@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>PRS 2.0 — Déclinaisons du thème avec l'or du logo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     3 déclinaisons « logo or » du design system, pilotées par
+     des variables CSS sur [data-theme]. On change tout l'écran
+     d'un clic pour comparer à iso-contenu.
+     ============================================================ */
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:"Hanken Grotesk",system-ui,sans-serif; background:#e8ecf3; color:#0f2138; font-size:14px; line-height:1.5; }
+  .page{ max-width:1180px; margin:0 auto; padding:40px 24px 100px; }
+  h1{ font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.7rem; margin:0 0 .2rem; color:#0b2a4a; }
+  .lead{ color:#5b6b80; margin:0 0 1.4rem; max-width:72ch; }
+
+  /* ---- Switcher ---- */
+  .switch{ position:sticky; top:12px; z-index:40; display:flex; gap:8px; padding:8px; background:#fff; border:1px solid #e2e9f3;
+    border-radius:14px; box-shadow:0 14px 36px -16px rgba(11,42,74,.25); margin-bottom:1.6rem; flex-wrap:wrap; }
+  .switch button{ flex:1; min-width:200px; border:2px solid transparent; background:#f4f7fb; font:inherit; font-weight:700;
+    padding:.7rem 1rem; border-radius:10px; cursor:pointer; text-align:left; transition:.15s; }
+  .switch button small{ display:block; font-weight:500; color:#5b6b80; font-size:.78rem; }
+  .switch button.on{ border-color:#1f6feb; background:#fff; box-shadow:0 6px 16px -10px rgba(31,111,235,.5); }
+  .switch .sw{ display:inline-flex; gap:4px; margin-top:.45rem; }
+  .switch .sw i{ width:18px; height:18px; border-radius:5px; }
+
+  /* ============ Variables par thème ============ */
+  /* A — Bleu & Or : structure bleue conservée, l'OR remplace le sarcelle
+     comme accent de marque (actifs, dégradés, signal). */
+  [data-theme="A"]{
+    --side-bg:linear-gradient(180deg,#0b2a4a,#0c2f52 55%,#173052);
+    --side-txt:#bcd2ee; --side-actif-bg:rgba(232,168,30,.16); --side-actif-txt:#ffd97a;
+    --side-liseret:linear-gradient(180deg,#FBCE4A,#B97708);
+    --fond:#f4f7fb; --surface:#fff; --ligne:#e2e9f3; --doux:#5b6b80; --nuit:#0b2a4a;
+    --accent:#B97708; --accent-bg:#FBF3DD;
+    --btn:linear-gradient(135deg,#1f6feb,#3b86ff); --btn-txt:#fff; --btn-ombre:rgba(31,111,235,.55);
+    --eyebrow:#B97708; --num:#0b2a4a; --frise-fait:#E8A81E; --frise-cours:#1f6feb;
+    --tile-bord:#e2e9f3;
+  }
+  /* B — Encre & Or : sombre encre + ivoire chaud, l'or devient l'accent
+     principal (boutons, actifs), le bleu passe en soutien. */
+  [data-theme="B"]{
+    --side-bg:linear-gradient(180deg,#0d1522,#101a2b 60%,#16213a);
+    --side-txt:#c9c2ae; --side-actif-bg:rgba(232,168,30,.14); --side-actif-txt:#ffd97a;
+    --side-liseret:linear-gradient(180deg,#FBCE4A,#B97708);
+    --fond:#f8f6f1; --surface:#fffdf8; --ligne:#e9e3d4; --doux:#6b6557; --nuit:#161d2b;
+    --accent:#a06c02; --accent-bg:#f6ecd2;
+    --btn:linear-gradient(135deg,#FBCE4A,#E8A81E); --btn-txt:#3a2a05; --btn-ombre:rgba(185,119,8,.5);
+    --eyebrow:#a06c02; --num:#161d2b; --frise-fait:#E8A81E; --frise-cours:#161d2b;
+    --tile-bord:#e9e3d4;
+  }
+  /* C — Souverain doré (sobre) : le thème actuel intact, l'or réservé
+     aux moments de marque et aux actes officiels. */
+  [data-theme="C"]{
+    --side-bg:linear-gradient(180deg,#0b2a4a,#0c2f52 55%,#0a3a4a);
+    --side-txt:#bcd2ee; --side-actif-bg:rgba(31,111,235,.22); --side-actif-txt:#fff;
+    --side-liseret:linear-gradient(180deg,#1f6feb,#10b3a3);
+    --fond:#f4f7fb; --surface:#fff; --ligne:#e2e9f3; --doux:#5b6b80; --nuit:#0b2a4a;
+    --accent:#B97708; --accent-bg:#FBF3DD;
+    --btn:linear-gradient(135deg,#1f6feb,#10b3a3); --btn-txt:#fff; --btn-ombre:rgba(31,111,235,.55);
+    --eyebrow:#1f6feb; --num:#0b2a4a; --frise-fait:#10b3a3; --frise-cours:#1f6feb;
+    --tile-bord:#e2e9f3;
+  }
+
+  /* ============ Maquette d'app ============ */
+  .app{ display:grid; grid-template-columns:230px 1fr; border-radius:18px; overflow:hidden;
+    border:1px solid #d7dfeb; box-shadow:0 30px 70px -30px rgba(11,42,74,.45); background:var(--fond); min-height:620px; }
+  .sb{ background:var(--side-bg); color:var(--side-txt); padding:1rem .9rem; display:flex; flex-direction:column; gap:.25rem; }
+  .sb .brand{ display:flex; align-items:center; gap:.6rem; color:#fff; padding:.2rem .4rem .9rem; }
+  .sb .brand b{ font-family:"Bricolage Grotesque",sans-serif; font-size:1rem; display:block; line-height:1; }
+  .sb .brand small{ font-size:.58rem; letter-spacing:.12em; text-transform:uppercase; opacity:.65; }
+  .sb .sec{ font-size:.6rem; letter-spacing:.12em; text-transform:uppercase; opacity:.55; font-weight:700; padding:.55rem .6rem .25rem; }
+  .sb a{ display:flex; align-items:center; gap:.6rem; padding:.5rem .6rem; border-radius:9px; color:inherit; text-decoration:none;
+    font-weight:600; font-size:.85rem; position:relative; }
+  .sb a svg{ width:16px; height:16px; opacity:.8; }
+  .sb a.on{ background:var(--side-actif-bg); color:var(--side-actif-txt); }
+  .sb a.on::before{ content:""; position:absolute; left:-.9rem; top:.45rem; bottom:.45rem; width:3px; border-radius:0 3px 3px 0; background:var(--side-liseret); }
+  .orb{ width:34px; height:34px; flex:none; }
+
+  .ct{ padding:1.5rem 1.8rem; }
+  .eyebrow{ font-size:.68rem; letter-spacing:.13em; text-transform:uppercase; color:var(--eyebrow); font-weight:700; }
+  .ct h2{ font-family:"Bricolage Grotesque",sans-serif; font-weight:800; color:var(--nuit); margin:.1rem 0 1rem; font-size:1.45rem; }
+
+  .tiles{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:1.1rem; }
+  .tile{ background:var(--surface); border:1px solid var(--tile-bord); border-radius:13px; padding:.85rem .95rem; }
+  .tile .l{ font-size:.72rem; font-weight:600; color:var(--doux); }
+  .tile .n{ font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.7rem; color:var(--num); line-height:1.1; }
+  .tile.gold .n{ color:var(--accent); }
+
+  .panel{ background:var(--surface); border:1px solid var(--tile-bord); border-radius:13px; margin-bottom:1.1rem; overflow:hidden; }
+  .panel .ph{ padding:.7rem 1rem; border-bottom:1px solid var(--ligne); font-weight:700; color:var(--nuit); font-size:.9rem;
+    display:flex; justify-content:space-between; align-items:center; }
+  .btn{ font:inherit; font-weight:700; font-size:.8rem; border:none; cursor:pointer; border-radius:9px; padding:.5rem .9rem;
+    color:var(--btn-txt); background:var(--btn); box-shadow:0 8px 18px -8px var(--btn-ombre); }
+
+  /* frise */
+  .frise{ display:flex; padding:1rem .6rem .8rem; }
+  .et{ flex:1; text-align:center; position:relative; }
+  .et::before{ content:""; position:absolute; top:10px; left:-50%; width:100%; height:2.5px; background:var(--ligne); }
+  .et:first-child::before{ display:none; }
+  .et.f::before{ background:var(--frise-fait); }
+  .et .pt{ position:relative; z-index:1; width:22px; height:22px; margin:0 auto .3rem; border-radius:50%; display:grid; place-items:center;
+    background:var(--surface); border:2px solid var(--ligne); color:var(--doux); font-size:.6rem; font-weight:800; }
+  .et.f .pt{ border-color:var(--frise-fait); background:var(--frise-fait); color:#fff; }
+  .et.c .pt{ border-color:var(--frise-cours); color:var(--frise-cours); }
+  .et.c .pt::after{ content:""; position:absolute; inset:-6px; border-radius:50%; border:2px solid var(--frise-cours); opacity:.5; animation:pulse 1.8s ease-out infinite; }
+  @keyframes pulse{ 0%{ transform:scale(.7); opacity:.7; } 100%{ transform:scale(1.25); opacity:0; } }
+  .et .lb{ font-size:.62rem; font-weight:600; color:var(--doux); }
+  .et.f .lb,.et.c .lb{ color:var(--nuit); }
+
+  table{ width:100%; border-collapse:collapse; font-size:.82rem; }
+  th{ text-align:left; font-size:.62rem; letter-spacing:.07em; text-transform:uppercase; color:var(--doux); padding:.5rem 1rem; background:var(--fond); }
+  td{ padding:.55rem 1rem; border-top:1px solid var(--ligne); }
+  td .mono{ font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--nuit); }
+  .badge{ display:inline-flex; align-items:center; gap:.35rem; font-size:.68rem; font-weight:700; padding:.2rem .55rem; border-radius:999px;
+    background:var(--accent-bg); color:var(--accent); border:1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+  .badge::before{ content:""; width:6px; height:6px; border-radius:50%; background:linear-gradient(135deg,#FBCE4A,#B97708); }
+  .badge.b{ background:#e7effc; color:#1f6feb; border-color:#c5d9f8; } .badge.b::before{ background:#1f6feb; }
+
+  .verdict{ margin-top:1.6rem; background:#FBF3DD; border:1px solid rgba(232,168,30,.4); border-radius:12px; padding:1rem 1.3rem; font-size:.92rem; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Le thème × l'or du logo — 3 déclinaisons</h1>
+  <p class="lead">Même écran, trois dosages de l'or. Clique pour basculer. <b>A</b> garde la structure bleue et donne
+  l'or au « signal » (actifs, frise, chiffres clés). <b>B</b> assume un vrai virage encre + or (boutons dorés).
+  <b>C</b> est le thème actuel où l'or reste réservé à la marque et aux actes signés.</p>
+
+  <div class="switch">
+    <button class="on" onclick="th(this,'A')">A — Bleu &amp; Or
+      <small>L'or remplace le sarcelle comme accent. Institutionnel, chaleureux.</small>
+      <span class="sw"><i style="background:#0b2a4a"></i><i style="background:#1f6feb"></i><i style="background:#E8A81E"></i><i style="background:#f4f7fb;border:1px solid #ddd"></i></span>
+    </button>
+    <button onclick="th(this,'B')">B — Encre &amp; Or
+      <small>Sombre encre, ivoire chaud, boutons or. Le plus « régalien ».</small>
+      <span class="sw"><i style="background:#0d1522"></i><i style="background:#E8A81E"></i><i style="background:#f8f6f1;border:1px solid #ddd"></i><i style="background:#a06c02"></i></span>
+    </button>
+    <button onclick="th(this,'C')">C — Souverain doré (sobre)
+      <small>Thème actuel intact ; l'or seulement sur la marque et les actes.</small>
+      <span class="sw"><i style="background:#0b2a4a"></i><i style="background:#1f6feb"></i><i style="background:#10b3a3"></i><i style="background:#E8A81E"></i></span>
+    </button>
+  </div>
+
+  <div class="app" id="app" data-theme="A">
+    <aside class="sb">
+      <div class="brand">
+        <svg class="orb" viewBox="0 0 64 64"><defs><radialGradient id="g" cx="38%" cy="30%" r="78%">
+          <stop offset="0%" stop-color="#FBCE4A"/><stop offset="55%" stop-color="#E8A81E"/><stop offset="100%" stop-color="#BC7C07"/></radialGradient></defs>
+          <circle cx="32" cy="32" r="26" fill="url(#g)"/>
+          <text x="32" y="33" text-anchor="middle" dominant-baseline="central" font-family="system-ui" font-weight="800" font-size="16" fill="#fff">PRS</text></svg>
+        <span><b>PRS&nbsp;2.0</b><small>Espace CNM/CRM</small></span>
+      </div>
+      <div class="sec">Navigation</div>
+      <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 11h7v9h-7zM4 13h7v7H4z"/></svg>Tableau de bord</a>
+      <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Files de traitement</a>
+      <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 14l4-4 3 3 5-6"/></svg>Statistiques</a>
+    </aside>
+    <div class="ct">
+      <div class="eyebrow">CC · Commission nationale</div>
+      <h2>Tableau de bord</h2>
+      <div class="tiles">
+        <div class="tile"><div class="l">Échéances actives</div><div class="n">14</div></div>
+        <div class="tile"><div class="l">À risque (≤ 1 j)</div><div class="n">3</div></div>
+        <div class="tile gold"><div class="l">Taux de conformité</div><div class="n">82 %</div></div>
+        <div class="tile"><div class="l">PV co-signés ce mois</div><div class="n">9</div></div>
+      </div>
+      <div class="panel">
+        <div class="ph">Dossier 3 PPM CNM 26 <button class="btn">Co-signer le PV</button></div>
+        <div class="frise">
+          <div class="et f"><div class="pt">✓</div><div class="lb">Réception</div></div>
+          <div class="et f"><div class="pt">✓</div><div class="lb">Dispatch</div></div>
+          <div class="et f"><div class="pt">✓</div><div class="lb">Examen</div></div>
+          <div class="et c"><div class="pt">4</div><div class="lb">Navette PV</div></div>
+          <div class="et"><div class="pt">5</div><div class="lb">Co-signature</div></div>
+          <div class="et"><div class="pt">6</div><div class="lb">Vérification</div></div>
+          <div class="et"><div class="pt">7</div><div class="lb">Clôture</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph">File de traitement</div>
+        <table>
+          <thead><tr><th>N°</th><th>Entité</th><th>Statut</th><th>Échéance</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">3 PPM CNM 26</td><td>Min. Santé Publique</td><td><span class="badge">PV co-signé</span></td><td>—</td></tr>
+            <tr><td class="mono">4 PPM CNM 26</td><td>Min. Éducation Nationale</td><td><span class="badge b">En examen</span></td><td>J-1</td></tr>
+            <tr><td class="mono">2 PPM CRM-A 26</td><td>Région Analamanga</td><td><span class="badge b">Vérification</span></td><td>J-3</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <b>Ma recommandation : A.</b> Elle accorde l'app au logo sans sacrifier la lisibilité quotidienne (les actions
+    restent bleues — l'or marque les états et le signal institutionnel). <b>B</b> est superbe en démo mais l'or en
+    couleur d'action fatigue plus vite sur 8 h d'écran ; <b>C</b> est l'option « zéro risque ». Réponds A, B ou C
+    (avec tes ajustements éventuels) et j'applique le thème + les 6 propositions validées dans la foulée.
+  </div>
+</div>
+<script>
+  function th(btn, t){
+    document.getElementById('app').dataset.theme = t;
+    document.querySelectorAll('.switch button').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 3.25rem;
+    padding-inline: var(--cnm-space-4);
+    background: var(--cnm-surface);
+    border-bottom: 1px solid var(--cnm-border);
+    color: var(--cnm-text);
+  }
+
+  &__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  &__content {
+    flex: 1;
+    padding: var(--cnm-space-5);
+    background: var(--cnm-bg);
+    overflow: auto;
+  }
+}
+
+.brand {
+  font-weight: var(--cnm-fw-semibold);
+  letter-spacing: 0.05em;
+  background: var(--cnm-brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: var(--cnm-space-3);
+  font-size: var(--cnm-fs-sm);
+  color: var(--cnm-text-2);
+
+  &__role {
+    background: var(--cnm-action-bg);
+    color: var(--cnm-action-fg);
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--cnm-radius-pill);
+    font-weight: var(--cnm-fw-medium);
+  }
+
+  &__perimetre {
+    color: var(--cnm-text-3);
+  }
+
+  &__logout {
+    background: transparent;
+    border: 1px solid var(--cnm-border-strong);
+    color: var(--cnm-text-2);
+    border-radius: var(--cnm-radius-sm);
+    padding: 0.25rem 0.625rem;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--cnm-surface-2);
+      color: var(--cnm-text);
+    }
+  }
+}
+
+.sidebar {
+  width: 15rem;
+  background: var(--cnm-surface);
+  border-right: 1px solid var(--cnm-border);
+  padding: var(--cnm-space-3) 0;
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem var(--cnm-space-4);
+    color: var(--cnm-text-2);
+    text-decoration: none;
+    font-size: var(--cnm-fs-sm);
+
+    &:hover {
+      background: var(--cnm-surface-2);
+      color: var(--cnm-text);
+      text-decoration: none;
+    }
+
+    &--active {
+      background: var(--cnm-surface-2);
+      color: var(--cnm-text);
+      font-weight: var(--cnm-fw-semibold);
+      box-shadow: inset 3px 0 0 var(--cnm-brand);
+    }
+  }
+
+  &__sublist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* En-tête accordéon : un bouton qui imite le lien latéral. */
+  &__group {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+  }
+
+  &__chevron {
+    margin-left: auto;
+    color: var(--cnm-text-3);
+    transition: transform 0.15s ease;
+  }
+
+  &__group--open &__chevron {
+    transform: rotate(90deg);
+  }
+
+  /* Sous-entrée : retrait pour aligner le texte sous celui du parent. */
+  &__link--sub {
+    padding-left: calc(var(--cnm-space-4) + 1.875rem);
+    font-size: var(--cnm-fs-xs);
+  }
+
+  &__icon {
+    width: 1.25rem;
+    text-align: center;
+  }
+}

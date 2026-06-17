@@ -1,0 +1,526 @@
+/* =============================================================================
+   CNM — Système de design global
+   Identité reprise de docs/cnm-profils-dashboards-clair.html :
+   thème CLAIR (fond doux, surfaces blanches, texte foncé), accent CNM
+   violet/teal réservé aux éléments actifs.
+   Polices importées dans index.html (Sora titres / Inter texte / DM Mono).
+
+   Tout est centralisé ici : variables (couleurs, typo, espacements, rayons) et
+   classes réutilisables (.cnm-card, .cnm-btn, .cnm-badge, .cnm-table, champs…).
+   Les écrans n'inventent pas de styles : ils composent ces primitives.
+   ============================================================================= */
+
+:root {
+  /* ---- Surfaces (clair : fond doux, surfaces blanches) ---- */
+  --cnm-bg: #edf0f5;
+  --cnm-surface: #ffffff;
+  --cnm-surface-2: #f4f6fb;
+  --cnm-surface-3: #e7ebf1;
+
+  /* ---- Bordures ---- */
+  --cnm-border: #e2e6ec;
+  --cnm-border-strong: #d7dce3;
+
+  /* ---- Texte (foncé) ---- */
+  --cnm-text: #1a2230;
+  --cnm-text-2: #66707f;
+  --cnm-text-3: #9aa3b0;
+
+  /* ---- Marque (accent réservé aux éléments actifs) ---- */
+  --cnm-brand: #6c6fff;
+  --cnm-brand-2: #3ec9a7;
+  --cnm-brand-gradient: linear-gradient(135deg, #6c6fff 0%, #3ec9a7 100%);
+
+  /* ---- Couleurs sémantiques (paires fond clair / texte foncé) — badges teintés clairs ---- */
+  --cnm-info-bg: #e6f1fb;
+  --cnm-info-fg: #185fa5;
+  --cnm-success-bg: #e3f2ec;
+  --cnm-success-fg: #0f6e56;
+  --cnm-action-bg: #e9e9fe;
+  --cnm-action-fg: #4b3fb0;
+  --cnm-warning-bg: #faeeda;
+  --cnm-warning-fg: #8a5a0c;
+  --cnm-danger-bg: #fbe9e7;
+  --cnm-danger-fg: #b42318;
+  --cnm-neutral-bg: #edf0f4;
+  --cnm-neutral-fg: #5f6b7a;
+
+  /* ---- Couleurs d'accent par profil (charte hiérarchie) ---- */
+  --cnm-profile-prmp: #1d9e75;
+  --cnm-profile-president: #ef9f27;
+  --cnm-profile-cc: #7f77dd;
+  --cnm-profile-secretaire: #378add;
+  --cnm-profile-membre: #d85a30;
+  --cnm-profile-verificateur: #639922;
+  --cnm-profile-publication: #d4537e;
+  --cnm-profile-admin: #888780;
+
+  /* ---- Typographie (Sora titres / Inter texte / DM Mono) ---- */
+  --cnm-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --cnm-font-display: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --cnm-mono: 'DM Mono', ui-monospace, 'Cascadia Code', monospace;
+
+  --cnm-fs-micro: 10px;
+  --cnm-fs-xs: 11px;
+  --cnm-fs-sm: 12px;
+  --cnm-fs-base: 14px;
+  --cnm-fs-md: 16px;
+  --cnm-fs-lg: 20px;
+  --cnm-fs-xl: 26px;
+
+  --cnm-fw-light: 300;
+  --cnm-fw-regular: 400;
+  --cnm-fw-medium: 500;
+  --cnm-fw-semibold: 600;
+
+  /* ---- Rayons ---- */
+  --cnm-radius: 10px;
+  --cnm-radius-lg: 14px;
+  --cnm-radius-sm: 7px;
+  --cnm-radius-pill: 20px;
+
+  /* ---- Espacements (échelle 4px) ---- */
+  --cnm-space-1: 4px;
+  --cnm-space-2: 8px;
+  --cnm-space-3: 12px;
+  --cnm-space-4: 16px;
+  --cnm-space-5: 22px;
+  --cnm-space-6: 32px;
+
+  /* ---- Ombres (douces, claires) ---- */
+  --cnm-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 32px rgba(16, 24, 40, 0.08);
+}
+
+/* =============================================================================
+   Base
+   ============================================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--cnm-font);
+  background: var(--cnm-bg);
+  color: var(--cnm-text);
+  font-size: var(--cnm-fs-base);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--cnm-font-display);
+  font-weight: var(--cnm-fw-semibold);
+  color: var(--cnm-text);
+  line-height: 1.3;
+}
+
+a {
+  color: var(--cnm-info-fg);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* Étiquette de section : micro, capitales, espacée — motif récurrent de la charte. */
+.cnm-section-label {
+  font-size: var(--cnm-fs-micro);
+  font-weight: var(--cnm-fw-medium);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cnm-text-3);
+}
+
+.cnm-mono {
+  font-family: var(--cnm-mono);
+}
+
+.cnm-muted {
+  color: var(--cnm-text-2);
+}
+
+/* =============================================================================
+   Cartes / surfaces
+   ============================================================================= */
+
+.cnm-card {
+  background: var(--cnm-surface);
+  border: 1px solid var(--cnm-border);
+  border-radius: var(--cnm-radius-lg);
+}
+
+.cnm-card--flat {
+  border-radius: var(--cnm-radius);
+}
+
+.cnm-card__header {
+  padding: var(--cnm-space-4) var(--cnm-space-5);
+  border-bottom: 1px solid var(--cnm-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cnm-space-3);
+}
+
+.cnm-card__body {
+  padding: var(--cnm-space-4) var(--cnm-space-5);
+}
+
+/* =============================================================================
+   Boutons
+   ============================================================================= */
+
+.cnm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cnm-space-2);
+  font-family: var(--cnm-font);
+  font-size: var(--cnm-fs-sm);
+  font-weight: var(--cnm-fw-medium);
+  line-height: 1.2;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--cnm-radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
+  white-space: nowrap;
+}
+
+.cnm-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cnm-btn--primary {
+  background: var(--cnm-brand);
+  color: #fff;
+}
+.cnm-btn--primary:not(:disabled):hover {
+  background: #5a5df0;
+}
+
+.cnm-btn--ghost {
+  background: transparent;
+  color: var(--cnm-text-2);
+  border-color: var(--cnm-border-strong);
+}
+.cnm-btn--ghost:not(:disabled):hover {
+  background: var(--cnm-surface-2);
+  color: var(--cnm-text);
+}
+
+.cnm-btn--success {
+  background: var(--cnm-success-fg);
+  color: #fff;
+}
+.cnm-btn--success:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+
+.cnm-btn--danger {
+  background: transparent;
+  color: var(--cnm-danger-fg);
+  border-color: rgba(252, 129, 129, 0.4);
+}
+.cnm-btn--danger:not(:disabled):hover {
+  background: var(--cnm-danger-bg);
+}
+
+.cnm-btn--warning {
+  background: var(--cnm-warning-fg);
+  color: #fff;
+}
+.cnm-btn--warning:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+
+.cnm-btn--sm {
+  padding: 0.3rem 0.6rem;
+  font-size: var(--cnm-fs-xs);
+}
+
+/* =============================================================================
+   Badges / pastilles
+   ============================================================================= */
+
+.cnm-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: var(--cnm-radius-pill);
+  font-size: var(--cnm-fs-xs);
+  font-weight: var(--cnm-fw-medium);
+  line-height: 1.5;
+  white-space: nowrap;
+  background: var(--cnm-neutral-bg);
+  color: var(--cnm-neutral-fg);
+  border: 1px solid transparent;
+}
+
+.cnm-badge--info {
+  background: var(--cnm-info-bg);
+  color: var(--cnm-info-fg);
+}
+.cnm-badge--success {
+  background: var(--cnm-success-bg);
+  color: var(--cnm-success-fg);
+}
+.cnm-badge--action {
+  background: var(--cnm-action-bg);
+  color: var(--cnm-action-fg);
+}
+.cnm-badge--warning {
+  background: var(--cnm-warning-bg);
+  color: var(--cnm-warning-fg);
+}
+.cnm-badge--danger {
+  background: var(--cnm-danger-bg);
+  color: var(--cnm-danger-fg);
+}
+.cnm-badge--neutral {
+  background: var(--cnm-neutral-bg);
+  color: var(--cnm-neutral-fg);
+}
+
+/* =============================================================================
+   Zone « lignes de marché » : distincte de l'en-tête / infos PPM
+   (tokens du design system uniquement — fond teinté + liseré d'accent).
+   ============================================================================= */
+
+.cnm-marches {
+  background: var(--cnm-success-bg);
+  border-left: 3px solid var(--cnm-brand);
+}
+
+/* =============================================================================
+   Tableaux de données (dense, lisible)
+   ============================================================================= */
+
+.cnm-table-wrap {
+  background: var(--cnm-surface);
+  border: 1px solid var(--cnm-border);
+  border-radius: var(--cnm-radius-lg);
+  overflow: auto;
+}
+
+.cnm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--cnm-fs-sm);
+}
+
+.cnm-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--cnm-surface-2);
+  color: var(--cnm-text-3);
+  font-size: var(--cnm-fs-micro);
+  font-weight: var(--cnm-fw-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--cnm-border-strong);
+  white-space: nowrap;
+}
+
+.cnm-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--cnm-border);
+  color: var(--cnm-text);
+  vertical-align: middle;
+}
+
+.cnm-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cnm-table tbody tr:hover td {
+  background: var(--cnm-surface-2);
+}
+
+/* Cellule numérique / montants : alignée à droite, en mono pour l'alignement des chiffres. */
+.cnm-table .cnm-num {
+  text-align: right;
+  font-family: var(--cnm-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.cnm-table__empty {
+  text-align: center;
+  color: var(--cnm-text-2);
+  padding: var(--cnm-space-5);
+}
+
+/* =============================================================================
+   Champs de formulaire
+   ============================================================================= */
+
+.cnm-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cnm-space-1);
+}
+
+.cnm-field__label {
+  font-size: var(--cnm-fs-sm);
+  font-weight: var(--cnm-fw-medium);
+  color: var(--cnm-text-2);
+}
+
+.cnm-input,
+.cnm-select,
+.cnm-textarea {
+  font-family: var(--cnm-font);
+  font-size: var(--cnm-fs-base);
+  color: var(--cnm-text);
+  background: var(--cnm-bg);
+  border: 1px solid var(--cnm-border-strong);
+  border-radius: var(--cnm-radius-sm);
+  padding: 0.5rem 0.65rem;
+}
+
+.cnm-input::placeholder,
+.cnm-textarea::placeholder {
+  color: var(--cnm-text-3);
+}
+
+.cnm-input:focus,
+.cnm-select:focus,
+.cnm-textarea:focus {
+  outline: none;
+  border-color: var(--cnm-brand);
+  box-shadow: 0 0 0 3px rgba(108, 111, 255, 0.25);
+}
+
+.cnm-input--invalid {
+  border-color: var(--cnm-danger-fg);
+}
+
+.cnm-field__hint {
+  font-size: var(--cnm-fs-xs);
+  color: var(--cnm-danger-fg);
+}
+
+/* =============================================================================
+   Onglets / pastilles cliquables
+   ============================================================================= */
+
+.cnm-tab {
+  padding: 6px 14px;
+  border-radius: var(--cnm-radius-pill);
+  border: 1px solid var(--cnm-border-strong);
+  background: transparent;
+  color: var(--cnm-text-2);
+  font-family: var(--cnm-font);
+  font-size: var(--cnm-fs-sm);
+  font-weight: var(--cnm-fw-medium);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.cnm-tab:hover {
+  background: var(--cnm-surface-2);
+  color: var(--cnm-text);
+}
+.cnm-tab--active {
+  background: var(--cnm-brand);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* =============================================================================
+   Barre de défilement fine (charte)
+   ============================================================================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cnm-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: #cdd4dd;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b6bdc8;
+}
+
+/* =============================================================================
+   Formulaires — patron compact réutilisable (opt-in via .cnm-form)
+   Champs resserrés et grille multi-colonnes, sans toucher tables ni filtres.
+   ============================================================================= */
+
+.cnm-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cnm-space-3);
+}
+
+/* Grille multi-colonnes auto-responsive (se replie seule selon la largeur). */
+.cnm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--cnm-space-2) var(--cnm-space-3);
+}
+.cnm-form-grid--wide {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.cnm-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cnm-space-2);
+}
+.cnm-form-section__title {
+  margin: 0;
+  font-size: var(--cnm-fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cnm-text-2);
+  font-weight: var(--cnm-fw-semibold);
+}
+
+/* Champs resserrés — SCOPÉ au formulaire (ne touche ni tables ni barres de filtre). */
+.cnm-form .cnm-input,
+.cnm-form .cnm-select,
+.cnm-form .cnm-textarea {
+  padding: 0.32rem 0.5rem;
+}
+.cnm-form .cnm-field {
+  gap: 2px;
+}
+.cnm-form .cnm-field__label {
+  font-size: var(--cnm-fs-xs);
+}
+
+/* Zone répétable à défilement interne (ex. lignes / entités) si la liste est longue. */
+.cnm-form-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cnm-space-2);
+  max-height: 14rem;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+/* Pied de formulaire : actions alignées. */
+.cnm-form__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--cnm-space-3);
+  flex-wrap: wrap;
+}

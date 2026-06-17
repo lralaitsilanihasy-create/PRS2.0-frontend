@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNM — Fonctionnalités par profil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0B0D12;--bg2:#13161E;--bg3:#1A1E2A;--bg4:#222636;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--txt:#E8EAF0;--txt2:#8B909E;--txt3:#555A6B;--radius:10px;--radius-lg:14px;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--txt);font-size:14px;line-height:1.6;min-height:100vh}
+.site-header{position:sticky;top:0;z-index:100;background:rgba(11,13,18,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:0 32px;height:54px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#6C6FFF 0%,#3EC9A7 100%);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff}
+.logo-text{font-size:13px;font-weight:500;color:var(--txt);letter-spacing:.02em}
+.logo-sub{font-size:11px;color:var(--txt3);letter-spacing:.03em}
+.header-meta{font-size:11px;color:var(--txt3);font-family:var(--mono)}
+.page{max-width:1100px;margin:0 auto;padding:36px 32px 80px}
+
+/* hierarchy banner */
+.hier{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 22px;margin-bottom:18px}
+.hier-title{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:12px}
+.hier-tree{display:flex;flex-direction:column;gap:4px}
+.hier-row{display:flex;align-items:center;gap:8px;font-size:11px}
+.hier-indent{color:var(--txt3);font-family:var(--mono);letter-spacing:-.05em;white-space:pre;font-size:11px}
+.hpill{padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.hier-note{font-size:11px;color:var(--txt3);margin-top:3px}
+
+/* circuit */
+.circuit{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 22px;margin-bottom:28px}
+.circuit-title{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:10px}
+.steps{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.step{padding:5px 11px;border-radius:8px;font-size:11px;font-weight:500;line-height:1.3;white-space:nowrap}
+.step small{display:block;font-weight:400;opacity:.7;font-size:10px}
+.arr{color:var(--txt3);font-size:16px}
+
+.tabs-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}
+.tab{padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--txt2);font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;transition:all .18s ease}
+.tab:hover{background:var(--bg3);color:var(--txt)}
+.tab.active{color:#fff;border-color:transparent}
+.pcard{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;animation:fadeIn .22s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.phead{padding:18px 24px 14px;display:flex;align-items:flex-start;gap:14px;border-bottom:1px solid var(--border)}
+.avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;flex-shrink:0}
+.pmeta{flex:1}
+.pname{font-size:16px;font-weight:500;margin-bottom:2px}
+.prole{font-size:12px;color:var(--txt2);margin-bottom:6px}
+.pbadges{display:flex;gap:5px;flex-wrap:wrap}
+.badge{padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
+
+/* hierarchy info strip */
+.phier{padding:8px 24px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.phier-label{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3)}
+.phier-pill{padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.phier-sep{color:var(--txt3);font-size:12px}
+.vis-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;background:#0A1A07;color:#68D391}
+.vis-badge.all{background:#1a1040;color:#A5B4FC}
+
+.pdesc{padding:10px 24px;font-size:12px;color:var(--txt2);line-height:1.7;border-bottom:1px solid var(--border);background:var(--bg2)}
+
+/* delegation strip */
+.pdeleg{padding:8px 24px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pdeleg-label{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#F6A832;margin-right:4px}
+.dpill{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;background:#2A1808;color:#F6A832;border:1px solid #4a3010}
+
+.msec-lbl{padding:10px 24px 4px;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;padding:0 16px 14px}
+.mcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.mhead{padding:8px 12px;display:flex;align-items:center;gap:8px}
+.mnum{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;background:rgba(255,255,255,.15);color:#fff;flex-shrink:0}
+.mtitle{font-size:12px;font-weight:500;color:#fff}
+.mbody{padding:2px 12px 8px}
+.feat{padding:7px 0;border-bottom:1px solid var(--border)}
+.feat:last-child{border-bottom:none}
+.ftop{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.fdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.ftitle{font-size:12px;font-weight:500;color:var(--txt)}
+.fdesc{font-size:11px;color:var(--txt2);line-height:1.5;padding-left:11px}
+.ftags{display:flex;gap:3px;flex-wrap:wrap;padding-left:11px;margin-top:4px}
+.tag{padding:1px 7px;border-radius:20px;font-size:10px;font-weight:500}
+.rsec{margin:0 16px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px}
+.rlbl{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:7px}
+.ritem{display:flex;align-items:flex-start;gap:7px;padding:3px 0;font-size:11px;color:var(--txt2);line-height:1.5}
+.ricon{color:#E24B4A;flex-shrink:0;margin-top:1px}
+.tag-lecture{background:#0D2238;color:#63B3ED}
+.tag-ecriture{background:#0A2112;color:#68D391}
+.tag-action{background:#1A1040;color:#A5B4FC}
+.tag-auto{background:#2A1808;color:#F6A832}
+.legend{display:flex;gap:8px;flex-wrap:wrap;padding:8px 16px 16px;border-top:1px solid var(--border)}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2)}
+.site-footer{border-top:1px solid var(--border);padding:20px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.footer-txt{font-size:11px;color:var(--txt3);font-family:var(--mono)}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="logo">
+    <div class="logo-mark">CNM</div>
+    <div>
+      <div class="logo-text">Contrôle des Marchés Publics</div>
+      <div class="logo-sub">Brochure des fonctionnalités — version 2.4</div>
+    </div>
+  </div>
+  <div class="header-meta">Généré le 03/06/2026 — v2.4</div>
+</header>
+
+<main class="page">
+
+  <!-- HIERARCHY BANNER -->
+  <div class="hier">
+    <div class="hier-title">Hiérarchie des contrôleurs & périmètre de visibilité</div>
+    <div class="hier-tree">
+      <div class="hier-row">
+        <span class="hier-indent">   </span>
+        <span class="hpill" style="background:#2A1808;color:#F6A832">Président</span>
+        <span class="hier-note">— ID_LOCALITE = NULL → voit <strong style="color:#A5B4FC">toutes les localités</strong> · peut exercer les tâches de Secrétaire, Membre, Vérificateur</span>
+      </div>
+      <div class="hier-row">
+        <span class="hier-indent"> └─ </span>
+        <span class="hpill" style="background:#15102E;color:#B794F4">Chef de commission</span>
+        <span class="hier-note">— rattaché à une localité · voit uniquement les dossiers de sa localité · a son Secrétaire et ses Membres · peut exercer les tâches de Secrétaire, Membre, Vérificateur</span>
+      </div>
+      <div class="hier-row">
+        <span class="hier-indent">    ├─ </span>
+        <span class="hpill" style="background:#0A1E35;color:#63B3ED">Secrétaire</span>
+        <span class="hier-note">— subordonné du CC · même localité que son CC · réception des dossiers</span>
+      </div>
+      <div class="hier-row">
+        <span class="hier-indent">    └─ </span>
+        <span class="hpill" style="background:#280F05;color:#FC8A6A">Membre</span>
+        <span class="hier-note">— subordonné du CC · voit tous les dossiers de sa localité</span>
+      </div>
+      <div class="hier-row">
+        <span class="hier-indent">         └─ </span>
+        <span class="hpill" style="background:#0A1A07;color:#68D391">Contrôleur vérificateur</span>
+        <span class="hier-note">— subordonné du Membre · même localité</span>
+      </div>
+      <div class="hier-row">
+        <span class="hier-indent">              └─ </span>
+        <span class="hpill" style="background:#1A1E2A;color:#B4B2A9">Assistant contrôleur</span>
+        <span class="hier-note">— subordonné du Vérificateur · même localité</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CIRCUIT -->
+  <div class="circuit">
+    <div class="circuit-title">Circuit de contrôle v4 — flux complet avec navette projet de PV</div>
+    <div class="steps">
+      <div class="step" style="background:#0D2035;color:#90CDF4">Réception<small>Secrétaire / CC / Président</small></div>
+      <span class="arr">›</span>
+      <div class="step" style="background:#0A2112;color:#68D391;border:1px solid #2d6a4f">PRET_DISPATCH<small>Trigger auto</small></div>
+      <span class="arr">›</span>
+      <div class="step" style="background:#2A1808;color:#F6C77A">Dispatch<small>Président / CC</small></div>
+      <span class="arr">›</span>
+      <div class="step" style="background:#280F05;color:#FC8A6A">Examen<small>Membre / CC / Président</small></div>
+      <span class="arr">›</span>
+      <div class="step" style="background:#1a0a2e;color:#D6BCFA">Projet de PV<small>Membre → navette</small></div>
+      <span class="arr">⇄</span>
+      <div class="step" style="background:#15102E;color:#B794F4">PV accepté &amp; signé<small>Président/CC + Membre</small></div>
+      <span class="arr">›</span>
+      <div class="step" style="background:#0A1A07;color:#68D391">Vérification<small>Vérificateur / CC / Président</small></div>
+      <span class="arr">›</span>
+      <div class="step" style="background:#1A1E2A;color:#555A6B">Clôture<small>Auto</small></div>
+    </div>
+  </div>
+
+  <div class="tabs-wrap" id="tabs"></div>
+  <div id="pcontent"></div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-txt">Application CNM · Brochure des fonctionnalités · v2.7 · 04/06/2026</div>
+  <div class="footer-txt">44 tables · 74 FK · 5 vues · 8 profils · Hiérarchie + délégations + visibilité par localité</div>
+</footer>
+
+<script>
+const TAGS={'Lecture':'tag-lecture','Écriture':'tag-ecriture','Action':'tag-action','Auto':'tag-auto'};
+
+const P=[
+  {
+    id:'prmp',label:'PRMP',tc:'#1D9E75',av:'#0A3D2D',at:'#5DCAA5',
+    name:'PRMP',role:'Personne Responsable des Marchés Publics',
+    hier:null,vis:'Acteur externe — aucun périmètre CNM',deleg:null,
+    desc:'Acteur externe qui soumet ses PPM et marchés à la CNM. Suit l\'avancement jusqu\'au PV d\'examen, peut demander le retrait motivé d\'un dossier (soumis à validation du CC), et consulte ses indicateurs de performance par exercice. Son mandat est de 3 ans à compter de DATE_NOMIN — des alertes automatiques lui sont envoyées à J-90, J-30 et J-7 avant expiration.',
+    badges:[{l:'Acteur externe',bg:'#0A2E22',c:'#3EC9A0'},{l:'Soumission & suivi',bg:'#0A2E22',c:'#3EC9A0'},{l:'Retrait motivé',bg:'#2A1808',c:'#F6A832'},{l:'Performance',bg:'#2A1808',c:'#F6A832'},{l:'Mandat 3 ans',bg:'#1F1210',c:'#FC8181'}],
+    mods:[
+      {n:'02',t:'Saisie & gestion PPM',hc:'#0F6E56',feats:[
+        {t:'Création et mise à jour du PPM',d:'En-tête, exercice, signataire, marchés, lots, tranches, SOA bénéficiaires.',g:['Écriture']},
+        {t:'Détermination automatique du mode',d:'Suggestion via t_regle_passation selon situation, montant, nature et localité.',g:['Auto']},
+      ]},
+      {n:'03',t:'Soumission & retours',hc:'#0F6E56',feats:[
+        {t:'Soumission du dossier',d:'Envoi officiel avec génération de la référence unique.',g:['Action']},
+        {t:'Suivi de l\'état de réception',d:'Accès à réception, date, secrétaire — en temps réel.',g:['Lecture']},
+        {t:'Consultation du PV d\'examen',d:'Accès en lecture au PV signé : référence, avis, synthèse des observations non conformes.',g:['Lecture']},
+        {t:'Soumission du dossier corrigé',d:'Dépôt en retour avec corrections basées sur les observations du PV.',g:['Action']},
+      ]},
+      {n:'11',t:'Retrait de dossier',hc:'#0F6E56',feats:[
+        {t:'Demande de retrait motivée',d:'Demande de retrait d\'un dossier déjà enregistré. Motif obligatoire (MOTIF_RETRAIT NOT NULL dans t_demande_retrait).',g:['Action']},
+        {t:'Suivi de la demande',d:'Consultation du statut : EN_ATTENTE / APPROUVE / REJETE.',g:['Lecture']},
+        {t:'Notification décision du CC',d:'Reçoit RETRAIT_APPROUVE ou RETRAIT_REJETE avec l\'observation du CC.',g:['Lecture']},
+      ]},
+      {n:'04',t:'Calendrier & notifications',hc:'#0F6E56',feats:[
+        {t:'Calendrier des jalons',d:'Lancement, ouverture, attribution — alertes J-7 et J-1.',g:['Lecture']},
+        {t:'Notification PV accepté puis signé',d:'Reçoit PV_SIGNE dès que le PV atteint le statut SIGNE (après navette et signature). Ne reçoit pas les notifications de la navette interne (PROJET_PV_SOUMIS / PROJET_PV_RETOUR / PROJET_PV_ACCEPTE — réservées aux contrôleurs).',g:['Lecture']},
+        {t:'Alerte fin de mandat',d:'Le système calcule la date d\'expiration du mandat = DATE_NOMIN + 3 ans (t_prmp). Des alertes automatiques sont envoyées à J-90, J-30 et J-7 avant expiration. TYPE_NOTIF = FIN_MANDAT. À J=0, le compte est marqué comme expiré.',g:['Lecture','Auto']},
+      ]},
+      {n:'01',t:'Tableau de bord',hc:'#0F6E56',feats:[
+        {t:'Synthèse de ses PPM',d:'Statuts en cours, clôturés, en observation — par exercice.',g:['Lecture']},
+        {t:'Pipeline de ses dossiers',d:'Soumis → Reçu → Examen → PV → Retour / Clôture.',g:['Lecture']},
+        {t:'Mes indicateurs de performance',d:'Taux de conformité, nb dossiers soumis / conformes / retours / retraits, délai moyen de correction — depuis v_performance_prmp.',g:['Lecture']},
+        {t:'Alertes personnelles',d:'Observations en attente, échéances dépassées, PV signé en attente de correction.',g:['Lecture']},
+      ]},
+    ],
+    restr:[
+      'Ne voit que la synthèse et l\'avis du PV — pas le détail des points de contrôle internes',
+      'Retrait soumis à validation obligatoire du Chef de commission',
+      'Ne peut pas modifier un dossier après soumission, sauf retour officiel ou retrait approuvé',
+      'Mandat de 3 ans non renouvelable automatiquement — expiration = DATE_NOMIN + 3 ans (t_prmp)',
+      'Aucun accès au journal d\'audit, aux anomalies ni aux statistiques CNM globales',
+    ]
+  },
+  {
+    id:'pres',label:'Président',tc:'#EF9F27',av:'#2A1808',at:'#FAC775',
+    name:'Président',role:'Pilotage de la commission — sommet de la hiérarchie',
+    hier:{sup:'—',sub:'Tous les Chefs de commission'},
+    vis:'Toutes localités (ID_LOCALITE = NULL)',visAll:true,
+    deleg:['Secrétaire','Membre','Vérificateur'],
+    desc:'Sommet de la hiérarchie CNM. Supervise tous les Chefs de commission. Voit tous les dossiers toutes localités confondues. Peut exercer par délégation les tâches de Secrétaire, Membre et Vérificateur. Dispatche les dossiers et co-signe les PV.',
+    badges:[{l:'CNM',bg:'#2A1808',c:'#F6A832'},{l:'Toutes localités',bg:'#1a1040',c:'#A5B4FC'},{l:'Dispatch & pilotage',bg:'#2A1808',c:'#F6A832'},{l:'Délégation 3 profils',bg:'#2A1808',c:'#F6A832'}],
+    mods:[
+      {n:'02',t:'Circuit de contrôle',hc:'#854F0B',feats:[
+        {t:'Notification PRET_DISPATCH',d:'Alerte automatique dès COMPLET = true — notifié en temps réel pour toutes les localités.',g:['Lecture']},
+        {t:'File d\'attente dispatch',d:'Vue v_file_attente_dispatch : tous les dossiers complets sans dispatch existant, toutes localités.',g:['Lecture']},
+        {t:'Dispatch vers un membre',d:'Affectation avec instructions et date limite. INTERIM_DISPATCH = false en fonctionnement normal.',g:['Action']},
+        {t:'Réception d\'un dossier (délégation)',d:'Peut enregistrer et valider la complétude d\'un dossier à la place du Secrétaire (t_delegation_profil).',g:['Action']},
+        {t:'Examen point par point (délégation)',d:'Peut instruire l\'examen d\'un dossier à la place du Membre (t_delegation_profil).',g:['Action']},
+        {t:'Vérification de levée (délégation)',d:'Peut vérifier la levée des observations à la place du Vérificateur (t_delegation_profil).',g:['Action']},
+        {t:'Révision et retour du projet de PV',d:'À réception du projet soumis par le Membre (PROJET_SOUMIS), peut demander des corrections : passage en EN_RECTIFICATION + insertion dans t_pv_navette (SENS = RETOUR_RECTIF) + notification PROJET_PV_RETOUR vers le Membre. Le commentaire de rectification est obligatoire.',g:['Action']},
+        {t:'Acceptation du projet de PV',d:'Valide le projet corrigé : passage en PROJET_ACCEPTE + insertion dans t_pv_navette (SENS = ACCEPTATION) + notification PROJET_PV_ACCEPTE vers le Membre. Le PV devient signable.',g:['Action']},
+        {t:'Co-signature définitive du PV',d:'Une fois le projet accepté, renseigne DATE_SIGNATURE_PRESIDENT dans t_pv_examen. Facultatif si c\'est le CC qui co-signe — contrainte t_pv_examen_cosignataire_check garantit qu\'au moins l\'un des deux signe.',g:['Écriture']},
+        {t:'Suivi de tous les dossiers',d:'Vue d\'ensemble de tous les dossiers, toutes localités et toutes commissions.',g:['Lecture']},
+      ]},
+      {n:'01',t:'Tableau de bord & KPIs',hc:'#854F0B',feats:[
+        {t:'Pipeline de tous les dossiers',d:'Vue de l\'avancement de tous les dossiers, toutes commissions et localités confondues — depuis v_file_attente_dispatch et t_dossier.STATUT.',g:['Lecture']},
+        {t:'Alertes et notifications',d:'Toutes les alertes PRET_DISPATCH, PV_SIGNE, ALERTE_DELAI — toutes localités, en temps réel.',g:['Lecture']},
+        {t:'KPIs en temps réel',d:'Dossiers reçus, taux de conformité, délai moyen de traitement, montant total contrôlé — agrégés toutes localités depuis t_snapshot_stats.',g:['Lecture']},
+        {t:'Taux de conformité',d:'Rapport NB_DOSSIERS_CONFORMES / NB_DOSSIERS_SOUMIS × 100 (t_snapshot_stats.TAUX_CONFORMITE). Un dossier est conforme quand le vérificateur enregistre OBS_LEVEES = true au dernier passage (t_verification). Un dossier non conforme a reçu un avis DEFAVORABLE ou FAVORABLE_RESERVES non levé. Le taux mesure donc la qualité initiale des soumissions PRMP : 100 % signifie zéro retour corrigé.',g:['Lecture']},
+        {t:'Flux de traitement visuel',d:'Pipeline par étape (Réception → Dispatch → Examen → PV → Vérification → Clôture) avec comptage par statut — source t_snapshot_stats.',g:['Lecture']},
+        {t:'Indicateurs par contrôleur',d:'Performance mensuelle (t_indicateur_ctrl) de chaque membre de toutes les commissions : nb examens, nb conformes, délai moyen, nb observations.',g:['Lecture']},
+        {t:'Performance des PRMP',d:'Consultation de v_performance_prmp : taux de conformité par PRMP, nb retours, nb retraits approuvés, délai moyen de correction — par exercice budgétaire.',g:['Lecture']},
+      ]},
+      {n:'06',t:'Calendrier & jalons',hc:'#854F0B',feats:[
+        {t:'Calendrier des jalons',d:'Vue de tous les marchés toutes localités avec retards (ECART_JOURS > 0).',g:['Lecture']},
+        {t:'Export PDF / iCal',d:'Export des échéances pour les outils de planning.',g:['Action']},
+      ]},
+      {n:'10',t:'Rapports périodiques',hc:'#854F0B',feats:[
+        {t:'Mensuel / trimestriel / annuel',d:'Génération et export PDF/Excel des dossiers traités — toutes commissions.',g:['Action']},
+      ]},
+      {n:'07',t:'Statistiques non-conformité',hc:'#854F0B',feats:[
+        {t:'Taux de non-conformité global',d:'Pour chaque point de contrôle (tr_points_ctrl), le taux = nb fois où t_examen_detail.CONFORME = false / nb total d\'occurrences du point dans tous les examens × 100. C\'est un taux par point de référentiel, pas par dossier. Source : v_stats_non_conformite — champ taux_non_conformite_pct. Toutes localités.',g:['Lecture']},
+        {t:'Top 5 des points de contrôle',d:'Les 5 points de contrôle ayant le taux de non-conformité le plus élevé (taux_non_conformite_pct DESC), toutes localités confondues. Calculé depuis v_stats_non_conformite : rang_frequence ≤ 5, partitionné par localité × exercice. Identifiés par LIBEL_POINT_CTRL et ID_TYPE_DOSSIER.',g:['Lecture']},
+        {t:'Évolution mensuelle',d:'Courbe d\'évolution du nombre de lignes t_examen_detail.CONFORME = false par mois — permet de détecter une dégradation ou amélioration de la qualité des soumissions dans le temps.',g:['Lecture']},
+        {t:'Répartition par type de dossier',d:'Distribution des occurrences CONFORME = false par ID_TYPE_DOSSIER (tr_points_ctrl.ID_TYPE_DOSSIER) — identifie les familles de dossiers les plus problématiques.',g:['Lecture']},
+      ]},
+    ],
+    restr:[
+      'Ne rédige pas le PV — c\'est le Membre qui rédige le projet',
+      'Peut retourner le projet autant de fois que nécessaire avant acceptation',
+      'Ne peut co-signer (SIGNE) qu\'après que le projet soit au statut PROJET_ACCEPTE',
+      'Pas d\'accès aux référentiels et au paramétrage (réservé à l\'Administrateur)',
+    ]
+  },
+  {
+    id:'cc',label:'Chef de commission',tc:'#7F77DD',av:'#15102E',at:'#AFA9EC',
+    name:'Chef de commission',role:'Pilotage de sa commission — localité définie',
+    hier:{sup:'Président',sub:'Secrétaire, Membres de sa localité'},
+    vis:'Sa localité uniquement',visAll:false,
+    deleg:['Secrétaire','Membre','Vérificateur'],
+    desc:'Subordonné du Président. Rattaché à une localité définie — ne voit que les dossiers de sa localité et ne trouve que ses propres membres. A son propre Secrétaire. Dispatche en titulaire (CRM) ou en intérim. Peut exercer les tâches de Secrétaire, Membre et Vérificateur pour sa localité.',
+    badges:[{l:'CNM',bg:'#15102E',c:'#B794F4'},{l:'Localité définie',bg:'#0D2238',c:'#63B3ED'},{l:'Délégation 3 profils',bg:'#2A1808',c:'#F6A832'},{l:'Validation retraits',bg:'#2A1808',c:'#F6A832'}],
+    mods:[
+      {n:'02',t:'Circuit de contrôle',hc:'#534AB7',feats:[
+        {t:'Notification PRET_DISPATCH (copie)',d:'Reçoit en copie la notification PRET_DISPATCH — uniquement pour les dossiers de sa localité.',g:['Lecture']},
+        {t:'Dispatch titulaire (localité CRM)',d:'Pour la localité CRM, le CC dispatche en tant que titulaire — INTERIM_DISPATCH = false.',g:['Action']},
+        {t:'Dispatch en intérim (autres localités)',d:'En l\'absence du Président — INTERIM_DISPATCH = true tracé dans t_dispatch.',g:['Action']},
+        {t:'Réception copie du dossier',d:'Copie formelle via t_copie_dossier (TYPE_COPIE = DISPATCH_CC) + notification DISPATCH_CC.',g:['Lecture']},
+        {t:'Réception d\'un dossier (délégation)',d:'Peut enregistrer et valider la complétude d\'un dossier à la place de son Secrétaire.',g:['Action']},
+        {t:'Examen point par point (délégation)',d:'Peut instruire l\'examen à la place d\'un de ses Membres — pour sa localité uniquement.',g:['Action']},
+        {t:'Vérification de levée (délégation)',d:'Peut vérifier la levée des observations à la place d\'un Vérificateur de sa localité.',g:['Action']},
+        {t:'Lecture des résultats d\'examen',d:'Accès aux points de contrôle de ses Membres (t_examen_detail) — sa localité uniquement.',g:['Lecture']},
+        {t:'Révision et retour du projet de PV',d:'À réception du projet soumis par le Membre (PROJET_SOUMIS), peut demander des corrections : passage en EN_RECTIFICATION + insertion dans t_pv_navette (SENS = RETOUR_RECTIF) + notification PROJET_PV_RETOUR vers le Membre. Le commentaire est obligatoire.',g:['Action']},
+        {t:'Acceptation du projet de PV',d:'Valide le projet : passage en PROJET_ACCEPTE + insertion dans t_pv_navette (SENS = ACCEPTATION) + notification PROJET_PV_ACCEPTE vers le Membre. Le PV devient signable.',g:['Action']},
+        {t:'Co-signature définitive du PV',d:'Une fois le projet accepté, renseigne DATE_SIGNATURE_CC dans t_pv_examen. Facultatif si c\'est le Président qui co-signe — contrainte cosignataire garantit qu\'au moins l\'un des deux signe.',g:['Écriture']},
+      ]},
+      {n:'11',t:'Gestion des retraits PRMP',hc:'#534AB7',feats:[
+        {t:'Notification demande de retrait',d:'Reçoit DEMANDE_RETRAIT dès qu\'une PRMP de sa localité soumet une demande motivée.',g:['Lecture']},
+        {t:'Validation ou rejet du retrait',d:'Statue (APPROUVE / REJETE) avec observation. Si APPROUVE : t_dossier.STATUT = RETIRE.',g:['Action']},
+        {t:'Notification décision à la PRMP',d:'RETRAIT_APPROUVE ou RETRAIT_REJETE envoyé automatiquement à la PRMP.',g:['Auto']},
+      ]},
+      {n:'07',t:'Statistiques non-conformité',hc:'#534AB7',feats:[
+        {t:'Taux de non-conformité',d:'Pour chaque point de contrôle (tr_points_ctrl) de sa localité : nb fois où t_examen_detail.CONFORME = false / nb total d\'occurrences du point dans les examens de sa localité × 100. Source : v_stats_non_conformite filtrée sur ID_LOCALITE du CC. Mesure la difficulté de chaque point de référentiel, pas le taux de dossiers rejetés.',g:['Lecture']},
+        {t:'Top 5 des points de contrôle',d:'Les 5 points de contrôle de sa localité ayant le taux de non-conformité le plus élevé (taux_non_conformite_pct DESC), filtrés sur ID_LOCALITE du CC. Source : v_stats_non_conformite, rang_frequence ≤ 5, partitionné par localité × exercice.',g:['Lecture']},
+        {t:'Détail par membre',d:'Répartition des occurrences t_examen_detail.CONFORME = false par IM_CTRL_MEMBRE — permet de comparer la sévérité d\'instruction entre les membres de sa commission.',g:['Lecture']},
+        {t:'Suivi après PV',d:'Taux de levée des observations (OBS_LEVEES = true dans t_verification) sur les dossiers ayant reçu un avis DEFAVORABLE ou FAVORABLE_RESERVES — mesure l\'efficacité du circuit de correction pour sa localité.',g:['Lecture']},
+      ]},
+      {n:'04',t:'Messagerie',hc:'#534AB7',feats:[
+        {t:'Notifications reçues',d:'PRET_DISPATCH, DISPATCH_CC, DEMANDE_RETRAIT et autres alertes de sa localité.',g:['Lecture']},
+        {t:'Messagerie interne',d:'Échange avec le Président, ses Membres et ses Vérificateurs.',g:['Action']},
+      ]},
+      {n:'01',t:'Tableau de bord',hc:'#534AB7',feats:[
+        {t:'Pipeline de ses dossiers',d:'Vue des dossiers de sa localité uniquement : en dispatch, en examen, PV, vérification, clôturés.',g:['Lecture']},
+        {t:'Alertes de sa localité',d:'Toutes les alertes PRET_DISPATCH, PV_SIGNE, ALERTE_DELAI filtrées sur sa localité.',g:['Lecture']},
+      ]},
+    ],
+    restr:[
+      'Visibilité strictement limitée à sa localité — ne voit pas les dossiers des autres CC',
+      'Ne trouve que ses propres membres (ID_SUPERIEUR = IM_CC via v_hierarchie_controleurs)',
+      'Dispatch en intérim pour les autres localités (INTERIM_DISPATCH = true obligatoire)',
+      'Délégations de tâches limitées à sa localité — pas de débordement inter-localités',
+    ]
+  },
+  {
+    id:'sec',label:'Secrétaire',tc:'#378ADD',av:'#0A1E35',at:'#85B7EB',
+    name:'Secrétaire',role:'Réception des dossiers — subordonné du CC',
+    hier:{sup:'Chef de commission',sub:'—'},
+    vis:'Sa localité uniquement (même localité que son CC)',visAll:false,
+    deleg:null,
+    desc:'Subordonné direct du Chef de commission. Partage sa localité avec son CC. Réceptionne et enregistre les dossiers. Actif uniquement au passage INITIAL (NUM_PASSAGE = 1).',
+    badges:[{l:'CNM',bg:'#0A1E35',c:'#63B3ED'},{l:'Subordonné du CC',bg:'#15102E',c:'#B794F4'}],
+    mods:[
+      {n:'02',t:'Circuit de contrôle',hc:'#185FA5',feats:[
+        {t:'Enregistrement du dossier',d:'Création de la réception avec référence, date, NUM_PASSAGE = 1 et TYPE_PASSAGE = INITIAL.',g:['Action']},
+        {t:'Vérification de complétude',d:'COMPLET = true/false avec consignation des observations initiales.',g:['Écriture']},
+        {t:'Déclenchement PRET_DISPATCH',d:'Quand COMPLET = true, le trigger notifie automatiquement le Président et le CC.',g:['Auto']},
+        {t:'Suivi des réceptions',d:'Liste des dossiers reçus de sa localité, statuts, historique des passages.',g:['Lecture']},
+      ]},
+      {n:'04',t:'Messagerie & notifications',hc:'#185FA5',feats:[
+        {t:'Notifications reçues',d:'Alertes de retour de dossier et de clôture — sa localité.',g:['Lecture']},
+        {t:'Messagerie interne',d:'Échange avec son CC et les autres agents de sa localité.',g:['Action']},
+      ]},
+      {n:'01',t:'Tableau de bord',hc:'#185FA5',feats:[
+        {t:'Pipeline de ses dossiers',d:'Vue de l\'avancement des dossiers reçus de sa localité : Reçu → Dispatch → Examen → PV → Vérification → Clôture.',g:['Lecture']},
+      ]},
+    ],
+    restr:[
+      'Visibilité limitée à sa localité (même localité que son CC)',
+      'Actif uniquement au passage INITIAL (NUM_PASSAGE = 1) — pas sur les retours',
+      'Pas d\'accès au dispatch, à l\'examen ni au PV',
+      'Pas d\'accès aux KPIs ni au journal d\'audit',
+    ]
+  },
+  {
+    id:'mbr',label:'Membre',tc:'#D85A30',av:'#280F05',at:'#F0997B',
+    name:'Membre',role:'Instructeur de l\'examen — subordonné du CC',
+    hier:{sup:'Chef de commission',sub:'Contrôleurs vérificateurs'},
+    vis:'Tous les dossiers de sa localité',visAll:false,
+    deleg:null,
+    desc:'Subordonné direct du Chef de commission. Voit tous les dossiers de sa localité — pas seulement ceux qui lui sont dispatché. Instruit les dossiers point par point, rédige le projet de PV et anime la navette avec le Président ou le CC jusqu\'à acceptation, puis co-signe le PV définitif.',
+    badges:[{l:'CNM',bg:'#280F05',c:'#FC8A6A'},{l:'Tous dossiers localité',bg:'#0D2238',c:'#63B3ED'},{l:'Examen & PV',bg:'#2A1808',c:'#F6A832'}],
+    mods:[
+      {n:'02',t:'Circuit de contrôle',hc:'#993C1D',feats:[
+        {t:'Consultation de tous les dossiers',d:'Accès en lecture à tous les dossiers de sa localité — pas uniquement ceux qui lui sont dispatché.',g:['Lecture']},
+        {t:'Examen point par point',d:'Renseigne chaque point de tr_points_ctrl : conforme / non conforme + observation (t_examen_detail).',g:['Écriture']},
+        {t:'Rédaction du projet de PV',d:'Le Membre rédige le projet de PV dans t_pv_examen (STATUT_PV = BROUILLON) : synthèse des observations non conformes de t_examen_detail.OBS_SI_NON_CONFORME, avis ID_AVIS. Le projet est modifiable librement tant qu\'il n\'a pas été soumis.',g:['Écriture']},
+        {t:'Soumission du projet au Président/CC',d:'Passage en PROJET_SOUMIS → insertion dans t_pv_navette (SENS = SOUMISSION, NUM_NAVETTE incrémenté) → notification PROJET_PV_SOUMIS envoyée au Président/CC destinataire.',g:['Action']},
+        {t:'Rectification sur retour',d:'Si le Président/CC retourne le projet (EN_RECTIFICATION, SENS = RETOUR_RECTIF dans t_pv_navette), le Membre corrige la synthèse et/ou l\'avis puis resoumet. Le cycle peut se répéter — NB_NAVETTES incrémenté à chaque retour.',g:['Écriture']},
+        {t:'Signature définitive du PV',d:'Quand le projet est accepté (PROJET_ACCEPTE), le Membre signe en renseignant DATE_SIGNATURE_MEMBRE dans t_pv_examen. Le PV passe à SIGNE quand DATE_SIGNATURE_MEMBRE ET (DATE_SIGNATURE_PRESIDENT ou DATE_SIGNATURE_CC) sont renseignées.',g:['Écriture']},
+      ]},
+      {n:'04',t:'Messagerie',hc:'#993C1D',feats:[
+        {t:'Notifications reçues',d:'Alertes de dispatch et de retour de dossier de sa localité.',g:['Lecture']},
+        {t:'Messagerie interne',d:'Échange avec son CC, le Président et ses Vérificateurs.',g:['Action']},
+      ]},
+      {n:'01',t:'Tableau de bord',hc:'#993C1D',feats:[
+        {t:'Pipeline de tous les dossiers',d:'Vue de l\'avancement de tous les dossiers de sa localité : affectés et non affectés.',g:['Lecture']},
+      ]},
+    ],
+    restr:[
+      'Visibilité limitée à sa localité',
+      'Ne trouve que les Vérificateurs qui lui sont subordonnés (ID_SUPERIEUR = IM_MEMBRE)',
+      'Pas de dispatch ni d\'accès à la file d\'attente',
+      'Ne peut pas signer le PV définitif tant que le projet n\'est pas au statut PROJET_ACCEPTE',
+      'Chaque soumission et rectification est tracée dans t_pv_navette — aucune navette ne peut être supprimée',
+      'Pas d\'accès aux KPIs, rapports ni au module anomalie',
+    ]
+  },
+  {
+    id:'ver',label:'Vérificateur',tc:'#639922',av:'#0A1A07',at:'#97C459',
+    name:'Contrôleur vérificateur',role:'Vérification de la levée — subordonné du Membre',
+    hier:{sup:'Membre',sub:'Assistants contrôleurs'},
+    vis:'Sa localité uniquement',visAll:false,
+    deleg:null,
+    desc:'Subordonné direct du Membre. Travaille sur la base du PV signé (STATUT_PV = SIGNE). Valide ou rejette la levée des observations et déclenche la clôture ou un nouveau retour.',
+    badges:[{l:'CNM',bg:'#0A1A07',c:'#68D391'},{l:'Subordonné du Membre',bg:'#280F05',c:'#FC8A6A'}],
+    mods:[
+      {n:'02',t:'Circuit de contrôle',hc:'#3B6D11',feats:[
+        {t:'Lecture du PV signé',d:'Accès au PV définitif (STATUT_PV = SIGNE) avant vérification : référence, avis, SYNTHESE_OBSERVATIONS issue de la navette acceptée — t_verification.ID_PV requis. Peut aussi consulter l\'historique de la navette (t_pv_navette) pour comprendre les rectifications apportées.',g:['Lecture']},
+        {t:'Vérification de levée des observations',d:'OBS_LEVEES = true → clôture automatique / false → nouveau passage (NUM_PASSAGE + 1).',g:['Action']},
+        {t:'Déclenchement de la clôture',d:'Statut CLOTURE propagé automatiquement sur t_dossier quand OBS_LEVEES = true.',g:['Auto']},
+      ]},
+      {n:'04',t:'Messagerie',hc:'#3B6D11',feats:[
+        {t:'Notifications reçues',d:'Alertes PV_SIGNE et retours de dossier de sa localité.',g:['Lecture']},
+        {t:'Messagerie interne',d:'Échange avec son Membre et ses Assistants contrôleurs.',g:['Action']},
+      ]},
+      {n:'01',t:'Tableau de bord',hc:'#3B6D11',feats:[
+        {t:'Pipeline de ses dossiers',d:'Vue des dossiers en attente de vérification (PV signé) et des dossiers récemment clôturés ou retournés.',g:['Lecture']},
+      ]},
+    ],
+    restr:[
+      'Visibilité limitée à sa localité',
+      'Ne trouve que ses Assistants subordonnés (ID_SUPERIEUR = IM_VERIFICATEUR)',
+      'Travaille uniquement sur PV au statut SIGNE — le PV ne peut atteindre SIGNE qu\'après passage par PROJET_ACCEPTE',
+      'Pas de dispatch, pas d\'accès aux KPIs ni au module anomalie',
+    ]
+  },
+  {
+    id:'pub',label:'Chargé de publication',tc:'#D4537E',av:'#1F0810',at:'#ED93B1',
+    name:'Chargé de publication',role:'Gestion des publications du portail',
+    hier:null,vis:'Aucun périmètre dossier CNM',deleg:null,
+    desc:'Gère les publications du portail de transparence. Accès strictement cloisonné : ne voit ni le circuit interne ni les données sensibles. Notifié automatiquement à chaque clôture conforme éligible.',
+    badges:[{l:'CNM',bg:'#1F0810',c:'#ED93B1'},{l:'Portail public',bg:'#1F0810',c:'#ED93B1'}],
+    mods:[
+      {n:'04',t:'Notifications',hc:'#993556',feats:[
+        {t:'Alerte clôture éligible',d:'Notification automatique dès qu\'un dossier conforme est clôturé et éligible à publication.',g:['Lecture']},
+      ]},
+      {n:'09',t:'Portail de publication',hc:'#993556',feats:[
+        {t:'Workflow de publication',d:'EN_ATTENTE → PUBLIE pour les PPM et marchés clôturés conformes.',g:['Action']},
+        {t:'Dépôt de documents publics',d:'Mise en ligne PDF avec vérification d\'intégrité SHA-256.',g:['Action']},
+        {t:'Compteur de consultations',d:'Suivi du NB_CONSULTATIONS par publication.',g:['Lecture']},
+        {t:'Retrait avec motif',d:'Dépublication documentée — MOTIF_RETRAIT + DATE_RETRAIT dans t_publication.',g:['Action']},
+      ]},
+    ],
+    restr:[
+      'Aucun accès au circuit interne (dispatch, examen, PV, vérification)',
+      'Aucun accès au journal d\'audit ni aux statistiques CNM',
+      'Pas d\'accès au pipeline des dossiers CNM',
+    ]
+  },
+  {
+    id:'adm',label:'Administrateur',tc:'#888780',av:'#1A1E2A',at:'#D3D1C7',
+    name:'Administrateur',role:'Gestion système et sécurité',
+    hier:null,vis:'Toutes localités (accès technique)',visAll:true,deleg:null,
+    desc:'Accès complet aux référentiels, comptes utilisateurs, journal d\'audit, hiérarchie et tableaux de bord. Profil haut privilège — toutes les actions sont tracées dans t_audit_log.',
+    badges:[{l:'CNM',bg:'#1A1E2A',c:'#B4B2A9'},{l:'Accès complet',bg:'#1A1E2A',c:'#B4B2A9'}],
+    mods:[
+      {n:'03',t:'Référentiels & paramétrage',hc:'#5F5E5A',feats:[
+        {t:'Localités, seuils, règles de passation',d:'Paramétrage complet de tr_localite, t_seuil, t_regle_passation.',g:['Écriture']},
+        {t:'Grilles de contrôle & règles d\'anomalie',d:'Configuration de tr_points_ctrl et t_regle_anomalie.',g:['Écriture']},
+        {t:'Comptes budgétaires & entités contractantes',d:'Plan comptable tr_compte et répertoire tr_entite_contract.',g:['Écriture']},
+        {t:'Délégations de profil',d:'Gestion des entrées t_delegation_profil — quels profils peuvent exercer les tâches d\'autres profils.',g:['Écriture']},
+      ]},
+      {n:'10',t:'Administration & sécurité',hc:'#5F5E5A',feats:[
+        {t:'Gestion des comptes contrôleurs & PRMP',d:'Création, modification, désactivation — rattachement hiérarchique (ID_SUPERIEUR) et localité.',g:['Écriture']},
+        {t:'Gestion de la hiérarchie',d:'Affectation des supérieurs (ID_SUPERIEUR) — construction de l\'arbre via v_hierarchie_controleurs.',g:['Écriture']},
+        {t:'RBAC — contrôle d\'accès par rôle',d:'Chaque profil n\'accède qu\'aux modules autorisés via tr_profile et t_delegation_profil.',g:['Auto']},
+      ]},
+      {n:'05',t:'Tableau de bord global',hc:'#5F5E5A',feats:[
+        {t:'Pipeline global de tous les dossiers',d:'Vue consolidée de tous les dossiers, toutes localités via v_perimetre_controleur.',g:['Lecture']},
+        {t:'KPIs toutes localités',d:'Vue agrégée depuis t_snapshot_stats.',g:['Lecture']},
+        {t:'Performance des PRMP',d:'Vue v_performance_prmp par PRMP et exercice.',g:['Lecture']},
+        {t:'Rapports périodiques',d:'Génération PDF/Excel mensuel, trimestriel, annuel.',g:['Action']},
+      ]},
+      {n:'08',t:'Journal d\'audit',hc:'#5F5E5A',feats:[
+        {t:'Consultation & filtrage',d:'Par table, utilisateur, type d\'action ou plage de dates.',g:['Lecture']},
+        {t:'Export CSV/Excel',d:'Pour analyse externe ou transmission à un organe de contrôle supérieur.',g:['Action']},
+      ]},
+    ],
+    restr:[
+      'Profil haut privilège — toutes actions tracées dans t_audit_log',
+    ]
+  },
+];
+
+function initials(n){return n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()}
+function tagClass(t){return({'Lecture':'tag-lecture','Écriture':'tag-ecriture','Action':'tag-action','Auto':'tag-auto'})[t]||''}
+
+function renderTabs(){
+  const el=document.getElementById('tabs');
+  el.innerHTML=P.map(p=>`<button class="tab" data-id="${p.id}">${p.label}</button>`).join('');
+  el.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>activate(b.dataset.id)));
+}
+
+function activate(id){
+  document.querySelectorAll('.tab').forEach(b=>{
+    const p=P.find(x=>x.id===b.dataset.id);
+    if(b.dataset.id===id){b.classList.add('active');b.style.cssText=`background:${p.tc};color:#fff;border-color:${p.tc}`}
+    else{b.classList.remove('active');b.style.cssText=''}
+  });
+  render(P.find(x=>x.id===id));
+}
+
+function render(p){
+  const av=initials(p.name);
+  const badges=p.badges.map(b=>`<span class="badge" style="background:${b.bg};color:${b.c}">${b.l}</span>`).join('');
+
+  // hierarchy strip
+  let hierHtml='';
+  if(p.hier){
+    hierHtml=`<div class="phier">
+      <span class="phier-label">Hiérarchie</span>
+      ${p.hier.sup?`<span class="phier-pill" style="background:#2A1808;color:#F6A832">↑ ${p.hier.sup}</span>`:''}
+      ${p.hier.sup&&p.hier.sub?'<span class="phier-sep">·</span>':''}
+      ${p.hier.sub?`<span class="phier-pill" style="background:#15102E;color:#B794F4">↓ ${p.hier.sub}</span>`:''}
+      <span class="phier-sep">·</span>
+      <span class="phier-label">Visibilité</span>
+      <span class="${p.visAll?'vis-badge all':'vis-badge'}">${p.vis}</span>
+    </div>`;
+  } else if(p.vis){
+    hierHtml=`<div class="phier">
+      <span class="phier-label">Visibilité</span>
+      <span class="${p.visAll?'vis-badge all':'vis-badge'}">${p.vis}</span>
+    </div>`;
+  }
+
+  // delegation strip
+  let delegHtml='';
+  if(p.deleg&&p.deleg.length){
+    const pills=p.deleg.map(d=>`<span class="dpill">⇄ ${d}</span>`).join('');
+    delegHtml=`<div class="pdeleg"><span class="pdeleg-label">Délégations</span>${pills}<span style="font-size:11px;color:var(--txt3);margin-left:4px">— peut exercer ces tâches par substitution</span></div>`;
+  }
+
+  const mods=p.mods.map(m=>{
+    const feats=m.feats.map(f=>{
+      const tags=f.g.map(g=>`<span class="tag ${tagClass(g)}">${g}</span>`).join('');
+      return `<div class="feat"><div class="ftop"><span class="fdot" style="background:${m.hc}"></span><span class="ftitle">${f.t}</span></div><div class="fdesc">${f.d}</div><div class="ftags">${tags}</div></div>`;
+    }).join('');
+    return `<div class="mcard"><div class="mhead" style="background:${m.hc}"><div class="mnum">${m.n}</div><div class="mtitle">${m.t}</div></div><div class="mbody">${feats}</div></div>`;
+  }).join('');
+  const restr=p.restr.map(r=>`<div class="ritem"><span class="ricon">✕</span><span>${r}</span></div>`).join('');
+
+  document.getElementById('pcontent').innerHTML=`
+  <div class="pcard" style="border-color:${p.tc}30">
+    <div class="phead">
+      <div class="avatar" style="background:${p.av};color:${p.at}">${av}</div>
+      <div class="pmeta">
+        <div class="pname" style="color:${p.tc}">${p.name}</div>
+        <div class="prole">${p.role}</div>
+        <div class="pbadges">${badges}</div>
+      </div>
+    </div>
+    ${hierHtml}${delegHtml}
+    <div class="pdesc">${p.desc}</div>
+    <div class="msec-lbl">Modules &amp; fonctionnalités accessibles</div>
+    <div class="mgrid">${mods}</div>
+    <div class="legend">
+      <span class="legend-item"><span class="tag tag-lecture">Lecture</span></span>
+      <span class="legend-item"><span class="tag tag-ecriture">Écriture</span></span>
+      <span class="legend-item"><span class="tag tag-action">Action</span></span>
+      <span class="legend-item"><span class="tag tag-auto">Auto</span></span>
+    </div>
+    <div class="rsec"><div class="rlbl">⚠ Restrictions d'accès</div>${restr}</div>
+  </div>`;
+}
+
+renderTabs();
+activate('prmp');
+</script>
+</body>
+</html>

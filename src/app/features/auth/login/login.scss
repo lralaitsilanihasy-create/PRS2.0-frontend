@@ -1,0 +1,291 @@
+:host {
+  display: block;
+  height: 100%;
+  /* Variables manquantes (panneau clair), isolées au login : la charte sombre globale reste intacte. */
+  --login-surface: #ffffff;
+  --login-text: #2a2f3a;
+  --login-muted: #6b7280;
+  --login-border: #e3e7ef;
+  --login-field-bg: #f4f6fb;
+}
+
+/* 1. Page pleine hauteur, fond de marque + motif « digitalisation », contenu centré */
+.login-page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background: var(--cnm-brand-gradient);
+  position: relative;
+  overflow: hidden;
+}
+
+/* motif digital (grille fine + nœuds lumineux), CSS pur, atténué vers les bords */
+.login-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.14) 1.4px, transparent 1.8px),
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 3.5rem 3.5rem, 1.75rem 1.75rem, 1.75rem 1.75rem;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 45%, transparent 95%);
+  mask-image: radial-gradient(ellipse at center, #000 45%, transparent 95%);
+}
+
+/* 2. Carte flottante arrondie (au-dessus du motif) + 3. deux colonnes 60/40 */
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1300px;
+  min-height: min(80vh, 660px);
+  display: grid;
+  grid-template-columns: 60% 40%;
+  background: var(--login-surface);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+}
+
+/* =========================================================
+   Colonne gauche : panneau décoratif de marque
+   ========================================================= */
+.login-card__deco {
+  position: relative;
+  padding: clamp(1.75rem, 3vw, 3rem);
+  background: var(--cnm-brand-gradient);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.deco {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.deco__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.blob--dark {
+  fill: rgba(0, 0, 0, 0.14);
+}
+.blob--light {
+  fill: rgba(255, 255, 255, 0.08);
+}
+.topo__line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 1.4;
+}
+
+.dot-grid {
+  position: absolute;
+  top: 14%;
+  right: 14%;
+  width: 3rem;
+  height: 4.5rem;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.6) 1.5px, transparent 1.7px);
+  background-size: 0.62rem 0.62rem;
+}
+.mark {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.55);
+}
+.mark--plus {
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1;
+}
+.mark--p1 { top: 16%; left: 22%; }
+.mark--p2 { bottom: 24%; left: 30%; }
+.mark--ring {
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+.mark--r1 { width: 1.5rem; height: 1.5rem; top: 28%; left: 46%; }
+.mark--r2 { width: 1rem; height: 1rem; bottom: 12%; left: 14%; }
+
+.login-card__intro {
+  position: relative;
+  z-index: 1;
+  max-width: 30rem;
+}
+.login-card__title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(2.2rem, 3.4vw, 3rem);
+  font-weight: var(--cnm-fw-semibold);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.login-card__subtitle {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* =========================================================
+   Colonne droite : panneau clair + formulaire
+   ========================================================= */
+.login-card__form {
+  background: var(--login-surface);
+  color: var(--login-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 2.5vw, 2.5rem);
+}
+
+.login-form {
+  width: 100%;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  font-size: 15px;
+  animation: login-in 0.35s ease both;
+
+  &__title {
+    margin: 0 0 0.25rem;
+    font-size: 1.9rem;
+    font-weight: var(--cnm-fw-semibold);
+    color: var(--login-text);
+  }
+
+  &__error {
+    background: #fdecec;
+    color: #b42318;
+    border: 1px solid #f3c0bd;
+    border-radius: var(--cnm-radius-sm);
+    padding: 0.5rem 0.75rem;
+    font-size: 14px;
+  }
+
+  &__hint {
+    font-size: 13px;
+    color: #b42318;
+    margin-top: -0.4rem;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 14px;
+  }
+
+  &__remember {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--login-muted);
+    cursor: pointer;
+  }
+  &__remember input { accent-color: var(--cnm-brand); }
+
+  &__forgot {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--cnm-brand);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  &__forgot:hover { text-decoration: underline; }
+
+  &__submit {
+    margin-top: 0.5rem;
+    padding: 0.8rem 1rem;
+    border: 0;
+    border-radius: var(--cnm-radius-pill);
+    background: var(--cnm-brand-gradient);
+    color: #fff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: var(--cnm-fw-semibold);
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(108, 111, 255, 0.35);
+    transition: transform 0.12s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+  }
+  &__submit:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px rgba(108, 111, 255, 0.45);
+  }
+  &__submit:disabled { opacity: 0.6; cursor: default; box-shadow: none; }
+
+  &__signup {
+    margin: 0.25rem 0 0;
+    text-align: center;
+    font-size: 14px;
+    color: var(--login-muted);
+  }
+  &__signup a { color: var(--cnm-brand); }
+}
+
+@keyframes login-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* champ en pilule clair avec icône */
+.login-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  background: var(--login-field-bg);
+  border: 1px solid var(--login-border);
+  border-radius: var(--cnm-radius-pill);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &:focus-within {
+    border-color: var(--cnm-brand);
+    box-shadow: 0 0 0 3px rgba(108, 111, 255, 0.2);
+  }
+  &--invalid { border-color: #d92d20; }
+
+  &__icon {
+    width: 1.05rem;
+    height: 1.05rem;
+    flex-shrink: 0;
+    fill: var(--login-muted);
+  }
+  &__input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    color: var(--login-text);
+    font: inherit;
+    font-size: 15px;
+    padding: 0.72rem 0;
+    outline: none;
+
+    &::placeholder { color: var(--login-muted); }
+  }
+}
+
+/* 4. responsive : sous 60rem, une seule colonne, décor masqué */
+@media (max-width: 60rem) {
+  .login-card {
+    grid-template-columns: 1fr;
+    max-width: 26rem;
+    min-height: 0;
+  }
+  .login-card__deco { display: none; }
+}

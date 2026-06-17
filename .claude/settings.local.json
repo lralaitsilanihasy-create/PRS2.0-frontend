@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx ng *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 4 http://localhost:4200/login)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s -o /dev/null -w \"GET /api/controleurs/MEMANT1 -> HTTP %{http_code}\\\\n\" http://localhost:8080/api/controleurs/MEMANT1)",
+      "Bash(curl -s -o /dev/null -w \"GET /api/controleurs -> HTTP %{http_code}\\\\n\" http://localhost:8080/api/controleurs)"
+    ]
+  }
+}

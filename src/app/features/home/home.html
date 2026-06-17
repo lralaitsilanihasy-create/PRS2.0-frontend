@@ -1,0 +1,38 @@
+<section class="home">
+  <h1 class="home__title">Bonjour {{ login() }}</h1>
+  <p class="home__meta">
+    Profil : <strong>{{ role() }}</strong> · Type : {{ typeActeur() }} · Périmètre :
+    {{ perimetre() }}
+  </p>
+
+  <section class="portail-banner" aria-label="Portail de transparence">
+    <span class="portail-banner__icon" aria-hidden="true">🌐</span>
+    <div class="portail-banner__body">
+      <strong class="portail-banner__title">Portail de transparence</strong>
+      <span class="portail-banner__text">
+        Les marchés publics clôturés conformes sont publiés sur le portail public.
+      </span>
+    </div>
+    @if (peutAccederPortail()) {
+      <a class="cnm-btn cnm-btn--primary" routerLink="/publication/publications">
+        Accéder au portail
+      </a>
+    } @else {
+      <span class="cnm-badge cnm-badge--neutral">Accès réservé au Chargé de publication</span>
+    }
+  </section>
+
+  <h2 class="home__subtitle">Vos modules</h2>
+  <div class="home__cards">
+    @for (m of modules(); track m.path) {
+      <a class="home-card" [routerLink]="m.path">
+        @if (m.icon) {
+          <span class="home-card__icon" aria-hidden="true">{{ m.icon }}</span>
+        }
+        <span class="home-card__label">{{ m.label }}</span>
+      </a>
+    } @empty {
+      <p>Aucun module disponible pour ce profil.</p>
+    }
+  </div>
+</section>

@@ -1,0 +1,73 @@
+<div class="login-page">
+  <div class="login-card">
+    <!-- Colonne gauche : décor de marque -->
+    <aside class="login-card__deco">
+      <div class="deco" aria-hidden="true">
+        <svg class="deco__svg" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice">
+          <path class="blob blob--dark" d="M340,40 C470,60 540,180 520,320 C500,460 560,520 470,540 C360,565 250,470 250,340 C250,210 210,20 340,40 Z" />
+          <path class="blob blob--light" d="M-60,150 C40,60 210,60 300,130 C390,200 350,340 240,380 C130,420 10,400 -50,310 C-95,245 -110,200 -60,150 Z" />
+          <g class="topo" transform="translate(478,648)">
+            <path class="topo__line" transform="scale(0.7)"  d="M-46,-18 C-64,-50 -24,-82 18,-74 C58,-66 84,-30 72,12 C62,52 14,82 -30,66 C-72,50 -28,14 -46,-18 Z"/>
+            <path class="topo__line" transform="scale(1.1)"  d="M-46,-18 C-64,-50 -24,-82 18,-74 C58,-66 84,-30 72,12 C62,52 14,82 -30,66 C-72,50 -28,14 -46,-18 Z"/>
+            <path class="topo__line" transform="scale(1.55)" d="M-46,-18 C-64,-50 -24,-82 18,-74 C58,-66 84,-30 72,12 C62,52 14,82 -30,66 C-72,50 -28,14 -46,-18 Z"/>
+            <path class="topo__line" transform="scale(2.05)" d="M-46,-18 C-64,-50 -24,-82 18,-74 C58,-66 84,-30 72,12 C62,52 14,82 -30,66 C-72,50 -28,14 -46,-18 Z"/>
+          </g>
+          <g class="topo" transform="translate(70,120)">
+            <path class="topo__line" transform="scale(0.55)" d="M-46,-18 C-64,-50 -24,-82 18,-74 C58,-66 84,-30 72,12 C62,52 14,82 -30,66 C-72,50 -28,14 -46,-18 Z"/>
+            <path class="topo__line" transform="scale(1.0)"  d="M-46,-18 C-64,-50 -24,-82 18,-74 C58,-66 84,-30 72,12 C62,52 14,82 -30,66 C-72,50 -28,14 -46,-18 Z"/>
+          </g>
+        </svg>
+        <span class="dot-grid"></span>
+        <span class="mark mark--plus mark--p1">+</span>
+        <span class="mark mark--plus mark--p2">+</span>
+        <span class="mark mark--ring mark--r1"></span>
+        <span class="mark mark--ring mark--r2"></span>
+      </div>
+
+      <div class="login-card__intro">
+        <h1 class="login-card__title">Portail de transparence</h1>
+        <p class="login-card__subtitle">Marchés publics contrôlés, publiés et vérifiables.</p>
+      </div>
+    </aside>
+
+    <!-- Colonne droite : formulaire (clair) -->
+    <section class="login-card__form">
+      <form class="login-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <h2 class="login-form__title">Connexion</h2>
+
+        @if (errorMessage()) {
+          <div class="login-form__error" role="alert">{{ errorMessage() }}</div>
+        }
+
+        <label class="login-field" [class.login-field--invalid]="form.controls.login.touched && form.controls.login.invalid">
+          <svg class="login-field__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.5-9 6v2h18v-2c0-3.5-4-6-9-6Z"/></svg>
+          <input type="text" class="login-field__input" placeholder="Identifiant" autocomplete="username" formControlName="login" />
+        </label>
+        @if (form.controls.login.touched && form.controls.login.hasError('required')) {
+          <span class="login-form__hint">L'identifiant est obligatoire.</span>
+        }
+
+        <label class="login-field" [class.login-field--invalid]="form.controls.motDePasse.touched && form.controls.motDePasse.invalid">
+          <svg class="login-field__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5Zm3 8H9V6a3 3 0 0 1 6 0v3Z"/></svg>
+          <input type="password" class="login-field__input" placeholder="Mot de passe" autocomplete="current-password" formControlName="motDePasse" />
+        </label>
+        @if (form.controls.motDePasse.touched && form.controls.motDePasse.hasError('required')) {
+          <span class="login-form__hint">Le mot de passe est obligatoire.</span>
+        }
+
+        <div class="login-form__row">
+          <label class="login-form__remember">
+            <input type="checkbox" formControlName="seSouvenir" /><span>Se souvenir de moi</span>
+          </label>
+          <button type="button" class="login-form__forgot" (click)="motDePasseOublie()">Mot de passe oublié&nbsp;?</button>
+        </div>
+
+        <button type="submit" class="login-form__submit" [disabled]="submitting()">
+          {{ submitting() ? 'Connexion…' : 'Se connecter' }}
+        </button>
+
+        <p class="login-form__signup">Nouveau&nbsp;? <a routerLink="/inscription">Créer un compte PRMP</a></p>
+      </form>
+    </section>
+  </div>
+</div>

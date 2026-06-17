@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>PRS 2.0 — Propositions design (juin 2026)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  /* ===== Tokens du design system réel (styles.css) ===== */
+  :root{
+    --nuit:#0b2a4a; --bleu:#1f6feb; --sarcelle:#10b3a3;
+    --or:#E8A81E; --or-fonce:#B97708; --or-pale:#FBF3DD;
+    --fond:#f4f7fb; --fond-2:#eaf0f8; --surface:#fff;
+    --texte:#0f2138; --doux:#5b6b80; --ligne:#e2e9f3;
+    --vert:#0f9d6b; --rouge:#e2483b; --ambre:#c2820a;
+    --r:16px; --r-sm:10px;
+    --ombre:0 1px 2px rgba(11,42,74,.04), 0 14px 36px -16px rgba(11,42,74,.22);
+    --disp:"Bricolage Grotesque",system-ui,sans-serif;
+    --sans:"Hanken Grotesk",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:var(--sans); color:var(--texte); background:var(--fond); line-height:1.55; font-size:15px; }
+  .wrap{ max-width:1060px; margin:0 auto; padding:48px 28px 120px; }
+
+  header.page{ display:flex; align-items:center; gap:1.1rem; margin-bottom:.6rem; }
+  header.page img{ height:74px; }
+  h1{ font-family:var(--disp); font-weight:800; font-size:2rem; color:var(--nuit); margin:.4rem 0 .2rem; letter-spacing:-.015em; }
+  p.lead{ color:var(--doux); max-width:64ch; margin:0 0 2.6rem; }
+
+  section{ background:var(--surface); border:1px solid var(--ligne); border-radius:var(--r); box-shadow:var(--ombre); margin-bottom:2rem; overflow:hidden; }
+  .sec-head{ display:flex; align-items:baseline; gap:.9rem; padding:1.1rem 1.5rem; border-bottom:1px solid var(--ligne); }
+  .sec-head .n{ font-family:var(--mono); font-weight:600; color:var(--bleu); font-size:.9rem; }
+  .sec-head h2{ font-family:var(--disp); font-weight:700; font-size:1.25rem; color:var(--nuit); margin:0; flex:1; }
+  .sec-head .effort{ font-size:.74rem; font-weight:700; padding:.2rem .6rem; border-radius:999px; background:var(--fond-2); color:var(--doux); white-space:nowrap; }
+  .sec-body{ padding:1.5rem; }
+  .note{ color:var(--doux); font-size:.88rem; margin:.9rem 0 0; max-width:70ch; }
+  .demo{ background:var(--fond); border:1px dashed var(--ligne); border-radius:var(--r-sm); padding:1.4rem; }
+
+  /* ===== 1. Accent or ===== */
+  .badge{ display:inline-flex; align-items:center; gap:.45rem; font-size:.8rem; font-weight:700; padding:.32rem .75rem; border-radius:999px; }
+  .badge.avant{ background:#e3f6ee; color:#0f9d6b; }
+  .badge.or{ background:var(--or-pale); color:var(--or-fonce); border:1px solid rgba(232,168,30,.55); box-shadow:inset 0 0 0 1px rgba(255,255,255,.6); }
+  .badge.or::before{ content:""; width:8px; height:8px; border-radius:50%; background:linear-gradient(135deg,#FBCE4A,var(--or-fonce)); }
+  .pv-card{ display:flex; justify-content:space-between; align-items:center; gap:1rem; background:var(--surface); border:1px solid var(--ligne); border-left:3px solid var(--or); border-radius:var(--r-sm); padding:1rem 1.2rem; max-width:560px; }
+  .pv-card .num{ font-family:var(--mono); font-size:.85rem; color:var(--doux); }
+  .pv-card b{ font-family:var(--disp); color:var(--nuit); }
+  .sceau{ width:74px; height:74px; border-radius:50%; flex:none; display:grid; place-items:center; text-align:center;
+    background:radial-gradient(circle at 36% 30%, #FBCE4A, var(--or) 55%, var(--or-fonce));
+    color:#fff; font-family:var(--disp); font-weight:800; font-size:.78rem; line-height:1.05;
+    box-shadow:0 8px 18px -6px rgba(185,119,8,.55), inset 0 0 0 3px rgba(255,255,255,.35), inset 0 0 0 6px rgba(185,119,8,.35);
+    transform:rotate(-8deg); }
+  .sceau small{ display:block; font-size:.5rem; font-weight:700; letter-spacing:.08em; opacity:.85; }
+
+  /* ===== 2. Frise circuit ===== */
+  .frise{ display:flex; align-items:flex-start; gap:0; overflow-x:auto; padding:.5rem 0 .2rem; }
+  .etape{ flex:1; min-width:96px; text-align:center; position:relative; }
+  .etape::before{ content:""; position:absolute; top:13px; left:-50%; width:100%; height:3px; background:var(--ligne); }
+  .etape:first-child::before{ display:none; }
+  .etape.fait::before{ background:linear-gradient(90deg,var(--bleu),var(--sarcelle)); }
+  .etape .pt{ position:relative; z-index:1; width:28px; height:28px; margin:0 auto .45rem; border-radius:50%; display:grid; place-items:center;
+    background:var(--surface); border:2.5px solid var(--ligne); color:var(--doux); font-size:.72rem; font-weight:800; }
+  .etape.fait .pt{ border-color:var(--sarcelle); background:var(--sarcelle); color:#fff; }
+  .etape.encours .pt{ border-color:var(--bleu); color:var(--bleu); }
+  .etape.encours .pt::after{ content:""; position:absolute; inset:-7px; border-radius:50%; border:2px solid rgba(31,111,235,.45); animation:pulse 1.8s ease-out infinite; }
+  @keyframes pulse{ 0%{ transform:scale(.75); opacity:1; } 100%{ transform:scale(1.25); opacity:0; } }
+  .etape .lbl{ font-size:.74rem; font-weight:600; color:var(--doux); }
+  .etape.fait .lbl, .etape.encours .lbl{ color:var(--nuit); }
+  .etape.encours .lbl{ font-weight:800; }
+  .etape .sous{ display:block; font-size:.66rem; color:var(--bleu); font-weight:600; }
+
+  /* ===== 3. Empty state ===== */
+  .empty{ text-align:center; padding:2.6rem 1rem; }
+  .empty svg{ width:120px; height:90px; margin-bottom:.6rem; }
+  .empty b{ font-family:var(--disp); color:var(--nuit); display:block; margin-bottom:.15rem; }
+  .empty span{ color:var(--doux); font-size:.92rem; }
+
+  /* ===== 4. Toast ===== */
+  .btn{ font-family:var(--sans); font-weight:700; font-size:.9rem; border:none; cursor:pointer; border-radius:11px; padding:.65rem 1.1rem; color:#fff;
+    background:linear-gradient(135deg,var(--bleu),var(--sarcelle)); box-shadow:0 10px 22px -10px rgba(31,111,235,.8); transition:transform .15s; }
+  .btn:hover{ transform:translateY(-2px); }
+  .toast{ position:fixed; bottom:26px; right:26px; z-index:50; display:none; align-items:center; gap:.8rem; max-width:360px;
+    background:var(--nuit); color:#eaf2ff; border-radius:14px; padding:.9rem 1.1rem; box-shadow:0 24px 50px -18px rgba(11,42,74,.6); }
+  .toast.on{ display:flex; animation:slidein .35s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes slidein{ from{ opacity:0; transform:translateY(14px) scale(.97); } to{ opacity:1; transform:none; } }
+  .toast .ic{ width:38px; height:38px; flex:none; border-radius:11px; display:grid; place-items:center; background:rgba(16,179,163,.25); color:#5fe6d4; }
+  .toast b{ display:block; font-size:.9rem; } .toast small{ color:#9fc0e6; font-size:.78rem; }
+
+  /* ===== 5. Densité ===== */
+  table{ width:100%; border-collapse:collapse; background:var(--surface); border-radius:var(--r-sm); overflow:hidden; border:1px solid var(--ligne); }
+  th{ text-align:left; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase; color:var(--doux); background:var(--fond-2); }
+  th,td{ padding:.8rem 1rem; border-bottom:1px solid var(--fond-2); transition:padding .2s; }
+  .compact th, .compact td{ padding:.38rem .8rem; font-size:.86rem; }
+  td .mono{ font-family:var(--mono); font-size:.85rem; color:var(--nuit); }
+  .seg{ display:inline-flex; gap:4px; padding:4px; background:var(--fond-2); border-radius:11px; margin-bottom:.9rem; }
+  .seg button{ border:none; background:transparent; font:inherit; font-weight:600; font-size:.85rem; color:var(--doux); padding:.4rem .85rem; border-radius:8px; cursor:pointer; }
+  .seg button.on{ background:var(--surface); color:var(--bleu); box-shadow:0 1px 2px rgba(11,42,74,.08); }
+
+  /* ===== 6. Letterhead ===== */
+  .a4{ background:#fff; border:1px solid var(--ligne); border-radius:6px; max-width:520px; padding:2rem 2.2rem 1.4rem; box-shadow:var(--ombre); }
+  .a4 .lh{ display:flex; justify-content:space-between; align-items:center; border-bottom:2.5px solid var(--or); padding-bottom:.9rem; margin-bottom:1rem; }
+  .a4 .lh img{ height:46px; }
+  .a4 .lh .rep{ text-align:right; font-size:.62rem; line-height:1.5; color:var(--doux); letter-spacing:.04em; text-transform:uppercase; }
+  .a4 h3{ font-family:var(--disp); text-align:center; font-size:.95rem; color:var(--nuit); margin:.8rem 0; }
+  .a4 .l{ height:7px; background:var(--fond-2); border-radius:4px; margin:.55rem 0; }
+  .a4 .l.c{ width:72%; } .a4 .l.d{ width:85%; }
+
+  .verdict{ background:var(--or-pale); border:1px solid rgba(232,168,30,.4); border-radius:var(--r-sm); padding:1rem 1.3rem; font-size:.92rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page"><img src="PRS-logo.png" alt="CNM — PRS"></header>
+  <h1>Propositions design — juin 2026</h1>
+  <p class="lead">Six pistes pour la suite, montrées en situation. Le logo et les micro-animations de base sont
+  déjà intégrés ; <b>rien de cette page n'est implémenté</b> — coche ce que tu veux, on fait dans cet ordre.
+  Tout respecte la contrainte : animations <code>transform/opacity</code> uniquement, rien d'imposé en boucle
+  aux contrôleurs, <code>prefers-reduced-motion</code> respecté.</p>
+
+  <!-- 1 -->
+  <section>
+    <div class="sec-head"><span class="n">01</span><h2>L'or comme accent institutionnel</h2><span class="effort">~½ jour</span></div>
+    <div class="sec-body">
+      <div class="demo" style="display:flex; flex-wrap:wrap; gap:2rem; align-items:center;">
+        <div>
+          <div style="font-size:.78rem;color:var(--doux);margin-bottom:.4rem">Badge actuel → badge or</div>
+          <span class="badge avant">PV signé</span> &nbsp;→&nbsp; <span class="badge or">PV co-signé</span>
+        </div>
+        <div class="pv-card">
+          <div><b>Procès-verbal d'examen</b><div class="num">PV-2026-014 · 3 PPM CNM 26</div></div>
+          <div class="sceau">CNM<small>CO-SIGNÉ</small></div>
+        </div>
+      </div>
+      <p class="note">L'or du logo CNM réservé à <b>un seul usage</b> : les actes signés (badge « PV co-signé »,
+      sceau sur l'écran de co-signature, liseré gauche des cartes d'actes). Le reste de l'app reste bleu —
+      l'or devient le signal « ceci est un acte officiel ».</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="sec-head"><span class="n">02</span><h2>Frise unifiée du circuit v4</h2><span class="effort">~1 jour</span></div>
+    <div class="sec-body">
+      <div class="demo">
+        <div class="frise">
+          <div class="etape fait"><div class="pt">✓</div><div class="lbl">Réception</div></div>
+          <div class="etape fait"><div class="pt">✓</div><div class="lbl">Dispatch</div></div>
+          <div class="etape fait"><div class="pt">✓</div><div class="lbl">Examen</div></div>
+          <div class="etape encours"><div class="pt">4</div><div class="lbl">Navette PV<span class="sous">2ᵉ tour · chez le CC</span></div></div>
+          <div class="etape"><div class="pt">5</div><div class="lbl">Co-signature</div></div>
+          <div class="etape"><div class="pt">6</div><div class="lbl">Vérification</div></div>
+          <div class="etape"><div class="pt">7</div><div class="lbl">Clôture</div></div>
+        </div>
+      </div>
+      <p class="note">Un composant unique réutilisé partout (détail dossier PRMP <i>et</i> contrôle) : étapes faites
+      en sarcelle, étape courante qui <b>pulse</b> doucement avec le sous-texte du contexte (n° de tour de navette,
+      passage). Remplace la lecture éparse des badges de statut par une lecture spatiale — où en est le dossier,
+      d'un coup d'œil.</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="sec-head"><span class="n">03</span><h2>Empty states illustrés (motif circuit)</h2><span class="effort">~½ jour</span></div>
+    <div class="sec-body">
+      <div class="demo">
+        <div class="empty">
+          <svg viewBox="0 0 120 90" fill="none">
+            <circle cx="52" cy="46" r="26" fill="#FBF3DD" stroke="#E8A81E" stroke-width="2.5"/>
+            <path d="M44 46h16M52 38v16" stroke="#E8A81E" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M73 30 L88 18" stroke="#10b3a3" stroke-width="2.5" stroke-linecap="round"/>
+            <rect x="88" y="12" width="8" height="8" rx="2" fill="#10b3a3"/>
+            <path d="M76 60 L94 68" stroke="#1f6feb" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="98" cy="70" r="4.5" fill="#1f6feb"/>
+            <path d="M30 26 L18 16" stroke="#cdd9ea" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="15" cy="13" r="4" fill="#cdd9ea"/>
+          </svg>
+          <b>Aucun dossier à vérifier</b>
+          <span>Les dossiers re-déposés par les PRMP arriveront ici.</span>
+        </div>
+      </div>
+      <p class="note">Une famille de 5-6 illustrations SVG inline (~1 Ko chacune) reprenant orbe + nœuds du logo,
+      déclinées par contexte : file vide, recherche sans résultat, aucune notification, erreur réseau. Donne une
+      personnalité aux moments creux sans aucune image à télécharger.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="sec-head"><span class="n">04</span><h2>Toast de transition d'état</h2><span class="effort">~½ jour</span></div>
+    <div class="sec-body">
+      <div class="demo" style="text-align:center">
+        <button class="btn" onclick="toast()">Simuler : « Co-signer le PV »</button>
+      </div>
+      <p class="note">Après chaque action de circuit (signer, dispatcher, vérifier…), un toast confirme <b>et dit
+      la suite</b> : « PV co-signé → dossier en vérification de levée ». L'infrastructure toast existe déjà
+      (<code>toast-outlet</code>) — il s'agit d'enrichir les messages avec l'étape suivante et son icône.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="sec-head"><span class="n">05</span><h2>Mode compact pour les files de traitement</h2><span class="effort">~1 jour</span></div>
+    <div class="sec-body">
+      <div class="demo">
+        <div class="seg">
+          <button class="on" onclick="dens(this,false)">Confortable</button>
+          <button onclick="dens(this,true)">Compact</button>
+        </div>
+        <table id="tbl">
+          <thead><tr><th>N°</th><th>Entité</th><th>Étape</th><th>Échéance</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">3 PPM CNM 26</td><td>Min. Santé Publique</td><td>En examen</td><td>J-1</td></tr>
+            <tr><td class="mono">4 PPM CNM 26</td><td>Min. Éducation Nationale</td><td>Navette PV</td><td>J-2</td></tr>
+            <tr><td class="mono">2 PPM CRM-A 26</td><td>Région Analamanga</td><td>Vérification</td><td>J-3</td></tr>
+            <tr><td class="mono">5 PPM CNM 26</td><td>Min. Travaux Publics</td><td>À dispatcher</td><td>Aujourd'hui</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Un toggle (mémorisé par compte) qui resserre tables et paddings sur les files. Les contrôleurs
+      vivent dans ces listes toute la journée : +60 % de lignes visibles sans scroller. Essaie le bouton « Compact ».</p>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <div class="sec-head"><span class="n">06</span><h2>Letterhead des documents officiels (PDF à venir)</h2><span class="effort">prépare le backlog PDF</span></div>
+    <div class="sec-body">
+      <div class="demo" style="display:grid;place-items:center">
+        <div class="a4">
+          <div class="lh">
+            <img src="PRS-logo.png" alt="CNM — PRS">
+            <div class="rep">Repoblikan'i Madagasikara<br>Commission Nationale des Marchés<br><span style="color:var(--or-fonce);font-weight:700">PV-2026-014</span></div>
+          </div>
+          <h3>PROCÈS-VERBAL D'EXAMEN</h3>
+          <div class="l"></div><div class="l d"></div><div class="l c"></div><div class="l d"></div><div class="l"></div><div class="l c"></div>
+        </div>
+      </div>
+      <p class="note">Gabarit d'en-tête commun PV / lettre de renvoi / fiche de circuit : lockup à gauche, mentions
+      officielles à droite, filet or. À valider maintenant pour que la génération PDF (backlog) parte sur de bonnes
+      bases — il faudra aussi une version <b>noir et blanc</b> du logo pour la photocopie.</p>
+    </div>
+  </section>
+
+  <div class="verdict">
+    <b>Pour décider :</b> réponds simplement avec les numéros à faire (ex. « 1, 2 et 5 »), l'ordre de priorité,
+    et les ajustements éventuels. Mon conseil : <b>02</b> (le plus de valeur quotidienne), puis <b>01</b> + <b>03</b>
+    (identité, rapides), <b>05</b> pour les contrôleurs ; <b>04</b> et <b>06</b> peuvent attendre F8/PDF.
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></span>
+  <span><b>PV co-signé</b><small>Dossier 3 PPM CNM 26 → en vérification de levée</small></span>
+</div>
+
+<script>
+  let t;
+  function toast(){
+    const el = document.getElementById('toast');
+    el.classList.remove('on'); void el.offsetWidth;
+    el.classList.add('on');
+    clearTimeout(t); t = setTimeout(() => el.classList.remove('on'), 3800);
+  }
+  function dens(btn, compact){
+    document.getElementById('tbl').classList.toggle('compact', compact);
+    btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+</script>
+</body>
+</html>

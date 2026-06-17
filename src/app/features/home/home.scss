@@ -1,0 +1,79 @@
+.home {
+  &__title {
+    margin: 0 0 var(--cnm-space-1);
+    font-size: var(--cnm-fs-lg);
+  }
+
+  &__meta {
+    margin: 0 0 var(--cnm-space-5);
+    color: var(--cnm-text-2);
+    font-size: var(--cnm-fs-sm);
+  }
+
+  &__subtitle {
+    font-size: var(--cnm-fs-md);
+    color: var(--cnm-text);
+    margin: 0 0 var(--cnm-space-3);
+  }
+
+  &__cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: var(--cnm-space-3);
+  }
+}
+
+.portail-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--cnm-space-3);
+  padding: var(--cnm-space-3) var(--cnm-space-4);
+  margin: 0 0 var(--cnm-space-5);
+  background: var(--cnm-surface);
+  border: 1px solid var(--cnm-border);
+  border-left: 3px solid var(--cnm-brand);
+  border-radius: var(--cnm-radius);
+
+  &__icon {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 2px;
+  }
+
+  &__title {
+    color: var(--cnm-text);
+  }
+
+  &__text {
+    font-size: var(--cnm-fs-sm);
+    color: var(--cnm-text-2);
+  }
+}
+
+.home-card {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: var(--cnm-space-4);
+  background: var(--cnm-surface);
+  border: 1px solid var(--cnm-border);
+  border-radius: var(--cnm-radius);
+  text-decoration: none;
+  color: var(--cnm-text);
+  font-weight: var(--cnm-fw-medium);
+
+  &:hover {
+    border-color: var(--cnm-brand);
+    text-decoration: none;
+  }
+
+  &__icon {
+    font-size: var(--cnm-fs-md);
+  }
+}

@@ -1,0 +1,96 @@
+.crud {
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--cnm-space-4);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--cnm-fs-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--cnm-space-2);
+  }
+
+  &__info {
+    color: var(--cnm-text-2);
+    padding: var(--cnm-space-4) 0;
+  }
+
+  &__note {
+    margin: 0 0 var(--cnm-space-3);
+    padding: var(--cnm-space-2) var(--cnm-space-4);
+    background: var(--cnm-surface-2);
+    border: 1px solid var(--cnm-border);
+    border-left: 3px solid var(--cnm-brand);
+    border-radius: var(--cnm-radius-sm);
+    font-size: var(--cnm-fs-sm);
+    color: var(--cnm-text-2);
+  }
+
+  &__filter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--cnm-space-3);
+    padding: var(--cnm-space-2) var(--cnm-space-4);
+    margin-bottom: var(--cnm-space-3);
+    background: var(--cnm-surface);
+    border: 1px solid var(--cnm-border);
+    border-left: 3px solid var(--cnm-brand);
+    border-radius: var(--cnm-radius);
+    font-size: var(--cnm-fs-sm);
+    color: var(--cnm-text-2);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--cnm-space-1);
+  }
+
+  &__actions-col {
+    width: 1%;
+  }
+
+  &__req {
+    color: var(--cnm-danger-fg);
+    margin-left: 2px;
+  }
+
+  &__form-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--cnm-space-4);
+    z-index: 1050;
+  }
+
+  &__form {
+    padding: var(--cnm-space-5);
+    width: 100%;
+    max-width: min(52rem, 96vw);
+    max-height: 85vh;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--cnm-space-3);
+    box-shadow: var(--cnm-shadow);
+  }
+
+  &__form-title {
+    margin: 0 0 var(--cnm-space-2);
+    font-size: var(--cnm-fs-md);
+  }
+
+  &__form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--cnm-space-2);
+    margin-top: var(--cnm-space-2);
+  }
+}

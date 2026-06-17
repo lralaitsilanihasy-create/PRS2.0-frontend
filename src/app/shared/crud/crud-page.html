@@ -1,0 +1,116 @@
+<section class="crud">
+  <header class="crud__header">
+    <h1 class="crud__title">
+      {{ config.title }}
+      @if (config.writeCapability) {
+        <app-lecture-badge [for]="config.writeCapability" />
+      }
+    </h1>
+    @if (canWrite()) {
+      <button type="button" class="cnm-btn cnm-btn--primary" (click)="openCreate()">+ Nouveau</button>
+    }
+  </header>
+
+  @if (config.note) {
+    <p class="crud__note">{{ config.note }}</p>
+  }
+
+  @if (activeFilter(); as f) {
+    <div class="crud__filter">
+      <span>Filtré sur {{ f.label }} : <strong>{{ filterValueLabel() }}</strong></span>
+      <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="clearFilter()">
+        Voir tout
+      </button>
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="crud__info">Chargement…</p>
+  } @else {
+    <div class="cnm-table-wrap">
+      <table class="cnm-table">
+        <thead>
+          <tr>
+            @for (f of config.fields; track f.key) {
+              <th>{{ f.label }}</th>
+            }
+            <th class="crud__actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of visibleRows(); track row[config.idKey]) {
+            <tr>
+              @for (f of config.fields; track f.key) {
+                <td>{{ display(row, f) }}</td>
+              }
+              <td class="crud__actions">
+                @for (a of config.rowActions ?? []; track a.label) {
+                  <a class="cnm-btn cnm-btn--ghost cnm-btn--sm" [routerLink]="a.path" [queryParams]="rowActionParams(a, row)">
+                    {{ a.label }}
+                  </a>
+                }
+                @if (canWrite()) {
+                  <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="openEdit(row)">Modifier</button>
+                  <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="remove(row)">Supprimer</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td [attr.colspan]="config.fields.length + 1" class="cnm-table__empty">
+                Aucun enregistrement.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (formOpen()) {
+    <div class="crud__form-overlay" (click)="closeForm()">
+      <form class="crud__form cnm-card cnm-form" [formGroup]="form" (ngSubmit)="save()" (click)="$event.stopPropagation()" novalidate>
+        <h2 class="crud__form-title">
+          {{ formMode() === 'create' ? 'Nouvel enregistrement' : 'Modifier' }}
+        </h2>
+
+        <div class="cnm-form-grid">
+          @for (f of config.fields; track f.key) {
+            <label class="cnm-field">
+              <span class="cnm-field__label">
+                {{ f.label }}@if (f.required) {<span class="crud__req">*</span>}
+              </span>
+
+              @switch (f.type) {
+                @case ('boolean') {
+                  <input type="checkbox" [formControlName]="f.key" />
+                }
+                @case ('number') {
+                  <input type="number" class="cnm-input" [formControlName]="f.key" />
+                }
+                @case ('date') {
+                  <input type="date" class="cnm-input" [formControlName]="f.key" />
+                }
+                @default {
+                  <input type="text" class="cnm-input" [formControlName]="f.key" />
+                }
+              }
+
+              @if (form.get(f.key)?.touched && form.get(f.key)?.hasError('required')) {
+                <span class="cnm-field__hint">Ce champ est obligatoire.</span>
+              }
+              @if (fieldError(f.key)) {
+                <span class="cnm-field__hint">{{ fieldError(f.key) }}</span>
+              }
+            </label>
+          }
+        </div>
+
+        <div class="crud__form-actions">
+          <button type="button" class="cnm-btn cnm-btn--ghost" (click)="closeForm()">Annuler</button>
+          <button type="submit" class="cnm-btn cnm-btn--primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  }
+</section>
