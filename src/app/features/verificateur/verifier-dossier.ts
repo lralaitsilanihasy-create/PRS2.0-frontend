@@ -20,6 +20,7 @@ import {
   VerificationService,
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { DossierConsultation } from '../circuit/dossier-consultation';
 
 /**
  * Écran de vérification d'un dossier (profil Contrôleur vérificateur).
@@ -32,7 +33,7 @@ import { StatutBadge } from '../../shared/circuit';
 @Component({
   selector: 'app-verifier-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge],
+  imports: [StatutBadge, DossierConsultation],
   template: `
     <section class="vf">
       <header class="vf__header">
@@ -51,6 +52,11 @@ import { StatutBadge } from '../../shared/circuit';
         <p class="cnm-muted">Dossier introuvable ou hors de votre périmètre.</p>
       } @else {
         <div class="vf__grid">
+          <div class="cnm-card vf__details">
+            <app-dossier-consultation [dossier]="dossier()!" [embedded]="true" />
+          </div>
+
+          <div class="vf__right">
           <div class="cnm-card vf__panel">
             <div class="vf__panel-head">Contexte du dossier</div>
             <div class="vf__panel-body">
@@ -151,6 +157,7 @@ import { StatutBadge } from '../../shared/circuit';
               }
             </div>
           </div>
+          </div>
         </div>
       }
     </section>
@@ -159,7 +166,9 @@ import { StatutBadge } from '../../shared/circuit';
     .vf__header { margin-bottom: var(--cnm-space-3); }
     .vf__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
     .vf__note { padding: var(--cnm-space-3) var(--cnm-space-4); color: var(--cnm-text-2); margin-bottom: var(--cnm-space-3); }
-    .vf__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); align-items: start; }
+    .vf__grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--cnm-space-3); align-items: start; }
+    .vf__right { display: flex; flex-direction: column; gap: var(--cnm-space-3); }
+    .vf__details { overflow: hidden; }
     .vf__panel-head { padding: var(--cnm-space-3) var(--cnm-space-4); border-bottom: 1px solid var(--cnm-border); font-weight: var(--cnm-fw-semibold); }
     .vf__panel-body { padding: var(--cnm-space-4); display: flex; flex-direction: column; gap: var(--cnm-space-3); }
     .vf__info { display: flex; flex-direction: column; gap: var(--cnm-space-1); margin: 0; }

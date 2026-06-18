@@ -7,7 +7,7 @@ import { SecretaireReceptions } from './receptions';
 
 /** Espace Secrétaire (lazy, sous roleGuard SECRETAIRE). */
 export const SECRETAIRE_ROUTES: Routes = [
-  { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
+  { path: '', redirectTo: 'receptions', pathMatch: 'full' },
   { path: 'tableau-de-bord', component: SecretaireDashboard },
   { path: 'receptions', component: SecretaireReceptions },
   { path: 'enregistrement', component: SecretaireEnregistrement },

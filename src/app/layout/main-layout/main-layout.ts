@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { NavItem, navFor } from '../../core/navigation/navigation';
-import { ControleurService, PrmpService } from '../../services';
+import { ControleurService, DossierService, PrmpService, ReceptionService } from '../../services';
 import { NotificationCenter } from '../notification-center/notification-center';
 
 /**
@@ -22,6 +24,8 @@ export class MainLayout {
   private readonly router = inject(Router);
   private readonly prmpService = inject(PrmpService);
   private readonly controleurService = inject(ControleurService);
+  private readonly dossierService = inject(DossierService);
+  private readonly receptionService = inject(ReceptionService);
 
   readonly role = this.auth.role;
   readonly login = this.auth.login;
@@ -29,6 +33,12 @@ export class MainLayout {
   readonly navItems = computed(() => navFor(this.auth.role()));
   /** Nom de l'utilisateur courant (résolu depuis sa fiche PRMP / contrôleur). */
   readonly displayName = signal('');
+  /** Compteurs affichés en badge à côté de certaines entrées de menu (clé = chemin). */
+  readonly counts = signal<Record<string, number>>({});
+
+  countFor(path: string): number | undefined {
+    return this.counts()[path];
+  }
 
   /** Chemins des en-têtes de sous-menu actuellement dépliés. */
   private readonly openGroups = signal<Set<string>>(this.initialOpenGroups());
@@ -49,6 +59,30 @@ export class MainLayout {
         error: () => {},
       });
     }
+
+    // Secrétaire : badges « nombre de dossiers » sur Réceptions et Enregistrement,
+    // rafraîchis à l'ouverture puis à chaque navigation (ex. après une réception enregistrée).
+    if (this.auth.role() === 'SECRETAIRE') {
+      this.rafraichirCompteursSecretaire();
+      this.router.events
+        .pipe(
+          filter((e) => e instanceof NavigationEnd),
+          takeUntilDestroyed(),
+        )
+        .subscribe(() => this.rafraichirCompteursSecretaire());
+    }
+  }
+
+  /** Recharge les compteurs du Secrétaire (à réceptionner / réceptionnés), scopés serveur. */
+  private rafraichirCompteursSecretaire(): void {
+    this.dossierService.aReceptionner().subscribe({
+      next: (rows) => this.counts.update((c) => ({ ...c, '/secretaire/receptions': rows.length })),
+      error: () => {},
+    });
+    this.receptionService.list().subscribe({
+      next: (rows) => this.counts.update((c) => ({ ...c, '/secretaire/enregistrement': rows.length })),
+      error: () => {},
+    });
   }
 
   isOpen(item: NavItem): boolean {

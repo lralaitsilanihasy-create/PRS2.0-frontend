@@ -21,9 +21,12 @@ export class Home {
   private readonly router = inject(Router);
 
   constructor() {
-    // À l'ouverture de session, le Membre atterrit directement sur « Dossiers à examiner ».
+    // À l'ouverture de session : le Membre atterrit sur « Dossiers à examiner »,
+    // le Secrétaire sur « Réceptions ».
     if (this.auth.role() === 'MEMBRE') {
       void this.router.navigateByUrl('/membre/examens', { replaceUrl: true });
+    } else if (this.auth.role() === 'SECRETAIRE') {
+      void this.router.navigateByUrl('/secretaire/receptions', { replaceUrl: true });
     }
   }
 
