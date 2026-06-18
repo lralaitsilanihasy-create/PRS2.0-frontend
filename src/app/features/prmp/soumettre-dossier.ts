@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { debounceTime, forkJoin } from 'rxjs';
+import { debounceTime, forkJoin, merge } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
@@ -26,6 +26,13 @@ import {
 } from '../../services';
 
 type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
+
+/** État d'aperçu du mode de passation (ensemble autorisé + recommandé). */
+type ModeSuggestion = {
+  state: 'idle' | 'loading' | 'ready' | 'none';
+  modes: { idMode: number; libelle: string }[];
+  recommande: number | null;
+};
 
 /**
  * Parcours de saisie & soumission PRMP (§3.1, Modules 02-03).
@@ -143,17 +150,20 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                     <input class="cnm-input" type="text" formControlName="financement" /></label>
                   <label class="cnm-field"><span class="cnm-field__label">Statut</span>
                     <input class="cnm-input" type="text" formControlName="statut" /></label>
+                  <label class="cnm-field"><span class="cnm-field__label">Mode de passation</span>
+                    @switch (modeLigne(g).state) {
+                      @case ('loading') { <span class="cnm-field__hint cnm-muted">Détermination…</span> }
+                      @case ('ready') {
+                        <select class="cnm-select" formControlName="idMode">
+                          @for (m of modeLigne(g).modes; track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle }}</option> }
+                        </select>
+                      }
+                      @case ('none') { <span class="cnm-field__hint cnm-muted">Mode à déterminer (aucune règle).</span> }
+                      @default { <span class="cnm-field__hint cnm-muted">Renseignez situation, nature et montant.</span> }
+                    }
+                  </label>
                 </div>
                 <div class="sd__ligne-foot">
-                  <span class="sd__ligne-mode">
-                    <span class="cnm-field__label">Mode (auto) :</span>
-                    @switch (modeLigne(g).state) {
-                      @case ('loading') { <span class="cnm-muted">Détermination…</span> }
-                      @case ('found') { <span class="cnm-badge cnm-badge--info">{{ modeLigne(g).label }}</span> }
-                      @case ('none') { <span class="cnm-badge cnm-badge--warning">À déterminer</span> }
-                      @default { <span class="cnm-muted">Renseignez situation, nature et montant.</span> }
-                    }
-                  </span>
                   <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="retirerMarche($index)">Retirer</button>
                 </div>
               </div>
@@ -306,11 +316,15 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                         </label>
                       </div>
                       <div class="cnm-field sd__mode">
-                        <span class="cnm-field__label">Mode de passation (déterminé automatiquement)</span>
-                        @switch (modeState()) {
+                        <span class="cnm-field__label">Mode de passation</span>
+                        @switch (modeSuggestion().state) {
                           @case ('loading') { <span class="cnm-muted">Détermination du mode…</span> }
-                          @case ('found') { <span class="cnm-badge cnm-badge--info">{{ modeLabel() }}</span> }
-                          @case ('none') { <span class="cnm-badge cnm-badge--warning">Mode de passation à déterminer</span> }
+                          @case ('ready') {
+                            <select class="cnm-select" formControlName="idMode">
+                              @for (m of modeSuggestion().modes; track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle }}</option> }
+                            </select>
+                          }
+                          @case ('none') { <span class="cnm-field__hint cnm-muted">Mode à déterminer (aucune règle).</span> }
                           @default { <span class="cnm-muted">Complétez situation, nature et montant pour voir le mode.</span> }
                         }
                       </div>
@@ -396,7 +410,7 @@ export class SoumettreDossier {
   private readonly destroyRef = inject(DestroyRef);
   private uidCounter = 0;
   /** Mode suggéré par ligne de marché (clé = uid stable de la ligne). */
-  readonly modes = signal<Record<number, { state: 'idle' | 'loading' | 'found' | 'none'; label: string }>>({});
+  readonly modes = signal<Record<number, ModeSuggestion>>({});
 
   readonly phase = signal<Phase>('choix');
   readonly submitting = signal(false);
@@ -409,9 +423,8 @@ export class SoumettreDossier {
   readonly comptes = signal<Compte[]>([]);
   readonly modeMap = signal<Map<string, string>>(new Map());
 
-  /** Mode de passation suggéré (aperçu via suggestion-mode, lecture seule). */
-  readonly modeState = signal<'idle' | 'loading' | 'found' | 'none'>('idle');
-  readonly modeLabel = signal<string>('');
+  /** Aperçu du mode de passation pour la ligne en cours d'édition (phase reprise). */
+  readonly modeSuggestion = signal<ModeSuggestion>({ state: 'idle', modes: [], recommande: null });
 
   readonly dossier = signal<Dossier | null>(null);
   private createdPpmId: number | null = null;
@@ -456,6 +469,7 @@ export class SoumettreDossier {
     numCompte: [null as string | null],
     idSituation: [null as number | null],
     idNature: [null as number | null],
+    idMode: [null as number | null],
   });
 
   private marcheRefsLoaded = false;
@@ -472,8 +486,13 @@ export class SoumettreDossier {
       this.marcheControls().forEach((g) => this.determinerModeLigne(g));
     });
     this.dossierForm.controls.idEntiteContract.valueChanges.subscribe((v) => this.selectedEntiteId.set(v));
-    // Aperçu en direct du mode de passation à chaque changement de ligne de marché.
-    this.marcheForm.valueChanges
+    // Aperçu en direct du mode (phase reprise) : recalcul sur les seuls champs déterminants
+    // (pas sur idMode, pour ne pas écraser le choix manuel).
+    merge(
+      this.marcheForm.controls.idSituation.valueChanges,
+      this.marcheForm.controls.idNature.valueChanges,
+      this.marcheForm.controls.montEstim.valueChanges,
+    )
       .pipe(debounceTime(350), takeUntilDestroyed())
       .subscribe(() => this.determinerMode());
     // Reprise d'un brouillon depuis « Mes brouillons » (?reprendre=<idDossier>).
@@ -573,8 +592,10 @@ export class SoumettreDossier {
       statut: [''],
       idSituation: [null as number | null],
       idNature: [null as number | null],
+      idMode: [null as number | null],
     });
-    g.valueChanges
+    // Recalcul du mode sur les seuls champs déterminants (pas idMode → choix manuel préservé).
+    merge(g.get('idSituation')!.valueChanges, g.get('idNature')!.valueChanges, g.get('montEstim')!.valueChanges)
       .pipe(debounceTime(350), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.determinerModeLigne(g));
     return g;
@@ -592,31 +613,47 @@ export class SoumettreDossier {
       return n;
     });
   }
-  modeLigne(g: FormGroup): { state: 'idle' | 'loading' | 'found' | 'none'; label: string } {
-    return this.modes()[g.get('uid')!.value as number] ?? { state: 'idle', label: '' };
+  modeLigne(g: FormGroup): ModeSuggestion {
+    return this.modes()[g.get('uid')!.value as number] ?? { state: 'idle', modes: [], recommande: null };
   }
-  private setMode(uid: number, state: 'idle' | 'loading' | 'found' | 'none', label: string): void {
-    this.modes.update((m) => ({ ...m, [uid]: { state, label } }));
+  private setMode(uid: number, s: ModeSuggestion): void {
+    this.modes.update((m) => ({ ...m, [uid]: s }));
   }
   /** Localité (code) dérivée de l'entité d'en-tête sélectionnée. */
   private selectedLocaliteCode(): string | null {
     return this.entites().find((e) => e.idEntiteContract === this.selectedEntiteId())?.idLocalite ?? null;
   }
-  /** Aperçu du mode pour une ligne (suggestion-mode ; non contraignant, le backend tranche). */
+  /** Aperçu du mode pour une ligne (suggestion-mode ; la PRMP choisit, le backend valide). */
   private determinerModeLigne(g: FormGroup): void {
     const uid = g.get('uid')!.value as number;
     const v = g.getRawValue();
     const idLocalite = this.selectedLocaliteCode();
+    const idMode = g.get('idMode')!;
     if (v.idSituation == null || v.idNature == null || v.montEstim == null || !idLocalite) {
-      this.setMode(uid, 'idle', '');
+      idMode.setValue(null, { emitEvent: false });
+      this.setMode(uid, { state: 'idle', modes: [], recommande: null });
       return;
     }
-    this.setMode(uid, 'loading', '');
+    this.setMode(uid, { state: 'loading', modes: [], recommande: null });
     this.reglePassation
       .suggestionMode({ idSituation: v.idSituation, idNature: v.idNature, montant: v.montEstim, idLocalite })
       .subscribe({
-        next: (res) => this.setMode(uid, 'found', this.modeMap().get(String(res.idMode)) ?? `#${res.idMode}`),
-        error: () => this.setMode(uid, 'none', ''),
+        next: (res) => {
+          if (res.modesAutorises.length) {
+            const cur = idMode.value as number | null;
+            if (cur == null || !res.modesAutorises.some((m) => m.idMode === cur)) {
+              idMode.setValue(res.modeRecommande, { emitEvent: false });
+            }
+            this.setMode(uid, { state: 'ready', modes: res.modesAutorises, recommande: res.modeRecommande });
+          } else {
+            idMode.setValue(null, { emitEvent: false });
+            this.setMode(uid, { state: 'none', modes: [], recommande: null });
+          }
+        },
+        error: () => {
+          idMode.setValue(null, { emitEvent: false });
+          this.setMode(uid, { state: 'none', modes: [], recommande: null });
+        },
       });
   }
   private ligneNonVide(l: Record<string, unknown>): boolean {
@@ -650,6 +687,7 @@ export class SoumettreDossier {
         statut: (l['statut'] as string) || undefined,
         idSituation: (l['idSituation'] as number) ?? undefined,
         idNature: (l['idNature'] as number) ?? undefined,
+        idMode: (l['idMode'] as number) ?? undefined,
       }));
     this.saisie
       .ppm({
@@ -730,6 +768,7 @@ export class SoumettreDossier {
       numCompte: m.numCompte ?? null,
       idSituation: m.idSituation ?? null,
       idNature: m.idNature ?? null,
+      idMode: m.idMode ?? null,
     });
     this.ligneOuverte.set(true);
   }
@@ -737,27 +776,39 @@ export class SoumettreDossier {
     this.ligneOuverte.set(false);
   }
 
-  /** Aperçu du mode (situation + nature + montant + localité du dossier). Non contraignant ; le backend tranche. */
+  /** Aperçu du mode (phase reprise) ; la PRMP choisit, le backend valide. */
   private determinerMode(): void {
+    const idMode = this.marcheForm.controls.idMode;
     if (!this.ligneOuverte()) {
-      this.modeState.set('idle');
+      this.modeSuggestion.set({ state: 'idle', modes: [], recommande: null });
       return;
     }
     const v = this.marcheForm.getRawValue();
     const idLocalite = this.dossier()?.idLocalite ?? this.auth.localite();
     if (v.idSituation == null || v.idNature == null || v.montEstim == null || !idLocalite) {
-      this.modeState.set('idle');
+      this.modeSuggestion.set({ state: 'idle', modes: [], recommande: null });
       return;
     }
-    this.modeState.set('loading');
+    this.modeSuggestion.set({ state: 'loading', modes: [], recommande: null });
     this.reglePassation
       .suggestionMode({ idSituation: v.idSituation, idNature: v.idNature, montant: v.montEstim, idLocalite })
       .subscribe({
         next: (res) => {
-          this.modeLabel.set(this.modeMap().get(String(res.idMode)) ?? `#${res.idMode}`);
-          this.modeState.set('found');
+          if (res.modesAutorises.length) {
+            const cur = idMode.value as number | null;
+            if (cur == null || !res.modesAutorises.some((m) => m.idMode === cur)) {
+              idMode.setValue(res.modeRecommande, { emitEvent: false });
+            }
+            this.modeSuggestion.set({ state: 'ready', modes: res.modesAutorises, recommande: res.modeRecommande });
+          } else {
+            idMode.setValue(null, { emitEvent: false });
+            this.modeSuggestion.set({ state: 'none', modes: [], recommande: null });
+          }
         },
-        error: () => this.modeState.set('none'), // 400/404 (aucune règle) gérés sans toast (skipErrorToast)
+        error: () => {
+          idMode.setValue(null, { emitEvent: false });
+          this.modeSuggestion.set({ state: 'none', modes: [], recommande: null });
+        }, // 400/404 (aucune règle) gérés sans toast (skipErrorToast)
       });
   }
   enregistrerLigne(): void {
@@ -770,7 +821,7 @@ export class SoumettreDossier {
     this.formError.set(null);
     this.submitting.set(true);
     const v = this.marcheForm.getRawValue();
-    // idMode omis volontairement : déterminé automatiquement par le backend.
+    // idMode = choix de la PRMP (facultatif) ; absent → recommandé serveur ; hors ensemble → 409.
     const body: Marche = {
       idDetail: v.idDetail as number,
       idDossier: d.idDossier,
@@ -780,6 +831,7 @@ export class SoumettreDossier {
       numCompte: v.numCompte ?? undefined,
       idSituation: v.idSituation ?? undefined,
       idNature: v.idNature ?? undefined,
+      idMode: v.idMode ?? undefined,
     };
     const op =
       this.editId() !== null

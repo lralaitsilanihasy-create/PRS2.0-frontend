@@ -112,6 +112,7 @@ export interface SaisieMarcheLigne {
   statut?: string;
   idSituation?: number;
   idNature?: number;
+  idMode?: number; // mode choisi par la PRMP (facultatif) ; absent → recommandé serveur
 }
 
 /**

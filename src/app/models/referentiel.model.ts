@@ -152,10 +152,15 @@ export interface SuggestionModeRequest {
   idLocalite: string;
 }
 
-/** Réponse de `suggestion-mode` (suggestion non contraignante). */
-export interface SuggestionModeResponse {
+/** Un mode autorisé renvoyé par `suggestion-mode`. */
+export interface ModeAutorise {
   idMode: number;
-  idRegle: number;
-  idSeuil: number;
-  priorite: number;
+  libelle: string;
+}
+
+/** Réponse de `suggestion-mode` : ensemble autorisé + recommandé (non contraignant ; le serveur valide). */
+export interface SuggestionModeResponse {
+  modeRecommande: number | null;
+  modesAutorises: ModeAutorise[];
+  modeNonDetermine: boolean;
 }

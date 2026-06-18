@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Subscription, debounceTime, forkJoin } from 'rxjs';
+import { Subscription, debounceTime, forkJoin, merge } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -28,6 +28,14 @@ import { StatutBadge } from '../../shared/circuit';
  * éditables (ajout/modif/suppression) tant que le dossier du marché est en BROUILLON — miroir
  * de la règle d'édition des marchés (le backend reste l'autorité). idPrevision = PK assignée client.
  */
+
+/** État d'aperçu du mode de passation (ensemble autorisé + recommandé). */
+type ModeSuggestion = {
+  state: 'idle' | 'loading' | 'ready' | 'none';
+  modes: { idMode: number; libelle: string }[];
+  recommande: number | null;
+};
+
 @Component({
   selector: 'app-mes-ppm-marches',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -293,11 +301,15 @@ import { StatutBadge } from '../../shared/circuit';
               @else if (!natures().length) { <span class="cnm-field__hint cnm-muted">Aucune nature disponible.</span> }
             </label>
             <div class="cnm-field mpm-form__mode">
-              <span class="cnm-field__label">Mode de passation (déterminé automatiquement)</span>
-              @switch (modeState()) {
+              <span class="cnm-field__label">Mode de passation</span>
+              @switch (modeSuggestion().state) {
                 @case ('loading') { <span class="cnm-muted">Détermination du mode…</span> }
-                @case ('found') { <span class="cnm-badge cnm-badge--info">{{ modeLabel() }}</span> }
-                @case ('none') { <span class="cnm-badge cnm-badge--warning">Mode de passation à déterminer</span> }
+                @case ('ready') {
+                  <select class="cnm-select" formControlName="idMode">
+                    @for (m of modeSuggestion().modes; track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle }}</option> }
+                  </select>
+                }
+                @case ('none') { <span class="cnm-badge cnm-badge--warning">Mode à déterminer (aucune règle)</span> }
                 @default { <span class="cnm-muted">Renseignez situation, nature et montant.</span> }
               }
               <span class="cnm-field__hint cnm-muted">Localité (dérivée de l'entité) : {{ localiteLabel() }}</span>
@@ -499,9 +511,8 @@ export class MesPpmMarches {
   readonly RAISON_BLOCAGE =
     'Suppression possible uniquement tant que le dossier est en brouillon (et que vous en êtes propriétaire).';
 
-  /** Mode de passation déterminé automatiquement (aperçu via suggestion-mode). */
-  readonly modeState = signal<'idle' | 'loading' | 'found' | 'none'>('idle');
-  readonly modeLabel = signal<string>('');
+  /** Aperçu du mode de passation (ensemble autorisé + recommandé via suggestion-mode). */
+  readonly modeSuggestion = signal<ModeSuggestion>({ state: 'idle', modes: [], recommande: null });
   private modeSub?: Subscription;
 
   // Référentiels des listes déroulantes (chargés une seule fois).
@@ -718,12 +729,17 @@ export class MesPpmMarches {
       statut: [m?.statut ?? ''],
       idSituation: [m?.idSituation ?? (null as number | null)],
       idNature: [m?.idNature ?? (null as number | null)],
+      idMode: [m?.idMode ?? (null as number | null)],
       datesPrev: this.fb.array([] as FormGroup[]),
     });
-    this.modeState.set('idle');
-    this.modeLabel.set('');
+    this.modeSuggestion.set({ state: 'idle', modes: [], recommande: null });
     this.modeSub?.unsubscribe();
-    this.modeSub = this.createForm.valueChanges
+    // Recalcul sur les seuls champs déterminants (pas idMode → choix manuel préservé).
+    this.modeSub = merge(
+      this.createForm.get('idSituation')!.valueChanges,
+      this.createForm.get('idNature')!.valueChanges,
+      this.createForm.get('montEstim')!.valueChanges,
+    )
       .pipe(debounceTime(350))
       .subscribe(() => this.determinerMode());
   }
@@ -839,23 +855,35 @@ export class MesPpmMarches {
     this.createOriginalDates.set([]);
   }
 
-  /** Aperçu en direct du mode (situation + nature + montant + localité du dossier, dérivée de son entité). */
+  /** Aperçu du mode (situation + nature + montant + localité du dossier) ; la PRMP choisit, le backend valide. */
   private determinerMode(): void {
     const v = this.createForm.getRawValue();
     const idLocalite = this.localiteCourante();
+    const idMode = this.createForm.get('idMode')!;
     if (v.idSituation == null || v.idNature == null || v.montEstim == null || !idLocalite) {
-      this.modeState.set('idle');
+      this.modeSuggestion.set({ state: 'idle', modes: [], recommande: null });
       return;
     }
-    this.modeState.set('loading');
+    this.modeSuggestion.set({ state: 'loading', modes: [], recommande: null });
     this.reglePassation
       .suggestionMode({ idSituation: v.idSituation, idNature: v.idNature, montant: v.montEstim, idLocalite })
       .subscribe({
         next: (res) => {
-          this.modeLabel.set(this.modeMap().get(String(res.idMode)) ?? `#${res.idMode}`);
-          this.modeState.set('found');
+          if (res.modesAutorises.length) {
+            const cur = idMode.value as number | null;
+            if (cur == null || !res.modesAutorises.some((m) => m.idMode === cur)) {
+              idMode.setValue(res.modeRecommande, { emitEvent: false });
+            }
+            this.modeSuggestion.set({ state: 'ready', modes: res.modesAutorises, recommande: res.modeRecommande });
+          } else {
+            idMode.setValue(null, { emitEvent: false });
+            this.modeSuggestion.set({ state: 'none', modes: [], recommande: null });
+          }
         },
-        error: () => this.modeState.set('none'),
+        error: () => {
+          idMode.setValue(null, { emitEvent: false });
+          this.modeSuggestion.set({ state: 'none', modes: [], recommande: null });
+        },
       });
   }
 
@@ -917,6 +945,7 @@ export class MesPpmMarches {
       statut: v.statut || undefined,
       idSituation: v.idSituation ?? undefined,
       idNature: v.idNature ?? undefined,
+      idMode: v.idMode ?? undefined,
     };
     const editing = this.editingMarche();
     if (editing) {
