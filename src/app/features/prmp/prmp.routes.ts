@@ -20,11 +20,6 @@ export const PRMP_ROUTES: Routes = [
   { path: 'soumettre-dossier', component: SoumettreDossier },
   { path: 'mes-brouillons', component: MesBrouillons },
   { path: 'ppm-marches', component: MesPpmMarches },
-  {
-    path: 'soumission',
-    component: DossiersPipeline,
-    data: { title: 'Suivi des soumissions' },
-  },
   { path: 'retraits', component: PrmpRetraits },
   { path: 'calendrier', component: CrudPage, data: { crud: ECHEANCE_CONFIG } },
 ];

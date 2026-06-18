@@ -131,7 +131,7 @@ export class MesBrouillons {
     this.dossierService.soumettre(d.idDossier).subscribe({
       next: (res) => {
         this.toast.success(`Dossier soumis${res.refeDossier ? ' · réf. ' + res.refeDossier : ''}.`);
-        this.router.navigate(['/prmp/soumission']);
+        this.router.navigate(['/prmp/tableau-de-bord']);
       },
       error: (_e: ApiError) => this.submittingId.set(null), // 403/409/400 → toast centralisé
     });

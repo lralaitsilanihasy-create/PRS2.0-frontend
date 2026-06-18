@@ -867,7 +867,7 @@ export class SoumettreDossier {
     this.dossierService.soumettre(d.idDossier).subscribe({
       next: (res) => {
         this.toast.success(`Dossier soumis${res.refeDossier ? ' · réf. ' + res.refeDossier : ''}.`);
-        this.router.navigate(['/prmp/soumission']);
+        this.router.navigate(['/prmp/tableau-de-bord']);
       },
       error: (e: ApiError) => this.echec(e),
     });
