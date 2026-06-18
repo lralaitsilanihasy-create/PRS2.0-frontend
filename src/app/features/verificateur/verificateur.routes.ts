@@ -1,18 +1,22 @@
 import { Routes } from '@angular/router';
 
-import { CrudPage } from '../../shared/crud/crud-page';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
-import { VERIFICATION_CONFIG } from '../circuit/circuit-resources.config';
 import { Messagerie } from '../transverse/messagerie';
+import { VerifierDossier } from './verifier-dossier';
 
 /** Espace Contrôleur vérificateur (lazy, sous roleGuard VERIFICATEUR). */
 export const VERIFICATEUR_ROUTES: Routes = [
-  { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
+  { path: '', redirectTo: 'a-verifier', pathMatch: 'full' },
   {
-    path: 'tableau-de-bord',
+    path: 'a-verifier',
     component: DossiersPipeline,
-    data: { title: 'Dossiers à vérifier' },
+    data: { title: 'Dossiers à vérifier', timeline: false, source: 'a-verifier', verifAction: true },
   },
-  { path: 'verifications', component: CrudPage, data: { crud: VERIFICATION_CONFIG } },
+  {
+    path: 'verifies',
+    component: DossiersPipeline,
+    data: { title: 'Dossiers vérifiés / clôturés', timeline: false, source: 'verifies' },
+  },
+  { path: 'verifier/:idDossier', component: VerifierDossier },
   { path: 'messagerie', component: Messagerie },
 ];

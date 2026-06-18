@@ -10,6 +10,7 @@ import {
   Dossier,
   Examen,
   ExamenDetail,
+  Page,
   PvActionRequest,
   PvExamen,
   PvNavette,
@@ -37,6 +38,33 @@ export class DossierService extends CrudService<Dossier> {
   /** `GET /api/dossiers/a-receptionner` (Secrétaire/Admin) — SOUMIS sans réception, filtré serveur (pas de N+1). */
   aReceptionner(): Observable<Dossier[]> {
     return this.http.get<Dossier[]>(`${this.baseUrl}/a-receptionner`);
+  }
+
+  /** `GET /api/dossiers/a-examiner` (Membre/Admin) — ses dossiers DISPATCHE à examiner (scopé serveur). */
+  aExaminer(): Observable<Dossier[]> {
+    return this.http.get<Dossier[]>(`${this.baseUrl}/a-examiner`);
+  }
+
+  /** `GET /api/dossiers/examines` (Membre/Admin) — historique EXAMINE+PV_SIGNE+CLOTURE, paginé. */
+  examines(page = 0, size = 10): Observable<Page<Dossier>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<Dossier>>(`${this.baseUrl}/examines`, { params });
+  }
+
+  /** `GET /api/dossiers/a-verifier` (Vérificateur/Admin) — dossiers EN_VERIFICATION (scopé localité). */
+  aVerifier(): Observable<Dossier[]> {
+    return this.http.get<Dossier[]>(`${this.baseUrl}/a-verifier`);
+  }
+
+  /** `GET /api/dossiers/verifies` (Vérificateur/Admin) — historique CLOTURE (PV signé), paginé, lecture seule. */
+  verifies(page = 0, size = 10): Observable<Page<Dossier>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<Dossier>>(`${this.baseUrl}/verifies`, { params });
+  }
+
+  /** `GET /api/dossiers/retirables` (PRMP) — dossiers SOUMIS/PRET_DISPATCH éligibles au retrait. */
+  retirables(): Observable<Dossier[]> {
+    return this.http.get<Dossier[]>(`${this.baseUrl}/retirables`);
   }
 
   /**
@@ -123,5 +151,25 @@ export class VerificationService extends CrudService<Verification> {
 @Injectable({ providedIn: 'root' })
 export class DemandeRetraitService extends CrudService<DemandeRetrait> {
   protected readonly resource = 'demande-retraits';
-  // Création : PRMP ; décision (PUT statut APPROUVE/REJETE) : CHEF_COMMISSION.
+  // `list()` = worklist PRMP (GET de base, filtré serveur — pas d'endpoint /mes).
+
+  /** `GET /api/demande-retraits/a-valider` — EN_ATTENTE de la localité (CC/Président). */
+  aValider(): Observable<DemandeRetrait[]> {
+    return this.http.get<DemandeRetrait[]>(`${this.baseUrl}/a-valider`);
+  }
+
+  /** `GET /api/demande-retraits/historique` — demandes décidées (CC/Président). */
+  historique(): Observable<DemandeRetrait[]> {
+    return this.http.get<DemandeRetrait[]>(`${this.baseUrl}/historique`);
+  }
+
+  /** `POST /{id}/accepter` — ACCEPTEE + dossier renvoyé en BROUILLON (décidé serveur). */
+  accepter(id: number): Observable<DemandeRetrait> {
+    return this.http.post<DemandeRetrait>(`${this.baseUrl}/${id}/accepter`, {});
+  }
+
+  /** `POST /{id}/refuser` — REFUSEE (motif → obsDecision côté serveur). */
+  refuser(id: number, motif: string): Observable<DemandeRetrait> {
+    return this.http.post<DemandeRetrait>(`${this.baseUrl}/${id}/refuser`, { motif });
+  }
 }

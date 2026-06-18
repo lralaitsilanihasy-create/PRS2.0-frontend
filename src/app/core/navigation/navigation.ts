@@ -40,6 +40,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Tableau de bord', path: '/president/tableau-de-bord', icon: '▤' },
     { label: 'Pré-dispatch', path: '/president/pre-dispatch', icon: '📤' },
     { label: 'Circuit & dispatch', path: '/president/circuit', icon: '🔀' },
+    { label: 'Demandes de retrait', path: '/president/retraits', icon: '↩' },
     { label: 'PPM, marchés & dates', path: '/president/ppm-marches', icon: '🗂' },
     { label: 'Calendrier', path: '/president/calendrier', icon: '📅' },
     { label: 'Rapports', path: '/president/rapports', icon: '📊' },
@@ -50,7 +51,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Circuit de contrôle', path: '/cc/circuit', icon: '🔀' },
     { label: 'PPM & marchés', path: '/cc/ppm-marches', icon: '🗂' },
     { label: 'Marchés & dates prév.', path: '/cc/marches-previsions', icon: '📆' },
-    { label: 'Retraits PRMP', path: '/cc/retraits', icon: '↩' },
+    { label: 'Demandes de retrait', path: '/cc/retraits', icon: '↩' },
     { label: 'Statistiques', path: '/cc/statistiques', icon: '📈' },
     { label: 'Messagerie', path: '/cc/messagerie', icon: '✉' },
   ],
@@ -69,8 +70,8 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Messagerie', path: '/membre/messagerie', icon: '✉' },
   ],
   VERIFICATEUR: [
-    { label: 'Tableau de bord', path: '/verificateur/tableau-de-bord', icon: '▤' },
-    { label: 'Vérifications', path: '/verificateur/verifications', icon: '✔' },
+    { label: 'À vérifier', path: '/verificateur/a-verifier', icon: '✔' },
+    { label: 'Vérifiés / clôturés', path: '/verificateur/verifies', icon: '🗂' },
     { label: 'Messagerie', path: '/verificateur/messagerie', icon: '✉' },
   ],
   CHARGE_PUBLICATION: [

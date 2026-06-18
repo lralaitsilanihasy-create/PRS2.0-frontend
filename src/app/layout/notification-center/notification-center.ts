@@ -50,7 +50,7 @@ const MESSAGERIE_ROLES: Record<string, string> = {
                 <button type="button" class="notif__item" [class.notif__item--unread]="!n.lu" (click)="ouvrir(n)">
                   <span class="notif__item-title">{{ n.titre || n.typeNotif }}</span>
                   @if (n.corps) { <span class="notif__item-corps">{{ n.corps }}</span> }
-                  <span class="notif__item-date cnm-mono">{{ n.dateEnvoi }}</span>
+                  <span class="notif__item-date cnm-mono">{{ formatDate(n.dateEnvoi) }}</span>
                 </button>
               } @empty {
                 <p class="notif__info">Aucune notification.</p>
@@ -136,6 +136,12 @@ export class NotificationCenter {
         error: () => {},
       });
     }
+    // Notif PV pour le Membre → « Projets de PV » (rectification / acceptation le concernent).
+    if (n.typeObjet === 'PV' && this.auth.role() === 'MEMBRE') {
+      void this.router.navigate(['/membre/pv']);
+      this.open.set(false);
+      return;
+    }
     if (n.idDossier != null) {
       this.dossierService.getById(n.idDossier).subscribe({
         next: (d) => {
@@ -151,6 +157,18 @@ export class NotificationCenter {
         this.open.set(false);
       }
     }
+  }
+
+  /** Horodatage lisible (ex. « 16/06/2026 09:15 ») ; repli sur la valeur brute. */
+  formatDate(iso?: string): string {
+    if (!iso) {
+      return '';
+    }
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) {
+      return iso;
+    }
+    return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
   }
 
   toutLu(): void {

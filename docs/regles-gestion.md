@@ -37,10 +37,20 @@ Flux complet d'un dossier, avec navette du projet de PV :
 4. **Examen** — acteurs : Membre / CC / Président
 5. **Projet de PV** — rédigé par le Membre ; navette (aller-retour) possible
 6. **PV accepté & signé** — co-signature Président/CC + Membre
-7. **Vérification** — acteurs : Vérificateur / CC / Président
-8. **Clôture** — automatique
+7. **Vérification** — acteur : **Contrôleur vérificateur** (strict, ⚠️ règle ajoutée) — uniquement pour un avis `FAVR`
+8. **Clôture** — automatique (à la signature pour FAV/DEF/NSP, ou après levée des observations pour FAVR)
 
 > Statuts de navette du PV : `PROJET_PV_SOUMIS`, `PROJET_PV_RETOUR`, `PROJET_PV_ACCEPTE`, puis `SIGNE`.
+
+> ⚠️ **Règle ajoutée (non issue de la brochure) — branchement du circuit à la signature du PV (selon l'avis).**
+> À la bascule `SIGNE`, le dossier est aiguillé selon `t_pv_examen.ID_AVIS` (référentiel `tr_avis` :
+> `FAV`, `FAVR`, `DEF`, `NSP`) :
+> - **`FAVR`** (favorable avec réserves) → dossier **`EN_VERIFICATION`** (vérification itérative ouverte) ;
+> - **`FAV`** / **`DEF`** / **`NSP`** (ne se prononce pas) → dossier **`CLOTURE`** automatique (pas de vérification).
+>
+> Dans **tous** les cas le PV est **transmis à la PRMP** (`PV_SIGNE`) et le **Contrôleur vérificateur** de la
+> localité est notifié : `PV_A_VERIFIER` (FAVR, à vérifier) ou `PV_POUR_INFO` (FAV/DEF/NSP, lecture seule).
+> Le statut `PV_SIGNE` n'est donc **plus un état de repos** du dossier.
 
 > ⚠️ **Règle ajoutée (non issue de la brochure d'origine) — statut `DISPATCHE`.** La brochure ne nomme
 > aucun statut de dossier entre `PRET_DISPATCH` et `CLOTURE`. Pour matérialiser l'étape **Dispatch (3)**
@@ -48,6 +58,37 @@ Flux complet d'un dossier, avec navette du projet de PV :
 > à la **création d'un dispatch**, le dossier passe **`PRET_DISPATCH` → `DISPATCHE`** (transactionnel).
 > L'**examen (4)** exige désormais que le dossier soit **`DISPATCHE`** (et non plus `PRET_DISPATCH`).
 > Portée : étape Dispatch → Examen uniquement. Le frontend doit s'aligner sur ce statut.
+
+> ⚠️ **Règle ajoutée — statuts `EXAMINE` et `PV_SIGNE`.** Même principe que `DISPATCHE`, pour matérialiser
+> **Examen (4)** et **PV signé (6)** : à la **création de l'examen**, le dossier passe **`DISPATCHE` →
+> `EXAMINE`** (il **quitte « à examiner »**) ; à la **signature du PV**, il passe **`EXAMINE` → `PV_SIGNE`**.
+> Cycle : `… DISPATCHE → EXAMINE → PV_SIGNE → CLOTURE`. Transitions transactionnelles et idempotentes.
+>
+> - **Verrou de l'examen** : l'examen et ses détails (`t_examen_detail`) sont **modifiables** tant que le
+>   dossier est `EXAMINE` (navette ouverte) ; toute modification est **refusée (409)** dès `PV_SIGNE`
+>   (l'examen devient **définitif** à la signature).
+> - **Attributaire** : un **Membre titulaire** n'examine que les dossiers **qui lui sont attribués**
+>   (`Dispatch.imCtrlMembre`) — sinon **403** ; un CC/Président instruisant **par délégation** (§3.5)
+>   reste autorisé.
+> - **Deux listes exclusives** (scopées au Membre attributaire) : « **à examiner** » = ses dossiers
+>   `DISPATCHE` ; « **examinés** » = ses dossiers `EXAMINE` / `PV_SIGNE` / `CLOTURE` (historique, paginé).
+
+### Notifications (transversal au circuit)
+
+À **chaque transmission**, le système émet une **notification** au(x) responsable(s) de l'étape suivante,
+**dans la même transaction** que l'événement :
+
+- **soumission** du dossier → Secrétaire / CC de la localité (`DOSSIER_SOUMIS`) ;
+- **dossier complet** → Président + CC de la localité (`PRET_DISPATCH`) ;
+- **dispatch** → **Membre assigné** (`EXAMEN_A_FAIRE`) ;
+- **projet de PV soumis** → CC + Président de la localité (`PV_A_VALIDER`) ;
+- **navette retour (commentaire) / acceptation** → **Membre auteur** (`PV_A_RECTIFIER` / `PV_ACCEPTE`) ;
+- **PV signé** → PRMP (`PV_SIGNE`) ; **clôture éligible** → Chargé de publication (`CLOTURE_ELIGIBLE`) ;
+- **message** de la messagerie interne → son destinataire (`NOUVEAU_MESSAGE`).
+
+Le destinataire est déterminé par **rôle + localité** du dossier (ou par **assignation explicite**, ex. le
+Membre du dispatch). Chaque utilisateur ne consulte que **ses** notifications (`/api/notifications/mes`,
+comptage des non-lues, marquer lu) ; la **liste globale** est réservée à l'**Administrateur** (supervision).
 
 ---
 
@@ -97,8 +138,12 @@ Acteur externe qui soumet ses PPM et marchés à la CNM. Suit l'avancement jusqu
 
 - Création et mise à jour du PPM [Écriture]
   - En-tête, exercice, signataire, marchés, lots, tranches, SOA bénéficiaires.
-- Détermination automatique du mode [Auto]
-  - Suggestion via t_regle_passation selon situation, montant, nature et localité.
+- Choix du mode parmi l'ensemble autorisé [Action]
+  - ⚠️ **Règle ajoutée** : pour (situation, nature, montant, localité), `t_regle_passation` calcule l'**ensemble des modes autorisés** (libellés `tr_mode`) avec un **recommandé** (règle la plus prioritaire). La PRMP **choisit** dans cet ensemble ; le serveur **valide** (mode hors ensemble → **409**) ; aucun choix → **recommandé** appliqué ; aucune règle → saisie manuelle (alerte `MODE_NON_DETERMINE`). Aperçu sans enregistrement : `POST /api/regle-passations/suggestion-mode` (renvoie l'ensemble + recommandé + `modeNonDetermine`).
+- Identifiants attribués par le serveur [Auto]
+  - ⚠️ **Règle ajoutée** : les PK dossier / PPM / marché sont **allouées par une séquence serveur** (`seq_dossier`/`seq_ppm`/`seq_marche`) ; tout id envoyé par le client est **ignoré** (plus de « identifiant en doublon »). Le formulaire ne saisit plus d'id. **Dette documentée** : séquence applicative (et non `IDENTITY`) pour éviter une refonte massive des fixtures de test sur ces 3 tables centrales ; bascule `IDENTITY` possible plus tard.
+- Suppression d'un marché / d'un PPM [Écriture]
+  - ⚠️ **Règle ajoutée** : possible **uniquement** si le **dossier rattaché est en BROUILLON** et **propriété** de la PRMP (sinon **403** « Vous n'êtes pas le propriétaire… » / **409** « Opération impossible : le dossier n'est pas un brouillon »). Supprimer un **marché** efface **en cascade** ses **dates prévisionnelles** (`t_marche_prevision`) ; supprimer un **PPM** efface **en cascade** ses **marchés** et leurs prévisions — le tout dans la **même transaction** (la cascade ne touche **que** les enfants de la cible). *(Côté SGBD, un filet de sécurité distingue désormais les violations FK / doublon / valeur obligatoire.)*
 
 **Module 03 — Soumission & retours**
 
@@ -120,10 +165,11 @@ Acteur externe qui soumet ses PPM et marchés à la CNM. Suit l'avancement jusqu
 
 - Demande de retrait motivée [Action]
   - Demande de retrait d'un dossier déjà enregistré. Motif obligatoire (MOTIF_RETRAIT NOT NULL dans t_demande_retrait).
+  - ⚠️ **Règle ajoutée** : la PRMP demandeuse est **l'utilisateur authentifié** (JWT), jamais le corps ; l'`ID_DEMANDE_RETRAIT` est **auto-généré**. Gardes (sinon 403/409) : **être propriétaire** du dossier, dossier **`SOUMIS` ou `PRET_DISPATCH`**, et **pas de demande déjà `EN_ATTENTE`** pour ce dossier. Liste déroulante des dossiers retirables : `GET /api/dossiers/retirables`.
 - Suivi de la demande [Lecture]
-  - Consultation du statut : EN_ATTENTE / APPROUVE / REJETE.
-- Notification décision du CC [Lecture]
-  - Reçoit RETRAIT_APPROUVE ou RETRAIT_REJETE avec l'observation du CC.
+  - Consultation du statut : **EN_ATTENTE / ACCEPTEE / REFUSEE** (⚠️ règle ajoutée). Ses demandes : `GET /api/demande-retraits`.
+- Notification décision [Lecture]
+  - Reçoit **RETRAIT_ACCEPTE** ou **RETRAIT_REFUSE**. ⚠️ **Règle ajoutée** : si **accepté**, le dossier **repasse en `BROUILLON`** (et non `RETIRE`) ; si refusé, dossier inchangé (motif de refus optionnel).
 
 **Module 04 — Calendrier & notifications**
 
@@ -183,7 +229,7 @@ Sommet de la hiérarchie CNM. Supervise tous les Chefs de commission. Voit tous 
 - Acceptation du projet de PV [Action]
   - Valide le projet corrigé : passage en PROJET_ACCEPTE + insertion dans t_pv_navette (SENS = ACCEPTATION) + notification PROJET_PV_ACCEPTE vers le Membre. Le PV devient signable.
 - Co-signature définitive du PV [Écriture]
-  - Une fois le projet accepté, renseigne DATE_SIGNATURE_PRESIDENT dans t_pv_examen. Facultatif si c'est le CC qui co-signe — contrainte t_pv_examen_cosignataire_check garantit qu'au moins l'un des deux signe.
+  - Une fois le projet accepté, un Président réel co-signe en renseignant DATE_SIGNATURE_PRESIDENT **et IM_CTRL_PRESIDENT (= son matricule)** dans t_pv_examen. Le service authentifie le signataire : profil PRESIDENT requis (403 sinon), et le co-signataire doit être **différent du Membre signataire** (auto-co-signature interdite). Facultatif si c'est le CC qui co-signe — contrainte t_pv_examen_cosignataire_check garantit qu'au moins l'un des deux signe.
 - Suivi de tous les dossiers [Lecture]
   - Vue d'ensemble de tous les dossiers, toutes localités et toutes commissions.
 
@@ -269,16 +315,18 @@ Subordonné du Président. Rattaché à une localité définie — ne voit que l
 - Acceptation du projet de PV [Action]
   - Valide le projet : passage en PROJET_ACCEPTE + insertion dans t_pv_navette (SENS = ACCEPTATION) + notification PROJET_PV_ACCEPTE vers le Membre. Le PV devient signable.
 - Co-signature définitive du PV [Écriture]
-  - Une fois le projet accepté, renseigne DATE_SIGNATURE_CC dans t_pv_examen. Facultatif si c'est le Président qui co-signe — contrainte cosignataire garantit qu'au moins l'un des deux signe.
+  - Une fois le projet accepté, le CC **de la localité du dossier** co-signe en renseignant DATE_SIGNATURE_CC **et IM_CTRL_CC (= son matricule)**. Le service authentifie le signataire : profil CHEF_COMMISSION **et localité du dossier** requis (403 sinon), co-signataire **différent du Membre** (auto-co-signature interdite). Facultatif si c'est le Président qui co-signe — contrainte cosignataire garantit qu'au moins l'un des deux signe.
 
 **Module 11 — Gestion des retraits PRMP**
 
 - Notification demande de retrait [Lecture]
-  - Reçoit DEMANDE_RETRAIT dès qu'une PRMP de sa localité soumet une demande motivée.
+  - Reçoit DEMANDE_RETRAIT_A_VALIDER dès qu'une PRMP de sa localité soumet une demande motivée (le **Président** est également notifié). File à valider : `GET /api/demande-retraits/a-valider` (scopée à la localité du dossier) ; historique : `…/historique`.
 - Validation ou rejet du retrait [Action]
-  - Statue (APPROUVE / REJETE) avec observation. Si APPROUVE : t_dossier.STATUT = RETIRE.
+  - ⚠️ **Règle ajoutée** : décision via **`POST /{id}/accepter`** ou **`POST /{id}/refuser`** (le `PUT` générique est supprimé). **Seuls le CC de la localité du dossier ou le Président** peuvent statuer (contrôle rôle↔localité **dans le service**, sinon 403) ; le décideur réel (CC **ou** Président) est enregistré dans `IM_CTRL_CC` depuis le **JWT**. **Accepter → dossier `BROUILLON`** ; refuser → dossier inchangé + motif (optionnel). Demande déjà traitée → 409.
 - Notification décision à la PRMP [Auto]
-  - RETRAIT_APPROUVE ou RETRAIT_REJETE envoyé automatiquement à la PRMP.
+  - **RETRAIT_ACCEPTE** ou **RETRAIT_REFUSE** envoyé automatiquement à la PRMP.
+
+> ⚠️ **Statut `RETIRE` (t_dossier) — non produit.** Depuis cette règle, un retrait accepté ramène le dossier en `BROUILLON` ; **aucune transition ne pose plus `RETIRE`** (valeur conservée dans l'enum, référencée défensivement par la réception, mais état mort).
 
 **Module 07 — Statistiques non-conformité**
 
@@ -294,7 +342,7 @@ Subordonné du Président. Rattaché à une localité définie — ne voit que l
 **Module 04 — Messagerie**
 
 - Notifications reçues [Lecture]
-  - PRET_DISPATCH, DISPATCH_CC, DEMANDE_RETRAIT et autres alertes de sa localité.
+  - PRET_DISPATCH, DISPATCH_CC, DEMANDE_RETRAIT_A_VALIDER et autres alertes de sa localité.
 - Messagerie interne [Action]
   - Échange avec le Président, ses Membres et ses Vérificateurs.
 
@@ -372,12 +420,14 @@ Subordonné direct du Chef de commission. Voit tous les dossiers de sa localité
   - Renseigne chaque point de tr_points_ctrl : conforme / non conforme + observation (t_examen_detail).
 - Rédaction du projet de PV [Écriture]
   - Le Membre rédige le projet de PV dans t_pv_examen (STATUT_PV = BROUILLON) : synthèse des observations non conformes de t_examen_detail.OBS_SI_NON_CONFORME, avis ID_AVIS. Le projet est modifiable librement tant qu'il n'a pas été soumis.
+  - ⚠️ **Règle ajoutée** : l'attributaire `IM_CTRL_MEMBRE` du PV est **dérivé de l'attribution** (Examen→Dispatch.imCtrlMembre), **jamais saisi** dans le corps — c'est la source de vérité de la signature Membre. Un examen sans attributaire → création/MAJ refusée (409).
 - Soumission du projet au Président/CC [Action]
   - Passage en PROJET_SOUMIS → insertion dans t_pv_navette (SENS = SOUMISSION, NUM_NAVETTE incrémenté) → notification PROJET_PV_SOUMIS envoyée au Président/CC destinataire.
 - Rectification sur retour [Écriture]
   - Si le Président/CC retourne le projet (EN_RECTIFICATION, SENS = RETOUR_RECTIF dans t_pv_navette), le Membre corrige la synthèse et/ou l'avis puis resoumet. Le cycle peut se répéter — NB_NAVETTES incrémenté à chaque retour.
 - Signature définitive du PV [Écriture]
-  - Quand le projet est accepté (PROJET_ACCEPTE), le Membre signe en renseignant DATE_SIGNATURE_MEMBRE dans t_pv_examen. Le PV passe à SIGNE quand DATE_SIGNATURE_MEMBRE ET (DATE_SIGNATURE_PRESIDENT ou DATE_SIGNATURE_CC) sont renseignées.
+  - Quand le projet est accepté (PROJET_ACCEPTE), **le Membre attributaire du PV** (IM_CTRL_MEMBRE) signe en renseignant DATE_SIGNATURE_MEMBRE dans t_pv_examen. Cette signature **n'est pas déléguable** : le service refuse (403) tout autre signataire que le Membre attributaire. Le PV passe à SIGNE quand DATE_SIGNATURE_MEMBRE ET (DATE_SIGNATURE_PRESIDENT ou DATE_SIGNATURE_CC) sont renseignées — le co-signataire devant être **une personne différente** du Membre (auto-co-signature interdite).
+  - **Identité du signataire** : pour chaque signature, le service enregistre l'identité de l'**utilisateur authentifié** (CurrentUser, principal JWT) dans IM_CTRL_MEMBRE / IM_CTRL_PRESIDENT / IM_CTRL_CC ; le champ `imActeur` du corps de requête n'est **pas** utilisé pour l'identité (non falsifiable).
 
 **Module 04 — Messagerie**
 
@@ -416,9 +466,10 @@ Subordonné direct du Membre. Travaille sur la base du PV signé (STATUT_PV = SI
 - Lecture du PV signé [Lecture]
   - Accès au PV définitif (STATUT_PV = SIGNE) avant vérification : référence, avis, SYNTHESE_OBSERVATIONS issue de la navette acceptée — t_verification.ID_PV requis. Peut aussi consulter l'historique de la navette (t_pv_navette) pour comprendre les rectifications apportées.
 - Vérification de levée des observations [Action]
-  - OBS_LEVEES = true → clôture automatique / false → nouveau passage (NUM_PASSAGE + 1).
+  - OBS_LEVEES = true → clôture automatique / false → le dossier **reste `EN_VERIFICATION`** (nouveau passage).
+  - ⚠️ **Règle ajoutée** : la vérification est **itérative** sur le même dossier et n'est possible que si **PV `SIGNE` + avis `FAVR` + dossier non clos** (sinon 403/409). **Seul le profil Contrôleur vérificateur** peut vérifier — **pas de délégation** CC/Président pour cet acte. L'**identité** enregistrée (`IM_CTRL_VERIF`) et la **date** proviennent du **JWT / serveur**, jamais du corps de requête. L'`ID_VERIFICATION` est **auto-généré** (IDENTITY).
 - Déclenchement de la clôture [Auto]
-  - Statut CLOTURE propagé automatiquement sur t_dossier quand OBS_LEVEES = true.
+  - ⚠️ **Règle ajoutée** : `OBS_LEVEES = true` clôture le dossier **uniquement s'il est `EN_VERIFICATION`** (`declencherCloture` conditionnelle — fin de la clôture inconditionnelle). Notifie `CLOTURE_ELIGIBLE` au Chargé de publication.
 
 **Module 04 — Messagerie**
 
@@ -431,6 +482,7 @@ Subordonné direct du Membre. Travaille sur la base du PV signé (STATUT_PV = SI
 
 - Pipeline de ses dossiers [Lecture]
   - Vue des dossiers en attente de vérification (PV signé) et des dossiers récemment clôturés ou retournés.
+  - ⚠️ **Règle ajoutée** — files scopées localité : **« à vérifier »** (`GET /api/dossiers/a-verifier` — dossiers `EN_VERIFICATION`) et **« vérifiés / clôturés »** (`GET /api/dossiers/verifies`, paginé, lecture seule — PV signés au statut `CLOTURE`, **y compris les auto-clôturés** FAV/DEF/NSP).
 
 **Restrictions / contraintes :**
 

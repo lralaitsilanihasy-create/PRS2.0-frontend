@@ -1,13 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, forkJoin } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Compte, Dossier, Marche, Nature, Situation, TypeDossier } from '../../models';
+import { Compte, Dossier, Marche, Nature, SaisieMarcheLigne, Situation, TypeDossier } from '../../models';
 import {
   CompteService,
   DossierService,
@@ -69,19 +69,8 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
 
         @case ('saisiePpm') {
           <form class="cnm-card sd__form cnm-form" [formGroup]="ppmForm" (ngSubmit)="creerPpm()" novalidate>
+            <h2 class="sd__sub">En-tête du PPM</h2>
             <div class="cnm-form-grid">
-              <label class="cnm-field">
-                <span class="cnm-field__label">Identifiant dossier (PK) *</span>
-                <input class="cnm-input" type="number" formControlName="idDossier" />
-                @if (req(ppmForm, 'idDossier')) { <span class="cnm-field__hint">Obligatoire.</span> }
-                @if (err('idDossier')) { <span class="cnm-field__hint">{{ err('idDossier') }}</span> }
-              </label>
-              <label class="cnm-field">
-                <span class="cnm-field__label">Identifiant PPM (PK) *</span>
-                <input class="cnm-input" type="number" formControlName="idPpm" />
-                @if (req(ppmForm, 'idPpm')) { <span class="cnm-field__hint">Obligatoire.</span> }
-                @if (err('idPpm')) { <span class="cnm-field__hint">{{ err('idPpm') }}</span> }
-              </label>
               <label class="cnm-field">
                 <span class="cnm-field__label">Entité contractante *</span>
                 <select class="cnm-select" formControlName="idEntiteContract">
@@ -120,9 +109,58 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                 @if (req(ppmForm, 'dateSignature')) { <span class="cnm-field__hint">Obligatoire.</span> }
               </label>
             </div>
-            <p class="sd__hint cnm-muted">
-              Les lignes de marché s'ajoutent à l'étape suivante (le mode de passation y est calculé automatiquement).
-            </p>
+
+            <div class="sd__lignes-head">
+              <h2 class="sd__sub">Marchés</h2>
+              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ajouterMarche()">+ Ajouter un marché</button>
+            </div>
+            @if (!marcheControls().length) {
+              <p class="cnm-muted">Aucun marché. Vous pouvez créer le brouillon sans marché et en ajouter plus tard.</p>
+            }
+            @for (g of marcheControls(); track g.get('uid')!.value) {
+              <div class="sd__ligne cnm-form" [formGroup]="g">
+                <div class="cnm-form-grid">
+                  <label class="cnm-field"><span class="cnm-field__label">Désignation</span>
+                    <input class="cnm-input" type="text" formControlName="designationMarche" /></label>
+                  <label class="cnm-field"><span class="cnm-field__label">Montant estimé</span>
+                    <input class="cnm-input" type="number" formControlName="montEstim" /></label>
+                  <label class="cnm-field"><span class="cnm-field__label">Compte</span>
+                    <select class="cnm-select" formControlName="numCompte">
+                      <option [ngValue]="null">— Sélectionner —</option>
+                      @for (c of comptes(); track c.numCompte) { <option [ngValue]="c.numCompte">{{ c.libelle || c.numCompte }}</option> }
+                    </select></label>
+                  <label class="cnm-field"><span class="cnm-field__label">Situation</span>
+                    <select class="cnm-select" formControlName="idSituation">
+                      <option [ngValue]="null">— Sélectionner —</option>
+                      @for (s of situations(); track s.idSituation) { <option [ngValue]="s.idSituation">{{ s.libelle || '#' + s.idSituation }}</option> }
+                    </select></label>
+                  <label class="cnm-field"><span class="cnm-field__label">Nature</span>
+                    <select class="cnm-select" formControlName="idNature">
+                      <option [ngValue]="null">— Sélectionner —</option>
+                      @for (n of natures(); track n.idNature) { <option [ngValue]="n.idNature">{{ n.libelle || '#' + n.idNature }}</option> }
+                    </select></label>
+                  <label class="cnm-field"><span class="cnm-field__label">Financement</span>
+                    <input class="cnm-input" type="text" formControlName="financement" /></label>
+                  <label class="cnm-field"><span class="cnm-field__label">Statut</span>
+                    <input class="cnm-input" type="text" formControlName="statut" /></label>
+                </div>
+                <div class="sd__ligne-foot">
+                  <span class="sd__ligne-mode">
+                    <span class="cnm-field__label">Mode (auto) :</span>
+                    @switch (modeLigne(g).state) {
+                      @case ('loading') { <span class="cnm-muted">Détermination…</span> }
+                      @case ('found') { <span class="cnm-badge cnm-badge--info">{{ modeLigne(g).label }}</span> }
+                      @case ('none') { <span class="cnm-badge cnm-badge--warning">À déterminer</span> }
+                      @default { <span class="cnm-muted">Renseignez situation, nature et montant.</span> }
+                    }
+                  </span>
+                  <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="retirerMarche($index)">Retirer</button>
+                </div>
+              </div>
+            }
+
+            <p class="sd__hint cnm-muted">Les dates prévisionnelles s'ajoutent ensuite, par marché, dans « Mes PPM &amp; marchés ».</p>
+
             <footer class="sd__foot">
               <button type="button" class="cnm-btn cnm-btn--ghost" (click)="retourChoix()">Retour</button>
               <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submitting()">
@@ -135,12 +173,6 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
         @case ('saisieDossier') {
           <form class="cnm-card sd__form cnm-form" [formGroup]="dossierForm" (ngSubmit)="creerDossier()" novalidate>
             <div class="cnm-form-grid">
-              <label class="cnm-field">
-                <span class="cnm-field__label">Identifiant dossier (PK) *</span>
-                <input class="cnm-input" type="number" formControlName="idDossier" />
-                @if (req(dossierForm, 'idDossier')) { <span class="cnm-field__hint">Obligatoire.</span> }
-                @if (err('idDossier')) { <span class="cnm-field__hint">{{ err('idDossier') }}</span> }
-              </label>
               <label class="cnm-field">
                 <span class="cnm-field__label">Type de dossier *</span>
                 <select class="cnm-select" formControlName="idTypeDossier">
@@ -338,6 +370,9 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
     .sd__row-actions { display: flex; gap: var(--cnm-space-1); justify-content: flex-end; }
     .sd__ligne-form { margin-top: var(--cnm-space-3); padding: var(--cnm-space-3); background: var(--cnm-surface-2); border: 1px solid var(--cnm-border); border-radius: var(--cnm-radius-sm); display: flex; flex-direction: column; gap: var(--cnm-space-2); }
     .sd__mode { display: flex; flex-direction: column; gap: var(--cnm-space-1); }
+    .sd__ligne { padding: var(--cnm-space-3); background: var(--cnm-surface-2); border: 1px solid var(--cnm-border); border-radius: var(--cnm-radius-sm); display: flex; flex-direction: column; gap: var(--cnm-space-2); margin-bottom: var(--cnm-space-2); }
+    .sd__ligne-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--cnm-space-2); }
+    .sd__ligne-mode { display: inline-flex; align-items: center; gap: var(--cnm-space-2); }
   `,
 })
 export class SoumettreDossier {
@@ -358,6 +393,10 @@ export class SoumettreDossier {
   private readonly compteService = inject(CompteService);
   private readonly reglePassation = inject(ReglePassationService);
   private readonly lookups = inject(ReferenceLookupService);
+  private readonly destroyRef = inject(DestroyRef);
+  private uidCounter = 0;
+  /** Mode suggéré par ligne de marché (clé = uid stable de la ligne). */
+  readonly modes = signal<Record<number, { state: 'idle' | 'loading' | 'found' | 'none'; label: string }>>({});
 
   readonly phase = signal<Phase>('choix');
   readonly submitting = signal(false);
@@ -397,17 +436,15 @@ export class SoumettreDossier {
   });
 
   readonly ppmForm = this.fb.nonNullable.group({
-    idDossier: [null as number | null, Validators.required],
     idEntiteContract: [null as number | null, Validators.required],
-    idPpm: [null as number | null, Validators.required],
     exercice: [new Date().getFullYear(), Validators.required],
     reference: ['', Validators.required],
     signataire: ['', Validators.required],
     dateSignature: ['', Validators.required],
+    marches: this.fb.array([] as FormGroup[]),
   });
 
   readonly dossierForm = this.fb.nonNullable.group({
-    idDossier: [null as number | null, Validators.required],
     idTypeDossier: [null as string | null, Validators.required],
     idEntiteContract: [null as number | null, Validators.required],
   });
@@ -429,7 +466,11 @@ export class SoumettreDossier {
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
     this.chargerEntites();
     // La localité lecture seule suit l'entité sélectionnée (PPM ou DAO/MAOO).
-    this.ppmForm.controls.idEntiteContract.valueChanges.subscribe((v) => this.selectedEntiteId.set(v));
+    this.ppmForm.controls.idEntiteContract.valueChanges.subscribe((v) => {
+      this.selectedEntiteId.set(v);
+      // La localité (dérivée de l'entité) change → recalcul du mode de chaque ligne.
+      this.marcheControls().forEach((g) => this.determinerModeLigne(g));
+    });
     this.dossierForm.controls.idEntiteContract.valueChanges.subscribe((v) => this.selectedEntiteId.set(v));
     // Aperçu en direct du mode de passation à chaque changement de ligne de marché.
     this.marcheForm.valueChanges
@@ -512,7 +553,85 @@ export class SoumettreDossier {
     this.phase.set('brouillon');
   }
 
-  // — Création des brouillons —
+  // — Lignes de marché du formulaire de création (FormArray) —
+  get marchesArray(): FormArray {
+    return this.ppmForm.get('marches') as FormArray;
+  }
+  marcheControls(): FormGroup[] {
+    return this.marchesArray.controls as FormGroup[];
+  }
+
+  /** Construit une ligne de marché (uid stable) ; aperçu du mode recalculé à chaque modification. */
+  private ligneMarche(): FormGroup {
+    const uid = ++this.uidCounter;
+    const g = this.fb.group({
+      uid: [uid],
+      designationMarche: [''],
+      montEstim: [null as number | null],
+      numCompte: [null as string | null],
+      financement: [''],
+      statut: [''],
+      idSituation: [null as number | null],
+      idNature: [null as number | null],
+    });
+    g.valueChanges
+      .pipe(debounceTime(350), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.determinerModeLigne(g));
+    return g;
+  }
+  ajouterMarche(): void {
+    this.ensureMarcheRefs();
+    this.marchesArray.push(this.ligneMarche());
+  }
+  retirerMarche(i: number): void {
+    const uid = this.marcheControls()[i].get('uid')!.value as number;
+    this.marchesArray.removeAt(i);
+    this.modes.update((m) => {
+      const n = { ...m };
+      delete n[uid];
+      return n;
+    });
+  }
+  modeLigne(g: FormGroup): { state: 'idle' | 'loading' | 'found' | 'none'; label: string } {
+    return this.modes()[g.get('uid')!.value as number] ?? { state: 'idle', label: '' };
+  }
+  private setMode(uid: number, state: 'idle' | 'loading' | 'found' | 'none', label: string): void {
+    this.modes.update((m) => ({ ...m, [uid]: { state, label } }));
+  }
+  /** Localité (code) dérivée de l'entité d'en-tête sélectionnée. */
+  private selectedLocaliteCode(): string | null {
+    return this.entites().find((e) => e.idEntiteContract === this.selectedEntiteId())?.idLocalite ?? null;
+  }
+  /** Aperçu du mode pour une ligne (suggestion-mode ; non contraignant, le backend tranche). */
+  private determinerModeLigne(g: FormGroup): void {
+    const uid = g.get('uid')!.value as number;
+    const v = g.getRawValue();
+    const idLocalite = this.selectedLocaliteCode();
+    if (v.idSituation == null || v.idNature == null || v.montEstim == null || !idLocalite) {
+      this.setMode(uid, 'idle', '');
+      return;
+    }
+    this.setMode(uid, 'loading', '');
+    this.reglePassation
+      .suggestionMode({ idSituation: v.idSituation, idNature: v.idNature, montant: v.montEstim, idLocalite })
+      .subscribe({
+        next: (res) => this.setMode(uid, 'found', this.modeMap().get(String(res.idMode)) ?? `#${res.idMode}`),
+        error: () => this.setMode(uid, 'none', ''),
+      });
+  }
+  private ligneNonVide(l: Record<string, unknown>): boolean {
+    return !!(
+      l['designationMarche'] ||
+      l['montEstim'] != null ||
+      l['numCompte'] ||
+      l['financement'] ||
+      l['statut'] ||
+      l['idSituation'] != null ||
+      l['idNature'] != null
+    );
+  }
+
+  // — Création du brouillon PPM (en-tête + marchés en un seul POST ; PK posées serveur) —
   creerPpm(): void {
     if (this.ppmForm.invalid) {
       this.ppmForm.markAllAsTouched();
@@ -521,20 +640,32 @@ export class SoumettreDossier {
     this.formError.set(null);
     this.submitting.set(true);
     const v = this.ppmForm.getRawValue();
-    this.createdPpmId = v.idPpm;
+    const marches: SaisieMarcheLigne[] = (v.marches as Record<string, unknown>[])
+      .filter((l) => this.ligneNonVide(l))
+      .map((l) => ({
+        designationMarche: (l['designationMarche'] as string) || undefined,
+        montEstim: (l['montEstim'] as number) ?? undefined,
+        numCompte: (l['numCompte'] as string) ?? undefined,
+        financement: (l['financement'] as string) || undefined,
+        statut: (l['statut'] as string) || undefined,
+        idSituation: (l['idSituation'] as number) ?? undefined,
+        idNature: (l['idNature'] as number) ?? undefined,
+      }));
     this.saisie
       .ppm({
-        idDossier: v.idDossier as number,
         idEntiteContract: v.idEntiteContract as number,
-        idPpm: v.idPpm as number,
         exercice: v.exercice,
         reference: v.reference,
         signataire: v.signataire,
         dateSignature: v.dateSignature,
-        marches: [],
+        marches,
       })
       .subscribe({
-        next: (d) => this.entrerBrouillon(d),
+        next: (d) => {
+          this.submitting.set(false);
+          this.toast.success(`Brouillon créé (dossier #${d.idDossier}).`);
+          this.router.navigate(['/prmp/ppm-marches']);
+        },
         error: (e: ApiError) => this.echec(e),
       });
   }
@@ -550,7 +681,6 @@ export class SoumettreDossier {
     this.createdPpmId = null;
     this.saisie
       .dossier({
-        idDossier: v.idDossier as number,
         idTypeDossier: v.idTypeDossier as string,
         idEntiteContract: v.idEntiteContract as number,
       })

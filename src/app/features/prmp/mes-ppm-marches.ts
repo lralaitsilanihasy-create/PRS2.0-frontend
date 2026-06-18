@@ -58,13 +58,20 @@ import { StatutBadge } from '../../shared/circuit';
 
             @if (isOpen(ppm.idPpm)) {
               <div class="mpm__detail cnm-marches">
-                @if (ppmEditable(ppm)) {
-                  <div class="mpm__toolbar">
+                <div class="mpm__toolbar">
+                  @if (ppmEditable(ppm)) {
                     <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" (click)="ouvrirCreation(ppm)">
                       + Nouveau marché
                     </button>
-                  </div>
-                }
+                    <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="demanderSuppressionPpm(ppm)">
+                      Supprimer le PPM
+                    </button>
+                  } @else {
+                    <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" disabled [title]="RAISON_BLOCAGE">
+                      Supprimer le PPM
+                    </button>
+                  }
+                </div>
                 @if (marchesOf(ppm.idPpm).length === 0) {
                   <p class="mpm__empty">Aucun marché rattaché à ce PPM.</p>
                 } @else {
@@ -100,16 +107,9 @@ import { StatutBadge } from '../../shared/circuit';
                             <div class="mpm__row-actions">
                               @if (estEditable(m)) {
                                 <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ouvrirEditionLigne(m)">Modifier</button>
-                                <button
-                                  type="button"
-                                  class="cnm-btn cnm-btn--danger cnm-btn--sm"
-                                  [disabled]="submittingDelete() === m.idDetail"
-                                  (click)="supprimerMarche(m)"
-                                >
-                                  Supprimer
-                                </button>
+                                <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="demanderSuppressionMarche(m)">Supprimer</button>
                               } @else {
-                                <span class="cnm-muted">—</span>
+                                <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" disabled [title]="RAISON_BLOCAGE">Supprimer</button>
                               }
                             </div>
                           </td>
@@ -327,6 +327,27 @@ import { StatutBadge } from '../../shared/circuit';
         </form>
       </div>
     }
+
+    @if (confirmState(); as c) {
+      <div class="mpm-modal__overlay" (click)="annulerSuppression()">
+        <div class="mpm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+          <header class="mpm-modal__head">
+            <h2 class="mpm-modal__title">{{ c.kind === 'ppm' ? 'Supprimer le PPM' : 'Supprimer le marché' }}</h2>
+            <button type="button" class="mpm-modal__close" aria-label="Fermer" (click)="annulerSuppression()">&times;</button>
+          </header>
+          <div class="mpm-modal__body">
+            <p>{{ messageSuppression(c) }}</p>
+            <p class="cnm-muted">Action irréversible.</p>
+          </div>
+          <footer class="mpm-modal__foot">
+            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerSuppression()">Annuler</button>
+            <button type="button" class="cnm-btn cnm-btn--danger" [disabled]="confirmBusy()" (click)="confirmerSuppression()">
+              {{ confirmBusy() ? 'Suppression…' : 'Supprimer définitivement' }}
+            </button>
+          </footer>
+        </div>
+      </div>
+    }
   `,
   styles: `
     .mpm__header { margin-bottom: var(--cnm-space-4); }
@@ -469,8 +490,14 @@ export class MesPpmMarches {
   /** Marché en cours d'édition de ligne (null = création). */
   readonly editingMarche = signal<Marche | null>(null);
   private readonly createOriginalDates = signal<MarchePrevision[]>([]);
-  /** idDetail du marché en cours de suppression (pour désactiver le bouton). */
-  readonly submittingDelete = signal<number | null>(null);
+  /** Confirmation de suppression en cours (marché ou PPM) ; null = fermée. */
+  readonly confirmState = signal<{ kind: 'marche' | 'ppm'; id: number; label: string; count: number | null } | null>(
+    null,
+  );
+  readonly confirmBusy = signal(false);
+  /** Raison affichée en tooltip quand la suppression est désactivée. */
+  readonly RAISON_BLOCAGE =
+    'Suppression possible uniquement tant que le dossier est en brouillon (et que vous en êtes propriétaire).';
 
   /** Mode de passation déterminé automatiquement (aperçu via suggestion-mode). */
   readonly modeState = signal<'idle' | 'loading' | 'found' | 'none'>('idle');
@@ -727,19 +754,81 @@ export class MesPpmMarches {
     this.createPpm.set(ppm);
   }
 
-  /** Suppression d'une ligne de marché (après confirmation). */
-  supprimerMarche(m: Marche): void {
-    if (!confirm(`Supprimer le marché #${m.idDetail} ? Cette action est irréversible.`)) {
+  // --- Suppression marché / PPM (cascade backend ; confirmation explicite) ---
+
+  /** Ouvre la confirmation de suppression d'un marché et charge le nombre de dates prévisionnelles. */
+  demanderSuppressionMarche(m: Marche): void {
+    this.confirmState.set({
+      kind: 'marche',
+      id: m.idDetail,
+      label: m.designationMarche || `marché #${m.idDetail}`,
+      count: null,
+    });
+    this.previsionService.byMarche(m.idDetail).subscribe({
+      next: (rows) =>
+        this.confirmState.update((c) =>
+          c && c.kind === 'marche' && c.id === m.idDetail ? { ...c, count: rows.length } : c,
+        ),
+      error: () => {}, // le nombre reste « … » ; la suppression demeure possible
+    });
+  }
+
+  /** Ouvre la confirmation de suppression d'un PPM (impact = ses marchés + leurs dates). */
+  demanderSuppressionPpm(ppm: Ppm): void {
+    this.confirmState.set({
+      kind: 'ppm',
+      id: ppm.idPpm,
+      label: ppm.reference || `PPM #${ppm.idPpm}`,
+      count: this.marchesOf(ppm.idPpm).length,
+    });
+  }
+
+  /** Message d'impact affiché dans la confirmation. */
+  messageSuppression(c: { kind: 'marche' | 'ppm'; label: string; count: number | null }): string {
+    if (c.kind === 'ppm') {
+      return `Supprimer le PPM « ${c.label} » ? Cela supprimera aussi ses ${c.count ?? 0} marché(s) et toutes leurs dates prévisionnelles.`;
+    }
+    const n = c.count == null ? '…' : c.count;
+    return `Supprimer le marché « ${c.label} » et ses ${n} date(s) prévisionnelle(s) ?`;
+  }
+
+  annulerSuppression(): void {
+    if (!this.confirmBusy()) {
+      this.confirmState.set(null);
+    }
+  }
+
+  /** Exécute la suppression confirmée ; la cascade (prévisions, marchés) est gérée côté backend. */
+  confirmerSuppression(): void {
+    const c = this.confirmState();
+    if (!c) {
       return;
     }
-    this.submittingDelete.set(m.idDetail);
-    this.marcheService.delete(m.idDetail).subscribe({
+    this.confirmBusy.set(true);
+    const op = c.kind === 'ppm' ? this.ppmService.delete(c.id) : this.marcheService.delete(c.id);
+    op.subscribe({
       next: () => {
-        this.toast.success('Marché supprimé.');
-        this.submittingDelete.set(null);
-        this.marches.update((arr) => arr.filter((x) => x.idDetail !== m.idDetail));
+        if (c.kind === 'ppm') {
+          this.toast.success('PPM supprimé.');
+          this.ppms.update((arr) => arr.filter((p) => p.idPpm !== c.id));
+          this.marches.update((arr) => arr.filter((m) => m.idPpm !== c.id));
+          this.expanded.update((s) => {
+            const n = new Set(s);
+            n.delete(c.id);
+            return n;
+          });
+        } else {
+          this.toast.success('Marché supprimé.');
+          this.marches.update((arr) => arr.filter((m) => m.idDetail !== c.id));
+        }
+        this.confirmBusy.set(false);
+        this.confirmState.set(null);
       },
-      error: () => this.submittingDelete.set(null), // 403/409 → toast centralisé
+      error: () => {
+        // 403/409 → toast centralisé avec le message réel du backend.
+        this.confirmBusy.set(false);
+        this.confirmState.set(null);
+      },
     });
   }
 

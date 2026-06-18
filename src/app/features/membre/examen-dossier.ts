@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, switchMap } from 'rxjs';
+import { forkJoin, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
@@ -47,7 +47,7 @@ interface RowState {
     <section class="exam">
       <header class="exam__header">
         <span class="cnm-section-label">Domaine Membre</span>
-        <h1 class="exam__title">Examiner — {{ dossier()?.refeDossier || ('Dossier #' + idDossier) }}</h1>
+        <h1 class="exam__title">{{ mode() === 'edit' ? 'Modifier l\\'examen' : 'Examiner' }} — {{ dossier()?.refeDossier || ('Dossier #' + idDossier) }}</h1>
       </header>
 
       @if (loading()) {
@@ -101,8 +101,8 @@ interface RowState {
           <div class="cnm-card exam__panel">
             <div class="exam__panel-head">Consigner l'examen</div>
             <div class="exam__panel-body cnm-form">
-              @if (dossier()!.statut !== 'DISPATCHE') {
-                <p class="cnm-field__hint">Ce dossier n'est pas au statut DISPATCHE — l'examen sera refusé (409).</p>
+              @if (mode() === 'locked') {
+                <p class="cnm-field__hint">Examen verrouillé (PV signé / dossier clôturé) — lecture seule.</p>
               }
               @if (idDispatch() == null) {
                 <p class="cnm-field__hint">Aucun dispatch trouvé pour ce dossier : examen impossible.</p>
@@ -134,31 +134,37 @@ interface RowState {
                 </div>
               }
 
-              <h3 class="exam__sub">Avis & synthèse (projet de PV)</h3>
-              <label class="cnm-field">
-                <span class="cnm-field__label">Avis global *</span>
-                <select class="cnm-select" [value]="avis() ?? ''" (change)="avis.set($any($event.target).value || null)">
-                  <option value="">— Sélectionner —</option>
-                  @for (a of aviss(); track a.idAvis) { <option [value]="a.idAvis">{{ a.libelleAvis || a.idAvis }}</option> }
-                </select>
-              </label>
-              <label class="cnm-field">
-                <span class="cnm-field__label">Synthèse des observations</span>
-                <textarea class="cnm-textarea" rows="3" [value]="synthese()" (input)="synthese.set($any($event.target).value)"></textarea>
-              </label>
+              @if (mode() === 'create') {
+                <h3 class="exam__sub">Avis & synthèse (projet de PV)</h3>
+                <label class="cnm-field">
+                  <span class="cnm-field__label">Avis global *</span>
+                  <select class="cnm-select" [value]="avis() ?? ''" (change)="avis.set($any($event.target).value || null)">
+                    <option value="">— Sélectionner —</option>
+                    @for (a of aviss(); track a.idAvis) { <option [value]="a.idAvis">{{ a.libelleAvis || a.idAvis }}</option> }
+                  </select>
+                </label>
+                <label class="cnm-field">
+                  <span class="cnm-field__label">Synthèse des observations</span>
+                  <textarea class="cnm-textarea" rows="3" [value]="synthese()" (input)="synthese.set($any($event.target).value)"></textarea>
+                </label>
+              } @else if (mode() === 'edit') {
+                <p class="cnm-field__hint cnm-muted">L'avis et la synthèse se modifient dans « Projets de PV ».</p>
+              }
 
               @if (formError()) { <span class="cnm-field__hint">{{ formError() }}</span> }
-              <div class="exam__foot">
-                <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Annuler</button>
-                <button
-                  type="button"
-                  class="cnm-btn cnm-btn--primary"
-                  [disabled]="saving() || idDispatch() == null"
-                  (click)="enregistrer()"
-                >
-                  {{ saving() ? 'Enregistrement…' : "Enregistrer l'examen" }}
-                </button>
-              </div>
+              @if (mode() !== 'locked') {
+                <div class="exam__foot">
+                  <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Annuler</button>
+                  <button
+                    type="button"
+                    class="cnm-btn cnm-btn--primary"
+                    [disabled]="saving() || idDispatch() == null"
+                    (click)="enregistrer()"
+                  >
+                    {{ saving() ? 'Enregistrement…' : mode() === 'edit' ? "Modifier l'examen" : "Enregistrer l'examen" }}
+                  </button>
+                </div>
+              }
             </div>
           </div>
         </div>
@@ -226,6 +232,15 @@ export class ExamenDossier {
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   private readonly modeMap = signal<Map<string, string>>(new Map());
 
+  /** Mode déduit du statut : DISPATCHE → création ; EXAMINE → édition ; sinon verrouillé. */
+  readonly mode = computed<'create' | 'edit' | 'locked'>(() => {
+    const s = this.dossier()?.statut;
+    if (s === 'DISPATCHE') return 'create';
+    if (s === 'EXAMINE') return 'edit';
+    return 'locked';
+  });
+  private readonly existingExamenId = signal<number | null>(null);
+
   readonly estPpm = computed(() => this.dossier()?.idTypeDossier === 'PPM');
   readonly typeLabel = computed(() => {
     const id = this.dossier()?.idTypeDossier;
@@ -272,6 +287,22 @@ export class ExamenDossier {
         for (const p of pts) {
           map.set(p.idPointCtrl, { conforme: true, observation: '', obsSiNonConforme: '' });
         }
+        // Mode édition (dossier EXAMINE) : pré-remplir depuis l'examen existant + ses détails.
+        if (r.dossier.statut === 'EXAMINE') {
+          const idDispatch = this.idDispatch();
+          const ex = r.examens.find((e) => e.idDispatch != null && e.idDispatch === idDispatch);
+          if (ex) {
+            this.existingExamenId.set(ex.idExamen);
+            if (ex.dateExamen) this.dateExamen.set(ex.dateExamen);
+            for (const det of r.details.filter((d) => d.idExamen === ex.idExamen)) {
+              map.set(det.idPtControle, {
+                conforme: det.conforme,
+                observation: det.observation ?? '',
+                obsSiNonConforme: det.obsSiNonConforme ?? '',
+              });
+            }
+          }
+        }
         this.rows.set(map);
         this.loading.set(false);
       },
@@ -317,6 +348,14 @@ export class ExamenDossier {
     const dossier = this.dossier();
     const idDispatch = this.idDispatch();
     if (!dossier || idDispatch == null) return;
+
+    if (this.mode() === 'edit') {
+      this.formError.set(null);
+      this.saving.set(true);
+      this.modifier(idDispatch);
+      return;
+    }
+
     if (!this.avis()) {
       this.formError.set('Sélectionnez un avis global (requis pour le projet de PV).');
       return;
@@ -363,6 +402,53 @@ export class ExamenDossier {
           void this.router.navigate(['/membre/pv']);
         },
         error: (_e: ApiError) => this.saving.set(false), // 400/403/409 → toast centralisé
+      });
+  }
+
+  /** Mode édition (dossier EXAMINE) : met à jour l'examen + réconcilie les détails (sans recréer le PV). */
+  private modifier(idDispatch: number): void {
+    const idExamen = this.existingExamenId();
+    if (idExamen == null) {
+      this.saving.set(false);
+      return;
+    }
+    const im = this.auth.ref() ?? '';
+    const examen: Examen = { idExamen, idDispatch, imCtrlMembre: im || undefined, dateExamen: this.dateExamen() };
+    const detailByPoint = new Map(
+      this.details()
+        .filter((d) => d.idExamen === idExamen)
+        .map((d) => [d.idPtControle, d]),
+    );
+    let baseNew = this.nextId(this.details().map((d) => d.idDetailExamen));
+
+    this.examenService
+      .update(idExamen, examen)
+      .pipe(
+        switchMap(() => {
+          const calls = this.points().map((p) => {
+            const st = this.row(p.idPointCtrl);
+            const existing = detailByPoint.get(p.idPointCtrl);
+            const body: ExamenDetail = {
+              idDetailExamen: existing?.idDetailExamen ?? baseNew++,
+              idExamen,
+              idPtControle: p.idPointCtrl,
+              conforme: st.conforme,
+              observation: st.observation || undefined,
+              obsSiNonConforme: st.conforme ? undefined : st.obsSiNonConforme || undefined,
+            };
+            return existing
+              ? this.examenDetailService.update(existing.idDetailExamen, body)
+              : this.examenDetailService.create(body);
+          });
+          return calls.length ? forkJoin(calls) : of([]);
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.toast.success('Examen modifié.');
+          void this.router.navigate(['/membre/examines']);
+        },
+        error: (_e: ApiError) => this.saving.set(false), // 409 (verrouillé) / 403 → toast centralisé
       });
   }
 }

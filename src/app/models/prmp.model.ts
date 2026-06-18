@@ -99,9 +99,12 @@ export interface PrmpEntite {
  * sont réservés ADMIN ; côté PRMP on passe toujours par ces requêtes.
  */
 
-/** Ligne de marché d'une saisie PPM. Le service renseigne idDossier/idPpm/idMode (mode auto). */
+/**
+ * Ligne de marché d'une saisie PPM. Le service renseigne idDossier/idPpm/idMode (mode auto).
+ * `idDetail` : null à la création (PK serveur) ; renseigné seulement en édition (réconciliation).
+ */
 export interface SaisieMarcheLigne {
-  idDetail: number;
+  idDetail?: number;
   designationMarche?: string;
   numCompte?: string;
   montEstim?: number;
@@ -114,11 +117,10 @@ export interface SaisieMarcheLigne {
 /**
  * Corps de `POST /api/saisies/ppm` : crée dossier (type PPM, BROUILLON) + PPM + lignes.
  * `idLocalite` n'est pas un champ d'entrée : dérivé de l'ENTITÉ choisie côté serveur.
+ * `idDossier`/`idPpm` non envoyés : attribués par une séquence serveur.
  */
 export interface SaisiePpmRequest {
-  idDossier: number;
   idEntiteContract: number;
-  idPpm: number;
   exercice: number;
   signataire: string;
   dateSignature: string;
@@ -128,10 +130,9 @@ export interface SaisiePpmRequest {
 
 /**
  * Corps de `POST /api/saisies/dossier` : DAO/MAOO (sans PPM). `idTypeDossier` ≠ `PPM` (sinon 409).
- * `idLocalite` dérivé de l'ENTITÉ choisie côté serveur (non envoyé).
+ * `idLocalite` dérivé de l'ENTITÉ choisie côté serveur (non envoyé) ; `idDossier` attribué serveur.
  */
 export interface SaisieDossierRequest {
-  idDossier: number;
   idTypeDossier: string;
   idEntiteContract: number;
 }

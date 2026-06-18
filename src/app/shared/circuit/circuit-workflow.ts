@@ -43,9 +43,10 @@ export function etapeIndexForDossier(statut?: string): number {
     case 'EN_EXAMEN':
     case 'EXAMEN':
       return 2; // Examen
+    case 'EXAMINE':
     case 'PROJET_PV':
     case 'EN_PV':
-      return 3; // Projet PV
+      return 3; // Projet PV (examen fait)
     case 'PV_SIGNE':
     case 'SIGNE':
       return 4; // PV signé
@@ -77,6 +78,9 @@ export const DOSSIER_STATUT_LABELS: Record<string, string> = {
   PRET_DISPATCH: 'Prêt à dispatcher',
   DISPATCHE: 'Dispatché',
   EN_EXAMEN: 'En examen',
+  EXAMINE: 'Examiné',
+  PV_SIGNE: 'PV signé',
+  EN_VERIFICATION: 'En vérification',
   CLOTURE: 'Clôturé',
   RETIRE: 'Retiré',
 };
@@ -87,6 +91,19 @@ export function statutDossierLabel(statut?: string): string {
   return DOSSIER_STATUT_LABELS[statut] ?? statut;
 }
 
+/** Libellés lisibles des statuts de demande de retrait. */
+export const DEMANDE_RETRAIT_STATUT_LABELS: Record<string, string> = {
+  EN_ATTENTE: 'En attente',
+  ACCEPTEE: 'Acceptée',
+  REFUSEE: 'Refusée',
+};
+
+/** Libellé d'affichage d'un statut de demande de retrait (code brut si inconnu). */
+export function statutDemandeRetraitLabel(statut?: string): string {
+  if (!statut) return '';
+  return DEMANDE_RETRAIT_STATUT_LABELS[statut] ?? statut;
+}
+
 /** Niveau de gravité visuelle d'un statut, pour le badge. */
 export type Severity = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
@@ -95,13 +112,16 @@ export function statutSeverity(statut: string): Severity {
   switch (statut) {
     case 'CLOTURE':
     case 'SIGNE':
+    case 'PV_SIGNE':
     case 'PROJET_ACCEPTE':
     case 'APPROUVE':
+    case 'ACCEPTEE':
     case 'PUBLIE':
     case 'FAV':
       return 'success';
     case 'RETIRE':
     case 'REJETE':
+    case 'REFUSEE':
     case 'DEFAVORABLE':
       return 'danger';
     case 'EN_RECTIFICATION':
@@ -111,6 +131,7 @@ export function statutSeverity(statut: string): Severity {
     case 'PRET_DISPATCH':
     case 'PROJET_SOUMIS':
     case 'EN_EXAMEN':
+    case 'EXAMINE':
     case 'SOUMIS':
     case 'DISPATCHE':
       return 'info';
@@ -188,6 +209,7 @@ export function etapeSuivante(statut?: string): EtapeInfo {
     case 'EN_EXAMEN':
     case 'EXAMEN':
       return { cle: 'EXAMEN', label: 'Examen & projet de PV', acteurs: 'Membre', capability: 'EXAMEN_WRITE' };
+    case 'EXAMINE':
     case 'EN_PV':
     case 'PROJET_PV':
       return {

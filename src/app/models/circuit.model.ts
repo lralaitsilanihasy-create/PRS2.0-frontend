@@ -125,7 +125,8 @@ export interface PvNavette {
 
 /** Vérification de la levée des observations sur PV signé. */
 export interface Verification {
-  idVerification: number;
+  /** Auto-généré côté serveur (IDENTITY) ; non envoyé à la création. */
+  idVerification?: number;
   idReception: number;
   idPv: number;
   imCtrlVerif?: string;
@@ -141,12 +142,16 @@ export interface Verification {
  * deviennent obligatoires (sinon 409).
  */
 export interface DemandeRetrait {
-  idDemandeRetrait: number;
+  /** Auto-généré serveur (IDENTITY) ; ignoré en entrée. */
+  idDemandeRetrait?: number;
   idDossier: number;
-  idPrmp: string;
+  /** Dérivé du JWT ; ignoré en entrée. */
+  idPrmp?: string;
   motifRetrait: string;
-  dateDemande: string;
-  statut: StatutDemandeRetrait;
+  /** Posé serveur ; ignoré en entrée. */
+  dateDemande?: string;
+  /** Forcé serveur (`EN_ATTENTE`) ; ignoré en entrée. */
+  statut?: StatutDemandeRetrait;
   imCtrlCc?: string;
   dateDecision?: string;
   obsDecision?: string;

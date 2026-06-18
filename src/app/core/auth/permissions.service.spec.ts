@@ -24,13 +24,15 @@ describe('PermissionsService', () => {
       expect(perms.canForRole('REFERENTIEL_WRITE', 'ADMINISTRATEUR')).toBe(true);
       expect(perms.canForRole('PV_RETOURNER', 'CHEF_COMMISSION')).toBe(true);
       expect(perms.canForRole('PV_RETOURNER', 'PRESIDENT')).toBe(true);
+      // Décision de retrait : CC ou Président (cf. règle backend).
+      expect(perms.canForRole('DEMANDE_RETRAIT_DECISION', 'PRESIDENT')).toBe(true);
     });
 
     it('refuse un rôle absent de la whitelist', () => {
       const perms = configure(null);
       expect(perms.canForRole('REFERENTIEL_WRITE', 'MEMBRE')).toBe(false);
       expect(perms.canForRole('PV_RETOURNER', 'MEMBRE')).toBe(false);
-      expect(perms.canForRole('DEMANDE_RETRAIT_DECISION', 'PRESIDENT')).toBe(false);
+      expect(perms.canForRole('DEMANDE_RETRAIT_DECISION', 'MEMBRE')).toBe(false);
     });
 
     it('refuse toujours quand le rôle est null', () => {

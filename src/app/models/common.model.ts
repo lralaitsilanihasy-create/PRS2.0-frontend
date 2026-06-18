@@ -6,6 +6,16 @@
  * acceptant n'importe quelle chaîne renvoyée par le backend (qui reste l'autorité).
  */
 
+/** Réponse paginée Spring (`Page<T>`). */
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  /** Index de la page courante (0-based). */
+  number: number;
+  size: number;
+}
+
 /** Profils métier portés par le claim `role` du JWT. */
 export type Role =
   | 'PRMP'
@@ -43,7 +53,7 @@ export type StatutPv =
 export type SensNavette = 'SOUMISSION' | 'RETOUR_RECTIF' | 'ACCEPTATION';
 
 /** Statut d'une demande de retrait (ensemble fermé). */
-export type StatutDemandeRetrait = 'EN_ATTENTE' | 'APPROUVE' | 'REJETE';
+export type StatutDemandeRetrait = 'EN_ATTENTE' | 'ACCEPTEE' | 'REFUSEE';
 
 /** Statut d'une publication (ensemble fermé). */
 export type StatutPublication = 'EN_ATTENTE' | 'PUBLIE' | 'RETIRE';

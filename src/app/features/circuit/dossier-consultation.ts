@@ -24,11 +24,19 @@ import { StatutBadge } from '../../shared/circuit';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StatutBadge],
   template: `
-    <div class="dc__overlay" (click)="closed.emit()">
-      <div class="dc cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <div [class.dc__overlay]="!embedded()" (click)="onOverlayClick()">
+      <div
+        class="dc cnm-card"
+        [class.dc--embedded]="embedded()"
+        (click)="$event.stopPropagation()"
+        [attr.role]="embedded() ? null : 'dialog'"
+        [attr.aria-modal]="embedded() ? null : 'true'"
+      >
         <header class="dc__head">
           <h2 class="dc__title">{{ dossier().refeDossier || ('Dossier #' + dossier().idDossier) }}</h2>
-          <button type="button" class="dc__close" aria-label="Fermer" (click)="closed.emit()">&times;</button>
+          @if (!embedded()) {
+            <button type="button" class="dc__close" aria-label="Fermer" (click)="closed.emit()">&times;</button>
+          }
         </header>
 
         <div class="dc__body">
@@ -81,15 +89,18 @@ import { StatutBadge } from '../../shared/circuit';
           }
         </div>
 
-        <footer class="dc__foot">
-          <button type="button" class="cnm-btn cnm-btn--ghost" (click)="closed.emit()">Fermer</button>
-        </footer>
+        @if (!embedded()) {
+          <footer class="dc__foot">
+            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="closed.emit()">Fermer</button>
+          </footer>
+        }
       </div>
     </div>
   `,
   styles: `
     .dc__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
     .dc { width: 100%; max-width: 44rem; max-height: 85vh; overflow: auto; box-shadow: var(--cnm-shadow); }
+    .dc--embedded { max-width: none; max-height: none; overflow: visible; box-shadow: none; border: 0; }
     .dc__head { display: flex; align-items: center; justify-content: space-between; gap: var(--cnm-space-3); padding: var(--cnm-space-4) var(--cnm-space-5); border-bottom: 1px solid var(--cnm-border); }
     .dc__title { margin: 0; font-size: var(--cnm-fs-md); }
     .dc__close { background: transparent; border: 0; color: var(--cnm-text-2); font-size: 1.5rem; line-height: 1; cursor: pointer; }
@@ -106,7 +117,16 @@ import { StatutBadge } from '../../shared/circuit';
 })
 export class DossierConsultation implements OnInit {
   readonly dossier = input.required<Dossier>();
+  /** En mode embarqué : rendu inline (sans overlay, bouton fermer, ni pied) pour insertion dans une colonne. */
+  readonly embedded = input(false);
   readonly closed = output<void>();
+
+  /** Clic sur l'overlay : ferme la modale (sans effet en mode embarqué). */
+  onOverlayClick(): void {
+    if (!this.embedded()) {
+      this.closed.emit();
+    }
+  }
 
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);

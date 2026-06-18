@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
-import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { Dispatch, Dossier, Examen, PvExamen, Reception, Verification } from '../../models';
 import {
@@ -42,19 +41,25 @@ import { DossierConsultation } from './dossier-consultation';
       @if (loading()) {
         <p class="pipeline__info">Chargement…</p>
       } @else if (visibleDossiers().length === 0) {
-        <p class="pipeline__info">{{ showExaminedOnly ? 'Aucun dossier examiné.' : showExamenAction ? 'Aucun dossier à examiner.' : 'Aucun dossier visible dans votre périmètre.' }}</p>
+        <p class="pipeline__info">{{ messageVide }}</p>
       } @else {
         <ul class="pipeline__list">
           @for (d of visibleDossiers(); track d.idDossier) {
             <li class="dossier-card">
               @let info = etapeInfo(d);
               <div class="dossier-card__head">
-                <span class="dossier-card__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (showExamenAction || showExaminedOnly) { · {{ entiteLabel(d) }}}</span>
+                <span class="dossier-card__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (source) { · {{ entiteLabel(d) }}}</span>
                 <div class="dossier-card__head-right">
                   <app-statut-badge [statut]="d.statut" />
                   <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="consulte.set(d)">Voir détails</button>
                   @if (showExamenAction && info.cle === 'EXAMEN' && peutAgir(info)) {
                     <a class="cnm-btn cnm-btn--primary cnm-btn--sm" [routerLink]="['/membre/examiner', d.idDossier]">Examiner</a>
+                  }
+                  @if (source === 'examines' && d.statut === 'EXAMINE') {
+                    <a class="cnm-btn cnm-btn--primary cnm-btn--sm" [routerLink]="['/membre/examiner', d.idDossier]">Modifier l'examen</a>
+                  }
+                  @if (showVerifAction && d.statut === 'EN_VERIFICATION') {
+                    <a class="cnm-btn cnm-btn--primary cnm-btn--sm" [routerLink]="['/verificateur/verifier', d.idDossier]">Vérifier</a>
                   }
                 </div>
               </div>
@@ -64,6 +69,14 @@ import { DossierConsultation } from './dossier-consultation';
             </li>
           }
         </ul>
+
+        @if (paginee && totalPages() > 1) {
+          <div class="pipeline__pager">
+            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="pageIndex() === 0" (click)="prevPage()">Précédent</button>
+            <span class="pipeline__pager-info">Page {{ pageIndex() + 1 }} / {{ totalPages() }}</span>
+            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="pageIndex() + 1 >= totalPages()" (click)="nextPage()">Suivant</button>
+          </div>
+        }
       }
     </section>
 
@@ -121,7 +134,16 @@ import { DossierConsultation } from './dossier-consultation';
       font-size: var(--cnm-fs-sm);
       margin-top: var(--cnm-space-1);
     }
+    .pipeline__pager {
+      display: flex;
+      align-items: center;
+      gap: var(--cnm-space-3);
+      justify-content: flex-end;
+      margin-top: var(--cnm-space-3);
+    }
+    .pipeline__pager-info { font-size: var(--cnm-fs-sm); color: var(--cnm-text-2); }
   `,
+
 })
 export class DossiersPipeline {
   private readonly route = inject(ActivatedRoute);
@@ -132,7 +154,6 @@ export class DossiersPipeline {
   private readonly pvService = inject(PvExamenService);
   private readonly verificationService = inject(VerificationService);
   private readonly permissions = inject(PermissionsService);
-  private readonly auth = inject(AuthService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly entiteMap = signal<Map<string, string>>(new Map());
 
@@ -141,51 +162,28 @@ export class DossiersPipeline {
   protected readonly showTimeline = (this.route.snapshot.data['timeline'] as boolean | undefined) ?? true;
   /** Bouton « Examiner » par dossier ; activé via `route.data.examenAction === true` (écran Examens). */
   protected readonly showExamenAction = (this.route.snapshot.data['examenAction'] as boolean | undefined) ?? false;
-  /** Liste restreinte aux dossiers déjà examinés ; activé via `route.data.examinedOnly === true`. */
-  protected readonly showExaminedOnly = (this.route.snapshot.data['examinedOnly'] as boolean | undefined) ?? false;
+  /** Bouton « Vérifier » par dossier ; activé via `route.data.verifAction === true` (file Vérificateur). */
+  protected readonly showVerifAction = (this.route.snapshot.data['verifAction'] as boolean | undefined) ?? false;
+  /** Source de données : files Membre ('a-examiner'/'examines'), files Vérificateur ('a-verifier'/'verifies'), ou undefined (dashboard). */
+  protected readonly source = this.route.snapshot.data['source'] as
+    | 'a-examiner'
+    | 'examines'
+    | 'a-verifier'
+    | 'verifies'
+    | undefined;
+  /** Sources paginées (historiques server-side). */
+  protected readonly paginee = this.source === 'examines' || this.source === 'verifies';
   readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);
+  /** Pagination (source 'examines'). */
+  readonly pageIndex = signal(0);
+  readonly totalPages = signal(0);
+  private readonly pageSize = 10;
   /** Dossier ouvert en consultation lecture seule (null = fermé). */
   readonly consulte = signal<Dossier | null>(null);
 
-  /**
-   * Dossiers affichés : tous par défaut ; sur l'écran « Examens » (`examenAction`),
-   * uniquement ceux réellement examinables (étape Examen + capacité) — ceux qui portent
-   * le bouton « Examiner ».
-   */
-  readonly visibleDossiers = computed(() => {
-    const all = this.dossiers();
-    if (this.showExaminedOnly) {
-      const ids = this.examinedDossierIds();
-      return all.filter((d) => ids.has(d.idDossier));
-    }
-    if (this.showExamenAction) {
-      return all.filter((d) => {
-        const info = this.etapeInfo(d);
-        return info.cle === 'EXAMEN' && this.peutAgir(info);
-      });
-    }
-    return all;
-  });
-
-  /** Ids des dossiers déjà examinés par le Membre courant (examen → dispatch → réception → dossier). */
-  private readonly examinedDossierIds = computed(() => {
-    const me = this.auth.ref();
-    const recById = new Map(this.receptions().map((r) => [r.idReception, r]));
-    const dispById = new Map(this.dispatchs().map((x) => [x.idDispatch, x]));
-    const ids = new Set<number>();
-    for (const e of this.examens()) {
-      if (e.imCtrlMembre && e.imCtrlMembre !== me) {
-        continue; // examinés par moi (ou membre non renseigné)
-      }
-      const disp = e.idDispatch != null ? dispById.get(e.idDispatch) : undefined;
-      const rec = disp ? recById.get(disp.idReception) : undefined;
-      if (rec) {
-        ids.add(rec.idDossier);
-      }
-    }
-    return ids;
-  });
+  /** Dossiers affichés (déjà scopés/exclusifs côté serveur — aucun filtre client). */
+  readonly visibleDossiers = computed(() => this.dossiers());
 
   // Collections du circuit (scopées par profil) pour dater les étapes franchies.
   private readonly receptions = signal<Reception[]>([]);
@@ -196,30 +194,89 @@ export class DossiersPipeline {
 
   constructor() {
     this.loading.set(true);
-    forkJoin({
-      dossiers: this.dossierService.list(),
-      receptions: this.receptionService.list(),
-      dispatchs: this.dispatchService.list(),
-      examens: this.examenService.list(),
-      pvs: this.pvService.list(),
-      verifications: this.verificationService.list(),
-    }).subscribe({
-      next: (r) => {
-        this.dossiers.set(r.dossiers);
-        this.receptions.set(r.receptions);
-        this.dispatchs.set(r.dispatchs);
-        this.examens.set(r.examens);
-        this.pvs.set(r.pvs);
-        this.verifications.set(r.verifications);
+    if (this.source === 'a-examiner' || this.source === 'a-verifier') {
+      // Files de travail scopées serveur (DISPATCHE / EN_VERIFICATION), sans filtre client.
+      const call = this.source === 'a-verifier' ? this.dossierService.aVerifier() : this.dossierService.aExaminer();
+      call.subscribe({
+        next: (rows) => {
+          this.dossiers.set(rows);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
+    } else if (this.paginee) {
+      this.chargerPage(0);
+    } else {
+      // Pipeline générique (dashboard) : toutes les ressources pour dater la frise.
+      forkJoin({
+        dossiers: this.dossierService.list(),
+        receptions: this.receptionService.list(),
+        dispatchs: this.dispatchService.list(),
+        examens: this.examenService.list(),
+        pvs: this.pvService.list(),
+        verifications: this.verificationService.list(),
+      }).subscribe({
+        next: (r) => {
+          this.dossiers.set(r.dossiers);
+          this.receptions.set(r.receptions);
+          this.dispatchs.set(r.dispatchs);
+          this.examens.set(r.examens);
+          this.pvs.set(r.pvs);
+          this.verifications.set(r.verifications);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
+    }
+    // Libellés d'entité (cache partagé) — pour les files Membre qui les affichent.
+    if (this.source) {
+      this.lookups
+        .lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite'])
+        .subscribe((m) => this.entiteMap.set(m));
+    }
+  }
+
+  /** Charge une page d'un historique paginé ('examines' ou 'verifies' selon la source). */
+  private chargerPage(page: number): void {
+    this.loading.set(true);
+    const call =
+      this.source === 'verifies'
+        ? this.dossierService.verifies(page, this.pageSize)
+        : this.dossierService.examines(page, this.pageSize);
+    call.subscribe({
+      next: (p) => {
+        this.dossiers.set(p.content);
+        this.pageIndex.set(p.number);
+        this.totalPages.set(p.totalPages);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
-    // Libellés d'entité (cache partagé) — uniquement pour les écrans qui les affichent.
-    if (this.showExamenAction || this.showExaminedOnly) {
-      this.lookups
-        .lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite'])
-        .subscribe((m) => this.entiteMap.set(m));
+  }
+  prevPage(): void {
+    if (this.pageIndex() > 0) {
+      this.chargerPage(this.pageIndex() - 1);
+    }
+  }
+  nextPage(): void {
+    if (this.pageIndex() + 1 < this.totalPages()) {
+      this.chargerPage(this.pageIndex() + 1);
+    }
+  }
+
+  /** Message d'absence de données selon la source. */
+  protected get messageVide(): string {
+    switch (this.source) {
+      case 'examines':
+        return 'Aucun dossier examiné.';
+      case 'a-examiner':
+        return 'Aucun dossier à examiner.';
+      case 'a-verifier':
+        return 'Aucun dossier à vérifier.';
+      case 'verifies':
+        return 'Aucun dossier vérifié ou clôturé.';
+      default:
+        return 'Aucun dossier visible dans votre périmètre.';
     }
   }
 

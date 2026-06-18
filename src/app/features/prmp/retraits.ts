@@ -1,83 +1,100 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 
-import { AuthService } from '../../core/auth/auth.service';
-import { PermissionsService } from '../../core/auth/permissions.service';
-import { ToastService } from '../../core/notifications/toast.service';
 import { ApiError, getFieldError } from '../../core/errors/api-error';
-import { DemandeRetrait } from '../../models';
-import { DemandeRetraitService } from '../../services';
-import { StatutBadge } from '../../shared/circuit';
+import { ToastService } from '../../core/notifications/toast.service';
+import { DemandeRetrait, Dossier } from '../../models';
+import { DemandeRetraitService, DossierService, ReferenceLookupService } from '../../services';
+import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
+import { DossierConsultation } from '../circuit/dossier-consultation';
 
 /**
- * Demandes de retrait de la PRMP : suivi de ses demandes + création motivée.
- * À la création, `statut` est forcé EN_ATTENTE et `dateDemande` horodatée côté client.
- * La décision (APPROUVE/REJETE) appartient au CC (espace dédié) ; ici lecture seule.
+ * Demande de retrait (PRMP) — deux colonnes : formulaire motivé (gauche) + détail
+ * lecture seule du dossier sélectionné (droite) ; suivi des demandes en dessous.
+ * Reflet du back : identité/date/statut posés serveur (non envoyés) ; on n'envoie
+ * que `{ idDossier, motifRetrait }`. 403/409 via l'intercepteur.
  */
 @Component({
   selector: 'app-prmp-retraits',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, StatutBadge],
+  imports: [StatutBadge, DossierConsultation],
   template: `
-    <section class="retraits">
-      <header class="retraits__header">
-        <h1 class="retraits__title">Demandes de retrait</h1>
-        @if (canCreate()) {
-          <button type="button" class="cnm-btn cnm-btn--primary" (click)="toggleForm()">
-            {{ formOpen() ? 'Fermer' : '+ Nouvelle demande' }}
-          </button>
-        }
-      </header>
+    <section class="rt">
+      <h1 class="rt__title">Demande de retrait</h1>
 
-      @if (formOpen()) {
-        <form class="retraits__form" [formGroup]="form" (ngSubmit)="creer()" novalidate>
-          <label class="field">
-            <span class="field__label">Identifiant demande *</span>
-            <input type="number" formControlName="idDemandeRetrait" />
-            @if (fieldErr('idDemandeRetrait')) { <span class="cnm-field__hint">{{ fieldErr('idDemandeRetrait') }}</span> }
-          </label>
-          <label class="field">
-            <span class="field__label">Dossier *</span>
-            <input type="number" formControlName="idDossier" />
-            @if (fieldErr('idDossier')) { <span class="cnm-field__hint">{{ fieldErr('idDossier') }}</span> }
-          </label>
-          <label class="field">
-            <span class="field__label">Motif du retrait *</span>
-            <textarea rows="3" formControlName="motifRetrait"></textarea>
-            @if (fieldErr('motifRetrait')) { <span class="cnm-field__hint">{{ fieldErr('motifRetrait') }}</span> }
-          </label>
-          <div class="retraits__form-actions">
-            <button type="submit" class="cnm-btn cnm-btn--primary">Soumettre la demande</button>
+      <div class="rt__grid">
+        <div class="cnm-card rt__panel">
+          <div class="rt__panel-head">Nouvelle demande</div>
+          <div class="rt__panel-body cnm-form">
+            <label class="cnm-field">
+              <span class="cnm-field__label">Dossier à retirer *</span>
+              <select class="cnm-select" [value]="selectedId() ?? ''" (change)="onSelect($any($event.target).value)">
+                <option value="" disabled>— Choisir un dossier —</option>
+                @for (d of retirables(); track d.idDossier) {
+                  <option [value]="d.idDossier">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</option>
+                }
+              </select>
+              @if (!retirables().length && !loading()) {
+                <span class="cnm-field__hint">Aucun dossier éligible au retrait.</span>
+              }
+              @if (fieldErr('idDossier')) { <span class="cnm-field__hint">{{ fieldErr('idDossier') }}</span> }
+            </label>
+
+            <label class="cnm-field">
+              <span class="cnm-field__label">Motif du retrait *</span>
+              <textarea
+                class="cnm-textarea"
+                rows="4"
+                [value]="motif()"
+                (input)="motif.set($any($event.target).value)"
+              ></textarea>
+              @if (fieldErr('motifRetrait')) { <span class="cnm-field__hint">{{ fieldErr('motifRetrait') }}</span> }
+            </label>
+
+            <div class="rt__foot">
+              <button
+                type="button"
+                class="cnm-btn cnm-btn--primary"
+                [disabled]="saving() || selectedId() == null || !motif().trim()"
+                (click)="soumettre()"
+              >
+                {{ saving() ? 'Envoi…' : 'Soumettre la demande' }}
+              </button>
+            </div>
           </div>
-        </form>
-      }
+        </div>
 
+        <div class="cnm-card rt__panel">
+          <div class="rt__panel-head">Détail du dossier</div>
+          <div class="rt__panel-body">
+            @if (selectedDossier(); as d) {
+              <app-dossier-consultation [dossier]="d" [embedded]="true" />
+            } @else {
+              <p class="cnm-muted">Sélectionnez un dossier pour voir son détail.</p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <h2 class="rt__sub">Mes demandes</h2>
       @if (loading()) {
-        <p class="retraits__info">Chargement…</p>
+        <p class="cnm-muted">Chargement…</p>
       } @else {
-        <table class="retraits__table">
+        <table class="cnm-table">
           <thead>
-            <tr>
-              <th>#</th>
-              <th>Dossier</th>
-              <th>Motif</th>
-              <th>Statut</th>
-              <th>Observation décision</th>
-            </tr>
+            <tr><th>Dossier</th><th>Motif</th><th>Statut</th><th>Date</th><th>Motif du refus</th></tr>
           </thead>
           <tbody>
-            @for (d of demandes(); track d.idDemandeRetrait) {
+            @for (r of demandes(); track r.idDemandeRetrait) {
               <tr>
-                <td>{{ d.idDemandeRetrait }}</td>
-                <td>{{ d.idDossier }}</td>
-                <td>{{ d.motifRetrait }}</td>
-                <td><app-statut-badge [statut]="d.statut" /></td>
-                <td>{{ d.obsDecision || '—' }}</td>
+                <td>{{ dossierRef(r.idDossier) }}</td>
+                <td>{{ r.motifRetrait }}</td>
+                <td><app-statut-badge [statut]="r.statut" [label]="statutLabel(r.statut)" /></td>
+                <td class="cnm-mono">{{ r.dateDemande || '—' }}</td>
+                <td>{{ r.statut === 'REFUSEE' ? (r.obsDecision || '—') : '—' }}</td>
               </tr>
             } @empty {
-              <tr>
-                <td colspan="5" class="retraits__info">Aucune demande.</td>
-              </tr>
+              <tr><td colspan="5" class="cnm-muted">Aucune demande.</td></tr>
             }
           </tbody>
         </table>
@@ -85,147 +102,87 @@ import { StatutBadge } from '../../shared/circuit';
     </section>
   `,
   styles: `
-    .retraits__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--cnm-space-4);
-    }
-    .retraits__title {
-      margin: 0;
-      font-size: var(--cnm-fs-lg);
-    }
-    .retraits__info {
-      color: var(--cnm-text-2);
-      text-align: center;
-      padding: var(--cnm-space-3);
-    }
-    .retraits__form {
-      background: var(--cnm-surface);
-      border: 1px solid var(--cnm-border);
-      border-radius: var(--cnm-radius);
-      padding: var(--cnm-space-4);
-      margin-bottom: var(--cnm-space-4);
-      display: flex;
-      flex-direction: column;
-      gap: var(--cnm-space-3);
-      max-width: 32rem;
-    }
-    .retraits__form-actions {
-      display: flex;
-      justify-content: flex-end;
-    }
-    .retraits__table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--cnm-surface);
-      border: 1px solid var(--cnm-border);
-      border-radius: var(--cnm-radius);
-      overflow: hidden;
-      font-size: var(--cnm-fs-sm);
-    }
-    .retraits__table th,
-    .retraits__table td {
-      text-align: left;
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--cnm-border);
-    }
-    .retraits__table th {
-      background: var(--cnm-surface-2);
-      color: var(--cnm-text-3);
-      font-size: var(--cnm-fs-micro);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: var(--cnm-fw-medium);
-    }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: var(--cnm-space-1);
-    }
-    .field__label {
-      font-size: var(--cnm-fs-sm);
-      font-weight: var(--cnm-fw-medium);
-      color: var(--cnm-text-2);
-    }
-    .field input,
-    .field textarea {
-      font: inherit;
-      color: var(--cnm-text);
-      background: var(--cnm-bg);
-      border: 1px solid var(--cnm-border-strong);
-      border-radius: var(--cnm-radius-sm);
-      padding: 0.5rem 0.65rem;
-    }
+    .rt__title { margin: 0 0 var(--cnm-space-4); font-size: var(--cnm-fs-lg); }
+    .rt__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); align-items: start; }
+    .rt__panel-head { padding: var(--cnm-space-3) var(--cnm-space-4); border-bottom: 1px solid var(--cnm-border); font-weight: var(--cnm-fw-semibold); }
+    .rt__panel-body { padding: var(--cnm-space-4); display: flex; flex-direction: column; gap: var(--cnm-space-3); }
+    .rt__foot { display: flex; justify-content: flex-end; }
+    .rt__sub { margin: var(--cnm-space-5) 0 var(--cnm-space-3); font-size: var(--cnm-fs-md); }
+    @media (max-width: 60rem) { .rt__grid { grid-template-columns: 1fr; } }
   `,
 })
 export class PrmpRetraits {
   private readonly service = inject(DemandeRetraitService);
-  private readonly auth = inject(AuthService);
-  private readonly permissions = inject(PermissionsService);
+  private readonly dossierService = inject(DossierService);
+  private readonly lookups = inject(ReferenceLookupService);
   private readonly toast = inject(ToastService);
-  private readonly fb = inject(FormBuilder);
 
+  readonly retirables = signal<Dossier[]>([]);
   readonly demandes = signal<DemandeRetrait[]>([]);
-  readonly loading = signal(false);
-  readonly formOpen = signal(false);
-  readonly canCreate = computed(() => this.permissions.can('DEMANDE_RETRAIT_CREATE'));
+  readonly loading = signal(true);
+  readonly saving = signal(false);
+  readonly selectedId = signal<number | null>(null);
+  readonly motif = signal('');
   readonly formError = signal<ApiError | null>(null);
+  private readonly dossierMap = signal<Map<string, string>>(new Map());
+
+  readonly selectedDossier = computed(() => {
+    const id = this.selectedId();
+    return id == null ? null : this.retirables().find((d) => d.idDossier === id) ?? null;
+  });
+
+  constructor() {
+    this.lookups.lookup(DossierService, 'idDossier', ['refeDossier']).subscribe((m) => this.dossierMap.set(m));
+    this.charger();
+  }
 
   fieldErr(champ: string): string | undefined {
     return getFieldError(this.formError(), champ);
   }
-
-  readonly form = this.fb.nonNullable.group({
-    idDemandeRetrait: [null as number | null, Validators.required],
-    idDossier: [null as number | null, Validators.required],
-    motifRetrait: ['', Validators.required],
-  });
-
-  constructor() {
-    this.charger();
+  statutLabel(s?: string): string {
+    return statutDemandeRetraitLabel(s);
+  }
+  dossierRef(id: number): string {
+    return this.dossierMap().get(String(id)) ?? '#' + id;
   }
 
-  toggleForm(): void {
-    this.formOpen.update((v) => !v);
+  onSelect(value: string): void {
+    this.selectedId.set(value ? Number(value) : null);
   }
 
-  charger(): void {
+  private charger(): void {
     this.loading.set(true);
-    this.service.list().subscribe({
-      next: (rows) => {
-        this.demandes.set(rows);
+    forkJoin({ retirables: this.dossierService.retirables(), demandes: this.service.list() }).subscribe({
+      next: (r) => {
+        this.retirables.set(r.retirables);
+        this.demandes.set(r.demandes);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
   }
 
-  creer(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+  soumettre(): void {
+    const idDossier = this.selectedId();
+    const motif = this.motif().trim();
+    if (idDossier == null || !motif) {
       return;
     }
     this.formError.set(null);
-    const v = this.form.getRawValue();
-    const body: DemandeRetrait = {
-      idDemandeRetrait: v.idDemandeRetrait as number,
-      idDossier: v.idDossier as number,
-      idPrmp: this.auth.ref() ?? '',
-      motifRetrait: v.motifRetrait,
-      dateDemande: new Date().toISOString().slice(0, 19),
-      statut: 'EN_ATTENTE',
-    };
-    this.service.create(body).subscribe({
+    this.saving.set(true);
+    // On n'envoie que idDossier + motif ; idPrmp/date/statut sont posés serveur.
+    this.service.create({ idDossier, motifRetrait: motif } as DemandeRetrait).subscribe({
       next: () => {
         this.toast.success('Demande de retrait soumise.');
-        this.form.reset();
-        this.formOpen.set(false);
+        this.selectedId.set(null);
+        this.motif.set('');
+        this.saving.set(false);
         this.charger();
       },
       error: (err: ApiError) => {
-        // 400 → fieldErrors sous les champs ; 409/autre → toast global (étape A).
+        // 400 → messages sous les champs ; 409/403 → toast centralisé.
         this.formError.set(err);
+        this.saving.set(false);
       },
     });
   }
