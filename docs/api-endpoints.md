@@ -749,7 +749,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 | idDossierParent | number | Non | |
 | refeDossier | string | Non | max 100 — **référence officielle, générée par `…/soumettre`** ; laisser vide à la création |
 | dateRef | string (date) | Non | renseignée à la soumission si vide |
-| statut | string | Non | max 20 — cycle : `BROUILLON` → `SOUMIS` → `PRET_DISPATCH` → `DISPATCHE` → `EXAMINE` → `PV_SIGNE` → (`EN_VERIFICATION` si avis FAVR) → `CLOTURE` (ou `RETIRE`) ; posé par le système, **lecture seule** côté PRMP |
+| statut | string | Non | max 30 — cycle : `BROUILLON` → `SOUMIS` → `PRET_DISPATCH` → `DISPATCHE` → `EXAMINE` → `PV_SIGNE` → (`EN_VERIFICATION` si avis FAVR) → `CLOTURE` ; vérif. obs. non levées → `EN_ATTENTE_DECISION_PRMP` (ou `RETIRE`) ; posé par le système, **lecture seule** côté PRMP |
 | idLocalite | string | Non | max 5 — localité (FK `tr_localite`) ; **dérivée de l'entité** du dossier (lecture seule à la saisie) |
 | idPrmp | string | Non | max 10 — PRMP **propriétaire** (FK `t_prmp`) ; posée à la saisie ; seule elle édite/soumet |
 | idEntiteContract | number | Non | entité contractante (FK `tr_entite_contract`) ; **choisie à la saisie**, fixe la localité |
@@ -769,6 +769,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 | GET | /api/dossiers/examines | — | `Page<DossierDto>` | 200, 403 | `MEMBRE` (titulaire/délégué) ou `ADMINISTRATEUR` |
 | GET | /api/dossiers/a-verifier | — | `DossierDto[]` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` |
 | GET | /api/dossiers/verifies | — | `Page<DossierDto>` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` |
+| GET | /api/dossiers/en-attente-prmp | — | `DossierDto[]` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` — lecture seule |
 | GET | /api/dossiers/{id} | — | `DossierDto` | 200, 403, 404 | Authentifié (filtré) |
 | POST | /api/dossiers | `DossierDto` | `DossierDto` | 201, 400, 403 | **ADMINISTRATEUR** |
 | PUT | /api/dossiers/{id} | `DossierDto` | `DossierDto` | 200, 400, 403, 404 | **ADMINISTRATEUR** |
@@ -779,7 +780,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 
 > **Filtre serveur `?statut=` (nouveau).** `GET /api/dossiers?statut=SOUMIS` restreint la liste à ce
 > statut **côté serveur**, en **conservant le périmètre** (localité / PRMP). Statut inconnu → **400**.
-> Valeurs : `BROUILLON`, `SOUMIS`, `PRET_DISPATCH`, `DISPATCHE`, `EXAMINE`, `PV_SIGNE`, `EN_VERIFICATION`, `RETIRE`, `CLOTURE`. **Ne pas** l'utiliser pour la
+> Valeurs : `BROUILLON`, `SOUMIS`, `PRET_DISPATCH`, `DISPATCHE`, `EXAMINE`, `PV_SIGNE`, `EN_VERIFICATION`, `EN_ATTENTE_DECISION_PRMP`, `RETIRE`, `CLOTURE`. **Ne pas** l'utiliser pour la
 > worklist du Secrétaire : un dossier réceptionné **mais incomplet** reste `SOUMIS` ; utiliser
 > `GET /api/dossiers/a-receptionner` (filtre serveur « `SOUMIS` + sans réception », sans N+1).
 
@@ -799,6 +800,10 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 > **historique** paginé, **lecture seule**, des dossiers **`CLOTURE` ayant un PV `SIGNE`** — **y compris
 > les auto-clôturés** à la signature (`FAV`/`DEF`/`NSP`). Les deux sont **scopées à la localité** du
 > vérificateur (contrôleur réceptionnaire) et **partitionnent** les PV signés (`EN_VERIFICATION` ⊎ `CLOTURE`).
+
+> ⚠️ **File « En attente PRMP » du Vérificateur (règle ajoutée), lecture seule.** `GET /api/dossiers/en-attente-prmp`
+> = dossiers **`EN_ATTENTE_DECISION_PRMP`** de sa localité (observations non levées transmises à la PRMP). Le
+> vérificateur ne peut ni modifier ni soumettre de nouvelle vérification tant que la PRMP n'a pas statué.
 
 > **Soumission (§3.1, Module 03).** `POST /api/dossiers/{id}/soumettre` (réservé **PRMP propriétaire**) :
 > passe le dossier de **`BROUILLON` → `SOUMIS`** (statut autre → **409**), vérifie la **cohérence
@@ -1666,6 +1671,7 @@ plusieurs dates, chacune typée). Remplace les anciens champs `datePrev*` de `Ma
 | `PV_SIGNE` | PV signé | PRMP | DOSSIER |
 | `PV_A_VERIFIER` | PV signé `FAVR` à vérifier | Vérificateur de la localité | DOSSIER |
 | `PV_POUR_INFO` | PV signé auto-clôturé (FAV/DEF/NSP) | Vérificateur de la localité | DOSSIER |
+| `OBSERVATION_VERIFICATION` | observations de vérification non levées à traiter | PRMP du dossier | DOSSIER |
 | `CLOTURE_ELIGIBLE` | dossier clôturé éligible | Chargé de publication | DOSSIER |
 | `NOUVEAU_MESSAGE` | message reçu (messagerie) | destinataire | MESSAGE |
 
@@ -2417,7 +2423,7 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 
 > **Préconditions de circuit (création/MAJ) → 403/409** : profil non `VERIFICATEUR` → **403** ; sinon le PV référencé (`idPv`) doit être **`SIGNE`** **et** d'avis **`FAVR`** (favorable avec réserves) **et** le dossier **non clos** → sinon **409**. La vérification est **itérative** sur le même dossier.
 
-> **Effet `[Auto]`** : `obsLevees = true` clôture le dossier **uniquement s'il est `EN_VERIFICATION`** (→ `CLOTURE` + notification `CLOTURE_ELIGIBLE`) ; `obsLevees = false` → le dossier **reste `EN_VERIFICATION`** (nouveau passage).
+> **Effet `[Auto]`** (sur un dossier `EN_VERIFICATION`) : `obsLevees = true` → dossier **`CLOTURE`** + notification `CLOTURE_ELIGIBLE`. ⚠️ **Règle ajoutée** — `obsLevees = false` → dossier **`EN_ATTENTE_DECISION_PRMP`** : l'observation est **transmise à la PRMP** du dossier (notification `OBSERVATION_VERIFICATION` : référence dossier, vérificateur, texte de l'observation, date) et l'événement est **tracé** dans `t_audit_log`. Le vérificateur ne peut plus modifier ni soumettre de vérification tant que la PRMP n'a pas statué (nouvelle tentative → **409**) ; il voit le dossier en lecture seule dans `GET /api/dossiers/en-attente-prmp`. La PRMP le retrouve via `GET /api/dossiers?statut=EN_ATTENTE_DECISION_PRMP` et lit l'observation complète dans sa notification.
 
 **Champs `VerificationDto`**
 
@@ -2429,7 +2435,7 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 | imCtrlVerif | string | Non | max 7 — **ignoré** : identité = JWT (`CurrentUser.ref`) |
 | dateVerif | string (date) | Non | **ignoré** : posée côté serveur (date du jour) |
 | observation | string | Non | max 500 |
-| obsLevees | boolean | Non | `true` → `CLOTURE` (si `EN_VERIFICATION`) ; `false` → reste `EN_VERIFICATION` |
+| obsLevees | boolean | Non | `true` → `CLOTURE` ; `false` → `EN_ATTENTE_DECISION_PRMP` + notif PRMP `OBSERVATION_VERIFICATION` + trace audit (si dossier `EN_VERIFICATION`) |
 
 **Endpoints**
 
