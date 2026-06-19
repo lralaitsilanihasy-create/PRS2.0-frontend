@@ -2,12 +2,14 @@ import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
   CopieDossier,
   DemandeRetrait,
   Dispatch,
   Dossier,
+  DossierResoumissionRequest,
   Examen,
   ExamenDetail,
   Page,
@@ -80,6 +82,15 @@ export class DossierService extends CrudService<Dossier> {
    */
   soumettre(id: number): Observable<Dossier> {
     return this.http.post<Dossier>(`${this.baseUrl}/${id}/soumettre`, {});
+  }
+
+  /**
+   * `POST /api/dossiers/{id}/resoumettre` (PRMP propriétaire) — resoumet un dossier rectifié :
+   * `EN_ATTENTE_DECISION_PRMP` → `EN_VERIFICATION` (retour au vérificateur). Motif obligatoire (400 sinon),
+   * dossier hors état → 409. `skipErrorToast` : 400/409 affichés en clair dans l'écran (messages dédiés).
+   */
+  resoumettre(id: number, body: DossierResoumissionRequest): Observable<Dossier> {
+    return this.http.post<Dossier>(`${this.baseUrl}/${id}/resoumettre`, body, { context: skipErrorToast() });
   }
 }
 

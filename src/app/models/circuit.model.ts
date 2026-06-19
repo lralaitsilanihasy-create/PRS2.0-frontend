@@ -134,6 +134,13 @@ export interface Verification {
   observation?: string;
   /** Si `true` → dossier `CLOTURE` + notification publication (effet [Auto]). */
   obsLevees?: boolean;
+  /** Motif de rectification PRMP (sortie) ; posé serveur à la resoumission ; lecture seule. */
+  motifRectif?: string;
+}
+
+/** Corps de `POST /api/dossiers/{id}/resoumettre` (PRMP propriétaire). */
+export interface DossierResoumissionRequest {
+  motifRectification: string;
 }
 
 /**

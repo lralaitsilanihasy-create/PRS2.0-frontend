@@ -89,7 +89,12 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                       <tr>
                         <td class="cnm-mono">{{ v.dateVerif || '—' }}</td>
                         <td>{{ ctrlLabel(v.imCtrlVerif) }}</td>
-                        <td>{{ v.observation || '—' }}</td>
+                        <td>
+                          {{ v.observation || '—' }}
+                          @if (v.motifRectif) {
+                            <span class="vf__rectif"><strong>Rectification PRMP :</strong> {{ v.motifRectif }}</span>
+                          }
+                        </td>
                         <td>{{ v.obsLevees ? 'Oui' : 'Non' }}</td>
                         @if (!verrouille()) {
                           <td>
@@ -197,6 +202,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .vf__info dt { flex: 0 0 9rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: .08em; color: var(--cnm-text-3); }
     .vf__info dd { margin: 0; color: var(--cnm-text); }
     .vf__synthese { margin: 0; font-size: var(--cnm-fs-sm); }
+    .vf__rectif { display: block; margin-top: 2px; font-size: var(--cnm-fs-xs); color: var(--cnm-warning-fg); }
     .vf__sub { margin: var(--cnm-space-2) 0 0; font-size: var(--cnm-fs-md); }
     .vf__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-3); }
     .vf__alert { margin: 0; font-size: var(--cnm-fs-sm); background: var(--cnm-warning-bg); color: var(--cnm-warning-fg); padding: var(--cnm-space-2) var(--cnm-space-3); border-radius: var(--cnm-radius-sm); }
