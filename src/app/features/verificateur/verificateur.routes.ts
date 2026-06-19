@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { Messagerie } from '../transverse/messagerie';
+import { EnAttentePrmp } from './en-attente-prmp';
 import { VerifierDossier } from './verifier-dossier';
 
 /** Espace Contrôleur vérificateur (lazy, sous roleGuard VERIFICATEUR). */
@@ -18,10 +19,6 @@ export const VERIFICATEUR_ROUTES: Routes = [
     data: { title: 'Dossiers vérifiés / clôturés', timeline: false, source: 'verifies' },
   },
   { path: 'verifier/:idDossier', component: VerifierDossier },
-  {
-    path: 'en-attente-prmp',
-    component: DossiersPipeline,
-    data: { title: 'En attente de rectification PRMP', timeline: false, source: 'en-attente-prmp' },
-  },
+  { path: 'en-attente-prmp', component: EnAttentePrmp },
   { path: 'messagerie', component: Messagerie },
 ];
