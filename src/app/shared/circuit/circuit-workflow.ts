@@ -82,7 +82,7 @@ export const DOSSIER_STATUT_LABELS: Record<string, string> = {
   EXAMINE: 'Examiné',
   PV_SIGNE: 'PV signé',
   EN_VERIFICATION: 'En vérification',
-  EN_ATTENTE_DECISION_PRMP: 'En attente PRMP',
+  EN_ATTENTE_DECISION_PRMP: 'À rectifier',
   CLOTURE: 'Clôturé',
   RETIRE: 'Retiré',
 };

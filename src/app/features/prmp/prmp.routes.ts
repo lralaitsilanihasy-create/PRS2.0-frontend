@@ -1,9 +1,10 @@
 import { Routes } from '@angular/router';
 
 import { CrudPage } from '../../shared/crud/crud-page';
+import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { ECHEANCE_CONFIG, PPM_CONFIG } from '../circuit/circuit-resources.config';
+import { DossiersARectifier } from './dossiers-a-rectifier';
 import { MesBrouillons } from './mes-brouillons';
-import { PrmpDashboard } from './prmp-dashboard';
 import { MesPpmMarches } from './mes-ppm-marches';
 import { PrmpRetraits } from './retraits';
 import { SoumettreDossier } from './soumettre-dossier';
@@ -13,9 +14,10 @@ export const PRMP_ROUTES: Routes = [
   { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
   {
     path: 'tableau-de-bord',
-    component: PrmpDashboard,
+    component: DossiersPipeline,
     data: { title: 'Mes dossiers' },
   },
+  { path: 'a-rectifier', component: DossiersARectifier },
   { path: 'ppm', component: CrudPage, data: { crud: PPM_CONFIG } },
   { path: 'soumettre-dossier', component: SoumettreDossier },
   { path: 'mes-brouillons', component: MesBrouillons },

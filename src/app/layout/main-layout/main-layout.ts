@@ -89,10 +89,10 @@ export class MainLayout {
     }
   }
 
-  /** Recharge le compteur d'alerte PRMP (dossiers EN_ATTENTE_DECISION_PRMP). */
+  /** Recharge le compteur d'alerte PRMP (dossiers EN_ATTENTE_DECISION_PRMP → à rectifier). */
   private rafraichirAlertesPrmp(): void {
     this.dossierService.list('EN_ATTENTE_DECISION_PRMP').subscribe({
-      next: (rows) => this.alerts.update((a) => ({ ...a, '/prmp/tableau-de-bord': rows.length })),
+      next: (rows) => this.alerts.update((a) => ({ ...a, '/prmp/a-rectifier': rows.length })),
       error: () => {},
     });
   }

@@ -21,7 +21,7 @@ export const VERIFICATEUR_ROUTES: Routes = [
   {
     path: 'en-attente-prmp',
     component: DossiersPipeline,
-    data: { title: 'En attente décision PRMP', timeline: false, source: 'en-attente-prmp' },
+    data: { title: 'En attente de rectification PRMP', timeline: false, source: 'en-attente-prmp' },
   },
   { path: 'messagerie', component: Messagerie },
 ];

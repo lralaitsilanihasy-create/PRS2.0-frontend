@@ -141,7 +141,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   </select>
                 </label>
                 @if (!obsLevees()) {
-                  <p class="vf__alert">⚠ Ce dossier sera transmis à la PRMP pour décision. L'observation est obligatoire.</p>
+                  <p class="vf__alert">⚠ Ce dossier sera transmis à la PRMP pour rectification. L'observation est obligatoire.</p>
                 }
                 @if (formError()) { <span class="cnm-field__hint">{{ formError() }}</span> }
                 <div class="vf__foot">
@@ -168,10 +168,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     @if (confirmOpen()) {
       <div class="vf-modal__overlay" (click)="annulerTransmission()">
         <div class="vf-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-          <h2 class="vf-modal__title">Transmettre à la PRMP ?</h2>
+          <h2 class="vf-modal__title">Transmettre à la PRMP pour rectification ?</h2>
           <p>
-            Ce dossier sera transmis à la PRMP pour décision. Vous ne pourrez plus le vérifier tant
-            qu'elle n'a pas statué.
+            Ce dossier sera transmis à la PRMP pour rectification. Vous ne pourrez plus le vérifier tant
+            qu'elle n'a pas rectifié et resoumis.
           </p>
           <div class="vf-modal__foot">
             <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerTransmission()">Annuler</button>
@@ -248,7 +248,7 @@ export class VerifierDossier {
   /** Libellé du verrou, conscient du statut (en attente PRMP vs clôturé). */
   readonly messageVerrou = computed(() =>
     this.dossier()?.statut === 'EN_ATTENTE_DECISION_PRMP'
-      ? 'En attente de décision PRMP — vérification en lecture seule.'
+      ? 'En attente de rectification par la PRMP — vérification en lecture seule.'
       : 'Dossier clôturé — vérification en lecture seule.',
   );
   readonly typeLabel = computed(() => {
@@ -398,7 +398,7 @@ export class VerifierDossier {
           this.toast.success('Observations levées — dossier clôturé.');
           void this.router.navigate(['/verificateur/verifies']);
         } else {
-          this.toast.success('Observation transmise à la PRMP pour décision.');
+          this.toast.success('Observation transmise à la PRMP pour rectification.');
           void this.router.navigate(['/verificateur/en-attente-prmp']);
         }
       },
