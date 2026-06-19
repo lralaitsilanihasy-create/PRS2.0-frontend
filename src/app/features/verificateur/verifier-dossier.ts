@@ -248,7 +248,7 @@ export class VerifierDossier {
   /** Libellé du verrou, conscient du statut (en attente PRMP vs clôturé). */
   readonly messageVerrou = computed(() =>
     this.dossier()?.statut === 'EN_ATTENTE_DECISION_PRMP'
-      ? 'En attente de rectification par la PRMP — vérification en lecture seule.'
+      ? 'Ce dossier est en attente de rectification par la PRMP. Aucune vérification possible.'
       : 'Dossier clôturé — vérification en lecture seule.',
   );
   readonly typeLabel = computed(() => {

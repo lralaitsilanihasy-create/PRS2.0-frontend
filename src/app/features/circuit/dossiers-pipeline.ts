@@ -50,7 +50,7 @@ import { DossierConsultation } from './dossier-consultation';
               <div class="dossier-card__head">
                 <span class="dossier-card__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (source) { · {{ entiteLabel(d) }}}</span>
                 <div class="dossier-card__head-right">
-                  <app-statut-badge [statut]="d.statut" />
+                  <app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" />
                   <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="consulte.set(d)">Voir détails</button>
                   @if (showExamenAction && info.cle === 'EXAMEN' && peutAgir(info)) {
                     <a class="cnm-btn cnm-btn--primary cnm-btn--sm" [routerLink]="['/membre/examiner', d.idDossier]">Examiner</a>
@@ -60,6 +60,9 @@ import { DossierConsultation } from './dossier-consultation';
                   }
                   @if (showVerifAction && d.statut === 'EN_VERIFICATION') {
                     <a class="cnm-btn cnm-btn--primary cnm-btn--sm" [routerLink]="['/verificateur/verifier', d.idDossier]">Vérifier</a>
+                  }
+                  @if (showVerifAction && d.statut === 'EN_ATTENTE_DECISION_PRMP') {
+                    <a class="cnm-btn cnm-btn--ghost cnm-btn--sm" [routerLink]="['/verificateur/verifier', d.idDossier]">Voir</a>
                   }
                 </div>
               </div>
@@ -195,14 +198,30 @@ export class DossiersPipeline {
 
   constructor() {
     this.loading.set(true);
-    if (this.source === 'a-examiner' || this.source === 'a-verifier' || this.source === 'en-attente-prmp') {
-      // Files de travail scopées serveur (DISPATCHE / EN_VERIFICATION / EN_ATTENTE_DECISION_PRMP), sans filtre client.
+    if (this.source === 'a-verifier') {
+      // a-verifier renvoie EN_VERIFICATION + EN_ATTENTE_DECISION_PRMP ; tri par date de réception DESC.
+      forkJoin({ dossiers: this.dossierService.aVerifier(), receptions: this.receptionService.list() }).subscribe({
+        next: ({ dossiers, receptions }) => {
+          const dateRecept = new Map<number, string>();
+          for (const r of receptions) {
+            const cur = dateRecept.get(r.idDossier) ?? '';
+            if ((r.dateReception ?? '') > cur) {
+              dateRecept.set(r.idDossier, r.dateReception ?? '');
+            }
+          }
+          this.dossiers.set(
+            [...dossiers].sort((a, b) =>
+              (dateRecept.get(b.idDossier) ?? '').localeCompare(dateRecept.get(a.idDossier) ?? ''),
+            ),
+          );
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
+    } else if (this.source === 'a-examiner' || this.source === 'en-attente-prmp') {
+      // Files de travail scopées serveur (DISPATCHE / EN_ATTENTE_DECISION_PRMP), sans filtre client.
       const call =
-        this.source === 'a-verifier'
-          ? this.dossierService.aVerifier()
-          : this.source === 'en-attente-prmp'
-            ? this.dossierService.enAttentePrmp()
-            : this.dossierService.aExaminer();
+        this.source === 'en-attente-prmp' ? this.dossierService.enAttentePrmp() : this.dossierService.aExaminer();
       call.subscribe({
         next: (rows) => {
           this.dossiers.set(rows);
@@ -293,6 +312,11 @@ export class DossiersPipeline {
     return d.idEntiteContract != null
       ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract
       : '—';
+  }
+
+  /** Libellé contextuel du badge dans la file Vérificateur : « En attente PRMP » pour EN_ATTENTE_DECISION_PRMP. */
+  badgeLabel(statut?: string): string | null {
+    return statut === 'EN_ATTENTE_DECISION_PRMP' ? 'En attente PRMP' : null;
   }
 
   /** Dates des 7 étapes par dossier (jointure réception → dispatch → examen → PV → vérification). */
