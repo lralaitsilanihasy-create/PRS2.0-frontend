@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { DossiersClotures } from '../circuit/dossiers-clotures';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { Messagerie } from '../transverse/messagerie';
 import { EnAttentePrmp } from './en-attente-prmp';
@@ -15,8 +16,8 @@ export const VERIFICATEUR_ROUTES: Routes = [
   },
   {
     path: 'verifies',
-    component: DossiersPipeline,
-    data: { title: 'Dossiers vérifiés / clôturés', timeline: false, source: 'verifies' },
+    component: DossiersClotures,
+    data: { title: 'Dossiers vérifiés / clôturés', source: 'verifies' },
   },
   { path: 'verifier/:idDossier', component: VerifierDossier },
   { path: 'en-attente-prmp', component: EnAttentePrmp },

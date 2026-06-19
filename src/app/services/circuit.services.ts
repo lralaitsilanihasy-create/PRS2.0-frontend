@@ -10,6 +10,7 @@ import {
   Dispatch,
   Dossier,
   DossierResoumissionRequest,
+  EchangeDto,
   Examen,
   ExamenDetail,
   Page,
@@ -91,6 +92,11 @@ export class DossierService extends CrudService<Dossier> {
    */
   resoumettre(id: number, body: DossierResoumissionRequest): Observable<Dossier> {
     return this.http.post<Dossier>(`${this.baseUrl}/${id}/resoumettre`, body, { context: skipErrorToast() });
+  }
+
+  /** `GET /api/dossiers/{id}/historique-echanges` (PRMP/Vérificateur/Admin) — fil ASC d'un dossier CLOTURE (403 sinon). */
+  historiqueEchanges(id: number): Observable<EchangeDto[]> {
+    return this.http.get<EchangeDto[]>(`${this.baseUrl}/${id}/historique-echanges`);
   }
 }
 

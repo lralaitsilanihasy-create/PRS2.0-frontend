@@ -143,6 +143,16 @@ export interface DossierResoumissionRequest {
   motifRectification: string;
 }
 
+/** Entrée du fil chronologique d'un dossier clôturé (`GET /api/dossiers/{id}/historique-echanges`, trié ASC). */
+export interface EchangeDto {
+  type: 'OBSERVATION' | 'RECTIFICATION';
+  date: string;
+  acteur: string;
+  texte: string;
+  /** Renseigné pour OBSERVATION (true = passage de clôture) ; null/absent pour RECTIFICATION. */
+  obsLevees?: boolean;
+}
+
 /**
  * Demande de retrait d'un dossier par une PRMP.
  * `EN_ATTENTE` à la création ; à la décision du CC, `imCtrlCc` et `obsDecision`

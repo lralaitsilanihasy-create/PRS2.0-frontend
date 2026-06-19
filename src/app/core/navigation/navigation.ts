@@ -33,6 +33,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     },
     { label: 'Soumettre un dossier', path: '/prmp/soumettre-dossier', icon: '📨' },
     { label: 'Dossiers à rectifier', path: '/prmp/a-rectifier', icon: '✏' },
+    { label: 'Dossiers vérifiés', path: '/prmp/dossiers-verifies', icon: '✅' },
     { label: 'Demandes de retrait', path: '/prmp/retraits', icon: '↩' },
     { label: 'Calendrier', path: '/prmp/calendrier', icon: '📅' },
   ],

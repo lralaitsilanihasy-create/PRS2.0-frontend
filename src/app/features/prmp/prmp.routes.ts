@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { CrudPage } from '../../shared/crud/crud-page';
+import { DossiersClotures } from '../circuit/dossiers-clotures';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { ECHEANCE_CONFIG, PPM_CONFIG } from '../circuit/circuit-resources.config';
 import { DossiersARectifier } from './dossiers-a-rectifier';
@@ -18,6 +19,7 @@ export const PRMP_ROUTES: Routes = [
     data: { title: 'Mes dossiers' },
   },
   { path: 'a-rectifier', component: DossiersARectifier },
+  { path: 'dossiers-verifies', component: DossiersClotures, data: { title: 'Dossiers vérifiés', source: 'prmp-clotures' } },
   { path: 'ppm', component: CrudPage, data: { crud: PPM_CONFIG } },
   { path: 'soumettre-dossier', component: SoumettreDossier },
   { path: 'mes-brouillons', component: MesBrouillons },
