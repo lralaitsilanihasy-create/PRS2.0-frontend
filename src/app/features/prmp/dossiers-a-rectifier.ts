@@ -94,17 +94,24 @@ export class DossiersARectifier {
     return idDossier == null ? undefined : this.dossierMap().get(idDossier)?.statut;
   }
 
-  /** Phrase d'observation extraite du corps (sans le préfixe « Dossier … — » ni l'instruction finale). */
+  /** Texte de l'observation seul (contenu entre « … » du corps ; ni préfixe vérificateur/date, ni guillemets). */
   observationTexte(m: Notification): string {
-    let t = (m.corps ?? '').trim();
-    const dash = t.indexOf('—'); // retire « Dossier {réf} — »
-    if (dash >= 0) {
-      t = t.slice(dash + 1).trim();
+    const t = m.corps ?? '';
+    const open = t.indexOf('«');
+    const close = t.lastIndexOf('»');
+    if (open >= 0 && close > open) {
+      return t.slice(open + 1, close).trim();
     }
-    const instr = t.indexOf('Veuillez rectifier'); // retire « Veuillez rectifier … puis décider de la suite. »
+    // Repli : retire le préfixe « … : » et l'instruction finale, sans guillemets.
+    let s = t.trim();
+    const colon = s.indexOf(' : ');
+    if (colon >= 0) {
+      s = s.slice(colon + 3);
+    }
+    const instr = s.indexOf('Veuillez rectifier');
     if (instr >= 0) {
-      t = t.slice(0, instr).trim();
+      s = s.slice(0, instr);
     }
-    return t ? t.charAt(0).toUpperCase() + t.slice(1) : (m.corps ?? '—');
+    return s.replace(/[«»]/g, '').trim() || (m.corps ?? '—');
   }
 }
