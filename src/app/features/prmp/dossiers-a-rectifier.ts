@@ -33,11 +33,12 @@ import { StatutBadge } from '../../shared/circuit';
           @for (m of messages(); track m.idNotification) {
             <li class="cnm-card ar__item">
               <div class="ar__item-head">
-                <span class="ar__ref">{{ refPour(m.idDossier) }}</span>
                 @if (statutPour(m.idDossier); as s) { <app-statut-badge [statut]="s" /> }
                 <span class="ar__date cnm-mono">{{ m.dateEnvoi || '—' }}</span>
               </div>
-              <p class="ar__obs">{{ m.corps || '—' }}</p>
+              <p class="ar__p ar__p--ref">Dossier {{ refPour(m.idDossier) }}</p>
+              <p class="ar__p">{{ observationTexte(m) }}</p>
+              <p class="ar__p ar__p--action">Veuillez rectifier le dossier.</p>
             </li>
           }
         </ul>
@@ -53,9 +54,10 @@ import { StatutBadge } from '../../shared/circuit';
     .ar__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--cnm-space-2); }
     .ar__item { padding: var(--cnm-space-3) var(--cnm-space-4); border-left: 4px solid var(--cnm-warning-fg); }
     .ar__item-head { display: flex; align-items: center; gap: var(--cnm-space-2); }
-    .ar__ref { font-weight: var(--cnm-fw-semibold); }
     .ar__date { margin-left: auto; color: var(--cnm-text-3); font-size: var(--cnm-fs-micro); }
-    .ar__obs { margin: var(--cnm-space-1) 0 0; font-size: var(--cnm-fs-sm); }
+    .ar__p { margin: var(--cnm-space-1) 0 0; font-size: var(--cnm-fs-sm); }
+    .ar__p--ref { font-weight: var(--cnm-fw-semibold); }
+    .ar__p--action { color: var(--cnm-text-2); font-style: italic; }
   `,
 })
 export class DossiersARectifier {
@@ -81,13 +83,28 @@ export class DossiersARectifier {
     });
   }
 
+  /** Référence du dossier (réf. officielle ou #id). */
   refPour(idDossier?: number): string {
     if (idDossier == null) {
       return '—';
     }
-    return this.dossierMap().get(idDossier)?.refeDossier || 'Dossier #' + idDossier;
+    return this.dossierMap().get(idDossier)?.refeDossier || '#' + idDossier;
   }
   statutPour(idDossier?: number): string | undefined {
     return idDossier == null ? undefined : this.dossierMap().get(idDossier)?.statut;
+  }
+
+  /** Phrase d'observation extraite du corps (sans le préfixe « Dossier … — » ni l'instruction finale). */
+  observationTexte(m: Notification): string {
+    let t = (m.corps ?? '').trim();
+    const dash = t.indexOf('—'); // retire « Dossier {réf} — »
+    if (dash >= 0) {
+      t = t.slice(dash + 1).trim();
+    }
+    const instr = t.indexOf('Veuillez rectifier'); // retire « Veuillez rectifier … puis décider de la suite. »
+    if (instr >= 0) {
+      t = t.slice(0, instr).trim();
+    }
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : (m.corps ?? '—');
   }
 }
