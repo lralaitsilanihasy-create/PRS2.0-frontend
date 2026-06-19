@@ -112,7 +112,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
             <div class="vf__panel-head">{{ editId() != null ? 'Corriger un passage' : 'Nouvelle vérification' }}</div>
             <div class="vf__panel-body cnm-form">
               @if (verrouille()) {
-                <p class="cnm-field__hint">Dossier clôturé — vérification en lecture seule.</p>
+                <p class="cnm-field__hint">{{ messageVerrou() }}</p>
               } @else {
                 @if (idPv() == null || idReception() == null) {
                   <p class="cnm-field__hint">
@@ -140,6 +140,9 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     <option value="oui">Oui — clôture le dossier</option>
                   </select>
                 </label>
+                @if (!obsLevees()) {
+                  <p class="vf__alert">⚠ Ce dossier sera transmis à la PRMP pour décision. L'observation est obligatoire.</p>
+                }
                 @if (formError()) { <span class="cnm-field__hint">{{ formError() }}</span> }
                 <div class="vf__foot">
                   <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">
@@ -161,6 +164,24 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
         </div>
       }
     </section>
+
+    @if (confirmOpen()) {
+      <div class="vf-modal__overlay" (click)="annulerTransmission()">
+        <div class="vf-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+          <h2 class="vf-modal__title">Transmettre à la PRMP ?</h2>
+          <p>
+            Ce dossier sera transmis à la PRMP pour décision. Vous ne pourrez plus le vérifier tant
+            qu'elle n'a pas statué.
+          </p>
+          <div class="vf-modal__foot">
+            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerTransmission()">Annuler</button>
+            <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving()" (click)="confirmerTransmission()">
+              Confirmer et transmettre à la PRMP
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: `
     .vf__header { margin-bottom: var(--cnm-space-3); }
@@ -178,6 +199,11 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .vf__synthese { margin: 0; font-size: var(--cnm-fs-sm); }
     .vf__sub { margin: var(--cnm-space-2) 0 0; font-size: var(--cnm-fs-md); }
     .vf__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-3); }
+    .vf__alert { margin: 0; font-size: var(--cnm-fs-sm); background: var(--cnm-warning-bg); color: var(--cnm-warning-fg); padding: var(--cnm-space-2) var(--cnm-space-3); border-radius: var(--cnm-radius-sm); }
+    .vf-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
+    .vf-modal { width: 100%; max-width: 30rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
+    .vf-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
+    .vf-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
     @media (max-width: 60rem) { .vf__grid { grid-template-columns: 1fr; } }
   `,
 })
@@ -197,6 +223,8 @@ export class VerifierDossier {
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly formError = signal<string | null>(null);
+  /** Modale de confirmation avant transmission à la PRMP (obsLevees = false). */
+  readonly confirmOpen = signal(false);
 
   readonly dossier = signal<Dossier | null>(null);
   readonly idReception = signal<number | null>(null);
@@ -215,8 +243,14 @@ export class VerifierDossier {
   private readonly avisMap = signal<Map<string, string>>(new Map());
   private readonly controleurMap = signal<Map<string, string>>(new Map());
 
-  /** Lecture seule hors EN_VERIFICATION (clôturé / autre) — aucune écriture proposée. */
+  /** Lecture seule hors EN_VERIFICATION (clôturé / en attente PRMP / autre) — aucune écriture proposée. */
   readonly verrouille = computed(() => this.dossier()?.statut !== 'EN_VERIFICATION');
+  /** Libellé du verrou, conscient du statut (en attente PRMP vs clôturé). */
+  readonly messageVerrou = computed(() =>
+    this.dossier()?.statut === 'EN_ATTENTE_DECISION_PRMP'
+      ? 'En attente de décision PRMP — vérification en lecture seule.'
+      : 'Dossier clôturé — vérification en lecture seule.',
+  );
   readonly typeLabel = computed(() => {
     const id = this.dossier()?.idTypeDossier;
     return id ? this.typeMap().get(id) ?? id : '—';
@@ -319,7 +353,35 @@ export class VerifierDossier {
       this.formError.set('PV signé / réception introuvable — vérification impossible.');
       return;
     }
+    // obsLevees = false : observation obligatoire + confirmation (le dossier part en décision PRMP).
+    if (!this.obsLevees()) {
+      if (!this.observation().trim()) {
+        this.formError.set("L'observation est obligatoire pour transmettre le dossier à la PRMP.");
+        return;
+      }
+      this.formError.set(null);
+      this.confirmOpen.set(true);
+      return;
+    }
     this.formError.set(null);
+    this.executerVerification();
+  }
+
+  confirmerTransmission(): void {
+    this.confirmOpen.set(false);
+    this.executerVerification();
+  }
+  annulerTransmission(): void {
+    this.confirmOpen.set(false);
+  }
+
+  /** Enregistre la vérification (POST/PUT) ; aiguillage du message/redirection selon obsLevees. */
+  private executerVerification(): void {
+    const idReception = this.idReception();
+    const idPv = this.idPv();
+    if (idReception == null || idPv == null) {
+      return;
+    }
     this.saving.set(true);
     const editId = this.editId();
     const body = {
@@ -336,8 +398,8 @@ export class VerifierDossier {
           this.toast.success('Observations levées — dossier clôturé.');
           void this.router.navigate(['/verificateur/verifies']);
         } else {
-          this.toast.success('Vérification enregistrée — le dossier reste à vérifier.');
-          void this.router.navigate(['/verificateur/a-verifier']);
+          this.toast.success('Observation transmise à la PRMP pour décision.');
+          void this.router.navigate(['/verificateur/en-attente-prmp']);
         }
       },
       error: (_e: ApiError) => this.saving.set(false), // 403/409/400 → toast centralisé

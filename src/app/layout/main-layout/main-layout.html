@@ -63,6 +63,9 @@
                 @if (countFor(item.path) !== undefined) {
                   <span class="sidebar__badge">{{ countFor(item.path) }}</span>
                 }
+                @if (alertFor(item.path)) {
+                  <span class="sidebar__badge sidebar__badge--alert">{{ alertFor(item.path) }}</span>
+                }
               </a>
             }
           </li>

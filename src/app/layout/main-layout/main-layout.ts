@@ -35,9 +35,14 @@ export class MainLayout {
   readonly displayName = signal('');
   /** Compteurs affichés en badge à côté de certaines entrées de menu (clé = chemin). */
   readonly counts = signal<Record<string, number>>({});
+  /** Compteurs d'alerte (badge rouge) à côté de certaines entrées (clé = chemin). */
+  readonly alerts = signal<Record<string, number>>({});
 
   countFor(path: string): number | undefined {
     return this.counts()[path];
+  }
+  alertFor(path: string): number | undefined {
+    return this.alerts()[path];
   }
 
   /** Chemins des en-têtes de sous-menu actuellement dépliés. */
@@ -71,6 +76,25 @@ export class MainLayout {
         )
         .subscribe(() => this.rafraichirCompteursSecretaire());
     }
+
+    // PRMP : badge rouge « dossiers en attente de décision » sur le tableau de bord.
+    if (this.auth.role() === 'PRMP') {
+      this.rafraichirAlertesPrmp();
+      this.router.events
+        .pipe(
+          filter((e) => e instanceof NavigationEnd),
+          takeUntilDestroyed(),
+        )
+        .subscribe(() => this.rafraichirAlertesPrmp());
+    }
+  }
+
+  /** Recharge le compteur d'alerte PRMP (dossiers EN_ATTENTE_DECISION_PRMP). */
+  private rafraichirAlertesPrmp(): void {
+    this.dossierService.list('EN_ATTENTE_DECISION_PRMP').subscribe({
+      next: (rows) => this.alerts.update((a) => ({ ...a, '/prmp/tableau-de-bord': rows.length })),
+      error: () => {},
+    });
   }
 
   /** Recharge les compteurs du Secrétaire (à réceptionner / réceptionnés), scopés serveur. */

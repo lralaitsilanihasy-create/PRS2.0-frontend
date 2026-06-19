@@ -70,6 +70,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   VERIFICATEUR: [
     { label: 'À vérifier', path: '/verificateur/a-verifier', icon: '✔' },
+    { label: 'En attente PRMP', path: '/verificateur/en-attente-prmp', icon: '⏳' },
     { label: 'Vérifiés / clôturés', path: '/verificateur/verifies', icon: '🗂' },
     { label: 'Messagerie', path: '/verificateur/messagerie', icon: '✉' },
   ],

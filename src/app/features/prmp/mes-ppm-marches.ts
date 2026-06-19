@@ -62,6 +62,9 @@ type ModeSuggestion = {
               <span class="mpm__ref">{{ ppm.reference || 'PPM #' + ppm.idPpm }}</span>
               <span class="mpm__sub">Exercice {{ ppm.exercice }} · {{ ppm.libelle || '—' }}</span>
               <span class="cnm-badge cnm-badge--neutral">{{ marchesOf(ppm.idPpm).length }} marché(s)</span>
+              @if (statutPpm(ppm) === 'EN_ATTENTE_DECISION_PRMP') {
+                <app-statut-badge [statut]="statutPpm(ppm)" />
+              }
             </button>
 
             @if (isOpen(ppm.idPpm)) {
@@ -583,6 +586,11 @@ export class MesPpmMarches {
   estSoumis(ppm: Ppm): boolean {
     const s = this.dossierStatut().get(ppm.idDossier);
     return !!s && s !== 'BROUILLON';
+  }
+
+  /** Statut du dossier rattaché au PPM (pour signaler « en attente PRMP » en orange). */
+  statutPpm(ppm: Ppm): string | undefined {
+    return this.dossierStatut().get(ppm.idDossier);
   }
 
   /** Ajout de marché autorisé uniquement si le dossier du PPM est en BROUILLON (donc dans le périmètre PRMP). */

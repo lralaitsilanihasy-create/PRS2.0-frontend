@@ -52,6 +52,7 @@ export function etapeIndexForDossier(statut?: string): number {
       return 4; // PV signé
     case 'VERIFICATION':
     case 'EN_VERIFICATION':
+    case 'EN_ATTENTE_DECISION_PRMP':
       return 5; // Vérification
     case 'CLOTURE':
       return 6; // Clôture
@@ -81,6 +82,7 @@ export const DOSSIER_STATUT_LABELS: Record<string, string> = {
   EXAMINE: 'Examiné',
   PV_SIGNE: 'PV signé',
   EN_VERIFICATION: 'En vérification',
+  EN_ATTENTE_DECISION_PRMP: 'En attente PRMP',
   CLOTURE: 'Clôturé',
   RETIRE: 'Retiré',
 };
@@ -126,6 +128,7 @@ export function statutSeverity(statut: string): Severity {
       return 'danger';
     case 'EN_RECTIFICATION':
     case 'EN_ATTENTE':
+    case 'EN_ATTENTE_DECISION_PRMP':
     case 'FAVORABLE_RESERVES':
       return 'warning';
     case 'PRET_DISPATCH':

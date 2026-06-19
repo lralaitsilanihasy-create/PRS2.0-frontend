@@ -159,4 +159,9 @@
     font-weight: var(--cnm-fw-semibold);
     text-align: center;
   }
+
+  &__badge--alert {
+    background: var(--cnm-danger-bg);
+    color: var(--cnm-danger-fg);
+  }
 }

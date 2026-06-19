@@ -67,6 +67,11 @@ export class DossierService extends CrudService<Dossier> {
     return this.http.get<Dossier[]>(`${this.baseUrl}/retirables`);
   }
 
+  /** `GET /api/dossiers/en-attente-prmp` (Vérificateur/Admin) — dossiers EN_ATTENTE_DECISION_PRMP, lecture seule. */
+  enAttentePrmp(): Observable<Dossier[]> {
+    return this.http.get<Dossier[]>(`${this.baseUrl}/en-attente-prmp`);
+  }
+
   /**
    * `POST /api/dossiers/{id}/soumettre` (réservé PRMP, §3.1 Module 03).
    * Soumission officielle : génère `refeDossier`, renseigne `dateRef` si vide,

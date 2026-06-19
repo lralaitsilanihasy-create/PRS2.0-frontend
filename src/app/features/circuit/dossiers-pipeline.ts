@@ -170,6 +170,7 @@ export class DossiersPipeline {
     | 'examines'
     | 'a-verifier'
     | 'verifies'
+    | 'en-attente-prmp'
     | undefined;
   /** Sources paginées (historiques server-side). */
   protected readonly paginee = this.source === 'examines' || this.source === 'verifies';
@@ -194,9 +195,14 @@ export class DossiersPipeline {
 
   constructor() {
     this.loading.set(true);
-    if (this.source === 'a-examiner' || this.source === 'a-verifier') {
-      // Files de travail scopées serveur (DISPATCHE / EN_VERIFICATION), sans filtre client.
-      const call = this.source === 'a-verifier' ? this.dossierService.aVerifier() : this.dossierService.aExaminer();
+    if (this.source === 'a-examiner' || this.source === 'a-verifier' || this.source === 'en-attente-prmp') {
+      // Files de travail scopées serveur (DISPATCHE / EN_VERIFICATION / EN_ATTENTE_DECISION_PRMP), sans filtre client.
+      const call =
+        this.source === 'a-verifier'
+          ? this.dossierService.aVerifier()
+          : this.source === 'en-attente-prmp'
+            ? this.dossierService.enAttentePrmp()
+            : this.dossierService.aExaminer();
       call.subscribe({
         next: (rows) => {
           this.dossiers.set(rows);
@@ -275,6 +281,8 @@ export class DossiersPipeline {
         return 'Aucun dossier à vérifier.';
       case 'verifies':
         return 'Aucun dossier vérifié ou clôturé.';
+      case 'en-attente-prmp':
+        return 'Aucun dossier en attente de décision PRMP.';
       default:
         return 'Aucun dossier visible dans votre périmètre.';
     }
