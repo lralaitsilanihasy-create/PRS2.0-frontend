@@ -775,8 +775,9 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 | PUT | /api/dossiers/{id} | `DossierDto` | `DossierDto` | 200, 400, 403, 404 | **ADMINISTRATEUR** |
 | DELETE | /api/dossiers/{id} | — | — | 204, 404 | Authentifié |
 | POST | /api/dossiers/{id}/soumettre | — | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** |
+| POST | /api/dossiers/{id}/resoumettre | `DossierResoumissionRequest` | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** propriétaire |
 
-`{id}` = idDossier (number).
+`{id}` = idDossier (number). **`DossierResoumissionRequest`** = `{ motifRectification }` (String, **@NotBlank**, max 255).
 
 > **Filtre serveur `?statut=` (nouveau).** `GET /api/dossiers?statut=SOUMIS` restreint la liste à ce
 > statut **côté serveur**, en **conservant le périmètre** (localité / PRMP). Statut inconnu → **400**.
@@ -804,6 +805,14 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 > ⚠️ **File « En attente PRMP » du Vérificateur (règle ajoutée), lecture seule.** `GET /api/dossiers/en-attente-prmp`
 > = dossiers **`EN_ATTENTE_DECISION_PRMP`** de sa localité (observations non levées transmises à la PRMP). Le
 > vérificateur ne peut ni modifier ni soumettre de nouvelle vérification tant que la PRMP n'a pas statué.
+
+> ⚠️ **Resoumission après rectification (règle ajoutée).** `POST /api/dossiers/{id}/resoumettre` (réservé **PRMP
+> propriétaire**) — corps `{ "motifRectification": "…" }` (**obligatoire**, non vide, sinon **400**). N'agit que
+> sur un dossier **`EN_ATTENTE_DECISION_PRMP`** (sinon **409**) → transition **`EN_VERIFICATION`** (retour au
+> vérificateur). Effets : notification **`RECTIFICATION_PRMP`** au vérificateur du dossier (référence, nom PRMP,
+> motif, date) ; trace dans `t_audit_log` (NOM_TABLE=`t_dossier`, TYPE_ACTION=`RECTIFICATION_PRMP`,
+> IM_ACTEUR=`<idPrmp>`, CHAMP_MODIFIE=`motifRectification`) ; le **motif** est enregistré sur la dernière
+> vérification (`t_verification.MOTIF_RECTIF`) et exposé dans `VerificationDto.motifRectif` (visible côté vérificateur).
 
 > **Soumission (§3.1, Module 03).** `POST /api/dossiers/{id}/soumettre` (réservé **PRMP propriétaire**) :
 > passe le dossier de **`BROUILLON` → `SOUMIS`** (statut autre → **409**), vérifie la **cohérence
@@ -1672,6 +1681,7 @@ plusieurs dates, chacune typée). Remplace les anciens champs `datePrev*` de `Ma
 | `PV_A_VERIFIER` | PV signé `FAVR` à vérifier | Vérificateur de la localité | DOSSIER |
 | `PV_POUR_INFO` | PV signé auto-clôturé (FAV/DEF/NSP) | Vérificateur de la localité | DOSSIER |
 | `OBSERVATION_VERIFICATION` | observations de vérification non levées à traiter | PRMP du dossier | DOSSIER |
+| `RECTIFICATION_PRMP` | dossier rectifié par la PRMP et resoumis | Vérificateur du dossier | DOSSIER |
 | `CLOTURE_ELIGIBLE` | dossier clôturé éligible | Chargé de publication | DOSSIER |
 | `NOUVEAU_MESSAGE` | message reçu (messagerie) | destinataire | MESSAGE |
 
@@ -2436,6 +2446,7 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 | dateVerif | string (date) | Non | **ignoré** : posée côté serveur (date du jour) |
 | observation | string | Non | max 500 |
 | obsLevees | boolean | Non | `true` → `CLOTURE` ; `false` → `EN_ATTENTE_DECISION_PRMP` + notif PRMP `OBSERVATION_VERIFICATION` + trace audit (si dossier `EN_VERIFICATION`) |
+| motifRectif | string | — (sortie) | max 255 — motif de rectification PRMP, posé serveur à la resoumission ; **lecture seule** (visible côté vérificateur) |
 
 **Endpoints**
 
