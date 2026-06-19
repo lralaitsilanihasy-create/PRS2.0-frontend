@@ -4,7 +4,7 @@ import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Dossier, Verification } from '../../models';
+import { Dossier, Notification, Verification } from '../../models';
 import {
   AvisService,
   ControleurService,
@@ -13,6 +13,7 @@ import {
   EntiteContractService,
   ExamenService,
   LocaliteService,
+  NotificationService,
   PvExamenService,
   ReceptionService,
   ReferenceLookupService,
@@ -22,10 +23,18 @@ import {
 import { StatutBadge } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 
+/** Une ligne du fil chronologique : observation envoyée (vérificateur) ou rectification PRMP reçue. */
+interface Echange {
+  type: 'obs' | 'rectif';
+  texte: string;
+  date: string;
+}
+
 /**
  * Écran de vérification d'un dossier (profil Contrôleur vérificateur).
  * Reflet du circuit : contexte lecture seule (dossier + PV signé / avis / réserves),
- * historique des passages, et formulaire d'enregistrement (observation + levée).
+ * fil chronologique des échanges (observations envoyées + rectifications PRMP reçues),
+ * et formulaire d'enregistrement d'un nouveau passage (observation + levée).
  *
  * `idReception` / `idPv` du POST sont dérivés côté client (chaîne dossier → examen →
  * PV signé), aucune donnée inventée. Le backend reste l'autorité (403/409 via l'intercepteur).
@@ -72,49 +81,30 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                 <p class="vf__synthese"><strong>Observations / réserves :</strong> {{ synthese() }}</p>
               }
 
-              <h3 class="vf__sub">Passages précédents</h3>
-              @if (passages().length) {
-                <table class="cnm-table">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Vérificateur</th>
-                      <th>Observation</th>
-                      <th>Levées</th>
-                      @if (!verrouille()) { <th></th> }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (v of passages(); track v.idVerification) {
-                      <tr>
-                        <td class="cnm-mono">{{ v.dateVerif || '—' }}</td>
-                        <td>{{ ctrlLabel(v.imCtrlVerif) }}</td>
-                        <td>
-                          {{ v.observation || '—' }}
-                          @if (v.motifRectif) {
-                            <span class="vf__rectif"><strong>Rectification PRMP :</strong> {{ v.motifRectif }}</span>
-                          }
-                        </td>
-                        <td>{{ v.obsLevees ? 'Oui' : 'Non' }}</td>
-                        @if (!verrouille()) {
-                          <td>
-                            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="editer(v)">
-                              Modifier
-                            </button>
-                          </td>
-                        }
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+              <h3 class="vf__sub">Historique des échanges</h3>
+              @if (echanges().length) {
+                <ul class="vf__ech">
+                  @for (e of echanges(); track $index; let first = $first) {
+                    <li
+                      class="vf__ech-item"
+                      [class.vf__ech-item--latest]="first && e.type === 'obs'"
+                      [class.vf__ech-item--rectif]="e.type === 'rectif'"
+                    >
+                      <span class="vf__ech-meta cnm-mono">
+                        {{ e.date || '—' }} · {{ e.type === 'obs' ? 'Observation envoyée' : 'Rectification PRMP reçue' }}
+                      </span>
+                      <span class="vf__ech-text">{{ e.texte }}</span>
+                    </li>
+                  }
+                </ul>
               } @else {
-                <p class="cnm-muted">Aucun passage enregistré.</p>
+                <p class="cnm-muted">Aucun échange enregistré.</p>
               }
             </div>
           </div>
 
           <div class="cnm-card vf__panel">
-            <div class="vf__panel-head">{{ editId() != null ? 'Corriger un passage' : 'Nouvelle vérification' }}</div>
+            <div class="vf__panel-head">Nouvelle vérification</div>
             <div class="vf__panel-body cnm-form">
               @if (verrouille()) {
                 <p class="cnm-field__hint">{{ messageVerrou() }}</p>
@@ -150,16 +140,14 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                 }
                 @if (formError()) { <span class="cnm-field__hint">{{ formError() }}</span> }
                 <div class="vf__foot">
-                  <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">
-                    {{ editId() != null ? 'Annuler la correction' : 'Retour' }}
-                  </button>
+                  <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Retour</button>
                   <button
                     type="button"
                     class="cnm-btn cnm-btn--primary"
                     [disabled]="saving() || idPv() == null || idReception() == null"
                     (click)="enregistrer()"
                   >
-                    {{ saving() ? 'Enregistrement…' : editId() != null ? 'Modifier la vérification' : 'Enregistrer la vérification' }}
+                    {{ saving() ? 'Enregistrement…' : 'Enregistrer la vérification' }}
                   </button>
                 </div>
               }
@@ -202,8 +190,13 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .vf__info dt { flex: 0 0 9rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: .08em; color: var(--cnm-text-3); }
     .vf__info dd { margin: 0; color: var(--cnm-text); }
     .vf__synthese { margin: 0; font-size: var(--cnm-fs-sm); }
-    .vf__rectif { display: block; margin-top: 2px; font-size: var(--cnm-fs-xs); color: var(--cnm-warning-fg); }
     .vf__sub { margin: var(--cnm-space-2) 0 0; font-size: var(--cnm-fs-md); }
+    .vf__ech { list-style: none; margin: var(--cnm-space-1) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--cnm-space-1); }
+    .vf__ech-item { display: flex; flex-direction: column; gap: 2px; padding: var(--cnm-space-1) var(--cnm-space-2); border-left: 2px solid var(--cnm-border); }
+    .vf__ech-item--latest { border-left-color: var(--cnm-brand); font-weight: var(--cnm-fw-semibold); color: var(--cnm-brand); }
+    .vf__ech-item--rectif { border-left-color: var(--cnm-warning-fg); }
+    .vf__ech-meta { color: var(--cnm-text-3); font-size: var(--cnm-fs-micro); }
+    .vf__ech-text { font-size: var(--cnm-fs-sm); }
     .vf__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-3); }
     .vf__alert { margin: 0; font-size: var(--cnm-fs-sm); background: var(--cnm-warning-bg); color: var(--cnm-warning-fg); padding: var(--cnm-space-2) var(--cnm-space-3); border-radius: var(--cnm-radius-sm); }
     .vf-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
@@ -223,6 +216,7 @@ export class VerifierDossier {
   private readonly examenService = inject(ExamenService);
   private readonly pvService = inject(PvExamenService);
   private readonly verificationService = inject(VerificationService);
+  private readonly notificationService = inject(NotificationService);
   private readonly lookups = inject(ReferenceLookupService);
 
   readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
@@ -237,11 +231,11 @@ export class VerifierDossier {
   readonly idPv = signal<number | null>(null);
   readonly synthese = signal('');
   private readonly avisPv = signal<string | null>(null);
-  readonly passages = signal<Verification[]>([]);
+  /** Fil chronologique : observations envoyées + rectifications PRMP reçues (DESC). */
+  readonly echanges = signal<Echange[]>([]);
 
   readonly observation = signal('');
   readonly obsLevees = signal(false);
-  readonly editId = signal<number | null>(null);
 
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -296,6 +290,7 @@ export class VerifierDossier {
       examens: this.examenService.list(),
       pvs: this.pvService.list(),
       verifications: this.verificationService.list(),
+      notifs: this.notificationService.mes(),
     }).subscribe({
       next: (r) => {
         this.dossier.set(r.dossier);
@@ -321,34 +316,24 @@ export class VerifierDossier {
         const recFallback = [...recOfD].sort((a, b) => (b.numPassage ?? 0) - (a.numPassage ?? 0))[0];
         this.idReception.set((recChain ?? recFallback)?.idReception ?? null);
 
-        // Historique : pas d'endpoint par dossier → filtrage client par réception / PV de la chaîne.
+        // Fil chronologique (lecture seule) : observations envoyées (vérifications de la chaîne du dossier)
+        // + rectifications PRMP reçues (notifications RECTIFICATION_PRMP du dossier). Pas d'endpoint par
+        // dossier pour les vérifications → filtrage client par réception / PV de la chaîne.
         const pvIds = new Set(r.pvs.filter((p) => exIds.has(p.idExamen)).map((p) => p.idPv));
-        this.passages.set(
-          r.verifications
-            .filter((v) => recIds.has(v.idReception) || (v.idPv != null && pvIds.has(v.idPv)))
-            .sort((a, b) => (b.dateVerif ?? '').localeCompare(a.dateVerif ?? '')),
-        );
+        const obs: Echange[] = r.verifications
+          .filter((v) => v.observation && (recIds.has(v.idReception) || (v.idPv != null && pvIds.has(v.idPv))))
+          .map((v) => ({ type: 'obs' as const, texte: v.observation as string, date: v.dateVerif ?? '' }));
+        const rectif: Echange[] = r.notifs
+          .filter((n) => n.typeNotif === 'RECTIFICATION_PRMP' && n.idDossier === this.idDossier && n.corps)
+          .map((n) => ({ type: 'rectif' as const, texte: n.corps as string, date: n.dateEnvoi ?? '' }));
+        this.echanges.set([...obs, ...rectif].sort((a, b) => b.date.localeCompare(a.date)));
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
   }
 
-  editer(v: Verification): void {
-    this.editId.set(v.idVerification ?? null);
-    this.observation.set(v.observation ?? '');
-    this.obsLevees.set(!!v.obsLevees);
-    this.formError.set(null);
-  }
-
   annuler(): void {
-    if (this.editId() != null) {
-      this.editId.set(null);
-      this.observation.set('');
-      this.obsLevees.set(false);
-      this.formError.set(null);
-      return;
-    }
     void this.router.navigate(['/verificateur/a-verifier']);
   }
 
@@ -381,7 +366,7 @@ export class VerifierDossier {
     this.confirmOpen.set(false);
   }
 
-  /** Enregistre la vérification (POST/PUT) ; aiguillage du message/redirection selon obsLevees. */
+  /** Enregistre un NOUVEAU passage de vérification (POST) ; message/redirection selon obsLevees. */
   private executerVerification(): void {
     const idReception = this.idReception();
     const idPv = this.idPv();
@@ -389,16 +374,13 @@ export class VerifierDossier {
       return;
     }
     this.saving.set(true);
-    const editId = this.editId();
     const body = {
       idReception,
       idPv,
       observation: this.observation() || undefined,
       obsLevees: this.obsLevees(),
-      ...(editId != null ? { idVerification: editId } : {}),
     } as Verification;
-    const op = editId != null ? this.verificationService.update(editId, body) : this.verificationService.create(body);
-    op.subscribe({
+    this.verificationService.create(body).subscribe({
       next: () => {
         if (this.obsLevees()) {
           this.toast.success('Observations levées — dossier clôturé.');
