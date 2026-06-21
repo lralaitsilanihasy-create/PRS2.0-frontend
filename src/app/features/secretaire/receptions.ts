@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
@@ -110,13 +110,6 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
 
             <div class="cnm-form-grid">
               <label class="cnm-field">
-                <span class="cnm-field__label">N° de réception (identifiant technique) *</span>
-                <input class="cnm-input" type="number" formControlName="idReception" />
-                <span class="cnm-field__hint cnm-muted">Identifiant unique à attribuer (doublon → 409).</span>
-                @if (req('idReception')) { <span class="cnm-field__hint">Obligatoire.</span> }
-                @if (err('idReception')) { <span class="cnm-field__hint">{{ err('idReception') }}</span> }
-              </label>
-              <label class="cnm-field">
                 <span class="cnm-field__label">Passage</span>
                 <input class="cnm-input" type="text" value="1 — INITIAL" readonly disabled />
                 <span class="cnm-field__hint cnm-muted">Réception initiale (le Secrétaire agit au passage 1).</span>
@@ -199,7 +192,6 @@ export class SecretaireReceptions {
   readonly canWrite = computed(() => this.permissions.can('RECEPTION_WRITE'));
 
   readonly form = this.fb.nonNullable.group({
-    idReception: [null as number | null, Validators.required],
     dateReception: [''],
     observation: [''],
     complet: [false],
@@ -244,7 +236,6 @@ export class SecretaireReceptions {
     this.formError.set(null);
     this.selected.set(d);
     this.form.reset({
-      idReception: null,
       dateReception: new Date().toISOString().slice(0, 10),
       observation: '',
       complet: false,
@@ -281,8 +272,8 @@ export class SecretaireReceptions {
 
   private creerReception(d: Dossier): void {
     const v = this.form.getRawValue();
-    const body: Reception = {
-      idReception: v.idReception as number,
+    // idReception non envoyé : alloué par le serveur (id client ignoré). Le reste typé Reception via cast.
+    const body = {
       idDossier: d.idDossier,
       numPassage: 1,
       typePassage: 'INITIAL',
@@ -290,7 +281,7 @@ export class SecretaireReceptions {
       dateReception: v.dateReception || undefined,
       observation: v.observation || undefined,
       complet: v.complet,
-    };
+    } as Reception;
     this.receptionService.create(body).subscribe({
       next: (created) => {
         this.toast.success('Réception enregistrée.');

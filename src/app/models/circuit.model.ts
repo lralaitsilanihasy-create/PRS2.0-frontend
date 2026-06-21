@@ -25,6 +25,7 @@ export interface Dossier {
 
 /** Réception d'un dossier (passage initial ou retour). */
 export interface Reception {
+  /** PK allouée par le serveur au POST (id client ignoré, non envoyé) ; présente en réponse, utilisée par le dispatch. */
   idReception: number;
   idDossier: number;
   numPassage: number;
