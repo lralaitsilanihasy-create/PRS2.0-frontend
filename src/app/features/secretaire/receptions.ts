@@ -40,6 +40,16 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
         réception initiale. Cliquez « Enregistrer » sur une ligne pour saisir sa réception.
       </div>
 
+      @if (referenceAttribuee(); as ref) {
+        <div class="cnm-card rec__ref">
+          <span>Réception enregistrée — <strong>Référence attribuée : {{ ref }}</strong></span>
+          <span class="rec__ref-actions">
+            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="copier(ref)">Copier</button>
+            <button type="button" class="rec__ref-close" aria-label="Fermer" (click)="referenceAttribuee.set(null)">&times;</button>
+          </span>
+        </div>
+      }
+
       @if (loading()) {
         <p class="rec__info">Chargement…</p>
       } @else {
@@ -144,6 +154,9 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .rec__header { margin-bottom: var(--cnm-space-4); }
     .rec__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
     .rec__note { padding: var(--cnm-space-3) var(--cnm-space-4); color: var(--cnm-text-2); margin-bottom: var(--cnm-space-3); }
+    .rec__ref { display: flex; align-items: center; justify-content: space-between; gap: var(--cnm-space-3); padding: var(--cnm-space-3) var(--cnm-space-4); background: var(--cnm-success-bg); color: var(--cnm-success-fg); margin-bottom: var(--cnm-space-3); }
+    .rec__ref-actions { display: flex; align-items: center; gap: var(--cnm-space-2); }
+    .rec__ref-close { background: transparent; border: 0; color: inherit; font-size: 1.25rem; line-height: 1; cursor: pointer; }
     .rec__info { color: var(--cnm-text-2); padding: var(--cnm-space-3); text-align: center; }
     .rec__row-action { text-align: right; }
     .rec__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); }
@@ -180,6 +193,8 @@ export class SecretaireReceptions {
   /** Worklist « à réceptionner » : SOUMIS + sans réception, filtré côté serveur. */
   readonly aReceptionner = signal<Dossier[]>([]);
   private readonly localiteMap = signal<Map<string, string>>(new Map());
+  /** Référence officielle attribuée à la dernière réception (affichée + copiable ; null = masquée). */
+  readonly referenceAttribuee = signal<string | null>(null);
 
   readonly canWrite = computed(() => this.permissions.can('RECEPTION_WRITE'));
 
@@ -209,6 +224,12 @@ export class SecretaireReceptions {
 
   loc(id?: string): string {
     return id ? this.localiteMap().get(id) ?? id : '—';
+  }
+  /** Copie la référence dans le presse-papiers (contexte sécurisé / localhost). */
+  copier(ref: string): void {
+    if (navigator.clipboard) {
+      void navigator.clipboard.writeText(ref).then(() => this.toast.success('Référence copiée.'));
+    }
   }
   err(champ: string): string | undefined {
     return getFieldError(this.formError(), champ);
@@ -271,9 +292,10 @@ export class SecretaireReceptions {
       complet: v.complet,
     };
     this.receptionService.create(body).subscribe({
-      next: () => {
+      next: (created) => {
         this.toast.success('Réception enregistrée.');
         this.submitting.set(false);
+        this.referenceAttribuee.set(created.reference ?? null);
         // Maj fine : la ligne quitte la worklist (a-receptionner = SOUMIS sans réception).
         this.retirerDeWorklist(d.idDossier);
         this.selected.set(null);

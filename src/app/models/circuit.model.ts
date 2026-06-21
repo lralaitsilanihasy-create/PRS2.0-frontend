@@ -35,6 +35,8 @@ export interface Reception {
   /** Si `true` → le dossier passe en `PRET_DISPATCH` (effet [Auto]). */
   complet?: boolean;
   idReceptionPrec?: number;
+  /** Référence officielle structurée générée au POST (réponse, lecture seule) ; aussi persistée sur le dossier (`refeDossier`). */
+  reference?: string;
 }
 
 /** Réponse de GET /api/receptions/dossier/{idDossier}/existe (test léger « déjà réceptionné ? »). */
