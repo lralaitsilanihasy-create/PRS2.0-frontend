@@ -66,10 +66,10 @@ interface CarteAttente {
                 <h3 class="ep__hist-title">Historique des échanges</h3>
                 @if (c.echanges.length) {
                   <ul class="ep__ech">
-                    @for (e of c.echanges; track $index; let first = $first) {
+                    @for (e of c.echanges; track $index; let last = $last) {
                       <li
                         class="ep__ech-item"
-                        [class.ep__ech-item--latest]="first && e.type === 'obs'"
+                        [class.ep__ech-item--latest]="last && e.type === 'obs'"
                         [class.ep__ech-item--rectif]="e.type === 'rectif'"
                       >
                         <span class="ep__ech-meta cnm-mono">
@@ -149,7 +149,7 @@ export class EnAttentePrmp {
             const rectif: Echange[] = notifs
               .filter((n) => n.typeNotif === 'RECTIFICATION_PRMP' && n.idDossier === d.idDossier && n.corps)
               .map((n) => ({ type: 'rectif' as const, texte: n.corps as string, date: n.dateEnvoi ?? '' }));
-            const echanges = [...obs, ...rectif].sort((a, b) => b.date.localeCompare(a.date));
+            const echanges = [...obs, ...rectif].sort((a, b) => a.date.localeCompare(b.date));
             return { dossier: d, echanges };
           }),
         );

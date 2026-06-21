@@ -84,10 +84,10 @@ interface Echange {
               <h3 class="vf__sub">Historique des échanges</h3>
               @if (echanges().length) {
                 <ul class="vf__ech">
-                  @for (e of echanges(); track $index; let first = $first) {
+                  @for (e of echanges(); track $index; let last = $last) {
                     <li
                       class="vf__ech-item"
-                      [class.vf__ech-item--latest]="first && e.type === 'obs'"
+                      [class.vf__ech-item--latest]="last && e.type === 'obs'"
                       [class.vf__ech-item--rectif]="e.type === 'rectif'"
                     >
                       <span class="vf__ech-meta cnm-mono">
@@ -326,7 +326,7 @@ export class VerifierDossier {
         const rectif: Echange[] = r.notifs
           .filter((n) => n.typeNotif === 'RECTIFICATION_PRMP' && n.idDossier === this.idDossier && n.corps)
           .map((n) => ({ type: 'rectif' as const, texte: n.corps as string, date: n.dateEnvoi ?? '' }));
-        this.echanges.set([...obs, ...rectif].sort((a, b) => b.date.localeCompare(a.date)));
+        this.echanges.set([...obs, ...rectif].sort((a, b) => a.date.localeCompare(b.date)));
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
