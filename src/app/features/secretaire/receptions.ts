@@ -139,6 +139,19 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       </div>
     }
 
+    @if (completWarning()) {
+      <div class="rec-warn__overlay" (click)="completWarning.set(false)">
+        <div class="rec-warn cnm-card" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+          <p class="rec-warn__msg">
+            Le dossier doit être complet pour être réceptionné. Veuillez cocher « Dossier complet » avant d'enregistrer.
+          </p>
+          <div class="rec-warn__foot">
+            <button type="button" class="cnm-btn cnm-btn--primary" (click)="completWarning.set(false)">OK</button>
+          </div>
+        </div>
+      </div>
+    }
+
     @if (consulte(); as d) {
       <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
     }
@@ -165,6 +178,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .rec-modal__close:hover { color: var(--cnm-text); }
     .rec-modal__body { padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); }
     .rec-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); padding: var(--cnm-space-3) var(--cnm-space-5); border-top: 1px solid var(--cnm-border); }
+    .rec-warn__overlay { position: fixed; inset: 0; z-index: 1060; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
+    .rec-warn { width: 100%; max-width: 26rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
+    .rec-warn__msg { margin: 0; }
+    .rec-warn__foot { display: flex; justify-content: flex-end; }
   `,
 })
 export class SecretaireReceptions {
@@ -188,6 +205,8 @@ export class SecretaireReceptions {
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   /** Référence officielle attribuée à la dernière réception (affichée + copiable ; null = masquée). */
   readonly referenceAttribuee = signal<string | null>(null);
+  /** Avertissement « cocher Dossier complet » avant enregistrement (true = affiché). */
+  readonly completWarning = signal(false);
 
   readonly canWrite = computed(() => this.permissions.can('RECEPTION_WRITE'));
 
@@ -250,6 +269,11 @@ export class SecretaireReceptions {
     if (!d) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      return;
+    }
+    // Garde-fou UX : la réception n'est acceptée que si le dossier est marqué complet.
+    if (!this.form.getRawValue().complet) {
+      this.completWarning.set(true);
       return;
     }
     this.formError.set(null);
