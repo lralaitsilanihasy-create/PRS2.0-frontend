@@ -774,12 +774,18 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 | GET | /api/dossiers/{id} | — | `DossierDto` | 200, 403, 404 | Authentifié (filtré) |
 | POST | /api/dossiers | `DossierDto` | `DossierDto` | 201, 400, 403 | **ADMINISTRATEUR** |
 | PUT | /api/dossiers/{id} | `DossierDto` | `DossierDto` | 200, 400, 403, 404 | **ADMINISTRATEUR** |
-| DELETE | /api/dossiers/{id} | — | — | 204, 404 | Authentifié |
+| DELETE | /api/dossiers/{id} | — | — | 204, 403, 404, 409 | **PRMP** propriétaire — BROUILLON sans historique |
 | POST | /api/dossiers/{id}/soumettre | — | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** |
 | POST | /api/dossiers/{id}/resoumettre | `DossierResoumissionRequest` | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** propriétaire |
 | GET | /api/dossiers/{id}/historique-echanges | — | `EchangeDto[]` | 200, 403, 404 | **PRMP** / **VERIFICATEUR** (titulaire/délégué) / **ADMINISTRATEUR** |
 
 `{id}` = idDossier (number). **`DossierResoumissionRequest`** = `{ motifRectification }` (String, **@NotBlank**, max 255).
+
+> ⚠️ **Suppression de dossier (règle ajoutée).** `DELETE /api/dossiers/{id}` est réservée à la **PRMP propriétaire**
+> (sinon **403**), uniquement sur un dossier **`BROUILLON`** (sinon **409** « Ce dossier ne peut pas être supprimé. »).
+> Cascade applicative du **contenu** : prévisions → marchés → PPM(s), puis le dossier. Un brouillon **avec historique
+> de circuit** (réception ou demande de retrait — ex. revenu BROUILLON via retrait) est **refusé (409)** : ses traces
+> FK (réception, retrait, notifications) sont **conservées**. Dossier inexistant → **404**.
 
 > ⚠️ **Historique d'échanges (règle ajoutée).** `GET /api/dossiers/{id}/historique-echanges` retourne l'historique
 > complet d'un dossier **`CLOTURE`** (sinon **403**), en **fil chronologique entrelacé** (chaîne de réponse : chaque
@@ -1826,9 +1832,16 @@ plusieurs dates, chacune typée). Remplace les anciens champs `datePrev*` de `Ma
 | POST | /api/ppms | `PpmDto` | `PpmDto` | 201, 400 | Authentifié |
 | PUT | /api/ppms/{id} | `PpmDto` | `PpmDto` | 200, 400, 404 | Authentifié |
 | PATCH | /api/ppms/{id}/rectifier | `PpmDto` | `PpmDto` | 200, 403, 404, 409 | PRMP (propriétaire) |
-| DELETE | /api/ppms/{id} | — | — | 204, 403, 404, 409 | PRMP (propriétaire, brouillon) — ⚠️ cascade marchés + prévisions |
+| DELETE | /api/ppms/{id} | — | — | 204, 403, 404, 409 | PRMP (propriétaire, brouillon) — ⚠️ cascade marchés + prévisions ; **+ dossier si brouillon vide** |
 
 `{id}` = idPpm (number).
+
+> ⚠️ **Suppression cohérente (règle ajoutée).** `DELETE /api/ppms/{id}` supprime le PPM et ses marchés/prévisions
+> (cascade), **et** — si le **dossier** devient un **brouillon pur** (plus aucun PPM ni marché, **et sans
+> historique de circuit** : ni réception ni demande de retrait) — supprime aussi le **dossier** (sinon un brouillon
+> vide subsisterait dans « Mes brouillons » = `GET /api/dossiers?statut=BROUILLON`). **Conservés** : un dossier
+> portant un **autre PPM** (cas multi-PPM) ; un dossier **revenu BROUILLON via retrait** (il porte des traces FK —
+> réception, demande de retrait, notifications — non supprimées).
 
 > ⚠️ **Édition restreinte (rectification) — règle ajoutée.** `PATCH /api/ppms/{id}/rectifier` permet à la PRMP
 > propriétaire de corriger l'en-tête d'un PPM dont le **dossier est `EN_ATTENTE_DECISION_PRMP`**, **sans repasser
