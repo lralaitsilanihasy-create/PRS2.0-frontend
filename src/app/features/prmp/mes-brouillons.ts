@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ApiError } from '../../core/errors/api-error';
@@ -11,6 +11,7 @@ import {
   ReferenceLookupService,
   TypeDossierService,
 } from '../../services';
+import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /**
  * « Mes brouillons » (PRMP) : sélection d'un dossier déjà créé (PPM/DAO/MAOO) en BROUILLON,
@@ -80,6 +81,7 @@ export class MesBrouillons {
   private readonly lookups = inject(ReferenceLookupService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
   readonly brouillons = signal<Dossier[]>([]);
   readonly loading = signal(false);
@@ -89,9 +91,13 @@ export class MesBrouillons {
   private readonly ppmRef = signal<Map<number, string>>(new Map());
 
   constructor() {
-    this.charger();
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
+    // Charge à l'init ET à chaque changement signalé (ex. suppression depuis « Mes PPM & marchés »).
+    effect(() => {
+      this.dossiersRefresh.revision();
+      this.charger();
+    });
   }
 
   private charger(): void {

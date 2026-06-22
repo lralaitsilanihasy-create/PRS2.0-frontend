@@ -18,6 +18,7 @@ import {
   SituationService,
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /**
  * Vue PRMP combinée : SES PPM (dépliables) → leurs marchés → dates prévisionnelles.
@@ -476,6 +477,7 @@ export class MesPpmMarches {
   private readonly situationService = inject(SituationService);
   private readonly compteService = inject(CompteService);
   private readonly dossierService = inject(DossierService);
+  private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
   readonly TYPES_DATE = ['LANCEMENT', 'DAO', 'OUVERTURE', 'ATTRIBUTION'] as const;
 
@@ -841,6 +843,8 @@ export class MesPpmMarches {
             n.delete(c.id);
             return n;
           });
+          // Notifie les autres écrans (ex. « Mes brouillons ») que la liste des dossiers a changé.
+          this.dossiersRefresh.notifierChangement();
         } else {
           this.toast.success('Marché supprimé.');
           this.marches.update((arr) => arr.filter((m) => m.idDetail !== c.id));
