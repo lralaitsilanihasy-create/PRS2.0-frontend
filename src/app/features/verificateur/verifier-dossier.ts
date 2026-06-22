@@ -288,7 +288,7 @@ export class VerifierDossier {
       receptions: this.receptionService.list(),
       dispatchs: this.dispatchService.list(),
       examens: this.examenService.list(),
-      pvs: this.pvService.list(),
+      pvs: this.pvService.definitifs(), // PV signés (GET /api/pv-examens/definitifs) — list() ne les expose plus
       verifications: this.verificationService.list(),
       notifs: this.notificationService.mes(),
     }).subscribe({
