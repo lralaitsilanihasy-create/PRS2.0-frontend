@@ -92,7 +92,7 @@ import { CompteService, MarcheService, NatureService, PpmService, SituationServi
               <div class="rd__marche cnm-form" [formGroup]="g">
                 <div class="rd__marche-head">
                   <span class="cnm-mono">Marché #{{ g.get('idDetail')!.value }}</span>
-                  <span class="cnm-muted rd__mode">Mode : {{ modeLabel(g.get('idDetail')!.value) }}</span>
+                  <span class="cnm-muted rd__mode">Mode : {{ modeAffiche(g) }}</span>
                 </div>
                 <div class="rd__grid">
                   <label class="cnm-field rd__col-full">
@@ -146,7 +146,18 @@ import { CompteService, MarcheService, NatureService, PpmService, SituationServi
           }
         </div>
 
-        @if (error(); as e) { <p class="cnm-field__hint rd__error">{{ e }}</p> }
+        @if (fieldErrorList().length) {
+          <div class="cnm-card rd__errors" role="alert">
+            <p class="rd__errors-title">{{ error() || 'Validation échouée' }}</p>
+            <ul class="rd__errors-list">
+              @for (er of fieldErrorList(); track er.champ) {
+                <li><span class="cnm-mono">{{ er.champ }}</span> — {{ er.message }}</li>
+              }
+            </ul>
+          </div>
+        } @else if (error(); as e) {
+          <p class="cnm-field__hint rd__error" role="alert">{{ e }}</p>
+        }
 
         <div class="rd__foot">
           <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Annuler</button>
@@ -179,6 +190,9 @@ import { CompteService, MarcheService, NatureService, PpmService, SituationServi
     .rd__marche-head { display: flex; align-items: baseline; gap: var(--cnm-space-3); margin-bottom: var(--cnm-space-1); }
     .rd__mode { font-size: var(--cnm-fs-micro); }
     .rd__error { color: var(--cnm-danger-fg); }
+    .rd__errors { padding: var(--cnm-space-3) var(--cnm-space-4); margin-bottom: var(--cnm-space-3); border-left: 4px solid var(--cnm-danger-fg); background: var(--cnm-danger-bg); }
+    .rd__errors-title { margin: 0 0 var(--cnm-space-1); font-weight: var(--cnm-fw-semibold); color: var(--cnm-danger-fg); }
+    .rd__errors-list { margin: 0; padding-left: var(--cnm-space-4); display: flex; flex-direction: column; gap: 2px; font-size: var(--cnm-fs-sm); }
     .rd__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
   `,
 })
@@ -200,8 +214,8 @@ export class RectifierDossier {
   readonly situations = signal<Situation[]>([]);
   readonly comptes = signal<Compte[]>([]);
   readonly error = signal<string | null>(null);
-  /** Modes par marché (idDetail → idMode) pour affichage lecture seule. */
-  private readonly modes = signal<Map<number, number | undefined>>(new Map());
+  /** Erreurs de validation par champ renvoyées par le backend (`erreurs:[{champ,message}]`, 400). */
+  readonly fieldErrors = signal<Record<string, string> | null>(null);
   private readonly returnUrl = signal('/prmp/a-rectifier');
 
   headerForm: FormGroup = this.fb.group({});
@@ -231,7 +245,6 @@ export class RectifierDossier {
         if (ppm) {
           this.buildHeaderForm(ppm);
           const lignes = marches.filter((m) => m.idPpm === ppm.idPpm);
-          this.modes.set(new Map(lignes.map((m) => [m.idDetail, m.idMode])));
           const arr = this.fb.array(lignes.map((m) => this.marcheGroup(m)));
           this.marchesArray.set(arr);
         }
@@ -244,9 +257,14 @@ export class RectifierDossier {
   marcheControls(): FormGroup[] {
     return this.marchesArray().controls;
   }
-  modeLabel(idDetail: number): string {
-    const m = this.modes().get(idDetail);
+  modeAffiche(g: FormGroup): string {
+    const m = g.get('idMode')?.value;
     return m != null ? '#' + m : 'à recalculer';
+  }
+  /** Erreurs de validation backend mises à plat pour l'affichage (`champ — message`). */
+  fieldErrorList(): { champ: string; message: string }[] {
+    const fe = this.fieldErrors();
+    return fe ? Object.entries(fe).map(([champ, message]) => ({ champ, message })) : [];
   }
 
   private buildHeaderForm(p: Ppm): void {
@@ -264,9 +282,11 @@ export class RectifierDossier {
   }
 
   private marcheGroup(m: Marche): FormGroup {
-    // idDetail conservé (clé du PATCH) mais lecture seule ; idMode/idDossier/idPpm exclus (figés serveur).
+    // idDetail = clé du PATCH (lecture seule, hors corps). idMode CONSERVÉ et transmis (revalidé serveur).
+    // idDossier/idPpm exclus (figés) ; le marché n'a pas d'idLocalite.
     return this.fb.group({
       idDetail: [m.idDetail],
+      idMode: [m.idMode ?? null],
       designationMarche: [m.designationMarche ?? ''],
       numCompte: [m.numCompte ?? ''],
       montEstim: [m.montEstim ?? null],
@@ -304,6 +324,7 @@ export class RectifierDossier {
     }
 
     this.error.set(null);
+    this.fieldErrors.set(null);
     this.saving.set(true);
     forkJoin(ops).subscribe({
       next: () => {
@@ -313,6 +334,8 @@ export class RectifierDossier {
       },
       error: (e: ApiError) => {
         this.saving.set(false);
+        // Détail des champs en cause (400) si fourni par le backend ; sinon message global.
+        this.fieldErrors.set(e.fieldErrors && Object.keys(e.fieldErrors).length ? e.fieldErrors : null);
         this.error.set(
           e.status === 409
             ? "Ce dossier n'est plus en attente de décision PRMP."
