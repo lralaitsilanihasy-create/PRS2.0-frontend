@@ -1,12 +1,21 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { debounceTime, forkJoin, merge, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Compte, Marche, Nature, Ppm, Situation } from '../../models';
-import { CompteService, MarcheService, NatureService, PpmService, SituationService } from '../../services';
+import {
+  CompteService,
+  MarcheService,
+  ModePassationService,
+  NatureService,
+  PpmService,
+  ReglePassationService,
+  SituationService,
+} from '../../services';
 
 /**
  * « Rectifier le dossier » (PRMP) — formulaire **restreint** d'édition en place d'un dossier PPM au
@@ -160,7 +169,7 @@ import { CompteService, MarcheService, NatureService, PpmService, SituationServi
         }
 
         <div class="rd__foot">
-          <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Annuler</button>
+          <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Retour</button>
           <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving()" (click)="enregistrer()">
             {{ saving() ? 'Enregistrement…' : 'Enregistrer les rectifications' }}
           </button>
@@ -206,6 +215,9 @@ export class RectifierDossier {
   private readonly natureService = inject(NatureService);
   private readonly situationService = inject(SituationService);
   private readonly compteService = inject(CompteService);
+  private readonly modePassationService = inject(ModePassationService);
+  private readonly reglePassation = inject(ReglePassationService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -213,6 +225,10 @@ export class RectifierDossier {
   readonly natures = signal<Nature[]>([]);
   readonly situations = signal<Situation[]>([]);
   readonly comptes = signal<Compte[]>([]);
+  /** Libellés des modes de passation (idMode → libellé) pour l'affichage. */
+  readonly modeMap = signal<Map<number, string>>(new Map());
+  /** État d'affichage du mode par ligne (idDetail) : recalcul en cours / déterminé / aucune règle. */
+  private readonly modeState = signal<Map<number, 'idle' | 'loading' | 'ready' | 'none'>>(new Map());
   readonly error = signal<string | null>(null);
   /** Erreurs de validation par champ renvoyées par le backend (`erreurs:[{champ,message}]`, 400). */
   readonly fieldErrors = signal<Record<string, string> | null>(null);
@@ -234,11 +250,13 @@ export class RectifierDossier {
       natures: this.natureService.list(),
       situations: this.situationService.list(),
       comptes: this.compteService.list(),
+      modes: this.modePassationService.list(),
     }).subscribe({
-      next: ({ ppms, marches, natures, situations, comptes }) => {
+      next: ({ ppms, marches, natures, situations, comptes, modes }) => {
         this.natures.set(natures);
         this.situations.set(situations);
         this.comptes.set(comptes);
+        this.modeMap.set(new Map(modes.map((m) => [m.idMode, m.libelle ?? '#' + m.idMode])));
 
         const ppm = ppms.find((p) => p.idDossier === idDossier) ?? null;
         this.ppm.set(ppm);
@@ -247,6 +265,8 @@ export class RectifierDossier {
           const lignes = marches.filter((m) => m.idPpm === ppm.idPpm);
           const arr = this.fb.array(lignes.map((m) => this.marcheGroup(m)));
           this.marchesArray.set(arr);
+          // Recalcul du mode en temps réel sur changement de montant / nature / situation (critères du calcul).
+          arr.controls.forEach((g) => this.brancherRecalcul(g));
         }
         this.loading.set(false);
       },
@@ -258,8 +278,65 @@ export class RectifierDossier {
     return this.marchesArray().controls;
   }
   modeAffiche(g: FormGroup): string {
-    const m = g.get('idMode')?.value;
-    return m != null ? '#' + m : 'à recalculer';
+    const idDetail = g.get('idDetail')!.value as number;
+    const st = this.modeState().get(idDetail) ?? 'idle';
+    if (st === 'loading') {
+      return 'calcul…';
+    }
+    if (st === 'none') {
+      return 'à déterminer (aucune règle)';
+    }
+    const idMode = g.get('idMode')!.value as number | null;
+    return idMode != null ? this.modeMap().get(idMode) ?? '#' + idMode : 'à recalculer';
+  }
+
+  private setModeLigne(idDetail: number, state: 'idle' | 'loading' | 'ready' | 'none'): void {
+    this.modeState.update((m) => new Map(m).set(idDetail, state));
+  }
+
+  /** Abonne une ligne au recalcul live : montant / nature / situation → `suggestion-mode`. */
+  private brancherRecalcul(g: FormGroup): void {
+    merge(g.get('montEstim')!.valueChanges, g.get('idNature')!.valueChanges, g.get('idSituation')!.valueChanges)
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.recalculerMode(g));
+  }
+
+  /**
+   * Recalcule le mode d'une ligne à la volée via `POST /api/regle-passations/suggestion-mode`
+   * (mêmes critères que le backend : situation + nature + montant + localité du dossier) et met à
+   * jour l'`idMode` de la ligne + son affichage. Critères incomplets → « à recalculer ».
+   */
+  private recalculerMode(g: FormGroup): void {
+    const idDetail = g.get('idDetail')!.value as number;
+    const idLocalite = this.ppm()?.idLocalite;
+    const idSituation = g.get('idSituation')!.value as number | null;
+    const idNature = g.get('idNature')!.value as number | null;
+    const montant = g.get('montEstim')!.value as number | null;
+    if (idSituation == null || idNature == null || montant == null || !idLocalite) {
+      this.setModeLigne(idDetail, 'idle');
+      return;
+    }
+    this.setModeLigne(idDetail, 'loading');
+    this.reglePassation
+      .suggestionMode({ idSituation, montant, idNature, idLocalite })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          const idMode = g.get('idMode')!;
+          if (res.modesAutorises.length) {
+            // Conserve le mode courant s'il reste autorisé, sinon applique le recommandé.
+            const cur = idMode.value as number | null;
+            const next = cur != null && res.modesAutorises.some((m) => m.idMode === cur) ? cur : res.modeRecommande;
+            idMode.setValue(next, { emitEvent: false });
+            res.modesAutorises.forEach((m) => this.modeMap.update((mm) => new Map(mm).set(m.idMode, m.libelle)));
+            this.setModeLigne(idDetail, 'ready');
+          } else {
+            idMode.setValue(null, { emitEvent: false });
+            this.setModeLigne(idDetail, 'none');
+          }
+        },
+        error: () => this.setModeLigne(idDetail, 'none'),
+      });
   }
   /** Erreurs de validation backend mises à plat pour l'affichage (`champ — message`). */
   fieldErrorList(): { champ: string; message: string }[] {
@@ -307,30 +384,42 @@ export class RectifierDossier {
       return;
     }
 
-    const ops = [];
-    if (this.headerForm.dirty) {
-      ops.push(this.ppmService.rectifier(ppm.idPpm, this.headerForm.getRawValue() as Partial<Ppm>));
-    }
-    for (const g of this.marcheControls()) {
-      if (g.dirty) {
-        const { idDetail, ...rest } = g.getRawValue();
-        ops.push(this.marcheService.rectifier(idDetail as number, rest as Partial<Marche>));
-      }
-    }
-    if (!ops.length) {
+    const headerDirty = this.headerForm.dirty;
+    const dirtyMarches = this.marcheControls().filter((g) => g.dirty);
+    if (!headerDirty && !dirtyMarches.length) {
       // Rien de modifié : on revient simplement à « Dossiers à rectifier ».
       this.router.navigateByUrl(this.returnUrl());
       return;
     }
 
+    const header$ = headerDirty
+      ? this.ppmService.rectifier(ppm.idPpm, this.headerForm.getRawValue() as Partial<Ppm>)
+      : of(null);
+    const marche$ = dirtyMarches.map((g) => {
+      const { idDetail, ...rest } = g.getRawValue();
+      return this.marcheService.rectifier(idDetail as number, rest as Partial<Marche>);
+    });
+
     this.error.set(null);
     this.fieldErrors.set(null);
     this.saving.set(true);
-    forkJoin(ops).subscribe({
-      next: () => {
-        this.toast.success('Rectifications enregistrées.');
+    forkJoin([header$, ...marche$]).subscribe({
+      next: (results) => {
         this.saving.set(false);
-        this.router.navigateByUrl(this.returnUrl());
+        // Mode recalculé par le backend (`validerOuAppliquerMode`) : reflété depuis la réponse de chaque marché.
+        const marcheResults = results.slice(1) as Marche[];
+        dirtyMarches.forEach((g, i) => {
+          const updated = marcheResults[i];
+          if (updated) {
+            g.get('idMode')!.setValue(updated.idMode ?? null, { emitEvent: false });
+            this.setModeLigne(g.get('idDetail')!.value as number, updated.idMode != null ? 'ready' : 'none');
+          }
+          g.markAsPristine();
+        });
+        if (headerDirty) {
+          this.headerForm.markAsPristine();
+        }
+        this.toast.success('Rectifications enregistrées. Mode de passation à jour.');
       },
       error: (e: ApiError) => {
         this.saving.set(false);
