@@ -87,20 +87,21 @@ BROUILLON** pour l'édition, **cohérence type↔contenu** (PPM ⇒ a un PPM ; D
   "error": "Conflict",
   "message": "Le commentaire de rectification est obligatoire (§3.2).",
   "path": "/api/pv-examens/1/retourner",
-  "fieldErrors": { "champ": "message" }
+  "erreurs": [ { "champ": "idDossier", "message": "ne doit pas être nul" } ]
 }
 ```
-`fieldErrors` n'est renseigné que pour les erreurs de validation (400).
+`erreurs` est un **tableau** d'objets `{ champ, message }`, renseigné uniquement pour les erreurs de
+validation (400) ; **omis** (absent du corps) pour les autres erreurs.
 
 ### Détail des erreurs 400 / 403 / 409
 Récapitulatif des trois codes d'erreur « métier » les plus fréquents, leur signification et
 quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côté Angular : afficher
-`message`, et pour le **400** exploiter `fieldErrors` champ par champ.
+`message`, et pour le **400** exploiter le tableau **`erreurs`** (`[{ champ, message }]`) champ par champ.
 
 #### 400 — Bad Request *(requête invalide ; à corriger avant de renvoyer)*
 | Cause | Quand ça survient | Indice |
 |---|---|---|
-| **Validation des champs** (`@Valid`) | un champ obligatoire manque ou ne respecte pas une contrainte (`@NotNull`, `@NotBlank`, `@Size`…) | `message` = « Validation échouée » + **`fieldErrors`** renseigné |
+| **Validation des champs** (`@Valid`) | un champ obligatoire manque ou ne respecte pas une contrainte (`@NotNull`, `@NotBlank`, `@Size`…) | `message` = « Validation échouée » + tableau **`erreurs`** (`[{ champ, message }]`) renseigné |
 | **Identifiant de création manquant** | POST de création sans la clé primaire (toutes les PK sont **assignées par le client**, cf. *Clés primaires*) | « L'identifiant (clé primaire) est obligatoire à la création… » |
 | **Règle d'entrée métier** (`BadRequestException`) | ex. `POST /api/mon-compte/changer-mot-de-passe` avec ancien mot de passe incorrect ou nouveau identique à l'ancien ; `POST /api/marches` quand la **localité du dossier** est introuvable (mode indéterminable) | message explicite |
 
@@ -767,7 +768,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 | GET | /api/dossiers/a-receptionner | — | `DossierDto[]` | 200, 403 | `SECRETAIRE` (titulaire/délégué) ou `ADMINISTRATEUR` |
 | GET | /api/dossiers/a-examiner | — | `DossierDto[]` | 200, 403 | `MEMBRE` (titulaire/délégué) ou `ADMINISTRATEUR` |
 | GET | /api/dossiers/examines | — | `Page<DossierDto>` | 200, 403 | `MEMBRE` (titulaire/délégué) ou `ADMINISTRATEUR` |
-| GET | /api/dossiers/a-verifier | — | `DossierDto[]` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` |
+| GET | /api/dossiers/a-verifier | — | `DossierDto[]` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` — EN_VERIFICATION + EN_ATTENTE_DECISION_PRMP |
 | GET | /api/dossiers/verifies | — | `Page<DossierDto>` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` |
 | GET | /api/dossiers/en-attente-prmp | — | `DossierDto[]` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` — lecture seule |
 | GET | /api/dossiers/{id} | — | `DossierDto` | 200, 403, 404 | Authentifié (filtré) |
@@ -776,8 +777,17 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 | DELETE | /api/dossiers/{id} | — | — | 204, 404 | Authentifié |
 | POST | /api/dossiers/{id}/soumettre | — | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** |
 | POST | /api/dossiers/{id}/resoumettre | `DossierResoumissionRequest` | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** propriétaire |
+| GET | /api/dossiers/{id}/historique-echanges | — | `EchangeDto[]` | 200, 403, 404 | **PRMP** / **VERIFICATEUR** (titulaire/délégué) / **ADMINISTRATEUR** |
 
 `{id}` = idDossier (number). **`DossierResoumissionRequest`** = `{ motifRectification }` (String, **@NotBlank**, max 255).
+
+> ⚠️ **Historique d'échanges (règle ajoutée).** `GET /api/dossiers/{id}/historique-echanges` retourne l'historique
+> complet d'un dossier **`CLOTURE`** (sinon **403**), en **fil chronologique entrelacé** (chaîne de réponse : chaque
+> observation est suivie de la rectification PRMP qui y répond) : les observations du vérificateur (source
+> `t_verification`, dont le passage final `obsLevees=true` qui a déclenché la clôture) et les rectifications de la PRMP
+> (source `t_audit_log`, `TYPE_ACTION=RECTIFICATION_PRMP`). **`EchangeDto`** = `{ type (`OBSERVATION` | `RECTIFICATION`),
+> date (jour `yyyy-MM-dd` pour OBSERVATION, date-heure pour RECTIFICATION), acteur (matricule vérificateur ou idPrmp),
+> texte (observation ou motif), obsLevees (renseigné pour OBSERVATION, `null` pour RECTIFICATION) }`.
 
 > **Filtre serveur `?statut=` (nouveau).** `GET /api/dossiers?statut=SOUMIS` restreint la liste à ce
 > statut **côté serveur**, en **conservant le périmètre** (localité / PRMP). Statut inconnu → **400**.
@@ -796,15 +806,17 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 > et **exclusives** : à la création de l'examen, un dossier quitte « à examiner » pour « examinés ». Un
 > Membre ne voit que **ses** dossiers (ceux d'un autre Membre n'y figurent pas).
 
-> ⚠️ **Files du Vérificateur (§3.6, règle ajoutée).** `GET /api/dossiers/a-verifier` = dossiers
-> **`EN_VERIFICATION`** (PV signé d'avis `FAVR`, à vérifier) ; `GET /api/dossiers/verifies` =
-> **historique** paginé, **lecture seule**, des dossiers **`CLOTURE` ayant un PV `SIGNE`** — **y compris
-> les auto-clôturés** à la signature (`FAV`/`DEF`/`NSP`). Les deux sont **scopées à la localité** du
-> vérificateur (contrôleur réceptionnaire) et **partitionnent** les PV signés (`EN_VERIFICATION` ⊎ `CLOTURE`).
+> ⚠️ **Files du Vérificateur (§3.6, règle ajoutée).** `GET /api/dossiers/a-verifier` = dossiers **encore
+> actifs** côté vérification : **`EN_VERIFICATION`** (à vérifier) **OU** **`EN_ATTENTE_DECISION_PRMP`** (en
+> lecture seule — le dossier **ne disparaît pas** de la liste tant qu'il n'est pas clôturé ; toute
+> vérification est refusée **409** tant que la PRMP n'a pas statué, cf. badge « En attente PRMP » côté UI).
+> `GET /api/dossiers/verifies` = **historique** paginé, **lecture seule**, des dossiers **`CLOTURE` ayant un
+> PV `SIGNE`** — **y compris les auto-clôturés** à la signature (`FAV`/`DEF`/`NSP`). Les deux sont **scopées
+> à la localité** du vérificateur (contrôleur réceptionnaire). Seul **`CLOTURE`** quitte « à vérifier » (→ `/verifies`).
 
 > ⚠️ **File « En attente PRMP » du Vérificateur (règle ajoutée), lecture seule.** `GET /api/dossiers/en-attente-prmp`
-> = dossiers **`EN_ATTENTE_DECISION_PRMP`** de sa localité (observations non levées transmises à la PRMP). Le
-> vérificateur ne peut ni modifier ni soumettre de nouvelle vérification tant que la PRMP n'a pas statué.
+> = dossiers **`EN_ATTENTE_DECISION_PRMP`** de sa localité (sous-vue dédiée ; ces dossiers figurent aussi dans
+> `/a-verifier`). Le vérificateur ne peut ni modifier ni soumettre de nouvelle vérification tant que la PRMP n'a pas statué.
 
 > ⚠️ **Resoumission après rectification (règle ajoutée).** `POST /api/dossiers/{id}/resoumettre` (réservé **PRMP
 > propriétaire**) — corps `{ "motifRectification": "…" }` (**obligatoire**, non vide, sinon **400**). N'agit que
@@ -1331,9 +1343,18 @@ dossier/PPM (désormais réservée Admin).
 | GET | /api/marches/{id} | — | `MarcheDto` | 200, 403, 404 | Authentifié (dans son périmètre) |
 | POST | /api/marches | `MarcheDto` | `MarcheDto` | 201, 400 | Authentifié |
 | PUT | /api/marches/{id} | `MarcheDto` | `MarcheDto` | 200, 400, 404 | Authentifié |
+| PATCH | /api/marches/{id}/rectifier | `MarcheDto` | `MarcheDto` | 200, 403, 404, 409 | PRMP (propriétaire) |
 | DELETE | /api/marches/{id} | — | — | 204, 403, 404, 409 | PRMP (propriétaire, brouillon) — ⚠️ cascade prévisions |
 
 `{id}` = idDetail (number).
+
+> ⚠️ **Édition restreinte (rectification) — règle ajoutée.** `PATCH /api/marches/{id}/rectifier` permet à la
+> PRMP propriétaire de corriger une ligne de marché dont le **dossier est `EN_ATTENTE_DECISION_PRMP`**, **sans
+> repasser par le brouillon**. Statut du dossier **inchangé** (reste `EN_ATTENTE_DECISION_PRMP` jusqu'à
+> `POST /api/dossiers/{id}/resoumettre`). Hors `EN_ATTENTE_DECISION_PRMP` → **409** ; non-propriétaire → **403** ;
+> profil **PRMP strict** (Admin/vérificateur → **403**). Identité **figée** (idDossier, idPpm — **non requis** dans
+> le corps, ignorés s'ils sont envoyés ; le PATCH ne valide pas ces champs) ; mode de passation **revalidé**.
+> Tracé `t_audit_log` (`MODIFICATION_RECTIFICATION`, `NOM_TABLE=t_marche`).
 
 > Les **dates prévisionnelles** ne sont plus portées par le marché : elles sont
 > dans la ressource dédiée **Marchés — dates prévisionnelles** (`/api/marche-previsions`),
@@ -1804,9 +1825,20 @@ plusieurs dates, chacune typée). Remplace les anciens champs `datePrev*` de `Ma
 | GET | /api/ppms/{id} | — | `PpmDto` | 200, 403, 404 | Authentifié (dans son périmètre) |
 | POST | /api/ppms | `PpmDto` | `PpmDto` | 201, 400 | Authentifié |
 | PUT | /api/ppms/{id} | `PpmDto` | `PpmDto` | 200, 400, 404 | Authentifié |
+| PATCH | /api/ppms/{id}/rectifier | `PpmDto` | `PpmDto` | 200, 403, 404, 409 | PRMP (propriétaire) |
 | DELETE | /api/ppms/{id} | — | — | 204, 403, 404, 409 | PRMP (propriétaire, brouillon) — ⚠️ cascade marchés + prévisions |
 
 `{id}` = idPpm (number).
+
+> ⚠️ **Édition restreinte (rectification) — règle ajoutée.** `PATCH /api/ppms/{id}/rectifier` permet à la PRMP
+> propriétaire de corriger l'en-tête d'un PPM dont le **dossier est `EN_ATTENTE_DECISION_PRMP`**, **sans repasser
+> par le brouillon**. Statut du dossier **inchangé** (reste `EN_ATTENTE_DECISION_PRMP` jusqu'à
+> `POST /api/dossiers/{id}/resoumettre`). Hors `EN_ATTENTE_DECISION_PRMP` → **409** ; non-propriétaire → **403** ;
+> profil **PRMP strict** (Admin/vérificateur → **403**). Identité **figée** (idDossier, idPrmp, idLocalite —
+> **non requis** dans le corps, ignorés s'ils sont envoyés ; le PATCH ne valide pas ces champs).
+> Tracé `t_audit_log` (`MODIFICATION_RECTIFICATION`, `NOM_TABLE=t_ppm`).
+> *(DAO/MAOO : sans contenu éditable, donc non concernés. Les lignes de marché se corrigent via
+> `PATCH /api/marches/{id}/rectifier` ; pas d'ajout/suppression de lignes en rectification.)*
 
 **Exemple — requête**
 ```json
@@ -2044,12 +2076,27 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 
 > **Règles (sinon 409)** : `numPassage` ≥ 1 ; `numPassage = 1` ⟺ `typePassage = "INITIAL"`.
 > **Effet `[Auto]`** : si `complet = true`, le dossier passe au statut `PRET_DISPATCH`.
+>
+> **Référence officielle générée à la réception (⚠️ règle ajoutée).** Au POST, le serveur génère et
+> renvoie `reference` au format **`xxxxx/type_dossier/code_localite/annee_exercice`** :
+> `xxxxx` = compteur 5 chiffres incrémenté par la base, **par combinaison** (`type_dossier`, `code_localite`,
+> `annee_exercice`) — table `t_sequence_reference`, sans compteur applicatif ;
+> `code_localite` = **`CNM`** si réception centrale (utilisateur transversal, sans localité, ex. Président),
+> sinon **`CRM-<localité>`** ; `annee_exercice` = exercice du PPM, sinon année courante.
+> La référence est **persistée** sur le dossier (`REFE_DOSSIER`, remplace la réf. provisoire de soumission).
+> Exemples : `00001/PPM/CNM/2026`, `00001/PPM/CRM-ANT/2026`, `00002/PPM/CRM-ANT/2026`, `00001/PPM/CRM-TMS/2026`.
+> *(Dossier sans `type_dossier` → `reference` non générée, la réception reste valide.)*
+>
+> **PK technique auto (⚠️ règle ajoutée).** Le secrétaire ne saisit plus de « N° de réception » : `idReception`
+> est **allouée par le serveur** (`seq_reception`, Voie B) et **tout id fourni en entrée est ignoré**. Elle reste
+> **présente en réponse** (le dispatch la référence). Le client n'a donc plus à l'envoyer ; il n'y a plus de
+> conflit de doublon de PK sur ce champ.
 
 **Champs `ReceptionDto`**
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idReception | number | Oui (PK, au POST) | clé primaire |
+| idReception | number | Non (alloué serveur) | PK technique — **allouée par séquence** (`seq_reception`), ignorée si fournie en entrée ; **présente en réponse** (référencée par le dispatch) |
 | idDossier | number | Oui | @NotNull |
 | numPassage | number | Oui | @NotNull (≥ 1) |
 | typePassage | string | Oui | @NotBlank, max 10 — `INITIAL` ⟺ numPassage=1 |
@@ -2058,6 +2105,7 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 | observation | string | Non | max 500 |
 | complet | boolean | Non | si `true` → dossier `PRET_DISPATCH` |
 | idReceptionPrec | number | Non | |
+| reference | string | — (réponse) | référence officielle générée au POST (lecture seule) |
 
 **Endpoints**
 

@@ -23,11 +23,31 @@ import {
 @Injectable({ providedIn: 'root' })
 export class PpmService extends CrudService<Ppm> {
   protected readonly resource = 'ppms';
+
+  /**
+   * `PATCH /api/ppms/{id}/rectifier` (PRMP propriétaire) — corrige l'en-tête d'un PPM dont le dossier
+   * est `EN_ATTENTE_DECISION_PRMP`, sans repasser par le brouillon (statut inchangé). Identité **figée**
+   * côté serveur : `idDossier`/`idPrmp`/`idLocalite` ignorés — donc absents du corps. Hors
+   * `EN_ATTENTE_DECISION_PRMP` → 409 ; non-propriétaire / profil ≠ PRMP → 403.
+   */
+  rectifier(id: number, body: Partial<Ppm>): Observable<Ppm> {
+    return this.http.patch<Ppm>(`${this.baseUrl}/${id}/rectifier`, body);
+  }
 }
 
 @Injectable({ providedIn: 'root' })
 export class MarcheService extends CrudService<Marche> {
   protected readonly resource = 'marches';
+
+  /**
+   * `PATCH /api/marches/{id}/rectifier` (PRMP propriétaire) — corrige une ligne de marché d'un dossier
+   * `EN_ATTENTE_DECISION_PRMP`, sans repasser par le brouillon (statut inchangé) ; mode de passation
+   * revalidé. Identité **figée** : `idDossier`/`idPpm` ignorés (absents du corps), `idMode` recalculé.
+   * Hors `EN_ATTENTE_DECISION_PRMP` → 409 ; non-propriétaire / profil ≠ PRMP → 403.
+   */
+  rectifier(id: number, body: Partial<Marche>): Observable<Marche> {
+    return this.http.patch<Marche>(`${this.baseUrl}/${id}/rectifier`, body);
+  }
 }
 
 /** Dates prévisionnelles d'un marché (relation 1,N ; remplace les datePrev* du marché). */

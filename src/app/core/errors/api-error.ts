@@ -72,7 +72,11 @@ export function toApiError(err: HttpErrorResponse): ApiError {
   const hasStructuredBody = typeof body === 'object' && body !== null;
 
   const message = hasStructuredBody && body.message ? body.message : defaultMessage(err.status);
-  const fieldErrors = hasStructuredBody ? body.fieldErrors : undefined;
+  // Backend : `erreurs: [{ champ, message }]` (validation 400) → indexé par champ pour les formulaires.
+  const fieldErrors =
+    hasStructuredBody && Array.isArray(body.erreurs)
+      ? Object.fromEntries(body.erreurs.map((e) => [e.champ, e.message] as const))
+      : undefined;
 
   return { status: err.status, message, fieldErrors, raw: err };
 }

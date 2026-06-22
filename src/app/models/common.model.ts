@@ -67,7 +67,7 @@ export type PvSignataireRole = 'MEMBRE' | 'PRESIDENT' | 'CC';
 
 /**
  * Corps d'erreur standard renvoyé par l'API (toutes les erreurs HTTP).
- * `fieldErrors` n'est renseigné que pour les erreurs de validation (400).
+ * `erreurs` (tableau `{ champ, message }`) n'est renseigné que pour les erreurs de validation (400).
  */
 export interface ErrorResponse {
   timestamp: string;
@@ -75,5 +75,5 @@ export interface ErrorResponse {
   error: string;
   message: string;
   path: string;
-  fieldErrors?: Record<string, string>;
+  erreurs?: { champ: string; message: string }[];
 }

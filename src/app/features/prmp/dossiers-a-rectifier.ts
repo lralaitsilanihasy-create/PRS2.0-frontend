@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
@@ -6,6 +7,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier, Notification } from '../../models';
 import { DossierService, NotificationService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { DossierModificationStore } from './dossier-modification.store';
 
 /** Une carte « à rectifier » = un dossier EN_ATTENTE_DECISION_PRMP + l'historique de ses observations. */
 interface CarteRectif {
@@ -46,6 +48,13 @@ interface CarteRectif {
               <div class="ar__item-head">
                 <span class="ar__p--ref">Dossier {{ c.dossier.refeDossier || '#' + c.dossier.idDossier }}</span>
                 <app-statut-badge [statut]="c.dossier.statut" [label]="'À rectifier'" />
+                <button
+                  type="button"
+                  class="cnm-btn cnm-btn--ghost cnm-btn--sm ar__modifier"
+                  (click)="modifierDossier(c)"
+                >
+                  Modifier le dossier
+                </button>
                 <span class="ar__date cnm-mono">{{ c.latest?.dateEnvoi || '—' }}</span>
               </div>
 
@@ -81,12 +90,15 @@ interface CarteRectif {
                   <button
                     type="button"
                     class="cnm-btn cnm-btn--primary cnm-btn--sm"
-                    [disabled]="saving() === cleDe(c)"
+                    [disabled]="saving() === cleDe(c) || !estModifie(c)"
                     (click)="demanderResoumission(c)"
                   >
                     {{ saving() === cleDe(c) ? 'Resoumission…' : 'Resoumettre le dossier' }}
                   </button>
                 </div>
+                @if (!estModifie(c)) {
+                  <span class="ar__hint">Veuillez modifier le dossier avant de resoumettre.</span>
+                }
               </div>
             </li>
           }
@@ -131,6 +143,7 @@ interface CarteRectif {
     .ar__obs-text { font-size: var(--cnm-fs-sm); }
     .ar__form { margin-top: var(--cnm-space-2); display: flex; flex-direction: column; gap: var(--cnm-space-1); }
     .ar__form-foot { display: flex; justify-content: flex-end; }
+    .ar__hint { display: block; margin-top: var(--cnm-space-1); font-size: var(--cnm-fs-micro); color: var(--cnm-text-3); text-align: right; }
     .ar-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
     .ar-modal { width: 100%; max-width: 30rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
     .ar-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
@@ -141,6 +154,8 @@ export class DossiersARectifier {
   private readonly dossierService = inject(DossierService);
   private readonly notificationService = inject(NotificationService);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
+  private readonly modifications = inject(DossierModificationStore);
 
   readonly loading = signal(true);
   /** Une carte par dossier EN_ATTENTE_DECISION_PRMP (dédoublonné par dossier). */
@@ -156,7 +171,25 @@ export class DossiersARectifier {
   readonly confirmCle = signal<number | null>(null);
 
   constructor() {
+    // Retour de l'édition du PPM : les dossiers ouverts en édition deviennent « modifiés ».
+    this.modifications.consommerRetours();
     this.charger();
+  }
+
+  /** Le dossier de cette carte a-t-il été ouvert en édition puis re-visité ? (active « Resoumettre »). */
+  estModifie(c: CarteRectif): boolean {
+    return this.modifications.estModifie(c.dossier.idDossier);
+  }
+
+  /**
+   * Clic « Modifier le dossier » : mémorise l'intention et navigue vers le **formulaire de rectification
+   * restreint** du dossier concerné (`idDossier` de la carte), avec un `returnUrl` vers « Dossiers à rectifier ».
+   */
+  modifierDossier(c: CarteRectif): void {
+    this.modifications.partirEnEdition(c.dossier.idDossier);
+    this.router.navigate(['/prmp/rectifier', c.dossier.idDossier], {
+      queryParams: { returnUrl: '/prmp/a-rectifier' },
+    });
   }
 
   private charger(): void {
@@ -217,6 +250,10 @@ export class DossiersARectifier {
   /** Vérifie le motif de CETTE carte puis ouvre la confirmation. */
   demanderResoumission(c: CarteRectif): void {
     const cle = this.cleDe(c);
+    if (!this.estModifie(c)) {
+      this.errors.update((e) => ({ ...e, [cle]: 'Veuillez modifier le dossier avant de resoumettre.' }));
+      return;
+    }
     if (!this.motif(cle).trim()) {
       this.errors.update((e) => ({ ...e, [cle]: 'Veuillez décrire les corrections apportées.' }));
       return;
@@ -244,6 +281,7 @@ export class DossiersARectifier {
       next: () => {
         this.toast.success('Dossier resoumis au vérificateur.');
         this.saving.set(null);
+        this.modifications.reinitialiser(idDossier);
         this.motifs.update((mm) => {
           const n = { ...mm };
           delete n[cle];

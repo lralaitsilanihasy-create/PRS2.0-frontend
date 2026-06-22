@@ -113,6 +113,18 @@ Acteur externe qui soumet ses PPM et marchés à la CNM. Suit l'avancement jusqu
 - Le périmètre de visibilité de la PRMP est donc la **propriété** de ses dossiers
   (`t_dossier.ID_PRMP`), pas une localité.
 
+**Rectification en attente de décision PRMP (⚠️ règle ajoutée)**
+
+- Sur un dossier au statut **`EN_ATTENTE_DECISION_PRMP`** (observations de vérification non levées), la PRMP
+  propriétaire peut **corriger le contenu sans repasser par le brouillon**, via une **édition restreinte** :
+  - `PATCH /api/ppms/{id}/rectifier` — en-tête du PPM ;
+  - `PATCH /api/marches/{id}/rectifier` — ligne de marché (mode de passation **revalidé**).
+- Le **statut reste `EN_ATTENTE_DECISION_PRMP`** jusqu'à la **resoumission** (`POST /api/dossiers/{id}/resoumettre`
+  → `EN_VERIFICATION`). Hors `EN_ATTENTE_DECISION_PRMP` → **409**. Profil **PRMP strict** (Admin/vérificateur → 403).
+- **Identité figée** (PPM : idDossier/idPrmp/idLocalite ; Marché : idDossier/idPpm) et **édition en place**
+  (pas d'ajout/suppression de lignes — ces opérations restent réservées au `BROUILLON`). Tracé `t_audit_log`
+  (`MODIFICATION_RECTIFICATION`). DAO/MAOO : sans contenu éditable, non concernés.
+
 **Inscription et validation du compte**
 
 - **Auto-inscription** (route publique, `multipart/form-data`) : la PRMP renseigne son identité,
@@ -375,6 +387,14 @@ Subordonné direct du Chef de commission. Partage sa localité avec son CC. Réc
 
 - Enregistrement du dossier [Action]
   - Création de la réception avec référence, date, NUM_PASSAGE = 1 et TYPE_PASSAGE = INITIAL.
+  - ⚠️ **Règle ajoutée — référence officielle générée à la réception.** Au `POST /api/receptions`, le serveur génère une référence au format **`xxxxx/type_dossier/code_localite/annee_exercice`** :
+    - `xxxxx` : compteur 5 chiffres **incrémenté par la base** par combinaison (`type_dossier`, `code_localite`, `annee_exercice`) — table `t_sequence_reference` (PK composite ; `UPDATE +1` atomique sinon `INSERT` à 1), sans `SELECT FOR UPDATE` ni compteur applicatif ; la PK garantit l'unicité.
+    - `type_dossier` : `ID_TYPE_DOSSIER` du dossier (PPM, DAO, MAOO…). *Dossier sans type → pas de référence structurée, la réception reste valide.*
+    - `code_localite` : **`CNM`** si réception **centrale** (utilisateur transversal, sans localité — ex. Président) ; sinon **`CRM-<code_localite>`** (ex. `CRM-ANT`, `CRM-TMS`).
+    - `annee_exercice` : exercice du PPM du dossier, sinon année courante.
+    - La référence est **persistée sur le dossier** (`REFE_DOSSIER`, elle remplace la référence provisoire de soumission) et **retournée** dans `ReceptionDto.reference`.
+    - Compteurs **isolés par contexte** : `CRM-ANT`, `CRM-TMS` et `CNM` ont chacun leur propre suite. Exemples : `00001/PPM/CNM/2026`, `00001/PPM/CRM-ANT/2026`, `00002/PPM/CRM-ANT/2026`, `00001/PPM/CRM-TMS/2026`.
+  - ⚠️ **Règle ajoutée — plus de N° de réception saisi.** L'identifiant technique `idReception` (PK de `t_reception`) n'est **plus saisi** par le secrétaire : il est **alloué par le serveur** (séquence `seq_reception`, Voie B — tout id client est ignoré), comme les PK dossier/PPM/marché. Il reste retourné dans la réponse (référencé par le dispatch). Le contrôle de doublon de PK sur ce champ devient sans objet.
 - Vérification de complétude [Écriture]
   - COMPLET = true/false avec consignation des observations initiales.
 - Déclenchement PRET_DISPATCH [Auto]
@@ -467,9 +487,11 @@ Subordonné direct du Membre. Travaille sur la base du PV signé (STATUT_PV = SI
   - Accès au PV définitif (STATUT_PV = SIGNE) avant vérification : référence, avis, SYNTHESE_OBSERVATIONS issue de la navette acceptée — t_verification.ID_PV requis. Peut aussi consulter l'historique de la navette (t_pv_navette) pour comprendre les rectifications apportées.
 - Vérification de levée des observations [Action]
   - OBS_LEVEES = true → clôture automatique (CLOTURE) ; OBS_LEVEES = false → ⚠️ **règle ajoutée** : le dossier passe en **`EN_ATTENTE_DECISION_PRMP`** (il ne reste **plus** en EN_VERIFICATION). L'observation est **transmise à la PRMP** du dossier (notification `OBSERVATION_VERIFICATION` : référence dossier, vérificateur, texte de l'observation, date) et l'événement est **tracé dans `t_audit_log`** (NOM_TABLE=`t_verification`, CHAMP_MODIFIE=`OBSERVATION_NON_LEVEE`, IM_ACTEUR=vérificateur). C'est ensuite la **PRMP** qui prend connaissance des observations, rectifie le dossier, puis décide de la suite.
-  - **Lecture seule côté vérificateur** : un dossier `EN_ATTENTE_DECISION_PRMP` apparaît dans sa file `GET /api/dossiers/en-attente-prmp` mais **ne peut plus être ni modifié ni re-vérifié** tant que la PRMP n'a pas statué (nouvelle vérification → 409).
+  - **Lecture seule côté vérificateur** : un dossier `EN_ATTENTE_DECISION_PRMP` **reste visible dans « à vérifier »** (`GET /api/dossiers/a-verifier` retourne `EN_VERIFICATION` **ou** `EN_ATTENTE_DECISION_PRMP`) — il ne disparaît de la liste qu'une fois `CLOTURE`. Il figure aussi dans la sous-vue `GET /api/dossiers/en-attente-prmp`. Dans les deux cas il est en **lecture seule** : il **ne peut plus être ni modifié ni re-vérifié** tant que la PRMP n'a pas statué (nouvelle vérification → 409).
   - ⚠️ **Règle ajoutée — resoumission après rectification** : la PRMP propriétaire resoumet le dossier rectifié via `POST /api/dossiers/{id}/resoumettre` avec un **motif obligatoire** (vide → 400). Le dossier repasse en **`EN_VERIFICATION`** (retour au vérificateur). Le **vérificateur du dossier** est notifié (`RECTIFICATION_PRMP` : référence, nom PRMP, motif, date), l'événement est **tracé** dans `t_audit_log` (NOM_TABLE=t_dossier, TYPE_ACTION=RECTIFICATION_PRMP, IM_ACTEUR=PRMP, CHAMP_MODIFIE=motifRectification), et le **motif est enregistré** sur la dernière vérification (`t_verification.MOTIF_RECTIF`) pour être **visible dans les passages** côté vérificateur.
   - ⚠️ **Règle ajoutée** : la vérification n'est possible que si **PV `SIGNE` + avis `FAVR` + dossier `EN_VERIFICATION`** (sinon 403/409). **Seul le profil Contrôleur vérificateur** peut vérifier — **pas de délégation** CC/Président pour cet acte. L'**identité** enregistrée (`IM_CTRL_VERIF`) et la **date** proviennent du **JWT / serveur**, jamais du corps de requête. L'`ID_VERIFICATION` est **auto-généré** (IDENTITY).
+- Historique des échanges d'un dossier clôturé [Lecture]
+  - ⚠️ **Règle ajoutée** : `GET /api/dossiers/{id}/historique-echanges` (accessible **PRMP** et **Contrôleur vérificateur**, + Admin) retourne, pour un dossier **`CLOTURE`** uniquement (sinon 403), le **fil chronologique entrelacé** (chaque observation suivie de la rectification PRMP qui y répond) : observations du vérificateur (`t_verification` : date, vérificateur, texte, `obsLevees` — dont le passage final `obsLevees=true`) et rectifications de la PRMP (`t_audit_log` : date, PRMP, motif).
 - Déclenchement de la clôture [Auto]
   - ⚠️ **Règle ajoutée** : `OBS_LEVEES = true` clôture le dossier **uniquement s'il est `EN_VERIFICATION`** (`declencherCloture` conditionnelle — fin de la clôture inconditionnelle). Notifie `CLOTURE_ELIGIBLE` au Chargé de publication.
 
