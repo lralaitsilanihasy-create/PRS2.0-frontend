@@ -1992,7 +1992,13 @@ plusieurs dates, chacune typée). Remplace les anciens champs `datePrev*` de `Ma
 | dateSignatureCc | string (date) | Non | |
 | dateSignatureMembre | string (date) | Non | |
 | datePv | string (date) | Non | |
-| referencePv | string | Non | max 100 |
+| referencePv | string | Non | max 100 — référence libre (saisie ; reprise dans les notifications) |
+| refePv | string | — (réponse) | max 120 — **référence officielle dérivée du dossier**, générée serveur, **unique** (lecture seule) |
+
+> ⚠️ **Référence du PV (`refePv`) — règle ajoutée.** À la création, le serveur dérive `refePv` du `refeDossier`
+> du dossier rattaché en insérant **`/PV` avant l'année** : `00003/PPM/CRM-ANT/2026` → `00003/PPM/CRM-ANT/PV/2026`.
+> Dérivée **uniquement** si `refeDossier` est au format `…/YYYY` (sinon `null`). **Unique** : créer un 2ᵉ PV sur le
+> même dossier (même `refePv`) → **409**. Distincte du champ libre `referencePv`.
 
 **Champs `PvActionRequest`** (corps des actions de workflow)
 
@@ -2006,8 +2012,9 @@ plusieurs dates, chacune typée). Remplace les anciens champs `datePrev*` de `Ma
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/pv-examens | — | `PvExamenDto[]` | 200 | Authentifié (filtré) |
-| GET | /api/pv-examens/{id} | — | `PvExamenDto` | 200, 404 | Authentifié (filtré) |
+| GET | /api/pv-examens | — | `PvExamenDto[]` | 200 | Authentifié (filtré) — **projets de PV** (non signés) |
+| GET | /api/pv-examens/definitifs | — | `PvExamenDto[]` | 200 | Authentifié (filtré) — **PV signés** uniquement |
+| GET | /api/pv-examens/{id} | — | `PvExamenDto` | 200, 404 | Authentifié (filtré) — tout PV (y c. signé) |
 | POST | /api/pv-examens | `PvExamenDto` | `PvExamenDto` | 201, 400, 403 | MEMBRE / CC / PRESIDENT |
 | PUT | /api/pv-examens/{id} | `PvExamenDto` | `PvExamenDto` | 200, 400, 404, 409 | MEMBRE / CC / PRESIDENT |
 | DELETE | /api/pv-examens/{id} | — | — | 204, 404 | ADMINISTRATEUR |
@@ -2017,6 +2024,8 @@ plusieurs dates, chacune typée). Remplace les anciens champs `datePrev*` de `Ma
 | POST | /api/pv-examens/{id}/signer | `PvActionRequest` | `PvExamenDto` | 200, 400, 403, 404, 409 | MEMBRE / CC / PRESIDENT |
 
 `{id}` = idPv (number). `soumettre` : BROUILLON|EN_RECTIFICATION→PROJET_SOUMIS ; `retourner` : PROJET_SOUMIS→EN_RECTIFICATION (`commentaire` obligatoire) ; `accepter` : PROJET_SOUMIS→PROJET_ACCEPTE ; `signer` : passe à SIGNE quand le Membre **et** (le Président **ou** le CC) ont signé.
+
+> ⚠️ **Liste scindée projets / définitifs (règle ajoutée).** `GET /api/pv-examens` ne retourne que les **projets de PV** (statut ≠ `SIGNE`) ; dès qu'un PV est **signé** (`SIGNE`) il **quitte** cette liste et apparaît dans **`GET /api/pv-examens/definitifs`** (PV signés uniquement). Les deux listes restent **scopées par localité**. L'accès direct `GET /api/pv-examens/{id}` reste valable pour **tout** PV, signé ou non.
 
 **`signer` — authentification de la signature (dans le service).** L'endpoint autorise largement (`MEMBRE`/`CHEF_COMMISSION`/`PRESIDENT`) mais le service vérifie que le **signataire authentifié** correspond au `role` signé et enregistre son identité (`IM_CTRL_MEMBRE`/`IM_CTRL_PRESIDENT`/`IM_CTRL_CC` = matricule du signataire) :
 - `role=MEMBRE` → l'appelant doit être le **Membre attributaire** du PV (`IM_CTRL_MEMBRE`), non déléguable → **403** sinon ;

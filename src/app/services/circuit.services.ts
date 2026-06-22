@@ -157,6 +157,14 @@ export class PvExamenService extends CrudService<PvExamen> {
   signer(id: number, body: PvActionRequest): Observable<PvExamen> {
     return this.http.post<PvExamen>(`${this.baseUrl}/${id}/signer`, body);
   }
+
+  /**
+   * `GET /api/pv-examens/definitifs` — **PV signés uniquement** (lecture seule, scopé localité).
+   * Complément de `list()` (`GET /api/pv-examens`) qui ne renvoie plus que les **projets** (statut ≠ SIGNE).
+   */
+  definitifs(): Observable<PvExamen[]> {
+    return this.http.get<PvExamen[]>(`${this.baseUrl}/definitifs`);
+  }
 }
 
 @Injectable({ providedIn: 'root' })

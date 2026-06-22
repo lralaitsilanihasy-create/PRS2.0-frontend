@@ -5,6 +5,7 @@ import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { DispatchsList } from '../circuit/dispatchs-list';
 import { ECHEANCE_CONFIG } from '../circuit/circuit-resources.config';
 import { MembrePv } from '../membre/pv-page';
+import { PvDefinitifs } from '../circuit/pv-definitifs';
 import { RetraitsValidation } from '../circuit/retraits-validation';
 import { KpiDashboard } from '../pilotage/kpi-dashboard';
 import { RapportsPage } from '../pilotage/rapports-page';
@@ -24,6 +25,7 @@ export const PRESIDENT_ROUTES: Routes = [
   { path: 'circuit', redirectTo: 'circuit/dispatch', pathMatch: 'full' },
   { path: 'circuit/dispatch', component: DispatchsList },
   { path: 'circuit/pv', component: MembrePv },
+  { path: 'circuit/pv-definitifs', component: PvDefinitifs },
   { path: 'retraits', component: RetraitsValidation },
   { path: 'calendrier', component: CrudPage, data: { crud: ECHEANCE_CONFIG } },
   { path: 'rapports', component: RapportsPage },

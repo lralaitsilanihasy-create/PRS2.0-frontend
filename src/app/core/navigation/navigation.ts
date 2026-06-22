@@ -42,6 +42,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Pré-dispatch', path: '/president/pre-dispatch', icon: '📤' },
     { label: 'Dispatch des dossiers', path: '/president/circuit/dispatch', icon: '🔀' },
     { label: 'Projets de PV', path: '/president/circuit/pv', icon: '📝' },
+    { label: 'PV définitifs', path: '/president/circuit/pv-definitifs', icon: '✅' },
     { label: 'Demandes de retrait', path: '/president/retraits', icon: '↩' },
     { label: 'PPM, marchés & dates', path: '/president/ppm-marches', icon: '🗂' },
     { label: 'Calendrier', path: '/president/calendrier', icon: '📅' },
@@ -52,6 +53,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Tableau de bord', path: '/cc/tableau-de-bord', icon: '▤' },
     { label: 'Dispatch des dossiers', path: '/cc/circuit/dispatch', icon: '🔀' },
     { label: 'Projets de PV', path: '/cc/circuit/pv', icon: '📝' },
+    { label: 'PV définitifs', path: '/cc/circuit/pv-definitifs', icon: '✅' },
     { label: 'PPM & marchés', path: '/cc/ppm-marches', icon: '🗂' },
     { label: 'Marchés & dates prév.', path: '/cc/marches-previsions', icon: '📆' },
     { label: 'Demandes de retrait', path: '/cc/retraits', icon: '↩' },
@@ -70,6 +72,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Dossiers examinés', path: '/membre/examines', icon: '✅' },
     { label: "Détails d'examen", path: '/membre/examen-details', icon: '☑' },
     { label: 'Projets de PV', path: '/membre/pv', icon: '📝' },
+    { label: 'PV définitifs', path: '/membre/pv-definitifs', icon: '✅' },
     { label: 'Messagerie', path: '/membre/messagerie', icon: '✉' },
   ],
   VERIFICATEUR: [

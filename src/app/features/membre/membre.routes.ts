@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { CrudPage } from '../../shared/crud/crud-page';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { EXAMEN_DETAIL_CONFIG } from '../circuit/circuit-resources.config';
+import { PvDefinitifs } from '../circuit/pv-definitifs';
 import { Messagerie } from '../transverse/messagerie';
 import { ExamenDossier } from './examen-dossier';
 import { MembrePv } from './pv-page';
@@ -20,5 +21,6 @@ export const MEMBRE_ROUTES: Routes = [
   { path: 'examines', component: DossiersPipeline, data: { title: 'Dossiers examinés', timeline: false, source: 'examines' } },
   { path: 'examen-details', component: CrudPage, data: { crud: EXAMEN_DETAIL_CONFIG } },
   { path: 'pv', component: MembrePv },
+  { path: 'pv-definitifs', component: PvDefinitifs },
   { path: 'messagerie', component: Messagerie },
 ];

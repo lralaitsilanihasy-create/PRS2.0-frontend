@@ -120,7 +120,7 @@ import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit'
               }
             </li>
           } @empty {
-            <li class="pv__info">Aucun PV dans votre périmètre.</li>
+            <li class="pv__info">Aucun projet de PV en cours.</li>
           }
         </ul>
       }

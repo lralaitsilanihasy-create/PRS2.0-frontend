@@ -113,6 +113,8 @@ export interface PvExamen {
   dateSignatureMembre?: string;
   datePv?: string;
   referencePv?: string;
+  /** Référence officielle dérivée du dossier (refeDossier avec /PV avant l'année), générée serveur. */
+  refePv?: string;
 }
 
 /** Navette (aller-retour) du projet de PV. Traçabilité immuable (pas de suppression). */

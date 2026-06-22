@@ -4,6 +4,7 @@ import { CrudPage } from '../../shared/crud/crud-page';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { DispatchsList } from '../circuit/dispatchs-list';
 import { MembrePv } from '../membre/pv-page';
+import { PvDefinitifs } from '../circuit/pv-definitifs';
 import { PpmMarches } from '../prmp/ppm-marches';
 import { PrmpMarchesPrevisions } from '../prmp/prmp-marches-previsions';
 import { SNAPSHOT_STATS_CONFIG } from '../pilotage/pilotage-resources.config';
@@ -22,6 +23,7 @@ export const CC_ROUTES: Routes = [
   { path: 'circuit', redirectTo: 'circuit/dispatch', pathMatch: 'full' },
   { path: 'circuit/dispatch', component: DispatchsList },
   { path: 'circuit/pv', component: MembrePv },
+  { path: 'circuit/pv-definitifs', component: PvDefinitifs },
   { path: 'retraits', component: RetraitsValidation },
   { path: 'statistiques', component: CrudPage, data: { crud: SNAPSHOT_STATS_CONFIG } },
   { path: 'messagerie', component: Messagerie },
