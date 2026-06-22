@@ -41,7 +41,7 @@ import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit'
           @for (pv of pvs(); track pv.idPv) {
             <li class="pv-card">
               <div class="pv-card__head">
-                <span class="pv-card__ref">{{ pv.referencePv || ('PV #' + pv.idPv) }}</span>
+                <span class="pv-card__ref">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</span>
                 <app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" />
                 <button type="button" class="cnm-btn cnm-btn--ghost" (click)="selectionner(pv)">
                   {{ selected()?.idPv === pv.idPv ? 'Masquer' : 'Gérer' }}
