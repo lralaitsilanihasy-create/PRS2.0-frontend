@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 
 import { CrudPage } from '../../shared/crud/crud-page';
-import { SectionHome } from '../../shared/ui/section-home';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { DispatchsList } from '../circuit/dispatchs-list';
 import { ECHEANCE_CONFIG } from '../circuit/circuit-resources.config';
@@ -21,17 +20,8 @@ export const PRESIDENT_ROUTES: Routes = [
     data: { title: 'Pipeline — toutes localités' },
   },
   { path: 'pre-dispatch', component: PresidentPreDispatch },
-  {
-    path: 'circuit',
-    component: SectionHome,
-    data: {
-      title: 'Circuit de contrôle',
-      links: [
-        { label: 'Dispatch des dossiers', path: '/president/circuit/dispatch' },
-        { label: 'Projets de PV', path: '/president/circuit/pv' },
-      ],
-    },
-  },
+  // Plus de page intermédiaire à tuiles : « circuit » redirige vers le dispatch (entrées directes au menu).
+  { path: 'circuit', redirectTo: 'circuit/dispatch', pathMatch: 'full' },
   { path: 'circuit/dispatch', component: DispatchsList },
   { path: 'circuit/pv', component: MembrePv },
   { path: 'retraits', component: RetraitsValidation },

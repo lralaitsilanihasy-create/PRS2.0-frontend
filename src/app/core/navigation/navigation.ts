@@ -40,7 +40,8 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   PRESIDENT: [
     { label: 'Tableau de bord', path: '/president/tableau-de-bord', icon: '▤' },
     { label: 'Pré-dispatch', path: '/president/pre-dispatch', icon: '📤' },
-    { label: 'Circuit & dispatch', path: '/president/circuit', icon: '🔀' },
+    { label: 'Dispatch des dossiers', path: '/president/circuit/dispatch', icon: '🔀' },
+    { label: 'Projets de PV', path: '/president/circuit/pv', icon: '📝' },
     { label: 'Demandes de retrait', path: '/president/retraits', icon: '↩' },
     { label: 'PPM, marchés & dates', path: '/president/ppm-marches', icon: '🗂' },
     { label: 'Calendrier', path: '/president/calendrier', icon: '📅' },
@@ -49,7 +50,8 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   CHEF_COMMISSION: [
     { label: 'Tableau de bord', path: '/cc/tableau-de-bord', icon: '▤' },
-    { label: 'Circuit de contrôle', path: '/cc/circuit', icon: '🔀' },
+    { label: 'Dispatch des dossiers', path: '/cc/circuit/dispatch', icon: '🔀' },
+    { label: 'Projets de PV', path: '/cc/circuit/pv', icon: '📝' },
     { label: 'PPM & marchés', path: '/cc/ppm-marches', icon: '🗂' },
     { label: 'Marchés & dates prév.', path: '/cc/marches-previsions', icon: '📆' },
     { label: 'Demandes de retrait', path: '/cc/retraits', icon: '↩' },

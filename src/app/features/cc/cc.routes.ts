@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 
 import { CrudPage } from '../../shared/crud/crud-page';
-import { SectionHome } from '../../shared/ui/section-home';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { DispatchsList } from '../circuit/dispatchs-list';
 import { MembrePv } from '../membre/pv-page';
@@ -19,17 +18,8 @@ export const CC_ROUTES: Routes = [
     component: DossiersPipeline,
     data: { title: 'Dossiers de ma localité' },
   },
-  {
-    path: 'circuit',
-    component: SectionHome,
-    data: {
-      title: 'Circuit de contrôle',
-      links: [
-        { label: 'Dispatch des dossiers', path: '/cc/circuit/dispatch' },
-        { label: 'Projets de PV', path: '/cc/circuit/pv' },
-      ],
-    },
-  },
+  // Plus de page intermédiaire à tuiles : « circuit » redirige vers le dispatch (entrées directes au menu).
+  { path: 'circuit', redirectTo: 'circuit/dispatch', pathMatch: 'full' },
   { path: 'circuit/dispatch', component: DispatchsList },
   { path: 'circuit/pv', component: MembrePv },
   { path: 'retraits', component: RetraitsValidation },
