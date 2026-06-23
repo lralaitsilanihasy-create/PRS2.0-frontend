@@ -748,7 +748,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 | idDossier | number | Oui (PK, au POST) | clé primaire |
 | idTypeDossier | string | Non | max 10 |
 | idDossierParent | number | Non | |
-| refeDossier | string | Non | max 100 — **référence officielle, générée par `…/soumettre`** ; laisser vide à la création |
+| refeDossier | string | Non | max 100 — **référence officielle, générée à la `…/réception`** ; **`null` avant** (BROUILLON/SOUMIS) ; laisser vide à la création |
 | dateRef | string (date) | Non | renseignée à la soumission si vide |
 | statut | string | Non | max 30 — cycle : `BROUILLON` → `SOUMIS` → `PRET_DISPATCH` → `DISPATCHE` → `EXAMINE` → `PV_SIGNE` → (`EN_VERIFICATION` si avis FAVR) → `CLOTURE` ; vérif. obs. non levées → `EN_ATTENTE_DECISION_PRMP` (ou `RETIRE`) ; posé par le système, **lecture seule** côté PRMP |
 | idLocalite | string | Non | max 5 — localité (FK `tr_localite`) ; **dérivée de l'entité** du dossier (lecture seule à la saisie) |
@@ -837,17 +837,17 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 > **Soumission (§3.1, Module 03).** `POST /api/dossiers/{id}/soumettre` (réservé **PRMP propriétaire**) :
 > passe le dossier de **`BROUILLON` → `SOUMIS`** (statut autre → **409**), vérifie la **cohérence
 > type↔contenu** (PPM ⇒ a un PPM ; DAO/MAOO ⇒ pas de PPM, sinon **409**), propage la **localité** (du PPM,
-> sinon de la PRMP ; **400** si indéterminable), **génère la référence** `refeDossier`
-> (`CNM-{localité}-{exercice}-{idDossier}`) et **notifie** le Secrétaire + CC (`DOSSIER_SOUMIS`).
-> Propriété non respectée → **403**.
+> sinon de la PRMP ; **400** si indéterminable) et **notifie** le Secrétaire + CC (`DOSSIER_SOUMIS`).
+> ⚠️ La soumission **ne génère plus** de référence : `refeDossier` reste **`null`** jusqu'à la **réception**
+> (l'ancien format `CNM-{localité}-{exercice}-{idDossier}` est **abandonné**). Propriété non respectée → **403**.
 >
 > ⚠️ **Précondition « PPM ⇒ ≥ 1 marché » (règle ajoutée, cf. `regles-gestion.md` §3.1 Module 03).** Un
 > dossier de type **PPM** sans aucune ligne de marché ne peut être soumis → **409** (« *Un PPM doit
 > comporter au moins un marché avant soumission.* »). **DAO/MAOO non concernés.**
 
-**Exemple — réponse après `…/soumettre`** (statut SOUMIS, référence générée)
+**Exemple — réponse après `…/soumettre`** (statut SOUMIS, `refeDossier` encore `null` — réf. posée à la réception)
 ```json
-{ "idDossier": 1023, "idTypeDossier": "DAO", "refeDossier": "CNM-ANT-2026-001023", "dateRef": "2026-03-10", "statut": "SOUMIS", "idLocalite": "ANT", "idPrmp": "PRMP001" }
+{ "idDossier": 1023, "idTypeDossier": "DAO", "refeDossier": null, "dateRef": "2026-03-10", "statut": "SOUMIS", "idLocalite": "ANT", "idPrmp": "PRMP001" }
 ```
 
 ---
@@ -2113,7 +2113,7 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 > `annee_exercice`) — table `t_sequence_reference`, sans compteur applicatif ;
 > `code_localite` = **`CNM`** si réception centrale (utilisateur transversal, sans localité, ex. Président),
 > sinon **`CRM-<localité>`** ; `annee_exercice` = exercice du PPM, sinon année courante.
-> La référence est **persistée** sur le dossier (`REFE_DOSSIER`, remplace la réf. provisoire de soumission).
+> La référence est **persistée** sur le dossier (`REFE_DOSSIER`, vide depuis la soumission).
 > Exemples : `00001/PPM/CNM/2026`, `00001/PPM/CRM-ANT/2026`, `00002/PPM/CRM-ANT/2026`, `00001/PPM/CRM-TMS/2026`.
 > *(Dossier sans `type_dossier` → `reference` non générée, la réception reste valide.)*
 >
