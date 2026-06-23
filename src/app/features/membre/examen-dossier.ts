@@ -134,21 +134,33 @@ interface RowState {
                   @if (p.decriptPointCtrl) { <p class="exam__point-desc cnm-muted">{{ p.decriptPointCtrl }}</p> }
                   @if (!row(p.idPointCtrl).conforme) {
                     <div class="exam__obs">
-                      <table class="cnm-table exam__obs-table">
-                        <thead><tr><th>AU LIEU DE</th><th>LIRE</th><th></th></tr></thead>
-                        <tbody>
-                          @for (o of row(p.idPointCtrl).observations; track $index) {
-                            <tr>
-                              <td><input class="cnm-input" [value]="o.auLieuDe" (input)="setAuLieuDe(p.idPointCtrl, $index, $any($event.target).value)" /></td>
-                              <td><input class="cnm-input" [value]="o.lire" (input)="setLire(p.idPointCtrl, $index, $any($event.target).value)" /></td>
-                              <td><button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerLigne(p.idPointCtrl, $index)" aria-label="Retirer">✕</button></td>
-                            </tr>
-                          } @empty {
-                            <tr><td colspan="3" class="cnm-muted">Aucune ligne.</td></tr>
-                          }
-                        </tbody>
-                      </table>
-                      <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ajouterLigne(p.idPointCtrl)">+ Ajouter une ligne</button>
+                      <div class="exam__obs-header">
+                        <span>AU LIEU DE</span>
+                        <span>LIRE</span>
+                        <span class="exam__obs-actions"></span>
+                      </div>
+                      @for (o of row(p.idPointCtrl).observations; track $index) {
+                        <div class="exam__obs-row">
+                          <textarea
+                            class="cnm-textarea"
+                            rows="2"
+                            placeholder="Au lieu de…"
+                            [value]="o.auLieuDe"
+                            (input)="setAuLieuDe(p.idPointCtrl, $index, $any($event.target).value)"
+                          ></textarea>
+                          <textarea
+                            class="cnm-textarea"
+                            rows="2"
+                            placeholder="Lire…"
+                            [value]="o.lire"
+                            (input)="setLire(p.idPointCtrl, $index, $any($event.target).value)"
+                          ></textarea>
+                          <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm exam__obs-del" (click)="retirerLigne(p.idPointCtrl, $index)" aria-label="Retirer">✕</button>
+                        </div>
+                      } @empty {
+                        <p class="cnm-muted">Aucune ligne.</p>
+                      }
+                      <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm exam__obs-add" (click)="ajouterLigne(p.idPointCtrl)">+ Ajouter une ligne</button>
                       @if (pointErreur(p.idPointCtrl)) { <span class="cnm-field__hint exam__obs-err">{{ pointErreur(p.idPointCtrl) }}</span> }
                     </div>
                   }
@@ -209,8 +221,11 @@ interface RowState {
     .exam__point-desc { font-size: var(--cnm-fs-sm); margin: 0; }
     .exam__conforme { display: flex; align-items: center; gap: var(--cnm-space-1); font-size: var(--cnm-fs-sm); white-space: nowrap; }
     .exam__obs { display: flex; flex-direction: column; gap: var(--cnm-space-1); align-items: flex-start; }
-    .exam__obs-table { width: 100%; }
-    .exam__obs-table th { font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
+    .exam__obs-header, .exam__obs-row { display: flex; gap: var(--cnm-space-3); align-items: flex-start; align-self: stretch; }
+    .exam__obs-header span:first-child, .exam__obs-header span:nth-child(2) { flex: 1 1 0; text-align: center; font-weight: var(--cnm-fw-semibold); font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
+    .exam__obs-actions { width: 2rem; }
+    .exam__obs-row textarea { flex: 1 1 0; min-height: 2.5rem; resize: none; word-wrap: break-word; white-space: pre-wrap; }
+    .exam__obs-del { width: 2rem; align-self: flex-start; margin-top: 0.3rem; }
     .exam__obs-err { color: var(--cnm-danger-fg); }
     .exam__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-3); margin-top: var(--cnm-space-2); }
     @media (max-width: 60rem) { .exam__grid { grid-template-columns: 1fr; } }
