@@ -774,7 +774,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 | GET | /api/dossiers/{id} | — | `DossierDto` | 200, 403, 404 | Authentifié (filtré) |
 | POST | /api/dossiers | `DossierDto` | `DossierDto` | 201, 400, 403 | **ADMINISTRATEUR** |
 | PUT | /api/dossiers/{id} | `DossierDto` | `DossierDto` | 200, 400, 403, 404 | **ADMINISTRATEUR** |
-| DELETE | /api/dossiers/{id} | — | — | 204, 403, 404, 409 | **PRMP** propriétaire — BROUILLON sans historique |
+| DELETE | /api/dossiers/{id} | — | — | 204, 403, 404, 409 | **PRMP** propriétaire — BROUILLON (cascade contenu + historique) |
 | POST | /api/dossiers/{id}/soumettre | — | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** |
 | POST | /api/dossiers/{id}/resoumettre | `DossierResoumissionRequest` | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** propriétaire |
 | GET | /api/dossiers/{id}/historique-echanges | — | `EchangeDto[]` | 200, 403, 404 | **PRMP** / **VERIFICATEUR** (titulaire/délégué) / **ADMINISTRATEUR** |
@@ -782,10 +782,12 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 `{id}` = idDossier (number). **`DossierResoumissionRequest`** = `{ motifRectification }` (String, **@NotBlank**, max 255).
 
 > ⚠️ **Suppression de dossier (règle ajoutée).** `DELETE /api/dossiers/{id}` est réservée à la **PRMP propriétaire**
-> (sinon **403**), uniquement sur un dossier **`BROUILLON`** (sinon **409** « Ce dossier ne peut pas être supprimé. »).
-> Cascade applicative du **contenu** : prévisions → marchés → PPM(s), puis le dossier. Un brouillon **avec historique
-> de circuit** (réception ou demande de retrait — ex. revenu BROUILLON via retrait) est **refusé (409)** : ses traces
-> FK (réception, retrait, notifications) sont **conservées**. Dossier inexistant → **404**.
+> (sinon **403**). Un dossier **`BROUILLON`** est **toujours supprimable** (sinon **409** « Ce dossier ne peut pas
+> être supprimé. »), **y compris s'il porte un historique de circuit** (revenu BROUILLON via retrait incomplet).
+> Cascade complète en une transaction : **contenu** (prévisions → marchés → PPM) **+ historique de circuit**
+> (notifications, demandes de retrait, réceptions — un brouillon n'a jamais dépassé `PRET_DISPATCH`, donc des
+> réceptions sans dispatch/examen/PV/vérification). Le **journal d'audit** (`t_audit_log`, immuable §3.8, sans FK) est
+> **conservé**. Dossier inexistant → **404**.
 
 > ⚠️ **Historique d'échanges (règle ajoutée).** `GET /api/dossiers/{id}/historique-echanges` retourne l'historique
 > complet d'un dossier **`CLOTURE`** (sinon **403**), en **fil chronologique entrelacé** (chaîne de réponse : chaque
@@ -877,12 +879,19 @@ dossier/PPM (désormais réservée Admin).
 |---|---|---|
 | **idEntiteContract** | number | **Oui** — entité contractante concernée (fixe la localité) |
 | exercice | number | Oui |
-| signataire | string | Oui (max 50) |
 | dateSignature | string (date) | Oui |
-| reference | string | Oui (max 100) |
 | marches | `SaisieMarcheLigne[]` | Non |
 
 *(plus de `idDossier`/`idPpm` : attribués par le serveur.)*
+
+> ⚠️ **Référence & signataire auto-générés (règle ajoutée).** `signataire` et `reference` ne sont **plus saisis**
+> (retirés de l'entrée). Le serveur les génère à la création du brouillon et les expose dans `PpmDto` (sortie) :
+> - **`reference`** = `<séquence>/<acronyme entité>/PPM/<année>` (ex. `00001/DGB/PPM/2026`), compteur **par
+>   (entité, année)** ; l'**acronyme** est dérivé du `LIBELLE_ENTITE` (initiales des mots significatifs :
+>   « Direction Générale du Budget » → `DGB`).
+> - **`signataire`** = « prénoms + nom » de la **PRMP connectée** (`t_prmp`), repli sur l'identifiant PRMP.
+>
+> Modifiables ensuite via la **rectification** (en attente de décision PRMP), pas à la création.
 
 **`SaisieMarcheLigne`** : `designationMarche`, `numCompte`, `montEstim`, `financement`, `statut`, `idSituation`, `idNature`. `idDetail` est **facultatif** — **null à la création** (PK serveur), renseigné seulement pour **identifier une ligne existante** lors de l'édition (réconciliation). `idDossier`/`idPpm` sont renseignés par le service. ⚠️ **`idMode`** = mode **choisi** par la PRMP (facultatif), validé contre l'ensemble autorisé (hors ensemble → **409**) ; absent → mode **recommandé** (§3.1 M02).
 
@@ -902,9 +911,8 @@ dossier/PPM (désormais réservée Admin).
 **Exemple — requête `POST /api/saisies/ppm`** (`idEntiteContract` fixe la localité, pas de `idLocalite`)
 ```json
 {
-  "idDossier": 70, "idEntiteContract": 1, "idPpm": 70, "exercice": 2026,
-  "signataire": "RABE Hery", "dateSignature": "2026-01-10", "reference": "PPM-2026-ANT-001",
-  "marches": [ { "idDetail": 700, "designationMarche": "Travaux X", "montEstim": 500000000, "idNature": 1, "idSituation": 1, "statut": "PREVU" } ]
+  "idEntiteContract": 1, "exercice": 2026, "dateSignature": "2026-01-10",
+  "marches": [ { "designationMarche": "Travaux X", "montEstim": 500000000, "idNature": 1, "idSituation": 1, "statut": "PREVU" } ]
 }
 ```
 
