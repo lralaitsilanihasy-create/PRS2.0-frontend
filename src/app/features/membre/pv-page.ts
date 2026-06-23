@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signa
 import { forkJoin } from 'rxjs';
 
 import { ToastService } from '../../core/notifications/toast.service';
-import { Dispatch, Dossier, Examen, ExamenDetail, PvExamen, PvNavette, Reception } from '../../models';
+import { Dispatch, Dossier, Examen, ExamenDetail, ObservationControle, PvExamen, PvNavette, Reception } from '../../models';
 import {
   AvisService,
   ControleurService,
@@ -87,7 +87,20 @@ import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit'
                           <tr>
                             <td>{{ pointLabel(d.idPtControle) }}</td>
                             <td>{{ d.conforme ? 'Conforme' : 'Non conforme' }}</td>
-                            <td>{{ d.conforme ? '—' : (d.obsSiNonConforme || '—') }}</td>
+                            <td>
+                              @if (!d.conforme && observationsTriees(d).length) {
+                                <table class="obs-pv-table">
+                                  <thead><tr><th>AU LIEU DE</th><th>LIRE</th></tr></thead>
+                                  <tbody>
+                                    @for (o of observationsTriees(d); track o.idObservation ?? $index) {
+                                      <tr><td>{{ o.auLieuDe || '—' }}</td><td>{{ o.lire || '—' }}</td></tr>
+                                    }
+                                  </tbody>
+                                </table>
+                              } @else {
+                                —
+                              }
+                            </td>
                           </tr>
                         }
                       </tbody>
@@ -239,6 +252,9 @@ import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit'
       font-size: var(--cnm-fs-sm);
     }
     .pv-print-bar { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
+    .obs-pv-table { width: 100%; border-collapse: collapse; font-size: var(--cnm-fs-sm); }
+    .obs-pv-table th { text-align: center; font-weight: var(--cnm-fw-semibold); padding: 0.2rem 0.5rem; border-bottom: 1px solid var(--cnm-border); }
+    .obs-pv-table td { padding: 0.2rem 0.5rem; vertical-align: top; border-bottom: 1px solid var(--cnm-border); word-wrap: break-word; }
   `,
 })
 export class MembrePv {
@@ -380,6 +396,10 @@ export class MembrePv {
   }
   pointLabel(id: number): string {
     return this.pointsMap().get(String(id)) ?? `#${id}`;
+  }
+  /** Lignes « AU LIEU DE / LIRE » du point, triées par `ordre` ASC. */
+  observationsTriees(d: ExamenDetail): ObservationControle[] {
+    return [...(d.observations ?? [])].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
   }
   sensLabel(sens: string): string {
     return MembrePv.SENS_LABELS[sens] ?? sens;
