@@ -57,7 +57,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
               <button
                 type="button"
                 class="cnm-btn cnm-btn--primary"
-                [disabled]="saving() || selectedId() == null || !motif().trim()"
+                [disabled]="saving() || !retirables().length || selectedId() == null || !motif().trim()"
                 (click)="soumettre()"
               >
                 {{ saving() ? 'Envoi…' : 'Soumettre la demande' }}
