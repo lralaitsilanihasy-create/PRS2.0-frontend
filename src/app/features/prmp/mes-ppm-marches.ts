@@ -203,6 +203,9 @@ type ModeSuggestion = {
                     <input class="cnm-input" type="date" formControlName="dateFin" />
                     <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerDate(ef, $index)">✕</button>
                   </div>
+                  @if (procErreur(ctrl.get('idCapm')!.value)) {
+                    <span class="cnm-field__hint mpm-date-err">{{ procErreur(ctrl.get('idCapm')!.value) }}</span>
+                  }
                 } @empty {
                   <p class="mpm__info">Aucune date. Ajoutez-en une.</p>
                 }
@@ -424,6 +427,7 @@ type ModeSuggestion = {
       gap: var(--cnm-space-2);
     }
     .mpm-date-row .cnm-select { flex: 1; }
+    .mpm-date-err { color: var(--cnm-danger-fg); display: block; }
 
     .mpm-modal__overlay {
       position: fixed;
@@ -488,6 +492,8 @@ export class MesPpmMarches {
 
   /** Référentiel CAPM (processus de marché), trié par `ordre` ASC. */
   readonly capms = signal<Capm[]>([]);
+  /** Erreurs de cohérence chronologique par processus (clé = idCapm) — modal « Modifier les dates ». */
+  readonly procErreurs = signal<Record<number, string>>({});
 
   private readonly ppms = signal<Ppm[]>([]);
   private readonly marches = signal<Marche[]>([]);
@@ -646,6 +652,41 @@ export class MesPpmMarches {
   capmLabel(id: number): string {
     return this.capms().find((c) => c.idCapm === id)?.libelleProcessus ?? '#' + id;
   }
+  procErreur(idCapm: number | null): string | undefined {
+    return idCapm == null ? undefined : this.procErreurs()[idCapm];
+  }
+  /**
+   * Cohérence chronologique des processus (triés par `ordre` CAPM) : `dateDebut < dateFin`, et
+   * `dateDebut[n] >= dateFin[n-1]` entre consécutifs. Renseigne `procErreurs` (clé idCapm) ; renvoie `true`
+   * si cohérent (comparaison lexicographique d'ISO `yyyy-MM-dd` = chronologique).
+   */
+  private validerChronologie(controls: FormGroup[]): boolean {
+    const parId = new Map(this.capms().map((c) => [c.idCapm, c]));
+    const items = controls
+      .map((g) => ({
+        idCapm: g.get('idCapm')!.value as number | null,
+        dateDebut: g.get('dateDebut')!.value as string,
+        dateFin: g.get('dateFin')!.value as string,
+      }))
+      .filter((p) => p.idCapm != null && p.dateDebut && p.dateFin)
+      .sort((a, b) => (parId.get(a.idCapm!)?.ordre ?? 0) - (parId.get(b.idCapm!)?.ordre ?? 0));
+    const err: Record<number, string> = {};
+    for (let i = 0; i < items.length; i++) {
+      const p = items[i];
+      if (p.dateDebut >= p.dateFin) {
+        err[p.idCapm!] = 'La date de fin doit être postérieure à la date de début.';
+        continue;
+      }
+      if (i > 0 && p.dateDebut < items[i - 1].dateFin) {
+        const lib = parId.get(p.idCapm!)?.libelleProcessus ?? '#' + p.idCapm;
+        const libPrec = parId.get(items[i - 1].idCapm!)?.libelleProcessus ?? '#' + items[i - 1].idCapm;
+        err[p.idCapm!] =
+          `La date de début de ${lib} doit être postérieure ou égale à la date de fin de ${libPrec}.`;
+      }
+    }
+    this.procErreurs.set(err);
+    return Object.keys(err).length === 0;
+  }
   private ligneDate(p?: Partial<MarchePrevision>): FormGroup {
     return this.fb.group({
       idPrevision: [p?.idPrevision ?? null],
@@ -683,6 +724,7 @@ export class MesPpmMarches {
 
   // --- Édition des dates d'un marché existant ---
   ouvrirEdition(m: Marche): void {
+    this.procErreurs.set({});
     this.editMarche.set(m);
     this.editLoading.set(true);
     const form = this.fb.group({ datesPrev: this.fb.array([] as FormGroup[]) });
@@ -698,6 +740,7 @@ export class MesPpmMarches {
     });
   }
   annulerEdition(): void {
+    this.procErreurs.set({});
     this.editMarche.set(null);
     this.editForm.set(null);
     this.editOriginal.set([]);
@@ -706,6 +749,10 @@ export class MesPpmMarches {
     const m = this.editMarche();
     const form = this.editForm();
     if (!m || !form) return;
+    // Cohérence chronologique (par ordre CAPM) avant tout envoi.
+    if (!this.validerChronologie(this.datesControls(form))) {
+      return;
+    }
     const rows = (form.get('datesPrev') as FormArray).getRawValue() as {
       idPrevision: number | null;
       idCapm: number | null;

@@ -386,6 +386,9 @@ type ModeSuggestion = {
                 <input class="cnm-input" type="date" formControlName="dateFin" />
                 <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerProc($index)" aria-label="Retirer">✕</button>
               </div>
+              @if (procErreur(ctrl.get('idCapm')!.value)) {
+                <span class="cnm-field__hint sd-proc-err">{{ procErreur(ctrl.get('idCapm')!.value) }}</span>
+              }
             } @empty {
               <p class="cnm-field__hint">Aucun processus. Ajoutez-en au moins un.</p>
             }
@@ -445,6 +448,7 @@ type ModeSuggestion = {
     .sd-modal { width: 100%; max-width: 36rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
     .sd-proc-row { display: flex; align-items: center; gap: var(--cnm-space-2); }
     .sd-proc-row .cnm-select { flex: 1; min-width: 8rem; }
+    .sd-proc-err { color: var(--cnm-danger-fg); display: block; }
     .sd-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
     .sd-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
   `,
@@ -531,6 +535,8 @@ export class SoumettreDossier {
   readonly datesCible = signal<FormGroup | null>(null);
   /** Copie de travail des processus du marché en édition (FormArray de { idCapm, dateDebut, dateFin }). */
   readonly datesForm = this.fb.array([] as FormGroup[]);
+  /** Erreurs de cohérence chronologique par processus (clé = idCapm). */
+  readonly procErreurs = signal<Record<number, string>>({});
 
   readonly marcheForm = this.fb.nonNullable.group({
     idDetail: [null as number | null, Validators.required],
@@ -792,8 +798,44 @@ export class SoumettreDossier {
   retirerProc(i: number): void {
     this.datesForm.removeAt(i);
   }
+  procErreur(idCapm: number | null): string | undefined {
+    return idCapm == null ? undefined : this.procErreurs()[idCapm];
+  }
+  /**
+   * Cohérence chronologique des processus (triés par `ordre` CAPM) : `dateDebut < dateFin` pour chacun,
+   * et `dateDebut[n] >= dateFin[n-1]` entre consécutifs. Renseigne `procErreurs` (clé idCapm) ; renvoie
+   * `true` si tout est cohérent. (Comparaison lexicographique d'ISO `yyyy-MM-dd` = chronologique.)
+   */
+  private validerChronologie(controls: FormGroup[]): boolean {
+    const parId = new Map(this.capms().map((c) => [c.idCapm, c]));
+    const items = controls
+      .map((g) => ({
+        idCapm: g.get('idCapm')!.value as number | null,
+        dateDebut: g.get('dateDebut')!.value as string,
+        dateFin: g.get('dateFin')!.value as string,
+      }))
+      .filter((p) => p.idCapm != null && p.dateDebut && p.dateFin)
+      .sort((a, b) => (parId.get(a.idCapm!)?.ordre ?? 0) - (parId.get(b.idCapm!)?.ordre ?? 0));
+    const err: Record<number, string> = {};
+    for (let i = 0; i < items.length; i++) {
+      const p = items[i];
+      if (p.dateDebut >= p.dateFin) {
+        err[p.idCapm!] = 'La date de fin doit être postérieure à la date de début.';
+        continue;
+      }
+      if (i > 0 && p.dateDebut < items[i - 1].dateFin) {
+        const lib = parId.get(p.idCapm!)?.libelleProcessus ?? '#' + p.idCapm;
+        const libPrec = parId.get(items[i - 1].idCapm!)?.libelleProcessus ?? '#' + items[i - 1].idCapm;
+        err[p.idCapm!] =
+          `La date de début de ${lib} doit être postérieure ou égale à la date de fin de ${libPrec}.`;
+      }
+    }
+    this.procErreurs.set(err);
+    return Object.keys(err).length === 0;
+  }
   /** Ouvre le modal des processus : copie de travail pré-remplie depuis la ligne. */
   ouvrirDates(g: FormGroup): void {
+    this.procErreurs.set({});
     this.datesForm.clear();
     (g.get('processus') as FormArray).controls.forEach((p) =>
       this.datesForm.push(this.processusGroup((p as FormGroup).getRawValue())),
@@ -801,9 +843,10 @@ export class SoumettreDossier {
     this.datesCible.set(g);
   }
   annulerDates(): void {
+    this.procErreurs.set({});
     this.datesCible.set(null);
   }
-  /** Valide la copie de travail (≥1 processus, tous complets) et la recopie sur la ligne. */
+  /** Valide la copie de travail (≥1 processus, tous complets, chronologie cohérente) et la recopie. */
   validerDates(): void {
     const g = this.datesCible();
     if (!g) {
@@ -811,6 +854,9 @@ export class SoumettreDossier {
     }
     if (!this.datesForm.length || this.datesForm.invalid) {
       this.datesForm.markAllAsTouched();
+      return;
+    }
+    if (!this.validerChronologie(this.procControls())) {
       return;
     }
     const arr = g.get('processus') as FormArray;
