@@ -204,6 +204,8 @@ export class MesBrouillons {
       next: () => {
         this.toast.success('Dossier supprimé avec succès.');
         this.brouillons.update((arr) => arr.filter((x) => x.idDossier !== d.idDossier));
+        // Propage le retrait aux autres écrans (tableau de bord, Mes PPM & marchés…).
+        this.dossiersRefresh.notifierSuppression(d.idDossier);
         this.suppression.set(null);
         this.confirmDossier.set(null);
       },

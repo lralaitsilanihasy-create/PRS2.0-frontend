@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { PermissionsService } from '../../core/auth/permissions.service';
+import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { Dispatch, Dossier, Examen, PvExamen, Reception, Verification } from '../../models';
 import {
   DispatchService,
@@ -158,6 +160,7 @@ export class DossiersPipeline {
   private readonly verificationService = inject(VerificationService);
   private readonly permissions = inject(PermissionsService);
   private readonly lookups = inject(ReferenceLookupService);
+  private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly entiteMap = signal<Map<string, string>>(new Map());
 
   protected readonly title = (this.route.snapshot.data['title'] as string) ?? 'Dossiers';
@@ -259,6 +262,10 @@ export class DossiersPipeline {
         .lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite'])
         .subscribe((m) => this.entiteMap.set(m));
     }
+    // Suppression d'un dossier propagée depuis un autre écran → retrait local immédiat de sa carte.
+    this.dossiersRefresh.supprime$
+      .pipe(takeUntilDestroyed())
+      .subscribe((idDossier) => this.dossiers.update((arr) => arr.filter((d) => d.idDossier !== idDossier)));
   }
 
   /** Charge une page d'un historique paginé ('examines' ou 'verifies' selon la source). */

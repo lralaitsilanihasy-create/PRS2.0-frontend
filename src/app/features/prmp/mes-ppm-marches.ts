@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subscription, debounceTime, forkJoin, merge } from 'rxjs';
 
@@ -559,6 +560,21 @@ export class MesPpmMarches {
       this.dossierStatut.set(new Map(r.map((d) => [d.idDossier, d.statut ?? ''])));
     });
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
+    // Suppression d'un dossier (depuis « Mes brouillons ») → retrait local de son PPM et de ses marchés.
+    this.dossiersRefresh.supprime$.pipe(takeUntilDestroyed()).subscribe((idDossier) => {
+      const idsPpm = this.ppms()
+        .filter((p) => p.idDossier === idDossier)
+        .map((p) => p.idPpm);
+      this.ppms.update((arr) => arr.filter((p) => p.idDossier !== idDossier));
+      this.marches.update((arr) => arr.filter((m) => m.idDossier !== idDossier));
+      if (idsPpm.length) {
+        this.expanded.update((s) => {
+          const n = new Set(s);
+          idsPpm.forEach((id) => n.delete(id));
+          return n;
+        });
+      }
+    });
   }
 
   marchesOf(idPpm: number): Marche[] {
