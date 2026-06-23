@@ -98,6 +98,15 @@ export class DossierService extends CrudService<Dossier> {
   historiqueEchanges(id: number): Observable<EchangeDto[]> {
     return this.http.get<EchangeDto[]>(`${this.baseUrl}/${id}/historique-echanges`);
   }
+
+  /**
+   * `DELETE /api/dossiers/{id}` (PRMP propriétaire) — supprime un dossier **BROUILLON sans historique**
+   * de circuit (204). 409 si historique conservé (traces) ; 403 non-propriétaire ; 404 inexistant.
+   * `skipErrorToast` : messages dédiés affichés par l'écran.
+   */
+  supprimer(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`, { context: skipErrorToast() });
+  }
 }
 
 @Injectable({ providedIn: 'root' })

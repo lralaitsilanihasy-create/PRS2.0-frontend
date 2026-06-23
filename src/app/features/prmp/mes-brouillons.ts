@@ -53,10 +53,19 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <button
                     type="button"
                     class="cnm-btn cnm-btn--success cnm-btn--sm"
-                    [disabled]="submittingId() === d.idDossier"
+                    [disabled]="submittingId() === d.idDossier || ppmManquant(d)"
+                    [title]="ppmManquant(d) ? 'Impossible de soumettre : aucun PPM rattaché à ce dossier. Ouvrez le dossier pour ajouter un PPM.' : ''"
                     (click)="soumettre(d)"
                   >
                     Soumettre
+                  </button>
+                  <button
+                    type="button"
+                    class="cnm-btn cnm-btn--danger cnm-btn--sm"
+                    [disabled]="suppression() === d.idDossier"
+                    (click)="demanderSuppression(d)"
+                  >
+                    Supprimer
                   </button>
                 </td>
               </tr>
@@ -67,12 +76,33 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
         </table>
       }
     </section>
+
+    @if (confirmDossier(); as d) {
+      <div class="mb-modal__overlay" (click)="annulerSuppression()">
+        <div class="mb-modal cnm-card" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+          <h2 class="mb-modal__title">Supprimer ce dossier ?</h2>
+          <p>Êtes-vous sûr de vouloir supprimer ce dossier ? Cette action est irréversible.</p>
+          <div class="mb-modal__foot">
+            <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="suppression() !== null" (click)="annulerSuppression()">
+              Annuler
+            </button>
+            <button type="button" class="cnm-btn cnm-btn--danger" [disabled]="suppression() !== null" (click)="confirmerSuppression()">
+              {{ suppression() !== null ? 'Suppression…' : 'Confirmer' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: `
     .mb__header { margin-bottom: var(--cnm-space-4); }
     .mb__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
     .mb__info { color: var(--cnm-text-2); padding: var(--cnm-space-3); text-align: center; }
     .mb__actions { display: flex; gap: var(--cnm-space-1); justify-content: flex-end; }
+    .mb-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
+    .mb-modal { width: 100%; max-width: 30rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
+    .mb-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
+    .mb-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
   `,
 })
 export class MesBrouillons {
@@ -86,6 +116,10 @@ export class MesBrouillons {
   readonly brouillons = signal<Dossier[]>([]);
   readonly loading = signal(false);
   readonly submittingId = signal<number | null>(null);
+  /** Dossier en attente de confirmation de suppression (null = pas de modale). */
+  readonly confirmDossier = signal<Dossier | null>(null);
+  /** idDossier en cours de suppression (désactive les boutons). */
+  readonly suppression = signal<number | null>(null);
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   private readonly ppmRef = signal<Map<number, string>>(new Map());
@@ -128,6 +162,14 @@ export class MesBrouillons {
     return d.refeDossier || this.ppmRef().get(d.idDossier) || '—';
   }
 
+  /**
+   * Dossier de type PPM sans PPM rattaché → soumission impossible (409, §3.1).
+   * Dérivé de `GET /api/ppms` déjà chargé (`ppmRef`), sans champ backend dédié.
+   */
+  ppmManquant(d: Dossier): boolean {
+    return d.idTypeDossier === 'PPM' && !this.ppmRef().has(d.idDossier);
+  }
+
   ouvrir(d: Dossier): void {
     this.router.navigate(['/prmp/soumettre-dossier'], { queryParams: { reprendre: d.idDossier } });
   }
@@ -140,6 +182,42 @@ export class MesBrouillons {
         this.router.navigate(['/prmp/tableau-de-bord']);
       },
       error: (_e: ApiError) => this.submittingId.set(null), // 403/409/400 → toast centralisé
+    });
+  }
+
+  demanderSuppression(d: Dossier): void {
+    this.confirmDossier.set(d);
+  }
+  annulerSuppression(): void {
+    if (this.suppression() === null) {
+      this.confirmDossier.set(null);
+    }
+  }
+  /** Confirme la suppression : DELETE /api/dossiers/{id} ; 204 → retire la ligne ; messages dédiés 409/403/404. */
+  confirmerSuppression(): void {
+    const d = this.confirmDossier();
+    if (!d) {
+      return;
+    }
+    this.suppression.set(d.idDossier);
+    this.dossierService.supprimer(d.idDossier).subscribe({
+      next: () => {
+        this.toast.success('Dossier supprimé avec succès.');
+        this.brouillons.update((arr) => arr.filter((x) => x.idDossier !== d.idDossier));
+        this.suppression.set(null);
+        this.confirmDossier.set(null);
+      },
+      error: (e: ApiError) => {
+        this.suppression.set(null);
+        this.confirmDossier.set(null);
+        this.toast.error(
+          e.status === 403
+            ? "Vous n'êtes pas autorisé à supprimer ce dossier."
+            : e.status === 404
+              ? 'Dossier introuvable.'
+              : e.message || 'Erreur lors de la suppression.',
+        );
+      },
     });
   }
 }
