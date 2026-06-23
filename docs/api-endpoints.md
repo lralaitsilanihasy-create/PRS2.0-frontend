@@ -609,7 +609,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 | idExamen | number | Oui | @NotNull |
 | idPtControle | number | Oui | @NotNull |
 | conforme | boolean | Oui | @NotNull |
-| observation | string | Non | max 500 |
+| observations | `ObservationControleDto[]` | Non | lignes « AU LIEU DE / LIRE » (cf. *Observations de contrôle*) ; **`[]` si conforme**, **N lignes si non conforme** (sinon **400**, champ `observations`) ; persistées par le service (remplacement à l'enregistrement) |
 | obsSiNonConforme | string | Non | max 500 |
 
 **Endpoints**
@@ -624,10 +624,40 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 
 `{id}` = idDetailExamen (number).
 
-**Exemple — requête**
+**Exemple — requête** (non conforme : au moins une ligne d'observation obligatoire)
 ```json
-{ "idDetailExamen": 4501, "idExamen": 201, "idPtControle": 12, "conforme": false, "observation": "Point examiné", "obsSiNonConforme": "Garantie de soumission absente" }
+{ "idDetailExamen": 4501, "idExamen": 201, "idPtControle": 12, "conforme": false,
+  "observations": [ { "auLieuDe": "500 000 Ar", "lire": "5 000 000 Ar", "ordre": 1 } ],
+  "obsSiNonConforme": "Garantie de soumission absente" }
 ```
+
+---
+
+## Observations de contrôle
+**Ressource** `/api/observation-controles` (table `t_observation_controle`) — **Lecture** : authentifié ;
+**écriture** (POST/PUT/DELETE) : profil **`MEMBRE`** (titulaire ou délégué).
+
+Lignes structurées **« AU LIEU DE / LIRE »** d'un point de contrôle d'examen (`ExamenDetail`), en
+relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien champ texte `observation`.
+
+**Champs `ObservationControleDto`**
+
+| Champ (JSON) | Type | Obligatoire | Contraintes |
+|---|---|---|---|
+| idObservation | number | — (réponse) | PK **auto-générée** (IDENTITY) |
+| idDetail | number | Oui | @NotNull — FK vers le point de contrôle (`t_examen_detail`) ; absent → **400** « Le point de contrôle est obligatoire. » |
+| auLieuDe | string | Non | max 500 |
+| lire | string | Non | max 500 |
+| ordre | number | Oui | @NotNull — ordre de saisie (tri ASC) |
+
+**Endpoints**
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/observation-controles?detail={idDetail} | — | `ObservationControleDto[]` | 200 | Authentifié |
+| POST | /api/observation-controles | `ObservationControleDto` | `ObservationControleDto` | 201, 400, 403 | **MEMBRE** |
+| PUT | /api/observation-controles/{id} | `ObservationControleDto` | `ObservationControleDto` | 200, 400, 403, 404 | **MEMBRE** |
+| DELETE | /api/observation-controles/{id} | — | — | 204, 403, 404 | **MEMBRE** |
 
 ---
 
