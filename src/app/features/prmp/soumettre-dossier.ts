@@ -88,6 +88,7 @@ type ModeSuggestion = {
                   }
                 </select>
                 @if (req(ppmForm, 'idEntiteContract')) { <span class="cnm-field__hint">Obligatoire.</span> }
+                @if (err('idEntiteContract')) { <span class="cnm-field__hint">{{ err('idEntiteContract') }}</span> }
                 @if (!entites().length) { <span class="cnm-field__hint cnm-muted">Aucune entité rattachée à votre profil PRMP.</span> }
               </label>
               <label class="cnm-field">
@@ -99,6 +100,7 @@ type ModeSuggestion = {
                 <span class="cnm-field__label">Exercice *</span>
                 <input class="cnm-input" type="number" formControlName="exercice" />
                 @if (req(ppmForm, 'exercice')) { <span class="cnm-field__hint">Obligatoire.</span> }
+                @if (err('exercice')) { <span class="cnm-field__hint">{{ err('exercice') }}</span> }
               </label>
               <label class="cnm-field">
                 <span class="cnm-field__label">Référence PPM</span>
@@ -114,6 +116,7 @@ type ModeSuggestion = {
                 <span class="cnm-field__label">Date de signature *</span>
                 <input class="cnm-input" type="date" formControlName="dateSignature" />
                 @if (req(ppmForm, 'dateSignature')) { <span class="cnm-field__hint">Obligatoire.</span> }
+                @if (err('dateSignature')) { <span class="cnm-field__hint">{{ err('dateSignature') }}</span> }
               </label>
             </div>
 
