@@ -113,6 +113,10 @@ export interface SaisieMarcheLigne {
   idSituation?: number;
   idNature?: number;
   idMode?: number; // mode choisi par la PRMP (facultatif) ; absent → recommandé serveur
+  /** Dates prévisionnelles **obligatoires à la création** (`POST /api/saisies/ppm`) ; format `yyyy-MM-dd`. */
+  dateDebut?: string;
+  /** Le serveur les persiste en 2 lignes `t_marche_prevision` typées DEBUT/FIN. */
+  dateFin?: string;
 }
 
 /**

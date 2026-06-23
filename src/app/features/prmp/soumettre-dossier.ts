@@ -167,12 +167,20 @@ type ModeSuggestion = {
                   </label>
                 </div>
                 <div class="sd__ligne-foot">
-                  <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="retirerMarche($index)">Retirer</button>
+                  @if (datesSaisies(g)) {
+                    <span class="sd__dates-ok">📅 {{ g.get('dateDebut')!.value }} → {{ g.get('dateFin')!.value }}</span>
+                  } @else {
+                    <span class="sd__dates-manq">⚠ Dates manquantes</span>
+                  }
+                  <span class="sd__ligne-foot-actions">
+                    <button type="button" class="cnm-btn cnm-btn--sm sd__btn-dates" (click)="ouvrirDates(g)">
+                      Dates prévisionnelles
+                    </button>
+                    <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="retirerMarche($index)">Retirer</button>
+                  </span>
                 </div>
               </div>
             }
-
-            <p class="sd__hint cnm-muted">Les dates prévisionnelles s'ajoutent ensuite, par marché, dans « Mes PPM &amp; marchés ».</p>
 
             <footer class="sd__foot">
               <button type="button" class="cnm-btn cnm-btn--ghost" (click)="retourChoix()">Retour</button>
@@ -361,6 +369,32 @@ type ModeSuggestion = {
           }
         }
       }
+
+      @if (datesCible()) {
+        <div class="sd-modal__overlay" (click)="annulerDates()">
+          <form class="sd-modal cnm-card cnm-form" [formGroup]="datesForm" (click)="$event.stopPropagation()" (ngSubmit)="validerDates()" novalidate>
+            <h2 class="sd-modal__title">Dates prévisionnelles du marché</h2>
+            <label class="cnm-field">
+              <span class="cnm-field__label">Date prévisionnelle de début *</span>
+              <input class="cnm-input" type="date" formControlName="dateDebut" />
+              @if (datesForm.controls.dateDebut.touched && datesForm.controls.dateDebut.hasError('required')) {
+                <span class="cnm-field__hint">Obligatoire.</span>
+              }
+            </label>
+            <label class="cnm-field">
+              <span class="cnm-field__label">Date prévisionnelle de fin *</span>
+              <input class="cnm-input" type="date" formControlName="dateFin" />
+              @if (datesForm.controls.dateFin.touched && datesForm.controls.dateFin.hasError('required')) {
+                <span class="cnm-field__hint">Obligatoire.</span>
+              }
+            </label>
+            <div class="sd-modal__foot">
+              <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerDates()">Annuler</button>
+              <button type="submit" class="cnm-btn cnm-btn--primary">Valider</button>
+            </div>
+          </form>
+        </div>
+      }
     </section>
   `,
   styles: `
@@ -389,7 +423,15 @@ type ModeSuggestion = {
     .sd__mode { display: flex; flex-direction: column; gap: var(--cnm-space-1); }
     .sd__ligne { padding: var(--cnm-space-3); background: var(--cnm-surface-2); border: 1px solid var(--cnm-border); border-radius: var(--cnm-radius-sm); display: flex; flex-direction: column; gap: var(--cnm-space-2); margin-bottom: var(--cnm-space-2); }
     .sd__ligne-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--cnm-space-2); }
+    .sd__ligne-foot-actions { display: flex; gap: var(--cnm-space-2); }
     .sd__ligne-mode { display: inline-flex; align-items: center; gap: var(--cnm-space-2); }
+    .sd__dates-manq { color: var(--cnm-warning-fg); font-size: var(--cnm-fs-sm); font-weight: var(--cnm-fw-semibold); }
+    .sd__dates-ok { color: var(--cnm-success-fg); font-size: var(--cnm-fs-sm); font-weight: var(--cnm-fw-semibold); }
+    .sd__btn-dates { background: transparent; border: 1px solid var(--cnm-info-fg, var(--cnm-brand)); color: var(--cnm-info-fg, var(--cnm-brand)); }
+    .sd-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
+    .sd-modal { width: 100%; max-width: 28rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
+    .sd-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
+    .sd-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
   `,
 })
 export class SoumettreDossier {
@@ -465,6 +507,13 @@ export class SoumettreDossier {
   readonly dossierForm = this.fb.nonNullable.group({
     idTypeDossier: [null as string | null, Validators.required],
     idEntiteContract: [null as number | null, Validators.required],
+  });
+
+  /** Ligne de marché (création) dont les dates prévisionnelles sont en cours d'édition (null = modal fermé). */
+  readonly datesCible = signal<FormGroup | null>(null);
+  readonly datesForm = this.fb.nonNullable.group({
+    dateDebut: ['', Validators.required],
+    dateFin: ['', Validators.required],
   });
 
   readonly marcheForm = this.fb.nonNullable.group({
@@ -602,10 +651,12 @@ export class SoumettreDossier {
       montEstim: [null as number | null],
       numCompte: [null as string | null],
       financement: [''],
-      statut: [''],
+      statut: ['PREVU'],
       idSituation: [null as number | null],
       idNature: [null as number | null],
       idMode: [null as number | null],
+      dateDebut: [''],
+      dateFin: [''],
     });
     // Recalcul du mode sur les seuls champs déterminants (pas idMode → choix manuel préservé).
     merge(g.get('idSituation')!.valueChanges, g.get('idNature')!.valueChanges, g.get('montEstim')!.valueChanges)
@@ -670,15 +721,43 @@ export class SoumettreDossier {
       });
   }
   private ligneNonVide(l: Record<string, unknown>): boolean {
+    // `statut` exclu : il a une valeur par défaut ('PREVU') et ne suffit pas à rendre une ligne « non vide ».
     return !!(
       l['designationMarche'] ||
       l['montEstim'] != null ||
       l['numCompte'] ||
       l['financement'] ||
-      l['statut'] ||
       l['idSituation'] != null ||
       l['idNature'] != null
     );
+  }
+
+  // — Dates prévisionnelles d'une ligne de marché (création) —
+  datesSaisies(g: FormGroup): boolean {
+    return !!g.get('dateDebut')!.value && !!g.get('dateFin')!.value;
+  }
+  ouvrirDates(g: FormGroup): void {
+    this.datesForm.setValue({
+      dateDebut: (g.get('dateDebut')!.value as string) || '',
+      dateFin: (g.get('dateFin')!.value as string) || '',
+    });
+    this.datesCible.set(g);
+  }
+  annulerDates(): void {
+    this.datesCible.set(null);
+  }
+  validerDates(): void {
+    const g = this.datesCible();
+    if (!g) {
+      return;
+    }
+    if (this.datesForm.invalid) {
+      this.datesForm.markAllAsTouched();
+      return;
+    }
+    g.patchValue(this.datesForm.getRawValue());
+    g.markAsDirty();
+    this.datesCible.set(null);
   }
 
   // — Création du brouillon PPM (en-tête + marchés en un seul POST ; PK posées serveur) —
@@ -687,21 +766,27 @@ export class SoumettreDossier {
       this.ppmForm.markAllAsTouched();
       return;
     }
+    const v = this.ppmForm.getRawValue();
+    const lignes = (v.marches as Record<string, unknown>[]).filter((l) => this.ligneNonVide(l));
+    // Dates prévisionnelles obligatoires pour chaque marché à la création (contrat /api/saisies/ppm).
+    if (lignes.some((l) => !l['dateDebut'] || !l['dateFin'])) {
+      this.toast.error('Veuillez saisir les dates prévisionnelles pour tous les marchés.');
+      return;
+    }
     this.formError.set(null);
     this.submitting.set(true);
-    const v = this.ppmForm.getRawValue();
-    const marches: SaisieMarcheLigne[] = (v.marches as Record<string, unknown>[])
-      .filter((l) => this.ligneNonVide(l))
-      .map((l) => ({
-        designationMarche: (l['designationMarche'] as string) || undefined,
-        montEstim: (l['montEstim'] as number) ?? undefined,
-        numCompte: (l['numCompte'] as string) ?? undefined,
-        financement: (l['financement'] as string) || undefined,
-        statut: (l['statut'] as string) || undefined,
-        idSituation: (l['idSituation'] as number) ?? undefined,
-        idNature: (l['idNature'] as number) ?? undefined,
-        idMode: (l['idMode'] as number) ?? undefined,
-      }));
+    const marches: SaisieMarcheLigne[] = lignes.map((l) => ({
+      designationMarche: (l['designationMarche'] as string) || undefined,
+      montEstim: (l['montEstim'] as number) ?? undefined,
+      numCompte: (l['numCompte'] as string) ?? undefined,
+      financement: (l['financement'] as string) || undefined,
+      statut: (l['statut'] as string) || 'PREVU',
+      idSituation: (l['idSituation'] as number) ?? undefined,
+      idNature: (l['idNature'] as number) ?? undefined,
+      idMode: (l['idMode'] as number) ?? undefined,
+      dateDebut: (l['dateDebut'] as string) || undefined,
+      dateFin: (l['dateFin'] as string) || undefined,
+    }));
     this.saisie
       .ppm({
         idEntiteContract: v.idEntiteContract as number,
