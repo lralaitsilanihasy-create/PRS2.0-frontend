@@ -5,8 +5,9 @@ import { Subscription, debounceTime, forkJoin, merge } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Compte, Dossier, Marche, MarchePrevision, Nature, Ppm, Situation } from '../../models';
+import { Capm, Compte, Dossier, Marche, MarchePrevision, Nature, Ppm, Situation } from '../../models';
 import {
+  CapmService,
   CompteService,
   DossierService,
   MarcheService,
@@ -154,10 +155,10 @@ type ModeSuggestion = {
               <p class="mpm__info">Chargement des dates…</p>
             } @else if (modalData().length) {
               <table class="cnm-table">
-                <thead><tr><th>Type</th><th>Date prévue</th></tr></thead>
+                <thead><tr><th>Processus</th><th>Période prévisionnelle</th></tr></thead>
                 <tbody>
                   @for (p of modalData(); track p.idPrevision) {
-                    <tr><td>{{ p.typeDate }}</td><td class="cnm-mono">{{ p.datePrev || '—' }}</td></tr>
+                    <tr><td>{{ capmLabel(p.idCapm) }}</td><td class="cnm-mono">{{ p.dateDebut || '—' }} → {{ p.dateFin || '—' }}</td></tr>
                   }
                 </tbody>
               </table>
@@ -194,16 +195,18 @@ type ModeSuggestion = {
               } @else {
                 @for (ctrl of datesControls(ef); track $index) {
                   <div class="mpm-date-row" [formGroup]="ctrl">
-                    <select class="cnm-select" formControlName="typeDate">
-                      @for (t of TYPES_DATE; track t) { <option [ngValue]="t">{{ t }}</option> }
+                    <select class="cnm-select" formControlName="idCapm">
+                      <option [ngValue]="null" disabled>— Processus —</option>
+                      @for (c of capmsPourLigne(ef, ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
                     </select>
-                    <input class="cnm-input" type="date" formControlName="datePrev" />
+                    <input class="cnm-input" type="date" formControlName="dateDebut" />
+                    <input class="cnm-input" type="date" formControlName="dateFin" />
                     <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerDate(ef, $index)">✕</button>
                   </div>
                 } @empty {
                   <p class="mpm__info">Aucune date. Ajoutez-en une.</p>
                 }
-                <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ajouterDate(ef)">+ Ajouter une date</button>
+                <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="!peutAjouterDate(ef)" (click)="ajouterDate(ef)">+ Ajouter une date</button>
               }
             </div>
             <footer class="mpm-modal__foot">
@@ -321,17 +324,19 @@ type ModeSuggestion = {
             </div>
 
             <div class="cnm-field mpm-form__dates">
-              <span class="cnm-field__label">Dates prévisionnelles</span>
+              <span class="cnm-field__label">Dates prévisionnelles (par processus)</span>
               @for (ctrl of datesControls(createForm); track $index) {
                 <div class="mpm-date-row" [formGroup]="ctrl">
-                  <select class="cnm-select" formControlName="typeDate">
-                    @for (t of TYPES_DATE; track t) { <option [ngValue]="t">{{ t }}</option> }
+                  <select class="cnm-select" formControlName="idCapm">
+                    <option [ngValue]="null" disabled>— Processus —</option>
+                    @for (c of capmsPourLigne(createForm, ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
                   </select>
-                  <input class="cnm-input" type="date" formControlName="datePrev" />
+                  <input class="cnm-input" type="date" formControlName="dateDebut" />
+                  <input class="cnm-input" type="date" formControlName="dateFin" />
                   <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerDate(createForm, $index)">✕</button>
                 </div>
               }
-              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ajouterDate(createForm)">+ Ajouter une date</button>
+              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="!peutAjouterDate(createForm)" (click)="ajouterDate(createForm)">+ Ajouter une date</button>
             </div>
           </div>
 
@@ -478,9 +483,11 @@ export class MesPpmMarches {
   private readonly situationService = inject(SituationService);
   private readonly compteService = inject(CompteService);
   private readonly dossierService = inject(DossierService);
+  private readonly capmService = inject(CapmService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
-  readonly TYPES_DATE = ['LANCEMENT', 'DAO', 'OUVERTURE', 'ATTRIBUTION'] as const;
+  /** Référentiel CAPM (processus de marché), trié par `ordre` ASC. */
+  readonly capms = signal<Capm[]>([]);
 
   private readonly ppms = signal<Ppm[]>([]);
   private readonly marches = signal<Marche[]>([]);
@@ -560,6 +567,8 @@ export class MesPpmMarches {
       this.dossierStatut.set(new Map(r.map((d) => [d.idDossier, d.statut ?? ''])));
     });
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
+    // Référentiel CAPM (processus), trié par ordre ASC — pour les selects et l'affichage des dates.
+    this.capmService.getAll().subscribe((rows) => this.capms.set([...rows].sort((a, b) => a.ordre - b.ordre)));
     // Suppression d'un dossier (depuis « Mes brouillons ») → retrait local de son PPM et de ses marchés.
     this.dossiersRefresh.supprime$.pipe(takeUntilDestroyed()).subscribe((idDossier) => {
       const idsPpm = this.ppms()
@@ -632,19 +641,41 @@ export class MesPpmMarches {
     this.modalMarche.set(null);
   }
 
-  // --- Lignes de dates prévisionnelles (création + édition) ---
+  // --- Lignes de dates prévisionnelles par processus CAPM (création + édition) ---
+  /** Libellé d'un processus CAPM. */
+  capmLabel(id: number): string {
+    return this.capms().find((c) => c.idCapm === id)?.libelleProcessus ?? '#' + id;
+  }
   private ligneDate(p?: Partial<MarchePrevision>): FormGroup {
     return this.fb.group({
       idPrevision: [p?.idPrevision ?? null],
-      typeDate: [p?.typeDate ?? 'LANCEMENT', Validators.required],
-      datePrev: [p?.datePrev ?? ''],
+      idCapm: [p?.idCapm ?? null, Validators.required],
+      dateDebut: [p?.dateDebut ?? '', Validators.required],
+      dateFin: [p?.dateFin ?? '', Validators.required],
     });
   }
   datesControls(form: FormGroup): FormGroup[] {
     return (form.get('datesPrev') as FormArray).controls as FormGroup[];
   }
+  /** CAPM sélectionnables pour une ligne = ceux non déjà utilisés par les autres lignes (+ sa valeur courante). */
+  capmsPourLigne(form: FormGroup, ctrl: FormGroup): Capm[] {
+    const autres = new Set(
+      this.datesControls(form)
+        .filter((g) => g !== ctrl)
+        .map((g) => g.get('idCapm')!.value as number)
+        .filter((v) => v != null),
+    );
+    return this.capms().filter((c) => !autres.has(c.idCapm));
+  }
+  /** Reste-t-il un processus CAPM non utilisé à ajouter ? */
+  peutAjouterDate(form: FormGroup): boolean {
+    const utilises = new Set(this.datesControls(form).map((g) => g.get('idCapm')!.value as number));
+    return this.capms().some((c) => !utilises.has(c.idCapm));
+  }
   ajouterDate(form: FormGroup): void {
-    (form.get('datesPrev') as FormArray).push(this.ligneDate());
+    const utilises = new Set(this.datesControls(form).map((g) => g.get('idCapm')!.value as number));
+    const libre = this.capms().find((c) => !utilises.has(c.idCapm));
+    (form.get('datesPrev') as FormArray).push(this.ligneDate({ idCapm: libre?.idCapm }));
   }
   retirerDate(form: FormGroup, i: number): void {
     (form.get('datesPrev') as FormArray).removeAt(i);
@@ -677,8 +708,9 @@ export class MesPpmMarches {
     if (!m || !form) return;
     const rows = (form.get('datesPrev') as FormArray).getRawValue() as {
       idPrevision: number | null;
-      typeDate: string;
-      datePrev: string;
+      idCapm: number | null;
+      dateDebut: string;
+      dateFin: string;
     }[];
     this.submittingEdit.set(true);
     this.reconcilierDates(
@@ -701,14 +733,14 @@ export class MesPpmMarches {
   private reconcilierDates(
     idDetail: number,
     original: MarchePrevision[],
-    rows: { idPrevision: number | null; typeDate: string; datePrev: string }[],
+    rows: { idPrevision: number | null; idCapm: number | null; dateDebut: string; dateFin: string }[],
     done: () => void,
     fail: () => void,
   ): void {
     const currentIds = new Set(rows.filter((r) => r.idPrevision != null).map((r) => r.idPrevision));
     const toDelete = original.filter((o) => !currentIds.has(o.idPrevision));
     const toUpdate = rows.filter((r) => r.idPrevision != null);
-    const toCreate = rows.filter((r) => r.idPrevision == null && r.typeDate);
+    const toCreate = rows.filter((r) => r.idPrevision == null && r.idCapm != null);
     const run = (base: number) => {
       const ops = [
         ...toDelete.map((o) => this.previsionService.delete(o.idPrevision)),
@@ -716,16 +748,18 @@ export class MesPpmMarches {
           this.previsionService.update(r.idPrevision as number, {
             idPrevision: r.idPrevision as number,
             idDetail,
-            typeDate: r.typeDate as MarchePrevision['typeDate'],
-            datePrev: r.datePrev || undefined,
+            idCapm: r.idCapm as number,
+            dateDebut: r.dateDebut,
+            dateFin: r.dateFin,
           }),
         ),
         ...toCreate.map((r, i) =>
           this.previsionService.create({
             idPrevision: base + i + 1,
             idDetail,
-            typeDate: r.typeDate as MarchePrevision['typeDate'],
-            datePrev: r.datePrev || undefined,
+            idCapm: r.idCapm as number,
+            dateDebut: r.dateDebut,
+            dateFin: r.dateFin,
           }),
         ),
       ];
@@ -1020,10 +1054,10 @@ export class MesPpmMarches {
   /** POST des dates saisies avec idPrevision auto (max global + 1). */
   private creerDates(
     idDetail: number,
-    lignes: { typeDate: string; datePrev: string }[],
+    lignes: { idCapm: number | null; dateDebut: string; dateFin: string }[],
     done: () => void,
   ): void {
-    const valides = lignes.filter((l) => l.typeDate);
+    const valides = lignes.filter((l) => l.idCapm != null);
     if (!valides.length) {
       done();
       return;
@@ -1035,8 +1069,9 @@ export class MesPpmMarches {
           this.previsionService.create({
             idPrevision: base + i + 1,
             idDetail,
-            typeDate: l.typeDate as MarchePrevision['typeDate'],
-            datePrev: l.datePrev || undefined,
+            idCapm: l.idCapm as number,
+            dateDebut: l.dateDebut,
+            dateFin: l.dateFin,
           }),
         ),
       ).subscribe({

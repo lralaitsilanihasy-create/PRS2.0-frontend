@@ -38,16 +38,29 @@ export interface Marche {
   idMode?: number;
 }
 
-/** Type de date prévisionnelle d'un marché (valeurs contrôlées). */
-export type TypeDatePrevision = 'LANCEMENT' | 'DAO' | 'OUVERTURE' | 'ATTRIBUTION';
-
-/** Date prévisionnelle d'un marché (relation 1,N avec Marché via idDetail). */
+/**
+ * Date prévisionnelle d'un marché (relation 1,N avec Marché via idDetail) — **une ligne par processus
+ * CAPM** (`idCapm`), avec sa période `dateDebut`/`dateFin`. `ordre` (réponse) vient de `t_capm.ordre`.
+ */
 export interface MarchePrevision {
   idPrevision: number;
   /** FK vers le marché (Marche.idDetail). */
   idDetail: number;
-  typeDate: TypeDatePrevision;
-  datePrev?: string;
+  /** FK vers le processus CAPM (`t_capm`). */
+  idCapm: number;
+  /** `yyyy-MM-dd`. */
+  dateDebut: string;
+  /** `yyyy-MM-dd`. */
+  dateFin: string;
+  /** Lecture seule (réponse) — `t_capm.ordre`, pour le tri d'affichage. */
+  ordre?: number;
+}
+
+/** Un processus prévisionnel d'un marché à la saisie (`POST /api/saisies/ppm`). */
+export interface ProcessusMarche {
+  idCapm: number;
+  dateDebut: string; // yyyy-MM-dd
+  dateFin: string; // yyyy-MM-dd
 }
 
 /** Lot d'un marché. */
@@ -113,10 +126,11 @@ export interface SaisieMarcheLigne {
   idSituation?: number;
   idNature?: number;
   idMode?: number; // mode choisi par la PRMP (facultatif) ; absent → recommandé serveur
-  /** Dates prévisionnelles **obligatoires à la création** (`POST /api/saisies/ppm`) ; format `yyyy-MM-dd`. */
-  dateDebut?: string;
-  /** Le serveur les persiste en 2 lignes `t_marche_prevision` typées DEBUT/FIN. */
-  dateFin?: string;
+  /**
+   * Processus prévisionnels du marché — **au moins un obligatoire à la création** (`POST /api/saisies/ppm`) ;
+   * le serveur crée une ligne `t_marche_prevision` par processus.
+   */
+  processus?: ProcessusMarche[];
 }
 
 /**

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 
 import { Marche, MarchePrevision, Ppm, Prmp } from '../../models';
 import {
+  CapmService,
   MarcheService,
   MarchePrevisionService,
   ModePassationService,
@@ -90,13 +91,13 @@ interface PrevState {
                               } @else if (prevOf(m.idDetail)?.data?.length) {
                                 <table class="cnm-table mdp__prev">
                                   <thead>
-                                    <tr><th>Type</th><th>Date prévue</th></tr>
+                                    <tr><th>Processus</th><th>Période prévisionnelle</th></tr>
                                   </thead>
                                   <tbody>
                                     @for (p of prevOf(m.idDetail)!.data; track p.idPrevision) {
                                       <tr>
-                                        <td>{{ p.typeDate }}</td>
-                                        <td class="cnm-mono">{{ p.datePrev || '—' }}</td>
+                                        <td>{{ capmLabel(p.idCapm) }}</td>
+                                        <td class="cnm-mono">{{ p.dateDebut || '—' }} → {{ p.dateFin || '—' }}</td>
                                       </tr>
                                     }
                                   </tbody>
@@ -161,6 +162,7 @@ export class PrmpMarchesPrevisions {
   private readonly marches = signal<Marche[]>([]);
   readonly loading = signal(false);
   readonly modeMap = signal<Map<string, string>>(new Map());
+  readonly capmMap = signal<Map<string, string>>(new Map());
   private readonly expandedPrmp = signal<Set<string>>(new Set());
   private readonly prev = signal<Map<number, PrevState>>(new Map());
 
@@ -201,8 +203,12 @@ export class PrmpMarchesPrevisions {
       error: () => this.loading.set(false),
     });
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
+    this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).subscribe((m) => this.capmMap.set(m));
   }
 
+  capmLabel(id: number): string {
+    return this.capmMap().get(String(id)) ?? '#' + id;
+  }
   marchesOf(idPrmp: string): Marche[] {
     return this.byPrmp().get(idPrmp) ?? [];
   }

@@ -138,6 +138,13 @@ export interface Situation {
   description?: string;
 }
 
+/** CAPM — processus de marché (référentiel `t_capm`) ; `ordre` fixe l'affichage des dates prévisionnelles. */
+export interface Capm {
+  idCapm: number;
+  libelleProcessus?: string;
+  ordre: number;
+}
+
 /** Type de dossier. PK = idTypeDossier (string). */
 export interface TypeDossier {
   idTypeDossier: string;

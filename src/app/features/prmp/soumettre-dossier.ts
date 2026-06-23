@@ -7,8 +7,9 @@ import { debounceTime, forkJoin, merge } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Compte, Dossier, Marche, Nature, SaisieMarcheLigne, Situation, TypeDossier } from '../../models';
+import { Capm, Compte, Dossier, Marche, Nature, SaisieMarcheLigne, Situation, TypeDossier } from '../../models';
 import {
+  CapmService,
   CompteService,
   DossierService,
   EntiteContractService,
@@ -168,7 +169,7 @@ type ModeSuggestion = {
                 </div>
                 <div class="sd__ligne-foot">
                   @if (datesSaisies(g)) {
-                    <span class="sd__dates-ok">📅 {{ g.get('dateDebut')!.value }} → {{ g.get('dateFin')!.value }}</span>
+                    <span class="sd__dates-ok">📅 {{ nbProcessus(g) }} processus prévisionnel(s)</span>
                   } @else {
                     <span class="sd__dates-manq">⚠ Dates manquantes</span>
                   }
@@ -372,25 +373,30 @@ type ModeSuggestion = {
 
       @if (datesCible()) {
         <div class="sd-modal__overlay" (click)="annulerDates()">
-          <form class="sd-modal cnm-card cnm-form" [formGroup]="datesForm" (click)="$event.stopPropagation()" (ngSubmit)="validerDates()" novalidate>
+          <form class="sd-modal cnm-card cnm-form" (click)="$event.stopPropagation()" (ngSubmit)="validerDates()" novalidate>
             <h2 class="sd-modal__title">Dates prévisionnelles du marché</h2>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Date prévisionnelle de début *</span>
-              <input class="cnm-input" type="date" formControlName="dateDebut" />
-              @if (datesForm.controls.dateDebut.touched && datesForm.controls.dateDebut.hasError('required')) {
-                <span class="cnm-field__hint">Obligatoire.</span>
-              }
-            </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Date prévisionnelle de fin *</span>
-              <input class="cnm-input" type="date" formControlName="dateFin" />
-              @if (datesForm.controls.dateFin.touched && datesForm.controls.dateFin.hasError('required')) {
-                <span class="cnm-field__hint">Obligatoire.</span>
-              }
-            </label>
+            <p class="cnm-field__hint cnm-muted">Au moins un processus est obligatoire ; un processus par ligne.</p>
+            @for (ctrl of procControls(); track $index) {
+              <div class="sd-proc-row" [formGroup]="ctrl">
+                <select class="cnm-select" formControlName="idCapm">
+                  <option [ngValue]="null" disabled>— Processus —</option>
+                  @for (c of capmsPourProc(ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
+                </select>
+                <input class="cnm-input" type="date" formControlName="dateDebut" />
+                <input class="cnm-input" type="date" formControlName="dateFin" />
+                <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerProc($index)" aria-label="Retirer">✕</button>
+              </div>
+            } @empty {
+              <p class="cnm-field__hint">Aucun processus. Ajoutez-en au moins un.</p>
+            }
+            <div>
+              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="!peutAjouterProc()" (click)="ajouterProc()">
+                + Ajouter un processus
+              </button>
+            </div>
             <div class="sd-modal__foot">
               <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerDates()">Annuler</button>
-              <button type="submit" class="cnm-btn cnm-btn--primary">Valider</button>
+              <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="!procControls().length">Valider</button>
             </div>
           </form>
         </div>
@@ -429,7 +435,9 @@ type ModeSuggestion = {
     .sd__dates-ok { color: var(--cnm-success-fg); font-size: var(--cnm-fs-sm); font-weight: var(--cnm-fw-semibold); }
     .sd__btn-dates { background: transparent; border: 1px solid var(--cnm-info-fg, var(--cnm-brand)); color: var(--cnm-info-fg, var(--cnm-brand)); }
     .sd-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
-    .sd-modal { width: 100%; max-width: 28rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
+    .sd-modal { width: 100%; max-width: 36rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
+    .sd-proc-row { display: flex; align-items: center; gap: var(--cnm-space-2); }
+    .sd-proc-row .cnm-select { flex: 1; min-width: 8rem; }
     .sd-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
     .sd-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
   `,
@@ -446,6 +454,7 @@ export class SoumettreDossier {
   private readonly ppmService = inject(PpmService);
   private readonly prmpEntiteService = inject(PrmpEntiteService);
   private readonly prmpService = inject(PrmpService);
+  private readonly capmService = inject(CapmService);
   private readonly entiteContractService = inject(EntiteContractService);
   private readonly typeDossierService = inject(TypeDossierService);
   private readonly natureService = inject(NatureService);
@@ -509,12 +518,12 @@ export class SoumettreDossier {
     idEntiteContract: [null as number | null, Validators.required],
   });
 
-  /** Ligne de marché (création) dont les dates prévisionnelles sont en cours d'édition (null = modal fermé). */
+  /** Référentiel CAPM (processus de marché), trié par `ordre` ASC. */
+  readonly capms = signal<Capm[]>([]);
+  /** Ligne de marché (création) dont les processus prévisionnels sont en cours d'édition (null = modal fermé). */
   readonly datesCible = signal<FormGroup | null>(null);
-  readonly datesForm = this.fb.nonNullable.group({
-    dateDebut: ['', Validators.required],
-    dateFin: ['', Validators.required],
-  });
+  /** Copie de travail des processus du marché en édition (FormArray de { idCapm, dateDebut, dateFin }). */
+  readonly datesForm = this.fb.array([] as FormGroup[]);
 
   readonly marcheForm = this.fb.nonNullable.group({
     idDetail: [null as number | null, Validators.required],
@@ -530,6 +539,8 @@ export class SoumettreDossier {
 
   constructor() {
     this.typeDossierService.list().subscribe((r) => this.typeDossiers.set(r));
+    // Référentiel CAPM (processus), trié par ordre ASC — pour les selects de processus par marché.
+    this.capmService.getAll().subscribe((rows) => this.capms.set([...rows].sort((a, b) => a.ordre - b.ordre)));
     // Signataire = PRMP connectée (lecture seule) ; le serveur le génère aussi à la création.
     const refPrmp = this.auth.ref();
     if (refPrmp) {
@@ -655,8 +666,7 @@ export class SoumettreDossier {
       idSituation: [null as number | null],
       idNature: [null as number | null],
       idMode: [null as number | null],
-      dateDebut: [''],
-      dateFin: [''],
+      processus: this.fb.array([] as FormGroup[]),
     });
     // Recalcul du mode sur les seuls champs déterminants (pas idMode → choix manuel préservé).
     merge(g.get('idSituation')!.valueChanges, g.get('idNature')!.valueChanges, g.get('montEstim')!.valueChanges)
@@ -732,30 +742,73 @@ export class SoumettreDossier {
     );
   }
 
-  // — Dates prévisionnelles d'une ligne de marché (création) —
-  datesSaisies(g: FormGroup): boolean {
-    return !!g.get('dateDebut')!.value && !!g.get('dateFin')!.value;
-  }
-  ouvrirDates(g: FormGroup): void {
-    this.datesForm.setValue({
-      dateDebut: (g.get('dateDebut')!.value as string) || '',
-      dateFin: (g.get('dateFin')!.value as string) || '',
+  // — Processus prévisionnels d'une ligne de marché (création) —
+  /** Un groupe { idCapm, dateDebut, dateFin } pour le modal des processus. */
+  private processusGroup(p?: { idCapm?: number | null; dateDebut?: string; dateFin?: string }): FormGroup {
+    return this.fb.group({
+      idCapm: [p?.idCapm ?? null, Validators.required],
+      dateDebut: [p?.dateDebut ?? '', Validators.required],
+      dateFin: [p?.dateFin ?? '', Validators.required],
     });
+  }
+  /** Nombre de processus saisis sur une ligne de marché. */
+  nbProcessus(g: FormGroup): number {
+    return (g.get('processus') as FormArray).length;
+  }
+  /** Au moins un processus saisi ? */
+  datesSaisies(g: FormGroup): boolean {
+    return this.nbProcessus(g) > 0;
+  }
+  /** Lignes de processus de la copie de travail (modal). */
+  procControls(): FormGroup[] {
+    return this.datesForm.controls as FormGroup[];
+  }
+  /** CAPM sélectionnables pour une ligne du modal = non utilisés par les autres lignes (+ sa valeur). */
+  capmsPourProc(ctrl: FormGroup): Capm[] {
+    const autres = new Set(
+      this.procControls()
+        .filter((g) => g !== ctrl)
+        .map((g) => g.get('idCapm')!.value as number)
+        .filter((v) => v != null),
+    );
+    return this.capms().filter((c) => !autres.has(c.idCapm));
+  }
+  peutAjouterProc(): boolean {
+    const utilises = new Set(this.procControls().map((g) => g.get('idCapm')!.value as number));
+    return this.capms().some((c) => !utilises.has(c.idCapm));
+  }
+  ajouterProc(): void {
+    const utilises = new Set(this.procControls().map((g) => g.get('idCapm')!.value as number));
+    const libre = this.capms().find((c) => !utilises.has(c.idCapm));
+    this.datesForm.push(this.processusGroup({ idCapm: libre?.idCapm }));
+  }
+  retirerProc(i: number): void {
+    this.datesForm.removeAt(i);
+  }
+  /** Ouvre le modal des processus : copie de travail pré-remplie depuis la ligne. */
+  ouvrirDates(g: FormGroup): void {
+    this.datesForm.clear();
+    (g.get('processus') as FormArray).controls.forEach((p) =>
+      this.datesForm.push(this.processusGroup((p as FormGroup).getRawValue())),
+    );
     this.datesCible.set(g);
   }
   annulerDates(): void {
     this.datesCible.set(null);
   }
+  /** Valide la copie de travail (≥1 processus, tous complets) et la recopie sur la ligne. */
   validerDates(): void {
     const g = this.datesCible();
     if (!g) {
       return;
     }
-    if (this.datesForm.invalid) {
+    if (!this.datesForm.length || this.datesForm.invalid) {
       this.datesForm.markAllAsTouched();
       return;
     }
-    g.patchValue(this.datesForm.getRawValue());
+    const arr = g.get('processus') as FormArray;
+    arr.clear();
+    this.procControls().forEach((c) => arr.push(this.processusGroup(c.getRawValue())));
     g.markAsDirty();
     this.datesCible.set(null);
   }
@@ -768,9 +821,9 @@ export class SoumettreDossier {
     }
     const v = this.ppmForm.getRawValue();
     const lignes = (v.marches as Record<string, unknown>[]).filter((l) => this.ligneNonVide(l));
-    // Dates prévisionnelles obligatoires pour chaque marché à la création (contrat /api/saisies/ppm).
-    if (lignes.some((l) => !l['dateDebut'] || !l['dateFin'])) {
-      this.toast.error('Veuillez saisir les dates prévisionnelles pour tous les marchés.');
+    // Au moins un processus prévisionnel par marché à la création (contrat /api/saisies/ppm).
+    if (lignes.some((l) => !((l['processus'] as unknown[]) ?? []).length)) {
+      this.toast.error('Veuillez saisir les dates prévisionnelles (au moins un processus) pour tous les marchés.');
       return;
     }
     this.formError.set(null);
@@ -784,8 +837,11 @@ export class SoumettreDossier {
       idSituation: (l['idSituation'] as number) ?? undefined,
       idNature: (l['idNature'] as number) ?? undefined,
       idMode: (l['idMode'] as number) ?? undefined,
-      dateDebut: (l['dateDebut'] as string) || undefined,
-      dateFin: (l['dateFin'] as string) || undefined,
+      processus: ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
+        idCapm: p['idCapm'] as number,
+        dateDebut: p['dateDebut'] as string,
+        dateFin: p['dateFin'] as string,
+      })),
     }));
     this.saisie
       .ppm({

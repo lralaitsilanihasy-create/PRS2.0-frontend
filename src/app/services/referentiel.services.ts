@@ -5,6 +5,7 @@ import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
   Avis,
+  Capm,
   CatCompte,
   Compte,
   DelegationProfil,
@@ -38,6 +39,16 @@ export class AvisService extends CrudService<Avis, string> {
 @Injectable({ providedIn: 'root' })
 export class CatCompteService extends CrudService<CatCompte, string> {
   protected readonly resource = 'cat-comptes';
+}
+
+@Injectable({ providedIn: 'root' })
+export class CapmService extends CrudService<Capm> {
+  protected readonly resource = 'capm';
+
+  /** `GET /api/capm` — processus de marché (référentiel), trié par `ordre` ASC côté serveur. */
+  getAll(): Observable<Capm[]> {
+    return this.list();
+  }
 }
 
 @Injectable({ providedIn: 'root' })
