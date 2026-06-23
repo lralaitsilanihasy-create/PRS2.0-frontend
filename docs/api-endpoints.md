@@ -898,6 +898,12 @@ dossier/PPM (désormais réservée Admin).
 
 ⚠️ **`processus`** : `ProcessusMarche[]` — **chaque marché doit comporter au moins un processus à la création** (`POST /api/saisies/ppm`), sinon **400** `{ "erreurs": [ { "champ": "marches[0].processus", "message": "Au moins un processus est obligatoire." } ] }`. Chaque **`ProcessusMarche`** = `idCapm` (FK `t_capm`, `@NotNull`), `dateDebut` et `dateFin` (`yyyy-MM-dd`, `@NotNull`) — un champ manquant → **400** au chemin `marches[i].processus[j].<champ>` (« Le processus est obligatoire. » / « La date de début est obligatoire. » / « La date de fin est obligatoire. ») ; `idCapm` **inconnu** → **400**. Le service crée **une ligne `t_marche_prevision` par processus**. *(À l'édition d'un brouillon, `processus` n'est pas exigé.)*
 
+⚠️ **Cohérence chronologique des processus** (par marché, processus triés par `t_capm.ordre` ASC) — validée à la **création** (`POST /api/saisies/ppm`) et à l'**édition** (`POST`/`PUT /api/marche-previsions`) :
+> 1. **Interne** : `dateDebut < dateFin` pour chaque processus, sinon **400** (champ `…dateFin` — « La date de fin doit être postérieure à la date de début. »).
+> 2. **Séquence** : `dateDebut[n] >= dateFin[n-1]` entre processus consécutifs, sinon **400** (champ `…dateDebut` — « La date de début du processus *[libellé n]* doit être postérieure ou égale à la date de fin du processus précédent *[libellé n-1]*. »).
+>
+> À la saisie, le champ porte le chemin `marches[i].processus[j].<champ>` ; à l'édition d'une prévision, le nom du champ seul (`dateDebut`/`dateFin`).
+
 **`SaisieDossierRequest`** (DAO/MAOO, sans contenu) : `idTypeDossier` (oui, ≠ `PPM` sinon **409**), **`idEntiteContract` (oui)**. *(plus de `idDossier` : attribué par le serveur.)*
 
 **`EditionPpmRequest`** (`PUT /api/saisies/ppm/{idDossier}`) — édite un **brouillon** PPM en une transaction :
