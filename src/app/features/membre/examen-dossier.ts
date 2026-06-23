@@ -5,7 +5,7 @@ import { forkJoin, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Avis, Dossier, Examen, ExamenDetail, Marche, PointsCtrl, Ppm, PvExamen } from '../../models';
+import { Avis, Dossier, Examen, ExamenDetail, Marche, ObservationControle, PointsCtrl, Ppm, PvExamen } from '../../models';
 import {
   AvisService,
   DispatchService,
@@ -24,10 +24,15 @@ import {
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
 
+/** Une ligne « AU LIEU DE / LIRE » saisie pour un point non conforme. */
+interface ObsLigne {
+  auLieuDe: string;
+  lire: string;
+}
 interface RowState {
   conforme: boolean;
-  observation: string;
-  obsSiNonConforme: string;
+  /** Lignes d'observation (non-conformité) ; vide si conforme. */
+  observations: ObsLigne[];
 }
 
 /**
@@ -128,8 +133,24 @@ interface RowState {
                   </div>
                   @if (p.decriptPointCtrl) { <p class="exam__point-desc cnm-muted">{{ p.decriptPointCtrl }}</p> }
                   @if (!row(p.idPointCtrl).conforme) {
-                    <input class="cnm-input" placeholder="Observation (non-conformité)" [value]="row(p.idPointCtrl).obsSiNonConforme"
-                      (input)="setObsNc(p.idPointCtrl, $any($event.target).value)" />
+                    <div class="exam__obs">
+                      <table class="cnm-table exam__obs-table">
+                        <thead><tr><th>AU LIEU DE</th><th>LIRE</th><th></th></tr></thead>
+                        <tbody>
+                          @for (o of row(p.idPointCtrl).observations; track $index) {
+                            <tr>
+                              <td><input class="cnm-input" [value]="o.auLieuDe" (input)="setAuLieuDe(p.idPointCtrl, $index, $any($event.target).value)" /></td>
+                              <td><input class="cnm-input" [value]="o.lire" (input)="setLire(p.idPointCtrl, $index, $any($event.target).value)" /></td>
+                              <td><button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerLigne(p.idPointCtrl, $index)" aria-label="Retirer">✕</button></td>
+                            </tr>
+                          } @empty {
+                            <tr><td colspan="3" class="cnm-muted">Aucune ligne.</td></tr>
+                          }
+                        </tbody>
+                      </table>
+                      <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ajouterLigne(p.idPointCtrl)">+ Ajouter une ligne</button>
+                      @if (pointErreur(p.idPointCtrl)) { <span class="cnm-field__hint exam__obs-err">{{ pointErreur(p.idPointCtrl) }}</span> }
+                    </div>
                   }
                 </div>
               }
@@ -187,6 +208,10 @@ interface RowState {
     .exam__point-lbl { font-weight: var(--cnm-fw-medium); }
     .exam__point-desc { font-size: var(--cnm-fs-sm); margin: 0; }
     .exam__conforme { display: flex; align-items: center; gap: var(--cnm-space-1); font-size: var(--cnm-fs-sm); white-space: nowrap; }
+    .exam__obs { display: flex; flex-direction: column; gap: var(--cnm-space-1); align-items: flex-start; }
+    .exam__obs-table { width: 100%; }
+    .exam__obs-table th { font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
+    .exam__obs-err { color: var(--cnm-danger-fg); }
     .exam__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-3); margin-top: var(--cnm-space-2); }
     @media (max-width: 60rem) { .exam__grid { grid-template-columns: 1fr; } }
   `,
@@ -227,6 +252,8 @@ export class ExamenDossier {
   readonly avis = signal<string | null>(null);
   readonly synthese = signal('');
   private readonly rows = signal<Map<number, RowState>>(new Map());
+  /** Erreur « ≥1 ligne obligatoire » par point de contrôle non conforme (clé = idPtControle). */
+  readonly pointErreurs = signal<Map<number, string>>(new Map());
 
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -285,7 +312,7 @@ export class ExamenDossier {
         this.points.set(pts);
         const map = new Map<number, RowState>();
         for (const p of pts) {
-          map.set(p.idPointCtrl, { conforme: true, observation: '', obsSiNonConforme: '' });
+          map.set(p.idPointCtrl, { conforme: true, observations: [] });
         }
         // Mode édition (dossier EXAMINE) : pré-remplir depuis l'examen existant + ses détails.
         if (r.dossier.statut === 'EXAMINE') {
@@ -297,8 +324,7 @@ export class ExamenDossier {
             for (const det of r.details.filter((d) => d.idExamen === ex.idExamen)) {
               map.set(det.idPtControle, {
                 conforme: det.conforme,
-                observation: det.observation ?? '',
-                obsSiNonConforme: det.obsSiNonConforme ?? '',
+                observations: (det.observations ?? []).map((o) => ({ auLieuDe: o.auLieuDe ?? '', lire: o.lire ?? '' })),
               });
             }
           }
@@ -311,7 +337,7 @@ export class ExamenDossier {
   }
 
   row(id: number): RowState {
-    return this.rows().get(id) ?? { conforme: true, observation: '', obsSiNonConforme: '' };
+    return this.rows().get(id) ?? { conforme: true, observations: [] };
   }
   private patchRow(id: number, patch: Partial<RowState>): void {
     this.rows.update((m) => {
@@ -320,14 +346,50 @@ export class ExamenDossier {
       return next;
     });
   }
-  setConforme(id: number, v: boolean): void {
-    this.patchRow(id, { conforme: v });
+  /** Coche/décoche « non conforme » : conforme → vide le tableau ; non conforme → amorce une ligne vide. */
+  setConforme(id: number, conforme: boolean): void {
+    if (conforme) {
+      this.patchRow(id, { conforme: true, observations: [] });
+    } else {
+      const obs = this.row(id).observations;
+      this.patchRow(id, { conforme: false, observations: obs.length ? obs : [{ auLieuDe: '', lire: '' }] });
+    }
   }
-  setObs(id: number, v: string): void {
-    this.patchRow(id, { observation: v });
+  ajouterLigne(id: number): void {
+    this.patchRow(id, { observations: [...this.row(id).observations, { auLieuDe: '', lire: '' }] });
   }
-  setObsNc(id: number, v: string): void {
-    this.patchRow(id, { obsSiNonConforme: v });
+  retirerLigne(id: number, i: number): void {
+    this.patchRow(id, { observations: this.row(id).observations.filter((_, idx) => idx !== i) });
+  }
+  setAuLieuDe(id: number, i: number, v: string): void {
+    this.patchRow(id, { observations: this.row(id).observations.map((o, idx) => (idx === i ? { ...o, auLieuDe: v } : o)) });
+  }
+  setLire(id: number, i: number, v: string): void {
+    this.patchRow(id, { observations: this.row(id).observations.map((o, idx) => (idx === i ? { ...o, lire: v } : o)) });
+  }
+  pointErreur(id: number): string | undefined {
+    return this.pointErreurs().get(id);
+  }
+  /** Chaque point non conforme doit avoir ≥1 ligne renseignée ; sinon erreur sous le tableau, envoi bloqué. */
+  private validerObservations(): boolean {
+    const err = new Map<number, string>();
+    for (const p of this.points()) {
+      const st = this.row(p.idPointCtrl);
+      if (!st.conforme && !st.observations.some((o) => o.auLieuDe.trim() || o.lire.trim())) {
+        err.set(p.idPointCtrl, "Au moins une ligne d'observation est obligatoire pour un point non conforme.");
+      }
+    }
+    this.pointErreurs.set(err);
+    return err.size === 0;
+  }
+  /** Lignes d'observation à envoyer pour un point (vide si conforme ; ordre 1-based). */
+  private observationsBody(st: RowState): ObservationControle[] {
+    if (st.conforme) {
+      return [];
+    }
+    return st.observations
+      .filter((o) => o.auLieuDe.trim() || o.lire.trim())
+      .map((o, i) => ({ auLieuDe: o.auLieuDe.trim() || undefined, lire: o.lire.trim() || undefined, ordre: i + 1 }));
   }
 
   modeLabel(id?: number): string {
@@ -348,6 +410,8 @@ export class ExamenDossier {
     const dossier = this.dossier();
     const idDispatch = this.idDispatch();
     if (!dossier || idDispatch == null) return;
+    // Chaque point non conforme exige au moins une ligne d'observation (« AU LIEU DE / LIRE »).
+    if (!this.validerObservations()) return;
 
     if (this.mode() === 'edit') {
       this.formError.set(null);
@@ -379,8 +443,7 @@ export class ExamenDossier {
               idExamen,
               idPtControle: p.idPointCtrl,
               conforme: st.conforme,
-              observation: st.observation || undefined,
-              obsSiNonConforme: st.conforme ? undefined : st.obsSiNonConforme || undefined,
+              observations: this.observationsBody(st),
             };
             return this.examenDetailService.create(body);
           });
@@ -433,8 +496,7 @@ export class ExamenDossier {
               idExamen,
               idPtControle: p.idPointCtrl,
               conforme: st.conforme,
-              observation: st.observation || undefined,
-              obsSiNonConforme: st.conforme ? undefined : st.obsSiNonConforme || undefined,
+              observations: this.observationsBody(st),
             };
             return existing
               ? this.examenDetailService.update(existing.idDetailExamen, body)

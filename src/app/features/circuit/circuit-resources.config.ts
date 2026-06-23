@@ -74,7 +74,6 @@ export const EXAMEN_DETAIL_CONFIG: CrudResourceConfig = {
     { key: 'idExamen', label: 'Examen', type: 'number', required: true },
     { key: 'idPtControle', label: 'Point de contrôle', type: 'number', required: true },
     { key: 'conforme', label: 'Conforme', type: 'boolean', required: true },
-    { key: 'observation', label: 'Observation' },
     { key: 'obsSiNonConforme', label: 'Obs. si non conforme' },
   ],
 };

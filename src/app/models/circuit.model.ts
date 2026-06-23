@@ -81,13 +81,28 @@ export interface Examen {
   dateExamen?: string;
 }
 
+/**
+ * Ligne structurée « AU LIEU DE / LIRE » d'un point de contrôle non conforme (`t_observation_controle`).
+ * Remplace l'ancien champ texte `observation`.
+ */
+export interface ObservationControle {
+  /** PK auto-générée (réponse, IDENTITY). */
+  idObservation?: number;
+  /** FK vers le point de contrôle ; requis pour l'API dédiée, implicite quand embarqué dans `ExamenDetail`. */
+  idDetail?: number;
+  auLieuDe?: string;
+  lire?: string;
+  ordre: number;
+}
+
 /** Résultat d'un point de contrôle examiné. */
 export interface ExamenDetail {
   idDetailExamen: number;
   idExamen: number;
   idPtControle: number;
   conforme: boolean;
-  observation?: string;
+  /** Lignes « AU LIEU DE / LIRE » (remplace l'ancien champ texte `observation`) ; `[]` si conforme. */
+  observations?: ObservationControle[];
   obsSiNonConforme?: string;
 }
 

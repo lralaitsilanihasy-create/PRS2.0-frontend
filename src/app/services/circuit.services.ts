@@ -13,6 +13,7 @@ import {
   EchangeDto,
   Examen,
   ExamenDetail,
+  ObservationControle,
   Page,
   PvActionRequest,
   PvExamen,
@@ -137,6 +138,29 @@ export class ExamenService extends CrudService<Examen> {
 @Injectable({ providedIn: 'root' })
 export class ExamenDetailService extends CrudService<ExamenDetail> {
   protected readonly resource = 'examen-details';
+}
+
+/** Lignes « AU LIEU DE / LIRE » d'un point de contrôle (écriture MEMBRE). */
+@Injectable({ providedIn: 'root' })
+export class ObservationControleService extends CrudService<ObservationControle> {
+  protected readonly resource = 'observation-controles';
+
+  /** `GET /api/observation-controles?detail={idDetail}` — lignes d'un point de contrôle (tri ASC par ordre). */
+  getByDetail(idDetail: number): Observable<ObservationControle[]> {
+    return this.http.get<ObservationControle[]>(this.baseUrl, { params: new HttpParams().set('detail', idDetail) });
+  }
+  /** `POST /api/observation-controles`. */
+  creer(dto: ObservationControle): Observable<ObservationControle> {
+    return this.create(dto);
+  }
+  /** `PUT /api/observation-controles/{id}`. */
+  modifier(id: number, dto: ObservationControle): Observable<ObservationControle> {
+    return this.update(id, dto);
+  }
+  /** `DELETE /api/observation-controles/{id}`. */
+  supprimer(id: number): Observable<void> {
+    return this.delete(id);
+  }
 }
 
 /**
