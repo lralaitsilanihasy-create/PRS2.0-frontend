@@ -373,7 +373,7 @@ type ModeSuggestion = {
 
       @if (datesCible()) {
         <div class="sd-modal__overlay" (click)="annulerDates()">
-          <form class="sd-modal cnm-card cnm-form" (click)="$event.stopPropagation()" (ngSubmit)="validerDates()" novalidate>
+          <div class="sd-modal cnm-card cnm-form" (click)="$event.stopPropagation()">
             <h2 class="sd-modal__title">Dates prévisionnelles du marché</h2>
             <p class="cnm-field__hint cnm-muted">Au moins un processus est obligatoire ; un processus par ligne.</p>
             @for (ctrl of procControls(); track $index) {
@@ -395,10 +395,17 @@ type ModeSuggestion = {
               </button>
             </div>
             <div class="sd-modal__foot">
-              <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerDates()">Annuler</button>
-              <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="!procControls().length">Valider</button>
+              <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerDates(); $event.stopPropagation()">Annuler</button>
+              <button
+                type="button"
+                class="cnm-btn cnm-btn--primary"
+                [disabled]="!procControls().length"
+                (click)="validerDates(); $event.stopPropagation()"
+              >
+                Valider
+              </button>
             </div>
-          </form>
+          </div>
         </div>
       }
     </section>
