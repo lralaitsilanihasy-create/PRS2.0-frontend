@@ -211,4 +211,13 @@ export class DemandeRetraitService extends CrudService<DemandeRetrait> {
   refuser(id: number, motif: string): Observable<DemandeRetrait> {
     return this.http.post<DemandeRetrait>(`${this.baseUrl}/${id}/refuser`, { motif });
   }
+
+  /**
+   * `POST /api/demande-retraits` (PRMP) — crée une demande ; corps réduit à `{ idDossier, motifRetrait }`
+   * (identité/date/statut posés serveur). `skipErrorToast` : l'écran affiche ses messages dédiés
+   * (400 par champ, 409 « déjà dispatché », 403 non-propriétaire).
+   */
+  creer(body: DemandeRetrait): Observable<DemandeRetrait> {
+    return this.http.post<DemandeRetrait>(this.baseUrl, body, { context: skipErrorToast() });
+  }
 }

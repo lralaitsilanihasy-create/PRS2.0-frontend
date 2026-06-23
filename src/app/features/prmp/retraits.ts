@@ -35,7 +35,9 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                 }
               </select>
               @if (!retirables().length && !loading()) {
-                <span class="cnm-field__hint">Aucun dossier éligible au retrait.</span>
+                <span class="cnm-field__hint">
+                  Aucun dossier éligible au retrait. Un dossier ne peut être retiré qu'avant d'avoir été dispatché.
+                </span>
               }
               @if (fieldErr('idDossier')) { <span class="cnm-field__hint">{{ fieldErr('idDossier') }}</span> }
             </label>
@@ -171,7 +173,7 @@ export class PrmpRetraits {
     this.formError.set(null);
     this.saving.set(true);
     // On n'envoie que idDossier + motif ; idPrmp/date/statut sont posés serveur.
-    this.service.create({ idDossier, motifRetrait: motif } as DemandeRetrait).subscribe({
+    this.service.creer({ idDossier, motifRetrait: motif } as DemandeRetrait).subscribe({
       next: () => {
         this.toast.success('Demande de retrait soumise.');
         this.selectedId.set(null);
@@ -180,9 +182,17 @@ export class PrmpRetraits {
         this.charger();
       },
       error: (err: ApiError) => {
-        // 400 → messages sous les champs ; 409/403 → toast centralisé.
-        this.formError.set(err);
+        this.formError.set(err); // 400 → messages sous les champs (fieldErr)
         this.saving.set(false);
+        if (err.status === 409) {
+          this.toast.error(
+            "Ce dossier ne peut plus faire l'objet d'une demande de retrait : il a déjà été dispatché.",
+          );
+        } else if (err.status === 403) {
+          this.toast.error("Vous n'êtes pas autorisé à demander le retrait de ce dossier.");
+        } else if (err.status !== 400) {
+          this.toast.error(err.message || 'Erreur lors de la demande de retrait.');
+        }
       },
     });
   }
