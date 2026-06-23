@@ -18,6 +18,7 @@ import {
   NatureService,
   PpmService,
   PrmpEntiteService,
+  PrmpService,
   ReferenceLookupService,
   ReglePassationService,
   SaisieService,
@@ -100,15 +101,14 @@ type ModeSuggestion = {
                 @if (req(ppmForm, 'exercice')) { <span class="cnm-field__hint">Obligatoire.</span> }
               </label>
               <label class="cnm-field">
-                <span class="cnm-field__label">Référence PPM *</span>
-                <input class="cnm-input" type="text" formControlName="reference" />
-                @if (req(ppmForm, 'reference')) { <span class="cnm-field__hint">Obligatoire.</span> }
-                @if (err('reference')) { <span class="cnm-field__hint">{{ err('reference') }}</span> }
+                <span class="cnm-field__label">Référence PPM</span>
+                <input class="cnm-input" type="text" value="" placeholder="Générée automatiquement à la création" readonly />
+                <span class="cnm-field__hint cnm-muted">Générée par le serveur (⟨séquence⟩/⟨entité⟩/PPM/⟨année⟩) ; visible après création.</span>
               </label>
               <label class="cnm-field">
-                <span class="cnm-field__label">Signataire *</span>
-                <input class="cnm-input" type="text" formControlName="signataire" />
-                @if (req(ppmForm, 'signataire')) { <span class="cnm-field__hint">Obligatoire.</span> }
+                <span class="cnm-field__label">Signataire</span>
+                <input class="cnm-input" type="text" [value]="signataireConnecte()" readonly />
+                <span class="cnm-field__hint cnm-muted">Renseigné automatiquement depuis votre profil PRMP.</span>
               </label>
               <label class="cnm-field">
                 <span class="cnm-field__label">Date de signature *</span>
@@ -400,6 +400,7 @@ export class SoumettreDossier {
   private readonly marcheService = inject(MarcheService);
   private readonly ppmService = inject(PpmService);
   private readonly prmpEntiteService = inject(PrmpEntiteService);
+  private readonly prmpService = inject(PrmpService);
   private readonly entiteContractService = inject(EntiteContractService);
   private readonly typeDossierService = inject(TypeDossierService);
   private readonly natureService = inject(NatureService);
@@ -448,11 +449,12 @@ export class SoumettreDossier {
     return this.localiteMap().get(loc) ?? loc;
   });
 
+  /** Signataire du PRMP connecté (lecture seule ; le serveur le génère, ce champ n'est qu'un aperçu). */
+  readonly signataireConnecte = signal('');
+
   readonly ppmForm = this.fb.nonNullable.group({
     idEntiteContract: [null as number | null, Validators.required],
     exercice: [new Date().getFullYear(), Validators.required],
-    reference: ['', Validators.required],
-    signataire: ['', Validators.required],
     dateSignature: ['', Validators.required],
     marches: this.fb.array([] as FormGroup[]),
   });
@@ -476,6 +478,14 @@ export class SoumettreDossier {
 
   constructor() {
     this.typeDossierService.list().subscribe((r) => this.typeDossiers.set(r));
+    // Signataire = PRMP connectée (lecture seule) ; le serveur le génère aussi à la création.
+    const refPrmp = this.auth.ref();
+    if (refPrmp) {
+      this.prmpService.getById(refPrmp).subscribe({
+        next: (p) => this.signataireConnecte.set(`${p.prenomsPrmp ?? ''} ${p.nomPrmp ?? ''}`.trim() || refPrmp),
+        error: () => this.signataireConnecte.set(refPrmp),
+      });
+    }
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
     this.chargerEntites();
@@ -693,16 +703,25 @@ export class SoumettreDossier {
       .ppm({
         idEntiteContract: v.idEntiteContract as number,
         exercice: v.exercice,
-        reference: v.reference,
-        signataire: v.signataire,
         dateSignature: v.dateSignature,
         marches,
       })
       .subscribe({
         next: (d) => {
-          this.submitting.set(false);
-          this.toast.success(`Brouillon créé (dossier #${d.idDossier}).`);
-          this.router.navigate(['/prmp/ppm-marches']);
+          // Référence PPM générée serveur (absente du DossierDto) : lue via le PPM rattaché pour l'afficher.
+          this.ppmService.list().subscribe({
+            next: (ppms) => {
+              const ref = ppms.find((p) => p.idDossier === d.idDossier)?.reference;
+              this.submitting.set(false);
+              this.toast.success(`Brouillon créé (dossier #${d.idDossier})${ref ? ' · réf. générée ' + ref : ''}.`);
+              this.router.navigate(['/prmp/ppm-marches']);
+            },
+            error: () => {
+              this.submitting.set(false);
+              this.toast.success(`Brouillon créé (dossier #${d.idDossier}).`);
+              this.router.navigate(['/prmp/ppm-marches']);
+            },
+          });
         },
         error: (e: ApiError) => this.echec(e),
       });

@@ -119,13 +119,13 @@ export interface SaisieMarcheLigne {
  * Corps de `POST /api/saisies/ppm` : crée dossier (type PPM, BROUILLON) + PPM + lignes.
  * `idLocalite` n'est pas un champ d'entrée : dérivé de l'ENTITÉ choisie côté serveur.
  * `idDossier`/`idPpm` non envoyés : attribués par une séquence serveur.
+ * `reference` et `signataire` ne sont plus saisis : générés serveur (référence dérivée de l'entité,
+ * signataire = PRMP connectée) et exposés en sortie dans `PpmDto`.
  */
 export interface SaisiePpmRequest {
   idEntiteContract: number;
   exercice: number;
-  signataire: string;
   dateSignature: string;
-  reference: string;
   marches?: SaisieMarcheLigne[];
 }
 
