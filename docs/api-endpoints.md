@@ -893,7 +893,7 @@ dossier/PPM (désormais réservée Admin).
 >
 > Modifiables ensuite via la **rectification** (en attente de décision PRMP), pas à la création.
 
-**`SaisieMarcheLigne`** : `designationMarche`, `numCompte`, `montEstim`, `financement`, `statut`, `idSituation`, `idNature`. `idDetail` est **facultatif** — **null à la création** (PK serveur), renseigné seulement pour **identifier une ligne existante** lors de l'édition (réconciliation). `idDossier`/`idPpm` sont renseignés par le service. ⚠️ **`idMode`** = mode **choisi** par la PRMP (facultatif), validé contre l'ensemble autorisé (hors ensemble → **409**) ; absent → mode **recommandé** (§3.1 M02).
+**`SaisieMarcheLigne`** : `designationMarche`, `numCompte`, `montEstim`, `financement`, `statut`, `idSituation`, `idNature`. `idDetail` est **facultatif** — **null à la création** (PK serveur), renseigné seulement pour **identifier une ligne existante** lors de l'édition (réconciliation). `idDossier`/`idPpm` sont renseignés par le service. ⚠️ **`idMode`** = mode **choisi** par la PRMP (facultatif), validé contre l'ensemble autorisé (hors ensemble → **409**) ; absent → mode **recommandé** (§3.1 M02). ⚠️ **`dateDebut`** et **`dateFin`** (dates prévisionnelles) sont **obligatoires pour chaque marché à la création** (`POST /api/saisies/ppm`) — absentes → **400** `{ "erreurs": [ { "champ": "dateDebut", "message": "La date de début est obligatoire." } ] }`. Le service les persiste en **2 lignes `t_marche_prevision`** typées **`DEBUT`** / **`FIN`** (cf. *Marchés — dates prévisionnelles*). *(À l'édition d'un brouillon, ces champs ne sont pas exigés.)*
 
 **`SaisieDossierRequest`** (DAO/MAOO, sans contenu) : `idTypeDossier` (oui, ≠ `PPM` sinon **409**), **`idEntiteContract` (oui)**. *(plus de `idDossier` : attribué par le serveur.)*
 
@@ -1370,9 +1370,11 @@ dossier/PPM (désormais réservée Admin).
 > le corps, ignorés s'ils sont envoyés ; le PATCH ne valide pas ces champs) ; mode de passation **revalidé**.
 > Tracé `t_audit_log` (`MODIFICATION_RECTIFICATION`, `NOM_TABLE=t_marche`).
 
-> Les **dates prévisionnelles** ne sont plus portées par le marché : elles sont
-> dans la ressource dédiée **Marchés — dates prévisionnelles** (`/api/marche-previsions`),
-> en relation 1,N avec le marché.
+> Les **dates prévisionnelles** ne sont pas des colonnes du marché : elles sont en relation **1,N**
+> dans **Marchés — dates prévisionnelles** (`/api/marche-previsions`). ⚠️ À la **création du brouillon**
+> (`POST /api/saisies/ppm`), un couple **début/fin est obligatoire par marché** (`dateDebut`/`dateFin`,
+> sinon **400**) et le serveur crée d'office les 2 lignes typées **`DEBUT`**/**`FIN`**. La ressource
+> `/api/marche-previsions` reste utilisée pour **consulter/éditer** ces dates ensuite.
 >
 > **Mode de passation (§3.1, Module 02) — ⚠️ règle ajoutée : la PRMP choisit, le serveur valide.**
 > Pour (`idSituation`, `idNature`, `montEstim`, **localité du dossier**), `t_regle_passation`/`t_seuil`
@@ -1413,7 +1415,7 @@ plusieurs dates, chacune typée). Remplace les anciens champs `datePrev*` de `Ma
 |---|---|---|---|
 | idPrevision | number | Oui (PK, au POST) | @NotNull, clé primaire |
 | idDetail | number | Oui | @NotNull — FK vers le marché |
-| typeDate | string | Oui | @NotNull, max 20 — `LANCEMENT`, `DAO`, `OUVERTURE`, `ATTRIBUTION` |
+| typeDate | string | Oui | @NotNull, max 20 — `DEBUT`, `FIN` (créés à la saisie PPM), `LANCEMENT`, `DAO`, `OUVERTURE`, `ATTRIBUTION` |
 | datePrev | string (date) | Non | |
 
 **Endpoints**
