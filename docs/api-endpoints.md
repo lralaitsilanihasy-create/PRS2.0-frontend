@@ -894,7 +894,9 @@ dossier/PPM (désormais réservée Admin).
 >
 > Modifiables ensuite via la **rectification** (en attente de décision PRMP), pas à la création.
 
-**`SaisieMarcheLigne`** : `designationMarche`, `numCompte`, `montEstim`, `financement`, `statut`, `idSituation`, `idNature`. `idDetail` est **facultatif** — **null à la création** (PK serveur), renseigné seulement pour **identifier une ligne existante** lors de l'édition (réconciliation). `idDossier`/`idPpm` sont renseignés par le service. ⚠️ **`idMode`** = mode **choisi** par la PRMP (facultatif), validé contre l'ensemble autorisé (hors ensemble → **409**) ; absent → mode **recommandé** (§3.1 M02). ⚠️ **`dateDebut`** et **`dateFin`** (dates prévisionnelles) sont **obligatoires pour chaque marché à la création** (`POST /api/saisies/ppm`) — absentes → **400** `{ "erreurs": [ { "champ": "dateDebut", "message": "La date de début est obligatoire." } ] }`. Le service les persiste en **2 lignes `t_marche_prevision`** typées **`DEBUT`** / **`FIN`** (cf. *Marchés — dates prévisionnelles*). *(À l'édition d'un brouillon, ces champs ne sont pas exigés.)*
+**`SaisieMarcheLigne`** : `designationMarche`, `numCompte`, `montEstim`, `financement`, `statut`, `idSituation`, `idNature`. `idDetail` est **facultatif** — **null à la création** (PK serveur), renseigné seulement pour **identifier une ligne existante** lors de l'édition (réconciliation). `idDossier`/`idPpm` sont renseignés par le service. ⚠️ **`idMode`** = mode **choisi** par la PRMP (facultatif), validé contre l'ensemble autorisé (hors ensemble → **409**) ; absent → mode **recommandé** (§3.1 M02).
+
+⚠️ **`processus`** : `ProcessusMarche[]` — **chaque marché doit comporter au moins un processus à la création** (`POST /api/saisies/ppm`), sinon **400** `{ "erreurs": [ { "champ": "marches[0].processus", "message": "Au moins un processus est obligatoire." } ] }`. Chaque **`ProcessusMarche`** = `idCapm` (FK `t_capm`, `@NotNull`), `dateDebut` et `dateFin` (`yyyy-MM-dd`, `@NotNull`) — un champ manquant → **400** au chemin `marches[i].processus[j].<champ>` (« Le processus est obligatoire. » / « La date de début est obligatoire. » / « La date de fin est obligatoire. ») ; `idCapm` **inconnu** → **400**. Le service crée **une ligne `t_marche_prevision` par processus**. *(À l'édition d'un brouillon, `processus` n'est pas exigé.)*
 
 **`SaisieDossierRequest`** (DAO/MAOO, sans contenu) : `idTypeDossier` (oui, ≠ `PPM` sinon **409**), **`idEntiteContract` (oui)**. *(plus de `idDossier` : attribué par le serveur.)*
 
@@ -1372,10 +1374,11 @@ dossier/PPM (désormais réservée Admin).
 > Tracé `t_audit_log` (`MODIFICATION_RECTIFICATION`, `NOM_TABLE=t_marche`).
 
 > Les **dates prévisionnelles** ne sont pas des colonnes du marché : elles sont en relation **1,N**
-> dans **Marchés — dates prévisionnelles** (`/api/marche-previsions`). ⚠️ À la **création du brouillon**
-> (`POST /api/saisies/ppm`), un couple **début/fin est obligatoire par marché** (`dateDebut`/`dateFin`,
-> sinon **400**) et le serveur crée d'office les 2 lignes typées **`DEBUT`**/**`FIN`**. La ressource
-> `/api/marche-previsions` reste utilisée pour **consulter/éditer** ces dates ensuite.
+> dans **Marchés — dates prévisionnelles** (`/api/marche-previsions`), **une ligne par processus**
+> (`idCapm` → **CAPM**). ⚠️ À la **création du brouillon** (`POST /api/saisies/ppm`), au moins un
+> **processus** (`idCapm` + `dateDebut` + `dateFin`) est **obligatoire par marché** (sinon **400**) et le
+> serveur crée d'office les lignes `t_marche_prevision`. La ressource `/api/marche-previsions` reste
+> utilisée pour **consulter/éditer** ces dates ensuite (triées par `t_capm.ordre`).
 >
 > **Mode de passation (§3.1, Module 02) — ⚠️ règle ajoutée : la PRMP choisit, le serveur valide.**
 > Pour (`idSituation`, `idNature`, `montEstim`, **localité du dossier**), `t_regle_passation`/`t_seuil`
@@ -1404,11 +1407,41 @@ dossier/PPM (désormais réservée Admin).
 
 ---
 
+## CAPM — processus de marché
+**Ressource** `/api/capm` (table référentielle `t_capm`) — **Lecture** : tout utilisateur authentifié ;
+**écriture** (POST/PUT/DELETE) : **`ADMINISTRATEUR`** (comme les autres référentiels).
+
+Processus de marché (LANCEMENT, DAO, OUVERTURE, ATTRIBUTION…), référencés par les dates
+prévisionnelles (`t_marche_prevision.ID_CAPM`). L'`ordre` fixe l'affichage des processus.
+
+**Champs `CapmDto`**
+
+| Champ (JSON) | Type | Obligatoire | Contraintes |
+|---|---|---|---|
+| idCapm | number | Oui (PK, au POST) | clé primaire (assignée par le client) |
+| libelleProcessus | string | Non | max 100 |
+| ordre | number | Oui | @NotNull |
+
+**Données initiales** : `(1,'LANCEMENT',1)`, `(2,'DAO',2)`, `(3,'OUVERTURE',3)`, `(4,'ATTRIBUTION',4)`.
+
+**Endpoints**
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/capm | — | `CapmDto[]` | 200 | Authentifié |
+| GET | /api/capm/{id} | — | `CapmDto` | 200, 404 | Authentifié |
+| POST | /api/capm | `CapmDto` | `CapmDto` | 201, 400, 403 | **ADMINISTRATEUR** |
+| PUT | /api/capm/{id} | `CapmDto` | `CapmDto` | 200, 400, 403, 404 | **ADMINISTRATEUR** |
+| DELETE | /api/capm/{id} | — | — | 204, 403, 404 | **ADMINISTRATEUR** |
+
+---
+
 ## Marchés — dates prévisionnelles
 **Ressource** `/api/marche-previsions` — Lecture / écriture : tout utilisateur authentifié.
 
-Dates prévisionnelles d'un marché, en relation **1,N** avec `/api/marches` (un marché a
-plusieurs dates, chacune typée). Remplace les anciens champs `datePrev*` de `MarcheDto`.
+Dates prévisionnelles d'un marché, en relation **1,N** avec `/api/marches` : **une ligne par
+processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` et une `dateFin`. Le filtre
+`?marche={idDetail}` renvoie les lignes **triées par `t_capm.ordre` ASC**.
 
 **Champs `MarchePrevisionDto`**
 
@@ -1416,8 +1449,10 @@ plusieurs dates, chacune typée). Remplace les anciens champs `datePrev*` de `Ma
 |---|---|---|---|
 | idPrevision | number | Oui (PK, au POST) | @NotNull, clé primaire |
 | idDetail | number | Oui | @NotNull — FK vers le marché |
-| typeDate | string | Oui | @NotNull, max 20 — `DEBUT`, `FIN` (créés à la saisie PPM), `LANCEMENT`, `DAO`, `OUVERTURE`, `ATTRIBUTION` |
-| datePrev | string (date) | Non | |
+| idCapm | number | Oui | @NotNull — FK vers `t_capm` (processus) |
+| dateDebut | string (date) | Oui | @NotNull — `yyyy-MM-dd` |
+| dateFin | string (date) | Oui | @NotNull — `yyyy-MM-dd` |
+| ordre | number | — (réponse) | **lecture seule**, porté par `t_capm.ordre` |
 
 **Endpoints**
 
@@ -1432,12 +1467,11 @@ plusieurs dates, chacune typée). Remplace les anciens champs `datePrev*` de `Ma
 
 `{id}` = idPrevision (number). Le paramètre `marche` filtre par marché (idDetail).
 
-**Exemple — réponse** (dates du marché 1)
+**Exemple — réponse** (`?marche=1`, triée par `ordre`)
 ```json
 [
-  { "idPrevision": 1, "idDetail": 1, "typeDate": "LANCEMENT", "datePrev": "2026-03-01" },
-  { "idPrevision": 2, "idDetail": 1, "typeDate": "OUVERTURE", "datePrev": "2026-04-15" },
-  { "idPrevision": 3, "idDetail": 1, "typeDate": "ATTRIBUTION", "datePrev": "2026-06-01" }
+  { "idPrevision": 1, "idDetail": 1, "idCapm": 1, "dateDebut": "2026-03-01", "dateFin": "2026-03-31", "ordre": 1 },
+  { "idPrevision": 2, "idDetail": 1, "idCapm": 3, "dateDebut": "2026-04-15", "dateFin": "2026-05-15", "ordre": 3 }
 ]
 ```
 
