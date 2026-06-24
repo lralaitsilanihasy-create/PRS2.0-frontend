@@ -13,6 +13,8 @@ import {
   EchangeDto,
   Examen,
   ExamenDetail,
+  ExamenSoumissionRequest,
+  LettreRenvoi,
   ObservationControle,
   Page,
   PvActionRequest,
@@ -133,11 +135,45 @@ export class CopieDossierService extends CrudService<CopieDossier> {
 @Injectable({ providedIn: 'root' })
 export class ExamenService extends CrudService<Examen> {
   protected readonly resource = 'examens';
+
+  /**
+   * `POST /api/examens/{id}/soumettre` (MEMBRE) — choix du résultat : `PV` (→ PvExamen) ou
+   * `LETTRE_RENVOI` (→ LettreRenvoi). `skipErrorToast` : l'écran affiche ses messages (400 objetLettre…).
+   */
+  soumettre(id: number, body: ExamenSoumissionRequest): Observable<PvExamen | LettreRenvoi> {
+    return this.http.post<PvExamen | LettreRenvoi>(`${this.baseUrl}/${id}/soumettre`, body, {
+      context: skipErrorToast(),
+    });
+  }
 }
 
 @Injectable({ providedIn: 'root' })
 export class ExamenDetailService extends CrudService<ExamenDetail> {
   protected readonly resource = 'examen-details';
+}
+
+/** Lettres de renvoi (alternative au projet de PV) — cycle BROUILLON → SOUMIS → SIGNE. */
+@Injectable({ providedIn: 'root' })
+export class LettreRenvoiService extends CrudService<LettreRenvoi> {
+  protected readonly resource = 'lettre-renvois';
+
+  /** `GET /api/lettre-renvois` — liste filtrée (localité). */
+  getAll(): Observable<LettreRenvoi[]> {
+    return this.list();
+  }
+  // `getById(id)` : hérité de CrudService (`GET /api/lettre-renvois/{id}`).
+  /** `PUT /api/lettre-renvois/{id}` (MEMBRE, brouillon). */
+  modifier(id: number, dto: LettreRenvoi): Observable<LettreRenvoi> {
+    return this.update(id, dto);
+  }
+  /** `POST /api/lettre-renvois/{id}/soumettre` (MEMBRE propriétaire) — BROUILLON → SOUMIS. */
+  soumettre(id: number): Observable<LettreRenvoi> {
+    return this.http.post<LettreRenvoi>(`${this.baseUrl}/${id}/soumettre`, {});
+  }
+  /** `POST /api/lettre-renvois/{id}/signer` (CC/Président) — SOUMIS → SIGNE. */
+  signer(id: number): Observable<LettreRenvoi> {
+    return this.http.post<LettreRenvoi>(`${this.baseUrl}/${id}/signer`, {}, { context: skipErrorToast() });
+  }
 }
 
 /** Lignes « AU LIEU DE / LIRE » d'un point de contrôle (écriture MEMBRE). */

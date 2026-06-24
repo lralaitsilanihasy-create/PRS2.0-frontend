@@ -72,6 +72,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Dossiers examinés', path: '/membre/examines', icon: '✅' },
     { label: "Détails d'examen", path: '/membre/examen-details', icon: '☑' },
     { label: 'Projets de PV', path: '/membre/pv', icon: '📝' },
+    { label: 'Projets de lettre de renvoi', path: '/membre/lettre-renvois', icon: '✉' },
     { label: 'PV définitifs', path: '/membre/pv-definitifs', icon: '✅' },
     { label: 'Messagerie', path: '/membre/messagerie', icon: '✉' },
   ],

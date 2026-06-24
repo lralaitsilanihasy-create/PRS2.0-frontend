@@ -95,6 +95,35 @@ export interface ObservationControle {
   ordre: number;
 }
 
+/** Corps de `POST /api/examens/{id}/soumettre` : choix du résultat de l'examen (PV ou lettre de renvoi). */
+export interface ExamenSoumissionRequest {
+  /** `PV` → crée le projet de PV (idAvis requis) ; `LETTRE_RENVOI` → crée la lettre (objetLettre requis). */
+  typeResultat: 'PV' | 'LETTRE_RENVOI';
+  idAvis?: string;
+  objetLettre?: string;
+}
+
+/**
+ * Lettre de renvoi (`t_lettre_renvoi`) — alternative au projet de PV produite par l'examen.
+ * Cycle : `BROUILLON → SOUMIS → SIGNE`. `refLettre`/dates/statut/imSignataire posés serveur.
+ */
+export interface LettreRenvoi {
+  /** PK auto-générée (réponse). */
+  idLettre?: number;
+  idExamen: number;
+  /** Lecture seule (dérivé de l'examen). */
+  idDossier?: number;
+  /** Générée serveur : `<seq>/<type>/<code_localite>/LR/<année>`. */
+  refLettre?: string;
+  objetLettre?: string;
+  corpsLettre?: string;
+  dateExamen?: string;
+  dateLettre?: string;
+  /** `BROUILLON` / `SOUMIS` / `SIGNE` (forcé serveur). */
+  statut?: string;
+  imSignataire?: string;
+}
+
 /** Résultat d'un point de contrôle examiné. */
 export interface ExamenDetail {
   idDetailExamen: number;

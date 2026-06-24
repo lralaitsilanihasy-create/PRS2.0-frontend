@@ -6,6 +6,7 @@ import { EXAMEN_DETAIL_CONFIG } from '../circuit/circuit-resources.config';
 import { PvDefinitifs } from '../circuit/pv-definitifs';
 import { Messagerie } from '../transverse/messagerie';
 import { ExamenDossier } from './examen-dossier';
+import { LettreRenvoiList } from './lettre-renvois';
 import { MembrePv } from './pv-page';
 
 /** Espace Membre (lazy, sous roleGuard MEMBRE). */
@@ -21,6 +22,7 @@ export const MEMBRE_ROUTES: Routes = [
   { path: 'examines', component: DossiersPipeline, data: { title: 'Dossiers examinés', timeline: false, source: 'examines' } },
   { path: 'examen-details', component: CrudPage, data: { crud: EXAMEN_DETAIL_CONFIG } },
   { path: 'pv', component: MembrePv },
+  { path: 'lettre-renvois', component: LettreRenvoiList },
   { path: 'pv-definitifs', component: PvDefinitifs },
   { path: 'messagerie', component: Messagerie },
 ];

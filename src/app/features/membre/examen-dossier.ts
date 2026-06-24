@@ -5,7 +5,18 @@ import { forkJoin, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Avis, Dossier, Examen, ExamenDetail, Marche, ObservationControle, PointsCtrl, Ppm, PvExamen } from '../../models';
+import {
+  Avis,
+  Dossier,
+  Examen,
+  ExamenDetail,
+  ExamenSoumissionRequest,
+  Marche,
+  ObservationControle,
+  PointsCtrl,
+  Ppm,
+  PvExamen,
+} from '../../models';
 import {
   AvisService,
   DispatchService,
@@ -185,19 +196,48 @@ interface RowState {
               }
 
               @if (formError()) { <span class="cnm-field__hint">{{ formError() }}</span> }
-              @if (mode() !== 'locked') {
+              @if (mode() === 'create') {
                 <div class="exam__foot">
                   <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Annuler</button>
-                  <button
-                    type="button"
-                    class="cnm-btn cnm-btn--primary"
-                    [disabled]="saving() || idDispatch() == null"
-                    (click)="enregistrer()"
-                  >
-                    {{ saving() ? 'Enregistrement…' : mode() === 'edit' ? "Modifier l'examen" : "Enregistrer l'examen" }}
+                  <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="saving() || idDispatch() == null" (click)="ouvrirFormulaireLettre()">
+                    Créer une lettre de renvoi
+                  </button>
+                  <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving() || idDispatch() == null" (click)="soumettreAvecType('PV')">
+                    {{ saving() ? 'Enregistrement…' : 'Créer un projet de PV' }}
+                  </button>
+                </div>
+              } @else if (mode() === 'edit') {
+                <div class="exam__foot">
+                  <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Annuler</button>
+                  <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving() || idDispatch() == null" (click)="enregistrer()">
+                    {{ saving() ? 'Enregistrement…' : "Modifier l'examen" }}
                   </button>
                 </div>
               }
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (lettreModal()) {
+        <div class="exam-modal__overlay" (click)="annulerLettre()">
+          <div class="exam-modal cnm-card cnm-form" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+            <h2 class="exam-modal__title">Projet de lettre de renvoi</h2>
+            <dl class="exam-modal__info">
+              <div><dt>Référence dossier</dt><dd>{{ dossier()?.refeDossier || ('Dossier #' + idDossier) }}</dd></div>
+              <div><dt>Date d'examen</dt><dd class="cnm-mono">{{ dateExamen() || '—' }}</dd></div>
+              <div><dt>Date de la lettre</dt><dd class="cnm-mono">{{ dateLettre }}</dd></div>
+            </dl>
+            <label class="cnm-field">
+              <span class="cnm-field__label">Objet de la lettre *</span>
+              <textarea class="cnm-textarea" rows="3" maxlength="500" [value]="objetLettre()" (input)="objetLettre.set($any($event.target).value)"></textarea>
+              @if (lettreErr()) { <span class="cnm-field__hint exam__obs-err">{{ lettreErr() }}</span> }
+            </label>
+            <div class="exam-modal__foot">
+              <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="saving()" (click)="annulerLettre()">Annuler</button>
+              <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving()" (click)="confirmerLettre()">
+                {{ saving() ? 'Création…' : 'Confirmer' }}
+              </button>
             </div>
           </div>
         </div>
@@ -228,6 +268,14 @@ interface RowState {
     .exam__obs-del { width: 2rem; align-self: flex-start; margin-top: 0.3rem; }
     .exam__obs-err { color: var(--cnm-danger-fg); }
     .exam__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-3); margin-top: var(--cnm-space-2); }
+    .exam-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
+    .exam-modal { width: 100%; max-width: 32rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
+    .exam-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
+    .exam-modal__info { display: flex; flex-direction: column; gap: var(--cnm-space-1); margin: 0; }
+    .exam-modal__info > div { display: flex; gap: var(--cnm-space-2); align-items: baseline; }
+    .exam-modal__info dt { flex: 0 0 10rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
+    .exam-modal__info dd { margin: 0; }
+    .exam-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
     @media (max-width: 60rem) { .exam__grid { grid-template-columns: 1fr; } }
   `,
 })
@@ -266,6 +314,12 @@ export class ExamenDossier {
   readonly dateExamen = signal(new Date().toISOString().slice(0, 10));
   readonly avis = signal<string | null>(null);
   readonly synthese = signal('');
+  /** Modal « Lettre de renvoi » (création) : visibilité, objet saisi, erreur dédiée. */
+  readonly lettreModal = signal(false);
+  readonly objetLettre = signal('');
+  readonly lettreErr = signal<string | null>(null);
+  /** Date de la lettre = aujourd'hui (lecture seule). */
+  readonly dateLettre = new Date().toISOString().slice(0, 10);
   private readonly rows = signal<Map<number, RowState>>(new Map());
   /** Erreur « ≥1 ligne obligatoire » par point de contrôle non conforme (clé = idPtControle). */
   readonly pointErreurs = signal<Map<number, string>>(new Map());
@@ -421,27 +475,63 @@ export class ExamenDossier {
     void this.router.navigate(['/membre/tableau-de-bord']);
   }
 
+  /** Mode édition (dossier EXAMINE) : met à jour l'examen + ses détails (pas de nouveau PV/lettre). */
   enregistrer(): void {
-    const dossier = this.dossier();
     const idDispatch = this.idDispatch();
-    if (!dossier || idDispatch == null) return;
-    // Chaque point non conforme exige au moins une ligne d'observation (« AU LIEU DE / LIRE »).
+    if (!this.dossier() || idDispatch == null) return;
     if (!this.validerObservations()) return;
+    this.formError.set(null);
+    this.saving.set(true);
+    this.modifier(idDispatch);
+  }
 
-    if (this.mode() === 'edit') {
-      this.formError.set(null);
-      this.saving.set(true);
-      this.modifier(idDispatch);
-      return;
-    }
-
+  /** Création — choix « Projet de PV » : avis global obligatoire, puis soumission de l'examen. */
+  soumettreAvecType(type: 'PV'): void {
+    if (!this.dossier() || this.idDispatch() == null) return;
+    if (!this.validerObservations()) return;
     if (!this.avis()) {
       this.formError.set('Sélectionnez un avis global (requis pour le projet de PV).');
       return;
     }
     this.formError.set(null);
-    this.saving.set(true);
+    this.creerExamenPuisSoumettre(
+      { typeResultat: type, idAvis: this.avis() as string },
+      '/membre/pv',
+      'Examen enregistré · projet de PV créé.',
+    );
+  }
 
+  /** Création — choix « Lettre de renvoi » : ouvre le formulaire (objet) après validation des observations. */
+  ouvrirFormulaireLettre(): void {
+    if (!this.dossier() || this.idDispatch() == null) return;
+    if (!this.validerObservations()) return;
+    this.lettreErr.set(null);
+    this.objetLettre.set('');
+    this.lettreModal.set(true);
+  }
+  annulerLettre(): void {
+    if (!this.saving()) {
+      this.lettreModal.set(false);
+    }
+  }
+  confirmerLettre(): void {
+    if (!this.objetLettre().trim()) {
+      this.lettreErr.set("L'objet de la lettre est obligatoire.");
+      return;
+    }
+    this.lettreErr.set(null);
+    this.creerExamenPuisSoumettre(
+      { typeResultat: 'LETTRE_RENVOI', objetLettre: this.objetLettre().trim() },
+      '/membre/lettre-renvois',
+      'Examen enregistré · lettre de renvoi créée.',
+    );
+  }
+
+  /** Crée l'examen + ses détails, puis `POST /api/examens/{id}/soumettre` avec le résultat choisi. */
+  private creerExamenPuisSoumettre(req: ExamenSoumissionRequest, route: string, succes: string): void {
+    const idDispatch = this.idDispatch();
+    if (idDispatch == null) return;
+    this.saving.set(true);
     const im = this.auth.ref() ?? '';
     const idExamen = this.nextId(this.examens().map((e) => e.idExamen));
     const examen: Examen = { idExamen, idDispatch, imCtrlMembre: im || undefined, dateExamen: this.dateExamen() };
@@ -451,35 +541,33 @@ export class ExamenDossier {
       .pipe(
         switchMap(() => {
           const baseDetail = this.nextId(this.details().map((d) => d.idDetailExamen));
-          const detailCalls = this.points().map((p, i) => {
-            const st = this.row(p.idPointCtrl);
-            const body: ExamenDetail = {
+          const detailCalls = this.points().map((p, i) =>
+            this.examenDetailService.create({
               idDetailExamen: baseDetail + i,
               idExamen,
               idPtControle: p.idPointCtrl,
-              conforme: st.conforme,
-              observations: this.observationsBody(st),
-            };
-            return this.examenDetailService.create(body);
-          });
-          const pv: PvExamen = {
-            idPv: this.nextId(this.pvs().map((v) => v.idPv)),
-            idExamen,
-            idAvis: this.avis() as string,
-            imCtrlMembre: im,
-            statutPv: 'BROUILLON',
-            nbNavettes: 0,
-            syntheseObservations: this.synthese() || undefined,
-          };
-          return forkJoin([...detailCalls, this.pvExamenService.create(pv)]);
+              conforme: this.row(p.idPointCtrl).conforme,
+              observations: this.observationsBody(this.row(p.idPointCtrl)),
+            }),
+          );
+          return detailCalls.length ? forkJoin(detailCalls) : of([]);
         }),
+        switchMap(() => this.examenService.soumettre(idExamen, req)),
       )
       .subscribe({
         next: () => {
-          this.toast.success('Examen enregistré · projet de PV créé.');
-          void this.router.navigate(['/membre/pv']);
+          this.toast.success(succes);
+          this.lettreModal.set(false);
+          void this.router.navigate([route]);
         },
-        error: (_e: ApiError) => this.saving.set(false), // 400/403/409 → toast centralisé
+        error: (e: ApiError) => {
+          this.saving.set(false);
+          if (req.typeResultat === 'LETTRE_RENVOI' && e.fieldErrors?.['objetLettre']) {
+            this.lettreErr.set(e.fieldErrors['objetLettre']);
+          } else {
+            this.toast.error(e.message || "Erreur lors de la soumission de l'examen.");
+          }
+        },
       });
   }
 
