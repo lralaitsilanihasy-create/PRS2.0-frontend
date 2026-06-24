@@ -11,6 +11,7 @@ import {
   Examen,
   ExamenDetail,
   ExamenSoumissionRequest,
+  LettreRenvoi,
   Marche,
   ObservationControle,
   PointsCtrl,
@@ -23,6 +24,7 @@ import {
   DossierService,
   ExamenDetailService,
   ExamenService,
+  LettreRenvoiService,
   LocaliteService,
   MarcheService,
   ModePassationService,
@@ -233,6 +235,10 @@ interface RowState {
               <textarea class="cnm-textarea" rows="3" maxlength="500" [value]="objetLettre()" (input)="objetLettre.set($any($event.target).value)"></textarea>
               @if (lettreErr()) { <span class="cnm-field__hint exam__obs-err">{{ lettreErr() }}</span> }
             </label>
+            <label class="cnm-field">
+              <span class="cnm-field__label">Corps de la lettre</span>
+              <textarea class="cnm-textarea exam-modal__corps" rows="6" placeholder="Corps de la lettre…" [value]="corpsLettre()" (input)="corpsLettre.set($any($event.target).value)"></textarea>
+            </label>
             <div class="exam-modal__foot">
               <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="saving()" (click)="annulerLettre()">Annuler</button>
               <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving()" (click)="confirmerLettre()">
@@ -276,6 +282,7 @@ interface RowState {
     .exam-modal__info dt { flex: 0 0 10rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
     .exam-modal__info dd { margin: 0; }
     .exam-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
+    .exam-modal__corps { resize: vertical; }
     @media (max-width: 60rem) { .exam__grid { grid-template-columns: 1fr; } }
   `,
 })
@@ -294,6 +301,7 @@ export class ExamenDossier {
   private readonly examenService = inject(ExamenService);
   private readonly examenDetailService = inject(ExamenDetailService);
   private readonly pvExamenService = inject(PvExamenService);
+  private readonly lettreRenvoiService = inject(LettreRenvoiService);
   private readonly lookups = inject(ReferenceLookupService);
 
   readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
@@ -317,6 +325,7 @@ export class ExamenDossier {
   /** Modal « Lettre de renvoi » (création) : visibilité, objet saisi, erreur dédiée. */
   readonly lettreModal = signal(false);
   readonly objetLettre = signal('');
+  readonly corpsLettre = signal('');
   readonly lettreErr = signal<string | null>(null);
   /** Date de la lettre = aujourd'hui (lecture seule). */
   readonly dateLettre = new Date().toISOString().slice(0, 10);
@@ -507,6 +516,7 @@ export class ExamenDossier {
     if (!this.validerObservations()) return;
     this.lettreErr.set(null);
     this.objetLettre.set('');
+    this.corpsLettre.set('');
     this.lettreModal.set(true);
   }
   annulerLettre(): void {
@@ -553,6 +563,17 @@ export class ExamenDossier {
           return detailCalls.length ? forkJoin(detailCalls) : of([]);
         }),
         switchMap(() => this.examenService.soumettre(idExamen, req)),
+        // Lettre de renvoi : le corps n'est pas dans ExamenSoumissionRequest → PUT de la lettre créée.
+        switchMap((cree) => {
+          const corps = this.corpsLettre().trim();
+          if (req.typeResultat === 'LETTRE_RENVOI' && corps) {
+            const lettre = cree as LettreRenvoi;
+            if (lettre.idLettre != null) {
+              return this.lettreRenvoiService.modifier(lettre.idLettre, { ...lettre, corpsLettre: corps });
+            }
+          }
+          return of(cree);
+        }),
       )
       .subscribe({
         next: () => {

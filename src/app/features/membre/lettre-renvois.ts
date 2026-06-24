@@ -37,6 +37,9 @@ import { StatutBadge } from '../../shared/circuit';
                 <td class="cnm-mono">{{ l.dateLettre || '—' }}</td>
                 <td><app-statut-badge [statut]="l.statut" /></td>
                 <td class="lr__actions">
+                  <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="basculer(l)">
+                    {{ ouvert() === l.idLettre ? 'Masquer' : 'Détails' }}
+                  </button>
                   @if (peutSigner() && l.statut === 'SOUMIS') {
                     <button
                       type="button"
@@ -49,6 +52,17 @@ import { StatutBadge } from '../../shared/circuit';
                   }
                 </td>
               </tr>
+              @if (ouvert() === l.idLettre) {
+                <tr class="lr__detail">
+                  <td colspan="5">
+                    <dl class="lr__detail-dl">
+                      <div><dt>Objet</dt><dd>{{ l.objetLettre || '—' }}</dd></div>
+                      <div><dt>Corps de la lettre</dt><dd class="lr__corps">{{ l.corpsLettre || '—' }}</dd></div>
+                      @if (l.refLettre) { <div><dt>Référence lettre</dt><dd class="cnm-mono">{{ l.refLettre }}</dd></div> }
+                    </dl>
+                  </td>
+                </tr>
+              }
             } @empty {
               <tr><td colspan="5" class="cnm-muted">Aucun projet de lettre de renvoi.</td></tr>
             }
@@ -60,7 +74,12 @@ import { StatutBadge } from '../../shared/circuit';
   styles: `
     .lr__header { margin-bottom: var(--cnm-space-3); }
     .lr__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .lr__actions { display: flex; justify-content: flex-end; }
+    .lr__actions { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
+    .lr__detail-dl { display: flex; flex-direction: column; gap: var(--cnm-space-1); margin: 0; }
+    .lr__detail-dl > div { display: flex; gap: var(--cnm-space-2); align-items: baseline; }
+    .lr__detail-dl dt { flex: 0 0 10rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
+    .lr__detail-dl dd { margin: 0; }
+    .lr__corps { white-space: pre-wrap; }
   `,
 })
 export class LettreRenvoiList {
@@ -72,6 +91,8 @@ export class LettreRenvoiList {
   readonly lettres = signal<LettreRenvoi[]>([]);
   readonly loading = signal(true);
   readonly signature = signal<number | null>(null);
+  /** idLettre dont le détail (objet + corps) est déplié. */
+  readonly ouvert = signal<number | null>(null);
   private readonly dossierRefs = signal<Map<number, string>>(new Map());
 
   /** Seuls CC / Président peuvent signer une lettre (jamais le Membre). */
@@ -97,6 +118,9 @@ export class LettreRenvoiList {
     });
   }
 
+  basculer(l: LettreRenvoi): void {
+    this.ouvert.update((cur) => (cur === l.idLettre ? null : (l.idLettre ?? null)));
+  }
   refDossier(l: LettreRenvoi): string {
     const ref = l.idDossier != null ? this.dossierRefs().get(l.idDossier) : '';
     return ref || l.refLettre || (l.idDossier != null ? 'Dossier #' + l.idDossier : '—');
