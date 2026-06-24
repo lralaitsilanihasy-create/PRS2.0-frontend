@@ -1095,13 +1095,54 @@ dossier/PPM (désormais réservée Admin).
 | POST | /api/examens | `ExamenDto` | `ExamenDto` | 201, 400, 403 | MEMBRE (titulaire/délégué) |
 | PUT | /api/examens/{id} | `ExamenDto` | `ExamenDto` | 200, 400, 403, 404 | MEMBRE (titulaire/délégué) |
 | DELETE | /api/examens/{id} | — | — | 204, 404 | ADMINISTRATEUR |
+| POST | /api/examens/{id}/soumettre | `ExamenSoumissionRequest` | `PvExamenDto` **ou** `LettreRenvoiDto` | 201, 400, 403, 404 | MEMBRE |
 
 `{id}` = idExamen (number).
+
+> ⚠️ **Soumission de l'examen (règle ajoutée).** `POST /api/examens/{id}/soumettre` : le Membre choisit le **résultat** via `ExamenSoumissionRequest` `{ typeResultat (@NotNull : PV | LETTRE_RENVOI), idAvis, objetLettre }` :
+> - `typeResultat = PV` → crée le **Projet de PV** (`PvExamenService`, `idPv` alloué serveur) avec `idAvis` (obligatoire sur le PV : FAV/FAVR/DEF/NSP) → **201** `PvExamenDto`.
+> - `typeResultat = LETTRE_RENVOI` → `objetLettre` **obligatoire** (sinon **400**, champ `objetLettre`) → crée une **lettre de renvoi** (BROUILLON) → **201** `LettreRenvoiDto`.
+> - `typeResultat` absent/invalide → **400**, champ `typeResultat`.
 
 **Exemple — requête**
 ```json
 { "idExamen": 201, "idDispatch": 88, "imCtrlMembre": "MEMANT1", "dateExamen": "2026-05-08" }
 ```
+
+---
+
+## Lettres de renvoi
+**Ressource** `/api/lettre-renvois` (table `t_lettre_renvoi`) — **alternative au Projet de PV** : un examen
+produit soit un Projet de PV, soit une **lettre de renvoi** (au choix du Membre, à la soumission de
+l'examen). Lecture : authentifié (filtré localité). Cycle : `BROUILLON → SOUMIS → SIGNE`.
+
+**Champs `LettreRenvoiDto`**
+
+| Champ (JSON) | Type | Obligatoire | Contraintes |
+|---|---|---|---|
+| idLettre | number | — (réponse) | PK **auto-générée** (IDENTITY) |
+| idExamen | number | Oui | @NotNull — FK `t_examen` (**unique** : un examen → une lettre) |
+| idDossier | number | — (réponse) | **lecture seule** (dérivé de l'examen) |
+| refLettre | string | — (réponse) | **générée serveur** : `<seq>/<type>/<code_localite>/LR/<année>` (ex. `00006/PPM/CRM-ANT/LR/2026`) |
+| objetLettre | string | Non | max 500 |
+| dateExamen | string (date) | — (réponse) | **lecture seule** (date d'examen) |
+| dateLettre | string (date) | — (réponse) | **posée serveur** (jour) |
+| statut | string | — (réponse) | `BROUILLON`/`SOUMIS`/`SIGNE` — **forcé** (ignoré en entrée) |
+| imSignataire | string | — (réponse) | **posé à la signature** (JWT) — ignoré en entrée |
+
+**Endpoints**
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/lettre-renvois | — | `LettreRenvoiDto[]` | 200 | Authentifié (filtré) |
+| GET | /api/lettre-renvois/{id} | — | `LettreRenvoiDto` | 200, 403, 404 | Authentifié (filtré) |
+| PUT | /api/lettre-renvois/{id} | `LettreRenvoiDto` | `LettreRenvoiDto` | 200, 400, 404, 409 | **MEMBRE** (brouillon) |
+| POST | /api/lettre-renvois/{id}/soumettre | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **MEMBRE propriétaire** (BROUILLON→SOUMIS) |
+| POST | /api/lettre-renvois/{id}/signer | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **CHEF_COMMISSION** ou **PRESIDENT** (SOUMIS→SIGNE) |
+| DELETE | /api/lettre-renvois/{id} | — | — | 204, 404 | ADMINISTRATEUR |
+
+> Circuit : `soumettre` (Membre attributaire de l'examen) `BROUILLON → SOUMIS` ; `signer` (CC ou Président,
+> jamais le Membre → **403**) `SOUMIS → SIGNE` (`imSignataire` = JWT). Statut incorrect → **409**.
 
 ---
 
