@@ -1125,6 +1125,7 @@ l'examen). Lecture : authentifié (filtré localité). Cycle : `BROUILLON → SO
 | idDossier | number | — (réponse) | **lecture seule** (dérivé de l'examen) |
 | refLettre | string | — (réponse) | **générée serveur** : `<seq>/<type>/<code_localite>/LR/<année>` (ex. `00006/PPM/CRM-ANT/LR/2026`) |
 | objetLettre | string | Non | max 500 |
+| corpsLettre | string | Non | corps libre de la lettre (TEXT, sans limite de taille) |
 | dateExamen | string (date) | — (réponse) | **lecture seule** (date d'examen) |
 | dateLettre | string (date) | — (réponse) | **posée serveur** (jour) |
 | statut | string | — (réponse) | `BROUILLON`/`SOUMIS`/`SIGNE` — **forcé** (ignoré en entrée) |
