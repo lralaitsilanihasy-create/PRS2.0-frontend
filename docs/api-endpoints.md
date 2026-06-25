@@ -23,7 +23,10 @@
 ### Profils (rôles)
 Le rôle de l'utilisateur est porté par le jeton (claim `role`). Valeurs possibles :
 `PRMP`, `PRESIDENT`, `CHEF_COMMISSION`, `SECRETAIRE`, `MEMBRE`, `VERIFICATEUR`,
-`CHARGE_PUBLICATION`, `ADMINISTRATEUR`.
+`ASSISTANT_CONTROLEUR`, `CHARGE_PUBLICATION`, `ADMINISTRATEUR`.
+> `ASSISTANT_CONTROLEUR` : contrôleur **rattaché à une localité** (comme le Vérificateur), compte créé
+> par l'**Administrateur** (`/api/controleurs`). Reçoit en lecture les **copies** des lettres de renvoi
+> signées et des PV définitifs (avis ≠ FAVR immédiatement ; FAVR après clôture du dossier).
 
 ### Clés primaires — IMPORTANT
 **Toutes les entités ont une clé primaire ASSIGNÉE par le client** (pas d'auto-génération).
@@ -1095,14 +1098,14 @@ dossier/PPM (désormais réservée Admin).
 | POST | /api/examens | `ExamenDto` | `ExamenDto` | 201, 400, 403 | MEMBRE (titulaire/délégué) |
 | PUT | /api/examens/{id} | `ExamenDto` | `ExamenDto` | 200, 400, 403, 404 | MEMBRE (titulaire/délégué) |
 | DELETE | /api/examens/{id} | — | — | 204, 404 | ADMINISTRATEUR |
-| POST | /api/examens/{id}/soumettre | `ExamenSoumissionRequest` | `PvExamenDto` **ou** `LettreRenvoiDto` | 201, 400, 403, 404 | MEMBRE |
+| POST | /api/examens/{id}/soumettre | `ExamenSoumissionRequest` | `PvExamenDto` | 201, 400, 403, 404 | MEMBRE |
 
 `{id}` = idExamen (number).
 
-> ⚠️ **Soumission de l'examen (règle ajoutée).** `POST /api/examens/{id}/soumettre` : le Membre choisit le **résultat** via `ExamenSoumissionRequest` `{ typeResultat (@NotNull : PV | LETTRE_RENVOI), idAvis, objetLettre }` :
-> - `typeResultat = PV` → crée le **Projet de PV** (`PvExamenService`, `idPv` alloué serveur) avec `idAvis` (obligatoire sur le PV : FAV/FAVR/DEF/NSP) → **201** `PvExamenDto`.
-> - `typeResultat = LETTRE_RENVOI` → `objetLettre` **obligatoire** (sinon **400**, champ `objetLettre`) → crée une **lettre de renvoi** (BROUILLON) → **201** `LettreRenvoiDto`.
-> - `typeResultat` absent/invalide → **400**, champ `typeResultat`.
+> ⚠️ **Soumission de l'examen (règle ajoutée).** `POST /api/examens/{id}/soumettre` produit **toujours un
+> Projet de PV** (`PvExamenService`, `idPv` alloué serveur). Corps `ExamenSoumissionRequest` `{ idAvis }`
+> = avis du PV (FAV/FAVR/DEF/NSP), obligatoire sur le PV. *(La lettre de renvoi est désormais une action
+> séparée pendant l'examen — ressource `/api/lettre-renvois` ; `ExamenDto` n'a pas de champ `typeResultat`.)*
 
 **Exemple — requête**
 ```json
@@ -1112,19 +1115,19 @@ dossier/PPM (désormais réservée Admin).
 ---
 
 ## Lettres de renvoi
-**Ressource** `/api/lettre-renvois` (table `t_lettre_renvoi`) — **alternative au Projet de PV** : un examen
-produit soit un Projet de PV, soit une **lettre de renvoi** (au choix du Membre, à la soumission de
-l'examen). Lecture : authentifié (filtré localité). Cycle : `BROUILLON → SOUMIS → SIGNE`.
+**Ressource** `/api/lettre-renvois` (table `t_lettre_renvoi`) — **action séparée pendant l'examen** : le
+Membre peut créer **N lettres de renvoi** par examen (indépendamment du Projet de PV). Lecture filtrée par
+profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Président).
 
 **Champs `LettreRenvoiDto`**
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
 | idLettre | number | — (réponse) | PK **auto-générée** (IDENTITY) |
-| idExamen | number | Oui | @NotNull — FK `t_examen` (**unique** : un examen → une lettre) |
+| idExamen | number | Oui | @NotNull (« L'examen est obligatoire. ») — FK `t_examen` (**non unique** : N lettres/examen) |
 | idDossier | number | — (réponse) | **lecture seule** (dérivé de l'examen) |
-| refLettre | string | — (réponse) | **générée serveur** : `<seq>/<type>/<code_localite>/LR/<année>` (ex. `00006/PPM/CRM-ANT/LR/2026`) |
-| objetLettre | string | Non | max 500 |
+| refLettre | string | — (réponse) | **générée serveur** : `<seq>/LR/<code_localite>/<année>` (ex. `00001/LR/CRM-ANT/2026`) |
+| objetLettre | string | **Oui** | @NotNull (« L'objet de la lettre est obligatoire. »), max 500 |
 | corpsLettre | string | Non | corps libre de la lettre (TEXT, sans limite de taille) |
 | dateExamen | string (date) | — (réponse) | **lecture seule** (date d'examen) |
 | dateLettre | string (date) | — (réponse) | **posée serveur** (jour) |
@@ -1135,15 +1138,23 @@ l'examen). Lecture : authentifié (filtré localité). Cycle : `BROUILLON → SO
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/lettre-renvois | — | `LettreRenvoiDto[]` | 200 | Authentifié (filtré) |
-| GET | /api/lettre-renvois/{id} | — | `LettreRenvoiDto` | 200, 403, 404 | Authentifié (filtré) |
-| PUT | /api/lettre-renvois/{id} | `LettreRenvoiDto` | `LettreRenvoiDto` | 200, 400, 404, 409 | **MEMBRE** (brouillon) |
+| GET | /api/lettre-renvois | — | `LettreRenvoiDto[]` | 200 | Authentifié (filtré, voir ci-dessous) |
+| GET | /api/lettre-renvois/mes-lettres | — | `LettreRenvoiDto[]` | 200 | **PRMP** — lettres `SIGNE` de ses dossiers (lecture seule) |
+| GET | /api/lettre-renvois/{id} | — | `LettreRenvoiDto` | 200, 403, 404 | Authentifié (dans le périmètre) |
+| POST | /api/lettre-renvois | `LettreRenvoiDto` | `LettreRenvoiDto` | 201, 400, 403 | **MEMBRE** — création pendant l'examen (BROUILLON) |
+| PUT | /api/lettre-renvois/{id} | `LettreRenvoiDto` | `LettreRenvoiDto` | 200, 400, 404, 409 | **MEMBRE** (brouillon : objet/corps) |
 | POST | /api/lettre-renvois/{id}/soumettre | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **MEMBRE propriétaire** (BROUILLON→SOUMIS) |
 | POST | /api/lettre-renvois/{id}/signer | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **CHEF_COMMISSION** ou **PRESIDENT** (SOUMIS→SIGNE) |
 | DELETE | /api/lettre-renvois/{id} | — | — | 204, 404 | ADMINISTRATEUR |
 
-> Circuit : `soumettre` (Membre attributaire de l'examen) `BROUILLON → SOUMIS` ; `signer` (CC ou Président,
-> jamais le Membre → **403**) `SOUMIS → SIGNE` (`imSignataire` = JWT). Statut incorrect → **409**.
+> **Scoping `GET /api/lettre-renvois`** : MEMBRE → **ses** lettres (par ses examens) ; CHEF_COMMISSION →
+> lettres `SOUMIS` de sa localité ; ASSISTANT_CONTROLEUR → lettres `SIGNE` de sa localité ;
+> Président/Administrateur → toutes.
+>
+> **Création** (POST) : examen **inexistant ou hors périmètre** → **403**. **Signature** (`signer`, CC ou
+> Président — jamais le Membre → **403**) `SOUMIS → SIGNE` (`imSignataire` = JWT) → **notifie la PRMP**
+> du dossier (`LETTRE_RENVOI_RECUE`) et les **Assistants contrôleurs** de la localité (`LETTRE_RENVOI_COPIE`).
+> Statut incorrect → **409**.
 
 ---
 
@@ -1832,6 +1843,10 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` et une `dateFi
 | `PV_POUR_INFO` | PV signé auto-clôturé (FAV/DEF/NSP) | Vérificateur de la localité | DOSSIER |
 | `OBSERVATION_VERIFICATION` | observations de vérification non levées à traiter | PRMP du dossier | DOSSIER |
 | `RECTIFICATION_PRMP` | dossier rectifié par la PRMP et resoumis | Vérificateur du dossier | DOSSIER |
+| `LETTRE_RENVOI_RECUE` | lettre de renvoi signée reçue | PRMP du dossier | DOSSIER |
+| `LETTRE_RENVOI_COPIE` | copie d'une lettre de renvoi signée | Assistant contrôleur de la localité | DOSSIER |
+| `PV_DEFINITIF_COPIE` | copie d'un PV définitif (avis ≠ FAVR) | Assistant contrôleur de la localité | DOSSIER |
+| `CLOTURE_COPIE_ASSISTANT` | copie d'un PV FAVR après clôture du dossier | Assistant contrôleur de la localité | DOSSIER |
 | `CLOTURE_ELIGIBLE` | dossier clôturé éligible | Chargé de publication | DOSSIER |
 | `NOUVEAU_MESSAGE` | message reçu (messagerie) | destinataire | MESSAGE |
 
