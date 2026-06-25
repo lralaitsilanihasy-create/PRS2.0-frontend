@@ -1133,6 +1133,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | dateLettre | string (date) | — (réponse) | **posée serveur** (jour) |
 | statut | string | — (réponse) | `BROUILLON`/`SOUMIS`/`SIGNE` — **forcé** (ignoré en entrée) |
 | imSignataire | string | — (réponse) | **posé à la signature** (JWT) — ignoré en entrée |
+| nomSignataire | string | — (réponse) | **nom complet du signataire** (« prénoms nom »), peuplé serveur — lecture seule |
 
 **Endpoints**
 
