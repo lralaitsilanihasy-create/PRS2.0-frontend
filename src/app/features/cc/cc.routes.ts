@@ -4,6 +4,7 @@ import { CrudPage } from '../../shared/crud/crud-page';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { DispatchsList } from '../circuit/dispatchs-list';
 import { MembrePv } from '../membre/pv-page';
+import { LettreRenvoiConsultation } from '../circuit/lettre-renvoi-consultation';
 import { PvDefinitifs } from '../circuit/pv-definitifs';
 import { PpmMarches } from '../prmp/ppm-marches';
 import { PrmpMarchesPrevisions } from '../prmp/prmp-marches-previsions';
@@ -29,4 +30,7 @@ export const CC_ROUTES: Routes = [
   { path: 'messagerie', component: Messagerie },
   { path: 'ppm-marches', component: PpmMarches },
   { path: 'marches-previsions', component: PrmpMarchesPrevisions },
+  // Lettres de renvoi à signer (SOUMIS → SIGNE) de sa localité ; `:idLettre` déplie le détail.
+  { path: 'lettre-renvois', component: LettreRenvoiConsultation, data: { source: 'localite', signable: true, title: 'Lettres de renvoi à signer' } },
+  { path: 'lettre-renvois/:idLettre', component: LettreRenvoiConsultation, data: { source: 'localite', signable: true, title: 'Lettres de renvoi à signer' } },
 ];

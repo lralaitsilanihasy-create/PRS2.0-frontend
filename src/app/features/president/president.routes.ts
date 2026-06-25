@@ -5,6 +5,7 @@ import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { DispatchsList } from '../circuit/dispatchs-list';
 import { ECHEANCE_CONFIG } from '../circuit/circuit-resources.config';
 import { MembrePv } from '../membre/pv-page';
+import { LettreRenvoiConsultation } from '../circuit/lettre-renvoi-consultation';
 import { PvDefinitifs } from '../circuit/pv-definitifs';
 import { RetraitsValidation } from '../circuit/retraits-validation';
 import { KpiDashboard } from '../pilotage/kpi-dashboard';
@@ -31,4 +32,7 @@ export const PRESIDENT_ROUTES: Routes = [
   { path: 'rapports', component: RapportsPage },
   { path: 'statistiques', component: KpiDashboard },
   { path: 'ppm-marches', component: PresidentPpmMarches },
+  // Lettres de renvoi à signer (SOUMIS → SIGNE) ; `:idLettre` (lien de notification) déplie le détail.
+  { path: 'lettre-renvois', component: LettreRenvoiConsultation, data: { source: 'localite', signable: true, title: 'Lettres de renvoi à signer' } },
+  { path: 'lettre-renvois/:idLettre', component: LettreRenvoiConsultation, data: { source: 'localite', signable: true, title: 'Lettres de renvoi à signer' } },
 ];
