@@ -119,6 +119,8 @@ export interface LettreRenvoi {
   /** `BROUILLON` / `SOUMIS` / `SIGNE` (forcé serveur). */
   statut?: string;
   imSignataire?: string;
+  /** Nom complet du signataire (« prénoms nom »), peuplé serveur — lecture seule. */
+  nomSignataire?: string;
 }
 
 /** Résultat d'un point de contrôle examiné. */

@@ -63,6 +63,7 @@ import { StatutBadge } from '../../shared/circuit';
                       <div><dt>Date d'examen</dt><dd class="cnm-mono">{{ l.dateExamen || '—' }}</dd></div>
                       <div><dt>Date lettre</dt><dd class="cnm-mono">{{ l.dateLettre || '—' }}</dd></div>
                       <div><dt>Statut</dt><dd><app-statut-badge [statut]="l.statut" /></dd></div>
+                      <div><dt>Signataire</dt><dd>{{ l.nomSignataire || '—' }}</dd></div>
                     </dl>
                     @if (signable && l.statut === 'SOUMIS') {
                       <div class="lrc__detail-foot">
