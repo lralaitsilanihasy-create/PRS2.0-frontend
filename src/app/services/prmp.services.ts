@@ -9,6 +9,7 @@ import {
   Lot,
   Marche,
   MarchePrevision,
+  PieceJointeDossier,
   Ppm,
   PrmpEntite,
   SaisieDossierRequest,
@@ -88,6 +89,31 @@ export class PrmpEntiteService extends CrudService<PrmpEntite> {
   protected readonly resource = 'prmp-entites';
 }
 
+/** Pièces jointes déposées sur un dossier (upload multipart ; contenu binaire via `/contenu`). */
+@Injectable({ providedIn: 'root' })
+export class PieceJointeDossierService extends CrudService<PieceJointeDossier> {
+  protected readonly resource = 'piece-jointe-dossiers';
+
+  /** `GET /api/piece-jointe-dossiers?dossier={idDossier}` — pièces d'un dossier. */
+  getByDossier(idDossier: number): Observable<PieceJointeDossier[]> {
+    return this.http.get<PieceJointeDossier[]>(this.baseUrl, {
+      params: new HttpParams().set('dossier', idDossier),
+    });
+  }
+  /** `POST /api/piece-jointe-dossiers` (multipart : part `data` JSON + part `fichier`). */
+  upload(fd: FormData): Observable<PieceJointeDossier> {
+    return this.http.post<PieceJointeDossier>(this.baseUrl, fd);
+  }
+  /** `GET /api/piece-jointe-dossiers/{id}/contenu` — contenu binaire du fichier. */
+  telecharger(idPiece: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${idPiece}/contenu`, { responseType: 'blob' });
+  }
+  /** `DELETE /api/piece-jointe-dossiers/{id}` (PRMP, dossier BROUILLON, ou Admin). */
+  supprimer(idPiece: number): Observable<void> {
+    return this.delete(idPiece);
+  }
+}
+
 /**
  * Façade de saisie PRMP (`/api/saisies`). Crée un dossier BROUILLON (+ PPM + lignes
  * pour une saisie PPM) en une transaction. Réservée PRMP côté backend (403 sinon).
@@ -101,6 +127,17 @@ export class SaisieService {
   /** `POST /api/saisies/ppm` → dossier créé (type PPM, statut BROUILLON). */
   ppm(req: SaisiePpmRequest): Observable<Dossier> {
     return this.http.post<Dossier>(`${this.baseUrl}/ppm`, req);
+  }
+
+  /**
+   * `POST /api/saisies/ppm` (multipart) → dossier PPM + pièces jointes initiales en une transaction.
+   * Parts : `data` (JSON `SaisiePpmRequest`) + `piece_<idTypePiece>` (fichiers PDF/JPEG/PNG).
+   */
+  ppmAvecPieces(req: SaisiePpmRequest, pieces: Map<number, File>): Observable<Dossier> {
+    const fd = new FormData();
+    fd.append('data', new Blob([JSON.stringify(req)], { type: 'application/json' }));
+    pieces.forEach((file, idTypePiece) => fd.append(`piece_${idTypePiece}`, file));
+    return this.http.post<Dossier>(`${this.baseUrl}/ppm`, fd);
   }
 
   /** `POST /api/saisies/dossier` → dossier DAO/MAOO créé (statut BROUILLON). */

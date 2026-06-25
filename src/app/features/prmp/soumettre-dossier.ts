@@ -7,7 +7,7 @@ import { debounceTime, forkJoin, merge } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Capm, Compte, Dossier, Marche, Nature, SaisieMarcheLigne, Situation, TypeDossier } from '../../models';
+import { Capm, Compte, Dossier, Marche, Nature, SaisieMarcheLigne, Situation, TypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -25,6 +25,7 @@ import {
   SaisieService,
   SituationService,
   TypeDossierService,
+  TypePieceJointeService,
 } from '../../services';
 
 type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
@@ -183,10 +184,40 @@ type ModeSuggestion = {
               </div>
             }
 
+            <div class="sd__pieces">
+              <h2 class="sd__sub">Pièces jointes</h2>
+              @if (!typesPiece().length) {
+                <p class="cnm-muted">Aucune pièce attendue pour ce type de dossier.</p>
+              }
+              @for (t of typesPiece(); track t.idTypePiece) {
+                <div class="sd__piece">
+                  <span class="sd__piece-lbl">📎 {{ t.libellePiece }}</span>
+                  @if (t.obligatoire) {
+                    <span class="cnm-badge cnm-badge--danger">obligatoire</span>
+                  } @else {
+                    <span class="cnm-badge cnm-badge--neutral">optionnel</span>
+                  }
+                  @if (pieceNom(t.idTypePiece); as nom) {
+                    <span class="sd__piece-file">{{ nom }} · {{ pieceTaille(t.idTypePiece) }}</span>
+                    <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerPiece(t.idTypePiece)" aria-label="Retirer">✕</button>
+                  } @else {
+                    <label class="cnm-btn cnm-btn--ghost cnm-btn--sm sd__piece-choisir">
+                      Choisir
+                      <input type="file" accept=".pdf,.jpeg,.jpg,.png" hidden (change)="onPiece(t.idTypePiece, $event)" />
+                    </label>
+                  }
+                  @if (pieceErreurs().has(t.idTypePiece)) {
+                    <span class="cnm-field__hint sd__piece-err">Cette pièce est obligatoire.</span>
+                  }
+                </div>
+              }
+              <p class="sd__hint cnm-muted">Formats acceptés : PDF, JPEG, PNG.</p>
+            </div>
+
             <footer class="sd__foot">
               <button type="button" class="cnm-btn cnm-btn--ghost" (click)="retourChoix()">Retour</button>
               <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submitting()">
-                {{ submitting() ? 'Création…' : 'Créer le brouillon' }}
+                {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
           </form>
@@ -226,7 +257,7 @@ type ModeSuggestion = {
             <footer class="sd__foot">
               <button type="button" class="cnm-btn cnm-btn--ghost" (click)="retourChoix()">Retour</button>
               <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submitting()">
-                {{ submitting() ? 'Création…' : 'Créer le brouillon' }}
+                {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
           </form>
@@ -426,6 +457,12 @@ type ModeSuggestion = {
     .sd__form { padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); max-width: min(64rem, 96vw); }
     .sd__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); }
     .sd__hint { margin: 0; }
+    .sd__pieces { display: flex; flex-direction: column; gap: var(--cnm-space-2); }
+    .sd__piece { display: flex; align-items: center; gap: var(--cnm-space-2); flex-wrap: wrap; }
+    .sd__piece-lbl { font-weight: var(--cnm-fw-medium); }
+    .sd__piece-file { font-size: var(--cnm-fs-sm); color: var(--cnm-text-2); }
+    .sd__piece-choisir { cursor: pointer; }
+    .sd__piece-err { color: var(--cnm-danger-fg); }
     .sd__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-3); }
     .sd__foot--main { margin-top: var(--cnm-space-3); }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
@@ -466,6 +503,7 @@ export class SoumettreDossier {
   private readonly prmpEntiteService = inject(PrmpEntiteService);
   private readonly prmpService = inject(PrmpService);
   private readonly capmService = inject(CapmService);
+  private readonly typePieceService = inject(TypePieceJointeService);
   private readonly entiteContractService = inject(EntiteContractService);
   private readonly typeDossierService = inject(TypeDossierService);
   private readonly natureService = inject(NatureService);
@@ -531,6 +569,12 @@ export class SoumettreDossier {
 
   /** Référentiel CAPM (processus de marché), trié par `ordre` ASC. */
   readonly capms = signal<Capm[]>([]);
+  /** Types de pièces jointes attendues (référentiel, type PPM). */
+  readonly typesPiece = signal<TypePieceJointe[]>([]);
+  /** Fichiers sélectionnés par type de pièce (idTypePiece → File). */
+  readonly pieces = signal<Map<number, File>>(new Map());
+  /** Types de pièces obligatoires manquants à la création (affichage de l'erreur). */
+  readonly pieceErreurs = signal<Set<number>>(new Set());
   /** Ligne de marché (création) dont les processus prévisionnels sont en cours d'édition (null = modal fermé). */
   readonly datesCible = signal<FormGroup | null>(null);
   /** Copie de travail des processus du marché en édition (FormArray de { idCapm, dateDebut, dateFin }). */
@@ -554,6 +598,8 @@ export class SoumettreDossier {
     this.typeDossierService.list().subscribe((r) => this.typeDossiers.set(r));
     // Référentiel CAPM (processus), trié par ordre ASC — pour les selects de processus par marché.
     this.capmService.getAll().subscribe((rows) => this.capms.set([...rows].sort((a, b) => a.ordre - b.ordre)));
+    // Pièces jointes attendues pour un dossier PPM (référentiel, triées par ordre côté serveur).
+    this.typePieceService.getByTypeDossier('PPM').subscribe((rows) => this.typesPiece.set(rows));
     // Signataire = PRMP connectée (lecture seule) ; le serveur le génère aussi à la création.
     const refPrmp = this.auth.ref();
     if (refPrmp) {
@@ -866,7 +912,44 @@ export class SoumettreDossier {
     this.datesCible.set(null);
   }
 
-  // — Création du brouillon PPM (en-tête + marchés en un seul POST ; PK posées serveur) —
+  // — Pièces jointes du dossier (PPM) —
+  onPiece(idTypePiece: number, ev: Event): void {
+    const file = (ev.target as HTMLInputElement).files?.[0];
+    if (!file) {
+      return;
+    }
+    this.pieces.update((m) => new Map(m).set(idTypePiece, file));
+    this.pieceErreurs.update((s) => {
+      const n = new Set(s);
+      n.delete(idTypePiece);
+      return n;
+    });
+  }
+  retirerPiece(idTypePiece: number): void {
+    this.pieces.update((m) => {
+      const n = new Map(m);
+      n.delete(idTypePiece);
+      return n;
+    });
+  }
+  pieceNom(idTypePiece: number): string | undefined {
+    return this.pieces().get(idTypePiece)?.name;
+  }
+  pieceTaille(idTypePiece: number): string {
+    const f = this.pieces().get(idTypePiece);
+    if (!f) {
+      return '';
+    }
+    if (f.size < 1024) {
+      return f.size + ' o';
+    }
+    if (f.size < 1024 * 1024) {
+      return Math.round(f.size / 1024) + ' Ko';
+    }
+    return (f.size / (1024 * 1024)).toFixed(1) + ' Mo';
+  }
+
+  // — Création du dossier PPM (en-tête + marchés + pièces en un seul POST multipart ; PK posées serveur) —
   creerPpm(): void {
     if (this.ppmForm.invalid) {
       this.ppmForm.markAllAsTouched();
@@ -879,6 +962,14 @@ export class SoumettreDossier {
       this.toast.error('Veuillez saisir les dates prévisionnelles (au moins un processus) pour tous les marchés.');
       return;
     }
+    // Pièces obligatoires : toutes doivent être fournies (vérif. backend renforcée à la soumission).
+    const manquantes = this.typesPiece().filter((t) => t.obligatoire && !this.pieces().has(t.idTypePiece));
+    if (manquantes.length) {
+      this.pieceErreurs.set(new Set(manquantes.map((t) => t.idTypePiece)));
+      this.toast.error('Veuillez fournir toutes les pièces obligatoires.');
+      return;
+    }
+    this.pieceErreurs.set(new Set());
     this.formError.set(null);
     this.submitting.set(true);
     const marches: SaisieMarcheLigne[] = lignes.map((l) => ({
@@ -897,12 +988,15 @@ export class SoumettreDossier {
       })),
     }));
     this.saisie
-      .ppm({
-        idEntiteContract: v.idEntiteContract as number,
-        exercice: v.exercice,
-        dateSignature: v.dateSignature,
-        marches,
-      })
+      .ppmAvecPieces(
+        {
+          idEntiteContract: v.idEntiteContract as number,
+          exercice: v.exercice,
+          dateSignature: v.dateSignature,
+          marches,
+        },
+        this.pieces(),
+      )
       .subscribe({
         next: (d) => {
           // Référence PPM générée serveur (absente du DossierDto) : lue via le PPM rattaché pour l'afficher.

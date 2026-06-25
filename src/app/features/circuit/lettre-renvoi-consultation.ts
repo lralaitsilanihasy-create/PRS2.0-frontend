@@ -3,8 +3,8 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Dossier, LettreRenvoi } from '../../models';
-import { DossierService, LettreRenvoiService } from '../../services';
+import { Dossier, LettreRenvoi, PieceJointeDossier, TypePieceJointe } from '../../models';
+import { DossierService, LettreRenvoiService, PieceJointeDossierService, TypePieceJointeService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
 
 /**
@@ -72,6 +72,44 @@ import { StatutBadge } from '../../shared/circuit';
                         </button>
                       </div>
                     }
+
+                    @if (piecesUpload && l.statut === 'SIGNE') {
+                      <div class="lrc__pieces">
+                        <h3 class="lrc__pieces-title">Pièces initiales du dossier</h3>
+                        @for (p of piecesInitiales(); track p.idPiece) {
+                          <div class="lrc__piece">
+                            <span>📎 {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="telecharger(p)">Télécharger</button>
+                          </div>
+                        } @empty {
+                          <p class="cnm-muted">Aucune pièce initiale.</p>
+                        }
+
+                        <h3 class="lrc__pieces-title">Pièces ajoutées suite à cette lettre</h3>
+                        @for (p of piecesApres(l); track p.idPiece) {
+                          <div class="lrc__piece">
+                            <span>📎 {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                            <span class="cnm-badge cnm-badge--warning">Ajoutée après lettre</span>
+                            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="telecharger(p)">Télécharger</button>
+                          </div>
+                        } @empty {
+                          <p class="cnm-muted">Aucune pièce ajoutée après cette lettre.</p>
+                        }
+
+                        <div class="lrc__upload">
+                          <select class="cnm-select" [value]="uploadType() ?? ''" (change)="uploadType.set($any($event.target).value ? +$any($event.target).value : null)">
+                            <option value="">— Type de pièce —</option>
+                            @for (t of typesPour(l); track t.idTypePiece) {
+                              <option [value]="t.idTypePiece">{{ t.libellePiece }}</option>
+                            }
+                          </select>
+                          <input type="file" accept=".pdf,.jpeg,.jpg,.png" (change)="onUploadFile($event)" />
+                          <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" [disabled]="uploading() || uploadType() == null || !uploadFile()" (click)="ajouterPiece(l)">
+                            {{ uploading() ? 'Ajout…' : '+ Ajouter une pièce' }}
+                          </button>
+                        </div>
+                      </div>
+                    }
                   </td>
                 </tr>
               }
@@ -93,6 +131,10 @@ import { StatutBadge } from '../../shared/circuit';
     .lrc__dl dt { flex: 0 0 10rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
     .lrc__dl dd { margin: 0; }
     .lrc__corps { white-space: pre-wrap; }
+    .lrc__pieces { margin-top: var(--cnm-space-3); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-2); display: flex; flex-direction: column; gap: var(--cnm-space-1); }
+    .lrc__pieces-title { margin: var(--cnm-space-2) 0 0; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
+    .lrc__piece { display: flex; align-items: center; gap: var(--cnm-space-2); }
+    .lrc__upload { display: flex; align-items: center; gap: var(--cnm-space-2); flex-wrap: wrap; margin-top: var(--cnm-space-2); }
   `,
 })
 export class LettreRenvoiConsultation {
@@ -100,10 +142,14 @@ export class LettreRenvoiConsultation {
   private readonly service = inject(LettreRenvoiService);
   private readonly dossierService = inject(DossierService);
   private readonly toast = inject(ToastService);
+  private readonly pieceService = inject(PieceJointeDossierService);
+  private readonly typePieceService = inject(TypePieceJointeService);
 
   private readonly source = (this.route.snapshot.data['source'] as 'mes' | 'localite') ?? 'localite';
   /** CC / Président : autorise la signature des lettres SOUMIS. */
   readonly signable = (this.route.snapshot.data['signable'] as boolean) ?? false;
+  /** PRMP : autorise l'ajout de pièces après une lettre de renvoi signée. */
+  readonly piecesUpload = (this.route.snapshot.data['piecesUpload'] as boolean) ?? false;
   readonly titre = (this.route.snapshot.data['title'] as string) ?? 'Lettres de renvoi';
   readonly loading = signal(true);
   readonly lettres = signal<LettreRenvoi[]>([]);
@@ -111,17 +157,28 @@ export class LettreRenvoiConsultation {
   /** idLettre en cours de signature (désactive le bouton). */
   readonly signature = signal<number | null>(null);
   private readonly dossierRefs = signal<Map<number, string>>(new Map());
+  private readonly dossierTypes = signal<Map<number, string>>(new Map());
+  /** Pièces du dossier de la lettre ouverte (chargées au dépliage). */
+  readonly pieces = signal<PieceJointeDossier[]>([]);
+  /** Types de pièces (référentiel) pour le select d'ajout. */
+  readonly typesPiece = signal<TypePieceJointe[]>([]);
+  /** Saisie d'ajout de pièce (type + fichier). */
+  readonly uploadType = signal<number | null>(null);
+  readonly uploadFile = signal<File | null>(null);
+  readonly uploading = signal(false);
 
   constructor() {
     const param = this.route.snapshot.paramMap.get('idLettre');
     if (param) {
       this.ouvert.set(Number(param));
     }
-    this.dossierService
-      .list()
-      .subscribe((rows: Dossier[]) =>
-        this.dossierRefs.set(new Map(rows.map((d) => [d.idDossier, d.refeDossier ?? '']))),
-      );
+    this.dossierService.list().subscribe((rows: Dossier[]) => {
+      this.dossierRefs.set(new Map(rows.map((d) => [d.idDossier, d.refeDossier ?? ''])));
+      this.dossierTypes.set(new Map(rows.map((d) => [d.idDossier, d.idTypeDossier ?? ''])));
+    });
+    if (this.piecesUpload) {
+      this.typePieceService.list().subscribe((rows) => this.typesPiece.set(rows));
+    }
     const call = this.source === 'mes' ? this.service.getMesLettres() : this.service.getAll();
     call.subscribe({
       next: (rows) => {
@@ -133,7 +190,81 @@ export class LettreRenvoiConsultation {
   }
 
   basculer(l: LettreRenvoi): void {
+    const ouverture = this.ouvert() !== l.idLettre;
     this.ouvert.update((cur) => (cur === l.idLettre ? null : (l.idLettre ?? null)));
+    // À l'ouverture d'une lettre signée (PRMP) : charge les pièces du dossier pour les deux sections.
+    if (ouverture && this.piecesUpload && l.statut === 'SIGNE' && l.idDossier != null) {
+      this.uploadType.set(null);
+      this.uploadFile.set(null);
+      this.pieces.set([]);
+      this.pieceService.getByDossier(l.idDossier).subscribe((rows) => this.pieces.set(rows));
+    }
+  }
+
+  // — Pièces jointes (PRMP, après lettre signée) —
+  piecesInitiales(): PieceJointeDossier[] {
+    return this.pieces().filter((p) => !p.apresLettreRenvoi);
+  }
+  piecesApres(l: LettreRenvoi): PieceJointeDossier[] {
+    return this.pieces().filter((p) => p.apresLettreRenvoi && p.idLettre === l.idLettre);
+  }
+  /** Types de pièces attendus pour le type du dossier de la lettre. */
+  typesPour(l: LettreRenvoi): TypePieceJointe[] {
+    const type = l.idDossier != null ? this.dossierTypes().get(l.idDossier) : undefined;
+    return this.typesPiece().filter((t) => !t.idTypeDossier || t.idTypeDossier === type);
+  }
+  onUploadFile(ev: Event): void {
+    this.uploadFile.set((ev.target as HTMLInputElement).files?.[0] ?? null);
+  }
+  /** Téléverse une pièce après la lettre (apresLettreRenvoi=true côté serveur via idLettre). */
+  ajouterPiece(l: LettreRenvoi): void {
+    const type = this.uploadType();
+    const file = this.uploadFile();
+    if (l.idDossier == null || l.idLettre == null || type == null || !file) {
+      this.toast.error('Sélectionnez un type de pièce et un fichier.');
+      return;
+    }
+    const fd = new FormData();
+    fd.append(
+      'data',
+      new Blob([JSON.stringify({ idDossier: l.idDossier, idTypePiece: type, idLettre: l.idLettre })], {
+        type: 'application/json',
+      }),
+    );
+    fd.append('fichier', file);
+    this.uploading.set(true);
+    this.pieceService.upload(fd).subscribe({
+      next: () => {
+        this.toast.success('Pièce ajoutée.');
+        this.uploadType.set(null);
+        this.uploadFile.set(null);
+        this.uploading.set(false);
+        if (l.idDossier != null) {
+          this.pieceService.getByDossier(l.idDossier).subscribe((rows) => this.pieces.set(rows));
+        }
+      },
+      error: (e: ApiError) => {
+        this.uploading.set(false);
+        this.toast.error(e.message || "Erreur lors de l'ajout de la pièce.");
+      },
+    });
+  }
+  /** Télécharge le contenu d'une pièce (blob → téléchargement navigateur). */
+  telecharger(p: PieceJointeDossier): void {
+    if (p.idPiece == null) {
+      return;
+    }
+    this.pieceService.telecharger(p.idPiece).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = p.nomFichier || `piece-${p.idPiece}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (e: ApiError) => this.toast.error(e.message || 'Erreur lors du téléchargement.'),
+    });
   }
   /** Signe une lettre SOUMIS (CC/Président) → SIGNE ; met à jour la ligne en place. */
   signer(l: LettreRenvoi): void {

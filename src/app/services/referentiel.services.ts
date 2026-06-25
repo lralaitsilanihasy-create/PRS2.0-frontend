@@ -1,3 +1,4 @@
+import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -24,6 +25,7 @@ import {
   SuggestionModeRequest,
   SuggestionModeResponse,
   TypeDossier,
+  TypePieceJointe,
 } from '../models';
 
 /**
@@ -39,6 +41,19 @@ export class AvisService extends CrudService<Avis, string> {
 @Injectable({ providedIn: 'root' })
 export class CatCompteService extends CrudService<CatCompte, string> {
   protected readonly resource = 'cat-comptes';
+}
+
+/** Référentiel des types de pièces jointes attendues par type de dossier. */
+@Injectable({ providedIn: 'root' })
+export class TypePieceJointeService extends CrudService<TypePieceJointe> {
+  protected readonly resource = 'type-piece-jointes';
+
+  /** `GET /api/type-piece-jointes?typeDossier={id}` — types du dossier (triés par `ordre`). */
+  getByTypeDossier(idTypeDossier: string): Observable<TypePieceJointe[]> {
+    return this.http.get<TypePieceJointe[]>(this.baseUrl, {
+      params: new HttpParams().set('typeDossier', idTypeDossier),
+    });
+  }
 }
 
 @Injectable({ providedIn: 'root' })

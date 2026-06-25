@@ -145,6 +145,15 @@ export interface Capm {
   ordre: number;
 }
 
+/** Type de pièce jointe attendue par type de dossier (référentiel `t_type_piece_jointe`). */
+export interface TypePieceJointe {
+  idTypePiece: number;
+  libellePiece: string;
+  obligatoire: boolean;
+  idTypeDossier?: string;
+  ordre?: number;
+}
+
 /** Type de dossier. PK = idTypeDossier (string). */
 export interface TypeDossier {
   idTypeDossier: string;

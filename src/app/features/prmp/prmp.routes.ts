@@ -31,6 +31,6 @@ export const PRMP_ROUTES: Routes = [
   { path: 'retraits', component: PrmpRetraits },
   { path: 'calendrier', component: CrudPage, data: { crud: ECHEANCE_CONFIG } },
   // Lettres de renvoi reçues (lecture seule) ; `:idLettre` (lien de notification) déplie le détail.
-  { path: 'lettre-renvois', component: LettreRenvoiConsultation, data: { source: 'mes', title: 'Mes lettres de renvoi' } },
-  { path: 'lettre-renvois/:idLettre', component: LettreRenvoiConsultation, data: { source: 'mes', title: 'Mes lettres de renvoi' } },
+  { path: 'lettre-renvois', component: LettreRenvoiConsultation, data: { source: 'mes', piecesUpload: true, title: 'Mes lettres de renvoi' } },
+  { path: 'lettre-renvois/:idLettre', component: LettreRenvoiConsultation, data: { source: 'mes', piecesUpload: true, title: 'Mes lettres de renvoi' } },
 ];

@@ -63,6 +63,24 @@ export interface ProcessusMarche {
   dateFin: string; // yyyy-MM-dd
 }
 
+/**
+ * Pièce jointe réellement déposée sur un dossier (`t_piece_jointe_dossier`).
+ * `apresLettreRenvoi` distingue les pièces initiales (`false`) des pièces ajoutées après une
+ * lettre de renvoi (`true`, avec `idLettre`). Le contenu binaire n'est jamais exposé en JSON.
+ */
+export interface PieceJointeDossier {
+  idPiece?: number;
+  idDossier: number;
+  idTypePiece: number;
+  libellePiece?: string;
+  nomFichier?: string;
+  format?: string;
+  taille?: number;
+  dateUpload?: string;
+  apresLettreRenvoi?: boolean;
+  idLettre?: number;
+}
+
 /** Lot d'un marché. */
 export interface Lot {
   idLot: number;
