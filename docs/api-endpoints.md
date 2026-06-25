@@ -886,6 +886,88 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 
 ---
 
+## Types de pièces jointes (référentiel)
+**Ressource** `/api/type-piece-jointes` (table `t_type_piece_jointe`) — Référentiel des pièces jointes
+**attendues par type de dossier** : lecture pour tout utilisateur authentifié ; écriture réservée à
+`ADMINISTRATEUR`. Une pièce marquée `obligatoire` doit être présente **à la soumission** du dossier (voir Dossiers).
+
+**Champs `TypePieceJointeDto`**
+
+| Champ (JSON) | Type | Obligatoire | Contraintes |
+|---|---|---|---|
+| idTypePiece | integer | Non (PK auto, IDENTITY) | généré par le serveur ; ignoré au POST |
+| libellePiece | string | **Oui** (`@NotNull`) | max 200 |
+| obligatoire | boolean | **Oui** (`@NotNull`) | `true` ⇒ exigée à la soumission |
+| idTypeDossier | string | Non | max 10 — FK `t_type_dossier` (`PPM`, `DAO`, …) |
+| ordre | integer | Non | ordre d'affichage |
+
+**Endpoints**
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/type-piece-jointes | — | `TypePieceJointeDto[]` | 200 | Authentifié |
+| GET | /api/type-piece-jointes?typeDossier={id} | — | `TypePieceJointeDto[]` (du type, triés par `ordre`) | 200 | Authentifié |
+| GET | /api/type-piece-jointes/{id} | — | `TypePieceJointeDto` | 200, 404 | Authentifié |
+| POST | /api/type-piece-jointes | `TypePieceJointeDto` | `TypePieceJointeDto` | 201, 400, 403 | ADMINISTRATEUR |
+| PUT | /api/type-piece-jointes/{id} | `TypePieceJointeDto` | `TypePieceJointeDto` | 200, 400, 403, 404 | ADMINISTRATEUR |
+| DELETE | /api/type-piece-jointes/{id} | — | — | 204, 403, 404 | ADMINISTRATEUR |
+
+`{id}` = idTypePiece (integer).
+
+**Exemple — requête `POST`**
+```json
+{ "libellePiece": "Plan de passation des marchés", "obligatoire": true, "idTypeDossier": "PPM", "ordre": 1 }
+```
+
+---
+
+## Pièces jointes d'un dossier
+**Ressource** `/api/piece-jointe-dossiers` (table `t_piece_jointe_dossier`) — Fichiers réellement déposés
+sur un dossier. **Upload `multipart/form-data`** par la **`PRMP` propriétaire**. Format vérifié par
+**magic-bytes** (PDF/JPEG/PNG uniquement, sinon **400**) ; **pas de limite de taille**. Le champ
+`apresLettreRenvoi` **distingue les pièces initiales** (déposées à la création, `false`) **des pièces
+ajoutées après réception d'une lettre de renvoi** (`true`).
+
+**Champs `PieceJointeDossierDto`** *(le contenu binaire n'est jamais exposé en JSON)*
+
+| Champ (JSON) | Type | Obligatoire | Contraintes |
+|---|---|---|---|
+| idPiece | integer | Non (PK auto, IDENTITY) | généré par le serveur |
+| idDossier | integer | **Oui** (`@NotNull`) | FK `t_dossier` |
+| idTypePiece | integer | **Oui** (`@NotNull`) | FK `t_type_piece_jointe` |
+| libellePiece | string | Non (lecture seule) | jointure `t_type_piece_jointe` |
+| nomFichier | string | Non (lecture seule) | nom d'origine du fichier (max 255) |
+| format | string | Non (lecture seule) | `PDF` / `JPEG` / `PNG` (déterminé par magic-bytes) |
+| taille | integer (long) | Non (lecture seule) | octets |
+| dateUpload | date-heure | Non (lecture seule) | posée par le serveur |
+| apresLettreRenvoi | boolean | Non (lecture seule) | `false` = initiale ; `true` = après lettre de renvoi |
+| idLettre | integer | Non (lecture seule) | FK `t_lettre_renvoi` si `apresLettreRenvoi` |
+
+**Endpoints**
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/piece-jointe-dossiers?dossier={idDossier} | — | `PieceJointeDossierDto[]` | 200 | Authentifié |
+| GET | /api/piece-jointe-dossiers/{id} | — | `PieceJointeDossierDto` | 200, 404 | Authentifié |
+| GET | /api/piece-jointe-dossiers/{id}/contenu | — | fichier (octets) | 200, 404 | Authentifié |
+| POST | /api/piece-jointe-dossiers | `multipart/form-data` | `PieceJointeDossierDto` | 201, 400, 403, 404 | **PRMP** (propriétaire) |
+| DELETE | /api/piece-jointe-dossiers/{id} | — | — | 204, 403, 404 | **PRMP** (dossier `BROUILLON`) ou ADMINISTRATEUR |
+
+`{id}` = idPiece (integer).
+
+**Upload (`POST`, `multipart/form-data`)** — deux parts :
+- `data` : JSON `{ "idDossier": …, "idTypePiece": … }` (et `idLettre` pour un dépôt après lettre de renvoi) ;
+- `fichier` : le fichier **PDF/JPEG/PNG** (magic-bytes ; sinon **400**).
+
+**Règle `apresLettreRenvoi`** : si `idLettre` est fourni **et** le dossier est `SOUMIS`/`PRET_DISPATCH`, la pièce
+est enregistrée `apresLettreRenvoi=true` (avec `idLettre`) ; sinon c'est une **pièce initiale** (`false`).
+
+> **Pièces obligatoires à la soumission.** `POST /api/dossiers/{id}/soumettre` vérifie que toutes les pièces
+> `obligatoire` du type de dossier (référentiel ci-dessus) sont présentes. Sinon **400** :
+> `{ "erreurs": [ { "champ": "piecesJointes", "message": "La pièce '<libellé>' est obligatoire." } ] }`.
+
+---
+
 ## Saisies (façade de création)
 **Ressource** `/api/saisies` — Réservée au profil **`PRMP`**. « Saisir un PPM/DAO/MAOO » **EST** créer le
 dossier à soumettre : la façade crée le `t_dossier` (statut **`BROUILLON`**, propriété de la PRMP courante)
@@ -903,9 +985,16 @@ dossier/PPM (désormais réservée Admin).
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| POST | /api/saisies/ppm | `SaisiePpmRequest` | `DossierDto` (le dossier créé) | 201, 400, 403 | **PRMP** |
+| POST | /api/saisies/ppm | `SaisiePpmRequest` (JSON) | `DossierDto` (le dossier créé) | 201, 400, 403 | **PRMP** |
+| POST | /api/saisies/ppm | `multipart/form-data` (PPM **+ pièces jointes**) | `DossierDto` | 201, 400, 403 | **PRMP** |
 | POST | /api/saisies/dossier | `SaisieDossierRequest` | `DossierDto` | 201, 400, 403, 409 | **PRMP** |
 | PUT | /api/saisies/ppm/{idDossier} | `EditionPpmRequest` | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** |
+
+> **Saisie avec pièces jointes (multipart).** La variante `multipart/form-data` de `POST /api/saisies/ppm`
+> accepte une part `data` = JSON `SaisiePpmRequest` et des parts fichiers nommées **`piece_<idTypePiece>`**
+> (PDF/JPEG/PNG, magic-bytes). Chaque pièce est persistée avec `apresLettreRenvoi=false` (pièce initiale),
+> dans la **même transaction** que la saisie (un format invalide annule toute la saisie). Voir
+> *Pièces jointes d'un dossier*.
 
 **`SaisiePpmRequest`** — crée dossier (type PPM) + PPM + lignes de marché (mode **auto**) :
 
