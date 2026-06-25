@@ -1126,7 +1126,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | idLettre | number | — (réponse) | PK **auto-générée** (IDENTITY) |
 | idExamen | number | Oui | @NotNull (« L'examen est obligatoire. ») — FK `t_examen` (**non unique** : N lettres/examen) |
 | idDossier | number | — (réponse) | **lecture seule** (dérivé de l'examen) |
-| refLettre | string | — (réponse) | **générée serveur** : `<seq>/LR/<code_localite>/<année>` (ex. `00001/LR/CRM-ANT/2026`) |
+| refLettre | string | — (réponse) | **générée serveur**, dérivée de `refeDossier` (même séquence que le PV, `/LR/` au lieu de `/PV/`) : `<seq>/<type>/<code_localite>/LR/<année>` (ex. `00007/PPM/CRM-ANT/LR/2026`) ; `null` si `refeDossier` non structuré |
 | objetLettre | string | **Oui** | @NotNull (« L'objet de la lettre est obligatoire. »), max 500 |
 | corpsLettre | string | Non | corps libre de la lettre (TEXT, sans limite de taille) |
 | dateExamen | string (date) | — (réponse) | **lecture seule** (date d'examen) |
