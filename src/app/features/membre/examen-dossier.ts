@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, of, switchMap } from 'rxjs';
+import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
@@ -10,7 +10,6 @@ import {
   Dossier,
   Examen,
   ExamenDetail,
-  ExamenSoumissionRequest,
   LettreRenvoi,
   Marche,
   ObservationControle,
@@ -201,16 +200,19 @@ interface RowState {
               @if (mode() === 'create') {
                 <div class="exam__foot">
                   <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Annuler</button>
-                  <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="saving() || idDispatch() == null" (click)="ouvrirFormulaireLettre()">
-                    Créer une lettre de renvoi
+                  <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="saving() || idDispatch() == null" (click)="ouvrirModalLettre()">
+                    Envoyer une lettre de renvoi
                   </button>
-                  <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving() || idDispatch() == null" (click)="soumettreAvecType('PV')">
-                    {{ saving() ? 'Enregistrement…' : 'Créer un projet de PV' }}
+                  <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving() || idDispatch() == null" (click)="soumettre()">
+                    {{ saving() ? 'Enregistrement…' : "Soumettre l'examen" }}
                   </button>
                 </div>
               } @else if (mode() === 'edit') {
                 <div class="exam__foot">
                   <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Annuler</button>
+                  <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="saving() || idDispatch() == null" (click)="ouvrirModalLettre()">
+                    Envoyer une lettre de renvoi
+                  </button>
                   <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving() || idDispatch() == null" (click)="enregistrer()">
                     {{ saving() ? 'Enregistrement…' : "Modifier l'examen" }}
                   </button>
@@ -222,9 +224,9 @@ interface RowState {
       }
 
       @if (lettreModal()) {
-        <div class="exam-modal__overlay" (click)="annulerLettre()">
+        <div class="exam-modal__overlay" (click)="fermerLettre()">
           <div class="exam-modal cnm-card cnm-form" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-            <h2 class="exam-modal__title">Projet de lettre de renvoi</h2>
+            <h2 class="exam-modal__title">Lettre de renvoi</h2>
             <dl class="exam-modal__info">
               <div><dt>Référence dossier</dt><dd>{{ dossier()?.refeDossier || ('Dossier #' + idDossier) }}</dd></div>
               <div><dt>Date d'examen</dt><dd class="cnm-mono">{{ dateExamen() || '—' }}</dd></div>
@@ -232,7 +234,7 @@ interface RowState {
             </dl>
             <label class="cnm-field">
               <span class="cnm-field__label">Objet de la lettre *</span>
-              <textarea class="cnm-textarea" rows="3" maxlength="500" [value]="objetLettre()" (input)="objetLettre.set($any($event.target).value)"></textarea>
+              <input class="cnm-input" type="text" maxlength="500" [value]="objetLettre()" (input)="objetLettre.set($any($event.target).value)" />
               @if (lettreErr()) { <span class="cnm-field__hint exam__obs-err">{{ lettreErr() }}</span> }
             </label>
             <label class="cnm-field">
@@ -240,11 +242,34 @@ interface RowState {
               <textarea class="cnm-textarea exam-modal__corps" rows="6" placeholder="Corps de la lettre…" [value]="corpsLettre()" (input)="corpsLettre.set($any($event.target).value)"></textarea>
             </label>
             <div class="exam-modal__foot">
-              <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="saving()" (click)="annulerLettre()">Annuler</button>
-              <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving()" (click)="confirmerLettre()">
-                {{ saving() ? 'Création…' : 'Confirmer' }}
+              <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="saving()" (click)="fermerLettre()">Fermer</button>
+              <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving()" (click)="enregistrerBrouillonLettre()">
+                {{ saving() ? 'Enregistrement…' : 'Enregistrer brouillon' }}
               </button>
             </div>
+
+            @if (lettresExamen().length) {
+              <div class="exam-modal__list">
+                <h3 class="exam__sub">Lettres de cet examen</h3>
+                <table class="cnm-table">
+                  <thead><tr><th>Référence</th><th>Statut</th><th>Date</th><th></th></tr></thead>
+                  <tbody>
+                    @for (l of lettresExamen(); track l.idLettre) {
+                      <tr>
+                        <td class="cnm-mono">{{ l.refLettre || ('#' + l.idLettre) }}</td>
+                        <td><app-statut-badge [statut]="l.statut" /></td>
+                        <td class="cnm-mono">{{ l.dateLettre || '—' }}</td>
+                        <td>
+                          @if (l.statut === 'BROUILLON') {
+                            <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" [disabled]="saving()" (click)="soumettreLettre(l)">Soumettre</button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
           </div>
         </div>
       }
@@ -327,6 +352,8 @@ export class ExamenDossier {
   readonly objetLettre = signal('');
   readonly corpsLettre = signal('');
   readonly lettreErr = signal<string | null>(null);
+  /** Lettres de renvoi déjà créées pour l'examen courant (affichées dans le modal). */
+  readonly lettresExamen = signal<LettreRenvoi[]>([]);
   /** Date de la lettre = aujourd'hui (lecture seule). */
   readonly dateLettre = new Date().toISOString().slice(0, 10);
   private readonly rows = signal<Map<number, RowState>>(new Map());
@@ -494,8 +521,8 @@ export class ExamenDossier {
     this.modifier(idDispatch);
   }
 
-  /** Création — choix « Projet de PV » : avis global obligatoire, puis soumission de l'examen. */
-  soumettreAvecType(type: 'PV'): void {
+  /** Création — « Soumettre l'examen » : avis global obligatoire, crée l'examen puis le projet de PV. */
+  soumettre(): void {
     if (!this.dossier() || this.idDispatch() == null) return;
     if (!this.validerObservations()) return;
     if (!this.avis()) {
@@ -503,93 +530,129 @@ export class ExamenDossier {
       return;
     }
     this.formError.set(null);
-    this.creerExamenPuisSoumettre(
-      { typeResultat: type, idAvis: this.avis() as string },
-      '/membre/pv',
-      'Examen enregistré · projet de PV créé.',
-    );
+    this.saving.set(true);
+    this.ensureExamen()
+      .pipe(switchMap((idExamen) => this.examenService.soumettre(idExamen, { idAvis: this.avis() as string })))
+      .subscribe({
+        next: () => {
+          this.toast.success('Examen enregistré · projet de PV créé.');
+          void this.router.navigate(['/membre/pv']);
+        },
+        error: (e: ApiError) => {
+          this.saving.set(false);
+          this.toast.error(e.message || "Erreur lors de la soumission de l'examen.");
+        },
+      });
   }
 
-  /** Création — choix « Lettre de renvoi » : ouvre le formulaire (objet) après validation des observations. */
-  ouvrirFormulaireLettre(): void {
+  // — Lettre(s) de renvoi pendant l'examen (action séparée ; plusieurs lettres possibles) —
+  ouvrirModalLettre(): void {
     if (!this.dossier() || this.idDispatch() == null) return;
     if (!this.validerObservations()) return;
     this.lettreErr.set(null);
     this.objetLettre.set('');
     this.corpsLettre.set('');
+    this.chargerLettresExamen();
     this.lettreModal.set(true);
   }
-  annulerLettre(): void {
+  fermerLettre(): void {
     if (!this.saving()) {
       this.lettreModal.set(false);
     }
   }
-  confirmerLettre(): void {
+  /** Enregistre un brouillon de lettre (crée l'examen au besoin), puis recharge la liste de l'examen. */
+  enregistrerBrouillonLettre(): void {
     if (!this.objetLettre().trim()) {
       this.lettreErr.set("L'objet de la lettre est obligatoire.");
       return;
     }
     this.lettreErr.set(null);
-    this.creerExamenPuisSoumettre(
-      { typeResultat: 'LETTRE_RENVOI', objetLettre: this.objetLettre().trim() },
-      '/membre/lettre-renvois',
-      'Examen enregistré · lettre de renvoi créée.',
-    );
-  }
-
-  /** Crée l'examen + ses détails, puis `POST /api/examens/{id}/soumettre` avec le résultat choisi. */
-  private creerExamenPuisSoumettre(req: ExamenSoumissionRequest, route: string, succes: string): void {
-    const idDispatch = this.idDispatch();
-    if (idDispatch == null) return;
     this.saving.set(true);
-    const im = this.auth.ref() ?? '';
-    const idExamen = this.nextId(this.examens().map((e) => e.idExamen));
-    const examen: Examen = { idExamen, idDispatch, imCtrlMembre: im || undefined, dateExamen: this.dateExamen() };
-
-    this.examenService
-      .create(examen)
-      .pipe(
-        switchMap(() => {
-          const baseDetail = this.nextId(this.details().map((d) => d.idDetailExamen));
-          const detailCalls = this.points().map((p, i) =>
-            this.examenDetailService.create({
-              idDetailExamen: baseDetail + i,
-              idExamen,
-              idPtControle: p.idPointCtrl,
-              conforme: this.row(p.idPointCtrl).conforme,
-              observations: this.observationsBody(this.row(p.idPointCtrl)),
-            }),
-          );
-          return detailCalls.length ? forkJoin(detailCalls) : of([]);
-        }),
-        switchMap(() => this.examenService.soumettre(idExamen, req)),
-        // Lettre de renvoi : le corps n'est pas dans ExamenSoumissionRequest → PUT de la lettre créée.
-        switchMap((cree) => {
-          const corps = this.corpsLettre().trim();
-          if (req.typeResultat === 'LETTRE_RENVOI' && corps) {
-            const lettre = cree as LettreRenvoi;
-            if (lettre.idLettre != null) {
-              return this.lettreRenvoiService.modifier(lettre.idLettre, { ...lettre, corpsLettre: corps });
-            }
-          }
-          return of(cree);
-        }),
-      )
+    const corps = this.corpsLettre().trim();
+    const objet = this.objetLettre().trim();
+    this.ensureExamen()
+      .pipe(switchMap((idExamen) => this.lettreRenvoiService.creer({ idExamen, objetLettre: objet, corpsLettre: corps || undefined })))
       .subscribe({
         next: () => {
-          this.toast.success(succes);
-          this.lettreModal.set(false);
-          void this.router.navigate([route]);
+          this.toast.success('Brouillon de lettre de renvoi enregistré.');
+          this.objetLettre.set('');
+          this.corpsLettre.set('');
+          this.saving.set(false);
+          this.chargerLettresExamen();
         },
         error: (e: ApiError) => {
           this.saving.set(false);
-          if (req.typeResultat === 'LETTRE_RENVOI' && e.fieldErrors?.['objetLettre']) {
+          if (e.fieldErrors?.['objetLettre']) {
             this.lettreErr.set(e.fieldErrors['objetLettre']);
           } else {
-            this.toast.error(e.message || "Erreur lors de la soumission de l'examen.");
+            this.toast.error(e.message || "Erreur lors de l'enregistrement de la lettre.");
           }
         },
       });
+  }
+  /** Soumet une lettre de renvoi (BROUILLON → SOUMIS). */
+  soumettreLettre(l: LettreRenvoi): void {
+    if (l.idLettre == null) return;
+    this.saving.set(true);
+    this.lettreRenvoiService.soumettre(l.idLettre).subscribe({
+      next: () => {
+        this.toast.success('Lettre de renvoi soumise.');
+        this.saving.set(false);
+        this.chargerLettresExamen();
+      },
+      error: (e: ApiError) => {
+        this.saving.set(false);
+        this.toast.error(e.message || 'Erreur lors de la soumission de la lettre.');
+      },
+    });
+  }
+
+  /** Recharge les lettres de l'examen courant (vide tant que l'examen n'existe pas). */
+  private chargerLettresExamen(): void {
+    const idExamen = this.existingExamenId();
+    if (idExamen == null) {
+      this.lettresExamen.set([]);
+      return;
+    }
+    this.lettreRenvoiService
+      .getAll()
+      .subscribe((rows) => this.lettresExamen.set(rows.filter((l) => l.idExamen === idExamen)));
+  }
+
+  /** Garantit l'existence de l'examen (le crée + ses détails si besoin) et renvoie son id. */
+  private ensureExamen(): Observable<number> {
+    const existing = this.existingExamenId();
+    if (existing != null) {
+      return of(existing);
+    }
+    const im = this.auth.ref() ?? '';
+    const idExamen = this.nextId(this.examens().map((e) => e.idExamen));
+    const examen: Examen = {
+      idExamen,
+      idDispatch: this.idDispatch() as number,
+      imCtrlMembre: im || undefined,
+      dateExamen: this.dateExamen(),
+    };
+    return this.examenService.create(examen).pipe(
+      switchMap(() => {
+        const baseDetail = this.nextId(this.details().map((d) => d.idDetailExamen));
+        const detailCalls = this.points().map((p, i) =>
+          this.examenDetailService.create({
+            idDetailExamen: baseDetail + i,
+            idExamen,
+            idPtControle: p.idPointCtrl,
+            conforme: this.row(p.idPointCtrl).conforme,
+            observations: this.observationsBody(this.row(p.idPointCtrl)),
+          }),
+        );
+        return detailCalls.length ? forkJoin(detailCalls) : of([]);
+      }),
+      map(() => {
+        this.existingExamenId.set(idExamen);
+        this.examens.update((arr) => [...arr, examen]);
+        return idExamen;
+      }),
+    );
   }
 
   /** Mode édition (dossier EXAMINE) : met à jour l'examen + réconcilie les détails (sans recréer le PV). */

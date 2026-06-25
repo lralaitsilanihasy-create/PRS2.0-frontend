@@ -34,6 +34,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Soumettre un dossier', path: '/prmp/soumettre-dossier', icon: '📨' },
     { label: 'Dossiers à rectifier', path: '/prmp/a-rectifier', icon: '✏' },
     { label: 'Dossiers vérifiés', path: '/prmp/dossiers-verifies', icon: '✅' },
+    { label: 'Mes lettres de renvoi', path: '/prmp/lettre-renvois', icon: '✉' },
     { label: 'Demandes de retrait', path: '/prmp/retraits', icon: '↩' },
     { label: 'Calendrier', path: '/prmp/calendrier', icon: '📅' },
   ],
@@ -81,6 +82,12 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'En attente PRMP', path: '/verificateur/en-attente-prmp', icon: '⏳' },
     { label: 'Vérifiés / clôturés', path: '/verificateur/verifies', icon: '🗂' },
     { label: 'Messagerie', path: '/verificateur/messagerie', icon: '✉' },
+  ],
+  ASSISTANT_CONTROLEUR: [
+    { label: 'Tableau de bord', path: '/assistant/tableau-de-bord', icon: '▤' },
+    { label: 'Lettres de renvoi reçues', path: '/assistant/lettre-renvois', icon: '✉' },
+    { label: 'PV reçus', path: '/assistant/pv-examens', icon: '📄' },
+    { label: 'Messagerie', path: '/assistant/messagerie', icon: '✉' },
   ],
   CHARGE_PUBLICATION: [
     { label: 'Publications', path: '/publication/publications', icon: '🌐' },

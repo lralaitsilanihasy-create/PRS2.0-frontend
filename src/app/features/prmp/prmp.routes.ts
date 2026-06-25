@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { CrudPage } from '../../shared/crud/crud-page';
 import { DossiersClotures } from '../circuit/dossiers-clotures';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
+import { LettreRenvoiConsultation } from '../circuit/lettre-renvoi-consultation';
 import { ECHEANCE_CONFIG, PPM_CONFIG } from '../circuit/circuit-resources.config';
 import { DossiersARectifier } from './dossiers-a-rectifier';
 import { MesBrouillons } from './mes-brouillons';
@@ -29,4 +30,7 @@ export const PRMP_ROUTES: Routes = [
   { path: 'ppm-marches', component: MesPpmMarches },
   { path: 'retraits', component: PrmpRetraits },
   { path: 'calendrier', component: CrudPage, data: { crud: ECHEANCE_CONFIG } },
+  // Lettres de renvoi reçues (lecture seule) ; `:idLettre` (lien de notification) déplie le détail.
+  { path: 'lettre-renvois', component: LettreRenvoiConsultation, data: { source: 'mes', title: 'Mes lettres de renvoi' } },
+  { path: 'lettre-renvois/:idLettre', component: LettreRenvoiConsultation, data: { source: 'mes', title: 'Mes lettres de renvoi' } },
 ];

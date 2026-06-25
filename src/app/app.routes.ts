@@ -84,6 +84,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'assistant',
+        canActivate: [roleGuard],
+        data: { roles: ['ASSISTANT_CONTROLEUR'] },
+        loadChildren: () =>
+          import('./features/assistant/assistant.routes').then((m) => m.ASSISTANT_ROUTES),
+      },
+      {
         path: 'publication',
         canActivate: [roleGuard],
         data: { roles: ['CHARGE_PUBLICATION'] },

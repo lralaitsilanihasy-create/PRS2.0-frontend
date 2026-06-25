@@ -95,12 +95,9 @@ export interface ObservationControle {
   ordre: number;
 }
 
-/** Corps de `POST /api/examens/{id}/soumettre` : choix du résultat de l'examen (PV ou lettre de renvoi). */
+/** Corps de `POST /api/examens/{id}/soumettre` : produit toujours un projet de PV (`idAvis` = avis du PV). */
 export interface ExamenSoumissionRequest {
-  /** `PV` → crée le projet de PV (idAvis requis) ; `LETTRE_RENVOI` → crée la lettre (objetLettre requis). */
-  typeResultat: 'PV' | 'LETTRE_RENVOI';
-  idAvis?: string;
-  objetLettre?: string;
+  idAvis: string;
 }
 
 /**

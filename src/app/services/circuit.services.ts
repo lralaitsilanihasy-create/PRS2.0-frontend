@@ -137,13 +137,11 @@ export class ExamenService extends CrudService<Examen> {
   protected readonly resource = 'examens';
 
   /**
-   * `POST /api/examens/{id}/soumettre` (MEMBRE) — choix du résultat : `PV` (→ PvExamen) ou
-   * `LETTRE_RENVOI` (→ LettreRenvoi). `skipErrorToast` : l'écran affiche ses messages (400 objetLettre…).
+   * `POST /api/examens/{id}/soumettre` (MEMBRE) — produit toujours le **projet de PV** (`idAvis` requis).
+   * La lettre de renvoi est une action séparée (`/api/lettre-renvois`). `skipErrorToast` : messages dédiés.
    */
-  soumettre(id: number, body: ExamenSoumissionRequest): Observable<PvExamen | LettreRenvoi> {
-    return this.http.post<PvExamen | LettreRenvoi>(`${this.baseUrl}/${id}/soumettre`, body, {
-      context: skipErrorToast(),
-    });
+  soumettre(id: number, body: ExamenSoumissionRequest): Observable<PvExamen> {
+    return this.http.post<PvExamen>(`${this.baseUrl}/${id}/soumettre`, body, { context: skipErrorToast() });
   }
 }
 
@@ -157,11 +155,19 @@ export class ExamenDetailService extends CrudService<ExamenDetail> {
 export class LettreRenvoiService extends CrudService<LettreRenvoi> {
   protected readonly resource = 'lettre-renvois';
 
-  /** `GET /api/lettre-renvois` — liste filtrée (localité). */
+  /** `GET /api/lettre-renvois` — liste filtrée par profil/localité (MEMBRE→siennes, ASSISTANT→SIGNE localité…). */
   getAll(): Observable<LettreRenvoi[]> {
     return this.list();
   }
+  /** `GET /api/lettre-renvois/mes-lettres` (PRMP) — lettres SIGNE de ses dossiers (lecture seule). */
+  getMesLettres(): Observable<LettreRenvoi[]> {
+    return this.http.get<LettreRenvoi[]>(`${this.baseUrl}/mes-lettres`);
+  }
   // `getById(id)` : hérité de CrudService (`GET /api/lettre-renvois/{id}`).
+  /** `POST /api/lettre-renvois` (MEMBRE) — crée une lettre (BROUILLON) pendant l'examen. */
+  creer(dto: LettreRenvoi): Observable<LettreRenvoi> {
+    return this.create(dto);
+  }
   /** `PUT /api/lettre-renvois/{id}` (MEMBRE, brouillon). */
   modifier(id: number, dto: LettreRenvoi): Observable<LettreRenvoi> {
     return this.update(id, dto);
