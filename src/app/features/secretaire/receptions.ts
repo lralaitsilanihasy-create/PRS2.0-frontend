@@ -165,7 +165,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .rec__ref-actions { display: flex; align-items: center; gap: 0.5rem; }
     .rec__ref-close { background: transparent; border: 0; color: inherit; font-size: 1.25rem; line-height: 1; cursor: pointer; }
     .rec__info { color: var(--n-400); padding: 1.5rem; text-align: center; }
-    .rec__row-action { text-align: right; }
+    .rec__row-action { display: flex; gap: 0.5rem; align-items: center; }
     .rec__check { flex-direction: row; align-items: center; gap: 0.5rem; }
     .rec-info { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0 0 0.75rem; }
     .rec-info dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
