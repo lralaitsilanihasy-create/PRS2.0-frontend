@@ -18,6 +18,7 @@ import { StatutBadge } from '../../shared/circuit';
  * - DAO/MAOO : infos du dossier.
  * Contenu reconstruit via les listes scopées (GET /api/ppms, /api/marches) filtrées par
  * idDossier (1 appel chacun, pas de N+1) ; libellés via référentiels en cache. Aucune action.
+ * Mise en forme alignée sur le modal « Détail PPM » (DetailPpmModal).
  */
 @Component({
   selector: 'app-dossier-consultation',
@@ -32,38 +33,81 @@ import { StatutBadge } from '../../shared/circuit';
         [attr.role]="embedded() ? null : 'dialog'"
         [attr.aria-modal]="embedded() ? null : 'true'"
       >
-        <header class="dc__head">
-          <h2 class="dc__title">{{ dossier().refeDossier || ('Dossier #' + dossier().idDossier) }}</h2>
-          @if (!embedded()) {
-            <button type="button" class="dc__close" aria-label="Fermer" (click)="closed.emit()">&times;</button>
-          }
-        </header>
+        <!-- ── En-tête ── -->
+        <div class="dc-header">
+          <div class="dc-header-top">
+            <div class="dc-chips">
+              <span class="dc-chip dc-chip-type">{{ typeLabel() }}</span>
+              <app-statut-badge [statut]="dossier().statut" />
+            </div>
+            @if (!embedded()) {
+              <button type="button" class="dc-close" aria-label="Fermer" (click)="closed.emit()">✕</button>
+            }
+          </div>
 
-        <div class="dc__body">
-          <dl class="dc__info">
-            <div><dt>Type</dt><dd>{{ typeLabel() }}</dd></div>
-            <div><dt>Localité</dt><dd>{{ localiteLabel() }}</dd></div>
-            <div><dt>Date réf.</dt><dd class="cnm-mono">{{ dossier().dateRef || '—' }}</dd></div>
-            <div><dt>Statut</dt><dd><app-statut-badge [statut]="dossier().statut" /></dd></div>
-          </dl>
+          <div class="dc-title">{{ dossier().refeDossier || ('Dossier #' + dossier().idDossier) }}</div>
 
+          <div class="dc-subtitle">
+            <i aria-hidden="true">📍</i>
+            <span>{{ localiteLabel() }}</span>
+            <span class="dc-sep">·</span>
+            <i aria-hidden="true">📅</i>
+            <span>{{ dossier().dateRef || '—' }}</span>
+          </div>
+
+          <div class="dc-meta">
+            <div class="dc-meta-row">
+              <span class="dc-meta-label">Type</span>
+              <span class="dc-meta-value">{{ typeLabel() }}</span>
+            </div>
+            <div class="dc-meta-row">
+              <span class="dc-meta-label">Localité</span>
+              <span class="dc-meta-value">{{ localiteLabel() }}</span>
+            </div>
+            <div class="dc-meta-row">
+              <span class="dc-meta-label">Date réf.</span>
+              <span class="dc-meta-value">{{ dossier().dateRef || '—' }}</span>
+            </div>
+            @if (ppm(); as p) {
+              <div class="dc-meta-row">
+                <span class="dc-meta-label">Référence</span>
+                <span class="dc-meta-value">{{ p.reference || '—' }}</span>
+              </div>
+              <div class="dc-meta-row">
+                <span class="dc-meta-label">Exercice</span>
+                <span class="dc-meta-value">{{ p.exercice }}</span>
+              </div>
+              <div class="dc-meta-row">
+                <span class="dc-meta-label">Signataire</span>
+                <span class="dc-meta-value">{{ p.signataire || '—' }}</span>
+              </div>
+              <div class="dc-meta-row">
+                <span class="dc-meta-label">Date signature</span>
+                <span class="dc-meta-value">{{ p.dateSignature || '—' }}</span>
+              </div>
+              <div class="dc-meta-row">
+                <span class="dc-meta-label">Libellé</span>
+                <span class="dc-meta-value" [class.dc-meta-empty]="!p.libelle">{{ p.libelle || 'Non renseigné' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- ── Corps ── -->
+        <div class="dc-body">
           @if (estPpm()) {
             @if (loadingContenu()) {
-              <p class="text-muted">Chargement du contenu…</p>
+              <div class="spinner-wrap"><div class="spinner"></div></div>
             } @else {
-              @if (ppm(); as p) {
-                <h3 class="dc__sub">PPM</h3>
-                <dl class="dc__info">
-                  <div><dt>Référence</dt><dd>{{ p.reference || '—' }}</dd></div>
-                  <div><dt>Exercice</dt><dd>{{ p.exercice }}</dd></div>
-                  <div><dt>Signataire</dt><dd>{{ p.signataire || '—' }}</dd></div>
-                  <div><dt>Date signature</dt><dd>{{ p.dateSignature || '—' }}</dd></div>
-                  <div><dt>Libellé</dt><dd>{{ p.libelle || '—' }}</dd></div>
-                </dl>
-              }
+              <div class="dc-section">
+                <div class="dc-section-head">
+                  <div class="section-block-title">
+                    <div class="section-icon">🏛</div>
+                    <span class="section-label">Lignes de marché</span>
+                    <span class="section-count">{{ marches().length }} marché(s)</span>
+                  </div>
+                </div>
 
-              <div class="dc__marches">
-                <h3 class="dc__sub">Lignes de marché</h3>
                 @if (marches().length) {
                   <div class="table-card">
                     <table>
@@ -76,42 +120,101 @@ import { StatutBadge } from '../../shared/circuit';
                             <td>{{ m.designationMarche || '—' }}</td>
                             <td class="td-montant">{{ montant(m.montEstim) }}</td>
                             <td>{{ modeLabel(m.idMode) }}</td>
-                            <td>{{ m.statut || '—' }}</td>
+                            <td>
+                              <span class="badge badge-dot"
+                                [class.badge-prevu]="m.statut === 'PREVU'"
+                                [class.badge-cours]="m.statut === 'EN_COURS'"
+                                [class.badge-cloture]="m.statut === 'CLOTURE'">
+                                {{ m.statut || '—' }}
+                              </span>
+                            </td>
                           </tr>
                         }
                       </tbody>
                     </table>
                   </div>
                 } @else {
-                  <p class="text-muted">Aucune ligne de marché.</p>
+                  <p class="text-muted dc-empty">Aucune ligne de marché.</p>
                 }
               </div>
             }
           }
         </div>
 
+        <!-- ── Pied ── -->
         @if (!embedded()) {
-          <footer class="dc__foot">
-            <button type="button" class="btn btn-outline" (click)="closed.emit()">Fermer</button>
+          <footer class="dc-foot">
+            @if (estPpm()) {
+              <div class="dc-foot-info"><strong>{{ marches().length }}</strong> marché(s)</div>
+            } @else {
+              <span></span>
+            }
+            <button type="button" class="btn btn-ghost" (click)="closed.emit()">Fermer</button>
           </footer>
         }
       </div>
     </div>
   `,
   styles: `
-    .dc { width: 100%; max-width: 44rem; max-height: 85vh; overflow: auto; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-2xl); box-shadow: var(--shadow-xl); }
-    .dc--embedded { max-width: none; max-height: none; overflow: visible; box-shadow: none; border: 0; border-radius: 0; }
-    .dc__head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--c-100); }
-    .dc__title { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
-    .dc__close { background: transparent; border: 0; color: var(--n-500); font-size: 1.5rem; line-height: 1; cursor: pointer; }
-    .dc__close:hover { color: var(--n-800); }
-    .dc__body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-    .dc__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
-    .dc__marches { display: flex; flex-direction: column; gap: 0.5rem; }
-    .dc__info { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0; }
-    .dc__info dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
-    .dc__info dd { margin: 2px 0 0; color: var(--n-700); font-weight: 500; }
-    .dc__foot { display: flex; justify-content: flex-end; padding: 1rem 1.5rem; border-top: 1px solid var(--c-100); }
+    .dc {
+      width: 100%;
+      max-width: 56rem;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 0 0 0.5px var(--p-200), var(--shadow-xl);
+    }
+    .dc--embedded {
+      max-width: none;
+      max-height: none;
+      overflow: visible;
+      box-shadow: none;
+      border-radius: 0;
+    }
+
+    /* En-tête */
+    .dc-header { padding: 18px 24px 16px; border-bottom: 0.5px solid var(--n-200); flex-shrink: 0; }
+    .dc-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 0.75rem; }
+    .dc-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .dc-chip { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 2px 9px; border-radius: var(--radius-full); }
+    .dc-chip-type { background: var(--p-50); color: var(--p-600); }
+    .dc-close {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: var(--n-100); border: 0.5px solid var(--n-200); color: var(--n-400);
+      font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-base); transition: var(--transition); flex-shrink: 0;
+    }
+    .dc-close:hover { background: var(--n-200); color: var(--n-800); }
+    .dc-title { font-size: 20px; font-weight: 700; color: var(--n-800); letter-spacing: -.025em; line-height: 1.1; margin-bottom: 6px; }
+    .dc-subtitle { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--n-400); margin-bottom: 14px; }
+    .dc-subtitle i { font-size: 12px; font-style: normal; }
+    .dc-sep { opacity: .4; }
+    .dc-meta { background: var(--n-50); border: 0.5px solid var(--n-200); border-radius: 10px; overflow: hidden; }
+    .dc-meta-row { display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-bottom: 0.5px solid var(--n-200); }
+    .dc-meta-row:last-child { border-bottom: none; }
+    .dc-meta-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); width: 110px; flex-shrink: 0; }
+    .dc-meta-value { font-size: 12.5px; font-weight: 600; color: var(--n-800); }
+    .dc-meta-empty { color: var(--n-300); font-style: italic; font-weight: 400; }
+
+    /* Corps / sections */
+    .dc-body { overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--p-200) transparent; }
+    .dc-section { padding: 16px 24px; }
+    .dc-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 1rem; }
+    .dc-empty { margin: 0; }
+
+    /* Badges statut (alignés sur le modal PPM) */
+    .badge.badge-prevu { background: var(--info-bg); color: var(--info-text); }
+    .badge.badge-cours { background: var(--success-bg); color: var(--success-text); }
+    .badge.badge-cloture { background: var(--n-100); color: var(--n-500); }
+
+    /* Pied */
+    .dc-foot { border-top: 0.5px solid var(--n-200); padding: 11px 24px; display: flex; align-items: center; justify-content: space-between; background: var(--p-50); flex-shrink: 0; }
+    .dc-foot-info { font-size: 11.5px; color: var(--n-400); }
+    .dc-foot-info strong { color: var(--p-600); font-weight: 600; }
+
     .table-card td { white-space: normal; }
   `,
 })
