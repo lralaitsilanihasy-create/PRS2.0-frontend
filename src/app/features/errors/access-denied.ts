@@ -10,7 +10,7 @@ import { RouterLink } from '@angular/router';
     <section class="access-denied">
       <h1>Accès refusé</h1>
       <p>Votre profil ne vous autorise pas à accéder à cette page.</p>
-      <a routerLink="/">Retour à l'accueil</a>
+      <a class="btn btn-primary" routerLink="/">Retour à l'accueil</a>
     </section>
   `,
   styles: `
@@ -18,10 +18,16 @@ import { RouterLink } from '@angular/router';
       max-width: 28rem;
       margin: 4rem auto;
       text-align: center;
-      color: var(--cnm-text-2);
+      color: var(--n-500);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
     }
     h1 {
-      color: var(--cnm-danger-fg);
+      color: var(--danger-text);
+      font-size: var(--text-xl);
+      font-weight: 800;
     }
   `,
 })

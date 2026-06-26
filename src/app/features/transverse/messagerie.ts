@@ -16,36 +16,36 @@ import { MessageService } from '../../services';
   imports: [ReactiveFormsModule],
   template: `
     <section class="msg">
-      <header class="msg__header">
-        <h1 class="msg__title">Messagerie</h1>
-        <button type="button" class="cnm-btn cnm-btn--primary" (click)="toggleCompose()">
+      <header class="page-header">
+        <h1 class="page-title">Messagerie</h1>
+        <button type="button" class="btn btn-primary" (click)="toggleCompose()">
           {{ composeOpen() ? 'Fermer' : '✉ Nouveau message' }}
         </button>
       </header>
 
       @if (composeOpen()) {
-        <form class="msg__compose" [formGroup]="form" (ngSubmit)="envoyer()" novalidate>
-          <label class="field">
-            <span class="field__label">Destinataire (matricule) *</span>
-            <input type="text" formControlName="destinataireIm" />
-            @if (fieldErr('destinataireIm')) { <span class="cnm-field__hint">{{ fieldErr('destinataireIm') }}</span> }
-          </label>
-          <label class="field">
-            <span class="field__label">Sujet</span>
-            <input type="text" formControlName="sujet" />
-            @if (fieldErr('sujet')) { <span class="cnm-field__hint">{{ fieldErr('sujet') }}</span> }
-          </label>
-          <label class="field">
-            <span class="field__label">Message</span>
-            <textarea rows="3" formControlName="corps"></textarea>
-            @if (fieldErr('corps')) { <span class="cnm-field__hint">{{ fieldErr('corps') }}</span> }
-          </label>
-          <label class="field">
-            <span class="field__label">Dossier lié (facultatif)</span>
-            <input type="number" formControlName="idDossier" />
-          </label>
+        <form class="card msg__compose" [formGroup]="form" (ngSubmit)="envoyer()" novalidate>
+          <div class="form-group">
+            <label class="form-label required">Destinataire (matricule)</label>
+            <input class="form-control" type="text" formControlName="destinataireIm" />
+            @if (fieldErr('destinataireIm')) { <span class="form-error">{{ fieldErr('destinataireIm') }}</span> }
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sujet</label>
+            <input class="form-control" type="text" formControlName="sujet" />
+            @if (fieldErr('sujet')) { <span class="form-error">{{ fieldErr('sujet') }}</span> }
+          </div>
+          <div class="form-group">
+            <label class="form-label">Message</label>
+            <textarea class="form-control" rows="3" formControlName="corps"></textarea>
+            @if (fieldErr('corps')) { <span class="form-error">{{ fieldErr('corps') }}</span> }
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dossier lié (facultatif)</label>
+            <input class="form-control" type="number" formControlName="idDossier" />
+          </div>
           <div class="msg__compose-actions">
-            <button type="submit" class="cnm-btn cnm-btn--primary">Envoyer</button>
+            <button type="submit" class="btn btn-primary">Envoyer</button>
           </div>
         </form>
       }
@@ -87,7 +87,7 @@ import { MessageService } from '../../services';
                 <p class="msg-item__corps">{{ m.corps }}</p>
               }
               @if (tab() === 'recus' && !m.lu) {
-                <button type="button" class="cnm-btn cnm-btn--ghost" (click)="marquerLu(m)">
+                <button type="button" class="btn btn-secondary btn-sm" (click)="marquerLu(m)">
                   Marquer comme lu
                 </button>
               }
@@ -100,32 +100,19 @@ import { MessageService } from '../../services';
     </section>
   `,
   styles: `
-    .msg__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-    .msg__title {
-      margin: 0;
-      font-size: 1.35rem;
-      color: var(--cnm-text);
-    }
     .msg__info {
-      color: var(--cnm-text-2);
+      color: var(--n-500);
       padding: 0.5rem 0;
     }
     .msg__compose {
-      background: var(--cnm-surface);
-      border: 1px solid var(--cnm-border);
-      border-radius: 0.5rem;
-      padding: 1rem;
+      padding: 1.25rem;
       margin-bottom: 1rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.5rem;
       max-width: 32rem;
     }
+    .msg__compose .form-group { margin-bottom: 0; }
     .msg__compose-actions {
       display: flex;
       justify-content: flex-end;
@@ -137,16 +124,16 @@ import { MessageService } from '../../services';
     }
     .msg__tab {
       border: 0;
-      background: var(--cnm-surface-2);
-      color: var(--cnm-text-2);
+      background: var(--n-100);
+      color: var(--n-500);
       padding: 0.4rem 1rem;
-      border-radius: 0.375rem;
+      border-radius: var(--radius-md);
       cursor: pointer;
       font-weight: 600;
-      font-size: 0.85rem;
+      font-size: var(--text-sm);
     }
     .msg__tab--active {
-      background: var(--cnm-brand);
+      background: linear-gradient(135deg, var(--c-600), var(--c-700));
       color: #fff;
     }
     .msg__list {
@@ -158,65 +145,34 @@ import { MessageService } from '../../services';
       gap: 0.5rem;
     }
     .msg-item {
-      background: var(--cnm-surface);
-      border: 1px solid var(--cnm-border);
-      border-radius: 0.5rem;
+      background: #fff;
+      border: 1px solid var(--c-100);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
       padding: 0.75rem 1rem;
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
+      align-items: flex-start;
     }
     .msg-item--unread {
-      border-left: 3px solid var(--cnm-brand);
+      border-left: 3px solid var(--c-600);
     }
     .msg-item__head {
       display: flex;
       justify-content: space-between;
-      font-size: 0.78rem;
-      color: var(--cnm-text-2);
+      width: 100%;
+      font-size: var(--text-sm);
+      color: var(--n-500);
     }
     .msg-item__who {
       font-weight: 600;
-      color: var(--cnm-brand);
+      color: var(--c-700);
     }
     .msg-item__corps {
       margin: 0;
-      font-size: 0.85rem;
-      color: var(--cnm-text-2);
-    }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-    .field__label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--cnm-text-2);
-    }
-    .field input,
-    .field textarea {
-      border: 1px solid var(--cnm-border-strong);
-      border-radius: 0.375rem;
-      padding: 0.45rem 0.6rem;
-      font: inherit;
-    }
-    .btn {
-      border: 0;
-      border-radius: 0.375rem;
-      padding: 0.4rem 0.75rem;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      align-self: flex-start;
-    }
-    .btn--primary {
-      background: var(--cnm-brand);
-      color: #fff;
-    }
-    .btn--ghost {
-      background: var(--cnm-surface-2);
-      color: var(--cnm-text-2);
+      font-size: var(--text-sm);
+      color: var(--n-600);
     }
   `,
 })

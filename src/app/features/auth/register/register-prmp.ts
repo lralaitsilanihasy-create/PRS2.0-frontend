@@ -69,13 +69,13 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
 
         @if (success()) {
           <div class="register-card__success" role="status">
-            <span class="cnm-badge cnm-badge--warning">En attente de validation</span>
+            <span class="badge badge-warning">En attente de validation</span>
             <p>{{ successMessage() }}</p>
             <p class="cnm-muted">
               Votre compte ne sera utilisable qu'une fois <strong>validé par l'Administrateur</strong> :
               la connexion reste refusée jusque-là.
             </p>
-            <a class="cnm-btn cnm-btn--primary register-card__back" routerLink="/login">
+            <a class="btn btn-primary register-card__back" routerLink="/login">
               Retour à la connexion
             </a>
           </div>
@@ -131,8 +131,8 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                         @if (photoPreview(); as src) { <img class="reg-photo__img" [src]="src" alt="Aperçu de la photo" /> }
                         <div class="reg-photo__meta">
                           <span class="cnm-field__hint cnm-muted">{{ f.name }}</span>
-                          <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="reprendrePhoto()">Reprendre</button>
-                          <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="clearPhoto()">Retirer</button>
+                          <button type="button" class="btn btn-secondary btn-sm" (click)="reprendrePhoto()">Reprendre</button>
+                          <button type="button" class="btn btn-danger btn-sm" (click)="clearPhoto()">Retirer</button>
                         </div>
                       </div>
                     } @else if (cameraState() === 'live') {
@@ -140,7 +140,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                         <video #cam class="reg-photo__video" autoplay playsinline muted></video>
                         <div class="reg-photo__actions">
                           <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" (click)="capture()">Capturer</button>
-                          <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="stopCamera()">Annuler</button>
+                          <button type="button" class="btn btn-secondary btn-sm" (click)="stopCamera()">Annuler</button>
                         </div>
                       </div>
                     } @else {
@@ -148,7 +148,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                         <input class="cnm-input" type="file" accept="image/png,image/jpeg" (change)="onFile('photo', $event)" />
                         <button
                           type="button"
-                          class="cnm-btn cnm-btn--ghost cnm-btn--sm"
+                          class="btn btn-secondary btn-sm"
                           (click)="startCamera()"
                           [disabled]="cameraState() === 'starting'"
                         >
@@ -165,7 +165,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                 <section class="reg-section reg-entites">
                   <div class="reg-section__head">
                     <h2 class="reg-section__title">Entités</h2>
-                    <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="addDecl()">+ Ajouter</button>
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="addDecl()">+ Ajouter</button>
                   </div>
                   <div class="reg-entites__list">
                     @for (d of declarations(); track $index; let i = $index) {
@@ -176,7 +176,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                             <option value="proposee">Entité non listée (à proposer)</option>
                           </select>
                           @if (declarations().length > 1) {
-                            <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="removeDecl(i)">Retirer</button>
+                            <button type="button" class="btn btn-danger btn-sm" (click)="removeDecl(i)">Retirer</button>
                           }
                         </div>
 
@@ -226,7 +226,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
             </div>
 
             <div class="reg-footer">
-              <button type="submit" class="cnm-btn cnm-btn--primary register-card__submit" [disabled]="submitting()">
+              <button type="submit" class="btn btn-primary register-card__submit" [disabled]="submitting()">
                 {{ submitting() ? 'Envoi…' : "S'inscrire" }}
               </button>
               <a class="register-card__login-link" routerLink="/login">Déjà un compte ? Se connecter</a>

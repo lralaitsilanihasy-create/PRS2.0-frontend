@@ -7,6 +7,9 @@
   --login-muted: #6b7280;
   --login-border: #e3e7ef;
   --login-field-bg: #f4f6fb;
+  /* Aligne l'identité du login sur le design system (bleu), localement. */
+  --cnm-brand: var(--c-600);
+  --cnm-brand-gradient: linear-gradient(135deg, var(--c-800) 0%, var(--c-700) 45%, var(--c-600) 100%);
 }
 
 /* 1. Page pleine hauteur, fond de marque + motif « digitalisation », contenu centré */
