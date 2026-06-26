@@ -32,177 +32,140 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   template: `
-    <section class="rd">
-      <header class="rd__header">
-        <span class="cnm-section-label">Domaine PRMP</span>
-        <h1 class="rd__title">Rectifier le dossier</h1>
+    <section>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine PRMP</div>
+          <h1 class="page-title">Rectifier le dossier</h1>
+        </div>
       </header>
 
       @if (loading()) {
-        <p class="cnm-muted">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else if (ppm(); as p) {
-        <div class="cnm-card rd__note">
+        <div class="alert alert-info">
           Corrigez le PPM concerné par les observations du vérificateur, puis enregistrez. Le dossier
           reste « à rectifier » jusqu'à la resoumission.
         </div>
 
         <!-- Identité figée (lecture seule, non envoyée) -->
-        <div class="cnm-card rd__frozen">
-          <span class="rd__frozen-item"><span class="rd__k">Dossier</span> <span class="cnm-mono">#{{ p.idDossier }}</span></span>
-          <span class="rd__frozen-item"><span class="rd__k">PRMP</span> <span class="cnm-mono">{{ p.idPrmp || '—' }}</span></span>
-          <span class="rd__frozen-item"><span class="rd__k">Localité</span> <span class="cnm-mono">{{ p.idLocalite || '—' }}</span></span>
-          <span class="rd__frozen-hint cnm-muted">Champs figés côté backend — non modifiables.</span>
+        <div class="card rd-frozen">
+          <span class="rd-frozen__item"><span class="rd-frozen__k">Dossier</span> <span class="fw-semibold">#{{ p.idDossier }}</span></span>
+          <span class="rd-frozen__item"><span class="rd-frozen__k">PRMP</span> <span class="fw-semibold">{{ p.idPrmp || '—' }}</span></span>
+          <span class="rd-frozen__item"><span class="rd-frozen__k">Localité</span> <span class="fw-semibold">{{ p.idLocalite || '—' }}</span></span>
+          <span class="rd-frozen__hint text-muted">Champs figés côté backend — non modifiables.</span>
         </div>
 
         <!-- En-tête PPM -->
-        <form class="cnm-card rd__form cnm-form" [formGroup]="headerForm">
-          <h2 class="rd__section">En-tête du PPM</h2>
-          <div class="rd__grid">
-            <label class="cnm-field">
-              <span class="cnm-field__label">Exercice *</span>
-              <input class="cnm-input" type="number" formControlName="exercice" />
-            </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Référence *</span>
-              <input class="cnm-input" formControlName="reference" maxlength="100" />
-            </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Signataire *</span>
-              <input class="cnm-input" formControlName="signataire" maxlength="50" />
-            </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Date de signature *</span>
-              <input class="cnm-input" type="date" formControlName="dateSignature" />
-            </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Libellé</span>
-              <input class="cnm-input" formControlName="libelle" maxlength="200" />
-            </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">N° de mise à jour</span>
-              <input class="cnm-input" type="number" formControlName="numMaj" />
-            </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Vu</span>
-              <input class="cnm-input" formControlName="vu" maxlength="100" />
-            </label>
-            <label class="cnm-field rd__col-full">
-              <span class="cnm-field__label">Motif de mise à jour</span>
-              <textarea class="cnm-textarea" rows="2" formControlName="motifMaj" maxlength="500"></textarea>
-            </label>
+        <form class="card rd-form" [formGroup]="headerForm">
+          <h2 class="rd-section">En-tête du PPM</h2>
+          <div class="rd-grid">
+            <div class="form-group"><label class="form-label required">Exercice</label><input class="form-control" type="number" formControlName="exercice" /></div>
+            <div class="form-group"><label class="form-label required">Référence</label><input class="form-control" formControlName="reference" maxlength="100" /></div>
+            <div class="form-group"><label class="form-label required">Signataire</label><input class="form-control" formControlName="signataire" maxlength="50" /></div>
+            <div class="form-group"><label class="form-label required">Date de signature</label><input class="form-control" type="date" formControlName="dateSignature" /></div>
+            <div class="form-group"><label class="form-label">Libellé</label><input class="form-control" formControlName="libelle" maxlength="200" /></div>
+            <div class="form-group"><label class="form-label">N° de mise à jour</label><input class="form-control" type="number" formControlName="numMaj" /></div>
+            <div class="form-group"><label class="form-label">Vu</label><input class="form-control" formControlName="vu" maxlength="100" /></div>
+            <div class="form-group rd-col-full"><label class="form-label">Motif de mise à jour</label><textarea class="form-control" rows="2" formControlName="motifMaj" maxlength="500"></textarea></div>
           </div>
         </form>
 
         <!-- Lignes de marché -->
-        <div class="cnm-card rd__form">
-          <h2 class="rd__section">Lignes de marché</h2>
+        <div class="card rd-form">
+          <h2 class="rd-section">Lignes de marché</h2>
           @if (marcheControls().length) {
             @for (g of marcheControls(); track g.get('idDetail')!.value) {
-              <div class="rd__marche cnm-form" [formGroup]="g">
-                <div class="rd__marche-head">
-                  <span class="cnm-mono">Marché #{{ g.get('idDetail')!.value }}</span>
-                  <span class="cnm-muted rd__mode">Mode : {{ modeAffiche(g) }}</span>
+              <div class="rd-marche" [formGroup]="g">
+                <div class="rd-marche__head">
+                  <span class="fw-semibold">Marché #{{ g.get('idDetail')!.value }}</span>
+                  <span class="text-muted rd-mode">Mode : {{ modeAffiche(g) }}</span>
                 </div>
-                <div class="rd__grid">
-                  <label class="cnm-field rd__col-full">
-                    <span class="cnm-field__label">Désignation</span>
-                    <input class="cnm-input" formControlName="designationMarche" maxlength="500" />
-                  </label>
-                  <label class="cnm-field">
-                    <span class="cnm-field__label">Montant estimé</span>
-                    <input class="cnm-input" type="number" formControlName="montEstim" />
-                  </label>
-                  <label class="cnm-field">
-                    <span class="cnm-field__label">Compte</span>
-                    <select class="cnm-select" formControlName="numCompte">
+                <div class="rd-grid">
+                  <div class="form-group rd-col-full"><label class="form-label">Désignation</label><input class="form-control" formControlName="designationMarche" maxlength="500" /></div>
+                  <div class="form-group"><label class="form-label">Montant estimé</label><input class="form-control" type="number" formControlName="montEstim" /></div>
+                  <div class="form-group">
+                    <label class="form-label">Compte</label>
+                    <select class="form-control" formControlName="numCompte">
                       <option value="">—</option>
                       @for (c of comptes(); track c.numCompte) {
                         <option [value]="c.numCompte">{{ c.numCompte }} · {{ c.libelle || '' }}</option>
                       }
                     </select>
-                  </label>
-                  <label class="cnm-field">
-                    <span class="cnm-field__label">Financement</span>
-                    <input class="cnm-input" formControlName="financement" maxlength="20" />
-                  </label>
-                  <label class="cnm-field">
-                    <span class="cnm-field__label">Statut</span>
-                    <input class="cnm-input" formControlName="statut" maxlength="20" />
-                  </label>
-                  <label class="cnm-field">
-                    <span class="cnm-field__label">Situation</span>
-                    <select class="cnm-select" formControlName="idSituation">
+                  </div>
+                  <div class="form-group"><label class="form-label">Financement</label><input class="form-control" formControlName="financement" maxlength="20" /></div>
+                  <div class="form-group"><label class="form-label">Statut</label><input class="form-control" formControlName="statut" maxlength="20" /></div>
+                  <div class="form-group">
+                    <label class="form-label">Situation</label>
+                    <select class="form-control" formControlName="idSituation">
                       <option [ngValue]="null">—</option>
                       @for (s of situations(); track s.idSituation) {
                         <option [ngValue]="s.idSituation">{{ s.libelle || '#' + s.idSituation }}</option>
                       }
                     </select>
-                  </label>
-                  <label class="cnm-field">
-                    <span class="cnm-field__label">Nature</span>
-                    <select class="cnm-select" formControlName="idNature">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Nature</label>
+                    <select class="form-control" formControlName="idNature">
                       <option [ngValue]="null">—</option>
                       @for (n of natures(); track n.idNature) {
                         <option [ngValue]="n.idNature">{{ n.libelle || '#' + n.idNature }}</option>
                       }
                     </select>
-                  </label>
+                  </div>
                 </div>
               </div>
             }
           } @else {
-            <p class="cnm-muted">Aucune ligne de marché.</p>
+            <p class="text-muted">Aucune ligne de marché.</p>
           }
         </div>
 
         @if (fieldErrorList().length) {
-          <div class="cnm-card rd__errors" role="alert">
-            <p class="rd__errors-title">{{ error() || 'Validation échouée' }}</p>
-            <ul class="rd__errors-list">
-              @for (er of fieldErrorList(); track er.champ) {
-                <li><span class="cnm-mono">{{ er.champ }}</span> — {{ er.message }}</li>
-              }
-            </ul>
+          <div class="alert alert-danger" role="alert">
+            <div>
+              <p class="fw-semibold">{{ error() || 'Validation échouée' }}</p>
+              <ul class="rd-errors__list">
+                @for (er of fieldErrorList(); track er.champ) {
+                  <li><strong>{{ er.champ }}</strong> — {{ er.message }}</li>
+                }
+              </ul>
+            </div>
           </div>
         } @else if (error(); as e) {
-          <p class="cnm-field__hint rd__error" role="alert">{{ e }}</p>
+          <p class="form-error" role="alert">{{ e }}</p>
         }
 
-        <div class="rd__foot">
-          <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Retour</button>
-          <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving()" (click)="enregistrer()">
+        <div class="rd-foot">
+          <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
+          <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="enregistrer()">
             {{ saving() ? 'Enregistrement…' : 'Enregistrer les rectifications' }}
           </button>
         </div>
       } @else {
-        <div class="cnm-card rd__note">Ce dossier n'a pas de PPM à rectifier.</div>
-        <div class="rd__foot">
-          <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Retour</button>
+        <div class="alert alert-info">Ce dossier n'a pas de PPM à rectifier.</div>
+        <div class="rd-foot">
+          <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
         </div>
       }
     </section>
   `,
   styles: `
-    .rd__header { margin-bottom: var(--cnm-space-3); }
-    .rd__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .rd__note { padding: var(--cnm-space-3) var(--cnm-space-4); color: var(--cnm-text-2); margin-bottom: var(--cnm-space-3); }
-    .rd__frozen { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cnm-space-3); padding: var(--cnm-space-2) var(--cnm-space-4); margin-bottom: var(--cnm-space-3); }
-    .rd__frozen-item { display: inline-flex; gap: var(--cnm-space-1); align-items: baseline; }
-    .rd__k { font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
-    .rd__frozen-hint { margin-left: auto; font-size: var(--cnm-fs-micro); }
-    .rd__form { padding: var(--cnm-space-3) var(--cnm-space-4); margin-bottom: var(--cnm-space-3); }
-    .rd__section { margin: 0 0 var(--cnm-space-2); font-size: var(--cnm-fs-md); }
-    .rd__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); }
-    .rd__col-full { grid-column: 1 / -1; }
-    .rd__marche { padding: var(--cnm-space-2) 0; border-top: 1px solid var(--cnm-border); }
-    .rd__marche:first-of-type { border-top: 0; }
-    .rd__marche-head { display: flex; align-items: baseline; gap: var(--cnm-space-3); margin-bottom: var(--cnm-space-1); }
-    .rd__mode { font-size: var(--cnm-fs-micro); }
-    .rd__error { color: var(--cnm-danger-fg); }
-    .rd__errors { padding: var(--cnm-space-3) var(--cnm-space-4); margin-bottom: var(--cnm-space-3); border-left: 4px solid var(--cnm-danger-fg); background: var(--cnm-danger-bg); }
-    .rd__errors-title { margin: 0 0 var(--cnm-space-1); font-weight: var(--cnm-fw-semibold); color: var(--cnm-danger-fg); }
-    .rd__errors-list { margin: 0; padding-left: var(--cnm-space-4); display: flex; flex-direction: column; gap: 2px; font-size: var(--cnm-fs-sm); }
-    .rd__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
+    .rd-frozen { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: 0.6rem 1.25rem; margin-bottom: 0.75rem; }
+    .rd-frozen__item { display: inline-flex; gap: 0.3rem; align-items: baseline; }
+    .rd-frozen__k { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
+    .rd-frozen__hint { margin-left: auto; font-size: var(--text-xs); }
+    .rd-form { padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; }
+    .rd-section { margin: 0 0 0.75rem; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .rd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .rd-grid .form-group { margin-bottom: 0; }
+    .rd-col-full { grid-column: 1 / -1; }
+    .rd-marche { padding: 0.75rem 0; border-top: 1px solid var(--c-100); }
+    .rd-marche:first-of-type { border-top: 0; }
+    .rd-marche__head { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.5rem; }
+    .rd-mode { font-size: var(--text-xs); }
+    .rd-errors__list { margin: 0.25rem 0 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 2px; font-size: var(--text-sm); }
+    .rd-foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
   `,
 })
 export class RectifierDossier {

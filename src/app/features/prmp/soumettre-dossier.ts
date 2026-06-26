@@ -54,23 +54,25 @@ type ModeSuggestion = {
   imports: [ReactiveFormsModule],
   template: `
     <section class="sd">
-      <header class="sd__header">
-        <span class="cnm-section-label">Domaine PRMP</span>
-        <h1 class="sd__title">Saisir & soumettre un dossier</h1>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine PRMP</div>
+          <h1 class="page-title">Saisir &amp; soumettre un dossier</h1>
+        </div>
       </header>
 
       @switch (phase()) {
         @case ('choix') {
-          <div class="cnm-card sd__note">
+          <div class="alert alert-info">
             « Saisir » crée un dossier en <strong>brouillon</strong> : invisible des contrôleurs
             jusqu'à la soumission. Choisissez ce que vous souhaitez saisir.
           </div>
           <div class="sd__choix">
-            <button type="button" class="cnm-card sd__choix-card" (click)="choisirPpm()">
+            <button type="button" class="card sd__choix-card" (click)="choisirPpm()">
               <span class="sd__choix-titre">PPM</span>
               <span class="sd__choix-desc">Plan de passation + lignes de marché (mode calculé automatiquement).</span>
             </button>
-            <button type="button" class="cnm-card sd__choix-card" (click)="choisirDossier()">
+            <button type="button" class="card sd__choix-card" (click)="choisirDossier()">
               <span class="sd__choix-titre">DAO / MAOO</span>
               <span class="sd__choix-desc">Dossier simple : un type + une localité, sans PPM.</span>
             </button>
@@ -78,7 +80,7 @@ type ModeSuggestion = {
         }
 
         @case ('saisiePpm') {
-          <form class="cnm-card sd__form cnm-form" [formGroup]="ppmForm" (ngSubmit)="creerPpm()" novalidate>
+          <form class="card sd__form cnm-form" [formGroup]="ppmForm" (ngSubmit)="creerPpm()" novalidate>
             <h2 class="sd__sub">En-tête du PPM</h2>
             <div class="cnm-form-grid">
               <label class="cnm-field">
@@ -124,7 +126,7 @@ type ModeSuggestion = {
 
             <div class="sd__lignes-head">
               <h2 class="sd__sub">Marchés</h2>
-              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ajouterMarche()">+ Ajouter un marché</button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterMarche()">+ Ajouter un marché</button>
             </div>
             @if (!marcheControls().length) {
               <p class="cnm-muted">Aucun marché. Vous pouvez créer le brouillon sans marché et en ajouter plus tard.</p>
@@ -175,10 +177,10 @@ type ModeSuggestion = {
                     <span class="sd__dates-manq">⚠ Dates manquantes</span>
                   }
                   <span class="sd__ligne-foot-actions">
-                    <button type="button" class="cnm-btn cnm-btn--sm sd__btn-dates" (click)="ouvrirDates(g)">
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDates(g)">
                       Dates prévisionnelles
                     </button>
-                    <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="retirerMarche($index)">Retirer</button>
+                    <button type="button" class="btn btn-danger btn-sm" (click)="retirerMarche($index)">Retirer</button>
                   </span>
                 </div>
               </div>
@@ -193,15 +195,15 @@ type ModeSuggestion = {
                 <div class="sd__piece">
                   <span class="sd__piece-lbl">📎 {{ t.libellePiece }}</span>
                   @if (t.obligatoire) {
-                    <span class="cnm-badge cnm-badge--danger">obligatoire</span>
+                    <span class="badge badge-danger">obligatoire</span>
                   } @else {
-                    <span class="cnm-badge cnm-badge--neutral">optionnel</span>
+                    <span class="badge badge-neutral">optionnel</span>
                   }
                   @if (pieceNom(t.idTypePiece); as nom) {
                     <span class="sd__piece-file">{{ nom }} · {{ pieceTaille(t.idTypePiece) }}</span>
-                    <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerPiece(t.idTypePiece)" aria-label="Retirer">✕</button>
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="retirerPiece(t.idTypePiece)" aria-label="Retirer">✕</button>
                   } @else {
-                    <label class="cnm-btn cnm-btn--ghost cnm-btn--sm sd__piece-choisir">
+                    <label class="btn btn-secondary btn-sm sd__piece-choisir">
                       Choisir
                       <input type="file" accept=".pdf,.jpeg,.jpg,.png" hidden (change)="onPiece(t.idTypePiece, $event)" />
                     </label>
@@ -215,8 +217,8 @@ type ModeSuggestion = {
             </div>
 
             <footer class="sd__foot">
-              <button type="button" class="cnm-btn cnm-btn--ghost" (click)="retourChoix()">Retour</button>
-              <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submitting()">
+              <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
+              <button type="submit" class="btn btn-primary" [disabled]="submitting()">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -224,7 +226,7 @@ type ModeSuggestion = {
         }
 
         @case ('saisieDossier') {
-          <form class="cnm-card sd__form cnm-form" [formGroup]="dossierForm" (ngSubmit)="creerDossier()" novalidate>
+          <form class="card sd__form cnm-form" [formGroup]="dossierForm" (ngSubmit)="creerDossier()" novalidate>
             <div class="cnm-form-grid">
               <label class="cnm-field">
                 <span class="cnm-field__label">Type de dossier *</span>
@@ -255,8 +257,8 @@ type ModeSuggestion = {
               </label>
             </div>
             <footer class="sd__foot">
-              <button type="button" class="cnm-btn cnm-btn--ghost" (click)="retourChoix()">Retour</button>
-              <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submitting()">
+              <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
+              <button type="submit" class="btn btn-primary" [disabled]="submitting()">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -265,10 +267,10 @@ type ModeSuggestion = {
 
         @case ('brouillon') {
           @if (dossier(); as d) {
-            <div class="cnm-card sd__brouillon">
+            <div class="card sd__brouillon">
               <div class="sd__brouillon-head">
                 <div>
-                  <span class="cnm-badge cnm-badge--warning">BROUILLON</span>
+                  <span class="badge badge-warning">BROUILLON</span>
                   <span class="sd__brouillon-id">Dossier #{{ d.idDossier }} · {{ d.idTypeDossier || '—' }}</span>
                 </div>
                 <span class="cnm-muted">Localité : {{ d.idLocalite || '—' }}</span>
@@ -282,32 +284,34 @@ type ModeSuggestion = {
                 <div class="sd__lignes">
                   <div class="sd__lignes-head">
                     <h2 class="sd__sub">Lignes de marché</h2>
-                    <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ouvrirAjout()">
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirAjout()">
                       + Ajouter une ligne
                     </button>
                   </div>
                   @if (marches().length) {
-                    <table class="cnm-table">
-                      <thead>
-                        <tr>
-                          <th>Désignation</th><th class="cnm-num">Montant</th>
-                          <th>Mode (auto)</th><th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (m of marches(); track m.idDetail) {
+                    <div class="table-card">
+                      <table>
+                        <thead>
                           <tr>
-                            <td>{{ m.designationMarche || '—' }}</td>
-                            <td class="cnm-num">{{ montant(m.montEstim) }}</td>
-                            <td>{{ resolve(modeMap(), m.idMode) }}</td>
-                            <td class="sd__row-actions">
-                              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="editer(m)">Éditer</button>
-                              <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="supprimer(m)">Suppr.</button>
-                            </td>
+                            <th>Désignation</th><th class="r">Montant</th>
+                            <th>Mode (auto)</th><th></th>
                           </tr>
-                        }
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          @for (m of marches(); track m.idDetail) {
+                            <tr>
+                              <td>{{ m.designationMarche || '—' }}</td>
+                              <td class="td-montant">{{ montant(m.montEstim) }}</td>
+                              <td>{{ resolve(modeMap(), m.idMode) }}</td>
+                              <td class="sd__row-actions">
+                                <button type="button" class="btn btn-secondary btn-sm" (click)="editer(m)">Éditer</button>
+                                <button type="button" class="btn btn-danger btn-sm" (click)="supprimer(m)">Suppr.</button>
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
                   } @else {
                     <p class="cnm-muted">Aucune ligne. Un PPM peut être soumis sans ligne, ou ajoutez-en une.</p>
                   }
@@ -371,8 +375,8 @@ type ModeSuggestion = {
                         }
                       </div>
                       <div class="sd__foot">
-                        <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerLigne()">Annuler</button>
-                        <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submitting()">
+                        <button type="button" class="btn btn-outline" (click)="annulerLigne()">Annuler</button>
+                        <button type="submit" class="btn btn-primary" [disabled]="submitting()">
                           {{ editId() !== null ? 'Mettre à jour' : 'Ajouter' }}
                         </button>
                       </div>
@@ -389,7 +393,7 @@ type ModeSuggestion = {
                 }
                 <button
                   type="button"
-                  class="cnm-btn cnm-btn--success"
+                  class="btn btn-success"
                   [disabled]="submitting() || ppmSansMarche()"
                   (click)="soumettre()"
                 >
@@ -402,36 +406,40 @@ type ModeSuggestion = {
       }
 
       @if (datesCible()) {
-        <div class="sd-modal__overlay" (click)="annulerDates()">
-          <div class="sd-modal cnm-card cnm-form" (click)="$event.stopPropagation()">
-            <h2 class="sd-modal__title">Dates prévisionnelles du marché</h2>
-            <p class="cnm-field__hint cnm-muted">Au moins un processus est obligatoire ; un processus par ligne.</p>
-            @for (ctrl of procControls(); track $index) {
-              <div class="sd-proc-row" [formGroup]="ctrl">
-                <select class="cnm-select" formControlName="idCapm">
-                  <option [ngValue]="null" disabled>— Processus —</option>
-                  @for (c of capmsPourProc(ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
-                </select>
-                <input class="cnm-input" type="date" formControlName="dateDebut" />
-                <input class="cnm-input" type="date" formControlName="dateFin" />
-                <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerProc($index)" aria-label="Retirer">✕</button>
-              </div>
-              @if (procErreur(ctrl.get('idCapm')!.value)) {
-                <span class="cnm-field__hint sd-proc-err">{{ procErreur(ctrl.get('idCapm')!.value) }}</span>
-              }
-            } @empty {
-              <p class="cnm-field__hint">Aucun processus. Ajoutez-en au moins un.</p>
-            }
-            <div>
-              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="!peutAjouterProc()" (click)="ajouterProc()">
-                + Ajouter un processus
-              </button>
+        <div class="modal-backdrop" (click)="annulerDates()">
+          <div class="modal confirm-modal cnm-form" (click)="$event.stopPropagation()">
+            <div class="modal-header-plain">
+              <span class="modal-title">Dates prévisionnelles du marché</span>
             </div>
-            <div class="sd-modal__foot">
-              <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerDates(); $event.stopPropagation()">Annuler</button>
+            <div class="modal-body">
+              <p class="form-hint">Au moins un processus est obligatoire ; un processus par ligne.</p>
+              @for (ctrl of procControls(); track $index) {
+                <div class="sd-proc-row" [formGroup]="ctrl">
+                  <select class="cnm-select" formControlName="idCapm">
+                    <option [ngValue]="null" disabled>— Processus —</option>
+                    @for (c of capmsPourProc(ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
+                  </select>
+                  <input class="cnm-input" type="date" formControlName="dateDebut" />
+                  <input class="cnm-input" type="date" formControlName="dateFin" />
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="retirerProc($index)" aria-label="Retirer">✕</button>
+                </div>
+                @if (procErreur(ctrl.get('idCapm')!.value)) {
+                  <span class="form-error sd-proc-err">{{ procErreur(ctrl.get('idCapm')!.value) }}</span>
+                }
+              } @empty {
+                <p class="form-hint">Aucun processus. Ajoutez-en au moins un.</p>
+              }
+              <div>
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="!peutAjouterProc()" (click)="ajouterProc()">
+                  + Ajouter un processus
+                </button>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" (click)="annulerDates(); $event.stopPropagation()">Annuler</button>
               <button
                 type="button"
-                class="cnm-btn cnm-btn--primary"
+                class="btn btn-primary"
                 [disabled]="!procControls().length"
                 (click)="validerDates(); $event.stopPropagation()"
               >
@@ -444,49 +452,41 @@ type ModeSuggestion = {
     </section>
   `,
   styles: `
-    .sd__header { margin-bottom: var(--cnm-space-4); }
-    .sd__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .sd__note, .sd__brouillon { padding: var(--cnm-space-4) var(--cnm-space-5); }
-    .sd__note { color: var(--cnm-text-2); margin-bottom: var(--cnm-space-3); }
-    .sd__choix { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); }
-    .sd__choix-card { text-align: left; cursor: pointer; border: 1px solid var(--cnm-border); padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-2); }
-    .sd__choix-card:hover { border-color: var(--cnm-brand); }
-    .sd__choix-titre { font-size: var(--cnm-fs-md); font-weight: var(--cnm-fw-semibold); color: var(--cnm-text); }
-    .sd__choix-desc { color: var(--cnm-text-2); font-size: var(--cnm-fs-sm); }
-    .sd__form { padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); max-width: min(64rem, 96vw); }
-    .sd__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); }
+    .sd__brouillon { padding: 1.25rem 1.5rem; }
+    .sd__choix { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .sd__choix-card { text-align: left; cursor: pointer; font: inherit; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; transition: var(--transition); }
+    .sd__choix-card:hover { border-color: var(--c-400); box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+    .sd__choix-titre { font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .sd__choix-desc { color: var(--n-400); font-size: var(--text-sm); }
+    .sd__form { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: min(64rem, 96vw); }
     .sd__hint { margin: 0; }
-    .sd__pieces { display: flex; flex-direction: column; gap: var(--cnm-space-2); }
-    .sd__piece { display: flex; align-items: center; gap: var(--cnm-space-2); flex-wrap: wrap; }
-    .sd__piece-lbl { font-weight: var(--cnm-fw-medium); }
-    .sd__piece-file { font-size: var(--cnm-fs-sm); color: var(--cnm-text-2); }
+    .sd__pieces { display: flex; flex-direction: column; gap: 0.5rem; }
+    .sd__piece { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .sd__piece-lbl { font-weight: 500; }
+    .sd__piece-file { font-size: var(--text-sm); color: var(--n-500); }
     .sd__piece-choisir { cursor: pointer; }
-    .sd__piece-err { color: var(--cnm-danger-fg); }
-    .sd__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-3); }
-    .sd__foot--main { margin-top: var(--cnm-space-3); }
+    .sd__piece-err { color: var(--danger-text); }
+    .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
+    .sd__foot--main { margin-top: 1rem; }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
-    .sd__brouillon-head { display: flex; align-items: center; justify-content: space-between; gap: var(--cnm-space-3); margin-bottom: var(--cnm-space-2); }
-    .sd__brouillon-id { margin-left: var(--cnm-space-2); font-weight: var(--cnm-fw-semibold); }
-    .sd__warn { margin: 0 0 var(--cnm-space-3); }
-    .sd__lignes-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--cnm-space-2); }
-    .sd__sub { margin: 0; font-size: var(--cnm-fs-md); }
-    .sd__row-actions { display: flex; gap: var(--cnm-space-1); justify-content: flex-end; }
-    .sd__ligne-form { margin-top: var(--cnm-space-3); padding: var(--cnm-space-3); background: var(--cnm-surface-2); border: 1px solid var(--cnm-border); border-radius: var(--cnm-radius-sm); display: flex; flex-direction: column; gap: var(--cnm-space-2); }
-    .sd__mode { display: flex; flex-direction: column; gap: var(--cnm-space-1); }
-    .sd__ligne { padding: var(--cnm-space-3); background: var(--cnm-surface-2); border: 1px solid var(--cnm-border); border-radius: var(--cnm-radius-sm); display: flex; flex-direction: column; gap: var(--cnm-space-2); margin-bottom: var(--cnm-space-2); }
-    .sd__ligne-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--cnm-space-2); }
-    .sd__ligne-foot-actions { display: flex; gap: var(--cnm-space-2); }
-    .sd__ligne-mode { display: inline-flex; align-items: center; gap: var(--cnm-space-2); }
-    .sd__dates-manq { color: var(--cnm-warning-fg); font-size: var(--cnm-fs-sm); font-weight: var(--cnm-fw-semibold); }
-    .sd__dates-ok { color: var(--cnm-success-fg); font-size: var(--cnm-fs-sm); font-weight: var(--cnm-fw-semibold); }
-    .sd__btn-dates { background: transparent; border: 1px solid var(--cnm-info-fg, var(--cnm-brand)); color: var(--cnm-info-fg, var(--cnm-brand)); }
-    .sd-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
-    .sd-modal { width: 100%; max-width: 36rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
-    .sd-proc-row { display: flex; align-items: center; gap: var(--cnm-space-2); }
+    .sd__brouillon-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.5rem; }
+    .sd__brouillon-id { margin-left: 0.5rem; font-weight: 700; }
+    .sd__warn { margin: 0 0 1rem; }
+    .sd__lignes-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+    .sd__sub { margin: 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .sd__row-actions { display: flex; gap: 0.3rem; justify-content: flex-end; }
+    .sd__ligne-form { margin-top: 1rem; padding: 1rem; background: var(--c-50); border: 1px solid var(--c-100); border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 0.5rem; }
+    .sd__mode { display: flex; flex-direction: column; gap: 0.25rem; }
+    .sd__ligne { padding: 1rem; background: var(--c-50); border: 1px solid var(--c-100); border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .sd__ligne-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .sd__ligne-foot-actions { display: flex; gap: 0.5rem; }
+    .sd__dates-manq { color: var(--warning-text); font-size: var(--text-sm); font-weight: 700; }
+    .sd__dates-ok { color: var(--success-text); font-size: var(--text-sm); font-weight: 700; }
+    .sd-proc-row { display: flex; align-items: center; gap: 0.5rem; }
     .sd-proc-row .cnm-select { flex: 1; min-width: 8rem; }
-    .sd-proc-err { color: var(--cnm-danger-fg); display: block; }
-    .sd-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
-    .sd-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
+    .sd-proc-err { color: var(--danger-text); display: block; }
+    .confirm-modal { max-width: 36rem; }
+    .table-card td { white-space: normal; }
   `,
 })
 export class SoumettreDossier {

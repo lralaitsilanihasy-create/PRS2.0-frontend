@@ -19,44 +19,49 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StatutBadge, DossierConsultation],
   template: `
-    <section class="rt">
-      <h1 class="rt__title">Demande de retrait</h1>
+    <section>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine PRMP</div>
+          <h1 class="page-title">Demande de retrait</h1>
+        </div>
+      </header>
 
-      <div class="rt__grid">
-        <div class="cnm-card rt__panel">
-          <div class="rt__panel-head">Nouvelle demande</div>
-          <div class="rt__panel-body cnm-form">
-            <label class="cnm-field">
-              <span class="cnm-field__label">Dossier à retirer *</span>
-              <select class="cnm-select" [value]="selectedId() ?? ''" (change)="onSelect($any($event.target).value)">
+      <div class="rt-grid">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Nouvelle demande</span></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label required">Dossier à retirer</label>
+              <select class="form-control" [value]="selectedId() ?? ''" (change)="onSelect($any($event.target).value)">
                 <option value="" disabled>— Choisir un dossier —</option>
                 @for (d of retirables(); track d.idDossier) {
                   <option [value]="d.idDossier">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</option>
                 }
               </select>
               @if (!retirables().length && !loading()) {
-                <span class="cnm-field__hint">
+                <span class="form-hint">
                   Aucun dossier éligible au retrait. Un dossier ne peut être retiré qu'avant d'avoir été dispatché.
                 </span>
               }
-              @if (fieldErr('idDossier')) { <span class="cnm-field__hint">{{ fieldErr('idDossier') }}</span> }
-            </label>
+              @if (fieldErr('idDossier')) { <span class="form-error">{{ fieldErr('idDossier') }}</span> }
+            </div>
 
-            <label class="cnm-field">
-              <span class="cnm-field__label">Motif du retrait *</span>
+            <div class="form-group">
+              <label class="form-label required">Motif du retrait</label>
               <textarea
-                class="cnm-textarea"
+                class="form-control"
                 rows="4"
                 [value]="motif()"
                 (input)="motif.set($any($event.target).value)"
               ></textarea>
-              @if (fieldErr('motifRetrait')) { <span class="cnm-field__hint">{{ fieldErr('motifRetrait') }}</span> }
-            </label>
+              @if (fieldErr('motifRetrait')) { <span class="form-error">{{ fieldErr('motifRetrait') }}</span> }
+            </div>
 
-            <div class="rt__foot">
+            <div class="rt-foot">
               <button
                 type="button"
-                class="cnm-btn cnm-btn--primary"
+                class="btn btn-primary"
                 [disabled]="saving() || !retirables().length || selectedId() == null || !motif().trim()"
                 (click)="soumettre()"
               >
@@ -66,51 +71,51 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
           </div>
         </div>
 
-        <div class="cnm-card rt__panel">
-          <div class="rt__panel-head">Détail du dossier</div>
-          <div class="rt__panel-body">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Détail du dossier</span></div>
+          <div class="card-body">
             @if (selectedDossier(); as d) {
               <app-dossier-consultation [dossier]="d" [embedded]="true" />
             } @else {
-              <p class="cnm-muted">Sélectionnez un dossier pour voir son détail.</p>
+              <p class="text-muted">Sélectionnez un dossier pour voir son détail.</p>
             }
           </div>
         </div>
       </div>
 
-      <h2 class="rt__sub">Mes demandes</h2>
+      <h2 class="rt-sub">Mes demandes</h2>
       @if (loading()) {
-        <p class="cnm-muted">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else {
-        <table class="cnm-table">
-          <thead>
-            <tr><th>Dossier</th><th>Motif</th><th>Statut</th><th>Date</th><th>Motif du refus</th></tr>
-          </thead>
-          <tbody>
-            @for (r of demandes(); track r.idDemandeRetrait) {
-              <tr>
-                <td>{{ dossierRef(r.idDossier) }}</td>
-                <td>{{ r.motifRetrait }}</td>
-                <td><app-statut-badge [statut]="r.statut" [label]="statutLabel(r.statut)" /></td>
-                <td class="cnm-mono">{{ r.dateDemande || '—' }}</td>
-                <td>{{ r.statut === 'REFUSEE' ? (r.obsDecision || '—') : '—' }}</td>
-              </tr>
-            } @empty {
-              <tr><td colspan="5" class="cnm-muted">Aucune demande.</td></tr>
-            }
-          </tbody>
-        </table>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr><th>Dossier</th><th>Motif</th><th>Statut</th><th>Date</th><th>Motif du refus</th></tr>
+            </thead>
+            <tbody>
+              @for (r of demandes(); track r.idDemandeRetrait) {
+                <tr>
+                  <td>{{ dossierRef(r.idDossier) }}</td>
+                  <td>{{ r.motifRetrait }}</td>
+                  <td><app-statut-badge [statut]="r.statut" [label]="statutLabel(r.statut)" /></td>
+                  <td>{{ r.dateDemande || '—' }}</td>
+                  <td>{{ r.statut === 'REFUSEE' ? (r.obsDecision || '—') : '—' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="empty-cell">Aucune demande.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
   `,
   styles: `
-    .rt__title { margin: 0 0 var(--cnm-space-4); font-size: var(--cnm-fs-lg); }
-    .rt__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); align-items: start; }
-    .rt__panel-head { padding: var(--cnm-space-3) var(--cnm-space-4); border-bottom: 1px solid var(--cnm-border); font-weight: var(--cnm-fw-semibold); }
-    .rt__panel-body { padding: var(--cnm-space-4); display: flex; flex-direction: column; gap: var(--cnm-space-3); }
-    .rt__foot { display: flex; justify-content: flex-end; }
-    .rt__sub { margin: var(--cnm-space-5) 0 var(--cnm-space-3); font-size: var(--cnm-fs-md); }
-    @media (max-width: 60rem) { .rt__grid { grid-template-columns: 1fr; } }
+    .rt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+    .rt-foot { display: flex; justify-content: flex-end; }
+    .rt-sub { margin: 1.75rem 0 0.75rem; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
+    .table-card td { white-space: normal; }
+    @media (max-width: 60rem) { .rt-grid { grid-template-columns: 1fr; } }
   `,
 })
 export class PrmpRetraits {
