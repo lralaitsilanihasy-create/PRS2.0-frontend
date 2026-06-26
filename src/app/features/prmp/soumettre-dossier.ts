@@ -192,7 +192,7 @@ type ModeSuggestion = {
                 <p class="cnm-muted">Aucune pièce attendue pour ce type de dossier.</p>
               }
               @for (t of typesPiece(); track t.idTypePiece) {
-                <div class="sd__piece">
+                <div class="sd__piece" [class.sd__piece--manquante]="t.obligatoire && !pieces().has(t.idTypePiece)">
                   <span class="sd__piece-lbl">📎 {{ t.libellePiece }}</span>
                   <div class="sd__piece-right">
                     @if (t.obligatoire) {
@@ -218,9 +218,23 @@ type ModeSuggestion = {
               <p class="sd__hint cnm-muted">Formats acceptés : PDF, JPEG, PNG.</p>
             </div>
 
+            @if (piecesObligatoiresManquantes().length) {
+              <div class="alert alert-warning">
+                <span aria-hidden="true">⚠</span>
+                <div>
+                  <div class="sd__warn-title">Pièces obligatoires manquantes</div>
+                  <ul class="sd__warn-list">
+                    @for (p of piecesObligatoiresManquantes(); track p.idTypePiece) {
+                      <li>{{ p.libellePiece }}</li>
+                    }
+                  </ul>
+                </div>
+              </div>
+            }
+
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -469,6 +483,9 @@ type ModeSuggestion = {
     .sd__piece-file { font-size: var(--text-sm); color: var(--n-500); }
     .sd__piece-choisir { cursor: pointer; }
     .sd__piece-err { color: var(--danger-text); flex-basis: 100%; }
+    .sd__piece--manquante { background: #fff8f8; border-left: 2.5px solid var(--danger-text); padding-left: 8px; border-radius: var(--radius-sm); }
+    .sd__warn-title { font-weight: 600; margin-bottom: 4px; }
+    .sd__warn-list { margin: 0; padding-left: 1rem; font-size: var(--text-sm); }
     .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
     .sd__foot--main { margin-top: 1rem; }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
@@ -577,6 +594,14 @@ export class SoumettreDossier {
   readonly pieces = signal<Map<number, File>>(new Map());
   /** Types de pièces obligatoires manquants à la création (affichage de l'erreur). */
   readonly pieceErreurs = signal<Set<number>>(new Set());
+  /** Pièces obligatoires non encore fournies (bloque la création du dossier PPM). */
+  readonly piecesObligatoiresManquantes = computed(() =>
+    this.typesPiece().filter((t) => t.obligatoire && !this.pieces().has(t.idTypePiece)),
+  );
+  /** Le formulaire PPM est-il prêt ? (champs requis valides + toutes les pièces obligatoires fournies) */
+  get ppmFormValide(): boolean {
+    return this.ppmForm.valid && this.piecesObligatoiresManquantes().length === 0;
+  }
   /** Ligne de marché (création) dont les processus prévisionnels sont en cours d'édition (null = modal fermé). */
   readonly datesCible = signal<FormGroup | null>(null);
   /** Copie de travail des processus du marché en édition (FormArray de { idCapm, dateDebut, dateFin }). */
