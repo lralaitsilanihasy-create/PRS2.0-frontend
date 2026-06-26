@@ -2351,11 +2351,17 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 | numPassage | number | Oui | @NotNull (≥ 1) |
 | typePassage | string | Oui | @NotBlank, max 10 — `INITIAL` ⟺ numPassage=1 |
 | imCtrlRecept | string | Non | max 7 |
-| dateReception | string (date) | Non | |
+| dateReception | string (date-heure) | Non | format **`yyyy-MM-dd HH:mm`** (date **et heure** de réception) |
+| dateSoumission | string (date-heure) | — (réponse) | format **`yyyy-MM-dd HH:mm`** — date/heure de soumission du dossier rattaché (lecture seule) ; **`null`** pour un dossier ancien sans date de soumission |
 | observation | string | Non | max 500 |
 | complet | boolean | Non | si `true` → dossier `PRET_DISPATCH` |
 | idReceptionPrec | number | Non | |
 | reference | string | — (réponse) | référence officielle générée au POST (lecture seule) |
+
+> **Dates/heures (⚠️ règle ajoutée).** `dateReception` est désormais une **date-heure** (`yyyy-MM-dd HH:mm`,
+> colonne `t_reception.DATE_RECEPTION` en TIMESTAMP). `dateSoumission` (lecture seule) reprend la
+> date/heure de soumission du **dossier rattaché** (`t_dossier.DATE_SOUMISSION`, posée à la saisie —
+> `POST /api/saisies/ppm`) ; **`null`** pour un dossier antérieur à cette règle.
 
 **Endpoints**
 
