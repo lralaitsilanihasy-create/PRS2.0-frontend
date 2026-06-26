@@ -162,6 +162,13 @@
   font-size: 15px;
   animation: login-in 0.35s ease both;
 
+  &__logo {
+    display: block;
+    width: 110px;
+    height: auto;
+    margin: 0 auto 1.25rem;
+  }
+
   &__title {
     margin: 0 0 0.25rem;
     font-size: 1.9rem;

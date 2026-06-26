@@ -33,6 +33,7 @@
     <!-- Colonne droite : formulaire (clair) -->
     <section class="login-card__form">
       <form class="login-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <img class="login-form__logo" src="mef-logo.png" alt="Ministère de l'Économie et des Finances" />
         <h2 class="login-form__title">Connexion</h2>
 
         @if (errorMessage()) {
