@@ -389,33 +389,36 @@ a:hover {
   color: var(--cnm-text-2);
 }
 
+/* Champs : apparence alignée sur le design system (.form-control) — fond blanc,
+   bordure neutre, rayon md, focus bleu. La structure des classes CNM est conservée. */
 .cnm-input,
 .cnm-select,
 .cnm-textarea {
-  font-family: var(--cnm-font);
+  font-family: var(--font-base, var(--cnm-font));
   font-size: var(--cnm-fs-base);
-  color: var(--cnm-text);
-  background: var(--cnm-bg);
-  border: 1px solid var(--cnm-border-strong);
-  border-radius: var(--cnm-radius-sm);
+  color: var(--n-800);
+  background: #fff;
+  border: 1.5px solid var(--n-200);
+  border-radius: var(--radius-md);
   padding: 0.5rem 0.65rem;
 }
 
 .cnm-input::placeholder,
 .cnm-textarea::placeholder {
-  color: var(--cnm-text-3);
+  color: var(--n-300);
 }
 
 .cnm-input:focus,
 .cnm-select:focus,
 .cnm-textarea:focus {
   outline: none;
-  border-color: var(--cnm-brand);
-  box-shadow: 0 0 0 3px rgba(108, 111, 255, 0.25);
+  border-color: var(--c-400);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
 }
 
 .cnm-input--invalid {
-  border-color: var(--cnm-danger-fg);
+  border-color: var(--danger-text);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 }
 
 .cnm-field__hint {
@@ -444,7 +447,7 @@ a:hover {
   color: var(--cnm-text);
 }
 .cnm-tab--active {
-  background: var(--cnm-brand);
+  background: linear-gradient(135deg, var(--c-600), var(--c-700));
   color: #fff;
   border-color: transparent;
 }
