@@ -53,7 +53,7 @@ import { DossierConsultation } from './dossier-consultation';
                         @if (refusOpen() === r.idDemandeRetrait) {
                           <div class="rv__refus">
                             <textarea
-                              class="cnm-textarea"
+                              class="form-control"
                               rows="2"
                               placeholder="Motif du refus (obligatoire)"
                               [value]="refusMotif()"

@@ -120,15 +120,15 @@ interface RowState {
             <div class="card-header"><span class="card-title">Consigner l'examen</span></div>
             <div class="card-body cnm-form">
               @if (mode() === 'locked') {
-                <p class="cnm-field__hint">Examen verrouillé (PV signé / dossier clôturé) — lecture seule.</p>
+                <p class="form-hint">Examen verrouillé (PV signé / dossier clôturé) — lecture seule.</p>
               }
               @if (idDispatch() == null) {
-                <p class="cnm-field__hint">Aucun dispatch trouvé pour ce dossier : examen impossible.</p>
+                <p class="form-hint">Aucun dispatch trouvé pour ce dossier : examen impossible.</p>
               }
 
-              <label class="cnm-field">
-                <span class="cnm-field__label">Date d'examen</span>
-                <input class="cnm-input" type="date" [value]="dateExamen()" (input)="dateExamen.set($any($event.target).value)" />
+              <label class="form-group">
+                <span class="form-label">Date d'examen</span>
+                <input class="form-control" type="date" [value]="dateExamen()" (input)="dateExamen.set($any($event.target).value)" />
               </label>
 
               <h3 class="exam__sub">Grille de contrôle</h3>
@@ -155,14 +155,14 @@ interface RowState {
                       @for (o of row(p.idPointCtrl).observations; track $index) {
                         <div class="exam__obs-row">
                           <textarea
-                            class="cnm-textarea"
+                            class="form-control"
                             rows="2"
                             placeholder="Au lieu de…"
                             [value]="o.auLieuDe"
                             (input)="setAuLieuDe(p.idPointCtrl, $index, $any($event.target).value)"
                           ></textarea>
                           <textarea
-                            class="cnm-textarea"
+                            class="form-control"
                             rows="2"
                             placeholder="Lire…"
                             [value]="o.lire"
@@ -174,7 +174,7 @@ interface RowState {
                         <p class="text-muted">Aucune ligne.</p>
                       }
                       <button type="button" class="btn btn-secondary btn-sm exam__obs-add" (click)="ajouterLigne(p.idPointCtrl)">+ Ajouter une ligne</button>
-                      @if (pointErreur(p.idPointCtrl)) { <span class="cnm-field__hint exam__obs-err">{{ pointErreur(p.idPointCtrl) }}</span> }
+                      @if (pointErreur(p.idPointCtrl)) { <span class="form-error exam__obs-err">{{ pointErreur(p.idPointCtrl) }}</span> }
                     </div>
                   }
                 </div>
@@ -182,22 +182,22 @@ interface RowState {
 
               @if (mode() === 'create') {
                 <h3 class="exam__sub">Avis & synthèse (projet de PV)</h3>
-                <label class="cnm-field">
-                  <span class="cnm-field__label">Avis global *</span>
-                  <select class="cnm-select" [value]="avis() ?? ''" (change)="avis.set($any($event.target).value || null)">
+                <label class="form-group">
+                  <span class="form-label">Avis global *</span>
+                  <select class="form-control" [value]="avis() ?? ''" (change)="avis.set($any($event.target).value || null)">
                     <option value="">— Sélectionner —</option>
                     @for (a of aviss(); track a.idAvis) { <option [value]="a.idAvis">{{ a.libelleAvis || a.idAvis }}</option> }
                   </select>
                 </label>
-                <label class="cnm-field">
-                  <span class="cnm-field__label">Synthèse des observations</span>
-                  <textarea class="cnm-textarea" rows="3" [value]="synthese()" (input)="synthese.set($any($event.target).value)"></textarea>
+                <label class="form-group">
+                  <span class="form-label">Synthèse des observations</span>
+                  <textarea class="form-control" rows="3" [value]="synthese()" (input)="synthese.set($any($event.target).value)"></textarea>
                 </label>
               } @else if (mode() === 'edit') {
-                <p class="cnm-field__hint cnm-muted">L'avis et la synthèse se modifient dans « Projets de PV ».</p>
+                <p class="form-hint">L'avis et la synthèse se modifient dans « Projets de PV ».</p>
               }
 
-              @if (formError()) { <span class="cnm-field__hint">{{ formError() }}</span> }
+              @if (formError()) { <span class="form-error">{{ formError() }}</span> }
               @if (mode() === 'create') {
                 <div class="exam__foot">
                   <button type="button" class="btn btn-outline" (click)="annuler()">Annuler</button>
@@ -233,14 +233,14 @@ interface RowState {
               <div><dt>Date d'examen</dt><dd class="cnm-mono">{{ dateExamen() || '—' }}</dd></div>
               <div><dt>Date de la lettre</dt><dd class="cnm-mono">{{ dateLettre }}</dd></div>
             </dl>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Objet de la lettre *</span>
-              <input class="cnm-input" type="text" maxlength="500" [value]="objetLettre()" (input)="objetLettre.set($any($event.target).value)" />
-              @if (lettreErr()) { <span class="cnm-field__hint exam__obs-err">{{ lettreErr() }}</span> }
+            <label class="form-group">
+              <span class="form-label">Objet de la lettre *</span>
+              <input class="form-control" type="text" maxlength="500" [value]="objetLettre()" (input)="objetLettre.set($any($event.target).value)" />
+              @if (lettreErr()) { <span class="form-error exam__obs-err">{{ lettreErr() }}</span> }
             </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Corps de la lettre</span>
-              <textarea class="cnm-textarea exam-modal__corps" rows="6" placeholder="Corps de la lettre…" [value]="corpsLettre()" (input)="corpsLettre.set($any($event.target).value)"></textarea>
+            <label class="form-group">
+              <span class="form-label">Corps de la lettre</span>
+              <textarea class="form-control exam-modal__corps" rows="6" placeholder="Corps de la lettre…" [value]="corpsLettre()" (input)="corpsLettre.set($any($event.target).value)"></textarea>
             </label>
             <div class="exam-modal__foot">
               <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="fermerLettre()">Fermer</button>

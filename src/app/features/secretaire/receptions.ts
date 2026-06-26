@@ -111,23 +111,23 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
             </dl>
 
             <div class="cnm-form-grid">
-              <label class="cnm-field">
-                <span class="cnm-field__label">Passage</span>
-                <input class="cnm-input" type="text" value="1 — INITIAL" readonly disabled />
-                <span class="cnm-field__hint cnm-muted">Réception initiale (le Secrétaire agit au passage 1).</span>
+              <label class="form-group">
+                <span class="form-label">Passage</span>
+                <input class="form-control" type="text" value="1 — INITIAL" readonly disabled />
+                <span class="form-hint">Réception initiale (le Secrétaire agit au passage 1).</span>
               </label>
-              <label class="cnm-field">
-                <span class="cnm-field__label">Date de réception</span>
-                <input class="cnm-input" type="date" formControlName="dateReception" />
+              <label class="form-group">
+                <span class="form-label">Date de réception</span>
+                <input class="form-control" type="date" formControlName="dateReception" />
               </label>
-              <label class="cnm-field rec__check">
+              <label class="form-group rec__check">
                 <input type="checkbox" formControlName="complet" />
                 <span>Dossier complet (→ passe en PRET_DISPATCH)</span>
               </label>
             </div>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Observation</span>
-              <textarea class="cnm-textarea" rows="2" formControlName="observation"></textarea>
+            <label class="form-group">
+              <span class="form-label">Observation</span>
+              <textarea class="form-control" rows="2" formControlName="observation"></textarea>
             </label>
           </div>
 

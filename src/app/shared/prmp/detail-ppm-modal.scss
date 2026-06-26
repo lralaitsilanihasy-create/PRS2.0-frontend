@@ -635,7 +635,8 @@
 .dpm__info { color: var(--cnm-text-2); padding: 0.5rem 0; }
 .dpm__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; }
 .dpm-form { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); }
-.dpm-form .cnm-input:read-only { opacity: 0.7; }
+.dpm-form .form-group { margin-bottom: 0; }
+.dpm-form .form-control:read-only { opacity: 0.7; }
 .dpm-form__mode, .dpm-form__dates {
   grid-column: 1 / -1;
   gap: var(--cnm-space-2);

@@ -18,34 +18,34 @@ import { StatutBadge } from '../../shared/circuit';
   imports: [ReactiveFormsModule, StatutBadge],
   template: `
     <section class="pub">
-      <header class="pub__header">
-        <h1 class="pub__title">Publications</h1>
+      <header class="page-header">
+        <h1 class="page-title">Publications</h1>
         @if (canManage()) {
-          <button type="button" class="cnm-btn cnm-btn--primary" (click)="toggleForm()">
+          <button type="button" class="btn btn-primary" (click)="toggleForm()">
             {{ formOpen() ? 'Fermer' : '+ Nouvelle publication' }}
           </button>
         }
       </header>
 
       @if (formOpen()) {
-        <form class="pub__form" [formGroup]="form" (ngSubmit)="creer()" novalidate>
-          <label class="field">
-            <span class="field__label">Identifiant *</span>
-            <input type="number" formControlName="idPublication" />
-            @if (fieldErr('idPublication')) { <span class="cnm-field__hint">{{ fieldErr('idPublication') }}</span> }
-          </label>
-          <label class="field">
-            <span class="field__label">Type d'objet *</span>
-            <input type="text" formControlName="typeObjet" placeholder="PPM, MARCHE…" />
-            @if (fieldErr('typeObjet')) { <span class="cnm-field__hint">{{ fieldErr('typeObjet') }}</span> }
-          </label>
-          <label class="field">
-            <span class="field__label">Identifiant de l'objet *</span>
-            <input type="number" formControlName="idObjet" />
-            @if (fieldErr('idObjet')) { <span class="cnm-field__hint">{{ fieldErr('idObjet') }}</span> }
-          </label>
+        <form class="card pub__form" [formGroup]="form" (ngSubmit)="creer()" novalidate>
+          <div class="form-group">
+            <label class="form-label required">Identifiant</label>
+            <input class="form-control" type="number" formControlName="idPublication" />
+            @if (fieldErr('idPublication')) { <span class="form-error">{{ fieldErr('idPublication') }}</span> }
+          </div>
+          <div class="form-group">
+            <label class="form-label required">Type d'objet</label>
+            <input class="form-control" type="text" formControlName="typeObjet" placeholder="PPM, MARCHE…" />
+            @if (fieldErr('typeObjet')) { <span class="form-error">{{ fieldErr('typeObjet') }}</span> }
+          </div>
+          <div class="form-group">
+            <label class="form-label required">Identifiant de l'objet</label>
+            <input class="form-control" type="number" formControlName="idObjet" />
+            @if (fieldErr('idObjet')) { <span class="form-error">{{ fieldErr('idObjet') }}</span> }
+          </div>
           <div class="pub__form-actions">
-            <button type="submit" class="cnm-btn cnm-btn--primary">Créer</button>
+            <button type="submit" class="btn btn-primary">Créer</button>
           </div>
         </form>
       }
@@ -53,113 +53,67 @@ import { StatutBadge } from '../../shared/circuit';
       @if (loading()) {
         <p class="pub__info">Chargement…</p>
       } @else {
-        <table class="pub__table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Objet</th>
-              <th>Statut</th>
-              <th>Consultations</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (p of publications(); track p.idPublication) {
+        <div class="table-card">
+          <table>
+            <thead>
               <tr>
-                <td>{{ p.idPublication }}</td>
-                <td>{{ p.typeObjet }} #{{ p.idObjet }}</td>
-                <td><app-statut-badge [statut]="p.statutPubli" /></td>
-                <td>{{ p.nbConsultations ?? 0 }}</td>
-                <td class="pub__actions">
-                  <button type="button" class="cnm-btn cnm-btn--ghost" (click)="consulter(p)">Consulter</button>
-                  @if (canManage()) {
-                    @if (p.statutPubli === 'EN_ATTENTE') {
-                      <button type="button" class="cnm-btn cnm-btn--success" (click)="publier(p)">Publier</button>
-                    }
-                    @if (p.statutPubli === 'PUBLIE') {
-                      <button type="button" class="cnm-btn cnm-btn--danger" (click)="retirer(p)">Retirer</button>
-                    }
-                  }
-                </td>
+                <th>#</th>
+                <th>Objet</th>
+                <th>Statut</th>
+                <th>Consultations</th>
+                <th>Actions</th>
               </tr>
-            } @empty {
-              <tr><td colspan="5" class="pub__info">Aucune publication.</td></tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (p of publications(); track p.idPublication) {
+                <tr>
+                  <td>{{ p.idPublication }}</td>
+                  <td>{{ p.typeObjet }} #{{ p.idObjet }}</td>
+                  <td><app-statut-badge [statut]="p.statutPubli" /></td>
+                  <td>{{ p.nbConsultations ?? 0 }}</td>
+                  <td class="pub__actions">
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="consulter(p)">Consulter</button>
+                    @if (canManage()) {
+                      @if (p.statutPubli === 'EN_ATTENTE') {
+                        <button type="button" class="btn btn-success btn-sm" (click)="publier(p)">Publier</button>
+                      }
+                      @if (p.statutPubli === 'PUBLIE') {
+                        <button type="button" class="btn btn-danger btn-sm" (click)="retirer(p)">Retirer</button>
+                      }
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="pub__info">Aucune publication.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
   `,
   styles: `
-    .pub__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-    .pub__title {
-      margin: 0;
-      font-size: 1.35rem;
-      color: var(--cnm-text);
-    }
     .pub__info {
-      color: var(--cnm-text-2);
+      color: var(--n-400);
       text-align: center;
       padding: 0.5rem;
     }
     .pub__form {
-      background: var(--cnm-surface);
-      border: 1px solid var(--cnm-border);
-      border-radius: 0.5rem;
-      padding: 1rem;
+      padding: 1.25rem;
       margin-bottom: 1rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.5rem;
       max-width: 28rem;
     }
+    .pub__form .form-group { margin-bottom: 0; }
     .pub__form-actions {
       display: flex;
       justify-content: flex-end;
     }
-    .pub__table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--cnm-surface);
-      border: 1px solid var(--cnm-border);
-      border-radius: 0.5rem;
-      font-size: 0.875rem;
-    }
-    .pub__table th,
-    .pub__table td {
-      text-align: left;
-      padding: 0.5rem 0.75rem;
-      border-bottom: 1px solid var(--cnm-border);
-    }
-    .pub__table th {
-      background: var(--cnm-surface-2);
-      font-weight: 600;
-    }
     .pub__actions {
       display: flex;
       gap: 0.375rem;
-    }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-    .field__label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--cnm-text-2);
-    }
-    .field input {
-      color: var(--cnm-text);
-      background: var(--cnm-bg);
-      border: 1px solid var(--cnm-border-strong);
-      border-radius: 0.375rem;
-      padding: 0.45rem 0.6rem;
     }
   `,
 })

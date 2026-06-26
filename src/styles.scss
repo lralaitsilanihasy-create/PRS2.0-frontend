@@ -506,16 +506,21 @@ a:hover {
   font-weight: var(--cnm-fw-semibold);
 }
 
-/* Champs resserrés — SCOPÉ au formulaire (ne touche ni tables ni barres de filtre). */
+/* Champs resserrés — SCOPÉ au formulaire (ne touche ni tables ni barres de filtre).
+   Couvre les primitives CNM ET les classes du design system (.form-control/.form-group). */
 .cnm-form .cnm-input,
 .cnm-form .cnm-select,
-.cnm-form .cnm-textarea {
+.cnm-form .cnm-textarea,
+.cnm-form .form-control {
   padding: 0.32rem 0.5rem;
 }
-.cnm-form .cnm-field {
+.cnm-form .cnm-field,
+.cnm-form .form-group {
   gap: 2px;
+  margin-bottom: 0;
 }
-.cnm-form .cnm-field__label {
+.cnm-form .cnm-field__label,
+.cnm-form .form-label {
   font-size: var(--cnm-fs-xs);
 }
 

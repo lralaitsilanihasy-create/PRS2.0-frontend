@@ -98,7 +98,7 @@ import { StatutBadge } from '../../shared/circuit';
                         }
 
                         <div class="lrc__upload">
-                          <select class="cnm-select" [value]="uploadType() ?? ''" (change)="uploadType.set($any($event.target).value ? +$any($event.target).value : null)">
+                          <select class="form-control" [value]="uploadType() ?? ''" (change)="uploadType.set($any($event.target).value ? +$any($event.target).value : null)">
                             <option value="">— Type de pièce —</option>
                             @for (t of typesPour(l); track t.idTypePiece) {
                               <option [value]="t.idTypePiece">{{ t.libellePiece }}</option>

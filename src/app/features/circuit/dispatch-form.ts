@@ -38,30 +38,30 @@ interface Option {
           <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="closed.emit()">✕</button>
         </header>
         <div class="modal-body">
-          <label class="cnm-field">
-            <span class="cnm-field__label">Chef de commission</span>
-            <select class="cnm-select" formControlName="imCtrlCc">
+          <label class="form-group">
+            <span class="form-label">Chef de commission</span>
+            <select class="form-control" formControlName="imCtrlCc">
               <option [ngValue]="null">— Sélectionner —</option>
               @for (o of ccOptions(); track o.id) { <option [ngValue]="o.id">{{ o.label }}</option> }
             </select>
-            @if (!ccOptions().length) { <span class="cnm-field__hint cnm-muted">Aucun CC pour cette localité.</span> }
+            @if (!ccOptions().length) { <span class="form-hint">Aucun CC pour cette localité.</span> }
           </label>
-          <label class="cnm-field">
-            <span class="cnm-field__label">Membre assigné *</span>
-            <select class="cnm-select" formControlName="imCtrlMembre">
+          <label class="form-group">
+            <span class="form-label">Membre assigné *</span>
+            <select class="form-control" formControlName="imCtrlMembre">
               <option [ngValue]="null">— Sélectionner —</option>
               @for (o of membreOptions(); track o.id) { <option [ngValue]="o.id">{{ o.label }}</option> }
             </select>
-            @if (req('imCtrlMembre')) { <span class="cnm-field__hint">Obligatoire.</span> }
-            @if (!membreOptions().length) { <span class="cnm-field__hint cnm-muted">Aucun membre pour cette localité.</span> }
+            @if (req('imCtrlMembre')) { <span class="form-error">Obligatoire.</span> }
+            @if (!membreOptions().length) { <span class="form-hint">Aucun membre pour cette localité.</span> }
           </label>
-          <label class="cnm-field">
-            <span class="cnm-field__label">Date de dispatch</span>
-            <input class="cnm-input" type="date" formControlName="dateDispatch" />
+          <label class="form-group">
+            <span class="form-label">Date de dispatch</span>
+            <input class="form-control" type="date" formControlName="dateDispatch" />
           </label>
-          <label class="cnm-field">
-            <span class="cnm-field__label">Instructions</span>
-            <textarea class="cnm-textarea" rows="2" formControlName="instructions"></textarea>
+          <label class="form-group">
+            <span class="form-label">Instructions</span>
+            <textarea class="form-control" rows="2" formControlName="instructions"></textarea>
           </label>
         </div>
         <footer class="modal-footer">

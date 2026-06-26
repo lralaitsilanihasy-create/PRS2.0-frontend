@@ -90,21 +90,21 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                 <h2 class="reg-section__title">Identifiants &amp; identité</h2>
                 <div class="reg-id__grid">
                   @for (f of fields; track f.key) {
-                    <label class="cnm-field">
-                      <span class="cnm-field__label">{{ f.label }}</span>
+                    <label class="form-group">
+                      <span class="form-label">{{ f.label }}</span>
                       <input
-                        class="cnm-input"
+                        class="form-control"
                         [type]="f.type"
                         [formControlName]="f.key"
-                        [class.cnm-input--invalid]="invalid(f.key)"
+                        [class.error]="invalid(f.key)"
                       />
                       @if (form.get(f.key)?.touched && form.get(f.key)?.hasError('required')) {
-                        <span class="cnm-field__hint">Obligatoire.</span>
+                        <span class="form-error">Obligatoire.</span>
                       }
                       @if (form.get(f.key)?.touched && form.get(f.key)?.hasError('minlength')) {
-                        <span class="cnm-field__hint">8 car. min.</span>
+                        <span class="form-error">8 car. min.</span>
                       }
-                      @if (fieldError(f.key)) { <span class="cnm-field__hint">{{ fieldError(f.key) }}</span> }
+                      @if (fieldError(f.key)) { <span class="form-error">{{ fieldError(f.key) }}</span> }
                     </label>
                   }
                 </div>
@@ -114,23 +114,23 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                 <section class="reg-section">
                   <h2 class="reg-section__title">Pièces jointes</h2>
                   <p class="cnm-muted reg-files__note">PDF, JPEG ou PNG.</p>
-                  <label class="cnm-field">
-                    <span class="cnm-field__label">Arrêté de nomination * (≤ 10 Mo)</span>
-                    <input class="cnm-input" type="file" accept=".pdf,image/png,image/jpeg" (change)="onFile('arrete', $event)" />
-                    @if (arrete(); as f) { <span class="cnm-field__hint cnm-muted">{{ f.name }}</span> }
+                  <label class="form-group">
+                    <span class="form-label">Arrêté de nomination * (≤ 10 Mo)</span>
+                    <input class="form-control" type="file" accept=".pdf,image/png,image/jpeg" (change)="onFile('arrete', $event)" />
+                    @if (arrete(); as f) { <span class="form-hint">{{ f.name }}</span> }
                   </label>
-                  <label class="cnm-field">
-                    <span class="cnm-field__label">CIN * (≤ 5 Mo)</span>
-                    <input class="cnm-input" type="file" accept=".pdf,image/png,image/jpeg" (change)="onFile('cin', $event)" />
-                    @if (cin(); as f) { <span class="cnm-field__hint cnm-muted">{{ f.name }}</span> }
+                  <label class="form-group">
+                    <span class="form-label">CIN * (≤ 5 Mo)</span>
+                    <input class="form-control" type="file" accept=".pdf,image/png,image/jpeg" (change)="onFile('cin', $event)" />
+                    @if (cin(); as f) { <span class="form-hint">{{ f.name }}</span> }
                   </label>
-                  <div class="cnm-field">
-                    <span class="cnm-field__label">Photo (optionnelle, ≤ 5 Mo)</span>
+                  <div class="form-group">
+                    <span class="form-label">Photo (optionnelle, ≤ 5 Mo)</span>
                     @if (photo(); as f) {
                       <div class="reg-photo__preview">
                         @if (photoPreview(); as src) { <img class="reg-photo__img" [src]="src" alt="Aperçu de la photo" /> }
                         <div class="reg-photo__meta">
-                          <span class="cnm-field__hint cnm-muted">{{ f.name }}</span>
+                          <span class="form-hint">{{ f.name }}</span>
                           <button type="button" class="btn btn-secondary btn-sm" (click)="reprendrePhoto()">Reprendre</button>
                           <button type="button" class="btn btn-danger btn-sm" (click)="clearPhoto()">Retirer</button>
                         </div>
@@ -145,7 +145,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                       </div>
                     } @else {
                       <div class="reg-photo__choices">
-                        <input class="cnm-input" type="file" accept="image/png,image/jpeg" (change)="onFile('photo', $event)" />
+                        <input class="form-control" type="file" accept="image/png,image/jpeg" (change)="onFile('photo', $event)" />
                         <button
                           type="button"
                           class="btn btn-secondary btn-sm"
@@ -155,11 +155,11 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                           {{ cameraState() === 'starting' ? 'Ouverture…' : '📷 Prendre une photo' }}
                         </button>
                       </div>
-                      @if (cameraError()) { <span class="cnm-field__hint">{{ cameraError() }}</span> }
+                      @if (cameraError()) { <span class="form-error">{{ cameraError() }}</span> }
                     }
                     <canvas #snap hidden></canvas>
                   </div>
-                  @if (fileError()) { <span class="cnm-field__hint">{{ fileError() }}</span> }
+                  @if (fileError()) { <span class="form-error">{{ fileError() }}</span> }
                 </section>
 
                 <section class="reg-section reg-entites">
@@ -171,7 +171,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                     @for (d of declarations(); track $index; let i = $index) {
                       <div class="reg-entite">
                         <div class="reg-entite__row">
-                          <select class="cnm-select" [value]="d.mode" (change)="setMode(i, $any($event.target).value)">
+                          <select class="form-control" [value]="d.mode" (change)="setMode(i, $any($event.target).value)">
                             <option value="existante">Entité de la liste</option>
                             <option value="proposee">Entité non listée (à proposer)</option>
                           </select>
@@ -182,7 +182,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
 
                         @if (d.mode === 'existante') {
                           <select
-                            class="cnm-select"
+                            class="form-control"
                             [value]="d.idEntite ?? ''"
                             (change)="updateDecl(i, { idEntite: toNum($any($event.target).value) })"
                           >
@@ -194,33 +194,33 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                             }
                           </select>
                           @if (!entites().length) {
-                            <span class="cnm-field__hint cnm-muted">Aucune entité — proposez-en une.</span>
+                            <span class="form-hint">Aucune entité — proposez-en une.</span>
                           }
                         } @else {
                           <div class="reg-entite__grid">
-                            <label class="cnm-field">
-                              <span class="cnm-field__label">Libellé *</span>
-                              <input class="cnm-input" [value]="d.libelle" (input)="updateDecl(i, { libelle: $any($event.target).value })" />
+                            <label class="form-group">
+                              <span class="form-label">Libellé *</span>
+                              <input class="form-control" [value]="d.libelle" (input)="updateDecl(i, { libelle: $any($event.target).value })" />
                             </label>
-                            <label class="cnm-field">
-                              <span class="cnm-field__label">Code localité *</span>
-                              <input class="cnm-input" maxlength="5" [value]="d.idLocalite" (input)="updateDecl(i, { idLocalite: $any($event.target).value })" />
+                            <label class="form-group">
+                              <span class="form-label">Code localité *</span>
+                              <input class="form-control" maxlength="5" [value]="d.idLocalite" (input)="updateDecl(i, { idLocalite: $any($event.target).value })" />
                             </label>
-                            <label class="cnm-field">
-                              <span class="cnm-field__label">Adresse</span>
-                              <input class="cnm-input" [value]="d.adresse" (input)="updateDecl(i, { adresse: $any($event.target).value })" />
+                            <label class="form-group">
+                              <span class="form-label">Adresse</span>
+                              <input class="form-control" [value]="d.adresse" (input)="updateDecl(i, { adresse: $any($event.target).value })" />
                             </label>
-                            <label class="cnm-field">
-                              <span class="cnm-field__label">Catégorie</span>
-                              <input class="cnm-input" [value]="d.categorie" (input)="updateDecl(i, { categorie: $any($event.target).value })" />
+                            <label class="form-group">
+                              <span class="form-label">Catégorie</span>
+                              <input class="form-control" [value]="d.categorie" (input)="updateDecl(i, { categorie: $any($event.target).value })" />
                             </label>
                           </div>
-                          <span class="cnm-field__hint cnm-muted">Proposition validée par l'Administrateur.</span>
+                          <span class="form-hint">Proposition validée par l'Administrateur.</span>
                         }
                       </div>
                     }
                   </div>
-                  @if (entitesError()) { <span class="cnm-field__hint">{{ entitesError() }}</span> }
+                  @if (entitesError()) { <span class="form-error">{{ entitesError() }}</span> }
                 </section>
               </div>
             </div>
@@ -283,7 +283,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
       border-radius: var(--cnm-radius-sm);
     }
     .reg-entite__row { display: flex; gap: var(--cnm-space-2); align-items: center; }
-    .reg-entite__row .cnm-select { flex: 1; }
+    .reg-entite__row .form-control { flex: 1; }
     .reg-entite__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-2); }
 
     .reg-files__note { font-size: var(--cnm-fs-xs); margin: 0; }
@@ -300,10 +300,9 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
     .register-card__login-link { font-size: var(--cnm-fs-sm); }
 
     /* Champs resserrés (scopé à la carte) */
-    .register-card .cnm-input,
-    .register-card .cnm-select { padding: 0.32rem 0.5rem; }
-    .register-card .cnm-field { gap: 2px; }
-    .register-card .cnm-field__label { font-size: var(--cnm-fs-xs); }
+    .register-card .form-control { padding: 0.32rem 0.5rem; }
+    .register-card .form-group { gap: 2px; margin-bottom: 0; }
+    .register-card .form-label { font-size: var(--cnm-fs-xs); }
 
     .register-card__error {
       background: var(--cnm-danger-bg);

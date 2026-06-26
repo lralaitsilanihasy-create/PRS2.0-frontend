@@ -76,8 +76,8 @@
 
         <div class="cnm-form-grid">
           @for (f of config.fields; track f.key) {
-            <label class="cnm-field">
-              <span class="cnm-field__label">
+            <label class="form-group">
+              <span class="form-label">
                 {{ f.label }}@if (f.required) {<span class="crud__req">*</span>}
               </span>
 
@@ -86,21 +86,21 @@
                   <input type="checkbox" [formControlName]="f.key" />
                 }
                 @case ('number') {
-                  <input type="number" class="cnm-input" [formControlName]="f.key" />
+                  <input type="number" class="form-control" [formControlName]="f.key" />
                 }
                 @case ('date') {
-                  <input type="date" class="cnm-input" [formControlName]="f.key" />
+                  <input type="date" class="form-control" [formControlName]="f.key" />
                 }
                 @default {
-                  <input type="text" class="cnm-input" [formControlName]="f.key" />
+                  <input type="text" class="form-control" [formControlName]="f.key" />
                 }
               }
 
               @if (form.get(f.key)?.touched && form.get(f.key)?.hasError('required')) {
-                <span class="cnm-field__hint">Ce champ est obligatoire.</span>
+                <span class="form-error">Ce champ est obligatoire.</span>
               }
               @if (fieldError(f.key)) {
-                <span class="cnm-field__hint">{{ fieldError(f.key) }}</span>
+                <span class="form-error">{{ fieldError(f.key) }}</span>
               }
             </label>
           }

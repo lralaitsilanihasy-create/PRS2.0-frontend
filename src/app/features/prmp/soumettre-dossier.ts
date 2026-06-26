@@ -83,44 +83,44 @@ type ModeSuggestion = {
           <form class="card sd__form cnm-form" [formGroup]="ppmForm" (ngSubmit)="creerPpm()" novalidate>
             <h2 class="sd__sub">En-tête du PPM</h2>
             <div class="cnm-form-grid">
-              <label class="cnm-field">
-                <span class="cnm-field__label">Entité contractante *</span>
-                <select class="cnm-select" formControlName="idEntiteContract">
+              <label class="form-group">
+                <span class="form-label">Entité contractante *</span>
+                <select class="form-control" formControlName="idEntiteContract">
                   <option [ngValue]="null">— Sélectionner —</option>
                   @for (e of entites(); track e.idEntiteContract) {
                     <option [ngValue]="e.idEntiteContract">{{ e.libelle }}</option>
                   }
                 </select>
-                @if (req(ppmForm, 'idEntiteContract')) { <span class="cnm-field__hint">Obligatoire.</span> }
-                @if (err('idEntiteContract')) { <span class="cnm-field__hint">{{ err('idEntiteContract') }}</span> }
-                @if (!entites().length) { <span class="cnm-field__hint cnm-muted">Aucune entité rattachée à votre profil PRMP.</span> }
+                @if (req(ppmForm, 'idEntiteContract')) { <span class="form-error">Obligatoire.</span> }
+                @if (err('idEntiteContract')) { <span class="form-error">{{ err('idEntiteContract') }}</span> }
+                @if (!entites().length) { <span class="form-hint">Aucune entité rattachée à votre profil PRMP.</span> }
               </label>
-              <label class="cnm-field">
-                <span class="cnm-field__label">Localité (dérivée de l'entité)</span>
-                <input class="cnm-input" type="text" [value]="localiteLabel()" readonly disabled />
-                <span class="cnm-field__hint cnm-muted">Le dossier sera déposé dans cette localité.</span>
+              <label class="form-group">
+                <span class="form-label">Localité (dérivée de l'entité)</span>
+                <input class="form-control" type="text" [value]="localiteLabel()" readonly disabled />
+                <span class="form-hint">Le dossier sera déposé dans cette localité.</span>
               </label>
-              <label class="cnm-field">
-                <span class="cnm-field__label">Exercice *</span>
-                <input class="cnm-input" type="number" formControlName="exercice" />
-                @if (req(ppmForm, 'exercice')) { <span class="cnm-field__hint">Obligatoire.</span> }
-                @if (err('exercice')) { <span class="cnm-field__hint">{{ err('exercice') }}</span> }
+              <label class="form-group">
+                <span class="form-label">Exercice *</span>
+                <input class="form-control" type="number" formControlName="exercice" />
+                @if (req(ppmForm, 'exercice')) { <span class="form-error">Obligatoire.</span> }
+                @if (err('exercice')) { <span class="form-error">{{ err('exercice') }}</span> }
               </label>
-              <label class="cnm-field">
-                <span class="cnm-field__label">Référence PPM</span>
-                <input class="cnm-input" type="text" value="" placeholder="Générée automatiquement à la création" readonly />
-                <span class="cnm-field__hint cnm-muted">Générée par le serveur (⟨séquence⟩/⟨entité⟩/PPM/⟨année⟩) ; visible après création.</span>
+              <label class="form-group">
+                <span class="form-label">Référence PPM</span>
+                <input class="form-control" type="text" value="" placeholder="Générée automatiquement à la création" readonly />
+                <span class="form-hint">Générée par le serveur (⟨séquence⟩/⟨entité⟩/PPM/⟨année⟩) ; visible après création.</span>
               </label>
-              <label class="cnm-field">
-                <span class="cnm-field__label">Signataire</span>
-                <input class="cnm-input" type="text" [value]="signataireConnecte()" readonly />
-                <span class="cnm-field__hint cnm-muted">Renseigné automatiquement depuis votre profil PRMP.</span>
+              <label class="form-group">
+                <span class="form-label">Signataire</span>
+                <input class="form-control" type="text" [value]="signataireConnecte()" readonly />
+                <span class="form-hint">Renseigné automatiquement depuis votre profil PRMP.</span>
               </label>
-              <label class="cnm-field">
-                <span class="cnm-field__label">Date de signature *</span>
-                <input class="cnm-input" type="date" formControlName="dateSignature" />
-                @if (req(ppmForm, 'dateSignature')) { <span class="cnm-field__hint">Obligatoire.</span> }
-                @if (err('dateSignature')) { <span class="cnm-field__hint">{{ err('dateSignature') }}</span> }
+              <label class="form-group">
+                <span class="form-label">Date de signature *</span>
+                <input class="form-control" type="date" formControlName="dateSignature" />
+                @if (req(ppmForm, 'dateSignature')) { <span class="form-error">Obligatoire.</span> }
+                @if (err('dateSignature')) { <span class="form-error">{{ err('dateSignature') }}</span> }
               </label>
             </div>
 
@@ -134,39 +134,39 @@ type ModeSuggestion = {
             @for (g of marcheControls(); track g.get('uid')!.value) {
               <div class="sd__ligne cnm-form" [formGroup]="g">
                 <div class="cnm-form-grid">
-                  <label class="cnm-field"><span class="cnm-field__label">Désignation</span>
-                    <input class="cnm-input" type="text" formControlName="designationMarche" /></label>
-                  <label class="cnm-field"><span class="cnm-field__label">Montant estimé</span>
-                    <input class="cnm-input" type="number" formControlName="montEstim" /></label>
-                  <label class="cnm-field"><span class="cnm-field__label">Compte</span>
-                    <select class="cnm-select" formControlName="numCompte">
+                  <label class="form-group"><span class="form-label">Désignation</span>
+                    <input class="form-control" type="text" formControlName="designationMarche" /></label>
+                  <label class="form-group"><span class="form-label">Montant estimé</span>
+                    <input class="form-control" type="number" formControlName="montEstim" /></label>
+                  <label class="form-group"><span class="form-label">Compte</span>
+                    <select class="form-control" formControlName="numCompte">
                       <option [ngValue]="null">— Sélectionner —</option>
                       @for (c of comptes(); track c.numCompte) { <option [ngValue]="c.numCompte">{{ c.libelle || c.numCompte }}</option> }
                     </select></label>
-                  <label class="cnm-field"><span class="cnm-field__label">Situation</span>
-                    <select class="cnm-select" formControlName="idSituation">
+                  <label class="form-group"><span class="form-label">Situation</span>
+                    <select class="form-control" formControlName="idSituation">
                       <option [ngValue]="null">— Sélectionner —</option>
                       @for (s of situations(); track s.idSituation) { <option [ngValue]="s.idSituation">{{ s.libelle || '#' + s.idSituation }}</option> }
                     </select></label>
-                  <label class="cnm-field"><span class="cnm-field__label">Nature</span>
-                    <select class="cnm-select" formControlName="idNature">
+                  <label class="form-group"><span class="form-label">Nature</span>
+                    <select class="form-control" formControlName="idNature">
                       <option [ngValue]="null">— Sélectionner —</option>
                       @for (n of natures(); track n.idNature) { <option [ngValue]="n.idNature">{{ n.libelle || '#' + n.idNature }}</option> }
                     </select></label>
-                  <label class="cnm-field"><span class="cnm-field__label">Financement</span>
-                    <input class="cnm-input" type="text" formControlName="financement" /></label>
-                  <label class="cnm-field"><span class="cnm-field__label">Statut</span>
-                    <input class="cnm-input" type="text" formControlName="statut" /></label>
-                  <label class="cnm-field"><span class="cnm-field__label">Mode de passation</span>
+                  <label class="form-group"><span class="form-label">Financement</span>
+                    <input class="form-control" type="text" formControlName="financement" /></label>
+                  <label class="form-group"><span class="form-label">Statut</span>
+                    <input class="form-control" type="text" formControlName="statut" /></label>
+                  <label class="form-group"><span class="form-label">Mode de passation</span>
                     @switch (modeLigne(g).state) {
-                      @case ('loading') { <span class="cnm-field__hint cnm-muted">Détermination…</span> }
+                      @case ('loading') { <span class="form-hint">Détermination…</span> }
                       @case ('ready') {
-                        <select class="cnm-select" formControlName="idMode">
+                        <select class="form-control" formControlName="idMode">
                           @for (m of modeLigne(g).modes; track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle }}</option> }
                         </select>
                       }
-                      @case ('none') { <span class="cnm-field__hint cnm-muted">Mode à déterminer (aucune règle).</span> }
-                      @default { <span class="cnm-field__hint cnm-muted">Renseignez situation, nature et montant.</span> }
+                      @case ('none') { <span class="form-hint">Mode à déterminer (aucune règle).</span> }
+                      @default { <span class="form-hint">Renseignez situation, nature et montant.</span> }
                     }
                   </label>
                 </div>
@@ -209,7 +209,7 @@ type ModeSuggestion = {
                     </label>
                   }
                   @if (pieceErreurs().has(t.idTypePiece)) {
-                    <span class="cnm-field__hint sd__piece-err">Cette pièce est obligatoire.</span>
+                    <span class="form-error sd__piece-err">Cette pièce est obligatoire.</span>
                   }
                 </div>
               }
@@ -228,32 +228,32 @@ type ModeSuggestion = {
         @case ('saisieDossier') {
           <form class="card sd__form cnm-form" [formGroup]="dossierForm" (ngSubmit)="creerDossier()" novalidate>
             <div class="cnm-form-grid">
-              <label class="cnm-field">
-                <span class="cnm-field__label">Type de dossier *</span>
-                <select class="cnm-select" formControlName="idTypeDossier">
+              <label class="form-group">
+                <span class="form-label">Type de dossier *</span>
+                <select class="form-control" formControlName="idTypeDossier">
                   <option [ngValue]="null">— Sélectionner —</option>
                   @for (t of typesNonPpm(); track t.idTypeDossier) {
                     <option [ngValue]="t.idTypeDossier">{{ t.libelleType || t.idTypeDossier }}</option>
                   }
                 </select>
-                @if (req(dossierForm, 'idTypeDossier')) { <span class="cnm-field__hint">Obligatoire.</span> }
-                @if (err('idTypeDossier')) { <span class="cnm-field__hint">{{ err('idTypeDossier') }}</span> }
+                @if (req(dossierForm, 'idTypeDossier')) { <span class="form-error">Obligatoire.</span> }
+                @if (err('idTypeDossier')) { <span class="form-error">{{ err('idTypeDossier') }}</span> }
               </label>
-              <label class="cnm-field">
-                <span class="cnm-field__label">Entité contractante *</span>
-                <select class="cnm-select" formControlName="idEntiteContract">
+              <label class="form-group">
+                <span class="form-label">Entité contractante *</span>
+                <select class="form-control" formControlName="idEntiteContract">
                   <option [ngValue]="null">— Sélectionner —</option>
                   @for (e of entites(); track e.idEntiteContract) {
                     <option [ngValue]="e.idEntiteContract">{{ e.libelle }}</option>
                   }
                 </select>
-                @if (req(dossierForm, 'idEntiteContract')) { <span class="cnm-field__hint">Obligatoire.</span> }
-                @if (!entites().length) { <span class="cnm-field__hint cnm-muted">Aucune entité rattachée à votre profil PRMP.</span> }
+                @if (req(dossierForm, 'idEntiteContract')) { <span class="form-error">Obligatoire.</span> }
+                @if (!entites().length) { <span class="form-hint">Aucune entité rattachée à votre profil PRMP.</span> }
               </label>
-              <label class="cnm-field">
-                <span class="cnm-field__label">Localité (dérivée de l'entité)</span>
-                <input class="cnm-input" type="text" [value]="localiteLabel()" readonly disabled />
-                <span class="cnm-field__hint cnm-muted">Le dossier sera déposé dans cette localité.</span>
+              <label class="form-group">
+                <span class="form-label">Localité (dérivée de l'entité)</span>
+                <input class="form-control" type="text" [value]="localiteLabel()" readonly disabled />
+                <span class="form-hint">Le dossier sera déposé dans cette localité.</span>
               </label>
             </div>
             <footer class="sd__foot">
@@ -319,41 +319,41 @@ type ModeSuggestion = {
                   @if (ligneOuverte()) {
                     <form class="sd__ligne-form cnm-form" [formGroup]="marcheForm" (ngSubmit)="enregistrerLigne()" novalidate>
                       <div class="cnm-form-grid">
-                        <label class="cnm-field">
-                          <span class="cnm-field__label">Identifiant marché (PK) *</span>
-                          <input class="cnm-input" type="number" formControlName="idDetail" [readonly]="editId() !== null" />
-                          @if (req(marcheForm, 'idDetail')) { <span class="cnm-field__hint">Obligatoire.</span> }
-                          @if (err('idDetail')) { <span class="cnm-field__hint">{{ err('idDetail') }}</span> }
+                        <label class="form-group">
+                          <span class="form-label">Identifiant marché (PK) *</span>
+                          <input class="form-control" type="number" formControlName="idDetail" [readonly]="editId() !== null" />
+                          @if (req(marcheForm, 'idDetail')) { <span class="form-error">Obligatoire.</span> }
+                          @if (err('idDetail')) { <span class="form-error">{{ err('idDetail') }}</span> }
                         </label>
-                        <label class="cnm-field">
-                          <span class="cnm-field__label">Désignation</span>
-                          <input class="cnm-input" type="text" formControlName="designationMarche" />
+                        <label class="form-group">
+                          <span class="form-label">Désignation</span>
+                          <input class="form-control" type="text" formControlName="designationMarche" />
                         </label>
-                        <label class="cnm-field">
-                          <span class="cnm-field__label">Montant estimé</span>
-                          <input class="cnm-input" type="number" formControlName="montEstim" />
+                        <label class="form-group">
+                          <span class="form-label">Montant estimé</span>
+                          <input class="form-control" type="number" formControlName="montEstim" />
                         </label>
-                        <label class="cnm-field">
-                          <span class="cnm-field__label">Compte</span>
-                          <select class="cnm-select" formControlName="numCompte">
+                        <label class="form-group">
+                          <span class="form-label">Compte</span>
+                          <select class="form-control" formControlName="numCompte">
                             <option [ngValue]="null">— Sélectionner —</option>
                             @for (c of comptes(); track c.numCompte) {
                               <option [ngValue]="c.numCompte">{{ c.libelle || c.numCompte }}</option>
                             }
                           </select>
                         </label>
-                        <label class="cnm-field">
-                          <span class="cnm-field__label">Situation</span>
-                          <select class="cnm-select" formControlName="idSituation">
+                        <label class="form-group">
+                          <span class="form-label">Situation</span>
+                          <select class="form-control" formControlName="idSituation">
                             <option [ngValue]="null">— Sélectionner —</option>
                             @for (s of situations(); track s.idSituation) {
                               <option [ngValue]="s.idSituation">{{ s.libelle || '#' + s.idSituation }}</option>
                             }
                           </select>
                         </label>
-                        <label class="cnm-field">
-                          <span class="cnm-field__label">Nature</span>
-                          <select class="cnm-select" formControlName="idNature">
+                        <label class="form-group">
+                          <span class="form-label">Nature</span>
+                          <select class="form-control" formControlName="idNature">
                             <option [ngValue]="null">— Sélectionner —</option>
                             @for (n of natures(); track n.idNature) {
                               <option [ngValue]="n.idNature">{{ n.libelle || '#' + n.idNature }}</option>
@@ -361,16 +361,16 @@ type ModeSuggestion = {
                           </select>
                         </label>
                       </div>
-                      <div class="cnm-field sd__mode">
-                        <span class="cnm-field__label">Mode de passation</span>
+                      <div class="form-group sd__mode">
+                        <span class="form-label">Mode de passation</span>
                         @switch (modeSuggestion().state) {
                           @case ('loading') { <span class="cnm-muted">Détermination du mode…</span> }
                           @case ('ready') {
-                            <select class="cnm-select" formControlName="idMode">
+                            <select class="form-control" formControlName="idMode">
                               @for (m of modeSuggestion().modes; track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle }}</option> }
                             </select>
                           }
-                          @case ('none') { <span class="cnm-field__hint cnm-muted">Mode à déterminer (aucune règle).</span> }
+                          @case ('none') { <span class="form-hint">Mode à déterminer (aucune règle).</span> }
                           @default { <span class="cnm-muted">Complétez situation, nature et montant pour voir le mode.</span> }
                         }
                       </div>
@@ -387,7 +387,7 @@ type ModeSuggestion = {
 
               <footer class="sd__foot sd__foot--main">
                 @if (ppmSansMarche()) {
-                  <span class="cnm-field__hint cnm-muted sd__soumettre-hint">
+                  <span class="form-hint sd__soumettre-hint">
                     Ajoutez au moins un marché avant de soumettre.
                   </span>
                 }
@@ -415,12 +415,12 @@ type ModeSuggestion = {
               <p class="form-hint">Au moins un processus est obligatoire ; un processus par ligne.</p>
               @for (ctrl of procControls(); track $index) {
                 <div class="sd-proc-row" [formGroup]="ctrl">
-                  <select class="cnm-select" formControlName="idCapm">
+                  <select class="form-control" formControlName="idCapm">
                     <option [ngValue]="null" disabled>— Processus —</option>
                     @for (c of capmsPourProc(ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
                   </select>
-                  <input class="cnm-input" type="date" formControlName="dateDebut" />
-                  <input class="cnm-input" type="date" formControlName="dateFin" />
+                  <input class="form-control" type="date" formControlName="dateDebut" />
+                  <input class="form-control" type="date" formControlName="dateFin" />
                   <button type="button" class="btn btn-secondary btn-sm" (click)="retirerProc($index)" aria-label="Retirer">✕</button>
                 </div>
                 @if (procErreur(ctrl.get('idCapm')!.value)) {
@@ -483,7 +483,7 @@ type ModeSuggestion = {
     .sd__dates-manq { color: var(--warning-text); font-size: var(--text-sm); font-weight: 700; }
     .sd__dates-ok { color: var(--success-text); font-size: var(--text-sm); font-weight: 700; }
     .sd-proc-row { display: flex; align-items: center; gap: 0.5rem; }
-    .sd-proc-row .cnm-select { flex: 1; min-width: 8rem; }
+    .sd-proc-row .form-control { flex: 1; min-width: 8rem; }
     .sd-proc-err { color: var(--danger-text); display: block; }
     .confirm-modal { max-width: 36rem; }
     .table-card td { white-space: normal; }

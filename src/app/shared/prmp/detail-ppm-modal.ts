@@ -268,16 +268,16 @@ type ModeSuggestion = {
               } @else {
                 @for (ctrl of datesControls(ef); track $index) {
                   <div class="dpm-date-row" [formGroup]="ctrl">
-                    <select class="cnm-select" formControlName="idCapm">
+                    <select class="form-control" formControlName="idCapm">
                       <option [ngValue]="null" disabled>— Processus —</option>
                       @for (c of capmsPourLigne(ef, ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
                     </select>
-                    <input class="cnm-input" type="date" formControlName="dateDebut" />
-                    <input class="cnm-input" type="date" formControlName="dateFin" />
+                    <input class="form-control" type="date" formControlName="dateDebut" />
+                    <input class="form-control" type="date" formControlName="dateFin" />
                     <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerDate(ef, $index)">✕</button>
                   </div>
                   @if (procErreur(ctrl.get('idCapm')!.value)) {
-                    <span class="cnm-field__hint dpm-date-err">{{ procErreur(ctrl.get('idCapm')!.value) }}</span>
+                    <span class="form-error dpm-date-err">{{ procErreur(ctrl.get('idCapm')!.value) }}</span>
                   }
                 } @empty {
                   <p class="dpm__info">Aucune date. Ajoutez-en une.</p>
@@ -304,78 +304,78 @@ type ModeSuggestion = {
             <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerCreation()">&times;</button>
           </header>
           <div class="dpm__body dpm__body--pad dpm-form">
-            <label class="cnm-field">
-              <span class="cnm-field__label">Identifiant marché (PK) *</span>
-              <input class="cnm-input" type="number" formControlName="idDetail" [readonly]="!!editingMarche()" />
-              @if (createForm.get('idDetail')?.touched && createForm.get('idDetail')?.hasError('required')) { <span class="cnm-field__hint">Obligatoire.</span> }
-              @if (createErr('idDetail')) { <span class="cnm-field__hint">{{ createErr('idDetail') }}</span> }
+            <label class="form-group">
+              <span class="form-label">Identifiant marché (PK) *</span>
+              <input class="form-control" type="number" formControlName="idDetail" [readonly]="!!editingMarche()" />
+              @if (createForm.get('idDetail')?.touched && createForm.get('idDetail')?.hasError('required')) { <span class="form-error">Obligatoire.</span> }
+              @if (createErr('idDetail')) { <span class="form-error">{{ createErr('idDetail') }}</span> }
             </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Dossier</span>
-              <input class="cnm-input" type="number" formControlName="idDossier" readonly />
+            <label class="form-group">
+              <span class="form-label">Dossier</span>
+              <input class="form-control" type="number" formControlName="idDossier" readonly />
             </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Désignation</span>
-              <input class="cnm-input" type="text" formControlName="designationMarche" />
+            <label class="form-group">
+              <span class="form-label">Désignation</span>
+              <input class="form-control" type="text" formControlName="designationMarche" />
             </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Compte</span>
-              <select class="cnm-select" formControlName="numCompte">
+            <label class="form-group">
+              <span class="form-label">Compte</span>
+              <select class="form-control" formControlName="numCompte">
                 <option [ngValue]="null">— Sélectionner —</option>
                 @for (c of comptes(); track c.numCompte) { <option [ngValue]="c.numCompte">{{ c.libelle || c.numCompte }}</option> }
               </select>
-              @if (refsLoading()) { <span class="cnm-field__hint cnm-muted">Chargement…</span> }
+              @if (refsLoading()) { <span class="form-hint">Chargement…</span> }
             </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Montant estimé</span>
-              <input class="cnm-input" type="number" formControlName="montEstim" />
+            <label class="form-group">
+              <span class="form-label">Montant estimé</span>
+              <input class="form-control" type="number" formControlName="montEstim" />
             </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Financement</span>
-              <input class="cnm-input" type="text" formControlName="financement" />
+            <label class="form-group">
+              <span class="form-label">Financement</span>
+              <input class="form-control" type="text" formControlName="financement" />
             </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Statut</span>
-              <input class="cnm-input" type="text" formControlName="statut" />
+            <label class="form-group">
+              <span class="form-label">Statut</span>
+              <input class="form-control" type="text" formControlName="statut" />
             </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Situation</span>
-              <select class="cnm-select" formControlName="idSituation">
+            <label class="form-group">
+              <span class="form-label">Situation</span>
+              <select class="form-control" formControlName="idSituation">
                 <option [ngValue]="null">— Sélectionner —</option>
                 @for (s of situations(); track s.idSituation) { <option [ngValue]="s.idSituation">{{ s.libelle || '#' + s.idSituation }}</option> }
               </select>
             </label>
-            <label class="cnm-field">
-              <span class="cnm-field__label">Nature</span>
-              <select class="cnm-select" formControlName="idNature">
+            <label class="form-group">
+              <span class="form-label">Nature</span>
+              <select class="form-control" formControlName="idNature">
                 <option [ngValue]="null">— Sélectionner —</option>
                 @for (n of natures(); track n.idNature) { <option [ngValue]="n.idNature">{{ n.libelle || '#' + n.idNature }}</option> }
               </select>
             </label>
-            <div class="cnm-field dpm-form__mode">
-              <span class="cnm-field__label">Mode de passation</span>
+            <div class="form-group dpm-form__mode">
+              <span class="form-label">Mode de passation</span>
               @switch (modeSuggestion().state) {
                 @case ('loading') { <span class="cnm-muted">Détermination du mode…</span> }
                 @case ('ready') {
-                  <select class="cnm-select" formControlName="idMode">
+                  <select class="form-control" formControlName="idMode">
                     @for (m of modeSuggestion().modes; track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle }}</option> }
                   </select>
                 }
                 @case ('none') { <span class="cnm-badge cnm-badge--warning">Mode à déterminer (aucune règle)</span> }
                 @default { <span class="cnm-muted">Renseignez situation, nature et montant.</span> }
               }
-              <span class="cnm-field__hint cnm-muted">Localité (dérivée de l'entité) : {{ localiteLabel() }}</span>
+              <span class="form-hint">Localité (dérivée de l'entité) : {{ localiteLabel() }}</span>
             </div>
-            <div class="cnm-field dpm-form__dates">
-              <span class="cnm-field__label">Dates prévisionnelles (par processus)</span>
+            <div class="form-group dpm-form__dates">
+              <span class="form-label">Dates prévisionnelles (par processus)</span>
               @for (ctrl of datesControls(createForm); track $index) {
                 <div class="dpm-date-row" [formGroup]="ctrl">
-                  <select class="cnm-select" formControlName="idCapm">
+                  <select class="form-control" formControlName="idCapm">
                     <option [ngValue]="null" disabled>— Processus —</option>
                     @for (c of capmsPourLigne(createForm, ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
                   </select>
-                  <input class="cnm-input" type="date" formControlName="dateDebut" />
-                  <input class="cnm-input" type="date" formControlName="dateFin" />
+                  <input class="form-control" type="date" formControlName="dateDebut" />
+                  <input class="form-control" type="date" formControlName="dateFin" />
                   <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerDate(createForm, $index)">✕</button>
                 </div>
               }
