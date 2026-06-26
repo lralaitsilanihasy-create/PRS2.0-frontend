@@ -81,7 +81,6 @@ type ModeSuggestion = {
 
         @case ('saisiePpm') {
           <form class="card sd__form cnm-form" [formGroup]="ppmForm" (ngSubmit)="creerPpm()" novalidate>
-            <h2 class="sd__sub">En-tête du PPM</h2>
             <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Entité contractante *</span>
@@ -105,11 +104,6 @@ type ModeSuggestion = {
                 <input class="form-control" type="number" formControlName="exercice" />
                 @if (req(ppmForm, 'exercice')) { <span class="form-error">Obligatoire.</span> }
                 @if (err('exercice')) { <span class="form-error">{{ err('exercice') }}</span> }
-              </label>
-              <label class="form-group">
-                <span class="form-label">Référence PPM</span>
-                <input class="form-control" type="text" value="" placeholder="Générée automatiquement à la création" readonly />
-                <span class="form-hint">Générée par le serveur (⟨séquence⟩/⟨entité⟩/PPM/⟨année⟩) ; visible après création.</span>
               </label>
               <label class="form-group">
                 <span class="form-label">Signataire</span>
