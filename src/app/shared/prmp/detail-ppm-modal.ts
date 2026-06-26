@@ -42,74 +42,92 @@ type ModeSuggestion = {
   imports: [ReactiveFormsModule, DatePipe, DecimalPipe],
   template: `
     <div class="modal-backdrop" (click)="emitFermer()">
-      <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="modal modal-xl" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
 
-        <!-- EN-TÊTE -->
-        <div class="modal-header">
-          <div class="header-inner">
-            <div>
-              <div class="header-chips">
-                <span class="chip chip-type">Plan de passation</span>
-                <span class="chip chip-live">Actif</span>
-              </div>
-              <div class="modal-ref">{{ ppm()?.reference || 'PPM #' + idPpm }}</div>
-              <div class="modal-desc">
-                {{ ppm()?.idLocalite || '—' }} <span>·</span>
-                Exercice {{ ppm()?.exercice }}
-              </div>
+        <!-- ── HEADER ── -->
+        <div class="dpm-header">
+
+          <!-- Ligne 1 : chips + fermer -->
+          <div class="dpm-header-top">
+            <div class="dpm-chips">
+              <span class="dpm-chip dpm-chip-type">Plan de passation</span>
+              <span class="dpm-chip dpm-chip-active"><span class="dpm-chip-dot"></span>Actif</span>
             </div>
             <button class="btn-close" type="button" (click)="emitFermer()">✕</button>
           </div>
 
-          <div class="meta-band">
-            <div class="meta-cell">
-              <span class="meta-lbl">Référence</span>
-              <span class="meta-val">{{ ppm()?.reference || '—' }}</span>
+          <!-- Ligne 2 : titre -->
+          <div class="dpm-title">{{ ppm()?.reference || 'PPM #' + idPpm }}</div>
+
+          <!-- Ligne 3 : localité · exercice -->
+          <div class="dpm-subtitle">
+            <i aria-hidden="true">📍</i>
+            <span>{{ ppm()?.idLocalite || '—' }}</span>
+            <span class="dpm-sep">·</span>
+            <i aria-hidden="true">📅</i>
+            <span>Exercice {{ ppm()?.exercice }}</span>
+          </div>
+
+          <!-- Métadonnées : une par ligne -->
+          <div class="dpm-meta">
+            <div class="dpm-meta-row">
+              <span class="dpm-meta-label">Référence</span>
+              <span class="dpm-meta-value">{{ ppm()?.reference || '—' }}</span>
             </div>
-            <div class="meta-cell">
-              <span class="meta-lbl">Exercice</span>
-              <span class="meta-val">{{ ppm()?.exercice }}</span>
+            <div class="dpm-meta-row">
+              <span class="dpm-meta-label">Exercice</span>
+              <span class="dpm-meta-value">{{ ppm()?.exercice }}</span>
             </div>
-            <div class="meta-cell">
-              <span class="meta-lbl">Date de signature</span>
-              <span class="meta-val">{{ (ppm()?.dateSignature | date: 'dd/MM/yyyy') || '—' }}</span>
+            <div class="dpm-meta-row">
+              <span class="dpm-meta-label">Date signature</span>
+              <span class="dpm-meta-value">{{ (ppm()?.dateSignature | date: 'dd/MM/yyyy') || '—' }}</span>
             </div>
-            <div class="meta-cell">
-              <span class="meta-lbl">Signataire</span>
-              <span class="meta-val">{{ ppm()?.signataire || '—' }}</span>
+            <div class="dpm-meta-row">
+              <span class="dpm-meta-label">Signataire</span>
+              <span class="dpm-meta-value">{{ ppm()?.signataire || '—' }}</span>
             </div>
-            <div class="meta-cell">
-              <span class="meta-lbl">Libellé</span>
-              <span class="meta-val" [class.empty]="!ppm()?.libelle">
+            <div class="dpm-meta-row">
+              <span class="dpm-meta-label">Libellé</span>
+              <span class="dpm-meta-value" [class.dpm-meta-empty]="!ppm()?.libelle">
                 {{ ppm()?.libelle || 'Non renseigné' }}
               </span>
             </div>
           </div>
+
         </div>
 
-        <!-- CORPS -->
-        <div class="modal-body">
+        <!-- ── CORPS ── -->
+        <div class="dpm-body">
           @if (loading()) {
             <div class="spinner-wrap"><div class="spinner"></div></div>
           } @else {
-            <!-- Marchés -->
-            <div class="section">
-              <div class="section-head">
-                <div class="section-title-wrap">
+
+            <!-- Lignes de marché -->
+            <div class="dpm-section">
+              <div class="dpm-section-head">
+                <div class="section-block-title">
                   <div class="section-icon">🏛</div>
-                  <span class="section-title">Lignes de marché</span>
+                  <span class="section-label">Lignes de marché</span>
                   <span class="section-count">{{ marches().length }} marché(s)</span>
                 </div>
                 @if (modeEdition) {
                   <div class="section-btns">
-                    <button class="btn btn-danger" type="button" (click)="supprimerPpm()">Supprimer le PPM</button>
-                    <button class="btn btn-primary" type="button" (click)="nouveauMarche()">+ Nouveau marché</button>
+                    <button class="btn btn-danger btn-sm" type="button" (click)="supprimerPpm()">Supprimer le PPM</button>
+                    <button class="btn btn-primary btn-sm" type="button" (click)="nouveauMarche()">+ Nouveau marché</button>
                   </div>
                 }
               </div>
 
               <div class="table-card">
                 <table>
+                  <colgroup>
+                    <col style="width:44px;" />
+                    <col />
+                    <col style="width:150px;" />
+                    <col style="width:170px;" />
+                    <col style="width:90px;" />
+                    @if (modeEdition) { <col style="width:220px;" /> }
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>#</th>
@@ -123,12 +141,12 @@ type ModeSuggestion = {
                   <tbody>
                     @for (m of marches(); track m.idDetail) {
                       <tr>
-                        <td>{{ m.idDetail }}</td>
-                        <td [title]="m.designationMarche || ''">{{ m.designationMarche || '—' }}</td>
-                        <td>{{ m.montEstim | number }}</td>
+                        <td class="td-ref">{{ m.idDetail }}</td>
+                        <td [title]="m.designationMarche || ''" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.designationMarche || '—' }}</td>
+                        <td class="td-montant">{{ m.montEstim | number }}</td>
                         <td>{{ resolve(modeMap(), m.idMode) }}</td>
                         <td>
-                          <span class="badge"
+                          <span class="badge badge-dot"
                             [class.badge-prevu]="m.statut === 'PREVU'"
                             [class.badge-cours]="m.statut === 'EN_COURS'"
                             [class.badge-cloture]="m.statut === 'CLOTURE'">
@@ -138,10 +156,10 @@ type ModeSuggestion = {
                         @if (modeEdition) {
                           <td>
                             <div class="td-actions">
-                              <button class="btn btn-sky" type="button" (click)="voirDates(m)">Voir dates</button>
-                              <button class="btn btn-teal" type="button" (click)="modifierDates(m)">Modifier dates</button>
-                              <button class="btn btn-outline" type="button" (click)="modifierMarche(m)">Modifier</button>
-                              <button class="btn btn-danger" type="button" (click)="supprimerMarche(m)">Supprimer</button>
+                              <button class="btn btn-secondary btn-sm" type="button" (click)="voirDates(m)">Voir dates</button>
+                              <button class="btn btn-primary btn-sm" type="button" (click)="modifierDates(m)">Modifier dates</button>
+                              <button class="btn btn-outline btn-sm" type="button" (click)="modifierMarche(m)">Modifier</button>
+                              <button class="btn btn-danger btn-sm" type="button" (click)="supprimerMarche(m)">Supprimer</button>
                             </div>
                           </td>
                         }
@@ -153,11 +171,11 @@ type ModeSuggestion = {
             </div>
 
             <!-- Pièces jointes -->
-            <div class="section">
-              <div class="section-head">
-                <div class="section-title-wrap">
+            <div class="dpm-section">
+              <div class="dpm-section-head">
+                <div class="section-block-title">
                   <div class="section-icon">📎</div>
-                  <span class="section-title">Pièces jointes</span>
+                  <span class="section-label">Pièces jointes</span>
                   <span class="section-count">{{ pieces().length }} pièce(s)</span>
                 </div>
               </div>
@@ -166,17 +184,17 @@ type ModeSuggestion = {
                 @if (piecesInitiales().length > 0) {
                   <div class="pieces-group">
                     <div class="pieces-group-hd">
-                      <span class="group-pill group-pill-blue">Pièces initiales</span>
+                      <span class="group-pill gp-blue">Pièces initiales</span>
                       <span class="group-count">{{ piecesInitiales().length }} fichier(s)</span>
                     </div>
                     @for (p of piecesInitiales(); track p.idPiece; let i = $index) {
                       <div class="piece-row">
                         <div class="piece-left">
-                          <span class="piece-index piece-index-blue">{{ i + 1 }}</span>
+                          <span class="piece-index pi-blue">{{ i + 1 }}</span>
                           <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
                         </div>
                         <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">
-                          Ouvrir <span class="ouvrir-arrow">↗</span>
+                          Ouvrir <span class="arrow">↗</span>
                         </button>
                       </div>
                     }
@@ -186,18 +204,18 @@ type ModeSuggestion = {
                 @if (piecesApresRenvoi().length > 0) {
                   <div class="pieces-group">
                     <div class="pieces-group-hd">
-                      <span class="group-pill group-pill-orange">Après lettre de renvoi</span>
+                      <span class="group-pill gp-orange">Après lettre de renvoi</span>
                       <span class="group-count">{{ piecesApresRenvoi().length }} fichier(s)</span>
                     </div>
                     @for (p of piecesApresRenvoi(); track p.idPiece; let i = $index) {
                       <div class="piece-row">
                         <div class="piece-left">
-                          <span class="piece-index piece-index-orange">{{ i + 1 }}</span>
+                          <span class="piece-index pi-orange">{{ i + 1 }}</span>
                           <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
                           <span class="lr-tag">LR</span>
                         </div>
                         <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">
-                          Ouvrir <span class="ouvrir-arrow">↗</span>
+                          Ouvrir <span class="arrow">↗</span>
                         </button>
                       </div>
                     }
@@ -205,16 +223,19 @@ type ModeSuggestion = {
                 }
 
                 @if (pieces().length === 0) {
-                  <div class="empty-pieces">Aucune pièce jointe.</div>
+                  <div class="empty-state">
+                    <span class="empty-state-icon" aria-hidden="true">📭</span>
+                    <span class="empty-state-text">Aucune pièce jointe.</span>
+                  </div>
                 }
               </div>
             </div>
           }
         </div>
 
-        <!-- PIED -->
-        <div class="modal-footer">
-          <div class="footer-info">
+        <!-- ── PIED ── -->
+        <div class="modal-footer modal-footer-spaced">
+          <div class="modal-footer-info">
             <strong>{{ marches().length }}</strong> marché(s) ·
             <strong>{{ pieces().length }}</strong> pièce(s) jointe(s)
           </div>
