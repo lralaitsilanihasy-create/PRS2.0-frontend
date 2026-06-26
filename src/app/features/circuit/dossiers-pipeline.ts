@@ -38,12 +38,14 @@ import { DossierConsultation } from './dossier-consultation';
   imports: [RouterLink, StatutBadge, CircuitTimeline, DossierConsultation],
   template: `
     <section class="pipeline">
-      <h1 class="pipeline__title">{{ title }}</h1>
+      <header class="page-header">
+        <h1 class="page-title">{{ title }}</h1>
+      </header>
 
       @if (loading()) {
-        <p class="pipeline__info">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else if (visibleDossiers().length === 0) {
-        <p class="pipeline__info">{{ messageVide }}</p>
+        <p class="text-muted">{{ messageVide }}</p>
       } @else {
         <ul class="pipeline__list">
           @for (d of visibleDossiers(); track d.idDossier) {
@@ -53,18 +55,18 @@ import { DossierConsultation } from './dossier-consultation';
                 <span class="dossier-card__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (source) { · {{ entiteLabel(d) }}}</span>
                 <div class="dossier-card__head-right">
                   <app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" />
-                  <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="consulte.set(d)">Voir détails</button>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
                   @if (showExamenAction && info.cle === 'EXAMEN' && peutAgir(info)) {
-                    <a class="cnm-btn cnm-btn--primary cnm-btn--sm" [routerLink]="['/membre/examiner', d.idDossier]">Examiner</a>
+                    <a class="btn btn-primary btn-sm" [routerLink]="['/membre/examiner', d.idDossier]">Examiner</a>
                   }
                   @if (source === 'examines' && d.statut === 'EXAMINE') {
-                    <a class="cnm-btn cnm-btn--primary cnm-btn--sm" [routerLink]="['/membre/examiner', d.idDossier]">Modifier l'examen</a>
+                    <a class="btn btn-primary btn-sm" [routerLink]="['/membre/examiner', d.idDossier]">Modifier l'examen</a>
                   }
                   @if (showVerifAction && d.statut === 'EN_VERIFICATION') {
-                    <a class="cnm-btn cnm-btn--primary cnm-btn--sm" [routerLink]="['/verificateur/verifier', d.idDossier]">Vérifier</a>
+                    <a class="btn btn-primary btn-sm" [routerLink]="['/verificateur/verifier', d.idDossier]">Vérifier</a>
                   }
                   @if (showVerifAction && d.statut === 'EN_ATTENTE_DECISION_PRMP') {
-                    <a class="cnm-btn cnm-btn--ghost cnm-btn--sm" [routerLink]="['/verificateur/verifier', d.idDossier]">Voir</a>
+                    <a class="btn btn-secondary btn-sm" [routerLink]="['/verificateur/verifier', d.idDossier]">Voir</a>
                   }
                 </div>
               </div>
@@ -77,9 +79,9 @@ import { DossierConsultation } from './dossier-consultation';
 
         @if (paginee && totalPages() > 1) {
           <div class="pipeline__pager">
-            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="pageIndex() === 0" (click)="prevPage()">Précédent</button>
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="pageIndex() === 0" (click)="prevPage()">Précédent</button>
             <span class="pipeline__pager-info">Page {{ pageIndex() + 1 }} / {{ totalPages() }}</span>
-            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="pageIndex() + 1 >= totalPages()" (click)="nextPage()">Suivant</button>
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="pageIndex() + 1 >= totalPages()" (click)="nextPage()">Suivant</button>
           </div>
         }
       }
@@ -90,63 +92,47 @@ import { DossierConsultation } from './dossier-consultation';
     }
   `,
   styles: `
-    .pipeline__title {
-      margin: 0 0 var(--cnm-space-4);
-      font-size: var(--cnm-fs-lg);
-    }
-    .pipeline__info {
-      color: var(--cnm-text-2);
-    }
     .pipeline__list {
       list-style: none;
       margin: 0;
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: var(--cnm-space-3);
+      gap: 0.75rem;
     }
     .dossier-card {
-      background: var(--cnm-surface);
-      border: 1px solid var(--cnm-border);
-      border-radius: var(--cnm-radius);
-      padding: 0.875rem var(--cnm-space-4);
+      background: #fff;
+      border: 1px solid var(--c-100);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 0.875rem 1.1rem;
       display: flex;
       flex-direction: column;
-      gap: var(--cnm-space-2);
+      gap: 0.5rem;
     }
     .dossier-card__head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: var(--cnm-space-3);
+      gap: 0.75rem;
     }
     .dossier-card__head-right {
       display: flex;
       align-items: center;
-      gap: var(--cnm-space-2);
+      gap: 0.5rem;
     }
     .dossier-card__ref {
-      font-weight: var(--cnm-fw-semibold);
-      color: var(--cnm-text);
-    }
-    .dossier-card__meta {
-      display: flex;
-      gap: 1.5rem;
-      font-size: var(--cnm-fs-xs);
-      color: var(--cnm-text-2);
-    }
-    .dossier-card__wf {
-      font-size: var(--cnm-fs-sm);
-      margin-top: var(--cnm-space-1);
+      font-weight: 700;
+      color: var(--c-800);
     }
     .pipeline__pager {
       display: flex;
       align-items: center;
-      gap: var(--cnm-space-3);
+      gap: 0.75rem;
       justify-content: flex-end;
-      margin-top: var(--cnm-space-3);
+      margin-top: 0.75rem;
     }
-    .pipeline__pager-info { font-size: var(--cnm-fs-sm); color: var(--cnm-text-2); }
+    .pipeline__pager-info { font-size: var(--text-sm); color: var(--n-400); }
   `,
 
 })

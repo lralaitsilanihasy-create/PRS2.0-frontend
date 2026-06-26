@@ -13,7 +13,7 @@ import { statutDossierLabel, statutSeverity } from './circuit-workflow';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (statut()) {
-      <span class="cnm-badge cnm-badge--{{ severity() }}">{{ label() || autoLabel() }}</span>
+      <span class="badge badge-{{ severity() }}">{{ label() || autoLabel() }}</span>
     }
   `,
 })

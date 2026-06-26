@@ -24,9 +24,9 @@ import { StatutBadge } from '../../shared/circuit';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StatutBadge],
   template: `
-    <div [class.dc__overlay]="!embedded()" (click)="onOverlayClick()">
+    <div [class.modal-backdrop]="!embedded()" (click)="onOverlayClick()">
       <div
-        class="dc cnm-card"
+        class="dc"
         [class.dc--embedded]="embedded()"
         (click)="$event.stopPropagation()"
         [attr.role]="embedded() ? null : 'dialog'"
@@ -49,7 +49,7 @@ import { StatutBadge } from '../../shared/circuit';
 
           @if (estPpm()) {
             @if (loadingContenu()) {
-              <p class="dc__muted">Chargement du contenu…</p>
+              <p class="text-muted">Chargement du contenu…</p>
             } @else {
               @if (ppm(); as p) {
                 <h3 class="dc__sub">PPM</h3>
@@ -57,31 +57,33 @@ import { StatutBadge } from '../../shared/circuit';
                   <div><dt>Référence</dt><dd>{{ p.reference || '—' }}</dd></div>
                   <div><dt>Exercice</dt><dd>{{ p.exercice }}</dd></div>
                   <div><dt>Signataire</dt><dd>{{ p.signataire || '—' }}</dd></div>
-                  <div><dt>Date signature</dt><dd class="cnm-mono">{{ p.dateSignature || '—' }}</dd></div>
+                  <div><dt>Date signature</dt><dd>{{ p.dateSignature || '—' }}</dd></div>
                   <div><dt>Libellé</dt><dd>{{ p.libelle || '—' }}</dd></div>
                 </dl>
               }
 
-              <div class="cnm-marches dc__marches">
+              <div class="dc__marches">
                 <h3 class="dc__sub">Lignes de marché</h3>
                 @if (marches().length) {
-                  <table class="cnm-table">
-                    <thead>
-                      <tr><th>Désignation</th><th class="cnm-num">Montant estimé</th><th>Mode</th><th>Statut</th></tr>
-                    </thead>
-                    <tbody>
-                      @for (m of marches(); track m.idDetail) {
-                        <tr>
-                          <td>{{ m.designationMarche || '—' }}</td>
-                          <td class="cnm-num">{{ montant(m.montEstim) }}</td>
-                          <td>{{ modeLabel(m.idMode) }}</td>
-                          <td>{{ m.statut || '—' }}</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
+                  <div class="table-card">
+                    <table>
+                      <thead>
+                        <tr><th>Désignation</th><th class="r">Montant estimé</th><th>Mode</th><th>Statut</th></tr>
+                      </thead>
+                      <tbody>
+                        @for (m of marches(); track m.idDetail) {
+                          <tr>
+                            <td>{{ m.designationMarche || '—' }}</td>
+                            <td class="td-montant">{{ montant(m.montEstim) }}</td>
+                            <td>{{ modeLabel(m.idMode) }}</td>
+                            <td>{{ m.statut || '—' }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
                 } @else {
-                  <p class="dc__muted">Aucune ligne de marché.</p>
+                  <p class="text-muted">Aucune ligne de marché.</p>
                 }
               </div>
             }
@@ -90,28 +92,27 @@ import { StatutBadge } from '../../shared/circuit';
 
         @if (!embedded()) {
           <footer class="dc__foot">
-            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="closed.emit()">Fermer</button>
+            <button type="button" class="btn btn-outline" (click)="closed.emit()">Fermer</button>
           </footer>
         }
       </div>
     </div>
   `,
   styles: `
-    .dc__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
-    .dc { width: 100%; max-width: 44rem; max-height: 85vh; overflow: auto; box-shadow: var(--cnm-shadow); }
-    .dc--embedded { max-width: none; max-height: none; overflow: visible; box-shadow: none; border: 0; }
-    .dc__head { display: flex; align-items: center; justify-content: space-between; gap: var(--cnm-space-3); padding: var(--cnm-space-4) var(--cnm-space-5); border-bottom: 1px solid var(--cnm-border); }
-    .dc__title { margin: 0; font-size: var(--cnm-fs-md); }
-    .dc__close { background: transparent; border: 0; color: var(--cnm-text-2); font-size: 1.5rem; line-height: 1; cursor: pointer; }
-    .dc__close:hover { color: var(--cnm-text); }
-    .dc__body { padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); }
-    .dc__sub { margin: var(--cnm-space-2) 0 0; font-size: var(--cnm-fs-md); }
-    .dc__marches { padding: var(--cnm-space-2) var(--cnm-space-3); border-radius: 0 var(--cnm-radius-sm) var(--cnm-radius-sm) 0; display: flex; flex-direction: column; gap: var(--cnm-space-2); }
-    .dc__info { display: flex; flex-wrap: wrap; gap: var(--cnm-space-4); margin: 0; }
-    .dc__info dt { font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.08em; color: var(--cnm-text-3); }
-    .dc__info dd { margin: 2px 0 0; color: var(--cnm-text); }
-    .dc__muted { color: var(--cnm-text-2); }
-    .dc__foot { display: flex; justify-content: flex-end; padding: var(--cnm-space-3) var(--cnm-space-5); border-top: 1px solid var(--cnm-border); }
+    .dc { width: 100%; max-width: 44rem; max-height: 85vh; overflow: auto; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-2xl); box-shadow: var(--shadow-xl); }
+    .dc--embedded { max-width: none; max-height: none; overflow: visible; box-shadow: none; border: 0; border-radius: 0; }
+    .dc__head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--c-100); }
+    .dc__title { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
+    .dc__close { background: transparent; border: 0; color: var(--n-500); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+    .dc__close:hover { color: var(--n-800); }
+    .dc__body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .dc__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .dc__marches { display: flex; flex-direction: column; gap: 0.5rem; }
+    .dc__info { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0; }
+    .dc__info dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
+    .dc__info dd { margin: 2px 0 0; color: var(--n-700); font-weight: 500; }
+    .dc__foot { display: flex; justify-content: flex-end; padding: 1rem 1.5rem; border-top: 1px solid var(--c-100); }
+    .table-card td { white-space: normal; }
   `,
 })
 export class DossierConsultation implements OnInit {
