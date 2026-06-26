@@ -13,84 +13,42 @@ import { RapportService } from '../../services';
   imports: [FormsModule],
   template: `
     <section class="rapports">
-      <h1 class="rapports__title">Rapports des dossiers</h1>
+      <header class="page-header">
+        <h1 class="page-title">Rapports des dossiers</h1>
+      </header>
 
       <div class="rapports__filters">
-        <label class="field">
-          <span class="field__label">Du</span>
-          <input type="date" [(ngModel)]="from" />
-        </label>
-        <label class="field">
-          <span class="field__label">Au</span>
-          <input type="date" [(ngModel)]="to" />
-        </label>
+        <div class="form-group">
+          <label class="form-label">Du</label>
+          <input class="form-control" type="date" [(ngModel)]="from" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Au</label>
+          <input class="form-control" type="date" [(ngModel)]="to" />
+        </div>
       </div>
 
       <div class="rapports__actions">
-        <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="busy()" (click)="pdf()">
+        <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="pdf()">
           Télécharger PDF
         </button>
-        <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="busy()" (click)="excel()">
+        <button type="button" class="btn btn-outline" [disabled]="busy()" (click)="excel()">
           Télécharger Excel
         </button>
       </div>
-      <p class="rapports__hint">Période facultative : sans dates, tous les dossiers sont inclus.</p>
+      <p class="form-hint">Période facultative : sans dates, tous les dossiers sont inclus.</p>
     </section>
   `,
   styles: `
-    .rapports__title {
-      margin: 0 0 1rem;
-      font-size: 1.35rem;
-      color: var(--cnm-text);
-    }
     .rapports__filters {
       display: flex;
       gap: 1rem;
       margin-bottom: 1rem;
     }
+    .rapports__filters .form-group { margin-bottom: 0; }
     .rapports__actions {
       display: flex;
       gap: 0.5rem;
-    }
-    .rapports__hint {
-      margin-top: 0.75rem;
-      font-size: 0.8rem;
-      color: var(--cnm-text-2);
-    }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-    .field__label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--cnm-text-2);
-    }
-    .field input {
-      border: 1px solid var(--cnm-border-strong);
-      border-radius: 0.375rem;
-      padding: 0.45rem 0.6rem;
-    }
-    .btn {
-      border: 0;
-      border-radius: 0.375rem;
-      padding: 0.5rem 0.9rem;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: default;
-    }
-    .btn--primary {
-      background: var(--cnm-brand);
-      color: #fff;
-    }
-    .btn--ghost {
-      background: var(--cnm-surface-2);
-      color: var(--cnm-text-2);
     }
   `,
 })

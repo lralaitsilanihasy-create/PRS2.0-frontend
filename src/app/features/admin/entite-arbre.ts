@@ -21,12 +21,12 @@ interface TreeNode {
   imports: [RouterLink],
   template: `
     <section class="arbre">
-      <header class="arbre__header">
+      <header class="page-header">
         <div>
-          <span class="cnm-section-label">Référentiels</span>
-          <h1 class="arbre__title">Arbre des entités</h1>
+          <div class="page-subtitle">Référentiels</div>
+          <h1 class="page-title">Arbre des entités</h1>
         </div>
-        <a class="cnm-btn cnm-btn--ghost cnm-btn--sm" routerLink="/admin/referentiels/entite-contracts">
+        <a class="btn btn-secondary btn-sm" routerLink="/admin/referentiels/entite-contracts">
           Gérer les entités
         </a>
       </header>
@@ -34,7 +34,7 @@ interface TreeNode {
       @if (organigrammeFilter()) {
         <div class="arbre__filter">
           <span>Organigramme : <strong>{{ organigrammeLabel() }}</strong></span>
-          <a class="cnm-btn cnm-btn--ghost cnm-btn--sm" routerLink="/admin/referentiels/entite-arbre">
+          <a class="btn btn-secondary btn-sm" routerLink="/admin/referentiels/entite-arbre">
             Voir toutes les entités
           </a>
         </div>
@@ -43,13 +43,13 @@ interface TreeNode {
       @if (loading()) {
         <p class="arbre__info">Chargement…</p>
       } @else {
-        <div class="cnm-card cnm-card--flat arbre__tree">
+        <div class="card arbre__tree">
           @for (node of nodes(); track node.entite.idEntiteContract) {
             <div class="node" [style.padding-left.rem]="0.75 + node.depth * 1.5">
               <span class="node__branch" aria-hidden="true">{{ node.depth > 0 ? '└─' : '' }}</span>
               <span class="node__label">{{ label(node.entite) }}</span>
               @if (node.entite.categorieEntite) {
-                <span class="cnm-badge cnm-badge--neutral">{{ node.entite.categorieEntite }}</span>
+                <span class="badge badge-neutral">{{ node.entite.categorieEntite }}</span>
               }
               <span class="node__level">niv. {{ node.entite.niveauHierarchique ?? node.depth + 1 }}</span>
             </div>
@@ -61,61 +61,51 @@ interface TreeNode {
     </section>
   `,
   styles: `
-    .arbre__header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      margin-bottom: var(--cnm-space-4);
-    }
-    .arbre__title {
-      margin: 2px 0 0;
-      font-size: var(--cnm-fs-lg);
-    }
     .arbre__filter {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: var(--cnm-space-3);
-      padding: var(--cnm-space-2) var(--cnm-space-4);
-      margin-bottom: var(--cnm-space-3);
-      background: var(--cnm-surface);
-      border: 1px solid var(--cnm-border);
-      border-left: 3px solid var(--cnm-brand);
-      border-radius: var(--cnm-radius);
-      font-size: var(--cnm-fs-sm);
-      color: var(--cnm-text-2);
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      margin-bottom: 0.75rem;
+      background: #fff;
+      border: 1px solid var(--c-100);
+      border-left: 3px solid var(--c-600);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      color: var(--n-500);
     }
     .arbre__info {
-      color: var(--cnm-text-2);
-      padding: var(--cnm-space-3);
+      color: var(--n-400);
+      padding: 0.75rem;
     }
     .arbre__tree {
-      padding: var(--cnm-space-2) 0;
+      padding: 0.5rem 0;
     }
     .node {
       display: flex;
       align-items: center;
-      gap: var(--cnm-space-2);
+      gap: 0.5rem;
       padding-top: 0.4rem;
       padding-bottom: 0.4rem;
-      padding-right: var(--cnm-space-4);
-      font-size: var(--cnm-fs-sm);
-      border-bottom: 1px solid var(--cnm-border);
+      padding-right: 1rem;
+      font-size: var(--text-sm);
+      border-bottom: 1px solid var(--c-50);
     }
     .node:last-child { border-bottom: none; }
     .node__branch {
-      color: var(--cnm-text-3);
-      font-family: var(--cnm-mono);
+      color: var(--n-400);
+      font-variant-numeric: tabular-nums;
     }
     .node__label {
-      color: var(--cnm-text);
-      font-weight: var(--cnm-fw-medium);
+      color: var(--n-800);
+      font-weight: 500;
     }
     .node__level {
       margin-left: auto;
-      color: var(--cnm-text-3);
-      font-family: var(--cnm-mono);
-      font-size: var(--cnm-fs-xs);
+      color: var(--n-400);
+      font-variant-numeric: tabular-nums;
+      font-size: var(--text-xs);
     }
   `,
 })
