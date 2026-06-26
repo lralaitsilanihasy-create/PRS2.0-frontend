@@ -62,20 +62,22 @@ interface RowState {
   imports: [StatutBadge],
   template: `
     <section class="exam">
-      <header class="exam__header">
-        <span class="cnm-section-label">Domaine Membre</span>
-        <h1 class="exam__title">{{ mode() === 'edit' ? 'Modifier l\\'examen' : 'Examiner' }} — {{ dossier()?.refeDossier || ('Dossier #' + idDossier) }}</h1>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine Membre</div>
+          <h1 class="page-title">{{ mode() === 'edit' ? 'Modifier l\\'examen' : 'Examiner' }} — {{ dossier()?.refeDossier || ('Dossier #' + idDossier) }}</h1>
+        </div>
       </header>
 
       @if (loading()) {
-        <p class="cnm-muted">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else if (!dossier()) {
-        <p class="cnm-muted">Dossier introuvable ou hors de votre périmètre.</p>
+        <p class="text-muted">Dossier introuvable ou hors de votre périmètre.</p>
       } @else {
         <div class="exam__grid">
-          <div class="cnm-card exam__panel">
-            <div class="exam__panel-head">Contenu du dossier</div>
-            <div class="exam__panel-body">
+          <div class="card exam__panel">
+            <div class="card-header"><span class="card-title">Contenu du dossier</span></div>
+            <div class="card-body">
               <dl class="exam__info">
                 <div><dt>Type</dt><dd>{{ typeLabel() }}</dd></div>
                 <div><dt>Localité</dt><dd>{{ localiteLabel() }}</dd></div>
@@ -91,32 +93,32 @@ interface RowState {
                     <div><dt>Libellé</dt><dd>{{ p.libelle || '—' }}</dd></div>
                   </dl>
                 }
-                <div class="cnm-marches exam__marches">
+                <div class="exam__marches">
                   <h3 class="exam__sub">Lignes de marché</h3>
                   @if (marches().length) {
-                    <table class="cnm-table">
-                      <thead><tr><th>Désignation</th><th class="cnm-num">Montant</th><th>Mode</th></tr></thead>
+                    <table>
+                      <thead><tr><th>Désignation</th><th class="r">Montant</th><th>Mode</th></tr></thead>
                       <tbody>
                         @for (m of marches(); track m.idDetail) {
                           <tr>
                             <td>{{ m.designationMarche || '—' }}</td>
-                            <td class="cnm-num">{{ montant(m.montEstim) }}</td>
+                            <td class="td-montant">{{ montant(m.montEstim) }}</td>
                             <td>{{ modeLabel(m.idMode) }}</td>
                           </tr>
                         }
                       </tbody>
                     </table>
                   } @else {
-                    <p class="cnm-muted">Aucune ligne de marché.</p>
+                    <p class="text-muted">Aucune ligne de marché.</p>
                   }
                 </div>
               }
             </div>
           </div>
 
-          <div class="cnm-card exam__panel">
-            <div class="exam__panel-head">Consigner l'examen</div>
-            <div class="exam__panel-body cnm-form">
+          <div class="card exam__panel">
+            <div class="card-header"><span class="card-title">Consigner l'examen</span></div>
+            <div class="card-body cnm-form">
               @if (mode() === 'locked') {
                 <p class="cnm-field__hint">Examen verrouillé (PV signé / dossier clôturé) — lecture seule.</p>
               }
@@ -131,7 +133,7 @@ interface RowState {
 
               <h3 class="exam__sub">Grille de contrôle</h3>
               @if (!points().length) {
-                <p class="cnm-muted">Aucun point de contrôle défini pour ce type de dossier.</p>
+                <p class="text-muted">Aucun point de contrôle défini pour ce type de dossier.</p>
               }
               @for (p of points(); track p.idPointCtrl) {
                 <div class="exam__point">
@@ -166,12 +168,12 @@ interface RowState {
                             [value]="o.lire"
                             (input)="setLire(p.idPointCtrl, $index, $any($event.target).value)"
                           ></textarea>
-                          <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm exam__obs-del" (click)="retirerLigne(p.idPointCtrl, $index)" aria-label="Retirer">✕</button>
+                          <button type="button" class="btn btn-secondary btn-sm exam__obs-del" (click)="retirerLigne(p.idPointCtrl, $index)" aria-label="Retirer">✕</button>
                         </div>
                       } @empty {
-                        <p class="cnm-muted">Aucune ligne.</p>
+                        <p class="text-muted">Aucune ligne.</p>
                       }
-                      <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm exam__obs-add" (click)="ajouterLigne(p.idPointCtrl)">+ Ajouter une ligne</button>
+                      <button type="button" class="btn btn-secondary btn-sm exam__obs-add" (click)="ajouterLigne(p.idPointCtrl)">+ Ajouter une ligne</button>
                       @if (pointErreur(p.idPointCtrl)) { <span class="cnm-field__hint exam__obs-err">{{ pointErreur(p.idPointCtrl) }}</span> }
                     </div>
                   }
@@ -198,21 +200,21 @@ interface RowState {
               @if (formError()) { <span class="cnm-field__hint">{{ formError() }}</span> }
               @if (mode() === 'create') {
                 <div class="exam__foot">
-                  <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Annuler</button>
-                  <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="saving() || idDispatch() == null" (click)="ouvrirModalLettre()">
+                  <button type="button" class="btn btn-outline" (click)="annuler()">Annuler</button>
+                  <button type="button" class="btn btn-outline" [disabled]="saving() || idDispatch() == null" (click)="ouvrirModalLettre()">
                     Envoyer une lettre de renvoi
                   </button>
-                  <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving() || idDispatch() == null" (click)="soumettre()">
+                  <button type="button" class="btn btn-primary" [disabled]="saving() || idDispatch() == null" (click)="soumettre()">
                     {{ saving() ? 'Enregistrement…' : "Soumettre l'examen" }}
                   </button>
                 </div>
               } @else if (mode() === 'edit') {
                 <div class="exam__foot">
-                  <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Annuler</button>
-                  <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="saving() || idDispatch() == null" (click)="ouvrirModalLettre()">
+                  <button type="button" class="btn btn-outline" (click)="annuler()">Annuler</button>
+                  <button type="button" class="btn btn-outline" [disabled]="saving() || idDispatch() == null" (click)="ouvrirModalLettre()">
                     Envoyer une lettre de renvoi
                   </button>
-                  <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving() || idDispatch() == null" (click)="enregistrer()">
+                  <button type="button" class="btn btn-primary" [disabled]="saving() || idDispatch() == null" (click)="enregistrer()">
                     {{ saving() ? 'Enregistrement…' : "Modifier l'examen" }}
                   </button>
                 </div>
@@ -223,8 +225,8 @@ interface RowState {
       }
 
       @if (lettreModal()) {
-        <div class="exam-modal__overlay" (click)="fermerLettre()">
-          <div class="exam-modal cnm-card cnm-form" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="modal-backdrop" (click)="fermerLettre()">
+          <div class="exam-modal cnm-form" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
             <h2 class="exam-modal__title">Lettre de renvoi</h2>
             <dl class="exam-modal__info">
               <div><dt>Référence dossier</dt><dd>{{ dossier()?.refeDossier || ('Dossier #' + idDossier) }}</dd></div>
@@ -241,8 +243,8 @@ interface RowState {
               <textarea class="cnm-textarea exam-modal__corps" rows="6" placeholder="Corps de la lettre…" [value]="corpsLettre()" (input)="corpsLettre.set($any($event.target).value)"></textarea>
             </label>
             <div class="exam-modal__foot">
-              <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="saving()" (click)="fermerLettre()">Fermer</button>
-              <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving()" (click)="enregistrerBrouillonLettre()">
+              <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="fermerLettre()">Fermer</button>
+              <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="enregistrerBrouillonLettre()">
                 {{ saving() ? 'Enregistrement…' : 'Enregistrer brouillon' }}
               </button>
             </div>
@@ -250,7 +252,7 @@ interface RowState {
             @if (lettresExamen().length) {
               <div class="exam-modal__list">
                 <h3 class="exam__sub">Lettres de cet examen</h3>
-                <table class="cnm-table">
+                <table>
                   <thead><tr><th>Référence</th><th>Statut</th><th>Date</th><th></th></tr></thead>
                   <tbody>
                     @for (l of lettresExamen(); track l.idLettre) {
@@ -260,7 +262,7 @@ interface RowState {
                         <td class="cnm-mono">{{ l.dateLettre || '—' }}</td>
                         <td>
                           @if (l.statut === 'BROUILLON') {
-                            <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" [disabled]="saving()" (click)="soumettreLettre(l)">Soumettre</button>
+                            <button type="button" class="btn btn-primary btn-sm" [disabled]="saving()" (click)="soumettreLettre(l)">Soumettre</button>
                           }
                         </td>
                       </tr>
@@ -275,37 +277,32 @@ interface RowState {
     </section>
   `,
   styles: `
-    .exam__header { margin-bottom: var(--cnm-space-4); }
-    .exam__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .exam__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); align-items: start; }
-    .exam__panel-head { padding: var(--cnm-space-3) var(--cnm-space-4); border-bottom: 1px solid var(--cnm-border); font-weight: var(--cnm-fw-semibold); }
-    .exam__panel-body { padding: var(--cnm-space-4); display: flex; flex-direction: column; gap: var(--cnm-space-3); }
-    .exam__sub { margin: var(--cnm-space-2) 0 0; font-size: var(--cnm-fs-md); }
-    .exam__info { display: flex; flex-wrap: wrap; gap: var(--cnm-space-4); margin: 0; }
-    .exam__info dt { font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: .08em; color: var(--cnm-text-3); }
+    .exam__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; align-items: start; }
+    .exam__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .exam__info { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0; }
+    .exam__info dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); }
     .exam__info dd { margin: 2px 0 0; }
-    .exam__marches { padding: var(--cnm-space-2) var(--cnm-space-3); border-radius: 0 var(--cnm-radius-sm) var(--cnm-radius-sm) 0; display: flex; flex-direction: column; gap: var(--cnm-space-2); }
-    .exam__point { display: flex; flex-direction: column; gap: var(--cnm-space-2); padding: var(--cnm-space-3); background: var(--cnm-surface-2); border: 1px solid var(--cnm-border); border-radius: var(--cnm-radius-sm); }
-    .exam__point-head { display: flex; align-items: center; justify-content: space-between; gap: var(--cnm-space-2); }
-    .exam__point-lbl { font-weight: var(--cnm-fw-medium); }
-    .exam__point-desc { font-size: var(--cnm-fs-sm); margin: 0; }
-    .exam__conforme { display: flex; align-items: center; gap: var(--cnm-space-1); font-size: var(--cnm-fs-sm); white-space: nowrap; }
-    .exam__obs { display: flex; flex-direction: column; gap: var(--cnm-space-1); align-items: flex-start; }
-    .exam__obs-header, .exam__obs-row { display: flex; gap: var(--cnm-space-3); align-items: flex-start; align-self: stretch; }
-    .exam__obs-header span:first-child, .exam__obs-header span:nth-child(2) { flex: 1 1 0; text-align: center; font-weight: var(--cnm-fw-semibold); font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
+    .exam__marches { display: flex; flex-direction: column; gap: 0.5rem; }
+    .exam__point { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; background: var(--c-50); border: 1px solid var(--c-100); border-radius: var(--radius-md); }
+    .exam__point-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .exam__point-lbl { font-weight: 500; }
+    .exam__point-desc { font-size: var(--text-sm); margin: 0; }
+    .exam__conforme { display: flex; align-items: center; gap: 0.25rem; font-size: var(--text-sm); white-space: nowrap; }
+    .exam__obs { display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start; }
+    .exam__obs-header, .exam__obs-row { display: flex; gap: 0.75rem; align-items: flex-start; align-self: stretch; }
+    .exam__obs-header span:first-child, .exam__obs-header span:nth-child(2) { flex: 1 1 0; text-align: center; font-weight: 700; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-400); }
     .exam__obs-actions { width: 2rem; }
     .exam__obs-row textarea { flex: 1 1 0; min-height: 2.5rem; resize: none; word-wrap: break-word; white-space: pre-wrap; }
     .exam__obs-del { width: 2rem; align-self: flex-start; margin-top: 0.3rem; }
-    .exam__obs-err { color: var(--cnm-danger-fg); }
-    .exam__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-3); margin-top: var(--cnm-space-2); }
-    .exam-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
-    .exam-modal { width: 100%; max-width: 32rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
-    .exam-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
-    .exam-modal__info { display: flex; flex-direction: column; gap: var(--cnm-space-1); margin: 0; }
-    .exam-modal__info > div { display: flex; gap: var(--cnm-space-2); align-items: baseline; }
-    .exam-modal__info dt { flex: 0 0 10rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
+    .exam__obs-err { color: var(--danger-text); }
+    .exam__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; margin-top: 0.5rem; }
+    .exam-modal { width: 100%; max-width: 32rem; max-height: 88vh; overflow: auto; background: #fff; border-radius: var(--radius-2xl); box-shadow: var(--shadow-xl); padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .exam-modal__title { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
+    .exam-modal__info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
+    .exam-modal__info > div { display: flex; gap: 0.5rem; align-items: baseline; }
+    .exam-modal__info dt { flex: 0 0 10rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-400); }
     .exam-modal__info dd { margin: 0; }
-    .exam-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
+    .exam-modal__foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
     .exam-modal__corps { resize: vertical; }
     @media (max-width: 60rem) { .exam__grid { grid-template-columns: 1fr; } }
   `,

@@ -45,30 +45,32 @@ interface Echange {
   imports: [StatutBadge, DossierConsultation],
   template: `
     <section class="vf">
-      <header class="vf__header">
-        <span class="cnm-section-label">Domaine Vérificateur</span>
-        <h1 class="vf__title">Vérifier — {{ dossier()?.refeDossier || ('Dossier #' + idDossier) }}</h1>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine Vérificateur</div>
+          <h1 class="page-title">Vérifier — {{ dossier()?.refeDossier || ('Dossier #' + idDossier) }}</h1>
+        </div>
       </header>
 
-      <div class="cnm-card vf__note">
+      <div class="alert alert-info">
         Vérification possible uniquement sur un dossier en vérification (PV signé, avis favorable avec
         réserve). Cocher « Observations levées » clôture le dossier.
       </div>
 
       @if (loading()) {
-        <p class="cnm-muted">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else if (!dossier()) {
-        <p class="cnm-muted">Dossier introuvable ou hors de votre périmètre.</p>
+        <p class="text-muted">Dossier introuvable ou hors de votre périmètre.</p>
       } @else {
         <div class="vf__grid">
-          <div class="cnm-card vf__details">
+          <div class="card vf__details">
             <app-dossier-consultation [dossier]="dossier()!" [embedded]="true" />
           </div>
 
           <div class="vf__right">
-          <div class="cnm-card vf__panel">
-            <div class="vf__panel-head">Contexte du dossier</div>
-            <div class="vf__panel-body">
+          <div class="card vf__panel">
+            <div class="card-header"><span class="card-title">Contexte du dossier</span></div>
+            <div class="card-body">
               <dl class="vf__info">
                 <div><dt>Référence</dt><dd>{{ dossier()!.refeDossier || '—' }}</dd></div>
                 <div><dt>Type</dt><dd>{{ typeLabel() }}</dd></div>
@@ -98,52 +100,52 @@ interface Echange {
                   }
                 </ul>
               } @else {
-                <p class="cnm-muted">Aucun échange enregistré.</p>
+                <p class="text-muted">Aucun échange enregistré.</p>
               }
             </div>
           </div>
 
-          <div class="cnm-card vf__panel">
-            <div class="vf__panel-head">Nouvelle vérification</div>
-            <div class="vf__panel-body cnm-form">
+          <div class="card vf__panel">
+            <div class="card-header"><span class="card-title">Nouvelle vérification</span></div>
+            <div class="card-body">
               @if (verrouille()) {
-                <p class="cnm-field__hint">{{ messageVerrou() }}</p>
+                <p class="form-hint">{{ messageVerrou() }}</p>
               } @else {
                 @if (idPv() == null || idReception() == null) {
-                  <p class="cnm-field__hint">
+                  <p class="form-hint">
                     PV signé / réception introuvable pour ce dossier : vérification impossible.
                   </p>
                 }
-                <label class="cnm-field">
-                  <span class="cnm-field__label">Observation</span>
+                <div class="form-group">
+                  <label class="form-label">Observation</label>
                   <textarea
-                    class="cnm-textarea"
+                    class="form-control"
                     rows="3"
                     maxlength="500"
                     [value]="observation()"
                     (input)="observation.set($any($event.target).value)"
                   ></textarea>
-                </label>
-                <label class="cnm-field">
-                  <span class="cnm-field__label">Observations levées</span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Observations levées</label>
                   <select
-                    class="cnm-select"
+                    class="form-control"
                     [value]="obsLevees() ? 'oui' : 'non'"
                     (change)="obsLevees.set($any($event.target).value === 'oui')"
                   >
                     <option value="non">Non — le dossier reste à vérifier</option>
                     <option value="oui">Oui — clôture le dossier</option>
                   </select>
-                </label>
+                </div>
                 @if (!obsLevees()) {
                   <p class="vf__alert">⚠ Ce dossier sera transmis à la PRMP pour rectification. L'observation est obligatoire.</p>
                 }
-                @if (formError()) { <span class="cnm-field__hint">{{ formError() }}</span> }
+                @if (formError()) { <span class="form-error">{{ formError() }}</span> }
                 <div class="vf__foot">
-                  <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Retour</button>
+                  <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
                   <button
                     type="button"
-                    class="cnm-btn cnm-btn--primary"
+                    class="btn btn-primary"
                     [disabled]="saving() || idPv() == null || idReception() == null"
                     (click)="enregistrer()"
                   >
@@ -159,16 +161,21 @@ interface Echange {
     </section>
 
     @if (confirmOpen()) {
-      <div class="vf-modal__overlay" (click)="annulerTransmission()">
-        <div class="vf-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-          <h2 class="vf-modal__title">Transmettre à la PRMP pour rectification ?</h2>
-          <p>
-            Ce dossier sera transmis à la PRMP pour rectification. Vous ne pourrez plus le vérifier tant
-            qu'elle n'a pas rectifié et resoumis.
-          </p>
-          <div class="vf-modal__foot">
-            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerTransmission()">Annuler</button>
-            <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="saving()" (click)="confirmerTransmission()">
+      <div class="modal-backdrop" (click)="annulerTransmission()">
+        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+          <div class="modal-header-plain">
+            <span class="modal-title">Transmettre à la PRMP pour rectification ?</span>
+            <button type="button" class="btn-close-plain" (click)="annulerTransmission()">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>
+              Ce dossier sera transmis à la PRMP pour rectification. Vous ne pourrez plus le vérifier tant
+              qu'elle n'a pas rectifié et resoumis.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" (click)="annulerTransmission()">Annuler</button>
+            <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="confirmerTransmission()">
               Confirmer et transmettre à la PRMP
             </button>
           </div>
@@ -177,32 +184,24 @@ interface Echange {
     }
   `,
   styles: `
-    .vf__header { margin-bottom: var(--cnm-space-3); }
-    .vf__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .vf__note { padding: var(--cnm-space-3) var(--cnm-space-4); color: var(--cnm-text-2); margin-bottom: var(--cnm-space-3); }
-    .vf__grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--cnm-space-3); align-items: start; }
-    .vf__right { display: flex; flex-direction: column; gap: var(--cnm-space-3); }
+    .vf__grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0.75rem; align-items: start; }
+    .vf__right { display: flex; flex-direction: column; gap: 0.75rem; }
     .vf__details { overflow: hidden; }
-    .vf__panel-head { padding: var(--cnm-space-3) var(--cnm-space-4); border-bottom: 1px solid var(--cnm-border); font-weight: var(--cnm-fw-semibold); }
-    .vf__panel-body { padding: var(--cnm-space-4); display: flex; flex-direction: column; gap: var(--cnm-space-3); }
-    .vf__info { display: flex; flex-direction: column; gap: var(--cnm-space-1); margin: 0; }
-    .vf__info > div { display: flex; gap: var(--cnm-space-2); align-items: baseline; }
-    .vf__info dt { flex: 0 0 9rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: .08em; color: var(--cnm-text-3); }
-    .vf__info dd { margin: 0; color: var(--cnm-text); }
-    .vf__synthese { margin: 0; font-size: var(--cnm-fs-sm); }
-    .vf__sub { margin: var(--cnm-space-2) 0 0; font-size: var(--cnm-fs-md); }
-    .vf__ech { list-style: none; margin: var(--cnm-space-1) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--cnm-space-1); }
-    .vf__ech-item { display: flex; flex-direction: column; gap: 2px; padding: var(--cnm-space-1) var(--cnm-space-2); border-left: 2px solid var(--cnm-border); }
-    .vf__ech-item--latest { border-left-color: var(--cnm-brand); font-weight: var(--cnm-fw-semibold); color: var(--cnm-brand); }
-    .vf__ech-item--rectif { border-left-color: var(--cnm-warning-fg); }
-    .vf__ech-meta { color: var(--cnm-text-3); font-size: var(--cnm-fs-micro); }
-    .vf__ech-text { font-size: var(--cnm-fs-sm); }
-    .vf__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-3); }
-    .vf__alert { margin: 0; font-size: var(--cnm-fs-sm); background: var(--cnm-warning-bg); color: var(--cnm-warning-fg); padding: var(--cnm-space-2) var(--cnm-space-3); border-radius: var(--cnm-radius-sm); }
-    .vf-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
-    .vf-modal { width: 100%; max-width: 30rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
-    .vf-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
-    .vf-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
+    .vf__info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
+    .vf__info > div { display: flex; gap: 0.5rem; align-items: baseline; }
+    .vf__info dt { flex: 0 0 9rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); }
+    .vf__info dd { margin: 0; color: var(--n-700); }
+    .vf__synthese { margin: 0; font-size: var(--text-sm); }
+    .vf__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .vf__ech { list-style: none; margin: 0.35rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+    .vf__ech-item { display: flex; flex-direction: column; gap: 2px; padding: 0.25rem 0.5rem; border-left: 2px solid var(--c-100); }
+    .vf__ech-item--latest { border-left-color: var(--c-600); font-weight: 600; color: var(--c-700); }
+    .vf__ech-item--rectif { border-left-color: var(--warning-text); }
+    .vf__ech-meta { color: var(--n-400); font-size: var(--text-xs); }
+    .vf__ech-text { font-size: var(--text-sm); }
+    .vf__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; }
+    .vf__alert { margin: 0; font-size: var(--text-sm); background: var(--warning-bg); color: var(--warning-text); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); }
+    .confirm-modal { max-width: 30rem; }
     @media (max-width: 60rem) { .vf__grid { grid-template-columns: 1fr; } }
   `,
 })
