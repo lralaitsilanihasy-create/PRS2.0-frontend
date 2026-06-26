@@ -28,67 +28,78 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DetailPpmModal],
   template: `
-    <section class="mb">
-      <header class="mb__header">
-        <span class="cnm-section-label">Domaine PRMP</span>
-        <h1 class="mb__title">Mes brouillons</h1>
+    <section>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine PRMP</div>
+          <h1 class="page-title">Mes brouillons</h1>
+        </div>
       </header>
 
       @if (loading()) {
-        <p class="mb__info">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else {
-        <table class="cnm-table">
-          <thead>
-            <tr>
-              <th>#</th><th>Type</th><th>Référence</th><th>Localité</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (d of brouillons(); track d.idDossier) {
+        <div class="table-card">
+          <table>
+            <thead>
               <tr>
-                <td class="cnm-mono">{{ d.idDossier }}</td>
-                <td>{{ typeLabel(d) }}</td>
-                <td>{{ reference(d) }}</td>
-                <td>{{ localiteLabel(d) }}</td>
-                <td class="mb__actions">
-                  <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ouvrir(d)">Ouvrir</button>
-                  <button
-                    type="button"
-                    class="cnm-btn cnm-btn--success cnm-btn--sm"
-                    [disabled]="submittingId() === d.idDossier || ppmManquant(d)"
-                    [title]="ppmManquant(d) ? 'Impossible de soumettre : aucun PPM rattaché à ce dossier. Ouvrez le dossier pour ajouter un PPM.' : ''"
-                    (click)="soumettre(d)"
-                  >
-                    Soumettre
-                  </button>
-                  <button
-                    type="button"
-                    class="cnm-btn cnm-btn--danger cnm-btn--sm"
-                    [disabled]="suppression() === d.idDossier"
-                    (click)="demanderSuppression(d)"
-                  >
-                    Supprimer
-                  </button>
-                </td>
+                <th>#</th><th>Type</th><th>Référence</th><th>Localité</th><th class="r">Actions</th>
               </tr>
-            } @empty {
-              <tr><td colspan="5" class="mb__info">Aucun brouillon. Saisissez un dossier depuis « Saisir & soumettre ».</td></tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (d of brouillons(); track d.idDossier) {
+                <tr>
+                  <td class="td-ref">{{ d.idDossier }}</td>
+                  <td>{{ typeLabel(d) }}</td>
+                  <td>{{ reference(d) }}</td>
+                  <td>{{ localiteLabel(d) }}</td>
+                  <td>
+                    <div class="td-actions actions-end">
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrir(d)">Ouvrir</button>
+                      <button
+                        type="button"
+                        class="btn btn-success btn-sm"
+                        [disabled]="submittingId() === d.idDossier || ppmManquant(d)"
+                        [title]="ppmManquant(d) ? 'Impossible de soumettre : aucun PPM rattaché à ce dossier. Ouvrez le dossier pour ajouter un PPM.' : ''"
+                        (click)="soumettre(d)"
+                      >
+                        Soumettre
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-danger btn-sm"
+                        [disabled]="suppression() === d.idDossier"
+                        (click)="demanderSuppression(d)"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="empty-cell">Aucun brouillon. Saisissez un dossier depuis « Saisir &amp; soumettre ».</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
 
     @if (confirmDossier(); as d) {
-      <div class="mb-modal__overlay" (click)="annulerSuppression()">
-        <div class="mb-modal cnm-card" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
-          <h2 class="mb-modal__title">Supprimer ce dossier ?</h2>
-          <p>Êtes-vous sûr de vouloir supprimer ce dossier ? Cette action est irréversible.</p>
-          <div class="mb-modal__foot">
-            <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="suppression() !== null" (click)="annulerSuppression()">
+      <div class="modal-backdrop" (click)="annulerSuppression()">
+        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+          <div class="modal-header-plain">
+            <span class="modal-title">Supprimer ce dossier ?</span>
+            <button type="button" class="btn-close-plain" [disabled]="suppression() !== null" (click)="annulerSuppression()">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>Êtes-vous sûr de vouloir supprimer ce dossier ? Cette action est irréversible.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" [disabled]="suppression() !== null" (click)="annulerSuppression()">
               Annuler
             </button>
-            <button type="button" class="cnm-btn cnm-btn--danger" [disabled]="suppression() !== null" (click)="confirmerSuppression()">
+            <button type="button" class="btn btn-danger" [disabled]="suppression() !== null" (click)="confirmerSuppression()">
               {{ suppression() !== null ? 'Suppression…' : 'Confirmer' }}
             </button>
           </div>
@@ -107,15 +118,9 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     }
   `,
   styles: `
-    .mb__header { margin-bottom: var(--cnm-space-4); }
-    .mb__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .mb__info { color: var(--cnm-text-2); padding: var(--cnm-space-3); text-align: center; }
-    .mb__actions { display: flex; gap: 0.5rem; align-items: center; justify-content: flex-end; min-width: 220px; white-space: nowrap; }
-    .mb__actions .cnm-btn { padding: 0.25rem 0.75rem; font-size: 0.85rem; }
-    .mb-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
-    .mb-modal { width: 100%; max-width: 30rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
-    .mb-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
-    .mb-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
+    .actions-end { justify-content: flex-end; }
+    .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
+    .confirm-modal { max-width: 28rem; }
   `,
 })
 export class MesBrouillons {

@@ -29,93 +29,92 @@ interface CarteRectif {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StatutBadge],
   template: `
-    <section class="ar">
-      <header class="ar__header">
-        <span class="cnm-section-label">Domaine PRMP</span>
-        <h1 class="ar__title">Dossiers à rectifier</h1>
+    <section>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine PRMP</div>
+          <h1 class="page-title">Dossiers à rectifier</h1>
+        </div>
       </header>
 
-      <div class="cnm-card ar__note">
+      <div class="alert alert-info">
         Observations transmises par le vérificateur. Corrigez le dossier concerné, puis resoumettez-le.
       </div>
 
       @if (loading()) {
-        <p class="cnm-muted">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else if (cartes().length) {
-        <ul class="ar__list">
+        <div class="ar-list">
           @for (c of cartes(); track c.dossier.idDossier) {
-            <li class="cnm-card ar__item">
-              <div class="ar__item-head">
-                <span class="ar__p--ref">Dossier {{ c.dossier.refeDossier || '#' + c.dossier.idDossier }}</span>
+            <div class="card ar-item">
+              <div class="ar-item__head">
+                <span class="ar-item__ref">Dossier {{ c.dossier.refeDossier || '#' + c.dossier.idDossier }}</span>
                 <app-statut-badge [statut]="c.dossier.statut" [label]="'À rectifier'" />
-                <button
-                  type="button"
-                  class="cnm-btn cnm-btn--ghost cnm-btn--sm ar__modifier"
-                  (click)="modifierDossier(c)"
-                >
+                <button type="button" class="btn btn-outline btn-sm" (click)="modifierDossier(c)">
                   Modifier le dossier
                 </button>
-                <span class="ar__date cnm-mono">{{ c.latest?.dateEnvoi || '—' }}</span>
+                <span class="ar-item__date">{{ c.latest?.dateEnvoi || '—' }}</span>
               </div>
 
-              <div class="ar__hist">
-                <h3 class="ar__hist-title">Observations du vérificateur</h3>
-                <ul class="ar__obs">
+              <div class="ar-hist">
+                <h3 class="ar-hist__title">Observations du vérificateur</h3>
+                <ul class="ar-obs">
                   @for (o of c.observations; track o.idNotification; let first = $first) {
-                    <li class="ar__obs-item" [class.ar__obs-item--latest]="first">
-                      <span class="ar__obs-meta cnm-mono">{{ o.dateEnvoi || '—' }} · {{ verificateurDe(o) }}</span>
-                      <span class="ar__obs-text">{{ observationTexte(o) }}</span>
+                    <li class="ar-obs__item" [class.ar-obs__item--latest]="first">
+                      <span class="ar-obs__meta">{{ o.dateEnvoi || '—' }} · {{ verificateurDe(o) }}</span>
+                      <span class="ar-obs__text">{{ observationTexte(o) }}</span>
                     </li>
                   } @empty {
-                    <li class="cnm-muted">Aucune observation enregistrée.</li>
+                    <li class="text-muted">Aucune observation enregistrée.</li>
                   }
                 </ul>
               </div>
 
-              <p class="ar__p ar__p--action">Veuillez rectifier le dossier.</p>
-
-              <div class="ar__form cnm-form">
-                <label class="cnm-field">
-                  <span class="cnm-field__label">Motif de rectification *</span>
-                  <textarea
-                    class="cnm-textarea"
-                    rows="2"
-                    maxlength="255"
-                    [value]="motif(cleDe(c))"
-                    (input)="setMotif(cleDe(c), $any($event.target).value)"
-                  ></textarea>
-                </label>
-                @if (errPour(cleDe(c))) { <span class="cnm-field__hint">{{ errPour(cleDe(c)) }}</span> }
-                <div class="ar__form-foot">
-                  <button
-                    type="button"
-                    class="cnm-btn cnm-btn--primary cnm-btn--sm"
-                    [disabled]="saving() === cleDe(c) || !estModifie(c)"
-                    (click)="demanderResoumission(c)"
-                  >
-                    {{ saving() === cleDe(c) ? 'Resoumission…' : 'Resoumettre le dossier' }}
-                  </button>
-                </div>
-                @if (!estModifie(c)) {
-                  <span class="ar__hint">Veuillez modifier le dossier avant de resoumettre.</span>
-                }
+              <div class="form-group ar-form">
+                <label class="form-label required">Motif de rectification</label>
+                <textarea
+                  class="form-control"
+                  rows="2"
+                  maxlength="255"
+                  [value]="motif(cleDe(c))"
+                  (input)="setMotif(cleDe(c), $any($event.target).value)"
+                ></textarea>
+                @if (errPour(cleDe(c))) { <span class="form-error">{{ errPour(cleDe(c)) }}</span> }
               </div>
-            </li>
+              <div class="ar-item__foot">
+                @if (!estModifie(c)) {
+                  <span class="form-hint">Veuillez modifier le dossier avant de resoumettre.</span>
+                }
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  [disabled]="saving() === cleDe(c) || !estModifie(c)"
+                  (click)="demanderResoumission(c)"
+                >
+                  {{ saving() === cleDe(c) ? 'Resoumission…' : 'Resoumettre le dossier' }}
+                </button>
+              </div>
+            </div>
           }
-        </ul>
+        </div>
       } @else {
-        <p class="cnm-muted">Aucun dossier à rectifier.</p>
+        <p class="text-muted">Aucun dossier à rectifier.</p>
       }
     </section>
 
     @if (confirmCle() !== null) {
-      <div class="ar-modal__overlay" (click)="annulerResoumission()">
-        <div class="ar-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-          <h2 class="ar-modal__title">Resoumettre au vérificateur ?</h2>
-          <p>Ce dossier sera renvoyé au vérificateur avec votre motif de rectification.</p>
-          <div class="ar-modal__foot">
-            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerResoumission()">Annuler</button>
-            <button type="button" class="cnm-btn cnm-btn--primary" (click)="confirmerResoumission()">
+      <div class="modal-backdrop" (click)="annulerResoumission()">
+        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+          <div class="modal-header-plain">
+            <span class="modal-title">Resoumettre au vérificateur ?</span>
+            <button type="button" class="btn-close-plain" (click)="annulerResoumission()">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>Ce dossier sera renvoyé au vérificateur avec votre motif de rectification.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" (click)="annulerResoumission()">Annuler</button>
+            <button type="button" class="btn btn-primary" (click)="confirmerResoumission()">
               Confirmer la resoumission
             </button>
           </div>
@@ -124,30 +123,21 @@ interface CarteRectif {
     }
   `,
   styles: `
-    .ar__header { margin-bottom: var(--cnm-space-3); }
-    .ar__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .ar__note { padding: var(--cnm-space-3) var(--cnm-space-4); color: var(--cnm-text-2); margin-bottom: var(--cnm-space-3); }
-    .ar__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--cnm-space-2); }
-    .ar__item { padding: var(--cnm-space-3) var(--cnm-space-4); border-left: 4px solid var(--cnm-warning-fg); }
-    .ar__item-head { display: flex; align-items: center; gap: var(--cnm-space-2); }
-    .ar__date { margin-left: auto; color: var(--cnm-text-3); font-size: var(--cnm-fs-micro); }
-    .ar__p { margin: var(--cnm-space-1) 0 0; font-size: var(--cnm-fs-sm); }
-    .ar__p--ref { font-weight: var(--cnm-fw-semibold); font-size: var(--cnm-fs-sm); }
-    .ar__p--action { color: var(--cnm-text-2); font-style: italic; }
-    .ar__hist { margin-top: var(--cnm-space-2); }
-    .ar__hist-title { margin: 0 0 var(--cnm-space-1); font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
-    .ar__obs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--cnm-space-1); }
-    .ar__obs-item { display: flex; flex-direction: column; gap: 2px; padding: var(--cnm-space-1) var(--cnm-space-2); border-left: 2px solid var(--cnm-border); }
-    .ar__obs-item--latest { border-left-color: var(--cnm-accent-fg); font-weight: var(--cnm-fw-semibold); }
-    .ar__obs-meta { color: var(--cnm-text-3); font-size: var(--cnm-fs-micro); }
-    .ar__obs-text { font-size: var(--cnm-fs-sm); }
-    .ar__form { margin-top: var(--cnm-space-2); display: flex; flex-direction: column; gap: var(--cnm-space-1); }
-    .ar__form-foot { display: flex; justify-content: flex-end; }
-    .ar__hint { display: block; margin-top: var(--cnm-space-1); font-size: var(--cnm-fs-micro); color: var(--cnm-text-3); text-align: right; }
-    .ar-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
-    .ar-modal { width: 100%; max-width: 30rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
-    .ar-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
-    .ar-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
+    .ar-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .ar-item { padding: 1rem 1.25rem; border-left: 4px solid var(--warning-text); }
+    .ar-item__head { display: flex; align-items: center; gap: 0.6rem; }
+    .ar-item__ref { font-weight: 700; color: var(--c-800); font-size: var(--text-sm); }
+    .ar-item__date { margin-left: auto; color: var(--n-400); font-size: var(--text-xs); }
+    .ar-hist { margin-top: 0.75rem; }
+    .ar-hist__title { margin: 0 0 0.4rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
+    .ar-obs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+    .ar-obs__item { display: flex; flex-direction: column; gap: 2px; padding: 0.25rem 0.5rem; border-left: 2px solid var(--c-100); }
+    .ar-obs__item--latest { border-left-color: var(--c-500); font-weight: 600; }
+    .ar-obs__meta { color: var(--n-400); font-size: var(--text-xs); }
+    .ar-obs__text { font-size: var(--text-sm); }
+    .ar-form { margin-top: 0.75rem; }
+    .ar-item__foot { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; }
+    .confirm-modal { max-width: 28rem; }
   `,
 })
 export class DossiersARectifier {

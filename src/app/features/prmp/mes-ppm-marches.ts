@@ -17,33 +17,31 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StatutBadge, DetailPpmModal],
   template: `
-    <section class="mpm">
-      <header class="mpm__header">
-        <span class="cnm-section-label">Domaine PRMP</span>
-        <h1 class="mpm__title">Mes PPM & marchés</h1>
+    <section>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine PRMP</div>
+          <h1 class="page-title">Mes PPM &amp; marchés</h1>
+        </div>
       </header>
 
       @if (loading()) {
-        <p class="mpm__info">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else {
         @for (ppm of mesPpms(); track ppm.idPpm) {
-          <div class="cnm-card mpm__ppm" [class.mpm__ppm--soumis]="estSoumis(ppm)">
-            <div class="mpm__bar">
-              <div class="mpm__head">
-                <span class="mpm__ref">{{ ppm.reference || 'PPM #' + ppm.idPpm }}</span>
-                <span class="mpm__sub">Exercice {{ ppm.exercice }} · {{ ppm.libelle || '—' }}</span>
-                <span class="cnm-badge cnm-badge--neutral">{{ marchesOf(ppm.idPpm).length }} marché(s)</span>
-                @if (statutPpm(ppm) === 'EN_ATTENTE_DECISION_PRMP') {
-                  <app-statut-badge [statut]="statutPpm(ppm)" />
-                }
-              </div>
-              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm mpm__details-btn" (click)="ouvrirDetail(ppm)">
-                Détails
-              </button>
+          <div class="card ppm-row" [class.ppm-row--soumis]="estSoumis(ppm)">
+            <div class="ppm-row__head">
+              <span class="ppm-row__ref">{{ ppm.reference || 'PPM #' + ppm.idPpm }}</span>
+              <span class="ppm-row__sub">Exercice {{ ppm.exercice }} · {{ ppm.libelle || '—' }}</span>
+              <span class="badge badge-neutral">{{ marchesOf(ppm.idPpm).length }} marché(s)</span>
+              @if (statutPpm(ppm) === 'EN_ATTENTE_DECISION_PRMP') {
+                <app-statut-badge [statut]="statutPpm(ppm)" />
+              }
             </div>
+            <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDetail(ppm)">Détails</button>
           </div>
         } @empty {
-          <p class="mpm__info">Aucun PPM dans votre périmètre.</p>
+          <p class="text-muted">Aucun PPM dans votre périmètre.</p>
         }
       }
     </section>
@@ -59,24 +57,17 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     }
   `,
   styles: `
-    .mpm__header { margin-bottom: var(--cnm-space-4); }
-    .mpm__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .mpm__info { color: var(--cnm-text-2); padding: var(--cnm-space-2) var(--cnm-space-3); }
-    .mpm__ppm { margin-bottom: var(--cnm-space-3); overflow: hidden; }
-    .mpm__ppm--soumis,
-    .mpm__ppm--soumis .mpm__head { background: var(--cnm-action-bg); }
-    .mpm__bar { display: flex; align-items: center; gap: var(--cnm-space-2); }
-    .mpm__head {
+    .ppm-row {
       display: flex;
       align-items: center;
-      gap: var(--cnm-space-3);
-      flex: 1;
-      padding: var(--cnm-space-3) var(--cnm-space-4);
-      color: var(--cnm-text);
+      gap: 0.75rem;
+      padding: 0.85rem 1.25rem;
+      margin-bottom: 0.75rem;
     }
-    .mpm__details-btn { align-self: center; white-space: nowrap; margin-right: var(--cnm-space-3); }
-    .mpm__ref { font-weight: var(--cnm-fw-semibold); }
-    .mpm__sub { color: var(--cnm-text-2); font-size: var(--cnm-fs-sm); flex: 1; }
+    .ppm-row--soumis { background: var(--c-50); }
+    .ppm-row__head { display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0; }
+    .ppm-row__ref { font-weight: 700; color: var(--c-800); }
+    .ppm-row__sub { color: var(--n-400); font-size: var(--text-sm); flex: 1; min-width: 0; }
   `,
 })
 export class MesPpmMarches {

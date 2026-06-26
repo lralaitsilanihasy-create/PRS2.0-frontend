@@ -14,30 +14,28 @@ import { DetailPpmModal } from '../../shared/prmp';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DetailPpmModal],
   template: `
-    <section class="md">
-      <header class="md__header">
-        <span class="cnm-section-label">Domaine PRMP</span>
-        <h1 class="md__title">PPM & marchés rattachés</h1>
+    <section>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine PRMP</div>
+          <h1 class="page-title">PPM &amp; marchés rattachés</h1>
+        </div>
       </header>
 
       @if (loading()) {
-        <p class="md__info">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else {
         @for (ppm of ppms(); track ppm.idPpm) {
-          <div class="cnm-card md__ppm">
-            <div class="md__bar">
-              <div class="md__head">
-                <span class="md__ref">{{ ppm.reference || 'PPM #' + ppm.idPpm }}</span>
-                <span class="md__sub">Exercice {{ ppm.exercice }} · {{ ppm.libelle || '—' }}</span>
-                <span class="cnm-badge cnm-badge--neutral">{{ marchesOf(ppm.idPpm).length }} marché(s)</span>
-              </div>
-              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm md__details-btn" (click)="ouvrirDetail(ppm)">
-                Détails
-              </button>
+          <div class="card ppm-row">
+            <div class="ppm-row__head">
+              <span class="ppm-row__ref">{{ ppm.reference || 'PPM #' + ppm.idPpm }}</span>
+              <span class="ppm-row__sub">Exercice {{ ppm.exercice }} · {{ ppm.libelle || '—' }}</span>
+              <span class="badge badge-neutral">{{ marchesOf(ppm.idPpm).length }} marché(s)</span>
             </div>
+            <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDetail(ppm)">Détails</button>
           </div>
         } @empty {
-          <p class="md__info">Aucun PPM dans votre périmètre.</p>
+          <p class="text-muted">Aucun PPM dans votre périmètre.</p>
         }
       }
     </section>
@@ -52,22 +50,16 @@ import { DetailPpmModal } from '../../shared/prmp';
     }
   `,
   styles: `
-    .md__header { margin-bottom: var(--cnm-space-4); }
-    .md__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .md__info { color: var(--cnm-text-2); padding: var(--cnm-space-3); }
-    .md__ppm { margin-bottom: var(--cnm-space-3); overflow: hidden; }
-    .md__bar { display: flex; align-items: center; gap: var(--cnm-space-2); }
-    .md__head {
+    .ppm-row {
       display: flex;
       align-items: center;
-      gap: var(--cnm-space-3);
-      flex: 1;
-      padding: var(--cnm-space-3) var(--cnm-space-4);
-      color: var(--cnm-text);
+      gap: 0.75rem;
+      padding: 0.85rem 1.25rem;
+      margin-bottom: 0.75rem;
     }
-    .md__details-btn { align-self: center; white-space: nowrap; margin-right: var(--cnm-space-3); }
-    .md__ref { font-weight: var(--cnm-fw-semibold); }
-    .md__sub { color: var(--cnm-text-2); font-size: var(--cnm-fs-sm); flex: 1; }
+    .ppm-row__head { display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0; }
+    .ppm-row__ref { font-weight: 700; color: var(--c-800); }
+    .ppm-row__sub { color: var(--n-400); font-size: var(--text-sm); flex: 1; min-width: 0; }
   `,
 })
 export class PpmMarches {
