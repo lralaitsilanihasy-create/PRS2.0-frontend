@@ -62,8 +62,8 @@ interface DispatchRow {
                   <td>{{ l.dossier?.refeDossier || (l.dossier ? 'Dossier #' + l.dossier.idDossier : '—') }}</td>
                   <td>{{ localiteLabel(l.dossier) }}</td>
                   <td style="white-space:nowrap;">
-                    @if (l.dispatch.dateCtrlAssigne) {
-                      {{ l.dispatch.dateCtrlAssigne | date: 'dd/MM/yyyy HH:mm' }}
+                    @if (l.reception?.dateReception) {
+                      {{ l.reception?.dateReception | date: 'dd/MM/yyyy HH:mm' }}
                     } @else {
                       <span style="color:var(--n-300)">—</span>
                     }
