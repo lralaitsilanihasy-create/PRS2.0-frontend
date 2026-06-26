@@ -154,6 +154,8 @@ a  { color: var(--p-600); text-decoration: none; }
   flex-direction: column;
   z-index: 100;
   overflow: hidden;
+
+  a { text-decoration: none !important; }
 }
 
 .sidebar-logo {
@@ -285,6 +287,7 @@ a  { color: var(--p-600); text-decoration: none; }
   &:hover {
     background: var(--p-50);
     color: var(--n-800);
+    text-decoration: none;
   }
 
   &.active {
@@ -325,7 +328,7 @@ a  { color: var(--p-600); text-decoration: none; }
   border-radius: var(--radius-sm);
   text-decoration: none;
   color: var(--n-400);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: 400;
   cursor: pointer;
   transition: var(--transition);
