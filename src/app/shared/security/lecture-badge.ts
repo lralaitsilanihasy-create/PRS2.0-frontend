@@ -18,7 +18,7 @@ import { Capability } from '../../core/auth/permissions';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (visible()) {
-      <span class="cnm-badge cnm-badge--neutral lecture-badge" title="Consultation en lecture seule">
+      <span class="badge badge-neutral lecture-badge" title="Consultation en lecture seule">
         Lecture
       </span>
     }

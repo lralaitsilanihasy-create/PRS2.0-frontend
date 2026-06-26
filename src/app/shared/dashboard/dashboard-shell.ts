@@ -37,27 +37,29 @@ export interface PipelineEntry {
   imports: [RouterLink, StatutBadge, CircuitTimeline],
   template: `
     <section class="dash">
-      <header class="dash__header">
-        <span class="cnm-section-label">{{ perimetre() }}</span>
-        <h1 class="dash__title">{{ title() }}</h1>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">{{ perimetre() }}</div>
+          <h1 class="page-title">{{ title() }}</h1>
+        </div>
       </header>
 
       @if (loading()) {
-        <p class="dash__info">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else {
         <h2 class="dash__section">À faire</h2>
         <div class="dash__worklist">
           @for (w of worklist(); track w.label) {
-            <div class="cnm-card dash-task">
-              <span class="cnm-badge {{ 'cnm-badge--' + (w.severity ?? 'neutral') }} dash-task__count">{{ w.count }}</span>
+            <div class="card dash-task">
+              <span class="badge {{ 'badge-' + (w.severity ?? 'neutral') }} dash-task__count">{{ w.count }}</span>
               <div class="dash-task__body">
                 <span class="dash-task__label">{{ w.label }}</span>
-                @if (w.hint) { <span class="dash-task__hint cnm-muted">{{ w.hint }}</span> }
+                @if (w.hint) { <span class="dash-task__hint text-muted">{{ w.hint }}</span> }
               </div>
-              <a class="cnm-btn cnm-btn--primary cnm-btn--sm" [routerLink]="w.actionPath">{{ w.actionLabel }}</a>
+              <a class="btn btn-primary btn-sm" [routerLink]="w.actionPath">{{ w.actionLabel }}</a>
             </div>
           } @empty {
-            <p class="dash__info">Rien à traiter pour le moment.</p>
+            <p class="text-muted">Rien à traiter pour le moment.</p>
           }
         </div>
 
@@ -78,7 +80,7 @@ export interface PipelineEntry {
           @for (p of pipeline(); track p.statut) {
             <span class="dash-pill"><app-statut-badge [statut]="p.statut" /><span class="dash-pill__count">{{ p.count }}</span></span>
           } @empty {
-            <p class="dash__info">Aucun dossier dans le périmètre.</p>
+            <p class="text-muted">Aucun dossier dans le périmètre.</p>
           }
         </div>
         <app-circuit-timeline [active]="-1" />
@@ -86,24 +88,21 @@ export interface PipelineEntry {
     </section>
   `,
   styles: `
-    .dash__header { margin-bottom: var(--cnm-space-4); }
-    .dash__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .dash__section { margin: var(--cnm-space-4) 0 var(--cnm-space-2); font-size: var(--cnm-fs-md); color: var(--cnm-text-2); }
-    .dash__info { color: var(--cnm-text-2); }
-    .dash__worklist { display: flex; flex-direction: column; gap: var(--cnm-space-2); }
-    .dash-task { display: flex; align-items: center; gap: var(--cnm-space-3); padding: var(--cnm-space-3) var(--cnm-space-4); }
-    .dash-task__count { font-weight: var(--cnm-fw-semibold); }
+    .dash__section { margin: 1.5rem 0 0.5rem; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .dash__worklist { display: flex; flex-direction: column; gap: 0.5rem; }
+    .dash-task { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.1rem; }
+    .dash-task__count { font-weight: 700; }
     .dash-task__body { display: flex; flex-direction: column; flex: 1; }
-    .dash-task__label { color: var(--cnm-text); font-weight: var(--cnm-fw-medium); }
-    .dash-task__hint { font-size: var(--cnm-fs-sm); }
-    .dash__kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: var(--cnm-space-3); }
-    .dash-kpi { background: var(--cnm-surface); border: 1px solid var(--cnm-border); border-radius: var(--cnm-radius); padding: var(--cnm-space-4); display: flex; flex-direction: column; gap: var(--cnm-space-1); }
-    .dash-kpi--accent { background: var(--cnm-brand); border-color: var(--cnm-brand); color: #fff; }
-    .dash-kpi__value { font-size: 1.75rem; font-weight: var(--cnm-fw-bold); }
-    .dash-kpi__label { font-size: var(--cnm-fs-sm); opacity: .85; }
-    .dash__pipeline { display: flex; flex-wrap: wrap; gap: var(--cnm-space-2); margin-bottom: var(--cnm-space-3); }
-    .dash-pill { display: flex; align-items: center; gap: var(--cnm-space-2); background: var(--cnm-surface); border: 1px solid var(--cnm-border); border-radius: var(--cnm-radius-pill); padding: 0.3rem 0.6rem; }
-    .dash-pill__count { font-weight: var(--cnm-fw-bold); color: var(--cnm-text); }
+    .dash-task__label { color: var(--n-800); font-weight: 500; }
+    .dash-task__hint { font-size: var(--text-sm); }
+    .dash__kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.75rem; }
+    .dash-kpi { background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+    .dash-kpi--accent { background: linear-gradient(135deg, var(--c-600), var(--c-700)); border-color: var(--c-700); color: #fff; }
+    .dash-kpi__value { font-size: 1.75rem; font-weight: 800; }
+    .dash-kpi__label { font-size: var(--text-sm); opacity: .85; }
+    .dash__pipeline { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .dash-pill { display: flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-full); padding: 0.3rem 0.6rem; }
+    .dash-pill__count { font-weight: 800; color: var(--c-800); }
   `,
 })
 export class DashboardShell {

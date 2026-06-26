@@ -17,7 +17,9 @@ export interface SectionLink {
   imports: [RouterLink],
   template: `
     <section class="section">
-      <h1 class="section__title">{{ title }}</h1>
+      <header class="page-header">
+        <h1 class="page-title">{{ title }}</h1>
+      </header>
       <div class="section__grid">
         @for (link of links; track link.path) {
           <a class="section__card" [routerLink]="link.path">{{ link.label }}</a>
@@ -26,27 +28,27 @@ export interface SectionLink {
     </section>
   `,
   styles: `
-    .section__title {
-      margin: 0 0 var(--cnm-space-4);
-      font-size: var(--cnm-fs-lg);
-    }
     .section__grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
-      gap: var(--cnm-space-3);
+      gap: 1rem;
     }
     .section__card {
       display: block;
-      padding: var(--cnm-space-4);
-      background: var(--cnm-surface);
-      border: 1px solid var(--cnm-border);
-      border-radius: var(--cnm-radius);
+      padding: 1.25rem;
+      background: #fff;
+      border: 1px solid var(--c-100);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-md);
       text-decoration: none;
-      color: var(--cnm-text);
-      font-weight: var(--cnm-fw-medium);
+      color: var(--c-800);
+      font-weight: 600;
+      transition: var(--transition);
     }
     .section__card:hover {
-      border-color: var(--cnm-brand);
+      border-color: var(--c-400);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-1px);
       text-decoration: none;
     }
   `,
