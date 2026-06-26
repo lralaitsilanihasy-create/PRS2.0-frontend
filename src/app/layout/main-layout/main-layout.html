@@ -1,80 +1,71 @@
-<div class="layout">
-  <header class="layout__header">
-    <div class="brand">CNM</div>
-    <div class="header-user">
-      @if (login()) {
-        <span class="header-user__login">{{ displayName() || login() }}</span>
-        <span class="header-user__role">{{ role() }}</span>
-        <app-notification-center />
-      }
-      <button type="button" class="header-user__logout" (click)="logout()">
-        Déconnexion
-      </button>
-    </div>
-  </header>
+<aside class="sidebar">
+  <div class="sidebar-logo">CNM</div>
 
-  <div class="layout__body">
-    <nav class="sidebar" aria-label="Navigation principale">
-      <ul class="sidebar__list">
-        @for (item of navItems(); track item.path) {
-          <li>
-            @if (item.children) {
-              <button
-                type="button"
-                class="sidebar__link sidebar__group"
-                [class.sidebar__group--open]="isOpen(item)"
-                [attr.aria-expanded]="isOpen(item)"
-                (click)="toggle(item)"
-              >
-                @if (item.icon) {
-                  <span class="sidebar__icon" aria-hidden="true">{{ item.icon }}</span>
-                }
-                <span>{{ item.label }}</span>
-                <span class="sidebar__chevron" aria-hidden="true">›</span>
-              </button>
-              @if (isOpen(item)) {
-                <ul class="sidebar__sublist">
-                  @for (child of item.children; track child.path) {
-                    <li>
-                      <a
-                        class="sidebar__link sidebar__link--sub"
-                        [routerLink]="child.path"
-                        routerLinkActive="sidebar__link--active"
-                      >
-                        @if (child.icon) {
-                          <span class="sidebar__icon" aria-hidden="true">{{ child.icon }}</span>
-                        }
-                        <span>{{ child.label }}</span>
-                      </a>
-                    </li>
-                  }
-                </ul>
+  <nav class="sidebar-nav" aria-label="Navigation principale">
+    @for (item of navItems(); track item.path) {
+      @if (item.children) {
+        <button
+          type="button"
+          class="nav-item nav-group"
+          [class.nav-group--open]="isOpen(item)"
+          [attr.aria-expanded]="isOpen(item)"
+          (click)="toggle(item)"
+        >
+          @if (item.icon) {
+            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+          }
+          <span class="nav-label">{{ item.label }}</span>
+          <span class="nav-chevron" aria-hidden="true">›</span>
+        </button>
+        @if (isOpen(item)) {
+          @for (child of item.children; track child.path) {
+            <a
+              class="nav-item nav-item--sub"
+              [routerLink]="child.path"
+              routerLinkActive="active"
+            >
+              @if (child.icon) {
+                <span class="nav-icon" aria-hidden="true">{{ child.icon }}</span>
               }
-            } @else {
-              <a
-                class="sidebar__link"
-                [routerLink]="item.path"
-                routerLinkActive="sidebar__link--active"
-              >
-                @if (item.icon) {
-                  <span class="sidebar__icon" aria-hidden="true">{{ item.icon }}</span>
-                }
-                <span>{{ item.label }}</span>
-                @if (countFor(item.path) !== undefined) {
-                  <span class="sidebar__badge">{{ countFor(item.path) }}</span>
-                }
-                @if (alertFor(item.path)) {
-                  <span class="sidebar__badge sidebar__badge--alert">{{ alertFor(item.path) }}</span>
-                }
-              </a>
-            }
-          </li>
+              <span class="nav-label">{{ child.label }}</span>
+            </a>
+          }
         }
-      </ul>
-    </nav>
+      } @else {
+        <a
+          class="nav-item"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+        >
+          @if (item.icon) {
+            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+          }
+          <span class="nav-label">{{ item.label }}</span>
+          @if (countFor(item.path) !== undefined) {
+            <span class="nav-badge">{{ countFor(item.path) }}</span>
+          }
+          @if (alertFor(item.path)) {
+            <span class="nav-badge nav-badge--alert">{{ alertFor(item.path) }}</span>
+          }
+        </a>
+      }
+    }
+  </nav>
+</aside>
 
-    <main class="layout__content">
-      <router-outlet />
-    </main>
+<header class="topbar">
+  <div class="topbar-title">{{ displayName() || login() }}</div>
+  <div class="topbar-right">
+    @if (login()) {
+      <span class="badge badge-primary">{{ role() }}</span>
+      <app-notification-center />
+    }
+    <button type="button" class="btn btn-outline btn-sm" (click)="logout()">Déconnexion</button>
   </div>
-</div>
+</header>
+
+<main class="page-content">
+  <div class="page-inner">
+    <router-outlet />
+  </div>
+</main>
