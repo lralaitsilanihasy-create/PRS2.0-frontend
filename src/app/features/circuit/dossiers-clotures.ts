@@ -17,17 +17,19 @@ import { StatutBadge } from '../../shared/circuit';
   imports: [StatutBadge],
   template: `
     <section class="dc">
-      <header class="dc__header">
-        <span class="cnm-section-label">{{ source === 'prmp-clotures' ? 'Domaine PRMP' : 'Domaine Vérificateur' }}</span>
-        <h1 class="dc__title">{{ titre }}</h1>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">{{ source === 'prmp-clotures' ? 'Domaine PRMP' : 'Domaine Vérificateur' }}</div>
+          <h1 class="page-title">{{ titre }}</h1>
+        </div>
       </header>
 
       @if (loading()) {
-        <p class="cnm-muted">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else if (dossiers().length) {
         <ul class="dc__list">
           @for (d of dossiers(); track d.idDossier) {
-            <li class="cnm-card dc__item">
+            <li class="card dc__item">
               <button
                 type="button"
                 class="dc__head"
@@ -42,7 +44,7 @@ import { StatutBadge } from '../../shared/circuit';
               @if (estOuvert(d.idDossier)) {
                 <div class="dc__hist">
                   @if (chargeEnCours(d.idDossier)) {
-                    <p class="cnm-muted">Chargement de l'historique…</p>
+                    <p class="text-muted">Chargement de l'historique…</p>
                   } @else {
                     <h3 class="dc__hist-title">Historique des échanges</h3>
                     @if (echangesDe(d.idDossier).length) {
@@ -57,13 +59,13 @@ import { StatutBadge } from '../../shared/circuit';
                             <span class="dc__ech-label">{{ e.type === 'OBSERVATION' ? 'Observation' : 'Rectification PRMP reçue' }}</span>
                             <span class="dc__ech-text">{{ e.texte }}</span>
                             @if (e.type === 'OBSERVATION' && e.obsLevees) {
-                              <span class="cnm-badge cnm-badge--success">{{ last ? 'Dossier clôturé — observations levées' : 'Observations levées' }}</span>
+                              <span class="badge badge-success">{{ last ? 'Dossier clôturé — observations levées' : 'Observations levées' }}</span>
                             }
                           </li>
                         }
                       </ul>
                     } @else {
-                      <p class="cnm-muted">Aucun échange enregistré.</p>
+                      <p class="text-muted">Aucun échange enregistré.</p>
                     }
                   }
                 </div>
@@ -74,36 +76,34 @@ import { StatutBadge } from '../../shared/circuit';
 
         @if (source === 'verifies' && totalPages() > 1) {
           <div class="dc__pager">
-            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="pageIndex() === 0" (click)="prevPage()">Précédent</button>
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="pageIndex() === 0" (click)="prevPage()">Précédent</button>
             <span class="dc__pager-info">Page {{ pageIndex() + 1 }} / {{ totalPages() }}</span>
-            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="pageIndex() + 1 >= totalPages()" (click)="nextPage()">Suivant</button>
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="pageIndex() + 1 >= totalPages()" (click)="nextPage()">Suivant</button>
           </div>
         }
       } @else {
-        <p class="cnm-muted">Aucun dossier clôturé.</p>
+        <p class="text-muted">Aucun dossier clôturé.</p>
       }
     </section>
   `,
   styles: `
-    .dc__header { margin-bottom: var(--cnm-space-3); }
-    .dc__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .dc__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--cnm-space-2); }
+    .dc__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .dc__item { padding: 0; overflow: hidden; }
-    .dc__head { width: 100%; display: flex; align-items: center; gap: var(--cnm-space-2); padding: var(--cnm-space-3) var(--cnm-space-4); background: none; border: 0; cursor: pointer; text-align: left; font: inherit; color: inherit; }
-    .dc__head:hover { background: var(--cnm-surface-2); }
-    .dc__chevron { color: var(--cnm-text-3); width: 1em; flex: none; }
-    .dc__ref { font-weight: var(--cnm-fw-semibold); }
-    .dc__hist { padding: 0 var(--cnm-space-4) var(--cnm-space-3); }
-    .dc__hist-title { margin: 0 0 var(--cnm-space-1); font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
-    .dc__ech { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--cnm-space-1); }
-    .dc__ech-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--cnm-space-2); padding: var(--cnm-space-1) var(--cnm-space-2); border-left: 2px solid var(--cnm-border); }
-    .dc__ech-item--rectif { border-left-color: var(--cnm-warning-fg); }
-    .dc__ech-item--final { border-left-color: var(--cnm-success-fg); background: var(--cnm-surface-2); }
-    .dc__ech-meta { color: var(--cnm-text-3); font-size: var(--cnm-fs-micro); }
-    .dc__ech-label { font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-2); }
-    .dc__ech-text { font-size: var(--cnm-fs-sm); }
-    .dc__pager { display: flex; align-items: center; gap: var(--cnm-space-3); justify-content: flex-end; margin-top: var(--cnm-space-3); }
-    .dc__pager-info { font-size: var(--cnm-fs-sm); color: var(--cnm-text-2); }
+    .dc__head { width: 100%; display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.1rem; background: none; border: 0; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+    .dc__head:hover { background: var(--c-50); }
+    .dc__chevron { color: var(--n-400); width: 1em; flex: none; }
+    .dc__ref { font-weight: 700; color: var(--c-800); }
+    .dc__hist { padding: 0 1.1rem 0.75rem; }
+    .dc__hist-title { margin: 0 0 0.4rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
+    .dc__ech { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+    .dc__ech-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; padding: 0.25rem 0.5rem; border-left: 2px solid var(--c-100); }
+    .dc__ech-item--rectif { border-left-color: var(--warning-text); }
+    .dc__ech-item--final { border-left-color: var(--success-text); background: var(--c-50); }
+    .dc__ech-meta { color: var(--n-400); font-size: var(--text-xs); }
+    .dc__ech-label { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-500); }
+    .dc__ech-text { font-size: var(--text-sm); }
+    .dc__pager { display: flex; align-items: center; gap: 0.75rem; justify-content: flex-end; margin-top: 0.75rem; }
+    .dc__pager-info { font-size: var(--text-sm); color: var(--n-400); }
   `,
 })
 export class DossiersClotures {

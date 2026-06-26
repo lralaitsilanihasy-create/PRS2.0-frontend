@@ -22,14 +22,15 @@ import { StatutBadge } from '../../shared/circuit';
   imports: [StatutBadge],
   template: `
     <section class="lrc">
-      <header class="lrc__header">
-        <h1 class="lrc__title">{{ titre }}</h1>
+      <header class="page-header">
+        <h1 class="page-title">{{ titre }}</h1>
       </header>
 
       @if (loading()) {
-        <p class="cnm-muted">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else {
-        <table class="cnm-table">
+        <div class="table-card">
+        <table>
           <thead>
             <tr><th>Référence lettre</th><th>Dossier</th><th>Objet</th><th>Date lettre</th><th>Statut</th><th></th></tr>
           </thead>
@@ -42,11 +43,11 @@ import { StatutBadge } from '../../shared/circuit';
                 <td class="cnm-mono">{{ l.dateLettre || '—' }}</td>
                 <td><app-statut-badge [statut]="l.statut" /></td>
                 <td class="lrc__actions">
-                  <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="basculer(l)">
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="basculer(l)">
                     {{ ouvert() === l.idLettre ? 'Masquer' : 'Détails' }}
                   </button>
                   @if (signable && l.statut === 'SOUMIS') {
-                    <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" [disabled]="signature() === l.idLettre" (click)="signer(l)">
+                    <button type="button" class="btn btn-primary btn-sm" [disabled]="signature() === l.idLettre" (click)="signer(l)">
                       {{ signature() === l.idLettre ? 'Signature…' : 'Signer' }}
                     </button>
                   }
@@ -67,7 +68,7 @@ import { StatutBadge } from '../../shared/circuit';
                     </dl>
                     @if (signable && l.statut === 'SOUMIS') {
                       <div class="lrc__detail-foot">
-                        <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="signature() === l.idLettre" (click)="signer(l)">
+                        <button type="button" class="btn btn-primary" [disabled]="signature() === l.idLettre" (click)="signer(l)">
                           {{ signature() === l.idLettre ? 'Signature…' : 'Signer la lettre' }}
                         </button>
                       </div>
@@ -79,21 +80,21 @@ import { StatutBadge } from '../../shared/circuit';
                         @for (p of piecesInitiales(); track p.idPiece) {
                           <div class="lrc__piece">
                             <span>📎 {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
-                            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="telecharger(p)">Télécharger</button>
+                            <button type="button" class="btn btn-secondary btn-sm" (click)="telecharger(p)">Télécharger</button>
                           </div>
                         } @empty {
-                          <p class="cnm-muted">Aucune pièce initiale.</p>
+                          <p class="text-muted">Aucune pièce initiale.</p>
                         }
 
                         <h3 class="lrc__pieces-title">Pièces ajoutées suite à cette lettre</h3>
                         @for (p of piecesApres(l); track p.idPiece) {
                           <div class="lrc__piece">
                             <span>📎 {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
-                            <span class="cnm-badge cnm-badge--warning">Ajoutée après lettre</span>
-                            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="telecharger(p)">Télécharger</button>
+                            <span class="badge badge-warning">Ajoutée après lettre</span>
+                            <button type="button" class="btn btn-secondary btn-sm" (click)="telecharger(p)">Télécharger</button>
                           </div>
                         } @empty {
-                          <p class="cnm-muted">Aucune pièce ajoutée après cette lettre.</p>
+                          <p class="text-muted">Aucune pièce ajoutée après cette lettre.</p>
                         }
 
                         <div class="lrc__upload">
@@ -104,7 +105,7 @@ import { StatutBadge } from '../../shared/circuit';
                             }
                           </select>
                           <input type="file" accept=".pdf,.jpeg,.jpg,.png" (change)="onUploadFile($event)" />
-                          <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" [disabled]="uploading() || uploadType() == null || !uploadFile()" (click)="ajouterPiece(l)">
+                          <button type="button" class="btn btn-primary btn-sm" [disabled]="uploading() || uploadType() == null || !uploadFile()" (click)="ajouterPiece(l)">
                             {{ uploading() ? 'Ajout…' : '+ Ajouter une pièce' }}
                           </button>
                         </div>
@@ -114,27 +115,28 @@ import { StatutBadge } from '../../shared/circuit';
                 </tr>
               }
             } @empty {
-              <tr><td colspan="6" class="cnm-muted">Aucune lettre de renvoi.</td></tr>
+              <tr><td colspan="6" class="text-muted">Aucune lettre de renvoi.</td></tr>
             }
           </tbody>
         </table>
+        </div>
       }
     </section>
   `,
   styles: `
-    .lrc__header { margin-bottom: var(--cnm-space-3); }
-    .lrc__title { margin: 0; font-size: var(--cnm-fs-lg); }
-    .lrc__actions { display: flex; gap: var(--cnm-space-2); justify-content: flex-end; }
-    .lrc__detail-foot { display: flex; justify-content: flex-end; margin-top: var(--cnm-space-2); }
-    .lrc__dl { display: flex; flex-direction: column; gap: var(--cnm-space-1); margin: 0; }
-    .lrc__dl > div { display: flex; gap: var(--cnm-space-2); align-items: baseline; }
-    .lrc__dl dt { flex: 0 0 10rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
+    .lrc__actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+    .lrc__detail-foot { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
+    .lrc__dl { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
+    .lrc__dl > div { display: flex; gap: 0.5rem; align-items: baseline; }
+    .lrc__dl dt { flex: 0 0 10rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
     .lrc__dl dd { margin: 0; }
     .lrc__corps { white-space: pre-wrap; }
-    .lrc__pieces { margin-top: var(--cnm-space-3); border-top: 1px solid var(--cnm-border); padding-top: var(--cnm-space-2); display: flex; flex-direction: column; gap: var(--cnm-space-1); }
-    .lrc__pieces-title { margin: var(--cnm-space-2) 0 0; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
-    .lrc__piece { display: flex; align-items: center; gap: var(--cnm-space-2); }
-    .lrc__upload { display: flex; align-items: center; gap: var(--cnm-space-2); flex-wrap: wrap; margin-top: var(--cnm-space-2); }
+    .lrc__pieces { margin-top: 0.75rem; border-top: 1px solid var(--c-100); padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .lrc__pieces-title { margin: 0.5rem 0 0; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
+    .lrc__piece { display: flex; align-items: center; gap: 0.5rem; }
+    .lrc__upload { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .table-card td { white-space: normal; }
+    .lrc__detail > td { background: var(--c-50); }
   `,
 })
 export class LettreRenvoiConsultation {
