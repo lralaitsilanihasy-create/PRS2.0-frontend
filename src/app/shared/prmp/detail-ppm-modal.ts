@@ -79,7 +79,7 @@ type ModeSuggestion = {
                 <table class="dpm__table">
                   <colgroup>
                     <col class="dpm__c-num" />
-                    <col />
+                    <col class="dpm__c-desig" />
                     <col class="dpm__c-mont" />
                     <col class="dpm__c-mode" />
                     <col class="dpm__c-statut" />
@@ -99,7 +99,7 @@ type ModeSuggestion = {
                     @for (m of marches(); track m.idDetail) {
                       <tr>
                         <td class="cnm-mono">{{ m.idDetail }}</td>
-                        <td>{{ m.designationMarche || '—' }}</td>
+                        <td class="dpm__desig" [title]="m.designationMarche || ''">{{ m.designationMarche || '—' }}</td>
                         <td class="dpm__num">{{ montant(m.montEstim) }}</td>
                         <td>{{ resolve(modeMap(), m.idMode) }}</td>
                         <td><app-statut-badge [statut]="m.statut" /></td>
@@ -407,13 +407,15 @@ type ModeSuggestion = {
     .dpm__section-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 
     /* Tableau des marchés (non compressé) */
-    .dpm__table { width: 100%; table-layout: auto; border-collapse: collapse; font-size: 0.85rem; }
+    .dpm__table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.85rem; }
     .dpm__c-num { width: 80px; }
-    .dpm__c-mont { width: 150px; }
-    .dpm__c-mode { width: 150px; }
+    .dpm__c-desig { width: 300px; }
+    .dpm__c-mont { width: 160px; }
+    .dpm__c-mode { width: 160px; }
     .dpm__c-statut { width: 100px; }
-    .dpm__c-action { width: 220px; }
+    .dpm__c-action { width: 250px; }
     .dpm__table th, .dpm__table td { padding: 0.75rem 1rem; text-align: left; vertical-align: middle; height: 56px; }
+    .dpm__desig { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dpm__table thead th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
     .dpm__table tbody tr:nth-child(even) { background: #f9fafb; }
     .dpm__num { text-align: right; }
