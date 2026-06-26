@@ -1,4 +1,11 @@
-<aside class="sidebar">
+<div
+  class="sidebar-overlay"
+  [class.visible]="sidebarOpen()"
+  (click)="closeSidebar()"
+  aria-hidden="true"
+></div>
+
+<aside class="sidebar" [class.open]="sidebarOpen()">
   <div class="sidebar-logo">CNM</div>
 
   <nav class="sidebar-nav" aria-label="Navigation principale">
@@ -64,7 +71,16 @@
 </aside>
 
 <header class="topbar">
-  <div class="topbar-title">{{ displayName() || login() }}</div>
+  <div class="topbar-left">
+    <button
+      type="button"
+      class="sidebar-toggle"
+      (click)="toggleSidebar()"
+      [attr.aria-expanded]="sidebarOpen()"
+      aria-label="Ouvrir le menu"
+    >☰</button>
+    <div class="topbar-title">{{ displayName() || login() }}</div>
+  </div>
   <div class="topbar-right">
     @if (login()) {
       <span class="profile-badge" [class]="'profile-badge ' + role()">{{ role() }}</span>

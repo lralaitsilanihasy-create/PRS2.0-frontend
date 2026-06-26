@@ -645,3 +645,46 @@
 .dpm-date-row { display: flex; align-items: center; gap: var(--cnm-space-2); }
 .dpm-date-row .form-control { flex: 1; }
 .dpm-date-err { color: var(--danger-text); display: block; }
+
+/* ──────────────────────────────────────────────────────────────────
+   Responsive — les selecteurs scopes du modal priment sur le _responsive
+   global, d'ou ce bloc dedie. Tablette <=768 / mobile <=480.
+   ────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .modal-backdrop { padding: 0; align-items: flex-end; }
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 94vh;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  }
+  .header-inner { padding: 1.25rem 1.25rem 1rem; }
+  .modal-ref { font-size: 1.25rem; }
+  .meta-band { grid-template-columns: repeat(2, 1fr); }
+  .meta-cell { padding: 0.7rem 1rem; }
+  .section { padding: 1.1rem 1.25rem; }
+  .table-card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-card table { table-layout: auto; min-width: 560px; }
+  .modal-footer { padding: 0.85rem 1.25rem; }
+  .dpm { max-width: 100%; border-radius: var(--radius-2xl) var(--radius-2xl) 0 0; }
+  .dpm__overlay { padding: 0; align-items: flex-end; }
+}
+
+@media (max-width: 480px) {
+  .meta-band { grid-template-columns: 1fr 1fr; }
+  .modal-ref { font-size: 1.1rem; }
+  .section-head { flex-wrap: wrap; gap: 0.6rem; }
+  .section-btns { width: 100%; justify-content: flex-end; }
+  .piece-row { flex-wrap: wrap; gap: 8px; }
+  .btn-ouvrir { width: 100%; justify-content: center; }
+  .modal-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .modal-footer .btn { width: 100%; justify-content: center; }
+  .dpm-form { grid-template-columns: 1fr; }
+}

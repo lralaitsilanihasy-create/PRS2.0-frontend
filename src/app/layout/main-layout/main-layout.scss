@@ -66,6 +66,14 @@
   text-transform: none;
 }
 
+/* Groupe gauche de la topbar : hamburger (mobile) + titre. */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
 /* ── Accent de navigation active par profil ──
    Le thème global reste violet ; seul l'item de menu actif prend la couleur du
    profil connecté (data-role sur l'hôte), pour un repère visuel par rôle. */

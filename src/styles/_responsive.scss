@@ -1,0 +1,497 @@
+/* ══════════════════════════════════════════
+   VARIABLES RESPONSIVE
+══════════════════════════════════════════ */
+
+$bp-tablet : 768px;
+$bp-mobile : 480px;
+$sidebar-w : 215px;
+$topbar-h  : 48px;
+
+/* ══════════════════════════════════════════
+   MIXINS
+══════════════════════════════════════════ */
+
+@mixin tablet {
+  @media (max-width: #{$bp-tablet}) { @content; }
+}
+
+@mixin mobile {
+  @media (max-width: #{$bp-mobile}) { @content; }
+}
+
+@mixin touch {
+  @media (max-width: #{$bp-tablet}) { @content; }
+}
+
+/* ══════════════════════════════════════════
+   SIDEBAR — DRAWER MOBILE
+══════════════════════════════════════════ */
+
+/* Bouton hamburger — caché sur desktop.
+   NB : glyphe texte « ☰ » (le projet n'utilise pas de police d'icônes Tabler). */
+.sidebar-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 0.5px solid var(--n-200);
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 20px;
+  line-height: 1;
+  color: var(--n-600);
+  font-family: var(--font-base);
+
+  i { font-size: 18px; color: var(--n-500); }
+
+  &:hover { background: var(--p-50); }
+
+  @include tablet {
+    display: flex;
+  }
+}
+
+/* Overlay sidebar mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26,29,46,.45);
+  backdrop-filter: blur(4px);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 200ms ease;
+
+  @include tablet {
+    display: block;
+
+    &.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    &:not(.visible) {
+      pointer-events: none;
+    }
+  }
+}
+
+/* Sidebar responsive */
+@include tablet {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 220ms ease;
+    z-index: 100;
+    box-shadow: none;
+
+    &.open {
+      transform: translateX(0);
+      box-shadow: var(--shadow-xl);
+    }
+  }
+}
+
+/* ══════════════════════════════════════════
+   TOPBAR RESPONSIVE
+══════════════════════════════════════════ */
+
+@include tablet {
+  .topbar {
+    left: 0;                    /* sidebar cachée */
+    padding: 0 16px;
+
+    .topbar-breadcrumb .current {
+      display: none;            /* trop long sur tablette */
+    }
+  }
+}
+
+@include mobile {
+  .topbar {
+    padding: 0 12px;
+    height: 44px;
+
+    .topbar-breadcrumb {
+      display: none;            /* masqué sur mobile */
+    }
+
+    .topbar-profile-name {
+      display: none;            /* nom masqué sur mobile */
+    }
+
+    .topbar-title {
+      max-width: 50vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+/* ══════════════════════════════════════════
+   PAGE CONTENT RESPONSIVE
+══════════════════════════════════════════ */
+
+@include tablet {
+  .page-content {
+    margin-left: 0;             /* sidebar cachée */
+    padding-top: $topbar-h;
+  }
+
+  .page-inner {
+    padding: 20px 20px;
+  }
+}
+
+@include mobile {
+  .page-content {
+    padding-top: 44px;
+  }
+
+  .page-inner {
+    padding: 16px 14px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+
+    h1 { font-size: var(--text-xl); }
+  }
+}
+
+/* ══════════════════════════════════════════
+   GRILLES DE CARTES
+══════════════════════════════════════════ */
+
+/* Cartes PPM / DAO (grid 2 colonnes) */
+.cards-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @include tablet {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* Grilles 3 colonnes (stats, KPIs) */
+.cards-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+
+  @include tablet {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Grilles 4 colonnes */
+.cards-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+
+  @include tablet {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ══════════════════════════════════════════
+   TABLEAUX RESPONSIVE
+══════════════════════════════════════════ */
+
+/* Wrapper scroll horizontal sur tablette/mobile */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--p-200) transparent;
+
+  @include tablet {
+    border-radius: var(--radius-xl);
+  }
+}
+
+@include tablet {
+  /* Le conteneur de tableau devient défilable horizontalement
+     (il était overflow:hidden) : aucune réécriture des composants nécessaire. */
+  .table-card {
+    border-radius: var(--radius-lg);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* min-width scopé aux conteneurs défilables (pas de débordement global). */
+  .table-card table,
+  .table-responsive table,
+  .cnm-table-wrap table {
+    min-width: 600px;
+  }
+
+  th, td {
+    padding: 0.7rem 0.85rem;
+    font-size: var(--text-sm);
+  }
+
+  /* Masquer colonnes moins importantes */
+  .col-hide-tablet { display: none; }
+}
+
+@include mobile {
+  .table-card table,
+  .table-responsive table,
+  .cnm-table-wrap table {
+    min-width: 500px;
+  }
+
+  th, td {
+    padding: 0.6rem 0.75rem;
+    font-size: var(--text-xs);
+  }
+
+  .col-hide-mobile { display: none; }
+
+  .td-actions {
+    gap: 4px;
+
+    .btn {
+      font-size: var(--text-xs);
+      padding: 0.22rem 0.5rem;
+    }
+  }
+}
+
+/* ══════════════════════════════════════════
+   MODALS RESPONSIVE
+══════════════════════════════════════════ */
+
+@include tablet {
+  .modal-backdrop {
+    padding: 1rem;
+    align-items: flex-end;      /* modal remonte du bas */
+  }
+
+  .modal,
+  .modal.modal-lg,
+  .modal.modal-xl {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+                                /* arrondi en haut seulement */
+  }
+
+  .meta-band {
+    grid-template-columns: repeat(2, 1fr);
+                                /* 5 → 2 colonnes */
+  }
+
+  .meta-band-cell {
+    padding: 8px 12px;
+  }
+}
+
+@include mobile {
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal,
+  .modal.modal-lg,
+  .modal.modal-xl {
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .modal-header,
+  .modal-header-dark .modal-header-dark-inner {
+    padding: 14px 16px 10px;
+  }
+
+  .modal-title { font-size: var(--text-md); }
+  .modal-title-light { font-size: var(--text-xl); }
+
+  .modal-body { padding: 14px 16px; }
+  .modal-footer { padding: 10px 16px; }
+
+  .meta-band {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ══════════════════════════════════════════
+   FORMULAIRES RESPONSIVE
+══════════════════════════════════════════ */
+
+/* Grille 2 colonnes dans les formulaires */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @include tablet {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+
+  @include tablet {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+@include mobile {
+  .form-control {
+    font-size: 16px;            /* évite le zoom iOS au focus */
+  }
+
+  .form-group { margin-bottom: 12px; }
+}
+
+/* ══════════════════════════════════════════
+   BOUTONS RESPONSIVE
+══════════════════════════════════════════ */
+
+@include mobile {
+  /* Boutons pleine largeur sur mobile */
+  .btn-block-mobile {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Groupe de boutons empilés sur mobile */
+  .btn-group-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+
+    .btn { width: 100%; justify-content: center; }
+  }
+}
+
+/* ══════════════════════════════════════════
+   TOPBAR — PROFIL CHIP
+══════════════════════════════════════════ */
+
+@include tablet {
+  .topbar-right {
+    gap: 8px;
+  }
+
+  .topbar-profile-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* ══════════════════════════════════════════
+   PIÈCES JOINTES RESPONSIVE
+══════════════════════════════════════════ */
+
+@include mobile {
+  .piece-row {
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .btn-ouvrir {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .piece-left { min-width: 0; }
+}
+
+/* ══════════════════════════════════════════
+   SECTION BLOCKS (modals internes)
+══════════════════════════════════════════ */
+
+@include mobile {
+  .section-block {
+    padding: 14px 16px;
+  }
+
+  .section-block-head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .section-btns {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ══════════════════════════════════════════
+   TABLEAU DE BORD — TUILES PROFIL
+══════════════════════════════════════════ */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+
+  @include tablet {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  @include mobile {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+/* ══════════════════════════════════════════
+   CLASSES UTILITAIRES RESPONSIVE
+══════════════════════════════════════════ */
+
+/* Visibilité */
+.hide-tablet { @include tablet { display: none !important; } }
+.hide-mobile { @include mobile { display: none !important; } }
+.show-tablet { display: none; @include tablet { display: flex !important; } }
+.show-mobile { display: none; @include mobile { display: flex !important; } }
+
+/* Texte */
+.text-center-mobile { @include mobile { text-align: center !important; } }
+
+/* Espacement */
+.p-mobile { @include mobile { padding: 14px !important; } }
+.mt-mobile { @include mobile { margin-top: 12px !important; } }

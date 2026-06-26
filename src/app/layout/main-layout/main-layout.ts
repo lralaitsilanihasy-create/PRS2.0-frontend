@@ -46,6 +46,8 @@ export class MainLayout {
   readonly counts = signal<Record<string, number>>({});
   /** Compteurs d'alerte (badge rouge) à côté de certaines entrées (clé = chemin). */
   readonly alerts = signal<Record<string, number>>({});
+  /** Sidebar ouverte en mode drawer (tablette / mobile). Sans effet sur desktop. */
+  readonly sidebarOpen = signal(false);
 
   countFor(path: string): number | undefined {
     return this.counts()[path];
@@ -58,6 +60,14 @@ export class MainLayout {
   private readonly openGroups = signal<Set<string>>(this.initialOpenGroups());
 
   constructor() {
+    // Ferme le drawer mobile à chaque navigation (clic sur un lien de menu).
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.sidebarOpen.set(false));
+
     const ref = this.auth.ref();
     if (!ref) {
       return;
@@ -137,6 +147,14 @@ export class MainLayout {
       if (item.children?.some((c) => url.startsWith(c.path))) open.add(item.path);
     }
     return open;
+  }
+
+  toggleSidebar(): void {
+    this.sidebarOpen.update((v) => !v);
+  }
+
+  closeSidebar(): void {
+    this.sidebarOpen.set(false);
   }
 
   logout(): void {
