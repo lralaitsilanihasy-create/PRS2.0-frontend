@@ -43,7 +43,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
           <table>
             <thead>
               <tr>
-                <th>Référence</th><th>Type</th><th>Date de soumission</th><th>Localité</th>
+                <th>Référence</th><th>Date de soumission</th><th>Localité</th>
                 <th>Date réception</th><th>Passage</th><th>Complet</th><th>Statut actuel</th><th>Action</th>
               </tr>
             </thead>
@@ -51,7 +51,6 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
               @for (l of lignes(); track l.r.idReception) {
                 <tr>
                   <td>{{ l.d?.refeDossier || ('Dossier #' + l.r.idDossier) }}</td>
-                  <td>{{ typeLabel(l.d) }}</td>
                   <td class="enr__date">
                     @if (l.d?.dateRef) {
                       {{ l.d?.dateRef | date: 'dd/MM/yyyy HH:mm' }}
@@ -77,7 +76,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="9" class="enr__info">Aucun dossier réceptionné.</td></tr>
+                <tr><td colspan="8" class="enr__info">Aucun dossier réceptionné.</td></tr>
               }
             </tbody>
           </table>
