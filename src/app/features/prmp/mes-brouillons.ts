@@ -11,6 +11,7 @@ import {
   ReferenceLookupService,
   TypeDossierService,
 } from '../../services';
+import { DetailPpmModal } from '../../shared/prmp';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /**
@@ -25,6 +26,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 @Component({
   selector: 'app-mes-brouillons',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [DetailPpmModal],
   template: `
     <section class="mb">
       <header class="mb__header">
@@ -93,6 +95,16 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
         </div>
       </div>
     }
+
+    @if (detail(); as d) {
+      <app-detail-ppm-modal
+        [idDossier]="d.idDossier"
+        [idPpm]="d.idPpm"
+        [modeEdition]="true"
+        (fermer)="fermerDetail()"
+        (modifie)="onModifie()"
+      />
+    }
   `,
   styles: `
     .mb__header { margin-bottom: var(--cnm-space-4); }
@@ -124,6 +136,11 @@ export class MesBrouillons {
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   private readonly ppmRef = signal<Map<number, string>>(new Map());
+  /** idDossier → idPpm (dérivé de `GET /api/ppms`) ; permet d'ouvrir le détail PPM d'un brouillon. */
+  private readonly ppmParDossier = signal<Map<number, number>>(new Map());
+
+  /** Détail PPM ouvert (null = fermé) ; toujours en mode édition (brouillon = périmètre PRMP). */
+  readonly detail = signal<{ idDossier: number; idPpm: number } | null>(null);
 
   constructor() {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
@@ -145,11 +162,14 @@ export class MesBrouillons {
       error: () => this.loading.set(false),
     });
     this.ppmService.list().subscribe((ppms) => {
-      const m = new Map<number, string>();
+      const refs = new Map<number, string>();
+      const ids = new Map<number, number>();
       for (const p of ppms) {
-        m.set(p.idDossier, p.reference);
+        refs.set(p.idDossier, p.reference);
+        ids.set(p.idDossier, p.idPpm);
       }
-      this.ppmRef.set(m);
+      this.ppmRef.set(refs);
+      this.ppmParDossier.set(ids);
     });
   }
 
@@ -171,8 +191,25 @@ export class MesBrouillons {
     return d.idTypeDossier === 'PPM' && !this.ppmRef().has(d.idDossier);
   }
 
+  /**
+   * « Ouvrir » : affiche le détail PPM dans le modal partagé (mode édition). Repli sur le formulaire
+   * d'édition pour un dossier **sans PPM** (DAO/MAOO), où il n'y a pas de détail PPM à présenter.
+   */
   ouvrir(d: Dossier): void {
-    this.router.navigate(['/prmp/soumettre-dossier'], { queryParams: { reprendre: d.idDossier } });
+    const idPpm = this.ppmParDossier().get(d.idDossier);
+    if (idPpm != null) {
+      this.detail.set({ idDossier: d.idDossier, idPpm });
+    } else {
+      this.router.navigate(['/prmp/soumettre-dossier'], { queryParams: { reprendre: d.idDossier } });
+    }
+  }
+  fermerDetail(): void {
+    this.detail.set(null);
+  }
+  /** Après une mutation dans le modal (ex. suppression PPM → cascade dossier) : recharge la liste. */
+  onModifie(): void {
+    this.charger();
+    this.dossiersRefresh.notifierChangement();
   }
 
   soumettre(d: Dossier): void {
