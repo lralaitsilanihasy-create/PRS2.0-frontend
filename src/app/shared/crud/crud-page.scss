@@ -1,53 +1,34 @@
 .crud {
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--cnm-space-4);
-  }
-
   &__title {
-    margin: 0;
-    font-size: var(--cnm-fs-lg);
     display: flex;
     align-items: center;
-    gap: var(--cnm-space-2);
-  }
-
-  &__info {
-    color: var(--cnm-text-2);
-    padding: var(--cnm-space-4) 0;
-  }
-
-  &__note {
-    margin: 0 0 var(--cnm-space-3);
-    padding: var(--cnm-space-2) var(--cnm-space-4);
-    background: var(--cnm-surface-2);
-    border: 1px solid var(--cnm-border);
-    border-left: 3px solid var(--cnm-brand);
-    border-radius: var(--cnm-radius-sm);
-    font-size: var(--cnm-fs-sm);
-    color: var(--cnm-text-2);
+    gap: 0.5rem;
   }
 
   &__filter {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--cnm-space-3);
-    padding: var(--cnm-space-2) var(--cnm-space-4);
-    margin-bottom: var(--cnm-space-3);
-    background: var(--cnm-surface);
-    border: 1px solid var(--cnm-border);
-    border-left: 3px solid var(--cnm-brand);
-    border-radius: var(--cnm-radius);
-    font-size: var(--cnm-fs-sm);
-    color: var(--cnm-text-2);
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.75rem;
+    background: #fff;
+    border: 1px solid var(--c-100);
+    border-left: 3px solid var(--c-600);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    color: var(--n-500);
+  }
+
+  &__empty {
+    text-align: center;
+    color: var(--n-400);
+    padding: 1.5rem;
   }
 
   &__actions {
     display: flex;
-    gap: var(--cnm-space-1);
+    gap: 0.3rem;
   }
 
   &__actions-col {
@@ -55,42 +36,35 @@
   }
 
   &__req {
-    color: var(--cnm-danger-fg);
+    color: var(--danger-text);
     margin-left: 2px;
   }
 
-  &__form-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--cnm-space-4);
-    z-index: 1050;
-  }
-
   &__form {
-    padding: var(--cnm-space-5);
+    background: #fff;
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
+    padding: 1.5rem;
     width: 100%;
     max-width: min(52rem, 96vw);
     max-height: 85vh;
     overflow: auto;
     display: flex;
     flex-direction: column;
-    gap: var(--cnm-space-3);
-    box-shadow: var(--cnm-shadow);
+    gap: 1rem;
   }
 
   &__form-title {
-    margin: 0 0 var(--cnm-space-2);
-    font-size: var(--cnm-fs-md);
+    margin: 0 0 0.5rem;
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--c-800);
   }
 
   &__form-actions {
     display: flex;
     justify-content: flex-end;
-    gap: var(--cnm-space-2);
-    margin-top: var(--cnm-space-2);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
   }
 }

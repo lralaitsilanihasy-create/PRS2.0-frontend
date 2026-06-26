@@ -1,34 +1,34 @@
 <section class="crud">
-  <header class="crud__header">
-    <h1 class="crud__title">
+  <header class="page-header">
+    <h1 class="page-title crud__title">
       {{ config.title }}
       @if (config.writeCapability) {
         <app-lecture-badge [for]="config.writeCapability" />
       }
     </h1>
     @if (canWrite()) {
-      <button type="button" class="cnm-btn cnm-btn--primary" (click)="openCreate()">+ Nouveau</button>
+      <button type="button" class="btn btn-primary" (click)="openCreate()">+ Nouveau</button>
     }
   </header>
 
   @if (config.note) {
-    <p class="crud__note">{{ config.note }}</p>
+    <p class="alert alert-info">{{ config.note }}</p>
   }
 
   @if (activeFilter(); as f) {
     <div class="crud__filter">
       <span>Filtré sur {{ f.label }} : <strong>{{ filterValueLabel() }}</strong></span>
-      <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="clearFilter()">
+      <button type="button" class="btn btn-secondary btn-sm" (click)="clearFilter()">
         Voir tout
       </button>
     </div>
   }
 
   @if (loading()) {
-    <p class="crud__info">Chargement…</p>
+    <p class="text-muted">Chargement…</p>
   } @else {
-    <div class="cnm-table-wrap">
-      <table class="cnm-table">
+    <div class="table-card">
+      <table>
         <thead>
           <tr>
             @for (f of config.fields; track f.key) {
@@ -45,19 +45,19 @@
               }
               <td class="crud__actions">
                 @for (a of config.rowActions ?? []; track a.label) {
-                  <a class="cnm-btn cnm-btn--ghost cnm-btn--sm" [routerLink]="a.path" [queryParams]="rowActionParams(a, row)">
+                  <a class="btn btn-secondary btn-sm" [routerLink]="a.path" [queryParams]="rowActionParams(a, row)">
                     {{ a.label }}
                   </a>
                 }
                 @if (canWrite()) {
-                  <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="openEdit(row)">Modifier</button>
-                  <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="remove(row)">Supprimer</button>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="openEdit(row)">Modifier</button>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="remove(row)">Supprimer</button>
                 }
               </td>
             </tr>
           } @empty {
             <tr>
-              <td [attr.colspan]="config.fields.length + 1" class="cnm-table__empty">
+              <td [attr.colspan]="config.fields.length + 1" class="crud__empty">
                 Aucun enregistrement.
               </td>
             </tr>
@@ -68,8 +68,8 @@
   }
 
   @if (formOpen()) {
-    <div class="crud__form-overlay" (click)="closeForm()">
-      <form class="crud__form cnm-card cnm-form" [formGroup]="form" (ngSubmit)="save()" (click)="$event.stopPropagation()" novalidate>
+    <div class="modal-backdrop" (click)="closeForm()">
+      <form class="crud__form cnm-form" [formGroup]="form" (ngSubmit)="save()" (click)="$event.stopPropagation()" novalidate>
         <h2 class="crud__form-title">
           {{ formMode() === 'create' ? 'Nouvel enregistrement' : 'Modifier' }}
         </h2>
@@ -107,8 +107,8 @@
         </div>
 
         <div class="crud__form-actions">
-          <button type="button" class="cnm-btn cnm-btn--ghost" (click)="closeForm()">Annuler</button>
-          <button type="submit" class="cnm-btn cnm-btn--primary">Enregistrer</button>
+          <button type="button" class="btn btn-outline" (click)="closeForm()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
         </div>
       </form>
     </div>
