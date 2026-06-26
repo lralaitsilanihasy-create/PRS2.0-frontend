@@ -1,11 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { filter } from 'rxjs';
+import { filter, forkJoin } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { NavItem, navFor } from '../../core/navigation/navigation';
-import { ControleurService, DossierService, PrmpService, ReceptionService } from '../../services';
+import {
+  ControleurService,
+  DemandeRetraitService,
+  DispatchService,
+  DossierService,
+  LettreRenvoiService,
+  PrmpService,
+  PvExamenService,
+  ReceptionService,
+} from '../../services';
 import { NotificationCenter } from '../notification-center/notification-center';
 
 /**
@@ -27,6 +36,10 @@ export class MainLayout {
   private readonly controleurService = inject(ControleurService);
   private readonly dossierService = inject(DossierService);
   private readonly receptionService = inject(ReceptionService);
+  private readonly dispatchService = inject(DispatchService);
+  private readonly pvExamenService = inject(PvExamenService);
+  private readonly lettreRenvoiService = inject(LettreRenvoiService);
+  private readonly demandeRetraitService = inject(DemandeRetraitService);
 
   readonly role = this.auth.role;
   readonly login = this.auth.login;
@@ -106,6 +119,47 @@ export class MainLayout {
         )
         .subscribe(() => this.rafraichirAlertesPrmp());
     }
+
+    // Président : compteurs de contenu par item de menu (dérivés des endpoints de liste).
+    if (this.auth.role() === 'PRESIDENT') {
+      this.rafraichirCompteursPresident();
+      this.router.events
+        .pipe(
+          filter((e) => e instanceof NavigationEnd),
+          takeUntilDestroyed(),
+        )
+        .subscribe(() => this.rafraichirCompteursPresident());
+    }
+  }
+
+  /**
+   * Compteurs de contenu du menu Président : un appel de liste documenté par item
+   * (n'affiche que les valeurs > 0). Aucun endpoint de compteurs agrégé n'existe côté API.
+   */
+  private rafraichirCompteursPresident(): void {
+    forkJoin({
+      preDispatch: this.dossierService.list('PRET_DISPATCH'),
+      dispatchs: this.dispatchService.list(),
+      projetsPv: this.pvExamenService.list(),
+      pvDefinitifs: this.pvExamenService.definitifs(),
+      lettres: this.lettreRenvoiService.getAll(),
+      retraits: this.demandeRetraitService.aValider(),
+    }).subscribe({
+      next: ({ preDispatch, dispatchs, projetsPv, pvDefinitifs, lettres, retraits }) => {
+        const c: Record<string, number> = {
+          '/president/pre-dispatch': preDispatch.length,
+          '/president/circuit/dispatch': dispatchs.length,
+          '/president/circuit/pv': projetsPv.length,
+          '/president/circuit/pv-definitifs': pvDefinitifs.length,
+          '/president/lettre-renvois': lettres.filter((l) => l.statut === 'SOUMIS').length,
+          '/president/retraits': retraits.length,
+        };
+        // N'expose que les compteurs > 0 (pas de badge « 0 »).
+        const visibles = Object.fromEntries(Object.entries(c).filter(([, n]) => n > 0));
+        this.counts.set(visibles);
+      },
+      error: () => {},
+    });
   }
 
   /** Recharge le compteur d'alerte PRMP (dossiers EN_ATTENTE_DECISION_PRMP → à rectifier). */

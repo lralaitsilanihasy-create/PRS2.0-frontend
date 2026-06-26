@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { forkJoin } from 'rxjs';
 
 import { Dispatch, Dossier, Reception } from '../../models';
@@ -28,7 +29,7 @@ interface DispatchRow {
 @Component({
   selector: 'app-dispatchs-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation],
+  imports: [StatutBadge, DossierConsultation, DatePipe],
   template: `
     <section class="dl">
       <header class="page-header">
@@ -43,16 +44,37 @@ interface DispatchRow {
       } @else {
         <div class="table-card">
           <table>
+            <colgroup>
+              <col style="width:220px;" />
+              <col style="width:130px;" />
+              <col style="width:155px;" />
+              <col style="width:155px;" />
+              <col />
+              <col style="width:120px;" />
+              <col style="width:100px;" />
+            </colgroup>
             <thead>
-              <tr><th>Référence</th><th>Type</th><th>Localité</th><th>Date dispatch</th><th>Attributaire</th><th>Statut actuel</th><th>Action</th></tr>
+              <tr><th>Référence</th><th>Localité</th><th>Date pré-dispatch</th><th>Date dispatch</th><th>Attributaire</th><th>Statut actuel</th><th>Action</th></tr>
             </thead>
             <tbody>
               @for (l of lignes(); track l.dispatch.idDispatch) {
                 <tr>
                   <td>{{ l.dossier?.refeDossier || (l.dossier ? 'Dossier #' + l.dossier.idDossier : '—') }}</td>
-                  <td>{{ typeLabel(l.dossier) }}</td>
                   <td>{{ localiteLabel(l.dossier) }}</td>
-                  <td>{{ l.dispatch.dateDispatch || '—' }}</td>
+                  <td style="white-space:nowrap;">
+                    @if (l.dispatch.dateCtrlAssigne) {
+                      {{ l.dispatch.dateCtrlAssigne | date: 'dd/MM/yyyy HH:mm' }}
+                    } @else {
+                      <span style="color:var(--n-300)">—</span>
+                    }
+                  </td>
+                  <td style="white-space:nowrap;">
+                    @if (l.dispatch.dateDispatch) {
+                      {{ l.dispatch.dateDispatch | date: 'dd/MM/yyyy HH:mm' }}
+                    } @else {
+                      <span style="color:var(--n-300)">—</span>
+                    }
+                  </td>
                   <td>{{ attributaire(l.dispatch) }}</td>
                   <td>@if (l.dossier) { <app-statut-badge [statut]="l.dossier.statut" /> } @else { — }</td>
                   <td>
