@@ -98,7 +98,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     .mb__header { margin-bottom: var(--cnm-space-4); }
     .mb__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
     .mb__info { color: var(--cnm-text-2); padding: var(--cnm-space-3); text-align: center; }
-    .mb__actions { display: flex; gap: var(--cnm-space-1); justify-content: flex-end; }
+    .mb__actions { display: flex; gap: 0.5rem; align-items: center; justify-content: flex-end; min-width: 220px; white-space: nowrap; }
+    .mb__actions .cnm-btn { padding: 0.25rem 0.75rem; font-size: 0.85rem; }
     .mb-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
     .mb-modal { width: 100%; max-width: 30rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
     .mb-modal__title { margin: 0; font-size: var(--cnm-fs-md); }

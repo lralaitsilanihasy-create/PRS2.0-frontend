@@ -5,11 +5,12 @@ import { Subscription, debounceTime, forkJoin, merge } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Capm, Compte, Dossier, Marche, MarchePrevision, Nature, Ppm, Situation } from '../../models';
+import { Capm, Compte, Dossier, Marche, MarchePrevision, Nature, PieceJointeDossier, Ppm, Situation } from '../../models';
 import {
   CapmService,
   CompteService,
   DossierService,
+  PieceJointeDossierService,
   MarcheService,
   MarchePrevisionService,
   ModePassationService,
@@ -55,20 +56,25 @@ type ModeSuggestion = {
       } @else {
         @for (ppm of mesPpms(); track ppm.idPpm) {
           <div class="cnm-card mpm__ppm" [class.mpm__ppm--soumis]="estSoumis(ppm)">
-            <button
-              type="button"
-              class="mpm__head"
-              (click)="togglePpm(ppm.idPpm)"
-              [attr.aria-expanded]="isOpen(ppm.idPpm)"
-            >
-              <span class="mpm__chevron">{{ isOpen(ppm.idPpm) ? '▾' : '▸' }}</span>
-              <span class="mpm__ref">{{ ppm.reference || 'PPM #' + ppm.idPpm }}</span>
-              <span class="mpm__sub">Exercice {{ ppm.exercice }} · {{ ppm.libelle || '—' }}</span>
-              <span class="cnm-badge cnm-badge--neutral">{{ marchesOf(ppm.idPpm).length }} marché(s)</span>
-              @if (statutPpm(ppm) === 'EN_ATTENTE_DECISION_PRMP') {
-                <app-statut-badge [statut]="statutPpm(ppm)" />
-              }
-            </button>
+            <div class="mpm__bar">
+              <button
+                type="button"
+                class="mpm__head"
+                (click)="togglePpm(ppm.idPpm)"
+                [attr.aria-expanded]="isOpen(ppm.idPpm)"
+              >
+                <span class="mpm__chevron">{{ isOpen(ppm.idPpm) ? '▾' : '▸' }}</span>
+                <span class="mpm__ref">{{ ppm.reference || 'PPM #' + ppm.idPpm }}</span>
+                <span class="mpm__sub">Exercice {{ ppm.exercice }} · {{ ppm.libelle || '—' }}</span>
+                <span class="cnm-badge cnm-badge--neutral">{{ marchesOf(ppm.idPpm).length }} marché(s)</span>
+                @if (statutPpm(ppm) === 'EN_ATTENTE_DECISION_PRMP') {
+                  <app-statut-badge [statut]="statutPpm(ppm)" />
+                }
+              </button>
+              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm mpm__pieces-btn" (click)="togglePieces(ppm.idDossier)">
+                {{ piecesOuvert(ppm.idDossier) ? '🔽' : '📎' }} Pièces jointes
+              </button>
+            </div>
 
             @if (isOpen(ppm.idPpm)) {
               <div class="mpm__detail cnm-marches">
@@ -131,6 +137,33 @@ type ModeSuggestion = {
                       }
                     </tbody>
                   </table>
+                }
+              </div>
+            }
+
+            @if (piecesOuvert(ppm.idDossier)) {
+              <div class="mpm__pieces">
+                <h3 class="mpm__pieces-title">Pièces jointes du dossier</h3>
+                @if (piecesChargement(ppm.idDossier)) {
+                  <p class="mpm__info">Chargement…</p>
+                } @else if (piecesDe(ppm.idDossier).length) {
+                  <table class="cnm-table">
+                    <thead><tr><th>Libellé</th><th>Format</th><th>Action</th></tr></thead>
+                    <tbody>
+                      @for (p of piecesDe(ppm.idDossier); track p.idPiece) {
+                        <tr>
+                          <td>
+                            {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}
+                            @if (p.apresLettreRenvoi) { <span class="cnm-badge cnm-badge--warning">Ajoutée après lettre de renvoi</span> }
+                          </td>
+                          <td>{{ p.format || '—' }}</td>
+                          <td><button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ouvrirPiece(p)">👁 Ouvrir</button></td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="mpm__empty">Aucune pièce jointe pour ce dossier.</p>
                 }
               </div>
             }
@@ -397,6 +430,11 @@ type ModeSuggestion = {
       font: inherit;
     }
     .mpm__head:hover { background: var(--cnm-surface-2); }
+    .mpm__bar { display: flex; align-items: stretch; gap: var(--cnm-space-2); }
+    .mpm__bar .mpm__head { flex: 1; width: auto; }
+    .mpm__pieces-btn { align-self: center; white-space: nowrap; margin-right: var(--cnm-space-2); }
+    .mpm__pieces { border-top: 1px solid var(--cnm-border); padding: var(--cnm-space-2) var(--cnm-space-3); display: flex; flex-direction: column; gap: var(--cnm-space-1); }
+    .mpm__pieces-title { margin: 0; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
     .mpm__chevron { color: var(--cnm-text-3); width: 1rem; }
     .mpm__ref { font-weight: var(--cnm-fw-semibold); }
     .mpm__sub { color: var(--cnm-text-2); font-size: var(--cnm-fs-sm); flex: 1; }
@@ -489,11 +527,19 @@ export class MesPpmMarches {
   private readonly dossierService = inject(DossierService);
   private readonly capmService = inject(CapmService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
+  private readonly pieceService = inject(PieceJointeDossierService);
 
   /** Référentiel CAPM (processus de marché), trié par `ordre` ASC. */
   readonly capms = signal<Capm[]>([]);
   /** Erreurs de cohérence chronologique par processus (clé = idCapm) — modal « Modifier les dates ». */
   readonly procErreurs = signal<Record<number, string>>({});
+
+  /** Pièces jointes par dossier (cache, chargées au 1er dépliage). */
+  private readonly piecesParDossier = signal<Record<number, PieceJointeDossier[]>>({});
+  /** Dossiers dont la section pièces est dépliée. */
+  private readonly piecesOuverts = signal<Set<number>>(new Set());
+  /** Dossiers dont les pièces sont en cours de chargement. */
+  private readonly piecesChargements = signal<Set<number>>(new Set());
 
   private readonly ppms = signal<Ppm[]>([]);
   private readonly marches = signal<Marche[]>([]);
@@ -607,6 +653,59 @@ export class MesPpmMarches {
         n.add(idPpm);
       }
       return n;
+    });
+  }
+
+  // — Pièces jointes du dossier (expand/collapse + chargement à la demande) —
+  piecesOuvert(idDossier: number): boolean {
+    return this.piecesOuverts().has(idDossier);
+  }
+  piecesChargement(idDossier: number): boolean {
+    return this.piecesChargements().has(idDossier);
+  }
+  piecesDe(idDossier: number): PieceJointeDossier[] {
+    return this.piecesParDossier()[idDossier] ?? [];
+  }
+  togglePieces(idDossier: number): void {
+    const ouverts = new Set(this.piecesOuverts());
+    if (ouverts.has(idDossier)) {
+      ouverts.delete(idDossier);
+      this.piecesOuverts.set(ouverts);
+      return;
+    }
+    ouverts.add(idDossier);
+    this.piecesOuverts.set(ouverts);
+    // Chargement à la première ouverture seulement (cache ensuite).
+    if (this.piecesParDossier()[idDossier] === undefined && !this.piecesChargements().has(idDossier)) {
+      this.piecesChargements.update((s) => new Set(s).add(idDossier));
+      this.pieceService.getByDossier(idDossier).subscribe({
+        next: (rows) => {
+          this.piecesParDossier.update((m) => ({ ...m, [idDossier]: rows }));
+          this.piecesChargements.update((s) => {
+            const n = new Set(s);
+            n.delete(idDossier);
+            return n;
+          });
+        },
+        error: () => {
+          this.piecesParDossier.update((m) => ({ ...m, [idDossier]: [] }));
+          this.piecesChargements.update((s) => {
+            const n = new Set(s);
+            n.delete(idDossier);
+            return n;
+          });
+        },
+      });
+    }
+  }
+  /** Ouvre le contenu d'une pièce dans un nouvel onglet (PDF/JPEG/PNG affichés nativement). */
+  ouvrirPiece(p: PieceJointeDossier): void {
+    if (p.idPiece == null) {
+      return;
+    }
+    this.pieceService.telecharger(p.idPiece).subscribe({
+      next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
+      error: () => this.toast.error("Impossible d'ouvrir la pièce."),
     });
   }
 
