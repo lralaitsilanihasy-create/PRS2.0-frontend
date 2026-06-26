@@ -54,7 +54,7 @@ interface DispatchRow {
               <col style="width:100px;" />
             </colgroup>
             <thead>
-              <tr><th>Référence</th><th>Localité</th><th>Date pré-dispatch</th><th>Date dispatch</th><th>Attributaire</th><th>Statut actuel</th><th>Action</th></tr>
+              <tr><th>Référence</th><th>Localité</th><th title="Date et heure de réception du dossier par le secrétaire">Réception sec.</th><th>Date dispatch</th><th>Attributaire</th><th>Statut actuel</th><th>Action</th></tr>
             </thead>
             <tbody>
               @for (l of lignes(); track l.dispatch.idDispatch) {
