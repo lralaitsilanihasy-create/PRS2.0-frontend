@@ -70,7 +70,6 @@ type ModeSuggestion = {
                 @if (modeEdition) {
                   <div class="dpm__section-actions">
                     <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" (click)="ouvrirCreation()">+ Nouveau marché</button>
-                    <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="demanderSuppressionPpm(p)">Supprimer le PPM</button>
                   </div>
                 }
               </div>
@@ -802,9 +801,6 @@ export class DetailPpmModal implements OnInit {
         this.confirmState.update((c) => (c && c.kind === 'marche' && c.id === m.idDetail ? { ...c, count: rows.length } : c)),
       error: () => {},
     });
-  }
-  demanderSuppressionPpm(p: Ppm): void {
-    this.confirmState.set({ kind: 'ppm', id: p.idPpm, label: p.reference || `PPM #${p.idPpm}`, count: this.marches().length });
   }
   messageSuppression(c: { kind: 'marche' | 'ppm'; label: string; count: number | null }): string {
     if (c.kind === 'ppm') {
