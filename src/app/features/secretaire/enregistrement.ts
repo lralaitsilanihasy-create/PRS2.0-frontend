@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { forkJoin } from 'rxjs';
 
 import { Dossier, Reception } from '../../models';
@@ -21,7 +22,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
 @Component({
   selector: 'app-secretaire-enregistrement',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation],
+  imports: [StatutBadge, DossierConsultation, DatePipe],
   template: `
     <section class="enr">
       <header class="page-header">
@@ -42,7 +43,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
           <table>
             <thead>
               <tr>
-                <th>Référence</th><th>Type</th><th>Localité</th>
+                <th>Référence</th><th>Type</th><th>Date de soumission</th><th>Localité</th>
                 <th>Date réception</th><th>Passage</th><th>Complet</th><th>Statut actuel</th><th>Action</th>
               </tr>
             </thead>
@@ -51,8 +52,21 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                 <tr>
                   <td>{{ l.d?.refeDossier || ('Dossier #' + l.r.idDossier) }}</td>
                   <td>{{ typeLabel(l.d) }}</td>
+                  <td class="enr__date">
+                    @if (l.d?.dateRef) {
+                      {{ l.d?.dateRef | date: 'dd/MM/yyyy HH:mm' }}
+                    } @else {
+                      <span class="enr__empty">—</span>
+                    }
+                  </td>
                   <td>{{ localiteLabel(l.d) }}</td>
-                  <td>{{ l.r.dateReception || '—' }}</td>
+                  <td class="enr__date">
+                    @if (l.r.dateReception) {
+                      {{ l.r.dateReception | date: 'dd/MM/yyyy HH:mm' }}
+                    } @else {
+                      <span class="enr__empty">—</span>
+                    }
+                  </td>
                   <td>{{ l.r.numPassage }}{{ l.r.typePassage === 'INITIAL' ? ' (INITIAL)' : '' }}</td>
                   <td>{{ l.r.complet ? 'Oui' : 'Non' }}</td>
                   <td>@if (l.d) { <app-statut-badge [statut]="l.d.statut" /> } @else { — }</td>
@@ -63,7 +77,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="8" class="enr__info">Aucun dossier réceptionné.</td></tr>
+                <tr><td colspan="9" class="enr__info">Aucun dossier réceptionné.</td></tr>
               }
             </tbody>
           </table>
@@ -78,6 +92,8 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
   styles: `
     .enr__info { color: var(--n-400); padding: 1.5rem; text-align: center; }
     .enr__row-action { text-align: right; }
+    .enr__date { min-width: 140px; white-space: nowrap; }
+    .enr__empty { color: var(--n-300); }
   `,
 })
 export class SecretaireEnregistrement {
