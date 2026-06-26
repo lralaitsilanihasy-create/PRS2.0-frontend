@@ -23,7 +23,7 @@ interface Option {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   template: `
-    <div class="modal-backdrop" (click)="closed.emit()">
+    <div class="modal-backdrop">
       <form
         class="modal cnm-form"
         [formGroup]="form"
@@ -33,9 +33,8 @@ interface Option {
         aria-modal="true"
         novalidate
       >
-        <header class="modal-header-plain">
-          <span class="modal-title">Dispatcher — {{ dossier().refeDossier || 'Dossier #' + dossier().idDossier }}</span>
-          <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="closed.emit()">✕</button>
+        <header class="modal-header-centered">
+          <div class="modal-title-centered">Dispatcher — {{ dossier().refeDossier || 'Dossier #' + dossier().idDossier }}</div>
         </header>
         <div class="modal-body">
           <label class="form-group">
@@ -73,6 +72,21 @@ interface Option {
   `,
   styles: `
     .modal { max-width: 30rem; }
+    .modal-header-centered {
+      padding: 28px 24px 18px;
+      border-bottom: 0.5px solid var(--n-200);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .modal-title-centered {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--n-800);
+      letter-spacing: -.015em;
+      text-align: center;
+    }
   `,
 })
 export class DispatchForm {
