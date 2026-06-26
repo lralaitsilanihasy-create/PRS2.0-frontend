@@ -19,7 +19,7 @@ import {
   ReglePassationService,
   SituationService,
 } from '../../services';
-import { StatutBadge } from '../circuit';
+import { DatePipe, DecimalPipe } from '@angular/common';
 
 /** État d'aperçu du mode de passation (ensemble autorisé + recommandé). */
 type ModeSuggestion = {
@@ -39,128 +39,188 @@ type ModeSuggestion = {
 @Component({
   selector: 'app-detail-ppm-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, ReactiveFormsModule],
+  imports: [ReactiveFormsModule, DatePipe, DecimalPipe],
   template: `
-    <div class="dpm__overlay" (click)="emitFermer()">
-      <div class="dpm cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-        <header class="dpm__head">
-          <h2 class="dpm__title">Détail PPM — {{ ppm()?.reference || 'PPM #' + idPpm }}</h2>
-          <button type="button" class="dpm__close" aria-label="Fermer" (click)="emitFermer()">&times;</button>
-        </header>
+    <div class="modal-backdrop" (click)="emitFermer()">
+      <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
 
-        <div class="dpm__body">
+        <!-- EN-TÊTE -->
+        <div class="modal-header">
+          <div class="header-inner">
+            <div>
+              <div class="header-chips">
+                <span class="chip chip-type">Plan de passation</span>
+                <span class="chip chip-live">Actif</span>
+              </div>
+              <div class="modal-ref">{{ ppm()?.reference || 'PPM #' + idPpm }}</div>
+              <div class="modal-desc">
+                {{ ppm()?.idLocalite || '—' }} <span>·</span>
+                Exercice {{ ppm()?.exercice }}
+              </div>
+            </div>
+            <button class="btn-close" type="button" (click)="emitFermer()">✕</button>
+          </div>
+
+          <div class="meta-band">
+            <div class="meta-cell">
+              <span class="meta-lbl">Référence</span>
+              <span class="meta-val">{{ ppm()?.reference || '—' }}</span>
+            </div>
+            <div class="meta-cell">
+              <span class="meta-lbl">Exercice</span>
+              <span class="meta-val">{{ ppm()?.exercice }}</span>
+            </div>
+            <div class="meta-cell">
+              <span class="meta-lbl">Date de signature</span>
+              <span class="meta-val">{{ (ppm()?.dateSignature | date: 'dd/MM/yyyy') || '—' }}</span>
+            </div>
+            <div class="meta-cell">
+              <span class="meta-lbl">Signataire</span>
+              <span class="meta-val">{{ ppm()?.signataire || '—' }}</span>
+            </div>
+            <div class="meta-cell">
+              <span class="meta-lbl">Libellé</span>
+              <span class="meta-val" [class.empty]="!ppm()?.libelle">
+                {{ ppm()?.libelle || 'Non renseigné' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CORPS -->
+        <div class="modal-body">
           @if (loading()) {
-            <p class="dpm__info">Chargement…</p>
-          } @else if (ppm(); as p) {
-            <dl class="dpm__meta">
-              <div class="dpm__col">
-                <div class="dpm__field"><dt>Référence</dt><dd>{{ p.reference || '—' }}</dd></div>
-                <div class="dpm__field"><dt>Signataire</dt><dd>{{ p.signataire || '—' }}</dd></div>
-                <div class="dpm__field"><dt>Libellé</dt><dd>{{ p.libelle || '—' }}</dd></div>
-              </div>
-              <div class="dpm__col">
-                <div class="dpm__field"><dt>Exercice</dt><dd>{{ p.exercice }}</dd></div>
-                <div class="dpm__field"><dt>Date sign.</dt><dd>{{ p.dateSignature || '—' }}</dd></div>
-              </div>
-            </dl>
-
-            <section class="dpm__section">
-              <div class="dpm__section-head">
-                <h3 class="dpm__section-title">Lignes de marché</h3>
+            <div class="spinner-wrap"><div class="spinner"></div></div>
+          } @else {
+            <!-- Marchés -->
+            <div class="section">
+              <div class="section-head">
+                <div class="section-title-wrap">
+                  <div class="section-icon">🏛</div>
+                  <span class="section-title">Lignes de marché</span>
+                  <span class="section-count">{{ marches().length }} marché(s)</span>
+                </div>
                 @if (modeEdition) {
-                  <div class="dpm__section-actions">
-                    <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" (click)="ouvrirCreation()">+ Nouveau marché</button>
+                  <div class="section-btns">
+                    <button class="btn btn-danger" type="button" (click)="supprimerPpm()">Supprimer le PPM</button>
+                    <button class="btn btn-primary" type="button" (click)="nouveauMarche()">+ Nouveau marché</button>
                   </div>
                 }
               </div>
-              @if (marches().length === 0) {
-                <p class="dpm__empty">Aucun marché rattaché à ce PPM.</p>
-              } @else {
-                <table class="dpm__table">
-                  <colgroup>
-                    <col class="dpm__c-desig" />
-                    <col class="dpm__c-mont" />
-                    <col class="dpm__c-mode" />
-                    <col class="dpm__c-statut" />
-                    <col class="dpm__c-action" />
-                  </colgroup>
+
+              <div class="table-card">
+                <table>
                   <thead>
                     <tr>
+                      <th>#</th>
                       <th>Désignation</th>
-                      <th class="dpm__num">Montant</th>
+                      <th class="r">Montant estimé</th>
                       <th>Mode</th>
                       <th>Statut</th>
-                      <th>Action</th>
+                      @if (modeEdition) { <th>Actions</th> }
                     </tr>
                   </thead>
                   <tbody>
                     @for (m of marches(); track m.idDetail) {
                       <tr>
-                        <td class="dpm__desig" [title]="m.designationMarche || ''">{{ m.designationMarche || '—' }}</td>
-                        <td class="dpm__num">{{ montant(m.montEstim) }}</td>
+                        <td>{{ m.idDetail }}</td>
+                        <td [title]="m.designationMarche || ''">{{ m.designationMarche || '—' }}</td>
+                        <td>{{ m.montEstim | number }}</td>
                         <td>{{ resolve(modeMap(), m.idMode) }}</td>
-                        <td><app-statut-badge [statut]="m.statut" /></td>
                         <td>
-                          <div class="dpm__row-actions">
-                            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ouvrirDates(m)">Voir dates</button>
-                            @if (modeEdition) {
-                              <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" (click)="ouvrirEdition(m)">Modifier dates</button>
-                              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ouvrirEditionLigne(m)">Modifier</button>
-                              <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" (click)="demanderSuppressionMarche(m)">Supprimer</button>
-                            }
-                          </div>
+                          <span class="badge"
+                            [class.badge-prevu]="m.statut === 'PREVU'"
+                            [class.badge-cours]="m.statut === 'EN_COURS'"
+                            [class.badge-cloture]="m.statut === 'CLOTURE'">
+                            {{ m.statut || '—' }}
+                          </span>
                         </td>
+                        @if (modeEdition) {
+                          <td>
+                            <div class="td-actions">
+                              <button class="btn btn-sky" type="button" (click)="voirDates(m)">Voir dates</button>
+                              <button class="btn btn-teal" type="button" (click)="modifierDates(m)">Modifier dates</button>
+                              <button class="btn btn-outline" type="button" (click)="modifierMarche(m)">Modifier</button>
+                              <button class="btn btn-danger" type="button" (click)="supprimerMarche(m)">Supprimer</button>
+                            </div>
+                          </td>
+                        }
                       </tr>
                     }
                   </tbody>
                 </table>
-              }
-            </section>
+              </div>
+            </div>
 
-            <section class="dpm__section">
-              <h3 class="dpm__section-title dpm__section-title--pieces">Pièces jointes</h3>
-              @if (pieces().length === 0) {
-                <p class="dpm__empty">Aucune pièce jointe.</p>
-              } @else {
-                @if (piecesInitiales().length) {
-                  <h4 class="dpm__pieces-sub">Pièces initiales</h4>
-                  <ul class="dpm__pieces">
-                    @for (pj of piecesInitiales(); track pj.idPiece) {
-                      <li class="dpm__piece">
-                        <span class="dpm__piece-id">
-                          <span aria-hidden="true">📎</span>
-                          {{ pj.libellePiece || pj.nomFichier || ('Pièce #' + pj.idPiece) }}
-                        </span>
-                        <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm dpm__piece-btn" (click)="ouvrirPiece(pj)">Ouvrir</button>
-                      </li>
+            <!-- Pièces jointes -->
+            <div class="section">
+              <div class="section-head">
+                <div class="section-title-wrap">
+                  <div class="section-icon">📎</div>
+                  <span class="section-title">Pièces jointes</span>
+                  <span class="section-count">{{ pieces().length }} pièce(s)</span>
+                </div>
+              </div>
+
+              <div class="pieces-card">
+                @if (piecesInitiales().length > 0) {
+                  <div class="pieces-group">
+                    <div class="pieces-group-hd">
+                      <span class="group-pill group-pill-blue">Pièces initiales</span>
+                      <span class="group-count">{{ piecesInitiales().length }} fichier(s)</span>
+                    </div>
+                    @for (p of piecesInitiales(); track p.idPiece; let i = $index) {
+                      <div class="piece-row">
+                        <div class="piece-left">
+                          <span class="piece-index piece-index-blue">{{ i + 1 }}</span>
+                          <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                        </div>
+                        <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">
+                          Ouvrir <span class="ouvrir-arrow">↗</span>
+                        </button>
+                      </div>
                     }
-                  </ul>
+                  </div>
                 }
-                @if (piecesApresRenvoi().length) {
-                  <h4 class="dpm__pieces-sub">Pièces ajoutées après lettre de renvoi</h4>
-                  <ul class="dpm__pieces">
-                    @for (pj of piecesApresRenvoi(); track pj.idPiece) {
-                      <li class="dpm__piece">
-                        <span class="dpm__piece-id">
-                          <span aria-hidden="true">📎</span>
-                          {{ pj.libellePiece || pj.nomFichier || ('Pièce #' + pj.idPiece) }}
-                          <span class="cnm-badge cnm-badge--warning">Après lettre de renvoi</span>
-                        </span>
-                        <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm dpm__piece-btn" (click)="ouvrirPiece(pj)">Ouvrir</button>
-                      </li>
+
+                @if (piecesApresRenvoi().length > 0) {
+                  <div class="pieces-group">
+                    <div class="pieces-group-hd">
+                      <span class="group-pill group-pill-orange">Après lettre de renvoi</span>
+                      <span class="group-count">{{ piecesApresRenvoi().length }} fichier(s)</span>
+                    </div>
+                    @for (p of piecesApresRenvoi(); track p.idPiece; let i = $index) {
+                      <div class="piece-row">
+                        <div class="piece-left">
+                          <span class="piece-index piece-index-orange">{{ i + 1 }}</span>
+                          <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                          <span class="lr-tag">LR</span>
+                        </div>
+                        <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">
+                          Ouvrir <span class="ouvrir-arrow">↗</span>
+                        </button>
+                      </div>
                     }
-                  </ul>
+                  </div>
                 }
-              }
-            </section>
-          } @else {
-            <p class="dpm__info">PPM introuvable.</p>
+
+                @if (pieces().length === 0) {
+                  <div class="empty-pieces">Aucune pièce jointe.</div>
+                }
+              </div>
+            </div>
           }
         </div>
 
-        <footer class="dpm__foot">
-          <button type="button" class="cnm-btn cnm-btn--ghost" (click)="emitFermer()">Fermer</button>
-        </footer>
+        <!-- PIED -->
+        <div class="modal-footer">
+          <div class="footer-info">
+            <strong>{{ marches().length }}</strong> marché(s) ·
+            <strong>{{ pieces().length }}</strong> pièce(s) jointe(s)
+          </div>
+          <button class="btn btn-ghost" type="button" (click)="emitFermer()">Fermer</button>
+        </div>
+
       </div>
     </div>
 
@@ -351,100 +411,7 @@ type ModeSuggestion = {
       </div>
     }
   `,
-  styles: `
-    .dpm__overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 1050;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: var(--cnm-space-4);
-    }
-    .dpm {
-      width: 90vw;
-      min-width: 900px;
-      max-width: 90vw;
-      max-height: 85vh;
-      overflow-y: auto;
-      box-shadow: var(--cnm-shadow);
-    }
-    .dpm--sm { width: 100%; min-width: 0; max-width: 32rem; }
-
-    .dpm__head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--cnm-space-3);
-      padding: 1.5rem 1.5rem 1rem;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    .dpm__title { margin: 0; font-size: 1.25rem; font-weight: 600; }
-    .dpm__close { background: transparent; border: 0; color: var(--cnm-text-2); font-size: 1.5rem; line-height: 1; cursor: pointer; }
-    .dpm__close:hover { color: var(--cnm-text); }
-
-    .dpm__body { display: block; }
-    .dpm__body--pad { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: var(--cnm-space-2); }
-    .dpm__info, .dpm__empty { color: var(--cnm-text-2); padding: 1.25rem 1.5rem; }
-    .dpm__empty { font-style: italic; text-align: center; }
-
-    /* Métadonnées : 2 colonnes */
-    .dpm__meta { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 1.25rem 1.5rem 1.5rem; margin: 0; }
-    .dpm__col { display: flex; flex-direction: column; gap: 0.75rem; }
-    .dpm__field { display: flex; flex-direction: column; gap: 0.2rem; }
-    .dpm__field dt { font-size: 0.75rem; text-transform: uppercase; color: #6b7280; letter-spacing: 0.05em; }
-    .dpm__field dd { margin: 0; font-size: 0.95rem; font-weight: 500; }
-
-    /* Séparateur entre sections */
-    .dpm__section { border-top: 1px solid #e5e7eb; margin: 0 1.5rem; padding: 0 0 1.25rem; }
-    .dpm__section-head { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0 0.75rem; }
-    .dpm__section-title { margin: 0; font-size: 1rem; font-weight: 600; }
-    .dpm__section-title--pieces { padding: 1rem 0 0.5rem; }
-    .dpm__section-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-
-    /* Tableau des marchés (non compressé) */
-    .dpm__table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.85rem; }
-    .dpm__c-desig { width: 300px; }
-    .dpm__c-mont { width: 160px; }
-    .dpm__c-mode { width: 160px; }
-    .dpm__c-statut { width: 100px; }
-    .dpm__c-action { width: 250px; }
-    .dpm__table th, .dpm__table td { padding: 0.75rem 1rem; text-align: left; vertical-align: middle; height: 56px; }
-    .dpm__desig { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .dpm__table thead th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
-    .dpm__table tbody tr:nth-child(even) { background: #f9fafb; }
-    .dpm__num { text-align: right; }
-    .dpm__row-actions { display: flex; gap: 0.4rem; flex-wrap: nowrap; align-items: center; white-space: nowrap; }
-
-    /* Pièces jointes */
-    .dpm__pieces-sub { margin: 0; font-size: 0.7rem; text-transform: uppercase; color: #6b7280; letter-spacing: 0.08em; padding: 0.5rem 0; }
-    .dpm__pieces { list-style: none; margin: 0; padding: 0; }
-    .dpm__piece { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid #f3f4f6; }
-    .dpm__piece-id { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
-    .dpm__piece-btn { font-size: 0.8rem; }
-
-    .dpm__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; }
-
-    /* Formulaires (création/édition marché, dates) */
-    .dpm-form { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); }
-    .dpm-form .cnm-input:read-only { opacity: 0.7; }
-    .dpm-form__mode, .dpm-form__dates {
-      grid-column: 1 / -1;
-      gap: var(--cnm-space-2);
-      padding: var(--cnm-space-3);
-      background: var(--cnm-surface-2);
-      border: 1px solid var(--cnm-border);
-      border-radius: var(--cnm-radius-sm);
-    }
-    .dpm-date-row { display: flex; align-items: center; gap: var(--cnm-space-2); }
-    .dpm-date-row .cnm-select { flex: 1; }
-    .dpm-date-err { color: var(--cnm-danger-fg); display: block; }
-
-    @media (max-width: 960px) {
-      .dpm { min-width: 0; width: 100%; }
-    }
-  `,
+  styleUrl: './detail-ppm-modal.scss',
 })
 export class DetailPpmModal implements OnInit {
   /** Dossier dont on affiche les pièces jointes (obligatoire). */
@@ -538,6 +505,31 @@ export class DetailPpmModal implements OnInit {
 
   emitFermer(): void {
     this.fermer.emit();
+  }
+
+  // — Alias appelés par le template (mode édition) —
+  nouveauMarche(): void {
+    this.ouvrirCreation();
+  }
+  voirDates(m: Marche): void {
+    this.ouvrirDates(m);
+  }
+  modifierDates(m: Marche): void {
+    this.ouvrirEdition(m);
+  }
+  modifierMarche(m: Marche): void {
+    this.ouvrirEditionLigne(m);
+  }
+  supprimerMarche(m: Marche): void {
+    this.demanderSuppressionMarche(m);
+  }
+  /** Ouvre la confirmation de suppression du PPM courant (cascade marchés + dates côté backend). */
+  supprimerPpm(): void {
+    const p = this.ppm();
+    if (!p) {
+      return;
+    }
+    this.confirmState.set({ kind: 'ppm', id: p.idPpm, label: p.reference || `PPM #${p.idPpm}`, count: this.marches().length });
   }
 
   // — Pièces jointes —
