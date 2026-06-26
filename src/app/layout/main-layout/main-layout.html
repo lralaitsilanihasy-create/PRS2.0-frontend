@@ -57,7 +57,7 @@
   <div class="topbar-title">{{ displayName() || login() }}</div>
   <div class="topbar-right">
     @if (login()) {
-      <span class="badge badge-primary">{{ role() }}</span>
+      <span class="profile-badge" [class]="'profile-badge ' + role()">{{ role() }}</span>
       <app-notification-center />
     }
     <button type="button" class="btn btn-outline btn-sm" (click)="logout()">Déconnexion</button>

@@ -1,143 +1,97 @@
 @use 'styles/design-system';
 
 /* =============================================================================
-   Design system global additionnel (tokens couleur c-/n-, classes .btn .card
-   .modal .badge .form-control…, inspire de DetailPpmModal). Charge EN PREMIER
-   ci-dessus : le systeme CNM ci-dessous reste l'actif dominant (egalites de
-   specificite tranchees en faveur du CNM existant ; l'app conserve son apparence).
-   ============================================================================= */
-
-/* =============================================================================
-   CNM — Système de design global
-   Identité reprise de docs/cnm-profils-dashboards-clair.html :
-   thème CLAIR (fond doux, surfaces blanches, texte foncé), accent CNM
-   violet/teal réservé aux éléments actifs.
-   Polices importées dans index.html (Sora titres / Inter texte / DM Mono).
-
-   Tout est centralisé ici : variables (couleurs, typo, espacements, rayons) et
-   classes réutilisables (.cnm-card, .cnm-btn, .cnm-badge, .cnm-table, champs…).
-   Les écrans n'inventent pas de styles : ils composent ces primitives.
+   COUCHE DE COMPATIBILITÉ — Le design system actif est « C » (violet, Plus Jakarta
+   Sans), défini dans styles/_design-system.scss (importé via @use ci-dessus).
+   Ce bloc re-mappe les anciens tokens (--cnm-*, --c-*) vers la palette violette/
+   neutre, afin que tous les composants existants adoptent le thème sans réécriture.
+   (--n-* et les tokens sémantiques sont déjà fournis par le design system.)
    ============================================================================= */
 
 :root {
-  /* ---- Surfaces (clair : fond doux, surfaces blanches) ---- */
-  --cnm-bg: #edf0f5;
-  --cnm-surface: #ffffff;
-  --cnm-surface-2: #f4f6fb;
-  --cnm-surface-3: #e7ebf1;
+  /* ---- CNM → palette C (violet/neutre) ---- */
+  --cnm-bg: var(--n-50);
+  --cnm-surface: #fff;
+  --cnm-surface-2: var(--n-100);
+  --cnm-surface-3: var(--n-200);
+  --cnm-border: var(--n-200);
+  --cnm-border-strong: var(--n-300);
+  --cnm-text: var(--n-800);
+  --cnm-text-2: var(--n-500);
+  --cnm-text-3: var(--n-400);
+  --cnm-brand: var(--p-600);
+  --cnm-brand-2: var(--p-500);
+  --cnm-brand-gradient: var(--grad-primary);
 
-  /* ---- Bordures ---- */
-  --cnm-border: #e2e6ec;
-  --cnm-border-strong: #d7dce3;
+  --cnm-info-bg: var(--info-bg);       --cnm-info-fg: var(--info-text);
+  --cnm-success-bg: var(--success-bg); --cnm-success-fg: var(--success-text);
+  --cnm-action-bg: var(--p-50);        --cnm-action-fg: var(--p-600);
+  --cnm-warning-bg: var(--warning-bg); --cnm-warning-fg: var(--warning-text);
+  --cnm-danger-bg: var(--danger-bg);   --cnm-danger-fg: var(--danger-text);
+  --cnm-neutral-bg: var(--n-100);      --cnm-neutral-fg: var(--n-500);
 
-  /* ---- Texte (foncé) ---- */
-  --cnm-text: #1a2230;
-  --cnm-text-2: #66707f;
-  --cnm-text-3: #9aa3b0;
+  /* Accents par profil (conservés) */
+  --cnm-profile-prmp: var(--prmp-color);
+  --cnm-profile-president: var(--pres-color);
+  --cnm-profile-cc: var(--cc-color);
+  --cnm-profile-secretaire: var(--sec-color);
+  --cnm-profile-membre: var(--membre-color);
+  --cnm-profile-verificateur: var(--verif-color);
+  --cnm-profile-publication: var(--assist-color);
+  --cnm-profile-admin: var(--admin-color);
 
-  /* ---- Marque (accent réservé aux éléments actifs) ---- */
-  --cnm-brand: #6c6fff;
-  --cnm-brand-2: #3ec9a7;
-  --cnm-brand-gradient: linear-gradient(135deg, #6c6fff 0%, #3ec9a7 100%);
-
-  /* ---- Couleurs sémantiques (paires fond clair / texte foncé) — badges teintés clairs ---- */
-  --cnm-info-bg: #e6f1fb;
-  --cnm-info-fg: #185fa5;
-  --cnm-success-bg: #e3f2ec;
-  --cnm-success-fg: #0f6e56;
-  --cnm-action-bg: #e9e9fe;
-  --cnm-action-fg: #4b3fb0;
-  --cnm-warning-bg: #faeeda;
-  --cnm-warning-fg: #8a5a0c;
-  --cnm-danger-bg: #fbe9e7;
-  --cnm-danger-fg: #b42318;
-  --cnm-neutral-bg: #edf0f4;
-  --cnm-neutral-fg: #5f6b7a;
-
-  /* ---- Couleurs d'accent par profil (charte hiérarchie) ---- */
-  --cnm-profile-prmp: #1d9e75;
-  --cnm-profile-president: #ef9f27;
-  --cnm-profile-cc: #7f77dd;
-  --cnm-profile-secretaire: #378add;
-  --cnm-profile-membre: #d85a30;
-  --cnm-profile-verificateur: #639922;
-  --cnm-profile-publication: #d4537e;
-  --cnm-profile-admin: #888780;
-
-  /* ---- Typographie (Sora titres / Inter texte / DM Mono) ---- */
-  --cnm-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --cnm-font-display: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --cnm-mono: 'DM Mono', ui-monospace, 'Cascadia Code', monospace;
-
+  /* Typographie → Plus Jakarta Sans / DM Mono */
+  --cnm-font: var(--font-base);
+  --cnm-font-display: var(--font-base);
+  --cnm-mono: 'DM Mono', ui-monospace, monospace;
   --cnm-fs-micro: 10px;
   --cnm-fs-xs: 11px;
   --cnm-fs-sm: 12px;
-  --cnm-fs-base: 14px;
-  --cnm-fs-md: 16px;
-  --cnm-fs-lg: 20px;
-  --cnm-fs-xl: 26px;
-
+  --cnm-fs-base: 13px;
+  --cnm-fs-md: 15px;
+  --cnm-fs-lg: 18px;
+  --cnm-fs-xl: 22px;
   --cnm-fw-light: 300;
   --cnm-fw-regular: 400;
   --cnm-fw-medium: 500;
   --cnm-fw-semibold: 600;
 
-  /* ---- Rayons ---- */
-  --cnm-radius: 10px;
-  --cnm-radius-lg: 14px;
-  --cnm-radius-sm: 7px;
-  --cnm-radius-pill: 20px;
-
-  /* ---- Espacements (échelle 4px) ---- */
+  --cnm-radius: var(--radius-md);
+  --cnm-radius-lg: var(--radius-lg);
+  --cnm-radius-sm: var(--radius-sm);
+  --cnm-radius-pill: var(--radius-full);
   --cnm-space-1: 4px;
   --cnm-space-2: 8px;
   --cnm-space-3: 12px;
   --cnm-space-4: 16px;
   --cnm-space-5: 22px;
   --cnm-space-6: 32px;
+  --cnm-shadow: var(--shadow-md);
 
-  /* ---- Ombres (douces, claires) ---- */
-  --cnm-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 32px rgba(16, 24, 40, 0.08);
+  /* ---- Palette c- (ancien DS) → palette C violette/neutre ---- */
+  --c-50: var(--p-50);   --c-100: var(--n-200); --c-200: var(--p-200); --c-300: var(--p-300);
+  --c-400: var(--p-400); --c-500: var(--p-600); --c-600: var(--p-600); --c-700: var(--p-700);
+  --c-800: var(--n-800); --c-900: var(--n-900);
 }
 
-/* =============================================================================
-   Base
-   ============================================================================= */
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* Compat titres de page (le design system C stylise h1/.eyebrow/.subtitle ;
+   les composants utilisent .page-title / .page-subtitle / .topbar-title). */
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--n-800);
+  letter-spacing: -.02em;
+}
+.page-subtitle {
+  font-size: var(--text-sm);
+  color: var(--n-400);
+}
+.topbar-title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--n-800);
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  font-family: var(--cnm-font);
-  background: var(--cnm-bg);
-  color: var(--cnm-text);
-  font-size: var(--cnm-fs-base);
-  line-height: 1.6;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-h1, h2, h3, h4 {
-  font-family: var(--cnm-font-display);
-  font-weight: var(--cnm-fw-semibold);
-  color: var(--cnm-text);
-  line-height: 1.3;
-}
-
-a {
-  color: var(--cnm-info-fg);
-  text-decoration: none;
-}
 a:hover {
   text-decoration: underline;
 }
@@ -464,11 +418,11 @@ a:hover {
   background: var(--cnm-bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #cdd4dd;
+  background: var(--n-300);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #b6bdc8;
+  background: var(--n-400);
 }
 
 /* =============================================================================

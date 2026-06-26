@@ -18,6 +18,7 @@ import { NotificationCenter } from '../notification-center/notification-center';
   imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationCenter],
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.scss',
+  host: { '[attr.data-role]': 'role()' },
 })
 export class MainLayout {
   private readonly auth = inject(AuthService);

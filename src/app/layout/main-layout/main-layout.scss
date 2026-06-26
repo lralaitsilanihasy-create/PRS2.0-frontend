@@ -65,3 +65,29 @@
 .topbar-title {
   text-transform: none;
 }
+
+/* ── Accent de navigation active par profil ──
+   Le thème global reste violet ; seul l'item de menu actif prend la couleur du
+   profil connecté (data-role sur l'hôte), pour un repère visuel par rôle. */
+@mixin nav-accent($color, $bg) {
+  .nav-item.active,
+  .nav-sub-item.active {
+    color: $color;
+    background: $bg;
+    border-color: rgba(0, 0, 0, 0.04);
+  }
+  .nav-badge {
+    background: $bg;
+    color: $color;
+  }
+}
+
+:host([data-role='PRMP'])                { @include nav-accent(var(--prmp-color),   var(--prmp-bg)); }
+:host([data-role='PRESIDENT'])           { @include nav-accent(var(--pres-color),   var(--pres-bg)); }
+:host([data-role='CHEF_COMMISSION'])     { @include nav-accent(var(--cc-color),     var(--cc-bg)); }
+:host([data-role='MEMBRE'])              { @include nav-accent(var(--membre-color), var(--membre-bg)); }
+:host([data-role='VERIFICATEUR'])        { @include nav-accent(var(--verif-color),  var(--verif-bg)); }
+:host([data-role='ASSISTANT_CONTROLEUR']){ @include nav-accent(var(--assist-color), var(--assist-bg)); }
+:host([data-role='CHARGE_PUBLICATION'])  { @include nav-accent(var(--assist-color), var(--assist-bg)); }
+:host([data-role='SECRETAIRE'])          { @include nav-accent(var(--sec-color),    var(--sec-bg)); }
+:host([data-role='ADMINISTRATEUR'])      { @include nav-accent(var(--admin-color),  var(--admin-bg)); }
