@@ -26,15 +26,18 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="pva">
-      <header class="pva__header">
-        <span class="cnm-section-label">Domaine Assistant</span>
-        <h1 class="pva__title">PV reçus</h1>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine Assistant</div>
+          <h1 class="page-title">PV reçus</h1>
+        </div>
       </header>
 
       @if (loading()) {
-        <p class="cnm-muted">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else {
-        <table class="cnm-table">
+        <div class="table-card">
+        <table>
           <thead>
             <tr><th>Référence PV</th><th>Dossier</th><th>Avis</th><th>Date signature</th></tr>
           </thead>
@@ -43,7 +46,7 @@ import {
               <tr class="pva__row" (click)="basculer(pv)">
                 <td class="cnm-mono">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</td>
                 <td>{{ dossierRef(pv) }}</td>
-                <td><span class="cnm-badge" [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span></td>
+                <td><span [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span></td>
                 <td class="cnm-mono">{{ dateSignature(pv) || '—' }}</td>
               </tr>
               @if (ouvert() === pv.idPv) {
@@ -65,23 +68,22 @@ import {
                 </tr>
               }
             } @empty {
-              <tr><td colspan="4" class="cnm-muted">Aucun PV reçu.</td></tr>
+              <tr><td colspan="4" class="text-muted">Aucun PV reçu.</td></tr>
             }
           </tbody>
         </table>
+        </div>
       }
     </section>
   `,
   styles: `
-    .pva__header { margin-bottom: var(--cnm-space-3); }
-    .pva__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
     .pva__row { cursor: pointer; }
-    .pva__row:hover { background: var(--cnm-surface-2); }
-    .pva__dl { display: flex; flex-direction: column; gap: var(--cnm-space-1); margin: 0; }
-    .pva__dl > div { display: flex; gap: var(--cnm-space-2); align-items: baseline; }
-    .pva__dl dt { flex: 0 0 11rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
+    .pva__dl { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
+    .pva__dl > div { display: flex; gap: 0.5rem; align-items: baseline; }
+    .pva__dl dt { flex: 0 0 11rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
     .pva__dl dd { margin: 0; }
     .pva__synthese { white-space: pre-wrap; }
+    .pva__detail > td { background: var(--c-50); }
   `,
 })
 export class PvAssistant {
@@ -159,15 +161,15 @@ export class PvAssistant {
   avisClasse(id: string): string {
     const code = (id || '').toUpperCase();
     if (code.startsWith('FAVR')) {
-      return 'cnm-badge--warning';
+      return 'badge badge-warning';
     }
     if (code.startsWith('FAV')) {
-      return 'cnm-badge--success';
+      return 'badge badge-success';
     }
     if (code.startsWith('DEF')) {
-      return 'cnm-badge--danger';
+      return 'badge badge-danger';
     }
-    return 'cnm-badge--neutral';
+    return 'badge badge-neutral';
   }
   dateSignature(pv: PvExamen): string {
     const dates = [pv.dateSignatureMembre, pv.dateSignatureCc, pv.dateSignaturePresident, pv.datePv].filter(

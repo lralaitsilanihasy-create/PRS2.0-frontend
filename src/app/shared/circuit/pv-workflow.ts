@@ -37,22 +37,22 @@ import {
 
       <div class="pv-workflow__actions">
         @if (canSoumettre()) {
-          <button *appCan="'PV_SOUMETTRE'" type="button" class="cnm-btn cnm-btn--primary" (click)="onSoumettre()">
+          <button *appCan="'PV_SOUMETTRE'" type="button" class="btn btn-primary" (click)="onSoumettre()">
             Soumettre le projet
           </button>
         }
         @if (canAccepter()) {
-          <button *appCan="'PV_ACCEPTER'" type="button" class="cnm-btn cnm-btn--success" (click)="accepter()">
+          <button *appCan="'PV_ACCEPTER'" type="button" class="btn btn-success" (click)="accepter()">
             Accepter le projet
           </button>
         }
         @if (canRetourner()) {
-          <button *appCan="'PV_RETOURNER'" type="button" class="cnm-btn cnm-btn--warning" (click)="toggleRetour()">
+          <button *appCan="'PV_RETOURNER'" type="button" class="btn btn-warning" (click)="toggleRetour()">
             Retourner pour rectification
           </button>
         }
         @if (canSigner()) {
-          <button *appCan="'PV_SIGNER'" type="button" class="cnm-btn cnm-btn--primary" (click)="signer()">
+          <button *appCan="'PV_SIGNER'" type="button" class="btn btn-primary" (click)="signer()">
             Signer
           </button>
         }
@@ -63,10 +63,10 @@ import {
           <label class="pv-workflow__retour-label" for="pv-soum-comment">
             Réponse au retour (commentaire, optionnel)
           </label>
-          <textarea id="pv-soum-comment" class="cnm-textarea" #soum rows="3"></textarea>
+          <textarea id="pv-soum-comment" class="form-control" #soum rows="3"></textarea>
           <div class="pv-workflow__retour-actions">
-            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="toggleSoumettre()">Annuler</button>
-            <button type="button" class="cnm-btn cnm-btn--primary" (click)="confirmerSoumission(soum.value)">
+            <button type="button" class="btn btn-outline" (click)="toggleSoumettre()">Annuler</button>
+            <button type="button" class="btn btn-primary" (click)="confirmerSoumission(soum.value)">
               Confirmer la soumission
             </button>
           </div>
@@ -78,10 +78,10 @@ import {
           <label class="pv-workflow__retour-label" for="pv-retour-comment">
             Commentaire de rectification (obligatoire)
           </label>
-          <textarea id="pv-retour-comment" class="cnm-textarea" #commentaire rows="3"></textarea>
+          <textarea id="pv-retour-comment" class="form-control" #commentaire rows="3"></textarea>
           <div class="pv-workflow__retour-actions">
-            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="toggleRetour()">Annuler</button>
-            <button type="button" class="cnm-btn cnm-btn--warning" (click)="retourner(commentaire.value)">
+            <button type="button" class="btn btn-outline" (click)="toggleRetour()">Annuler</button>
+            <button type="button" class="btn btn-warning" (click)="retourner(commentaire.value)">
               Confirmer le retour
             </button>
           </div>
@@ -93,51 +93,51 @@ import {
     .pv-workflow {
       display: flex;
       flex-direction: column;
-      gap: var(--cnm-space-3);
+      gap: 0.75rem;
     }
     .pv-workflow__state {
       display: flex;
       align-items: center;
-      gap: var(--cnm-space-2);
+      gap: 0.5rem;
     }
     .pv-workflow__label {
-      font-size: var(--cnm-fs-sm);
-      color: var(--cnm-text-2);
-      font-weight: var(--cnm-fw-semibold);
+      font-size: var(--text-sm);
+      color: var(--n-500);
+      font-weight: 600;
     }
     .pv-workflow__actions {
       display: flex;
       flex-wrap: wrap;
-      gap: var(--cnm-space-2);
+      gap: 0.5rem;
     }
     .pv-workflow__retour {
       display: flex;
       flex-direction: column;
-      gap: var(--cnm-space-1);
-      background: var(--cnm-warning-bg);
-      border: 1px solid rgba(246, 168, 50, 0.35);
-      border-radius: var(--cnm-radius);
-      padding: var(--cnm-space-3);
+      gap: 0.35rem;
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-bdr);
+      border-radius: var(--radius-lg);
+      padding: 0.75rem;
     }
     .pv-workflow__retour-label {
-      font-size: var(--cnm-fs-sm);
-      font-weight: var(--cnm-fw-semibold);
-      color: var(--cnm-warning-fg);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--warning-text);
     }
     .pv-workflow__retour--reponse {
-      background: var(--cnm-surface-2);
-      border-color: var(--cnm-border);
+      background: var(--c-50);
+      border-color: var(--c-100);
     }
     .pv-workflow__retour--reponse .pv-workflow__retour-label {
-      color: var(--cnm-text-2);
+      color: var(--n-500);
     }
-    .pv-workflow__retour .cnm-textarea {
+    .pv-workflow__retour .form-control {
       resize: vertical;
     }
     .pv-workflow__retour-actions {
       display: flex;
       justify-content: flex-end;
-      gap: var(--cnm-space-2);
+      gap: 0.5rem;
     }
   `,
 })

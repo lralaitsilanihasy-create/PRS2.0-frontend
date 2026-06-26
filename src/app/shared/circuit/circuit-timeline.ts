@@ -44,12 +44,12 @@ import { CIRCUIT_ETAPES } from './circuit-workflow';
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: var(--cnm-space-1);
+      gap: 0.25rem;
       text-align: center;
     }
     .ct__name {
-      font-size: var(--cnm-fs-xs);
-      color: var(--cnm-text-3);
+      font-size: var(--text-xs);
+      color: var(--n-400);
       line-height: 1.2;
       min-height: 2.4em;
       display: flex;
@@ -71,7 +71,7 @@ import { CIRCUIT_ETAPES } from './circuit-workflow';
       right: 50%;
       width: 100%;
       height: 2px;
-      background: var(--cnm-border-strong);
+      background: var(--n-200);
       transform: translateY(-50%);
     }
     .ct__step:first-child .ct__node::before {
@@ -83,23 +83,23 @@ import { CIRCUIT_ETAPES } from './circuit-workflow';
       width: 0.85rem;
       height: 0.85rem;
       border-radius: 50%;
-      background: var(--cnm-surface-3);
-      border: 2px solid var(--cnm-border-strong);
+      background: var(--n-100);
+      border: 2px solid var(--n-200);
     }
     .ct__sub {
-      font-size: var(--cnm-fs-micro);
-      color: var(--cnm-text-2);
-      font-family: var(--cnm-mono);
+      font-size: var(--text-xs);
+      color: var(--n-500);
+      font-variant-numeric: tabular-nums;
       min-height: 1.2em;
     }
     /* Étapes franchies */
-    .ct__step--done .ct__name { color: var(--cnm-text-2); }
-    .ct__step--done .ct__dot { background: var(--cnm-brand); border-color: var(--cnm-brand); }
-    .ct__step--done .ct__node::before { background: var(--cnm-brand); }
+    .ct__step--done .ct__name { color: var(--n-500); }
+    .ct__step--done .ct__dot { background: var(--c-600); border-color: var(--c-600); }
+    .ct__step--done .ct__node::before { background: var(--c-600); }
     /* Étape en cours */
-    .ct__step--current .ct__name { color: var(--cnm-text); font-weight: var(--cnm-fw-semibold); }
-    .ct__step--current .ct__dot { background: var(--cnm-brand); border-color: var(--cnm-brand); box-shadow: 0 0 0 4px var(--cnm-action-bg); }
-    .ct__step--current .ct__node::before { background: var(--cnm-brand); }
+    .ct__step--current .ct__name { color: var(--n-800); font-weight: 600; }
+    .ct__step--current .ct__dot { background: var(--c-600); border-color: var(--c-600); box-shadow: 0 0 0 4px var(--c-100); }
+    .ct__step--current .ct__node::before { background: var(--c-600); }
   `,
 })
 export class CircuitTimeline {

@@ -15,21 +15,21 @@ import { StatutBadge } from '../../shared/circuit';
   imports: [StatutBadge],
   template: `
     <section class="pvd">
-      <header class="pvd__header">
-        <h1 class="pvd__title">PV définitifs</h1>
+      <header class="page-header">
+        <h1 class="page-title">PV définitifs</h1>
       </header>
 
       @if (loading()) {
-        <p class="cnm-muted">Chargement…</p>
+        <p class="text-muted">Chargement…</p>
       } @else if (pvs().length) {
         <ul class="pvd__list">
           @for (pv of pvs(); track pv.idPv) {
-            <li class="cnm-card pvd__item">
+            <li class="card pvd__item">
               <div class="pvd__head">
                 <span class="pvd__ref">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</span>
-                <span class="pvd__date cnm-mono">{{ dateSignature(pv) || '—' }}</span>
+                <span class="pvd__date">{{ dateSignature(pv) || '—' }}</span>
                 <app-statut-badge [statut]="pv.statutPv" [label]="'Définitif'" />
-                <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm pvd__details" (click)="basculer(pv)">
+                <button type="button" class="btn btn-secondary btn-sm pvd__details" (click)="basculer(pv)">
                   {{ ouvert()?.idPv === pv.idPv ? 'Masquer' : 'Voir détails' }}
                 </button>
               </div>
@@ -53,24 +53,22 @@ import { StatutBadge } from '../../shared/circuit';
           }
         </ul>
       } @else {
-        <p class="cnm-muted">Aucun PV définitif.</p>
+        <p class="text-muted">Aucun PV définitif.</p>
       }
     </section>
   `,
   styles: `
-    .pvd__header { margin-bottom: var(--cnm-space-3); }
-    .pvd__title { margin: 0; font-size: var(--cnm-fs-lg); }
-    .pvd__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--cnm-space-2); }
-    .pvd__item { padding: var(--cnm-space-3) var(--cnm-space-4); }
-    .pvd__head { display: flex; align-items: center; gap: var(--cnm-space-2); }
-    .pvd__ref { font-weight: var(--cnm-fw-semibold); }
-    .pvd__date { color: var(--cnm-text-3); font-size: var(--cnm-fs-micro); }
+    .pvd__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+    .pvd__item { padding: 0.75rem 1.1rem; }
+    .pvd__head { display: flex; align-items: center; gap: 0.5rem; }
+    .pvd__ref { font-weight: 700; color: var(--c-800); }
+    .pvd__date { color: var(--n-400); font-size: var(--text-xs); }
     .pvd__details { margin-left: auto; }
-    .pvd__info { display: flex; flex-direction: column; gap: var(--cnm-space-1); margin: var(--cnm-space-2) 0 0; }
-    .pvd__info > div { display: flex; gap: var(--cnm-space-2); align-items: baseline; }
-    .pvd__info dt { flex: 0 0 11rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.06em; color: var(--cnm-text-3); }
-    .pvd__info dd { margin: 0; color: var(--cnm-text); }
-    .pvd__synthese { margin: var(--cnm-space-2) 0 0; font-size: var(--cnm-fs-sm); }
+    .pvd__info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0.5rem 0 0; }
+    .pvd__info > div { display: flex; gap: 0.5rem; align-items: baseline; }
+    .pvd__info dt { flex: 0 0 11rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--n-400); }
+    .pvd__info dd { margin: 0; color: var(--n-700); }
+    .pvd__synthese { margin: 0.5rem 0 0; font-size: var(--text-sm); }
   `,
 })
 export class PvDefinitifs {

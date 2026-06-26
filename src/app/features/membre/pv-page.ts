@@ -30,8 +30,8 @@ import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit'
   imports: [StatutBadge, PvWorkflow],
   template: `
     <section class="pv">
-      <header class="pv__header">
-        <h1 class="pv__title">Projets de PV</h1>
+      <header class="page-header">
+        <h1 class="page-title">Projets de PV</h1>
       </header>
 
       @if (loading()) {
@@ -39,23 +39,23 @@ import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit'
       } @else {
         <ul class="pv__list">
           @for (pv of pvs(); track pv.idPv) {
-            <li class="pv-card">
+            <li class="card pv-card">
               <div class="pv-card__head">
                 <span class="pv-card__ref">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</span>
                 <app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" />
-                <button type="button" class="cnm-btn cnm-btn--ghost" (click)="selectionner(pv)">
+                <button type="button" class="btn btn-secondary" (click)="selectionner(pv)">
                   {{ selected()?.idPv === pv.idPv ? 'Masquer' : 'Gérer' }}
                 </button>
               </div>
               @if (selected()?.idPv === pv.idPv) {
                 <div class="pv-content" #pvContent>
                   <div class="pv-print-bar">
-                    <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="imprimer(pv)" title="Imprimer" aria-label="Imprimer">🖨 Imprimer</button>
-                    <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="imprimer(pv)" title="Enregistrer au format PDF" aria-label="Enregistrer au format PDF">📄 PDF</button>
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Imprimer" aria-label="Imprimer">🖨 Imprimer</button>
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Enregistrer au format PDF" aria-label="Enregistrer au format PDF">📄 PDF</button>
                   </div>
                   @if (pv.statutPv === 'EN_RECTIFICATION' && dernierRetour()) {
-                    <div class="pv-retour-note">
-                      <strong>Retour pour rectification :</strong> {{ dernierRetour() }}
+                    <div class="alert alert-warning">
+                      <span><strong>Retour pour rectification :</strong> {{ dernierRetour() }}</span>
                     </div>
                   }
                   <dl class="pv-info">
@@ -80,7 +80,7 @@ import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit'
 
                   <h3 class="pv-sub">Grille de contrôle</h3>
                   @if (details().length) {
-                    <table class="cnm-table">
+                    <table>
                       <thead><tr><th>Point de contrôle</th><th>Résultat</th><th>Observation</th></tr></thead>
                       <tbody>
                         @for (d of details(); track d.idDetailExamen) {
@@ -111,7 +111,7 @@ import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit'
 
                   <h3 class="pv-sub">Historique des navettes</h3>
                   @if (navettes().length) {
-                    <table class="cnm-table">
+                    <table>
                       <thead><tr><th>#</th><th>Sens</th><th>Acteur</th><th>Date</th><th>Commentaire</th></tr></thead>
                       <tbody>
                         @for (n of navettes(); track n.idNavette) {
@@ -140,36 +140,7 @@ import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit'
     </section>
   `,
   styles: `
-    .pv__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-    .pv__title {
-      margin: 0;
-      font-size: 1.35rem;
-      color: var(--cnm-text);
-    }
-    .pv__info {
-      color: var(--cnm-text-2);
-      padding: 0.5rem 0;
-    }
-    .pv__form {
-      background: var(--cnm-surface);
-      border: 1px solid var(--cnm-border);
-      border-radius: 0.5rem;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      max-width: 32rem;
-    }
-    .pv__form-actions {
-      display: flex;
-      justify-content: flex-end;
-    }
+    .pv__info { color: var(--n-500); padding: 0.5rem 0; }
     .pv__list {
       list-style: none;
       margin: 0;
@@ -178,83 +149,27 @@ import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit'
       flex-direction: column;
       gap: 0.75rem;
     }
-    .pv-card {
-      background: var(--cnm-surface);
-      border: 1px solid var(--cnm-border);
-      border-radius: 0.5rem;
-      padding: 0.875rem 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    .pv-card__head {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    .pv-card__ref {
-      font-weight: 600;
-      color: var(--cnm-text);
-      flex: 1;
-    }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-    .field__label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--cnm-text-2);
-    }
-    .field input,
-    .field textarea {
-      border: 1px solid var(--cnm-border-strong);
-      border-radius: 0.375rem;
-      padding: 0.45rem 0.6rem;
-      font: inherit;
-    }
-    .btn {
-      border: 0;
-      border-radius: 0.375rem;
-      padding: 0.4rem 0.75rem;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .btn--primary {
-      background: var(--cnm-brand);
-      color: #fff;
-    }
-    .btn--ghost {
-      background: var(--cnm-surface-2);
-      color: var(--cnm-text-2);
-    }
+    .pv-card { padding: 0.875rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .pv-card__head { display: flex; align-items: center; gap: 0.75rem; }
+    .pv-card__ref { font-weight: 700; color: var(--c-800); flex: 1; }
     .pv-content {
       display: flex;
       flex-direction: column;
-      gap: var(--cnm-space-2);
-      border-top: 1px solid var(--cnm-border);
-      padding-top: var(--cnm-space-3);
+      gap: 0.5rem;
+      border-top: 1px solid var(--c-100);
+      padding-top: 0.75rem;
     }
-    .pv-info { display: flex; flex-direction: column; gap: var(--cnm-space-1); margin: 0; }
-    .pv-info > div { display: flex; gap: var(--cnm-space-2); align-items: baseline; }
-    .pv-info dt { flex: 0 0 11rem; font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.08em; color: var(--cnm-text-3); }
-    .pv-info dd { margin: 0; color: var(--cnm-text); }
-    .pv-synthese { margin: 0; font-size: var(--cnm-fs-sm); }
-    .pv-sub { margin: var(--cnm-space-2) 0 0; font-size: var(--cnm-fs-md); }
-    .pv-retour-note {
-      background: var(--cnm-warning-bg);
-      color: var(--cnm-warning-fg);
-      border: 1px solid rgba(246, 168, 50, 0.35);
-      border-radius: var(--cnm-radius-sm);
-      padding: var(--cnm-space-2) var(--cnm-space-3);
-      font-size: var(--cnm-fs-sm);
-    }
-    .pv-print-bar { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); }
-    .obs-pv-table { width: 100%; border-collapse: collapse; font-size: var(--cnm-fs-sm); }
-    .obs-pv-table th { text-align: center; font-weight: var(--cnm-fw-semibold); padding: 0.2rem 0.5rem; border-bottom: 1px solid var(--cnm-border); }
-    .obs-pv-table td { padding: 0.2rem 0.5rem; vertical-align: top; border-bottom: 1px solid var(--cnm-border); word-wrap: break-word; }
+    .pv-content td { white-space: normal; }
+    .pv-info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
+    .pv-info > div { display: flex; gap: 0.5rem; align-items: baseline; }
+    .pv-info dt { flex: 0 0 11rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
+    .pv-info dd { margin: 0; color: var(--n-700); }
+    .pv-synthese { margin: 0; font-size: var(--text-sm); }
+    .pv-sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .pv-print-bar { display: flex; justify-content: flex-end; gap: 0.5rem; }
+    .obs-pv-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .obs-pv-table th { text-align: center; font-weight: 600; padding: 0.2rem 0.5rem; border-bottom: 1px solid var(--c-100); background: none; text-transform: none; letter-spacing: normal; color: var(--n-700); }
+    .obs-pv-table td { padding: 0.2rem 0.5rem; vertical-align: top; border-bottom: 1px solid var(--c-100); word-wrap: break-word; white-space: normal; }
   `,
 })
 export class MembrePv {
