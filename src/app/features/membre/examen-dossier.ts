@@ -95,11 +95,10 @@ interface RowState {
                   <h3 class="exam__sub">Lignes de marché</h3>
                   @if (marches().length) {
                     <table class="cnm-table">
-                      <thead><tr><th>#</th><th>Désignation</th><th class="cnm-num">Montant</th><th>Mode</th></tr></thead>
+                      <thead><tr><th>Désignation</th><th class="cnm-num">Montant</th><th>Mode</th></tr></thead>
                       <tbody>
                         @for (m of marches(); track m.idDetail) {
                           <tr>
-                            <td class="cnm-mono">{{ m.idDetail }}</td>
                             <td>{{ m.designationMarche || '—' }}</td>
                             <td class="cnm-num">{{ montant(m.montEstim) }}</td>
                             <td>{{ modeLabel(m.idMode) }}</td>

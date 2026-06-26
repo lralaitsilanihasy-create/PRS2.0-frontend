@@ -67,12 +67,11 @@ import { StatutBadge } from '../../shared/circuit';
                 @if (marches().length) {
                   <table class="cnm-table">
                     <thead>
-                      <tr><th>#</th><th>Désignation</th><th class="cnm-num">Montant estimé</th><th>Mode</th><th>Statut</th></tr>
+                      <tr><th>Désignation</th><th class="cnm-num">Montant estimé</th><th>Mode</th><th>Statut</th></tr>
                     </thead>
                     <tbody>
                       @for (m of marches(); track m.idDetail) {
                         <tr>
-                          <td class="cnm-mono">{{ m.idDetail }}</td>
                           <td>{{ m.designationMarche || '—' }}</td>
                           <td class="cnm-num">{{ montant(m.montEstim) }}</td>
                           <td>{{ modeLabel(m.idMode) }}</td>

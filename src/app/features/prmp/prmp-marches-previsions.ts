@@ -61,7 +61,6 @@ interface PrevState {
                   <table class="cnm-table">
                     <thead>
                       <tr>
-                        <th>Réf.</th>
                         <th>Désignation</th>
                         <th class="cnm-num">Montant estimé</th>
                         <th>Mode</th>
@@ -72,7 +71,6 @@ interface PrevState {
                     <tbody>
                       @for (m of marchesOf(prmp.idPrmp); track m.idDetail) {
                         <tr>
-                          <td class="cnm-mono">{{ m.idDetail }}</td>
                           <td>{{ m.designationMarche || '—' }}</td>
                           <td class="cnm-num">{{ montant(m.montEstim) }}</td>
                           <td>{{ resolve(modeMap(), m.idMode) }}</td>
@@ -85,7 +83,7 @@ interface PrevState {
                         </tr>
                         @if (prevOf(m.idDetail)?.open) {
                           <tr class="mdp__prev-row">
-                            <td colspan="6">
+                            <td colspan="5">
                               @if (prevOf(m.idDetail)?.loading) {
                                 <span class="mdp__loading">Chargement des dates…</span>
                               } @else if (prevOf(m.idDetail)?.data?.length) {

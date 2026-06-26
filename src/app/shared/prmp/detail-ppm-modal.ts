@@ -78,7 +78,6 @@ type ModeSuggestion = {
               } @else {
                 <table class="dpm__table">
                   <colgroup>
-                    <col class="dpm__c-num" />
                     <col class="dpm__c-desig" />
                     <col class="dpm__c-mont" />
                     <col class="dpm__c-mode" />
@@ -87,7 +86,6 @@ type ModeSuggestion = {
                   </colgroup>
                   <thead>
                     <tr>
-                      <th>#</th>
                       <th>Désignation</th>
                       <th class="dpm__num">Montant</th>
                       <th>Mode</th>
@@ -98,7 +96,6 @@ type ModeSuggestion = {
                   <tbody>
                     @for (m of marches(); track m.idDetail) {
                       <tr>
-                        <td class="cnm-mono">{{ m.idDetail }}</td>
                         <td class="dpm__desig" [title]="m.designationMarche || ''">{{ m.designationMarche || '—' }}</td>
                         <td class="dpm__num">{{ montant(m.montEstim) }}</td>
                         <td>{{ resolve(modeMap(), m.idMode) }}</td>
@@ -408,7 +405,6 @@ type ModeSuggestion = {
 
     /* Tableau des marchés (non compressé) */
     .dpm__table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.85rem; }
-    .dpm__c-num { width: 80px; }
     .dpm__c-desig { width: 300px; }
     .dpm__c-mont { width: 160px; }
     .dpm__c-mode { width: 160px; }

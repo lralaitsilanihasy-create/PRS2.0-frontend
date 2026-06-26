@@ -290,14 +290,13 @@ type ModeSuggestion = {
                     <table class="cnm-table">
                       <thead>
                         <tr>
-                          <th>#</th><th>Désignation</th><th class="cnm-num">Montant</th>
+                          <th>Désignation</th><th class="cnm-num">Montant</th>
                           <th>Mode (auto)</th><th></th>
                         </tr>
                       </thead>
                       <tbody>
                         @for (m of marches(); track m.idDetail) {
                           <tr>
-                            <td class="cnm-mono">{{ m.idDetail }}</td>
                             <td>{{ m.designationMarche || '—' }}</td>
                             <td class="cnm-num">{{ montant(m.montEstim) }}</td>
                             <td>{{ resolve(modeMap(), m.idMode) }}</td>

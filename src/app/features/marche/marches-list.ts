@@ -42,7 +42,6 @@ const PAGE_SIZE = 15;
         <table class="cnm-table">
           <thead>
             <tr>
-              <th>Réf.</th>
               <th>Désignation</th>
               <th>PPM</th>
               <th>Dossier</th>
@@ -54,11 +53,10 @@ const PAGE_SIZE = 15;
           </thead>
           <tbody>
             @if (loading()) {
-              <tr><td colspan="8" class="cnm-table__empty">Chargement…</td></tr>
+              <tr><td colspan="7" class="cnm-table__empty">Chargement…</td></tr>
             } @else {
               @for (m of pageItems(); track m.idDetail) {
                 <tr>
-                  <td class="cnm-mono">{{ m.idDetail }}</td>
                   <td>{{ m.designationMarche || '—' }}</td>
                   <td class="cnm-mono">{{ m.idPpm }}</td>
                   <td class="cnm-mono">{{ m.idDossier }}</td>
@@ -68,7 +66,7 @@ const PAGE_SIZE = 15;
                   <td><app-statut-badge [statut]="m.statut" /></td>
                 </tr>
               } @empty {
-                <tr><td colspan="8" class="cnm-table__empty">Aucun marché.</td></tr>
+                <tr><td colspan="7" class="cnm-table__empty">Aucun marché.</td></tr>
               }
             }
           </tbody>
