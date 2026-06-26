@@ -135,6 +135,14 @@
   color: #fff;
   white-space: nowrap;
 }
+.login-card__version {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.4rem, 2vw, 1.75rem);
+  font-weight: var(--cnm-fw-semibold);
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  color: #fff;
+}
 .login-card__subtitle {
   margin: 0;
   font-size: 1.0625rem;
