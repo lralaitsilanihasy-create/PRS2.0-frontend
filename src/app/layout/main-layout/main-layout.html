@@ -51,6 +51,16 @@
       }
     }
   </nav>
+
+  @if (login()) {
+    <div class="sidebar-profile">
+      <div class="avatar">{{ initials() }}</div>
+      <div class="info">
+        <div class="name">{{ displayName() || login() }}</div>
+        <div class="role">{{ role() }}</div>
+      </div>
+    </div>
+  }
 </aside>
 
 <header class="topbar">

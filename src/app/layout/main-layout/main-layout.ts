@@ -34,6 +34,14 @@ export class MainLayout {
   readonly navItems = computed(() => navFor(this.auth.role()));
   /** Nom de l'utilisateur courant (résolu depuis sa fiche PRMP / contrôleur). */
   readonly displayName = signal('');
+  /** Initiales (1 à 2 lettres) pour l'avatar du bloc profil de la sidebar. */
+  readonly initials = computed(() => {
+    const source = (this.displayName() || this.login() || '').trim();
+    if (!source) return '?';
+    const mots = source.split(/\s+/);
+    const lettres = mots.length > 1 ? mots[0][0] + mots[1][0] : source.slice(0, 2);
+    return lettres.toUpperCase();
+  });
   /** Compteurs affichés en badge à côté de certaines entrées de menu (clé = chemin). */
   readonly counts = signal<Record<string, number>>({});
   /** Compteurs d'alerte (badge rouge) à côté de certaines entrées (clé = chemin). */
