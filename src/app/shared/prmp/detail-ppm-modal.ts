@@ -41,7 +41,10 @@ type ModeSuggestion = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, DatePipe, DecimalPipe],
   template: `
-    <div class="modal-backdrop" (click)="emitFermer()">
+    <div class="modal-backdrop" [class.closing]="closing()" (click)="emitFermer()">
+      @if (loading()) {
+        <div class="spinner-wrap"><div class="spinner"></div></div>
+      } @else {
       <div class="modal modal-xl" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
 
         <!-- ── HEADER ── -->
@@ -98,9 +101,6 @@ type ModeSuggestion = {
 
         <!-- ── CORPS ── -->
         <div class="dpm-body">
-          @if (loading()) {
-            <div class="spinner-wrap"><div class="spinner"></div></div>
-          } @else {
 
             <!-- Lignes de marché -->
             <div class="dpm-section">
@@ -226,7 +226,6 @@ type ModeSuggestion = {
                 }
               </div>
             </div>
-          }
         </div>
 
         <!-- ── PIED ── -->
@@ -239,6 +238,7 @@ type ModeSuggestion = {
         </div>
 
       </div>
+      }
     </div>
 
     @if (modalMarche(); as m) {
@@ -456,6 +456,8 @@ export class DetailPpmModal implements OnInit {
   private readonly capmService = inject(CapmService);
 
   readonly loading = signal(true);
+  /** Animation de fermeture en cours : retarde l'émission de `fermer` le temps du fondu sortant. */
+  readonly closing = signal(false);
   readonly ppm = signal<Ppm | null>(null);
   readonly marches = signal<Marche[]>([]);
   readonly pieces = signal<PieceJointeDossier[]>([]);
@@ -521,7 +523,15 @@ export class DetailPpmModal implements OnInit {
   }
 
   emitFermer(): void {
-    this.fermer.emit();
+    if (this.closing()) {
+      return;
+    }
+    // Joue le fondu sortant (.closing) avant de demander la fermeture à l'hôte.
+    this.closing.set(true);
+    setTimeout(() => {
+      this.closing.set(false);
+      this.fermer.emit();
+    }, 160);
   }
 
   // — Alias appelés par le template (mode édition) —
