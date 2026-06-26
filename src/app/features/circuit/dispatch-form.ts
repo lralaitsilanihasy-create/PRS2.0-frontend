@@ -23,9 +23,9 @@ interface Option {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   template: `
-    <div class="df__overlay" (click)="closed.emit()">
+    <div class="modal-backdrop" (click)="closed.emit()">
       <form
-        class="df cnm-card cnm-form"
+        class="modal cnm-form"
         [formGroup]="form"
         (ngSubmit)="enregistrer()"
         (click)="$event.stopPropagation()"
@@ -33,11 +33,11 @@ interface Option {
         aria-modal="true"
         novalidate
       >
-        <header class="df__head">
-          <h2 class="df__title">Dispatcher — {{ dossier().refeDossier || 'Dossier #' + dossier().idDossier }}</h2>
-          <button type="button" class="df__close" aria-label="Fermer" (click)="closed.emit()">&times;</button>
+        <header class="modal-header-plain">
+          <span class="modal-title">Dispatcher — {{ dossier().refeDossier || 'Dossier #' + dossier().idDossier }}</span>
+          <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="closed.emit()">✕</button>
         </header>
-        <div class="df__body">
+        <div class="modal-body">
           <label class="cnm-field">
             <span class="cnm-field__label">Chef de commission</span>
             <select class="cnm-select" formControlName="imCtrlCc">
@@ -64,22 +64,15 @@ interface Option {
             <textarea class="cnm-textarea" rows="2" formControlName="instructions"></textarea>
           </label>
         </div>
-        <footer class="df__foot">
-          <button type="button" class="cnm-btn cnm-btn--ghost" (click)="closed.emit()">Annuler</button>
-          <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submitting()">Dispatcher</button>
+        <footer class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closed.emit()">Annuler</button>
+          <button type="submit" class="btn btn-primary" [disabled]="submitting()">Dispatcher</button>
         </footer>
       </form>
     </div>
   `,
   styles: `
-    .df__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
-    .df { width: 100%; max-width: 30rem; box-shadow: var(--cnm-shadow); }
-    .df__head { display: flex; align-items: center; justify-content: space-between; gap: var(--cnm-space-3); padding: var(--cnm-space-4) var(--cnm-space-5); border-bottom: 1px solid var(--cnm-border); }
-    .df__title { margin: 0; font-size: var(--cnm-fs-md); }
-    .df__close { background: transparent; border: 0; color: var(--cnm-text-2); font-size: 1.5rem; line-height: 1; cursor: pointer; }
-    .df__close:hover { color: var(--cnm-text); }
-    .df__body { padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); }
-    .df__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); padding: var(--cnm-space-3) var(--cnm-space-5); border-top: 1px solid var(--cnm-border); }
+    .modal { max-width: 30rem; }
   `,
 })
 export class DispatchForm {

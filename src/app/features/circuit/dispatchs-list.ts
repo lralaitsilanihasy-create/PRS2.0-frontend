@@ -31,38 +31,42 @@ interface DispatchRow {
   imports: [StatutBadge, DossierConsultation],
   template: `
     <section class="dl">
-      <header class="dl__header">
-        <span class="cnm-section-label">Circuit de contrôle</span>
-        <h1 class="dl__title">Dispatch des dossiers</h1>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Circuit de contrôle</div>
+          <h1 class="page-title">Dispatch des dossiers</h1>
+        </div>
       </header>
 
       @if (loading()) {
         <p class="dl__info">Chargement…</p>
       } @else {
-        <table class="cnm-table">
-          <thead>
-            <tr><th>Référence</th><th>Type</th><th>Localité</th><th>Date dispatch</th><th>Attributaire</th><th>Statut actuel</th><th>Action</th></tr>
-          </thead>
-          <tbody>
-            @for (l of lignes(); track l.dispatch.idDispatch) {
-              <tr>
-                <td>{{ l.dossier?.refeDossier || (l.dossier ? 'Dossier #' + l.dossier.idDossier : '—') }}</td>
-                <td>{{ typeLabel(l.dossier) }}</td>
-                <td>{{ localiteLabel(l.dossier) }}</td>
-                <td class="cnm-mono">{{ l.dispatch.dateDispatch || '—' }}</td>
-                <td>{{ attributaire(l.dispatch) }}</td>
-                <td>@if (l.dossier) { <app-statut-badge [statut]="l.dossier.statut" /> } @else { — }</td>
-                <td>
-                  @if (l.dossier; as d) {
-                    <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="consulte.set(d)">Consulter</button>
-                  }
-                </td>
-              </tr>
-            } @empty {
-              <tr><td colspan="7" class="dl__info">Aucun dossier dispatché.</td></tr>
-            }
-          </tbody>
-        </table>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr><th>Référence</th><th>Type</th><th>Localité</th><th>Date dispatch</th><th>Attributaire</th><th>Statut actuel</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              @for (l of lignes(); track l.dispatch.idDispatch) {
+                <tr>
+                  <td>{{ l.dossier?.refeDossier || (l.dossier ? 'Dossier #' + l.dossier.idDossier : '—') }}</td>
+                  <td>{{ typeLabel(l.dossier) }}</td>
+                  <td>{{ localiteLabel(l.dossier) }}</td>
+                  <td>{{ l.dispatch.dateDispatch || '—' }}</td>
+                  <td>{{ attributaire(l.dispatch) }}</td>
+                  <td>@if (l.dossier) { <app-statut-badge [statut]="l.dossier.statut" /> } @else { — }</td>
+                  <td>
+                    @if (l.dossier; as d) {
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Consulter</button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="7" class="dl__info">Aucun dossier dispatché.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
 
@@ -71,10 +75,7 @@ interface DispatchRow {
     }
   `,
   styles: `
-    .dl__header { margin-bottom: var(--cnm-space-4); }
-    .dl__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .dl__info { color: var(--cnm-text-2); padding: var(--cnm-space-3); text-align: center; }
-    .dl__row-actions { display: flex; gap: var(--cnm-space-1); align-items: center; }
+    .dl__info { color: var(--n-400); padding: 1.5rem; text-align: center; }
   `,
 })
 export class DispatchsList {

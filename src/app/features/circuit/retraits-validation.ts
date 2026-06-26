@@ -20,7 +20,9 @@ import { DossierConsultation } from './dossier-consultation';
   imports: [StatutBadge, DossierConsultation],
   template: `
     <section class="rv">
-      <h1 class="rv__title">Demandes de retrait</h1>
+      <header class="page-header">
+        <h1 class="page-title">Demandes de retrait</h1>
+      </header>
 
       <div class="rv__tabs">
         <button type="button" class="cnm-tab" [class.cnm-tab--active]="onglet() === 'a-valider'" (click)="setOnglet('a-valider')">
@@ -34,9 +36,10 @@ import { DossierConsultation } from './dossier-consultation';
       <div class="rv__grid">
         <div class="rv__main">
           @if (loading()) {
-            <p class="cnm-muted">Chargement…</p>
+            <p class="text-muted">Chargement…</p>
           } @else if (onglet() === 'a-valider') {
-            <table class="cnm-table">
+            <div class="table-card">
+            <table>
               <thead><tr><th>Dossier</th><th>PRMP</th><th>Motif</th><th>Date</th><th></th></tr></thead>
               <tbody>
                 @for (r of liste(); track r.idDemandeRetrait) {
@@ -57,28 +60,30 @@ import { DossierConsultation } from './dossier-consultation';
                               (input)="refusMotif.set($any($event.target).value)"
                             ></textarea>
                             <div class="rv__refus-actions">
-                              <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="annulerRefus()">Annuler</button>
-                              <button type="button" class="cnm-btn cnm-btn--danger cnm-btn--sm" [disabled]="deciding() || !refusMotif().trim()" (click)="confirmerRefus(r)">
+                              <button type="button" class="btn btn-secondary btn-sm" (click)="annulerRefus()">Annuler</button>
+                              <button type="button" class="btn btn-danger btn-sm" [disabled]="deciding() || !refusMotif().trim()" (click)="confirmerRefus(r)">
                                 Confirmer le refus
                               </button>
                             </div>
                           </div>
                         } @else {
                           <div class="rv__actions">
-                            <button type="button" class="cnm-btn cnm-btn--success cnm-btn--sm" [disabled]="deciding()" (click)="accepter(r)">Accepter</button>
-                            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ouvrirRefus(r.idDemandeRetrait!)">Refuser</button>
+                            <button type="button" class="btn btn-success btn-sm" [disabled]="deciding()" (click)="accepter(r)">Accepter</button>
+                            <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirRefus(r.idDemandeRetrait!)">Refuser</button>
                           </div>
                         }
                       }
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="5" class="cnm-muted">Aucune demande à valider.</td></tr>
+                  <tr><td colspan="5" class="text-muted">Aucune demande à valider.</td></tr>
                 }
               </tbody>
             </table>
+            </div>
           } @else {
-            <table class="cnm-table">
+            <div class="table-card">
+            <table>
               <thead><tr><th>Dossier</th><th>PRMP</th><th>Motif</th><th>Statut</th><th>Date décision</th><th>Motif du refus</th></tr></thead>
               <tbody>
                 @for (r of liste(); track r.idDemandeRetrait) {
@@ -91,22 +96,23 @@ import { DossierConsultation } from './dossier-consultation';
                     <td>{{ r.statut === 'REFUSEE' ? (r.obsDecision || '—') : '—' }}</td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="6" class="cnm-muted">Aucune demande décidée.</td></tr>
+                  <tr><td colspan="6" class="text-muted">Aucune demande décidée.</td></tr>
                 }
               </tbody>
             </table>
+            </div>
           }
         </div>
 
-        <div class="cnm-card rv__detail">
-          <div class="rv__panel-head">Détail du dossier</div>
-          <div class="rv__panel-body">
+        <div class="card rv__detail">
+          <div class="card-header"><span class="card-title">Détail du dossier</span></div>
+          <div class="card-body">
             @if (loadingDetail()) {
-              <p class="cnm-muted">Chargement…</p>
+              <p class="text-muted">Chargement…</p>
             } @else if (selectedDossier(); as d) {
               <app-dossier-consultation [dossier]="d" [embedded]="true" />
             } @else {
-              <p class="cnm-muted">Cliquez sur un dossier pour voir son détail.</p>
+              <p class="text-muted">Cliquez sur un dossier pour voir son détail.</p>
             }
           </div>
         </div>
@@ -114,14 +120,11 @@ import { DossierConsultation } from './dossier-consultation';
     </section>
   `,
   styles: `
-    .rv__title { margin: 0 0 var(--cnm-space-3); font-size: var(--cnm-fs-lg); }
-    .rv__tabs { display: flex; gap: var(--cnm-space-2); margin-bottom: var(--cnm-space-3); }
-    .rv__grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--cnm-space-3); align-items: start; }
-    .rv__panel-head { padding: var(--cnm-space-3) var(--cnm-space-4); border-bottom: 1px solid var(--cnm-border); font-weight: var(--cnm-fw-semibold); }
-    .rv__panel-body { padding: var(--cnm-space-4); }
-    .rv__actions, .rv__refus-actions { display: flex; gap: var(--cnm-space-2); justify-content: flex-end; }
-    .rv__refus { display: flex; flex-direction: column; gap: var(--cnm-space-2); min-width: 14rem; }
-    .rv__link { background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--cnm-brand); font: inherit; text-decoration: underline; }
+    .rv__tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .rv__grid { display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem; align-items: start; }
+    .rv__actions, .rv__refus-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+    .rv__refus { display: flex; flex-direction: column; gap: 0.5rem; min-width: 14rem; }
+    .rv__link { background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--c-600); font: inherit; text-decoration: underline; }
     @media (max-width: 60rem) { .rv__grid { grid-template-columns: 1fr; } }
   `,
 })

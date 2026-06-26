@@ -31,44 +31,48 @@ interface PreDispatchItem {
   imports: [DossierConsultation, DispatchForm],
   template: `
     <section class="pd">
-      <header class="pd__header">
-        <span class="cnm-section-label">Domaine Président</span>
-        <h1 class="pd__title">Pré-dispatch</h1>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine Président</div>
+          <h1 class="page-title">Pré-dispatch</h1>
+        </div>
       </header>
-      <div class="cnm-card pd__note">
+      <div class="alert alert-info">
         Dossiers réceptionnés et marqués <strong>complets</strong> (PRET_DISPATCH), en attente de dispatch — toutes localités.
       </div>
 
       @if (loading()) {
         <p class="pd__info">Chargement…</p>
       } @else {
-        <table class="cnm-table">
-          <thead>
-            <tr><th>Référence</th><th>Type</th><th>Localité</th><th>Date réception</th><th>Action</th></tr>
-          </thead>
-          <tbody>
-            @for (it of worklist(); track it.dossier.idDossier) {
-              <tr>
-                <td>{{ it.dossier.refeDossier || ('Dossier #' + it.dossier.idDossier) }}</td>
-                <td>{{ typeLabel(it.dossier) }}</td>
-                <td>{{ localiteLabel(it.dossier) }}</td>
-                <td class="cnm-mono">{{ it.reception.dateReception || '—' }}</td>
-                <td>
-                  <div class="pd__row-actions">
-                    <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="consulte.set(it.dossier)">Consulter</button>
-                    @if (canDispatch()) {
-                      <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" (click)="dispatchItem.set(it)">
-                        Dispatcher
-                      </button>
-                    }
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr><td colspan="5" class="pd__info">Aucun dossier à dispatcher.</td></tr>
-            }
-          </tbody>
-        </table>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr><th>Référence</th><th>Type</th><th>Localité</th><th>Date réception</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              @for (it of worklist(); track it.dossier.idDossier) {
+                <tr>
+                  <td>{{ it.dossier.refeDossier || ('Dossier #' + it.dossier.idDossier) }}</td>
+                  <td>{{ typeLabel(it.dossier) }}</td>
+                  <td>{{ localiteLabel(it.dossier) }}</td>
+                  <td>{{ it.reception.dateReception || '—' }}</td>
+                  <td>
+                    <div class="pd__row-actions">
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(it.dossier)">Consulter</button>
+                      @if (canDispatch()) {
+                        <button type="button" class="btn btn-primary btn-sm" (click)="dispatchItem.set(it)">
+                          Dispatcher
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="pd__info">Aucun dossier à dispatcher.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
 
@@ -85,11 +89,8 @@ interface PreDispatchItem {
     }
   `,
   styles: `
-    .pd__header { margin-bottom: var(--cnm-space-4); }
-    .pd__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .pd__note { padding: var(--cnm-space-3) var(--cnm-space-4); color: var(--cnm-text-2); margin-bottom: var(--cnm-space-3); }
-    .pd__info { color: var(--cnm-text-2); padding: var(--cnm-space-3); text-align: center; }
-    .pd__row-actions { display: flex; gap: var(--cnm-space-1); align-items: center; }
+    .pd__info { color: var(--n-400); padding: 1.5rem; text-align: center; }
+    .pd__row-actions { display: flex; gap: 0.3rem; align-items: center; }
   `,
 })
 export class PresidentPreDispatch {
