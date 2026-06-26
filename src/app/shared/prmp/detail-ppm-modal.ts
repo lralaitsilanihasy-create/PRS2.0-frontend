@@ -112,7 +112,6 @@ type ModeSuggestion = {
                 </div>
                 @if (modeEdition) {
                   <div class="section-btns">
-                    <button class="btn btn-danger btn-sm" type="button" (click)="supprimerPpm()">Supprimer le PPM</button>
                     <button class="btn btn-primary btn-sm" type="button" (click)="nouveauMarche()">+ Nouveau marché</button>
                   </div>
                 }
@@ -121,7 +120,6 @@ type ModeSuggestion = {
               <div class="table-card">
                 <table>
                   <colgroup>
-                    <col style="width:44px;" />
                     <col />
                     <col style="width:150px;" />
                     <col style="width:170px;" />
@@ -130,7 +128,6 @@ type ModeSuggestion = {
                   </colgroup>
                   <thead>
                     <tr>
-                      <th>#</th>
                       <th>Désignation</th>
                       <th class="r">Montant estimé</th>
                       <th>Mode</th>
@@ -141,7 +138,6 @@ type ModeSuggestion = {
                   <tbody>
                     @for (m of marches(); track m.idDetail) {
                       <tr>
-                        <td class="td-ref">{{ m.idDetail }}</td>
                         <td [title]="m.designationMarche || ''" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.designationMarche || '—' }}</td>
                         <td class="td-montant">{{ m.montEstim | number }}</td>
                         <td>{{ resolve(modeMap(), m.idMode) }}</td>
