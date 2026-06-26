@@ -1,3 +1,12 @@
+@use 'styles/design-system';
+
+/* =============================================================================
+   Design system global additionnel (tokens couleur c-/n-, classes .btn .card
+   .modal .badge .form-control…, inspire de DetailPpmModal). Charge EN PREMIER
+   ci-dessus : le systeme CNM ci-dessous reste l'actif dominant (egalites de
+   specificite tranchees en faveur du CNM existant ; l'app conserve son apparence).
+   ============================================================================= */
+
 /* =============================================================================
    CNM — Système de design global
    Identité reprise de docs/cnm-profils-dashboards-clair.html :
