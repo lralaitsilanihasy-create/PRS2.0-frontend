@@ -194,20 +194,22 @@ type ModeSuggestion = {
               @for (t of typesPiece(); track t.idTypePiece) {
                 <div class="sd__piece">
                   <span class="sd__piece-lbl">📎 {{ t.libellePiece }}</span>
-                  @if (t.obligatoire) {
-                    <span class="badge badge-danger">obligatoire</span>
-                  } @else {
-                    <span class="badge badge-neutral">optionnel</span>
-                  }
-                  @if (pieceNom(t.idTypePiece); as nom) {
-                    <span class="sd__piece-file">{{ nom }} · {{ pieceTaille(t.idTypePiece) }}</span>
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="retirerPiece(t.idTypePiece)" aria-label="Retirer">✕</button>
-                  } @else {
-                    <label class="btn btn-secondary btn-sm sd__piece-choisir">
-                      Choisir
-                      <input type="file" accept=".pdf,.jpeg,.jpg,.png" hidden (change)="onPiece(t.idTypePiece, $event)" />
-                    </label>
-                  }
+                  <div class="sd__piece-right">
+                    @if (t.obligatoire) {
+                      <span class="badge badge-danger">obligatoire</span>
+                    } @else {
+                      <span class="badge badge-neutral">optionnel</span>
+                    }
+                    @if (pieceNom(t.idTypePiece); as nom) {
+                      <span class="sd__piece-file">{{ nom }} · {{ pieceTaille(t.idTypePiece) }}</span>
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="retirerPiece(t.idTypePiece)" aria-label="Retirer">✕</button>
+                    } @else {
+                      <label class="btn btn-secondary btn-sm sd__piece-choisir">
+                        Choisir
+                        <input type="file" accept=".pdf,.jpeg,.jpg,.png" hidden (change)="onPiece(t.idTypePiece, $event)" />
+                      </label>
+                    }
+                  </div>
                   @if (pieceErreurs().has(t.idTypePiece)) {
                     <span class="form-error sd__piece-err">Cette pièce est obligatoire.</span>
                   }
@@ -461,11 +463,12 @@ type ModeSuggestion = {
     .sd__form { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: min(64rem, 96vw); }
     .sd__hint { margin: 0; }
     .sd__pieces { display: flex; flex-direction: column; gap: 0.5rem; }
-    .sd__piece { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .sd__piece-lbl { font-weight: 500; }
+    .sd__piece { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+    .sd__piece-lbl { font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sd__piece-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
     .sd__piece-file { font-size: var(--text-sm); color: var(--n-500); }
     .sd__piece-choisir { cursor: pointer; }
-    .sd__piece-err { color: var(--danger-text); }
+    .sd__piece-err { color: var(--danger-text); flex-basis: 100%; }
     .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
     .sd__foot--main { margin-top: 1rem; }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
