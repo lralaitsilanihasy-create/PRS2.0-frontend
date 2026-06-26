@@ -30,21 +30,23 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
   imports: [ReactiveFormsModule, StatutBadge, DossierConsultation],
   template: `
     <section class="rec">
-      <header class="rec__header">
-        <span class="cnm-section-label">Domaine Secrétaire</span>
-        <h1 class="rec__title">Réceptions</h1>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine Secrétaire</div>
+          <h1 class="page-title">Réceptions</h1>
+        </div>
       </header>
 
-      <div class="cnm-card rec__note">
+      <div class="alert alert-info">
         À réceptionner : les dossiers <strong>soumis</strong> de votre localité, en attente de
         réception initiale. Cliquez « Enregistrer » sur une ligne pour saisir sa réception.
       </div>
 
       @if (referenceAttribuee(); as ref) {
-        <div class="cnm-card rec__ref">
+        <div class="alert alert-success rec__ref">
           <span>Réception enregistrée — <strong>Référence attribuée : {{ ref }}</strong></span>
           <span class="rec__ref-actions">
-            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="copier(ref)">Copier</button>
+            <button type="button" class="btn btn-secondary btn-sm" (click)="copier(ref)">Copier</button>
             <button type="button" class="rec__ref-close" aria-label="Fermer" (click)="referenceAttribuee.set(null)">&times;</button>
           </span>
         </div>
@@ -53,7 +55,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       @if (loading()) {
         <p class="rec__info">Chargement…</p>
       } @else {
-        <table class="cnm-table">
+        <table>
           <thead>
             <tr><th>#</th><th>Référence</th><th>Type</th><th>Localité</th><th>Statut</th><th>Action</th></tr>
           </thead>
@@ -66,11 +68,11 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                 <td>{{ loc(d.idLocalite) }}</td>
                 <td><app-statut-badge [statut]="d.statut" /></td>
                 <td class="rec__row-action">
-                  <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="consulte.set(d)">
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">
                     Consulter
                   </button>
                   @if (canWrite()) {
-                    <button type="button" class="cnm-btn cnm-btn--primary cnm-btn--sm" (click)="ouvrir(d)">
+                    <button type="button" class="btn btn-primary btn-sm" (click)="ouvrir(d)">
                       Enregistrer
                     </button>
                   }
@@ -85,9 +87,9 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     </section>
 
     @if (selected(); as d) {
-      <div class="rec-modal__overlay" (click)="annuler()">
+      <div class="modal-backdrop" (click)="annuler()">
         <form
-          class="rec-modal cnm-card cnm-form"
+          class="modal cnm-form"
           [formGroup]="form"
           (ngSubmit)="enregistrer()"
           (click)="$event.stopPropagation()"
@@ -95,12 +97,12 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
           aria-modal="true"
           novalidate
         >
-          <header class="rec-modal__head">
-            <h2 class="rec-modal__title">Réception — {{ d.refeDossier || 'Dossier #' + d.idDossier }}</h2>
-            <button type="button" class="rec-modal__close" aria-label="Fermer" (click)="annuler()">&times;</button>
+          <header class="modal-header-plain">
+            <span class="modal-title">Réception — {{ d.refeDossier || 'Dossier #' + d.idDossier }}</span>
+            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="annuler()">✕</button>
           </header>
 
-          <div class="rec-modal__body">
+          <div class="modal-body">
             <dl class="rec-info">
               <div><dt>Dossier</dt><dd class="cnm-mono">#{{ d.idDossier }}</dd></div>
               <div><dt>Type</dt><dd>{{ d.idTypeDossier || '—' }}</dd></div>
@@ -129,9 +131,9 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
             </label>
           </div>
 
-          <footer class="rec-modal__foot">
-            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annuler()">Annuler</button>
-            <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submitting()">
+          <footer class="modal-footer">
+            <button type="button" class="btn btn-outline" (click)="annuler()">Annuler</button>
+            <button type="submit" class="btn btn-primary" [disabled]="submitting()">
               {{ submitting() ? 'Enregistrement…' : 'Enregistrer la réception' }}
             </button>
           </footer>
@@ -140,13 +142,15 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     }
 
     @if (completWarning()) {
-      <div class="rec-warn__overlay" (click)="completWarning.set(false)">
-        <div class="rec-warn cnm-card" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
-          <p class="rec-warn__msg">
-            Le dossier doit être complet pour être réceptionné. Veuillez cocher « Dossier complet » avant d'enregistrer.
-          </p>
-          <div class="rec-warn__foot">
-            <button type="button" class="cnm-btn cnm-btn--primary" (click)="completWarning.set(false)">OK</button>
+      <div class="modal-backdrop" (click)="completWarning.set(false)">
+        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+          <div class="modal-body">
+            <p>
+              Le dossier doit être complet pour être réceptionné. Veuillez cocher « Dossier complet » avant d'enregistrer.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" (click)="completWarning.set(false)">OK</button>
           </div>
         </div>
       </div>
@@ -157,31 +161,16 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     }
   `,
   styles: `
-    .rec__header { margin-bottom: var(--cnm-space-4); }
-    .rec__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .rec__note { padding: var(--cnm-space-3) var(--cnm-space-4); color: var(--cnm-text-2); margin-bottom: var(--cnm-space-3); }
-    .rec__ref { display: flex; align-items: center; justify-content: space-between; gap: var(--cnm-space-3); padding: var(--cnm-space-3) var(--cnm-space-4); background: var(--cnm-success-bg); color: var(--cnm-success-fg); margin-bottom: var(--cnm-space-3); }
-    .rec__ref-actions { display: flex; align-items: center; gap: var(--cnm-space-2); }
+    .rec__ref { justify-content: space-between; align-items: center; }
+    .rec__ref-actions { display: flex; align-items: center; gap: 0.5rem; }
     .rec__ref-close { background: transparent; border: 0; color: inherit; font-size: 1.25rem; line-height: 1; cursor: pointer; }
-    .rec__info { color: var(--cnm-text-2); padding: var(--cnm-space-3); text-align: center; }
+    .rec__info { color: var(--n-400); padding: 1.5rem; text-align: center; }
     .rec__row-action { text-align: right; }
-    .rec__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cnm-space-3); }
-    .rec__check { flex-direction: row; align-items: center; gap: var(--cnm-space-2); }
-    .rec-info { display: flex; flex-wrap: wrap; gap: var(--cnm-space-4); margin: 0 0 var(--cnm-space-3); }
-    .rec-info dt { font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.08em; color: var(--cnm-text-3); }
-    .rec-info dd { margin: 2px 0 0; color: var(--cnm-text); }
-    .rec-modal__overlay { position: fixed; inset: 0; z-index: 1050; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
-    .rec-modal { width: 100%; max-width: 34rem; max-height: 85vh; overflow: auto; box-shadow: var(--cnm-shadow); }
-    .rec-modal__head { display: flex; align-items: center; justify-content: space-between; gap: var(--cnm-space-3); padding: var(--cnm-space-4) var(--cnm-space-5); border-bottom: 1px solid var(--cnm-border); }
-    .rec-modal__title { margin: 0; font-size: var(--cnm-fs-md); }
-    .rec-modal__close { background: transparent; border: 0; color: var(--cnm-text-2); font-size: 1.5rem; line-height: 1; cursor: pointer; }
-    .rec-modal__close:hover { color: var(--cnm-text); }
-    .rec-modal__body { padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); }
-    .rec-modal__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); padding: var(--cnm-space-3) var(--cnm-space-5); border-top: 1px solid var(--cnm-border); }
-    .rec-warn__overlay { position: fixed; inset: 0; z-index: 1060; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; padding: var(--cnm-space-4); }
-    .rec-warn { width: 100%; max-width: 26rem; padding: var(--cnm-space-4) var(--cnm-space-5); display: flex; flex-direction: column; gap: var(--cnm-space-3); box-shadow: var(--cnm-shadow); }
-    .rec-warn__msg { margin: 0; }
-    .rec-warn__foot { display: flex; justify-content: flex-end; }
+    .rec__check { flex-direction: row; align-items: center; gap: 0.5rem; }
+    .rec-info { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0 0 0.75rem; }
+    .rec-info dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
+    .rec-info dd { margin: 2px 0 0; color: var(--n-700); }
+    .confirm-modal { max-width: 26rem; }
   `,
 })
 export class SecretaireReceptions {

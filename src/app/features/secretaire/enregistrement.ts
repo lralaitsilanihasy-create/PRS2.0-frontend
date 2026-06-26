@@ -24,46 +24,50 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
   imports: [StatutBadge, DossierConsultation],
   template: `
     <section class="enr">
-      <header class="enr__header">
-        <span class="cnm-section-label">Domaine Secrétaire</span>
-        <h1 class="enr__title">Enregistrement</h1>
+      <header class="page-header">
+        <div>
+          <div class="page-subtitle">Domaine Secrétaire</div>
+          <h1 class="page-title">Enregistrement</h1>
+        </div>
       </header>
 
-      <div class="cnm-card enr__note">
+      <div class="alert alert-info">
         Historique des dossiers réceptionnés dans votre localité (lecture seule).
       </div>
 
       @if (loading()) {
         <p class="enr__info">Chargement…</p>
       } @else {
-        <table class="cnm-table">
-          <thead>
-            <tr>
-              <th>Référence</th><th>Type</th><th>Localité</th>
-              <th>Date réception</th><th class="cnm-num">Passage</th><th>Complet</th><th>Statut actuel</th><th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (l of lignes(); track l.r.idReception) {
+        <div class="table-card">
+          <table>
+            <thead>
               <tr>
-                <td>{{ l.d?.refeDossier || ('Dossier #' + l.r.idDossier) }}</td>
-                <td>{{ typeLabel(l.d) }}</td>
-                <td>{{ localiteLabel(l.d) }}</td>
-                <td class="cnm-mono">{{ l.r.dateReception || '—' }}</td>
-                <td class="cnm-num">{{ l.r.numPassage }}{{ l.r.typePassage === 'INITIAL' ? ' (INITIAL)' : '' }}</td>
-                <td>{{ l.r.complet ? 'Oui' : 'Non' }}</td>
-                <td>@if (l.d) { <app-statut-badge [statut]="l.d.statut" /> } @else { — }</td>
-                <td class="enr__row-action">
-                  @if (l.d; as d) {
-                    <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="consulte.set(d)">Consulter</button>
-                  }
-                </td>
+                <th>Référence</th><th>Type</th><th>Localité</th>
+                <th>Date réception</th><th>Passage</th><th>Complet</th><th>Statut actuel</th><th>Action</th>
               </tr>
-            } @empty {
-              <tr><td colspan="8" class="enr__info">Aucun dossier réceptionné.</td></tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (l of lignes(); track l.r.idReception) {
+                <tr>
+                  <td>{{ l.d?.refeDossier || ('Dossier #' + l.r.idDossier) }}</td>
+                  <td>{{ typeLabel(l.d) }}</td>
+                  <td>{{ localiteLabel(l.d) }}</td>
+                  <td>{{ l.r.dateReception || '—' }}</td>
+                  <td>{{ l.r.numPassage }}{{ l.r.typePassage === 'INITIAL' ? ' (INITIAL)' : '' }}</td>
+                  <td>{{ l.r.complet ? 'Oui' : 'Non' }}</td>
+                  <td>@if (l.d) { <app-statut-badge [statut]="l.d.statut" /> } @else { — }</td>
+                  <td class="enr__row-action">
+                    @if (l.d; as d) {
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Consulter</button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="8" class="enr__info">Aucun dossier réceptionné.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
 
@@ -72,10 +76,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     }
   `,
   styles: `
-    .enr__header { margin-bottom: var(--cnm-space-4); }
-    .enr__title { margin: 2px 0 0; font-size: var(--cnm-fs-lg); }
-    .enr__note { padding: var(--cnm-space-3) var(--cnm-space-4); color: var(--cnm-text-2); margin-bottom: var(--cnm-space-3); }
-    .enr__info { color: var(--cnm-text-2); padding: var(--cnm-space-3); text-align: center; }
+    .enr__info { color: var(--n-400); padding: 1.5rem; text-align: center; }
     .enr__row-action { text-align: right; }
   `,
 })
