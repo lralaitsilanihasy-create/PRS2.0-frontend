@@ -1,15 +1,17 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
-import { Dossier, Marche, Ppm } from '../../models';
+import { Dossier, Marche, PieceJointeDossier, Ppm } from '../../models';
 import {
   LocaliteService,
   MarcheService,
   ModePassationService,
+  PieceJointeDossierService,
   PpmService,
   ReferenceLookupService,
   TypeDossierService,
 } from '../../services';
+import { ToastService } from '../../core/notifications/toast.service';
 import { StatutBadge } from '../../shared/circuit';
 
 /**
@@ -139,16 +141,76 @@ import { StatutBadge } from '../../shared/circuit';
               </div>
             }
           }
+
+          <!-- Pièces jointes (tous dossiers) -->
+          <div class="dc-section">
+            <div class="dc-section-head">
+              <div class="section-block-title">
+                <div class="section-icon">📎</div>
+                <span class="section-label">Pièces jointes</span>
+                <span class="section-count">{{ pieces().length }} pièce(s)</span>
+              </div>
+            </div>
+
+            @if (loadingPieces()) {
+              <div class="spinner-wrap"><div class="spinner"></div></div>
+            } @else {
+              <div class="pieces-card">
+                @if (piecesInitiales().length > 0) {
+                  <div class="pieces-group">
+                    <div class="pieces-group-hd">
+                      <span class="group-pill gp-blue">Pièces initiales</span>
+                      <span class="group-count">{{ piecesInitiales().length }} fichier(s)</span>
+                    </div>
+                    @for (p of piecesInitiales(); track p.idPiece; let i = $index) {
+                      <div class="piece-row">
+                        <div class="piece-left">
+                          <span class="piece-index pi-blue">{{ i + 1 }}</span>
+                          <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                        </div>
+                        <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (piecesApresRenvoi().length > 0) {
+                  <div class="pieces-group">
+                    <div class="pieces-group-hd">
+                      <span class="group-pill gp-orange">Après lettre de renvoi</span>
+                      <span class="group-count">{{ piecesApresRenvoi().length }} fichier(s)</span>
+                    </div>
+                    @for (p of piecesApresRenvoi(); track p.idPiece; let i = $index) {
+                      <div class="piece-row">
+                        <div class="piece-left">
+                          <span class="piece-index pi-orange">{{ i + 1 }}</span>
+                          <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                          <span class="lr-tag">LR</span>
+                        </div>
+                        <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (pieces().length === 0) {
+                  <div class="empty-state">
+                    <span class="empty-state-icon" aria-hidden="true">📭</span>
+                    <span class="empty-state-text">Aucune pièce jointe.</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
         </div>
 
         <!-- ── Pied ── -->
         @if (!embedded()) {
           <footer class="dc-foot">
-            @if (estPpm()) {
-              <div class="dc-foot-info"><strong>{{ marches().length }}</strong> marché(s)</div>
-            } @else {
-              <span></span>
-            }
+            <div class="dc-foot-info">
+              @if (estPpm()) { <strong>{{ marches().length }}</strong> marché(s) · }
+              <strong>{{ pieces().length }}</strong> pièce(s) jointe(s)
+            </div>
             <button type="button" class="btn btn-ghost" (click)="closed.emit()">Fermer</button>
           </footer>
         }
@@ -233,11 +295,17 @@ export class DossierConsultation implements OnInit {
 
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);
+  private readonly pieceService = inject(PieceJointeDossierService);
+  private readonly toast = inject(ToastService);
   private readonly lookups = inject(ReferenceLookupService);
 
   readonly ppm = signal<Ppm | null>(null);
   readonly marches = signal<Marche[]>([]);
+  readonly pieces = signal<PieceJointeDossier[]>([]);
   readonly loadingContenu = signal(false);
+  readonly loadingPieces = signal(false);
+  readonly piecesInitiales = computed(() => this.pieces().filter((p) => !p.apresLettreRenvoi));
+  readonly piecesApresRenvoi = computed(() => this.pieces().filter((p) => p.apresLettreRenvoi));
   private readonly modeMap = signal<Map<string, string>>(new Map());
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -255,6 +323,15 @@ export class DossierConsultation implements OnInit {
   ngOnInit(): void {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
+    // Pièces jointes du dossier (tous types) — GET /api/piece-jointe-dossiers?dossier={id}.
+    this.loadingPieces.set(true);
+    this.pieceService.getByDossier(this.dossier().idDossier).subscribe({
+      next: (rows) => {
+        this.pieces.set(rows);
+        this.loadingPieces.set(false);
+      },
+      error: () => this.loadingPieces.set(false),
+    });
     if (this.estPpm()) {
       const id = this.dossier().idDossier;
       this.loadingContenu.set(true);
@@ -268,6 +345,17 @@ export class DossierConsultation implements OnInit {
         error: () => this.loadingContenu.set(false),
       });
     }
+  }
+
+  /** Télécharge et ouvre une pièce jointe dans un nouvel onglet (lecture seule). */
+  ouvrirPiece(p: PieceJointeDossier): void {
+    if (p.idPiece == null) {
+      return;
+    }
+    this.pieceService.telecharger(p.idPiece).subscribe({
+      next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
+      error: () => this.toast.error("Impossible d'ouvrir la pièce."),
+    });
   }
 
   modeLabel(id?: number): string {
