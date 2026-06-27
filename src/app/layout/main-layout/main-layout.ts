@@ -151,7 +151,7 @@ export class MainLayout {
           '/president/circuit/dispatch': dispatchs.length,
           '/president/circuit/pv': projetsPv.length,
           '/president/circuit/pv-definitifs': pvDefinitifs.length,
-          '/president/lettre-renvois': lettres.filter((l) => l.statut === 'SOUMIS').length,
+          '/president/lettre-renvois': lettres.length,
           '/president/retraits': retraits.length,
         };
         // N'expose que les compteurs > 0 (pas de badge « 0 »).
