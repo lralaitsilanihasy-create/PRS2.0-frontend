@@ -11,6 +11,7 @@ import {
   DispatchService,
   DossierService,
   LettreRenvoiService,
+  PpmService,
   PrmpService,
   PvExamenService,
   ReceptionService,
@@ -36,6 +37,7 @@ export class MainLayout {
   private readonly controleurService = inject(ControleurService);
   private readonly dossierService = inject(DossierService);
   private readonly receptionService = inject(ReceptionService);
+  private readonly ppmService = inject(PpmService);
   private readonly dispatchService = inject(DispatchService);
   private readonly pvExamenService = inject(PvExamenService);
   private readonly lettreRenvoiService = inject(LettreRenvoiService);
@@ -109,15 +111,19 @@ export class MainLayout {
         .subscribe(() => this.rafraichirCompteursSecretaire());
     }
 
-    // PRMP : badge rouge « dossiers en attente de décision » sur le tableau de bord.
+    // PRMP : alerte « à rectifier » + compteurs de contenu du menu.
     if (this.auth.role() === 'PRMP') {
       this.rafraichirAlertesPrmp();
+      this.rafraichirCompteursPrmp();
       this.router.events
         .pipe(
           filter((e) => e instanceof NavigationEnd),
           takeUntilDestroyed(),
         )
-        .subscribe(() => this.rafraichirAlertesPrmp());
+        .subscribe(() => {
+          this.rafraichirAlertesPrmp();
+          this.rafraichirCompteursPrmp();
+        });
     }
 
     // Président : compteurs de contenu par item de menu (dérivés des endpoints de liste).
@@ -157,6 +163,30 @@ export class MainLayout {
         // N'expose que les compteurs > 0 (pas de badge « 0 »).
         const visibles = Object.fromEntries(Object.entries(c).filter(([, n]) => n > 0));
         this.counts.set(visibles);
+      },
+      error: () => {},
+    });
+  }
+
+  /**
+   * Compteurs de contenu du menu PRMP (un appel de liste documenté par item ; valeurs > 0 seulement).
+   * « Dossiers à rectifier » garde son badge d'alerte rouge (rafraichirAlertesPrmp), non dupliqué ici.
+   */
+  private rafraichirCompteursPrmp(): void {
+    forkJoin({
+      brouillons: this.dossierService.list('BROUILLON'),
+      ppms: this.ppmService.list(),
+      verifies: this.dossierService.list('CLOTURE'),
+      lettres: this.lettreRenvoiService.getMesLettres(),
+    }).subscribe({
+      next: ({ brouillons, ppms, verifies, lettres }) => {
+        const c: Record<string, number> = {
+          '/prmp/mes-brouillons': brouillons.length,
+          '/prmp/ppm-marches': ppms.length,
+          '/prmp/dossiers-verifies': verifies.length,
+          '/prmp/lettre-renvois': lettres.length,
+        };
+        this.counts.set(Object.fromEntries(Object.entries(c).filter(([, n]) => n > 0)));
       },
       error: () => {},
     });
