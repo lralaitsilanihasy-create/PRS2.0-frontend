@@ -1439,11 +1439,22 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | nbNonConforme | number | occurrences non conformes |
 | tauxNonConformitePct | number | taux de non-conformité (%) |
 
+**Champs `CompteursPrmpDto`** (réponse de `mes-compteurs`) — par section du menu **PRMP**, tous filtrés sur la PRMP authentifiée (JWT)
+
+| Champ (JSON) | Type | Description |
+|---|---|---|
+| brouillons | number | mes dossiers en brouillon (`t_dossier.STATUT = BROUILLON`) |
+| ppmMarches | number | mes PPM & marchés (PPM de la PRMP, `t_ppm.ID_PRMP`) |
+| dossiersARectifier | number | mes dossiers à rectifier non traités (`t_dossier.STATUT = EN_ATTENTE_DECISION_PRMP`) |
+| dossiersVerifies | number | mes dossiers vérifiés (`t_dossier.STATUT IN (PV_SIGNE, CLOTURE)`) |
+| lettresRenvoi | number | mes lettres de renvoi signées (`t_lettre_renvoi.STATUT = SIGNE`) |
+
 **Endpoints**
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/kpis/tableau-bord | — | `TableauBordDto` | 200, 403 | PRESIDENT / ADMINISTRATEUR |
+| GET | /api/kpis/tableau-bord | — | `TableauBordDto` | 200, 403 | PRESIDENT / ADMINISTRATEUR / CHEF_COMMISSION |
+| GET | /api/kpis/mes-compteurs | — | `CompteursPrmpDto` | 200, 403 | **PRMP** (compteurs de son propre périmètre) |
 
 **Exemple — réponse**
 ```json
@@ -1462,6 +1473,16 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > comptes **globaux** (toutes localités) pour le **Président/Administrateur** et **filtrés sur sa
 > localité** pour le **Chef de commission** — cohérent avec le périmètre du reste du tableau de bord.
 > Scope localité : Dossier/Demande via `idLocalite`, PV/Lettre via la localité de la réception.
+
+**Exemple — réponse `GET /api/kpis/mes-compteurs`** (PRMP)
+```json
+{ "brouillons": 3, "ppmMarches": 12, "dossiersARectifier": 1, "dossiersVerifies": 7, "lettresRenvoi": 2 }
+```
+
+> **Compteurs PRMP (⚠️ règle ajoutée).** `GET /api/kpis/mes-compteurs` (réservé **PRMP**) renvoie les
+> compteurs des sections du menu PRMP, **tous filtrés sur la PRMP authentifiée** (JWT) : « Mes brouillons »,
+> « Mes PPM & marchés », « Dossiers à rectifier » non traités (`EN_ATTENTE_DECISION_PRMP`), « Dossiers
+> vérifiés » (`PV_SIGNE`/`CLOTURE`), « Mes lettres de renvoi » signées.
 
 ---
 
