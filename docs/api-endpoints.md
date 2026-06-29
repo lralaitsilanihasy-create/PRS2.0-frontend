@@ -1229,6 +1229,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | statut | string | — (réponse) | `BROUILLON`/`SOUMIS`/`SIGNE` — **forcé** (ignoré en entrée) |
 | imSignataire | string | — (réponse) | **posé à la signature** (JWT) — ignoré en entrée |
 | nomSignataire | string | — (réponse) | **nom complet du signataire** (« prénoms nom »), peuplé serveur — lecture seule |
+| lue | boolean | — (réponse) | **lecture seule** — `true` si la lettre a déjà été lue par la PRMP courante (trace `t_lettre_renvoi_lue`) |
 
 **Endpoints**
 
@@ -1236,7 +1237,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 |---|---|---|---|---|---|
 | GET | /api/lettre-renvois | — | `LettreRenvoiDto[]` | 200 | Authentifié (filtré, voir ci-dessous) |
 | GET | /api/lettre-renvois/mes-lettres | — | `LettreRenvoiDto[]` | 200 | **PRMP** — lettres `SIGNE` de ses dossiers (lecture seule) |
-| GET | /api/lettre-renvois/{id} | — | `LettreRenvoiDto` | 200, 403, 404 | Authentifié (dans le périmètre) |
+| GET | /api/lettre-renvois/{id} | — | `LettreRenvoiDto` | 200, 403, 404 | Authentifié (dans le périmètre) **ou PRMP propriétaire** (lettre `SIGNE`) — voir marquage « lu » |
 | POST | /api/lettre-renvois | `LettreRenvoiDto` | `LettreRenvoiDto` | 201, 400, 403 | **MEMBRE** — création pendant l'examen (BROUILLON) |
 | PUT | /api/lettre-renvois/{id} | `LettreRenvoiDto` | `LettreRenvoiDto` | 200, 400, 404, 409 | **MEMBRE** (brouillon : objet/corps) |
 | POST | /api/lettre-renvois/{id}/soumettre | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **MEMBRE propriétaire** (BROUILLON→SOUMIS) |
@@ -1251,6 +1252,13 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > Président — jamais le Membre → **403**) `SOUMIS → SIGNE` (`imSignataire` = JWT) → **notifie la PRMP**
 > du dossier (`LETTRE_RENVOI_RECUE`) et les **Assistants contrôleurs** de la localité (`LETTRE_RENVOI_COPIE`).
 > Statut incorrect → **409**.
+>
+> **Marquage « lu » à la consultation PRMP (⚠️ règle ajoutée).** La **PRMP propriétaire** du dossier peut
+> consulter le détail d'une lettre **`SIGNE`** via `GET /api/lettre-renvois/{id}` (au-delà du périmètre de
+> localité habituel, qui sinon lui renvoie 403). À cette consultation, la lettre est **marquée lue** pour
+> elle (trace `t_lettre_renvoi_lue`, **une seule entrée** par couple lettre/PRMP, opération idempotente et
+> silencieuse). Le champ `lue` du DTO reflète cet état, et le compteur **« Mes lettres de renvoi »** du
+> menu PRMP ne compte que les lettres `SIGNE` **non encore lues** (voir KPIs / `CompteursPrmpDto`).
 
 ---
 
@@ -1447,7 +1455,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | ppmMarches | number | mes PPM & marchés (PPM de la PRMP, `t_ppm.ID_PRMP`) |
 | dossiersARectifier | number | mes dossiers à rectifier non traités (`t_dossier.STATUT = EN_ATTENTE_DECISION_PRMP`) |
 | dossiersVerifies | number | mes dossiers vérifiés (`t_dossier.STATUT IN (PV_SIGNE, CLOTURE)`) |
-| lettresRenvoi | number | mes lettres de renvoi signées (`t_lettre_renvoi.STATUT = SIGNE`) |
+| lettresRenvoi | number | mes lettres de renvoi signées **non encore lues** (`STATUT = SIGNE` sans trace dans `t_lettre_renvoi_lue` pour la PRMP) — voir marquage « lu » dans *Lettres de renvoi* |
 
 **Champs `CompteursVerificateurDto`** (réponse de `mes-compteurs-verificateur`) — par section du menu **Vérificateur**, filtrés sur sa localité (miroir de ses worklists)
 
