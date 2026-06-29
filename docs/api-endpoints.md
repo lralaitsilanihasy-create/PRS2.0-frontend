@@ -1471,6 +1471,14 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | aExaminer | number | dossiers à examiner (`STATUT = DISPATCHE` qui lui sont attribués) |
 | examines | number | dossiers examinés (`STATUT IN (EXAMINE, PV_SIGNE, EN_VERIFICATION, CLOTURE)`) |
 
+**Champs `CompteursPublicationDto`** (réponse de `mes-compteurs-publication`) — workflow de publication, comptes **globaux**
+
+| Champ (JSON) | Type | Description |
+|---|---|---|
+| aPublier | number | publications à publier (`t_publication.STATUT_PUBLI = EN_ATTENTE`) |
+| publiees | number | publications publiées (`STATUT_PUBLI = PUBLIE`) |
+| retirees | number | publications retirées (`STATUT_PUBLI = RETIRE`) |
+
 **Endpoints**
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
@@ -1480,6 +1488,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | GET | /api/kpis/mes-compteurs-verificateur | — | `CompteursVerificateurDto` | 200, 403 | **VERIFICATEUR** (ou délégué) / ADMINISTRATEUR — compteurs de sa localité |
 | GET | /api/kpis/mes-compteurs-secretaire | — | `CompteursSecretaireDto` | 200, 403 | **SECRETAIRE** (ou délégué) / ADMINISTRATEUR — compteurs de sa localité |
 | GET | /api/kpis/mes-compteurs-membre | — | `CompteursMembreDto` | 200, 403 | **MEMBRE** (ou délégué) / ADMINISTRATEUR — compteurs de ses dossiers attribués |
+| GET | /api/kpis/mes-compteurs-publication | — | `CompteursPublicationDto` | 200, 403 | **CHARGE_PUBLICATION** / ADMINISTRATEUR — workflow de publication (global) |
 
 **Exemple — réponse**
 ```json
@@ -1539,6 +1548,15 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > délégué) renvoie, **filtrés sur le Membre attributaire** (son IM via `Dispatch.imCtrlMembre`) :
 > `aExaminer` (ses dossiers `DISPATCHE`, miroir de `/api/dossiers/a-examiner`) et `examines` (son
 > historique : `EXAMINE`/`PV_SIGNE`/`EN_VERIFICATION`/`CLOTURE`).
+
+**Exemple — réponse `GET /api/kpis/mes-compteurs-publication`** (Chargé de publication)
+```json
+{ "aPublier": 4, "publiees": 31, "retirees": 2 }
+```
+
+> **Compteurs Chargé de publication (⚠️ règle ajoutée).** `GET /api/kpis/mes-compteurs-publication`
+> (réservé **CHARGE_PUBLICATION**) renvoie des comptes **globaux** (rôle transversal, sans localité) du
+> workflow de publication : `aPublier` (`EN_ATTENTE`), `publiees` (`PUBLIE`), `retirees` (`RETIRE`).
 
 ---
 
