@@ -682,7 +682,8 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 | imCtrlDispatch | string | Non | max 7 |
 | imCtrlCc | string | Non | max 7 |
 | imCtrlMembre | string | Non | max 7 |
-| dateDispatch | string (date) | Non | |
+| dateDispatch | string (date-heure) | Non | format **`yyyy-MM-dd HH:mm`** (date **et heure** du dispatch) |
+| datePredispatch | string (date-heure) | — (réponse) | **`yyyy-MM-dd HH:mm`** — date/heure de réception du dossier par le secrétaire (`t_reception.DATE_RECEPTION` la plus récente du dossier) ; lecture seule, **`null`** si aucune réception |
 | dateCtrlAssigne | string (date) | Non | |
 | instructions | string | Non | max 500 |
 | interimDispatch | boolean | Oui | @NotNull (voir règle) |
@@ -701,8 +702,13 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 
 **Exemple — requête**
 ```json
-{ "idDispatch": 88, "idReception": 305, "imCtrlCc": "CCANT01", "imCtrlMembre": "MEMANT1", "dateDispatch": "2026-05-02", "instructions": "Examiner en priorité", "interimDispatch": false }
+{ "idDispatch": 88, "idReception": 305, "imCtrlCc": "CCANT01", "imCtrlMembre": "MEMANT1", "dateDispatch": "2026-05-02 09:30", "instructions": "Examiner en priorité", "interimDispatch": false }
 ```
+
+> **Dates/heures (⚠️ règle ajoutée).** `dateDispatch` est une **date-heure** (`yyyy-MM-dd HH:mm`,
+> colonne `t_dispatch.DATE_DISPATCH` en TIMESTAMP). `datePredispatch` (lecture seule) reprend la
+> date/heure de **réception du dossier par le secrétaire** — `t_reception.DATE_RECEPTION` la **plus
+> récente** du dossier rattaché (navettes) ; **`null`** si le dossier n'a aucune réception datée.
 
 ---
 
@@ -1410,6 +1416,18 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | nbDossiersConformes | number | dossiers conformes (observations levées) |
 | tauxConformitePct | number | conformes / soumis × 100 |
 | topNonConformite | `PointNonConformiteDto[]` | top 5 des points de contrôle non conformes |
+| compteurs | `CompteursDto` | compteurs de contenu par section du menu (Président) — voir ci-dessous |
+
+**Champs `CompteursDto`** — comptes **globaux** (toutes localités) par section du menu
+
+| Champ (JSON) | Type | Description |
+|---|---|---|
+| predispatch | number | dossiers prêts à dispatcher (`t_dossier.STATUT = PRET_DISPATCH`) |
+| dispatch | number | dossiers dispatchés (`t_dossier.STATUT = DISPATCHE`) |
+| projetsPV | number | projets de PV non signés (`t_pv_examen.STATUT_PV ≠ SIGNE`) |
+| lettresRenvoi | number | lettres de renvoi soumises (`t_lettre_renvoi.STATUT = SOUMIS`) |
+| pvDefinitifs | number | PV signés (`t_pv_examen.STATUT_PV = SIGNE`) |
+| demandesRetrait | number | demandes de retrait en attente (`t_demande_retrait.STATUT = EN_ATTENTE`) |
 
 **Champs `PointNonConformiteDto`**
 
@@ -1434,9 +1452,15 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
   "nbDossiersSoumis": 75, "nbDossiersConformes": 47, "tauxConformitePct": 62.67,
   "topNonConformite": [
     { "idPointCtrl": 14, "libelle": "Absence de pièce justificative", "nbTotal": 58, "nbNonConforme": 22, "tauxNonConformitePct": 37.93 }
-  ]
+  ],
+  "compteurs": { "predispatch": 5, "dispatch": 8, "projetsPV": 3, "lettresRenvoi": 1, "pvDefinitifs": 6, "demandesRetrait": 2 }
 }
 ```
+
+> **Compteurs de contenu (⚠️ règle ajoutée).** L'objet `compteurs` (menu Président) donne des comptes
+> **globaux** (toutes localités) par section : pré-dispatch, dispatch, projets de PV, lettres de renvoi
+> soumises, PV signés, demandes de retrait en attente. *(Le CC reçoit ces compteurs globaux à côté de
+> ses KPIs filtrés sur sa localité.)*
 
 ---
 
