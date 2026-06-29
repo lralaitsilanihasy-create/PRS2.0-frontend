@@ -1479,6 +1479,13 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | publiees | number | publications publiées (`STATUT_PUBLI = PUBLIE`) |
 | retirees | number | publications retirées (`STATUT_PUBLI = RETIRE`) |
 
+**Champs `CompteursAssistantDto`** (réponse de `mes-compteurs-assistant`) — documents signés de sa localité
+
+| Champ (JSON) | Type | Description |
+|---|---|---|
+| lettresRenvoi | number | lettres de renvoi signées de sa localité (`t_lettre_renvoi.STATUT = SIGNE`) |
+| pvDefinitifs | number | PV définitifs (signés) de sa localité (`t_pv_examen.STATUT_PV = SIGNE`) |
+
 **Endpoints**
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
@@ -1489,6 +1496,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | GET | /api/kpis/mes-compteurs-secretaire | — | `CompteursSecretaireDto` | 200, 403 | **SECRETAIRE** (ou délégué) / ADMINISTRATEUR — compteurs de sa localité |
 | GET | /api/kpis/mes-compteurs-membre | — | `CompteursMembreDto` | 200, 403 | **MEMBRE** (ou délégué) / ADMINISTRATEUR — compteurs de ses dossiers attribués |
 | GET | /api/kpis/mes-compteurs-publication | — | `CompteursPublicationDto` | 200, 403 | **CHARGE_PUBLICATION** / ADMINISTRATEUR — workflow de publication (global) |
+| GET | /api/kpis/mes-compteurs-assistant | — | `CompteursAssistantDto` | 200, 403 | **ASSISTANT_CONTROLEUR** / ADMINISTRATEUR — documents signés de sa localité |
 
 **Exemple — réponse**
 ```json
@@ -1557,6 +1565,16 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > **Compteurs Chargé de publication (⚠️ règle ajoutée).** `GET /api/kpis/mes-compteurs-publication`
 > (réservé **CHARGE_PUBLICATION**) renvoie des comptes **globaux** (rôle transversal, sans localité) du
 > workflow de publication : `aPublier` (`EN_ATTENTE`), `publiees` (`PUBLIE`), `retirees` (`RETIRE`).
+
+**Exemple — réponse `GET /api/kpis/mes-compteurs-assistant`** (Assistant contrôleur)
+```json
+{ "lettresRenvoi": 3, "pvDefinitifs": 9 }
+```
+
+> **Compteurs Assistant contrôleur (⚠️ règle ajoutée).** `GET /api/kpis/mes-compteurs-assistant`
+> (réservé **ASSISTANT_CONTROLEUR**) renvoie, **filtrés sur sa localité** (via la réception), les
+> documents signés qu'il distribue : `lettresRenvoi` (lettres de renvoi `SIGNE`) et `pvDefinitifs`
+> (PV `SIGNE`).
 
 ---
 
