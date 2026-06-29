@@ -1418,7 +1418,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | topNonConformite | `PointNonConformiteDto[]` | top 5 des points de contrôle non conformes |
 | compteurs | `CompteursDto` | compteurs de contenu par section du menu (Président) — voir ci-dessous |
 
-**Champs `CompteursDto`** — comptes **globaux** (toutes localités) par section du menu
+**Champs `CompteursDto`** — par section du menu ; **globaux** (toutes localités) pour Président/Administrateur, **filtrés sur la localité** pour le Chef de commission
 
 | Champ (JSON) | Type | Description |
 |---|---|---|
@@ -1457,10 +1457,11 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 }
 ```
 
-> **Compteurs de contenu (⚠️ règle ajoutée).** L'objet `compteurs` (menu Président) donne des comptes
-> **globaux** (toutes localités) par section : pré-dispatch, dispatch, projets de PV, lettres de renvoi
-> soumises, PV signés, demandes de retrait en attente. *(Le CC reçoit ces compteurs globaux à côté de
-> ses KPIs filtrés sur sa localité.)*
+> **Compteurs de contenu (⚠️ règle ajoutée).** L'objet `compteurs` donne, par section (pré-dispatch,
+> dispatch, projets de PV, lettres de renvoi soumises, PV signés, demandes de retrait en attente), des
+> comptes **globaux** (toutes localités) pour le **Président/Administrateur** et **filtrés sur sa
+> localité** pour le **Chef de commission** — cohérent avec le périmètre du reste du tableau de bord.
+> Scope localité : Dossier/Demande via `idLocalite`, PV/Lettre via la localité de la réception.
 
 ---
 
