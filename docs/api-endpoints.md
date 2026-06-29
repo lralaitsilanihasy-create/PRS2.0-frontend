@@ -1464,6 +1464,13 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | aReceptionner | number | dossiers à réceptionner (`STATUT = SOUMIS`, sans réception, de sa localité) |
 | receptions | number | réceptions enregistrées dans sa localité (historique) |
 
+**Champs `CompteursMembreDto`** (réponse de `mes-compteurs-membre`) — par section du menu **Membre**, filtrés sur le Membre attributaire (son IM)
+
+| Champ (JSON) | Type | Description |
+|---|---|---|
+| aExaminer | number | dossiers à examiner (`STATUT = DISPATCHE` qui lui sont attribués) |
+| examines | number | dossiers examinés (`STATUT IN (EXAMINE, PV_SIGNE, EN_VERIFICATION, CLOTURE)`) |
+
 **Endpoints**
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
@@ -1472,6 +1479,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | GET | /api/kpis/mes-compteurs | — | `CompteursPrmpDto` | 200, 403 | **PRMP** (compteurs de son propre périmètre) |
 | GET | /api/kpis/mes-compteurs-verificateur | — | `CompteursVerificateurDto` | 200, 403 | **VERIFICATEUR** (ou délégué) / ADMINISTRATEUR — compteurs de sa localité |
 | GET | /api/kpis/mes-compteurs-secretaire | — | `CompteursSecretaireDto` | 200, 403 | **SECRETAIRE** (ou délégué) / ADMINISTRATEUR — compteurs de sa localité |
+| GET | /api/kpis/mes-compteurs-membre | — | `CompteursMembreDto` | 200, 403 | **MEMBRE** (ou délégué) / ADMINISTRATEUR — compteurs de ses dossiers attribués |
 
 **Exemple — réponse**
 ```json
@@ -1521,6 +1529,16 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > **SECRETAIRE** ou délégué) renvoie, **filtrés sur sa localité** : `aReceptionner` (sa file de dossiers
 > `SOUMIS` sans réception, miroir de `/api/dossiers/a-receptionner`) et `receptions` (nombre de réceptions
 > de sa localité, via le contrôleur réceptionnaire).
+
+**Exemple — réponse `GET /api/kpis/mes-compteurs-membre`** (Membre)
+```json
+{ "aExaminer": 2, "examines": 15 }
+```
+
+> **Compteurs Membre (⚠️ règle ajoutée).** `GET /api/kpis/mes-compteurs-membre` (réservé **MEMBRE** ou
+> délégué) renvoie, **filtrés sur le Membre attributaire** (son IM via `Dispatch.imCtrlMembre`) :
+> `aExaminer` (ses dossiers `DISPATCHE`, miroir de `/api/dossiers/a-examiner`) et `examines` (son
+> historique : `EXAMINE`/`PV_SIGNE`/`EN_VERIFICATION`/`CLOTURE`).
 
 ---
 
