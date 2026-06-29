@@ -1449,12 +1449,21 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | dossiersVerifies | number | mes dossiers vérifiés (`t_dossier.STATUT IN (PV_SIGNE, CLOTURE)`) |
 | lettresRenvoi | number | mes lettres de renvoi signées (`t_lettre_renvoi.STATUT = SIGNE`) |
 
+**Champs `CompteursVerificateurDto`** (réponse de `mes-compteurs-verificateur`) — par section du menu **Vérificateur**, filtrés sur sa localité (miroir de ses worklists)
+
+| Champ (JSON) | Type | Description |
+|---|---|---|
+| aVerifier | number | dossiers à vérifier (`STATUT IN (EN_VERIFICATION, EN_ATTENTE_DECISION_PRMP)`) |
+| verifies | number | dossiers vérifiés/clôturés (`STATUT = CLOTURE` avec PV `SIGNE`) |
+| enAttentePrmp | number | dossiers en attente de décision PRMP (`STATUT = EN_ATTENTE_DECISION_PRMP`) |
+
 **Endpoints**
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
 | GET | /api/kpis/tableau-bord | — | `TableauBordDto` | 200, 403 | PRESIDENT / ADMINISTRATEUR / CHEF_COMMISSION |
 | GET | /api/kpis/mes-compteurs | — | `CompteursPrmpDto` | 200, 403 | **PRMP** (compteurs de son propre périmètre) |
+| GET | /api/kpis/mes-compteurs-verificateur | — | `CompteursVerificateurDto` | 200, 403 | **VERIFICATEUR** (ou délégué) / ADMINISTRATEUR — compteurs de sa localité |
 
 **Exemple — réponse**
 ```json
@@ -1483,6 +1492,17 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > compteurs des sections du menu PRMP, **tous filtrés sur la PRMP authentifiée** (JWT) : « Mes brouillons »,
 > « Mes PPM & marchés », « Dossiers à rectifier » non traités (`EN_ATTENTE_DECISION_PRMP`), « Dossiers
 > vérifiés » (`PV_SIGNE`/`CLOTURE`), « Mes lettres de renvoi » signées.
+
+**Exemple — réponse `GET /api/kpis/mes-compteurs-verificateur`** (Vérificateur)
+```json
+{ "aVerifier": 4, "verifies": 18, "enAttentePrmp": 1 }
+```
+
+> **Compteurs Vérificateur (⚠️ règle ajoutée).** `GET /api/kpis/mes-compteurs-verificateur` (réservé
+> **VERIFICATEUR** ou délégué) renvoie les compteurs de ses trois worklists, **filtrés sur sa localité**
+> (via la réception) : « à vérifier », « vérifiés/clôturés », « en attente décision PRMP ». Un dossier
+> `EN_ATTENTE_DECISION_PRMP` est compté **à la fois** dans `aVerifier` (lecture seule) et `enAttentePrmp`,
+> comme dans les écrans.
 
 ---
 
