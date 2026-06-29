@@ -1486,6 +1486,14 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | lettresRenvoi | number | lettres de renvoi signées de sa localité (`t_lettre_renvoi.STATUT = SIGNE`) |
 | pvDefinitifs | number | PV définitifs (signés) de sa localité (`t_pv_examen.STATUT_PV = SIGNE`) |
 
+**Champs `CompteursAdminDto`** (réponse de `mes-compteurs-admin`) — comptes **globaux** (rôle transversal)
+
+| Champ (JSON) | Type | Description |
+|---|---|---|
+| inscriptionsEnAttente | number | inscriptions PRMP en attente de validation (`t_compte_auth.STATUT = EN_ATTENTE`, type PRMP) |
+| comptes | number | nombre total de comptes d'authentification |
+| journalAudit | number | nombre total d'entrées du journal d'audit |
+
 **Endpoints**
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
@@ -1497,6 +1505,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | GET | /api/kpis/mes-compteurs-membre | — | `CompteursMembreDto` | 200, 403 | **MEMBRE** (ou délégué) / ADMINISTRATEUR — compteurs de ses dossiers attribués |
 | GET | /api/kpis/mes-compteurs-publication | — | `CompteursPublicationDto` | 200, 403 | **CHARGE_PUBLICATION** / ADMINISTRATEUR — workflow de publication (global) |
 | GET | /api/kpis/mes-compteurs-assistant | — | `CompteursAssistantDto` | 200, 403 | **ASSISTANT_CONTROLEUR** / ADMINISTRATEUR — documents signés de sa localité |
+| GET | /api/kpis/mes-compteurs-admin | — | `CompteursAdminDto` | 200, 403 | **ADMINISTRATEUR** — inscriptions, comptes, audit (global) |
 
 **Exemple — réponse**
 ```json
@@ -1575,6 +1584,16 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > (réservé **ASSISTANT_CONTROLEUR**) renvoie, **filtrés sur sa localité** (via la réception), les
 > documents signés qu'il distribue : `lettresRenvoi` (lettres de renvoi `SIGNE`) et `pvDefinitifs`
 > (PV `SIGNE`).
+
+**Exemple — réponse `GET /api/kpis/mes-compteurs-admin`** (Administrateur)
+```json
+{ "inscriptionsEnAttente": 2, "comptes": 48, "journalAudit": 1530 }
+```
+
+> **Compteurs Administrateur (⚠️ règle ajoutée).** `GET /api/kpis/mes-compteurs-admin` (réservé
+> **ADMINISTRATEUR**) renvoie des comptes **globaux** : `inscriptionsEnAttente` (inscriptions PRMP
+> `EN_ATTENTE` à valider), `comptes` (total des comptes d'authentification), `journalAudit` (total des
+> entrées du journal d'audit). L'Administrateur conserve par ailleurs la vue globale du `tableau-bord`.
 
 ---
 
