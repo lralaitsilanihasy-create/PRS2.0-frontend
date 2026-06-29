@@ -1457,6 +1457,13 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | verifies | number | dossiers vérifiés/clôturés (`STATUT = CLOTURE` avec PV `SIGNE`) |
 | enAttentePrmp | number | dossiers en attente de décision PRMP (`STATUT = EN_ATTENTE_DECISION_PRMP`) |
 
+**Champs `CompteursSecretaireDto`** (réponse de `mes-compteurs-secretaire`) — par section du menu **Secrétaire**, filtrés sur sa localité
+
+| Champ (JSON) | Type | Description |
+|---|---|---|
+| aReceptionner | number | dossiers à réceptionner (`STATUT = SOUMIS`, sans réception, de sa localité) |
+| receptions | number | réceptions enregistrées dans sa localité (historique) |
+
 **Endpoints**
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
@@ -1464,6 +1471,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | GET | /api/kpis/tableau-bord | — | `TableauBordDto` | 200, 403 | PRESIDENT / ADMINISTRATEUR / CHEF_COMMISSION |
 | GET | /api/kpis/mes-compteurs | — | `CompteursPrmpDto` | 200, 403 | **PRMP** (compteurs de son propre périmètre) |
 | GET | /api/kpis/mes-compteurs-verificateur | — | `CompteursVerificateurDto` | 200, 403 | **VERIFICATEUR** (ou délégué) / ADMINISTRATEUR — compteurs de sa localité |
+| GET | /api/kpis/mes-compteurs-secretaire | — | `CompteursSecretaireDto` | 200, 403 | **SECRETAIRE** (ou délégué) / ADMINISTRATEUR — compteurs de sa localité |
 
 **Exemple — réponse**
 ```json
@@ -1503,6 +1511,16 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > (via la réception) : « à vérifier », « vérifiés/clôturés », « en attente décision PRMP ». Un dossier
 > `EN_ATTENTE_DECISION_PRMP` est compté **à la fois** dans `aVerifier` (lecture seule) et `enAttentePrmp`,
 > comme dans les écrans.
+
+**Exemple — réponse `GET /api/kpis/mes-compteurs-secretaire`** (Secrétaire)
+```json
+{ "aReceptionner": 6, "receptions": 23 }
+```
+
+> **Compteurs Secrétaire (⚠️ règle ajoutée).** `GET /api/kpis/mes-compteurs-secretaire` (réservé
+> **SECRETAIRE** ou délégué) renvoie, **filtrés sur sa localité** : `aReceptionner` (sa file de dossiers
+> `SOUMIS` sans réception, miroir de `/api/dossiers/a-receptionner`) et `receptions` (nombre de réceptions
+> de sa localité, via le contrôleur réceptionnaire).
 
 ---
 
