@@ -64,6 +64,17 @@ export class MainLayout {
   /** Sidebar ouverte en mode drawer (tablette / mobile). Sans effet sur desktop. */
   readonly sidebarOpen = signal(false);
 
+  /** Couleur du badge de compteur par item (i=info, w=warning, s=success, d=danger). */
+  private readonly badgeSeverites: Record<string, string> = {
+    '/prmp/mes-brouillons': 'i',
+    '/prmp/ppm-marches': 'i',
+    '/prmp/dossiers-verifies': 's',
+    '/prmp/lettre-renvois': 'd',
+  };
+  badgeSeverity(path: string): string {
+    return this.badgeSeverites[path] ?? '';
+  }
+
   countFor(path: string): number | undefined {
     return this.counts()[path];
   }

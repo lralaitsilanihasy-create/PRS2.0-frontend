@@ -61,6 +61,12 @@
   color: var(--danger-text);
 }
 
+/* Couleurs de badge par sévérité (priment sur l'accent de profil). */
+.nav-badge.i { background: var(--info-bg) !important; color: var(--info-text) !important; }
+.nav-badge.w { background: var(--warning-bg) !important; color: var(--warning-text) !important; }
+.nav-badge.s { background: var(--success-bg) !important; color: var(--success-text) !important; }
+.nav-badge.d { background: var(--danger-bg) !important; color: var(--danger-text) !important; }
+
 /* Le titre de la topbar reste en casse normale (le nom de l'utilisateur). */
 .topbar-title {
   text-transform: none;

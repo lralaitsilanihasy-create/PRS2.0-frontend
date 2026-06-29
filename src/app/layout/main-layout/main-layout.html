@@ -35,6 +35,9 @@
                 <span class="nav-icon" aria-hidden="true">{{ child.icon }}</span>
               }
               <span class="nav-label">{{ child.label }}</span>
+              @if (countFor(child.path) !== undefined) {
+                <span [class]="'nav-badge ' + badgeSeverity(child.path)">{{ countFor(child.path) }}</span>
+              }
             </a>
           }
         }
@@ -49,7 +52,7 @@
           }
           <span class="nav-label">{{ item.label }}</span>
           @if (countFor(item.path) !== undefined) {
-            <span class="nav-badge">{{ countFor(item.path) }}</span>
+            <span [class]="'nav-badge ' + badgeSeverity(item.path)">{{ countFor(item.path) }}</span>
           }
           @if (alertFor(item.path)) {
             <span class="nav-badge nav-badge--alert">{{ alertFor(item.path) }}</span>
