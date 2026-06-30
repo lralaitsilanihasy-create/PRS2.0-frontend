@@ -1274,10 +1274,14 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > uniquement** (Président → **403**, message « Seul le Chef de Commission peut signer une lettre de renvoi
 > pour une localité régionale. »).
 >
-> **Document PDF (⚠️ règle ajoutée).** À la signature, le **PDF** de la lettre est **généré** (mise en page
-> programmatique selon la localité — variante centrale/régionale pour le libellé du signataire) et stocké
-> (`t_lettre_renvoi.DOCUMENT_PDF`). Téléchargeable via `GET /api/lettre-renvois/{id}/document` (PDF), dans
-> le périmètre de la lettre. *(Génération maison OpenPDF, sans modèle Word ni dépendance externe.)*
+> **Document PDF (⚠️ règle ajoutée).** À la signature, le **PDF** de la lettre est **généré** et stocké
+> (`t_lettre_renvoi.DOCUMENT_PDF`), puis téléchargeable via `GET /api/lettre-renvois/{id}/document` (PDF),
+> dans le périmètre de la lettre. Le document reproduit la mise en page officielle : **en-tête républicain**
+> (`REPOBLIKAN'I MADAGASIKARA`, devise), ministère, **CNM** et **type de commission** selon la localité
+> (centrale/régionale), destinataire (« Madame/Monsieur la PRMP de `<entité>` »), **objet/réf**, corps de
+> la lettre et **nom réel du signataire**. *(Génération programmatique OpenPDF — les modèles `.docx` et une
+> chaîne docx→PDF/LibreOffice ne sont pas disponibles dans l'environnement ; le rendu reproduit le contenu
+> du modèle sans utiliser le fichier `.docx` lui-même.)*
 
 ---
 
