@@ -1229,7 +1229,6 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | idExamen | number | Oui | @NotNull (« L'examen est obligatoire. ») — FK `t_examen` (**non unique** : N lettres/examen) |
 | idDossier | number | — (réponse) | **lecture seule** (dérivé de l'examen) |
 | refLettre | string | — (réponse) | **générée serveur**, dérivée de `refeDossier` (même séquence que le PV, `/LR/` au lieu de `/PV/`) : `<seq>/<type>/<code_localite>/LR/<année>` (ex. `00007/PPM/CRM-ANT/LR/2026`) ; `null` si `refeDossier` non structuré |
-| objetLettre | string | **Oui** | @NotNull (« L'objet de la lettre est obligatoire. »), max 500 |
 | corpsLettre | string | Non | corps libre de la lettre (TEXT, sans limite de taille) |
 | dateExamen | string (date) | — (réponse) | **lecture seule** (date d'examen) |
 | dateLettre | string (date) | — (réponse) | **posée serveur** (jour) |
@@ -1237,6 +1236,8 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | imSignataire | string | — (réponse) | **posé à la signature** (JWT) — ignoré en entrée |
 | nomSignataire | string | — (réponse) | **nom complet du signataire** (« prénoms nom »), peuplé serveur — lecture seule |
 | lue | boolean | — (réponse) | **lecture seule** — `true` si la lettre a déjà été lue par la PRMP courante (trace `t_lettre_renvoi_lue`) |
+
+> **Objet fixe** : l'objet de la lettre est constant (« lettre de renvoi », déjà inscrit en dur dans les modèles Word) — il n'est **plus saisi ni retourné** (champ `objetLettre` supprimé du DTO). S'il est encore envoyé dans le corps de la requête, il est **ignoré** (compat rétroactive du frontend). La colonne `t_lettre_renvoi.OBJET_LETTRE` reste en base pour l'historique mais n'est plus alimentée.
 
 **Endpoints**
 
