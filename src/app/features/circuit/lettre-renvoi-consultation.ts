@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier, LettreRenvoi, PieceJointeDossier, TypePieceJointe } from '../../models';
@@ -53,10 +54,13 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
                   <button type="button" class="btn btn-secondary btn-sm" (click)="basculer(l)">
                     {{ ouvert() === l.idLettre ? 'Masquer' : 'Détails' }}
                   </button>
-                  @if (signable && l.statut === 'SOUMIS') {
+                  @if (peutSigner(l)) {
                     <button type="button" class="btn btn-primary btn-sm" [disabled]="signature() === l.idLettre" (click)="signer(l)">
                       {{ signature() === l.idLettre ? 'Signature…' : 'Signer' }}
                     </button>
+                  }
+                  @if (l.statut === 'SIGNE') {
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="telechargerDocument(l)">⬇ PDF</button>
                   }
                 </td>
               </tr>
@@ -73,11 +77,21 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
                       <div><dt>Statut</dt><dd><app-statut-badge [statut]="l.statut" /></dd></div>
                       <div><dt>Signataire</dt><dd>{{ l.nomSignataire || '—' }}</dd></div>
                     </dl>
-                    @if (signable && l.statut === 'SOUMIS') {
+                    @if (peutSigner(l)) {
                       <div class="lrc__detail-foot">
                         <button type="button" class="btn btn-primary" [disabled]="signature() === l.idLettre" (click)="signer(l)">
                           {{ signature() === l.idLettre ? 'Signature…' : 'Signer la lettre' }}
                         </button>
+                      </div>
+                    }
+                    @if (signatureRegionaleBloquee(l)) {
+                      <p class="text-muted text-sm lrc__regional">
+                        Seul le Chef de Commission peut signer une lettre de renvoi pour une localité régionale.
+                      </p>
+                    }
+                    @if (l.statut === 'SIGNE') {
+                      <div class="lrc__detail-foot">
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="telechargerDocument(l)">⬇ Télécharger le PDF</button>
                       </div>
                     }
 
@@ -133,6 +147,7 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
   styles: `
     .lrc__actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
     .lrc__detail-foot { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
+    .lrc__regional { margin: 0.5rem 0 0; text-align: right; }
     .lrc__dl { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
     .lrc__dl > div { display: flex; gap: 0.5rem; align-items: baseline; }
     .lrc__dl dt { flex: 0 0 10rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
@@ -159,6 +174,7 @@ export class LettreRenvoiConsultation {
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly typePieceService = inject(TypePieceJointeService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
+  private readonly auth = inject(AuthService);
 
   private readonly source = (this.route.snapshot.data['source'] as 'mes' | 'localite') ?? 'localite';
   /** PRMP (`source = 'mes'`) : distingue les lettres lues / non lues et marque « lu » à l'ouverture. */
@@ -175,6 +191,8 @@ export class LettreRenvoiConsultation {
   readonly signature = signal<number | null>(null);
   private readonly dossierRefs = signal<Map<number, string>>(new Map());
   private readonly dossierTypes = signal<Map<number, string>>(new Map());
+  /** Localité du dossier de chaque lettre (pour la règle de signature ANT/régional). */
+  private readonly dossierLocalites = signal<Map<number, string>>(new Map());
   /** Pièces du dossier de la lettre ouverte (chargées au dépliage). */
   readonly pieces = signal<PieceJointeDossier[]>([]);
   /** Types de pièces (référentiel) pour le select d'ajout. */
@@ -192,6 +210,7 @@ export class LettreRenvoiConsultation {
     this.dossierService.list().subscribe((rows: Dossier[]) => {
       this.dossierRefs.set(new Map(rows.map((d) => [d.idDossier, d.refeDossier ?? ''])));
       this.dossierTypes.set(new Map(rows.map((d) => [d.idDossier, d.idTypeDossier ?? ''])));
+      this.dossierLocalites.set(new Map(rows.map((d) => [d.idDossier, d.idLocalite ?? ''])));
     });
     if (this.piecesUpload) {
       this.typePieceService.list().subscribe((rows) => this.typesPiece.set(rows));
@@ -227,6 +246,40 @@ export class LettreRenvoiConsultation {
         error: () => {},
       });
     }
+  }
+
+  /**
+   * Règle de signature par localité (le backend reste l'autorité — 403 sinon) :
+   * CC → toutes localités ; Président → localité centrale `ANT` uniquement.
+   */
+  peutSigner(l: LettreRenvoi): boolean {
+    if (!this.signable || l.statut !== 'SOUMIS') {
+      return false;
+    }
+    if (this.auth.role() === 'PRESIDENT') {
+      return l.idDossier != null && this.dossierLocalites().get(l.idDossier) === 'ANT';
+    }
+    return true; // CHEF_COMMISSION (toutes localités)
+  }
+  /** Président face à une lettre régionale (≠ ANT) : signature réservée au CC → message explicatif. */
+  signatureRegionaleBloquee(l: LettreRenvoi): boolean {
+    return (
+      this.signable &&
+      l.statut === 'SOUMIS' &&
+      this.auth.role() === 'PRESIDENT' &&
+      l.idDossier != null &&
+      this.dossierLocalites().get(l.idDossier) !== 'ANT'
+    );
+  }
+  /** Télécharge le PDF de la lettre signée (`GET /api/lettre-renvois/{id}/document`). */
+  telechargerDocument(l: LettreRenvoi): void {
+    if (l.idLettre == null) {
+      return;
+    }
+    this.service.document(l.idLettre).subscribe({
+      next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
+      error: () => this.toast.error('Impossible de télécharger le document.'),
+    });
   }
 
   // — Pièces jointes (PRMP, après lettre signée) —

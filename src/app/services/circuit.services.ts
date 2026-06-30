@@ -164,6 +164,10 @@ export class LettreRenvoiService extends CrudService<LettreRenvoi> {
     return this.http.get<LettreRenvoi[]>(`${this.baseUrl}/mes-lettres`);
   }
   // `getById(id)` : hérité de CrudService (`GET /api/lettre-renvois/{id}`).
+  /** `GET /api/lettre-renvois/{id}/document` — PDF de la lettre signée (dans le périmètre). */
+  document(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/document`, { responseType: 'blob' });
+  }
   /** `POST /api/lettre-renvois` (MEMBRE) — crée une lettre (BROUILLON) pendant l'examen. */
   creer(dto: LettreRenvoi): Observable<LettreRenvoi> {
     return this.create(dto);
