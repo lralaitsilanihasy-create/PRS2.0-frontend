@@ -258,6 +258,14 @@ export class DemandeRetraitService extends CrudService<DemandeRetrait> {
   protected readonly resource = 'demande-retraits';
   // `list()` = worklist PRMP (GET de base, filtré serveur — pas d'endpoint /mes).
 
+  /**
+   * `GET /api/demande-retraits/mes-demandes` (PRMP) — ses demandes ; **marque l'écran consulté**
+   * (dateDerniereVue = now) → remet à zéro le compteur `demandesRetraitNouvelles` du menu.
+   */
+  getMesDemandes(): Observable<DemandeRetrait[]> {
+    return this.http.get<DemandeRetrait[]>(`${this.baseUrl}/mes-demandes`);
+  }
+
   /** `GET /api/demande-retraits/a-valider` — EN_ATTENTE de la localité (CC/Président). */
   aValider(): Observable<DemandeRetrait[]> {
     return this.http.get<DemandeRetrait[]>(`${this.baseUrl}/a-valider`);

@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 import { CrudService } from './api/crud.service';
 import {
   Anomalie,
+  CompteursPrmp,
   Echeance,
   IndicateurCtrl,
   IndicateurPrmp,
@@ -97,6 +98,11 @@ export class KpiService {
 
   tableauBord(): Observable<TableauBord> {
     return this.http.get<TableauBord>(`${this.baseUrl}/tableau-bord`);
+  }
+
+  /** `GET /api/kpis/mes-compteurs` (PRMP) — compteurs du menu (filtrés sur la PRMP authentifiée). */
+  mesCompteurs(): Observable<CompteursPrmp> {
+    return this.http.get<CompteursPrmp>(`${this.baseUrl}/mes-compteurs`);
   }
 }
 

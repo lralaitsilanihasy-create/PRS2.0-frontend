@@ -7,6 +7,7 @@ import { DemandeRetrait, Dossier } from '../../models';
 import { DemandeRetraitService, DossierService, ReferenceLookupService } from '../../services';
 import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
+import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /**
  * Demande de retrait (PRMP) — deux colonnes : formulaire motivé (gauche) + détail
@@ -123,6 +124,7 @@ export class PrmpRetraits {
   private readonly dossierService = inject(DossierService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly toast = inject(ToastService);
+  private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
   readonly retirables = signal<Dossier[]>([]);
   readonly demandes = signal<DemandeRetrait[]>([]);
@@ -159,11 +161,14 @@ export class PrmpRetraits {
 
   private charger(): void {
     this.loading.set(true);
-    forkJoin({ retirables: this.dossierService.retirables(), demandes: this.service.list() }).subscribe({
+    // `mes-demandes` marque l'écran consulté côté serveur (remet à zéro le compteur du menu).
+    forkJoin({ retirables: this.dossierService.retirables(), demandes: this.service.getMesDemandes() }).subscribe({
       next: (r) => {
         this.retirables.set(r.retirables);
         this.demandes.set(r.demandes);
         this.loading.set(false);
+        // Le compteur « demandes de retrait nouvelles » a été remis à zéro serveur → rafraîchir le menu.
+        this.dossiersRefresh.notifierChangement();
       },
       error: () => this.loading.set(false),
     });

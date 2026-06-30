@@ -127,6 +127,18 @@ export interface PointNonConformite {
   tauxNonConformitePct: number;
 }
 
+/** Réponse de `GET /api/kpis/mes-compteurs` (PRMP) — compteurs par section du menu, filtrés sur la PRMP (JWT). */
+export interface CompteursPrmp {
+  brouillons: number;
+  ppmMarches: number;
+  dossiersARectifier: number;
+  dossiersVerifies: number;
+  /** Lettres de renvoi SIGNE non encore lues. */
+  lettresRenvoi: number;
+  /** Demandes passées à ACCEPTEE/REFUSEE depuis ma dernière consultation de l'écran. */
+  demandesRetraitNouvelles: number;
+}
+
 /** Réponse de `GET /api/kpis/tableau-bord` (PRESIDENT / ADMINISTRATEUR). */
 export interface TableauBord {
   /** Nombre de dossiers par statut. */

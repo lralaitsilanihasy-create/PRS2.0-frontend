@@ -11,6 +11,7 @@ import {
   DemandeRetraitService,
   DispatchService,
   DossierService,
+  KpiService,
   LettreRenvoiService,
   PpmService,
   PrmpService,
@@ -43,6 +44,7 @@ export class MainLayout {
   private readonly pvExamenService = inject(PvExamenService);
   private readonly lettreRenvoiService = inject(LettreRenvoiService);
   private readonly demandeRetraitService = inject(DemandeRetraitService);
+  private readonly kpiService = inject(KpiService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
   readonly role = this.auth.role;
@@ -72,6 +74,7 @@ export class MainLayout {
     '/prmp/ppm-marches': 'i',
     '/prmp/dossiers-verifies': 's',
     '/prmp/lettre-renvois': 'd',
+    '/prmp/retraits': 'd',
   };
   badgeSeverity(path: string): string {
     return this.badgeSeverites[path] ?? '';
@@ -196,14 +199,17 @@ export class MainLayout {
       ppms: this.ppmService.list(),
       verifies: this.dossierService.list('CLOTURE'),
       lettres: this.lettreRenvoiService.getMesLettres(),
+      compteurs: this.kpiService.mesCompteurs(),
     }).subscribe({
-      next: ({ brouillons, ppms, verifies, lettres }) => {
+      next: ({ brouillons, ppms, verifies, lettres, compteurs }) => {
         const c: Record<string, number> = {
           '/prmp/mes-brouillons': brouillons.length,
           '/prmp/ppm-marches': ppms.length,
           '/prmp/dossiers-verifies': verifies.length,
           // Lettres SIGNE non encore lues (le compteur décroît à la lecture).
           '/prmp/lettre-renvois': lettres.filter((l) => !l.lue).length,
+          // Demandes passées à ACCEPTEE/REFUSEE depuis ma dernière consultation (calcul serveur).
+          '/prmp/retraits': compteurs.demandesRetraitNouvelles,
         };
         this.counts.set(Object.fromEntries(Object.entries(c).filter(([, n]) => n > 0)));
       },
