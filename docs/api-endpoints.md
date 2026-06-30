@@ -1279,12 +1279,13 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > **`{refLettre}.pdf`** (les `/` remplacés par `_`, ex. `00007_PPM_CRM-ANT_LR_2026.pdf`) ; le chemin est
 > conservé dans `t_lettre_renvoi.CHEMIN_DOCUMENT`. Téléchargeable via `GET /api/lettre-renvois/{id}/document`
 > (PDF), dans le périmètre de la lettre (lecture du fichier FSX, repli sur `DOCUMENT_PDF` pour les anciennes
-> lettres). Le document reproduit la mise en page officielle : **en-tête républicain** (`REPOBLIKAN'I
-> MADAGASIKARA`, devise), ministère, **CNM**, **type de commission** selon la localité — régional suffixé de
-> la **localité du dossier** (ex. `COMMISSION REGIONALE DES MARCHES TOAMASINA`), destinataire, **objet/réf**,
-> corps, et **signataire** (régional : « Le Chef de la Commission Régionale des Marchés »). *(Génération
-> programmatique OpenPDF — les modèles `.docx`, un converter docx→PDF et LibreOffice ne sont pas disponibles
-> dans l'environnement ; le rendu reproduit le contenu du modèle sans utiliser le fichier `.docx`.)*
+> lettres). Le PDF est produit **à partir du modèle Word fourni** (`resources/templates/LR_CENTRALE.docx`
+> pour la localité centrale `ANT`, `LR_REGIONALE.docx` sinon) : **copie du `.docx`** + **remplacement des
+> placeholders** (`<DATE_LETTRE>`, `<NOM_ENTITE_CONTRACT>`, `<REFERENCE DOSSIER>`, `<DATE EXAMEN>`,
+> `<CORPS DE LA LETTRE>`, le nom du signataire, et `<LOCALITE DOSSIER>` pour le régional) **avec fusion des
+> runs scindés** (Apache POI XWPF), puis **conversion docx→PDF 100 % Java** (docx4j + Apache FOP, **sans
+> LibreOffice**). La mise en forme et l'**emblème** du modèle sont conservés ; le nom du signataire remplace
+> uniquement le placeholder (aucun libellé de rôle ajouté).
 
 ---
 
