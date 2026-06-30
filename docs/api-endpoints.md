@@ -1283,9 +1283,10 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > pour la localité centrale `ANT`, `LR_REGIONALE.docx` sinon) : **copie du `.docx`** + **remplacement des
 > placeholders** (`<DATE_LETTRE>`, `<NOM_ENTITE_CONTRACT>`, `<REFERENCE DOSSIER>`, `<DATE EXAMEN>`,
 > `<CORPS DE LA LETTRE>`, le nom du signataire, et `<LOCALITE DOSSIER>` pour le régional) **avec fusion des
-> runs scindés** (Apache POI XWPF), puis **conversion docx→PDF 100 % Java** (docx4j + Apache FOP, **sans
-> LibreOffice**). La mise en forme et l'**emblème** du modèle sont conservés ; le nom du signataire remplace
-> uniquement le placeholder (aucun libellé de rôle ajouté).
+> runs scindés** (Apache POI XWPF), puis **conversion docx→PDF via Microsoft Word** (documents4j local) pour
+> un rendu **fidèle au modèle** (positionnement des pointillés d'en-tête et du signataire conformes à Word).
+> La mise en forme et l'**emblème** du modèle sont conservés ; le nom du signataire remplace uniquement le
+> placeholder (aucun libellé de rôle ajouté). _Pré-requis machine/CI : Microsoft Word installé (automation COM)._
 
 ---
 
