@@ -1205,13 +1205,29 @@ dossier/PPM (désormais réservée Admin).
 `{id}` = idExamen (number).
 
 > ⚠️ **Soumission de l'examen (règle ajoutée).** `POST /api/examens/{id}/soumettre` produit **toujours un
-> Projet de PV** (`PvExamenService`, `idPv` alloué serveur). Corps `ExamenSoumissionRequest` `{ idAvis }`
-> = avis du PV (FAV/FAVR/DEF/NSP), obligatoire sur le PV. *(La lettre de renvoi est désormais une action
-> séparée pendant l'examen — ressource `/api/lettre-renvois` ; `ExamenDto` n'a pas de champ `typeResultat`.)*
+> Projet de PV** (`PvExamenService`, `idPv` alloué serveur). Corps `ExamenSoumissionRequest`
+> `{ idAvis, idSecretaireSeance }` : `idAvis` = avis du PV (FAV/FAVR/DEF/NSP), obligatoire ;
+> `idSecretaireSeance` = matricule du **Vérificateur désigné Secrétaire de séance**, **obligatoire** et qui
+> doit être un VERIFICATEUR de la **localité du dossier** (circuit/réception). Absent ou invalide → **400**
+> `{ erreurs:[{ champ:"idSecretaireSeance", message }] }`. *(La lettre de renvoi est une action séparée
+> pendant l'examen — ressource `/api/lettre-renvois` ; `ExamenDto` n'a pas de champ `typeResultat`.)*
+>
+> ⚠️ **Projet de PV — document généré (règle ajoutée).** À la soumission, si le PV est éligible — avis
+> **favorable sous réserve** (`FAVR`), dossier de **localité centrale** (`ANT`) et **toutes** les lignes de
+> marché du PPM en **appel d'offres ouvert** — le **PDF du Projet de PV** est généré à partir du modèle Word
+> `PV_AFSR_PPMAGPM_CENTRALE.docx` (copie du modèle + remplacement des placeholders ; date d'examen formatée et
+> **en toutes lettres** ; bloc « Étaient présents » filtré sur les signataires effectifs ; ANNEXE = une ligne
+> par observation des points non conformes) puis converti via Microsoft Word (documents4j) et **stocké sur le
+> FSX** (`storage.pv-examen.path`, sous-répertoire `PV/`), chemin conservé dans `t_pv_examen.CHEMIN_DOCUMENT`.
+> Hors de ces conditions, le PV est créé normalement **sans document**. _Pré-requis machine/CI : Word installé._
 
-**Exemple — requête**
+**Exemple — requête (examen)**
 ```json
 { "idExamen": 201, "idDispatch": 88, "imCtrlMembre": "MEMANT1", "dateExamen": "2026-05-08" }
+```
+**Exemple — corps `…/soumettre`**
+```json
+{ "idAvis": "FAVR", "idSecretaireSeance": "VERANT1" }
 ```
 
 ---
@@ -2430,6 +2446,8 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` et une `dateFi
 | datePv | string (date) | Non | |
 | referencePv | string | Non | max 100 — référence libre (saisie ; reprise dans les notifications) |
 | refePv | string | — (réponse) | max 120 — **référence officielle dérivée du dossier**, générée serveur, **unique** (lecture seule) |
+| idSecretaireSeance | string | — (posé à la soumission) | max 7 — Vérificateur désigné **Secrétaire de séance** (validé à `…/examens/{id}/soumettre`) |
+| nomSecretaireSeance | string | — (réponse) | nom complet du secrétaire de séance (« prénoms nom »), peuplé serveur — lecture seule |
 
 > ⚠️ **Référence du PV (`refePv`) — règle ajoutée.** À la création, le serveur dérive `refePv` du `refeDossier`
 > du dossier rattaché en insérant **`/PV` avant l'année** : `00003/PPM/CRM-ANT/2026` → `00003/PPM/CRM-ANT/PV/2026`.
