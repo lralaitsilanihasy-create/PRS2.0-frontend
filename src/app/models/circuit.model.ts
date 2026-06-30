@@ -121,6 +121,8 @@ export interface LettreRenvoi {
   imSignataire?: string;
   /** Nom complet du signataire (« prénoms nom »), peuplé serveur — lecture seule. */
   nomSignataire?: string;
+  /** `true` si la lettre a déjà été lue par la PRMP courante (réponse, lecture seule). */
+  lue?: boolean;
 }
 
 /** Résultat d'un point de contrôle examiné. */

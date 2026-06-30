@@ -6,6 +6,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier, LettreRenvoi, PieceJointeDossier, TypePieceJointe } from '../../models';
 import { DossierService, LettreRenvoiService, PieceJointeDossierService, TypePieceJointeService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 
 /**
  * Consultation des lettres de renvoi, partagée par profil via `route.data` :
@@ -36,8 +37,14 @@ import { StatutBadge } from '../../shared/circuit';
           </thead>
           <tbody>
             @for (l of lettres(); track l.idLettre) {
-              <tr>
-                <td class="cnm-mono">{{ l.refLettre || ('#' + l.idLettre) }}</td>
+              <tr [class.lrc__unread]="afficherLue && l.lue === false">
+                <td class="cnm-mono">
+                  <span class="lrc__ref">
+                    @if (afficherLue && l.lue === false) { <span class="lrc__unread-dot" aria-hidden="true"></span> }
+                    {{ l.refLettre || ('#' + l.idLettre) }}
+                    @if (afficherLue && l.lue === false) { <span class="badge badge-danger lrc__nouveau">Non lue</span> }
+                  </span>
+                </td>
                 <td>{{ refDossier(l) }}</td>
                 <td>{{ l.objetLettre || '—' }}</td>
                 <td class="cnm-mono">{{ l.dateLettre || '—' }}</td>
@@ -137,6 +144,11 @@ import { StatutBadge } from '../../shared/circuit';
     .lrc__upload { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
     .table-card td { white-space: normal; }
     .lrc__detail > td { background: var(--c-50); }
+    .lrc__ref { display: inline-flex; align-items: center; gap: 7px; }
+    .lrc__unread { background: var(--p-50); }
+    .lrc__unread td { font-weight: 600; }
+    .lrc__unread-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--danger-text); flex-shrink: 0; display: inline-block; }
+    .lrc__nouveau { font-size: 9px; }
   `,
 })
 export class LettreRenvoiConsultation {
@@ -146,8 +158,11 @@ export class LettreRenvoiConsultation {
   private readonly toast = inject(ToastService);
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly typePieceService = inject(TypePieceJointeService);
+  private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
   private readonly source = (this.route.snapshot.data['source'] as 'mes' | 'localite') ?? 'localite';
+  /** PRMP (`source = 'mes'`) : distingue les lettres lues / non lues et marque « lu » à l'ouverture. */
+  readonly afficherLue = this.source === 'mes';
   /** CC / Président : autorise la signature des lettres SOUMIS. */
   readonly signable = (this.route.snapshot.data['signable'] as boolean) ?? false;
   /** PRMP : autorise l'ajout de pièces après une lettre de renvoi signée. */
@@ -200,6 +215,17 @@ export class LettreRenvoiConsultation {
       this.uploadFile.set(null);
       this.pieces.set([]);
       this.pieceService.getByDossier(l.idDossier).subscribe((rows) => this.pieces.set(rows));
+    }
+    // PRMP : consulter le détail marque la lettre « lue » côté serveur (GET /{id}).
+    // On reflète l'état localement et on notifie le menu pour décrémenter le compteur.
+    if (ouverture && this.afficherLue && l.lue === false && l.idLettre != null) {
+      this.service.getById(l.idLettre).subscribe({
+        next: () => {
+          this.lettres.update((arr) => arr.map((x) => (x.idLettre === l.idLettre ? { ...x, lue: true } : x)));
+          this.dossiersRefresh.notifierChangement();
+        },
+        error: () => {},
+      });
     }
   }
 

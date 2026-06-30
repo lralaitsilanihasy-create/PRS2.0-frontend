@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { filter, forkJoin } from 'rxjs';
+import { filter, forkJoin, skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { NavItem, navFor } from '../../core/navigation/navigation';
+import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 import {
   ControleurService,
   DemandeRetraitService,
@@ -42,6 +43,7 @@ export class MainLayout {
   private readonly pvExamenService = inject(PvExamenService);
   private readonly lettreRenvoiService = inject(LettreRenvoiService);
   private readonly demandeRetraitService = inject(DemandeRetraitService);
+  private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
   readonly role = this.auth.role;
   readonly login = this.auth.login;
@@ -135,6 +137,11 @@ export class MainLayout {
           this.rafraichirAlertesPrmp();
           this.rafraichirCompteursPrmp();
         });
+      // Mise à jour immédiate des compteurs après une mutation signalée
+      // (ex. lecture d'une lettre de renvoi → décrément du compteur).
+      toObservable(this.dossiersRefresh.revision)
+        .pipe(skip(1), takeUntilDestroyed())
+        .subscribe(() => this.rafraichirCompteursPrmp());
     }
 
     // Président : compteurs de contenu par item de menu (dérivés des endpoints de liste).
@@ -195,7 +202,8 @@ export class MainLayout {
           '/prmp/mes-brouillons': brouillons.length,
           '/prmp/ppm-marches': ppms.length,
           '/prmp/dossiers-verifies': verifies.length,
-          '/prmp/lettre-renvois': lettres.length,
+          // Lettres SIGNE non encore lues (le compteur décroît à la lecture).
+          '/prmp/lettre-renvois': lettres.filter((l) => !l.lue).length,
         };
         this.counts.set(Object.fromEntries(Object.entries(c).filter(([, n]) => n > 0)));
       },
