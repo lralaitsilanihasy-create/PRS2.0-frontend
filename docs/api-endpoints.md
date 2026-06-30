@@ -583,6 +583,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
 | GET | /api/demande-retraits | — | `DemandeRetraitDto[]` | 200 | Authentifié (filtré) — worklist PRMP |
+| GET | /api/demande-retraits/mes-demandes | — | `DemandeRetraitDto[]` | 200, 403 | **PRMP** — ses demandes ; **marque l'écran consulté** (voir ci-dessous) |
 | GET | /api/demande-retraits/a-valider | — | `DemandeRetraitDto[]` | 200, 403 | CHEF_COMMISSION (localité) / PRESIDENT |
 | GET | /api/demande-retraits/historique | — | `DemandeRetraitDto[]` | 200, 403 | CHEF_COMMISSION (localité) / PRESIDENT |
 | GET | /api/demande-retraits/{id} | — | `DemandeRetraitDto` | 200, 403, 404 | Authentifié (filtré) |
@@ -598,6 +599,12 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 { "idDossier": 1023, "motifRetrait": "Dossier incomplet, pièces manquantes" }
 ```
 *(le reste — `idPrmp`, `dateDemande`, `statut`, `idDemandeRetrait` — est dérivé/serveur, ignoré en entrée)*
+
+> **Marquage de consultation à l'ouverture (⚠️ règle ajoutée).** `GET /api/demande-retraits/mes-demandes`
+> (PRMP) renvoie ses demandes **et** met à jour, à chaque appel, sa **dernière consultation** de l'écran
+> (`t_demande_retrait_vue.dateDerniereVue = now`, une seule ligne par PRMP). Cela **remet à zéro** le
+> compteur **`demandesRetraitNouvelles`** du menu PRMP, qui compte les demandes passées à `ACCEPTEE`/`REFUSEE`
+> (date `DATE_DECISION`) **après** cette dernière consultation (tout l'historique si jamais consulté).
 
 ---
 
@@ -1456,6 +1463,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | dossiersARectifier | number | mes dossiers à rectifier non traités (`t_dossier.STATUT = EN_ATTENTE_DECISION_PRMP`) |
 | dossiersVerifies | number | mes dossiers vérifiés (`t_dossier.STATUT IN (PV_SIGNE, CLOTURE)`) |
 | lettresRenvoi | number | mes lettres de renvoi signées **non encore lues** (`STATUT = SIGNE` sans trace dans `t_lettre_renvoi_lue` pour la PRMP) — voir marquage « lu » dans *Lettres de renvoi* |
+| demandesRetraitNouvelles | number | mes demandes de retrait passées à `ACCEPTEE`/`REFUSEE` (`DATE_DECISION`) **depuis ma dernière consultation** de l'écran « Demandes de retrait » — voir marquage dans *Demandes de retrait* |
 
 **Champs `CompteursVerificateurDto`** (réponse de `mes-compteurs-verificateur`) — par section du menu **Vérificateur**, filtrés sur sa localité (miroir de ses worklists)
 
