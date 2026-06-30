@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -278,7 +279,12 @@ export class LettreRenvoiConsultation {
     }
     this.service.document(l.idLettre).subscribe({
       next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
-      error: () => this.toast.error('Impossible de télécharger le document.'),
+      error: (err: HttpErrorResponse) =>
+        this.toast.error(
+          err.status === 404
+            ? "Le document PDF n'est pas disponible pour cette lettre."
+            : 'Impossible de télécharger le document.',
+        ),
     });
   }
 

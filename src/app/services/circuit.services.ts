@@ -164,9 +164,12 @@ export class LettreRenvoiService extends CrudService<LettreRenvoi> {
     return this.http.get<LettreRenvoi[]>(`${this.baseUrl}/mes-lettres`);
   }
   // `getById(id)` : hérité de CrudService (`GET /api/lettre-renvois/{id}`).
-  /** `GET /api/lettre-renvois/{id}/document` — PDF de la lettre signée (dans le périmètre). */
+  /**
+   * `GET /api/lettre-renvois/{id}/document` — PDF de la lettre signée (dans le périmètre).
+   * `skipErrorToast` : l'écran affiche un message dédié (évite le toast générique « Ressource introuvable »).
+   */
   document(id: number): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/${id}/document`, { responseType: 'blob' });
+    return this.http.get(`${this.baseUrl}/${id}/document`, { responseType: 'blob', context: skipErrorToast() });
   }
   /** `POST /api/lettre-renvois` (MEMBRE) — crée une lettre (BROUILLON) pendant l'examen. */
   creer(dto: LettreRenvoi): Observable<LettreRenvoi> {
