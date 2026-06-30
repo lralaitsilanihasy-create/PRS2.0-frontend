@@ -44,6 +44,7 @@ import { StatutBadge } from '../../shared/circuit';
                   <div><dt>Membre</dt><dd>{{ signataire(pv.imCtrlMembre, pv.dateSignatureMembre) }}</dd></div>
                   <div><dt>Chef de commission</dt><dd>{{ signataire(pv.imCtrlCc, pv.dateSignatureCc) }}</dd></div>
                   <div><dt>Président</dt><dd>{{ signataire(pv.imCtrlPresident, pv.dateSignaturePresident) }}</dd></div>
+                  <div><dt>Secrétaire de séance</dt><dd>{{ pv.nomSecretaireSeance || '—' }}</dd></div>
                 </dl>
                 @if (pv.syntheseObservations) {
                   <p class="pvd__synthese"><strong>Synthèse :</strong> {{ pv.syntheseObservations }}</p>

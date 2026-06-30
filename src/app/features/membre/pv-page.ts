@@ -76,6 +76,7 @@ import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit'
                     <div><dt>Membre</dt><dd>{{ signataire(pv.imCtrlMembre, pv.dateSignatureMembre) }}</dd></div>
                     <div><dt>Chef de commission</dt><dd>{{ signataire(pv.imCtrlCc, pv.dateSignatureCc) }}</dd></div>
                     <div><dt>Président</dt><dd>{{ signataire(pv.imCtrlPresident, pv.dateSignaturePresident) }}</dd></div>
+                    <div><dt>Secrétaire de séance</dt><dd>{{ pv.nomSecretaireSeance || '—' }}</dd></div>
                   </dl>
 
                   <h3 class="pv-sub">Grille de contrôle</h3>

@@ -147,6 +147,10 @@ export interface PvExamen {
   imCtrlPresident?: string;
   imCtrlCc?: string;
   imCtrlMembre: string;
+  /** Vérificateur désigné Secrétaire de séance (posé à la soumission). */
+  idSecretaireSeance?: string;
+  /** Nom complet du secrétaire de séance, peuplé serveur — lecture seule. */
+  nomSecretaireSeance?: string;
   syntheseObservations?: string;
   statutPv: StatutPv;
   nbNavettes: number;
