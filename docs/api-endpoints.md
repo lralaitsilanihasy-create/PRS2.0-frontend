@@ -1245,10 +1245,11 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | GET | /api/lettre-renvois | — | `LettreRenvoiDto[]` | 200 | Authentifié (filtré, voir ci-dessous) |
 | GET | /api/lettre-renvois/mes-lettres | — | `LettreRenvoiDto[]` | 200 | **PRMP** — lettres `SIGNE` de ses dossiers (lecture seule) |
 | GET | /api/lettre-renvois/{id} | — | `LettreRenvoiDto` | 200, 403, 404 | Authentifié (dans le périmètre) **ou PRMP propriétaire** (lettre `SIGNE`) — voir marquage « lu » |
+| GET | /api/lettre-renvois/{id}/document | — | fichier **PDF** | 200, 403, 404 | Authentifié (périmètre) — document de la lettre signée |
 | POST | /api/lettre-renvois | `LettreRenvoiDto` | `LettreRenvoiDto` | 201, 400, 403 | **MEMBRE** — création pendant l'examen (BROUILLON) |
 | PUT | /api/lettre-renvois/{id} | `LettreRenvoiDto` | `LettreRenvoiDto` | 200, 400, 404, 409 | **MEMBRE** (brouillon : objet/corps) |
 | POST | /api/lettre-renvois/{id}/soumettre | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **MEMBRE propriétaire** (BROUILLON→SOUMIS) |
-| POST | /api/lettre-renvois/{id}/signer | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **CHEF_COMMISSION** ou **PRESIDENT** (SOUMIS→SIGNE) |
+| POST | /api/lettre-renvois/{id}/signer | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **CHEF_COMMISSION** (toutes localités) ou **PRESIDENT** (localité **centrale ANT** uniquement) — voir règle |
 | DELETE | /api/lettre-renvois/{id} | — | — | 204, 404 | ADMINISTRATEUR |
 
 > **Scoping `GET /api/lettre-renvois`** : MEMBRE → **ses** lettres (par ses examens) ; CHEF_COMMISSION →
@@ -1266,6 +1267,17 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > elle (trace `t_lettre_renvoi_lue`, **une seule entrée** par couple lettre/PRMP, opération idempotente et
 > silencieuse). Le champ `lue` du DTO reflète cet état, et le compteur **« Mes lettres de renvoi »** du
 > menu PRMP ne compte que les lettres `SIGNE` **non encore lues** (voir KPIs / `CompteursPrmpDto`).
+>
+> **Signature selon la localité (⚠️ règle ajoutée).** La localité de la lettre est celle du **dossier**
+> (`idLocalite`), avec **repli** sur la localité de **réception** si absente. Localité **centrale `ANT`** →
+> signature par **CC ou Président** ; localité **régionale** (toute autre) → **Chef de Commission
+> uniquement** (Président → **403**, message « Seul le Chef de Commission peut signer une lettre de renvoi
+> pour une localité régionale. »).
+>
+> **Document PDF (⚠️ règle ajoutée).** À la signature, le **PDF** de la lettre est **généré** (mise en page
+> programmatique selon la localité — variante centrale/régionale pour le libellé du signataire) et stocké
+> (`t_lettre_renvoi.DOCUMENT_PDF`). Téléchargeable via `GET /api/lettre-renvois/{id}/document` (PDF), dans
+> le périmètre de la lettre. *(Génération maison OpenPDF, sans modèle Word ni dépendance externe.)*
 
 ---
 
