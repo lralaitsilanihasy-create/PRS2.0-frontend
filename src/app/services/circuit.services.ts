@@ -247,6 +247,11 @@ export class PvExamenService extends CrudService<PvExamen> {
   definitifs(): Observable<PvExamen[]> {
     return this.http.get<PvExamen[]>(`${this.baseUrl}/definitifs`);
   }
+
+  /** `GET /api/pv-examens/{id}/document` — PDF officiel du PV (dans le périmètre localité). */
+  document(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/document`, { responseType: 'blob', context: skipErrorToast() });
+  }
 }
 
 @Injectable({ providedIn: 'root' })

@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 
 import { PvExamen } from '../../models';
-import { AvisService, ControleurService, PvExamenService, ReferenceLookupService } from '../../services';
+import { PvExamenService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { DetailPvModal } from './detail-pv-modal';
 
 /**
  * « PV définitifs » (MEMBRE / PRESIDENT / CHEF_COMMISSION) — **LECTURE SEULE**.
@@ -12,7 +13,7 @@ import { StatutBadge } from '../../shared/circuit';
 @Component({
   selector: 'app-pv-definitifs',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge],
+  imports: [StatutBadge, DetailPvModal],
   template: `
     <section class="pvd">
       <header class="page-header">
@@ -29,27 +30,13 @@ import { StatutBadge } from '../../shared/circuit';
                 <span class="pvd__ref">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</span>
                 <span class="pvd__date">{{ dateSignature(pv) || '—' }}</span>
                 <app-statut-badge [statut]="pv.statutPv" [label]="'Définitif'" />
-                <button type="button" class="btn btn-secondary btn-sm pvd__details" (click)="basculer(pv)">
-                  {{ ouvert()?.idPv === pv.idPv ? 'Masquer' : 'Voir détails' }}
-                </button>
-              </div>
-
-              @if (ouvert()?.idPv === pv.idPv) {
-                <dl class="pvd__info">
-                  <div><dt>Avis</dt><dd>{{ avisLabel(pv.idAvis) }}</dd></div>
-                  <div><dt>Navettes</dt><dd>{{ pv.nbNavettes }}</dd></div>
-                  @if (pv.dateSoumissionInitiale) { <div><dt>Soumis le</dt><dd class="cnm-mono">{{ pv.dateSoumissionInitiale }}</dd></div> }
-                  @if (pv.dateAcceptation) { <div><dt>Accepté le</dt><dd class="cnm-mono">{{ pv.dateAcceptation }}</dd></div> }
-                  @if (pv.datePv) { <div><dt>Date PV</dt><dd class="cnm-mono">{{ pv.datePv }}</dd></div> }
-                  <div><dt>Membre</dt><dd>{{ signataire(pv.imCtrlMembre, pv.dateSignatureMembre) }}</dd></div>
-                  <div><dt>Chef de commission</dt><dd>{{ signataire(pv.imCtrlCc, pv.dateSignatureCc) }}</dd></div>
-                  <div><dt>Président</dt><dd>{{ signataire(pv.imCtrlPresident, pv.dateSignaturePresident) }}</dd></div>
-                  <div><dt>Secrétaire de séance</dt><dd>{{ pv.nomSecretaireSeance || '—' }}</dd></div>
-                </dl>
-                @if (pv.syntheseObservations) {
-                  <p class="pvd__synthese"><strong>Synthèse :</strong> {{ pv.syntheseObservations }}</p>
+                @if (estReferenceComplete(pv.refePv || pv.referencePv)) {
+                  <button type="button" class="btn btn-secondary btn-sm pvd__details" (click)="ouvrirDetailPv(pv)">Voir détails</button>
+                } @else {
+                  <button type="button" class="btn btn-secondary btn-sm pvd__details" disabled
+                    title="Référence incomplète — contactez l'administrateur">Voir détails</button>
                 }
-              }
+              </div>
             </li>
           }
         </ul>
@@ -57,6 +44,10 @@ import { StatutBadge } from '../../shared/circuit';
         <p class="text-muted">Aucun PV définitif.</p>
       }
     </section>
+
+    @if (detail(); as pv) {
+      <app-detail-pv-modal [pv]="pv" (fermer)="detail.set(null)" />
+    }
   `,
   styles: `
     .pvd__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
@@ -74,20 +65,13 @@ import { StatutBadge } from '../../shared/circuit';
 })
 export class PvDefinitifs {
   private readonly service = inject(PvExamenService);
-  private readonly lookups = inject(ReferenceLookupService);
 
   readonly loading = signal(true);
   readonly pvs = signal<PvExamen[]>([]);
-  readonly ouvert = signal<PvExamen | null>(null);
-  private readonly avisMap = signal<Map<string, string>>(new Map());
-  private readonly controleurMap = signal<Map<string, string>>(new Map());
+  /** PV ouvert dans le modal de détail (null = fermé). */
+  readonly detail = signal<PvExamen | null>(null);
 
   constructor() {
-    this.lookups.lookup(AvisService, 'idAvis', ['libelleAvis']).subscribe((m) => this.avisMap.set(m));
-    this.lookups
-      .lookup(ControleurService, 'imControleur', ['nomCont', 'prenomsCont'])
-      .subscribe((m) => this.controleurMap.set(m));
-
     this.service.definitifs().subscribe({
       next: (rows) => {
         // Tri par date de signature décroissante (PV le plus récemment signé en tête).
@@ -106,19 +90,12 @@ export class PvDefinitifs {
     return dates.length ? dates.sort()[dates.length - 1] : '';
   }
 
-  basculer(pv: PvExamen): void {
-    this.ouvert.update((cur) => (cur?.idPv === pv.idPv ? null : pv));
+  ouvrirDetailPv(pv: PvExamen): void {
+    this.detail.set(pv);
   }
 
-  avisLabel(id: string): string {
-    return this.avisMap().get(id) ?? id;
-  }
-  /** Signataire : nom du contrôleur (+ date si présente), ou « — ». */
-  signataire(im?: string, date?: string): string {
-    if (!im) {
-      return '—';
-    }
-    const nom = this.controleurMap().get(im) ?? im;
-    return date ? `${nom} · signé le ${date}` : nom;
+  /** Référence complète = au moins 2 « / » (ex. 00006/PPM/CRM-ANT/PV/2026), pas « PV #N ». */
+  estReferenceComplete(ref?: string): boolean {
+    return !!ref && (ref.match(/\//g) || []).length >= 2;
   }
 }
