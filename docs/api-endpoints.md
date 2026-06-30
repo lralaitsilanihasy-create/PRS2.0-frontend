@@ -1212,14 +1212,16 @@ dossier/PPM (désormais réservée Admin).
 > `{ erreurs:[{ champ:"idSecretaireSeance", message }] }`. *(La lettre de renvoi est une action séparée
 > pendant l'examen — ressource `/api/lettre-renvois` ; `ExamenDto` n'a pas de champ `typeResultat`.)*
 >
-> ⚠️ **Projet de PV — document généré (règle ajoutée).** À la soumission, si le PV est éligible — avis
-> **favorable sous réserve** (`FAVR`), dossier de **localité centrale** (`ANT`) et **toutes** les lignes de
-> marché du PPM en **appel d'offres ouvert** — le **PDF du Projet de PV** est généré à partir du modèle Word
-> `PV_AFSR_PPMAGPM_CENTRALE.docx` (copie du modèle + remplacement des placeholders ; date d'examen formatée et
-> **en toutes lettres** ; bloc « Étaient présents » filtré sur les signataires effectifs ; ANNEXE = une ligne
-> par observation des points non conformes) puis converti via Microsoft Word (documents4j) et **stocké sur le
-> FSX** (`storage.pv-examen.path`, sous-répertoire `PV/`), chemin conservé dans `t_pv_examen.CHEMIN_DOCUMENT`.
-> Hors de ces conditions, le PV est créé normalement **sans document**. _Pré-requis machine/CI : Word installé._
+> ⚠️ **PV — document généré (règle ajoutée).** À la **signature finale** du PV (passage à `SIGNE`), si le PV
+> est éligible — avis **favorable sous réserve** (`FAVR`), dossier de **localité centrale** (`ANT`) et
+> **toutes** les lignes de marché du PPM en **appel d'offres ouvert** — le **PDF du PV** est généré à partir du
+> modèle Word `PV_AFSR_PPMAGPM_CENTRALE.docx` (copie du modèle + remplacement des placeholders ; date d'examen
+> formatée et **en toutes lettres** dans « L'an … » ; bloc « Étaient présents » filtré sur les signataires
+> effectifs ; ANNEXE = une ligne par observation des points non conformes) puis converti via Microsoft Word
+> (documents4j) et **stocké sur le FSX** (`storage.pv-examen.path`, sous-répertoire `PV/`), chemin conservé dans
+> `t_pv_examen.CHEMIN_DOCUMENT`. Hors de ces conditions, le PV reste **sans document**. Le téléchargement
+> **régénère le document à la demande** si le chemin est absent ou le fichier introuvable (migration des PV
+> signés avant ce correctif). _Pré-requis machine/CI : Word installé._
 
 **Exemple — requête (examen)**
 ```json
@@ -2482,7 +2484,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` et une `dateFi
 
 > ⚠️ **Liste scindée projets / définitifs (règle ajoutée).** `GET /api/pv-examens` ne retourne que les **projets de PV** (statut ≠ `SIGNE`) ; dès qu'un PV est **signé** (`SIGNE`) il **quitte** cette liste et apparaît dans **`GET /api/pv-examens/definitifs`** (PV signés uniquement). Les deux listes restent **scopées par localité**. L'accès direct `GET /api/pv-examens/{id}` reste valable pour **tout** PV, signé ou non.
 
-> ⚠️ **Téléchargement du PDF du PV (règle ajoutée).** `GET /api/pv-examens/{id}/document` renvoie le **PDF du Projet de PV** (`application/pdf`, en pièce jointe) **lu sur le FSX** (`t_pv_examen.CHEMIN_DOCUMENT`). Accès dans le **périmètre de localité** (même contrôle que `GET /api/pv-examens/{id}`). **404** si le PV n'a pas de document (non éligible à la génération — cf. règle « Projet de PV — document généré ») ou si le fichier est introuvable.
+> ⚠️ **Téléchargement du PDF du PV (règle ajoutée).** `GET /api/pv-examens/{id}/document` renvoie le **PDF du PV** (`application/pdf`, en pièce jointe) **lu sur le FSX** (`t_pv_examen.CHEMIN_DOCUMENT`). Accès dans le **périmètre de localité** (même contrôle que `GET /api/pv-examens/{id}`). Si le chemin est absent (PV signé avant le correctif) ou le fichier introuvable, le document est **régénéré à la demande** (si le PV est éligible). **404** seulement si le PV n'est **pas éligible** à la génération (cf. règle « PV — document généré »).
 
 **`signer` — authentification de la signature (dans le service).** L'endpoint autorise largement (`MEMBRE`/`CHEF_COMMISSION`/`PRESIDENT`) mais le service vérifie que le **signataire authentifié** correspond au `role` signé et enregistre son identité (`IM_CTRL_MEMBRE`/`IM_CTRL_PRESIDENT`/`IM_CTRL_CC` = matricule du signataire) :
 - `role=MEMBRE` → l'appelant doit être le **Membre attributaire** du PV (`IM_CTRL_MEMBRE`), non déléguable → **403** sinon ;
