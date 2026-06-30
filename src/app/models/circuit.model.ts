@@ -112,7 +112,6 @@ export interface LettreRenvoi {
   idDossier?: number;
   /** Générée serveur : `<seq>/<type>/<code_localite>/LR/<année>`. */
   refLettre?: string;
-  objetLettre?: string;
   corpsLettre?: string;
   dateExamen?: string;
   dateLettre?: string;

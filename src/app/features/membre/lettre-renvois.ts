@@ -27,13 +27,12 @@ import { StatutBadge } from '../../shared/circuit';
       } @else {
         <table class="cnm-table">
           <thead>
-            <tr><th>Référence dossier</th><th>Objet</th><th>Date lettre</th><th>Statut</th><th></th></tr>
+            <tr><th>Référence dossier</th><th>Date lettre</th><th>Statut</th><th></th></tr>
           </thead>
           <tbody>
             @for (l of lettres(); track l.idLettre) {
               <tr>
                 <td>{{ refDossier(l) }}</td>
-                <td>{{ l.objetLettre || '—' }}</td>
                 <td class="cnm-mono">{{ l.dateLettre || '—' }}</td>
                 <td><app-statut-badge [statut]="l.statut" /></td>
                 <td class="lr__actions">
@@ -54,9 +53,8 @@ import { StatutBadge } from '../../shared/circuit';
               </tr>
               @if (ouvert() === l.idLettre) {
                 <tr class="lr__detail">
-                  <td colspan="5">
+                  <td colspan="4">
                     <dl class="lr__detail-dl">
-                      <div><dt>Objet</dt><dd>{{ l.objetLettre || '—' }}</dd></div>
                       <div><dt>Corps de la lettre</dt><dd class="lr__corps">{{ l.corpsLettre || '—' }}</dd></div>
                       @if (l.refLettre) { <div><dt>Référence lettre</dt><dd class="cnm-mono">{{ l.refLettre }}</dd></div> }
                     </dl>
@@ -64,7 +62,7 @@ import { StatutBadge } from '../../shared/circuit';
                 </tr>
               }
             } @empty {
-              <tr><td colspan="5" class="cnm-muted">Aucun projet de lettre de renvoi.</td></tr>
+              <tr><td colspan="4" class="cnm-muted">Aucun projet de lettre de renvoi.</td></tr>
             }
           </tbody>
         </table>

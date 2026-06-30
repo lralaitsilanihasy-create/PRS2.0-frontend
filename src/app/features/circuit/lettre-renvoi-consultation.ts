@@ -35,7 +35,7 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
         <div class="table-card">
         <table>
           <thead>
-            <tr><th>Référence lettre</th><th>Dossier</th><th>Objet</th><th>Date lettre</th><th>Statut</th><th></th></tr>
+            <tr><th>Référence lettre</th><th>Dossier</th><th>Date lettre</th><th>Statut</th><th></th></tr>
           </thead>
           <tbody>
             @for (l of lettres(); track l.idLettre) {
@@ -48,7 +48,6 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
                   </span>
                 </td>
                 <td>{{ refDossier(l) }}</td>
-                <td>{{ l.objetLettre || '—' }}</td>
                 <td class="cnm-mono">{{ l.dateLettre || '—' }}</td>
                 <td><app-statut-badge [statut]="l.statut" /></td>
                 <td class="lrc__actions">
@@ -67,11 +66,10 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
               </tr>
               @if (ouvert() === l.idLettre) {
                 <tr class="lrc__detail">
-                  <td colspan="6">
+                  <td colspan="5">
                     <dl class="lrc__dl">
                       <div><dt>Référence</dt><dd class="cnm-mono">{{ l.refLettre || '—' }}</dd></div>
                       <div><dt>Dossier</dt><dd>{{ refDossier(l) }}</dd></div>
-                      <div><dt>Objet</dt><dd>{{ l.objetLettre || '—' }}</dd></div>
                       <div><dt>Corps</dt><dd class="lrc__corps">{{ l.corpsLettre || '—' }}</dd></div>
                       <div><dt>Date d'examen</dt><dd class="cnm-mono">{{ l.dateExamen || '—' }}</dd></div>
                       <div><dt>Date lettre</dt><dd class="cnm-mono">{{ l.dateLettre || '—' }}</dd></div>
@@ -137,7 +135,7 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
                 </tr>
               }
             } @empty {
-              <tr><td colspan="6" class="text-muted">Aucune lettre de renvoi.</td></tr>
+              <tr><td colspan="5" class="text-muted">Aucune lettre de renvoi.</td></tr>
             }
           </tbody>
         </table>

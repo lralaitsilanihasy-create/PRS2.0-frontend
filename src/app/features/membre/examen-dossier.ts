@@ -234,11 +234,6 @@ interface RowState {
               <div><dt>Date de la lettre</dt><dd class="cnm-mono">{{ dateLettre }}</dd></div>
             </dl>
             <label class="form-group">
-              <span class="form-label">Objet de la lettre *</span>
-              <input class="form-control" type="text" maxlength="500" [value]="objetLettre()" (input)="objetLettre.set($any($event.target).value)" />
-              @if (lettreErr()) { <span class="form-error exam__obs-err">{{ lettreErr() }}</span> }
-            </label>
-            <label class="form-group">
               <span class="form-label">Corps de la lettre</span>
               <textarea class="form-control exam-modal__corps" rows="6" placeholder="Corps de la lettre…" [value]="corpsLettre()" (input)="corpsLettre.set($any($event.target).value)"></textarea>
             </label>
@@ -343,11 +338,9 @@ export class ExamenDossier {
   readonly dateExamen = signal(new Date().toISOString().slice(0, 10));
   readonly avis = signal<string | null>(null);
   readonly synthese = signal('');
-  /** Modal « Lettre de renvoi » (création) : visibilité, objet saisi, erreur dédiée. */
+  /** Modal « Lettre de renvoi » (création) : visibilité + corps (objet fixe « lettre de renvoi »). */
   readonly lettreModal = signal(false);
-  readonly objetLettre = signal('');
   readonly corpsLettre = signal('');
-  readonly lettreErr = signal<string | null>(null);
   /** Lettres de renvoi déjà créées pour l'examen courant (affichées dans le modal). */
   readonly lettresExamen = signal<LettreRenvoi[]>([]);
   /** Date de la lettre = aujourd'hui (lecture seule). */
@@ -545,8 +538,6 @@ export class ExamenDossier {
   ouvrirModalLettre(): void {
     if (!this.dossier() || this.idDispatch() == null) return;
     if (!this.validerObservations()) return;
-    this.lettreErr.set(null);
-    this.objetLettre.set('');
     this.corpsLettre.set('');
     this.chargerLettresExamen();
     this.lettreModal.set(true);
@@ -558,31 +549,20 @@ export class ExamenDossier {
   }
   /** Enregistre un brouillon de lettre (crée l'examen au besoin), puis recharge la liste de l'examen. */
   enregistrerBrouillonLettre(): void {
-    if (!this.objetLettre().trim()) {
-      this.lettreErr.set("L'objet de la lettre est obligatoire.");
-      return;
-    }
-    this.lettreErr.set(null);
     this.saving.set(true);
     const corps = this.corpsLettre().trim();
-    const objet = this.objetLettre().trim();
     this.ensureExamen()
-      .pipe(switchMap((idExamen) => this.lettreRenvoiService.creer({ idExamen, objetLettre: objet, corpsLettre: corps || undefined })))
+      .pipe(switchMap((idExamen) => this.lettreRenvoiService.creer({ idExamen, corpsLettre: corps || undefined })))
       .subscribe({
         next: () => {
           this.toast.success('Brouillon de lettre de renvoi enregistré.');
-          this.objetLettre.set('');
           this.corpsLettre.set('');
           this.saving.set(false);
           this.chargerLettresExamen();
         },
         error: (e: ApiError) => {
           this.saving.set(false);
-          if (e.fieldErrors?.['objetLettre']) {
-            this.lettreErr.set(e.fieldErrors['objetLettre']);
-          } else {
-            this.toast.error(e.message || "Erreur lors de l'enregistrement de la lettre.");
-          }
+          this.toast.error(e.message || "Erreur lors de l'enregistrement de la lettre.");
         },
       });
   }
