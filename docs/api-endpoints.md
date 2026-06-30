@@ -1274,14 +1274,17 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > uniquement** (Président → **403**, message « Seul le Chef de Commission peut signer une lettre de renvoi
 > pour une localité régionale. »).
 >
-> **Document PDF (⚠️ règle ajoutée).** À la signature, le **PDF** de la lettre est **généré** et stocké
-> (`t_lettre_renvoi.DOCUMENT_PDF`), puis téléchargeable via `GET /api/lettre-renvois/{id}/document` (PDF),
-> dans le périmètre de la lettre. Le document reproduit la mise en page officielle : **en-tête républicain**
-> (`REPOBLIKAN'I MADAGASIKARA`, devise), ministère, **CNM** et **type de commission** selon la localité
-> (centrale/régionale), destinataire (« Madame/Monsieur la PRMP de `<entité>` »), **objet/réf**, corps de
-> la lettre et **nom réel du signataire**. *(Génération programmatique OpenPDF — les modèles `.docx` et une
-> chaîne docx→PDF/LibreOffice ne sont pas disponibles dans l'environnement ; le rendu reproduit le contenu
-> du modèle sans utiliser le fichier `.docx` lui-même.)*
+> **Document PDF (⚠️ règle ajoutée).** À la signature, le **PDF** de la lettre est **généré** puis **stocké
+> sur le système de fichiers (FSX)** dans le répertoire **`LR/`** (`storage.lettre-renvoi.path`), sous le nom
+> **`{refLettre}.pdf`** (les `/` remplacés par `_`, ex. `00007_PPM_CRM-ANT_LR_2026.pdf`) ; le chemin est
+> conservé dans `t_lettre_renvoi.CHEMIN_DOCUMENT`. Téléchargeable via `GET /api/lettre-renvois/{id}/document`
+> (PDF), dans le périmètre de la lettre (lecture du fichier FSX, repli sur `DOCUMENT_PDF` pour les anciennes
+> lettres). Le document reproduit la mise en page officielle : **en-tête républicain** (`REPOBLIKAN'I
+> MADAGASIKARA`, devise), ministère, **CNM**, **type de commission** selon la localité — régional suffixé de
+> la **localité du dossier** (ex. `COMMISSION REGIONALE DES MARCHES TOAMASINA`), destinataire, **objet/réf**,
+> corps, et **signataire** (régional : « Le Chef de la Commission Régionale des Marchés »). *(Génération
+> programmatique OpenPDF — les modèles `.docx`, un converter docx→PDF et LibreOffice ne sont pas disponibles
+> dans l'environnement ; le rendu reproduit le contenu du modèle sans utiliser le fichier `.docx`.)*
 
 ---
 
