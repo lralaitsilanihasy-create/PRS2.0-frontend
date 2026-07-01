@@ -330,12 +330,6 @@ type ModeSuggestion = {
                     <form class="sd__ligne-form cnm-form" [formGroup]="marcheForm" (ngSubmit)="enregistrerLigne()" novalidate>
                       <div class="cnm-form-grid">
                         <label class="form-group">
-                          <span class="form-label">Identifiant marché (PK) *</span>
-                          <input class="form-control" type="number" formControlName="idDetail" [readonly]="editId() !== null" />
-                          @if (req(marcheForm, 'idDetail')) { <span class="form-error">Obligatoire.</span> }
-                          @if (err('idDetail')) { <span class="form-error">{{ err('idDetail') }}</span> }
-                        </label>
-                        <label class="form-group">
                           <span class="form-label">Désignation</span>
                           <input class="form-control" type="text" formControlName="designationMarche" />
                         </label>
@@ -604,7 +598,6 @@ export class SoumettreDossier {
   readonly procErreurs = signal<Record<number, string>>({});
 
   readonly marcheForm = this.fb.nonNullable.group({
-    idDetail: [null as number | null, Validators.required],
     designationMarche: [''],
     montEstim: [null as number | null],
     numCompte: [null as string | null],
@@ -1093,7 +1086,6 @@ export class SoumettreDossier {
     this.editId.set(m.idDetail);
     this.marcheForm.reset();
     this.marcheForm.patchValue({
-      idDetail: m.idDetail,
       designationMarche: m.designationMarche ?? '',
       montEstim: m.montEstim ?? null,
       numCompte: m.numCompte ?? null,
@@ -1153,9 +1145,8 @@ export class SoumettreDossier {
     this.submitting.set(true);
     const v = this.marcheForm.getRawValue();
     // idMode = choix de la PRMP (facultatif) ; absent → recommandé serveur ; hors ensemble → 409.
-    const body: Marche = {
-      idDetail: v.idDetail as number,
-      idDossier: d.idDossier,
+    // idDetail (PK) n'est jamais saisi : généré serveur à la création, repris de editId() en édition.
+    const champs = {
       idPpm: this.createdPpmId,
       designationMarche: v.designationMarche || undefined,
       montEstim: v.montEstim ?? undefined,
@@ -1164,10 +1155,11 @@ export class SoumettreDossier {
       idNature: v.idNature ?? undefined,
       idMode: v.idMode ?? undefined,
     };
+    const idDetail = this.editId();
     const op =
-      this.editId() !== null
-        ? this.marcheService.update(body.idDetail, body)
-        : this.marcheService.create(body);
+      idDetail !== null
+        ? this.marcheService.update(idDetail, { idDetail, idDossier: d.idDossier, ...champs })
+        : this.marcheService.createMarche(d.idDossier, champs);
     op.subscribe({
       next: () => {
         this.submitting.set(false);
