@@ -819,6 +819,7 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 | GET | /api/dossiers/verifies | — | `Page<DossierDto>` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` |
 | GET | /api/dossiers/en-attente-prmp | — | `DossierDto[]` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` — lecture seule |
 | GET | /api/dossiers/{id} | — | `DossierDto` | 200, 403, 404 | Authentifié (filtré) |
+| GET | /api/dossiers/{id}/ppm | — | `PpmDto` | 200, 403, 404 | Authentifié (propriétaire pour un BROUILLON) |
 | POST | /api/dossiers | `DossierDto` | `DossierDto` | 201, 400, 403 | **ADMINISTRATEUR** |
 | PUT | /api/dossiers/{id} | `DossierDto` | `DossierDto` | 200, 400, 403, 404 | **ADMINISTRATEUR** |
 | DELETE | /api/dossiers/{id} | — | — | 204, 403, 404, 409 | **PRMP** propriétaire — BROUILLON (cascade contenu + historique) |
@@ -827,6 +828,18 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 | GET | /api/dossiers/{id}/historique-echanges | — | `EchangeDto[]` | 200, 403, 404 | **PRMP** / **VERIFICATEUR** (titulaire/délégué) / **ADMINISTRATEUR** |
 
 `{id}` = idDossier (number). **`DossierResoumissionRequest`** = `{ motifRectification }` (String, **@NotBlank**, max 255).
+
+> 📌 **Résolution `idDossier → PPM` (règle ajoutée).** `GET /api/dossiers/{id}/ppm` renvoie le **`PpmDto`
+> complet** du dossier, **y compris pour un `BROUILLON`** lu par son **propriétaire** (même critère de
+> visibilité que `GET /api/ppms/{id}`, non filtré par statut). Résout le besoin front d'ouvrir un brouillon
+> depuis « Mes brouillons » — dont le cas d'un **brouillon PPM sans aucun marché** (où `GET /api/marches` ne
+> peut fournir aucun `idPpm`). Aucun PPM rattaché → **404** ; hors périmètre → **403**. *(Depuis le retrait des
+> BROUILLON de `GET /api/ppms`, cf. §1/§3.1, c'est la voie recommandée pour obtenir le PPM d'un brouillon.)*
+
+> 📌 **Écran « Dossiers à rectifier » (PRMP).** Il n'existe **pas** d'endpoint dédié : la liste est alimentée
+> par le **filtre serveur** existant `GET /api/dossiers?statut=EN_ATTENTE_DECISION_PRMP` (scopé à la PRMP),
+> qui ne renvoie **que** les dossiers à ce statut. Cohérent avec le compteur KPI `dossiersARectifier`
+> (`t_dossier.STATUT = EN_ATTENTE_DECISION_PRMP`).
 
 > ⚠️ **Suppression de dossier (règle ajoutée).** `DELETE /api/dossiers/{id}` est réservée à la **PRMP propriétaire**
 > (sinon **403**). Un dossier **`BROUILLON`** est **toujours supprimable** (sinon **409** « Ce dossier ne peut pas
