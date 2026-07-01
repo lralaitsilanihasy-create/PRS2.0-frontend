@@ -7,6 +7,7 @@ import { Dossier } from '../../models';
 import {
   DossierService,
   LocaliteService,
+  MarcheService,
   PpmService,
   ReferenceLookupService,
   TypeDossierService,
@@ -126,6 +127,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 export class MesBrouillons {
   private readonly dossierService = inject(DossierService);
   private readonly ppmService = inject(PpmService);
+  private readonly marcheService = inject(MarcheService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -141,7 +143,11 @@ export class MesBrouillons {
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   private readonly ppmRef = signal<Map<number, string>>(new Map());
-  /** idDossier → idPpm (dérivé de `GET /api/ppms`) ; permet d'ouvrir le détail PPM d'un brouillon. */
+  /**
+   * idDossier → idPpm ; permet d'ouvrir le détail PPM d'un brouillon dans le modal partagé.
+   * Résolu via `GET /api/marches` (MarcheDto porte idPpm, non filtré par statut pour le propriétaire),
+   * car `GET /api/ppms` EXCLUT les BROUILLON (scoping serveur) et ne permet donc pas ce mapping.
+   */
   private readonly ppmParDossier = signal<Map<number, number>>(new Map());
 
   /** Détail PPM ouvert (null = fermé) ; toujours en mode édition (brouillon = périmètre PRMP). */
@@ -166,14 +172,16 @@ export class MesBrouillons {
       },
       error: () => this.loading.set(false),
     });
+    // Référence PPM (affichage) : `GET /api/ppms` — ne couvre pas les BROUILLON, sans conséquence
+    // (leur refeDossier est nul avant réception → « — »).
     this.ppmService.list().subscribe((ppms) => {
-      const refs = new Map<number, string>();
+      this.ppmRef.set(new Map(ppms.map((p) => [p.idDossier, p.reference])));
+    });
+    // idDossier → idPpm résolu via les marchés (idPpm porté par MarcheDto, non filtré par statut) :
+    // permet d'ouvrir le détail d'un brouillon PPM directement dans le modal.
+    this.marcheService.list().subscribe((marches) => {
       const ids = new Map<number, number>();
-      for (const p of ppms) {
-        refs.set(p.idDossier, p.reference);
-        ids.set(p.idDossier, p.idPpm);
-      }
-      this.ppmRef.set(refs);
+      for (const m of marches) ids.set(m.idDossier, m.idPpm);
       this.ppmParDossier.set(ids);
     });
   }
@@ -189,11 +197,13 @@ export class MesBrouillons {
   }
 
   /**
-   * Dossier de type PPM sans PPM rattaché → soumission impossible (409, §3.1).
-   * Dérivé de `GET /api/ppms` déjà chargé (`ppmRef`), sans champ backend dédié.
+   * Dossier de type PPM sans contenu rattaché → soumission impossible (409, §3.1).
+   * Dérivé de `ppmParDossier` (marchés) : `GET /api/ppms` exclut les BROUILLON et ne peut donc
+   * servir ce test. Limite : un brouillon PPM valide mais sans aucun marché est aussi signalé
+   * « manquant » (aucun endpoint documenté ne mappe idDossier → idPpm dans ce cas).
    */
   ppmManquant(d: Dossier): boolean {
-    return d.idTypeDossier === 'PPM' && !this.ppmRef().has(d.idDossier);
+    return d.idTypeDossier === 'PPM' && !this.ppmParDossier().has(d.idDossier);
   }
 
   /**
