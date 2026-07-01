@@ -290,7 +290,16 @@ type ModeSuggestion = {
             <strong>{{ marches().length }}</strong> marché(s) ·
             <strong>{{ pieces().length }}</strong> pièce(s) jointe(s)
           </div>
-          <button class="btn btn-ghost" type="button" (click)="emitFermer()">Fermer</button>
+          @if (soumissible) {
+            <div class="dpm-foot-actions">
+              <button class="btn btn-ghost" type="button" (click)="emitFermer()">Retour</button>
+              <button class="btn btn-success" type="button" [disabled]="marches().length === 0" (click)="soumettre.emit()">
+                Soumettre le dossier
+              </button>
+            </div>
+          } @else {
+            <button class="btn btn-ghost" type="button" (click)="emitFermer()">Fermer</button>
+          }
         </div>
 
       </div>
@@ -483,10 +492,14 @@ export class DetailPpmModal implements OnInit {
   @Input({ required: true }) idPpm!: number;
   /** `true` = PRMP propriétaire (boutons + colonne ACTION) ; `false` = lecture seule. */
   @Input() modeEdition = false;
-  /** Fermeture demandée (× / backdrop / Fermer). */
+  /** `true` = pied « Retour + Soumettre le dossier » (édition d'un brouillon) au lieu de « Fermer ». */
+  @Input() soumissible = false;
+  /** Fermeture demandée (× / backdrop / Fermer / Retour). */
   @Output() fermer = new EventEmitter<void>();
   /** Émis après une mutation (création/édition/suppression) pour rafraîchir l'hôte. */
   @Output() modifie = new EventEmitter<void>();
+  /** Demande de soumission du dossier (bouton « Soumettre le dossier »). */
+  @Output() soumettre = new EventEmitter<void>();
 
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);

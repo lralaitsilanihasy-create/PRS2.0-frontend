@@ -7,6 +7,7 @@ import { debounceTime, forkJoin, merge } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { Capm, Compte, Dossier, Marche, Nature, SaisieMarcheLigne, Situation, TypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
@@ -51,7 +52,7 @@ type ModeSuggestion = {
 @Component({
   selector: 'app-soumettre-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, DetailPpmModal],
   template: `
     <section class="sd">
       <header class="page-header">
@@ -277,134 +278,39 @@ type ModeSuggestion = {
 
         @case ('brouillon') {
           @if (dossier(); as d) {
-            <div class="card sd__brouillon">
-              <div class="sd__brouillon-head">
-                <div>
-                  <span class="badge badge-warning">BROUILLON</span>
-                  <span class="sd__brouillon-id">Dossier #{{ d.idDossier }} · {{ d.idTypeDossier || '—' }}</span>
-                </div>
-                <span class="cnm-muted">Localité : {{ d.idLocalite || '—' }}</span>
-              </div>
-              <p class="sd__warn cnm-muted">
-                Ce brouillon est éditable tant qu'il n'est pas soumis. Vous pourrez le retrouver
-                dans « Mes brouillons » pour le reprendre plus tard.
-              </p>
-
-              @if (estPpm()) {
-                <div class="sd__lignes">
-                  <div class="sd__lignes-head">
-                    <h2 class="sd__sub">Lignes de marché</h2>
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirAjout()">
-                      + Ajouter une ligne
-                    </button>
+            @if (estPpm() && createdPpmId() !== null) {
+              <!-- PPM : rendu et édition via le modal de détail partagé (même design que l'écran de détail). -->
+              <app-detail-ppm-modal
+                [idDossier]="d.idDossier"
+                [idPpm]="createdPpmId()!"
+                [modeEdition]="true"
+                [soumissible]="true"
+                (fermer)="retourChoix()"
+                (soumettre)="soumettre()"
+                (modifie)="rechargerMarches()"
+              />
+            } @else {
+              <!-- DAO/MAOO : pas de PPM ni de lignes de marché. -->
+              <div class="card sd__brouillon">
+                <div class="sd__brouillon-head">
+                  <div>
+                    <span class="badge badge-warning">BROUILLON</span>
+                    <span class="sd__brouillon-id">Dossier #{{ d.idDossier }} · {{ d.idTypeDossier || '—' }}</span>
                   </div>
-                  @if (marches().length) {
-                    <div class="table-card">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Désignation</th><th class="r">Montant</th>
-                            <th>Mode (auto)</th><th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (m of marches(); track m.idDetail) {
-                            <tr>
-                              <td>{{ m.designationMarche || '—' }}</td>
-                              <td class="td-montant">{{ montant(m.montEstim) }}</td>
-                              <td>{{ resolve(modeMap(), m.idMode) }}</td>
-                              <td class="sd__row-actions">
-                                <button type="button" class="btn btn-secondary btn-sm" (click)="editer(m)">Éditer</button>
-                                <button type="button" class="btn btn-danger btn-sm" (click)="supprimer(m)">Suppr.</button>
-                              </td>
-                            </tr>
-                          }
-                        </tbody>
-                      </table>
-                    </div>
-                  } @else {
-                    <p class="cnm-muted">Aucune ligne. Un PPM peut être soumis sans ligne, ou ajoutez-en une.</p>
-                  }
-
-                  @if (ligneOuverte()) {
-                    <form class="sd__ligne-form cnm-form" [formGroup]="marcheForm" (ngSubmit)="enregistrerLigne()" novalidate>
-                      <div class="cnm-form-grid">
-                        <label class="form-group">
-                          <span class="form-label">Désignation</span>
-                          <input class="form-control" type="text" formControlName="designationMarche" />
-                        </label>
-                        <label class="form-group">
-                          <span class="form-label">Montant estimé</span>
-                          <input class="form-control" type="number" formControlName="montEstim" />
-                        </label>
-                        <label class="form-group">
-                          <span class="form-label">Compte</span>
-                          <select class="form-control" formControlName="numCompte">
-                            <option [ngValue]="null">— Sélectionner —</option>
-                            @for (c of comptes(); track c.numCompte) {
-                              <option [ngValue]="c.numCompte">{{ c.libelle || c.numCompte }}</option>
-                            }
-                          </select>
-                        </label>
-                        <label class="form-group">
-                          <span class="form-label">Situation</span>
-                          <select class="form-control" formControlName="idSituation">
-                            <option [ngValue]="null">— Sélectionner —</option>
-                            @for (s of situations(); track s.idSituation) {
-                              <option [ngValue]="s.idSituation">{{ s.libelle || '#' + s.idSituation }}</option>
-                            }
-                          </select>
-                        </label>
-                        <label class="form-group">
-                          <span class="form-label">Nature</span>
-                          <select class="form-control" formControlName="idNature">
-                            <option [ngValue]="null">— Sélectionner —</option>
-                            @for (n of natures(); track n.idNature) {
-                              <option [ngValue]="n.idNature">{{ n.libelle || '#' + n.idNature }}</option>
-                            }
-                          </select>
-                        </label>
-                      </div>
-                      <div class="form-group sd__mode">
-                        <span class="form-label">Mode de passation</span>
-                        @switch (modeSuggestion().state) {
-                          @case ('loading') { <span class="cnm-muted">Détermination du mode…</span> }
-                          @case ('ready') {
-                            <select class="form-control" formControlName="idMode">
-                              @for (m of modeSuggestion().modes; track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle }}</option> }
-                            </select>
-                          }
-                          @case ('none') { <span class="form-hint">Mode à déterminer (aucune règle).</span> }
-                          @default { <span class="cnm-muted">Complétez situation, nature et montant pour voir le mode.</span> }
-                        }
-                      </div>
-                      <div class="sd__foot">
-                        <button type="button" class="btn btn-outline" (click)="annulerLigne()">Annuler</button>
-                        <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-                          {{ editId() !== null ? 'Mettre à jour' : 'Ajouter' }}
-                        </button>
-                      </div>
-                    </form>
-                  }
+                  <span class="cnm-muted">Localité : {{ d.idLocalite || '—' }}</span>
                 </div>
-              }
-
-              <footer class="sd__foot sd__foot--main">
-                @if (ppmSansMarche()) {
-                  <span class="form-hint sd__soumettre-hint">
-                    Ajoutez au moins un marché avant de soumettre.
-                  </span>
-                }
-                <button
-                  type="button"
-                  class="btn btn-success"
-                  [disabled]="submitting() || ppmSansMarche()"
-                  (click)="soumettre()"
-                >
-                  Soumettre le dossier
-                </button>
-              </footer>
-            </div>
+                <p class="sd__warn cnm-muted">
+                  Ce brouillon est éditable tant qu'il n'est pas soumis. Vous pourrez le retrouver
+                  dans « Mes brouillons » pour le reprendre plus tard.
+                </p>
+                <footer class="sd__foot sd__foot--main">
+                  <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
+                  <button type="button" class="btn btn-success" [disabled]="submitting()" (click)="soumettre()">
+                    Soumettre le dossier
+                  </button>
+                </footer>
+              </div>
+            }
           }
         }
       }
@@ -538,7 +444,8 @@ export class SoumettreDossier {
   readonly modeSuggestion = signal<ModeSuggestion>({ state: 'idle', modes: [], recommande: null });
 
   readonly dossier = signal<Dossier | null>(null);
-  private createdPpmId: number | null = null;
+  /** idPpm du brouillon PPM courant (créé ou repris) — alimente le DetailPpmModal en phase brouillon. */
+  readonly createdPpmId = signal<number | null>(null);
   readonly marches = signal<Marche[]>([]);
   readonly ligneOuverte = signal(false);
   readonly editId = signal<number | null>(null);
@@ -706,12 +613,12 @@ export class SoumettreDossier {
   reprendre(d: Dossier): void {
     this.formError.set(null);
     this.dossier.set(d);
-    this.createdPpmId = null;
+    this.createdPpmId.set(null);
     if (d.idTypeDossier === 'PPM') {
       this.ensureMarcheRefs();
       // Le DossierDto ne porte pas l'idPpm : on le résout via le PPM rattaché.
       this.ppmService.list().subscribe((ppms) => {
-        this.createdPpmId = ppms.find((p) => p.idDossier === d.idDossier)?.idPpm ?? null;
+        this.createdPpmId.set(ppms.find((p) => p.idDossier === d.idDossier)?.idPpm ?? null);
       });
       this.rechargerMarches();
     }
@@ -1040,7 +947,7 @@ export class SoumettreDossier {
     this.formError.set(null);
     this.submitting.set(true);
     const v = this.dossierForm.getRawValue();
-    this.createdPpmId = null;
+    this.createdPpmId.set(null);
     this.saisie
       .dossier({
         idTypeDossier: v.idTypeDossier as string,
@@ -1070,7 +977,7 @@ export class SoumettreDossier {
   }
 
   // — Édition des lignes de marché du brouillon (PPM) —
-  private rechargerMarches(): void {
+  rechargerMarches(): void {
     const id = this.dossier()?.idDossier;
     if (id == null) return;
     this.marcheService.list().subscribe((rows) => this.marches.set(rows.filter((m) => m.idDossier === id)));
@@ -1140,14 +1047,15 @@ export class SoumettreDossier {
       return;
     }
     const d = this.dossier();
-    if (!d || this.createdPpmId == null) return;
+    const idPpm = this.createdPpmId();
+    if (!d || idPpm == null) return;
     this.formError.set(null);
     this.submitting.set(true);
     const v = this.marcheForm.getRawValue();
     // idMode = choix de la PRMP (facultatif) ; absent → recommandé serveur ; hors ensemble → 409.
     // idDetail (PK) n'est jamais saisi : généré serveur à la création, repris de editId() en édition.
     const champs = {
-      idPpm: this.createdPpmId,
+      idPpm,
       designationMarche: v.designationMarche || undefined,
       montEstim: v.montEstim ?? undefined,
       numCompte: v.numCompte ?? undefined,
