@@ -616,10 +616,8 @@ export class SoumettreDossier {
     this.createdPpmId.set(null);
     if (d.idTypeDossier === 'PPM') {
       this.ensureMarcheRefs();
-      // Le DossierDto ne porte pas l'idPpm : on le résout via le PPM rattaché.
-      this.ppmService.list().subscribe((ppms) => {
-        this.createdPpmId.set(ppms.find((p) => p.idDossier === d.idDossier)?.idPpm ?? null);
-      });
+      // Le DossierDto ne porte pas l'idPpm et `GET /api/ppms` exclut les BROUILLON (scoping serveur) :
+      // l'idPpm d'un brouillon se résout via ses marchés (qui le portent), chargés par rechargerMarches().
       this.rechargerMarches();
     }
     this.phase.set('brouillon');
@@ -980,7 +978,15 @@ export class SoumettreDossier {
   rechargerMarches(): void {
     const id = this.dossier()?.idDossier;
     if (id == null) return;
-    this.marcheService.list().subscribe((rows) => this.marches.set(rows.filter((m) => m.idDossier === id)));
+    this.marcheService.list().subscribe((rows) => {
+      const mine = rows.filter((m) => m.idDossier === id);
+      this.marches.set(mine);
+      // `GET /api/ppms` exclut les BROUILLON : on résout l'idPpm du brouillon via ses marchés (idPpm porté
+      // par MarcheDto, `GET /api/marches` non filtré par statut pour le propriétaire).
+      if (this.estPpm() && this.createdPpmId() == null && mine.length) {
+        this.createdPpmId.set(mine[0].idPpm);
+      }
+    });
   }
   ouvrirAjout(): void {
     this.formError.set(null);
