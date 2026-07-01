@@ -291,7 +291,9 @@ interface RowState {
     .exam__obs-del { width: 2rem; align-self: flex-start; margin-top: 0.3rem; }
     .exam__obs-err { color: var(--danger-text); }
     .exam__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; margin-top: 0.5rem; }
-    .exam-modal { width: 100%; max-width: 32rem; max-height: 88vh; overflow: auto; background: #fff; border-radius: var(--radius-2xl); box-shadow: var(--shadow-xl); padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .exam-modal { width: 100%; max-width: 44rem; max-height: 88vh; overflow: auto; background: #fff; border-radius: var(--radius-2xl); box-shadow: var(--shadow-xl); padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .exam-modal__list { overflow-x: auto; }
+    .exam-modal__list table { width: 100%; }
     .exam-modal__title { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
     .exam-modal__info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
     .exam-modal__info > div { display: flex; gap: 0.5rem; align-items: baseline; }
