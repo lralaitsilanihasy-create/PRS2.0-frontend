@@ -41,11 +41,13 @@ export class MarcheService extends CrudService<Marche> {
   protected readonly resource = 'marches';
 
   /**
-   * `POST /api/marches?idDossier={id}` — ajoute une ligne de marché ; la PK (`idDetail`) est **générée
-   * par le serveur** (non envoyée). `idDossier` passe en **query param** (pas dans le corps).
+   * `POST /api/marches` — ajoute une ligne de marché à un brouillon. Le corps est un `MarcheDto`
+   * incluant **`idDossier`** (et `idPpm`), tous deux `@NotNull` (cf. contrat §« Ajouter une ligne de
+   * marché »). La PK `idDetail` est **générée par le serveur** (`seq_marche`) : non envoyée. Le mode de
+   * passation est calculé/validé côté serveur.
    */
   createMarche(idDossier: number, body: Partial<Marche>): Observable<Marche> {
-    return this.http.post<Marche>(this.baseUrl, body, { params: new HttpParams().set('idDossier', idDossier) });
+    return this.http.post<Marche>(this.baseUrl, { ...body, idDossier });
   }
 
   /**
