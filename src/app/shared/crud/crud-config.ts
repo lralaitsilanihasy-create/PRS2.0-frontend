@@ -32,6 +32,8 @@ export interface FieldConfig {
   pk?: boolean;
   /** Si défini, la valeur (un id) est affichée via le libellé du référentiel lié. */
   ref?: FieldRef;
+  /** Masque la colonne dans la liste (le champ reste dans le formulaire, ex. PK). */
+  hideInList?: boolean;
 }
 
 /**

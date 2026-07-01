@@ -31,7 +31,7 @@
       <table>
         <thead>
           <tr>
-            @for (f of config.fields; track f.key) {
+            @for (f of listFields; track f.key) {
               <th>{{ f.label }}</th>
             }
             <th class="crud__actions-col">Actions</th>
@@ -40,7 +40,7 @@
         <tbody>
           @for (row of visibleRows(); track row[config.idKey]) {
             <tr>
-              @for (f of config.fields; track f.key) {
+              @for (f of listFields; track f.key) {
                 <td>{{ display(row, f) }}</td>
               }
               <td class="crud__actions">
@@ -57,7 +57,7 @@
             </tr>
           } @empty {
             <tr>
-              <td [attr.colspan]="config.fields.length + 1" class="crud__empty">
+              <td [attr.colspan]="listFields.length + 1" class="crud__empty">
                 Aucun enregistrement.
               </td>
             </tr>

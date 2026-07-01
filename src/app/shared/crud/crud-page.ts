@@ -83,6 +83,11 @@ export class CrudPage {
   form: FormGroup = this.fb.group({});
   private editingId: string | number | null = null;
 
+  /** Champs affichés en colonnes de liste (exclut ceux marqués `hideInList`, ex. PK). */
+  get listFields(): FieldConfig[] {
+    return this.config.fields.filter((f) => !f.hideInList);
+  }
+
   constructor() {
     this.config = this.route.snapshot.data['crud'] as CrudResourceConfig;
     this.service = inject(this.config.service);
