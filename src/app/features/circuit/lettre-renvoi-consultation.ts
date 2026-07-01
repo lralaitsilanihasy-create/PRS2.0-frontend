@@ -9,6 +9,7 @@ import { Dossier, LettreRenvoi, PieceJointeDossier, TypePieceJointe } from '../.
 import { DossierService, LettreRenvoiService, PieceJointeDossierService, TypePieceJointeService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
+import { DossierConsultation } from './dossier-consultation';
 
 /**
  * Consultation des lettres de renvoi, partagée par profil via `route.data` :
@@ -22,7 +23,7 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 @Component({
   selector: 'app-lettre-renvoi-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge],
+  imports: [StatutBadge, DossierConsultation],
   template: `
     <section class="lrc">
       <header class="page-header">
@@ -69,7 +70,15 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
                   <td colspan="5">
                     <dl class="lrc__dl">
                       <div><dt>Référence</dt><dd class="cnm-mono">{{ l.refLettre || '—' }}</dd></div>
-                      <div><dt>Dossier</dt><dd>{{ refDossier(l) }}</dd></div>
+                      <div>
+                        <dt>Dossier</dt>
+                        <dd class="lrc__dossier">
+                          <span>{{ refDossier(l) }}</span>
+                          @if (dossierDe(l)) {
+                            <button type="button" class="btn btn-secondary btn-sm" (click)="voirDossier(l)">Voir le dossier</button>
+                          }
+                        </dd>
+                      </div>
                       <div><dt>Corps</dt><dd class="lrc__corps">{{ l.corpsLettre || '—' }}</dd></div>
                       <div><dt>Date d'examen</dt><dd class="cnm-mono">{{ l.dateExamen || '—' }}</dd></div>
                       <div><dt>Date lettre</dt><dd class="cnm-mono">{{ l.dateLettre || '—' }}</dd></div>
@@ -117,18 +126,25 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
                           <p class="text-muted">Aucune pièce ajoutée après cette lettre.</p>
                         }
 
-                        <div class="lrc__upload">
-                          <select class="form-control" [value]="uploadType() ?? ''" (change)="uploadType.set($any($event.target).value ? +$any($event.target).value : null)">
-                            <option value="">— Type de pièce —</option>
-                            @for (t of typesPour(l); track t.idTypePiece) {
-                              <option [value]="t.idTypePiece">{{ t.libellePiece }}</option>
-                            }
-                          </select>
-                          <input type="file" accept=".pdf,.jpeg,.jpg,.png" (change)="onUploadFile($event)" />
-                          <button type="button" class="btn btn-primary btn-sm" [disabled]="uploading() || uploadType() == null || !uploadFile()" (click)="ajouterPiece(l)">
-                            {{ uploading() ? 'Ajout…' : '+ Ajouter une pièce' }}
-                          </button>
-                        </div>
+                        @if (typesPour(l).length) {
+                          <div class="lrc__upload">
+                            <select class="form-control" [value]="uploadType() ?? ''" (change)="uploadType.set($any($event.target).value ? +$any($event.target).value : null)">
+                              <option value="">— Type de pièce —</option>
+                              @for (t of typesPour(l); track t.idTypePiece) {
+                                <option [value]="t.idTypePiece">{{ t.libellePiece }}</option>
+                              }
+                            </select>
+                            <input type="file" accept=".pdf,.jpeg,.jpg,.png" (change)="onUploadFile($event)" />
+                            <button type="button" class="btn btn-primary btn-sm" [disabled]="uploading() || uploadType() == null || !uploadFile()" (click)="ajouterPiece(l)">
+                              {{ uploading() ? 'Ajout…' : '+ Ajouter une pièce' }}
+                            </button>
+                          </div>
+                          <p class="text-muted text-sm lrc__upload-hint">
+                            Choisissez un <strong>type de pièce</strong> et un fichier (PDF, JPEG ou PNG), puis « Ajouter une pièce ».
+                          </p>
+                        } @else {
+                          <p class="text-muted">Aucun type de pièce disponible pour ce dossier — ajout impossible.</p>
+                        }
                       </div>
                     }
                   </td>
@@ -142,6 +158,10 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
         </div>
       }
     </section>
+
+    @if (dossierConsulte(); as d) {
+      <app-dossier-consultation [dossier]="d" (closed)="dossierConsulte.set(null)" />
+    }
   `,
   styles: `
     .lrc__actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
@@ -151,11 +171,13 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
     .lrc__dl > div { display: flex; gap: 0.5rem; align-items: baseline; }
     .lrc__dl dt { flex: 0 0 10rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
     .lrc__dl dd { margin: 0; }
+    .lrc__dossier { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
     .lrc__corps { white-space: pre-wrap; }
     .lrc__pieces { margin-top: 0.75rem; border-top: 1px solid var(--c-100); padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem; }
     .lrc__pieces-title { margin: 0.5rem 0 0; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
     .lrc__piece { display: flex; align-items: center; gap: 0.5rem; }
     .lrc__upload { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .lrc__upload-hint { margin: 0.35rem 0 0; }
     .table-card td { white-space: normal; }
     .lrc__detail > td { background: var(--c-50); }
     .lrc__ref { display: inline-flex; align-items: center; gap: 7px; }
@@ -190,6 +212,10 @@ export class LettreRenvoiConsultation {
   readonly signature = signal<number | null>(null);
   private readonly dossierRefs = signal<Map<number, string>>(new Map());
   private readonly dossierTypes = signal<Map<number, string>>(new Map());
+  /** Dossiers complets (par idDossier) pour la consultation lecture seule via DossierConsultation. */
+  private readonly dossiersById = signal<Map<number, Dossier>>(new Map());
+  /** Dossier ouvert en consultation lecture seule (null = fermé). */
+  readonly dossierConsulte = signal<Dossier | null>(null);
   /** Localité du dossier de chaque lettre (pour la règle de signature ANT/régional). */
   private readonly dossierLocalites = signal<Map<number, string>>(new Map());
   /** Pièces du dossier de la lettre ouverte (chargées au dépliage). */
@@ -210,9 +236,13 @@ export class LettreRenvoiConsultation {
       this.dossierRefs.set(new Map(rows.map((d) => [d.idDossier, d.refeDossier ?? ''])));
       this.dossierTypes.set(new Map(rows.map((d) => [d.idDossier, d.idTypeDossier ?? ''])));
       this.dossierLocalites.set(new Map(rows.map((d) => [d.idDossier, d.idLocalite ?? ''])));
+      this.dossiersById.set(new Map(rows.map((d) => [d.idDossier, d])));
     });
     if (this.piecesUpload) {
-      this.typePieceService.list().subscribe((rows) => this.typesPiece.set(rows));
+      this.typePieceService.list().subscribe({
+        next: (rows) => this.typesPiece.set(rows),
+        error: () => this.toast.error('Impossible de charger les types de pièces jointes.'),
+      });
     }
     const call = this.source === 'mes' ? this.service.getMesLettres() : this.service.getAll();
     call.subscribe({
@@ -296,6 +326,10 @@ export class LettreRenvoiConsultation {
   /** Types de pièces attendus pour le type du dossier de la lettre. */
   typesPour(l: LettreRenvoi): TypePieceJointe[] {
     const type = l.idDossier != null ? this.dossierTypes().get(l.idDossier) : undefined;
+    // Type du dossier non résolu → ne pas sur-filtrer (on montre tous les types plutôt qu'une liste vide).
+    if (!type) {
+      return this.typesPiece();
+    }
     return this.typesPiece().filter((t) => !t.idTypeDossier || t.idTypeDossier === type);
   }
   onUploadFile(ev: Event): void {
@@ -378,5 +412,16 @@ export class LettreRenvoiConsultation {
   refDossier(l: LettreRenvoi): string {
     const ref = l.idDossier != null ? this.dossierRefs().get(l.idDossier) : '';
     return ref || (l.idDossier != null ? 'Dossier #' + l.idDossier : '—');
+  }
+  /** Dossier complet rattaché à la lettre (undefined si non chargé / hors périmètre). */
+  dossierDe(l: LettreRenvoi): Dossier | undefined {
+    return l.idDossier != null ? this.dossiersById().get(l.idDossier) : undefined;
+  }
+  /** Ouvre la consultation lecture seule du dossier lié à la lettre. */
+  voirDossier(l: LettreRenvoi): void {
+    const d = this.dossierDe(l);
+    if (d) {
+      this.dossierConsulte.set(d);
+    }
   }
 }
