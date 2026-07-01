@@ -29,17 +29,19 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
         <p class="text-muted">Chargement…</p>
       } @else {
         @for (ppm of mesPpms(); track ppm.idPpm) {
-          <div class="card ppm-row" [class.ppm-row--soumis]="estSoumis(ppm)">
-            <div class="ppm-row__head">
-              <span class="ppm-row__ref">{{ ppm.reference || 'PPM #' + ppm.idPpm }}</span>
-              <span class="ppm-row__sub">Exercice {{ ppm.exercice }} · {{ ppm.libelle || '—' }}</span>
-              <span class="badge badge-neutral">{{ marchesOf(ppm.idPpm).length }} marché(s)</span>
-              @if (statutPpm(ppm) === 'EN_ATTENTE_DECISION_PRMP') {
-                <app-statut-badge [statut]="statutPpm(ppm)" />
-              }
+          @if (statutPpm(ppm) !== 'BROUILLON') {
+            <div class="card ppm-row" [class.ppm-row--soumis]="estSoumis(ppm)">
+              <div class="ppm-row__head">
+                <span class="ppm-row__ref">{{ ppm.reference || 'PPM #' + ppm.idPpm }}</span>
+                <span class="ppm-row__sub">Exercice {{ ppm.exercice }} · {{ ppm.libelle || '—' }}</span>
+                <span class="badge badge-neutral">{{ marchesOf(ppm.idPpm).length }} marché(s)</span>
+                @if (statutPpm(ppm) === 'EN_ATTENTE_DECISION_PRMP') {
+                  <app-statut-badge [statut]="statutPpm(ppm)" />
+                }
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDetail(ppm)">Détails</button>
             </div>
-            <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDetail(ppm)">Détails</button>
-          </div>
+          }
         } @empty {
           <p class="text-muted">Aucun PPM dans votre périmètre.</p>
         }
@@ -85,7 +87,12 @@ export class MesPpmMarches {
   /** Détail ouvert (null = fermé) ; `modeEdition` = dossier du PPM en BROUILLON. */
   readonly detail = signal<{ idDossier: number; idPpm: number; modeEdition: boolean } | null>(null);
 
-  readonly mesPpms = computed(() => this.ppms());
+  // Garde-fou d'affichage : on n'affiche pas les PPM dont le dossier est en BROUILLON
+  // (le backend filtre déjà ; ceci couvre le cas où un BROUILLON remonterait).
+  readonly mesPpms = computed(() => {
+    const statuts = this.dossierStatut();
+    return this.ppms().filter((p) => statuts.get(p.idDossier) !== 'BROUILLON');
+  });
   private readonly byPpm = computed(() => {
     const map = new Map<number, Marche[]>();
     for (const m of this.marches()) {
