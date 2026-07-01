@@ -2683,10 +2683,15 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
 | idRegle | number | Oui (PK, au POST) | clé primaire |
-| idSituation | number | Oui | @NotNull |
-| idSeuil | number | Oui | @NotNull |
-| idMode | number | Oui | @NotNull |
+| idSituation | number | Oui | @NotNull — **id** (écriture) |
+| idSeuil | number | Oui | @NotNull — **id** (écriture) |
+| idMode | number | Oui | @NotNull — **id** (écriture) |
 | priorite | number | Non | |
+| libelleSituation | string | — (réponse) | **lecture seule** — libellé de la situation (ex. « Situation normale ») |
+| libelleSeuil | string | — (réponse) | **lecture seule** — « montantMin à montantMax », ou « ≥ montantMin » si max nul |
+| libelleMode | string | — (réponse) | **lecture seule** — libellé du mode (ex. « Appel d'offres ouvert ») |
+
+> ⚠️ **Libellés en lecture (règle ajoutée).** `GET /api/regle-passations` (et `/{id}`) renseigne `libelleSituation`, `libelleSeuil` et `libelleMode` (résolus depuis `tr_situation` / `t_seuil` / `tr_mode_passation`) pour l'affichage. Les `id*` restent présents (nécessaires à la création/édition) mais n'ont pas à être affichés.
 
 **Champs `SuggestionModeRequest`** (corps de `suggestion-mode`)
 
