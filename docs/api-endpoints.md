@@ -562,7 +562,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 
 > ⚠️ **Identité & ID (règle ajoutée).** À la création : `idPrmp` = **utilisateur authentifié** (JWT, corps ignoré), `dateDemande` serveur, `statut` forcé `EN_ATTENTE`, `idDemandeRetrait` **auto-généré** (IDENTITY). Gardes (sinon **403/409**) : PRMP **propriétaire** du dossier ; dossier **`SOUMIS`/`PRET_DISPATCH`** ; pas de demande déjà **`EN_ATTENTE`**. Liste déroulante des dossiers éligibles : **`GET /api/dossiers/retirables`** (PRMP).
 
-> ⚠️ **Décision (règle ajoutée).** `POST /{id}/accepter` → statut `ACCEPTEE` + **dossier `BROUILLON`**, avec sa **référence de réception invalidée** : `refeDossier` est **restauré à la référence initiale du dossier** (celle générée à la création, stockée dans `t_ppm.REFERENCE`, ex. `00003/DGB/PPM/2026`) — la référence de réception (ex. `00002/PPM/CRM-ANT/2026`) est ainsi remplacée. `GET /api/dossiers` (« Mes brouillons ») réaffiche donc la référence d'origine, et le dossier **redevient entièrement modifiable** (métadonnées, lignes de marché, pièces). *(Dossier sans PPM → `refeDossier` remis à `null`.)* `POST /{id}/refuser` (corps `{ "motif"? }`) → `REFUSEE`, dossier **inchangé**. Le décideur réel (CC **ou** Président) est enregistré dans `IM_CTRL_CC` depuis le **JWT**. Hors CC-localité/Président → **403** ; demande déjà traitée → **409**. Notifs PRMP : `RETRAIT_ACCEPTE` / `RETRAIT_REFUSE`.
+> ⚠️ **Décision (règle ajoutée).** `POST /{id}/accepter` → statut `ACCEPTEE` + **dossier `BROUILLON`**, avec sa **référence de réception invalidée** : `refeDossier` est **restauré à la référence initiale du dossier** (celle générée à la création, stockée dans `t_ppm.REFERENCE`, ex. `00003/DGB/PPM/2026`) — la référence de réception (ex. `00002/PPM/CRM-ANT/2026`) est ainsi remplacée. `GET /api/dossiers` (« Mes brouillons ») réaffiche donc la référence d'origine, et le dossier **redevient entièrement modifiable** (métadonnées, lignes de marché, pièces). *(Dossier sans PPM → `refeDossier` remis à `null`.)* ⚠️ **La/les réception(s) résiduelle(s) du dossier sont supprimées** (`t_reception`) : après `POST /api/dossiers/{id}/soumettre`, le dossier redevient **`SOUMIS` sans réception** et **réapparaît dans `GET /api/dossiers/a-receptionner`** (re-réception en `INITIAL`, passage 1, avec une **nouvelle** référence de réception). Un dossier retirable (`SOUMIS`/`PRET_DISPATCH`) n'est jamais dispatché → aucune dépendance (dispatch/examen) sur ces réceptions. `POST /{id}/refuser` (corps `{ "motif"? }`) → `REFUSEE`, dossier **inchangé**. Le décideur réel (CC **ou** Président) est enregistré dans `IM_CTRL_CC` depuis le **JWT**. Hors CC-localité/Président → **403** ; demande déjà traitée → **409**. Notifs PRMP : `RETRAIT_ACCEPTE` / `RETRAIT_REFUSE`.
 
 **Champs `DemandeRetraitDto`**
 
@@ -2584,7 +2584,11 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 > `annee_exercice`) — table `t_sequence_reference`, sans compteur applicatif ;
 > `code_localite` = **`CNM`** si réception centrale (utilisateur transversal, sans localité, ex. Président),
 > sinon **`CRM-<localité>`** ; `annee_exercice` = exercice du PPM, sinon année courante.
-> La référence est **persistée** sur le dossier (`REFE_DOSSIER`, vide depuis la soumission).
+> La référence est **persistée** sur le dossier (`REFE_DOSSIER`, vide depuis la soumission)
+> **et sur la réception elle-même** (`t_reception.REFERENCE`) comme **snapshot immuable** : `GET /api/receptions`
+> la renvoie telle qu'à la réception, **même après** une mutation ultérieure de `refeDossier` (ex. restauration
+> de la référence PPM après un **retrait accepté**, cf. `POST /api/demande-retraits/{id}/accepter`). L'historique
+> des réceptions reste ainsi correct indépendamment du dossier.
 > Exemples : `00001/PPM/CNM/2026`, `00001/PPM/CRM-ANT/2026`, `00002/PPM/CRM-ANT/2026`, `00001/PPM/CRM-TMS/2026`.
 > *(Dossier sans `type_dossier` → `reference` non générée, la réception reste valide.)*
 >
@@ -2607,7 +2611,7 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 | observation | string | Non | max 500 |
 | complet | boolean | Non | si `true` → dossier `PRET_DISPATCH` |
 | idReceptionPrec | number | Non | |
-| reference | string | — (réponse) | référence officielle générée au POST (lecture seule) |
+| reference | string | — (réponse) | référence officielle **persistée** (`t_reception.REFERENCE`), snapshot immuable posé au POST — renvoyée par `GET` ; lecture seule, indépendante des mutations ultérieures de `refeDossier` |
 
 > **Dates/heures (⚠️ règle ajoutée).** `dateReception` est désormais une **date-heure** (`yyyy-MM-dd HH:mm`,
 > colonne `t_reception.DATE_RECEPTION` en TIMESTAMP). `dateSoumission` (lecture seule) reprend la
