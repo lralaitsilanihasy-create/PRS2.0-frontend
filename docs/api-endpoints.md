@@ -1512,7 +1512,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | Champ (JSON) | Type | Description |
 |---|---|---|
 | brouillons | number | mes dossiers en brouillon (`t_dossier.STATUT = BROUILLON`) |
-| ppmMarches | number | mes PPM & marchés (PPM de la PRMP, `t_ppm.ID_PRMP`) |
+| ppmMarches | number | mes PPM & marchés (PPM de la PRMP, `t_ppm.ID_PRMP`, **hors BROUILLON** — colle à la liste `GET /api/ppms`) |
 | dossiersARectifier | number | mes dossiers à rectifier non traités (`t_dossier.STATUT = EN_ATTENTE_DECISION_PRMP`) |
 | dossiersVerifies | number | mes dossiers vérifiés (`t_dossier.STATUT IN (PV_SIGNE, CLOTURE)`) |
 | lettresRenvoi | number | mes lettres de renvoi signées **non encore lues** (`STATUT = SIGNE` sans trace dans `t_lettre_renvoi_lue` pour la PRMP) — voir marquage « lu » dans *Lettres de renvoi* |
@@ -2251,9 +2251,16 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` et une `dateFi
 **Ressource** `/api/ppms` — Lecture **scopée au périmètre de l'appelant** (⚠️ changement de portée, voir note). **`POST` réservé `ADMINISTRATEUR`** (la saisie passe par `/api/saisies/ppm`) ; **`PUT` réservé `PRMP`/`ADMINISTRATEUR`** (édition de l'en-tête d'un brouillon) ; **`DELETE` réservé `PRMP` propriétaire** — uniquement si le **dossier rattaché est en BROUILLON** (sinon **403**/**409**), avec ⚠️ **cascade** des marchés du PPM **et** de leurs dates prévisionnelles (même transaction). Un PPM ne se rattache qu'à un dossier de **type PPM, en BROUILLON, propriété de la PRMP** (sinon **409**/**403**).
 
 > **⚠️ Scoping serveur (changement de portée, §1/§3.1).** `GET /api/ppms` ne renvoie **plus toute la
-> table** : Président/Administrateur → tout ; **PRMP → les siens** (`t_ppm.ID_PRMP`, brouillons compris) ;
-> contrôleur → ceux de **sa localité** (dossier non brouillon) ; autre profil → liste vide.
-> `GET /api/ppms/{id}` hors périmètre → **403**. Corrige la fuite inter‑PRMP/localité (plus de filtrage côté client).
+> table** : Président/Administrateur → tout ; **PRMP → les siens** (`t_ppm.ID_PRMP`) **hors BROUILLON**
+> (écran « Mes PPM & marchés ») ; contrôleur → ceux de **sa localité** (dossier non brouillon) ; autre
+> profil → liste vide. `GET /api/ppms/{id}` hors périmètre → **403**. Corrige la fuite inter‑PRMP/localité
+> (plus de filtrage côté client).
+>
+> ⚠️ **« Mes PPM & marchés » exclut les BROUILLON (filtrage serveur).** La liste `GET /api/ppms` de la PRMP
+> ne comporte **plus les dossiers `BROUILLON`** : ils relèvent de l'écran **« Mes brouillons »**
+> (`GET /api/dossiers?statut=BROUILLON`). Le détail d'un brouillon reste lisible par son propriétaire via
+> **`GET /api/ppms/{id}`** (non filtré par statut). Filtrage **côté serveur** (sécurité), pas un simple
+> masquage front.
 
 **Champs `PpmDto`**
 
