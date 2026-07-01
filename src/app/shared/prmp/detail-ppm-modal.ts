@@ -58,8 +58,8 @@ type ModeSuggestion = {
               <span class="dpm-chip dpm-chip-active"><span class="dpm-chip-dot"></span>Actif</span>
             </div>
             <div class="dpm-head-actions">
-              @if (modeEdition) {
-                <button class="btn btn-secondary btn-sm" type="button" (click)="ouvrirEditionHeader()">✎ Modifier l'en-tête</button>
+              @if (modeEdition && !editHeaderOpen()) {
+                <button class="btn btn-secondary btn-sm" type="button" (click)="ouvrirEditionHeader()">✎ Modifier</button>
               }
               <button class="btn-close" type="button" (click)="emitFermer()">✕</button>
             </div>
@@ -77,19 +77,27 @@ type ModeSuggestion = {
             <span>Exercice {{ ppm()?.exercice }}</span>
           </div>
 
-          <!-- Métadonnées : une par ligne -->
-          <div class="dpm-meta">
+          <!-- Métadonnées : une par ligne (éditables inline en modeEdition) -->
+          <div class="dpm-meta" [formGroup]="headerForm">
             <div class="dpm-meta-row">
               <span class="dpm-meta-label">Référence</span>
               <span class="dpm-meta-value">{{ ppm()?.reference || '—' }}</span>
             </div>
             <div class="dpm-meta-row">
               <span class="dpm-meta-label">Exercice</span>
-              <span class="dpm-meta-value">{{ ppm()?.exercice }}</span>
+              @if (editHeaderOpen()) {
+                <input class="form-control dpm-meta-input" type="number" formControlName="exercice" />
+              } @else {
+                <span class="dpm-meta-value">{{ ppm()?.exercice }}</span>
+              }
             </div>
             <div class="dpm-meta-row">
               <span class="dpm-meta-label">Date signature</span>
-              <span class="dpm-meta-value">{{ (ppm()?.dateSignature | date: 'dd/MM/yyyy') || '—' }}</span>
+              @if (editHeaderOpen()) {
+                <input class="form-control dpm-meta-input" type="date" formControlName="dateSignature" />
+              } @else {
+                <span class="dpm-meta-value">{{ (ppm()?.dateSignature | date: 'dd/MM/yyyy') || '—' }}</span>
+              }
             </div>
             <div class="dpm-meta-row">
               <span class="dpm-meta-label">Signataire</span>
@@ -97,11 +105,26 @@ type ModeSuggestion = {
             </div>
             <div class="dpm-meta-row">
               <span class="dpm-meta-label">Libellé</span>
-              <span class="dpm-meta-value" [class.dpm-meta-empty]="!ppm()?.libelle">
-                {{ ppm()?.libelle || 'Non renseigné' }}
-              </span>
+              @if (editHeaderOpen()) {
+                <input class="form-control dpm-meta-input" type="text" formControlName="libelle" placeholder="Libellé (facultatif)" />
+              } @else {
+                <span class="dpm-meta-value" [class.dpm-meta-empty]="!ppm()?.libelle">
+                  {{ ppm()?.libelle || 'Non renseigné' }}
+                </span>
+              }
             </div>
           </div>
+
+          @if (editHeaderOpen()) {
+            <div class="dpm-header-savebar">
+              @if (headerErr('exercice')) { <span class="form-error">{{ headerErr('exercice') }}</span> }
+              @if (headerErr('dateSignature')) { <span class="form-error">{{ headerErr('dateSignature') }}</span> }
+              <button class="btn btn-ghost btn-sm" type="button" [disabled]="submittingHeader()" (click)="annulerEditionHeader()">Annuler</button>
+              <button class="btn btn-primary btn-sm" type="button" [disabled]="submittingHeader()" (click)="enregistrerHeader()">
+                {{ submittingHeader() ? 'Enregistrement…' : 'Enregistrer' }}
+              </button>
+            </div>
+          }
 
         </div>
 
@@ -273,42 +296,6 @@ type ModeSuggestion = {
       </div>
       }
     </div>
-
-    @if (editHeaderOpen()) {
-      <div class="dpm__overlay" (click)="annulerEditionHeader()">
-        <form class="dpm dpm--sm cnm-card" [formGroup]="headerForm" (ngSubmit)="enregistrerHeader()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" novalidate>
-          <header class="dpm__head">
-            <h2 class="dpm__title">Modifier l'en-tête du PPM</h2>
-            <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerEditionHeader()">&times;</button>
-          </header>
-          <div class="dpm__body dpm__body--pad dpm-form">
-            <label class="form-group">
-              <span class="form-label">Exercice *</span>
-              <input class="form-control" type="number" formControlName="exercice" />
-              @if (headerErr('exercice')) { <span class="form-error">{{ headerErr('exercice') }}</span> }
-            </label>
-            <label class="form-group">
-              <span class="form-label">Date de signature *</span>
-              <input class="form-control" type="date" formControlName="dateSignature" />
-              @if (headerErr('dateSignature')) { <span class="form-error">{{ headerErr('dateSignature') }}</span> }
-            </label>
-            <label class="form-group dpm-form__mode">
-              <span class="form-label">Libellé</span>
-              <input class="form-control" type="text" formControlName="libelle" />
-            </label>
-            <div class="dpm-form__dates">
-              <span class="cnm-muted">Entité contractante, référence et signataire sont fixés par le serveur (non modifiables).</span>
-            </div>
-          </div>
-          <footer class="dpm__foot">
-            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerEditionHeader()">Annuler</button>
-            <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submittingHeader()">
-              {{ submittingHeader() ? 'Enregistrement…' : 'Enregistrer' }}
-            </button>
-          </footer>
-        </form>
-      </div>
-    }
 
     @if (modalMarche(); as m) {
       <div class="dpm__overlay" (click)="fermerDates()">

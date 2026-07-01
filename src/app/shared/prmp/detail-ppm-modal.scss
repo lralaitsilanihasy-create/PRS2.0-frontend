@@ -102,6 +102,22 @@
 
 /* Édition (modeEdition) : actions d'en-tête, actions par pièce, ligne d'upload. */
 .dpm-head-actions { display: flex; align-items: center; gap: 8px; }
+.dpm-meta-input {
+  padding: 3px 8px;
+  font-size: 12.5px;
+  height: auto;
+  max-width: 240px;
+}
+.dpm-header-savebar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--n-200);
+}
+.dpm-header-savebar .form-error { margin-right: auto; }
 .piece-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .dpm-piece-upload {
   display: flex;
