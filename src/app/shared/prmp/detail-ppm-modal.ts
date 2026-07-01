@@ -378,16 +378,6 @@ type ModeSuggestion = {
           </header>
           <div class="dpm__body dpm__body--pad dpm-form">
             <label class="form-group">
-              <span class="form-label">Identifiant marché (PK) *</span>
-              <input class="form-control" type="number" formControlName="idDetail" [readonly]="!!editingMarche()" />
-              @if (createForm.get('idDetail')?.touched && createForm.get('idDetail')?.hasError('required')) { <span class="form-error">Obligatoire.</span> }
-              @if (createErr('idDetail')) { <span class="form-error">{{ createErr('idDetail') }}</span> }
-            </label>
-            <label class="form-group">
-              <span class="form-label">Dossier</span>
-              <input class="form-control" type="number" formControlName="idDossier" readonly />
-            </label>
-            <label class="form-group">
               <span class="form-label">Désignation</span>
               <input class="form-control" type="text" formControlName="designationMarche" />
             </label>
@@ -935,7 +925,7 @@ export class DetailPpmModal implements OnInit {
   private construireForm(m?: Marche): void {
     const p = this.ppm();
     this.createForm = this.fb.group({
-      idDetail: [{ value: m?.idDetail ?? null, disabled: !!m }, Validators.required],
+      idDetail: [{ value: m?.idDetail ?? null, disabled: true }],
       idDossier: [{ value: m?.idDossier ?? this.idDossier, disabled: true }, Validators.required],
       idPpm: [{ value: m?.idPpm ?? this.idPpm, disabled: true }, Validators.required],
       designationMarche: [m?.designationMarche ?? ''],
@@ -1145,7 +1135,11 @@ export class DetailPpmModal implements OnInit {
       });
       return;
     }
-    this.marcheService.create(body).subscribe({
+    // Création : idDetail (PK) généré serveur (absent du corps) ; idDossier passé en query param.
+    const { idDetail: _pk, idDossier: _d, ...payload } = body;
+    void _pk;
+    void _d;
+    this.marcheService.createMarche(this.idDossier, payload).subscribe({
       next: (created) =>
         this.creerDates(created.idDetail, v.datesPrev ?? [], () => {
           this.toast.success((v.datesPrev?.length ?? 0) ? 'Marché et dates créés.' : 'Marché créé.');

@@ -41,6 +41,14 @@ export class MarcheService extends CrudService<Marche> {
   protected readonly resource = 'marches';
 
   /**
+   * `POST /api/marches?idDossier={id}` — ajoute une ligne de marché ; la PK (`idDetail`) est **générée
+   * par le serveur** (non envoyée). `idDossier` passe en **query param** (pas dans le corps).
+   */
+  createMarche(idDossier: number, body: Partial<Marche>): Observable<Marche> {
+    return this.http.post<Marche>(this.baseUrl, body, { params: new HttpParams().set('idDossier', idDossier) });
+  }
+
+  /**
    * `PATCH /api/marches/{id}/rectifier` (PRMP propriétaire) — corrige une ligne de marché d'un dossier
    * `EN_ATTENTE_DECISION_PRMP`, sans repasser par le brouillon (statut inchangé) ; mode de passation
    * revalidé. Identité **figée** : `idDossier`/`idPpm` ignorés (absents du corps), `idMode` recalculé.
