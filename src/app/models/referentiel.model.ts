@@ -120,6 +120,11 @@ export interface ReglePassation {
   idSeuil: number;
   idMode: number;
   priorite?: number;
+  /** Libellés en lecture seule (réponse GET) pour l'affichage ; ignorés en écriture. */
+  libelleSituation?: string;
+  /** « montantMin à montantMax », ou « ≥ montantMin » si max nul. */
+  libelleSeuil?: string;
+  libelleMode?: string;
 }
 
 /** Seuil de montant par nature et localité. */

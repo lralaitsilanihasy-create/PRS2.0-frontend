@@ -177,6 +177,11 @@ export class CrudPage {
   }
 
   display(row: Row, field: FieldConfig): string {
+    // Affichage depuis une autre clé (ex. libellé fourni par le serveur) si défini.
+    if (field.displayKey) {
+      const v = row[field.displayKey];
+      return v === null || v === undefined || v === '' ? '—' : String(v);
+    }
     const value = row[field.key];
     if (value === null || value === undefined || value === '') {
       return '—';

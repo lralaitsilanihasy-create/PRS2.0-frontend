@@ -34,6 +34,11 @@ export interface FieldConfig {
   ref?: FieldRef;
   /** Masque la colonne dans la liste (le champ reste dans le formulaire, ex. PK). */
   hideInList?: boolean;
+  /**
+   * En liste, affiche la valeur d'une AUTRE clé de la ligne (ex. libellé fourni par le serveur)
+   * au lieu de `key`. Le formulaire continue d'utiliser `key` (l'id envoyé en écriture).
+   */
+  displayKey?: string;
 }
 
 /**
