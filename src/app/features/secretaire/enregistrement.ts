@@ -50,7 +50,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
             <tbody>
               @for (l of lignes(); track l.r.idReception) {
                 <tr>
-                  <td>{{ l.d?.refeDossier || ('Dossier #' + l.r.idDossier) }}</td>
+                  <!-- Réf. figée à CETTE réception (reception.reference) : le refeDossier du dossier est
+                       mutable (restauré à la réf. PPM initiale après un retrait accepté) ; l'historique
+                       des réceptions doit refléter la réf. telle qu'elle était au moment de la réception. -->
+                  <td>{{ l.r.reference || l.d?.refeDossier || ('Dossier #' + l.r.idDossier) }}</td>
                   <td class="enr__date">
                     @if (l.d?.dateRef) {
                       {{ l.d?.dateRef | date: 'dd/MM/yyyy HH:mm' }}
