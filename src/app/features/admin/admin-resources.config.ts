@@ -276,9 +276,7 @@ export const REFERENTIELS: AdminResource[] = [
       idKey: 'idSeuil',
       writeCapability: 'REFERENTIEL_WRITE',
       fields: [
-        { key: 'idSeuil', label: 'Identifiant', type: 'number', pk: true, required: true, hideInList: true },
-        { key: 'montantMin', label: 'Montant min.', type: 'number' },
-        { key: 'montantMax', label: 'Montant max.', type: 'number' },
+        { key: 'idSeuil', label: 'Identifiant', type: 'number', pk: true, required: true },
         {
           key: 'idNature',
           label: 'Nature',
@@ -292,6 +290,8 @@ export const REFERENTIELS: AdminResource[] = [
           required: true,
           ref: { service: LocaliteService, idKey: 'idLocalite', labelKeys: ['libelleLocalite'] },
         },
+        { key: 'montantMin', label: 'Montant min.', type: 'number' },
+        { key: 'montantMax', label: 'Montant max.', type: 'number' },
       ],
     },
   },
