@@ -38,6 +38,8 @@ export interface Reception {
   idReceptionPrec?: number;
   /** Référence officielle structurée générée au POST (réponse, lecture seule) ; aussi persistée sur le dossier (`refeDossier`). */
   reference?: string;
+  /** Date/heure de soumission du dossier rattaché (`yyyy-MM-dd HH:mm`, lecture seule) ; `null` pour un dossier ancien sans date de soumission. */
+  dateSoumission?: string;
 }
 
 /** Réponse de GET /api/receptions/dossier/{idDossier}/existe (test léger « déjà réceptionné ? »). */

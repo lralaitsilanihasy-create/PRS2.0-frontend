@@ -61,9 +61,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                       <span class="enr__empty">—</span>
                     }
                   </td>
+                  <!-- Date/heure réelle de soumission (reception.dateSoumission) ; repli sur dossier.dateRef. -->
                   <td class="enr__date">
-                    @if (l.d?.dateRef) {
-                      {{ l.d?.dateRef | date: 'dd/MM/yyyy HH:mm' }}
+                    @if (l.r.dateSoumission || l.d?.dateRef; as dsoum) {
+                      {{ dsoum | date: 'dd/MM/yyyy HH:mm' }}
                     } @else {
                       <span class="enr__empty">—</span>
                     }
