@@ -421,7 +421,7 @@ a  { color: var(--p-600); text-decoration: none; }
 
 .page-inner {
   padding: 28px 32px;
-  max-width: 1280px;
+  max-width: 1600px;
 }
 
 .page-header {
@@ -554,7 +554,10 @@ a  { color: var(--p-600); text-decoration: none; }
   background: #fff;
   border: 0.5px solid var(--n-200);
   border-radius: var(--radius-xl);
-  overflow: hidden;
+  /* Scroll horizontal de secours : aucune colonne (ex. ACTIONS) n'est coupée
+     silencieusement si le tableau dépasse la largeur du conteneur. */
+  overflow-x: auto;
+  overflow-y: hidden;
   box-shadow: var(--shadow-sm);
 }
 

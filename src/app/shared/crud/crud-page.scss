@@ -29,10 +29,14 @@
   &__actions {
     display: flex;
     gap: 0.3rem;
+    align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
 
   &__actions-col {
     width: 1%;
+    white-space: nowrap;
   }
 
   &__req {
