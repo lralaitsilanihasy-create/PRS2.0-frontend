@@ -50,10 +50,17 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
             <tbody>
               @for (l of lignes(); track l.r.idReception) {
                 <tr>
-                  <!-- Réf. figée à CETTE réception (reception.reference) : le refeDossier du dossier est
-                       mutable (restauré à la réf. PPM initiale après un retrait accepté) ; l'historique
-                       des réceptions doit refléter la réf. telle qu'elle était au moment de la réception. -->
-                  <td>{{ l.r.reference || l.d?.refeDossier || ('Dossier #' + l.r.idDossier) }}</td>
+                  <!-- Réf. figée à CETTE réception (reception.reference, snapshot immuable). On n'affiche
+                       PAS de repli sur dossier.refeDossier : ce champ est mutable (restauré à la réf. PPM
+                       initiale après un retrait accepté) et fausserait l'historique. NULL (réf. héritée
+                       irrécupérable) → « — ». -->
+                  <td>
+                    @if (l.r.reference) {
+                      {{ l.r.reference }}
+                    } @else {
+                      <span class="enr__empty">—</span>
+                    }
+                  </td>
                   <td class="enr__date">
                     @if (l.d?.dateRef) {
                       {{ l.d?.dateRef | date: 'dd/MM/yyyy HH:mm' }}
