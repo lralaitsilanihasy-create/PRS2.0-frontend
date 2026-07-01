@@ -562,7 +562,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 
 > ⚠️ **Identité & ID (règle ajoutée).** À la création : `idPrmp` = **utilisateur authentifié** (JWT, corps ignoré), `dateDemande` serveur, `statut` forcé `EN_ATTENTE`, `idDemandeRetrait` **auto-généré** (IDENTITY). Gardes (sinon **403/409**) : PRMP **propriétaire** du dossier ; dossier **`SOUMIS`/`PRET_DISPATCH`** ; pas de demande déjà **`EN_ATTENTE`**. Liste déroulante des dossiers éligibles : **`GET /api/dossiers/retirables`** (PRMP).
 
-> ⚠️ **Décision (règle ajoutée).** `POST /{id}/accepter` → statut `ACCEPTEE` + **dossier `BROUILLON`** ; `POST /{id}/refuser` (corps `{ "motif"? }`) → `REFUSEE`, dossier **inchangé**. Le décideur réel (CC **ou** Président) est enregistré dans `IM_CTRL_CC` depuis le **JWT**. Hors CC-localité/Président → **403** ; demande déjà traitée → **409**. Notifs PRMP : `RETRAIT_ACCEPTE` / `RETRAIT_REFUSE`.
+> ⚠️ **Décision (règle ajoutée).** `POST /{id}/accepter` → statut `ACCEPTEE` + **dossier `BROUILLON`**, avec sa **référence de réception invalidée** : `refeDossier` est **restauré à la référence initiale du dossier** (celle générée à la création, stockée dans `t_ppm.REFERENCE`, ex. `00003/DGB/PPM/2026`) — la référence de réception (ex. `00002/PPM/CRM-ANT/2026`) est ainsi remplacée. `GET /api/dossiers` (« Mes brouillons ») réaffiche donc la référence d'origine, et le dossier **redevient entièrement modifiable** (métadonnées, lignes de marché, pièces). *(Dossier sans PPM → `refeDossier` remis à `null`.)* `POST /{id}/refuser` (corps `{ "motif"? }`) → `REFUSEE`, dossier **inchangé**. Le décideur réel (CC **ou** Président) est enregistré dans `IM_CTRL_CC` depuis le **JWT**. Hors CC-localité/Président → **403** ; demande déjà traitée → **409**. Notifs PRMP : `RETRAIT_ACCEPTE` / `RETRAIT_REFUSE`.
 
 **Champs `DemandeRetraitDto`**
 
@@ -2691,7 +2691,7 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 | libelleSeuil | string | — (réponse) | **lecture seule** — « montantMin à montantMax », ou « ≥ montantMin » si max nul |
 | libelleMode | string | — (réponse) | **lecture seule** — libellé du mode (ex. « Appel d'offres ouvert ») |
 
-> ⚠️ **Libellés en lecture (règle ajoutée).** `GET /api/regle-passations` (et `/{id}`) renseigne `libelleSituation`, `libelleSeuil` et `libelleMode` (résolus depuis `tr_situation` / `t_seuil` / `tr_mode_passation`) pour l'affichage. Les `id*` restent présents (nécessaires à la création/édition) mais n'ont pas à être affichés.
+> ⚠️ **Libellés en lecture (règle ajoutée).** `GET /api/regle-passations` (et `/{id}`) renseigne `libelleSituation`, `libelleSeuil` et `libelleMode` (résolus depuis `tr_situation` / `t_seuil` / `tr_mode_passation`) pour l'affichage. Les `id*` restent présents (nécessaires à la création/édition — les retirer casserait POST/PUT) mais n'ont pas à être affichés.
 
 **Champs `SuggestionModeRequest`** (corps de `suggestion-mode`)
 
