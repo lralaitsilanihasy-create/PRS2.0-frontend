@@ -1044,6 +1044,19 @@ dossier/PPM (désormais réservée Admin).
 **`EditionPpmRequest`** (`PUT /api/saisies/ppm/{idDossier}`) — édite un **brouillon** PPM en une transaction :
 `exercice`, `signataire`, `dateSignature`, `reference` (en-tête, tous obligatoires) + `marches` (liste désirée). Les lignes sont **réconciliées par `idDetail`** : ajout des nouvelles, mise à jour des existantes (mode **recalculé**), **retrait** des absentes. La localité/le type/le propriétaire/l'entité ne changent pas. Dossier non BROUILLON → **409** ; non-propriétaire → **403**.
 
+> 📌 **Modification d'un dossier BROUILLON par la PRMP — parcours réel (endpoints existants).** Il n'existe **pas** de façade `/api/dossiers/{id}/...` pour l'édition partielle : chaque partie se modifie via sa ressource propre, **toutes gardées par la même règle** — *dossier en `BROUILLON`* **et** *`idPrmp` == PRMP connectée* (sinon **403**/**409**). L'**entité** et la **localité** ne sont **jamais** modifiables (elles déterminent la référence du dossier).
+>
+> | Cible | Endpoint réel | Corps | Réponse |
+> |---|---|---|---|
+> | En-tête (+ remplacement des lignes en une transaction) | `PUT /api/saisies/ppm/{idDossier}` | `EditionPpmRequest` (`exercice`, `signataire`, `dateSignature`, `reference`, `marches[]`) | 200 `DossierDto` |
+> | Ajouter une ligne de marché | `POST /api/marches` | `MarcheDto` (`idDossier`, `designationMarche`, `montEstim`, `idNature`…) — **mode calculé auto** | 201 `MarcheDto` |
+> | Modifier une ligne de marché | `PUT /api/marches/{idMarche}` | `MarcheDto` — **mode recalculé** si montant/nature change | 200 `MarcheDto` |
+> | Supprimer une ligne de marché | `DELETE /api/marches/{idMarche}` | — (⚠️ cascade des prévisions) | 204 |
+> | Ajouter une pièce jointe | `POST /api/piece-jointe-dossiers` (`multipart`) | part `data` = `PieceJointeDossierDto` (`idDossier`, `idTypePiece`, `apresLettreRenvoi`) + part `fichier` | 201 `PieceJointeDossierDto` |
+> | Supprimer une pièce jointe | `DELETE /api/piece-jointe-dossiers/{idPj}` | — (fichier + entrée supprimés) | 204 |
+>
+> *(Aucun champ `libelle` d'en-tête : l'en-tête PPM se compose de `exercice`/`signataire`/`dateSignature`/`reference`. La désignation d'une ligne est `designationMarche`, son montant `montEstim`.)*
+
 > **Localité dérivée de l'ENTITÉ.** Le champ `idLocalite` n'est **pas** saisi : la PRMP **choisit une
 > entité contractante** parmi **ses** entités actives (`t_prmp_entite`), et la **localité du dossier en
 > est dérivée** (`tr_entite_contract.idLocalite`). Une même PRMP liée à des entités de localités
