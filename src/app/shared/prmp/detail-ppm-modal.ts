@@ -5,7 +5,7 @@ import { debounceTime, forkJoin, merge, Subscription } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Capm, Compte, Marche, MarchePrevision, Nature, PieceJointeDossier, Ppm, Situation } from '../../models';
+import { Capm, Compte, Marche, MarchePrevision, Nature, PieceJointeDossier, Ppm, Situation, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -18,6 +18,7 @@ import {
   ReferenceLookupService,
   ReglePassationService,
   SituationService,
+  TypePieceJointeService,
 } from '../../services';
 import { DatePipe, DecimalPipe } from '@angular/common';
 
@@ -56,7 +57,12 @@ type ModeSuggestion = {
               <span class="dpm-chip dpm-chip-type">Plan de passation</span>
               <span class="dpm-chip dpm-chip-active"><span class="dpm-chip-dot"></span>Actif</span>
             </div>
-            <button class="btn-close" type="button" (click)="emitFermer()">✕</button>
+            <div class="dpm-head-actions">
+              @if (modeEdition) {
+                <button class="btn btn-secondary btn-sm" type="button" (click)="ouvrirEditionHeader()">✎ Modifier l'en-tête</button>
+              }
+              <button class="btn-close" type="button" (click)="emitFermer()">✕</button>
+            </div>
           </div>
 
           <!-- Ligne 2 : titre -->
@@ -189,9 +195,14 @@ type ModeSuggestion = {
                           <span class="piece-index pi-blue">{{ i + 1 }}</span>
                           <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
                         </div>
-                        <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">
-                          Ouvrir <span class="arrow">↗</span>
-                        </button>
+                        <div class="piece-actions">
+                          <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">
+                            Ouvrir <span class="arrow">↗</span>
+                          </button>
+                          @if (modeEdition) {
+                            <button class="btn btn-danger btn-sm" type="button" [disabled]="suppressionPiece() === p.idPiece" (click)="supprimerPiece(p)">Supprimer</button>
+                          }
+                        </div>
                       </div>
                     }
                   </div>
@@ -210,9 +221,14 @@ type ModeSuggestion = {
                           <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
                           <span class="lr-tag">LR</span>
                         </div>
-                        <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">
-                          Ouvrir <span class="arrow">↗</span>
-                        </button>
+                        <div class="piece-actions">
+                          <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">
+                            Ouvrir <span class="arrow">↗</span>
+                          </button>
+                          @if (modeEdition) {
+                            <button class="btn btn-danger btn-sm" type="button" [disabled]="suppressionPiece() === p.idPiece" (click)="supprimerPiece(p)">Supprimer</button>
+                          }
+                        </div>
                       </div>
                     }
                   </div>
@@ -222,6 +238,23 @@ type ModeSuggestion = {
                   <div class="empty-state">
                     <span class="empty-state-icon" aria-hidden="true">📭</span>
                     <span class="empty-state-text">Aucune pièce jointe.</span>
+                  </div>
+                }
+
+                @if (modeEdition) {
+                  <div class="dpm-piece-upload">
+                    <select class="form-control" [value]="uploadType() ?? ''"
+                      (change)="uploadType.set($any($event.target).value ? +$any($event.target).value : null)">
+                      <option value="">— Type de pièce —</option>
+                      @for (t of typesPiece(); track t.idTypePiece) {
+                        <option [value]="t.idTypePiece">{{ t.libellePiece }}</option>
+                      }
+                    </select>
+                    <input type="file" accept=".pdf,.jpeg,.jpg,.png" (change)="onUploadFile($event)" />
+                    <button class="btn btn-primary btn-sm" type="button"
+                      [disabled]="uploading() || uploadType() == null || !uploadFile()" (click)="ajouterPiece()">
+                      {{ uploading() ? 'Ajout…' : '+ Ajouter une pièce' }}
+                    </button>
                   </div>
                 }
               </div>
@@ -240,6 +273,42 @@ type ModeSuggestion = {
       </div>
       }
     </div>
+
+    @if (editHeaderOpen()) {
+      <div class="dpm__overlay" (click)="annulerEditionHeader()">
+        <form class="dpm dpm--sm cnm-card" [formGroup]="headerForm" (ngSubmit)="enregistrerHeader()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" novalidate>
+          <header class="dpm__head">
+            <h2 class="dpm__title">Modifier l'en-tête du PPM</h2>
+            <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerEditionHeader()">&times;</button>
+          </header>
+          <div class="dpm__body dpm__body--pad dpm-form">
+            <label class="form-group">
+              <span class="form-label">Exercice *</span>
+              <input class="form-control" type="number" formControlName="exercice" />
+              @if (headerErr('exercice')) { <span class="form-error">{{ headerErr('exercice') }}</span> }
+            </label>
+            <label class="form-group">
+              <span class="form-label">Date de signature *</span>
+              <input class="form-control" type="date" formControlName="dateSignature" />
+              @if (headerErr('dateSignature')) { <span class="form-error">{{ headerErr('dateSignature') }}</span> }
+            </label>
+            <label class="form-group dpm-form__mode">
+              <span class="form-label">Libellé</span>
+              <input class="form-control" type="text" formControlName="libelle" />
+            </label>
+            <div class="dpm-form__dates">
+              <span class="cnm-muted">Entité contractante, référence et signataire sont fixés par le serveur (non modifiables).</span>
+            </div>
+          </div>
+          <footer class="dpm__foot">
+            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerEditionHeader()">Annuler</button>
+            <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submittingHeader()">
+              {{ submittingHeader() ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    }
 
     @if (modalMarche(); as m) {
       <div class="dpm__overlay" (click)="fermerDates()">
@@ -454,6 +523,7 @@ export class DetailPpmModal implements OnInit {
   private readonly situationService = inject(SituationService);
   private readonly compteService = inject(CompteService);
   private readonly capmService = inject(CapmService);
+  private readonly typePieceService = inject(TypePieceJointeService);
 
   readonly loading = signal(true);
   /** Animation de fermeture en cours : retarde l'émission de `fermer` le temps du fondu sortant. */
@@ -464,6 +534,19 @@ export class DetailPpmModal implements OnInit {
   readonly modeMap = signal<Map<string, string>>(new Map());
   readonly capms = signal<Capm[]>([]);
   readonly procErreurs = signal<Record<number, string>>({});
+
+  // Édition de l'en-tête du PPM (modeEdition) : exercice / date signature / libellé.
+  readonly editHeaderOpen = signal(false);
+  readonly submittingHeader = signal(false);
+  readonly headerErrors = signal<Record<string, string>>({});
+  headerForm: FormGroup = this.fb.group({});
+
+  // Gestion des pièces jointes (modeEdition) : upload + suppression.
+  readonly typesPiece = signal<TypePieceJointe[]>([]);
+  readonly uploadType = signal<number | null>(null);
+  readonly uploadFile = signal<File | null>(null);
+  readonly uploading = signal(false);
+  readonly suppressionPiece = signal<number | null>(null);
 
   // Consultation des dates d'un marché
   readonly modalMarche = signal<Marche | null>(null);
@@ -507,6 +590,10 @@ export class DetailPpmModal implements OnInit {
     this.loading.set(true);
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.capmService.getAll().subscribe((rows) => this.capms.set([...rows].sort((a, b) => a.ordre - b.ordre)));
+    // Types de pièces attendus (édition) — dossier PPM.
+    if (this.modeEdition) {
+      this.typePieceService.getByTypeDossier('PPM').subscribe((rows) => this.typesPiece.set(rows));
+    }
     forkJoin({
       ppm: this.ppmService.getById(this.idPpm),
       marches: this.marcheService.list(),
@@ -532,6 +619,109 @@ export class DetailPpmModal implements OnInit {
       this.closing.set(false);
       this.fermer.emit();
     }, 160);
+  }
+
+  // — Édition de l'en-tête du PPM (PUT /api/ppms/{id}) : en-tête seul, marchés non touchés —
+  ouvrirEditionHeader(): void {
+    const p = this.ppm();
+    if (!p) {
+      return;
+    }
+    this.headerErrors.set({});
+    this.headerForm = this.fb.group({
+      exercice: [p.exercice, Validators.required],
+      dateSignature: [p.dateSignature, Validators.required],
+      libelle: [p.libelle ?? ''],
+    });
+    this.editHeaderOpen.set(true);
+  }
+  annulerEditionHeader(): void {
+    if (!this.submittingHeader()) {
+      this.editHeaderOpen.set(false);
+    }
+  }
+  headerErr(key: string): string | undefined {
+    return this.headerErrors()[key];
+  }
+  enregistrerHeader(): void {
+    const p = this.ppm();
+    if (!p) {
+      return;
+    }
+    if (this.headerForm.invalid) {
+      this.headerForm.markAllAsTouched();
+      return;
+    }
+    const v = this.headerForm.getRawValue();
+    this.submittingHeader.set(true);
+    this.headerErrors.set({});
+    // Entité / référence / signataire fixés serveur → renvoyés inchangés.
+    const body: Ppm = { ...p, exercice: v.exercice, dateSignature: v.dateSignature, libelle: v.libelle || undefined };
+    this.ppmService.update(p.idPpm, body).subscribe({
+      next: (updated) => {
+        this.ppm.set(updated);
+        this.submittingHeader.set(false);
+        this.editHeaderOpen.set(false);
+        this.toast.success('En-tête du PPM mis à jour.');
+        this.modifie.emit();
+      },
+      error: (e: ApiError) => {
+        this.submittingHeader.set(false);
+        this.headerErrors.set(e.fieldErrors ?? {});
+      },
+    });
+  }
+
+  // — Pièces jointes (upload / suppression, modeEdition) —
+  onUploadFile(ev: Event): void {
+    this.uploadFile.set((ev.target as HTMLInputElement).files?.[0] ?? null);
+  }
+  ajouterPiece(): void {
+    const type = this.uploadType();
+    const file = this.uploadFile();
+    if (type == null || !file) {
+      this.toast.error('Sélectionnez un type de pièce et un fichier.');
+      return;
+    }
+    const fd = new FormData();
+    fd.append(
+      'data',
+      new Blob([JSON.stringify({ idDossier: this.idDossier, idTypePiece: type })], { type: 'application/json' }),
+    );
+    fd.append('fichier', file);
+    this.uploading.set(true);
+    this.pieceService.upload(fd).subscribe({
+      next: () => {
+        this.toast.success('Pièce ajoutée.');
+        this.uploadType.set(null);
+        this.uploadFile.set(null);
+        this.uploading.set(false);
+        this.rechargerPieces();
+        this.modifie.emit();
+      },
+      error: (e: ApiError) => {
+        this.uploading.set(false);
+        this.toast.error(e.message || "Erreur lors de l'ajout de la pièce.");
+      },
+    });
+  }
+  supprimerPiece(p: PieceJointeDossier): void {
+    if (p.idPiece == null) {
+      return;
+    }
+    this.suppressionPiece.set(p.idPiece);
+    this.pieceService.supprimer(p.idPiece).subscribe({
+      next: () => {
+        this.toast.success('Pièce supprimée.');
+        this.suppressionPiece.set(null);
+        this.rechargerPieces();
+        this.modifie.emit();
+      },
+      error: () => this.suppressionPiece.set(null),
+    });
+  }
+  private rechargerPieces(): void {
+    this.pieceService.getByDossier(this.idDossier).subscribe((rows) => this.pieces.set(rows));
   }
 
   // — Alias appelés par le template (mode édition) —

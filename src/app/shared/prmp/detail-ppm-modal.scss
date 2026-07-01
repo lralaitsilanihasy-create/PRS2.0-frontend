@@ -100,6 +100,19 @@
   &:hover { background: var(--n-200); color: var(--n-800); }
 }
 
+/* Édition (modeEdition) : actions d'en-tête, actions par pièce, ligne d'upload. */
+.dpm-head-actions { display: flex; align-items: center; gap: 8px; }
+.piece-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.dpm-piece-upload {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-top: 0.5px solid var(--n-200);
+}
+.dpm-piece-upload .form-control { flex: 1; min-width: 10rem; }
+
 .dpm-title {
   font-size: 20px;
   font-weight: 700;
