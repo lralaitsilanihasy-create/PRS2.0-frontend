@@ -59,7 +59,7 @@ import { DossierConsultation } from './dossier-consultation';
                   @if (showExamenAction && info.cle === 'EXAMEN' && peutAgir(info)) {
                     <a class="btn btn-primary btn-sm" [routerLink]="['/membre/examiner', d.idDossier]">Examiner</a>
                   }
-                  @if (source === 'examines' && d.statut === 'EXAMINE') {
+                  @if (examenModifiable(d)) {
                     <a class="btn btn-primary btn-sm" [routerLink]="['/membre/examiner', d.idDossier]">Modifier l'examen</a>
                   }
                   @if (showVerifAction && d.statut === 'EN_VERIFICATION') {
@@ -185,6 +185,27 @@ export class DossiersPipeline {
   private readonly pvs = signal<PvExamen[]>([]);
   private readonly verifications = signal<Verification[]>([]);
 
+  /**
+   * idDossier dont le projet de PV est déjà SOUMIS (statut ≠ BROUILLON) — l'examen n'est alors plus
+   * « modifiable » depuis « Dossiers examinés ». Résolu par la chaîne PV → examen → dispatch → réception.
+   * (Un PV signé quitte `GET /api/pv-examens` mais son dossier passe PV_SIGNE ≠ EXAMINE : géré par le statut.)
+   */
+  private readonly pvSoumisDossiers = computed(() => {
+    const recDossier = new Map(this.receptions().map((r) => [r.idReception, r.idDossier]));
+    const dispDossier = new Map(this.dispatchs().map((d) => [d.idDispatch, recDossier.get(d.idReception)]));
+    const exDossier = new Map(
+      this.examens().map((e) => [e.idExamen, e.idDispatch != null ? dispDossier.get(e.idDispatch) : undefined]),
+    );
+    const set = new Set<number>();
+    for (const pv of this.pvs()) {
+      if (pv.statutPv !== 'BROUILLON') {
+        const idDossier = exDossier.get(pv.idExamen);
+        if (idDossier != null) set.add(idDossier);
+      }
+    }
+    return set;
+  });
+
   constructor() {
     this.loading.set(true);
     if (this.source === 'a-verifier') {
@@ -220,6 +241,21 @@ export class DossiersPipeline {
       });
     } else if (this.paginee) {
       this.chargerPage(0);
+      // « Dossiers examinés » (Membre) : charger PV + examens + dispatchs + réceptions pour masquer
+      // « Modifier l'examen » dès que le projet de PV est soumis (statut ≠ BROUILLON).
+      if (this.source === 'examines') {
+        forkJoin({
+          pvs: this.pvService.list(),
+          examens: this.examenService.list(),
+          dispatchs: this.dispatchService.list(),
+          receptions: this.receptionService.list(),
+        }).subscribe((r) => {
+          this.pvs.set(r.pvs);
+          this.examens.set(r.examens);
+          this.dispatchs.set(r.dispatchs);
+          this.receptions.set(r.receptions);
+        });
+      }
     } else {
       // Pipeline générique (dashboard) : toutes les ressources pour dater la frise.
       forkJoin({
@@ -298,6 +334,14 @@ export class DossiersPipeline {
       default:
         return 'Aucun dossier visible dans votre périmètre.';
     }
+  }
+
+  /**
+   * « Modifier l'examen » (source 'examines') : visible tant que le dossier est EXAMINE **et** que
+   * son projet de PV n'a pas encore été soumis (une fois soumis, l'examen se gère via le PV/la navette).
+   */
+  examenModifiable(d: Dossier): boolean {
+    return this.source === 'examines' && d.statut === 'EXAMINE' && !this.pvSoumisDossiers().has(d.idDossier);
   }
 
   /** Libellé de l'entité du dossier (cache, sans appel par ligne). */
