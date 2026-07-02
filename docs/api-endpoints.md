@@ -988,6 +988,15 @@ ajoutées après réception d'une lettre de renvoi** (`true`).
 **Règle `apresLettreRenvoi`** : si `idLettre` est fourni **et** le dossier est `SOUMIS`/`PRET_DISPATCH`, la pièce
 est enregistrée `apresLettreRenvoi=true` (avec `idLettre`) ; sinon c'est une **pièce initiale** (`false`).
 
+> ⚠️ **Ré-ouverture de l'examen après lettre de renvoi (règle ajoutée).** Au **premier** dépôt
+> `apresLettreRenvoi=true` (dossier `PRET_DISPATCH`, cf. signature de la lettre ci-dessous), le serveur **réutilise
+> le dispatch existant** (le Membre y est déjà désigné) et fait avancer le dossier **`PRET_DISPATCH → DISPATCHE`**
+> — **pas de nouveau dispatch** (aucun doublon). Le dossier **réapparaît alors dans `GET /api/dossiers/a-examiner`**
+> du Membre attributaire, qui peut ré-examiner. Une **unique** notification **`PIECE_AJOUTEE_APRES_RENVOI`**
+> (`typeObjet=DOSSIER`, `idObjet=idDossier`) est émise vers ce Membre. Les **dépôts suivants** trouvent le dossier
+> déjà `DISPATCHE` (donc `apresLettreRenvoi=false`) : **ni ré-avance, ni notification en double** (regroupement
+> naturel).
+
 > **Pièces obligatoires à la soumission.** `POST /api/dossiers/{id}/soumettre` vérifie que toutes les pièces
 > `obligatoire` du type de dossier (référentiel ci-dessus) sont présentes. Sinon **400** :
 > `{ "erreurs": [ { "champ": "piecesJointes", "message": "La pièce '<libellé>' est obligatoire." } ] }`.
@@ -1304,7 +1313,10 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > **Création** (POST) : examen **inexistant ou hors périmètre** → **403**. **Signature** (`signer`, CC ou
 > Président — jamais le Membre → **403**) `SOUMIS → SIGNE` (`imSignataire` = JWT) → **notifie la PRMP**
 > du dossier (`LETTRE_RENVOI_RECUE`) et les **Assistants contrôleurs** de la localité (`LETTRE_RENVOI_COPIE`).
-> Statut incorrect → **409**.
+> Statut incorrect → **409**. ⚠️ **La signature rouvre le circuit** : le dossier examiné repasse
+> **`EXAMINE → PRET_DISPATCH`** (réception/dispatch/examen/lettre **conservés**), afin que la PRMP puisse déposer
+> les pièces manquantes (`apresLettreRenvoi=true`) ; le **premier** dépôt le fait avancer à `DISPATCHE` et notifie
+> le Membre (cf. `POST /api/piece-jointe-dossiers`).
 >
 > **Marquage « lu » à la consultation PRMP (⚠️ règle ajoutée).** La **PRMP propriétaire** du dossier peut
 > consulter le détail d'une lettre **`SIGNE`** via `GET /api/lettre-renvois/{id}` (au-delà du périmètre de
@@ -2176,6 +2188,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` et une `dateFi
 | `LETTRE_RENVOI_COPIE` | copie d'une lettre de renvoi signée | Assistant contrôleur de la localité | DOSSIER |
 | `PV_DEFINITIF_COPIE` | copie d'un PV définitif (avis ≠ FAVR) | Assistant contrôleur de la localité | DOSSIER |
 | `CLOTURE_COPIE_ASSISTANT` | copie d'un PV FAVR après clôture du dossier | Assistant contrôleur de la localité | DOSSIER |
+| `PIECE_AJOUTEE_APRES_RENVOI` | dossier complété par la PRMP après lettre de renvoi, à ré-examiner | Membre attributaire | DOSSIER |
 | `CLOTURE_ELIGIBLE` | dossier clôturé éligible | Chargé de publication | DOSSIER |
 | `NOUVEAU_MESSAGE` | message reçu (messagerie) | destinataire | MESSAGE |
 
