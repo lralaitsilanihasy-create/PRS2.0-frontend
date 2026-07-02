@@ -180,7 +180,7 @@ interface RowState {
                 </div>
               }
 
-              @if (mode() === 'create') {
+              @if (avisEditable()) {
                 <h3 class="exam__sub">Avis & synthèse (projet de PV)</h3>
                 <label class="form-group">
                   <span class="form-label">Avis global *</span>
@@ -194,7 +194,10 @@ interface RowState {
                   <textarea class="form-control" rows="3" [value]="synthese()" (input)="synthese.set($any($event.target).value)"></textarea>
                 </label>
               } @else if (mode() === 'edit') {
-                <p class="form-hint">L'avis et la synthèse se modifient dans « Projets de PV ».</p>
+                <h3 class="exam__sub">Avis & synthèse (projet de PV)</h3>
+                <p class="form-hint"><strong>Avis global :</strong> {{ avisLabel(avis()) }}</p>
+                @if (synthese()) { <p class="form-hint"><strong>Synthèse :</strong> {{ synthese() }}</p> }
+                <p class="form-hint">Le projet de PV a déjà été soumis : l'avis et la synthèse se modifient désormais dans « Projets de PV ».</p>
               }
 
               @if (formError()) { <span class="form-error">{{ formError() }}</span> }
@@ -363,6 +366,12 @@ export class ExamenDossier {
     return 'locked';
   });
   private readonly existingExamenId = signal<number | null>(null);
+  /** Projet de PV rattaché à l'examen (mode edit) — porte l'avis + la synthèse à éditer. */
+  private readonly existingPv = signal<PvExamen | null>(null);
+  /** Avis/synthèse éditables ici uniquement si le projet de PV est encore BROUILLON (sinon → « Projets de PV »). */
+  readonly pvEditable = computed(() => this.mode() === 'edit' && this.existingPv()?.statutPv === 'BROUILLON');
+  /** Le bloc avis/synthèse est éditable à la création, ou en édition tant que le PV est BROUILLON. */
+  readonly avisEditable = computed(() => this.mode() === 'create' || this.pvEditable());
 
   readonly estPpm = computed(() => this.dossier()?.idTypeDossier === 'PPM');
   readonly typeLabel = computed(() => {
@@ -417,6 +426,13 @@ export class ExamenDossier {
           if (ex) {
             this.existingExamenId.set(ex.idExamen);
             if (ex.dateExamen) this.dateExamen.set(ex.dateExamen);
+            // Projet de PV existant : préremplir avis + synthèse (éditables seulement si PV BROUILLON).
+            const pv = r.pvs.find((p) => p.idExamen === ex.idExamen) ?? null;
+            this.existingPv.set(pv);
+            if (pv) {
+              this.avis.set(pv.idAvis ?? null);
+              this.synthese.set(pv.syntheseObservations ?? '');
+            }
             for (const det of r.details.filter((d) => d.idExamen === ex.idExamen)) {
               map.set(det.idPtControle, {
                 conforme: det.conforme,
@@ -491,6 +507,10 @@ export class ExamenDossier {
   modeLabel(id?: number): string {
     return id === null || id === undefined ? '—' : this.modeMap().get(String(id)) ?? `#${id}`;
   }
+  /** Libellé d'un avis global (lecture seule, mode edit avec PV déjà soumis). */
+  avisLabel(id: string | null): string {
+    return id ? this.aviss().find((a) => a.idAvis === id)?.libelleAvis ?? id : '—';
+  }
   montant(v?: number): string {
     return v === null || v === undefined ? '—' : new Intl.NumberFormat('fr-FR').format(v);
   }
@@ -507,6 +527,11 @@ export class ExamenDossier {
     const idDispatch = this.idDispatch();
     if (!this.dossier() || idDispatch == null) return;
     if (!this.validerObservations()) return;
+    // PV encore BROUILLON : l'avis est édité ici (requis) et mis à jour avec l'examen.
+    if (this.pvEditable() && !this.avis()) {
+      this.formError.set('Sélectionnez un avis global (requis pour le projet de PV).');
+      return;
+    }
     this.formError.set(null);
     this.saving.set(true);
     this.modifier(idDispatch);
@@ -668,6 +693,18 @@ export class ExamenDossier {
               : this.examenDetailService.create(body);
           });
           return calls.length ? forkJoin(calls) : of([]);
+        }),
+        // PV encore BROUILLON : on met à jour l'avis + la synthèse du projet de PV dans la foulée.
+        switchMap(() => {
+          const pv = this.existingPv();
+          if (this.pvEditable() && pv) {
+            return this.pvExamenService.update(pv.idPv, {
+              ...pv,
+              idAvis: this.avis() as string,
+              syntheseObservations: this.synthese().trim() || undefined,
+            });
+          }
+          return of(null);
         }),
       )
       .subscribe({
