@@ -723,12 +723,19 @@ export class ExamenDossier {
               syntheseObservations: synthese,
             });
           }
-          // Aucun projet de PV (examen créé sans soumission) → le créer, puis persister la synthèse.
-          return this.examenService.soumettre(idExamen, { idAvis: this.avis() as string }).pipe(
-            switchMap((created) =>
-              synthese ? this.pvExamenService.update(created.idPv, { ...created, syntheseObservations: synthese }) : of(created),
-            ),
-          );
+          // Aucun projet de PV (examen créé sans soumission, ex. via lettre de renvoi) → le créer
+          // DIRECTEMENT (POST /api/pv-examens). On n'utilise pas la façade examens/{id}/soumettre :
+          // elle attend un dossier DISPATCHE et renvoie 400 sur un dossier déjà EXAMINE.
+          const nouveauPv: PvExamen = {
+            idPv: this.nextId(this.pvs().map((p) => p.idPv)),
+            idExamen,
+            idAvis: this.avis() as string,
+            imCtrlMembre: this.auth.ref() ?? '', // @NotBlank requis ; valeur ignorée (dérivée du dispatch)
+            statutPv: 'BROUILLON',
+            nbNavettes: 0,
+            syntheseObservations: synthese,
+          };
+          return this.pvExamenService.create(nouveauPv);
         }),
       )
       .subscribe({
