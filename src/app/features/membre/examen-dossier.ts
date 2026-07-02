@@ -548,7 +548,15 @@ export class ExamenDossier {
     this.formError.set(null);
     this.saving.set(true);
     this.ensureExamen()
-      .pipe(switchMap((idExamen) => this.examenService.soumettre(idExamen, { idAvis: this.avis() as string })))
+      .pipe(
+        switchMap((idExamen) => this.examenService.soumettre(idExamen, { idAvis: this.avis() as string })),
+        // ExamenSoumissionRequest ne porte que idAvis : on persiste la synthèse via une MAJ du PV créé
+        // (encore BROUILLON) — PUT /api/pv-examens/{id}.
+        switchMap((pv) => {
+          const synthese = this.synthese().trim();
+          return synthese ? this.pvExamenService.update(pv.idPv, { ...pv, syntheseObservations: synthese }) : of(pv);
+        }),
+      )
       .subscribe({
         next: () => {
           this.toast.success('Examen enregistré · projet de PV créé.');
