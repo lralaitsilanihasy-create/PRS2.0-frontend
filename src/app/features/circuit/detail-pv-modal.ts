@@ -112,8 +112,12 @@ import { StatutBadge } from '../../shared/circuit';
 
         <!-- Pied -->
         <div class="modal-footer modal-footer-spaced">
-          <span class="text-muted text-sm">Document officiel signé</span>
-          <button type="button" class="btn btn-secondary" (click)="telechargerPdf()">⬇ Télécharger le PDF</button>
+          @if (pv().documentDisponible === false) {
+            <span class="text-muted text-sm">Aucun PDF officiel : ce PV n'est pas éligible à la génération de document.</span>
+          } @else {
+            <span class="text-muted text-sm">Document officiel signé</span>
+            <button type="button" class="btn btn-secondary" (click)="telechargerPdf()">⬇ Télécharger le PDF</button>
+          }
         </div>
       </div>
     </div>
@@ -188,12 +192,17 @@ export class DetailPvModal implements OnInit {
   telechargerPdf(): void {
     this.pvService.document(this.pv().idPv).subscribe({
       next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
-      error: (err: HttpErrorResponse) =>
-        this.toast.error(
-          err.status === 404
-            ? "Le document PDF n'est pas disponible pour ce PV."
-            : 'Impossible de télécharger le document.',
-        ),
+      error: (err: HttpErrorResponse) => {
+        if (err.status === 404) {
+          // Comportement attendu : un PDF n'est généré que pour un avis « Favorable sous réserve » (FAVR),
+          // un dossier de localité centrale (ANT) et des marchés tous en appel d'offres ouvert.
+          this.toast.info(
+            "Ce PV n'a pas de document PDF officiel : il n'est généré que pour un avis « Favorable sous réserve », un dossier de la localité centrale et des marchés tous en appel d'offres ouvert.",
+          );
+        } else {
+          this.toast.error('Impossible de télécharger le document.');
+        }
+      },
     });
   }
 }

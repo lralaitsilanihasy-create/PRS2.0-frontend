@@ -165,6 +165,12 @@ export interface PvExamen {
   referencePv?: string;
   /** Référence officielle dérivée du dossier (refeDossier avec /PV avant l'année), générée serveur. */
   refePv?: string;
+  /**
+   * Présence d'un PDF officiel téléchargeable (`t_pv_examen.CHEMIN_DOCUMENT` non nul / PV éligible).
+   * Le document n'est généré que pour un avis `FAVR`, un dossier de localité centrale (`ANT`) et des
+   * marchés tous en appel d'offres ouvert. `undefined` = information non fournie par le backend.
+   */
+  documentDisponible?: boolean;
 }
 
 /** Navette (aller-retour) du projet de PV. Traçabilité immuable (pas de suppression). */
