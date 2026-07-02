@@ -368,8 +368,16 @@ export class ExamenDossier {
   private readonly existingExamenId = signal<number | null>(null);
   /** Projet de PV rattaché à l'examen (mode edit) — porte l'avis + la synthèse à éditer. */
   private readonly existingPv = signal<PvExamen | null>(null);
-  /** Avis/synthèse éditables ici uniquement si le projet de PV est encore BROUILLON (sinon → « Projets de PV »). */
-  readonly pvEditable = computed(() => this.mode() === 'edit' && this.existingPv()?.statutPv === 'BROUILLON');
+  /**
+   * Avis/synthèse éditables ici si : aucun projet de PV n'existe encore (examen créé sans soumission,
+   * ex. via lettre de renvoi → « Modifier l'examen » le créera), OU le PV existant est encore BROUILLON.
+   * Un PV déjà soumis (≠ BROUILLON) reste en lecture seule (→ « Projets de PV »).
+   */
+  readonly pvEditable = computed(() => {
+    if (this.mode() !== 'edit') return false;
+    const pv = this.existingPv();
+    return pv === null || pv.statutPv === 'BROUILLON';
+  });
   /** Le bloc avis/synthèse est éditable à la création, ou en édition tant que le PV est BROUILLON. */
   readonly avisEditable = computed(() => this.mode() === 'create' || this.pvEditable());
 
@@ -702,17 +710,25 @@ export class ExamenDossier {
           });
           return calls.length ? forkJoin(calls) : of([]);
         }),
-        // PV encore BROUILLON : on met à jour l'avis + la synthèse du projet de PV dans la foulée.
+        // Projet de PV éditable : on met à jour (PV BROUILLON existant) ou on le CRÉE (aucun PV encore),
+        // puis on persiste la synthèse — dans la foulée de la mise à jour de l'examen.
         switchMap(() => {
+          if (!this.pvEditable()) return of(null);
           const pv = this.existingPv();
-          if (this.pvEditable() && pv) {
+          const synthese = this.synthese().trim() || undefined;
+          if (pv) {
             return this.pvExamenService.update(pv.idPv, {
               ...pv,
               idAvis: this.avis() as string,
-              syntheseObservations: this.synthese().trim() || undefined,
+              syntheseObservations: synthese,
             });
           }
-          return of(null);
+          // Aucun projet de PV (examen créé sans soumission) → le créer, puis persister la synthèse.
+          return this.examenService.soumettre(idExamen, { idAvis: this.avis() as string }).pipe(
+            switchMap((created) =>
+              synthese ? this.pvExamenService.update(created.idPv, { ...created, syntheseObservations: synthese }) : of(created),
+            ),
+          );
         }),
       )
       .subscribe({
