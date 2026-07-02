@@ -1248,8 +1248,9 @@ dossier/PPM (désormais réservée Admin).
 > pendant l'examen — ressource `/api/lettre-renvois` ; `ExamenDto` n'a pas de champ `typeResultat`.)*
 >
 > ⚠️ **PV — document généré (règle ajoutée).** À la **signature finale** du PV (passage à `SIGNE`), si le PV
-> est éligible — avis **favorable sous réserve** (`FAVR`), dossier de **localité centrale** (`ANT`) et
-> **toutes** les lignes de marché du PPM en **appel d'offres ouvert** — le **PDF du PV** est généré à partir du
+> est éligible — avis **favorable sous réserve** (`FAVR`), dossier de **localité centrale** (`ANT`) et **PPM**
+> comportant au moins une ligne de marché, **quel que soit le mode de passation** (le gabarit AFSR/PPM/central
+> ne dépend pas du mode) — le **PDF du PV** est généré à partir du
 > modèle Word `PV_AFSR_PPMAGPM_CENTRALE.docx` (copie du modèle + remplacement des placeholders ; date d'examen
 > formatée et **en toutes lettres** dans « L'an … » ; bloc « Étaient présents » filtré sur les signataires
 > effectifs ; ANNEXE = une ligne par observation des points non conformes) puis converti via Microsoft Word
@@ -2496,9 +2497,9 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` et une `dateFi
 | refePv | string | — (réponse) | max 120 — **référence officielle dérivée du dossier**, générée serveur, **unique** (lecture seule) |
 | idSecretaireSeance | string | — (posé à la soumission) | max 7 — Vérificateur désigné **Secrétaire de séance** (validé à `…/examens/{id}/soumettre`) |
 | nomSecretaireSeance | string | — (réponse) | nom complet du secrétaire de séance (« prénoms nom »), peuplé serveur — lecture seule |
-| documentDisponible | boolean | — (réponse) | **`true`** si un PDF officiel est réellement disponible : `CHEMIN_DOCUMENT` non nul **ou** PV **éligible** (avis `FAVR` + localité centrale `ANT` + toutes les lignes de marché en appel d'offres ouvert, donc régénérable à la demande) ; **`false`** sinon. Lecture seule, peuplé serveur → le front masque « Télécharger le PDF » et évite un 404 |
+| documentDisponible | boolean | — (réponse) | **`true`** si un PDF officiel est réellement disponible : `CHEMIN_DOCUMENT` non nul **ou** PV **éligible** (avis `FAVR` + localité centrale `ANT` + PPM avec ≥ 1 ligne de marché, **quel que soit le mode de passation**, donc régénérable à la demande) ; **`false`** sinon. Lecture seule, peuplé serveur → le front masque « Télécharger le PDF » et évite un 404 |
 
-> ⚠️ **Disponibilité du document (`documentDisponible`) — règle ajoutée.** Le flag reflète la règle « PV — document généré » **et** l'existence effective du fichier : `true` si `t_pv_examen.CHEMIN_DOCUMENT` est renseigné, ou si le PV est éligible à la génération à la demande (`GET /api/pv-examens/{id}/document` régénère alors le PDF). Il reste donc juste après une (re)génération. Un PV non éligible (ex. avis `FAVR`/`ANT` mais une ligne en « Demande de cotation ») → `false`, et `…/document` renvoie **404**.
+> ⚠️ **Disponibilité du document (`documentDisponible`) — règle ajoutée.** Le flag reflète la règle « PV — document généré » **et** l'existence effective du fichier : `true` si `t_pv_examen.CHEMIN_DOCUMENT` est renseigné, ou si le PV est éligible à la génération à la demande (`GET /api/pv-examens/{id}/document` régénère alors le PDF). Il reste donc juste après une (re)génération. Un PV non éligible (ex. avis **≠ FAVR**, ou localité **non centrale**, ou dossier **sans PPM**) → `false`, et `…/document` renvoie **404**. *(Le **mode de passation** n'entre plus dans l'éligibilité : un PV FAVR/ANT/PPM en « Demande de cotation » est désormais éligible.)*
 
 > ⚠️ **Référence du PV (`refePv`) — règle ajoutée.** À la création, le serveur dérive `refePv` du `refeDossier`
 > du dossier rattaché en insérant **`/PV` avant l'année** : `00003/PPM/CRM-ANT/2026` → `00003/PPM/CRM-ANT/PV/2026`.
