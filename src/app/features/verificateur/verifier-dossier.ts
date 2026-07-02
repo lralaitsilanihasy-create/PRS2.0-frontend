@@ -4,7 +4,7 @@ import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Dossier, Notification, Verification } from '../../models';
+import { Dossier, Notification, PvExamen, Verification } from '../../models';
 import {
   AvisService,
   ControleurService,
@@ -22,6 +22,7 @@ import {
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
+import { DetailPvModal } from '../circuit/detail-pv-modal';
 
 /** Une ligne du fil chronologique : observation envoyée (vérificateur) ou rectification PRMP reçue. */
 interface Echange {
@@ -42,7 +43,7 @@ interface Echange {
 @Component({
   selector: 'app-verifier-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation],
+  imports: [StatutBadge, DossierConsultation, DetailPvModal],
   template: `
     <section class="vf">
       <header class="page-header">
@@ -81,6 +82,11 @@ interface Echange {
               </dl>
               @if (synthese()) {
                 <p class="vf__synthese"><strong>Observations / réserves :</strong> {{ synthese() }}</p>
+              }
+              @if (pv(); as p) {
+                <button type="button" class="btn btn-outline btn-sm vf__voir-pv" (click)="pvDetail.set(p)">
+                  Voir les observations du PV
+                </button>
               }
 
               <h3 class="vf__sub">Historique des échanges</h3>
@@ -182,6 +188,10 @@ interface Echange {
         </div>
       </div>
     }
+
+    @if (pvDetail(); as p) {
+      <app-detail-pv-modal [pv]="p" (fermer)="pvDetail.set(null)" />
+    }
   `,
   styles: `
     .vf__grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0.75rem; align-items: start; }
@@ -192,6 +202,7 @@ interface Echange {
     .vf__info dt { flex: 0 0 9rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); }
     .vf__info dd { margin: 0; color: var(--n-700); }
     .vf__synthese { margin: 0; font-size: var(--text-sm); }
+    .vf__voir-pv { margin-top: 0.5rem; }
     .vf__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
     .vf__ech { list-style: none; margin: 0.35rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
     .vf__ech-item { display: flex; flex-direction: column; gap: 2px; padding: 0.25rem 0.5rem; border-left: 2px solid var(--c-100); }
@@ -230,6 +241,10 @@ export class VerifierDossier {
   readonly idPv = signal<number | null>(null);
   readonly synthese = signal('');
   private readonly avisPv = signal<string | null>(null);
+  /** PV signé du dossier (conservé pour ouvrir le détail : grille de contrôle + observations). */
+  readonly pv = signal<PvExamen | null>(null);
+  /** PV ouvert dans le modal de détail (null = fermé). */
+  readonly pvDetail = signal<PvExamen | null>(null);
   /** Fil chronologique : observations envoyées + rectifications PRMP reçues (DESC). */
   readonly echanges = signal<Echange[]>([]);
 
@@ -307,6 +322,7 @@ export class VerifierDossier {
         this.idPv.set(signedPv?.idPv ?? null);
         this.avisPv.set(signedPv?.idAvis ?? null);
         this.synthese.set(signedPv?.syntheseObservations ?? '');
+        this.pv.set(signedPv ?? null);
 
         // idReception = réception de la chaîne du PV signé ; sinon la plus récente du dossier.
         const exOfPv = signedPv ? exOfD.find((e) => e.idExamen === signedPv.idExamen) : undefined;
