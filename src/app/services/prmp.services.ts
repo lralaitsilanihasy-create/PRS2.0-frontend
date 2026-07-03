@@ -13,6 +13,7 @@ import {
   Ppm,
   PrmpEntite,
   SaisieDossierRequest,
+  SaisiePpmImportResult,
   SaisiePpmRequest,
   ServiceBeneficiaire,
   SoaBeneficiaire,
@@ -153,5 +154,16 @@ export class SaisieService {
   /** `POST /api/saisies/dossier` → dossier DAO/MAOO créé (statut BROUILLON). */
   dossier(req: SaisieDossierRequest): Observable<Dossier> {
     return this.http.post<Dossier>(`${this.baseUrl}/dossier`, req);
+  }
+
+  /**
+   * `POST /api/saisies/ppm/import` (multipart, part `fichier` = PDF) — **read-only** : parse un PPM PDF
+   * et renvoie les données extraites pour **pré-remplir** le formulaire. **Ne crée rien** (la création
+   * reste `ppm`/`ppmAvecPieces`). 400 si le PDF est illisible / non reconnu.
+   */
+  importPpm(fichier: File): Observable<SaisiePpmImportResult> {
+    const fd = new FormData();
+    fd.append('fichier', fichier);
+    return this.http.post<SaisiePpmImportResult>(`${this.baseUrl}/ppm/import`, fd);
   }
 }

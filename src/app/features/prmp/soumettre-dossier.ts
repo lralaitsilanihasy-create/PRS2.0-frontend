@@ -8,7 +8,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
-import { Capm, Compte, Dossier, Marche, Nature, SaisieMarcheLigne, Situation, TypeDossier, TypePieceJointe } from '../../models';
+import { Capm, Compte, Dossier, Marche, Nature, SaisieMarcheLigne, SaisiePpmImportResult, Situation, TypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -82,6 +82,22 @@ type ModeSuggestion = {
 
         @case ('saisiePpm') {
           <form class="card sd__form cnm-form" [formGroup]="ppmForm" (ngSubmit)="creerPpm()" novalidate>
+            <div class="sd__import">
+              <label class="btn btn-outline btn-sm sd__import-btn">
+                📄 Importer un PPM (PDF)
+                <input type="file" accept=".pdf,application/pdf" hidden (change)="importerPpm($event)" [disabled]="importing()" />
+              </label>
+              @if (importing()) { <span class="cnm-muted">Analyse du PDF…</span> }
+              <span class="form-hint">Pré-remplit le formulaire depuis un PPM PDF officiel — à vérifier avant création.</span>
+            </div>
+            @if (importAvertissements().length) {
+              <div class="alert alert-warning">
+                <div class="sd__warn-title">Import — points à vérifier</div>
+                <ul class="sd__warn-list">
+                  @for (a of importAvertissements(); track $index) { <li>{{ a }}</li> }
+                </ul>
+              </div>
+            }
             <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Entité contractante *</span>
@@ -369,6 +385,8 @@ type ModeSuggestion = {
     .sd__choix-titre { font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
     .sd__choix-desc { color: var(--n-400); font-size: var(--text-sm); }
     .sd__form { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: min(64rem, 96vw); }
+    .sd__import { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.75rem; border-bottom: 1px solid var(--c-100); }
+    .sd__import-btn { cursor: pointer; }
     .sd__hint { margin: 0; }
     .sd__pieces { display: flex; flex-direction: column; gap: 0.5rem; }
     .sd__piece { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
@@ -480,6 +498,10 @@ export class SoumettreDossier {
     idTypeDossier: [null as string | null, Validators.required],
     idEntiteContract: [null as number | null, Validators.required],
   });
+
+  /** Import PPM PDF (pré-remplissage read-only) : état d'analyse + avertissements du parsing. */
+  readonly importing = signal(false);
+  readonly importAvertissements = signal<string[]>([]);
 
   /** Référentiel CAPM (processus de marché), trié par `ordre` ASC. */
   readonly capms = signal<Capm[]>([]);
@@ -664,6 +686,56 @@ export class SoumettreDossier {
       delete n[uid];
       return n;
     });
+  }
+
+  // — Import d'un PPM PDF (pré-remplissage read-only ; POST /api/saisies/ppm/import) —
+  importerPpm(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // autorise la re-sélection du même fichier
+    if (!file) return;
+    this.importing.set(true);
+    this.importAvertissements.set([]);
+    this.saisie.importPpm(file).subscribe({
+      next: (r) => {
+        this.appliquerImport(r);
+        this.importing.set(false);
+        this.toast.success('PPM importé — vérifiez les données pré-remplies avant de créer le dossier.');
+      },
+      error: (e: ApiError) => {
+        this.importing.set(false);
+        this.toast.error(e.message || 'PDF illisible ou non reconnu comme un PPM.');
+      },
+    });
+  }
+  /** Pré-remplit le formulaire depuis le résultat d'import (best-effort ; à vérifier avant création). */
+  private appliquerImport(r: SaisiePpmImportResult): void {
+    if (r.exercice != null) this.ppmForm.controls.exercice.setValue(r.exercice);
+    if (r.dateSignature) this.ppmForm.controls.dateSignature.setValue(r.dateSignature);
+    if (r.idEntiteContract != null) this.ppmForm.controls.idEntiteContract.setValue(r.idEntiteContract);
+    // Marchés (best-effort) : remplace les lignes actuelles par celles du PDF.
+    this.ensureMarcheRefs();
+    this.marchesArray.clear();
+    for (const m of r.marches ?? []) {
+      const g = this.ligneMarche();
+      g.patchValue({
+        designationMarche: m.designationMarche ?? '',
+        montEstim: m.montEstim ?? null,
+        financement: m.financement ?? '',
+        idNature: m.idNature ?? null,
+        idMode: m.idMode ?? null,
+      });
+      this.marchesArray.push(g);
+    }
+    // Avertissements : ceux du backend + entité non résolue + rappel dates/bénéficiaires.
+    const av = [...(r.avertissements ?? [])];
+    if (r.idEntiteContract == null && r.autoriteContractante) {
+      av.unshift(`Entité « ${r.autoriteContractante} » non résolue automatiquement — sélectionnez l'entité contractante.`);
+    }
+    if ((r.marches ?? []).length) {
+      av.push('Complétez les dates prévisionnelles (processus) de chaque marché avant de créer le dossier.');
+    }
+    this.importAvertissements.set(av);
   }
   modeLigne(g: FormGroup): ModeSuggestion {
     return this.modes()[g.get('uid')!.value as number] ?? { state: 'idle', modes: [], recommande: null };

@@ -175,3 +175,45 @@ export interface SaisieDossierRequest {
   idTypeDossier: string;
   idEntiteContract: number;
 }
+
+/** Bénéficiaire extrait d'un PPM PDF (import read-only ; pas encore consommé par la création). */
+export interface SaisieImportBeneficiaire {
+  soaCode?: string;
+  numCompte?: string;
+  ancMontBenef?: number;
+  nouvMontBenef?: number;
+}
+
+/** Prévision (jalon) extraite d'un PPM PDF. `processus` = LANCEMENT / OUVERTURE / ATTRIBUTION… */
+export interface SaisieImportPrevision {
+  processus?: string;
+  dateDebut?: string;
+}
+
+/** Ligne de marché extraite d'un PPM PDF (best-effort ; `idNature`/`idMode` résolus ou libellé seul). */
+export interface SaisieImportMarche {
+  designationMarche?: string;
+  montEstim?: number;
+  nouvMontEstim?: number;
+  idNature?: number;
+  natureLibelle?: string;
+  idMode?: number;
+  modeLibelle?: string;
+  financement?: string;
+  beneficiaires?: SaisieImportBeneficiaire[];
+  previsions?: SaisieImportPrevision[];
+}
+
+/**
+ * Résultat **read-only** de `POST /api/saisies/ppm/import` (parsing d'un PPM PDF, PDFBox).
+ * Pré-remplit le formulaire de saisie **sans rien créer**. En-tête + entité fiables ; tableau des
+ * marchés best-effort (référentiels non résolus → libellé seul + `avertissements`).
+ */
+export interface SaisiePpmImportResult {
+  exercice?: number;
+  dateSignature?: string;
+  autoriteContractante?: string;
+  idEntiteContract?: number;
+  marches?: SaisieImportMarche[];
+  avertissements?: string[];
+}
