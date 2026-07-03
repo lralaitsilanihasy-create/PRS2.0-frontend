@@ -719,6 +719,7 @@ export class SoumettreDossier {
     // Marchés (best-effort) : remplace les lignes actuelles par celles du PDF.
     this.ensureMarcheRefs();
     this.marchesArray.clear();
+    let previsionsPresentes = false;
     for (const m of r.marches ?? []) {
       const g = this.ligneMarche();
       g.patchValue({
@@ -728,15 +729,31 @@ export class SoumettreDossier {
         idNature: m.idNature ?? null,
         idMode: m.idMode ?? null,
       });
+      // Prévisions (jalons) : idCapm résolu depuis le libellé + date de début ; date de fin à compléter (non fournie).
+      const procArr = g.get('processus') as FormArray;
+      for (const p of m.previsions ?? []) {
+        const idCapm =
+          this.capms().find((c) => (c.libelleProcessus ?? '').toUpperCase() === (p.processus ?? '').toUpperCase())
+            ?.idCapm ?? null;
+        procArr.push(this.processusGroup({ idCapm, dateDebut: p.dateDebut, dateFin: '' }));
+        previsionsPresentes = true;
+      }
       this.marchesArray.push(g);
     }
-    // Avertissements : ceux du backend + entité non résolue + rappel dates/bénéficiaires.
+    // Avertissements : ceux du backend + entité non résolue + dates + bénéficiaires.
     const av = [...(r.avertissements ?? [])];
     if (r.idEntiteContract == null && r.autoriteContractante) {
       av.unshift(`Entité « ${r.autoriteContractante} » non résolue automatiquement — sélectionnez l'entité contractante.`);
     }
     if ((r.marches ?? []).length) {
-      av.push('Complétez les dates prévisionnelles (processus) de chaque marché avant de créer le dossier.');
+      av.push(
+        previsionsPresentes
+          ? 'Dates de début pré-remplies depuis le PDF — complétez la date de fin de chaque processus avant de créer.'
+          : 'Complétez les dates prévisionnelles (processus) de chaque marché avant de créer le dossier.',
+      );
+    }
+    if ((r.marches ?? []).some((m) => (m.beneficiaires ?? []).length)) {
+      av.push('Bénéficiaires détectés mais non repris à la création — à ajouter ensuite via le détail du PPM (bouton « Bénéficiaires »).');
     }
     this.importAvertissements.set(av);
   }
