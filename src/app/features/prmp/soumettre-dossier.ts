@@ -704,7 +704,10 @@ export class SoumettreDossier {
       },
       error: (e: ApiError) => {
         this.importing.set(false);
-        this.toast.error(e.message || 'PDF illisible ou non reconnu comme un PPM.');
+        // 400 = PDF illisible / non reconnu → message d'import dédié ; autres statuts (500, 503…) → toast centralisé.
+        if (e.status === 400) {
+          this.toast.error(e.message || 'PDF illisible ou non reconnu comme un PPM.');
+        }
       },
     });
   }
