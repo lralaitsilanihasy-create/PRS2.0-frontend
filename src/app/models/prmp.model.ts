@@ -100,12 +100,14 @@ export interface Tranche {
   idLot: number;
 }
 
-/** Service bénéficiaire d'un détail de marché. */
+/** Service bénéficiaire d'un détail de marché (compte + montants propres au bénéficiaire). */
 export interface ServiceBeneficiaire {
   idBenef: number;
   ancMontBenef?: number;
   nouvMontBenef?: number;
   soaCode?: string;
+  /** Compte budgétaire du bénéficiaire (FK `tr_compte`) — par bénéficiaire, cf. « COMPTE » du PPM. */
+  numCompte?: string;
   idDetail: number;
 }
 
