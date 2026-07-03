@@ -5,7 +5,7 @@ import { debounceTime, forkJoin, merge, Subscription } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Capm, Compte, Marche, MarchePrevision, Nature, PieceJointeDossier, Ppm, ServiceBeneficiaire, Situation, TypePieceJointe } from '../../models';
+import { Capm, Compte, Marche, MarchePrevision, Nature, PieceJointeDossier, Ppm, ServiceBeneficiaire, SoaBeneficiaire, Situation, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -197,15 +197,16 @@ type ModeSuggestion = {
                             <div class="td-actions">
                               <button class="btn btn-secondary btn-sm" type="button" (click)="voirDates(m)">Voir dates</button>
                               <button class="btn btn-primary btn-sm" type="button" (click)="modifierDates(m)">Modifier dates</button>
+                              <button class="btn btn-secondary btn-sm" type="button" (click)="modifierBenefs(m)">Bénéficiaires</button>
                               <button class="btn btn-outline btn-sm" type="button" (click)="modifierMarche(m)">Modifier</button>
                               <button class="btn btn-danger btn-sm" type="button" (click)="supprimerMarche(m)">Supprimer</button>
                             </div>
                           </td>
                         }
                       </tr>
-                      @if (benefsDe(m.idDetail).length) {
+                      @if (!modeEdition && benefsDe(m.idDetail).length) {
                         <tr class="dpm-benef-row">
-                          <td [attr.colspan]="modeEdition ? 5 : 4">
+                          <td colspan="4">
                             <span class="dpm-benef-title">Services bénéficiaires</span>
                             @for (b of benefsDe(m.idDetail); track b.idBenef) {
                               <div class="dpm-benef-line">
@@ -220,9 +221,9 @@ type ModeSuggestion = {
                           </td>
                         </tr>
                       }
-                      @if (datesDe(m.idDetail).length) {
+                      @if (!modeEdition && datesDe(m.idDetail).length) {
                         <tr class="dpm-benef-row">
-                          <td [attr.colspan]="modeEdition ? 5 : 4">
+                          <td colspan="4">
                             <span class="dpm-benef-title">Dates prévisionnelles</span>
                             @for (p of datesDe(m.idDetail); track p.idPrevision) {
                               <div class="dpm-benef-line">
@@ -420,6 +421,45 @@ type ModeSuggestion = {
       }
     }
 
+    @if (editBenefMarche(); as m) {
+      <div class="dpm__overlay" (click)="annulerBenefs()">
+        <form class="dpm cnm-card" [formGroup]="benefForm" (ngSubmit)="enregistrerBenefs()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" novalidate>
+          <header class="dpm__head">
+            <h2 class="dpm__title">Services bénéficiaires — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
+            <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerBenefs()">&times;</button>
+          </header>
+          <div class="dpm__body dpm__body--pad">
+            @for (ctrl of benefLignes(); track $index) {
+              <div class="dpm-benef-edit-row" [formGroup]="ctrl">
+                <select class="form-control" formControlName="soaCode" aria-label="Service bénéficiaire">
+                  <option [ngValue]="null">— Service bénéficiaire —</option>
+                  @for (s of soaList(); track s.soaCode) {
+                    <option [ngValue]="s.soaCode">{{ s.soaCode }}{{ s.libelle ? ' · ' + s.libelle : '' }}</option>
+                  }
+                </select>
+                <select class="form-control" formControlName="numCompte" aria-label="Compte">
+                  <option [ngValue]="null">— Compte —</option>
+                  @for (c of comptes(); track c.numCompte) {
+                    <option [ngValue]="c.numCompte">{{ c.numCompte }}{{ c.libelle ? ' · ' + c.libelle : '' }}</option>
+                  }
+                </select>
+                <input class="form-control" type="number" formControlName="ancMontBenef" placeholder="Montant" aria-label="Montant" />
+                <input class="form-control" type="number" formControlName="nouvMontBenef" placeholder="Nouveau montant" aria-label="Nouveau montant" />
+                <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerBenef($index)" aria-label="Retirer">✕</button>
+              </div>
+            } @empty {
+              <p class="dpm__info">Aucun bénéficiaire. Ajoutez-en un.</p>
+            }
+            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ajouterBenef()">+ Ajouter un bénéficiaire</button>
+          </div>
+          <footer class="dpm__foot">
+            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerBenefs()">Annuler</button>
+            <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submittingBenef()">Enregistrer</button>
+          </footer>
+        </form>
+      </div>
+    }
+
     @if (createOpen()) {
       <div class="dpm__overlay" (click)="annulerCreation()">
         <form class="dpm dpm--sm cnm-card" [formGroup]="createForm" (ngSubmit)="enregistrerMarche()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" novalidate>
@@ -548,6 +588,7 @@ export class DetailPpmModal implements OnInit {
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);
   private readonly serviceBenefService = inject(ServiceBeneficiaireService);
+  private readonly soaBenefService = inject(SoaBeneficiaireService);
   private readonly previsionService = inject(MarchePrevisionService);
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly lookups = inject(ReferenceLookupService);
@@ -603,6 +644,13 @@ export class DetailPpmModal implements OnInit {
   readonly editingMarche = signal<Marche | null>(null);
   private readonly createOriginalDates = signal<MarchePrevision[]>([]);
 
+  // Édition des services bénéficiaires d'un marché (modeEdition)
+  readonly editBenefMarche = signal<Marche | null>(null);
+  benefForm: FormGroup = this.fb.group({ lignes: this.fb.array([] as FormGroup[]) });
+  private readonly editBenefOriginal = signal<ServiceBeneficiaire[]>([]);
+  readonly submittingBenef = signal(false);
+  readonly soaList = signal<SoaBeneficiaire[]>([]);
+
   // Suppression (marché ou PPM)
   readonly confirmState = signal<{ kind: 'marche' | 'ppm'; id: number; label: string; count: number | null } | null>(null);
   readonly confirmBusy = signal(false);
@@ -654,8 +702,12 @@ export class DetailPpmModal implements OnInit {
   private charger(): void {
     this.loading.set(true);
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
-    this.lookups.lookup(SoaBeneficiaireService, 'soaCode', ['libelle']).subscribe((m) => this.soaMap.set(m));
     this.lookups.lookup(CompteService, 'numCompte', ['libelle']).subscribe((m) => this.compteMap.set(m));
+    // Liste SOA (dropdown d'édition) + map libellés (affichage) en un seul appel.
+    this.soaBenefService.list().subscribe((rows) => {
+      this.soaList.set(rows);
+      this.soaMap.set(new Map(rows.map((s) => [s.soaCode, s.libelle ?? ''])));
+    });
     this.capmService.getAll().subscribe((rows) => this.capms.set([...rows].sort((a, b) => a.ordre - b.ordre)));
     // Types de pièces attendus (édition) — dossier PPM.
     if (this.modeEdition) {
@@ -1036,6 +1088,103 @@ export class DetailPpmModal implements OnInit {
     };
     if (toCreate.length) {
       this.previsionService.list().subscribe((all) => run(all.length ? Math.max(...all.map((p) => p.idPrevision)) : 0));
+    } else {
+      run(0);
+    }
+  }
+
+  // — Édition des services bénéficiaires d'un marché (CRUD + réconciliation) —
+  benefLignes(): FormGroup[] {
+    return (this.benefForm.get('lignes') as FormArray).controls as FormGroup[];
+  }
+  private ligneBenef(b?: ServiceBeneficiaire): FormGroup {
+    return this.fb.group({
+      idBenef: [b?.idBenef ?? null],
+      soaCode: [b?.soaCode ?? null],
+      numCompte: [b?.numCompte ?? null],
+      ancMontBenef: [b?.ancMontBenef ?? null],
+      nouvMontBenef: [b?.nouvMontBenef ?? null],
+    });
+  }
+  modifierBenefs(m: Marche): void {
+    this.chargerReferentiels(); // comptes pour le sélecteur
+    this.editBenefMarche.set(m);
+    const current = this.benefsDe(m.idDetail);
+    this.editBenefOriginal.set(current);
+    this.benefForm = this.fb.group({ lignes: this.fb.array(current.map((b) => this.ligneBenef(b))) });
+  }
+  ajouterBenef(): void {
+    (this.benefForm.get('lignes') as FormArray).push(this.ligneBenef());
+  }
+  retirerBenef(i: number): void {
+    (this.benefForm.get('lignes') as FormArray).removeAt(i);
+  }
+  annulerBenefs(): void {
+    this.editBenefMarche.set(null);
+    this.editBenefOriginal.set([]);
+  }
+  enregistrerBenefs(): void {
+    const m = this.editBenefMarche();
+    if (!m) return;
+    const rows = (this.benefForm.get('lignes') as FormArray).getRawValue() as {
+      idBenef: number | null;
+      soaCode: string | null;
+      numCompte: string | null;
+      ancMontBenef: number | null;
+      nouvMontBenef: number | null;
+    }[];
+    this.submittingBenef.set(true);
+    this.reconcilierBenefs(
+      m.idDetail,
+      this.editBenefOriginal(),
+      rows,
+      () => {
+        this.toast.success('Services bénéficiaires enregistrés.');
+        this.submittingBenef.set(false);
+        this.annulerBenefs();
+        this.rechargerBenefs();
+        this.modifie.emit();
+      },
+      () => this.submittingBenef.set(false),
+    );
+  }
+  private rechargerBenefs(): void {
+    const detailIds = new Set(this.marches().map((m) => m.idDetail));
+    this.serviceBenefService.list().subscribe((rows) => this.serviceBenefs.set(rows.filter((b) => detailIds.has(b.idDetail))));
+  }
+  private reconcilierBenefs(
+    idDetail: number,
+    original: ServiceBeneficiaire[],
+    rows: { idBenef: number | null; soaCode: string | null; numCompte: string | null; ancMontBenef: number | null; nouvMontBenef: number | null }[],
+    done: () => void,
+    fail: () => void,
+  ): void {
+    const currentIds = new Set(rows.filter((r) => r.idBenef != null).map((r) => r.idBenef));
+    const toDelete = original.filter((o) => !currentIds.has(o.idBenef));
+    const toUpdate = rows.filter((r) => r.idBenef != null);
+    const toCreate = rows.filter((r) => r.idBenef == null);
+    const body = (r: (typeof rows)[number], id: number): ServiceBeneficiaire => ({
+      idBenef: id,
+      idDetail,
+      soaCode: r.soaCode || undefined,
+      numCompte: r.numCompte || undefined,
+      ancMontBenef: r.ancMontBenef ?? undefined,
+      nouvMontBenef: r.nouvMontBenef ?? undefined,
+    });
+    const run = (base: number) => {
+      const ops = [
+        ...toDelete.map((o) => this.serviceBenefService.delete(o.idBenef)),
+        ...toUpdate.map((r) => this.serviceBenefService.update(r.idBenef as number, body(r, r.idBenef as number))),
+        ...toCreate.map((r, i) => this.serviceBenefService.create(body(r, base + i + 1))),
+      ];
+      if (!ops.length) {
+        done();
+        return;
+      }
+      forkJoin(ops).subscribe({ next: () => done(), error: () => fail() });
+    };
+    if (toCreate.length) {
+      this.serviceBenefService.list().subscribe((all) => run(all.length ? Math.max(...all.map((b) => b.idBenef)) : 0));
     } else {
       run(0);
     }

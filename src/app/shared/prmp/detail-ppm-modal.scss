@@ -298,6 +298,8 @@
   border-radius: var(--radius-sm);
 }
 .dpm-date-row { display: flex; align-items: center; gap: var(--cnm-space-2); }
+.dpm-benef-edit-row { display: flex; align-items: center; gap: var(--cnm-space-2); flex-wrap: wrap; margin-bottom: var(--cnm-space-2); }
+.dpm-benef-edit-row .form-control { flex: 1; min-width: 8rem; }
 .dpm-date-row .form-control { flex: 1; }
 .dpm-date-err { color: var(--danger-text); display: block; }
 
