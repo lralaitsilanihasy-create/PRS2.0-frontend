@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
-import { Dossier, Marche, PieceJointeDossier, Ppm, ServiceBeneficiaire } from '../../models';
+import { Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire } from '../../models';
 import {
+  CapmService,
   CompteService,
   LocaliteService,
   MarcheService,
+  MarchePrevisionService,
   ModePassationService,
   PieceJointeDossierService,
   PpmService,
@@ -146,6 +148,19 @@ import { StatutBadge } from '../../shared/circuit';
                                     @if (b.nouvMontBenef != null) {
                                       <span class="dc-benef-cell">Nouveau : {{ montant(b.nouvMontBenef) }}</span>
                                     }
+                                  </div>
+                                }
+                              </td>
+                            </tr>
+                          }
+                          @if (datesDe(m.idDetail).length) {
+                            <tr class="dc-benef-row">
+                              <td colspan="4">
+                                <span class="dc-benef-title">Dates prévisionnelles</span>
+                                @for (p of datesDe(m.idDetail); track p.idPrevision) {
+                                  <div class="dc-benef-line">
+                                    <span class="dc-benef-soa">{{ capmLabel(p.idCapm) }}</span>
+                                    <span class="dc-benef-cell">{{ p.dateDebut || '—' }} → {{ p.dateFin || '—' }}</span>
                                   </div>
                                 }
                               </td>
@@ -323,6 +338,7 @@ export class DossierConsultation implements OnInit {
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);
   private readonly serviceBenefService = inject(ServiceBeneficiaireService);
+  private readonly previsionService = inject(MarchePrevisionService);
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly toast = inject(ToastService);
   private readonly lookups = inject(ReferenceLookupService);
@@ -348,6 +364,22 @@ export class DossierConsultation implements OnInit {
       const list = map.get(b.idDetail) ?? [];
       list.push(b);
       map.set(b.idDetail, list);
+    }
+    return map;
+  });
+  /** Dates prévisionnelles des marchés du dossier (lecture seule) + libellés CAPM. */
+  private readonly previsions = signal<MarchePrevision[]>([]);
+  private readonly capmMap = signal<Map<string, string>>(new Map());
+  /** idDetail → ses dates prévisionnelles (triées par ordre CAPM). */
+  private readonly prevParDetail = computed(() => {
+    const map = new Map<number, MarchePrevision[]>();
+    for (const p of this.previsions()) {
+      const list = map.get(p.idDetail) ?? [];
+      list.push(p);
+      map.set(p.idDetail, list);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
     }
     return map;
   });
@@ -380,18 +412,21 @@ export class DossierConsultation implements OnInit {
       this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
       this.lookups.lookup(SoaBeneficiaireService, 'soaCode', ['libelle']).subscribe((m) => this.soaMap.set(m));
       this.lookups.lookup(CompteService, 'numCompte', ['libelle']).subscribe((m) => this.compteMap.set(m));
+      this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).subscribe((m) => this.capmMap.set(m));
       forkJoin({
         ppms: this.ppmService.list(),
         marches: this.marcheService.list(),
         benefs: this.serviceBenefService.list(),
+        previsions: this.previsionService.list(),
       }).subscribe({
-        next: ({ ppms, marches, benefs }) => {
+        next: ({ ppms, marches, benefs, previsions }) => {
           this.ppm.set(ppms.find((p) => p.idDossier === id) ?? null);
           const mine = marches.filter((m) => m.idDossier === id);
           this.marches.set(mine);
-          // Bénéficiaires : ne garder que ceux des marchés du dossier (pas de filtre par dossier côté API).
+          // Bénéficiaires + dates : ne garder que ceux des marchés du dossier (pas de filtre par dossier côté API).
           const detailIds = new Set(mine.map((m) => m.idDetail));
           this.serviceBenefs.set(benefs.filter((b) => detailIds.has(b.idDetail)));
+          this.previsions.set(previsions.filter((p) => detailIds.has(p.idDetail)));
           this.loadingContenu.set(false);
         },
         error: () => this.loadingContenu.set(false),
@@ -431,5 +466,13 @@ export class DossierConsultation implements OnInit {
     if (!num) return '—';
     const lib = this.compteMap().get(num);
     return lib ? `${num} · ${lib}` : num;
+  }
+  /** Dates prévisionnelles d'un marché (triées par ordre CAPM). */
+  datesDe(idDetail: number): MarchePrevision[] {
+    return this.prevParDetail().get(idDetail) ?? [];
+  }
+  /** Libellé du processus CAPM (LANCEMENT / OUVERTURE / ATTRIBUTION…). */
+  capmLabel(id?: number): string {
+    return id === null || id === undefined ? '—' : this.capmMap().get(String(id)) ?? `#${id}`;
   }
 }

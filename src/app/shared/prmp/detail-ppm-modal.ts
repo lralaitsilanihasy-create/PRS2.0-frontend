@@ -208,6 +208,19 @@ type ModeSuggestion = {
                           </td>
                         </tr>
                       }
+                      @if (datesDe(m.idDetail).length) {
+                        <tr class="dpm-benef-row">
+                          <td [attr.colspan]="modeEdition ? 5 : 4">
+                            <span class="dpm-benef-title">Dates prévisionnelles</span>
+                            @for (p of datesDe(m.idDetail); track p.idPrevision) {
+                              <div class="dpm-benef-line">
+                                <span class="dpm-benef-soa">{{ capmLabel(p.idCapm) }}</span>
+                                <span class="dpm-benef-cell">{{ p.dateDebut || '—' }} → {{ p.dateFin || '—' }}</span>
+                              </div>
+                            }
+                          </td>
+                        </tr>
+                      }
                     }
                   </tbody>
                 </table>
@@ -605,6 +618,21 @@ export class DetailPpmModal implements OnInit {
     }
     return map;
   });
+  /** Dates prévisionnelles (bulk, lecture seule sous chaque marché). */
+  private readonly previsions = signal<MarchePrevision[]>([]);
+  /** idDetail → ses dates prévisionnelles (triées par ordre CAPM). */
+  private readonly prevParDetail = computed(() => {
+    const map = new Map<number, MarchePrevision[]>();
+    for (const p of this.previsions()) {
+      const list = map.get(p.idDetail) ?? [];
+      list.push(p);
+      map.set(p.idDetail, list);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+    }
+    return map;
+  });
 
   ngOnInit(): void {
     this.charger();
@@ -626,19 +654,26 @@ export class DetailPpmModal implements OnInit {
       marches: this.marcheService.list(),
       pieces: this.pieceService.getByDossier(this.idDossier),
       benefs: this.serviceBenefService.list(),
+      previsions: this.previsionService.list(),
     }).subscribe({
-      next: ({ ppm, marches, pieces, benefs }) => {
+      next: ({ ppm, marches, pieces, benefs, previsions }) => {
         this.ppm.set(ppm);
         const mine = marches.filter((m) => m.idPpm === this.idPpm);
         this.marches.set(mine);
         this.pieces.set(pieces);
-        // Bénéficiaires : ne garder que ceux des marchés du PPM (pas de filtre par PPM côté API).
+        // Bénéficiaires + dates : ne garder que ceux des marchés du PPM (pas de filtre par PPM côté API).
         const detailIds = new Set(mine.map((m) => m.idDetail));
         this.serviceBenefs.set(benefs.filter((b) => detailIds.has(b.idDetail)));
+        this.previsions.set(previsions.filter((p) => detailIds.has(p.idDetail)));
         this.loading.set(false);
       },
       error: () => this.loading.set(false), // 403/404 → toast centralisé
     });
+  }
+
+  /** Dates prévisionnelles d'un marché (triées par ordre CAPM ; lecture seule). */
+  datesDe(idDetail: number): MarchePrevision[] {
+    return this.prevParDetail().get(idDetail) ?? [];
   }
 
   /** Services bénéficiaires d'un marché (lecture seule). */
