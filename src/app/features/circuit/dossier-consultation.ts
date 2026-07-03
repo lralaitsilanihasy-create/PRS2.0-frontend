@@ -1,14 +1,17 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
-import { Dossier, Marche, PieceJointeDossier, Ppm } from '../../models';
+import { Dossier, Marche, PieceJointeDossier, Ppm, ServiceBeneficiaire } from '../../models';
 import {
+  CompteService,
   LocaliteService,
   MarcheService,
   ModePassationService,
   PieceJointeDossierService,
   PpmService,
   ReferenceLookupService,
+  ServiceBeneficiaireService,
+  SoaBeneficiaireService,
   TypeDossierService,
 } from '../../services';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -131,6 +134,23 @@ import { StatutBadge } from '../../shared/circuit';
                               </span>
                             </td>
                           </tr>
+                          @if (benefsDe(m.idDetail).length) {
+                            <tr class="dc-benef-row">
+                              <td colspan="4">
+                                <span class="dc-benef-title">Services bénéficiaires</span>
+                                @for (b of benefsDe(m.idDetail); track b.idBenef) {
+                                  <div class="dc-benef-line">
+                                    <span class="dc-benef-soa">{{ soaLabel(b.soaCode) }}</span>
+                                    <span class="dc-benef-cell">Compte : {{ compteLabel(b.numCompte) }}</span>
+                                    <span class="dc-benef-cell">Montant : {{ montant(b.ancMontBenef) }}</span>
+                                    @if (b.nouvMontBenef != null) {
+                                      <span class="dc-benef-cell">Nouveau : {{ montant(b.nouvMontBenef) }}</span>
+                                    }
+                                  </div>
+                                }
+                              </td>
+                            </tr>
+                          }
                         }
                       </tbody>
                     </table>
@@ -278,6 +298,13 @@ import { StatutBadge } from '../../shared/circuit';
     .dc-foot-info strong { color: var(--p-600); font-weight: 600; }
 
     .table-card td { white-space: normal; }
+
+    /* Services bénéficiaires (sous-ligne lecture seule d'un marché) */
+    .dc-benef-row td { background: var(--n-50); padding: 8px 14px 10px; }
+    .dc-benef-title { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); margin-bottom: 4px; }
+    .dc-benef-line { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--n-600); padding: 2px 0; }
+    .dc-benef-soa { font-weight: 600; color: var(--n-800); }
+    .dc-benef-cell { color: var(--n-500); }
   `,
 })
 export class DossierConsultation implements OnInit {
@@ -295,6 +322,7 @@ export class DossierConsultation implements OnInit {
 
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);
+  private readonly serviceBenefService = inject(ServiceBeneficiaireService);
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly toast = inject(ToastService);
   private readonly lookups = inject(ReferenceLookupService);
@@ -309,6 +337,20 @@ export class DossierConsultation implements OnInit {
   private readonly modeMap = signal<Map<string, string>>(new Map());
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
+  /** Services bénéficiaires des marchés du dossier (lecture seule) + libellés SOA / compte. */
+  private readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
+  private readonly soaMap = signal<Map<string, string>>(new Map());
+  private readonly compteMap = signal<Map<string, string>>(new Map());
+  /** idDetail → ses services bénéficiaires. */
+  private readonly benefParDetail = computed(() => {
+    const map = new Map<number, ServiceBeneficiaire[]>();
+    for (const b of this.serviceBenefs()) {
+      const list = map.get(b.idDetail) ?? [];
+      list.push(b);
+      map.set(b.idDetail, list);
+    }
+    return map;
+  });
 
   readonly estPpm = computed(() => this.dossier().idTypeDossier === 'PPM');
   readonly typeLabel = computed(() => {
@@ -336,10 +378,20 @@ export class DossierConsultation implements OnInit {
       const id = this.dossier().idDossier;
       this.loadingContenu.set(true);
       this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
-      forkJoin({ ppms: this.ppmService.list(), marches: this.marcheService.list() }).subscribe({
-        next: ({ ppms, marches }) => {
+      this.lookups.lookup(SoaBeneficiaireService, 'soaCode', ['libelle']).subscribe((m) => this.soaMap.set(m));
+      this.lookups.lookup(CompteService, 'numCompte', ['libelle']).subscribe((m) => this.compteMap.set(m));
+      forkJoin({
+        ppms: this.ppmService.list(),
+        marches: this.marcheService.list(),
+        benefs: this.serviceBenefService.list(),
+      }).subscribe({
+        next: ({ ppms, marches, benefs }) => {
           this.ppm.set(ppms.find((p) => p.idDossier === id) ?? null);
-          this.marches.set(marches.filter((m) => m.idDossier === id));
+          const mine = marches.filter((m) => m.idDossier === id);
+          this.marches.set(mine);
+          // Bénéficiaires : ne garder que ceux des marchés du dossier (pas de filtre par dossier côté API).
+          const detailIds = new Set(mine.map((m) => m.idDetail));
+          this.serviceBenefs.set(benefs.filter((b) => detailIds.has(b.idDetail)));
           this.loadingContenu.set(false);
         },
         error: () => this.loadingContenu.set(false),
@@ -363,5 +415,21 @@ export class DossierConsultation implements OnInit {
   }
   montant(v?: number): string {
     return v === null || v === undefined ? '—' : new Intl.NumberFormat('fr-FR').format(v);
+  }
+  /** Services bénéficiaires d'un marché (lecture seule). */
+  benefsDe(idDetail: number): ServiceBeneficiaire[] {
+    return this.benefParDetail().get(idDetail) ?? [];
+  }
+  /** Libellé du service bénéficiaire (code SOA + libellé si connu). */
+  soaLabel(code?: string): string {
+    if (!code) return '—';
+    const lib = this.soaMap().get(code);
+    return lib ? `${code} · ${lib}` : code;
+  }
+  /** Libellé du compte budgétaire (numéro + libellé si connu). */
+  compteLabel(num?: string): string {
+    if (!num) return '—';
+    const lib = this.compteMap().get(num);
+    return lib ? `${num} · ${lib}` : num;
   }
 }
