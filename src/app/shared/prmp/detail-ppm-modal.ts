@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Output } from '@angular/core';
 import { debounceTime, forkJoin, merge, Subscription } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Capm, Compte, Marche, MarchePrevision, Nature, PieceJointeDossier, Ppm, Situation, TypePieceJointe } from '../../models';
+import { Capm, Compte, Marche, MarchePrevision, Nature, PieceJointeDossier, Ppm, ServiceBeneficiaire, Situation, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -17,7 +17,9 @@ import {
   PpmService,
   ReferenceLookupService,
   ReglePassationService,
+  ServiceBeneficiaireService,
   SituationService,
+  SoaBeneficiaireService,
   TypePieceJointeService,
 } from '../../services';
 import { DatePipe, DecimalPipe } from '@angular/common';
@@ -189,6 +191,23 @@ type ModeSuggestion = {
                           </td>
                         }
                       </tr>
+                      @if (benefsDe(m.idDetail).length) {
+                        <tr class="dpm-benef-row">
+                          <td [attr.colspan]="modeEdition ? 5 : 4">
+                            <span class="dpm-benef-title">Services bénéficiaires</span>
+                            @for (b of benefsDe(m.idDetail); track b.idBenef) {
+                              <div class="dpm-benef-line">
+                                <span class="dpm-benef-soa">{{ soaLabel(b.soaCode) }}</span>
+                                <span class="dpm-benef-cell">Compte : {{ compteLabel(b.numCompte) }}</span>
+                                <span class="dpm-benef-cell">Montant : {{ (b.ancMontBenef | number) || '—' }}</span>
+                                @if (b.nouvMontBenef != null) {
+                                  <span class="dpm-benef-cell">Nouveau : {{ (b.nouvMontBenef | number) || '—' }}</span>
+                                }
+                              </div>
+                            }
+                          </td>
+                        </tr>
+                      }
                     }
                   </tbody>
                 </table>
@@ -503,6 +522,7 @@ export class DetailPpmModal implements OnInit {
 
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);
+  private readonly serviceBenefService = inject(ServiceBeneficiaireService);
   private readonly previsionService = inject(MarchePrevisionService);
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly lookups = inject(ReferenceLookupService);
@@ -571,6 +591,21 @@ export class DetailPpmModal implements OnInit {
   readonly refsLoading = signal(false);
   private refsLoaded = false;
 
+  /** Services bénéficiaires des marchés du PPM (lecture seule) + libellés SOA / compte. */
+  private readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
+  private readonly soaMap = signal<Map<string, string>>(new Map());
+  private readonly compteMap = signal<Map<string, string>>(new Map());
+  /** idDetail → ses services bénéficiaires. */
+  private readonly benefParDetail = computed(() => {
+    const map = new Map<number, ServiceBeneficiaire[]>();
+    for (const b of this.serviceBenefs()) {
+      const list = map.get(b.idDetail) ?? [];
+      list.push(b);
+      map.set(b.idDetail, list);
+    }
+    return map;
+  });
+
   ngOnInit(): void {
     this.charger();
   }
@@ -579,6 +614,8 @@ export class DetailPpmModal implements OnInit {
   private charger(): void {
     this.loading.set(true);
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
+    this.lookups.lookup(SoaBeneficiaireService, 'soaCode', ['libelle']).subscribe((m) => this.soaMap.set(m));
+    this.lookups.lookup(CompteService, 'numCompte', ['libelle']).subscribe((m) => this.compteMap.set(m));
     this.capmService.getAll().subscribe((rows) => this.capms.set([...rows].sort((a, b) => a.ordre - b.ordre)));
     // Types de pièces attendus (édition) — dossier PPM.
     if (this.modeEdition) {
@@ -588,15 +625,37 @@ export class DetailPpmModal implements OnInit {
       ppm: this.ppmService.getById(this.idPpm),
       marches: this.marcheService.list(),
       pieces: this.pieceService.getByDossier(this.idDossier),
+      benefs: this.serviceBenefService.list(),
     }).subscribe({
-      next: ({ ppm, marches, pieces }) => {
+      next: ({ ppm, marches, pieces, benefs }) => {
         this.ppm.set(ppm);
-        this.marches.set(marches.filter((m) => m.idPpm === this.idPpm));
+        const mine = marches.filter((m) => m.idPpm === this.idPpm);
+        this.marches.set(mine);
         this.pieces.set(pieces);
+        // Bénéficiaires : ne garder que ceux des marchés du PPM (pas de filtre par PPM côté API).
+        const detailIds = new Set(mine.map((m) => m.idDetail));
+        this.serviceBenefs.set(benefs.filter((b) => detailIds.has(b.idDetail)));
         this.loading.set(false);
       },
       error: () => this.loading.set(false), // 403/404 → toast centralisé
     });
+  }
+
+  /** Services bénéficiaires d'un marché (lecture seule). */
+  benefsDe(idDetail: number): ServiceBeneficiaire[] {
+    return this.benefParDetail().get(idDetail) ?? [];
+  }
+  /** Libellé du service bénéficiaire (code SOA + libellé si connu). */
+  soaLabel(code?: string): string {
+    if (!code) return '—';
+    const lib = this.soaMap().get(code);
+    return lib ? `${code} · ${lib}` : code;
+  }
+  /** Libellé du compte budgétaire (numéro + libellé si connu). */
+  compteLabel(num?: string): string {
+    if (!num) return '—';
+    const lib = this.compteMap().get(num);
+    return lib ? `${num} · ${lib}` : num;
   }
 
   emitFermer(): void {
