@@ -96,6 +96,18 @@ import { StatutBadge } from '../../shared/circuit';
                 <span class="dc-meta-label">Libellé</span>
                 <span class="dc-meta-value" [class.dc-meta-empty]="!p.libelle">{{ p.libelle || 'Non renseigné' }}</span>
               </div>
+              @if (p.datePpmInit) {
+                <div class="dc-meta-row">
+                  <span class="dc-meta-label">Établi le</span>
+                  <span class="dc-meta-value">{{ p.datePpmInit }}</span>
+                </div>
+              }
+              @if (p.numMaj != null) {
+                <div class="dc-meta-row">
+                  <span class="dc-meta-label">Mise à jour</span>
+                  <span class="dc-meta-value">n° {{ p.numMaj }}{{ p.dateMaj ? ' · ' + p.dateMaj : '' }}</span>
+                </div>
+              }
             }
           </div>
         </div>

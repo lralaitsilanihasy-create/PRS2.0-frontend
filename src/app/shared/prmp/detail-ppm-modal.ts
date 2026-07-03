@@ -115,6 +115,18 @@ type ModeSuggestion = {
                 </span>
               }
             </div>
+            @if (ppm()?.datePpmInit) {
+              <div class="dpm-meta-row">
+                <span class="dpm-meta-label">Établi le</span>
+                <span class="dpm-meta-value">{{ ppm()?.datePpmInit }}</span>
+              </div>
+            }
+            @if (ppm()?.numMaj != null) {
+              <div class="dpm-meta-row">
+                <span class="dpm-meta-label">Mise à jour</span>
+                <span class="dpm-meta-value">n° {{ ppm()?.numMaj }}{{ ppm()?.dateMaj ? ' · ' + ppm()?.dateMaj : '' }}</span>
+              </div>
+            }
           </div>
 
           @if (editHeaderOpen()) {
