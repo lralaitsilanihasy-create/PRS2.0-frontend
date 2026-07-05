@@ -148,7 +148,10 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                     <select class="form-control" formControlName="idNature">
                       <option [ngValue]="null">— Sélectionner —</option>
                       @for (n of natures(); track n.idNature) { <option [ngValue]="n.idNature">{{ n.libelle || '#' + n.idNature }}</option> }
-                    </select></label>
+                    </select>
+                    @if (libelleNatureImport(g); as lib) {
+                      <span class="form-hint sd__import-lib">📄 « {{ lib }} » — sera créé à la création</span>
+                    }</label>
                   <label class="form-group"><span class="form-label">Financement</span>
                     <input class="form-control" type="text" formControlName="financement" /></label>
                   <label class="form-group"><span class="form-label">Statut</span>
@@ -157,7 +160,10 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                     <select class="form-control" formControlName="idMode">
                       <option [ngValue]="null">— Sélectionner —</option>
                       @for (m of modesList(); track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle || '#' + m.idMode }}</option> }
-                    </select></label>
+                    </select>
+                    @if (libelleModeImport(g); as lib) {
+                      <span class="form-hint sd__import-lib">📄 « {{ lib }} » — sera créé à la création</span>
+                    }</label>
                 </div>
                 <div class="sd__ligne-foot">
                   @if (datesSaisies(g)) {
@@ -365,6 +371,7 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
     .sd__form { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: min(64rem, 96vw); }
     .sd__import { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.75rem; border-bottom: 1px solid var(--c-100); }
     .sd__import-btn { cursor: pointer; }
+    .sd__import-lib { color: var(--c-600); font-style: italic; }
     .sd__hint { margin: 0; }
     .sd__pieces { display: flex; flex-direction: column; gap: 0.5rem; }
     .sd__piece { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
@@ -707,6 +714,16 @@ export class SoumettreDossier {
       av.push('Bénéficiaires détectés mais non repris à la création — à ajouter ensuite via le détail du PPM (bouton « Bénéficiaires »).');
     }
     this.importAvertissements.set(av);
+  }
+  /** Libellé de nature du PDF quand l'id n'est pas résolu (affiché à côté du menu vide ; créé à la création). */
+  libelleNatureImport(g: FormGroup): string | null {
+    if (g.get('idNature')!.value != null) return null;
+    return this.importLibelles()[g.get('uid')!.value as number]?.natureLibelle ?? null;
+  }
+  /** Libellé de mode du PDF quand l'id n'est pas résolu. */
+  libelleModeImport(g: FormGroup): string | null {
+    if (g.get('idMode')!.value != null) return null;
+    return this.importLibelles()[g.get('uid')!.value as number]?.modeLibelle ?? null;
   }
   private ligneNonVide(l: Record<string, unknown>): boolean {
     // `statut` exclu : il a une valeur par défaut ('PREVU') et ne suffit pas à rendre une ligne « non vide ».
