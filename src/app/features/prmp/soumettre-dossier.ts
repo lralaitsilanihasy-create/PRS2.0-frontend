@@ -315,7 +315,7 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
               <span class="modal-title">Dates prévisionnelles du marché</span>
             </div>
             <div class="modal-body">
-              <p class="form-hint">Au moins un processus est obligatoire ; une date par processus (telle qu'indiquée dans le PPM).</p>
+              <p class="form-hint">Au moins un processus est obligatoire ; un processus par ligne.</p>
               @for (ctrl of procControls(); track $index) {
                 <div class="sd-proc-row" [formGroup]="ctrl">
                   <select class="form-control" formControlName="idCapm">
@@ -323,8 +323,12 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                     @for (c of capmsPourProc(ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
                   </select>
                   <input class="form-control" type="date" formControlName="dateDebut" />
+                  <input class="form-control" type="date" formControlName="dateFin" />
                   <button type="button" class="btn btn-secondary btn-sm" (click)="retirerProc($index)" aria-label="Retirer">✕</button>
                 </div>
+                @if (procErreur(ctrl.get('idCapm')!.value)) {
+                  <span class="form-error sd-proc-err">{{ procErreur(ctrl.get('idCapm')!.value) }}</span>
+                }
               } @empty {
                 <p class="form-hint">Aucun processus. Ajoutez-en au moins un.</p>
               }
@@ -390,6 +394,7 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
     .sd__dates-ok { color: var(--success-text); font-size: var(--text-sm); font-weight: 700; }
     .sd-proc-row { display: flex; align-items: center; gap: 0.5rem; }
     .sd-proc-row .form-control { flex: 1; min-width: 8rem; }
+    .sd-proc-err { color: var(--danger-text); display: block; }
     .confirm-modal { max-width: 36rem; }
     .table-card td { white-space: normal; }
   `,
@@ -489,8 +494,10 @@ export class SoumettreDossier {
   }
   /** Ligne de marché (création) dont les processus prévisionnels sont en cours d'édition (null = modal fermé). */
   readonly datesCible = signal<FormGroup | null>(null);
-  /** Copie de travail des processus du marché en édition (FormArray de { idCapm, dateDebut }). */
+  /** Copie de travail des processus du marché en édition (FormArray de { idCapm, dateDebut, dateFin }). */
   readonly datesForm = this.fb.array([] as FormGroup[]);
+  /** Erreurs de cohérence chronologique par processus (clé = idCapm). */
+  readonly procErreurs = signal<Record<number, string>>({});
 
   readonly marcheForm = this.fb.nonNullable.group({
     designationMarche: [''],
@@ -676,13 +683,13 @@ export class SoumettreDossier {
       });
       const uid = g.get('uid')!.value as number;
       benefs[uid] = m.beneficiaires ?? [];
-      // Prévisions (jalons) : idCapm résolu depuis le libellé + date du jalon (telle qu'indiquée dans le PDF).
+      // Prévisions (jalons) : idCapm résolu depuis le libellé + date de début ; date de fin à compléter (non fournie).
       const procArr = g.get('processus') as FormArray;
       for (const p of m.previsions ?? []) {
         const idCapm =
           this.capms().find((c) => (c.libelleProcessus ?? '').toUpperCase() === (p.processus ?? '').toUpperCase())
             ?.idCapm ?? null;
-        procArr.push(this.processusGroup({ idCapm, dateDebut: p.dateDebut }));
+        procArr.push(this.processusGroup({ idCapm, dateDebut: p.dateDebut, dateFin: '' }));
         previsionsPresentes = true;
       }
       this.marchesArray.push(g);
@@ -696,7 +703,7 @@ export class SoumettreDossier {
     if ((r.marches ?? []).length) {
       av.push(
         previsionsPresentes
-          ? 'Dates prévisionnelles pré-remplies depuis le PDF — vérifiez-les avant de créer le dossier.'
+          ? 'Dates de début pré-remplies depuis le PDF — complétez la date de fin de chaque processus avant de créer.'
           : 'Complétez les dates prévisionnelles (processus) de chaque marché avant de créer le dossier.',
       );
     }
@@ -724,11 +731,12 @@ export class SoumettreDossier {
   }
 
   // — Processus prévisionnels d'une ligne de marché (création) —
-  /** Un groupe { idCapm, dateDebut } pour le modal des processus (une date par jalon). */
-  private processusGroup(p?: { idCapm?: number | null; dateDebut?: string }): FormGroup {
+  /** Un groupe { idCapm, dateDebut, dateFin } pour le modal des processus. */
+  private processusGroup(p?: { idCapm?: number | null; dateDebut?: string; dateFin?: string }): FormGroup {
     return this.fb.group({
       idCapm: [p?.idCapm ?? null, Validators.required],
       dateDebut: [p?.dateDebut ?? '', Validators.required],
+      dateFin: [p?.dateFin ?? '', Validators.required],
     });
   }
   /** Nombre de processus saisis sur une ligne de marché. */
@@ -765,8 +773,44 @@ export class SoumettreDossier {
   retirerProc(i: number): void {
     this.datesForm.removeAt(i);
   }
+  procErreur(idCapm: number | null): string | undefined {
+    return idCapm == null ? undefined : this.procErreurs()[idCapm];
+  }
+  /**
+   * Cohérence chronologique des processus (triés par `ordre` CAPM) : `dateDebut < dateFin` pour chacun,
+   * et `dateDebut[n] >= dateFin[n-1]` entre consécutifs. Renseigne `procErreurs` (clé idCapm) ; renvoie
+   * `true` si tout est cohérent. (Comparaison lexicographique d'ISO `yyyy-MM-dd` = chronologique.)
+   */
+  private validerChronologie(controls: FormGroup[]): boolean {
+    const parId = new Map(this.capms().map((c) => [c.idCapm, c]));
+    const items = controls
+      .map((g) => ({
+        idCapm: g.get('idCapm')!.value as number | null,
+        dateDebut: g.get('dateDebut')!.value as string,
+        dateFin: g.get('dateFin')!.value as string,
+      }))
+      .filter((p) => p.idCapm != null && p.dateDebut && p.dateFin)
+      .sort((a, b) => (parId.get(a.idCapm!)?.ordre ?? 0) - (parId.get(b.idCapm!)?.ordre ?? 0));
+    const err: Record<number, string> = {};
+    for (let i = 0; i < items.length; i++) {
+      const p = items[i];
+      if (p.dateDebut >= p.dateFin) {
+        err[p.idCapm!] = 'La date de fin doit être postérieure à la date de début.';
+        continue;
+      }
+      if (i > 0 && p.dateDebut < items[i - 1].dateFin) {
+        const lib = parId.get(p.idCapm!)?.libelleProcessus ?? '#' + p.idCapm;
+        const libPrec = parId.get(items[i - 1].idCapm!)?.libelleProcessus ?? '#' + items[i - 1].idCapm;
+        err[p.idCapm!] =
+          `La date de début de ${lib} doit être postérieure ou égale à la date de fin de ${libPrec}.`;
+      }
+    }
+    this.procErreurs.set(err);
+    return Object.keys(err).length === 0;
+  }
   /** Ouvre le modal des processus : copie de travail pré-remplie depuis la ligne. */
   ouvrirDates(g: FormGroup): void {
+    this.procErreurs.set({});
     this.datesForm.clear();
     (g.get('processus') as FormArray).controls.forEach((p) =>
       this.datesForm.push(this.processusGroup((p as FormGroup).getRawValue())),
@@ -774,9 +818,10 @@ export class SoumettreDossier {
     this.datesCible.set(g);
   }
   annulerDates(): void {
+    this.procErreurs.set({});
     this.datesCible.set(null);
   }
-  /** Valide la copie de travail (≥1 processus, tous complets) et la recopie. */
+  /** Valide la copie de travail (≥1 processus, tous complets, chronologie cohérente) et la recopie. */
   validerDates(): void {
     const g = this.datesCible();
     if (!g) {
@@ -784,6 +829,9 @@ export class SoumettreDossier {
     }
     if (!this.datesForm.length || this.datesForm.invalid) {
       this.datesForm.markAllAsTouched();
+      return;
+    }
+    if (!this.validerChronologie(this.procControls())) {
       return;
     }
     const arr = g.get('processus') as FormArray;
@@ -865,6 +913,7 @@ export class SoumettreDossier {
       processus: ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
         idCapm: p['idCapm'] as number,
         dateDebut: p['dateDebut'] as string,
+        dateFin: p['dateFin'] as string,
       })),
     }));
     this.saisie
