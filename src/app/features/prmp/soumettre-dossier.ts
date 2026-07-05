@@ -862,11 +862,11 @@ export class SoumettreDossier {
       benefs.reduce((acc, b) => acc + (Number(b.get(champ)!.value) || 0), 0);
     const montEstim = Number(g.get('montEstim')!.value) || 0;
     if (somme('ancMontBenef') !== montEstim) {
-      return `La somme des montants par bénéficiaire (${somme('ancMontBenef').toLocaleString('fr-FR')}) doit égaler le montant estimé du marché (${montEstim.toLocaleString('fr-FR')}).`;
+      return `La somme des montants par bénéficiaire (${this.montantFmt(somme('ancMontBenef'))}) doit égaler le montant estimé du marché (${this.montantFmt(montEstim)}).`;
     }
     const nouvMont = g.get('nouvMontEstim')!.value;
     if (nouvMont != null && nouvMont !== '' && somme('nouvMontBenef') !== Number(nouvMont)) {
-      return `La somme des nouveaux montants par bénéficiaire (${somme('nouvMontBenef').toLocaleString('fr-FR')}) doit égaler le nouveau montant estimé (${Number(nouvMont).toLocaleString('fr-FR')}).`;
+      return `La somme des nouveaux montants par bénéficiaire (${this.montantFmt(somme('nouvMontBenef'))}) doit égaler le nouveau montant estimé (${this.montantFmt(Number(nouvMont))}).`;
     }
     return null;
   }
@@ -881,11 +881,12 @@ export class SoumettreDossier {
     if (idCapm == null) return '—';
     return this.capms().find((c) => c.idCapm === idCapm)?.libelleProcessus ?? '#' + idCapm;
   }
-  /** Formate un montant en fr-FR (2 décimales, comme le PPM officiel), ou « » si absent. */
+  /** Formate un montant (2 décimales, séparateur de milliers = espace visible), ou « » si absent. */
   montantFmt(v?: number | null): string {
-    return v === null || v === undefined || (v as unknown) === ''
-      ? ''
-      : new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+    if (v === null || v === undefined || (v as unknown) === '') return '';
+    const n = Number(v);
+    const [ent, dec] = Math.abs(n).toFixed(2).split('.');
+    return (n < 0 ? '-' : '') + ent.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ',' + dec;
   }
   /** Convertit une date ISO `yyyy-MM-dd` en `dd/MM/yyyy` (vide si absente). */
   dateFr(iso?: string | null): string {

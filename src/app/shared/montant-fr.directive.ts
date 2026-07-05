@@ -60,8 +60,15 @@ export class MontantFrDirective implements ControlValueAccessor {
     const n = Number(nettoye);
     return isNaN(n) ? null : n;
   }
-  /** Formate un nombre en fr-FR avec séparateur de milliers (jusqu'à 2 décimales), ou '' si absent. */
+  /**
+   * Formate un nombre avec séparateur de milliers = **espace normale visible** (et virgule décimale),
+   * ou '' si absent. On groupe manuellement pour éviter l'espace fine insécable (U+202F) de
+   * `Intl.NumberFormat('fr-FR')`, peu ou pas visible selon la police/rendu.
+   */
   private format(v: number | null): string {
-    return v == null ? '' : new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(v);
+    if (v == null) return '';
+    const [ent, dec] = Math.abs(v).toString().split('.');
+    const groupe = ent.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return (v < 0 ? '-' : '') + groupe + (dec ? ',' + dec : '');
   }
 }
