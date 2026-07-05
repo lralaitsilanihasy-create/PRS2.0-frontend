@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
@@ -169,62 +169,65 @@ interface ApercuDossier {
             </div>
             @if (!marcheControls().length) {
               <p class="cnm-muted">Aucun marché. Vous pouvez créer le brouillon sans marché et en ajouter plus tard.</p>
-            }
-            @for (g of marcheControls(); track g.get('uid')!.value) {
-              <div class="sd__ligne cnm-form" [formGroup]="g">
-                <div class="cnm-form-grid">
-                  <label class="form-group"><span class="form-label">Objet</span>
-                    <input class="form-control" type="text" formControlName="designationMarche" /></label>
-                  <label class="form-group"><span class="form-label">Montant estimé</span>
-                    <input class="form-control" type="text" inputmode="decimal" appMontantFr formControlName="montEstim" /></label>
-                  <label class="form-group"><span class="form-label">Nouveau montant estimé</span>
-                    <input class="form-control" type="text" inputmode="decimal" appMontantFr formControlName="nouvMontEstim" placeholder="(si révisé)" /></label>
-                  <label class="form-group"><span class="form-label">Compte</span>
-                    <input class="form-control" type="text" formControlName="numCompte" list="sd-comptes" placeholder="N° compte" /></label>
-                  <label class="form-group"><span class="form-label">Nature</span>
-                    <input class="form-control" type="text" formControlName="natureLibelle" list="sd-natures" placeholder="Nature (créée si nouvelle)" />
-                  </label>
-                  <label class="form-group"><span class="form-label">Financement</span>
-                    <input class="form-control" type="text" formControlName="financement" /></label>
-                  <label class="form-group"><span class="form-label">Statut</span>
-                    <input class="form-control" type="text" formControlName="statut" /></label>
-                  <label class="form-group"><span class="form-label">Mode de passation</span>
-                    <input class="form-control" type="text" formControlName="modeLibelle" list="sd-modes" placeholder="Mode (créé si nouveau)" />
-                  </label>
-                </div>
-                <div class="sd__benefs" formArrayName="beneficiaires">
-                  <div class="sd__benefs-head">
-                    <span class="form-label">Bénéficiaires (ventilation par service)</span>
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterBeneficiaire(g)">+ Ajouter un bénéficiaire</button>
-                  </div>
-                  @for (b of beneficiairesControls(g); track $index) {
-                    <div class="sd__benef-row" [formGroupName]="$index">
-                      <input class="form-control" type="text" formControlName="soaCode" list="sd-soa" placeholder="Service bénéficiaire (SOA)" />
-                      <input class="form-control" type="text" formControlName="numCompte" list="sd-comptes" placeholder="Compte" />
-                      <input class="form-control" type="text" inputmode="decimal" appMontantFr formControlName="ancMontBenef" placeholder="Montant estimatif" />
-                      <input class="form-control" type="text" inputmode="decimal" appMontantFr formControlName="nouvMontBenef" placeholder="Nouveau montant" />
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="retirerBeneficiaire(g, $index)" aria-label="Retirer">✕</button>
-                    </div>
-                  } @empty {
-                    <p class="form-hint">Aucun bénéficiaire (optionnel). Si vous en ajoutez, la somme des montants par bénéficiaire doit égaler le montant du marché.</p>
+            } @else {
+              <div class="sd__marches-wrap">
+                <table class="sd__marches-table">
+                  <thead>
+                    <tr>
+                      <th rowspan="2">Nature</th>
+                      <th rowspan="2">Objet</th>
+                      <th rowspan="2">Montant estimé</th>
+                      <th rowspan="2">Nouveau montant</th>
+                      <th rowspan="2">Mode de passation</th>
+                      <th rowspan="2">Financement</th>
+                      <th colspan="4">Informations sur le bénéficiaire</th>
+                      <th rowspan="2">Actions</th>
+                    </tr>
+                    <tr>
+                      <th>Service bénéficiaire</th><th>Compte</th><th>Montant</th><th>Nouveau montant</th>
+                    </tr>
+                  </thead>
+                  @for (g of marcheControls(); track g.get('uid')!.value) {
+                    <tbody class="sd__marche-tb">
+                      @for (b of beneficiairesControls(g); track $index; let first = $first; let i = $index) {
+                        <tr>
+                          @if (first) {
+                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'natureLibelle')" list="sd-natures" placeholder="Nature" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-objet" type="text" [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="sd-modes" placeholder="Mode" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'financement')" /></td>
+                          }
+                          <td><input class="form-control" type="text" [formControl]="benefCtrl(g, i, 'soaCode')" list="sd-soa" placeholder="SOA" /></td>
+                          <td><input class="form-control" type="text" [formControl]="benefCtrl(g, i, 'numCompte')" list="sd-comptes" placeholder="Compte" /></td>
+                          <td><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="benefCtrl(g, i, 'ancMontBenef')" /></td>
+                          <td>
+                            <div class="sd__benef-cell">
+                              <input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="benefCtrl(g, i, 'nouvMontBenef')" placeholder="(si révisé)" />
+                              <button type="button" class="btn btn-secondary btn-sm" [disabled]="beneficiairesControls(g).length === 1" (click)="retirerBeneficiaire(g, i)" aria-label="Retirer le bénéficiaire">✕</button>
+                            </div>
+                          </td>
+                          @if (first) {
+                            <td [attr.rowspan]="rowspanBenef(g)" class="sd__marche-actions">
+                              <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterBeneficiaire(g)">+ bénéficiaire</button>
+                              <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDates(g)">Dates prévisionnelles</button>
+                              @if (datesSaisies(g)) {
+                                <span class="sd__dates-ok">📅 {{ nbProcessus(g) }} processus</span>
+                              } @else {
+                                <span class="sd__dates-manq">⚠ Dates manquantes</span>
+                              }
+                              <button type="button" class="btn btn-danger btn-sm" (click)="retirerMarche(marcheIndex(g))">Retirer</button>
+                              @if (erreurCoherenceBenefs(g); as errBenef) {
+                                <span class="form-error">{{ errBenef }}</span>
+                              }
+                            </td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
                   }
-                  @if (erreurCoherenceBenefs(g); as errBenef) {
-                    <span class="form-error">{{ errBenef }}</span>
-                  }
-                </div>
-                <div class="sd__ligne-foot">
-                  @if (datesSaisies(g)) {
-                    <span class="sd__dates-ok">📅 {{ nbProcessus(g) }} processus prévisionnel(s)</span>
-                  } @else {
-                    <span class="sd__dates-manq">⚠ Dates manquantes</span>
-                  }
-                  <span class="sd__ligne-foot-actions">
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDates(g)">
-                      Dates prévisionnelles
-                    </button>
-                    <button type="button" class="btn btn-danger btn-sm" (click)="retirerMarche($index)">Retirer</button>
-                  </span>
-                </div>
+                </table>
               </div>
             }
             <datalist id="sd-natures">@for (n of natures(); track n.idNature) { <option [value]="n.libelle"></option> }</datalist>
@@ -559,6 +562,17 @@ interface ApercuDossier {
     .sd__benefs-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
     .sd__benef-row { display: flex; align-items: center; gap: 0.5rem; }
     .sd__benef-row .form-control { flex: 1; min-width: 6rem; }
+    /* Tableau éditable des marchés (mise en forme façon PPM) */
+    .sd__marches-wrap { overflow-x: auto; margin-bottom: 1rem; }
+    .sd__marches-table { border-collapse: collapse; width: 100%; }
+    .sd__marches-table th, .sd__marches-table td { border: 1px solid var(--c-200); padding: 0.25rem; vertical-align: top; }
+    .sd__marches-table thead th { background: var(--c-50); font-size: var(--text-sm); text-align: center; font-weight: 700; color: var(--c-800); white-space: nowrap; }
+    .sd__marches-table .form-control { min-width: 7rem; font-size: var(--text-sm); padding: 0.3rem 0.4rem; }
+    .sd__marche-tb { border-bottom: 3px solid var(--c-200); }
+    .sd__c-objet { min-width: 14rem; }
+    .sd__c-mont { min-width: 8rem; text-align: right; }
+    .sd__benef-cell { display: flex; gap: 0.3rem; align-items: center; }
+    .sd__marche-actions { min-width: 12rem; display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start; }
     .sd__apercu { max-width: min(78rem, 97vw); max-height: 92vh; display: flex; flex-direction: column; }
     .sd__apercu .modal-body { overflow-y: auto; }
     .ppm-doc { background: #fff; color: #000; padding: 1rem 1.25rem; font-size: 0.8rem; }
@@ -826,8 +840,8 @@ export class SoumettreDossier {
       // Nature/mode en saisie libre (comme montant) : le libellé est résolu-ou-créé au POST par le backend.
       natureLibelle: [''],
       modeLibelle: [''],
-      // Ventilation par bénéficiaire (SOA + montants) — résolue-ou-créée au POST par le backend.
-      beneficiaires: this.fb.array([] as FormGroup[]),
+      // Ventilation par bénéficiaire (SOA + montants) — au moins une ligne (une ligne vide est ignorée au POST).
+      beneficiaires: this.fb.array([this.ligneBeneficiaire()]),
       processus: this.fb.array([] as FormGroup[]),
     });
   }
@@ -850,13 +864,34 @@ export class SoumettreDossier {
   retirerBeneficiaire(g: FormGroup, i: number): void {
     (g.get('beneficiaires') as FormArray).removeAt(i);
   }
+  // — Accès direct aux contrôles pour la liaison en cellules de tableau —
+  /** Contrôle d'un champ de la ligne de marché. */
+  ctrl(g: FormGroup, nom: string): FormControl {
+    return g.get(nom) as FormControl;
+  }
+  /** Contrôle d'un champ du i-ème bénéficiaire d'un marché. */
+  benefCtrl(g: FormGroup, i: number, nom: string): FormControl {
+    return (g.get('beneficiaires') as FormArray).at(i).get(nom) as FormControl;
+  }
+  /** Rowspan des colonnes marché = nombre de lignes bénéficiaires (au moins 1). */
+  rowspanBenef(g: FormGroup): number {
+    return Math.max(1, this.beneficiairesControls(g).length);
+  }
+  /** Index d'un marché dans le FormArray (pour la suppression). */
+  marcheIndex(g: FormGroup): number {
+    return this.marcheControls().indexOf(g);
+  }
+  /** Un bénéficiaire est-il renseigné (SOA, compte ou un montant) ? */
+  private benefRempli(b: FormGroup): boolean {
+    return !!(b.get('soaCode')!.value || b.get('numCompte')!.value || b.get('ancMontBenef')!.value != null || b.get('nouvMontBenef')!.value != null);
+  }
   /**
    * Écart de cohérence des montants d'un marché (message inline, null si cohérent). Vérifié seulement si
    * au moins un bénéficiaire est saisi : `Σ ancMontBenef = montEstim` (et `Σ nouvMontBenef = nouvMontEstim`
    * si le nouveau montant du marché est renseigné). Reflète la règle serveur (sinon 400).
    */
   erreurCoherenceBenefs(g: FormGroup): string | null {
-    const benefs = this.beneficiairesControls(g);
+    const benefs = this.beneficiairesControls(g).filter((b) => this.benefRempli(b));
     if (!benefs.length) return null;
     const somme = (champ: string) =>
       benefs.reduce((acc, b) => acc + (Number(b.get(champ)!.value) || 0), 0);
@@ -1032,11 +1067,13 @@ export class SoumettreDossier {
       });
       // Bénéficiaires (SOA + montants) pré-remplis depuis le PDF — saisis directement (résolus/créés au POST).
       const benefArr = g.get('beneficiaires') as FormArray;
+      benefArr.clear(); // retire la ligne vide par défaut de ligneMarche()
       for (const b of m.beneficiaires ?? []) {
         benefArr.push(
           this.ligneBeneficiaire({ soaCode: b.soaCode, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }),
         );
       }
+      if (!benefArr.length) benefArr.push(this.ligneBeneficiaire()); // toujours au moins une ligne
       // Prévisions (jalons) : idCapm résolu depuis le libellé + date de début ; date de fin à compléter (non fournie).
       const procArr = g.get('processus') as FormArray;
       for (const p of m.previsions ?? []) {
