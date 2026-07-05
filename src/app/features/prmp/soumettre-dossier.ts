@@ -29,6 +29,38 @@ import {
 
 type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
 
+/** Bénéficiaire d'un marché dans l'aperçu (snapshot lecture seule du formulaire). */
+interface ApercuBenef {
+  soaCode?: string;
+  numCompte?: string;
+  ancMontBenef?: number | null;
+  nouvMontBenef?: number | null;
+}
+/** Marché dans l'aperçu (snapshot lecture seule du formulaire). */
+interface ApercuMarche {
+  designationMarche?: string;
+  montEstim?: number | null;
+  nouvMontEstim?: number | null;
+  numCompte?: string | null;
+  natureLibelle?: string;
+  modeLibelle?: string;
+  financement?: string;
+  statut?: string;
+  beneficiaires: ApercuBenef[];
+  processus: { capm: string; dateDebut: string; dateFin: string }[];
+  coherenceErr: string | null;
+}
+/** Snapshot du dossier PPM à créer, pour l'aperçu avant création (aucune création). */
+interface ApercuDossier {
+  entite: string;
+  localite: string;
+  exercice: number | null;
+  signataire: string;
+  dateSignature: string;
+  marches: ApercuMarche[];
+  pieces: { libelle: string; nom: string }[];
+}
+
 /**
  * Parcours de saisie & soumission PRMP (§3.1, Modules 02-03).
  *
@@ -243,6 +275,7 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
 
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
+              <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu</button>
               <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
@@ -373,6 +406,79 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
           </div>
         </div>
       }
+
+      @if (apercu(); as a) {
+        <div class="modal-backdrop" (click)="fermerApercu()">
+          <div class="modal sd__apercu cnm-form" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+            <div class="modal-header-plain">
+              <span class="modal-title">Aperçu du dossier à créer</span>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="fermerApercu()" aria-label="Fermer">✕</button>
+            </div>
+            <div class="modal-body">
+              <div class="sd__ap-grid">
+                <div><span class="sd__ap-lbl">Entité contractante</span><span>{{ a.entite }}</span></div>
+                <div><span class="sd__ap-lbl">Localité</span><span>{{ a.localite }}</span></div>
+                <div><span class="sd__ap-lbl">Exercice</span><span>{{ a.exercice ?? '—' }}</span></div>
+                <div><span class="sd__ap-lbl">Signataire</span><span>{{ a.signataire || '—' }}</span></div>
+                <div><span class="sd__ap-lbl">Date de signature</span><span>{{ a.dateSignature || '—' }}</span></div>
+              </div>
+
+              <h3 class="sd__ap-sub">Marchés ({{ a.marches.length }})</h3>
+              @for (m of a.marches; track $index) {
+                <div class="sd__ap-marche">
+                  <div class="sd__ap-marche-head">
+                    <strong>{{ m.designationMarche || '(sans désignation)' }}</strong>
+                    <span class="cnm-muted">{{ m.natureLibelle || '—' }} · {{ m.modeLibelle || '—' }}</span>
+                  </div>
+                  <div class="sd__ap-marche-grid">
+                    <span>Montant estimé : <strong>{{ montantFmt(m.montEstim) }}</strong></span>
+                    @if (m.nouvMontEstim != null) { <span>Nouveau montant : <strong>{{ montantFmt(m.nouvMontEstim) }}</strong></span> }
+                    <span>Compte : {{ m.numCompte || '—' }}</span>
+                    <span>Financement : {{ m.financement || '—' }}</span>
+                    <span>Statut : {{ m.statut || '—' }}</span>
+                  </div>
+                  @if (m.beneficiaires.length) {
+                    <table class="cnm-table sd__ap-table">
+                      <thead><tr><th>Service bénéficiaire</th><th>Compte</th><th>Montant estim.</th><th>Nouveau montant</th></tr></thead>
+                      <tbody>
+                        @for (b of m.beneficiaires; track $index) {
+                          <tr><td>{{ b.soaCode || '—' }}</td><td>{{ b.numCompte || '—' }}</td><td>{{ montantFmt(b.ancMontBenef) }}</td><td>{{ montantFmt(b.nouvMontBenef) }}</td></tr>
+                        }
+                      </tbody>
+                    </table>
+                  }
+                  @if (m.coherenceErr) { <span class="form-error">{{ m.coherenceErr }}</span> }
+                  @if (m.processus.length) {
+                    <div class="sd__ap-proc">
+                      <span class="sd__ap-lbl">Dates prévisionnelles</span>
+                      @for (p of m.processus; track $index) {
+                        <span class="sd__ap-proc-item">{{ p.capm }} : {{ p.dateDebut || '—' }} → {{ p.dateFin || '—' }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="form-error">Aucune date prévisionnelle (obligatoire à la création).</span>
+                  }
+                </div>
+              } @empty {
+                <p class="cnm-muted">Aucun marché saisi.</p>
+              }
+
+              <h3 class="sd__ap-sub">Pièces jointes ({{ a.pieces.length }})</h3>
+              @for (p of a.pieces; track $index) {
+                <div class="sd__ap-piece">📎 {{ p.libelle }} — {{ p.nom }}</div>
+              } @empty {
+                <p class="cnm-muted">Aucune pièce jointe fournie.</p>
+              }
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" (click)="fermerApercu()">Fermer</button>
+              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents" (click)="fermerApercu(); creerPpm()">
+                Créer le dossier
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </section>
   `,
   styles: `
@@ -414,6 +520,19 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
     .sd__benefs-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
     .sd__benef-row { display: flex; align-items: center; gap: 0.5rem; }
     .sd__benef-row .form-control { flex: 1; min-width: 6rem; }
+    .sd__apercu { max-width: min(56rem, 96vw); max-height: 90vh; display: flex; flex-direction: column; }
+    .sd__apercu .modal-body { overflow-y: auto; }
+    .sd__ap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+    .sd__ap-grid > div { display: flex; flex-direction: column; }
+    .sd__ap-lbl { font-size: var(--text-sm); color: var(--n-400); font-weight: 600; }
+    .sd__ap-sub { margin: 1rem 0 0.5rem; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    .sd__ap-marche { padding: 0.75rem; border: 1px solid var(--c-100); border-radius: var(--radius-md); margin-bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .sd__ap-marche-head { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+    .sd__ap-marche-grid { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: var(--text-sm); }
+    .sd__ap-table { font-size: var(--text-sm); }
+    .sd__ap-proc { display: flex; flex-direction: column; gap: 0.15rem; }
+    .sd__ap-proc-item { font-size: var(--text-sm); }
+    .sd__ap-piece { font-size: var(--text-sm); padding: 0.15rem 0; }
     .sd__dates-manq { color: var(--warning-text); font-size: var(--text-sm); font-weight: 700; }
     .sd__dates-ok { color: var(--success-text); font-size: var(--text-sm); font-weight: 700; }
     .sd-proc-row { display: flex; align-items: center; gap: 0.5rem; }
@@ -509,6 +628,8 @@ export class SoumettreDossier {
   /** Import PPM PDF (pré-remplissage read-only) : état d'analyse + avertissements du parsing. */
   readonly importing = signal(false);
   readonly importAvertissements = signal<string[]>([]);
+  /** Snapshot lecture seule du dossier à créer (aperçu) ; null = fermé. Ne crée rien. */
+  readonly apercu = signal<ApercuDossier | null>(null);
 
   /** Référentiel CAPM (processus de marché), trié par `ordre` ASC. */
   readonly capms = signal<Capm[]>([]);
@@ -708,6 +829,67 @@ export class SoumettreDossier {
   /** Toutes les lignes de marché ont-elles des bénéficiaires cohérents ? (bloque la création si non) */
   get benefsCoherents(): boolean {
     return this.marcheControls().every((g) => this.erreurCoherenceBenefs(g) === null);
+  }
+
+  // — Aperçu du dossier à créer (lecture seule ; ne crée rien) —
+  /** Libellé d'un processus CAPM (pour l'affichage). */
+  private capmLabel(idCapm: number | null): string {
+    if (idCapm == null) return '—';
+    return this.capms().find((c) => c.idCapm === idCapm)?.libelleProcessus ?? '#' + idCapm;
+  }
+  /** Formate un montant en fr-FR, ou « — » si absent. */
+  montantFmt(v?: number | null): string {
+    return v === null || v === undefined ? '—' : new Intl.NumberFormat('fr-FR').format(v);
+  }
+  /** Construit le snapshot du formulaire et ouvre l'aperçu. */
+  ouvrirApercu(): void {
+    const marches: ApercuMarche[] = this.marcheControls()
+      .filter((g) => this.ligneNonVide(g.getRawValue() as Record<string, unknown>))
+      .map((g) => {
+        const l = g.getRawValue() as Record<string, unknown>;
+        const beneficiaires = ((l['beneficiaires'] as Record<string, unknown>[]) ?? [])
+          .filter((b) => b['soaCode'] || b['numCompte'] || b['ancMontBenef'] != null || b['nouvMontBenef'] != null)
+          .map((b) => ({
+            soaCode: (b['soaCode'] as string) || undefined,
+            numCompte: (b['numCompte'] as string) || undefined,
+            ancMontBenef: (b['ancMontBenef'] as number | null) ?? null,
+            nouvMontBenef: (b['nouvMontBenef'] as number | null) ?? null,
+          }));
+        const processus = ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
+          capm: this.capmLabel(p['idCapm'] as number | null),
+          dateDebut: (p['dateDebut'] as string) ?? '',
+          dateFin: (p['dateFin'] as string) ?? '',
+        }));
+        return {
+          designationMarche: (l['designationMarche'] as string) || undefined,
+          montEstim: (l['montEstim'] as number | null) ?? null,
+          nouvMontEstim: (l['nouvMontEstim'] as number | null) ?? null,
+          numCompte: (l['numCompte'] as string | null) ?? null,
+          natureLibelle: (l['natureLibelle'] as string) || undefined,
+          modeLibelle: (l['modeLibelle'] as string) || undefined,
+          financement: (l['financement'] as string) || undefined,
+          statut: (l['statut'] as string) || undefined,
+          beneficiaires,
+          processus,
+          coherenceErr: this.erreurCoherenceBenefs(g),
+        };
+      });
+    const v = this.ppmForm.getRawValue();
+    const pieces = this.typesPiece()
+      .filter((t) => this.pieces().has(t.idTypePiece))
+      .map((t) => ({ libelle: t.libellePiece, nom: this.pieces().get(t.idTypePiece)!.name }));
+    this.apercu.set({
+      entite: this.optionsEntite().find((e) => e.idEntiteContract === v.idEntiteContract)?.libelle ?? '—',
+      localite: this.localiteLabel(),
+      exercice: (v.exercice as number | null) ?? null,
+      signataire: this.signataireConnecte(),
+      dateSignature: (v.dateSignature as string) ?? '',
+      marches,
+      pieces,
+    });
+  }
+  fermerApercu(): void {
+    this.apercu.set(null);
   }
   ajouterMarche(): void {
     this.ensureMarcheRefs();
