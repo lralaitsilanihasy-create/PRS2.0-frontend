@@ -18,6 +18,7 @@ import {
 } from '../../services';
 import { ToastService } from '../../core/notifications/toast.service';
 import { StatutBadge } from '../../shared/circuit';
+import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 
 /**
  * Consultation d'un dossier en LECTURE SEULE (modale réutilisable).
@@ -30,7 +31,7 @@ import { StatutBadge } from '../../shared/circuit';
 @Component({
   selector: 'app-dossier-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge],
+  imports: [StatutBadge, PpmMarchesTable],
   template: `
     <div [class.modal-backdrop]="!embedded()" (click)="onOverlayClick()">
       <div
@@ -127,64 +128,7 @@ import { StatutBadge } from '../../shared/circuit';
                   </div>
                 </div>
 
-                @if (marches().length) {
-                  <div class="table-card">
-                    <table>
-                      <thead>
-                        <tr><th>Désignation</th><th class="r">Montant estimé</th><th>Mode</th><th>Statut</th></tr>
-                      </thead>
-                      <tbody>
-                        @for (m of marches(); track m.idDetail) {
-                          <tr>
-                            <td>{{ m.designationMarche || '—' }}</td>
-                            <td class="td-montant">{{ montant(m.montEstim) }}</td>
-                            <td>{{ modeLabel(m.idMode) }}</td>
-                            <td>
-                              <span class="badge badge-dot"
-                                [class.badge-prevu]="m.statut === 'PREVU'"
-                                [class.badge-cours]="m.statut === 'EN_COURS'"
-                                [class.badge-cloture]="m.statut === 'CLOTURE'">
-                                {{ m.statut || '—' }}
-                              </span>
-                            </td>
-                          </tr>
-                          @if (benefsDe(m.idDetail).length) {
-                            <tr class="dc-benef-row">
-                              <td colspan="4">
-                                <span class="dc-benef-title">Services bénéficiaires</span>
-                                @for (b of benefsDe(m.idDetail); track b.idBenef) {
-                                  <div class="dc-benef-line">
-                                    <span class="dc-benef-soa">{{ soaLabel(b.soaCode) }}</span>
-                                    <span class="dc-benef-cell">Compte : {{ compteLabel(b.numCompte) }}</span>
-                                    <span class="dc-benef-cell">Montant : {{ montant(b.ancMontBenef) }}</span>
-                                    @if (b.nouvMontBenef != null) {
-                                      <span class="dc-benef-cell">Nouveau : {{ montant(b.nouvMontBenef) }}</span>
-                                    }
-                                  </div>
-                                }
-                              </td>
-                            </tr>
-                          }
-                          @if (datesDe(m.idDetail).length) {
-                            <tr class="dc-benef-row">
-                              <td colspan="4">
-                                <span class="dc-benef-title">Dates prévisionnelles</span>
-                                @for (p of datesDe(m.idDetail); track p.idPrevision) {
-                                  <div class="dc-benef-line">
-                                    <span class="dc-benef-soa">{{ capmLabel(p.idCapm) }}</span>
-                                    <span class="dc-benef-cell">{{ p.dateDebut || '—' }} → {{ p.dateFin || '—' }}</span>
-                                  </div>
-                                }
-                              </td>
-                            </tr>
-                          }
-                        }
-                      </tbody>
-                    </table>
-                  </div>
-                } @else {
-                  <p class="text-muted dc-empty">Aucune ligne de marché.</p>
-                }
+                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
               </div>
             }
           }
@@ -365,8 +309,8 @@ export class DossierConsultation implements OnInit {
   private readonly modeMap = signal<Map<string, string>>(new Map());
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
-  /** Services bénéficiaires des marchés du dossier (lecture seule) + libellés SOA / compte. */
-  private readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
+  /** Services bénéficiaires des marchés du dossier (lecture seule), passés au tableau partagé. */
+  readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
   private readonly soaMap = signal<Map<string, string>>(new Map());
   private readonly compteMap = signal<Map<string, string>>(new Map());
   /** idDetail → ses services bénéficiaires. */
@@ -379,8 +323,8 @@ export class DossierConsultation implements OnInit {
     }
     return map;
   });
-  /** Dates prévisionnelles des marchés du dossier (lecture seule) + libellés CAPM. */
-  private readonly previsions = signal<MarchePrevision[]>([]);
+  /** Dates prévisionnelles des marchés du dossier (lecture seule), passées au tableau partagé. */
+  readonly previsions = signal<MarchePrevision[]>([]);
   private readonly capmMap = signal<Map<string, string>>(new Map());
   /** idDetail → ses dates prévisionnelles (triées par ordre CAPM). */
   private readonly prevParDetail = computed(() => {

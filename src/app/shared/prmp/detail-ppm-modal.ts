@@ -21,6 +21,7 @@ import {
   TypePieceJointeService,
 } from '../../services';
 import { DatePipe, DecimalPipe } from '@angular/common';
+import { PpmMarchesTable } from './ppm-marches-table';
 
 /**
  * Modal « Détail PPM » réutilisable (partagé) : en-tête PPM + lignes de marché + pièces jointes du dossier.
@@ -33,7 +34,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 @Component({
   selector: 'app-detail-ppm-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, DecimalPipe],
+  imports: [ReactiveFormsModule, DatePipe, DecimalPipe, PpmMarchesTable],
   template: `
     <div class="modal-backdrop" [class.closing]="closing()" (click)="emitFermer()">
       @if (loading()) {
@@ -151,39 +152,39 @@ import { DatePipe, DecimalPipe } from '@angular/common';
                 }
               </div>
 
-              <div class="table-card">
-                <table>
-                  <colgroup>
-                    <col />
-                    <col style="width:150px;" />
-                    <col style="width:170px;" />
-                    <col style="width:90px;" />
-                    @if (modeEdition) { <col style="width:220px;" /> }
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th>Désignation</th>
-                      <th class="r">Montant estimé</th>
-                      <th>Mode</th>
-                      <th>Statut</th>
-                      @if (modeEdition) { <th>Actions</th> }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (m of marches(); track m.idDetail) {
+              @if (modeEdition) {
+                <div class="table-card">
+                  <table>
+                    <colgroup>
+                      <col />
+                      <col style="width:150px;" />
+                      <col style="width:170px;" />
+                      <col style="width:90px;" />
+                      <col style="width:220px;" />
+                    </colgroup>
+                    <thead>
                       <tr>
-                        <td [title]="m.designationMarche || ''" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.designationMarche || '—' }}</td>
-                        <td class="td-montant">{{ m.montEstim | number }}</td>
-                        <td>{{ resolve(modeMap(), m.idMode) }}</td>
-                        <td>
-                          <span class="badge badge-dot"
-                            [class.badge-prevu]="m.statut === 'PREVU'"
-                            [class.badge-cours]="m.statut === 'EN_COURS'"
-                            [class.badge-cloture]="m.statut === 'CLOTURE'">
-                            {{ m.statut || '—' }}
-                          </span>
-                        </td>
-                        @if (modeEdition) {
+                        <th>Désignation</th>
+                        <th class="r">Montant estimé</th>
+                        <th>Mode</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (m of marches(); track m.idDetail) {
+                        <tr>
+                          <td [title]="m.designationMarche || ''" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.designationMarche || '—' }}</td>
+                          <td class="td-montant">{{ m.montEstim | number }}</td>
+                          <td>{{ resolve(modeMap(), m.idMode) }}</td>
+                          <td>
+                            <span class="badge badge-dot"
+                              [class.badge-prevu]="m.statut === 'PREVU'"
+                              [class.badge-cours]="m.statut === 'EN_COURS'"
+                              [class.badge-cloture]="m.statut === 'CLOTURE'">
+                              {{ m.statut || '—' }}
+                            </span>
+                          </td>
                           <td>
                             <div class="td-actions">
                               <button class="btn btn-secondary btn-sm" type="button" (click)="voirDates(m)">Voir dates</button>
@@ -193,42 +194,14 @@ import { DatePipe, DecimalPipe } from '@angular/common';
                               <button class="btn btn-danger btn-sm" type="button" (click)="supprimerMarche(m)">Supprimer</button>
                             </div>
                           </td>
-                        }
-                      </tr>
-                      @if (!modeEdition && benefsDe(m.idDetail).length) {
-                        <tr class="dpm-benef-row">
-                          <td colspan="4">
-                            <span class="dpm-benef-title">Services bénéficiaires</span>
-                            @for (b of benefsDe(m.idDetail); track b.idBenef) {
-                              <div class="dpm-benef-line">
-                                <span class="dpm-benef-soa">{{ soaLabel(b.soaCode) }}</span>
-                                <span class="dpm-benef-cell">Compte : {{ compteLabel(b.numCompte) }}</span>
-                                <span class="dpm-benef-cell">Montant : {{ (b.ancMontBenef | number) || '—' }}</span>
-                                @if (b.nouvMontBenef != null) {
-                                  <span class="dpm-benef-cell">Nouveau : {{ (b.nouvMontBenef | number) || '—' }}</span>
-                                }
-                              </div>
-                            }
-                          </td>
                         </tr>
                       }
-                      @if (!modeEdition && datesDe(m.idDetail).length) {
-                        <tr class="dpm-benef-row">
-                          <td colspan="4">
-                            <span class="dpm-benef-title">Dates prévisionnelles</span>
-                            @for (p of datesDe(m.idDetail); track p.idPrevision) {
-                              <div class="dpm-benef-line">
-                                <span class="dpm-benef-soa">{{ capmLabel(p.idCapm) }}</span>
-                                <span class="dpm-benef-cell">{{ p.dateDebut || '—' }} → {{ p.dateFin || '—' }}</span>
-                              </div>
-                            }
-                          </td>
-                        </tr>
-                      }
-                    }
-                  </tbody>
-                </table>
-              </div>
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
+              }
             </div>
 
             <!-- Pièces jointes -->
@@ -638,7 +611,7 @@ export class DetailPpmModal implements OnInit {
   private refsLoaded = false;
 
   /** Services bénéficiaires des marchés du PPM (lecture seule) + libellés SOA / compte. */
-  private readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
+  readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
   private readonly soaMap = signal<Map<string, string>>(new Map());
   private readonly compteMap = signal<Map<string, string>>(new Map());
   /** idDetail → ses services bénéficiaires. */
@@ -652,7 +625,7 @@ export class DetailPpmModal implements OnInit {
     return map;
   });
   /** Dates prévisionnelles (bulk, lecture seule sous chaque marché). */
-  private readonly previsions = signal<MarchePrevision[]>([]);
+  readonly previsions = signal<MarchePrevision[]>([]);
   /** idDetail → ses dates prévisionnelles (triées par ordre CAPM). */
   private readonly prevParDetail = computed(() => {
     const map = new Map<number, MarchePrevision[]>();
