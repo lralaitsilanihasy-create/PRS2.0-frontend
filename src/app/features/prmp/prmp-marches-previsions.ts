@@ -89,13 +89,13 @@ interface PrevState {
                               } @else if (prevOf(m.idDetail)?.data?.length) {
                                 <table class="cnm-table mdp__prev">
                                   <thead>
-                                    <tr><th>Processus</th><th>Période prévisionnelle</th></tr>
+                                    <tr><th>Processus</th><th>Date prévisionnelle</th></tr>
                                   </thead>
                                   <tbody>
                                     @for (p of prevOf(m.idDetail)!.data; track p.idPrevision) {
                                       <tr>
                                         <td>{{ capmLabel(p.idCapm) }}</td>
-                                        <td class="cnm-mono">{{ p.dateDebut || '—' }} → {{ p.dateFin || '—' }}</td>
+                                        <td class="cnm-mono">{{ p.dateDebut || '—' }}</td>
                                       </tr>
                                     }
                                   </tbody>

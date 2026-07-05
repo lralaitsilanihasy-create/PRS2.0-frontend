@@ -39,7 +39,9 @@ export interface Marche {
 
 /**
  * Date prévisionnelle d'un marché (relation 1,N avec Marché via idDetail) — **une ligne par processus
- * CAPM** (`idCapm`), avec sa période `dateDebut`/`dateFin`. `ordre` (réponse) vient de `t_capm.ordre`.
+ * CAPM** (`idCapm`), avec la **date du jalon** `dateDebut` (telle qu'indiquée dans le PPM). `dateFin`
+ * n'est plus saisie (une prévision = une date) ; conservée optionnelle pour compat lecture. `ordre`
+ * (réponse) vient de `t_capm.ordre`.
  */
 export interface MarchePrevision {
   idPrevision: number;
@@ -47,19 +49,18 @@ export interface MarchePrevision {
   idDetail: number;
   /** FK vers le processus CAPM (`t_capm`). */
   idCapm: number;
-  /** `yyyy-MM-dd`. */
+  /** `yyyy-MM-dd` — date du jalon (lancement / ouverture / attribution…). */
   dateDebut: string;
-  /** `yyyy-MM-dd`. */
-  dateFin: string;
+  /** `yyyy-MM-dd` — déprécié (plus saisi) ; peut rester présent en lecture pour d'anciennes données. */
+  dateFin?: string;
   /** Lecture seule (réponse) — `t_capm.ordre`, pour le tri d'affichage. */
   ordre?: number;
 }
 
-/** Un processus prévisionnel d'un marché à la saisie (`POST /api/saisies/ppm`). */
+/** Un processus prévisionnel d'un marché à la saisie (`POST /api/saisies/ppm`) — une date par jalon. */
 export interface ProcessusMarche {
   idCapm: number;
-  dateDebut: string; // yyyy-MM-dd
-  dateFin: string; // yyyy-MM-dd
+  dateDebut: string; // yyyy-MM-dd — date du jalon
 }
 
 /**

@@ -219,7 +219,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
                             @for (p of datesDe(m.idDetail); track p.idPrevision) {
                               <div class="dpm-benef-line">
                                 <span class="dpm-benef-soa">{{ capmLabel(p.idCapm) }}</span>
-                                <span class="dpm-benef-cell">{{ p.dateDebut || '—' }} → {{ p.dateFin || '—' }}</span>
+                                <span class="dpm-benef-cell">{{ p.dateDebut || '—' }}</span>
                               </div>
                             }
                           </td>
@@ -354,10 +354,10 @@ import { DatePipe, DecimalPipe } from '@angular/common';
               <p class="dpm__info">Chargement des dates…</p>
             } @else if (modalData().length) {
               <table class="cnm-table">
-                <thead><tr><th>Processus</th><th>Période prévisionnelle</th></tr></thead>
+                <thead><tr><th>Processus</th><th>Date prévisionnelle</th></tr></thead>
                 <tbody>
                   @for (d of modalData(); track d.idPrevision) {
-                    <tr><td>{{ capmLabel(d.idCapm) }}</td><td class="cnm-mono">{{ d.dateDebut || '—' }} → {{ d.dateFin || '—' }}</td></tr>
+                    <tr><td>{{ capmLabel(d.idCapm) }}</td><td class="cnm-mono">{{ d.dateDebut || '—' }}</td></tr>
                   }
                 </tbody>
               </table>
@@ -391,12 +391,8 @@ import { DatePipe, DecimalPipe } from '@angular/common';
                       @for (c of capmsPourLigne(ef, ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
                     </select>
                     <input class="form-control" type="date" formControlName="dateDebut" />
-                    <input class="form-control" type="date" formControlName="dateFin" />
                     <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerDate(ef, $index)">✕</button>
                   </div>
-                  @if (procErreur(ctrl.get('idCapm')!.value)) {
-                    <span class="form-error dpm-date-err">{{ procErreur(ctrl.get('idCapm')!.value) }}</span>
-                  }
                 } @empty {
                   <p class="dpm__info">Aucune date. Ajoutez-en une.</p>
                 }
@@ -508,7 +504,6 @@ import { DatePipe, DecimalPipe } from '@angular/common';
                     @for (c of capmsPourLigne(createForm, ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
                   </select>
                   <input class="form-control" type="date" formControlName="dateDebut" />
-                  <input class="form-control" type="date" formControlName="dateFin" />
                   <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerDate(createForm, $index)">✕</button>
                 </div>
               }
@@ -585,7 +580,6 @@ export class DetailPpmModal implements OnInit {
   readonly pieces = signal<PieceJointeDossier[]>([]);
   readonly modeMap = signal<Map<string, string>>(new Map());
   readonly capms = signal<Capm[]>([]);
-  readonly procErreurs = signal<Record<number, string>>({});
 
   // Édition de l'en-tête du PPM (modeEdition) : exercice / date signature / libellé.
   readonly editHeaderOpen = signal(false);
@@ -908,41 +902,11 @@ export class DetailPpmModal implements OnInit {
   capmLabel(id: number): string {
     return this.capms().find((c) => c.idCapm === id)?.libelleProcessus ?? '#' + id;
   }
-  procErreur(idCapm: number | null): string | undefined {
-    return idCapm == null ? undefined : this.procErreurs()[idCapm];
-  }
-  private validerChronologie(controls: FormGroup[]): boolean {
-    const parId = new Map(this.capms().map((c) => [c.idCapm, c]));
-    const items = controls
-      .map((g) => ({
-        idCapm: g.get('idCapm')!.value as number | null,
-        dateDebut: g.get('dateDebut')!.value as string,
-        dateFin: g.get('dateFin')!.value as string,
-      }))
-      .filter((p) => p.idCapm != null && p.dateDebut && p.dateFin)
-      .sort((a, b) => (parId.get(a.idCapm!)?.ordre ?? 0) - (parId.get(b.idCapm!)?.ordre ?? 0));
-    const err: Record<number, string> = {};
-    for (let i = 0; i < items.length; i++) {
-      const p = items[i];
-      if (p.dateDebut >= p.dateFin) {
-        err[p.idCapm!] = 'La date de fin doit être postérieure à la date de début.';
-        continue;
-      }
-      if (i > 0 && p.dateDebut < items[i - 1].dateFin) {
-        const lib = parId.get(p.idCapm!)?.libelleProcessus ?? '#' + p.idCapm;
-        const libPrec = parId.get(items[i - 1].idCapm!)?.libelleProcessus ?? '#' + items[i - 1].idCapm;
-        err[p.idCapm!] = `La date de début de ${lib} doit être postérieure ou égale à la date de fin de ${libPrec}.`;
-      }
-    }
-    this.procErreurs.set(err);
-    return Object.keys(err).length === 0;
-  }
   private ligneDate(p?: Partial<MarchePrevision>): FormGroup {
     return this.fb.group({
       idPrevision: [p?.idPrevision ?? null],
       idCapm: [p?.idCapm ?? null, Validators.required],
       dateDebut: [p?.dateDebut ?? '', Validators.required],
-      dateFin: [p?.dateFin ?? '', Validators.required],
     });
   }
   datesControls(form: FormGroup): FormGroup[] {
@@ -971,7 +935,6 @@ export class DetailPpmModal implements OnInit {
   }
 
   ouvrirEdition(m: Marche): void {
-    this.procErreurs.set({});
     this.editMarche.set(m);
     this.editLoading.set(true);
     const form = this.fb.group({ datesPrev: this.fb.array([] as FormGroup[]) });
@@ -987,7 +950,6 @@ export class DetailPpmModal implements OnInit {
     });
   }
   annulerEdition(): void {
-    this.procErreurs.set({});
     this.editMarche.set(null);
     this.editForm.set(null);
     this.editOriginal.set([]);
@@ -996,14 +958,15 @@ export class DetailPpmModal implements OnInit {
     const m = this.editMarche();
     const form = this.editForm();
     if (!m || !form) return;
-    if (!this.validerChronologie(this.datesControls(form))) {
+    const datesArray = form.get('datesPrev') as FormArray;
+    if (datesArray.invalid) {
+      datesArray.markAllAsTouched();
       return;
     }
-    const rows = (form.get('datesPrev') as FormArray).getRawValue() as {
+    const rows = datesArray.getRawValue() as {
       idPrevision: number | null;
       idCapm: number | null;
       dateDebut: string;
-      dateFin: string;
     }[];
     this.submittingEdit.set(true);
     this.reconcilierDates(
@@ -1023,7 +986,7 @@ export class DetailPpmModal implements OnInit {
   private reconcilierDates(
     idDetail: number,
     original: MarchePrevision[],
-    rows: { idPrevision: number | null; idCapm: number | null; dateDebut: string; dateFin: string }[],
+    rows: { idPrevision: number | null; idCapm: number | null; dateDebut: string }[],
     done: () => void,
     fail: () => void,
   ): void {
@@ -1040,7 +1003,6 @@ export class DetailPpmModal implements OnInit {
             idDetail,
             idCapm: r.idCapm as number,
             dateDebut: r.dateDebut,
-            dateFin: r.dateFin,
           }),
         ),
         ...toCreate.map((r, i) =>
@@ -1049,7 +1011,6 @@ export class DetailPpmModal implements OnInit {
             idDetail,
             idCapm: r.idCapm as number,
             dateDebut: r.dateDebut,
-            dateFin: r.dateFin,
           }),
         ),
       ];
@@ -1346,7 +1307,7 @@ export class DetailPpmModal implements OnInit {
     });
   }
 
-  private creerDates(idDetail: number, lignes: { idCapm: number | null; dateDebut: string; dateFin: string }[], done: () => void): void {
+  private creerDates(idDetail: number, lignes: { idCapm: number | null; dateDebut: string }[], done: () => void): void {
     const valides = lignes.filter((l) => l.idCapm != null);
     if (!valides.length) {
       done();
@@ -1361,7 +1322,6 @@ export class DetailPpmModal implements OnInit {
             idDetail,
             idCapm: l.idCapm as number,
             dateDebut: l.dateDebut,
-            dateFin: l.dateFin,
           }),
         ),
       ).subscribe({

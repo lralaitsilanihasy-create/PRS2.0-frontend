@@ -172,7 +172,7 @@ import { StatutBadge } from '../../shared/circuit';
                                 @for (p of datesDe(m.idDetail); track p.idPrevision) {
                                   <div class="dc-benef-line">
                                     <span class="dc-benef-soa">{{ capmLabel(p.idCapm) }}</span>
-                                    <span class="dc-benef-cell">{{ p.dateDebut || '—' }} → {{ p.dateFin || '—' }}</span>
+                                    <span class="dc-benef-cell">{{ p.dateDebut || '—' }}</span>
                                   </div>
                                 }
                               </td>
