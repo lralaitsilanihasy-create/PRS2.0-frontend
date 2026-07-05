@@ -148,25 +148,15 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                       <span class="form-hint sd__import-lib">📄 Bénéficiaire(s) PDF : {{ lib }} — à ajouter via « Bénéficiaires »</span>
                     }</label>
                   <label class="form-group"><span class="form-label">Nature</span>
-                    <select class="form-control" formControlName="idNature">
-                      <option [ngValue]="null">— Sélectionner —</option>
-                      @for (n of natures(); track n.idNature) { <option [ngValue]="n.idNature">{{ n.libelle || '#' + n.idNature }}</option> }
-                    </select>
-                    @if (libelleNatureImport(g); as lib) {
-                      <span class="form-hint sd__import-lib">📄 « {{ lib }} » — sera créé à la création</span>
-                    }</label>
+                    <input class="form-control" type="text" formControlName="natureLibelle" list="sd-natures" placeholder="Nature (créée si nouvelle)" />
+                  </label>
                   <label class="form-group"><span class="form-label">Financement</span>
                     <input class="form-control" type="text" formControlName="financement" /></label>
                   <label class="form-group"><span class="form-label">Statut</span>
                     <input class="form-control" type="text" formControlName="statut" /></label>
                   <label class="form-group"><span class="form-label">Mode de passation</span>
-                    <select class="form-control" formControlName="idMode">
-                      <option [ngValue]="null">— Sélectionner —</option>
-                      @for (m of modesList(); track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle || '#' + m.idMode }}</option> }
-                    </select>
-                    @if (libelleModeImport(g); as lib) {
-                      <span class="form-hint sd__import-lib">📄 « {{ lib }} » — sera créé à la création</span>
-                    }</label>
+                    <input class="form-control" type="text" formControlName="modeLibelle" list="sd-modes" placeholder="Mode (créé si nouveau)" />
+                  </label>
                 </div>
                 <div class="sd__ligne-foot">
                   @if (datesSaisies(g)) {
@@ -183,6 +173,8 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                 </div>
               </div>
             }
+            <datalist id="sd-natures">@for (n of natures(); track n.idNature) { <option [value]="n.libelle"></option> }</datalist>
+            <datalist id="sd-modes">@for (m of modesList(); track m.idMode) { <option [value]="m.libelle"></option> }</datalist>
 
             <div class="sd__pieces">
               <h2 class="sd__sub">Pièces jointes</h2>
@@ -483,8 +475,6 @@ export class SoumettreDossier {
   /** Import PPM PDF (pré-remplissage read-only) : état d'analyse + avertissements du parsing. */
   readonly importing = signal(false);
   readonly importAvertissements = signal<string[]>([]);
-  /** Libellés nature/mode non résolus par l'import (uid de ligne → libellés) — envoyés à la création pour création à la volée. */
-  private readonly importLibelles = signal<Record<number, { natureLibelle?: string; modeLibelle?: string }>>({});
   /** Bénéficiaires détectés par l'import (uid de ligne → bénéficiaires) — affichés (compte/SOA par bénéficiaire). */
   private readonly importBenefs = signal<Record<number, SaisieImportBeneficiaire[]>>({});
 
@@ -634,8 +624,9 @@ export class SoumettreDossier {
       numCompte: [null as string | null],
       financement: [''],
       statut: ['PREVU'],
-      idNature: [null as number | null],
-      idMode: [null as number | null],
+      // Nature/mode en saisie libre (comme montant) : le libellé est résolu-ou-créé au POST par le backend.
+      natureLibelle: [''],
+      modeLibelle: [''],
       processus: this.fb.array([] as FormGroup[]),
     });
   }
@@ -678,7 +669,6 @@ export class SoumettreDossier {
     // Marchés (best-effort) : remplace les lignes actuelles par celles du PDF.
     this.ensureMarcheRefs();
     this.marchesArray.clear();
-    const libelles: Record<number, { natureLibelle?: string; modeLibelle?: string }> = {};
     const benefs: Record<number, SaisieImportBeneficiaire[]> = {};
     let previsionsPresentes = false;
     for (const m of r.marches ?? []) {
@@ -687,12 +677,11 @@ export class SoumettreDossier {
         designationMarche: m.designationMarche ?? '',
         montEstim: m.montEstim ?? null,
         financement: m.financement ?? '',
-        idNature: m.idNature ?? null,
-        idMode: m.idMode ?? null,
+        // Nature/mode : libellé du PDF pré-rempli directement dans le champ (créé/résolu au POST).
+        natureLibelle: m.natureLibelle ?? '',
+        modeLibelle: m.modeLibelle ?? '',
       });
-      // Libellés bruts (nature/mode) conservés pour la création à la volée si l'id n'est pas résolu.
       const uid = g.get('uid')!.value as number;
-      libelles[uid] = { natureLibelle: m.natureLibelle, modeLibelle: m.modeLibelle };
       benefs[uid] = m.beneficiaires ?? [];
       // Prévisions (jalons) : idCapm résolu depuis le libellé + date de début ; date de fin à compléter (non fournie).
       const procArr = g.get('processus') as FormArray;
@@ -705,7 +694,6 @@ export class SoumettreDossier {
       }
       this.marchesArray.push(g);
     }
-    this.importLibelles.set(libelles);
     this.importBenefs.set(benefs);
     // Avertissements : ceux du backend + entité non résolue + dates + bénéficiaires.
     const av = [...(r.avertissements ?? [])];
@@ -724,16 +712,6 @@ export class SoumettreDossier {
     }
     this.importAvertissements.set(av);
   }
-  /** Libellé de nature du PDF quand l'id n'est pas résolu (affiché à côté du menu vide ; créé à la création). */
-  libelleNatureImport(g: FormGroup): string | null {
-    if (g.get('idNature')!.value != null) return null;
-    return this.importLibelles()[g.get('uid')!.value as number]?.natureLibelle ?? null;
-  }
-  /** Libellé de mode du PDF quand l'id n'est pas résolu. */
-  libelleModeImport(g: FormGroup): string | null {
-    if (g.get('idMode')!.value != null) return null;
-    return this.importLibelles()[g.get('uid')!.value as number]?.modeLibelle ?? null;
-  }
   /** Bénéficiaire(s) du PDF (SOA · compte) pour une ligne — informatif (compte par bénéficiaire, à ajouter après création). */
   benefsImportLabel(g: FormGroup): string | null {
     const bs = this.importBenefs()[g.get('uid')!.value as number] ?? [];
@@ -747,7 +725,8 @@ export class SoumettreDossier {
       l['montEstim'] != null ||
       l['numCompte'] ||
       l['financement'] ||
-      l['idNature'] != null
+      l['natureLibelle'] ||
+      l['modeLibelle']
     );
   }
 
@@ -928,12 +907,9 @@ export class SoumettreDossier {
       numCompte: (l['numCompte'] as string) ?? undefined,
       financement: (l['financement'] as string) || undefined,
       statut: (l['statut'] as string) || 'PREVU',
-      idNature: (l['idNature'] as number) ?? undefined,
-      // Libellé envoyé seulement si l'id n'est pas résolu → le serveur crée/résout la nature à la volée.
-      natureLibelle:
-        l['idNature'] == null ? this.importLibelles()[l['uid'] as number]?.natureLibelle : undefined,
-      idMode: (l['idMode'] as number) ?? undefined,
-      modeLibelle: l['idMode'] == null ? this.importLibelles()[l['uid'] as number]?.modeLibelle : undefined,
+      // Nature/mode en saisie libre : on envoie le libellé, le serveur le résout-ou-crée au POST.
+      natureLibelle: (l['natureLibelle'] as string)?.trim() || undefined,
+      modeLibelle: (l['modeLibelle'] as string)?.trim() || undefined,
       processus: ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
         idCapm: p['idCapm'] as number,
         dateDebut: p['dateDebut'] as string,
