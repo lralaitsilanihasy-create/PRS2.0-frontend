@@ -7,7 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
-import { Capm, Compte, Dossier, Marche, ModePassation, Nature, SaisieImportBeneficiaire, SaisieMarcheLigne, SaisiePpmImportResult, TypeDossier, TypePieceJointe } from '../../models';
+import { Capm, Compte, Dossier, Marche, ModePassation, Nature, SaisieMarcheLigne, SaisiePpmImportResult, SoaBeneficiaire, TypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -22,6 +22,7 @@ import {
   PrmpService,
   ReferenceLookupService,
   SaisieService,
+  SoaBeneficiaireService,
   TypeDossierService,
   TypePieceJointeService,
 } from '../../services';
@@ -139,11 +140,10 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                     <input class="form-control" type="text" formControlName="designationMarche" /></label>
                   <label class="form-group"><span class="form-label">Montant estimé</span>
                     <input class="form-control" type="number" formControlName="montEstim" /></label>
+                  <label class="form-group"><span class="form-label">Nouveau montant estimé</span>
+                    <input class="form-control" type="number" formControlName="nouvMontEstim" placeholder="(si révisé)" /></label>
                   <label class="form-group"><span class="form-label">Compte</span>
-                    <input class="form-control" type="text" formControlName="numCompte" list="sd-comptes" placeholder="N° compte" />
-                    @if (benefsImportLabel(g); as lib) {
-                      <span class="form-hint sd__import-lib">📄 Bénéficiaire(s) PDF : {{ lib }} — à ajouter via « Bénéficiaires »</span>
-                    }</label>
+                    <input class="form-control" type="text" formControlName="numCompte" list="sd-comptes" placeholder="N° compte" /></label>
                   <label class="form-group"><span class="form-label">Nature</span>
                     <input class="form-control" type="text" formControlName="natureLibelle" list="sd-natures" placeholder="Nature (créée si nouvelle)" />
                   </label>
@@ -154,6 +154,26 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                   <label class="form-group"><span class="form-label">Mode de passation</span>
                     <input class="form-control" type="text" formControlName="modeLibelle" list="sd-modes" placeholder="Mode (créé si nouveau)" />
                   </label>
+                </div>
+                <div class="sd__benefs" formArrayName="beneficiaires">
+                  <div class="sd__benefs-head">
+                    <span class="form-label">Bénéficiaires (ventilation par service)</span>
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterBeneficiaire(g)">+ Ajouter un bénéficiaire</button>
+                  </div>
+                  @for (b of beneficiairesControls(g); track $index) {
+                    <div class="sd__benef-row" [formGroupName]="$index">
+                      <input class="form-control" type="text" formControlName="soaCode" list="sd-soa" placeholder="Service bénéficiaire (SOA)" />
+                      <input class="form-control" type="text" formControlName="numCompte" list="sd-comptes" placeholder="Compte" />
+                      <input class="form-control" type="number" formControlName="ancMontBenef" placeholder="Montant estimatif" />
+                      <input class="form-control" type="number" formControlName="nouvMontBenef" placeholder="Nouveau montant" />
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="retirerBeneficiaire(g, $index)" aria-label="Retirer">✕</button>
+                    </div>
+                  } @empty {
+                    <p class="form-hint">Aucun bénéficiaire (optionnel). Si vous en ajoutez, la somme des montants par bénéficiaire doit égaler le montant du marché.</p>
+                  }
+                  @if (erreurCoherenceBenefs(g); as errBenef) {
+                    <span class="form-error">{{ errBenef }}</span>
+                  }
                 </div>
                 <div class="sd__ligne-foot">
                   @if (datesSaisies(g)) {
@@ -173,6 +193,7 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
             <datalist id="sd-natures">@for (n of natures(); track n.idNature) { <option [value]="n.libelle"></option> }</datalist>
             <datalist id="sd-modes">@for (m of modesList(); track m.idMode) { <option [value]="m.libelle"></option> }</datalist>
             <datalist id="sd-comptes">@for (c of comptes(); track c.numCompte) { <option [value]="c.numCompte">{{ c.libelle }}</option> }</datalist>
+            <datalist id="sd-soa">@for (s of soaList(); track s.soaCode) { <option [value]="s.soaCode">{{ s.libelle }}</option> }</datalist>
 
             <div class="sd__pieces">
               <h2 class="sd__sub">Pièces jointes</h2>
@@ -222,7 +243,7 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
 
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -364,7 +385,6 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
     .sd__form { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: min(64rem, 96vw); }
     .sd__import { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.75rem; border-bottom: 1px solid var(--c-100); }
     .sd__import-btn { cursor: pointer; }
-    .sd__import-lib { color: var(--c-600); font-style: italic; }
     .sd__hint { margin: 0; }
     .sd__pieces { display: flex; flex-direction: column; gap: 0.5rem; }
     .sd__piece { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
@@ -390,6 +410,10 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
     .sd__ligne { padding: 1rem; background: var(--c-50); border: 1px solid var(--c-100); border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem; }
     .sd__ligne-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
     .sd__ligne-foot-actions { display: flex; gap: 0.5rem; }
+    .sd__benefs { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.6rem; background: var(--c-100); border-radius: var(--radius-md); }
+    .sd__benefs-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .sd__benef-row { display: flex; align-items: center; gap: 0.5rem; }
+    .sd__benef-row .form-control { flex: 1; min-width: 6rem; }
     .sd__dates-manq { color: var(--warning-text); font-size: var(--text-sm); font-weight: 700; }
     .sd__dates-ok { color: var(--success-text); font-size: var(--text-sm); font-weight: 700; }
     .sd-proc-row { display: flex; align-items: center; gap: 0.5rem; }
@@ -418,6 +442,7 @@ export class SoumettreDossier {
   private readonly natureService = inject(NatureService);
   private readonly modeService = inject(ModePassationService);
   private readonly compteService = inject(CompteService);
+  private readonly soaService = inject(SoaBeneficiaireService);
   private readonly lookups = inject(ReferenceLookupService);
   private uidCounter = 0;
 
@@ -430,6 +455,7 @@ export class SoumettreDossier {
   readonly natures = signal<Nature[]>([]);
   readonly modesList = signal<ModePassation[]>([]);
   readonly comptes = signal<Compte[]>([]);
+  readonly soaList = signal<SoaBeneficiaire[]>([]);
   readonly modeMap = signal<Map<string, string>>(new Map());
 
   readonly dossier = signal<Dossier | null>(null);
@@ -483,8 +509,6 @@ export class SoumettreDossier {
   /** Import PPM PDF (pré-remplissage read-only) : état d'analyse + avertissements du parsing. */
   readonly importing = signal(false);
   readonly importAvertissements = signal<string[]>([]);
-  /** Bénéficiaires détectés par l'import (uid de ligne → bénéficiaires) — affichés (compte/SOA par bénéficiaire). */
-  private readonly importBenefs = signal<Record<number, SaisieImportBeneficiaire[]>>({});
 
   /** Référentiel CAPM (processus de marché), trié par `ordre` ASC. */
   readonly capms = signal<Capm[]>([]);
@@ -583,6 +607,7 @@ export class SoumettreDossier {
     this.natureService.list().subscribe((r) => this.natures.set(r));
     this.modeService.list().subscribe((r) => this.modesList.set(r));
     this.compteService.list().subscribe((r) => this.comptes.set(r));
+    this.soaService.list().subscribe((r) => this.soaList.set(r));
   }
 
   // — Choix du type —
@@ -629,14 +654,60 @@ export class SoumettreDossier {
       uid: [uid],
       designationMarche: [''],
       montEstim: [null as number | null],
+      nouvMontEstim: [null as number | null],
       numCompte: [null as string | null],
       financement: [''],
       statut: ['PREVU'],
       // Nature/mode en saisie libre (comme montant) : le libellé est résolu-ou-créé au POST par le backend.
       natureLibelle: [''],
       modeLibelle: [''],
+      // Ventilation par bénéficiaire (SOA + montants) — résolue-ou-créée au POST par le backend.
+      beneficiaires: this.fb.array([] as FormGroup[]),
       processus: this.fb.array([] as FormGroup[]),
     });
+  }
+  /** Un groupe bénéficiaire { soaCode, numCompte, ancMontBenef, nouvMontBenef } d'une ligne de marché. */
+  private ligneBeneficiaire(b?: { soaCode?: string; numCompte?: string; ancMontBenef?: number; nouvMontBenef?: number }): FormGroup {
+    return this.fb.group({
+      soaCode: [b?.soaCode ?? ''],
+      numCompte: [b?.numCompte ?? ''],
+      ancMontBenef: [b?.ancMontBenef ?? (null as number | null)],
+      nouvMontBenef: [b?.nouvMontBenef ?? (null as number | null)],
+    });
+  }
+  /** Lignes bénéficiaires d'un marché (copie de travail du formulaire). */
+  beneficiairesControls(g: FormGroup): FormGroup[] {
+    return (g.get('beneficiaires') as FormArray).controls as FormGroup[];
+  }
+  ajouterBeneficiaire(g: FormGroup): void {
+    (g.get('beneficiaires') as FormArray).push(this.ligneBeneficiaire());
+  }
+  retirerBeneficiaire(g: FormGroup, i: number): void {
+    (g.get('beneficiaires') as FormArray).removeAt(i);
+  }
+  /**
+   * Écart de cohérence des montants d'un marché (message inline, null si cohérent). Vérifié seulement si
+   * au moins un bénéficiaire est saisi : `Σ ancMontBenef = montEstim` (et `Σ nouvMontBenef = nouvMontEstim`
+   * si le nouveau montant du marché est renseigné). Reflète la règle serveur (sinon 400).
+   */
+  erreurCoherenceBenefs(g: FormGroup): string | null {
+    const benefs = this.beneficiairesControls(g);
+    if (!benefs.length) return null;
+    const somme = (champ: string) =>
+      benefs.reduce((acc, b) => acc + (Number(b.get(champ)!.value) || 0), 0);
+    const montEstim = Number(g.get('montEstim')!.value) || 0;
+    if (somme('ancMontBenef') !== montEstim) {
+      return `La somme des montants par bénéficiaire (${somme('ancMontBenef').toLocaleString('fr-FR')}) doit égaler le montant estimé du marché (${montEstim.toLocaleString('fr-FR')}).`;
+    }
+    const nouvMont = g.get('nouvMontEstim')!.value;
+    if (nouvMont != null && nouvMont !== '' && somme('nouvMontBenef') !== Number(nouvMont)) {
+      return `La somme des nouveaux montants par bénéficiaire (${somme('nouvMontBenef').toLocaleString('fr-FR')}) doit égaler le nouveau montant estimé (${Number(nouvMont).toLocaleString('fr-FR')}).`;
+    }
+    return null;
+  }
+  /** Toutes les lignes de marché ont-elles des bénéficiaires cohérents ? (bloque la création si non) */
+  get benefsCoherents(): boolean {
+    return this.marcheControls().every((g) => this.erreurCoherenceBenefs(g) === null);
   }
   ajouterMarche(): void {
     this.ensureMarcheRefs();
@@ -690,22 +761,27 @@ export class SoumettreDossier {
     // Marchés (best-effort) : remplace les lignes actuelles par celles du PDF.
     this.ensureMarcheRefs();
     this.marchesArray.clear();
-    const benefs: Record<number, SaisieImportBeneficiaire[]> = {};
     let previsionsPresentes = false;
     for (const m of r.marches ?? []) {
       const g = this.ligneMarche();
       g.patchValue({
         designationMarche: m.designationMarche ?? '',
         montEstim: m.montEstim ?? null,
-        financement: m.financement ?? '',
+        nouvMontEstim: m.nouvMontEstim ?? null,
         // Compte : le PDF le porte au niveau bénéficiaire ; on pré-remplit le compte du marché avec le 1er (éditable).
         numCompte: m.beneficiaires?.[0]?.numCompte ?? null,
+        financement: m.financement ?? '',
         // Nature/mode : libellé du PDF pré-rempli directement dans le champ (créé/résolu au POST).
         natureLibelle: m.natureLibelle ?? '',
         modeLibelle: m.modeLibelle ?? '',
       });
-      const uid = g.get('uid')!.value as number;
-      benefs[uid] = m.beneficiaires ?? [];
+      // Bénéficiaires (SOA + montants) pré-remplis depuis le PDF — saisis directement (résolus/créés au POST).
+      const benefArr = g.get('beneficiaires') as FormArray;
+      for (const b of m.beneficiaires ?? []) {
+        benefArr.push(
+          this.ligneBeneficiaire({ soaCode: b.soaCode, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }),
+        );
+      }
       // Prévisions (jalons) : idCapm résolu depuis le libellé + date de début ; date de fin à compléter (non fournie).
       const procArr = g.get('processus') as FormArray;
       for (const p of m.previsions ?? []) {
@@ -717,7 +793,6 @@ export class SoumettreDossier {
       }
       this.marchesArray.push(g);
     }
-    this.importBenefs.set(benefs);
     // Avertissements : ceux du backend + entité non résolue + dates + bénéficiaires.
     const av = [...(r.avertissements ?? [])];
     if (r.idEntiteContract == null && r.autoriteContractante) {
@@ -735,21 +810,16 @@ export class SoumettreDossier {
       );
     }
     if ((r.marches ?? []).some((m) => (m.beneficiaires ?? []).length)) {
-      av.push('Bénéficiaires détectés mais non repris à la création — à ajouter ensuite via le détail du PPM (bouton « Bénéficiaires »).');
+      av.push('Bénéficiaires pré-remplis depuis le PDF — vérifiez SOA et montants (la somme par bénéficiaire doit égaler le montant du marché).');
     }
     this.importAvertissements.set(av);
-  }
-  /** Bénéficiaire(s) du PDF (SOA · compte) pour une ligne — informatif (compte par bénéficiaire, à ajouter après création). */
-  benefsImportLabel(g: FormGroup): string | null {
-    const bs = this.importBenefs()[g.get('uid')!.value as number] ?? [];
-    if (!bs.length) return null;
-    return bs.map((b) => `${b.soaCode ?? '—'} · compte ${b.numCompte ?? '—'}`).join(' ; ');
   }
   private ligneNonVide(l: Record<string, unknown>): boolean {
     // `statut` exclu : il a une valeur par défaut ('PREVU') et ne suffit pas à rendre une ligne « non vide ».
     return !!(
       l['designationMarche'] ||
       l['montEstim'] != null ||
+      l['nouvMontEstim'] != null ||
       l['numCompte'] ||
       l['financement'] ||
       l['natureLibelle'] ||
@@ -918,6 +988,11 @@ export class SoumettreDossier {
       this.toast.error('Veuillez saisir les dates prévisionnelles (au moins un processus) pour tous les marchés.');
       return;
     }
+    // Cohérence des montants par bénéficiaire (règle serveur) : Σ par bénéficiaire = montant du marché.
+    if (!this.benefsCoherents) {
+      this.toast.error('Bénéficiaires : la somme des montants par bénéficiaire doit égaler le montant du marché.');
+      return;
+    }
     // Pièces obligatoires : toutes doivent être fournies (vérif. backend renforcée à la soumission).
     const manquantes = this.typesPiece().filter((t) => t.obligatoire && !this.pieces().has(t.idTypePiece));
     if (manquantes.length) {
@@ -928,21 +1003,35 @@ export class SoumettreDossier {
     this.pieceErreurs.set(new Set());
     this.formError.set(null);
     this.submitting.set(true);
-    const marches: SaisieMarcheLigne[] = lignes.map((l) => ({
-      designationMarche: (l['designationMarche'] as string) || undefined,
-      montEstim: (l['montEstim'] as number) ?? undefined,
-      numCompte: (l['numCompte'] as string) ?? undefined,
-      financement: (l['financement'] as string) || undefined,
-      statut: (l['statut'] as string) || 'PREVU',
-      // Nature/mode en saisie libre : on envoie le libellé, le serveur le résout-ou-crée au POST.
-      natureLibelle: (l['natureLibelle'] as string)?.trim() || undefined,
-      modeLibelle: (l['modeLibelle'] as string)?.trim() || undefined,
-      processus: ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
-        idCapm: p['idCapm'] as number,
-        dateDebut: p['dateDebut'] as string,
-        dateFin: p['dateFin'] as string,
-      })),
-    }));
+    const marches: SaisieMarcheLigne[] = lignes.map((l) => {
+      // Bénéficiaires non vides uniquement (SOA ou compte ou un montant renseigné).
+      const beneficiaires = ((l['beneficiaires'] as Record<string, unknown>[]) ?? [])
+        .filter((b) => b['soaCode'] || b['numCompte'] || b['ancMontBenef'] != null || b['nouvMontBenef'] != null)
+        .map((b) => ({
+          soaCode: (b['soaCode'] as string)?.trim() || undefined,
+          numCompte: (b['numCompte'] as string)?.trim() || undefined,
+          ancMontBenef: (b['ancMontBenef'] as number) ?? undefined,
+          nouvMontBenef: (b['nouvMontBenef'] as number) ?? undefined,
+        }));
+      return {
+        designationMarche: (l['designationMarche'] as string) || undefined,
+        montEstim: (l['montEstim'] as number) ?? undefined,
+        nouvMontEstim: (l['nouvMontEstim'] as number) ?? undefined,
+        numCompte: (l['numCompte'] as string) ?? undefined,
+        financement: (l['financement'] as string) || undefined,
+        statut: (l['statut'] as string) || 'PREVU',
+        // Nature/mode en saisie libre : on envoie le libellé, le serveur le résout-ou-crée au POST.
+        natureLibelle: (l['natureLibelle'] as string)?.trim() || undefined,
+        modeLibelle: (l['modeLibelle'] as string)?.trim() || undefined,
+        // Bénéficiaires (SOA + montants) — le serveur crée une t_service_beneficiaire par élément.
+        beneficiaires: beneficiaires.length ? beneficiaires : undefined,
+        processus: ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
+          idCapm: p['idCapm'] as number,
+          dateDebut: p['dateDebut'] as string,
+          dateFin: p['dateFin'] as string,
+        })),
+      };
+    });
     this.saisie
       .ppmAvecPieces(
         {

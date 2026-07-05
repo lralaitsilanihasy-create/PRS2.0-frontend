@@ -132,6 +132,21 @@ export interface PrmpEntite {
  */
 
 /**
+ * Bénéficiaire (ventilation par service) d'une ligne de marché à la saisie (`POST /api/saisies/ppm`).
+ * Le serveur résout-ou-crée `soaCode` (`tr_soa_beneficiaire`) et `numCompte` (`tr_compte`) à la volée
+ * et crée une ligne `t_service_beneficiaire`. Cohérence : `Σ ancMontBenef = montEstim` du marché
+ * (et `Σ nouvMontBenef = nouvMontEstim` si fourni) — validée serveur quand la liste est non vide.
+ */
+export interface SaisieMarcheBeneficiaire {
+  soaCode?: string;
+  numCompte?: string;
+  /** Montant estimatif (initial) par bénéficiaire. */
+  ancMontBenef?: number;
+  /** Nouveau montant estimatif par bénéficiaire. */
+  nouvMontBenef?: number;
+}
+
+/**
  * Ligne de marché d'une saisie PPM. Le service renseigne idDossier/idPpm/idMode (mode auto).
  * `idDetail` : null à la création (PK serveur) ; renseigné seulement en édition (réconciliation).
  */
@@ -140,6 +155,8 @@ export interface SaisieMarcheLigne {
   designationMarche?: string;
   numCompte?: string;
   montEstim?: number;
+  /** Nouveau montant estimatif du marché (versioning) — `t_marche.NOUV_MONT_ESTIM`. */
+  nouvMontEstim?: number;
   financement?: string;
   statut?: string;
   idNature?: number;
@@ -148,6 +165,8 @@ export interface SaisieMarcheLigne {
   idMode?: number; // mode de passation choisi par la PRMP (FK tr_mode) ; conservé tel quel
   /** Libellé de mode (import) quand `idMode` n'est pas résolu → le serveur crée/résout à la volée. */
   modeLibelle?: string;
+  /** Ventilation par bénéficiaire (SOA + montants) — le serveur crée une `t_service_beneficiaire` par élément. */
+  beneficiaires?: SaisieMarcheBeneficiaire[];
   /**
    * Processus prévisionnels du marché — **au moins un obligatoire à la création** (`POST /api/saisies/ppm`) ;
    * le serveur crée une ligne `t_marche_prevision` par processus.
