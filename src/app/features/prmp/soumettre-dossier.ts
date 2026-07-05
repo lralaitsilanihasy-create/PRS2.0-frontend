@@ -109,7 +109,7 @@ interface ApercuDossier {
         }
 
         @case ('saisiePpm') {
-          <form class="card sd__form cnm-form" [formGroup]="ppmForm" (ngSubmit)="creerPpm()" novalidate>
+          <form class="card sd__form sd__form--wide cnm-form" [formGroup]="ppmForm" (ngSubmit)="creerPpm()" novalidate>
             <div class="sd__import">
               <label class="btn btn-outline btn-sm sd__import-btn">
                 📄 Importer un PPM (PDF)
@@ -172,6 +172,11 @@ interface ApercuDossier {
             } @else {
               <div class="sd__marches-wrap">
                 <table class="sd__marches-table">
+                  <colgroup>
+                    <col style="width: 8%" /><col style="width: 15%" /><col style="width: 9%" /><col style="width: 9%" />
+                    <col style="width: 8%" /><col style="width: 6%" /><col style="width: 10%" /><col style="width: 6%" />
+                    <col style="width: 9%" /><col style="width: 9%" /><col style="width: 11%" />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th rowspan="2">Nature</th>
@@ -531,6 +536,7 @@ interface ApercuDossier {
     .sd__choix-titre { font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
     .sd__choix-desc { color: var(--n-400); font-size: var(--text-sm); }
     .sd__form { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: min(64rem, 96vw); }
+    .sd__form--wide { max-width: min(100rem, 98vw); }
     .sd__import { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.75rem; border-bottom: 1px solid var(--c-100); }
     .sd__import-btn { cursor: pointer; }
     .sd__hint { margin: 0; }
@@ -564,15 +570,16 @@ interface ApercuDossier {
     .sd__benef-row .form-control { flex: 1; min-width: 6rem; }
     /* Tableau éditable des marchés (mise en forme façon PPM) */
     .sd__marches-wrap { overflow-x: auto; margin-bottom: 1rem; }
-    .sd__marches-table { border-collapse: collapse; width: 100%; }
+    .sd__marches-table { border-collapse: collapse; width: 100%; table-layout: fixed; }
     .sd__marches-table th, .sd__marches-table td { border: 1px solid var(--c-200); padding: 0.25rem; vertical-align: top; }
-    .sd__marches-table thead th { background: var(--c-50); font-size: var(--text-sm); text-align: center; font-weight: 700; color: var(--c-800); white-space: nowrap; }
-    .sd__marches-table .form-control { min-width: 7rem; font-size: var(--text-sm); padding: 0.3rem 0.4rem; }
+    .sd__marches-table thead th { background: var(--c-50); font-size: var(--text-xs, 0.72rem); text-align: center; font-weight: 700; color: var(--c-800); overflow-wrap: break-word; }
+    .sd__marches-table .form-control { width: 100%; min-width: 0; font-size: var(--text-sm); padding: 0.3rem 0.4rem; }
     .sd__marche-tb { border-bottom: 3px solid var(--c-200); }
-    .sd__c-objet { min-width: 14rem; }
-    .sd__c-mont { min-width: 8rem; text-align: right; }
-    .sd__benef-cell { display: flex; gap: 0.3rem; align-items: center; }
-    .sd__marche-actions { min-width: 12rem; display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start; }
+    .sd__c-mont { text-align: right; }
+    .sd__benef-cell { display: flex; gap: 0.25rem; align-items: center; }
+    .sd__benef-cell .form-control { flex: 1; }
+    .sd__marche-actions { display: flex; flex-direction: column; gap: 0.35rem; align-items: stretch; }
+    .sd__marche-actions .btn { white-space: normal; }
     .sd__apercu { max-width: min(78rem, 97vw); max-height: 92vh; display: flex; flex-direction: column; }
     .sd__apercu .modal-body { overflow-y: auto; }
     .ppm-doc { background: #fff; color: #000; padding: 1rem 1.25rem; font-size: 0.8rem; }
