@@ -140,10 +140,7 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                   <label class="form-group"><span class="form-label">Montant estimé</span>
                     <input class="form-control" type="number" formControlName="montEstim" /></label>
                   <label class="form-group"><span class="form-label">Compte</span>
-                    <select class="form-control" formControlName="numCompte">
-                      <option [ngValue]="null">— Sélectionner —</option>
-                      @for (c of comptes(); track c.numCompte) { <option [ngValue]="c.numCompte">{{ c.libelle || c.numCompte }}</option> }
-                    </select>
+                    <input class="form-control" type="text" formControlName="numCompte" list="sd-comptes" placeholder="N° compte" />
                     @if (benefsImportLabel(g); as lib) {
                       <span class="form-hint sd__import-lib">📄 Bénéficiaire(s) PDF : {{ lib }} — à ajouter via « Bénéficiaires »</span>
                     }</label>
@@ -175,6 +172,7 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
             }
             <datalist id="sd-natures">@for (n of natures(); track n.idNature) { <option [value]="n.libelle"></option> }</datalist>
             <datalist id="sd-modes">@for (m of modesList(); track m.idMode) { <option [value]="m.libelle"></option> }</datalist>
+            <datalist id="sd-comptes">@for (c of comptes(); track c.numCompte) { <option [value]="c.numCompte">{{ c.libelle }}</option> }</datalist>
 
             <div class="sd__pieces">
               <h2 class="sd__sub">Pièces jointes</h2>
@@ -677,6 +675,8 @@ export class SoumettreDossier {
         designationMarche: m.designationMarche ?? '',
         montEstim: m.montEstim ?? null,
         financement: m.financement ?? '',
+        // Compte : le PDF le porte au niveau bénéficiaire ; on pré-remplit le compte du marché avec le 1er (éditable).
+        numCompte: m.beneficiaires?.[0]?.numCompte ?? null,
         // Nature/mode : libellé du PDF pré-rempli directement dans le champ (créé/résolu au POST).
         natureLibelle: m.natureLibelle ?? '',
         modeLibelle: m.modeLibelle ?? '',
