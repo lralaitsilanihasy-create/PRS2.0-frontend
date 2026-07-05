@@ -437,6 +437,11 @@ interface ApercuDossier {
 
                 <div class="ppm-doc__table-wrap">
                   <table class="ppm-doc__table">
+                    <colgroup>
+                      <col style="width: 7%" /><col style="width: 16%" /><col style="width: 8%" /><col style="width: 8%" />
+                      <col style="width: 7%" /><col style="width: 6%" /><col style="width: 9%" /><col style="width: 5%" />
+                      <col style="width: 8%" /><col style="width: 8%" /><col style="width: 6%" /><col style="width: 6%" /><col style="width: 6%" />
+                    </colgroup>
                     <thead>
                       <tr>
                         <th rowspan="2">NATURE</th>
@@ -559,19 +564,18 @@ interface ApercuDossier {
     .sd__benefs-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
     .sd__benef-row { display: flex; align-items: center; gap: 0.5rem; }
     .sd__benef-row .form-control { flex: 1; min-width: 6rem; }
-    .sd__apercu { max-width: min(78rem, 97vw); max-height: 92vh; display: flex; flex-direction: column; }
+    .sd__apercu { max-width: min(92rem, 98vw); max-height: 92vh; display: flex; flex-direction: column; }
     .sd__apercu .modal-body { overflow-y: auto; }
     .ppm-doc { background: #fff; color: #000; padding: 1rem 1.25rem; font-size: 0.8rem; }
-    .ppm-doc__titre { text-align: center; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem; text-transform: uppercase; }
+    .ppm-doc__titre { text-align: center; font-size: 1.05rem; font-weight: 700; margin: 0 0 1rem; text-transform: uppercase; }
     .ppm-doc__entete { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
     .ppm-doc__entete p { margin: 0.15rem 0; }
     .ppm-doc__table-wrap { overflow-x: auto; }
-    .ppm-doc__table { border-collapse: collapse; width: 100%; font-size: 0.72rem; }
-    .ppm-doc__table th, .ppm-doc__table td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; }
-    .ppm-doc__table th { text-align: center; font-weight: 700; background: #f0f0f0; }
-    .ppm-doc__num { text-align: right; white-space: nowrap; }
-    .ppm-doc__date { text-align: center; white-space: nowrap; }
-    .ppm-doc__objet { min-width: 12rem; }
+    .ppm-doc__table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 0.62rem; }
+    .ppm-doc__table th, .ppm-doc__table td { border: 1px solid #000; padding: 2px 3px; vertical-align: top; overflow-wrap: break-word; word-break: break-word; }
+    .ppm-doc__table th { text-align: center; font-weight: 700; background: #f0f0f0; line-height: 1.1; }
+    .ppm-doc__num { text-align: right; }
+    .ppm-doc__date { text-align: center; }
     .ppm-doc__pied { margin-top: 1.75rem; text-align: right; }
     .ppm-doc__pied p { margin: 0.2rem 0; }
     .ppm-doc__prmp { margin-top: 1rem; font-weight: 700; text-transform: uppercase; }
@@ -886,7 +890,7 @@ export class SoumettreDossier {
     if (v === null || v === undefined || (v as unknown) === '') return '';
     const n = Number(v);
     const [ent, dec] = Math.abs(n).toFixed(2).split('.');
-    return (n < 0 ? '-' : '') + ent.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ',' + dec;
+    return (n < 0 ? '-' : '') + ent.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ',' + dec;
   }
   /** Convertit une date ISO `yyyy-MM-dd` en `dd/MM/yyyy` (vide si absente). */
   dateFr(iso?: string | null): string {
