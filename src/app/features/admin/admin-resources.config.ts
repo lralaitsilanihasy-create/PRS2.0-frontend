@@ -19,6 +19,7 @@ import {
   RegleAlerteService,
   RegleAnomalieService,
   SessionUtilisateurService,
+  SoaBeneficiaireService,
   TypeDossierService,
 } from '../../services';
 
@@ -67,6 +68,19 @@ export const REFERENTIELS: AdminResource[] = [
         { key: 'numCompte', label: 'N° compte', pk: true, required: true },
         { key: 'libelle', label: 'Libellé' },
         { key: 'idCatCompte', label: 'Catégorie' },
+      ],
+    },
+  },
+  {
+    slug: 'soa-beneficiaires',
+    config: {
+      title: 'SOA bénéficiaires',
+      service: SoaBeneficiaireService,
+      idKey: 'soaCode',
+      writeCapability: 'REFERENTIEL_WRITE',
+      fields: [
+        { key: 'soaCode', label: 'Code SOA', pk: true, required: true },
+        { key: 'libelle', label: 'Libellé' },
       ],
     },
   },
