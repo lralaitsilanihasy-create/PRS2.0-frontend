@@ -36,23 +36,27 @@ interface ApercuBenef {
   ancMontBenef?: number | null;
   nouvMontBenef?: number | null;
 }
-/** Marché dans l'aperçu (snapshot lecture seule du formulaire). */
+/** Marché dans l'aperçu — colonnes du PPM officiel (snapshot lecture seule du formulaire). */
 interface ApercuMarche {
+  natureLibelle?: string;
   designationMarche?: string;
   montEstim?: number | null;
   nouvMontEstim?: number | null;
-  numCompte?: string | null;
-  natureLibelle?: string;
   modeLibelle?: string;
   financement?: string;
-  statut?: string;
-  beneficiaires: ApercuBenef[];
-  processus: { capm: string; dateDebut: string; dateFin: string }[];
+  /** Lignes bénéficiaires (au moins 1 ; placeholder vide si aucun) — pilote le rowspan des colonnes marché. */
+  benefRows: ApercuBenef[];
+  /** Dates prévisionnelles (date de début) par jalon, format dd/MM/yyyy. */
+  dateLancement: string;
+  dateOuverture: string;
+  dateAttribution: string;
   coherenceErr: string | null;
+  sansDates: boolean;
 }
-/** Snapshot du dossier PPM à créer, pour l'aperçu avant création (aucune création). */
+/** Snapshot du dossier PPM à créer, mis en forme comme le PPM officiel (aucune création). */
 interface ApercuDossier {
   entite: string;
+  adresse: string;
   localite: string;
   exercice: number | null;
   signataire: string;
@@ -415,59 +419,93 @@ interface ApercuDossier {
               <button type="button" class="btn btn-secondary btn-sm" (click)="fermerApercu()" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body">
-              <div class="sd__ap-grid">
-                <div><span class="sd__ap-lbl">Entité contractante</span><span>{{ a.entite }}</span></div>
-                <div><span class="sd__ap-lbl">Localité</span><span>{{ a.localite }}</span></div>
-                <div><span class="sd__ap-lbl">Exercice</span><span>{{ a.exercice ?? '—' }}</span></div>
-                <div><span class="sd__ap-lbl">Signataire</span><span>{{ a.signataire || '—' }}</span></div>
-                <div><span class="sd__ap-lbl">Date de signature</span><span>{{ a.dateSignature || '—' }}</span></div>
+              <div class="ppm-doc">
+                <h1 class="ppm-doc__titre">PLAN DE PASSATION DES MARCHES POUR L'ANNEE {{ a.exercice ?? '____' }}</h1>
+                <div class="ppm-doc__entete">
+                  <div>
+                    <p><u>Autorité Contractante</u> : <strong>{{ a.entite }}</strong></p>
+                    <p><u>Nom de la PRMP</u> : <strong>{{ a.signataire || '—' }}</strong></p>
+                    <p><u>Adresse</u> : <strong>{{ a.adresse }}</strong></p>
+                  </div>
+                  <div>
+                    <p><u>Date d'établissement du Document initial</u> : {{ a.dateSignature || '—' }}</p>
+                    <p><u>Numéro et date de la dernière mise à jour</u> : 0</p>
+                    <p><u>Numéro de la présente mise à jour</u> : 0</p>
+                  </div>
+                </div>
+
+                <div class="ppm-doc__table-wrap">
+                  <table class="ppm-doc__table">
+                    <thead>
+                      <tr>
+                        <th rowspan="2">NATURE</th>
+                        <th rowspan="2">OBJET</th>
+                        <th rowspan="2">MONTANT ESTIMATIF INITIAL</th>
+                        <th rowspan="2">NOUVEAU MONTANT ESTIMATIF</th>
+                        <th rowspan="2">MODE DE PASSATION</th>
+                        <th rowspan="2">FINANCEMENT</th>
+                        <th colspan="4">Informations sur le Bénéficiaire</th>
+                        <th rowspan="2">DATE PREVISIONNELLE DE LANCEMENT</th>
+                        <th rowspan="2">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
+                        <th rowspan="2">DATE PREVISIONNELLE D'ATTRIBUTION</th>
+                      </tr>
+                      <tr>
+                        <th>SERVICE BENEFICIAIRE</th>
+                        <th>COMPTE</th>
+                        <th>MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
+                        <th>NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (m of a.marches; track $index) {
+                        @for (b of m.benefRows; track $index; let first = $first) {
+                          <tr>
+                            @if (first) {
+                              <td [attr.rowspan]="m.benefRows.length">{{ m.natureLibelle || '' }}</td>
+                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__objet">{{ m.designationMarche || '' }}</td>
+                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__num">{{ montantFmt(m.montEstim) }}</td>
+                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__num">{{ montantFmt(m.nouvMontEstim) }}</td>
+                              <td [attr.rowspan]="m.benefRows.length">{{ m.modeLibelle || '' }}</td>
+                              <td [attr.rowspan]="m.benefRows.length">{{ m.financement || '' }}</td>
+                            }
+                            <td>{{ b.soaCode || '' }}</td>
+                            <td>{{ b.numCompte || '' }}</td>
+                            <td class="ppm-doc__num">{{ montantFmt(b.ancMontBenef) }}</td>
+                            <td class="ppm-doc__num">{{ montantFmt(b.nouvMontBenef) }}</td>
+                            @if (first) {
+                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__date">{{ m.dateLancement }}</td>
+                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__date">{{ m.dateOuverture }}</td>
+                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__date">{{ m.dateAttribution }}</td>
+                            }
+                          </tr>
+                        }
+                      } @empty {
+                        <tr><td colspan="13" class="cnm-muted">Aucun marché saisi.</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="ppm-doc__pied">
+                  <p>Fait à ______________________________, le _ _ /_ _ /_ _ _ _</p>
+                  <p class="ppm-doc__prmp">LA PERSONNE RESPONSABLE DES MARCHES PUBLICS</p>
+                  <p><strong>{{ a.signataire || '' }}</strong></p>
+                </div>
               </div>
 
-              <h3 class="sd__ap-sub">Marchés ({{ a.marches.length }})</h3>
-              @for (m of a.marches; track $index) {
-                <div class="sd__ap-marche">
-                  <div class="sd__ap-marche-head">
-                    <strong>{{ m.designationMarche || '(sans désignation)' }}</strong>
-                    <span class="cnm-muted">{{ m.natureLibelle || '—' }} · {{ m.modeLibelle || '—' }}</span>
-                  </div>
-                  <div class="sd__ap-marche-grid">
-                    <span>Montant estimé : <strong>{{ montantFmt(m.montEstim) }}</strong></span>
-                    @if (m.nouvMontEstim != null) { <span>Nouveau montant : <strong>{{ montantFmt(m.nouvMontEstim) }}</strong></span> }
-                    <span>Compte : {{ m.numCompte || '—' }}</span>
-                    <span>Financement : {{ m.financement || '—' }}</span>
-                    <span>Statut : {{ m.statut || '—' }}</span>
-                  </div>
-                  @if (m.beneficiaires.length) {
-                    <table class="cnm-table sd__ap-table">
-                      <thead><tr><th>Service bénéficiaire</th><th>Compte</th><th>Montant estim.</th><th>Nouveau montant</th></tr></thead>
-                      <tbody>
-                        @for (b of m.beneficiaires; track $index) {
-                          <tr><td>{{ b.soaCode || '—' }}</td><td>{{ b.numCompte || '—' }}</td><td>{{ montantFmt(b.ancMontBenef) }}</td><td>{{ montantFmt(b.nouvMontBenef) }}</td></tr>
-                        }
-                      </tbody>
-                    </table>
-                  }
-                  @if (m.coherenceErr) { <span class="form-error">{{ m.coherenceErr }}</span> }
-                  @if (m.processus.length) {
-                    <div class="sd__ap-proc">
-                      <span class="sd__ap-lbl">Dates prévisionnelles</span>
-                      @for (p of m.processus; track $index) {
-                        <span class="sd__ap-proc-item">{{ p.capm }} : {{ p.dateDebut || '—' }} → {{ p.dateFin || '—' }}</span>
-                      }
-                    </div>
-                  } @else {
-                    <span class="form-error">Aucune date prévisionnelle (obligatoire à la création).</span>
-                  }
+              @if (apercuAvertissements(a).length) {
+                <div class="alert alert-warning sd__ap-alertes">
+                  <span aria-hidden="true">⚠</span>
+                  <ul class="sd__warn-list">
+                    @for (w of apercuAvertissements(a); track $index) { <li>{{ w }}</li> }
+                  </ul>
                 </div>
-              } @empty {
-                <p class="cnm-muted">Aucun marché saisi.</p>
               }
 
-              <h3 class="sd__ap-sub">Pièces jointes ({{ a.pieces.length }})</h3>
-              @for (p of a.pieces; track $index) {
-                <div class="sd__ap-piece">📎 {{ p.libelle }} — {{ p.nom }}</div>
-              } @empty {
-                <p class="cnm-muted">Aucune pièce jointe fournie.</p>
+              @if (a.pieces.length) {
+                <p class="sd__ap-pieces"><strong>Pièces jointes :</strong> {{ piecesLabel(a) }}</p>
+              } @else {
+                <p class="sd__ap-pieces cnm-muted">Aucune pièce jointe fournie.</p>
               }
             </div>
             <div class="modal-footer">
@@ -520,19 +558,24 @@ interface ApercuDossier {
     .sd__benefs-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
     .sd__benef-row { display: flex; align-items: center; gap: 0.5rem; }
     .sd__benef-row .form-control { flex: 1; min-width: 6rem; }
-    .sd__apercu { max-width: min(56rem, 96vw); max-height: 90vh; display: flex; flex-direction: column; }
+    .sd__apercu { max-width: min(78rem, 97vw); max-height: 92vh; display: flex; flex-direction: column; }
     .sd__apercu .modal-body { overflow-y: auto; }
-    .sd__ap-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
-    .sd__ap-grid > div { display: flex; flex-direction: column; }
-    .sd__ap-lbl { font-size: var(--text-sm); color: var(--n-400); font-weight: 600; }
-    .sd__ap-sub { margin: 1rem 0 0.5rem; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
-    .sd__ap-marche { padding: 0.75rem; border: 1px solid var(--c-100); border-radius: var(--radius-md); margin-bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
-    .sd__ap-marche-head { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
-    .sd__ap-marche-grid { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: var(--text-sm); }
-    .sd__ap-table { font-size: var(--text-sm); }
-    .sd__ap-proc { display: flex; flex-direction: column; gap: 0.15rem; }
-    .sd__ap-proc-item { font-size: var(--text-sm); }
-    .sd__ap-piece { font-size: var(--text-sm); padding: 0.15rem 0; }
+    .ppm-doc { background: #fff; color: #000; padding: 1rem 1.25rem; font-size: 0.8rem; }
+    .ppm-doc__titre { text-align: center; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem; text-transform: uppercase; }
+    .ppm-doc__entete { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+    .ppm-doc__entete p { margin: 0.15rem 0; }
+    .ppm-doc__table-wrap { overflow-x: auto; }
+    .ppm-doc__table { border-collapse: collapse; width: 100%; font-size: 0.72rem; }
+    .ppm-doc__table th, .ppm-doc__table td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; }
+    .ppm-doc__table th { text-align: center; font-weight: 700; background: #f0f0f0; }
+    .ppm-doc__num { text-align: right; white-space: nowrap; }
+    .ppm-doc__date { text-align: center; white-space: nowrap; }
+    .ppm-doc__objet { min-width: 12rem; }
+    .ppm-doc__pied { margin-top: 1.75rem; text-align: right; }
+    .ppm-doc__pied p { margin: 0.2rem 0; }
+    .ppm-doc__prmp { margin-top: 1rem; font-weight: 700; text-transform: uppercase; }
+    .sd__ap-alertes { margin-top: 1rem; }
+    .sd__ap-pieces { margin-top: 0.75rem; font-size: var(--text-sm); }
     .sd__dates-manq { color: var(--warning-text); font-size: var(--text-sm); font-weight: 700; }
     .sd__dates-ok { color: var(--success-text); font-size: var(--text-sm); font-weight: 700; }
     .sd-proc-row { display: flex; align-items: center; gap: 0.5rem; }
@@ -585,10 +628,10 @@ export class SoumettreDossier {
   readonly editId = signal<number | null>(null);
 
   /** Entités de la PRMP courante (id, libellé, localité dérivée). */
-  readonly entites = signal<{ idEntiteContract: number; libelle: string; idLocalite?: string }[]>([]);
+  readonly entites = signal<{ idEntiteContract: number; libelle: string; idLocalite?: string; adresse?: string }[]>([]);
   readonly selectedEntiteId = signal<number | null>(null);
   /** Entité du PPM importé hors du périmètre PRMP — ajoutée aux options pour l'afficher/sélectionner (§3.1). */
-  readonly entiteImportee = signal<{ idEntiteContract: number; libelle: string; idLocalite?: string } | null>(null);
+  readonly entiteImportee = signal<{ idEntiteContract: number; libelle: string; idLocalite?: string; adresse?: string } | null>(null);
   /** Options du sélecteur d'entité = entités du PRMP + éventuelle entité importée hors périmètre. */
   readonly optionsEntite = computed(() => {
     const base = this.entites();
@@ -701,7 +744,7 @@ export class SoumettreDossier {
           .filter((l) => l.idPrmp === ref && l.actif)
           .map((l) => parId.get(l.idEntiteContract))
           .filter((e): e is NonNullable<typeof e> => !!e)
-          .map((e) => ({ idEntiteContract: e.idEntiteContract, libelle: e.libelleEntite, idLocalite: e.idLocalite }));
+          .map((e) => ({ idEntiteContract: e.idEntiteContract, libelle: e.libelleEntite, idLocalite: e.idLocalite, adresse: e.adresse }));
         this.entites.set(miennes);
         if (miennes.length === 1) {
           const id = miennes[0].idEntiteContract;
@@ -837,17 +880,25 @@ export class SoumettreDossier {
     if (idCapm == null) return '—';
     return this.capms().find((c) => c.idCapm === idCapm)?.libelleProcessus ?? '#' + idCapm;
   }
-  /** Formate un montant en fr-FR, ou « — » si absent. */
+  /** Formate un montant en fr-FR (2 décimales, comme le PPM officiel), ou « » si absent. */
   montantFmt(v?: number | null): string {
-    return v === null || v === undefined ? '—' : new Intl.NumberFormat('fr-FR').format(v);
+    return v === null || v === undefined || (v as unknown) === ''
+      ? ''
+      : new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
   }
-  /** Construit le snapshot du formulaire et ouvre l'aperçu. */
+  /** Convertit une date ISO `yyyy-MM-dd` en `dd/MM/yyyy` (vide si absente). */
+  dateFr(iso?: string | null): string {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return y && m && d ? `${d}/${m}/${y}` : iso;
+  }
+  /** Construit le snapshot du formulaire (mis en forme comme le PPM officiel) et ouvre l'aperçu. */
   ouvrirApercu(): void {
     const marches: ApercuMarche[] = this.marcheControls()
       .filter((g) => this.ligneNonVide(g.getRawValue() as Record<string, unknown>))
       .map((g) => {
         const l = g.getRawValue() as Record<string, unknown>;
-        const beneficiaires = ((l['beneficiaires'] as Record<string, unknown>[]) ?? [])
+        const beneficiaires: ApercuBenef[] = ((l['beneficiaires'] as Record<string, unknown>[]) ?? [])
           .filter((b) => b['soaCode'] || b['numCompte'] || b['ancMontBenef'] != null || b['nouvMontBenef'] != null)
           .map((b) => ({
             soaCode: (b['soaCode'] as string) || undefined,
@@ -855,41 +906,61 @@ export class SoumettreDossier {
             ancMontBenef: (b['ancMontBenef'] as number | null) ?? null,
             nouvMontBenef: (b['nouvMontBenef'] as number | null) ?? null,
           }));
-        const processus = ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
-          capm: this.capmLabel(p['idCapm'] as number | null),
-          dateDebut: (p['dateDebut'] as string) ?? '',
-          dateFin: (p['dateFin'] as string) ?? '',
-        }));
+        // Date de début par jalon (LANCEMENT / OUVERTURE / ATTRIBUTION), résolue depuis le libellé CAPM.
+        const processus = (l['processus'] as Record<string, unknown>[]) ?? [];
+        const dateDe = (kw: string): string => {
+          const p = processus.find((x) =>
+            this.capmLabel(x['idCapm'] as number | null).toUpperCase().includes(kw),
+          );
+          return p ? this.dateFr(p['dateDebut'] as string) : '';
+        };
         return {
+          natureLibelle: (l['natureLibelle'] as string) || undefined,
           designationMarche: (l['designationMarche'] as string) || undefined,
           montEstim: (l['montEstim'] as number | null) ?? null,
           nouvMontEstim: (l['nouvMontEstim'] as number | null) ?? null,
-          numCompte: (l['numCompte'] as string | null) ?? null,
-          natureLibelle: (l['natureLibelle'] as string) || undefined,
           modeLibelle: (l['modeLibelle'] as string) || undefined,
           financement: (l['financement'] as string) || undefined,
-          statut: (l['statut'] as string) || undefined,
-          beneficiaires,
-          processus,
+          benefRows: beneficiaires.length ? beneficiaires : [{}],
+          dateLancement: dateDe('LANCEMENT'),
+          dateOuverture: dateDe('OUVERTURE'),
+          dateAttribution: dateDe('ATTRIBUTION'),
           coherenceErr: this.erreurCoherenceBenefs(g),
+          sansDates: processus.length === 0,
         };
       });
     const v = this.ppmForm.getRawValue();
+    const ent = this.optionsEntite().find((e) => e.idEntiteContract === v.idEntiteContract);
     const pieces = this.typesPiece()
       .filter((t) => this.pieces().has(t.idTypePiece))
       .map((t) => ({ libelle: t.libellePiece, nom: this.pieces().get(t.idTypePiece)!.name }));
     this.apercu.set({
-      entite: this.optionsEntite().find((e) => e.idEntiteContract === v.idEntiteContract)?.libelle ?? '—',
+      entite: ent?.libelle ?? '—',
+      adresse: ent?.adresse ?? '—',
       localite: this.localiteLabel(),
       exercice: (v.exercice as number | null) ?? null,
       signataire: this.signataireConnecte(),
-      dateSignature: (v.dateSignature as string) ?? '',
+      dateSignature: this.dateFr(v.dateSignature as string),
       marches,
       pieces,
     });
   }
   fermerApercu(): void {
     this.apercu.set(null);
+  }
+  /** Avertissements de l'aperçu (cohérence des montants + dates manquantes), hors mise en page PDF. */
+  apercuAvertissements(a: ApercuDossier): string[] {
+    const w: string[] = [];
+    a.marches.forEach((m, i) => {
+      const nom = m.designationMarche || `marché ${i + 1}`;
+      if (m.coherenceErr) w.push(`« ${nom} » : ${m.coherenceErr}`);
+      if (m.sansDates) w.push(`« ${nom} » : aucune date prévisionnelle (au moins un processus est obligatoire).`);
+    });
+    return w;
+  }
+  /** Libellés des pièces jointes fournies, pour l'aperçu. */
+  piecesLabel(a: ApercuDossier): string {
+    return a.pieces.map((p) => p.libelle).join(', ');
   }
   ajouterMarche(): void {
     this.ensureMarcheRefs();
