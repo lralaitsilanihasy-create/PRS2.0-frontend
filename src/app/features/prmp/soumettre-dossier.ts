@@ -7,7 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
-import { Capm, Compte, Dossier, Marche, ModePassation, Nature, SaisieMarcheLigne, SaisiePpmImportResult, TypeDossier, TypePieceJointe } from '../../models';
+import { Capm, Compte, Dossier, Marche, ModePassation, Nature, SaisieImportBeneficiaire, SaisieMarcheLigne, SaisiePpmImportResult, TypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -143,7 +143,10 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                     <select class="form-control" formControlName="numCompte">
                       <option [ngValue]="null">— Sélectionner —</option>
                       @for (c of comptes(); track c.numCompte) { <option [ngValue]="c.numCompte">{{ c.libelle || c.numCompte }}</option> }
-                    </select></label>
+                    </select>
+                    @if (benefsImportLabel(g); as lib) {
+                      <span class="form-hint sd__import-lib">📄 Bénéficiaire(s) PDF : {{ lib }} — à ajouter via « Bénéficiaires »</span>
+                    }</label>
                   <label class="form-group"><span class="form-label">Nature</span>
                     <select class="form-control" formControlName="idNature">
                       <option [ngValue]="null">— Sélectionner —</option>
@@ -482,6 +485,8 @@ export class SoumettreDossier {
   readonly importAvertissements = signal<string[]>([]);
   /** Libellés nature/mode non résolus par l'import (uid de ligne → libellés) — envoyés à la création pour création à la volée. */
   private readonly importLibelles = signal<Record<number, { natureLibelle?: string; modeLibelle?: string }>>({});
+  /** Bénéficiaires détectés par l'import (uid de ligne → bénéficiaires) — affichés (compte/SOA par bénéficiaire). */
+  private readonly importBenefs = signal<Record<number, SaisieImportBeneficiaire[]>>({});
 
   /** Référentiel CAPM (processus de marché), trié par `ordre` ASC. */
   readonly capms = signal<Capm[]>([]);
@@ -674,6 +679,7 @@ export class SoumettreDossier {
     this.ensureMarcheRefs();
     this.marchesArray.clear();
     const libelles: Record<number, { natureLibelle?: string; modeLibelle?: string }> = {};
+    const benefs: Record<number, SaisieImportBeneficiaire[]> = {};
     let previsionsPresentes = false;
     for (const m of r.marches ?? []) {
       const g = this.ligneMarche();
@@ -685,7 +691,9 @@ export class SoumettreDossier {
         idMode: m.idMode ?? null,
       });
       // Libellés bruts (nature/mode) conservés pour la création à la volée si l'id n'est pas résolu.
-      libelles[g.get('uid')!.value as number] = { natureLibelle: m.natureLibelle, modeLibelle: m.modeLibelle };
+      const uid = g.get('uid')!.value as number;
+      libelles[uid] = { natureLibelle: m.natureLibelle, modeLibelle: m.modeLibelle };
+      benefs[uid] = m.beneficiaires ?? [];
       // Prévisions (jalons) : idCapm résolu depuis le libellé + date de début ; date de fin à compléter (non fournie).
       const procArr = g.get('processus') as FormArray;
       for (const p of m.previsions ?? []) {
@@ -698,6 +706,7 @@ export class SoumettreDossier {
       this.marchesArray.push(g);
     }
     this.importLibelles.set(libelles);
+    this.importBenefs.set(benefs);
     // Avertissements : ceux du backend + entité non résolue + dates + bénéficiaires.
     const av = [...(r.avertissements ?? [])];
     if (r.idEntiteContract == null && r.autoriteContractante) {
@@ -724,6 +733,12 @@ export class SoumettreDossier {
   libelleModeImport(g: FormGroup): string | null {
     if (g.get('idMode')!.value != null) return null;
     return this.importLibelles()[g.get('uid')!.value as number]?.modeLibelle ?? null;
+  }
+  /** Bénéficiaire(s) du PDF (SOA · compte) pour une ligne — informatif (compte par bénéficiaire, à ajouter après création). */
+  benefsImportLabel(g: FormGroup): string | null {
+    const bs = this.importBenefs()[g.get('uid')!.value as number] ?? [];
+    if (!bs.length) return null;
+    return bs.map((b) => `${b.soaCode ?? '—'} · compte ${b.numCompte ?? '—'}`).join(' ; ');
   }
   private ligneNonVide(l: Record<string, unknown>): boolean {
     // `statut` exclu : il a une valeur par défaut ('PREVU') et ne suffit pas à rendre une ligne « non vide ».
