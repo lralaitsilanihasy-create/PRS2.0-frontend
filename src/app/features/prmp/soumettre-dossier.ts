@@ -8,6 +8,7 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { MontantFrDirective } from '../../shared/montant-fr.directive';
+import { AutosizeDirective } from '../../shared/autosize.directive';
 import { Capm, Compte, Dossier, Marche, ModePassation, Nature, SaisieMarcheLigne, SaisiePpmImportResult, SoaBeneficiaire, TypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
@@ -80,7 +81,7 @@ interface ApercuDossier {
 @Component({
   selector: 'app-soumettre-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DetailPpmModal, MontantFrDirective],
+  imports: [ReactiveFormsModule, DetailPpmModal, MontantFrDirective, AutosizeDirective],
   template: `
     <section class="sd">
       <header class="page-header">
@@ -197,8 +198,8 @@ interface ApercuDossier {
                       @for (b of beneficiairesControls(g); track $index; let first = $first; let i = $index) {
                         <tr>
                           @if (first) {
-                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'natureLibelle')" list="sd-natures" placeholder="Nature" /></td>
-                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-objet" type="text" [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature"></textarea></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet"></textarea></td>
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" /></td>
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" /></td>
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="sd-modes" placeholder="Mode" /></td>
@@ -574,6 +575,7 @@ interface ApercuDossier {
     .sd__marches-table th, .sd__marches-table td { border: 1px solid var(--c-200); padding: 0.25rem; vertical-align: top; }
     .sd__marches-table thead th { background: var(--c-50); font-size: var(--text-xs, 0.72rem); text-align: center; font-weight: 700; color: var(--c-800); overflow-wrap: break-word; }
     .sd__marches-table .form-control { width: 100%; min-width: 0; font-size: var(--text-sm); padding: 0.3rem 0.4rem; }
+    .sd__c-wrap { resize: none; overflow: hidden; line-height: 1.3; white-space: pre-wrap; word-break: break-word; font-family: inherit; }
     .sd__marche-tb { border-bottom: 3px solid var(--c-200); }
     .sd__c-mont { text-align: right; }
     .sd__benef-cell { display: flex; gap: 0.25rem; align-items: center; }
