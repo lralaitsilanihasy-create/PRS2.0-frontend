@@ -663,7 +663,14 @@ export class SoumettreDossier {
   private appliquerImport(r: SaisiePpmImportResult): void {
     if (r.exercice != null) this.ppmForm.controls.exercice.setValue(r.exercice);
     if (r.dateSignature) this.ppmForm.controls.dateSignature.setValue(r.dateSignature);
-    if (r.idEntiteContract != null) this.ppmForm.controls.idEntiteContract.setValue(r.idEntiteContract);
+    // Entité : ne pré-sélectionner que si elle appartient au périmètre du PRMP (§3.1). Forcer une entité
+    // hors périmètre ferait échouer la création en 403 ; on laisse alors le choix par défaut + on avertit.
+    const entiteImportee = r.idEntiteContract;
+    const entiteHorsPerimetre =
+      entiteImportee != null && !this.entites().some((e) => e.idEntiteContract === entiteImportee);
+    if (entiteImportee != null && !entiteHorsPerimetre) {
+      this.ppmForm.controls.idEntiteContract.setValue(entiteImportee);
+    }
     // Marchés (best-effort) : remplace les lignes actuelles par celles du PDF.
     this.ensureMarcheRefs();
     this.marchesArray.clear();
@@ -699,6 +706,10 @@ export class SoumettreDossier {
     const av = [...(r.avertissements ?? [])];
     if (r.idEntiteContract == null && r.autoriteContractante) {
       av.unshift(`Entité « ${r.autoriteContractante} » non résolue automatiquement — sélectionnez l'entité contractante.`);
+    } else if (entiteHorsPerimetre) {
+      av.unshift(
+        `L'entité du PPM${r.autoriteContractante ? ` « ${r.autoriteContractante} »` : ''} ne fait pas partie de vos entités contractantes (§3.1) — sélectionnez une de vos entités avant de créer le dossier.`,
+      );
     }
     if ((r.marches ?? []).length) {
       av.push(
