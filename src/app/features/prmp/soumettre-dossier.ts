@@ -173,7 +173,7 @@ interface ApercuDossier {
             @for (g of marcheControls(); track g.get('uid')!.value) {
               <div class="sd__ligne cnm-form" [formGroup]="g">
                 <div class="cnm-form-grid">
-                  <label class="form-group"><span class="form-label">Désignation</span>
+                  <label class="form-group"><span class="form-label">Objet</span>
                     <input class="form-control" type="text" formControlName="designationMarche" /></label>
                   <label class="form-group"><span class="form-label">Montant estimé</span>
                     <input class="form-control" type="text" inputmode="decimal" appMontantFr formControlName="montEstim" /></label>
