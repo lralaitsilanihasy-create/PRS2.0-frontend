@@ -113,36 +113,6 @@ export interface RegleAnomalie {
   graviteDefaut?: string;
 }
 
-/** Règle de passation (situation × seuil × mode). */
-export interface ReglePassation {
-  idRegle: number;
-  idSituation: number;
-  idSeuil: number;
-  idMode: number;
-  priorite?: number;
-  /** Libellés en lecture seule (réponse GET) pour l'affichage ; ignorés en écriture. */
-  libelleSituation?: string;
-  /** « montantMin à montantMax », ou « ≥ montantMin » si max nul. */
-  libelleSeuil?: string;
-  libelleMode?: string;
-}
-
-/** Seuil de montant par nature et localité. */
-export interface Seuil {
-  idSeuil: number;
-  montantMin?: number;
-  montantMax?: number;
-  idNature: number;
-  idLocalite: string;
-}
-
-/** Situation. */
-export interface Situation {
-  idSituation: number;
-  libelle?: string;
-  description?: string;
-}
-
 /** CAPM — processus de marché (référentiel `t_capm`) ; `ordre` fixe l'affichage des dates prévisionnelles. */
 export interface Capm {
   idCapm: number;
@@ -163,25 +133,4 @@ export interface TypePieceJointe {
 export interface TypeDossier {
   idTypeDossier: string;
   libelleType?: string;
-}
-
-/** Corps de `POST /api/regle-passations/suggestion-mode` (réservé PRMP). */
-export interface SuggestionModeRequest {
-  idSituation: number;
-  montant: number;
-  idNature: number;
-  idLocalite: string;
-}
-
-/** Un mode autorisé renvoyé par `suggestion-mode`. */
-export interface ModeAutorise {
-  idMode: number;
-  libelle: string;
-}
-
-/** Réponse de `suggestion-mode` : ensemble autorisé + recommandé (non contraignant ; le serveur valide). */
-export interface SuggestionModeResponse {
-  modeRecommande: number | null;
-  modesAutorises: ModeAutorise[];
-  modeNonDetermine: boolean;
 }

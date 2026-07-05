@@ -33,7 +33,6 @@ export interface Marche {
   nouvMontEstim?: number;
   financement?: string;
   statut?: string;
-  idSituation?: number;
   idNature?: number;
   idMode?: number;
 }
@@ -143,9 +142,8 @@ export interface SaisieMarcheLigne {
   montEstim?: number;
   financement?: string;
   statut?: string;
-  idSituation?: number;
   idNature?: number;
-  idMode?: number; // mode choisi par la PRMP (facultatif) ; absent → recommandé serveur
+  idMode?: number; // mode de passation choisi par la PRMP (FK tr_mode) ; conservé tel quel
   /**
    * Processus prévisionnels du marché — **au moins un obligatoire à la création** (`POST /api/saisies/ppm`) ;
    * le serveur crée une ligne `t_marche_prevision` par processus.

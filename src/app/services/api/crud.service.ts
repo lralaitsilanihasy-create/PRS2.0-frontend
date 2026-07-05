@@ -10,7 +10,7 @@ import { environment } from '../../../environments/environment';
  * Toutes les ressources suivent la même convention (cf. api-endpoints.md) :
  * `GET /api/{resource}`, `GET /{id}`, `POST`, `PUT /{id}`, `DELETE /{id}`.
  * Les classes concrètes fixent `resource` et ajoutent leurs méthodes d'action métier
- * (ex. `/soumettre`, `/publier`, `/suggestion-mode`).
+ * (ex. `/soumettre`, `/publier`, `/rectifier`).
  *
  * Rappel : le backend reste l'autorité. Ce service ne fait aucun filtrage par
  * rôle/localité — il transmet ; les listes arrivent déjà filtrées côté serveur.

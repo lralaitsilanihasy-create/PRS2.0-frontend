@@ -2,7 +2,6 @@ import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
   Avis,
@@ -19,11 +18,6 @@ import {
   Profile,
   RegleAlerte,
   RegleAnomalie,
-  ReglePassation,
-  Seuil,
-  Situation,
-  SuggestionModeRequest,
-  SuggestionModeResponse,
   TypeDossier,
   TypePieceJointe,
 } from '../models';
@@ -119,31 +113,6 @@ export class RegleAlerteService extends CrudService<RegleAlerte> {
 @Injectable({ providedIn: 'root' })
 export class RegleAnomalieService extends CrudService<RegleAnomalie> {
   protected readonly resource = 'regle-anomalies';
-}
-
-@Injectable({ providedIn: 'root' })
-export class ReglePassationService extends CrudService<ReglePassation> {
-  protected readonly resource = 'regle-passations';
-
-  /**
-   * `POST /api/regle-passations/suggestion-mode` (réservé PRMP). Suggestion non contraignante.
-   * 400/404 (aucune règle) sont gérés par l'appelant → pas de toast d'erreur global.
-   */
-  suggestionMode(body: SuggestionModeRequest): Observable<SuggestionModeResponse> {
-    return this.http.post<SuggestionModeResponse>(`${this.baseUrl}/suggestion-mode`, body, {
-      context: skipErrorToast(),
-    });
-  }
-}
-
-@Injectable({ providedIn: 'root' })
-export class SeuilService extends CrudService<Seuil> {
-  protected readonly resource = 'seuils';
-}
-
-@Injectable({ providedIn: 'root' })
-export class SituationService extends CrudService<Situation> {
-  protected readonly resource = 'situations';
 }
 
 @Injectable({ providedIn: 'root' })

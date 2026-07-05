@@ -18,10 +18,7 @@ import {
   PrmpService,
   RegleAlerteService,
   RegleAnomalieService,
-  ReglePassationService,
   SessionUtilisateurService,
-  SeuilService,
-  SituationService,
   TypeDossierService,
 } from '../../services';
 
@@ -249,63 +246,6 @@ export const REFERENTIELS: AdminResource[] = [
         { key: 'parametreTxt', label: 'Paramètre texte' },
         { key: 'actif', label: 'Actif', type: 'boolean' },
         { key: 'graviteDefaut', label: 'Gravité par défaut' },
-      ],
-    },
-  },
-  {
-    slug: 'regle-passations',
-    config: {
-      title: 'Règles de passation',
-      service: ReglePassationService,
-      idKey: 'idRegle',
-      writeCapability: 'REFERENTIEL_WRITE',
-      fields: [
-        { key: 'idRegle', label: 'Identifiant', type: 'number', pk: true, required: true, hideInList: true },
-        { key: 'idSituation', label: 'Situation', type: 'number', required: true, displayKey: 'libelleSituation' },
-        { key: 'idSeuil', label: 'Seuil', type: 'number', required: true, displayKey: 'libelleSeuil' },
-        { key: 'idMode', label: 'Mode', type: 'number', required: true, displayKey: 'libelleMode' },
-        { key: 'priorite', label: 'Priorité', type: 'number' },
-      ],
-    },
-  },
-  {
-    slug: 'seuils',
-    config: {
-      title: 'Seuils',
-      service: SeuilService,
-      idKey: 'idSeuil',
-      writeCapability: 'REFERENTIEL_WRITE',
-      fields: [
-        { key: 'idSeuil', label: 'Identifiant', type: 'number', pk: true, required: true },
-        {
-          key: 'idNature',
-          label: 'Nature',
-          type: 'number',
-          required: true,
-          ref: { service: NatureService, idKey: 'idNature', labelKeys: ['libelle'] },
-        },
-        {
-          key: 'idLocalite',
-          label: 'Localité',
-          required: true,
-          ref: { service: LocaliteService, idKey: 'idLocalite', labelKeys: ['libelleLocalite'] },
-        },
-        { key: 'montantMin', label: 'Montant min.', type: 'number' },
-        { key: 'montantMax', label: 'Montant max.', type: 'number' },
-      ],
-    },
-  },
-  {
-    slug: 'situations',
-    config: {
-      title: 'Situations',
-      service: SituationService,
-      idKey: 'idSituation',
-      writeCapability: 'REFERENTIEL_WRITE',
-      fields: [
-        { key: 'idSituation', label: 'Identifiant', type: 'number', pk: true, required: true },
-        { key: 'libelle', label: 'Libellé' },
-        { key: 'description', label: 'Description' },
       ],
     },
   },

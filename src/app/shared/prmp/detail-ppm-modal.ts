@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Output } from '@angular/core';
-import { debounceTime, forkJoin, merge, Subscription } from 'rxjs';
+import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Capm, Compte, Marche, MarchePrevision, Nature, PieceJointeDossier, Ppm, ServiceBeneficiaire, SoaBeneficiaire, Situation, TypePieceJointe } from '../../models';
+import { Capm, Compte, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, ServiceBeneficiaire, SoaBeneficiaire, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -16,20 +16,11 @@ import {
   PieceJointeDossierService,
   PpmService,
   ReferenceLookupService,
-  ReglePassationService,
   ServiceBeneficiaireService,
-  SituationService,
   SoaBeneficiaireService,
   TypePieceJointeService,
 } from '../../services';
 import { DatePipe, DecimalPipe } from '@angular/common';
-
-/** État d'aperçu du mode de passation (ensemble autorisé + recommandé). */
-type ModeSuggestion = {
-  state: 'idle' | 'loading' | 'ready' | 'none';
-  modes: { idMode: number; libelle: string }[];
-  recommande: number | null;
-};
 
 /**
  * Modal « Détail PPM » réutilisable (partagé) : en-tête PPM + lignes de marché + pièces jointes du dossier.
@@ -495,33 +486,19 @@ type ModeSuggestion = {
               <input class="form-control" type="text" formControlName="statut" />
             </label>
             <label class="form-group">
-              <span class="form-label">Situation</span>
-              <select class="form-control" formControlName="idSituation">
-                <option [ngValue]="null">— Sélectionner —</option>
-                @for (s of situations(); track s.idSituation) { <option [ngValue]="s.idSituation">{{ s.libelle || '#' + s.idSituation }}</option> }
-              </select>
-            </label>
-            <label class="form-group">
               <span class="form-label">Nature</span>
               <select class="form-control" formControlName="idNature">
                 <option [ngValue]="null">— Sélectionner —</option>
                 @for (n of natures(); track n.idNature) { <option [ngValue]="n.idNature">{{ n.libelle || '#' + n.idNature }}</option> }
               </select>
             </label>
-            <div class="form-group dpm-form__mode">
+            <label class="form-group">
               <span class="form-label">Mode de passation</span>
-              @switch (modeSuggestion().state) {
-                @case ('loading') { <span class="cnm-muted">Détermination du mode…</span> }
-                @case ('ready') {
-                  <select class="form-control" formControlName="idMode">
-                    @for (m of modeSuggestion().modes; track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle }}</option> }
-                  </select>
-                }
-                @case ('none') { <span class="cnm-badge cnm-badge--warning">Mode à déterminer (aucune règle)</span> }
-                @default { <span class="cnm-muted">Renseignez situation, nature et montant.</span> }
-              }
-              <span class="form-hint">Localité (dérivée de l'entité) : {{ localiteLabel() }}</span>
-            </div>
+              <select class="form-control" formControlName="idMode">
+                <option [ngValue]="null">— Sélectionner —</option>
+                @for (m of modes(); track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle || '#' + m.idMode }}</option> }
+              </select>
+            </label>
             <div class="form-group dpm-form__dates">
               <span class="form-label">Dates prévisionnelles (par processus)</span>
               @for (ctrl of datesControls(createForm); track $index) {
@@ -594,9 +571,8 @@ export class DetailPpmModal implements OnInit {
   private readonly lookups = inject(ReferenceLookupService);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
-  private readonly reglePassation = inject(ReglePassationService);
   private readonly natureService = inject(NatureService);
-  private readonly situationService = inject(SituationService);
+  private readonly modeService = inject(ModePassationService);
   private readonly compteService = inject(CompteService);
   private readonly capmService = inject(CapmService);
   private readonly typePieceService = inject(TypePieceJointeService);
@@ -655,11 +631,8 @@ export class DetailPpmModal implements OnInit {
   readonly confirmState = signal<{ kind: 'marche' | 'ppm'; id: number; label: string; count: number | null } | null>(null);
   readonly confirmBusy = signal(false);
 
-  readonly modeSuggestion = signal<ModeSuggestion>({ state: 'idle', modes: [], recommande: null });
-  private modeSub?: Subscription;
-
   readonly natures = signal<Nature[]>([]);
-  readonly situations = signal<Situation[]>([]);
+  readonly modes = signal<ModePassation[]>([]);
   readonly comptes = signal<Compte[]>([]);
   readonly refsLoading = signal(false);
   private refsLoaded = false;
@@ -1201,21 +1174,11 @@ export class DetailPpmModal implements OnInit {
       montEstim: [m?.montEstim ?? (null as number | null)],
       financement: [m?.financement ?? ''],
       statut: [m?.statut ?? ''],
-      idSituation: [m?.idSituation ?? (null as number | null)],
       idNature: [m?.idNature ?? (null as number | null)],
       idMode: [m?.idMode ?? (null as number | null)],
       datesPrev: this.fb.array([] as FormGroup[]),
     });
     void p;
-    this.modeSuggestion.set({ state: 'idle', modes: [], recommande: null });
-    this.modeSub?.unsubscribe();
-    this.modeSub = merge(
-      this.createForm.get('idSituation')!.valueChanges,
-      this.createForm.get('idNature')!.valueChanges,
-      this.createForm.get('montEstim')!.valueChanges,
-    )
-      .pipe(debounceTime(350))
-      .subscribe(() => this.determinerMode());
   }
 
   ouvrirCreation(): void {
@@ -1239,7 +1202,6 @@ export class DetailPpmModal implements OnInit {
     this.createOpen.set(true);
   }
   annulerCreation(): void {
-    this.modeSub?.unsubscribe();
     this.createOpen.set(false);
     this.editingMarche.set(null);
     this.createOriginalDates.set([]);
@@ -1296,44 +1258,6 @@ export class DetailPpmModal implements OnInit {
     });
   }
 
-  private determinerMode(): void {
-    const v = this.createForm.getRawValue();
-    const idLocalite = this.localiteCourante();
-    const idMode = this.createForm.get('idMode')!;
-    if (v.idSituation == null || v.idNature == null || v.montEstim == null || !idLocalite) {
-      this.modeSuggestion.set({ state: 'idle', modes: [], recommande: null });
-      return;
-    }
-    this.modeSuggestion.set({ state: 'loading', modes: [], recommande: null });
-    this.reglePassation
-      .suggestionMode({ idSituation: v.idSituation, idNature: v.idNature, montant: v.montEstim, idLocalite })
-      .subscribe({
-        next: (res) => {
-          if (res.modesAutorises.length) {
-            const cur = idMode.value as number | null;
-            if (cur == null || !res.modesAutorises.some((m) => m.idMode === cur)) {
-              idMode.setValue(res.modeRecommande, { emitEvent: false });
-            }
-            this.modeSuggestion.set({ state: 'ready', modes: res.modesAutorises, recommande: res.modeRecommande });
-          } else {
-            idMode.setValue(null, { emitEvent: false });
-            this.modeSuggestion.set({ state: 'none', modes: [], recommande: null });
-          }
-        },
-        error: () => {
-          idMode.setValue(null, { emitEvent: false });
-          this.modeSuggestion.set({ state: 'none', modes: [], recommande: null });
-        },
-      });
-  }
-  /** Localité (code) du dossier courant, dérivée de l'entité côté serveur (portée par le PPM chargé). */
-  private localiteCourante(): string | null {
-    return this.ppm()?.idLocalite ?? null;
-  }
-  localiteLabel(): string {
-    return this.localiteCourante() ?? '— (dérivée de l’entité)';
-  }
-
   private chargerReferentiels(): void {
     if (this.refsLoaded) {
       return;
@@ -1341,12 +1265,12 @@ export class DetailPpmModal implements OnInit {
     this.refsLoading.set(true);
     forkJoin({
       natures: this.natureService.list(),
-      situations: this.situationService.list(),
+      modes: this.modeService.list(),
       comptes: this.compteService.list(),
     }).subscribe({
       next: (r) => {
         this.natures.set(r.natures);
-        this.situations.set(r.situations);
+        this.modes.set(r.modes);
         this.comptes.set(r.comptes);
         this.refsLoaded = true;
         this.refsLoading.set(false);
@@ -1375,7 +1299,6 @@ export class DetailPpmModal implements OnInit {
       montEstim: v.montEstim ?? undefined,
       financement: v.financement || undefined,
       statut: v.statut || undefined,
-      idSituation: v.idSituation ?? undefined,
       idNature: v.idNature ?? undefined,
       idMode: v.idMode ?? undefined,
     };
