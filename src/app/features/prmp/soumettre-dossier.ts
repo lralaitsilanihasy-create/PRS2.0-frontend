@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
+import { MontantFrDirective } from '../../shared/montant-fr.directive';
 import { Capm, Compte, Dossier, Marche, ModePassation, Nature, SaisieMarcheLigne, SaisiePpmImportResult, SoaBeneficiaire, TypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
@@ -79,7 +80,7 @@ interface ApercuDossier {
 @Component({
   selector: 'app-soumettre-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DetailPpmModal],
+  imports: [ReactiveFormsModule, DetailPpmModal, MontantFrDirective],
   template: `
     <section class="sd">
       <header class="page-header">
@@ -175,9 +176,9 @@ interface ApercuDossier {
                   <label class="form-group"><span class="form-label">Désignation</span>
                     <input class="form-control" type="text" formControlName="designationMarche" /></label>
                   <label class="form-group"><span class="form-label">Montant estimé</span>
-                    <input class="form-control" type="number" formControlName="montEstim" /></label>
+                    <input class="form-control" type="text" inputmode="decimal" appMontantFr formControlName="montEstim" /></label>
                   <label class="form-group"><span class="form-label">Nouveau montant estimé</span>
-                    <input class="form-control" type="number" formControlName="nouvMontEstim" placeholder="(si révisé)" /></label>
+                    <input class="form-control" type="text" inputmode="decimal" appMontantFr formControlName="nouvMontEstim" placeholder="(si révisé)" /></label>
                   <label class="form-group"><span class="form-label">Compte</span>
                     <input class="form-control" type="text" formControlName="numCompte" list="sd-comptes" placeholder="N° compte" /></label>
                   <label class="form-group"><span class="form-label">Nature</span>
@@ -200,8 +201,8 @@ interface ApercuDossier {
                     <div class="sd__benef-row" [formGroupName]="$index">
                       <input class="form-control" type="text" formControlName="soaCode" list="sd-soa" placeholder="Service bénéficiaire (SOA)" />
                       <input class="form-control" type="text" formControlName="numCompte" list="sd-comptes" placeholder="Compte" />
-                      <input class="form-control" type="number" formControlName="ancMontBenef" placeholder="Montant estimatif" />
-                      <input class="form-control" type="number" formControlName="nouvMontBenef" placeholder="Nouveau montant" />
+                      <input class="form-control" type="text" inputmode="decimal" appMontantFr formControlName="ancMontBenef" placeholder="Montant estimatif" />
+                      <input class="form-control" type="text" inputmode="decimal" appMontantFr formControlName="nouvMontBenef" placeholder="Nouveau montant" />
                       <button type="button" class="btn btn-secondary btn-sm" (click)="retirerBeneficiaire(g, $index)" aria-label="Retirer">✕</button>
                     </div>
                   } @empty {
