@@ -473,6 +473,8 @@ export class SoumettreDossier {
   /** Import PPM PDF (pré-remplissage read-only) : état d'analyse + avertissements du parsing. */
   readonly importing = signal(false);
   readonly importAvertissements = signal<string[]>([]);
+  /** Libellés nature/mode non résolus par l'import (uid de ligne → libellés) — envoyés à la création pour création à la volée. */
+  private readonly importLibelles = signal<Record<number, { natureLibelle?: string; modeLibelle?: string }>>({});
 
   /** Référentiel CAPM (processus de marché), trié par `ordre` ASC. */
   readonly capms = signal<Capm[]>([]);
@@ -664,6 +666,7 @@ export class SoumettreDossier {
     // Marchés (best-effort) : remplace les lignes actuelles par celles du PDF.
     this.ensureMarcheRefs();
     this.marchesArray.clear();
+    const libelles: Record<number, { natureLibelle?: string; modeLibelle?: string }> = {};
     let previsionsPresentes = false;
     for (const m of r.marches ?? []) {
       const g = this.ligneMarche();
@@ -674,6 +677,8 @@ export class SoumettreDossier {
         idNature: m.idNature ?? null,
         idMode: m.idMode ?? null,
       });
+      // Libellés bruts (nature/mode) conservés pour la création à la volée si l'id n'est pas résolu.
+      libelles[g.get('uid')!.value as number] = { natureLibelle: m.natureLibelle, modeLibelle: m.modeLibelle };
       // Prévisions (jalons) : idCapm résolu depuis le libellé + date de début ; date de fin à compléter (non fournie).
       const procArr = g.get('processus') as FormArray;
       for (const p of m.previsions ?? []) {
@@ -685,6 +690,7 @@ export class SoumettreDossier {
       }
       this.marchesArray.push(g);
     }
+    this.importLibelles.set(libelles);
     // Avertissements : ceux du backend + entité non résolue + dates + bénéficiaires.
     const av = [...(r.avertissements ?? [])];
     if (r.idEntiteContract == null && r.autoriteContractante) {
@@ -891,7 +897,11 @@ export class SoumettreDossier {
       financement: (l['financement'] as string) || undefined,
       statut: (l['statut'] as string) || 'PREVU',
       idNature: (l['idNature'] as number) ?? undefined,
+      // Libellé envoyé seulement si l'id n'est pas résolu → le serveur crée/résout la nature à la volée.
+      natureLibelle:
+        l['idNature'] == null ? this.importLibelles()[l['uid'] as number]?.natureLibelle : undefined,
       idMode: (l['idMode'] as number) ?? undefined,
+      modeLibelle: l['idMode'] == null ? this.importLibelles()[l['uid'] as number]?.modeLibelle : undefined,
       processus: ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
         idCapm: p['idCapm'] as number,
         dateDebut: p['dateDebut'] as string,

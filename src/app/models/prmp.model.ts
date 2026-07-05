@@ -143,7 +143,11 @@ export interface SaisieMarcheLigne {
   financement?: string;
   statut?: string;
   idNature?: number;
+  /** Libellé de nature (import) quand `idNature` n'est pas résolu → le serveur crée/résout à la volée. */
+  natureLibelle?: string;
   idMode?: number; // mode de passation choisi par la PRMP (FK tr_mode) ; conservé tel quel
+  /** Libellé de mode (import) quand `idMode` n'est pas résolu → le serveur crée/résout à la volée. */
+  modeLibelle?: string;
   /**
    * Processus prévisionnels du marché — **au moins un obligatoire à la création** (`POST /api/saisies/ppm`) ;
    * le serveur crée une ligne `t_marche_prevision` par processus.
