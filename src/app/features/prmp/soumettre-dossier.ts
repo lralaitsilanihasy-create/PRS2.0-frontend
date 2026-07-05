@@ -93,7 +93,7 @@ type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
                 <span class="form-label">Entité contractante *</span>
                 <select class="form-control" formControlName="idEntiteContract">
                   <option [ngValue]="null">— Sélectionner —</option>
-                  @for (e of entites(); track e.idEntiteContract) {
+                  @for (e of optionsEntite(); track e.idEntiteContract) {
                     <option [ngValue]="e.idEntiteContract">{{ e.libelle }}</option>
                   }
                 </select>
@@ -442,6 +442,14 @@ export class SoumettreDossier {
   /** Entités de la PRMP courante (id, libellé, localité dérivée). */
   readonly entites = signal<{ idEntiteContract: number; libelle: string; idLocalite?: string }[]>([]);
   readonly selectedEntiteId = signal<number | null>(null);
+  /** Entité du PPM importé hors du périmètre PRMP — ajoutée aux options pour l'afficher/sélectionner (§3.1). */
+  readonly entiteImportee = signal<{ idEntiteContract: number; libelle: string; idLocalite?: string } | null>(null);
+  /** Options du sélecteur d'entité = entités du PRMP + éventuelle entité importée hors périmètre. */
+  readonly optionsEntite = computed(() => {
+    const base = this.entites();
+    const imp = this.entiteImportee();
+    return imp && !base.some((e) => e.idEntiteContract === imp.idEntiteContract) ? [...base, imp] : base;
+  });
 
   readonly estPpm = computed(() => this.dossier()?.idTypeDossier === 'PPM');
   /** Soumission bloquée : un PPM doit comporter au moins un marché (§3.1 M03 ; sinon 409). */
@@ -449,9 +457,11 @@ export class SoumettreDossier {
   readonly typesNonPpm = computed(() => this.typeDossiers().filter((t) => t.idTypeDossier !== 'PPM'));
   /** Localité (lecture seule) dérivée de l'entité contractante sélectionnée. */
   readonly localiteLabel = computed(() => {
-    const ent = this.entites().find((e) => e.idEntiteContract === this.selectedEntiteId());
+    const id = this.selectedEntiteId();
+    if (id == null) return '— (sélectionnez une entité)';
+    const ent = this.optionsEntite().find((e) => e.idEntiteContract === id);
     const loc = ent?.idLocalite;
-    if (!loc) return '— (sélectionnez une entité)';
+    if (!loc) return '— (dérivée de l\'entité à la création)';
     return this.localiteMap().get(loc) ?? loc;
   });
 
@@ -663,13 +673,19 @@ export class SoumettreDossier {
   private appliquerImport(r: SaisiePpmImportResult): void {
     if (r.exercice != null) this.ppmForm.controls.exercice.setValue(r.exercice);
     if (r.dateSignature) this.ppmForm.controls.dateSignature.setValue(r.dateSignature);
-    // Entité : ne pré-sélectionner que si elle appartient au périmètre du PRMP (§3.1). Forcer une entité
-    // hors périmètre ferait échouer la création en 403 ; on laisse alors le choix par défaut + on avertit.
-    const entiteImportee = r.idEntiteContract;
+    // Entité : pré-remplir depuis le PDF. Si elle est hors du périmètre du PRMP (§3.1), on l'ajoute aux
+    // options (marquée « hors périmètre ») pour l'afficher/sélectionner, et on avertit — la création
+    // restera refusée (403) tant que le PRMP n'est pas rattaché à cette entité.
+    const idEntiteImportee = r.idEntiteContract;
     const entiteHorsPerimetre =
-      entiteImportee != null && !this.entites().some((e) => e.idEntiteContract === entiteImportee);
-    if (entiteImportee != null && !entiteHorsPerimetre) {
-      this.ppmForm.controls.idEntiteContract.setValue(entiteImportee);
+      idEntiteImportee != null && !this.entites().some((e) => e.idEntiteContract === idEntiteImportee);
+    this.entiteImportee.set(
+      entiteHorsPerimetre
+        ? { idEntiteContract: idEntiteImportee!, libelle: `${r.autoriteContractante ?? '#' + idEntiteImportee} — hors périmètre` }
+        : null,
+    );
+    if (idEntiteImportee != null) {
+      this.ppmForm.controls.idEntiteContract.setValue(idEntiteImportee);
     }
     // Marchés (best-effort) : remplace les lignes actuelles par celles du PDF.
     this.ensureMarcheRefs();
