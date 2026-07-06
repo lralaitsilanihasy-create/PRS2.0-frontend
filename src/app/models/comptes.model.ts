@@ -30,6 +30,29 @@ export interface Prmp {
   idLocalite: string;
 }
 
+/**
+ * UGPM (Unité de Gestion de la Passation des Marchés), rattachée à **une** PRMP de tutelle.
+ * `GET /api/ugpms` → `UgpmDto[]` (Admin). PK = idUgpm (string).
+ */
+export interface Ugpm {
+  idUgpm: string;
+  libelle?: string;
+  /** PRMP de tutelle (FK t_prmp.idPrmp). */
+  idPrmpTutelle: string;
+}
+
+/**
+ * Corps de `POST /api/ugpms` (Admin) : crée l'UGPM **et** son compte d'authentification actif
+ * (TYPE_ACTEUR='UGPM'). 409 si idPrmpTutelle inconnue, idUgpm déjà pris, ou login déjà utilisé.
+ */
+export interface CreerUgpmRequest {
+  idUgpm: string;
+  libelle?: string;
+  idPrmpTutelle: string;
+  login: string;
+  motDePasse: string;
+}
+
 /** Organigramme d'un ministère. */
 export interface Organigramme {
   idOrganigramme: number;

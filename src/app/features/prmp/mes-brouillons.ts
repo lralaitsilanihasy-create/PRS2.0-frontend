@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier } from '../../models';
@@ -57,15 +58,18 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <td>
                     <div class="td-actions actions-end">
                       <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrir(d)">Ouvrir</button>
-                      <button
-                        type="button"
-                        class="btn btn-success btn-sm"
-                        [disabled]="submittingId() === d.idDossier || ppmManquant(d)"
-                        [title]="ppmManquant(d) ? 'Impossible de soumettre : aucun PPM rattaché à ce dossier. Ouvrez le dossier pour ajouter un PPM.' : ''"
-                        (click)="soumettre(d)"
-                      >
-                        Soumettre
-                      </button>
+                      <!-- Soumission réservée à la PRMP ; l'UGPM ouvre/édite mais ne soumet pas (backend 403). -->
+                      @if (estPrmp()) {
+                        <button
+                          type="button"
+                          class="btn btn-success btn-sm"
+                          [disabled]="submittingId() === d.idDossier || ppmManquant(d)"
+                          [title]="ppmManquant(d) ? 'Impossible de soumettre : aucun PPM rattaché à ce dossier. Ouvrez le dossier pour ajouter un PPM.' : ''"
+                          (click)="soumettre(d)"
+                        >
+                          Soumettre
+                        </button>
+                      }
                       <button
                         type="button"
                         class="btn btn-danger btn-sm"
@@ -132,6 +136,9 @@ export class MesBrouillons {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
+  private readonly auth = inject(AuthService);
+  /** Seule la PRMP soumet ; l'UGPM ouvre/édite ses brouillons mais ne soumet pas (bouton masqué). */
+  readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
 
   readonly brouillons = signal<Dossier[]>([]);
   readonly loading = signal(false);

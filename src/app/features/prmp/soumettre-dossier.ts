@@ -345,7 +345,7 @@ interface ApercuDossier {
                 [idDossier]="d.idDossier"
                 [idPpm]="createdPpmId()!"
                 [modeEdition]="true"
-                [soumissible]="true"
+                [soumissible]="estPrmp()"
                 (fermer)="retourChoix()"
                 (soumettre)="soumettre()"
                 (modifie)="rechargerMarches()"
@@ -366,9 +366,12 @@ interface ApercuDossier {
                 </p>
                 <footer class="sd__foot sd__foot--main">
                   <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
-                  <button type="button" class="btn btn-success" [disabled]="submitting()" (click)="soumettre()">
-                    Soumettre le dossier
-                  </button>
+                  <!-- Soumission réservée à la PRMP ; l'UGPM édite le brouillon mais ne soumet pas (backend 403). -->
+                  @if (estPrmp()) {
+                    <button type="button" class="btn btn-success" [disabled]="submitting()" (click)="soumettre()">
+                      Soumettre le dossier
+                    </button>
+                  }
                 </footer>
               </div>
             }
@@ -676,6 +679,9 @@ export class SoumettreDossier {
     if (!loc) return '— (dérivée de l\'entité à la création)';
     return this.localiteMap().get(loc) ?? loc;
   });
+
+  /** Seule la PRMP peut soumettre ; l'UGPM saisit/édite mais ne soumet pas (bouton masqué, backend 403). */
+  readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
 
   /** Signataire du PRMP connecté (lecture seule ; le serveur le génère, ce champ n'est qu'un aperçu). */
   readonly signataireConnecte = signal('');

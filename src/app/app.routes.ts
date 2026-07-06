@@ -45,7 +45,9 @@ export const routes: Routes = [
       {
         path: 'prmp',
         canActivate: [roleGuard],
-        data: { roles: ['PRMP'] },
+        // UGPM agit sous le périmètre de sa PRMP : accès aux écrans PRMP (saisie/brouillons/PV).
+        // Le menu restreint ce qu'il voit ; le backend refuse (403) ce qu'il ne peut pas faire (soumettre…).
+        data: { roles: ['PRMP', 'UGPM'] },
         loadChildren: () => import('./features/prmp/prmp.routes').then((m) => m.PRMP_ROUTES),
       },
       {

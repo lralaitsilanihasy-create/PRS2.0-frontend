@@ -5,6 +5,7 @@ import { SectionHome } from '../../shared/ui/section-home';
 import { KpiDashboard } from '../pilotage/kpi-dashboard';
 import { RapportsPage } from '../pilotage/rapports-page';
 import { EntiteArbre } from './entite-arbre';
+import { UgpmAdmin } from './ugpm-admin';
 import { PpmMarches } from '../prmp/ppm-marches';
 import { PrmpMarchesPrevisions } from '../prmp/prmp-marches-previsions';
 import { COMPTES, REFERENTIELS, SECURITE } from './admin-resources.config';
@@ -13,10 +14,14 @@ const refLinks = REFERENTIELS.map((r) => ({
   label: r.config.title,
   path: `/admin/referentiels/${r.slug}`,
 }));
-const compteLinks = COMPTES.map((r) => ({
-  label: r.config.title,
-  path: `/admin/comptes/${r.slug}`,
-}));
+const compteLinks = [
+  ...COMPTES.map((r) => ({
+    label: r.config.title,
+    path: `/admin/comptes/${r.slug}`,
+  })),
+  // Écran dédié (POST /api/ugpms : création UGPM + compte ; pas de CRUD générique).
+  { label: 'UGPM (unités de gestion)', path: '/admin/comptes/ugpms' },
+];
 const auditConfig = SECURITE.find((r) => r.slug === 'audit-logs')!.config;
 const sessionConfig = SECURITE.find((r) => r.slug === 'session-utilisateurs')!.config;
 
@@ -51,6 +56,7 @@ export const ADMIN_ROUTES: Routes = [
     component: CrudPage,
     data: { crud: r.config },
   })),
+  { path: 'comptes/ugpms', component: UgpmAdmin },
 
   { path: 'audit', component: CrudPage, data: { crud: auditConfig } },
   { path: 'sessions', component: CrudPage, data: { crud: sessionConfig } },

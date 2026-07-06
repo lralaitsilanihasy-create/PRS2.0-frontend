@@ -16,9 +16,15 @@ export interface Page<T> {
   size: number;
 }
 
-/** Profils métier portés par le claim `role` du JWT. */
+/**
+ * Profils métier portés par le claim `role` du JWT.
+ * `UGPM` (Unité de Gestion de la Passation des Marchés) agit **sous le périmètre de sa PRMP de tutelle**
+ * (le claim `ref` porte l'idPrmp) : crée/édite des brouillons, marchés, pièces et consulte les PV,
+ * mais **ne peut pas soumettre** (réservé PRMP). Cf. docs/api-endpoints.md (/api/saisies, /api/ugpms).
+ */
 export type Role =
   | 'PRMP'
+  | 'UGPM'
   | 'PRESIDENT'
   | 'CHEF_COMMISSION'
   | 'SECRETAIRE'
@@ -28,8 +34,8 @@ export type Role =
   | 'CHARGE_PUBLICATION'
   | 'ADMINISTRATEUR';
 
-/** Nature de l'acteur authentifié (LoginResponse.typeActeur). */
-export type TypeActeur = 'CONTROLEUR' | 'PRMP';
+/** Nature de l'acteur authentifié (LoginResponse.typeActeur) ; `UGPM` agit sous sa PRMP de tutelle. */
+export type TypeActeur = 'CONTROLEUR' | 'PRMP' | 'UGPM';
 
 /** Statut d'un dossier (cycle réel backend : BROUILLON → SOUMIS → PRET_DISPATCH → … → CLOTURE/RETIRE). */
 export type StatutDossier =
