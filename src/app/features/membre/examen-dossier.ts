@@ -12,10 +12,12 @@ import {
   ExamenDetail,
   LettreRenvoi,
   Marche,
+  MarchePrevision,
   ObservationControle,
   PointsCtrl,
   Ppm,
   PvExamen,
+  ServiceBeneficiaire,
 } from '../../models';
 import {
   AvisService,
@@ -26,15 +28,18 @@ import {
   LettreRenvoiService,
   LocaliteService,
   MarcheService,
+  MarchePrevisionService,
   ModePassationService,
   PointsCtrlService,
   PpmService,
   PvExamenService,
   ReceptionService,
   ReferenceLookupService,
+  ServiceBeneficiaireService,
   TypeDossierService,
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 
 /** Une ligne « AU LIEU DE / LIRE » saisie pour un point non conforme. */
 interface ObsLigne {
@@ -59,7 +64,7 @@ interface RowState {
 @Component({
   selector: 'app-examen-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge],
+  imports: [StatutBadge, PpmMarchesTable],
   template: `
     <section class="exam">
       <header class="page-header">
@@ -95,22 +100,7 @@ interface RowState {
                 }
                 <div class="exam__marches">
                   <h3 class="exam__sub">Lignes de marché</h3>
-                  @if (marches().length) {
-                    <table>
-                      <thead><tr><th>Désignation</th><th class="r">Montant</th><th>Mode</th></tr></thead>
-                      <tbody>
-                        @for (m of marches(); track m.idDetail) {
-                          <tr>
-                            <td>{{ m.designationMarche || '—' }}</td>
-                            <td class="td-montant">{{ montant(m.montEstim) }}</td>
-                            <td>{{ modeLabel(m.idMode) }}</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  } @else {
-                    <p class="text-muted">Aucune ligne de marché.</p>
-                  }
+                  <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
                 </div>
               }
             </div>
@@ -323,6 +313,8 @@ export class ExamenDossier {
   private readonly examenDetailService = inject(ExamenDetailService);
   private readonly pvExamenService = inject(PvExamenService);
   private readonly lettreRenvoiService = inject(LettreRenvoiService);
+  private readonly serviceBenefService = inject(ServiceBeneficiaireService);
+  private readonly previsionService = inject(MarchePrevisionService);
   private readonly lookups = inject(ReferenceLookupService);
 
   readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
@@ -333,6 +325,9 @@ export class ExamenDossier {
   readonly dossier = signal<Dossier | null>(null);
   readonly ppm = signal<Ppm | null>(null);
   readonly marches = signal<Marche[]>([]);
+  /** Bénéficiaires + dates prévisionnelles des marchés du dossier (pour le tableau PPM partagé). */
+  readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
+  readonly previsions = signal<MarchePrevision[]>([]);
   readonly idDispatch = signal<number | null>(null);
   readonly points = signal<PointsCtrl[]>([]);
   readonly aviss = signal<Avis[]>([]);
@@ -407,6 +402,8 @@ export class ExamenDossier {
       examens: this.examenService.list(),
       details: this.examenDetailService.list(),
       pvs: this.pvExamenService.list(),
+      benefs: this.serviceBenefService.list(),
+      previsions: this.previsionService.list(),
     }).subscribe({
       next: (r) => {
         this.dossier.set(r.dossier);
@@ -414,7 +411,12 @@ export class ExamenDossier {
         this.details.set(r.details);
         this.pvs.set(r.pvs);
         this.ppm.set(r.ppms.find((p) => p.idDossier === this.idDossier) ?? null);
-        this.marches.set(r.marches.filter((m) => m.idDossier === this.idDossier));
+        const mines = r.marches.filter((m) => m.idDossier === this.idDossier);
+        this.marches.set(mines);
+        // Bénéficiaires + prévisions des marchés du dossier (pour le tableau PPM partagé).
+        const detailIds = new Set(mines.map((m) => m.idDetail));
+        this.serviceBenefs.set(r.benefs.filter((b) => detailIds.has(b.idDetail)));
+        this.previsions.set(r.previsions.filter((p) => detailIds.has(p.idDetail)));
         const recIds = new Set(
           r.receptions.filter((x) => x.idDossier === this.idDossier).map((x) => x.idReception),
         );
