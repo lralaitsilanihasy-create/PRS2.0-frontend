@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { CrudService } from './api/crud.service';
-import { Controleur, CreerUgpmRequest, Organigramme, Prmp, Ugpm } from '../models';
+import { Controleur, CreerUgpmRequest, ModifierUgpmRequest, Organigramme, Prmp, Ugpm } from '../models';
 
 /**
  * Gestion des comptes et de la hiérarchie (§3.8).
@@ -35,5 +35,10 @@ export class UgpmService extends CrudService<Ugpm, string> {
   /** `POST /api/ugpms` — crée l'UGPM et son compte d'authentification actif. */
   creer(req: CreerUgpmRequest): Observable<Ugpm> {
     return this.http.post<Ugpm>(this.baseUrl, req);
+  }
+
+  /** `PUT /api/ugpms/{id}` — modifie les champs métier (pas l'id ni le compte). */
+  modifier(idUgpm: string, req: ModifierUgpmRequest): Observable<Ugpm> {
+    return this.http.put<Ugpm>(`${this.baseUrl}/${idUgpm}`, req);
   }
 }
