@@ -31,7 +31,7 @@
   display: flex;
   flex-direction: column;
 
-  &.modal-xl { max-width: 1020px; }
+  &.modal-xl { max-width: min(96rem, 98vw); }
 }
 
 /* ── Header ── */

@@ -211,7 +211,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
   styles: `
     .dc {
       width: 100%;
-      max-width: 56rem;
+      max-width: min(96rem, 98vw);
       max-height: 90vh;
       overflow: hidden;
       display: flex;

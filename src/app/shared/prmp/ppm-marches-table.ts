@@ -44,9 +44,9 @@ interface MarcheRow {
       <div class="pmt-wrap">
         <table class="pmt">
           <colgroup>
-            <col style="width: 7%" /><col style="width: 15%" /><col style="width: 9%" /><col style="width: 9%" />
-            <col style="width: 7%" /><col style="width: 6%" /><col style="width: 9%" /><col style="width: 5%" />
-            <col style="width: 9%" /><col style="width: 9%" /><col style="width: 5%" /><col style="width: 5%" /><col style="width: 5%" />
+            <col style="width: 6%" /><col style="width: 15%" /><col style="width: 9%" /><col style="width: 9%" />
+            <col style="width: 6%" /><col style="width: 5%" /><col style="width: 8%" /><col style="width: 5%" />
+            <col style="width: 9%" /><col style="width: 9%" /><col style="width: 6%" /><col style="width: 6%" /><col style="width: 6%" />
           </colgroup>
           <thead>
             <tr>
