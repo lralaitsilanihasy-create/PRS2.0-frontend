@@ -30,8 +30,8 @@ import { PrmpService, UgpmService } from '../../services';
       <form class="ua__form cnm-form" [formGroup]="form" (ngSubmit)="creer()" novalidate>
         <div class="cnm-form-grid">
           <label class="form-group">
-            <span class="form-label">Identifiant UGPM *</span>
-            <input class="form-control" type="text" formControlName="idUgpm" placeholder="ex. UGPM001" />
+            <span class="form-label">Matricule (identifiant) *</span>
+            <input class="form-control" type="text" formControlName="idUgpm" placeholder="matricule UGPM" />
             @if (invalide('idUgpm')) { <span class="form-error">Obligatoire.</span> }
           </label>
           <label class="form-group">
@@ -58,11 +58,6 @@ import { PrmpService, UgpmService } from '../../services';
             <span class="form-label">Prénoms *</span>
             <input class="form-control" type="text" formControlName="prenomsUgpm" />
             @if (invalide('prenomsUgpm')) { <span class="form-error">Obligatoire.</span> }
-          </label>
-          <label class="form-group">
-            <span class="form-label">Matricule *</span>
-            <input class="form-control" type="text" formControlName="imUgpm" />
-            @if (invalide('imUgpm')) { <span class="form-error">Obligatoire.</span> }
           </label>
           <label class="form-group">
             <span class="form-label">CIN *</span>
@@ -153,7 +148,6 @@ export class UgpmAdmin implements OnInit {
     idPrmpTutelle: ['', Validators.required],
     nomUgpm: ['', Validators.required],
     prenomsUgpm: ['', Validators.required],
-    imUgpm: ['', Validators.required],
     cin: ['', Validators.required],
     dateCin: ['', Validators.required],
     lieuCin: ['', Validators.required],

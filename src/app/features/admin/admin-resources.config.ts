@@ -311,10 +311,9 @@ export const COMPTES: AdminResource[] = [
         { label: 'Voir ses entités', path: '/admin/comptes/prmp-entites', queryParam: 'prmp', valueKey: 'idPrmp' },
       ],
       fields: [
-        { key: 'idPrmp', label: 'Identifiant', pk: true, required: true },
+        { key: 'idPrmp', label: 'Matricule (identifiant)', pk: true, required: true },
         { key: 'nomPrmp', label: 'Nom', required: true },
         { key: 'prenomsPrmp', label: 'Prénoms', required: true },
-        { key: 'imPrmp', label: 'Matricule', required: true },
         { key: 'arreteNomin', label: 'Arrêté de nomination', required: true },
         { key: 'dateNomin', label: 'Date de nomination', type: 'date', required: true },
         { key: 'cin', label: 'CIN', required: true },

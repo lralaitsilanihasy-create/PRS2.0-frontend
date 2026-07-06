@@ -16,10 +16,9 @@ interface FieldDef {
 const FIELDS: FieldDef[] = [
   { key: 'login', label: 'Identifiant de connexion', type: 'text' },
   { key: 'motDePasse', label: 'Mot de passe (min. 8 caractères)', type: 'password' },
-  { key: 'idPrmp', label: 'Identifiant PRMP', type: 'text' },
+  { key: 'idPrmp', label: 'Matricule (identifiant)', type: 'text' },
   { key: 'nomPrmp', label: 'Nom', type: 'text' },
   { key: 'prenomsPrmp', label: 'Prénoms', type: 'text' },
-  { key: 'imPrmp', label: 'Matricule (IM)', type: 'text' },
   { key: 'arreteNomin', label: 'Arrêté de nomination (référence)', type: 'text' },
   { key: 'dateNomin', label: 'Date de nomination', type: 'date' },
   { key: 'cin', label: 'CIN', type: 'text' },

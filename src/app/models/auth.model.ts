@@ -26,10 +26,10 @@ export interface LoginResponse {
 export interface RegisterPrmpRequest {
   login: string;
   motDePasse: string;
+  /** = matricule de la PRMP (identifiant unifié). */
   idPrmp: string;
   nomPrmp: string;
   prenomsPrmp: string;
-  imPrmp: string;
   arreteNomin: string;
   dateNomin: string;
   cin: string;
@@ -60,10 +60,10 @@ export interface EntiteNonListee {
 export interface RegisterPrmpV2Request {
   login: string;
   motDePasse: string;
+  /** = matricule de la PRMP (identifiant unifié). */
   idPrmp: string;
   nomPrmp: string;
   prenomsPrmp: string;
-  imPrmp: string;
   arreteNomin: string;
   dateNomin: string;
   cin: string;
