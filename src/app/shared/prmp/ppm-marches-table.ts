@@ -99,11 +99,12 @@ interface MarcheRow {
   styles: `
     .pmt-wrap { overflow-x: auto; }
     .pmt { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 0.64rem; color: #000; background: #fff; }
-    .pmt th, .pmt td { border: 1px solid #000; padding: 3px 4px; vertical-align: top; overflow-wrap: break-word; word-break: break-word; }
+    /* white-space: normal force le retour à la ligne (évite un nowrap hérité d'un style global de th/table). */
+    .pmt th, .pmt td { border: 1px solid #000; padding: 3px 4px; vertical-align: top; white-space: normal; overflow-wrap: break-word; word-break: break-word; }
     .pmt thead th { background: #f0f0f0; text-align: center; font-weight: 700; line-height: 1.15; }
-    .pmt-num { text-align: right; white-space: nowrap; }
-    .pmt-date { text-align: center; white-space: nowrap; }
-    .pmt-objet { white-space: pre-wrap; }
+    .pmt td.pmt-num { text-align: right; }
+    .pmt td.pmt-date { text-align: center; white-space: nowrap; }
+    .pmt td.pmt-objet { white-space: pre-wrap; }
     .pmt-empty { color: var(--n-400, #71717a); margin: 0; }
   `,
 })
