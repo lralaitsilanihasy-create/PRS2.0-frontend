@@ -50,6 +50,46 @@ import { PrmpService, UgpmService } from '../../services';
             @if (!prmps().length) { <span class="form-hint">Aucune PRMP disponible — créez d'abord une PRMP.</span> }
           </label>
           <label class="form-group">
+            <span class="form-label">Nom *</span>
+            <input class="form-control" type="text" formControlName="nomUgpm" />
+            @if (invalide('nomUgpm')) { <span class="form-error">Obligatoire.</span> }
+          </label>
+          <label class="form-group">
+            <span class="form-label">Prénoms *</span>
+            <input class="form-control" type="text" formControlName="prenomsUgpm" />
+            @if (invalide('prenomsUgpm')) { <span class="form-error">Obligatoire.</span> }
+          </label>
+          <label class="form-group">
+            <span class="form-label">Matricule *</span>
+            <input class="form-control" type="text" formControlName="imUgpm" />
+            @if (invalide('imUgpm')) { <span class="form-error">Obligatoire.</span> }
+          </label>
+          <label class="form-group">
+            <span class="form-label">CIN *</span>
+            <input class="form-control" type="text" formControlName="cin" />
+            @if (invalide('cin')) { <span class="form-error">Obligatoire.</span> }
+          </label>
+          <label class="form-group">
+            <span class="form-label">Date CIN *</span>
+            <input class="form-control" type="date" formControlName="dateCin" />
+            @if (invalide('dateCin')) { <span class="form-error">Obligatoire.</span> }
+          </label>
+          <label class="form-group">
+            <span class="form-label">Lieu CIN *</span>
+            <input class="form-control" type="text" formControlName="lieuCin" />
+            @if (invalide('lieuCin')) { <span class="form-error">Obligatoire.</span> }
+          </label>
+          <label class="form-group">
+            <span class="form-label">Email *</span>
+            <input class="form-control" type="email" formControlName="emailUgpm" autocomplete="off" />
+            @if (invalide('emailUgpm')) { <span class="form-error">Email valide obligatoire.</span> }
+          </label>
+          <label class="form-group">
+            <span class="form-label">Téléphone *</span>
+            <input class="form-control" type="text" formControlName="telUgpm" />
+            @if (invalide('telUgpm')) { <span class="form-error">Obligatoire.</span> }
+          </label>
+          <label class="form-group">
             <span class="form-label">Login *</span>
             <input class="form-control" type="text" formControlName="login" autocomplete="off" />
             @if (invalide('login')) { <span class="form-error">Obligatoire.</span> }
@@ -70,11 +110,12 @@ import { PrmpService, UgpmService } from '../../services';
       <h2 class="ua__sub">UGPM existantes ({{ ugpms().length }})</h2>
       @if (ugpms().length) {
         <table class="cnm-table">
-          <thead><tr><th>Identifiant</th><th>Libellé</th><th>PRMP de tutelle</th></tr></thead>
+          <thead><tr><th>Identifiant</th><th>Responsable</th><th>Libellé</th><th>PRMP de tutelle</th></tr></thead>
           <tbody>
             @for (u of ugpms(); track u.idUgpm) {
               <tr>
                 <td>{{ u.idUgpm }}</td>
+                <td>{{ u.nomUgpm }} {{ u.prenomsUgpm }}</td>
                 <td>{{ u.libelle || '—' }}</td>
                 <td>{{ tutelleLabel(u.idPrmpTutelle) }}</td>
               </tr>
@@ -110,6 +151,14 @@ export class UgpmAdmin implements OnInit {
     idUgpm: ['', Validators.required],
     libelle: [''],
     idPrmpTutelle: ['', Validators.required],
+    nomUgpm: ['', Validators.required],
+    prenomsUgpm: ['', Validators.required],
+    imUgpm: ['', Validators.required],
+    cin: ['', Validators.required],
+    dateCin: ['', Validators.required],
+    lieuCin: ['', Validators.required],
+    emailUgpm: ['', [Validators.required, Validators.email]],
+    telUgpm: ['', Validators.required],
     login: ['', Validators.required],
     motDePasse: ['', [Validators.required, Validators.minLength(8)]],
   });
@@ -144,7 +193,7 @@ export class UgpmAdmin implements OnInit {
       next: () => {
         this.toast.success(`UGPM « ${req.idUgpm} » créée.`);
         this.submitting.set(false);
-        this.form.reset({ idUgpm: '', libelle: '', idPrmpTutelle: '', login: '', motDePasse: '' });
+        this.form.reset();
         this.charger();
       },
       error: (_e: ApiError) => this.submitting.set(false), // message via l'intercepteur (409 : id/login pris, tutelle inconnue)

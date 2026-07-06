@@ -39,16 +39,34 @@ export interface Ugpm {
   libelle?: string;
   /** PRMP de tutelle (FK t_prmp.idPrmp). */
   idPrmpTutelle: string;
+  // Identité (alignée PRMP, sans arrêté/date de nomination) — champs obligatoires.
+  nomUgpm: string;
+  prenomsUgpm: string;
+  imUgpm: string;
+  cin: string;
+  dateCin: string;
+  lieuCin: string;
+  emailUgpm: string;
+  telUgpm: string;
 }
 
 /**
  * Corps de `POST /api/ugpms` (Admin) : crée l'UGPM **et** son compte d'authentification actif
- * (TYPE_ACTEUR='UGPM'). 409 si idPrmpTutelle inconnue, idUgpm déjà pris, ou login déjà utilisé.
+ * (TYPE_ACTEUR='UGPM'). 409 si idPrmpTutelle inconnue, idUgpm déjà pris, ou login déjà utilisé ;
+ * 400 si un champ d'identité obligatoire manque.
  */
 export interface CreerUgpmRequest {
   idUgpm: string;
   libelle?: string;
   idPrmpTutelle: string;
+  nomUgpm: string;
+  prenomsUgpm: string;
+  imUgpm: string;
+  cin: string;
+  dateCin: string;
+  lieuCin: string;
+  emailUgpm: string;
+  telUgpm: string;
   login: string;
   motDePasse: string;
 }
