@@ -50,19 +50,19 @@ interface MarcheRow {
           </colgroup>
           <thead>
             <tr>
-              <th rowspan="2">Nature</th>
-              <th rowspan="2">Objet</th>
-              <th rowspan="2">Montant estimatif initial</th>
-              <th rowspan="2">Nouveau montant estimatif</th>
-              <th rowspan="2">Mode de passation</th>
-              <th rowspan="2">Financement</th>
-              <th colspan="4">Informations sur le bénéficiaire</th>
-              <th rowspan="2">Date prév. de lancement</th>
-              <th rowspan="2">Date prév. ouverture des plis</th>
-              <th rowspan="2">Date prév. d'attribution</th>
+              <th rowspan="2">NATURE</th>
+              <th rowspan="2">OBJET</th>
+              <th rowspan="2">MONTANT ESTIMATIF INITIAL</th>
+              <th rowspan="2">NOUVEAU MONTANT ESTIMATIF</th>
+              <th rowspan="2">MODE DE PASSATION</th>
+              <th rowspan="2">FINANCEMENT</th>
+              <th colspan="4">Informations sur le Bénéficiaire</th>
+              <th rowspan="2">DATE PREVISIONNELLE DE LANCEMENT</th>
+              <th rowspan="2">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
+              <th rowspan="2">DATE PREVISIONNELLE D'ATTRIBUTION</th>
             </tr>
             <tr>
-              <th>Service bénéficiaire</th><th>Compte</th><th>Montant estimatif par bénéficiaire</th><th>Nouveau montant estimatif par bénéficiaire</th>
+              <th>SERVICE BENEFICIAIRE</th><th>COMPTE</th><th>MONTANT ESTIMATIF PAR BENEFICIAIRE</th><th>NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
             </tr>
           </thead>
           <tbody>
@@ -98,9 +98,9 @@ interface MarcheRow {
   `,
   styles: `
     .pmt-wrap { overflow-x: auto; }
-    .pmt { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 0.64rem; }
-    .pmt th, .pmt td { border: 1px solid var(--n-300, #c8c8c8); padding: 2px 4px; vertical-align: top; overflow-wrap: break-word; word-break: break-word; }
-    .pmt thead th { background: var(--n-50, #f4f4f5); text-align: center; font-weight: 700; color: var(--n-800, #27272a); line-height: 1.1; }
+    .pmt { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 0.64rem; color: #000; background: #fff; }
+    .pmt th, .pmt td { border: 1px solid #000; padding: 3px 4px; vertical-align: top; overflow-wrap: break-word; word-break: break-word; }
+    .pmt thead th { background: #f0f0f0; text-align: center; font-weight: 700; line-height: 1.15; }
     .pmt-num { text-align: right; white-space: nowrap; }
     .pmt-date { text-align: center; white-space: nowrap; }
     .pmt-objet { white-space: pre-wrap; }
