@@ -108,12 +108,14 @@ export class MainLayout {
         next: (p) => this.displayName.set(`${p.nomPrmp ?? ''} ${p.prenomsPrmp ?? ''}`.trim()),
         error: () => {},
       });
-    } else {
+    } else if (this.auth.typeActeur() === 'CONTROLEUR') {
       this.controleurService.getById(ref).subscribe({
         next: (c) => this.displayName.set(`${c.nomCont ?? ''} ${c.prenomsCont ?? ''}`.trim()),
         error: () => {},
       });
     }
+    // UGPM : le claim `ref` porte l'idPrmp de tutelle (pas un contrôleur ni le compte UGPM) — on n'appelle
+    // aucun référentiel (sinon 404 « Contrôleur introuvable ») ; le nom affiché retombe sur le login.
 
     // Secrétaire : badges « nombre de dossiers » sur Réceptions et Enregistrement,
     // rafraîchis à l'ouverture puis à chaque navigation (ex. après une réception enregistrée).
