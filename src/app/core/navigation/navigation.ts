@@ -38,13 +38,14 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Demandes de retrait', path: '/prmp/retraits', icon: '↩' },
     { label: 'Calendrier', path: '/prmp/calendrier', icon: '📅' },
   ],
-  // UGPM : agit sous sa PRMP de tutelle — saisit/édite des brouillons et consulte les PV,
-  // mais ne soumet pas (bouton masqué + backend 403). Sous-ensemble curé des écrans PRMP.
+  // UGPM : agit sous sa PRMP de tutelle — saisit/édite des brouillons, ne soumet pas
+  // (bouton masqué + backend 403). Sous-ensemble curé des écrans PRMP dont les endpoints
+  // sont accessibles à l'UGPM. « Mes lettres de renvoi » retiré : GET /api/lettre-renvois/mes-lettres
+  // est réservé PRMP (403). « Dossiers vérifiés » (GET /api/dossiers?statut=CLOTURE, scopé) est OK.
   UGPM: [
     { label: 'Saisir un dossier', path: '/prmp/soumettre-dossier', icon: '📨' },
     { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: '🗒' },
     { label: 'Dossiers vérifiés', path: '/prmp/dossiers-verifies', icon: '✅' },
-    { label: 'Mes lettres de renvoi', path: '/prmp/lettre-renvois', icon: '✉' },
   ],
   PRESIDENT: [
     { label: 'Tableau de bord', path: '/president/tableau-de-bord', icon: '▤' },
