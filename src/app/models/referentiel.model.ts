@@ -67,6 +67,25 @@ export interface ModePassation {
   publiciteRequise?: boolean;
   delaiMinJours?: number;
   baseLegale?: string;
+  /** Mapping vers le type de DMC (`t_type_dmc`) — sert à dériver le type de DMC des marchés de ce mode. `null` = non mappé. */
+  idTypeDmc?: number | null;
+  /**
+   * Drapeau data-driven (`tr_mode_passation.DECLENCHE_AGPM`) : ce mode (ex. « appel d'offres ouvert »)
+   * rend la pièce AGPM obligatoire à la soumission d'un PPM. Administrable via `mode-passations`.
+   */
+  declencheAgpm?: boolean;
+}
+
+/**
+ * Type de Dossier de Mise en Concurrence (`/api/type-dmc`, référentiel administrable).
+ * Ex. `DAO` (Dossier d'Appel d'Offres), `DC` (Dossier de Consultation), `BC` (Bon de Commande).
+ * PK `idTypeDmc` **générée par la base** (IDENTITY). Écriture réservée ADMINISTRATEUR.
+ */
+export interface TypeDmc {
+  idTypeDmc: number;
+  code: string;
+  libelle: string;
+  actif?: boolean;
 }
 
 /** Nature de marché. */
@@ -127,6 +146,8 @@ export interface TypePieceJointe {
   obligatoire: boolean;
   idTypeDossier?: string;
   ordre?: number;
+  /** Code stable (`t_type_piece_jointe.CODE`), ex. `AGPM` — sert à repérer une pièce par nature. */
+  code?: string;
 }
 
 /** Type de dossier. PK = idTypeDossier (string). */

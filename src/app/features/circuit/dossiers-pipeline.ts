@@ -100,39 +100,45 @@ import { DossierConsultation } from './dossier-consultation';
       flex-direction: column;
       gap: 0.75rem;
     }
+    /* Carte de dossier : relief doux + élévation au survol, cohérent avec le design system. */
     .dossier-card {
       background: #fff;
-      border: 1px solid var(--c-100);
+      border: 1px solid var(--n-200);
       border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-md);
-      padding: 0.875rem 1.1rem;
+      box-shadow: var(--shadow-sm);
+      padding: 0.9rem 1.15rem;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.6rem;
+      transition: var(--transition);
     }
+    .dossier-card:hover { border-color: var(--p-200); box-shadow: var(--shadow-lg); transform: translateY(-1px); }
     .dossier-card__head {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
+      flex-wrap: wrap;
     }
     .dossier-card__head-right {
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      flex-wrap: wrap;
     }
     .dossier-card__ref {
       font-weight: 700;
-      color: var(--c-800);
+      color: var(--n-800);
+      font-size: var(--text-md);
     }
     .pipeline__pager {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      justify-content: flex-end;
-      margin-top: 0.75rem;
+      justify-content: center;
+      margin-top: 1rem;
     }
-    .pipeline__pager-info { font-size: var(--text-sm); color: var(--n-400); }
+    .pipeline__pager-info { font-size: var(--text-sm); color: var(--n-500); font-weight: 600; }
   `,
 
 })

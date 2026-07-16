@@ -7,9 +7,11 @@ import {
   EntitePubliqueDto,
   LoginRequest,
   LoginResponse,
+  PrmpPublique,
   RegisterPrmpRequest,
   RegisterPrmpV2Request,
   RegisterResponse,
+  RegisterUgpmRequest,
   Role,
   TypeActeur,
 } from '../../models';
@@ -106,6 +108,31 @@ export class AuthService {
       fd.append('photo', files.photo);
     }
     return this.http.post<RegisterResponse>(`${environment.apiUrl}/auth/register/prmp`, fd, {
+      context: skipErrorToast(),
+    });
+  }
+
+  /** GET /api/auth/prmps (public) : liste réduite des PRMP pour le menu « PRMP de tutelle » (inscription UGPM). */
+  prmpsPubliques(): Observable<PrmpPublique[]> {
+    return this.http.get<PrmpPublique[]>(`${environment.apiUrl}/auth/prmps`);
+  }
+
+  /**
+   * POST /api/auth/register/ugpm (multipart, public). Crée un compte UGPM EN_ATTENTE.
+   * `data` = JSON (identité + PRMP de tutelle) ; CIN obligatoire, photo optionnelle (image).
+   * Toast désactivé : la page gère 400/409.
+   */
+  registerUgpm(
+    data: RegisterUgpmRequest,
+    files: { cin: File; photo?: File | null },
+  ): Observable<RegisterResponse> {
+    const fd = new FormData();
+    fd.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+    fd.append('cin', files.cin);
+    if (files.photo) {
+      fd.append('photo', files.photo);
+    }
+    return this.http.post<RegisterResponse>(`${environment.apiUrl}/auth/register/ugpm`, fd, {
       context: skipErrorToast(),
     });
   }

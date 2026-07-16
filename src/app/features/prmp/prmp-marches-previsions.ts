@@ -40,7 +40,6 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
             >
               <span class="mdp__chevron">{{ isPrmpOpen(prmp.idPrmp) ? '▾' : '▸' }}</span>
               <span class="mdp__ref">{{ prmpLabel(prmp) }}</span>
-              <span class="mdp__sub">{{ prmp.idLocalite || '—' }}</span>
               <span class="cnm-badge cnm-badge--neutral">{{ marchesOf(prmp.idPrmp).length }} marché(s)</span>
             </button>
 

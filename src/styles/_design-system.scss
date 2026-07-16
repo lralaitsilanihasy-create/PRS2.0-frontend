@@ -69,14 +69,15 @@
   --radius-2xl : 20px;
   --radius-full: 100px;
 
-  /* Ombres */
-  --shadow-sm: 0 1px 4px  rgba(102,126,234,.06);
-  --shadow-md: 0 4px 16px rgba(102,126,234,.10);
-  --shadow-lg: 0 8px 28px rgba(102,126,234,.14);
-  --shadow-xl: 0 16px 48px rgba(102,126,234,.18);
+  /* Ombres — superposées (ambiance neutre + touche de marque) pour une profondeur douce et sophistiquée. */
+  --shadow-sm: 0 1px 2px rgba(26,29,46,.04), 0 1px 3px rgba(102,126,234,.05);
+  --shadow-md: 0 2px 6px rgba(26,29,46,.05), 0 6px 16px rgba(102,126,234,.09);
+  --shadow-lg: 0 4px 12px rgba(26,29,46,.06), 0 12px 32px rgba(102,126,234,.13);
+  --shadow-xl: 0 8px 24px rgba(26,29,46,.08), 0 24px 56px rgba(102,126,234,.16);
 
-  /* Transitions */
-  --transition: all 140ms ease;
+  /* Transitions — courbe standard « ease-out » douce et moderne (micro-interactions homogènes). */
+  --transition: all 170ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Couleurs par profil */
   --prmp-color   : #667eea;
@@ -117,6 +118,32 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Sélection de texte — teinte de marque, cohérente sur toute l'application. */
+::selection { background: rgba(102, 126, 234, 0.2); color: var(--n-900); }
+
+/* Barres de défilement fines et discrètes (WebKit) — touche moderne, partout. */
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--n-200);
+  border-radius: var(--radius-full);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--n-300); }
+
+/* Focus clavier net et élégant sur les éléments interactifs (accessibilité), sans cerner les clics souris.
+   Les champs de formulaire gardent leur halo dédié (.form-control:focus). */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--p-400);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 h1, h2, h3, h4 {
@@ -596,7 +623,7 @@ td {
 }
 
 tbody tr {
-  transition: background 120ms;
+  transition: background 160ms var(--ease-out);
 
   &:hover { background: var(--p-50); }
   &:last-child td { border-bottom: none; }
@@ -660,9 +687,11 @@ tbody tr {
   transition: var(--transition);
   outline: none;
 
+  &:hover:not(:focus):not(:disabled) { border-color: var(--n-300); }
+
   &:focus {
     border-color: var(--p-600);
-    box-shadow: 0 0 0 3px rgba(102,126,234,.15);
+    box-shadow: 0 0 0 3.5px rgba(102, 126, 234, 0.14);
   }
 
   &::placeholder { color: var(--n-300); }
@@ -735,6 +764,9 @@ textarea.form-control {
     transform: none !important;
     box-shadow: none !important;
   }
+
+  /* Retour tactile au clic (les variantes à relief conservent leur élévation au survol). */
+  &:active:not(:disabled) { transform: translateY(1px) scale(0.99); }
 
   &.btn-sm {
     font-size: var(--text-sm);
@@ -841,6 +873,8 @@ textarea.form-control {
   font-weight: 700;
   letter-spacing: .04em;
   white-space: nowrap;
+  /* Cerné discret assorti à la variante → pastilles plus nettes et pro (sans décaler la mise en page). */
+  border: 1px solid transparent;
 
   &.badge-dot::before {
     content: '';
@@ -850,24 +884,24 @@ textarea.form-control {
     flex-shrink: 0;
   }
 
-  &.badge-primary  { background: var(--p-50);        color: var(--p-600); }
-  &.badge-success  { background: var(--success-bg);  color: var(--success-text); }
-  &.badge-warning  { background: var(--warning-bg);  color: var(--warning-text); }
-  &.badge-danger   { background: var(--danger-bg);   color: var(--danger-text); }
-  &.badge-neutral  { background: var(--n-100);       color: var(--n-500); }
-  &.badge-info     { background: var(--info-bg);     color: var(--info-text); }
+  &.badge-primary  { background: var(--p-50);        color: var(--p-600);        border-color: var(--p-200); }
+  &.badge-success  { background: var(--success-bg);  color: var(--success-text); border-color: var(--success-bdr); }
+  &.badge-warning  { background: var(--warning-bg);  color: var(--warning-text); border-color: var(--warning-bdr); }
+  &.badge-danger   { background: var(--danger-bg);   color: var(--danger-text);  border-color: var(--danger-bdr); }
+  &.badge-neutral  { background: var(--n-100);       color: var(--n-500);        border-color: var(--n-200); }
+  &.badge-info     { background: var(--info-bg);     color: var(--info-text);    border-color: var(--info-bdr); }
 
   /* Statuts dossier */
-  &.badge-brouillon  { background: var(--n-100);       color: var(--n-500); }
-  &.badge-soumis     { background: var(--info-bg);     color: var(--info-text); }
-  &.badge-prevu      { background: var(--info-bg);     color: var(--info-text); }
-  &.badge-dispatche  { background: var(--p-50);        color: var(--p-600); }
-  &.badge-signe      { background: var(--success-bg);  color: var(--success-text); }
-  &.badge-cloture    { background: var(--n-100);       color: var(--n-500); }
-  &.badge-refuse     { background: var(--danger-bg);   color: var(--danger-text); }
-  &.badge-accepte    { background: var(--success-bg);  color: var(--success-text); }
-  &.badge-attente    { background: var(--warning-bg);  color: var(--warning-text); }
-  &.badge-en-cours   { background: var(--success-bg);  color: var(--success-text); }
+  &.badge-brouillon  { background: var(--n-100);       color: var(--n-500);        border-color: var(--n-200); }
+  &.badge-soumis     { background: var(--info-bg);     color: var(--info-text);    border-color: var(--info-bdr); }
+  &.badge-prevu      { background: var(--info-bg);     color: var(--info-text);    border-color: var(--info-bdr); }
+  &.badge-dispatche  { background: var(--p-50);        color: var(--p-600);        border-color: var(--p-200); }
+  &.badge-signe      { background: var(--success-bg);  color: var(--success-text); border-color: var(--success-bdr); }
+  &.badge-cloture    { background: var(--n-100);       color: var(--n-500);        border-color: var(--n-200); }
+  &.badge-refuse     { background: var(--danger-bg);   color: var(--danger-text);  border-color: var(--danger-bdr); }
+  &.badge-accepte    { background: var(--success-bg);  color: var(--success-text); border-color: var(--success-bdr); }
+  &.badge-attente    { background: var(--warning-bg);  color: var(--warning-text); border-color: var(--warning-bdr); }
+  &.badge-en-cours   { background: var(--success-bg);  color: var(--success-text); border-color: var(--success-bdr); }
 }
 
 /* ══════════════════════════════════════════
@@ -888,7 +922,7 @@ textarea.form-control {
 
 .modal {
   background: #fff;
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-lg);
   box-shadow:
     0 0 0 0.5px var(--p-200),
     var(--shadow-xl);
@@ -1139,6 +1173,8 @@ textarea.form-control {
   gap: 9px;
   margin-bottom: 14px;
   border: 0.5px solid;
+  /* Barre d'accent colorée à gauche (reprend la couleur de la variante) — plus premium. */
+  border-left-width: 3px;
 
   i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
 
@@ -1317,6 +1353,27 @@ textarea.form-control {
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Squelette de chargement (placeholder animé) — alternative moderne aux « Chargement… » textuels.
+   Usage : <div class="skeleton skeleton-text"></div> (barres) — s'adopte progressivement par écran. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--n-100);
+  border-radius: var(--radius-sm);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+.skeleton-text { height: 0.75rem; margin: 0.35rem 0; }
+.skeleton-title { height: 1.1rem; width: 40%; margin-bottom: 0.6rem; }
+@keyframes skeleton-shimmer { 100% { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .skeleton::after { animation: none; } }
 
 /* ══════════════════════════════════════════
    ÉTATS VIDES

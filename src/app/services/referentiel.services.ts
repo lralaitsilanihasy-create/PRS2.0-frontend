@@ -18,6 +18,7 @@ import {
   Profile,
   RegleAlerte,
   RegleAnomalie,
+  TypeDmc,
   TypeDossier,
   TypePieceJointe,
 } from '../models';
@@ -93,6 +94,12 @@ export class ModePassationService extends CrudService<ModePassation> {
 @Injectable({ providedIn: 'root' })
 export class NatureService extends CrudService<Nature> {
   protected readonly resource = 'natures';
+}
+
+/** Types de DMC (`/api/type-dmc`) — référentiel administrable ; le mapping mode→type vit sur `ModePassation.idTypeDmc`. */
+@Injectable({ providedIn: 'root' })
+export class TypeDmcService extends CrudService<TypeDmc> {
+  protected readonly resource = 'type-dmc';
 }
 
 @Injectable({ providedIn: 'root' })

@@ -6,7 +6,7 @@ export interface NavItem {
   /** Chemin de route (implémenté progressivement aux étapes suivantes). */
   path: string;
   icon?: string;
-  /** Sous-entrées affichées en retrait sous cette entrée (un seul niveau). */
+  /** Sous-entrées affichées en retrait sous cette entrée (jusqu'à deux niveaux d'imbrication). */
   children?: NavItem[];
 }
 
@@ -22,16 +22,10 @@ export interface NavItem {
 export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   PRMP: [
     { label: 'Tableau de bord', path: '/prmp/tableau-de-bord', icon: '▤' },
-    {
-      label: 'Mes PPM',
-      path: '/prmp/ppm',
-      icon: '📄',
-      children: [
-        { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: '🗒' },
-        { label: 'Mes PPM & marchés', path: '/prmp/ppm-marches', icon: '🗂' },
-      ],
-    },
+    // « Mes dossiers » = page dédiée (cartes type → statut) ; l'arborescence s'affiche à l'écran.
+    { label: 'Mes dossiers', path: '/prmp/dossiers', icon: '🗂' },
     { label: 'Soumettre un dossier', path: '/prmp/soumettre-dossier', icon: '📨' },
+    { label: 'Créer une UGPM', path: '/prmp/creer-ugpm', icon: '👤' },
     { label: 'Dossiers à rectifier', path: '/prmp/a-rectifier', icon: '✏' },
     { label: 'Dossiers vérifiés', path: '/prmp/dossiers-verifies', icon: '✅' },
     { label: 'Mes lettres de renvoi', path: '/prmp/lettre-renvois', icon: '✉' },
@@ -107,6 +101,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   ADMINISTRATEUR: [
     { label: 'Tableau de bord global', path: '/admin/tableau-de-bord', icon: '▤' },
+    { label: 'Inscriptions en attente', path: '/admin/inscriptions', icon: '📝' },
     { label: 'Référentiels', path: '/admin/referentiels', icon: '⚙' },
     { label: 'Comptes & hiérarchie', path: '/admin/comptes', icon: '👥' },
     { label: 'PPM & marchés', path: '/admin/ppm-marches', icon: '🗂' },

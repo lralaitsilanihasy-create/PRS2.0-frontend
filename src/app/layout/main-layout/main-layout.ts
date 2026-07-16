@@ -250,14 +250,29 @@ export class MainLayout {
     this.openGroups.set(next);
   }
 
-  /** Au chargement, ouvre le sous-menu contenant la page active. */
+  /** Au chargement, ouvre les sous-menus (à tout niveau) contenant la page active. */
   private initialOpenGroups(): Set<string> {
-    const url = this.router.url;
     const open = new Set<string>();
-    for (const item of navFor(this.auth.role())) {
-      if (item.children?.some((c) => url.startsWith(c.path))) open.add(item.path);
-    }
+    this.collectOpenGroups(navFor(this.auth.role()), this.router.url, open);
     return open;
+  }
+  /**
+   * Ajoute à `open` le chemin de chaque groupe (à n'importe quel niveau) dont un descendant **feuille**
+   * correspond à `url`. Retourne `true` si un élément de `items` est actif (pour la remontée récursive).
+   */
+  private collectOpenGroups(items: NavItem[], url: string, open: Set<string>): boolean {
+    let active = false;
+    for (const item of items) {
+      if (item.children?.length) {
+        if (this.collectOpenGroups(item.children, url, open)) {
+          open.add(item.path);
+          active = true;
+        }
+      } else if (url.startsWith(item.path)) {
+        active = true;
+      }
+    }
+    return active;
   }
 
   toggleSidebar(): void {

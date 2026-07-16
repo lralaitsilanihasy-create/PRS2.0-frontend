@@ -154,6 +154,7 @@ import {
     .rd-form { padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; }
     .rd-section { margin: 0 0 0.75rem; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
     .rd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 48rem) { .rd-grid { grid-template-columns: 1fr; } }
     .rd-grid .form-group { margin-bottom: 0; }
     .rd-col-full { grid-column: 1 / -1; }
     .rd-marche { padding: 0.75rem 0; border-top: 1px solid var(--c-100); }

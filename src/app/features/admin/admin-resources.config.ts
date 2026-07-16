@@ -20,7 +20,9 @@ import {
   RegleAnomalieService,
   SessionUtilisateurService,
   SoaBeneficiaireService,
+  TypeDmcService,
   TypeDossierService,
+  TypePieceJointeService,
 } from '../../services';
 
 /** Une entrée navigable de l'espace admin : slug d'URL + configuration CRUD. */
@@ -115,10 +117,10 @@ export const REFERENTIELS: AdminResource[] = [
         { label: 'Affectations PRMP', path: '/admin/comptes/prmp-entites', queryParam: 'entite', valueKey: 'idEntiteContract' },
       ],
       fields: [
-        { key: 'idEntiteContract', label: 'Identifiant', type: 'number', pk: true, required: true },
+        { key: 'idEntiteContract', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true },
         { key: 'libelleEntite', label: 'Libellé', required: true },
         { key: 'adresse', label: 'Adresse', required: true },
-        { key: 'categorieEntite', label: 'Catégorie' },
+        { key: 'categorieEntite', label: 'Catégorie', optionsFromData: true },
         {
           key: 'idOrganigramme',
           label: 'Organigramme',
@@ -132,7 +134,7 @@ export const REFERENTIELS: AdminResource[] = [
           type: 'number',
           ref: { service: EntiteContractService, idKey: 'idEntiteContract', labelKeys: ['libelleEntite'] },
         },
-        { key: 'niveauHierarchique', label: 'Niveau', type: 'number' },
+        { key: 'niveauHierarchique', label: 'Niveau', type: 'number', optionsFromData: true },
       ],
     },
   },
@@ -180,6 +182,7 @@ export const REFERENTIELS: AdminResource[] = [
         { key: 'libelle', label: 'Libellé' },
         { key: 'description', label: 'Description' },
         { key: 'publiciteRequise', label: 'Publicité requise', type: 'boolean' },
+        { key: 'declencheAgpm', label: 'Déclenche AGPM', type: 'boolean' },
         { key: 'delaiMinJours', label: 'Délai min. (jours)', type: 'number' },
         { key: 'baseLegale', label: 'Base légale' },
       ],
@@ -196,6 +199,46 @@ export const REFERENTIELS: AdminResource[] = [
         { key: 'idNature', label: 'Identifiant', type: 'number', pk: true, required: true },
         { key: 'libelle', label: 'Libellé' },
         { key: 'description', label: 'Description' },
+      ],
+    },
+  },
+  {
+    slug: 'type-dmc',
+    config: {
+      title: 'Types de DMC',
+      service: TypeDmcService,
+      idKey: 'idTypeDmc',
+      writeCapability: 'REFERENTIEL_WRITE',
+      note: 'Types de dossier de mise en concurrence (DAO, DC, BC…). Le type d’un marché est dérivé de son mode de passation (voir « Mapping mode → type de DMC »).',
+      fields: [
+        // idTypeDmc est une PK IDENTITY (générée par la base) → masquée à la création.
+        { key: 'idTypeDmc', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true },
+        { key: 'code', label: 'Code', required: true },
+        { key: 'libelle', label: 'Libellé', required: true },
+        { key: 'actif', label: 'Actif', type: 'boolean' },
+      ],
+    },
+  },
+  {
+    slug: 'type-piece-jointes',
+    config: {
+      title: 'Types de pièces jointes',
+      service: TypePieceJointeService,
+      idKey: 'idTypePiece',
+      writeCapability: 'REFERENTIEL_WRITE',
+      note: 'Pièces jointes attendues par type de dossier (ex. PPM). « Obligatoire » = exigée à la soumission du dossier ; « Ordre » fixe l’ordre d’affichage dans le formulaire de saisie.',
+      fields: [
+        // idTypePiece est une PK IDENTITY (générée par la base) → masquée à la création (envoyée mais ignorée serveur).
+        { key: 'idTypePiece', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true },
+        { key: 'libellePiece', label: 'Libellé', required: true },
+        {
+          key: 'idTypeDossier',
+          label: 'Type de dossier',
+          required: true,
+          ref: { service: TypeDossierService, idKey: 'idTypeDossier', labelKeys: ['libelleType'] },
+        },
+        { key: 'obligatoire', label: 'Obligatoire', type: 'boolean', required: true },
+        { key: 'ordre', label: 'Ordre', type: 'number' },
       ],
     },
   },
@@ -283,6 +326,8 @@ export const COMPTES: AdminResource[] = [
   {
     slug: 'controleurs',
     config: {
+      // Écran contrôleur dédié (fiche + photo inline via multipart) : ce CRUD générique n'est plus routé
+      // pour les contrôleurs ; la config sert au libellé du lien de la section « Comptes ».
       title: 'Contrôleurs',
       service: ControleurService,
       idKey: 'imControleur',
@@ -309,19 +354,20 @@ export const COMPTES: AdminResource[] = [
       writeCapability: 'COMPTE_WRITE',
       rowActions: [
         { label: 'Voir ses entités', path: '/admin/comptes/prmp-entites', queryParam: 'prmp', valueKey: 'idPrmp' },
+        { label: 'Pièces jointes', path: '/admin/comptes/prmp-pieces', queryParam: 'prmp', valueKey: 'idPrmp' },
       ],
       fields: [
         { key: 'idPrmp', label: 'Matricule (identifiant)', pk: true, required: true },
         { key: 'nomPrmp', label: 'Nom', required: true },
         { key: 'prenomsPrmp', label: 'Prénoms', required: true },
-        { key: 'arreteNomin', label: 'Arrêté de nomination', required: true },
+        { key: 'arreteNomin', label: 'Arrêté de nomination (référence)', required: true },
         { key: 'dateNomin', label: 'Date de nomination', type: 'date', required: true },
         { key: 'cin', label: 'CIN', required: true },
-        { key: 'dateCin', label: 'Date CIN', type: 'date', required: true },
-        { key: 'lieuCin', label: 'Lieu CIN', required: true },
+        { key: 'dateCin', label: 'Date du CIN', type: 'date', required: true },
+        { key: 'lieuCin', label: 'Lieu du CIN', required: true },
         { key: 'emailPrmp', label: 'Email', required: true },
         { key: 'telPrmp', label: 'Téléphone', required: true },
-        { key: 'idLocalite', label: 'Localité', required: true },
+        // Pas de « Localité » : PrmpDto ne porte plus idLocalite (la PRMP n'a pas de localité propre).
       ],
     },
   },
@@ -338,7 +384,7 @@ export const COMPTES: AdminResource[] = [
         { label: 'Arbre des entités', path: '/admin/referentiels/entite-arbre', queryParam: 'organigramme', valueKey: 'idOrganigramme' },
       ],
       fields: [
-        { key: 'idOrganigramme', label: 'Identifiant', type: 'number', pk: true, required: true },
+        { key: 'idOrganigramme', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true },
         {
           key: 'idMinistere',
           label: 'Ministère',

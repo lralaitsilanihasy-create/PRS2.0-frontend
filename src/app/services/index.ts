@@ -11,4 +11,5 @@ export * from './pilotage.services';
 export * from './transparence.services';
 export * from './admin.services';
 export * from './compte-auth.services';
+export * from './inscription.services';
 export * from './reference-lookup.service';

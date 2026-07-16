@@ -25,7 +25,7 @@ import { StatutBadge } from '../../shared/circuit';
       @if (loading()) {
         <p class="cnm-muted">Chargement…</p>
       } @else {
-        <table class="cnm-table">
+        <div class="table-responsive"><table class="cnm-table">
           <thead>
             <tr><th>Référence dossier</th><th>Date lettre</th><th>Statut</th><th></th></tr>
           </thead>
@@ -65,7 +65,7 @@ import { StatutBadge } from '../../shared/circuit';
               <tr><td colspan="4" class="cnm-muted">Aucun projet de lettre de renvoi.</td></tr>
             }
           </tbody>
-        </table>
+        </table></div>
       }
     </section>
   `,

@@ -5,6 +5,16 @@
     gap: 0.5rem;
   }
 
+  &__head-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__search {
+    min-width: 16rem;
+  }
+
   &__filter {
     display: flex;
     align-items: center;
@@ -46,8 +56,9 @@
 
   &__form {
     background: #fff;
-    border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-xl);
+    /* Rayon aligné sur les modals du design system (cohérence globale). */
+    border-radius: var(--radius-lg);
+    box-shadow: 0 0 0 0.5px var(--p-200), var(--shadow-xl);
     padding: 1.5rem;
     width: 100%;
     max-width: min(52rem, 96vw);
@@ -61,8 +72,9 @@
   &__form-title {
     margin: 0 0 0.5rem;
     font-size: var(--text-lg);
-    font-weight: 700;
-    color: var(--c-800);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--n-800);
   }
 
   &__form-actions {

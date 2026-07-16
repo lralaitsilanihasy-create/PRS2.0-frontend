@@ -30,7 +30,22 @@ export interface FieldConfig {
   required?: boolean;
   /** Clé primaire : éditable à la création, verrouillée en modification. */
   pk?: boolean;
-  /** Si défini, la valeur (un id) est affichée via le libellé du référentiel lié. */
+  /**
+   * PK numérique **auto-générée côté client** (`max(ids existants) + 1`) : le champ est masqué
+   * du formulaire mais reste envoyé (le contrat exige une PK assignée par le client au POST).
+   * À réserver aux PK numériques sans signification métier (ex. `idEntiteContract`).
+   */
+  autoId?: boolean;
+  /**
+   * Rend le champ en **liste déroulante** alimentée par les valeurs distinctes déjà présentes
+   * dans la ressource (pas d'énumération figée). Pour les champs libres sans référentiel dédié
+   * (ex. `categorieEntite`, `niveauHierarchique`).
+   */
+  optionsFromData?: boolean;
+  /**
+   * Si défini, la valeur (un id) est affichée via le libellé du référentiel lié ; en formulaire,
+   * le champ devient une **liste déroulante** des enregistrements du référentiel.
+   */
   ref?: FieldRef;
   /** Masque la colonne dans la liste (le champ reste dans le formulaire, ex. PK). */
   hideInList?: boolean;
@@ -95,6 +110,11 @@ export interface CrudResourceConfig {
   rowActions?: RowAction[];
   /** Filtres client par query param (ex. afficher les entités d'un organigramme). */
   filters?: CrudFilter[];
+  /**
+   * Active une **recherche par nom côté serveur** (`GET /api/{resource}/par-nom/{nom}`).
+   * À réserver aux ressources qui exposent ce sous-chemin (ex. contrôleurs, PRMP).
+   */
+  searchByName?: { placeholder?: string };
   /** Note d'aide affichée en tête (ex. précondition de circuit). */
   note?: string;
 }

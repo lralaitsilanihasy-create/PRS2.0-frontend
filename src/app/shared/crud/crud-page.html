@@ -6,9 +6,19 @@
         <app-lecture-badge [for]="config.writeCapability" />
       }
     </h1>
-    @if (canWrite()) {
-      <button type="button" class="btn btn-primary" (click)="openCreate()">+ Nouveau</button>
-    }
+    <div class="crud__head-actions">
+      @if (config.searchByName) {
+        <input
+          type="search"
+          class="form-control crud__search"
+          [placeholder]="config.searchByName.placeholder ?? 'Rechercher par nom…'"
+          (input)="onSearch($any($event.target).value)"
+        />
+      }
+      @if (canWrite()) {
+        <button type="button" class="btn btn-primary" (click)="openCreate()">+ Nouveau</button>
+      }
+    </div>
   </header>
 
   @if (config.note) {
@@ -75,24 +85,40 @@
         </h2>
 
         <div class="cnm-form-grid">
-          @for (f of config.fields; track f.key) {
+          @for (f of formFields; track f.key) {
             <label class="form-group">
               <span class="form-label">
                 {{ f.label }}@if (f.required) {<span class="crud__req">*</span>}
               </span>
 
-              @switch (f.type) {
-                @case ('boolean') {
-                  <input type="checkbox" [formControlName]="f.key" />
-                }
-                @case ('number') {
-                  <input type="number" class="form-control" [formControlName]="f.key" />
-                }
-                @case ('date') {
-                  <input type="date" class="form-control" [formControlName]="f.key" />
-                }
-                @default {
-                  <input type="text" class="form-control" [formControlName]="f.key" />
+              @if (f.ref) {
+                <select class="form-control" [formControlName]="f.key">
+                  <option [ngValue]="null">— Sélectionner —</option>
+                  @for (opt of refOptionsFor(f.key); track opt.value) {
+                    <option [ngValue]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+              } @else if (f.optionsFromData) {
+                <select class="form-control" [formControlName]="f.key">
+                  <option [ngValue]="null">— Sélectionner —</option>
+                  @for (opt of dataOptionsFor(f); track opt.value) {
+                    <option [ngValue]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+              } @else {
+                @switch (f.type) {
+                  @case ('boolean') {
+                    <input type="checkbox" [formControlName]="f.key" />
+                  }
+                  @case ('number') {
+                    <input type="number" class="form-control" [formControlName]="f.key" />
+                  }
+                  @case ('date') {
+                    <input type="date" class="form-control" [formControlName]="f.key" />
+                  }
+                  @default {
+                    <input type="text" class="form-control" [formControlName]="f.key" />
+                  }
                 }
               }
 

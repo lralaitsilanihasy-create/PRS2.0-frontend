@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
@@ -16,17 +17,19 @@ import {
 import { DetailPpmModal } from '../../shared/prmp';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
+/** Groupe de statut du menu « Mes dossiers » : brouillons vs tout ce qui est soumis (non brouillon). */
+type Groupe = 'brouillon' | 'soumis';
+
 /**
- * « Mes brouillons » (PRMP) : sélection d'un dossier déjà créé (PPM/DAO/MAOO) en BROUILLON,
- * pour l'ouvrir (édition via l'écran de saisie) ou le soumettre.
+ * Liste des dossiers d'un **type** donné (référentiel `type-dossier`) filtrés par **groupe de statut**
+ * (`brouillon` = BROUILLON ; `soumis` = tout sauf BROUILLON). Route : `/prmp/dossiers/:type/:groupe`.
+ * Écran générique du menu « Mes dossiers » (arborescence type → statut construite dynamiquement).
  *
- * Liste = GET /api/dossiers filtré sur statut === 'BROUILLON' (le backend ne renvoie que les
- * dossiers de la PRMP propriétaire). Type & localité résolus en libellés. La « référence »
- * d'un brouillon n'existe pas encore (générée à la soumission) : on affiche la référence du
- * PPM si disponible, sinon « — ». Soumission via POST /api/dossiers/{id}/soumettre.
+ * Liste = `GET /api/dossiers` (déjà scopé à la PRMP propriétaire par le backend), filtrée côté client
+ * par type + statut. Pour un brouillon : ouvrir/soumettre/supprimer ; pour un dossier soumis : consulter.
  */
 @Component({
-  selector: 'app-mes-brouillons',
+  selector: 'app-dossiers-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DetailPpmModal],
   template: `
@@ -34,7 +37,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       <header class="page-header">
         <div>
           <div class="page-subtitle">Domaine PRMP</div>
-          <h1 class="page-title">Mes brouillons</h1>
+          <h1 class="page-title">{{ titre() }}</h1>
         </div>
       </header>
 
@@ -45,44 +48,46 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
           <table>
             <thead>
               <tr>
-                <th>#</th><th>Type</th><th>Référence</th><th>Localité</th><th class="r">Actions</th>
+                <th>#</th><th>Référence</th><th>Statut</th><th>Localité</th><th class="r">Actions</th>
               </tr>
             </thead>
             <tbody>
-              @for (d of brouillons(); track d.idDossier) {
+              @for (d of dossiers(); track d.idDossier) {
                 <tr>
                   <td class="td-ref">{{ d.idDossier }}</td>
-                  <td>{{ typeLabel(d) }}</td>
                   <td>{{ reference(d) }}</td>
+                  <td>{{ d.statut || '—' }}</td>
                   <td>{{ localiteLabel(d) }}</td>
                   <td>
                     <div class="td-actions actions-end">
                       <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrir(d)">Ouvrir</button>
-                      <!-- Soumission réservée à la PRMP ; l'UGPM ouvre/édite mais ne soumet pas (backend 403). -->
-                      @if (estPrmp()) {
+                      @if (groupe() === 'brouillon') {
+                        <!-- Soumission réservée à la PRMP ; l'UGPM ouvre/édite mais ne soumet pas (backend 403). -->
+                        @if (estPrmp()) {
+                          <button
+                            type="button"
+                            class="btn btn-success btn-sm"
+                            [disabled]="submittingId() === d.idDossier || ppmManquant(d)"
+                            [title]="ppmManquant(d) ? 'Impossible de soumettre : aucun PPM rattaché. Ouvrez le dossier pour ajouter un PPM.' : ''"
+                            (click)="soumettre(d)"
+                          >
+                            Soumettre
+                          </button>
+                        }
                         <button
                           type="button"
-                          class="btn btn-success btn-sm"
-                          [disabled]="submittingId() === d.idDossier || ppmManquant(d)"
-                          [title]="ppmManquant(d) ? 'Impossible de soumettre : aucun PPM rattaché à ce dossier. Ouvrez le dossier pour ajouter un PPM.' : ''"
-                          (click)="soumettre(d)"
+                          class="btn btn-danger btn-sm"
+                          [disabled]="suppression() === d.idDossier"
+                          (click)="demanderSuppression(d)"
                         >
-                          Soumettre
+                          Supprimer
                         </button>
                       }
-                      <button
-                        type="button"
-                        class="btn btn-danger btn-sm"
-                        [disabled]="suppression() === d.idDossier"
-                        (click)="demanderSuppression(d)"
-                      >
-                        Supprimer
-                      </button>
                     </div>
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="empty-cell">Aucun brouillon. Saisissez un dossier depuis « Saisir &amp; soumettre ».</td></tr>
+                <tr><td colspan="5" class="empty-cell">{{ messageVide() }}</td></tr>
               }
             </tbody>
           </table>
@@ -116,7 +121,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       <app-detail-ppm-modal
         [idDossier]="d.idDossier"
         [idPpm]="d.idPpm"
-        [modeEdition]="true"
+        [modeEdition]="groupe() === 'brouillon'"
         (fermer)="fermerDetail()"
         (modifie)="onModifie()"
       />
@@ -128,7 +133,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     .confirm-modal { max-width: 28rem; }
   `,
 })
-export class MesBrouillons {
+export class DossiersListe {
+  private readonly route = inject(ActivatedRoute);
   private readonly dossierService = inject(DossierService);
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);
@@ -137,33 +143,44 @@ export class MesBrouillons {
   private readonly router = inject(Router);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly auth = inject(AuthService);
-  /** Seule la PRMP soumet ; l'UGPM ouvre/édite ses brouillons mais ne soumet pas (bouton masqué). */
   readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
 
-  readonly brouillons = signal<Dossier[]>([]);
+  /** Type de dossier (idTypeDossier) et groupe de statut, lus dans l'URL (réactifs aux changements de menu). */
+  readonly type = signal<string>('');
+  readonly groupe = signal<Groupe>('brouillon');
+
+  readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);
   readonly submittingId = signal<number | null>(null);
-  /** Dossier en attente de confirmation de suppression (null = pas de modale). */
   readonly confirmDossier = signal<Dossier | null>(null);
-  /** idDossier en cours de suppression (désactive les boutons). */
   readonly suppression = signal<number | null>(null);
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   private readonly ppmRef = signal<Map<number, string>>(new Map());
-  /**
-   * idDossier → idPpm ; permet d'ouvrir le détail PPM d'un brouillon dans le modal partagé.
-   * Résolu via `GET /api/marches` (MarcheDto porte idPpm, non filtré par statut pour le propriétaire),
-   * car `GET /api/ppms` EXCLUT les BROUILLON (scoping serveur) et ne permet donc pas ce mapping.
-   */
+  /** idDossier → idPpm (via `GET /api/marches`, MarcheDto portant idPpm) pour ouvrir le détail PPM. */
   private readonly ppmParDossier = signal<Map<number, number>>(new Map());
 
-  /** Détail PPM ouvert (null = fermé) ; toujours en mode édition (brouillon = périmètre PRMP). */
   readonly detail = signal<{ idDossier: number; idPpm: number } | null>(null);
+
+  /** Libellé du type courant (référentiel), repli sur l'id. */
+  readonly typeLabel = computed(() => this.typeMap().get(this.type()) ?? this.type());
+  readonly titre = computed(() => `${this.typeLabel()} — ${this.groupe() === 'brouillon' ? 'Brouillons' : 'Soumis'}`);
+  readonly messageVide = computed(() =>
+    this.groupe() === 'brouillon'
+      ? 'Aucun brouillon de ce type. Saisissez un dossier depuis « Saisir & soumettre ».'
+      : 'Aucun dossier soumis de ce type.',
+  );
 
   constructor() {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
-    // Charge à l'init ET à chaque changement signalé (ex. suppression depuis « Mes PPM & marchés »).
+    // Réagit aux changements d'URL (navigation entre entrées du menu, même composant réutilisé).
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((p) => {
+      this.type.set(p.get('type') ?? '');
+      this.groupe.set(p.get('groupe') === 'soumis' ? 'soumis' : 'brouillon');
+      this.charger();
+    });
+    // Recharge quand un autre écran signale un changement (suppression, soumission…).
     effect(() => {
       this.dossiersRefresh.revision();
       this.charger();
@@ -171,21 +188,21 @@ export class MesBrouillons {
   }
 
   private charger(): void {
+    const type = this.type();
+    if (!type) return;
+    const brouillon = this.groupe() === 'brouillon';
     this.loading.set(true);
-    this.dossierService.list('BROUILLON').subscribe({
+    // `list('BROUILLON')` côté serveur pour les brouillons ; sinon liste complète filtrée « non brouillon ».
+    this.dossierService.list(brouillon ? 'BROUILLON' : undefined).subscribe({
       next: (rows) => {
-        this.brouillons.set(rows);
+        this.dossiers.set(
+          rows.filter((d) => d.idTypeDossier === type && (brouillon ? d.statut === 'BROUILLON' : d.statut !== 'BROUILLON')),
+        );
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
-    // Référence PPM (affichage) : `GET /api/ppms` — ne couvre pas les BROUILLON, sans conséquence
-    // (leur refeDossier est nul avant réception → « — »).
-    this.ppmService.list().subscribe((ppms) => {
-      this.ppmRef.set(new Map(ppms.map((p) => [p.idDossier, p.reference])));
-    });
-    // idDossier → idPpm résolu via les marchés (idPpm porté par MarcheDto, non filtré par statut) :
-    // permet d'ouvrir le détail d'un brouillon PPM directement dans le modal.
+    this.ppmService.list().subscribe((ppms) => this.ppmRef.set(new Map(ppms.map((p) => [p.idDossier, p.reference]))));
     this.marcheService.list().subscribe((marches) => {
       const ids = new Map<number, number>();
       for (const m of marches) ids.set(m.idDossier, m.idPpm);
@@ -193,42 +210,34 @@ export class MesBrouillons {
     });
   }
 
-  typeLabel(d: Dossier): string {
-    return d.idTypeDossier ? this.typeMap().get(d.idTypeDossier) ?? d.idTypeDossier : '—';
-  }
   localiteLabel(d: Dossier): string {
     return d.idLocalite ? this.localiteMap().get(d.idLocalite) ?? d.idLocalite : '—';
   }
   reference(d: Dossier): string {
     return d.refeDossier || this.ppmRef().get(d.idDossier) || '—';
   }
-
-  /**
-   * Dossier de type PPM sans contenu rattaché → soumission impossible (409, §3.1).
-   * Dérivé de `ppmParDossier` (marchés) : `GET /api/ppms` exclut les BROUILLON et ne peut donc
-   * servir ce test. Limite : un brouillon PPM valide mais sans aucun marché est aussi signalé
-   * « manquant » (aucun endpoint documenté ne mappe idDossier → idPpm dans ce cas).
-   */
+  /** Dossier PPM sans contenu rattaché → soumission impossible (409, §3.1). */
   ppmManquant(d: Dossier): boolean {
     return d.idTypeDossier === 'PPM' && !this.ppmParDossier().has(d.idDossier);
   }
 
   /**
-   * « Ouvrir » : affiche le détail PPM dans le modal partagé (mode édition). Repli sur le formulaire
-   * d'édition pour un dossier **sans PPM** (DAO/MAOO), où il n'y a pas de détail PPM à présenter.
+   * « Ouvrir » : détail PPM dans le modal partagé (édition si brouillon, lecture sinon). Pour un dossier
+   * **sans PPM** (DAO/MAOO), repli sur le formulaire d'édition — uniquement pertinent pour un brouillon.
    */
   ouvrir(d: Dossier): void {
     const idPpm = this.ppmParDossier().get(d.idDossier);
     if (idPpm != null) {
       this.detail.set({ idDossier: d.idDossier, idPpm });
-    } else {
+    } else if (this.groupe() === 'brouillon') {
       this.router.navigate(['/prmp/soumettre-dossier'], { queryParams: { reprendre: d.idDossier } });
+    } else {
+      this.toast.info('Aucun détail à afficher pour ce dossier (pas de PPM rattaché).');
     }
   }
   fermerDetail(): void {
     this.detail.set(null);
   }
-  /** Après une mutation dans le modal (ex. suppression PPM → cascade dossier) : recharge la liste. */
   onModifie(): void {
     this.charger();
     this.dossiersRefresh.notifierChangement();
@@ -239,12 +248,14 @@ export class MesBrouillons {
     this.dossierService.soumettre(d.idDossier).subscribe({
       next: (res) => {
         this.toast.success(`Dossier soumis${res.refeDossier ? ' · réf. ' + res.refeDossier : ''}.`);
-        this.router.navigate(['/prmp/tableau-de-bord']);
+        this.submittingId.set(null);
+        this.dossiersRefresh.notifierChangement();
+        this.charger();
       },
       error: (e: ApiError) => {
         this.submittingId.set(null);
-        // 403/409 → toast centralisé (intercepteur) ; 400 fieldErrors (ex. AGPM sur « piecesJointes »)
-        // n'y produit AUCUN toast (laissé au formulaire) : sans champ ici, on l'affiche nous-mêmes.
+        // Pas de formulaire ici pour porter les fieldErrors (ex. AGPM sur « piecesJointes ») : le toast
+        // centralisé est supprimé en 400 fieldErrors → on affiche nous-mêmes le détail du backend.
         const detail = e.fieldErrors ? Object.values(e.fieldErrors).join(' ') : '';
         this.toast.error(detail || e.message || 'Échec de la soumission.', 'Soumission impossible');
       },
@@ -255,22 +266,16 @@ export class MesBrouillons {
     this.confirmDossier.set(d);
   }
   annulerSuppression(): void {
-    if (this.suppression() === null) {
-      this.confirmDossier.set(null);
-    }
+    if (this.suppression() === null) this.confirmDossier.set(null);
   }
-  /** Confirme la suppression : DELETE /api/dossiers/{id} ; 204 → retire la ligne ; messages dédiés 409/403/404. */
   confirmerSuppression(): void {
     const d = this.confirmDossier();
-    if (!d) {
-      return;
-    }
+    if (!d) return;
     this.suppression.set(d.idDossier);
     this.dossierService.supprimer(d.idDossier).subscribe({
       next: () => {
         this.toast.success('Dossier supprimé avec succès.');
-        this.brouillons.update((arr) => arr.filter((x) => x.idDossier !== d.idDossier));
-        // Propage le retrait aux autres écrans (tableau de bord, Mes PPM & marchés…).
+        this.dossiers.update((arr) => arr.filter((x) => x.idDossier !== d.idDossier));
         this.dossiersRefresh.notifierSuppression(d.idDossier);
         this.suppression.set(null);
         this.confirmDossier.set(null);

@@ -41,3 +41,45 @@ export interface CompteAuthResume {
 export interface ReinitMotDePasseRequest {
   nouveauMotDePasse: string;
 }
+
+/** Entité déclarée dans une inscription PRMP (existante et/ou proposée). */
+export interface InscriptionEntiteDeclaree {
+  idEntiteContract?: number;
+  libelle?: string;
+  /** `true` si l'entité existante est encore disponible (non rattachée à une autre PRMP). */
+  disponible?: boolean;
+}
+
+/**
+ * Inscription en attente de validation Administrateur (`GET /api/inscriptions/en-attente`).
+ * Couvre les inscriptions **PRMP et UGPM** (`type`) ; une UGPM porte `idPrmpTutelle` et n'a pas d'entités.
+ */
+export interface InscriptionEnAttente {
+  login: string;
+  /** PRMP ou UGPM. */
+  type: 'PRMP' | 'UGPM';
+  /** Identifiant de l'acteur (matricule PRMP/UGPM), si exposé. */
+  refActeur?: string;
+  /**
+   * Identité — le backend type l'identité « en Prmp générique » : selon la sérialisation, les champs
+   * peuvent être unifiés (`nom`/`prenoms`/`email`) ou typés (`nomPrmp`/`nomUgpm`…). On lit les deux.
+   */
+  nom?: string;
+  prenoms?: string;
+  email?: string;
+  nomPrmp?: string;
+  prenomsPrmp?: string;
+  emailPrmp?: string;
+  nomUgpm?: string;
+  prenomsUgpm?: string;
+  emailUgpm?: string;
+  /** Renseigné pour une UGPM : matricule de la PRMP de tutelle. */
+  idPrmpTutelle?: string;
+  /** Entités déclarées (PRMP uniquement ; vide pour une UGPM). */
+  entitesDeclarees?: InscriptionEntiteDeclaree[];
+}
+
+/** Corps de POST /api/inscriptions/{login}/refuser. */
+export interface RefusInscriptionRequest {
+  motif: string;
+}

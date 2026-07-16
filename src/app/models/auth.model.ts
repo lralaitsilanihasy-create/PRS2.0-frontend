@@ -75,6 +75,31 @@ export interface RegisterPrmpV2Request {
   entitesNonListees: EntiteNonListee[];
 }
 
+/** PRMP du référentiel réduit public (`GET /api/auth/prmps`), pour le menu « PRMP de tutelle ». */
+export interface PrmpPublique {
+  idPrmp: string;
+  nomPrmp: string;
+  prenomsPrmp: string;
+}
+
+/** Part `data` (application/json) de l'auto-inscription UGPM multipart (public). */
+export interface RegisterUgpmRequest {
+  login: string;
+  motDePasse: string;
+  /** = matricule de l'UGPM (identifiant unifié). */
+  idUgpm: string;
+  libelle?: string;
+  nomUgpm: string;
+  prenomsUgpm: string;
+  cin: string;
+  dateCin: string;
+  lieuCin: string;
+  emailUgpm: string;
+  telUgpm: string;
+  /** PRMP de tutelle (= matricule) — obligatoire. */
+  idPrmpTutelle: string;
+}
+
 /** Réponse de POST /api/auth/register/prmp (compte créé inactif, en attente de validation). */
 export interface RegisterResponse {
   login: string;

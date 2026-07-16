@@ -55,7 +55,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       @if (loading()) {
         <p class="rec__info">Chargement…</p>
       } @else {
-        <table>
+        <div class="table-responsive"><table>
           <thead>
             <tr><th>#</th><th>Référence</th><th>Type</th><th>Localité</th><th>Statut</th><th>Action</th></tr>
           </thead>
@@ -82,7 +82,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
               <tr><td colspan="6" class="rec__info">Aucun dossier en attente de réception.</td></tr>
             }
           </tbody>
-        </table>
+        </table></div>
       }
     </section>
 

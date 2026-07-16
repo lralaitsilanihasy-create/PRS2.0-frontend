@@ -39,6 +39,14 @@ export abstract class CrudService<T, Id extends string | number = number> {
     return this.http.get<T>(`${this.baseUrl}/${id}`);
   }
 
+  /**
+   * `GET /api/{resource}/par-nom/{nom}` — recherche partielle par nom (contient, insensible à la casse).
+   * À n'utiliser que pour les ressources qui exposent ce sous-chemin (ex. contrôleurs, PRMP).
+   */
+  searchByName(nom: string): Observable<T[]> {
+    return this.http.get<T[]>(`${this.baseUrl}/par-nom/${encodeURIComponent(nom)}`);
+  }
+
   /** `POST /api/{resource}` — la clé primaire doit être présente dans `body` (sinon 400). */
   create(body: T): Observable<T> {
     return this.http.post<T>(this.baseUrl, body);

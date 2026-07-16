@@ -43,6 +43,12 @@
   font-size: var(--text-base);
 }
 
+/* 3ᵉ niveau (ex. Mes dossiers → PPM → Brouillons / Soumis) : indentation supplémentaire. */
+.nav-item--sub2 {
+  padding-left: 3.75rem;
+  font-size: var(--text-sm);
+}
+
 .nav-badge {
   margin-left: auto;
   min-width: 1.25rem;

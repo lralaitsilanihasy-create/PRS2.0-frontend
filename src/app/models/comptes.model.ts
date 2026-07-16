@@ -27,7 +27,17 @@ export interface Prmp {
   lieuCin: string;
   emailPrmp: string;
   telPrmp: string;
-  idLocalite: string;
+  // Pas d'idLocalite : la PRMP n'a pas de localité propre (dérivée de l'entité du dossier).
+}
+
+/**
+ * Corps de `POST /api/prmps` (Admin) : `PrmpDto` + **compte optionnel** (`login`/`motDePasse`).
+ * Fournis **ensemble** → crée aussi le compte PRMP **actif** (parité UGPM, connectable de suite).
+ * Un seul des deux → **400** ; `idPrmp` ou `login` déjà pris → **409**.
+ */
+export interface CreerPrmpRequest extends Prmp {
+  login?: string;
+  motDePasse?: string;
 }
 
 /**
@@ -48,6 +58,8 @@ export interface Ugpm {
   lieuCin: string;
   emailUgpm: string;
   telUgpm: string;
+  /** Login du compte associé, exposé en **lecture seule** (jamais le mot de passe) ; pré-remplit la réinitialisation. */
+  login?: string;
 }
 
 /**

@@ -26,19 +26,50 @@
         </button>
         @if (isOpen(item)) {
           @for (child of item.children; track child.path) {
-            <a
-              class="nav-item nav-item--sub"
-              [routerLink]="child.path"
-              routerLinkActive="active"
-            >
-              @if (child.icon) {
-                <span class="nav-icon" aria-hidden="true">{{ child.icon }}</span>
+            @if (child.children) {
+              <!-- Sous-groupe (2ᵉ niveau) : dépliable à son tour (ex. « PPM » → Brouillons / Soumis). -->
+              <button
+                type="button"
+                class="nav-item nav-item--sub nav-group"
+                [class.nav-group--open]="isOpen(child)"
+                [attr.aria-expanded]="isOpen(child)"
+                (click)="toggle(child)"
+              >
+                @if (child.icon) {
+                  <span class="nav-icon" aria-hidden="true">{{ child.icon }}</span>
+                }
+                <span class="nav-label">{{ child.label }}</span>
+                <span class="nav-chevron" aria-hidden="true">›</span>
+              </button>
+              @if (isOpen(child)) {
+                @for (gc of child.children; track gc.path) {
+                  <a
+                    class="nav-item nav-item--sub2"
+                    [routerLink]="gc.path"
+                    routerLinkActive="active"
+                  >
+                    <span class="nav-label">{{ gc.label }}</span>
+                    @if (countFor(gc.path) !== undefined) {
+                      <span [class]="'nav-badge ' + badgeSeverity(gc.path)">{{ countFor(gc.path) }}</span>
+                    }
+                  </a>
+                }
               }
-              <span class="nav-label">{{ child.label }}</span>
-              @if (countFor(child.path) !== undefined) {
-                <span [class]="'nav-badge ' + badgeSeverity(child.path)">{{ countFor(child.path) }}</span>
-              }
-            </a>
+            } @else {
+              <a
+                class="nav-item nav-item--sub"
+                [routerLink]="child.path"
+                routerLinkActive="active"
+              >
+                @if (child.icon) {
+                  <span class="nav-icon" aria-hidden="true">{{ child.icon }}</span>
+                }
+                <span class="nav-label">{{ child.label }}</span>
+                @if (countFor(child.path) !== undefined) {
+                  <span [class]="'nav-badge ' + badgeSeverity(child.path)">{{ countFor(child.path) }}</span>
+                }
+              </a>
+            }
           }
         }
       } @else {

@@ -5,10 +5,11 @@ import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Capm, Compte, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, ServiceBeneficiaire, SoaBeneficiaire, TypePieceJointe } from '../../models';
+import { Capm, Compte, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, ServiceBeneficiaire, SoaBeneficiaire, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
+  LotService,
   MarcheService,
   MarchePrevisionService,
   ModePassationService,
@@ -154,17 +155,19 @@ import { PpmMarchesTable } from './ppm-marches-table';
 
               @if (modeEdition) {
                 <div class="table-card">
-                  <table>
+                  <table class="dpm-marches">
                     <colgroup>
-                      <col />
-                      <col style="width:150px;" />
-                      <col style="width:170px;" />
-                      <col style="width:90px;" />
-                      <col style="width:220px;" />
+                      <col style="width:12%;" />
+                      <col style="width:24%;" />
+                      <col style="width:13%;" />
+                      <col style="width:11%;" />
+                      <col style="width:9%;" />
+                      <col style="width:31%;" />
                     </colgroup>
                     <thead>
                       <tr>
-                        <th>Désignation</th>
+                        <th>Nature</th>
+                        <th>Objet</th>
                         <th class="r">Montant estimé</th>
                         <th>Mode</th>
                         <th>Statut</th>
@@ -174,7 +177,8 @@ import { PpmMarchesTable } from './ppm-marches-table';
                     <tbody>
                       @for (m of marches(); track m.idDetail) {
                         <tr>
-                          <td [title]="m.designationMarche || ''" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.designationMarche || '—' }}</td>
+                          <td class="dpm-objet-cell">{{ resolve(natureMap(), m.idNature) }}</td>
+                          <td [title]="m.designationMarche || ''" class="dpm-objet-cell">{{ m.designationMarche || '—' }}</td>
                           <td class="td-montant">{{ m.montEstim | number }}</td>
                           <td>{{ resolve(modeMap(), m.idMode) }}</td>
                           <td>
@@ -188,8 +192,8 @@ import { PpmMarchesTable } from './ppm-marches-table';
                           <td>
                             <div class="td-actions">
                               <button class="btn btn-secondary btn-sm" type="button" (click)="voirDates(m)">Voir dates</button>
-                              <button class="btn btn-primary btn-sm" type="button" (click)="modifierDates(m)">Modifier dates</button>
                               <button class="btn btn-secondary btn-sm" type="button" (click)="modifierBenefs(m)">Bénéficiaires</button>
+                              <button class="btn btn-secondary btn-sm" type="button" (click)="modifierLots(m)">Lots ({{ lotsDe(m.idDetail).length }})</button>
                               <button class="btn btn-outline btn-sm" type="button" (click)="modifierMarche(m)">Modifier</button>
                               <button class="btn btn-danger btn-sm" type="button" (click)="supprimerMarche(m)">Supprimer</button>
                             </div>
@@ -215,6 +219,18 @@ import { PpmMarchesTable } from './ppm-marches-table';
               </div>
 
               <div class="pieces-card">
+                @if (agpmRequise()) {
+                  <div class="dpm-agpm" [class.dpm-agpm--ok]="!agpmManquante()" role="note">
+                    <span class="dpm-agpm-ic" aria-hidden="true">{{ agpmManquante() ? '⚠️' : '✅' }}</span>
+                    @if (agpmManquante()) {
+                      <span>Ce PPM comporte un marché en « appel d'offres ouvert » : la pièce
+                        <strong>AGPM</strong> (Avis Général de Passation de Marché) est
+                        <strong>requise</strong> avant la soumission.</span>
+                    } @else {
+                      <span>Pièce <strong>AGPM</strong> requise — bien fournie.</span>
+                    }
+                  </div>
+                }
                 @if (piecesInitiales().length > 0) {
                   <div class="pieces-group">
                     <div class="pieces-group-hd">
@@ -424,6 +440,35 @@ import { PpmMarchesTable } from './ppm-marches-table';
       </div>
     }
 
+    @if (editLotMarche(); as m) {
+      <div class="dpm__overlay" (click)="annulerLots()">
+        <form class="dpm cnm-card" [formGroup]="lotForm" (ngSubmit)="enregistrerLots()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" novalidate>
+          <header class="dpm__head">
+            <h2 class="dpm__title">Lots (allotissement) — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
+            <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerLots()">&times;</button>
+          </header>
+          <div class="dpm__body dpm__body--pad">
+            @for (ctrl of lotLignes(); track $index) {
+              <div class="dpm-benef-edit-row" [formGroup]="ctrl">
+                <input class="form-control" type="text" formControlName="designationLot" placeholder="Désignation du lot *" aria-label="Désignation du lot" />
+                <input class="form-control" type="number" formControlName="montLot" placeholder="Montant" aria-label="Montant" />
+                <input class="form-control" type="number" formControlName="qteLot" placeholder="Quantité" aria-label="Quantité" />
+                <input class="form-control" type="text" formControlName="uniteLot" placeholder="Unité" aria-label="Unité" />
+                <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerLot($index)" aria-label="Retirer">✕</button>
+              </div>
+            } @empty {
+              <p class="dpm__info">Aucun lot. Ajoutez-en un pour allotir ce marché.</p>
+            }
+            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ajouterLot()">+ Ajouter un lot</button>
+          </div>
+          <footer class="dpm__foot">
+            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerLots()">Annuler</button>
+            <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submittingLot()">Enregistrer</button>
+          </footer>
+        </form>
+      </div>
+    }
+
     @if (createOpen()) {
       <div class="dpm__overlay" (click)="annulerCreation()">
         <form class="dpm dpm--sm cnm-card" [formGroup]="createForm" (ngSubmit)="enregistrerMarche()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" novalidate>
@@ -537,6 +582,7 @@ export class DetailPpmModal implements OnInit {
 
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);
+  private readonly lotService = inject(LotService);
   private readonly serviceBenefService = inject(ServiceBeneficiaireService);
   private readonly soaBenefService = inject(SoaBeneficiaireService);
   private readonly previsionService = inject(MarchePrevisionService);
@@ -557,6 +603,7 @@ export class DetailPpmModal implements OnInit {
   readonly marches = signal<Marche[]>([]);
   readonly pieces = signal<PieceJointeDossier[]>([]);
   readonly modeMap = signal<Map<string, string>>(new Map());
+  readonly natureMap = signal<Map<string, string>>(new Map());
   readonly capms = signal<Capm[]>([]);
   readonly procErreurs = signal<Record<number, string>>({});
 
@@ -572,6 +619,17 @@ export class DetailPpmModal implements OnInit {
   readonly uploadFile = signal<File | null>(null);
   readonly uploading = signal(false);
   readonly suppressionPiece = signal<number | null>(null);
+
+  // — AGPM conditionnel : le PPM porte `agpmRequis` (autorité backend) ; pièce repérée par code stable. —
+  /** Type de pièce AGPM parmi les pièces attendues (chargées en modeEdition). */
+  private readonly agpmType = computed(() => this.typesPiece().find((t) => t.code === 'AGPM') ?? null);
+  /** Le backend requiert-il l'AGPM pour ce PPM ? (`agpmRequis`, lecture seule). */
+  readonly agpmRequise = computed(() => this.ppm()?.agpmRequis === true && this.agpmType() != null);
+  /** AGPM requis mais pièce non encore déposée. */
+  readonly agpmManquante = computed(() => {
+    const t = this.agpmType();
+    return this.agpmRequise() && t != null && !this.pieces().some((p) => p.idTypePiece === t.idTypePiece);
+  });
 
   // Consultation des dates d'un marché
   readonly modalMarche = signal<Marche | null>(null);
@@ -600,6 +658,12 @@ export class DetailPpmModal implements OnInit {
   readonly submittingBenef = signal(false);
   readonly soaList = signal<SoaBeneficiaire[]>([]);
 
+  // Édition des lots d'un marché (allotissement, modeEdition)
+  readonly editLotMarche = signal<Marche | null>(null);
+  lotForm: FormGroup = this.fb.group({ lignes: this.fb.array([] as FormGroup[]) });
+  private readonly editLotOriginal = signal<Lot[]>([]);
+  readonly submittingLot = signal(false);
+
   // Suppression (marché ou PPM)
   readonly confirmState = signal<{ kind: 'marche' | 'ppm'; id: number; label: string; count: number | null } | null>(null);
   readonly confirmBusy = signal(false);
@@ -621,6 +685,17 @@ export class DetailPpmModal implements OnInit {
       const list = map.get(b.idDetail) ?? [];
       list.push(b);
       map.set(b.idDetail, list);
+    }
+    return map;
+  });
+  /** Lots (allotissement) des marchés du PPM. */
+  readonly lots = signal<Lot[]>([]);
+  private readonly lotParDetail = computed(() => {
+    const map = new Map<number, Lot[]>();
+    for (const l of this.lots()) {
+      const list = map.get(l.idDetail) ?? [];
+      list.push(l);
+      map.set(l.idDetail, list);
     }
     return map;
   });
@@ -648,6 +723,7 @@ export class DetailPpmModal implements OnInit {
   private charger(): void {
     this.loading.set(true);
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
+    this.lookups.lookup(NatureService, 'idNature', ['libelle']).subscribe((m) => this.natureMap.set(m));
     this.lookups.lookup(CompteService, 'numCompte', ['libelle']).subscribe((m) => this.compteMap.set(m));
     // Liste SOA (dropdown d'édition) + map libellés (affichage) en un seul appel.
     this.soaBenefService.list().subscribe((rows) => {
@@ -665,16 +741,18 @@ export class DetailPpmModal implements OnInit {
       pieces: this.pieceService.getByDossier(this.idDossier),
       benefs: this.serviceBenefService.list(),
       previsions: this.previsionService.list(),
+      lots: this.lotService.list(),
     }).subscribe({
-      next: ({ ppm, marches, pieces, benefs, previsions }) => {
+      next: ({ ppm, marches, pieces, benefs, previsions, lots }) => {
         this.ppm.set(ppm);
         const mine = marches.filter((m) => m.idPpm === this.idPpm);
         this.marches.set(mine);
         this.pieces.set(pieces);
-        // Bénéficiaires + dates : ne garder que ceux des marchés du PPM (pas de filtre par PPM côté API).
+        // Bénéficiaires + dates + lots : ne garder que ceux des marchés du PPM (pas de filtre par PPM côté API).
         const detailIds = new Set(mine.map((m) => m.idDetail));
         this.serviceBenefs.set(benefs.filter((b) => detailIds.has(b.idDetail)));
         this.previsions.set(previsions.filter((p) => detailIds.has(p.idDetail)));
+        this.lots.set(lots.filter((l) => detailIds.has(l.idDetail)));
         this.loading.set(false);
       },
       error: () => this.loading.set(false), // 403/404 → toast centralisé
@@ -915,7 +993,8 @@ export class DetailPpmModal implements OnInit {
       idPrevision: [p?.idPrevision ?? null],
       idCapm: [p?.idCapm ?? null, Validators.required],
       dateDebut: [p?.dateDebut ?? '', Validators.required],
-      dateFin: [p?.dateFin ?? '', Validators.required],
+      // Date de fin **optionnelle** (backend : `dateFin` nullable ; chronologie ignorée si absente).
+      dateFin: [p?.dateFin ?? ''],
     });
   }
   datesControls(form: FormGroup): FormGroup[] {
@@ -1013,7 +1092,8 @@ export class DetailPpmModal implements OnInit {
             idDetail,
             idCapm: r.idCapm as number,
             dateDebut: r.dateDebut,
-            dateFin: r.dateFin,
+            // Date de fin optionnelle : chaîne vide → omise (date ISO ou rien, pas '').
+            dateFin: r.dateFin || undefined,
           }),
         ),
         ...toCreate.map((r, i) =>
@@ -1022,7 +1102,8 @@ export class DetailPpmModal implements OnInit {
             idDetail,
             idCapm: r.idCapm as number,
             dateDebut: r.dateDebut,
-            dateFin: r.dateFin,
+            // Date de fin optionnelle : chaîne vide → omise (date ISO ou rien, pas '').
+            dateFin: r.dateFin || undefined,
           }),
         ),
       ];
@@ -1131,6 +1212,114 @@ export class DetailPpmModal implements OnInit {
     };
     if (toCreate.length) {
       this.serviceBenefService.list().subscribe((all) => run(all.length ? Math.max(...all.map((b) => b.idBenef)) : 0));
+    } else {
+      run(0);
+    }
+  }
+
+  // — Édition des lots d'un marché (allotissement : CRUD + réconciliation, comme les bénéficiaires) —
+  /** Lots d'un marché (lecture seule, pour le compteur du bouton). */
+  lotsDe(idDetail: number): Lot[] {
+    return this.lotParDetail().get(idDetail) ?? [];
+  }
+  lotLignes(): FormGroup[] {
+    return (this.lotForm.get('lignes') as FormArray).controls as FormGroup[];
+  }
+  private ligneLot(l?: Lot): FormGroup {
+    return this.fb.group({
+      idLot: [l?.idLot ?? null],
+      designationLot: [l?.designationLot ?? '', Validators.required],
+      montLot: [l?.montLot ?? null],
+      qteLot: [l?.qteLot ?? null],
+      uniteLot: [l?.uniteLot ?? ''],
+    });
+  }
+  modifierLots(m: Marche): void {
+    this.editLotMarche.set(m);
+    const current = this.lotsDe(m.idDetail);
+    this.editLotOriginal.set(current);
+    this.lotForm = this.fb.group({ lignes: this.fb.array(current.map((l) => this.ligneLot(l))) });
+  }
+  ajouterLot(): void {
+    (this.lotForm.get('lignes') as FormArray).push(this.ligneLot());
+  }
+  retirerLot(i: number): void {
+    (this.lotForm.get('lignes') as FormArray).removeAt(i);
+  }
+  annulerLots(): void {
+    this.editLotMarche.set(null);
+    this.editLotOriginal.set([]);
+  }
+  enregistrerLots(): void {
+    const m = this.editLotMarche();
+    if (!m) return;
+    if (this.lotForm.invalid) {
+      this.lotForm.markAllAsTouched();
+      this.toast.error('La désignation est obligatoire pour chaque lot.');
+      return;
+    }
+    const rows = (this.lotForm.get('lignes') as FormArray).getRawValue() as {
+      idLot: number | null;
+      designationLot: string;
+      montLot: number | null;
+      qteLot: number | null;
+      uniteLot: string;
+    }[];
+    this.submittingLot.set(true);
+    this.reconcilierLots(
+      m.idDetail,
+      m.idDossier,
+      this.editLotOriginal(),
+      rows,
+      () => {
+        this.toast.success('Lots enregistrés.');
+        this.submittingLot.set(false);
+        this.annulerLots();
+        this.rechargerLots();
+        this.modifie.emit();
+      },
+      () => this.submittingLot.set(false),
+    );
+  }
+  private rechargerLots(): void {
+    const detailIds = new Set(this.marches().map((m) => m.idDetail));
+    this.lotService.list().subscribe((rows) => this.lots.set(rows.filter((l) => detailIds.has(l.idDetail))));
+  }
+  private reconcilierLots(
+    idDetail: number,
+    idDossier: number,
+    original: Lot[],
+    rows: { idLot: number | null; designationLot: string; montLot: number | null; qteLot: number | null; uniteLot: string }[],
+    done: () => void,
+    fail: () => void,
+  ): void {
+    const currentIds = new Set(rows.filter((r) => r.idLot != null).map((r) => r.idLot));
+    const toDelete = original.filter((o) => !currentIds.has(o.idLot));
+    const toUpdate = rows.filter((r) => r.idLot != null);
+    const toCreate = rows.filter((r) => r.idLot == null);
+    const body = (r: (typeof rows)[number], id: number): Lot => ({
+      idLot: id,
+      idDossier,
+      idDetail,
+      designationLot: r.designationLot.trim(),
+      montLot: r.montLot ?? undefined,
+      qteLot: r.qteLot ?? undefined,
+      uniteLot: r.uniteLot || undefined,
+    });
+    const run = (base: number) => {
+      const ops = [
+        ...toDelete.map((o) => this.lotService.delete(o.idLot)),
+        ...toUpdate.map((r) => this.lotService.update(r.idLot as number, body(r, r.idLot as number))),
+        ...toCreate.map((r, i) => this.lotService.create(body(r, base + i + 1))),
+      ];
+      if (!ops.length) {
+        done();
+        return;
+      }
+      forkJoin(ops).subscribe({ next: () => done(), error: () => fail() });
+    };
+    if (toCreate.length) {
+      this.lotService.list().subscribe((all) => run(all.length ? Math.max(...all.map((l) => l.idLot)) : 0));
     } else {
       run(0);
     }

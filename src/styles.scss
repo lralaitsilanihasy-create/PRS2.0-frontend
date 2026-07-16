@@ -78,14 +78,20 @@
 /* Compat titres de page (le design system C stylise h1/.eyebrow/.subtitle ;
    les composants utilisent .page-title / .page-subtitle / .topbar-title). */
 .page-title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
+  font-size: var(--text-3xl);
+  font-weight: 800;
   color: var(--n-800);
-  letter-spacing: -.02em;
+  letter-spacing: -.025em;
+  line-height: 1.15;
 }
+/* Sur-titre de domaine (« Domaine PRMP »…) : eyebrow de marque, plus professionnel. */
 .page-subtitle {
-  font-size: var(--text-sm);
-  color: var(--n-400);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--p-600);
+  margin-bottom: 3px;
 }
 .topbar-title {
   font-size: var(--text-md);

@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -61,6 +63,8 @@ export class CrudPage {
   readonly activeFilter = signal<ActiveFilter | null>(null);
   /** id → libellé, par champ FK (chargé une fois par référentiel lié). */
   private readonly lookups = signal<Record<string, Map<string, string>>>({});
+  /** Options { value, label } d'une liste déroulante FK, valeur brute (type préservé). */
+  private readonly refOptions = signal<Record<string, { value: unknown; label: string }[]>>({});
 
   /** Lignes affichées (toutes, ou filtrées par le query param actif). */
   readonly visibleRows = computed(() => {
@@ -82,10 +86,41 @@ export class CrudPage {
 
   form: FormGroup = this.fb.group({});
   private editingId: string | number | null = null;
+  /** Terme de recherche par nom (débattu puis envoyé au serveur si `config.searchByName`). */
+  private readonly search$ = new Subject<string>();
 
   /** Champs affichés en colonnes de liste (exclut ceux marqués `hideInList`, ex. PK). */
   get listFields(): FieldConfig[] {
     return this.config.fields.filter((f) => !f.hideInList);
+  }
+
+  /** Champs affichés dans le formulaire (exclut les PK auto-générées, masquées). */
+  get formFields(): FieldConfig[] {
+    return this.config.fields.filter((f) => !f.autoId);
+  }
+
+  /** Options d'une liste déroulante FK (issues du référentiel lié). */
+  refOptionsFor(key: string): { value: unknown; label: string }[] {
+    return this.refOptions()[key] ?? [];
+  }
+
+  /** Options d'une liste déroulante alimentée par les valeurs distinctes déjà saisies. */
+  dataOptionsFor(field: FieldConfig): { value: unknown; label: string }[] {
+    const seen = new Set<string>();
+    const out: { value: unknown; label: string }[] = [];
+    for (const row of this.rows()) {
+      const v = row[field.key];
+      if (v === null || v === undefined || v === '') {
+        continue;
+      }
+      const cle = String(v);
+      if (seen.has(cle)) {
+        continue;
+      }
+      seen.add(cle);
+      out.push({ value: v, label: cle });
+    }
+    return out.sort((a, b) => a.label.localeCompare(b.label, 'fr', { numeric: true }));
   }
 
   constructor() {
@@ -100,6 +135,33 @@ export class CrudPage {
       this.activeFilter.set(
         match ? { label: match.label, key: match.key, value: params.get(match.param) as string } : null,
       );
+    });
+
+    // Recherche par nom côté serveur (débattu) : terme vide → liste complète.
+    if (this.config.searchByName) {
+      this.search$
+        .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+        .subscribe((term) => this.runSearch(term));
+    }
+  }
+
+  onSearch(term: string): void {
+    this.search$.next(term);
+  }
+
+  private runSearch(term: string): void {
+    const t = term.trim();
+    if (!t) {
+      this.load();
+      return;
+    }
+    this.loading.set(true);
+    this.service.searchByName(t).subscribe({
+      next: (rows) => {
+        this.rows.set(rows as Row[]);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
     });
   }
 
@@ -173,6 +235,9 @@ export class CrudPage {
         this.toast.success('Enregistrement supprimé.');
         this.load();
       },
+      // 404 / 409 (ex. PRMP avec dossiers/entités liés) : le toast est déjà affiché par
+      // l'intercepteur ; on absorbe l'erreur pour éviter un log non géré (la liste reste inchangée).
+      error: () => {},
     });
   }
 
@@ -208,16 +273,20 @@ export class CrudPage {
         .subscribe({
           next: (rows: Row[]) => {
             const map = new Map<string, string>();
+            const options: { value: unknown; label: string }[] = [];
             for (const r of rows) {
-              const id = String(r[ref.idKey]);
+              const raw = r[ref.idKey];
+              const id = String(raw);
               const label = ref.labelKeys
                 .map((k) => r[k])
                 .filter((v) => v !== null && v !== undefined && v !== '')
                 .join(' ')
                 .trim();
               map.set(id, label || id);
+              options.push({ value: raw, label: label || id });
             }
             this.lookups.update((cur) => ({ ...cur, [field.key]: map }));
+            this.refOptions.update((cur) => ({ ...cur, [field.key]: options }));
           },
         });
     }
@@ -237,12 +306,24 @@ export class CrudPage {
     for (const field of this.config.fields) {
       const locked = this.formMode() === 'edit' && !!field.pk;
       const fallback = field.type === 'boolean' ? false : null;
-      const initial = model ? (model[field.key] ?? fallback) : fallback;
+      let initial = model ? (model[field.key] ?? fallback) : fallback;
+      // PK auto-générée : à la création, valeur = max(ids existants) + 1 (le champ reste masqué).
+      if (field.autoId && this.formMode() === 'create') {
+        initial = this.nextAutoId(field);
+      }
       group[field.key] = this.fb.control(
         { value: initial, disabled: locked },
         field.required ? [Validators.required] : [],
       );
     }
     return this.fb.group(group);
+  }
+
+  /** Prochain identifiant numérique libre pour une PK auto-générée (max existant + 1). */
+  private nextAutoId(field: FieldConfig): number {
+    const ids = this.rows()
+      .map((r) => Number(r[field.key]))
+      .filter((n) => Number.isFinite(n));
+    return (ids.length ? Math.max(...ids) : 0) + 1;
   }
 }

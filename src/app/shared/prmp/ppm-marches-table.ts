@@ -6,6 +6,7 @@ import {
   ModePassationService,
   NatureService,
   ReferenceLookupService,
+  TypeDmcService,
 } from '../../services';
 
 /** Bénéficiaire d'une ligne (placeholder vide `{}` si aucun, pour garder une ligne). */
@@ -22,6 +23,9 @@ interface MarcheRow {
   montEstim?: number | null;
   nouvMontEstim?: number | null;
   mode: string;
+  /** Type de DMC **dérivé** du mode (code court + libellé en tooltip) ; absent si mode non mappé. */
+  typeDmcCode?: string;
+  typeDmcLibelle?: string;
   financement: string;
   benefRows: BenefRow[];
   dateLancement: string;
@@ -74,7 +78,14 @@ interface MarcheRow {
                     <td [attr.rowspan]="m.benefRows.length" class="pmt-objet">{{ m.objet }}</td>
                     <td [attr.rowspan]="m.benefRows.length" class="pmt-num">{{ montantFmt(m.montEstim) }}</td>
                     <td [attr.rowspan]="m.benefRows.length" class="pmt-num">{{ montantFmt(m.nouvMontEstim) }}</td>
-                    <td [attr.rowspan]="m.benefRows.length">{{ m.mode }}</td>
+                    <td [attr.rowspan]="m.benefRows.length">
+                      {{ m.mode }}
+                      @if (m.typeDmcCode) {
+                        <span class="badge pmt-dmc" [title]="m.typeDmcLibelle || ''">{{ m.typeDmcCode }}</span>
+                      } @else if (m.mode) {
+                        <span class="badge badge-warning pmt-dmc" title="Aucun type de DMC mappé pour ce mode. Configurez le mapping en administration.">DMC ?</span>
+                      }
+                    </td>
                     <td [attr.rowspan]="m.benefRows.length">{{ m.financement }}</td>
                   }
                   <td>{{ b.soaCode || '' }}</td>
@@ -97,14 +108,18 @@ interface MarcheRow {
     }
   `,
   styles: `
-    .pmt-wrap { overflow-x: auto; }
-    .pmt { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 0.64rem; color: #000; background: #fff; }
+    .pmt-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* min-width : en dessous, .pmt-wrap défile au lieu de tasser les 13 colonnes (illisible sur mobile) ;
+       au-dessus, le tableau reste à 100 % de son conteneur (desktop inchangé). */
+    .pmt { border-collapse: collapse; width: 100%; min-width: 56rem; table-layout: fixed; font-size: 0.64rem; color: #000; background: #fff; }
     /* white-space: normal force le retour à la ligne (évite un nowrap hérité d'un style global de th/table). */
     .pmt th, .pmt td { border: 1px solid #000; padding: 3px 4px; vertical-align: top; white-space: normal; overflow-wrap: break-word; word-break: break-word; }
     .pmt thead th { background: #f0f0f0; text-align: center; font-weight: 700; line-height: 1.15; }
     .pmt td.pmt-num { text-align: right; }
     .pmt td.pmt-date { text-align: center; white-space: nowrap; }
     .pmt td.pmt-objet { white-space: pre-wrap; }
+    /* Badge de type de DMC (dérivé) : compact pour cette table dense ; libellé complet en tooltip. */
+    .pmt .pmt-dmc { display: inline-block; margin-top: 2px; font-size: 0.56rem; padding: 0 3px; line-height: 1.4; }
     .pmt-empty { color: var(--n-400, #71717a); margin: 0; }
   `,
 })
@@ -117,14 +132,30 @@ export class PpmMarchesTable implements OnInit {
   readonly previsions = input<MarchePrevision[]>([]);
 
   private readonly lookups = inject(ReferenceLookupService);
+  private readonly modeService = inject(ModePassationService);
+  private readonly typeDmcService = inject(TypeDmcService);
   private readonly natureMap = signal<Map<string, string>>(new Map());
   private readonly modeMap = signal<Map<string, string>>(new Map());
   private readonly capmMap = signal<Map<string, string>>(new Map());
+  /** idMode → type de DMC dérivé (code + libellé), pour les modes mappés à un type. */
+  private readonly modeTypeMap = signal<Map<number, { code: string; libelle: string }>>(new Map());
 
   ngOnInit(): void {
     this.lookups.lookup(NatureService, 'idNature', ['libelle']).subscribe((m) => this.natureMap.set(m));
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).subscribe((m) => this.capmMap.set(m));
+    // Type de DMC dérivé du mode : idMode → idTypeDmc → code/libellé. Chargé une fois (pas d'appel par ligne).
+    this.modeService.list().subscribe((modes) => {
+      this.typeDmcService.list().subscribe((types) => {
+        const typeById = new Map(types.map((t) => [t.idTypeDmc, t]));
+        const map = new Map<number, { code: string; libelle: string }>();
+        for (const md of modes) {
+          const t = md.idTypeDmc != null ? typeById.get(md.idTypeDmc) : undefined;
+          if (t) map.set(md.idMode, { code: t.code, libelle: t.libelle });
+        }
+        this.modeTypeMap.set(map);
+      });
+    });
   }
 
   /** Lignes mises en forme (libellés résolus, bénéficiaires et dates regroupés par marché). */
@@ -149,12 +180,15 @@ export class PpmMarchesTable implements OnInit {
         return p ? this.dateFr(p.dateDebut) : '';
       };
       const benefs = benefByDetail.get(m.idDetail) ?? [];
+      const dmc = m.idMode != null ? this.modeTypeMap().get(m.idMode) : undefined;
       return {
         nature: this.lbl(this.natureMap(), m.idNature),
         objet: m.designationMarche ?? '',
         montEstim: m.montEstim,
         nouvMontEstim: m.nouvMontEstim,
         mode: this.lbl(this.modeMap(), m.idMode),
+        typeDmcCode: dmc?.code,
+        typeDmcLibelle: dmc?.libelle,
         financement: m.financement ?? '',
         benefRows: benefs.length
           ? benefs.map((b) => ({ soaCode: b.soaCode, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }))

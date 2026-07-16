@@ -19,6 +19,11 @@ export interface Ppm {
   vu?: string;
   idPrmp?: string;
   motifMaj?: string;
+  /**
+   * Dérivé backend (lecture seule) : `true` ssi ≥1 marché du PPM est en mode déclencheur d'AGPM
+   * → pièce AGPM requise à la soumission. Ignoré en écriture.
+   */
+  agpmRequis?: boolean;
 }
 
 /** Marché (détail d'un dossier). PK = idDetail. */
@@ -49,8 +54,8 @@ export interface MarchePrevision {
   idCapm: number;
   /** `yyyy-MM-dd`. */
   dateDebut: string;
-  /** `yyyy-MM-dd`. */
-  dateFin: string;
+  /** `yyyy-MM-dd` — **optionnelle** (date de fin non connue / période ouverte). */
+  dateFin?: string;
   /** Lecture seule (réponse) — `t_capm.ordre`, pour le tri d'affichage. */
   ordre?: number;
 }
@@ -59,7 +64,7 @@ export interface MarchePrevision {
 export interface ProcessusMarche {
   idCapm: number;
   dateDebut: string; // yyyy-MM-dd
-  dateFin: string; // yyyy-MM-dd
+  dateFin?: string; // yyyy-MM-dd — optionnelle (fin non connue / période ouverte)
 }
 
 /**
@@ -147,6 +152,19 @@ export interface SaisieMarcheBeneficiaire {
 }
 
 /**
+ * Lot (allotissement) d'une ligne de marché à la saisie (`POST /api/saisies/ppm`).
+ * = `LotDto` **sans** `idLot`/`idDossier`/`idDetail` (renseignés serveur : PK allouée, dossier et
+ * marché du contexte). `designationLot` **obligatoire** (`@NotBlank`, max 200) ; `montLot`/`qteLot`/
+ * `uniteLot` sont **descriptifs** → **aucun contrôle de somme** (contrairement aux bénéficiaires).
+ */
+export interface SaisieMarcheLot {
+  designationLot: string;
+  montLot?: number;
+  qteLot?: number;
+  uniteLot?: string;
+}
+
+/**
  * Ligne de marché d'une saisie PPM. Le service renseigne idDossier/idPpm/idMode (mode auto).
  * `idDetail` : null à la création (PK serveur) ; renseigné seulement en édition (réconciliation).
  */
@@ -167,6 +185,8 @@ export interface SaisieMarcheLigne {
   modeLibelle?: string;
   /** Ventilation par bénéficiaire (SOA + montants) — le serveur crée une `t_service_beneficiaire` par élément. */
   beneficiaires?: SaisieMarcheBeneficiaire[];
+  /** Lots (allotissement) — le serveur crée une `t_lot` par élément ; descriptifs, aucun contrôle de somme. */
+  lots?: SaisieMarcheLot[];
   /**
    * Processus prévisionnels du marché — **au moins un obligatoire à la création** (`POST /api/saisies/ppm`) ;
    * le serveur crée une ligne `t_marche_prevision` par processus.
@@ -211,6 +231,17 @@ export interface SaisieImportPrevision {
   dateDebut?: string;
 }
 
+/**
+ * Lot extrait d'un PPM PDF (import). ⚠️ **Toujours vide** : le parser ne détecte pas de structure de
+ * lot fiable dans ces PDF → l'allotissement se fait à la saisie. Type conservé par fidélité au contrat.
+ */
+export interface SaisieImportLot {
+  designationLot?: string;
+  montLot?: number;
+  qteLot?: number;
+  uniteLot?: string;
+}
+
 /** Ligne de marché extraite d'un PPM PDF (best-effort ; `idNature`/`idMode` résolus ou libellé seul). */
 export interface SaisieImportMarche {
   designationMarche?: string;
@@ -223,6 +254,8 @@ export interface SaisieImportMarche {
   financement?: string;
   beneficiaires?: SaisieImportBeneficiaire[];
   previsions?: SaisieImportPrevision[];
+  /** Lots extraits — ⚠️ toujours vide (parser sans structure de lot ; allotissement à la saisie). */
+  lots?: SaisieImportLot[];
 }
 
 /**

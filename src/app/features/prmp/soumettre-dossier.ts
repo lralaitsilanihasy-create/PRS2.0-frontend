@@ -9,7 +9,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { MontantFrDirective } from '../../shared/montant-fr.directive';
 import { AutosizeDirective } from '../../shared/autosize.directive';
-import { Capm, Compte, Dossier, Marche, ModePassation, Nature, SaisieMarcheLigne, SaisiePpmImportResult, SoaBeneficiaire, TypeDossier, TypePieceJointe } from '../../models';
+import { Capm, Compte, Dossier, Marche, ModePassation, Nature, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, TypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -19,6 +19,7 @@ import {
   MarcheService,
   ModePassationService,
   NatureService,
+  PieceJointeDossierService,
   PpmService,
   PrmpEntiteService,
   PrmpService,
@@ -30,6 +31,22 @@ import {
 } from '../../services';
 
 type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
+
+/** Famille métier d'un dossier hors PPM (le PPM = famille « planification », créé par son propre flux). */
+type FamilleDossier = 'concurrence' | 'marche';
+/**
+ * Rattachement **type de dossier → famille** (mapping **front**, cf. décision : le référentiel
+ * `t_type_dossier` n'a pas de champ « famille »). À AJUSTER si un type est ajouté / renommé côté backend.
+ * Tout type hors PPM absent de cette table retombe sur « mise en concurrence » (`familleDe`).
+ */
+const FAMILLE_PAR_TYPE: Record<string, FamilleDossier> = {
+  DAO: 'concurrence', // Dossier d'appel d'offres
+  DC: 'concurrence', // Dossier de consultation
+  AO: 'concurrence',
+  BC: 'concurrence', // Bon de commande
+  MAOO: 'marche', // Marché (à confirmer)
+  MARCHE: 'marche',
+};
 
 /** Bénéficiaire d'un marché dans l'aperçu (snapshot lecture seule du formulaire). */
 interface ApercuBenef {
@@ -98,13 +115,29 @@ interface ApercuDossier {
             jusqu'à la soumission. Choisissez ce que vous souhaitez saisir.
           </div>
           <div class="sd__choix">
-            <button type="button" class="card sd__choix-card" (click)="choisirPpm()">
-              <span class="sd__choix-titre">PPM</span>
-              <span class="sd__choix-desc">Plan de passation + lignes de marché (mode calculé automatiquement).</span>
+            <button type="button" class="sd__choix-card sd__choix-card--plan" (click)="choisirPpm()">
+              <span class="sd__choix-head">
+                <span class="sd__choix-ic" aria-hidden="true">📄</span>
+                <span class="sd__choix-titre">Dossier de planification</span>
+              </span>
+              <span class="sd__choix-desc">PPM — Plan de passation des marchés : lignes de marché, bénéficiaires, dates prévisionnelles et lots.</span>
+              <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
             </button>
-            <button type="button" class="card sd__choix-card" (click)="choisirDossier()">
-              <span class="sd__choix-titre">DAO / MAOO</span>
-              <span class="sd__choix-desc">Dossier simple : un type + une localité, sans PPM.</span>
+            <button type="button" class="sd__choix-card sd__choix-card--concurrence" (click)="choisirFamille('concurrence')">
+              <span class="sd__choix-head">
+                <span class="sd__choix-ic" aria-hidden="true">📢</span>
+                <span class="sd__choix-titre">Dossier de mise en concurrence</span>
+              </span>
+              <span class="sd__choix-desc">Appel d'offres, consultation… — un type + une localité. Pièces jointes selon le type choisi.</span>
+              <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
+            </button>
+            <button type="button" class="sd__choix-card sd__choix-card--marche" (click)="choisirFamille('marche')">
+              <span class="sd__choix-head">
+                <span class="sd__choix-ic" aria-hidden="true">📝</span>
+                <span class="sd__choix-titre">Dossier de marché</span>
+              </span>
+              <span class="sd__choix-desc">Marché / contrat — un type + une localité. Pièces jointes selon le type choisi.</span>
+              <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
             </button>
           </div>
         }
@@ -165,8 +198,7 @@ interface ApercuDossier {
             </div>
 
             <div class="sd__lignes-head">
-              <h2 class="sd__sub">Marchés</h2>
-              <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterMarche()">+ Ajouter un marché</button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterMarche()">+ Ajouter une ligne</button>
             </div>
             @if (!marcheControls().length) {
               <p class="cnm-muted">Aucun marché. Vous pouvez créer le brouillon sans marché et en ajouter plus tard.</p>
@@ -218,11 +250,13 @@ interface ApercuDossier {
                             <td [attr.rowspan]="rowspanBenef(g)" class="sd__marche-actions">
                               <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterBeneficiaire(g)">+ bénéficiaire</button>
                               <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDates(g)">Dates prévisionnelles</button>
-                              @if (datesSaisies(g)) {
-                                <span class="sd__dates-ok">📅 {{ nbProcessus(g) }} processus</span>
-                              } @else {
+                              @if (!datesSaisies(g)) {
                                 <span class="sd__dates-manq">⚠ Dates manquantes</span>
                               }
+                              <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirLots(g)"
+                                [title]="lotsExplicites(g) ? '' : 'Lot unique par défaut = objet du marché ; cliquez pour le modifier ou en ajouter.'">
+                                Lots ({{ nbLots(g) }})
+                              </button>
                               <button type="button" class="btn btn-danger btn-sm" (click)="retirerMarche(marcheIndex(g))">Retirer</button>
                               @if (erreurCoherenceBenefs(g); as errBenef) {
                                 <span class="form-error">{{ errBenef }}</span>
@@ -252,6 +286,8 @@ interface ApercuDossier {
                   <div class="sd__piece-right">
                     @if (t.obligatoire) {
                       <span class="badge badge-danger">obligatoire</span>
+                    } @else if (t.code === 'AGPM' && agpmRequisSaisie()) {
+                      <span class="badge badge-warning">requise (appel d'offres ouvert)</span>
                     } @else {
                       <span class="badge badge-neutral">optionnel</span>
                     }
@@ -287,6 +323,15 @@ interface ApercuDossier {
               </div>
             }
 
+            @if (agpmManquanteSaisie()) {
+              <div class="alert alert-info">
+                <span aria-hidden="true">ℹ️</span>
+                <div>Un marché est saisi en « appel d'offres ouvert » : la pièce <strong>AGPM</strong>
+                  (Avis Général de Passation de Marché) sera <strong>exigée à la soumission</strong>.
+                  Le brouillon peut être créé sans elle ; joignez-la avant de soumettre.</div>
+              </div>
+            }
+
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu</button>
@@ -299,17 +344,19 @@ interface ApercuDossier {
 
         @case ('saisieDossier') {
           <form class="card sd__form cnm-form" [formGroup]="dossierForm" (ngSubmit)="creerDossier()" novalidate>
+            <div class="alert alert-info">Dossier de <strong>{{ familleLabel() }}</strong>. Choisissez le type précis parmi ceux de cette famille.</div>
             <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Type de dossier *</span>
                 <select class="form-control" formControlName="idTypeDossier">
                   <option [ngValue]="null">— Sélectionner —</option>
-                  @for (t of typesNonPpm(); track t.idTypeDossier) {
+                  @for (t of typesDeLaFamille(); track t.idTypeDossier) {
                     <option [ngValue]="t.idTypeDossier">{{ t.libelleType || t.idTypeDossier }}</option>
                   }
                 </select>
                 @if (req(dossierForm, 'idTypeDossier')) { <span class="form-error">Obligatoire.</span> }
                 @if (err('idTypeDossier')) { <span class="form-error">{{ err('idTypeDossier') }}</span> }
+                @if (!typesDeLaFamille().length) { <span class="form-hint">Aucun type de dossier dans la famille « {{ familleLabel() }} ».</span> }
               </label>
               <label class="form-group">
                 <span class="form-label">Entité contractante *</span>
@@ -328,9 +375,60 @@ interface ApercuDossier {
                 <span class="form-hint">Le dossier sera déposé dans cette localité.</span>
               </label>
             </div>
+
+            <!-- Pièces jointes : la liste dépend du type de dossier sélectionné (référentiel type-piece-jointes). -->
+            @if (dossierForm.controls.idTypeDossier.value) {
+              <div class="sd__pieces">
+                <h2 class="sd__sub">Pièces jointes</h2>
+                @if (!typesPiece().length) {
+                  <p class="cnm-muted">Aucune pièce attendue pour ce type de dossier.</p>
+                }
+                @for (t of typesPiece(); track t.idTypePiece) {
+                  <div class="sd__piece" [class.sd__piece--manquante]="t.obligatoire && !pieces().has(t.idTypePiece)">
+                    <span class="sd__piece-lbl">📎 {{ t.libellePiece }}</span>
+                    <div class="sd__piece-right">
+                      @if (t.obligatoire) {
+                        <span class="badge badge-danger">obligatoire</span>
+                      } @else {
+                        <span class="badge badge-neutral">optionnel</span>
+                      }
+                      @if (pieceNom(t.idTypePiece); as nom) {
+                        <span class="sd__piece-file">{{ nom }} · {{ pieceTaille(t.idTypePiece) }}</span>
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="retirerPiece(t.idTypePiece)" aria-label="Retirer">✕</button>
+                      } @else {
+                        <label class="btn btn-secondary btn-sm sd__piece-choisir">
+                          Choisir
+                          <input type="file" accept=".pdf,.jpeg,.jpg,.png" hidden (change)="onPiece(t.idTypePiece, $event)" />
+                        </label>
+                      }
+                    </div>
+                    @if (pieceErreurs().has(t.idTypePiece)) {
+                      <span class="form-error sd__piece-err">Cette pièce est obligatoire.</span>
+                    }
+                  </div>
+                }
+                <p class="sd__hint cnm-muted">Formats acceptés : PDF, JPEG, PNG. Déposées après création du brouillon.</p>
+              </div>
+              @if (piecesObligatoiresManquantes().length) {
+                <div class="alert alert-warning">
+                  <span aria-hidden="true">⚠</span>
+                  <div>
+                    <div class="sd__warn-title">Pièces obligatoires manquantes</div>
+                    <ul class="sd__warn-list">
+                      @for (p of piecesObligatoiresManquantes(); track p.idTypePiece) {
+                        <li>{{ p.libellePiece }}</li>
+                      }
+                    </ul>
+                  </div>
+                </div>
+              }
+            } @else {
+              <p class="cnm-muted">Sélectionnez un type de dossier pour voir les pièces jointes attendues.</p>
+            }
+
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || piecesObligatoiresManquantes().length">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -381,12 +479,12 @@ interface ApercuDossier {
 
       @if (datesCible()) {
         <div class="modal-backdrop" (click)="annulerDates()">
-          <div class="modal confirm-modal cnm-form" (click)="$event.stopPropagation()">
+          <div class="modal confirm-modal cnm-form sd__dates-modal" (click)="$event.stopPropagation()">
             <div class="modal-header-plain">
               <span class="modal-title">Dates prévisionnelles du marché</span>
             </div>
             <div class="modal-body">
-              <p class="form-hint">Au moins un processus est obligatoire ; un processus par ligne.</p>
+              <p class="form-hint">Au moins un processus est obligatoire ; un processus par ligne. La <strong>date de fin est optionnelle</strong>.</p>
               @for (ctrl of procControls(); track $index) {
                 <div class="sd-proc-row" [formGroup]="ctrl">
                   <select class="form-control" formControlName="idCapm">
@@ -419,6 +517,44 @@ interface ApercuDossier {
               >
                 Valider
               </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (lotsCible()) {
+        <div class="modal-backdrop" (click)="annulerLots()">
+          <div class="modal confirm-modal cnm-form sd__lots-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header-plain">
+              <span class="modal-title">Lots (allotissement) du marché</span>
+            </div>
+            <div class="modal-body">
+              <p class="form-hint">
+                Par défaut, le marché forme un <strong>lot unique = son objet</strong> (ligne pré-remplie ci-dessous) ;
+                modifiez-le ou ajoutez des lots pour l'allotir. La désignation est obligatoire ; montant, quantité et
+                unité sont descriptifs (aucun contrôle de somme).
+              </p>
+              @for (ctrl of lotControls(); track $index) {
+                <div class="sd-lot-row" [formGroup]="ctrl">
+                  <input class="form-control" type="text" formControlName="designationLot" placeholder="Désignation du lot *" aria-label="Désignation du lot" />
+                  <input class="form-control sd__c-mont" type="number" formControlName="montLot" placeholder="Montant" aria-label="Montant" />
+                  <input class="form-control" type="number" formControlName="qteLot" placeholder="Quantité" aria-label="Quantité" />
+                  <input class="form-control" type="text" formControlName="uniteLot" placeholder="Unité" aria-label="Unité" />
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="retirerLot($index)" aria-label="Retirer">✕</button>
+                </div>
+                @if (lotCtrl($index, 'designationLot').touched && lotCtrl($index, 'designationLot').hasError('required')) {
+                  <span class="form-error sd-proc-err">La désignation du lot est obligatoire.</span>
+                }
+              } @empty {
+                <p class="form-hint">Renseignez d'abord l'<strong>objet</strong> du marché (il servira de lot unique), ou ajoutez un lot ci-dessous.</p>
+              }
+              <div>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterLot()">+ Ajouter un lot</button>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline" (click)="annulerLots(); $event.stopPropagation()">Annuler</button>
+              <button type="button" class="btn btn-primary" (click)="validerLots(); $event.stopPropagation()">Valider</button>
             </div>
           </div>
         </div>
@@ -534,15 +670,66 @@ interface ApercuDossier {
   `,
   styles: `
     .sd__brouillon { padding: 1.25rem 1.5rem; }
-    .sd__choix { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .sd__choix-card { text-align: left; cursor: pointer; font: inherit; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; transition: var(--transition); }
-    .sd__choix-card:hover { border-color: var(--c-400); box-shadow: var(--shadow-lg); transform: translateY(-1px); }
-    .sd__choix-titre { font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
-    .sd__choix-desc { color: var(--n-400); font-size: var(--text-sm); }
+    /* Cartes de choix (PPM / DAO-MAOO) : style carte moderne, bandeau et pastille d'accent, relief au survol. */
+    .sd__choix { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1.1rem; }
+    .sd__choix-card {
+      position: relative; overflow: hidden;
+      text-align: left; cursor: pointer; font: inherit;
+      background: #fff; border: 1px solid var(--n-200); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 1.4rem 1.5rem 1.15rem;
+      display: flex; flex-direction: column; gap: 0.65rem; min-height: 11rem;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+    /* Bandeau d'accent coloré en haut de carte (distinct par type). */
+    .sd__choix-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--grad-primary); }
+    .sd__choix-card--concurrence::before { background: linear-gradient(135deg, #0ea5e9, #14b8a6); }
+    .sd__choix-card--marche::before { background: linear-gradient(135deg, #f59e0b, #f97316); }
+    .sd__choix-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--c-300); }
+    .sd__choix-head { display: flex; align-items: center; gap: 0.8rem; }
+    .sd__choix-ic {
+      width: 2.75rem; height: 2.75rem; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-md); font-size: 1.3rem;
+      background: var(--grad-primary); color: #fff;
+      box-shadow: 0 3px 10px rgba(102, 126, 234, 0.35);
+    }
+    .sd__choix-card--concurrence .sd__choix-ic { background: linear-gradient(135deg, #0ea5e9, #14b8a6); box-shadow: 0 3px 10px rgba(20, 184, 166, 0.35); }
+    .sd__choix-card--marche .sd__choix-ic { background: linear-gradient(135deg, #f59e0b, #f97316); box-shadow: 0 3px 10px rgba(249, 115, 22, 0.32); }
+    .sd__choix-titre { font-size: var(--text-lg); font-weight: 700; color: var(--n-800); }
+    .sd__choix-desc { color: var(--n-500); font-size: var(--text-sm); line-height: 1.5; }
+    .sd__choix-go { margin-top: auto; display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 700; font-size: var(--text-sm); color: var(--c-600); }
+    .sd__choix-card--concurrence .sd__choix-go { color: #0d9488; }
+    .sd__choix-card--marche .sd__choix-go { color: #c2620c; }
+    .sd__choix-arrow { font-size: 1.15rem; line-height: 1; transition: transform 0.16s ease; }
+    .sd__choix-card:hover .sd__choix-arrow { transform: translateX(4px); }
+    @media (max-width: 40rem) { .sd__choix { grid-template-columns: 1fr; } }
     .sd__form { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: min(64rem, 96vw); }
     .sd__form--wide { max-width: min(100rem, 98vw); }
     .sd__import { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.75rem; border-bottom: 1px solid var(--c-100); }
-    .sd__import-btn { cursor: pointer; }
+    /* Bouton d'import mis en avant : dégradé chaud distinct du primaire (violet), lueur douce + relief au survol. */
+    .sd__import-btn {
+      cursor: pointer;
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      background: linear-gradient(135deg, #f59e0b, #f97316 55%, #ef4444);
+      box-shadow: 0 4px 14px rgba(249, 115, 22, 0.45);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+      animation: sd-import-glow 2.6s ease-in-out infinite;
+    }
+    .sd__import-btn:hover {
+      color: #fff;
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(249, 115, 22, 0.58);
+    }
+    @keyframes sd-import-glow {
+      0%, 100% { box-shadow: 0 4px 14px rgba(249, 115, 22, 0.38); }
+      50% { box-shadow: 0 4px 22px rgba(249, 115, 22, 0.62); }
+    }
+    @media (prefers-reduced-motion: reduce) { .sd__import-btn { animation: none; } }
     .sd__hint { margin: 0; }
     .sd__pieces { display: flex; flex-direction: column; gap: 0.5rem; }
     .sd__piece { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
@@ -562,19 +749,9 @@ interface ApercuDossier {
     .sd__warn { margin: 0 0 1rem; }
     .sd__lignes-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
     .sd__sub { margin: 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
-    .sd__row-actions { display: flex; gap: 0.3rem; justify-content: flex-end; }
-    .sd__ligne-form { margin-top: 1rem; padding: 1rem; background: var(--c-50); border: 1px solid var(--c-100); border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 0.5rem; }
-    .sd__mode { display: flex; flex-direction: column; gap: 0.25rem; }
-    .sd__ligne { padding: 1rem; background: var(--c-50); border: 1px solid var(--c-100); border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem; }
-    .sd__ligne-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-    .sd__ligne-foot-actions { display: flex; gap: 0.5rem; }
-    .sd__benefs { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.6rem; background: var(--c-100); border-radius: var(--radius-md); }
-    .sd__benefs-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-    .sd__benef-row { display: flex; align-items: center; gap: 0.5rem; }
-    .sd__benef-row .form-control { flex: 1; min-width: 6rem; }
     /* Tableau éditable des marchés (mise en forme façon PPM) */
     .sd__marches-wrap { overflow-x: auto; margin-bottom: 1rem; }
-    .sd__marches-table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    .sd__marches-table { border-collapse: collapse; width: 100%; min-width: 52rem; table-layout: fixed; }
     .sd__marches-table th, .sd__marches-table td { border: 1px solid var(--c-200); padding: 0.25rem; vertical-align: top; }
     .sd__marches-table thead th { background: var(--c-50); font-size: var(--text-xs, 0.72rem); text-align: center; font-weight: 700; color: var(--c-800); overflow-wrap: break-word; }
     .sd__marches-table .form-control { width: 100%; min-width: 0; font-size: var(--text-sm); padding: 0.3rem 0.4rem; }
@@ -592,7 +769,7 @@ interface ApercuDossier {
     .ppm-doc__entete { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
     .ppm-doc__entete p { margin: 0.15rem 0; }
     .ppm-doc__table-wrap { overflow-x: auto; }
-    .ppm-doc__table { border-collapse: collapse; width: 100%; font-size: 0.72rem; }
+    .ppm-doc__table { border-collapse: collapse; width: 100%; min-width: 48rem; font-size: 0.72rem; }
     .ppm-doc__table th, .ppm-doc__table td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; }
     .ppm-doc__table th { text-align: center; font-weight: 700; background: #f0f0f0; }
     .ppm-doc__num { text-align: right; white-space: nowrap; }
@@ -605,9 +782,18 @@ interface ApercuDossier {
     .sd__ap-pieces { margin-top: 0.75rem; font-size: var(--text-sm); }
     .sd__dates-manq { color: var(--warning-text); font-size: var(--text-sm); font-weight: 700; }
     .sd__dates-ok { color: var(--success-text); font-size: var(--text-sm); font-weight: 700; }
-    .sd-proc-row { display: flex; align-items: center; gap: 0.5rem; }
-    .sd-proc-row .form-control { flex: 1; min-width: 8rem; }
+    .sd-proc-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .sd-proc-row .form-control { flex: 1 1 8rem; min-width: 7rem; }
+    /* Sélecteur « Processus » (1er champ) élargi : ses libellés (LANCEMENT/OUVERTURE/ATTRIBUTION) sont longs. */
+    .sd-proc-row .form-control:first-child { flex: 2 1 15rem; min-width: 12rem; }
     .sd-proc-err { color: var(--danger-text); display: block; }
+    /* Modals lots & dates : plus larges que le confirm-modal standard pour laisser respirer les champs. */
+    .modal.sd__lots-modal, .modal.sd__dates-modal { max-width: 54rem; }
+    /* Titre décalé (droite + bas) : l'en-tête « plein » n'a pas de padding par défaut, on l'aligne sur le corps. */
+    .sd__lots-modal .modal-header-plain, .sd__dates-modal .modal-header-plain { padding: 1.25rem 1.5rem 0.5rem; }
+    .sd-lot-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+    .sd-lot-row .form-control { flex: 1 1 7rem; min-width: 6rem; }
+    .sd-lot-row .form-control:first-child { flex: 3 1 16rem; min-width: 13rem; }
     .confirm-modal { max-width: 36rem; }
     .table-card td { white-space: normal; }
   `,
@@ -626,6 +812,7 @@ export class SoumettreDossier {
   private readonly prmpService = inject(PrmpService);
   private readonly capmService = inject(CapmService);
   private readonly typePieceService = inject(TypePieceJointeService);
+  private readonly pieceService = inject(PieceJointeDossierService);
   private readonly entiteContractService = inject(EntiteContractService);
   private readonly typeDossierService = inject(TypeDossierService);
   private readonly natureService = inject(NatureService);
@@ -670,6 +857,17 @@ export class SoumettreDossier {
   /** Soumission bloquée : un PPM doit comporter au moins un marché (§3.1 M03 ; sinon 409). */
   readonly ppmSansMarche = computed(() => this.estPpm() && this.marches().length === 0);
   readonly typesNonPpm = computed(() => this.typeDossiers().filter((t) => t.idTypeDossier !== 'PPM'));
+  /** Famille de dossier hors PPM choisie sur l'écran d'accueil (mise en concurrence / marché). */
+  readonly familleChoisie = signal<FamilleDossier>('concurrence');
+  readonly familleLabel = computed(() => (this.familleChoisie() === 'concurrence' ? 'mise en concurrence' : 'marché'));
+  /** Types de dossier de la famille choisie (mapping front `FAMILLE_PAR_TYPE`, défaut « concurrence »). */
+  readonly typesDeLaFamille = computed(() =>
+    this.typesNonPpm().filter((t) => this.familleDe(t.idTypeDossier) === this.familleChoisie()),
+  );
+  /** Famille d'un type de dossier (PPM exclu, traité par son propre flux). */
+  private familleDe(id?: string): FamilleDossier {
+    return (id && FAMILLE_PAR_TYPE[id]) || 'concurrence';
+  }
   /** Localité (lecture seule) dérivée de l'entité contractante sélectionnée. */
   readonly localiteLabel = computed(() => {
     const id = this.selectedEntiteId();
@@ -720,12 +918,42 @@ export class SoumettreDossier {
   get ppmFormValide(): boolean {
     return this.ppmForm.valid && this.piecesObligatoiresManquantes().length === 0;
   }
+
+  // — AGPM conditionnel (hint non bloquant) : reflète la règle backend sans la dupliquer en dur. —
+  /** Libellés (normalisés) des modes déclencheurs d'AGPM, d'après le référentiel des modes existants. */
+  private agpmModeLabels(): Set<string> {
+    return new Set(
+      this.modesList().filter((m) => m.declencheAgpm).map((m) => (m.libelle ?? '').trim().toLowerCase()),
+    );
+  }
+  /** ≥1 marché saisi avec un mode déclencheur → AGPM exigée à la soumission (règle backend). */
+  agpmRequisSaisie(): boolean {
+    const labels = this.agpmModeLabels();
+    if (!labels.size) return false;
+    return this.marcheControls().some((g) =>
+      labels.has(((g.get('modeLibelle')?.value as string) ?? '').trim().toLowerCase()),
+    );
+  }
+  /** Type de pièce AGPM (code stable) parmi les pièces attendues. */
+  agpmType(): TypePieceJointe | undefined {
+    return this.typesPiece().find((t) => t.code === 'AGPM');
+  }
+  /** AGPM requis (mode déclencheur saisi) mais pièce non fournie — avertissement non bloquant. */
+  agpmManquanteSaisie(): boolean {
+    const t = this.agpmType();
+    return this.agpmRequisSaisie() && t != null && !this.pieces().has(t.idTypePiece);
+  }
   /** Ligne de marché (création) dont les processus prévisionnels sont en cours d'édition (null = modal fermé). */
   readonly datesCible = signal<FormGroup | null>(null);
   /** Copie de travail des processus du marché en édition (FormArray de { idCapm, dateDebut, dateFin }). */
   readonly datesForm = this.fb.array([] as FormGroup[]);
   /** Erreurs de cohérence chronologique par processus (clé = idCapm). */
   readonly procErreurs = signal<Record<number, string>>({});
+
+  /** Ligne de marché dont les lots (allotissement) sont en cours d'édition (null = modal fermé). */
+  readonly lotsCible = signal<FormGroup | null>(null);
+  /** Copie de travail des lots du marché en édition (FormArray de { designationLot, montLot, qteLot, uniteLot }). */
+  readonly lotsForm = this.fb.array([] as FormGroup[]);
 
   readonly marcheForm = this.fb.nonNullable.group({
     designationMarche: [''],
@@ -741,8 +969,13 @@ export class SoumettreDossier {
     this.typeDossierService.list().subscribe((r) => this.typeDossiers.set(r));
     // Référentiel CAPM (processus), trié par ordre ASC — pour les selects de processus par marché.
     this.capmService.getAll().subscribe((rows) => this.capms.set([...rows].sort((a, b) => a.ordre - b.ordre)));
-    // Pièces jointes attendues pour un dossier PPM (référentiel, triées par ordre côté serveur).
-    this.typePieceService.getByTypeDossier('PPM').subscribe((rows) => this.typesPiece.set(rows));
+    // Pièces jointes attendues : dépendent du **type de dossier** (référentiel `type-piece-jointes`,
+    // triées par ordre côté serveur). PPM chargé à l'entrée du flux ; DAO/MAOO suit le type choisi.
+    this.chargerTypesPiece('PPM');
+    // Le flux DAO/MAOO recharge les pièces attendues quand le type de dossier change (liste ≠ selon le type).
+    this.dossierForm.controls.idTypeDossier.valueChanges.subscribe((v) => {
+      if (this.phase() === 'saisieDossier') this.chargerTypesPiece(v);
+    });
     // Signataire = PRMP connectée (lecture seule) ; le serveur le génère aussi à la création.
     const refPrmp = this.auth.ref();
     if (refPrmp) {
@@ -808,11 +1041,37 @@ export class SoumettreDossier {
   choisirPpm(): void {
     this.formError.set(null);
     this.phase.set('saisiePpm');
+    // Pièces attendues du PPM (le flux PPM crée toujours un dossier de type PPM).
+    this.chargerTypesPiece('PPM');
   }
 
-  choisirDossier(): void {
+  /** Ouvre la saisie d'un dossier hors PPM pour la **famille** choisie (filtre la liste des types). */
+  choisirFamille(f: FamilleDossier): void {
     this.formError.set(null);
+    this.familleChoisie.set(f);
+    // Repart d'une sélection vierge : le type précédent pourrait ne pas appartenir à la nouvelle famille.
+    this.dossierForm.controls.idTypeDossier.setValue(null);
     this.phase.set('saisieDossier');
+    // Aucune pièce tant qu'un type précis n'est pas choisi (rechargées via valueChanges du type).
+    this.chargerTypesPiece(null);
+  }
+
+  /**
+   * Charge les pièces jointes **attendues pour un type de dossier** (référentiel, triées serveur) et
+   * **réinitialise** les fichiers déjà choisis + erreurs (les clés `idTypePiece` diffèrent d'un type à l'autre).
+   * `null` → aucune pièce (aucun type sélectionné).
+   */
+  private chargerTypesPiece(idTypeDossier: string | null): void {
+    this.pieces.set(new Map());
+    this.pieceErreurs.set(new Set());
+    if (!idTypeDossier) {
+      this.typesPiece.set([]);
+      return;
+    }
+    this.typePieceService.getByTypeDossier(idTypeDossier).subscribe({
+      next: (rows) => this.typesPiece.set(rows),
+      error: () => this.typesPiece.set([]),
+    });
   }
   retourChoix(): void {
     this.formError.set(null);
@@ -857,8 +1116,29 @@ export class SoumettreDossier {
       modeLibelle: [''],
       // Ventilation par bénéficiaire (SOA + montants) — au moins une ligne (une ligne vide est ignorée au POST).
       beneficiaires: this.fb.array([this.ligneBeneficiaire()]),
+      // Lots (allotissement) — optionnels, descriptifs (aucun contrôle de somme) ; édités via un modal dédié.
+      lots: this.fb.array([] as FormGroup[]),
       processus: this.fb.array([] as FormGroup[]),
     });
+  }
+  /** Un groupe lot { designationLot, montLot, qteLot, uniteLot } d'une ligne de marché (désignation obligatoire). */
+  private ligneLot(l?: { designationLot?: string; montLot?: number | null; qteLot?: number | null; uniteLot?: string }): FormGroup {
+    return this.fb.group({
+      designationLot: [l?.designationLot ?? '', Validators.required],
+      montLot: [l?.montLot ?? (null as number | null)],
+      qteLot: [l?.qteLot ?? (null as number | null)],
+      uniteLot: [l?.uniteLot ?? ''],
+    });
+  }
+  /**
+   * Montant à retenir pour le **montant d'un lot dérivé du marché** (le lot-objet pré-rempli) : le
+   * **nouveau montant estimatif** s'il est renseigné (marché révisé), sinon le montant estimatif initial.
+   * `undefined` si les deux sont vides. Vaut quel que soit le nombre de lots (le lot-objet conserve ce
+   * montant ; les lots ajoutés manuellement gardent leur propre saisie).
+   */
+  private montantLotObjet(montEstim: unknown, nouvMontEstim: unknown): number | undefined {
+    if (nouvMontEstim != null && nouvMontEstim !== '') return Number(nouvMontEstim);
+    return montEstim != null && montEstim !== '' ? Number(montEstim) : undefined;
   }
   /** Un groupe bénéficiaire { soaCode, numCompte, ancMontBenef, nouvMontBenef } d'une ligne de marché. */
   private ligneBeneficiaire(b?: { soaCode?: string; numCompte?: string; ancMontBenef?: number; nouvMontBenef?: number }): FormGroup {
@@ -1089,6 +1369,12 @@ export class SoumettreDossier {
         );
       }
       if (!benefArr.length) benefArr.push(this.ligneBeneficiaire()); // toujours au moins une ligne
+      // Lots : le parser ne les extrait pas des PPM actuels (toujours vide) ; mappé par fidélité au contrat.
+      const lotArr = g.get('lots') as FormArray;
+      for (const lt of m.lots ?? []) {
+        if (!lt.designationLot) continue;
+        lotArr.push(this.ligneLot({ designationLot: lt.designationLot, montLot: lt.montLot, qteLot: lt.qteLot, uniteLot: lt.uniteLot }));
+      }
       // Prévisions (jalons) : idCapm résolu depuis le libellé + date de début ; date de fin à compléter (non fournie).
       const procArr = g.get('processus') as FormArray;
       for (const p of m.previsions ?? []) {
@@ -1112,8 +1398,8 @@ export class SoumettreDossier {
     if ((r.marches ?? []).length) {
       av.push(
         previsionsPresentes
-          ? 'Dates de début pré-remplies depuis le PDF — complétez la date de fin de chaque processus avant de créer.'
-          : 'Complétez les dates prévisionnelles (processus) de chaque marché avant de créer le dossier.',
+          ? 'Dates de début pré-remplies depuis le PDF — vous pouvez compléter la date de fin de chaque processus (optionnelle).'
+          : 'Complétez les dates prévisionnelles (au moins la date de début d\'un processus) de chaque marché avant de créer le dossier.',
       );
     }
     if ((r.marches ?? []).some((m) => (m.beneficiaires ?? []).length)) {
@@ -1140,7 +1426,8 @@ export class SoumettreDossier {
     return this.fb.group({
       idCapm: [p?.idCapm ?? null, Validators.required],
       dateDebut: [p?.dateDebut ?? '', Validators.required],
-      dateFin: [p?.dateFin ?? '', Validators.required],
+      // Date de fin **optionnelle** (backend : `dateFin` nullable ; chronologie ignorée si absente).
+      dateFin: [p?.dateFin ?? ''],
     });
   }
   /** Nombre de processus saisis sur une ligne de marché. */
@@ -1245,6 +1532,70 @@ export class SoumettreDossier {
     this.datesCible.set(null);
   }
 
+  // — Lots (allotissement) d'une ligne de marché (création) —
+  /**
+   * Nombre de lots **effectifs** affiché sur le bouton : les lots saisis, ou **1** (le lot-objet par
+   * défaut) dès qu'un objet est renseigné — reflète la règle « marché sans lot = lot unique = objet »
+   * sans exiger d'ouvrir le modal ni de valider. 0 seulement si aucun lot ni objet.
+   */
+  nbLots(g: FormGroup): number {
+    const saisis = (g.get('lots') as FormArray).length;
+    if (saisis) return saisis;
+    return (g.get('designationMarche')!.value as string)?.trim() ? 1 : 0;
+  }
+  /** Vrai si des lots ont été saisis explicitement (sinon le « lot » affiché est le lot-objet par défaut). */
+  lotsExplicites(g: FormGroup): boolean {
+    return (g.get('lots') as FormArray).length > 0;
+  }
+  /** Lignes de lot de la copie de travail (modal). */
+  lotControls(): FormGroup[] {
+    return this.lotsForm.controls as FormGroup[];
+  }
+  /** Contrôle d'un champ du i-ème lot de la copie de travail. */
+  lotCtrl(i: number, nom: string): FormControl {
+    return this.lotsForm.at(i).get(nom) as FormControl;
+  }
+  /** Ouvre le modal des lots : copie de travail pré-remplie depuis la ligne. */
+  ouvrirLots(g: FormGroup): void {
+    this.lotsForm.clear();
+    const existants = (g.get('lots') as FormArray).controls;
+    if (existants.length) {
+      existants.forEach((l) => this.lotsForm.push(this.ligneLot((l as FormGroup).getRawValue())));
+    } else {
+      // Aucun lot saisi : on pré-affiche le lot unique = l'objet du marché (désignation = objet, montant = montEstim),
+      // reflet de la règle appliquée au POST. Éditable : l'utilisateur peut le modifier ou ajouter d'autres lots.
+      const objet = (g.get('designationMarche')!.value as string)?.trim();
+      if (objet) {
+        const montLot = this.montantLotObjet(g.get('montEstim')!.value, g.get('nouvMontEstim')!.value) ?? null;
+        this.lotsForm.push(this.ligneLot({ designationLot: objet, montLot }));
+      }
+    }
+    this.lotsCible.set(g);
+  }
+  ajouterLot(): void {
+    this.lotsForm.push(this.ligneLot());
+  }
+  retirerLot(i: number): void {
+    this.lotsForm.removeAt(i);
+  }
+  annulerLots(): void {
+    this.lotsCible.set(null);
+  }
+  /** Valide (désignations non vides) et recopie les lots dans la ligne de marché. */
+  validerLots(): void {
+    const g = this.lotsCible();
+    if (!g) return;
+    if (this.lotsForm.invalid) {
+      this.lotsForm.markAllAsTouched();
+      return;
+    }
+    const arr = g.get('lots') as FormArray;
+    arr.clear();
+    this.lotControls().forEach((c) => arr.push(this.ligneLot(c.getRawValue())));
+    g.markAsDirty();
+    this.lotsCible.set(null);
+  }
+
   // — Pièces jointes du dossier (PPM) —
   onPiece(idTypePiece: number, ev: Event): void {
     const file = (ev.target as HTMLInputElement).files?.[0];
@@ -1320,6 +1671,24 @@ export class SoumettreDossier {
           ancMontBenef: (b['ancMontBenef'] as number) ?? undefined,
           nouvMontBenef: (b['nouvMontBenef'] as number) ?? undefined,
         }));
+      // Lots non vides uniquement (désignation renseignée) — le serveur crée une t_lot par élément.
+      const lotsSaisis: SaisieMarcheLot[] = ((l['lots'] as Record<string, unknown>[]) ?? [])
+        .filter((lt) => (lt['designationLot'] as string)?.trim())
+        .map((lt) => ({
+          designationLot: (lt['designationLot'] as string).trim(),
+          montLot: (lt['montLot'] as number) ?? undefined,
+          qteLot: (lt['qteLot'] as number) ?? undefined,
+          uniteLot: (lt['uniteLot'] as string)?.trim() || undefined,
+        }));
+      // Règle : un marché **sans lot explicite** est traité comme un **lot unique = l'objet du marché**
+      // (désignation = objet, tronquée à 200 pour @NotBlank max 200 ; montant = montant estimatif du marché).
+      // Si l'objet est vide, aucun lot n'est envoyé (impossible de respecter @NotBlank).
+      const objet = (l['designationMarche'] as string)?.trim();
+      const lots: SaisieMarcheLot[] = lotsSaisis.length
+        ? lotsSaisis
+        : objet
+          ? [{ designationLot: objet.slice(0, 200), montLot: this.montantLotObjet(l['montEstim'], l['nouvMontEstim']) }]
+          : [];
       return {
         designationMarche: (l['designationMarche'] as string) || undefined,
         montEstim: (l['montEstim'] as number) ?? undefined,
@@ -1332,10 +1701,13 @@ export class SoumettreDossier {
         modeLibelle: (l['modeLibelle'] as string)?.trim() || undefined,
         // Bénéficiaires (SOA + montants) — le serveur crée une t_service_beneficiaire par élément.
         beneficiaires: beneficiaires.length ? beneficiaires : undefined,
+        // Lots (allotissement) — optionnels ; le serveur crée une t_lot par élément (aucun contrôle de somme).
+        lots: lots.length ? lots : undefined,
         processus: ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
           idCapm: p['idCapm'] as number,
           dateDebut: p['dateDebut'] as string,
-          dateFin: p['dateFin'] as string,
+          // Date de fin optionnelle : chaîne vide → omise (le backend attend une date ISO ou rien, pas '').
+          dateFin: (p['dateFin'] as string) || undefined,
         })),
       };
     });
@@ -1375,6 +1747,14 @@ export class SoumettreDossier {
       this.dossierForm.markAllAsTouched();
       return;
     }
+    // Pièces obligatoires du type de dossier : toutes doivent être fournies (déposées après création).
+    const manquantes = this.typesPiece().filter((t) => t.obligatoire && !this.pieces().has(t.idTypePiece));
+    if (manquantes.length) {
+      this.pieceErreurs.set(new Set(manquantes.map((t) => t.idTypePiece)));
+      this.toast.error('Veuillez fournir toutes les pièces obligatoires.');
+      return;
+    }
+    this.pieceErreurs.set(new Set());
     this.formError.set(null);
     this.submitting.set(true);
     const v = this.dossierForm.getRawValue();
@@ -1385,9 +1765,35 @@ export class SoumettreDossier {
         idEntiteContract: v.idEntiteContract as number,
       })
       .subscribe({
-        next: (d) => this.entrerBrouillon(d),
+        // `POST /api/saisies/dossier` est « sans contenu » : les pièces se déposent ensuite, une par une,
+        // via `POST /api/piece-jointe-dossiers` (multipart) sur le brouillon créé.
+        next: (d) => this.deposerPiecesPuisBrouillon(d),
         error: (e: ApiError) => this.echec(e),
       });
+  }
+
+  /** Dépose les pièces choisies sur le dossier créé (multipart, une par pièce), puis entre dans le brouillon. */
+  private deposerPiecesPuisBrouillon(d: Dossier): void {
+    const entries = [...this.pieces().entries()];
+    if (!entries.length) {
+      this.entrerBrouillon(d);
+      return;
+    }
+    const ops = entries.map(([idTypePiece, file]) => {
+      const fd = new FormData();
+      fd.append('data', new Blob([JSON.stringify({ idDossier: d.idDossier, idTypePiece })], { type: 'application/json' }));
+      fd.append('fichier', file);
+      return this.pieceService.upload(fd);
+    });
+    forkJoin(ops).subscribe({
+      next: () => this.entrerBrouillon(d),
+      // Le dossier est déjà créé : si un dépôt échoue, on entre quand même dans le brouillon (les pièces
+      // restent redéposables depuis le suivi du dossier) et on signale l'échec plutôt que de bloquer.
+      error: () => {
+        this.toast.error('Dossier créé, mais une pièce jointe n’a pas pu être déposée — vous pourrez la redéposer.');
+        this.entrerBrouillon(d);
+      },
+    });
   }
 
   private entrerBrouillon(d: Dossier): void {
