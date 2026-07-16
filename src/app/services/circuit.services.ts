@@ -68,7 +68,7 @@ export class DossierService extends CrudService<Dossier> {
     return this.http.get<Page<Dossier>>(`${this.baseUrl}/verifies`, { params });
   }
 
-  /** `GET /api/dossiers/retirables` (PRMP) — dossiers SOUMIS/PRET_DISPATCH éligibles au retrait. */
+  /** `GET /api/dossiers/retirables` (PRMP) — dossiers éligibles au retrait : statuts **avant PV signé** (SOUMIS, PRET_DISPATCH, DISPATCHE, EXAMINE — source unique serveur). */
   retirables(): Observable<Dossier[]> {
     return this.http.get<Dossier[]>(`${this.baseUrl}/retirables`);
   }
@@ -301,7 +301,7 @@ export class DemandeRetraitService extends CrudService<DemandeRetrait> {
   /**
    * `POST /api/demande-retraits` (PRMP) — crée une demande ; corps réduit à `{ idDossier, motifRetrait }`
    * (identité/date/statut posés serveur). `skipErrorToast` : l'écran affiche ses messages dédiés
-   * (400 par champ, 409 « déjà dispatché », 403 non-propriétaire).
+   * (400 par champ, 409 « PV déjà signé » / demande déjà EN_ATTENTE, 403 non-propriétaire).
    */
   creer(body: DemandeRetrait): Observable<DemandeRetrait> {
     return this.http.post<DemandeRetrait>(this.baseUrl, body, { context: skipErrorToast() });

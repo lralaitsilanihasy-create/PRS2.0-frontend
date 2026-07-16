@@ -42,7 +42,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
               </select>
               @if (!retirables().length && !loading()) {
                 <span class="form-hint">
-                  Aucun dossier éligible au retrait. Un dossier ne peut être retiré qu'avant d'avoir été dispatché.
+                  Aucun dossier éligible au retrait. Un dossier peut être retiré à toute étape du circuit
+                  tant que son PV n'est pas signé.
                 </span>
               }
               @if (fieldErr('idDossier')) { <span class="form-error">{{ fieldErr('idDossier') }}</span> }
@@ -195,8 +196,10 @@ export class PrmpRetraits {
         this.formError.set(err); // 400 → messages sous les champs (fieldErr)
         this.saving.set(false);
         if (err.status === 409) {
+          // Deux causes possibles (PV déjà signé, ou demande déjà EN_ATTENTE) : afficher le message backend.
           this.toast.error(
-            "Ce dossier ne peut plus faire l'objet d'une demande de retrait : il a déjà été dispatché.",
+            err.message ||
+              "Ce dossier ne peut plus faire l'objet d'une demande de retrait (PV déjà signé, ou demande déjà en attente).",
           );
         } else if (err.status === 403) {
           this.toast.error("Vous n'êtes pas autorisé à demander le retrait de ce dossier.");
