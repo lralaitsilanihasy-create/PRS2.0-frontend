@@ -206,11 +206,11 @@ export const REFERENTIELS: AdminResource[] = [
   {
     slug: 'type-dmc',
     config: {
-      title: 'Types de DMC',
+      title: 'Types de document DMC (par marché)',
       service: TypeDmcService,
       idKey: 'idTypeDmc',
       writeCapability: 'REFERENTIEL_WRITE',
-      note: 'Types de dossier de mise en concurrence (DAO, DC, BC…). Le type d’un marché est dérivé de son mode de passation (voir « Mapping mode → type de DMC »).',
+      note: 'Types du DOCUMENT de mise en concurrence exigé pour chaque marché (DAO, DC, BC…), dérivé de son mode de passation (voir « Mapping mode → document DMC »). À ne pas confondre avec « Sous-types de dossier », qui classe les dossiers soumis à la CNM.',
       fields: [
         // idTypeDmc est une PK IDENTITY (générée par la base) → masquée à la création.
         { key: 'idTypeDmc', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true },

@@ -18,7 +18,7 @@ import { ModePassationService, TypeDmcService } from '../../services';
   template: `
     <section class="dm">
       <header class="page-header">
-        <h1 class="page-title">Mapping mode de passation → type de DMC</h1>
+        <h1 class="page-title">Mapping mode de passation → document DMC</h1>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
       <p class="alert alert-info">
@@ -64,7 +64,7 @@ import { ModePassationService, TypeDmcService } from '../../services';
           </table>
         </div>
         @if (!typesActifs().length) {
-          <p class="cnm-muted">Aucun type de DMC actif — créez-en d'abord dans « Types de DMC ».</p>
+          <p class="cnm-muted">Aucun type de DMC actif — créez-en d'abord dans « Types de document DMC (par marché) ».</p>
         }
       }
     </section>

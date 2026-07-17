@@ -22,7 +22,7 @@ const refLinks = [
     path: `/admin/referentiels/${r.slug}`,
   })),
   // Écran dédié : mapping mode de passation → type de DMC (PUT sur les modes ; pas un CRUD générique).
-  { label: 'Mapping mode → type de DMC', path: '/admin/referentiels/dmc-mapping' },
+  { label: 'Mapping mode → document DMC', path: '/admin/referentiels/dmc-mapping' },
 ];
 const compteLinks = [
   ...COMPTES.map((r) => ({
