@@ -1908,14 +1908,23 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 ## Localités
 **Ressource** `/api/localites` — Référentiel : lecture ouverte ; écriture `ADMINISTRATEUR`.
 
+> ⚠️ **Champs `referencement` et `localite` (code max 3) RETIRÉS du contrat (2026-07-17).** Colonnes
+> héritées du MLD **sans aucune sémantique** : jamais lues par la génération des références, les documents
+> (PV/lettres) ni les jobs ; valeurs dupliquant (`localite` = ANT/TMS = PK) ou dérivant
+> (« REF-&lt;id&gt; ») la PK. L'admin devait pourtant les saisir (@NotBlank). Retirées du DTO, de la
+> validation et de l'entité ; colonnes BD **dépréciées** (conservées, rendues nullables — migrations
+> `2026-07-17_localite_referencement_deprecie.sql` et `2026-07-17_localite_code_deprecie.sql`). Des valeurs
+> encore envoyées par un ancien front sont **ignorées**. → L'écran admin se réduit à **id / libellé**.
+>
+> 📌 **Étiquetage front.** Le segment localité des références officielles (`00012/DDP/CRM-ANT/2026`)
+> est bâti sur la **PK `idLocalite`** (préfixée `CRM-`, ou `CNM` en central).
+
 **Champs `LocaliteDto`**
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idLocalite | string | Oui (PK, au POST) | clé primaire, max 5 |
-| libelleLocalite | string | Oui | @NotBlank, max 50 |
-| referencement | string | Oui | @NotBlank, max 50 |
-| localite | string | Oui | @NotBlank, max 3 |
+| idLocalite | string | Oui (PK, au POST) | clé primaire, max 5 — sert de segment localité des références (`CRM-<id>`) |
+| libelleLocalite | string | Oui | @NotBlank, max 50 — libellé affiché (aussi dans les documents PV/lettres) |
 
 **Endpoints**
 
