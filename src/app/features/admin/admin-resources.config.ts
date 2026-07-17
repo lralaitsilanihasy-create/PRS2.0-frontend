@@ -95,7 +95,8 @@ export const REFERENTIELS: AdminResource[] = [
       idKey: 'idDelegation',
       writeCapability: 'REFERENTIEL_WRITE',
       fields: [
-        { key: 'idDelegation', label: 'Identifiant', type: 'number', pk: true, required: true },
+        // PK technique sans signification métier : masquée de la liste et du formulaire (auto max+1 à la création).
+        { key: 'idDelegation', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         // Libellés résolus via le référentiel Profils (liste) ; dropdown de profils en formulaire.
         {
           key: 'idProfileDelegant',
@@ -225,8 +226,8 @@ export const REFERENTIELS: AdminResource[] = [
       writeCapability: 'REFERENTIEL_WRITE',
       note: 'Types du DOCUMENT de mise en concurrence exigé pour chaque marché (DAO, DC, BC…), dérivé de son mode de passation (voir « Mapping mode → document DMC »). À ne pas confondre avec « Sous-types de dossier », qui classe les dossiers soumis à la CNM.',
       fields: [
-        // idTypeDmc est une PK IDENTITY (générée par la base) → masquée à la création.
-        { key: 'idTypeDmc', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true },
+        // idTypeDmc est une PK IDENTITY (générée par la base) → masquée à la création ET de la liste (technique).
+        { key: 'idTypeDmc', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'code', label: 'Code', required: true },
         { key: 'libelle', label: 'Libellé', required: true },
         { key: 'actif', label: 'Actif', type: 'boolean' },
@@ -265,7 +266,8 @@ export const REFERENTIELS: AdminResource[] = [
       writeCapability: 'REFERENTIEL_WRITE',
       note: 'Grille d\'examen : un point porte sa famille (DDP/DMC/DDM) et, en option, un sous-type ciblé — vide = commun à toute la famille. Un sous-type hors de la famille du point est refusé (400).',
       fields: [
-        { key: 'idPointCtrl', label: 'Identifiant', type: 'number', pk: true, required: true },
+        // PK technique sans signification métier : masquée de la liste et du formulaire (auto max+1 à la création).
+        { key: 'idPointCtrl', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'libelPointCtrl', label: 'Libellé' },
         { key: 'decriptPointCtrl', label: 'Description' },
         { key: 'ordrePointCtrl', label: 'Ordre', type: 'number' },
@@ -305,7 +307,8 @@ export const REFERENTIELS: AdminResource[] = [
       idKey: 'idRegleAlerte',
       writeCapability: 'REFERENTIEL_WRITE',
       fields: [
-        { key: 'idRegleAlerte', label: 'Identifiant', type: 'number', pk: true, required: true },
+        // PK technique sans signification métier : masquée de la liste et du formulaire (auto max+1 à la création).
+        { key: 'idRegleAlerte', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'typeJalon', label: 'Type de jalon', required: true },
         { key: 'joursAvant', label: 'Jours avant', type: 'number', required: true },
         { key: 'destinataireProfil', label: 'Profil destinataire', type: 'number' },
@@ -321,7 +324,8 @@ export const REFERENTIELS: AdminResource[] = [
       idKey: 'idRegleAnomalie',
       writeCapability: 'REFERENTIEL_WRITE',
       fields: [
-        { key: 'idRegleAnomalie', label: 'Identifiant', type: 'number', pk: true, required: true },
+        // PK technique (codeRegle est la clé métier) : masquée de la liste et du formulaire (auto max+1 à la création).
+        { key: 'idRegleAnomalie', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'codeRegle', label: 'Code règle', required: true },
         { key: 'libelle', label: 'Libellé' },
         { key: 'parametreNum', label: 'Paramètre num.', type: 'number' },
