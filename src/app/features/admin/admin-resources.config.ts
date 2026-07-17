@@ -132,7 +132,8 @@ export const REFERENTIELS: AdminResource[] = [
         { label: 'Affectations PRMP', path: '/admin/comptes/prmp-entites', queryParam: 'entite', valueKey: 'idEntiteContract' },
       ],
       fields: [
-        { key: 'idEntiteContract', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true },
+        // PK technique : auto (max+1) à la création et masquée de la liste.
+        { key: 'idEntiteContract', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'libelleEntite', label: 'Libellé', required: true },
         { key: 'adresse', label: 'Adresse', required: true },
         { key: 'categorieEntite', label: 'Catégorie', optionsFromData: true },
@@ -179,7 +180,8 @@ export const REFERENTIELS: AdminResource[] = [
         { label: 'Voir organigrammes', path: '/admin/comptes/organigrammes', queryParam: 'ministere', valueKey: 'idMinistere' },
       ],
       fields: [
-        { key: 'idMinistere', label: 'Identifiant', type: 'number', pk: true, required: true },
+        // PK technique : auto (max+1) à la création et masquée de la liste.
+        { key: 'idMinistere', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'libelleMinistere', label: 'Libellé', required: true },
         { key: 'sigle', label: 'Sigle' },
       ],
@@ -253,7 +255,9 @@ export const REFERENTIELS: AdminResource[] = [
           ref: { service: TypeDossierService, idKey: 'idTypeDossier', labelKeys: ['libelleType'] },
         },
         { key: 'obligatoire', label: 'Obligatoire', type: 'boolean', required: true },
-        { key: 'ordre', label: 'Ordre', type: 'number' },
+        // Colonne masquée en liste (bruit) ; le champ reste au formulaire — il pilote l'ordre d'affichage
+        // des pièces dans les formulaires de saisie (tri serveur). Pré-rempli : prochain ordre de la famille.
+        { key: 'ordre', label: 'Ordre', type: 'number', hideInList: true, autoOrderBy: 'idTypeDossier' },
       ],
     },
   },
@@ -434,7 +438,8 @@ export const COMPTES: AdminResource[] = [
         { label: 'Arbre des entités', path: '/admin/referentiels/entite-arbre', queryParam: 'organigramme', valueKey: 'idOrganigramme' },
       ],
       fields: [
-        { key: 'idOrganigramme', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true },
+        // PK technique : auto (max+1) à la création et masquée de la liste.
+        { key: 'idOrganigramme', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         {
           key: 'idMinistere',
           label: 'Ministère',
