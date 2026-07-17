@@ -18,6 +18,7 @@ import {
   Profile,
   RegleAlerte,
   RegleAnomalie,
+  SousTypeDossier,
   TypeDmc,
   TypeDossier,
   TypePieceJointe,
@@ -125,4 +126,15 @@ export class RegleAnomalieService extends CrudService<RegleAnomalie> {
 @Injectable({ providedIn: 'root' })
 export class TypeDossierService extends CrudService<TypeDossier, string> {
   protected readonly resource = 'type-dossiers';
+}
+
+/** Sous-types de dossier (`/api/sous-type-dossiers`) — référentiel administrable, rattaché à une famille. */
+@Injectable({ providedIn: 'root' })
+export class SousTypeDossierService extends CrudService<SousTypeDossier, string> {
+  protected readonly resource = 'sous-type-dossiers';
+
+  /** `GET /api/sous-type-dossiers/par-famille/{idTypeDossier}` — sous-types d'une famille (404 si inconnue). */
+  parFamille(idTypeDossier: string): Observable<SousTypeDossier[]> {
+    return this.http.get<SousTypeDossier[]>(`${this.baseUrl}/par-famille/${idTypeDossier}`);
+  }
 }

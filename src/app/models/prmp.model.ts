@@ -209,11 +209,12 @@ export interface SaisiePpmRequest {
 }
 
 /**
- * Corps de `POST /api/saisies/dossier` : DAO/MAOO (sans PPM). `idTypeDossier` ≠ `PPM` (sinon 409).
+ * Corps de `POST /api/saisies/dossier` : familles DMC/DDM (sans contenu). La **famille se déduit du
+ * sous-type** (sous-type de la famille DDP → 409 ; inconnu → 400 `{champ:"idSousType"}`).
  * `idLocalite` dérivé de l'ENTITÉ choisie côté serveur (non envoyé) ; `idDossier` attribué serveur.
  */
 export interface SaisieDossierRequest {
-  idTypeDossier: string;
+  idSousType: string;
   idEntiteContract: number;
 }
 

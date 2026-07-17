@@ -340,7 +340,7 @@ export class DossierConsultation implements OnInit {
     return map;
   });
 
-  readonly estPpm = computed(() => this.dossier().idTypeDossier === 'PPM');
+  readonly estPpm = computed(() => this.dossier().idTypeDossier === 'DDP');
   readonly typeLabel = computed(() => {
     const id = this.dossier().idTypeDossier;
     return id ? this.typeMap().get(id) ?? id : '—';

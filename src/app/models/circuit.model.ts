@@ -10,7 +10,10 @@ import {
 /** Dossier soumis au contrôle. Lecture filtrée par localité. */
 export interface Dossier {
   idDossier: number;
+  /** Famille de dossier (`tr_type_dossier` : DDP / DMC / DDM). */
   idTypeDossier?: string;
+  /** Sous-type (référentiel `sous-type-dossiers`) ; famille DDP : **dérivé serveur** (PPM / PPM-AGPM selon les marchés), DMC/DDM : choisi à la saisie. */
+  idSousType?: string;
   idDossierParent?: number | null;
   /** Référence officielle générée par `…/soumettre` ; laisser vide à la création. */
   refeDossier?: string;

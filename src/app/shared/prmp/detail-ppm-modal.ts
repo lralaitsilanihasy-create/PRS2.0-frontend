@@ -731,9 +731,9 @@ export class DetailPpmModal implements OnInit {
       this.soaMap.set(new Map(rows.map((s) => [s.soaCode, s.libelle ?? ''])));
     });
     this.capmService.getAll().subscribe((rows) => this.capms.set([...rows].sort((a, b) => a.ordre - b.ordre)));
-    // Types de pièces attendus (édition) — dossier PPM.
+    // Types de pièces attendus (édition) — famille DDP (planification).
     if (this.modeEdition) {
-      this.typePieceService.getByTypeDossier('PPM').subscribe((rows) => this.typesPiece.set(rows));
+      this.typePieceService.getByTypeDossier('DDP').subscribe((rows) => this.typesPiece.set(rows));
     }
     forkJoin({
       ppm: this.ppmService.getById(this.idPpm),

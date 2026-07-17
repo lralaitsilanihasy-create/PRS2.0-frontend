@@ -20,6 +20,7 @@ import {
   RegleAnomalieService,
   SessionUtilisateurService,
   SoaBeneficiaireService,
+  SousTypeDossierService,
   TypeDmcService,
   TypeDossierService,
   TypePieceJointeService,
@@ -313,9 +314,30 @@ export const REFERENTIELS: AdminResource[] = [
       service: TypeDossierService,
       idKey: 'idTypeDossier',
       writeCapability: 'REFERENTIEL_WRITE',
+      note: 'Familles de dossier (DDP / DMC / DDM) ; leurs déclinaisons vivent dans « Sous-types de dossier ».',
       fields: [
         { key: 'idTypeDossier', label: 'Identifiant', pk: true, required: true },
         { key: 'libelleType', label: 'Libellé' },
+      ],
+    },
+  },
+  {
+    slug: 'sous-type-dossiers',
+    config: {
+      title: 'Sous-types de dossier',
+      service: SousTypeDossierService,
+      idKey: 'idSousType',
+      writeCapability: 'REFERENTIEL_WRITE',
+      note: 'Chaque sous-type est rattaché à une famille (DDP / DMC / DDM). Les sous-types DDP (PPM / PPM-AGPM) sont dérivés par le serveur selon les marchés du dossier ; supprimer un sous-type référencé par un dossier est refusé (409).',
+      fields: [
+        { key: 'idSousType', label: 'Identifiant', pk: true, required: true },
+        { key: 'libelleSousType', label: 'Libellé' },
+        {
+          key: 'idTypeDossier',
+          label: 'Famille',
+          required: true,
+          ref: { service: TypeDossierService, idKey: 'idTypeDossier', labelKeys: ['libelleType'] },
+        },
       ],
     },
   },

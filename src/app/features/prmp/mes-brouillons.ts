@@ -210,7 +210,7 @@ export class MesBrouillons {
    * « manquant » (aucun endpoint documenté ne mappe idDossier → idPpm dans ce cas).
    */
   ppmManquant(d: Dossier): boolean {
-    return d.idTypeDossier === 'PPM' && !this.ppmParDossier().has(d.idDossier);
+    return d.idTypeDossier === 'DDP' && !this.ppmParDossier().has(d.idDossier);
   }
 
   /**

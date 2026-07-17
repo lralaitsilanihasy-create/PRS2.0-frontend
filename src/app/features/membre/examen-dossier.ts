@@ -376,7 +376,7 @@ export class ExamenDossier {
   /** Le bloc avis/synthèse est éditable à la création, ou en édition tant que le PV est BROUILLON. */
   readonly avisEditable = computed(() => this.mode() === 'create' || this.pvEditable());
 
-  readonly estPpm = computed(() => this.dossier()?.idTypeDossier === 'PPM');
+  readonly estPpm = computed(() => this.dossier()?.idTypeDossier === 'DDP');
   readonly typeLabel = computed(() => {
     const id = this.dossier()?.idTypeDossier;
     return id ? this.typeMap().get(id) ?? id : '—';

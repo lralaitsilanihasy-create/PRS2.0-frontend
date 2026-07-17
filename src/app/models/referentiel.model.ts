@@ -150,8 +150,20 @@ export interface TypePieceJointe {
   code?: string;
 }
 
-/** Type de dossier. PK = idTypeDossier (string). */
+/** Type (famille) de dossier — `DDP` / `DMC` / `DDM`. PK = idTypeDossier (string). */
 export interface TypeDossier {
   idTypeDossier: string;
   libelleType?: string;
+}
+
+/**
+ * Sous-type de dossier (référentiel administrable `tr_sous_type_dossier`), rattaché à une famille.
+ * Jeu initial : DDP ⊃ PPM / PPM-AGPM (dérivés serveur) ; DMC ⊃ DAO / DAOR ; DDM ⊃ MAOO / MAOR.
+ * DELETE d'un sous-type référencé par un dossier → 409.
+ */
+export interface SousTypeDossier {
+  idSousType: string;
+  libelleSousType?: string;
+  /** FK famille (`tr_type_dossier` : DDP / DMC / DDM) ; famille inconnue → 404. */
+  idTypeDossier: string;
 }

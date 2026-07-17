@@ -9,7 +9,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { MontantFrDirective } from '../../shared/montant-fr.directive';
 import { AutosizeDirective } from '../../shared/autosize.directive';
-import { Capm, Compte, Dossier, Marche, ModePassation, Nature, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, TypeDossier, TypePieceJointe } from '../../models';
+import { Capm, Compte, Dossier, Marche, ModePassation, Nature, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -26,27 +26,18 @@ import {
   ReferenceLookupService,
   SaisieService,
   SoaBeneficiaireService,
-  TypeDossierService,
+  SousTypeDossierService,
   TypePieceJointeService,
 } from '../../services';
 
 type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
 
-/** Famille métier d'un dossier hors PPM (le PPM = famille « planification », créé par son propre flux). */
-type FamilleDossier = 'concurrence' | 'marche';
 /**
- * Rattachement **type de dossier → famille** (mapping **front**, cf. décision : le référentiel
- * `t_type_dossier` n'a pas de champ « famille »). À AJUSTER si un type est ajouté / renommé côté backend.
- * Tout type hors PPM absent de cette table retombe sur « mise en concurrence » (`familleDe`).
+ * Famille de dossier hors planification (référentiel `type-dossiers`) : `DMC` (mise en concurrence)
+ * ou `DDM` (marché). La famille DDP (planification) a son propre flux (saisie PPM) ; les sous-types
+ * (DAO, DAOR, MAOO, MAOR…) viennent du référentiel serveur `sous-type-dossiers` (par-famille).
  */
-const FAMILLE_PAR_TYPE: Record<string, FamilleDossier> = {
-  DAO: 'concurrence', // Dossier d'appel d'offres
-  DC: 'concurrence', // Dossier de consultation
-  AO: 'concurrence',
-  BC: 'concurrence', // Bon de commande
-  MAOO: 'marche', // Marché (à confirmer)
-  MARCHE: 'marche',
-};
+type FamilleDossier = 'DMC' | 'DDM';
 
 /** Bénéficiaire d'un marché dans l'aperçu (snapshot lecture seule du formulaire). */
 interface ApercuBenef {
@@ -123,7 +114,7 @@ interface ApercuDossier {
               <span class="sd__choix-desc">PPM — Plan de passation des marchés : lignes de marché, bénéficiaires, dates prévisionnelles et lots.</span>
               <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
             </button>
-            <button type="button" class="sd__choix-card sd__choix-card--concurrence" (click)="choisirFamille('concurrence')">
+            <button type="button" class="sd__choix-card sd__choix-card--concurrence" (click)="choisirFamille('DMC')">
               <span class="sd__choix-head">
                 <span class="sd__choix-ic" aria-hidden="true">📢</span>
                 <span class="sd__choix-titre">Dossier de mise en concurrence</span>
@@ -131,7 +122,7 @@ interface ApercuDossier {
               <span class="sd__choix-desc">Appel d'offres, consultation… — un type + une localité. Pièces jointes selon le type choisi.</span>
               <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
             </button>
-            <button type="button" class="sd__choix-card sd__choix-card--marche" (click)="choisirFamille('marche')">
+            <button type="button" class="sd__choix-card sd__choix-card--marche" (click)="choisirFamille('DDM')">
               <span class="sd__choix-head">
                 <span class="sd__choix-ic" aria-hidden="true">📝</span>
                 <span class="sd__choix-titre">Dossier de marché</span>
@@ -344,19 +335,19 @@ interface ApercuDossier {
 
         @case ('saisieDossier') {
           <form class="card sd__form cnm-form" [formGroup]="dossierForm" (ngSubmit)="creerDossier()" novalidate>
-            <div class="alert alert-info">Dossier de <strong>{{ familleLabel() }}</strong>. Choisissez le type précis parmi ceux de cette famille.</div>
+            <div class="alert alert-info">Dossier de <strong>{{ familleLabel() }}</strong>. Choisissez le sous-type précis parmi ceux de cette famille.</div>
             <div class="cnm-form-grid">
               <label class="form-group">
-                <span class="form-label">Type de dossier *</span>
-                <select class="form-control" formControlName="idTypeDossier">
+                <span class="form-label">Sous-type de dossier *</span>
+                <select class="form-control" formControlName="idSousType">
                   <option [ngValue]="null">— Sélectionner —</option>
-                  @for (t of typesDeLaFamille(); track t.idTypeDossier) {
-                    <option [ngValue]="t.idTypeDossier">{{ t.libelleType || t.idTypeDossier }}</option>
+                  @for (t of sousTypesDeLaFamille(); track t.idSousType) {
+                    <option [ngValue]="t.idSousType">{{ t.libelleSousType || t.idSousType }}</option>
                   }
                 </select>
-                @if (req(dossierForm, 'idTypeDossier')) { <span class="form-error">Obligatoire.</span> }
-                @if (err('idTypeDossier')) { <span class="form-error">{{ err('idTypeDossier') }}</span> }
-                @if (!typesDeLaFamille().length) { <span class="form-hint">Aucun type de dossier dans la famille « {{ familleLabel() }} ».</span> }
+                @if (req(dossierForm, 'idSousType')) { <span class="form-error">Obligatoire.</span> }
+                @if (err('idSousType')) { <span class="form-error">{{ err('idSousType') }}</span> }
+                @if (!sousTypesDeLaFamille().length) { <span class="form-hint">Aucun sous-type dans la famille « {{ familleLabel() }} » (référentiel « Sous-types de dossier »).</span> }
               </label>
               <label class="form-group">
                 <span class="form-label">Entité contractante *</span>
@@ -376,13 +367,12 @@ interface ApercuDossier {
               </label>
             </div>
 
-            <!-- Pièces jointes : la liste dépend du type de dossier sélectionné (référentiel type-piece-jointes). -->
-            @if (dossierForm.controls.idTypeDossier.value) {
-              <div class="sd__pieces">
-                <h2 class="sd__sub">Pièces jointes</h2>
-                @if (!typesPiece().length) {
-                  <p class="cnm-muted">Aucune pièce attendue pour ce type de dossier.</p>
-                }
+            <!-- Pièces jointes : rattachées à la FAMILLE (référentiel type-piece-jointes), connues dès l'entrée. -->
+            <div class="sd__pieces">
+              <h2 class="sd__sub">Pièces jointes</h2>
+              @if (!typesPiece().length) {
+                <p class="cnm-muted">Aucune pièce attendue pour cette famille de dossier.</p>
+              }
                 @for (t of typesPiece(); track t.idTypePiece) {
                   <div class="sd__piece" [class.sd__piece--manquante]="t.obligatoire && !pieces().has(t.idTypePiece)">
                     <span class="sd__piece-lbl">📎 {{ t.libellePiece }}</span>
@@ -422,9 +412,6 @@ interface ApercuDossier {
                   </div>
                 </div>
               }
-            } @else {
-              <p class="cnm-muted">Sélectionnez un type de dossier pour voir les pièces jointes attendues.</p>
-            }
 
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
@@ -814,7 +801,7 @@ export class SoumettreDossier {
   private readonly typePieceService = inject(TypePieceJointeService);
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly entiteContractService = inject(EntiteContractService);
-  private readonly typeDossierService = inject(TypeDossierService);
+  private readonly sousTypeService = inject(SousTypeDossierService);
   private readonly natureService = inject(NatureService);
   private readonly modeService = inject(ModePassationService);
   private readonly compteService = inject(CompteService);
@@ -827,7 +814,6 @@ export class SoumettreDossier {
   readonly formError = signal<ApiError | null>(null);
 
   private readonly localiteMap = signal<Map<string, string>>(new Map());
-  readonly typeDossiers = signal<TypeDossier[]>([]);
   readonly natures = signal<Nature[]>([]);
   readonly modesList = signal<ModePassation[]>([]);
   readonly comptes = signal<Compte[]>([]);
@@ -853,21 +839,15 @@ export class SoumettreDossier {
     return imp && !base.some((e) => e.idEntiteContract === imp.idEntiteContract) ? [...base, imp] : base;
   });
 
-  readonly estPpm = computed(() => this.dossier()?.idTypeDossier === 'PPM');
+  /** Famille planification = `DDP` (le sous-type PPM / PPM-AGPM est dérivé serveur, jamais saisi). */
+  readonly estPpm = computed(() => this.dossier()?.idTypeDossier === 'DDP');
   /** Soumission bloquée : un PPM doit comporter au moins un marché (§3.1 M03 ; sinon 409). */
   readonly ppmSansMarche = computed(() => this.estPpm() && this.marches().length === 0);
-  readonly typesNonPpm = computed(() => this.typeDossiers().filter((t) => t.idTypeDossier !== 'PPM'));
-  /** Famille de dossier hors PPM choisie sur l'écran d'accueil (mise en concurrence / marché). */
-  readonly familleChoisie = signal<FamilleDossier>('concurrence');
-  readonly familleLabel = computed(() => (this.familleChoisie() === 'concurrence' ? 'mise en concurrence' : 'marché'));
-  /** Types de dossier de la famille choisie (mapping front `FAMILLE_PAR_TYPE`, défaut « concurrence »). */
-  readonly typesDeLaFamille = computed(() =>
-    this.typesNonPpm().filter((t) => this.familleDe(t.idTypeDossier) === this.familleChoisie()),
-  );
-  /** Famille d'un type de dossier (PPM exclu, traité par son propre flux). */
-  private familleDe(id?: string): FamilleDossier {
-    return (id && FAMILLE_PAR_TYPE[id]) || 'concurrence';
-  }
+  /** Famille de dossier hors planification choisie sur l'écran d'accueil (`DMC` / `DDM`). */
+  readonly familleChoisie = signal<FamilleDossier>('DMC');
+  readonly familleLabel = computed(() => (this.familleChoisie() === 'DMC' ? 'mise en concurrence' : 'marché'));
+  /** Sous-types de la famille choisie (référentiel serveur, `GET /api/sous-type-dossiers/par-famille/{famille}`). */
+  readonly sousTypesDeLaFamille = signal<SousTypeDossier[]>([]);
   /** Localité (lecture seule) dérivée de l'entité contractante sélectionnée. */
   readonly localiteLabel = computed(() => {
     const id = this.selectedEntiteId();
@@ -892,7 +872,7 @@ export class SoumettreDossier {
   });
 
   readonly dossierForm = this.fb.nonNullable.group({
-    idTypeDossier: [null as string | null, Validators.required],
+    idSousType: [null as string | null, Validators.required],
     idEntiteContract: [null as number | null, Validators.required],
   });
 
@@ -966,16 +946,11 @@ export class SoumettreDossier {
   private marcheRefsLoaded = false;
 
   constructor() {
-    this.typeDossierService.list().subscribe((r) => this.typeDossiers.set(r));
     // Référentiel CAPM (processus), trié par ordre ASC — pour les selects de processus par marché.
     this.capmService.getAll().subscribe((rows) => this.capms.set([...rows].sort((a, b) => a.ordre - b.ordre)));
-    // Pièces jointes attendues : dépendent du **type de dossier** (référentiel `type-piece-jointes`,
-    // triées par ordre côté serveur). PPM chargé à l'entrée du flux ; DAO/MAOO suit le type choisi.
-    this.chargerTypesPiece('PPM');
-    // Le flux DAO/MAOO recharge les pièces attendues quand le type de dossier change (liste ≠ selon le type).
-    this.dossierForm.controls.idTypeDossier.valueChanges.subscribe((v) => {
-      if (this.phase() === 'saisieDossier') this.chargerTypesPiece(v);
-    });
+    // Pièces jointes attendues : rattachées à la **famille** (référentiel `type-piece-jointes`, triées
+    // par ordre côté serveur). DDP chargée à l'entrée du flux ; DMC/DDM chargées à `choisirFamille`.
+    this.chargerTypesPiece('DDP');
     // Signataire = PRMP connectée (lecture seule) ; le serveur le génère aussi à la création.
     const refPrmp = this.auth.ref();
     if (refPrmp) {
@@ -1037,37 +1012,38 @@ export class SoumettreDossier {
     this.soaService.list().subscribe((r) => this.soaList.set(r));
   }
 
-  // — Choix du type —
+  // — Choix de la famille —
   choisirPpm(): void {
     this.formError.set(null);
     this.phase.set('saisiePpm');
-    // Pièces attendues du PPM (le flux PPM crée toujours un dossier de type PPM).
-    this.chargerTypesPiece('PPM');
+    // Pièces attendues de la planification (le flux PPM crée toujours un dossier de famille DDP).
+    this.chargerTypesPiece('DDP');
   }
 
-  /** Ouvre la saisie d'un dossier hors PPM pour la **famille** choisie (filtre la liste des types). */
+  /** Ouvre la saisie d'un dossier hors planification pour la **famille** choisie (`DMC` / `DDM`). */
   choisirFamille(f: FamilleDossier): void {
     this.formError.set(null);
     this.familleChoisie.set(f);
-    // Repart d'une sélection vierge : le type précédent pourrait ne pas appartenir à la nouvelle famille.
-    this.dossierForm.controls.idTypeDossier.setValue(null);
+    // Repart d'une sélection vierge : le sous-type précédent pourrait ne pas appartenir à la nouvelle famille.
+    this.dossierForm.controls.idSousType.setValue(null);
     this.phase.set('saisieDossier');
-    // Aucune pièce tant qu'un type précis n'est pas choisi (rechargées via valueChanges du type).
-    this.chargerTypesPiece(null);
+    // Sous-types de la famille (référentiel serveur) — alimente le select du formulaire.
+    this.sousTypesDeLaFamille.set([]);
+    this.sousTypeService.parFamille(f).subscribe({
+      next: (rows) => this.sousTypesDeLaFamille.set(rows),
+      error: () => this.sousTypesDeLaFamille.set([]),
+    });
+    // Pièces attendues : rattachées à la famille (connues dès l'entrée, pas au choix du sous-type).
+    this.chargerTypesPiece(f);
   }
 
   /**
-   * Charge les pièces jointes **attendues pour un type de dossier** (référentiel, triées serveur) et
-   * **réinitialise** les fichiers déjà choisis + erreurs (les clés `idTypePiece` diffèrent d'un type à l'autre).
-   * `null` → aucune pièce (aucun type sélectionné).
+   * Charge les pièces jointes **attendues pour une famille de dossier** (référentiel, triées serveur) et
+   * **réinitialise** les fichiers déjà choisis + erreurs (les clés `idTypePiece` diffèrent d'une famille à l'autre).
    */
-  private chargerTypesPiece(idTypeDossier: string | null): void {
+  private chargerTypesPiece(idTypeDossier: string): void {
     this.pieces.set(new Map());
     this.pieceErreurs.set(new Set());
-    if (!idTypeDossier) {
-      this.typesPiece.set([]);
-      return;
-    }
     this.typePieceService.getByTypeDossier(idTypeDossier).subscribe({
       next: (rows) => this.typesPiece.set(rows),
       error: () => this.typesPiece.set([]),
@@ -1083,7 +1059,7 @@ export class SoumettreDossier {
     this.formError.set(null);
     this.dossier.set(d);
     this.createdPpmId.set(null);
-    if (d.idTypeDossier === 'PPM') {
+    if (d.idTypeDossier === 'DDP') {
       this.ensureMarcheRefs();
       // Le DossierDto ne porte pas l'idPpm et `GET /api/ppms` exclut les BROUILLON (scoping serveur) :
       // l'idPpm d'un brouillon se résout via ses marchés (qui le portent), chargés par rechargerMarches().
@@ -1761,7 +1737,7 @@ export class SoumettreDossier {
     this.createdPpmId.set(null);
     this.saisie
       .dossier({
-        idTypeDossier: v.idTypeDossier as string,
+        idSousType: v.idSousType as string,
         idEntiteContract: v.idEntiteContract as number,
       })
       .subscribe({
