@@ -316,7 +316,37 @@ export class CrudPage {
         field.required ? [Validators.required] : [],
       );
     }
-    return this.fb.group(group);
+    const fg = this.fb.group(group);
+    // Ordre auto par groupe (`autoOrderBy`) : à la création, suit le champ de regroupement
+    // (ex. la famille) et propose max(du groupe) + 1 tant que l'utilisateur n'a rien saisi.
+    if (this.formMode() === 'create') {
+      for (const field of this.config.fields) {
+        if (!field.autoOrderBy) {
+          continue;
+        }
+        const groupCtrl = fg.get(field.autoOrderBy);
+        const orderCtrl = fg.get(field.key);
+        if (!groupCtrl || !orderCtrl) {
+          continue;
+        }
+        groupCtrl.valueChanges.subscribe((g) => {
+          if (!orderCtrl.dirty) {
+            orderCtrl.setValue(this.nextOrder(field, g));
+          }
+        });
+      }
+    }
+    return fg;
+  }
+
+  /** Prochain ordre dans le groupe : max des lignes de même valeur de regroupement + 1 (1 si aucune). */
+  private nextOrder(field: FieldConfig, groupValue: unknown): number {
+    const group = String(groupValue);
+    const nums = this.rows()
+      .filter((r) => String(r[field.autoOrderBy as string]) === group)
+      .map((r) => Number(r[field.key]))
+      .filter((n) => Number.isFinite(n));
+    return (nums.length ? Math.max(...nums) : 0) + 1;
   }
 
   /** Prochain identifiant numérique libre pour une PK auto-générée (max existant + 1). */

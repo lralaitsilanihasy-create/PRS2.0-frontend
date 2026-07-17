@@ -50,6 +50,13 @@ export interface FieldConfig {
   /** Masque la colonne dans la liste (le champ reste dans le formulaire, ex. PK). */
   hideInList?: boolean;
   /**
+   * Pré-remplit ce champ NUMÉRIQUE à la création avec `max(du groupe) + 1`, où le groupe est
+   * l'ensemble des lignes partageant la valeur du champ indiqué (ex. `ordre` par `idTypeDossier`).
+   * Recalculé quand le champ de regroupement change, tant que l'utilisateur n'a pas saisi
+   * lui-même une valeur ; le champ reste éditable (intercalation possible).
+   */
+  autoOrderBy?: string;
+  /**
    * En liste, affiche la valeur d'une AUTRE clé de la ligne (ex. libellé fourni par le serveur)
    * au lieu de `key`. Le formulaire continue d'utiliser `key` (l'id envoyé en écriture).
    */
