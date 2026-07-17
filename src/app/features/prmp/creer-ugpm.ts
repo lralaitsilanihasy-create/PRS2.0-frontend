@@ -135,7 +135,8 @@ const IMG_OK = ['image/jpeg', 'image/png'];
     </section>
   `,
   styles: `
-    .cu { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: min(64rem, 96vw); }
+    /* Pleine largeur : le formulaire occupe tout l'espace disponible. */
+    .cu { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
     .cu__head { display: flex; flex-direction: column; gap: 0.35rem; }
     .cu__title { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
     .cu__form { display: flex; flex-direction: column; gap: 1rem; }

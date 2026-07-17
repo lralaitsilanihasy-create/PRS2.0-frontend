@@ -247,7 +247,8 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
   `,
   styles: `
     .pa-wrap { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
-    .pa { flex: 1 1 38rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; max-width: 58rem; }
+    /* Pleine largeur : la carte occupe tout l'espace disponible (le panneau Détail partage via flex). */
+    .pa { flex: 1 1 38rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
     .pa-detail { flex: 1 1 26rem; position: sticky; top: 1rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
     .pa-detail__head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
     .pa-detail__title { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }

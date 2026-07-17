@@ -195,7 +195,8 @@ const IMG_OK = ['image/jpeg', 'image/png'];
   `,
   styles: `
     .ca-wrap { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
-    .ca { flex: 1 1 38rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; max-width: 58rem; }
+    /* Pleine largeur : la carte occupe tout l'espace disponible (le panneau Détail partage via flex). */
+    .ca { flex: 1 1 38rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
     /* Panneau de détail : occupe tout l'espace disponible à droite (grandit), photo pleine largeur. */
     .ca-detail { flex: 1 1 26rem; position: sticky; top: 1rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
     .ca-detail__head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }

@@ -251,7 +251,8 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
     .ua-detail__list dt { color: var(--n-500); font-weight: 600; }
     .ua-detail__list dd { margin: 0; color: var(--c-800); word-break: break-word; }
     .ua-detail__foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
-    .ua { flex: 1 1 38rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; max-width: 58rem; }
+    /* Pleine largeur : la carte occupe tout l'espace disponible (le panneau Détail partage via flex). */
+    .ua { flex: 1 1 38rem; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
     .ua__head { display: flex; flex-direction: column; gap: 0.35rem; }
     .ua__title { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
     .ua__form { display: flex; flex-direction: column; gap: 1rem; }
