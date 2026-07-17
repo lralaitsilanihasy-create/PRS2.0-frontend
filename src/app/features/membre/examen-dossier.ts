@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
+import { Observable, forkJoin, map, of, shareReplay, switchMap } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
@@ -392,13 +392,16 @@ export class ExamenDossier {
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.avisService.list().subscribe((a) => this.aviss.set(a));
 
+    // Dossier partagé : consommé par le forkJoin ET par la grille (dérivée de son sous-type), un seul GET.
+    const dossier$ = this.dossierService.getById(this.idDossier).pipe(shareReplay(1));
     forkJoin({
-      dossier: this.dossierService.getById(this.idDossier),
+      dossier: dossier$,
       ppms: this.ppmService.list(),
       marches: this.marcheService.list(),
       receptions: this.receptionService.list(),
       dispatchs: this.dispatchService.list(),
-      points: this.pointsCtrlService.list(),
+      // Grille effective du sous-type (serveur : communs famille + spécifiques) ; repli famille si idSousType absent.
+      points: dossier$.pipe(switchMap((d) => (d.idSousType ? this.pointsCtrlService.grille(d.idSousType) : this.pointsCtrlService.list()))),
       examens: this.examenService.list(),
       details: this.examenDetailService.list(),
       pvs: this.pvExamenService.list(),
@@ -422,7 +425,7 @@ export class ExamenDossier {
         );
         this.idDispatch.set(r.dispatchs.find((d) => recIds.has(d.idReception))?.idDispatch ?? null);
         const pts = r.points
-          .filter((p) => p.idTypeDossier === r.dossier.idTypeDossier)
+          .filter((p) => p.idTypeDossier === r.dossier.idTypeDossier) // no-op sur la grille serveur ; filtre famille en repli
           .sort((a, b) => (a.ordrePointCtrl ?? 0) - (b.ordrePointCtrl ?? 0));
         this.points.set(pts);
         const map = new Map<number, RowState>();

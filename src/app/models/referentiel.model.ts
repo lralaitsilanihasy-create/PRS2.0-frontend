@@ -95,14 +95,17 @@ export interface Nature {
   description?: string;
 }
 
-/** Point de contrôle (grille d'examen). */
+/** Point de contrôle (grille d'examen) — porté par une famille, affinable par sous-type. */
 export interface PointsCtrl {
   idPointCtrl: number;
   libelPointCtrl?: string;
   decriptPointCtrl?: string;
   ordrePointCtrl?: number;
   obligatoire: boolean;
+  /** Famille (`DDP`/`DMC`/`DDM`). */
   idTypeDossier: string;
+  /** Sous-type ciblé (doit appartenir à la famille, sinon 400) ; `null`/absent = point **commun** à la famille. */
+  idSousType?: string | null;
 }
 
 /** Profil (référentiel RBAC). */

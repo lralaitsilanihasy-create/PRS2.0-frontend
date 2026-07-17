@@ -106,6 +106,11 @@ export class TypeDmcService extends CrudService<TypeDmc> {
 @Injectable({ providedIn: 'root' })
 export class PointsCtrlService extends CrudService<PointsCtrl> {
   protected readonly resource = 'points-ctrls';
+
+  /** `GET /api/points-ctrls?sousType=X` — grille effective (points communs de la famille + spécifiques du sous-type), triée par ordre. */
+  grille(idSousType: string): Observable<PointsCtrl[]> {
+    return this.http.get<PointsCtrl[]>(this.baseUrl, { params: new HttpParams().set('sousType', idSousType) });
+  }
 }
 
 @Injectable({ providedIn: 'root' })
