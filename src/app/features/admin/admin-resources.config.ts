@@ -195,7 +195,8 @@ export const REFERENTIELS: AdminResource[] = [
       idKey: 'idMode',
       writeCapability: 'REFERENTIEL_WRITE',
       fields: [
-        { key: 'idMode', label: 'Identifiant', type: 'number', pk: true, required: true },
+        // PK technique : auto (max+1) à la création et masquée de la liste.
+        { key: 'idMode', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'libelle', label: 'Libellé' },
         { key: 'description', label: 'Description' },
         { key: 'publiciteRequise', label: 'Publicité requise', type: 'boolean' },
@@ -213,7 +214,8 @@ export const REFERENTIELS: AdminResource[] = [
       idKey: 'idNature',
       writeCapability: 'REFERENTIEL_WRITE',
       fields: [
-        { key: 'idNature', label: 'Identifiant', type: 'number', pk: true, required: true },
+        // PK technique : auto (max+1) à la création et masquée de la liste.
+        { key: 'idNature', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'libelle', label: 'Libellé' },
         { key: 'description', label: 'Description' },
       ],
@@ -245,8 +247,8 @@ export const REFERENTIELS: AdminResource[] = [
       writeCapability: 'REFERENTIEL_WRITE',
       note: 'Pièces jointes attendues par type de dossier (ex. PPM). « Obligatoire » = exigée à la soumission du dossier ; « Ordre » fixe l’ordre d’affichage dans le formulaire de saisie.',
       fields: [
-        // idTypePiece est une PK IDENTITY (générée par la base) → masquée à la création (envoyée mais ignorée serveur).
-        { key: 'idTypePiece', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true },
+        // idTypePiece est une PK IDENTITY (générée par la base) → masquée à la création ET de la liste (technique).
+        { key: 'idTypePiece', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'libellePiece', label: 'Libellé', required: true },
         {
           key: 'idTypeDossier',
@@ -466,7 +468,8 @@ export const COMPTES: AdminResource[] = [
         { param: 'entite', key: 'idEntiteContract', label: 'Entité' },
       ],
       fields: [
-        { key: 'idPrmpEntite', label: 'Identifiant', type: 'number', pk: true, required: true },
+        // PK générée côté serveur : masquée (la valeur max+1 envoyée est ignorée par le backend).
+        { key: 'idPrmpEntite', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         {
           key: 'idPrmp',
           label: 'PRMP',
