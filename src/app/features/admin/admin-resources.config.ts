@@ -96,8 +96,21 @@ export const REFERENTIELS: AdminResource[] = [
       writeCapability: 'REFERENTIEL_WRITE',
       fields: [
         { key: 'idDelegation', label: 'Identifiant', type: 'number', pk: true, required: true },
-        { key: 'idProfileDelegant', label: 'Profil délégant', type: 'number', required: true },
-        { key: 'idProfileDelegue', label: 'Profil délégué', type: 'number', required: true },
+        // Libellés résolus via le référentiel Profils (liste) ; dropdown de profils en formulaire.
+        {
+          key: 'idProfileDelegant',
+          label: 'Profil délégant',
+          type: 'number',
+          required: true,
+          ref: { service: ProfileService, idKey: 'idProfile', labelKeys: ['profile'] },
+        },
+        {
+          key: 'idProfileDelegue',
+          label: 'Profil délégué',
+          type: 'number',
+          required: true,
+          ref: { service: ProfileService, idKey: 'idProfile', labelKeys: ['profile'] },
+        },
         { key: 'actif', label: 'Actif', type: 'boolean', required: true },
       ],
     },
