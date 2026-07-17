@@ -45,11 +45,11 @@ export interface EntiteContract {
 }
 
 /** Localité. PK = idLocalite (string). */
+/** Localité — contrat réduit à 2 champs (2026-07-17) : `referencement` et `localite` (code) retirés (colonnes héritées dépréciées en BD). */
 export interface Localite {
+  /** Clé (max 5) référencée partout ; compose aussi le segment localité des références officielles (`CRM-<id>`). */
   idLocalite: string;
   libelleLocalite: string;
-  referencement: string;
-  localite: string;
 }
 
 /** Ministère. */

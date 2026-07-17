@@ -160,13 +160,11 @@ export const REFERENTIELS: AdminResource[] = [
       service: LocaliteService,
       idKey: 'idLocalite',
       writeCapability: 'REFERENTIEL_WRITE',
-      note: "L'identifiant (max 5) est la clé référencée partout (dossiers, contrôleurs, périmètre de visibilité) ; le code référence (max 3) compose le segment localité des références de dossier (ex. CRM-ANT). Ils peuvent différer.",
+      note: "L'identifiant (max 5) est la clé référencée partout (dossiers, contrôleurs, périmètre de visibilité) et compose le segment localité des références officielles (ex. CRM-ANT).",
+      // `referencement` et `localite` (code) retirés du contrat (2026-07-17) : colonnes héritées sans usage, dépréciées en BD.
       fields: [
         { key: 'idLocalite', label: 'Identifiant', pk: true, required: true },
         { key: 'libelleLocalite', label: 'Libellé', required: true },
-        // Rôle exact de « referencement » en cours de clarification côté backend (dérivable du code ?).
-        { key: 'referencement', label: 'Référencement (interne)', required: true },
-        { key: 'localite', label: 'Code référence (3 lettres)', required: true },
       ],
     },
   },
