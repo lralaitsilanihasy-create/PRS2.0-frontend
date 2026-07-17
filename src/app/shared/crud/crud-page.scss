@@ -49,6 +49,14 @@
     white-space: nowrap;
   }
 
+  /* Textes longs (descriptions, notes…) : retour à la ligne au lieu du scroll horizontal
+     (le design system pose `td { white-space: nowrap }` par défaut). Les boutons de la
+     colonne Actions restent insécables (`.btn { white-space: nowrap }` + flex nowrap). */
+  .table-card td {
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+
   &__req {
     color: var(--danger-text);
     margin-left: 2px;
