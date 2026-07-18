@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 import { CrudService } from './api/crud.service';
 import {
   Dossier,
+  EditionPpmRequest,
   Lot,
   Marche,
   MarchePrevision,
@@ -154,6 +155,14 @@ export class SaisieService {
   /** `POST /api/saisies/dossier` → dossier DAO/MAOO créé (statut BROUILLON). */
   dossier(req: SaisieDossierRequest): Observable<Dossier> {
     return this.http.post<Dossier>(`${this.baseUrl}/dossier`, req);
+  }
+
+  /**
+   * `PUT /api/saisies/ppm/{idDossier}` — édite un **brouillon** PPM en une transaction :
+   * en-tête + `marches` réconciliées par `idDetail` (absentes → retirées). 409 hors brouillon.
+   */
+  editionPpm(idDossier: number, req: EditionPpmRequest): Observable<Dossier> {
+    return this.http.put<Dossier>(`${this.baseUrl}/ppm/${idDossier}`, req);
   }
 
   /**

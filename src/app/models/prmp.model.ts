@@ -227,6 +227,20 @@ export interface SaisiePpmRequest {
 }
 
 /**
+ * Corps de `PUT /api/saisies/ppm/{idDossier}` — édite un **BROUILLON** PPM en une transaction :
+ * en-tête (tous obligatoires) + `marches` = **liste désirée**, réconciliée par `idDetail`
+ * (ajout des nouvelles, MAJ des existantes, **RETRAIT des absentes**). L'entité/la localité/le
+ * type/le propriétaire ne changent pas. Dossier non BROUILLON → 409 ; non-propriétaire → 403.
+ */
+export interface EditionPpmRequest {
+  exercice: number;
+  signataire: string;
+  dateSignature: string;
+  reference: string;
+  marches?: SaisieMarcheLigne[];
+}
+
+/**
  * Corps de `POST /api/saisies/dossier` : familles DMC/DDM (sans contenu). La **famille se déduit du
  * sous-type** (sous-type de la famille DDP → 409 ; inconnu → 400 `{champ:"idSousType"}`).
  * `idLocalite` dérivé de l'ENTITÉ choisie côté serveur (non envoyé) ; `idDossier` attribué serveur.

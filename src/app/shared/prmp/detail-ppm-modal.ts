@@ -5,7 +5,7 @@ import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Capm, Compte, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, ServiceBeneficiaire, SoaBeneficiaire, TypePieceJointe } from '../../models';
+import { Capm, Compte, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -17,6 +17,7 @@ import {
   PieceJointeDossierService,
   PpmService,
   ReferenceLookupService,
+  SaisieService,
   ServiceBeneficiaireService,
   SoaBeneficiaireService,
   TypePieceJointeService,
@@ -54,6 +55,11 @@ import { PpmMarchesTable } from './ppm-marches-table';
             </div>
             <div class="dpm-head-actions">
               @if (modeEdition && !editHeaderOpen()) {
+                <!-- Ré-import : parse read-only puis remplacement confirmé des lignes (PUT /api/saisies/ppm/{id}). -->
+                <label class="btn btn-outline btn-sm">
+                  {{ importEnCours() ? 'Analyse…' : '📄 Importer un PPM (PDF)' }}
+                  <input type="file" accept=".pdf,application/pdf" hidden (change)="importerPdf($event)" [disabled]="importEnCours() || applyingImport()" />
+                </label>
                 <button class="btn btn-secondary btn-sm" type="button" (click)="ouvrirEditionHeader()">✎ Modifier</button>
               }
               <button class="btn-close" type="button" (click)="emitFermer()">✕</button>
@@ -569,6 +575,38 @@ import { PpmMarchesTable } from './ppm-marches-table';
         </div>
       </div>
     }
+
+    <!-- Confirmation du ré-import : le PDF REMPLACE les lignes du brouillon (transaction serveur). -->
+    @if (importConfirm(); as r) {
+      <div class="dpm__overlay" (click)="annulerImport()">
+        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+          <header class="dpm__head">
+            <h2 class="dpm__title">Remplacer le contenu du brouillon ?</h2>
+            <button type="button" class="dpm__close" aria-label="Fermer" [disabled]="applyingImport()" (click)="annulerImport()">&times;</button>
+          </header>
+          <div class="dpm__body dpm__body--pad">
+            <p>
+              Le PDF contient <strong>{{ (r.marches ?? []).length }}</strong> marché(s) : ils
+              <strong>remplaceront les {{ marches().length }} ligne(s) actuelle(s)</strong> du brouillon
+              (bénéficiaires, dates, lots et formes re-créés depuis le PDF).
+            </p>
+            <p class="cnm-muted">
+              Les pièces jointes sont conservées. L'entité et la référence du dossier ne changent
+              pas{{ r.autoriteContractante ? ' (PDF : « ' + r.autoriteContractante + ' »)' : '' }}.
+              @if (r.avertissements?.length) {
+                {{ r.avertissements!.length }} avertissement(s) d'import — vérifiez les lignes après remplacement.
+              }
+            </p>
+          </div>
+          <footer class="dpm__foot">
+            <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="applyingImport()" (click)="annulerImport()">Annuler</button>
+            <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="applyingImport()" (click)="confirmerImport()">
+              {{ applyingImport() ? 'Remplacement…' : 'Remplacer' }}
+            </button>
+          </footer>
+        </div>
+      </div>
+    }
   `,
   styleUrl: './detail-ppm-modal.scss',
 })
@@ -603,6 +641,7 @@ export class DetailPpmModal implements OnInit {
   private readonly compteService = inject(CompteService);
   private readonly capmService = inject(CapmService);
   private readonly typePieceService = inject(TypePieceJointeService);
+  private readonly saisieService = inject(SaisieService);
 
   readonly loading = signal(true);
   /** Animation de fermeture en cours : retarde l'émission de `fermer` le temps du fondu sortant. */
@@ -627,6 +666,12 @@ export class DetailPpmModal implements OnInit {
   readonly uploadFile = signal<File | null>(null);
   readonly uploading = signal(false);
   readonly suppressionPiece = signal<number | null>(null);
+
+  // — Ré-import PDF sur le brouillon (modeEdition) : parse read-only puis remplacement en une transaction. —
+  readonly importEnCours = signal(false);
+  /** Résultat d'import en attente de confirmation de remplacement (null = fermé). */
+  readonly importConfirm = signal<SaisiePpmImportResult | null>(null);
+  readonly applyingImport = signal(false);
 
   // — AGPM conditionnel : le PPM porte `agpmRequis` (autorité backend) ; pièce repérée par code stable. —
   /** Type de pièce AGPM parmi les pièces attendues (chargées en modeEdition). */
@@ -766,6 +811,104 @@ export class DetailPpmModal implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false), // 403/404 → toast centralisé
+    });
+  }
+
+  // — Ré-import PDF (modeEdition) : parse read-only, confirmation, puis remplacement en une transaction. —
+  importerPdf(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // autorise la re-sélection du même fichier
+    if (!file) return;
+    this.importEnCours.set(true);
+    this.saisieService.importPpm(file).subscribe({
+      next: (r) => {
+        this.importEnCours.set(false);
+        this.importConfirm.set(r); // rien n'est écrit tant que le remplacement n'est pas confirmé
+      },
+      error: () => this.importEnCours.set(false), // 400 PDF illisible → toast centralisé
+    });
+  }
+  annulerImport(): void {
+    if (!this.applyingImport()) this.importConfirm.set(null);
+  }
+  /** Applique le remplacement : `PUT /api/saisies/ppm/{idDossier}` (réconciliation — lignes actuelles retirées). */
+  confirmerImport(): void {
+    const r = this.importConfirm();
+    const p = this.ppm();
+    if (!r || !p) return;
+    this.applyingImport.set(true);
+    const req: EditionPpmRequest = {
+      // En-tête : exercice/date du PDF (repli sur l'existant) ; signataire/référence actuels conservés (non extraits).
+      exercice: r.exercice ?? p.exercice,
+      dateSignature: r.dateSignature ?? p.dateSignature,
+      signataire: p.signataire,
+      reference: p.reference,
+      marches: this.lignesDepuisImport(r),
+    };
+    this.saisieService.editionPpm(this.idDossier, req).subscribe({
+      next: () => {
+        this.toast.success('Brouillon remplacé par le contenu du PDF.');
+        this.applyingImport.set(false);
+        this.importConfirm.set(null);
+        this.charger();
+        this.modifie.emit();
+      },
+      error: (e: ApiError) => {
+        this.applyingImport.set(false);
+        // 400 fieldErrors (ex. dates de processus manquantes) : pas de formulaire ici → toast explicite.
+        const detail = e.fieldErrors ? Object.values(e.fieldErrors).join(' ') : '';
+        this.toast.error(detail || e.message || 'Échec du remplacement.', 'Import impossible');
+      },
+    });
+  }
+  /** Mapping import → lignes de saisie — identique à la création (lot-objet par défaut compris). */
+  private lignesDepuisImport(r: SaisiePpmImportResult): SaisieMarcheLigne[] {
+    return (r.marches ?? []).map((m) => {
+      const beneficiaires = (m.beneficiaires ?? [])
+        .filter((b) => b.soaCode || b.numCompte || b.ancMontBenef != null || b.nouvMontBenef != null)
+        .map((b) => ({
+          soaCode: b.soaCode?.trim() || undefined,
+          numCompte: b.numCompte?.trim() || undefined,
+          ancMontBenef: b.ancMontBenef ?? undefined,
+          nouvMontBenef: b.nouvMontBenef ?? undefined,
+        }));
+      const lotsSaisis = (m.lots ?? [])
+        .filter((lt) => lt.designationLot?.trim())
+        .map((lt) => ({
+          designationLot: (lt.designationLot as string).trim(),
+          montLot: lt.montLot ?? undefined,
+          qteLot: lt.qteLot ?? undefined,
+          uniteLot: lt.uniteLot?.trim() || undefined,
+        }));
+      // Règle du lot-objet par défaut (comme à la création) : sans lot explicite, lot unique = objet du marché.
+      const objet = m.designationMarche?.trim();
+      const lots = lotsSaisis.length
+        ? lotsSaisis
+        : objet
+          ? [{ designationLot: objet.slice(0, 200), montLot: m.nouvMontEstim ?? m.montEstim ?? undefined }]
+          : [];
+      const processus = (m.previsions ?? [])
+        .map((pv) => ({
+          idCapm: this.capms().find((c) => (c.libelleProcessus ?? '').toUpperCase() === (pv.processus ?? '').toUpperCase())?.idCapm,
+          dateDebut: pv.dateDebut,
+        }))
+        .filter((pv): pv is { idCapm: number; dateDebut: string } => pv.idCapm != null && !!pv.dateDebut);
+      return {
+        designationMarche: m.designationMarche || undefined,
+        montEstim: m.montEstim ?? undefined,
+        nouvMontEstim: m.nouvMontEstim ?? undefined,
+        numCompte: m.beneficiaires?.[0]?.numCompte?.trim() || undefined,
+        financement: m.financement || undefined,
+        idNature: m.idNature ?? undefined,
+        natureLibelle: m.natureLibelle?.trim() || undefined,
+        idMode: m.idMode ?? undefined,
+        modeLibelle: m.modeLibelle?.trim() || undefined,
+        formeMarche: m.formeMarche ?? undefined,
+        beneficiaires: beneficiaires.length ? beneficiaires : undefined,
+        lots: lots.length ? lots : undefined,
+        processus,
+      };
     });
   }
 
