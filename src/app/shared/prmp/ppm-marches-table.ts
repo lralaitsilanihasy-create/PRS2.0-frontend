@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, computed, contentChild, inject, input, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 
 import { FORME_MARCHE_LIBELLES, Marche, MarchePrevision, ServiceBeneficiaire } from '../../models';
 import {
@@ -18,6 +19,8 @@ interface BenefRow {
 }
 /** Ligne de marché mise en forme pour le tableau (libellés résolus, dates par jalon). */
 interface MarcheRow {
+  /** Marché d'origine — contexte transmis au template d'actions optionnel (`#rowActions`). */
+  source: Marche;
   nature: string;
   objet: string;
   montEstim?: number | null;
@@ -45,6 +48,7 @@ interface MarcheRow {
   selector: 'app-ppm-marches-table',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [NgTemplateOutlet],
   template: `
     @if (rows().length) {
       <div class="pmt-wrap">
@@ -53,6 +57,7 @@ interface MarcheRow {
             <col style="width: 6%" /><col style="width: 15%" /><col style="width: 9%" /><col style="width: 9%" />
             <col style="width: 6%" /><col style="width: 5%" /><col style="width: 8%" /><col style="width: 5%" />
             <col style="width: 9%" /><col style="width: 9%" /><col style="width: 6%" /><col style="width: 6%" /><col style="width: 6%" />
+            @if (actionsTpl()) { <col style="width: 11%" /> }
           </colgroup>
           <thead>
             <tr>
@@ -66,6 +71,7 @@ interface MarcheRow {
               <th rowspan="2">DATE PREVISIONNELLE DE LANCEMENT</th>
               <th rowspan="2">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
               <th rowspan="2">DATE PREVISIONNELLE D'ATTRIBUTION</th>
+              @if (actionsTpl()) { <th rowspan="2">ACTIONS</th> }
             </tr>
             <tr>
               <th>SERVICE BENEFICIAIRE</th><th>COMPTE</th><th>MONTANT ESTIMATIF PAR BENEFICIAIRE</th><th>NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
@@ -101,6 +107,11 @@ interface MarcheRow {
                     <td [attr.rowspan]="m.benefRows.length" class="pmt-date">{{ m.dateLancement }}</td>
                     <td [attr.rowspan]="m.benefRows.length" class="pmt-date">{{ m.dateOuverture }}</td>
                     <td [attr.rowspan]="m.benefRows.length" class="pmt-date">{{ m.dateAttribution }}</td>
+                    @if (actionsTpl(); as tpl) {
+                      <td [attr.rowspan]="m.benefRows.length" class="pmt-actions">
+                        <ng-container [ngTemplateOutlet]="tpl" [ngTemplateOutletContext]="{ $implicit: m.source }" />
+                      </td>
+                    }
                   }
                 </tr>
               }
@@ -137,6 +148,8 @@ export class PpmMarchesTable implements OnInit {
   readonly beneficiaires = input<ServiceBeneficiaire[]>([]);
   /** Dates prévisionnelles de ces marchés (regroupées par idDetail en interne). */
   readonly previsions = input<MarchePrevision[]>([]);
+  /** Colonne ACTIONS optionnelle : template projeté `#rowActions` (contexte = le `Marche` de la ligne). */
+  readonly actionsTpl = contentChild<TemplateRef<unknown>>('rowActions');
 
   private readonly lookups = inject(ReferenceLookupService);
   private readonly modeService = inject(ModePassationService);
@@ -189,6 +202,7 @@ export class PpmMarchesTable implements OnInit {
       const benefs = benefByDetail.get(m.idDetail) ?? [];
       const dmc = m.idMode != null ? this.modeTypeMap().get(m.idMode) : undefined;
       return {
+        source: m,
         nature: this.lbl(this.natureMap(), m.idNature),
         objet: m.designationMarche ?? '',
         montEstim: m.montEstim,

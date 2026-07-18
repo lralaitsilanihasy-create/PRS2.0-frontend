@@ -199,57 +199,19 @@ import { PpmMarchesTable } from './ppm-marches-table';
                   </button>
                 </div>
               } @else if (modeEdition) {
-                <div class="table-card">
-                  <table class="dpm-marches">
-                    <colgroup>
-                      <col style="width:12%;" />
-                      <col style="width:24%;" />
-                      <col style="width:13%;" />
-                      <col style="width:11%;" />
-                      <col style="width:9%;" />
-                      <col style="width:31%;" />
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        <th>Nature</th>
-                        <th>Objet</th>
-                        <th class="r">Montant estimé</th>
-                        <th>Mode</th>
-                        <th>Forme</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (m of marches(); track m.idDetail) {
-                        <tr>
-                          <td class="dpm-objet-cell">{{ resolve(natureMap(), m.idNature) }}</td>
-                          <td [title]="m.designationMarche || ''" class="dpm-objet-cell">{{ m.designationMarche || '—' }}</td>
-                          <td class="td-montant">{{ m.montEstim | number }}</td>
-                          <td>{{ resolve(modeMap(), m.idMode) }}</td>
-                          <td>{{ formeLabel(m.formeMarche) }}</td>
-                          <td>
-                            <span class="badge badge-dot"
-                              [class.badge-prevu]="m.statut === 'PREVU'"
-                              [class.badge-cours]="m.statut === 'EN_COURS'"
-                              [class.badge-cloture]="m.statut === 'CLOTURE'">
-                              {{ m.statut || '—' }}
-                            </span>
-                          </td>
-                          <td>
-                            <div class="td-actions">
-                              <button class="btn btn-secondary btn-sm" type="button" (click)="voirDates(m)">Voir dates</button>
-                              <button class="btn btn-secondary btn-sm" type="button" (click)="modifierBenefs(m)">Bénéficiaires</button>
-                              <button class="btn btn-secondary btn-sm" type="button" (click)="modifierLots(m)">Lots ({{ lotsDe(m.idDetail).length }})</button>
-                              <button class="btn btn-outline btn-sm" type="button" (click)="modifierMarche(m)">Modifier</button>
-                              <button class="btn btn-danger btn-sm" type="button" (click)="supprimerMarche(m)">Supprimer</button>
-                            </div>
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
+                <!-- Même affichage que la lecture (format PPM officiel : montants, mode, forme, financement,
+                     bénéficiaires, dates) + colonne ACTIONS injectée dans la table partagée. -->
+                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()">
+                  <ng-template #rowActions let-m>
+                    <div class="dpm-actions-stack">
+                      <button class="btn btn-secondary btn-sm" type="button" (click)="voirDates(m)">Voir dates</button>
+                      <button class="btn btn-secondary btn-sm" type="button" (click)="modifierBenefs(m)">Bénéficiaires</button>
+                      <button class="btn btn-secondary btn-sm" type="button" (click)="modifierLots(m)">Lots ({{ lotsDe(m.idDetail).length }})</button>
+                      <button class="btn btn-outline btn-sm" type="button" (click)="modifierMarche(m)">Modifier</button>
+                      <button class="btn btn-danger btn-sm" type="button" (click)="supprimerMarche(m)">Supprimer</button>
+                    </div>
+                  </ng-template>
+                </app-ppm-marches-table>
               } @else {
                 <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
               }
@@ -917,6 +879,7 @@ export class DetailPpmModal implements OnInit {
         nouvMontEstim: m.nouvMontEstim ?? undefined,
         numCompte: m.beneficiaires?.[0]?.numCompte?.trim() || undefined,
         financement: m.financement || undefined,
+        statut: 'PREVU', // comme à la création (l'import ne porte pas de statut)
         idNature: m.idNature ?? undefined,
         natureLibelle: m.natureLibelle?.trim() || undefined,
         idMode: m.idMode ?? undefined,

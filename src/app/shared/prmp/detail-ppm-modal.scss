@@ -47,7 +47,8 @@
     overflow-wrap: anywhere;
     word-break: break-word;
   }
-  td { vertical-align: top; }
+  /* Toutes les cellules replient (modes non résolus longs, formes…) au lieu de déborder sur la colonne voisine. */
+  td { vertical-align: top; white-space: normal; overflow-wrap: anywhere; }
   .td-actions { flex-wrap: wrap; }
 }
 
@@ -167,6 +168,14 @@
   }
 }
 .dpm-agpm-ic { flex-shrink: 0; }
+
+/* Colonne ACTIONS injectée dans la table PPM officielle : boutons empilés (comme la saisie). */
+.dpm-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  .btn { width: 100%; }
+}
 
 /* Actions de la prévisualisation d'import (Annuler / Enregistrer). */
 .dpm-apercu-actions {
