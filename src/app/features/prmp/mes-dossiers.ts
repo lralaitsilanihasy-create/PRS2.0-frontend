@@ -326,13 +326,15 @@ export class MesDossiers {
       },
       error: () => this.loading.set(false),
     });
-    // Deux appels scopés PRMP : GET /api/dossiers est « hors BROUILLON » (doc §Dossiers),
-    // donc les brouillons se comptent via ?statut=BROUILLON ; les soumis = la liste de base.
+    // Deux appels scopés PRMP : brouillons via ?statut=BROUILLON ; soumis = liste de base filtrée
+    // « hors BROUILLON » en DÉFENSIF (le contrat dit la liste de base hors brouillon, mais une
+    // régression l'a déjà démentie — un brouillon serait sinon compté deux fois, cf. DossiersListe).
     forkJoin({
       brouillons: this.dossierService.list('BROUILLON'),
       soumis: this.dossierService.list(),
     }).subscribe({
-      next: ({ brouillons, soumis }) => this.compteurs.set(this.grouper(brouillons, soumis)),
+      next: ({ brouillons, soumis }) =>
+        this.compteurs.set(this.grouper(brouillons, soumis.filter((d) => d.statut !== 'BROUILLON'))),
       error: () => {},
     });
   }
