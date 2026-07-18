@@ -9,7 +9,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { MontantFrDirective } from '../../shared/montant-fr.directive';
 import { AutosizeDirective } from '../../shared/autosize.directive';
-import { Capm, Compte, Dossier, Marche, ModePassation, Nature, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
+import { Capm, Compte, Dossier, FORME_MARCHE_LIBELLES, FormeMarche, Marche, ModePassation, Nature, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -197,9 +197,9 @@ interface ApercuDossier {
               <div class="sd__marches-wrap">
                 <table class="sd__marches-table">
                   <colgroup>
-                    <col style="width: 8%" /><col style="width: 15%" /><col style="width: 9%" /><col style="width: 9%" />
-                    <col style="width: 8%" /><col style="width: 6%" /><col style="width: 10%" /><col style="width: 6%" />
-                    <col style="width: 9%" /><col style="width: 9%" /><col style="width: 11%" />
+                    <col style="width: 7%" /><col style="width: 13%" /><col style="width: 9%" /><col style="width: 9%" />
+                    <col style="width: 7%" /><col style="width: 7%" /><col style="width: 5%" /><col style="width: 9%" />
+                    <col style="width: 6%" /><col style="width: 8%" /><col style="width: 8%" /><col style="width: 12%" />
                   </colgroup>
                   <thead>
                     <tr>
@@ -208,6 +208,7 @@ interface ApercuDossier {
                       <th rowspan="2">Montant estimé</th>
                       <th rowspan="2">Nouveau montant</th>
                       <th rowspan="2">Mode de passation</th>
+                      <th rowspan="2">Forme</th>
                       <th rowspan="2">Financement</th>
                       <th colspan="4">Informations sur le bénéficiaire</th>
                       <th rowspan="2">Actions</th>
@@ -226,6 +227,11 @@ interface ApercuDossier {
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" /></td>
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" /></td>
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="sd-modes" placeholder="Mode" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)">
+                              <select class="form-control" [formControl]="ctrl(g, 'formeMarche')" title="Forme du marché">
+                                @for (f of formes; track f.code) { <option [value]="f.code">{{ f.libelle }}</option> }
+                              </select>
+                            </td>
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'financement')" /></td>
                           }
                           <td><input class="form-control" type="text" [formControl]="benefCtrl(g, i, 'soaCode')" list="sd-soa" placeholder="SOA" /></td>
@@ -819,6 +825,8 @@ export class SoumettreDossier {
   readonly comptes = signal<Compte[]>([]);
   readonly soaList = signal<SoaBeneficiaire[]>([]);
   readonly modeMap = signal<Map<string, string>>(new Map());
+  /** Options du select « Forme du marché » (liste fermée, libellés d'affichage). */
+  readonly formes = (Object.entries(FORME_MARCHE_LIBELLES) as [FormeMarche, string][]).map(([code, libelle]) => ({ code, libelle }));
 
   readonly dossier = signal<Dossier | null>(null);
   /** idPpm du brouillon PPM courant (créé ou repris) — alimente le DetailPpmModal en phase brouillon. */
@@ -1090,6 +1098,8 @@ export class SoumettreDossier {
       // Nature/mode en saisie libre (comme montant) : le libellé est résolu-ou-créé au POST par le backend.
       natureLibelle: [''],
       modeLibelle: [''],
+      // Forme du marché : défaut réglementaire « à quantité fixe » (pré-remplie par l'import si relevée dans l'objet).
+      formeMarche: ['QUANTITE_FIXE' as FormeMarche],
       // Ventilation par bénéficiaire (SOA + montants) — au moins une ligne (une ligne vide est ignorée au POST).
       beneficiaires: this.fb.array([this.ligneBeneficiaire()]),
       // Lots (allotissement) — optionnels, descriptifs (aucun contrôle de somme) ; édités via un modal dédié.
@@ -1335,6 +1345,8 @@ export class SoumettreDossier {
         // Nature/mode : libellé du PDF pré-rempli directement dans le champ (créé/résolu au POST).
         natureLibelle: m.natureLibelle ?? '',
         modeLibelle: m.modeLibelle ?? '',
+        // Forme relevée dans l'objet par le parser (« contrat cadre », « à commande ») ; sinon défaut.
+        formeMarche: m.formeMarche ?? ('QUANTITE_FIXE' as FormeMarche),
       });
       // Bénéficiaires (SOA + montants) pré-remplis depuis le PDF — saisis directement (résolus/créés au POST).
       const benefArr = g.get('beneficiaires') as FormArray;
@@ -1675,6 +1687,7 @@ export class SoumettreDossier {
         // Nature/mode en saisie libre : on envoie le libellé, le serveur le résout-ou-crée au POST.
         natureLibelle: (l['natureLibelle'] as string)?.trim() || undefined,
         modeLibelle: (l['modeLibelle'] as string)?.trim() || undefined,
+        formeMarche: (l['formeMarche'] as FormeMarche) || undefined,
         // Bénéficiaires (SOA + montants) — le serveur crée une t_service_beneficiaire par élément.
         beneficiaires: beneficiaires.length ? beneficiaires : undefined,
         // Lots (allotissement) — optionnels ; le serveur crée une t_lot par élément (aucun contrôle de somme).

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
 
-import { Marche, MarchePrevision, ServiceBeneficiaire } from '../../models';
+import { FORME_MARCHE_LIBELLES, Marche, MarchePrevision, ServiceBeneficiaire } from '../../models';
 import {
   CapmService,
   ModePassationService,
@@ -26,6 +26,8 @@ interface MarcheRow {
   /** Type de DMC **dérivé** du mode (code court + libellé en tooltip) ; absent si mode non mappé. */
   typeDmcCode?: string;
   typeDmcLibelle?: string;
+  /** Libellé de la forme du marché — vide si `QUANTITE_FIXE` (défaut non affiché, seules les exceptions le sont). */
+  formeLibelle: string;
   financement: string;
   benefRows: BenefRow[];
   dateLancement: string;
@@ -85,6 +87,9 @@ interface MarcheRow {
                       } @else if (m.mode) {
                         <span class="badge badge-warning pmt-dmc" title="Aucun type de DMC mappé pour ce mode. Configurez le mapping en administration.">DMC ?</span>
                       }
+                      @if (m.formeLibelle) {
+                        <span class="badge pmt-forme" title="Forme du marché">{{ m.formeLibelle }}</span>
+                      }
                     </td>
                     <td [attr.rowspan]="m.benefRows.length">{{ m.financement }}</td>
                   }
@@ -120,6 +125,8 @@ interface MarcheRow {
     .pmt td.pmt-objet { white-space: pre-wrap; }
     /* Badge de type de DMC (dérivé) : compact pour cette table dense ; libellé complet en tooltip. */
     .pmt .pmt-dmc { display: inline-block; margin-top: 2px; font-size: 0.56rem; padding: 0 3px; line-height: 1.4; }
+    /* Badge de forme du marché (affiché seulement hors défaut « à quantité fixe »). */
+    .pmt .pmt-forme { display: inline-block; margin-top: 2px; font-size: 0.56rem; padding: 0 3px; line-height: 1.4; background: var(--p-50, #eef2ff); color: var(--p-600, #4f46e5); border: 1px solid var(--p-200, #c7d2fe); }
     .pmt-empty { color: var(--n-400, #71717a); margin: 0; }
   `,
 })
@@ -189,6 +196,8 @@ export class PpmMarchesTable implements OnInit {
         mode: this.lbl(this.modeMap(), m.idMode),
         typeDmcCode: dmc?.code,
         typeDmcLibelle: dmc?.libelle,
+        // Forme affichée seulement hors défaut (« À quantité fixe » sur chaque ligne serait du bruit).
+        formeLibelle: m.formeMarche && m.formeMarche !== 'QUANTITE_FIXE' ? FORME_MARCHE_LIBELLES[m.formeMarche] : '',
         financement: m.financement ?? '',
         benefRows: benefs.length
           ? benefs.map((b) => ({ soaCode: b.soaCode, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }))

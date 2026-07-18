@@ -5,7 +5,7 @@ import { forkJoin, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Compte, Marche, ModePassation, Nature, Ppm } from '../../models';
+import { Compte, FORME_MARCHE_LIBELLES, FormeMarche, Marche, ModePassation, Nature, Ppm } from '../../models';
 import {
   CompteService,
   MarcheService,
@@ -91,6 +91,14 @@ import {
                   </div>
                   <div class="form-group"><label class="form-label">Financement</label><input class="form-control" formControlName="financement" maxlength="20" /></div>
                   <div class="form-group"><label class="form-label">Statut</label><input class="form-control" formControlName="statut" maxlength="20" /></div>
+                  <div class="form-group">
+                    <label class="form-label">Forme du marché</label>
+                    <select class="form-control" formControlName="formeMarche">
+                      @for (f of formes; track f.code) {
+                        <option [value]="f.code">{{ f.libelle }}</option>
+                      }
+                    </select>
+                  </div>
                   <div class="form-group">
                     <label class="form-label">Mode de passation</label>
                     <select class="form-control" formControlName="idMode">
@@ -190,6 +198,8 @@ export class RectifierDossier {
 
   headerForm: FormGroup = this.fb.group({});
   private readonly marchesArray = signal<FormArray<FormGroup>>(this.fb.array([] as FormGroup[]));
+  /** Options du select « Forme du marché » (liste fermée, libellés d'affichage). */
+  readonly formes = (Object.entries(FORME_MARCHE_LIBELLES) as [FormeMarche, string][]).map(([code, libelle]) => ({ code, libelle }));
 
   constructor() {
     const idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
@@ -258,6 +268,8 @@ export class RectifierDossier {
       financement: [m.financement ?? ''],
       statut: [m.statut ?? ''],
       idNature: [m.idNature ?? null],
+      // Forme courante pré-remplie : elle DOIT repartir au PATCH (défaut serveur sinon → écrasement silencieux).
+      formeMarche: [m.formeMarche ?? ('QUANTITE_FIXE' as FormeMarche)],
     });
   }
 

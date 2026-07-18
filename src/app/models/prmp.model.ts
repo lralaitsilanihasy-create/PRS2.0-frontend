@@ -1,5 +1,19 @@
 /** Domaine PRMP : PPM, marchés et leurs détails. */
 
+/**
+ * Forme du marché — liste fermée réglementaire (enum contrôlé serveur, pas de référentiel en table).
+ * Défaut serveur `QUANTITE_FIXE` : jamais null en base ni en sortie ; code inconnu → 400 ciblé.
+ * ⚠️ Optionnelle en entrée PARTOUT (POST/PUT/PATCH) avec défaut : toute ÉCRITURE de marché doit
+ * ré-envoyer la forme courante, sinon elle serait silencieusement réinitialisée à QUANTITE_FIXE.
+ */
+export type FormeMarche = 'A_COMMANDE' | 'CONTRAT_CADRE' | 'QUANTITE_FIXE';
+/** Libellés d'affichage des formes de marché. */
+export const FORME_MARCHE_LIBELLES: Record<FormeMarche, string> = {
+  A_COMMANDE: 'Marché à commande',
+  CONTRAT_CADRE: 'Contrat cadre',
+  QUANTITE_FIXE: 'À quantité fixe',
+};
+
 /** Plan de Passation des Marchés. */
 export interface Ppm {
   idPpm: number;
@@ -40,6 +54,8 @@ export interface Marche {
   statut?: string;
   idNature?: number;
   idMode?: number;
+  /** Forme du marché (relevée dans l'objet à l'import, sinon défaut serveur `QUANTITE_FIXE`). */
+  formeMarche?: FormeMarche;
 }
 
 /**
@@ -183,6 +199,8 @@ export interface SaisieMarcheLigne {
   idMode?: number; // mode de passation choisi par la PRMP (FK tr_mode) ; conservé tel quel
   /** Libellé de mode (import) quand `idMode` n'est pas résolu → le serveur crée/résout à la volée. */
   modeLibelle?: string;
+  /** Forme du marché — optionnelle (absente → défaut serveur `QUANTITE_FIXE`). */
+  formeMarche?: FormeMarche;
   /** Ventilation par bénéficiaire (SOA + montants) — le serveur crée une `t_service_beneficiaire` par élément. */
   beneficiaires?: SaisieMarcheBeneficiaire[];
   /** Lots (allotissement) — le serveur crée une `t_lot` par élément ; descriptifs, aucun contrôle de somme. */
@@ -233,8 +251,8 @@ export interface SaisieImportPrevision {
 }
 
 /**
- * Lot extrait d'un PPM PDF (import). ⚠️ **Toujours vide** : le parser ne détecte pas de structure de
- * lot fiable dans ces PDF → l'allotissement se fait à la saisie. Type conservé par fidélité au contrat.
+ * Lot extrait d'un PPM PDF (import) — extraction best-effort depuis la désignation (motif
+ * « répartis en NN Lots : Lot 01 : … » ; garde de cohérence NN annoncés = NN trouvés, sinon vide).
  */
 export interface SaisieImportLot {
   designationLot?: string;
@@ -253,9 +271,11 @@ export interface SaisieImportMarche {
   idMode?: number;
   modeLibelle?: string;
   financement?: string;
+  /** Forme relevée dans l'objet (« contrat cadre », « à commande ») ; sinon `QUANTITE_FIXE`. */
+  formeMarche?: FormeMarche;
   beneficiaires?: SaisieImportBeneficiaire[];
   previsions?: SaisieImportPrevision[];
-  /** Lots extraits — ⚠️ toujours vide (parser sans structure de lot ; allotissement à la saisie). */
+  /** Lots extraits de la désignation (best-effort, garde de cohérence) ; désignation conservée intégrale. */
   lots?: SaisieImportLot[];
 }
 

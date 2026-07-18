@@ -5,7 +5,7 @@ import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Capm, Compte, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, ServiceBeneficiaire, SoaBeneficiaire, TypePieceJointe } from '../../models';
+import { Capm, Compte, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, ServiceBeneficiaire, SoaBeneficiaire, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -170,6 +170,7 @@ import { PpmMarchesTable } from './ppm-marches-table';
                         <th>Objet</th>
                         <th class="r">Montant estimé</th>
                         <th>Mode</th>
+                        <th>Forme</th>
                         <th>Statut</th>
                         <th>Actions</th>
                       </tr>
@@ -181,6 +182,7 @@ import { PpmMarchesTable } from './ppm-marches-table';
                           <td [title]="m.designationMarche || ''" class="dpm-objet-cell">{{ m.designationMarche || '—' }}</td>
                           <td class="td-montant">{{ m.montEstim | number }}</td>
                           <td>{{ resolve(modeMap(), m.idMode) }}</td>
+                          <td>{{ formeLabel(m.formeMarche) }}</td>
                           <td>
                             <span class="badge badge-dot"
                               [class.badge-prevu]="m.statut === 'PREVU'"
@@ -517,6 +519,12 @@ import { PpmMarchesTable } from './ppm-marches-table';
                 @for (m of modes(); track m.idMode) { <option [ngValue]="m.idMode">{{ m.libelle || '#' + m.idMode }}</option> }
               </select>
             </label>
+            <label class="form-group">
+              <span class="form-label">Forme du marché</span>
+              <select class="form-control" formControlName="formeMarche">
+                @for (f of formes; track f.code) { <option [value]="f.code">{{ f.libelle }}</option> }
+              </select>
+            </label>
             <div class="form-group dpm-form__dates">
               <span class="form-label">Dates prévisionnelles (par processus)</span>
               @for (ctrl of datesControls(createForm); track $index) {
@@ -671,6 +679,8 @@ export class DetailPpmModal implements OnInit {
   readonly natures = signal<Nature[]>([]);
   readonly modes = signal<ModePassation[]>([]);
   readonly comptes = signal<Compte[]>([]);
+  /** Options du select « Forme du marché » (liste fermée, libellés d'affichage). */
+  readonly formes = (Object.entries(FORME_MARCHE_LIBELLES) as [FormeMarche, string][]).map(([code, libelle]) => ({ code, libelle }));
   readonly refsLoading = signal(false);
   private refsLoaded = false;
 
@@ -1338,6 +1348,8 @@ export class DetailPpmModal implements OnInit {
       statut: [m?.statut ?? ''],
       idNature: [m?.idNature ?? (null as number | null)],
       idMode: [m?.idMode ?? (null as number | null)],
+      // Forme courante pré-remplie : elle DOIT repartir au PUT (défaut serveur sinon → écrasement silencieux).
+      formeMarche: [m?.formeMarche ?? ('QUANTITE_FIXE' as FormeMarche)],
       datesPrev: this.fb.array([] as FormGroup[]),
     });
     void p;
@@ -1463,6 +1475,8 @@ export class DetailPpmModal implements OnInit {
       statut: v.statut || undefined,
       idNature: v.idNature ?? undefined,
       idMode: v.idMode ?? undefined,
+      // Toujours renvoyée (création ET édition) : absente, le serveur appliquerait le défaut QUANTITE_FIXE.
+      formeMarche: (v.formeMarche as FormeMarche) ?? undefined,
     };
     const editing = this.editingMarche();
     if (editing) {
@@ -1534,6 +1548,11 @@ export class DetailPpmModal implements OnInit {
         },
       });
     });
+  }
+
+  /** Libellé d'affichage de la forme du marché (repli sur le code ; « — » si absente). */
+  formeLabel(f?: string): string {
+    return f ? FORME_MARCHE_LIBELLES[f as FormeMarche] ?? f : '—';
   }
 
   resolve(map: Map<string, string>, id?: number): string {
