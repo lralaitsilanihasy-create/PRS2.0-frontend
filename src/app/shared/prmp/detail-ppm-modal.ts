@@ -54,8 +54,8 @@ import { PpmMarchesTable } from './ppm-marches-table';
               <span class="dpm-chip dpm-chip-active"><span class="dpm-chip-dot"></span>Actif</span>
             </div>
             <div class="dpm-head-actions">
-              @if (modeEdition && !editHeaderOpen()) {
-                <!-- Ré-import : parse read-only puis remplacement confirmé des lignes (PUT /api/saisies/ppm/{id}). -->
+              @if (modeEdition && !editHeaderOpen() && !importApercu()) {
+                <!-- Ré-import : parse read-only → PRÉVISUALISATION ; rien n'est écrit avant « Enregistrer ». -->
                 <label class="btn btn-outline btn-sm">
                   {{ importEnCours() ? 'Analyse…' : '📄 Importer un PPM (PDF)' }}
                   <input type="file" accept=".pdf,application/pdf" hidden (change)="importerPdf($event)" [disabled]="importEnCours() || applyingImport()" />
@@ -152,14 +152,53 @@ import { PpmMarchesTable } from './ppm-marches-table';
                   <span class="section-label">Lignes de marché</span>
                   <span class="section-count">{{ marches().length }} marché(s)</span>
                 </div>
-                @if (modeEdition) {
+                @if (modeEdition && !importApercu()) {
                   <div class="section-btns">
                     <button class="btn btn-primary btn-sm" type="button" (click)="nouveauMarche()">+ Nouveau marché</button>
                   </div>
                 }
               </div>
 
-              @if (modeEdition) {
+              @if (importApercu(); as r) {
+                <!-- PRÉVISUALISATION de l'import : RIEN n'est écrit tant qu'« Enregistrer » n'est pas cliqué. -->
+                <div class="alert alert-warning">
+                  ⚠ <strong>Prévisualisation de l'import</strong> — {{ lignesApercu().length }} marché(s) du PDF
+                  remplaceront les {{ marches().length }} ligne(s) actuelle(s). <strong>Modifications non
+                  enregistrées.</strong> En-tête (exercice, date de signature) repris du PDF à l'enregistrement ;
+                  pièces jointes conservées ; entité et référence inchangées{{ r.autoriteContractante ? ' (PDF : « ' + r.autoriteContractante + ' »)' : '' }}.
+                  @if (r.avertissements?.length) { {{ r.avertissements!.length }} avertissement(s) d'import. }
+                </div>
+                <div class="table-card">
+                  <table class="dpm-marches">
+                    <thead>
+                      <tr>
+                        <th>Nature</th><th>Objet</th><th class="r">Montant estimé</th><th>Mode</th>
+                        <th>Forme</th><th>Lots</th><th>Bénéf.</th><th>Dates</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (l of lignesApercu(); track $index) {
+                        <tr>
+                          <td class="dpm-objet-cell">{{ l.natureLibelle || resolve(natureMap(), l.idNature) }}</td>
+                          <td [title]="l.designationMarche || ''" class="dpm-objet-cell">{{ l.designationMarche || '—' }}</td>
+                          <td class="td-montant">{{ l.montEstim | number }}</td>
+                          <td>{{ l.modeLibelle || resolve(modeMap(), l.idMode) }}</td>
+                          <td>{{ formeLabel(l.formeMarche) }}</td>
+                          <td>{{ l.lots?.length ?? 0 }}</td>
+                          <td>{{ l.beneficiaires?.length ?? 0 }}</td>
+                          <td>{{ l.processus?.length ?? 0 }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <div class="dpm-apercu-actions">
+                  <button class="btn btn-outline" type="button" [disabled]="applyingImport()" (click)="annulerImport()">Annuler l'import</button>
+                  <button class="btn btn-primary" type="button" [disabled]="applyingImport()" (click)="enregistrerImport()">
+                    {{ applyingImport() ? 'Enregistrement…' : '💾 Enregistrer' }}
+                  </button>
+                </div>
+              } @else if (modeEdition) {
                 <div class="table-card">
                   <table class="dpm-marches">
                     <colgroup>
@@ -326,7 +365,7 @@ import { PpmMarchesTable } from './ppm-marches-table';
           @if (soumissible) {
             <div class="dpm-foot-actions">
               <button class="btn btn-ghost" type="button" (click)="emitFermer()">Retour</button>
-              <button class="btn btn-success" type="button" [disabled]="marches().length === 0" (click)="soumettre.emit()">
+              <button class="btn btn-success" type="button" [disabled]="marches().length === 0 || importApercu() !== null" (click)="soumettre.emit()">
                 Soumettre le dossier
               </button>
             </div>
@@ -576,37 +615,6 @@ import { PpmMarchesTable } from './ppm-marches-table';
       </div>
     }
 
-    <!-- Confirmation du ré-import : le PDF REMPLACE les lignes du brouillon (transaction serveur). -->
-    @if (importConfirm(); as r) {
-      <div class="dpm__overlay" (click)="annulerImport()">
-        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
-          <header class="dpm__head">
-            <h2 class="dpm__title">Remplacer le contenu du brouillon ?</h2>
-            <button type="button" class="dpm__close" aria-label="Fermer" [disabled]="applyingImport()" (click)="annulerImport()">&times;</button>
-          </header>
-          <div class="dpm__body dpm__body--pad">
-            <p>
-              Le PDF contient <strong>{{ (r.marches ?? []).length }}</strong> marché(s) : ils
-              <strong>remplaceront les {{ marches().length }} ligne(s) actuelle(s)</strong> du brouillon
-              (bénéficiaires, dates, lots et formes re-créés depuis le PDF).
-            </p>
-            <p class="cnm-muted">
-              Les pièces jointes sont conservées. L'entité et la référence du dossier ne changent
-              pas{{ r.autoriteContractante ? ' (PDF : « ' + r.autoriteContractante + ' »)' : '' }}.
-              @if (r.avertissements?.length) {
-                {{ r.avertissements!.length }} avertissement(s) d'import — vérifiez les lignes après remplacement.
-              }
-            </p>
-          </div>
-          <footer class="dpm__foot">
-            <button type="button" class="cnm-btn cnm-btn--ghost" [disabled]="applyingImport()" (click)="annulerImport()">Annuler</button>
-            <button type="button" class="cnm-btn cnm-btn--primary" [disabled]="applyingImport()" (click)="confirmerImport()">
-              {{ applyingImport() ? 'Remplacement…' : 'Remplacer' }}
-            </button>
-          </footer>
-        </div>
-      </div>
-    }
   `,
   styleUrl: './detail-ppm-modal.scss',
 })
@@ -667,10 +675,13 @@ export class DetailPpmModal implements OnInit {
   readonly uploading = signal(false);
   readonly suppressionPiece = signal<number | null>(null);
 
-  // — Ré-import PDF sur le brouillon (modeEdition) : parse read-only puis remplacement en une transaction. —
+  // — Ré-import PDF sur le brouillon (modeEdition) : parse read-only → PRÉVISUALISATION, puis
+  //   remplacement en une transaction SEULEMENT à « Enregistrer » (annuler/fermer = rien d'écrit). —
   readonly importEnCours = signal(false);
-  /** Résultat d'import en attente de confirmation de remplacement (null = fermé). */
-  readonly importConfirm = signal<SaisiePpmImportResult | null>(null);
+  /** Import en prévisualisation (null = aucune) — les lignes affichées ne sont PAS persistées. */
+  readonly importApercu = signal<SaisiePpmImportResult | null>(null);
+  /** Lignes de saisie mappées depuis l'import (prévisualisation + corps du PUT à l'enregistrement). */
+  readonly lignesApercu = signal<SaisieMarcheLigne[]>([]);
   readonly applyingImport = signal(false);
 
   // — AGPM conditionnel : le PPM porte `agpmRequis` (autorité backend) ; pièce repérée par code stable. —
@@ -814,7 +825,7 @@ export class DetailPpmModal implements OnInit {
     });
   }
 
-  // — Ré-import PDF (modeEdition) : parse read-only, confirmation, puis remplacement en une transaction. —
+  // — Ré-import PDF (modeEdition) : parse read-only → prévisualisation, remplacement à « Enregistrer ». —
   importerPdf(ev: Event): void {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -824,17 +835,22 @@ export class DetailPpmModal implements OnInit {
     this.saisieService.importPpm(file).subscribe({
       next: (r) => {
         this.importEnCours.set(false);
-        this.importConfirm.set(r); // rien n'est écrit tant que le remplacement n'est pas confirmé
+        // Prévisualisation seulement : rien n'est écrit tant qu'« Enregistrer » n'est pas cliqué.
+        this.importApercu.set(r);
+        this.lignesApercu.set(this.lignesDepuisImport(r));
       },
       error: () => this.importEnCours.set(false), // 400 PDF illisible → toast centralisé
     });
   }
+  /** Abandonne la prévisualisation : aucune écriture n'a eu lieu, le contenu existant reste tel quel. */
   annulerImport(): void {
-    if (!this.applyingImport()) this.importConfirm.set(null);
+    if (this.applyingImport()) return;
+    this.importApercu.set(null);
+    this.lignesApercu.set([]);
   }
-  /** Applique le remplacement : `PUT /api/saisies/ppm/{idDossier}` (réconciliation — lignes actuelles retirées). */
-  confirmerImport(): void {
-    const r = this.importConfirm();
+  /** Enregistre le remplacement : `PUT /api/saisies/ppm/{idDossier}` (réconciliation — lignes actuelles retirées). */
+  enregistrerImport(): void {
+    const r = this.importApercu();
     const p = this.ppm();
     if (!r || !p) return;
     this.applyingImport.set(true);
@@ -844,13 +860,14 @@ export class DetailPpmModal implements OnInit {
       dateSignature: r.dateSignature ?? p.dateSignature,
       signataire: p.signataire,
       reference: p.reference,
-      marches: this.lignesDepuisImport(r),
+      marches: this.lignesApercu(),
     };
     this.saisieService.editionPpm(this.idDossier, req).subscribe({
       next: () => {
         this.toast.success('Brouillon remplacé par le contenu du PDF.');
         this.applyingImport.set(false);
-        this.importConfirm.set(null);
+        this.importApercu.set(null);
+        this.lignesApercu.set([]);
         this.charger();
         this.modifie.emit();
       },
