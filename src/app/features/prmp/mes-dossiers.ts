@@ -300,6 +300,9 @@ export class MesDossiers {
   private readonly typeDossierService = inject(TypeDossierService);
   private readonly dossierService = inject(DossierService);
 
+  /** Ordre d'affichage imposé des familles (référentiel non trié) : DDP → DMC → DDM, le reste après. */
+  private static readonly ORDRE_FAMILLE: Record<string, number> = { DDP: 0, DMC: 1, DDM: 2 };
+
   readonly types = signal<TypeDossier[]>([]);
   readonly loading = signal(true);
   /** idTypeDossier → { brouillon, soumis } (compteurs dérivés côté client). */
@@ -321,7 +324,8 @@ export class MesDossiers {
   constructor() {
     this.typeDossierService.list().subscribe({
       next: (rows) => {
-        this.types.set(rows);
+        const rang = (id: string) => MesDossiers.ORDRE_FAMILLE[id] ?? 99;
+        this.types.set([...rows].sort((a, b) => rang(a.idTypeDossier) - rang(b.idTypeDossier)));
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
