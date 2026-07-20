@@ -169,6 +169,19 @@
 }
 .dpm-agpm-ic { flex-shrink: 0; }
 
+/* Bouton d'action principal du brouillon : ré-import PPM — mis en avant (plus grand, ombre, icône). */
+.dpm-import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  padding: 8px 16px;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.35);
+
+  &:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(102, 126, 234, 0.45); }
+  &--busy { opacity: 0.75; pointer-events: none; }
+}
+
 /* Colonne ACTIONS injectée dans la table PPM officielle : boutons empilés (comme la saisie). */
 .dpm-actions-stack {
   display: flex;

@@ -55,12 +55,12 @@ import { PpmMarchesTable } from './ppm-marches-table';
             </div>
             <div class="dpm-head-actions">
               @if (modeEdition && !editHeaderOpen() && !importApercu()) {
-                <!-- Ré-import : parse read-only → PRÉVISUALISATION ; rien n'est écrit avant « Enregistrer ». -->
-                <label class="btn btn-outline btn-sm">
-                  {{ importEnCours() ? 'Analyse…' : '📄 Importer un PPM (PDF)' }}
+                <!-- Action principale du brouillon : ré-import (parse read-only → prévisualisation → Enregistrer). -->
+                <label class="btn btn-primary dpm-import-btn" [class.dpm-import-btn--busy]="importEnCours()">
+                  <span aria-hidden="true">📄</span>
+                  {{ importEnCours() ? 'Analyse…' : 'Importer un PPM (PDF)' }}
                   <input type="file" accept=".pdf,application/pdf" hidden (change)="importerPdf($event)" [disabled]="importEnCours() || applyingImport()" />
                 </label>
-                <button class="btn btn-secondary btn-sm" type="button" (click)="ouvrirEditionHeader()">✎ Modifier</button>
               }
               <button class="btn-close" type="button" (click)="emitFermer()">✕</button>
             </div>
