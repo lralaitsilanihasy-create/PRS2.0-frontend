@@ -184,6 +184,9 @@
   gap: 8px;
   margin-top: 10px;
 }
+/* Lignes incohérentes de l'aperçu (Σ bénéficiaires ≠ montant) : surlignées, détail en tooltip + liste. */
+.dpm-row-err td { background: var(--danger-bg, #fde8e8); }
+.dpm-err-list { margin: 6px 0 0; padding-left: 18px; }
 
 .dpm-title {
   font-size: 20px;

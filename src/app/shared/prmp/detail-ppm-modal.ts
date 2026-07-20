@@ -168,6 +168,16 @@ import { PpmMarchesTable } from './ppm-marches-table';
                   pièces jointes conservées ; entité et référence inchangées{{ r.autoriteContractante ? ' (PDF : « ' + r.autoriteContractante + ' »)' : '' }}.
                   @if (r.avertissements?.length) { {{ r.avertissements!.length }} avertissement(s) d'import. }
                 </div>
+                @if (apercuErreurs().length) {
+                  <!-- Reflet de la règle serveur Σ bénéficiaires : signalé AVANT l'enregistrement (qui serait refusé en 400). -->
+                  <div class="alert alert-danger">
+                    <strong>{{ apercuErreurs().length }} ligne(s) incohérente(s)</strong> — l'enregistrement serait refusé.
+                    Corrigez le PDF ou saisissez ces lignes manuellement.
+                    <ul class="dpm-err-list">
+                      @for (e of apercuErreurs(); track e.ligne) { <li>Ligne {{ e.ligne }} : {{ e.message }}</li> }
+                    </ul>
+                  </div>
+                }
                 <div class="table-card">
                   <table class="dpm-marches">
                     <thead>
@@ -177,8 +187,8 @@ import { PpmMarchesTable } from './ppm-marches-table';
                       </tr>
                     </thead>
                     <tbody>
-                      @for (l of lignesApercu(); track $index) {
-                        <tr>
+                      @for (l of lignesApercu(); track $index; let i = $index) {
+                        <tr [class.dpm-row-err]="erreurDeLigne(i)" [title]="erreurDeLigne(i) || ''">
                           <td class="dpm-objet-cell">{{ l.natureLibelle || resolve(natureMap(), l.idNature) }}</td>
                           <td [title]="l.designationMarche || ''" class="dpm-objet-cell">{{ l.designationMarche || '—' }}</td>
                           <td class="td-montant">{{ l.montEstim | number }}</td>
@@ -194,7 +204,10 @@ import { PpmMarchesTable } from './ppm-marches-table';
                 </div>
                 <div class="dpm-apercu-actions">
                   <button class="btn btn-outline" type="button" [disabled]="applyingImport()" (click)="annulerImport()">Annuler l'import</button>
-                  <button class="btn btn-primary" type="button" [disabled]="applyingImport()" (click)="enregistrerImport()">
+                  <button class="btn btn-primary" type="button"
+                    [disabled]="applyingImport() || apercuErreurs().length > 0"
+                    [title]="apercuErreurs().length ? 'Corrigez les lignes incohérentes avant d\\'enregistrer.' : ''"
+                    (click)="enregistrerImport()">
                     {{ applyingImport() ? 'Enregistrement…' : '💾 Enregistrer' }}
                   </button>
                 </div>
@@ -644,6 +657,8 @@ export class DetailPpmModal implements OnInit {
   readonly importApercu = signal<SaisiePpmImportResult | null>(null);
   /** Lignes de saisie mappées depuis l'import (prévisualisation + corps du PUT à l'enregistrement). */
   readonly lignesApercu = signal<SaisieMarcheLigne[]>([]);
+  /** Incohérences Σ bénéficiaires détectées dans l'aperçu (même règle que la saisie) — bloquent l'enregistrement. */
+  readonly apercuErreurs = signal<{ ligne: number; message: string }[]>([]);
   readonly applyingImport = signal(false);
 
   // — AGPM conditionnel : le PPM porte `agpmRequis` (autorité backend) ; pièce repérée par code stable. —
@@ -798,8 +813,15 @@ export class DetailPpmModal implements OnInit {
       next: (r) => {
         this.importEnCours.set(false);
         // Prévisualisation seulement : rien n'est écrit tant qu'« Enregistrer » n'est pas cliqué.
+        const lignes = this.lignesDepuisImport(r);
         this.importApercu.set(r);
-        this.lignesApercu.set(this.lignesDepuisImport(r));
+        this.lignesApercu.set(lignes);
+        // Pré-contrôle de cohérence Σ (reflet de la règle serveur) : signalé AVANT l'enregistrement.
+        this.apercuErreurs.set(
+          lignes
+            .map((l, i) => ({ ligne: i + 1, message: this.coherenceLigne(l) as string }))
+            .filter((e) => e.message),
+        );
       },
       error: () => this.importEnCours.set(false), // 400 PDF illisible → toast centralisé
     });
@@ -809,6 +831,34 @@ export class DetailPpmModal implements OnInit {
     if (this.applyingImport()) return;
     this.importApercu.set(null);
     this.lignesApercu.set([]);
+    this.apercuErreurs.set([]);
+  }
+  /** Message d'incohérence d'une ligne de l'aperçu (1-indexée), s'il y en a un. */
+  erreurDeLigne(i: number): string | undefined {
+    return this.apercuErreurs().find((e) => e.ligne === i + 1)?.message;
+  }
+  /**
+   * Cohérence Σ bénéficiaires d'une ligne (MÊME règle que la saisie / le serveur) : si ≥1 bénéficiaire
+   * rempli, Σ ancMontBenef = montEstim, et Σ nouvMontBenef = nouvMontEstim si celui-ci est renseigné.
+   */
+  private coherenceLigne(l: SaisieMarcheLigne): string | null {
+    const benefs = (l.beneficiaires ?? []).filter(
+      (b) => b.soaCode || b.numCompte || b.ancMontBenef != null || b.nouvMontBenef != null,
+    );
+    if (!benefs.length) return null;
+    const fmt = (v: number) => new Intl.NumberFormat('fr-FR').format(v);
+    const sAnc = benefs.reduce((acc, b) => acc + (Number(b.ancMontBenef) || 0), 0);
+    const montEstim = Number(l.montEstim) || 0;
+    if (sAnc !== montEstim) {
+      return `La somme des montants par bénéficiaire (${fmt(sAnc)}) doit égaler le montant estimé du marché (${fmt(montEstim)}).`;
+    }
+    if (l.nouvMontEstim != null) {
+      const sNouv = benefs.reduce((acc, b) => acc + (Number(b.nouvMontBenef) || 0), 0);
+      if (sNouv !== Number(l.nouvMontEstim)) {
+        return `La somme des nouveaux montants par bénéficiaire (${fmt(sNouv)}) doit égaler le nouveau montant estimé (${fmt(Number(l.nouvMontEstim))}).`;
+      }
+    }
+    return null;
   }
   /** Enregistre le remplacement : `PUT /api/saisies/ppm/{idDossier}` (réconciliation — lignes actuelles retirées). */
   enregistrerImport(): void {
@@ -830,13 +880,21 @@ export class DetailPpmModal implements OnInit {
         this.applyingImport.set(false);
         this.importApercu.set(null);
         this.lignesApercu.set([]);
+        this.apercuErreurs.set([]);
         this.charger();
         this.modifie.emit();
       },
       error: (e: ApiError) => {
         this.applyingImport.set(false);
-        // 400 fieldErrors (ex. dates de processus manquantes) : pas de formulaire ici → toast explicite.
-        const detail = e.fieldErrors ? Object.values(e.fieldErrors).join(' ') : '';
+        // 400 fieldErrors : pas de formulaire ici → toast explicite, préfixé par la ligne (marches[11] → Ligne 12).
+        const detail = e.fieldErrors
+          ? Object.entries(e.fieldErrors)
+              .map(([champ, msg]) => {
+                const m = champ.match(/^marches\[(\d+)\]/);
+                return m ? `Ligne ${Number(m[1]) + 1} : ${msg}` : msg;
+              })
+              .join(' ')
+          : '';
         this.toast.error(detail || e.message || 'Échec du remplacement.', 'Import impossible');
       },
     });
