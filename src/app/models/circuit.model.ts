@@ -84,6 +84,8 @@ export interface Examen {
   idDispatch: number;
   imCtrlMembre?: string;
   dateExamen?: string;
+  /** Avis **suggéré** (réponse `GET /{id}`, non contraignant) : `DEF` si ≥1 point non conforme, sinon `FAV`, `null` si rien d'évalué. Pré-remplit l'avis final. */
+  avisSuggere?: string | null;
 }
 
 /**
@@ -129,10 +131,12 @@ export interface LettreRenvoi {
   lue?: boolean;
 }
 
-/** Résultat d'un point de contrôle examiné. */
+/** Résultat d'un point de contrôle examiné — par ligne de marché (portée LIGNE) ou au niveau dossier (DOSSIER). */
 export interface ExamenDetail {
   idDetailExamen: number;
   idExamen: number;
+  /** Ligne de marché évaluée (FK `t_marche`) : renseignée pour un point **LIGNE**, `null` pour un point **DOSSIER** (ou examen historique). */
+  idDetail?: number | null;
   idPtControle: number;
   conforme: boolean;
   /** Lignes « AU LIEU DE / LIRE » (remplace l'ancien champ texte `observation`) ; `[]` si conforme. */

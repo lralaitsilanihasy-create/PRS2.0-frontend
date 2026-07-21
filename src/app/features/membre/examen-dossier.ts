@@ -100,7 +100,7 @@ interface RowState {
                 }
                 <div class="exam__marches">
                   <h3 class="exam__sub">Lignes de marché</h3>
-                  <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
+                  <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [rowStateFn]="etatLigneFn" />
                 </div>
               }
             </div>
@@ -121,96 +121,108 @@ interface RowState {
                 <input class="form-control" type="date" [value]="dateExamen()" (input)="dateExamen.set($any($event.target).value)" />
               </label>
 
-              <h3 class="exam__sub">Grille de contrôle</h3>
               @if (!points().length) {
                 <p class="text-muted">Aucun point de contrôle défini pour ce type de dossier.</p>
-              }
-              @for (p of points(); track p.idPointCtrl) {
-                <div class="exam__point">
-                  <div class="exam__point-head">
-                    <span class="exam__point-lbl">{{ p.libelPointCtrl || ('Point #' + p.idPointCtrl) }}{{ p.obligatoire ? ' *' : '' }}</span>
-                    <label class="exam__conforme">
-                      <input type="checkbox" [checked]="!row(p.idPointCtrl).conforme" (change)="setConforme(p.idPointCtrl, !$any($event.target).checked)" />
-                      Non conforme
-                    </label>
-                  </div>
-                  @if (p.decriptPointCtrl) { <p class="exam__point-desc cnm-muted">{{ p.decriptPointCtrl }}</p> }
-                  @if (!row(p.idPointCtrl).conforme) {
-                    <div class="exam__obs">
-                      <div class="exam__obs-header">
-                        <span>AU LIEU DE</span>
-                        <span>LIRE</span>
-                        <span class="exam__obs-actions"></span>
+              } @else {
+                <!-- Fil d'étapes : un marché après l'autre (haut → bas), puis dossier (si points DOSSIER), puis avis. -->
+                <div class="exam__steps">
+                  @for (m of marches(); track m.idDetail; let i = $index) {
+                    <button type="button" class="exam__step"
+                      [class.exam__step--done]="estLigneValidee(m.idDetail)"
+                      [class.exam__step--current]="etape() === i"
+                      (click)="allerEtape(i)">Marché {{ i + 1 }}</button>
+                  }
+                  @if (hasEtapeDossier()) {
+                    <button type="button" class="exam__step"
+                      [class.exam__step--done]="estDossierValide()"
+                      [class.exam__step--current]="estEtapeDossier()"
+                      (click)="allerEtape(nbLignes())">Dossier</button>
+                  }
+                  <button type="button" class="exam__step"
+                    [class.exam__step--current]="estEtapeAvis()"
+                    [disabled]="!toutTraite()"
+                    (click)="allerEtape(etapeAvis())">Avis</button>
+                </div>
+
+                @if (estEtapeMarche()) {
+                  <h3 class="exam__sub">Marché {{ etape() + 1 }} / {{ nbLignes() }} — grille de contrôle</h3>
+                  @if (marcheCourant(); as m) { <p class="exam__point-desc cnm-muted">{{ m.designationMarche || ('Marché #' + m.idDetail) }}</p> }
+                } @else if (estEtapeDossier()) {
+                  <h3 class="exam__sub">Contrôles au niveau du dossier</h3>
+                  <p class="exam__point-desc cnm-muted">Points inter-lignes (ex. fractionnement, cohérence) — évalués une fois pour le dossier.</p>
+                }
+
+                @if (!estEtapeAvis()) {
+                  @for (p of pointsCourants(); track p.idPointCtrl) {
+                    <div class="exam__point">
+                      <div class="exam__point-head">
+                        <span class="exam__point-lbl">{{ p.libelPointCtrl || ('Point #' + p.idPointCtrl) }}{{ p.obligatoire ? ' *' : '' }}</span>
+                        <label class="exam__conforme">
+                          <input type="checkbox" [checked]="!resultat(idDetailCourant(), p.idPointCtrl).conforme" [disabled]="mode() === 'locked'"
+                            (change)="setConforme(idDetailCourant(), p.idPointCtrl, !$any($event.target).checked)" />
+                          Non conforme
+                        </label>
                       </div>
-                      @for (o of row(p.idPointCtrl).observations; track $index) {
-                        <div class="exam__obs-row">
-                          <textarea
-                            class="form-control"
-                            rows="2"
-                            placeholder="Au lieu de…"
-                            [value]="o.auLieuDe"
-                            (input)="setAuLieuDe(p.idPointCtrl, $index, $any($event.target).value)"
-                          ></textarea>
-                          <textarea
-                            class="form-control"
-                            rows="2"
-                            placeholder="Lire…"
-                            [value]="o.lire"
-                            (input)="setLire(p.idPointCtrl, $index, $any($event.target).value)"
-                          ></textarea>
-                          <button type="button" class="btn btn-secondary btn-sm exam__obs-del" (click)="retirerLigne(p.idPointCtrl, $index)" aria-label="Retirer">✕</button>
+                      @if (p.decriptPointCtrl) { <p class="exam__point-desc cnm-muted">{{ p.decriptPointCtrl }}</p> }
+                      @if (!resultat(idDetailCourant(), p.idPointCtrl).conforme) {
+                        <div class="exam__obs">
+                          <div class="exam__obs-header"><span>AU LIEU DE</span><span>LIRE</span><span class="exam__obs-actions"></span></div>
+                          @for (o of resultat(idDetailCourant(), p.idPointCtrl).observations; track $index) {
+                            <div class="exam__obs-row">
+                              <textarea class="form-control" rows="2" placeholder="Au lieu de…" [value]="o.auLieuDe" (input)="setAuLieuDe(idDetailCourant(), p.idPointCtrl, $index, $any($event.target).value)"></textarea>
+                              <textarea class="form-control" rows="2" placeholder="Lire…" [value]="o.lire" (input)="setLire(idDetailCourant(), p.idPointCtrl, $index, $any($event.target).value)"></textarea>
+                              <button type="button" class="btn btn-secondary btn-sm exam__obs-del" (click)="retirerLigne(idDetailCourant(), p.idPointCtrl, $index)" aria-label="Retirer">✕</button>
+                            </div>
+                          } @empty { <p class="text-muted">Aucune ligne.</p> }
+                          <button type="button" class="btn btn-secondary btn-sm exam__obs-add" (click)="ajouterLigne(idDetailCourant(), p.idPointCtrl)">+ Ajouter une ligne</button>
+                          @if (pointErreur(p.idPointCtrl)) { <span class="form-error exam__obs-err">{{ pointErreur(p.idPointCtrl) }}</span> }
                         </div>
-                      } @empty {
-                        <p class="text-muted">Aucune ligne.</p>
                       }
-                      <button type="button" class="btn btn-secondary btn-sm exam__obs-add" (click)="ajouterLigne(p.idPointCtrl)">+ Ajouter une ligne</button>
-                      @if (pointErreur(p.idPointCtrl)) { <span class="form-error exam__obs-err">{{ pointErreur(p.idPointCtrl) }}</span> }
                     </div>
                   }
-                </div>
-              }
+                  <div class="exam__foot">
+                    @if (etape() > 0) { <button type="button" class="btn btn-outline" (click)="allerEtape(etape() - 1)">Précédent</button> }
+                    <button type="button" class="btn btn-outline" [disabled]="saving() || idDispatch() == null" (click)="ouvrirModalLettre()">Lettre de renvoi</button>
+                    <button type="button" class="btn btn-primary" [disabled]="mode() === 'locked'" (click)="validerEtape()">
+                      {{ estEtapeDossier() ? 'Valider les contrôles dossier' : 'Valider la ligne et continuer' }}
+                    </button>
+                  </div>
+                }
 
-              @if (avisEditable()) {
-                <h3 class="exam__sub">Avis & synthèse (projet de PV)</h3>
-                <label class="form-group">
-                  <span class="form-label">Avis global *</span>
-                  <select class="form-control" [value]="avis() ?? ''" (change)="avis.set($any($event.target).value || null)">
-                    <option value="">— Sélectionner —</option>
-                    @for (a of aviss(); track a.idAvis) { <option [value]="a.idAvis">{{ a.libelleAvis || a.idAvis }}</option> }
-                  </select>
-                </label>
-                <label class="form-group">
-                  <span class="form-label">Synthèse des observations</span>
-                  <textarea class="form-control" rows="3" [value]="synthese()" (input)="synthese.set($any($event.target).value)"></textarea>
-                </label>
-              } @else if (mode() === 'edit') {
-                <h3 class="exam__sub">Avis & synthèse (projet de PV)</h3>
-                <p class="form-hint"><strong>Avis global :</strong> {{ avisLabel(avis()) }}</p>
-                @if (synthese()) { <p class="form-hint"><strong>Synthèse :</strong> {{ synthese() }}</p> }
-                <p class="form-hint">Le projet de PV a déjà été soumis : l'avis et la synthèse se modifient désormais dans « Projets de PV ».</p>
-              }
-
-              @if (formError()) { <span class="form-error">{{ formError() }}</span> }
-              @if (mode() === 'create') {
-                <div class="exam__foot">
-                  <button type="button" class="btn btn-outline" (click)="annuler()">Annuler</button>
-                  <button type="button" class="btn btn-outline" [disabled]="saving() || idDispatch() == null" (click)="ouvrirModalLettre()">
-                    Envoyer une lettre de renvoi
-                  </button>
-                  <button type="button" class="btn btn-primary" [disabled]="saving() || idDispatch() == null" (click)="soumettre()">
-                    {{ saving() ? 'Enregistrement…' : "Soumettre l'examen" }}
-                  </button>
-                </div>
-              } @else if (mode() === 'edit') {
-                <div class="exam__foot">
-                  <button type="button" class="btn btn-outline" (click)="annuler()">Annuler</button>
-                  <button type="button" class="btn btn-outline" [disabled]="saving() || idDispatch() == null" (click)="ouvrirModalLettre()">
-                    Envoyer une lettre de renvoi
-                  </button>
-                  <button type="button" class="btn btn-primary" [disabled]="saving() || idDispatch() == null" (click)="enregistrer()">
-                    {{ saving() ? 'Enregistrement…' : "Modifier l'examen" }}
-                  </button>
-                </div>
+                @if (estEtapeAvis()) {
+                  @if (avisEditable()) {
+                    <h3 class="exam__sub">Avis & synthèse (projet de PV)</h3>
+                    <p class="form-hint">Toutes les lignes ont été traitées.</p>
+                    @if (avisSuggereLabel(); as s) { <p class="form-hint"><strong>Avis suggéré :</strong> {{ s }}</p> }
+                    <label class="form-group">
+                      <span class="form-label">Avis global *</span>
+                      <select class="form-control" [value]="avis() ?? ''" (change)="avis.set($any($event.target).value || null)">
+                        <option value="">— Sélectionner —</option>
+                        @for (a of aviss(); track a.idAvis) { <option [value]="a.idAvis">{{ a.libelleAvis || a.idAvis }}</option> }
+                      </select>
+                    </label>
+                    <label class="form-group">
+                      <span class="form-label">Synthèse des observations</span>
+                      <textarea class="form-control" rows="3" [value]="synthese()" (input)="synthese.set($any($event.target).value)"></textarea>
+                    </label>
+                  } @else if (mode() === 'edit') {
+                    <h3 class="exam__sub">Avis & synthèse (projet de PV)</h3>
+                    <p class="form-hint"><strong>Avis global :</strong> {{ avisLabel(avis()) }}</p>
+                    @if (synthese()) { <p class="form-hint"><strong>Synthèse :</strong> {{ synthese() }}</p> }
+                    <p class="form-hint">Le projet de PV a déjà été soumis : l'avis et la synthèse se modifient désormais dans « Projets de PV ».</p>
+                  }
+                  @if (formError()) { <span class="form-error">{{ formError() }}</span> }
+                  <div class="exam__foot">
+                    <button type="button" class="btn btn-outline" (click)="allerEtape(etape() - 1)">Précédent</button>
+                    <button type="button" class="btn btn-outline" (click)="annuler()">Annuler</button>
+                    <button type="button" class="btn btn-outline" [disabled]="saving() || idDispatch() == null" (click)="ouvrirModalLettre()">Lettre de renvoi</button>
+                    @if (mode() === 'create') {
+                      <button type="button" class="btn btn-primary" [disabled]="saving() || idDispatch() == null" (click)="soumettre()">{{ saving() ? 'Enregistrement…' : "Soumettre l'examen" }}</button>
+                    } @else if (mode() === 'edit') {
+                      <button type="button" class="btn btn-primary" [disabled]="saving() || idDispatch() == null" (click)="enregistrer()">{{ saving() ? 'Enregistrement…' : "Modifier l'examen" }}</button>
+                    }
+                  </div>
+                }
               }
             </div>
           </div>
@@ -272,6 +284,12 @@ interface RowState {
     /* Sous ~1200px, on empile (côte à côte devient illisible). */
     @media (max-width: 75rem) { .exam__grid { grid-template-columns: 1fr; } }
     .exam__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    /* Fil d'étapes séquentielles (une ligne à la fois → dossier → avis). */
+    .exam__steps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.25rem 0 0.75rem; }
+    .exam__step { padding: 0.3rem 0.7rem; border: 1px solid var(--c-200, #c7d2fe); border-radius: 999px; background: #fff; color: var(--n-500); font-size: var(--text-sm); font-weight: 600; cursor: pointer; transition: var(--transition); }
+    .exam__step:disabled { opacity: 0.5; cursor: not-allowed; }
+    .exam__step--done { background: var(--success-bg, #ecfdf5); color: var(--success-text, #059669); border-color: var(--success-text, #059669); }
+    .exam__step--current { background: var(--info-bg, #eff6ff); color: var(--info-text, #2563eb); border-color: var(--info-text, #2563eb); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15); }
     .exam__info { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0; }
     .exam__info dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); }
     .exam__info dd { margin: 2px 0 0; }
@@ -351,9 +369,47 @@ export class ExamenDossier {
   readonly lettresExamen = signal<LettreRenvoi[]>([]);
   /** Date de la lettre = aujourd'hui (lecture seule). */
   readonly dateLettre = new Date().toISOString().slice(0, 10);
-  private readonly rows = signal<Map<number, RowState>>(new Map());
-  /** Erreur « ≥1 ligne obligatoire » par point de contrôle non conforme (clé = idPtControle). */
+  /**
+   * Résultats de l'examen, clé `${idDetail}:${idPt}` (point LIGNE, par marché) ou `D:${idPt}` (point DOSSIER).
+   * Remplace l'ancien état par-dossier : l'examen se fait ligne par ligne.
+   */
+  private readonly resultats = signal<Map<string, RowState>>(new Map());
+  /** Erreur « ≥1 ligne obligatoire » par point non conforme de l'étape courante (clé = idPtControle). */
   readonly pointErreurs = signal<Map<number, string>>(new Map());
+
+  // — Workflow séquentiel : une ligne active à la fois, de haut en bas, puis étape dossier, puis avis. —
+  /** Étape courante : 0..N-1 = marchés ; N = points DOSSIER (si présents) ; dernière = avis global. */
+  readonly etape = signal(0);
+  /** Marchés dont tous les points LIGNE ont été validés (clé = idDetail). */
+  private readonly lignesValidees = signal<Set<number>>(new Set());
+  /** Les points DOSSIER ont-ils été validés. */
+  private readonly dossierValide = signal(false);
+
+  /** Points de portée LIGNE (évalués par marché) — défaut LIGNE si portée absente. */
+  readonly pointsLigne = computed(() => this.points().filter((p) => (p.portee ?? 'LIGNE') === 'LIGNE'));
+  /** Points de portée DOSSIER (inter-lignes, évalués une fois). */
+  readonly pointsDossier = computed(() => this.points().filter((p) => p.portee === 'DOSSIER'));
+  readonly nbLignes = computed(() => this.marches().length);
+  readonly hasEtapeDossier = computed(() => this.pointsDossier().length > 0);
+  /** Index de l'étape « avis global » (après les marchés + l'éventuelle étape dossier). */
+  readonly etapeAvis = computed(() => this.nbLignes() + (this.hasEtapeDossier() ? 1 : 0));
+  readonly estEtapeMarche = computed(() => this.etape() < this.nbLignes());
+  readonly estEtapeDossier = computed(() => this.hasEtapeDossier() && this.etape() === this.nbLignes());
+  readonly estEtapeAvis = computed(() => this.etape() >= this.etapeAvis());
+  /** Marché de l'étape courante (null hors étape marché). */
+  readonly marcheCourant = computed(() => (this.estEtapeMarche() ? this.marches()[this.etape()] ?? null : null));
+  /** idDetail associé à l'étape courante (null pour l'étape dossier). */
+  readonly idDetailCourant = computed(() => this.marcheCourant()?.idDetail ?? null);
+  /** Points affichés à l'étape courante : LIGNE (marché) ou DOSSIER, sinon aucun (avis). */
+  readonly pointsCourants = computed(() =>
+    this.estEtapeMarche() ? this.pointsLigne() : this.estEtapeDossier() ? this.pointsDossier() : [],
+  );
+  /** Toutes les lignes + l'étape dossier ont-elles été traitées ? (condition d'ouverture de l'avis). */
+  readonly toutTraite = computed(
+    () =>
+      this.marches().every((m) => this.lignesValidees().has(m.idDetail)) &&
+      (!this.hasEtapeDossier() || this.dossierValide()),
+  );
 
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -434,18 +490,19 @@ export class ExamenDossier {
           .filter((p) => p.idTypeDossier === r.dossier.idTypeDossier) // no-op sur la grille serveur ; filtre famille en repli
           .sort((a, b) => (a.ordrePointCtrl ?? 0) - (b.ordrePointCtrl ?? 0));
         this.points.set(pts);
-        const map = new Map<number, RowState>();
-        for (const p of pts) {
-          map.set(p.idPointCtrl, { conforme: true, observations: [] });
-        }
-        // Mode édition (dossier EXAMINE) : pré-remplir depuis l'examen existant + ses détails.
+        // Init des résultats : chaque point LIGNE × chaque marché, + chaque point DOSSIER (clé « D »). Conforme par défaut.
+        const ligne = pts.filter((p) => (p.portee ?? 'LIGNE') === 'LIGNE');
+        const dossierPts = pts.filter((p) => p.portee === 'DOSSIER');
+        const map = new Map<string, RowState>();
+        for (const m of mines) for (const p of ligne) map.set(this.cle(m.idDetail, p.idPointCtrl), { conforme: true, observations: [] });
+        for (const p of dossierPts) map.set(this.cle(null, p.idPointCtrl), { conforme: true, observations: [] });
+        // Mode édition (dossier EXAMINE) : pré-remplir depuis l'examen existant + ses détails (par ligne).
         if (r.dossier.statut === 'EXAMINE') {
           const idDispatch = this.idDispatch();
           const ex = r.examens.find((e) => e.idDispatch != null && e.idDispatch === idDispatch);
           if (ex) {
             this.existingExamenId.set(ex.idExamen);
             if (ex.dateExamen) this.dateExamen.set(ex.dateExamen);
-            // Projet de PV existant : préremplir avis + synthèse (éditables seulement si PV BROUILLON).
             const pv = r.pvs.find((p) => p.idExamen === ex.idExamen) ?? null;
             this.existingPv.set(pv);
             if (pv) {
@@ -453,67 +510,131 @@ export class ExamenDossier {
               this.synthese.set(pv.syntheseObservations ?? '');
             }
             for (const det of r.details.filter((d) => d.idExamen === ex.idExamen)) {
-              map.set(det.idPtControle, {
+              map.set(this.cle(det.idDetail ?? null, det.idPtControle), {
                 conforme: det.conforme,
                 observations: (det.observations ?? []).map((o) => ({ auLieuDe: o.auLieuDe ?? '', lire: o.lire ?? '' })),
               });
             }
+            // Examen déjà réalisé : toutes les étapes considérées validées (navigation libre, avis accessible).
+            this.lignesValidees.set(new Set(mines.map((m) => m.idDetail)));
+            this.dossierValide.set(true);
+            this.etape.set(this.etapeAvis());
           }
         }
-        this.rows.set(map);
+        this.resultats.set(map);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
   }
 
-  row(id: number): RowState {
-    return this.rows().get(id) ?? { conforme: true, observations: [] };
+  /** Clé de résultat : `${idDetail}:${idPt}` (LIGNE) ou `D:${idPt}` (DOSSIER, idDetail null). */
+  private cle(idDetail: number | null, idPt: number): string {
+    return `${idDetail ?? 'D'}:${idPt}`;
   }
-  private patchRow(id: number, patch: Partial<RowState>): void {
-    this.rows.update((m) => {
+  /** Résultat d'un point pour une ligne (ou le dossier) — défaut conforme. */
+  resultat(idDetail: number | null, idPt: number): RowState {
+    return this.resultats().get(this.cle(idDetail, idPt)) ?? { conforme: true, observations: [] };
+  }
+  private patchResultat(idDetail: number | null, idPt: number, patch: Partial<RowState>): void {
+    this.resultats.update((m) => {
       const next = new Map(m);
-      next.set(id, { ...this.row(id), ...patch });
+      next.set(this.cle(idDetail, idPt), { ...this.resultat(idDetail, idPt), ...patch });
       return next;
     });
   }
-  /** Coche/décoche « non conforme » : conforme → vide le tableau ; non conforme → amorce une ligne vide. */
-  setConforme(id: number, conforme: boolean): void {
+  /** Coche/décoche « non conforme » : conforme → vide les observations ; non conforme → amorce une ligne vide. */
+  setConforme(idDetail: number | null, idPt: number, conforme: boolean): void {
     if (conforme) {
-      this.patchRow(id, { conforme: true, observations: [] });
+      this.patchResultat(idDetail, idPt, { conforme: true, observations: [] });
     } else {
-      const obs = this.row(id).observations;
-      this.patchRow(id, { conforme: false, observations: obs.length ? obs : [{ auLieuDe: '', lire: '' }] });
+      const obs = this.resultat(idDetail, idPt).observations;
+      this.patchResultat(idDetail, idPt, { conforme: false, observations: obs.length ? obs : [{ auLieuDe: '', lire: '' }] });
     }
   }
-  ajouterLigne(id: number): void {
-    this.patchRow(id, { observations: [...this.row(id).observations, { auLieuDe: '', lire: '' }] });
+  ajouterLigne(idDetail: number | null, idPt: number): void {
+    this.patchResultat(idDetail, idPt, { observations: [...this.resultat(idDetail, idPt).observations, { auLieuDe: '', lire: '' }] });
   }
-  retirerLigne(id: number, i: number): void {
-    this.patchRow(id, { observations: this.row(id).observations.filter((_, idx) => idx !== i) });
+  retirerLigne(idDetail: number | null, idPt: number, i: number): void {
+    this.patchResultat(idDetail, idPt, { observations: this.resultat(idDetail, idPt).observations.filter((_, idx) => idx !== i) });
   }
-  setAuLieuDe(id: number, i: number, v: string): void {
-    this.patchRow(id, { observations: this.row(id).observations.map((o, idx) => (idx === i ? { ...o, auLieuDe: v } : o)) });
+  setAuLieuDe(idDetail: number | null, idPt: number, i: number, v: string): void {
+    this.patchResultat(idDetail, idPt, { observations: this.resultat(idDetail, idPt).observations.map((o, idx) => (idx === i ? { ...o, auLieuDe: v } : o)) });
   }
-  setLire(id: number, i: number, v: string): void {
-    this.patchRow(id, { observations: this.row(id).observations.map((o, idx) => (idx === i ? { ...o, lire: v } : o)) });
+  setLire(idDetail: number | null, idPt: number, i: number, v: string): void {
+    this.patchResultat(idDetail, idPt, { observations: this.resultat(idDetail, idPt).observations.map((o, idx) => (idx === i ? { ...o, lire: v } : o)) });
   }
   pointErreur(id: number): string | undefined {
     return this.pointErreurs().get(id);
   }
-  /** Chaque point non conforme doit avoir ≥1 ligne renseignée ; sinon erreur sous le tableau, envoi bloqué. */
-  private validerObservations(): boolean {
+
+  /** État visuel d'une ligne de marché (pour la table partagée) : traitée / en cours / à venir. */
+  readonly etatLigneFn = (idDetail: number): 'done' | 'current' | 'pending' => {
+    if (this.lignesValidees().has(idDetail)) return 'done';
+    if (this.idDetailCourant() === idDetail) return 'current';
+    return 'pending';
+  };
+  estLigneValidee(idDetail: number): boolean {
+    return this.lignesValidees().has(idDetail);
+  }
+  estDossierValide(): boolean {
+    return this.dossierValide();
+  }
+  /** Libellé lisible de l'avis suggéré (`avisSuggere` de l'examen) ; `null` si absent. */
+  avisSuggereLabel(): string | null {
+    const s = this.examens().find((e) => e.idExamen === this.existingExamenId())?.avisSuggere;
+    if (!s) return null;
+    return this.aviss().find((a) => a.idAvis === s)?.libelleAvis ?? (s === 'DEF' ? 'Défavorable' : s === 'FAV' ? 'Favorable' : s);
+  }
+
+  /** Valide l'étape courante (points non conformes ⇒ ≥1 observation), la marque traitée et avance. */
+  validerEtape(): void {
+    const idDetail = this.idDetailCourant();
+    const pts = this.pointsCourants();
     const err = new Map<number, string>();
-    for (const p of this.points()) {
-      const st = this.row(p.idPointCtrl);
+    for (const p of pts) {
+      const st = this.resultat(idDetail, p.idPointCtrl);
       if (!st.conforme && !st.observations.some((o) => o.auLieuDe.trim() || o.lire.trim())) {
         err.set(p.idPointCtrl, "Au moins une ligne d'observation est obligatoire pour un point non conforme.");
       }
     }
     this.pointErreurs.set(err);
-    return err.size === 0;
+    if (err.size) return;
+    if (this.estEtapeMarche() && idDetail != null) {
+      this.lignesValidees.update((s) => new Set(s).add(idDetail));
+    } else if (this.estEtapeDossier()) {
+      this.dossierValide.set(true);
+    }
+    // Avance vers l'étape suivante (marché suivant → dossier → avis).
+    this.etape.update((e) => Math.min(e + 1, this.etapeAvis()));
+    this.pointErreurs.set(new Map());
+    this.preRemplirAvisSuggere();
   }
-  /** Lignes d'observation à envoyer pour un point (vide si conforme ; ordre 1-based). */
+  /** Navigation vers une étape déjà atteinte (marché validé, dossier validé, ou l'étape courante). */
+  allerEtape(i: number): void {
+    const atteignable =
+      i <= this.etape() ||
+      (i < this.nbLignes() && this.lignesValidees().has(this.marches()[i]?.idDetail)) ||
+      (this.hasEtapeDossier() && i === this.nbLignes() && this.dossierValide()) ||
+      (i === this.etapeAvis() && this.toutTraite());
+    if (atteignable) this.etape.set(i);
+  }
+  /** Pré-remplit l'avis final depuis `avisSuggere` (si non encore choisi et présent au référentiel). */
+  private preRemplirAvisSuggere(): void {
+    if (this.avis()) return;
+    const sugg = this.examens().find((e) => e.idExamen === this.existingExamenId())?.avisSuggere;
+    if (sugg && this.aviss().some((a) => a.idAvis === sugg)) this.avis.set(sugg);
+  }
+  /** Liste plate des résultats à persister : (marché × point LIGNE) + (point DOSSIER, `idDetail` null). */
+  private entreesResultats(): { idDetail: number | null; idPt: number; st: RowState }[] {
+    const out: { idDetail: number | null; idPt: number; st: RowState }[] = [];
+    for (const m of this.marches())
+      for (const p of this.pointsLigne())
+        out.push({ idDetail: m.idDetail, idPt: p.idPointCtrl, st: this.resultat(m.idDetail, p.idPointCtrl) });
+    for (const p of this.pointsDossier()) out.push({ idDetail: null, idPt: p.idPointCtrl, st: this.resultat(null, p.idPointCtrl) });
+    return out;
+  }
+  /** Observations à envoyer pour un point (vide si conforme ; ordre 1-based). */
   private observationsBody(st: RowState): ObservationControle[] {
     if (st.conforme) {
       return [];
@@ -533,6 +654,14 @@ export class ExamenDossier {
   montant(v?: number): string {
     return v === null || v === undefined ? '—' : new Intl.NumberFormat('fr-FR').format(v);
   }
+  /** Contrôle final : aucune non-conformité (toutes lignes) sans observation. Sinon toast + false. */
+  private observationsCompletes(): boolean {
+    const manque = this.entreesResultats().some(
+      (e) => !e.st.conforme && !e.st.observations.some((o) => o.auLieuDe.trim() || o.lire.trim()),
+    );
+    if (manque) this.toast.error('Un point non conforme sans observation subsiste — vérifiez chaque ligne.');
+    return !manque;
+  }
   private nextId(ids: number[]): number {
     return (ids.length ? Math.max(...ids) : 0) + 1;
   }
@@ -545,7 +674,7 @@ export class ExamenDossier {
   enregistrer(): void {
     const idDispatch = this.idDispatch();
     if (!this.dossier() || idDispatch == null) return;
-    if (!this.validerObservations()) return;
+    if (!this.observationsCompletes()) return;
     // PV encore BROUILLON : l'avis est édité ici (requis) et mis à jour avec l'examen.
     if (this.pvEditable() && !this.avis()) {
       this.formError.set('Sélectionnez un avis global (requis pour le projet de PV).');
@@ -556,10 +685,14 @@ export class ExamenDossier {
     this.modifier(idDispatch);
   }
 
-  /** Création — « Soumettre l'examen » : avis global obligatoire, crée l'examen puis le projet de PV. */
+  /** Création — « Soumettre l'examen » : toutes les lignes traitées + avis global, crée l'examen puis le projet de PV. */
   soumettre(): void {
     if (!this.dossier() || this.idDispatch() == null) return;
-    if (!this.validerObservations()) return;
+    if (!this.toutTraite()) {
+      this.formError.set('Traitez toutes les lignes de marché (et l\'étape dossier) avant de soumettre.');
+      return;
+    }
+    if (!this.observationsCompletes()) return;
     if (!this.avis()) {
       this.formError.set('Sélectionnez un avis global (requis pour le projet de PV).');
       return;
@@ -591,7 +724,7 @@ export class ExamenDossier {
   // — Lettre(s) de renvoi pendant l'examen (action séparée ; plusieurs lettres possibles) —
   ouvrirModalLettre(): void {
     if (!this.dossier() || this.idDispatch() == null) return;
-    if (!this.validerObservations()) return;
+    if (!this.observationsCompletes()) return;
     this.corpsLettre.set('');
     this.chargerLettresExamen();
     this.lettreModal.set(true);
@@ -665,14 +798,16 @@ export class ExamenDossier {
     };
     return this.examenService.create(examen).pipe(
       switchMap(() => {
-        const baseDetail = this.nextId(this.details().map((d) => d.idDetailExamen));
-        const detailCalls = this.points().map((p, i) =>
+        let idd = this.nextId(this.details().map((d) => d.idDetailExamen));
+        // Un ExamenDetail par (marché × point LIGNE) + un par point DOSSIER (idDetail null).
+        const detailCalls = this.entreesResultats().map((e) =>
           this.examenDetailService.create({
-            idDetailExamen: baseDetail + i,
+            idDetailExamen: idd++,
             idExamen,
-            idPtControle: p.idPointCtrl,
-            conforme: this.row(p.idPointCtrl).conforme,
-            observations: this.observationsBody(this.row(p.idPointCtrl)),
+            idDetail: e.idDetail,
+            idPtControle: e.idPt,
+            conforme: e.st.conforme,
+            observations: this.observationsBody(e.st),
           }),
         );
         return detailCalls.length ? forkJoin(detailCalls) : of([]);
@@ -694,10 +829,11 @@ export class ExamenDossier {
     }
     const im = this.auth.ref() ?? '';
     const examen: Examen = { idExamen, idDispatch, imCtrlMembre: im || undefined, dateExamen: this.dateExamen() };
-    const detailByPoint = new Map(
+    // Réconciliation par (idDetail, idPtControle) : un détail existant par couple ligne↔point.
+    const detailParCle = new Map(
       this.details()
         .filter((d) => d.idExamen === idExamen)
-        .map((d) => [d.idPtControle, d]),
+        .map((d) => [this.cle(d.idDetail ?? null, d.idPtControle), d]),
     );
     let baseNew = this.nextId(this.details().map((d) => d.idDetailExamen));
 
@@ -705,15 +841,15 @@ export class ExamenDossier {
       .update(idExamen, examen)
       .pipe(
         switchMap(() => {
-          const calls = this.points().map((p) => {
-            const st = this.row(p.idPointCtrl);
-            const existing = detailByPoint.get(p.idPointCtrl);
+          const calls = this.entreesResultats().map((e) => {
+            const existing = detailParCle.get(this.cle(e.idDetail, e.idPt));
             const body: ExamenDetail = {
               idDetailExamen: existing?.idDetailExamen ?? baseNew++,
               idExamen,
-              idPtControle: p.idPointCtrl,
-              conforme: st.conforme,
-              observations: this.observationsBody(st),
+              idDetail: e.idDetail,
+              idPtControle: e.idPt,
+              conforme: e.st.conforme,
+              observations: this.observationsBody(e.st),
             };
             return existing
               ? this.examenDetailService.update(existing.idDetailExamen, body)

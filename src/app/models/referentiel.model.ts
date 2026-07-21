@@ -106,6 +106,8 @@ export interface PointsCtrl {
   idTypeDossier: string;
   /** Sous-type ciblé (doit appartenir à la famille, sinon 400) ; `null`/absent = point **commun** à la famille. */
   idSousType?: string | null;
+  /** Portée d'évaluation : `LIGNE` (par ligne de marché) ou `DOSSIER` (inter-lignes, ex. fractionnement). Défaut serveur `LIGNE`. */
+  portee?: 'LIGNE' | 'DOSSIER';
 }
 
 /** Profil (référentiel RBAC). */
