@@ -151,6 +151,21 @@ interface ApercuDossier {
                 </ul>
               </div>
             }
+            @if (soaInconnus().length) {
+              <div class="alert alert-warning sd__soa">
+                <div class="sd__warn-title">Services bénéficiaires (SOA) inconnus au référentiel — {{ soaInconnus().length }}</div>
+                <p class="sd__hint">Saisissez leur libellé et enregistrez-les au référentiel (réutilisables ensuite). À défaut, ils seront créés automatiquement à la soumission, sans libellé.</p>
+                @for (code of soaInconnus(); track code) {
+                  <div class="sd__soa-row">
+                    <span class="sd__soa-code">{{ code }}</span>
+                    <input class="form-control" type="text" [value]="soaLibelle(code)" (input)="setSoaLibelle(code, $any($event.target).value)" placeholder="Libellé du service bénéficiaire" maxlength="100" />
+                    <button type="button" class="btn btn-primary btn-sm" [disabled]="soaCreating() === code || !soaLibelle(code).trim()" (click)="creerSoa(code)">
+                      {{ soaCreating() === code ? 'Enregistrement…' : 'Enregistrer' }}
+                    </button>
+                  </div>
+                }
+              </div>
+            }
             <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Entité contractante *</span>
@@ -760,6 +775,11 @@ interface ApercuDossier {
     .sd__piece--manquante { background: #fff8f8; border-left: 2.5px solid var(--danger-text); padding-left: 8px; border-radius: var(--radius-sm); }
     .sd__warn-title { font-weight: 600; margin-bottom: 4px; }
     .sd__warn-list { margin: 0; padding-left: 1rem; font-size: var(--text-sm); }
+    /* Panneau des SOA inconnus : une ligne par code (code + libellé + enregistrer au référentiel). */
+    .sd__soa { display: flex; flex-direction: column; gap: 0.4rem; }
+    .sd__soa-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .sd__soa-code { font-weight: 700; flex: 0 0 auto; min-width: 11rem; }
+    .sd__soa-row .form-control { flex: 1 1 14rem; min-width: 10rem; }
     .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
     .sd__foot--main { margin-top: 1rem; }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
@@ -850,6 +870,27 @@ export class SoumettreDossier {
   readonly modesList = signal<ModePassation[]>([]);
   readonly comptes = signal<Compte[]>([]);
   readonly soaList = signal<SoaBeneficiaire[]>([]);
+  /** Libellés saisis pour les SOA inconnus (clé = soaCode). */
+  readonly soaLibelles = signal<Map<string, string>>(new Map());
+  /** Code SOA dont la création au référentiel est en cours (null = aucune). */
+  readonly soaCreating = signal<string | null>(null);
+  /**
+   * Codes SOA (distincts) des bénéficiaires importés absents du référentiel → à créer via le panneau
+   * (`POST /api/soa-beneficiaires`, ouvert à tout authentifié). Nature/mode/compte = ADMINISTRATEUR,
+   * donc non créables ici (résolus/créés à la volée au POST).
+   */
+  readonly soaInconnus = computed<string[]>(() => {
+    if (!this.importe()) return [];
+    const connus = new Set(this.soaList().map((s) => s.soaCode));
+    const inconnus = new Set<string>();
+    for (const g of this.marcheControls()) {
+      for (const b of this.beneficiairesControls(g)) {
+        const code = ((b.get('soaCode')?.value as string) ?? '').trim();
+        if (code && !connus.has(code)) inconnus.add(code);
+      }
+    }
+    return [...inconnus];
+  });
   readonly modeMap = signal<Map<string, string>>(new Map());
   /** Options du select « Forme du marché » (liste fermée, libellés d'affichage). */
   readonly formes = (Object.entries(FORME_MARCHE_LIBELLES) as [FormeMarche, string][]).map(([code, libelle]) => ({ code, libelle }));
@@ -1195,6 +1236,30 @@ export class SoumettreDossier {
   formeLabel(code: string | null | undefined): string {
     return code ? FORME_MARCHE_LIBELLES[code as FormeMarche] ?? code : '';
   }
+  /** Libellé saisi pour un SOA inconnu (binding d'input). */
+  soaLibelle(code: string): string {
+    return this.soaLibelles().get(code) ?? '';
+  }
+  setSoaLibelle(code: string, v: string): void {
+    this.soaLibelles.update((m) => new Map(m).set(code, v));
+  }
+  /** Enregistre un SOA inconnu au référentiel puis recharge la liste (le code sort des inconnus). */
+  creerSoa(code: string): void {
+    const libelle = this.soaLibelle(code).trim();
+    if (!libelle) return;
+    this.soaCreating.set(code);
+    this.soaService.create({ soaCode: code, libelle }).subscribe({
+      next: () => {
+        this.soaCreating.set(null);
+        this.toast.success(`Service bénéficiaire « ${code} » enregistré au référentiel.`);
+        this.soaService.list().subscribe((r) => this.soaList.set(r));
+      },
+      error: (e: ApiError) => {
+        this.soaCreating.set(null);
+        this.toast.error(e.message || 'Création du service bénéficiaire impossible.');
+      },
+    });
+  }
   /** Un bénéficiaire est-il renseigné (SOA, compte ou un montant) ? */
   private benefRempli(b: FormGroup): boolean {
     return !!(b.get('soaCode')!.value || b.get('numCompte')!.value || b.get('ancMontBenef')!.value != null || b.get('nouvMontBenef')!.value != null);
@@ -1426,7 +1491,10 @@ export class SoumettreDossier {
     if ((r.marches ?? []).some((m) => (m.beneficiaires ?? []).length)) {
       av.push('Bénéficiaires pré-remplis depuis le PDF — vérifiez SOA et montants (la somme par bénéficiaire doit égaler le montant du marché).');
     }
-    this.importAvertissements.set(av);
+    // SOA inconnus traités par le panneau dédié → on retire ces avertissements répétitifs, et on
+    // dédoublonne le reste (le backend en répète certains par marché).
+    const filtres = av.filter((w) => !(/\(SOA\)/i.test(w) && /inconnu/i.test(w)));
+    this.importAvertissements.set([...new Set(filtres)]);
     // Données issues du PDF : verrouiller le tableau (seules les CAPM/dates restent modifiables).
     this.importe.set(true);
   }
