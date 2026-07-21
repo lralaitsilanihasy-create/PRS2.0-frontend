@@ -14,6 +14,7 @@ import {
   Marche,
   MarchePrevision,
   ObservationControle,
+  PieceJointeDossier,
   PointsCtrl,
   Ppm,
   PvExamen,
@@ -30,6 +31,7 @@ import {
   MarcheService,
   MarchePrevisionService,
   ModePassationService,
+  PieceJointeDossierService,
   PointsCtrlService,
   PpmService,
   PvExamenService,
@@ -105,6 +107,40 @@ interface RowState {
                   <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [rowStateFn]="etatLigneFn" (rowClick)="ouvrirLigne($event)" />
                 </div>
               }
+              <div class="exam__pieces">
+                <h3 class="exam__sub">Pièces jointes</h3>
+                @if (loadingPieces()) {
+                  <p class="cnm-muted">Chargement des pièces…</p>
+                } @else {
+                  @if (piecesInitiales().length) {
+                    <div class="exam__pieces-grp">
+                      <span class="exam__pieces-pill">Pièces initiales · {{ piecesInitiales().length }}</span>
+                      @for (p of piecesInitiales(); track p.idPiece; let i = $index) {
+                        <div class="exam__piece">
+                          <span class="exam__piece-idx">{{ i + 1 }}</span>
+                          <span class="exam__piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                          @if (p.format) { <span class="badge exam__piece-fmt">{{ p.format }}</span> }
+                          <button type="button" class="btn btn-outline btn-sm exam__piece-btn" (click)="ouvrirPiece(p)">Ouvrir ↗</button>
+                        </div>
+                      }
+                    </div>
+                  }
+                  @if (piecesApresRenvoi().length) {
+                    <div class="exam__pieces-grp">
+                      <span class="exam__pieces-pill exam__pieces-pill--lr">Après lettre de renvoi · {{ piecesApresRenvoi().length }}</span>
+                      @for (p of piecesApresRenvoi(); track p.idPiece; let i = $index) {
+                        <div class="exam__piece">
+                          <span class="exam__piece-idx exam__piece-idx--lr">{{ i + 1 }}</span>
+                          <span class="exam__piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                          @if (p.format) { <span class="badge exam__piece-fmt">{{ p.format }}</span> }
+                          <button type="button" class="btn btn-outline btn-sm exam__piece-btn" (click)="ouvrirPiece(p)">Ouvrir ↗</button>
+                        </div>
+                      }
+                    </div>
+                  }
+                  @if (!pieces().length) { <p class="cnm-muted">Aucune pièce jointe.</p> }
+                }
+              </div>
             </div>
           </div>
 
@@ -311,6 +347,17 @@ interface RowState {
     .exam__info dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); }
     .exam__info dd { margin: 2px 0 0; }
     .exam__marches { display: flex; flex-direction: column; gap: 0.5rem; }
+    /* Pièces jointes du dossier (liste + téléchargement) sous les lignes de marché. */
+    .exam__pieces { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+    .exam__pieces-grp { display: flex; flex-direction: column; gap: 0.35rem; }
+    .exam__pieces-pill { align-self: flex-start; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--info-text, #2563eb); background: var(--info-bg, #eff6ff); padding: 0.15rem 0.5rem; border-radius: 999px; }
+    .exam__pieces-pill--lr { color: #B45309; background: #FFFBEB; }
+    .exam__piece { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-md); }
+    .exam__piece-idx { flex: none; width: 1.4rem; height: 1.4rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--info-bg, #eff6ff); color: var(--info-text, #2563eb); font-size: var(--text-xs); font-weight: 700; }
+    .exam__piece-idx--lr { background: #FFFBEB; color: #B45309; }
+    .exam__piece-name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+    .exam__piece-fmt { flex: none; font-size: 0.6rem; }
+    .exam__piece-btn { flex: none; white-space: nowrap; }
     .exam__point { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; background: var(--c-50); border: 1px solid var(--c-100); border-left: 3px solid #D1D5DB; border-radius: var(--radius-md); transition: var(--transition); }
     .exam__point--ras { background: #F0FDF4; border-color: #DCFCE7; border-left-color: #22C55E; }
     .exam__point--obs { background: #FFFBEB; border-color: #FEF3C7; border-left-color: #F59E0B; }
@@ -363,6 +410,7 @@ export class ExamenDossier {
   private readonly lettreRenvoiService = inject(LettreRenvoiService);
   private readonly serviceBenefService = inject(ServiceBeneficiaireService);
   private readonly previsionService = inject(MarchePrevisionService);
+  private readonly pieceService = inject(PieceJointeDossierService);
   private readonly lookups = inject(ReferenceLookupService);
 
   readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
@@ -376,6 +424,11 @@ export class ExamenDossier {
   /** Bénéficiaires + dates prévisionnelles des marchés du dossier (pour le tableau PPM partagé). */
   readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
   readonly previsions = signal<MarchePrevision[]>([]);
+  /** Pièces jointes réellement déposées sur le dossier (lecture + téléchargement). */
+  readonly pieces = signal<PieceJointeDossier[]>([]);
+  readonly loadingPieces = signal(false);
+  readonly piecesInitiales = computed(() => this.pieces().filter((p) => !p.apresLettreRenvoi));
+  readonly piecesApresRenvoi = computed(() => this.pieces().filter((p) => p.apresLettreRenvoi));
   readonly idDispatch = signal<number | null>(null);
   readonly points = signal<PointsCtrl[]>([]);
   readonly aviss = signal<Avis[]>([]);
@@ -497,6 +550,16 @@ export class ExamenDossier {
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.avisService.list().subscribe((a) => this.aviss.set(a));
+
+    // Pièces jointes du dossier (tous types) — chargées à part pour ne pas bloquer l'examen si l'appel échoue.
+    this.loadingPieces.set(true);
+    this.pieceService.getByDossier(this.idDossier).subscribe({
+      next: (rows) => {
+        this.pieces.set(rows);
+        this.loadingPieces.set(false);
+      },
+      error: () => this.loadingPieces.set(false),
+    });
 
     // Dossier partagé : consommé par le forkJoin ET par la grille (dérivée de son sous-type), un seul GET.
     const dossier$ = this.dossierService.getById(this.idDossier).pipe(shareReplay(1));
@@ -668,6 +731,14 @@ export class ExamenDossier {
   ouvrirLigne(m: Marche): void {
     const i = this.marches().findIndex((x) => x.idDetail === m.idDetail);
     if (i >= 0) this.allerEtape(i);
+  }
+  /** Ouvre/télécharge une pièce jointe dans un nouvel onglet (contenu binaire via /contenu). */
+  ouvrirPiece(p: PieceJointeDossier): void {
+    if (p.idPiece == null) return;
+    this.pieceService.telecharger(p.idPiece).subscribe({
+      next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
+      error: () => this.toast.error("Impossible d'ouvrir la pièce."),
+    });
   }
   /** Pré-remplit l'avis final depuis `avisSuggere` (si non encore choisi et présent au référentiel). */
   private preRemplirAvisSuggere(): void {
