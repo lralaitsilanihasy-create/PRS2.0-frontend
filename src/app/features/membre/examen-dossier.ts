@@ -265,7 +265,12 @@ interface RowState {
     </section>
   `,
   styles: `
-    .exam__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; align-items: start; }
+    /* Colonne gauche (contenu du dossier + tableau dense des marchés) plus large que la grille de
+       contrôle : le tableau tient sans scroll horizontal, le formulaire de droite (champs courts)
+       reste confortable. minmax(0, ...) empêche le tableau de forcer la colonne au-delà de sa part. */
+    .exam__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: 0.75rem; align-items: start; }
+    /* Sous ~1200px, on empile (côte à côte devient illisible). */
+    @media (max-width: 75rem) { .exam__grid { grid-template-columns: 1fr; } }
     .exam__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
     .exam__info { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0; }
     .exam__info dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); }
@@ -283,7 +288,8 @@ interface RowState {
     .exam__obs-row textarea { flex: 1 1 0; min-height: 2.5rem; resize: none; word-wrap: break-word; white-space: pre-wrap; }
     .exam__obs-del { width: 2rem; align-self: flex-start; margin-top: 0.3rem; }
     .exam__obs-err { color: var(--danger-text); }
-    .exam__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; margin-top: 0.5rem; }
+    /* flex-wrap : la barre d'actions se replie si le panneau (droite, 30%) est trop étroit pour les 3 boutons. */
+    .exam__foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; margin-top: 0.5rem; }
     .exam-modal { width: 100%; max-width: 44rem; max-height: 88vh; overflow: auto; background: #fff; border-radius: var(--radius-2xl); box-shadow: var(--shadow-xl); padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
     .exam-modal__list { overflow-x: auto; }
     .exam-modal__list table { width: 100%; }
