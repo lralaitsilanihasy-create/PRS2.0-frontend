@@ -345,7 +345,7 @@ interface RowState {
     .exam__info { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0; }
     .exam__info dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); }
     .exam__info dd { margin: 2px 0 0; }
-    .exam__marches { display: flex; flex-direction: column; gap: 0.5rem; }
+    .exam__marches { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.25rem; }
     /* Pièces jointes du dossier (liste + téléchargement) sous les lignes de marché. */
     .exam__pieces { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
     .exam__pieces-grp { display: flex; flex-direction: column; gap: 0.35rem; }
