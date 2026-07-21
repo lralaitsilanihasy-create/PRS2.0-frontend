@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Observable, forkJoin, map, of, shareReplay, switchMap } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -115,12 +116,18 @@ interface RowState {
                     <div class="exam__pieces-grp">
                       <span class="exam__pieces-pill">Pièces initiales · {{ piecesInitiales().length }}</span>
                       @for (p of piecesInitiales(); track p.idPiece; let i = $index) {
-                        <div class="exam__piece">
+                        <div class="exam__piece" [class.is-open]="openPiece() === p.idPiece" (click)="togglePiece(p)">
                           <span class="exam__piece-idx">{{ i + 1 }}</span>
                           <span class="exam__piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
                           @if (p.format) { <span class="badge exam__piece-fmt">{{ p.format }}</span> }
-                          <button type="button" class="btn btn-outline btn-sm exam__piece-btn" (click)="ouvrirPiece(p)">Ouvrir ↗</button>
+                          <span class="exam__piece-chev" [class.is-open]="openPiece() === p.idPiece" aria-hidden="true">▾</span>
                         </div>
+                        @if (openPiece() === p.idPiece) {
+                          <div class="exam__piece-view">
+                            @if (loadingPiece() === p.idPiece) { <p class="cnm-muted exam__piece-loading">Chargement de l'aperçu…</p> }
+                            @else if (openUrl(); as u) { <iframe [src]="u" class="exam__piece-frame" title="Aperçu de la pièce"></iframe> }
+                          </div>
+                        }
                       }
                     </div>
                   }
@@ -128,12 +135,18 @@ interface RowState {
                     <div class="exam__pieces-grp">
                       <span class="exam__pieces-pill exam__pieces-pill--lr">Après lettre de renvoi · {{ piecesApresRenvoi().length }}</span>
                       @for (p of piecesApresRenvoi(); track p.idPiece; let i = $index) {
-                        <div class="exam__piece">
+                        <div class="exam__piece" [class.is-open]="openPiece() === p.idPiece" (click)="togglePiece(p)">
                           <span class="exam__piece-idx exam__piece-idx--lr">{{ i + 1 }}</span>
                           <span class="exam__piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
                           @if (p.format) { <span class="badge exam__piece-fmt">{{ p.format }}</span> }
-                          <button type="button" class="btn btn-outline btn-sm exam__piece-btn" (click)="ouvrirPiece(p)">Ouvrir ↗</button>
+                          <span class="exam__piece-chev" [class.is-open]="openPiece() === p.idPiece" aria-hidden="true">▾</span>
                         </div>
+                        @if (openPiece() === p.idPiece) {
+                          <div class="exam__piece-view">
+                            @if (loadingPiece() === p.idPiece) { <p class="cnm-muted exam__piece-loading">Chargement de l'aperçu…</p> }
+                            @else if (openUrl(); as u) { <iframe [src]="u" class="exam__piece-frame" title="Aperçu de la pièce"></iframe> }
+                          </div>
+                        }
                       }
                     </div>
                   }
@@ -351,12 +364,18 @@ interface RowState {
     .exam__pieces-grp { display: flex; flex-direction: column; gap: 0.35rem; }
     .exam__pieces-pill { align-self: flex-start; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--info-text, #2563eb); background: var(--info-bg, #eff6ff); padding: 0.15rem 0.5rem; border-radius: 999px; }
     .exam__pieces-pill--lr { color: #B45309; background: #FFFBEB; }
-    .exam__piece { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-md); }
+    .exam__piece { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); }
+    .exam__piece:hover { border-color: var(--c-200, #c7d2fe); background: var(--c-50); }
+    .exam__piece.is-open { border-color: var(--info-text, #2563eb); background: var(--info-bg, #eff6ff); }
     .exam__piece-idx { flex: none; width: 1.4rem; height: 1.4rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--info-bg, #eff6ff); color: var(--info-text, #2563eb); font-size: var(--text-xs); font-weight: 700; }
     .exam__piece-idx--lr { background: #FFFBEB; color: #B45309; }
     .exam__piece-name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
     .exam__piece-fmt { flex: none; font-size: 0.6rem; }
-    .exam__piece-btn { flex: none; white-space: nowrap; }
+    .exam__piece-chev { flex: none; color: var(--n-400); transition: transform 0.15s; }
+    .exam__piece-chev.is-open { transform: rotate(180deg); }
+    .exam__piece-view { border: 1px solid var(--c-100); border-radius: var(--radius-md); overflow: hidden; }
+    .exam__piece-frame { width: 100%; height: 600px; border: 0; display: block; background: #fff; }
+    .exam__piece-loading { padding: 1rem; margin: 0; }
     .exam__point { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; background: var(--c-50); border: 1px solid var(--c-100); border-left: 3px solid #D1D5DB; border-radius: var(--radius-md); transition: var(--transition); }
     .exam__point--ras { background: #F0FDF4; border-color: #DCFCE7; border-left-color: #22C55E; }
     .exam__point--obs { background: #FFFBEB; border-color: #FEF3C7; border-left-color: #F59E0B; }
@@ -391,7 +410,7 @@ interface RowState {
     @media (max-width: 60rem) { .exam__grid { grid-template-columns: 1fr; } }
   `,
 })
-export class ExamenDossier {
+export class ExamenDossier implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
@@ -410,6 +429,7 @@ export class ExamenDossier {
   private readonly serviceBenefService = inject(ServiceBeneficiaireService);
   private readonly previsionService = inject(MarchePrevisionService);
   private readonly pieceService = inject(PieceJointeDossierService);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly lookups = inject(ReferenceLookupService);
 
   readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
@@ -428,6 +448,11 @@ export class ExamenDossier {
   readonly loadingPieces = signal(false);
   readonly piecesInitiales = computed(() => this.pieces().filter((p) => !p.apresLettreRenvoi));
   readonly piecesApresRenvoi = computed(() => this.pieces().filter((p) => p.apresLettreRenvoi));
+  /** Aperçu inline : pièce ouverte (idPiece), son URL blob sécurisée, et le chargement éventuel. */
+  readonly openPiece = signal<number | null>(null);
+  readonly openUrl = signal<SafeResourceUrl | null>(null);
+  readonly loadingPiece = signal<number | null>(null);
+  private currentObjectUrl: string | null = null;
   readonly idDispatch = signal<number | null>(null);
   readonly points = signal<PointsCtrl[]>([]);
   readonly aviss = signal<Avis[]>([]);
@@ -731,13 +756,44 @@ export class ExamenDossier {
     const i = this.marches().findIndex((x) => x.idDetail === m.idDetail);
     if (i >= 0) this.allerEtape(i);
   }
-  /** Ouvre/télécharge une pièce jointe dans un nouvel onglet (contenu binaire via /contenu). */
-  ouvrirPiece(p: PieceJointeDossier): void {
+  /** Ouvre/ferme l'aperçu inline d'une pièce sous son nom (une seule à la fois). */
+  togglePiece(p: PieceJointeDossier): void {
     if (p.idPiece == null) return;
+    if (this.openPiece() === p.idPiece) {
+      this.fermerPiece();
+      return;
+    }
+    this.revoquer();
+    this.openUrl.set(null);
+    this.openPiece.set(p.idPiece);
+    this.loadingPiece.set(p.idPiece);
     this.pieceService.telecharger(p.idPiece).subscribe({
-      next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
-      error: () => this.toast.error("Impossible d'ouvrir la pièce."),
+      next: (blob) => {
+        this.currentObjectUrl = URL.createObjectURL(blob);
+        this.openUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.currentObjectUrl));
+        this.loadingPiece.set(null);
+      },
+      error: () => {
+        this.loadingPiece.set(null);
+        this.openPiece.set(null);
+        this.toast.error("Impossible d'ouvrir la pièce.");
+      },
     });
+  }
+  private fermerPiece(): void {
+    this.revoquer();
+    this.openPiece.set(null);
+    this.openUrl.set(null);
+    this.loadingPiece.set(null);
+  }
+  private revoquer(): void {
+    if (this.currentObjectUrl) {
+      URL.revokeObjectURL(this.currentObjectUrl);
+      this.currentObjectUrl = null;
+    }
+  }
+  ngOnDestroy(): void {
+    this.revoquer();
   }
   /** Pré-remplit l'avis final depuis `avisSuggere` (si non encore choisi et présent au référentiel). */
   private preRemplirAvisSuggere(): void {
