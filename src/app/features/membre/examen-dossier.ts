@@ -103,7 +103,6 @@ interface RowState {
                   </dl>
                 }
                 <div class="exam__marches">
-                  <h3 class="exam__sub">Lignes de marché</h3>
                   <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [rowStateFn]="etatLigneFn" (rowClick)="ouvrirLigne($event)" />
                 </div>
               }
@@ -166,7 +165,7 @@ interface RowState {
                 <div class="exam__steps">
                   @for (m of marches(); track m.idDetail; let i = $index) {
                     <button type="button" class="exam__step exam__step--{{ etatOngletMarche(i) }}" (click)="allerEtape(i)">
-                      <span class="exam__step-dot"></span>Marché {{ i + 1 }}
+                      <span class="exam__step-dot"></span>Ligne {{ i + 1 }}
                     </button>
                   }
                   @if (hasEtapeDossier()) {
@@ -181,8 +180,8 @@ interface RowState {
                 </div>
 
                 @if (estEtapeMarche()) {
-                  <h3 class="exam__sub">Marché {{ etape() + 1 }} / {{ nbLignes() }} — grille de contrôle</h3>
-                  @if (marcheCourant(); as m) { <p class="exam__point-desc cnm-muted">{{ m.designationMarche || ('Marché #' + m.idDetail) }}</p> }
+                  <h3 class="exam__sub">Ligne {{ etape() + 1 }} / {{ nbLignes() }} — grille de contrôle</h3>
+                  @if (marcheCourant(); as m) { <p class="exam__point-desc cnm-muted">{{ m.designationMarche || ('Ligne #' + m.idDetail) }}</p> }
                 } @else if (estEtapeDossier()) {
                   <h3 class="exam__sub">Contrôles au niveau du dossier</h3>
                   <p class="exam__point-desc cnm-muted">Points inter-lignes (ex. fractionnement, cohérence) — évalués une fois pour le dossier.</p>
