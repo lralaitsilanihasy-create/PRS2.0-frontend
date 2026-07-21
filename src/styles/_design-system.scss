@@ -448,7 +448,10 @@ a  { color: var(--p-600); text-decoration: none; }
 
 .page-inner {
   padding: 28px 32px;
-  max-width: 1600px;
+  /* Plafond relevé (1600 → 1920) : sur écran large, les pages à deux panneaux (ex. examen :
+     contenu du dossier + grille) et les tableaux denses profitent de la largeur au lieu d'être
+     tassés ; reste un max, les écrans plus étroits sont inchangés. */
+  max-width: 1920px;
 }
 
 .page-header {
