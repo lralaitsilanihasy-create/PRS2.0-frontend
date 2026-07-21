@@ -46,9 +46,11 @@ interface ObsLigne {
   auLieuDe: string;
   lire: string;
 }
+/** Statut explicite d'un point de contrôle : `null` = non statué, `RAS` = conforme, `OBS` = avec observation. */
+type StatutPoint = 'RAS' | 'OBS' | null;
 interface RowState {
-  conforme: boolean;
-  /** Lignes d'observation (non-conformité) ; vide si conforme. */
+  statut: StatutPoint;
+  /** Lignes d'observation (statut OBS) ; vide sinon. */
   observations: ObsLigne[];
 }
 
@@ -100,7 +102,7 @@ interface RowState {
                 }
                 <div class="exam__marches">
                   <h3 class="exam__sub">Lignes de marché</h3>
-                  <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [rowStateFn]="etatLigneFn" />
+                  <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [rowStateFn]="etatLigneFn" (rowClick)="ouvrirLigne($event)" />
                 </div>
               }
             </div>
@@ -127,21 +129,19 @@ interface RowState {
                 <!-- Fil d'étapes : un marché après l'autre (haut → bas), puis dossier (si points DOSSIER), puis avis. -->
                 <div class="exam__steps">
                   @for (m of marches(); track m.idDetail; let i = $index) {
-                    <button type="button" class="exam__step"
-                      [class.exam__step--done]="estLigneValidee(m.idDetail)"
-                      [class.exam__step--current]="etape() === i"
-                      (click)="allerEtape(i)">Marché {{ i + 1 }}</button>
+                    <button type="button" class="exam__step exam__step--{{ etatOngletMarche(i) }}" (click)="allerEtape(i)">
+                      <span class="exam__step-dot"></span>Marché {{ i + 1 }}
+                    </button>
                   }
                   @if (hasEtapeDossier()) {
-                    <button type="button" class="exam__step"
-                      [class.exam__step--done]="estDossierValide()"
-                      [class.exam__step--current]="estEtapeDossier()"
-                      (click)="allerEtape(nbLignes())">Dossier</button>
+                    <button type="button" class="exam__step exam__step--{{ etatOngletDossier() }}" (click)="allerEtape(nbLignes())">
+                      <span class="exam__step-dot"></span>Dossier
+                    </button>
                   }
-                  <button type="button" class="exam__step"
-                    [class.exam__step--current]="estEtapeAvis()"
-                    [disabled]="!toutTraite()"
-                    (click)="allerEtape(etapeAvis())">Avis</button>
+                  <button type="button" class="exam__step" [class.exam__step--current]="estEtapeAvis()"
+                    [disabled]="!toutTraite()" (click)="allerEtape(etapeAvis())">
+                    <span class="exam__step-dot"></span>Avis
+                  </button>
                 </div>
 
                 @if (estEtapeMarche()) {
@@ -154,17 +154,26 @@ interface RowState {
 
                 @if (!estEtapeAvis()) {
                   @for (p of pointsCourants(); track p.idPointCtrl) {
-                    <div class="exam__point">
+                    <div class="exam__point exam__point--{{ statutClasse(resultat(idDetailCourant(), p.idPointCtrl).statut) }}">
                       <div class="exam__point-head">
                         <span class="exam__point-lbl">{{ p.libelPointCtrl || ('Point #' + p.idPointCtrl) }}{{ p.obligatoire ? ' *' : '' }}</span>
-                        <label class="exam__conforme">
-                          <input type="checkbox" [checked]="!resultat(idDetailCourant(), p.idPointCtrl).conforme" [disabled]="mode() === 'locked'"
-                            (change)="setConforme(idDetailCourant(), p.idPointCtrl, !$any($event.target).checked)" />
-                          Non conforme
-                        </label>
+                        <div class="exam__statut" role="radiogroup">
+                          <label class="exam__statut-opt exam__statut-opt--ras" [class.is-active]="resultat(idDetailCourant(), p.idPointCtrl).statut === 'RAS'">
+                            <input type="radio" [name]="'st-' + idDetailCourant() + '-' + p.idPointCtrl"
+                              [checked]="resultat(idDetailCourant(), p.idPointCtrl).statut === 'RAS'" [disabled]="mode() === 'locked'"
+                              (change)="setStatut(idDetailCourant(), p.idPointCtrl, 'RAS')" />
+                            RAS
+                          </label>
+                          <label class="exam__statut-opt exam__statut-opt--obs" [class.is-active]="resultat(idDetailCourant(), p.idPointCtrl).statut === 'OBS'">
+                            <input type="radio" [name]="'st-' + idDetailCourant() + '-' + p.idPointCtrl"
+                              [checked]="resultat(idDetailCourant(), p.idPointCtrl).statut === 'OBS'" [disabled]="mode() === 'locked'"
+                              (change)="setStatut(idDetailCourant(), p.idPointCtrl, 'OBS')" />
+                            Observation
+                          </label>
+                        </div>
                       </div>
                       @if (p.decriptPointCtrl) { <p class="exam__point-desc cnm-muted">{{ p.decriptPointCtrl }}</p> }
-                      @if (!resultat(idDetailCourant(), p.idPointCtrl).conforme) {
+                      @if (resultat(idDetailCourant(), p.idPointCtrl).statut === 'OBS') {
                         <div class="exam__obs">
                           <div class="exam__obs-header"><span>AU LIEU DE</span><span>LIRE</span><span class="exam__obs-actions"></span></div>
                           @for (o of resultat(idDetailCourant(), p.idPointCtrl).observations; track $index) {
@@ -183,7 +192,7 @@ interface RowState {
                   <div class="exam__foot">
                     @if (etape() > 0) { <button type="button" class="btn btn-outline" (click)="allerEtape(etape() - 1)">Précédent</button> }
                     <button type="button" class="btn btn-outline" [disabled]="saving() || idDispatch() == null" (click)="ouvrirModalLettre()">Lettre de renvoi</button>
-                    <button type="button" class="btn btn-primary" [disabled]="mode() === 'locked'" (click)="validerEtape()">
+                    <button type="button" class="btn btn-primary" [disabled]="mode() === 'locked' || !etapeCouranteStatuee()" (click)="validerEtape()">
                       {{ estEtapeDossier() ? 'Valider les contrôles dossier' : 'Valider la ligne et continuer' }}
                     </button>
                   </div>
@@ -286,19 +295,34 @@ interface RowState {
     .exam__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
     /* Fil d'étapes séquentielles (une ligne à la fois → dossier → avis). */
     .exam__steps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.25rem 0 0.75rem; }
-    .exam__step { padding: 0.3rem 0.7rem; border: 1px solid var(--c-200, #c7d2fe); border-radius: 999px; background: #fff; color: var(--n-500); font-size: var(--text-sm); font-weight: 600; cursor: pointer; transition: var(--transition); }
+    .exam__step { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.75rem; border: 1px solid #E5E7EB; border-radius: 999px; background: #fff; color: var(--n-600, #475569); font-size: var(--text-sm); font-weight: 600; cursor: pointer; transition: var(--transition); }
     .exam__step:disabled { opacity: 0.5; cursor: not-allowed; }
-    .exam__step--done { background: var(--success-bg, #ecfdf5); color: var(--success-text, #059669); border-color: var(--success-text, #059669); }
-    .exam__step--current { background: var(--info-bg, #eff6ff); color: var(--info-text, #2563eb); border-color: var(--info-text, #2563eb); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15); }
+    .exam__step-dot { width: 0.55rem; height: 0.55rem; border-radius: 999px; background: #D1D5DB; flex: none; }
+    /* Pastilles alignées sur la palette sobre des lignes du tableau (indigo / vert / ambre). */
+    .exam__step--pending { background: #F9FAFB; }
+    .exam__step--pending .exam__step-dot { background: #D1D5DB; }
+    .exam__step--current { background: #EEF2FF; color: #4338CA; border-color: #6366F1; }
+    .exam__step--current .exam__step-dot { background: #6366F1; }
+    .exam__step--done-ras { background: #F0FDF4; color: #15803D; border-color: #22C55E; }
+    .exam__step--done-ras .exam__step-dot { background: #22C55E; }
+    .exam__step--done-obs { background: #FFFBEB; color: #B45309; border-color: #F59E0B; }
+    .exam__step--done-obs .exam__step-dot { background: #F59E0B; }
     .exam__info { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0; }
     .exam__info dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); }
     .exam__info dd { margin: 2px 0 0; }
     .exam__marches { display: flex; flex-direction: column; gap: 0.5rem; }
-    .exam__point { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; background: var(--c-50); border: 1px solid var(--c-100); border-radius: var(--radius-md); }
+    .exam__point { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; background: var(--c-50); border: 1px solid var(--c-100); border-left: 3px solid #D1D5DB; border-radius: var(--radius-md); transition: var(--transition); }
+    .exam__point--ras { background: #F0FDF4; border-color: #DCFCE7; border-left-color: #22C55E; }
+    .exam__point--obs { background: #FFFBEB; border-color: #FEF3C7; border-left-color: #F59E0B; }
     .exam__point-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
     .exam__point-lbl { font-weight: 500; }
     .exam__point-desc { font-size: var(--text-sm); margin: 0; }
-    .exam__conforme { display: flex; align-items: center; gap: 0.25rem; font-size: var(--text-sm); white-space: nowrap; }
+    /* Choix mutuellement exclusif RAS / Observation (aucun par défaut ⇒ point non statué). */
+    .exam__statut { display: inline-flex; gap: 0.35rem; flex: none; }
+    .exam__statut-opt { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.6rem; border: 1px solid #E5E7EB; border-radius: 999px; background: #fff; font-size: var(--text-sm); font-weight: 600; color: var(--n-500); cursor: pointer; white-space: nowrap; transition: var(--transition); }
+    .exam__statut-opt input { margin: 0; }
+    .exam__statut-opt--ras.is-active { background: #F0FDF4; color: #15803D; border-color: #22C55E; }
+    .exam__statut-opt--obs.is-active { background: #FFFBEB; color: #B45309; border-color: #F59E0B; }
     .exam__obs { display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start; }
     .exam__obs-header, .exam__obs-row { display: flex; gap: 0.75rem; align-items: flex-start; align-self: stretch; }
     .exam__obs-header span:first-child, .exam__obs-header span:nth-child(2) { flex: 1 1 0; text-align: center; font-weight: 700; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-400); }
@@ -380,10 +404,6 @@ export class ExamenDossier {
   // — Workflow séquentiel : une ligne active à la fois, de haut en bas, puis étape dossier, puis avis. —
   /** Étape courante : 0..N-1 = marchés ; N = points DOSSIER (si présents) ; dernière = avis global. */
   readonly etape = signal(0);
-  /** Marchés dont tous les points LIGNE ont été validés (clé = idDetail). */
-  private readonly lignesValidees = signal<Set<number>>(new Set());
-  /** Les points DOSSIER ont-ils été validés. */
-  private readonly dossierValide = signal(false);
 
   /** Points de portée LIGNE (évalués par marché) — défaut LIGNE si portée absente. */
   readonly pointsLigne = computed(() => this.points().filter((p) => (p.portee ?? 'LIGNE') === 'LIGNE'));
@@ -404,11 +424,35 @@ export class ExamenDossier {
   readonly pointsCourants = computed(() =>
     this.estEtapeMarche() ? this.pointsLigne() : this.estEtapeDossier() ? this.pointsDossier() : [],
   );
+
+  // — États DÉRIVÉS des statuts (pas d'état manuel « validé ») : un point/une ligne est « examiné » dès qu'il est statué. —
+  /** Tous les points LIGNE d'un marché sont-ils statués (RAS ou OBS) ? */
+  ligneStatuee(idDetail: number): boolean {
+    return this.pointsLigne().every((p) => this.resultat(idDetail, p.idPointCtrl).statut !== null);
+  }
+  /** Le marché porte-t-il ≥1 observation (→ « examinée avec observation ») ? */
+  ligneAObs(idDetail: number): boolean {
+    return this.pointsLigne().some((p) => this.resultat(idDetail, p.idPointCtrl).statut === 'OBS');
+  }
+  /** Tous les points DOSSIER sont-ils statués ? */
+  readonly dossierStatue = computed(() => this.pointsDossier().every((p) => this.resultat(null, p.idPointCtrl).statut !== null));
+  readonly dossierAObs = computed(() => this.pointsDossier().some((p) => this.resultat(null, p.idPointCtrl).statut === 'OBS'));
+  /** Première étape marché non encore statuée (frontière atteignable) ; `nbLignes` si toutes faites. */
+  readonly frontiere = computed(() => {
+    const idx = this.marches().findIndex((m) => !this.ligneStatuee(m.idDetail));
+    return idx === -1 ? this.nbLignes() : idx;
+  });
+  /** Tous les points de l'étape courante sont-ils statués (→ « Valider » activable) ? */
+  readonly etapeCouranteStatuee = computed(() =>
+    this.estEtapeMarche()
+      ? this.idDetailCourant() != null && this.ligneStatuee(this.idDetailCourant() as number)
+      : this.estEtapeDossier()
+        ? this.dossierStatue()
+        : true,
+  );
   /** Toutes les lignes + l'étape dossier ont-elles été traitées ? (condition d'ouverture de l'avis). */
   readonly toutTraite = computed(
-    () =>
-      this.marches().every((m) => this.lignesValidees().has(m.idDetail)) &&
-      (!this.hasEtapeDossier() || this.dossierValide()),
+    () => this.marches().every((m) => this.ligneStatuee(m.idDetail)) && (!this.hasEtapeDossier() || this.dossierStatue()),
   );
 
   private readonly typeMap = signal<Map<string, string>>(new Map());
@@ -490,13 +534,13 @@ export class ExamenDossier {
           .filter((p) => p.idTypeDossier === r.dossier.idTypeDossier) // no-op sur la grille serveur ; filtre famille en repli
           .sort((a, b) => (a.ordrePointCtrl ?? 0) - (b.ordrePointCtrl ?? 0));
         this.points.set(pts);
-        // Init des résultats : chaque point LIGNE × chaque marché, + chaque point DOSSIER (clé « D »). Conforme par défaut.
+        // Init des résultats : chaque point LIGNE × chaque marché, + chaque point DOSSIER (clé « D »). NON statué par défaut.
         const ligne = pts.filter((p) => (p.portee ?? 'LIGNE') === 'LIGNE');
         const dossierPts = pts.filter((p) => p.portee === 'DOSSIER');
         const map = new Map<string, RowState>();
-        for (const m of mines) for (const p of ligne) map.set(this.cle(m.idDetail, p.idPointCtrl), { conforme: true, observations: [] });
-        for (const p of dossierPts) map.set(this.cle(null, p.idPointCtrl), { conforme: true, observations: [] });
-        // Mode édition (dossier EXAMINE) : pré-remplir depuis l'examen existant + ses détails (par ligne).
+        for (const m of mines) for (const p of ligne) map.set(this.cle(m.idDetail, p.idPointCtrl), { statut: null, observations: [] });
+        for (const p of dossierPts) map.set(this.cle(null, p.idPointCtrl), { statut: null, observations: [] });
+        // Mode édition (dossier EXAMINE) : pré-remplir depuis l'examen existant + ses détails (statut dérivé de conforme).
         if (r.dossier.statut === 'EXAMINE') {
           const idDispatch = this.idDispatch();
           const ex = r.examens.find((e) => e.idDispatch != null && e.idDispatch === idDispatch);
@@ -511,13 +555,11 @@ export class ExamenDossier {
             }
             for (const det of r.details.filter((d) => d.idExamen === ex.idExamen)) {
               map.set(this.cle(det.idDetail ?? null, det.idPtControle), {
-                conforme: det.conforme,
+                statut: det.conforme ? 'RAS' : 'OBS',
                 observations: (det.observations ?? []).map((o) => ({ auLieuDe: o.auLieuDe ?? '', lire: o.lire ?? '' })),
               });
             }
-            // Examen déjà réalisé : toutes les étapes considérées validées (navigation libre, avis accessible).
-            this.lignesValidees.set(new Set(mines.map((m) => m.idDetail)));
-            this.dossierValide.set(true);
+            // Examen déjà réalisé (tout statué) → l'avis est directement accessible (navigation libre).
             this.etape.set(this.etapeAvis());
           }
         }
@@ -532,9 +574,9 @@ export class ExamenDossier {
   private cle(idDetail: number | null, idPt: number): string {
     return `${idDetail ?? 'D'}:${idPt}`;
   }
-  /** Résultat d'un point pour une ligne (ou le dossier) — défaut conforme. */
+  /** Résultat d'un point pour une ligne (ou le dossier) — défaut NON statué. */
   resultat(idDetail: number | null, idPt: number): RowState {
-    return this.resultats().get(this.cle(idDetail, idPt)) ?? { conforme: true, observations: [] };
+    return this.resultats().get(this.cle(idDetail, idPt)) ?? { statut: null, observations: [] };
   }
   private patchResultat(idDetail: number | null, idPt: number, patch: Partial<RowState>): void {
     this.resultats.update((m) => {
@@ -543,13 +585,13 @@ export class ExamenDossier {
       return next;
     });
   }
-  /** Coche/décoche « non conforme » : conforme → vide les observations ; non conforme → amorce une ligne vide. */
-  setConforme(idDetail: number | null, idPt: number, conforme: boolean): void {
-    if (conforme) {
-      this.patchResultat(idDetail, idPt, { conforme: true, observations: [] });
+  /** Statut d'un point : RAS → conforme (observations vidées) ; OBS → non conforme (amorce une ligne vide). */
+  setStatut(idDetail: number | null, idPt: number, statut: 'RAS' | 'OBS'): void {
+    if (statut === 'RAS') {
+      this.patchResultat(idDetail, idPt, { statut: 'RAS', observations: [] });
     } else {
       const obs = this.resultat(idDetail, idPt).observations;
-      this.patchResultat(idDetail, idPt, { conforme: false, observations: obs.length ? obs : [{ auLieuDe: '', lire: '' }] });
+      this.patchResultat(idDetail, idPt, { statut: 'OBS', observations: obs.length ? obs : [{ auLieuDe: '', lire: '' }] });
     }
   }
   ajouterLigne(idDetail: number | null, idPt: number): void {
@@ -569,16 +611,27 @@ export class ExamenDossier {
   }
 
   /** État visuel d'une ligne de marché (pour la table partagée) : traitée / en cours / à venir. */
-  readonly etatLigneFn = (idDetail: number): 'done' | 'current' | 'pending' => {
-    if (this.lignesValidees().has(idDetail)) return 'done';
+  readonly etatLigneFn = (idDetail: number): 'current' | 'done-ras' | 'done-obs' | 'pending' => {
     if (this.idDetailCourant() === idDetail) return 'current';
+    if (this.ligneStatuee(idDetail)) return this.ligneAObs(idDetail) ? 'done-obs' : 'done-ras';
     return 'pending';
   };
-  estLigneValidee(idDetail: number): boolean {
-    return this.lignesValidees().has(idDetail);
+  /** État d'un onglet marché (pour la pastille de progression). */
+  etatOngletMarche(i: number): 'current' | 'done-ras' | 'done-obs' | 'pending' {
+    if (this.etape() === i) return 'current';
+    const idDetail = this.marches()[i]?.idDetail;
+    if (idDetail != null && this.ligneStatuee(idDetail)) return this.ligneAObs(idDetail) ? 'done-obs' : 'done-ras';
+    return 'pending';
   }
-  estDossierValide(): boolean {
-    return this.dossierValide();
+  /** État de l'onglet dossier. */
+  etatOngletDossier(): 'current' | 'done-ras' | 'done-obs' | 'pending' {
+    if (this.estEtapeDossier()) return 'current';
+    if (this.dossierStatue()) return this.dossierAObs() ? 'done-obs' : 'done-ras';
+    return 'pending';
+  }
+  /** Classe visuelle d'un point selon son statut (bordure gauche colorée). */
+  statutClasse(statut: StatutPoint): 'ras' | 'obs' | 'vide' {
+    return statut === 'RAS' ? 'ras' : statut === 'OBS' ? 'obs' : 'vide';
   }
   /** Libellé lisible de l'avis suggéré (`avisSuggere` de l'examen) ; `null` si absent. */
   avisSuggereLabel(): string | null {
@@ -587,37 +640,34 @@ export class ExamenDossier {
     return this.aviss().find((a) => a.idAvis === s)?.libelleAvis ?? (s === 'DEF' ? 'Défavorable' : s === 'FAV' ? 'Favorable' : s);
   }
 
-  /** Valide l'étape courante (points non conformes ⇒ ≥1 observation), la marque traitée et avance. */
+  /** Valide l'étape courante (points OBS ⇒ ≥1 observation) et avance. Bouton activable seulement si tout est statué. */
   validerEtape(): void {
     const idDetail = this.idDetailCourant();
-    const pts = this.pointsCourants();
     const err = new Map<number, string>();
-    for (const p of pts) {
+    for (const p of this.pointsCourants()) {
       const st = this.resultat(idDetail, p.idPointCtrl);
-      if (!st.conforme && !st.observations.some((o) => o.auLieuDe.trim() || o.lire.trim())) {
-        err.set(p.idPointCtrl, "Au moins une ligne d'observation est obligatoire pour un point non conforme.");
+      if (st.statut === 'OBS' && !st.observations.some((o) => o.auLieuDe.trim() || o.lire.trim())) {
+        err.set(p.idPointCtrl, "Au moins une ligne d'observation est obligatoire pour un point avec observation.");
       }
     }
     this.pointErreurs.set(err);
     if (err.size) return;
-    if (this.estEtapeMarche() && idDetail != null) {
-      this.lignesValidees.update((s) => new Set(s).add(idDetail));
-    } else if (this.estEtapeDossier()) {
-      this.dossierValide.set(true);
-    }
-    // Avance vers l'étape suivante (marché suivant → dossier → avis).
+    // Avance vers l'étape suivante (marché suivant → dossier → avis). L'état « traité » est dérivé des statuts.
     this.etape.update((e) => Math.min(e + 1, this.etapeAvis()));
-    this.pointErreurs.set(new Map());
     this.preRemplirAvisSuggere();
   }
-  /** Navigation vers une étape déjà atteinte (marché validé, dossier validé, ou l'étape courante). */
+  /** Navigation : n'importe quelle ligne jusqu'à la frontière (rouvrir une ligne examinée pour la corriger), dossier/avis si atteints. */
   allerEtape(i: number): void {
     const atteignable =
-      i <= this.etape() ||
-      (i < this.nbLignes() && this.lignesValidees().has(this.marches()[i]?.idDetail)) ||
-      (this.hasEtapeDossier() && i === this.nbLignes() && this.dossierValide()) ||
+      (i < this.nbLignes() && i <= this.frontiere()) ||
+      (this.hasEtapeDossier() && i === this.nbLignes() && this.frontiere() === this.nbLignes()) ||
       (i === this.etapeAvis() && this.toutTraite());
     if (atteignable) this.etape.set(i);
+  }
+  /** Rouvre la ligne cliquée dans le tableau (repasse « en cours » ; son état RAS/observation est recalculé après re-validation). */
+  ouvrirLigne(m: Marche): void {
+    const i = this.marches().findIndex((x) => x.idDetail === m.idDetail);
+    if (i >= 0) this.allerEtape(i);
   }
   /** Pré-remplit l'avis final depuis `avisSuggere` (si non encore choisi et présent au référentiel). */
   private preRemplirAvisSuggere(): void {
@@ -634,9 +684,9 @@ export class ExamenDossier {
     for (const p of this.pointsDossier()) out.push({ idDetail: null, idPt: p.idPointCtrl, st: this.resultat(null, p.idPointCtrl) });
     return out;
   }
-  /** Observations à envoyer pour un point (vide si conforme ; ordre 1-based). */
+  /** Observations à envoyer pour un point (vide sauf statut OBS ; ordre 1-based). */
   private observationsBody(st: RowState): ObservationControle[] {
-    if (st.conforme) {
+    if (st.statut !== 'OBS') {
       return [];
     }
     return st.observations
@@ -654,12 +704,17 @@ export class ExamenDossier {
   montant(v?: number): string {
     return v === null || v === undefined ? '—' : new Intl.NumberFormat('fr-FR').format(v);
   }
-  /** Contrôle final : aucune non-conformité (toutes lignes) sans observation. Sinon toast + false. */
+  /** Contrôle final : tout point est statué, et tout point OBS a ≥1 observation. Sinon toast + false. */
   private observationsCompletes(): boolean {
+    const nonStatue = this.entreesResultats().some((e) => e.st.statut === null);
+    if (nonStatue) {
+      this.toast.error('Un point de contrôle n\'a pas été statué (RAS ou Observation) — vérifiez chaque ligne.');
+      return false;
+    }
     const manque = this.entreesResultats().some(
-      (e) => !e.st.conforme && !e.st.observations.some((o) => o.auLieuDe.trim() || o.lire.trim()),
+      (e) => e.st.statut === 'OBS' && !e.st.observations.some((o) => o.auLieuDe.trim() || o.lire.trim()),
     );
-    if (manque) this.toast.error('Un point non conforme sans observation subsiste — vérifiez chaque ligne.');
+    if (manque) this.toast.error('Un point avec observation n\'a pas d\'observation renseignée — vérifiez chaque ligne.');
     return !manque;
   }
   private nextId(ids: number[]): number {
@@ -806,7 +861,7 @@ export class ExamenDossier {
             idExamen,
             idDetail: e.idDetail,
             idPtControle: e.idPt,
-            conforme: e.st.conforme,
+            conforme: e.st.statut !== 'OBS',
             observations: this.observationsBody(e.st),
           }),
         );
@@ -848,7 +903,7 @@ export class ExamenDossier {
               idExamen,
               idDetail: e.idDetail,
               idPtControle: e.idPt,
-              conforme: e.st.conforme,
+              conforme: e.st.statut !== 'OBS',
               observations: this.observationsBody(e.st),
             };
             return existing

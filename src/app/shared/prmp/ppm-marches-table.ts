@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, computed, contentChild, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, computed, contentChild, inject, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 
 import { FORME_MARCHE_LIBELLES, Marche, MarchePrevision, ServiceBeneficiaire } from '../../models';
@@ -17,6 +17,9 @@ interface BenefRow {
   ancMontBenef?: number | null;
   nouvMontBenef?: number | null;
 }
+/** État visuel d'une ligne dans l'examen séquentiel. */
+export type RowExamState = 'current' | 'done-ras' | 'done-obs' | 'pending';
+
 /** Ligne de marché mise en forme pour le tableau (libellés résolus, dates par jalon). */
 interface MarcheRow {
   /** Marché d'origine — contexte transmis au template d'actions optionnel (`#rowActions`). */
@@ -80,7 +83,10 @@ interface MarcheRow {
           <tbody>
             @for (m of rows(); track $index) {
               @for (b of m.benefRows; track $index; let first = $first) {
-                <tr [class.pmt-row-done]="etat(m.source) === 'done'" [class.pmt-row-current]="etat(m.source) === 'current'">
+                <tr [class]="etat(m.source) ? 'pmt-row-' + etat(m.source) : ''"
+                    [class.pmt-lead]="first"
+                    [class.pmt-clickable]="rowStateFn()"
+                    (click)="onRowClick(m.source)">
                   @if (first) {
                     <td [attr.rowspan]="m.benefRows.length">{{ m.nature }}</td>
                     <td [attr.rowspan]="m.benefRows.length" class="pmt-objet">{{ m.objet }}</td>
@@ -139,9 +145,15 @@ interface MarcheRow {
     /* Badge de forme du marché (affiché seulement hors défaut « à quantité fixe »). */
     .pmt .pmt-forme { display: inline-block; margin-top: 2px; font-size: 0.56rem; padding: 0 3px; line-height: 1.4; background: var(--p-50, #eef2ff); color: var(--p-600, #4f46e5); border: 1px solid var(--p-200, #c7d2fe); }
     .pmt-empty { color: var(--n-400, #71717a); margin: 0; }
-    /* États d'examen séquentiel : ligne traitée (vert) / en cours (bleu) ; les autres restent neutres. */
-    .pmt tbody tr.pmt-row-done > td { background: var(--success-bg, #ecfdf5); }
-    .pmt tbody tr.pmt-row-current > td { background: var(--info-bg, #eff6ff); box-shadow: inset 3px 0 0 var(--info-text, #2563eb); }
+    /* États d'examen séquentiel — palette sobre alignée sur l'accent indigo (fond pâle + liseré gauche) :
+       à examiner (neutre) / en cours (indigo) / examinée RAS (vert) / examinée avec observation (ambre). */
+    .pmt tbody tr.pmt-clickable { cursor: pointer; }
+    .pmt tbody tr.pmt-row-current > td { background: #EEF2FF; }
+    .pmt tbody tr.pmt-row-current.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #6366F1; }
+    .pmt tbody tr.pmt-row-done-ras > td { background: #F0FDF4; }
+    .pmt tbody tr.pmt-row-done-ras.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #22C55E; }
+    .pmt tbody tr.pmt-row-done-obs > td { background: #FFFBEB; }
+    .pmt tbody tr.pmt-row-done-obs.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #F59E0B; }
   `,
 })
 export class PpmMarchesTable implements OnInit {
@@ -153,8 +165,13 @@ export class PpmMarchesTable implements OnInit {
   readonly previsions = input<MarchePrevision[]>([]);
   /** Colonne ACTIONS optionnelle : template projeté `#rowActions` (contexte = le `Marche` de la ligne). */
   readonly actionsTpl = contentChild<TemplateRef<unknown>>('rowActions');
-  /** État visuel optionnel d'une ligne (ex. examen séquentiel) : 'done' | 'current' | 'pending' → classe de fond. */
-  readonly rowStateFn = input<((idDetail: number) => 'done' | 'current' | 'pending' | null) | null>(null);
+  /**
+   * État visuel optionnel d'une ligne (examen séquentiel) → classe de fond :
+   * `current` (en cours), `done-ras` (examinée, RAS), `done-obs` (examinée avec observation), `pending` (à examiner).
+   */
+  readonly rowStateFn = input<((idDetail: number) => RowExamState | null) | null>(null);
+  /** Émis au clic sur une ligne (le `Marche` cliqué) — sert à rouvrir une ligne déjà examinée. Actif seulement si `rowStateFn` est fourni. */
+  readonly rowClick = output<Marche>();
 
   private readonly lookups = inject(ReferenceLookupService);
   private readonly modeService = inject(ModePassationService);
@@ -229,9 +246,13 @@ export class PpmMarchesTable implements OnInit {
   });
 
   /** État visuel d'une ligne (délègue au `rowStateFn` fourni ; `null` si aucun). */
-  etat(m: Marche): 'done' | 'current' | 'pending' | null {
+  etat(m: Marche): RowExamState | null {
     const fn = this.rowStateFn();
     return fn ? fn(m.idDetail) : null;
+  }
+  /** Clic sur une ligne : ne réémet que si un état séquentiel est actif (contexte examen). */
+  onRowClick(m: Marche): void {
+    if (this.rowStateFn()) this.rowClick.emit(m);
   }
 
   private lbl(map: Map<string, string>, id?: number): string {
