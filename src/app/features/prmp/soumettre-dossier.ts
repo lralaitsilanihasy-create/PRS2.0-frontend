@@ -189,7 +189,11 @@ interface ApercuDossier {
             </div>
 
             <div class="sd__lignes-head">
-              <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterMarche()">+ Ajouter une ligne</button>
+              @if (importe()) {
+                <span class="cnm-muted">📄 Données importées du PDF (lecture seule) — seules les CAPM restent modifiables.</span>
+              } @else {
+                <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterMarche()">+ Ajouter une ligne</button>
+              }
             </div>
             @if (!marcheControls().length) {
               <p class="cnm-muted">Aucun marché. Vous pouvez créer le brouillon sans marché et en ajouter plus tard.</p>
@@ -222,39 +226,49 @@ interface ApercuDossier {
                       @for (b of beneficiairesControls(g); track $index; let first = $first; let i = $index) {
                         <tr>
                           @if (first) {
-                            <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature"></textarea></td>
-                            <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet"></textarea></td>
-                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" /></td>
-                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" /></td>
-                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="sd-modes" placeholder="Mode" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature" [readonly]="importe()"></textarea></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet" [readonly]="importe()"></textarea></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" [readonly]="importe()" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" [readonly]="importe()" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="sd-modes" placeholder="Mode" [readonly]="importe()" /></td>
                             <td [attr.rowspan]="rowspanBenef(g)">
-                              <select class="form-control" [formControl]="ctrl(g, 'formeMarche')" title="Forme du marché">
-                                @for (f of formes; track f.code) { <option [value]="f.code">{{ f.libelle }}</option> }
-                              </select>
+                              @if (importe()) {
+                                <input class="form-control" type="text" [value]="formeLabel(ctrl(g, 'formeMarche').value)" readonly />
+                              } @else {
+                                <select class="form-control" [formControl]="ctrl(g, 'formeMarche')" title="Forme du marché">
+                                  @for (f of formes; track f.code) { <option [value]="f.code">{{ f.libelle }}</option> }
+                                </select>
+                              }
                             </td>
-                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'financement')" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'financement')" [readonly]="importe()" /></td>
                           }
-                          <td><input class="form-control" type="text" [formControl]="benefCtrl(g, i, 'soaCode')" list="sd-soa" placeholder="SOA" /></td>
-                          <td><input class="form-control" type="text" [formControl]="benefCtrl(g, i, 'numCompte')" list="sd-comptes" placeholder="Compte" /></td>
-                          <td><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="benefCtrl(g, i, 'ancMontBenef')" /></td>
+                          <td><input class="form-control" type="text" [formControl]="benefCtrl(g, i, 'soaCode')" list="sd-soa" placeholder="SOA" [readonly]="importe()" /></td>
+                          <td><input class="form-control" type="text" [formControl]="benefCtrl(g, i, 'numCompte')" list="sd-comptes" placeholder="Compte" [readonly]="importe()" /></td>
+                          <td><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="benefCtrl(g, i, 'ancMontBenef')" [readonly]="importe()" /></td>
                           <td>
                             <div class="sd__benef-cell">
-                              <input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="benefCtrl(g, i, 'nouvMontBenef')" placeholder="(si révisé)" />
-                              <button type="button" class="btn btn-secondary btn-sm" [disabled]="beneficiairesControls(g).length === 1" (click)="retirerBeneficiaire(g, i)" aria-label="Retirer le bénéficiaire">✕</button>
+                              <input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="benefCtrl(g, i, 'nouvMontBenef')" placeholder="(si révisé)" [readonly]="importe()" />
+                              @if (!importe()) {
+                                <button type="button" class="btn btn-secondary btn-sm" [disabled]="beneficiairesControls(g).length === 1" (click)="retirerBeneficiaire(g, i)" aria-label="Retirer le bénéficiaire">✕</button>
+                              }
                             </div>
                           </td>
                           @if (first) {
                             <td [attr.rowspan]="rowspanBenef(g)" class="sd__marche-actions">
-                              <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterBeneficiaire(g)">+ bénéficiaire</button>
-                              <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDates(g)">Dates prévisionnelles</button>
+                              @if (!importe()) {
+                                <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterBeneficiaire(g)">+ bénéficiaire</button>
+                              }
+                              <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDates(g)">CAPM</button>
                               @if (!datesSaisies(g)) {
                                 <span class="sd__dates-manq">⚠ Dates manquantes</span>
                               }
                               <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirLots(g)"
-                                [title]="lotsExplicites(g) ? '' : 'Lot unique par défaut = objet du marché ; cliquez pour le modifier ou en ajouter.'">
+                                [title]="importe() ? 'Lots (lecture seule)' : (lotsExplicites(g) ? '' : 'Lot unique par défaut = objet du marché ; cliquez pour le modifier ou en ajouter.')">
                                 Lots ({{ nbLots(g) }})
                               </button>
-                              <button type="button" class="btn btn-danger btn-sm" (click)="retirerMarche(marcheIndex(g))">Retirer</button>
+                              @if (!importe()) {
+                                <button type="button" class="btn btn-danger btn-sm" (click)="retirerMarche(marcheIndex(g))">Retirer</button>
+                              }
                               @if (erreurCoherenceBenefs(g); as errBenef) {
                                 <span class="form-error">{{ errBenef }}</span>
                               }
@@ -474,7 +488,7 @@ interface ApercuDossier {
         <div class="modal-backdrop" (click)="annulerDates()">
           <div class="modal confirm-modal cnm-form sd__dates-modal" (click)="$event.stopPropagation()">
             <div class="modal-header-plain">
-              <span class="modal-title">Dates prévisionnelles du marché</span>
+              <span class="modal-title">CAPM du marché</span>
             </div>
             <div class="modal-body">
               <p class="form-hint">Au moins un processus est obligatoire ; un processus par ligne. La <strong>date de fin est optionnelle</strong>.</p>
@@ -522,32 +536,44 @@ interface ApercuDossier {
               <span class="modal-title">Lots (allotissement) du marché</span>
             </div>
             <div class="modal-body">
-              <p class="form-hint">
-                Par défaut, le marché forme un <strong>lot unique = son objet</strong> (ligne pré-remplie ci-dessous) ;
-                modifiez-le ou ajoutez des lots pour l'allotir. La désignation est obligatoire ; montant, quantité et
-                unité sont descriptifs (aucun contrôle de somme).
-              </p>
+              @if (importe()) {
+                <p class="form-hint">Lots issus de l'import PDF — <strong>lecture seule</strong>.</p>
+              } @else {
+                <p class="form-hint">
+                  Par défaut, le marché forme un <strong>lot unique = son objet</strong> (ligne pré-remplie ci-dessous) ;
+                  modifiez-le ou ajoutez des lots pour l'allotir. La désignation est obligatoire ; montant, quantité et
+                  unité sont descriptifs (aucun contrôle de somme).
+                </p>
+              }
               @for (ctrl of lotControls(); track $index) {
                 <div class="sd-lot-row" [formGroup]="ctrl">
-                  <input class="form-control" type="text" formControlName="designationLot" placeholder="Désignation du lot *" aria-label="Désignation du lot" />
-                  <input class="form-control sd__c-mont" type="number" formControlName="montLot" placeholder="Montant" aria-label="Montant" />
-                  <input class="form-control" type="number" formControlName="qteLot" placeholder="Quantité" aria-label="Quantité" />
-                  <input class="form-control" type="text" formControlName="uniteLot" placeholder="Unité" aria-label="Unité" />
-                  <button type="button" class="btn btn-secondary btn-sm" (click)="retirerLot($index)" aria-label="Retirer">✕</button>
+                  <input class="form-control" type="text" formControlName="designationLot" placeholder="Désignation du lot *" aria-label="Désignation du lot" [readonly]="importe()" />
+                  <input class="form-control sd__c-mont" type="number" formControlName="montLot" placeholder="Montant" aria-label="Montant" [readonly]="importe()" />
+                  <input class="form-control" type="number" formControlName="qteLot" placeholder="Quantité" aria-label="Quantité" [readonly]="importe()" />
+                  <input class="form-control" type="text" formControlName="uniteLot" placeholder="Unité" aria-label="Unité" [readonly]="importe()" />
+                  @if (!importe()) {
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="retirerLot($index)" aria-label="Retirer">✕</button>
+                  }
                 </div>
-                @if (lotCtrl($index, 'designationLot').touched && lotCtrl($index, 'designationLot').hasError('required')) {
+                @if (!importe() && lotCtrl($index, 'designationLot').touched && lotCtrl($index, 'designationLot').hasError('required')) {
                   <span class="form-error sd-proc-err">La désignation du lot est obligatoire.</span>
                 }
               } @empty {
                 <p class="form-hint">Renseignez d'abord l'<strong>objet</strong> du marché (il servira de lot unique), ou ajoutez un lot ci-dessous.</p>
               }
-              <div>
-                <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterLot()">+ Ajouter un lot</button>
-              </div>
+              @if (!importe()) {
+                <div>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterLot()">+ Ajouter un lot</button>
+                </div>
+              }
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-outline" (click)="annulerLots(); $event.stopPropagation()">Annuler</button>
-              <button type="button" class="btn btn-primary" (click)="validerLots(); $event.stopPropagation()">Valider</button>
+              @if (importe()) {
+                <button type="button" class="btn btn-outline" (click)="annulerLots(); $event.stopPropagation()">Fermer</button>
+              } @else {
+                <button type="button" class="btn btn-outline" (click)="annulerLots(); $event.stopPropagation()">Annuler</button>
+                <button type="button" class="btn btn-primary" (click)="validerLots(); $event.stopPropagation()">Valider</button>
+              }
             </div>
           </div>
         </div>
@@ -887,6 +913,8 @@ export class SoumettreDossier {
   /** Import PPM PDF (pré-remplissage read-only) : état d'analyse + avertissements du parsing. */
   readonly importing = signal(false);
   readonly importAvertissements = signal<string[]>([]);
+  /** Vrai quand les lignes courantes proviennent d'un import PDF : le tableau passe en lecture seule (sauf les CAPM/dates). */
+  readonly importe = signal(false);
   /** Snapshot lecture seule du dossier à créer (aperçu) ; null = fermé. Ne crée rien. */
   readonly apercu = signal<ApercuDossier | null>(null);
 
@@ -1023,6 +1051,7 @@ export class SoumettreDossier {
   // — Choix de la famille —
   choisirPpm(): void {
     this.formError.set(null);
+    this.importe.set(false); // saisie manuelle : tableau éditable
     this.phase.set('saisiePpm');
     // Pièces attendues de la planification (le flux PPM crée toujours un dossier de famille DDP).
     this.chargerTypesPiece('DDP');
@@ -1161,6 +1190,10 @@ export class SoumettreDossier {
   /** Index d'un marché dans le FormArray (pour la suppression). */
   marcheIndex(g: FormGroup): number {
     return this.marcheControls().indexOf(g);
+  }
+  /** Libellé d'affichage d'une forme de marché (cellule lecture seule après import). */
+  formeLabel(code: string | null | undefined): string {
+    return code ? FORME_MARCHE_LIBELLES[code as FormeMarche] ?? code : '';
   }
   /** Un bénéficiaire est-il renseigné (SOA, compte ou un montant) ? */
   private benefRempli(b: FormGroup): boolean {
@@ -1394,6 +1427,8 @@ export class SoumettreDossier {
       av.push('Bénéficiaires pré-remplis depuis le PDF — vérifiez SOA et montants (la somme par bénéficiaire doit égaler le montant du marché).');
     }
     this.importAvertissements.set(av);
+    // Données issues du PDF : verrouiller le tableau (seules les CAPM/dates restent modifiables).
+    this.importe.set(true);
   }
   private ligneNonVide(l: Record<string, unknown>): boolean {
     // `statut` exclu : il a une valeur par défaut ('PREVU') et ne suffit pas à rendre une ligne « non vide ».
