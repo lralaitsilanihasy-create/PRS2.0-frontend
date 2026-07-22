@@ -9,7 +9,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { MontantFrDirective } from '../../shared/montant-fr.directive';
 import { AutosizeDirective } from '../../shared/autosize.directive';
-import { Capm, Compte, Dossier, FORME_MARCHE_LIBELLES, FormeMarche, Marche, ModePassation, Nature, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
+import { Capm, Compte, Dossier, FORME_MARCHE_LIBELLES, FormeMarche, Marche, ModePassation, Nature, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -63,6 +63,17 @@ interface ApercuMarche {
   coherenceErr: string | null;
   sansDates: boolean;
 }
+/**
+ * Anomalie de transcription d'une ligne importée (revue ciblée). Forme alignée sur le futur contrat
+ * backend `SaisieImportMarche.anomalies[]` — le producteur heuristique sera remplacé à sa livraison.
+ */
+interface AnomalieTranscription {
+  champ: 'objet' | 'montEstim';
+  type: 'MONTANT_INCOHERENT' | 'OBJET_TRONQUE_PROBABLE';
+  gravite: 'BLOQUANT' | 'A_VERIFIER';
+  message: string;
+}
+
 /** Snapshot du dossier PPM à créer, mis en forme comme le PPM officiel (aucune création). */
 interface ApercuDossier {
   entite: string;
@@ -186,6 +197,18 @@ interface ApercuDossier {
                 }
               </div>
             }
+            @if (nbAVerifier()) {
+              <div class="alert alert-warning sd__soa">
+                <div class="sd__warn-title">⚠ {{ nbAVerifier() }} ligne(s) à vérifier — transcription de l'import</div>
+                <ul class="sd__warn-list">
+                  @for (g of marcheControls(); track g.get('uid')!.value; let i = $index) {
+                    @if (anomaliesDe(g).length) {
+                      <li><button type="button" class="sd__lien-ligne" (click)="scrollToMarche(g.get('uid')!.value)">Ligne {{ i + 1 }}</button> : {{ messagesAnomalie(g) }}</li>
+                    }
+                  }
+                </ul>
+              </div>
+            }
             <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Entité contractante *</span>
@@ -257,13 +280,13 @@ interface ApercuDossier {
                     </tr>
                   </thead>
                   @for (g of marcheControls(); track g.get('uid')!.value) {
-                    <tbody class="sd__marche-tb">
+                    <tbody class="sd__marche-tb" [attr.id]="'sd-m-' + g.get('uid')!.value" [class.sd__row-warn]="anomaliesDe(g).length">
                       @for (b of beneficiairesControls(g); track $index; let first = $first; let i = $index) {
                         <tr>
                           @if (first) {
                             <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature" [readonly]="importe()"></textarea></td>
-                            <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet" [readonly]="importe()"></textarea></td>
-                            <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" [readonly]="importe()" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-warn]="aAnomalie(g, 'objet')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet" [readonly]="importe()"></textarea></td>
+                            <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-err]="aAnomalie(g, 'montEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" [readonly]="importe()" /></td>
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" [readonly]="importe()" /></td>
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="sd-modes" placeholder="Mode" [readonly]="importe()" /></td>
                             <td [attr.rowspan]="rowspanBenef(g)">
@@ -303,6 +326,9 @@ interface ApercuDossier {
                               </button>
                               @if (!importe()) {
                                 <button type="button" class="btn btn-danger btn-sm" (click)="retirerMarche(marcheIndex(g))">Retirer</button>
+                              }
+                              @if (anomaliesDe(g).length) {
+                                <span class="sd__badge-warn" [title]="messagesAnomalie(g)">⚠ à vérifier</span>
                               }
                               @if (erreurCoherenceBenefs(g); as errBenef) {
                                 <span class="form-error">{{ errBenef }}</span>
@@ -378,10 +404,16 @@ interface ApercuDossier {
               </div>
             }
 
+            @if (nbAVerifier()) {
+              <label class="sd__revue">
+                <input type="checkbox" [checked]="revueAccusee()" (change)="revueAccusee.set($any($event.target).checked)" />
+                J'ai vérifié les {{ nbAVerifier() }} ligne(s) signalée(s).
+              </label>
+            }
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || (nbAVerifier() > 0 && !revueAccusee())">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -718,7 +750,7 @@ interface ApercuDossier {
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-outline" (click)="fermerApercu()">Fermer</button>
-              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents" (click)="fermerApercu(); creerPpm()">
+              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || (nbAVerifier() > 0 && !revueAccusee())" (click)="fermerApercu(); creerPpm()">
                 Créer le dossier
               </button>
             </div>
@@ -805,6 +837,13 @@ interface ApercuDossier {
     .sd__soa-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
     .sd__soa-code { font-weight: 700; flex: 0 0 auto; min-width: 11rem; }
     .sd__soa-row .form-control { flex: 1 1 14rem; min-width: 10rem; }
+    /* Revue de transcription : surlignage des lignes/cellules signalées + badge + accusé de revue. */
+    .sd__row-warn td { background: rgba(245, 158, 11, 0.06); }
+    .sd__cell-warn { background: #FFFBEB !important; }
+    .sd__cell-err { background: #FEF2F2 !important; }
+    .sd__badge-warn { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #B45309; background: #FFFBEB; border: 1px solid #F59E0B; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
+    .sd__lien-ligne { background: none; border: none; padding: 0; color: var(--info-text, #2563eb); font-weight: 700; text-decoration: underline; cursor: pointer; font: inherit; }
+    .sd__revue { display: flex; align-items: center; gap: 0.4rem; font-size: var(--text-sm); font-weight: 600; }
     .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
     .sd__foot--main { margin-top: 1rem; }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
@@ -945,6 +984,15 @@ export class SoumettreDossier {
   readonly entiteAResoudre = computed(
     () => this.importe() && !this.entites().some((e) => e.idEntiteContract === this.selectedEntiteId()),
   );
+  /** Accusé de revue des lignes signalées (gate avant création). */
+  readonly revueAccusee = signal(false);
+  /**
+   * Anomalies de transcription par ligne (clé = uid du marché), calculées **à l'import** (robuste au
+   * ré-import). HEURISTIQUE de repli tant que le backend n'émet pas `SaisieImportMarche.anomalies[]`
+   * (remplacer alors `detecterAnomalies(m)` par `m.anomalies ?? detecterAnomalies(m)`).
+   */
+  readonly anomaliesParLigne = signal<Map<number, AnomalieTranscription[]>>(new Map());
+  readonly nbAVerifier = computed(() => this.anomaliesParLigne().size);
 
   /** Famille planification = `DDP` (le sous-type PPM / PPM-AGPM est dérivé serveur, jamais saisi). */
   readonly estPpm = computed(() => this.dossier()?.idTypeDossier === 'DDP');
@@ -1125,6 +1173,8 @@ export class SoumettreDossier {
   choisirPpm(): void {
     this.formError.set(null);
     this.importe.set(false); // saisie manuelle : tableau éditable
+    this.revueAccusee.set(false);
+    this.anomaliesParLigne.set(new Map());
     this.phase.set('saisiePpm');
     // Pièces attendues de la planification (le flux PPM crée toujours un dossier de famille DDP).
     this.chargerTypesPiece('DDP');
@@ -1295,6 +1345,52 @@ export class SoumettreDossier {
   /** Sélection de l'entité contractante depuis le panneau de résolution (import). */
   choisirEntite(v: string): void {
     this.ppmForm.controls.idEntiteContract.setValue(v ? +v : null);
+  }
+  /**
+   * Détecte les anomalies de transcription d'un marché importé (repli heuristique).
+   * OBJET_TRONQUE_PROBABLE : objet finissant par un préfixe de route sans numéro.
+   * MONTANT_INCOHERENT : montant estimé ≠ Σ des montants par bénéficiaire.
+   */
+  private detecterAnomalies(m: SaisieImportMarche): AnomalieTranscription[] {
+    const list: AnomalieTranscription[] = [];
+    const objet = (m.designationMarche ?? '').trim();
+    if (/(RN|RNT|RNS|RNP|RIP|RR)\s*$/i.test(objet)) {
+      list.push({
+        champ: 'objet',
+        type: 'OBJET_TRONQUE_PROBABLE',
+        gravite: 'A_VERIFIER',
+        message: "Objet possiblement tronqué : se termine par un n° de route incomplet (ex. « RNS » → « RNS 44 »).",
+      });
+    }
+    const benefs = (m.beneficiaires ?? []).filter(
+      (b) => b.soaCode || b.numCompte || b.ancMontBenef != null || b.nouvMontBenef != null,
+    );
+    if (benefs.length) {
+      const somme = benefs.reduce((a, b) => a + (Number(b.ancMontBenef) || 0), 0);
+      const me = Number(m.montEstim) || 0;
+      if (somme !== me) {
+        list.push({
+          champ: 'montEstim',
+          type: 'MONTANT_INCOHERENT',
+          gravite: 'BLOQUANT',
+          message: `Montant incohérent : Σ bénéficiaires (${this.montantFmt(somme)}) ≠ montant estimé (${this.montantFmt(me)}).`,
+        });
+      }
+    }
+    return list;
+  }
+  /** Anomalies de transcription d'une ligne (heuristique ; futur `SaisieImportMarche.anomalies`). */
+  anomaliesDe(g: FormGroup): AnomalieTranscription[] {
+    return this.anomaliesParLigne().get(g.get('uid')!.value) ?? [];
+  }
+  aAnomalie(g: FormGroup, champ: 'objet' | 'montEstim'): boolean {
+    return this.anomaliesDe(g).some((a) => a.champ === champ);
+  }
+  messagesAnomalie(g: FormGroup): string {
+    return this.anomaliesDe(g).map((a) => a.message).join(' ');
+  }
+  scrollToMarche(uid: number): void {
+    document.getElementById('sd-m-' + uid)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   /** Un bénéficiaire est-il renseigné (SOA, compte ou un montant) ? */
   private benefRempli(b: FormGroup): boolean {
@@ -1468,6 +1564,7 @@ export class SoumettreDossier {
     this.ensureMarcheRefs();
     this.marchesArray.clear();
     let previsionsPresentes = false;
+    const anomMap = new Map<number, AnomalieTranscription[]>();
     for (const m of r.marches ?? []) {
       const g = this.ligneMarche();
       g.patchValue({
@@ -1508,7 +1605,11 @@ export class SoumettreDossier {
         previsionsPresentes = true;
       }
       this.marchesArray.push(g);
+      // Anomalies de transcription (repli) — futur : `m.anomalies ?? this.detecterAnomalies(m)`.
+      const anom = this.detecterAnomalies(m);
+      if (anom.length) anomMap.set(g.get('uid')!.value as number, anom);
     }
+    this.anomaliesParLigne.set(anomMap);
     // Avertissements : ceux du backend + entité non résolue + dates + bénéficiaires.
     const av = [...(r.avertissements ?? [])];
     if (r.idEntiteContract == null && r.autoriteContractante) {
@@ -1538,6 +1639,7 @@ export class SoumettreDossier {
     this.importAvertissements.set([...new Set(filtres)]);
     // Données issues du PDF : verrouiller le tableau (seules les CAPM/dates restent modifiables).
     this.importe.set(true);
+    this.revueAccusee.set(false); // nouvelle transcription → revue à ré-accuser
   }
   private ligneNonVide(l: Record<string, unknown>): boolean {
     // `statut` exclu : il a une valeur par défaut ('PREVU') et ne suffit pas à rendre une ligne « non vide ».
