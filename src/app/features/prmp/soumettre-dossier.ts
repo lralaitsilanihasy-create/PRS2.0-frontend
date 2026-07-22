@@ -141,7 +141,7 @@ interface ApercuDossier {
                 <input type="file" accept=".pdf,application/pdf" hidden (change)="importerPpm($event)" [disabled]="importing()" />
               </label>
               @if (importe()) {
-                <button type="button" class="btn btn-ghost btn-sm" (click)="reinitialiserImport()">↺ Réinitialiser l'import</button>
+                <button type="button" class="btn btn-sm sd__reset-btn" (click)="reinitialiserImport()">↺ Réinitialiser l'import</button>
               }
               @if (importing()) { <span class="cnm-muted">Analyse du PDF…</span> }
               <span class="form-hint">Pré-remplit le formulaire depuis un PPM PDF officiel — à vérifier avant création.</span>
@@ -814,6 +814,9 @@ interface ApercuDossier {
       50% { box-shadow: 0 4px 22px rgba(249, 115, 22, 0.62); }
     }
     @media (prefers-reduced-motion: reduce) { .sd__import-btn { animation: none; } }
+    /* Bouton « Réinitialiser l'import » : vert. */
+    .sd__reset-btn { cursor: pointer; color: #fff; border: none; font-weight: 700; background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35); transition: filter 0.15s ease, transform 0.15s ease; }
+    .sd__reset-btn:hover { color: #fff; filter: brightness(1.06); transform: translateY(-1px); }
     .sd__hint { margin: 0; }
     .sd__pieces { display: flex; flex-direction: column; gap: 0.5rem; }
     .sd__piece { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
