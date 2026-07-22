@@ -166,6 +166,26 @@ interface ApercuDossier {
                 }
               </div>
             }
+            @if (entiteAResoudre()) {
+              <div class="alert alert-warning sd__soa">
+                <div class="sd__warn-title">Entité contractante à sélectionner</div>
+                <p class="sd__hint">
+                  @if (autoriteImportee()) { Entité lue dans le PDF : « <strong>{{ autoriteImportee() }}</strong> » — non résolue automatiquement. }Choisissez l'entité contractante parmi les vôtres.
+                </p>
+                @if (entites().length) {
+                  <div class="sd__soa-row">
+                    <select class="form-control" (change)="choisirEntite($any($event.target).value)">
+                      <option value="">— Sélectionner —</option>
+                      @for (e of entites(); track e.idEntiteContract) {
+                        <option [value]="e.idEntiteContract" [selected]="e.idEntiteContract === selectedEntiteId()">{{ e.libelle }}</option>
+                      }
+                    </select>
+                  </div>
+                } @else {
+                  <span class="form-hint">Aucune entité rattachée à votre profil PRMP — contactez l'administrateur.</span>
+                }
+              </div>
+            }
             <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Entité contractante *</span>
@@ -913,6 +933,12 @@ export class SoumettreDossier {
     const imp = this.entiteImportee();
     return imp && !base.some((e) => e.idEntiteContract === imp.idEntiteContract) ? [...base, imp] : base;
   });
+  /** Nom de l'autorité contractante lue dans le PDF (contexte du panneau de résolution). */
+  readonly autoriteImportee = signal<string | null>(null);
+  /** Entité importée non résolue à une entité de la PRMP → panneau de sélection inline. */
+  readonly entiteAResoudre = computed(
+    () => this.importe() && !this.entites().some((e) => e.idEntiteContract === this.selectedEntiteId()),
+  );
 
   /** Famille planification = `DDP` (le sous-type PPM / PPM-AGPM est dérivé serveur, jamais saisi). */
   readonly estPpm = computed(() => this.dossier()?.idTypeDossier === 'DDP');
@@ -1260,6 +1286,10 @@ export class SoumettreDossier {
       },
     });
   }
+  /** Sélection de l'entité contractante depuis le panneau de résolution (import). */
+  choisirEntite(v: string): void {
+    this.ppmForm.controls.idEntiteContract.setValue(v ? +v : null);
+  }
   /** Un bénéficiaire est-il renseigné (SOA, compte ou un montant) ? */
   private benefRempli(b: FormGroup): boolean {
     return !!(b.get('soaCode')!.value || b.get('numCompte')!.value || b.get('ancMontBenef')!.value != null || b.get('nouvMontBenef')!.value != null);
@@ -1424,6 +1454,7 @@ export class SoumettreDossier {
         ? { idEntiteContract: idEntiteImportee!, libelle: `${r.autoriteContractante ?? '#' + idEntiteImportee} — hors périmètre` }
         : null,
     );
+    this.autoriteImportee.set(r.autoriteContractante ?? null);
     if (idEntiteImportee != null) {
       this.ppmForm.controls.idEntiteContract.setValue(idEntiteImportee);
     }
@@ -1493,7 +1524,11 @@ export class SoumettreDossier {
     }
     // SOA inconnus traités par le panneau dédié → on retire ces avertissements répétitifs, et on
     // dédoublonne le reste (le backend en répète certains par marché).
-    const filtres = av.filter((w) => !(/\(SOA\)/i.test(w) && /inconnu/i.test(w)));
+    const filtres = av.filter(
+      (w) =>
+        !(/\(SOA\)/i.test(w) && /inconnu/i.test(w)) &&
+        !(/entit/i.test(w) && (/non r/i.test(w) || /lectionner/i.test(w) || /rim/i.test(w))),
+    );
     this.importAvertissements.set([...new Set(filtres)]);
     // Données issues du PDF : verrouiller le tableau (seules les CAPM/dates restent modifiables).
     this.importe.set(true);
