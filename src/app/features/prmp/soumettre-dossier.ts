@@ -140,13 +140,8 @@ interface ApercuDossier {
                 📄 Importer un PPM (PDF)
                 <input type="file" accept=".pdf,application/pdf" hidden (change)="importerPpm($event)" [disabled]="importing()" />
               </label>
-              <label class="btn btn-outline btn-sm sd__import-xlsx">
-                📊 Importer un tableur (.xlsx)
-                <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden (change)="importerXlsx($event)" [disabled]="importing()" />
-              </label>
-              <button type="button" class="btn btn-ghost btn-sm" (click)="telechargerGabarit()">⬇ Télécharger le gabarit</button>
-              @if (importing()) { <span class="cnm-muted">Analyse en cours…</span> }
-              <span class="form-hint">Pré-remplit le formulaire depuis un PPM (PDF officiel ou tableur à colonnes) — à vérifier avant création. Le tableur donne une transcription exacte.</span>
+              @if (importing()) { <span class="cnm-muted">Analyse du PDF…</span> }
+              <span class="form-hint">Pré-remplit le formulaire depuis un PPM PDF officiel — à vérifier avant création.</span>
             </div>
             @if (importAvertissements().length) {
               <div class="alert alert-warning">
@@ -816,9 +811,6 @@ interface ApercuDossier {
       50% { box-shadow: 0 4px 22px rgba(249, 115, 22, 0.62); }
     }
     @media (prefers-reduced-motion: reduce) { .sd__import-btn { animation: none; } }
-    /* Import tableur : vert (source fiable / transcription exacte), distinct de l'import PDF (orange). */
-    .sd__import-xlsx { cursor: pointer; color: #fff; border: none; font-weight: 700; background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35); transition: filter 0.15s ease, transform 0.15s ease; }
-    .sd__import-xlsx:hover { color: #fff; filter: brightness(1.06); transform: translateY(-1px); }
     .sd__hint { margin: 0; }
     .sd__pieces { display: flex; flex-direction: column; gap: 0.5rem; }
     .sd__piece { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
@@ -1549,42 +1541,6 @@ export class SoumettreDossier {
           this.toast.error(e.message || 'PDF illisible ou non reconnu comme un PPM.');
         }
       },
-    });
-  }
-  // — Import tableur (.xlsx) : colonnes explicites, transcription exacte (même flux que le PDF). —
-  importerXlsx(ev: Event): void {
-    const input = ev.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) return;
-    this.importing.set(true);
-    this.importAvertissements.set([]);
-    this.saisie.importPpmXlsx(file).subscribe({
-      next: (r) => {
-        this.appliquerImport(r);
-        this.importing.set(false);
-        this.toast.success('Tableur importé — vérifiez les données avant de créer le dossier.');
-      },
-      error: (e: ApiError) => {
-        this.importing.set(false);
-        if (e.status === 400) {
-          this.toast.error(e.message || 'Tableur illisible ou colonnes non reconnues.');
-        }
-      },
-    });
-  }
-  /** Télécharge le gabarit `.xlsx` à remplir (blob → téléchargement navigateur). */
-  telechargerGabarit(): void {
-    this.saisie.telechargerGabaritXlsx().subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'gabarit-ppm.xlsx';
-        a.click();
-        URL.revokeObjectURL(url);
-      },
-      error: () => this.toast.error('Téléchargement du gabarit impossible.'),
     });
   }
   /** Pré-remplit le formulaire depuis le résultat d'import (best-effort ; à vérifier avant création). */
