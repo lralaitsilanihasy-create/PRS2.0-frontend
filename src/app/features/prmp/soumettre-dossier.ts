@@ -639,6 +639,11 @@ interface ApercuDossier {
 
                 <div class="ppm-doc__table-wrap">
                   <table class="ppm-doc__table">
+                    <colgroup>
+                      <col style="width: 6%" /><col style="width: 18%" /><col style="width: 8%" /><col style="width: 8%" />
+                      <col style="width: 8%" /><col style="width: 5%" /><col style="width: 8%" /><col style="width: 5%" />
+                      <col style="width: 8%" /><col style="width: 8%" /><col style="width: 6%" /><col style="width: 6%" /><col style="width: 6%" />
+                    </colgroup>
                     <thead>
                       <tr>
                         <th rowspan="2">NATURE</th>
@@ -821,19 +826,20 @@ interface ApercuDossier {
     .sd__benef-cell .form-control { flex: 1; }
     .sd__marche-actions { display: flex; flex-direction: column; gap: 0.35rem; align-items: stretch; }
     .sd__marche-actions .btn { white-space: normal; }
-    .sd__apercu { max-width: min(78rem, 97vw); max-height: 92vh; display: flex; flex-direction: column; }
+    .sd__apercu { max-width: min(112rem, 98vw); max-height: 92vh; display: flex; flex-direction: column; }
     .sd__apercu .modal-body { overflow-y: auto; }
     .ppm-doc { background: #fff; color: #000; padding: 1rem 1.25rem; font-size: 0.8rem; }
     .ppm-doc__titre { text-align: center; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem; text-transform: uppercase; }
     .ppm-doc__entete { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
     .ppm-doc__entete p { margin: 0.15rem 0; }
     .ppm-doc__table-wrap { overflow-x: auto; }
-    .ppm-doc__table { border-collapse: collapse; width: 100%; min-width: 48rem; font-size: 0.72rem; }
-    .ppm-doc__table th, .ppm-doc__table td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; }
+    /* table-layout: fixed + colgroup en % → le tableau tient dans la fenêtre ; le contenu long (OBJET) revient à la ligne au lieu de déborder. */
+    .ppm-doc__table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 0.72rem; }
+    .ppm-doc__table th, .ppm-doc__table td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
     .ppm-doc__table th { text-align: center; font-weight: 700; background: #f0f0f0; }
-    .ppm-doc__num { text-align: right; white-space: nowrap; }
+    .ppm-doc__num { text-align: right; }
     .ppm-doc__date { text-align: center; white-space: nowrap; }
-    .ppm-doc__objet { min-width: 12rem; }
+    .ppm-doc__objet { white-space: pre-wrap; }
     .ppm-doc__pied { margin-top: 1.75rem; text-align: right; }
     .ppm-doc__pied p { margin: 0.2rem 0; }
     .ppm-doc__prmp { margin-top: 1rem; font-weight: 700; text-transform: uppercase; }
