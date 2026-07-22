@@ -281,7 +281,14 @@ export interface SaisieImportLot {
  */
 export interface AnomalieTranscription {
   champ: 'objet' | 'montEstim' | 'nouvMontEstim' | 'mode' | 'nature' | 'beneficiaire' | 'date' | 'lot';
-  type: 'MONTANT_INCOHERENT' | 'OBJET_TRONQUE_PROBABLE' | 'ENCODAGE_SUSPECT' | 'REFERENTIEL_INCONNU' | 'CHAMP_MANQUANT';
+  type:
+    | 'MONTANT_INCOHERENT'
+    | 'OBJET_TRONQUE_PROBABLE'
+    | 'ENCODAGE_SUSPECT'
+    | 'REFERENTIEL_INCONNU'
+    | 'CHAMP_MANQUANT'
+    /** Allotissement décrit dans l'objet mais lots non extraits (compte discordant / motif ambigu) — `champ:'lot'`, A_VERIFIER. */
+    | 'LOT_INCOHERENT';
   gravite: 'BLOQUANT' | 'A_VERIFIER';
   /** `true` si le backend a auto-corrigé (à confirmer par l'humain). */
   corrige?: boolean;

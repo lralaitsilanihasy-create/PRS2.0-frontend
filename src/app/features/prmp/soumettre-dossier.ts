@@ -315,6 +315,7 @@ interface ApercuDossier {
                                 <span class="sd__dates-manq">⚠ Dates manquantes</span>
                               }
                               <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirLots(g)"
+                                [class.sd__lot-warn]="aAnomalieLot(g)"
                                 [title]="importe() ? 'Lots (lecture seule)' : (lotsExplicites(g) ? '' : 'Lot unique par défaut = objet du marché ; cliquez pour le modifier ou en ajouter.')">
                                 Lots ({{ nbLots(g) }})
                               </button>
@@ -841,6 +842,7 @@ interface ApercuDossier {
     .sd__badge-warn { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #B45309; background: #FFFBEB; border: 1px solid #F59E0B; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
     .sd__lien-ligne { background: none; border: none; padding: 0; color: var(--info-text, #2563eb); font-weight: 700; text-decoration: underline; cursor: pointer; font: inherit; }
     .sd__revue { display: flex; align-items: center; gap: 0.4rem; font-size: var(--text-sm); font-weight: 600; }
+    .sd__lot-warn { border-color: #F59E0B !important; color: #B45309 !important; background: #FFFBEB !important; }
     .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
     .sd__foot--main { margin-top: 1rem; }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
@@ -1380,9 +1382,13 @@ export class SoumettreDossier {
     }
     return list;
   }
-  /** Anomalies de transcription d'une ligne (heuristique ; futur `SaisieImportMarche.anomalies`). */
+  /** Anomalies de transcription d'une ligne (contrat backend `m.anomalies` ; heuristique en repli). */
   anomaliesDe(g: FormGroup): AnomalieTranscription[] {
     return this.anomaliesParLigne().get(g.get('uid')!.value) ?? [];
+  }
+  /** Une anomalie touche-t-elle les lots (pour surligner le bouton « Lots ») ? */
+  aAnomalieLot(g: FormGroup): boolean {
+    return this.anomaliesDe(g).some((a) => a.champ === 'lot');
   }
   /** Classe de surlignage d'une cellule selon la gravité de son anomalie (rouge = bloquant, ambre = à vérifier). */
   classeCellule(g: FormGroup, champ: 'objet' | 'montEstim'): string {
@@ -1645,7 +1651,7 @@ export class SoumettreDossier {
         previsionsPresentes = true;
       }
       this.marchesArray.push(g);
-      // Anomalies : contrat backend (`m.anomalies`) prioritaire ; heuristique locale en repli.
+      // Anomalies : contrat backend (`m.anomalies`, dont LOT_INCOHERENT) prioritaire ; heuristique locale en repli.
       // REFERENTIEL_INCONNU retiré de la revue : SOA géré par le panneau dédié, nature/mode/compte créés à la volée.
       const anom = (m.anomalies?.length ? m.anomalies : this.detecterAnomalies(m)).filter(
         (a) => a.type !== 'REFERENTIEL_INCONNU',
