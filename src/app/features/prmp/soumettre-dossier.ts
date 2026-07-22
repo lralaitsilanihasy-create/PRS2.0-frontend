@@ -137,9 +137,12 @@ interface ApercuDossier {
           <form class="card sd__form sd__form--wide cnm-form" [formGroup]="ppmForm" (ngSubmit)="creerPpm()" novalidate>
             <div class="sd__import">
               <label class="btn btn-outline btn-sm sd__import-btn">
-                📄 Importer un PPM (PDF)
+                📄 {{ importe() ? 'Changer le PDF' : 'Importer un PPM (PDF)' }}
                 <input type="file" accept=".pdf,application/pdf" hidden (change)="importerPpm($event)" [disabled]="importing()" />
               </label>
+              @if (importe()) {
+                <button type="button" class="btn btn-ghost btn-sm" (click)="reinitialiserImport()">↺ Réinitialiser l'import</button>
+              }
               @if (importing()) { <span class="cnm-muted">Analyse du PDF…</span> }
               <span class="form-hint">Pré-remplit le formulaire depuis un PPM PDF officiel — à vérifier avant création.</span>
             </div>
@@ -1542,6 +1545,25 @@ export class SoumettreDossier {
         }
       },
     });
+  }
+  /**
+   * Réinitialise l'import : vide les lignes et l'état d'import (verrou, anomalies, revue, entité/en-tête
+   * repris du PDF) pour repartir d'une feuille propre — importer un autre PDF ou saisir manuellement.
+   */
+  reinitialiserImport(): void {
+    this.marchesArray.clear();
+    this.importe.set(false);
+    this.revueAccusee.set(false);
+    this.anomaliesParLigne.set(new Map());
+    this.importAvertissements.set([]);
+    this.entiteImportee.set(null);
+    this.autoriteImportee.set(null);
+    this.soaLibelles.set(new Map());
+    this.soaCreating.set(null);
+    // En-tête repris du PDF remis aux valeurs par défaut.
+    this.ppmForm.controls.exercice.setValue(new Date().getFullYear());
+    this.ppmForm.controls.dateSignature.setValue('');
+    this.ppmForm.controls.idEntiteContract.setValue(null);
   }
   /** Pré-remplit le formulaire depuis le résultat d'import (best-effort ; à vérifier avant création). */
   private appliquerImport(r: SaisiePpmImportResult): void {
