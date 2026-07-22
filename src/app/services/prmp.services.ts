@@ -175,4 +175,17 @@ export class SaisieService {
     fd.append('fichier', fichier);
     return this.http.post<SaisiePpmImportResult>(`${this.baseUrl}/ppm/import`, fd);
   }
+  /**
+   * `POST /api/saisies/ppm/import-xlsx` (multipart, part `fichier` = `.xlsx`) — **read-only** : import
+   * à colonnes explicites (transcription exacte), même `SaisiePpmImportResult` que l'import PDF.
+   */
+  importPpmXlsx(fichier: File): Observable<SaisiePpmImportResult> {
+    const fd = new FormData();
+    fd.append('fichier', fichier);
+    return this.http.post<SaisiePpmImportResult>(`${this.baseUrl}/ppm/import-xlsx`, fd);
+  }
+  /** `GET /api/saisies/ppm/import-xlsx/gabarit` — gabarit `.xlsx` à remplir (binaire). */
+  telechargerGabaritXlsx(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/ppm/import-xlsx/gabarit`, { responseType: 'blob' });
+  }
 }

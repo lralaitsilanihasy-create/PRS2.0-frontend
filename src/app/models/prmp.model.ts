@@ -275,6 +275,20 @@ export interface SaisieImportLot {
   uniteLot?: string;
 }
 
+/**
+ * Anomalie de transcription structurée d'un marché importé (PDF ou xlsx) — permet une revue ciblée
+ * (ligne + champ exacts). Émise par l'assemblage backend partagé (`GET /import`, `/import-xlsx`).
+ */
+export interface AnomalieTranscription {
+  champ: 'objet' | 'montEstim' | 'nouvMontEstim' | 'mode' | 'nature' | 'beneficiaire' | 'date' | 'lot';
+  type: 'MONTANT_INCOHERENT' | 'OBJET_TRONQUE_PROBABLE' | 'ENCODAGE_SUSPECT' | 'REFERENTIEL_INCONNU' | 'CHAMP_MANQUANT';
+  gravite: 'BLOQUANT' | 'A_VERIFIER';
+  /** `true` si le backend a auto-corrigé (à confirmer par l'humain). */
+  corrige?: boolean;
+  /** Message prêt à afficher. */
+  message: string;
+}
+
 /** Ligne de marché extraite d'un PPM PDF (best-effort ; `idNature`/`idMode` résolus ou libellé seul). */
 export interface SaisieImportMarche {
   designationMarche?: string;
@@ -291,6 +305,8 @@ export interface SaisieImportMarche {
   previsions?: SaisieImportPrevision[];
   /** Lots extraits de la désignation (best-effort, garde de cohérence) ; désignation conservée intégrale. */
   lots?: SaisieImportLot[];
+  /** Anomalies de transcription détectées sur ce marché (vide/absent si RAS) — pour la revue front. */
+  anomalies?: AnomalieTranscription[];
 }
 
 /**
@@ -305,4 +321,6 @@ export interface SaisiePpmImportResult {
   idEntiteContract?: number;
   marches?: SaisieImportMarche[];
   avertissements?: string[];
+  /** Nombre de marchés portant ≥1 anomalie de transcription (résumé de `marches[].anomalies`). */
+  nbAVerifier?: number;
 }

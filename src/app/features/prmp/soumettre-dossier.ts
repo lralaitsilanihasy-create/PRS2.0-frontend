@@ -9,7 +9,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { MontantFrDirective } from '../../shared/montant-fr.directive';
 import { AutosizeDirective } from '../../shared/autosize.directive';
-import { Capm, Compte, Dossier, FORME_MARCHE_LIBELLES, FormeMarche, Marche, ModePassation, Nature, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
+import { AnomalieTranscription, Capm, Compte, Dossier, FORME_MARCHE_LIBELLES, FormeMarche, Marche, ModePassation, Nature, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -63,17 +63,6 @@ interface ApercuMarche {
   coherenceErr: string | null;
   sansDates: boolean;
 }
-/**
- * Anomalie de transcription d'une ligne importée (revue ciblée). Forme alignée sur le futur contrat
- * backend `SaisieImportMarche.anomalies[]` — le producteur heuristique sera remplacé à sa livraison.
- */
-interface AnomalieTranscription {
-  champ: 'objet' | 'montEstim';
-  type: 'MONTANT_INCOHERENT' | 'OBJET_TRONQUE_PROBABLE';
-  gravite: 'BLOQUANT' | 'A_VERIFIER';
-  message: string;
-}
-
 /** Snapshot du dossier PPM à créer, mis en forme comme le PPM officiel (aucune création). */
 interface ApercuDossier {
   entite: string;
@@ -151,8 +140,13 @@ interface ApercuDossier {
                 📄 Importer un PPM (PDF)
                 <input type="file" accept=".pdf,application/pdf" hidden (change)="importerPpm($event)" [disabled]="importing()" />
               </label>
-              @if (importing()) { <span class="cnm-muted">Analyse du PDF…</span> }
-              <span class="form-hint">Pré-remplit le formulaire depuis un PPM PDF officiel — à vérifier avant création.</span>
+              <label class="btn btn-outline btn-sm sd__import-xlsx">
+                📊 Importer un tableur (.xlsx)
+                <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden (change)="importerXlsx($event)" [disabled]="importing()" />
+              </label>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="telechargerGabarit()">⬇ Télécharger le gabarit</button>
+              @if (importing()) { <span class="cnm-muted">Analyse en cours…</span> }
+              <span class="form-hint">Pré-remplit le formulaire depuis un PPM (PDF officiel ou tableur à colonnes) — à vérifier avant création. Le tableur donne une transcription exacte.</span>
             </div>
             @if (importAvertissements().length) {
               <div class="alert alert-warning">
@@ -285,8 +279,8 @@ interface ApercuDossier {
                         <tr>
                           @if (first) {
                             <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature" [readonly]="importe()"></textarea></td>
-                            <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-warn]="aAnomalie(g, 'objet')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet" [readonly]="importe()"></textarea></td>
-                            <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-err]="aAnomalie(g, 'montEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" [readonly]="importe()" /></td>
+                            <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'objet')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet" [readonly]="importe()"></textarea></td>
+                            <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'montEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" [readonly]="importe()" /></td>
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" [readonly]="importe()" /></td>
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="sd-modes" placeholder="Mode" [readonly]="importe()" /></td>
                             <td [attr.rowspan]="rowspanBenef(g)">
@@ -413,7 +407,7 @@ interface ApercuDossier {
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || (nbAVerifier() > 0 && !revueAccusee())">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || aBloquant() || (nbAVerifier() > 0 && !revueAccusee())">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -750,7 +744,7 @@ interface ApercuDossier {
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-outline" (click)="fermerApercu()">Fermer</button>
-              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || (nbAVerifier() > 0 && !revueAccusee())" (click)="fermerApercu(); creerPpm()">
+              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || aBloquant() || (nbAVerifier() > 0 && !revueAccusee())" (click)="fermerApercu(); creerPpm()">
                 Créer le dossier
               </button>
             </div>
@@ -821,6 +815,9 @@ interface ApercuDossier {
       50% { box-shadow: 0 4px 22px rgba(249, 115, 22, 0.62); }
     }
     @media (prefers-reduced-motion: reduce) { .sd__import-btn { animation: none; } }
+    /* Import tableur : vert (source fiable / transcription exacte), distinct de l'import PDF (orange). */
+    .sd__import-xlsx { cursor: pointer; color: #fff; border: none; font-weight: 700; background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35); transition: filter 0.15s ease, transform 0.15s ease; }
+    .sd__import-xlsx:hover { color: #fff; filter: brightness(1.06); transform: translateY(-1px); }
     .sd__hint { margin: 0; }
     .sd__pieces { display: flex; flex-direction: column; gap: 0.5rem; }
     .sd__piece { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
@@ -993,6 +990,10 @@ export class SoumettreDossier {
    */
   readonly anomaliesParLigne = signal<Map<number, AnomalieTranscription[]>>(new Map());
   readonly nbAVerifier = computed(() => this.anomaliesParLigne().size);
+  /** Au moins une anomalie bloquante (empêche la création tant qu'elle n'est pas résolue). */
+  readonly aBloquant = computed(() =>
+    [...this.anomaliesParLigne().values()].some((list) => list.some((a) => a.gravite === 'BLOQUANT')),
+  );
 
   /** Famille planification = `DDP` (le sous-type PPM / PPM-AGPM est dérivé serveur, jamais saisi). */
   readonly estPpm = computed(() => this.dossier()?.idTypeDossier === 'DDP');
@@ -1383,8 +1384,11 @@ export class SoumettreDossier {
   anomaliesDe(g: FormGroup): AnomalieTranscription[] {
     return this.anomaliesParLigne().get(g.get('uid')!.value) ?? [];
   }
-  aAnomalie(g: FormGroup, champ: 'objet' | 'montEstim'): boolean {
-    return this.anomaliesDe(g).some((a) => a.champ === champ);
+  /** Classe de surlignage d'une cellule selon la gravité de son anomalie (rouge = bloquant, ambre = à vérifier). */
+  classeCellule(g: FormGroup, champ: 'objet' | 'montEstim'): string {
+    const a = this.anomaliesDe(g).filter((x) => x.champ === champ);
+    if (!a.length) return '';
+    return a.some((x) => x.gravite === 'BLOQUANT') ? 'sd__cell-err' : 'sd__cell-warn';
   }
   messagesAnomalie(g: FormGroup): string {
     return this.anomaliesDe(g).map((a) => a.message).join(' ');
@@ -1541,6 +1545,42 @@ export class SoumettreDossier {
       },
     });
   }
+  // — Import tableur (.xlsx) : colonnes explicites, transcription exacte (même flux que le PDF). —
+  importerXlsx(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    this.importing.set(true);
+    this.importAvertissements.set([]);
+    this.saisie.importPpmXlsx(file).subscribe({
+      next: (r) => {
+        this.appliquerImport(r);
+        this.importing.set(false);
+        this.toast.success('Tableur importé — vérifiez les données avant de créer le dossier.');
+      },
+      error: (e: ApiError) => {
+        this.importing.set(false);
+        if (e.status === 400) {
+          this.toast.error(e.message || 'Tableur illisible ou colonnes non reconnues.');
+        }
+      },
+    });
+  }
+  /** Télécharge le gabarit `.xlsx` à remplir (blob → téléchargement navigateur). */
+  telechargerGabarit(): void {
+    this.saisie.telechargerGabaritXlsx().subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'gabarit-ppm.xlsx';
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => this.toast.error('Téléchargement du gabarit impossible.'),
+    });
+  }
   /** Pré-remplit le formulaire depuis le résultat d'import (best-effort ; à vérifier avant création). */
   private appliquerImport(r: SaisiePpmImportResult): void {
     if (r.exercice != null) this.ppmForm.controls.exercice.setValue(r.exercice);
@@ -1605,8 +1645,11 @@ export class SoumettreDossier {
         previsionsPresentes = true;
       }
       this.marchesArray.push(g);
-      // Anomalies de transcription (repli) — futur : `m.anomalies ?? this.detecterAnomalies(m)`.
-      const anom = this.detecterAnomalies(m);
+      // Anomalies : contrat backend (`m.anomalies`) prioritaire ; heuristique locale en repli.
+      // REFERENTIEL_INCONNU retiré de la revue : SOA géré par le panneau dédié, nature/mode/compte créés à la volée.
+      const anom = (m.anomalies?.length ? m.anomalies : this.detecterAnomalies(m)).filter(
+        (a) => a.type !== 'REFERENTIEL_INCONNU',
+      );
       if (anom.length) anomMap.set(g.get('uid')!.value as number, anom);
     }
     this.anomaliesParLigne.set(anomMap);
