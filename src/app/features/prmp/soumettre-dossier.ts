@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
+import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { MontantFrDirective } from '../../shared/montant-fr.directive';
 import { AutosizeDirective } from '../../shared/autosize.directive';
 import { AnomalieTranscription, Capm, Compte, Dossier, FORME_MARCHE_LIBELLES, FormeMarche, Marche, ModePassation, Nature, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
@@ -932,7 +933,7 @@ export class SoumettreDossier {
   private readonly compteService = inject(CompteService);
   private readonly soaService = inject(SoaBeneficiaireService);
   private readonly lookups = inject(ReferenceLookupService);
-  private uidCounter = 0;
+  private readonly factory = inject(PpmFormFactory);
 
   readonly phase = signal<Phase>('choix');
   readonly submitting = signal(false);
@@ -1269,65 +1270,12 @@ export class SoumettreDossier {
     return this.marchesArray.controls as FormGroup[];
   }
 
-  /** Construit une ligne de marché (uid stable) ; aperçu du mode recalculé à chaque modification. */
-  private ligneMarche(): FormGroup {
-    const uid = ++this.uidCounter;
-    return this.fb.group({
-      uid: [uid],
-      designationMarche: [''],
-      montEstim: [null as number | null],
-      nouvMontEstim: [null as number | null],
-      numCompte: [null as string | null],
-      financement: [''],
-      statut: ['PREVU'],
-      // Nature/mode en saisie libre (comme montant) : le libellé est résolu-ou-créé au POST par le backend.
-      natureLibelle: [''],
-      modeLibelle: [''],
-      // Forme du marché : défaut réglementaire « à quantité fixe » (pré-remplie par l'import si relevée dans l'objet).
-      formeMarche: ['QUANTITE_FIXE' as FormeMarche],
-      // Ventilation par bénéficiaire (SOA + montants) — au moins une ligne (une ligne vide est ignorée au POST).
-      beneficiaires: this.fb.array([this.ligneBeneficiaire()]),
-      // Lots (allotissement) — optionnels, descriptifs (aucun contrôle de somme) ; édités via un modal dédié.
-      lots: this.fb.array([] as FormGroup[]),
-      processus: this.fb.array([] as FormGroup[]),
-    });
-  }
-  /** Un groupe lot { designationLot, montLot, qteLot, uniteLot } d'une ligne de marché (désignation obligatoire). */
-  private ligneLot(l?: { designationLot?: string; montLot?: number | null; qteLot?: number | null; uniteLot?: string }): FormGroup {
-    return this.fb.group({
-      uid: [++this.uidCounter],
-      designationLot: [l?.designationLot ?? '', Validators.required],
-      montLot: [l?.montLot ?? (null as number | null)],
-      qteLot: [l?.qteLot ?? (null as number | null)],
-      uniteLot: [l?.uniteLot ?? ''],
-    });
-  }
-  /**
-   * Montant à retenir pour le **montant d'un lot dérivé du marché** (le lot-objet pré-rempli) : le
-   * **nouveau montant estimatif** s'il est renseigné (marché révisé), sinon le montant estimatif initial.
-   * `undefined` si les deux sont vides. Vaut quel que soit le nombre de lots (le lot-objet conserve ce
-   * montant ; les lots ajoutés manuellement gardent leur propre saisie).
-   */
-  private montantLotObjet(montEstim: unknown, nouvMontEstim: unknown): number | undefined {
-    if (nouvMontEstim != null && nouvMontEstim !== '') return Number(nouvMontEstim);
-    return montEstim != null && montEstim !== '' ? Number(montEstim) : undefined;
-  }
-  /** Un groupe bénéficiaire { soaCode, numCompte, ancMontBenef, nouvMontBenef } d'une ligne de marché. */
-  private ligneBeneficiaire(b?: { soaCode?: string; numCompte?: string; ancMontBenef?: number; nouvMontBenef?: number }): FormGroup {
-    return this.fb.group({
-      uid: [++this.uidCounter], // clé stable de ligne (track/binding), jamais l'index
-      soaCode: [b?.soaCode ?? ''],
-      numCompte: [b?.numCompte ?? ''],
-      ancMontBenef: [b?.ancMontBenef ?? (null as number | null)],
-      nouvMontBenef: [b?.nouvMontBenef ?? (null as number | null)],
-    });
-  }
   /** Lignes bénéficiaires d'un marché (copie de travail du formulaire). */
   beneficiairesControls(g: FormGroup): FormGroup[] {
     return (g.get('beneficiaires') as FormArray).controls as FormGroup[];
   }
   ajouterBeneficiaire(g: FormGroup): void {
-    (g.get('beneficiaires') as FormArray).push(this.ligneBeneficiaire());
+    (g.get('beneficiaires') as FormArray).push(this.factory.ligneBeneficiaire());
   }
   retirerBeneficiaire(g: FormGroup, i: number): void {
     (g.get('beneficiaires') as FormArray).removeAt(i);
@@ -1595,7 +1543,7 @@ export class SoumettreDossier {
   }
   ajouterMarche(): void {
     this.ensureMarcheRefs();
-    this.marchesArray.push(this.ligneMarche());
+    this.marchesArray.push(this.factory.ligneMarche());
   }
   retirerMarche(i: number): void {
     this.marchesArray.removeAt(i);
@@ -1668,7 +1616,7 @@ export class SoumettreDossier {
     let previsionsPresentes = false;
     const anomMap = new Map<number, AnomalieTranscription[]>();
     for (const m of r.marches ?? []) {
-      const g = this.ligneMarche();
+      const g = this.factory.ligneMarche();
       g.patchValue({
         designationMarche: m.designationMarche ?? '',
         montEstim: m.montEstim ?? null,
@@ -1687,15 +1635,15 @@ export class SoumettreDossier {
       benefArr.clear(); // retire la ligne vide par défaut de ligneMarche()
       for (const b of m.beneficiaires ?? []) {
         benefArr.push(
-          this.ligneBeneficiaire({ soaCode: b.soaCode, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }),
+          this.factory.ligneBeneficiaire({ soaCode: b.soaCode, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }),
         );
       }
-      if (!benefArr.length) benefArr.push(this.ligneBeneficiaire()); // toujours au moins une ligne
+      if (!benefArr.length) benefArr.push(this.factory.ligneBeneficiaire()); // toujours au moins une ligne
       // Lots : le parser ne les extrait pas des PPM actuels (toujours vide) ; mappé par fidélité au contrat.
       const lotArr = g.get('lots') as FormArray;
       for (const lt of m.lots ?? []) {
         if (!lt.designationLot) continue;
-        lotArr.push(this.ligneLot({ designationLot: lt.designationLot, montLot: lt.montLot, qteLot: lt.qteLot, uniteLot: lt.uniteLot }));
+        lotArr.push(this.factory.ligneLot({ designationLot: lt.designationLot, montLot: lt.montLot, qteLot: lt.qteLot, uniteLot: lt.uniteLot }));
       }
       // Prévisions (jalons) : idCapm résolu depuis le libellé + date de début ; date de fin à compléter (non fournie).
       const procArr = g.get('processus') as FormArray;
@@ -1703,7 +1651,7 @@ export class SoumettreDossier {
         const idCapm =
           this.capms().find((c) => (c.libelleProcessus ?? '').toUpperCase() === (p.processus ?? '').toUpperCase())
             ?.idCapm ?? null;
-        procArr.push(this.processusGroup({ idCapm, dateDebut: p.dateDebut, dateFin: '' }));
+        procArr.push(this.factory.processusGroup({ idCapm, dateDebut: p.dateDebut, dateFin: '' }));
         previsionsPresentes = true;
       }
       this.marchesArray.push(g);
@@ -1760,16 +1708,6 @@ export class SoumettreDossier {
   }
 
   // — Processus prévisionnels d'une ligne de marché (création) —
-  /** Un groupe { idCapm, dateDebut, dateFin } pour le modal des processus. */
-  private processusGroup(p?: { idCapm?: number | null; dateDebut?: string; dateFin?: string }): FormGroup {
-    return this.fb.group({
-      uid: [++this.uidCounter],
-      idCapm: [p?.idCapm ?? null, Validators.required],
-      dateDebut: [p?.dateDebut ?? '', Validators.required],
-      // Date de fin **optionnelle** (backend : `dateFin` nullable ; chronologie ignorée si absente).
-      dateFin: [p?.dateFin ?? ''],
-    });
-  }
   /** Nombre de processus saisis sur une ligne de marché. */
   nbProcessus(g: FormGroup): number {
     return (g.get('processus') as FormArray).length;
@@ -1799,7 +1737,7 @@ export class SoumettreDossier {
   ajouterProc(): void {
     const utilises = new Set(this.procControls().map((g) => g.get('idCapm')!.value as number));
     const libre = this.capms().find((c) => !utilises.has(c.idCapm));
-    this.datesForm.push(this.processusGroup({ idCapm: libre?.idCapm }));
+    this.datesForm.push(this.factory.processusGroup({ idCapm: libre?.idCapm }));
   }
   retirerProc(i: number): void {
     this.datesForm.removeAt(i);
@@ -1844,7 +1782,7 @@ export class SoumettreDossier {
     this.procErreurs.set({});
     this.datesForm.clear();
     (g.get('processus') as FormArray).controls.forEach((p) =>
-      this.datesForm.push(this.processusGroup((p as FormGroup).getRawValue())),
+      this.datesForm.push(this.factory.processusGroup((p as FormGroup).getRawValue())),
     );
     this.datesCible.set(g);
   }
@@ -1867,7 +1805,7 @@ export class SoumettreDossier {
     }
     const arr = g.get('processus') as FormArray;
     arr.clear();
-    this.procControls().forEach((c) => arr.push(this.processusGroup(c.getRawValue())));
+    this.procControls().forEach((c) => arr.push(this.factory.processusGroup(c.getRawValue())));
     g.markAsDirty();
     this.datesCible.set(null);
   }
@@ -1900,20 +1838,20 @@ export class SoumettreDossier {
     this.lotsForm.clear();
     const existants = (g.get('lots') as FormArray).controls;
     if (existants.length) {
-      existants.forEach((l) => this.lotsForm.push(this.ligneLot((l as FormGroup).getRawValue())));
+      existants.forEach((l) => this.lotsForm.push(this.factory.ligneLot((l as FormGroup).getRawValue())));
     } else {
       // Aucun lot saisi : on pré-affiche le lot unique = l'objet du marché (désignation = objet, montant = montEstim),
       // reflet de la règle appliquée au POST. Éditable : l'utilisateur peut le modifier ou ajouter d'autres lots.
       const objet = (g.get('designationMarche')!.value as string)?.trim();
       if (objet) {
-        const montLot = this.montantLotObjet(g.get('montEstim')!.value, g.get('nouvMontEstim')!.value) ?? null;
-        this.lotsForm.push(this.ligneLot({ designationLot: objet, montLot }));
+        const montLot = this.factory.montantLotObjet(g.get('montEstim')!.value, g.get('nouvMontEstim')!.value) ?? null;
+        this.lotsForm.push(this.factory.ligneLot({ designationLot: objet, montLot }));
       }
     }
     this.lotsCible.set(g);
   }
   ajouterLot(): void {
-    this.lotsForm.push(this.ligneLot());
+    this.lotsForm.push(this.factory.ligneLot());
   }
   retirerLot(i: number): void {
     this.lotsForm.removeAt(i);
@@ -1931,7 +1869,7 @@ export class SoumettreDossier {
     }
     const arr = g.get('lots') as FormArray;
     arr.clear();
-    this.lotControls().forEach((c) => arr.push(this.ligneLot(c.getRawValue())));
+    this.lotControls().forEach((c) => arr.push(this.factory.ligneLot(c.getRawValue())));
     g.markAsDirty();
     this.lotsCible.set(null);
   }
@@ -2027,7 +1965,7 @@ export class SoumettreDossier {
       const lots: SaisieMarcheLot[] = lotsSaisis.length
         ? lotsSaisis
         : objet
-          ? [{ designationLot: objet.slice(0, 200), montLot: this.montantLotObjet(l['montEstim'], l['nouvMontEstim']) }]
+          ? [{ designationLot: objet.slice(0, 200), montLot: this.factory.montantLotObjet(l['montEstim'], l['nouvMontEstim']) }]
           : [];
       return {
         designationMarche: (l['designationMarche'] as string) || undefined,
