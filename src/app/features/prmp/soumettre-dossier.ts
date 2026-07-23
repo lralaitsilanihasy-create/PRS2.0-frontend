@@ -189,13 +189,18 @@ interface ApercuDossier {
                 }
               </div>
             }
-            @if (nbAVerifier()) {
+            @if (nbAutoCorrige()) {
+              <div class="alert sd__soa sd__alert-ok">
+                <div class="sd__warn-title">✓ {{ nbAutoCorrige() }} ligne(s) auto-corrigée(s) par le système (fragments recollés, montants réalignés) — à confirmer.</div>
+              </div>
+            }
+            @if (nbAConfirmer()) {
               <div class="alert alert-warning sd__soa">
-                <div class="sd__warn-title">⚠ {{ nbAVerifier() }} ligne(s) à vérifier — transcription de l'import</div>
+                <div class="sd__warn-title">⚠ {{ nbAConfirmer() }} ligne(s) à vérifier — transcription de l'import</div>
                 <ul class="sd__warn-list">
                   @for (g of marcheControls(); track g.get('uid')!.value; let i = $index) {
-                    @if (anomaliesDe(g).length) {
-                      <li><button type="button" class="sd__lien-ligne" (click)="scrollToMarche(g.get('uid')!.value)">Ligne {{ i + 1 }}</button> : {{ messagesAnomalie(g) }}</li>
+                    @if (aVerifier(g)) {
+                      <li><button type="button" class="sd__lien-ligne" (click)="scrollToMarche(g.get('uid')!.value)">Ligne {{ i + 1 }}</button> : {{ messagesReels(g) }}</li>
                     }
                   }
                 </ul>
@@ -272,8 +277,8 @@ interface ApercuDossier {
                     </tr>
                   </thead>
                   @for (g of marcheControls(); track g.get('uid')!.value) {
-                    <tbody class="sd__marche-tb" [attr.id]="'sd-m-' + g.get('uid')!.value" [class.sd__row-warn]="anomaliesDe(g).length">
-                      @for (b of beneficiairesControls(g); track $index; let first = $first; let i = $index) {
+                    <tbody class="sd__marche-tb" [attr.id]="'sd-m-' + g.get('uid')!.value" [class.sd__row-warn]="aVerifier(g)" [class.sd__row-ok]="corrigeeSeulement(g)">
+                      @for (b of beneficiairesControls(g); track b.get('uid')!.value; let first = $first; let i = $index) {
                         <tr>
                           @if (first) {
                             <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature" [readonly]="importe()"></textarea></td>
@@ -292,12 +297,12 @@ interface ApercuDossier {
                             </td>
                             <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'financement')" [readonly]="importe()" /></td>
                           }
-                          <td><input class="form-control" type="text" [formControl]="benefCtrl(g, i, 'soaCode')" list="sd-soa" placeholder="SOA" [readonly]="importe()" /></td>
-                          <td><input class="form-control" type="text" [formControl]="benefCtrl(g, i, 'numCompte')" list="sd-comptes" placeholder="Compte" [readonly]="importe()" /></td>
-                          <td><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="benefCtrl(g, i, 'ancMontBenef')" [readonly]="importe()" /></td>
+                          <td><input class="form-control" type="text" [formControl]="bctrl(b, 'soaCode')" list="sd-soa" placeholder="SOA" [readonly]="importe()" /></td>
+                          <td><input class="form-control" type="text" [formControl]="bctrl(b, 'numCompte')" list="sd-comptes" placeholder="Compte" [readonly]="importe()" /></td>
+                          <td><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'ancMontBenef')" [readonly]="importe()" /></td>
                           <td>
                             <div class="sd__benef-cell">
-                              <input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="benefCtrl(g, i, 'nouvMontBenef')" placeholder="(si révisé)" [readonly]="importe()" />
+                              <input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'nouvMontBenef')" placeholder="(si révisé)" [readonly]="importe()" />
                               @if (!importe()) {
                                 <button type="button" class="btn btn-secondary btn-sm" [disabled]="beneficiairesControls(g).length === 1" (click)="retirerBeneficiaire(g, i)" aria-label="Retirer le bénéficiaire">✕</button>
                               }
@@ -320,8 +325,10 @@ interface ApercuDossier {
                               @if (!importe()) {
                                 <button type="button" class="btn btn-danger btn-sm" (click)="retirerMarche(marcheIndex(g))">Retirer</button>
                               }
-                              @if (anomaliesDe(g).length) {
+                              @if (aVerifier(g)) {
                                 <span class="sd__badge-warn" [title]="messagesAnomalie(g)">⚠ à vérifier</span>
+                              } @else if (corrigeeSeulement(g)) {
+                                <span class="sd__badge-ok" [title]="messagesAnomalie(g)">✓ auto-corrigé</span>
                               }
                               @if (erreurCoherenceBenefs(g); as errBenef) {
                                 <span class="form-error">{{ errBenef }}</span>
@@ -397,16 +404,16 @@ interface ApercuDossier {
               </div>
             }
 
-            @if (nbAVerifier()) {
+            @if (nbAConfirmer()) {
               <label class="sd__revue">
                 <input type="checkbox" [checked]="revueAccusee()" (change)="revueAccusee.set($any($event.target).checked)" />
-                J'ai vérifié les {{ nbAVerifier() }} ligne(s) signalée(s).
+                J'ai vérifié les {{ nbAConfirmer() }} ligne(s) à vérifier.
               </label>
             }
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || aBloquant() || (nbAVerifier() > 0 && !revueAccusee())">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || aBloquant() || (nbAConfirmer() > 0 && !revueAccusee())">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -552,7 +559,7 @@ interface ApercuDossier {
             </div>
             <div class="modal-body">
               <p class="form-hint">Au moins un processus est obligatoire ; un processus par ligne. La <strong>date de fin est optionnelle</strong>.</p>
-              @for (ctrl of procControls(); track $index) {
+              @for (ctrl of procControls(); track ctrl.get('uid')!.value) {
                 <div class="sd-proc-row" [formGroup]="ctrl">
                   <select class="form-control" formControlName="idCapm">
                     <option [ngValue]="null" disabled>— Processus —</option>
@@ -605,7 +612,7 @@ interface ApercuDossier {
                   unité sont descriptifs (aucun contrôle de somme).
                 </p>
               }
-              @for (ctrl of lotControls(); track $index) {
+              @for (ctrl of lotControls(); track ctrl.get('uid')!.value) {
                 <div class="sd-lot-row" [formGroup]="ctrl">
                   <input class="form-control" type="text" formControlName="designationLot" placeholder="Désignation du lot *" aria-label="Désignation du lot" [readonly]="importe()" />
                   <input class="form-control sd__c-mont" type="number" formControlName="montLot" placeholder="Montant" aria-label="Montant" [readonly]="importe()" />
@@ -743,7 +750,7 @@ interface ApercuDossier {
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-outline" (click)="fermerApercu()">Fermer</button>
-              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || aBloquant() || (nbAVerifier() > 0 && !revueAccusee())" (click)="fermerApercu(); creerPpm()">
+              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || aBloquant() || (nbAConfirmer() > 0 && !revueAccusee())" (click)="fermerApercu(); creerPpm()">
                 Créer le dossier
               </button>
             </div>
@@ -835,11 +842,17 @@ interface ApercuDossier {
     .sd__soa-row .form-control { flex: 1 1 14rem; min-width: 10rem; }
     /* Revue de transcription : surlignage des lignes/cellules signalées + badge + accusé de revue. */
     .sd__row-warn td { background: rgba(245, 158, 11, 0.06); }
+    .sd__row-ok td { background: rgba(34, 197, 94, 0.05); }
     .sd__cell-warn { background: #FFFBEB !important; }
     .sd__cell-err { background: #FEF2F2 !important; }
+    .sd__cell-ok { background: #F0FDF4 !important; }
     .sd__badge-warn { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #B45309; background: #FFFBEB; border: 1px solid #F59E0B; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
+    .sd__badge-ok { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #15803D; background: #F0FDF4; border: 1px solid #22C55E; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
+    .sd__alert-ok { background: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; }
     .sd__lien-ligne { background: none; border: none; padding: 0; color: var(--info-text, #2563eb); font-weight: 700; text-decoration: underline; cursor: pointer; font: inherit; }
     .sd__revue { display: flex; align-items: center; gap: 0.4rem; font-size: var(--text-sm); font-weight: 600; }
+    /* Message de cohérence inline : s'enroule proprement dans la cellule Actions (jamais coupé). */
+    .sd__marche-actions .form-error { white-space: normal; overflow-wrap: anywhere; font-size: var(--text-xs); }
     .sd__lot-warn { border-color: #F59E0B !important; color: #B45309 !important; background: #FFFBEB !important; }
     .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
     .sd__foot--main { margin-top: 1rem; }
@@ -989,7 +1002,18 @@ export class SoumettreDossier {
    * (remplacer alors `detecterAnomalies(m)` par `m.anomalies ?? detecterAnomalies(m)`).
    */
   readonly anomaliesParLigne = signal<Map<number, AnomalieTranscription[]>>(new Map());
-  readonly nbAVerifier = computed(() => this.anomaliesParLigne().size);
+  /** Anomalie « réelle » (à examiner) : bloquante, ou à vérifier NON auto-corrigée. Les `corrige:true` sont déjà réglées. */
+  private estReelle(a: AnomalieTranscription): boolean {
+    return a.gravite === 'BLOQUANT' || !a.corrige;
+  }
+  /** Nombre de lignes portant ≥1 anomalie réelle (à confirmer/corriger) — pilote le gate d'accusé. */
+  readonly nbAConfirmer = computed(
+    () => [...this.anomaliesParLigne().values()].filter((list) => list.some((a) => this.estReelle(a))).length,
+  );
+  /** Nombre de lignes uniquement auto-corrigées (info, hors gate). */
+  readonly nbAutoCorrige = computed(
+    () => [...this.anomaliesParLigne().values()].filter((list) => list.length > 0 && !list.some((a) => this.estReelle(a))).length,
+  );
   /** Au moins une anomalie bloquante (empêche la création tant qu'elle n'est pas résolue). */
   readonly aBloquant = computed(() =>
     [...this.anomaliesParLigne().values()].some((list) => list.some((a) => a.gravite === 'BLOQUANT')),
@@ -1263,6 +1287,7 @@ export class SoumettreDossier {
   /** Un groupe lot { designationLot, montLot, qteLot, uniteLot } d'une ligne de marché (désignation obligatoire). */
   private ligneLot(l?: { designationLot?: string; montLot?: number | null; qteLot?: number | null; uniteLot?: string }): FormGroup {
     return this.fb.group({
+      uid: [++this.uidCounter],
       designationLot: [l?.designationLot ?? '', Validators.required],
       montLot: [l?.montLot ?? (null as number | null)],
       qteLot: [l?.qteLot ?? (null as number | null)],
@@ -1282,6 +1307,7 @@ export class SoumettreDossier {
   /** Un groupe bénéficiaire { soaCode, numCompte, ancMontBenef, nouvMontBenef } d'une ligne de marché. */
   private ligneBeneficiaire(b?: { soaCode?: string; numCompte?: string; ancMontBenef?: number; nouvMontBenef?: number }): FormGroup {
     return this.fb.group({
+      uid: [++this.uidCounter], // clé stable de ligne (track/binding), jamais l'index
       soaCode: [b?.soaCode ?? ''],
       numCompte: [b?.numCompte ?? ''],
       ancMontBenef: [b?.ancMontBenef ?? (null as number | null)],
@@ -1302,10 +1328,6 @@ export class SoumettreDossier {
   /** Contrôle d'un champ de la ligne de marché. */
   ctrl(g: FormGroup, nom: string): FormControl {
     return g.get(nom) as FormControl;
-  }
-  /** Contrôle d'un champ du i-ème bénéficiaire d'un marché. */
-  benefCtrl(g: FormGroup, i: number, nom: string): FormControl {
-    return (g.get('beneficiaires') as FormArray).at(i).get(nom) as FormControl;
   }
   /** Rowspan des colonnes marché = nombre de lignes bénéficiaires (au moins 1). */
   rowspanBenef(g: FormGroup): number {
@@ -1388,14 +1410,37 @@ export class SoumettreDossier {
   aAnomalieLot(g: FormGroup): boolean {
     return this.anomaliesDe(g).some((a) => a.champ === 'lot');
   }
-  /** Classe de surlignage d'une cellule selon la gravité de son anomalie (rouge = bloquant, ambre = à vérifier). */
+  /** La ligne porte-t-elle ≥1 anomalie réelle (bloquante ou à vérifier non corrigée) ? */
+  aVerifier(g: FormGroup): boolean {
+    return this.anomaliesDe(g).some((a) => this.estReelle(a));
+  }
+  /** La ligne n'a que des anomalies auto-corrigées (info). */
+  corrigeeSeulement(g: FormGroup): boolean {
+    const a = this.anomaliesDe(g);
+    return a.length > 0 && !a.some((x) => this.estReelle(x));
+  }
+  /**
+   * Classe de surlignage d'une cellule selon son anomalie : rouge = bloquant, ambre = à vérifier,
+   * vert = auto-corrigé (valeur déjà rétablie).
+   */
   classeCellule(g: FormGroup, champ: 'objet' | 'montEstim'): string {
     const a = this.anomaliesDe(g).filter((x) => x.champ === champ);
     if (!a.length) return '';
-    return a.some((x) => x.gravite === 'BLOQUANT') ? 'sd__cell-err' : 'sd__cell-warn';
+    if (a.some((x) => x.gravite === 'BLOQUANT')) return 'sd__cell-err';
+    if (a.some((x) => !x.corrige)) return 'sd__cell-warn';
+    return 'sd__cell-ok';
   }
+  /** Contrôle d'un champ d'un bénéficiaire, **par le groupe** (binding direct, jamais par index). */
+  bctrl(b: FormGroup, nom: string): FormControl {
+    return b.get(nom) as FormControl;
+  }
+  /** Messages des anomalies d'une ligne (tooltip). */
   messagesAnomalie(g: FormGroup): string {
     return this.anomaliesDe(g).map((a) => a.message).join(' ');
+  }
+  /** Messages des anomalies **réelles** (à vérifier) d'une ligne — pour le bandeau récap. */
+  messagesReels(g: FormGroup): string {
+    return this.anomaliesDe(g).filter((a) => this.estReelle(a)).map((a) => a.message).join(' ');
   }
   scrollToMarche(uid: number): void {
     document.getElementById('sd-m-' + uid)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1688,6 +1733,7 @@ export class SoumettreDossier {
   /** Un groupe { idCapm, dateDebut, dateFin } pour le modal des processus. */
   private processusGroup(p?: { idCapm?: number | null; dateDebut?: string; dateFin?: string }): FormGroup {
     return this.fb.group({
+      uid: [++this.uidCounter],
       idCapm: [p?.idCapm ?? null, Validators.required],
       dateDebut: [p?.dateDebut ?? '', Validators.required],
       // Date de fin **optionnelle** (backend : `dateFin` nullable ; chronologie ignorée si absente).
