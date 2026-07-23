@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Output } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Capm, Compte, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypePieceJointe } from '../../models';
+import { AnomalieTranscription, Capm, Compte, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -22,8 +22,10 @@ import {
   SoaBeneficiaireService,
   TypePieceJointeService,
 } from '../../services';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { PpmMarchesTable } from './ppm-marches-table';
+import { PpmSaisieGrid } from './ppm-saisie-grid';
+import { PpmFormFactory } from './ppm-form-factory';
 
 /**
  * Modal « Détail PPM » réutilisable (partagé) : en-tête PPM + lignes de marché + pièces jointes du dossier.
@@ -36,7 +38,7 @@ import { PpmMarchesTable } from './ppm-marches-table';
 @Component({
   selector: 'app-detail-ppm-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, DecimalPipe, PpmMarchesTable],
+  imports: [ReactiveFormsModule, DatePipe, PpmMarchesTable, PpmSaisieGrid],
   template: `
     <div class="modal-backdrop" [class.closing]="closing()" (click)="emitFermer()">
       @if (loading()) {
@@ -162,51 +164,30 @@ import { PpmMarchesTable } from './ppm-marches-table';
               @if (importApercu(); as r) {
                 <!-- PRÉVISUALISATION de l'import : RIEN n'est écrit tant qu'« Enregistrer » n'est pas cliqué. -->
                 <div class="alert alert-warning">
-                  ⚠ <strong>Prévisualisation de l'import</strong> — {{ lignesApercu().length }} marché(s) du PDF
+                  ⚠ <strong>Prévisualisation de l'import</strong> — {{ importMarches()?.length ?? 0 }} marché(s) du PDF
                   remplaceront les {{ marches().length }} ligne(s) actuelle(s). <strong>Modifications non
                   enregistrées.</strong> En-tête (exercice, date de signature) repris du PDF à l'enregistrement ;
                   pièces jointes conservées ; entité et référence inchangées{{ r.autoriteContractante ? ' (PDF : « ' + r.autoriteContractante + ' »)' : '' }}.
                   @if (r.avertissements?.length) { {{ r.avertissements!.length }} avertissement(s) d'import. }
                 </div>
-                @if (apercuErreurs().length) {
-                  <!-- Reflet de la règle serveur Σ bénéficiaires : signalé AVANT l'enregistrement (qui serait refusé en 400). -->
-                  <div class="alert alert-danger">
-                    <strong>{{ apercuErreurs().length }} ligne(s) incohérente(s)</strong> — l'enregistrement serait refusé.
-                    Corrigez le PDF ou saisissez ces lignes manuellement.
-                    <ul class="dpm-err-list">
-                      @for (e of apercuErreurs(); track e.ligne) { <li>Ligne {{ e.ligne }} : {{ e.message }}</li> }
-                    </ul>
-                  </div>
+                <!-- Grille éditable partagée (identique à la soumission) : édition, revue de transcription, validation par ligne. -->
+                @if (importMarches(); as arr) {
+                  <app-ppm-saisie-grid
+                    [marches]="arr"
+                    [natures]="natures()"
+                    [modesList]="modes()"
+                    [comptes]="comptes()"
+                    [soaList]="soaList()"
+                    [capms]="capms()"
+                    [anomaliesParLigne]="anomaliesImport()"
+                    mode="import"
+                  />
                 }
-                <div class="table-card">
-                  <table class="dpm-marches">
-                    <thead>
-                      <tr>
-                        <th>Nature</th><th>Objet</th><th class="r">Montant estimé</th><th>Mode</th>
-                        <th>Forme</th><th>Lots</th><th>Bénéf.</th><th>Dates</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (l of lignesApercu(); track $index; let i = $index) {
-                        <tr [class.dpm-row-err]="erreurDeLigne(i)" [title]="erreurDeLigne(i) || ''">
-                          <td class="dpm-objet-cell">{{ l.natureLibelle || resolve(natureMap(), l.idNature) }}</td>
-                          <td [title]="l.designationMarche || ''" class="dpm-objet-cell">{{ l.designationMarche || '—' }}</td>
-                          <td class="td-montant">{{ l.montEstim | number }}</td>
-                          <td>{{ l.modeLibelle || resolve(modeMap(), l.idMode) }}</td>
-                          <td>{{ formeLabel(l.formeMarche) }}</td>
-                          <td>{{ l.lots?.length ?? 0 }}</td>
-                          <td>{{ l.beneficiaires?.length ?? 0 }}</td>
-                          <td>{{ l.processus?.length ?? 0 }}</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
                 <div class="dpm-apercu-actions">
                   <button class="btn btn-outline" type="button" [disabled]="applyingImport()" (click)="annulerImport()">Annuler l'import</button>
                   <button class="btn btn-primary" type="button"
-                    [disabled]="applyingImport() || apercuErreurs().length > 0"
-                    [title]="apercuErreurs().length ? 'Corrigez les lignes incohérentes avant d\\'enregistrer.' : ''"
+                    [disabled]="applyingImport() || !importPret()"
+                    [title]="importPret() ? '' : 'Validez chaque ligne signalée et corrigez les montants incohérents avant d\\'enregistrer.'"
                     (click)="enregistrerImport()">
                     {{ applyingImport() ? 'Enregistrement…' : '💾 Enregistrer' }}
                   </button>
@@ -625,6 +606,7 @@ export class DetailPpmModal implements OnInit {
   private readonly capmService = inject(CapmService);
   private readonly typePieceService = inject(TypePieceJointeService);
   private readonly saisieService = inject(SaisieService);
+  private readonly factory = inject(PpmFormFactory);
 
   readonly loading = signal(true);
   /** Animation de fermeture en cours : retarde l'émission de `fermer` le temps du fondu sortant. */
@@ -655,10 +637,12 @@ export class DetailPpmModal implements OnInit {
   readonly importEnCours = signal(false);
   /** Import en prévisualisation (null = aucune) — les lignes affichées ne sont PAS persistées. */
   readonly importApercu = signal<SaisiePpmImportResult | null>(null);
-  /** Lignes de saisie mappées depuis l'import (prévisualisation + corps du PUT à l'enregistrement). */
-  readonly lignesApercu = signal<SaisieMarcheLigne[]>([]);
-  /** Incohérences Σ bénéficiaires détectées dans l'aperçu (même règle que la saisie) — bloquent l'enregistrement. */
-  readonly apercuErreurs = signal<{ ligne: number; message: string }[]>([]);
+  /** Marchés de l'import montés en formulaire (grille éditable partagée) — corps du PUT à l'enregistrement. */
+  readonly importMarches = signal<FormArray | null>(null);
+  /** Anomalies de transcription par ligne (clé = uid), calculées à l'import — pilotent la revue de la grille. */
+  readonly anomaliesImport = signal<Map<number, AnomalieTranscription[]>>(new Map());
+  /** Grille de saisie partagée (prévisualisation d'import) — lue pour conditionner « Enregistrer ». */
+  readonly grid = viewChild(PpmSaisieGrid);
   readonly applyingImport = signal(false);
 
   // — AGPM conditionnel : le PPM porte `agpmRequis` (autorité backend) ; pièce repérée par code stable. —
@@ -809,19 +793,24 @@ export class DetailPpmModal implements OnInit {
     input.value = ''; // autorise la re-sélection du même fichier
     if (!file) return;
     this.importEnCours.set(true);
+    this.chargerReferentiels(); // datalists (nature/mode/compte) de la grille éditable
     this.saisieService.importPpm(file).subscribe({
       next: (r) => {
         this.importEnCours.set(false);
         // Prévisualisation seulement : rien n'est écrit tant qu'« Enregistrer » n'est pas cliqué.
-        const lignes = this.lignesDepuisImport(r);
+        // Marchés montés en formulaire via la MÊME fabrique qu'à la soumission (grille éditable partagée),
+        // + revue de transcription (anomalies backend, hors REFERENTIEL_INCONNU géré à la volée au POST).
+        const arr = this.fb.array([] as FormGroup[]);
+        const anomMap = new Map<number, AnomalieTranscription[]>();
+        for (const m of r.marches ?? []) {
+          const g = this.factory.construireMarcheDepuisImport(m, this.capms());
+          arr.push(g);
+          const anom = (m.anomalies ?? []).filter((a) => a.type !== 'REFERENTIEL_INCONNU');
+          if (anom.length) anomMap.set(g.get('uid')!.value as number, anom);
+        }
         this.importApercu.set(r);
-        this.lignesApercu.set(lignes);
-        // Pré-contrôle de cohérence Σ (reflet de la règle serveur) : signalé AVANT l'enregistrement.
-        this.apercuErreurs.set(
-          lignes
-            .map((l, i) => ({ ligne: i + 1, message: this.coherenceLigne(l) as string }))
-            .filter((e) => e.message),
-        );
+        this.importMarches.set(arr);
+        this.anomaliesImport.set(anomMap);
       },
       error: () => this.importEnCours.set(false), // 400 PDF illisible → toast centralisé
     });
@@ -830,41 +819,26 @@ export class DetailPpmModal implements OnInit {
   annulerImport(): void {
     if (this.applyingImport()) return;
     this.importApercu.set(null);
-    this.lignesApercu.set([]);
-    this.apercuErreurs.set([]);
+    this.importMarches.set(null);
+    this.anomaliesImport.set(new Map());
   }
-  /** Message d'incohérence d'une ligne de l'aperçu (1-indexée), s'il y en a un. */
-  erreurDeLigne(i: number): string | undefined {
-    return this.apercuErreurs().find((e) => e.ligne === i + 1)?.message;
-  }
-  /**
-   * Cohérence Σ bénéficiaires d'une ligne (MÊME règle que la saisie / le serveur) : si ≥1 bénéficiaire
-   * rempli, Σ ancMontBenef = montEstim, et Σ nouvMontBenef = nouvMontEstim si celui-ci est renseigné.
-   */
-  private coherenceLigne(l: SaisieMarcheLigne): string | null {
-    const benefs = (l.beneficiaires ?? []).filter(
-      (b) => b.soaCode || b.numCompte || b.ancMontBenef != null || b.nouvMontBenef != null,
-    );
-    if (!benefs.length) return null;
-    const fmt = (v: number) => new Intl.NumberFormat('fr-FR').format(v);
-    const sAnc = benefs.reduce((acc, b) => acc + (Number(b.ancMontBenef) || 0), 0);
-    const montEstim = Number(l.montEstim) || 0;
-    if (sAnc !== montEstim) {
-      return `La somme des montants par bénéficiaire (${fmt(sAnc)}) doit égaler le montant estimé du marché (${fmt(montEstim)}).`;
-    }
-    if (l.nouvMontEstim != null) {
-      const sNouv = benefs.reduce((acc, b) => acc + (Number(b.nouvMontBenef) || 0), 0);
-      if (sNouv !== Number(l.nouvMontEstim)) {
-        return `La somme des nouveaux montants par bénéficiaire (${fmt(sNouv)}) doit égaler le nouveau montant estimé (${fmt(Number(l.nouvMontEstim))}).`;
-      }
-    }
-    return null;
+  /** Vrai si la grille d'import est prête à être enregistrée (toutes les lignes signalées validées + montants cohérents). */
+  importPret(): boolean {
+    const g = this.grid();
+    return !!this.importMarches() && !!g && g.nbAValiderRestantes() === 0 && g.benefsCoherents;
   }
   /** Enregistre le remplacement : `PUT /api/saisies/ppm/{idDossier}` (réconciliation — lignes actuelles retirées). */
   enregistrerImport(): void {
     const r = this.importApercu();
     const p = this.ppm();
-    if (!r || !p) return;
+    const arr = this.importMarches();
+    if (!r || !p || !arr) return;
+    // Corps du PUT reconstruit depuis la grille éditée (mapping identique à la soumission) : lignes non vides,
+    // lot-objet par défaut, dates de fin optionnelles.
+    const lignes: SaisieMarcheLigne[] = (arr.controls as FormGroup[])
+      .map((g) => g.getRawValue() as Record<string, unknown>)
+      .filter((l) => this.factory.ligneNonVide(l))
+      .map((l) => this.factory.payloadDepuisMarche(l));
     this.applyingImport.set(true);
     const req: EditionPpmRequest = {
       // En-tête : exercice/date du PDF (repli sur l'existant) ; signataire/référence actuels conservés (non extraits).
@@ -872,15 +846,15 @@ export class DetailPpmModal implements OnInit {
       dateSignature: r.dateSignature ?? p.dateSignature,
       signataire: p.signataire,
       reference: p.reference,
-      marches: this.lignesApercu(),
+      marches: lignes,
     };
     this.saisieService.editionPpm(this.idDossier, req).subscribe({
       next: () => {
         this.toast.success('Brouillon remplacé par le contenu du PDF.');
         this.applyingImport.set(false);
         this.importApercu.set(null);
-        this.lignesApercu.set([]);
-        this.apercuErreurs.set([]);
+        this.importMarches.set(null);
+        this.anomaliesImport.set(new Map());
         this.charger();
         this.modifie.emit();
       },
@@ -899,57 +873,6 @@ export class DetailPpmModal implements OnInit {
       },
     });
   }
-  /** Mapping import → lignes de saisie — identique à la création (lot-objet par défaut compris). */
-  private lignesDepuisImport(r: SaisiePpmImportResult): SaisieMarcheLigne[] {
-    return (r.marches ?? []).map((m) => {
-      const beneficiaires = (m.beneficiaires ?? [])
-        .filter((b) => b.soaCode || b.numCompte || b.ancMontBenef != null || b.nouvMontBenef != null)
-        .map((b) => ({
-          soaCode: b.soaCode?.trim() || undefined,
-          numCompte: b.numCompte?.trim() || undefined,
-          ancMontBenef: b.ancMontBenef ?? undefined,
-          nouvMontBenef: b.nouvMontBenef ?? undefined,
-        }));
-      const lotsSaisis = (m.lots ?? [])
-        .filter((lt) => lt.designationLot?.trim())
-        .map((lt) => ({
-          designationLot: (lt.designationLot as string).trim(),
-          montLot: lt.montLot ?? undefined,
-          qteLot: lt.qteLot ?? undefined,
-          uniteLot: lt.uniteLot?.trim() || undefined,
-        }));
-      // Règle du lot-objet par défaut (comme à la création) : sans lot explicite, lot unique = objet du marché.
-      const objet = m.designationMarche?.trim();
-      const lots = lotsSaisis.length
-        ? lotsSaisis
-        : objet
-          ? [{ designationLot: objet.slice(0, 200), montLot: m.nouvMontEstim ?? m.montEstim ?? undefined }]
-          : [];
-      const processus = (m.previsions ?? [])
-        .map((pv) => ({
-          idCapm: this.capms().find((c) => (c.libelleProcessus ?? '').toUpperCase() === (pv.processus ?? '').toUpperCase())?.idCapm,
-          dateDebut: pv.dateDebut,
-        }))
-        .filter((pv): pv is { idCapm: number; dateDebut: string } => pv.idCapm != null && !!pv.dateDebut);
-      return {
-        designationMarche: m.designationMarche || undefined,
-        montEstim: m.montEstim ?? undefined,
-        nouvMontEstim: m.nouvMontEstim ?? undefined,
-        numCompte: m.beneficiaires?.[0]?.numCompte?.trim() || undefined,
-        financement: m.financement || undefined,
-        statut: 'PREVU', // comme à la création (l'import ne porte pas de statut)
-        idNature: m.idNature ?? undefined,
-        natureLibelle: m.natureLibelle?.trim() || undefined,
-        idMode: m.idMode ?? undefined,
-        modeLibelle: m.modeLibelle?.trim() || undefined,
-        formeMarche: m.formeMarche ?? undefined,
-        beneficiaires: beneficiaires.length ? beneficiaires : undefined,
-        lots: lots.length ? lots : undefined,
-        processus,
-      };
-    });
-  }
-
   /** Dates prévisionnelles d'un marché (triées par ordre CAPM ; lecture seule). */
   datesDe(idDetail: number): MarchePrevision[] {
     return this.prevParDetail().get(idDetail) ?? [];

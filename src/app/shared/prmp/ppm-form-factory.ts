@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-import { Capm, FormeMarche, SaisieImportMarche } from '../../models';
+import { Capm, FormeMarche, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot } from '../../models';
 
 /**
  * Fabrique **partagée** des sous-formulaires d'une ligne de marché PPM (marché, bénéficiaire, lot,
@@ -111,5 +111,71 @@ export class PpmFormFactory {
       procArr.push(this.processusGroup({ idCapm, dateDebut: p.dateDebut, dateFin: '' }));
     }
     return g;
+  }
+
+  /**
+   * Une ligne de marché (valeur brute du formulaire) est-elle **non vide** ? (`statut`, valeur par
+   * défaut, exclu). Sert à filtrer les lignes avant l'envoi au serveur.
+   */
+  ligneNonVide(l: Record<string, unknown>): boolean {
+    return !!(
+      l['designationMarche'] ||
+      l['montEstim'] != null ||
+      l['nouvMontEstim'] != null ||
+      l['numCompte'] ||
+      l['financement'] ||
+      l['natureLibelle'] ||
+      l['modeLibelle']
+    );
+  }
+
+  /**
+   * Convertit une ligne de marché (valeur brute du formulaire) en **ligne de saisie** pour le serveur
+   * (`SaisieMarcheLigne`) — mapping **unique** partagé par la soumission ET le réimport : bénéficiaires
+   * et lots non vides seulement, règle du **lot-objet par défaut** (sans lot explicite, lot unique =
+   * objet, tronqué à 200, montant = nouveau montant estimatif ou montant estimatif), dates de fin vides
+   * omises. Le libellé nature/mode est envoyé tel quel (résolu-ou-créé au POST).
+   */
+  payloadDepuisMarche(l: Record<string, unknown>): SaisieMarcheLigne {
+    const beneficiaires = ((l['beneficiaires'] as Record<string, unknown>[]) ?? [])
+      .filter((b) => b['soaCode'] || b['numCompte'] || b['ancMontBenef'] != null || b['nouvMontBenef'] != null)
+      .map((b) => ({
+        soaCode: (b['soaCode'] as string)?.trim() || undefined,
+        numCompte: (b['numCompte'] as string)?.trim() || undefined,
+        ancMontBenef: (b['ancMontBenef'] as number) ?? undefined,
+        nouvMontBenef: (b['nouvMontBenef'] as number) ?? undefined,
+      }));
+    const lotsSaisis: SaisieMarcheLot[] = ((l['lots'] as Record<string, unknown>[]) ?? [])
+      .filter((lt) => (lt['designationLot'] as string)?.trim())
+      .map((lt) => ({
+        designationLot: (lt['designationLot'] as string).trim(),
+        montLot: (lt['montLot'] as number) ?? undefined,
+        qteLot: (lt['qteLot'] as number) ?? undefined,
+        uniteLot: (lt['uniteLot'] as string)?.trim() || undefined,
+      }));
+    const objet = (l['designationMarche'] as string)?.trim();
+    const lots: SaisieMarcheLot[] = lotsSaisis.length
+      ? lotsSaisis
+      : objet
+        ? [{ designationLot: objet.slice(0, 200), montLot: this.montantLotObjet(l['montEstim'], l['nouvMontEstim']) }]
+        : [];
+    return {
+      designationMarche: (l['designationMarche'] as string) || undefined,
+      montEstim: (l['montEstim'] as number) ?? undefined,
+      nouvMontEstim: (l['nouvMontEstim'] as number) ?? undefined,
+      numCompte: (l['numCompte'] as string) ?? undefined,
+      financement: (l['financement'] as string) || undefined,
+      statut: (l['statut'] as string) || 'PREVU',
+      natureLibelle: (l['natureLibelle'] as string)?.trim() || undefined,
+      modeLibelle: (l['modeLibelle'] as string)?.trim() || undefined,
+      formeMarche: (l['formeMarche'] as FormeMarche) || undefined,
+      beneficiaires: beneficiaires.length ? beneficiaires : undefined,
+      lots: lots.length ? lots : undefined,
+      processus: ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({
+        idCapm: p['idCapm'] as number,
+        dateDebut: p['dateDebut'] as string,
+        dateFin: (p['dateFin'] as string) || undefined,
+      })),
+    };
   }
 }
