@@ -300,7 +300,9 @@ interface ApercuDossier {
                           </td>
                           @if (first) {
                             <td [attr.rowspan]="rowspanBenef(g)" class="sd__marche-actions">
-                              <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterBeneficiaire(g)">+ bénéficiaire</button>
+                              @if (!importe()) {
+                                <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterBeneficiaire(g)">+ bénéficiaire</button>
+                              }
                               <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDates(g)">CAPM</button>
                               @if (!datesSaisies(g)) {
                                 <span class="sd__dates-manq">⚠ Dates manquantes</span>
@@ -310,7 +312,9 @@ interface ApercuDossier {
                                 [title]="lotsExplicites(g) ? '' : 'Lot unique par défaut = objet du marché ; cliquez pour le modifier ou en ajouter.'">
                                 Lots ({{ nbLots(g) }})
                               </button>
-                              <button type="button" class="btn btn-danger btn-sm" (click)="retirerMarche(marcheIndex(g))">Retirer</button>
+                              @if (!importe()) {
+                                <button type="button" class="btn btn-danger btn-sm" (click)="retirerMarche(marcheIndex(g))">Retirer</button>
+                              }
                               @if (estValidee(g)) {
                                 <span class="sd__badge-valide" [title]="messagesAnomalie(g)">✓ validé</span>
                               } @else if (aVerifier(g)) {
