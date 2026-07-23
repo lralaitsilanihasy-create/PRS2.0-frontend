@@ -277,7 +277,7 @@ interface ApercuDossier {
                     </tr>
                   </thead>
                   @for (g of marcheControls(); track g.get('uid')!.value) {
-                    <tbody class="sd__marche-tb" [attr.id]="'sd-m-' + g.get('uid')!.value" [class.sd__row-warn]="aVerifier(g)" [class.sd__row-ok]="corrigeeSeulement(g)">
+                    <tbody class="sd__marche-tb" [attr.id]="'sd-m-' + g.get('uid')!.value" [class.sd__row-valide]="estValidee(g)" [class.sd__row-warn]="aVerifier(g) && !estValidee(g)" [class.sd__row-ok]="corrigeeSeulement(g) && !estValidee(g)">
                       @for (b of beneficiairesControls(g); track b.get('uid')!.value; let first = $first; let i = $index) {
                         <tr>
                           @if (first) {
@@ -325,10 +325,17 @@ interface ApercuDossier {
                               @if (!importe()) {
                                 <button type="button" class="btn btn-danger btn-sm" (click)="retirerMarche(marcheIndex(g))">Retirer</button>
                               }
-                              @if (aVerifier(g)) {
+                              @if (estValidee(g)) {
+                                <span class="sd__badge-valide" [title]="messagesAnomalie(g)">✓ validé</span>
+                              } @else if (aVerifier(g)) {
                                 <span class="sd__badge-warn" [title]="messagesAnomalie(g)">⚠ à vérifier</span>
                               } @else if (corrigeeSeulement(g)) {
                                 <span class="sd__badge-ok" [title]="messagesAnomalie(g)">✓ auto-corrigé</span>
+                              }
+                              @if (aValider(g)) {
+                                <button type="button" class="btn btn-sm" [class.btn-secondary]="!estValidee(g)" [class.btn-outline]="estValidee(g)" (click)="basculerValidation(g)">
+                                  {{ estValidee(g) ? '↩ Annuler' : '✓ Valider' }}
+                                </button>
                               }
                               @if (erreurCoherenceBenefs(g); as errBenef) {
                                 <span class="form-error">{{ errBenef }}</span>
@@ -404,16 +411,22 @@ interface ApercuDossier {
               </div>
             }
 
-            @if (nbAConfirmer()) {
-              <label class="sd__revue">
-                <input type="checkbox" [checked]="revueAccusee()" (change)="revueAccusee.set($any($event.target).checked)" />
-                J'ai vérifié les {{ nbAConfirmer() }} ligne(s) à vérifier.
-              </label>
+            @if (nbAValider()) {
+              <div class="sd__validation">
+                <span [class.sd__validation--ok]="nbAValiderRestantes() === 0">
+                  ✓ {{ nbValidees() }} / {{ nbAValider() }} ligne(s) signalée(s) validée(s)@if (nbAValiderRestantes()) { — validez chaque ligne (bouton « Valider ») pour créer le dossier. }
+                </span>
+                @if (nbAValiderRestantes()) {
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="toutValider()">✓ Tout valider</button>
+                } @else {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="toutInvalider()">↩ Tout dé-valider</button>
+                }
+              </div>
             }
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || aBloquant() || (nbAConfirmer() > 0 && !revueAccusee())">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || aBloquant() || nbAValiderRestantes() > 0">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -750,7 +763,7 @@ interface ApercuDossier {
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-outline" (click)="fermerApercu()">Fermer</button>
-              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || aBloquant() || (nbAConfirmer() > 0 && !revueAccusee())" (click)="fermerApercu(); creerPpm()">
+              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || aBloquant() || nbAValiderRestantes() > 0" (click)="fermerApercu(); creerPpm()">
                 Créer le dossier
               </button>
             </div>
@@ -850,7 +863,11 @@ interface ApercuDossier {
     .sd__badge-ok { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #15803D; background: #F0FDF4; border: 1px solid #22C55E; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
     .sd__alert-ok { background: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; }
     .sd__lien-ligne { background: none; border: none; padding: 0; color: var(--info-text, #2563eb); font-weight: 700; text-decoration: underline; cursor: pointer; font: inherit; }
-    .sd__revue { display: flex; align-items: center; gap: 0.4rem; font-size: var(--text-sm); font-weight: 600; }
+    /* Validation par ligne : ligne/badge « validé » (vert) + barre de progression. */
+    .sd__row-valide td { background: rgba(34, 197, 94, 0.12); }
+    .sd__badge-valide { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #fff; background: #22C55E; border: 1px solid #16A34A; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
+    .sd__validation { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: var(--text-sm); font-weight: 600; color: var(--n-600, #475569); }
+    .sd__validation--ok { color: #15803D; }
     /* Message de cohérence inline : s'enroule proprement dans la cellule Actions (jamais coupé). */
     .sd__marche-actions .form-error { white-space: normal; overflow-wrap: anywhere; font-size: var(--text-xs); }
     .sd__lot-warn { border-color: #F59E0B !important; color: #B45309 !important; background: #FFFBEB !important; }
@@ -994,8 +1011,8 @@ export class SoumettreDossier {
   readonly entiteAResoudre = computed(
     () => this.importe() && !this.entites().some((e) => e.idEntiteContract === this.selectedEntiteId()),
   );
-  /** Accusé de revue des lignes signalées (gate avant création). */
-  readonly revueAccusee = signal(false);
+  /** Uid des lignes signalées **validées** par l'utilisateur (validation par ligne, gate avant création). */
+  readonly lignesValidees = signal<Set<number>>(new Set());
   /**
    * Anomalies de transcription par ligne (clé = uid du marché), calculées **à l'import** (robuste au
    * ré-import). HEURISTIQUE de repli tant que le backend n'émet pas `SaisieImportMarche.anomalies[]`
@@ -1018,6 +1035,20 @@ export class SoumettreDossier {
   readonly aBloquant = computed(() =>
     [...this.anomaliesParLigne().values()].some((list) => list.some((a) => a.gravite === 'BLOQUANT')),
   );
+  /** Une ligne est **validable** si elle porte des anomalies non bloquantes (auto-corrigées ou à vérifier). */
+  private ligneValidable(list: AnomalieTranscription[]): boolean {
+    return list.length > 0 && !list.some((a) => a.gravite === 'BLOQUANT');
+  }
+  /** Nombre de lignes signalées validables (à valider une à une). */
+  readonly nbAValider = computed(
+    () => [...this.anomaliesParLigne().values()].filter((list) => this.ligneValidable(list)).length,
+  );
+  /** Nombre de lignes validables déjà validées. */
+  readonly nbValidees = computed(
+    () => [...this.anomaliesParLigne().entries()].filter(([uid, list]) => this.ligneValidable(list) && this.lignesValidees().has(uid)).length,
+  );
+  /** Lignes validables restant à valider (gate). */
+  readonly nbAValiderRestantes = computed(() => this.nbAValider() - this.nbValidees());
 
   /** Famille planification = `DDP` (le sous-type PPM / PPM-AGPM est dérivé serveur, jamais saisi). */
   readonly estPpm = computed(() => this.dossier()?.idTypeDossier === 'DDP');
@@ -1198,7 +1229,7 @@ export class SoumettreDossier {
   choisirPpm(): void {
     this.formError.set(null);
     this.importe.set(false); // saisie manuelle : tableau éditable
-    this.revueAccusee.set(false);
+    this.lignesValidees.set(new Set());
     this.anomaliesParLigne.set(new Map());
     this.phase.set('saisiePpm');
     // Pièces attendues de la planification (le flux PPM crée toujours un dossier de famille DDP).
@@ -1419,6 +1450,32 @@ export class SoumettreDossier {
     const a = this.anomaliesDe(g);
     return a.length > 0 && !a.some((x) => this.estReelle(x));
   }
+  /** La ligne est-elle validable (anomalies non bloquantes) → bouton « Valider ». */
+  aValider(g: FormGroup): boolean {
+    return this.ligneValidable(this.anomaliesDe(g));
+  }
+  /** La ligne a-t-elle été validée par l'utilisateur ? */
+  estValidee(g: FormGroup): boolean {
+    return this.lignesValidees().has(g.get('uid')!.value);
+  }
+  /** Valide / dé-valide une ligne signalée. */
+  basculerValidation(g: FormGroup): void {
+    const uid = g.get('uid')!.value as number;
+    this.lignesValidees.update((s) => {
+      const n = new Set(s);
+      n.has(uid) ? n.delete(uid) : n.add(uid);
+      return n;
+    });
+  }
+  /** Valide toutes les lignes validables (raccourci). */
+  toutValider(): void {
+    const uids = [...this.anomaliesParLigne().entries()].filter(([, list]) => this.ligneValidable(list)).map(([uid]) => uid);
+    this.lignesValidees.set(new Set(uids));
+  }
+  /** Annule toutes les validations. */
+  toutInvalider(): void {
+    this.lignesValidees.set(new Set());
+  }
   /**
    * Classe de surlignage d'une cellule selon son anomalie : rouge = bloquant, ambre = à vérifier,
    * vert = auto-corrigé (valeur déjà rétablie).
@@ -1601,7 +1658,7 @@ export class SoumettreDossier {
   reinitialiserImport(): void {
     this.marchesArray.clear();
     this.importe.set(false);
-    this.revueAccusee.set(false);
+    this.lignesValidees.set(new Set());
     this.anomaliesParLigne.set(new Map());
     this.importAvertissements.set([]);
     this.entiteImportee.set(null);
@@ -1714,7 +1771,7 @@ export class SoumettreDossier {
     this.importAvertissements.set([...new Set(filtres)]);
     // Données issues du PDF : verrouiller le tableau (seules les CAPM/dates restent modifiables).
     this.importe.set(true);
-    this.revueAccusee.set(false); // nouvelle transcription → revue à ré-accuser
+    this.lignesValidees.set(new Set()); // nouvelle transcription → tout à revalider
   }
   private ligneNonVide(l: Record<string, unknown>): boolean {
     // `statut` exclu : il a une valeur par défaut ('PREVU') et ne suffit pas à rendre une ligne « non vide ».
