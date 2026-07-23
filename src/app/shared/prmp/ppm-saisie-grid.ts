@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { AutosizeDirective } from '../autosize.directive';
@@ -309,6 +309,15 @@ export class PpmSaisieGrid {
 
   /** Uid des lignes signalées validées par l'utilisateur (gate avant enregistrement). */
   readonly lignesValidees = signal<Set<number>>(new Set());
+
+  constructor() {
+    // Chaque nouvel import produit une **nouvelle** map d'anomalies (identité différente) : on repart d'une
+    // revue vierge. Indispensable pour la grille persistante de la soumission (le modal recrée une grille neuve).
+    effect(() => {
+      this.anomaliesParLigne();
+      this.lignesValidees.set(new Set());
+    });
+  }
 
   // — Copies de travail des modals —
   readonly datesCible = signal<FormGroup | null>(null);
