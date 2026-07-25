@@ -113,6 +113,20 @@
       [attr.aria-expanded]="sidebarOpen()"
       aria-label="Ouvrir le menu"
     >☰</button>
+    @if (peutRechercher()) {
+      <form class="topbar-search" (submit)="allerAuDossier(); $event.preventDefault()">
+        <span class="topbar-search__ic" aria-hidden="true">🔍</span>
+        <input
+          type="search"
+          class="topbar-search__input"
+          placeholder="Aller à un dossier (référence)…"
+          [value]="recherche()"
+          (input)="recherche.set($any($event.target).value)"
+          [disabled]="rechercheEnCours()"
+          aria-label="Rechercher un dossier par référence"
+        />
+      </form>
+    }
   </div>
   <div class="topbar-right">
     @if (login()) {

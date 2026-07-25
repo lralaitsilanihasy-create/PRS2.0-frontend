@@ -55,7 +55,7 @@ type Groupe = 'brouillon' | 'soumis';
             </thead>
             <tbody>
               @for (d of dossiers(); track d.idDossier) {
-                <tr>
+                <tr [id]="'dl-row-' + d.idDossier" [class.dl-row-focus]="d.idDossier === focusId()">
                   <td class="td-ref">{{ d.idDossier }}</td>
                   <td>{{ reference(d) }}</td>
                   <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
@@ -134,6 +134,12 @@ type Groupe = 'brouillon' | 'soumis';
     .actions-end { justify-content: flex-end; }
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .confirm-modal { max-width: 28rem; }
+    /* Ligne ciblée par la recherche topbar : flash bleu puis surlignage doux persistant. */
+    .dl-row-focus > td { animation: dl-flash 1.8s ease; background: rgba(37, 99, 235, 0.06); }
+    @keyframes dl-flash {
+      0%, 30% { background: rgba(37, 99, 235, 0.28); }
+      100% { background: rgba(37, 99, 235, 0.06); }
+    }
   `,
 })
 export class DossiersListe {
@@ -154,6 +160,8 @@ export class DossiersListe {
 
   readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);
+  /** idDossier à mettre en évidence (arrivée depuis la recherche topbar `?focus=`) ; null = aucun. */
+  readonly focusId = signal<number | null>(null);
   readonly submittingId = signal<number | null>(null);
   readonly confirmDossier = signal<Dossier | null>(null);
   readonly suppression = signal<number | null>(null);
@@ -186,6 +194,11 @@ export class DossiersListe {
       this.groupe.set(p.get('groupe') === 'soumis' ? 'soumis' : 'brouillon');
       this.charger();
     });
+    // Mise en évidence d'un dossier arrivé depuis la recherche topbar (`?focus=`).
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((q) => {
+      const f = q.get('focus');
+      this.focusId.set(f ? Number(f) : null);
+    });
     // Recharge quand un autre écran signale un changement (suppression, soumission…).
     effect(() => {
       this.dossiersRefresh.revision();
@@ -205,6 +218,11 @@ export class DossiersListe {
           rows.filter((d) => d.idTypeDossier === type && (brouillon ? d.statut === 'BROUILLON' : d.statut !== 'BROUILLON')),
         );
         this.loading.set(false);
+        // Défile vers le dossier mis en évidence (recherche topbar), après rendu de la ligne.
+        const fid = this.focusId();
+        if (fid != null) {
+          setTimeout(() => document.getElementById('dl-row-' + fid)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+        }
       },
       error: () => this.loading.set(false),
     });

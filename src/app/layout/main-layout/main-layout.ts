@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter, forkJoin, skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { ToastService } from '../../core/notifications/toast.service';
 import { NavItem, navFor } from '../../core/navigation/navigation';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 import {
@@ -46,6 +47,7 @@ export class MainLayout {
   private readonly demandeRetraitService = inject(DemandeRetraitService);
   private readonly kpiService = inject(KpiService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
+  private readonly toast = inject(ToastService);
 
   readonly role = this.auth.role;
   readonly login = this.auth.login;
@@ -67,6 +69,46 @@ export class MainLayout {
   readonly alerts = signal<Record<string, number>>({});
   /** Sidebar ouverte en mode drawer (tablette / mobile). Sans effet sur desktop. */
   readonly sidebarOpen = signal(false);
+
+  // ── Recherche « aller à un dossier par référence » (topbar, PRMP/UGPM) ──
+  /** Saisie de la recherche par référence de dossier. */
+  readonly recherche = signal('');
+  /** Résolution de la référence en cours (désactive le champ). */
+  readonly rechercheEnCours = signal(false);
+  /** La recherche cible l'espace `/prmp` → réservée aux profils qui y accèdent. */
+  readonly peutRechercher = computed(() => this.role() === 'PRMP' || this.role() === 'UGPM');
+  /**
+   * Résout la saisie sur la référence **affichée** d'un dossier du périmètre (`refeDossier` ou réf. du PPM)
+   * et navigue vers sa liste (type × groupe) en le mettant en évidence (`?focus=`). Aucun résultat → toast.
+   */
+  allerAuDossier(): void {
+    const saisie = this.recherche().trim();
+    if (!saisie || this.rechercheEnCours()) return;
+    const q = saisie.toLowerCase();
+    this.rechercheEnCours.set(true);
+    forkJoin({ dossiers: this.dossierService.list(), ppms: this.ppmService.list() }).subscribe({
+      next: ({ dossiers, ppms }) => {
+        this.rechercheEnCours.set(false);
+        const ppmRef = new Map(ppms.map((p) => [p.idDossier, p.reference]));
+        const refDe = (d: { refeDossier?: string; idDossier: number }) =>
+          (d.refeDossier || ppmRef.get(d.idDossier) || '').toLowerCase();
+        const trouve = dossiers.find((d) => refDe(d).includes(q));
+        if (!trouve) {
+          this.toast.info(`Aucun dossier pour « ${saisie} ».`);
+          return;
+        }
+        const groupe = trouve.statut === 'BROUILLON' ? 'brouillon' : 'soumis';
+        this.recherche.set('');
+        void this.router.navigate(['/prmp/dossiers', trouve.idTypeDossier, groupe], {
+          queryParams: { focus: trouve.idDossier },
+        });
+      },
+      error: () => {
+        this.rechercheEnCours.set(false);
+        this.toast.error('Recherche impossible pour le moment.');
+      },
+    });
+  }
 
   /** Couleur du badge de compteur par item (i=info, w=warning, s=success, d=danger). */
   private readonly badgeSeverites: Record<string, string> = {
