@@ -55,10 +55,10 @@ export class SecretaireDashboard {
   readonly kpis = computed<KpiTile[]>(() => {
     const ds = this.dossiers();
     return [
-      { label: 'À réceptionner', value: this.aRecep().length, accent: true },
-      { label: 'Dossiers (localité)', value: ds.length },
-      { label: 'Prêts à dispatcher', value: ds.filter((d) => d.statut === 'PRET_DISPATCH').length },
-      { label: 'Clôturés', value: ds.filter((d) => d.statut === 'CLOTURE').length },
+      { label: 'À réceptionner', value: this.aRecep().length, icon: '📥', color: 'blue' },
+      { label: 'Dossiers (localité)', value: ds.length, icon: '📁', color: 'indigo' },
+      { label: 'Prêts à dispatcher', value: ds.filter((d) => d.statut === 'PRET_DISPATCH').length, icon: '🚚', color: 'amber' },
+      { label: 'Clôturés', value: ds.filter((d) => d.statut === 'CLOTURE').length, icon: '✓', color: 'green' },
     ];
   });
 

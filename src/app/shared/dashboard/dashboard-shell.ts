@@ -13,11 +13,14 @@ export interface WorklistItem {
   severity?: Severity;
   hint?: string;
 }
-/** Tuile d'indicateur clé. */
+/** Tuile d'indicateur clé (pill dégradée). */
 export interface KpiTile {
   label: string;
   value: string | number;
-  accent?: boolean;
+  /** Icône (emoji) optionnelle affichée dans la pastille. */
+  icon?: string;
+  /** Couleur de la pill ; à défaut, une couleur est cyclée selon la position. */
+  color?: 'blue' | 'indigo' | 'green' | 'amber' | 'red' | 'purple' | 'teal';
 }
 /** Entrée du pipeline (comptage par statut). */
 export interface PipelineEntry {
@@ -66,10 +69,13 @@ export interface PipelineEntry {
         @if (kpis().length) {
           <h2 class="dash__section">Indicateurs</h2>
           <div class="dash__kpis">
-            @for (k of kpis(); track k.label) {
-              <div class="dash-kpi" [class.dash-kpi--accent]="k.accent">
-                <span class="dash-kpi__value">{{ k.value }}</span>
-                <span class="dash-kpi__label">{{ k.label }}</span>
+            @for (k of kpis(); track k.label; let i = $index) {
+              <div class="cnm-stat cnm-stat--{{ k.color ?? couleurAuto(i) }}">
+                @if (k.icon) { <div class="cnm-stat__icon" aria-hidden="true">{{ k.icon }}</div> }
+                <div class="cnm-stat__body">
+                  <div class="cnm-stat__value">{{ k.value }}</div>
+                  <div class="cnm-stat__label">{{ k.label }}</div>
+                </div>
               </div>
             }
           </div>
@@ -95,11 +101,7 @@ export interface PipelineEntry {
     .dash-task__body { display: flex; flex-direction: column; flex: 1; }
     .dash-task__label { color: var(--n-800); font-weight: 500; }
     .dash-task__hint { font-size: var(--text-sm); }
-    .dash__kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.75rem; }
-    .dash-kpi { background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; }
-    .dash-kpi--accent { background: linear-gradient(135deg, var(--c-600), var(--c-700)); border-color: var(--c-700); color: #fff; }
-    .dash-kpi__value { font-size: 1.75rem; font-weight: 800; }
-    .dash-kpi__label { font-size: var(--text-sm); opacity: .85; }
+    .dash__kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0.75rem; }
     .dash__pipeline { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
     .dash-pill { display: flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-full); padding: 0.3rem 0.6rem; }
     .dash-pill__count { font-weight: 800; color: var(--c-800); }
@@ -112,4 +114,10 @@ export class DashboardShell {
   readonly worklist = input<WorklistItem[]>([]);
   readonly kpis = input<KpiTile[]>([]);
   readonly pipeline = input<PipelineEntry[]>([]);
+
+  /** Couleurs cyclées pour les pills KPI sans couleur explicite. */
+  private readonly kpiPalette = ['blue', 'indigo', 'green', 'amber', 'purple', 'teal'];
+  couleurAuto(i: number): string {
+    return this.kpiPalette[i % this.kpiPalette.length];
+  }
 }
