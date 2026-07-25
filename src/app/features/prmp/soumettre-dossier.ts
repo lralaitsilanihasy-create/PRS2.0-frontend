@@ -654,7 +654,7 @@ interface ApercuDossier {
     /* table-layout: fixed + colgroup en % → le tableau tient dans la fenêtre ; le contenu long (OBJET) revient à la ligne au lieu de déborder. */
     .ppm-doc__table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 0.72rem; }
     .ppm-doc__table th, .ppm-doc__table td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
-    .ppm-doc__table th { text-align: center; font-weight: 700; background: #f0f0f0; }
+    .ppm-doc__table th { text-align: center; font-weight: 700; background: #f0f0f0; color: #000; }
     .ppm-doc__num { text-align: right; }
     .ppm-doc__date { text-align: center; white-space: nowrap; }
     .ppm-doc__objet { white-space: pre-wrap; }

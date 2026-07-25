@@ -202,7 +202,6 @@ import { PpmFormFactory } from './ppm-form-factory';
                       <button class="btn btn-secondary btn-sm" type="button" (click)="modifierBenefs(m)">Bénéficiaires</button>
                       <button class="btn btn-secondary btn-sm" type="button" (click)="modifierLots(m)">Lots ({{ lotsDe(m.idDetail).length }})</button>
                       <button class="btn btn-outline btn-sm" type="button" (click)="modifierMarche(m)">Modifier</button>
-                      <button class="btn btn-danger btn-sm" type="button" (click)="supprimerMarche(m)">Supprimer</button>
                     </div>
                   </ng-template>
                 </app-ppm-marches-table>

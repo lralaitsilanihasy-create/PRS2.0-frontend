@@ -136,7 +136,7 @@ interface MarcheRow {
     .pmt { border-collapse: collapse; width: 100%; min-width: 56rem; table-layout: fixed; font-size: 0.64rem; color: #000; background: #fff; }
     /* white-space: normal force le retour à la ligne (évite un nowrap hérité d'un style global de th/table). */
     .pmt th, .pmt td { border: 1px solid #000; padding: 3px 4px; vertical-align: top; white-space: normal; overflow-wrap: break-word; word-break: break-word; }
-    .pmt thead th { background: #f0f0f0; text-align: center; font-weight: 700; line-height: 1.15; }
+    .pmt thead th { background: #f0f0f0; color: #000; text-align: center; font-weight: 700; line-height: 1.15; }
     .pmt td.pmt-num { text-align: right; }
     .pmt td.pmt-date { text-align: center; white-space: nowrap; }
     .pmt td.pmt-objet { white-space: pre-wrap; }
