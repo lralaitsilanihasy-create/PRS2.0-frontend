@@ -120,14 +120,6 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
               <div class="spinner-wrap"><div class="spinner"></div></div>
             } @else {
               <div class="dc-section">
-                <div class="dc-section-head">
-                  <div class="section-block-title">
-                    <div class="section-icon">🏛</div>
-                    <span class="section-label">Lignes de marché</span>
-                    <span class="section-count">{{ marches().length }} marché(s)</span>
-                  </div>
-                </div>
-
                 <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
               </div>
             }
