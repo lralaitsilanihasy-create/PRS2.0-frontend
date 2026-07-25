@@ -113,12 +113,17 @@
       [attr.aria-expanded]="sidebarOpen()"
       aria-label="Ouvrir le menu"
     >☰</button>
-    <div class="topbar-title">{{ displayName() || login() }}</div>
   </div>
   <div class="topbar-right">
     @if (login()) {
-      <span class="profile-badge" [class]="'profile-badge ' + role()">{{ role() }}</span>
       <app-notification-center />
+      <div class="topbar-user">
+        <span class="topbar-user__avatar">{{ initials() }}</span>
+        <span class="topbar-user__meta">
+          <span class="topbar-user__name">{{ displayName() || login() }}</span>
+          <span class="profile-badge" [class]="'profile-badge ' + role()">{{ role() }}</span>
+        </span>
+      </div>
     }
     <button type="button" class="btn btn-outline btn-sm" (click)="logout()">Déconnexion</button>
   </div>

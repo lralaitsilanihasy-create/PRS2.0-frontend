@@ -73,17 +73,57 @@
 .nav-badge.s { background: var(--success-bg) !important; color: var(--success-text) !important; }
 .nav-badge.d { background: var(--danger-bg) !important; color: var(--danger-text) !important; }
 
-/* Le titre de la topbar reste en casse normale (le nom de l'utilisateur). */
-.topbar-title {
-  text-transform: none;
-}
-
-/* Groupe gauche de la topbar : hamburger (mobile) + titre. */
+/* Groupe gauche de la topbar : hamburger (mobile). */
 .topbar-left {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
+}
+
+/* Chip utilisateur (droite de la topbar) : avatar en initiales + nom + badge rôle. */
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.topbar-user__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--grad-primary);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.topbar-user__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.topbar-user__name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--n-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 14rem;
+}
+
+/* Sous ~640px : on garde l'avatar + le badge rôle, on masque le nom (place). */
+@media (max-width: 40rem) {
+  .topbar-user__name { display: none; }
 }
 
 /* ── Accent de navigation active par profil ──
