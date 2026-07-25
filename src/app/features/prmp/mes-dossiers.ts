@@ -57,17 +57,26 @@ import { DossierService, TypeDossierService } from '../../services';
       } @else {
         <!-- Bandeau de synthèse (dérivé des compteurs, sans appel réseau). -->
         <div class="md__kpis">
-          <div class="md__kpi md__kpi--total">
-            <span class="md__kpi-val">{{ totalDossiers() }}</span>
-            <span class="md__kpi-lbl">Total dossiers</span>
+          <div class="cnm-stat cnm-stat--blue">
+            <div class="cnm-stat__icon" aria-hidden="true">📊</div>
+            <div class="cnm-stat__body">
+              <div class="cnm-stat__value">{{ totalDossiers() }}</div>
+              <div class="cnm-stat__label">Total dossiers</div>
+            </div>
           </div>
-          <div class="md__kpi md__kpi--draft">
-            <span class="md__kpi-val">{{ totalBrouillons() }}</span>
-            <span class="md__kpi-lbl">Brouillons</span>
+          <div class="cnm-stat cnm-stat--amber">
+            <div class="cnm-stat__icon" aria-hidden="true">📝</div>
+            <div class="cnm-stat__body">
+              <div class="cnm-stat__value">{{ totalBrouillons() }}</div>
+              <div class="cnm-stat__label">Brouillons</div>
+            </div>
           </div>
-          <div class="md__kpi md__kpi--sent">
-            <span class="md__kpi-val">{{ totalSoumis() }}</span>
-            <span class="md__kpi-lbl">Déposés</span>
+          <div class="cnm-stat cnm-stat--green">
+            <div class="cnm-stat__icon" aria-hidden="true">📤</div>
+            <div class="cnm-stat__body">
+              <div class="cnm-stat__value">{{ totalSoumis() }}</div>
+              <div class="cnm-stat__label">Déposés</div>
+            </div>
           </div>
         </div>
 

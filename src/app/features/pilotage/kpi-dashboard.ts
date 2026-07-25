@@ -23,19 +23,26 @@ import { StatutBadge } from '../../shared/circuit';
         <p class="text-muted">Chargement…</p>
       } @else if (data(); as d) {
         <div class="kpi__cards">
-          <article class="kpi-card">
-            <span class="kpi-card__ic">📥</span>
-            <span class="kpi-card__value">{{ d.nbDossiersSoumis }}</span>
-            <span class="kpi-card__label">Dossiers soumis</span>
+          <article class="cnm-stat cnm-stat--blue">
+            <div class="cnm-stat__icon" aria-hidden="true">📥</div>
+            <div class="cnm-stat__body">
+              <div class="cnm-stat__value">{{ d.nbDossiersSoumis }}</div>
+              <div class="cnm-stat__label">Dossiers déposés</div>
+            </div>
           </article>
-          <article class="kpi-card">
-            <span class="kpi-card__ic kpi-card__ic--ok" aria-hidden="true">✓</span>
-            <span class="kpi-card__value">{{ d.nbDossiersConformes }}</span>
-            <span class="kpi-card__label">Dossiers conformes</span>
+          <article class="cnm-stat cnm-stat--green">
+            <div class="cnm-stat__icon" aria-hidden="true">✓</div>
+            <div class="cnm-stat__body">
+              <div class="cnm-stat__value">{{ d.nbDossiersConformes }}</div>
+              <div class="cnm-stat__label">Dossiers conformes</div>
+            </div>
           </article>
-          <article class="kpi-card kpi-card--accent">
-            <span class="kpi-card__value">{{ d.tauxConformitePct }} %</span>
-            <span class="kpi-card__label">Taux de conformité</span>
+          <article class="cnm-stat cnm-stat--indigo">
+            <div class="cnm-stat__icon" aria-hidden="true">🎯</div>
+            <div class="cnm-stat__body">
+              <div class="cnm-stat__value">{{ d.tauxConformitePct }} %</div>
+              <div class="cnm-stat__label">Taux de conformité</div>
+            </div>
           </article>
         </div>
 
