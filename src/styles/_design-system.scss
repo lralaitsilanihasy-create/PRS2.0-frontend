@@ -7,23 +7,26 @@
   --font-base: 'Plus Jakarta Sans', -apple-system,
                BlinkMacSystemFont, sans-serif;
 
-  /* Palette principale — violet dégradé */
-  --p-50 : #f0f2ff;
-  --p-100: #e4e8ff;
-  --p-200: #c7cefd;
-  --p-300: #a5aefb;
-  --p-400: #8b93f8;
-  --p-600: #667eea;
-  --p-700: #5264d4;
-  --p-800: #3b4db8;
-  --p-500: #764ba2;
-  --p-900: #1a1d2e;
+  /* Palette principale — bleu (inspiration tableau de bord logistique, adaptée CNM) */
+  --p-50 : #eff5ff;
+  --p-100: #dbeafe;
+  --p-200: #bfdbfe;
+  --p-300: #93c5fd;
+  --p-400: #60a5fa;
+  --p-600: #2563eb;
+  --p-700: #1d4ed8;
+  --p-800: #1e40af;
+  --p-500: #3b82f6;
+  --p-900: #14233f;
+
+  /* Sidebar bleu marine (dégradé sombre). */
+  --sidebar-bg: linear-gradient(180deg, #1e3356, #14233f);
 
   /* Gradient accent */
-  --grad-primary: linear-gradient(135deg, #667eea, #764ba2);
+  --grad-primary: linear-gradient(135deg, #3b82f6, #2563eb);
   --grad-light  : linear-gradient(135deg,
-                    rgba(102,126,234,.15),
-                    rgba(118,75,162,.15));
+                    rgba(59,130,246,.14),
+                    rgba(37,99,235,.14));
 
   /* Neutres */
   --n-50 : #f8f9fe;
@@ -70,10 +73,10 @@
   --radius-full: 100px;
 
   /* Ombres — superposées (ambiance neutre + touche de marque) pour une profondeur douce et sophistiquée. */
-  --shadow-sm: 0 1px 2px rgba(26,29,46,.04), 0 1px 3px rgba(102,126,234,.05);
-  --shadow-md: 0 2px 6px rgba(26,29,46,.05), 0 6px 16px rgba(102,126,234,.09);
-  --shadow-lg: 0 4px 12px rgba(26,29,46,.06), 0 12px 32px rgba(102,126,234,.13);
-  --shadow-xl: 0 8px 24px rgba(26,29,46,.08), 0 24px 56px rgba(102,126,234,.16);
+  --shadow-sm: 0 1px 2px rgba(20,35,63,.04), 0 1px 3px rgba(37,99,235,.05);
+  --shadow-md: 0 2px 6px rgba(20,35,63,.05), 0 6px 16px rgba(37,99,235,.09);
+  --shadow-lg: 0 4px 12px rgba(20,35,63,.06), 0 12px 32px rgba(37,99,235,.13);
+  --shadow-xl: 0 8px 24px rgba(20,35,63,.08), 0 24px 56px rgba(37,99,235,.16);
 
   /* Transitions — courbe standard « ease-out » douce et moderne (micro-interactions homogènes). */
   --transition: all 170ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -175,8 +178,8 @@ a  { color: var(--p-600); text-decoration: none; }
   position: fixed;
   top: 0; left: 0; bottom: 0;
   width: 215px;
-  background: #fff;
-  border-right: 0.5px solid var(--n-200);
+  background: var(--sidebar-bg);
+  border-right: 0;
   display: flex;
   flex-direction: column;
   z-index: 100;
@@ -375,9 +378,48 @@ a  { color: var(--p-600); text-decoration: none; }
 
 .nav-divider {
   height: 0.5px;
-  background: var(--n-200);
+  background: rgba(255, 255, 255, 0.1);
   margin: 5px 0;
 }
+
+/* ── Sidebar sombre (marine) : textes clairs + séparateurs translucides.
+   Surcharge les couleurs neutres des règles ci-dessus (spécificité `.sidebar x`). ── */
+.sidebar-logo {
+  border-bottom-color: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+.sidebar-logo-text .name { color: #fff; }
+.sidebar-logo-text .sub { color: rgba(255, 255, 255, 0.5); }
+.sidebar-profile {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+
+  &:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.2); }
+  .info .name { color: #fff; }
+  .info .role { color: rgba(255, 255, 255, 0.55); }
+}
+.sidebar .nav-section-label { color: rgba(255, 255, 255, 0.42); }
+.sidebar .nav-item {
+  color: rgba(255, 255, 255, 0.72);
+
+  &:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
+  &.active {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+}
+.sidebar .nav-sub { border-left-color: rgba(255, 255, 255, 0.16); }
+.sidebar .nav-sub-item {
+  color: rgba(255, 255, 255, 0.6);
+
+  &:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
+  &.active { color: #fff; }
+}
+.sidebar .nav-chevron { color: rgba(255, 255, 255, 0.4); }
 
 /* Topbar */
 .topbar {
@@ -443,7 +485,7 @@ a  { color: var(--p-600); text-decoration: none; }
   margin-left: 215px;
   padding-top: 48px;
   min-height: 100vh;
-  background: var(--n-50);
+  background: #eef2f9;
 }
 
 .page-inner {
@@ -599,7 +641,7 @@ table {
 }
 
 thead tr {
-  background: linear-gradient(to right, var(--p-50), var(--n-50));
+  background: var(--grad-primary);
 }
 
 th {
@@ -608,9 +650,9 @@ th {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .1em;
-  color: var(--p-600);
+  color: #fff;
   text-align: left;
-  border-bottom: 1.5px solid var(--n-200);
+  border-bottom: 0;
   white-space: nowrap;
 
   &.r { text-align: right; }
@@ -1449,3 +1491,41 @@ textarea.form-control {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* ══════════════════════════════════════════
+   CARTES KPI (« pills » dégradées) — tableaux de bord
+   Utilitaires additifs (aucun écran ne les impose) ; à appliquer aux dashboards.
+══════════════════════════════════════════ */
+.cnm-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: var(--radius-2xl);
+  color: #fff;
+  box-shadow: var(--shadow-md);
+  background: var(--grad-primary);
+}
+.cnm-stat__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+.cnm-stat__body { min-width: 0; }
+.cnm-stat__label { font-size: var(--text-sm); font-weight: 600; opacity: 0.92; }
+.cnm-stat__value { font-size: var(--text-3xl); font-weight: 800; line-height: 1.1; }
+
+.cnm-stat--blue   { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.cnm-stat--indigo { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.cnm-stat--green  { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.cnm-stat--red    { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+.cnm-stat--orange { background: linear-gradient(135deg, #fb923c, #ea580c); }
+.cnm-stat--amber  { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+.cnm-stat--purple { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+.cnm-stat--teal   { background: linear-gradient(135deg, #2dd4bf, #0d9488); }
