@@ -135,10 +135,10 @@ type Groupe = 'brouillon' | 'soumis';
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .confirm-modal { max-width: 28rem; }
     /* Ligne ciblée par la recherche topbar : flash bleu puis surlignage doux persistant. */
-    .dl-row-focus > td { animation: dl-flash 1.8s ease; background: rgba(37, 99, 235, 0.06); }
+    .dl-row-focus > td { animation: dl-flash 1.8s ease; background: rgba(2, 132, 199, 0.06); }
     @keyframes dl-flash {
-      0%, 30% { background: rgba(37, 99, 235, 0.28); }
-      100% { background: rgba(37, 99, 235, 0.06); }
+      0%, 30% { background: rgba(2, 132, 199, 0.28); }
+      100% { background: rgba(2, 132, 199, 0.06); }
     }
   `,
 })
