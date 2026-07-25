@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, map, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
@@ -157,16 +157,21 @@ interface ApercuDossier {
             @if (soaInconnus().length) {
               <div class="alert alert-warning sd__soa">
                 <div class="sd__warn-title">Services bénéficiaires (SOA) inconnus au référentiel — {{ soaInconnus().length }}</div>
-                <p class="sd__hint">Saisissez leur libellé et enregistrez-les au référentiel (réutilisables ensuite). À défaut, ils seront créés automatiquement à la soumission, sans libellé.</p>
+                <p class="sd__hint">Le libellé est <strong>facultatif</strong> : enregistrez-les au référentiel (réutilisables ensuite) avec ou sans libellé — sans libellé, le SOA est créé avec le code seul. À défaut, ils seront aussi créés automatiquement à la soumission.</p>
                 @for (code of soaInconnus(); track code) {
                   <div class="sd__soa-row">
                     <span class="sd__soa-code">{{ code }}</span>
-                    <input class="form-control" type="text" [value]="soaLibelle(code)" (input)="setSoaLibelle(code, $any($event.target).value)" placeholder="Libellé du service bénéficiaire" maxlength="100" />
-                    <button type="button" class="btn btn-primary btn-sm" [disabled]="soaCreating() === code || !soaLibelle(code).trim()" (click)="creerSoa(code)">
+                    <input class="form-control" type="text" [value]="soaLibelle(code)" (input)="setSoaLibelle(code, $any($event.target).value)" placeholder="Libellé du service bénéficiaire (optionnel)" maxlength="100" />
+                    <button type="button" class="btn btn-primary btn-sm" [disabled]="soaCreating() === code || soaCreatingAll()" (click)="creerSoa(code)">
                       {{ soaCreating() === code ? 'Enregistrement…' : 'Enregistrer' }}
                     </button>
                   </div>
                 }
+                <div class="sd__soa-actions">
+                  <button type="button" class="btn btn-secondary btn-sm" [disabled]="soaCreatingAll() || soaCreating() !== null" (click)="creerTousSoa()">
+                    {{ soaCreatingAll() ? 'Enregistrement…' : '✓ Tout enregistrer (' + soaInconnus().length + ')' }}
+                  </button>
+                </div>
               </div>
             }
             @if (entiteAResoudre()) {
@@ -631,6 +636,7 @@ interface ApercuDossier {
     .sd__soa-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
     .sd__soa-code { font-weight: 700; flex: 0 0 auto; min-width: 11rem; }
     .sd__soa-row .form-control { flex: 1 1 14rem; min-width: 10rem; }
+    .sd__soa-actions { margin-top: 0.5rem; display: flex; justify-content: flex-end; }
     .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
     .sd__foot--main { margin-top: 1rem; }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
@@ -700,6 +706,8 @@ export class SoumettreDossier {
   readonly soaLibelles = signal<Map<string, string>>(new Map());
   /** Code SOA dont la création au référentiel est en cours (null = aucune). */
   readonly soaCreating = signal<string | null>(null);
+  /** Enregistrement global de tous les SOA inconnus en cours. */
+  readonly soaCreatingAll = signal(false);
   /**
    * Codes SOA (distincts) des bénéficiaires importés absents du référentiel → à créer via le panneau
    * (`POST /api/soa-beneficiaires`, ouvert à tout authentifié). Nature/mode/compte = ADMINISTRATEUR,
@@ -991,12 +999,15 @@ export class SoumettreDossier {
   setSoaLibelle(code: string, v: string): void {
     this.soaLibelles.update((m) => new Map(m).set(code, v));
   }
-  /** Enregistre un SOA inconnu au référentiel puis recharge la liste (le code sort des inconnus). */
+  /**
+   * Enregistre un SOA inconnu au référentiel puis recharge la liste (le code sort des inconnus).
+   * Le **libellé est facultatif** (contrat `SoaBeneficiaireDto` : seul `soaCode` est obligatoire) — sans
+   * libellé, le SOA est créé avec le code seul.
+   */
   creerSoa(code: string): void {
     const libelle = this.soaLibelle(code).trim();
-    if (!libelle) return;
     this.soaCreating.set(code);
-    this.soaService.create({ soaCode: code, libelle }).subscribe({
+    this.soaService.create({ soaCode: code, libelle: libelle || undefined }).subscribe({
       next: () => {
         this.soaCreating.set(null);
         this.toast.success(`Service bénéficiaire « ${code} » enregistré au référentiel.`);
@@ -1006,6 +1017,33 @@ export class SoumettreDossier {
         this.soaCreating.set(null);
         this.toast.error(e.message || 'Création du service bénéficiaire impossible.');
       },
+    });
+  }
+  /**
+   * Enregistre **tous** les SOA inconnus en une fois (chacun avec son libellé saisi s'il y en a un, sinon
+   * vide). Résilient : un échec n'interrompt pas les autres ; récapitulatif + un seul rechargement de la
+   * liste (les codes créés sortent des inconnus).
+   */
+  creerTousSoa(): void {
+    const codes = this.soaInconnus();
+    if (!codes.length || this.soaCreatingAll()) return;
+    this.soaCreatingAll.set(true);
+    forkJoin(
+      codes.map((code) =>
+        this.soaService
+          .create({ soaCode: code, libelle: this.soaLibelle(code).trim() || undefined })
+          .pipe(
+            map(() => true),
+            catchError(() => of(false)),
+          ),
+      ),
+    ).subscribe((res) => {
+      this.soaCreatingAll.set(false);
+      const ok = res.filter(Boolean).length;
+      const ko = res.length - ok;
+      if (ok) this.toast.success(`${ok} service(s) bénéficiaire(s) enregistré(s) au référentiel.`);
+      if (ko) this.toast.error(`${ko} enregistrement(s) de service bénéficiaire en échec.`);
+      this.soaService.list().subscribe((r) => this.soaList.set(r));
     });
   }
   /** Sélection de l'entité contractante depuis le panneau de résolution (import). */
@@ -1200,6 +1238,7 @@ export class SoumettreDossier {
     this.autoriteImportee.set(null);
     this.soaLibelles.set(new Map());
     this.soaCreating.set(null);
+    this.soaCreatingAll.set(false);
     // En-tête repris du PDF remis aux valeurs par défaut.
     this.ppmForm.controls.exercice.setValue(new Date().getFullYear());
     this.ppmForm.controls.dateSignature.setValue('');
