@@ -67,7 +67,7 @@ import { DossierService, TypeDossierService } from '../../services';
           </div>
           <div class="md__kpi md__kpi--sent">
             <span class="md__kpi-val">{{ totalSoumis() }}</span>
-            <span class="md__kpi-lbl">Soumis</span>
+            <span class="md__kpi-lbl">Déposés</span>
           </div>
         </div>
 
@@ -104,7 +104,7 @@ import { DossierService, TypeDossierService } from '../../services';
                   </a>
                   <a class="md__row" [routerLink]="['/prmp/dossiers', t.idTypeDossier, 'soumis']">
                     <span class="md__row-ic md__row-ic--sent" aria-hidden="true">📤</span>
-                    <span class="md__row-label">Soumis</span>
+                    <span class="md__row-label">Déposés</span>
                     <span class="md__row-count">{{ compte(t.idTypeDossier, 'soumis') }}</span>
                     <span class="md__row-arrow" aria-hidden="true">›</span>
                   </a>

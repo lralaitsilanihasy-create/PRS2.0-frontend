@@ -16,6 +16,7 @@ import {
   TypeDossierService,
 } from '../../services';
 import { DetailPpmModal } from '../../shared/prmp';
+import { StatutBadge } from '../../shared/circuit';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /** Groupe de statut du menu « Mes dossiers » : brouillons vs tout ce qui est soumis (non brouillon). */
@@ -32,7 +33,7 @@ type Groupe = 'brouillon' | 'soumis';
 @Component({
   selector: 'app-dossiers-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DetailPpmModal],
+  imports: [DetailPpmModal, StatutBadge],
   template: `
     <section>
       <header class="page-header">
@@ -57,7 +58,7 @@ type Groupe = 'brouillon' | 'soumis';
                 <tr>
                   <td class="td-ref">{{ d.idDossier }}</td>
                   <td>{{ reference(d) }}</td>
-                  <td>{{ d.statut || '—' }}</td>
+                  <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
                   <td>{{ sousTypeLabel(d) }}</td>
                   <td>{{ localiteLabel(d) }}</td>
                   <td>
@@ -168,11 +169,11 @@ export class DossiersListe {
 
   /** Libellé du type courant (référentiel), repli sur l'id. */
   readonly typeLabel = computed(() => this.typeMap().get(this.type()) ?? this.type());
-  readonly titre = computed(() => `${this.typeLabel()} — ${this.groupe() === 'brouillon' ? 'Brouillons' : 'Soumis'}`);
+  readonly titre = computed(() => `${this.typeLabel()} — ${this.groupe() === 'brouillon' ? 'Brouillons' : 'Déposés'}`);
   readonly messageVide = computed(() =>
     this.groupe() === 'brouillon'
       ? 'Aucun brouillon de ce type. Saisissez un dossier depuis « Saisir & soumettre ».'
-      : 'Aucun dossier soumis de ce type.',
+      : 'Aucun dossier déposé de ce type.',
   );
 
   constructor() {

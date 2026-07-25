@@ -75,7 +75,7 @@ export const PV_STATUT_LABELS: Record<StatutPv, string> = {
 /** Libellés lisibles des statuts de dossier (affichage ; les codes restent l'autorité). */
 export const DOSSIER_STATUT_LABELS: Record<string, string> = {
   BROUILLON: 'Brouillon',
-  SOUMIS: 'Soumis',
+  SOUMIS: 'Déposé',
   PRET_DISPATCH: 'Prêt à dispatcher',
   DISPATCHE: 'Dispatché',
   EN_EXAMEN: 'En examen',
