@@ -133,17 +133,17 @@ interface MarcheRow {
     .pmt-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     /* min-width : en dessous, .pmt-wrap défile au lieu de tasser les 13 colonnes (illisible sur mobile) ;
        au-dessus, le tableau reste à 100 % de son conteneur (desktop inchangé). */
-    .pmt { border-collapse: collapse; width: 100%; min-width: 56rem; table-layout: fixed; font-size: 0.64rem; color: #000; background: #fff; }
+    .pmt { border-collapse: collapse; width: 100%; min-width: 80rem; table-layout: fixed; font-size: 0.74rem; color: #000; background: #fff; }
     /* white-space: normal force le retour à la ligne (évite un nowrap hérité d'un style global de th/table). */
-    .pmt th, .pmt td { border: 1px solid #000; padding: 3px 4px; vertical-align: top; white-space: normal; overflow-wrap: break-word; word-break: break-word; }
+    .pmt th, .pmt td { border: 1px solid #000; padding: 5px 7px; vertical-align: top; white-space: normal; overflow-wrap: break-word; word-break: break-word; }
     .pmt thead th { background: #f0f0f0; color: #000; text-align: center; font-weight: 700; line-height: 1.15; }
     .pmt td.pmt-num { text-align: right; }
     .pmt td.pmt-date { text-align: center; white-space: nowrap; }
     .pmt td.pmt-objet { white-space: pre-wrap; }
     /* Badge de type de DMC (dérivé) : compact pour cette table dense ; libellé complet en tooltip. */
-    .pmt .pmt-dmc { display: inline-block; margin-top: 2px; font-size: 0.56rem; padding: 0 3px; line-height: 1.4; }
+    .pmt .pmt-dmc { display: inline-block; margin-top: 2px; font-size: 0.62rem; padding: 0 3px; line-height: 1.4; }
     /* Badge de forme du marché (affiché seulement hors défaut « à quantité fixe »). */
-    .pmt .pmt-forme { display: inline-block; margin-top: 2px; font-size: 0.56rem; padding: 0 3px; line-height: 1.4; background: var(--p-50, #eef2ff); color: var(--p-600, #4f46e5); border: 1px solid var(--p-200, #c7d2fe); }
+    .pmt .pmt-forme { display: inline-block; margin-top: 2px; font-size: 0.62rem; padding: 0 3px; line-height: 1.4; background: var(--p-50, #eef2ff); color: var(--p-600, #4f46e5); border: 1px solid var(--p-200, #c7d2fe); }
     .pmt-empty { color: var(--n-400, #71717a); margin: 0; }
     /* États d'examen séquentiel — palette sobre alignée sur l'accent indigo (fond pâle + liseré gauche) :
        à examiner (neutre) / en cours (indigo) / examinée RAS (vert) / examinée avec observation (ambre). */
