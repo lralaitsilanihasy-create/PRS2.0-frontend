@@ -44,7 +44,7 @@ import { PpmFormFactory } from './ppm-form-factory';
       @if (loading()) {
         <div class="spinner-wrap"><div class="spinner"></div></div>
       } @else {
-      <div class="modal modal-xl" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="modal dpm-wide" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
 
         <!-- ── HEADER ── -->
         <div class="dpm-header">
@@ -106,16 +106,6 @@ import { PpmFormFactory } from './ppm-form-factory';
               <span class="dpm-meta-label">Signataire</span>
               <span class="dpm-meta-value">{{ ppm()?.signataire || '—' }}</span>
             </div>
-            <div class="dpm-meta-row">
-              <span class="dpm-meta-label">Libellé</span>
-              @if (editHeaderOpen()) {
-                <input class="form-control dpm-meta-input" type="text" formControlName="libelle" placeholder="Libellé (facultatif)" />
-              } @else {
-                <span class="dpm-meta-value" [class.dpm-meta-empty]="!ppm()?.libelle">
-                  {{ ppm()?.libelle || 'Non renseigné' }}
-                </span>
-              }
-            </div>
             @if (ppm()?.datePpmInit) {
               <div class="dpm-meta-row">
                 <span class="dpm-meta-label">Établi le</span>
@@ -148,19 +138,6 @@ import { PpmFormFactory } from './ppm-form-factory';
 
             <!-- Lignes de marché -->
             <div class="dpm-section">
-              <div class="dpm-section-head">
-                <div class="section-block-title">
-                  <div class="section-icon">🏛</div>
-                  <span class="section-label">Lignes de marché</span>
-                  <span class="section-count">{{ marches().length }} marché(s)</span>
-                </div>
-                @if (modeEdition && !importApercu()) {
-                  <div class="section-btns">
-                    <button class="btn btn-primary btn-sm" type="button" (click)="nouveauMarche()">+ Nouveau marché</button>
-                  </div>
-                }
-              </div>
-
               @if (importApercu(); as r) {
                 <!-- PRÉVISUALISATION de l'import : RIEN n'est écrit tant qu'« Enregistrer » n'est pas cliqué. -->
                 <div class="alert alert-warning">

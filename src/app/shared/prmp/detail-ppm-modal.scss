@@ -22,7 +22,7 @@
   border-radius: var(--radius-md);
   box-shadow:
     0 0 0 0.5px var(--p-200),
-    0 8px 40px rgba(102, 126, 234, .18),
+    0 8px 40px rgba(2, 132, 199, .18),
     0 2px 8px rgba(0, 0, 0, .06);
   width: 94vw;
   max-width: 780px;
@@ -31,7 +31,8 @@
   display: flex;
   flex-direction: column;
 
-  &.modal-xl { max-width: min(96rem, 98vw); }
+  /* Détail PPM : modal élargi (table à 13 colonnes). */
+  &.dpm-wide { width: 98vw; max-width: min(120rem, 98vw); }
 }
 
 /* ── Tableau des lignes de marché (édition) ──
