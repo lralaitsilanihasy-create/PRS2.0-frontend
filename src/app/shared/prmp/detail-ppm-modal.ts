@@ -153,11 +153,6 @@ import { PpmFormFactory } from './ppm-form-factory';
                   pièces jointes conservées ; entité et référence inchangées{{ r.autoriteContractante ? ' (PDF : « ' + r.autoriteContractante + ' »)' : '' }}.
                   @if (r.avertissements?.length) { {{ r.avertissements!.length }} avertissement(s) d'import. }
                 </div>
-                @if (entitePdfDifferente()) {
-                  <div class="alert alert-danger">
-                    🚫 <strong>Réimport impossible</strong> — ce PDF concerne une autre entité contractante@if (r.autoriteContractante) { (« {{ r.autoriteContractante }} ») } que le dossier ({{ ppm()?.reference }}). L'entité d'un dossier ne peut pas changer : importez un PPM de la même entité.
-                  </div>
-                }
                 <!-- Grille éditable partagée (identique à la soumission) : édition, revue de transcription, validation par ligne. -->
                 @if (importMarches(); as arr) {
                   <app-ppm-saisie-grid
@@ -558,6 +553,30 @@ import { PpmFormFactory } from './ppm-form-factory';
       </div>
     }
 
+    @if (reimportRefus(); as ref) {
+      <div class="dpm__overlay" (click)="reimportRefus.set(null)">
+        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+          <header class="dpm__head">
+            <h2 class="dpm__title">🚫 Réimport impossible</h2>
+            <button type="button" class="dpm__close" aria-label="Fermer" (click)="reimportRefus.set(null)">&times;</button>
+          </header>
+          <div class="dpm__body dpm__body--pad">
+            <p>
+              Ce PDF concerne l'entité contractante <strong>« {{ ref.autorite }} »</strong>, alors que le dossier
+              concerne <strong>« {{ entiteLabel() }} »</strong>.
+            </p>
+            <p class="cnm-muted">
+              L'entité d'un dossier ne peut pas changer. <strong>Les données actuelles n'ont pas été modifiées.</strong>
+              Importez un PPM de la même entité.
+            </p>
+          </div>
+          <footer class="dpm__foot">
+            <button type="button" class="cnm-btn cnm-btn--primary" (click)="reimportRefus.set(null)">Compris</button>
+          </footer>
+        </div>
+      </div>
+    }
+
   `,
   styleUrl: './detail-ppm-modal.scss',
 })
@@ -642,14 +661,29 @@ export class DetailPpmModal implements OnInit {
   readonly grid = viewChild(PpmSaisieGrid);
   readonly applyingImport = signal(false);
   /**
-   * Le PDF réimporté concerne-t-il une **autre entité contractante** que le dossier ? L'entité d'un dossier
-   * est fixe : réimporter un PDF d'une autre entité injecterait des marchés étrangers. On bloque le cas
-   * d'une entité **résolue différente** (une entité non résolue au PDF n'est pas considérée comme différente).
+   * Réimport refusé (entité du PDF ≠ entité du dossier) : boîte de dialogue d'avertissement (null = fermée).
+   * Le mismatch est détecté **au parse** : la prévisualisation n'est PAS chargée (données actuelles conservées).
    */
+  readonly reimportRefus = signal<{ autorite: string } | null>(null);
+  /**
+   * Le résultat d'import concerne-t-il une **autre entité contractante** que le dossier ? L'entité d'un dossier
+   * est fixe : réimporter un PDF d'une autre entité injecterait des marchés étrangers. Deux cas de blocage :
+   * 1) le PDF **résout** à une entité connue **différente** de celle du dossier (comparaison par id) ;
+   * 2) le PDF **ne résout pas** (entité absente du référentiel) mais son **autorité lue diffère** du libellé
+   *    de l'entité du dossier (comparaison par nom normalisé, quand les deux noms sont connus).
+   */
+  private pdfEntiteDifferente(r: SaisiePpmImportResult): boolean {
+    const de = this.dossierEntite();
+    if (r.idEntiteContract != null) return de != null && r.idEntiteContract !== de;
+    // Entité du PDF non résolue → comparaison par nom (sinon on ne bloque pas, faute de base de comparaison).
+    const dossNom = de != null ? this.normEntite(this.entiteMap().get(String(de)) ?? '') : '';
+    const pdfNom = this.normEntite(r.autoriteContractante ?? '');
+    return !!dossNom && !!pdfNom && dossNom !== pdfNom;
+  }
+  /** Défense : la prévisualisation en cours porte-t-elle une entité ≠ dossier ? (normalement jamais chargée si ≠). */
   readonly entitePdfDifferente = computed(() => {
     const r = this.importApercu();
-    const de = this.dossierEntite();
-    return !!r && r.idEntiteContract != null && de != null && r.idEntiteContract !== de;
+    return !!r && this.pdfEntiteDifferente(r);
   });
 
   // — AGPM conditionnel : le PPM porte `agpmRequis` (autorité backend) ; pièce repérée par code stable. —
@@ -807,6 +841,12 @@ export class DetailPpmModal implements OnInit {
     this.saisieService.importPpm(file).subscribe({
       next: (r) => {
         this.importEnCours.set(false);
+        // Entité du PDF ≠ entité du dossier → réimport refusé : NE PAS charger la prévisualisation
+        // (les lignes actuelles restent intactes), avertir via une boîte de dialogue.
+        if (this.pdfEntiteDifferente(r)) {
+          this.reimportRefus.set({ autorite: (r.autoriteContractante ?? '').trim() || '(entité non identifiée)' });
+          return;
+        }
         // Prévisualisation seulement : rien n'est écrit tant qu'« Enregistrer » n'est pas cliqué.
         // Marchés montés en formulaire via la MÊME fabrique qu'à la soumission (grille éditable partagée),
         // + revue de transcription (anomalies backend, hors REFERENTIEL_INCONNU géré à la volée au POST).
@@ -836,6 +876,15 @@ export class DetailPpmModal implements OnInit {
   importPret(): boolean {
     const g = this.grid();
     return !!this.importMarches() && !!g && g.nbAValiderRestantes() === 0 && g.benefsCoherents;
+  }
+  /** Normalise un nom d'entité pour comparaison tolérante (majuscules, sans accents/diacritiques, espaces réduits). */
+  private normEntite(s: string): string {
+    return s
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
   }
   /** Enregistre le remplacement : `PUT /api/saisies/ppm/{idDossier}` (réconciliation — lignes actuelles retirées). */
   enregistrerImport(): void {
