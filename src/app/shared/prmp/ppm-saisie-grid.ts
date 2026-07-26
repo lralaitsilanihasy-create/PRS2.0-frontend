@@ -168,7 +168,7 @@ import { PpmFormFactory } from './ppm-form-factory';
             <span class="modal-title">CAPM du marché</span>
           </div>
           <div class="modal-body">
-            <p class="form-hint">Au moins un processus est obligatoire ; un processus par ligne. La <strong>date de fin est optionnelle</strong>.</p>
+            <p class="form-hint">Au moins un processus est obligatoire ; un processus par ligne. Les <strong>dates de début du PDF</strong> ne sont pas modifiables ; la <strong>date de fin</strong> (optionnelle) est pré-proposée à la veille du début suivant.</p>
             @for (ctrl of procControls(); track ctrl.get('uid')!.value) {
               <div class="sd-proc-row" [formGroup]="ctrl">
                 <select class="form-control" formControlName="idCapm">
@@ -176,7 +176,7 @@ import { PpmFormFactory } from './ppm-form-factory';
                   @for (c of capmsPourProc(ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
                 </select>
                 <input class="form-control" type="date" formControlName="dateDebut" />
-                <input class="form-control" type="date" formControlName="dateFin" (change)="onDateFinChange(ctrl)" />
+                <input class="form-control" type="date" formControlName="dateFin" />
                 <button type="button" class="btn btn-secondary btn-sm" (click)="retirerProc($index)" aria-label="Retirer">✕</button>
               </div>
               @if (procErreur(ctrl.get('idCapm')!.value)) {
@@ -503,35 +503,37 @@ export class PpmSaisieGrid {
     const utilises = new Set(this.procControls().map((g) => g.get('idCapm')!.value as number));
     const libre = this.capms().find((c) => !utilises.has(c.idCapm));
     this.datesForm.push(this.factory.processusGroup({ idCapm: libre?.idCapm }));
+    this.proposerFins(); // recalcule les fins vides selon la nouvelle séquence
   }
   retirerProc(i: number): void {
     this.datesForm.removeAt(i);
   }
   /**
-   * Au choix d'une **date de fin**, renseigne automatiquement la **date de début du processus suivant**
-   * (ordre CAPM immédiatement supérieur présent) à `dateFin + 1 jour` — donc **postérieure**. N'écrase pas
-   * un début déjà valide (plus tardif) ; ne pose la date que s'il est vide ou viole la contrainte (≤ dateFin).
+   * Auto-proposition des **dates de fin** : la fin de chaque processus (si vide) est posée à la **veille du
+   * début du processus suivant** (ordre CAPM) — donc `fin < début suivant`. Les débuts (issus du PDF) restent
+   * fixes ; seules les fins vides sont proposées, et uniquement si l'écart laisse ≥ 1 jour après le début courant.
    */
-  onDateFinChange(ctrl: FormGroup): void {
-    const fin = ctrl.get('dateFin')!.value as string;
-    if (!fin) return;
+  private proposerFins(): void {
     const parId = new Map(this.capms().map((c) => [c.idCapm, c]));
     const ordre = (g: FormGroup) => parId.get(g.get('idCapm')!.value as number)?.ordre ?? null;
-    const ordreCourant = ordre(ctrl);
-    if (ordreCourant == null) return;
-    const suivant = this.procControls()
-      .filter((g) => ordre(g) != null && (ordre(g) as number) > ordreCourant)
-      .sort((a, b) => (ordre(a) as number) - (ordre(b) as number))[0];
-    if (!suivant) return;
-    const debutSuiv = suivant.get('dateDebut')!.value as string;
-    if (!debutSuiv || debutSuiv <= fin) {
-      suivant.get('dateDebut')!.setValue(this.plusUnJour(fin));
+    const ordonnes = this.procControls()
+      .filter((g) => ordre(g) != null)
+      .sort((a, b) => (ordre(a) as number) - (ordre(b) as number));
+    for (let i = 0; i < ordonnes.length - 1; i++) {
+      const cur = ordonnes[i];
+      const debutCur = cur.get('dateDebut')!.value as string;
+      const finCur = cur.get('dateFin')!.value as string;
+      const debutSuiv = ordonnes[i + 1].get('dateDebut')!.value as string;
+      if (finCur || !debutSuiv) continue;
+      const veille = this.moinsUnJour(debutSuiv);
+      if (debutCur && veille <= debutCur) continue; // pas assez d'écart pour respecter début < fin
+      cur.get('dateFin')!.setValue(veille);
     }
   }
-  /** Ajoute un jour à une date ISO `yyyy-mm-dd` (arithmétique locale, sans décalage de fuseau). */
-  private plusUnJour(iso: string): string {
+  /** Retranche un jour à une date ISO `yyyy-mm-dd` (arithmétique locale, sans décalage de fuseau). */
+  private moinsUnJour(iso: string): string {
     const [y, m, d] = iso.split('-').map(Number);
-    const dt = new Date(y, m - 1, d + 1);
+    const dt = new Date(y, m - 1, d - 1);
     return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
   }
   procErreur(idCapm: number | null): string | undefined {
@@ -570,9 +572,13 @@ export class PpmSaisieGrid {
   ouvrirDates(g: FormGroup): void {
     this.procErreurs.set({});
     this.datesForm.clear();
-    (g.get('processus') as FormArray).controls.forEach((p) =>
-      this.datesForm.push(this.factory.processusGroup((p as FormGroup).getRawValue())),
-    );
+    (g.get('processus') as FormArray).controls.forEach((p) => {
+      const grp = this.factory.processusGroup((p as FormGroup).getRawValue());
+      // Date de début issue du PDF (non vide) → verrouillée (non modifiable) ; un ajout manuel reste éditable.
+      if (grp.get('dateDebut')!.value) grp.get('dateDebut')!.disable();
+      this.datesForm.push(grp);
+    });
+    this.proposerFins(); // fins pré-proposées à la veille du début suivant (débuts fixes)
     this.datesCible.set(g);
   }
   annulerDates(): void {
