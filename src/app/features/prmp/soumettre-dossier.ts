@@ -9,7 +9,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
-import { AnomalieTranscription, Capm, Compte, Dossier, FormeMarche, Marche, ModePassation, Nature, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
+import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CategorieEntiteService,
@@ -17,6 +17,7 @@ import {
   DossierService,
   EntiteContractService,
   LocaliteService,
+  MinistereService,
   OrganigrammeService,
   MarcheService,
   ModePassationService,
@@ -206,12 +207,12 @@ interface ApercuDossier {
                         <span class="sd__soa-code">Ministère d'appartenance</span>
                         <select class="form-control" (change)="choisirMinistere($any($event.target).value)">
                           <option value="">— Sélectionner —</option>
-                          @for (m of ministeres(); track m.idEntiteContract) {
-                            <option [value]="m.idEntiteContract" [selected]="m.idEntiteContract === nouvEntiteForm.controls.idEntiteParent.value">{{ m.libelleEntite }}</option>
+                          @for (m of ministeres(); track m.idMinistere) {
+                            <option [value]="m.idMinistere" [selected]="m.idMinistere === ministereChoisi()">{{ m.libelleMinistere }}</option>
                           }
                         </select>
                       </div>
-                      @if (nouvEntiteForm.controls.idEntiteParent.value) {
+                      @if (ministereChoisi()) {
                         <div class="cnm-form-grid">
                           <label class="form-group">
                             <span class="form-label">Libellé *</span>
@@ -232,7 +233,7 @@ interface ApercuDossier {
                             <span class="form-label">Organigramme *</span>
                             <select class="form-control" formControlName="idOrganigramme">
                               <option [ngValue]="null">— Sélectionner —</option>
-                              @for (o of organigrammes(); track o.idOrganigramme) { <option [ngValue]="o.idOrganigramme">{{ o.libelle }}</option> }
+                              @for (o of organigrammesDuMinistere(); track o.idOrganigramme) { <option [ngValue]="o.idOrganigramme">{{ o.libelle }}</option> }
                             </select>
                           </label>
                         </div>
@@ -739,6 +740,7 @@ export class SoumettreDossier {
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly entiteContractService = inject(EntiteContractService);
   private readonly organigrammeService = inject(OrganigrammeService);
+  private readonly ministereService = inject(MinistereService);
   private readonly categorieEntiteService = inject(CategorieEntiteService);
   private readonly sousTypeService = inject(SousTypeDossierService);
   private readonly natureService = inject(NatureService);
@@ -810,12 +812,21 @@ export class SoumettreDossier {
   readonly creationEntite = signal(false);
   /** Enregistrement de l'entité en cours (POST). */
   readonly creatingEntite = signal(false);
-  /** Ministères du référentiel (catégorie MINISTERE) = ministère d'appartenance sélectionnable. */
-  readonly ministeres = signal<{ idEntiteContract: number; libelleEntite: string; idOrganigramme: number }[]>([]);
+  /** Ministère d'appartenance choisi (idMinistere du référentiel `/api/ministeres`) — pilote l'affichage du formulaire. */
+  readonly ministereChoisi = signal<number | null>(null);
+  /** Référentiel des ministères (`/api/ministeres`) = ministère d'appartenance sélectionnable (les 6, pas seulement ceux déjà entités contractantes). */
+  readonly ministeres = signal<Ministere[]>([]);
   /** Catégories d'entité (référentiel) pour le champ Catégorie. */
   readonly categories = signal<{ libelle: string }[]>([]);
-  /** Organigrammes (référentiel) pour le champ Organigramme. */
-  readonly organigrammes = signal<{ idOrganigramme: number; libelle: string }[]>([]);
+  /** Organigrammes (référentiel) : dérivation de l'organigramme du ministère + champ Organigramme. */
+  readonly organigrammes = signal<Organigramme[]>([]);
+  /** Entités contractantes de catégorie MINISTERE (par organigramme) → entité parente best-effort. */
+  private ministereEntites: EntiteContract[] = [];
+  /** Organigrammes du ministère choisi (le champ Organigramme reste cohérent avec le ministère d'appartenance). */
+  readonly organigrammesDuMinistere = computed(() => {
+    const id = this.ministereChoisi();
+    return id ? this.organigrammes().filter((o) => o.idMinistere === id) : [];
+  });
   /** Formulaire de la nouvelle entité (niveau dérivé de la catégorie côté serveur). */
   readonly nouvEntiteForm = this.fb.group({
     idEntiteParent: [null as number | null], // = ministère d'appartenance
@@ -1133,6 +1144,7 @@ export class SoumettreDossier {
   /** Ouvre le formulaire de création d'entité (import) : charge les référentiels, pré-remplit le libellé lu au PDF. */
   ouvrirCreationEntite(): void {
     this.creationEntite.set(true);
+    this.ministereChoisi.set(null);
     this.nouvEntiteForm.reset({
       idEntiteParent: null,
       libelleEntite: this.autoriteImportee() ?? '',
@@ -1140,23 +1152,34 @@ export class SoumettreDossier {
       categorieEntite: '',
       idOrganigramme: null,
     });
+    // Ministère d'appartenance = référentiel `/api/ministeres` (les 6), pas seulement les ministères déjà entités contractantes.
+    this.ministereService.list().subscribe((rows) => this.ministeres.set(rows));
+    // Entités MINISTERE existantes (indexées par organigramme) → entité parente best-effort ; PK client = max+1.
     this.entiteContractService.list().subscribe((rows) => {
-      this.ministeres.set(
-        rows
-          .filter((e) => (e.categorieEntite ?? '').toUpperCase() === 'MINISTERE')
-          .map((e) => ({ idEntiteContract: e.idEntiteContract, libelleEntite: e.libelleEntite, idOrganigramme: e.idOrganigramme })),
-      );
+      this.ministereEntites = rows.filter((e) => (e.categorieEntite ?? '').toUpperCase() === 'MINISTERE');
       this.nextEntiteId = rows.length ? Math.max(...rows.map((e) => e.idEntiteContract)) + 1 : 1;
     });
     this.categorieEntiteService.list().subscribe((rows) => this.categories.set(rows.map((c) => ({ libelle: c.libelle }))));
-    this.organigrammeService.list().subscribe((rows) => this.organigrammes.set(rows.map((o) => ({ idOrganigramme: o.idOrganigramme, libelle: o.libelle ?? '' }))));
+    this.organigrammeService.list().subscribe((rows) => this.organigrammes.set(rows));
   }
-  /** Ministère d'appartenance choisi → entité parente + organigramme pré-rempli (celui du ministère). */
+  /**
+   * Ministère d'appartenance choisi (idMinistere) → dérive l'organigramme (actif) du ministère puis, si
+   * elle existe, la racine MINISTERE de cet organigramme comme entité parente (sinon parent laissé vide —
+   * `idEntiteParent` est optionnel). Le champ Organigramme reste ajustable parmi ceux du ministère.
+   */
   choisirMinistere(v: string): void {
-    const id = v ? +v : null;
-    this.nouvEntiteForm.controls.idEntiteParent.setValue(id);
-    const min = this.ministeres().find((m) => m.idEntiteContract === id);
-    if (min) this.nouvEntiteForm.controls.idOrganigramme.setValue(min.idOrganigramme);
+    const idMinistere = v ? +v : null;
+    this.ministereChoisi.set(idMinistere);
+    if (idMinistere == null) {
+      this.nouvEntiteForm.controls.idEntiteParent.setValue(null);
+      this.nouvEntiteForm.controls.idOrganigramme.setValue(null);
+      return;
+    }
+    const orgs = this.organigrammes().filter((o) => o.idMinistere === idMinistere);
+    const org = orgs.find((o) => o.actif) ?? orgs[0];
+    this.nouvEntiteForm.controls.idOrganigramme.setValue(org?.idOrganigramme ?? null);
+    const parent = org ? this.ministereEntites.find((e) => e.idOrganigramme === org.idOrganigramme) : undefined;
+    this.nouvEntiteForm.controls.idEntiteParent.setValue(parent?.idEntiteContract ?? null);
   }
   annulerCreationEntite(): void {
     this.creationEntite.set(false);
