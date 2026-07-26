@@ -18,6 +18,21 @@ export interface FieldRef {
   idKey: string;
   /** Champs composant le libellé (ex. ['libelle'] ou ['nomPrmp', 'prenomsPrmp']). */
   labelKeys: string[];
+  /**
+   * Filtre « catégorie supérieure » : ne garde que les options dont `optionLevelKey` est **strictement
+   * inférieur** au niveau de la valeur choisie dans `fromField` (niveau lu dans `viaService` via
+   * `viaMatchKey`→`viaLevelKey`). Recalculé quand `fromField` change ; l'enregistrement en cours d'édition
+   * est exclu (pas son propre parent). Ex. « Entité parente » = entités de tout niveau au-dessus de la
+   * catégorie (un niveau 3 accepte un parent de niveau 1 ou 2).
+   */
+  superiorLevelFilter?: {
+    fromField: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    viaService: Type<CrudService<any, string | number>>;
+    viaMatchKey: string;
+    viaLevelKey: string;
+    optionLevelKey: string;
+  };
 }
 
 /** Description d'un champ d'une ressource (colonne de table + champ de formulaire). */

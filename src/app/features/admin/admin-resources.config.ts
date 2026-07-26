@@ -167,7 +167,19 @@ export const REFERENTIELS: AdminResource[] = [
           key: 'idEntiteParent',
           label: 'Entité parente',
           type: 'number',
-          ref: { service: EntiteContractService, idKey: 'idEntiteContract', labelKeys: ['libelleEntite'] },
+          // N'affiche que les entités de catégorie supérieure (niveau strictement au-dessus de la catégorie choisie).
+          ref: {
+            service: EntiteContractService,
+            idKey: 'idEntiteContract',
+            labelKeys: ['libelleEntite'],
+            superiorLevelFilter: {
+              fromField: 'categorieEntite',
+              viaService: CategorieEntiteService,
+              viaMatchKey: 'libelle',
+              viaLevelKey: 'niveauHierarchique',
+              optionLevelKey: 'niveauHierarchique',
+            },
+          },
         },
         // Niveau dérivé de la catégorie côté serveur : affiché en liste, retiré du formulaire.
         { key: 'niveauHierarchique', label: 'Niveau', type: 'number', hideInForm: true },

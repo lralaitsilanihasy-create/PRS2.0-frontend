@@ -63,8 +63,10 @@ export class CrudPage {
   readonly activeFilter = signal<ActiveFilter | null>(null);
   /** id → libellé, par champ FK (chargé une fois par référentiel lié). */
   private readonly lookups = signal<Record<string, Map<string, string>>>({});
-  /** Options { value, label } d'une liste déroulante FK, valeur brute (type préservé). */
-  private readonly refOptions = signal<Record<string, { value: unknown; label: string }[]>>({});
+  /** Options { value, label, level? } d'une liste déroulante FK (valeur brute ; `level` pour le filtre « catégorie supérieure »). */
+  private readonly refOptions = signal<Record<string, { value: unknown; label: string; level?: number }[]>>({});
+  /** Par champ à `superiorLevelFilter` : map (valeur de `fromField`) → niveau (lue dans le référentiel `viaService`). */
+  private readonly auxLevelMaps = signal<Record<string, Map<string, number>>>({});
 
   /** Lignes affichées (toutes, ou filtrées par le query param actif). */
   readonly visibleRows = computed(() => {
@@ -99,9 +101,22 @@ export class CrudPage {
     return this.config.fields.filter((f) => !f.autoId && !f.hideInForm);
   }
 
-  /** Options d'une liste déroulante FK (issues du référentiel lié). */
-  refOptionsFor(key: string): { value: unknown; label: string }[] {
-    return this.refOptions()[key] ?? [];
+  /** Options d'une liste déroulante FK (issues du référentiel lié), filtrées si `superiorLevelFilter`. */
+  refOptionsFor(key: string): { value: unknown; label: string; level?: number }[] {
+    const opts = this.refOptions()[key] ?? [];
+    const slf = this.config.fields.find((f) => f.key === key)?.ref?.superiorLevelFilter;
+    if (!slf) {
+      return opts;
+    }
+    // Niveau de la valeur choisie dans `fromField` : on ne garde que les options de niveau strictement au-dessus.
+    const src = this.form?.get(slf.fromField)?.value;
+    const srcLevel = src != null ? this.auxLevelMaps()[key]?.get(String(src)) : undefined;
+    if (srcLevel == null) {
+      return []; // pas de catégorie choisie (ou inconnue) → aucun parent proposé
+    }
+    return opts.filter(
+      (o) => o.level != null && o.level < srcLevel && String(o.value) !== String(this.editingId),
+    );
   }
 
   /** Options d'une liste déroulante alimentée par les valeurs distinctes déjà saisies. */
@@ -268,12 +283,13 @@ export class CrudPage {
       if (!ref) {
         continue;
       }
+      const slf = ref.superiorLevelFilter;
       inject(ref.service)
         .list()
         .subscribe({
           next: (rows: Row[]) => {
             const map = new Map<string, string>();
-            const options: { value: unknown; label: string }[] = [];
+            const options: { value: unknown; label: string; level?: number }[] = [];
             for (const r of rows) {
               const raw = r[ref.idKey];
               const id = String(raw);
@@ -283,12 +299,30 @@ export class CrudPage {
                 .join(' ')
                 .trim();
               map.set(id, label || id);
-              options.push({ value: raw, label: label || id });
+              // `level` : niveau de l'option, pour le filtre « catégorie supérieure » (sinon undefined).
+              const level = slf ? (r[slf.optionLevelKey] as number | undefined) : undefined;
+              options.push({ value: raw, label: label || id, level });
             }
             this.lookups.update((cur) => ({ ...cur, [field.key]: map }));
             this.refOptions.update((cur) => ({ ...cur, [field.key]: options }));
           },
         });
+      // Référentiel auxiliaire (ex. catégories) : map (valeur source) → niveau, pour calculer le seuil.
+      if (slf) {
+        inject(slf.viaService)
+          .list()
+          .subscribe({
+            next: (rows: Row[]) => {
+              const m = new Map<string, number>();
+              for (const r of rows) {
+                const key = r[slf.viaMatchKey];
+                const lvl = r[slf.viaLevelKey];
+                if (key != null && lvl != null) m.set(String(key), Number(lvl));
+              }
+              this.auxLevelMaps.update((cur) => ({ ...cur, [field.key]: m }));
+            },
+          });
+      }
     }
   }
 
