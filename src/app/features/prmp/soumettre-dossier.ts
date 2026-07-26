@@ -12,10 +12,12 @@ import { PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
 import { AnomalieTranscription, Capm, Compte, Dossier, FormeMarche, Marche, ModePassation, Nature, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
 import {
   CapmService,
+  CategorieEntiteService,
   CompteService,
   DossierService,
   EntiteContractService,
   LocaliteService,
+  OrganigrammeService,
   MarcheService,
   ModePassationService,
   NatureService,
@@ -191,8 +193,59 @@ interface ApercuDossier {
                     </select>
                   </div>
                 } @else {
-                  <span class="form-hint">Aucune entité rattachée à votre profil PRMP — contactez l'administrateur.</span>
+                  <span class="form-hint">Aucune entité rattachée à votre profil PRMP.</span>
                 }
+
+                <!-- Enregistrement d'une nouvelle entité (si absente du référentiel) : ministère d'appartenance puis formulaire. -->
+                <div class="sd__nouv-entite">
+                  @if (!creationEntite()) {
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirCreationEntite()">➕ Enregistrer une nouvelle entité</button>
+                  } @else {
+                    <div [formGroup]="nouvEntiteForm">
+                      <div class="sd__soa-row">
+                        <span class="sd__soa-code">Ministère d'appartenance</span>
+                        <select class="form-control" (change)="choisirMinistere($any($event.target).value)">
+                          <option value="">— Sélectionner —</option>
+                          @for (m of ministeres(); track m.idEntiteContract) {
+                            <option [value]="m.idEntiteContract" [selected]="m.idEntiteContract === nouvEntiteForm.controls.idEntiteParent.value">{{ m.libelleEntite }}</option>
+                          }
+                        </select>
+                      </div>
+                      @if (nouvEntiteForm.controls.idEntiteParent.value) {
+                        <div class="cnm-form-grid">
+                          <label class="form-group">
+                            <span class="form-label">Libellé *</span>
+                            <input class="form-control" type="text" formControlName="libelleEntite" />
+                          </label>
+                          <label class="form-group">
+                            <span class="form-label">Adresse *</span>
+                            <input class="form-control" type="text" formControlName="adresse" />
+                          </label>
+                          <label class="form-group">
+                            <span class="form-label">Catégorie</span>
+                            <select class="form-control" formControlName="categorieEntite">
+                              <option value="">— Sélectionner —</option>
+                              @for (c of categories(); track c.libelle) { <option [value]="c.libelle">{{ c.libelle }}</option> }
+                            </select>
+                          </label>
+                          <label class="form-group">
+                            <span class="form-label">Organigramme *</span>
+                            <select class="form-control" formControlName="idOrganigramme">
+                              <option [ngValue]="null">— Sélectionner —</option>
+                              @for (o of organigrammes(); track o.idOrganigramme) { <option [ngValue]="o.idOrganigramme">{{ o.libelle }}</option> }
+                            </select>
+                          </label>
+                        </div>
+                        <div class="sd__soa-actions">
+                          <button type="button" class="btn btn-outline btn-sm" (click)="annulerCreationEntite()">Annuler</button>
+                          <button type="button" class="btn btn-primary btn-sm" [disabled]="creatingEntite()" (click)="creerEntite()">
+                            {{ creatingEntite() ? 'Enregistrement…' : "Enregistrer l'entité" }}
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
               </div>
             }
             <div class="cnm-form-grid">
@@ -637,7 +690,8 @@ interface ApercuDossier {
     .sd__soa-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
     .sd__soa-code { font-weight: 700; flex: 0 0 auto; min-width: 11rem; }
     .sd__soa-row .form-control { flex: 1 1 14rem; min-width: 10rem; }
-    .sd__soa-actions { margin-top: 0.5rem; display: flex; justify-content: flex-end; }
+    .sd__soa-actions { margin-top: 0.5rem; display: flex; justify-content: flex-end; gap: 0.5rem; }
+    .sd__nouv-entite { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(0, 0, 0, 0.08); }
     .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
     .sd__foot--main { margin-top: 1rem; }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
@@ -684,6 +738,8 @@ export class SoumettreDossier {
   private readonly typePieceService = inject(TypePieceJointeService);
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly entiteContractService = inject(EntiteContractService);
+  private readonly organigrammeService = inject(OrganigrammeService);
+  private readonly categorieEntiteService = inject(CategorieEntiteService);
   private readonly sousTypeService = inject(SousTypeDossierService);
   private readonly natureService = inject(NatureService);
   private readonly modeService = inject(ModePassationService);
@@ -748,6 +804,26 @@ export class SoumettreDossier {
   });
   /** Nom de l'autorité contractante lue dans le PDF (contexte du panneau de résolution). */
   readonly autoriteImportee = signal<string | null>(null);
+
+  // ── Enregistrement d'une nouvelle entité contractante pendant l'import (modèle A : création PRMP directe) ──
+  /** Formulaire de création d'entité affiché dans le panneau de résolution. */
+  readonly creationEntite = signal(false);
+  /** Enregistrement de l'entité en cours (POST). */
+  readonly creatingEntite = signal(false);
+  /** Ministères du référentiel (catégorie MINISTERE) = ministère d'appartenance sélectionnable. */
+  readonly ministeres = signal<{ idEntiteContract: number; libelleEntite: string; idOrganigramme: number }[]>([]);
+  /** Catégories d'entité (référentiel) pour le champ Catégorie. */
+  readonly categories = signal<{ libelle: string }[]>([]);
+  /** Organigrammes (référentiel) pour le champ Organigramme. */
+  readonly organigrammes = signal<{ idOrganigramme: number; libelle: string }[]>([]);
+  /** Formulaire de la nouvelle entité (niveau dérivé de la catégorie côté serveur). */
+  readonly nouvEntiteForm = this.fb.group({
+    idEntiteParent: [null as number | null], // = ministère d'appartenance
+    libelleEntite: ['', Validators.required],
+    adresse: ['', Validators.required],
+    categorieEntite: [''],
+    idOrganigramme: [null as number | null, Validators.required],
+  });
   /** Entité importée non résolue à une entité de la PRMP → panneau de sélection inline. */
   readonly entiteAResoudre = computed(
     () => this.importe() && !this.entites().some((e) => e.idEntiteContract === this.selectedEntiteId()),
@@ -1050,6 +1126,75 @@ export class SoumettreDossier {
   /** Sélection de l'entité contractante depuis le panneau de résolution (import). */
   choisirEntite(v: string): void {
     this.ppmForm.controls.idEntiteContract.setValue(v ? +v : null);
+  }
+
+  /** PK à assigner à la prochaine entité créée (contrat `entite-contracts` : PK côté client). */
+  private nextEntiteId = 0;
+  /** Ouvre le formulaire de création d'entité (import) : charge les référentiels, pré-remplit le libellé lu au PDF. */
+  ouvrirCreationEntite(): void {
+    this.creationEntite.set(true);
+    this.nouvEntiteForm.reset({
+      idEntiteParent: null,
+      libelleEntite: this.autoriteImportee() ?? '',
+      adresse: '',
+      categorieEntite: '',
+      idOrganigramme: null,
+    });
+    this.entiteContractService.list().subscribe((rows) => {
+      this.ministeres.set(
+        rows
+          .filter((e) => (e.categorieEntite ?? '').toUpperCase() === 'MINISTERE')
+          .map((e) => ({ idEntiteContract: e.idEntiteContract, libelleEntite: e.libelleEntite, idOrganigramme: e.idOrganigramme })),
+      );
+      this.nextEntiteId = rows.length ? Math.max(...rows.map((e) => e.idEntiteContract)) + 1 : 1;
+    });
+    this.categorieEntiteService.list().subscribe((rows) => this.categories.set(rows.map((c) => ({ libelle: c.libelle }))));
+    this.organigrammeService.list().subscribe((rows) => this.organigrammes.set(rows.map((o) => ({ idOrganigramme: o.idOrganigramme, libelle: o.libelle ?? '' }))));
+  }
+  /** Ministère d'appartenance choisi → entité parente + organigramme pré-rempli (celui du ministère). */
+  choisirMinistere(v: string): void {
+    const id = v ? +v : null;
+    this.nouvEntiteForm.controls.idEntiteParent.setValue(id);
+    const min = this.ministeres().find((m) => m.idEntiteContract === id);
+    if (min) this.nouvEntiteForm.controls.idOrganigramme.setValue(min.idOrganigramme);
+  }
+  annulerCreationEntite(): void {
+    this.creationEntite.set(false);
+  }
+  /**
+   * Enregistre la nouvelle entité (POST) puis la sélectionne pour le dossier. Requiert l'ouverture de
+   * `POST /api/entite-contracts` à la PRMP **+ auto-affectation** au périmètre (sinon 403 / entité non listée).
+   */
+  creerEntite(): void {
+    if (this.nouvEntiteForm.invalid) {
+      this.nouvEntiteForm.markAllAsTouched();
+      return;
+    }
+    const v = this.nouvEntiteForm.getRawValue();
+    this.creatingEntite.set(true);
+    this.entiteContractService
+      .create({
+        idEntiteContract: this.nextEntiteId,
+        libelleEntite: (v.libelleEntite ?? '').trim(),
+        adresse: (v.adresse ?? '').trim(),
+        categorieEntite: v.categorieEntite || undefined,
+        idOrganigramme: v.idOrganigramme as number,
+        idEntiteParent: v.idEntiteParent ?? undefined,
+      })
+      .subscribe({
+        next: (cree) => {
+          this.creatingEntite.set(false);
+          this.creationEntite.set(false);
+          this.toast.success(`Entité « ${cree.libelleEntite} » enregistrée.`);
+          // Recharge le périmètre PRMP (l'entité doit y être auto-affectée) puis la sélectionne pour le dossier.
+          this.chargerEntites();
+          this.ppmForm.controls.idEntiteContract.setValue(cree.idEntiteContract);
+        },
+        error: (e: ApiError) => {
+          this.creatingEntite.set(false);
+          this.toast.error(e.message || "Enregistrement de l'entité impossible (autorisation ?).", 'Création impossible');
+        },
+      });
   }
   /**
    * Détecte les anomalies de transcription d'un marché importé (repli heuristique).
