@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 
 import { CrudPage } from '../../shared/crud/crud-page';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
+import { DossiersClassement, CIRCUIT_GROUPES } from '../circuit/dossiers-classement';
+import { DossiersCircuitListe } from '../circuit/dossiers-circuit-liste';
 import { DispatchsList } from '../circuit/dispatchs-list';
 import { MembrePv } from '../membre/pv-page';
 import { LettreRenvoiConsultation } from '../circuit/lettre-renvoi-consultation';
@@ -12,6 +14,9 @@ import { SNAPSHOT_STATS_CONFIG } from '../pilotage/pilotage-resources.config';
 import { RetraitsValidation } from '../circuit/retraits-validation';
 import { Messagerie } from '../transverse/messagerie';
 
+/** Classement « Mes dossiers » (CC) : cartes par type × {pré-dispatch, dispatch}, scopé à sa localité. */
+const CLASSEMENT_CC = { subtitle: 'Domaine Chef de commission', base: '/cc/mes-dossiers', groupes: CIRCUIT_GROUPES };
+
 /** Espace Chef de commission (lazy, sous roleGuard CHEF_COMMISSION). */
 export const CC_ROUTES: Routes = [
   { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
@@ -20,6 +25,8 @@ export const CC_ROUTES: Routes = [
     component: DossiersPipeline,
     data: { title: 'Dossiers de ma localité' },
   },
+  { path: 'mes-dossiers', component: DossiersClassement, data: { classement: CLASSEMENT_CC } },
+  { path: 'mes-dossiers/:type/:groupe', component: DossiersCircuitListe, data: { classement: CLASSEMENT_CC } },
   // Plus de page intermédiaire à tuiles : « circuit » redirige vers le dispatch (entrées directes au menu).
   { path: 'circuit', redirectTo: 'circuit/dispatch', pathMatch: 'full' },
   { path: 'circuit/dispatch', component: DispatchsList },
