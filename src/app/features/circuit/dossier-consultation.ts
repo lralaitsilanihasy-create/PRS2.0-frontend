@@ -5,6 +5,7 @@ import { Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBenef
 import {
   CapmService,
   CompteService,
+  EntiteContractService,
   LocaliteService,
   MarcheService,
   MarchePrevisionService,
@@ -69,6 +70,10 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
               <span class="dc-meta-value">{{ typeLabel() }}</span>
             </div>
             <div class="dc-meta-row">
+              <span class="dc-meta-label">Entité contractante</span>
+              <span class="dc-meta-value">{{ entiteLabel() }}</span>
+            </div>
+            <div class="dc-meta-row">
               <span class="dc-meta-label">Localité</span>
               <span class="dc-meta-value">{{ localiteLabel() }}</span>
             </div>
@@ -92,10 +97,6 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
               <div class="dc-meta-row">
                 <span class="dc-meta-label">Date signature</span>
                 <span class="dc-meta-value">{{ p.dateSignature || '—' }}</span>
-              </div>
-              <div class="dc-meta-row">
-                <span class="dc-meta-label">Libellé</span>
-                <span class="dc-meta-value" [class.dc-meta-empty]="!p.libelle">{{ p.libelle || 'Non renseigné' }}</span>
               </div>
               @if (p.datePpmInit) {
                 <div class="dc-meta-row">
@@ -301,6 +302,7 @@ export class DossierConsultation implements OnInit {
   private readonly modeMap = signal<Map<string, string>>(new Map());
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
+  private readonly entiteMap = signal<Map<string, string>>(new Map());
   /** Services bénéficiaires des marchés du dossier (lecture seule), passés au tableau partagé. */
   readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
   private readonly soaMap = signal<Map<string, string>>(new Map());
@@ -341,10 +343,15 @@ export class DossierConsultation implements OnInit {
     const id = this.dossier().idLocalite;
     return id ? this.localiteMap().get(id) ?? id : '—';
   });
+  readonly entiteLabel = computed(() => {
+    const id = this.dossier().idEntiteContract;
+    return id != null ? this.entiteMap().get(String(id)) ?? '#' + id : '—';
+  });
 
   ngOnInit(): void {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
+    this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     // Pièces jointes du dossier (tous types) — GET /api/piece-jointe-dossiers?dossier={id}.
     this.loadingPieces.set(true);
     this.pieceService.getByDossier(this.dossier().idDossier).subscribe({

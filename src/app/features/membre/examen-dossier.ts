@@ -25,6 +25,7 @@ import {
   AvisService,
   DispatchService,
   DossierService,
+  EntiteContractService,
   ExamenDetailService,
   ExamenService,
   LettreRenvoiService,
@@ -90,6 +91,7 @@ interface RowState {
             <div class="card-body">
               <dl class="exam__info">
                 <div><dt>Type</dt><dd>{{ typeLabel() }}</dd></div>
+                <div><dt>Entité contractante</dt><dd>{{ entiteLabel() }}</dd></div>
                 <div><dt>Localité</dt><dd>{{ localiteLabel() }}</dd></div>
                 <div><dt>Statut</dt><dd><app-statut-badge [statut]="dossier()!.statut" /></dd></div>
                 <div><dt>Date réf.</dt><dd class="cnm-mono">{{ dossier()!.dateRef || '—' }}</dd></div>
@@ -100,7 +102,6 @@ interface RowState {
                   <dl class="exam__info">
                     <div><dt>Exercice</dt><dd>{{ p.exercice }}</dd></div>
                     <div><dt>Signataire</dt><dd>{{ p.signataire || '—' }}</dd></div>
-                    <div><dt>Libellé</dt><dd>{{ p.libelle || '—' }}</dd></div>
                   </dl>
                 }
                 <div class="exam__marches">
@@ -534,6 +535,7 @@ export class ExamenDossier implements OnDestroy {
 
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
+  private readonly entiteMap = signal<Map<string, string>>(new Map());
   private readonly modeMap = signal<Map<string, string>>(new Map());
 
   /** Mode déduit du statut : DISPATCHE → création ; EXAMINE → édition ; sinon verrouillé. */
@@ -568,10 +570,15 @@ export class ExamenDossier implements OnDestroy {
     const id = this.dossier()?.idLocalite;
     return id ? this.localiteMap().get(id) ?? id : '—';
   });
+  readonly entiteLabel = computed(() => {
+    const id = this.dossier()?.idEntiteContract;
+    return id != null ? this.entiteMap().get(String(id)) ?? '#' + id : '—';
+  });
 
   constructor() {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
+    this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.avisService.list().subscribe((a) => this.aviss.set(a));
 
