@@ -96,7 +96,7 @@ export class CrudPage {
 
   /** Champs affichés dans le formulaire (exclut les PK auto-générées, masquées). */
   get formFields(): FieldConfig[] {
-    return this.config.fields.filter((f) => !f.autoId);
+    return this.config.fields.filter((f) => !f.autoId && !f.hideInForm);
   }
 
   /** Options d'une liste déroulante FK (issues du référentiel lié). */
@@ -304,6 +304,8 @@ export class CrudPage {
   private buildForm(model: Row | null): FormGroup {
     const group: Record<string, ReturnType<FormBuilder['control']>> = {};
     for (const field of this.config.fields) {
+      // Champ dérivé serveur : hors formulaire ET hors payload (valeur client ignorée de toute façon).
+      if (field.hideInForm) continue;
       const locked = this.formMode() === 'edit' && !!field.pk;
       const fallback = field.type === 'boolean' ? false : null;
       let initial = model ? (model[field.key] ?? fallback) : fallback;

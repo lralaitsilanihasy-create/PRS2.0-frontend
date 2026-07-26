@@ -7,6 +7,7 @@ import {
   Avis,
   Capm,
   CatCompte,
+  CategorieEntite,
   Compte,
   DelegationProfil,
   EntiteContract,
@@ -37,6 +38,12 @@ export class AvisService extends CrudService<Avis, string> {
 @Injectable({ providedIn: 'root' })
 export class CatCompteService extends CrudService<CatCompte, string> {
   protected readonly resource = 'cat-comptes';
+}
+
+/** Référentiel des catégories d'entité contractante (`/api/categorie-entites`, PK = libellé). */
+@Injectable({ providedIn: 'root' })
+export class CategorieEntiteService extends CrudService<CategorieEntite, string> {
+  protected readonly resource = 'categorie-entites';
 }
 
 /** Référentiel des types de pièces jointes attendues par type de dossier. */

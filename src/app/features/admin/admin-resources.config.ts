@@ -3,6 +3,7 @@ import {
   AuditLogService,
   AvisService,
   CatCompteService,
+  CategorieEntiteService,
   CompteService,
   ControleurService,
   DelegationProfilService,
@@ -57,6 +58,20 @@ export const REFERENTIELS: AdminResource[] = [
       fields: [
         { key: 'idCatCompte', label: 'Identifiant', pk: true, required: true },
         { key: 'catCompte', label: 'Catégorie' },
+      ],
+    },
+  },
+  {
+    slug: 'categorie-entites',
+    config: {
+      title: "Catégories d'entité",
+      service: CategorieEntiteService,
+      idKey: 'libelle',
+      writeCapability: 'REFERENTIEL_WRITE',
+      fields: [
+        { key: 'libelle', label: 'Catégorie', pk: true, required: true },
+        // Niveau hiérarchique dont l'entité héritera (dérivé côté serveur pour l'entité).
+        { key: 'niveauHierarchique', label: 'Niveau', type: 'number', options: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], required: true },
       ],
     },
   },
@@ -136,7 +151,11 @@ export const REFERENTIELS: AdminResource[] = [
         { key: 'idEntiteContract', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'libelleEntite', label: 'Libellé', required: true },
         { key: 'adresse', label: 'Adresse', required: true },
-        { key: 'categorieEntite', label: 'Catégorie', optionsFromData: true },
+        {
+          key: 'categorieEntite',
+          label: 'Catégorie',
+          ref: { service: CategorieEntiteService, idKey: 'libelle', labelKeys: ['libelle'] },
+        },
         {
           key: 'idOrganigramme',
           label: 'Organigramme',
@@ -150,7 +169,8 @@ export const REFERENTIELS: AdminResource[] = [
           type: 'number',
           ref: { service: EntiteContractService, idKey: 'idEntiteContract', labelKeys: ['libelleEntite'] },
         },
-        { key: 'niveauHierarchique', label: 'Niveau', type: 'number', options: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+        // Niveau dérivé de la catégorie côté serveur : affiché en liste, retiré du formulaire.
+        { key: 'niveauHierarchique', label: 'Niveau', type: 'number', hideInForm: true },
       ],
     },
   },

@@ -12,6 +12,12 @@ export interface CatCompte {
   catCompte?: string;
 }
 
+/** Catégorie d'entité contractante (PK = libellé) ; porte le niveau hiérarchique dont l'entité hérite. */
+export interface CategorieEntite {
+  libelle: string;
+  niveauHierarchique?: number;
+}
+
 /** Compte budgétaire. PK = numCompte (string). */
 export interface Compte {
   numCompte: string;
