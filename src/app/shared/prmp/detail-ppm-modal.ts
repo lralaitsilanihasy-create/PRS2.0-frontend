@@ -9,6 +9,7 @@ import { AnomalieTranscription, Capm, Compte, EditionPpmRequest, FORME_MARCHE_LI
 import {
   CapmService,
   CompteService,
+  DossierService,
   LotService,
   MarcheService,
   MarchePrevisionService,
@@ -147,6 +148,11 @@ import { PpmFormFactory } from './ppm-form-factory';
                   pièces jointes conservées ; entité et référence inchangées{{ r.autoriteContractante ? ' (PDF : « ' + r.autoriteContractante + ' »)' : '' }}.
                   @if (r.avertissements?.length) { {{ r.avertissements!.length }} avertissement(s) d'import. }
                 </div>
+                @if (entitePdfDifferente()) {
+                  <div class="alert alert-danger">
+                    🚫 <strong>Réimport impossible</strong> — ce PDF concerne une autre entité contractante@if (r.autoriteContractante) { (« {{ r.autoriteContractante }} ») } que le dossier ({{ ppm()?.reference }}). L'entité d'un dossier ne peut pas changer : importez un PPM de la même entité.
+                  </div>
+                }
                 <!-- Grille éditable partagée (identique à la soumission) : édition, revue de transcription, validation par ligne. -->
                 @if (importMarches(); as arr) {
                   <app-ppm-saisie-grid
@@ -163,8 +169,8 @@ import { PpmFormFactory } from './ppm-form-factory';
                 <div class="dpm-apercu-actions">
                   <button class="btn btn-outline" type="button" [disabled]="applyingImport()" (click)="annulerImport()">Annuler l'import</button>
                   <button class="btn btn-primary" type="button"
-                    [disabled]="applyingImport() || !importPret()"
-                    [title]="importPret() ? '' : 'Validez chaque ligne signalée et corrigez les montants incohérents avant d\\'enregistrer.'"
+                    [disabled]="applyingImport() || !importPret() || entitePdfDifferente()"
+                    [title]="entitePdfDifferente() ? 'Le PDF concerne une autre entité contractante que le dossier.' : (importPret() ? '' : 'Validez chaque ligne signalée et corrigez les montants incohérents avant d\\'enregistrer.')"
                     (click)="enregistrerImport()">
                     {{ applyingImport() ? 'Enregistrement…' : '💾 Enregistrer' }}
                   </button>
@@ -567,6 +573,7 @@ export class DetailPpmModal implements OnInit {
   @Output() soumettre = new EventEmitter<void>();
 
   private readonly ppmService = inject(PpmService);
+  private readonly dossierService = inject(DossierService);
   private readonly marcheService = inject(MarcheService);
   private readonly lotService = inject(LotService);
   private readonly serviceBenefService = inject(ServiceBeneficiaireService);
@@ -588,6 +595,8 @@ export class DetailPpmModal implements OnInit {
   /** Animation de fermeture en cours : retarde l'émission de `fermer` le temps du fondu sortant. */
   readonly closing = signal(false);
   readonly ppm = signal<Ppm | null>(null);
+  /** Entité contractante du dossier (fixe) — sert à interdire un réimport d'un PDF d'une autre entité. */
+  readonly dossierEntite = signal<number | null>(null);
   readonly marches = signal<Marche[]>([]);
   readonly pieces = signal<PieceJointeDossier[]>([]);
   readonly modeMap = signal<Map<string, string>>(new Map());
@@ -620,6 +629,16 @@ export class DetailPpmModal implements OnInit {
   /** Grille de saisie partagée (prévisualisation d'import) — lue pour conditionner « Enregistrer ». */
   readonly grid = viewChild(PpmSaisieGrid);
   readonly applyingImport = signal(false);
+  /**
+   * Le PDF réimporté concerne-t-il une **autre entité contractante** que le dossier ? L'entité d'un dossier
+   * est fixe : réimporter un PDF d'une autre entité injecterait des marchés étrangers. On bloque le cas
+   * d'une entité **résolue différente** (une entité non résolue au PDF n'est pas considérée comme différente).
+   */
+  readonly entitePdfDifferente = computed(() => {
+    const r = this.importApercu();
+    const de = this.dossierEntite();
+    return !!r && r.idEntiteContract != null && de != null && r.idEntiteContract !== de;
+  });
 
   // — AGPM conditionnel : le PPM porte `agpmRequis` (autorité backend) ; pièce repérée par code stable. —
   /** Type de pièce AGPM parmi les pièces attendues (chargées en modeEdition). */
@@ -740,14 +759,16 @@ export class DetailPpmModal implements OnInit {
     }
     forkJoin({
       ppm: this.ppmService.getById(this.idPpm),
+      dossier: this.dossierService.getById(this.idDossier),
       marches: this.marcheService.list(),
       pieces: this.pieceService.getByDossier(this.idDossier),
       benefs: this.serviceBenefService.list(),
       previsions: this.previsionService.list(),
       lots: this.lotService.list(),
     }).subscribe({
-      next: ({ ppm, marches, pieces, benefs, previsions, lots }) => {
+      next: ({ ppm, dossier, marches, pieces, benefs, previsions, lots }) => {
         this.ppm.set(ppm);
+        this.dossierEntite.set(dossier?.idEntiteContract ?? null);
         const mine = marches.filter((m) => m.idPpm === this.idPpm);
         this.marches.set(mine);
         this.pieces.set(pieces);
@@ -809,6 +830,7 @@ export class DetailPpmModal implements OnInit {
     const p = this.ppm();
     const arr = this.importMarches();
     if (!r || !p || !arr) return;
+    if (this.entitePdfDifferente()) return; // garde : entité du PDF ≠ entité du dossier
     // Corps du PUT reconstruit depuis la grille éditée (mapping identique à la soumission) : lignes non vides,
     // lot-objet par défaut, dates de fin optionnelles.
     const lignes: SaisieMarcheLigne[] = (arr.controls as FormGroup[])
