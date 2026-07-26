@@ -33,6 +33,12 @@ export interface FieldRef {
     viaLevelKey: string;
     optionLevelKey: string;
   };
+  /**
+   * Ne garde que les options dont `optionKey` égale la valeur du champ `formField` du formulaire (ex.
+   * n'afficher que les entités du **même organigramme**). Cumulable avec `superiorLevelFilter`. Une
+   * contrainte est **ignorée** tant que son `formField` est vide (pas de filtrage prématuré).
+   */
+  matchFields?: { optionKey: string; formField: string }[];
 }
 
 /** Description d'un champ d'une ressource (colonne de table + champ de formulaire). */

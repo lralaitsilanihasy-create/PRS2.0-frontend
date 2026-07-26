@@ -167,7 +167,7 @@ export const REFERENTIELS: AdminResource[] = [
           key: 'idEntiteParent',
           label: 'Entité parente',
           type: 'number',
-          // N'affiche que les entités de catégorie supérieure (niveau strictement au-dessus de la catégorie choisie).
+          // Entités de catégorie supérieure (niveau au-dessus) ET du même organigramme que celui choisi.
           ref: {
             service: EntiteContractService,
             idKey: 'idEntiteContract',
@@ -179,6 +179,7 @@ export const REFERENTIELS: AdminResource[] = [
               viaLevelKey: 'niveauHierarchique',
               optionLevelKey: 'niveauHierarchique',
             },
+            matchFields: [{ optionKey: 'idOrganigramme', formField: 'idOrganigramme' }],
           },
         },
         // Niveau dérivé de la catégorie côté serveur : affiché en liste, retiré du formulaire.

@@ -63,8 +63,8 @@ export class CrudPage {
   readonly activeFilter = signal<ActiveFilter | null>(null);
   /** id → libellé, par champ FK (chargé une fois par référentiel lié). */
   private readonly lookups = signal<Record<string, Map<string, string>>>({});
-  /** Options { value, label, level? } d'une liste déroulante FK (valeur brute ; `level` pour le filtre « catégorie supérieure »). */
-  private readonly refOptions = signal<Record<string, { value: unknown; label: string; level?: number }[]>>({});
+  /** Options { value, label, row? } d'une liste déroulante FK (valeur brute ; `row` = ligne source pour les filtres niveau/champ). */
+  private readonly refOptions = signal<Record<string, { value: unknown; label: string; row?: Row }[]>>({});
   /** Par champ à `superiorLevelFilter` : map (valeur de `fromField`) → niveau (lue dans le référentiel `viaService`). */
   private readonly auxLevelMaps = signal<Record<string, Map<string, number>>>({});
 
@@ -101,22 +101,36 @@ export class CrudPage {
     return this.config.fields.filter((f) => !f.autoId && !f.hideInForm);
   }
 
-  /** Options d'une liste déroulante FK (issues du référentiel lié), filtrées si `superiorLevelFilter`. */
-  refOptionsFor(key: string): { value: unknown; label: string; level?: number }[] {
-    const opts = this.refOptions()[key] ?? [];
-    const slf = this.config.fields.find((f) => f.key === key)?.ref?.superiorLevelFilter;
-    if (!slf) {
+  /** Options d'une liste déroulante FK, filtrées par `superiorLevelFilter` et/ou `matchFields` si définis. */
+  refOptionsFor(key: string): { value: unknown; label: string; row?: Row }[] {
+    const ref = this.config.fields.find((f) => f.key === key)?.ref;
+    let opts = this.refOptions()[key] ?? [];
+    if (!ref) {
       return opts;
     }
-    // Niveau de la valeur choisie dans `fromField` : on ne garde que les options de niveau strictement au-dessus.
-    const src = this.form?.get(slf.fromField)?.value;
-    const srcLevel = src != null ? this.auxLevelMaps()[key]?.get(String(src)) : undefined;
-    if (srcLevel == null) {
-      return []; // pas de catégorie choisie (ou inconnue) → aucun parent proposé
+    const slf = ref.superiorLevelFilter;
+    if (slf) {
+      // Niveau de la valeur choisie dans `fromField` : on ne garde que les options de niveau strictement au-dessus.
+      const src = this.form?.get(slf.fromField)?.value;
+      const srcLevel = src != null ? this.auxLevelMaps()[key]?.get(String(src)) : undefined;
+      if (srcLevel == null) {
+        return []; // pas de catégorie choisie (ou inconnue) → aucun parent proposé
+      }
+      opts = opts.filter(
+        (o) => (o.row?.[slf.optionLevelKey] as number | undefined) != null
+          && (o.row![slf.optionLevelKey] as number) < srcLevel
+          && String(o.value) !== String(this.editingId),
+      );
     }
-    return opts.filter(
-      (o) => o.level != null && o.level < srcLevel && String(o.value) !== String(this.editingId),
-    );
+    // Filtres « même champ » (ex. même organigramme) : contrainte ignorée tant que le champ source est vide.
+    for (const m of ref.matchFields ?? []) {
+      const want = this.form?.get(m.formField)?.value;
+      if (want === null || want === undefined || want === '') {
+        continue;
+      }
+      opts = opts.filter((o) => String(o.row?.[m.optionKey]) === String(want));
+    }
+    return opts;
   }
 
   /** Options d'une liste déroulante alimentée par les valeurs distinctes déjà saisies. */
@@ -284,12 +298,13 @@ export class CrudPage {
         continue;
       }
       const slf = ref.superiorLevelFilter;
+      const needsRow = !!slf || !!ref.matchFields; // conserve la ligne source pour les filtres
       inject(ref.service)
         .list()
         .subscribe({
           next: (rows: Row[]) => {
             const map = new Map<string, string>();
-            const options: { value: unknown; label: string; level?: number }[] = [];
+            const options: { value: unknown; label: string; row?: Row }[] = [];
             for (const r of rows) {
               const raw = r[ref.idKey];
               const id = String(raw);
@@ -299,9 +314,7 @@ export class CrudPage {
                 .join(' ')
                 .trim();
               map.set(id, label || id);
-              // `level` : niveau de l'option, pour le filtre « catégorie supérieure » (sinon undefined).
-              const level = slf ? (r[slf.optionLevelKey] as number | undefined) : undefined;
-              options.push({ value: raw, label: label || id, level });
+              options.push({ value: raw, label: label || id, row: needsRow ? r : undefined });
             }
             this.lookups.update((cur) => ({ ...cur, [field.key]: map }));
             this.refOptions.update((cur) => ({ ...cur, [field.key]: options }));
