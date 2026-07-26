@@ -102,6 +102,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ADMINISTRATEUR: [
     { label: 'Tableau de bord global', path: '/admin/tableau-de-bord', icon: '▤' },
     { label: 'Inscriptions en attente', path: '/admin/inscriptions', icon: '📝' },
+    { label: 'Rattachements en attente', path: '/admin/rattachements', icon: '🔗' },
     { label: 'Référentiels', path: '/admin/referentiels', icon: '⚙' },
     { label: 'Comptes & hiérarchie', path: '/admin/comptes', icon: '👥' },
     { label: 'PPM & marchés', path: '/admin/ppm-marches', icon: '🗂' },

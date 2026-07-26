@@ -10,6 +10,7 @@ import { DmcMappingAdmin } from './dmc-mapping-admin';
 import { InscriptionsAdmin } from './inscriptions-admin';
 import { PrmpAdmin } from './prmp-admin';
 import { PrmpPiecesAdmin } from './prmp-pieces-admin';
+import { RattachementsAdmin } from './rattachements-admin';
 import { UgpmAdmin } from './ugpm-admin';
 import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
 import { PpmMarches } from '../prmp/ppm-marches';
@@ -75,6 +76,7 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'comptes/ugpm-pieces', component: UgpmPiecesAdmin },
 
   { path: 'inscriptions', component: InscriptionsAdmin },
+  { path: 'rattachements', component: RattachementsAdmin },
   { path: 'audit', component: CrudPage, data: { crud: auditConfig } },
   { path: 'sessions', component: CrudPage, data: { crud: sessionConfig } },
   { path: 'rapports', component: RapportsPage },

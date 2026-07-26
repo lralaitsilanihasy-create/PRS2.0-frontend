@@ -1162,8 +1162,10 @@ export class SoumettreDossier {
     this.creationEntite.set(false);
   }
   /**
-   * Enregistre la nouvelle entité (POST) puis la sélectionne pour le dossier. Requiert l'ouverture de
-   * `POST /api/entite-contracts` à la PRMP **+ auto-affectation** au périmètre (sinon 403 / entité non listée).
+   * Enregistre la nouvelle entité (`POST /api/entite-contracts`). Le rattachement PRMP↔entité est
+   * auto-créé **en attente** (`actif=false`) côté serveur, puis **activé par l'ADMIN** (écran
+   * « Rattachements en attente ») : l'entité n'est donc **pas** sélectionnable immédiatement — pas
+   * d'auto-sélection. Requiert l'ouverture du POST à la PRMP + l'auto-affectation en attente (sinon 403).
    */
   creerEntite(): void {
     if (this.nouvEntiteForm.invalid) {
@@ -1185,10 +1187,12 @@ export class SoumettreDossier {
         next: (cree) => {
           this.creatingEntite.set(false);
           this.creationEntite.set(false);
-          this.toast.success(`Entité « ${cree.libelleEntite} » enregistrée.`);
-          // Recharge le périmètre PRMP (l'entité doit y être auto-affectée) puis la sélectionne pour le dossier.
-          this.chargerEntites();
-          this.ppmForm.controls.idEntiteContract.setValue(cree.idEntiteContract);
+          // Le rattachement PRMP↔entité est auto-créé EN ATTENTE (actif=false) : l'entité n'est pas
+          // encore sélectionnable. Pas d'auto-sélection — elle apparaîtra après approbation de l'ADMIN.
+          this.toast.info(
+            `Entité « ${cree.libelleEntite} » enregistrée. Son rattachement à votre profil sera actif après approbation de l'ADMIN — vous pourrez alors la sélectionner.`,
+            "En attente d'approbation",
+          );
         },
         error: (e: ApiError) => {
           this.creatingEntite.set(false);
