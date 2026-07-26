@@ -10,6 +10,7 @@ import {
   CapmService,
   CompteService,
   DossierService,
+  EntiteContractService,
   LotService,
   MarcheService,
   MarchePrevisionService,
@@ -86,6 +87,10 @@ import { PpmFormFactory } from './ppm-form-factory';
             <div class="dpm-meta-row">
               <span class="dpm-meta-label">Référence</span>
               <span class="dpm-meta-value">{{ ppm()?.reference || '—' }}</span>
+            </div>
+            <div class="dpm-meta-row">
+              <span class="dpm-meta-label">Entité contractante</span>
+              <span class="dpm-meta-value">{{ entiteLabel() }}</span>
             </div>
             <div class="dpm-meta-row">
               <span class="dpm-meta-label">Exercice</span>
@@ -595,8 +600,15 @@ export class DetailPpmModal implements OnInit {
   /** Animation de fermeture en cours : retarde l'émission de `fermer` le temps du fondu sortant. */
   readonly closing = signal(false);
   readonly ppm = signal<Ppm | null>(null);
-  /** Entité contractante du dossier (fixe) — sert à interdire un réimport d'un PDF d'une autre entité. */
+  /** Entité contractante du dossier (fixe) — sert à interdire un réimport d'un PDF d'une autre entité + affichage. */
   readonly dossierEntite = signal<number | null>(null);
+  /** idEntiteContract → libellé (référentiel entités contractantes, un seul chargement). */
+  private readonly entiteMap = signal<Map<string, string>>(new Map());
+  /** Libellé de l'entité contractante du dossier (affiché dans l'en-tête). */
+  readonly entiteLabel = computed(() => {
+    const id = this.dossierEntite();
+    return id != null ? this.entiteMap().get(String(id)) ?? '#' + id : '—';
+  });
   readonly marches = signal<Marche[]>([]);
   readonly pieces = signal<PieceJointeDossier[]>([]);
   readonly modeMap = signal<Map<string, string>>(new Map());
@@ -746,6 +758,7 @@ export class DetailPpmModal implements OnInit {
     this.loading.set(true);
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.lookups.lookup(NatureService, 'idNature', ['libelle']).subscribe((m) => this.natureMap.set(m));
+    this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     this.lookups.lookup(CompteService, 'numCompte', ['libelle']).subscribe((m) => this.compteMap.set(m));
     // Liste SOA (dropdown d'édition) + map libellés (affichage) en un seul appel.
     this.soaBenefService.list().subscribe((rows) => {

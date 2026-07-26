@@ -8,6 +8,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier } from '../../models';
 import {
   DossierService,
+  EntiteContractService,
   LocaliteService,
   MarcheService,
   PpmService,
@@ -50,7 +51,7 @@ type Groupe = 'brouillon' | 'soumis';
           <table>
             <thead>
               <tr>
-                <th>#</th><th>Référence</th><th>Statut</th><th>Sous-type</th><th>Localité</th><th class="r">Actions</th>
+                <th>#</th><th>Référence</th><th>Entité contractante</th><th>Statut</th><th>Sous-type</th><th>Localité</th><th class="r">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -58,6 +59,7 @@ type Groupe = 'brouillon' | 'soumis';
                 <tr [id]="'dl-row-' + d.idDossier" [class.dl-row-focus]="d.idDossier === focusId()">
                   <td class="td-ref">{{ d.idDossier }}</td>
                   <td>{{ reference(d) }}</td>
+                  <td>{{ entiteLabel(d) }}</td>
                   <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
                   <td>{{ sousTypeLabel(d) }}</td>
                   <td>{{ localiteLabel(d) }}</td>
@@ -90,7 +92,7 @@ type Groupe = 'brouillon' | 'soumis';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="6" class="empty-cell">{{ messageVide() }}</td></tr>
+                <tr><td colspan="7" class="empty-cell">{{ messageVide() }}</td></tr>
               }
             </tbody>
           </table>
@@ -169,6 +171,8 @@ export class DossiersListe {
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   /** idSousType → libellé (référentiel sous-type-dossiers, un seul chargement). */
   private readonly sousTypeMap = signal<Map<string, string>>(new Map());
+  /** idEntiteContract → libellé (référentiel entités contractantes, un seul chargement). */
+  private readonly entiteMap = signal<Map<string, string>>(new Map());
   private readonly ppmRef = signal<Map<number, string>>(new Map());
   /** idDossier → idPpm (via `GET /api/marches`, MarcheDto portant idPpm) pour ouvrir le détail PPM. */
   private readonly ppmParDossier = signal<Map<number, number>>(new Map());
@@ -188,6 +192,7 @@ export class DossiersListe {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
     this.lookups.lookup(SousTypeDossierService, 'idSousType', ['libelleSousType']).subscribe((m) => this.sousTypeMap.set(m));
+    this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     // Réagit aux changements d'URL (navigation entre entrées du menu, même composant réutilisé).
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((p) => {
       this.type.set(p.get('type') ?? '');
@@ -240,6 +245,10 @@ export class DossiersListe {
   /** Libellé du sous-type (repli sur le code ; « — » si non renseigné). */
   sousTypeLabel(d: Dossier): string {
     return d.idSousType ? this.sousTypeMap().get(d.idSousType) ?? d.idSousType : '—';
+  }
+  /** Libellé de l'entité contractante du dossier (repli sur l'id ; « — » si absente). */
+  entiteLabel(d: Dossier): string {
+    return d.idEntiteContract != null ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract : '—';
   }
   reference(d: Dossier): string {
     return d.refeDossier || this.ppmRef().get(d.idDossier) || '—';

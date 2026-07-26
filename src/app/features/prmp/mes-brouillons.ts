@@ -7,6 +7,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier } from '../../models';
 import {
   DossierService,
+  EntiteContractService,
   LocaliteService,
   MarcheService,
   PpmService,
@@ -45,7 +46,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
           <table>
             <thead>
               <tr>
-                <th>#</th><th>Type</th><th>Référence</th><th>Localité</th><th class="r">Actions</th>
+                <th>#</th><th>Type</th><th>Référence</th><th>Entité contractante</th><th>Localité</th><th class="r">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -54,6 +55,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <td class="td-ref">{{ d.idDossier }}</td>
                   <td>{{ typeLabel(d) }}</td>
                   <td>{{ reference(d) }}</td>
+                  <td>{{ entiteLabel(d) }}</td>
                   <td>{{ localiteLabel(d) }}</td>
                   <td>
                     <div class="td-actions actions-end">
@@ -82,7 +84,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="empty-cell">Aucun brouillon. Saisissez un dossier depuis « Saisir &amp; soumettre ».</td></tr>
+                <tr><td colspan="6" class="empty-cell">Aucun brouillon. Saisissez un dossier depuis « Saisir &amp; soumettre ».</td></tr>
               }
             </tbody>
           </table>
@@ -149,6 +151,8 @@ export class MesBrouillons {
   readonly suppression = signal<number | null>(null);
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
+  /** idEntiteContract → libellé (référentiel entités contractantes, un seul chargement). */
+  private readonly entiteMap = signal<Map<string, string>>(new Map());
   private readonly ppmRef = signal<Map<number, string>>(new Map());
   /**
    * idDossier → idPpm ; permet d'ouvrir le détail PPM d'un brouillon dans le modal partagé.
@@ -163,6 +167,7 @@ export class MesBrouillons {
   constructor() {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
+    this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     // Charge à l'init ET à chaque changement signalé (ex. suppression depuis « Mes PPM & marchés »).
     effect(() => {
       this.dossiersRefresh.revision();
@@ -198,6 +203,10 @@ export class MesBrouillons {
   }
   localiteLabel(d: Dossier): string {
     return d.idLocalite ? this.localiteMap().get(d.idLocalite) ?? d.idLocalite : '—';
+  }
+  /** Libellé de l'entité contractante du dossier (repli sur l'id ; « — » si absente). */
+  entiteLabel(d: Dossier): string {
+    return d.idEntiteContract != null ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract : '—';
   }
   reference(d: Dossier): string {
     return d.refeDossier || this.ppmRef().get(d.idDossier) || '—';
