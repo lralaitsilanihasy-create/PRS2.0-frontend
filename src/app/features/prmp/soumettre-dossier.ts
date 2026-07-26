@@ -274,7 +274,11 @@ interface ApercuDossier {
               <label class="form-group">
                 <span class="form-label">Localité (dérivée de l'entité)</span>
                 <input class="form-control" type="text" [value]="localiteLabel()" readonly disabled />
-                <span class="form-hint">Le dossier sera déposé dans cette localité.</span>
+                @if (entiteSansLocalite()) {
+                  <span class="form-error">Cette entité n'a pas de localité — contactez l'administrateur. Le dépôt est impossible tant qu'elle n'est pas définie.</span>
+                } @else {
+                  <span class="form-hint">Le dossier sera déposé dans cette localité.</span>
+                }
               </label>
               <label class="form-group">
                 <span class="form-label">Exercice *</span>
@@ -368,7 +372,7 @@ interface ApercuDossier {
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite()">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -405,7 +409,11 @@ interface ApercuDossier {
               <label class="form-group">
                 <span class="form-label">Localité (dérivée de l'entité)</span>
                 <input class="form-control" type="text" [value]="localiteLabel()" readonly disabled />
-                <span class="form-hint">Le dossier sera déposé dans cette localité.</span>
+                @if (entiteSansLocalite()) {
+                  <span class="form-error">Cette entité n'a pas de localité — contactez l'administrateur. Le dépôt est impossible tant qu'elle n'est pas définie.</span>
+                } @else {
+                  <span class="form-hint">Le dossier sera déposé dans cette localité.</span>
+                }
               </label>
             </div>
 
@@ -457,7 +465,7 @@ interface ApercuDossier {
 
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || piecesObligatoiresManquantes().length">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || piecesObligatoiresManquantes().length || entiteSansLocalite()">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -610,7 +618,7 @@ interface ApercuDossier {
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-outline" (click)="fermerApercu()">Fermer</button>
-              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0" (click)="fermerApercu(); creerPpm()">
+              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite()" (click)="fermerApercu(); creerPpm()">
                 Créer le dossier
               </button>
             </div>
@@ -877,6 +885,17 @@ export class SoumettreDossier {
     const loc = ent?.idLocalite;
     if (!loc) return '— (dérivée de l\'entité à la création)';
     return this.localiteMap().get(loc) ?? loc;
+  });
+  /**
+   * Entité sélectionnée sans localité → le dépôt est **impossible** (le backend dérive la localité du
+   * dossier de l'entité et renvoie 400 « entité sans localité »). On bloque la création côté front avec
+   * un message clair plutôt que de laisser découvrir le 400 à la soumission.
+   */
+  readonly entiteSansLocalite = computed(() => {
+    const id = this.selectedEntiteId();
+    if (id == null) return false;
+    const ent = this.optionsEntite().find((e) => e.idEntiteContract === id);
+    return !!ent && !ent.idLocalite;
   });
 
   /** Seule la PRMP peut soumettre ; l'UGPM saisit/édite mais ne soumet pas (bouton masqué, backend 403). */
