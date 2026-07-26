@@ -1,28 +1,34 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DatePipe } from '@angular/common';
+import { forkJoin } from 'rxjs';
 
-import { Dossier } from '../../models';
+import { Dispatch, Dossier, Reception } from '../../models';
 import {
+  ControleurService,
+  DispatchService,
   DossierService,
   EntiteContractService,
   LocaliteService,
+  ReceptionService,
   ReferenceLookupService,
   TypeDossierService,
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
 import { DossierConsultation } from './dossier-consultation';
-import { ClassementConfig } from './dossiers-classement';
+import { ClassementConfig, ColonneCircuit } from './dossiers-classement';
 
 /**
  * Liste des dossiers d'un **type** et d'un **groupe** de classement (statuts issus de `data.classement`),
  * en **lecture seule** (consultation via `DossierConsultation`). Drill-down de `DossiersClassement`
- * (Président / CC). Route : `{base}/:type/:groupe`. `GET /api/dossiers` scopé profil, filtré client.
+ * (Président / CC). Colonnes enrichies selon le groupe (`colonnes` : réception / date dispatch / attributaire),
+ * jointes depuis réceptions + dispatchs (idDossier → réception → dispatch). Route : `{base}/:type/:groupe`.
  */
 @Component({
   selector: 'app-dossiers-circuit-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation],
+  imports: [StatutBadge, DossierConsultation, DatePipe],
   template: `
     <section>
       <header class="page-header">
@@ -38,7 +44,17 @@ import { ClassementConfig } from './dossiers-classement';
         <div class="table-card">
           <table>
             <thead>
-              <tr><th>#</th><th>Référence</th><th>Entité contractante</th><th>Statut</th><th>Localité</th><th class="r">Actions</th></tr>
+              <tr>
+                <th>#</th>
+                <th>Référence</th>
+                <th>Entité contractante</th>
+                @if (aColonne('reception')) { <th>Réception sec.</th> }
+                @if (aColonne('dateDispatch')) { <th>Date dispatch</th> }
+                @if (aColonne('attributaire')) { <th>Attributaire</th> }
+                <th>Statut</th>
+                <th>Localité</th>
+                <th class="r">Actions</th>
+              </tr>
             </thead>
             <tbody>
               @for (d of dossiers(); track d.idDossier) {
@@ -46,6 +62,15 @@ import { ClassementConfig } from './dossiers-classement';
                   <td class="td-ref">{{ d.idDossier }}</td>
                   <td>{{ d.refeDossier || '—' }}</td>
                   <td>{{ entiteLabel(d) }}</td>
+                  @if (aColonne('reception')) {
+                    <td style="white-space:nowrap;">{{ (dateReception(d) | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
+                  }
+                  @if (aColonne('dateDispatch')) {
+                    <td style="white-space:nowrap;">{{ (dateDispatch(d) | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
+                  }
+                  @if (aColonne('attributaire')) {
+                    <td>{{ attributaire(d) }}</td>
+                  }
                   <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
                   <td>{{ localiteLabel(d) }}</td>
                   <td>
@@ -55,7 +80,7 @@ import { ClassementConfig } from './dossiers-classement';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="6" class="empty-cell">Aucun dossier dans ce groupe.</td></tr>
+                <tr><td [attr.colspan]="colspan()" class="empty-cell">Aucun dossier dans ce groupe.</td></tr>
               }
             </tbody>
           </table>
@@ -75,6 +100,8 @@ import { ClassementConfig } from './dossiers-classement';
 export class DossiersCircuitListe {
   private readonly route = inject(ActivatedRoute);
   private readonly dossierService = inject(DossierService);
+  private readonly receptionService = inject(ReceptionService);
+  private readonly dispatchService = inject(DispatchService);
   private readonly lookups = inject(ReferenceLookupService);
 
   readonly cfg = this.route.snapshot.data['classement'] as ClassementConfig;
@@ -85,18 +112,30 @@ export class DossiersCircuitListe {
   readonly loading = signal(false);
   readonly consulte = signal<Dossier | null>(null);
 
+  /** idDossier → dernière réception (pour « Réception sec. »). */
+  private readonly recByDossier = signal<Map<number, Reception>>(new Map());
+  /** idDossier → dernier dispatch (pour « Date dispatch » / « Attributaire »). */
+  private readonly dispatchByDossier = signal<Map<number, Dispatch>>(new Map());
+
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   private readonly entiteMap = signal<Map<string, string>>(new Map());
+  private readonly controleurMap = signal<Map<string, string>>(new Map());
 
   readonly typeLabel = computed(() => this.typeMap().get(this.type()) ?? this.type());
-  readonly groupeLabel = computed(() => this.cfg.groupes.find((g) => g.key === this.groupe())?.label ?? this.groupe());
+  private readonly groupeConfig = computed(() => this.cfg.groupes.find((g) => g.key === this.groupe()));
+  readonly groupeLabel = computed(() => this.groupeConfig()?.label ?? this.groupe());
   readonly titre = computed(() => `${this.typeLabel()} — ${this.groupeLabel()}`);
+  /** Colonnes supplémentaires actives pour le groupe courant. */
+  private readonly colonnes = computed(() => new Set(this.groupeConfig()?.colonnes ?? []));
+  /** Colspan de la ligne vide = 6 colonnes de base + colonnes optionnelles. */
+  readonly colspan = computed(() => 6 + this.colonnes().size);
 
   constructor() {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
+    this.lookups.lookup(ControleurService, 'imControleur', ['nomCont', 'prenomsCont']).subscribe((m) => this.controleurMap.set(m));
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((p) => {
       this.type.set(p.get('type') ?? '');
       this.groupe.set(p.get('groupe') ?? '');
@@ -104,16 +143,43 @@ export class DossiersCircuitListe {
     });
   }
 
+  aColonne(c: ColonneCircuit): boolean {
+    return this.colonnes().has(c);
+  }
+
   private charger(): void {
-    const statuts = new Set(this.cfg.groupes.find((g) => g.key === this.groupe())?.statuts ?? []);
+    const statuts = new Set(this.groupeConfig()?.statuts ?? []);
     if (!this.type() || !statuts.size) {
       this.dossiers.set([]);
       return;
     }
     this.loading.set(true);
-    this.dossierService.list().subscribe({
-      next: (rows) => {
-        this.dossiers.set(rows.filter((d) => d.idTypeDossier === this.type() && !!d.statut && statuts.has(d.statut)));
+    // Dossiers (scopé profil) + réceptions/dispatchs pour les colonnes du circuit.
+    forkJoin({
+      dossiers: this.dossierService.list(),
+      receptions: this.receptionService.list(),
+      dispatchs: this.dispatchService.list(),
+    }).subscribe({
+      next: ({ dossiers, receptions, dispatchs }) => {
+        this.dossiers.set(dossiers.filter((d) => d.idTypeDossier === this.type() && !!d.statut && statuts.has(d.statut)));
+        // idDossier → dernière réception (par date) ; idReception → réception (pour relier les dispatchs).
+        const recById = new Map<number, Reception>();
+        const recByDossier = new Map<number, Reception>();
+        for (const r of receptions) {
+          recById.set(r.idReception, r);
+          const prec = recByDossier.get(r.idDossier);
+          if (!prec || (r.dateReception ?? '') >= (prec.dateReception ?? '')) recByDossier.set(r.idDossier, r);
+        }
+        // idDossier → dernier dispatch (via sa réception).
+        const dispatchByDossier = new Map<number, Dispatch>();
+        for (const disp of dispatchs) {
+          const idDossier = recById.get(disp.idReception)?.idDossier;
+          if (idDossier == null) continue;
+          const prec = dispatchByDossier.get(idDossier);
+          if (!prec || (disp.dateDispatch ?? '') >= (prec.dateDispatch ?? '')) dispatchByDossier.set(idDossier, disp);
+        }
+        this.recByDossier.set(recByDossier);
+        this.dispatchByDossier.set(dispatchByDossier);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -125,5 +191,15 @@ export class DossiersCircuitListe {
   }
   localiteLabel(d: Dossier): string {
     return d.idLocalite ? this.localiteMap().get(d.idLocalite) ?? d.idLocalite : '—';
+  }
+  dateReception(d: Dossier): string | undefined {
+    return this.recByDossier().get(d.idDossier)?.dateReception;
+  }
+  dateDispatch(d: Dossier): string | undefined {
+    return this.dispatchByDossier().get(d.idDossier)?.dateDispatch;
+  }
+  attributaire(d: Dossier): string {
+    const im = this.dispatchByDossier().get(d.idDossier)?.imCtrlMembre;
+    return im ? this.controleurMap().get(im) ?? im : '—';
   }
 }

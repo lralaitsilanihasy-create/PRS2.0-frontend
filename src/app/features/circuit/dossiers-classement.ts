@@ -4,6 +4,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Dossier, TypeDossier } from '../../models';
 import { DossierService, TypeDossierService } from '../../services';
 
+/** Colonnes optionnelles de la liste (drill-down), selon le groupe. */
+export type ColonneCircuit = 'reception' | 'dateDispatch' | 'attributaire';
+
 /** Un groupe de classement (colonne du classement) : libellé + statuts couverts + habillage. */
 export interface ClassementGroupe {
   /** Segment d'URL du groupe (ex. 'pre-dispatch'). */
@@ -14,6 +17,8 @@ export interface ClassementGroupe {
   icon: string;
   /** Teinte : 'a' (en attente) ou 'b' (avancé). */
   kind: 'a' | 'b';
+  /** Colonnes supplémentaires affichées dans la liste de ce groupe (drill-down). */
+  colonnes?: ColonneCircuit[];
 }
 /** Config d'un écran de classement, passée via `data.classement` de la route. */
 export interface ClassementConfig {
@@ -25,8 +30,8 @@ export interface ClassementConfig {
 
 /** Groupes du circuit (Président / CC) : pré-dispatch (en attente) vs dispatch (dispatché). */
 export const CIRCUIT_GROUPES: ClassementGroupe[] = [
-  { key: 'pre-dispatch', label: 'Pré-dispatch', statuts: ['PRET_DISPATCH'], icon: '📥', kind: 'a' },
-  { key: 'dispatch', label: 'Dispatch', statuts: ['DISPATCHE'], icon: '📦', kind: 'b' },
+  { key: 'pre-dispatch', label: 'Pré-dispatch', statuts: ['PRET_DISPATCH'], icon: '📥', kind: 'a', colonnes: ['reception'] },
+  { key: 'dispatch', label: 'Dispatch', statuts: ['DISPATCHE'], icon: '📦', kind: 'b', colonnes: ['reception', 'dateDispatch', 'attributaire'] },
 ];
 
 /**
