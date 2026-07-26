@@ -10,7 +10,6 @@ import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store
 import {
   ControleurService,
   DemandeRetraitService,
-  DispatchService,
   DossierService,
   KpiService,
   LettreRenvoiService,
@@ -41,7 +40,6 @@ export class MainLayout {
   private readonly dossierService = inject(DossierService);
   private readonly receptionService = inject(ReceptionService);
   private readonly ppmService = inject(PpmService);
-  private readonly dispatchService = inject(DispatchService);
   private readonly pvExamenService = inject(PvExamenService);
   private readonly lettreRenvoiService = inject(LettreRenvoiService);
   private readonly demandeRetraitService = inject(DemandeRetraitService);
@@ -210,16 +208,15 @@ export class MainLayout {
   private rafraichirCompteursPresident(): void {
     forkJoin({
       preDispatch: this.dossierService.list('PRET_DISPATCH'),
-      dispatchs: this.dispatchService.list(),
       projetsPv: this.pvExamenService.list(),
       pvDefinitifs: this.pvExamenService.definitifs(),
       lettres: this.lettreRenvoiService.getAll(),
       retraits: this.demandeRetraitService.aValider(),
     }).subscribe({
-      next: ({ preDispatch, dispatchs, projetsPv, pvDefinitifs, lettres, retraits }) => {
+      next: ({ preDispatch, projetsPv, pvDefinitifs, lettres, retraits }) => {
         const c: Record<string, number> = {
-          '/president/pre-dispatch': preDispatch.length,
-          '/president/circuit/dispatch': dispatchs.length,
+          // Dossiers en attente de dispatch → badge « action à faire » sur « Mes dossiers ».
+          '/president/mes-dossiers': preDispatch.length,
           '/president/circuit/pv': projetsPv.length,
           '/president/circuit/pv-definitifs': pvDefinitifs.length,
           '/president/lettre-renvois': lettres.length,

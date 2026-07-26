@@ -4,7 +4,6 @@ import { CrudPage } from '../../shared/crud/crud-page';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { DossiersClassement, CIRCUIT_GROUPES } from '../circuit/dossiers-classement';
 import { DossiersCircuitListe } from '../circuit/dossiers-circuit-liste';
-import { DispatchsList } from '../circuit/dispatchs-list';
 import { MembrePv } from '../membre/pv-page';
 import { LettreRenvoiConsultation } from '../circuit/lettre-renvoi-consultation';
 import { PvDefinitifs } from '../circuit/pv-definitifs';
@@ -27,9 +26,8 @@ export const CC_ROUTES: Routes = [
   },
   { path: 'mes-dossiers', component: DossiersClassement, data: { classement: CLASSEMENT_CC } },
   { path: 'mes-dossiers/:type/:groupe', component: DossiersCircuitListe, data: { classement: CLASSEMENT_CC } },
-  // Plus de page intermédiaire à tuiles : « circuit » redirige vers le dispatch (entrées directes au menu).
-  { path: 'circuit', redirectTo: 'circuit/dispatch', pathMatch: 'full' },
-  { path: 'circuit/dispatch', component: DispatchsList },
+  // « Dispatch des dossiers » retiré : dossiers dispatchés consultables dans « Mes dossiers ».
+  { path: 'circuit', redirectTo: 'circuit/pv', pathMatch: 'full' },
   { path: 'circuit/pv', component: MembrePv },
   { path: 'circuit/pv-definitifs', component: PvDefinitifs },
   { path: 'retraits', component: RetraitsValidation },

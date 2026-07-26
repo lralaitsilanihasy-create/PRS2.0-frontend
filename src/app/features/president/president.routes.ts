@@ -4,7 +4,6 @@ import { CrudPage } from '../../shared/crud/crud-page';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { DossiersClassement, CIRCUIT_GROUPES } from '../circuit/dossiers-classement';
 import { DossiersCircuitListe } from '../circuit/dossiers-circuit-liste';
-import { DispatchsList } from '../circuit/dispatchs-list';
 import { ECHEANCE_CONFIG } from '../circuit/circuit-resources.config';
 import { MembrePv } from '../membre/pv-page';
 import { LettreRenvoiConsultation } from '../circuit/lettre-renvoi-consultation';
@@ -13,7 +12,6 @@ import { RetraitsValidation } from '../circuit/retraits-validation';
 import { KpiDashboard } from '../pilotage/kpi-dashboard';
 import { RapportsPage } from '../pilotage/rapports-page';
 import { PresidentPpmMarches } from './president-ppm-marches';
-import { PresidentPreDispatch } from './pre-dispatch';
 
 /** Classement « Mes dossiers » (Président) : cartes par type × {pré-dispatch, dispatch}, toutes localités. */
 const CLASSEMENT_PRESIDENT = { subtitle: 'Domaine Président', base: '/president/mes-dossiers', groupes: CIRCUIT_GROUPES };
@@ -28,10 +26,8 @@ export const PRESIDENT_ROUTES: Routes = [
   },
   { path: 'mes-dossiers', component: DossiersClassement, data: { classement: CLASSEMENT_PRESIDENT } },
   { path: 'mes-dossiers/:type/:groupe', component: DossiersCircuitListe, data: { classement: CLASSEMENT_PRESIDENT } },
-  { path: 'pre-dispatch', component: PresidentPreDispatch },
-  // Plus de page intermédiaire à tuiles : « circuit » redirige vers le dispatch (entrées directes au menu).
-  { path: 'circuit', redirectTo: 'circuit/dispatch', pathMatch: 'full' },
-  { path: 'circuit/dispatch', component: DispatchsList },
+  // Pré-dispatch et « Dispatch des dossiers » retirés : classement + action de dispatch dans « Mes dossiers ».
+  { path: 'circuit', redirectTo: 'circuit/pv', pathMatch: 'full' },
   { path: 'circuit/pv', component: MembrePv },
   { path: 'circuit/pv-definitifs', component: PvDefinitifs },
   { path: 'retraits', component: RetraitsValidation },

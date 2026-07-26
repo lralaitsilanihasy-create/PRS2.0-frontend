@@ -15,7 +15,9 @@ import {
   ReferenceLookupService,
   TypeDossierService,
 } from '../../services';
+import { PermissionsService } from '../../core/auth/permissions.service';
 import { StatutBadge } from '../../shared/circuit';
+import { DispatchForm } from './dispatch-form';
 import { DossierConsultation } from './dossier-consultation';
 import { ClassementConfig, ColonneCircuit } from './dossiers-classement';
 
@@ -28,7 +30,7 @@ import { ClassementConfig, ColonneCircuit } from './dossiers-classement';
 @Component({
   selector: 'app-dossiers-circuit-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, DatePipe],
+  imports: [StatutBadge, DossierConsultation, DatePipe, DispatchForm],
   template: `
     <section>
       <header class="page-header">
@@ -76,6 +78,9 @@ import { ClassementConfig, ColonneCircuit } from './dossiers-classement';
                   <td>
                     <div class="td-actions actions-end">
                       <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
+                      @if (peutDispatcher(d); as rec) {
+                        <button type="button" class="btn btn-primary btn-sm" (click)="dispatchItem.set({ dossier: d, reception: rec })">Dispatcher</button>
+                      }
                     </div>
                   </td>
                 </tr>
@@ -91,6 +96,9 @@ import { ClassementConfig, ColonneCircuit } from './dossiers-classement';
     @if (consulte(); as d) {
       <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
     }
+    @if (dispatchItem(); as it) {
+      <app-dispatch-form [dossier]="it.dossier" [reception]="it.reception" (closed)="dispatchItem.set(null)" (saved)="onDispatched()" />
+    }
   `,
   styles: `
     .actions-end { justify-content: flex-end; }
@@ -103,6 +111,7 @@ export class DossiersCircuitListe {
   private readonly receptionService = inject(ReceptionService);
   private readonly dispatchService = inject(DispatchService);
   private readonly lookups = inject(ReferenceLookupService);
+  private readonly permissions = inject(PermissionsService);
 
   readonly cfg = this.route.snapshot.data['classement'] as ClassementConfig;
 
@@ -111,9 +120,13 @@ export class DossiersCircuitListe {
   readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);
   readonly consulte = signal<Dossier | null>(null);
+  /** Dossier + réception dont le formulaire de dispatch est ouvert (null = fermé). */
+  readonly dispatchItem = signal<{ dossier: Dossier; reception: Reception } | null>(null);
 
   /** idDossier → dernière réception (pour « Réception sec. »). */
   private readonly recByDossier = signal<Map<number, Reception>>(new Map());
+  /** idDossier → réception à dispatcher (complète, non encore dispatchée) — pour l'action « Dispatcher ». */
+  private readonly recDispatchable = signal<Map<number, Reception>>(new Map());
   /** idDossier → dernier dispatch (pour « Date dispatch » / « Attributaire »). */
   private readonly dispatchByDossier = signal<Map<number, Dispatch>>(new Map());
 
@@ -130,6 +143,10 @@ export class DossiersCircuitListe {
   private readonly colonnes = computed(() => new Set(this.groupeConfig()?.colonnes ?? []));
   /** Colspan de la ligne vide = 6 colonnes de base + colonnes optionnelles. */
   readonly colspan = computed(() => 6 + this.colonnes().size);
+  /** L'utilisateur peut-il dispatcher ? (capacité DISPATCH_WRITE — le CC ne l'a pas). */
+  private readonly canDispatch = computed(() => this.permissions.can('DISPATCH_WRITE'));
+  /** Ce groupe propose-t-il l'action « Dispatcher » ? (config `actionDispatch`). */
+  private readonly aActionDispatch = computed(() => !!this.groupeConfig()?.actionDispatch);
 
   constructor() {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
@@ -178,7 +195,17 @@ export class DossiersCircuitListe {
           const prec = dispatchByDossier.get(idDossier);
           if (!prec || (disp.dateDispatch ?? '') >= (prec.dateDispatch ?? '')) dispatchByDossier.set(idDossier, disp);
         }
+        // Réception « à dispatcher » : la réception complète du dossier, non encore dispatchée (idem worklist pré-dispatch).
+        const dispatched = new Set(dispatchs.map((d) => d.idReception));
+        const recComplete = new Map<number, Reception>();
+        for (const r of receptions) {
+          const prec = recComplete.get(r.idDossier);
+          if (!prec || (r.complet && !prec.complet)) recComplete.set(r.idDossier, r);
+        }
+        const recDispatchable = new Map<number, Reception>();
+        for (const [idDossier, r] of recComplete) if (!dispatched.has(r.idReception)) recDispatchable.set(idDossier, r);
         this.recByDossier.set(recByDossier);
+        this.recDispatchable.set(recDispatchable);
         this.dispatchByDossier.set(dispatchByDossier);
         this.loading.set(false);
       },
@@ -201,5 +228,15 @@ export class DossiersCircuitListe {
   attributaire(d: Dossier): string {
     const im = this.dispatchByDossier().get(d.idDossier)?.imCtrlMembre;
     return im ? this.controleurMap().get(im) ?? im : '—';
+  }
+  /** Réception à dispatcher pour ce dossier si l'action est offerte (groupe) et autorisée (DISPATCH_WRITE) ; sinon null. */
+  peutDispatcher(d: Dossier): Reception | null {
+    if (!this.aActionDispatch() || !this.canDispatch()) return null;
+    return this.recDispatchable().get(d.idDossier) ?? null;
+  }
+  /** Après dispatch réussi : le dossier passe DISPATCHE et quitte la liste pré-dispatch → recharge. */
+  onDispatched(): void {
+    this.dispatchItem.set(null);
+    this.charger();
   }
 }

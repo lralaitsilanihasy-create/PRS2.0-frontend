@@ -19,6 +19,8 @@ export interface ClassementGroupe {
   kind: 'a' | 'b';
   /** Colonnes supplémentaires affichées dans la liste de ce groupe (drill-down). */
   colonnes?: ColonneCircuit[];
+  /** Propose l'action « Dispatcher » dans la liste (gardée par la capacité DISPATCH_WRITE). */
+  actionDispatch?: boolean;
 }
 /** Config d'un écran de classement, passée via `data.classement` de la route. */
 export interface ClassementConfig {
@@ -30,7 +32,7 @@ export interface ClassementConfig {
 
 /** Groupes du circuit (Président / CC) : pré-dispatch (en attente) vs dispatch (dispatché). */
 export const CIRCUIT_GROUPES: ClassementGroupe[] = [
-  { key: 'pre-dispatch', label: 'Pré-dispatch', statuts: ['PRET_DISPATCH'], icon: '📥', kind: 'a', colonnes: ['reception'] },
+  { key: 'pre-dispatch', label: 'Pré-dispatch', statuts: ['PRET_DISPATCH'], icon: '📥', kind: 'a', colonnes: ['reception'], actionDispatch: true },
   { key: 'dispatch', label: 'Dispatch', statuts: ['DISPATCHE'], icon: '📦', kind: 'b', colonnes: ['reception', 'dateDispatch', 'attributaire'] },
 ];
 
