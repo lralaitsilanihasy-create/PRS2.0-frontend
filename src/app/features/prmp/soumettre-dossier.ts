@@ -42,6 +42,7 @@ type FamilleDossier = 'DMC' | 'DDM';
 /** Bénéficiaire d'un marché dans l'aperçu (snapshot lecture seule du formulaire). */
 interface ApercuBenef {
   soaCode?: string;
+  soaLibelle?: string;
   numCompte?: string;
   ancMontBenef?: number | null;
   nouvMontBenef?: number | null;
@@ -504,7 +505,7 @@ interface ApercuDossier {
                               <td [attr.rowspan]="m.benefRows.length">{{ m.modeLibelle || '' }}</td>
                               <td [attr.rowspan]="m.benefRows.length">{{ m.financement || '' }}</td>
                             }
-                            <td>{{ b.soaCode || '' }}</td>
+                            <td>{{ b.soaCode || b.soaLibelle || '' }}</td>
                             <td>{{ b.numCompte || '' }}</td>
                             <td class="ppm-doc__num">{{ montantFmt(b.ancMontBenef) }}</td>
                             <td class="ppm-doc__num">{{ montantFmt(b.nouvMontBenef) }}</td>
@@ -1067,7 +1068,7 @@ export class SoumettreDossier {
       });
     }
     const benefs = (m.beneficiaires ?? []).filter(
-      (b) => b.soaCode || b.numCompte || b.ancMontBenef != null || b.nouvMontBenef != null,
+      (b) => b.soaCode || b.soaLibelle || b.numCompte || b.ancMontBenef != null || b.nouvMontBenef != null,
     );
     if (benefs.length) {
       const somme = benefs.reduce((a, b) => a + (Number(b.ancMontBenef) || 0), 0);
@@ -1085,7 +1086,7 @@ export class SoumettreDossier {
   }
   /** Un bénéficiaire est-il renseigné (SOA, compte ou un montant) ? */
   private benefRempli(b: FormGroup): boolean {
-    return !!(b.get('soaCode')!.value || b.get('numCompte')!.value || b.get('ancMontBenef')!.value != null || b.get('nouvMontBenef')!.value != null);
+    return !!(b.get('soaCode')!.value || b.get('soaLibelle')!.value || b.get('numCompte')!.value || b.get('ancMontBenef')!.value != null || b.get('nouvMontBenef')!.value != null);
   }
   /**
    * Écart de cohérence des montants d'un marché (message inline, null si cohérent). Vérifié seulement si
@@ -1138,9 +1139,10 @@ export class SoumettreDossier {
       .map((g) => {
         const l = g.getRawValue() as Record<string, unknown>;
         const beneficiaires: ApercuBenef[] = ((l['beneficiaires'] as Record<string, unknown>[]) ?? [])
-          .filter((b) => b['soaCode'] || b['numCompte'] || b['ancMontBenef'] != null || b['nouvMontBenef'] != null)
+          .filter((b) => b['soaCode'] || b['soaLibelle'] || b['numCompte'] || b['ancMontBenef'] != null || b['nouvMontBenef'] != null)
           .map((b) => ({
             soaCode: (b['soaCode'] as string) || undefined,
+            soaLibelle: (b['soaLibelle'] as string) || undefined,
             numCompte: (b['numCompte'] as string) || undefined,
             ancMontBenef: (b['ancMontBenef'] as number | null) ?? null,
             nouvMontBenef: (b['nouvMontBenef'] as number | null) ?? null,
@@ -1288,7 +1290,7 @@ export class SoumettreDossier {
       benefArr.clear(); // retire la ligne vide par défaut de ligneMarche()
       for (const b of m.beneficiaires ?? []) {
         benefArr.push(
-          this.factory.ligneBeneficiaire({ soaCode: b.soaCode, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }),
+          this.factory.ligneBeneficiaire({ soaCode: b.soaCode, soaLibelle: b.soaLibelle, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }),
         );
       }
       if (!benefArr.length) benefArr.push(this.factory.ligneBeneficiaire()); // toujours au moins une ligne
@@ -1429,9 +1431,10 @@ export class SoumettreDossier {
     const marches: SaisieMarcheLigne[] = lignes.map((l) => {
       // Bénéficiaires non vides uniquement (SOA ou compte ou un montant renseigné).
       const beneficiaires = ((l['beneficiaires'] as Record<string, unknown>[]) ?? [])
-        .filter((b) => b['soaCode'] || b['numCompte'] || b['ancMontBenef'] != null || b['nouvMontBenef'] != null)
+        .filter((b) => b['soaCode'] || b['soaLibelle'] || b['numCompte'] || b['ancMontBenef'] != null || b['nouvMontBenef'] != null)
         .map((b) => ({
           soaCode: (b['soaCode'] as string)?.trim() || undefined,
+          soaLibelle: (b['soaLibelle'] as string)?.trim() || undefined,
           numCompte: (b['numCompte'] as string)?.trim() || undefined,
           ancMontBenef: (b['ancMontBenef'] as number) ?? undefined,
           nouvMontBenef: (b['nouvMontBenef'] as number) ?? undefined,

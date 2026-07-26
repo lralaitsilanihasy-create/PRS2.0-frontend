@@ -17,11 +17,13 @@ export class PpmFormFactory {
     return ++this.uid;
   }
 
-  /** Groupe bénéficiaire { soaCode, numCompte, ancMontBenef, nouvMontBenef } (uid stable). */
-  ligneBeneficiaire(b?: { soaCode?: string; numCompte?: string; ancMontBenef?: number; nouvMontBenef?: number }): FormGroup {
+  /** Groupe bénéficiaire { soaCode, soaLibelle, numCompte, ancMontBenef, nouvMontBenef } (uid stable). */
+  ligneBeneficiaire(b?: { soaCode?: string; soaLibelle?: string; numCompte?: string; ancMontBenef?: number; nouvMontBenef?: number }): FormGroup {
     return this.fb.group({
       uid: [this.nextUid()],
       soaCode: [b?.soaCode ?? ''],
+      // Service en texte libre (résolu-ou-créé par libellé au POST quand aucun soaCode).
+      soaLibelle: [b?.soaLibelle ?? ''],
       numCompte: [b?.numCompte ?? ''],
       ancMontBenef: [b?.ancMontBenef ?? (null as number | null)],
       nouvMontBenef: [b?.nouvMontBenef ?? (null as number | null)],
@@ -97,7 +99,7 @@ export class PpmFormFactory {
     const benefArr = g.get('beneficiaires') as FormArray;
     benefArr.clear();
     for (const b of m.beneficiaires ?? []) {
-      benefArr.push(this.ligneBeneficiaire({ soaCode: b.soaCode, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }));
+      benefArr.push(this.ligneBeneficiaire({ soaCode: b.soaCode, soaLibelle: b.soaLibelle, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }));
     }
     if (!benefArr.length) benefArr.push(this.ligneBeneficiaire());
     const lotArr = g.get('lots') as FormArray;
@@ -138,9 +140,10 @@ export class PpmFormFactory {
    */
   payloadDepuisMarche(l: Record<string, unknown>): SaisieMarcheLigne {
     const beneficiaires = ((l['beneficiaires'] as Record<string, unknown>[]) ?? [])
-      .filter((b) => b['soaCode'] || b['numCompte'] || b['ancMontBenef'] != null || b['nouvMontBenef'] != null)
+      .filter((b) => b['soaCode'] || b['soaLibelle'] || b['numCompte'] || b['ancMontBenef'] != null || b['nouvMontBenef'] != null)
       .map((b) => ({
         soaCode: (b['soaCode'] as string)?.trim() || undefined,
+        soaLibelle: (b['soaLibelle'] as string)?.trim() || undefined,
         numCompte: (b['numCompte'] as string)?.trim() || undefined,
         ancMontBenef: (b['ancMontBenef'] as number) ?? undefined,
         nouvMontBenef: (b['nouvMontBenef'] as number) ?? undefined,

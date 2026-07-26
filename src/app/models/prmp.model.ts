@@ -160,6 +160,8 @@ export interface PrmpEntite {
  */
 export interface SaisieMarcheBeneficiaire {
   soaCode?: string;
+  /** Libellé du service bénéficiaire (texte libre) — résolu-ou-créé par libellé au POST si `soaCode` absent. */
+  soaLibelle?: string;
   numCompte?: string;
   /** Montant estimatif (initial) par bénéficiaire. */
   ancMontBenef?: number;
@@ -253,6 +255,8 @@ export interface SaisieDossierRequest {
 /** Bénéficiaire extrait d'un PPM PDF (import read-only ; pas encore consommé par la création). */
 export interface SaisieImportBeneficiaire {
   soaCode?: string;
+  /** Libellé du service bénéficiaire quand la colonne est en texte libre (`soaCode` reste null). */
+  soaLibelle?: string;
   numCompte?: string;
   ancMontBenef?: number;
   nouvMontBenef?: number;

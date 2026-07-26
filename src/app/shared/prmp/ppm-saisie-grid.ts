@@ -87,7 +87,13 @@ import { PpmFormFactory } from './ppm-form-factory';
                     </td>
                     <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'financement')" /></td>
                   }
-                  <td><input class="form-control" type="text" [formControl]="bctrl(b, 'soaCode')" list="psg-soa" placeholder="SOA" /></td>
+                  <td>
+                    @if (bctrl(b, 'soaCode').value) {
+                      <input class="form-control" type="text" [formControl]="bctrl(b, 'soaCode')" list="psg-soa" placeholder="SOA" />
+                    } @else {
+                      <input class="form-control" type="text" [formControl]="bctrl(b, 'soaLibelle')" list="psg-soa-lib" placeholder="Service bénéficiaire" />
+                    }
+                  </td>
                   <td><input class="form-control" type="text" [formControl]="bctrl(b, 'numCompte')" list="psg-comptes" placeholder="Compte" /></td>
                   <td><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'ancMontBenef')" /></td>
                   <td>
@@ -140,6 +146,7 @@ import { PpmFormFactory } from './ppm-form-factory';
     <datalist id="psg-modes">@for (m of modesList(); track m.idMode) { <option [value]="m.libelle"></option> }</datalist>
     <datalist id="psg-comptes">@for (c of comptes(); track c.numCompte) { <option [value]="c.numCompte">{{ c.libelle }}</option> }</datalist>
     <datalist id="psg-soa">@for (s of soaList(); track s.soaCode) { <option [value]="s.soaCode">{{ s.libelle }}</option> }</datalist>
+    <datalist id="psg-soa-lib">@for (s of soaList(); track s.soaCode) { <option [value]="s.libelle"></option> }</datalist>
 
     @if (nbAValider()) {
       <div class="sd__validation">
@@ -439,7 +446,7 @@ export class PpmSaisieGrid {
 
   // — Cohérence des montants par bénéficiaire —
   private benefRempli(b: FormGroup): boolean {
-    return !!(b.get('soaCode')!.value || b.get('numCompte')!.value || b.get('ancMontBenef')!.value != null || b.get('nouvMontBenef')!.value != null);
+    return !!(b.get('soaCode')!.value || b.get('soaLibelle')!.value || b.get('numCompte')!.value || b.get('ancMontBenef')!.value != null || b.get('nouvMontBenef')!.value != null);
   }
   /** Écart de cohérence des montants d'un marché (message inline, null si cohérent). */
   erreurCoherenceBenefs(g: FormGroup): string | null {
