@@ -176,7 +176,7 @@ import { PpmFormFactory } from './ppm-form-factory';
                   @for (c of capmsPourProc(ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
                 </select>
                 <input class="form-control" type="date" formControlName="dateDebut" />
-                <input class="form-control" type="date" formControlName="dateFin" />
+                <input class="form-control" type="date" formControlName="dateFin" (change)="onDateFinChange(ctrl)" />
                 <button type="button" class="btn btn-secondary btn-sm" (click)="retirerProc($index)" aria-label="Retirer">✕</button>
               </div>
               @if (procErreur(ctrl.get('idCapm')!.value)) {
@@ -507,12 +507,39 @@ export class PpmSaisieGrid {
   retirerProc(i: number): void {
     this.datesForm.removeAt(i);
   }
+  /**
+   * Au choix d'une **date de fin**, renseigne automatiquement la **date de début du processus suivant**
+   * (ordre CAPM immédiatement supérieur présent) à `dateFin + 1 jour` — donc **postérieure**. N'écrase pas
+   * un début déjà valide (plus tardif) ; ne pose la date que s'il est vide ou viole la contrainte (≤ dateFin).
+   */
+  onDateFinChange(ctrl: FormGroup): void {
+    const fin = ctrl.get('dateFin')!.value as string;
+    if (!fin) return;
+    const parId = new Map(this.capms().map((c) => [c.idCapm, c]));
+    const ordre = (g: FormGroup) => parId.get(g.get('idCapm')!.value as number)?.ordre ?? null;
+    const ordreCourant = ordre(ctrl);
+    if (ordreCourant == null) return;
+    const suivant = this.procControls()
+      .filter((g) => ordre(g) != null && (ordre(g) as number) > ordreCourant)
+      .sort((a, b) => (ordre(a) as number) - (ordre(b) as number))[0];
+    if (!suivant) return;
+    const debutSuiv = suivant.get('dateDebut')!.value as string;
+    if (!debutSuiv || debutSuiv <= fin) {
+      suivant.get('dateDebut')!.setValue(this.plusUnJour(fin));
+    }
+  }
+  /** Ajoute un jour à une date ISO `yyyy-mm-dd` (arithmétique locale, sans décalage de fuseau). */
+  private plusUnJour(iso: string): string {
+    const [y, m, d] = iso.split('-').map(Number);
+    const dt = new Date(y, m - 1, d + 1);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  }
   procErreur(idCapm: number | null): string | undefined {
     return idCapm == null ? undefined : this.procErreurs()[idCapm];
   }
   /**
    * Cohérence chronologique des processus (triés par `ordre` CAPM) : `dateDebut < dateFin` pour chacun,
-   * et `dateDebut[n] >= dateFin[n-1]` entre consécutifs. Renseigne `procErreurs` (clé idCapm).
+   * et `dateDebut[n] > dateFin[n-1]` (strictement **postérieure**) entre consécutifs. Renseigne `procErreurs`.
    */
   private validerChronologie(controls: FormGroup[]): boolean {
     const parId = new Map(this.capms().map((c) => [c.idCapm, c]));
@@ -531,10 +558,10 @@ export class PpmSaisieGrid {
         err[p.idCapm!] = 'La date de fin doit être postérieure à la date de début.';
         continue;
       }
-      if (i > 0 && p.dateDebut < items[i - 1].dateFin) {
+      if (i > 0 && p.dateDebut <= items[i - 1].dateFin) {
         const lib = parId.get(p.idCapm!)?.libelleProcessus ?? '#' + p.idCapm;
         const libPrec = parId.get(items[i - 1].idCapm!)?.libelleProcessus ?? '#' + items[i - 1].idCapm;
-        err[p.idCapm!] = `La date de début de ${lib} doit être postérieure ou égale à la date de fin de ${libPrec}.`;
+        err[p.idCapm!] = `La date de début de ${lib} doit être postérieure à la date de fin de ${libPrec}.`;
       }
     }
     this.procErreurs.set(err);
