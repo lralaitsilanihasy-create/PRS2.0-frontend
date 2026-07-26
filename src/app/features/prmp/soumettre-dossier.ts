@@ -237,6 +237,14 @@ interface ApercuDossier {
                               @for (o of organigrammesDuMinistere(); track o.idOrganigramme) { <option [ngValue]="o.idOrganigramme">{{ o.libelle }}</option> }
                             </select>
                           </label>
+                          <label class="form-group">
+                            <span class="form-label">Localité *</span>
+                            <select class="form-control" formControlName="idLocalite">
+                              <option [ngValue]="null">— Sélectionner —</option>
+                              @for (l of localiteOptions(); track l.id) { <option [ngValue]="l.id">{{ l.libelle }}</option> }
+                            </select>
+                            <span class="form-hint">Détermine la localité des dossiers de cette entité.</span>
+                          </label>
                         </div>
                         <div class="sd__soa-actions">
                           <button type="button" class="btn btn-outline btn-sm" (click)="annulerCreationEntite()">Annuler</button>
@@ -836,7 +844,11 @@ export class SoumettreDossier {
     adresse: ['', Validators.required],
     categorieEntite: [''],
     idOrganigramme: [null as number | null, Validators.required],
+    // Requise : détermine la localité des dossiers de l'entité (entité sans localité → 400 à la saisie).
+    idLocalite: [null as string | null, Validators.required],
   });
+  /** Options du menu Localité (référentiel des localités déjà chargé dans `localiteMap`). */
+  readonly localiteOptions = computed(() => [...this.localiteMap().entries()].map(([id, libelle]) => ({ id, libelle })));
   /** Entité importée non résolue à une entité de la PRMP → panneau de sélection inline. */
   readonly entiteAResoudre = computed(
     () => this.importe() && !this.entites().some((e) => e.idEntiteContract === this.selectedEntiteId()),
@@ -1153,6 +1165,7 @@ export class SoumettreDossier {
       adresse: '',
       categorieEntite: '',
       idOrganigramme: null,
+      idLocalite: null,
     });
     // Ministère d'appartenance = référentiel `/api/ministeres` (les 6), pas seulement les ministères déjà entités contractantes.
     this.ministereService.list().subscribe((rows) => this.ministeres.set(rows));
@@ -1207,6 +1220,7 @@ export class SoumettreDossier {
         categorieEntite: v.categorieEntite || undefined,
         idOrganigramme: v.idOrganigramme as number,
         idEntiteParent: v.idEntiteParent ?? undefined,
+        idLocalite: v.idLocalite ?? undefined,
       })
       .subscribe({
         next: (cree) => {

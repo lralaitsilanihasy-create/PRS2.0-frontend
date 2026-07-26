@@ -182,6 +182,12 @@ export const REFERENTIELS: AdminResource[] = [
             matchFields: [{ optionKey: 'idOrganigramme', formField: 'idOrganigramme' }],
           },
         },
+        // Localité de l'entité : détermine la localité des dossiers la concernant (entité sans localité → 400 à la saisie).
+        {
+          key: 'idLocalite',
+          label: 'Localité',
+          ref: { service: LocaliteService, idKey: 'idLocalite', labelKeys: ['libelleLocalite'] },
+        },
         // Niveau dérivé de la catégorie côté serveur : affiché en liste, retiré du formulaire.
         { key: 'niveauHierarchique', label: 'Niveau', type: 'number', hideInForm: true },
       ],
