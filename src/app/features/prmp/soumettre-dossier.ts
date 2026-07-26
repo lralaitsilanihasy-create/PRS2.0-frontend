@@ -182,7 +182,7 @@ interface ApercuDossier {
               <div class="alert alert-warning sd__soa">
                 <div class="sd__warn-title">Entité contractante à sélectionner</div>
                 <p class="sd__hint">
-                  @if (autoriteImportee()) { Entité lue dans le PDF : « <strong>{{ autoriteImportee() }}</strong> » — non résolue automatiquement. }Choisissez l'entité contractante parmi les vôtres.
+                  @if (autoriteImportee()) { Entité lue dans le PDF : « <strong>{{ autoriteImportee() }}</strong> » — non résolue automatiquement. }Si elle fait déjà partie de votre périmètre, choisissez-la ci-dessous ; sinon, enregistrez-la comme nouvelle entité.
                 </p>
                 @if (entites().length) {
                   <div class="sd__soa-row">
@@ -200,6 +200,7 @@ interface ApercuDossier {
                 <!-- Enregistrement d'une nouvelle entité (si absente du référentiel) : ministère d'appartenance puis formulaire. -->
                 <div class="sd__nouv-entite">
                   @if (!creationEntite()) {
+                    @if (entites().length) { <div class="sd__ou">— ou —</div> }
                     <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirCreationEntite()">➕ Enregistrer une nouvelle entité</button>
                   } @else {
                     <div [formGroup]="nouvEntiteForm">
@@ -693,6 +694,7 @@ interface ApercuDossier {
     .sd__soa-row .form-control { flex: 1 1 14rem; min-width: 10rem; }
     .sd__soa-actions { margin-top: 0.5rem; display: flex; justify-content: flex-end; gap: 0.5rem; }
     .sd__nouv-entite { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(0, 0, 0, 0.08); }
+    .sd__ou { text-align: center; color: var(--n-400); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
     .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
     .sd__foot--main { margin-top: 1rem; }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
