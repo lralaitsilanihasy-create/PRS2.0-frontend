@@ -150,7 +150,7 @@ export const REFERENTIELS: AdminResource[] = [
           type: 'number',
           ref: { service: EntiteContractService, idKey: 'idEntiteContract', labelKeys: ['libelleEntite'] },
         },
-        { key: 'niveauHierarchique', label: 'Niveau', type: 'number', optionsFromData: true },
+        { key: 'niveauHierarchique', label: 'Niveau', type: 'number', options: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
       ],
     },
   },

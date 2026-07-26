@@ -43,6 +43,11 @@ export interface FieldConfig {
    */
   optionsFromData?: boolean;
   /**
+   * Liste déroulante à **options figées** (énumération statique, ex. niveaux `[1, 2, 3]`). La valeur
+   * de chaque option est envoyée telle quelle ; le libellé affiché est la valeur elle-même.
+   */
+  options?: (string | number)[];
+  /**
    * Si défini, la valeur (un id) est affichée via le libellé du référentiel lié ; en formulaire,
    * le champ devient une **liste déroulante** des enregistrements du référentiel.
    */
