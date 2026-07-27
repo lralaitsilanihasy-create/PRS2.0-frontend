@@ -1,10 +1,8 @@
 import { Routes } from '@angular/router';
 
-import { CrudPage } from '../../shared/crud/crud-page';
 import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { DossiersClassement, ClassementConfig, ClassementGroupe } from '../circuit/dossiers-classement';
 import { DossiersCircuitListe } from '../circuit/dossiers-circuit-liste';
-import { EXAMEN_DETAIL_CONFIG } from '../circuit/circuit-resources.config';
 import { PvDefinitifs } from '../circuit/pv-definitifs';
 import { Messagerie } from '../transverse/messagerie';
 import { ExamenDossier } from './examen-dossier';
@@ -31,9 +29,8 @@ export const MEMBRE_ROUTES: Routes = [
   { path: 'mes-dossiers', component: DossiersClassement, data: { classement: CLASSEMENT_MEMBRE } },
   { path: 'mes-dossiers/:type/:groupe', component: DossiersCircuitListe, data: { classement: CLASSEMENT_MEMBRE } },
   { path: 'examiner/:idDossier', component: ExamenDossier, data: { title: 'Examiner un dossier' } },
-  { path: 'examens', component: DossiersPipeline, data: { title: 'Dossiers à examiner', timeline: false, source: 'a-examiner', examenAction: true } },
-  { path: 'examines', component: DossiersPipeline, data: { title: 'Dossiers examinés', timeline: false, source: 'examines' } },
-  { path: 'examen-details', component: CrudPage, data: { crud: EXAMEN_DETAIL_CONFIG } },
+  // « Dossiers à examiner », « Dossiers examinés » et « Détails d'examen » retirés :
+  // files + actions Examiner / Modifier l'examen dans « Mes dossiers ».
   { path: 'pv', component: MembrePv },
   { path: 'lettre-renvois', component: LettreRenvoiList },
   { path: 'pv-definitifs', component: PvDefinitifs },

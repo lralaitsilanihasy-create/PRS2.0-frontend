@@ -1122,7 +1122,7 @@ export class ExamenDossier implements OnDestroy {
       .subscribe({
         next: () => {
           this.toast.success('Examen modifié.');
-          void this.router.navigate(['/membre/examines']);
+          void this.router.navigate(['/membre/mes-dossiers']);
         },
         error: (_e: ApiError) => this.saving.set(false), // 409 (verrouillé) / 403 → toast centralisé
       });
