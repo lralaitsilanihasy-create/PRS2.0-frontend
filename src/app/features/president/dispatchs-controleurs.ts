@@ -5,6 +5,7 @@ import { forkJoin } from 'rxjs';
 import { Controleur, Dossier } from '../../models';
 import {
   ControleurService,
+  DelegationProfilService,
   DispatchService,
   DossierService,
   EntiteContractService,
@@ -51,7 +52,7 @@ interface LigneControleur {
           <h1 class="page-title">Dispatchs par contrôleur</h1>
         </div>
       </header>
-      <p class="dpc__intro">Répartition des dossiers <strong>dispatchés</strong> entre les Membres attributaires et les CC (dernier dispatch de chaque dossier). Un dossier sort de la statistique dès que son <strong>PV définitif est signé</strong>.</p>
+      <p class="dpc__intro">Répartition des dossiers <strong>dispatchés</strong> entre les Membres attributaires et les CC (dernier dispatch de chaque dossier). Un dossier sort de la statistique dès que son <strong>PV définitif est signé</strong> ; les attributions d'un CC ou d'un Président n'apparaissent que si la <strong>délégation du profil Membre</strong> est active.</p>
 
       @if (loading()) {
         <p class="text-muted">Chargement…</p>
@@ -176,6 +177,7 @@ export class DispatchsControleurs {
   private readonly dispatchService = inject(DispatchService);
   private readonly controleurService = inject(ControleurService);
   private readonly profileService = inject(ProfileService);
+  private readonly delegationProfilService = inject(DelegationProfilService);
   private readonly lookups = inject(ReferenceLookupService);
 
   readonly loading = signal(true);
@@ -206,8 +208,9 @@ export class DispatchsControleurs {
       dispatchs: this.dispatchService.list(),
       controleurs: this.controleurService.list(),
       profiles: this.profileService.list(),
+      delegations: this.delegationProfilService.list(),
     }).subscribe({
-      next: ({ dossiers, receptions, dispatchs, controleurs, profiles }) => {
+      next: ({ dossiers, receptions, dispatchs, controleurs, profiles, delegations }) => {
         const dossierById = new Map(dossiers.map((d) => [d.idDossier, d]));
         const recDossier = new Map(receptions.map((r) => [r.idReception, r.idDossier]));
         // Dernier dispatch par dossier (attribution courante — même règle que le drill-down circuit).
@@ -224,9 +227,20 @@ export class DispatchsControleurs {
         // Un dossier sort de la statistique dès la signature de son PV définitif (PV_SIGNE et au-delà) :
         // seuls les dossiers encore en cours côté commission comptent (DISPATCHE / EXAMINE).
         const STATUTS_EN_COURS = new Set(['DISPATCHE', 'EXAMINE']);
+        // §3.5 — un CC / Président n'exerce la tâche du Membre que par DÉLÉGATION DE PROFIL active :
+        // sans délégation « son profil → Membre » active, ses attributions ne sont pas affichées.
+        const idProfileMembre = profiles.find((p) => /membre/i.test(p.profile ?? ''))?.idProfile;
+        const delegantsMembre = new Set(
+          delegations.filter((d) => d.actif && d.idProfileDelegue === idProfileMembre).map((d) => d.idProfileDelegant),
+        );
+        const estAffichable = (im: string): boolean => {
+          const idProfile = ctrlById.get(im)?.idProfile;
+          if (idProfile == null) return false;
+          return idProfile === idProfileMembre || delegantsMembre.has(idProfile);
+        };
         const ajouter = (im: string | undefined, idDossier: number, dateDispatch: string | undefined, role: 'Membre' | 'CC') => {
           const dossier = im ? dossierById.get(idDossier) : undefined;
-          if (!im || !dossier || !STATUTS_EN_COURS.has(dossier.statut ?? '')) return;
+          if (!im || !dossier || !estAffichable(im) || !STATUTS_EN_COURS.has(dossier.statut ?? '')) return;
           const liste = parControleur.get(im) ?? [];
           liste.push({ dossier, dateDispatch, role });
           parControleur.set(im, liste);
