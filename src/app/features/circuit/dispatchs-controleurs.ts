@@ -24,7 +24,7 @@ interface DossierAttribue {
   dateDispatch?: string;
   role: 'Membre' | 'CC';
 }
-/** Ligne de la statistique : un contrôleur et ses dossiers dispatchés. */
+/** Carte de la statistique : un contrôleur et ses dossiers dispatchés. */
 interface LigneControleur {
   im: string;
   nom: string;
@@ -34,13 +34,13 @@ interface LigneControleur {
 
 /**
  * Section « Dispatchs par contrôleur » — embarquée dans « Mes dossiers » (Président, via
- * `ClassementConfig.statDispatchsControleurs`) : nombre de dossiers dispatchés à chaque
- * Membre attributaire / CC (dernier dispatch de chaque dossier, toutes localités), avec le détail
- * des dossiers dépliable par contrôleur. Seuls les dossiers encore en cours côté commission comptent
- * (DISPATCHE / EXAMINE) : un dossier sort de la statistique dès la signature de son PV définitif
- * (statut PV_SIGNE et au-delà) ; attributions CC/Président visibles seulement si la délégation
- * « profil → Membre » est active (§3.5). Aucun endpoint dédié : dispatchs + réceptions + dossiers
- * joints côté client (mêmes listes que le drill-down circuit, pas de N+1).
+ * `ClassementConfig.statDispatchsControleurs`) : grille de cartes (une par contrôleur, triées par
+ * total décroissant) — avatar à initiales, profil, nom, total et répartition par type de dossier —
+ * avec le détail des dossiers dépliable sous la grille (« Voir les dossiers »). Seuls les dossiers
+ * encore en cours côté commission comptent (DISPATCHE / EXAMINE) : un dossier sort de la statistique
+ * dès la signature de son PV définitif (statut PV_SIGNE et au-delà) ; attributions CC/Président
+ * visibles seulement si la délégation « profil → Membre » est active (§3.5). Aucun endpoint dédié :
+ * dispatchs + réceptions + dossiers joints côté client (mêmes listes que le drill-down, pas de N+1).
  */
 @Component({
   selector: 'app-dispatchs-controleurs',
@@ -71,80 +71,76 @@ interface LigneControleur {
           </div>
         </div>
 
-        <div class="table-card">
-          <table>
-            <thead>
-              <tr>
-                <th>Contrôleur</th>
-                <th>Profil</th>
-                <th>Dossiers dispatchés</th>
-                <th class="dpc__bar-col" aria-hidden="true"></th>
-                <th class="r">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (l of lignes(); track l.im) {
+        <div class="dpc__grid">
+          @for (l of lignes(); track l.im; let i = $index) {
+            <article class="dpc__card">
+              <div class="dpc__avatar dpc__avatar--{{ i % 4 }}">
+                <span class="dpc__rank">#{{ i + 1 }}</span>
+                <span class="dpc__initiales" aria-hidden="true">{{ initiales(l.nom) }}</span>
+              </div>
+              <div class="dpc__role">{{ l.profil }}</div>
+              <h3 class="dpc__nom">{{ l.nom }}</h3>
+              <div class="dpc__total">
+                <span class="dpc__total-nb">{{ l.dossiers.length }}</span>
+                <span class="dpc__total-lbl">dossier{{ l.dossiers.length > 1 ? 's' : '' }} au total</span>
+              </div>
+              <ul class="dpc__types">
+                @for (t of typesDe(l); track t.libelle; let j = $index) {
+                  <li class="dpc__type">
+                    <div class="dpc__type-head">
+                      <span>{{ t.libelle }}</span>
+                      <span class="dpc__type-nb">{{ t.count }}</span>
+                    </div>
+                    <div class="dpc__tbar"><span class="dpc__tbar-fill dpc__tbar--{{ j % 5 }}" [style.width.%]="t.pct"></span></div>
+                  </li>
+                }
+              </ul>
+              <button type="button" class="dpc__voir" (click)="basculer(l.im)">
+                {{ ouvert() === l.im ? 'Masquer les dossiers' : 'Voir les dossiers' }}
+              </button>
+            </article>
+          } @empty {
+            <div class="dpc__empty">Aucun dossier dispatché pour le moment.</div>
+          }
+        </div>
+
+        @if (ligneOuverte(); as l) {
+          <div class="table-card">
+            <div class="dpc__detail-titre">Dossiers dispatchés à {{ l.nom }}</div>
+            <table>
+              <thead>
                 <tr>
-                  <td><strong>{{ l.nom }}</strong><span class="cnm-muted dpc__im">({{ l.im }})</span></td>
-                  <td>{{ l.profil }}</td>
-                  <td class="dpc__count">{{ l.dossiers.length }}</td>
-                  <td class="dpc__bar-col">
-                    <div class="dpc__bar" role="img" [attr.aria-label]="l.dossiers.length + ' dossier(s)'">
-                      <span class="dpc__bar-fill" [style.width.%]="pct(l)"></span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="td-actions dpc__actions-end">
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="basculer(l.im)">
-                        {{ ouvert() === l.im ? 'Masquer les dossiers' : 'Voir les dossiers' }}
-                      </button>
-                    </div>
-                  </td>
+                  <th>Référence</th>
+                  <th>Entité contractante</th>
+                  <th>Type</th>
+                  <th>Rôle</th>
+                  <th>Date dispatch</th>
+                  <th>Statut</th>
+                  <th>Localité</th>
+                  <th class="r">Actions</th>
                 </tr>
-                @if (ouvert() === l.im) {
-                  <tr class="dpc__detail-row">
-                    <td colspan="5">
-                      <table class="dpc__inner">
-                        <thead>
-                          <tr>
-                            <th>Référence</th>
-                            <th>Entité contractante</th>
-                            <th>Type</th>
-                            <th>Rôle</th>
-                            <th>Date dispatch</th>
-                            <th>Statut</th>
-                            <th>Localité</th>
-                            <th class="r">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (a of l.dossiers; track a.dossier.idDossier + a.role) {
-                            <tr>
-                              <td>{{ a.dossier.refeDossier || '#' + a.dossier.idDossier }}</td>
-                              <td>{{ entiteLabel(a.dossier) }}</td>
-                              <td>{{ typeLabel(a.dossier) }}</td>
-                              <td>{{ a.role }}</td>
-                              <td style="white-space:nowrap;">{{ (a.dateDispatch | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
-                              <td>@if (a.dossier.statut) { <app-statut-badge [statut]="a.dossier.statut" /> } @else { — }</td>
-                              <td>{{ localiteLabel(a.dossier) }}</td>
-                              <td>
-                                <div class="td-actions dpc__actions-end">
-                                  <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(a.dossier)">Voir détails</button>
-                                </div>
-                              </td>
-                            </tr>
-                          }
-                        </tbody>
-                      </table>
+              </thead>
+              <tbody>
+                @for (a of l.dossiers; track a.dossier.idDossier + a.role) {
+                  <tr>
+                    <td>{{ a.dossier.refeDossier || '#' + a.dossier.idDossier }}</td>
+                    <td>{{ entiteLabel(a.dossier) }}</td>
+                    <td>{{ typeLabel(a.dossier) }}</td>
+                    <td>{{ a.role }}</td>
+                    <td style="white-space:nowrap;">{{ (a.dateDispatch | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
+                    <td>@if (a.dossier.statut) { <app-statut-badge [statut]="a.dossier.statut" /> } @else { — }</td>
+                    <td>{{ localiteLabel(a.dossier) }}</td>
+                    <td>
+                      <div class="td-actions dpc__actions-end">
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(a.dossier)">Voir détails</button>
+                      </div>
                     </td>
                   </tr>
                 }
-              } @empty {
-                <tr><td colspan="5" class="dpc__empty">Aucun dossier dispatché pour le moment.</td></tr>
-              }
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        }
       }
     </section>
 
@@ -153,20 +149,51 @@ interface LigneControleur {
     }
   `,
   styles: `
-    .dpc { display: flex; flex-direction: column; gap: 1.15rem; margin-top: 1rem; padding-top: 1.25rem; border-top: 1px solid var(--n-200); }
+    /* Accent corail de la maquette (nom, bouton) — barres de types en palette assortie. */
+    .dpc { --dpc-accent: #e8687e; display: flex; flex-direction: column; gap: 1.15rem; margin-top: 1rem; padding-top: 1.25rem; border-top: 1px solid var(--n-200); }
     .dpc__titre { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--n-800); }
     .dpc__intro { margin: -0.4rem 0 0; color: var(--n-500); }
     .dpc__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem; }
-    .dpc__count { font-weight: 800; font-variant-numeric: tabular-nums; }
-    .dpc__im { margin-left: 0.35rem; }
-    .dpc__bar-col { width: 30%; }
-    .dpc__bar { height: 6px; border-radius: var(--radius-full); background: var(--n-100); overflow: hidden; }
-    .dpc__bar-fill { display: block; height: 100%; background: var(--grad-primary); border-radius: var(--radius-full); transition: width 300ms var(--ease-out); }
+
+    /* Grille responsive : 4 / 2 / 1 cartes par ligne. */
+    .dpc__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.15rem; }
+    @media (max-width: 68rem) { .dpc__grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 40rem) { .dpc__grid { grid-template-columns: 1fr; } }
+
+    .dpc__card { display: flex; flex-direction: column; gap: 0.5rem; background: #fff; border: 1px solid var(--n-100); border-radius: 16px; box-shadow: 0 10px 28px rgba(30, 41, 59, 0.08); padding: 1.1rem 1.1rem 1.25rem; transition: var(--transition); }
+    .dpc__card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(30, 41, 59, 0.12); }
+
+    .dpc__avatar { position: relative; aspect-ratio: 1 / 1; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; }
+    .dpc__avatar--0 { background: linear-gradient(160deg, #e8687e, #f29cab); }
+    .dpc__avatar--1 { background: linear-gradient(160deg, #f0a05a, #f6c489); }
+    .dpc__avatar--2 { background: linear-gradient(160deg, #7b85d4, #a3abe8); }
+    .dpc__avatar--3 { background: linear-gradient(160deg, #38b2a0, #7bd4c6); }
+    .dpc__initiales { font-size: clamp(2.4rem, 4.5vw, 3.4rem); font-weight: 800; letter-spacing: 0.04em; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
+    .dpc__rank { position: absolute; top: 0.6rem; left: 0.6rem; background: #fff; color: var(--n-700); font-size: 0.72rem; font-weight: 800; padding: 0.16rem 0.55rem; border-radius: var(--radius-full); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14); }
+
+    .dpc__role { margin-top: 0.4rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--n-400); }
+    .dpc__nom { margin: 0; font-size: 1.35rem; font-weight: 800; line-height: 1.15; color: var(--dpc-accent); }
+    .dpc__total { display: flex; align-items: baseline; gap: 0.4rem; }
+    .dpc__total-nb { font-size: 1.9rem; font-weight: 800; color: var(--n-800); font-variant-numeric: tabular-nums; }
+    .dpc__total-lbl { font-size: var(--text-sm); color: var(--n-400); }
+
+    .dpc__types { list-style: none; margin: 0.15rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+    .dpc__type-head { display: flex; justify-content: space-between; gap: 0.5rem; font-size: var(--text-sm); color: var(--n-700); }
+    .dpc__type-nb { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .dpc__tbar { margin-top: 0.28rem; height: 5px; border-radius: var(--radius-full); background: var(--n-100); overflow: hidden; }
+    .dpc__tbar-fill { display: block; height: 100%; border-radius: var(--radius-full); transition: width 300ms var(--ease-out); }
+    .dpc__tbar--0 { background: #e8687e; }
+    .dpc__tbar--1 { background: #f0a05a; }
+    .dpc__tbar--2 { background: #7b85d4; }
+    .dpc__tbar--3 { background: #38b2a0; }
+    .dpc__tbar--4 { background: #b187c9; }
+
+    .dpc__voir { margin-top: 0.6rem; padding: 0.5rem 0.75rem; border-radius: var(--radius-full); border: 1.5px solid var(--dpc-accent); background: #fff; color: var(--dpc-accent); font-weight: 700; cursor: pointer; transition: var(--transition); }
+    .dpc__voir:hover { background: var(--dpc-accent); color: #fff; }
+
+    .dpc__detail-titre { padding: 0.85rem 1rem 0; font-weight: 700; color: var(--n-800); }
     .dpc__actions-end { justify-content: flex-end; }
-    .dpc__detail-row > td { background: var(--p-50); padding: 0.75rem 1rem; }
-    .dpc__inner { width: 100%; }
-    .dpc__inner thead th { font-size: var(--text-xs); }
-    .dpc__empty { text-align: center; color: var(--n-400); padding: 1.5rem; }
+    .dpc__empty { grid-column: 1 / -1; text-align: center; color: var(--n-400); padding: 1.5rem; background: #fff; border: 1px dashed var(--n-200); border-radius: 16px; }
   `,
 })
 export class DispatchsControleurs {
@@ -183,6 +210,8 @@ export class DispatchsControleurs {
   /** Contrôleur dont la liste des dossiers est dépliée (im), null = tout replié. */
   readonly ouvert = signal<string | null>(null);
   readonly consulte = signal<Dossier | null>(null);
+  /** Carte du contrôleur déplié (détail affiché sous la grille). */
+  readonly ligneOuverte = computed(() => this.lignes().find((l) => l.im === this.ouvert()) ?? null);
 
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -194,7 +223,6 @@ export class DispatchsControleurs {
     for (const l of this.lignes()) for (const a of l.dossiers) ids.add(a.dossier.idDossier);
     return ids.size;
   });
-  private readonly maxDossiers = computed(() => Math.max(1, ...this.lignes().map((l) => l.dossiers.length)));
 
   constructor() {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
@@ -256,6 +284,7 @@ export class DispatchsControleurs {
             dossiers: [...liste].sort((a, b) => (b.dateDispatch ?? '').localeCompare(a.dateDispatch ?? '')),
           };
         });
+        // Tri par nombre total de dossiers, décroissant (rang #1, #2, …).
         lignes.sort((a, b) => b.dossiers.length - a.dossiers.length || a.nom.localeCompare(b.nom));
         this.lignes.set(lignes);
         this.loading.set(false);
@@ -267,8 +296,25 @@ export class DispatchsControleurs {
   basculer(im: string): void {
     this.ouvert.set(this.ouvert() === im ? null : im);
   }
-  pct(l: LigneControleur): number {
-    return (l.dossiers.length / this.maxDossiers()) * 100;
+  /** Initiales de l'avatar (deux premiers mots du nom). */
+  initiales(nom: string): string {
+    return nom
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((m) => m[0].toUpperCase())
+      .join('');
+  }
+  /** Répartition des dossiers du contrôleur par type (libellé + compte + % du total), décroissante. */
+  typesDe(l: LigneControleur): { libelle: string; count: number; pct: number }[] {
+    const compte = new Map<string, number>();
+    for (const a of l.dossiers) {
+      const lib = this.typeLabel(a.dossier);
+      compte.set(lib, (compte.get(lib) ?? 0) + 1);
+    }
+    return [...compte.entries()]
+      .map(([libelle, count]) => ({ libelle, count, pct: (count / l.dossiers.length) * 100 }))
+      .sort((a, b) => b.count - a.count);
   }
   typeLabel(d: Dossier): string {
     return d.idTypeDossier ? this.typeMap().get(d.idTypeDossier) ?? d.idTypeDossier : '—';
