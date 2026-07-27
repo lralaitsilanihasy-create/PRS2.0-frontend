@@ -143,7 +143,7 @@ export class DossiersCircuitListe {
   private readonly colonnes = computed(() => new Set(this.groupeConfig()?.colonnes ?? []));
   /** Colspan de la ligne vide = 6 colonnes de base + colonnes optionnelles. */
   readonly colspan = computed(() => 6 + this.colonnes().size);
-  /** L'utilisateur peut-il dispatcher ? (capacité DISPATCH_WRITE — le CC ne l'a pas). */
+  /** L'utilisateur peut-il dispatcher ? (capacité DISPATCH_WRITE — Président et CC, comme au backend ; interim=false car l'écran CC est scopé à sa localité). */
   private readonly canDispatch = computed(() => this.permissions.can('DISPATCH_WRITE'));
   /** Ce groupe propose-t-il l'action « Dispatcher » ? (config `actionDispatch`). */
   private readonly aActionDispatch = computed(() => !!this.groupeConfig()?.actionDispatch);
