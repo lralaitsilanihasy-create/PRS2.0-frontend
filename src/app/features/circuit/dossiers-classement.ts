@@ -166,7 +166,7 @@ export const CIRCUIT_GROUPES: ClassementGroupe[] = [
     .md { display: flex; flex-direction: column; gap: 1.15rem; }
     .md__intro { margin: -0.4rem 0 0; color: var(--n-500); }
     .md__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem; }
-    .md__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(18.5rem, 1fr)); gap: 1.1rem; }
+    .md__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(18.5rem, 22rem)); gap: 1.1rem; justify-content: center; }
     .md__card { position: relative; background: #fff; border: 1px solid var(--n-200); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); overflow: hidden; transition: var(--transition); }
     .md__card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--grad-primary); }
     .md__card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--p-200); }
