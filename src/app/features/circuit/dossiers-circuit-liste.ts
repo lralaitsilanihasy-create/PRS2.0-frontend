@@ -19,7 +19,7 @@ import { PermissionsService } from '../../core/auth/permissions.service';
 import { StatutBadge } from '../../shared/circuit';
 import { DispatchForm } from './dispatch-form';
 import { DossierConsultation } from './dossier-consultation';
-import { ClassementConfig, ColonneCircuit } from './dossiers-classement';
+import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './dossiers-classement';
 
 /**
  * Liste des dossiers d'un **type** et d'un **groupe** de classement (statuts issus de `data.classement`),
@@ -171,9 +171,9 @@ export class DossiersCircuitListe {
       return;
     }
     this.loading.set(true);
-    // Dossiers (scopé profil) + réceptions/dispatchs pour les colonnes du circuit.
+    // Dossiers (scopé profil, selon la source du classement) + réceptions/dispatchs pour les colonnes du circuit.
     forkJoin({
-      dossiers: this.dossierService.list(),
+      dossiers: dossiersDuClassement(this.cfg, this.dossierService),
       receptions: this.receptionService.list(),
       dispatchs: this.dispatchService.list(),
     }).subscribe({

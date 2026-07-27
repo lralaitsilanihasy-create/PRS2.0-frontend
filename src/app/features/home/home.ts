@@ -21,11 +21,10 @@ export class Home {
   private readonly router = inject(Router);
 
   constructor() {
-    // À l'ouverture de session : le Membre atterrit sur « Dossiers à examiner »,
-    // la PRMP sur « Mes dossiers », le Président, le CC et le Secrétaire sur
-    // leur classement « Mes dossiers ».
+    // À l'ouverture de session : la PRMP atterrit sur « Mes dossiers » ; le Membre, le
+    // Secrétaire, le Président et le CC sur leur classement « Mes dossiers ».
     if (this.auth.role() === 'MEMBRE') {
-      void this.router.navigateByUrl('/membre/examens', { replaceUrl: true });
+      void this.router.navigateByUrl('/membre/mes-dossiers', { replaceUrl: true });
     } else if (this.auth.role() === 'SECRETAIRE') {
       void this.router.navigateByUrl('/secretaire/mes-dossiers', { replaceUrl: true });
     } else if (this.auth.role() === 'PRMP') {

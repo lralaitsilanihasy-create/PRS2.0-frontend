@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { forkJoin, map, Observable } from 'rxjs';
 
 import { Dossier, TypeDossier } from '../../models';
 import { DossierService, TypeDossierService } from '../../services';
@@ -28,6 +29,23 @@ export interface ClassementConfig {
   /** Base des liens de drill-down (ex. '/president/mes-dossiers'). */
   base: string;
   groupes: ClassementGroupe[];
+  /**
+   * Source des dossiers : absente = `GET /api/dossiers` (scopé localité/PRMP) ; `'membre'` = files du
+   * Membre attributaire (`/a-examiner` + `/examines`, scopées à SON IM — la liste générale montrerait
+   * aussi les dossiers attribués aux autres Membres de la localité).
+   */
+  source?: 'membre';
+}
+
+/** Dossiers couverts par un classement, selon sa source (voir `ClassementConfig.source`). */
+export function dossiersDuClassement(cfg: ClassementConfig, dossiers: DossierService): Observable<Dossier[]> {
+  if (cfg.source === 'membre') {
+    // `examines` est paginé : une page large couvre le classement (au-delà de 1000, comptes tronqués).
+    return forkJoin({ a: dossiers.aExaminer(), e: dossiers.examines(0, 1000) }).pipe(
+      map(({ a, e }) => [...a, ...e.content]),
+    );
+  }
+  return dossiers.list();
 }
 
 /** Groupes du circuit (Président / CC) : pré-dispatch (en attente) vs dispatch (dispatché). */
@@ -207,8 +225,8 @@ export class DossiersClassement {
       },
       error: () => this.loading.set(false),
     });
-    // Un seul GET scopé profil : on ne retient que les statuts couverts par les groupes.
-    this.dossierService.list().subscribe({
+    // Un seul chargement scopé profil : on ne retient que les statuts couverts par les groupes.
+    dossiersDuClassement(this.cfg, this.dossierService).subscribe({
       next: (rows) => this.compteurs.set(this.grouper(rows)),
       error: () => {},
     });

@@ -74,6 +74,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   MEMBRE: [
     { label: 'Tableau de bord', path: '/membre/tableau-de-bord', icon: '▤' },
+    { label: 'Mes dossiers', path: '/membre/mes-dossiers', icon: '📁' },
     { label: 'Dossiers à examiner', path: '/membre/examens', icon: '🔍' },
     { label: 'Dossiers examinés', path: '/membre/examines', icon: '✅' },
     { label: "Détails d'examen", path: '/membre/examen-details', icon: '☑' },
