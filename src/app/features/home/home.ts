@@ -22,12 +22,12 @@ export class Home {
 
   constructor() {
     // À l'ouverture de session : le Membre atterrit sur « Dossiers à examiner »,
-    // le Secrétaire sur « Réceptions », la PRMP sur « Mes dossiers »,
-    // le Président et le CC sur leur classement « Mes dossiers ».
+    // la PRMP sur « Mes dossiers », le Président, le CC et le Secrétaire sur
+    // leur classement « Mes dossiers ».
     if (this.auth.role() === 'MEMBRE') {
       void this.router.navigateByUrl('/membre/examens', { replaceUrl: true });
     } else if (this.auth.role() === 'SECRETAIRE') {
-      void this.router.navigateByUrl('/secretaire/receptions', { replaceUrl: true });
+      void this.router.navigateByUrl('/secretaire/mes-dossiers', { replaceUrl: true });
     } else if (this.auth.role() === 'PRMP') {
       void this.router.navigateByUrl('/prmp/dossiers', { replaceUrl: true });
     } else if (this.auth.role() === 'PRESIDENT') {

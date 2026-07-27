@@ -67,6 +67,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   SECRETAIRE: [
     { label: 'Tableau de bord', path: '/secretaire/tableau-de-bord', icon: '▤' },
+    { label: 'Mes dossiers', path: '/secretaire/mes-dossiers', icon: '📁' },
     { label: 'Réceptions', path: '/secretaire/receptions', icon: '📥' },
     { label: 'Enregistrement', path: '/secretaire/enregistrement', icon: '📚' },
     { label: 'Messagerie', path: '/secretaire/messagerie', icon: '✉' },
