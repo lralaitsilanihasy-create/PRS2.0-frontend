@@ -44,6 +44,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   PRESIDENT: [
     { label: 'Tableau de bord', path: '/president/tableau-de-bord', icon: '▤' },
     { label: 'Mes dossiers', path: '/president/mes-dossiers', icon: '📁' },
+    { label: 'Dispatchs par contrôleur', path: '/president/dispatchs-controleurs', icon: '📊' },
     { label: 'Projets de PV', path: '/president/circuit/pv', icon: '📝' },
     { label: 'PV définitifs', path: '/president/circuit/pv-definitifs', icon: '✅' },
     { label: 'Lettres de renvoi', path: '/president/lettre-renvois', icon: '✉' },

@@ -11,6 +11,7 @@ import { PvDefinitifs } from '../circuit/pv-definitifs';
 import { RetraitsValidation } from '../circuit/retraits-validation';
 import { KpiDashboard } from '../pilotage/kpi-dashboard';
 import { RapportsPage } from '../pilotage/rapports-page';
+import { DispatchsControleurs } from './dispatchs-controleurs';
 import { PresidentPpmMarches } from './president-ppm-marches';
 
 /** Classement « Mes dossiers » (Président) : cartes par type × {pré-dispatch, dispatch}, toutes localités. */
@@ -26,6 +27,7 @@ export const PRESIDENT_ROUTES: Routes = [
   },
   { path: 'mes-dossiers', component: DossiersClassement, data: { classement: CLASSEMENT_PRESIDENT } },
   { path: 'mes-dossiers/:type/:groupe', component: DossiersCircuitListe, data: { classement: CLASSEMENT_PRESIDENT } },
+  { path: 'dispatchs-controleurs', component: DispatchsControleurs },
   // Pré-dispatch et « Dispatch des dossiers » retirés : classement + action de dispatch dans « Mes dossiers ».
   { path: 'circuit', redirectTo: 'circuit/pv', pathMatch: 'full' },
   { path: 'circuit/pv', component: MembrePv },
