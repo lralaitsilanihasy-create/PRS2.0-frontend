@@ -11,11 +11,11 @@ import { PvDefinitifs } from '../circuit/pv-definitifs';
 import { RetraitsValidation } from '../circuit/retraits-validation';
 import { KpiDashboard } from '../pilotage/kpi-dashboard';
 import { RapportsPage } from '../pilotage/rapports-page';
-import { DispatchsControleurs } from './dispatchs-controleurs';
 import { PresidentPpmMarches } from './president-ppm-marches';
 
-/** Classement « Mes dossiers » (Président) : cartes par type × {pré-dispatch, dispatch}, toutes localités. */
-const CLASSEMENT_PRESIDENT = { subtitle: 'Domaine Président', base: '/president/mes-dossiers', groupes: CIRCUIT_GROUPES };
+/** Classement « Mes dossiers » (Président) : cartes par type × {pré-dispatch, dispatch}, toutes localités,
+ *  + section « Dispatchs par contrôleur » sous le classement. */
+const CLASSEMENT_PRESIDENT = { subtitle: 'Domaine Président', base: '/president/mes-dossiers', groupes: CIRCUIT_GROUPES, statDispatchsControleurs: true };
 
 /** Espace Président (lazy, sous roleGuard PRESIDENT). */
 export const PRESIDENT_ROUTES: Routes = [
@@ -27,7 +27,7 @@ export const PRESIDENT_ROUTES: Routes = [
   },
   { path: 'mes-dossiers', component: DossiersClassement, data: { classement: CLASSEMENT_PRESIDENT } },
   { path: 'mes-dossiers/:type/:groupe', component: DossiersCircuitListe, data: { classement: CLASSEMENT_PRESIDENT } },
-  { path: 'dispatchs-controleurs', component: DispatchsControleurs },
+  // « Dispatchs par contrôleur » : section embarquée dans « Mes dossiers » (plus d'écran dédié).
   // Pré-dispatch et « Dispatch des dossiers » retirés : classement + action de dispatch dans « Mes dossiers ».
   { path: 'circuit', redirectTo: 'circuit/pv', pathMatch: 'full' },
   { path: 'circuit/pv', component: MembrePv },

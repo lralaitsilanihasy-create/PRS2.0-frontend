@@ -4,6 +4,7 @@ import { forkJoin, map, Observable } from 'rxjs';
 
 import { Dossier, TypeDossier } from '../../models';
 import { DossierService, TypeDossierService } from '../../services';
+import { DispatchsControleurs } from './dispatchs-controleurs';
 
 /** Colonnes optionnelles de la liste (drill-down), selon le groupe. */
 export type ColonneCircuit = 'reception' | 'dateDispatch' | 'attributaire';
@@ -39,6 +40,8 @@ export interface ClassementConfig {
    * aussi les dossiers attribués aux autres Membres de la localité).
    */
   source?: 'membre';
+  /** Affiche la section « Dispatchs par contrôleur » sous le classement (Président). */
+  statDispatchsControleurs?: boolean;
 }
 
 /** Dossiers couverts par un classement, selon sa source (voir `ClassementConfig.source`). */
@@ -69,7 +72,7 @@ export const CIRCUIT_GROUPES: ClassementGroupe[] = [
 @Component({
   selector: 'app-dossiers-classement',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, DispatchsControleurs],
   template: `
     <section class="md">
       <header class="page-header">
@@ -152,6 +155,10 @@ export const CIRCUIT_GROUPES: ClassementGroupe[] = [
             </div>
           }
         </div>
+      }
+
+      @if (cfg.statDispatchsControleurs) {
+        <app-dispatchs-controleurs />
       }
     </section>
   `,

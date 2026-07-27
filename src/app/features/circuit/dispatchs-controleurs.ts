@@ -16,7 +16,7 @@ import {
   TypeDossierService,
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
-import { DossierConsultation } from '../circuit/dossier-consultation';
+import { DossierConsultation } from './dossier-consultation';
 
 /** Un dossier attribué à un contrôleur par le dernier dispatch (rôle joué : Membre attributaire ou CC). */
 interface DossierAttribue {
@@ -33,11 +33,13 @@ interface LigneControleur {
 }
 
 /**
- * Statistique « Dispatchs par contrôleur » (Président) : nombre de dossiers dispatchés à chaque
+ * Section « Dispatchs par contrôleur » — embarquée dans « Mes dossiers » (Président, via
+ * `ClassementConfig.statDispatchsControleurs`) : nombre de dossiers dispatchés à chaque
  * Membre attributaire / CC (dernier dispatch de chaque dossier, toutes localités), avec le détail
  * des dossiers dépliable par contrôleur. Seuls les dossiers encore en cours côté commission comptent
  * (DISPATCHE / EXAMINE) : un dossier sort de la statistique dès la signature de son PV définitif
- * (statut PV_SIGNE et au-delà). Aucun endpoint dédié : dispatchs + réceptions + dossiers
+ * (statut PV_SIGNE et au-delà) ; attributions CC/Président visibles seulement si la délégation
+ * « profil → Membre » est active (§3.5). Aucun endpoint dédié : dispatchs + réceptions + dossiers
  * joints côté client (mêmes listes que le drill-down circuit, pas de N+1).
  */
 @Component({
@@ -46,12 +48,7 @@ interface LigneControleur {
   imports: [StatutBadge, DossierConsultation, DatePipe],
   template: `
     <section class="dpc">
-      <header class="page-header">
-        <div>
-          <div class="page-subtitle">Domaine Président</div>
-          <h1 class="page-title">Dispatchs par contrôleur</h1>
-        </div>
-      </header>
+      <h2 class="dpc__titre"><span aria-hidden="true">📊</span> Dispatchs par contrôleur</h2>
       <p class="dpc__intro">Répartition des dossiers <strong>dispatchés</strong> entre les Membres attributaires et les CC (dernier dispatch de chaque dossier). Un dossier sort de la statistique dès que son <strong>PV définitif est signé</strong> ; les attributions d'un CC ou d'un Président n'apparaissent que si la <strong>délégation du profil Membre</strong> est active.</p>
 
       @if (loading()) {
@@ -156,7 +153,8 @@ interface LigneControleur {
     }
   `,
   styles: `
-    .dpc { display: flex; flex-direction: column; gap: 1.15rem; }
+    .dpc { display: flex; flex-direction: column; gap: 1.15rem; margin-top: 1rem; padding-top: 1.25rem; border-top: 1px solid var(--n-200); }
+    .dpc__titre { margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--n-800); }
     .dpc__intro { margin: -0.4rem 0 0; color: var(--n-500); }
     .dpc__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem; }
     .dpc__count { font-weight: 800; font-variant-numeric: tabular-nums; }
