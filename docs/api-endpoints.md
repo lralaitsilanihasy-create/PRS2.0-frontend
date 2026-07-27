@@ -47,9 +47,11 @@ Pour les ressources du circuit (`dossiers`, `receptions`, `dispatchs`, `examens`
 
 ### Référentiels & administration
 - **Référentiels** (lecture ouverte, écriture POST/PUT/DELETE réservée à `ADMINISTRATEUR`) :
-  `aviss`, `cat-comptes`, `comptes`, `delegation-profils`, `entite-contracts`, `localites`,
+  `aviss`, `cat-comptes`, `categorie-entites`, `comptes`, `delegation-profils`, `entite-contracts`, `localites`,
   `ministeres`, `mode-passations`, `natures`, `points-ctrls`, `profiles`, `regle-alertes`,
   `regle-anomalies`, `regle-passations`, `seuils`, `situations`, `sous-type-dossiers`, `type-dossiers`, `type-dmc`.
+  ⚠️ **Exception (2026-07-26)** : `POST /api/entite-contracts` est ouvert à la **PRMP** (en plus de l'Admin) —
+  création d'entité à l'import PPM + auto-rattachement en attente ; PUT/DELETE restent Administrateur.
 - **Gestion des comptes / hiérarchie** (écriture `ADMINISTRATEUR`, lecture ouverte) :
   `controleurs`, `prmps`, `organigrammes`.
 - **Réservé `ADMINISTRATEUR`** (lecture comprise) : `audit-logs`, `session-utilisateurs`, `comptes-auth`.
@@ -377,6 +379,31 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 | DELETE | /api/cat-comptes/{id} | — | — | 204, 403, 404 | ADMINISTRATEUR |
 
 `{id}` = idCatCompte (string).
+
+## Catégories d'entité (⚠️ référentiel ajouté 2026-07-26)
+**Ressource** `/api/categorie-entites` — Référentiel : lecture ouverte ; écriture `ADMINISTRATEUR`. Source unique
+du **niveau hiérarchique** d'une entité contractante (voir Entités contractantes : `niveauHierarchique` **dérivé**
+de `categorieEntite`).
+
+**Champs `CategorieEntiteDto`**
+
+| Champ (JSON) | Type | Obligatoire | Contraintes |
+|---|---|---|---|
+| libelle | string | Oui (PK) | max 20, non vide (ex. « MINISTERE ») |
+| niveauHierarchique | number | Oui | entier > 0 |
+
+**Endpoints**
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/categorie-entites | — | `CategorieEntiteDto[]` | 200 | Authentifié |
+| GET | /api/categorie-entites/{id} | — | `CategorieEntiteDto` | 200, 404 | Authentifié |
+| POST | /api/categorie-entites | `CategorieEntiteDto` | `CategorieEntiteDto` | 201, 400, 403 | ADMINISTRATEUR |
+| PUT | /api/categorie-entites/{id} | `CategorieEntiteDto` | `CategorieEntiteDto` | 200, 400, 403, 404 | ADMINISTRATEUR |
+| DELETE | /api/categorie-entites/{id} | — | — | 204, 403, 404 | ADMINISTRATEUR |
+
+`{id}` = libelle (string). **Seed** (`docs/migrations/2026-07-26_categorie_entite.sql`) : MINISTERE→1,
+CABINET→2, SECRETARIAT GENERAL→2, DIRECTION GENERALE→3, DIRECTION→4, SERVICE→5, DIVISION→6.
 
 **Exemple — requête**
 ```json
@@ -1184,6 +1211,8 @@ volumineux → **400** (annule la création si multipart) ; **404** si l'UGPM ou
 | POST | /api/saisies/ppm | `multipart/form-data` (PPM **+ pièces jointes**) | `DossierDto` | 201, 400, 403 | **PRMP** |
 | POST | /api/saisies/dossier | `SaisieDossierRequest` | `DossierDto` | 201, 400, 403, 409 | **PRMP** |
 | POST | /api/saisies/ppm/import | `multipart/form-data` (part `fichier` = PPM **PDF**) | `SaisiePpmImportResult` | 200, 400, 403 | **PRMP** |
+| POST | /api/saisies/ppm/import-xlsx | `multipart/form-data` (part `fichier` = **tableur .xlsx**) | `SaisiePpmImportResult` | 200, 400, 403 | **PRMP** |
+| GET | /api/saisies/ppm/import-xlsx/gabarit | — | **`.xlsx`** (gabarit à remplir) | 200, 403 | **PRMP** |
 | PUT | /api/saisies/ppm/{idDossier} | `EditionPpmRequest` | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** |
 
 > **Saisie avec pièces jointes (multipart).** La variante `multipart/form-data` de `POST /api/saisies/ppm`
@@ -1198,16 +1227,20 @@ volumineux → **400** (annule la création si multipart) ; **404** si l'UGPM ou
 > Forme : `{ exercice, dateSignature` (« Fait à… le… » sinon **date d'établissement**, `null` sinon)`, autoriteContractante,
 > idEntiteContract` (résolu depuis l'autorité si trouvé, sinon `null` → la PRMP choisit)`, marches[]`
 > `{ designationMarche, formeMarche, montEstim, nouvMontEstim, idNature+natureLibelle, idMode+modeLibelle, financement,`
-> `beneficiaires[]` `{ soaCode, numCompte, ancMontBenef, nouvMontBenef }, previsions[]` `{ processus, dateDebut },`
+> `beneficiaires[]` `{ soaCode, soaLibelle, numCompte, ancMontBenef, nouvMontBenef }, previsions[]` `{ processus, dateDebut },`
 > `lots[]` `{ designationLot, montLot?, qteLot?, uniteLot? } },`
 > `avertissements[] }`. ⚠️ **`lots[]` — extraction best-effort depuis la désignation (règle révisée 2026-07-17,
-> remplace « toujours vide »)** : quand la désignation du marché décrit l'allotissement selon le motif
-> « … **répartis en NN Lots :** Lot 01 : &lt;texte&gt; ; Lot 02 : &lt;texte&gt; … » (casse/accents libres, variantes
-> `Lot 1`, `Lot n°01`, séparateurs `;` ou `.`), le parser produit `lots[] = [{ designationLot }]` — désignation de
-> lot **seule** (le texte ne porte ni montant ni quantité ; champs descriptifs, **aucun contrôle de somme**, règle
-> actée). **Contrôle de cohérence** : extraction uniquement si le compte annoncé (« 04 Lots ») **égale** le nombre
-> de segments « Lot NN : » trouvés ; sinon (compte différent, motif ambigu) → **avertissement** dans
-> `avertissements[]` et lots vides. **Décision revisitée (2026-07-18, remplace « désignation raccourcie »)** :
+> **généralisée 2026-07-22** — remplace « toujours vide »)** : quand la désignation décrit l'allotissement, le
+> parser produit `lots[] = [{ designationLot }]` — désignation de lot **seule** (le texte ne porte ni montant ni
+> quantité ; **aucun contrôle de somme**, règle actée). **Marqueurs reconnus** (généralisés) : `Lot 01 :`,
+> `Lot 1`, `lot n1:`, `LOT N°02 :`, `Lot 1 -` (`n`/`°`/zéros de tête optionnels, terminateur `:` ou `-`),
+> séparateur `-` ou accolé. **Annonce** : « répartis/répartie(s) en NN lots » avec le compte en **chiffres**
+> et/ou en **lettres** (« deux 2 lots », « trois lots »). **Cas sans annonce** : au moins **2** marqueurs
+> « LOT N°NN : » suffisent à extraire — y compris quand la désignation **commence** par le marqueur
+> (`LOT N°01:…` en position 0, **aucun objet préalable requis**) et que les lots sont séparés par un simple
+> espace. **Contrôle de cohérence** : extraction uniquement si aucun segment n'est vide et le nombre de
+> marqueurs **égale** le compte annoncé (ou ≥2 sans annonce) ; sinon → **avertissement** dans
+> `avertissements[]`, lots vides, **et anomalie `champ:lot` (`LOT_INCOHERENT`)** pour la revue front. **Décision revisitée (2026-07-18, remplace « désignation raccourcie »)** :
 > extraction réussie ou non, `designationMarche` est **conservée intégrale** — l'énumération des lots
 > (« répartis en NN Lots : Lot 01 : … ») y reste, **en plus** de `lots[]` ; le doublon texte/structure est
 > accepté et voulu. Sans motif d'allotissement → inchangé (lots vides, pas d'avertissement).
@@ -1216,15 +1249,74 @@ volumineux → **400** (annule la création si multipart) ; **404** si l'UGPM ou
 > → `CONTRAT_CADRE` et « **à commande** » / « marché à commande » → `A_COMMANDE` ; sinon **défaut
 > `QUANTITE_FIXE`**. Détection à frontières de mots (« la commande » ne matche pas). **Désignation conservée
 > intégrale** (même décision que pour les lots : on relève, on ne retire pas) ; jamais null.
+> ⚠️ **Fragment d'objet collé au montant — garde d'invariant (règle ajoutée 2026-07-22).** Quand l'objet
+> d'un marché s'enroule sur plusieurs lignes et que son fragment final (typiquement un n° de route « RNT 33 »,
+> « RNS 44 ») est isolé par PDFBox, deux défaillances survenaient : (a) le fragment collé au montant était
+> **absorbé** par la regex de milliers (`33 590 000 000.00` au lieu de `590 000 000.00`) ; (b) le fragment
+> seul sur sa ligne physique était pris pour un **n° de page** et **supprimé** (objet tronqué). Corrigé :
+> les lignes réduites à un court nombre nu ne sont **plus** filtrées (ce sont des fragments d'objet, pas des
+> n° de page — ceux-ci sont en « page X/Y »), et une **garde d'invariant `tête == Σ bénéficiaires`**
+> (invariant du document) **détecte** les chiffres de tête excédentaires (1-3) contaminant un montant, les
+> **recolle à l'objet** et réaligne. La correction est **tracée** dans `avertissements` (non silencieuse). La
+> désignation reste **intégrale** (n° de route compris). ⚠️ **Symétrique (généralisé 2026-07-22)** : la garde
+> s'applique à **toutes les colonnes numériques** — le fragment peut contaminer le **montant de tête**
+> (`montEstim`/`nouvMontEstim` — « 33 590 000 000 ») **ou** un **montant bénéficiaire** (« 3 125 000 000 » pour
+> un estimatif de 125 000 000). Colonne par colonne (ancien puis nouveau), si retirer 1-3 chiffres de tête du
+> montant fautif rétablit l'égalité `tête == Σ`, ils sont recollés à l'objet et le montant réaligné. Un écart
+> qui **n'est pas** un pur fragment de tête reste `MONTANT_INCOHERENT` (non auto-corrigé).
+> ⚠️ **Encodage (règle ajoutée 2026-07-22).** Certains PPM ont une `ToUnicode` défaillante : le caractère
+> de remplacement « ¿ » (`U+00BF`) code selon le contexte soit la ligature **œ** (« ¿uvre » = « œuvre »),
+> soit une **apostrophe** d'élision (« jusqu¿à » = « jusqu'à »). Le serveur applique des **règles ancrées non
+> ambiguës** (jamais un remplacement global aveugle) ; tout « ¿ » **résiduel** est signalé par l'anomalie
+> `ENCODAGE_SUSPECT` (ci-dessous), jamais deviné en silence.
+>
+> ⚠️ **Anomalies de transcription structurées (règle ajoutée 2026-07-22) — clé de la revue front.** Chaque
+> `marches[i]` porte **`anomalies[]`** (vide si RAS) et le résultat porte **`nbAVerifier`** (nombre de marchés
+> avec ≥1 anomalie). Cela **remplace avantageusement** le balayage de `avertissements[]` à plat (conservé pour
+> rétro-compatibilité) : le front pointe la **ligne + le champ exacts**. Forme d'une anomalie :
+> `{ champ, type, gravite, corrige?, message }` —
+> **`champ`** ∈ `objet|montEstim|nouvMontEstim|mode|nature|beneficiaire|date|lot` ;
+> **`type`** ∈ `MONTANT_INCOHERENT|OBJET_TRONQUE_PROBABLE|ENCODAGE_SUSPECT|REFERENTIEL_INCONNU|CHAMP_MANQUANT|LOT_INCOHERENT` ;
+> **`gravite`** ∈ `BLOQUANT|A_VERIFIER` ; **`corrige`** = `true` si le backend a **auto-corrigé** (à confirmer
+> par l'humain) ; **`message`** prêt à afficher. Règles émises : `MONTANT_INCOHERENT` (montEstim ≠ Σ
+> bénéficiaires — `A_VERIFIER` + `corrige:true` si auto-réaligné via l'invariant, sinon `BLOQUANT`) ;
+> `OBJET_TRONQUE_PROBABLE` (objet finissant par un préfixe de route `RN|RNT|RNS|RNP|RNC|RIP|RR` sans numéro) ;
+> `REFERENTIEL_INCONNU` (nature/mode/SOA/compte non résolus) ; `CHAMP_MANQUANT` (objet/montant/mode absent) ;
+> `ENCODAGE_SUSPECT` (« ¿ » résiduel dans l'objet) ; **`LOT_INCOHERENT`** (allotissement décrit mais lots non
+> extraits — `champ:lot`, `A_VERIFIER` ; le front la consomme au lieu de sa propre heuristique).
 > **Read-only** : les référentiels manquants (`idNature`/`idMode`/`numCompte`/`soaCode`,
-> entité) **ne sont pas créés** — renvoyés en libellé seul + listés dans `avertissements` ; la
+> entité) **ne sont pas créés** — renvoyés en libellé seul + listés dans `avertissements` **et** `anomalies` ; la
 > création-à-la-volée se fait au `POST /api/saisies/ppm`.
+>
+> ⚠️ **Import tableur `.xlsx` — transcription exacte (règle ajoutée 2026-07-22).** `POST /api/saisies/ppm/import-xlsx`
+> (part `fichier` = `.xlsx`) importe un PPM à **colonnes explicites** : la transcription est **exacte par
+> construction** (chaque champ dans sa cellule), sans les pièges de mise en page du PDF (le PDF ne reste qu'un
+> justificatif) — c'est la voie vers ~100 %. Renvoie le **même `SaisiePpmImportResult`** (mêmes `anomalies[]` +
+> `nbAVerifier`) et reste **read-only** (la création reste `POST /api/saisies/ppm`). L'**assemblage** (résolution
+> des référentiels par libellé, forme, anomalies) est **partagé** avec l'import PDF. `GET
+> /api/saisies/ppm/import-xlsx/gabarit` télécharge le **gabarit** (`.xlsx` : en-têtes + exemples + notice).
+> **Colonnes** (onglet « Marchés », 1 ligne par marché) : `objet` (obl.), `montant estimatif` (obl.), `forme`
+> (`A_COMMANDE|CONTRAT_CADRE|QUANTITE_FIXE`, défaut `QUANTITE_FIXE`), `nature`, `nouveau montant`, `mode`,
+> `financement`, `soa`, `compte`, `montant beneficiaire` (vide pour 1 seul bénéficiaire = montant estimatif),
+> `nouveau montant beneficiaire`, `date lancement/ouverture/attribution` (jj/mm/aaaa ou date Excel),
+> `lots` (désignations séparées par « | »), `exercice`, `date signature` (sur la 1re ligne). **Multi-bénéficiaire** :
+> une ligne SOUS le marché avec l'`objet` **vide** (continuation : seuls `soa`/`compte`/`montant beneficiaire`).
+> Colonnes obligatoires manquantes ou fichier non `.xlsx` → **400**.
 > ⚠️ **Résolution des modes/natures (règle révisée 2026-07-18)** : normalisation **étendue** (trim + casse +
 > accents + apostrophes/espaces typographiques + **pluriels simples** — un « s » final par token), **même
 > fonction** que la création-à-la-volée du POST (source unique). En cas de résolution, `modeLibelle` /
 > `natureLibelle` renvoient le **libellé canonique du référentiel** (pas le texte brut du PDF) — les aides
-> front (badge/bandeau AGPM, datalist) comparent au libellé exact. Mode **non résolu** malgré la
-> normalisation : si un mode du référentiel est **proche** (Levenshtein 1..3 sur formes normalisées),
+> front (badge/bandeau AGPM, datalist) comparent au libellé exact.
+> **Suffixe de source de financement (règle ajoutée 2026-07-25)** : la résolution du **mode** (import **et**
+> création-à-la-volée, source unique `LibelleNormalisation`) **ignore un token de source de financement en
+> suffixe** — `RPI`, `PIP`. « ACHAT DIRECT **RPI** » → « Achat Direct » (idMode=5) ; « APPEL D'OFFRE OUVERT
+> **RPI** » → « Appel d'offres ouvert » (idMode=1, **déclencheur AGPM** — résolu, **jamais recréé** sans le
+> drapeau). Désambiguïsation : **source exacte d'abord** (« … **PIP** » → la variante PIP `idMode=8`), sinon
+> **repli sur le mode base** sans suffixe (« … **RPI** » → `idMode=4`, **jamais** `idMode=8` « … PIP » :
+> `RPI ≠ PIP`). `PPP` **n'est pas** une source (mode à part entière « MARCHE DE GRE A GRE PPP », `idMode=6`).
+> Mode **non résolu** malgré la
+> normalisation : si un mode du référentiel est **proche** (Levenshtein 1..3 sur formes normalisées, **noyau
+> sans suffixe de source**),
 > l'avertissement est enrichi — « Mode « X » non trouvé au référentiel — **vouliez-vous dire « Y » ?** » ;
 > jamais d'auto-résolution fuzzy. PDF illisible / non-PDF / sans texte → **400** (message
 > clair, pas de données partielles silencieuses).
@@ -1234,9 +1326,27 @@ volumineux → **400** (annule la création si multipart) ; **404** si l'UGPM ou
 > `MONTANT`/`ESTIMATIF`/`INITIAL` etc. sur des lignes séparées — est ainsi ignoré) et se termine à la **dernière**
 > « **Fait à … le …** » (ou « La personne responsable »). Chaque **enregistrement** (délimité par une `NATURE`) est
 > **recomposé** (lignes jointes) puis lu **par position** : `NATURE` → `OBJET` (avant le 1ᵉʳ montant) →
-> `montEstim [nouvMontEstim]` → `mode` (**multi-mots/multi-lignes**, ex. « Consultation de prix ouverte ») +
-> `financement` (dernier mot avant le 1ᵉʳ SOA, ex. `RPI`/`PIP`) → **codes SOA** → `compte` → **montants
-> bénéficiaires** → **3 prévisions** `LANCEMENT`/`OUVERTURE`/`ATTRIBUTION` (`dd/MM/yyyy` → ISO).
+> `montEstim [nouvMontEstim]` → **`mode` | `financement` | `service bénéficiaire`** (voir ci-dessous) → **codes
+> SOA** → `compte` → **montants bénéficiaires** → **3 prévisions** `LANCEMENT`/`OUVERTURE`/`ATTRIBUTION`
+> (`dd/MM/yyyy` → ISO).
+>
+> **⚠️ Découpage MODE | FINANCEMENT | SERVICE (règle révisée 2026-07-26 — SIGMP).** Ces trois colonnes sont
+> **aplaties dans un même flux de mots** (cellules **multi-lignes** : mode et service enroulés sur plusieurs
+> lignes physiques, financement court entre les deux). Un **libellé de FINANCEMENT** (`RPI`/`PIP`/`FR` —
+> constante extensible, distincte du suffixe de mode `{RPI,PIP}`) délimite : **mode AVANT**, **financement = ce
+> token**, **service APRÈS** (→ `beneficiaires[].soaLibelle`). On coupe sur la **dernière** source de la 1ʳᵉ plage
+> contiguë : un mode à variante suffixée (« … **PIP** » = idMode 8) collé au vrai financement (« … PIP **RPI** »)
+> **conserve son PIP**, financement = RPI ; un `FR` plus loin dans un service n'est pas capté. Sans financement
+> reconnu → repli sur l'ancienne heuristique (dernier mot avant le 1ᵉʳ SOA, ex. `FCE` suivi d'un SOA codé). Un
+> fragment d'en-tête enroulé (`FINAN-`, `NOUVEAU`, …) n'est plus filtré comme préfixe (« **Finan**cier »,
+> « **Nouveau**x » restaient perdus) : filtrage **ancré en fin de ligne** uniquement.
+>
+> **`soaLibelle` (règle ajoutée 2026-07-26).** Quand la colonne « SERVICE BÉNÉFICIAIRE » est en **texte libre**
+> (sans code SOA, ex. « Service Administratif et Financier », « TOUT SERVICE »), le nom alimente
+> `beneficiaires[].soaLibelle` (`soaCode` reste `null`). À la **persistance** (`POST /api/saisies/ppm`), le
+> service est **résolu-ou-créé par libellé** dans `tr_soa_beneficiaire` (dé-doublonnage sur libellé normalisé ;
+> à la création, code SOA **dérivé du libellé**, slug ≤ 25). Un `soaCode` explicite (ancien format) reste résolu
+> par PK.
 >
 > **Multi-bénéficiaires.** Un marché peut porter **plusieurs bénéficiaires** (colonnes SOA/compte/montants aplaties
 > verticalement par l'extraction) : `n` codes SOA et `K` montants ⇒ `K = 2n` (ancien **et** nouveau montant par
@@ -1303,9 +1413,11 @@ volumineux → **400** (annule la création si multipart) ; **404** si l'UGPM ou
 > `TYPE_ACTION=CREATION_MODE_PROCHE_AGPM` (pas d'avertissement de réponse : `DossierDto` n'a pas de champ
 > avertissements) — pour arbitrage Admin (fusion / coche du drapeau).
 > **Bénéficiaires par marché (règle ajoutée).** `beneficiaires[]` (optionnel) = une ligne **`t_service_beneficiaire`**
-> par élément `{ soaCode, numCompte, ancMontBenef, nouvMontBenef }`. `soaCode` est **résolu-ou-créé** dans
-> `tr_soa_beneficiaire` (PK = `soaCode`, audit `CREATION_A_LA_VOLEE`), `numCompte` dans `tr_compte` — même logique
-> (réutilisation, jamais suppression). **Cohérence des montants** (⚠️ **uniquement si `beneficiaires[]` non vide**,
+> par élément `{ soaCode, soaLibelle, numCompte, ancMontBenef, nouvMontBenef }`. Le service (SOA) est
+> **résolu-ou-créé** dans `tr_soa_beneficiaire` (audit `CREATION_A_LA_VOLEE`) : par **PK** si `soaCode` fourni
+> (ancien format), sinon par **libellé normalisé** si seul `soaLibelle` est fourni (⚠️ règle ajoutée 2026-07-26,
+> texte libre SIGMP « TOUT SERVICE » — code SOA **dérivé du libellé**, slug ≤ 25) ; `numCompte` dans `tr_compte` —
+> même logique (réutilisation, jamais suppression). **Cohérence des montants** (⚠️ **uniquement si `beneficiaires[]` non vide**,
 > **égalité exacte** — Ariary entiers, pas de tolérance) : `Σ ancMontBenef = montEstim` ; et si `nouvMontEstim` est
 > **fourni**, chaque bénéficiaire doit porter `nouvMontBenef` et `Σ nouvMontBenef = nouvMontEstim`. Écart → **400**
 > ciblé : `{ "erreurs": [ { "champ": "marches[i].beneficiaires", "message": "La somme des montants par bénéficiaire
@@ -1419,10 +1531,10 @@ et interprété comme un code de **sous-type** (les anciens payloads `{"idTypeDo
 | idEntiteContract | number | Oui (PK, au POST) | clé primaire |
 | libelleEntite | string | Oui | @NotBlank, max 150 (aligné sur `libelleMinistere`) |
 | adresse | string | Oui | @NotBlank, max 200 |
-| categorieEntite | string | Non | max 20 |
+| categorieEntite | string | Non | max 20 — **validé** au référentiel `tr_categorie_entite` (400 si inconnu) |
 | idOrganigramme | number | Oui | @NotNull |
 | idEntiteParent | number | Non | |
-| niveauHierarchique | number | Non | |
+| niveauHierarchique | number | **Dérivé (lecture seule)** | ⚠️ **DÉRIVÉ** de `categorieEntite` au POST/PUT (source unique) — la valeur envoyée par le client est **ignorée** |
 | idLocalite | string | Non | max 5 — **localité de l'entité** (FK `tr_localite`) ; détermine la localité des dossiers la concernant |
 
 **Endpoints**
@@ -1431,11 +1543,25 @@ et interprété comme un code de **sous-type** (les anciens payloads `{"idTypeDo
 |---|---|---|---|---|---|
 | GET | /api/entite-contracts | — | `EntiteContractDto[]` | 200 | Authentifié |
 | GET | /api/entite-contracts/{id} | — | `EntiteContractDto` | 200, 404 | Authentifié |
-| POST | /api/entite-contracts | `EntiteContractDto` | `EntiteContractDto` | 201, 400, 403 | ADMINISTRATEUR |
+| POST | /api/entite-contracts | `EntiteContractDto` | `EntiteContractDto` | 201, 400, 403 | **PRMP ou ADMINISTRATEUR** |
 | PUT | /api/entite-contracts/{id} | `EntiteContractDto` | `EntiteContractDto` | 200, 400, 404 | ADMINISTRATEUR |
 | DELETE | /api/entite-contracts/{id} | — | — | 204, 404 | ADMINISTRATEUR |
 
-`{id}` = idEntiteContract (number).
+`{id}` = idEntiteContract (number). **PK assignée client** : `idEntiteContract = max(ids)+1` (aussi bien PRMP qu'Admin).
+`idEntiteParent` **facultatif** (null accepté — rattachement par organigramme seul, ex. ministère sans entité racine).
+
+> ⚠️ **Création par la PRMP + auto-rattachement (règle ajoutée 2026-07-26).** Le **POST** est ouvert à la
+> **PRMP** (en plus de l'Admin) — cas import PPM : autorité contractante hors périmètre → la PRMP enregistre une
+> nouvelle entité. Quand l'appelant est une **PRMP**, le backend crée en même temps un lien
+> [`/api/prmp-entites`](#ressource-apiprmp-entites--affectations-prmpentité-contractante-31) **`actif=false`
+> (EN ATTENTE)** PRMP↔entité, qu'un **Administrateur approuve** (`PUT {actif:true}`) ou **rejette** (`DELETE`).
+> PUT/DELETE de l'entité elle-même restent **Administrateur**.
+
+> ⚠️ **Dérivation du niveau hiérarchique (règle ajoutée 2026-07-26).** À **POST** et **PUT**, `niveauHierarchique`
+> est **dérivé** de `categorieEntite` via le référentiel [`/api/categorie-entites`](#catégories-dentité--référentiel-ajouté-2026-07-26)
+> (`tr_categorie_entite`) — **source unique**, l'entité et sa catégorie ne peuvent plus diverger. Catégorie
+> **inconnue** du référentiel → **400** ; catégorie absente/vide → `categorieEntite`=`null` et `niveauHierarchique`=`null`.
+> La valeur `niveauHierarchique` du corps est **ignorée** en écriture (elle reste renseignée en lecture).
 
 **Exemple — requête**
 ```json
@@ -1451,8 +1577,15 @@ et interprété comme un code de **sous-type** (les anciens payloads `{"idTypeDo
   (accès direct hors périmètre → **403**).
 - **Écriture** (POST/PUT/DELETE) : réservée à l'**Administrateur**, qui gère les affectations.
 - **Invariant d'unicité** : une entité ne peut être rattachée qu'à **une seule PRMP active** ;
-  toute tentative d'affecter une entité déjà rattachée → **409**. Une PRMP peut gérer **plusieurs**
-  entités. Les affectations sont **stables** (pas de transfert d'une PRMP à une autre).
+  toute tentative d'**activer** une entité déjà rattachée activement → **409**. Une PRMP peut gérer
+  **plusieurs** entités. Les affectations sont **stables** (pas de transfert d'une PRMP à une autre).
+- ⚠️ **Auto-rattachement EN ATTENTE (règle ajoutée 2026-07-26).** Quand une **PRMP** crée une entité
+  contractante (`POST /api/entite-contracts`, cf. Entités contractantes), le backend crée
+  **automatiquement** un lien PRMP↔entité **`actif=false`** (en attente d'approbation). L'invariant
+  d'unicité **ne bloque pas** cette création (le lien est en attente) ; il s'applique à l'**activation**.
+  **Approuver** = `PUT /api/prmp-entites/{id}` `{actif:true}` (Administrateur → **409** si une autre PRMP
+  est déjà active sur l'entité). **Rejeter** = `DELETE /api/prmp-entites/{id}`. Une fois **actif=true**,
+  l'entité apparaît dans le `GET /api/prmp-entites` scopé de la PRMP (le front filtre `actif=true`).
 
 **Champs `PrmpEntiteDto`**
 
@@ -1462,7 +1595,7 @@ et interprété comme un code de **sous-type** (les anciens payloads `{"idTypeDo
 | idPrmp | string | Oui | @NotBlank, max 10 ; la PRMP doit exister (sinon 400) |
 | idEntiteContract | number | Oui | @NotNull ; l'entité doit exister (sinon 400) |
 | dateAffectation | string (date) | Non | défaut = date du jour |
-| actif | boolean | Oui | @NotNull ; une création est toujours active |
+| actif | boolean | Oui | @NotNull ; **création directe (POST) toujours active** ; l'**auto-rattachement** à la création d'entité par une PRMP est **EN ATTENTE** (`actif=false`) |
 
 **Endpoints**
 
