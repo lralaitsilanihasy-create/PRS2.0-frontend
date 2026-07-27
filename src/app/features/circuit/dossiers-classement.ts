@@ -22,6 +22,8 @@ export interface ClassementGroupe {
   colonnes?: ColonneCircuit[];
   /** Propose l'action « Dispatcher » dans la liste (gardée par la capacité DISPATCH_WRITE). */
   actionDispatch?: boolean;
+  /** Propose l'action « Examiner » dans la liste (→ `/membre/examiner/:idDossier`, espace Membre). */
+  actionExamen?: boolean;
 }
 /** Config d'un écran de classement, passée via `data.classement` de la route. */
 export interface ClassementConfig {

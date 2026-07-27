@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { forkJoin } from 'rxjs';
@@ -30,7 +30,7 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './dossie
 @Component({
   selector: 'app-dossiers-circuit-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, DatePipe, DispatchForm],
+  imports: [StatutBadge, DossierConsultation, DatePipe, DispatchForm, RouterLink],
   template: `
     <section>
       <header class="page-header">
@@ -80,6 +80,9 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './dossie
                       <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
                       @if (peutDispatcher(d); as rec) {
                         <button type="button" class="btn btn-primary btn-sm" (click)="dispatchItem.set({ dossier: d, reception: rec })">Dispatcher</button>
+                      }
+                      @if (aActionExamen()) {
+                        <a class="btn btn-primary btn-sm" [routerLink]="['/membre/examiner', d.idDossier]">Examiner</a>
                       }
                     </div>
                   </td>
@@ -147,6 +150,8 @@ export class DossiersCircuitListe {
   private readonly canDispatch = computed(() => this.permissions.can('DISPATCH_WRITE'));
   /** Ce groupe propose-t-il l'action « Dispatcher » ? (config `actionDispatch`). */
   private readonly aActionDispatch = computed(() => !!this.groupeConfig()?.actionDispatch);
+  /** Ce groupe propose-t-il l'action « Examiner » ? (config `actionExamen` — espace Membre, même cible que la worklist). */
+  readonly aActionExamen = computed(() => !!this.groupeConfig()?.actionExamen);
 
   constructor() {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
