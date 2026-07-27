@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { forkJoin } from 'rxjs';
 
@@ -76,7 +76,11 @@ interface LigneControleur {
             <article class="dpc__card">
               <span class="dpc__rank">#{{ i + 1 }}</span>
               <div class="dpc__avatar dpc__avatar--{{ i % 4 }}">
-                <span class="dpc__initiales" aria-hidden="true">{{ initiales(l.nom) }}</span>
+                @if (photoDe(l.im); as ph) {
+                  <img class="dpc__photo" [src]="ph" [alt]="'Photo de ' + l.nom" />
+                } @else {
+                  <span class="dpc__initiales" aria-hidden="true">{{ initiales(l.nom) }}</span>
+                }
               </div>
               <div class="dpc__role">{{ l.profil }}</div>
               <h3 class="dpc__nom">{{ l.nom }}</h3>
@@ -163,12 +167,13 @@ interface LigneControleur {
     .dpc__card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(30, 41, 59, 0.12); }
 
     /* Photo du membre : cercle à anneau (couleur de la palette), centré — carte compacte. */
-    .dpc__avatar { width: 8.5rem; aspect-ratio: 1 / 1; margin: 0.85rem auto 0.35rem; border-radius: 50%; border: 4px solid #fff; display: flex; align-items: center; justify-content: center; color: #fff; }
+    .dpc__avatar { width: 8.5rem; height: 8.5rem; margin: 0.85rem auto 0.35rem; border-radius: 50%; border: 4px solid #fff; display: flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; }
     .dpc__avatar--0 { background: linear-gradient(160deg, #e8687e, #f29cab); box-shadow: 0 0 0 5px #e8687e, 0 8px 18px rgba(30, 41, 59, 0.14); }
     .dpc__avatar--1 { background: linear-gradient(160deg, #f0a05a, #f6c489); box-shadow: 0 0 0 5px #f0a05a, 0 8px 18px rgba(30, 41, 59, 0.14); }
     .dpc__avatar--2 { background: linear-gradient(160deg, #7b85d4, #a3abe8); box-shadow: 0 0 0 5px #7b85d4, 0 8px 18px rgba(30, 41, 59, 0.14); }
     .dpc__avatar--3 { background: linear-gradient(160deg, #38b2a0, #7bd4c6); box-shadow: 0 0 0 5px #38b2a0, 0 8px 18px rgba(30, 41, 59, 0.14); }
     .dpc__initiales { font-size: 2.4rem; font-weight: 800; letter-spacing: 0.04em; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
+    .dpc__photo { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
     .dpc__rank { position: absolute; top: 0.75rem; left: 0.75rem; z-index: 1; background: #fff; color: var(--n-700); font-size: 0.72rem; font-weight: 800; padding: 0.16rem 0.55rem; border-radius: var(--radius-full); border: 1px solid var(--n-100); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); }
 
     .dpc__role { margin-top: 0.4rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--n-400); text-align: center; }
@@ -196,7 +201,7 @@ interface LigneControleur {
     .dpc__empty { grid-column: 1 / -1; text-align: center; color: var(--n-400); padding: 1.5rem; background: #fff; border: 1px dashed var(--n-200); border-radius: 16px; }
   `,
 })
-export class DispatchsControleurs {
+export class DispatchsControleurs implements OnDestroy {
   private readonly dossierService = inject(DossierService);
   private readonly receptionService = inject(ReceptionService);
   private readonly dispatchService = inject(DispatchService);
@@ -216,6 +221,8 @@ export class DispatchsControleurs {
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   private readonly entiteMap = signal<Map<string, string>>(new Map());
+  /** im → object-URL de la photo (`GET /api/controleurs/{id}/pieces/PHOTO`) ; absent = repli initiales. */
+  private readonly photos = signal<Map<string, string>>(new Map());
 
   /** Dossiers distincts dispatchés (un dossier compté une fois, même partagé Membre + CC). */
   readonly totalDossiers = computed(() => {
@@ -288,9 +295,24 @@ export class DispatchsControleurs {
         lignes.sort((a, b) => b.dossiers.length - a.dossiers.length || a.nom.localeCompare(b.nom));
         this.lignes.set(lignes);
         this.loading.set(false);
+        // Photos des contrôleurs affichés (une requête binaire par carte, 404 = repli initiales).
+        for (const l of lignes) {
+          this.controleurService.downloadPhoto(l.im).subscribe({
+            next: (blob) => this.photos.update((m) => new Map(m).set(l.im, URL.createObjectURL(blob))),
+            error: () => {},
+          });
+        }
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  ngOnDestroy(): void {
+    for (const url of this.photos().values()) URL.revokeObjectURL(url);
+  }
+
+  photoDe(im: string): string | null {
+    return this.photos().get(im) ?? null;
   }
 
   basculer(im: string): void {
