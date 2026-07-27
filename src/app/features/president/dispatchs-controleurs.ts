@@ -34,7 +34,9 @@ interface LigneControleur {
 /**
  * Statistique « Dispatchs par contrôleur » (Président) : nombre de dossiers dispatchés à chaque
  * Membre attributaire / CC (dernier dispatch de chaque dossier, toutes localités), avec le détail
- * des dossiers dépliable par contrôleur. Aucun endpoint dédié : dispatchs + réceptions + dossiers
+ * des dossiers dépliable par contrôleur. Seuls les dossiers encore en cours côté commission comptent
+ * (DISPATCHE / EXAMINE) : un dossier sort de la statistique dès la signature de son PV définitif
+ * (statut PV_SIGNE et au-delà). Aucun endpoint dédié : dispatchs + réceptions + dossiers
  * joints côté client (mêmes listes que le drill-down circuit, pas de N+1).
  */
 @Component({
@@ -49,7 +51,7 @@ interface LigneControleur {
           <h1 class="page-title">Dispatchs par contrôleur</h1>
         </div>
       </header>
-      <p class="dpc__intro">Répartition des dossiers <strong>dispatchés</strong> entre les Membres attributaires et les CC (dernier dispatch de chaque dossier).</p>
+      <p class="dpc__intro">Répartition des dossiers <strong>dispatchés</strong> entre les Membres attributaires et les CC (dernier dispatch de chaque dossier). Un dossier sort de la statistique dès que son <strong>PV définitif est signé</strong>.</p>
 
       @if (loading()) {
         <p class="text-muted">Chargement…</p>
@@ -219,9 +221,12 @@ export class DispatchsControleurs {
         const profilLib = new Map(profiles.map((p) => [p.idProfile, p.profile ?? '']));
         const ctrlById = new Map<string, Controleur>(controleurs.map((c) => [c.imControleur, c]));
         const parControleur = new Map<string, DossierAttribue[]>();
+        // Un dossier sort de la statistique dès la signature de son PV définitif (PV_SIGNE et au-delà) :
+        // seuls les dossiers encore en cours côté commission comptent (DISPATCHE / EXAMINE).
+        const STATUTS_EN_COURS = new Set(['DISPATCHE', 'EXAMINE']);
         const ajouter = (im: string | undefined, idDossier: number, dateDispatch: string | undefined, role: 'Membre' | 'CC') => {
           const dossier = im ? dossierById.get(idDossier) : undefined;
-          if (!im || !dossier) return;
+          if (!im || !dossier || !STATUTS_EN_COURS.has(dossier.statut ?? '')) return;
           const liste = parControleur.get(im) ?? [];
           liste.push({ dossier, dateDispatch, role });
           parControleur.set(im, liste);
