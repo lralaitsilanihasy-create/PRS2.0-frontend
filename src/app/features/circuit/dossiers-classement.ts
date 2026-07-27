@@ -24,6 +24,8 @@ export interface ClassementGroupe {
   actionDispatch?: boolean;
   /** Propose l'action « Examiner » dans la liste (→ `/membre/examiner/:idDossier`, espace Membre). */
   actionExamen?: boolean;
+  /** Propose « Modifier l'examen » (même cible) tant que le dossier est EXAMINE et son PV non soumis. */
+  actionModifierExamen?: boolean;
 }
 /** Config d'un écran de classement, passée via `data.classement` de la route. */
 export interface ClassementConfig {

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 
 import { Dispatch, Dossier, Reception } from '../../models';
 import {
@@ -10,7 +10,9 @@ import {
   DispatchService,
   DossierService,
   EntiteContractService,
+  ExamenService,
   LocaliteService,
+  PvExamenService,
   ReceptionService,
   ReferenceLookupService,
   TypeDossierService,
@@ -84,6 +86,9 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './dossie
                       @if (aActionExamen()) {
                         <a class="btn btn-primary btn-sm" [routerLink]="['/membre/examiner', d.idDossier]">Examiner</a>
                       }
+                      @if (examenModifiable(d)) {
+                        <a class="btn btn-primary btn-sm" [routerLink]="['/membre/examiner', d.idDossier]">Modifier l'examen</a>
+                      }
                     </div>
                   </td>
                 </tr>
@@ -113,6 +118,8 @@ export class DossiersCircuitListe {
   private readonly dossierService = inject(DossierService);
   private readonly receptionService = inject(ReceptionService);
   private readonly dispatchService = inject(DispatchService);
+  private readonly examenService = inject(ExamenService);
+  private readonly pvExamenService = inject(PvExamenService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly permissions = inject(PermissionsService);
 
@@ -132,6 +139,8 @@ export class DossiersCircuitListe {
   private readonly recDispatchable = signal<Map<number, Reception>>(new Map());
   /** idDossier → dernier dispatch (pour « Date dispatch » / « Attributaire »). */
   private readonly dispatchByDossier = signal<Map<number, Dispatch>>(new Map());
+  /** idDossier dont le projet de PV est déjà soumis (statut ≠ BROUILLON) — examen non modifiable. */
+  private readonly pvSoumisDossiers = signal<Set<number>>(new Set());
 
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -152,6 +161,8 @@ export class DossiersCircuitListe {
   private readonly aActionDispatch = computed(() => !!this.groupeConfig()?.actionDispatch);
   /** Ce groupe propose-t-il l'action « Examiner » ? (config `actionExamen` — espace Membre, même cible que la worklist). */
   readonly aActionExamen = computed(() => !!this.groupeConfig()?.actionExamen);
+  /** Ce groupe propose-t-il « Modifier l'examen » ? (config `actionModifierExamen` — espace Membre). */
+  private readonly aActionModifierExamen = computed(() => !!this.groupeConfig()?.actionModifierExamen);
 
   constructor() {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
@@ -177,12 +188,15 @@ export class DossiersCircuitListe {
     }
     this.loading.set(true);
     // Dossiers (scopé profil, selon la source du classement) + réceptions/dispatchs pour les colonnes du circuit.
+    // Examens + PV chargés seulement si le groupe offre « Modifier l'examen » (condition PV non soumis).
     forkJoin({
       dossiers: dossiersDuClassement(this.cfg, this.dossierService),
       receptions: this.receptionService.list(),
       dispatchs: this.dispatchService.list(),
+      examens: this.aActionModifierExamen() ? this.examenService.list() : of([]),
+      pvs: this.aActionModifierExamen() ? this.pvExamenService.list() : of([]),
     }).subscribe({
-      next: ({ dossiers, receptions, dispatchs }) => {
+      next: ({ dossiers, receptions, dispatchs, examens, pvs }) => {
         this.dossiers.set(dossiers.filter((d) => d.idTypeDossier === this.type() && !!d.statut && statuts.has(d.statut)));
         // idDossier → dernière réception (par date) ; idReception → réception (pour relier les dispatchs).
         const recById = new Map<number, Reception>();
@@ -209,6 +223,22 @@ export class DossiersCircuitListe {
         }
         const recDispatchable = new Map<number, Reception>();
         for (const [idDossier, r] of recComplete) if (!dispatched.has(r.idReception)) recDispatchable.set(idDossier, r);
+        // PV déjà soumis (statut ≠ BROUILLON) → « Modifier l'examen » masqué. Chaîne PV → examen → dispatch → réception.
+        const dispById = new Map(dispatchs.map((disp) => [disp.idDispatch, disp]));
+        const exDossier = new Map(
+          examens.map((e) => [
+            e.idExamen,
+            e.idDispatch != null ? recById.get(dispById.get(e.idDispatch)?.idReception ?? -1)?.idDossier : undefined,
+          ]),
+        );
+        const pvSoumis = new Set<number>();
+        for (const pv of pvs) {
+          if (pv.statutPv !== 'BROUILLON') {
+            const idD = exDossier.get(pv.idExamen);
+            if (idD != null) pvSoumis.add(idD);
+          }
+        }
+        this.pvSoumisDossiers.set(pvSoumis);
         this.recByDossier.set(recByDossier);
         this.recDispatchable.set(recDispatchable);
         this.dispatchByDossier.set(dispatchByDossier);
@@ -238,6 +268,10 @@ export class DossiersCircuitListe {
   peutDispatcher(d: Dossier): Reception | null {
     if (!this.aActionDispatch() || !this.canDispatch()) return null;
     return this.recDispatchable().get(d.idDossier) ?? null;
+  }
+  /** « Modifier l'examen » : offert par le groupe, tant que le dossier est EXAMINE et son PV non soumis. */
+  examenModifiable(d: Dossier): boolean {
+    return this.aActionModifierExamen() && d.statut === 'EXAMINE' && !this.pvSoumisDossiers().has(d.idDossier);
   }
   /** Après dispatch réussi : le dossier passe DISPATCHE et quitte la liste pré-dispatch → recharge. */
   onDispatched(): void {

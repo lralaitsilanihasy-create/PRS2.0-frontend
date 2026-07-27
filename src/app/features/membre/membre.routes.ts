@@ -14,7 +14,7 @@ import { MembrePv } from './pv-page';
 /** Groupes du Membre : à examiner (DISPATCHE) vs examinés (historique de la file `/examines`). */
 const MEMBRE_GROUPES: ClassementGroupe[] = [
   { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true },
-  { key: 'examines', label: 'Examinés', statuts: ['EXAMINE', 'PV_SIGNE', 'EN_VERIFICATION', 'CLOTURE'], icon: '✅', kind: 'b', colonnes: ['dateDispatch'] },
+  { key: 'examines', label: 'Examinés', statuts: ['EXAMINE', 'PV_SIGNE', 'EN_VERIFICATION', 'CLOTURE'], icon: '✅', kind: 'b', colonnes: ['dateDispatch'], actionModifierExamen: true },
 ];
 
 /** Classement « Mes dossiers » (Membre) : cartes par type × {à examiner, examinés}, SES dossiers attribués. */
