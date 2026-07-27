@@ -155,9 +155,8 @@ interface LigneControleur {
     .dpc__intro { margin: -0.4rem 0 0; color: var(--n-500); }
     .dpc__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem; }
 
-    /* Grille responsive : 4 / 2 / 1 cartes par ligne. */
-    .dpc__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.15rem; }
-    @media (max-width: 68rem) { .dpc__grid { grid-template-columns: repeat(2, 1fr); } }
+    /* Grille responsive : cartes étroites à largeur fixe (15rem), pleine largeur en mobile. */
+    .dpc__grid { display: grid; grid-template-columns: repeat(auto-fill, 15rem); gap: 1.15rem; }
     @media (max-width: 40rem) { .dpc__grid { grid-template-columns: 1fr; } }
 
     .dpc__card { position: relative; display: flex; flex-direction: column; gap: 0.45rem; background: #fff; border: 1px solid var(--n-100); border-radius: 16px; box-shadow: 0 10px 28px rgba(30, 41, 59, 0.08); padding: 1.1rem 1.1rem 1.25rem; transition: var(--transition); }
