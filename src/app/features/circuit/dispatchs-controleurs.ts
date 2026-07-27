@@ -27,7 +27,10 @@ interface DossierAttribue {
 /** Carte de la statistique : un contrôleur et ses dossiers dispatchés. */
 interface LigneControleur {
   im: string;
+  /** Nom complet (détail, alt, initiales). */
   nom: string;
+  /** Prénom(s) seul(s) — affiché sur la carte. */
+  prenom: string;
   profil: string;
   dossiers: DossierAttribue[];
 }
@@ -83,7 +86,7 @@ interface LigneControleur {
                 }
               </div>
               <div class="dpc__role">{{ l.profil }}</div>
-              <h3 class="dpc__nom">{{ l.nom }}</h3>
+              <h3 class="dpc__nom">{{ l.prenom }}</h3>
               <div class="dpc__total">
                 <span class="dpc__total-nb">{{ l.dossiers.length }}</span>
                 <span class="dpc__total-lbl">dossier{{ l.dossiers.length > 1 ? 's' : '' }} au total</span>
@@ -287,6 +290,7 @@ export class DispatchsControleurs implements OnDestroy {
           return {
             im,
             nom: c ? [c.nomCont, c.prenomsCont].filter(Boolean).join(' ') || im : im,
+            prenom: c?.prenomsCont || c?.nomCont || im,
             profil: c?.idProfile != null ? profilLib.get(c.idProfile) ?? '—' : '—',
             dossiers: [...liste].sort((a, b) => (b.dateDispatch ?? '').localeCompare(a.dateDispatch ?? '')),
           };
