@@ -105,6 +105,8 @@ export interface ObservationControle {
 /** Corps de `POST /api/examens/{id}/soumettre` : produit toujours un projet de PV (`idAvis` = avis du PV). */
 export interface ExamenSoumissionRequest {
   idAvis: string;
+  /** Matricule du Vérificateur désigné Secrétaire de séance — obligatoire, VERIFICATEUR de la localité du dossier. */
+  idSecretaireSeance: string;
 }
 
 /**

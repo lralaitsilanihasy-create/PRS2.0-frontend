@@ -8,6 +8,7 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import {
   Avis,
+  Controleur,
   Dossier,
   Examen,
   ExamenDetail,
@@ -23,6 +24,7 @@ import {
 } from '../../models';
 import {
   AvisService,
+  ControleurService,
   DispatchService,
   DossierService,
   EntiteContractService,
@@ -36,6 +38,7 @@ import {
   PieceJointeDossierService,
   PointsCtrlService,
   PpmService,
+  ProfileService,
   PvExamenService,
   ReceptionService,
   ReferenceLookupService,
@@ -260,6 +263,14 @@ interface RowState {
                       </select>
                     </label>
                     <label class="form-group">
+                      <span class="form-label">Secrétaire de séance *</span>
+                      <select class="form-control" [value]="secretaireSeance() ?? ''" (change)="secretaireSeance.set($any($event.target).value || null)">
+                        <option value="">— Sélectionner —</option>
+                        @for (v of verificateurOptions(); track v.id) { <option [value]="v.id">{{ v.label }}</option> }
+                      </select>
+                      <span class="form-hint">Vérificateur de la localité du dossier, désigné au projet de PV.</span>
+                    </label>
+                    <label class="form-group">
                       <span class="form-label">Synthèse des observations</span>
                       <textarea class="form-control" rows="3" [value]="synthese()" (input)="synthese.set($any($event.target).value)"></textarea>
                     </label>
@@ -430,6 +441,8 @@ export class ExamenDossier implements OnDestroy {
   private readonly serviceBenefService = inject(ServiceBeneficiaireService);
   private readonly previsionService = inject(MarchePrevisionService);
   private readonly pieceService = inject(PieceJointeDossierService);
+  private readonly controleurService = inject(ControleurService);
+  private readonly profileService = inject(ProfileService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly lookups = inject(ReferenceLookupService);
 
@@ -464,6 +477,19 @@ export class ExamenDossier implements OnDestroy {
   readonly dateExamen = signal(new Date().toISOString().slice(0, 10));
   readonly avis = signal<string | null>(null);
   readonly synthese = signal('');
+  /** Secrétaire de séance (matricule) — requis à la soumission (`ExamenSoumissionRequest.idSecretaireSeance`). */
+  readonly secretaireSeance = signal<string | null>(null);
+  /** Contrôleurs + libellés de profils, pour la liste des Vérificateurs de la localité du dossier. */
+  private readonly controleurs = signal<Controleur[]>([]);
+  private readonly profileLib = signal<Map<number, string>>(new Map());
+  /** Vérificateurs de la localité du dossier (candidats Secrétaire de séance — règle backend). */
+  readonly verificateurOptions = computed(() => {
+    const loc = this.dossier()?.idLocalite;
+    const libs = this.profileLib();
+    return this.controleurs()
+      .filter((c) => c.idLocalite === loc && c.idProfile != null && /v[ée]rificateur/i.test(libs.get(c.idProfile) ?? ''))
+      .map((c) => ({ id: c.imControleur, label: [c.nomCont, c.prenomsCont].filter(Boolean).join(' ') || c.imControleur }));
+  });
   /** Modal « Lettre de renvoi » (création) : visibilité + corps (objet fixe « lettre de renvoi »). */
   readonly lettreModal = signal(false);
   readonly corpsLettre = signal('');
@@ -581,6 +607,13 @@ export class ExamenDossier implements OnDestroy {
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.avisService.list().subscribe((a) => this.aviss.set(a));
+    // Candidats « Secrétaire de séance » : Vérificateurs de la localité du dossier (rôle via profils).
+    forkJoin({ ctrls: this.controleurService.list(), profiles: this.profileService.list() }).subscribe(
+      ({ ctrls, profiles }) => {
+        this.controleurs.set(ctrls);
+        this.profileLib.set(new Map(profiles.map((p) => [p.idProfile, p.profile ?? ''])));
+      },
+    );
 
     // Pièces jointes du dossier (tous types) — chargées à part pour ne pas bloquer l'examen si l'appel échoue.
     this.loadingPieces.set(true);
@@ -885,12 +918,19 @@ export class ExamenDossier implements OnDestroy {
       this.formError.set('Sélectionnez un avis global (requis pour le projet de PV).');
       return;
     }
+    const secretaire = this.secretaireSeance();
+    if (!secretaire) {
+      this.formError.set('Désignez le Secrétaire de séance (Vérificateur de la localité du dossier).');
+      return;
+    }
     this.formError.set(null);
     this.saving.set(true);
     this.ensureExamen()
       .pipe(
-        switchMap((idExamen) => this.examenService.soumettre(idExamen, { idAvis: this.avis() as string })),
-        // ExamenSoumissionRequest ne porte que idAvis : on persiste la synthèse via une MAJ du PV créé
+        switchMap((idExamen) =>
+          this.examenService.soumettre(idExamen, { idAvis: this.avis() as string, idSecretaireSeance: secretaire }),
+        ),
+        // La synthèse ne fait pas partie d'ExamenSoumissionRequest : on la persiste via une MAJ du PV créé
         // (encore BROUILLON) — PUT /api/pv-examens/{id}.
         switchMap((pv) => {
           const synthese = this.synthese().trim();
@@ -904,7 +944,13 @@ export class ExamenDossier implements OnDestroy {
         },
         error: (e: ApiError) => {
           this.saving.set(false);
-          this.toast.error(e.message || "Erreur lors de la soumission de l'examen.");
+          // 400 ciblé (idSecretaireSeance, grille…) : afficher le détail par champ, pas un message générique.
+          const msg =
+            (e.fieldErrors && Object.values(e.fieldErrors).join(' ')) ||
+            e.message ||
+            "Erreur lors de la soumission de l'examen.";
+          this.formError.set(msg);
+          this.toast.error(msg);
         },
       });
   }

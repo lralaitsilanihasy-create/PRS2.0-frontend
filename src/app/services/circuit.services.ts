@@ -137,7 +137,8 @@ export class ExamenService extends CrudService<Examen> {
   protected readonly resource = 'examens';
 
   /**
-   * `POST /api/examens/{id}/soumettre` (MEMBRE) — produit toujours le **projet de PV** (`idAvis` requis).
+   * `POST /api/examens/{id}/soumettre` (MEMBRE) — produit toujours le **projet de PV** (`idAvis` +
+   * `idSecretaireSeance` requis — Vérificateur de la localité du dossier, sinon 400 ciblé).
    * La lettre de renvoi est une action séparée (`/api/lettre-renvois`). `skipErrorToast` : messages dédiés.
    */
   soumettre(id: number, body: ExamenSoumissionRequest): Observable<PvExamen> {
