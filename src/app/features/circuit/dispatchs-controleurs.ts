@@ -74,8 +74,8 @@ interface LigneControleur {
         <div class="dpc__grid">
           @for (l of lignes(); track l.im; let i = $index) {
             <article class="dpc__card">
+              <span class="dpc__rank">#{{ i + 1 }}</span>
               <div class="dpc__avatar dpc__avatar--{{ i % 4 }}">
-                <span class="dpc__rank">#{{ i + 1 }}</span>
                 <span class="dpc__initiales" aria-hidden="true">{{ initiales(l.nom) }}</span>
               </div>
               <div class="dpc__role">{{ l.profil }}</div>
@@ -160,20 +160,21 @@ interface LigneControleur {
     @media (max-width: 68rem) { .dpc__grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 40rem) { .dpc__grid { grid-template-columns: 1fr; } }
 
-    .dpc__card { display: flex; flex-direction: column; gap: 0.5rem; background: #fff; border: 1px solid var(--n-100); border-radius: 16px; box-shadow: 0 10px 28px rgba(30, 41, 59, 0.08); padding: 1.1rem 1.1rem 1.25rem; transition: var(--transition); }
+    .dpc__card { position: relative; display: flex; flex-direction: column; gap: 0.45rem; background: #fff; border: 1px solid var(--n-100); border-radius: 16px; box-shadow: 0 10px 28px rgba(30, 41, 59, 0.08); padding: 1.1rem 1.1rem 1.25rem; transition: var(--transition); }
     .dpc__card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(30, 41, 59, 0.12); }
 
-    .dpc__avatar { position: relative; aspect-ratio: 1 / 1; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; }
-    .dpc__avatar--0 { background: linear-gradient(160deg, #e8687e, #f29cab); }
-    .dpc__avatar--1 { background: linear-gradient(160deg, #f0a05a, #f6c489); }
-    .dpc__avatar--2 { background: linear-gradient(160deg, #7b85d4, #a3abe8); }
-    .dpc__avatar--3 { background: linear-gradient(160deg, #38b2a0, #7bd4c6); }
-    .dpc__initiales { font-size: clamp(2.4rem, 4.5vw, 3.4rem); font-weight: 800; letter-spacing: 0.04em; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
-    .dpc__rank { position: absolute; top: 0.6rem; left: 0.6rem; background: #fff; color: var(--n-700); font-size: 0.72rem; font-weight: 800; padding: 0.16rem 0.55rem; border-radius: var(--radius-full); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14); }
+    /* Photo du membre : cercle à anneau (couleur de la palette), centré — carte compacte. */
+    .dpc__avatar { width: 8.5rem; aspect-ratio: 1 / 1; margin: 0.85rem auto 0.35rem; border-radius: 50%; border: 4px solid #fff; display: flex; align-items: center; justify-content: center; color: #fff; }
+    .dpc__avatar--0 { background: linear-gradient(160deg, #e8687e, #f29cab); box-shadow: 0 0 0 5px #e8687e, 0 8px 18px rgba(30, 41, 59, 0.14); }
+    .dpc__avatar--1 { background: linear-gradient(160deg, #f0a05a, #f6c489); box-shadow: 0 0 0 5px #f0a05a, 0 8px 18px rgba(30, 41, 59, 0.14); }
+    .dpc__avatar--2 { background: linear-gradient(160deg, #7b85d4, #a3abe8); box-shadow: 0 0 0 5px #7b85d4, 0 8px 18px rgba(30, 41, 59, 0.14); }
+    .dpc__avatar--3 { background: linear-gradient(160deg, #38b2a0, #7bd4c6); box-shadow: 0 0 0 5px #38b2a0, 0 8px 18px rgba(30, 41, 59, 0.14); }
+    .dpc__initiales { font-size: 2.4rem; font-weight: 800; letter-spacing: 0.04em; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
+    .dpc__rank { position: absolute; top: 0.75rem; left: 0.75rem; z-index: 1; background: #fff; color: var(--n-700); font-size: 0.72rem; font-weight: 800; padding: 0.16rem 0.55rem; border-radius: var(--radius-full); border: 1px solid var(--n-100); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); }
 
-    .dpc__role { margin-top: 0.4rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--n-400); }
-    .dpc__nom { margin: 0; font-size: 1.35rem; font-weight: 800; line-height: 1.15; color: var(--dpc-accent); }
-    .dpc__total { display: flex; align-items: baseline; gap: 0.4rem; }
+    .dpc__role { margin-top: 0.4rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--n-400); text-align: center; }
+    .dpc__nom { margin: 0; font-size: 1.3rem; font-weight: 800; line-height: 1.15; color: var(--dpc-accent); text-align: center; }
+    .dpc__total { display: flex; align-items: baseline; justify-content: center; gap: 0.4rem; }
     .dpc__total-nb { font-size: 1.9rem; font-weight: 800; color: var(--n-800); font-variant-numeric: tabular-nums; }
     .dpc__total-lbl { font-size: var(--text-sm); color: var(--n-400); }
 
