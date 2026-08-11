@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 
-import { Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire } from '../../models';
+import { Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -9,7 +9,9 @@ import {
   LocaliteService,
   MarcheService,
   MarchePrevisionService,
+  MiseAJourPpmService,
   ModePassationService,
+  NatureService,
   PieceJointeDossierService,
   PpmService,
   ReferenceLookupService,
@@ -17,6 +19,7 @@ import {
   SoaBeneficiaireService,
   TypeDossierService,
 } from '../../services';
+import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { StatutBadge } from '../../shared/circuit';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
@@ -38,6 +41,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
       <div
         class="dc"
         [class.dc--embedded]="embedded()"
+        [class.dc--large]="estPpm()"
         (click)="$event.stopPropagation()"
         [attr.role]="embedded() ? null : 'dialog'"
         [attr.aria-modal]="embedded() ? null : 'true'"
@@ -82,10 +86,12 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
               <span class="dc-meta-value">{{ dossier().dateRef || '—' }}</span>
             </div>
             @if (ppm(); as p) {
-              <div class="dc-meta-row">
-                <span class="dc-meta-label">Référence</span>
-                <span class="dc-meta-value">{{ p.reference || '—' }}</span>
-              </div>
+              @if (montrerReferencePpm()) {
+                <div class="dc-meta-row">
+                  <span class="dc-meta-label">Référence</span>
+                  <span class="dc-meta-value">{{ p.reference || '—' }}</span>
+                </div>
+              }
               <div class="dc-meta-row">
                 <span class="dc-meta-label">Exercice</span>
                 <span class="dc-meta-value">{{ p.exercice }}</span>
@@ -114,16 +120,15 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
           </div>
         </div>
 
-        <!-- ── Corps ── -->
+        <!-- ── Corps ── (une seule vague : tout est affiché quand TOUT est chargé — pas de sauts) -->
         <div class="dc-body">
+          @if (loading()) {
+            <div class="spinner-wrap dc-load"><div class="spinner"></div></div>
+          } @else {
           @if (estPpm()) {
-            @if (loadingContenu()) {
-              <div class="spinner-wrap"><div class="spinner"></div></div>
-            } @else {
-              <div class="dc-section">
-                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
-              </div>
-            }
+            <div class="dc-section">
+              <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" />
+            </div>
           }
 
           <!-- Pièces jointes (tous dossiers) -->
@@ -136,9 +141,6 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
               </div>
             </div>
 
-            @if (loadingPieces()) {
-              <div class="spinner-wrap"><div class="spinner"></div></div>
-            } @else {
               <div class="pieces-card">
                 @if (piecesInitiales().length > 0) {
                   <div class="pieces-group">
@@ -151,6 +153,27 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
                         <div class="piece-left">
                           <span class="piece-index pi-blue">{{ i + 1 }}</span>
                           <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                        </div>
+                        <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- ⚠️ 2026-08-03 (demande user) — versions CORRIGÉES (rectification sur observations
+                     du PV) : section dédiée, distinctes des originales conservées ci-dessus. -->
+                @if (piecesCorrigees().length > 0) {
+                  <div class="pieces-group">
+                    <div class="pieces-group-hd">
+                      <span class="group-pill gp-green">Versions corrigées (rectification)</span>
+                      <span class="group-count">{{ piecesCorrigees().length }} fichier(s)</span>
+                    </div>
+                    @for (p of piecesCorrigees(); track p.idPiece; let i = $index) {
+                      <div class="piece-row">
+                        <div class="piece-left">
+                          <span class="piece-index pi-green">{{ i + 1 }}</span>
+                          <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                          <span class="vc-tag">Corrigée</span>
                         </div>
                         <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
                       </div>
@@ -184,8 +207,8 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
                   </div>
                 }
               </div>
-            }
           </div>
+          }
         </div>
 
         <!-- ── Pied ── -->
@@ -204,7 +227,8 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
   styles: `
     .dc {
       width: 100%;
-      max-width: min(96rem, 98vw);
+      /* Jamais plus large que la zone utile du backdrop (100 % = viewport − padding), quel que soit le zoom. */
+      max-width: min(96rem, 100%);
       max-height: 90vh;
       overflow: hidden;
       display: flex;
@@ -212,6 +236,13 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
       background: #fff;
       border-radius: 20px;
       box-shadow: 0 0 0 0.5px var(--p-200), var(--shadow-xl);
+    }
+    /* ⚠️ 2026-08-06 (demande user) — un dossier de PLANIFICATION porte le tableau des marchés et ses
+       15 colonnes : à 96rem, les en-têtes d'un mot long (« PREVISIONNELLE ») débordaient sur la colonne
+       voisine. Le modal prend alors toute la largeur utile. Les autres types de dossier, eux, n'ont
+       que des champs : les élargir ne ferait qu'étirer du vide. */
+    .dc--large {
+      max-width: min(118rem, 100%);
     }
     .dc--embedded {
       max-width: none;
@@ -245,8 +276,10 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
     .dc-meta-value { font-size: 12.5px; font-weight: 600; color: var(--n-800); }
     .dc-meta-empty { color: var(--n-300); font-style: italic; font-weight: 400; }
 
-    /* Corps / sections */
-    .dc-body { overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--p-200) transparent; }
+    /* Corps / sections — overscroll contenu : la molette ne « fuit » pas vers la page derrière. */
+    .dc-body { overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--p-200) transparent; overscroll-behavior: contain; }
+    /* Hauteur réservée pendant le chargement : le contenu remplace le spinner sans saut brutal. */
+    .dc-load { min-height: 18rem; }
     .dc-section { padding: 16px 24px; }
     .dc-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 1rem; }
     .dc-empty { margin: 0; }
@@ -285,20 +318,29 @@ export class DossierConsultation implements OnInit {
   }
 
   private readonly ppmService = inject(PpmService);
+  private readonly miseAJourService = inject(MiseAJourPpmService);
   private readonly marcheService = inject(MarcheService);
   private readonly serviceBenefService = inject(ServiceBeneficiaireService);
   private readonly previsionService = inject(MarchePrevisionService);
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly toast = inject(ToastService);
   private readonly lookups = inject(ReferenceLookupService);
+  private readonly auth = inject(AuthService);
+
+  /** La référence PPM interne (ex. « 00018/MLF/PPM/2026 ») n'est montrée qu'aux profils PRMP, UGPM et Secrétaire. */
+  readonly montrerReferencePpm = computed(() => ['PRMP', 'UGPM', 'SECRETAIRE'].includes(this.auth.role() ?? ''));
 
   readonly ppm = signal<Ppm | null>(null);
+  /** Versionnement : idDetail → type de changement vs la version précédente (surlignage du tableau). */
+  readonly changements = signal<Map<number, TypeChangementLigne> | null>(null);
   readonly marches = signal<Marche[]>([]);
   readonly pieces = signal<PieceJointeDossier[]>([]);
-  readonly loadingContenu = signal(false);
-  readonly loadingPieces = signal(false);
-  readonly piecesInitiales = computed(() => this.pieces().filter((p) => !p.apresLettreRenvoi));
+  /** Une seule vague de rendu : le corps s'affiche quand TOUT est chargé (données + référentiels). */
+  readonly loading = signal(true);
+  readonly piecesInitiales = computed(() => this.pieces().filter((p) => !p.apresLettreRenvoi && !p.versionCorrigee));
   readonly piecesApresRenvoi = computed(() => this.pieces().filter((p) => p.apresLettreRenvoi));
+  /** ⚠️ 2026-08-03 — versions CORRIGÉES déposées pendant la rectification (distinctes des originales). */
+  readonly piecesCorrigees = computed(() => this.pieces().filter((p) => !p.apresLettreRenvoi && p.versionCorrigee));
   private readonly modeMap = signal<Map<string, string>>(new Map());
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -349,44 +391,71 @@ export class DossierConsultation implements OnInit {
   });
 
   ngOnInit(): void {
-    this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
-    this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
-    this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
-    // Pièces jointes du dossier (tous types) — GET /api/piece-jointe-dossiers?dossier={id}.
-    this.loadingPieces.set(true);
-    this.pieceService.getByDossier(this.dossier().idDossier).subscribe({
-      next: (rows) => {
-        this.pieces.set(rows);
-        this.loadingPieces.set(false);
-      },
-      error: () => this.loadingPieces.set(false),
-    });
-    if (this.estPpm()) {
-      const id = this.dossier().idDossier;
-      this.loadingContenu.set(true);
-      this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
-      this.lookups.lookup(SoaBeneficiaireService, 'soaCode', ['libelle']).subscribe((m) => this.soaMap.set(m));
-      this.lookups.lookup(CompteService, 'numCompte', ['libelle']).subscribe((m) => this.compteMap.set(m));
-      this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).subscribe((m) => this.capmMap.set(m));
-      forkJoin({
-        ppms: this.ppmService.list(),
-        marches: this.marcheService.list(),
-        benefs: this.serviceBenefService.list(),
-        previsions: this.previsionService.list(),
-      }).subscribe({
-        next: ({ ppms, marches, benefs, previsions }) => {
-          this.ppm.set(ppms.find((p) => p.idDossier === id) ?? null);
-          const mine = marches.filter((m) => m.idDossier === id);
-          this.marches.set(mine);
-          // Bénéficiaires + dates : ne garder que ceux des marchés du dossier (pas de filtre par dossier côté API).
-          const detailIds = new Set(mine.map((m) => m.idDetail));
-          this.serviceBenefs.set(benefs.filter((b) => detailIds.has(b.idDetail)));
-          this.previsions.set(previsions.filter((p) => detailIds.has(p.idDetail)));
-          this.loadingContenu.set(false);
+    const id = this.dossier().idDossier;
+    // Dossier issu d'une mise à jour → diff vs version précédente pour surligner les lignes changées.
+    // Appel SILENCIEUX (hors vague principale) : 403/409 → pas de surlignage, l'affichage reste complet.
+    if (this.dossier().idDossierParent != null) {
+      this.miseAJourService.diff(id, true).subscribe({
+        next: (diff) => {
+          const m = new Map<number, TypeChangementLigne>();
+          for (const l of diff.lignes) if (l.idDetail != null) m.set(l.idDetail, l.type);
+          this.changements.set(m);
         },
-        error: () => this.loadingContenu.set(false),
+        error: () => {},
       });
     }
+    // UNE SEULE VAGUE : données + référentiels joints dans un même forkJoin — le corps ne s'affiche
+    // qu'une fois complet (pas de spinners successifs, pas de libellés qui « clignotent »). Chaque
+    // source de données est tolérante à l'échec (of(...)) : le toast centralisé signale l'erreur,
+    // le reste du modal s'affiche quand même. Les lookups (shareReplay) sont mis en cache : les
+    // rouvrir — ou le tableau partagé qui les redemande — les résout alors de façon synchrone.
+    const commun = {
+      typeMap: this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).pipe(catchError(() => of(new Map<string, string>()))),
+      localiteMap: this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).pipe(catchError(() => of(new Map<string, string>()))),
+      entiteMap: this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).pipe(catchError(() => of(new Map<string, string>()))),
+      // Pièces jointes du dossier (tous types) — GET /api/piece-jointe-dossiers?dossier={id}.
+      pieces: this.pieceService.getByDossier(id).pipe(catchError(() => of([] as PieceJointeDossier[]))),
+    };
+    if (!this.estPpm()) {
+      forkJoin(commun).subscribe(({ typeMap, localiteMap, entiteMap, pieces }) => {
+        this.typeMap.set(typeMap);
+        this.localiteMap.set(localiteMap);
+        this.entiteMap.set(entiteMap);
+        this.pieces.set(pieces);
+        this.loading.set(false);
+      });
+      return;
+    }
+    forkJoin({
+      ...commun,
+      modeMap: this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).pipe(catchError(() => of(new Map<string, string>()))),
+      soaMap: this.lookups.lookup(SoaBeneficiaireService, 'soaCode', ['libelle']).pipe(catchError(() => of(new Map<string, string>()))),
+      compteMap: this.lookups.lookup(CompteService, 'numCompte', ['libelle']).pipe(catchError(() => of(new Map<string, string>()))),
+      capmMap: this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).pipe(catchError(() => of(new Map<string, string>()))),
+      // Natures : utilisées par le tableau partagé — préchargées ici pour que son premier rendu soit complet.
+      natureMap: this.lookups.lookup(NatureService, 'idNature', ['libelle']).pipe(catchError(() => of(new Map<string, string>()))),
+      ppms: this.ppmService.list().pipe(catchError(() => of([] as Ppm[]))),
+      marches: this.marcheService.list().pipe(catchError(() => of([] as Marche[]))),
+      benefs: this.serviceBenefService.list().pipe(catchError(() => of([] as ServiceBeneficiaire[]))),
+      previsions: this.previsionService.list().pipe(catchError(() => of([] as MarchePrevision[]))),
+    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, modeMap, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions }) => {
+      this.typeMap.set(typeMap);
+      this.localiteMap.set(localiteMap);
+      this.entiteMap.set(entiteMap);
+      this.pieces.set(pieces);
+      this.modeMap.set(modeMap);
+      this.soaMap.set(soaMap);
+      this.compteMap.set(compteMap);
+      this.capmMap.set(capmMap);
+      this.ppm.set(ppms.find((p) => p.idDossier === id) ?? null);
+      const mine = marches.filter((m) => m.idDossier === id);
+      this.marches.set(mine);
+      // Bénéficiaires + dates : ne garder que ceux des marchés du dossier (pas de filtre par dossier côté API).
+      const detailIds = new Set(mine.map((m) => m.idDetail));
+      this.serviceBenefs.set(benefs.filter((b) => detailIds.has(b.idDetail)));
+      this.previsions.set(previsions.filter((p) => detailIds.has(p.idDetail)));
+      this.loading.set(false);
+    });
   }
 
   /** Télécharge et ouvre une pièce jointe dans un nouvel onglet (lecture seule). */

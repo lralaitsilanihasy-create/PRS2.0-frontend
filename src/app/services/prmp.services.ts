@@ -3,8 +3,10 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
+import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
+  DiffDossier,
   Dossier,
   EditionPpmRequest,
   Lot,
@@ -187,5 +189,68 @@ export class SaisieService {
   /** `GET /api/saisies/ppm/import-xlsx/gabarit` — gabarit `.xlsx` à remplir (binaire). */
   telechargerGabaritXlsx(): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/ppm/import-xlsx/gabarit`, { responseType: 'blob' });
+  }
+
+  /**
+   * ⚠️ 2026-08-05 — `POST /api/saisies/ppm/{idDossier}/mise-a-jour` : ouvre la version suivante d'un PPM
+   * en vigueur. Crée un **nouveau dossier BROUILLON**, copie conforme du précédent, qu'il ne modifie
+   * pas — le prédécesseur ne bascule en « Remplacé » qu'à la soumission de cette nouvelle version.
+   *
+   * 400 motif vide · 409 dossier encore en instruction, déjà remplacé, ou mise à jour déjà en cours.
+   */
+  creerMiseAJour(idDossier: number, motif: string): Observable<Dossier> {
+    return this.http.post<Dossier>(`${this.baseUrl}/ppm/${idDossier}/mise-a-jour`, { motif });
+  }
+}
+
+/**
+ * ⚠️ 2026-08-05 — versionnement d'un PPM : comparaison avec le prédécesseur, chaîne des versions et
+ * suppression/restauration logique d'une ligne. Les chemins portent sur les ressources concernées
+ * (`/dossiers`, `/marches`), la façade de création restant `SaisieService.creerMiseAJour`.
+ */
+@Injectable({ providedIn: 'root' })
+export class MiseAJourPpmService {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = environment.apiUrl;
+
+  /**
+   * `GET /api/dossiers/{id}/diff` — récapitulatif chiffré + détail ligne à ligne. Recalculé tant que la
+   * version est un brouillon (il suit la saisie), relu depuis la trace figée une fois soumise.
+   * 409 si le dossier n'est pas une mise à jour.
+   */
+  diff(idDossier: number, silencieux = false): Observable<DiffDossier> {
+    // `silencieux` : sondage d'affichage (surlignage des lignes changées) — un 403 (profil non
+    // propriétaire) ou 409 ne doit pas toaster, l'écran dégrade simplement sans surlignage.
+    return this.http.get<DiffDossier>(
+      `${this.apiUrl}/dossiers/${idDossier}/diff`,
+      silencieux ? { context: skipErrorToast() } : {},
+    );
+  }
+
+  /** `GET /api/dossiers/{id}/versions` — chaîne complète, **la plus récente d'abord**. */
+  versions(idDossier: number): Observable<Dossier[]> {
+    return this.http.get<Dossier[]>(`${this.apiUrl}/dossiers/${idDossier}/versions`);
+  }
+
+  /**
+   * ⚠️ 2026-08-05 — `POST /api/saisies/ppm/{idDossier}/mise-a-jour/import` (multipart, part `fichier`).
+   * Une mise à jour arrive comme un **document**, comme la création : on importe le PPM modifié au lieu
+   * de le ressaisir. Le serveur parse le PDF, **rapproche** ses lignes de celles de la version (identité
+   * conservée), marque supprimées celles qui en ont disparu, crée les nouvelles — et renvoie le diff.
+   */
+  importerMiseAJour(idDossier: number, fichier: File): Observable<DiffDossier> {
+    const fd = new FormData();
+    fd.append('fichier', fichier);
+    return this.http.post<DiffDossier>(`${this.apiUrl}/saisies/ppm/${idDossier}/mise-a-jour/import`, fd);
+  }
+
+  /** `PATCH /api/marches/{idDetail}/supprimer` — suppression LOGIQUE (la ligne reste, restaurable). */
+  supprimerLigne(idDetail: number): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/marches/${idDetail}/supprimer`, {});
+  }
+
+  /** `PATCH /api/marches/{idDetail}/restaurer` — remet la ligne en service. */
+  restaurerLigne(idDetail: number): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/marches/${idDetail}/restaurer`, {});
   }
 }

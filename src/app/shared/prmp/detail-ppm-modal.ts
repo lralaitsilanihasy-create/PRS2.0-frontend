@@ -5,7 +5,7 @@ import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { AnomalieTranscription, Capm, Compte, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypePieceJointe } from '../../models';
+import { AnomalieTranscription, Capm, Compte, Dossier, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypeChangementLigne, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -14,6 +14,7 @@ import {
   LotService,
   MarcheService,
   MarchePrevisionService,
+  MiseAJourPpmService,
   ModePassationService,
   NatureService,
   PieceJointeDossierService,
@@ -178,7 +179,7 @@ import { PpmFormFactory } from './ppm-form-factory';
               } @else if (modeEdition) {
                 <!-- Même affichage que la lecture (format PPM officiel : montants, mode, forme, financement,
                      bénéficiaires, dates) + colonne ACTIONS injectée dans la table partagée. -->
-                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()">
+                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()">
                   <ng-template #rowActions let-m>
                     <div class="dpm-actions-stack">
                       <button class="btn btn-secondary btn-sm" type="button" (click)="voirDates(m)">Voir dates</button>
@@ -189,7 +190,7 @@ import { PpmFormFactory } from './ppm-form-factory';
                   </ng-template>
                 </app-ppm-marches-table>
               } @else {
-                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
+                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" />
               }
             </div>
 
@@ -235,6 +236,30 @@ import { PpmFormFactory } from './ppm-form-factory';
                           @if (modeEdition) {
                             <button class="btn btn-danger btn-sm" type="button" [disabled]="suppressionPiece() === p.idPiece" (click)="supprimerPiece(p)">Supprimer</button>
                           }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- ⚠️ 2026-08-03 — versions CORRIGÉES (rectification sur observations du PV). -->
+                @if (piecesCorrigees().length > 0) {
+                  <div class="pieces-group">
+                    <div class="pieces-group-hd">
+                      <span class="group-pill gp-green">Versions corrigées (rectification)</span>
+                      <span class="group-count">{{ piecesCorrigees().length }} fichier(s)</span>
+                    </div>
+                    @for (p of piecesCorrigees(); track p.idPiece; let i = $index) {
+                      <div class="piece-row">
+                        <div class="piece-left">
+                          <span class="piece-index pi-green">{{ i + 1 }}</span>
+                          <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                          <span class="vc-tag">Corrigée</span>
+                        </div>
+                        <div class="piece-actions">
+                          <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">
+                            Ouvrir <span class="arrow">↗</span>
+                          </button>
                         </div>
                       </div>
                     }
@@ -362,7 +387,15 @@ import { PpmFormFactory } from './ppm-form-factory';
                   <div class="dpm-date-row" [formGroup]="ctrl">
                     <select class="form-control" formControlName="idCapm">
                       <option [ngValue]="null" disabled>— Processus —</option>
-                      @for (c of capmsPourLigne(ef, ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
+                      @for (grp of groupesPourLigne(ef, ctrl); track grp.groupe) {
+                        @if (grp.groupe) {
+                          <optgroup [label]="grp.groupe">
+                            @for (c of grp.capms; track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
+                          </optgroup>
+                        } @else {
+                          @for (c of grp.capms; track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
+                        }
+                      }
                     </select>
                     <input class="form-control" type="date" formControlName="dateDebut" />
                     <input class="form-control" type="date" formControlName="dateFin" />
@@ -514,7 +547,15 @@ import { PpmFormFactory } from './ppm-form-factory';
                 <div class="dpm-date-row" [formGroup]="ctrl">
                   <select class="form-control" formControlName="idCapm">
                     <option [ngValue]="null" disabled>— Processus —</option>
-                    @for (c of capmsPourLigne(createForm, ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
+                    @for (grp of groupesPourLigne(createForm, ctrl); track grp.groupe) {
+                      @if (grp.groupe) {
+                        <optgroup [label]="grp.groupe">
+                          @for (c of grp.capms; track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
+                        </optgroup>
+                      } @else {
+                        @for (c of grp.capms; track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
+                      }
+                    }
                   </select>
                   <input class="form-control" type="date" formControlName="dateDebut" />
                   <input class="form-control" type="date" formControlName="dateFin" />
@@ -598,6 +639,7 @@ export class DetailPpmModal implements OnInit {
 
   private readonly ppmService = inject(PpmService);
   private readonly dossierService = inject(DossierService);
+  private readonly miseAJourService = inject(MiseAJourPpmService);
   private readonly marcheService = inject(MarcheService);
   private readonly lotService = inject(LotService);
   private readonly serviceBenefService = inject(ServiceBeneficiaireService);
@@ -621,6 +663,8 @@ export class DetailPpmModal implements OnInit {
   readonly ppm = signal<Ppm | null>(null);
   /** Entité contractante du dossier (fixe) — sert à interdire un réimport d'un PDF d'une autre entité + affichage. */
   readonly dossierEntite = signal<number | null>(null);
+  /** Versionnement : idDetail → type de changement vs la version précédente (surlignage du tableau). */
+  readonly changements = signal<Map<number, TypeChangementLigne> | null>(null);
   /** idEntiteContract → libellé (référentiel entités contractantes, un seul chargement). */
   private readonly entiteMap = signal<Map<string, string>>(new Map());
   /** Libellé de l'entité contractante du dossier (affiché dans l'en-tête). */
@@ -790,20 +834,12 @@ export class DetailPpmModal implements OnInit {
   /** Charge le PPM, ses marchés, ses pièces jointes et les référentiels d'affichage (modes, CAPM). */
   private charger(): void {
     this.loading.set(true);
-    this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
-    this.lookups.lookup(NatureService, 'idNature', ['libelle']).subscribe((m) => this.natureMap.set(m));
-    this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
-    this.lookups.lookup(CompteService, 'numCompte', ['libelle']).subscribe((m) => this.compteMap.set(m));
-    // Liste SOA (dropdown d'édition) + map libellés (affichage) en un seul appel.
-    this.soaBenefService.list().subscribe((rows) => {
-      this.soaList.set(rows);
-      this.soaMap.set(new Map(rows.map((s) => [s.soaCode, s.libelle ?? ''])));
-    });
-    this.capmService.getAll().subscribe((rows) => this.capms.set([...rows].sort((a, b) => a.ordre - b.ordre)));
     // Types de pièces attendus (édition) — famille DDP (planification).
     if (this.modeEdition) {
       this.typePieceService.getByTypeDossier('DDP').subscribe((rows) => this.typesPiece.set(rows));
     }
+    // UNE SEULE VAGUE : les référentiels d'affichage sont joints au même forkJoin que les données —
+    // le corps se rend une fois complet (pas de libellés qui « clignotent » à mesure des arrivées).
     forkJoin({
       ppm: this.ppmService.getById(this.idPpm),
       dossier: this.dossierService.getById(this.idDossier),
@@ -812,10 +848,25 @@ export class DetailPpmModal implements OnInit {
       benefs: this.serviceBenefService.list(),
       previsions: this.previsionService.list(),
       lots: this.lotService.list(),
+      modeMap: this.lookups.lookup(ModePassationService, 'idMode', ['libelle']),
+      natureMap: this.lookups.lookup(NatureService, 'idNature', ['libelle']),
+      entiteMap: this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']),
+      compteMap: this.lookups.lookup(CompteService, 'numCompte', ['libelle']),
+      // Liste SOA (dropdown d'édition) + map libellés (affichage) en un seul appel.
+      soas: this.soaBenefService.list(),
+      capms: this.capmService.getAll(),
     }).subscribe({
-      next: ({ ppm, dossier, marches, pieces, benefs, previsions, lots }) => {
+      next: ({ ppm, dossier, marches, pieces, benefs, previsions, lots, modeMap, natureMap, entiteMap, compteMap, soas, capms }) => {
+        this.modeMap.set(modeMap);
+        this.natureMap.set(natureMap);
+        this.entiteMap.set(entiteMap);
+        this.compteMap.set(compteMap);
+        this.soaList.set(soas);
+        this.soaMap.set(new Map(soas.map((s) => [s.soaCode, s.libelle ?? ''])));
+        this.capms.set([...capms].sort((a, b) => a.ordre - b.ordre));
         this.ppm.set(ppm);
         this.dossierEntite.set(dossier?.idEntiteContract ?? null);
+        this.chargerChangements(dossier);
         const mine = marches.filter((m) => m.idPpm === this.idPpm);
         this.marches.set(mine);
         this.pieces.set(pieces);
@@ -827,6 +878,23 @@ export class DetailPpmModal implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false), // 403/404 → toast centralisé
+    });
+  }
+
+  /**
+   * Dossier issu d'une mise à jour (`idDossierParent` renseigné) → charge le diff vs la version précédente
+   * pour surligner les lignes changées. Appel **silencieux** : 403 (profil non propriétaire) / 409 → pas de
+   * surlignage, l'affichage reste complet.
+   */
+  private chargerChangements(dossier: Dossier | null | undefined): void {
+    if (dossier?.idDossierParent == null) return;
+    this.miseAJourService.diff(dossier.idDossier, true).subscribe({
+      next: (diff) => {
+        const m = new Map<number, TypeChangementLigne>();
+        for (const l of diff.lignes) if (l.idDetail != null) m.set(l.idDetail, l.type);
+        this.changements.set(m);
+      },
+      error: () => {},
     });
   }
 
@@ -853,7 +921,7 @@ export class DetailPpmModal implements OnInit {
         const arr = this.fb.array([] as FormGroup[]);
         const anomMap = new Map<number, AnomalieTranscription[]>();
         for (const m of r.marches ?? []) {
-          const g = this.factory.construireMarcheDepuisImport(m, this.capms());
+          const g = this.factory.construireMarcheDepuisImport(m, this.capms(), this.modes());
           arr.push(g);
           const anom = (m.anomalies ?? []).filter((a) => a.type !== 'REFERENTIEL_INCONNU');
           if (anom.length) anomMap.set(g.get('uid')!.value as number, anom);
@@ -1097,10 +1165,14 @@ export class DetailPpmModal implements OnInit {
 
   // — Pièces jointes —
   piecesInitiales(): PieceJointeDossier[] {
-    return this.pieces().filter((p) => !p.apresLettreRenvoi);
+    return this.pieces().filter((p) => !p.apresLettreRenvoi && !p.versionCorrigee);
   }
   piecesApresRenvoi(): PieceJointeDossier[] {
     return this.pieces().filter((p) => p.apresLettreRenvoi);
+  }
+  /** ⚠️ 2026-08-03 — versions CORRIGÉES déposées pendant la rectification (distinctes des originales). */
+  piecesCorrigees(): PieceJointeDossier[] {
+    return this.pieces().filter((p) => !p.apresLettreRenvoi && p.versionCorrigee);
   }
   ouvrirPiece(p: PieceJointeDossier): void {
     if (p.idPiece == null) {
@@ -1174,6 +1246,15 @@ export class DetailPpmModal implements OnInit {
   datesControls(form: FormGroup): FormGroup[] {
     return (form.get('datesPrev') as FormArray).controls as FormGroup[];
   }
+  /** Mode de passation du contexte du formulaire de dates : marché en édition, sinon champ `idMode` (création). */
+  private modeDuForm(form: FormGroup): number | null {
+    if (form === this.editForm()) return this.editMarche()?.idMode ?? null;
+    return (form.get('idMode')?.value as number | null) ?? null;
+  }
+  /** Grille CAPM EFFECTIVE du contexte (spécifiques au mode — ou son modèle partagé — sinon communs). */
+  private capmsEffectifsDe(form: FormGroup): Capm[] {
+    return this.factory.capmsEffectifsParMode(this.capms(), this.modeDuForm(form), this.modes());
+  }
   capmsPourLigne(form: FormGroup, ctrl: FormGroup): Capm[] {
     const autres = new Set(
       this.datesControls(form)
@@ -1181,15 +1262,26 @@ export class DetailPpmModal implements OnInit {
         .map((g) => g.get('idCapm')!.value as number)
         .filter((v) => v != null),
     );
-    return this.capms().filter((c) => !autres.has(c.idCapm));
+    return this.capmsEffectifsDe(form).filter((c) => !autres.has(c.idCapm));
+  }
+  /** Options du sélecteur regroupées par phase du modèle (`groupe` ; null = sans phase). */
+  groupesPourLigne(form: FormGroup, ctrl: FormGroup): { groupe: string | null; capms: Capm[] }[] {
+    const groupes: { groupe: string | null; capms: Capm[] }[] = [];
+    for (const c of this.capmsPourLigne(form, ctrl)) {
+      const g = c.groupe ?? null;
+      const dernier = groupes[groupes.length - 1];
+      if (dernier && dernier.groupe === g) dernier.capms.push(c);
+      else groupes.push({ groupe: g, capms: [c] });
+    }
+    return groupes;
   }
   peutAjouterDate(form: FormGroup): boolean {
     const utilises = new Set(this.datesControls(form).map((g) => g.get('idCapm')!.value as number));
-    return this.capms().some((c) => !utilises.has(c.idCapm));
+    return this.capmsEffectifsDe(form).some((c) => !utilises.has(c.idCapm));
   }
   ajouterDate(form: FormGroup): void {
     const utilises = new Set(this.datesControls(form).map((g) => g.get('idCapm')!.value as number));
-    const libre = this.capms().find((c) => !utilises.has(c.idCapm));
+    const libre = this.capmsEffectifsDe(form).find((c) => !utilises.has(c.idCapm));
     (form.get('datesPrev') as FormArray).push(this.ligneDate({ idCapm: libre?.idCapm }));
   }
   retirerDate(form: FormGroup, i: number): void {

@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, computed, contentChild, inject, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { forkJoin } from 'rxjs';
 
-import { FORME_MARCHE_LIBELLES, Marche, MarchePrevision, ServiceBeneficiaire } from '../../models';
+import { FORME_MARCHE_LIBELLES, Marche, MarchePrevision, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
   CapmService,
   ModePassationService,
@@ -54,45 +55,75 @@ interface MarcheRow {
   imports: [NgTemplateOutlet],
   template: `
     @if (rows().length) {
-      <div class="pmt-wrap">
-        <table class="pmt">
+      <!-- Légende du versionnement : visible seulement si au moins une ligne diffère de la version
+           précédente (le surlignage doit rester lisible dans TOUS les profils qui voient ce tableau). -->
+      @if (typesPresents().length) {
+        <div class="pmt-legende">
+          <span class="pmt-legende-titre">Mise à jour :</span>
+          @for (t of typesPresents(); track t) {
+            <span class="pmt-legende-chip" [class]="'pmt-legende-chip--' + t.toLowerCase()">{{ chgLabel(t) }}</span>
+          }
+        </div>
+      }
+      <!-- ⚠️ 2026-08-06 — présentation COMMUNE à tous les tableaux du dossier de planification
+           (« .ppm-table », styles/_ppm-table.scss) : le tableau tient dans l'écran, seules les
+           colonnes d'identité restent à gauche. « .pmt » ne porte plus que ce qui lui est propre
+           (états d'examen, badges). -->
+      <div class="pmt-wrap ppm-table-wrap">
+        <table class="pmt ppm-table">
+          <!-- Largeurs calibrées sur le plus long libellé d'en-tête d'un mot seul (FINANCEMENT,
+               COMPTE) et sur un montant à 10 chiffres, qui ne doivent jamais se couper. Les deux
+               colonnes optionnelles portent la somme au-delà de 100 % : le navigateur normalise. -->
           <colgroup>
-            <col style="width: 6%" /><col style="width: 15%" /><col style="width: 9%" /><col style="width: 9%" />
-            <col style="width: 6%" /><col style="width: 5%" /><col style="width: 8%" /><col style="width: 5%" />
-            <col style="width: 9%" /><col style="width: 9%" /><col style="width: 6%" /><col style="width: 6%" /><col style="width: 6%" />
-            @if (actionsTpl()) { <col style="width: 11%" /> }
+            @if (rowStateFn()) { <col style="width: 3%" /> }
+            <col style="width: 7%" /><col style="width: 17%" /><col style="width: 8%" /><col style="width: 8%" />
+            <col style="width: 8%" /><col style="width: 7%" /><col style="width: 7%" /><col style="width: 5%" />
+            <col style="width: 8%" /><col style="width: 8%" /><col style="width: 6%" /><col style="width: 6%" /><col style="width: 6%" />
+            @if (actionsTpl()) { <col style="width: 9%" /> }
           </colgroup>
           <thead>
             <tr>
+              @if (rowStateFn()) { <th rowspan="2" class="ppm-c" title="État d'examen de la ligne"></th> }
               <th rowspan="2">NATURE</th>
               <th rowspan="2">OBJET</th>
-              <th rowspan="2">MONTANT ESTIMATIF INITIAL</th>
-              <th rowspan="2">NOUVEAU MONTANT ESTIMATIF</th>
-              <th rowspan="2">MODE DE PASSATION</th>
-              <th rowspan="2">FINANCEMENT</th>
-              <th colspan="4">Informations sur le Bénéficiaire</th>
-              <th rowspan="2">DATE PREVISIONNELLE DE LANCEMENT</th>
-              <th rowspan="2">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
-              <th rowspan="2">DATE PREVISIONNELLE D'ATTRIBUTION</th>
-              @if (actionsTpl()) { <th rowspan="2">ACTIONS</th> }
+              <th rowspan="2" class="ppm-c">MONTANT ESTIMATIF INITIAL</th>
+              <th rowspan="2" class="ppm-c">NOUVEAU MONTANT ESTIMATIF</th>
+              <th rowspan="2" class="ppm-c">MODE DE PASSATION</th>
+              <th rowspan="2" class="ppm-c">FINANCEMENT</th>
+              <th colspan="4" class="ppm-c">Informations sur le Bénéficiaire</th>
+              <th rowspan="2" class="ppm-c">DATE PREVISIONNELLE DE LANCEMENT</th>
+              <th rowspan="2" class="ppm-c">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
+              <th rowspan="2" class="ppm-c">DATE PREVISIONNELLE D'ATTRIBUTION</th>
+              @if (actionsTpl()) { <th rowspan="2" class="ppm-c">ACTIONS</th> }
             </tr>
             <tr>
-              <th>SERVICE BENEFICIAIRE</th><th>COMPTE</th><th>MONTANT ESTIMATIF PAR BENEFICIAIRE</th><th>NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
+              <th class="ppm-c">SERVICE BENEFICIAIRE</th><th class="ppm-c">COMPTE</th><th class="ppm-c">MONTANT ESTIMATIF PAR BENEFICIAIRE</th><th class="ppm-c">NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
             </tr>
           </thead>
           <tbody>
             @for (m of rows(); track $index) {
               @for (b of m.benefRows; track $index; let first = $first) {
-                <tr [class]="etat(m.source) ? 'pmt-row-' + etat(m.source) : ''"
+                <tr [class]="rowClass(m.source)"
                     [class.pmt-lead]="first"
                     [class.pmt-clickable]="rowStateFn()"
                     (click)="onRowClick(m.source)">
                   @if (first) {
+                    <!-- État d'examen : ✓ vert = examinée sans observation ; ✗ rouge = avec observation(s) ; ● = en cours. -->
+                    @if (rowStateFn()) {
+                      <td [attr.rowspan]="m.benefRows.length" class="pmt-etat">
+                        @switch (etat(m.source)) {
+                          @case ('done-ras') { <span class="pmt-etat-ok" title="Examinée — sans observation">✓</span> }
+                          @case ('done-obs') { <span class="pmt-etat-obs" title="Examinée — avec observation(s)">✗</span> }
+                          @case ('current') { <span class="pmt-etat-cur" title="Ligne en cours d'examen">●</span> }
+                          @default { <span class="pmt-etat-att" title="À examiner">•</span> }
+                        }
+                      </td>
+                    }
                     <td [attr.rowspan]="m.benefRows.length">{{ m.nature }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="pmt-objet">{{ m.objet }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="pmt-num">{{ montantFmt(m.montEstim) }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="pmt-num">{{ montantFmt(m.nouvMontEstim) }}</td>
-                    <td [attr.rowspan]="m.benefRows.length">
+                    <td [attr.rowspan]="m.benefRows.length" class="pmt-objet ppm-objet">{{ m.objet }}</td>
+                    <td [attr.rowspan]="m.benefRows.length" class="ppm-mont">{{ montantFmt(m.montEstim) }}</td>
+                    <td [attr.rowspan]="m.benefRows.length" class="ppm-mont">{{ montantFmt(m.nouvMontEstim) }}</td>
+                    <td [attr.rowspan]="m.benefRows.length" class="ppm-c">
                       {{ m.mode }}
                       @if (m.typeDmcCode) {
                         <span class="badge pmt-dmc" [title]="m.typeDmcLibelle || ''">{{ m.typeDmcCode }}</span>
@@ -103,18 +134,18 @@ interface MarcheRow {
                         <span class="badge pmt-forme" title="Forme du marché">{{ m.formeLibelle }}</span>
                       }
                     </td>
-                    <td [attr.rowspan]="m.benefRows.length">{{ m.financement }}</td>
+                    <td [attr.rowspan]="m.benefRows.length" class="ppm-c">{{ m.financement }}</td>
                   }
-                  <td>{{ b.soaCode || '' }}</td>
-                  <td>{{ b.numCompte || '' }}</td>
-                  <td class="pmt-num">{{ montantFmt(b.ancMontBenef) }}</td>
-                  <td class="pmt-num">{{ montantFmt(b.nouvMontBenef) }}</td>
+                  <td class="ppm-c">{{ b.soaCode || '' }}</td>
+                  <td class="ppm-c">{{ b.numCompte || '' }}</td>
+                  <td class="ppm-mont">{{ montantFmt(b.ancMontBenef) }}</td>
+                  <td class="ppm-mont">{{ montantFmt(b.nouvMontBenef) }}</td>
                   @if (first) {
-                    <td [attr.rowspan]="m.benefRows.length" class="pmt-date">{{ m.dateLancement }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="pmt-date">{{ m.dateOuverture }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="pmt-date">{{ m.dateAttribution }}</td>
+                    <td [attr.rowspan]="m.benefRows.length" class="ppm-date">{{ m.dateLancement }}</td>
+                    <td [attr.rowspan]="m.benefRows.length" class="ppm-date">{{ m.dateOuverture }}</td>
+                    <td [attr.rowspan]="m.benefRows.length" class="ppm-date">{{ m.dateAttribution }}</td>
                     @if (actionsTpl(); as tpl) {
-                      <td [attr.rowspan]="m.benefRows.length" class="pmt-actions">
+                      <td [attr.rowspan]="m.benefRows.length" class="pmt-actions ppm-actions">
                         <ng-container [ngTemplateOutlet]="tpl" [ngTemplateOutletContext]="{ $implicit: m.source }" />
                       </td>
                     }
@@ -130,30 +161,47 @@ interface MarcheRow {
     }
   `,
   styles: `
-    .pmt-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    /* min-width : en dessous, .pmt-wrap défile au lieu de tasser les 13 colonnes (illisible sur mobile) ;
-       au-dessus, le tableau reste à 100 % de son conteneur (desktop inchangé). */
-    .pmt { border-collapse: collapse; width: 100%; min-width: 80rem; table-layout: fixed; font-size: 0.74rem; color: #000; background: #fff; }
-    /* white-space: normal force le retour à la ligne (évite un nowrap hérité d'un style global de th/table). */
-    .pmt th, .pmt td { border: 1px solid #000; padding: 5px 7px; vertical-align: top; white-space: normal; overflow-wrap: break-word; word-break: break-word; }
-    .pmt thead th { background: #f0f0f0; color: #000; text-align: center; font-weight: 700; line-height: 1.15; }
-    .pmt td.pmt-num { text-align: right; }
-    .pmt td.pmt-date { text-align: center; white-space: nowrap; }
+    /* ⚠️ 2026-08-06 — cadre, largeurs, retours à la ligne, alignements et en-tête bleu viennent
+       désormais de « .ppm-table » (styles/_ppm-table.scss), commun à tous les tableaux du dossier de
+       planification. Ce qui suit est PROPRE à ce tableau : états d'examen et badges.
+       ⚠️ Ne pas y remettre « min-width », « border 1px solid #000 » ni un fond d'en-tête : c'est ce qui
+       imposait le défilement horizontal et l'ancien rendu « document ». */
     .pmt td.pmt-objet { white-space: pre-wrap; }
     /* Badge de type de DMC (dérivé) : compact pour cette table dense ; libellé complet en tooltip. */
     .pmt .pmt-dmc { display: inline-block; margin-top: 2px; font-size: 0.62rem; padding: 0 3px; line-height: 1.4; }
     /* Badge de forme du marché (affiché seulement hors défaut « à quantité fixe »). */
     .pmt .pmt-forme { display: inline-block; margin-top: 2px; font-size: 0.62rem; padding: 0 3px; line-height: 1.4; background: var(--p-50, #eef2ff); color: var(--p-600, #4f46e5); border: 1px solid var(--p-200, #c7d2fe); }
     .pmt-empty { color: var(--n-400, #71717a); margin: 0; }
-    /* États d'examen séquentiel — palette sobre alignée sur l'accent indigo (fond pâle + liseré gauche) :
-       à examiner (neutre) / en cours (indigo) / examinée RAS (vert) / examinée avec observation (ambre). */
+    /* Versionnement : lignes changées vs version précédente — fonds pastel distincts + liseré gauche.
+       Déclarées AVANT les états d'examen pour que l'examen (workflow actif) garde la priorité visuelle. */
+    .pmt tbody tr.pmt-chg-modifiee > td { background: #FEF3C7; }
+    .pmt tbody tr.pmt-chg-modifiee.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #F59E0B; }
+    .pmt tbody tr.pmt-chg-nouvelle > td { background: #DCFCE7; }
+    .pmt tbody tr.pmt-chg-nouvelle.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #16A34A; }
+    .pmt tbody tr.pmt-chg-restauree > td { background: #E0F2FE; }
+    .pmt tbody tr.pmt-chg-restauree.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #0284C7; }
+    /* Légende (chips aux mêmes fonds que les lignes). */
+    .pmt-legende { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.45rem; font-size: var(--text-xs, 0.75rem); }
+    .pmt-legende-titre { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--n-400, #71717a); }
+    .pmt-legende-chip { padding: 0.1rem 0.5rem; border-radius: 999px; font-weight: 600; color: #000; }
+    .pmt-legende-chip--modifiee { background: #FEF3C7; border: 1px solid #F59E0B; }
+    .pmt-legende-chip--nouvelle { background: #DCFCE7; border: 1px solid #16A34A; }
+    .pmt-legende-chip--restauree { background: #E0F2FE; border: 1px solid #0284C7; }
+    /* États d'examen séquentiel : à examiner (neutre) / EN COURS (indigo appuyé, bien visible) /
+       examinée RAS (vert + ✓) / examinée avec observation (rouge + ✗). */
     .pmt tbody tr.pmt-clickable { cursor: pointer; }
-    .pmt tbody tr.pmt-row-current > td { background: #EEF2FF; }
-    .pmt tbody tr.pmt-row-current.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #6366F1; }
+    .pmt tbody tr.pmt-row-current > td { background: #E0E7FF; }
+    .pmt tbody tr.pmt-row-current.pmt-lead > td:first-child { box-shadow: inset 5px 0 0 #4F46E5; }
     .pmt tbody tr.pmt-row-done-ras > td { background: #F0FDF4; }
     .pmt tbody tr.pmt-row-done-ras.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #22C55E; }
-    .pmt tbody tr.pmt-row-done-obs > td { background: #FFFBEB; }
-    .pmt tbody tr.pmt-row-done-obs.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #F59E0B; }
+    .pmt tbody tr.pmt-row-done-obs > td { background: #FEF2F2; }
+    .pmt tbody tr.pmt-row-done-obs.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #DC2626; }
+    /* Colonne d'état (mode examen) : marqueur centré, gros et contrasté. */
+    .pmt td.pmt-etat { text-align: center; vertical-align: middle; font-size: 1.05rem; font-weight: 800; }
+    .pmt-etat-ok { color: #16A34A; }
+    .pmt-etat-obs { color: #DC2626; }
+    .pmt-etat-cur { color: #4F46E5; }
+    .pmt-etat-att { color: var(--n-300, #d4d4d8); }
   `,
 })
 export class PpmMarchesTable implements OnInit {
@@ -172,6 +220,12 @@ export class PpmMarchesTable implements OnInit {
   readonly rowStateFn = input<((idDetail: number) => RowExamState | null) | null>(null);
   /** Émis au clic sur une ligne (le `Marche` cliqué) — sert à rouvrir une ligne déjà examinée. Actif seulement si `rowStateFn` est fourni. */
   readonly rowClick = output<Marche>();
+  /**
+   * Versionnement (optionnel) : idDetail → type de changement vs la version précédente
+   * (`GET /api/dossiers/{id}/diff`). Les lignes MODIFIEE / NOUVELLE / RESTAUREE reçoivent un fond
+   * distinctif + une légende ; INCHANGEE reste neutre (les SUPPRIMEE ne figurent pas dans ce tableau).
+   */
+  readonly changements = input<Map<number, TypeChangementLigne> | null>(null);
 
   private readonly lookups = inject(ReferenceLookupService);
   private readonly modeService = inject(ModePassationService);
@@ -186,17 +240,16 @@ export class PpmMarchesTable implements OnInit {
     this.lookups.lookup(NatureService, 'idNature', ['libelle']).subscribe((m) => this.natureMap.set(m));
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).subscribe((m) => this.capmMap.set(m));
-    // Type de DMC dérivé du mode : idMode → idTypeDmc → code/libellé. Chargé une fois (pas d'appel par ligne).
-    this.modeService.list().subscribe((modes) => {
-      this.typeDmcService.list().subscribe((types) => {
-        const typeById = new Map(types.map((t) => [t.idTypeDmc, t]));
-        const map = new Map<number, { code: string; libelle: string }>();
-        for (const md of modes) {
-          const t = md.idTypeDmc != null ? typeById.get(md.idTypeDmc) : undefined;
-          if (t) map.set(md.idMode, { code: t.code, libelle: t.libelle });
-        }
-        this.modeTypeMap.set(map);
-      });
+    // Type de DMC dérivé du mode : idMode → idTypeDmc → code/libellé. Chargé une fois (pas d'appel par
+    // ligne), modes et types en parallèle (une seule vague de rendu).
+    forkJoin({ modes: this.modeService.list(), types: this.typeDmcService.list() }).subscribe(({ modes, types }) => {
+      const typeById = new Map(types.map((t) => [t.idTypeDmc, t]));
+      const map = new Map<number, { code: string; libelle: string }>();
+      for (const md of modes) {
+        const t = md.idTypeDmc != null ? typeById.get(md.idTypeDmc) : undefined;
+        if (t) map.set(md.idMode, { code: t.code, libelle: t.libelle });
+      }
+      this.modeTypeMap.set(map);
     });
   }
 
@@ -215,7 +268,11 @@ export class PpmMarchesTable implements OnInit {
       prevByDetail.set(p.idDetail, l);
     }
     const capm = this.capmMap();
-    return this.marches().map((m) => {
+    // ⚠️ 2026-08-05 (versionnement des PPM) — une ligne SUPPRIMÉE d'une version est conservée en base
+    // (restaurable, jamais effacée) mais ne fait plus partie du plan : elle est donc absente de toute
+    // vue « officielle » du PPM (consultation, détail, grille d'examen, dates prévisionnelles).
+    // L'écran de mise à jour, lui, a sa propre table et continue de les montrer, grisées.
+    return this.marches().filter((m) => !m.supprimee).map((m) => {
       const prevs = prevByDetail.get(m.idDetail) ?? [];
       const dateDe = (kw: string): string => {
         const p = prevs.find((x) => (capm.get(String(x.idCapm)) ?? '').toUpperCase().includes(kw));
@@ -249,6 +306,37 @@ export class PpmMarchesTable implements OnInit {
   etat(m: Marche): RowExamState | null {
     const fn = this.rowStateFn();
     return fn ? fn(m.idDetail) : null;
+  }
+  /** Type de changement d'une ligne (hors INCHANGEE) — `null` si pas de diff fourni. */
+  private chg(m: Marche): TypeChangementLigne | null {
+    const t = this.changements()?.get(m.idDetail);
+    return t && t !== 'INCHANGEE' ? t : null;
+  }
+  /** Classes de la ligne : état d'examen (prioritaire visuellement) + changement de version. */
+  rowClass(m: Marche): string {
+    const exam = this.etat(m);
+    const chg = this.chg(m);
+    return [exam ? 'pmt-row-' + exam : '', chg ? 'pmt-chg-' + chg.toLowerCase() : ''].filter(Boolean).join(' ');
+  }
+  /** Types de changement présents parmi les lignes affichées (pilote la légende, dans un ordre stable). */
+  readonly typesPresents = computed<TypeChangementLigne[]>(() => {
+    const ch = this.changements();
+    if (!ch) return [];
+    const presents = new Set<TypeChangementLigne>();
+    for (const m of this.marches()) {
+      if (m.supprimee) continue;
+      const t = ch.get(m.idDetail);
+      if (t && t !== 'INCHANGEE') presents.add(t);
+    }
+    return (['MODIFIEE', 'NOUVELLE', 'RESTAUREE'] as TypeChangementLigne[]).filter((t) => presents.has(t));
+  });
+  chgLabel(t: TypeChangementLigne): string {
+    switch (t) {
+      case 'MODIFIEE': return 'Modifiée';
+      case 'NOUVELLE': return 'Nouvelle';
+      case 'RESTAUREE': return 'Restaurée';
+      default: return t;
+    }
   }
   /** Clic sur une ligne : ne réémet que si un état séquentiel est actif (contexte examen). */
   onRowClick(m: Marche): void {
