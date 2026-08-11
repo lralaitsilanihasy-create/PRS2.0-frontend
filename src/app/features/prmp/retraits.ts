@@ -113,11 +113,15 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     </section>
   `,
   styles: `
-    .rt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+    /* ⚠️ 2026-08-06 — la colonne de gauche porte la consultation du dossier, donc le tableau des
+       marchés et ses 14 colonnes ; celle de droite, une liste de demandes. Le partage à parts égales
+       étranglait le tableau : 2 pour 1. */
+    /* Empilement : le détail du dossier (tableau PPM large) passe SOUS le formulaire — en colonne
+       latérale, le tableau n'avait que ~500px et chaque en-tête se cassait lettre à lettre. */
+    .rt-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: start; }
     .rt-foot { display: flex; justify-content: flex-end; }
     .rt-sub { margin: 1.75rem 0 0.75rem; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
     .table-card td { white-space: normal; }
-    @media (max-width: 60rem) { .rt-grid { grid-template-columns: 1fr; } }
   `,
 })
 export class PrmpRetraits {
