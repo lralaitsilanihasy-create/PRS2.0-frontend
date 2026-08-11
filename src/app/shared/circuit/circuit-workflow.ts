@@ -53,9 +53,18 @@ export function etapeIndexForDossier(statut?: string): number {
     case 'VERIFICATION':
     case 'EN_VERIFICATION':
     case 'EN_ATTENTE_DECISION_PRMP':
-      return 5; // Vérification
+    case 'OBSERVATIONS_LEVEES':
+    case 'DECISION_TRANSMISE_SIGMP':
+      return 5; // Vérification (⚠️ spec navette : levée / transmission SIGMP / attente d'archivage)
+    case 'EN_ATTENTE_PIECES':
+      return 3; // Examen suspendu (lettre de renvoi — en attente de pièces complémentaires)
+    case 'A_REEXAMINER':
+      return 2; // Réexamen (pièces complémentaires reçues — retour dans la file du Membre)
+    case 'EN_ATTENTE_COMPLEMENTS_DEPOT':
+      return 0; // Contrôle de complétude au dépôt (avant réception) — pièces attendues de la PRMP
     case 'CLOTURE':
-      return 6; // Clôture
+    case 'REMPLACE':
+      return 6; // Clôture (REMPLACE = circuit terminé puis supplanté par une nouvelle version)
     case 'RETIRE':
       return -1; // hors flux
     default:
@@ -83,8 +92,16 @@ export const DOSSIER_STATUT_LABELS: Record<string, string> = {
   PV_SIGNE: 'PV signé',
   EN_VERIFICATION: 'En vérification',
   EN_ATTENTE_DECISION_PRMP: 'À rectifier',
+  OBSERVATIONS_LEVEES: 'Observations levées',
+  DECISION_TRANSMISE_SIGMP: 'Décision transmise à SIGMP',
+  EN_ATTENTE_PIECES: 'En attente de pièces',
+  A_REEXAMINER: 'À réexaminer',
+  EN_ATTENTE_COMPLEMENTS_DEPOT: 'En attente de pièces complémentaires',
   CLOTURE: 'Clôturé',
   RETIRE: 'Retiré',
+  // ⚠️ 2026-08-05 — versionnement des PPM : dossier remplacé par une version postérieure. Il reste
+  // intégralement consultable (c'est l'historique) mais n'est plus le PPM en vigueur.
+  REMPLACE: 'Remplacé',
 };
 
 /** Libellé d'affichage d'un statut de dossier (code brut si inconnu / hors dossier). */
@@ -129,6 +146,9 @@ export function statutSeverity(statut: string): Severity {
     case 'EN_RECTIFICATION':
     case 'EN_ATTENTE':
     case 'EN_ATTENTE_DECISION_PRMP':
+    case 'EN_ATTENTE_PIECES':
+    case 'A_REEXAMINER':
+    case 'EN_ATTENTE_COMPLEMENTS_DEPOT':
     case 'FAVORABLE_RESERVES':
       return 'warning';
     case 'PRET_DISPATCH':
@@ -137,6 +157,8 @@ export function statutSeverity(statut: string): Severity {
     case 'EXAMINE':
     case 'SOUMIS':
     case 'DISPATCHE':
+    case 'OBSERVATIONS_LEVEES':
+    case 'DECISION_TRANSMISE_SIGMP':
       return 'info';
     default:
       return 'neutral';
@@ -212,6 +234,15 @@ export function etapeSuivante(statut?: string): EtapeInfo {
     case 'EN_EXAMEN':
     case 'EXAMEN':
       return { cle: 'EXAMEN', label: 'Examen & projet de PV', acteurs: 'Membre', capability: 'EXAMEN_WRITE' };
+    case 'A_REEXAMINER':
+      // ⚠️ Réexamen après lettre de renvoi (2026-08-02) : pièces complémentaires transmises par la
+      // PRMP — le Membre réexamine puis re-soumet le projet de PV (le dossier repasse EXAMINE).
+      return {
+        cle: 'EXAMEN',
+        label: 'Réexamen (pièces complémentaires reçues)',
+        acteurs: 'Membre',
+        capability: 'EXAMEN_WRITE',
+      };
     case 'EXAMINE':
     case 'EN_PV':
     case 'PROJET_PV':
@@ -235,6 +266,10 @@ export function etapeSuivante(statut?: string): EtapeInfo {
       return { cle: 'CLOTURE', label: 'Dossier clôturé', acteurs: '—', capability: null };
     case 'RETIRE':
       return { cle: 'RETIRE', label: 'Dossier retiré', acteurs: '—', capability: null };
+    // ⚠️ 2026-08-05 — versionnement : le dossier a fini son parcours, une version postérieure a pris
+    // le relais. Rangé avec les fins de parcours (comme RETIRE) plutôt qu'en « étape indéterminée ».
+    case 'REMPLACE':
+      return { cle: 'RETIRE', label: 'Remplacé par une version postérieure', acteurs: '—', capability: null };
     default:
       return { cle: 'INCONNU', label: 'Étape indéterminée', acteurs: '—', capability: null };
   }

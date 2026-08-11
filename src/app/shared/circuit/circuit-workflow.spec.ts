@@ -27,6 +27,7 @@ describe('circuit-workflow', () => {
       expect(etapeIndexForDossier('DISPATCHE')).toBe(2);
       expect(etapeIndexForDossier('EN_EXAMEN')).toBe(2);
       expect(etapeIndexForDossier('CLOTURE')).toBe(6);
+      expect(etapeIndexForDossier('REMPLACE')).toBe(6);
     });
 
     it('renvoie -1 pour un dossier retiré (hors flux)', () => {
