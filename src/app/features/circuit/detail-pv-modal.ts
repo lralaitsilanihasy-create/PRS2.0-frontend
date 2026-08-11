@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { ToastService } from '../../core/notifications/toast.service';
@@ -193,11 +194,35 @@ import { StatutBadge } from '../../shared/circuit';
             <span class="text-muted text-sm">Aucun PDF officiel : ce PV n'est pas éligible à la génération de document.</span>
           } @else {
             <span class="text-muted text-sm">Document officiel signé</span>
-            <button type="button" class="btn btn-secondary" (click)="telechargerPdf()">⬇ Télécharger le PDF</button>
+            <button type="button" class="btn btn-secondary" [disabled]="chargementPdf()" (click)="afficherPdf()">
+              {{ chargementPdf() ? 'Chargement…' : '📄 Afficher' }}
+            </button>
           }
         </div>
       </div>
     </div>
+
+    <!-- Visionneuse du PDF officiel signé (même modèle que « PV définitifs » PRMP) : le lecteur du
+         navigateur offre déjà impression / enregistrement. -->
+    @if (apercu(); as ap) {
+      <div class="modal-backdrop" (click)="fermerApercu()">
+        <div class="modal modal-lg dpv-viewer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <div class="dpv-head-top">
+                <app-statut-badge [statut]="pv().statutPv" [label]="'Définitif'" />
+                <span class="text-muted text-sm">Document officiel signé</span>
+              </div>
+              <h2 class="modal-title">{{ ap.reference }}</h2>
+            </div>
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerApercu()">✕</button>
+          </div>
+          <div class="modal-body dpv-viewer-body">
+            <iframe [src]="ap.url" [title]="ap.reference" class="dpv-viewer-frame"></iframe>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: `
     .dpv-head-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
@@ -222,6 +247,9 @@ import { StatutBadge } from '../../shared/circuit';
     .dpv-detail-table td:first-child { color: var(--n-400); width: 160px; }
     /* Modal élargi : la grille (point / résultat / observation) chevauchait ses colonnes à 860px. */
     .modal.modal-lg { max-width: 1100px; }
+    /* Visionneuse PDF : le corps du modal est entièrement occupé par le document. */
+    .dpv-viewer-body { padding: 0; }
+    .dpv-viewer-frame { display: block; width: 100%; height: 75vh; border: 0; }
     .dpv-grille-table { width: 100%; font-size: var(--text-sm); border-collapse: collapse; table-layout: fixed; }
     /* Répartition : le libellé (point / pièce) et l'observation portent les textes longs, le résultat est court. */
     .dpv-grille-table th:nth-child(1) { width: 45%; }
@@ -250,6 +278,7 @@ export class DetailPvModal implements OnInit {
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly toast = inject(ToastService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   readonly details = signal<ExamenDetail[]>([]);
   readonly loadingGrille = signal(true);
@@ -391,25 +420,26 @@ export class DetailPvModal implements OnInit {
     return [...(d.observations ?? [])].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
   }
 
+  /** Visionneuse PDF ouverte : référence + URL blob « de confiance » (null = fermée). */
+  readonly apercu = signal<{ reference: string; url: SafeResourceUrl; brute: string } | null>(null);
+  readonly chargementPdf = signal(false);
+
   /**
-   * Télécharge le PDF officiel du PV (`GET /api/pv-examens/{id}/document`).
-   * ⚠️ Le fichier porte la RÉFÉRENCE du PV (les « / » deviennent « - ») — un `window.open(blob)`
-   * donnerait un nom aléatoire ; on force le téléchargement via une ancre `download`.
+   * AFFICHE le PDF officiel du PV (`GET /api/pv-examens/{id}/document`) dans une visionneuse (iframe),
+   * comme « PV définitifs » côté PRMP — pas de téléchargement forcé, le lecteur du navigateur offre
+   * déjà impression / enregistrement. L'URL blob est révoquée à la fermeture.
    */
-  telechargerPdf(): void {
+  afficherPdf(): void {
+    this.chargementPdf.set(true);
     this.pvService.document(this.pv().idPv).subscribe({
       next: (blob) => {
+        this.chargementPdf.set(false);
         const ref = this.pv().refePv || this.pv().referencePv || 'PV-' + this.pv().idPv;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = ref.replace(/[\\/:*?"<>|]/g, '-') + '.pdf';
-        a.click();
-        // ⚠️ Révocation DIFFÉRÉE : révoquer tout de suite peut interrompre le téléchargement
-        // (fichier absent → ERR_FAILED dans la barre de téléchargements).
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        const brute = URL.createObjectURL(blob);
+        this.apercu.set({ reference: ref, url: this.sanitizer.bypassSecurityTrustResourceUrl(brute), brute });
       },
       error: (err: HttpErrorResponse) => {
+        this.chargementPdf.set(false);
         if (err.status === 404) {
           // Comportement attendu : un PDF n'est généré que pour un avis « Favorable sous réserve » (FAVR),
           // un dossier de localité centrale (ANT) et des marchés tous en appel d'offres ouvert.
@@ -417,9 +447,15 @@ export class DetailPvModal implements OnInit {
             "Ce PV n'a pas de document PDF officiel : il n'est généré que pour un avis « Favorable sous réserve », un dossier de la localité centrale et des marchés tous en appel d'offres ouvert.",
           );
         } else {
-          this.toast.error('Impossible de télécharger le document.');
+          this.toast.error("Impossible d'afficher le document.");
         }
       },
     });
+  }
+  /** Ferme la visionneuse et libère l'URL blob (l'iframe est détruite en même temps). */
+  fermerApercu(): void {
+    const ap = this.apercu();
+    if (ap) URL.revokeObjectURL(ap.brute);
+    this.apercu.set(null);
   }
 }
