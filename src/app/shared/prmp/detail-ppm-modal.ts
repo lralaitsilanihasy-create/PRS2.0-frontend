@@ -86,7 +86,7 @@ import { PpmFormFactory } from './ppm-form-factory';
           <!-- Métadonnées : une par ligne (éditables inline en modeEdition) -->
           <div class="dpm-meta" [formGroup]="headerForm">
             <div class="dpm-meta-row">
-              <span class="dpm-meta-label">Référence</span>
+              <span class="dpm-meta-label">Référence PRMP</span>
               <span class="dpm-meta-value">{{ ppm()?.reference || '—' }}</span>
             </div>
             <div class="dpm-meta-row">

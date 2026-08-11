@@ -20,7 +20,8 @@ export const PPM_CONFIG: CrudResourceConfig = {
     { key: 'exercice', label: 'Exercice', type: 'number', required: true },
     { key: 'signataire', label: 'Signataire', required: true },
     { key: 'dateSignature', label: 'Date signature', type: 'date', required: true },
-    { key: 'reference', label: 'Référence', required: true },
+    // « Référence PRMP » : la référence portée par la PRMP sur son plan (≠ référence officielle du dossier).
+    { key: 'reference', label: 'Référence PRMP', required: true },
     { key: 'libelle', label: 'Libellé' },
     { key: 'dateReceptionCnm', label: 'Réception CNM', type: 'date' },
     { key: 'idLocalite', label: 'Localité' },

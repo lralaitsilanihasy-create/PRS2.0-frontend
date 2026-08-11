@@ -88,7 +88,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
             @if (ppm(); as p) {
               @if (montrerReferencePpm()) {
                 <div class="dc-meta-row">
-                  <span class="dc-meta-label">Référence</span>
+                  <span class="dc-meta-label">Référence PRMP</span>
                   <span class="dc-meta-value">{{ p.reference || '—' }}</span>
                 </div>
               }
