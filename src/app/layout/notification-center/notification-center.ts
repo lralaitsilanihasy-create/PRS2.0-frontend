@@ -1,12 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
-import { interval } from 'rxjs';
+import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { routePourNotification } from '../../core/notifications/notification-route';
+import { NotificationsStore } from '../../core/notifications/notifications.store';
 import { Dossier, Notification } from '../../models';
 import { DossierService, NotificationService } from '../../services';
-import { DossierConsultation } from '../../features/circuit/dossier-consultation';
 
 /** Profils disposant d'un écran messagerie (pour router les notifications MESSAGE). */
 const MESSAGERIE_ROLES: Record<string, string> = {
@@ -19,13 +18,13 @@ const MESSAGERIE_ROLES: Record<string, string> = {
 /**
  * Centre de notifications commun à tous les profils : cloche + compteur de non-lues
  * et panneau listant « mes » notifications (scopées serveur via /mes). Au clic : marquage
- * lu + ouverture de l'élément (dossier → modale de consultation ; message → messagerie si
- * le profil en dispose). Le backend reste l'autorité (403 si la notif n'est pas la vôtre).
+ * lu + ouverture de l'élément (dossier → `voirDossier` émis, le LAYOUT rend la modale hors
+ * topbar ; message → messagerie si le profil en dispose). Le backend reste l'autorité.
  */
 @Component({
   selector: 'app-notification-center',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DossierConsultation],
+  imports: [RouterLink],
   template: `
     <div class="notif">
       <button type="button" class="notif__bell" (click)="toggle()" [attr.aria-expanded]="open()" aria-label="Notifications">
@@ -57,13 +56,12 @@ const MESSAGERIE_ROLES: Record<string, string> = {
               }
             }
           </div>
+          <!-- ⚠️ Spec notifications (2026-08-02) — accès à l'écran dédié depuis le panneau. -->
+          <a class="notif__tout" routerLink="/notifications" (click)="open.set(false)">Voir toutes les notifications ›</a>
         </div>
       }
     </div>
 
-    @if (consulteDossier(); as d) {
-      <app-dossier-consultation [dossier]="d" (closed)="consulteDossier.set(null)" />
-    }
   `,
   styles: `
     .notif { position: relative; display: inline-flex; }
@@ -82,6 +80,8 @@ const MESSAGERIE_ROLES: Record<string, string> = {
     .notif__item-title { font-weight: var(--cnm-fw-medium); color: var(--cnm-text); font-size: var(--cnm-fs-sm); }
     .notif__item-corps { color: var(--cnm-text-2); font-size: var(--cnm-fs-xs); }
     .notif__item-date { color: var(--cnm-text-3); font-size: var(--cnm-fs-micro); }
+    .notif__tout { display: block; text-align: center; padding: var(--cnm-space-3); border-top: 1px solid var(--cnm-border); font-weight: var(--cnm-fw-semibold); font-size: var(--cnm-fs-sm); color: var(--cnm-brand); text-decoration: none; }
+    .notif__tout:hover { background: var(--cnm-surface-2); }
   `,
 })
 export class NotificationCenter {
@@ -89,23 +89,19 @@ export class NotificationCenter {
   private readonly dossierService = inject(DossierService);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  private readonly store = inject(NotificationsStore);
 
   readonly open = signal(false);
   readonly notifs = signal<Notification[]>([]);
-  readonly count = signal(0);
+  /** ⚠️ Temps réel (2026-08-02) — compteur SERVEUR partagé (SSE + repli polling + synchro onglets). */
+  readonly count = computed(() => this.store.count());
   readonly loading = signal(false);
-  readonly consulteDossier = signal<Dossier | null>(null);
-
-  constructor() {
-    this.rafraichirCount();
-    interval(60000)
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.rafraichirCount());
-  }
-
-  private rafraichirCount(): void {
-    this.service.nonLuesCount().subscribe({ next: (r) => this.count.set(r.nonLues), error: () => {} });
-  }
+  /**
+   * Dossier à consulter, ÉMIS vers le layout : le modal doit être rendu HORS de la topbar — son
+   * `position: fixed; z-index: 99` crée un contexte d'empilement qui passerait le modal SOUS la
+   * sidebar (z-index 100) et le voile ne couvrirait pas tout l'écran.
+   */
+  readonly voirDossier = output<Dossier>();
 
   toggle(): void {
     const next = !this.open();
@@ -131,21 +127,30 @@ export class NotificationCenter {
       this.service.marquerLu(n.idNotification).subscribe({
         next: () => {
           this.notifs.update((l) => l.map((x) => (x.idNotification === n.idNotification ? { ...x, lu: true } : x)));
-          this.rafraichirCount();
+          this.store.actionLocale(); // décrément immédiat + synchro des autres onglets
         },
         error: () => {},
       });
     }
-    // Notif PV pour le Membre → « Projets de PV » (rectification / acceptation le concernent).
-    if (n.typeObjet === 'PV' && this.auth.role() === 'MEMBRE') {
-      void this.router.navigate(['/membre/pv']);
+    // Écran d'ACTION de la notification (mapping partagé avec la page /notifications).
+    const cible = routePourNotification(n, this.auth.role());
+    if (cible) {
+      if (cible.genre === 'route-type-dossier' && n.idDossier != null) {
+        this.dossierService.getById(n.idDossier).subscribe({
+          next: (d) =>
+            void this.router.navigate(d.idTypeDossier ? cible.versCommands(d.idTypeDossier) : cible.repli),
+          error: () => void this.router.navigate(cible.repli),
+        });
+      } else {
+        void this.router.navigate(cible.genre === 'route' ? cible.commands : cible.repli);
+      }
       this.open.set(false);
       return;
     }
     if (n.idDossier != null) {
       this.dossierService.getById(n.idDossier).subscribe({
         next: (d) => {
-          this.consulteDossier.set(d);
+          this.voirDossier.emit(d); // le layout rend le modal (hors topbar)
           this.open.set(false);
         },
         error: () => {},
@@ -175,7 +180,7 @@ export class NotificationCenter {
     this.service.lireTout().subscribe({
       next: () => {
         this.notifs.update((l) => l.map((x) => ({ ...x, lu: true })));
-        this.count.set(0);
+        this.store.actionLocale(); // badge → 0 partout (recalcul serveur + synchro onglets)
       },
       error: () => {},
     });
