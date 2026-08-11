@@ -9,19 +9,29 @@ import { Notification } from '../../models';
  * Utilisé par la PAGE /notifications ET la cloche (notification-center) — source unique.
  */
 
-/** Préfixe d'espace par rôle. */
+/** Préfixe d'espace par rôle (l'UGPM agit dans l'espace PRMP de sa tutelle). */
 const BASE: Record<string, string> = {
   PRESIDENT: 'president',
   CHEF_COMMISSION: 'cc',
   MEMBRE: 'membre',
   SECRETAIRE: 'secretaire',
   VERIFICATEUR: 'verificateur',
-  ASSISTANT: 'assistant',
+  ASSISTANT_CONTROLEUR: 'assistant',
+  CHARGE_PUBLICATION: 'publication',
+  ADMINISTRATEUR: 'admin',
   PRMP: 'prmp',
+  UGPM: 'prmp',
 };
 
 /** Profils disposant d'un écran messagerie (routage des notifications MESSAGE). */
-const MESSAGERIE: ReadonlySet<string> = new Set(['PRESIDENT', 'CHEF_COMMISSION', 'MEMBRE', 'SECRETAIRE', 'VERIFICATEUR', 'ASSISTANT']);
+const MESSAGERIE: ReadonlySet<string> = new Set([
+  'PRESIDENT',
+  'CHEF_COMMISSION',
+  'MEMBRE',
+  'SECRETAIRE',
+  'VERIFICATEUR',
+  'ASSISTANT_CONTROLEUR',
+]);
 
 /** Cible résolue : une route directe, ou une route paramétrée par le type du dossier (avec repli). */
 export type CibleNotification =
@@ -75,9 +85,43 @@ export function routePourNotification(n: Notification, role: string | null): Cib
     return { genre: 'route', commands: [`/${base}/retraits`] };
   }
   // — Assistant contrôleur : copies (lettres / PV définitifs).
-  if (type === 'LETTRE_RENVOI_COPIE' && role === 'ASSISTANT') return { genre: 'route', commands: ['/assistant/lettre-renvois'] };
-  if ((type === 'PV_DEFINITIF_COPIE' || type === 'CLOTURE_COPIE_ASSISTANT') && role === 'ASSISTANT') {
+  if (type === 'LETTRE_RENVOI_COPIE' && role === 'ASSISTANT_CONTROLEUR') {
+    return { genre: 'route', commands: ['/assistant/lettre-renvois'] };
+  }
+  if ((type === 'PV_DEFINITIF_COPIE' || type === 'CLOTURE_COPIE_ASSISTANT') && role === 'ASSISTANT_CONTROLEUR') {
     return { genre: 'route', commands: ['/assistant/pv-examens'] };
+  }
+  // — PRMP : pièces manquantes au dépôt → liste des déposés du type (action « Compléter les pièces »).
+  if (type === 'PIECES_MANQUANTES_DEPOT' && role === 'PRMP') {
+    return {
+      genre: 'route-type-dossier',
+      versCommands: (t) => ['/prmp/dossiers', t, 'soumis'],
+      repli: ['/prmp/dossiers'],
+    };
+  }
+  // — Membre : compléments transmis après lettre de renvoi → réexamen du dossier.
+  if (type === 'COMPLEMENTS_TRANSMIS' && role === 'MEMBRE' && n.idDossier != null) {
+    return { genre: 'route', commands: ['/membre/examiner', String(n.idDossier)] };
+  }
+  // — CC : copie de dispatch → drill-down dispatch de « Mes dossiers » ; annulation → hub.
+  if (type === 'DISPATCH_CC' && role === 'CHEF_COMMISSION') {
+    return {
+      genre: 'route-type-dossier',
+      versCommands: (t) => ['/cc/mes-dossiers', t, 'dispatch'],
+      repli: ['/cc/mes-dossiers'],
+    };
+  }
+  if (type === 'DISPATCH_ANNULE' && role === 'CHEF_COMMISSION') return { genre: 'route', commands: ['/cc/mes-dossiers'] };
+  // — Chargé de publication : dossier clôturé éligible → écran des publications.
+  if (type === 'CLOTURE_ELIGIBLE' && role === 'CHARGE_PUBLICATION') {
+    return { genre: 'route', commands: ['/publication/publications'] };
+  }
+  // — Administrateur : inscriptions à valider ; fin de mandat d'un contrôleur → gestion des comptes.
+  if (type === 'NOUVELLE_INSCRIPTION' && role === 'ADMINISTRATEUR') {
+    return { genre: 'route', commands: ['/admin/inscriptions'] };
+  }
+  if (type === 'FIN_MANDAT' && role === 'ADMINISTRATEUR') {
+    return { genre: 'route', commands: ['/admin/comptes/controleurs'] };
   }
 
   // — Replis par OBJET (types non mappés individuellement).
