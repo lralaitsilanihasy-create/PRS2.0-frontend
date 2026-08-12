@@ -159,7 +159,13 @@ export class MainLayout {
     if (!ref) {
       return;
     }
-    if (this.auth.typeActeur() === 'PRMP') {
+    // « Nom Prénoms » : résolu par le SERVEUR au login (`nomAffichage`, tous types d'acteur — UGPM
+    // comprise, dont le claim `ref` porte la PRMP de tutelle). Les lookups ci-dessous ne restent que
+    // pour les sessions persistées ANTÉRIEURES à cette livraison (sans nomAffichage).
+    const nomSession = this.auth.nomAffichage();
+    if (nomSession) {
+      this.displayName.set(nomSession);
+    } else if (this.auth.typeActeur() === 'PRMP') {
       this.prmpService.getById(ref).subscribe({
         next: (p) => this.displayName.set(`${p.nomPrmp ?? ''} ${p.prenomsPrmp ?? ''}`.trim()),
         error: () => {},
@@ -170,8 +176,6 @@ export class MainLayout {
         error: () => {},
       });
     }
-    // UGPM : le claim `ref` porte l'idPrmp de tutelle (pas un contrôleur ni le compte UGPM) — on n'appelle
-    // aucun référentiel (sinon 404 « Contrôleur introuvable ») ; le nom affiché retombe sur le login.
 
     // Secrétaire : badge « à réceptionner » sur « Mes dossiers » (les écrans Réceptions /
     // Enregistrement ont été fusionnés dedans), rafraîchi à l'ouverture puis à chaque navigation.

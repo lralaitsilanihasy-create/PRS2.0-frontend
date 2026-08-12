@@ -38,6 +38,8 @@ export class Home {
 
   readonly role = this.auth.role;
   readonly login = this.auth.login;
+  /** « Nom Prénoms » résolu au login (serveur) — repli sur le login pour une session antérieure. */
+  readonly nomAffiche = computed(() => this.auth.nomAffichage() || this.auth.login() || '');
   readonly typeActeur = this.auth.typeActeur;
   readonly perimetre = computed(() => this.auth.localite() ?? 'Toutes localités');
   readonly modules = computed(() => navFlat(this.auth.role()));

@@ -20,6 +20,12 @@ export interface LoginResponse {
   localite: string | null;
   /** Durée de validité du jeton, en secondes. */
   expiresIn: number;
+  /**
+   * « Nom Prénoms » résolu côté serveur pour TOUS les types d'acteur (PRMP, contrôleur, UGPM, admin) —
+   * toujours renseigné (repli serveur sur le login). Disponible seulement à la connexion : persisté avec
+   * la session. Absent d'une session antérieure à la livraison → repli front sur les anciens lookups.
+   */
+  nomAffichage?: string;
 }
 
 /** Corps de POST /api/auth/register/prmp (route publique). Auto-inscription PRMP. */

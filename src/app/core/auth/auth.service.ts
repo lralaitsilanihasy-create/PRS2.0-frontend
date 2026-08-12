@@ -54,6 +54,8 @@ export class AuthService {
   readonly typeActeur = computed<TypeActeur | null>(() => this.session()?.typeActeur ?? null);
   /** Login connecté. */
   readonly login = computed<string | null>(() => this.session()?.login ?? null);
+  /** « Nom Prénoms » résolu par le serveur au login (toujours renseigné) ; null sur une session antérieure. */
+  readonly nomAffichage = computed<string | null>(() => this.session()?.nomAffichage ?? null);
   /** Vrai si un jeton valide et non expiré est présent. */
   readonly isAuthenticated = computed(() => {
     const s = this.session();
