@@ -38,10 +38,11 @@ const STATUT_LABELS: Record<string, string> = {
         <button type="button" class="btn btn-primary" (click)="ouvrirCreation()">+ Nouveau mandat</button>
       </header>
       <p class="ma__intro">
-        Un mandat dure <strong>3 ans</strong> et n'est renouvelable qu'<strong>une fois</strong> (2 mandats
-        consécutifs maximum). Une <strong>reconduction est un mandat distinct</strong> — nouvel arrêté
-        obligatoire, jamais une prolongation. Un mandat <em>implicite</em> (reconstitué depuis la fiche PRMP)
-        s'affiche tant qu'aucun mandat n'est déclaré : déclarez le mandat initial pour fiabiliser la règle.
+        Un mandat dure <strong>3 ans à partir de la date de l'arrêté de nomination</strong> et n'est
+        renouvelable qu'<strong>une fois</strong> (2 mandats consécutifs maximum). Une
+        <strong>reconduction est un mandat distinct</strong> — nouvel arrêté obligatoire, jamais une
+        prolongation. Un mandat <em>implicite</em> (reconstitué depuis la fiche PRMP) s'affiche tant
+        qu'aucun mandat n'est déclaré : déclarez le mandat initial pour fiabiliser la règle.
       </p>
 
       <div class="ma__filtre">
@@ -60,7 +61,7 @@ const STATUT_LABELS: Record<string, string> = {
         <div class="table-card">
           <table>
             <thead>
-              <tr><th>PRMP</th><th>Titulaire</th><th>N°</th><th>Début</th><th>Fin</th><th>Arrêté</th><th>Statut</th><th class="r">Actions</th></tr>
+              <tr><th>PRMP</th><th>Titulaire</th><th>N°</th><th>Début (arrêté)</th><th>Fin</th><th>Arrêté</th><th>Statut</th><th class="r">Actions</th></tr>
             </thead>
             <tbody>
               @for (m of mandatsAffiches(); track m.idMandat ?? m.idPrmp + m.dateDebut) {
@@ -114,11 +115,12 @@ const STATUT_LABELS: Record<string, string> = {
               <span class="form-hint">Un arrêté n'est jamais réutilisé — même pour la même personne.</span>
             </label>
             <label class="form-group">
-              <span class="form-label required">Date de début (prise de fonction)</span>
+              <span class="form-label required">Date de l'arrêté de nomination</span>
               <input class="form-control" type="date" formControlName="dateDebut" />
+              <span class="form-hint">Le mandat de 3 ans court à partir de cette date{{ finCalculee() ? ' — fin calculée : ' + finCalculee() : '' }}.</span>
             </label>
             <label class="form-group">
-              <span class="form-label">Date de fin (défaut : début + 3 ans − 1 jour)</span>
+              <span class="form-label">Date de fin (défaut : date de l'arrêté + 3 ans − 1 jour)</span>
               <input class="form-control" type="date" formControlName="dateFin" />
             </label>
             <label class="form-group">
@@ -307,6 +309,16 @@ export class MandatsAdmin implements OnInit {
       },
       error: (_e: ApiError) => this.saving.set(false),
     });
+  }
+
+  /** Fin de mandat calculée depuis la date de l'arrêté saisie (arrêté + 3 ans − 1 jour), en `jj/mm/aaaa`. */
+  finCalculee(): string {
+    const d = this.form.controls.dateDebut.value;
+    if (!d) return '';
+    const [y, m, day] = d.split('-').map(Number);
+    if (!y || !m || !day) return '';
+    const dt = new Date(y + 3, m - 1, day - 1);
+    return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
   }
 
   /** Lendemain d'une date ISO (pré-remplissage d'une reconduction : elle ne recouvre jamais le mandat précédent). */
