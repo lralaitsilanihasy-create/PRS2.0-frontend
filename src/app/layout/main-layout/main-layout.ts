@@ -9,16 +9,18 @@ import { NavItem, navFor } from '../../core/navigation/navigation';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 import {
   ControleurService,
-  DemandeRetraitService,
   DossierService,
   KpiService,
   LettreRenvoiService,
   PpmService,
   PrmpService,
-  PvExamenService,
-  ReceptionService,
 } from '../../services';
 import { NotificationCenter } from '../notification-center/notification-center';
+import { DossierConsultation } from '../../features/circuit/dossier-consultation';
+import { Dossier } from '../../models';
+
+/** Entrée de menu du Vérificateur portant le badge du nombre de dossiers restant à traiter. */
+const CHEMIN_A_VERIFIER = '/verificateur/a-verifier';
 
 /**
  * Coquille applicative pour les utilisateurs connectés : en-tête (identité + déconnexion),
@@ -27,7 +29,7 @@ import { NotificationCenter } from '../notification-center/notification-center';
 @Component({
   selector: 'app-main-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationCenter],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationCenter, DossierConsultation],
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.scss',
   host: { '[attr.data-role]': 'role()' },
@@ -38,11 +40,8 @@ export class MainLayout {
   private readonly prmpService = inject(PrmpService);
   private readonly controleurService = inject(ControleurService);
   private readonly dossierService = inject(DossierService);
-  private readonly receptionService = inject(ReceptionService);
   private readonly ppmService = inject(PpmService);
-  private readonly pvExamenService = inject(PvExamenService);
   private readonly lettreRenvoiService = inject(LettreRenvoiService);
-  private readonly demandeRetraitService = inject(DemandeRetraitService);
   private readonly kpiService = inject(KpiService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly toast = inject(ToastService);
@@ -67,6 +66,8 @@ export class MainLayout {
   readonly alerts = signal<Record<string, number>>({});
   /** Sidebar ouverte en mode drawer (tablette / mobile). Sans effet sur desktop. */
   readonly sidebarOpen = signal(false);
+  /** Dossier ouvert depuis une notification — la modale est rendue par le layout (hors topbar, cf. template). */
+  readonly dossierNotification = signal<Dossier | null>(null);
 
   // ── Recherche « aller à un dossier par référence » (topbar, PRMP/UGPM) ──
   /** Saisie de la recherche par référence de dossier. */
@@ -113,8 +114,9 @@ export class MainLayout {
     '/prmp/mes-brouillons': 'i',
     '/prmp/ppm-marches': 'i',
     '/prmp/dossiers-verifies': 's',
-    '/prmp/lettre-renvois': 'd',
+    '/prmp/resultat-examen': 'd',
     '/prmp/retraits': 'd',
+    [CHEMIN_A_VERIFIER]: 'i',
   };
   badgeSeverity(path: string): string {
     return this.badgeSeverites[path] ?? '';
@@ -157,8 +159,8 @@ export class MainLayout {
     // UGPM : le claim `ref` porte l'idPrmp de tutelle (pas un contrôleur ni le compte UGPM) — on n'appelle
     // aucun référentiel (sinon 404 « Contrôleur introuvable ») ; le nom affiché retombe sur le login.
 
-    // Secrétaire : badges « nombre de dossiers » sur Réceptions et Enregistrement,
-    // rafraîchis à l'ouverture puis à chaque navigation (ex. après une réception enregistrée).
+    // Secrétaire : badge « à réceptionner » sur « Mes dossiers » (les écrans Réceptions /
+    // Enregistrement ont été fusionnés dedans), rafraîchi à l'ouverture puis à chaque navigation.
     if (this.auth.role() === 'SECRETAIRE') {
       this.rafraichirCompteursSecretaire();
       this.router.events
@@ -166,6 +168,10 @@ export class MainLayout {
           filter((e) => e instanceof NavigationEnd),
           takeUntilDestroyed(),
         )
+        .subscribe(() => this.rafraichirCompteursSecretaire());
+      // Réception enregistrée dans le drill-down (pas de navigation) → badge à jour immédiatement.
+      toObservable(this.dossiersRefresh.revision)
+        .pipe(skip(1), takeUntilDestroyed())
         .subscribe(() => this.rafraichirCompteursSecretaire());
     }
 
@@ -189,6 +195,23 @@ export class MainLayout {
         .subscribe(() => this.rafraichirCompteursPrmp());
     }
 
+    // Vérificateur : badge « À vérifier » (demande user 2026-08-04). Compteur SERVEUR
+    // (`/api/kpis/mes-compteurs-verificateur`), miroir exact de la file — il décroît donc de lui-même
+    // dès qu'un dossier en sort, notamment à la transmission de la décision à SIGMP.
+    if (this.auth.role() === 'VERIFICATEUR') {
+      this.rafraichirCompteursVerificateur();
+      this.router.events
+        .pipe(
+          filter((e) => e instanceof NavigationEnd),
+          takeUntilDestroyed(),
+        )
+        .subscribe(() => this.rafraichirCompteursVerificateur());
+      // Transmission SIGMP faite depuis l'écran de vérification (sans navigation) → badge à jour tout de suite.
+      toObservable(this.dossiersRefresh.revision)
+        .pipe(skip(1), takeUntilDestroyed())
+        .subscribe(() => this.rafraichirCompteursVerificateur());
+    }
+
     // Président : compteurs de contenu par item de menu (dérivés des endpoints de liste).
     if (this.auth.role() === 'PRESIDENT') {
       this.rafraichirCompteursPresident();
@@ -198,6 +221,10 @@ export class MainLayout {
           takeUntilDestroyed(),
         )
         .subscribe(() => this.rafraichirCompteursPresident());
+      // Dispatch depuis le drill-down (pas de navigation) → badge « Mes dossiers » à jour immédiatement.
+      toObservable(this.dossiersRefresh.revision)
+        .pipe(skip(1), takeUntilDestroyed())
+        .subscribe(() => this.rafraichirCompteursPresident());
     }
   }
 
@@ -206,21 +233,15 @@ export class MainLayout {
    * (n'affiche que les valeurs > 0). Aucun endpoint de compteurs agrégé n'existe côté API.
    */
   private rafraichirCompteursPresident(): void {
-    forkJoin({
-      preDispatch: this.dossierService.list('PRET_DISPATCH'),
-      projetsPv: this.pvExamenService.list(),
-      pvDefinitifs: this.pvExamenService.definitifs(),
-      lettres: this.lettreRenvoiService.getAll(),
-      retraits: this.demandeRetraitService.aValider(),
-    }).subscribe({
-      next: ({ preDispatch, projetsPv, pvDefinitifs, lettres, retraits }) => {
+    this.dossierService.list('PRET_DISPATCH').subscribe({
+      next: (preDispatch) => {
+        // ⚠️ 2026-08-06/07 — « Projets de PV », « PV définitifs », « Lettres de renvoi » et
+        // « Demandes de retrait » ne sont plus des entrées de menu : leurs compteurs vivent
+        // désormais là où l'utilisateur les lit — sur les cartes du hub « Résultat examen » et sur
+        // les cartes de type de « Mes dossiers ». Il ne reste ici que le badge « à dispatcher ».
         const c: Record<string, number> = {
           // Dossiers en attente de dispatch → badge « action à faire » sur « Mes dossiers ».
           '/president/mes-dossiers': preDispatch.length,
-          '/president/circuit/pv': projetsPv.length,
-          '/president/circuit/pv-definitifs': pvDefinitifs.length,
-          '/president/lettre-renvois': lettres.length,
-          '/president/retraits': retraits.length,
         };
         // N'expose que les compteurs > 0 (pas de badge « 0 »).
         const visibles = Object.fromEntries(Object.entries(c).filter(([, n]) => n > 0));
@@ -247,8 +268,9 @@ export class MainLayout {
           '/prmp/mes-brouillons': brouillons.length,
           '/prmp/ppm-marches': ppms.length,
           '/prmp/dossiers-verifies': verifies.length,
-          // Lettres SIGNE non encore lues (le compteur décroît à la lecture).
-          '/prmp/lettre-renvois': lettres.filter((l) => !l.lue).length,
+          // Lettres SIGNE non encore lues (le compteur décroît à la lecture) → badge sur le hub
+          // « Examen de dossiers » qui regroupe désormais lettres + PV définitifs.
+          '/prmp/resultat-examen': lettres.filter((l) => !l.lue).length,
           // Demandes passées à ACCEPTEE/REFUSEE depuis ma dernière consultation (calcul serveur).
           '/prmp/retraits': compteurs.demandesRetraitNouvelles,
         };
@@ -266,14 +288,30 @@ export class MainLayout {
     });
   }
 
-  /** Recharge les compteurs du Secrétaire (à réceptionner / réceptionnés), scopés serveur. */
-  private rafraichirCompteursSecretaire(): void {
-    this.dossierService.aReceptionner().subscribe({
-      next: (rows) => this.counts.update((c) => ({ ...c, '/secretaire/receptions': rows.length })),
+  /**
+   * Recharge le badge « À vérifier » du Vérificateur (compteur serveur, scopé à sa localité).
+   * File vide → aucun badge (convention du menu : pas de badge « 0 »), d'où le retrait de la clé.
+   */
+  private rafraichirCompteursVerificateur(): void {
+    this.kpiService.mesCompteursVerificateur().subscribe({
+      next: (c) =>
+        this.counts.update((m) => {
+          const suivant = { ...m };
+          if (c.aVerifier > 0) {
+            suivant[CHEMIN_A_VERIFIER] = c.aVerifier;
+          } else {
+            delete suivant[CHEMIN_A_VERIFIER];
+          }
+          return suivant;
+        }),
       error: () => {},
     });
-    this.receptionService.list().subscribe({
-      next: (rows) => this.counts.update((c) => ({ ...c, '/secretaire/enregistrement': rows.length })),
+  }
+
+  /** Recharge le compteur du Secrétaire (à réceptionner, scopé serveur) → badge « Mes dossiers ». */
+  private rafraichirCompteursSecretaire(): void {
+    this.dossierService.aReceptionner().subscribe({
+      next: (rows) => this.counts.update((c) => ({ ...c, '/secretaire/mes-dossiers': rows.length })),
       error: () => {},
     });
   }

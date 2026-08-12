@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { filter, forkJoin } from 'rxjs';
+import { filter, forkJoin, of } from 'rxjs';
 
 import { LettreRenvoiService, PvExamenService } from '../../services';
 
@@ -50,6 +50,28 @@ const CARTES: CarteResultat[] = [
   },
 ];
 
+/** Variante PRMP (demande user 2026-08-12) : SES PV définitifs et SES lettres de renvoi — pas de projets. */
+const CARTES_PRMP: CarteResultat[] = [
+  {
+    cle: 'definitifs',
+    icone: '📋',
+    titre: 'PV définitifs',
+    description: 'PV signés de vos dossiers — base de la rectification selon les observations.',
+    suffixe: 'pv-definitifs',
+    unite: 'PV',
+    aTraiter: false,
+  },
+  {
+    cle: 'lettres',
+    icone: '✉',
+    titre: 'Mes lettres de renvoi',
+    description: 'Lettres qui vous sont adressées à l’issue de l’examen — pièces complémentaires à transmettre.',
+    suffixe: 'lettre-renvois',
+    unite: 'lettre',
+    aTraiter: true,
+  },
+];
+
 /**
  * **Résultat de l'examen** — écran de regroupement (demande user 2026-08-06 : « mettre dans un écran
  * appelé résultat examen, en card : Projets de PV, PV définitifs, Lettres de renvoi »).
@@ -74,14 +96,21 @@ const CARTES: CarteResultat[] = [
           <h1 class="page-title">Examen de dossiers</h1>
         </div>
       </header>
-      <p class="re__intro">
-        Tout ce que produit l'examen d'un dossier : le <strong>projet de PV</strong> tant qu'il circule,
-        le <strong>PV définitif</strong> une fois signé, et la <strong>lettre de renvoi</strong> adressée
-        à la PRMP.
-      </p>
+      @if (estPrmp()) {
+        <p class="re__intro">
+          Ce que produit l'examen de vos dossiers : le <strong>PV définitif</strong> signé par la
+          Commission, et la <strong>lettre de renvoi</strong> qui vous est adressée.
+        </p>
+      } @else {
+        <p class="re__intro">
+          Tout ce que produit l'examen d'un dossier : le <strong>projet de PV</strong> tant qu'il circule,
+          le <strong>PV définitif</strong> une fois signé, et la <strong>lettre de renvoi</strong> adressée
+          à la PRMP.
+        </p>
+      }
 
       <div class="re__grid">
-        @for (c of cartes; track c.cle) {
+        @for (c of cartes(); track c.cle) {
           <a
             class="re__card"
             [class.re__card--action]="c.aTraiter"
@@ -164,7 +193,6 @@ export class ResultatExamen implements OnInit {
   private readonly pvService = inject(PvExamenService);
   private readonly lettreService = inject(LettreRenvoiService);
 
-  protected readonly cartes = CARTES;
   protected readonly chargement = signal(true);
   private readonly compteurs = signal<Record<CarteResultat['cle'], number>>({
     projets: 0,
@@ -175,11 +203,19 @@ export class ResultatExamen implements OnInit {
   /** URL courante, suivie pour savoir quelle carte est ouverte (le hub reste monté pendant la navigation). */
   private readonly urlCourante = signal(this.router.url);
 
-  /** `/president` ou `/cc` selon le profil connecté — les suffixes de route sont identiques. */
-  protected readonly base = computed(() => (this.urlCourante().startsWith('/cc') ? '/cc' : '/president'));
-  protected readonly sousTitre = computed(() =>
-    this.base() === '/cc' ? 'Domaine Chef de Commission' : 'Domaine Président',
-  );
+  /** `/president`, `/cc` ou `/prmp` selon le profil connecté — les suffixes de route sont identiques. */
+  protected readonly base = computed(() => {
+    const url = this.urlCourante();
+    if (url.startsWith('/prmp')) return '/prmp';
+    return url.startsWith('/cc') ? '/cc' : '/president';
+  });
+  /** Variante PRMP : deux cartes (SES PV définitifs, SES lettres), pas de projets de PV. */
+  protected readonly estPrmp = computed(() => this.base() === '/prmp');
+  protected readonly cartes = computed(() => (this.estPrmp() ? CARTES_PRMP : CARTES));
+  protected readonly sousTitre = computed(() => {
+    if (this.estPrmp()) return 'Domaine PRMP';
+    return this.base() === '/cc' ? 'Domaine Chef de Commission' : 'Domaine Président';
+  });
 
   constructor() {
     // Le hub ne se démonte pas quand on passe d'une carte à l'autre : c'est l'URL qui dit laquelle
@@ -198,12 +234,12 @@ export class ResultatExamen implements OnInit {
   }
 
   ngOnInit(): void {
-    // ⚠️ Une seule vague : les trois listes en parallèle, pas de spinners successifs.
-    forkJoin({
-      projets: this.pvService.list(),
-      definitifs: this.pvService.definitifs(),
-      lettres: this.lettreService.getAll(),
-    }).subscribe({
+    // ⚠️ Une seule vague : les listes en parallèle, pas de spinners successifs. PRMP : ses PV définitifs
+    // et SES lettres (`/mes-lettres`, réservé PRMP) — pas de projets de PV.
+    const sources = this.estPrmp()
+      ? { projets: of([]), definitifs: this.pvService.definitifs(), lettres: this.lettreService.getMesLettres() }
+      : { projets: this.pvService.list(), definitifs: this.pvService.definitifs(), lettres: this.lettreService.getAll() };
+    forkJoin(sources).subscribe({
       next: ({ projets, definitifs, lettres }) => {
         this.compteurs.set({
           projets: projets.length,

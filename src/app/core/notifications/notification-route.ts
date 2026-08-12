@@ -73,10 +73,12 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   if ((type === 'PV_A_RECTIFIER' || type === 'PV_ACCEPTE') && role === 'MEMBRE') {
     return { genre: 'route', commands: ['/membre/pv'] };
   }
-  // — PRMP : PV signé (PV définitifs), observations de vérification (à rectifier), lettre de renvoi, retraits.
-  if (type === 'PV_SIGNE' && role === 'PRMP') return { genre: 'route', commands: ['/prmp/pv-definitifs'] };
+  // — PRMP : PV signé et lettre de renvoi vivent dans le hub « Examen de dossiers » ; observations → à rectifier.
+  if (type === 'PV_SIGNE' && role === 'PRMP') return { genre: 'route', commands: ['/prmp/resultat-examen/pv-definitifs'] };
   if (type === 'OBSERVATION_VERIFICATION' && role === 'PRMP') return { genre: 'route', commands: ['/prmp/a-rectifier'] };
-  if (type === 'LETTRE_RENVOI_RECUE' && role === 'PRMP') return { genre: 'route', commands: ['/prmp/lettre-renvois'] };
+  if (type === 'LETTRE_RENVOI_RECUE' && role === 'PRMP') {
+    return { genre: 'route', commands: ['/prmp/resultat-examen/lettre-renvois'] };
+  }
   if ((type === 'RETRAIT_ACCEPTE' || type === 'RETRAIT_REFUSE') && role === 'PRMP') {
     return { genre: 'route', commands: ['/prmp/retraits'] };
   }
@@ -127,7 +129,7 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   // — Replis par OBJET (types non mappés individuellement).
   if (n.typeObjet === 'PV') {
     if (role === 'MEMBRE') return { genre: 'route', commands: ['/membre/pv'] };
-    if (role === 'PRMP') return { genre: 'route', commands: ['/prmp/pv-definitifs'] };
+    if (role === 'PRMP') return { genre: 'route', commands: ['/prmp/resultat-examen/pv-definitifs'] };
     if (role === 'PRESIDENT' || role === 'CHEF_COMMISSION') return { genre: 'route', commands: [`/${base}/resultat-examen/pv`] };
   }
   if ((n.typeObjet === 'MESSAGE' || type === 'NOUVEAU_MESSAGE') && MESSAGERIE.has(role ?? '')) {
