@@ -11,6 +11,38 @@ export interface NavItem {
 }
 
 /**
+ * Menu commun **Président / Chef de commission** (demande user 2026-08-04 : « les menus gauches de ces
+ * deux profils doivent être les mêmes »). Les deux rôles conduisent la même commission, à un périmètre
+ * près (national vs localité) que le **backend** scope déjà : les écrans sont identiques, seules les
+ * données diffèrent. Source UNIQUE pour que les deux menus ne puissent plus diverger — les suffixes de
+ * route sont volontairement identiques de part et d'autre, seule la base change (`/president` | `/cc`).
+ *
+ * Accès vérifié le 2026-08-04 avec PRES001 et CCANT01 : `/ppms`, `/marches`, `/marche-previsions`,
+ * `/messages` et `/rapports/dossiers` répondent 200 pour les DEUX rôles (cf. `api-endpoints.md` —
+ * rapports = PRESIDENT / ADMINISTRATEUR / CHEF_COMMISSION).
+ */
+function menuCommission(base: '/president' | '/cc'): NavItem[] {
+  return [
+    { label: 'Tableau de bord', path: `${base}/tableau-de-bord`, icon: '▤' },
+    { label: 'Mes dossiers', path: `${base}/mes-dossiers`, icon: '📁' },
+    // ⚠️ 2026-08-06 (demande user) — « Projets de PV », « PV définitifs » et « Lettres de renvoi »
+    // sont regroupés dans un écran-hub à cartes : ce sont les trois productions d'un même examen.
+    // Les trois écrans et leurs routes sont inchangés, seul le chemin d'accès l'est.
+    { label: 'Examen de dossiers', path: `${base}/resultat-examen`, icon: '📑' },
+    // « PPM & marchés » et « Marchés & dates prév. » : retirés du menu des DEUX profils
+    // (demande user 2026-08-04). Routes conservées de part et d'autre — cf. president.routes.ts / cc.routes.ts.
+    // ⚠️ 2026-08-07 (demande user) — « Demandes de retrait » quitte le menu : une demande porte sur un
+    // dossier, donc sur un type, et figure désormais en ligne dans la carte de type correspondante de
+    // « Mes dossiers » (config `retraitsPath`). Route conservée, atteinte avec `?type=`.
+    { label: 'Rapports', path: `${base}/rapports`, icon: '📊' },
+    { label: 'Statistiques', path: `${base}/statistiques`, icon: '📈' },
+    { label: 'Messagerie', path: `${base}/messagerie`, icon: '✉' },
+    // ⚠️ Spec notifications (2026-08-02) — écran transverse, chemin absolu commun à tous les profils.
+    { label: 'Notifications', path: '/notifications', icon: '🔔' },
+  ];
+}
+
+/**
  * Menu par profil, dérivé des modules de `regles-gestion.md`.
  *
  * C'est la table de référence de l'affichage conditionnel par rôle (§2 du plan) :
@@ -24,13 +56,19 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Tableau de bord', path: '/prmp/tableau-de-bord', icon: '▤' },
     // « Mes dossiers » = page dédiée (cartes type → statut) ; l'arborescence s'affiche à l'écran.
     { label: 'Mes dossiers', path: '/prmp/dossiers', icon: '🗂' },
-    { label: 'Soumettre un dossier', path: '/prmp/soumettre-dossier', icon: '📨' },
-    { label: 'Créer une UGPM', path: '/prmp/creer-ugpm', icon: '👤' },
-    { label: 'Dossiers à rectifier', path: '/prmp/a-rectifier', icon: '✏' },
-    { label: 'Dossiers vérifiés', path: '/prmp/dossiers-verifies', icon: '✅' },
+    // « Soumettre un dossier » : retiré du menu (demande user 2026-08-02) — la saisie s'ouvre par type
+    // via la ligne « Créer » des cartes « Mes dossiers » (?famille=), route conservée.
+    // « Créer compte UGPM » : déplacé dans le PIED de la barre latérale (à la place de la carte profil,
+    // redondante avec la topbar) — cf. main-layout.html (demande user 2026-08-02).
+    // « Dossiers à rectifier » / « Dossiers vérifiés » : retirés du menu (demande user 2026-08-02) —
+    // accessibles par type via les cartes « Mes dossiers » (lignes À rectifier / Vérifiés), routes conservées.
     { label: 'Mes lettres de renvoi', path: '/prmp/lettre-renvois', icon: '✉' },
+    // ⚠️ 2026-08-02 — PV signés de SES dossiers (base de la rectification selon les observations).
+    { label: 'PV définitifs', path: '/prmp/pv-definitifs', icon: '📋' },
     { label: 'Demandes de retrait', path: '/prmp/retraits', icon: '↩' },
     { label: 'Calendrier', path: '/prmp/calendrier', icon: '📅' },
+    // ⚠️ Spec notifications (2026-08-02) — écran transverse, présent dans TOUS les profils.
+    { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   // UGPM : agit sous sa PRMP de tutelle — saisit/édite des brouillons, ne soumet pas
   // (bouton masqué + backend 403). Sous-ensemble curé des écrans PRMP dont les endpoints
@@ -40,37 +78,17 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Saisir un dossier', path: '/prmp/soumettre-dossier', icon: '📨' },
     { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: '🗒' },
     { label: 'Dossiers vérifiés', path: '/prmp/dossiers-verifies', icon: '✅' },
+    { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
-  PRESIDENT: [
-    { label: 'Tableau de bord', path: '/president/tableau-de-bord', icon: '▤' },
-    { label: 'Mes dossiers', path: '/president/mes-dossiers', icon: '📁' },
-    { label: 'Projets de PV', path: '/president/circuit/pv', icon: '📝' },
-    { label: 'PV définitifs', path: '/president/circuit/pv-definitifs', icon: '✅' },
-    { label: 'Lettres de renvoi', path: '/president/lettre-renvois', icon: '✉' },
-    { label: 'Demandes de retrait', path: '/president/retraits', icon: '↩' },
-    { label: 'PPM, marchés & dates', path: '/president/ppm-marches', icon: '🗂' },
-    { label: 'Calendrier', path: '/president/calendrier', icon: '📅' },
-    { label: 'Rapports', path: '/president/rapports', icon: '📊' },
-    { label: 'Statistiques', path: '/president/statistiques', icon: '📈' },
-  ],
-  CHEF_COMMISSION: [
-    { label: 'Tableau de bord', path: '/cc/tableau-de-bord', icon: '▤' },
-    { label: 'Mes dossiers', path: '/cc/mes-dossiers', icon: '📁' },
-    { label: 'Projets de PV', path: '/cc/circuit/pv', icon: '📝' },
-    { label: 'Lettres de renvoi', path: '/cc/lettre-renvois', icon: '✉' },
-    { label: 'PV définitifs', path: '/cc/circuit/pv-definitifs', icon: '✅' },
-    { label: 'PPM & marchés', path: '/cc/ppm-marches', icon: '🗂' },
-    { label: 'Marchés & dates prév.', path: '/cc/marches-previsions', icon: '📆' },
-    { label: 'Demandes de retrait', path: '/cc/retraits', icon: '↩' },
-    { label: 'Statistiques', path: '/cc/statistiques', icon: '📈' },
-    { label: 'Messagerie', path: '/cc/messagerie', icon: '✉' },
-  ],
+  // ⚠️ Président et Chef de commission partagent EXACTEMENT le même menu : ne pas éditer l'un des deux
+  // isolément, modifier `menuCommission()` (source unique).
+  PRESIDENT: menuCommission('/president'),
+  CHEF_COMMISSION: menuCommission('/cc'),
   SECRETAIRE: [
     { label: 'Tableau de bord', path: '/secretaire/tableau-de-bord', icon: '▤' },
     { label: 'Mes dossiers', path: '/secretaire/mes-dossiers', icon: '📁' },
-    { label: 'Réceptions', path: '/secretaire/receptions', icon: '📥' },
-    { label: 'Enregistrement', path: '/secretaire/enregistrement', icon: '📚' },
     { label: 'Messagerie', path: '/secretaire/messagerie', icon: '✉' },
+    { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   MEMBRE: [
     { label: 'Tableau de bord', path: '/membre/tableau-de-bord', icon: '▤' },
@@ -79,23 +97,28 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Projets de lettre de renvoi', path: '/membre/lettre-renvois', icon: '✉' },
     { label: 'PV définitifs', path: '/membre/pv-definitifs', icon: '✅' },
     { label: 'Messagerie', path: '/membre/messagerie', icon: '✉' },
+    { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   VERIFICATEUR: [
     { label: 'À vérifier', path: '/verificateur/a-verifier', icon: '✔' },
-    { label: 'En attente PRMP', path: '/verificateur/en-attente-prmp', icon: '⏳' },
+    // « En attente PRMP » : retiré du menu (demande user 2026-08-04) — sous-vue redondante. Ces dossiers
+    // (EN_ATTENTE_DECISION_PRMP) figurent déjà dans « À vérifier », badgés « En attente PRMP » et en
+    // lecture seule ; leur historique d'échanges s'affiche dans l'écran de vérification. Route conservée.
     { label: 'Vérifiés / clôturés', path: '/verificateur/verifies', icon: '🗂' },
     { label: 'Messagerie', path: '/verificateur/messagerie', icon: '✉' },
+    { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   ASSISTANT_CONTROLEUR: [
     { label: 'Tableau de bord', path: '/assistant/tableau-de-bord', icon: '▤' },
     { label: 'Lettres de renvoi reçues', path: '/assistant/lettre-renvois', icon: '✉' },
     { label: 'PV reçus', path: '/assistant/pv-examens', icon: '📄' },
     { label: 'Messagerie', path: '/assistant/messagerie', icon: '✉' },
+    { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   CHARGE_PUBLICATION: [
     { label: 'Publications', path: '/publication/publications', icon: '🌐' },
     { label: 'Documents publics', path: '/publication/documents', icon: '📎' },
-    { label: 'Notifications', path: '/publication/notifications', icon: '🔔' },
+    { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   ADMINISTRATEUR: [
     { label: 'Tableau de bord global', path: '/admin/tableau-de-bord', icon: '▤' },
@@ -108,6 +131,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Journal d’audit', path: '/admin/audit', icon: '🛡' },
     { label: 'Sessions', path: '/admin/sessions', icon: '🔑' },
     { label: 'Rapports', path: '/admin/rapports', icon: '📊' },
+    { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
 };
 
