@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { VacanceStore } from '../../core/vacance/vacance.store';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
@@ -34,6 +35,20 @@ import {
 } from '../../services';
 
 type Phase = 'choix' | 'saisiePpm' | 'saisieDossier' | 'brouillon';
+
+/**
+ * Écran d'atterrissage après création d'un brouillon (demande user 2026-08-04).
+ * ⚠️ Surtout pas `/prmp/ppm-marches` : cet écran masque volontairement les dossiers en BROUILLON,
+ * si bien qu'on atterrissait sur « Aucun PPM dans votre périmètre » juste après la création.
+ */
+const APRES_CREATION_BROUILLON = '/prmp/mes-brouillons';
+
+/**
+ * ⚠️ 2026-08-05 — codes des pièces constituant le DOSSIER HISTORIQUE d'une mise à jour de PPM. Elles
+ * figurent au référentiel de la famille DDP (pour être rattachables) mais sont jointes par le serveur,
+ * jamais déposées : elles n'ont pas leur place dans le formulaire de création d'un dossier neuf.
+ */
+const TYPES_PIECE_HISTORIQUE = new Set(['PV_PRECEDENT', 'PPM_ANTERIEUR']);
 
 /**
  * Famille de dossier hors planification (référentiel `type-dossiers`) : `DMC` (mise en concurrence)
@@ -93,15 +108,34 @@ interface ApercuDossier {
 @Component({
   selector: 'app-soumettre-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DetailPpmModal, PpmSaisieGrid],
+  imports: [ReactiveFormsModule, RouterLink, DetailPpmModal, PpmSaisieGrid],
   template: `
     <section class="sd">
-      <header class="page-header">
+      <header class="page-header page-header--actions">
         <div>
           <div class="page-subtitle">Domaine PRMP</div>
           <h1 class="page-title">Saisir &amp; soumettre un dossier</h1>
         </div>
+        <!-- Retour aux cartes « Mes dossiers » (PRMP seulement — l'UGPM n'a pas cet écran). -->
+        @if (estPrmp()) {
+          <a class="btn btn-retour-hub" routerLink="/prmp/dossiers">← Mes dossiers</a>
+        }
       </header>
+
+      <!-- ⚠️ 2026-08-05 (demande user) — rattrapage : on arrive ici par réflexe pour faire évoluer un PPM
+           déjà validé, alors que cet écran crée un dossier NEUF. Le renvoi n'est proposé qu'à la PRMP
+           (l'UGPM ne versionne pas) et sur la famille planification. -->
+      @if (renvoiMiseAJour()) {
+        <div class="alert alert-info sd__renvoi-maj">
+          <span>
+            Vous souhaitez <strong>faire évoluer un PPM déjà validé</strong> ? Ce formulaire crée un
+            dossier neuf. Une mise à jour part du plan en vigueur et en conserve l'historique.
+          </span>
+          <a class="btn btn-secondary btn-sm" routerLink="/prmp/dossiers-verifies" [queryParams]="{ type: 'DDP', maj: 1 }">
+            🔄 Mettre à jour un PPM
+          </a>
+        </div>
+      }
 
       @switch (phase()) {
         @case ('choix') {
@@ -212,7 +246,29 @@ interface ApercuDossier {
                             <option [value]="m.idMinistere" [selected]="m.idMinistere === ministereChoisi()">{{ m.libelleMinistere }}</option>
                           }
                         </select>
+                        @if (!creationMinistere()) {
+                          <button type="button" class="btn btn-secondary btn-sm" (click)="creationMinistere.set(true)" title="Le ministère d'appartenance ne figure pas dans la liste ? Enregistrez-le directement.">➕ Nouveau ministère</button>
+                        }
                       </div>
+                      @if (creationMinistere()) {
+                        <!-- Ministère absent du référentiel : créé à la volée (avec son organigramme actif). -->
+                        <div class="cnm-form-grid">
+                          <label class="form-group">
+                            <span class="form-label">Libellé du ministère *</span>
+                            <input class="form-control" type="text" [formControl]="nouvMinLibelle" placeholder="Ex. MINISTERE DE …" />
+                          </label>
+                          <label class="form-group">
+                            <span class="form-label">Sigle</span>
+                            <input class="form-control" type="text" [formControl]="nouvMinSigle" placeholder="Ex. MEF" />
+                          </label>
+                        </div>
+                        <div class="sd__soa-actions">
+                          <button type="button" class="btn btn-outline btn-sm" (click)="annulerCreationMinistere()">Annuler</button>
+                          <button type="button" class="btn btn-primary btn-sm" [disabled]="creatingMinistere() || !nouvMinLibelle.value.trim()" (click)="creerMinistere()">
+                            {{ creatingMinistere() ? 'Enregistrement…' : 'Enregistrer le ministère' }}
+                          </button>
+                        </div>
+                      }
                       @if (ministereChoisi()) {
                         <div class="cnm-form-grid">
                           <label class="form-group">
@@ -372,7 +428,7 @@ interface ApercuDossier {
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite()">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite()">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -465,7 +521,7 @@ interface ApercuDossier {
 
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || piecesObligatoiresManquantes().length || entiteSansLocalite()">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || vacance() || piecesObligatoiresManquantes().length || entiteSansLocalite()">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -618,7 +674,7 @@ interface ApercuDossier {
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-outline" (click)="fermerApercu()">Fermer</button>
-              <button type="button" class="btn btn-primary" [disabled]="submitting() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite()" (click)="fermerApercu(); creerPpm()">
+              <button type="button" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite()" (click)="fermerApercu(); creerPpm()">
                 Créer le dossier
               </button>
             </div>
@@ -630,6 +686,9 @@ interface ApercuDossier {
   styles: `
     .sd__brouillon { padding: 1.25rem 1.5rem; }
     /* Cartes de choix (PPM / DAO-MAOO) : style carte moderne, bandeau et pastille d'accent, relief au survol. */
+    /* Renvoi vers la mise à jour d'un PPM : informatif, jamais concurrent de l'action principale. */
+    .sd__renvoi-maj { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .sd__renvoi-maj > span { flex: 1; min-width: 18rem; }
     .sd__choix { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1.1rem; }
     .sd__choix-card {
       position: relative; overflow: hidden;
@@ -743,6 +802,9 @@ interface ApercuDossier {
 })
 export class SoumettreDossier {
   private readonly auth = inject(AuthService);
+  private readonly vacanceStore = inject(VacanceStore);
+  /** Vacance du poste PRMP (spec « Mandats PRMP ») — création/soumission suspendues. */
+  readonly vacance = this.vacanceStore.vacance;
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -832,6 +894,11 @@ export class SoumettreDossier {
   readonly creatingEntite = signal(false);
   /** Ministère d'appartenance choisi (idMinistere du référentiel `/api/ministeres`) — pilote l'affichage du formulaire. */
   readonly ministereChoisi = signal<number | null>(null);
+  /** Mini-formulaire « nouveau ministère » (référentiel incomplet) ouvert ? */
+  readonly creationMinistere = signal(false);
+  readonly creatingMinistere = signal(false);
+  readonly nouvMinLibelle = this.fb.nonNullable.control('');
+  readonly nouvMinSigle = this.fb.nonNullable.control('');
   /** Référentiel des ministères (`/api/ministeres`) = ministère d'appartenance sélectionnable (les 6, pas seulement ceux déjà entités contractantes). */
   readonly ministeres = signal<Ministere[]>([]);
   /** Catégories d'entité (référentiel) pour le champ Catégorie. */
@@ -873,6 +940,13 @@ export class SoumettreDossier {
   /** Soumission bloquée : un PPM doit comporter au moins un marché (§3.1 M03 ; sinon 409). */
   readonly ppmSansMarche = computed(() => this.estPpm() && this.marches().length === 0);
   /** Famille de dossier hors planification choisie sur l'écran d'accueil (`DMC` / `DDM`). */
+  /**
+   * ⚠️ 2026-08-05 (demande user) — renvoi vers la mise à jour d'un PPM. Affiché uniquement sur la saisie
+   * d'un PLAN par une PRMP : c'est là qu'on atterrit par réflexe en voulant faire évoluer un plan
+   * existant. L'UGPM en est exclue (elle saisit sous tutelle, elle ne versionne pas).
+   */
+  readonly renvoiMiseAJour = computed(() => this.estPrmp() && this.phase() === 'saisiePpm');
+
   readonly familleChoisie = signal<FamilleDossier>('DMC');
   readonly familleLabel = computed(() => (this.familleChoisie() === 'DMC' ? 'mise en concurrence' : 'marché'));
   /** Sous-types de la famille choisie (référentiel serveur, `GET /api/sous-type-dossiers/par-famille/{famille}`). */
@@ -1001,6 +1075,14 @@ export class SoumettreDossier {
     if (reprendreId) {
       this.dossierService.getById(Number(reprendreId)).subscribe((d) => this.reprendre(d));
     }
+    // ⚠️ Demande user (2026-08-02) — lien « Créer » des cartes « Mes dossiers » : entre directement
+    // dans la saisie de la famille demandée (`?famille=DDP|DMC|DDM`), sans repasser par le choix.
+    const famille = this.route.snapshot.queryParamMap.get('famille');
+    if (!reprendreId && famille === 'DDP') {
+      this.choisirPpm();
+    } else if (!reprendreId && (famille === 'DMC' || famille === 'DDM')) {
+      this.choisirFamille(famille);
+    }
   }
 
   /** Entités contractantes de la PRMP courante (jointure liens↔entités) ; pré-sélection si unique. */
@@ -1048,6 +1130,9 @@ export class SoumettreDossier {
     this.formError.set(null);
     this.importe.set(false); // saisie manuelle : tableau éditable
     this.anomaliesParLigne.set(new Map());
+    // Référentiels de la grille (natures/modes/comptes/SOA) : nécessaires aussi en saisie manuelle
+    // (datalists + grille CAPM effective par mode) — l'import et la reprise les chargeaient déjà.
+    this.ensureMarcheRefs();
     this.phase.set('saisiePpm');
     // Pièces attendues de la planification (le flux PPM crée toujours un dossier de famille DDP).
     this.chargerTypesPiece('DDP');
@@ -1078,7 +1163,10 @@ export class SoumettreDossier {
     this.pieces.set(new Map());
     this.pieceErreurs.set(new Set());
     this.typePieceService.getByTypeDossier(idTypeDossier).subscribe({
-      next: (rows) => this.typesPiece.set(rows),
+      // ⚠️ 2026-08-05 — les pièces d'HISTORIQUE (PV du dossier précédent, PPM antérieur) n'existent que
+      // pour une mise à jour, où elles sont jointes par le serveur. Elles n'ont aucun sens ici et ne
+      // doivent pas être proposées au dépôt sur un dossier neuf.
+      next: (rows) => this.typesPiece.set(rows.filter((t) => !TYPES_PIECE_HISTORIQUE.has(t.code ?? ''))),
       error: () => this.typesPiece.set([]),
     });
   }
@@ -1217,6 +1305,45 @@ export class SoumettreDossier {
   }
   annulerCreationEntite(): void {
     this.creationEntite.set(false);
+    this.annulerCreationMinistere();
+  }
+  annulerCreationMinistere(): void {
+    this.creationMinistere.set(false);
+    this.nouvMinLibelle.setValue('');
+    this.nouvMinSigle.setValue('');
+  }
+  /**
+   * ⚠️ Règle ajoutée — ministère d'appartenance ABSENT du référentiel : créé à la volée par la PRMP
+   * (`POST /api/ministeres`, ouvert PRMP comme la création d'entité), avec son **organigramme actif**
+   * (`POST /api/organigrammes`, requis par le formulaire d'entité), puis sélectionné automatiquement.
+   * PK client = max+1 (convention référentiels).
+   */
+  creerMinistere(): void {
+    const libelle = this.nouvMinLibelle.value.trim();
+    if (!libelle) return;
+    const sigle = this.nouvMinSigle.value.trim();
+    this.creatingMinistere.set(true);
+    const idMinistere = (this.ministeres().length ? Math.max(...this.ministeres().map((m) => m.idMinistere)) : 0) + 1;
+    this.ministereService.create({ idMinistere, libelleMinistere: libelle, sigle: sigle || undefined }).subscribe({
+      next: (min) => {
+        const idOrganigramme =
+          (this.organigrammes().length ? Math.max(...this.organigrammes().map((o) => o.idOrganigramme)) : 0) + 1;
+        this.organigrammeService
+          .create({ idOrganigramme, idMinistere: min.idMinistere, libelle: `Organigramme ${sigle || libelle}`.slice(0, 100), actif: true })
+          .subscribe({
+            next: (org) => {
+              this.ministeres.update((l) => [...l, min]);
+              this.organigrammes.update((l) => [...l, org]);
+              this.creatingMinistere.set(false);
+              this.annulerCreationMinistere();
+              this.toast.success('Ministère enregistré.');
+              this.choisirMinistere(String(min.idMinistere)); // sélection + dérivation de l'organigramme
+            },
+            error: () => this.creatingMinistere.set(false), // 403/400 → toast centralisé
+          });
+      },
+      error: () => this.creatingMinistere.set(false), // 403/400 → toast centralisé
+    });
   }
   /**
    * Enregistre la nouvelle entité (`POST /api/entite-contracts`). Le rattachement PRMP↔entité est
@@ -1507,12 +1634,12 @@ export class SoumettreDossier {
         if (!lt.designationLot) continue;
         lotArr.push(this.factory.ligneLot({ designationLot: lt.designationLot, montLot: lt.montLot, qteLot: lt.qteLot, uniteLot: lt.uniteLot }));
       }
-      // Prévisions (jalons) : idCapm résolu depuis le libellé + date de début ; date de fin à compléter (non fournie).
+      // Prévisions (jalons) : idCapm résolu sur la grille EFFECTIVE du mode de la ligne (modèle spécifique
+      // au mode — ex. Appel d'offres ouvert — sinon communs) : égalité de libellé, sinon 1er contenant le mot-clé.
       const procArr = g.get('processus') as FormArray;
+      const capmsEffectifs = this.factory.capmsEffectifs(this.capms(), this.modesList(), m.modeLibelle);
       for (const p of m.previsions ?? []) {
-        const idCapm =
-          this.capms().find((c) => (c.libelleProcessus ?? '').toUpperCase() === (p.processus ?? '').toUpperCase())
-            ?.idCapm ?? null;
+        const idCapm = this.factory.resoudreCapmImport(p.processus, capmsEffectifs);
         procArr.push(this.factory.processusGroup({ idCapm, dateDebut: p.dateDebut, dateFin: '' }));
         previsionsPresentes = true;
       }
@@ -1705,12 +1832,12 @@ export class SoumettreDossier {
               const ref = ppms.find((p) => p.idDossier === d.idDossier)?.reference;
               this.submitting.set(false);
               this.toast.success(`Brouillon créé (dossier #${d.idDossier})${ref ? ' · réf. générée ' + ref : ''}.`);
-              this.router.navigate(['/prmp/ppm-marches']);
+              this.router.navigate([APRES_CREATION_BROUILLON]);
             },
             error: () => {
               this.submitting.set(false);
               this.toast.success(`Brouillon créé (dossier #${d.idDossier}).`);
-              this.router.navigate(['/prmp/ppm-marches']);
+              this.router.navigate([APRES_CREATION_BROUILLON]);
             },
           });
         },

@@ -11,6 +11,7 @@ import { InscriptionsAdmin } from './inscriptions-admin';
 import { PrmpAdmin } from './prmp-admin';
 import { PrmpPiecesAdmin } from './prmp-pieces-admin';
 import { RattachementsAdmin } from './rattachements-admin';
+import { MandatsAdmin } from './mandats-admin';
 import { UgpmAdmin } from './ugpm-admin';
 import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
 import { PpmMarches } from '../prmp/ppm-marches';
@@ -32,6 +33,8 @@ const compteLinks = [
   })),
   // Écran dédié (POST /api/ugpms : création UGPM + compte ; pas de CRUD générique).
   { label: 'UGPM (unités de gestion)', path: '/admin/comptes/ugpms' },
+  // Écran dédié : mandats PRMP (nomination / reconduction / abrogation — pas un CRUD générique).
+  { label: 'Mandats PRMP', path: '/admin/comptes/mandats' },
 ];
 const auditConfig = SECURITE.find((r) => r.slug === 'audit-logs')!.config;
 const sessionConfig = SECURITE.find((r) => r.slug === 'session-utilisateurs')!.config;
@@ -72,6 +75,7 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'comptes/prmps', component: PrmpAdmin },
   { path: 'comptes/controleurs', component: ControleurAdmin },
   { path: 'comptes/ugpms', component: UgpmAdmin },
+  { path: 'comptes/mandats', component: MandatsAdmin },
   { path: 'comptes/prmp-pieces', component: PrmpPiecesAdmin },
   { path: 'comptes/ugpm-pieces', component: UgpmPiecesAdmin },
 

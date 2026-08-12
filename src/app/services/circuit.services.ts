@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
+  ActionDossier,
   CopieDossier,
   DemandeRetrait,
   Dispatch,
@@ -13,9 +14,11 @@ import {
   EchangeDto,
   Examen,
   ExamenDetail,
+  ExamenPiece,
   ExamenSoumissionRequest,
   LettreRenvoi,
   ObservationControle,
+  ObservationPv,
   Page,
   PvActionRequest,
   PvExamen,
@@ -23,7 +26,9 @@ import {
   Reception,
   ReceptionExiste,
   StatutDossier,
+  TransmissionSigmp,
   Verification,
+  VerificationPieceDepot,
 } from '../models';
 
 /**
@@ -46,7 +51,15 @@ export class DossierService extends CrudService<Dossier> {
     return this.http.get<Dossier[]>(`${this.baseUrl}/a-receptionner`);
   }
 
-  /** `GET /api/dossiers/a-examiner` (Membre/Admin) — ses dossiers DISPATCHE à examiner (scopé serveur). */
+  /**
+   * `GET /api/dossiers/{id}/journal` — journal MÉTIER des actions (spec « Mandats PRMP ») : qui a agi,
+   * quand et sous quel mandat (l'opérateur courant peut différer de la PRMP d'attribution, figée).
+   */
+  journal(idDossier: number): Observable<ActionDossier[]> {
+    return this.http.get<ActionDossier[]>(`${this.baseUrl}/${idDossier}/journal`);
+  }
+
+  /** `GET /api/dossiers/a-examiner` (Membre/Admin) — ses dossiers DISPATCHE + A_REEXAMINER (réexamen après lettre de renvoi), scopé serveur. */
   aExaminer(): Observable<Dossier[]> {
     return this.http.get<Dossier[]>(`${this.baseUrl}/a-examiner`);
   }
@@ -103,6 +116,35 @@ export class DossierService extends CrudService<Dossier> {
   }
 
   /**
+   * `POST /api/dossiers/{id}/transmettre-complements` (PRMP propriétaire) — ⚠️ spec navette (cas 3,
+   * MODIFIÉE 2026-08-02) : compléments de lettre de renvoi transmis, le dossier suspendu
+   * (EN_ATTENTE_PIECES) passe A_REEXAMINER — retour dans la file « à examiner » du Membre pour
+   * réexamen ; la navette repart à la re-soumission du projet de PV (→ EXAMINE). 409 hors
+   * EN_ATTENTE_PIECES ou si aucune pièce n'a été déposée pour la lettre du cycle courant.
+   */
+  transmettreComplements(id: number): Observable<Dossier> {
+    return this.http.post<Dossier>(`${this.baseUrl}/${id}/transmettre-complements`, {});
+  }
+
+  /**
+   * `POST /api/dossiers/{id}/signaler-pieces-manquantes` (SECRÉTAIRE) — ⚠️ spec recevabilité au dépôt :
+   * notifie la PRMP des pièces manquantes / non conformes (liste + observations reprises du contrôle),
+   * SOUMIS → EN_ATTENTE_COMPLEMENTS_DEPOT (non enregistrable). Sans archivage.
+   */
+  signalerPiecesManquantes(id: number): Observable<Dossier> {
+    return this.http.post<Dossier>(`${this.baseUrl}/${id}/signaler-pieces-manquantes`, {}, { context: skipErrorToast() });
+  }
+
+  /**
+   * `POST /api/dossiers/{id}/transmettre-complements-depot` (PRMP propriétaire) — ⚠️ spec recevabilité :
+   * compléments de DÉPÔT transmis, EN_ATTENTE_COMPLEMENTS_DEPOT → SOUMIS (le Secrétaire reprend le
+   * contrôle, les pièces déjà conformes restent acquises).
+   */
+  transmettreComplementsDepot(id: number): Observable<Dossier> {
+    return this.http.post<Dossier>(`${this.baseUrl}/${id}/transmettre-complements-depot`, {}, { context: skipErrorToast() });
+  }
+
+  /**
    * `DELETE /api/dossiers/{id}` (PRMP propriétaire) — supprime un dossier **BROUILLON sans historique**
    * de circuit (204). 409 si historique conservé (traces) ; 403 non-propriétaire ; 404 inexistant.
    * `skipErrorToast` : messages dédiés affichés par l'écran.
@@ -125,6 +167,16 @@ export class ReceptionService extends CrudService<Reception> {
 @Injectable({ providedIn: 'root' })
 export class DispatchService extends CrudService<Dispatch> {
   protected readonly resource = 'dispatchs';
+
+  /**
+   * `POST /api/dispatchs/{id}/annuler` (Président/CC, CC = sa localité) — retire le dossier au Membre,
+   * possible tant que le PV n'est pas signé (dossier DISPATCHE **ou** EXAMINE, 409 au-delà) : purge
+   * l'aval du dispatch (examen, détails, projet de PV…, réception conservée) puis le dispatch, et fait
+   * revenir le dossier en PRET_DISPATCH (re-dispatchable). Le Membre est notifié côté serveur.
+   */
+  annuler(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/annuler`, {});
+  }
 }
 
 @Injectable({ providedIn: 'root' })
@@ -137,9 +189,9 @@ export class ExamenService extends CrudService<Examen> {
   protected readonly resource = 'examens';
 
   /**
-   * `POST /api/examens/{id}/soumettre` (MEMBRE) — produit toujours le **projet de PV** (`idAvis` +
-   * `idSecretaireSeance` requis — Vérificateur de la localité du dossier, sinon 400 ciblé).
-   * La lettre de renvoi est une action séparée (`/api/lettre-renvois`). `skipErrorToast` : messages dédiés.
+   * `POST /api/examens/{id}/soumettre` (MEMBRE) — produit toujours le **projet de PV**.
+   * ⚠️ Règle modifiée (2026-08-01) — `idAvis`/`idSecretaireSeance` OPTIONNELS : posés à la clôture
+   * de navette (`/pv-examens/{id}/accepter`, Président/CC). `skipErrorToast` : messages dédiés.
    */
   soumettre(id: number, body: ExamenSoumissionRequest): Observable<PvExamen> {
     return this.http.post<PvExamen>(`${this.baseUrl}/${id}/soumettre`, body, { context: skipErrorToast() });
@@ -149,6 +201,17 @@ export class ExamenService extends CrudService<Examen> {
 @Injectable({ providedIn: 'root' })
 export class ExamenDetailService extends CrudService<ExamenDetail> {
   protected readonly resource = 'examen-details';
+}
+
+/** Examen des **pièces jointes** une par une (`/api/examen-pieces`, ⚠️ règle ajoutée — miroir des examen-details). */
+@Injectable({ providedIn: 'root' })
+export class ExamenPieceService extends CrudService<ExamenPiece> {
+  protected readonly resource = 'examen-pieces';
+
+  /** `GET /api/examen-pieces?examen={idExamen}` — résultats des pièces d'UN examen. */
+  byExamen(idExamen: number): Observable<ExamenPiece[]> {
+    return this.http.get<ExamenPiece[]>(this.baseUrl, { params: new HttpParams().set('examen', idExamen) });
+  }
 }
 
 /** Lettres de renvoi (alternative au projet de PV) — cycle BROUILLON → SOUMIS → SIGNE. */
@@ -172,21 +235,94 @@ export class LettreRenvoiService extends CrudService<LettreRenvoi> {
   document(id: number): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/${id}/document`, { responseType: 'blob', context: skipErrorToast() });
   }
-  /** `POST /api/lettre-renvois` (MEMBRE) — crée une lettre (BROUILLON) pendant l'examen. */
+  /** `POST /api/lettre-renvois` (Président/CC — ⚠️ règle modifiée 2026-08-01) — crée une lettre (BROUILLON). */
   creer(dto: LettreRenvoi): Observable<LettreRenvoi> {
     return this.create(dto);
   }
-  /** `PUT /api/lettre-renvois/{id}` (MEMBRE, brouillon). */
+  /** `PUT /api/lettre-renvois/{id}` (Président/CC, brouillon). */
   modifier(id: number, dto: LettreRenvoi): Observable<LettreRenvoi> {
     return this.update(id, dto);
   }
-  /** `POST /api/lettre-renvois/{id}/soumettre` (MEMBRE propriétaire) — BROUILLON → SOUMIS. */
+  /** `POST /api/lettre-renvois/{id}/soumettre` (Président/CC) — BROUILLON → SOUMIS. */
   soumettre(id: number): Observable<LettreRenvoi> {
     return this.http.post<LettreRenvoi>(`${this.baseUrl}/${id}/soumettre`, {});
   }
   /** `POST /api/lettre-renvois/{id}/signer` (CC/Président) — SOUMIS → SIGNE. */
   signer(id: number): Observable<LettreRenvoi> {
     return this.http.post<LettreRenvoi>(`${this.baseUrl}/${id}/signer`, {}, { context: skipErrorToast() });
+  }
+  /** `POST /api/lettre-renvois/{id}/archiver` (Assistant contrôleur) — ⚠️ spec navette : archive la lettre signée. */
+  archiver(id: number): Observable<LettreRenvoi> {
+    return this.http.post<LettreRenvoi>(`${this.baseUrl}/${id}/archiver`, {}, { context: skipErrorToast() });
+  }
+}
+
+/**
+ * ⚠️ Spec recevabilité au dépôt (2026-08-02) — contrôle de complétude des pièces par le SECRÉTAIRE
+ * (`/api/verification-pieces-depot`, append-only : historisation de chaque décision).
+ */
+@Injectable({ providedIn: 'root' })
+export class VerificationPieceDepotService extends CrudService<VerificationPieceDepot> {
+  protected readonly resource = 'verification-pieces-depot';
+
+  /** `GET ?dossier=` — historique ASC des vérifications du dossier (état courant = dernière par type). */
+  parDossier(idDossier: number): Observable<VerificationPieceDepot[]> {
+    return this.http.get<VerificationPieceDepot[]>(this.baseUrl, {
+      params: new HttpParams().set('dossier', idDossier),
+    });
+  }
+
+  /** `POST` (SECRÉTAIRE) — enregistre une décision (CONFORME / NON_CONFORME / MANQUANTE). */
+  decider(v: VerificationPieceDepot): Observable<VerificationPieceDepot> {
+    return this.http.post<VerificationPieceDepot>(this.baseUrl, v, { context: skipErrorToast() });
+  }
+}
+
+/**
+ * ⚠️ Spec « circuit des observations FAVR » (2026-08-02) — suivi des observations du PV
+ * (`/api/observations-pv`, périmètre FIGÉ) : lecture vérificateur/PRMP propriétaire ; passage
+ * VÉRIFICATEUR = décision individuelle (LEVEE | MAINTENUE + précision) pour chaque observation
+ * restante. Aucune création possible (rejet backend hors périmètre).
+ */
+@Injectable({ providedIn: 'root' })
+export class ObservationPvService extends CrudService<ObservationPv> {
+  protected readonly resource = 'observations-pv';
+
+  /** `GET ?dossier=` — observations du dossier (statut courant + historique par itération). */
+  parDossier(idDossier: number): Observable<ObservationPv[]> {
+    return this.http.get<ObservationPv[]>(this.baseUrl, {
+      params: new HttpParams().set('dossier', idDossier),
+    });
+  }
+
+  /** `POST /passage` (VÉRIFICATEUR) — statue toutes les observations restantes du périmètre. */
+  passage(
+    idDossier: number,
+    decisions: { idObservationPv: number; decision: 'LEVEE' | 'MAINTENUE'; precision?: string }[],
+  ): Observable<ObservationPv[]> {
+    return this.http.post<ObservationPv[]>(`${this.baseUrl}/passage`, { idDossier, decisions });
+  }
+}
+
+/**
+ * ⚠️ Spec navette (2026-08-01) — transmissions SIGMP (`/api/sigmp-transmissions`) : le VÉRIFICATEUR
+ * transmet le sens de la décision de la Commission (dérivé serveur de l'avis du PV signé) ;
+ * enregistrement côté PRS 2.0 en attendant l'API SIGMP réelle.
+ */
+@Injectable({ providedIn: 'root' })
+export class TransmissionSigmpService extends CrudService<TransmissionSigmp> {
+  protected readonly resource = 'sigmp-transmissions';
+
+  /** `GET /api/sigmp-transmissions?dossier=` — transmissions d'un dossier. */
+  parDossier(idDossier: number): Observable<TransmissionSigmp[]> {
+    return this.http.get<TransmissionSigmp[]>(this.baseUrl, {
+      params: new HttpParams().set('dossier', idDossier),
+    });
+  }
+
+  /** `POST /api/sigmp-transmissions` (VERIFICATEUR) — corps `{ idDossier }` ; sens dérivé serveur. */
+  transmettre(idDossier: number): Observable<TransmissionSigmp> {
+    return this.http.post<TransmissionSigmp>(this.baseUrl, { idDossier }, { context: skipErrorToast() });
   }
 }
 
@@ -231,7 +367,10 @@ export class PvExamenService extends CrudService<PvExamen> {
     return this.http.post<PvExamen>(`${this.baseUrl}/${id}/retourner`, body);
   }
 
-  /** Accepter le projet (PROJET_SOUMIS → PROJET_ACCEPTE). */
+  /**
+   * Accepter le projet (PROJET_SOUMIS → PROJET_ACCEPTE) — clôture de navette, Président/CC.
+   * ⚠️ Règle ajoutée (2026-08-01) — `idAvis` + `idSecretaireSeance` obligatoires (400 sinon).
+   */
   accepter(id: number, body: PvActionRequest): Observable<PvExamen> {
     return this.http.post<PvExamen>(`${this.baseUrl}/${id}/accepter`, body);
   }
@@ -239,6 +378,14 @@ export class PvExamenService extends CrudService<PvExamen> {
   /** Signer (passe à SIGNE quand Membre + (Président ou CC) ont signé ; `role` obligatoire). */
   signer(id: number, body: PvActionRequest): Observable<PvExamen> {
     return this.http.post<PvExamen>(`${this.baseUrl}/${id}/signer`, body);
+  }
+
+  /**
+   * `POST /api/pv-examens/{id}/archiver` (Assistant contrôleur) — ⚠️ spec navette : archive le PV
+   * (après transmission SIGMP) et CLÔT le dossier. 409 si la décision n'est pas encore transmise.
+   */
+  archiver(id: number): Observable<PvExamen> {
+    return this.http.post<PvExamen>(`${this.baseUrl}/${id}/archiver`, {}, { context: skipErrorToast() });
   }
 
   /**

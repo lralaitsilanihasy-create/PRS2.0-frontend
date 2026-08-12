@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { catchError, forkJoin, of } from 'rxjs';
 
-import { Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
+import { ActionDossier, Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
   CapmService,
   CompteService,
+  DossierService,
   EntiteContractService,
   LocaliteService,
   MarcheService,
@@ -35,7 +37,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 @Component({
   selector: 'app-dossier-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, PpmMarchesTable],
+  imports: [DatePipe, StatutBadge, PpmMarchesTable],
   template: `
     <div [class.modal-backdrop]="!embedded()" (click)="onOverlayClick()">
       <div
@@ -77,6 +79,14 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
               <span class="dc-meta-label">Entité contractante</span>
               <span class="dc-meta-value">{{ entiteLabel() }}</span>
             </div>
+            @if (dossier().idPrmp) {
+              <!-- Attribution FIGÉE à la création (spec « Mandats PRMP ») — jamais recalculée ; l'opérateur
+                   courant de chaque action est tracé au journal ci-dessous. -->
+              <div class="dc-meta-row">
+                <span class="dc-meta-label">PRMP d'attribution</span>
+                <span class="dc-meta-value">{{ dossier().idPrmp }}@if (dossier().idMandatAttrib != null) { <span class="dc-meta-hint"> · mandat #{{ dossier().idMandatAttrib }}</span> }</span>
+              </div>
+            }
             <div class="dc-meta-row">
               <span class="dc-meta-label">Localité</span>
               <span class="dc-meta-value">{{ localiteLabel() }}</span>
@@ -209,6 +219,40 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
               </div>
           </div>
           }
+
+          <!-- Journal des actions (spec « Mandats PRMP ») : qui a agi, quand et sous quel mandat.
+               L'OPÉRATEUR d'une action peut différer de la PRMP d'attribution (figée) — il est alors marqué. -->
+          @if (journal().length) {
+            <div class="dc-section">
+              <div class="dc-section-head">
+                <div class="section-block-title">
+                  <div class="section-icon">🕘</div>
+                  <span class="section-label">Journal des actions</span>
+                  <span class="section-count">{{ journal().length }} action(s)</span>
+                </div>
+              </div>
+              <table class="dc-journal">
+                <thead>
+                  <tr><th>Date</th><th>Action</th><th>Opérateur</th><th>Détail</th></tr>
+                </thead>
+                <tbody>
+                  @for (a of journal(); track a.idAction) {
+                    <tr>
+                      <td class="dc-journal__date">{{ a.dateAction | date: 'dd/MM/yyyy HH:mm' }}</td>
+                      <td>{{ actionLabel(a.typeAction) }}</td>
+                      <td>
+                        {{ a.nomOperateur || a.auteur || a.idPrmpOperateur || '—' }}
+                        @if (a.idPrmpOperateur && dossier().idPrmp && a.idPrmpOperateur !== dossier().idPrmp) {
+                          <span class="badge dc-journal__succ" title="PRMP en fonction à la date de l'action — différente de la PRMP d'attribution (figée)">≠ attribution</span>
+                        }
+                      </td>
+                      <td class="dc-journal__detail">{{ a.detail || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </div>
 
         <!-- ── Pied ── -->
@@ -275,6 +319,16 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
     .dc-meta-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); width: 110px; flex-shrink: 0; }
     .dc-meta-value { font-size: 12.5px; font-weight: 600; color: var(--n-800); }
     .dc-meta-empty { color: var(--n-300); font-style: italic; font-weight: 400; }
+    .dc-meta-hint { color: var(--n-400); font-weight: 400; font-size: 11px; }
+
+    /* Journal des actions (spec « Mandats PRMP »). */
+    .dc-journal { width: 100%; border-collapse: collapse; font-size: 12.5px; background: #fff; border: 0.5px solid var(--n-200); border-radius: 10px; overflow: hidden; }
+    .dc-journal th { text-align: left; padding: 7px 12px; background: var(--n-50); border-bottom: 0.5px solid var(--n-200); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--n-400); white-space: nowrap; }
+    .dc-journal td { padding: 7px 12px; border-bottom: 0.5px solid var(--n-100); vertical-align: top; white-space: normal; }
+    .dc-journal tr:last-child td { border-bottom: none; }
+    .dc-journal__date { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--n-500); }
+    .dc-journal__detail { color: var(--n-500); }
+    .dc-journal__succ { background: var(--warning-bg, #fef3c7); color: var(--warning-text, #b45309); margin-left: 6px; font-size: 10px; }
 
     /* Corps / sections — overscroll contenu : la molette ne « fuit » pas vers la page derrière. */
     .dc-body { overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--p-200) transparent; overscroll-behavior: contain; }
@@ -323,6 +377,7 @@ export class DossierConsultation implements OnInit {
   private readonly serviceBenefService = inject(ServiceBeneficiaireService);
   private readonly previsionService = inject(MarchePrevisionService);
   private readonly pieceService = inject(PieceJointeDossierService);
+  private readonly dossierService = inject(DossierService);
   private readonly toast = inject(ToastService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly auth = inject(AuthService);
@@ -333,6 +388,8 @@ export class DossierConsultation implements OnInit {
   readonly ppm = signal<Ppm | null>(null);
   /** Versionnement : idDetail → type de changement vs la version précédente (surlignage du tableau). */
   readonly changements = signal<Map<number, TypeChangementLigne> | null>(null);
+  /** Journal MÉTIER des actions (spec « Mandats PRMP ») — vide si le backend ne le sert pas encore. */
+  readonly journal = signal<ActionDossier[]>([]);
   readonly marches = signal<Marche[]>([]);
   readonly pieces = signal<PieceJointeDossier[]>([]);
   /** Une seule vague de rendu : le corps s'affiche quand TOUT est chargé (données + référentiels). */
@@ -390,6 +447,20 @@ export class DossierConsultation implements OnInit {
     return id != null ? this.entiteMap().get(String(id)) ?? '#' + id : '—';
   });
 
+  /** Libellé d'une action du journal (code brut si inconnu — le backend reste l'autorité). */
+  actionLabel(type: string): string {
+    const labels: Record<string, string> = {
+      CREATION: 'Création',
+      SOUMISSION: 'Soumission',
+      RESOUMISSION: 'Resoumission',
+      TRANSMISSION_COMPLEMENTS: 'Transmission de compléments',
+      TRANSMISSION_COMPLEMENTS_DEPOT: 'Compléments de dépôt',
+      SUPPRESSION: 'Suppression',
+      MISE_A_JOUR: 'Mise à jour',
+    };
+    return labels[type] ?? type;
+  }
+
   ngOnInit(): void {
     const id = this.dossier().idDossier;
     // Dossier issu d'une mise à jour → diff vs version précédente pour surligner les lignes changées.
@@ -404,6 +475,12 @@ export class DossierConsultation implements OnInit {
         error: () => {},
       });
     }
+    // Journal des actions (spec « Mandats PRMP ») — progressif et silencieux : un dossier sans journal
+    // (ou un backend antérieur à la spec) n'affiche simplement pas la section.
+    this.dossierService.journal(id).subscribe({
+      next: (rows) => this.journal.set(rows),
+      error: () => {},
+    });
     // UNE SEULE VAGUE : données + référentiels joints dans un même forkJoin — le corps ne s'affiche
     // qu'une fois complet (pas de spinners successifs, pas de libellés qui « clignotent »). Chaque
     // source de données est tolérante à l'échec (of(...)) : le toast centralisé signale l'erreur,

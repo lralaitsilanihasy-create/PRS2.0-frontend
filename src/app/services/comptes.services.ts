@@ -1,12 +1,16 @@
+import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { CrudService } from './api/crud.service';
 import { skipErrorToast } from '../core/errors/api-error';
 import {
+  AbrogerMandatRequest,
   Controleur,
+  CreerMandatRequest,
   CreerPrmpRequest,
   CreerUgpmRequest,
+  Mandat,
   ModifierUgpmRequest,
   Organigramme,
   Prmp,
@@ -57,6 +61,44 @@ export class ControleurService extends CrudService<Controleur, string> {
       responseType: 'blob',
       context: skipErrorToast(),
     });
+  }
+}
+
+/**
+ * Mandats PRMP (`/api/mandats`) — habilitation 3 ans, renouvelable une fois ; écriture ADMINISTRATEUR,
+ * lecture scopée (PRMP/UGPM = son périmètre). Ni PUT ni DELETE (un mandat matérialise un arrêté).
+ */
+@Injectable({ providedIn: 'root' })
+export class MandatService extends CrudService<Mandat> {
+  protected readonly resource = 'mandats';
+
+  /** `GET /api/mandats[?prmp=|?ugpm=]` — historique CHRONOLOGIQUE (statut inclus) ; `?prmp` l'emporte. */
+  historique(filtre?: { prmp?: string; ugpm?: string }): Observable<Mandat[]> {
+    let params = new HttpParams();
+    if (filtre?.prmp) params = params.set('prmp', filtre.prmp);
+    else if (filtre?.ugpm) params = params.set('ugpm', filtre.ugpm);
+    return this.http.get<Mandat[]>(this.baseUrl, { params });
+  }
+
+  /**
+   * `GET /api/mandats/actif` — SIGNAL DE VACANCE : 200 = quelqu'un est en fonction, **404 = personne**
+   * (« en attente de nomination »). Appel silencieux : le 404 est une réponse attendue, pas une erreur.
+   */
+  actif(filtre?: { prmp?: string; ugpm?: string }): Observable<Mandat> {
+    let params = new HttpParams();
+    if (filtre?.prmp) params = params.set('prmp', filtre.prmp);
+    else if (filtre?.ugpm) params = params.set('ugpm', filtre.ugpm);
+    return this.http.get<Mandat>(`${this.baseUrl}/actif`, { params, context: skipErrorToast() });
+  }
+
+  /** `POST /api/mandats` (ADMIN) — 409 : 3ᵉ mandat, arrêté réutilisé, prolongation déguisée, > 3 ans, chevauchement. */
+  creer(body: CreerMandatRequest): Observable<Mandat> {
+    return this.http.post<Mandat>(this.baseUrl, body);
+  }
+
+  /** `POST /api/mandats/{id}/abroger` (ADMIN) — fin avant terme, motif obligatoire. */
+  abroger(idMandat: number, body: AbrogerMandatRequest): Observable<Mandat> {
+    return this.http.post<Mandat>(`${this.baseUrl}/${idMandat}/abroger`, body);
   }
 }
 

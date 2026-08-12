@@ -15,6 +15,45 @@ export interface Controleur {
 }
 
 /** Fiche de la personne PRMP. PK = `idPrmp` = **matricule** (identifiant unifié, comme les contrôleurs). */
+/** Statut d'un mandat PRMP — dérivé serveur à la date du jour (`ABROGE` prime, sinon la période décide). */
+export type StatutMandat = 'ACTIF' | 'EN_TRANSITION' | 'ACHEVE' | 'ABROGE';
+
+/**
+ * Mandat PRMP (`/api/mandats`, t_mandat) — l'HABILITATION (3 ans, renouvelable une fois), distincte de
+ * l'attribution des dossiers (figée). Une reconduction est un mandat DISTINCT (nouvel arrêté, numeroMandat 2) ;
+ * ni PUT ni DELETE. `implicite: true` = mandat reconstitué depuis t_prmp (DATE_NOMIN + 3 ans, sans idMandat).
+ */
+export interface Mandat {
+  idMandat: number | null;
+  idPrmp: string;
+  /** Nom figé à la nomination. */
+  titulaire?: string;
+  dateDebut: string;
+  dateFin: string;
+  refArrete?: string;
+  statut: StatutMandat;
+  /** 1 (initial) ou 2 (reconduction) — calculé serveur. */
+  numeroMandat?: number;
+  dateAbrogation?: string;
+  motifAbrogation?: string;
+  implicite?: boolean;
+}
+
+/** Corps de `POST /api/mandats` (ADMIN) — `numeroMandat` et le statut sont calculés serveur. */
+export interface CreerMandatRequest {
+  idPrmp: string;
+  refArrete: string;
+  dateDebut: string;
+  dateFin?: string;
+  titulaire?: string;
+}
+
+/** Corps de `POST /api/mandats/{id}/abroger` (ADMIN). */
+export interface AbrogerMandatRequest {
+  motif: string;
+  dateAbrogation?: string;
+}
+
 export interface Prmp {
   /** = matricule de la PRMP (identifiant unifié). */
   idPrmp: string;

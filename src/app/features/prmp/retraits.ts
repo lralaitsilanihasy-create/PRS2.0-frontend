@@ -3,6 +3,7 @@ import { forkJoin } from 'rxjs';
 
 import { ApiError, getFieldError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { VacanceStore } from '../../core/vacance/vacance.store';
 import { DemandeRetrait, Dossier } from '../../models';
 import { DemandeRetraitService, DossierService, ReferenceLookupService } from '../../services';
 import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
@@ -64,7 +65,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
               <button
                 type="button"
                 class="btn btn-primary"
-                [disabled]="saving() || !retirables().length || selectedId() == null || !motif().trim()"
+                [disabled]="saving() || vacance() || !retirables().length || selectedId() == null || !motif().trim()"
                 (click)="soumettre()"
               >
                 {{ saving() ? 'Envoi…' : 'Soumettre la demande' }}
@@ -129,6 +130,9 @@ export class PrmpRetraits {
   private readonly dossierService = inject(DossierService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly toast = inject(ToastService);
+  private readonly vacanceStore = inject(VacanceStore);
+  /** Vacance du poste PRMP (spec « Mandats PRMP ») — demande de retrait suspendue. */
+  readonly vacance = this.vacanceStore.vacance;
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
   readonly retirables = signal<Dossier[]>([]);

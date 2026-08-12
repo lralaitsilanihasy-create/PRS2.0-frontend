@@ -194,3 +194,8 @@
 :host([data-role='CHARGE_PUBLICATION'])  { @include nav-accent(var(--assist-color), var(--assist-bg)); }
 :host([data-role='SECRETAIRE'])          { @include nav-accent(var(--sec-color),    var(--sec-bg)); }
 :host([data-role='ADMINISTRATEUR'])      { @include nav-accent(var(--admin-color),  var(--admin-bg)); }
+
+/* Bannière de vacance du poste PRMP (spec « Mandats PRMP ») — au-dessus du contenu de chaque page. */
+.vacance-banniere {
+  margin-bottom: 1rem;
+}

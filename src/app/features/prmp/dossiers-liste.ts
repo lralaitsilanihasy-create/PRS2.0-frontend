@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { VacanceStore } from '../../core/vacance/vacance.store';
 import { Dossier } from '../../models';
 import {
   DossierService,
@@ -18,6 +19,7 @@ import {
 } from '../../services';
 import { DetailPpmModal } from '../../shared/prmp';
 import { StatutBadge } from '../../shared/circuit';
+import { CompleterPiecesDepotModal } from './completer-pieces-depot-modal';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /** Groupe de statut du menu « Mes dossiers » : brouillons vs tout ce qui est soumis (non brouillon). */
@@ -34,14 +36,15 @@ type Groupe = 'brouillon' | 'soumis';
 @Component({
   selector: 'app-dossiers-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DetailPpmModal, StatutBadge],
+  imports: [RouterLink, DetailPpmModal, StatutBadge, CompleterPiecesDepotModal],
   template: `
     <section>
-      <header class="page-header">
+      <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
         <div>
           <div class="page-subtitle">Domaine PRMP</div>
           <h1 class="page-title">{{ titre() }}</h1>
         </div>
+        <a class="btn btn-retour-hub" routerLink="/prmp/dossiers">← Mes dossiers</a>
       </header>
 
       @if (loading()) {
@@ -51,13 +54,12 @@ type Groupe = 'brouillon' | 'soumis';
           <table>
             <thead>
               <tr>
-                <th>#</th><th>Référence</th><th>Entité contractante</th><th>Statut</th><th>Sous-type</th><th>Localité</th><th class="r">Actions</th>
+                <th>Référence</th><th>Entité contractante</th><th>Statut</th><th>Sous-type</th><th>Localité</th><th class="r">Actions</th>
               </tr>
             </thead>
             <tbody>
               @for (d of dossiers(); track d.idDossier) {
                 <tr [id]="'dl-row-' + d.idDossier" [class.dl-row-focus]="d.idDossier === focusId()">
-                  <td class="td-ref">{{ d.idDossier }}</td>
                   <td>{{ reference(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
                   <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
@@ -66,14 +68,18 @@ type Groupe = 'brouillon' | 'soumis';
                   <td>
                     <div class="td-actions actions-end">
                       <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrir(d)">Ouvrir</button>
+                      <!-- ⚠️ Spec recevabilité : le Secrétaire a signalé des pièces manquantes au dépôt. -->
+                      @if (d.statut === 'EN_ATTENTE_COMPLEMENTS_DEPOT' && estPrmp()) {
+                        <button type="button" class="btn btn-warning btn-sm" (click)="completer.set(d)">Compléter les pièces</button>
+                      }
                       @if (groupe() === 'brouillon') {
                         <!-- Soumission réservée à la PRMP ; l'UGPM ouvre/édite mais ne soumet pas (backend 403). -->
                         @if (estPrmp()) {
                           <button
                             type="button"
                             class="btn btn-success btn-sm"
-                            [disabled]="submittingId() === d.idDossier || ppmManquant(d)"
-                            [title]="ppmManquant(d) ? 'Impossible de soumettre : aucun PPM rattaché. Ouvrez le dossier pour ajouter un PPM.' : ''"
+                            [disabled]="submittingId() === d.idDossier || ppmManquant(d) || vacance()"
+                            [title]="vacance() ? 'Poste PRMP vacant — soumission suspendue en attente de nomination.' : ppmManquant(d) ? 'Impossible de soumettre : aucun PPM rattaché. Ouvrez le dossier pour ajouter un PPM.' : ''"
                             (click)="soumettre(d)"
                           >
                             Soumettre
@@ -92,7 +98,7 @@ type Groupe = 'brouillon' | 'soumis';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="7" class="empty-cell">{{ messageVide() }}</td></tr>
+                <tr><td colspan="6" class="empty-cell">{{ messageVide() }}</td></tr>
               }
             </tbody>
           </table>
@@ -131,6 +137,10 @@ type Groupe = 'brouillon' | 'soumis';
         (modifie)="onModifie()"
       />
     }
+
+    @if (completer(); as d) {
+      <app-completer-pieces-depot-modal [dossier]="d" (transmis)="onComplementsTransmis()" (fermer)="completer.set(null)" />
+    }
   `,
   styles: `
     .actions-end { justify-content: flex-end; }
@@ -146,11 +156,17 @@ type Groupe = 'brouillon' | 'soumis';
 })
 export class DossiersListe {
   private readonly route = inject(ActivatedRoute);
+  /** Rendu SOUS les cartes de « Mes dossiers » (route enfant) : l'en-tête se colle alors sous la
+   *  topbar pour que le bouton de retour ne bouge pas quand la liste défile. */
+  protected readonly encastre = this.route.snapshot.data['encastre'] === true;
   private readonly dossierService = inject(DossierService);
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly toast = inject(ToastService);
+  private readonly vacanceStore = inject(VacanceStore);
+  /** Vacance du poste PRMP (spec « Mandats PRMP ») — soumission suspendue. */
+  readonly vacance = this.vacanceStore.vacance;
   private readonly router = inject(Router);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly auth = inject(AuthService);
@@ -176,8 +192,18 @@ export class DossiersListe {
   private readonly ppmRef = signal<Map<number, string>>(new Map());
   /** idDossier → idPpm (via `GET /api/marches`, MarcheDto portant idPpm) pour ouvrir le détail PPM. */
   private readonly ppmParDossier = signal<Map<number, number>>(new Map());
+  /** idDossier → idPpm depuis la LISTE DES PPM (couvre les PPM sans marché — ⚠️ correctif 2026-08-02). */
+  private readonly ppmIdParDossier = signal<Map<number, number>>(new Map());
 
   readonly detail = signal<{ idDossier: number; idPpm: number } | null>(null);
+  /** Dossier ouvert dans le modal « Compléter les pièces » (EN_ATTENTE_COMPLEMENTS_DEPOT ; null = fermé). */
+  readonly completer = signal<Dossier | null>(null);
+
+  /** Compléments transmis : ferme le modal et recharge la liste (statut revenu SOUMIS). */
+  onComplementsTransmis(): void {
+    this.completer.set(null);
+    this.charger();
+  }
 
   /** Libellé du type courant (référentiel), repli sur l'id. */
   readonly typeLabel = computed(() => this.typeMap().get(this.type()) ?? this.type());
@@ -231,7 +257,10 @@ export class DossiersListe {
       },
       error: () => this.loading.set(false),
     });
-    this.ppmService.list().subscribe((ppms) => this.ppmRef.set(new Map(ppms.map((p) => [p.idDossier, p.reference]))));
+    this.ppmService.list().subscribe((ppms) => {
+      this.ppmRef.set(new Map(ppms.map((p) => [p.idDossier, p.reference])));
+      this.ppmIdParDossier.set(new Map(ppms.map((p) => [p.idDossier, p.idPpm])));
+    });
     this.marcheService.list().subscribe((marches) => {
       const ids = new Map<number, number>();
       for (const m of marches) ids.set(m.idDossier, m.idPpm);
@@ -255,7 +284,15 @@ export class DossiersListe {
   }
   /** Dossier PPM sans contenu rattaché → soumission impossible (409, §3.1). */
   ppmManquant(d: Dossier): boolean {
-    return d.idTypeDossier === 'DDP' && !this.ppmParDossier().has(d.idDossier);
+    // ⚠️ Correctif (2026-08-02) : deux sources COMPLÉMENTAIRES — les marchés (couvrent les brouillons,
+    // exclus de GET /api/ppms côté PRMP) et la liste des PPM (couvre les PPM sans ligne de marché).
+    // Résiduel : un BROUILLON DDP sans marché reste signalé « sans PPM » (les deux sources muettes) —
+    // le backend tranche de toute façon (400 explicite à la soumission).
+    return (
+      d.idTypeDossier === 'DDP' &&
+      !this.ppmParDossier().has(d.idDossier) &&
+      !this.ppmIdParDossier().has(d.idDossier)
+    );
   }
 
   /**
@@ -263,7 +300,7 @@ export class DossiersListe {
    * **sans PPM** (DAO/MAOO), repli sur le formulaire d'édition — uniquement pertinent pour un brouillon.
    */
   ouvrir(d: Dossier): void {
-    const idPpm = this.ppmParDossier().get(d.idDossier);
+    const idPpm = this.ppmParDossier().get(d.idDossier) ?? this.ppmIdParDossier().get(d.idDossier);
     if (idPpm != null) {
       this.detail.set({ idDossier: d.idDossier, idPpm });
     } else if (this.groupe() === 'brouillon') {

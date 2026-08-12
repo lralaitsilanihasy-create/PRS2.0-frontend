@@ -94,13 +94,25 @@
   </nav>
 
   @if (login()) {
-    <div class="sidebar-profile">
-      <div class="avatar">{{ initials() }}</div>
-      <div class="info">
-        <div class="name">{{ displayName() || login() }}</div>
-        <div class="role">{{ role() }}</div>
+    @if (role() === 'PRMP') {
+      <!-- ⚠️ Demande user (2026-08-02) : « Créer compte UGPM » remplace la carte profil en bas de la
+           barre latérale (l'identité est déjà affichée dans la topbar). -->
+      <a class="sidebar-profile sidebar-profile--action" routerLink="/prmp/creer-ugpm" routerLinkActive="active">
+        <div class="avatar">👤</div>
+        <div class="info">
+          <div class="name">Créer compte UGPM</div>
+          <div class="role">Compte rattaché à votre PRMP</div>
+        </div>
+      </a>
+    } @else {
+      <div class="sidebar-profile">
+        <div class="avatar">{{ initials() }}</div>
+        <div class="info">
+          <div class="name">{{ displayName() || login() }}</div>
+          <div class="role">{{ role() }}</div>
+        </div>
       </div>
-    </div>
+    }
   }
 </aside>
 
@@ -130,7 +142,7 @@
   </div>
   <div class="topbar-right">
     @if (login()) {
-      <app-notification-center />
+      <app-notification-center (voirDossier)="dossierNotification.set($event)" />
       <div class="topbar-user">
         <span class="topbar-user__avatar">{{ initials() }}</span>
         <span class="topbar-user__meta">
@@ -145,6 +157,20 @@
 
 <main class="page-content">
   <div class="page-inner">
+    <!-- Vacance du poste PRMP (spec « Mandats PRMP », §5) : aucun mandat actif → standby explicite. -->
+    @if (vacance()) {
+      <div class="alert alert-warning vacance-banniere" role="status">
+        ⏸ <strong>En attente de nomination de la nouvelle PRMP</strong> — le poste est vacant : le
+        traitement des dossiers est suspendu (création, modification, soumission, retraits). Les actions
+        redeviendront disponibles automatiquement dès la nomination effective du nouveau titulaire.
+      </div>
+    }
     <router-outlet />
   </div>
 </main>
+
+<!-- Consultation ouverte depuis une notification — rendue ICI (hors topbar : son contexte
+     d'empilement z-index 99 passerait le modal sous la sidebar z-index 100). -->
+@if (dossierNotification(); as d) {
+  <app-dossier-consultation [dossier]="d" (closed)="dossierNotification.set(null)" />
+}

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { VacanceStore } from '../../core/vacance/vacance.store';
 import { Dossier } from '../../models';
 import {
   DossierService,
@@ -46,13 +47,12 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
           <table>
             <thead>
               <tr>
-                <th>#</th><th>Type</th><th>Référence</th><th>Entité contractante</th><th>Localité</th><th class="r">Actions</th>
+                <th>Type</th><th>Référence</th><th>Entité contractante</th><th>Localité</th><th class="r">Actions</th>
               </tr>
             </thead>
             <tbody>
               @for (d of brouillons(); track d.idDossier) {
                 <tr>
-                  <td class="td-ref">{{ d.idDossier }}</td>
                   <td>{{ typeLabel(d) }}</td>
                   <td>{{ reference(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
@@ -65,7 +65,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                         <button
                           type="button"
                           class="btn btn-success btn-sm"
-                          [disabled]="submittingId() === d.idDossier || ppmManquant(d)"
+                          [disabled]="submittingId() === d.idDossier || ppmManquant(d) || vacance()"
                           [title]="ppmManquant(d) ? 'Impossible de soumettre : aucun PPM rattaché à ce dossier. Ouvrez le dossier pour ajouter un PPM.' : ''"
                           (click)="soumettre(d)"
                         >
@@ -84,7 +84,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="6" class="empty-cell">Aucun brouillon. Saisissez un dossier depuis « Saisir &amp; soumettre ».</td></tr>
+                <tr><td colspan="5" class="empty-cell">Aucun brouillon. Saisissez un dossier depuis « Saisir &amp; soumettre ».</td></tr>
               }
             </tbody>
           </table>
@@ -136,6 +136,9 @@ export class MesBrouillons {
   private readonly marcheService = inject(MarcheService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly toast = inject(ToastService);
+  private readonly vacanceStore = inject(VacanceStore);
+  /** Vacance du poste PRMP (spec « Mandats PRMP ») — soumission suspendue. */
+  readonly vacance = this.vacanceStore.vacance;
   private readonly router = inject(Router);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly auth = inject(AuthService);
@@ -179,7 +182,10 @@ export class MesBrouillons {
     this.loading.set(true);
     this.dossierService.list('BROUILLON').subscribe({
       next: (rows) => {
-        this.brouillons.set(rows);
+        // ⚠️ 2026-08-05 (demande user) — une MISE À JOUR en cours (dossier rattaché à un prédécesseur)
+        // n'est pas un brouillon de dossier : rien n'est effectif tant qu'elle n'est pas créée. Elle se
+        // reprend depuis « Mettre à jour un PPM », pas d'ici.
+        this.brouillons.set(rows.filter((d) => d.idDossierParent == null));
         this.loading.set(false);
       },
       error: () => this.loading.set(false),

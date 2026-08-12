@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter, forkJoin, skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { VacanceStore } from '../../core/vacance/vacance.store';
 import { ToastService } from '../../core/notifications/toast.service';
 import { NavItem, navFor } from '../../core/navigation/navigation';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
@@ -44,6 +45,9 @@ export class MainLayout {
   private readonly lettreRenvoiService = inject(LettreRenvoiService);
   private readonly kpiService = inject(KpiService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
+  private readonly vacanceStore = inject(VacanceStore);
+  /** Vacance du poste PRMP (spec « Mandats PRMP ») — bannière + standby des actions de traitement. */
+  readonly vacance = this.vacanceStore.vacance;
   private readonly toast = inject(ToastService);
 
   readonly role = this.auth.role;
@@ -140,6 +144,16 @@ export class MainLayout {
         takeUntilDestroyed(),
       )
       .subscribe(() => this.sidebarOpen.set(false));
+
+    // Vacance PRMP (spec « Mandats PRMP ») : vérifiée à l'ouverture puis à chaque navigation — le
+    // déblocage est automatique côté serveur, re-vérifier suffit à lever la bannière et les blocages.
+    this.vacanceStore.verifier();
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.vacanceStore.verifier());
 
     const ref = this.auth.ref();
     if (!ref) {
