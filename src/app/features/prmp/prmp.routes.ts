@@ -8,7 +8,8 @@ import { DossiersPipeline } from '../circuit/dossiers-pipeline';
 import { LettreRenvoiConsultation } from '../circuit/lettre-renvoi-consultation';
 import { PvDefinitifs } from '../circuit/pv-definitifs';
 import { ResultatExamen } from '../circuit/resultat-examen';
-import { ECHEANCE_CONFIG, PPM_CONFIG } from '../circuit/circuit-resources.config';
+import { PPM_CONFIG } from '../circuit/circuit-resources.config';
+import { CalendrierMarches } from './calendrier-marches';
 import { DossiersARectifier } from './dossiers-a-rectifier';
 import { DossiersListe } from './dossiers-liste';
 import { MesDossiers } from './mes-dossiers';
@@ -65,7 +66,9 @@ export const PRMP_ROUTES: Routes = [
     ],
   },
   { path: 'retraits', component: PrmpRetraits },
-  { path: 'calendrier', component: CrudPage, data: { crud: ECHEANCE_CONFIG } },
+  // ⚠️ 2026-08-12 (demande user) — le calendrier montre l'objet de chaque ligne des dossiers de
+  // planification avec ses processus CAPM (remplace le CRUD « échéances », vide pour la PRMP).
+  { path: 'calendrier', component: CalendrierMarches },
   // ⚠️ 2026-08-12 (demande user) — hub « Examen de dossiers » (même composant que Président/CC, variante
   // PRMP à deux cartes) : SES lettres de renvoi et SES PV définitifs, listes rendues sous les cartes.
   {
