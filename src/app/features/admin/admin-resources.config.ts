@@ -2,6 +2,7 @@ import { CrudResourceConfig } from '../../shared/crud/crud-config';
 import {
   AuditLogService,
   AvisService,
+  CapmService,
   CatCompteService,
   CategorieEntiteService,
   CompteService,
@@ -205,6 +206,9 @@ export const REFERENTIELS: AdminResource[] = [
       fields: [
         { key: 'idLocalite', label: 'Identifiant', pk: true, required: true },
         { key: 'libelleLocalite', label: 'Libellé', required: true },
+        // ⚠️ Ajouté (2026-08-03) — chef-lieu : ville de siège de la Commission (régionale), reprise
+        // par les documents officiels (« A <chef-lieu>, le … ») ; à défaut, le libellé est utilisé.
+        { key: 'chefLieu', label: 'Chef-lieu' },
       ],
     },
   },
@@ -237,11 +241,25 @@ export const REFERENTIELS: AdminResource[] = [
         // PK technique : auto (max+1) à la création et masquée de la liste.
         { key: 'idMode', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'libelle', label: 'Libellé' },
+        // Classification déclarative (enum backend NORMAL/DEROGATOIRE) : le code envoyé diffère du libellé montré.
+        {
+          key: 'categorie',
+          label: 'Catégorie',
+          options: [
+            { value: 'NORMAL', label: 'Mode normal' },
+            { value: 'DEROGATOIRE', label: 'Mode dérogatoire' },
+          ],
+        },
         { key: 'description', label: 'Description' },
         { key: 'publiciteRequise', label: 'Publicité requise', type: 'boolean' },
         { key: 'declencheAgpm', label: 'Déclenche AGPM', type: 'boolean' },
         { key: 'delaiMinJours', label: 'Délai min. (jours)', type: 'number' },
         { key: 'baseLegale', label: 'Base légale' },
+        {
+          key: 'idModeModeleCapm',
+          label: 'Modèle CAPM (vide = le sien)',
+          ref: { service: ModePassationService, idKey: 'idMode', labelKeys: ['libelle'] },
+        },
       ],
     },
   },
@@ -328,6 +346,27 @@ export const REFERENTIELS: AdminResource[] = [
           label: 'Sous-type (vide = commun)',
           ref: { service: SousTypeDossierService, idKey: 'idSousType', labelKeys: ['libelleSousType'] },
         },
+      ],
+    },
+  },
+  {
+    slug: 'capm',
+    config: {
+      title: 'Processus de marché (CAPM)',
+      service: CapmService,
+      idKey: 'idCapm',
+      writeCapability: 'REFERENTIEL_WRITE',
+      note: 'Modèle mixte : un processus sans mode est COMMUN (modèle par défaut : LANCEMENT, DAO, OUVERTURE, ATTRIBUTION) ; un processus rattaché à un mode appartient au modèle détaillé de ce mode (ex. « Appel d\'offres ouvert » : 30 tâches en 6 phases). L\'ordre fixe la chronologie ; la phase regroupe les tâches à l\'affichage.',
+      fields: [
+        { key: 'idCapm', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
+        { key: 'libelleProcessus', label: 'Libellé' },
+        { key: 'ordre', label: 'Ordre', type: 'number', required: true },
+        {
+          key: 'idMode',
+          label: 'Mode (vide = commun)',
+          ref: { service: ModePassationService, idKey: 'idMode', labelKeys: ['libelle'] },
+        },
+        { key: 'groupe', label: 'Phase (regroupement)' },
       ],
     },
   },

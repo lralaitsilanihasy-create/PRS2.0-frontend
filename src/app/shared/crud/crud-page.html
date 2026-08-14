@@ -108,8 +108,8 @@
               } @else if (f.options) {
                 <select class="form-control" [formControlName]="f.key">
                   <option [ngValue]="null">— Sélectionner —</option>
-                  @for (opt of f.options; track opt) {
-                    <option [ngValue]="opt">{{ opt }}</option>
+                  @for (opt of optionsFixes(f); track opt.value) {
+                    <option [ngValue]="opt.value">{{ opt.label }}</option>
                   }
                 </select>
               } @else {

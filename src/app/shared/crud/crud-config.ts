@@ -64,10 +64,12 @@ export interface FieldConfig {
    */
   optionsFromData?: boolean;
   /**
-   * Liste déroulante à **options figées** (énumération statique, ex. niveaux `[1, 2, 3]`). La valeur
-   * de chaque option est envoyée telle quelle ; le libellé affiché est la valeur elle-même.
+   * Liste déroulante à **options figées** (énumération statique). Deux formes : une valeur brute
+   * (ex. niveaux `[1, 2, 3]` — le libellé affiché est la valeur elle-même) ou une paire
+   * `{ value, label }` quand le code envoyé diffère du libellé montré (ex. enum `NORMAL` → « Mode
+   * normal »). La liste ET les cellules du tableau affichent le libellé.
    */
-  options?: (string | number)[];
+  options?: (string | number | { value: string | number; label: string })[];
   /**
    * Si défini, la valeur (un id) est affichée via le libellé du référentiel lié ; en formulaire,
    * le champ devient une **liste déroulante** des enregistrements du référentiel.

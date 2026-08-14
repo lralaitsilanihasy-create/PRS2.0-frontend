@@ -270,6 +270,13 @@ export class CrudPage {
     });
   }
 
+  /** Options figées normalisées en paires { value, label } (une valeur brute est son propre libellé). */
+  optionsFixes(field: FieldConfig): { value: string | number; label: string }[] {
+    return (field.options ?? []).map((opt) =>
+      typeof opt === 'object' ? opt : { value: opt, label: String(opt) },
+    );
+  }
+
   display(row: Row, field: FieldConfig): string {
     // Affichage depuis une autre clé (ex. libellé fourni par le serveur) si défini.
     if (field.displayKey) {
@@ -286,6 +293,11 @@ export class CrudPage {
     if (field.ref) {
       // Résolution FK : libellé si connu, sinon repli sur l'id brut.
       return this.lookups()[field.key]?.get(String(value)) ?? String(value);
+    }
+    if (field.options) {
+      // Option figée en paire {value,label} : la cellule montre le libellé, pas le code envoyé.
+      const opt = this.optionsFixes(field).find((o) => o.value === value);
+      if (opt) return opt.label;
     }
     return String(value);
   }

@@ -56,6 +56,11 @@ export interface Localite {
   /** Clé (max 5) référencée partout ; compose aussi le segment localité des références officielles (`CRM-<id>`). */
   idLocalite: string;
   libelleLocalite: string;
+  /**
+   * ⚠️ Ajouté (2026-08-03) — chef-lieu : ville de siège de la Commission (régionale), reprise par les
+   * documents officiels (« A <chef-lieu>, le … ») ; à défaut, `libelleLocalite` est utilisé.
+   */
+  chefLieu?: string;
 }
 
 /** Ministère. */
@@ -80,6 +85,17 @@ export interface ModePassation {
    * rend la pièce AGPM obligatoire à la soumission d'un PPM. Administrable via `mode-passations`.
    */
   declencheAgpm?: boolean;
+  /**
+   * Modèle CAPM partagé (`tr_mode_passation.ID_MODE_MODELE_CAPM`) : mode dont ce mode réutilise le
+   * modèle détaillé de processus (ex. CPO / Appel à manifestation d'intérêt → « Appel d'offres ouvert »).
+   * `null` = pas de partage. Administrable via `mode-passations`.
+   */
+  idModeModeleCapm?: number | null;
+  /**
+   * Classification du mode (`tr_mode_passation.CATEGORIE`) : `NORMAL` (droit commun) ou `DEROGATOIRE`.
+   * `null` = non classé. Déclaratif (aucune règle dérivée à ce jour), administrable via `mode-passations`.
+   */
+  categorie?: 'NORMAL' | 'DEROGATOIRE' | null;
 }
 
 /**
@@ -143,11 +159,15 @@ export interface RegleAnomalie {
   graviteDefaut?: string;
 }
 
-/** CAPM — processus de marché (référentiel `t_capm`) ; `ordre` fixe l'affichage des dates prévisionnelles. */
+/** CAPM — processus de marché (référentiel `t_capm`) ; `ordre` fixe l'affichage des dates prévisionnelles.
+ *  Modèle mixte : `idMode` null = processus commun, sinon spécifique au mode de passation (ex. modèle
+ *  détaillé « Appel d'offres ouvert ») ; `groupe` = phase du modèle (regroupement à l'affichage). */
 export interface Capm {
   idCapm: number;
   libelleProcessus?: string;
   ordre: number;
+  idMode?: number | null;
+  groupe?: string | null;
 }
 
 /** Type de pièce jointe attendue par type de dossier (référentiel `t_type_piece_jointe`). */
