@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { ToastService } from '../../core/notifications/toast.service';
 import { NavItem, navFor } from '../../core/navigation/navigation';
+import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 import {
   ControleurService,
@@ -53,7 +54,21 @@ export class MainLayout {
   readonly role = this.auth.role;
   readonly login = this.auth.login;
   readonly localite = this.auth.localite;
-  readonly navItems = computed(() => navFor(this.auth.role()));
+  private readonly permissions = inject(PermissionsService);
+  /**
+   * Menu du profil, filtré par la DÉLÉGATION ASCENDANTE (spec 2026-08-14) : une entrée portant
+   * `delegation` n'apparaît que si le profil courant peut exécuter les tâches de ce profil (paire
+   * active de t_delegation_profil) — le menu suit la base, zéro code.
+   */
+  readonly navItems = computed(() =>
+    navFor(this.auth.role())
+      .filter((item) => !item.delegation || this.permissions.peutExecuter(item.delegation))
+      .map((item) =>
+        item.children
+          ? { ...item, children: item.children.filter((c) => !c.delegation || this.permissions.peutExecuter(c.delegation)) }
+          : item,
+      ),
+  );
   /** Nom de l'utilisateur courant (résolu depuis sa fiche PRMP / contrôleur). */
   readonly displayName = signal('');
   /** Initiales (1 à 2 lettres) pour l'avatar du bloc profil de la sidebar. */

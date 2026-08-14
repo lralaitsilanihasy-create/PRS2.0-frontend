@@ -8,6 +8,12 @@ export interface NavItem {
   icon?: string;
   /** Sous-entrées affichées en retrait sous cette entrée (jusqu'à deux niveaux d'imbrication). */
   children?: NavItem[];
+  /**
+   * ⚠️ Délégation ascendante (spec 2026-08-14) — l'entrée n'est affichée que si le profil courant peut
+   * exécuter les tâches de CE profil (titulaire, ou paire active de `t_delegation_profil`) : désactiver
+   * la paire en base retire l'entrée du menu, zéro code. Absent = entrée toujours affichée.
+   */
+  delegation?: Role;
 }
 
 /**
@@ -29,6 +35,12 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // sont regroupés dans un écran-hub à cartes : ce sont les trois productions d'un même examen.
     // Les trois écrans et leurs routes sont inchangés, seul le chemin d'accès l'est.
     { label: 'Examen de dossiers', path: `${base}/resultat-examen`, icon: '📑' },
+    // ⚠️ Délégation ascendante (spec 2026-08-14) — tâches du Vérificateur et de l'Assistant exercées
+    // par Président/CC : entrées affichées SEULEMENT si la paire est active en base (champ `delegation`).
+    // Les tâches Secrétaire (réceptions) et Membre (Examiner) vivent dans « Mes dossiers » (groupes/actions
+    // gardés par capacités, mêmes paires).
+    { label: 'Vérifications', path: `${base}/verifications`, icon: '🔎', delegation: 'VERIFICATEUR' },
+    { label: 'Archivage des PV', path: `${base}/pv-examens`, icon: '🗄', delegation: 'ASSISTANT_CONTROLEUR' },
     // « PPM & marchés » et « Marchés & dates prév. » : retirés du menu des DEUX profils
     // (demande user 2026-08-04). Routes conservées de part et d'autre — cf. president.routes.ts / cc.routes.ts.
     // ⚠️ 2026-08-07 (demande user) — « Demandes de retrait » quitte le menu : une demande porte sur un

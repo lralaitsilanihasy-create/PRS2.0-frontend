@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { PermissionsService } from '../../core/auth/permissions.service';
@@ -26,6 +26,7 @@ import {
   statutDossierLabel,
 } from '../../shared/circuit';
 import { DossierConsultation } from './dossier-consultation';
+import { DetailPvModal } from './detail-pv-modal';
 
 /**
  * Pipeline des dossiers (lecture seule) : liste filtrée par le backend selon le
@@ -35,7 +36,7 @@ import { DossierConsultation } from './dossier-consultation';
 @Component({
   selector: 'app-dossiers-pipeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, StatutBadge, CircuitTimeline, DossierConsultation],
+  imports: [RouterLink, StatutBadge, CircuitTimeline, DossierConsultation, DetailPvModal],
   template: `
     <section class="pipeline">
       <header class="page-header">
@@ -57,16 +58,25 @@ import { DossierConsultation } from './dossier-consultation';
                   <app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" />
                   <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
                   @if (showExamenAction && info.cle === 'EXAMEN' && peutAgir(info)) {
-                    <a class="btn btn-primary btn-sm" [routerLink]="['/membre/examiner', d.idDossier]">Examiner</a>
+                    <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Examiner</a>
                   }
                   @if (examenModifiable(d)) {
-                    <a class="btn btn-primary btn-sm" [routerLink]="['/membre/examiner', d.idDossier]">Modifier l'examen</a>
+                    <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Modifier l'examen</a>
+                  }
+                  <!-- ⚠️ File Vérificateur : le dossier à vérifier est ACCOMPAGNÉ de son PV définitif. -->
+                  @if (showVerifAction && pvSigne(d); as p) {
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="pvDetail.set(p)">PV définitif</button>
                   }
                   @if (showVerifAction && d.statut === 'EN_VERIFICATION') {
-                    <a class="btn btn-primary btn-sm" [routerLink]="['/verificateur/verifier', d.idDossier]">Vérifier</a>
+                    <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">
+                      {{ pvSigne(d)?.idAvis === 'FAVR' ? 'Vérifier' : 'Transmettre la décision' }}
+                    </a>
                   }
-                  @if (showVerifAction && d.statut === 'EN_ATTENTE_DECISION_PRMP') {
-                    <a class="btn btn-secondary btn-sm" [routerLink]="['/verificateur/verifier', d.idDossier]">Voir</a>
+                  @if (showVerifAction && d.statut === 'OBSERVATIONS_LEVEES') {
+                    <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Transmettre à SIGMP</a>
+                  }
+                  @if (showVerifAction && (d.statut === 'EN_ATTENTE_DECISION_PRMP' || d.statut === 'DECISION_TRANSMISE_SIGMP')) {
+                    <a class="btn btn-secondary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Voir</a>
                   }
                 </div>
               </div>
@@ -89,6 +99,9 @@ import { DossierConsultation } from './dossier-consultation';
 
     @if (consulte(); as d) {
       <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
+    }
+    @if (pvDetail(); as p) {
+      <app-detail-pv-modal [pv]="p" (fermer)="pvDetail.set(null)" />
     }
   `,
   styles: `
@@ -144,6 +157,13 @@ import { DossierConsultation } from './dossier-consultation';
 })
 export class DossiersPipeline {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  /**
+   * Espace courant (`/membre`, `/verificateur`, `/president`, `/cc`…) — cible des liens Examiner /
+   * Vérifier : chaque espace monte ses routes (délégation ascendante, spec 2026-08-14) ; un lien
+   * absolu vers l'espace d'un autre profil serait bloqué par son roleGuard.
+   */
+  protected readonly espace = '/' + (this.router.url.split('/')[1] || 'membre');
   private readonly dossierService = inject(DossierService);
   private readonly receptionService = inject(ReceptionService);
   private readonly dispatchService = inject(DispatchService);
@@ -180,6 +200,31 @@ export class DossiersPipeline {
   private readonly pageSize = 10;
   /** Dossier ouvert en consultation lecture seule (null = fermé). */
   readonly consulte = signal<Dossier | null>(null);
+  /** PV définitif ouvert dans le modal de détail (file Vérificateur ; null = fermé). */
+  readonly pvDetail = signal<PvExamen | null>(null);
+
+  /** idDossier → PV SIGNÉ (chaîne réception → dispatch → examen → PV) — file Vérificateur. */
+  private readonly pvSigneParDossier = computed(() => {
+    const recDossier = new Map(this.receptions().map((r) => [r.idReception, r.idDossier]));
+    const dispDossier = new Map(this.dispatchs().map((d) => [d.idDispatch, recDossier.get(d.idReception)]));
+    const exDossier = new Map(
+      this.examens().map((e) => [e.idExamen, e.idDispatch != null ? dispDossier.get(e.idDispatch) : undefined]),
+    );
+    const map = new Map<number, PvExamen>();
+    for (const pv of this.pvs()) {
+      if (pv.statutPv === 'SIGNE') {
+        const idDossier = exDossier.get(pv.idExamen);
+        if (idDossier != null) {
+          map.set(idDossier, pv);
+        }
+      }
+    }
+    return map;
+  });
+  /** PV définitif accompagnant un dossier de la file Vérificateur (null si introuvable). */
+  pvSigne(d: Dossier): PvExamen | null {
+    return this.pvSigneParDossier().get(d.idDossier) ?? null;
+  }
 
   /** Dossiers affichés (déjà scopés/exclusifs côté serveur — aucun filtre client). */
   readonly visibleDossiers = computed(() => this.dossiers());
@@ -216,8 +261,19 @@ export class DossiersPipeline {
     this.loading.set(true);
     if (this.source === 'a-verifier') {
       // a-verifier renvoie EN_VERIFICATION + EN_ATTENTE_DECISION_PRMP ; tri par date de réception DESC.
-      forkJoin({ dossiers: this.dossierService.aVerifier(), receptions: this.receptionService.list() }).subscribe({
-        next: ({ dossiers, receptions }) => {
+      // ⚠️ La chaîne dispatchs/examens + les PV DÉFINITIFS accompagnent chaque dossier (bouton « PV définitif »).
+      forkJoin({
+        dossiers: this.dossierService.aVerifier(),
+        receptions: this.receptionService.list(),
+        dispatchs: this.dispatchService.list(),
+        examens: this.examenService.list(),
+        pvs: this.pvService.definitifs(),
+      }).subscribe({
+        next: ({ dossiers, receptions, dispatchs, examens, pvs }) => {
+          this.receptions.set(receptions);
+          this.dispatchs.set(dispatchs);
+          this.examens.set(examens);
+          this.pvs.set(pvs);
           const dateRecept = new Map<number, string>();
           for (const r of receptions) {
             const cur = dateRecept.get(r.idDossier) ?? '';

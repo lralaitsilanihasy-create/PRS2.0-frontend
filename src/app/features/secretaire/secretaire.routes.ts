@@ -1,15 +1,13 @@
 import { Routes } from '@angular/router';
 
-import { DossiersClassement, ClassementGroupe } from '../circuit/dossiers-classement';
+import { DossiersClassement, ClassementGroupe, GROUPE_RECEPTIONS } from '../circuit/dossiers-classement';
 import { DossiersCircuitListe } from '../circuit/dossiers-circuit-liste';
 import { Messagerie } from '../transverse/messagerie';
 import { SecretaireDashboard } from './secretaire-dashboard';
-import { SecretaireEnregistrement } from './enregistrement';
-import { SecretaireReceptions } from './receptions';
 
-/** Groupes du Secrétaire : à réceptionner (SOUMIS) vs réceptionné-enregistré (PRET_DISPATCH). */
+/** Groupes du Secrétaire : à réceptionner (groupe PARTAGÉ avec P/CC via délégation) vs réceptionné-enregistré. */
 const SECRETAIRE_GROUPES: ClassementGroupe[] = [
-  { key: 'receptions', label: 'Réceptions', statuts: ['SOUMIS'], icon: '📥', kind: 'a' },
+  GROUPE_RECEPTIONS,
   { key: 'enregistrement', label: 'Enregistrement', statuts: ['PRET_DISPATCH'], icon: '📚', kind: 'b', colonnes: ['reception'] },
 ];
 
@@ -22,7 +20,5 @@ export const SECRETAIRE_ROUTES: Routes = [
   { path: 'tableau-de-bord', component: SecretaireDashboard },
   { path: 'mes-dossiers', component: DossiersClassement, data: { classement: CLASSEMENT_SECRETAIRE } },
   { path: 'mes-dossiers/:type/:groupe', component: DossiersCircuitListe, data: { classement: CLASSEMENT_SECRETAIRE } },
-  { path: 'receptions', component: SecretaireReceptions },
-  { path: 'enregistrement', component: SecretaireEnregistrement },
   { path: 'messagerie', component: Messagerie },
 ];

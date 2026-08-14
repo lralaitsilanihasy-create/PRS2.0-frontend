@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
@@ -18,10 +18,13 @@ import {
   TypeDossierService,
 } from '../../services';
 import { PermissionsService } from '../../core/auth/permissions.service';
+import { ToastService } from '../../core/notifications/toast.service';
 import { StatutBadge } from '../../shared/circuit';
-import { DispatchForm } from './dispatch-form';
+import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
+import { DispatchForm, DispatchItem } from './dispatch-form';
 import { DossierConsultation } from './dossier-consultation';
-import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './dossiers-classement';
+import { ReceptionForm } from './reception-form';
+import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classement-config';
 
 /**
  * Liste des dossiers d'un **type** et d'un **groupe** de classement (statuts issus de `data.classement`),
@@ -32,24 +35,60 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './dossie
 @Component({
   selector: 'app-dossiers-circuit-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, DatePipe, DispatchForm, RouterLink],
+  imports: [StatutBadge, DossierConsultation, DatePipe, DispatchForm, ReceptionForm, RouterLink],
   template: `
     <section>
-      <header class="page-header">
-        <div>
-          <div class="page-subtitle">{{ cfg.subtitle }}</div>
-          <h1 class="page-title">{{ titre() }}</h1>
+      @if (!embed()) {
+        <header class="page-header">
+          <div>
+            <div class="page-subtitle">{{ cfg.subtitle }}</div>
+            <h1 class="page-title">{{ titre() }}</h1>
+          </div>
+        </header>
+      }
+
+      @if (referenceAttribuee(); as ref) {
+        <div class="alert alert-success dcl__ref">
+          <span>Réception enregistrée — <strong>Référence attribuée : {{ ref }}</strong></span>
+          <span class="dcl__ref-actions">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="copier(ref)">Copier</button>
+            <button type="button" class="dcl__ref-close" aria-label="Fermer" (click)="referenceAttribuee.set(null)">&times;</button>
+          </span>
         </div>
-      </header>
+      }
+
+      @if (coches().size >= 2) {
+        <div class="alert alert-info dcl__lot">
+          <span><strong>{{ coches().size }}</strong> dossiers sélectionnés</span>
+          <span class="dcl__lot-actions">
+            <button type="button" class="btn btn-outline btn-sm" (click)="deselectionner()">Tout décocher</button>
+            <button type="button" class="btn btn-sm dcl__btn-lot" (click)="dispatcherSelection()">
+              Dispatcher la sélection ({{ coches().size }})
+            </button>
+          </span>
+        </div>
+      }
 
       @if (loading()) {
         <p class="text-muted">Chargement…</p>
       } @else {
         <div class="table-card">
+          @if (embed()) {
+            <div class="dcl__embed-titre">{{ titre() }}</div>
+          }
           <table>
             <thead>
               <tr>
-                <th>#</th>
+                @if (avecSelection()) {
+                  <th class="dcl__check-col">
+                    <input
+                      type="checkbox"
+                      [checked]="toutEstCoche()"
+                      (change)="toutCocher()"
+                      aria-label="Tout sélectionner (une seule localité)"
+                    />
+                  </th>
+                }
                 <th>Référence</th>
                 <th>Entité contractante</th>
                 @if (aColonne('reception')) { <th>Réception sec.</th> }
@@ -63,7 +102,20 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './dossie
             <tbody>
               @for (d of dossiers(); track d.idDossier) {
                 <tr>
-                  <td class="td-ref">{{ d.idDossier }}</td>
+                  @if (avecSelection()) {
+                    <td class="dcl__check-col">
+                      @if (peutDispatcher(d)) {
+                        <input
+                          type="checkbox"
+                          [checked]="coches().has(d.idDossier)"
+                          [disabled]="!cochable(d)"
+                          [title]="cochable(d) ? '' : 'Sélection limitée à une seule localité'"
+                          [attr.aria-label]="'Sélectionner ' + (d.refeDossier || '#' + d.idDossier)"
+                          (change)="basculerCoche(d.idDossier)"
+                        />
+                      }
+                    </td>
+                  }
                   <td>{{ d.refeDossier || '—' }}</td>
                   <td>{{ entiteLabel(d) }}</td>
                   @if (aColonne('reception')) {
@@ -75,19 +127,32 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './dossie
                   @if (aColonne('attributaire')) {
                     <td>{{ attributaire(d) }}</td>
                   }
-                  <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
+                  <td>
+                    @if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }
+                    @if (aExamenEnCours(d)) {
+                      <span class="badge dcl__brouillon" title="Un examen est commencé (brouillon enregistré) — reprise possible via « Examiner ».">Examen en cours</span>
+                    }
+                  </td>
                   <td>{{ localiteLabel(d) }}</td>
                   <td>
                     <div class="td-actions actions-end">
                       <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
                       @if (peutDispatcher(d); as rec) {
-                        <button type="button" class="btn btn-primary btn-sm" (click)="dispatchItem.set({ dossier: d, reception: rec })">Dispatcher</button>
+                        <button type="button" class="btn btn-primary btn-sm" (click)="dispatchItems.set([{ dossier: d, reception: rec }])">Dispatcher</button>
+                      }
+                      @if (peutReceptionner(d)) {
+                        <button type="button" class="btn btn-primary btn-sm" (click)="receptionItem.set(d)">Enregistrer</button>
+                      }
+                      @if (peutAnnulerDispatch(d)) {
+                        <button type="button" class="btn btn-danger btn-sm" (click)="annulation.set(d)">Retirer</button>
                       }
                       @if (aActionExamen()) {
-                        <a class="btn btn-primary btn-sm" [routerLink]="['/membre/examiner', d.idDossier]">Examiner</a>
+                        <a class="btn btn-primary btn-sm" [routerLink]="[espace(), 'examiner', d.idDossier]">{{
+                          d.statut === 'A_REEXAMINER' ? 'Réexaminer' : 'Examiner'
+                        }}</a>
                       }
                       @if (examenModifiable(d)) {
-                        <a class="btn btn-primary btn-sm" [routerLink]="['/membre/examiner', d.idDossier]">Modifier l'examen</a>
+                        <a class="btn btn-primary btn-sm" [routerLink]="[espace(), 'examiner', d.idDossier]">Modifier l'examen</a>
                       }
                     </div>
                   </td>
@@ -104,13 +169,54 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './dossie
     @if (consulte(); as d) {
       <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
     }
-    @if (dispatchItem(); as it) {
-      <app-dispatch-form [dossier]="it.dossier" [reception]="it.reception" (closed)="dispatchItem.set(null)" (saved)="onDispatched()" />
+    @if (dispatchItems(); as its) {
+      <app-dispatch-form [items]="its" (closed)="dispatchItems.set(null)" (saved)="onDispatched()" />
+    }
+    @if (receptionItem(); as d) {
+      <app-reception-form [dossier]="d" (closed)="receptionItem.set(null)" (saved)="onReception($event)" />
+    }
+    @if (annulation(); as d) {
+      <div class="modal-backdrop" (click)="annulation.set(null)">
+        <div class="modal dcl__confirm" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+          <div class="modal-body">
+            <p>
+              Retirer le dossier <strong>{{ d.refeDossier || '#' + d.idDossier }}</strong> à
+              <strong>{{ attributaire(d) }}</strong> ?
+            </p>
+            <p class="dcl__confirm-hint">
+              Le dispatch sera annulé : le dossier reviendra en <strong>Pré-dispatch</strong> (re-dispatchable),
+              tout examen déjà commencé sera supprimé et le Membre sera notifié.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" (click)="annulation.set(null)">Annuler</button>
+            <button type="button" class="btn btn-danger" [disabled]="annulationEnCours()" (click)="confirmerAnnulation()">
+              {{ annulationEnCours() ? 'Retrait…' : 'Retirer le dossier' }}
+            </button>
+          </div>
+        </div>
+      </div>
     }
   `,
   styles: `
     .actions-end { justify-content: flex-end; }
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
+    .dcl__embed-titre { padding: 0.85rem 1rem 0; font-weight: 700; color: var(--n-800); }
+    .dcl__ref { justify-content: space-between; align-items: center; }
+    .dcl__ref-actions { display: flex; align-items: center; gap: 0.5rem; }
+    .dcl__ref-close { background: transparent; border: 0; color: inherit; font-size: 1.25rem; line-height: 1; cursor: pointer; }
+    .dcl__lot { justify-content: space-between; align-items: center; }
+    .dcl__lot-actions { display: flex; align-items: center; gap: 0.5rem; }
+    /* Fuchsia vif demandé par le user (dérogation assumée aux tokens, comme l'accent corail des cartes contrôleurs). */
+    .dcl__btn-lot { background: linear-gradient(135deg, #e935c1, #b31fa0); color: #fff; border-color: transparent; box-shadow: 0 3px 10px rgba(217, 70, 239, 0.45); }
+    .dcl__btn-lot:hover:not(:disabled) { background: linear-gradient(135deg, #f04fd0, #c62bb2); transform: translateY(-1px); box-shadow: 0 5px 14px rgba(217, 70, 239, 0.55); }
+    .dcl__check-col { width: 2.2rem; text-align: center; }
+    .dcl__check-col input { cursor: pointer; }
+    .dcl__check-col input:disabled { cursor: not-allowed; }
+    .dcl__confirm { max-width: 28rem; }
+    .dcl__confirm-hint { margin: 0.5rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
+    /* Brouillon d'examen (couleur « en cours » de l'examen : indigo). */
+    .dcl__brouillon { margin-left: 0.4rem; background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE; }
   `,
 })
 export class DossiersCircuitListe {
@@ -122,16 +228,30 @@ export class DossiersCircuitListe {
   private readonly pvExamenService = inject(PvExamenService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly permissions = inject(PermissionsService);
+  private readonly toast = inject(ToastService);
+  private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
   readonly cfg = this.route.snapshot.data['classement'] as ClassementConfig;
+
+  /** Mode embarqué (liste inline sous le classement) : type + groupe fournis par le parent, en-tête masqué. */
+  readonly embed = input<{ type: string; groupe: string } | null>(null);
 
   readonly type = signal<string>('');
   readonly groupe = signal<string>('');
   readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);
   readonly consulte = signal<Dossier | null>(null);
-  /** Dossier + réception dont le formulaire de dispatch est ouvert (null = fermé). */
-  readonly dispatchItem = signal<{ dossier: Dossier; reception: Reception } | null>(null);
+  /** Dossiers + réceptions dont le formulaire de dispatch est ouvert (1 = unitaire, plusieurs = lot ; null = fermé). */
+  readonly dispatchItems = signal<DispatchItem[] | null>(null);
+  /** idDossier cochés pour le dispatch en lot (contrainte : une seule localité). */
+  readonly coches = signal<Set<number>>(new Set());
+  /** Dossier dont le formulaire de réception est ouvert (null = fermé). */
+  readonly receptionItem = signal<Dossier | null>(null);
+  /** Dossier dont la confirmation de retrait (annulation du dispatch) est ouverte (null = fermée). */
+  readonly annulation = signal<Dossier | null>(null);
+  readonly annulationEnCours = signal(false);
+  /** Référence officielle attribuée à la dernière réception (affichée + copiable ; null = masquée). */
+  readonly referenceAttribuee = signal<string | null>(null);
 
   /** idDossier → dernière réception (pour « Réception sec. »). */
   private readonly recByDossier = signal<Map<number, Reception>>(new Map());
@@ -141,6 +261,8 @@ export class DossiersCircuitListe {
   private readonly dispatchByDossier = signal<Map<number, Dispatch>>(new Map());
   /** idDossier dont le projet de PV est déjà soumis (statut ≠ BROUILLON) — examen non modifiable. */
   private readonly pvSoumisDossiers = signal<Set<number>>(new Set());
+  /** idDossier ayant un examen (brouillon si le dossier est encore DISPATCHE) → badge « Examen en cours ». */
+  private readonly dossiersAvecExamen = signal<Set<number>>(new Set());
 
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -153,16 +275,44 @@ export class DossiersCircuitListe {
   readonly titre = computed(() => `${this.typeLabel()} — ${this.groupeLabel()}`);
   /** Colonnes supplémentaires actives pour le groupe courant. */
   private readonly colonnes = computed(() => new Set(this.groupeConfig()?.colonnes ?? []));
-  /** Colspan de la ligne vide = 6 colonnes de base + colonnes optionnelles. */
-  readonly colspan = computed(() => 6 + this.colonnes().size);
+  /** Colspan de la ligne vide = 5 colonnes de base + colonnes optionnelles + sélection éventuelle. */
+  readonly colspan = computed(() => 5 + this.colonnes().size + (this.avecSelection() ? 1 : 0));
   /** L'utilisateur peut-il dispatcher ? (capacité DISPATCH_WRITE — Président et CC, comme au backend ; interim=false car l'écran CC est scopé à sa localité). */
   private readonly canDispatch = computed(() => this.permissions.can('DISPATCH_WRITE'));
   /** Ce groupe propose-t-il l'action « Dispatcher » ? (config `actionDispatch`). */
   private readonly aActionDispatch = computed(() => !!this.groupeConfig()?.actionDispatch);
-  /** Ce groupe propose-t-il l'action « Examiner » ? (config `actionExamen` — espace Membre, même cible que la worklist). */
-  readonly aActionExamen = computed(() => !!this.groupeConfig()?.actionExamen);
-  /** Ce groupe propose-t-il « Modifier l'examen » ? (config `actionModifierExamen` — espace Membre). */
-  private readonly aActionModifierExamen = computed(() => !!this.groupeConfig()?.actionModifierExamen);
+  /** Colonne de sélection (dispatch en lot) affichée ? — mêmes conditions que l'action « Dispatcher ». */
+  readonly avecSelection = computed(() => this.aActionDispatch() && this.canDispatch());
+  /** Localité de la sélection courante (celle du premier dossier coché ; null = sélection vide). */
+  private readonly localiteSelection = computed(() => {
+    const set = this.coches();
+    if (!set.size) return null;
+    return this.dossiers().find((d) => set.has(d.idDossier))?.idLocalite ?? null;
+  });
+  /** « Tout sélectionner » coché = toutes les lignes dispatchables de la localité de sélection le sont. */
+  readonly toutEstCoche = computed(() => {
+    const set = this.coches();
+    if (!set.size) return false;
+    const loc = this.localiteSelection();
+    const rows = this.dossiers().filter((d) => this.peutDispatcher(d) && d.idLocalite === loc);
+    return rows.length > 0 && rows.every((d) => set.has(d.idDossier));
+  });
+  /** Ce groupe propose-t-il « Enregistrer » la réception ? (config `actionReception` — espace Secrétaire). */
+  private readonly aActionReception = computed(() => !!this.groupeConfig()?.actionReception);
+  /** Ce groupe propose-t-il « Retirer » (annuler le dispatch) ? (config `actionAnnulerDispatch`). */
+  private readonly aActionAnnulerDispatch = computed(() => !!this.groupeConfig()?.actionAnnulerDispatch);
+  /**
+   * Ce groupe propose-t-il l'action « Examiner » ? Config `actionExamen` ET capacité EXAMEN_WRITE —
+   * titulaire (Membre) OU délégation ascendante active (Président/CC) : désactiver la paire en base
+   * retire le bouton, zéro code (spec 2026-08-14).
+   */
+  readonly aActionExamen = computed(() => !!this.groupeConfig()?.actionExamen && this.permissions.can('EXAMEN_WRITE'));
+  /** Ce groupe propose-t-il « Modifier l'examen » ? (config `actionModifierExamen`, même garde de capacité). */
+  private readonly aActionModifierExamen = computed(
+    () => !!this.groupeConfig()?.actionModifierExamen && this.permissions.can('EXAMEN_WRITE'),
+  );
+  /** Espace courant (`/membre`, `/president`, `/cc`…) — cible des liens Examiner (chaque espace monte sa route). */
+  readonly espace = computed(() => '/' + (this.cfg.base.split('/')[1] ?? 'membre'));
 
   constructor() {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
@@ -170,9 +320,18 @@ export class DossiersCircuitListe {
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     this.lookups.lookup(ControleurService, 'imControleur', ['nomCont', 'prenomsCont']).subscribe((m) => this.controleurMap.set(m));
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((p) => {
+      if (this.embed()) return; // mode embarqué : type/groupe pilotés par l'input, pas par l'URL
       this.type.set(p.get('type') ?? '');
       this.groupe.set(p.get('groupe') ?? '');
       this.charger();
+    });
+    effect(() => {
+      const e = this.embed();
+      if (e) {
+        this.type.set(e.type);
+        this.groupe.set(e.groupe);
+        this.charger();
+      }
     });
   }
 
@@ -181,6 +340,7 @@ export class DossiersCircuitListe {
   }
 
   private charger(): void {
+    this.coches.set(new Set()); // la sélection ne survit pas à un changement de type/groupe ni à une recharge
     const statuts = new Set(this.groupeConfig()?.statuts ?? []);
     if (!this.type() || !statuts.size) {
       this.dossiers.set([]);
@@ -188,12 +348,14 @@ export class DossiersCircuitListe {
     }
     this.loading.set(true);
     // Dossiers (scopé profil, selon la source du classement) + réceptions/dispatchs pour les colonnes du circuit.
-    // Examens + PV chargés seulement si le groupe offre « Modifier l'examen » (condition PV non soumis).
+    // Examens chargés si « Modifier l'examen » OU si le groupe contient des DISPATCHE (badge « Examen en
+    // cours » : brouillon d'examen sur un dossier pas encore soumis) ; PV pour la condition PV non soumis.
+    const chargerExamens = this.aActionModifierExamen() || statuts.has('DISPATCHE');
     forkJoin({
       dossiers: dossiersDuClassement(this.cfg, this.dossierService),
       receptions: this.receptionService.list(),
       dispatchs: this.dispatchService.list(),
-      examens: this.aActionModifierExamen() ? this.examenService.list() : of([]),
+      examens: chargerExamens ? this.examenService.list() : of([]),
       pvs: this.aActionModifierExamen() ? this.pvExamenService.list() : of([]),
     }).subscribe({
       next: ({ dossiers, receptions, dispatchs, examens, pvs }) => {
@@ -239,6 +401,11 @@ export class DossiersCircuitListe {
           }
         }
         this.pvSoumisDossiers.set(pvSoumis);
+        // Brouillons d'examen : un examen existe pour le dossier (via son dispatch) — le badge n'est
+        // affiché que sur les dossiers encore DISPATCHE (pas encore soumis → « Examen en cours »).
+        const brouillons = new Set<number>();
+        for (const idD of exDossier.values()) if (idD != null) brouillons.add(idD);
+        this.dossiersAvecExamen.set(brouillons);
         this.recByDossier.set(recByDossier);
         this.recDispatchable.set(recDispatchable);
         this.dispatchByDossier.set(dispatchByDossier);
@@ -269,13 +436,104 @@ export class DossiersCircuitListe {
     if (!this.aActionDispatch() || !this.canDispatch()) return null;
     return this.recDispatchable().get(d.idDossier) ?? null;
   }
+  /** « Retirer » : offert par le groupe, autorisé (DISPATCH_WRITE), dossier DISPATCHE avec un dispatch connu. */
+  peutAnnulerDispatch(d: Dossier): boolean {
+    return (
+      this.aActionAnnulerDispatch() &&
+      this.canDispatch() &&
+      d.statut === 'DISPATCHE' &&
+      this.dispatchByDossier().has(d.idDossier)
+    );
+  }
+  /** Confirme le retrait : annule le dernier dispatch du dossier (retour PRET_DISPATCH côté serveur). */
+  confirmerAnnulation(): void {
+    const d = this.annulation();
+    const disp = d ? this.dispatchByDossier().get(d.idDossier) : undefined;
+    if (!d || !disp) return;
+    this.annulationEnCours.set(true);
+    this.dispatchService.annuler(disp.idDispatch).subscribe({
+      next: () => {
+        this.toast.success('Dossier retiré : de retour en pré-dispatch.');
+        this.annulationEnCours.set(false);
+        this.annulation.set(null);
+        this.charger();
+        this.dossiersRefresh.notifierChangement();
+      },
+      error: () => {
+        // 404/409 = l'état a changé ailleurs (déjà retiré, PV signé…) : toast centralisé (message
+        // backend) + fermeture et resynchronisation pour faire disparaître la ligne périmée.
+        this.annulationEnCours.set(false);
+        this.annulation.set(null);
+        this.charger();
+        this.dossiersRefresh.notifierChangement();
+      },
+    });
+  }
+  /** Cochable = sélection vide, déjà cochée, ou même localité que la sélection (lot mono-localité). */
+  cochable(d: Dossier): boolean {
+    const set = this.coches();
+    return !set.size || set.has(d.idDossier) || d.idLocalite === this.localiteSelection();
+  }
+  basculerCoche(idDossier: number): void {
+    const next = new Set(this.coches());
+    if (next.has(idDossier)) next.delete(idDossier);
+    else next.add(idDossier);
+    this.coches.set(next);
+  }
+  /** En-tête : coche toutes les lignes dispatchables de la localité de sélection (à défaut, celle de la première ligne dispatchable) ; re-clic = tout décoche. */
+  toutCocher(): void {
+    if (this.coches().size) {
+      this.deselectionner();
+      return;
+    }
+    const rows = this.dossiers().filter((d) => this.peutDispatcher(d));
+    if (!rows.length) return;
+    const loc = rows[0].idLocalite;
+    this.coches.set(new Set(rows.filter((d) => d.idLocalite === loc).map((d) => d.idDossier)));
+  }
+  deselectionner(): void {
+    this.coches.set(new Set());
+  }
+  /** Ouvre le formulaire de dispatch pour la sélection (chaque dossier avec sa réception dispatchable). */
+  dispatcherSelection(): void {
+    const set = this.coches();
+    const items: DispatchItem[] = [];
+    for (const d of this.dossiers()) {
+      const rec = set.has(d.idDossier) ? this.recDispatchable().get(d.idDossier) : undefined;
+      if (rec) items.push({ dossier: d, reception: rec });
+    }
+    if (items.length) this.dispatchItems.set(items);
+  }
   /** « Modifier l'examen » : offert par le groupe, tant que le dossier est EXAMINE et son PV non soumis. */
   examenModifiable(d: Dossier): boolean {
     return this.aActionModifierExamen() && d.statut === 'EXAMINE' && !this.pvSoumisDossiers().has(d.idDossier);
   }
-  /** Après dispatch réussi : le dossier passe DISPATCHE et quitte la liste pré-dispatch → recharge. */
+  /** Badge « Examen en cours » : brouillon d'examen existant sur un dossier pas encore soumis (DISPATCHE). */
+  aExamenEnCours(d: Dossier): boolean {
+    return d.statut === 'DISPATCHE' && this.dossiersAvecExamen().has(d.idDossier);
+  }
+  /** « Enregistrer » la réception : offert par le groupe (actionReception), autorisé (RECEPTION_WRITE) et dossier sans réception (règle « à réceptionner »). */
+  peutReceptionner(d: Dossier): boolean {
+    return this.aActionReception() && this.permissions.can('RECEPTION_WRITE') && !this.recByDossier().has(d.idDossier);
+  }
+  /** Après dispatch réussi (unitaire ou lot) : les dossiers passent DISPATCHE et quittent la liste → recharge
+   * + notification (classement parent, stat « Dispatchs par contrôleur », badges de nav). */
   onDispatched(): void {
-    this.dispatchItem.set(null);
+    this.dispatchItems.set(null);
     this.charger();
+    this.dossiersRefresh.notifierChangement();
+  }
+  /** Après réception : affiche la référence attribuée (rec créée) et recharge (le dossier complet passe PRET_DISPATCH). */
+  onReception(rec: Reception | null): void {
+    this.receptionItem.set(null);
+    this.referenceAttribuee.set(rec?.reference ?? null);
+    this.charger();
+    this.dossiersRefresh.notifierChangement();
+  }
+  /** Copie la référence dans le presse-papiers (contexte sécurisé / localhost). */
+  copier(ref: string): void {
+    if (navigator.clipboard) {
+      void navigator.clipboard.writeText(ref).then(() => this.toast.success('Référence copiée.'));
+    }
   }
 }
