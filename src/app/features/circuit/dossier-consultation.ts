@@ -70,30 +70,17 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
             <span>{{ dossier().dateRef || '—' }}</span>
           </div>
 
+          <!-- ⚠️ 2026-08-14 (demande user) — en-tête ÉPURÉ : seuls Entité contractante, Localité,
+               Référence PRMP, Exercice, Signataire et Mise à jour restent (Type est déjà en chip,
+               la date réf. dans le sous-titre ; PRMP d'attribution/dates de signature retirés). -->
           <div class="dc-meta">
-            <div class="dc-meta-row">
-              <span class="dc-meta-label">Type</span>
-              <span class="dc-meta-value">{{ typeLabel() }}</span>
-            </div>
             <div class="dc-meta-row">
               <span class="dc-meta-label">Entité contractante</span>
               <span class="dc-meta-value">{{ entiteLabel() }}</span>
             </div>
-            @if (dossier().idPrmp) {
-              <!-- Attribution FIGÉE à la création (spec « Mandats PRMP ») — jamais recalculée ; l'opérateur
-                   courant de chaque action est tracé au journal ci-dessous. -->
-              <div class="dc-meta-row">
-                <span class="dc-meta-label">PRMP d'attribution</span>
-                <span class="dc-meta-value">{{ dossier().idPrmp }}@if (dossier().idMandatAttrib != null) { <span class="dc-meta-hint"> · mandat #{{ dossier().idMandatAttrib }}</span> }</span>
-              </div>
-            }
             <div class="dc-meta-row">
               <span class="dc-meta-label">Localité</span>
               <span class="dc-meta-value">{{ localiteLabel() }}</span>
-            </div>
-            <div class="dc-meta-row">
-              <span class="dc-meta-label">Date réf.</span>
-              <span class="dc-meta-value">{{ dossier().dateRef || '—' }}</span>
             </div>
             @if (ppm(); as p) {
               @if (montrerReferencePpm()) {
@@ -110,16 +97,6 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
                 <span class="dc-meta-label">Signataire</span>
                 <span class="dc-meta-value">{{ p.signataire || '—' }}</span>
               </div>
-              <div class="dc-meta-row">
-                <span class="dc-meta-label">Date signature</span>
-                <span class="dc-meta-value">{{ p.dateSignature || '—' }}</span>
-              </div>
-              @if (p.datePpmInit) {
-                <div class="dc-meta-row">
-                  <span class="dc-meta-label">Établi le</span>
-                  <span class="dc-meta-value">{{ p.datePpmInit }}</span>
-                </div>
-              }
               @if (p.numMaj != null) {
                 <div class="dc-meta-row">
                   <span class="dc-meta-label">Mise à jour</span>
@@ -319,7 +296,6 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
     .dc-meta-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); width: 110px; flex-shrink: 0; }
     .dc-meta-value { font-size: 12.5px; font-weight: 600; color: var(--n-800); }
     .dc-meta-empty { color: var(--n-300); font-style: italic; font-weight: 400; }
-    .dc-meta-hint { color: var(--n-400); font-weight: 400; font-size: 11px; }
 
     /* Journal des actions (spec « Mandats PRMP »). */
     .dc-journal { width: 100%; border-collapse: collapse; font-size: 12.5px; background: #fff; border: 0.5px solid var(--n-200); border-radius: 10px; overflow: hidden; }
