@@ -199,3 +199,10 @@
 .vacance-banniere {
   margin-bottom: 1rem;
 }
+
+/* Marqueur ⤴ « tâche exercée par délégation » sur une entrée de menu (spec 2026-08-14). */
+.nav-deleg {
+  margin-left: auto;
+  font-size: 0.8rem;
+  opacity: 0.65;
+}

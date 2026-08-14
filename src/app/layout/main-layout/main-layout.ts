@@ -19,7 +19,7 @@ import {
 } from '../../services';
 import { NotificationCenter } from '../notification-center/notification-center';
 import { DossierConsultation } from '../../features/circuit/dossier-consultation';
-import { Dossier } from '../../models';
+import { Dossier, Role } from '../../models';
 
 /** Entrée de menu du Vérificateur portant le badge du nombre de dossiers restant à traiter. */
 const CHEMIN_A_VERIFIER = '/verificateur/a-verifier';
@@ -55,6 +55,17 @@ export class MainLayout {
   readonly login = this.auth.login;
   readonly localite = this.auth.localite;
   private readonly permissions = inject(PermissionsService);
+  /** Libellé humain d'un profil délégué (infobulle du marqueur ⤴ du menu). */
+  private static readonly LIBELLES_PROFILS: Partial<Record<Role, string>> = {
+    SECRETAIRE: 'Secrétaire',
+    MEMBRE: 'Membre',
+    VERIFICATEUR: 'Contrôleur vérificateur',
+    ASSISTANT_CONTROLEUR: 'Assistant contrôleur',
+    CHEF_COMMISSION: 'Chef de commission',
+  };
+  delegationLabel(role: Role): string {
+    return MainLayout.LIBELLES_PROFILS[role] ?? role;
+  }
   /**
    * Menu du profil, filtré par la DÉLÉGATION ASCENDANTE (spec 2026-08-14) : une entrée portant
    * `delegation` n'apparaît que si le profil courant peut exécuter les tâches de ce profil (paire

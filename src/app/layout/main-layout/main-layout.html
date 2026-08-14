@@ -77,11 +77,16 @@
           class="nav-item"
           [routerLink]="item.path"
           routerLinkActive="active"
+          [title]="item.delegation ? 'Tâche du profil ' + delegationLabel(item.delegation) + ' — exercée par délégation active.' : ''"
         >
           @if (item.icon) {
             <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
           }
           <span class="nav-label">{{ item.label }}</span>
+          <!-- ⤴ = tâche d'un profil subordonné, exercée par DÉLÉGATION (paire active de t_delegation_profil). -->
+          @if (item.delegation) {
+            <span class="nav-deleg" aria-hidden="true">⤴</span>
+          }
           @if (countFor(item.path) !== undefined) {
             <span [class]="'nav-badge ' + badgeSeverity(item.path)">{{ countFor(item.path) }}</span>
           }

@@ -67,6 +67,9 @@ export * from './classement-config';
               <div class="cnm-stat__body">
                 <div class="cnm-stat__value">{{ totalGroupe(g.key) }}</div>
                 <div class="cnm-stat__label">{{ g.label }}</div>
+                @if (delegationDe(g); as prof) {
+                  <span class="md__deleg md__deleg--tuile" [title]="'Tâche du profil ' + prof + ' — exercée par délégation active.'">⤴ Délégation · {{ prof }}</span>
+                }
               </div>
             </div>
           }
@@ -94,7 +97,11 @@ export * from './classement-config';
                 @for (g of groupesVisibles(); track g.key) {
                   <button type="button" class="md__row" [class.md__row--actif]="estSelection(t.idTypeDossier, g.key)" (click)="choisir(t.idTypeDossier, g.key)">
                     <span class="md__row-ic" [class.md__row-ic--a]="g.kind === 'a'" [class.md__row-ic--b]="g.kind === 'b'" aria-hidden="true">{{ g.icon }}</span>
-                    <span class="md__row-label">{{ g.label }}</span>
+                    <span class="md__row-label">{{ g.label }}
+                      @if (delegationDe(g); as prof) {
+                        <span class="md__deleg" [title]="'Tâche du profil ' + prof + ' — exercée par délégation active.'">⤴ {{ prof }}</span>
+                      }
+                    </span>
                     <span class="md__row-count">{{ compte(t.idTypeDossier, g.key) }}</span>
                     <span class="md__row-arrow" aria-hidden="true">›</span>
                   </button>
@@ -177,6 +184,9 @@ export * from './classement-config';
     .md__row-count--alerte { background: var(--danger-bg); color: var(--danger-text); }
     .md__row:hover .md__row-count--alerte { background: var(--danger-text); color: #fff; }
     .md__row-label { font-weight: 600; }
+    /* Badge « tâche exercée par délégation » (spec 2026-08-14) — discret, absent chez le titulaire. */
+    .md__deleg { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.45rem; border-radius: var(--radius-full); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em; background: var(--c-50); color: var(--c-800); border: 1px solid var(--c-100); vertical-align: middle; }
+    .md__deleg--tuile { margin-left: 0; margin-top: 0.15rem; align-self: flex-start; }
     .md__row-count { margin-left: auto; min-width: 1.5rem; padding: 0 0.45rem; background: var(--n-100); color: var(--n-600); border-radius: var(--radius-full); font-weight: 700; font-size: var(--text-sm); text-align: center; font-variant-numeric: tabular-nums; }
     .md__row:hover .md__row-count { background: var(--p-100); color: var(--p-600); }
     .md__row-arrow { color: var(--n-300); font-size: 1.1rem; line-height: 1; transition: transform 130ms var(--ease-out), color 130ms var(--ease-out); }
@@ -215,6 +225,25 @@ export class DossiersClassement {
     return exigences.length === 0 || exigences.some(Boolean);
   }
   readonly groupesVisibles = computed(() => this.cfg.groupes.filter((g) => this.groupePermis(g)));
+
+  /**
+   * Profil TITULAIRE de la tâche du groupe quand elle n'est exercée que PAR DÉLÉGATION (badge
+   * « ⤴ Délégation · X ») : `null` chez le titulaire lui-même (le Secrétaire ne voit rien sur son
+   * écran) et pour les groupes portant une action native du profil courant (ex. Dispatch chez P/CC).
+   */
+  delegationDe(g: ClassementGroupe): string | null {
+    if (g.actionReception && this.permissions.parDelegation('RECEPTION_WRITE')) return 'Secrétaire';
+    if (
+      g.actionExamen &&
+      !g.actionDispatch &&
+      !g.actionAnnulerDispatch &&
+      !g.actionReception &&
+      this.permissions.parDelegation('EXAMEN_WRITE')
+    ) {
+      return 'Membre';
+    }
+    return null;
+  }
 
   private static readonly ORDRE_FAMILLE: Record<string, number> = { DDP: 0, DMC: 1, DDM: 2 };
 

@@ -56,6 +56,17 @@ export class PermissionsService {
     return titulaires.includes(role) || titulaires.some((t) => this.paireActive(role, t));
   }
 
+  /** Le profil courant est-il TITULAIRE de la capacité (hors délégation) ? Sert à signaler « par délégation ». */
+  estTitulaire(capability: Capability): boolean {
+    const role = this.auth.role();
+    return role !== null && CAPABILITY_ROLES[capability].includes(role);
+  }
+
+  /** La capacité n'est acquise que PAR DÉLÉGATION (permise, mais profil courant non titulaire). */
+  parDelegation(capability: Capability): boolean {
+    return this.can(capability) && !this.estTitulaire(capability);
+  }
+
   /**
    * Garde générique de la spec : le profil courant peut-il exécuter les tâches du profil `requis` ?
    * `true` si profil courant == requis OU si la paire (courant → requis) est active en base.

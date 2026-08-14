@@ -141,18 +141,29 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
                         <button type="button" class="btn btn-primary btn-sm" (click)="dispatchItems.set([{ dossier: d, reception: rec }])">Dispatcher</button>
                       }
                       @if (peutReceptionner(d)) {
-                        <button type="button" class="btn btn-primary btn-sm" (click)="receptionItem.set(d)">Enregistrer</button>
+                        <button
+                          type="button"
+                          class="btn btn-primary btn-sm"
+                          [title]="permissions.parDelegation('RECEPTION_WRITE') ? 'Tâche du profil Secrétaire — exercée par délégation active.' : ''"
+                          (click)="receptionItem.set(d)"
+                        >Enregistrer</button>
                       }
                       @if (peutAnnulerDispatch(d)) {
                         <button type="button" class="btn btn-danger btn-sm" (click)="annulation.set(d)">Retirer</button>
                       }
                       @if (aActionExamen()) {
-                        <a class="btn btn-primary btn-sm" [routerLink]="[espace(), 'examiner', d.idDossier]">{{
-                          d.statut === 'A_REEXAMINER' ? 'Réexaminer' : 'Examiner'
-                        }}</a>
+                        <a
+                          class="btn btn-primary btn-sm"
+                          [routerLink]="[espace(), 'examiner', d.idDossier]"
+                          [title]="permissions.parDelegation('EXAMEN_WRITE') ? 'Tâche du profil Membre — exercée par délégation active.' : ''"
+                        >{{ d.statut === 'A_REEXAMINER' ? 'Réexaminer' : 'Examiner' }}</a>
                       }
                       @if (examenModifiable(d)) {
-                        <a class="btn btn-primary btn-sm" [routerLink]="[espace(), 'examiner', d.idDossier]">Modifier l'examen</a>
+                        <a
+                          class="btn btn-primary btn-sm"
+                          [routerLink]="[espace(), 'examiner', d.idDossier]"
+                          [title]="permissions.parDelegation('EXAMEN_WRITE') ? 'Tâche du profil Membre — exercée par délégation active.' : ''"
+                        >Modifier l'examen</a>
                       }
                     </div>
                   </td>
@@ -227,7 +238,7 @@ export class DossiersCircuitListe {
   private readonly examenService = inject(ExamenService);
   private readonly pvExamenService = inject(PvExamenService);
   private readonly lookups = inject(ReferenceLookupService);
-  private readonly permissions = inject(PermissionsService);
+  protected readonly permissions = inject(PermissionsService);
   private readonly toast = inject(ToastService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
