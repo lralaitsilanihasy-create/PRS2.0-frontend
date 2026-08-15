@@ -227,6 +227,19 @@ export class MiseAJourPpmService {
     );
   }
 
+  /**
+   * `GET /api/dossiers/{id}/diff-rectification` (backend 3178aa4) — diff du DERNIER cycle de
+   * rectification (état pré-correction figé au premier PUT saisies/ppm du cycle → état courant),
+   * même DTO que le diff de versions. Lisible par la PRMP et les profils du circuit. 404/409 si
+   * aucun instantané (dossier jamais rectifié, ou cycle antérieur à la règle).
+   */
+  diffRectification(idDossier: number, silencieux = false): Observable<DiffDossier> {
+    return this.http.get<DiffDossier>(
+      `${this.apiUrl}/dossiers/${idDossier}/diff-rectification`,
+      silencieux ? { context: skipErrorToast() } : {},
+    );
+  }
+
   /** `GET /api/dossiers/{id}/versions` — chaîne complète, **la plus récente d'abord**. */
   versions(idDossier: number): Observable<Dossier[]> {
     return this.http.get<Dossier[]>(`${this.apiUrl}/dossiers/${idDossier}/versions`);

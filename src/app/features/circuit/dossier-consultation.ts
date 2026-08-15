@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, ou
 import { DatePipe } from '@angular/common';
 import { catchError, forkJoin, of } from 'rxjs';
 
-import { ActionDossier, Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
+import { ActionDossier, DiffDossier, Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -114,7 +114,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
           } @else {
           @if (estPpm()) {
             <div class="dc-section">
-              <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" />
+              <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [legendeTitre]="legendeChangements()" [detailsChangements]="detailsChangements()" />
             </div>
           }
 
@@ -364,6 +364,28 @@ export class DossierConsultation implements OnInit {
   readonly ppm = signal<Ppm | null>(null);
   /** Versionnement : idDetail → type de changement vs la version précédente (surlignage du tableau). */
   readonly changements = signal<Map<number, TypeChangementLigne> | null>(null);
+  /** Titre de la légende du surlignage (« Mise à jour : » ou « Rectification : » selon la source). */
+  readonly legendeChangements = signal('Mise à jour :');
+  /** idDetail → détail humain « champ : avant → après ; … » (infobulle des lignes surlignées). */
+  readonly detailsChangements = signal<Map<number, string> | null>(null);
+  /** Le diff de rectification a été appliqué — il prime sur le diff de versions (course des sondages). */
+  private diffRectifApplique = false;
+
+  /** Applique un diff (versions OU rectification) au tableau : types par ligne + infobulles de détail. */
+  private appliquerDiff(diff: DiffDossier, legende: string): void {
+    const types = new Map<number, TypeChangementLigne>();
+    const details = new Map<number, string>();
+    for (const l of diff.lignes) {
+      if (l.idDetail == null) continue;
+      types.set(l.idDetail, l.type);
+      if (l.champs?.length) {
+        details.set(l.idDetail, l.champs.map((c) => `${c.champ} : ${c.avant ?? '—'} → ${c.apres ?? '—'}`).join(' ; '));
+      }
+    }
+    this.changements.set(types);
+    this.detailsChangements.set(details);
+    this.legendeChangements.set(legende);
+  }
   /** Journal MÉTIER des actions (spec « Mandats PRMP ») — vide si le backend ne le sert pas encore. */
   readonly journal = signal<ActionDossier[]>([]);
   readonly marches = signal<Marche[]>([]);
@@ -443,10 +465,26 @@ export class DossierConsultation implements OnInit {
     // Appel SILENCIEUX (hors vague principale) : 403/409 → pas de surlignage, l'affichage reste complet.
     if (this.dossier().idDossierParent != null) {
       this.miseAJourService.diff(id, true).subscribe({
+        // Le diff de RECTIFICATION prime (changement le plus récent) : ne pas l'écraser si les deux
+        // sondages répondent (ordre d'arrivée non garanti).
         next: (diff) => {
-          const m = new Map<number, TypeChangementLigne>();
-          for (const l of diff.lignes) if (l.idDetail != null) m.set(l.idDetail, l.type);
-          this.changements.set(m);
+          if (!this.diffRectifApplique) this.appliquerDiff(diff, 'Mise à jour :');
+        },
+        error: () => {},
+      });
+    }
+    // ⚠️ 2026-08-15 — phase de vérification : diff du DERNIER cycle de RECTIFICATION (état
+    // pré-correction figé au premier PUT saisies/ppm → état courant), pour que le vérificateur (et
+    // tout profil qui consulte) voie ce que la PRMP a changé. Sondage silencieux (404/409 = jamais
+    // rectifié → rien) ; s'il existe, il PRIME sur le diff de versions (changement le plus récent).
+    const STATUTS_RECTIFIABLES = ['EN_ATTENTE_DECISION_PRMP', 'EN_VERIFICATION', 'OBSERVATIONS_LEVEES', 'DECISION_TRANSMISE_SIGMP', 'CLOTURE'];
+    if (STATUTS_RECTIFIABLES.includes(this.dossier().statut ?? '')) {
+      this.miseAJourService.diffRectification(id, true).subscribe({
+        next: (diff) => {
+          if (diff.lignes.some((l) => l.type !== 'INCHANGEE')) {
+            this.diffRectifApplique = true;
+            this.appliquerDiff(diff, 'Rectification :');
+          }
         },
         error: () => {},
       });

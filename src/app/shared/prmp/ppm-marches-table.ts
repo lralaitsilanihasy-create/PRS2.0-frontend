@@ -61,7 +61,7 @@ interface MarcheRow {
            précédente (le surlignage doit rester lisible dans TOUS les profils qui voient ce tableau). -->
       @if (typesPresents().length) {
         <div class="pmt-legende">
-          <span class="pmt-legende-titre">Mise à jour :</span>
+          <span class="pmt-legende-titre">{{ legendeTitre() }}</span>
           @for (t of typesPresents(); track t) {
             <span class="pmt-legende-chip" [class]="'pmt-legende-chip--' + t.toLowerCase()">{{ chgLabel(t) }}</span>
           }
@@ -108,6 +108,7 @@ interface MarcheRow {
                 <tr [class]="rowClass(m.source)"
                     [class.pmt-lead]="first"
                     [class.pmt-clickable]="rowStateFn()"
+                    [attr.title]="detailDe(m.source)"
                     (click)="onRowClick(m.source)">
                   @if (first) {
                     <!-- État d'examen : ✓ vert = examinée sans observation ; ✗ rouge = avec observation(s) ; ● = en cours. -->
@@ -238,6 +239,18 @@ export class PpmMarchesTable implements OnInit {
    * distinctif + une légende ; INCHANGEE reste neutre (les SUPPRIMEE ne figurent pas dans ce tableau).
    */
   readonly changements = input<Map<number, TypeChangementLigne> | null>(null);
+  /** Titre de la légende du surlignage (« Mise à jour : » par défaut ; « Rectification : » au diff de rectification). */
+  readonly legendeTitre = input('Mise à jour :');
+  /**
+   * Détail humain des champs changés par ligne (idDetail → « champ : avant → après ; … ») — affiché
+   * en infobulle sur la ligne surlignée (2026-08-15, visibilité de la rectification au vérificateur).
+   */
+  readonly detailsChangements = input<Map<number, string> | null>(null);
+
+  /** Infobulle de la ligne : détail des champs changés, seulement si la ligne est surlignée. */
+  detailDe(m: Marche): string | null {
+    return this.chg(m) ? this.detailsChangements()?.get(m.idDetail) ?? null : null;
+  }
 
   private readonly lookups = inject(ReferenceLookupService);
   private readonly modeService = inject(ModePassationService);
