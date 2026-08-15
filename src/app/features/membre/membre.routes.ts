@@ -9,9 +9,9 @@ import { ExamenDossier } from './examen-dossier';
 import { LettreRenvoiList } from './lettre-renvois';
 import { MembrePv } from './pv-page';
 
-/** Groupes du Membre : à examiner (DISPATCHE) vs examinés (historique de la file `/examines`). */
+/** Groupes du Membre : à examiner (DISPATCHE + A_REEXAMINER, réexamen après lettre de renvoi) vs examinés (historique `/examines`). */
 const MEMBRE_GROUPES: ClassementGroupe[] = [
-  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true },
+  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE', 'A_REEXAMINER'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true },
   { key: 'examines', label: 'Examinés', statuts: ['EXAMINE', 'PV_SIGNE', 'EN_VERIFICATION', 'CLOTURE'], icon: '✅', kind: 'b', colonnes: ['dateDispatch'], actionModifierExamen: true },
 ];
 

@@ -60,6 +60,15 @@ import { DossierConsultation } from './dossier-consultation';
                       {{ signature() === l.idLettre ? 'Signature…' : 'Signer' }}
                     </button>
                   }
+                  <!-- ⚠️ Spec navette : archivage des lettres signées par l'Assistant (même circuit que les PV). -->
+                  @if (archivable && l.statut === 'SIGNE' && !l.dateArchivage) {
+                    <button type="button" class="btn btn-primary btn-sm" [disabled]="archivage() === l.idLettre" (click)="archiver(l)">
+                      {{ archivage() === l.idLettre ? 'Archivage…' : 'Archiver' }}
+                    </button>
+                  }
+                  @if (l.dateArchivage) {
+                    <span class="badge badge-success">Archivée le {{ l.dateArchivage }}</span>
+                  }
                   @if (l.statut === 'SIGNE') {
                     <button type="button" class="btn btn-secondary btn-sm" (click)="telechargerDocument(l)">⬇ PDF</button>
                   }
@@ -145,6 +154,22 @@ import { DossierConsultation } from './dossier-consultation';
                         } @else {
                           <p class="text-muted">Aucun type de pièce disponible pour ce dossier — ajout impossible.</p>
                         }
+
+                        <!-- ⚠️ Spec navette (cas 3) : reprise de l'examen — action EXPLICITE de la PRMP
+                             quand toutes les pièces demandées ont été déposées. -->
+                        @if (dossierDe(l)?.statut === 'EN_ATTENTE_PIECES') {
+                          <div class="lrc__complements">
+                            <p class="text-muted text-sm">
+                              L'examen du dossier est <strong>suspendu</strong> (en attente de pièces). Une fois toutes les
+                              pièces demandées déposées ci-dessus, transmettez-les : le dossier repartira en
+                              <strong>réexamen</strong> chez le Membre attributaire, qui le réexaminera à la lumière des
+                              pièces reçues (la transmission est refusée tant qu'aucune pièce n'a été déposée).
+                            </p>
+                            <button type="button" class="btn btn-primary" [disabled]="transmissionComplements()" (click)="transmettreComplements(l)">
+                              {{ transmissionComplements() ? 'Transmission…' : 'Transmettre les compléments' }}
+                            </button>
+                          </div>
+                        }
                       </div>
                     }
                   </td>
@@ -177,6 +202,8 @@ import { DossierConsultation } from './dossier-consultation';
     .lrc__pieces-title { margin: 0.5rem 0 0; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
     .lrc__piece { display: flex; align-items: center; gap: 0.5rem; }
     .lrc__upload { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    /* Reprise après lettre de renvoi (spec navette) : bloc de transmission des compléments. */
+    .lrc__complements { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; margin-top: 0.75rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; }
     .lrc__upload-hint { margin: 0.35rem 0 0; }
     .table-card td { white-space: normal; }
     .lrc__detail > td { background: var(--c-50); }
@@ -202,6 +229,10 @@ export class LettreRenvoiConsultation {
   readonly afficherLue = this.source === 'mes';
   /** CC / Président : autorise la signature des lettres SOUMIS. */
   readonly signable = (this.route.snapshot.data['signable'] as boolean) ?? false;
+  /** ⚠️ Spec navette — Assistant contrôleur : autorise l'ARCHIVAGE des lettres signées. */
+  readonly archivable = (this.route.snapshot.data['archivable'] as boolean) ?? false;
+  /** idLettre en cours d'archivage (désactive le bouton). */
+  readonly archivage = signal<number | null>(null);
   /** PRMP : autorise l'ajout de pièces après une lettre de renvoi signée. */
   readonly piecesUpload = (this.route.snapshot.data['piecesUpload'] as boolean) ?? false;
   readonly titre = (this.route.snapshot.data['title'] as string) ?? 'Lettres de renvoi';
@@ -386,6 +417,52 @@ export class LettreRenvoiConsultation {
     });
   }
   /** Signe une lettre SOUMIS (CC/Président) → SIGNE ; met à jour la ligne en place. */
+  /** Transmission des compléments en cours (bouton désactivé). */
+  readonly transmissionComplements = signal(false);
+  /** ⚠️ Spec navette (cas 3, MODIFIÉE 2026-08-02) — la PRMP transmet les compléments : le dossier
+   * suspendu passe A_REEXAMINER (réexamen par le Membre) ; 409 serveur si aucune pièce déposée. */
+  transmettreComplements(l: LettreRenvoi): void {
+    if (l.idDossier == null) {
+      return;
+    }
+    const idDossier = l.idDossier;
+    this.transmissionComplements.set(true);
+    this.dossierService.transmettreComplements(idDossier).subscribe({
+      next: (maj) => {
+        this.transmissionComplements.set(false);
+        this.toast.success('Compléments transmis — le dossier repart en réexamen chez le Membre attributaire.');
+        this.dossiersById.update((m) => {
+          const next = new Map(m);
+          next.set(idDossier, maj);
+          return next;
+        });
+      },
+      error: (e: ApiError) => {
+        this.transmissionComplements.set(false);
+        this.toast.error(e.message || 'Transmission des compléments impossible.');
+      },
+    });
+  }
+
+  /** ⚠️ Spec navette — archive une lettre signée (Assistant contrôleur). */
+  archiver(l: LettreRenvoi): void {
+    if (l.idLettre == null) {
+      return;
+    }
+    this.archivage.set(l.idLettre);
+    this.service.archiver(l.idLettre).subscribe({
+      next: (maj) => {
+        this.archivage.set(null);
+        this.lettres.update((arr) => arr.map((x) => (x.idLettre === maj.idLettre ? maj : x)));
+        this.toast.success('Lettre de renvoi archivée.');
+      },
+      error: (e: ApiError) => {
+        this.archivage.set(null);
+        this.toast.error(e.message || "Erreur lors de l'archivage.");
+      },
+    });
+  }
+
   signer(l: LettreRenvoi): void {
     if (l.idLettre == null) {
       return;

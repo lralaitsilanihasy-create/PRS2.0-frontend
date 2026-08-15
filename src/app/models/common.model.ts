@@ -45,6 +45,11 @@ export type StatutDossier =
   | 'DISPATCHE'
   | 'EN_EXAMEN'
   | 'EN_ATTENTE_DECISION_PRMP'
+  | 'OBSERVATIONS_LEVEES'
+  | 'DECISION_TRANSMISE_SIGMP'
+  | 'EN_ATTENTE_PIECES'
+  | 'A_REEXAMINER'
+  | 'EN_ATTENTE_COMPLEMENTS_DEPOT'
   | 'CLOTURE'
   | 'RETIRE'
   | (string & {});

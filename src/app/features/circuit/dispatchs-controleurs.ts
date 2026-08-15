@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { forkJoin } from 'rxjs';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { forkJoin, skip } from 'rxjs';
 
 import { Controleur, Dossier } from '../../models';
 import {
@@ -8,6 +9,7 @@ import {
   DelegationProfilService,
   DispatchService,
   DossierService,
+  ExamenService,
   EntiteContractService,
   LocaliteService,
   ProfileService,
@@ -15,12 +17,17 @@ import {
   ReferenceLookupService,
   TypeDossierService,
 } from '../../services';
+import { PermissionsService } from '../../core/auth/permissions.service';
+import { ToastService } from '../../core/notifications/toast.service';
 import { StatutBadge } from '../../shared/circuit';
+import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { DossierConsultation } from './dossier-consultation';
 
 /** Un dossier attribué à un contrôleur par le dernier dispatch (rôle joué : Membre attributaire ou CC). */
 interface DossierAttribue {
   dossier: Dossier;
+  /** Dispatch d'attribution (cible de l'action « Retirer »). */
+  idDispatch: number;
   dateDispatch?: string;
   role: 'Membre' | 'CC';
 }
@@ -36,8 +43,9 @@ interface LigneControleur {
 }
 
 /**
- * Section « Dispatchs par contrôleur » — embarquée dans « Mes dossiers » (Président, via
- * `ClassementConfig.statDispatchsControleurs`) : grille de cartes (une par contrôleur, triées par
+ * Section « Dispatchs par contrôleur » — embarquée dans « Mes dossiers » (Président et CC, via
+ * `ClassementConfig.statDispatchsControleurs` ; le périmètre — toutes localités vs sa localité —
+ * vient du scoping serveur des listes) : grille de cartes (une par contrôleur, triées par
  * total décroissant) — avatar à initiales, profil, nom, total et répartition par type de dossier —
  * avec le détail des dossiers dépliable sous la grille (« Voir les dossiers »). Seuls les dossiers
  * encore en cours côté commission comptent (DISPATCHE / EXAMINE) : un dossier sort de la statistique
@@ -135,11 +143,19 @@ interface LigneControleur {
                     <td>{{ typeLabel(a.dossier) }}</td>
                     <td>{{ a.role }}</td>
                     <td style="white-space:nowrap;">{{ (a.dateDispatch | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
-                    <td>@if (a.dossier.statut) { <app-statut-badge [statut]="a.dossier.statut" /> } @else { — }</td>
+                    <td>
+                      @if (a.dossier.statut) { <app-statut-badge [statut]="a.dossier.statut" /> } @else { — }
+                      @if (a.dossier.statut === 'DISPATCHE' && dossiersAvecExamen().has(a.dossier.idDossier)) {
+                        <span class="badge dpc__brouillon" title="Un examen est commencé (brouillon enregistré par le Membre).">Examen en cours</span>
+                      }
+                    </td>
                     <td>{{ localiteLabel(a.dossier) }}</td>
                     <td>
                       <div class="td-actions dpc__actions-end">
                         <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(a.dossier)">Voir détails</button>
+                        @if (peutRetirer()) {
+                          <button type="button" class="btn btn-danger btn-sm" (click)="retrait.set({ a, nom: l.nom })">Retirer</button>
+                        }
                       </div>
                     </td>
                   </tr>
@@ -153,6 +169,31 @@ interface LigneControleur {
 
     @if (consulte(); as d) {
       <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
+    }
+    @if (retrait(); as r) {
+      <div class="modal-backdrop" (click)="retrait.set(null)">
+        <div class="modal dpc__confirm" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+          <div class="modal-body">
+            <p>
+              Retirer le dossier <strong>{{ r.a.dossier.refeDossier || '#' + r.a.dossier.idDossier }}</strong> à
+              <strong>{{ r.nom }}</strong> ?
+            </p>
+            <p class="dpc__confirm-hint">
+              Le dispatch sera annulé et le dossier reviendra en <strong>Pré-dispatch</strong> (re-dispatchable).
+              @if (r.a.dossier.statut === 'EXAMINE') {
+                <strong>L'examen déjà produit (et son éventuel projet de PV) sera supprimé.</strong>
+              }
+              Le Membre sera notifié.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" (click)="retrait.set(null)">Annuler</button>
+            <button type="button" class="btn btn-danger" [disabled]="retraitEnCours()" (click)="confirmerRetrait()">
+              {{ retraitEnCours() ? 'Retrait…' : 'Retirer le dossier' }}
+            </button>
+          </div>
+        </div>
+      </div>
     }
   `,
   styles: `
@@ -201,6 +242,10 @@ interface LigneControleur {
 
     .dpc__detail-titre { padding: 0.85rem 1rem 0; font-weight: 700; color: var(--n-800); }
     .dpc__actions-end { justify-content: flex-end; }
+    .dpc__confirm { max-width: 28rem; }
+    .dpc__confirm-hint { margin: 0.5rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
+    /* Brouillon d'examen (couleur « en cours » de l'examen : indigo). */
+    .dpc__brouillon { margin-left: 0.4rem; background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE; }
     .dpc__empty { grid-column: 1 / -1; text-align: center; color: var(--n-400); padding: 1.5rem; background: #fff; border: 1px dashed var(--n-200); border-radius: 16px; }
   `,
 })
@@ -208,16 +253,23 @@ export class DispatchsControleurs implements OnDestroy {
   private readonly dossierService = inject(DossierService);
   private readonly receptionService = inject(ReceptionService);
   private readonly dispatchService = inject(DispatchService);
+  private readonly examenService = inject(ExamenService);
   private readonly controleurService = inject(ControleurService);
   private readonly profileService = inject(ProfileService);
   private readonly delegationProfilService = inject(DelegationProfilService);
   private readonly lookups = inject(ReferenceLookupService);
+  private readonly dossiersRefresh = inject(DossiersRefreshStore);
+  private readonly permissions = inject(PermissionsService);
+  private readonly toast = inject(ToastService);
 
   readonly loading = signal(true);
   readonly lignes = signal<LigneControleur[]>([]);
   /** Contrôleur dont la liste des dossiers est dépliée (im), null = tout replié. */
   readonly ouvert = signal<string | null>(null);
   readonly consulte = signal<Dossier | null>(null);
+  /** Attribution dont la confirmation de retrait est ouverte (null = fermée). */
+  readonly retrait = signal<{ a: DossierAttribue; nom: string } | null>(null);
+  readonly retraitEnCours = signal(false);
   /** Carte du contrôleur déplié (détail affiché sous la grille). */
   readonly ligneOuverte = computed(() => this.lignes().find((l) => l.im === this.ouvert()) ?? null);
 
@@ -226,6 +278,8 @@ export class DispatchsControleurs implements OnDestroy {
   private readonly entiteMap = signal<Map<string, string>>(new Map());
   /** im → object-URL de la photo (`GET /api/controleurs/{id}/pieces/PHOTO`) ; absent = repli initiales. */
   private readonly photos = signal<Map<string, string>>(new Map());
+  /** idDossier avec examen commencé (brouillon si le dossier est encore DISPATCHE) → badge « Examen en cours ». */
+  readonly dossiersAvecExamen = signal<Set<number>>(new Set());
 
   /** Dossiers distincts dispatchés (un dossier compté une fois, même partagé Membre + CC). */
   readonly totalDossiers = computed(() => {
@@ -238,6 +292,14 @@ export class DispatchsControleurs implements OnDestroy {
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
+    this.charger();
+    // Mutation signalée (ex. dispatch depuis le drill-down au-dessus) → statistique à jour sans navigation.
+    toObservable(this.dossiersRefresh.revision)
+      .pipe(skip(1), takeUntilDestroyed())
+      .subscribe(() => this.charger());
+  }
+
+  private charger(): void {
     forkJoin({
       dossiers: this.dossierService.list(),
       receptions: this.receptionService.list(),
@@ -245,8 +307,9 @@ export class DispatchsControleurs implements OnDestroy {
       controleurs: this.controleurService.list(),
       profiles: this.profileService.list(),
       delegations: this.delegationProfilService.list(),
+      examens: this.examenService.list(),
     }).subscribe({
-      next: ({ dossiers, receptions, dispatchs, controleurs, profiles, delegations }) => {
+      next: ({ dossiers, receptions, dispatchs, controleurs, profiles, delegations, examens }) => {
         const dossierById = new Map(dossiers.map((d) => [d.idDossier, d]));
         const recDossier = new Map(receptions.map((r) => [r.idReception, r.idDossier]));
         // Dernier dispatch par dossier (attribution courante — même règle que le drill-down circuit).
@@ -274,17 +337,25 @@ export class DispatchsControleurs implements OnDestroy {
           if (idProfile == null) return false;
           return idProfile === idProfileMembre || delegantsMembre.has(idProfile);
         };
-        const ajouter = (im: string | undefined, idDossier: number, dateDispatch: string | undefined, role: 'Membre' | 'CC') => {
+        const ajouter = (im: string | undefined, idDossier: number, disp: (typeof dispatchs)[number], role: 'Membre' | 'CC') => {
           const dossier = im ? dossierById.get(idDossier) : undefined;
           if (!im || !dossier || !estAffichable(im) || !STATUTS_EN_COURS.has(dossier.statut ?? '')) return;
           const liste = parControleur.get(im) ?? [];
-          liste.push({ dossier, dateDispatch, role });
+          liste.push({ dossier, idDispatch: disp.idDispatch, dateDispatch: disp.dateDispatch, role });
           parControleur.set(im, liste);
         };
         for (const [idDossier, disp] of dernier) {
-          ajouter(disp.imCtrlMembre, idDossier, disp.dateDispatch, 'Membre');
-          ajouter(disp.imCtrlCc, idDossier, disp.dateDispatch, 'CC');
+          ajouter(disp.imCtrlMembre, idDossier, disp, 'Membre');
+          ajouter(disp.imCtrlCc, idDossier, disp, 'CC');
         }
+        // Brouillons d'examen (dossier encore DISPATCHE mais examen commencé) → badge « Examen en cours ».
+        const dossierParDispatch = new Map([...dernier.entries()].map(([idD, disp]) => [disp.idDispatch, idD]));
+        const brouillons = new Set<number>();
+        for (const e of examens) {
+          const idD = e.idDispatch != null ? dossierParDispatch.get(e.idDispatch) : undefined;
+          if (idD != null) brouillons.add(idD);
+        }
+        this.dossiersAvecExamen.set(brouillons);
         const lignes: LigneControleur[] = [...parControleur.entries()].map(([im, liste]) => {
           const c = ctrlById.get(im);
           return {
@@ -299,8 +370,10 @@ export class DispatchsControleurs implements OnDestroy {
         lignes.sort((a, b) => b.dossiers.length - a.dossiers.length || a.nom.localeCompare(b.nom));
         this.lignes.set(lignes);
         this.loading.set(false);
-        // Photos des contrôleurs affichés (une requête binaire par carte, 404 = repli initiales).
+        // Photos des contrôleurs affichés (une requête binaire par carte, 404 = repli initiales) ;
+        // déjà téléchargée (rechargement via revision) → conservée, pas de nouvelle requête.
         for (const l of lignes) {
+          if (this.photos().has(l.im)) continue;
           this.controleurService.downloadPhoto(l.im).subscribe({
             next: (blob) => this.photos.update((m) => new Map(m).set(l.im, URL.createObjectURL(blob))),
             error: () => {},
@@ -321,6 +394,32 @@ export class DispatchsControleurs implements OnDestroy {
 
   basculer(im: string): void {
     this.ouvert.set(this.ouvert() === im ? null : im);
+  }
+  /** « Retirer » offert ? (DISPATCH_WRITE ; les dossiers listés sont tous DISPATCHE/EXAMINE, donc annulables). */
+  peutRetirer(): boolean {
+    return this.permissions.can('DISPATCH_WRITE');
+  }
+  /** Confirme le retrait : annule le dispatch (purge examen/PV côté serveur, dossier → PRET_DISPATCH). */
+  confirmerRetrait(): void {
+    const r = this.retrait();
+    if (!r) return;
+    this.retraitEnCours.set(true);
+    this.dispatchService.annuler(r.a.idDispatch).subscribe({
+      next: () => {
+        this.toast.success('Dossier retiré : de retour en pré-dispatch.');
+        this.retraitEnCours.set(false);
+        this.retrait.set(null);
+        // La notification recharge cette stat (abonnement revision) + classement + badges.
+        this.dossiersRefresh.notifierChangement();
+      },
+      error: () => {
+        // 404/409 = l'état a changé ailleurs (déjà retiré, PV signé…) : toast centralisé (message
+        // backend) + fermeture et resynchronisation pour faire disparaître la ligne périmée.
+        this.retraitEnCours.set(false);
+        this.retrait.set(null);
+        this.dossiersRefresh.notifierChangement();
+      },
+    });
   }
   /** Initiales de l'avatar (deux premiers mots du nom). */
   initiales(nom: string): string {

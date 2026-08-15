@@ -10,8 +10,8 @@ export const ASSISTANT_ROUTES: Routes = [
   { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
   { path: 'tableau-de-bord', component: DossiersPipeline, data: { title: 'Dossiers de ma localité' } },
   // `:idLettre` / `:idPv` : liens de notification (LETTRE_RENVOI_COPIE / PV_DEFINITIF_COPIE / CLOTURE_COPIE_ASSISTANT).
-  { path: 'lettre-renvois', component: LettreRenvoiConsultation, data: { source: 'localite', title: 'Lettres de renvoi reçues' } },
-  { path: 'lettre-renvois/:idLettre', component: LettreRenvoiConsultation, data: { source: 'localite', title: 'Lettres de renvoi reçues' } },
+  { path: 'lettre-renvois', component: LettreRenvoiConsultation, data: { source: 'localite', title: 'Lettres de renvoi reçues', archivable: true } },
+  { path: 'lettre-renvois/:idLettre', component: LettreRenvoiConsultation, data: { source: 'localite', title: 'Lettres de renvoi reçues', archivable: true } },
   { path: 'pv-examens', component: PvAssistant },
   { path: 'pv-examens/:idPv', component: PvAssistant },
   { path: 'messagerie', component: Messagerie },

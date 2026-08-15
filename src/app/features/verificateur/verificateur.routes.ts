@@ -20,6 +20,7 @@ export const VERIFICATEUR_ROUTES: Routes = [
     data: { title: 'Dossiers vérifiés / clôturés', source: 'verifies' },
   },
   { path: 'verifier/:idDossier', component: VerifierDossier },
+  // Retiré du menu (demande user 2026-08-04) : redondant avec « À vérifier ». Route conservée.
   { path: 'en-attente-prmp', component: EnAttentePrmp },
   { path: 'messagerie', component: Messagerie },
 ];

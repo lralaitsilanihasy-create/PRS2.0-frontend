@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { ApiError } from '../../core/errors/api-error';
+import { ToastService } from '../../core/notifications/toast.service';
 import { Dispatch, Dossier, Examen, PvExamen, Reception } from '../../models';
 import {
   AvisService,
@@ -39,7 +41,7 @@ import {
         <div class="table-card">
         <table>
           <thead>
-            <tr><th>Référence PV</th><th>Dossier</th><th>Avis</th><th>Date signature</th></tr>
+            <tr><th>Référence PV</th><th>Dossier</th><th>Avis</th><th>Date signature</th><th>Archivage</th></tr>
           </thead>
           <tbody>
             @for (pv of pvs(); track pv.idPv) {
@@ -48,10 +50,21 @@ import {
                 <td>{{ dossierRef(pv) }}</td>
                 <td><span [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span></td>
                 <td class="cnm-mono">{{ dateSignature(pv) || '—' }}</td>
+                <td>
+                  <!-- ⚠️ Spec navette : archivage par l'Assistant (après transmission SIGMP) — clôt le dossier. -->
+                  @if (pv.dateArchivage) {
+                    <span class="badge badge-success">Archivé le {{ pv.dateArchivage }}</span>
+                  } @else {
+                    <button type="button" class="btn btn-primary btn-sm" [disabled]="archivage() === pv.idPv"
+                      (click)="archiver(pv); $event.stopPropagation()">
+                      {{ archivage() === pv.idPv ? 'Archivage…' : 'Archiver' }}
+                    </button>
+                  }
+                </td>
               </tr>
               @if (ouvert() === pv.idPv) {
                 <tr class="pva__detail">
-                  <td colspan="4">
+                  <td colspan="5">
                     <dl class="pva__dl">
                       <div><dt>Référence</dt><dd class="cnm-mono">{{ pv.refePv || pv.referencePv || '—' }}</dd></div>
                       <div><dt>Dossier</dt><dd>{{ dossierRef(pv) }}</dd></div>
@@ -69,7 +82,7 @@ import {
                 </tr>
               }
             } @empty {
-              <tr><td colspan="4" class="text-muted">Aucun PV reçu.</td></tr>
+              <tr><td colspan="5" class="text-muted">Aucun PV reçu.</td></tr>
             }
           </tbody>
         </table>
@@ -96,10 +109,29 @@ export class PvAssistant {
   private readonly dossierService = inject(DossierService);
   private readonly lookups = inject(ReferenceLookupService);
 
+  private readonly toast = inject(ToastService);
   readonly loading = signal(true);
   readonly pvs = signal<PvExamen[]>([]);
   readonly ouvert = signal<number | null>(null);
+  /** idPv en cours d'archivage (bouton désactivé), null sinon. */
+  readonly archivage = signal<number | null>(null);
   private readonly avisMap = signal<Map<string, string>>(new Map());
+
+  /** ⚠️ Spec navette — archive le PV (l'archivage clôt le dossier) ; 409 explicite si SIGMP non transmis. */
+  archiver(pv: PvExamen): void {
+    this.archivage.set(pv.idPv);
+    this.pvService.archiver(pv.idPv).subscribe({
+      next: (maj) => {
+        this.archivage.set(null);
+        this.pvs.update((arr) => arr.map((p) => (p.idPv === maj.idPv ? maj : p)));
+        this.toast.success('PV archivé — dossier clôturé.');
+      },
+      error: (e: ApiError) => {
+        this.archivage.set(null);
+        this.toast.error(e.message || 'Archivage impossible.');
+      },
+    });
+  }
 
   private readonly examens = signal<Examen[]>([]);
   private readonly dispatchs = signal<Dispatch[]>([]);
@@ -155,11 +187,11 @@ export class PvAssistant {
     const d = this.dossierByExamen().get(pv.idExamen);
     return d ? d.refeDossier || 'Dossier #' + d.idDossier : '—';
   }
-  avisLabel(id: string): string {
-    return this.avisMap().get(id) ?? id;
+  avisLabel(id?: string): string {
+    return id ? this.avisMap().get(id) ?? id : '—';
   }
   /** Couleur du badge d'avis : FAV → vert, DEF → rouge, FAVR → orange, autres → neutre. */
-  avisClasse(id: string): string {
+  avisClasse(id?: string): string {
     const code = (id || '').toUpperCase();
     if (code.startsWith('FAVR')) {
       return 'badge badge-warning';
