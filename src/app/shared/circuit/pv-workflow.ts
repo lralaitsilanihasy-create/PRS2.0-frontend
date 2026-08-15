@@ -75,12 +75,21 @@ import {
           </button>
           @if (dejaSigne()) {
             <span class="pv-workflow__deja-signe">Vous avez déjà signé — en attente des autres signataires.</span>
-          } @else if (signeCommeAttributaire()) {
-            <!-- ⚠️ Auto-attribution (délégation ascendante) : la signature vaut PART MEMBRE ; la part
-                 Président/CC doit être co-signée par quelqu'un d'autre (garde backend 409). -->
+          } @else if (coSignatureRestante()) {
+            <!-- ⚠️ Règle 2026-08-15 : auto-co-signature — la part Membre est posée, le même
+                 utilisateur enchaîne sur sa part de rôle et clôt seul la signature du PV. -->
             <span class="pv-workflow__deja-signe">
-              ⤴ Vous êtes l'attributaire : votre signature vaudra la <strong>part Membre</strong>. La part
-              Président/CC devra être co-signée par un autre signataire.
+              ⤴ Part Membre signée — votre signature vaudra maintenant la
+              <strong>part {{ roleSignatureLabel() }}</strong> (auto-co-signature par délégation) : le PV
+              sera <strong>signé</strong>.
+            </span>
+          } @else if (signeCommeAttributaire()) {
+            <!-- ⚠️ Auto-attribution (délégation ascendante) : la 1ʳᵉ signature vaut PART MEMBRE ; la
+                 part de rôle suit (auto-co-signature) ou reste co-signable par un autre signataire. -->
+            <span class="pv-workflow__deja-signe">
+              ⤴ Vous êtes l'attributaire : votre signature vaudra la <strong>part Membre</strong>. Vous
+              pourrez ensuite signer vous-même la part {{ partRoleLabel() }} (auto-co-signature par
+              délégation) — ou la laisser à un autre signataire.
             </span>
           }
         }
@@ -329,19 +338,39 @@ export class PvWorkflow {
   readonly canRetourner = computed(() => peutRetourner(this.pv().statutPv));
   readonly canAccepter = computed(() => peutAccepter(this.pv().statutPv));
   readonly canSigner = computed(() => peutSigner(this.pv().statutPv));
+  /** L'utilisateur courant est l'ATTRIBUTAIRE du PV (`imCtrlMembre` = son matricule). */
+  private readonly estAttributaire = computed(
+    () => !!this.pv().imCtrlMembre && this.pv().imCtrlMembre === this.auth.ref(),
+  );
   /**
-   * Rôle sous lequel le signataire courant signe. ⚠️ Délégation ascendante (auto-attribution) : quand
-   * l'utilisateur est l'ATTRIBUTAIRE du PV (`imCtrlMembre` = son matricule — ex. Président qui s'est
-   * dispatché le dossier), sa signature vaut **part Membre** (garde backend : `role=MEMBRE` exige
-   * l'attributaire, non déléguable ; et le signataire de la part Membre ne peut PAS signer aussi la
-   * part Président → 409, la co-signature revient au CC). Sinon : le rôle de son profil.
+   * Rôle sous lequel le signataire courant signe — la PROCHAINE part à poser. ⚠️ Délégation
+   * ascendante (auto-attribution) : l'attributaire signe d'abord la **part Membre** (`role=MEMBRE`,
+   * acte d'identité, non déléguable). ⚠️ Règle 2026-08-15 (annule la séparation des signataires) :
+   * le verrou « une signature par personne » est LEVÉ pour le P/CC attributaire — part Membre posée,
+   * le même utilisateur enchaîne sur SA part de rôle (auto-co-signature, conditionnée côté serveur à
+   * la paire « → Membre » active : 403 si elle a été désactivée entre-temps). Le circuit court se
+   * clôt donc seul : deux actions successives, PV → SIGNE.
    */
   readonly roleSignature = computed<PvSignataireRole | null>(() => {
-    if (this.pv().imCtrlMembre && this.pv().imCtrlMembre === this.auth.ref()) return 'MEMBRE';
+    if (this.estAttributaire() && this.pv().dateSignatureMembre == null) return 'MEMBRE';
     return pvSignataireRole(this.auth.role());
   });
   /** L'utilisateur signe la part Membre en tant qu'ATTRIBUTAIRE alors que son profil n'est pas Membre. */
   readonly signeCommeAttributaire = computed(() => this.roleSignature() === 'MEMBRE' && this.auth.role() !== 'MEMBRE');
+  /** Part Membre posée par l'attributaire P/CC → sa part de rôle reste à signer (auto-co-signature). */
+  readonly coSignatureRestante = computed(
+    () =>
+      this.estAttributaire() &&
+      this.auth.role() !== 'MEMBRE' &&
+      this.pv().dateSignatureMembre != null &&
+      !this.dejaSigne(),
+  );
+  /** Libellé humain de la part de rôle courante (hint d'auto-co-signature). */
+  readonly roleSignatureLabel = computed(() =>
+    this.roleSignature() === 'PRESIDENT' ? 'Président' : this.roleSignature() === 'CC' ? 'Chef de commission' : 'Membre',
+  );
+  /** Libellé de la part de rôle du PROFIL courant (hint avant la part Membre de l'attributaire). */
+  readonly partRoleLabel = computed(() => (this.auth.role() === 'PRESIDENT' ? 'Président' : 'Chef de commission'));
   /**
    * ⚠️ Règle ajoutée (2026-08-02) — une signature par rôle : le signataire courant a déjà posé la
    * sienne (date du rôle renseignée) ⇒ bouton « Signer » désactivé (garde 409 miroir côté backend).
@@ -570,7 +599,8 @@ export class PvWorkflow {
     this.pvService.signer(this.pv().idPv, { imActeur: acteur, role }).subscribe({
       next: (pv) => {
         this.saving.set(false);
-        this.onSuccess(pv, 'PV signé.');
+        // Part intermédiaire (ex. part Membre de l'attributaire, auto-co-signature à suivre) ≠ PV complet.
+        this.onSuccess(pv, pv.statutPv === 'SIGNE' ? 'PV signé.' : 'Signature enregistrée — en attente des autres parts.');
       },
       error: () => this.saving.set(false), // 409/403 → toast centralisé
     });
