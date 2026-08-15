@@ -56,6 +56,60 @@ export interface Marche {
   idMode?: number;
   /** Forme du marché (relevée dans l'objet à l'import, sinon défaut serveur `QUANTITE_FIXE`). */
   formeMarche?: FormeMarche;
+  /**
+   * ⚠️ 2026-08-05 (versionnement) — identité de la ligne **à travers les versions** du PPM, posée par
+   * le serveur. `idDetail` ne l'identifie que dans un dossier : une copie en v2 a une nouvelle PK.
+   */
+  idLigneOrigine?: number;
+  /** ⚠️ 2026-08-05 — ligne supprimée logiquement dans cette version : restaurable, jamais effacée. */
+  supprimee?: boolean;
+}
+
+/** ⚠️ 2026-08-05 — statut d'une ligne relativement à la version précédente du PPM. */
+export type TypeChangementLigne = 'INCHANGEE' | 'MODIFIEE' | 'NOUVELLE' | 'SUPPRIMEE' | 'RESTAUREE';
+
+/** Un champ modifié d'une ligne, valeurs rendues en texte comparable par le serveur. */
+export interface ChampDiff {
+  champ: string;
+  avant?: string;
+  apres?: string;
+}
+
+/** Une ligne de marché vue à travers les deux versions comparées. */
+export interface LigneDiff {
+  /** `null` si la ligne n'existe que chez le prédécesseur. */
+  idDetail?: number;
+  idLigneOrigine: number;
+  designation?: string;
+  type: TypeChangementLigne;
+  /** `ORIGINE` (clé stable), `LIBELLE_SOA` (repli) ou `AUCUN` — rend l'appariement auditable. */
+  apparieePar: string;
+  champs: ChampDiff[];
+}
+
+/** Récapitulatif chiffré exigé avant validation d'une mise à jour. */
+export interface RecapDiff {
+  inchangees: number;
+  modifiees: number;
+  nouvelles: number;
+  supprimees: number;
+  restaurees: number;
+  total: number;
+}
+
+/**
+ * Réponse de `GET /api/dossiers/{id}/diff` — comparaison d'une version de PPM avec son prédécesseur.
+ * `fige` vaut `false` tant que la version est un brouillon (diff recalculé à chaque appel, il suit la
+ * saisie) et `true` une fois soumise (trace figée, qui fait foi).
+ */
+export interface DiffDossier {
+  idDossier: number;
+  idDossierPrecedent?: number;
+  numMaj?: number;
+  motifMaj?: string;
+  fige: boolean;
+  recap: RecapDiff;
+  lignes: LigneDiff[];
 }
 
 /**
@@ -99,6 +153,8 @@ export interface PieceJointeDossier {
   dateUpload?: string;
   apresLettreRenvoi?: boolean;
   idLettre?: number;
+  /** ⚠️ 2026-08-03 — version CORRIGÉE déposée pendant la rectification (observations du PV). */
+  versionCorrigee?: boolean;
 }
 
 /** Lot d'un marché. */
@@ -239,7 +295,17 @@ export interface EditionPpmRequest {
   signataire: string;
   dateSignature: string;
   reference: string;
+  /**
+   * ⚠️ 2026-08-05 — motif de la mise à jour, corrigeable tant que la version n'est pas soumise.
+   * Sans effet hors version ; absent = motif inchangé (jamais effacé par omission).
+   */
+  motifMaj?: string;
   marches?: SaisieMarcheLigne[];
+}
+
+/** Corps de `POST /api/saisies/ppm/{idDossier}/mise-a-jour` — le motif est obligatoire (400 si vide). */
+export interface MiseAJourRequest {
+  motif: string;
 }
 
 /**

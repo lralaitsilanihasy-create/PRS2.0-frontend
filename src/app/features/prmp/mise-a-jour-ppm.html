@@ -1,0 +1,357 @@
+<section class="maj">
+  @if (chargement()) {
+    <p class="text-muted">Chargement de la mise à jour…</p>
+  } @else if (!dossier()) {
+    <p class="text-muted">Mise à jour introuvable.</p>
+  } @else {
+    <!-- ① Bandeau de filiation : d'où vient cette version, et quel numéro elle porte. -->
+    <div class="maj__filiation">
+      <div class="maj__filiation-main">
+        <span class="maj__badge">Mise à jour de {{ precedent()?.refeDossier || ('dossier #' + dossier()!.idDossierParent) }}</span>
+        @if (ppm()?.numMaj != null) {
+          <span class="maj__version">Version n° {{ ppm()!.numMaj }}</span>
+        }
+        @if (precedent(); as p) {
+          <button type="button" class="maj__lien" (click)="origineConsultee.set(p)">
+            📂 Voir le dossier d'origine
+          </button>
+        }
+      </div>
+      <p class="maj__filiation-note">
+        Le PPM en vigueur n'est <strong>pas modifié</strong> : cette version est un nouveau dossier. Il ne
+        remplacera le précédent qu'au moment où vous créerez la mise à jour.
+      </p>
+    </div>
+
+    <header class="page-header page-header--actions">
+      <div>
+        <div class="page-subtitle">Domaine PRMP</div>
+        <h1 class="page-title">Mise à jour du PPM</h1>
+      </div>
+      <a class="btn btn-retour-hub" routerLink="/prmp/dossiers">← Mes dossiers</a>
+    </header>
+
+    <!-- ② En-tête : hérités verrouillés vs modifiables. -->
+    <div class="card maj__panel">
+      <div class="card-header"><span class="card-title">En-tête de la version</span></div>
+      <div class="card-body maj__entete">
+        <div class="maj__champ">
+          <label>Entité contractante</label>
+          <input class="form-control" [value]="libelleEntite()" disabled />
+          <span class="maj__herite">hérité</span>
+        </div>
+        <div class="maj__champ">
+          <label>Exercice</label>
+          <input class="form-control" [value]="ppm()?.exercice ?? ''" disabled />
+          <span class="maj__herite">hérité</span>
+        </div>
+        <div class="maj__champ">
+          <label for="maj-signataire">Signataire</label>
+          <input id="maj-signataire" class="form-control" [ngModel]="signataire()" (ngModelChange)="signataire.set($event)" name="signataire" />
+        </div>
+        <div class="maj__champ">
+          <label for="maj-date">Nouvelle date de signature</label>
+          <input id="maj-date" class="form-control" type="date" [ngModel]="dateSignature()" (ngModelChange)="dateSignature.set($event)" name="dateSignature" />
+        </div>
+        <div class="maj__champ maj__champ--large">
+          <label for="maj-motif">Motif de la mise à jour <span class="maj__requis">obligatoire</span></label>
+          <textarea id="maj-motif" class="form-control" rows="2" [ngModel]="motif()" (ngModelChange)="motif.set($event)" name="motif"
+                    placeholder="Ce qui justifie cette nouvelle version du plan"></textarea>
+        </div>
+        <div class="maj__entete-actions">
+          <button type="button" class="btn btn-secondary btn-sm" [disabled]="enregistrement() || !enteteModifiee()" (click)="enregistrerEntete()">
+            Enregistrer l'en-tête
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ Import du PPM modifié : la voie NORMALE d'une mise à jour, comme à la création. -->
+    <div class="card maj__panel maj__import">
+      <div class="card-body maj__import-body">
+        <label class="btn btn-primary maj__import-btn">
+          📄 Importer le PPM mis à jour (PDF)
+          <input type="file" accept="application/pdf" hidden [disabled]="enregistrement()" (change)="importerPpm($event)" />
+        </label>
+        <p class="maj__import-note">
+          {{ enregistrement() ? 'Analyse du document…' : 'Le plan importé est comparé au précédent : les lignes conservées gardent leur identité, celles qui en ont disparu passent en « supprimées », les nouvelles sont ajoutées. Rien n\'est définitif avant « Créer la mise à jour ».' }}
+        </p>
+      </div>
+    </div>
+
+    <!-- ④ Lignes de marché : statut par ligne + diff en place. -->
+    <div class="card maj__panel">
+      <div class="card-header">
+        <span class="card-title">Lignes de marché</span>
+        @if (recap(); as r) {
+          <span class="maj__recap">
+            {{ r.inchangees }} inchangée(s) · {{ r.modifiees }} modifiée(s) ·
+            {{ r.nouvelles }} nouvelle(s) · {{ r.supprimees }} supprimée(s)
+            @if (r.restaurees) { · {{ r.restaurees }} restaurée(s) }
+          </span>
+        }
+      </div>
+      <div class="card-body">
+        <div class="maj__lignes-head">
+          <!-- Édition fine (bénéficiaires, lots, dates prévisionnelles) : le détail PPM partagé sait
+               déjà tout faire sur un brouillon — inutile de refaire une grille ici. -->
+          <button type="button" class="btn btn-secondary btn-sm" [disabled]="enregistrement()" (click)="ouvrirDetailComplet()">
+            ⚙ Modifier le détail (bénéficiaires, lots, dates)
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" [disabled]="enregistrement()" (click)="ajouterLigne()">
+            + Ajouter une ligne
+          </button>
+        </div>
+
+        <!-- Structure alignée sur la grille de « Saisir & soumettre un dossier » (demande user
+             2026-08-05) : mêmes colonnes, même regroupement des informations bénéficiaire. L'édition
+             fine passe par le détail PPM partagé, la même grille que la saisie initiale. -->
+        <!-- Conteneur à défilement horizontal, comme la grille de saisie : beaucoup de colonnes, on ne
+             veut ni rogner les actions ni faire déborder la page. -->
+        <div class="maj__table-wrap ppm-table-wrap">
+        <table class="maj__table ppm-table">
+          <!-- ⚠️ 2026-08-06 (demande user) — largeurs FIXES : le tableau tient dans l'écran, sans
+               défilement horizontal. Le colgroup est nécessaire car `table-layout: fixed` ne lit que
+               la 1re ligne d'en-tête, où les 4 colonnes du bénéficiaire sont fondues dans un colspan. -->
+          <colgroup>
+            <col class="maj__w-num" />
+            <col class="maj__w-statut" />
+            <col class="maj__w-nature" />
+            <col class="maj__w-objet" />
+            <col class="maj__w-mont" />
+            <col class="maj__w-mont" />
+            <col class="maj__w-mode" />
+            <col class="maj__w-forme" />
+            <col class="maj__w-financement" />
+            <col class="maj__w-soa" />
+            <col class="maj__w-compte" />
+            <col class="maj__w-mont" />
+            <col class="maj__w-mont" />
+            <col class="maj__w-actions" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th rowspan="2" class="maj__col-num">N°</th>
+              <th rowspan="2" class="maj__col-statut">Statut</th>
+              <th rowspan="2">Nature</th>
+              <th rowspan="2">Objet</th>
+              <th rowspan="2" class="ppm-c">Montant estimé</th>
+              <th rowspan="2" class="ppm-c">Nouveau montant</th>
+              <th rowspan="2" class="ppm-c">Mode de passation</th>
+              <th rowspan="2" class="ppm-c">Forme</th>
+              <th rowspan="2" class="ppm-c">Financement</th>
+              <th colspan="4" class="ppm-c">Informations sur le bénéficiaire</th>
+              <th rowspan="2" class="ppm-c">Actions</th>
+            </tr>
+            <tr>
+              <th class="ppm-c">Service bénéficiaire</th><th class="ppm-c">Compte</th><th class="ppm-c">Montant</th><th class="ppm-c">Nouveau montant</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of lignes(); track l.marche.idDetail; let idx = $index) {
+              @for (b of benefsDe(l.marche); track $index; let premier = $first) {
+                <tr [class]="classeStatut(l)" [class.maj__ligne--off]="l.marche.supprimee">
+                  @if (premier) {
+                    <td [attr.rowspan]="benefsDe(l.marche).length" class="maj__num">{{ idx + 1 }}</td>
+                    <td [attr.rowspan]="benefsDe(l.marche).length"><span class="maj__tag">{{ libelleStatut(l) }}</span></td>
+                    <td [attr.rowspan]="benefsDe(l.marche).length">{{ libelleNature(l.marche) }}</td>
+                    <td [attr.rowspan]="benefsDe(l.marche).length" class="ppm-objet">
+                      {{ l.marche.designationMarche || '—' }}
+                      <!-- Diff en place : ce qui a changé, valeur avant → après. -->
+                      @if (l.diff?.type === 'MODIFIEE') {
+                        <ul class="maj__diff">
+                          @for (c of l.diff!.champs; track c.champ) {
+                            <li>
+                              <span class="maj__diff-champ">{{ libelleChamp(c.champ) }}</span>
+                              <span class="maj__diff-avant">{{ valeurOuTiret(c.avant) }}</span>
+                              <span class="maj__diff-fleche">→</span>
+                              <span class="maj__diff-apres">{{ valeurOuTiret(c.apres) }}</span>
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </td>
+                    <td [attr.rowspan]="benefsDe(l.marche).length" class="ppm-mont">{{ montant(l.marche.montEstim) }}</td>
+                    <td [attr.rowspan]="benefsDe(l.marche).length" class="ppm-mont">{{ montant(l.marche.nouvMontEstim) }}</td>
+                    <td [attr.rowspan]="benefsDe(l.marche).length" class="ppm-c">{{ libelleMode(l.marche) }}</td>
+                    <td [attr.rowspan]="benefsDe(l.marche).length" class="ppm-c">{{ libelleForme(l.marche) }}</td>
+                    <td [attr.rowspan]="benefsDe(l.marche).length" class="ppm-c">{{ l.marche.financement || '—' }}</td>
+                  }
+                  <td class="ppm-c">{{ b?.soaCode || '—' }}</td>
+                  <td class="ppm-c">{{ b?.numCompte || '—' }}</td>
+                  <td class="ppm-mont">{{ montant(b?.ancMontBenef) }}</td>
+                  <td class="ppm-mont">{{ montant(b?.nouvMontBenef) }}</td>
+                  @if (premier) {
+                    <td [attr.rowspan]="benefsDe(l.marche).length" class="ppm-actions">
+                      @if (l.marche.supprimee) {
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="restaurerLigne(l.marche)">Restaurer</button>
+                      } @else {
+                        <button type="button" class="btn btn-danger btn-sm" (click)="supprimerLigne(l.marche)">Supprimer</button>
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            } @empty {
+              <tr><td colspan="14" class="text-muted">Aucune ligne de marché.</td></tr>
+            }
+          </tbody>
+        </table>
+        </div>
+        <p class="form-hint">
+          Une ligne supprimée n'est jamais effacée : elle reste ici, grisée, et se restaure d'un clic.
+          Les retouches ci-dessus servent aux ajustements ponctuels — l'essentiel d'une mise à jour se fait
+          en important le PPM modifié.
+        </p>
+      </div>
+    </div>
+
+    <!-- ⑤ Pièces jointes reprises du dossier d'origine, remplaçables une à une. -->
+    <div class="card maj__panel">
+      <div class="card-header"><span class="card-title">Pièces jointes reprises du dossier d'origine</span></div>
+      <div class="card-body">
+        <!-- Structure et styles REPRIS du formulaire de création (demande user) : libellé à gauche,
+             badge + fichier + action groupés à droite, liseré rouge sur une obligatoire manquante. -->
+        <div class="maj__pieces">
+          @for (t of typesADeposer(); track t.idTypePiece) {
+            <div class="maj__piece" [class.maj__piece--manquante]="t.obligatoire && !pieceDe(t.idTypePiece)">
+              <span class="maj__piece-lbl">📎 {{ t.libellePiece }}</span>
+              <div class="maj__piece-right">
+                @if (aRenouveler(t)) {
+                  <!-- Le plan lui-même change par définition dans une mise à jour : le signaler
+                       explicitement, sinon on croit pouvoir soumettre avec l'ancien. -->
+                  <span class="badge badge-warning">nouvelle version attendue</span>
+                } @else if (t.obligatoire) {
+                  <span class="badge badge-danger">obligatoire</span>
+                } @else {
+                  <span class="badge badge-neutral">optionnel</span>
+                }
+                @if (pieceDe(t.idTypePiece); as p) {
+                  <span class="maj__piece-file">actuellement : {{ p.nomFichier }}</span>
+                }
+                <!-- ⚠️ 2026-08-06 (demande user) — l'action dit ce qu'on attend réellement d'une mise à
+                     jour : déposer la NOUVELLE version du document, pas « remplacer » un acquis. -->
+                <label class="btn btn-secondary btn-sm maj__remplacer"
+                       [class.btn-primary]="aRenouveler(t)">
+                  {{ pieceDe(t.idTypePiece) ? 'Ajouter la nouvelle version' : 'Choisir' }}
+                  <input type="file" accept=".pdf,.jpeg,.jpg,.png" hidden
+                         (change)="deposerPiece(t.idTypePiece, $event)" />
+                </label>
+              </div>
+            </div>
+          } @empty {
+            <p class="text-muted">Aucune pièce attendue pour ce type de dossier.</p>
+          }
+        </div>
+        <p class="form-hint">
+          Les pièces affichées sont celles du dossier précédent, reprises pour ne rien perdre. Déposez la
+          <strong>nouvelle version</strong> de celles qui changent — à commencer par le plan de passation,
+          qui est l'objet même de la mise à jour. Les autres restent en l'état. Le dossier précédent, lui,
+          conserve ses propres pièces : rien de ce que vous faites ici ne l'atteint.
+          Formats acceptés : PDF, JPEG, PNG.
+        </p>
+        @if (piecesManquantes().length) {
+          <div class="alert alert-warning maj__manquantes">
+            <strong>Pièces obligatoires manquantes</strong>
+            <ul>
+              @for (t of piecesManquantes(); track t.idTypePiece) {
+                <li>{{ t.libellePiece }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- ⑥ Dossier historique : constitué par l'application, donc NON remplaçable à la main. -->
+    <div class="card maj__panel">
+      <div class="card-header"><span class="card-title">Dossier historique — joint automatiquement</span></div>
+      <div class="card-body">
+        <ul class="maj__pieces">
+          @for (p of piecesHistorique(); track p.idPiece) {
+            <li class="maj__piece maj__piece--auto">
+              <span class="maj__piece-lbl">📎 {{ libellePiece(p) }}</span>
+              <div class="maj__piece-right">
+                <span class="maj__piece-file">{{ p.nomFichier || '—' }}</span>
+                <span class="maj__piece-tag">repris</span>
+              </div>
+            </li>
+          } @empty {
+            <li class="text-muted">Aucune pièce d'historique.</li>
+          }
+        </ul>
+        <p class="form-hint">
+          Une mise à jour exige le <strong>PV du dossier précédent</strong> et le <strong>PPM daté et signé
+          de chaque version antérieure</strong>. L'application les détient déjà : elle les joint pour vous,
+          vous n'avez rien à redéposer.
+        </p>
+      </div>
+    </div>
+
+    <!-- ⑤ Aperçu du diff, distinct de la soumission finale. -->
+    <div class="maj__final">
+      <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu du diff complet</button>
+      <button type="button" class="btn btn-ghost" [disabled]="enregistrement()" (click)="abandonner()">Abandonner la mise à jour</button>
+      <button type="button" class="btn btn-primary" [disabled]="enregistrement() || sansChangement()" (click)="creerLaMiseAJour()">
+        Créer la mise à jour
+      </button>
+    </div>
+    @if (sansChangement()) {
+      <p class="form-hint maj__hint-fin">Cette version est identique à la précédente : modifiez au moins une ligne avant de la créer.</p>
+    }
+  }
+</section>
+
+@if (apercuOuvert() && diff(); as d) {
+  <div class="maj__overlay" (click)="apercuOuvert.set(false)">
+    <div class="maj__modal" (click)="$event.stopPropagation()">
+      <header class="maj__modal-head">
+        <h2>Aperçu du diff complet</h2>
+        <button type="button" class="maj__fermer" (click)="apercuOuvert.set(false)" aria-label="Fermer">✕</button>
+      </header>
+      <div class="maj__modal-body">
+        <p class="maj__recap-fort">
+          {{ d.recap.inchangees }} inchangée(s) · {{ d.recap.modifiees }} modifiée(s) ·
+          {{ d.recap.nouvelles }} nouvelle(s) · {{ d.recap.supprimees }} supprimée(s) ·
+          {{ d.recap.restaurees }} restaurée(s) — {{ d.recap.total }} ligne(s) au total
+        </p>
+        <ul class="maj__apercu">
+          @for (l of d.lignes; track l.idLigneOrigine) {
+            <li class="maj__apercu-ligne maj__ligne--{{ l.type.toLowerCase() }}">
+              <span class="maj__tag">{{ l.type }}</span>
+              <span class="maj__apercu-des">{{ l.designation || '—' }}</span>
+              @if (l.champs.length) {
+                <ul class="maj__diff">
+                  @for (c of l.champs; track c.champ) {
+                    <li>
+                      <span class="maj__diff-champ">{{ libelleChamp(c.champ) }}</span>
+                      <span class="maj__diff-avant">{{ valeurOuTiret(c.avant) }}</span>
+                      <span class="maj__diff-fleche">→</span>
+                      <span class="maj__diff-apres">{{ valeurOuTiret(c.apres) }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+}
+
+@if (origineConsultee(); as origine) {
+  <app-dossier-consultation [dossier]="origine" (closed)="origineConsultee.set(null)" />
+}
+
+<!-- Détail complet du PPM de la version, en ÉDITION (le dossier est un brouillon). À sa fermeture, le
+     diff est recalculé : les modifications faites ici remontent donc au tableau et au récapitulatif. -->
+@if (detailOuvert() && ppm(); as p) {
+  <app-detail-ppm-modal
+    [idDossier]="idDossier"
+    [idPpm]="p.idPpm"
+    [modeEdition]="true"
+    (fermer)="fermerDetailComplet()"
+    (modifie)="fermerDetailComplet()"
+  />
+}

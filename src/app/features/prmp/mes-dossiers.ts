@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { Dossier, TypeDossier } from '../../models';
@@ -19,7 +19,7 @@ import { DossierService, TypeDossierService } from '../../services';
 @Component({
   selector: 'app-mes-dossiers',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
   template: `
     <section class="md">
       <header class="page-header">
@@ -105,18 +105,47 @@ import { DossierService, TypeDossierService } from '../../services';
                 </div>
 
                 <div class="md__rows">
-                  <a class="md__row" [routerLink]="['/prmp/dossiers', t.idTypeDossier, 'brouillon']">
+                  <!-- ⚠️ Demande user (2026-08-02) : « Créer » entre directement dans la saisie de la famille. -->
+                  <a class="md__row md__row--creer" [routerLink]="['/prmp/soumettre-dossier']" [queryParams]="{ famille: t.idTypeDossier }">
+                    <span class="md__row-ic md__row-ic--creer" aria-hidden="true">➕</span>
+                    <span class="md__row-label">Créer</span>
+                    <span class="md__row-arrow" aria-hidden="true">›</span>
+                  </a>
+                  <a class="md__row" [routerLink]="['/prmp/dossiers', t.idTypeDossier, 'brouillon']" routerLinkActive="md__row--actif">
                     <span class="md__row-ic md__row-ic--draft" aria-hidden="true">📝</span>
                     <span class="md__row-label">Brouillons</span>
                     <span class="md__row-count">{{ compte(t.idTypeDossier, 'brouillon') }}</span>
                     <span class="md__row-arrow" aria-hidden="true">›</span>
                   </a>
-                  <a class="md__row" [routerLink]="['/prmp/dossiers', t.idTypeDossier, 'soumis']">
+                  <a class="md__row" [routerLink]="['/prmp/dossiers', t.idTypeDossier, 'soumis']" routerLinkActive="md__row--actif">
                     <span class="md__row-ic md__row-ic--sent" aria-hidden="true">📤</span>
                     <span class="md__row-label">Déposés</span>
                     <span class="md__row-count">{{ compte(t.idTypeDossier, 'soumis') }}</span>
                     <span class="md__row-arrow" aria-hidden="true">›</span>
                   </a>
+                  <!-- ⚠️ Demande user (2026-08-02) : accès direct par type aux écrans « à rectifier » / « vérifiés ». -->
+                  <a class="md__row" [routerLink]="['/prmp/dossiers/a-rectifier']" [queryParams]="{ type: t.idTypeDossier }" routerLinkActive="md__row--actif">
+                    <span class="md__row-ic md__row-ic--rectif" aria-hidden="true">✏️</span>
+                    <span class="md__row-label">À rectifier après examen</span>
+                    <span class="md__row-count">{{ compte(t.idTypeDossier, 'rectifier') }}</span>
+                    <span class="md__row-arrow" aria-hidden="true">›</span>
+                  </a>
+                  <a class="md__row" [routerLink]="['/prmp/dossiers/verifies']" [queryParams]="{ type: t.idTypeDossier }" routerLinkActive="md__row--actif" [routerLinkActiveOptions]="{ queryParams: 'exact', paths: 'exact', matrixParams: 'ignored', fragment: 'ignored' }">
+                    <span class="md__row-ic md__row-ic--verif" aria-hidden="true">✅</span>
+                    <span class="md__row-label">Vérifiés</span>
+                    <span class="md__row-count">{{ compte(t.idTypeDossier, 'verifie') }}</span>
+                    <span class="md__row-arrow" aria-hidden="true">›</span>
+                  </a>
+                  <!-- ⚠️ 2026-08-05 (demande user) — la mise à jour d'un PPM était trop enfouie : accès
+                       direct depuis la carte, comme « Créer ». Famille DDP uniquement (seule versionnable). -->
+                  @if (versionnable(t.idTypeDossier)) {
+                    <a class="md__row md__row--maj" [routerLink]="['/prmp/dossiers/verifies']" [queryParams]="{ type: t.idTypeDossier, maj: 1 }" routerLinkActive="md__row--actif" [routerLinkActiveOptions]="{ queryParams: 'exact', paths: 'exact', matrixParams: 'ignored', fragment: 'ignored' }">
+                      <span class="md__row-ic md__row-ic--maj" aria-hidden="true">🔄</span>
+                      <span class="md__row-label">Mettre à jour un PPM</span>
+                      <span class="md__row-count">{{ compte(t.idTypeDossier, 'maj') }}</span>
+                      <span class="md__row-arrow" aria-hidden="true">›</span>
+                    </a>
+                  }
                 </div>
               </div>
             </article>
@@ -129,6 +158,12 @@ import { DossierService, TypeDossierService } from '../../services';
           }
         </div>
       }
+
+      <!-- ⚠️ 2026-08-07 (demande user) — la liste de la ligne cliquée s'affiche ICI, sous les cartes,
+           au même écran. Chaque écran de liste est une route ENFANT (cf. prmp.routes.ts). -->
+      <div class="md__liste">
+        <router-outlet />
+      </div>
     </section>
   `,
   styles: `
@@ -180,11 +215,12 @@ import { DossierService, TypeDossierService } from '../../services';
       color: var(--n-400);
     }
 
-    /* ── Grille de cartes par type ── */
+    /* ── Grille de cartes par type — CENTRÉE (largeur bornée, comme le classement du circuit) ── */
     .md__grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(18.5rem, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(18.5rem, 22rem));
       gap: 1.1rem;
+      justify-content: center;
     }
     .md__card {
       position: relative;
@@ -275,6 +311,16 @@ import { DossierService, TypeDossierService } from '../../services';
     }
     .md__row-ic--draft { background: var(--warning-bg); color: var(--warning-text); }
     .md__row-ic--sent { background: var(--success-bg); color: var(--success-text); }
+    .md__row-ic--rectif { background: #FEF2F2; color: #B91C1C; }
+    .md__row-ic--verif { background: var(--c-50); color: var(--c-600, #4f46e5); }
+    .md__row-ic--creer { background: var(--p-50); color: var(--p-600); }
+    /* « Créer » : action d'entrée mise en avant (gras + accent), séparée des lignes de consultation. */
+    .md__row--creer { font-weight: 700; color: var(--p-600); border-bottom: 1px solid var(--n-100); border-radius: 0; margin-bottom: 2px; }
+    .md__row--creer:hover { background: var(--p-50); color: var(--p-700, var(--p-600)); }
+    /* « Mettre à jour un PPM » : seconde action d'entrée de la carte, détachée des lignes de consultation. */
+    .md__row-ic--maj { background: var(--c-50); color: var(--c-700, #3730a3); }
+    .md__row--maj { font-weight: 700; color: var(--c-700, #3730a3); border-top: 1px solid var(--n-100); border-radius: 0; margin-top: 2px; }
+    .md__row--maj:hover { background: var(--c-50); }
     .md__row-label { font-weight: 600; }
     .md__row-count {
       margin-left: auto;
@@ -311,11 +357,32 @@ export class MesDossiers {
 
   /** Ordre d'affichage imposé des familles (référentiel non trié) : DDP → DMC → DDM, le reste après. */
   private static readonly ORDRE_FAMILLE: Record<string, number> = { DDP: 0, DMC: 1, DDM: 2 };
+  /**
+   * ⚠️ Demande user (2026-08-03) — statuts du groupe « Vérifiés » : la phase de vérification complète
+   * (dossier rectifié/resoumis compris), pas seulement la clôture. Partagé avec l'écran liste.
+   */
+  static readonly STATUTS_VERIFIES = new Set([
+    'EN_VERIFICATION',
+    'OBSERVATIONS_LEVEES',
+    'DECISION_TRANSMISE_SIGMP',
+    'CLOTURE',
+  ]);
+  /**
+   * ⚠️ 2026-08-05 (versionnement) — statuts depuis lesquels un PPM peut être mis à jour : la Commission
+   * a rendu sa décision. Miroir de la garde serveur (`MiseAJourPpmService`) — la carte ne doit pas
+   * annoncer un nombre de dossiers plus large que ce que l'action accepte réellement.
+   */
+  static readonly STATUTS_MAJ = new Set(['DECISION_TRANSMISE_SIGMP', 'CLOTURE']);
+  /** Seule la famille DDP (plan de passation) se versionne. */
+  static readonly FAMILLE_VERSIONNABLE = 'DDP';
 
   readonly types = signal<TypeDossier[]>([]);
   readonly loading = signal(true);
-  /** idTypeDossier → { brouillon, soumis } (compteurs dérivés côté client). */
-  private readonly compteurs = signal<Map<string, { brouillon: number; soumis: number }>>(new Map());
+  /**
+   * idTypeDossier → compteurs dérivés côté client. `rectifier` (EN_ATTENTE_DECISION_PRMP) et
+   * `verifie` (CLOTURE) sont des SOUS-ENSEMBLES de `soumis` (⚠️ demande user 2026-08-02).
+   */
+  private readonly compteurs = signal<Map<string, { brouillon: number; soumis: number; rectifier: number; verifie: number; maj: number }>>(new Map());
 
   /** Totaux tous types confondus, pour le bandeau de synthèse (dérivés, sans appel réseau). */
   readonly totalBrouillons = computed(() => {
@@ -352,19 +419,33 @@ export class MesDossiers {
     });
   }
 
-  private grouper(brouillons: Dossier[], soumis: Dossier[]): Map<string, { brouillon: number; soumis: number }> {
-    const m = new Map<string, { brouillon: number; soumis: number }>();
-    const cumuler = (rows: Dossier[], cle: 'brouillon' | 'soumis') => {
+  private grouper(
+    brouillons: Dossier[],
+    soumis: Dossier[],
+  ): Map<string, { brouillon: number; soumis: number; rectifier: number; verifie: number; maj: number }> {
+    const m = new Map<string, { brouillon: number; soumis: number; rectifier: number; verifie: number; maj: number }>();
+    const cumuler = (rows: Dossier[], cle: 'brouillon' | 'soumis' | 'rectifier' | 'verifie' | 'maj') => {
       for (const d of rows) {
         const type = d.idTypeDossier;
         if (!type) continue;
-        const c = m.get(type) ?? { brouillon: 0, soumis: 0 };
+        const c = m.get(type) ?? { brouillon: 0, soumis: 0, rectifier: 0, verifie: 0, maj: 0 };
         c[cle]++;
         m.set(type, c);
       }
     };
-    cumuler(brouillons, 'brouillon');
+    // ⚠️ 2026-08-05 — une mise à jour en cours (dossier rattaché à un prédécesseur) ne compte pas comme
+    // un brouillon : elle n'est effective qu'à sa création, et se reprend depuis « Mettre à jour un PPM ».
+    cumuler(brouillons.filter((d) => d.idDossierParent == null), 'brouillon');
     cumuler(soumis, 'soumis');
+    // Sous-ensembles de « soumis » (aucun appel réseau supplémentaire).
+    cumuler(soumis.filter((d) => d.statut === 'EN_ATTENTE_DECISION_PRMP'), 'rectifier');
+    // ⚠️ Demande user (2026-08-03) — « Vérifiés » couvre TOUTE la phase de vérification : un dossier
+    // rectifié puis resoumis (EN_VERIFICATION) y figure, jusqu'à la clôture (SIGMP / archivage).
+    cumuler(soumis.filter((d) => MesDossiers.STATUTS_VERIFIES.has(d.statut ?? '')), 'verifie');
+    // ⚠️ 2026-08-05 — PPM réellement VERSIONNABLES : la Commission a rendu sa décision. Sous-ensemble
+    // strict de « Vérifiés » — un dossier encore en vérification n'est pas mettable à jour. Le compteur
+    // est le miroir de la garde serveur, pour ne pas annoncer une action que le backend refuserait.
+    cumuler(soumis.filter((d) => MesDossiers.STATUTS_MAJ.has(d.statut ?? '')), 'maj');
     return m;
   }
 
@@ -372,7 +453,11 @@ export class MesDossiers {
   chip(t: TypeDossier): string {
     return (t.idTypeDossier || '?').slice(0, 3).toUpperCase();
   }
-  compte(type: string, groupe: 'brouillon' | 'soumis'): number {
+  /** Vrai pour la famille des plans de passation, seule à se versionner. */
+  versionnable(type: string): boolean {
+    return type === MesDossiers.FAMILLE_VERSIONNABLE;
+  }
+  compte(type: string, groupe: 'brouillon' | 'soumis' | 'rectifier' | 'verifie' | 'maj'): number {
     return this.compteurs().get(type)?.[groupe] ?? 0;
   }
   total(type: string): number {

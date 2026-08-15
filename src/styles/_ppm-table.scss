@@ -1,0 +1,98 @@
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   TABLEAU DU DOSSIER DE PLANIFICATION (PPM) — présentation UNIQUE, quel que soit le profil.
+
+   ⚠️ Demande user 2026-08-06 : « tous les tableaux du dossier de planification, quel que soit le
+   profil, copient ce style et cette mise en forme ». Une seule source ici, appliquée par la classe
+   `.ppm-table` — consultation d'un dossier, examen (Membre), détail PPM, dates prévisionnelles,
+   saisie/rectification (PRMP) et mise à jour d'un PPM.
+
+   Les trois règles qui font tenir l'ensemble :
+   ① `table-layout: fixed` + largeurs en % (via `<colgroup>` propre à chaque tableau, les colonnes
+      variant d'un écran à l'autre) : le tableau se partage la largeur disponible au lieu de s'étirer
+      sur son contenu. AUCUN `min-width` — c'est lui qui imposait le défilement horizontal.
+   ② `white-space: normal` : indispensable, le design system pose `nowrap` sur les sélecteurs
+      d'élément NUS `td`/`th` ; sans cela un objet de marché reste sur une ligne et déborde.
+   ③ La coupure de mot est RÉSERVÉE à la colonne Objet (`.ppm-objet`) : partout ailleurs elle
+      donnait « FINANCEMEN/T » ou « 8000000000,0/0 ». Les montants sont insécables.
+
+   Alignement : les colonnes d'identité (N°, Statut, Nature, Objet) restent à gauche ; toutes les
+   autres sont centrées, en-tête compris, via `.ppm-c`.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Cadre : filet de sécurité pour les écrans très étroits. Le tableau, lui, tient à 100 %. */
+.ppm-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ppm-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+/* ② et ③ — l'en-tête bleu vient du style global (`thead tr` + `th`) : ne rien y surcharger. */
+.ppm-table th,
+.ppm-table td {
+  white-space: normal;
+  overflow-wrap: normal;
+  vertical-align: top;
+}
+
+.ppm-table th {
+  padding: 0.55rem 0.5rem;
+  line-height: 1.25;
+  /* L'interlettrage large du style global (.1em) fait déborder les en-têtes d'un mot seul
+     (« FINANCEMENT », « COMPTE ») dans une colonne étroite : resserré pour ces tableaux denses. */
+  letter-spacing: 0.04em;
+  /* ⚠️ Filet anti-CHEVAUCHEMENT (demande user 2026-08-06) : `break-word` ne coupe un mot que s'il ne
+     tient VRAIMENT pas — contrairement à `anywhere`, qui coupait « FINANCEMEN/T » alors qu'il y avait
+     la place. Sans ce filet, « PREVISIONNELLE » débordait sur la colonne voisine dans un conteneur
+     étroit : un mot coupé se lit, deux mots superposés non. */
+  overflow-wrap: break-word;
+}
+
+.ppm-table td {
+  padding: 0.5rem 0.5rem;
+  border-bottom: 1px solid var(--n-100);
+}
+
+/* Colonnes centrées — en-tête et cellules. */
+.ppm-table th.ppm-c,
+.ppm-table td.ppm-c {
+  text-align: center;
+}
+
+/* Objet : seul texte libre, seul autorisé à couper un mot insécable. */
+.ppm-table td.ppm-objet {
+  overflow-wrap: anywhere;
+}
+
+/* Un montant ne se lit pas coupé en deux lignes. */
+.ppm-table td.ppm-mont {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-inline: 0.3rem;
+}
+
+/* Dates prévisionnelles : même traitement que les montants. */
+.ppm-table td.ppm-date {
+  text-align: center;
+  white-space: nowrap;
+  padding-inline: 0.3rem;
+}
+
+/* ⚠️ Cellule d'actions en CELLULE DE TABLEAU, pas en `display: flex` : en flex sa largeur minimale
+   est celle de son bouton (le tableau s'élargit alors sur écran étroit) et son `rowspan` est perdu.
+   Bouton compact pour tenir dans une colonne étroite. */
+.ppm-table td.ppm-actions {
+  text-align: center;
+}
+
+.ppm-table td.ppm-actions .btn {
+  padding-inline: 0.55rem;
+  font-size: var(--text-xs);
+  white-space: normal;
+}

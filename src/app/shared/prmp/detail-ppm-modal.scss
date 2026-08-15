@@ -8,8 +8,9 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(26, 29, 46, .5);
-  backdrop-filter: blur(8px);
+  /* Flou léger (voir _design-system.scss) : blur(8px) plein écran = ouverture/défilement saccadés. */
+  background: rgba(26, 29, 46, .58);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -327,8 +328,8 @@
   position: fixed;
   inset: 0;
   z-index: 1050;
-  background: rgba(26, 29, 46, 0.5);
-  backdrop-filter: blur(8px);
+  background: rgba(26, 29, 46, 0.58);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;

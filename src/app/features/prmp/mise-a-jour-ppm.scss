@@ -1,0 +1,137 @@
+/* Écran de mise à jour d'un PPM (versionnement, 2026-08-05).
+   Code couleur du statut de ligne, repris à l'identique dans le tableau et dans l'aperçu. */
+
+.maj__panel { margin-bottom: 1rem; }
+
+/* ---- bandeau de filiation ---- */
+.maj__filiation {
+  border: 1px solid var(--c-200);
+  background: var(--c-50);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+.maj__filiation-main { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.maj__badge {
+  background: var(--c-600); color: #fff; font-weight: 700; font-size: var(--text-sm);
+  padding: 0.2rem 0.6rem; border-radius: var(--radius-sm);
+}
+.maj__version { font-weight: 700; color: var(--c-800); }
+.maj__lien {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--c-700); font-weight: 600; text-decoration: underline;
+}
+.maj__filiation-note { margin: 0.5rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
+
+/* ---- en-tête ---- */
+.maj__entete { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem 1rem; }
+.maj__champ { display: flex; flex-direction: column; gap: 0.25rem; position: relative; }
+.maj__champ--large { grid-column: 1 / -1; }
+.maj__champ label { font-weight: 600; font-size: var(--text-sm); color: var(--n-600); }
+.maj__herite {
+  position: absolute; top: 0; right: 0;
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--n-400); border: 1px solid var(--n-200); border-radius: var(--radius-sm); padding: 0 0.3rem;
+}
+.maj__requis { font-size: 0.7rem; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.04em; }
+.maj__entete-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+
+/* ---- import du PPM modifié : action principale de l'écran ---- */
+.maj__import { border: 1px solid var(--c-200); background: var(--c-50); }
+.maj__import-body { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.maj__import-btn { cursor: pointer; margin: 0; flex: none; }
+.maj__import-note { margin: 0; color: var(--n-500); font-size: var(--text-sm); flex: 1; min-width: 16rem; }
+
+/* ---- tableau des lignes ---- */
+.maj__lignes-head { display: flex; justify-content: flex-end; margin-bottom: 0.5rem; }
+/* ⚠️ 2026-08-06 — cadre, largeurs de police, retours à la ligne et alignements viennent de
+   `.ppm-table` (styles/_ppm-table.scss), commun à TOUS les tableaux du dossier de planification.
+   Ne restent ici que les largeurs de colonnes (propres à cet écran) et le langage du diff. */
+
+/* Largeurs des colonnes — total 100 %. Objet garde la part du lion, c'est lui qui porte le texte. */
+.maj__w-num { width: 3%; }
+.maj__w-statut { width: 6%; }
+.maj__w-nature { width: 7%; }
+.maj__w-objet { width: 19%; }
+.maj__w-mont { width: 7%; } /* ×4 — calibré sur « 8000000000,00 », qui ne doit jamais se couper */
+.maj__w-mode { width: 8%; }
+.maj__w-forme { width: 5%; }
+.maj__w-financement { width: 7%; } /* le mot « FINANCEMENT » en capitales dicte cette largeur */
+.maj__w-soa { width: 6%; }
+.maj__w-compte { width: 4.5%; }
+.maj__w-actions { width: 6.5%; }
+
+/* N° · Statut · Nature · Objet : alignés à gauche, comme demandé — on n'y touche pas. */
+.maj__num { font-weight: 700; color: var(--n-400); font-variant-numeric: tabular-nums; }
+.maj__recap { color: var(--n-500); font-size: var(--text-sm); }
+
+/* Étiquette de statut + liseré de couleur : même langage visuel des deux côtés. */
+.maj__tag {
+  display: inline-block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.03em; padding: 0.15rem 0.45rem; border-radius: var(--radius-sm);
+  background: var(--n-100); color: var(--n-600);
+}
+.maj__ligne--modifiee { background: #FFFBEB; }
+.maj__ligne--modifiee .maj__tag { background: #FEF3C7; color: #92400E; }
+.maj__ligne--nouvelle { background: #F0FDF4; }
+.maj__ligne--nouvelle .maj__tag { background: #DCFCE7; color: #15803D; }
+.maj__ligne--supprimee .maj__tag { background: #FEE2E2; color: #B91C1C; }
+.maj__ligne--restauree { background: #EFF6FF; }
+.maj__ligne--restauree .maj__tag { background: #DBEAFE; color: #1D4ED8; }
+.maj__ligne--off td:not(.maj__actions) { opacity: 0.55; text-decoration: line-through; }
+
+/* Diff en place */
+.maj__diff { list-style: none; margin: 0.35rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.maj__diff li { display: flex; align-items: baseline; gap: 0.4rem; font-size: var(--text-sm); flex-wrap: wrap; }
+.maj__diff-champ { color: var(--n-500); min-width: 9rem; }
+.maj__diff-avant { color: #B91C1C; text-decoration: line-through; }
+.maj__diff-fleche { color: var(--n-400); }
+.maj__diff-apres { color: #15803D; font-weight: 600; }
+
+/* ---- pièces jointes : trame REPRISE de « Saisir & soumettre un dossier » (.sd__piece) ---- */
+.maj__pieces { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.maj__piece { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.maj__piece-lbl { font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.maj__piece-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+.maj__piece-file { font-size: var(--text-sm); color: var(--n-500); }
+/* Pièce obligatoire non fournie : même signalement qu'à la saisie. */
+.maj__piece--manquante { background: #fff8f8; border-left: 2.5px solid var(--danger-text); padding-left: 8px; border-radius: var(--radius-sm); }
+.maj__manquantes ul { margin: 0.25rem 0 0; padding-left: 1.1rem; }
+.maj__remplacer { cursor: pointer; margin: 0; }
+/* Dossier historique : constitué par l'application, donc présenté comme acquis (pas d'action). */
+.maj__piece--auto .maj__piece-lbl { color: var(--n-600); }
+.maj__piece-tag {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+  background: var(--c-50); color: var(--c-700, #3730a3);
+  border-radius: var(--radius-sm); padding: 0.1rem 0.4rem;
+}
+
+/* ---- actions finales ---- */
+.maj__final { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+.maj__hint-fin { text-align: right; }
+
+/* ---- aperçu du diff ---- */
+.maj__overlay {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
+  display: flex; align-items: center; justify-content: center; z-index: 60; padding: 1rem;
+}
+.maj__modal {
+  background: #fff; border-radius: var(--radius-lg); width: min(60rem, 100%);
+  max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+}
+.maj__modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--n-100);
+}
+.maj__modal-head h2 { margin: 0; font-size: 1.1rem; }
+.maj__fermer { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--n-500); }
+.maj__modal-body { padding: 1rem 1.25rem; overflow: auto; }
+.maj__recap-fort { font-weight: 700; margin: 0 0 0.75rem; }
+.maj__apercu { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.maj__apercu-ligne { border: 1px solid var(--n-100); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; }
+.maj__apercu-des { margin-left: 0.5rem; font-weight: 600; }
+
+@media (max-width: 60rem) {
+  .maj__entete { grid-template-columns: 1fr; }
+  .maj__piece-lbl { min-width: 0; }
+}

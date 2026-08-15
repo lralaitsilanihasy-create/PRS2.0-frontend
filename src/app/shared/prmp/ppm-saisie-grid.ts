@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AutosizeDirective } from '../autosize.directive';
 import { MontantFrDirective } from '../montant-fr.directive';
@@ -47,15 +47,25 @@ import { PpmFormFactory } from './ppm-form-factory';
     @if (!marcheControls().length) {
       <p class="cnm-muted">Aucun marché. Vous pouvez enregistrer sans marché et en ajouter plus tard.</p>
     } @else {
-      <div class="sd__marches-wrap">
-        <table class="sd__marches-table">
+      <div class="sd__marches-wrap ppm-table-wrap">
+        <table class="sd__marches-table ppm-table">
+          <!-- ⚠️ Le « Statut » est optionnel : sans sa colonne ici, la dernière colonne perdait sa
+               largeur. Financement est calibré sur son en-tête (un mot, en capitales). -->
           <colgroup>
-            <col style="width: 7%" /><col style="width: 13%" /><col style="width: 9%" /><col style="width: 9%" />
-            <col style="width: 7%" /><col style="width: 7%" /><col style="width: 5%" /><col style="width: 9%" />
-            <col style="width: 6%" /><col style="width: 8%" /><col style="width: 8%" /><col style="width: 12%" />
+            <col style="width: 3%" />
+            @if (statutParUid().size) { <col style="width: 6%" /> }
+            <col style="width: 7%" /><col style="width: 13%" /><col style="width: 8%" /><col style="width: 8%" />
+            <col style="width: 7%" /><col style="width: 6%" /><col style="width: 7%" /><col style="width: 8%" />
+            <col style="width: 6%" /><col style="width: 8%" /><col style="width: 8%" /><col style="width: 11%" />
           </colgroup>
           <thead>
             <tr>
+              <th rowspan="2">N°</th>
+              <!-- ⚠️ 2026-08-05 — colonne OPTIONNELLE, alimentée par la mise à jour d'un PPM : statut de
+                   la ligne vis-à-vis de la version précédente. Absente partout ailleurs (saisie, réimport). -->
+              @if (statutParUid().size) {
+                <th rowspan="2">Statut</th>
+              }
               <th rowspan="2">Nature</th>
               <th rowspan="2">Objet</th>
               <th rowspan="2">Montant estimé</th>
@@ -70,11 +80,18 @@ import { PpmFormFactory } from './ppm-form-factory';
               <th>Service bénéficiaire</th><th>Compte</th><th>Montant</th><th>Nouveau montant</th>
             </tr>
           </thead>
-          @for (g of marcheControls(); track g.get('uid')!.value) {
+          @for (g of marcheControls(); track g.get('uid')!.value; let idx = $index) {
             <tbody class="sd__marche-tb" [attr.id]="'psg-m-' + g.get('uid')!.value" [class.sd__row-valide]="estValidee(g)" [class.sd__row-warn]="aVerifier(g) && !estValidee(g)" [class.sd__row-ok]="corrigeeSeulement(g) && !estValidee(g)">
               @for (b of beneficiairesControls(g); track b.get('uid')!.value; let first = $first; let i = $index) {
                 <tr>
                   @if (first) {
+                    <!-- Numéro de ligne : même numérotation que le bandeau « à vérifier » (« Ligne N »). -->
+                    <td [attr.rowspan]="rowspanBenef(g)" class="sd__num">{{ idx + 1 }}</td>
+                    @if (statutParUid().size) {
+                      <td [attr.rowspan]="rowspanBenef(g)">
+                        <span class="psg-statut psg-statut--{{ (statutDe(g) || 'inconnu').toLowerCase() }}">{{ libelleStatut(statutDe(g)) }}</span>
+                      </td>
+                    }
                     <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature"></textarea></td>
                     <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'objet')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet"></textarea></td>
                     <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'montEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" /></td>
@@ -168,30 +185,37 @@ import { PpmFormFactory } from './ppm-form-factory';
             <span class="modal-title">CAPM du marché</span>
           </div>
           <div class="modal-body">
-            <p class="form-hint">Au moins un processus est obligatoire ; un processus par ligne. Les <strong>dates de début du PDF</strong> ne sont pas modifiables ; la <strong>date de fin</strong> (optionnelle) est pré-proposée à la veille du début suivant.</p>
+            <p class="form-hint">Tous les processus du <strong>modèle CAPM de ce mode</strong> sont listés — renseignez les dates des processus concernés (<strong>au moins un</strong> ; les lignes non datées ne sont pas enregistrées). Les <strong>dates de début du PDF</strong> ne sont pas modifiables ; la <strong>date de fin</strong> (optionnelle) est pré-proposée à la veille du début suivant.</p>
+            <div class="sd-proc-head" aria-hidden="true">
+              <span>Processus</span>
+              <span class="sd-proc-head-date">Début</span>
+              <span class="sd-proc-head-date">Fin</span>
+              <span></span>
+            </div>
             @for (ctrl of procControls(); track ctrl.get('uid')!.value) {
+              @if (titrePhase($index); as t) { <div class="sd-proc-phase">{{ t }}</div> }
               <div class="sd-proc-row" [formGroup]="ctrl">
-                <select class="form-control" formControlName="idCapm">
-                  <option [ngValue]="null" disabled>— Processus —</option>
-                  @for (c of capmsPourProc(ctrl); track c.idCapm) { <option [ngValue]="c.idCapm">{{ c.libelleProcessus || ('#' + c.idCapm) }}</option> }
-                </select>
-                <input class="form-control" type="date" formControlName="dateDebut" />
-                <input class="form-control" type="date" formControlName="dateFin" />
-                <button type="button" class="btn btn-secondary btn-sm" (click)="retirerProc($index)" aria-label="Retirer">✕</button>
+                <span class="sd-proc-lib" [title]="libelleProc(ctrl)">{{ libelleProc(ctrl) }}</span>
+                <input class="form-control sd-proc-date" type="date" formControlName="dateDebut" />
+                <input class="form-control sd-proc-date" type="date" formControlName="dateFin" />
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm sd-proc-clear"
+                  [disabled]="!ligneDatee(ctrl)"
+                  (click)="effacerProc(ctrl)"
+                  title="Supprimer ce processus (efface ses dates — il ne sera pas enregistré)"
+                  aria-label="Supprimer ce processus"
+                >✕</button>
               </div>
               @if (procErreur(ctrl.get('idCapm')!.value)) {
                 <span class="form-error sd-proc-err">{{ procErreur(ctrl.get('idCapm')!.value) }}</span>
               }
             } @empty {
-              <p class="form-hint">Aucun processus. Ajoutez-en au moins un.</p>
+              <p class="form-hint">Aucun processus dans le référentiel CAPM.</p>
             }
-            <div>
-              <button type="button" class="btn btn-secondary btn-sm" [disabled]="!peutAjouterProc()" (click)="ajouterProc()">
-                + Ajouter un processus
-              </button>
-            </div>
           </div>
           <div class="modal-footer">
+            @if (erreurDates(); as e) { <span class="form-error sd-proc-err-globale">{{ e }}</span> }
             <button type="button" class="btn btn-outline" (click)="annulerDates(); $event.stopPropagation()">Annuler</button>
             <button type="button" class="btn btn-primary" [disabled]="!procControls().length" (click)="validerDates(); $event.stopPropagation()">Valider</button>
           </div>
@@ -265,10 +289,16 @@ import { PpmFormFactory } from './ppm-form-factory';
     .sd__lot-warn { border-color: #F59E0B !important; color: #B45309 !important; background: #FFFBEB !important; }
     .sd__lignes-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
     /* Tableau éditable des marchés (mise en forme façon PPM) */
-    .sd__marches-wrap { overflow-x: auto; margin-bottom: 1rem; }
-    .sd__marches-table { border-collapse: collapse; width: 100%; min-width: 52rem; table-layout: fixed; }
+    /* ⚠️ 2026-08-06 — cadre, largeurs et retours à la ligne viennent de « .ppm-table »
+       (styles/_ppm-table.scss), commun à tous les tableaux du dossier de planification : le tableau
+       tient dans l'écran, sans « min-width ». Ici les cellules portent des CHAMPS DE SAISIE : on
+       conserve leur quadrillage et leur compacité, on ne centre pas leur contenu (un libellé qu'on
+       édite se lit à gauche). */
+    .sd__marches-wrap { margin-bottom: 1rem; }
     .sd__marches-table th, .sd__marches-table td { border: 1px solid var(--c-200); padding: 0.25rem; vertical-align: top; }
-    .sd__marches-table thead th { background: var(--c-50); font-size: var(--text-xs, 0.72rem); text-align: center; font-weight: 700; color: var(--c-800); overflow-wrap: break-word; }
+    /* ⚠️ 2026-08-06 — l'en-tête suit désormais le style commun (bandeau bleu du design system), comme
+       tous les tableaux du dossier de planification : ne PAS y remettre de fond ni de couleur. */
+    .sd__marches-table thead th { font-size: var(--text-xs, 0.72rem); text-align: center; }
     .sd__marches-table .form-control { width: 100%; min-width: 0; font-size: var(--text-sm); padding: 0.3rem 0.4rem; }
     .sd__c-wrap { resize: none; overflow: hidden; line-height: 1.3; white-space: pre-wrap; word-break: break-word; font-family: inherit; }
     .sd__marche-tb { border-bottom: 3px solid var(--c-200); }
@@ -278,10 +308,29 @@ import { PpmFormFactory } from './ppm-form-factory';
     .sd__marche-actions { display: flex; flex-direction: column; gap: 0.35rem; align-items: stretch; }
     .sd__marche-actions .btn { white-space: normal; }
     .sd__dates-manq { color: var(--warning-text); font-size: var(--text-sm); font-weight: 700; }
-    .sd-proc-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .sd-proc-row .form-control { flex: 1 1 8rem; min-width: 7rem; }
-    /* Sélecteur « Processus » (1er champ) élargi : ses libellés (LANCEMENT/OUVERTURE/ATTRIBUTION) sont longs. */
-    .sd-proc-row .form-control:first-child { flex: 2 1 15rem; min-width: 12rem; }
+    .sd__num { text-align: center; font-weight: 700; color: var(--n-400); font-variant-numeric: tabular-nums; }
+    /* Statut de version (colonne optionnelle) — même code couleur que l'aperçu du diff. */
+    .psg-statut {
+      display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.03em; padding: 0.1rem 0.4rem; border-radius: var(--radius-sm);
+      background: var(--n-100); color: var(--n-600); white-space: nowrap;
+    }
+    .psg-statut--modifiee { background: #FEF3C7; color: #92400E; }
+    .psg-statut--nouvelle { background: #DCFCE7; color: #15803D; }
+    .psg-statut--supprimee { background: #FEE2E2; color: #B91C1C; }
+    .psg-statut--restauree { background: #DBEAFE; color: #1D4ED8; }
+    /* Modal CAPM : colonnes ALIGNÉES sur toutes les lignes (libellé fluide | Début | Fin | ✕ fixes) —
+       même gabarit de grille pour l'en-tête et chaque ligne, chaque date reste en face de son processus. */
+    .sd-proc-head, .sd-proc-row { display: grid; grid-template-columns: minmax(0, 1fr) 9.5rem 9.5rem 2.4rem; gap: 0.5rem; align-items: center; }
+    .sd-proc-head { margin-top: 0.6rem; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--n-400); }
+    .sd-proc-head-date { text-align: center; }
+    .sd-proc-row { padding: 0.15rem 0; }
+    .sd-proc-row .form-control { width: 100%; min-width: 0; }
+    .sd-proc-lib { min-width: 0; font-size: var(--text-sm); color: var(--n-700); line-height: 1.25; }
+    .sd-proc-phase { margin: 0.8rem 0 0.3rem; font-weight: 700; color: var(--p-600); font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--n-200); padding-bottom: 0.2rem; }
+    .sd-proc-err-globale { margin-right: auto; }
+    .sd__dates-modal .modal-body { overflow-y: auto; }
+    .sd-proc-clear:disabled { opacity: 0.35; cursor: default; }
     .sd-proc-err { color: var(--danger-text); display: block; }
     /* Modals lots & dates : plus larges que le confirm-modal standard pour laisser respirer les champs. */
     .modal.sd__lots-modal, .modal.sd__dates-modal { max-width: 54rem; }
@@ -310,6 +359,28 @@ export class PpmSaisieGrid {
   readonly anomaliesParLigne = input<Map<number, AnomalieTranscription[]>>(new Map());
   /** `import` masque « + bénéficiaire » et « Retirer » (données importées) ; `manuel` les affiche. */
   readonly mode = input<'import' | 'manuel'>('manuel');
+
+  /**
+   * ⚠️ 2026-08-05 — statut de chaque ligne vis-à-vis de la version précédente d'un PPM, indexé par
+   * l'{@code uid} de la ligne : `INCHANGEE` | `MODIFIEE` | `NOUVELLE` | `SUPPRIMEE` | `RESTAUREE`.
+   * Vide partout ailleurs (saisie initiale, réimport) — la colonne n'est alors même pas rendue, si bien
+   * que la grille reste strictement identique à ce qu'elle était.
+   */
+  readonly statutParUid = input<Map<number, string>>(new Map());
+
+  statutDe(g: FormGroup): string {
+    return this.statutParUid().get(g.get('uid')!.value as number) ?? '';
+  }
+  libelleStatut(statut: string): string {
+    switch (statut) {
+      case 'INCHANGEE': return 'Inchangée';
+      case 'MODIFIEE': return 'Modifiée';
+      case 'NOUVELLE': return 'Nouvelle';
+      case 'SUPPRIMEE': return 'Supprimée';
+      case 'RESTAUREE': return 'Restaurée';
+      default: return '—';
+    }
+  }
   readonly isImport = computed(() => this.mode() === 'import');
 
   readonly formes = (Object.entries(FORME_MARCHE_LIBELLES) as [FormeMarche, string][]).map(([code, libelle]) => ({ code, libelle }));
@@ -329,7 +400,11 @@ export class PpmSaisieGrid {
   // — Copies de travail des modals —
   readonly datesCible = signal<FormGroup | null>(null);
   readonly datesForm = this.fb.array([] as FormGroup[]);
+  /** Grille CAPM EFFECTIVE de la ligne du modal ouvert (spécifiques à son mode sinon communs), triée par ordre. */
+  readonly datesCapms = signal<Capm[]>([]);
   private readonly procErreurs = signal<Record<number, string>>({});
+  /** Erreur globale du modal CAPM (ex. aucun processus daté). */
+  readonly erreurDates = signal<string | null>(null);
   readonly lotsCible = signal<FormGroup | null>(null);
   readonly lotsForm = this.fb.array([] as FormGroup[]);
 
@@ -485,28 +560,33 @@ export class PpmSaisieGrid {
   procControls(): FormGroup[] {
     return this.datesForm.controls as FormGroup[];
   }
-  /** CAPM sélectionnables pour une ligne du modal = non utilisés par les autres lignes (+ sa valeur). */
-  capmsPourProc(ctrl: FormGroup): Capm[] {
-    const autres = new Set(
-      this.procControls()
-        .filter((g) => g !== ctrl)
-        .map((g) => g.get('idCapm')!.value as number)
-        .filter((v) => v != null),
-    );
-    return this.capms().filter((c) => !autres.has(c.idCapm));
+  /** Ligne datée ? (début ou fin renseignée — `getRawValue` car un début importé peut être désactivé). */
+  ligneDatee(ctrl: FormGroup): boolean {
+    const v = ctrl.getRawValue() as { dateDebut: string; dateFin: string };
+    return !!(v.dateDebut || v.dateFin);
   }
-  peutAjouterProc(): boolean {
-    const utilises = new Set(this.procControls().map((g) => g.get('idCapm')!.value as number));
-    return this.capms().some((c) => !utilises.has(c.idCapm));
+  /** « Supprime » un processus du CAPM : efface ses dates (début verrouillé compris) — non enregistré au Valider. */
+  effacerProc(ctrl: FormGroup): void {
+    const debut = ctrl.get('dateDebut')!;
+    debut.enable(); // un début importé (verrouillé) redevient éditable une fois effacé
+    debut.setValue('');
+    ctrl.get('dateFin')!.setValue('');
+    ctrl.markAsDirty();
   }
-  ajouterProc(): void {
-    const utilises = new Set(this.procControls().map((g) => g.get('idCapm')!.value as number));
-    const libre = this.capms().find((c) => !utilises.has(c.idCapm));
-    this.datesForm.push(this.factory.processusGroup({ idCapm: libre?.idCapm }));
-    this.proposerFins(); // recalcule les fins vides selon la nouvelle séquence
+  /** Libellé (fixe) du processus d'une ligne du modal — chaque ligne du modèle est affichée, datée ou non. */
+  libelleProc(ctrl: FormGroup): string {
+    const id = ctrl.get('idCapm')!.value as number | null;
+    if (id == null) return '—';
+    return this.datesCapms().find((c) => c.idCapm === id)?.libelleProcessus ?? '#' + id;
   }
-  retirerProc(i: number): void {
-    this.datesForm.removeAt(i);
+  /** Titre de phase à afficher au-dessus de la ligne `i` (quand le `groupe` change), sinon null. */
+  titrePhase(i: number): string | null {
+    const rows = this.procControls();
+    const groupeDe = (k: number) =>
+      this.datesCapms().find((c) => c.idCapm === (rows[k]?.get('idCapm')!.value as number))?.groupe ?? null;
+    const cur = groupeDe(i);
+    if (!cur) return null;
+    return i === 0 || groupeDe(i - 1) !== cur ? cur : null;
   }
   /**
    * Auto-proposition des **dates de fin** : la fin de chaque processus (si vide) est posée à la **veille du
@@ -514,10 +594,13 @@ export class PpmSaisieGrid {
    * fixes ; seules les fins vides sont proposées, et uniquement si l'écart laisse ≥ 1 jour après le début courant.
    */
   private proposerFins(): void {
-    const parId = new Map(this.capms().map((c) => [c.idCapm, c]));
+    const parId = new Map(this.datesCapms().map((c) => [c.idCapm, c]));
     const ordre = (g: FormGroup) => parId.get(g.get('idCapm')!.value as number)?.ordre ?? null;
+    // Seules les lignes DATÉES (début renseigné — dates du PDF = dates de DÉBUT) forment la séquence :
+    // jamais de fin proposée sur une ligne non datée, et une ligne non datée ne coupe pas la chaîne
+    // (la fin d'un processus daté = veille du début du PROCHAIN PROCESSUS DATÉ).
     const ordonnes = this.procControls()
-      .filter((g) => ordre(g) != null)
+      .filter((g) => ordre(g) != null && !!(g.getRawValue() as { dateDebut: string }).dateDebut)
       .sort((a, b) => (ordre(a) as number) - (ordre(b) as number));
     for (let i = 0; i < ordonnes.length - 1; i++) {
       const cur = ordonnes[i];
@@ -544,7 +627,7 @@ export class PpmSaisieGrid {
    * et `dateDebut[n] > dateFin[n-1]` (strictement **postérieure**) entre consécutifs. Renseigne `procErreurs`.
    */
   private validerChronologie(controls: FormGroup[]): boolean {
-    const parId = new Map(this.capms().map((c) => [c.idCapm, c]));
+    const parId = new Map(this.datesCapms().map((c) => [c.idCapm, c]));
     const items = controls
       .map((g) => ({
         idCapm: g.get('idCapm')!.value as number | null,
@@ -571,31 +654,82 @@ export class PpmSaisieGrid {
   }
   ouvrirDates(g: FormGroup): void {
     this.procErreurs.set({});
+    this.erreurDates.set(null);
+    // Grille effective de la ligne : modèle spécifique à son mode (ex. Appel d'offres ouvert) sinon communs.
+    const effectifs = this.factory.capmsEffectifs(this.capms(), this.modesList(), g.get('modeLibelle')?.value as string);
+    this.datesCapms.set(effectifs);
     this.datesForm.clear();
+    // TOUS les processus du modèle sont affichés (comme le document CAPM) ; seuls les datés seront enregistrés.
+    const existants = new Map<number, { dateDebut: string; dateFin: string }>();
     (g.get('processus') as FormArray).controls.forEach((p) => {
-      const grp = this.factory.processusGroup((p as FormGroup).getRawValue());
-      // Date de début issue du PDF (non vide) → verrouillée (non modifiable) ; un ajout manuel reste éditable.
-      if (grp.get('dateDebut')!.value) grp.get('dateDebut')!.disable();
-      this.datesForm.push(grp);
+      const v = (p as FormGroup).getRawValue() as { idCapm: number | null; dateDebut: string; dateFin: string };
+      if (v.idCapm != null) existants.set(v.idCapm, { dateDebut: v.dateDebut, dateFin: v.dateFin });
     });
+    // Réaffectation : des dates posées sur des processus HORS grille effective (ex. communs importés
+    // avant le modèle du mode, ou mode changé après coup) sont REMAPPÉES par mot-clé sur la tâche
+    // équivalente du modèle (LANCEMENT → « Lancement du DAO/DC… », ATTRIBUTION → « Décision d'attribution… »).
+    const tous = this.capms();
+    for (const [idCapm, ex] of [...existants]) {
+      if (effectifs.some((c) => c.idCapm === idCapm)) continue;
+      const lib = tous.find((c) => c.idCapm === idCapm)?.libelleProcessus;
+      const cible = this.factory.resoudreCapmImport(lib, effectifs);
+      if (cible != null && !existants.has(cible)) {
+        existants.set(cible, ex);
+        existants.delete(idCapm);
+      }
+    }
+    const pousser = (idCapm: number, ex?: { dateDebut: string; dateFin: string }) => {
+      const grp = this.factory.processusGroup({ idCapm, dateDebut: ex?.dateDebut ?? '', dateFin: ex?.dateFin ?? '' });
+      // Dates optionnelles ligne à ligne (le Valider ne retient que les lignes datées).
+      grp.get('dateDebut')!.removeValidators(Validators.required);
+      grp.get('dateDebut')!.updateValueAndValidity();
+      // Date de début issue du PDF (non vide) → verrouillée (non modifiable) ; une saisie manuelle reste éditable.
+      if (ex?.dateDebut) grp.get('dateDebut')!.disable();
+      this.datesForm.push(grp);
+    };
+    for (const c of effectifs) {
+      const ex = existants.get(c.idCapm);
+      existants.delete(c.idCapm);
+      pousser(c.idCapm, ex);
+    }
+    // Dates restées sans équivalent dans la grille effective : conservées à la suite (jamais perdues).
+    for (const [idCapm, ex] of existants) pousser(idCapm, ex);
     this.proposerFins(); // fins pré-proposées à la veille du début suivant (débuts fixes)
     this.datesCible.set(g);
   }
   annulerDates(): void {
     this.procErreurs.set({});
+    this.erreurDates.set(null);
     this.datesCible.set(null);
   }
   validerDates(): void {
     const g = this.datesCible();
     if (!g) return;
-    if (!this.datesForm.length || this.datesForm.invalid) {
-      this.datesForm.markAllAsTouched();
+    this.erreurDates.set(null);
+    // Lignes datées = début renseigné ; une fin seule est incomplète ; les lignes vides sont ignorées.
+    const err: Record<number, string> = {};
+    const datees: FormGroup[] = [];
+    for (const c of this.procControls()) {
+      const v = c.getRawValue() as { idCapm: number | null; dateDebut: string; dateFin: string };
+      if (v.idCapm == null) continue;
+      if (!v.dateDebut && v.dateFin) {
+        err[v.idCapm] = 'Renseignez la date de début (ou retirez la date de fin).';
+        continue;
+      }
+      if (v.dateDebut) datees.push(c);
+    }
+    if (Object.keys(err).length) {
+      this.procErreurs.set(err);
       return;
     }
-    if (!this.validerChronologie(this.procControls())) return;
+    if (!datees.length) {
+      this.erreurDates.set('Datez au moins un processus.');
+      return;
+    }
+    if (!this.validerChronologie(datees)) return;
     const arr = g.get('processus') as FormArray;
     arr.clear();
-    this.procControls().forEach((c) => arr.push(this.factory.processusGroup(c.getRawValue())));
+    datees.forEach((c) => arr.push(this.factory.processusGroup(c.getRawValue())));
     g.markAsDirty();
     this.datesCible.set(null);
   }

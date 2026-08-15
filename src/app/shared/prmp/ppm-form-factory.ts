@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-import { Capm, FormeMarche, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot } from '../../models';
+import { Capm, FormeMarche, ModePassation, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot } from '../../models';
 
 /**
  * Fabrique **partagée** des sous-formulaires d'une ligne de marché PPM (marché, bénéficiaire, lot,
@@ -80,11 +80,47 @@ export class PpmFormFactory {
   }
 
   /**
-   * Construit une ligne de marché **entièrement pré-remplie** depuis une ligne d'import PDF/xlsx
-   * (bénéficiaires, lots, processus résolus par libellé CAPM) — logique unique partagée par tous les
-   * appelants (même mapping qu'à la saisie).
+   * Grille CAPM **effective** d'un mode (modèle mixte) : les processus SPÉCIFIQUES à `idMode` s'ils
+   * existent (ex. modèle détaillé « Appel d'offres ouvert »), sinon ceux du **mode modèle partagé**
+   * (`ModePassation.idModeModeleCapm` — ex. CPO / AMI → modèle AOO), sinon les processus COMMUNS
+   * (`idMode` null). Toujours triée par `ordre` ASC.
    */
-  construireMarcheDepuisImport(m: SaisieImportMarche, capms: Capm[]): FormGroup {
+  capmsEffectifsParMode(capms: Capm[], idMode: number | null | undefined, modes: ModePassation[] = []): Capm[] {
+    let specifiques = idMode == null ? [] : capms.filter((c) => c.idMode === idMode);
+    if (!specifiques.length && idMode != null) {
+      const modele = modes.find((m) => m.idMode === idMode)?.idModeModeleCapm;
+      if (modele != null) specifiques = capms.filter((c) => c.idMode === modele);
+    }
+    const retenus = specifiques.length ? specifiques : capms.filter((c) => c.idMode == null);
+    return [...retenus].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+  }
+
+  /** Grille CAPM effective d'une ligne dont le mode est saisi en **libellé libre** (résolu insensible à la casse). */
+  capmsEffectifs(capms: Capm[], modes: ModePassation[], modeLibelle: string | null | undefined): Capm[] {
+    const lib = (modeLibelle ?? '').trim().toUpperCase();
+    const idMode = lib ? modes.find((m) => (m.libelle ?? '').trim().toUpperCase() === lib)?.idMode : undefined;
+    return this.capmsEffectifsParMode(capms, idMode, modes);
+  }
+
+  /**
+   * Résout l'`idCapm` d'un processus importé (PDF) sur la grille **effective** : égalité stricte de
+   * libellé d'abord, sinon **premier processus (ordre ASC) dont le libellé contient le mot-clé** —
+   * nécessaire pour les modèles détaillés (« LANCEMENT » → « Lancement du DAO/DC : avis spécifique… »).
+   */
+  resoudreCapmImport(processus: string | null | undefined, effectifs: Capm[]): number | null {
+    const cle = (processus ?? '').trim().toUpperCase();
+    if (!cle) return null;
+    const exact = effectifs.find((c) => (c.libelleProcessus ?? '').trim().toUpperCase() === cle);
+    if (exact) return exact.idCapm;
+    return effectifs.find((c) => (c.libelleProcessus ?? '').toUpperCase().includes(cle))?.idCapm ?? null;
+  }
+
+  /**
+   * Construit une ligne de marché **entièrement pré-remplie** depuis une ligne d'import PDF/xlsx
+   * (bénéficiaires, lots, processus résolus par libellé CAPM sur la grille effective du mode de la
+   * ligne) — logique unique partagée par tous les appelants (même mapping qu'à la saisie).
+   */
+  construireMarcheDepuisImport(m: SaisieImportMarche, capms: Capm[], modes: ModePassation[] = []): FormGroup {
     const g = this.ligneMarche();
     g.patchValue({
       designationMarche: m.designationMarche ?? '',
@@ -108,9 +144,9 @@ export class PpmFormFactory {
       lotArr.push(this.ligneLot({ designationLot: lt.designationLot, montLot: lt.montLot, qteLot: lt.qteLot, uniteLot: lt.uniteLot }));
     }
     const procArr = g.get('processus') as FormArray;
+    const effectifs = this.capmsEffectifs(capms, modes, m.modeLibelle);
     for (const p of m.previsions ?? []) {
-      const idCapm = capms.find((c) => (c.libelleProcessus ?? '').toUpperCase() === (p.processus ?? '').toUpperCase())?.idCapm ?? null;
-      procArr.push(this.processusGroup({ idCapm, dateDebut: p.dateDebut, dateFin: '' }));
+      procArr.push(this.processusGroup({ idCapm: this.resoudreCapmImport(p.processus, effectifs), dateDebut: p.dateDebut, dateFin: '' }));
     }
     return g;
   }

@@ -1,5 +1,7 @@
 @use 'styles/design-system';
 @use 'styles/responsive';
+/* Présentation commune des tableaux du dossier de planification (voir le fichier pour la règle). */
+@use 'styles/ppm-table';
 
 /* =============================================================================
    COUCHE DE COMPATIBILITÉ — Le design system actif est « C » (violet, Plus Jakarta
