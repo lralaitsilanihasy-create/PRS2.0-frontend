@@ -90,6 +90,16 @@ interface LigneObs {
                   @if (lignesObs(c).length) {
                     <div class="table-card ar-table">
                       <table>
+                        <!-- Largeurs imposées (2026-08-15) : « Au lieu de » / « Lire » élargies, « Observation »
+                             resserrée (le libellé passe à la ligne — table-layout fixed + overflow-wrap). -->
+                        <colgroup>
+                          <col style="width: 4%" />
+                          <col style="width: 11%" />
+                          <col style="width: 33%" />
+                          <col style="width: 19%" />
+                          <col style="width: 19%" />
+                          <col style="width: 14%" />
+                        </colgroup>
                         <thead>
                           <tr>
                             <th>N°</th>
@@ -203,8 +213,9 @@ interface LigneObs {
     .ar-item__modifier:hover { background: #D97706; color: #fff; box-shadow: 0 0 0 3px #FCD34D, 0 6px 14px rgba(180, 83, 9, 0.45); }
     .ar-item__meta { color: var(--n-400); font-size: var(--text-xs); }
     .ar-hist__title { margin: 0 0 0.4rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
-    /* Tableau des observations non satisfaites. */
-    .ar-table table { width: 100%; }
+    /* Tableau des observations non satisfaites — largeurs du colgroup respectées, contenu à la ligne. */
+    .ar-table table { width: 100%; table-layout: fixed; }
+    .ar-table td { overflow-wrap: anywhere; white-space: normal; vertical-align: top; }
     .ar-table__demande { color: var(--n-500); font-size: var(--text-xs); margin-top: 0.15rem; }
     .ar-table__avant { color: #B91C1C; text-decoration: line-through; }
     .ar-table__apres { color: #15803D; font-weight: 600; }
