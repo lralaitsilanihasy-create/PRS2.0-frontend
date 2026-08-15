@@ -3,10 +3,12 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
+import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
   Anomalie,
   CompteursPrmp,
+  CompteursVerificateur,
   Echeance,
   IndicateurCtrl,
   IndicateurPrmp,
@@ -51,13 +53,23 @@ export class NotificationService extends CrudService<Notification> {
   mes(): Observable<Notification[]> {
     return this.http.get<Notification[]>(`${this.baseUrl}/mes`);
   }
-  /** Compteur de non-lues. */
+  /**
+   * Compteur de non-lues. ⚠️ Sondage de FOND (badge de la cloche, toutes les 60 s) : ses échecs sont
+   * silencieux — depuis que les erreurs s'affichent en boîte de dialogue (2026-08-06), un backend
+   * indisponible ouvrirait sinon un dialogue à chaque battement.
+   */
   nonLuesCount(): Observable<{ nonLues: number }> {
-    return this.http.get<{ nonLues: number }>(`${this.baseUrl}/mes/non-lues/count`);
+    return this.http.get<{ nonLues: number }>(`${this.baseUrl}/mes/non-lues/count`, {
+      context: skipErrorToast(),
+    });
   }
   /** Marquer une notification comme lue (destinataire uniquement ; 403 sinon). */
   marquerLu(id: number): Observable<Notification> {
     return this.http.post<Notification>(`${this.baseUrl}/${id}/lu`, null);
+  }
+  /** ⚠️ Spec notifications (2026-08-02) — marquage manuel NON LU (unitaire). */
+  marquerNonLu(id: number): Observable<Notification> {
+    return this.http.post<Notification>(`${this.baseUrl}/${id}/non-lu`, null);
   }
   /** Tout marquer lu. */
   lireTout(): Observable<{ traitees: number }> {
@@ -103,6 +115,14 @@ export class KpiService {
   /** `GET /api/kpis/mes-compteurs` (PRMP) — compteurs du menu (filtrés sur la PRMP authentifiée). */
   mesCompteurs(): Observable<CompteursPrmp> {
     return this.http.get<CompteursPrmp>(`${this.baseUrl}/mes-compteurs`);
+  }
+
+  /**
+   * `GET /api/kpis/mes-compteurs-verificateur` (VERIFICATEUR) — compteurs du menu, scopés à sa
+   * localité. Un seul appel de comptage côté serveur, préféré à un `list().length` côté client.
+   */
+  mesCompteursVerificateur(): Observable<CompteursVerificateur> {
+    return this.http.get<CompteursVerificateur>(`${this.baseUrl}/mes-compteurs-verificateur`);
   }
 }
 

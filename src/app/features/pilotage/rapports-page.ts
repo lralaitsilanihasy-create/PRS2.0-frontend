@@ -82,7 +82,8 @@ export class RapportsPage {
         a.href = url;
         a.download = filename;
         a.click();
-        URL.revokeObjectURL(url);
+        // Révocation différée : révoquer immédiatement peut interrompre le téléchargement (ERR_FAILED).
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
         this.busy.set(false);
       },
       error: () => this.busy.set(false),

@@ -3,8 +3,11 @@ import { SnapshotStatsService } from '../../services';
 
 /**
  * Instantanés de statistiques (lecture seule ici).
- * Sert de vue « statistiques » pour les profils sans accès aux KPIs agrégés
- * (`/kpis/tableau-bord` est réservé Président/Admin).
+ *
+ * ⚠️ 2026-08-04 — **plus référencé par aucune route**. Servait de vue « statistiques » de repli pour les
+ * profils privés des KPIs agrégés ; cette prémisse est caduque : `GET /api/kpis/tableau-bord` est ouvert à
+ * PRESIDENT / ADMINISTRATEUR / CHEF_COMMISSION, et le Chef de commission affiche désormais le MÊME tableau
+ * de bord KPI que le Président. Conservé pour un éventuel ré-usage (profil sans droit sur les KPIs).
  */
 export const SNAPSHOT_STATS_CONFIG: CrudResourceConfig = {
   title: 'Statistiques',

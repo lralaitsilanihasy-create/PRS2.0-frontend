@@ -139,6 +139,22 @@ export interface CompteursPrmp {
   demandesRetraitNouvelles: number;
 }
 
+/**
+ * Réponse de `GET /api/kpis/mes-compteurs-verificateur` (VERIFICATEUR) — miroir exact de ses trois
+ * files, scopé à sa localité par le serveur.
+ */
+export interface CompteursVerificateur {
+  /**
+   * Dossiers sur lesquels le vérificateur a encore une action : EN_VERIFICATION,
+   * EN_ATTENTE_DECISION_PRMP ou OBSERVATIONS_LEVEES. ⚠️ Un dossier en sort dès la transmission de la
+   * décision à SIGMP (il bascule alors dans `verifies`).
+   */
+  aVerifier: number;
+  /** Dossiers DECISION_TRANSMISE_SIGMP ou CLOTURE avec PV signé. */
+  verifies: number;
+  enAttentePrmp: number;
+}
+
 /** Réponse de `GET /api/kpis/tableau-bord` (PRESIDENT / ADMINISTRATEUR). */
 export interface TableauBord {
   /** Nombre de dossiers par statut. */

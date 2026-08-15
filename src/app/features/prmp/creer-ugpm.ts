@@ -43,7 +43,7 @@ const IMG_OK = ['image/jpeg', 'image/png'];
   template: `
     <section class="cu cnm-card">
       <header class="cu__head">
-        <h1 class="cu__title">Créer une UGPM</h1>
+        <h1 class="cu__title">Créer compte UGPM</h1>
         <p class="cnm-muted">
           L'UGPM est créée sous votre PRMP de tutelle (<strong>{{ tutelle() || '—' }}</strong>) ;
           son compte reste <strong>en attente de validation</strong> par l'Administrateur.
@@ -127,7 +127,7 @@ const IMG_OK = ['image/jpeg', 'image/png'];
 
           <footer class="cu__footer">
             <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-              {{ submitting() ? 'Envoi…' : "Créer l'UGPM" }}
+              {{ submitting() ? 'Envoi…' : 'Créer le compte UGPM' }}
             </button>
           </footer>
         </form>

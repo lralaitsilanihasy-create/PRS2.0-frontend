@@ -401,6 +401,12 @@ a  { color: var(--p-600); text-decoration: none; }
   .info .name { color: #fff; }
   .info .role { color: rgba(255, 255, 255, 0.55); }
 }
+/* Pied de barre latérale en ACTION (ex. « Créer compte UGPM » chez la PRMP) : lien, même gabarit que la carte. */
+a.sidebar-profile--action {
+  text-decoration: none;
+
+  &.active { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.28); }
+}
 .sidebar .nav-section-label { color: rgba(255, 255, 255, 0.42); }
 .sidebar .nav-item {
   color: rgba(255, 255, 255, 0.72);
@@ -499,6 +505,28 @@ a  { color: var(--p-600); text-decoration: none; }
 .page-header {
   margin-bottom: 24px;
 
+  /* Variante avec action(s) à droite (ex. « ← Mes dossiers » sur les écrans atteints depuis les cartes). */
+  &.page-header--actions {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  /* ⚠️ 2026-08-07 (demande user) — écran DÉPLIÉ sous les cartes : son en-tête (donc son bouton
+     « ← Mes dossiers ») reste à la même place pendant qu'on fait défiler la liste. Collé sous la
+     topbar, qui est fixe et haute de 48 px. Le fond est indispensable : sans lui, les lignes du
+     tableau défileraient visiblement DERRIÈRE le titre. */
+  &.page-header--colle {
+    position: sticky;
+    top: 48px;
+    z-index: 6;
+    margin-bottom: 12px;
+    padding: 10px 0;
+    background: var(--cnm-bg, #f2f5fa);
+  }
+
   .eyebrow {
     font-size: var(--text-xs);
     font-weight: 700;
@@ -514,6 +542,27 @@ a  { color: var(--p-600); text-decoration: none; }
     font-size: var(--text-md);
     color: var(--n-400);
     font-weight: 400;
+  }
+}
+
+/* Bouton retour au hub « Mes dossiers » (PRMP) — volontairement IMPOSANT et remarquable (demande user) :
+   même fuchsia brillant que le dispatch groupé, taille généreuse, relief au survol. */
+.btn.btn-retour-hub {
+  background: linear-gradient(135deg, #e935c1, #b31fa0);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 800;
+  font-size: var(--text-md);
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--radius-lg);
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 14px rgba(217, 70, 239, 0.45);
+
+  &:hover {
+    background: linear-gradient(135deg, #f04fd0, #c62bb2);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(217, 70, 239, 0.55);
   }
 }
 
@@ -912,13 +961,30 @@ textarea.form-control {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(26,29,46,.5);
-  backdrop-filter: blur(8px);
+  /* Voile un peu plus sombre, flou léger : blur(8px) plein écran forçait une rasterisation GPU
+     coûteuse (ouverture et défilement saccadés sur GPU intégré). */
+  background: rgba(26,29,46,.58);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
   z-index: 1000;
+  /* Si le modal déborde du viewport (zoom navigateur, petit écran), il devient défilable au lieu
+     d'être ROGNÉ côté gauche/haut par le centrage flex (margin:auto sur l'enfant = même centrage,
+     mais tolérant au débordement). */
+  overflow: auto;
+  animation: modal-fade 150ms var(--ease-out, ease-out);
+
+  /* Ouverture adoucie de TOUT contenu de modal (`.modal`, formulaires, consultation…). */
+  > * { animation: modal-rise 180ms var(--ease-out, ease-out); margin: auto; }
+}
+
+@keyframes modal-fade { from { opacity: 0; } }
+@keyframes modal-rise { from { opacity: 0; transform: translateY(10px) scale(.985); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop, .modal-backdrop > * { animation: none; }
 }
 
 .modal {
@@ -1239,6 +1305,12 @@ textarea.form-control {
     color: var(--warning-text);
     border: 0.5px solid var(--warning-bdr);
   }
+  /* ⚠️ 2026-08-03 — versions corrigées (rectification sur observations du PV). */
+  &.gp-green {
+    background: #DCFCE7;
+    color: #15803D;
+    border: 0.5px solid #BBF7D0;
+  }
 }
 
 .group-count {
@@ -1281,6 +1353,7 @@ textarea.form-control {
 
   &.pi-blue   { background: var(--p-50);        color: var(--p-600); }
   &.pi-orange { background: var(--warning-bg);   color: var(--warning-text); }
+  &.pi-green  { background: #DCFCE7;             color: #15803D; }
 }
 
 .piece-name {
@@ -1296,6 +1369,21 @@ textarea.form-control {
   background: var(--warning-bg);
   color: var(--warning-text);
   border: 1px solid var(--warning-bdr);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  padding: 1px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+/* ⚠️ 2026-08-03 — étiquette « Corrigée » des versions déposées en rectification (pendant LR = .lr-tag). */
+.vc-tag {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: 700;
