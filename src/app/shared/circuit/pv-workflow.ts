@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, ou
 import { forkJoin } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { PermissionsService } from '../../core/auth/permissions.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Avis, Controleur, LettreRenvoi, PvExamen, PvSignataireRole } from '../../models';
@@ -264,6 +265,7 @@ export class PvWorkflow {
   private readonly profileService = inject(ProfileService);
   private readonly lettreService = inject(LettreRenvoiService);
   private readonly auth = inject(AuthService);
+  private readonly permissions = inject(PermissionsService);
   private readonly toast = inject(ToastService);
 
   /** PV courant. */
@@ -299,13 +301,27 @@ export class PvWorkflow {
   private readonly profileLib = signal<Map<number, string>>(new Map());
   /** Référentiels (avis / contrôleurs / profils) chargés une seule fois, à l'ouverture du panneau. */
   private refsCharges = false;
-  /** Vérificateurs de la localité du dossier (candidats Secrétaire de séance — règle backend). */
+  /**
+   * Candidats Secrétaire de séance : Vérificateurs TITULAIRES de la localité + « moi-même » (⤴
+   * délégation du profil Vérificateur — décision 2026-08-15 qui ANNULE le statu quo du même jour)
+   * quand la paire « profil courant → Vérificateur » est ACTIVE en base : le Président/CC qui accepte
+   * peut se désigner lui-même (garde backend en miroir « titulaire OU délégation », 409 sinon —
+   * mention « (par délégation) » posée sur le document PV côté serveur). Paire désactivée → l'option
+   * disparaît, zéro code.
+   */
   readonly verificateurOptions = computed(() => {
     const loc = this.idLocalite();
     const libs = this.profileLib();
-    return this.controleurs()
+    const options = this.controleurs()
       .filter((c) => c.idLocalite === loc && c.idProfile != null && /v[ée]rificateur/i.test(libs.get(c.idProfile) ?? ''))
       .map((c) => ({ id: c.imControleur, label: [c.nomCont, c.prenomsCont].filter(Boolean).join(' ') || c.imControleur }));
+    const ref = this.auth.ref();
+    if (ref && this.auth.role() !== 'VERIFICATEUR' && this.permissions.peutExecuter('VERIFICATEUR') && !options.some((o) => o.id === ref)) {
+      const moi = this.controleurs().find((c) => c.imControleur === ref);
+      const nom = moi ? [moi.nomCont, moi.prenomsCont].filter(Boolean).join(' ') : ref;
+      options.unshift({ id: ref, label: `${nom} — moi-même ⤴ (délégation du profil Vérificateur)` });
+    }
+    return options;
   });
 
   readonly statutLabel = computed(() => PV_STATUT_LABELS[this.pv().statutPv]);
