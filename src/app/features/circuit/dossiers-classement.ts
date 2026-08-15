@@ -222,6 +222,8 @@ export class DossiersClassement {
     if (g.actionReception) exigences.push(this.permissions.can('RECEPTION_WRITE'));
     if (g.actionDispatch || g.actionAnnulerDispatch) exigences.push(this.permissions.can('DISPATCH_WRITE'));
     if (g.actionExamen || g.actionModifierExamen) exigences.push(this.permissions.can('EXAMEN_WRITE'));
+    // Groupe sans action rattaché à un profil délégable (ex. Enregistrement) : identité ou délégation exercée.
+    if (g.delegation) exigences.push(this.permissions.peutExecuter(g.delegation));
     return exigences.length === 0 || exigences.some(Boolean);
   }
   readonly groupesVisibles = computed(() => this.cfg.groupes.filter((g) => this.groupePermis(g)));
@@ -232,6 +234,8 @@ export class DossiersClassement {
    * écran) et pour les groupes portant une action native du profil courant (ex. Dispatch chez P/CC).
    */
   delegationDe(g: ClassementGroupe): string | null {
+    // Groupe sans action rattaché à un profil (`delegation`) : badge chez le non-titulaire seulement.
+    if (g.delegation === 'SECRETAIRE' && this.permissions.parDelegation('RECEPTION_WRITE')) return 'Secrétaire';
     if (g.actionReception && this.permissions.parDelegation('RECEPTION_WRITE')) return 'Secrétaire';
     if (
       g.actionExamen &&
@@ -253,19 +257,18 @@ export class DossiersClassement {
   readonly selection = signal<{ type: string; groupe: string } | null>(null);
   /** Type dont les demandes de retrait sont dépliées sous le classement ; null = replié. */
   readonly selectionRetrait = signal<string | null>(null);
-  /** idTypeDossier → { groupeKey → compte }. */
+  /** idTypeDossier → { groupeKey → compte }. ⚠️ Un dossier peut compter dans PLUSIEURS groupes
+   * (statut partagé, ex. PRET_DISPATCH ∈ Enregistrement ET Pré-dispatch) — les totaux utilisent
+   * `distincts`, jamais la somme des groupes. */
   private readonly compteurs = signal<Map<string, Record<string, number>>>(new Map());
+  /** idTypeDossier → nombre de dossiers DISTINCTS couverts par au moins un groupe. */
+  private readonly distincts = signal<Map<string, number>>(new Map());
   /** idTypeDossier → nombre de demandes de retrait en attente (config `retraitsPath` seulement). */
   private readonly retraitsParType = signal<Record<string, number>>({});
 
-  /** Statut → clé de groupe (index inverse construit depuis la config). */
-  private readonly statutVersGroupe = new Map<string, string>(
-    this.cfg.groupes.flatMap((g) => g.statuts.map((s) => [s, g.key] as [string, string])),
-  );
-
   readonly totalDossiers = computed(() => {
     let n = 0;
-    for (const rec of this.compteurs().values()) for (const v of Object.values(rec)) n += v;
+    for (const v of this.distincts().values()) n += v;
     return n;
   });
 
@@ -289,7 +292,7 @@ export class DossiersClassement {
   private chargerCompteurs(): void {
     dossiersDuClassement(this.cfg, this.dossierService).subscribe({
       next: (rows) => {
-        this.compteurs.set(this.grouper(rows));
+        this.grouper(rows);
         if (this.cfg.retraitsPath) {
           this.chargerRetraits(rows);
         }
@@ -330,16 +333,21 @@ export class DossiersClassement {
     return this.retraitsParType()[idType] ?? 0;
   }
 
-  private grouper(rows: Dossier[]): Map<string, Record<string, number>> {
+  /** Ventile chaque dossier dans TOUS les groupes couvrant son statut, et compte les distincts. */
+  private grouper(rows: Dossier[]): void {
     const m = new Map<string, Record<string, number>>();
+    const dist = new Map<string, number>();
     for (const d of rows) {
-      const groupe = d.statut ? this.statutVersGroupe.get(d.statut) : undefined;
-      if (!d.idTypeDossier || !groupe) continue;
+      if (!d.idTypeDossier || !d.statut) continue;
+      const groupes = this.cfg.groupes.filter((g) => g.statuts.includes(d.statut!));
+      if (!groupes.length) continue;
       const rec = m.get(d.idTypeDossier) ?? {};
-      rec[groupe] = (rec[groupe] ?? 0) + 1;
+      for (const g of groupes) rec[g.key] = (rec[g.key] ?? 0) + 1;
       m.set(d.idTypeDossier, rec);
+      dist.set(d.idTypeDossier, (dist.get(d.idTypeDossier) ?? 0) + 1);
     }
-    return m;
+    this.compteurs.set(m);
+    this.distincts.set(dist);
   }
 
   /** Déplie la liste du groupe sous le classement (re-clic = replie). */
@@ -369,20 +377,23 @@ export class DossiersClassement {
   compte(type: string, groupe: string): number {
     return this.compteurs().get(type)?.[groupe] ?? 0;
   }
+  /** Dossiers DISTINCTS du type (un statut partagé par 2 groupes ne compte qu'une fois). */
   total(type: string): number {
-    const rec = this.compteurs().get(type);
-    return rec ? Object.values(rec).reduce((a, b) => a + b, 0) : 0;
+    return this.distincts().get(type) ?? 0;
   }
   totalGroupe(groupe: string): number {
     let n = 0;
     for (const rec of this.compteurs().values()) n += rec[groupe] ?? 0;
     return n;
   }
+  /** Part du groupe dans la barre : dénominateur = somme des groupes VISIBLES (segments ≤ 100 %). */
   pct(type: string, groupe: string): number {
-    const t = this.total(type);
+    const t = this.groupesVisibles().reduce((somme, g) => somme + this.compte(type, g.key), 0);
     return t === 0 ? 0 : (this.compte(type, groupe) / t) * 100;
   }
   repartitionLabel(type: string): string {
-    return this.cfg.groupes.map((g) => `${this.compte(type, g.key)} ${g.label}`).join(', ');
+    return this.groupesVisibles()
+      .map((g) => `${this.compte(type, g.key)} ${g.label}`)
+      .join(', ');
   }
 }

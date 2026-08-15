@@ -1,6 +1,6 @@
 import { forkJoin, map, Observable } from 'rxjs';
 
-import { Dossier } from '../../models';
+import { Dossier, Role } from '../../models';
 import { DossierService } from '../../services';
 
 /** Colonnes optionnelles de la liste (drill-down), selon le groupe. */
@@ -28,6 +28,12 @@ export interface ClassementGroupe {
   actionExamen?: boolean;
   /** Propose « Modifier l'examen » (même cible) tant que le dossier est EXAMINE et son PV non soumis. */
   actionModifierExamen?: boolean;
+  /**
+   * Groupe SANS action propre à un profil délégable (ex. « Enregistrement » du Secrétaire) : visible
+   * seulement si `peutExecuter(delegation)` — identité chez le titulaire, paire active ET exercée
+   * ailleurs (2026-08-15, parité des tâches du subordonné chez P/CC).
+   */
+  delegation?: Role;
 }
 /** Config d'un écran de classement, passée via `data.classement` de la route. */
 export interface ClassementConfig {
@@ -67,11 +73,29 @@ export const GROUPE_RECEPTIONS: ClassementGroupe = {
 };
 
 /**
- * Groupes du circuit (Président / CC) : réceptions (délégation Secrétaire), pré-dispatch (en attente)
- * et dispatch (dispatché — avec « Examiner » par délégation Membre, A_REEXAMINER inclus).
+ * Registre du Secrétaire : dossiers réceptionnés-enregistrés (PRET_DISPATCH), consultation. Partagé
+ * avec P/CC via `delegation` (2026-08-15, demande user : la délégation Secrétaire monte ses DEUX
+ * tâches — réceptions ET enregistrement). ⚠️ Même statut que « Pré-dispatch » chez P/CC : un dossier
+ * y apparaît DANS LES DEUX groupes (vues différentes de la même donnée) — les totaux comptent en
+ * dossiers DISTINCTS (cf. `DossiersClassement.grouper`).
+ */
+export const GROUPE_ENREGISTREMENT: ClassementGroupe = {
+  key: 'enregistrement',
+  label: 'Enregistrement',
+  statuts: ['PRET_DISPATCH'],
+  icon: '📚',
+  kind: 'b',
+  colonnes: ['reception'],
+  delegation: 'SECRETAIRE',
+};
+
+/**
+ * Groupes du circuit (Président / CC) : réceptions + enregistrement (délégation Secrétaire),
+ * pré-dispatch (en attente) et dispatch (dispatché — « Examiner » par délégation Membre).
  */
 export const CIRCUIT_GROUPES: ClassementGroupe[] = [
   GROUPE_RECEPTIONS,
+  GROUPE_ENREGISTREMENT,
   { key: 'pre-dispatch', label: 'Pré-dispatch', statuts: ['PRET_DISPATCH'], icon: '📤', kind: 'a', colonnes: ['reception'], actionDispatch: true },
   {
     key: 'dispatch',
