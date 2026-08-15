@@ -46,7 +46,7 @@ export class SecretaireDashboard {
       label: 'Dossiers à réceptionner',
       count: this.aRecep().length,
       actionLabel: 'Réceptionner',
-      actionPath: '/secretaire/receptions',
+      actionPath: '/secretaire/mes-dossiers',
       severity: 'info',
       hint: 'Dossiers soumis en attente de réception initiale.',
     },
