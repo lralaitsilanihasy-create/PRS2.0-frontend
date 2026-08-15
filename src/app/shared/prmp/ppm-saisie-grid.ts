@@ -7,6 +7,16 @@ import { AnomalieTranscription, Capm, Compte, FORME_MARCHE_LIBELLES, FormeMarche
 import { PpmFormFactory } from './ppm-form-factory';
 
 /**
+ * Un champ d'une ligne importée qui diffère du dossier examiné (rectification, 2026-08-15).
+ * `champ` = clé machine pour surligner la cellule ('designationMarche', 'montEstim', 'benef:0:numCompte',
+ * 'capm:3'…), `libelle` = texte humain « Champ : avant → après » pour le récapitulatif.
+ */
+export interface ModificationChamp {
+  champ: string;
+  libelle: string;
+}
+
+/**
  * Grille **éditable partagée** de saisie des marchés d'un PPM : table façon PPM (marché + bénéficiaires
  * + lots + processus/CAPM), revue de transcription (bandeaux auto-corrigé / à vérifier, surlignage
  * cellules, validation par ligne) et modals CAPM & Lots. Portée par la soumission d'un dossier ET le
@@ -35,6 +45,20 @@ import { PpmFormFactory } from './ppm-form-factory';
           @for (g of marcheControls(); track g.get('uid')!.value; let i = $index) {
             @if (aVerifier(g)) {
               <li><button type="button" class="sd__lien-ligne" (click)="scrollToMarche(g.get('uid')!.value)">Ligne {{ i + 1 }}</button> : {{ messagesReels(g) }}</li>
+            }
+          }
+        </ul>
+      </div>
+    }
+    <!-- ⚠️ Rectification (2026-08-15) : comparaison import ↔ dossier examiné, calculée par l'appelant
+         (input modificationsParLigne) — récap « avant → après » par ligne, cellules modifiées surlignées. -->
+    @if (modificationsParLigne().size) {
+      <div class="alert alert-warning sd__soa sd__modifs">
+        <div class="sd__warn-title">✎ {{ nbLignesModifiees() }} ligne(s) modifiée(s) par rapport au dossier examiné — détail :</div>
+        <ul class="sd__warn-list">
+          @for (g of marcheControls(); track g.get('uid')!.value; let i = $index) {
+            @if (modificationsDe(g).length) {
+              <li><button type="button" class="sd__lien-ligne" (click)="scrollToMarche(g.get('uid')!.value)">Ligne {{ i + 1 }}</button> : {{ libellesModifs(g) }}</li>
             }
           }
         </ul>
@@ -92,28 +116,28 @@ import { PpmFormFactory } from './ppm-form-factory';
                         <span class="psg-statut psg-statut--{{ (statutDe(g) || 'inconnu').toLowerCase() }}">{{ libelleStatut(statutDe(g)) }}</span>
                       </td>
                     }
-                    <td [attr.rowspan]="rowspanBenef(g)"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature"></textarea></td>
-                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'objet')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet"></textarea></td>
-                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'montEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" /></td>
-                    <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" /></td>
-                    <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="psg-modes" placeholder="Mode" /></td>
-                    <td [attr.rowspan]="rowspanBenef(g)">
+                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'natureLibelle')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature"></textarea></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'objet')" [class.sd__cell-modif]="estChampModifie(g, 'designationMarche')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet"></textarea></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'montEstim')" [class.sd__cell-modif]="estChampModifie(g, 'montEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" /></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'nouvMontEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" /></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'modeLibelle')"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="psg-modes" placeholder="Mode" /></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'formeMarche')">
                       <select class="form-control" [formControl]="ctrl(g, 'formeMarche')" title="Forme du marché">
                         @for (f of formes; track f.code) { <option [value]="f.code">{{ f.libelle }}</option> }
                       </select>
                     </td>
-                    <td [attr.rowspan]="rowspanBenef(g)"><input class="form-control" type="text" [formControl]="ctrl(g, 'financement')" /></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'financement')"><input class="form-control" type="text" [formControl]="ctrl(g, 'financement')" /></td>
                   }
-                  <td>
+                  <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':soaCode')">
                     @if (bctrl(b, 'soaCode').value) {
                       <input class="form-control" type="text" [formControl]="bctrl(b, 'soaCode')" list="psg-soa" placeholder="SOA" />
                     } @else {
                       <input class="form-control" type="text" [formControl]="bctrl(b, 'soaLibelle')" list="psg-soa-lib" placeholder="Service bénéficiaire" />
                     }
                   </td>
-                  <td><input class="form-control" type="text" [formControl]="bctrl(b, 'numCompte')" list="psg-comptes" placeholder="Compte" /></td>
-                  <td><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'ancMontBenef')" /></td>
-                  <td>
+                  <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':numCompte')"><input class="form-control" type="text" [formControl]="bctrl(b, 'numCompte')" list="psg-comptes" placeholder="Compte" /></td>
+                  <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':ancMontBenef')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'ancMontBenef')" /></td>
+                  <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':nouvMontBenef')">
                     <div class="sd__benef-cell">
                       <input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'nouvMontBenef')" placeholder="(si révisé)" />
                       <button type="button" class="btn btn-secondary btn-sm" [disabled]="beneficiairesControls(g).length === 1" (click)="retirerBeneficiaire(g, i)" aria-label="Retirer le bénéficiaire">✕</button>
@@ -124,7 +148,9 @@ import { PpmFormFactory } from './ppm-form-factory';
                       @if (!isImport()) {
                         <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterBeneficiaire(g)">+ bénéficiaire</button>
                       }
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDates(g)">CAPM</button>
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDates(g)"
+                        [class.sd__capm-modif]="calendrierModifie(g)"
+                        [title]="calendrierModifie(g) ? 'Dates du calendrier modifiées par l\\'import (détail dans le récapitulatif au-dessus de la grille).' : ''">CAPM</button>
                       @if (!datesSaisies(g)) {
                         <span class="sd__dates-manq">⚠ Dates manquantes</span>
                       }
@@ -271,6 +297,9 @@ import { PpmFormFactory } from './ppm-form-factory';
     .sd__row-ok td { background: rgba(34, 197, 94, 0.05); }
     .sd__cell-warn { background: #FFFBEB !important; }
     .sd__cell-err { background: #FEF2F2 !important; }
+    /* Rectification : cellule dont la valeur importée diffère du dossier examiné (ambre du diff). */
+    .sd__cell-modif { background: #FEF3C7 !important; box-shadow: inset 3px 0 0 #F59E0B; }
+    .sd__capm-modif { border-color: #F59E0B !important; color: #B45309 !important; background: #FEF3C7 !important; }
     .sd__cell-ok { background: #F0FDF4 !important; }
     .sd__badge-warn { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #B45309; background: #FFFBEB; border: 1px solid #F59E0B; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
     .sd__badge-ok { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #15803D; background: #F0FDF4; border: 1px solid #22C55E; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
@@ -367,6 +396,31 @@ export class PpmSaisieGrid {
    * que la grille reste strictement identique à ce qu'elle était.
    */
   readonly statutParUid = input<Map<number, string>>(new Map());
+  /**
+   * ⚠️ Rectification (2026-08-15) — champs modifiés par rapport au dossier examiné, calculés par
+   * l'appelant (uid de ligne → liste { champ machine, libellé « avant → après » }). Absent = aucun
+   * affichage (les autres usages de la grille sont inchangés).
+   */
+  readonly modificationsParLigne = input<Map<number, ModificationChamp[]>>(new Map());
+
+  modificationsDe(g: FormGroup): ModificationChamp[] {
+    return this.modificationsParLigne().get(g.get('uid')!.value as number) ?? [];
+  }
+  estChampModifie(g: FormGroup, champ: string): boolean {
+    return this.modificationsDe(g).some((m) => m.champ === champ);
+  }
+  libellesModifs(g: FormGroup): string {
+    return this.modificationsDe(g)
+      .map((m) => m.libelle)
+      .join(' · ');
+  }
+  readonly nbLignesModifiees = computed(() =>
+    this.marcheControls().filter((g) => this.modificationsDe(g).length > 0).length,
+  );
+  /** Le calendrier CAPM de la ligne diffère (surligne le bouton « CAPM »). */
+  calendrierModifie(g: FormGroup): boolean {
+    return this.modificationsDe(g).some((m) => m.champ.startsWith('capm:'));
+  }
 
   statutDe(g: FormGroup): string {
     return this.statutParUid().get(g.get('uid')!.value as number) ?? '';

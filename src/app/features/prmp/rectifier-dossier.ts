@@ -13,6 +13,7 @@ import {
   EditionPpmRequest,
   ExamenPiece,
   Marche,
+  MarchePrevision,
   ModePassation,
   Nature,
   ObservationPv,
@@ -20,6 +21,7 @@ import {
   Ppm,
   SaisieMarcheLigne,
   SaisiePpmImportResult,
+  ServiceBeneficiaire,
   SoaBeneficiaire,
 } from '../../models';
 import {
@@ -28,6 +30,7 @@ import {
   DossierService,
   EntiteContractService,
   ExamenPieceService,
+  MarchePrevisionService,
   MarcheService,
   ModePassationService,
   NatureService,
@@ -36,11 +39,12 @@ import {
   PpmService,
   ReferenceLookupService,
   SaisieService,
+  ServiceBeneficiaireService,
   SoaBeneficiaireService,
 } from '../../services';
 import { ObservationPvCard } from '../../shared/circuit';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
-import { PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
+import { ModificationChamp, PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
 
 /**
  * « Rectifier le dossier » (PRMP, statut `EN_ATTENTE_DECISION_PRMP`).
@@ -207,6 +211,8 @@ import { PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
               [soaList]="soaList()"
               [capms]="capms()"
               [anomaliesParLigne]="anomaliesImport()"
+              [modificationsParLigne]="modifsImport()"
+              [statutParUid]="statutsImport()"
               mode="import"
             />
           }
@@ -282,6 +288,8 @@ export class RectifierDossier {
   private readonly soaBenefService = inject(SoaBeneficiaireService);
   private readonly capmService = inject(CapmService);
   private readonly saisieService = inject(SaisieService);
+  private readonly serviceBeneficiaireService = inject(ServiceBeneficiaireService);
+  private readonly marchePrevisionService = inject(MarchePrevisionService);
   private readonly observationPvService = inject(ObservationPvService);
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly examenPieceService = inject(ExamenPieceService);
@@ -296,6 +304,13 @@ export class RectifierDossier {
   readonly dossier = signal<Dossier | null>(null);
   /** Lignes de marché ACTUELLES du dossier, triées par idDetail (appariement par position). */
   private readonly marchesActuels = signal<Marche[]>([]);
+  /** Bénéficiaires ACTUELS par idDetail (ordre stable idBenef) — pour la comparaison import ↔ dossier. */
+  private readonly benefsActuels = signal<Map<number, ServiceBeneficiaire[]>>(new Map());
+  /** Prévisions CAPM ACTUELLES par idDetail — pour la comparaison des calendriers. */
+  private readonly previsionsActuelles = signal<Map<number, MarchePrevision[]>>(new Map());
+  /** ⚠️ 2026-08-15 — comparaison import ↔ dossier : champs modifiés par ligne (uid) + statut de ligne. */
+  readonly modifsImport = signal<Map<number, ModificationChamp[]>>(new Map());
+  readonly statutsImport = signal<Map<number, string>>(new Map());
   readonly nbLignesActuelles = computed(() => this.marchesActuels().length);
   readonly error = signal<string | null>(null);
   /** ⚠️ Spec observations FAVR (2026-08-02) — observations du PV (périmètre figé), lecture seule. */
@@ -355,8 +370,10 @@ export class RectifierDossier {
       observations: this.observationPvService.parDossier(this.idDossier).pipe(catchError(() => of([] as ObservationPv[]))),
       pieces: this.pieceService.getByDossier(this.idDossier).pipe(catchError(() => of([] as PieceJointeDossier[]))),
       examenPieces: this.examenPieceService.list().pipe(catchError(() => of([] as ExamenPiece[]))),
+      benefs: this.serviceBeneficiaireService.list().pipe(catchError(() => of([] as ServiceBeneficiaire[]))),
+      previsions: this.marchePrevisionService.list().pipe(catchError(() => of([] as MarchePrevision[]))),
     }).subscribe({
-      next: ({ ppms, marches, dossier, natures, comptes, modes, soas, capms, observations, pieces, examenPieces }) => {
+      next: ({ ppms, marches, dossier, natures, comptes, modes, soas, capms, observations, pieces, examenPieces, benefs, previsions }) => {
         this.observations.set(observations);
         this.pieces.set(pieces);
         this.examenPieceVersPiece.set(
@@ -374,6 +391,18 @@ export class RectifierDossier {
           this.marchesActuels.set(
             marches.filter((m) => m.idPpm === ppm.idPpm).sort((a, b) => (a.idDetail ?? 0) - (b.idDetail ?? 0)),
           );
+          // Bénéficiaires + prévisions CAPM des lignes du dossier (pour le diff import ↔ dossier).
+          const idsDetail = new Set(this.marchesActuels().map((m) => m.idDetail));
+          const benefMap = new Map<number, ServiceBeneficiaire[]>();
+          for (const b of benefs.filter((x) => idsDetail.has(x.idDetail)).sort((a, x) => a.idBenef - x.idBenef)) {
+            benefMap.set(b.idDetail, [...(benefMap.get(b.idDetail) ?? []), b]);
+          }
+          this.benefsActuels.set(benefMap);
+          const prevMap = new Map<number, MarchePrevision[]>();
+          for (const p of previsions.filter((x) => idsDetail.has(x.idDetail))) {
+            prevMap.set(p.idDetail, [...(prevMap.get(p.idDetail) ?? []), p]);
+          }
+          this.previsionsActuelles.set(prevMap);
         }
         this.loading.set(false);
       },
@@ -405,6 +434,7 @@ export class RectifierDossier {
         const arr = this.factoryArray(r);
         this.importApercu.set(r);
         this.importMarches.set(arr);
+        this.calculerComparaison(arr);
       },
       error: (e: ApiError) => {
         this.importEnCours.set(false);
@@ -436,7 +466,108 @@ export class RectifierDossier {
     this.importApercu.set(null);
     this.importMarches.set(null);
     this.anomaliesImport.set(new Map());
+    this.modifsImport.set(new Map());
+    this.statutsImport.set(new Map());
     this.error.set(null);
+  }
+
+  // ── Comparaison import ↔ dossier examiné (2026-08-15) ────────────────────────────────────────────
+  /** Valeur textuelle normalisée (null/'' équivalents, espaces réduits) pour comparer sans bruit. */
+  private static texte(v: unknown): string {
+    return String(v ?? '').replace(/\s+/g, ' ').trim();
+  }
+  private static nombre(v: unknown): number | null {
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    return Number.isNaN(n) ? null : n;
+  }
+  private static fmtMontant(v: number | null): string {
+    return v == null ? '—' : v.toLocaleString('fr-FR');
+  }
+
+  /**
+   * Compare chaque ligne importée à la ligne ACTUELLE correspondante du dossier (appariement
+   * positionnel — structure figée) : champs de la ligne, bénéficiaires (par position) et calendrier
+   * CAPM (par processus). Alimente `modifsImport` (cellules + récap « avant → après » de la grille)
+   * et `statutsImport` (badge Modifiée / Inchangée par ligne). Structure non conforme → maps vides
+   * (le bandeau rouge bloque déjà).
+   */
+  private calculerComparaison(arr: FormArray): void {
+    const actuels = this.marchesActuels();
+    if (!arr.length || arr.length !== actuels.length) {
+      this.modifsImport.set(new Map());
+      this.statutsImport.set(new Map());
+      return;
+    }
+    const txt = RectifierDossier.texte;
+    const num = RectifierDossier.nombre;
+    const fmt = RectifierDossier.fmtMontant;
+    const natureLib = new Map(this.natures().map((n) => [n.idNature, n.libelle ?? '']));
+    const modeLib = new Map(this.modes().map((m) => [m.idMode, m.libelle ?? '']));
+    const capmLib = new Map(this.capms().map((c) => [c.idCapm, c.libelleProcessus ?? '#' + c.idCapm]));
+    const modifs = new Map<number, ModificationChamp[]>();
+    const statuts = new Map<number, string>();
+
+    for (let i = 0; i < arr.length; i++) {
+      const g = arr.at(i) as FormGroup;
+      const v = g.getRawValue() as Record<string, unknown>;
+      const m = actuels[i];
+      const liste: ModificationChamp[] = [];
+      const champTexte = (champ: string, libelle: string, imp: string, act: string) => {
+        if (imp.localeCompare(act, 'fr', { sensitivity: 'base' }) !== 0) {
+          liste.push({ champ, libelle: `${libelle} : « ${act || '—'} » → « ${imp || '—'} »` });
+        }
+      };
+      const champMontant = (champ: string, libelle: string, imp: number | null, act: number | null) => {
+        if (imp !== act) liste.push({ champ, libelle: `${libelle} : ${fmt(act)} → ${fmt(imp)}` });
+      };
+
+      champTexte('designationMarche', 'Objet', txt(v['designationMarche']), txt(m.designationMarche));
+      champMontant('montEstim', 'Montant estimé', num(v['montEstim']), num(m.montEstim));
+      champMontant('nouvMontEstim', 'Nouveau montant', num(v['nouvMontEstim']), num(m.nouvMontEstim));
+      champTexte('natureLibelle', 'Nature', txt(v['natureLibelle']), txt(m.idNature != null ? natureLib.get(m.idNature) : ''));
+      champTexte('modeLibelle', 'Mode de passation', txt(v['modeLibelle']), txt(m.idMode != null ? modeLib.get(m.idMode) : ''));
+      champTexte('formeMarche', 'Forme', txt(v['formeMarche']), txt(m.formeMarche ?? 'QUANTITE_FIXE'));
+      champTexte('financement', 'Financement', txt(v['financement']), txt(m.financement));
+
+      // Bénéficiaires, appariés par position (les lignes actuelles sont triées par idBenef).
+      const benefsImport = (v['beneficiaires'] as Record<string, unknown>[]) ?? [];
+      const benefsActuels = this.benefsActuels().get(m.idDetail) ?? [];
+      if (benefsImport.length !== benefsActuels.length) {
+        liste.push({ champ: 'benef:nombre', libelle: `Bénéficiaires : ${benefsActuels.length} → ${benefsImport.length}` });
+      }
+      for (let bi = 0; bi < Math.min(benefsImport.length, benefsActuels.length); bi++) {
+        const imp = benefsImport[bi];
+        const act = benefsActuels[bi];
+        const pfx = benefsImport.length > 1 ? `Bénéficiaire ${bi + 1} · ` : 'Bénéficiaire · ';
+        champTexte(`benef:${bi}:soaCode`, pfx + 'service', txt(imp['soaCode'] || imp['soaLibelle']), txt(act.soaCode));
+        champTexte(`benef:${bi}:numCompte`, pfx + 'compte', txt(imp['numCompte']), txt(act.numCompte));
+        champMontant(`benef:${bi}:ancMontBenef`, pfx + 'montant', num(imp['ancMontBenef']), num(act.ancMontBenef));
+        champMontant(`benef:${bi}:nouvMontBenef`, pfx + 'nouveau montant', num(imp['nouvMontBenef']), num(act.nouvMontBenef));
+      }
+
+      // Calendrier CAPM : date de début par processus (la date de fin actuelle est conservée à l'import).
+      const prevImport = new Map(
+        ((v['processus'] as Record<string, unknown>[]) ?? [])
+          .filter((p) => p['idCapm'] != null)
+          .map((p) => [Number(p['idCapm']), txt(p['dateDebut'])]),
+      );
+      const prevActuel = new Map((this.previsionsActuelles().get(m.idDetail) ?? []).map((p) => [p.idCapm, txt(p.dateDebut)]));
+      for (const [idCapm, dImp] of prevImport) {
+        const dAct = prevActuel.get(idCapm);
+        if (dAct === undefined) liste.push({ champ: `capm:${idCapm}`, libelle: `Calendrier · ${capmLib.get(idCapm)} : ajouté (${dImp || '—'})` });
+        else if (dAct !== dImp) liste.push({ champ: `capm:${idCapm}`, libelle: `Calendrier · ${capmLib.get(idCapm)} : ${dAct || '—'} → ${dImp || '—'}` });
+      }
+      for (const [idCapm, dAct] of prevActuel) {
+        if (!prevImport.has(idCapm)) liste.push({ champ: `capm:${idCapm}`, libelle: `Calendrier · ${capmLib.get(idCapm)} : retiré (était ${dAct || '—'})` });
+      }
+
+      const uid = g.get('uid')!.value as number;
+      if (liste.length) modifs.set(uid, liste);
+      statuts.set(uid, liste.length ? 'MODIFIEE' : 'INCHANGEE');
+    }
+    this.modifsImport.set(modifs);
+    this.statutsImport.set(statuts);
   }
 
   /** Grille prête : lignes signalées validées + montants bénéficiaires cohérents. */
