@@ -33,18 +33,25 @@ const PAIRES_OFFICIELLES: DelegationProfil[] = [
   { idDelegation: 9, idProfileDelegant: 3, idProfileDelegue: 6, actif: true }, // CC → Assistant
 ];
 
-/** Stub complet : AuthService (rôle) + référentiels délégations/profils (réponses synchrones). */
+/** Stub complet : AuthService (rôle + matricule) + référentiels délégations/profils (synchrones). */
 function configure(role: Role | null, delegations: DelegationProfil[] = PAIRES_OFFICIELLES): PermissionsService {
+  localStorage.clear(); // isole la persistance des délégations exercées entre les tests
   const roleSignal = signal<Role | null>(role);
   TestBed.configureTestingModule({
     providers: [
       PermissionsService,
-      { provide: AuthService, useValue: { role: roleSignal } },
+      { provide: AuthService, useValue: { role: roleSignal, ref: () => 'TEST01' } },
       { provide: DelegationProfilService, useValue: { list: () => of(delegations) } },
       { provide: ProfileService, useValue: { list: () => of(PROFILS) } },
     ],
   });
   return TestBed.inject(PermissionsService);
+}
+
+/** Active l'exercice des délégations données (interrupteurs ON — opt-in du 2026-08-15). */
+function exercer(perms: PermissionsService, ...roles: Role[]): PermissionsService {
+  for (const r of roles) perms.basculerExercice(r);
+  return perms;
 }
 
 describe('PermissionsService', () => {
@@ -71,8 +78,8 @@ describe('PermissionsService', () => {
   });
 
   describe('délégation ascendante (table explicite, spec 2026-08-14)', () => {
-    it('le Président exécute les tâches de ses 5 subordonnés (paires listées)', () => {
-      const perms = configure('PRESIDENT');
+    it('le Président exécute les tâches de ses 5 subordonnés (paires listées, interrupteurs ON)', () => {
+      const perms = exercer(configure('PRESIDENT'), 'SECRETAIRE', 'CHEF_COMMISSION', 'MEMBRE', 'VERIFICATEUR', 'ASSISTANT_CONTROLEUR');
       expect(perms.peutExecuter('SECRETAIRE')).toBe(true);
       expect(perms.peutExecuter('CHEF_COMMISSION')).toBe(true);
       expect(perms.peutExecuter('MEMBRE')).toBe(true);
@@ -89,13 +96,13 @@ describe('PermissionsService', () => {
     // commission est SOUS le Secrétaire dans la hiérarchie (Président > Secrétaire > CC > …)
     // mais hérite quand même de ses droits, parce que la paire CC → Secrétaire est LISTÉE.
     it('le Chef de commission exécute les tâches du Secrétaire (exception au rang)', () => {
-      const perms = configure('CHEF_COMMISSION');
+      const perms = exercer(configure('CHEF_COMMISSION'), 'SECRETAIRE');
       expect(perms.peutExecuter('SECRETAIRE')).toBe(true);
       expect(perms.can('RECEPTION_WRITE')).toBe(true);
     });
 
     it('le Chef de commission exécute les tâches de Membre, Vérificateur et Assistant', () => {
-      const perms = configure('CHEF_COMMISSION');
+      const perms = exercer(configure('CHEF_COMMISSION'), 'MEMBRE', 'VERIFICATEUR', 'ASSISTANT_CONTROLEUR');
       expect(perms.peutExecuter('MEMBRE')).toBe(true);
       expect(perms.peutExecuter('VERIFICATEUR')).toBe(true);
       expect(perms.peutExecuter('ASSISTANT_CONTROLEUR')).toBe(true);
@@ -134,15 +141,58 @@ describe('PermissionsService', () => {
     });
 
     it('PILOTÉ PAR LES DONNÉES : désactiver une paire retire le droit, zéro changement de code', () => {
-      // Décor = l'état live constaté : CC → Membre existe mais actif=false.
+      // Décor : CC → Membre existe mais actif=false — l'interrupteur ON n'y change rien (la base prime).
       const delegations = PAIRES_OFFICIELLES.map((d) =>
         d.idDelegation === 7 ? { ...d, actif: false } : d,
       );
-      const perms = configure('CHEF_COMMISSION', delegations);
+      const perms = exercer(configure('CHEF_COMMISSION', delegations), 'MEMBRE', 'SECRETAIRE');
       expect(perms.peutExecuter('MEMBRE')).toBe(false);
       expect(perms.can('EXAMEN_WRITE')).toBe(false);
       // Les autres paires du CC restent effectives.
       expect(perms.peutExecuter('SECRETAIRE')).toBe(true);
+    });
+  });
+
+  describe('délégations exercées (opt-in par interrupteur, demande user 2026-08-15)', () => {
+    it('DÉFAUT : paire active mais non exercée → tâches masquées', () => {
+      const perms = configure('PRESIDENT');
+      expect(perms.peutExecuter('MEMBRE')).toBe(false);
+      expect(perms.can('RECEPTION_WRITE')).toBe(false);
+      expect(perms.can('EXAMEN_WRITE')).toBe(false);
+    });
+
+    it('la bascule active PUIS retire l’exercice (aller-retour)', () => {
+      const perms = configure('CHEF_COMMISSION');
+      perms.basculerExercice('MEMBRE');
+      expect(perms.peutExecuter('MEMBRE')).toBe(true);
+      perms.basculerExercice('MEMBRE');
+      expect(perms.peutExecuter('MEMBRE')).toBe(false);
+    });
+
+    it('SÉPARÉE par profil : exercer Membre seul ne montre pas le Vérificateur', () => {
+      const perms = exercer(configure('CHEF_COMMISSION'), 'MEMBRE');
+      expect(perms.peutExecuter('MEMBRE')).toBe(true);
+      expect(perms.can('EXAMEN_WRITE')).toBe(true);
+      expect(perms.peutExecuter('VERIFICATEUR')).toBe(false);
+      expect(perms.can('VERIFICATION_WRITE')).toBe(false);
+    });
+
+    it('le TITULAIRE est insensible aux interrupteurs (identité, pas délégation)', () => {
+      const perms = configure('SECRETAIRE');
+      expect(perms.peutExecuter('SECRETAIRE')).toBe(true);
+      expect(perms.can('RECEPTION_WRITE')).toBe(true);
+    });
+
+    it('liste les rôles délégués disponibles de mon profil (pour les interrupteurs)', () => {
+      const perms = configure('CHEF_COMMISSION');
+      expect(perms.delegationsDisponibles()).toEqual(['SECRETAIRE', 'MEMBRE', 'VERIFICATEUR', 'ASSISTANT_CONTROLEUR']);
+    });
+
+    it('persiste le choix par matricule dans localStorage', () => {
+      const perms = configure('PRESIDENT');
+      perms.basculerExercice('VERIFICATEUR');
+      const stocke = JSON.parse(localStorage.getItem('cnm.delegations-exercees.TEST01') ?? '[]') as Role[];
+      expect(stocke).toContain('VERIFICATEUR');
     });
   });
 

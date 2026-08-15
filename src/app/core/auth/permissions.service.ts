@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
 import { Role } from '../../models';
@@ -31,6 +31,10 @@ const LIBELLE_ROLE: readonly (readonly [RegExp, Role])[] = [
  * tout modèle de rang). Retirer/désactiver une paire en base retire les boutons, zéro code.
  * Repli optimiste (`DELEGATIONS_OPTIMISTES`) tant que la table n'est pas chargée. Le backend reste
  * l'autorité (garde centrale « titulaire OU délégation », périmètre, état du dossier).
+ *
+ * ⚠️ 2026-08-15 — s'y ajoute la couche « délégations EXERCÉES » (opt-in par interrupteur, un par
+ * profil délégué, défaut désactivé) : une tâche déléguée n'est visible que si paire active ET
+ * interrupteur activé. Voir `exercees` / `basculerExercice` / `delegationsDisponibles`.
  */
 @Injectable({ providedIn: 'root' })
 export class PermissionsService {
@@ -42,18 +46,32 @@ export class PermissionsService {
   private readonly paires = signal<ReadonlySet<string> | null>(null);
   /** Rôle pour lequel la table a été (re)chargée — recharge après un changement de session. */
   private roleCharge: Role | null = null;
+  /**
+   * ⚠️ Demande user (2026-08-15) — délégations EXERCÉES : les tâches déléguées ne s'affichent que si
+   * l'utilisateur a activé l'interrupteur du profil correspondant (opt-in, séparé par profil, défaut
+   * TOUT DÉSACTIVÉ). Préférence d'AFFICHAGE locale (localStorage par matricule) : la table en base
+   * reste l'autorité sur le permis — l'interrupteur ne peut que restreindre, jamais élargir.
+   * `exerce()` LIT le stockage (lecture pure — `peutExecuter` est appelé depuis des `computed`, où
+   * écrire un signal est interdit) ; `revisionExercees` rend cette lecture réactive aux bascules.
+   */
+  private readonly revisionExercees = signal(0);
+  /** Repli mémoire si localStorage est indisponible (mode privé…) — la préférence vaut pour la session. */
+  private readonly exerceesMemoire = new Map<string, ReadonlySet<Role>>();
+  private static cleExercees(ref: string): string {
+    return `cnm.delegations-exercees.${ref}`;
+  }
 
   /** Le profil courant peut-il tenter cette capacité ? (confort UX, non contraignant) */
   can(capability: Capability): boolean {
     return this.canForRole(capability, this.auth.role());
   }
 
-  /** Variante explicite pour un rôle donné : TITULAIRE ou relié au titulaire par une paire active. */
+  /** Variante explicite pour un rôle donné : TITULAIRE ou relié au titulaire par une paire active ET exercée. */
   canForRole(capability: Capability, role: Role | null): boolean {
     if (role === null) return false;
     this.assurerChargement();
     const titulaires = CAPABILITY_ROLES[capability];
-    return titulaires.includes(role) || titulaires.some((t) => this.paireActive(role, t));
+    return titulaires.includes(role) || titulaires.some((t) => this.paireActive(role, t) && this.exerce(t));
   }
 
   /** Le profil courant est-il TITULAIRE de la capacité (hors délégation) ? Sert à signaler « par délégation ». */
@@ -69,14 +87,62 @@ export class PermissionsService {
 
   /**
    * Garde générique de la spec : le profil courant peut-il exécuter les tâches du profil `requis` ?
-   * `true` si profil courant == requis OU si la paire (courant → requis) est active en base.
+   * `true` si profil courant == requis OU si la paire (courant → requis) est active en base ET que
+   * l'utilisateur EXERCE cette délégation (interrupteur activé — demande user 2026-08-15).
    */
   peutExecuter(requis: Role): boolean {
     const role = this.auth.role();
     if (!role) return false;
     if (role === requis) return true;
     this.assurerChargement();
-    return this.paireActive(role, requis);
+    return this.paireActive(role, requis) && this.exerce(requis);
+  }
+
+  /** Rôles délégués DISPONIBLES pour mon profil (paires actives en base) — pour les interrupteurs. */
+  readonly delegationsDisponibles = computed<Role[]>(() => {
+    const role = this.auth.role();
+    if (!role) return [];
+    const paires = this.paires();
+    const delegues = paires
+      ? [...paires].filter((p) => p.startsWith(`${role}→`)).map((p) => p.split('→')[1] as Role)
+      : DELEGATIONS_OPTIMISTES.filter(([a]) => a === role).map(([, b]) => b);
+    // Ordre stable : celui de la hiérarchie de la spec.
+    const ordre: Role[] = ['SECRETAIRE', 'CHEF_COMMISSION', 'MEMBRE', 'VERIFICATEUR', 'ASSISTANT_CONTROLEUR'];
+    return delegues.sort((a, b) => ordre.indexOf(a) - ordre.indexOf(b));
+  });
+
+  /** L'utilisateur exerce-t-il actuellement la délégation vers ce profil ? (interrupteur activé). */
+  exerce(delegue: Role): boolean {
+    this.revisionExercees(); // dépendance réactive : les computed consommateurs suivent les bascules
+    const ref = this.auth.ref();
+    return !!ref && this.lireExercees(ref).has(delegue);
+  }
+
+  /** Bascule l'exercice d'une délégation (persisté par matricule dans localStorage). */
+  basculerExercice(delegue: Role): void {
+    const ref = this.auth.ref();
+    if (!ref) return;
+    const suivant = new Set(this.lireExercees(ref));
+    if (suivant.has(delegue)) suivant.delete(delegue);
+    else suivant.add(delegue);
+    this.exerceesMemoire.set(ref, suivant);
+    try {
+      localStorage.setItem(PermissionsService.cleExercees(ref), JSON.stringify([...suivant]));
+    } catch {
+      // Stockage indisponible : le repli mémoire ci-dessus porte la préférence pour la session.
+    }
+    this.revisionExercees.update((n) => n + 1);
+  }
+
+  /** Lecture PURE des délégations exercées d'un matricule (localStorage, repli mémoire). */
+  private lireExercees(ref: string): ReadonlySet<Role> {
+    try {
+      const brut = localStorage.getItem(PermissionsService.cleExercees(ref));
+      if (brut) return new Set(JSON.parse(brut) as Role[]);
+    } catch {
+      // Stockage illisible → repli mémoire.
+    }
+    return this.exerceesMemoire.get(ref) ?? new Set();
   }
 
   /** La paire (delegant → delegue) est-elle active ? (table serveur, repli optimiste avant chargement). */
