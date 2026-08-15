@@ -37,6 +37,12 @@ export const routes: Routes = [
           import('./features/errors/access-denied').then((m) => m.AccessDenied),
       },
       {
+        // ⚠️ Spec notifications (2026-08-02) — écran dédié, TRANSVERSE (tous profils authentifiés).
+        path: 'notifications',
+        loadComponent: () =>
+          import('./features/transverse/notifications-page').then((m) => m.NotificationsPage),
+      },
+      {
         path: 'admin',
         canActivate: [roleGuard],
         data: { roles: ['ADMINISTRATEUR'] },

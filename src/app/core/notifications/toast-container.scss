@@ -78,3 +78,140 @@
     transform: translateX(0);
   }
 }
+
+/* --------------------------------------------------------------------------------------------------
+   BOÎTE DE DIALOGUE D'AVERTISSEMENT (demande user 2026-08-06)
+   Un refus n'est pas un bandeau qui s'efface dans un coin : il occupe le centre, sur fond assombri,
+   et attend d'être fermé. Zoom à l'affichage — au-dessus des modales métier (z-index 1050) pour
+   qu'un refus survenu dans une modale reste lisible.
+   -------------------------------------------------------------------------------------------------- */
+.alerte-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1090;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+  animation: alerte-fond 0.16s ease-out;
+}
+
+.alerte {
+  position: relative;
+  width: min(100%, 30rem);
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 1.75rem 1.75rem 1.5rem;
+  text-align: center;
+  background: var(--cnm-surface, #fff);
+  color: var(--cnm-text, #1a202c);
+  border: 1px solid var(--cnm-border, #e2e8f0);
+  border-top: 4px solid var(--cnm-danger-fg, #c53030);
+  border-radius: var(--cnm-radius-lg, 12px);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  animation: alerte-zoom 0.24s cubic-bezier(0.22, 1.16, 0.36, 1) both;
+
+  &--warning {
+    border-top-color: var(--cnm-warning-fg, #b7791f);
+  }
+  &--success {
+    border-top-color: var(--cnm-success-fg, #2f855a);
+  }
+}
+
+.alerte__icone {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.alerte__titre {
+  margin: 0 0 0.5rem;
+  font-size: var(--cnm-fs-lg, 1.125rem);
+  font-weight: var(--cnm-fw-semibold, 600);
+  color: var(--cnm-danger-fg, #c53030);
+
+  .alerte--warning & {
+    color: var(--cnm-warning-fg, #b7791f);
+  }
+  .alerte--success & {
+    color: var(--cnm-success-fg, #2f855a);
+  }
+}
+
+.alerte__message {
+  margin: 0;
+  font-size: var(--cnm-fs-sm, 0.9rem);
+  line-height: 1.5;
+  color: var(--cnm-text-2, #4a5568);
+  white-space: pre-line;
+}
+
+.alerte__actions {
+  margin-top: 1.25rem;
+}
+
+.alerte__bouton {
+  min-width: 9rem;
+  padding: 0.55rem 1.5rem;
+  font: inherit;
+  font-weight: var(--cnm-fw-semibold, 600);
+  color: #fff;
+  background: var(--cnm-danger-fg, #c53030);
+  border: 0;
+  border-radius: var(--cnm-radius-sm, 8px);
+  cursor: pointer;
+  transition: filter 0.15s ease;
+
+  .alerte--warning & {
+    background: var(--cnm-warning-fg, #b7791f);
+  }
+  .alerte--success & {
+    background: var(--cnm-success-fg, #2f855a);
+  }
+  &:hover {
+    filter: brightness(1.08);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--cnm-brand, #4c6ef5);
+    outline-offset: 2px;
+  }
+}
+
+.alerte__reste {
+  margin: 0.75rem 0 0;
+  font-size: var(--cnm-fs-xs, 0.75rem);
+  color: var(--cnm-text-3, #718096);
+}
+
+@keyframes alerte-fond {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Le zoom demandé : la boîte arrive de l'arrière-plan et se pose (léger dépassement d'échelle). */
+@keyframes alerte-zoom {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Respect des préférences système : l'information reste, l'effet disparaît. */
+@media (prefers-reduced-motion: reduce) {
+  .alerte,
+  .alerte-backdrop,
+  .toast {
+    animation: none;
+  }
+}
