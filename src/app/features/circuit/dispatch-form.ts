@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, concatMap, forkJoin, from, map, of, toArray } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { PermissionsService } from '../../core/auth/permissions.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Controleur, Dispatch, Dossier, Reception } from '../../models';
 import {
@@ -153,6 +154,7 @@ export class DispatchForm {
   readonly closed = output<void>();
 
   private readonly auth = inject(AuthService);
+  private readonly permissions = inject(PermissionsService);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
   private readonly dispatchService = inject(DispatchService);
@@ -200,7 +202,23 @@ export class DispatchForm {
       .map((c) => ({ id: c.imControleur, label: [c.nomCont, c.prenomsCont].filter(Boolean).join(' ') || c.imControleur }));
   }
   readonly ccOptions = computed(() => this.optionsParRole(/chef.*commission/i));
-  readonly membreOptions = computed(() => this.optionsParRole(/membre/i));
+  /**
+   * Attributaires possibles : les Membres de la localité + « moi-même » (⤴ AUTO-ATTRIBUTION par
+   * délégation ascendante, spec 2026-08-14) quand la paire « profil courant → Membre » est ACTIVE en
+   * base — permet le circuit court « je dispatche → je m'attribue → j'examine » sans passer par un
+   * Membre (la signature « part Membre » du PV, non déléguable, revient alors à l'attributaire = soi).
+   * Paire désactivée → l'option disparaît, zéro code (le CC la perd tant que CC → Membre est inactive).
+   */
+  readonly membreOptions = computed(() => {
+    const options = this.optionsParRole(/membre/i);
+    const ref = this.auth.ref();
+    if (ref && this.auth.role() !== 'MEMBRE' && this.permissions.peutExecuter('MEMBRE') && !options.some((o) => o.id === ref)) {
+      const moi = this.controleurs().find((c) => c.imControleur === ref);
+      const nom = moi ? [moi.nomCont, moi.prenomsCont].filter(Boolean).join(' ') : ref;
+      options.unshift({ id: ref, label: `${nom} — moi-même ⤴ (délégation du profil Membre)` });
+    }
+    return options;
+  });
 
   /** Suffixe de charge d'un membre pour l'option (« — 2 en cours » ; rien si 0). */
   chargeLabel(im: string): string {
