@@ -66,18 +66,28 @@ export interface DispatchItem {
             </div>
             <p class="df__lot-hint">Le même dispatch (CC, Membre, date, instructions) sera appliqué à chaque dossier.</p>
           }
-          <label class="form-group">
-            <span class="form-label">Chef de commission</span>
-            <select class="form-control" formControlName="imCtrlCc">
-              <option [ngValue]="null">— Sélectionner —</option>
-              @for (o of ccOptions(); track o.id) { <option [ngValue]="o.id">{{ o.label }}</option> }
-            </select>
-            @if (ccOptions().length) {
-              <span class="form-hint">Associé automatiquement : le CC reçoit copie du dispatch et suit le circuit du dossier.</span>
-            } @else {
-              <span class="form-hint">Aucun CC pour cette localité.</span>
-            }
-          </label>
+          @if (!sansAssociationCc()) {
+            <label class="form-group">
+              <span class="form-label">Chef de commission</span>
+              <select class="form-control" formControlName="imCtrlCc">
+                <option [ngValue]="null">— Sélectionner —</option>
+                @for (o of ccOptions(); track o.id) { <option [ngValue]="o.id">{{ o.label }}</option> }
+              </select>
+              @if (ccOptions().length) {
+                <span class="form-hint">Associé automatiquement : le CC reçoit copie du dispatch et suit le circuit du dossier.</span>
+              } @else {
+                <span class="form-hint">Aucun CC pour cette localité.</span>
+              }
+            </label>
+          } @else {
+            <!-- ⚠️ Règle 2026-08-15 : la copie CC ne vaut que quand le PRÉSIDENT dispatche À UN MEMBRE.
+                 Dispatcheur CC, ou attributaire = soi-même → aucune association (imCtrlCc non envoyé,
+                 normalisé null par le backend de toute façon). -->
+            <p class="form-hint df__sans-cc">
+              Pas d'association « Chef de commission » pour ce dispatch — la copie CC ne vaut que pour un
+              dispatch du Président à un Membre.
+            </p>
+          }
           <label class="form-group">
             <span class="form-label required">Membre assigné</span>
             <select class="form-control" formControlName="imCtrlMembre">
@@ -226,6 +236,20 @@ export class DispatchForm {
     return n > 0 ? ` — ${n} en cours` : '';
   }
 
+  /** Miroir réactif de l'attributaire choisi dans le formulaire (pour `sansAssociationCc`). */
+  private readonly attributaireChoisi = signal<string | null>(null);
+  /**
+   * ⚠️ Règle (2026-08-15) : l'association CC ne vaut que quand le PRÉSIDENT dispatche À UN MEMBRE.
+   * Dispatcheur CC (il est déjà l'acteur du dispatch) ou attributaire = soi-même (l'association ne
+   * désigne jamais l'attributaire) → champ masqué et `imCtrlCc` non envoyé (le backend normalise à
+   * null de toute façon — garde miroir).
+   */
+  readonly sansAssociationCc = computed(() => {
+    if (this.auth.role() === 'CHEF_COMMISSION') return true;
+    const ref = this.auth.ref();
+    return !!ref && this.attributaireChoisi() === ref;
+  });
+
   constructor() {
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
@@ -258,12 +282,14 @@ export class DispatchForm {
       }
       this.chargeMembres.set(charge);
     });
-    // Le CC de la localité est TOUJOURS associé au dispatch (résolu côté serveur s'il est omis) :
-    // on le pré-sélectionne pour que le dispatcheur voie qui sera informé — modifiable.
+    this.attributaireChoisi.set(this.form.controls.imCtrlMembre.value);
+    this.form.controls.imCtrlMembre.valueChanges.subscribe((v) => this.attributaireChoisi.set(v));
+    // Pré-sélection du CC de la localité (résolu côté serveur s'il est omis) pour que le dispatcheur
+    // voie qui sera informé — modifiable. Sans objet quand l'association n'a pas lieu (champ masqué).
     effect(() => {
       const opts = this.ccOptions();
       const ctrl = this.form.controls.imCtrlCc;
-      if (opts.length && ctrl.value === null && ctrl.pristine) ctrl.setValue(opts[0].id);
+      if (!this.sansAssociationCc() && opts.length && ctrl.value === null && ctrl.pristine) ctrl.setValue(opts[0].id);
     });
   }
 
@@ -281,7 +307,8 @@ export class DispatchForm {
     const v = this.form.getRawValue();
     const commun = {
       imCtrlDispatch: this.auth.ref() ?? undefined,
-      imCtrlCc: v.imCtrlCc ?? undefined,
+      // Pas d'association hors « Président → Membre » : imCtrlCc omis (règle 2026-08-15).
+      imCtrlCc: this.sansAssociationCc() ? undefined : v.imCtrlCc ?? undefined,
       imCtrlMembre: v.imCtrlMembre ?? undefined,
       dateDispatch: v.dateDispatch || undefined,
       instructions: v.instructions || undefined,
