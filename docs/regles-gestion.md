@@ -113,6 +113,55 @@ Acteur externe qui soumet ses PPM et marchés à la CNM. Suit l'avancement jusqu
 - Le périmètre de visibilité de la PRMP est donc la **propriété** de ses dossiers
   (`t_dossier.ID_PRMP`), pas une localité.
 
+**Mandats de la PRMP (⚠️ règle ajoutée — spec « Mandats PRMP »)**
+
+Le mandat d'une PRMP est matérialisé par la table **`t_mandat`** (`/api/mandats`) :
+`{idMandat, idPrmp, titulaire, dateDebut, dateFin, refArrete, statut, numeroMandat}`. Il est
+**déclaré par l'Administrateur** — un arrêté de nomination ne se déclare pas soi-même.
+
+- **Durée 3 ans.** `dateFin` vaut par défaut `dateDebut + 3 ans − 1 jour` et ne peut jamais excéder cette
+  borne.
+- **Une reconduction est un mandat distinct, jamais une prolongation.** Elle exige un **nouvel arrêté**
+  (`refArrete` inédit) et des **dates nouvelles** qui **succèdent** au mandat précédent ; elle porte
+  `numeroMandat = 2`. Il n'existe volontairement aucun moyen d'allonger un mandat existant : ni `PUT`, ni
+  endpoint de prolongation.
+- **Renouvellement unique.** Une même personne ne peut porter plus de **2** mandats : un 3ᵉ est refusé
+  (**409**, message explicite). Une reconduction ne peut partir que d'un **1ᵉʳ** mandat.
+- **Statuts** : `ACTIF` (en cours), `EN_TRANSITION` (nommé, pas encore en fonction), `ACHEVE` (terme
+  atteint), `ABROGE` (fin avant terme, acte explicite qui prime sur les dates). Le statut est **dérivé des
+  dates** à chaque lecture — un mandat périme dans le temps, pas au gré d'une écriture en base.
+- **Reprise de l'existant** : une PRMP sans mandat déclaré se voit reconstituer un mandat **implicite**
+  depuis `t_prmp` (`DATE_NOMIN` → `+ 3 ans`, arrêté = `ARRETE_NOMIN`). Aucune reprise de données n'est
+  requise, et la règle d'expiration ci-dessus (§ « Mandat de 3 ans ») devient opposable telle quelle.
+
+**Standby de transition — vacance de PRMP (⚠️ règle ajoutée)**
+
+- **Aucune obligation d'intérim.** S'il n'existe **aucun mandat actif à la date de l'action**, **toute
+  action de traitement** côté PRMP / UGPM — création, édition, transmission de compléments, demande de
+  retrait, et la **soumission** (acte de signature de la PRMP) — est **bloquée** : **409** avec le code
+  dédié **`VACANCE_PRMP`** et le message « En attente de nomination de la nouvelle PRMP ». Le dossier
+  attend, il ne bascule sur personne.
+- **Déblocage automatique** dès qu'un mandat redevient actif : rien à rejouer, rien à débloquer à la main.
+  L'action en attente est alors faite par le **nouveau titulaire en tant qu'opérateur** — l'attribution des
+  dossiers reste **inchangée**.
+- Le circuit interne CNM (réception, dispatch, examen, navette, signature du PV) n'est **jamais** suspendu
+  par la vacance d'une PRMP.
+
+**Attribution figée vs opérateur courant (⚠️ règle ajoutée)**
+
+- Le dossier **fige son mandat d'attribution à la création** (`t_dossier.ID_MANDAT_ATTRIB`, aux côtés de
+  `ID_PRMP`) et ne le **recalcule jamais**. Un changement de PRMP **ne réattribue rien** rétroactivement ;
+  une mise à jour de PPM hérite de l'attribution de sa lignée.
+- Chaque action porte au contraire l'**opérateur courant** — la PRMP **en fonction à la date de l'action** —
+  consigné horodaté et par auteur dans **`t_action_dossier`**, lisible via
+  `GET /api/dossiers/{id}/journal` par les profils concernés (périmètre de visibilité du dossier, §1). Ce
+  journal métier est distinct de `t_audit_log` (trace technique, réservée à l'Administrateur).
+- La **garde de propriété** accepte donc **deux titres** : la PRMP d'attribution **et** la PRMP en fonction
+  sur le périmètre du dossier — celle qui a *à la fois* un mandat actif *et* une affectation active
+  (`t_prmp_entite.ACTIF`) sur l'entité contractante du dossier. C'est ce second titre qui autorise la
+  **reprise du traitement** des dossiers de l'UGPM par le successeur, sans changer l'attribution. Une PRMP
+  en fonction **ailleurs** reste refusée (**403**).
+
 **Rectification en attente de décision PRMP (⚠️ règle ajoutée)**
 
 - Sur un dossier au statut **`EN_ATTENTE_DECISION_PRMP`** (observations de vérification non levées), la PRMP
@@ -241,7 +290,9 @@ Acteur externe qui soumet ses PPM et marchés à la CNM. Suit l'avancement jusqu
 - Ne voit que la synthèse et l'avis du PV — pas le détail des points de contrôle internes
 - Retrait soumis à validation obligatoire du Chef de commission
 - Ne peut pas modifier un dossier après soumission, sauf retour officiel ou retrait approuvé
-- Mandat de 3 ans non renouvelable automatiquement — expiration = DATE_NOMIN + 3 ans (t_prmp)
+- Mandat de 3 ans non renouvelable automatiquement — expiration = DATE_NOMIN + 3 ans (t_prmp), ou la
+  `dateFin` du mandat déclaré (`t_mandat`) qui prime dès qu'il en existe un. **Reconductible une seule
+  fois**, par un mandat distinct ; sans mandat actif, tout traitement est suspendu (409 `VACANCE_PRMP`).
 - Aucun accès au journal d'audit, aux anomalies ni aux statistiques CNM globales
 
 ---
@@ -263,6 +314,9 @@ Sommet de la hiérarchie CNM. Supervise tous les Chefs de commission. Voit tous 
   - Vue v_file_attente_dispatch : tous les dossiers complets sans dispatch existant, toutes localités.
 - Dispatch vers un membre [Action]
   - Affectation avec instructions et date limite. INTERIM_DISPATCH = false en fonctionnement normal.
+  - ⚠️ **Règle ajoutée (2026-08-15) — cohérence de l'attributaire (garde au POST/PUT `/api/dispatchs`)** : `IM_CTRL_MEMBRE` doit désigner un contrôleur **capable d'exercer la tâche du Membre** — titulaire (profil MEMBRE) **ou** couvert par une paire (profil → Membre) **active** de `t_delegation_profil`. Sinon le dossier serait inexaminable (l'examen est réservé à l'attributaire, §2.4) : **409**, message explicite ; matricule inconnu → **409** aussi. Data-driven : désactiver/réactiver la paire en base change la réponse **sans changement de code**.
+  - ⚠️ **Règle ajoutée (2026-08-15) — auto-attribution (circuit court)** : la garde ci-dessus autorise le dispatcheur à **s'attribuer le dossier à lui-même** (Président via la paire Président → Membre ; CC via CC → Membre lorsqu'elle est active) : il dispatche, examine et **signe la part Membre** (acte d'identité de l'attributaire). La **co-signature reste une autre personne** (auto-co-signature interdite, §2.6) : Président auto-attributaire → co-signature par le **CC de la localité** ; CC auto-attributaire → co-signature par le **Président**. Le verrou de signature est donc **une signature par personne**, pas seulement par rôle.
+  - ⚠️ **Règle MODIFIÉE (2026-08-15) — association CC du dispatch** : l'association/copie CC ne vaut que **quand le Président dispatche à un Membre** (le CC suit alors les dossiers de sa commission). Dispatcheur **CC** → aucune association (un `imCtrlCc` envoyé par le client est **ignoré**, forcé à null) ; Président **auto-attributaire** → pas d'association non plus ; l'association ne désigne **jamais l'attributaire lui-même** — plus de doublon « Rôle Membre + Rôle CC » dans les attributions. **Reprise au démarrage** (`AssociationCcDispatchMigration`) : `IM_CTRL_CC` effacé sur l'existant quand il désigne l'attributaire ou le dispatcheur.
 - Réception d'un dossier (délégation) [Action]
   - Peut enregistrer et valider la complétude d'un dossier à la place du Secrétaire (t_delegation_profil).
 - Examen point par point (délégation) [Action]
@@ -345,8 +399,10 @@ Subordonné du Président. Rattaché à une localité définie — ne voit que l
   - Pour la localité CRM, le CC dispatche en tant que titulaire — INTERIM_DISPATCH = false.
 - Dispatch en intérim (autres localités) [Action]
   - En l'absence du Président — INTERIM_DISPATCH = true tracé dans t_dispatch.
+  - ⚠️ La **garde de cohérence de l'attributaire** et l'**auto-attribution** (§3.2, Dispatch vers un membre) s'appliquent à l'identique au dispatch du CC — l'auto-attribution du CC n'est possible que si la paire CC → Membre est **active**.
 - Réception copie du dossier [Lecture]
   - Copie formelle via t_copie_dossier (TYPE_COPIE = DISPATCH_CC) + notification DISPATCH_CC.
+  - ⚠️ **Règle MODIFIÉE (2026-08-15)** : la copie/association CC ne vaut que pour les dispatchs du **Président vers un Membre**. Quand le CC dispatche lui-même (titulaire ou intérim, Membre ou auto-attribution), **aucune association CC** n'est posée — il est l'acteur du dispatch (voir §3.2, « Dispatch vers un membre »).
 - Réception d'un dossier (délégation) [Action]
   - Peut enregistrer et valider la complétude d'un dossier à la place de son Secrétaire.
 - Examen point par point (délégation) [Action]
@@ -598,6 +654,48 @@ Accès complet aux référentiels, comptes utilisateurs, journal d'audit, hiéra
   - Plan comptable tr_compte et répertoire tr_entite_contract.
 - Délégations de profil [Écriture]
   - Gestion des entrées t_delegation_profil — quels profils peuvent exercer les tâches d'autres profils.
+- ⚠️ **Règle ajoutée (2026-08-14) — délégation ascendante de profils, pilotée par les données** [Auto]
+  - `t_delegation_profil` est la **source unique** de la règle permanente : la garde centrale
+    `PermissionService.peutExercer(profilRequis)` autorise si **profil courant == requis** OU si la
+    paire **(courant → requis)** est **active** en base. Aucune liste de profils en dur dans les
+    contrôleurs/services pour les tâches hiérarchiques.
+  - **Hiérarchie** (rang décroissant) : Président > Secrétaire > Chef de commission > Membre >
+    Contrôleur vérificateur > Assistant contrôleur. **Hors hiérarchie** : PRMP, Administrateur,
+    Chargé de publication (aucune paire ne les concerne).
+  - **Les 9 paires autorisées** (seed idempotent `DelegationHierarchieSeeder`, `actif=true` à la
+    création, paires existantes jamais modifiées) : **Président →** Secrétaire, Chef de commission,
+    Membre, Vérificateur, Assistant (5) ; **Chef de commission →** Secrétaire, Membre, Vérificateur,
+    Assistant (4).
+  - ⚠️ **Pourquoi une table explicite et PAS un rang** : le Chef de commission est **sous** le
+    Secrétaire dans la hiérarchie mais **hérite quand même de ses droits** parce que la paire
+    CC → Secrétaire est **listée**. Un modèle « rang ≥ rang requis » casserait ce cas. La relation est
+    **non transitive** : Président → Secrétaire vaut parce que la paire est listée, pas via le CC.
+  - **Unicité** : une ligne par paire (contrainte `UQ_DELEGATION_PAIRE`) ; l'habilitation se pilote
+    par `ACTIF` — désactiver une paire retire l'habilitation **sans changement de code**, la
+    réactiver la rend (critère de recette).
+  - **Invariants** : accès Administrateur inchangé (`hasRole`), périmètre par localité inchangé,
+    actes d'identité non délégables (signatures du PV, signature régionale des lettres de renvoi).
+  - **Garde dérivée (2026-08-15)** : l'**attributaire** d'un dispatch (`IM_CTRL_MEMBRE`) est validé par
+    la même règle data-driven — Membre titulaire **ou** paire (profil → Membre) **active** — ce qui
+    autorise l'**auto-attribution** du Président/CC (voir §3.2, « Dispatch vers un membre »).
+  - **Décisions (2026-08-15) — passage vérificateur et Secrétaire de séance** : le passage vérificateur
+    (levée/maintenue des observations, suite de la navette) est une **tâche de profil** (titulaire OU
+    paire « → Vérificateur » active), **non** restreinte au Secrétaire de séance désigné ; dans le
+    circuit court, le décideur peut donc être l'**attributaire du même dossier** (auteur des
+    observations) — **assumé, sans garde de séparation** : la vérification juge la levée par la PRMP,
+    le PV a déjà été co-signé par une seconde personne, chaque décision est tracée. À l'inverse, la
+    **désignation du Secrétaire de séance** (`idSecretaireSeance`, bloc Signataires du PV) reste
+    **réservée aux Vérificateurs titulaires** de la localité — non élargie à la délégation.
+- ⚠️ **Règle ajoutée (2026-08-13) — catégorie des modes de passation** [Écriture]
+  - Chaque mode (`tr_mode_passation`) porte une **catégorie déclarative** `CATEGORIE` :
+    **`NORMAL`** (mode de droit commun — l'appel d'offres ouvert au sens du Code des marchés publics)
+    ou **`DEROGATOIRE`** (modes d'exception soumis à conditions) ; **null = non classé**.
+    Champ `categorie` de `ModePassationDto` (lecture partout, écriture Administrateur via l'écran
+    référentiel) ; valeur hors enum → **400 (champ `categorie`)**. **Aucun comportement dérivé pour
+    l'instant** (purement data-driven, comme `publiciteRequise`). Les modes créés à la volée à l'import
+    PPM naissent **non classés**. Reprise au démarrage : `NORMAL` posé sur les modes marqués
+    `DECLENCHE_AGPM` (marqueur AOO administré, jamais de mot-clé de libellé) dont la catégorie est null
+    — sans écraser un classement admin (`app.migration.categorie-mode.enabled=false` pour désactiver).
 
 **Module 10 — Administration & sécurité**
 

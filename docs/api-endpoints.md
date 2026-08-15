@@ -52,6 +52,9 @@ Pour les ressources du circuit (`dossiers`, `receptions`, `dispatchs`, `examens`
   `regle-anomalies`, `regle-passations`, `seuils`, `situations`, `sous-type-dossiers`, `type-dossiers`, `type-dmc`.
   ⚠️ **Exception (2026-07-26)** : `POST /api/entite-contracts` est ouvert à la **PRMP** (en plus de l'Admin) —
   création d'entité à l'import PPM + auto-rattachement en attente ; PUT/DELETE restent Administrateur.
+  ⚠️ **Exception (2026-07-29)** : `POST /api/ministeres` et `POST /api/organigrammes` sont ouverts à la
+  **PRMP** (en plus de l'Admin) — ministère d'appartenance absent du référentiel lors de l'enregistrement
+  d'une nouvelle entité (le front crée le ministère puis son organigramme actif) ; PUT/DELETE restent Administrateur.
 - **Gestion des comptes / hiérarchie** (écriture `ADMINISTRATEUR`, lecture ouverte) :
   `controleurs`, `prmps`, `organigrammes`.
 - **Réservé `ADMINISTRATEUR`** (lecture comprise) : `audit-logs`, `session-utilisateurs`, `comptes-auth`.
@@ -99,6 +102,10 @@ BROUILLON** pour l'édition, **cohérence type↔contenu** (PPM ⇒ a un PPM ; D
 `erreurs` est un **tableau** d'objets `{ champ, message }`, renseigné uniquement pour les erreurs de
 validation (400) ; **omis** (absent du corps) pour les autres erreurs.
 
+Un champ **`code`** (string) s'ajoute au corps pour les erreurs métier que le front doit traiter
+**spécifiquement** plutôt qu'en affichant le message brut ; il est **omis** partout ailleurs. Seule valeur
+actuelle : **`VACANCE_PRMP`** (409, cf. *Mandats PRMP*).
+
 ### Détail des erreurs 400 / 403 / 409
 Récapitulatif des trois codes d'erreur « métier » les plus fréquents, leur signification et
 quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côté Angular : afficher
@@ -125,6 +132,8 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 | **Précondition de circuit non remplie** | l'étape précédente n'est pas atteinte | `dispatch` d'un dossier non `PRET_DISPATCH` ou **doublon** de dispatch ; `examen` d'un dossier non `DISPATCHE` ; **édition d'un examen verrouillé** (dossier `PV_SIGNE`) ; `vérification` hors PV `SIGNE` / avis ≠ `FAVR` / dossier clos |
 | **Autre règle de gestion** | contrainte métier violée | `NUM_PASSAGE = 1` ⟺ `TYPE_PASSAGE = INITIAL` ; `INTERIM_DISPATCH` incohérent avec la localité ; décision de retrait sans observation ; `sens` de navette invalide |
 | **Suppression interdite (immuabilité)** | `DELETE` d'une ressource à traçabilité immuable | `pv-navettes`, `audit-logs` |
+| **Vacance de PRMP** (`code: "VACANCE_PRMP"`) | aucune PRMP en fonction à la date de l'action : toute action de traitement côté PRMP/UGPM attend la nomination (pas d'intérim) | `POST /api/dossiers/{id}/soumettre` pendant une transition — message « En attente de nomination de la nouvelle PRMP » |
+| **Mandat : règle de nomination** | 3ᵉ mandat pour la même personne, arrêté réutilisé, reconduction recouvrant le précédent (prolongation déguisée), durée > 3 ans | `POST /api/mandats` (cf. *Mandats PRMP*) |
 | **Violation de contrainte BD** (`DataIntegrityViolationException`) | identifiant en **doublon**, valeur obligatoire manquante (NOT NULL) ou **clé étrangère** inexistante | POST avec un id déjà utilisé, ou référençant une entité inexistante |
 
 > Rappel : **401** (non authentifié : JWT absent/invalide ou compte désactivé) et **404** (ressource introuvable) restent distincts des trois ci-dessus.
@@ -198,10 +207,23 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 | token | string | JWT à placer dans `Authorization: Bearer ...` |
 | login | string | login authentifié |
 | role | string | profil métier (ou `null` si non reconnu) |
-| typeActeur | string | `CONTROLEUR` ou `PRMP` |
-| ref | string | matricule contrôleur ou identifiant PRMP |
+| typeActeur | string | `CONTROLEUR`, `PRMP` ou `UGPM` |
+| ref | string | **périmètre** de l'acteur : matricule contrôleur, identifiant PRMP — et pour une **UGPM**, l'identifiant de sa **PRMP de tutelle** (⚠️ pas son propre matricule) |
+| nomAffichage | string | ⚠️ **ajouté** — « Nom Prénoms » de la personne connectée, résolu serveur (voir note) |
 | localite | string | localité de rattachement (`null` = toutes, cas Président) |
 | expiresIn | number | durée de validité du jeton (secondes) |
+
+> 📌 **`nomAffichage` (⚠️ champ ajouté).** Résolu côté serveur selon le type d'acteur —
+> contrôleur (tous rôles CNM, Administrateur compris) → `NOM_CONT` + `PRENOMS_CONT` ; PRMP → `NOM_PRMP` +
+> `PRENOMS_PRMP` ; UGPM → `NOM_UGPM` + `PRENOMS_UGPM`. Toujours renseigné : une fiche sans nom exploitable
+> retombe sur le **login**, jamais `null` ni chaîne vide. Le front peut donc afficher
+> « {nomAffichage} · {role} » **sans aucun appel de référentiel** à l'ouverture de session (avant :
+> un `GET /prmps/{ref}` ou `/controleurs/{ref}` par connexion).
+>
+> C'est la **seule** voie pour une **UGPM** : son `ref` désigne sa PRMP de tutelle (c'est ce qui fait
+> fonctionner son périmètre, et cela ne change pas), et `/api/ugpms/**` reste réservé à l'`ADMINISTRATEUR`
+> — elle ne peut pas lire sa propre fiche. La réponse ne porte pas son matricule ; si le front en a besoin
+> un jour, il faudra l'ajouter explicitement.
 
 **Champs `RegisterPrmpRequest`** (corps de `/register/prmp` — **variante JSON historique**, sans entités ni pièces ; conservée le temps de la bascule du frontend puis retirée)
 
@@ -273,7 +295,16 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiJ9...", "login": "CTRMEM", "role": "MEMBRE",
-  "typeActeur": "CONTROLEUR", "ref": "CTRMEM", "localite": "ANT", "expiresIn": 28800
+  "typeActeur": "CONTROLEUR", "ref": "CTRMEM", "nomAffichage": "Rakoto Jean Claude",
+  "localite": "ANT", "expiresIn": 28800
+}
+```
+**Exemple — connexion d'une UGPM** (`ref` = tutelle, `nomAffichage` = l'UGPM elle-même)
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...", "login": "UGPM002", "role": "UGPM",
+  "typeActeur": "UGPM", "ref": "PRMP001", "nomAffichage": "Rakoto Jean Claude",
+  "expiresIn": 28800
 }
 ```
 **Exemple — inscription PRMP (requête / réponse)**
@@ -610,6 +641,22 @@ si aucun résultat (pas de 404). `{nom}` est un fragment (URL-encoder si espaces
 > **Convention** : `idProfileDelegant` = profil qui **exerce** la tâche (ex. Président) ;
 > `idProfileDelegue` = profil **dont la tâche est exercée** (ex. Secrétaire) ; `actif` active/désactive.
 
+> ⚠️ **Délégation ascendante — SOURCE UNIQUE de la règle (2026-08-14).** Cette table pilote la garde
+> centrale **`PermissionService.peutExercer(profilRequis)`** (`@perm.peutExercer('X')` dans les
+> `@PreAuthorize`, même garde dans les services) : un utilisateur exerce la tâche d'un profil s'il en
+> est **titulaire** OU si la paire (profil courant → profil requis) est **active** en base. Hiérarchie
+> (rang décroissant) : Président > Secrétaire > Chef de commission > Membre > Contrôleur vérificateur >
+> Assistant contrôleur ; PRMP, Administrateur et Chargé de publication **hors hiérarchie**. Les
+> **9 paires autorisées** (seed `DelegationHierarchieSeeder`, idempotent — ne réactive jamais une paire
+> désactivée par l'Admin) : **Président →** Secrétaire, Chef de commission, Membre, Vérificateur,
+> Assistant (5) ; **Chef de commission →** Secrétaire, Membre, Vérificateur, Assistant (4).
+> **Table explicite, PAS de comparaison de rangs** : le CC est SOUS le Secrétaire dans la hiérarchie mais
+> hérite de ses droits parce que la paire CC → Secrétaire est LISTÉE — un modèle « rang ≥ rang requis »
+> casserait ce cas. **Non transitive.** Désactiver une paire (`actif=false`) retire l'habilitation
+> **sans changement de code** ; la réactiver la rend. L'accès `ADMINISTRATEUR` (via `hasRole`) et le
+> **périmètre par localité** restent inchangés ; les actes d'**identité** (signatures du PV, signature
+> régionale des lettres) restent non délégables.
+
 **Champs `DelegationProfilDto`**
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
@@ -618,6 +665,10 @@ si aucun résultat (pas de 404). `{nom}` est un fragment (URL-encoder si espaces
 | idProfileDelegant | number | Oui | @NotNull — profil qui exerce |
 | idProfileDelegue | number | Oui | @NotNull — profil dont la tâche est exercée |
 | actif | boolean | Oui | @NotNull |
+
+> **Unicité** : une seule ligne par paire (`idProfileDelegant`, `idProfileDelegue`) — contrainte
+> `UQ_DELEGATION_PAIRE` (migration `docs/migrations/2026-08-14_delegation_unicite_paires.sql`) ;
+> doublon au POST → **409**. L'habilitation se pilote par `actif`, jamais par des doublons.
 
 **Endpoints**
 
@@ -737,6 +788,39 @@ si aucun résultat (pas de 404). `{nom}` est un fragment (URL-encoder si espaces
 
 ---
 
+## Examen des pièces jointes
+**Ressource** `/api/examen-pieces` (table `t_examen_piece`, ⚠️ règle ajoutée) — **Lecture** : authentifié ;
+POST/PUT : profil **`MEMBRE`** (titulaire ou délégué) ; DELETE : `ADMINISTRATEUR`.
+
+Résultat d'examen d'une **pièce jointe** du dossier, une par une (miroir des `examen-details` pour les
+lignes de marché) : `conforme` = RAS, sinon `observation` (texte libre) porte le constat. **Unicité** du
+couple (`idExamen`, `idPiece`) → **409** en cas de doublon (corriger via `PUT`). Purgés avec le circuit
+(retrait accepté / annulation de dispatch).
+
+**Champs `ExamenPieceDto`**
+
+| Champ (JSON) | Type | Obligatoire | Contraintes |
+|---|---|---|---|
+| idExamenPiece | number | Oui (PK, au POST) | clé primaire (assignée par le client) |
+| idExamen | number | Oui | @NotNull — FK `t_examen` |
+| idPiece | number | Oui | @NotNull — FK `t_piece_jointe_dossier` |
+| conforme | boolean | Oui | @NotNull (true = RAS) |
+| observation | string | Non | max 500 — constat si non conforme |
+
+**Endpoints**
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/examen-pieces[?examen={idExamen}] | — | `ExamenPieceDto[]` | 200 | Authentifié |
+| GET | /api/examen-pieces/{id} | — | `ExamenPieceDto` | 200, 404 | Authentifié |
+| POST | /api/examen-pieces | `ExamenPieceDto` | `ExamenPieceDto` | 201, 400, 403, 409 | MEMBRE (titulaire/délégué) |
+| PUT | /api/examen-pieces/{id} | `ExamenPieceDto` | `ExamenPieceDto` | 200, 400, 404, 409 | MEMBRE (titulaire/délégué) |
+| DELETE | /api/examen-pieces/{id} | — | — | 204, 403, 404 | ADMINISTRATEUR |
+
+`{id}` = idExamenPiece (number).
+
+---
+
 ## Observations de contrôle
 **Ressource** `/api/observation-controles` (table `t_observation_controle`) — **Lecture** : authentifié ;
 **écriture** (POST/PUT/DELETE) : profil **`MEMBRE`** (titulaire ou délégué).
@@ -772,7 +856,19 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 
 > ⚠️ **Transition de statut (règle ajoutée).** À la **création** d'un dispatch, le dossier passe **`PRET_DISPATCH` → `DISPATCHE`** dans la **même transaction** que le dispatch. C'est ce statut `DISPATCHE` qui conditionne l'étape suivante (l'examen l'exige).
 
+> ⚠️ **Annulation (règle ajoutée).** `POST /{id}/annuler` (Président / CC de la localité) **retire le dossier au Membre**, possible tant que le PV n'est pas signé (dossier **`DISPATCHE` ou `EXAMINE`**, **409** au-delà) : purge tout l'**aval du dispatch** (examen, détails, observations, projet de PV, navettes, lettres, copies — la **réception est conservée**) puis le dispatch, et fait revenir le dossier en **`PRET_DISPATCH`** (même transaction, re-dispatchable). Le Membre anciennement assigné est notifié (`DISPATCH_ANNULE`).
+
 > **Règle `interimDispatch`** (sinon **409**) : Président → `false` ; CC dans sa localité → `false` ; CC hors de sa localité → `true` obligatoire.
+
+> ⚠️ **Cohérence de l'attributaire (règle ajoutée 2026-08-15, POST et PUT) → 409** : `imCtrlMembre`, s'il est renseigné, doit désigner un contrôleur **capable d'exercer la tâche du Membre** — profil MEMBRE, **ou** paire (profil → Membre) **active** dans `t_delegation_profil`. Refus explicite sinon (« …n'est ni Membre ni couvert par une délégation active vers Membre… le dossier serait inexaminable (§2.4) ») ; matricule inconnu → **409** (« aucun contrôleur avec le matricule… »). Cette garde **autorise l'auto-attribution** du dispatcheur (Président via Président → Membre ; CC via CC → Membre active) : il examine et signe ensuite la part Membre lui-même. La part Président/CC du même PV doit alors être signée par **une autre personne** — `POST /api/pv-examens/{id}/signer` répond **409** « Le co-signataire doit être différent du Membre signataire (auto-co-signature interdite, §2.6). » (le front peut avertir avant la tentative).
+
+> ⚠️ **Association CC (règle MODIFIÉE 2026-08-15, §3.3).** L'association/copie CC d'un dispatch **ne vaut que lorsque le Président dispatche à un Membre** (le CC de la localité suit alors les dossiers de sa commission) :
+> - **dispatcheur = CC** → **aucune association** (ni auto-association, ni copie `DISPATCH_CC`), quelle que soit l'attribution (Membre ou lui-même) : un `imCtrlCc` envoyé par le client est **ignoré** (forcé à `null` par le serveur — pas d'erreur) ;
+> - **dispatcheur = Président, attributaire = Membre** → comportement conservé : `imCtrlCc` fourni respecté, à défaut le **CC de la localité du dossier est associé automatiquement** (POST) ; le CC associé reçoit la **copie de dispatch** (`DISPATCH_CC`) et la **copie d'annulation** (`DISPATCH_ANNULE`) ;
+> - **dispatcheur = Président, attributaire = lui-même** (auto-attribution) → **pas d'association** (la copie n'a de sens que pour un dispatch « à un Membre ») ;
+> - l'association ne désigne **jamais l'attributaire lui-même** (ex. Président → CC-par-délégation) — plus de **doublon « Rôle Membre + Rôle CC »** dans les attributions/statistiques dérivées.
+>
+> La même normalisation s'applique au **PUT** (sans auto-association : le corps est respecté puis épuré). **Reprise des données au démarrage** (`AssociationCcDispatchMigration`, désactivable via `app.migration.association-cc-dispatch.enabled=false`) : `IM_CTRL_CC` est effacé sur les dispatchs existants où il désigne l'attributaire ou le dispatcheur lui-même — le dispatch en double (ex. 00002/PPM/CNM/2026) est corrigé **sans retrait ni re-dispatch**.
 
 **Champs `DispatchDto`**
 
@@ -798,6 +894,7 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 | POST | /api/dispatchs | `DispatchDto` | `DispatchDto` | 201, 400, 403, 409 | PRESIDENT / CHEF_COMMISSION |
 | PUT | /api/dispatchs/{id} | `DispatchDto` | `DispatchDto` | 200, 400, 404, 409 | PRESIDENT / CHEF_COMMISSION |
 | DELETE | /api/dispatchs/{id} | — | — | 204, 404 | ADMINISTRATEUR |
+| POST | /api/dispatchs/{id}/annuler | — | — | 204, 403, 404, 409 | PRESIDENT / CHEF_COMMISSION |
 
 `{id}` = idDispatch (number).
 
@@ -894,7 +991,8 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 | dateRef | string (date) | Non | renseignée à la soumission si vide |
 | statut | string | Non | max 30 — cycle : `BROUILLON` → `SOUMIS` → `PRET_DISPATCH` → `DISPATCHE` → `EXAMINE` → `PV_SIGNE` → (`EN_VERIFICATION` si avis FAVR) → `CLOTURE` ; vérif. obs. non levées → `EN_ATTENTE_DECISION_PRMP` (ou `RETIRE`) ; posé par le système, **lecture seule** côté PRMP |
 | idLocalite | string | Non | max 5 — localité (FK `tr_localite`) ; **dérivée de l'entité** du dossier (lecture seule à la saisie) |
-| idPrmp | string | Non | max 10 — PRMP **propriétaire** (FK `t_prmp`) ; posée à la saisie ; seule elle édite/soumet |
+| idPrmp | string | Non | max 10 — PRMP **d'attribution** (FK `t_prmp`) ; posée à la saisie, **jamais recalculée** ; la PRMP **en fonction** peut aussi agir (cf. *Mandats PRMP*) |
+| idMandatAttrib | number | Non | **lecture seule** — mandat d'attribution (FK `t_mandat`), figé à la création et jamais recalculé ; `null` si la PRMP n'a pas de mandat déclaré (cf. *Mandats PRMP*) |
 | idEntiteContract | number | Non | entité contractante (FK `tr_entite_contract`) ; **choisie à la saisie**, fixe la localité |
 
 > **Cycle de vie & saisie.** On **ne crée pas** un dossier brut : la **façade `/api/saisies`** (réservée PRMP)
@@ -910,8 +1008,8 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 | GET | /api/dossiers/a-receptionner | — | `DossierDto[]` | 200, 403 | `SECRETAIRE` (titulaire/délégué) ou `ADMINISTRATEUR` |
 | GET | /api/dossiers/a-examiner | — | `DossierDto[]` | 200, 403 | `MEMBRE` (titulaire/délégué) ou `ADMINISTRATEUR` |
 | GET | /api/dossiers/examines | — | `Page<DossierDto>` | 200, 403 | `MEMBRE` (titulaire/délégué) ou `ADMINISTRATEUR` |
-| GET | /api/dossiers/a-verifier | — | `DossierDto[]` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` — EN_VERIFICATION + EN_ATTENTE_DECISION_PRMP |
-| GET | /api/dossiers/verifies | — | `Page<DossierDto>` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` |
+| GET | /api/dossiers/a-verifier | — | `DossierDto[]` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` — EN_VERIFICATION + EN_ATTENTE_DECISION_PRMP + OBSERVATIONS_LEVEES |
+| GET | /api/dossiers/verifies | — | `Page<DossierDto>` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` — DECISION_TRANSMISE_SIGMP + CLOTURE (PV signé) |
 | GET | /api/dossiers/en-attente-prmp | — | `DossierDto[]` | 200, 403 | `VERIFICATEUR` (titulaire/délégué) ou `ADMINISTRATEUR` — lecture seule |
 | GET | /api/dossiers/{id} | — | `DossierDto` | 200, 403, 404 | Authentifié (filtré) |
 | GET | /api/dossiers/{id}/ppm | — | `PpmDto` | 200, 403, 404 | Authentifié (propriétaire pour un BROUILLON) |
@@ -921,8 +1019,22 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 | POST | /api/dossiers/{id}/soumettre | — | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** |
 | POST | /api/dossiers/{id}/resoumettre | `DossierResoumissionRequest` | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** propriétaire |
 | GET | /api/dossiers/{id}/historique-echanges | — | `EchangeDto[]` | 200, 403, 404 | **PRMP** / **VERIFICATEUR** (titulaire/délégué) / **ADMINISTRATEUR** |
+| GET | /api/dossiers/{id}/journal | — | `ActionDossierDto[]` | 200, 403, 404 | Authentifié (périmètre de visibilité du dossier) |
 
 `{id}` = idDossier (number). **`DossierResoumissionRequest`** = `{ motifRectification }` (String, **@NotBlank**, max 255).
+
+> 📌 **Journal des actions (⚠️ spec « Mandats PRMP »).** `GET /api/dossiers/{id}/journal` renvoie, dans
+> l'ordre chronologique, **qui a agi, quand et sous quel mandat**. À ne pas confondre avec
+> `/api/audit-logs` (trace technique de toutes les écritures HTTP, réservée à l'Administrateur) : ce
+> journal-ci est **métier** et suit le périmètre de visibilité du dossier (§1).
+>
+> **`ActionDossierDto`** = `{ idAction (number), idDossier (number), dateAction (date-time),
+> typeAction (string), idPrmpOperateur (string), nomOperateur (string), auteur (string),
+> idMandatOperateur (number|null), detail (string) }`.
+> `typeAction` ∈ `CREATION`, `SOUMISSION`, `RESOUMISSION`, `TRANSMISSION_COMPLEMENTS`,
+> `TRANSMISSION_COMPLEMENTS_DEPOT`, `SUPPRESSION`, `MISE_A_JOUR`.
+> **`idPrmpOperateur` est la PRMP en fonction à la date de l'action** — après un changement de titulaire
+> elle diffère de `idPrmp` / `idMandatAttrib` du dossier, qui eux ne bougent pas.
 
 > 📌 **Résolution `idDossier → PPM` (règle ajoutée).** `GET /api/dossiers/{id}/ppm` renvoie le **`PpmDto`
 > complet** du dossier, **y compris pour un `BROUILLON`** lu par son **propriétaire** (même critère de
@@ -968,19 +1080,27 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 > localités). C'est la file de travail du Secrétaire ; un dossier en sort dès qu'une réception est créée.
 
 > **Files du Membre attributaire (§2.4).** `GET /api/dossiers/a-examiner` = ses dossiers **`DISPATCHE`**
-> (pas encore examinés) ; `GET /api/dossiers/examines` = **historique** de ce qu'il a examiné
+> (pas encore examinés) **+ `A_REEXAMINER`** (⚠️ 2026-08-02 — réexamen après lettre de renvoi, pièces
+> complémentaires transmises) ; `GET /api/dossiers/examines` = **historique** de ce qu'il a examiné
 > (**`EXAMINE` + `PV_SIGNE` + `CLOTURE`**), **paginé** (`?page=&size=&sort=`, réponse `Page` :
 > `content[]`, `totalElements`, …). Les deux sont **scopées au Membre courant** (`Dispatch.imCtrlMembre`)
 > et **exclusives** : à la création de l'examen, un dossier quitte « à examiner » pour « examinés ». Un
 > Membre ne voit que **ses** dossiers (ceux d'un autre Membre n'y figurent pas).
 
-> ⚠️ **Files du Vérificateur (§3.6, règle ajoutée).** `GET /api/dossiers/a-verifier` = dossiers **encore
-> actifs** côté vérification : **`EN_VERIFICATION`** (à vérifier) **OU** **`EN_ATTENTE_DECISION_PRMP`** (en
-> lecture seule — le dossier **ne disparaît pas** de la liste tant qu'il n'est pas clôturé ; toute
-> vérification est refusée **409** tant que la PRMP n'a pas statué, cf. badge « En attente PRMP » côté UI).
-> `GET /api/dossiers/verifies` = **historique** paginé, **lecture seule**, des dossiers **`CLOTURE` ayant un
-> PV `SIGNE`** — **y compris les auto-clôturés** à la signature (`FAV`/`DEF`/`NSP`). Les deux sont **scopées
-> à la localité** du vérificateur (contrôleur réceptionnaire). Seul **`CLOTURE`** quitte « à vérifier » (→ `/verifies`).
+> ⚠️ **Files du Vérificateur (§3.6, règle ajoutée ; ⚠️ RÈGLE DE BASCULE MODIFIÉE 2026-08-04).**
+> `GET /api/dossiers/a-verifier` = dossiers sur lesquels le vérificateur a encore une **action** :
+> **`EN_VERIFICATION`** (à vérifier), **`EN_ATTENTE_DECISION_PRMP`** (lecture seule — toute vérification est
+> refusée **409** tant que la PRMP n'a pas statué, cf. badge « En attente PRMP » côté UI) et
+> **`OBSERVATIONS_LEVEES`** (approbation + levée à transmettre à SIGMP).
+> `GET /api/dossiers/verifies` = **historique** paginé, **lecture seule**, des dossiers
+> **`DECISION_TRANSMISE_SIGMP` ou `CLOTURE` ayant un PV `SIGNE`** — **y compris les auto-clôturés**
+> à la signature (`FAV`/`DEF`/`NSP`). Les deux sont **scopées à la localité** du vérificateur (contrôleur
+> réceptionnaire).
+> ⚠️ **La bascule se fait à la transmission de la décision à SIGMP** (`POST /api/sigmp-transmissions`) :
+> le dossier quitte `/a-verifier` et apparaît dans `/verifies` **au même instant** — le travail du
+> vérificateur est terminé, l'archivage revient à l'Assistant. *(Avant le 2026-08-04, `DECISION_TRANSMISE_SIGMP`
+> restait dans `/a-verifier` jusqu'au `CLOTURE`.)* Les deux files sont **complémentaires et disjointes**.
+> Le compteur `aVerifier` de `GET /api/kpis/mes-compteurs-verificateur` en est le **miroir exact** (badge du menu).
 
 > ⚠️ **File « En attente PRMP » du Vérificateur (règle ajoutée), lecture seule.** `GET /api/dossiers/en-attente-prmp`
 > = dossiers **`EN_ATTENTE_DECISION_PRMP`** de sa localité (sous-vue dédiée ; ces dossiers figurent aussi dans
@@ -1085,17 +1205,16 @@ ajoutées après réception d'une lettre de renvoi** (`true`).
 - `data` : JSON `{ "idDossier": …, "idTypePiece": … }` (et `idLettre` pour un dépôt après lettre de renvoi) ;
 - `fichier` : le fichier **PDF/JPEG/PNG** (magic-bytes ; sinon **400**).
 
-**Règle `apresLettreRenvoi`** : si `idLettre` est fourni **et** le dossier est `SOUMIS`/`PRET_DISPATCH`, la pièce
+**Règle `apresLettreRenvoi`** : si `idLettre` est fourni **et** le dossier est `SOUMIS`/`PRET_DISPATCH`
+**ou `EN_ATTENTE_PIECES`** (⚠️ spec navette 2026-08-02 — dossier suspendu par la lettre signée), la pièce
 est enregistrée `apresLettreRenvoi=true` (avec `idLettre`) ; sinon c'est une **pièce initiale** (`false`).
 
-> ⚠️ **Ré-ouverture de l'examen après lettre de renvoi (règle ajoutée).** Au **premier** dépôt
-> `apresLettreRenvoi=true` (dossier `PRET_DISPATCH`, cf. signature de la lettre ci-dessous), le serveur **réutilise
-> le dispatch existant** (le Membre y est déjà désigné) et fait avancer le dossier **`PRET_DISPATCH → DISPATCHE`**
-> — **pas de nouveau dispatch** (aucun doublon). Le dossier **réapparaît alors dans `GET /api/dossiers/a-examiner`**
-> du Membre attributaire, qui peut ré-examiner. Une **unique** notification **`PIECE_AJOUTEE_APRES_RENVOI`**
-> (`typeObjet=DOSSIER`, `idObjet=idDossier`) est émise vers ce Membre. Les **dépôts suivants** trouvent le dossier
-> déjà `DISPATCHE` (donc `apresLettreRenvoi=false`) : **ni ré-avance, ni notification en double** (regroupement
-> naturel).
+> ⚠️ **Reprise après lettre de renvoi (règle MODIFIÉE 2026-08-02, spec navette + réexamen).** Le dépôt
+> d'une pièce pendant `EN_ATTENTE_PIECES` **ne réactive PAS l'examen** : la reprise est une action
+> **EXPLICITE** de la PRMP (`POST /api/dossiers/{id}/transmettre-complements` → dossier **`A_REEXAMINER`**,
+> même dispatch/Membre, notification `COMPLEMENTS_TRANSMIS` — cf. « Cas 3 » de la section Vérifications).
+> L'ancienne ré-ouverture automatique au premier dépôt (`PRET_DISPATCH → DISPATCHE` +
+> `PIECE_AJOUTEE_APRES_RENVOI`) ne subsiste que pour le flux historique `PRET_DISPATCH`.
 
 > **Pièces obligatoires à la soumission.** `POST /api/dossiers/{id}/soumettre` vérifie que toutes les pièces
 > `obligatoire` de la **famille** de dossier (référentiel ci-dessus, clé `DDP`/`DMC`/`DDM`) sont présentes.
@@ -1214,6 +1333,96 @@ volumineux → **400** (annule la création si multipart) ; **404** si l'UGPM ou
 | POST | /api/saisies/ppm/import-xlsx | `multipart/form-data` (part `fichier` = **tableur .xlsx**) | `SaisiePpmImportResult` | 200, 400, 403 | **PRMP** |
 | GET | /api/saisies/ppm/import-xlsx/gabarit | — | **`.xlsx`** (gabarit à remplir) | 200, 403 | **PRMP** |
 | PUT | /api/saisies/ppm/{idDossier} | `EditionPpmRequest` | `DossierDto` | 200, 400, 403, 404, 409 | **PRMP** |
+| POST | /api/saisies/ppm/{idDossier}/mise-a-jour | `MiseAJourRequest` (`{motif}`) | `DossierDto` (la nouvelle version) | 201, 400, 403, 404, 409 | **PRMP propriétaire** |
+| POST | /api/saisies/ppm/{idDossier}/mise-a-jour/import | `multipart/form-data` (part `fichier` = PPM **PDF**) | `DiffDossierDto` | 200, 400, 403, 404, 409 | **PRMP propriétaire** |
+| GET | /api/dossiers/{idDossier}/diff | — | `DiffDossierDto` | 200, 403, 404, 409 | **PRMP propriétaire** |
+| GET | /api/dossiers/{idDossier}/versions | — | `DossierDto[]` (plus récente d'abord) | 200, 404 | PRMP / PRESIDENT / CHEF_COMMISSION / MEMBRE / VERIFICATEUR / ADMINISTRATEUR |
+| PATCH | /api/marches/{idDetail}/supprimer | — | — | 204, 403, 404, 409 | **PRMP propriétaire** |
+| PATCH | /api/marches/{idDetail}/restaurer | — | — | 204, 403, 404, 409 | **PRMP propriétaire** |
+
+> ⚠️ **Mise à jour d'un PPM — versionnement (règle ajoutée 2026-08-05).** Une mise à jour **ne modifie
+> jamais** le dossier en place : `POST /api/saisies/ppm/{id}/mise-a-jour` crée un **nouveau dossier**
+> `BROUILLON`, copie profonde du précédent (PPM, lignes de marché avec leurs lots, bénéficiaires et dates
+> prévisionnelles, pièces jointes dupliquées), rattaché par `t_dossier.ID_DOSSIER_PARENT`. Le compteur
+> métier `t_ppm.NUM_MAJ` s'incrémente (`NUM_MAJ_PREC`/`DATE_MAJ_PREC` rappellent la version précédente,
+> `DATE_PPM_INIT` se propage inchangée) et **`MOTIF_MAJ` est obligatoire** (400 s'il est vide).
+>
+> ⚠️ **Ne pas confondre avec la rectification** (`PUT /api/saisies/ppm/{id}` sur un dossier
+> `EN_ATTENTE_DECISION_PRMP`), qui corrige la version courante en réponse aux observations du PV : même
+> dossier, même identité. Le versionnement, lui, s'applique à un PPM déjà instruit.
+>
+> **Gardes** — 409 si le dossier source n'est pas `DECISION_TRANSMISE_SIGMP`/`CLOTURE` (on ne versionne
+> pas un dossier encore dans le circuit), s'il est déjà `REMPLACE` (versionner la version en vigueur), ou
+> si une mise à jour est **déjà en cours** (un seul brouillon de mise à jour par dossier).
+>
+> **Bascule.** Le prédécesseur passe à **`REMPLACE`** — nouveau statut, jamais supprimé, toujours
+> consultable — **à la SOUMISSION** de la nouvelle version, pas à la création du brouillon : une mise à
+> jour abandonnée se supprime sans neutraliser le dossier en vigueur. Au même instant le diff est **figé**
+> dans `t_changement_ligne` (append-only).
+>
+> **Identité de ligne.** `t_marche.ID_LIGNE_ORIGINE` porte l'identité d'une ligne **à travers les
+> versions** (l'`ID_DETAIL` d'origine, hérité à chaque copie) ; `SUPPRIMEE` marque une suppression
+> **logique** (ligne conservée, restaurable, jamais effacée — à exclure des documents officiels).
+> Le rapprochement du diff ne dépend **jamais de la position** : des lignes réordonnées à contenu
+> identique ressortent `INCHANGEE`. Repli d'appariement pour une ligne sans ancêtre (réimport PDF) :
+> libellé normalisé + services bénéficiaires (`apparieePar = LIBELLE_SOA`).
+>
+> **`DiffDossierDto`** = `recap` (`inchangees`, `modifiees`, `nouvelles`, `supprimees`, `restaurees`,
+> `total`) + `lignes[]` (`type` ∈ INCHANGEE | MODIFIEE | NOUVELLE | SUPPRIMEE | RESTAUREE, avec `champs[]`
+> `{champ, avant, apres}` pour les modifiées). `fige = false` tant que la version est un brouillon (diff
+> recalculé à chaque appel, il doit suivre la saisie) ; `true` une fois soumise (trace figée, qui fait foi).
+>
+> ⚠️ `GET /api/ppms` **exclut les brouillons** : l'en-tête d'une version en cours (n° de mise à jour,
+> motif, référence) se lit à l'unité par `GET /api/ppms/{idPpm}` — l'`idPpm` est porté par ses lignes.
+
+> ⚠️ **Pièces exigées d'une mise à jour (règle ajoutée 2026-08-05).** En plus des pièces obligatoires d'un
+> dossier neuf, une version doit porter le **PV du dossier prédécesseur** (type `22`, code `PV_PRECEDENT`)
+> et le **PPM daté et signé de CHAQUE version antérieure** (type `23`, `PPM_ANTERIEUR`, une pièce par
+> ancêtre). Ces deux types restent `OBLIGATOIRE = false` au **référentiel** — ils n'ont aucun sens sur un
+> dossier initial : l'exigence est portée par le code pour les seuls dossiers rattachés à un prédécesseur,
+> comme l'obligation conditionnelle de l'AGPM.
+>
+> Les pièces du dossier d'origine sont **reprises** dans la version (contenu dupliqué) : la PRMP ne
+> remplace que celles qui changent. Les deux pièces d'historique, elles, sont **constituées
+> automatiquement** à `POST …/mise-a-jour` — l'application détient déjà ces documents (le PV est
+> lu/régénéré depuis le FSX), il serait absurde de les faire redéposer. Elles ne sont
+> donc jamais recopiées telles quelles du prédécesseur — sinon elles s'empileraient à chaque version — mais
+> **reconstituées** depuis la chaîne. À la soumission, si elles manquent (version ouverte avant la règle,
+> pièce supprimée par erreur), elles sont **reconstituées puis contrôlées** : un brouillon ne peut pas se
+> retrouver dans l'impasse d'un document qu'il n'a aucun moyen de produire.
+>
+> ⚠️ **Corollaire** : `POST …/mise-a-jour` **409** si le dossier source n'a pas de PV signé — on ne
+> versionne pas un plan dont la Commission n'a jamais rendu d'avis. En circuit normal, un dossier clôturé
+> porte toujours son PV.
+
+> ⚠️ **Mise à jour PAR IMPORT du PPM PDF (règle ajoutée 2026-08-05, voie NORMALE).** Une mise à jour
+> arrive comme un **document**, exactement comme la création : la PRMP importe le plan modifié plutôt que
+> de le ressaisir (même principe que la rectification après observations).
+> `POST /api/saisies/ppm/{idDossier}/mise-a-jour/import` parse le PDF (même façade read-only que
+> `/saisies/ppm/import`), **rapproche** chaque ligne importée d'une ligne de la version — empreinte métier
+> (libellé normalisé + services bénéficiaires), puis libellé seul — et lui transmet son `idDetail`. Les
+> lignes absentes du document passent en **supprimées** (logiques, restaurables) ; celles qui réapparaissent
+> sont **restaurées** ; les inconnues sont créées. La persistance est déléguée à `PUT /api/saisies/ppm/{id}`
+> (résolution des référentiels à la volée, validations de montants et de chronologie).
+> Les **étapes** du PDF (`LANCEMENT`, `OUVERTURE`…) sont résolues en `idCapm` sur la grille effective du
+> mode, avec la MÊME règle qu'à la saisie (égalité de libellé, sinon premier libellé qui le contient) —
+> une ligne nouvelle exige au moins un processus. Retourne le **diff recalculé**, à vérifier avant de
+> créer la mise à jour. 409 si le dossier n'est pas une version ou n'est plus un brouillon.
+>
+> ⚠️ **Une mise à jour ne change pas d'entité contractante (règle ajoutée 2026-08-06).** L'entité est
+> **héritée** du prédécesseur (champ verrouillé à l'écran) : importer le plan d'un autre organisme
+> produirait un dossier incohérent — mêmes identités de lignes, tout autre entité. `POST …/mise-a-jour/import`
+> répond donc **409** lorsque le document relève d'une entité différente, **sans rien écrire**. Deux cas :
+> l'autorité contractante lue est **résolue** au référentiel et diffère de celle du dossier (comparaison
+> d'`idEntiteContract`) ; ou elle n'est **pas résolue** — le libellé lu est alors comparé à celui de
+> l'entité du dossier, à la casse, aux accents et à la ponctuation près (inclusion admise), et le refus
+> n'est prononcé que s'ils ne se recouvrent manifestement pas. Le message nomme les deux entités. La
+> lecture préparatoire `POST /api/saisies/ppm/import` (création d'un dossier neuf) n'est **pas** concernée :
+> elle ne vise aucun dossier existant.
+>
+> Sans ce rapprochement, réimporter le plan ferait apparaître l'intégralité des lignes comme « supprimées
+> puis recréées » et l'identité inter-versions serait perdue. Vérifié sur un PPM réel de 32 lignes :
+> réimport du même document dans une version suivante → **35 inchangées, 0 modifiée, 0 nouvelle**.
 
 > **Saisie avec pièces jointes (multipart).** La variante `multipart/form-data` de `POST /api/saisies/ppm`
 > accepte une part `data` = JSON `SaisiePpmRequest` et des parts fichiers nommées **`piece_<idTypePiece>`**
@@ -1444,7 +1653,32 @@ attribué par le serveur.)* ⚠️ `idTypeDossier` est **déprécié** : accept�
 et interprété comme un code de **sous-type** (les anciens payloads `{"idTypeDossier":"DAO"}` restent valides).
 
 **`EditionPpmRequest`** (`PUT /api/saisies/ppm/{idDossier}`) — édite un **brouillon** PPM en une transaction :
-`exercice`, `signataire`, `dateSignature`, `reference` (en-tête, tous obligatoires) + `marches` (liste désirée). Les lignes sont **réconciliées par `idDetail`** : ajout des nouvelles, mise à jour des existantes (mode **conservé tel quel** — saisi), **retrait** des absentes. La localité/le type/le propriétaire/l'entité ne changent pas. Dossier non BROUILLON → **409** ; non-propriétaire → **403**.
+`exercice`, `signataire`, `dateSignature`, `reference` (en-tête, tous obligatoires) + `marches` (liste désirée). Les lignes sont **réconciliées par `idDetail`** : ajout des nouvelles, mise à jour des existantes (mode **conservé tel quel** — saisi), **retrait** des absentes. La localité/le type/le propriétaire/l'entité ne changent pas. Dossier ni BROUILLON ni EN_ATTENTE_DECISION_PRMP → **409** ; non-propriétaire → **403**.
+
+> ⚠️ **Rectification PAR IMPORT du PPM (règle 2026-08-02, demande user).** La rectification d'un dossier
+> **`EN_ATTENTE_DECISION_PRMP`** se fait par l'**importation du PPM rectifié (PDF)** — plus de formulaire
+> manuel : le front parse le PDF (`POST /api/saisies/ppm/import`, read-only), prévisualise dans la grille
+> partagée, puis enregistre via **le même `PUT /api/saisies/ppm/{idDossier}`** (accepté à ce statut,
+> propriétaire). En rectification la **STRUCTURE est FIGÉE** : chaque ligne fournie doit porter l'`idDetail`
+> d'une ligne existante (mise à jour **en place** — l'examen et le périmètre des observations référencent
+> les lignes) ; **ajout → 409**, **retrait → 409**. L'entité du PDF doit être celle du dossier (garde front
+> au parse) ; signataire/référence actuels conservés. `PUT /api/ppms/{id}` et `PUT /api/marches/{id}`
+> (appelés par la façade) acceptent aussi ce statut pour le propriétaire ; **create/delete restent
+> BROUILLON uniquement**. Le statut reste `EN_ATTENTE_DECISION_PRMP` jusqu'à la resoumission
+> (`POST /api/dossiers/{id}/resoumettre`). Les PATCH `…/rectifier` (édition manuelle champ à champ)
+> subsistent côté API mais ne sont plus le parcours UI. ⚠️ La rectification couvre AUSSI les **pièces
+> jointes** (observations « pièce » du PV) : la PRMP joint la **version corrigée** — nouvel upload du
+> même type (`POST /api/piece-jointe-dossiers`, autorisé au statut, propriétaire), l'**original est
+> conservé** (traçabilité, DELETE réservé brouillon). ⚠️ 2026-08-03 : un dépôt pendant la rectification
+> est **marqué `versionCorrigee=true`** (colonne `VERSION_CORRIGEE`, posée serveur au statut
+> `EN_ATTENTE_DECISION_PRMP`) — les listes de pièces la distinguent de l'originale : section
+> « **Versions corrigées (rectification)** » + étiquette « Corrigée » (verte, comme « LR » pour les
+> pièces après lettre de renvoi) dans la consultation du dossier et le détail PPM.
+> L'écran « Rectifier » ne liste QUE les pièces
+> **citées dans les observations du PV** (et les versions du même type, dont celles jointes en
+> rectification) — badge « Observation du PV — version corrigée attendue » sur celles visées par une
+> observation non levée (pont `ObservationPvDto.idExamenPiece` → `t_examen_piece.ID_PIECE`) ; aucune
+> observation de pièce → section absente.
 
 > ⚠️ **Sous-objets des lignes à l'édition (règle corrigée 2026-07-18).** Le PUT traitait l'en-tête et les
 > colonnes du marché mais **ignorait silencieusement** `beneficiaires[]`, `lots[]` et `processus[]` (enfants des
@@ -1623,7 +1857,7 @@ et interprété comme un code de **sous-type** (les anciens payloads `{"idTypeDo
 >
 > **Autorisation (création) → 403** : un **Membre titulaire** n'examine que les dossiers **qui lui sont attribués** (`Dispatch.imCtrlMembre`) ; un CC/Président **par délégation** (§3.5) reste autorisé.
 >
-> **Transition** : à la création de l'examen, le dossier passe **`DISPATCHE` → `EXAMINE`** (même transaction) — il **quitte « à examiner »**.
+> **Transition (⚠️ règle déplacée 2026-08-01)** : le dossier ne passe **`DISPATCHE` → `EXAMINE`** qu'à la **SOUMISSION** de l'examen (`POST /{id}/soumettre`, même transaction que le projet de PV) — il quitte alors « à examiner ». La **création** d'un examen est désormais un **brouillon de progression** (le front sauvegarde les résultats à chaque étape ; le dossier reste `DISPATCHE`, reprise possible). Le verrou d'écriture des examens/détails accepte donc `DISPATCHE` (brouillon) **ou** `EXAMINE` — refus 409 dès `PV_SIGNE`, inchangé.
 >
 > **Verrou (édition) → 409** : `PUT /api/examens/{id}` **et** les écritures sur `/api/examen-details` (création/MAJ/suppression) sont **refusées dès `PV_SIGNE`** : l'examen est modifiable tant que le dossier est `EXAMINE` (navette ouverte), **définitif** après signature du PV.
 
@@ -1650,13 +1884,15 @@ et interprété comme un code de **sous-type** (les anciens payloads `{"idTypeDo
 
 `{id}` = idExamen (number).
 
-> ⚠️ **Soumission de l'examen (règle ajoutée).** `POST /api/examens/{id}/soumettre` produit **toujours un
-> Projet de PV** (`PvExamenService`, `idPv` alloué serveur). Corps `ExamenSoumissionRequest`
-> `{ idAvis, idSecretaireSeance }` : `idAvis` = avis du PV (FAV/FAVR/DEF/NSP), obligatoire ;
-> `idSecretaireSeance` = matricule du **Vérificateur désigné Secrétaire de séance**, **obligatoire** et qui
-> doit être un VERIFICATEUR de la **localité du dossier** (circuit/réception). Absent ou invalide → **400**
-> `{ erreurs:[{ champ:"idSecretaireSeance", message }] }`. *(La lettre de renvoi est une action séparée
-> pendant l'examen — ressource `/api/lettre-renvois` ; `ExamenDto` n'a pas de champ `typeResultat`.)*
+> ⚠️ **Soumission de l'examen (règle MODIFIÉE 2026-08-01).** `POST /api/examens/{id}/soumettre` produit
+> **toujours un Projet de PV** (`PvExamenService`, `idPv` alloué serveur). Corps `ExamenSoumissionRequest`
+> `{ idAvis?, idSecretaireSeance? }` : les deux champs sont désormais **OPTIONNELS** — le Membre ne renseigne
+> que la **synthèse des observations** (PUT du PV) ; l'avis global et le Secrétaire de séance sont posés à la
+> **clôture de la navette** (`POST /api/pv-examens/{id}/accepter`, Président/CC — voir section PV). S'ils sont
+> fournis, `idSecretaireSeance` doit rester un VERIFICATEUR de la **localité du dossier** (sinon **400**
+> `{ erreurs:[{ champ:"idSecretaireSeance", message }] }`). Le projet de PV = **résultats des points de
+> contrôle + synthèse du Membre** (avis `null` à ce stade). *(La lettre de renvoi appartient aussi à la
+> clôture de navette — ressource `/api/lettre-renvois`, Président/CC.)*
 >
 > ⚠️ **Complétude de l'examen à la soumission (règle ajoutée 2026-07-21).** Avant de produire le Projet de PV,
 > le serveur vérifie que **toutes les lignes ont été traitées** : chaque point de **portée LIGNE** de la
@@ -1666,15 +1902,41 @@ et interprété comme un code de **sous-type** (les anciens payloads `{"idTypeDo
 > traitées » — le workflow séquentiel/couleurs est géré côté front. **Vacant** (aucune exigence) si le dossier
 > n'a **pas de grille** (famille/sous-type sans points) → examens historiques et non-PPM non contraints.
 >
-> ⚠️ **PV — document généré (règle ajoutée).** À la **signature finale** du PV (passage à `SIGNE`), si le PV
-> est éligible — avis **favorable sous réserve** (`FAVR`), dossier de **localité centrale** (`ANT`) et **PPM**
-> comportant au moins une ligne de marché, **quel que soit le mode de passation** (le gabarit AFSR/PPM/central
-> ne dépend pas du mode) — le **PDF du PV** est généré à partir du
-> modèle Word `PV_AFSR_PPMAGPM_CENTRALE.docx` (copie du modèle + remplacement des placeholders ; date d'examen
+> ⚠️ **PV — document généré (règle ajoutée ; modèles étendus 2026-08-03).** À la **signature finale** du PV
+> (passage à `SIGNE`), le **PDF officiel** est généré **s'il existe un modèle Word pour le cas** — conditions
+> communes : dossier de **localité centrale** (`ANT`, seuls modèles fournis) et **PPM** comportant au moins une
+> ligne de marché, **quel que soit le mode de passation**. Choix du modèle (`PvDocumentService.modelePour`) :
+>
+> **12 modèles** `PV_{AFSR|AF|ANF}_{PPMAGPM|PPM}_{CENTRALE|REGIONALE}.docx`, choisis sur **trois axes** :
+>
+> | axe | valeurs | effet sur le document |
+> |---|---|---|
+> | **avis** | `FAVR` → `AFSR` / `FAV` → `AF` / `DEF` → `ANF` | `AFSR` : clause « sous réserve … » + **ANNEXE** des observations ; `AF` : « émet un **AVIS FAVORABLE** … », ni clause ni annexe (1 page) ; `ANF` : « émet un **AVIS NON FAVORABLE** … », ni clause ni annexe |
+> | **sous-type** (dérivé serveur des marchés déclencheurs) | `PPM-AGPM` / `PPM` | mention « … et d'Avis Général de Passation des Marchés INITIAL » (intitulé) et « … et à la publication de l'AGPM » (avis) |
+> | **localité** du circuit (réception) | `ANT` → `CENTRALE` / autre → `REGIONALE` | en-tête « COMMISSION **REGIONALE** DES MARCHES » + ligne **localité**, titre et mentions « Commission **Régionale** » |
+>
+> Seul l'avis `NSP` (« ne se prononce pas ») n'a **aucun modèle** → aucun document produit.
+> ⚠️ La variante `FAVR` **sans AGPM** (centrale et régionale) est **dérivée** de la règle AGPM des modèles
+> fournis — **à valider par le métier** : « … émet un AVIS FAVORABLE à l'affichage du PPM sous réserve
+> qu'il soit tenu compte des observations portées en annexe. ».
+>
+> 📌 **Lieu d'établissement.** La ligne de signature (« A …, le … ») porte le **chef-lieu**
+> (`tr_localite.CHEF_LIEU`, repli sur le libellé) — marqueur dédié `<CHEF LIEU>` (la graphie
+> `<CHEF-LIEU>` est également acceptée) — tandis que l'en-tête régional porte la **localité** (région)
+> via `<LOCALITE>`.
+>
+> 📌 **Résilience de la conversion (2026-08-04).** Word (documents4j) peut s'arrêter entre deux
+> conversions : le convertisseur en cache est désormais **recréé** s'il n'est plus opérationnel et la
+> conversion est **retentée une fois**. Auparavant, un seul arrêt de Word faisait échouer (409) toutes
+> les générations de PV **et** de lettres jusqu'au redémarrage du serveur. Le PDF est produit à partir du
+> modèle Word retenu (copie du modèle + remplacement des placeholders ; date d'examen
 > formatée et **en toutes lettres** dans « L'an … » ; bloc « Étaient présents » filtré sur les signataires
 > effectifs ; ANNEXE = une ligne par observation des points non conformes, **préfixée par la ligne de marché**
 concernée — « [Marché « désignation »] point » pour un résultat par ligne, « [Dossier] point » pour un point
-inter-lignes ou historique (⚠️ 2026-07-21, sans modification du gabarit Word)) puis converti via Microsoft Word
+inter-lignes ou historique (⚠️ 2026-07-21, sans modification du gabarit Word) ; ⚠️ 2026-08-01 : les **pièces
+jointes non conformes** (`t_examen_piece`) sont ajoutées à la suite de l'ANNEXE — RÉFÉRENCES = **libellé de
+la pièce seul** (sans préfixe), OBSERVATIONS = texte libre de l'observation, les libellés « Au lieu de : /
+Lire : » de la ligne modèle étant retirés) puis converti via Microsoft Word
 > (documents4j) et **stocké sur le FSX** (`storage.pv-examen.path`, sous-répertoire `PV/`), chemin conservé dans
 > `t_pv_examen.CHEMIN_DOCUMENT`. Hors de ces conditions, le PV reste **sans document**. Le téléchargement
 > **régénère le document à la demande** si le chemin est absent ou le fichier introuvable (migration des PV
@@ -1684,17 +1946,18 @@ inter-lignes ou historique (⚠️ 2026-07-21, sans modification du gabarit Word
 ```json
 { "idExamen": 201, "idDispatch": 88, "imCtrlMembre": "MEMANT1", "dateExamen": "2026-05-08" }
 ```
-**Exemple — corps `…/soumettre`**
+**Exemple — corps `…/soumettre`** *(⚠️ 2026-08-01 : corps vide accepté — avis/secrétaire posés à la clôture de navette)*
 ```json
-{ "idAvis": "FAVR", "idSecretaireSeance": "VERANT1" }
+{}
 ```
 
 ---
 
 ## Lettres de renvoi
-**Ressource** `/api/lettre-renvois` (table `t_lettre_renvoi`) — **action séparée pendant l'examen** : le
-Membre peut créer **N lettres de renvoi** par examen (indépendamment du Projet de PV). Lecture filtrée par
-profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Président).
+**Ressource** `/api/lettre-renvois` (table `t_lettre_renvoi`) — ⚠️ **règle MODIFIÉE 2026-08-01** : la lettre
+de renvoi est une action de la **clôture de la navette du projet de PV**, réservée au **Président / Chef de
+Commission** (auparavant : Membre pendant l'examen). N lettres possibles par examen (indépendamment du Projet
+de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Président).
 
 **Champs `LettreRenvoiDto`**
 
@@ -1703,7 +1966,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | idLettre | number | — (réponse) | PK **auto-générée** (IDENTITY) |
 | idExamen | number | Oui | @NotNull (« L'examen est obligatoire. ») — FK `t_examen` (**non unique** : N lettres/examen) |
 | idDossier | number | — (réponse) | **lecture seule** (dérivé de l'examen) |
-| refLettre | string | — (réponse) | **générée serveur** : `<seqLettreGlobal>/<sous_type>/<code_localite>/LR/<année>` (ex. `00001/PPM/CRM-ANT/LR/2026`, `00001/PPM-AGPM/CRM-ANT/LR/2026`). Le **segment sous-type / localité / année** est **repris tel quel** du `refeDossier` du dossier (donc suit automatiquement le segment sous-type, tiret compris), mais le **numéro de séquence est un compteur GLOBAL dédié aux lettres** (par année, **strictement unique et continu** tous dossiers/entités/localités confondus — ≠ le numéro du dossier). `null` si `refeDossier` non structuré |
+| refLettre | string | — (réponse) | **générée serveur** : `<seqLettreGlobal>/<sous_type>/<code_localite>/LR/<année>` (ex. `00001/PPM/CNM/LR/2026` en central, `00001/PPM-AGPM/CRM-TMS/LR/2026` en région). Le **segment sous-type / localité / année** est **repris tel quel** du `refeDossier` du dossier (donc suit automatiquement le segment sous-type, tiret compris), mais le **numéro de séquence est un compteur GLOBAL dédié aux lettres** (par année, **strictement unique et continu** tous dossiers/entités/localités confondus — ≠ le numéro du dossier). `null` si `refeDossier` non structuré |
 | corpsLettre | string | Non | corps libre de la lettre (TEXT, sans limite de taille) |
 | dateExamen | string (date) | — (réponse) | **lecture seule** (date d'examen) |
 | dateLettre | string (date) | — (réponse) | **posée serveur** (jour) |
@@ -1722,9 +1985,9 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 | GET | /api/lettre-renvois/mes-lettres | — | `LettreRenvoiDto[]` | 200 | **PRMP** — lettres `SIGNE` de ses dossiers (lecture seule) |
 | GET | /api/lettre-renvois/{id} | — | `LettreRenvoiDto` | 200, 403, 404 | Authentifié (dans le périmètre) **ou PRMP propriétaire** (lettre `SIGNE`) — voir marquage « lu » |
 | GET | /api/lettre-renvois/{id}/document | — | fichier **PDF** | 200, 403, 404 | Authentifié (périmètre) — document de la lettre signée |
-| POST | /api/lettre-renvois | `LettreRenvoiDto` | `LettreRenvoiDto` | 201, 400, 403 | **MEMBRE** — création pendant l'examen (BROUILLON) |
-| PUT | /api/lettre-renvois/{id} | `LettreRenvoiDto` | `LettreRenvoiDto` | 200, 400, 404, 409 | **MEMBRE** (brouillon : objet/corps) |
-| POST | /api/lettre-renvois/{id}/soumettre | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **MEMBRE propriétaire** (BROUILLON→SOUMIS) |
+| POST | /api/lettre-renvois | `LettreRenvoiDto` | `LettreRenvoiDto` | 201, 400, 403 | **CHEF_COMMISSION / PRESIDENT** (⚠️ 2026-08-01) — création à la clôture de navette (BROUILLON) |
+| PUT | /api/lettre-renvois/{id} | `LettreRenvoiDto` | `LettreRenvoiDto` | 200, 400, 404, 409 | **CHEF_COMMISSION / PRESIDENT** (brouillon : corps) |
+| POST | /api/lettre-renvois/{id}/soumettre | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **CHEF_COMMISSION / PRESIDENT** (BROUILLON→SOUMIS) |
 | POST | /api/lettre-renvois/{id}/signer | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **CHEF_COMMISSION** (toutes localités) ou **PRESIDENT** (localité **centrale ANT** uniquement) — voir règle |
 | DELETE | /api/lettre-renvois/{id} | — | — | 204, 404 | ADMINISTRATEUR |
 
@@ -1755,7 +2018,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 >
 > **Document PDF (⚠️ règle ajoutée).** À la signature, le **PDF** de la lettre est **généré** puis **stocké
 > sur le système de fichiers (FSX)** dans le répertoire **`LR/`** (`storage.lettre-renvoi.path`), sous le nom
-> **`{refLettre}.pdf`** (les `/` remplacés par `_`, ex. `00007_PPM_CRM-ANT_LR_2026.pdf`) ; le chemin est
+> **`{refLettre}.pdf`** (les `/` remplacés par `_`, ex. `00007_PPM_CNM_LR_2026.pdf`) ; le chemin est
 > conservé dans `t_lettre_renvoi.CHEMIN_DOCUMENT`. Téléchargeable via `GET /api/lettre-renvois/{id}/document`
 > (PDF), dans le périmètre de la lettre (lecture du fichier FSX, repli sur `DOCUMENT_PDF` pour les anciennes
 > lettres). Le PDF est produit **à partir du modèle Word fourni** (`resources/templates/LR_CENTRALE.docx`
@@ -2079,8 +2342,8 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 
 > **Compteurs Membre (⚠️ règle ajoutée).** `GET /api/kpis/mes-compteurs-membre` (réservé **MEMBRE** ou
 > délégué) renvoie, **filtrés sur le Membre attributaire** (son IM via `Dispatch.imCtrlMembre`) :
-> `aExaminer` (ses dossiers `DISPATCHE`, miroir de `/api/dossiers/a-examiner`) et `examines` (son
-> historique : `EXAMINE`/`PV_SIGNE`/`EN_VERIFICATION`/`CLOTURE`).
+> `aExaminer` (ses dossiers `DISPATCHE` + `A_REEXAMINER`, miroir de `/api/dossiers/a-examiner`) et
+> `examines` (son historique : `EXAMINE`/`PV_SIGNE`/`EN_VERIFICATION`/`CLOTURE`).
 
 **Exemple — réponse `GET /api/kpis/mes-compteurs-publication`** (Chargé de publication)
 ```json
@@ -2124,8 +2387,9 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 > `2026-07-17_localite_referencement_deprecie.sql` et `2026-07-17_localite_code_deprecie.sql`). Des valeurs
 > encore envoyées par un ancien front sont **ignorées**. → L'écran admin se réduit à **id / libellé**.
 >
-> 📌 **Étiquetage front.** Le segment localité des références officielles (`00013/PPM/CRM-ANT/2026`)
-> est bâti sur la **PK `idLocalite`** (préfixée `CRM-`, ou `CNM` en central).
+> 📌 **Étiquetage front.** Le segment localité des références officielles est bâti sur la **PK
+> `idLocalite`** : **`CNM`** pour la localité **centrale** (`ANT`, cf. `Localite.ID_CENTRALE` — ex.
+> `00013/PPM/CNM/2026`), **`CRM-<idLocalite>`** pour les régions (ex. `00014/PPM/CRM-TMS/2026`).
 
 **Champs `LocaliteDto`**
 
@@ -2133,6 +2397,7 @@ profil/localité. Cycle : `BROUILLON → SOUMIS → SIGNE` (signature CC ou Pré
 |---|---|---|---|
 | idLocalite | string | Oui (PK, au POST) | clé primaire, max 5 — sert de segment localité des références (`CRM-<id>`) |
 | libelleLocalite | string | Oui | @NotBlank, max 50 — libellé affiché (aussi dans les documents PV/lettres) |
+| chefLieu | string | Non | max 50 — ⚠️ **ajouté 2026-08-03** : **chef-lieu** de la localité (ville de siège de la Commission régionale, lieu porté par les documents officiels « A &lt;chef-lieu&gt;, le … »). **Facultatif** : à défaut, les documents retombent sur `libelleLocalite`. Colonne `CHEF_LIEU` (nullable), éditable dans l'écran admin **Référentiels → Localités** |
 
 **Endpoints**
 
@@ -2188,6 +2453,107 @@ les lots d'une **ligne de marché** (`t_lot.ID_DETAIL`) — **liste vide** si au
 ```json
 { "idLot": 88, "idDossier": 320, "idDetail": 1205, "designationLot": "Fourniture de mobilier - Lot 1", "montLot": 85000000.0, "qteLot": 150, "uniteLot": "unite" }
 ```
+
+---
+
+## Mandats PRMP
+**Ressource** `/api/mandats` (table `t_mandat`) — ⚠️ **règle ajoutée (spec « Mandats PRMP »)**.
+**Écriture réservée `ADMINISTRATEUR`** (un mandat matérialise un arrêté de nomination : personne ne
+déclare le sien). **Lecture ouverte aux authentifiés**, mais une `PRMP` / `UGPM` reste cantonnée à son
+propre périmètre (§3.1) — un filtre pointant ailleurs → **403**.
+
+> **Le mandat est l'habilitation, pas l'attribution.** Un mandat dure **3 ans**. Une **reconduction est un
+> mandat distinct** — nouvel arrêté, nouvelles dates, `numeroMandat = 2` — **jamais une prolongation** : il
+> n'existe volontairement **ni `PUT` ni `DELETE`** sur cette ressource. Le **renouvellement est unique** :
+> un **3ᵉ mandat** pour la même personne → **409**.
+
+> **Reprise de l'existant.** Une PRMP sans aucun mandat déclaré se voit reconstituer un mandat **implicite**
+> depuis `t_prmp` (`DATE_NOMIN` → `DATE_NOMIN + 3 ans`, arrêté = `ARRETE_NOMIN`), signalé par
+> `implicite: true` et sans `idMandat`. Dès qu'un mandat est déclaré pour cette PRMP, `t_mandat` fait seul
+> autorité. Aucune reprise de données n'est donc nécessaire — mais la règle « expiration = `DATE_NOMIN` + 3 ans »
+> (§3.1) devient **opposable** aux PRMP dont la nomination remonte à plus de 3 ans.
+>
+> ⚠️ Le mandat implicite **ne compte pas** dans le plafond de 2 : pour une PRMP déjà en poste, déclarer son
+> **mandat initial** (et pas seulement la reconduction) est ce qui rend la garde de renouvellement exacte.
+
+**Champs `MandatDto`** *(lecture)*
+
+| Champ (JSON) | Type | Contraintes |
+|---|---|---|
+| idMandat | number | PK serveur (IDENTITY) ; **`null`** pour un mandat implicite |
+| idPrmp | string | max 10 — titulaire (FK `t_prmp`) |
+| titulaire | string | max 200 — nom **figé** à la nomination |
+| dateDebut | string (date) | prise de fonction |
+| dateFin | string (date) | par défaut `dateDebut + 3 ans − 1 jour` |
+| refArrete | string | max 100 — arrêté de nomination, **jamais réutilisé** |
+| statut | string | `ACTIF` / `EN_TRANSITION` / `ACHEVE` / `ABROGE` — **dérivé à la date du jour** (voir ci-dessous) |
+| numeroMandat | number | `1` (initial) ou `2` (reconduction) — **calculé serveur**, jamais reçu du client |
+| dateAbrogation | string (date) | renseignée en cas de fin avant terme |
+| motifAbrogation | string | max 255 |
+| implicite | boolean | `true` = mandat reconstitué depuis `t_prmp` |
+
+**Statuts** — `ABROGE` prime (acte explicite) ; sinon la période décide : avant `dateDebut` →
+`EN_TRANSITION` (nomination prise, pas encore effective — **n'autorise pas** le traitement), pendant →
+`ACTIF`, après `dateFin` → `ACHEVE`.
+
+**Endpoints**
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/mandats | — | `MandatDto[]` | 200, 403, 404 | Authentifié — filtres `?ugpm=` / `?prmp=` |
+| GET | /api/mandats/actif | — | `MandatDto` | **200 / 404**, 400, 403 | Authentifié — `?ugpm=` / `?prmp=` **requis** pour un profil CNM |
+| GET | /api/mandats/{id} | — | `MandatDto` | 200, 404 | Authentifié |
+| POST | /api/mandats | `CreerMandatRequest` | `MandatDto` | 201, 400, 403, 404, **409** | **ADMINISTRATEUR** |
+| POST | /api/mandats/{id}/abroger | `AbrogerMandatRequest` | `MandatDto` | 200, 400, 403, 404, 409 | **ADMINISTRATEUR** |
+
+`{id}` = idMandat (number).
+**`CreerMandatRequest`** = `{ idPrmp (@NotBlank, max 10), refArrete (@NotBlank, max 100), dateDebut (@NotNull),
+dateFin (optionnel), titulaire (optionnel, max 200) }`.
+**`AbrogerMandatRequest`** = `{ motif (@NotBlank, max 255), dateAbrogation (optionnel, défaut = aujourd'hui) }`.
+
+> 📌 **`GET /api/mandats?ugpm=`** renvoie l'historique **chronologique** (du plus ancien au plus récent) de la
+> PRMP de **tutelle** de cette UGPM (`t_ugpm.ID_PRMP_TUTELLE`), statut inclus. `?prmp=` l'emporte sur
+> `?ugpm=`. Sans filtre : une PRMP / UGPM obtient son propre historique, un profil CNM obtient tout.
+
+> 📌 **`GET /api/mandats/actif` est le signal de vacance du front** : **200** = quelqu'un est en fonction,
+> **404** = personne ne l'est (« en attente de nomination de la nouvelle PRMP »). À interroger pour griser
+> les actions de traitement avant même de les tenter.
+
+**409 refusés à la création** — `Renouvellement unique` (3ᵉ mandat) · `Arrêté déjà utilisé` ·
+`pas une prolongation` (reconduction recouvrant le mandat précédent) · `ne peut excéder 3 ans` ·
+chevauchement de périodes.
+
+### Standby de transition (`409 VACANCE_PRMP`)
+Sans mandat actif à la date de l'action, **toute action de traitement côté PRMP / UGPM est bloquée** —
+il n'y a **aucune obligation d'intérim**, le dossier attend. Réponse :
+
+```json
+{ "timestamp": "...", "status": 409, "error": "Conflict",
+  "code": "VACANCE_PRMP",
+  "message": "En attente de nomination de la nouvelle PRMP",
+  "path": "/api/dossiers/12/soumettre" }
+```
+
+Le **déblocage est automatique** dès qu'un mandat redevient actif : rien à rejouer, rien à débloquer à la
+main. L'action en attente est alors faite par le **nouveau titulaire en tant qu'opérateur** — l'attribution
+des dossiers, elle, ne change pas.
+
+**Endpoints concernés** (côté PRMP / UGPM uniquement — le circuit interne CNM n'est jamais suspendu par la
+vacance d'une PRMP) : `POST /api/saisies/**` (création), toute édition de PPM / marché / pièce jointe,
+`POST /api/dossiers/{id}/soumettre` · `…/resoumettre` · `…/transmettre-complements` ·
+`…/transmettre-complements-depot`, `DELETE /api/dossiers/{id}`, `POST /api/demande-retraits`, et les
+mises à jour de PPM.
+
+### Attribution figée vs opérateur courant
+| | Porté par | Recalculé ? |
+|---|---|---|
+| **Attribution** | `t_dossier.ID_PRMP` + `ID_MANDAT_ATTRIB` | **Jamais.** Figée à la création ; un changement de PRMP ne réattribue **rien** rétroactivement |
+| **Opérateur courant** | `t_action_dossier` (cf. `GET /api/dossiers/{id}/journal`) | À **chaque action** : la PRMP en fonction à cette date |
+
+La **garde de propriété** accepte donc **deux titres** : la PRMP d'attribution, **et** la PRMP en fonction
+sur le périmètre du dossier — c'est-à-dire celle qui a *à la fois* un mandat actif *et* une affectation
+active (`t_prmp_entite.ACTIF`) sur l'entité contractante du dossier. C'est ce second titre qui permet la
+**reprise du traitement** par le successeur. Une PRMP en fonction **ailleurs** reste refusée (**403**).
 
 ---
 
@@ -2277,21 +2643,35 @@ les lots d'une **ligne de marché** (`t_lot.ID_DETAIL`) — **liste vide** si au
 Processus de marché (LANCEMENT, DAO, OUVERTURE, ATTRIBUTION…), référencés par les dates
 prévisionnelles (`t_marche_prevision.ID_CAPM`). L'`ordre` fixe l'affichage des processus.
 
+> ⚠️ **Modèle mixte par mode de passation (règle ajoutée)** — comme les points de contrôle par sous-type :
+> `idMode` **null** = processus **commun** (modèle par défaut) ; sinon processus **spécifique** au mode
+> (`t_mode_passation.ID_MODE`). `GET /api/capm?mode={idMode}` renvoie la **grille effective** du mode :
+> ses spécifiques s'ils existent, sinon ceux de son **mode modèle partagé**
+> (`tr_mode_passation.ID_MODE_MODELE_CAPM`, administrable — ex. « Consultation des Prix Ouverte »,
+> « CPO PIP » et « Appel à manifestation d'intérêt » → modèle AOO), sinon les communs — triée par
+> `ordre` ASC. Le champ `groupe` porte la **phase** du modèle (regroupement à l'affichage, ex. « 2 — Lancement »).
+> **Modèle détaillé « Appel d'offres ouvert »** (`idMode=1`) : 30 tâches en 6 phases (ids/ordre 101-130),
+> reprises du modèle officiel CAPM AOO (étape préalable, lancement, ouverture des plis, attribution,
+> circuit administratif de validation, notification et exécution).
+
 **Champs `CapmDto`**
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
 | idCapm | number | Oui (PK, au POST) | clé primaire (assignée par le client) |
-| libelleProcessus | string | Non | max 100 |
+| libelleProcessus | string | Non | max 300 |
 | ordre | number | Oui | @NotNull |
+| idMode | number | Non | null = commun ; sinon spécifique au mode de passation |
+| groupe | string | Non | max 150 — phase du modèle (regroupement) |
 
-**Données initiales** : `(1,'LANCEMENT',1)`, `(2,'DAO',2)`, `(3,'OUVERTURE',3)`, `(4,'ATTRIBUTION',4)`.
+**Données initiales** : `(1,'LANCEMENT',1)`, `(2,'DAO',2)`, `(3,'OUVERTURE',3)`, `(4,'ATTRIBUTION',4)`
+(communes, `idMode` null) + le modèle AOO (ids 101-130, `idMode=1`).
 
 **Endpoints**
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/capm | — | `CapmDto[]` | 200 | Authentifié |
+| GET | /api/capm[?mode={idMode}] | — | `CapmDto[]` (grille effective si `mode`) | 200 | Authentifié |
 | GET | /api/capm/{id} | — | `CapmDto` | 200, 404 | Authentifié |
 | POST | /api/capm | `CapmDto` | `CapmDto` | 201, 400, 403 | **ADMINISTRATEUR** |
 | PUT | /api/capm/{id} | `CapmDto` | `CapmDto` | 200, 400, 403, 404 | **ADMINISTRATEUR** |
@@ -2493,6 +2873,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 | delaiMinJours | number | Non | |
 | baseLegale | string | Non | max 200 |
 | idTypeDmc | number | Non | **mapping vers le type de DMC** (`t_type_dmc`) dérivé pour les marchés de ce mode |
+| categorie | string enum | Non | `NORMAL` \| `DEROGATOIRE` \| `null` (= non classé) ; valeur hors enum → **400** `{ "champ": "categorie", ... }` |
 
 **Endpoints**
 
@@ -2511,6 +2892,15 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 > mots-clés, insensible casse/accents) : « appel d'offres » → **DAO** ; « consultation »/« cotation » → **DC** ;
 > « gré à gré »/« achat direct » → **BC** ; sinon **`null`** (à mapper ensuite via `PUT`). Un `idTypeDmc` **fourni
 > explicitement est conservé** (pas d'écrasement). Le `PUT` ne dérive pas (mapping explicite de l'admin).
+
+> **Catégorie `NORMAL` / `DEROGATOIRE` (règle ajoutée 2026-08-13).** Classification **purement déclarative**
+> (aucun comportement dérivé pour l'instant, au même titre que `publiciteRequise`) : le Code des marchés
+> publics fait de l'appel d'offres ouvert le mode de **droit commun** (`NORMAL`), les autres modes étant
+> **dérogatoires** (`DEROGATOIRE`). `null` = **non classé** — les modes créés à la volée (import PPM)
+> naissent non classés et l'Administrateur les classe via l'écran référentiel. **Reprise au démarrage**
+> (`CategorieModePassationMigration`, désactivable par `app.migration.categorie-mode.enabled=false`) :
+> `NORMAL` est posé sur les modes marqués `declencheAgpm` (marqueur AOO administré — jamais de mot-clé
+> de libellé) **dont la catégorie est `null`** ; aucun classement admin n'est écrasé.
 
 **Exemple — requête**
 ```json
@@ -2621,8 +3011,21 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 ## Notifications
 **Ressource** `/api/notifications` (table `t_notification`) — Notifications système, émises **automatiquement à chaque transmission** (dossier, PV, navette, message).
-- **Mes notifications** (`/mes`, `/mes/non-lues/count`, `/{id}/lu`, `/lire-tout`) : **scopées** à l'utilisateur courant — chacun ne voit/agit que sur **les siennes** (clé `DESTINATAIRE_REF` + `DESTINATAIRE_TYPE` ; repli e-mail pour les PRMP).
+- **Mes notifications** (`/mes`, `/mes/non-lues/count`, `/{id}/lu`, `/{id}/non-lu`, `/lire-tout`) : **scopées** à l'utilisateur courant — chacun ne voit/agit que sur **les siennes** (clé `DESTINATAIRE_REF` + `DESTINATAIRE_TYPE` ; repli e-mail pour les PRMP).
 - **Liste globale** et **CRUD** : réservés à l'**Administrateur** (supervision).
+
+> ⚠️ **Temps réel & écran dédié (spec notifications 2026-08-02).**
+> - `POST /{id}/non-lu` : marquage manuel **NON LU** unitaire (inverse de `/{id}/lu`).
+> - `GET /api/notifications/stream` (`text/event-stream`) : flux **SSE** par utilisateur — un événement
+>   `maj` est poussé à **tous les flux du destinataire** à chaque émission de notification et à chaque
+>   marquage lu / non-lu / lire-tout (synchronisation **entre onglets et sessions**). Le front s'y
+>   connecte en fetch-stream (Bearer — EventSource ne porte pas d'en-tête) et recharge alors le compteur
+>   `GET /mes/non-lues/count` — **le compteur est toujours calculé côté serveur**. Repli : polling 60 s.
+>   Flux expirant (~30 min) avec reconnexion automatique côté client.
+> - Front : écran transverse `/notifications` (tous profils, entrée de menu + lien « Voir toutes les
+>   notifications » de la cloche) — regroupement Aujourd'hui / Hier / dates, filtres toutes / non-lues et
+>   par type, « Charger plus » (défilement progressif), clic = lu + ouverture de l'objet, badge cloche
+>   plafonné « 99+ » (`NotificationsStore` : SSE + BroadcastChannel + polling).
 
 **Champs `NotificationDto`**
 
@@ -3028,7 +3431,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 |---|---|---|---|
 | idPv | number | Oui (PK, au POST) | clé primaire |
 | idExamen | number | Oui | @NotNull |
-| idAvis | string | Oui | @NotBlank, max 10 |
+| idAvis | string | Non (⚠️ 2026-08-01) | max 10 — **nullable** : `null` jusqu'à la **clôture de navette** (`…/accepter`, Président/CC) ; requis pour `signer` (409 sinon) |
 | imCtrlPresident | string | Non | max 7 |
 | imCtrlCc | string | Non | max 7 |
 | imCtrlMembre | string | Oui (validation) | @NotBlank, max 7 — **valeur ignorée** : dérivée de l'attribution (`Examen → Dispatch.imCtrlMembre`) ; examen sans attributaire → 409 |
@@ -3043,14 +3446,16 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 | datePv | string (date) | Non | |
 | referencePv | string | Non | max 100 — référence libre (saisie ; reprise dans les notifications) |
 | refePv | string | — (réponse) | max 120 — **référence officielle dérivée du dossier**, générée serveur, **unique** (lecture seule) |
-| idSecretaireSeance | string | — (posé à la soumission) | max 7 — Vérificateur désigné **Secrétaire de séance** (validé à `…/examens/{id}/soumettre`) |
+| idSecretaireSeance | string | — (⚠️ posé à la **clôture de navette**, 2026-08-01) | max 7 — Vérificateur désigné **Secrétaire de séance** (validé à `…/pv-examens/{id}/accepter` ; encore accepté à `…/examens/{id}/soumettre` si fourni) |
 | nomSecretaireSeance | string | — (réponse) | nom complet du secrétaire de séance (« prénoms nom »), peuplé serveur — lecture seule |
-| documentDisponible | boolean | — (réponse) | **`true`** si un PDF officiel est réellement disponible : `CHEMIN_DOCUMENT` non nul **ou** PV **éligible** (avis `FAVR` + localité centrale `ANT` + PPM avec ≥ 1 ligne de marché, **quel que soit le mode de passation**, donc régénérable à la demande) ; **`false`** sinon. Lecture seule, peuplé serveur → le front masque « Télécharger le PDF » et évite un 404 |
+| documentDisponible | boolean | — (réponse) | **`true`** si un PDF officiel est réellement disponible : `CHEMIN_DOCUMENT` non nul **ou** PV **éligible** — un **modèle Word existe pour le cas** (avis `FAVR` ou `FAV` + PPM avec ≥ 1 ligne de marché, **quel que soit le mode de passation** et **quelle que soit la localité** — centrale ou régionale —, donc régénérable à la demande ; cf. tableau des modèles §PV) ; **`false`** sinon. Lecture seule, peuplé serveur → le front masque « Télécharger le PDF » et évite un 404 |
 
 > ⚠️ **Disponibilité du document (`documentDisponible`) — règle ajoutée.** Le flag reflète la règle « PV — document généré » **et** l'existence effective du fichier : `true` si `t_pv_examen.CHEMIN_DOCUMENT` est renseigné, ou si le PV est éligible à la génération à la demande (`GET /api/pv-examens/{id}/document` régénère alors le PDF). Il reste donc juste après une (re)génération. Un PV non éligible (ex. avis **≠ FAVR**, ou localité **non centrale**, ou dossier **sans PPM**) → `false`, et `…/document` renvoie **404**. *(Le **mode de passation** n'entre plus dans l'éligibilité : un PV FAVR/ANT/PPM en « Demande de cotation » est désormais éligible.)*
 
 > ⚠️ **Référence du PV (`refePv`) — règle ajoutée.** À la création, le serveur dérive `refePv` du `refeDossier`
-> du dossier rattaché en insérant **`/PV` avant l'année** : `00003/PPM/CRM-ANT/2026` → `00003/PPM/CRM-ANT/PV/2026`.
+> du dossier rattaché en insérant **`/PV` avant l'année** : `00003/PPM/CNM/2026` → `00003/PPM/CNM/PV/2026`
+> (dossier central), `00004/PPM/CRM-TMS/2026` → `00004/PPM/CRM-TMS/PV/2026` (régional) — le **segment
+> localité est donc hérité du dossier**, jamais recalculé.
 > Dérivée **uniquement** si `refeDossier` est au format `…/YYYY` (sinon `null`). **Unique** : créer un 2ᵉ PV sur le
 > même dossier (même `refePv`) → **409**. Distincte du champ libre `referencePv`.
 
@@ -3061,8 +3466,12 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 | imActeur | string | Oui | @NotBlank, max 7. **Non utilisé pour l'identité** : `signer` enregistre l'utilisateur authentifié (JWT), pas ce champ |
 | commentaire | string | Conditionnel | obligatoire pour `retourner` (sinon 409) |
 | role | string | Conditionnel | max 20 — obligatoire pour `signer` : `MEMBRE` / `PRESIDENT` / `CC` |
+| idAvis | string | Conditionnel (⚠️ 2026-08-01) | max 10 — **obligatoire pour `accepter`** (clôture de navette : pose l'avis global du PV, 400 sinon) ; ignoré ailleurs |
+| idSecretaireSeance | string | Conditionnel (⚠️ 2026-08-01) | max 7 — **obligatoire pour `accepter`** : Vérificateur de la **localité du dossier** désigné Secrétaire de séance (400 sinon) ; ignoré ailleurs |
 
-**Endpoints**
+> ⚠️ **Décisions (2026-08-15, circuit court) — vérification par délégation et Secrétaire de séance.**
+> - Le **passage vérificateur** (décisions levée/maintenue sur les observations, `POST /api/observations-pv/passage`, et la suite de la navette) est une **tâche de profil** : Vérificateur **titulaire OU** contrôleur couvert par une paire « → Vérificateur » **active** (garde centrale) — il n'est **pas** restreint au contrôleur désigné `idSecretaireSeance`. Dans le circuit court, le décideur (CC/Président par délégation) **peut être l'attributaire du même dossier** (auteur des observations) : **assumé, sans garde de séparation** — la vérification juge la levée par la **PRMP**, le PV a déjà été co-signé par une **seconde personne** avant cette phase, et chaque décision est tracée avec l'identité du décideur.
+> - La **désignation** `idSecretaireSeance` reste en revanche **réservée aux Vérificateurs TITULAIRES** de la localité — **non élargie** à la délégation : c'est une mention nominative du **bloc Signataires du PV** (même famille que les actes d'identité), et la délégation couvrant déjà l'exercice de la vérification, le circuit court n'en a pas besoin. Se désigner soi-même → refus (message « Le Secrétaire de séance doit être un Vérificateur de la localité du dossier. »).
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
@@ -3078,20 +3487,48 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 | POST | /api/pv-examens/{id}/accepter | `PvActionRequest` | `PvExamenDto` | 200, 403, 404, 409 | CC / PRESIDENT |
 | POST | /api/pv-examens/{id}/signer | `PvActionRequest` | `PvExamenDto` | 200, 400, 403, 404, 409 | MEMBRE / CC / PRESIDENT |
 
-`{id}` = idPv (number). `soumettre` : BROUILLON|EN_RECTIFICATION→PROJET_SOUMIS ; `retourner` : PROJET_SOUMIS→EN_RECTIFICATION (`commentaire` obligatoire) ; `accepter` : PROJET_SOUMIS→PROJET_ACCEPTE ; `signer` : passe à SIGNE quand le Membre **et** (le Président **ou** le CC) ont signé.
+`{id}` = idPv (number). `soumettre` : BROUILLON|EN_RECTIFICATION→PROJET_SOUMIS ; `retourner` : PROJET_SOUMIS→EN_RECTIFICATION (`commentaire` obligatoire) ; `accepter` : PROJET_SOUMIS→PROJET_ACCEPTE — ⚠️ **clôture de la navette (2026-08-01)** : `idAvis` + `idSecretaireSeance` **obligatoires** (400 sinon ; le serveur pose l'avis global et le secrétaire sur le PV) ; `signer` : passe à SIGNE quand le Membre **et** (le Président **ou** le CC) ont signé — **409 si l'avis global n'est pas posé** (navette non close).
+
+> ⚠️ **Cohérence avis ↔ observations (règle ajoutée 2026-08-01).** À `accepter`, le serveur vérifie la cohérence
+> de l'avis avec les **observations de l'examen** (points de contrôle non conformes **+ pièces jointes non
+> conformes**, `t_examen_detail` + `t_examen_piece`) : **≥ 1 observation → `FAV` (« Favorable » sans réserve)
+> refusé** (400 — choisir `FAVR` ou `DEF`) ; **0 observation → `FAVR` (« Favorable avec réserves ») refusé**
+> (400 — choisir `FAV`). `DEF`/`NSP` restent libres (appréciation souveraine). Le front (panneau de clôture)
+> pré-sélectionne l'avis suggéré et affiche le nombre d'observations.
 
 > ⚠️ **Garde-fou de cohérence dossier↔PV (règle ajoutée).** `DELETE /api/pv-examens/{id}` réaligne le dossier : si, après suppression, le dossier n'a **plus aucun PV `SIGNE`** et se trouve encore **`EN_VERIFICATION`**, il est ramené à **`EXAMINE`** (état « examiné, en attente de PV »). Un dossier ne peut donc plus rester bloqué `EN_VERIFICATION` (« PV signé introuvable » côté vérification) alors que son PV signé n'existe plus. Les autres statuts sont laissés inchangés.
 
 > ⚠️ **Liste scindée projets / définitifs (règle ajoutée).** `GET /api/pv-examens` ne retourne que les **projets de PV** (statut ≠ `SIGNE`) ; dès qu'un PV est **signé** (`SIGNE`) il **quitte** cette liste et apparaît dans **`GET /api/pv-examens/definitifs`** (PV signés uniquement). Les deux listes restent **scopées par localité**. L'accès direct `GET /api/pv-examens/{id}` reste valable pour **tout** PV, signé ou non.
 
-> ⚠️ **Téléchargement du PDF du PV (règle ajoutée).** `GET /api/pv-examens/{id}/document` renvoie le **PDF du PV** (`application/pdf`, en pièce jointe) **lu sur le FSX** (`t_pv_examen.CHEMIN_DOCUMENT`). Accès dans le **périmètre de localité** (même contrôle que `GET /api/pv-examens/{id}`). Si le chemin est absent (PV signé avant le correctif) ou le fichier introuvable, le document est **régénéré à la demande** (si le PV est éligible). **404** seulement si le PV n'est **pas éligible** à la génération (cf. règle « PV — document généré »).
+> ⚠️ **PV définitifs consultables par la PRMP (2026-08-02).** La PRMP (hors périmètre localité) voit les
+> **PV `SIGNE` de SES dossiers** (via PPM, même périmètre que `/lettre-renvois/mes-lettres`) — elle en a
+> besoin pour **rectifier selon les observations du PV** : `GET /definitifs` (liste scopée),
+> `GET /{id}` et `GET /{id}/document` (PDF) autorisés **si le PV est SIGNÉ et relève d'un de ses
+> dossiers** (403 sinon). Les **projets** restent invisibles (liste vide). La notification `PV_SIGNE`
+> est désormais **actionnable** (ref = idPrmp, objet `PV` + `idDossier` — avant : e-mail seul, sans
+> objet) ; front : menu PRMP « PV définitifs » (`/prmp/pv-definitifs`, écran partagé lecture seule),
+> clic notification PV → cet écran. ⚠️ La PRMP ne reçoit que la **VERSION PDF** du PV (document officiel
+> signé), **affichée directement** au clic (« Afficher le PV » → visionneuse iframe blob, URL révoquée à
+> la fermeture ; le lecteur du navigateur offre impression/enregistrement) — pas de modal de détail
+> (reconstruction interne réservée aux contrôleurs).
+
+> ⚠️ **Téléchargement du PDF du PV (règle ajoutée).** `GET /api/pv-examens/{id}/document` renvoie le **PDF du PV** (`application/pdf`, en pièce jointe) **lu sur le FSX** (`t_pv_examen.CHEMIN_DOCUMENT`). ⚠️ 2026-08-01 : le fichier porte la **référence du PV** (`refePv`, repli `referencePv`, « / » → « - » — ex. `00020-PPM-CRM-ANT-PV-2026.pdf`) ; le front télécharge via une ancre `download` du même nom (plus de blob anonyme). Accès dans le **périmètre de localité** (même contrôle que `GET /api/pv-examens/{id}`). Si le chemin est absent (PV signé avant le correctif) ou le fichier introuvable, le document est **régénéré à la demande** (si le PV est éligible). **404** seulement si le PV n'est **pas éligible** à la génération (cf. règle « PV — document généré »).
 
 **`signer` — authentification de la signature (dans le service).** L'endpoint autorise largement (`MEMBRE`/`CHEF_COMMISSION`/`PRESIDENT`) mais le service vérifie que le **signataire authentifié** correspond au `role` signé et enregistre son identité (`IM_CTRL_MEMBRE`/`IM_CTRL_PRESIDENT`/`IM_CTRL_CC` = matricule du signataire) :
 - `role=MEMBRE` → l'appelant doit être le **Membre attributaire** du PV (`IM_CTRL_MEMBRE`), non déléguable → **403** sinon ;
 - `role=PRESIDENT` → profil **PRESIDENT** réel → **403** sinon ;
 - `role=CC` → profil **CHEF_COMMISSION** **et localité du dossier** → **403** sinon ;
 - co-signataire (Président/CC) **≠ Membre signataire** : auto-co-signature interdite → **409** ;
-- `signer` hors `PROJET_ACCEPTE` → **409**.
+- `signer` hors `PROJET_ACCEPTE` → **409** ;
+- ⚠️ **une signature par rôle (2026-08-02)** : si la date de signature du rôle est **déjà posée**
+  (`dateSignatureMembre`/`dateSignaturePresident`/`dateSignatureCc`), re-signer → **409** (« Le PV est
+  déjà signé pour le rôle … »). Le front désactive le bouton « Signer » (libellé « Signé ✓ » + rappel
+  « en attente des autres signataires ») dès que le signataire courant a signé ;
+- ⚠️ **anti-doublon concurrent (2026-08-02)** : `signer` charge le PV avec un **verrou pessimiste**
+  (la génération du PDF rend la signature longue ; des clics répétés lisaient tous `PROJET_ACCEPTE`
+  et notifiaient la signature plusieurs fois). Les requêtes concurrentes sont sérialisées : la 2ᵉ
+  voit l'état commité et reçoit 409. Le front désactive aussi le bouton **pendant** la requête
+  (« Signature… »).
 
 **Exemple — requête (création) / signature**
 ```json
@@ -3130,8 +3567,39 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 
 ---
 
+## Contrôle de complétude des pièces au dépôt (spec recevabilité 2026-08-02)
+**Ressource** `/api/verification-pieces-depot` (table `t_verification_piece_depot`, **append-only** —
+chaque décision est une nouvelle ligne, l'état courant d'une pièce attendue = sa DERNIÈRE décision) :
+AVANT tout enregistrement de la réception, le **SECRÉTAIRE** vérifie **pièce par pièce** la liste de
+référence du type (référentiel `type-piece-jointes` : libellé + obligatoire/facultatif, paramétrable en
+admin) confrontée aux pièces déposées. Objet **distinct de la lettre de renvoi** (recevabilité formelle
+au dépôt, **aucun archivage** — simple événement tracé).
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/verification-pieces-depot?dossier= | — | `VerificationPieceDepotDto[]` (historique ASC) | 200 | Authentifié |
+| POST | /api/verification-pieces-depot | `{ idDossier, idTypePiece, idPiece?, decision, observation? }` | `VerificationPieceDepotDto` | 201, 400, 403, 404, 409 | **SECRETAIRE** |
+
+> `decision` ∈ `CONFORME` / `NON_CONFORME` / `MANQUANTE` ; dossier requis `SOUMIS` ou
+> `EN_ATTENTE_COMPLEMENTS_DEPOT` (409 sinon). Auteur (`imSecretaire`) et horodatage posés serveur (JWT) —
+> traçabilité §6 : pièce, décision, observation, auteur, horodatage, historisés à chaque passage.
+
+> ⚠️ **Signalement PRMP** : `POST /api/dossiers/{id}/signaler-pieces-manquantes` (**SECRETAIRE**, dossier
+> `SOUMIS`, ≥ 1 défaut sinon 409) → notification `PIECES_MANQUANTES_DEPOT` à la PRMP (liste des pièces en
+> défaut + observations), dossier → **`EN_ATTENTE_COMPLEMENTS_DEPOT`** (non enregistrable), événement
+> `t_audit_log`. La PRMP dépose ses pièces (upload pièce initiale autorisé à ce statut) puis
+> `POST /api/dossiers/{id}/transmettre-complements-depot` (**PRMP propriétaire**) → retour `SOUMIS` +
+> notification `COMPLEMENTS_DEPOT_TRANSMIS` aux Secrétaires de la localité. À la reprise, les décisions
+> `CONFORME` restent acquises (état courant par type) : seules les pièces en défaut sont à re-vérifier.
+
 ## Réceptions
 **Ressource** `/api/receptions` — POST/PUT : profil `SECRETAIRE` (titulaire ou délégué) ; DELETE : `ADMINISTRATEUR`. Écriture limitée à sa localité (dossier hors localité → 403, sauf Président). Lecture filtrée par localité.
+
+> ⚠️ **Garde de complétude (spec recevabilité 2026-08-02).** `POST /api/receptions` (réception initiale)
+> est **refusé (409)** tant que toutes les pièces **obligatoires** du type n'ont pas une dernière décision
+> `CONFORME` dans `t_verification_pieces_depot` — le message liste les pièces en cause. Le front reflète la
+> règle (bouton « Enregistrer » désactivé + message explicite + progression x/y) ; la case « Dossier
+> complet » manuelle est remplacée par cet état dérivé.
 
 > **Garde de localité dès la 1ʳᵉ réception.** La localité du dossier est résolue par ordre :
 > `t_dossier.idLocalite` → PPM (`Ppm.idLocalite`) → réception existante. Si elle est connue, un
@@ -3155,14 +3623,20 @@ GET /api/rapports/dossiers/excel                   (Chef de commission : forcé 
 > fixe `DOSSIER`, `annee_exercice`) — table `t_sequence_reference`, sans compteur applicatif : **la numérotation
 > reste continue au sein d'une famille** (un PPM puis un PPM-AGPM se suivent : `00013`, `00014`), seul le libellé
 > du segment change ;
-> `code_localite` = **`CNM`** si réception centrale (utilisateur transversal, sans localité, ex. Président),
-> sinon **`CRM-<localité>`** ; `annee_exercice` = exercice du PPM, sinon année courante.
+> `code_localite` = ⚠️ **règle CORRIGÉE (2026-08-04)** — dépend de la **localité DU DOSSIER**, jamais de
+> celle de l'agent qui enregistre : dossier de la localité **centrale** (`Localite.ID_CENTRALE` = `ANT`)
+> → **`CNM`** (ex. `00023/PPM/CNM/2026`) ; dossier **régional** → **`CRM-<localité>`** (ex.
+> `00023/PPM/CRM-TMS/2026`). *(Auparavant le test portait sur la localité de l'utilisateur courant : un
+> Secrétaire d'Antananarivo produisait `CRM-ANT` alors qu'un Président — sans localité — aurait produit
+> `CNM` pour le même dossier.)* `annee_exercice` = exercice du PPM, sinon année courante.
 > La référence est **persistée** sur le dossier (`REFE_DOSSIER`, vide depuis la soumission)
 > **et sur la réception elle-même** (`t_reception.REFERENCE`) comme **snapshot immuable** : `GET /api/receptions`
 > la renvoie telle qu'à la réception, **même après** une mutation ultérieure de `refeDossier` (ex. restauration
 > de la référence PPM après un **retrait accepté**, cf. `POST /api/demande-retraits/{id}/accepter`). L'historique
 > des réceptions reste ainsi correct indépendamment du dossier.
-> Exemples : `00001/PPM/CNM/2026`, `00001/PPM/CRM-ANT/2026`, `00002/PPM/CRM-ANT/2026`, `00001/PPM/CRM-TMS/2026`.
+> Exemples : `00001/PPM/CNM/2026` et `00002/PPM-AGPM/CNM/2026` (dossiers centraux), `00003/PPM/CRM-TMS/2026`
+> (dossier régional). La référence du **PV** et celle de la **lettre de renvoi** en dérivent, donc portent
+> le même segment (`00001/PPM/CNM/PV/2026`, `00001/PPM/CNM/LR/2026`).
 > *(Dossier sans `type_dossier` → `reference` non générée, la réception reste valide.)*
 >
 > **PK technique auto (⚠️ règle ajoutée).** Le secrétaire ne saisit plus de « N° de réception » : `idReception`
@@ -3504,7 +3978,72 @@ Ouvert Restreint ».
 
 > **Préconditions de circuit (création/MAJ) → 403/409** : profil non `VERIFICATEUR` → **403** ; sinon le PV référencé (`idPv`) doit être **`SIGNE`** **et** d'avis **`FAVR`** (favorable avec réserves) **et** le dossier **non clos** → sinon **409**. La vérification est **itérative** sur le même dossier.
 
-> **Effet `[Auto]`** (sur un dossier `EN_VERIFICATION`) : `obsLevees = true` → dossier **`CLOTURE`** + notification `CLOTURE_ELIGIBLE`. ⚠️ **Règle ajoutée** — `obsLevees = false` → dossier **`EN_ATTENTE_DECISION_PRMP`** : l'observation est **transmise à la PRMP** du dossier (notification `OBSERVATION_VERIFICATION` : référence dossier, vérificateur, texte de l'observation, date) et l'événement est **tracé** dans `t_audit_log`. Le vérificateur ne peut plus modifier ni soumettre de vérification tant que la PRMP n'a pas statué (nouvelle tentative → **409**) ; il voit le dossier en lecture seule dans `GET /api/dossiers/en-attente-prmp`. La PRMP le retrouve via `GET /api/dossiers?statut=EN_ATTENTE_DECISION_PRMP` et lit l'observation complète dans sa notification.
+> ⚠️ **Circuit des observations FAVR — PÉRIMÈTRE FIGÉ (spec 2026-08-02).** Les observations transmises à
+> la PRMP sont **exclusivement celles arrêtées dans le PV** (snapshot à la **signature** du PV FAVR :
+> une observation trackée par ligne « Au lieu de / Lire » de point non conforme + une par pièce non
+> conforme, libellés **figés** — `t_observation_pv` ; rattrapage paresseux au premier accès pour les
+> dossiers FAVR signés avant la règle). **Aucun acteur ne peut élargir ce périmètre** à aucun stade :
+> - `GET /api/observations-pv?dossier=` (vérificateur localité / PRMP propriétaire / tout-voyant) :
+>   observations + **statut courant** (`EMISE` / `LEVEE` / `MAINTENUE`) + **historique par itération**
+>   (`t_suivi_observation` : décision, précision, auteur, horodatage).
+> - `POST /api/observations-pv/passage` (**VERIFICATEUR**, dossier `EN_VERIFICATION`) :
+>   `{ idDossier, decisions:[{ idObservationPv, decision: LEVEE|MAINTENUE, precision? }] }` — **chaque
+>   observation restante doit être statuée** (400 sinon) ; **hors périmètre → 409** (aucune création) ;
+>   **re-décision sur une LEVÉE → 409** (« levée = acquise », décision user 02/08) ; la précision
+>   (facultative, MAINTENUE seulement) est un rappel de **ce qui manque**, jamais une exigence nouvelle.
+>   Le passage `t_verification` est **créé par le serveur** (observation = rappel auto-généré des
+>   maintenues, `obsLevees` dérivé) puis la transition [Auto] s'applique : toutes levées →
+>   `OBSERVATIONS_LEVEES` (cap SIGMP) ; sinon → `EN_ATTENTE_DECISION_PRMP` + notification PRMP
+>   (`OBSERVATION_VERIFICATION`) au contenu **auto-généré** (les maintenues + précisions, rien d'autre).
+> - **Saisie libre interdite** : dès que le périmètre existe, `POST`/`PUT /api/verifications` avec un
+>   texte d'observation client → **409** (rejet backend, pas seulement masquage UI). Le premier envoi à
+>   la PRMP (PV signé) reprend automatiquement les observations du PV — aucun champ de rédaction.
+> - Front : écran Vérificateur = liste des observations (radio Levée / Maintenue + précision), plus
+>   aucun champ libre ; écran « Rectifier » PRMP = panneau lecture seule (statuts + précisions).
+> - Purge retrait : `t_suivi_observation` puis `t_observation_pv` en tête de cascade.
+
+> **Effet `[Auto]`** (sur un dossier `EN_VERIFICATION`) : ⚠️ **règle MODIFIÉE (2026-08-02, spec navette)** — `obsLevees = true` → dossier **`OBSERVATIONS_LEVEES`** (la clôture n'est PLUS posée ici : le vérificateur doit transmettre l'approbation + la levée à SIGMP via `POST /api/sigmp-transmissions`, puis l'Assistant archive le PV, ce qui clôt). `obsLevees = false` → dossier **`EN_ATTENTE_DECISION_PRMP`** : l'observation est **transmise à la PRMP** du dossier (notification `OBSERVATION_VERIFICATION` : référence dossier, vérificateur, texte de l'observation, date) et l'événement est **tracé** dans `t_audit_log`. Le vérificateur ne peut plus modifier ni soumettre de vérification tant que la PRMP n'a pas statué (nouvelle tentative → **409**) ; il voit le dossier en lecture seule dans `GET /api/dossiers/en-attente-prmp`. La PRMP le retrouve via `GET /api/dossiers?statut=EN_ATTENTE_DECISION_PRMP` et lit l'observation complète dans sa notification.
+
+## Transmissions SIGMP (spec navette 2026-08-02)
+**Ressource** `/api/sigmp-transmissions` (table `t_transmission_sigmp`) — ⚠️ le **VÉRIFICATEUR** transmet le
+**sens de la décision de la Commission** vers **SIGMP** (interop PRS 2.0 ↔ SIGMP). En l'absence de contrat
+d'API SIGMP réel, la transmission est **enregistrée côté PRS** (`STATUT_ENVOI = ENREGISTREE`) — aucun endpoint
+tiers inventé ; l'envoi réel sera branché plus tard.
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/sigmp-transmissions[?dossier=] | — | `TransmissionSigmpDto[]` | 200 | Authentifié |
+| POST | /api/sigmp-transmissions | `{ idDossier }` | `TransmissionSigmpDto` | 201, 400, 403, 404, 409 | **VERIFICATEUR** (localité du dossier) |
+
+> Le **sens est dérivé serveur** de l'avis du PV **signé** du dossier : **cas 1** (dossier `EN_VERIFICATION`,
+> avis ≠ FAVR) — `FAV` → `APPROUVE`, `DEF`/`NSP` → `NON_APPROUVE` ; **cas 2** (dossier `OBSERVATIONS_LEVEES`,
+> fin de boucle FAVR) — `APPROUVE` + `leveeObservations = true`. Autre statut/avis → **409**. Effets : dossier →
+> **`DECISION_TRANSMISE_SIGMP`** + notification **`PV_A_ARCHIVER`** aux Assistants contrôleurs de la localité.
+
+> ⚠️ **Branchement post-signature MODIFIÉ (2026-08-02).** À la signature du PV, **TOUS les avis** passent par le
+> vérificateur : dossier → `EN_VERIFICATION` (plus de clôture directe pour FAV/DEF/NSP). Notifications : PRMP
+> (`PV_SIGNE`), vérificateurs (`PV_A_VERIFIER` si FAVR, sinon `DECISION_A_TRANSMETTRE`). La copie assistant
+> (`PV_DEFINITIF_COPIE`) est remplacée par `PV_A_ARCHIVER` (à la transmission SIGMP).
+
+> ⚠️ **Archivage (2026-08-02).** `POST /api/pv-examens/{id}/archiver` (**ASSISTANT_CONTROLEUR**, localité) :
+> PV `SIGNE` + dossier `DECISION_TRANSMISE_SIGMP` → pose `DATE_ARCHIVAGE`/`IM_ARCHIVEUR`, **clôt** le dossier
+> (`CLOTURE`) et émet `CLOTURE_ELIGIBLE`. `POST /api/lettre-renvois/{id}/archiver` (idem) archive une lettre
+> **SIGNE** (le dossier n'est pas modifié). Statuts dossier ajoutés : `OBSERVATIONS_LEVEES`,
+> `DECISION_TRANSMISE_SIGMP`, `EN_ATTENTE_PIECES`, `A_REEXAMINER` (réexamen après lettre de renvoi).
+
+> ⚠️ **Cas 3 — lettre de renvoi (2026-08-02, RÉEXAMEN ajouté).** À la **signature** de la lettre, le dossier
+> `EXAMINE` (ou `A_REEXAMINER`, nouvelle lettre pendant un réexamen) passe **`EN_ATTENTE_PIECES`** (examen
+> suspendu, non modifiable par les Membres — remplace l'ancien retour PRET_DISPATCH), et un projet de PV
+> resté `PROJET_SOUMIS` repasse **`EN_RECTIFICATION`** (la lettre vaut retour de navette : le Membre pourra
+> re-soumettre après réexamen). La PRMP dépose les pièces demandées (`apresLettreRenvoi=true`) puis appelle
+> `POST /api/dossiers/{id}/transmettre-complements` (**PRMP propriétaire**, 409 hors `EN_ATTENTE_PIECES` ;
+> **409 aussi tant qu'aucune pièce n'est rattachée à la lettre du cycle courant** — le réexamen n'a lieu
+> qu'une fois les pièces nécessaires présentes) : dossier → **`A_REEXAMINER`** — retour dans la **file
+> « à examiner » du Membre attributaire** (`GET /api/dossiers/a-examiner` = `DISPATCHE` + `A_REEXAMINER`,
+> compteurs idem ; verrous d'examen rouverts à ce statut) ; notification `COMPLEMENTS_TRANSMIS`. Le Membre
+> **réexamine** à la lumière des pièces reçues (reprise sur les pièces non statuées, examen/PV conservés)
+> puis **re-soumet le projet de PV** (`POST /api/pv-examens/{id}/soumettre`) : le dossier repasse
+> **`EXAMINE`** (même transaction) et la navette reprend son circuit normal (acceptation P/CC → signature).
 
 **Champs `VerificationDto`**
 
