@@ -262,6 +262,12 @@ export interface ObservationPv {
   statut: 'EMISE' | 'LEVEE' | 'MAINTENUE' | (string & {});
   /** Dernière précision du vérificateur (« ce qui manque »), si MAINTENUE. */
   precision?: string;
+  /**
+   * ⚠️ Règle 2026-08-15 — pas de levée avant la première RESOUMISSION de la PRMP : false au premier
+   * passage (= rappel, tout est maintenu ; 409 serveur en garde), true ensuite. Absent = backend
+   * antérieur → comportement historique (levée offerte).
+   */
+  leveePossible?: boolean;
   /** Dernière itération statuée. */
   iteration?: number;
   historique?: SuiviObservation[];

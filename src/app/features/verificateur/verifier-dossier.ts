@@ -176,8 +176,13 @@ interface Echange {
                       <app-observation-pv-card [obs]="o" [numero]="i + 1">
                         @if (o.statut !== 'LEVEE' && !verrouille()) {
                           <div class="vf__obs-actions">
-                            <label class="vf__obs-opt vf__obs-opt--ok">
+                            <!-- ⚠️ Règle 2026-08-15 : levée impossible avant la première rectification
+                                 de la PRMP (leveePossible=false au premier passage — le rappel) ;
+                                 grisée en miroir de la garde 409 serveur. -->
+                            <label class="vf__obs-opt vf__obs-opt--ok" [class.vf__obs-opt--off]="o.leveePossible === false"
+                              [title]="o.leveePossible === false ? 'Levée possible après la première rectification de la PRMP — ce premier passage constitue le rappel (les observations restent maintenues).' : ''">
                               <input type="radio" [name]="'obs-' + o.idObservationPv"
+                                [disabled]="o.leveePossible === false"
                                 [checked]="decisionDe(o.idObservationPv) === 'LEVEE'"
                                 (change)="setDecision(o.idObservationPv, 'LEVEE')" />
                               Levée
@@ -275,6 +280,8 @@ interface Echange {
     .vf__obs-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; border-top: 1px dashed var(--c-100); padding-top: 0.4rem; }
     .vf__obs-opt { display: inline-flex; gap: 0.3rem; align-items: center; font-size: var(--text-sm); cursor: pointer; }
     .vf__obs-opt--ok { color: #15803D; }
+    /* Levée indisponible (premier passage = rappel) : grisée, l'infobulle explique la règle. */
+    .vf__obs-opt--off { opacity: 0.45; cursor: not-allowed; }
     .vf__obs-opt--ko { color: var(--warning-text); }
     .vf__obs-precision { flex: 1 1 16rem; }
     /* Décision transmise à SIGMP : constat vert (spec navette). */
