@@ -3,6 +3,28 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { ObservationPv } from '../../models';
 
 /**
+ * Décomposition du libellé FIGÉ d'une observation du PV (formats générés au snapshot) :
+ * « Ligne « m » — point : au lieu de « x », lire « y » » / « Pièce « p » : obs » / repli brut.
+ * Partagée entre la carte et le tableau « Dossiers à rectifier » de la PRMP.
+ */
+export function decomposerObservation(lib: string): {
+  contexte: string;
+  auLieuDe: string | null;
+  lire: string | null;
+  demande: string | null;
+} {
+  const corr = /^(.*?) : au lieu de « (.*?) », lire « (.*?) »$/s.exec(lib);
+  if (corr) {
+    return { contexte: corr[1], auLieuDe: corr[2], lire: corr[3], demande: null };
+  }
+  const deuxPoints = /^(Pièce « .*?»|Ligne « .*?» — .*?|[^:]{1,120}?) : (.+)$/s.exec(lib);
+  if (deuxPoints) {
+    return { contexte: deuxPoints[1], auLieuDe: null, lire: null, demande: deuxPoints[2] };
+  }
+  return { contexte: lib, auLieuDe: null, lire: null, demande: null };
+}
+
+/**
  * ⚠️ Spec « circuit des observations FAVR » (2026-08-02) — carte de PRÉSENTATION d'une observation du
  * périmètre figé du PV, partagée entre l'écran Vérificateur (qui y projette ses décisions) et le
  * panneau « Rectifier » de la PRMP (lecture seule). Le libellé FIGÉ est décomposé à l'affichage
@@ -83,19 +105,7 @@ export class ObservationPvCard {
    * Décomposition du libellé FIGÉ (formats générés au snapshot) :
    * « Ligne « m » — point : au lieu de « x », lire « y » » / « Pièce « p » : obs » / repli brut.
    */
-  private readonly parties = computed(() => {
-    const o = this.obs();
-    const lib = o.libelle ?? '';
-    const corr = /^(.*?) : au lieu de « (.*?) », lire « (.*?) »$/s.exec(lib);
-    if (corr) {
-      return { contexte: corr[1], auLieuDe: corr[2], lire: corr[3], demande: null as string | null };
-    }
-    const deuxPoints = /^(Pièce « .*?»|Ligne « .*?» — .*?|[^:]{1,120}?) : (.+)$/s.exec(lib);
-    if (deuxPoints) {
-      return { contexte: deuxPoints[1], auLieuDe: null, lire: null, demande: deuxPoints[2] };
-    }
-    return { contexte: lib, auLieuDe: null, lire: null, demande: null };
-  });
+  private readonly parties = computed(() => decomposerObservation(this.obs().libelle ?? ''));
 
   readonly contexte = computed(() => this.parties().contexte);
   readonly demande = computed(() => this.parties().demande);
