@@ -173,9 +173,6 @@
    Le thème global reste violet ; seul l'item de menu actif prend la couleur du
    profil connecté (data-role sur l'hôte), pour un repère visuel par rôle. */
 @mixin nav-accent($color, $bg) {
-  /* Accent du rôle propagé au panneau « Délégations » (demande user 15/08 : couleur du profil). */
-  --deleg-accent: #{$color};
-
   .nav-item.active,
   .nav-sub-item.active {
     color: $color;
@@ -214,11 +211,12 @@
    ⚠️ Demande user (15/08) : ENCART différencié des entrées de menu — panneau sombre arrondi,
    bordure et titre accentué, pour qu'on lise « réglage » et non « navigation ». */
 .sidebar-delegations {
+  /* Teinte VIOLET/INDIGO fixe (choix user 15/08) — tranche avec le bleu nuit, sans évoquer un statut métier. */
+  --deleg-teinte: #8b5cf6;
   margin: auto 0.6rem 0.65rem;
   padding: 0.6rem 0.55rem 0.5rem;
-  /* Teinte = ACCENT DU PROFIL connecté (--deleg-accent posé par nav-accent), fondue dans le sombre. */
-  background: color-mix(in srgb, var(--deleg-accent, #7dd3fc) 16%, rgba(0, 0, 0, 0.3));
-  border: 1px solid color-mix(in srgb, var(--deleg-accent, #7dd3fc) 40%, transparent);
+  background: color-mix(in srgb, var(--deleg-teinte) 18%, rgba(0, 0, 0, 0.3));
+  border: 1px solid color-mix(in srgb, var(--deleg-teinte) 45%, transparent);
   border-radius: 12px;
 }
 .sidebar-delegations__titre {
@@ -231,8 +229,8 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--deleg-accent, #7dd3fc) 50%, white);
-  border-bottom: 1px solid color-mix(in srgb, var(--deleg-accent, #7dd3fc) 30%, transparent);
+  color: color-mix(in srgb, var(--deleg-teinte) 50%, white);
+  border-bottom: 1px solid color-mix(in srgb, var(--deleg-teinte) 30%, transparent);
 }
 .sidebar-delegations__item {
   display: flex;
@@ -289,7 +287,7 @@
 }
 .sidebar-delegations__item--on .sidebar-delegations__switch {
   /* Interrupteur ON à l'accent du profil (éclairci pour rester lisible sur fond sombre). */
-  background: color-mix(in srgb, var(--deleg-accent, #22c55e) 65%, white);
+  background: color-mix(in srgb, var(--deleg-teinte) 65%, white);
 
   &::after {
     left: calc(100% - 1rem + 2px);
