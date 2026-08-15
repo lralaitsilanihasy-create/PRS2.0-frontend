@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
@@ -27,25 +28,29 @@ interface CarteRectif {
 @Component({
   selector: 'app-dossiers-a-rectifier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge],
+  imports: [RouterLink, StatutBadge],
   template: `
     <section>
-      <header class="page-header">
+      <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
         <div>
           <div class="page-subtitle">Domaine PRMP</div>
           <h1 class="page-title">Dossiers à rectifier</h1>
         </div>
+        <a class="btn btn-retour-hub" routerLink="/prmp/dossiers">← Mes dossiers</a>
       </header>
 
       <div class="alert alert-info">
         Observations transmises par le vérificateur. Corrigez le dossier concerné, puis resoumettez-le.
       </div>
 
+      @if (typeFiltre(); as t) {
+        <p class="text-muted">Filtré sur le type <strong>{{ t }}</strong> — <a [routerLink]="[]" [queryParams]="{}">tout afficher</a></p>
+      }
       @if (loading()) {
         <p class="text-muted">Chargement…</p>
-      } @else if (cartes().length) {
+      } @else if (cartesAffichees().length) {
         <div class="ar-list">
-          @for (c of cartes(); track c.dossier.idDossier) {
+          @for (c of cartesAffichees(); track c.dossier.idDossier) {
             <div class="card ar-item">
               <div class="ar-item__head">
                 <span class="ar-item__ref">Dossier {{ c.dossier.refeDossier || '#' + c.dossier.idDossier }}</span>
@@ -147,9 +152,19 @@ export class DossiersARectifier {
   private readonly router = inject(Router);
   private readonly modifications = inject(DossierModificationStore);
 
+  private readonly route = inject(ActivatedRoute);
+  /** Rendu SOUS les cartes de « Mes dossiers » (route enfant) : l'en-tête se colle alors sous la
+   *  topbar pour que le bouton de retour ne bouge pas quand la liste défile. */
+  protected readonly encastre = this.route.snapshot.data['encastre'] === true;
   readonly loading = signal(true);
   /** Une carte par dossier EN_ATTENTE_DECISION_PRMP (dédoublonné par dossier). */
   readonly cartes = signal<CarteRectif[]>([]);
+  /** ⚠️ Demande user (2026-08-02) — filtre par type (`?type=DDP…`) depuis les cartes « Mes dossiers ». */
+  readonly typeFiltre = signal<string | null>(null);
+  readonly cartesAffichees = computed(() => {
+    const t = this.typeFiltre();
+    return t ? this.cartes().filter((c) => c.dossier.idTypeDossier === t) : this.cartes();
+  });
 
   /** Saisie du motif par carte (clé = cleDe(c), unique par dossier). */
   readonly motifs = signal<Record<number, string>>({});
@@ -163,6 +178,7 @@ export class DossiersARectifier {
   constructor() {
     // Retour de l'édition du PPM : les dossiers ouverts en édition deviennent « modifiés ».
     this.modifications.consommerRetours();
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((q) => this.typeFiltre.set(q.get('type')));
     this.charger();
   }
 

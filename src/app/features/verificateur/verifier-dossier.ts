@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { SlicePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { Dossier, Notification, PvExamen, Verification } from '../../models';
+import { Dossier, Notification, ObservationPv, PvExamen, TransmissionSigmp } from '../../models';
 import {
   AvisService,
   ControleurService,
@@ -14,15 +15,18 @@ import {
   ExamenService,
   LocaliteService,
   NotificationService,
+  ObservationPvService,
   PvExamenService,
   ReceptionService,
   ReferenceLookupService,
+  TransmissionSigmpService,
   TypeDossierService,
   VerificationService,
 } from '../../services';
-import { StatutBadge } from '../../shared/circuit';
+import { ObservationPvCard, StatutBadge } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 import { DetailPvModal } from '../circuit/detail-pv-modal';
+import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 
 /** Une ligne du fil chronologique : observation envoyée (vérificateur) ou rectification PRMP reçue. */
 interface Echange {
@@ -43,7 +47,7 @@ interface Echange {
 @Component({
   selector: 'app-verifier-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, DetailPvModal],
+  imports: [SlicePipe, StatutBadge, DossierConsultation, DetailPvModal, ObservationPvCard],
   template: `
     <section class="vf">
       <header class="page-header">
@@ -55,7 +59,8 @@ interface Echange {
 
       <div class="alert alert-info">
         Vérification possible uniquement sur un dossier en vérification (PV signé, avis favorable avec
-        réserve). Cocher « Observations levées » clôture le dossier.
+        réserve). Statuez chaque observation du PV — levée (définitive) ou maintenue ; quand toutes sont
+        levées, le dossier passe à la transmission SIGMP.
       </div>
 
       @if (loading()) {
@@ -111,56 +116,107 @@ interface Echange {
             </div>
           </div>
 
+          <!-- ⚠️ Spec navette (cas 1 & 2) : décision SIGMP — avis ≠ FAVR, ou FAVR après levée des observations. -->
+          @if (modeSigmp(); as mode) {
+            <div class="card vf__panel">
+              <div class="card-header"><span class="card-title">Décision de la Commission → SIGMP</span></div>
+              <div class="card-body">
+                @if (mode === 'transmise') {
+                  <p class="vf__sigmp-ok">✓ Décision transmise à SIGMP — le PV est chez l'Assistant contrôleur pour archivage (l'archivage clôturera le dossier).</p>
+                  @for (t of transmissions(); track t.idTransmission) {
+                    <dl class="vf__info">
+                      <div><dt>Sens transmis</dt><dd><span [class]="t.sens === 'APPROUVE' ? 'badge badge-success' : 'badge badge-danger'">{{ t.sens === 'APPROUVE' ? 'Approuvé' : 'Non approuvé' }}</span></dd></div>
+                      @if (t.leveeObservations) { <div><dt>Levée</dt><dd>Observations levées transmises</dd></div> }
+                      <div><dt>Transmise le</dt><dd class="cnm-mono">{{ t.dateTransmission | slice: 0 : 10 }}</dd></div>
+                    </dl>
+                  }
+                } @else {
+                  <p class="form-hint">
+                    @if (mode === 'levee') {
+                      Observations levées : transmettez à SIGMP l'<strong>approbation du dossier</strong> et la <strong>levée des observations</strong>.
+                    } @else {
+                      Le PV est signé (avis {{ avisLabel() }}) : transmettez le <strong>sens de la décision</strong> à SIGMP.
+                    }
+                  </p>
+                  <dl class="vf__info">
+                    <div><dt>Sens à transmettre</dt><dd><span [class]="sensApprouve() ? 'badge badge-success' : 'badge badge-danger'">{{ sensApprouve() ? 'Approuvé' : 'Non approuvé' }}</span></dd></div>
+                  </dl>
+                  <p class="form-hint">La transmission est enregistrée côté PRS 2.0 (interop SIGMP) puis le PV part automatiquement chez l'Assistant contrôleur pour archivage.</p>
+                  <div class="vf__foot">
+                    <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
+                    <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="transmettreSigmp()">
+                      {{ saving() ? 'Transmission…' : 'Transmettre la décision à SIGMP' }}
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+          <!-- ⚠️ Spec « circuit des observations FAVR » (2026-08-02) — plus AUCUNE saisie libre : le
+               vérificateur statue une à une les observations du PV (périmètre figé), LEVÉE (définitive)
+               ou MAINTENUE (+ précision facultative). Le rappel PRMP est auto-généré des maintenues. -->
           <div class="card vf__panel">
-            <div class="card-header"><span class="card-title">Nouvelle vérification</span></div>
+            <div class="card-header"><span class="card-title">Observations du PV — passage de vérification</span></div>
             <div class="card-body">
               @if (verrouille()) {
                 <p class="form-hint">{{ messageVerrou() }}</p>
+              } @else if (observations().length) {
+                <p class="form-hint">
+                  Périmètre <strong>figé</strong> sur les observations arrêtées au PV — aucune observation ne peut être
+                  ajoutée. Statuez chaque observation restante : une observation <strong>levée est définitivement
+                  acquise</strong> ; les maintenues constituent le rappel adressé à la PRMP.
+                </p>
               } @else {
-                @if (idPv() == null || idReception() == null) {
-                  <p class="form-hint">
-                    PV signé / réception introuvable pour ce dossier : vérification impossible.
-                  </p>
-                }
-                <div class="form-group">
-                  <label class="form-label">Observation</label>
-                  <textarea
-                    class="form-control"
-                    rows="3"
-                    maxlength="500"
-                    [value]="observation()"
-                    (input)="observation.set($any($event.target).value)"
-                  ></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Observations levées</label>
-                  <select
-                    class="form-control"
-                    [value]="obsLevees() ? 'oui' : 'non'"
-                    (change)="obsLevees.set($any($event.target).value === 'oui')"
-                  >
-                    <option value="non">Non — le dossier reste à vérifier</option>
-                    <option value="oui">Oui — clôture le dossier</option>
-                  </select>
-                </div>
-                @if (!obsLevees()) {
-                  <p class="vf__alert">⚠ Ce dossier sera transmis à la PRMP pour rectification. L'observation est obligatoire.</p>
+                <p class="form-hint">Aucune observation au PV pour ce dossier.</p>
+              }
+              @if (observations().length) {
+                <ul class="vf__obs">
+                  @for (o of observations(); track o.idObservationPv; let i = $index) {
+                    <li>
+                      <app-observation-pv-card [obs]="o" [numero]="i + 1">
+                        @if (o.statut !== 'LEVEE' && !verrouille()) {
+                          <div class="vf__obs-actions">
+                            <label class="vf__obs-opt vf__obs-opt--ok">
+                              <input type="radio" [name]="'obs-' + o.idObservationPv"
+                                [checked]="decisionDe(o.idObservationPv) === 'LEVEE'"
+                                (change)="setDecision(o.idObservationPv, 'LEVEE')" />
+                              Levée
+                            </label>
+                            <label class="vf__obs-opt vf__obs-opt--ko">
+                              <input type="radio" [name]="'obs-' + o.idObservationPv"
+                                [checked]="decisionDe(o.idObservationPv) === 'MAINTENUE'"
+                                (change)="setDecision(o.idObservationPv, 'MAINTENUE')" />
+                              Maintenue
+                            </label>
+                            @if (decisionDe(o.idObservationPv) === 'MAINTENUE') {
+                              <input type="text" class="form-control vf__obs-precision" maxlength="500"
+                                placeholder="Précision — ce qui manque (facultatif)"
+                                [value]="precisionDe(o.idObservationPv)"
+                                (input)="setPrecision(o.idObservationPv, $any($event.target).value)" />
+                            }
+                          </div>
+                        }
+                      </app-observation-pv-card>
+                    </li>
+                  }
+                </ul>
+              }
+              @if (!verrouille() && restantes().length) {
+                @if (nbMaintenues() > 0) {
+                  <p class="vf__alert">⚠ {{ nbMaintenues() }} observation(s) maintenue(s) : le dossier sera transmis à la
+                    PRMP pour rectification (rappel généré automatiquement — uniquement les observations du PV).</p>
                 }
                 @if (formError()) { <span class="form-error">{{ formError() }}</span> }
                 <div class="vf__foot">
                   <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
-                  <button
-                    type="button"
-                    class="btn btn-primary"
-                    [disabled]="saving() || idPv() == null || idReception() == null"
-                    (click)="enregistrer()"
-                  >
-                    {{ saving() ? 'Enregistrement…' : 'Enregistrer la vérification' }}
+                  <button type="button" class="btn btn-primary" [disabled]="saving() || !toutesStatuees()" (click)="enregistrer()">
+                    {{ saving() ? 'Enregistrement…' : 'Enregistrer le passage' }}
                   </button>
                 </div>
               }
             </div>
           </div>
+          }
           </div>
         </div>
       }
@@ -194,7 +250,9 @@ interface Echange {
     }
   `,
   styles: `
-    .vf__grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0.75rem; align-items: start; }
+    /* ⚠️ 2026-08-06 — à gauche la consultation du dossier (tableau des marchés, 14 colonnes), à droite
+       le panneau de décision : la part du dossier passe de 1,3 à 1,9 pour que ses en-têtes respirent. */
+    .vf__grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 0.75rem; align-items: start; }
     .vf__right { display: flex; flex-direction: column; gap: 0.75rem; }
     .vf__details { overflow: hidden; }
     .vf__info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
@@ -212,6 +270,15 @@ interface Echange {
     .vf__ech-text { font-size: var(--text-sm); }
     .vf__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; }
     .vf__alert { margin: 0; font-size: var(--text-sm); background: var(--warning-bg); color: var(--warning-text); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); }
+    /* ⚠️ Spec observations FAVR — liste des observations du PV (cartes partagées + décisions projetées). */
+    .vf__obs { list-style: none; margin: 0.5rem 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+    .vf__obs-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; border-top: 1px dashed var(--c-100); padding-top: 0.4rem; }
+    .vf__obs-opt { display: inline-flex; gap: 0.3rem; align-items: center; font-size: var(--text-sm); cursor: pointer; }
+    .vf__obs-opt--ok { color: #15803D; }
+    .vf__obs-opt--ko { color: var(--warning-text); }
+    .vf__obs-precision { flex: 1 1 16rem; }
+    /* Décision transmise à SIGMP : constat vert (spec navette). */
+    .vf__sigmp-ok { margin: 0 0 0.5rem; padding: 0.5rem 0.75rem; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--radius-md); color: #15803D; font-size: var(--text-sm); font-weight: 600; }
     .confirm-modal { max-width: 30rem; }
     @media (max-width: 60rem) { .vf__grid { grid-template-columns: 1fr; } }
   `,
@@ -220,12 +287,15 @@ export class VerifierDossier {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly sigmpService = inject(TransmissionSigmpService);
+  private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly dossierService = inject(DossierService);
   private readonly receptionService = inject(ReceptionService);
   private readonly dispatchService = inject(DispatchService);
   private readonly examenService = inject(ExamenService);
   private readonly pvService = inject(PvExamenService);
   private readonly verificationService = inject(VerificationService);
+  private readonly observationPvService = inject(ObservationPvService);
   private readonly notificationService = inject(NotificationService);
   private readonly lookups = inject(ReferenceLookupService);
 
@@ -240,7 +310,23 @@ export class VerifierDossier {
   readonly idReception = signal<number | null>(null);
   readonly idPv = signal<number | null>(null);
   readonly synthese = signal('');
-  private readonly avisPv = signal<string | null>(null);
+  readonly avisPv = signal<string | null>(null);
+  /** ⚠️ Spec navette — transmissions SIGMP déjà enregistrées pour ce dossier. */
+  readonly transmissions = signal<TransmissionSigmp[]>([]);
+  /**
+   * Mode « décision SIGMP » : `decision` (cas 1 — EN_VERIFICATION, avis ≠ FAVR), `levee` (cas 2 —
+   * OBSERVATIONS_LEVEES), `transmise` (DECISION_TRANSMISE_SIGMP, en attente d'archivage) ; `null`
+   * = vérification classique (FAVR) ou verrou.
+   */
+  readonly modeSigmp = computed<null | 'decision' | 'levee' | 'transmise'>(() => {
+    const s = this.dossier()?.statut;
+    if (s === 'DECISION_TRANSMISE_SIGMP') return 'transmise';
+    if (s === 'OBSERVATIONS_LEVEES') return 'levee';
+    if (s === 'EN_VERIFICATION' && this.avisPv() && this.avisPv() !== 'FAVR') return 'decision';
+    return null;
+  });
+  /** Sens à transmettre : FAV / levée d'observations → Approuvé ; DEF / NSP → Non approuvé. */
+  readonly sensApprouve = computed(() => this.modeSigmp() === 'levee' || this.avisPv() === 'FAV');
   /** PV signé du dossier (conservé pour ouvrir le détail : grille de contrôle + observations). */
   readonly pv = signal<PvExamen | null>(null);
   /** PV ouvert dans le modal de détail (null = fermé). */
@@ -248,8 +334,17 @@ export class VerifierDossier {
   /** Fil chronologique : observations envoyées + rectifications PRMP reçues (DESC). */
   readonly echanges = signal<Echange[]>([]);
 
-  readonly observation = signal('');
-  readonly obsLevees = signal(false);
+  /** ⚠️ Spec observations FAVR (2026-08-02) — périmètre figé du PV (statuts + historique serveur). */
+  readonly observations = signal<ObservationPv[]>([]);
+  /** Décisions en cours de saisie (idObservationPv → décision + précision). */
+  private readonly decisions = signal<Map<number, { decision: 'LEVEE' | 'MAINTENUE'; precision: string }>>(new Map());
+  /** Observations restantes (non levées) — à statuer à cette itération. */
+  readonly restantes = computed(() => this.observations().filter((o) => o.statut !== 'LEVEE'));
+  /** Vrai quand chaque observation restante a reçu une décision. */
+  readonly toutesStatuees = computed(() => this.restantes().every((o) => this.decisions().has(o.idObservationPv)));
+  readonly nbMaintenues = computed(
+    () => [...this.decisions().values()].filter((d) => d.decision === 'MAINTENUE').length,
+  );
 
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -305,9 +400,16 @@ export class VerifierDossier {
       pvs: this.pvService.definitifs(), // PV signés (GET /api/pv-examens/definitifs) — list() ne les expose plus
       verifications: this.verificationService.list(),
       notifs: this.notificationService.mes(),
+      sigmp: this.sigmpService.parDossier(this.idDossier).pipe(catchError(() => of([] as TransmissionSigmp[]))),
+      // ⚠️ Spec observations FAVR — périmètre figé + statuts (vide pour un dossier non FAVR).
+      observations: this.observationPvService
+        .parDossier(this.idDossier)
+        .pipe(catchError(() => of([] as ObservationPv[]))),
     }).subscribe({
       next: (r) => {
         this.dossier.set(r.dossier);
+        this.transmissions.set(r.sigmp);
+        this.observations.set(r.observations);
 
         // Chaîne du dossier : réceptions → dispatchs → examens → PV signé.
         const recOfD = r.receptions.filter((x) => x.idDossier === this.idDossier);
@@ -352,60 +454,102 @@ export class VerifierDossier {
     void this.router.navigate(['/verificateur/a-verifier']);
   }
 
-  enregistrer(): void {
-    const idReception = this.idReception();
-    const idPv = this.idPv();
-    if (idReception == null || idPv == null) {
-      this.formError.set('PV signé / réception introuvable — vérification impossible.');
-      return;
-    }
-    // obsLevees = false : observation obligatoire + confirmation (le dossier part en décision PRMP).
-    if (!this.obsLevees()) {
-      if (!this.observation().trim()) {
-        this.formError.set("L'observation est obligatoire pour transmettre le dossier à la PRMP.");
-        return;
+  // — ⚠️ Spec observations FAVR (2026-08-02) : décisions individuelles sur le périmètre figé du PV —
+
+  decisionDe(id: number): 'LEVEE' | 'MAINTENUE' | null {
+    return this.decisions().get(id)?.decision ?? null;
+  }
+  precisionDe(id: number): string {
+    return this.decisions().get(id)?.precision ?? '';
+  }
+  setDecision(id: number, decision: 'LEVEE' | 'MAINTENUE'): void {
+    this.formError.set(null);
+    this.decisions.update((m) => {
+      const next = new Map(m);
+      const cur = next.get(id);
+      next.set(id, { decision, precision: decision === 'MAINTENUE' ? cur?.precision ?? '' : '' });
+      return next;
+    });
+  }
+  setPrecision(id: number, v: string): void {
+    this.decisions.update((m) => {
+      const next = new Map(m);
+      const cur = next.get(id);
+      if (cur) {
+        next.set(id, { ...cur, precision: v });
       }
-      this.formError.set(null);
-      this.confirmOpen.set(true);
+      return next;
+    });
+  }
+
+  enregistrer(): void {
+    if (!this.toutesStatuees()) {
+      this.formError.set('Chaque observation restante doit être statuée (levée ou maintenue).');
       return;
     }
     this.formError.set(null);
-    this.executerVerification();
+    // ≥1 maintenue : confirmation (le dossier part en décision PRMP avec le rappel auto-généré).
+    if (this.nbMaintenues() > 0) {
+      this.confirmOpen.set(true);
+      return;
+    }
+    this.executerPassage();
   }
 
   confirmerTransmission(): void {
     this.confirmOpen.set(false);
-    this.executerVerification();
+    this.executerPassage();
   }
   annulerTransmission(): void {
     this.confirmOpen.set(false);
   }
 
-  /** Enregistre un NOUVEAU passage de vérification (POST) ; message/redirection selon obsLevees. */
-  private executerVerification(): void {
-    const idReception = this.idReception();
-    const idPv = this.idPv();
-    if (idReception == null || idPv == null) {
-      return;
-    }
+  /** Enregistre le PASSAGE (décisions individuelles) ; le serveur crée le passage + la transition. */
+  private executerPassage(): void {
+    const corps = this.restantes().map((o) => {
+      const d = this.decisions().get(o.idObservationPv)!;
+      return {
+        idObservationPv: o.idObservationPv,
+        decision: d.decision,
+        precision: d.decision === 'MAINTENUE' && d.precision.trim() ? d.precision.trim() : undefined,
+      };
+    });
     this.saving.set(true);
-    const body = {
-      idReception,
-      idPv,
-      observation: this.observation() || undefined,
-      obsLevees: this.obsLevees(),
-    } as Verification;
-    this.verificationService.create(body).subscribe({
-      next: () => {
-        if (this.obsLevees()) {
-          this.toast.success('Observations levées — dossier clôturé.');
-          void this.router.navigate(['/verificateur/verifies']);
+    this.observationPvService.passage(this.idDossier, corps).subscribe({
+      next: (rows) => {
+        this.observations.set(rows);
+        this.decisions.set(new Map());
+        if (rows.every((o) => o.statut === 'LEVEE')) {
+          // ⚠️ Spec navette : la levée ne clôture plus — reste à transmettre l'approbation à SIGMP.
+          this.toast.success("Toutes les observations sont levées — transmettez maintenant l'approbation à SIGMP.");
+          this.saving.set(false);
+          this.dossier.update((d) => (d ? { ...d, statut: 'OBSERVATIONS_LEVEES' } : d));
         } else {
-          this.toast.success('Observation transmise à la PRMP pour rectification.');
+          this.toast.success('Rappel des observations maintenues transmis à la PRMP pour rectification.');
           void this.router.navigate(['/verificateur/en-attente-prmp']);
         }
       },
       error: (_e: ApiError) => this.saving.set(false), // 403/409/400 → toast centralisé
+    });
+  }
+
+  /** ⚠️ Spec navette — transmet le sens de la décision à SIGMP (enregistrement PRS) ; le PV part à l'archivage. */
+  transmettreSigmp(): void {
+    this.saving.set(true);
+    this.sigmpService.transmettre(this.idDossier).subscribe({
+      next: (t) => {
+        this.saving.set(false);
+        this.toast.success("Décision transmise à SIGMP — le dossier passe dans « Vérifiés / clôturés ».");
+        this.transmissions.update((arr) => [...arr, t]);
+        this.dossier.update((d) => (d ? { ...d, statut: 'DECISION_TRANSMISE_SIGMP' } : d));
+        // ⚠️ 2026-08-04 — le dossier quitte « À vérifier » à cet instant : on signale le changement pour
+        // que le badge du menu décroisse sans attendre une navigation.
+        this.dossiersRefresh.notifierChangement();
+      },
+      error: (e: ApiError) => {
+        this.saving.set(false);
+        this.toast.error(e.message || 'Transmission SIGMP impossible.');
+      },
     });
   }
 }
