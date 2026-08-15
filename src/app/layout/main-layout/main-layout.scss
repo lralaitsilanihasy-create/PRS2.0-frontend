@@ -207,19 +207,28 @@
   opacity: 0.65;
 }
 
-/* Interrupteurs « Délégations » (2026-08-15) : opt-in par profil délégué, sous le menu. */
+/* Interrupteurs « Délégations » (2026-08-15) : opt-in par profil délégué, sous le menu.
+   ⚠️ Demande user (15/08) : ENCART différencié des entrées de menu — panneau sombre arrondi,
+   bordure et titre accentué, pour qu'on lise « réglage » et non « navigation ». */
 .sidebar-delegations {
-  margin-top: auto;
-  padding: 0.65rem 0.75rem 0.35rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: auto 0.6rem 0.65rem;
+  padding: 0.6rem 0.55rem 0.5rem;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
 }
 .sidebar-delegations__titre {
-  padding: 0 0.45rem 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 0.45rem 0.45rem;
+  margin-bottom: 0.2rem;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--n-400);
+  color: #7dd3fc;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .sidebar-delegations__item {
   display: flex;
