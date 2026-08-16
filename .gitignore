@@ -45,3 +45,10 @@ Thumbs.db
 
 # Ressources locales non versionnées
 public/mef-logo.png
+
+# Configuration locale Claude Code (contient des commandes avec secrets locaux)
+.claude/settings.local.json
+
+# Artefacts de démonstration (captures avec données personnelles, présentations)
+/screenshots
+/output
