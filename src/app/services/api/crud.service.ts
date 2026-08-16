@@ -1,8 +1,9 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { Page } from '../../models/common.model';
 
 /**
  * Service CRUD générique pour les ressources REST standard de l'API CNM.
@@ -32,6 +33,20 @@ export abstract class CrudService<T, Id extends string | number = number> {
   /** `GET /api/{resource}` — liste (déjà filtrée par le backend si applicable). */
   list(): Observable<T[]> {
     return this.http.get<T[]>(this.baseUrl);
+  }
+
+  /**
+   * `GET /api/{resource}?page=&size=` — page de la liste (enveloppe Spring `Page`).
+   * Disponible sur les grandes listes (dossiers, ppms, marches — livraison backend c16407f) ;
+   * sans le paramètre `page`, le même endpoint continue de renvoyer la liste plate.
+   * Les filtres habituels de la ressource (ex. `statut=`) se combinent via `filtres`.
+   */
+  listePage(page: number, size: number, filtres?: Record<string, string>): Observable<Page<T>> {
+    let params = new HttpParams().set('page', page).set('size', size);
+    for (const [cle, valeur] of Object.entries(filtres ?? {})) {
+      params = params.set(cle, valeur);
+    }
+    return this.http.get<Page<T>>(this.baseUrl, { params });
   }
 
   /** `GET /api/{resource}/{id}`. */

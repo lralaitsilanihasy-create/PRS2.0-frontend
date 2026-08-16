@@ -7,6 +7,7 @@ import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
   Anomalie,
+  BadgesMenu,
   CompteursPrmp,
   CompteursVerificateur,
   Echeance,
@@ -123,6 +124,14 @@ export class KpiService {
    */
   mesCompteursVerificateur(): Observable<CompteursVerificateur> {
     return this.http.get<CompteursVerificateur>(`${this.baseUrl}/mes-compteurs-verificateur`);
+  }
+
+  /**
+   * `GET /api/kpis/badges` — compteurs de menu agrégés du connecté, tous profils, en un appel.
+   * Remplace les rejeux d'endpoints de liste par rôle dans le layout (AUDIT.md P2).
+   */
+  badges(): Observable<BadgesMenu> {
+    return this.http.get<BadgesMenu>(`${this.baseUrl}/badges`);
   }
 }
 

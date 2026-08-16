@@ -13,7 +13,6 @@ import {
   ControleurService,
   DossierService,
   KpiService,
-  LettreRenvoiService,
   PpmService,
   PrmpService,
 } from '../../services';
@@ -43,7 +42,6 @@ export class MainLayout {
   private readonly controleurService = inject(ControleurService);
   private readonly dossierService = inject(DossierService);
   private readonly ppmService = inject(PpmService);
-  private readonly lettreRenvoiService = inject(LettreRenvoiService);
   private readonly kpiService = inject(KpiService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly vacanceStore = inject(VacanceStore);
@@ -215,192 +213,67 @@ export class MainLayout {
       });
     }
 
-    // Secrétaire : badge « à réceptionner » sur « Mes dossiers » (les écrans Réceptions /
-    // Enregistrement ont été fusionnés dedans), rafraîchi à l'ouverture puis à chaque navigation.
-    if (this.auth.role() === 'SECRETAIRE') {
-      this.rafraichirCompteursSecretaire();
+    // Badges de menu : UN appel agrégé (`GET /api/kpis/badges`, livraison backend c16407f)
+    // remplace les rejeux d'endpoints de liste par rôle (AUDIT.md P2) — à l'ouverture, à chaque
+    // navigation, et immédiatement sur mutation signalée (réception, dispatch, lecture de lettre…).
+    // Le compteur Vérificateur reste le miroir exact de sa file (il décroît de lui-même à la
+    // transmission SIGMP) ; le CC gagne le même badge « à dispatcher » que le Président.
+    const role = this.auth.role();
+    if (role && ['PRMP', 'SECRETAIRE', 'VERIFICATEUR', 'PRESIDENT', 'CHEF_COMMISSION'].includes(role)) {
+      this.rafraichirBadges();
       this.router.events
         .pipe(
           filter((e) => e instanceof NavigationEnd),
           takeUntilDestroyed(),
         )
-        .subscribe(() => this.rafraichirCompteursSecretaire());
-      // Réception enregistrée dans le drill-down (pas de navigation) → badge à jour immédiatement.
+        .subscribe(() => this.rafraichirBadges());
       toObservable(this.dossiersRefresh.revision)
         .pipe(skip(1), takeUntilDestroyed())
-        .subscribe(() => this.rafraichirCompteursSecretaire(true));
-    }
-
-    // PRMP : alerte « à rectifier » + compteurs de contenu du menu.
-    if (this.auth.role() === 'PRMP') {
-      this.rafraichirAlertesPrmp();
-      this.rafraichirCompteursPrmp();
-      this.router.events
-        .pipe(
-          filter((e) => e instanceof NavigationEnd),
-          takeUntilDestroyed(),
-        )
-        .subscribe(() => {
-          this.rafraichirAlertesPrmp();
-          this.rafraichirCompteursPrmp();
-        });
-      // Mise à jour immédiate des compteurs après une mutation signalée
-      // (ex. lecture d'une lettre de renvoi → décrément du compteur).
-      toObservable(this.dossiersRefresh.revision)
-        .pipe(skip(1), takeUntilDestroyed())
-        .subscribe(() => this.rafraichirCompteursPrmp(true));
-    }
-
-    // Vérificateur : badge « À vérifier » (demande user 2026-08-04). Compteur SERVEUR
-    // (`/api/kpis/mes-compteurs-verificateur`), miroir exact de la file — il décroît donc de lui-même
-    // dès qu'un dossier en sort, notamment à la transmission de la décision à SIGMP.
-    if (this.auth.role() === 'VERIFICATEUR') {
-      this.rafraichirCompteursVerificateur();
-      this.router.events
-        .pipe(
-          filter((e) => e instanceof NavigationEnd),
-          takeUntilDestroyed(),
-        )
-        .subscribe(() => this.rafraichirCompteursVerificateur());
-      // Transmission SIGMP faite depuis l'écran de vérification (sans navigation) → badge à jour tout de suite.
-      toObservable(this.dossiersRefresh.revision)
-        .pipe(skip(1), takeUntilDestroyed())
-        .subscribe(() => this.rafraichirCompteursVerificateur(true));
-    }
-
-    // Président : compteurs de contenu par item de menu (dérivés des endpoints de liste).
-    if (this.auth.role() === 'PRESIDENT') {
-      this.rafraichirCompteursPresident();
-      this.router.events
-        .pipe(
-          filter((e) => e instanceof NavigationEnd),
-          takeUntilDestroyed(),
-        )
-        .subscribe(() => this.rafraichirCompteursPresident());
-      // Dispatch depuis le drill-down (pas de navigation) → badge « Mes dossiers » à jour immédiatement.
-      toObservable(this.dossiersRefresh.revision)
-        .pipe(skip(1), takeUntilDestroyed())
-        .subscribe(() => this.rafraichirCompteursPresident(true));
+        .subscribe(() => this.rafraichirBadges());
     }
   }
 
-  /** Horodatage du dernier rafraîchissement, par famille de compteurs. */
-  private readonly derniersRafraichissements = new Map<string, number>();
-
   /**
-   * Limite les rafraîchissements de compteurs à un appel / 30 s par famille : ces méthodes
-   * rejouent des endpoints de LISTE à chaque NavigationEnd uniquement pour des `.length`,
-   * ce qui était le coût réseau dominant de l'application (AUDIT.md P2). Les mutations
-   * signalées (revision) passent `force = true` pour rester immédiates.
+   * Compteurs de contenu du menu — un seul appel agrégé (`/api/kpis/badges`), mappé vers les
+   * items du profil. Conventions conservées : pas de badge « 0 » (clés filtrées) ; « Dossiers
+   * à rectifier » reste une ALERTE rouge distincte des compteurs informatifs.
+   * ⚠️ 2026-08-06/07 — chez Président/CC, seuls « à dispatcher » est badgé au menu : les autres
+   * compteurs vivent sur les cartes des hubs (« Résultat examen », « Mes dossiers »).
    */
-  private doitRafraichir(cle: string, force: boolean): boolean {
-    const dernier = this.derniersRafraichissements.get(cle) ?? 0;
-    if (!force && Date.now() - dernier < 30_000) {
-      return false;
-    }
-    this.derniersRafraichissements.set(cle, Date.now());
-    return true;
-  }
-
-  /**
-   * Compteurs de contenu du menu Président : un appel de liste documenté par item
-   * (n'affiche que les valeurs > 0). Aucun endpoint de compteurs agrégé n'existe côté API.
-   */
-  private rafraichirCompteursPresident(force = false): void {
-    if (!this.doitRafraichir('president', force)) {
-      return;
-    }
-    this.dossierService.list('PRET_DISPATCH').subscribe({
-      next: (preDispatch) => {
-        // ⚠️ 2026-08-06/07 — « Projets de PV », « PV définitifs », « Lettres de renvoi » et
-        // « Demandes de retrait » ne sont plus des entrées de menu : leurs compteurs vivent
-        // désormais là où l'utilisateur les lit — sur les cartes du hub « Résultat examen » et sur
-        // les cartes de type de « Mes dossiers ». Il ne reste ici que le badge « à dispatcher ».
-        const c: Record<string, number> = {
-          // Dossiers en attente de dispatch → badge « action à faire » sur « Mes dossiers ».
-          '/president/mes-dossiers': preDispatch.length,
-        };
-        // N'expose que les compteurs > 0 (pas de badge « 0 »).
-        const visibles = Object.fromEntries(Object.entries(c).filter(([, n]) => n > 0));
-        this.counts.set(visibles);
-      },
-      error: () => {},
-    });
-  }
-
-  /**
-   * Compteurs de contenu du menu PRMP (un appel de liste documenté par item ; valeurs > 0 seulement).
-   * « Dossiers à rectifier » garde son badge d'alerte rouge (rafraichirAlertesPrmp), non dupliqué ici.
-   */
-  private rafraichirCompteursPrmp(force = false): void {
-    if (!this.doitRafraichir('compteursPrmp', force)) {
-      return;
-    }
-    forkJoin({
-      brouillons: this.dossierService.list('BROUILLON'),
-      ppms: this.ppmService.list(),
-      verifies: this.dossierService.list('CLOTURE'),
-      lettres: this.lettreRenvoiService.getMesLettres(),
-      compteurs: this.kpiService.mesCompteurs(),
-    }).subscribe({
-      next: ({ brouillons, ppms, verifies, lettres, compteurs }) => {
-        const c: Record<string, number> = {
-          '/prmp/mes-brouillons': brouillons.length,
-          '/prmp/ppm-marches': ppms.length,
-          '/prmp/dossiers-verifies': verifies.length,
-          // Lettres SIGNE non encore lues (le compteur décroît à la lecture) → badge sur le hub
-          // « Examen de dossiers » qui regroupe désormais lettres + PV définitifs.
-          '/prmp/resultat-examen': lettres.filter((l) => !l.lue).length,
-          // Demandes passées à ACCEPTEE/REFUSEE depuis ma dernière consultation (calcul serveur).
-          '/prmp/retraits': compteurs.demandesRetraitNouvelles,
-        };
+  private rafraichirBadges(): void {
+    this.kpiService.badges().subscribe({
+      next: ({ compteurs }) => {
+        const c: Record<string, number> = {};
+        switch (this.auth.role()) {
+          case 'PRMP':
+            // ⚠️ « Mes brouillons » / « PPM & marchés » / « Dossiers vérifiés » ne sont plus des
+            // entrées du menu PRMP (retirées le 2026-08-02 au profit des cartes « Mes dossiers ») :
+            // ces clés restent mappées pour le menu UGPM et les réintroductions éventuelles — un
+            // compteur sans item correspondant n'affiche simplement rien.
+            c['/prmp/mes-brouillons'] = compteurs['brouillons'] ?? 0;
+            c['/prmp/ppm-marches'] = compteurs['ppmMarches'] ?? 0;
+            c['/prmp/dossiers-verifies'] = compteurs['dossiersVerifies'] ?? 0;
+            // Lettres SIGNE non encore lues → badge sur le hub « Examen de dossiers ».
+            c['/prmp/resultat-examen'] = compteurs['lettresRenvoi'] ?? 0;
+            // Demandes passées à ACCEPTEE/REFUSEE depuis ma dernière consultation (calcul serveur).
+            c['/prmp/retraits'] = compteurs['demandesRetraitNouvelles'] ?? 0;
+            this.alerts.update((a) => ({ ...a, '/prmp/a-rectifier': compteurs['dossiersARectifier'] ?? 0 }));
+            break;
+          case 'PRESIDENT':
+            c['/president/mes-dossiers'] = compteurs['predispatch'] ?? 0;
+            break;
+          case 'CHEF_COMMISSION':
+            c['/cc/mes-dossiers'] = compteurs['predispatch'] ?? 0;
+            break;
+          case 'SECRETAIRE':
+            c['/secretaire/mes-dossiers'] = compteurs['aReceptionner'] ?? 0;
+            break;
+          case 'VERIFICATEUR':
+            c[CHEMIN_A_VERIFIER] = compteurs['aVerifier'] ?? 0;
+            break;
+        }
         this.counts.set(Object.fromEntries(Object.entries(c).filter(([, n]) => n > 0)));
       },
-      error: () => {},
-    });
-  }
-
-  /** Recharge le compteur d'alerte PRMP (dossiers EN_ATTENTE_DECISION_PRMP → à rectifier). */
-  private rafraichirAlertesPrmp(force = false): void {
-    if (!this.doitRafraichir('alertesPrmp', force)) {
-      return;
-    }
-    this.dossierService.list('EN_ATTENTE_DECISION_PRMP').subscribe({
-      next: (rows) => this.alerts.update((a) => ({ ...a, '/prmp/a-rectifier': rows.length })),
-      error: () => {},
-    });
-  }
-
-  /**
-   * Recharge le badge « À vérifier » du Vérificateur (compteur serveur, scopé à sa localité).
-   * File vide → aucun badge (convention du menu : pas de badge « 0 »), d'où le retrait de la clé.
-   */
-  private rafraichirCompteursVerificateur(force = false): void {
-    if (!this.doitRafraichir('verificateur', force)) {
-      return;
-    }
-    this.kpiService.mesCompteursVerificateur().subscribe({
-      next: (c) =>
-        this.counts.update((m) => {
-          const suivant = { ...m };
-          if (c.aVerifier > 0) {
-            suivant[CHEMIN_A_VERIFIER] = c.aVerifier;
-          } else {
-            delete suivant[CHEMIN_A_VERIFIER];
-          }
-          return suivant;
-        }),
-      error: () => {},
-    });
-  }
-
-  /** Recharge le compteur du Secrétaire (à réceptionner, scopé serveur) → badge « Mes dossiers ». */
-  private rafraichirCompteursSecretaire(force = false): void {
-    if (!this.doitRafraichir('secretaire', force)) {
-      return;
-    }
-    this.dossierService.aReceptionner().subscribe({
-      next: (rows) => this.counts.update((c) => ({ ...c, '/secretaire/mes-dossiers': rows.length })),
       error: () => {},
     });
   }

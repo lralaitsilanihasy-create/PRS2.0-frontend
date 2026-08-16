@@ -155,6 +155,18 @@ export interface CompteursVerificateur {
   enAttentePrmp: number;
 }
 
+/**
+ * `GET /api/kpis/badges` — compteurs de menu agrégés en UN appel, par profil du connecté
+ * (livraison backend c16407f). Les clés de `compteurs` dépendent du profil :
+ * PRMP → clés de `CompteursPrmp` ; PRESIDENT / CHEF_COMMISSION → predispatch, dispatch,
+ * projetsPV, lettresRenvoi, pvDefinitifs, demandesRetrait ; SECRETAIRE → aReceptionner,
+ * receptions ; VERIFICATEUR → clés de `CompteursVerificateur`.
+ */
+export interface BadgesMenu {
+  profil: string;
+  compteurs: Record<string, number>;
+}
+
 /** Réponse de `GET /api/kpis/tableau-bord` (PRESIDENT / ADMINISTRATEUR). */
 export interface TableauBord {
   /** Nombre de dossiers par statut. */
