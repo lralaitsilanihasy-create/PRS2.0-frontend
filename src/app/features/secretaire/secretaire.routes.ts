@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
 
-import { DossiersClassement, ClassementGroupe, GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../circuit/dossiers-classement';
-import { DossiersCircuitListe } from '../circuit/dossiers-circuit-liste';
-import { Messagerie } from '../transverse/messagerie';
-import { SecretaireDashboard } from './secretaire-dashboard';
+import { ClassementGroupe, GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../circuit/dossiers-classement';
+
+
+
 
 /** Groupes du Secrétaire : à réceptionner vs réceptionné-enregistré (groupes PARTAGÉS avec P/CC via délégation). */
 const SECRETAIRE_GROUPES: ClassementGroupe[] = [GROUPE_RECEPTIONS, GROUPE_ENREGISTREMENT];
@@ -14,8 +14,8 @@ const CLASSEMENT_SECRETAIRE = { subtitle: 'Domaine Secrétaire', base: '/secreta
 /** Espace Secrétaire (lazy, sous roleGuard SECRETAIRE). */
 export const SECRETAIRE_ROUTES: Routes = [
   { path: '', redirectTo: 'mes-dossiers', pathMatch: 'full' },
-  { path: 'tableau-de-bord', component: SecretaireDashboard },
-  { path: 'mes-dossiers', component: DossiersClassement, data: { classement: CLASSEMENT_SECRETAIRE } },
-  { path: 'mes-dossiers/:type/:groupe', component: DossiersCircuitListe, data: { classement: CLASSEMENT_SECRETAIRE } },
-  { path: 'messagerie', component: Messagerie },
+  { path: 'tableau-de-bord', loadComponent: () => import('./secretaire-dashboard').then((m) => m.SecretaireDashboard) },
+  { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_SECRETAIRE } },
+  { path: 'mes-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_SECRETAIRE } },
+  { path: 'messagerie', loadComponent: () => import('../transverse/messagerie').then((m) => m.Messagerie) },
 ];

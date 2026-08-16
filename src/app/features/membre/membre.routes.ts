@@ -1,13 +1,13 @@
 import { Routes } from '@angular/router';
 
-import { DossiersPipeline } from '../circuit/dossiers-pipeline';
-import { DossiersClassement, ClassementConfig, ClassementGroupe } from '../circuit/dossiers-classement';
-import { DossiersCircuitListe } from '../circuit/dossiers-circuit-liste';
-import { PvDefinitifs } from '../circuit/pv-definitifs';
-import { Messagerie } from '../transverse/messagerie';
-import { ExamenDossier } from './examen-dossier';
-import { LettreRenvoiList } from './lettre-renvois';
-import { MembrePv } from './pv-page';
+
+import { ClassementConfig, ClassementGroupe } from '../circuit/dossiers-classement';
+
+
+
+
+
+
 
 /** Groupes du Membre : à examiner (DISPATCHE + A_REEXAMINER, réexamen après lettre de renvoi) vs examinés (historique `/examines`). */
 const MEMBRE_GROUPES: ClassementGroupe[] = [
@@ -23,16 +23,16 @@ export const MEMBRE_ROUTES: Routes = [
   { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
   {
     path: 'tableau-de-bord',
-    component: DossiersPipeline,
+    loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline),
     data: { title: 'Dossiers de ma localité' },
   },
-  { path: 'mes-dossiers', component: DossiersClassement, data: { classement: CLASSEMENT_MEMBRE } },
-  { path: 'mes-dossiers/:type/:groupe', component: DossiersCircuitListe, data: { classement: CLASSEMENT_MEMBRE } },
-  { path: 'examiner/:idDossier', component: ExamenDossier, data: { title: 'Examiner un dossier' } },
+  { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_MEMBRE } },
+  { path: 'mes-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_MEMBRE } },
+  { path: 'examiner/:idDossier', loadComponent: () => import('./examen-dossier').then((m) => m.ExamenDossier), data: { title: 'Examiner un dossier' } },
   // « Dossiers à examiner », « Dossiers examinés » et « Détails d'examen » retirés :
   // files + actions Examiner / Modifier l'examen dans « Mes dossiers ».
-  { path: 'pv', component: MembrePv },
-  { path: 'lettre-renvois', component: LettreRenvoiList },
-  { path: 'pv-definitifs', component: PvDefinitifs },
-  { path: 'messagerie', component: Messagerie },
+  { path: 'pv', loadComponent: () => import('./pv-page').then((m) => m.MembrePv) },
+  { path: 'lettre-renvois', loadComponent: () => import('./lettre-renvois').then((m) => m.LettreRenvoiList) },
+  { path: 'pv-definitifs', loadComponent: () => import('../circuit/pv-definitifs').then((m) => m.PvDefinitifs) },
+  { path: 'messagerie', loadComponent: () => import('../transverse/messagerie').then((m) => m.Messagerie) },
 ];

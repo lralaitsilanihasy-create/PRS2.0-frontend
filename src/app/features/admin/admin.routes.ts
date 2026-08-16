@@ -1,21 +1,20 @@
 import { Routes } from '@angular/router';
 
-import { CrudPage } from '../../shared/crud/crud-page';
-import { SectionHome } from '../../shared/ui/section-home';
-import { KpiDashboard } from '../pilotage/kpi-dashboard';
-import { RapportsPage } from '../pilotage/rapports-page';
-import { EntiteArbre } from './entite-arbre';
-import { ControleurAdmin } from './controleur-admin';
-import { DmcMappingAdmin } from './dmc-mapping-admin';
-import { InscriptionsAdmin } from './inscriptions-admin';
-import { PrmpAdmin } from './prmp-admin';
-import { PrmpPiecesAdmin } from './prmp-pieces-admin';
-import { RattachementsAdmin } from './rattachements-admin';
-import { MandatsAdmin } from './mandats-admin';
-import { UgpmAdmin } from './ugpm-admin';
-import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
-import { PpmMarches } from '../prmp/ppm-marches';
-import { PrmpMarchesPrevisions } from '../prmp/prmp-marches-previsions';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import { COMPTES, REFERENTIELS, SECURITE } from './admin-resources.config';
 
 const refLinks = [
@@ -46,44 +45,44 @@ const sessionConfig = SECURITE.find((r) => r.slug === 'session-utilisateurs')!.c
 export const ADMIN_ROUTES: Routes = [
   { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
 
-  { path: 'tableau-de-bord', component: KpiDashboard },
+  { path: 'tableau-de-bord', loadComponent: () => import('../pilotage/kpi-dashboard').then((m) => m.KpiDashboard) },
 
   {
     path: 'referentiels',
-    component: SectionHome,
+    loadComponent: () => import('../../shared/ui/section-home').then((m) => m.SectionHome),
     data: { title: 'Référentiels', links: refLinks },
   },
-  { path: 'referentiels/entite-arbre', component: EntiteArbre },
-  { path: 'referentiels/dmc-mapping', component: DmcMappingAdmin },
+  { path: 'referentiels/entite-arbre', loadComponent: () => import('./entite-arbre').then((m) => m.EntiteArbre) },
+  { path: 'referentiels/dmc-mapping', loadComponent: () => import('./dmc-mapping-admin').then((m) => m.DmcMappingAdmin) },
   ...REFERENTIELS.map((r) => ({
     path: `referentiels/${r.slug}`,
-    component: CrudPage,
+    loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage),
     data: { crud: r.config },
   })),
 
   {
     path: 'comptes',
-    component: SectionHome,
+    loadComponent: () => import('../../shared/ui/section-home').then((m) => m.SectionHome),
     data: { title: 'Comptes & hiérarchie', links: compteLinks },
   },
   // PRMP et contrôleur ont un écran dédié (fiche + photo/pièces) ; les autres ressources « comptes » sont génériques.
   ...COMPTES.filter((r) => r.slug !== 'prmps' && r.slug !== 'controleurs').map((r) => ({
     path: `comptes/${r.slug}`,
-    component: CrudPage,
+    loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage),
     data: { crud: r.config },
   })),
-  { path: 'comptes/prmps', component: PrmpAdmin },
-  { path: 'comptes/controleurs', component: ControleurAdmin },
-  { path: 'comptes/ugpms', component: UgpmAdmin },
-  { path: 'comptes/mandats', component: MandatsAdmin },
-  { path: 'comptes/prmp-pieces', component: PrmpPiecesAdmin },
-  { path: 'comptes/ugpm-pieces', component: UgpmPiecesAdmin },
+  { path: 'comptes/prmps', loadComponent: () => import('./prmp-admin').then((m) => m.PrmpAdmin) },
+  { path: 'comptes/controleurs', loadComponent: () => import('./controleur-admin').then((m) => m.ControleurAdmin) },
+  { path: 'comptes/ugpms', loadComponent: () => import('./ugpm-admin').then((m) => m.UgpmAdmin) },
+  { path: 'comptes/mandats', loadComponent: () => import('./mandats-admin').then((m) => m.MandatsAdmin) },
+  { path: 'comptes/prmp-pieces', loadComponent: () => import('./prmp-pieces-admin').then((m) => m.PrmpPiecesAdmin) },
+  { path: 'comptes/ugpm-pieces', loadComponent: () => import('./ugpm-pieces-admin').then((m) => m.UgpmPiecesAdmin) },
 
-  { path: 'inscriptions', component: InscriptionsAdmin },
-  { path: 'rattachements', component: RattachementsAdmin },
-  { path: 'audit', component: CrudPage, data: { crud: auditConfig } },
-  { path: 'sessions', component: CrudPage, data: { crud: sessionConfig } },
-  { path: 'rapports', component: RapportsPage },
-  { path: 'ppm-marches', component: PpmMarches },
-  { path: 'marches-previsions', component: PrmpMarchesPrevisions },
+  { path: 'inscriptions', loadComponent: () => import('./inscriptions-admin').then((m) => m.InscriptionsAdmin) },
+  { path: 'rattachements', loadComponent: () => import('./rattachements-admin').then((m) => m.RattachementsAdmin) },
+  { path: 'audit', loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage), data: { crud: auditConfig } },
+  { path: 'sessions', loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage), data: { crud: sessionConfig } },
+  { path: 'rapports', loadComponent: () => import('../pilotage/rapports-page').then((m) => m.RapportsPage) },
+  { path: 'ppm-marches', loadComponent: () => import('../prmp/ppm-marches').then((m) => m.PpmMarches) },
+  { path: 'marches-previsions', loadComponent: () => import('../prmp/prmp-marches-previsions').then((m) => m.PrmpMarchesPrevisions) },
 ];
