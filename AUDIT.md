@@ -1,6 +1,13 @@
 # Audit technique — frontendprs2 (CNM PRS 2.0)
 
 > **Date** : 16 août 2026 · **Périmètre** : frontend Angular (`src/`, configuration, dépendances) · **Méthode** : lecture systématique du code (138 fichiers TS, ~38 000 lignes), build de production mesuré, `npm audit`, vérification manuelle de chaque constat majeur (fichier:ligne).
+>
+> **Suivi des corrections (16/08/2026)** — appliquées et vérifiées le jour même :
+> `787ec4a` S1/S11 (secrets détrackés + .gitignore) · `62a26f7` D1 (Angular 22.1.x, npm audit = 0) ·
+> `816ced8` S2/S3-timer/S4/S5/S7/S13 (blobs sûrs, validation uploads, expiration, interceptor, échappement impression) ·
+> `3e7fb0e` P2/P3/P7 (badges 30 s, poll conditionnel, doublons) · `9ff24e9` A1 partiel/A5/A6 (directive appModale sur 27 dialogues, noms accessibles, cloche) ·
+> `f8dca39` P4/P11 (112 routes en loadComponent, preload, budget anyScript — plus gros chunk lazy 200 → 69 kB).
+> Restent ouverts : P1 (pagination — backend), P5/P6 (templates chauds), P8 (logo), A2 (contraste — décision design), A3/A4/A7, S3 (cookie HttpOnly — backend), S6/S8 (CSP/polices), S9 (choix produit : persistance des interrupteurs de délégation conservée), T1/T2/T3.
 
 ## Sommaire
 
