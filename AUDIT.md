@@ -7,7 +7,8 @@
 > `816ced8` S2/S3-timer/S4/S5/S7/S13 (blobs sûrs, validation uploads, expiration, interceptor, échappement impression) ·
 > `3e7fb0e` P2/P3/P7 (badges 30 s, poll conditionnel, doublons) · `9ff24e9` A1 partiel/A5/A6 (directive appModale sur 27 dialogues, noms accessibles, cloche) ·
 > `f8dca39` P4/P11 (112 routes en loadComponent, preload, budget anyScript — plus gros chunk lazy 200 → 69 kB).
-> Restent ouverts : P1 (pagination — backend), P5/P6 (templates chauds), P8 (logo), A2 (contraste — décision design), A3/A4/A7, S3 (cookie HttpOnly — backend), S6/S8 (CSP/polices), S9 (choix produit : persistance des interrupteurs de délégation conservée), T1/T2/T3.
+> `fad4ca7` P2 **clos** (badges par `GET /api/kpis/badges` — un appel, throttle supprimé, badge « à dispatcher » gagné par le CC) et P1 **outillé** (`CrudService.listePage`, filtres combinables) après la livraison backend `c16407f`, qui a aussi clos **S6** (CSP, `nosniff`, `X-Frame-Options` vérifiés en live) et la garde serveur de **S2** (`Content-Type` des pièces).
+> Restent ouverts : P1 (adoption écran par écran des pages), P5/P6 (templates chauds), P8 (logo), A2 (contraste — décision design), A3/A4/A7, S3 (cookie HttpOnly — plan backend à demander), S8 (polices), S9 (choix produit : persistance des interrupteurs de délégation conservée), T1/T2/T3.
 
 ## Sommaire
 
