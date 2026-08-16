@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
@@ -231,10 +232,11 @@ export class DossiersListe {
       this.focusId.set(f ? Number(f) : null);
     });
     // Recharge quand un autre écran signale un changement (suppression, soumission…).
-    effect(() => {
-      this.dossiersRefresh.revision();
-      this.charger();
-    });
+    // skip(1) : le chargement initial est déjà déclenché par paramMap ci-dessus — un effect
+    // s'exécutant aussi au premier cycle, chaque montage lançait les 3 requêtes deux fois.
+    toObservable(this.dossiersRefresh.revision)
+      .pipe(skip(1), takeUntilDestroyed())
+      .subscribe(() => this.charger());
   }
 
   private charger(): void {

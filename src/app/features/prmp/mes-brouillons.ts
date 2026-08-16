@@ -245,7 +245,8 @@ export class MesBrouillons {
   }
   /** Après une mutation dans le modal (ex. suppression PPM → cascade dossier) : recharge la liste. */
   onModifie(): void {
-    this.charger();
+    // notifierChangement() suffit : l'effect du constructeur (revision) recharge la liste —
+    // l'appel direct à charger() en plus lançait la requête deux fois.
     this.dossiersRefresh.notifierChangement();
   }
 

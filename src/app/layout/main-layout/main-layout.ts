@@ -228,7 +228,7 @@ export class MainLayout {
       // Réception enregistrée dans le drill-down (pas de navigation) → badge à jour immédiatement.
       toObservable(this.dossiersRefresh.revision)
         .pipe(skip(1), takeUntilDestroyed())
-        .subscribe(() => this.rafraichirCompteursSecretaire());
+        .subscribe(() => this.rafraichirCompteursSecretaire(true));
     }
 
     // PRMP : alerte « à rectifier » + compteurs de contenu du menu.
@@ -248,7 +248,7 @@ export class MainLayout {
       // (ex. lecture d'une lettre de renvoi → décrément du compteur).
       toObservable(this.dossiersRefresh.revision)
         .pipe(skip(1), takeUntilDestroyed())
-        .subscribe(() => this.rafraichirCompteursPrmp());
+        .subscribe(() => this.rafraichirCompteursPrmp(true));
     }
 
     // Vérificateur : badge « À vérifier » (demande user 2026-08-04). Compteur SERVEUR
@@ -265,7 +265,7 @@ export class MainLayout {
       // Transmission SIGMP faite depuis l'écran de vérification (sans navigation) → badge à jour tout de suite.
       toObservable(this.dossiersRefresh.revision)
         .pipe(skip(1), takeUntilDestroyed())
-        .subscribe(() => this.rafraichirCompteursVerificateur());
+        .subscribe(() => this.rafraichirCompteursVerificateur(true));
     }
 
     // Président : compteurs de contenu par item de menu (dérivés des endpoints de liste).
@@ -280,15 +280,36 @@ export class MainLayout {
       // Dispatch depuis le drill-down (pas de navigation) → badge « Mes dossiers » à jour immédiatement.
       toObservable(this.dossiersRefresh.revision)
         .pipe(skip(1), takeUntilDestroyed())
-        .subscribe(() => this.rafraichirCompteursPresident());
+        .subscribe(() => this.rafraichirCompteursPresident(true));
     }
+  }
+
+  /** Horodatage du dernier rafraîchissement, par famille de compteurs. */
+  private readonly derniersRafraichissements = new Map<string, number>();
+
+  /**
+   * Limite les rafraîchissements de compteurs à un appel / 30 s par famille : ces méthodes
+   * rejouent des endpoints de LISTE à chaque NavigationEnd uniquement pour des `.length`,
+   * ce qui était le coût réseau dominant de l'application (AUDIT.md P2). Les mutations
+   * signalées (revision) passent `force = true` pour rester immédiates.
+   */
+  private doitRafraichir(cle: string, force: boolean): boolean {
+    const dernier = this.derniersRafraichissements.get(cle) ?? 0;
+    if (!force && Date.now() - dernier < 30_000) {
+      return false;
+    }
+    this.derniersRafraichissements.set(cle, Date.now());
+    return true;
   }
 
   /**
    * Compteurs de contenu du menu Président : un appel de liste documenté par item
    * (n'affiche que les valeurs > 0). Aucun endpoint de compteurs agrégé n'existe côté API.
    */
-  private rafraichirCompteursPresident(): void {
+  private rafraichirCompteursPresident(force = false): void {
+    if (!this.doitRafraichir('president', force)) {
+      return;
+    }
     this.dossierService.list('PRET_DISPATCH').subscribe({
       next: (preDispatch) => {
         // ⚠️ 2026-08-06/07 — « Projets de PV », « PV définitifs », « Lettres de renvoi » et
@@ -311,7 +332,10 @@ export class MainLayout {
    * Compteurs de contenu du menu PRMP (un appel de liste documenté par item ; valeurs > 0 seulement).
    * « Dossiers à rectifier » garde son badge d'alerte rouge (rafraichirAlertesPrmp), non dupliqué ici.
    */
-  private rafraichirCompteursPrmp(): void {
+  private rafraichirCompteursPrmp(force = false): void {
+    if (!this.doitRafraichir('compteursPrmp', force)) {
+      return;
+    }
     forkJoin({
       brouillons: this.dossierService.list('BROUILLON'),
       ppms: this.ppmService.list(),
@@ -337,7 +361,10 @@ export class MainLayout {
   }
 
   /** Recharge le compteur d'alerte PRMP (dossiers EN_ATTENTE_DECISION_PRMP → à rectifier). */
-  private rafraichirAlertesPrmp(): void {
+  private rafraichirAlertesPrmp(force = false): void {
+    if (!this.doitRafraichir('alertesPrmp', force)) {
+      return;
+    }
     this.dossierService.list('EN_ATTENTE_DECISION_PRMP').subscribe({
       next: (rows) => this.alerts.update((a) => ({ ...a, '/prmp/a-rectifier': rows.length })),
       error: () => {},
@@ -348,7 +375,10 @@ export class MainLayout {
    * Recharge le badge « À vérifier » du Vérificateur (compteur serveur, scopé à sa localité).
    * File vide → aucun badge (convention du menu : pas de badge « 0 »), d'où le retrait de la clé.
    */
-  private rafraichirCompteursVerificateur(): void {
+  private rafraichirCompteursVerificateur(force = false): void {
+    if (!this.doitRafraichir('verificateur', force)) {
+      return;
+    }
     this.kpiService.mesCompteursVerificateur().subscribe({
       next: (c) =>
         this.counts.update((m) => {
@@ -365,7 +395,10 @@ export class MainLayout {
   }
 
   /** Recharge le compteur du Secrétaire (à réceptionner, scopé serveur) → badge « Mes dossiers ». */
-  private rafraichirCompteursSecretaire(): void {
+  private rafraichirCompteursSecretaire(force = false): void {
+    if (!this.doitRafraichir('secretaire', force)) {
+      return;
+    }
     this.dossierService.aReceptionner().subscribe({
       next: (rows) => this.counts.update((c) => ({ ...c, '/secretaire/mes-dossiers': rows.length })),
       error: () => {},
