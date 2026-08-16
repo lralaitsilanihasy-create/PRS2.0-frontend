@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, ou
 import { DatePipe } from '@angular/common';
 import { catchError, forkJoin, of } from 'rxjs';
 
+import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ActionDossier, DiffDossier, Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
   CapmService,
@@ -555,7 +556,7 @@ export class DossierConsultation implements OnInit {
       return;
     }
     this.pieceService.telecharger(p.idPiece).subscribe({
-      next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
+      next: (blob) => window.open(urlBlobSure(blob), '_blank'),
       error: () => this.toast.error("Impossible d'ouvrir la pièce."),
     });
   }

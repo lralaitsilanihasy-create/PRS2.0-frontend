@@ -5,6 +5,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import {
   AnomalieTranscription,
   Capm,
@@ -418,6 +419,11 @@ export class RectifierDossier {
     if (!file) {
       return;
     }
+    const erreurFichier = validerFichier(file, TYPES_PDF);
+    if (erreurFichier) {
+      this.toast.error(erreurFichier);
+      return;
+    }
     this.importErreur.set(null);
     this.importEnCours.set(true);
     this.saisieService.importPpm(file).subscribe({
@@ -673,6 +679,11 @@ export class RectifierDossier {
     const file = input.files?.[0];
     input.value = '';
     if (!file || pc.idPiece == null) {
+      return;
+    }
+    const erreurFichier = validerFichier(file);
+    if (erreurFichier) {
+      this.toast.error(erreurFichier);
       return;
     }
     this.uploadPiece.set(pc.idPiece);

@@ -6,6 +6,7 @@ import { catchError } from 'rxjs/operators';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import {
   DiffDossier,
   Dossier,
@@ -335,7 +336,13 @@ export class MiseAJourPpm {
   importerPpm(evt: Event): void {
     const input = evt.target as HTMLInputElement;
     const fichier = input.files?.[0];
+    input.value = '';
     if (!fichier) {
+      return;
+    }
+    const erreurFichier = validerFichier(fichier, TYPES_PDF);
+    if (erreurFichier) {
+      this.toast.error(erreurFichier);
       return;
     }
     this.enregistrement.set(true);
@@ -382,6 +389,12 @@ export class MiseAJourPpm {
     const input = evt.target as HTMLInputElement;
     const fichier = input.files?.[0];
     if (!fichier) {
+      return;
+    }
+    const erreurFichier = validerFichier(fichier);
+    if (erreurFichier) {
+      this.toast.error(erreurFichier);
+      input.value = '';
       return;
     }
     const ancienne = this.pieceDe(idTypePiece);

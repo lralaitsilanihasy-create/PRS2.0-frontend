@@ -5,6 +5,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
+import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier, PieceJointeDossier, Reception, TypePieceJointe, VerificationPieceDepot } from '../../models';
 import {
@@ -329,7 +330,7 @@ export class ReceptionForm implements OnInit {
     if (p.idPiece == null) return;
     this.pieceService.telecharger(p.idPiece).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
+        const url = urlBlobSure(blob);
         window.open(url, '_blank');
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
       },

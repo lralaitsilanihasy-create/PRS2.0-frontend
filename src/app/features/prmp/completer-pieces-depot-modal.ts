@@ -3,6 +3,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { validerFichier } from '../../core/securite/fichiers-surs';
 import { Dossier, PieceJointeDossier, TypePieceJointe, VerificationPieceDepot } from '../../models';
 import {
   DossierService,
@@ -155,7 +156,17 @@ export class CompleterPiecesDepotModal implements OnInit {
   }
 
   onFile(e: Event): void {
-    const f = (e.target as HTMLInputElement).files?.[0] ?? null;
+    const input = e.target as HTMLInputElement;
+    const f = input.files?.[0] ?? null;
+    if (f) {
+      const erreurFichier = validerFichier(f);
+      if (erreurFichier) {
+        this.toast.error(erreurFichier);
+        input.value = '';
+        this.uploadFile.set(null);
+        return;
+      }
+    }
     this.uploadFile.set(f);
   }
 

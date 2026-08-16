@@ -4,6 +4,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { Dispatch, Dossier, Examen, PvExamen, Reception } from '../../models';
 import {
   ControleurService,
@@ -261,7 +262,7 @@ export class PvDefinitifs {
     this.service.document(pv.idPv).subscribe({
       next: (blob) => {
         this.chargementPdf.set(null);
-        const brute = URL.createObjectURL(blob);
+        const brute = urlBlobSure(blob);
         this.apercu.set({
           reference: pv.refePv || pv.referencePv || 'PV #' + pv.idPv,
           url: this.sanitizer.bypassSecurityTrustResourceUrl(brute),

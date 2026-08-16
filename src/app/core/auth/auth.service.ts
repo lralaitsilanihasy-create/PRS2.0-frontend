@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -36,9 +37,20 @@ const STORAGE_KEY = 'cnm.session';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
 
   /** Session courante (null si déconnecté). */
   private readonly session = signal<StoredSession | null>(this.restore());
+
+  /** Minuterie de déconnexion automatique à l'échéance du jeton. */
+  private expirationTimer: ReturnType<typeof setTimeout> | undefined;
+
+  constructor() {
+    const s = this.session();
+    if (s) {
+      this.armerExpiration(s.expiresAt);
+    }
+  }
 
   // --- État dérivé, lisible partout (templates, guards, services) ---
 
@@ -147,6 +159,7 @@ export class AuthService {
 
   /** Efface la session (déconnexion locale ; le backend reste sans état avec le JWT). */
   logout(): void {
+    clearTimeout(this.expirationTimer);
     this.session.set(null);
     localStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(STORAGE_KEY);
@@ -161,6 +174,20 @@ export class AuthService {
     const secondary = remember ? sessionStorage : localStorage;
     primary.setItem(STORAGE_KEY, JSON.stringify(stored));
     secondary.removeItem(STORAGE_KEY);
+    this.armerExpiration(stored.expiresAt);
+  }
+
+  /**
+   * Déconnexion automatique à l'échéance du jeton. Sans cette minuterie,
+   * `isAuthenticated` (mémoïsé sur la session seule, `Date.now()` n'étant pas
+   * réactif) resterait vrai après expiration, jusqu'au premier 401 serveur.
+   */
+  private armerExpiration(expiresAt: number): void {
+    clearTimeout(this.expirationTimer);
+    this.expirationTimer = setTimeout(() => {
+      this.logout();
+      this.router.navigate(['/login']);
+    }, Math.max(0, expiresAt - Date.now()));
   }
 
   /** Restaure une session valide depuis le stockage (local ou session) au démarrage. */

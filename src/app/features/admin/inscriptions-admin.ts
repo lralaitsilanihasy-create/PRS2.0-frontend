@@ -4,6 +4,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { blobSur } from '../../core/securite/fichiers-surs';
 import { InscriptionEnAttente } from '../../models';
 import { InscriptionService } from '../../services';
 
@@ -221,9 +222,10 @@ export class InscriptionsAdmin implements OnInit, OnDestroy {
   }
   private setDoc(blob: Blob): void {
     this.clearDoc();
-    const url = URL.createObjectURL(blob);
+    const sur = blobSur(blob);
+    const url = URL.createObjectURL(sur);
     this.currentUrl = url;
-    if (blob.type.includes('pdf')) {
+    if (sur.type.includes('pdf')) {
       this.viewPdf.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
     } else {
       this.viewImg.set(url);

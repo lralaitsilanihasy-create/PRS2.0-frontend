@@ -508,7 +508,8 @@ export class MembrePv {
       this.toast.error("Impossible d'ouvrir la fenêtre d'impression (popups bloqués ?).");
       return;
     }
-    const ref = this.dossierRef(pv);
+    // Interpolée dans du HTML brut (document.write) : échappement obligatoire.
+    const ref = this.echapperHtml(this.dossierRef(pv));
     // Le nom du PDF enregistré reprend la référence du dossier (titre du document).
     const titre = `PV ${ref}`;
     const heading = `Projet de PV — ${ref}`;
@@ -555,6 +556,14 @@ export class MembrePv {
     w.document.close();
     w.focus();
     w.print();
+  }
+
+  /** Échappe un texte interpolé dans le HTML brut de la fenêtre d'impression. */
+  private echapperHtml(texte: string): string {
+    return texte.replace(
+      /[&<>"']/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+    );
   }
 
   label(pv: PvExamen): string {

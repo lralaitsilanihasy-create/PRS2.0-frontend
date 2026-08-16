@@ -4,6 +4,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { ToastService } from '../../core/notifications/toast.service';
+import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ExamenDetail, ExamenPiece, Marche, ObservationControle, PieceJointeDossier, PvExamen } from '../../models';
 import {
   AvisService,
@@ -435,7 +436,7 @@ export class DetailPvModal implements OnInit {
       next: (blob) => {
         this.chargementPdf.set(false);
         const ref = this.pv().refePv || this.pv().referencePv || 'PV-' + this.pv().idPv;
-        const brute = URL.createObjectURL(blob);
+        const brute = urlBlobSure(blob);
         this.apercu.set({ reference: ref, url: this.sanitizer.bypassSecurityTrustResourceUrl(brute), brute });
       },
       error: (err: HttpErrorResponse) => {

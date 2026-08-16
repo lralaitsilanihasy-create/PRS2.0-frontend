@@ -6,6 +6,7 @@ import { catchError, forkJoin, map, of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
@@ -1544,6 +1545,11 @@ export class SoumettreDossier {
     const file = input.files?.[0];
     input.value = ''; // autorise la re-sélection du même fichier
     if (!file) return;
+    const erreurFichier = validerFichier(file, TYPES_PDF);
+    if (erreurFichier) {
+      this.toast.error(erreurFichier);
+      return;
+    }
     this.importing.set(true);
     this.importAvertissements.set([]);
     this.saisie.importPpm(file).subscribe({
@@ -1699,8 +1705,15 @@ export class SoumettreDossier {
 
   // — Pièces jointes du dossier (PPM) —
   onPiece(idTypePiece: number, ev: Event): void {
-    const file = (ev.target as HTMLInputElement).files?.[0];
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) {
+      return;
+    }
+    const erreurFichier = validerFichier(file);
+    if (erreurFichier) {
+      this.toast.error(erreurFichier);
+      input.value = '';
       return;
     }
     this.pieces.update((m) => new Map(m).set(idTypePiece, file));

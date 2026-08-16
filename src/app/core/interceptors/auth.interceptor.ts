@@ -1,6 +1,7 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 
 /**
@@ -12,8 +13,9 @@ import { AuthService } from '../auth/auth.service';
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // Ne jamais ajouter le jeton aux routes publiques d'authentification
-  // (/auth/login et /auth/register/prmp).
-  if (req.url.includes('/auth/')) {
+  // (/auth/login, /auth/register/…). Préfixe strict : un simple `includes`
+  // priverait de jeton toute future route contenant « /auth/ » ailleurs.
+  if (req.url.startsWith(`${environment.apiUrl}/auth/`)) {
     return next(req);
   }
 

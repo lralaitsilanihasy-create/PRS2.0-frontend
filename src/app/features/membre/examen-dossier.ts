@@ -7,6 +7,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import {
   Avis,
   Dossier,
@@ -901,7 +902,7 @@ export class ExamenDossier implements OnDestroy {
     this.loadingPiece.set(p.idPiece);
     this.pieceService.telecharger(p.idPiece).subscribe({
       next: (blob) => {
-        this.currentObjectUrl = URL.createObjectURL(blob);
+        this.currentObjectUrl = urlBlobSure(blob);
         this.openUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.currentObjectUrl));
         this.loadingPiece.set(null);
       },

@@ -5,6 +5,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { Controleur } from '../../models';
 import { ControleurService } from '../../services';
 
@@ -433,7 +434,7 @@ export class ControleurAdmin implements OnInit, OnDestroy {
     this.busyPhoto.set(true);
     this.controleurService.downloadPhoto(id).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
+        const url = urlBlobSure(blob);
         window.open(url, '_blank');
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
         this.busyPhoto.set(false);

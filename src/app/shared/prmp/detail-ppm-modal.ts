@@ -5,6 +5,7 @@ import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
 import { AnomalieTranscription, Capm, Compte, Dossier, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypeChangementLigne, TypePieceJointe } from '../../models';
 import {
   CapmService,
@@ -1088,7 +1089,18 @@ export class DetailPpmModal implements OnInit {
 
   // — Pièces jointes (upload / suppression, modeEdition) —
   onUploadFile(ev: Event): void {
-    this.uploadFile.set((ev.target as HTMLInputElement).files?.[0] ?? null);
+    const input = ev.target as HTMLInputElement;
+    const f = input.files?.[0] ?? null;
+    if (f) {
+      const erreurFichier = validerFichier(f);
+      if (erreurFichier) {
+        this.toast.error(erreurFichier);
+        input.value = '';
+        this.uploadFile.set(null);
+        return;
+      }
+    }
+    this.uploadFile.set(f);
   }
   ajouterPiece(): void {
     const type = this.uploadType();
@@ -1179,7 +1191,7 @@ export class DetailPpmModal implements OnInit {
       return;
     }
     this.pieceService.telecharger(p.idPiece).subscribe({
-      next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
+      next: (blob) => window.open(urlBlobSure(blob), '_blank'),
       error: () => this.toast.error("Impossible d'ouvrir la pièce."),
     });
   }

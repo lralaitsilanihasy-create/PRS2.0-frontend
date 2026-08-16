@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
 import { Dossier, LettreRenvoi, PieceJointeDossier, TypePieceJointe } from '../../models';
 import { DossierService, LettreRenvoiService, PieceJointeDossierService, TypePieceJointeService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
@@ -337,7 +338,7 @@ export class LettreRenvoiConsultation {
       return;
     }
     this.service.document(l.idLettre).subscribe({
-      next: (blob) => window.open(URL.createObjectURL(blob), '_blank'),
+      next: (blob) => window.open(urlBlobSure(blob), '_blank'),
       error: (err: HttpErrorResponse) =>
         this.toast.error(
           err.status === 404
@@ -364,7 +365,18 @@ export class LettreRenvoiConsultation {
     return this.typesPiece().filter((t) => !t.idTypeDossier || t.idTypeDossier === type);
   }
   onUploadFile(ev: Event): void {
-    this.uploadFile.set((ev.target as HTMLInputElement).files?.[0] ?? null);
+    const input = ev.target as HTMLInputElement;
+    const f = input.files?.[0] ?? null;
+    if (f) {
+      const erreurFichier = validerFichier(f);
+      if (erreurFichier) {
+        this.toast.error(erreurFichier);
+        input.value = '';
+        this.uploadFile.set(null);
+        return;
+      }
+    }
+    this.uploadFile.set(f);
   }
   /** Téléverse une pièce après la lettre (apresLettreRenvoi=true côté serveur via idLettre). */
   ajouterPiece(l: LettreRenvoi): void {
