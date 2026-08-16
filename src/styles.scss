@@ -1,3 +1,5 @@
+/* Polices auto-hébergées : doit précéder le design system (qui les référence). */
+@use 'styles/fonts';
 @use 'styles/design-system';
 @use 'styles/responsive';
 /* Présentation commune des tableaux du dossier de planification (voir le fichier pour la règle). */
@@ -120,6 +122,23 @@ a:hover {
 
 .cnm-muted {
   color: var(--cnm-text-2);
+}
+
+/**
+ * Masquage VISUEL seul : le texte reste lu par les lecteurs d'écran (à la différence de
+ * `display: none`). Sert à nommer un champ dont le libellé n'est porté que par une icône ou un
+ * texte de substitution — celui-ci disparaît à la saisie et n'est pas un nom accessible fiable.
+ */
+.cnm-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* =============================================================================

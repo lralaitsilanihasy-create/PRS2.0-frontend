@@ -1,0 +1,33 @@
+name: CI
+
+# Vérifie chaque poussée et chaque pull request : les tests unitaires et le build de
+# production doivent passer. Sans cela, les 42 tests du dépôt ne s'exécutaient que
+# manuellement (AUDIT.md T2).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verifier:
+    name: Tests et build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Tests unitaires
+        run: npm test
+
+      - name: Build de production
+        run: npm run build
+
+      - name: Audit des dépendances (bloquant à partir de « high »)
+        run: npm audit --audit-level=high
