@@ -6,6 +6,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { CreerPrmpRequest, Prmp } from '../../models';
 import { CompteAuthService, PrmpService } from '../../services';
 import { PrmpPiecesAdmin } from './prmp-pieces-admin';
@@ -21,7 +22,7 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
   selector: 'app-prmp-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, PrmpPiecesAdmin],
+  imports: [ModaleDirective, ReactiveFormsModule, RouterLink, PrmpPiecesAdmin],
   template: `
     <div class="pa-wrap">
     <section class="pa cnm-card">
@@ -231,7 +232,7 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
 
     @if (confirmDelete(); as p) {
       <div class="modal-backdrop" (click)="annulerSuppression()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annulerSuppression()">
           <div class="modal-header-plain"><span class="modal-title">Supprimer la PRMP</span></div>
           <div class="modal-body">
             Supprimer la PRMP <strong>{{ p.idPrmp }}</strong> ({{ p.nomPrmp }} {{ p.prenomsPrmp }}) et son compte ?

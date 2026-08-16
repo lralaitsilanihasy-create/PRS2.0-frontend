@@ -6,6 +6,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Controleur } from '../../models';
 import { ControleurService } from '../../services';
 
@@ -21,7 +22,7 @@ const IMG_OK = ['image/jpeg', 'image/png'];
   selector: 'app-controleur-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ModaleDirective, ReactiveFormsModule],
   template: `
     <div class="ca-wrap">
     <section class="ca cnm-card">
@@ -180,7 +181,7 @@ const IMG_OK = ['image/jpeg', 'image/png'];
 
     @if (confirmDelete(); as c) {
       <div class="modal-backdrop" (click)="annulerSuppression()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annulerSuppression()">
           <div class="modal-header-plain"><span class="modal-title">Supprimer le contrôleur</span></div>
           <div class="modal-body">
             Supprimer le contrôleur <strong>{{ c.imControleur }}</strong> ({{ c.nomCont }} {{ c.prenomsCont }}), son compte et sa photo ?

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { ModaleDirective } from '../a11y/modale.directive';
 import { AutosizeDirective } from '../autosize.directive';
 import { MontantFrDirective } from '../montant-fr.directive';
 import { AnomalieTranscription, Capm, Compte, FORME_MARCHE_LIBELLES, FormeMarche, ModePassation, Nature, SoaBeneficiaire } from '../../models';
@@ -31,7 +32,7 @@ export interface ModificationChamp {
   selector: 'app-ppm-saisie-grid',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MontantFrDirective, AutosizeDirective],
+  imports: [ReactiveFormsModule, ModaleDirective, MontantFrDirective, AutosizeDirective],
   template: `
     @if (nbAutoCorrige()) {
       <div class="alert sd__soa sd__alert-ok">
@@ -206,7 +207,7 @@ export interface ModificationChamp {
 
     @if (datesCible()) {
       <div class="modal-backdrop" (click)="annulerDates()">
-        <div class="modal confirm-modal cnm-form sd__dates-modal" (click)="$event.stopPropagation()">
+        <div class="modal confirm-modal cnm-form sd__dates-modal" role="dialog" aria-modal="true" aria-label="CAPM du marché" appModale (appModaleFermer)="annulerDates()" (click)="$event.stopPropagation()">
           <div class="modal-header-plain">
             <span class="modal-title">CAPM du marché</span>
           </div>
@@ -251,7 +252,7 @@ export interface ModificationChamp {
 
     @if (lotsCible()) {
       <div class="modal-backdrop" (click)="annulerLots()">
-        <div class="modal confirm-modal cnm-form sd__lots-modal" (click)="$event.stopPropagation()">
+        <div class="modal confirm-modal cnm-form sd__lots-modal" role="dialog" aria-modal="true" aria-label="Lots du marché" appModale (appModaleFermer)="annulerLots()" (click)="$event.stopPropagation()">
           <div class="modal-header-plain">
             <span class="modal-title">Lots (allotissement) du marché</span>
           </div>

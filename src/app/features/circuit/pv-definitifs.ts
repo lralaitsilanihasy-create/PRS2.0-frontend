@@ -5,6 +5,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Dispatch, Dossier, Examen, PvExamen, Reception } from '../../models';
 import {
   ControleurService,
@@ -30,7 +31,7 @@ import { DetailPvModal } from './detail-pv-modal';
 @Component({
   selector: 'app-pv-definitifs',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DetailPvModal],
+  imports: [ModaleDirective, StatutBadge, DetailPvModal],
   template: `
     <section class="pvd">
       <header class="page-header">
@@ -102,7 +103,7 @@ import { DetailPvModal } from './detail-pv-modal';
     <!-- ⚠️ 2026-08-02 (PRMP) — visionneuse du PDF officiel signé, affichée directement au clic. -->
     @if (apercu(); as ap) {
       <div class="modal-backdrop" (click)="fermerApercu()">
-        <div class="modal modal-lg pvd__viewer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <div class="modal modal-lg pvd__viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV définitif" appModale (appModaleFermer)="fermerApercu()" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <div>
               <div class="pvd__viewer-top">

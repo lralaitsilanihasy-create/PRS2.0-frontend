@@ -6,6 +6,7 @@ import { forkJoin } from 'rxjs';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
+import { ModaleDirective } from '../a11y/modale.directive';
 import { AnomalieTranscription, Capm, Compte, Dossier, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypeChangementLigne, TypePieceJointe } from '../../models';
 import {
   CapmService,
@@ -42,13 +43,13 @@ import { PpmFormFactory } from './ppm-form-factory';
 @Component({
   selector: 'app-detail-ppm-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, PpmMarchesTable, PpmSaisieGrid],
+  imports: [ReactiveFormsModule, DatePipe, ModaleDirective, PpmMarchesTable, PpmSaisieGrid],
   template: `
     <div class="modal-backdrop" [class.closing]="closing()" (click)="emitFermer()">
       @if (loading()) {
         <div class="spinner-wrap"><div class="spinner"></div></div>
       } @else {
-      <div class="modal dpm-wide" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="modal dpm-wide" role="dialog" aria-modal="true" aria-label="Détail du plan de passation" appModale (appModaleFermer)="emitFermer()" (click)="$event.stopPropagation()">
 
         <!-- ── HEADER ── -->
         <div class="dpm-header">
@@ -68,7 +69,7 @@ import { PpmFormFactory } from './ppm-form-factory';
                   <input type="file" accept=".pdf,application/pdf" hidden (change)="importerPdf($event)" [disabled]="importEnCours() || applyingImport()" />
                 </label>
               }
-              <button class="btn-close" type="button" (click)="emitFermer()">✕</button>
+              <button class="btn-close" type="button" aria-label="Fermer" (click)="emitFermer()">✕</button>
             </div>
           </div>
 
@@ -344,7 +345,7 @@ import { PpmFormFactory } from './ppm-form-factory';
 
     @if (modalMarche(); as m) {
       <div class="dpm__overlay" (click)="fermerDates()">
-        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Dates du marché" appModale (appModaleFermer)="fermerDates()">
           <header class="dpm__head">
             <h2 class="dpm__title">Dates prévisionnelles — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
             <button type="button" class="dpm__close" aria-label="Fermer" (click)="fermerDates()">&times;</button>
@@ -375,7 +376,7 @@ import { PpmFormFactory } from './ppm-form-factory';
     @if (editMarche(); as m) {
       @if (editForm(); as ef) {
         <div class="dpm__overlay" (click)="annulerEdition()">
-          <form class="dpm dpm--sm cnm-card" [formGroup]="ef" (ngSubmit)="enregistrerEdition()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" novalidate>
+          <form class="dpm dpm--sm cnm-card" [formGroup]="ef" (ngSubmit)="enregistrerEdition()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Modifier le marché" appModale (appModaleFermer)="annulerEdition()" novalidate>
             <header class="dpm__head">
               <h2 class="dpm__title">Modifier les dates — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
               <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerEdition()">&times;</button>
@@ -422,7 +423,7 @@ import { PpmFormFactory } from './ppm-form-factory';
 
     @if (editBenefMarche(); as m) {
       <div class="dpm__overlay" (click)="annulerBenefs()">
-        <form class="dpm cnm-card" [formGroup]="benefForm" (ngSubmit)="enregistrerBenefs()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" novalidate>
+        <form class="dpm cnm-card" [formGroup]="benefForm" (ngSubmit)="enregistrerBenefs()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Services bénéficiaires du marché" appModale (appModaleFermer)="annulerBenefs()" novalidate>
           <header class="dpm__head">
             <h2 class="dpm__title">Services bénéficiaires — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
             <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerBenefs()">&times;</button>
@@ -461,7 +462,7 @@ import { PpmFormFactory } from './ppm-form-factory';
 
     @if (editLotMarche(); as m) {
       <div class="dpm__overlay" (click)="annulerLots()">
-        <form class="dpm cnm-card" [formGroup]="lotForm" (ngSubmit)="enregistrerLots()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" novalidate>
+        <form class="dpm cnm-card" [formGroup]="lotForm" (ngSubmit)="enregistrerLots()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Lots du marché" appModale (appModaleFermer)="annulerLots()" novalidate>
           <header class="dpm__head">
             <h2 class="dpm__title">Lots (allotissement) — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
             <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerLots()">&times;</button>
@@ -490,7 +491,7 @@ import { PpmFormFactory } from './ppm-form-factory';
 
     @if (createOpen()) {
       <div class="dpm__overlay" (click)="annulerCreation()">
-        <form class="dpm dpm--sm cnm-card" [formGroup]="createForm" (ngSubmit)="enregistrerMarche()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" novalidate>
+        <form class="dpm dpm--sm cnm-card" [formGroup]="createForm" (ngSubmit)="enregistrerMarche()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Nouveau marché" appModale (appModaleFermer)="annulerCreation()" novalidate>
           <header class="dpm__head">
             <h2 class="dpm__title">
               {{ editingMarche() ? 'Modifier le marché #' + editingMarche()!.idDetail : 'Nouveau marché — PPM ' + (ppm()?.reference || '#' + idPpm) }}
@@ -576,7 +577,7 @@ import { PpmFormFactory } from './ppm-form-factory';
 
     @if (confirmState(); as c) {
       <div class="dpm__overlay" (click)="annulerSuppression()">
-        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annulerSuppression()">
           <header class="dpm__head">
             <h2 class="dpm__title">{{ c.kind === 'ppm' ? 'Supprimer le PPM' : 'Supprimer le marché' }}</h2>
             <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerSuppression()">&times;</button>
@@ -597,7 +598,7 @@ import { PpmFormFactory } from './ppm-form-factory';
 
     @if (reimportRefus(); as ref) {
       <div class="dpm__overlay" (click)="reimportRefus.set(null)">
-        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Réimport refusé" appModale (appModaleFermer)="reimportRefus.set(null)">
           <header class="dpm__head">
             <h2 class="dpm__title">🚫 Réimport impossible</h2>
             <button type="button" class="dpm__close" aria-label="Fermer" (click)="reimportRefus.set(null)">&times;</button>

@@ -5,6 +5,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { blobSur } from '../../core/securite/fichiers-surs';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { InscriptionEnAttente } from '../../models';
 import { InscriptionService } from '../../services';
 
@@ -19,7 +20,7 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
   selector: 'app-inscriptions-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ModaleDirective, ReactiveFormsModule],
   template: `
     <div class="ia-wrap">
     <section class="ia">
@@ -120,7 +121,7 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
 
     @if (refuseFor(); as i) {
       <div class="modal-backdrop" (click)="annulerRefus()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Refus de l'inscription" appModale (appModaleFermer)="annulerRefus()">
           <div class="modal-header-plain"><span class="modal-title">Refuser l'inscription — {{ i.login }}</span></div>
           <div class="modal-body">
             <label class="form-group">

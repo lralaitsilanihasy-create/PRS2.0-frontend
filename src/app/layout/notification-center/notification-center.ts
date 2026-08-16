@@ -27,14 +27,21 @@ const MESSAGERIE_ROLES: Record<string, string> = {
   imports: [RouterLink],
   template: `
     <div class="notif">
-      <button type="button" class="notif__bell" (click)="toggle()" [attr.aria-expanded]="open()" aria-label="Notifications">
-        🔔
-        @if (count() > 0) { <span class="notif__badge">{{ count() > 99 ? '99+' : count() }}</span> }
+      <button
+        type="button"
+        class="notif__bell"
+        (click)="toggle()"
+        (keydown.escape)="open.set(false)"
+        [attr.aria-expanded]="open()"
+        [attr.aria-label]="count() > 0 ? 'Notifications, ' + count() + ' non lue(s)' : 'Notifications'"
+      >
+        <span aria-hidden="true">🔔</span>
+        @if (count() > 0) { <span class="notif__badge" aria-hidden="true">{{ count() > 99 ? '99+' : count() }}</span> }
       </button>
 
       @if (open()) {
-        <div class="notif__backdrop" (click)="open.set(false)"></div>
-        <div class="notif__panel" role="dialog" aria-label="Notifications">
+        <div class="notif__backdrop" aria-hidden="true" (click)="open.set(false)"></div>
+        <div class="notif__panel" role="dialog" aria-label="Notifications" (keydown.escape)="open.set(false)">
           <div class="notif__head">
             <span class="notif__title">Notifications</span>
             <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="toutLu()" [disabled]="!count()">

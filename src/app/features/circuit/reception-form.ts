@@ -6,6 +6,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier, PieceJointeDossier, Reception, TypePieceJointe, VerificationPieceDepot } from '../../models';
 import {
@@ -38,7 +39,7 @@ interface LigneControle {
 @Component({
   selector: 'app-reception-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, SlicePipe, StatutBadge],
+  imports: [ModaleDirective, ReactiveFormsModule, SlicePipe, StatutBadge],
   template: `
     <div class="modal-backdrop" (click)="closed.emit()">
       <form
@@ -48,6 +49,9 @@ interface LigneControle {
         (click)="$event.stopPropagation()"
         role="dialog"
         aria-modal="true"
+        aria-label="Réception du dossier"
+        appModale
+        (appModaleFermer)="closed.emit()"
         novalidate
       >
         <header class="modal-header-plain rf-header">

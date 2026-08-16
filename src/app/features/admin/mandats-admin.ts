@@ -4,6 +4,7 @@ import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Mandat, Prmp } from '../../models';
 import { MandatService, PrmpService } from '../../services';
 
@@ -27,7 +28,7 @@ const STATUT_LABELS: Record<string, string> = {
   selector: 'app-mandats-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ModaleDirective, ReactiveFormsModule],
   template: `
     <section class="ma">
       <header class="page-header">
@@ -99,7 +100,7 @@ const STATUT_LABELS: Record<string, string> = {
     <!-- Nomination / reconduction : nouvel arrêté OBLIGATOIRE, dates neuves (jamais une prolongation). -->
     @if (creationOuverte()) {
       <div class="modal-backdrop" (click)="fermerCreation()">
-        <form class="modal confirm-modal cnm-form" [formGroup]="form" (ngSubmit)="creer()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" novalidate>
+        <form class="modal confirm-modal cnm-form" [formGroup]="form" (ngSubmit)="creer()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Nomination d'une PRMP" appModale (appModaleFermer)="fermerCreation()" novalidate>
           <div class="modal-header-plain"><span class="modal-title">Nouveau mandat (nomination / reconduction)</span></div>
           <div class="modal-body">
             <label class="form-group">
@@ -139,7 +140,7 @@ const STATUT_LABELS: Record<string, string> = {
     <!-- Abrogation : fin de fonction avant terme, motif obligatoire. -->
     @if (abrogation(); as m) {
       <div class="modal-backdrop" (click)="fermerAbrogation()">
-        <form class="modal confirm-modal cnm-form" [formGroup]="formAbrogation" (ngSubmit)="abroger(m)" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" novalidate>
+        <form class="modal confirm-modal cnm-form" [formGroup]="formAbrogation" (ngSubmit)="abroger(m)" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Abrogation du mandat" appModale (appModaleFermer)="fermerAbrogation()" novalidate>
           <div class="modal-header-plain"><span class="modal-title">Abroger le mandat — {{ m.idPrmp }} ({{ m.refArrete }})</span></div>
           <div class="modal-body">
             <p class="text-muted">

@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { forkJoin, skip } from 'rxjs';
 
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Controleur, Dossier } from '../../models';
 import {
   ControleurService,
@@ -56,7 +57,7 @@ interface LigneControleur {
 @Component({
   selector: 'app-dispatchs-controleurs',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, DatePipe],
+  imports: [StatutBadge, DossierConsultation, DatePipe, ModaleDirective],
   template: `
     <section class="dpc">
       <h2 class="dpc__titre"><span aria-hidden="true">📊</span> Dispatchs par contrôleur</h2>
@@ -172,7 +173,7 @@ interface LigneControleur {
     }
     @if (retrait(); as r) {
       <div class="modal-backdrop" (click)="retrait.set(null)">
-        <div class="modal dpc__confirm" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+        <div class="modal dpc__confirm" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Retrait du dossier dispatché" appModale (appModaleFermer)="retrait.set(null)">
           <div class="modal-body">
             <p>
               Retirer le dossier <strong>{{ r.a.dossier.refeDossier || '#' + r.a.dossier.idDossier }}</strong> à

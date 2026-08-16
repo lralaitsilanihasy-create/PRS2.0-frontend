@@ -5,6 +5,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Dossier, Notification, ObservationPv, PvExamen, TransmissionSigmp } from '../../models';
 import {
   AvisService,
@@ -47,7 +48,7 @@ interface Echange {
 @Component({
   selector: 'app-verifier-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SlicePipe, StatutBadge, DossierConsultation, DetailPvModal, ObservationPvCard],
+  imports: [SlicePipe, StatutBadge, DossierConsultation, DetailPvModal, ModaleDirective, ObservationPvCard],
   template: `
     <section class="vf">
       <header class="page-header">
@@ -229,10 +230,10 @@ interface Echange {
 
     @if (confirmOpen()) {
       <div class="modal-backdrop" (click)="annulerTransmission()">
-        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Transmission de la décision" appModale (appModaleFermer)="annulerTransmission()">
           <div class="modal-header-plain">
             <span class="modal-title">Transmettre à la PRMP pour rectification ?</span>
-            <button type="button" class="btn-close-plain" (click)="annulerTransmission()">✕</button>
+            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="annulerTransmission()">✕</button>
           </div>
           <div class="modal-body">
             <p>

@@ -15,6 +15,7 @@ import {
   ReferenceLookupService,
   TypeDossierService,
 } from '../../services';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { DetailPpmModal } from '../../shared/prmp';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
@@ -30,7 +31,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 @Component({
   selector: 'app-mes-brouillons',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DetailPpmModal],
+  imports: [DetailPpmModal, ModaleDirective],
   template: `
     <section>
       <header class="page-header">
@@ -94,10 +95,10 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 
     @if (confirmDossier(); as d) {
       <div class="modal-backdrop" (click)="annulerSuppression()">
-        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annulerSuppression()">
           <div class="modal-header-plain">
             <span class="modal-title">Supprimer ce dossier ?</span>
-            <button type="button" class="btn-close-plain" [disabled]="suppression() !== null" (click)="annulerSuppression()">✕</button>
+            <button type="button" class="btn-close-plain" aria-label="Fermer" [disabled]="suppression() !== null" (click)="annulerSuppression()">✕</button>
           </div>
           <div class="modal-body">
             <p>Êtes-vous sûr de vouloir supprimer ce dossier ? Cette action est irréversible.</p>

@@ -6,6 +6,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Dossier, Notification, ObservationPv } from '../../models';
 import { DossierService, NotificationService, ObservationPvService } from '../../services';
 import { StatutBadge, decomposerObservation } from '../../shared/circuit';
@@ -40,7 +41,7 @@ interface LigneObs {
 @Component({
   selector: 'app-dossiers-a-rectifier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, StatutBadge, DatePipe],
+  imports: [RouterLink, ModaleDirective, StatutBadge, DatePipe],
   template: `
     <section>
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -174,10 +175,10 @@ interface LigneObs {
 
     @if (confirmCle() !== null) {
       <div class="modal-backdrop" (click)="annulerResoumission()">
-        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de resoumission" appModale (appModaleFermer)="annulerResoumission()">
           <div class="modal-header-plain">
             <span class="modal-title">Resoumettre au vérificateur ?</span>
-            <button type="button" class="btn-close-plain" (click)="annulerResoumission()">✕</button>
+            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="annulerResoumission()">✕</button>
           </div>
           <div class="modal-body">
             <p>Ce dossier sera renvoyé au vérificateur avec votre motif de rectification.</p>

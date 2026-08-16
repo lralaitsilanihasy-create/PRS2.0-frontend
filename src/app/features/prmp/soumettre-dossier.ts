@@ -8,6 +8,7 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import { VacanceStore } from '../../core/vacance/vacance.store';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
@@ -109,7 +110,7 @@ interface ApercuDossier {
 @Component({
   selector: 'app-soumettre-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, DetailPpmModal, PpmSaisieGrid],
+  imports: [ReactiveFormsModule, RouterLink, DetailPpmModal, ModaleDirective, PpmSaisieGrid],
   template: `
     <section class="sd">
       <header class="page-header page-header--actions">
@@ -573,7 +574,7 @@ interface ApercuDossier {
 
       @if (apercu(); as a) {
         <div class="modal-backdrop" (click)="fermerApercu()">
-          <div class="modal sd__apercu cnm-form" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+          <div class="modal sd__apercu cnm-form" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Aperçu du dossier" appModale (appModaleFermer)="fermerApercu()">
             <div class="modal-header-plain">
               <span class="modal-title">Aperçu du dossier à créer</span>
               <button type="button" class="btn btn-secondary btn-sm" (click)="fermerApercu()" aria-label="Fermer">✕</button>

@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
 
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Dispatch, Dossier, Reception } from '../../models';
 import {
   ControleurService,
@@ -35,7 +36,7 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
 @Component({
   selector: 'app-dossiers-circuit-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, DatePipe, DispatchForm, ReceptionForm, RouterLink],
+  imports: [StatutBadge, DossierConsultation, DatePipe, DispatchForm, ModaleDirective, ReceptionForm, RouterLink],
   template: `
     <section>
       @if (!embed()) {
@@ -188,7 +189,7 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
     }
     @if (annulation(); as d) {
       <div class="modal-backdrop" (click)="annulation.set(null)">
-        <div class="modal dcl__confirm" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true">
+        <div class="modal dcl__confirm" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Confirmation d'annulation" appModale (appModaleFermer)="annulation.set(null)">
           <div class="modal-body">
             <p>
               Retirer le dossier <strong>{{ d.refeDossier || '#' + d.idDossier }}</strong> à

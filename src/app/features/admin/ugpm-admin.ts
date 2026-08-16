@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { CreerUgpmRequest, ModifierUgpmRequest, Prmp, Ugpm } from '../../models';
 import { CompteAuthService, PrmpService, UgpmService } from '../../services';
 import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
@@ -17,7 +18,7 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
   selector: 'app-ugpm-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, UgpmPiecesAdmin],
+  imports: [ModaleDirective, ReactiveFormsModule, UgpmPiecesAdmin],
   template: `
     <div class="ua-wrap">
     <section class="ua cnm-card">
@@ -225,7 +226,7 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
 
     @if (confirmDelete(); as u) {
       <div class="modal-backdrop" (click)="annulerSuppression()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annulerSuppression()">
           <div class="modal-header-plain"><span class="modal-title">Supprimer l'UGPM</span></div>
           <div class="modal-body">
             Supprimer l'UGPM <strong>{{ u.idUgpm }}</strong> ({{ u.nomUgpm }} {{ u.prenomsUgpm }}) et son compte de connexion ?

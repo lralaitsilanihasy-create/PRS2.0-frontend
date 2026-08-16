@@ -4,6 +4,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { validerFichier } from '../../core/securite/fichiers-surs';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Dossier, PieceJointeDossier, TypePieceJointe, VerificationPieceDepot } from '../../models';
 import {
   DossierService,
@@ -22,9 +23,10 @@ import {
 @Component({
   selector: 'app-completer-pieces-depot-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ModaleDirective],
   template: `
     <div class="modal-backdrop" (click)="fermer.emit()">
-      <div class="modal cnm-form cpd-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <div class="modal cnm-form cpd-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Compléter les pièces du dépôt" appModale (appModaleFermer)="fermer.emit()">
         <header class="modal-header-plain">
           <span class="modal-title">Compléter les pièces — {{ dossier().refeDossier || 'Dossier #' + dossier().idDossier }}</span>
           <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermer.emit()">✕</button>

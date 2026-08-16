@@ -5,6 +5,7 @@ import { catchError, concatMap, forkJoin, from, map, of, toArray } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Controleur, Dispatch, Dossier, Reception } from '../../models';
 import {
   ControleurService,
@@ -39,7 +40,7 @@ export interface DispatchItem {
 @Component({
   selector: 'app-dispatch-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ModaleDirective, ReactiveFormsModule],
   template: `
     <div class="modal-backdrop">
       <form
@@ -49,6 +50,9 @@ export interface DispatchItem {
         (click)="$event.stopPropagation()"
         role="dialog"
         aria-modal="true"
+        [attr.aria-label]="titre()"
+        appModale
+        (appModaleFermer)="closed.emit()"
         novalidate
       >
         <header class="modal-header-centered">

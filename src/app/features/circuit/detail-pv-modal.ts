@@ -5,6 +5,7 @@ import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { ExamenDetail, ExamenPiece, Marche, ObservationControle, PieceJointeDossier, PvExamen } from '../../models';
 import {
   AvisService,
@@ -31,10 +32,10 @@ import { StatutBadge } from '../../shared/circuit';
 @Component({
   selector: 'app-detail-pv-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge],
+  imports: [ModaleDirective, StatutBadge],
   template: `
     <div class="modal-backdrop" (click)="fermer.emit()">
-      <div class="modal modal-lg" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Détail du PV" appModale (appModaleFermer)="fermer.emit()" (click)="$event.stopPropagation()">
         <!-- En-tête -->
         <div class="modal-header">
           <div>
@@ -207,7 +208,7 @@ import { StatutBadge } from '../../shared/circuit';
          navigateur offre déjà impression / enregistrement. -->
     @if (apercu(); as ap) {
       <div class="modal-backdrop" (click)="fermerApercu()">
-        <div class="modal modal-lg dpv-viewer" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+        <div class="modal modal-lg dpv-viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV" appModale (appModaleFermer)="fermerApercu()" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <div>
               <div class="dpv-head-top">
