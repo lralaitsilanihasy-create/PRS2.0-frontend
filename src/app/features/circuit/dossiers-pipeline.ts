@@ -455,11 +455,30 @@ export class DossiersPipeline {
     return etapeIndexForDossier(d.statut);
   }
 
-  /** Libellés sous chaque point : date d'étape franchie ; sinon, statut sur l'étape en cours. */
+  /**
+   * Libellés sous chaque point : date d'étape franchie ; sinon, statut sur l'étape en cours.
+   *
+   * ⚠️ Calculés UNE fois par jeu de données, pas à chaque appel : ce tableau est passé en entrée
+   * à `app-circuit-timeline` (OnPush). Reconstruit à chaque cycle, il changeait d'identité et
+   * forçait le re-rendu de la frise de CHAQUE ligne du pipeline (AUDIT.md P6).
+   */
+  private readonly sublabelsByDossier = computed(() => {
+    const dates = this.datesByDossier();
+    const map = new Map<number, string[]>();
+    for (const d of this.dossiers()) {
+      const datesDossier = dates.get(d.idDossier) ?? [];
+      const active = etapeIndexForDossier(d.statut);
+      map.set(
+        d.idDossier,
+        CIRCUIT_ETAPES.map((_, i) => datesDossier[i] || (i === active ? statutDossierLabel(d.statut) : '')),
+      );
+    }
+    return map;
+  });
+  /** Référence STABLE (voir `sublabelsByDossier`) — ne jamais reconstruire le tableau ici. */
+  private static readonly SANS_LIBELLE: string[] = [];
   sublabels(d: Dossier): string[] {
-    const dates = this.datesByDossier().get(d.idDossier) ?? [];
-    const active = this.etape(d);
-    return CIRCUIT_ETAPES.map((_, i) => dates[i] || (i === active ? statutDossierLabel(d.statut) : ''));
+    return this.sublabelsByDossier().get(d.idDossier) ?? DossiersPipeline.SANS_LIBELLE;
   }
 
   etapeInfo(d: Dossier): EtapeInfo {

@@ -43,9 +43,9 @@ export interface ModificationChamp {
       <div class="alert alert-warning sd__soa">
         <div class="sd__warn-title">⚠ {{ nbAConfirmer() }} ligne(s) à vérifier — transcription de l'import</div>
         <ul class="sd__warn-list">
-          @for (g of marcheControls(); track g.get('uid')!.value; let i = $index) {
+          @for (g of marcheControls(); track uidDe(g); let i = $index) {
             @if (aVerifier(g)) {
-              <li><button type="button" class="sd__lien-ligne" (click)="scrollToMarche(g.get('uid')!.value)">Ligne {{ i + 1 }}</button> : {{ messagesReels(g) }}</li>
+              <li><button type="button" class="sd__lien-ligne" (click)="scrollToMarche(uidDe(g))">Ligne {{ i + 1 }}</button> : {{ messagesReels(g) }}</li>
             }
           }
         </ul>
@@ -57,9 +57,9 @@ export interface ModificationChamp {
       <div class="alert alert-warning sd__soa sd__modifs">
         <div class="sd__warn-title">✎ {{ nbLignesModifiees() }} ligne(s) modifiée(s) par rapport au dossier examiné — détail :</div>
         <ul class="sd__warn-list">
-          @for (g of marcheControls(); track g.get('uid')!.value; let i = $index) {
+          @for (g of marcheControls(); track uidDe(g); let i = $index) {
             @if (modificationsDe(g).length) {
-              <li><button type="button" class="sd__lien-ligne" (click)="scrollToMarche(g.get('uid')!.value)">Ligne {{ i + 1 }}</button> : {{ libellesModifs(g) }}</li>
+              <li><button type="button" class="sd__lien-ligne" (click)="scrollToMarche(uidDe(g))">Ligne {{ i + 1 }}</button> : {{ libellesModifs(g) }}</li>
             }
           }
         </ul>
@@ -107,9 +107,9 @@ export interface ModificationChamp {
               <th scope="col">Service bénéficiaire</th><th scope="col">Compte</th><th scope="col">Montant</th><th scope="col">Nouveau montant</th>
             </tr>
           </thead>
-          @for (g of marcheControls(); track g.get('uid')!.value; let idx = $index) {
-            <tbody class="sd__marche-tb" [attr.id]="'psg-m-' + g.get('uid')!.value" [class.sd__row-valide]="estValidee(g)" [class.sd__row-warn]="aVerifier(g) && !estValidee(g)" [class.sd__row-ok]="corrigeeSeulement(g) && !estValidee(g)">
-              @for (b of beneficiairesControls(g); track b.get('uid')!.value; let first = $first; let i = $index) {
+          @for (g of marcheControls(); track uidDe(g); let idx = $index) {
+            <tbody class="sd__marche-tb" [attr.id]="'psg-m-' + uidDe(g)" [class.sd__row-valide]="estValidee(g)" [class.sd__row-warn]="aVerifier(g) && !estValidee(g)" [class.sd__row-ok]="corrigeeSeulement(g) && !estValidee(g)">
+              @for (b of beneficiairesControls(g); track uidDe(b); let first = $first; let i = $index) {
                 <tr>
                   @if (first) {
                     <!-- Numéro de ligne : même numérotation que le bandeau « à vérifier » (« Ligne N »). -->
@@ -410,10 +410,24 @@ export class PpmSaisieGrid {
   readonly modificationsParLigne = input<Map<number, ModificationChamp[]>>(new Map());
 
   modificationsDe(g: FormGroup): ModificationChamp[] {
-    return this.modificationsParLigne().get(g.get('uid')!.value as number) ?? [];
+    return this.modificationsParLigne().get(this.uidDe(g)) ?? [];
   }
+  /**
+   * Cellules modifiées, indexées « uid:champ » — dérivé UNE fois de l'entrée au lieu de parcourir
+   * la liste des modifications de la ligne pour chacune de ses ~13 cellules, à chaque cycle.
+   */
+  private readonly cellulesModifiees = computed(() => {
+    const cles = new Set<string>();
+    for (const [uid, mods] of this.modificationsParLigne()) {
+      for (const m of mods) {
+        cles.add(`${uid}:${m.champ}`);
+      }
+    }
+    return cles;
+  });
   estChampModifie(g: FormGroup, champ: string): boolean {
-    return this.modificationsDe(g).some((m) => m.champ === champ);
+    const cles = this.cellulesModifiees();
+    return cles.size > 0 && cles.has(`${this.uidDe(g)}:${champ}`);
   }
   libellesModifs(g: FormGroup): string {
     return this.modificationsDe(g)
@@ -429,7 +443,7 @@ export class PpmSaisieGrid {
   }
 
   statutDe(g: FormGroup): string {
-    return this.statutParUid().get(g.get('uid')!.value as number) ?? '';
+    return this.statutParUid().get(this.uidDe(g)) ?? '';
   }
   libelleStatut(statut: string): string {
     switch (statut) {
@@ -490,11 +504,38 @@ export class PpmSaisieGrid {
   retirerBeneficiaire(g: FormGroup, i: number): void {
     (g.get('beneficiaires') as FormArray).removeAt(i);
   }
+  /**
+   * Contrôles résolus une seule fois par (groupe, champ).
+   *
+   * `AbstractControl.get()` analyse le chemin à chaque appel ; dans cette grille il est invoqué
+   * une quinzaine de fois par ligne de marché et par bénéficiaire, à CHAQUE cycle de détection —
+   * soit des milliers d'appels sur un PPM fourni, ressentis à la frappe (AUDIT.md P5).
+   * WeakMap : l'entrée disparaît avec le FormGroup (ligne retirée), sans fuite ni invalidation
+   * manuelle. Les champs d'une ligne sont fixés par la fabrique, jamais ajoutés à la volée.
+   */
+  private readonly cacheControles = new WeakMap<FormGroup, Map<string, FormControl>>();
+  private resoudre(groupe: FormGroup, nom: string): FormControl {
+    let champs = this.cacheControles.get(groupe);
+    if (!champs) {
+      champs = new Map<string, FormControl>();
+      this.cacheControles.set(groupe, champs);
+    }
+    let controle = champs.get(nom);
+    if (!controle) {
+      controle = groupe.get(nom) as FormControl;
+      champs.set(nom, controle);
+    }
+    return controle;
+  }
   ctrl(g: FormGroup, nom: string): FormControl {
-    return g.get(nom) as FormControl;
+    return this.resoudre(g, nom);
   }
   bctrl(b: FormGroup, nom: string): FormControl {
-    return b.get(nom) as FormControl;
+    return this.resoudre(b, nom);
+  }
+  /** Identifiant stable de la ligne (clé de `track`, des ancres et des tables de statut/modifications). */
+  uidDe(g: FormGroup): number {
+    return this.resoudre(g, 'uid').value as number;
   }
   /** Rowspan des colonnes marché = nombre de lignes bénéficiaires (au moins 1). */
   rowspanBenef(g: FormGroup): number {
@@ -504,7 +545,7 @@ export class PpmSaisieGrid {
   // — Revue de transcription (anomalies) —
   /** Anomalies de transcription d'une ligne (contrat backend `m.anomalies`). */
   anomaliesDe(g: FormGroup): AnomalieTranscription[] {
-    return this.anomaliesParLigne().get(g.get('uid')!.value) ?? [];
+    return this.anomaliesParLigne().get(this.uidDe(g)) ?? [];
   }
   /** Anomalie « réelle » (à examiner) : bloquante, ou à vérifier NON auto-corrigée. */
   private estReelle(a: AnomalieTranscription): boolean {
@@ -529,10 +570,10 @@ export class PpmSaisieGrid {
     return this.ligneValidable(this.anomaliesDe(g));
   }
   estValidee(g: FormGroup): boolean {
-    return this.lignesValidees().has(g.get('uid')!.value);
+    return this.lignesValidees().has(this.uidDe(g));
   }
   basculerValidation(g: FormGroup): void {
-    const uid = g.get('uid')!.value as number;
+    const uid = this.uidDe(g);
     this.lignesValidees.update((s) => {
       const n = new Set(s);
       n.has(uid) ? n.delete(uid) : n.add(uid);

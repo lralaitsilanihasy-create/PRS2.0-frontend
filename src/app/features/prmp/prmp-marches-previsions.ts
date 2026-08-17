@@ -145,16 +145,53 @@ export class PrmpMarchesPrevisions {
     this.previsionService.list().subscribe({ next: (r) => this.previsions.set(r) });
   }
 
+  /**
+   * ⚠️ Bénéficiaires et prévisions par PRMP : regroupés UNE fois par jeu de données.
+   *
+   * Ces tableaux sont passés en entrée à `app-ppm-marches-table` (OnPush). Recalculés à chaque
+   * appel — un `Set` et un `filter` sur toute la liste, par PRMP et par cycle de détection — ils
+   * changeaient d'identité en permanence et forçaient le re-rendu du tableau (AUDIT.md P6).
+   */
+  private readonly benefsByPrmp = computed(() => this.regrouperParPrmp(this.serviceBenefs()));
+  private readonly previsionsByPrmp = computed(() => this.regrouperParPrmp(this.previsions()));
+
+  /** Regroupe des éléments portant un `idDetail` selon la PRMP propriétaire du marché. */
+  private regrouperParPrmp<T extends { idDetail?: number }>(elements: T[]): Map<string, T[]> {
+    const prmpDeDetail = new Map<number, string>();
+    for (const [idPrmp, marches] of this.byPrmp()) {
+      for (const m of marches) {
+        if (m.idDetail != null) {
+          prmpDeDetail.set(m.idDetail, idPrmp);
+        }
+      }
+    }
+    const map = new Map<string, T[]>();
+    for (const e of elements) {
+      const idPrmp = e.idDetail != null ? prmpDeDetail.get(e.idDetail) : undefined;
+      if (idPrmp === undefined) {
+        continue;
+      }
+      const liste = map.get(idPrmp);
+      if (liste) {
+        liste.push(e);
+      } else {
+        map.set(idPrmp, [e]);
+      }
+    }
+    return map;
+  }
+
+  /** Référence STABLE pour l'absence de résultat — ne jamais renvoyer un `[]` fraîchement créé. */
+  private static readonly VIDE: never[] = [];
+
   marchesOf(idPrmp: string): Marche[] {
-    return this.byPrmp().get(idPrmp) ?? [];
+    return this.byPrmp().get(idPrmp) ?? PrmpMarchesPrevisions.VIDE;
   }
   benefsOf(idPrmp: string): ServiceBeneficiaire[] {
-    const ids = new Set(this.marchesOf(idPrmp).map((m) => m.idDetail));
-    return this.serviceBenefs().filter((b) => ids.has(b.idDetail));
+    return this.benefsByPrmp().get(idPrmp) ?? PrmpMarchesPrevisions.VIDE;
   }
   previsionsOf(idPrmp: string): MarchePrevision[] {
-    const ids = new Set(this.marchesOf(idPrmp).map((m) => m.idDetail));
-    return this.previsions().filter((p) => ids.has(p.idDetail));
+    return this.previsionsByPrmp().get(idPrmp) ?? PrmpMarchesPrevisions.VIDE;
   }
   prmpLabel(p: Prmp): string {
     return `${p.nomPrmp} ${p.prenomsPrmp}`.trim() || p.idPrmp;
