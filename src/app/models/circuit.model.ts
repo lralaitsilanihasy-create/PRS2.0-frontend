@@ -359,6 +359,13 @@ export interface DemandeRetrait {
   imCtrlCc?: string;
   dateDecision?: string;
   obsDecision?: string;
+  /**
+   * ⚠️ Lettre de demande de retrait (règle 2026-08-17) : PDF daté et signé, joint **à la demande**
+   * (pas aux pièces du dossier — il justifie la décision et survit à la purge du circuit).
+   * `null` sur les demandes antérieures à la règle : le document répond alors 404.
+   */
+  nomFichier?: string | null;
+  tailleFichier?: number | null;
 }
 
 /**

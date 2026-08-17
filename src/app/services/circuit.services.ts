@@ -426,6 +426,26 @@ export class DemandeRetraitService extends CrudService<DemandeRetrait> {
     return this.http.get<DemandeRetrait[]>(`${this.baseUrl}/mes-demandes`);
   }
 
+  /**
+   * `POST /api/demande-retraits` (**multipart**, PRMP) — la lettre de demande de retrait datée et
+   * signée est **obligatoire** (règle 2026-08-17) : part `data` (JSON) + part `fichier` (PDF).
+   * Le serveur valide le PDF par ses magic-bytes et refuse en 400 sinon (la demande n'est pas créée).
+   */
+  creerAvecLettre(demande: DemandeRetrait, fichier: File): Observable<DemandeRetrait> {
+    const fd = new FormData();
+    fd.append('data', new Blob([JSON.stringify(demande)], { type: 'application/json' }));
+    fd.append('fichier', fichier);
+    return this.http.post<DemandeRetrait>(this.baseUrl, fd);
+  }
+
+  /**
+   * `GET /api/demande-retraits/{id}/document` — la lettre signée (PDF).
+   * Accessible à la PRMP demandeuse et au décideur ; **404** si la demande est antérieure à la règle.
+   */
+  document(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/document`, { responseType: 'blob' });
+  }
+
   /** `GET /api/demande-retraits/a-valider` — EN_ATTENTE de la localité (CC/Président). */
   aValider(): Observable<DemandeRetrait[]> {
     return this.http.get<DemandeRetrait[]>(`${this.baseUrl}/a-valider`);

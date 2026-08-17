@@ -329,25 +329,19 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 
 **Exemple — login (requête / réponse)**
 ```json
-{ "login": "CTRMEM", "motDePasse": "<mot de passe>" }
+{ "login": "CTRMEM", "motDePasse": "Test@1234" }
 ```
 ```json
 {
-  "token": null, "login": "CTRMEM", "role": "MEMBRE",
+  "token": "eyJhbGciOiJIUzI1NiJ9...", "login": "CTRMEM", "role": "MEMBRE",
   "typeActeur": "CONTROLEUR", "ref": "CTRMEM", "nomAffichage": "Rakoto Jean Claude",
   "localite": "ANT", "expiresIn": 28800
 }
 ```
-> ⚠️ **`token` est `null` depuis le passage en mode cookie exclusif** (`app.auth.cookie.exclusif=true`,
-> phase 3 — 2026-08-17) : le jeton n'est plus jamais renvoyé dans le corps, il vit exclusivement dans
-> le cookie `PRS_SESSION`. Conséquence pour les clients **non-navigateur** (scripts de seed, tests
-> externes) : ils ne peuvent plus obtenir de jeton pour `Authorization: Bearer` — ils doivent
-> renvoyer le cookie reçu au login. Vérifié en réel côté front le 17/08.
-
 **Exemple — connexion d'une UGPM** (`ref` = tutelle, `nomAffichage` = l'UGPM elle-même)
 ```json
 {
-  "token": null, "login": "UGPM002", "role": "UGPM",
+  "token": "eyJhbGciOiJIUzI1NiJ9...", "login": "UGPM002", "role": "UGPM",
   "typeActeur": "UGPM", "ref": "PRMP001", "nomAffichage": "Rakoto Jean Claude",
   "expiresIn": 28800
 }
@@ -355,7 +349,7 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 **Exemple — inscription PRMP (requête / réponse)**
 ```json
 {
-  "login": "prmp.rabe", "motDePasse": "<mot de passe choisi>", "idPrmp": "IM0050",
+  "login": "prmp.rabe", "motDePasse": "MotDePasse#2026", "idPrmp": "IM0050",
   "nomPrmp": "Rabe", "prenomsPrmp": "Hery",
   "arreteNomin": "ARR-2026-050", "dateNomin": "2026-01-15", "cin": "101011112222",
   "dateCin": "2010-05-05", "lieuCin": "Antananarivo", "emailPrmp": "hery.rabe@min.mg",
@@ -550,7 +544,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 
 **Exemple — requête (`/reinitialiser-mot-de-passe`) / réponse (`/activer`)**
 ```json
-{ "nouveauMotDePasse": "<mot de passe provisoire>" }
+{ "nouveauMotDePasse": "MotProvisoire#2026" }
 ```
 ```json
 { "login": "prmp.rabe", "typeActeur": "PRMP", "refActeur": "PRMP050", "actif": true }
@@ -739,6 +733,8 @@ si aucun résultat (pas de 404). `{nom}` est un fragment (URL-encoder si espaces
 
 > ⚠️ **Identité & ID (règle ajoutée).** À la création : `idPrmp` = **utilisateur authentifié** (JWT, corps ignoré), `dateDemande` serveur, `statut` forcé `EN_ATTENTE`, `idDemandeRetrait` **auto-généré** (IDENTITY). Gardes (sinon **403/409**) : PRMP **propriétaire** du dossier ; dossier **« avant PV signé »** ; pas de demande déjà **`EN_ATTENTE`**. Liste déroulante des dossiers éligibles : **`GET /api/dossiers/retirables`** (PRMP).
 
+> ⚠️ **Lettre de demande de retrait obligatoire (règle ajoutée 2026-08-17).** Le `POST` est désormais **multipart/form-data** : partie **`data`** = `DemandeRetraitDto` JSON (contrat inchangé), partie **`fichier`** = la **lettre de demande de retrait datée et signée**, **PDF obligatoire**. **400** si la pièce est absente, n'est pas un PDF (validation par **magic-bytes** `%PDF-`, pas le Content-Type déclaré) ou dépasse **10 Mo**. Un `POST` JSON pur → **415**. Stockage **dédié** `t_piece_demande_retrait` (une lettre par demande — nom, format, taille, SHA-256, contenu `bytea`), volontairement **hors** `t_piece_jointe_dossier` : la lettre **justifie la décision** et **survit à la purge du circuit** déclenchée par l'acceptation. Lecture : **`GET /{id}/document`** (PDF, `Content-Disposition: attachment`) — réservée à la **PRMP demanderesse** (périmètre partagé avec son UGPM) et au **décideur** (CC de la localité du dossier / Président ; Admin). **Rétro-compatibilité** : les demandes créées avant l'obligation **restent valides** — `nomFichier`/`tailleFichier` sont `null` (le front affiche « — ») et `GET /{id}/document` renvoie un **404** explicite ; l'obligation ne porte que sur les nouvelles créations.
+
 > ⚠️ **Éligibilité « avant PV signé » (règle ajoutée §3.3).** Un retrait est possible **à toute étape du circuit tant que le PV n'est pas signé** — plus seulement « avant dispatch ». L'ensemble **exact** des statuts de dossier retirables est : **`SOUMIS`, `PRET_DISPATCH`, `DISPATCHE`, `EXAMINE`**. À partir de **`PV_SIGNE`** (puis `EN_VERIFICATION`, `EN_ATTENTE_DECISION_PRMP`, `RETIRE`, `CLOTURE`) le retrait est **refusé** (**409**). `BROUILLON` en est exclu (pré-circuit : supprimable, pas retirable). **`GET /api/dossiers/retirables`** et la garde du **POST** s'appuient sur **le même ensemble** (source unique serveur `StatutDossier.NOMS_AVANT_PV_SIGNE`) — la liste ne peut donc jamais proposer un dossier que le POST rejetterait.
 
 > ⚠️ **Décision (règle ajoutée).** `POST /{id}/accepter` → statut `ACCEPTEE` + **dossier `BROUILLON`**, avec sa **référence de réception invalidée** : `refeDossier` est **restauré à la référence initiale du dossier** (celle générée à la création, stockée dans `t_ppm.REFERENCE`, ex. `00003/DGB/PPM/2026`) — la référence de réception (ex. `00002/PPM/CRM-ANT/2026`) est ainsi remplacée. `GET /api/dossiers` (« Mes brouillons ») réaffiche donc la référence d'origine, et le dossier **redevient entièrement modifiable** (métadonnées, lignes de marché, pièces). *(Dossier sans PPM → `refeDossier` remis à `null`.)* ⚠️ **Purge du circuit** : comme le retrait est possible jusqu'à `EXAMINE`, l'acceptation **supprime tout l'historique de circuit du dossier** en une transaction, dans l'ordre FK-safe (observations → détails d'examen → navettes → vérifications → projets de PV → accusés de lecture → lettres de renvoi → copies → examens → dispatchs → **réceptions**). Après `POST /api/dossiers/{id}/soumettre`, le dossier redevient **`SOUMIS` sans réception** et **réapparaît dans `GET /api/dossiers/a-receptionner`** (re-réception en `INITIAL`, passage 1, avec une **nouvelle** référence de réception). Pour un dossier `SOUMIS`/`PRET_DISPATCH` (jamais dispatché) seules les réceptions feuilles existent ; les autres suppressions portent sur 0 ligne. Le **journal d'audit** (`t_audit_log`, sans FK) est conservé. `POST /{id}/refuser` (corps `{ "motif"? }`) → `REFUSEE`, dossier **inchangé**. Le décideur réel (CC **ou** Président) est enregistré dans `IM_CTRL_CC` depuis le **JWT**. Hors CC-localité/Président → **403** ; demande déjà traitée → **409**. Notifs PRMP : `RETRAIT_ACCEPTE` / `RETRAIT_REFUSE`.
@@ -756,6 +752,8 @@ si aucun résultat (pas de 404). `{nom}` est un fragment (URL-encoder si espaces
 | imCtrlCc | string | — | max 7 — décideur (CC ou Président), posé serveur depuis le JWT |
 | dateDecision | string (date-time) | — | posé serveur à la décision |
 | obsDecision | string | — | max 500 — motif de refus (optionnel) |
+| nomFichier | string | — | **sortie seule** — nom de la lettre jointe ; `null` si demande antérieure à l'obligation (front : « — ») |
+| tailleFichier | number | — | **sortie seule** — taille de la lettre en octets ; `null` si aucune pièce |
 
 **Endpoints**
 
@@ -766,18 +764,24 @@ si aucun résultat (pas de 404). `{nom}` est un fragment (URL-encoder si espaces
 | GET | /api/demande-retraits/a-valider | — | `DemandeRetraitDto[]` | 200, 403 | CHEF_COMMISSION (localité) / PRESIDENT |
 | GET | /api/demande-retraits/historique | — | `DemandeRetraitDto[]` | 200, 403 | CHEF_COMMISSION (localité) / PRESIDENT |
 | GET | /api/demande-retraits/{id} | — | `DemandeRetraitDto` | 200, 403, 404 | Authentifié (filtré) |
-| POST | /api/demande-retraits | `DemandeRetraitDto` | `DemandeRetraitDto` | 201, 400, 403, 409 | PRMP |
+| GET | /api/demande-retraits/{id}/document | — | PDF (binaire, attachment) | 200, 403, 404 | PRMP demanderesse / CC localité / PRESIDENT / ADMIN |
+| POST | /api/demande-retraits | **multipart** : `data` (`DemandeRetraitDto` JSON) + `fichier` (lettre PDF) | `DemandeRetraitDto` | 201, 400, 403, 409, 415 | PRMP |
 | POST | /api/demande-retraits/{id}/accepter | — | `DemandeRetraitDto` | 200, 403, 404, 409 | CHEF_COMMISSION / PRESIDENT |
 | POST | /api/demande-retraits/{id}/refuser | `{ motif? }` | `DemandeRetraitDto` | 200, 403, 404, 409 | CHEF_COMMISSION / PRESIDENT |
 | DELETE | /api/demande-retraits/{id} | — | — | 204, 404 | ADMINISTRATEUR |
 
 `{id}` = idDemandeRetrait (number). Le `PUT /{id}` générique est **supprimé** au profit de `accepter`/`refuser`.
 
-**Exemple — requête (création, PRMP)**
-```json
-{ "idDossier": 1023, "motifRetrait": "Dossier incomplet, pièces manquantes" }
+**Exemple — requête (création, PRMP — multipart/form-data)**
 ```
-*(le reste — `idPrmp`, `dateDemande`, `statut`, `idDemandeRetrait` — est dérivé/serveur, ignoré en entrée)*
+POST /api/demande-retraits
+Content-Type: multipart/form-data
+
+-- partie "data" (application/json) :
+{ "idDossier": 1023, "motifRetrait": "Dossier incomplet, pièces manquantes" }
+-- partie "fichier" : lettre-retrait.pdf (application/pdf, ≤ 10 Mo)
+```
+*(le reste — `idPrmp`, `dateDemande`, `statut`, `idDemandeRetrait` — est dérivé/serveur, ignoré en entrée ; la réponse porte `nomFichier`/`tailleFichier`)*
 
 > **Marquage de consultation à l'ouverture (⚠️ règle ajoutée).** `GET /api/demande-retraits/mes-demandes`
 > (PRMP) renvoie ses demandes **et** met à jour, à chaque appel, sa **dernière consultation** de l'écran
@@ -3007,7 +3011,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 **Exemple — requête / réponse**
 ```json
-{ "ancienMotDePasse": "<ancien>", "nouveauMotDePasse": "<nouveau>" }
+{ "ancienMotDePasse": "Test@1234", "nouveauMotDePasse": "Nouveau#2026" }
 ```
 ```json
 { "message": "Mot de passe modifié avec succès." }
@@ -3892,7 +3896,7 @@ au dépôt, **aucun archivage** — simple événement tracé).
 
 **Exemple — requête**
 ```json
-{ "idSession": "SESS-2026-0007", "imControleur": "CTRMEM", "dateConnexion": "2026-06-11T08:32:17", "ipAdresse": "203.0.113.42", "userAgent": "Mozilla/5.0", "succes": true }
+{ "idSession": "SESS-2026-0007", "imControleur": "CTRMEM", "dateConnexion": "2026-06-11T08:32:17", "ipAdresse": "192.168.1.42", "userAgent": "Mozilla/5.0", "succes": true }
 ```
 
 ---

@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { forkJoin } from 'rxjs';
 
 import { ApiError, getFieldError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { TYPES_PDF, urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { DemandeRetrait, Dossier } from '../../models';
 import { DemandeRetraitService, DossierService, ReferenceLookupService } from '../../services';
@@ -19,7 +21,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 @Component({
   selector: 'app-prmp-retraits',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation],
+  imports: [DecimalPipe, StatutBadge, DossierConsultation],
   template: `
     <section>
       <header class="page-header">
@@ -61,6 +63,24 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
               @if (fieldErr('motifRetrait')) { <span class="form-error">{{ fieldErr('motifRetrait') }}</span> }
             </div>
 
+            <!-- ⚠️ Règle 2026-08-17 — la lettre datée et signée accompagne OBLIGATOIREMENT la
+                 demande : sans elle le serveur refuse (400) et la demande n'est pas créée. -->
+            <div class="form-group">
+              <label class="form-label required" for="rt-lettre">Lettre de demande de retrait (PDF daté et signé)</label>
+              <input
+                id="rt-lettre"
+                class="form-control"
+                type="file"
+                accept="application/pdf,.pdf"
+                (change)="onLettre($event)"
+              />
+              @if (lettre(); as f) {
+                <span class="form-hint">{{ f.name }} — {{ (f.size / 1024) | number: '1.0-0' }} Ko</span>
+              } @else {
+                <span class="form-hint">Obligatoire — PDF de 10 Mo au maximum, signé par la PRMP.</span>
+              }
+            </div>
+
             <div class="rt-foot">
               <!-- ⚠️ 2026-08-17 (demande user) — le détail s'ouvre à la DEMANDE, en modale : le bloc
                    permanent occupait la page en affichant « sélectionnez un dossier », et le tableau
@@ -77,7 +97,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
               <button
                 type="button"
                 class="btn btn-primary"
-                [disabled]="saving() || vacance() || !retirables().length || selectedId() == null || !motif().trim()"
+                [disabled]="saving() || vacance() || !retirables().length || selectedId() == null || !motif().trim() || !lettre()"
                 (click)="soumettre()"
               >
                 {{ saving() ? 'Envoi…' : 'Soumettre la demande' }}
@@ -94,7 +114,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
         <div class="table-card">
           <table>
             <thead>
-              <tr><th>Dossier</th><th>Motif</th><th>Statut</th><th>Date</th><th>Motif du refus</th></tr>
+              <tr><th>Dossier</th><th>Motif</th><th>Lettre</th><th>Statut</th><th>Date</th><th>Motif du refus</th></tr>
             </thead>
             <tbody>
               @for (r of demandes(); track r.idDemandeRetrait) {
@@ -102,12 +122,20 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <!-- Référence cliquable : le dossier s'ouvre sur place, sans quitter le suivi. -->
                   <td><button type="button" class="rt-link" (click)="voirDossier(r.idDossier)">{{ dossierRef(r.idDossier) }}</button></td>
                   <td>{{ r.motifRetrait }}</td>
+                  <!-- Demandes antérieures à la règle du 2026-08-17 : aucune lettre (document → 404). -->
+                  <td>
+                    @if (r.nomFichier) {
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirLettre(r)">Ouvrir</button>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
                   <td><app-statut-badge [statut]="r.statut" [label]="statutLabel(r.statut)" /></td>
                   <td>{{ r.dateDemande || '—' }}</td>
                   <td>{{ r.statut === 'REFUSEE' ? (r.obsDecision || '—') : '—' }}</td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="empty-cell">Aucune demande.</td></tr>
+                <tr><td colspan="6" class="empty-cell">Aucune demande.</td></tr>
               }
             </tbody>
           </table>
@@ -155,6 +183,39 @@ export class PrmpRetraits {
 
   /** Dossier affiché dans la modale de consultation (null = fermée). */
   readonly dossierConsulte = signal<Dossier | null>(null);
+
+  /**
+   * Lettre de demande de retrait (PDF daté et signé) — **obligatoire** depuis la règle du
+   * 2026-08-17 : sans elle, le serveur refuse la demande en 400 et ne la crée pas.
+   */
+  readonly lettre = signal<File | null>(null);
+
+  /** Sélection de la lettre : type et taille contrôlés ici, magic-bytes revérifiés par le serveur. */
+  onLettre(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const f = input.files?.[0] ?? null;
+    if (f) {
+      const erreur = validerFichier(f, TYPES_PDF, 10);
+      if (erreur) {
+        this.toast.error(erreur);
+        input.value = '';
+        this.lettre.set(null);
+        return;
+      }
+    }
+    this.lettre.set(f);
+  }
+
+  /** Ouvre la lettre signée d'une demande (PDF). 404 = demande antérieure à la règle. */
+  ouvrirLettre(r: DemandeRetrait): void {
+    if (r.idDemandeRetrait == null) {
+      return;
+    }
+    this.service.document(r.idDemandeRetrait).subscribe({
+      next: (blob) => window.open(urlBlobSure(blob), '_blank'),
+      error: () => this.toast.error("La lettre n'est pas disponible pour cette demande."),
+    });
+  }
 
   /** Ouvre la consultation du dossier choisi dans le formulaire. */
   ouvrirDetail(d: Dossier | null): void {
@@ -216,17 +277,20 @@ export class PrmpRetraits {
   soumettre(): void {
     const idDossier = this.selectedId();
     const motif = this.motif().trim();
-    if (idDossier == null || !motif) {
+    const lettre = this.lettre();
+    if (idDossier == null || !motif || !lettre) {
       return;
     }
     this.formError.set(null);
     this.saving.set(true);
+    // ⚠️ Multipart depuis la règle du 2026-08-17 : la lettre signée accompagne la demande.
     // On n'envoie que idDossier + motif ; idPrmp/date/statut sont posés serveur.
-    this.service.creer({ idDossier, motifRetrait: motif } as DemandeRetrait).subscribe({
+    this.service.creerAvecLettre({ idDossier, motifRetrait: motif } as DemandeRetrait, lettre).subscribe({
       next: () => {
         this.toast.success('Demande de retrait soumise.');
         this.selectedId.set(null);
         this.motif.set('');
+        this.lettre.set(null);
         this.saving.set(false);
         this.charger();
       },

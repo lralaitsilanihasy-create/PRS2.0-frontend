@@ -5,6 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { DemandeRetrait, Dossier } from '../../models';
 import { DemandeRetraitService, DossierService, ReferenceLookupService } from '../../services';
 import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
@@ -78,13 +79,22 @@ import { DossierConsultation } from './dossier-consultation';
           } @else if (onglet() === 'a-valider') {
             <div class="table-card">
             <table>
-              <thead><tr><th>Dossier</th><th>PRMP</th><th>Motif</th><th>Date</th><th></th></tr></thead>
+              <thead><tr><th>Dossier</th><th>PRMP</th><th>Motif</th><th>Lettre</th><th>Date</th><th></th></tr></thead>
               <tbody>
                 @for (r of liste(); track r.idDemandeRetrait) {
                   <tr>
                     <td><button type="button" class="rv__link" (click)="voirDetail(r.idDossier)">{{ dossierRef(r.idDossier) }}</button></td>
                     <td>{{ r.idPrmp || '—' }}</td>
                     <td>{{ r.motifRetrait }}</td>
+                    <!-- Lettre signée : à consulter AVANT de trancher (règle 2026-08-17).
+                         « — » sur les demandes antérieures, qui n'en portent pas. -->
+                    <td>
+                      @if (r.nomFichier) {
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirLettre(r)">Ouvrir</button>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
                     <td class="cnm-mono">{{ r.dateDemande || '—' }}</td>
                     <td>
                       @if (canDecide()) {
@@ -114,7 +124,7 @@ import { DossierConsultation } from './dossier-consultation';
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="5" class="text-muted">Aucune demande à valider.</td></tr>
+                  <tr><td colspan="6" class="text-muted">Aucune demande à valider.</td></tr>
                 }
               </tbody>
             </table>
@@ -122,19 +132,26 @@ import { DossierConsultation } from './dossier-consultation';
           } @else {
             <div class="table-card">
             <table>
-              <thead><tr><th>Dossier</th><th>PRMP</th><th>Motif</th><th>Statut</th><th>Date décision</th><th>Motif du refus</th></tr></thead>
+              <thead><tr><th>Dossier</th><th>PRMP</th><th>Motif</th><th>Lettre</th><th>Statut</th><th>Date décision</th><th>Motif du refus</th></tr></thead>
               <tbody>
                 @for (r of liste(); track r.idDemandeRetrait) {
                   <tr>
                     <td><button type="button" class="rv__link" (click)="voirDetail(r.idDossier)">{{ dossierRef(r.idDossier) }}</button></td>
                     <td>{{ r.idPrmp || '—' }}</td>
                     <td>{{ r.motifRetrait }}</td>
+                    <td>
+                      @if (r.nomFichier) {
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirLettre(r)">Ouvrir</button>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
                     <td><app-statut-badge [statut]="r.statut" [label]="statutLabel(r.statut)" /></td>
                     <td class="cnm-mono">{{ r.dateDecision || '—' }}</td>
                     <td>{{ r.statut === 'REFUSEE' ? (r.obsDecision || '—') : '—' }}</td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="6" class="text-muted">Aucune demande décidée.</td></tr>
+                  <tr><td colspan="7" class="text-muted">Aucune demande décidée.</td></tr>
                 }
               </tbody>
             </table>
@@ -281,6 +298,15 @@ export class RetraitsValidation {
         this.loadingDetail.set(false);
       },
       error: () => this.loadingDetail.set(false),
+    });
+  }
+
+  /** Ouvre la lettre de demande de retrait (PDF signé). 404 = demande antérieure à la règle. */
+  ouvrirLettre(r: DemandeRetrait): void {
+    if (r.idDemandeRetrait == null) return;
+    this.service.document(r.idDemandeRetrait).subscribe({
+      next: (blob) => window.open(urlBlobSure(blob), '_blank'),
+      error: () => this.toast.error("La lettre n'est pas disponible pour cette demande."),
     });
   }
 
