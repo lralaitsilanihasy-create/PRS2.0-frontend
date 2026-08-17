@@ -228,8 +228,9 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 >   Mise en œuvre : le `CsrfFilter` de Spring **émet** le jeton, la garde dédiée `CookieCsrfGarde`
 >   l'**applique** (le resource server OAuth2 exempte d'office de l'enforcement standard toute requête
 >   où le résolveur trouve un jeton — cookie compris — d'où l'exécuteur séparé).
-> - Toggles : `app.auth.cookie.secure` (défaut `true`), `app.auth.cookie.exclusif` (défaut `false` —
->   phase 3 : `true` retire le jeton du corps de la réponse de login).
+> - Toggles : `app.auth.cookie.secure` (défaut `true`) ; `app.auth.cookie.exclusif` — **`true` depuis
+>   la phase 3 (2026-08-17)** : le jeton ne sort plus dans le corps de la réponse de login
+>   (`token: null`), le cookie fait tout côté navigateur ; rollback en repassant à `false`.
 
 **Champs `LoginRequest`** (corps de `/login`)
 
@@ -242,7 +243,7 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 
 | Champ (JSON) | Type | Description |
 |---|---|---|
-| token | string | JWT à placer dans `Authorization: Bearer ...` — ⚠️ phase 1 du plan cookie : encore présent tant que `app.auth.cookie.exclusif=false` ; `null` en phase 3 (le cookie fait tout) |
+| token | string \| null | ⚠️ **`null` depuis la phase 3 du plan cookie (2026-08-17)** — la session est portée par le cookie `PRS_SESSION`, le corps ne transporte plus de jeton (rollback : `app.auth.cookie.exclusif=false`). Le canal `Authorization: Bearer` reste accepté pour les clients API |
 | login | string | login authentifié |
 | role | string | profil métier (ou `null` si non reconnu) |
 | typeActeur | string | `CONTROLEUR`, `PRMP` ou `UGPM` |
@@ -328,19 +329,25 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 
 **Exemple — login (requête / réponse)**
 ```json
-{ "login": "CTRMEM", "motDePasse": "Test@1234" }
+{ "login": "CTRMEM", "motDePasse": "<mot de passe>" }
 ```
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiJ9...", "login": "CTRMEM", "role": "MEMBRE",
+  "token": null, "login": "CTRMEM", "role": "MEMBRE",
   "typeActeur": "CONTROLEUR", "ref": "CTRMEM", "nomAffichage": "Rakoto Jean Claude",
   "localite": "ANT", "expiresIn": 28800
 }
 ```
+> ⚠️ **`token` est `null` depuis le passage en mode cookie exclusif** (`app.auth.cookie.exclusif=true`,
+> phase 3 — 2026-08-17) : le jeton n'est plus jamais renvoyé dans le corps, il vit exclusivement dans
+> le cookie `PRS_SESSION`. Conséquence pour les clients **non-navigateur** (scripts de seed, tests
+> externes) : ils ne peuvent plus obtenir de jeton pour `Authorization: Bearer` — ils doivent
+> renvoyer le cookie reçu au login. Vérifié en réel côté front le 17/08.
+
 **Exemple — connexion d'une UGPM** (`ref` = tutelle, `nomAffichage` = l'UGPM elle-même)
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiJ9...", "login": "UGPM002", "role": "UGPM",
+  "token": null, "login": "UGPM002", "role": "UGPM",
   "typeActeur": "UGPM", "ref": "PRMP001", "nomAffichage": "Rakoto Jean Claude",
   "expiresIn": 28800
 }
@@ -348,7 +355,7 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 **Exemple — inscription PRMP (requête / réponse)**
 ```json
 {
-  "login": "prmp.rabe", "motDePasse": "MotDePasse#2026", "idPrmp": "IM0050",
+  "login": "prmp.rabe", "motDePasse": "<mot de passe choisi>", "idPrmp": "IM0050",
   "nomPrmp": "Rabe", "prenomsPrmp": "Hery",
   "arreteNomin": "ARR-2026-050", "dateNomin": "2026-01-15", "cin": "101011112222",
   "dateCin": "2010-05-05", "lieuCin": "Antananarivo", "emailPrmp": "hery.rabe@min.mg",
@@ -543,7 +550,7 @@ utilisateur (ex. mot de passe oublié) ; l'utilisateur pourra ensuite le changer
 
 **Exemple — requête (`/reinitialiser-mot-de-passe`) / réponse (`/activer`)**
 ```json
-{ "nouveauMotDePasse": "MotProvisoire#2026" }
+{ "nouveauMotDePasse": "<mot de passe provisoire>" }
 ```
 ```json
 { "login": "prmp.rabe", "typeActeur": "PRMP", "refActeur": "PRMP050", "actif": true }
@@ -3000,7 +3007,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 **Exemple — requête / réponse**
 ```json
-{ "ancienMotDePasse": "Test@1234", "nouveauMotDePasse": "Nouveau#2026" }
+{ "ancienMotDePasse": "<ancien>", "nouveauMotDePasse": "<nouveau>" }
 ```
 ```json
 { "message": "Mot de passe modifié avec succès." }
@@ -3885,7 +3892,7 @@ au dépôt, **aucun archivage** — simple événement tracé).
 
 **Exemple — requête**
 ```json
-{ "idSession": "SESS-2026-0007", "imControleur": "CTRMEM", "dateConnexion": "2026-06-11T08:32:17", "ipAdresse": "192.168.1.42", "userAgent": "Mozilla/5.0", "succes": true }
+{ "idSession": "SESS-2026-0007", "imControleur": "CTRMEM", "dateConnexion": "2026-06-11T08:32:17", "ipAdresse": "203.0.113.42", "userAgent": "Mozilla/5.0", "succes": true }
 ```
 
 ---
