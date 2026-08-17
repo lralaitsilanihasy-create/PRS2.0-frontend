@@ -7,8 +7,9 @@ import { NotificationService } from '../../services';
 /**
  * ⚠️ Spec notifications temps réel (2026-08-02) — store PARTAGÉ du compteur de non-lues :
  * - la valeur vient TOUJOURS du serveur (`GET /mes/non-lues/count`), le front ne fait que la refléter ;
- * - poussée temps réel via SSE (`GET /api/notifications/stream`, fetch-stream avec Bearer — EventSource
- *   ne porte pas de header) : chaque événement `maj` déclenche un rechargement du compteur ;
+ * - poussée temps réel via SSE (`GET /api/notifications/stream`, fetch-stream authentifié par le
+ *   cookie de session — EventSource ne permet pas de personnaliser la requête) : chaque événement
+ *   `maj` déclenche un rechargement du compteur ;
  * - repli : polling périodique (60 s) si le flux est indisponible ; reconnexion automatique ;
  * - synchronisation entre onglets : BroadcastChannel (une action locale notifie les autres onglets,
  *   qui rechargent) — en plus du SSE serveur qui pousse déjà à tous les flux du destinataire.
