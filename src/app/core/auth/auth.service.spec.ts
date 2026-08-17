@@ -34,7 +34,7 @@ describe('AuthService', () => {
     expect(auth.isAuthenticated()).toBe(false);
 
     auth.authenticate({ login: 'CTRMEM', motDePasse: 'x' }).subscribe();
-    const req = http.expectOne('http://localhost:8080/api/auth/login');
+    const req = http.expectOne('/api/auth/login');
     expect(req.request.method).toBe('POST');
     req.flush(loginResponse);
 
@@ -52,7 +52,7 @@ describe('AuthService', () => {
     const auth = TestBed.inject(AuthService);
     const http = TestBed.inject(HttpTestingController);
     auth.authenticate({ login: 'CTRMEM', motDePasse: 'x' }).subscribe();
-    http.expectOne('http://localhost:8080/api/auth/login').flush(loginResponse);
+    http.expectOne('/api/auth/login').flush(loginResponse);
 
     expect(auth.hasRole('MEMBRE', 'PRESIDENT')).toBe(true);
     expect(auth.hasRole('ADMINISTRATEUR')).toBe(false);
@@ -62,7 +62,7 @@ describe('AuthService', () => {
     const auth = TestBed.inject(AuthService);
     const http = TestBed.inject(HttpTestingController);
     auth.authenticate({ login: 'CTRMEM', motDePasse: 'x' }).subscribe();
-    http.expectOne('http://localhost:8080/api/auth/login').flush(loginResponse);
+    http.expectOne('/api/auth/login').flush(loginResponse);
 
     auth.logout();
     expect(auth.isAuthenticated()).toBe(false);

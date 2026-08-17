@@ -1,0 +1,11 @@
+{
+  "/api": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": false,
+    "ws": false,
+    "logLevel": "warn",
+    "proxyTimeout": 3600000,
+    "timeout": 3600000
+  }
+}
