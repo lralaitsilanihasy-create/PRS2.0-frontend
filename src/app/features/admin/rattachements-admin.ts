@@ -35,7 +35,7 @@ interface RattachementEnAttente {
       </p>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else if (rattachements().length) {
         <div class="table-card">
           <table class="cnm-table">

@@ -71,7 +71,7 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
       }
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else {
         <div class="table-card">
           @if (embed()) {

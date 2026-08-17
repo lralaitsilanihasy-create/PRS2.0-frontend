@@ -45,7 +45,7 @@ interface AlerteJalon {
       </p>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else {
         <div class="table-card cj__wrap">
           <table>

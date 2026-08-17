@@ -60,7 +60,7 @@ interface LigneObs {
         <p class="text-muted">Filtré sur le type <strong>{{ t }}</strong> — <a [routerLink]="[]" [queryParams]="{}">tout afficher</a></p>
       }
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else if (cartesAffichees().length) {
         <div class="ar-list">
           @for (c of cartesAffichees(); track c.dossier.idDossier) {

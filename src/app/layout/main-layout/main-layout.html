@@ -1,3 +1,7 @@
+<!-- Lien d'évitement : premier élément focalisable, visible seulement au clavier — la barre de
+     navigation compte deux niveaux, la retraverser à chaque page est très coûteux (AUDIT.md A6). -->
+<a class="lien-evitement" href="#contenu-principal" (click)="allerAuContenu($event)">Aller au contenu</a>
+
 <div
   class="sidebar-overlay"
   [class.visible]="sidebarOpen()"
@@ -182,7 +186,12 @@
   </div>
 </header>
 
-<main class="page-content">
+<!-- Région live de navigation : sur une application d'une seule page, changer d'écran est
+     silencieux pour un lecteur d'écran (l'URL change, pas le document). On annonce le titre
+     de la page atteinte (AUDIT.md A5). -->
+<p class="cnm-sr-only" role="status" aria-live="polite">{{ annonceNavigation() }}</p>
+
+<main class="page-content" id="contenu-principal" tabindex="-1">
   <div class="page-inner">
     <!-- Vacance du poste PRMP (spec « Mandats PRMP », §5) : aucun mandat actif → standby explicite. -->
     @if (vacance()) {

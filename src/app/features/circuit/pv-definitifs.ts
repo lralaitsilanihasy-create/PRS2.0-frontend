@@ -39,7 +39,7 @@ import { DetailPvModal } from './detail-pv-modal';
       </header>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else if (pvs().length) {
         <!-- ⚠️ Demande user (2026-08-15) — tableau : référence, entité contractante, date du PV,
              co-signataires, et l'action (le bouton varie selon le profil, comme avant). -->

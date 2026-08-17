@@ -53,7 +53,7 @@ import { DossierConsultation } from './dossier-consultation';
       <div class="rv__grid">
         <div class="rv__main">
           @if (loading()) {
-            <p class="text-muted">Chargement…</p>
+            <p class="text-muted" role="status">Chargement…</p>
           } @else if (onglet() === 'a-valider') {
             <div class="table-card">
             <table>
@@ -125,7 +125,7 @@ import { DossierConsultation } from './dossier-consultation';
           <div class="card-header"><span class="card-title">Détail du dossier</span></div>
           <div class="card-body">
             @if (loadingDetail()) {
-              <p class="text-muted">Chargement…</p>
+              <p class="text-muted" role="status">Chargement…</p>
             } @else if (selectedDossier(); as d) {
               <app-dossier-consultation [dossier]="d" [embedded]="true" />
             } @else {

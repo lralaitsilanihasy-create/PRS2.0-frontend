@@ -28,7 +28,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
       </header>
 
       @if (loading()) {
-        <p class="mdp__info">Chargement…</p>
+        <p class="mdp__info" role="status">Chargement…</p>
       } @else {
         @for (prmp of prmps(); track prmp.idPrmp) {
           <div class="cnm-card mdp__prmp">

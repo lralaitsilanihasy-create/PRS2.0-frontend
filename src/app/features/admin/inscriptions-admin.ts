@@ -30,7 +30,7 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
       </header>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else if (inscriptions().length) {
         <div class="table-card">
           <table class="cnm-table">

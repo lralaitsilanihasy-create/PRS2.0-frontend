@@ -26,7 +26,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       </header>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else {
         @for (ppm of mesPpms(); track ppm.idPpm) {
           @if (statutPpm(ppm) !== 'BROUILLON') {

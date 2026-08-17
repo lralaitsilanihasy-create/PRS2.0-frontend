@@ -36,7 +36,7 @@ import {
       </header>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else {
         <div class="table-card">
         <table>

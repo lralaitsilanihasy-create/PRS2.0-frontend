@@ -51,7 +51,7 @@ import { StatutBadge } from '../../shared/circuit';
       }
 
       @if (loading()) {
-        <p class="pub__info">Chargement…</p>
+        <p class="pub__info" role="status">Chargement…</p>
       } @else {
         <div class="table-card">
           <table>

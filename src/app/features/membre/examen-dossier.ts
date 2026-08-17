@@ -89,7 +89,7 @@ interface RowState {
       </header>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else if (!dossier()) {
         <p class="text-muted">Dossier introuvable ou hors de votre périmètre.</p>
       } @else {
@@ -119,7 +119,7 @@ interface RowState {
               <div class="exam__pieces">
                 <h3 class="exam__sub">Pièces jointes</h3>
                 @if (loadingPieces()) {
-                  <p class="cnm-muted">Chargement des pièces…</p>
+                  <p class="cnm-muted" role="status">Chargement des pièces…</p>
                 } @else {
                   @if (piecesInitiales().length) {
                     <div class="exam__pieces-grp">
@@ -143,7 +143,7 @@ interface RowState {
                         </button>
                         @if (openPiece() === p.idPiece) {
                           <div class="exam__piece-view" [id]="'piece-vue-' + p.idPiece">
-                            @if (loadingPiece() === p.idPiece) { <p class="cnm-muted exam__piece-loading">Chargement de l'aperçu…</p> }
+                            @if (loadingPiece() === p.idPiece) { <p class="cnm-muted exam__piece-loading" role="status">Chargement de l'aperçu…</p> }
                             @else if (openUrl(); as u) { <iframe [src]="u" class="exam__piece-frame" title="Aperçu de la pièce"></iframe> }
                           </div>
                         }
@@ -170,7 +170,7 @@ interface RowState {
                         </button>
                         @if (openPiece() === p.idPiece) {
                           <div class="exam__piece-view" [id]="'piece-vue-' + p.idPiece">
-                            @if (loadingPiece() === p.idPiece) { <p class="cnm-muted exam__piece-loading">Chargement de l'aperçu…</p> }
+                            @if (loadingPiece() === p.idPiece) { <p class="cnm-muted exam__piece-loading" role="status">Chargement de l'aperçu…</p> }
                             @else if (openUrl(); as u) { <iframe [src]="u" class="exam__piece-frame" title="Aperçu de la pièce"></iframe> }
                           </div>
                         }

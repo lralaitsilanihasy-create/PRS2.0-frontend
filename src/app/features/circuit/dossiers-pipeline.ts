@@ -25,6 +25,7 @@ import {
   etapeSuivante,
   statutDossierLabel,
 } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossierConsultation } from './dossier-consultation';
 import { DetailPvModal } from './detail-pv-modal';
 
@@ -36,7 +37,7 @@ import { DetailPvModal } from './detail-pv-modal';
 @Component({
   selector: 'app-dossiers-pipeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, StatutBadge, CircuitTimeline, DossierConsultation, DetailPvModal],
+  imports: [RouterLink, StatutBadge, CircuitTimeline, DossierConsultation, DetailPvModal, EtatErreur],
   template: `
     <section class="pipeline">
       <header class="page-header">
@@ -44,7 +45,9 @@ import { DetailPvModal } from './detail-pv-modal';
       </header>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les dossiers." (reessayer)="charger()" />
       } @else if (visibleDossiers().length === 0) {
         <p class="text-muted">{{ messageVide }}</p>
       } @else {
@@ -194,6 +197,8 @@ export class DossiersPipeline {
   protected readonly paginee = this.source === 'examines' || this.source === 'verifies';
   readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement : la liste affiche l'erreur et le bouton « Réessayer » (AUDIT.md P9). */
+  readonly erreur = signal(false);
   /** Pagination (source 'examines'). */
   readonly pageIndex = signal(0);
   readonly totalPages = signal(0);
@@ -258,7 +263,29 @@ export class DossiersPipeline {
   });
 
   constructor() {
+    this.charger();
+    // Libellés d'entité (cache partagé) — pour les files Membre qui les affichent.
+    if (this.source) {
+      this.lookups
+        .lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite'])
+        .subscribe((m) => this.entiteMap.set(m));
+    }
+    // Suppression d'un dossier propagée depuis un autre écran → retrait local immédiat de sa carte.
+    this.dossiersRefresh.supprime$
+      .pipe(takeUntilDestroyed())
+      .subscribe((idDossier) => this.dossiers.update((arr) => arr.filter((d) => d.idDossier !== idDossier)));
+  }
+
+  /** Échec de chargement : le corps de la liste affiche l'erreur et propose de relancer (AUDIT.md P9). */
+  private echec(): void {
+    this.loading.set(false);
+    this.erreur.set(true);
+  }
+
+  /** Charge la source de l'écran. Rejouable tel quel depuis le bouton « Réessayer ». */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     if (this.source === 'a-verifier') {
       // a-verifier renvoie EN_VERIFICATION + EN_ATTENTE_DECISION_PRMP ; tri par date de réception DESC.
       // ⚠️ La chaîne dispatchs/examens + les PV DÉFINITIFS accompagnent chaque dossier (bouton « PV définitif »).
@@ -288,7 +315,7 @@ export class DossiersPipeline {
           );
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: () => this.echec(),
       });
     } else if (this.source === 'a-examiner' || this.source === 'en-attente-prmp') {
       // Files de travail scopées serveur (DISPATCHE / EN_ATTENTE_DECISION_PRMP), sans filtre client.
@@ -299,7 +326,7 @@ export class DossiersPipeline {
           this.dossiers.set(rows);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: () => this.echec(),
       });
     } else if (this.paginee) {
       this.chargerPage(0);
@@ -337,19 +364,9 @@ export class DossiersPipeline {
           this.verifications.set(r.verifications);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: () => this.echec(),
       });
     }
-    // Libellés d'entité (cache partagé) — pour les files Membre qui les affichent.
-    if (this.source) {
-      this.lookups
-        .lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite'])
-        .subscribe((m) => this.entiteMap.set(m));
-    }
-    // Suppression d'un dossier propagée depuis un autre écran → retrait local immédiat de sa carte.
-    this.dossiersRefresh.supprime$
-      .pipe(takeUntilDestroyed())
-      .subscribe((idDossier) => this.dossiers.update((arr) => arr.filter((d) => d.idDossier !== idDossier)));
   }
 
   /** Charge une page d'un historique paginé ('examines' ou 'verifies' selon la source). */
@@ -366,7 +383,7 @@ export class DossiersPipeline {
         this.totalPages.set(p.totalPages);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => this.echec(),
     });
   }
   prevPage(): void {

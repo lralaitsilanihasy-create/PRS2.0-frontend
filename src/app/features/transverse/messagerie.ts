@@ -71,7 +71,7 @@ import { MessageService } from '../../services';
 
       @let liste = tab() === 'recus' ? recus() : envoyes();
       @if (loading()) {
-        <p class="msg__info">Chargement…</p>
+        <p class="msg__info" role="status">Chargement…</p>
       } @else {
         <ul class="msg__list">
           @for (m of liste; track m.idMessage) {

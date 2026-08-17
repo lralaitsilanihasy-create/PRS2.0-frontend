@@ -57,7 +57,7 @@ const STATUT_LABELS: Record<string, string> = {
       </div>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else {
         <div class="table-card">
           <table>

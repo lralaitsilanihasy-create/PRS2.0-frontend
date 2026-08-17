@@ -40,7 +40,7 @@ import {
 
           <h3 class="cpd-sub">Pièces à corriger</h3>
           @if (chargement()) {
-            <p class="text-muted">Chargement…</p>
+            <p class="text-muted" role="status">Chargement…</p>
           } @else {
             @for (d of defauts(); track d.type.idTypePiece) {
               <div class="cpd-defaut">

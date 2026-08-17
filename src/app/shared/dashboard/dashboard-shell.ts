@@ -48,7 +48,7 @@ export interface PipelineEntry {
       </header>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else {
         <h2 class="dash__section">À faire</h2>
         <div class="dash__worklist">

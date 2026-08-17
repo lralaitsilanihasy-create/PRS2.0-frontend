@@ -352,7 +352,7 @@ import { PpmFormFactory } from './ppm-form-factory';
           </header>
           <div class="dpm__body dpm__body--pad">
             @if (modalLoading()) {
-              <p class="dpm__info">Chargement des dates…</p>
+              <p class="dpm__info" role="status">Chargement des dates…</p>
             } @else if (modalData().length) {
               <table class="cnm-table">
                 <thead><tr><th>Processus</th><th>Période prévisionnelle</th></tr></thead>
@@ -383,7 +383,7 @@ import { PpmFormFactory } from './ppm-form-factory';
             </header>
             <div class="dpm__body dpm__body--pad">
               @if (editLoading()) {
-                <p class="dpm__info">Chargement des dates…</p>
+                <p class="dpm__info" role="status">Chargement des dates…</p>
               } @else {
                 @for (ctrl of datesControls(ef); track $index) {
                   <div class="dpm-date-row" [formGroup]="ctrl">

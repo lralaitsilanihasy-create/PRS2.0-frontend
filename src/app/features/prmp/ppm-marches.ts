@@ -23,7 +23,7 @@ import { DetailPpmModal } from '../../shared/prmp';
       </header>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else {
         @for (ppm of ppms(); track ppm.idPpm) {
           <div class="card ppm-row">

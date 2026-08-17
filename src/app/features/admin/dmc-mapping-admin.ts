@@ -27,7 +27,7 @@ import { ModePassationService, TypeDmcService } from '../../services';
       </p>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else {
         <div class="table-responsive">
           <table class="cnm-table">

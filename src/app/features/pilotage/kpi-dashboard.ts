@@ -20,7 +20,7 @@ import { StatutBadge } from '../../shared/circuit';
       </header>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else if (data(); as d) {
         <div class="kpi__cards">
           <article class="cnm-stat cnm-stat--blue">

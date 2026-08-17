@@ -62,7 +62,7 @@ interface GroupeJour {
       </div>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else {
         @for (g of groupesAffiches(); track g.libelle) {
           <h2 class="np__jour">{{ g.libelle }}</h2>

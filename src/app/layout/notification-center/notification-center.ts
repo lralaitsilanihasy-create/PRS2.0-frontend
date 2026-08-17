@@ -50,7 +50,7 @@ const MESSAGERIE_ROLES: Record<string, string> = {
           </div>
           <div class="notif__list">
             @if (loading()) {
-              <p class="notif__info">Chargement…</p>
+              <p class="notif__info" role="status">Chargement…</p>
             } @else {
               @for (n of notifs(); track n.idNotification) {
                 <button type="button" class="notif__item" [class.notif__item--unread]="!n.lu" (click)="ouvrir(n)">

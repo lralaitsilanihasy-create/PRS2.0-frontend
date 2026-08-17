@@ -172,6 +172,36 @@ export class MainLayout {
   /** Chemins des en-têtes de sous-menu actuellement dépliés. */
   private readonly openGroups = signal<Set<string>>(this.initialOpenGroups());
 
+  /** Titre de la page atteinte, lu par la région live de navigation (voir le template). */
+  readonly annonceNavigation = signal('');
+
+  /**
+   * Annonce le titre de la page après une navigation, et le reporte dans le titre du document
+   * (onglet, historique). Le titre est lu dans le DOM rendu — chaque écran porte un `h1` — avec
+   * repli sur `route.data.title`, toutes les routes n'en déclarant pas.
+   */
+  private annoncerPage(): void {
+    setTimeout(() => {
+      let route = this.router.routerState.root;
+      while (route.firstChild) {
+        route = route.firstChild;
+      }
+      const titreRoute = route.snapshot.data['title'] as string | undefined;
+      const h1 = document.querySelector('main h1')?.textContent?.trim();
+      const titre = (h1 || titreRoute || '').replace(/\s+/g, ' ');
+      if (titre) {
+        this.annonceNavigation.set(titre);
+        document.title = `${titre} — CNM`;
+      }
+    });
+  }
+
+  /** Lien d'évitement : place le focus sur le contenu (l'ancre seule ne le déplace pas partout). */
+  allerAuContenu(ev: Event): void {
+    ev.preventDefault();
+    document.getElementById('contenu-principal')?.focus();
+  }
+
   constructor() {
     // Ferme le drawer mobile à chaque navigation (clic sur un lien de menu).
     this.router.events
@@ -179,7 +209,10 @@ export class MainLayout {
         filter((e) => e instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => this.sidebarOpen.set(false));
+      .subscribe(() => {
+        this.sidebarOpen.set(false);
+        this.annoncerPage();
+      });
 
     // Vacance PRMP (spec « Mandats PRMP ») : vérifiée à l'ouverture puis à chaque navigation — le
     // déblocage est automatique côté serveur, re-vérifier suffit à lever la bannière et les blocages.

@@ -294,3 +294,28 @@
     opacity: 1;
   }
 }
+
+/* Lien d'évitement : hors écran, ramené visuellement dès qu'il reçoit le focus clavier. */
+.lien-evitement {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2000;
+  transform: translateY(-120%);
+  padding: 0.6rem 1rem;
+  background: var(--p-600, #0369a1);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom-right-radius: var(--radius-md);
+  transition: transform 0.15s ease;
+
+  &:focus {
+    transform: translateY(0);
+  }
+}
+
+/* Le contenu principal reçoit le focus depuis le lien d'évitement : pas de contour permanent. */
+.page-content:focus {
+  outline: none;
+}

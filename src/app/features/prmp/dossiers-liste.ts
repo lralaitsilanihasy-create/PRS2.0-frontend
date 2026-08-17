@@ -19,6 +19,7 @@ import {
   TypeDossierService,
 } from '../../services';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DetailPpmModal } from '../../shared/prmp';
 import { StatutBadge } from '../../shared/circuit';
 import { CompleterPiecesDepotModal } from './completer-pieces-depot-modal';
@@ -38,7 +39,7 @@ type Groupe = 'brouillon' | 'soumis';
 @Component({
   selector: 'app-dossiers-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DetailPpmModal, ModaleDirective, StatutBadge, CompleterPiecesDepotModal],
+  imports: [RouterLink, DetailPpmModal, EtatErreur, ModaleDirective, StatutBadge, CompleterPiecesDepotModal],
   template: `
     <section>
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -50,7 +51,9 @@ type Groupe = 'brouillon' | 'soumis';
       </header>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger vos dossiers." (reessayer)="charger()" />
       } @else {
         <div class="table-card">
           <table>
@@ -180,6 +183,8 @@ export class DossiersListe {
 
   readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer »). */
+  readonly erreur = signal(false);
   /** idDossier à mettre en évidence (arrivée depuis la recherche topbar `?focus=`) ; null = aucun. */
   readonly focusId = signal<number | null>(null);
   readonly submittingId = signal<number | null>(null);
@@ -240,11 +245,13 @@ export class DossiersListe {
       .subscribe(() => this.charger());
   }
 
-  private charger(): void {
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     const type = this.type();
     if (!type) return;
     const brouillon = this.groupe() === 'brouillon';
     this.loading.set(true);
+    this.erreur.set(false);
     // `list('BROUILLON')` côté serveur pour les brouillons ; sinon liste complète filtrée « non brouillon ».
     this.dossierService.list(brouillon ? 'BROUILLON' : undefined).subscribe({
       next: (rows) => {
@@ -258,7 +265,10 @@ export class DossiersListe {
           setTimeout(() => document.getElementById('dl-row-' + fid)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
         }
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
     this.ppmService.list().subscribe((ppms) => {
       this.ppmRef.set(new Map(ppms.map((p) => [p.idDossier, p.reference])));

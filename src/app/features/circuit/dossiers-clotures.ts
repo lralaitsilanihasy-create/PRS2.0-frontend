@@ -36,7 +36,7 @@ import { StatutBadge } from '../../shared/circuit';
         <p class="text-muted">Filtré sur le type <strong>{{ t }}</strong> — <a [routerLink]="[]" [queryParams]="{}">tout afficher</a></p>
       }
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else if (dossiersAffiches().length) {
         <ul class="dc__list">
           @for (d of dossiersAffiches(); track d.idDossier) {
@@ -96,7 +96,7 @@ import { StatutBadge } from '../../shared/circuit';
               @if (estOuvert(d.idDossier)) {
                 <div class="dc__hist">
                   @if (chargeEnCours(d.idDossier)) {
-                    <p class="text-muted">Chargement de l'historique…</p>
+                    <p class="text-muted" role="status">Chargement de l'historique…</p>
                   } @else {
                     <h3 class="dc__hist-title">Historique des échanges</h3>
                     @if (echangesDe(d.idDossier).length) {

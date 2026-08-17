@@ -23,7 +23,7 @@ import { StatutBadge } from '../../shared/circuit';
       </header>
 
       @if (loading()) {
-        <p class="cnm-muted">Chargement…</p>
+        <p class="cnm-muted" role="status">Chargement…</p>
       } @else {
         <div class="table-responsive"><table class="cnm-table">
           <thead>

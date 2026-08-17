@@ -49,7 +49,7 @@ interface CarteAttente {
       </div>
 
       @if (loading()) {
-        <p class="cnm-muted">Chargement…</p>
+        <p class="cnm-muted" role="status">Chargement…</p>
       } @else if (cartes().length) {
         <ul class="ep__list">
           @for (c of cartes(); track c.dossier.idDossier) {

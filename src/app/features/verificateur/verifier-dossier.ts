@@ -65,7 +65,7 @@ interface Echange {
       </div>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else if (!dossier()) {
         <p class="text-muted">Dossier introuvable ou hors de votre périmètre.</p>
       } @else {

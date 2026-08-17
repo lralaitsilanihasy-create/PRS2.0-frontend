@@ -41,7 +41,7 @@ interface TreeNode {
       }
 
       @if (loading()) {
-        <p class="arbre__info">Chargement…</p>
+        <p class="arbre__info" role="status">Chargement…</p>
       } @else {
         <div class="card arbre__tree">
           @for (node of nodes(); track node.entite.idEntiteContract) {

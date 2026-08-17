@@ -92,7 +92,7 @@ interface LigneControle {
               </span>
             </div>
             @if (chargementCtrl()) {
-              <p class="text-muted">Chargement des pièces…</p>
+              <p class="text-muted" role="status">Chargement des pièces…</p>
             } @else {
               @for (l of lignes(); track l.type.idTypePiece) {
                 <div class="rf-piece"

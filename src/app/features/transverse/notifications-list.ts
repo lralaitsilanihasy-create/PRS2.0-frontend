@@ -12,7 +12,7 @@ import { NotificationService } from '../../services';
       <h1 class="notifs__title">Notifications</h1>
 
       @if (loading()) {
-        <p class="notifs__info">Chargement…</p>
+        <p class="notifs__info" role="status">Chargement…</p>
       } @else {
         <ul class="notifs__list">
           @for (n of notifications(); track n.idNotification) {

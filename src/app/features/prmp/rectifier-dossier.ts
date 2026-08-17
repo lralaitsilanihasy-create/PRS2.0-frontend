@@ -84,7 +84,7 @@ import { ModificationChamp, PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-g
       </header>
 
       @if (loading()) {
-        <p class="text-muted">Chargement…</p>
+        <p class="text-muted" role="status">Chargement…</p>
       } @else if (ppm(); as p) {
         <div class="alert alert-info">
           Corrigez votre PPM selon les observations du PV ci-dessous, puis <strong>importez le PPM

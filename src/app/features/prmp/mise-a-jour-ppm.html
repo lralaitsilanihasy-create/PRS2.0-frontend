@@ -1,6 +1,6 @@
 <section class="maj">
   @if (chargement()) {
-    <p class="text-muted">Chargement de la mise à jour…</p>
+    <p class="text-muted" role="status">Chargement de la mise à jour…</p>
   } @else if (!dossier()) {
     <p class="text-muted">Mise à jour introuvable.</p>
   } @else {

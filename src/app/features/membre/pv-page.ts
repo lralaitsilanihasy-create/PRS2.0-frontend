@@ -52,7 +52,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       </header>
 
       @if (loading()) {
-        <p class="pv__info">Chargement…</p>
+        <p class="pv__info" role="status">Chargement…</p>
       } @else {
         <ul class="pv__list">
           @for (pv of pvs(); track pv.idPv) {
