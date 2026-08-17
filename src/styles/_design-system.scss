@@ -991,8 +991,21 @@ textarea.form-control {
 @keyframes modal-fade { from { opacity: 0; } }
 @keyframes modal-rise { from { opacity: 0; transform: translateY(10px) scale(.985); } }
 
+/* FERMETURE — symétrique de l'ouverture. Sans elle, le modal disparaît d'un coup (le `@if` le
+   retire du DOM) : c'est ce que l'œil perçoit comme un « à-coup ». L'hôte pose `.closing` puis
+   retire le modal après ce délai — voir `fermerAvecAnimation()` (shared/a11y). */
+.modal-backdrop.closing {
+  animation: modal-fade-out 150ms var(--ease-out, ease-out) forwards;
+
+  > * { animation: modal-sink 150ms var(--ease-out, ease-out) forwards; }
+}
+
+@keyframes modal-fade-out { to { opacity: 0; } }
+@keyframes modal-sink { to { opacity: 0; transform: translateY(10px) scale(.985); } }
+
 @media (prefers-reduced-motion: reduce) {
-  .modal-backdrop, .modal-backdrop > * { animation: none; }
+  .modal-backdrop, .modal-backdrop > *,
+  .modal-backdrop.closing, .modal-backdrop.closing > * { animation: none; }
 }
 
 .modal {

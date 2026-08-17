@@ -16,6 +16,7 @@ import {
   TypeDossierService,
 } from '../../services';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { DetailPpmModal } from '../../shared/prmp';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
@@ -94,7 +95,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     </section>
 
     @if (confirmDossier(); as d) {
-      <div class="modal-backdrop" (click)="annulerSuppression()">
+      <div class="modal-backdrop" [class.closing]="closingSuppression()" (click)="annulerSuppression()">
         <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annulerSuppression()">
           <div class="modal-header-plain">
             <span class="modal-title">Supprimer ce dossier ?</span>
@@ -271,9 +272,12 @@ export class MesBrouillons {
   demanderSuppression(d: Dossier): void {
     this.confirmDossier.set(d);
   }
+  /** Animation de sortie du modal de confirmation (voir `fermerAvecAnimation`). */
+  readonly closingSuppression = signal(false);
+  /** Ferme la confirmation en jouant l'animation de sortie — sans effet pendant la suppression. */
   annulerSuppression(): void {
     if (this.suppression() === null) {
-      this.confirmDossier.set(null);
+      fermerAvecAnimation(this.closingSuppression, () => this.confirmDossier.set(null));
     }
   }
   /** Confirme la suppression : DELETE /api/dossiers/{id} ; 204 → retire la ligne ; messages dédiés 409/403/404. */

@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { ActionDossier, DiffDossier, Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
   CapmService,
@@ -40,7 +41,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, StatutBadge, PpmMarchesTable],
   template: `
-    <div [class.modal-backdrop]="!embedded()" (click)="onOverlayClick()">
+    <div [class.modal-backdrop]="!embedded()" [class.closing]="closing()" (click)="onOverlayClick()">
       <div
         class="dc"
         [class.dc--embedded]="embedded()"
@@ -57,7 +58,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
               <app-statut-badge [statut]="dossier().statut" />
             </div>
             @if (!embedded()) {
-              <button type="button" class="dc-close" aria-label="Fermer" (click)="closed.emit()">✕</button>
+              <button type="button" class="dc-close" aria-label="Fermer" (click)="fermer()">✕</button>
             }
           </div>
 
@@ -240,7 +241,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
               @if (estPpm()) { <strong>{{ marches().length }}</strong> marché(s) · }
               <strong>{{ pieces().length }}</strong> pièce(s) jointe(s)
             </div>
-            <button type="button" class="btn btn-ghost" (click)="closed.emit()">Fermer</button>
+            <button type="button" class="btn btn-ghost" (click)="fermer()">Fermer</button>
           </footer>
         }
       </div>
@@ -341,11 +342,33 @@ export class DossierConsultation implements OnInit {
   readonly embedded = input(false);
   readonly closed = output<void>();
 
+  /** Animation de sortie en cours (pose `.closing` sur le voile) — voir `fermerAvecAnimation`. */
+  readonly closing = signal(false);
+
+  /**
+   * Fermeture unique de tous les chemins (voile, ✕, bouton Fermer, Échap) : joue l'animation de
+   * sortie avant de retirer le modal. En mode embarqué il n'y a pas de voile — sortie immédiate.
+   */
+  fermer(): void {
+    if (this.embedded()) {
+      return;
+    }
+    fermerAvecAnimation(this.closing, () => this.closed.emit());
+  }
+
   /** Clic sur l'overlay : ferme la modale (sans effet en mode embarqué). */
   onOverlayClick(): void {
-    if (!this.embedded()) {
-      this.closed.emit();
-    }
+    this.fermer();
+  }
+
+  /**
+   * Échap ferme la consultation. Ce composant ne peut pas porter la directive `appModale`
+   * partagée : le même conteneur est aussi rendu **embarqué** (sans voile, dans une colonne),
+   * où un piège de focus serait nuisible. D'où cet écouteur, neutralisé en mode embarqué.
+   */
+  @HostListener('document:keydown.escape')
+  onEchap(): void {
+    this.fermer();
   }
 
   private readonly ppmService = inject(PpmService);

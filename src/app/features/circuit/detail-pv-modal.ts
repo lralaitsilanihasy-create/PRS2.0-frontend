@@ -6,6 +6,7 @@ import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { ExamenDetail, ExamenPiece, Marche, ObservationControle, PieceJointeDossier, PvExamen } from '../../models';
 import {
   AvisService,
@@ -34,8 +35,8 @@ import { StatutBadge } from '../../shared/circuit';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ModaleDirective, StatutBadge],
   template: `
-    <div class="modal-backdrop" (click)="fermer.emit()">
-      <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Détail du PV" appModale (appModaleFermer)="fermer.emit()" (click)="$event.stopPropagation()">
+    <div class="modal-backdrop" [class.closing]="closing()" (click)="fermerModal()">
+      <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Détail du PV" appModale (appModaleFermer)="fermerModal()" (click)="$event.stopPropagation()">
         <!-- En-tête -->
         <div class="modal-header">
           <div>
@@ -45,7 +46,7 @@ import { StatutBadge } from '../../shared/circuit';
             </div>
             <h2 class="modal-title">{{ pv().refePv || pv().referencePv || ('PV #' + pv().idPv) }}</h2>
           </div>
-          <button type="button" class="btn-close" aria-label="Fermer" (click)="fermer.emit()">✕</button>
+          <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerModal()">✕</button>
         </div>
 
         <div class="modal-body">
@@ -207,8 +208,8 @@ import { StatutBadge } from '../../shared/circuit';
     <!-- Visionneuse du PDF officiel signé (même modèle que « PV définitifs » PRMP) : le lecteur du
          navigateur offre déjà impression / enregistrement. -->
     @if (apercu(); as ap) {
-      <div class="modal-backdrop" (click)="fermerApercu()">
-        <div class="modal modal-lg dpv-viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV" appModale (appModaleFermer)="fermerApercu()" (click)="$event.stopPropagation()">
+      <div class="modal-backdrop" [class.closing]="closingApercu()" (click)="fermerApercuAnime()">
+        <div class="modal modal-lg dpv-viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV" appModale (appModaleFermer)="fermerApercuAnime()" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <div>
               <div class="dpv-head-top">
@@ -455,6 +456,18 @@ export class DetailPvModal implements OnInit {
     });
   }
   /** Ferme la visionneuse et libère l'URL blob (l'iframe est détruite en même temps). */
+  /** Animations de sortie (modal principal / visionneuse PDF). */
+  readonly closing = signal(false);
+  readonly closingApercu = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie. */
+  fermerModal(): void {
+    fermerAvecAnimation(this.closing, () => this.fermer.emit());
+  }
+  /** Ferme la visionneuse en jouant l'animation de sortie (l'URL blob est révoquée à la fin). */
+  fermerApercuAnime(): void {
+    fermerAvecAnimation(this.closingApercu, () => this.fermerApercu());
+  }
+
   fermerApercu(): void {
     const ap = this.apercu();
     if (ap) URL.revokeObjectURL(ap.brute);

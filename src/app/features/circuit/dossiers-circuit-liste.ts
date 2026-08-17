@@ -5,6 +5,7 @@ import { DatePipe } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
 
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { Dispatch, Dossier, Reception } from '../../models';
 import {
   ControleurService,
@@ -188,8 +189,8 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
       <app-reception-form [dossier]="d" (closed)="receptionItem.set(null)" (saved)="onReception($event)" />
     }
     @if (annulation(); as d) {
-      <div class="modal-backdrop" (click)="annulation.set(null)">
-        <div class="modal dcl__confirm" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Confirmation d'annulation" appModale (appModaleFermer)="annulation.set(null)">
+      <div class="modal-backdrop" [class.closing]="closingAnnulation()" (click)="fermerAnnulation()">
+        <div class="modal dcl__confirm" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Confirmation d'annulation" appModale (appModaleFermer)="fermerAnnulation()">
           <div class="modal-body">
             <p>
               Retirer le dossier <strong>{{ d.refeDossier || '#' + d.idDossier }}</strong> à
@@ -201,7 +202,7 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
             </p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="annulation.set(null)">Annuler</button>
+            <button type="button" class="btn btn-outline" (click)="fermerAnnulation()">Annuler</button>
             <button type="button" class="btn btn-danger" [disabled]="annulationEnCours()" (click)="confirmerAnnulation()">
               {{ annulationEnCours() ? 'Retrait…' : 'Retirer le dossier' }}
             </button>
@@ -261,6 +262,12 @@ export class DossiersCircuitListe {
   readonly receptionItem = signal<Dossier | null>(null);
   /** Dossier dont la confirmation de retrait (annulation du dispatch) est ouverte (null = fermée). */
   readonly annulation = signal<Dossier | null>(null);
+  /** Animation de sortie du modal de confirmation (voir `fermerAvecAnimation`). */
+  readonly closingAnnulation = signal(false);
+  /** Ferme la confirmation en jouant l'animation de sortie (voile, Échap, bouton Annuler). */
+  fermerAnnulation(): void {
+    fermerAvecAnimation(this.closingAnnulation, () => this.annulation.set(null));
+  }
   readonly annulationEnCours = signal(false);
   /** Référence officielle attribuée à la dernière réception (affichée + copiable ; null = masquée). */
   readonly referenceAttribuee = signal<string | null>(null);
