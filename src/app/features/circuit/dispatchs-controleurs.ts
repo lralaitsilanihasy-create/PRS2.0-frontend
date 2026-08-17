@@ -31,7 +31,6 @@ interface DossierAttribue {
   /** Dispatch d'attribution (cible de l'action « Retirer »). */
   idDispatch: number;
   dateDispatch?: string;
-  role: 'Membre' | 'CC';
 }
 /** Carte de la statistique : un contrôleur et ses dossiers dispatchés. */
 interface LigneControleur {
@@ -62,7 +61,7 @@ interface LigneControleur {
   template: `
     <section class="dpc">
       <h2 class="dpc__titre"><span aria-hidden="true">📊</span> Dispatchs par contrôleur</h2>
-      <p class="dpc__intro">Répartition des dossiers <strong>dispatchés</strong> entre les Membres attributaires et les CC (dernier dispatch de chaque dossier). Un dossier sort de la statistique dès que son <strong>PV définitif est signé</strong> ; les attributions d'un CC ou d'un Président n'apparaissent que si la <strong>délégation du profil Membre</strong> est active.</p>
+      <p class="dpc__intro">Répartition des dossiers <strong>dispatchés</strong> entre leurs <strong>attributaires</strong> (dernier dispatch de chaque dossier) : chaque dossier compte <strong>une seule fois</strong> — la copie adressée au Chef de commission n'est pas une attribution. Un dossier sort de la statistique dès que son <strong>PV définitif est signé</strong> ; les attributions d'un CC ou d'un Président n'apparaissent que si la <strong>délégation du profil Membre</strong> est active.</p>
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
@@ -130,7 +129,6 @@ interface LigneControleur {
                   <th>Référence</th>
                   <th>Entité contractante</th>
                   <th>Type</th>
-                  <th>Rôle</th>
                   <th>Date dispatch</th>
                   <th>Statut</th>
                   <th>Localité</th>
@@ -138,12 +136,11 @@ interface LigneControleur {
                 </tr>
               </thead>
               <tbody>
-                @for (a of l.dossiers; track a.dossier.idDossier + a.role) {
+                @for (a of l.dossiers; track a.dossier.idDossier) {
                   <tr>
                     <td>{{ a.dossier.refeDossier || '#' + a.dossier.idDossier }}</td>
                     <td>{{ entiteLabel(a.dossier) }}</td>
                     <td>{{ typeLabel(a.dossier) }}</td>
-                    <td>{{ a.role }}</td>
                     <td style="white-space:nowrap;">{{ (a.dateDispatch | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
                     <td>
                       @if (a.dossier.statut) { <app-statut-badge [statut]="a.dossier.statut" /> } @else { — }
@@ -339,16 +336,21 @@ export class DispatchsControleurs implements OnDestroy {
           if (idProfile == null) return false;
           return idProfile === idProfileMembre || delegantsMembre.has(idProfile);
         };
-        const ajouter = (im: string | undefined, idDossier: number, disp: (typeof dispatchs)[number], role: 'Membre' | 'CC') => {
+        const ajouter = (im: string | undefined, idDossier: number, disp: (typeof dispatchs)[number]) => {
           const dossier = im ? dossierById.get(idDossier) : undefined;
           if (!im || !dossier || !estAffichable(im) || !STATUTS_EN_COURS.has(dossier.statut ?? '')) return;
           const liste = parControleur.get(im) ?? [];
-          liste.push({ dossier, idDispatch: disp.idDispatch, dateDispatch: disp.dateDispatch, role });
+          liste.push({ dossier, idDispatch: disp.idDispatch, dateDispatch: disp.dateDispatch });
           parControleur.set(im, liste);
         };
+        // ⚠️ 2026-08-17 (demande user) — SEULE la part attributaire (`imCtrlMembre`) est comptée.
+        // `imCtrlCc` n'est pas une attribution : c'est la COPIE adressée au Chef de commission
+        // quand le Président dispatche à un Membre. La compter faisait apparaître le même dossier
+        // sur deux cartes et doublait le total (1 dossier → « 1 dispatché, 2 contrôleurs »).
+        // Un CC ou un Président qui s'attribue le dossier (« moi-même ⤴ ») est porté par
+        // `imCtrlMembre` : il reste donc compté, à juste titre.
         for (const [idDossier, disp] of dernier) {
-          ajouter(disp.imCtrlMembre, idDossier, disp, 'Membre');
-          ajouter(disp.imCtrlCc, idDossier, disp, 'CC');
+          ajouter(disp.imCtrlMembre, idDossier, disp);
         }
         // Brouillons d'examen (dossier encore DISPATCHE mais examen commencé) → badge « Examen en cours ».
         const dossierParDispatch = new Map([...dernier.entries()].map(([idD, disp]) => [disp.idDispatch, idD]));
