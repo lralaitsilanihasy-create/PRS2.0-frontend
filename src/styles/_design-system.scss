@@ -28,13 +28,19 @@
                     rgba(14,165,233,.14),
                     rgba(2,132,199,.14));
 
-  /* Neutres */
+  /* Neutres
+     ⚠️ --n-400 et --n-500 portent le TEXTE (105 et 71 usages) : leurs valeurs sont contraintes par
+     le contraste minimum AA (4,5:1 sur le fond --n-50), pas seulement par l'harmonie de la palette.
+     Anciennes valeurs : n-500 #6b7a9e (4,07:1) et n-400 #a0a8c0 (2,26:1) — toutes deux sous le
+     seuil, à 12,5 px et moins (AUDIT.md A2). Teinte et saturation conservées : seule la
+     luminosité baisse, juste assez. n-400 reste plus clair que n-500 : la hiérarchie tient.
+     --n-300 est laissé intact (bordures et fonds) ; ses usages TEXTE pointent désormais n-400. */
   --n-50 : #f8f9fe;
   --n-100: #f0f2f8;
   --n-200: #e8ecf4;
   --n-300: #d0d8e8;
-  --n-400: #a0a8c0;
-  --n-500: #6b7a9e;
+  --n-400: #667299; /* 4,51:1 — texte secondaire, libellés micro */
+  --n-500: #586586; /* 5,52:1 — texte courant du corps de page */
   --n-600: #4a5578;
   --n-700: #2e3a58;
   --n-800: #1a1d2e;
@@ -744,7 +750,9 @@ tbody tr {
     box-shadow: 0 0 0 3.5px rgba(2, 132, 199, 0.14);
   }
 
-  &::placeholder { color: var(--n-300); }
+  /* Texte de substitution : n-300 le rendait quasi invisible (1,36:1). n-400 est conforme (4,5:1)
+     — il reste plus clair que la valeur saisie (n-700), donc distinguable d'une vraie saisie. */
+  &::placeholder { color: var(--n-400); }
 
   &.error {
     border-color: var(--danger-text);

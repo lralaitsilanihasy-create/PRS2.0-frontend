@@ -189,7 +189,7 @@ export * from './classement-config';
     .md__deleg--tuile { margin-left: 0; margin-top: 0.15rem; align-self: flex-start; }
     .md__row-count { margin-left: auto; min-width: 1.5rem; padding: 0 0.45rem; background: var(--n-100); color: var(--n-600); border-radius: var(--radius-full); font-weight: 700; font-size: var(--text-sm); text-align: center; font-variant-numeric: tabular-nums; }
     .md__row:hover .md__row-count { background: var(--p-100); color: var(--p-600); }
-    .md__row-arrow { color: var(--n-300); font-size: 1.1rem; line-height: 1; transition: transform 130ms var(--ease-out), color 130ms var(--ease-out); }
+    .md__row-arrow { color: var(--n-400); font-size: 1.1rem; line-height: 1; transition: transform 130ms var(--ease-out), color 130ms var(--ease-out); }
     .md__row:hover .md__row-arrow { color: var(--p-500); transform: translateX(3px); }
     .md__card--sk::before { background: var(--n-200); }
     .md__sk-kpi { display: block; width: 60%; height: 1.9rem; }

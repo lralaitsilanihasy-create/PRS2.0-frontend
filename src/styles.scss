@@ -385,9 +385,10 @@ a:hover {
   padding: 0.5rem 0.65rem;
 }
 
+/* Conforme AA (voir la règle ::placeholder du design system). */
 .cnm-input::placeholder,
 .cnm-textarea::placeholder {
-  color: var(--n-300);
+  color: var(--n-400);
 }
 
 .cnm-input:focus,

@@ -332,7 +332,7 @@ import { DossierService, TypeDossierService } from '../../services';
     }
     .md__row:hover .md__row-count { background: var(--p-100); color: var(--p-600); }
     .md__row-arrow {
-      color: var(--n-300); font-size: 1.1rem; line-height: 1;
+      color: var(--n-400); font-size: 1.1rem; line-height: 1;
       transition: transform 130ms var(--ease-out), color 130ms var(--ease-out);
     }
     .md__row:hover .md__row-arrow { color: var(--p-500); transform: translateX(3px); }
