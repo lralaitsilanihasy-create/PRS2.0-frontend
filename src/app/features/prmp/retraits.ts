@@ -66,18 +66,29 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
             <!-- ⚠️ Règle 2026-08-17 — la lettre datée et signée accompagne OBLIGATOIREMENT la
                  demande : sans elle le serveur refuse (400) et la demande n'est pas créée. -->
             <div class="form-group">
-              <label class="form-label required" for="rt-lettre">Lettre de demande de retrait (PDF daté et signé)</label>
-              <input
-                id="rt-lettre"
-                class="form-control"
-                type="file"
-                accept="application/pdf,.pdf"
-                (change)="onLettre($event)"
-              />
+              <span class="form-label required">Lettre de demande de retrait (PDF daté et signé)</span>
+              <!-- Le sélecteur natif du navigateur n'est pas stylable : on masque le champ et on
+                   déclenche la sélection par un libellé — le clic sur un <label> ouvre l'input. -->
               @if (lettre(); as f) {
-                <span class="form-hint">{{ f.name }} — {{ (f.size / 1024) | number: '1.0-0' }} Ko</span>
+                <div class="rt-fichier rt-fichier--ok">
+                  <span class="rt-fichier__icone" aria-hidden="true">📄</span>
+                  <span class="rt-fichier__nom">{{ f.name }}</span>
+                  <span class="rt-fichier__taille">{{ f.size / 1024 | number: '1.0-0' }} Ko</span>
+                  <label class="btn btn-secondary btn-sm rt-fichier__remplacer">
+                    Remplacer
+                    <input type="file" accept="application/pdf,.pdf" hidden (change)="onLettre($event)" />
+                  </label>
+                  <button type="button" class="btn btn-danger btn-sm" aria-label="Retirer la lettre" (click)="retirerLettre()">✕</button>
+                </div>
               } @else {
-                <span class="form-hint">Obligatoire — PDF de 10 Mo au maximum, signé par la PRMP.</span>
+                <label class="rt-fichier rt-fichier--vide">
+                  <span class="rt-fichier__cta">
+                    <span aria-hidden="true">📎</span>
+                    Choisir le fichier PDF
+                  </span>
+                  <span class="rt-fichier__aide">Obligatoire — PDF de 10 Mo au maximum, daté et signé par la PRMP.</span>
+                  <input type="file" accept="application/pdf,.pdf" hidden (change)="onLettre($event)" />
+                </label>
               }
             </div>
 
@@ -153,6 +164,45 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     .rt-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: start; }
     .rt-foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
     .rt-link { background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--c-600); font: inherit; text-decoration: underline; }
+
+    /* Dépôt de la lettre : zone cliquable en entier (le libellé enveloppe le champ masqué). */
+    .rt-fichier {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-lg);
+      transition: var(--transition);
+    }
+    .rt-fichier--vide {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.35rem;
+      border: 1.5px dashed var(--p-300);
+      background: var(--p-50);
+      cursor: pointer;
+    }
+    .rt-fichier--vide:hover { border-color: var(--p-500); background: var(--p-100); }
+    /* Le champ étant masqué, c'est le libellé qui reçoit le focus clavier : il doit le montrer. */
+    .rt-fichier--vide:focus-within { outline: 2px solid var(--p-400); outline-offset: 2px; }
+    .rt-fichier__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      background: var(--grad-primary);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: var(--shadow-sm);
+    }
+    .rt-fichier__aide { color: var(--n-500); font-size: var(--text-sm); }
+    /* Fichier choisi : bandeau vert, le nom du document au premier plan. */
+    .rt-fichier--ok { border: 1px solid var(--success-bdr); background: var(--success-bg); flex-wrap: wrap; }
+    .rt-fichier__icone { font-size: 1.15rem; }
+    .rt-fichier__nom { font-weight: 700; color: var(--n-800); flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+    .rt-fichier__taille { color: var(--success-text); font-weight: 600; font-size: var(--text-sm); white-space: nowrap; }
+    .rt-fichier__remplacer { cursor: pointer; }
     .rt-sub { margin: 1.75rem 0 0.75rem; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
     .table-card td { white-space: normal; }
   `,
@@ -204,6 +254,11 @@ export class PrmpRetraits {
       }
     }
     this.lettre.set(f);
+  }
+
+  /** Retire la lettre choisie (le dépôt redevient vide). */
+  retirerLettre(): void {
+    this.lettre.set(null);
   }
 
   /** Ouvre la lettre signée d'une demande (PDF). 404 = demande antérieure à la règle. */
