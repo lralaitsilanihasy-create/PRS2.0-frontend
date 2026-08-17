@@ -16,13 +16,30 @@ exposée par défaut sur `http://localhost:8080/api`.
 Le frontend tourne sur `http://localhost:4200` en développement.
 
 ## Structure
-- `src/app/` : composants, services, routes
-  - `app.ts`, `app.config.ts`, `app.routes.ts` : configuration de l'application standalone
-- `src/app/services/` : services HTTP (appels à l'API)
-- `src/app/components/` (ou `pages/`) : composants d'interface
-- `src/app/models/` : interfaces TypeScript décrivant les données de l'API
-- `src/environments/` : URLs d'API par environnement (si présent)
-- `public/` : ressources statiques (favicon, images)
+Organisation **par domaine métier**, pas par type technique : il n'y a **pas** de dossier
+`components/` ni `pages/` — un écran vit dans le dossier de son profil.
+
+- `src/app/app.ts`, `app.config.ts`, `app.routes.ts` : configuration standalone et routes racines
+- `src/app/features/` — **l'essentiel des écrans (≈ 55 composants)**, un sous-dossier par espace :
+  `prmp/`, `secretaire/`, `president/`, `cc/`, `membre/`, `verificateur/`, `assistant/`,
+  `publication/`, `admin/`, plus les transverses `auth/`, `circuit/` (écrans partagés du circuit
+  de contrôle : dispatch, réception, consultation, PV…), `pilotage/`, `transverse/`, `home/`,
+  `errors/`, `marche/`. Chaque espace a son `*.routes.ts` (toutes les routes en `loadComponent`).
+- `src/app/shared/` — composants et directives réutilisables (≈ 12) : `prmp/` (grille de saisie,
+  modal de détail PPM, tableaux), `circuit/` (frise, badges de statut, cartes d'observation),
+  `a11y/` (directive `appModale`), `ui/`, `security/` (directives d'affichage conditionnel), `crud/`
+- `src/app/core/` — socle applicatif : `auth/` (service de session, guards, permissions),
+  `interceptors/`, `notifications/` (toasts, alertes, flux temps réel), `securite/`
+  (`fichiers-surs`), `navigation/`, `errors/`, `vacance/`
+- `src/app/layout/` — coquille de l'application : barre latérale, en-tête, centre de notifications
+- `src/app/services/` — services HTTP (un par ressource, tous dérivés de `CrudService`)
+- `src/app/models/` — interfaces TypeScript des données de l'API
+- `src/styles/` — design system et styles partagés (`_design-system.scss`, `_fonts.scss`,
+  `_ppm-table.scss`, `_responsive.scss`)
+- `src/environments/` — URL d'API par environnement · `public/` — ressources statiques et polices
+
+> Pour trouver un écran : partir du profil (`features/<profil>/`) ou de son `*.routes.ts`, qui
+> associe chaque chemin d'URL à son composant.
 
 ## Conventions
 - Composants **standalone** uniquement (pas de `NgModule`).
