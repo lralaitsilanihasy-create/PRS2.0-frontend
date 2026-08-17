@@ -11,7 +11,8 @@
 > `b350579` **S8 clos** (polices auto-hébergées, 119 Ko, zéro appel Google — vérifié), **P8 clos** (logo 238 → 120 Ko + dimensions), **T2 clos** (CI : tests, build, `npm audit` bloquant à « high ») et **A7 clos** (champs du login nommés, erreurs reliées).
 > `a3735ff` **A4 clos** (pièces de l'examen ouvrables au clavier) et **A3 clos** (11/11 champs de la grille PPM nommés, 14/14 en-têtes avec `scope`).
 > `b85abbf` **P5/P6 traités — avec réserve** : contrôles mémoïsés (WeakMap), entrées de composants rendues stables (`sublabels`, `benefsOf`/`previsionsOf`). ⚠️ **Le diagnostic P5 surestimait l'impact** : mesuré au Chrome DevTools Protocol sur une grille de 40 lignes, l'écart est dans le bruit (30 ajouts de ligne : 210 → 194 ms ; frappe : 1,50 → 1,44 ms). En **zoneless + OnPush**, la frappe dans un formulaire réactif ne déclenche pas le cycle complet supposé. À retenir pour les prochains audits de ce dépôt : chiffrer avant d'optimiser.
-> Restent ouverts : P1 (adoption écran par écran des pages), A2 (contraste — décision design), A5 (annonces de chargement), A6 (tables hors grille PPM, lien d'évitement), S3 (cookie HttpOnly — plan backend à demander), S9 (choix produit : persistance des interrupteurs de délégation conservée), T1/T3 (couverture, e2e versionnés).
+> `414b922` **A5 clos** (45 indicateurs annoncés, navigation annoncée + titre du document), **A6 partiellement clos** (lien d'évitement ; restent les `scope` des tables hors grille PPM) et **P9 traité** (composant `<app-etat-erreur>` avec « Réessayer », branché sur le pipeline et « Mes dossiers » PRMP — à étendre aux autres listes au fil de l'eau).
+> Restent ouverts : P1 (adoption écran par écran des pages), A2 (contraste — décision design), A6 (scope des tables restantes), S3 (cookie HttpOnly — plan backend à demander), S9 (choix produit : persistance des interrupteurs de délégation conservée), T1/T3 (couverture, e2e versionnés).
 
 ## Sommaire
 
