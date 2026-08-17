@@ -52,6 +52,9 @@ import { DossierConsultation } from './dossier-consultation';
 
       <div class="rv__grid">
         <div class="rv__main">
+          @if (loadingDetail()) {
+            <p class="text-muted" role="status">Ouverture du dossier…</p>
+          }
           @if (loading()) {
             <p class="text-muted" role="status">Chargement…</p>
           } @else if (onglet() === 'a-valider') {
@@ -121,24 +124,20 @@ import { DossierConsultation } from './dossier-consultation';
           }
         </div>
 
-        <div class="card rv__detail">
-          <div class="card-header"><span class="card-title">Détail du dossier</span></div>
-          <div class="card-body">
-            @if (loadingDetail()) {
-              <p class="text-muted" role="status">Chargement…</p>
-            } @else if (selectedDossier(); as d) {
-              <app-dossier-consultation [dossier]="d" [embedded]="true" />
-            } @else {
-              <p class="text-muted">Cliquez sur un dossier pour voir son détail.</p>
-            }
-          </div>
-        </div>
       </div>
     </section>
+
+    <!-- ⚠️ 2026-08-17 (demande user) — le détail s'ouvre en MODALE, plus dans une colonne latérale :
+         le dossier porte le tableau des marchés (13 colonnes), illisible dans une colonne étroite
+         où les en-têtes se repliaient lettre par lettre. La liste reprend toute la largeur. -->
+    @if (selectedDossier(); as d) {
+      <app-dossier-consultation [dossier]="d" (closed)="fermerDetail()" />
+    }
   `,
   styles: `
     .rv__tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
-    .rv__grid { display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem; align-items: start; }
+    /* Le détail s'ouvre en modale : la liste occupe toute la largeur (une seule colonne). */
+    .rv__grid { display: grid; grid-template-columns: 1fr; gap: 0.75rem; align-items: start; }
     .rv__actions, .rv__refus-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
     .rv__refus { display: flex; flex-direction: column; gap: 0.5rem; min-width: 14rem; }
     .rv__embed-head { font-weight: 700; color: var(--n-700); margin-bottom: 0.25rem; }
@@ -255,6 +254,11 @@ export class RetraitsValidation {
       },
       error: () => this.loadingDetail.set(false),
     });
+  }
+
+  /** Referme la modale de détail. */
+  fermerDetail(): void {
+    this.selectedDossier.set(null);
   }
 
   accepter(r: DemandeRetrait): void {
