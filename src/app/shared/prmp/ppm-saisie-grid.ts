@@ -83,26 +83,28 @@ export interface ModificationChamp {
             <col style="width: 7%" /><col style="width: 6%" /><col style="width: 7%" /><col style="width: 8%" />
             <col style="width: 6%" /><col style="width: 8%" /><col style="width: 8%" /><col style="width: 11%" />
           </colgroup>
+          <!-- scope : en-tête à DEUX niveaux (rowspan/colspan) — sans lui, la relation entre les
+               colonnes et les champs est indevinable en navigation cellule par cellule (AUDIT.md A3). -->
           <thead>
             <tr>
-              <th rowspan="2">N°</th>
+              <th rowspan="2" scope="col">N°</th>
               <!-- ⚠️ 2026-08-05 — colonne OPTIONNELLE, alimentée par la mise à jour d'un PPM : statut de
                    la ligne vis-à-vis de la version précédente. Absente partout ailleurs (saisie, réimport). -->
               @if (statutParUid().size) {
-                <th rowspan="2">Statut</th>
+                <th rowspan="2" scope="col">Statut</th>
               }
-              <th rowspan="2">Nature</th>
-              <th rowspan="2">Objet</th>
-              <th rowspan="2">Montant estimé</th>
-              <th rowspan="2">Nouveau montant</th>
-              <th rowspan="2">Mode de passation</th>
-              <th rowspan="2">Forme</th>
-              <th rowspan="2">Financement</th>
-              <th colspan="4">Informations sur le bénéficiaire</th>
-              <th rowspan="2">Actions</th>
+              <th rowspan="2" scope="col">Nature</th>
+              <th rowspan="2" scope="col">Objet</th>
+              <th rowspan="2" scope="col">Montant estimé</th>
+              <th rowspan="2" scope="col">Nouveau montant</th>
+              <th rowspan="2" scope="col">Mode de passation</th>
+              <th rowspan="2" scope="col">Forme</th>
+              <th rowspan="2" scope="col">Financement</th>
+              <th colspan="4" scope="colgroup">Informations sur le bénéficiaire</th>
+              <th rowspan="2" scope="col">Actions</th>
             </tr>
             <tr>
-              <th>Service bénéficiaire</th><th>Compte</th><th>Montant</th><th>Nouveau montant</th>
+              <th scope="col">Service bénéficiaire</th><th scope="col">Compte</th><th scope="col">Montant</th><th scope="col">Nouveau montant</th>
             </tr>
           </thead>
           @for (g of marcheControls(); track g.get('uid')!.value; let idx = $index) {
@@ -117,30 +119,33 @@ export interface ModificationChamp {
                         <span class="psg-statut psg-statut--{{ (statutDe(g) || 'inconnu').toLowerCase() }}">{{ libelleStatut(statutDe(g)) }}</span>
                       </td>
                     }
-                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'natureLibelle')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature"></textarea></td>
-                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'objet')" [class.sd__cell-modif]="estChampModifie(g, 'designationMarche')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet"></textarea></td>
-                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'montEstim')" [class.sd__cell-modif]="estChampModifie(g, 'montEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" /></td>
-                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'nouvMontEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" /></td>
-                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'modeLibelle')"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="psg-modes" placeholder="Mode" /></td>
+                    <!-- aria-label sur CHAQUE champ : dans une grille, le texte de substitution ne
+                         suffit pas (il disparaît à la saisie) et trois champs n'en avaient aucun.
+                         Le numéro de ligne y est repris pour situer le champ (AUDIT.md A3). -->
+                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'natureLibelle')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature" [attr.aria-label]="'Nature — ligne ' + (idx + 1)"></textarea></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'objet')" [class.sd__cell-modif]="estChampModifie(g, 'designationMarche')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet" [attr.aria-label]="'Objet du marché — ligne ' + (idx + 1)"></textarea></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'montEstim')" [class.sd__cell-modif]="estChampModifie(g, 'montEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" [attr.aria-label]="'Montant estimé — ligne ' + (idx + 1)" /></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'nouvMontEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" [attr.aria-label]="'Nouveau montant estimé (si révisé) — ligne ' + (idx + 1)" /></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'modeLibelle')"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="psg-modes" placeholder="Mode" [attr.aria-label]="'Mode de passation — ligne ' + (idx + 1)" /></td>
                     <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'formeMarche')">
-                      <select class="form-control" [formControl]="ctrl(g, 'formeMarche')" title="Forme du marché">
+                      <select class="form-control" [formControl]="ctrl(g, 'formeMarche')" [attr.aria-label]="'Forme du marché — ligne ' + (idx + 1)">
                         @for (f of formes; track f.code) { <option [value]="f.code">{{ f.libelle }}</option> }
                       </select>
                     </td>
-                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'financement')"><input class="form-control" type="text" [formControl]="ctrl(g, 'financement')" /></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'financement')"><input class="form-control" type="text" [formControl]="ctrl(g, 'financement')" placeholder="Financement" [attr.aria-label]="'Financement — ligne ' + (idx + 1)" /></td>
                   }
                   <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':soaCode')">
                     @if (bctrl(b, 'soaCode').value) {
-                      <input class="form-control" type="text" [formControl]="bctrl(b, 'soaCode')" list="psg-soa" placeholder="SOA" />
+                      <input class="form-control" type="text" [formControl]="bctrl(b, 'soaCode')" list="psg-soa" placeholder="SOA" [attr.aria-label]="'Code SOA — ligne ' + (idx + 1) + ', bénéficiaire ' + (i + 1)" />
                     } @else {
-                      <input class="form-control" type="text" [formControl]="bctrl(b, 'soaLibelle')" list="psg-soa-lib" placeholder="Service bénéficiaire" />
+                      <input class="form-control" type="text" [formControl]="bctrl(b, 'soaLibelle')" list="psg-soa-lib" placeholder="Service bénéficiaire" [attr.aria-label]="'Service bénéficiaire — ligne ' + (idx + 1) + ', bénéficiaire ' + (i + 1)" />
                     }
                   </td>
-                  <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':numCompte')"><input class="form-control" type="text" [formControl]="bctrl(b, 'numCompte')" list="psg-comptes" placeholder="Compte" /></td>
-                  <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':ancMontBenef')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'ancMontBenef')" /></td>
+                  <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':numCompte')"><input class="form-control" type="text" [formControl]="bctrl(b, 'numCompte')" list="psg-comptes" placeholder="Compte" [attr.aria-label]="'Compte — ligne ' + (idx + 1) + ', bénéficiaire ' + (i + 1)" /></td>
+                  <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':ancMontBenef')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'ancMontBenef')" [attr.aria-label]="'Montant du bénéficiaire — ligne ' + (idx + 1) + ', bénéficiaire ' + (i + 1)" /></td>
                   <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':nouvMontBenef')">
                     <div class="sd__benef-cell">
-                      <input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'nouvMontBenef')" placeholder="(si révisé)" />
+                      <input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'nouvMontBenef')" placeholder="(si révisé)" [attr.aria-label]="'Nouveau montant du bénéficiaire (si révisé) — ligne ' + (idx + 1) + ', bénéficiaire ' + (i + 1)" />
                       <button type="button" class="btn btn-secondary btn-sm" [disabled]="beneficiairesControls(g).length === 1" (click)="retirerBeneficiaire(g, i)" aria-label="Retirer le bénéficiaire">✕</button>
                     </div>
                   </td>

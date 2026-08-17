@@ -125,15 +125,24 @@ interface RowState {
                     <div class="exam__pieces-grp">
                       <span class="exam__pieces-pill">Pièces initiales · {{ piecesInitiales().length }}</span>
                       @for (p of piecesInitiales(); track p.idPiece; let i = $index) {
-                        <div class="exam__piece exam__piece--{{ etatPiece(p) }}" [class.is-open]="openPiece() === p.idPiece" (click)="togglePiece(p)">
+                        <!-- <button> et non <div> : l'ouverture d'une pièce doit être atteignable
+                             au clavier — c'est l'action centrale de l'écran d'examen (AUDIT.md A4). -->
+                        <button
+                          type="button"
+                          class="exam__piece exam__piece--{{ etatPiece(p) }}"
+                          [class.is-open]="openPiece() === p.idPiece"
+                          [attr.aria-expanded]="openPiece() === p.idPiece"
+                          [attr.aria-controls]="'piece-vue-' + p.idPiece"
+                          (click)="togglePiece(p)"
+                        >
                           <span class="exam__piece-etat exam__piece-etat--{{ etatPiece(p) }}" aria-hidden="true">{{ marqueurPiece(p) }}</span>
                           <span class="exam__piece-idx">{{ i + 1 }}</span>
                           <span class="exam__piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
                           @if (p.format) { <span class="badge exam__piece-fmt">{{ p.format }}</span> }
                           <span class="exam__piece-chev" [class.is-open]="openPiece() === p.idPiece" aria-hidden="true">▾</span>
-                        </div>
+                        </button>
                         @if (openPiece() === p.idPiece) {
-                          <div class="exam__piece-view">
+                          <div class="exam__piece-view" [id]="'piece-vue-' + p.idPiece">
                             @if (loadingPiece() === p.idPiece) { <p class="cnm-muted exam__piece-loading">Chargement de l'aperçu…</p> }
                             @else if (openUrl(); as u) { <iframe [src]="u" class="exam__piece-frame" title="Aperçu de la pièce"></iframe> }
                           </div>
@@ -145,15 +154,22 @@ interface RowState {
                     <div class="exam__pieces-grp">
                       <span class="exam__pieces-pill exam__pieces-pill--lr">Après lettre de renvoi · {{ piecesApresRenvoi().length }}</span>
                       @for (p of piecesApresRenvoi(); track p.idPiece; let i = $index) {
-                        <div class="exam__piece exam__piece--{{ etatPiece(p) }}" [class.is-open]="openPiece() === p.idPiece" (click)="togglePiece(p)">
+                        <button
+                          type="button"
+                          class="exam__piece exam__piece--{{ etatPiece(p) }}"
+                          [class.is-open]="openPiece() === p.idPiece"
+                          [attr.aria-expanded]="openPiece() === p.idPiece"
+                          [attr.aria-controls]="'piece-vue-' + p.idPiece"
+                          (click)="togglePiece(p)"
+                        >
                           <span class="exam__piece-etat exam__piece-etat--{{ etatPiece(p) }}" aria-hidden="true">{{ marqueurPiece(p) }}</span>
                           <span class="exam__piece-idx exam__piece-idx--lr">{{ i + 1 }}</span>
                           <span class="exam__piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
                           @if (p.format) { <span class="badge exam__piece-fmt">{{ p.format }}</span> }
                           <span class="exam__piece-chev" [class.is-open]="openPiece() === p.idPiece" aria-hidden="true">▾</span>
-                        </div>
+                        </button>
                         @if (openPiece() === p.idPiece) {
-                          <div class="exam__piece-view">
+                          <div class="exam__piece-view" [id]="'piece-vue-' + p.idPiece">
                             @if (loadingPiece() === p.idPiece) { <p class="cnm-muted exam__piece-loading">Chargement de l'aperçu…</p> }
                             @else if (openUrl(); as u) { <iframe [src]="u" class="exam__piece-frame" title="Aperçu de la pièce"></iframe> }
                           </div>
@@ -376,7 +392,9 @@ interface RowState {
     .exam__piece-etat--done-obs { color: #DC2626; }
     .exam__piece-etat--current { color: #4F46E5; }
     .exam__piece-etat--pending { color: var(--n-300); }
-    .exam__piece { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); }
+    /* <button> : neutraliser les styles natifs (largeur, police, alignement) pour conserver
+       exactement le rendu de l'ancienne ligne, tout en gagnant le clavier et le focus. */
+    .exam__piece { display: flex; width: 100%; text-align: left; font: inherit; color: inherit; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); }
     .exam__piece:hover { border-color: var(--c-200, #c7d2fe); background: var(--c-50); }
     .exam__piece.is-open { border-color: var(--info-text, #2563eb); background: var(--info-bg, #eff6ff); }
     .exam__piece-idx { flex: none; width: 1.4rem; height: 1.4rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--info-bg, #eff6ff); color: var(--info-text, #2563eb); font-size: var(--text-xs); font-weight: 700; }
