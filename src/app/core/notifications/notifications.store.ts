@@ -41,17 +41,19 @@ export class NotificationsStore {
     }
     // Onglet redevenu visible : resynchronisation immédiate (les polls en onglet caché sont sautés).
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && this.auth.token()) {
+      if (!document.hidden && this.auth.isAuthenticated()) {
         this.refresh();
       }
     });
     // Suit la session : connecte le flux à la connexion, coupe tout à la déconnexion.
+    // ⚠️ Phase 2 du plan cookie (2026-08-17) : plus de jeton côté JS — le flux s'authentifie par
+    // le cookie HttpOnly (envoyé automatiquement en même origine), le signal est isAuthenticated.
     effect(() => {
-      const token = this.auth.token();
+      const connecte = this.auth.isAuthenticated();
       this.deconnecterFlux();
-      if (token) {
+      if (connecte) {
         this.refresh();
-        this.connecterFlux(token);
+        this.connecterFlux();
         this.demarrerPolling();
       } else {
         this.count.set(0);
@@ -84,19 +86,24 @@ export class NotificationsStore {
     this.canal?.postMessage('maj');
   }
 
-  /** Flux SSE via fetch-stream (porte le Bearer) ; reconnexion différée en cas de coupure. */
-  private connecterFlux(token: string): void {
+  /**
+   * Flux SSE via fetch-stream ; reconnexion différée en cas de coupure.
+   * ⚠️ Phase 2 : l'authentification passe par le cookie HttpOnly `PRS_SESSION`, que `fetch`
+   * envoie automatiquement en même origine (`credentials: 'same-origin'` est le défaut) —
+   * plus d'en-tête Authorization. GET = méthode sûre : pas de jeton XSRF à porter.
+   */
+  private connecterFlux(): void {
     const abort = new AbortController();
     this.streamAbort = abort;
     void (async () => {
       let arretDefinitif = false;
       try {
         const rep = await fetch(`${environment.apiUrl}/notifications/stream`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
+          headers: { Accept: 'text/event-stream' },
           signal: abort.signal,
         });
         if (rep.status === 401) {
-          // Jeton refusé : reboucler toutes les 5 s n'y changera rien — la minuterie
+          // Session refusée : reboucler toutes les 5 s n'y changera rien — la minuterie
           // d'expiration (AuthService) et l'intercepteur d'erreurs gèrent la déconnexion.
           arretDefinitif = true;
           throw new Error('non autorisé');
@@ -122,10 +129,10 @@ export class NotificationsStore {
       }
       this.fluxActif = false;
       // Reconnexion (fin de timeout serveur ~30 min ou coupure), sauf si volontairement fermé.
-      if (!arretDefinitif && this.streamAbort === abort && this.auth.token()) {
+      if (!arretDefinitif && this.streamAbort === abort && this.auth.isAuthenticated()) {
         this.reconnexionTimer = setTimeout(() => {
-          if (this.streamAbort === abort && this.auth.token()) {
-            this.connecterFlux(this.auth.token()!);
+          if (this.streamAbort === abort && this.auth.isAuthenticated()) {
+            this.connecterFlux();
           }
         }, 5000);
       }

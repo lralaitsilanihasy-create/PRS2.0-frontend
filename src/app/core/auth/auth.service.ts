@@ -18,8 +18,13 @@ import {
 } from '../../models';
 import { skipErrorToast } from '../errors/api-error';
 
-/** Session persistée = réponse de login + date d'expiration calculée (epoch ms). */
-interface StoredSession extends LoginResponse {
+/**
+ * Session persistée = réponse de login SANS LE JETON + date d'expiration calculée (epoch ms).
+ * ⚠️ Phase 2 du plan cookie (2026-08-17) : le jeton vit exclusivement dans le cookie HttpOnly
+ * `PRS_SESSION` posé par le serveur — il n'est JAMAIS stocké côté front (un XSS ne peut plus le
+ * voler). Le stockage ne garde que le profil d'affichage (rôle, localité, nom…) et l'échéance.
+ */
+interface StoredSession extends Omit<LoginResponse, 'token'> {
   expiresAt: number;
 }
 
@@ -53,9 +58,8 @@ export class AuthService {
   }
 
   // --- État dérivé, lisible partout (templates, guards, services) ---
+  // (Plus de `token()` : le jeton est dans le cookie HttpOnly, invisible au JS — phase 2.)
 
-  /** JWT courant, ou null. */
-  readonly token = computed(() => this.session()?.token ?? null);
   /** Profil métier courant, ou null. */
   readonly role = computed<Role | null>(() => this.session()?.role ?? null);
   /** Localité de rattachement ; `null` = toutes localités (Président/Admin). */
@@ -68,7 +72,7 @@ export class AuthService {
   readonly login = computed<string | null>(() => this.session()?.login ?? null);
   /** « Nom Prénoms » résolu par le serveur au login (toujours renseigné) ; null sur une session antérieure. */
   readonly nomAffichage = computed<string | null>(() => this.session()?.nomAffichage ?? null);
-  /** Vrai si un jeton valide et non expiré est présent. */
+  /** Vrai si une session non expirée est présente (le jeton lui-même vit dans le cookie HttpOnly). */
   readonly isAuthenticated = computed(() => {
     const s = this.session();
     return !!s && Date.now() < s.expiresAt;
@@ -157,18 +161,28 @@ export class AuthService {
     return r !== null && roles.includes(r);
   }
 
-  /** Efface la session (déconnexion locale ; le backend reste sans état avec le JWT). */
+  /**
+   * Déconnexion : efface l'état local ET demande au serveur de vider le cookie de session
+   * (`POST /api/auth/logout`, route publique — un cookie HttpOnly n'est pas supprimable par le JS).
+   * L'appel serveur est en « meilleur effort » : silencieux en cas d'échec (session déjà expirée,
+   * réseau coupé), l'état local est purgé dans tous les cas.
+   */
   logout(): void {
     clearTimeout(this.expirationTimer);
     this.session.set(null);
     localStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(STORAGE_KEY);
+    this.http
+      .post<void>(`${environment.apiUrl}/auth/logout`, null, { context: skipErrorToast() })
+      .subscribe({ error: () => {} });
   }
 
   // --- Persistance ---
 
   private persist(res: LoginResponse, remember: boolean): void {
-    const stored: StoredSession = { ...res, expiresAt: Date.now() + res.expiresIn * 1000 };
+    // ⚠️ Phase 2 : le jeton est ÉCARTÉ avant toute persistance — il vit dans le cookie HttpOnly.
+    const { token: _jeton, ...profil } = res;
+    const stored: StoredSession = { ...profil, expiresAt: Date.now() + res.expiresIn * 1000 };
     this.session.set(stored);
     const primary = remember ? localStorage : sessionStorage;
     const secondary = remember ? sessionStorage : localStorage;
@@ -190,19 +204,28 @@ export class AuthService {
     }, Math.max(0, expiresAt - Date.now()));
   }
 
-  /** Restaure une session valide depuis le stockage (local ou session) au démarrage. */
+  /**
+   * Restaure une session valide depuis le stockage (local ou session) au démarrage.
+   * Une session d'AVANT la phase 2 contenait le jeton : il est purgé du stockage à la volée
+   * (si le cookie correspondant n'existe pas, le premier appel API fera un 401 → reconnexion).
+   */
   private restore(): StoredSession | null {
-    const raw = localStorage.getItem(STORAGE_KEY) ?? sessionStorage.getItem(STORAGE_KEY);
+    const depuisLocal = localStorage.getItem(STORAGE_KEY);
+    const raw = depuisLocal ?? sessionStorage.getItem(STORAGE_KEY);
     if (!raw) {
       return null;
     }
     try {
-      const stored = JSON.parse(raw) as StoredSession;
-      if (!stored.token || Date.now() >= stored.expiresAt) {
+      const brut = JSON.parse(raw) as StoredSession & { token?: string | null };
+      if (!brut.login || Date.now() >= brut.expiresAt) {
         this.clearStorage();
         return null;
       }
-      return stored;
+      if ('token' in brut) {
+        delete brut.token;
+        (depuisLocal !== null ? localStorage : sessionStorage).setItem(STORAGE_KEY, JSON.stringify(brut));
+      }
+      return brut;
     } catch {
       this.clearStorage();
       return null;

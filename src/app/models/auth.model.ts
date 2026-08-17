@@ -8,8 +8,13 @@ export interface LoginRequest {
 
 /** Réponse de `POST /api/auth/login`. */
 export interface LoginResponse {
-  /** JWT à placer dans `Authorization: Bearer ...`. */
-  token: string;
+  /**
+   * JWT. ⚠️ Phase 2 du plan cookie (2026-08-17) : la session est portée par le cookie HttpOnly
+   * `PRS_SESSION` posé par le serveur — le front N'UTILISE PLUS ce champ et ne le stocke jamais.
+   * Encore renseigné tant que le backend est en phase 1 ; `null` quand il passera en phase 3
+   * (`app.auth.cookie.exclusif=true`).
+   */
+  token: string | null;
   login: string;
   /** Profil métier (ou `null` si non reconnu). */
   role: Role | null;
