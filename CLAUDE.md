@@ -35,13 +35,27 @@ Le frontend tourne sur `http://localhost:4200` en développement.
 - Nommage : fichiers en kebab-case, classes en PascalCase.
 - Privilégier les API Angular modernes : `inject()`, signals quand c'est pertinent.
 
-## Backend associé
-- URL de base de l'API : `http://localhost:8080/api`
-- Le backend doit autoriser le CORS depuis `http://localhost:4200`,
-  sinon les requêtes seront bloquées par le navigateur.
+## Backend associé — MÊME ORIGINE (depuis le 17/08/2026)
+- L'API s'appelle en **relatif** : `environment.apiUrl = '/api'`, en développement comme en
+  production. Le serveur de dev relaie `/api` vers `http://localhost:8080` (`proxy.conf.json`,
+  branché sur la cible `serve` d'`angular.json`) — donc **jamais** d'appel direct à `:8080` depuis
+  le front, et plus de CORS en développement.
+- **Pourquoi c'est impératif** : la session est portée par un cookie `PRS_SESSION`
+  `HttpOnly; Secure; SameSite=Strict`. Un cookie strict n'est **jamais** envoyé vers une autre
+  origine : un appel à `:8080` partirait non authentifié.
+- **Aucun jeton côté client** : `POST /api/auth/login` renvoie `token: null` (mode cookie exclusif).
+  Il n'y a plus d'intercepteur `Authorization`, plus de jeton en `localStorage` — celui-ci ne garde
+  que le profil d'affichage. La déconnexion appelle `POST /api/auth/logout` (le JavaScript ne peut
+  pas supprimer un cookie `HttpOnly`).
+- **Mutations** : garde CSRF double-submit. `HttpClient` pose `X-XSRF-TOKEN` **automatiquement**
+  depuis le cookie `XSRF-TOKEN` — ne rien coder pour cela. En revanche, un `fetch` manuel
+  (ex. le flux SSE) doit le poser lui-même sur les méthodes non sûres, sinon 401.
+- ⚠️ Tout script externe (seed, test) qui s'authentifiait en `Authorization: Bearer` **ne fonctionne
+  plus** : passer par le cookie renvoyé au login.
 
 ## Commandes
-- Serveur de dev : `ng serve` → `http://localhost:4200`
+- Serveur de dev : `ng serve` → `http://localhost:4200` (proxy `/api` inclus — toujours attaquer
+  l'application par ce port, pas par `:8080`)
 - Générer un composant : `ng generate component nom`
 - Générer un service : `ng generate service services/nom`
 - Build de production : `ng build`
@@ -52,3 +66,23 @@ Le frontend tourne sur `http://localhost:4200` en développement.
 - Proposer des interfaces TypeScript pour chaque ressource consommée.
 - Signaler tout ajout de dépendance npm.
 - Garder les composants fins ; déplacer la logique métier et les appels API dans les services.
+
+## Acquis de l'audit technique (16-17/08/2026) — voir `AUDIT.md`
+À respecter dans tout nouveau code, sous peine de régresser des correctifs livrés :
+- **Affichage d'un fichier** : passer par `urlBlobSure()` / `blobSur()`
+  (`core/securite/fichiers-surs`) — jamais `URL.createObjectURL(blob)` brut : un HTML ou SVG
+  téléversé s'exécuterait dans l'origine de l'application. Tout téléversement passe par
+  `validerFichier()` (type et taille).
+- **Modale** : poser la directive `appModale` (`shared/a11y`) sur le conteneur du dialogue —
+  elle apporte le focus initial, sa restitution, Échap et le piège de Tab. Y ajouter un
+  `aria-label`, et un `aria-label` sur tout bouton réduit à un symbole (✕, ⤴…).
+- **Élément cliquable** : utiliser `<button>`, jamais `<div (click)>` — sinon l'action est
+  inaccessible au clavier.
+- **Champ de formulaire** : un nom accessible stable (`<label>` ou `aria-label`) ; le texte de
+  substitution ne suffit pas, il disparaît à la saisie.
+- **Couleur de texte** : `--n-500` / `--n-400` sont calibrés sur le contraste AA (4,5:1) —
+  ne pas les éclaircir ; `--n-300` est réservé aux bordures et fonds.
+- **Chargement / erreur** : `role="status"` sur l'indicateur de chargement, et
+  `<app-etat-erreur (reessayer)>` dans le corps de la liste en cas d'échec (un toast disparaît,
+  l'utilisateur resterait devant un écran vide).
+- **Route de feature** : toujours `loadComponent: () => import(...)`, jamais un import statique.
