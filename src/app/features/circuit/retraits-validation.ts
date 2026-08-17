@@ -50,6 +50,24 @@ import { DossierConsultation } from './dossier-consultation';
         </button>
       </div>
 
+      <!-- ⚠️ 2026-08-17 (demande user) — sans cette explication, l'écran est MUET : la liste
+           s'affiche mais la colonne d'actions reste vide, sans que rien n'indique pourquoi.
+           Cas courant : un Président qui n'a pas activé la délégation « Chef de commission ». -->
+      @if (onglet() === 'a-valider' && !canDecide() && liste().length) {
+        <div class="alert alert-info rv__info" role="status">
+          @if (peutParDelegation()) {
+            <strong>Décision indisponible pour le moment.</strong>
+            Accepter ou refuser un retrait relève du <strong>Chef de commission</strong> : activez
+            <strong>« Chef de commission »</strong> dans le panneau <strong>Délégations ⤴</strong>, en bas
+            de la barre latérale, et les boutons apparaîtront sur chaque ligne.
+          } @else {
+            <strong>Consultation seule.</strong>
+            La décision sur une demande de retrait est réservée au <strong>Chef de commission</strong>
+            (ou au Président exerçant cette délégation).
+          }
+        </div>
+      }
+
       <div class="rv__grid">
         <div class="rv__main">
           @if (loadingDetail()) {
@@ -141,6 +159,7 @@ import { DossierConsultation } from './dossier-consultation';
     .rv__actions, .rv__refus-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
     .rv__refus { display: flex; flex-direction: column; gap: 0.5rem; min-width: 14rem; }
     .rv__embed-head { font-weight: 700; color: var(--n-700); margin-bottom: 0.25rem; }
+    .rv__info { margin-bottom: 0.75rem; }
     .rv__filtre { margin: -0.4rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
     .rv__filtre a { margin-left: 0.4rem; color: var(--p-600); font-weight: 600; }
     .rv__link { background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--c-600); font: inherit; text-decoration: underline; }
@@ -188,6 +207,15 @@ export class RetraitsValidation {
   private readonly dossierMap = signal<Map<string, string>>(new Map());
 
   readonly canDecide = computed(() => this.permissions.can('DEMANDE_RETRAIT_DECISION'));
+
+  /**
+   * Vrai si l'utilisateur POURRAIT décider en activant la délégation « Chef de commission »
+   * (paire active en base, mais interrupteur éteint) : cas du Président. Sert à afficher le
+   * mode d'emploi plutôt qu'un simple « non autorisé ».
+   */
+  readonly peutParDelegation = computed(
+    () => !this.canDecide() && this.permissions.delegationsDisponibles().includes('CHEF_COMMISSION'),
+  );
 
   constructor() {
     this.lookups.lookup(DossierService, 'idDossier', ['refeDossier']).subscribe((m) => this.dossierMap.set(m));
