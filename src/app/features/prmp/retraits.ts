@@ -62,6 +62,18 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
             </div>
 
             <div class="rt-foot">
+              <!-- ⚠️ 2026-08-17 (demande user) — le détail s'ouvre à la DEMANDE, en modale : le bloc
+                   permanent occupait la page en affichant « sélectionnez un dossier », et le tableau
+                   des marchés y était à l'étroit. Pas d'ouverture automatique à la sélection : on
+                   choisit d'abord, on vérifie si on le souhaite. -->
+              <button
+                type="button"
+                class="btn btn-secondary"
+                [disabled]="selectedDossier() === null"
+                (click)="ouvrirDetail(selectedDossier())"
+              >
+                Voir le détail du dossier
+              </button>
               <button
                 type="button"
                 class="btn btn-primary"
@@ -71,17 +83,6 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                 {{ saving() ? 'Envoi…' : 'Soumettre la demande' }}
               </button>
             </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header"><span class="card-title">Détail du dossier</span></div>
-          <div class="card-body">
-            @if (selectedDossier(); as d) {
-              <app-dossier-consultation [dossier]="d" [embedded]="true" />
-            } @else {
-              <p class="text-muted">Sélectionnez un dossier pour voir son détail.</p>
-            }
           </div>
         </div>
       </div>
@@ -98,7 +99,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
             <tbody>
               @for (r of demandes(); track r.idDemandeRetrait) {
                 <tr>
-                  <td>{{ dossierRef(r.idDossier) }}</td>
+                  <!-- Référence cliquable : le dossier s'ouvre sur place, sans quitter le suivi. -->
+                  <td><button type="button" class="rt-link" (click)="voirDossier(r.idDossier)">{{ dossierRef(r.idDossier) }}</button></td>
                   <td>{{ r.motifRetrait }}</td>
                   <td><app-statut-badge [statut]="r.statut" [label]="statutLabel(r.statut)" /></td>
                   <td>{{ r.dateDemande || '—' }}</td>
@@ -112,15 +114,17 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
         </div>
       }
     </section>
+
+    <!-- Consultation du dossier en modale : depuis le formulaire (bouton) ou depuis une ligne
+         du suivi (référence cliquable) — même composant, pleine largeur. -->
+    @if (dossierConsulte(); as d) {
+      <app-dossier-consultation [dossier]="d" (closed)="dossierConsulte.set(null)" />
+    }
   `,
   styles: `
-    /* ⚠️ 2026-08-06 — la colonne de gauche porte la consultation du dossier, donc le tableau des
-       marchés et ses 14 colonnes ; celle de droite, une liste de demandes. Le partage à parts égales
-       étranglait le tableau : 2 pour 1. */
-    /* Empilement : le détail du dossier (tableau PPM large) passe SOUS le formulaire — en colonne
-       latérale, le tableau n'avait que ~500px et chaque en-tête se cassait lettre à lettre. */
     .rt-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: start; }
-    .rt-foot { display: flex; justify-content: flex-end; }
+    .rt-foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
+    .rt-link { background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--c-600); font: inherit; text-decoration: underline; }
     .rt-sub { margin: 1.75rem 0 0.75rem; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
     .table-card td { white-space: normal; }
   `,
@@ -148,6 +152,32 @@ export class PrmpRetraits {
     const id = this.selectedId();
     return id == null ? null : this.retirables().find((d) => d.idDossier === id) ?? null;
   });
+
+  /** Dossier affiché dans la modale de consultation (null = fermée). */
+  readonly dossierConsulte = signal<Dossier | null>(null);
+
+  /** Ouvre la consultation du dossier choisi dans le formulaire. */
+  ouvrirDetail(d: Dossier | null): void {
+    if (d) {
+      this.dossierConsulte.set(d);
+    }
+  }
+
+  /**
+   * Ouvre le dossier d'une demande du suivi. Une demande peut porter sur un dossier déjà retiré
+   * (donc absent de la liste des retirables) : on le charge alors à la demande.
+   */
+  voirDossier(idDossier: number): void {
+    const connu = this.retirables().find((d) => d.idDossier === idDossier);
+    if (connu) {
+      this.dossierConsulte.set(connu);
+      return;
+    }
+    this.dossierService.getById(idDossier).subscribe({
+      next: (d) => this.dossierConsulte.set(d),
+      error: () => {},
+    });
+  }
 
   constructor() {
     this.lookups.lookup(DossierService, 'idDossier', ['refeDossier']).subscribe((m) => this.dossierMap.set(m));
