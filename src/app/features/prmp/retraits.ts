@@ -7,7 +7,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { TYPES_PDF, urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { DemandeRetrait, Dossier } from '../../models';
-import { DemandeRetraitService, DossierService, ReferenceLookupService } from '../../services';
+import { DemandeRetraitService, DossierService, LocaliteService, ReferenceLookupService } from '../../services';
 import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
@@ -51,6 +51,26 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
               }
               @if (fieldErr('idDossier')) { <span class="form-error">{{ fieldErr('idDossier') }}</span> }
             </div>
+
+            <!-- ⚠️ Confirmation VISIBLE dès la sélection : on retire un dossier, l'erreur de cible
+                 serait coûteuse. Un résumé suffit ici (aucun appel réseau : tout vient de la liste
+                 des retirables déjà chargée) ; le détail complet reste à un clic, en modale. -->
+            @if (selectedDossier(); as d) {
+              <div class="rt-choisi">
+                <div class="rt-choisi__tete">
+                  <span class="rt-choisi__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</span>
+                  @if (d.statut) { <app-statut-badge [statut]="d.statut" /> }
+                </div>
+                <dl class="rt-choisi__faits">
+                  <div><dt>Localité</dt><dd>{{ localiteLabel(d) }}</dd></div>
+                  <div><dt>Type</dt><dd>{{ d.idSousType || d.idTypeDossier || '—' }}</dd></div>
+                  <div><dt>Date de référence</dt><dd>{{ d.dateRef || '—' }}</dd></div>
+                </dl>
+                <button type="button" class="rt-choisi__lien" (click)="ouvrirDetail(d)">
+                  Voir le détail complet du dossier ›
+                </button>
+              </div>
+            }
 
             <div class="form-group">
               <label class="form-label required">Motif du retrait</label>
@@ -97,14 +117,6 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                    permanent occupait la page en affichant « sélectionnez un dossier », et le tableau
                    des marchés y était à l'étroit. Pas d'ouverture automatique à la sélection : on
                    choisit d'abord, on vérifie si on le souhaite. -->
-              <button
-                type="button"
-                class="btn btn-secondary"
-                [disabled]="selectedDossier() === null"
-                (click)="ouvrirDetail(selectedDossier())"
-              >
-                Voir le détail du dossier
-              </button>
               <button
                 type="button"
                 class="btn btn-primary"
@@ -203,6 +215,15 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     .rt-fichier__nom { font-weight: 700; color: var(--n-800); flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
     .rt-fichier__taille { color: var(--success-text); font-weight: 600; font-size: var(--text-sm); white-space: nowrap; }
     .rt-fichier__remplacer { cursor: pointer; }
+    /* Confirmation du dossier choisi : compacte, informative, sans bloquer la saisie. */
+    .rt-choisi { margin: 0 0 1rem; padding: 0.85rem 1rem; border: 1px solid var(--info-bdr); background: var(--info-bg); border-radius: var(--radius-lg); }
+    .rt-choisi__tete { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+    .rt-choisi__ref { font-weight: 700; color: var(--n-800); font-size: var(--text-md); }
+    .rt-choisi__faits { display: flex; flex-wrap: wrap; gap: 0.35rem 1.75rem; margin: 0; }
+    .rt-choisi__faits dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .07em; color: var(--n-400); }
+    .rt-choisi__faits dd { margin: 0; font-weight: 600; color: var(--n-700); }
+    .rt-choisi__lien { margin-top: 0.6rem; background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--p-600); font: inherit; font-weight: 700; }
+    .rt-choisi__lien:hover { text-decoration: underline; }
     .rt-sub { margin: 1.75rem 0 0.75rem; font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
     .table-card td { white-space: normal; }
   `,
@@ -225,6 +246,13 @@ export class PrmpRetraits {
   readonly motif = signal('');
   readonly formError = signal<ApiError | null>(null);
   private readonly dossierMap = signal<Map<string, string>>(new Map());
+  /** Libellés de localité (cache partagé) — pour le résumé du dossier choisi. */
+  private readonly localiteMap = signal<Map<string, string>>(new Map());
+
+  /** Libellé de la localité d'un dossier (code brut tant que le référentiel n'est pas arrivé). */
+  localiteLabel(d: Dossier): string {
+    return d.idLocalite ? (this.localiteMap().get(d.idLocalite) ?? d.idLocalite) : '—';
+  }
 
   readonly selectedDossier = computed(() => {
     const id = this.selectedId();
@@ -297,6 +325,7 @@ export class PrmpRetraits {
 
   constructor() {
     this.lookups.lookup(DossierService, 'idDossier', ['refeDossier']).subscribe((m) => this.dossierMap.set(m));
+    this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
     this.charger();
   }
 
