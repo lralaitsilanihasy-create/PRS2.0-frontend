@@ -42,6 +42,14 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
   imports: [DatePipe, StatutBadge, PpmMarchesTable],
   template: `
     <div [class.modal-backdrop]="!embedded()" [class.closing]="closing()" (click)="onOverlayClick()">
+      <!-- ⚠️ En modale, le corps n'est monté qu'une fois les données là : sinon le panneau
+           s'ouvrait à la taille de son seul en-tête puis grandissait par à-coups (552 → 724 →
+           964 px mesurés) PENDANT son animation d'entrée — d'où une ouverture « brusque ».
+           Le voile porte donc d'abord le seul indicateur d'attente. En mode embarqué (pas de
+           voile), le rendu progressif reste préférable : le bloc est déjà dans la page. -->
+      @if (loading() && !embedded()) {
+        <div class="dc-attente" role="status"><div class="spinner"></div></div>
+      } @else {
       <div
         class="dc"
         [class.dc--embedded]="embedded()"
@@ -245,9 +253,13 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
           </footer>
         }
       </div>
+      }
     </div>
   `,
   styles: `
+    /* Attente avant montage du panneau : discrète, sans cadre — le panneau qui suit doit être la
+       PREMIÈRE forme pleine que l'œil voit apparaître. */
+    .dc-attente { display: flex; align-items: center; justify-content: center; padding: 3rem; }
     .dc {
       width: 100%;
       /* Jamais plus large que la zone utile du backdrop (100 % = viewport − padding), quel que soit le zoom. */
@@ -513,12 +525,6 @@ export class DossierConsultation implements OnInit {
         error: () => {},
       });
     }
-    // Journal des actions (spec « Mandats PRMP ») — progressif et silencieux : un dossier sans journal
-    // (ou un backend antérieur à la spec) n'affiche simplement pas la section.
-    this.dossierService.journal(id).subscribe({
-      next: (rows) => this.journal.set(rows),
-      error: () => {},
-    });
     // UNE SEULE VAGUE : données + référentiels joints dans un même forkJoin — le corps ne s'affiche
     // qu'une fois complet (pas de spinners successifs, pas de libellés qui « clignotent »). Chaque
     // source de données est tolérante à l'échec (of(...)) : le toast centralisé signale l'erreur,
@@ -530,9 +536,14 @@ export class DossierConsultation implements OnInit {
       entiteMap: this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).pipe(catchError(() => of(new Map<string, string>()))),
       // Pièces jointes du dossier (tous types) — GET /api/piece-jointe-dossiers?dossier={id}.
       pieces: this.pieceService.getByDossier(id).pipe(catchError(() => of([] as PieceJointeDossier[]))),
+      // ⚠️ Journal des actions (spec « Mandats PRMP ») : DANS la vague. Chargé à part, sa section
+      // s'ajoutait après coup et faisait grandir le panneau déjà affiché (+52 px mesurés) — le
+      // mouvement se superposait à l'animation d'ouverture, d'où une entrée « brusque ».
+      // Silencieux : un dossier sans journal (ou un backend antérieur) n'affiche pas la section.
+      journal: this.dossierService.journal(id).pipe(catchError(() => of([] as ActionDossier[]))),
     };
     if (!this.estPpm()) {
-      forkJoin(commun).subscribe(({ typeMap, localiteMap, entiteMap, pieces }) => {
+      forkJoin(commun).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal }) => {
         this.typeMap.set(typeMap);
         this.localiteMap.set(localiteMap);
         this.entiteMap.set(entiteMap);
@@ -553,7 +564,7 @@ export class DossierConsultation implements OnInit {
       marches: this.marcheService.list().pipe(catchError(() => of([] as Marche[]))),
       benefs: this.serviceBenefService.list().pipe(catchError(() => of([] as ServiceBeneficiaire[]))),
       previsions: this.previsionService.list().pipe(catchError(() => of([] as MarchePrevision[]))),
-    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, modeMap, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions }) => {
+    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, modeMap, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions }) => {
       this.typeMap.set(typeMap);
       this.localiteMap.set(localiteMap);
       this.entiteMap.set(entiteMap);

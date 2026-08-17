@@ -982,14 +982,16 @@ textarea.form-control {
      d'être ROGNÉ côté gauche/haut par le centrage flex (margin:auto sur l'enfant = même centrage,
      mais tolérant au débordement). */
   overflow: auto;
-  animation: modal-fade 150ms var(--ease-out, ease-out);
+  animation: modal-fade 200ms var(--ease-out, ease-out);
 
-  /* Ouverture adoucie de TOUT contenu de modal (`.modal`, formulaires, consultation…). */
-  > * { animation: modal-rise 180ms var(--ease-out, ease-out); margin: auto; }
+  /* Ouverture adoucie de TOUT contenu de modal (`.modal`, formulaires, consultation…).
+     Zoom volontairement perceptible et durée généreuse : à 180 ms avec scale(.985), l'apparition
+     était ressentie comme sèche — le mouvement doit se voir pour que l'ouverture paraisse douce. */
+  > * { animation: modal-rise 260ms var(--ease-out, ease-out); margin: auto; }
 }
 
 @keyframes modal-fade { from { opacity: 0; } }
-@keyframes modal-rise { from { opacity: 0; transform: translateY(10px) scale(.985); } }
+@keyframes modal-rise { from { opacity: 0; transform: translateY(18px) scale(.94); } }
 
 /* FERMETURE — symétrique de l'ouverture. Sans elle, le modal disparaît d'un coup (le `@if` le
    retire du DOM) : c'est ce que l'œil perçoit comme un « à-coup ». L'hôte pose `.closing` puis
@@ -1001,7 +1003,7 @@ textarea.form-control {
 }
 
 @keyframes modal-fade-out { to { opacity: 0; } }
-@keyframes modal-sink { to { opacity: 0; transform: translateY(10px) scale(.985); } }
+@keyframes modal-sink { to { opacity: 0; transform: translateY(12px) scale(.96); } }
 
 @media (prefers-reduced-motion: reduce) {
   .modal-backdrop, .modal-backdrop > *,
