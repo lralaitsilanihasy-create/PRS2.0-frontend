@@ -7,6 +7,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { Dossier, Notification, ObservationPv } from '../../models';
 import { DossierService, NotificationService, ObservationPvService } from '../../services';
 import { StatutBadge, decomposerObservation } from '../../shared/circuit';
@@ -174,17 +175,17 @@ interface LigneObs {
     </section>
 
     @if (confirmCle() !== null) {
-      <div class="modal-backdrop" (click)="annulerResoumission()">
-        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de resoumission" appModale (appModaleFermer)="annulerResoumission()">
+      <div class="modal-backdrop" [class.closing]="closingResoumission()" (click)="fermerResoumissionAnime()">
+        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de resoumission" appModale (appModaleFermer)="fermerResoumissionAnime()">
           <div class="modal-header-plain">
             <span class="modal-title">Resoumettre au vérificateur ?</span>
-            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="annulerResoumission()">✕</button>
+            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerResoumissionAnime()">✕</button>
           </div>
           <div class="modal-body">
             <p>Ce dossier sera renvoyé au vérificateur avec votre motif de rectification.</p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="annulerResoumission()">Annuler</button>
+            <button type="button" class="btn btn-outline" (click)="fermerResoumissionAnime()">Annuler</button>
             <button type="button" class="btn btn-primary" (click)="confirmerResoumission()">
               Confirmer la resoumission
             </button>
@@ -229,6 +230,13 @@ interface LigneObs {
   `,
 })
 export class DossiersARectifier {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingResoumission = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerResoumissionAnime(): void {
+    fermerAvecAnimation(this.closingResoumission, () => this.annulerResoumission());
+  }
+
   private readonly dossierService = inject(DossierService);
   private readonly notificationService = inject(NotificationService);
   private readonly observationPvService = inject(ObservationPvService);

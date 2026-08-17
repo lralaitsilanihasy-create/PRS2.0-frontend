@@ -7,6 +7,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { blobSur } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { InscriptionEnAttente } from '../../models';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { InscriptionService } from '../../services';
 
 type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
@@ -120,8 +121,8 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
     </div>
 
     @if (refuseFor(); as i) {
-      <div class="modal-backdrop" (click)="annulerRefus()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Refus de l'inscription" appModale (appModaleFermer)="annulerRefus()">
+      <div class="modal-backdrop" [class.closing]="closingRefus()" (click)="fermerRefusAnime()">
+        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Refus de l'inscription" appModale (appModaleFermer)="fermerRefusAnime()">
           <div class="modal-header-plain"><span class="modal-title">Refuser l'inscription — {{ i.login }}</span></div>
           <div class="modal-body">
             <label class="form-group">
@@ -131,7 +132,7 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
             </label>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="annulerRefus()">Annuler</button>
+            <button type="button" class="btn btn-outline" (click)="fermerRefusAnime()">Annuler</button>
             <button type="button" class="btn btn-danger" [disabled]="busy() === i.login" (click)="confirmerRefus()">Refuser</button>
           </div>
         </div>
@@ -162,6 +163,12 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
   `,
 })
 export class InscriptionsAdmin implements OnInit, OnDestroy {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingRefus = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerRefusAnime(): void {
+    fermerAvecAnimation(this.closingRefus, () => this.annulerRefus());
+  }
   private readonly inscriptionService = inject(InscriptionService);
   private readonly toast = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);

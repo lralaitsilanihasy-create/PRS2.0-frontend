@@ -6,6 +6,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { validerFichier } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Dossier, PieceJointeDossier, TypePieceJointe, VerificationPieceDepot } from '../../models';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import {
   DossierService,
   PieceJointeDossierService,
@@ -25,11 +26,11 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ModaleDirective],
   template: `
-    <div class="modal-backdrop" (click)="fermer.emit()">
-      <div class="modal cnm-form cpd-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Compléter les pièces du dépôt" appModale (appModaleFermer)="fermer.emit()">
+    <div class="modal-backdrop" [class.closing]="closingFermer()" (click)="fermerFermerAnime()">
+      <div class="modal cnm-form cpd-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Compléter les pièces du dépôt" appModale (appModaleFermer)="fermerFermerAnime()">
         <header class="modal-header-plain">
           <span class="modal-title">Compléter les pièces — {{ dossier().refeDossier || 'Dossier #' + dossier().idDossier }}</span>
-          <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermer.emit()">✕</button>
+          <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerFermerAnime()">✕</button>
         </header>
 
         <div class="modal-body">
@@ -78,7 +79,7 @@ import {
         </div>
 
         <footer class="modal-footer">
-          <button type="button" class="btn btn-outline" (click)="fermer.emit()">Fermer</button>
+          <button type="button" class="btn btn-outline" (click)="fermerFermerAnime()">Fermer</button>
           <button type="button" class="btn btn-primary" [disabled]="transmission()" (click)="transmettre()">
             {{ transmission() ? 'Transmission…' : 'Transmettre les compléments' }}
           </button>
@@ -97,6 +98,12 @@ import {
   `,
 })
 export class CompleterPiecesDepotModal implements OnInit {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingFermer = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerFermerAnime(): void {
+    fermerAvecAnimation(this.closingFermer, () => this.fermer.emit());
+  }
   readonly dossier = input.required<Dossier>();
   /** Émis après « Transmettre les compléments » (dossier revenu SOUMIS — liste à rafraîchir). */
   readonly transmis = output<Dossier>();

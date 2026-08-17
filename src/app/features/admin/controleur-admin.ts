@@ -8,6 +8,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Controleur } from '../../models';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { ControleurService } from '../../services';
 
 const IMG_OK = ['image/jpeg', 'image/png'];
@@ -180,15 +181,15 @@ const IMG_OK = ['image/jpeg', 'image/png'];
     </div>
 
     @if (confirmDelete(); as c) {
-      <div class="modal-backdrop" (click)="annulerSuppression()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annulerSuppression()">
+      <div class="modal-backdrop" [class.closing]="closingSuppression()" (click)="fermerSuppressionAnime()">
+        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="fermerSuppressionAnime()">
           <div class="modal-header-plain"><span class="modal-title">Supprimer le contrôleur</span></div>
           <div class="modal-body">
             Supprimer le contrôleur <strong>{{ c.imControleur }}</strong> ({{ c.nomCont }} {{ c.prenomsCont }}), son compte et sa photo ?
             Refusé (409) s'il a une activité (subordonnés, examens, PV, vérifications, dispatch…). Action irréversible.
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="annulerSuppression()">Annuler</button>
+            <button type="button" class="btn btn-outline" (click)="fermerSuppressionAnime()">Annuler</button>
             <button type="button" class="btn btn-danger" [disabled]="submitting()" (click)="confirmerSuppression()">Supprimer</button>
           </div>
         </div>
@@ -229,6 +230,12 @@ const IMG_OK = ['image/jpeg', 'image/png'];
   `,
 })
 export class ControleurAdmin implements OnInit, OnDestroy {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingSuppression = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerSuppressionAnime(): void {
+    fermerAvecAnimation(this.closingSuppression, () => this.annulerSuppression());
+  }
   private readonly fb = inject(FormBuilder);
   private readonly controleurService = inject(ControleurService);
   private readonly toast = inject(ToastService);

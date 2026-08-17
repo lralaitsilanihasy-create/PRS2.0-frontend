@@ -19,6 +19,7 @@ import {
   VerificationPieceDepotService,
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 
 /** Ligne du contrôle de complétude : type attendu + pièce déposée (ou non) + dernière décision. */
 interface LigneControle {
@@ -41,7 +42,7 @@ interface LigneControle {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ModaleDirective, ReactiveFormsModule, SlicePipe, StatutBadge],
   template: `
-    <div class="modal-backdrop" (click)="closed.emit()">
+    <div class="modal-backdrop" [class.closing]="closingD()" (click)="fermerDAnime()">
       <form
         class="modal cnm-form rf-modal"
         [formGroup]="form"
@@ -51,7 +52,7 @@ interface LigneControle {
         aria-modal="true"
         aria-label="Réception du dossier"
         appModale
-        (appModaleFermer)="closed.emit()"
+        (appModaleFermer)="fermerDAnime()"
         novalidate
       >
         <header class="modal-header-plain rf-header">
@@ -59,7 +60,7 @@ interface LigneControle {
             <span class="modal-title">Réception initiale</span>
             <span class="rf-header__ref cnm-mono">{{ dossier().refeDossier || 'Dossier #' + dossier().idDossier }}</span>
           </div>
-          <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="closed.emit()">✕</button>
+          <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerDAnime()">✕</button>
         </header>
 
         <div class="modal-body">
@@ -158,7 +159,7 @@ interface LigneControle {
         </div>
 
         <footer class="modal-footer">
-          <button type="button" class="btn btn-outline" (click)="closed.emit()">Annuler</button>
+          <button type="button" class="btn btn-outline" (click)="fermerDAnime()">Annuler</button>
           @if (defauts()) {
             <button type="button" class="btn btn-warning" [disabled]="signalement()" (click)="notifierPrmp()">
               {{ signalement() ? 'Notification…' : 'Notifier la PRMP (pièces manquantes)' }}
@@ -226,6 +227,12 @@ interface LigneControle {
   `,
 })
 export class ReceptionForm implements OnInit {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingD = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerDAnime(): void {
+    fermerAvecAnimation(this.closingD, () => this.closed.emit());
+  }
   readonly dossier = input.required<Dossier>();
   /** Réception créée — ou `null` si l'état du dossier a changé (signalement PRMP, déjà réceptionné…). */
   readonly saved = output<Reception | null>();

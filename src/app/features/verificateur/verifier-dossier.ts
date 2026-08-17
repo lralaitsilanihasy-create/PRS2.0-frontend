@@ -6,6 +6,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { Dossier, Notification, ObservationPv, PvExamen, TransmissionSigmp } from '../../models';
 import {
   AvisService,
@@ -229,11 +230,11 @@ interface Echange {
     </section>
 
     @if (confirmOpen()) {
-      <div class="modal-backdrop" (click)="annulerTransmission()">
-        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Transmission de la décision" appModale (appModaleFermer)="annulerTransmission()">
+      <div class="modal-backdrop" [class.closing]="closingTransmission()" (click)="fermerTransmissionAnime()">
+        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Transmission de la décision" appModale (appModaleFermer)="fermerTransmissionAnime()">
           <div class="modal-header-plain">
             <span class="modal-title">Transmettre à la PRMP pour rectification ?</span>
-            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="annulerTransmission()">✕</button>
+            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerTransmissionAnime()">✕</button>
           </div>
           <div class="modal-body">
             <p>
@@ -242,7 +243,7 @@ interface Echange {
             </p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="annulerTransmission()">Annuler</button>
+            <button type="button" class="btn btn-outline" (click)="fermerTransmissionAnime()">Annuler</button>
             <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="confirmerTransmission()">
               Confirmer et transmettre à la PRMP
             </button>
@@ -292,6 +293,13 @@ interface Echange {
   `,
 })
 export class VerifierDossier {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingTransmission = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerTransmissionAnime(): void {
+    fermerAvecAnimation(this.closingTransmission, () => this.annulerTransmission());
+  }
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);

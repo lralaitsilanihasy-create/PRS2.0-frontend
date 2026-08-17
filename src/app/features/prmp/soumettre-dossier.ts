@@ -13,6 +13,7 @@ import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
 import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import {
   CapmService,
   CategorieEntiteService,
@@ -573,8 +574,8 @@ interface ApercuDossier {
       }
 
       @if (apercu(); as a) {
-        <div class="modal-backdrop" (click)="fermerApercu()">
-          <div class="modal sd__apercu cnm-form" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Aperçu du dossier" appModale (appModaleFermer)="fermerApercu()">
+        <div class="modal-backdrop" [class.closing]="closingApercu()" (click)="fermerApercuAnime()">
+          <div class="modal sd__apercu cnm-form" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Aperçu du dossier" appModale (appModaleFermer)="fermerApercuAnime()">
             <div class="modal-header-plain">
               <span class="modal-title">Aperçu du dossier à créer</span>
               <button type="button" class="btn btn-secondary btn-sm" (click)="fermerApercu()" aria-label="Fermer">✕</button>
@@ -675,7 +676,7 @@ interface ApercuDossier {
               }
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-outline" (click)="fermerApercu()">Fermer</button>
+              <button type="button" class="btn btn-outline" (click)="fermerApercuAnime()">Fermer</button>
               <button type="button" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite()" (click)="fermerApercu(); creerPpm()">
                 Créer le dossier
               </button>
@@ -803,6 +804,12 @@ interface ApercuDossier {
   `,
 })
 export class SoumettreDossier {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingApercu = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerApercuAnime(): void {
+    fermerAvecAnimation(this.closingApercu, () => this.fermerApercu());
+  }
   private readonly auth = inject(AuthService);
   private readonly vacanceStore = inject(VacanceStore);
   /** Vacance du poste PRMP (spec « Mandats PRMP ») — création/soumission suspendues. */

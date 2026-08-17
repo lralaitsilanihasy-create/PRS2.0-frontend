@@ -6,6 +6,7 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Mandat, Prmp } from '../../models';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { MandatService, PrmpService } from '../../services';
 
 /** Libellés d'affichage des statuts de mandat. */
@@ -99,8 +100,8 @@ const STATUT_LABELS: Record<string, string> = {
 
     <!-- Nomination / reconduction : nouvel arrêté OBLIGATOIRE, dates neuves (jamais une prolongation). -->
     @if (creationOuverte()) {
-      <div class="modal-backdrop" (click)="fermerCreation()">
-        <form class="modal confirm-modal cnm-form" [formGroup]="form" (ngSubmit)="creer()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Nomination d'une PRMP" appModale (appModaleFermer)="fermerCreation()" novalidate>
+      <div class="modal-backdrop" [class.closing]="closingCreation()" (click)="fermerCreationAnime()">
+        <form class="modal confirm-modal cnm-form" [formGroup]="form" (ngSubmit)="creer()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Nomination d'une PRMP" appModale (appModaleFermer)="fermerCreationAnime()" novalidate>
           <div class="modal-header-plain"><span class="modal-title">Nouveau mandat (nomination / reconduction)</span></div>
           <div class="modal-body">
             <label class="form-group">
@@ -130,7 +131,7 @@ const STATUT_LABELS: Record<string, string> = {
             </label>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="fermerCreation()">Annuler</button>
+            <button type="button" class="btn btn-outline" (click)="fermerCreationAnime()">Annuler</button>
             <button type="submit" class="btn btn-primary" [disabled]="saving() || form.invalid">{{ saving() ? 'Enregistrement…' : 'Nommer' }}</button>
           </div>
         </form>
@@ -139,8 +140,8 @@ const STATUT_LABELS: Record<string, string> = {
 
     <!-- Abrogation : fin de fonction avant terme, motif obligatoire. -->
     @if (abrogation(); as m) {
-      <div class="modal-backdrop" (click)="fermerAbrogation()">
-        <form class="modal confirm-modal cnm-form" [formGroup]="formAbrogation" (ngSubmit)="abroger(m)" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Abrogation du mandat" appModale (appModaleFermer)="fermerAbrogation()" novalidate>
+      <div class="modal-backdrop" [class.closing]="closingAbrogation()" (click)="fermerAbrogationAnime()">
+        <form class="modal confirm-modal cnm-form" [formGroup]="formAbrogation" (ngSubmit)="abroger(m)" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Abrogation du mandat" appModale (appModaleFermer)="fermerAbrogationAnime()" novalidate>
           <div class="modal-header-plain"><span class="modal-title">Abroger le mandat — {{ m.idPrmp }} ({{ m.refArrete }})</span></div>
           <div class="modal-body">
             <p class="text-muted">
@@ -157,7 +158,7 @@ const STATUT_LABELS: Record<string, string> = {
             </label>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="fermerAbrogation()">Annuler</button>
+            <button type="button" class="btn btn-outline" (click)="fermerAbrogationAnime()">Annuler</button>
             <button type="submit" class="btn btn-danger" [disabled]="saving() || formAbrogation.invalid">{{ saving() ? 'Abrogation…' : 'Abroger' }}</button>
           </div>
         </form>
@@ -182,6 +183,18 @@ const STATUT_LABELS: Record<string, string> = {
   `,
 })
 export class MandatsAdmin implements OnInit {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingCreation = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerCreationAnime(): void {
+    fermerAvecAnimation(this.closingCreation, () => this.fermerCreation());
+  }
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingAbrogation = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerAbrogationAnime(): void {
+    fermerAvecAnimation(this.closingAbrogation, () => this.fermerAbrogation());
+  }
   private readonly mandatService = inject(MandatService);
   private readonly prmpService = inject(PrmpService);
   private readonly toast = inject(ToastService);

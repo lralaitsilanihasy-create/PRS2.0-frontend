@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { CreerUgpmRequest, ModifierUgpmRequest, Prmp, Ugpm } from '../../models';
 import { CompteAuthService, PrmpService, UgpmService } from '../../services';
 import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
@@ -225,15 +226,15 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
     </div>
 
     @if (confirmDelete(); as u) {
-      <div class="modal-backdrop" (click)="annulerSuppression()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annulerSuppression()">
+      <div class="modal-backdrop" [class.closing]="closingSuppression()" (click)="fermerSuppressionAnime()">
+        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="fermerSuppressionAnime()">
           <div class="modal-header-plain"><span class="modal-title">Supprimer l'UGPM</span></div>
           <div class="modal-body">
             Supprimer l'UGPM <strong>{{ u.idUgpm }}</strong> ({{ u.nomUgpm }} {{ u.prenomsUgpm }}) et son compte de connexion ?
             Cette action est irréversible.
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="annulerSuppression()">Annuler</button>
+            <button type="button" class="btn btn-outline" (click)="fermerSuppressionAnime()">Annuler</button>
             <button type="button" class="btn btn-danger" [disabled]="submitting()" (click)="confirmerSuppression()">Supprimer</button>
           </div>
         </div>
@@ -271,6 +272,13 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
   `,
 })
 export class UgpmAdmin implements OnInit, OnDestroy {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingSuppression = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerSuppressionAnime(): void {
+    fermerAvecAnimation(this.closingSuppression, () => this.annulerSuppression());
+  }
+
   private readonly fb = inject(FormBuilder);
   private readonly ugpmService = inject(UgpmService);
   private readonly prmpService = inject(PrmpService);

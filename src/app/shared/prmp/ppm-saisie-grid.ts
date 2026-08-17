@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ModaleDirective } from '../a11y/modale.directive';
+import { fermerAvecAnimation } from '../a11y/fermeture-animee';
 import { AutosizeDirective } from '../autosize.directive';
 import { MontantFrDirective } from '../montant-fr.directive';
 import { AnomalieTranscription, Capm, Compte, FORME_MARCHE_LIBELLES, FormeMarche, ModePassation, Nature, SoaBeneficiaire } from '../../models';
@@ -211,8 +212,8 @@ export interface ModificationChamp {
     }
 
     @if (datesCible()) {
-      <div class="modal-backdrop" (click)="annulerDates()">
-        <div class="modal confirm-modal cnm-form sd__dates-modal" role="dialog" aria-modal="true" aria-label="CAPM du marché" appModale (appModaleFermer)="annulerDates()" (click)="$event.stopPropagation()">
+      <div class="modal-backdrop" [class.closing]="closingDates()" (click)="fermerDatesAnime()">
+        <div class="modal confirm-modal cnm-form sd__dates-modal" role="dialog" aria-modal="true" aria-label="CAPM du marché" appModale (appModaleFermer)="fermerDatesAnime()" (click)="$event.stopPropagation()">
           <div class="modal-header-plain">
             <span class="modal-title">CAPM du marché</span>
           </div>
@@ -256,8 +257,8 @@ export interface ModificationChamp {
     }
 
     @if (lotsCible()) {
-      <div class="modal-backdrop" (click)="annulerLots()">
-        <div class="modal confirm-modal cnm-form sd__lots-modal" role="dialog" aria-modal="true" aria-label="Lots du marché" appModale (appModaleFermer)="annulerLots()" (click)="$event.stopPropagation()">
+      <div class="modal-backdrop" [class.closing]="closingLots()" (click)="fermerLotsAnime()">
+        <div class="modal confirm-modal cnm-form sd__lots-modal" role="dialog" aria-modal="true" aria-label="Lots du marché" appModale (appModaleFermer)="fermerLotsAnime()" (click)="$event.stopPropagation()">
           <div class="modal-header-plain">
             <span class="modal-title">Lots (allotissement) du marché</span>
           </div>
@@ -376,6 +377,20 @@ export interface ModificationChamp {
   `,
 })
 export class PpmSaisieGrid {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingLots = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerLotsAnime(): void {
+    fermerAvecAnimation(this.closingLots, () => this.annulerLots());
+  }
+
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingDates = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerDatesAnime(): void {
+    fermerAvecAnimation(this.closingDates, () => this.annulerDates());
+  }
+
   private readonly fb = inject(FormBuilder);
   private readonly factory = inject(PpmFormFactory);
 

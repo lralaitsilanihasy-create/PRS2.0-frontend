@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { Dispatch, Dossier, Examen, PvExamen, Reception } from '../../models';
 import {
   ControleurService,
@@ -102,8 +103,8 @@ import { DetailPvModal } from './detail-pv-modal';
 
     <!-- ⚠️ 2026-08-02 (PRMP) — visionneuse du PDF officiel signé, affichée directement au clic. -->
     @if (apercu(); as ap) {
-      <div class="modal-backdrop" (click)="fermerApercu()">
-        <div class="modal modal-lg pvd__viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV définitif" appModale (appModaleFermer)="fermerApercu()" (click)="$event.stopPropagation()">
+      <div class="modal-backdrop" [class.closing]="closingApercu()" (click)="fermerApercuAnime()">
+        <div class="modal modal-lg pvd__viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV définitif" appModale (appModaleFermer)="fermerApercuAnime()" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <div>
               <div class="pvd__viewer-top">
@@ -112,7 +113,7 @@ import { DetailPvModal } from './detail-pv-modal';
               </div>
               <h2 class="modal-title">{{ ap.reference }}</h2>
             </div>
-            <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerApercu()">✕</button>
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerApercuAnime()">✕</button>
           </div>
           <div class="modal-body pvd__viewer-body">
             <iframe [src]="ap.url" [title]="ap.reference" class="pvd__viewer-frame"></iframe>
@@ -136,6 +137,13 @@ import { DetailPvModal } from './detail-pv-modal';
   `,
 })
 export class PvDefinitifs {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingApercu = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerApercuAnime(): void {
+    fermerAvecAnimation(this.closingApercu, () => this.fermerApercu());
+  }
+
   private readonly service = inject(PvExamenService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);

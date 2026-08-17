@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { Controleur, Dispatch, Dossier, Reception } from '../../models';
 import {
   ControleurService,
@@ -42,7 +43,7 @@ export interface DispatchItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ModaleDirective, ReactiveFormsModule],
   template: `
-    <div class="modal-backdrop">
+    <div class="modal-backdrop" [class.closing]="closingDispatch()">
       <form
         class="modal cnm-form"
         [formGroup]="form"
@@ -52,7 +53,7 @@ export interface DispatchItem {
         aria-modal="true"
         [attr.aria-label]="titre()"
         appModale
-        (appModaleFermer)="closed.emit()"
+        (appModaleFermer)="fermerDispatchAnime()"
         novalidate
       >
         <header class="modal-header-centered">
@@ -125,7 +126,7 @@ export interface DispatchItem {
           </label>
         </div>
         <footer class="modal-footer">
-          <button type="button" class="btn btn-outline" [disabled]="submitting()" (click)="closed.emit()">Annuler</button>
+          <button type="button" class="btn btn-outline" [disabled]="submitting()" (click)="fermerDispatchAnime()">Annuler</button>
           <button type="submit" class="btn btn-primary" [disabled]="submitting()">
             @if (submitting()) {
               Dispatch en cours…
@@ -166,6 +167,12 @@ export class DispatchForm {
   readonly items = input.required<DispatchItem[]>();
   readonly saved = output<void>();
   readonly closed = output<void>();
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingDispatch = signal(false);
+  /** Ferme le formulaire en jouant l'animation de sortie (Échap, bouton Annuler). */
+  fermerDispatchAnime(): void {
+    fermerAvecAnimation(this.closingDispatch, () => this.closed.emit());
+  }
 
   private readonly auth = inject(AuthService);
   private readonly permissions = inject(PermissionsService);

@@ -9,6 +9,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { CreerPrmpRequest, Prmp } from '../../models';
 import { CompteAuthService, PrmpService } from '../../services';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { PrmpPiecesAdmin } from './prmp-pieces-admin';
 
 /**
@@ -231,15 +232,15 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
     </div>
 
     @if (confirmDelete(); as p) {
-      <div class="modal-backdrop" (click)="annulerSuppression()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annulerSuppression()">
+      <div class="modal-backdrop" [class.closing]="closingSuppression()" (click)="fermerSuppressionAnime()">
+        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="fermerSuppressionAnime()">
           <div class="modal-header-plain"><span class="modal-title">Supprimer la PRMP</span></div>
           <div class="modal-body">
             Supprimer la PRMP <strong>{{ p.idPrmp }}</strong> ({{ p.nomPrmp }} {{ p.prenomsPrmp }}) et son compte ?
             Refusé (409) si elle porte des données liées (dossiers, PPM, entités, UGPM…). Action irréversible.
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="annulerSuppression()">Annuler</button>
+            <button type="button" class="btn btn-outline" (click)="fermerSuppressionAnime()">Annuler</button>
             <button type="button" class="btn btn-danger" [disabled]="submitting()" (click)="confirmerSuppression()">Supprimer</button>
           </div>
         </div>
@@ -279,6 +280,12 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
   `,
 })
 export class PrmpAdmin implements OnInit, OnDestroy {
+  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
+  readonly closingSuppression = signal(false);
+  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
+  fermerSuppressionAnime(): void {
+    fermerAvecAnimation(this.closingSuppression, () => this.annulerSuppression());
+  }
   private readonly fb = inject(FormBuilder);
   private readonly prmpService = inject(PrmpService);
   private readonly compteAuth = inject(CompteAuthService);
