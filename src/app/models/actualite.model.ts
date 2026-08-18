@@ -1,3 +1,5 @@
+import { Role } from './common.model';
+
 /**
  * Actualités affichées à l'ouverture de session (spec 2026-08-18, `docs/spec-actualites.md`).
  *
@@ -10,8 +12,8 @@ export interface Actualite {
   titre: string;
   /** Markdown brut (sous-ensemble : titres, gras, italique, listes, liens, images, paragraphes). */
   contenuMd: string;
-  /** Profils destinataires. Vide ⇒ visible de personne (le ciblage est un acte délibéré). */
-  profilsCibles: string[];
+  /** Profils destinataires (noms d'enum serveur). Vide ⇒ 400 : le ciblage est un acte délibéré. */
+  profilsCibles: Role[];
   statut: StatutActualite;
   /** `null` = visible dès l'activation. */
   datePublication?: string | null;

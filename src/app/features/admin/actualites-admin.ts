@@ -4,14 +4,21 @@ import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../core/notifications/toast.service';
 import { validerFichier } from '../../core/securite/fichiers-surs';
 import { ACTUALITE_STATUT_LABELS, Actualite, StatutActualite } from '../../models/actualite.model';
+import { Role } from '../../models/common.model';
 import { ActualiteService, ParametreActualitesService } from '../../services/actualite.services';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { MarkdownVue } from '../../shared/actualites/markdown-vue';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 
-/** Profils destinataires possibles — les neuf profils de l'application. */
-const PROFILS: readonly { id: string; label: string }[] = [
+/**
+ * Profils destinataires — les dix profils de l'application.
+ *
+ * ⚠️ Typé `Role` volontairement : le serveur attend les **noms d'enum** exacts et refuse le reste
+ * (400). Une première version portait « PUBLICATION » au lieu de `CHARGE_PUBLICATION` ; le type
+ * rend désormais l'erreur impossible à compiler plutôt qu'à découvrir à l'envoi.
+ */
+const PROFILS: readonly { id: Role; label: string }[] = [
   { id: 'PRMP', label: 'PRMP' },
   { id: 'UGPM', label: 'UGPM' },
   { id: 'SECRETAIRE', label: 'Secrétaire' },
@@ -20,7 +27,8 @@ const PROFILS: readonly { id: string; label: string }[] = [
   { id: 'MEMBRE', label: 'Membre' },
   { id: 'VERIFICATEUR', label: 'Contrôleur vérificateur' },
   { id: 'ASSISTANT_CONTROLEUR', label: 'Assistant contrôleur' },
-  { id: 'PUBLICATION', label: 'Chargé de publication' },
+  { id: 'CHARGE_PUBLICATION', label: 'Chargé de publication' },
+  { id: 'ADMINISTRATEUR', label: 'Administrateur' },
 ];
 
 /** JPEG uniquement (spec) ; 10 Mo — le serveur redimensionne ensuite pour l'affichage. */
@@ -381,7 +389,7 @@ export class ActualitesAdmin {
     this.consultation.set(a);
   }
 
-  basculerProfil(a: Actualite, id: string): void {
+  basculerProfil(a: Actualite, id: Role): void {
     a.profilsCibles = a.profilsCibles.includes(id)
       ? a.profilsCibles.filter((p) => p !== id)
       : [...a.profilsCibles, id];
