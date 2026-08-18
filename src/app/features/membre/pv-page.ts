@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { ToastService } from '../../core/notifications/toast.service';
+import { PermissionsService } from '../../core/auth/permissions.service';
 import {
   Dispatch,
   Dossier,
@@ -44,7 +46,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
 @Component({
   selector: 'app-membre-pv',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, PvWorkflow, DossierConsultation, DatePipe],
+  imports: [StatutBadge, PvWorkflow, DossierConsultation, DatePipe, RouterLink],
   template: `
     <section class="pv">
       <header class="page-header">
@@ -86,9 +88,24 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Enregistrer au format PDF" aria-label="Enregistrer au format PDF">📄 PDF</button>
                   </div>
                   @if (pv.statutPv === 'EN_RECTIFICATION' && dernierRetour()) {
-                    <div class="alert alert-warning">
+                    <!-- ⚠️ 2026-08-18 — le retour se lit ici : l'accès à la correction doit y être
+                         aussi. Sans ce lien, le Membre ne dispose que de « Soumettre le projet » et
+                         resoumet à l'identique ; le chemin réel (Mes dossiers → Examinés → Modifier
+                         l'examen) n'est signalé nulle part. -->
+                    <div class="alert alert-warning pv-retour">
                       <span><strong>Retour pour rectification :</strong> {{ dernierRetour() }}</span>
+                      @if (peutRectifier(pv)) {
+                        <a class="btn btn-primary btn-sm" [routerLink]="lienRectification(pv)">
+                          ✎ Rectifier l'examen
+                        </a>
+                      }
                     </div>
+                    @if (peutRectifier(pv)) {
+                      <p class="pv-retour__aide">
+                        Corrigez la grille de contrôle et la synthèse, enregistrez, puis revenez ici
+                        pour <strong>soumettre le projet</strong> au Chef de commission.
+                      </p>
+                    }
                   }
                   <!-- En-tête du projet de PV : référence + tuiles d'identification (avis en badge coloré). -->
                   <div class="pv-entete">
@@ -320,6 +337,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     /* Examen entièrement conforme (mode observations) : constat vert, pas de tableau vide. */
     .pv-grille-ok { margin: 0; padding: 0.5rem 0.75rem; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--radius-md); color: #15803D; font-size: var(--text-sm); font-weight: 600; }
     .pv-print-bar { display: flex; justify-content: flex-end; gap: 0.5rem; }
+    /* Le retour de navette porte son action : le motif à gauche, « Rectifier » à droite. */
+    .pv-retour { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .pv-retour .btn { flex-shrink: 0; text-decoration: none; }
+    .pv-retour__aide { margin: 0.4rem 0 0; font-size: var(--text-sm); color: var(--n-500); }
     .obs-pv-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .obs-pv-table th { text-align: center; font-weight: 600; padding: 0.2rem 0.5rem; border-bottom: 1px solid var(--c-100); background: none; text-transform: none; letter-spacing: normal; color: var(--n-700); }
     .obs-pv-table td { padding: 0.2rem 0.5rem; vertical-align: top; border-bottom: 1px solid var(--c-100); word-wrap: break-word; white-space: normal; }
@@ -338,6 +359,8 @@ export class MembrePv {
   private readonly receptionService = inject(ReceptionService);
   private readonly dossierService = inject(DossierService);
   private readonly lookups = inject(ReferenceLookupService);
+  private readonly permissions = inject(PermissionsService);
+  private readonly router = inject(Router);
 
   readonly pvs = signal<PvExamen[]>([]);
   readonly loading = signal(false);
@@ -479,6 +502,24 @@ export class MembrePv {
   /** Localité du dossier du PV (candidats Secrétaire de séance à la clôture de navette). */
   dossierLocalite(pv: PvExamen): string | null {
     return this.dossierByExamen().get(pv.idExamen)?.idLocalite ?? null;
+  }
+  /**
+   * ⚠️ 2026-08-18 — « Rectifier l'examen » depuis le retour de navette. Mêmes conditions que le
+   * bouton « Modifier l'examen » de la liste des dossiers examinés : capacité d'écriture sur
+   * l'examen, et dossier encore ouvert (le serveur refuse toute modification dès `PV_SIGNE`).
+   */
+  peutRectifier(pv: PvExamen): boolean {
+    const statut = this.dossierByExamen().get(pv.idExamen)?.statut;
+    return (
+      pv.statutPv === 'EN_RECTIFICATION' &&
+      this.permissions.can('EXAMEN_WRITE') &&
+      (statut === 'EXAMINE' || statut === 'A_REEXAMINER')
+    );
+  }
+  /** Cible de « Rectifier l'examen » — l'écran d'examen de l'espace courant (membre, cc, président). */
+  lienRectification(pv: PvExamen): unknown[] {
+    const idDossier = this.dossierByExamen().get(pv.idExamen)?.idDossier;
+    return ['/' + (this.router.url.split('/')[1] || 'membre'), 'examiner', idDossier];
   }
   /** Signataire : nom du contrôleur (+ date de signature si présente), ou « — ». */
   signataire(im?: string, date?: string): string {
