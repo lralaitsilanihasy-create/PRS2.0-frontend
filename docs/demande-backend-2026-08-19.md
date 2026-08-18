@@ -5,7 +5,7 @@
 
 ---
 
-## 0. ⚠️ URGENT — la lettre de demande de retrait n'est pas commitée
+## 0. ✅ CLOS — la lettre de demande de retrait est commitée (19/08)
 
 La fonctionnalité livrée le 2026-08-17 (lettre PDF obligatoire à la demande de retrait) **tourne sur
 le serveur local mais n'existe pas dans git**. Dernier commit du dépôt : `63a6e28`, 17/08 à 4 h
@@ -27,8 +27,16 @@ backend depuis git ferait donc disparaître l'entité et repasser l'endpoint en 
 demande de retrait échouerait en 415**, y compris les écrans recettés le 18/08. C'est le scénario
 qui a déjà cassé le distant par le passé.
 
-**Action attendue** : commiter ces 8 fichiers (les deux fichiers non suivis compris — c'est
-précisément ce qui manque le plus facilement) et pousser, avant toute autre livraison.
+**Traité** : commit backend `0a73fde` « Retrait : lettre de demande obligatoire (PDF) jointe a la
+demande » (8 fichiers, +409/−37), poussé ; arbre propre, suite backend 439/439, serveur relancé,
+table `t_piece_demande_retrait` créée (PK identity, UNIQUE sur `ID_DEMANDE_RETRAIT`, `bytea` +
+SHA-256).
+
+**Vérifié côté front après relance** (lecture seule) : la lettre déposée le 18/08 a survécu — demande
+#34, `lettre-de-retrait-signee.pdf`, 133 Ko, `GET /{id}/document` → **200 · application/pdf · 136 195
+octets**. Les trois demandes antérieures à la règle (#26, #27, #28) renvoient bien `nomFichier: null`
+et s'affichent « — » : la rétro-compatibilité tient. Aucune adaptation du front n'était nécessaire,
+le contrat multipart y étant branché depuis le 17/08.
 
 ---
 
