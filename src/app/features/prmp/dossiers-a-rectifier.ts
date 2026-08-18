@@ -104,12 +104,12 @@ interface LigneObs {
                         </colgroup>
                         <thead>
                           <tr>
-                            <th>N°</th>
-                            <th>Origine</th>
-                            <th>Observation</th>
-                            <th>Au lieu de</th>
-                            <th>Lire</th>
-                            <th>Statut</th>
+                            <th scope="col">N°</th>
+                            <th scope="col">Origine</th>
+                            <th scope="col">Observation</th>
+                            <th scope="col">Au lieu de</th>
+                            <th scope="col">Lire</th>
+                            <th scope="col">Statut</th>
                           </tr>
                         </thead>
                         <tbody>

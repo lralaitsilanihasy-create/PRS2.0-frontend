@@ -48,11 +48,11 @@ import { DetailPvModal } from './detail-pv-modal';
           <table>
             <thead>
               <tr>
-                <th>Référence</th>
-                <th>Entité contractante</th>
-                <th>Date du PV</th>
-                <th>Co-signataires</th>
-                <th class="r">Action</th>
+                <th scope="col">Référence</th>
+                <th scope="col">Entité contractante</th>
+                <th scope="col">Date du PV</th>
+                <th scope="col">Co-signataires</th>
+                <th scope="col" class="r">Action</th>
               </tr>
             </thead>
             <tbody>

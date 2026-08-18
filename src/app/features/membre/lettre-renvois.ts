@@ -27,7 +27,7 @@ import { StatutBadge } from '../../shared/circuit';
       } @else {
         <div class="table-responsive"><table class="cnm-table">
           <thead>
-            <tr><th>Référence dossier</th><th>Date lettre</th><th>Statut</th><th></th></tr>
+            <tr><th scope="col">Référence dossier</th><th scope="col">Date lettre</th><th scope="col">Statut</th><th scope="col"></th></tr>
           </thead>
           <tbody>
             @for (l of lettres(); track l.idLettre) {

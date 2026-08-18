@@ -185,7 +185,7 @@ import {
           @if (lettres().length) {
             <div class="pv-workflow__lettres">
               <table>
-                <thead><tr><th>Référence</th><th>Statut</th><th>Date</th><th></th></tr></thead>
+                <thead><tr><th scope="col">Référence</th><th scope="col">Statut</th><th scope="col">Date</th><th scope="col"></th></tr></thead>
                 <tbody>
                   @for (l of lettres(); track l.idLettre) {
                     <tr>

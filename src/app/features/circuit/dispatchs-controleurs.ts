@@ -126,13 +126,13 @@ interface LigneControleur {
             <table>
               <thead>
                 <tr>
-                  <th>Référence</th>
-                  <th>Entité contractante</th>
-                  <th>Type</th>
-                  <th>Date dispatch</th>
-                  <th>Statut</th>
-                  <th>Localité</th>
-                  <th class="r">Actions</th>
+                  <th scope="col">Référence</th>
+                  <th scope="col">Entité contractante</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Date dispatch</th>
+                  <th scope="col">Statut</th>
+                  <th scope="col">Localité</th>
+                  <th scope="col" class="r">Actions</th>
                 </tr>
               </thead>
               <tbody>

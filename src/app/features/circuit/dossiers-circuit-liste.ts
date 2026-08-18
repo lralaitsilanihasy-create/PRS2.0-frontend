@@ -82,7 +82,7 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
             <thead>
               <tr>
                 @if (avecSelection()) {
-                  <th class="dcl__check-col">
+                  <th scope="col" class="dcl__check-col">
                     <input
                       type="checkbox"
                       [checked]="toutEstCoche()"
@@ -91,14 +91,14 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
                     />
                   </th>
                 }
-                <th>Référence</th>
-                <th>Entité contractante</th>
-                @if (aColonne('reception')) { <th>Réception sec.</th> }
-                @if (aColonne('dateDispatch')) { <th>Date dispatch</th> }
-                @if (aColonne('attributaire')) { <th>Attributaire</th> }
-                <th>Statut</th>
-                <th>Localité</th>
-                <th class="r">Actions</th>
+                <th scope="col">Référence</th>
+                <th scope="col">Entité contractante</th>
+                @if (aColonne('reception')) { <th scope="col">Réception sec.</th> }
+                @if (aColonne('dateDispatch')) { <th scope="col">Date dispatch</th> }
+                @if (aColonne('attributaire')) { <th scope="col">Attributaire</th> }
+                <th scope="col">Statut</th>
+                <th scope="col">Localité</th>
+                <th scope="col" class="r">Actions</th>
               </tr>
             </thead>
             <tbody>

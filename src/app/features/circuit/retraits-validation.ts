@@ -79,7 +79,7 @@ import { DossierConsultation } from './dossier-consultation';
           } @else if (onglet() === 'a-valider') {
             <div class="table-card">
             <table>
-              <thead><tr><th>Dossier</th><th>PRMP</th><th>Motif</th><th>Lettre</th><th>Date</th><th></th></tr></thead>
+              <thead><tr><th scope="col">Dossier</th><th scope="col">PRMP</th><th scope="col">Motif</th><th scope="col">Lettre</th><th scope="col">Date</th><th scope="col"></th></tr></thead>
               <tbody>
                 @for (r of liste(); track r.idDemandeRetrait) {
                   <tr>
@@ -132,7 +132,7 @@ import { DossierConsultation } from './dossier-consultation';
           } @else {
             <div class="table-card">
             <table>
-              <thead><tr><th>Dossier</th><th>PRMP</th><th>Motif</th><th>Lettre</th><th>Statut</th><th>Date décision</th><th>Motif du refus</th></tr></thead>
+              <thead><tr><th scope="col">Dossier</th><th scope="col">PRMP</th><th scope="col">Motif</th><th scope="col">Lettre</th><th scope="col">Statut</th><th scope="col">Date décision</th><th scope="col">Motif du refus</th></tr></thead>
               <tbody>
                 @for (r of liste(); track r.idDemandeRetrait) {
                   <tr>

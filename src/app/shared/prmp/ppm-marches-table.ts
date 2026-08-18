@@ -85,21 +85,21 @@ interface MarcheRow {
           </colgroup>
           <thead>
             <tr>
-              @if (rowStateFn()) { <th rowspan="2" class="ppm-c" title="État d'examen de la ligne"></th> }
-              <th rowspan="2">NATURE</th>
-              <th rowspan="2">OBJET</th>
-              <th rowspan="2" class="ppm-c">MONTANT ESTIMATIF INITIAL</th>
-              <th rowspan="2" class="ppm-c">NOUVEAU MONTANT ESTIMATIF</th>
-              <th rowspan="2" class="ppm-c">MODE DE PASSATION</th>
-              <th rowspan="2" class="ppm-c">FINANCEMENT</th>
-              <th colspan="4" class="ppm-c">Informations sur le Bénéficiaire</th>
-              <th rowspan="2" class="ppm-c">DATE PREVISIONNELLE DE LANCEMENT</th>
-              <th rowspan="2" class="ppm-c">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
-              <th rowspan="2" class="ppm-c">DATE PREVISIONNELLE D'ATTRIBUTION</th>
-              @if (actionsTpl()) { <th rowspan="2" class="ppm-c">ACTIONS</th> }
+              @if (rowStateFn()) { <th scope="col" rowspan="2" class="ppm-c" title="État d'examen de la ligne"></th> }
+              <th scope="col" rowspan="2">NATURE</th>
+              <th scope="col" rowspan="2">OBJET</th>
+              <th scope="col" rowspan="2" class="ppm-c">MONTANT ESTIMATIF INITIAL</th>
+              <th scope="col" rowspan="2" class="ppm-c">NOUVEAU MONTANT ESTIMATIF</th>
+              <th scope="col" rowspan="2" class="ppm-c">MODE DE PASSATION</th>
+              <th scope="col" rowspan="2" class="ppm-c">FINANCEMENT</th>
+              <th scope="col" colspan="4" class="ppm-c">Informations sur le Bénéficiaire</th>
+              <th scope="col" rowspan="2" class="ppm-c">DATE PREVISIONNELLE DE LANCEMENT</th>
+              <th scope="col" rowspan="2" class="ppm-c">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
+              <th scope="col" rowspan="2" class="ppm-c">DATE PREVISIONNELLE D'ATTRIBUTION</th>
+              @if (actionsTpl()) { <th scope="col" rowspan="2" class="ppm-c">ACTIONS</th> }
             </tr>
             <tr>
-              <th class="ppm-c">SERVICE BENEFICIAIRE</th><th class="ppm-c">COMPTE</th><th class="ppm-c">MONTANT ESTIMATIF PAR BENEFICIAIRE</th><th class="ppm-c">NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
+              <th scope="col" class="ppm-c">SERVICE BENEFICIAIRE</th><th scope="col" class="ppm-c">COMPTE</th><th scope="col" class="ppm-c">MONTANT ESTIMATIF PAR BENEFICIAIRE</th><th scope="col" class="ppm-c">NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
             </tr>
           </thead>
           <tbody>

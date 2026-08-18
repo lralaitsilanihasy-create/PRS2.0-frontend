@@ -63,10 +63,10 @@ import { StatutBadge } from '../../shared/circuit';
           <table>
             <thead>
               <tr>
-                <th>Point de contrôle</th>
-                <th class="r">Non conformes</th>
-                <th class="r">Total</th>
-                <th class="r">Taux</th>
+                <th scope="col">Point de contrôle</th>
+                <th scope="col" class="r">Non conformes</th>
+                <th scope="col" class="r">Total</th>
+                <th scope="col" class="r">Taux</th>
               </tr>
             </thead>
             <tbody>

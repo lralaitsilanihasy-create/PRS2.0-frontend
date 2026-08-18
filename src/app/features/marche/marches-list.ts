@@ -42,13 +42,13 @@ const PAGE_SIZE = 15;
         <table class="cnm-table">
           <thead>
             <tr>
-              <th>Désignation</th>
-              <th>PPM</th>
-              <th>Dossier</th>
-              <th>Compte</th>
-              <th class="cnm-num">Montant estimé</th>
-              <th>Financement</th>
-              <th>Statut</th>
+              <th scope="col">Désignation</th>
+              <th scope="col">PPM</th>
+              <th scope="col">Dossier</th>
+              <th scope="col">Compte</th>
+              <th scope="col" class="cnm-num">Montant estimé</th>
+              <th scope="col">Financement</th>
+              <th scope="col">Statut</th>
             </tr>
           </thead>
           <tbody>

@@ -31,7 +31,7 @@ import { ModePassationService, TypeDmcService } from '../../services';
       } @else {
         <div class="table-responsive">
           <table class="cnm-table">
-            <thead><tr><th>Mode de passation</th><th>Type de DMC</th><th>État</th></tr></thead>
+            <thead><tr><th scope="col">Mode de passation</th><th scope="col">Type de DMC</th><th scope="col">État</th></tr></thead>
             <tbody>
               @for (m of modes(); track m.idMode) {
                 <tr>

@@ -168,7 +168,7 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
       <h2 class="ua__sub">UGPM existantes ({{ ugpms().length }})</h2>
       @if (ugpms().length) {
         <div class="table-responsive"><table class="cnm-table">
-          <thead><tr><th>Matricule</th><th>Responsable</th><th class="col-hide-mobile">Libellé</th><th class="col-hide-mobile">PRMP de tutelle</th><th>Actions</th></tr></thead>
+          <thead><tr><th scope="col">Matricule</th><th scope="col">Responsable</th><th scope="col" class="col-hide-mobile">Libellé</th><th scope="col" class="col-hide-mobile">PRMP de tutelle</th><th scope="col">Actions</th></tr></thead>
           <tbody>
             @for (u of ugpms(); track u.idUgpm) {
               <tr>

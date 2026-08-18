@@ -41,7 +41,7 @@ import {
         <div class="table-card">
         <table>
           <thead>
-            <tr><th>Référence PV</th><th>Dossier</th><th>Avis</th><th>Date signature</th><th>Archivage</th></tr>
+            <tr><th scope="col">Référence PV</th><th scope="col">Dossier</th><th scope="col">Avis</th><th scope="col">Date signature</th><th scope="col">Archivage</th></tr>
           </thead>
           <tbody>
             @for (pv of pvs(); track pv.idPv) {

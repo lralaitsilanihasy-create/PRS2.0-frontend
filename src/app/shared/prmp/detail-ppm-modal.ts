@@ -355,7 +355,7 @@ import { PpmFormFactory } from './ppm-form-factory';
               <p class="dpm__info" role="status">Chargement des dates…</p>
             } @else if (modalData().length) {
               <table class="cnm-table">
-                <thead><tr><th>Processus</th><th>Période prévisionnelle</th></tr></thead>
+                <thead><tr><th scope="col">Processus</th><th scope="col">Période prévisionnelle</th></tr></thead>
                 <tbody>
                   @for (d of modalData(); track d.idPrevision) {
                     <tr><td>{{ capmLabel(d.idCapm) }}</td><td class="cnm-mono">{{ d.dateDebut || '—' }} → {{ d.dateFin || '—' }}</td></tr>

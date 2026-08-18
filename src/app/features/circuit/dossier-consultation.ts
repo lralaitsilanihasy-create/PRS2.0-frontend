@@ -220,7 +220,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
               </div>
               <table class="dc-journal">
                 <thead>
-                  <tr><th>Date</th><th>Action</th><th>Opérateur</th><th>Détail</th></tr>
+                  <tr><th scope="col">Date</th><th scope="col">Action</th><th scope="col">Opérateur</th><th scope="col">Détail</th></tr>
                 </thead>
                 <tbody>
                   @for (a of journal(); track a.idAction) {

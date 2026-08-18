@@ -57,11 +57,11 @@ import { StatutBadge } from '../../shared/circuit';
           <table>
             <thead>
               <tr>
-                <th>#</th>
-                <th>Objet</th>
-                <th>Statut</th>
-                <th>Consultations</th>
-                <th>Actions</th>
+                <th scope="col">#</th>
+                <th scope="col">Objet</th>
+                <th scope="col">Statut</th>
+                <th scope="col">Consultations</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>

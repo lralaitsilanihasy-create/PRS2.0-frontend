@@ -60,7 +60,7 @@ type Groupe = 'brouillon' | 'soumis';
           <table>
             <thead>
               <tr>
-                <th>Référence</th><th>Entité contractante</th><th>Statut</th><th>Sous-type</th><th>Localité</th><th class="r">Actions</th>
+                <th scope="col">Référence</th><th scope="col">Entité contractante</th><th scope="col">Statut</th><th scope="col">Sous-type</th><th scope="col">Localité</th><th scope="col" class="r">Actions</th>
               </tr>
             </thead>
             <tbody>

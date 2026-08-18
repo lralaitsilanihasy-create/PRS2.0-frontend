@@ -42,9 +42,9 @@
         <thead>
           <tr>
             @for (f of listFields; track f.key) {
-              <th>{{ f.label }}</th>
+              <th scope="col">{{ f.label }}</th>
             }
-            <th class="crud__actions-col">Actions</th>
+            <th scope="col" class="crud__actions-col">Actions</th>
           </tr>
         </thead>
         <tbody>

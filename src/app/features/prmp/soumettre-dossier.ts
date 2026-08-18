@@ -605,22 +605,22 @@ interface ApercuDossier {
                     </colgroup>
                     <thead>
                       <tr>
-                        <th rowspan="2">NATURE</th>
-                        <th rowspan="2">OBJET</th>
-                        <th rowspan="2">MONTANT ESTIMATIF INITIAL</th>
-                        <th rowspan="2">NOUVEAU MONTANT ESTIMATIF</th>
-                        <th rowspan="2">MODE DE PASSATION</th>
-                        <th rowspan="2">FINANCEMENT</th>
-                        <th colspan="4">Informations sur le Bénéficiaire</th>
-                        <th rowspan="2">DATE PREVISIONNELLE DE LANCEMENT</th>
-                        <th rowspan="2">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
-                        <th rowspan="2">DATE PREVISIONNELLE D'ATTRIBUTION</th>
+                        <th scope="col" rowspan="2">NATURE</th>
+                        <th scope="col" rowspan="2">OBJET</th>
+                        <th scope="col" rowspan="2">MONTANT ESTIMATIF INITIAL</th>
+                        <th scope="col" rowspan="2">NOUVEAU MONTANT ESTIMATIF</th>
+                        <th scope="col" rowspan="2">MODE DE PASSATION</th>
+                        <th scope="col" rowspan="2">FINANCEMENT</th>
+                        <th scope="col" colspan="4">Informations sur le Bénéficiaire</th>
+                        <th scope="col" rowspan="2">DATE PREVISIONNELLE DE LANCEMENT</th>
+                        <th scope="col" rowspan="2">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
+                        <th scope="col" rowspan="2">DATE PREVISIONNELLE D'ATTRIBUTION</th>
                       </tr>
                       <tr>
-                        <th>SERVICE BENEFICIAIRE</th>
-                        <th>COMPTE</th>
-                        <th>MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
-                        <th>NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
+                        <th scope="col">SERVICE BENEFICIAIRE</th>
+                        <th scope="col">COMPTE</th>
+                        <th scope="col">MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
+                        <th scope="col">NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
                       </tr>
                     </thead>
                     <tbody>

@@ -174,7 +174,7 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
       </div>
       @if (prmps().length) {
         <div class="table-responsive"><table class="cnm-table">
-          <thead><tr><th>Matricule</th><th>Nom &amp; prénoms</th><th class="col-hide-mobile">Email</th><th class="col-hide-mobile">Téléphone</th><th>Actions</th></tr></thead>
+          <thead><tr><th scope="col">Matricule</th><th scope="col">Nom &amp; prénoms</th><th scope="col" class="col-hide-mobile">Email</th><th scope="col" class="col-hide-mobile">Téléphone</th><th scope="col">Actions</th></tr></thead>
           <tbody>
             @for (p of prmps(); track p.idPrmp) {
               <tr>

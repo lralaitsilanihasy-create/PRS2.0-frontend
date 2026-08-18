@@ -51,10 +51,10 @@ interface AlerteJalon {
           <table>
             <thead>
               <tr>
-                <th>Référence PRMP</th>
-                <th>Objet</th>
-                @for (c of capms(); track c.idCapm) { <th class="cj__c">{{ c.libelleProcessus }}</th> }
-                <th class="cj__c">Alerte</th>
+                <th scope="col">Référence PRMP</th>
+                <th scope="col">Objet</th>
+                @for (c of capms(); track c.idCapm) { <th scope="col" class="cj__c">{{ c.libelleProcessus }}</th> }
+                <th scope="col" class="cj__c">Alerte</th>
               </tr>
             </thead>
             <tbody>

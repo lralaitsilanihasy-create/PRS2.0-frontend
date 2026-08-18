@@ -185,7 +185,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   }
                   @if (details().length && groupesAffiches().length) {
                     <table>
-                      <thead><tr><th>Point de contrôle</th><th>Résultat</th><th>Observation</th></tr></thead>
+                      <thead><tr><th scope="col">Point de contrôle</th><th scope="col">Résultat</th><th scope="col">Observation</th></tr></thead>
                       <tbody>
                         <!-- ⚠️ Résultats groupés par LIGNE DE MARCHÉ (puis points inter-lignes « Dossier »),
                              pour refléter l'examen séquentiel — même donnée, contexte restitué. -->
@@ -198,7 +198,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                               <td>
                                 @if (!d.conforme && observationsTriees(d).length) {
                                   <table class="obs-pv-table">
-                                    <thead><tr><th>AU LIEU DE</th><th>LIRE</th></tr></thead>
+                                    <thead><tr><th scope="col">AU LIEU DE</th><th scope="col">LIRE</th></tr></thead>
                                     <tbody>
                                       @for (o of observationsTriees(d); track o.idObservation ?? $index) {
                                         <tr><td>{{ o.auLieuDe || '—' }}</td><td>{{ o.lire || '—' }}</td></tr>
@@ -232,7 +232,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   }
                   @if (examenPiecesPv().length && piecesAffichees().length) {
                     <table>
-                      <thead><tr><th>Pièce</th><th>Résultat</th><th>Observation</th></tr></thead>
+                      <thead><tr><th scope="col">Pièce</th><th scope="col">Résultat</th><th scope="col">Observation</th></tr></thead>
                       <tbody>
                         @for (ep of piecesAffichees(); track ep.idExamenPiece) {
                           <tr>
@@ -250,7 +250,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   <h3 class="pv-sub">Historique des navettes</h3>
                   @if (navettes().length) {
                     <table>
-                      <thead><tr><th>#</th><th>Sens</th><th>Acteur</th><th>Date</th><th>Commentaire</th></tr></thead>
+                      <thead><tr><th scope="col">#</th><th scope="col">Sens</th><th scope="col">Acteur</th><th scope="col">Date</th><th scope="col">Commentaire</th></tr></thead>
                       <tbody>
                         @for (n of navettes(); track n.idNavette) {
                           <tr>

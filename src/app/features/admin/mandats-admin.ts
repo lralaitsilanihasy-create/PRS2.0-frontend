@@ -63,7 +63,7 @@ const STATUT_LABELS: Record<string, string> = {
         <div class="table-card">
           <table>
             <thead>
-              <tr><th>PRMP</th><th>Titulaire</th><th>N°</th><th>Début (arrêté)</th><th>Fin</th><th>Arrêté</th><th>Statut</th><th class="r">Actions</th></tr>
+              <tr><th scope="col">PRMP</th><th scope="col">Titulaire</th><th scope="col">N°</th><th scope="col">Début (arrêté)</th><th scope="col">Fin</th><th scope="col">Arrêté</th><th scope="col">Statut</th><th scope="col" class="r">Actions</th></tr>
             </thead>
             <tbody>
               @for (m of mandatsAffiches(); track m.idMandat ?? m.idPrmp + m.dateDebut) {

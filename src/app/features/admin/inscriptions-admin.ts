@@ -36,7 +36,7 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
         <div class="table-card">
           <table class="cnm-table">
             <thead>
-              <tr><th>Type</th><th>Login</th><th>Responsable</th><th>Périmètre</th><th>Pièces</th><th>Actions</th></tr>
+              <tr><th scope="col">Type</th><th scope="col">Login</th><th scope="col">Responsable</th><th scope="col">Périmètre</th><th scope="col">Pièces</th><th scope="col">Actions</th></tr>
             </thead>
             <tbody>
               @for (i of inscriptions(); track i.login) {

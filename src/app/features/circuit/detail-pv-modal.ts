@@ -128,7 +128,7 @@ import { StatutBadge } from '../../shared/circuit';
             } @else if (details().length && groupesAffiches().length) {
               <table class="dpv-grille-table">
                 <thead>
-                  <tr><th>Point de contrôle</th><th>Résultat</th><th>Observation</th></tr>
+                  <tr><th scope="col">Point de contrôle</th><th scope="col">Résultat</th><th scope="col">Observation</th></tr>
                 </thead>
                 <tbody>
                   @for (g of groupesAffiches(); track g.cle) {
@@ -173,7 +173,7 @@ import { StatutBadge } from '../../shared/circuit';
                 <p class="dpv-ok">✓ Toutes les pièces jointes sont conformes — aucune observation.</p>
               } @else if (examenPieces().length && piecesAffichees().length) {
                 <table class="dpv-grille-table">
-                  <thead><tr><th>Pièce</th><th>Résultat</th><th>Observation</th></tr></thead>
+                  <thead><tr><th scope="col">Pièce</th><th scope="col">Résultat</th><th scope="col">Observation</th></tr></thead>
                   <tbody>
                     @for (ep of piecesAffichees(); track ep.idExamenPiece) {
                       <tr>

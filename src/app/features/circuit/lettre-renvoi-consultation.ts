@@ -37,7 +37,7 @@ import { DossierConsultation } from './dossier-consultation';
         <div class="table-card">
         <table>
           <thead>
-            <tr><th>Référence lettre</th><th>Dossier</th><th>Date lettre</th><th>Statut</th><th></th></tr>
+            <tr><th scope="col">Référence lettre</th><th scope="col">Dossier</th><th scope="col">Date lettre</th><th scope="col">Statut</th><th scope="col"></th></tr>
           </thead>
           <tbody>
             @for (l of lettres(); track l.idLettre) {

@@ -137,7 +137,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
         <div class="table-card">
           <table>
             <thead>
-              <tr><th>Dossier</th><th>Motif</th><th>Lettre</th><th>Statut</th><th>Date</th><th>Motif du refus</th></tr>
+              <tr><th scope="col">Dossier</th><th scope="col">Motif</th><th scope="col">Lettre</th><th scope="col">Statut</th><th scope="col">Date</th><th scope="col">Motif du refus</th></tr>
             </thead>
             <tbody>
               @for (r of demandes(); track r.idDemandeRetrait) {

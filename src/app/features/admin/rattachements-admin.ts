@@ -40,7 +40,7 @@ interface RattachementEnAttente {
         <div class="table-card">
           <table class="cnm-table">
             <thead>
-              <tr><th>PRMP</th><th>Entité contractante</th><th>Date d'affectation</th><th>Actions</th></tr>
+              <tr><th scope="col">PRMP</th><th scope="col">Entité contractante</th><th scope="col">Date d'affectation</th><th scope="col">Actions</th></tr>
             </thead>
             <tbody>
               @for (r of rattachements(); track r.lien.idPrmpEntite) {

@@ -128,7 +128,7 @@ const IMG_OK = ['image/jpeg', 'image/png'];
       </div>
       @if (controleurs().length) {
         <div class="table-responsive"><table class="cnm-table">
-          <thead><tr><th>Matricule</th><th>Nom &amp; prénoms</th><th class="col-hide-mobile">Email</th><th class="col-hide-mobile">Localité</th><th class="col-hide-mobile">Transversal</th><th>Actions</th></tr></thead>
+          <thead><tr><th scope="col">Matricule</th><th scope="col">Nom &amp; prénoms</th><th scope="col" class="col-hide-mobile">Email</th><th scope="col" class="col-hide-mobile">Localité</th><th scope="col" class="col-hide-mobile">Transversal</th><th scope="col">Actions</th></tr></thead>
           <tbody>
             @for (c of controleurs(); track c.imControleur) {
               <tr>
