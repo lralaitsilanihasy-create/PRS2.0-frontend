@@ -598,15 +598,18 @@ export class ExamenDossier implements OnDestroy {
   private readonly existingPv = signal<PvExamen | null>(null);
   /**
    * Synthèse éditable ici si : aucun projet de PV n'existe encore (examen créé sans soumission →
-   * « Modifier l'examen » le créera), OU le PV existant est encore BROUILLON.
-   * Un PV déjà soumis (≠ BROUILLON) reste en lecture seule (→ « Projets de PV »).
+   * « Modifier l'examen » le créera), OU le PV est BROUILLON, OU il est revenu EN_RECTIFICATION.
+   * Un PV entre les mains de la commission (PROJET_SOUMIS, PROJET_ACCEPTE, SIGNE) reste en lecture
+   * seule (→ « Projets de PV »).
    */
   readonly pvEditable = computed(() => {
     if (this.mode() !== 'edit') return false;
     const pv = this.existingPv();
-    // ⚠️ Réexamen (2026-08-02) : la lettre de renvoi signée a repassé un PV PROJET_SOUMIS en
-    // EN_RECTIFICATION — la synthèse reste éditable pour préparer la re-soumission.
-    return pv === null || pv.statutPv === 'BROUILLON' || (this.estReexamen() && pv.statutPv === 'EN_RECTIFICATION');
+    // ⚠️ EN_RECTIFICATION recouvre DEUX retours, tous deux destinés à être corrigés ici : le retour
+    // de navette du P/CC (dossier EXAMINE, commentaire de rectification) et le réexamen après lettre
+    // de renvoi signée (dossier A_REEXAMINER, 2026-08-02). Le second seul était traité (2026-08-18) :
+    // le premier laissait la synthèse verrouillée alors que le serveur en accepte la mise à jour.
+    return pv === null || pv.statutPv === 'BROUILLON' || pv.statutPv === 'EN_RECTIFICATION';
   });
   /** Le bloc synthèse est éditable à la création, ou en édition tant que le PV est BROUILLON. */
   readonly syntheseEditable = computed(() => this.mode() === 'create' || this.pvEditable());

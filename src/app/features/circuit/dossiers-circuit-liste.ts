@@ -404,7 +404,8 @@ export class DossiersCircuitListe {
         }
         const recDispatchable = new Map<number, Reception>();
         for (const [idDossier, r] of recComplete) if (!dispatched.has(r.idReception)) recDispatchable.set(idDossier, r);
-        // PV déjà soumis (statut ≠ BROUILLON) → « Modifier l'examen » masqué. Chaîne PV → examen → dispatch → réception.
+        // PV en cours de navette chez le P/CC (PROJET_SOUMIS, PROJET_ACCEPTE, SIGNE) → « Modifier
+        // l'examen » masqué : la main est à la commission. Chaîne PV → examen → dispatch → réception.
         const dispById = new Map(dispatchs.map((disp) => [disp.idDispatch, disp]));
         const exDossier = new Map(
           examens.map((e) => [
@@ -414,7 +415,12 @@ export class DossiersCircuitListe {
         );
         const pvSoumis = new Set<number>();
         for (const pv of pvs) {
-          if (pv.statutPv !== 'BROUILLON') {
+          // ⚠️ 2026-08-18 — EN_RECTIFICATION est un RETOUR DE NAVETTE, pas un PV figé : le Membre
+          // doit pouvoir reprendre son examen pour donner suite au commentaire du P/CC. Le serveur
+          // l'autorise (PvExamenService.update : BROUILLON | EN_RECTIFICATION) ; le front le rangeait
+          // à tort parmi les PV soumis, et « Modifier l'examen » disparaissait — la demande de
+          // rectification était alors sans issue.
+          if (pv.statutPv !== 'BROUILLON' && pv.statutPv !== 'EN_RECTIFICATION') {
             const idD = exDossier.get(pv.idExamen);
             if (idD != null) pvSoumis.add(idD);
           }
