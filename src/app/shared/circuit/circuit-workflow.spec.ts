@@ -4,6 +4,7 @@ import {
   etapeIndexForDossier,
   peutAccepter,
   peutRetourner,
+  examenRectifiable,
   peutSigner,
   peutSoumettre,
   pvSignataireRole,
@@ -99,6 +100,40 @@ describe('circuit-workflow', () => {
       expect(peutSigner('PROJET_ACCEPTE')).toBe(true);
       expect(peutSigner('PROJET_SOUMIS')).toBe(false);
       expect(peutSigner('SIGNE')).toBe(false);
+    });
+  });
+
+
+  /**
+   * ⚠️ Régression du 2026-08-18 : la règle vivait recopiée dans trois écrans et y avait divergé.
+   * Un PV revenu EN_RECTIFICATION était compté comme « soumis », si bien qu'un retour de navette
+   * ne laissait au Membre aucun moyen de corriger — il ne pouvait que resoumettre à l'identique.
+   */
+  describe('examenRectifiable', () => {
+    it('ouvre l’examen au retour de navette du Président/CC', () => {
+      expect(examenRectifiable('EN_RECTIFICATION', 'EXAMINE')).toBe(true);
+    });
+
+    it('ouvre l’examen au réexamen après lettre de renvoi signée', () => {
+      expect(examenRectifiable('EN_RECTIFICATION', 'A_REEXAMINER')).toBe(true);
+    });
+
+    it('ouvre l’examen tant que le PV est brouillon, ou avant qu’il existe', () => {
+      expect(examenRectifiable('BROUILLON', 'EXAMINE')).toBe(true);
+      expect(examenRectifiable(null, 'EXAMINE')).toBe(true);
+      expect(examenRectifiable(undefined, 'EXAMINE')).toBe(true);
+    });
+
+    it('ferme l’examen quand la main est à la commission', () => {
+      expect(examenRectifiable('PROJET_SOUMIS', 'EXAMINE')).toBe(false);
+      expect(examenRectifiable('PROJET_ACCEPTE', 'EXAMINE')).toBe(false);
+      expect(examenRectifiable('SIGNE', 'EXAMINE')).toBe(false);
+    });
+
+    it('ferme l’examen dès que le dossier a quitté l’état examinable', () => {
+      for (const statut of ['PV_SIGNE', 'EN_VERIFICATION', 'CLOTURE', 'DISPATCHE', 'RETIRE', null, undefined]) {
+        expect(examenRectifiable('EN_RECTIFICATION', statut)).toBe(false);
+      }
     });
   });
 

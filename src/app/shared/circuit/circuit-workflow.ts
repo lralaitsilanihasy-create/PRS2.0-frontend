@@ -194,6 +194,28 @@ export function peutSigner(statut: StatutPv): boolean {
   return statut === 'PROJET_ACCEPTE';
 }
 
+/**
+ * L'examen d'un dossier est-il encore modifiable par son attributaire ?
+ *
+ * ⚠️ Règle centralisée le 2026-08-19 après incident : elle vivait recopiée dans trois écrans
+ * (liste des dossiers examinés, écran d'examen, panneau des projets de PV) et y avait divergé —
+ * `EN_RECTIFICATION` était compté comme « PV soumis », si bien qu'un retour de navette du
+ * Président/CC ne laissait au Membre aucun moyen de corriger : il ne pouvait que resoumettre à
+ * l'identique. Un seul point de vérité, désormais, et des tests dessus.
+ *
+ * Deux conditions, alignées sur le serveur :
+ * - le PV est **à la main du Membre** : pas encore de PV, brouillon, ou revenu en rectification —
+ *   qu'il s'agisse d'un retour de navette ou d'un réexamen après lettre de renvoi signée
+ *   (`PvExamenService.update` n'accepte que `BROUILLON` et `EN_RECTIFICATION`) ;
+ * - le **dossier est encore ouvert** : `EXAMINE` (navette en cours) ou `A_REEXAMINER` ; toute
+ *   modification est refusée (409) dès `PV_SIGNE`, l'examen devenant définitif à la signature.
+ */
+export function examenRectifiable(statutPv: StatutPv | null | undefined, statutDossier: string | null | undefined): boolean {
+  const pvALaMainDuMembre = !statutPv || statutPv === 'BROUILLON' || statutPv === 'EN_RECTIFICATION';
+  const dossierOuvert = statutDossier === 'EXAMINE' || statutDossier === 'A_REEXAMINER';
+  return pvALaMainDuMembre && dossierOuvert;
+}
+
 // --- Étape attendue d'un dossier selon son statut (orientation pour le pipeline) ---
 
 /** Étape attendue d'un dossier + qui peut l'exécuter + capacité requise. */

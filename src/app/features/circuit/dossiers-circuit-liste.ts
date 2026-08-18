@@ -6,7 +6,7 @@ import { forkJoin, of } from 'rxjs';
 
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
-import { Dispatch, Dossier, Reception } from '../../models';
+import { Dispatch, Dossier, Reception, StatutPv } from '../../models';
 import {
   ControleurService,
   DispatchService,
@@ -21,7 +21,7 @@ import {
 } from '../../services';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ToastService } from '../../core/notifications/toast.service';
-import { StatutBadge } from '../../shared/circuit';
+import { StatutBadge, examenRectifiable } from '../../shared/circuit';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { DispatchForm, DispatchItem } from './dispatch-form';
 import { DossierConsultation } from './dossier-consultation';
@@ -278,8 +278,8 @@ export class DossiersCircuitListe {
   private readonly recDispatchable = signal<Map<number, Reception>>(new Map());
   /** idDossier → dernier dispatch (pour « Date dispatch » / « Attributaire »). */
   private readonly dispatchByDossier = signal<Map<number, Dispatch>>(new Map());
-  /** idDossier dont le projet de PV est déjà soumis (statut ≠ BROUILLON) — examen non modifiable. */
-  private readonly pvSoumisDossiers = signal<Set<number>>(new Set());
+  /** idDossier → statut de son projet de PV (absent = aucun PV). Décide de l'ouverture de l'examen. */
+  private readonly statutPvParDossier = signal<Map<number, StatutPv>>(new Map());
   /** idDossier ayant un examen (brouillon si le dossier est encore DISPATCHE) → badge « Examen en cours ». */
   private readonly dossiersAvecExamen = signal<Set<number>>(new Set());
 
@@ -413,19 +413,14 @@ export class DossiersCircuitListe {
             e.idDispatch != null ? recById.get(dispById.get(e.idDispatch)?.idReception ?? -1)?.idDossier : undefined,
           ]),
         );
-        const pvSoumis = new Set<number>();
+        // Le statut du PV est conservé tel quel : c'est `examenRectifiable` (règle partagée) qui
+        // décide, et non un tri fait ici — c'est en dupliquant ce tri que la règle avait divergé.
+        const statutPv = new Map<number, StatutPv>();
         for (const pv of pvs) {
-          // ⚠️ 2026-08-18 — EN_RECTIFICATION est un RETOUR DE NAVETTE, pas un PV figé : le Membre
-          // doit pouvoir reprendre son examen pour donner suite au commentaire du P/CC. Le serveur
-          // l'autorise (PvExamenService.update : BROUILLON | EN_RECTIFICATION) ; le front le rangeait
-          // à tort parmi les PV soumis, et « Modifier l'examen » disparaissait — la demande de
-          // rectification était alors sans issue.
-          if (pv.statutPv !== 'BROUILLON' && pv.statutPv !== 'EN_RECTIFICATION') {
-            const idD = exDossier.get(pv.idExamen);
-            if (idD != null) pvSoumis.add(idD);
-          }
+          const idD = exDossier.get(pv.idExamen);
+          if (idD != null) statutPv.set(idD, pv.statutPv);
         }
-        this.pvSoumisDossiers.set(pvSoumis);
+        this.statutPvParDossier.set(statutPv);
         // Brouillons d'examen : un examen existe pour le dossier (via son dispatch) — le badge n'est
         // affiché que sur les dossiers encore DISPATCHE (pas encore soumis → « Examen en cours »).
         const brouillons = new Set<number>();
@@ -529,9 +524,9 @@ export class DossiersCircuitListe {
     }
     if (items.length) this.dispatchItems.set(items);
   }
-  /** « Modifier l'examen » : offert par le groupe, tant que le dossier est EXAMINE et son PV non soumis. */
+  /** « Modifier l'examen » : offert par le groupe, tant que l'examen est ouvert (règle partagée). */
   examenModifiable(d: Dossier): boolean {
-    return this.aActionModifierExamen() && d.statut === 'EXAMINE' && !this.pvSoumisDossiers().has(d.idDossier);
+    return this.aActionModifierExamen() && examenRectifiable(this.statutPvParDossier().get(d.idDossier), d.statut);
   }
   /** Badge « Examen en cours » : brouillon d'examen existant sur un dossier pas encore soumis (DISPATCHE). */
   aExamenEnCours(d: Dossier): boolean {

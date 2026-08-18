@@ -46,7 +46,7 @@ import {
   ServiceBeneficiaireService,
   TypeDossierService,
 } from '../../services';
-import { StatutBadge } from '../../shared/circuit';
+import { StatutBadge, examenRectifiable } from '../../shared/circuit';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 
 /** Une ligne « AU LIEU DE / LIRE » saisie pour un point non conforme. */
@@ -604,12 +604,10 @@ export class ExamenDossier implements OnDestroy {
    */
   readonly pvEditable = computed(() => {
     if (this.mode() !== 'edit') return false;
-    const pv = this.existingPv();
     // ⚠️ EN_RECTIFICATION recouvre DEUX retours, tous deux destinés à être corrigés ici : le retour
-    // de navette du P/CC (dossier EXAMINE, commentaire de rectification) et le réexamen après lettre
-    // de renvoi signée (dossier A_REEXAMINER, 2026-08-02). Le second seul était traité (2026-08-18) :
-    // le premier laissait la synthèse verrouillée alors que le serveur en accepte la mise à jour.
-    return pv === null || pv.statutPv === 'BROUILLON' || pv.statutPv === 'EN_RECTIFICATION';
+    // de navette du P/CC (dossier EXAMINE) et le réexamen après lettre de renvoi signée (dossier
+    // A_REEXAMINER). Le second seul était traité ; la règle est désormais partagée et testée.
+    return examenRectifiable(this.existingPv()?.statutPv, this.dossier()?.statut);
   });
   /** Le bloc synthèse est éditable à la création, ou en édition tant que le PV est BROUILLON. */
   readonly syntheseEditable = computed(() => this.mode() === 'create' || this.pvEditable());

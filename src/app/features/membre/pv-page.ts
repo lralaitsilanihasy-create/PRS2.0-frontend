@@ -35,7 +35,7 @@ import {
   ReceptionService,
   ReferenceLookupService,
 } from '../../services';
-import { PvWorkflow, PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
+import { PvWorkflow, PV_STATUT_LABELS, StatutBadge, examenRectifiable } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 
 /**
@@ -526,16 +526,17 @@ export class MembrePv {
     return this.dossierByExamen().get(pv.idExamen)?.idLocalite ?? null;
   }
   /**
-   * ⚠️ 2026-08-18 — « Rectifier l'examen » depuis le retour de navette. Mêmes conditions que le
-   * bouton « Modifier l'examen » de la liste des dossiers examinés : capacité d'écriture sur
-   * l'examen, et dossier encore ouvert (le serveur refuse toute modification dès `PV_SIGNE`).
+   * ⚠️ 2026-08-18 — « Rectifier l'examen » depuis le retour de navette. La règle d'ouverture de
+   * l'examen est partagée (`examenRectifiable`) avec la liste des dossiers examinés et l'écran
+   * d'examen : elle avait divergé entre ces trois écrans, au point de rendre la rectification
+   * impossible. S'y ajoute ici la capacité d'écriture — le CC voit le motif, mais n'a pas à
+   * rectifier l'examen du Membre.
    */
   peutRectifier(pv: PvExamen): boolean {
-    const statut = this.dossierByExamen().get(pv.idExamen)?.statut;
     return (
       pv.statutPv === 'EN_RECTIFICATION' &&
       this.permissions.can('EXAMEN_WRITE') &&
-      (statut === 'EXAMINE' || statut === 'A_REEXAMINER')
+      examenRectifiable(pv.statutPv, this.dossierByExamen().get(pv.idExamen)?.statut)
     );
   }
   /** Cible de « Rectifier l'examen » — l'écran d'examen de l'espace courant (membre, cc, président). */
