@@ -71,8 +71,17 @@ import {
           <button *appCan="'PV_SIGNER'" type="button" class="btn btn-primary" [disabled]="dejaSigne() || saving()"
             [title]="dejaSigne() ? 'Vous avez déjà signé ce PV — en attente des autres signataires.' : ''"
             (click)="signer()">
-            {{ dejaSigne() ? 'Signé ✓' : saving() ? 'Signature…' : 'Signer' }}
+            {{ dejaSigne() ? 'Signé ✓' : saving() ? (editionDocument() ? 'Signature et édition du PV…' : 'Signature…') : 'Signer' }}
           </button>
+          @if (saving() && editionDocument()) {
+            <!-- ⚠️ L'attente est ici NORMALE (édition du PV par le serveur) : sans ce mot, un écran
+                 figé plusieurs secondes se lit comme une panne et invite à recliquer. -->
+            <span class="pv-workflow__edition" role="status">
+              <span class="pv-workflow__spin" aria-hidden="true"></span>
+              Le procès-verbal officiel est en cours d'édition — cela peut prendre quelques secondes.
+              <strong>Ne fermez pas la page.</strong>
+            </span>
+          }
           @if (dejaSigne()) {
             <span class="pv-workflow__deja-signe">Vous avez déjà signé — en attente des autres signataires.</span>
           } @else if (coSignatureRestante()) {
@@ -226,6 +235,31 @@ import {
       color: var(--n-500);
       font-style: italic;
     }
+    /* Attente annoncée de l'édition du PV : lisible sans être alarmante. */
+    .pv-workflow__edition {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: var(--text-sm);
+      color: var(--c-800);
+      background: var(--c-50);
+      border: 1px solid var(--c-200);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.7rem;
+    }
+    .pv-workflow__spin {
+      width: 0.9rem;
+      height: 0.9rem;
+      flex-shrink: 0;
+      border: 2px solid var(--c-200);
+      border-top-color: var(--c-600);
+      border-radius: 50%;
+      animation: pv-workflow-spin 700ms linear infinite;
+    }
+    @keyframes pv-workflow-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .pv-workflow__spin { animation-duration: 2.4s; }
+    }
     .pv-workflow__retour {
       display: flex;
       flex-direction: column;
@@ -365,6 +399,24 @@ export class PvWorkflow {
       this.pv().dateSignatureMembre != null &&
       !this.dejaSigne(),
   );
+  /**
+   * La part sur le point d'être posée est la DERNIÈRE : le PV passera à SIGNE. La complétude est
+   * « Membre + (Président OU CC) » — la part Membre clôt si une part de rôle est déjà là, et
+   * inversement.
+   */
+  private readonly signatureCloturante = computed(() => {
+    const pv = this.pv();
+    const partDeRole = pv.dateSignaturePresident != null || pv.dateSignatureCc != null;
+    return this.roleSignature() === 'MEMBRE' ? partDeRole : pv.dateSignatureMembre != null;
+  });
+  /**
+   * ⚠️ Attente attendue (2026-08-18) — à la signature qui clôt le PV, le serveur ÉDITE le
+   * procès-verbal officiel : remplissage du modèle Word puis conversion en PDF pilotée par Word
+   * (documents4j), le tout dans la requête. L'attente se compte en secondes. `documentDisponible`
+   * dit qu'un modèle existe pour ce PV : sans lui, aucun document n'est produit et la signature est
+   * immédiate — on n'annonce donc l'attente que lorsqu'elle aura effectivement lieu.
+   */
+  readonly editionDocument = computed(() => this.signatureCloturante() && this.pv().documentDisponible === true);
   /** Libellé humain de la part de rôle courante (hint d'auto-co-signature). */
   readonly roleSignatureLabel = computed(() =>
     this.roleSignature() === 'PRESIDENT' ? 'Président' : this.roleSignature() === 'CC' ? 'Chef de commission' : 'Membre',
