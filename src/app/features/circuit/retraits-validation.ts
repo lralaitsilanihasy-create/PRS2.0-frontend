@@ -85,7 +85,7 @@ import { DossierConsultation } from './dossier-consultation';
                   <tr>
                     <td><button type="button" class="rv__link" (click)="voirDetail(r.idDossier)">{{ dossierRef(r.idDossier) }}</button></td>
                     <td>{{ r.idPrmp || '—' }}</td>
-                    <td>{{ r.motifRetrait }}</td>
+                    <td class="rv__motif">{{ r.motifRetrait }}</td>
                     <!-- Lettre signée : à consulter AVANT de trancher (règle 2026-08-17).
                          « — » sur les demandes antérieures, qui n'en portent pas. -->
                     <td>
@@ -138,7 +138,7 @@ import { DossierConsultation } from './dossier-consultation';
                   <tr>
                     <td><button type="button" class="rv__link" (click)="voirDetail(r.idDossier)">{{ dossierRef(r.idDossier) }}</button></td>
                     <td>{{ r.idPrmp || '—' }}</td>
-                    <td>{{ r.motifRetrait }}</td>
+                    <td class="rv__motif">{{ r.motifRetrait }}</td>
                     <td>
                       @if (r.nomFichier) {
                         <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirLettre(r)">Ouvrir</button>
@@ -148,7 +148,7 @@ import { DossierConsultation } from './dossier-consultation';
                     </td>
                     <td><app-statut-badge [statut]="r.statut" [label]="statutLabel(r.statut)" /></td>
                     <td class="cnm-mono">{{ r.dateDecision || '—' }}</td>
-                    <td>{{ r.statut === 'REFUSEE' ? (r.obsDecision || '—') : '—' }}</td>
+                    <td class="rv__motif">{{ r.statut === 'REFUSEE' ? (r.obsDecision || '—') : '—' }}</td>
                   </tr>
                 } @empty {
                   <tr><td colspan="7" class="text-muted">Aucune demande décidée.</td></tr>
@@ -180,6 +180,9 @@ import { DossierConsultation } from './dossier-consultation';
     .rv__filtre { margin: -0.4rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
     .rv__filtre a { margin-left: 0.4rem; color: var(--p-600); font-weight: 600; }
     .rv__link { background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--c-600); font: inherit; text-decoration: underline; }
+    /* Le motif est du texte libre : sans cela, le « white-space: nowrap » global des cellules
+       étire la ligne et pousse la colonne de décision hors de l'écran. */
+    .rv__motif { white-space: normal; max-width: 42rem; }
     @media (max-width: 60rem) { .rv__grid { grid-template-columns: 1fr; } }
   `,
 })

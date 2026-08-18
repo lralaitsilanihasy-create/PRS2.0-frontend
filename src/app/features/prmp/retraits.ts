@@ -144,7 +144,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                 <tr>
                   <!-- Référence cliquable : le dossier s'ouvre sur place, sans quitter le suivi. -->
                   <td><button type="button" class="rt-link" (click)="voirDossier(r.idDossier)">{{ dossierRef(r.idDossier) }}</button></td>
-                  <td>{{ r.motifRetrait }}</td>
+                  <td class="rt-motif">{{ r.motifRetrait }}</td>
                   <!-- Demandes antérieures à la règle du 2026-08-17 : aucune lettre (document → 404). -->
                   <td>
                     @if (r.nomFichier) {
@@ -155,7 +155,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   </td>
                   <td><app-statut-badge [statut]="r.statut" [label]="statutLabel(r.statut)" /></td>
                   <td>{{ r.dateDemande || '—' }}</td>
-                  <td>{{ r.statut === 'REFUSEE' ? (r.obsDecision || '—') : '—' }}</td>
+                  <td class="rt-motif">{{ r.statut === 'REFUSEE' ? (r.obsDecision || '—') : '—' }}</td>
                 </tr>
               } @empty {
                 <tr><td colspan="6" class="empty-cell">Aucune demande.</td></tr>
@@ -176,6 +176,9 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     .rt-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: start; }
     .rt-foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
     .rt-link { background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--c-600); font: inherit; text-decoration: underline; }
+    /* Le motif est du texte libre : sans cela, le « white-space: nowrap » global des cellules
+       étire la ligne et pousse les dernières colonnes hors de l'écran. */
+    .rt-motif { white-space: normal; max-width: 34rem; }
 
     /* Dépôt de la lettre : zone cliquable en entier (le libellé enveloppe le champ masqué). */
     .rt-fichier {
