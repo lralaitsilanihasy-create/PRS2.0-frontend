@@ -95,7 +95,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     <div class="alert alert-warning pv-retour">
                       <span><strong>Retour pour rectification :</strong> {{ dernierRetour() }}</span>
                       @if (peutRectifier(pv)) {
-                        <a class="btn btn-primary btn-sm" [routerLink]="lienRectification(pv)">
+                        <a class="btn pv-retour__cta" [routerLink]="lienRectification(pv)">
                           ✎ Rectifier l'examen
                         </a>
                       }
@@ -341,6 +341,28 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .pv-retour { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
     .pv-retour .btn { flex-shrink: 0; text-decoration: none; }
     .pv-retour__aide { margin: 0.4rem 0 0; font-size: var(--text-sm); color: var(--n-500); }
+    /*
+     * Action attendue du Membre : elle doit se voir sur le jaune pâle du bandeau (#fef9c3).
+     * « btn-warning » y est invisible (même fond que l'alerte) et le bleu primaire s'y fond ;
+     * d'où cet orange soutenu. Blanc sur #C2410C = 5,2:1 — au-dessus du seuil AA, comme
+     * l'exige le design system pour tout texte.
+     */
+    .pv-retour .pv-retour__cta {
+      background: linear-gradient(135deg, #C2410C, #9A3412);
+      border-color: #9A3412;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgb(154 52 18 / 35%);
+    }
+    .pv-retour .pv-retour__cta:hover {
+      background: linear-gradient(135deg, #9A3412, #7C2D12);
+      box-shadow: 0 4px 10px rgb(154 52 18 / 45%);
+      transform: translateY(-1px);
+    }
+    .pv-retour .pv-retour__cta:focus-visible { outline: 3px solid #7C2D12; outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+      .pv-retour .pv-retour__cta:hover { transform: none; }
+    }
     .obs-pv-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
     .obs-pv-table th { text-align: center; font-weight: 600; padding: 0.2rem 0.5rem; border-bottom: 1px solid var(--c-100); background: none; text-transform: none; letter-spacing: normal; color: var(--n-700); }
     .obs-pv-table td { padding: 0.2rem 0.5rem; vertical-align: top; border-bottom: 1px solid var(--c-100); word-wrap: break-word; white-space: normal; }
