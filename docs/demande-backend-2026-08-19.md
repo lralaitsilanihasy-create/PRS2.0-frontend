@@ -1,91 +1,55 @@
 # Demande au backend `PRS20` — 19 août 2026
 
-> Document destiné à la session backend. Émis depuis le front `frontendprs2`, qui est **à jour et
-> poussé** (dernier commit `11596dd`). Trois points, par ordre d'urgence.
+> Document destiné à la session backend. Émis depuis le front `frontendprs2`, **à jour et poussé**
+> (dernier commit `b108ec8`).
+>
+> **État au 19/08 en soirée** — 1 point urgent, 1 point ouvert, 2 clos :
+>
+> | | Sujet | État |
+> |---|---|---|
+> | **A** | API des actualités **non commitée** (22 fichiers) | 🔴 **urgent** |
+> | **B** | Génération du PDF de PV hors du chemin de la requête | 🟠 ouvert |
+> | 0 | Lettre de demande de retrait | ✅ clos (`0a73fde`) |
+> | 1 | API des actualités : conception et livraison | ✅ clos, recetté |
 
 ---
 
-## 0. ✅ CLOS — la lettre de demande de retrait est commitée (19/08)
+## A. 🔴 URGENT — l'API des actualités n'est pas commitée
 
-La fonctionnalité livrée le 2026-08-17 (lettre PDF obligatoire à la demande de retrait) **tourne sur
-le serveur local mais n'existe pas dans git**. Dernier commit du dépôt : `63a6e28`, 17/08 à 4 h
-(phase 3 du plan cookie). Tout le travail sur la lettre lui est postérieur et n'a jamais été versé.
+**Le scénario du point 0 se répète, à plus grande échelle.** L'API livrée aujourd'hui tourne sur le
+serveur local et a été recettée de bout en bout par le front — mais **rien n'est dans git**. Dernier
+commit du dépôt : `0a73fde` (19/08, 1 h 04), qui ne concerne que la lettre de retrait.
+
+**17 fichiers neufs, aucun suivi par git** — ce sont eux qu'un `git add` oublie le plus facilement :
 
 ```
-?? src/main/java/cnm/prs/entity/PieceDemandeRetrait.java            ← entité, NON SUIVIE
-?? src/main/java/cnm/prs/repository/PieceDemandeRetraitRepository.java  ← NON SUIVI
- M src/main/java/cnm/prs/service/DemandeRetraitService.java         (+156 lignes)
- M src/main/java/cnm/prs/controller/DemandeRetraitController.java   (+34)
- M src/main/java/cnm/prs/dto/DemandeRetraitDto.java                 (+6)
- M src/test/java/cnm/prs/CnmWorkflowIntegrationTest.java            (+137 lignes de tests)
- M docs/api-endpoints.md · docs/regles-gestion.md
+src/main/java/cnm/prs/entity/     Actualite.java · ActualiteImage.java · ActualiteProfil.java · Parametre.java
+src/main/java/cnm/prs/enums/      StatutActualite.java
+src/main/java/cnm/prs/dto/        ActualiteDto.java · ActualiteImageDto.java · InterrupteurDto.java
+src/main/java/cnm/prs/repository/ ActualiteRepository.java · ActualiteImageRepository.java
+                                  ActualiteProfilRepository.java · ParametreRepository.java
+src/main/java/cnm/prs/service/    ActualiteService.java · ParametreService.java
+src/main/java/cnm/prs/controller/ ActualiteController.java · ParametreController.java
+src/main/java/cnm/prs/exception/  PayloadTropVolumineuxException.java
 ```
 
-**Pourquoi c'est urgent.** Le front correspondant, lui, **est poussé** : il envoie désormais un
-`multipart/form-data` avec la lettre (`DemandeRetraitService.creerAvecLettre`). Un redéploiement du
-backend depuis git ferait donc disparaître l'entité et repasser l'endpoint en JSON pur : **toute
-demande de retrait échouerait en 415**, y compris les écrans recettés le 18/08. C'est le scénario
-qui a déjà cassé le distant par le passé.
+**5 fichiers modifiés** : `GlobalExceptionHandler.java`, `CnmWorkflowIntegrationTest.java`,
+`src/test/resources/application.properties`, `docs/api-endpoints.md`, `docs/regles-gestion.md`.
 
-**Traité** : commit backend `0a73fde` « Retrait : lettre de demande obligatoire (PDF) jointe a la
-demande » (8 fichiers, +409/−37), poussé ; arbre propre, suite backend 439/439, serveur relancé,
-table `t_piece_demande_retrait` créée (PK identity, UNIQUE sur `ID_DEMANDE_RETRAIT`, `bytea` +
-SHA-256).
+**Pourquoi c'est urgent.** Le front correspondant **est poussé** (`9faaa14`, `b108ec8`) et appelle
+ces endpoints. Un redéploiement du backend depuis git ferait disparaître l'intégralité de la
+fonctionnalité : `/api/actualites/**` et `/api/parametres/**` renverraient 404, la table
+`t_parametre` ne serait plus créée, et le travail d'une journée serait perdu — il n'existe qu'en
+copie de travail.
 
-**Vérifié côté front après relance** (lecture seule) : la lettre déposée le 18/08 a survécu — demande
-#34, `lettre-de-retrait-signee.pdf`, 133 Ko, `GET /{id}/document` → **200 · application/pdf · 136 195
-octets**. Les trois demandes antérieures à la règle (#26, #27, #28) renvoient bien `nomFichier: null`
-et s'affichent « — » : la rétro-compatibilité tient. Aucune adaptation du front n'était nécessaire,
-le contrat multipart y étant branché depuis le 17/08.
+**Action attendue** : `git add` des 17 fichiers non suivis **compris**, commit et push, avant toute
+autre livraison.
 
 ---
 
-## 1. API des actualités affichées à l'ouverture de session
+## B. 🟠 Sortir la génération du PDF du chemin de la signature
 
-**Contrat complet** : `frontendprs2/docs/spec-actualites.md` (versionné, commit `ae79f41`). Il décrit
-le modèle de données, onze endpoints, le DTO et les règles. Résumé :
-
-| | |
-|---|---|
-| Ressource | `/api/actualites` — CRUD réservé à `ADMINISTRATEUR` ; `DELETE` = **archivage logique**, jamais de suppression physique |
-| Lecture ciblée | `GET /api/actualites/mes-actualites` — filtre **entièrement serveur** : profil de l'utilisateur authentifié, statut `ACTIF`, fenêtre `datePublication`/`dateExpiration`, interrupteur global |
-| Images | `POST /api/actualites/{id}/images` — **JPEG seul**, magic-bytes `FF D8 FF`, **10 Mo max**, redimensionnement serveur avant stockage (`bytea`, comme `t_piece_demande_retrait`) |
-| Interrupteur global | `GET`/`PUT /api/parametres/actualites-actives` — à `false`, `/mes-actualites` renvoie une liste **vide** pour tout le monde |
-| Contenu | **Markdown** stocké tel quel. **Aucun HTML** n'est accepté ni renvoyé |
-
-**Deux règles à ne pas perdre de vue :**
-
-- **Aucun profil ciblé ⇒ visible de personne.** Jamais « tous » par défaut : un oubli de saisie
-  diffuserait sinon l'annonce à toute l'administration.
-- **L'expiration bascule le statut en `ARCHIVE`** (tâche planifiée ou calcul à la lecture, au choix),
-  afin que l'onglet « Historique » se remplisse sans geste manuel.
-
-**Pourquoi markdown et pas HTML** : le front rend le contenu en construisant des nœuds typés, sans
-jamais utiliser `innerHTML`. Accepter du HTML éditable rouvrirait la surface XSS fermée par l'audit
-des 16-17/08 — un compte administrateur compromis suffirait à exécuter du script dans l'origine de
-l'application.
-
-**Pourquoi 10 Mo et non « sans limite »** (la demande initiale disait sans limite) : Spring plafonne
-à 1 Mo par défaut, et une photo de plusieurs dizaines de Mo saturerait la mémoire tout en ralentissant
-l'ouverture du modal pour **tous** les profils ciblés, à **chaque** connexion.
-`spring.servlet.multipart.max-file-size` et `max-request-size` sont donc à relever à 10 Mo.
-
-**État du front** : livré et poussé (`9faaa14`) — modal d'ouverture de session, écran
-d'administration complet, historique, interrupteur. Il est **déployable dès maintenant** : l'appel
-`/mes-actualites` porte `skipErrorToast`, donc un endpoint absent n'affiche aucune erreur et aucun
-modal. Il se branchera sans changement de code si le contrat est respecté.
-
-**Trois questions ouvertes :**
-
-1. Ordre d'affichage quand plusieurs actualités sont actives — `datePublication` décroissante, ou un
-   champ d'ordre explicite ?
-2. Une pagination est-elle utile sur `GET /api/actualites` (vue Administrateur) ?
-3. Les créations, activations et archivages entrent-ils dans `t_audit_log` ? (Souhaitable : une
-   annonce est un acte de communication institutionnelle.)
-
----
-
-## 2. Sortir la génération du PDF du chemin de la signature
+*(seul point fonctionnel encore ouvert — inchangé depuis la version initiale de ce document)*
 
 ### Constat
 
@@ -146,3 +110,63 @@ clôturante **et** `documentDisponible` doit indiquer qu'un modèle existe.
 ⚠️ Cela **ne raccourcit pas l'attente d'une seconde** : c'est un pansement d'ergonomie, pour éviter
 qu'un écran figé plusieurs secondes ne se lise comme une panne et n'invite à recliquer. La correction
 de fond reste entièrement côté serveur.
+
+---
+
+## 0. ✅ CLOS — lettre de demande de retrait (19/08)
+
+Le travail du 17/08 était resté hors de git (entité et repository non suivis compris). **Traité** :
+commit `0a73fde`, 8 fichiers, +409/−37 ; arbre propre à ce moment-là, suite backend 439/439, serveur
+relancé, table `t_piece_demande_retrait` créée (PK identity, `UNIQUE` sur `ID_DEMANDE_RETRAIT`,
+`bytea` + SHA-256).
+
+**Vérifié côté front après relance** : la lettre déposée le 18/08 a survécu — demande #34,
+`lettre-de-retrait-signee.pdf`, 133 Ko, `GET /{id}/document` → **200 · application/pdf · 136 195
+octets**. Les demandes antérieures à la règle (#26, #27, #28) renvoient `nomFichier: null` et
+s'affichent « — » : la rétro-compatibilité tient. Aucune adaptation du front n'était nécessaire, le
+contrat multipart y étant branché depuis le 17/08.
+
+---
+
+## 1. ✅ CLOS — API des actualités : livrée et recettée (19/08)
+
+Contrat conforme à `frontendprs2/docs/spec-actualites.md`. **Sous réserve du point A : ce code n'est
+pas encore versé dans git.**
+
+### Recette de bout en bout, par l'interface, sur l'API réelle
+
+| Étape | Résultat |
+|---|---|
+| Création d'une actualité (Administrateur) | statut **forcé `INACTIF`** par le serveur ✅ |
+| Dépôt d'une image JPEG | acceptée, métadonnées renvoyées ✅ |
+| Activation | statut `ACTIF` ✅ |
+| Connexion d'une PRMP ciblée | **modal affiché** : markdown rendu (sous-titre, 3 puces, gras, citation) + image chargée ✅ |
+| Fermeture (✕, Échap, clic extérieur, bouton) | ✅ |
+
+**Ciblage — la garantie principale.** Les profils non ciblés ne reçoivent **rien** : Membre, Chef de
+commission et Administrateur obtiennent **0 actualité** de `/mes-actualites` (filtrage serveur, pas
+un masquage d'écran). La PRMP ciblée en reçoit 1.
+
+**Interrupteur global.** Basculé à `false` : la PRMP ciblée reçoit **0 actualité**, aucun modal.
+Rétabli ensuite. Le comportement « ligne absente = actif » est confirmé (`{"actif":true}` sans ligne
+en base).
+
+### Précisions apportées par le backend, à conserver
+
+- **Archivage automatique à l'expiration** *au fil des lectures* (pas de tâche planifiée), avec
+  `imArchiveur` nul pour marquer l'origine système.
+- **HTML rejeté dès la saisie** (400), tout en laissant passer les usages markdown légitimes de
+  « < » (autolien, comparaison).
+- **Tri** : date de publication effective décroissante.
+- Une actualité `ARCHIVE` n'est **plus modifiable** (409) — le front ne propose d'ailleurs que
+  « Consulter ».
+- Les trois questions ouvertes ont toutes reçu réponse : tri par `datePublication` décroissante,
+  pagination disponible via `?page=&size=`, et écritures journalisées dans `t_audit_log`.
+
+### Un écart corrigé côté front
+
+L'écran d'administration proposait le profil sous le nom `PUBLICATION` ; le nom d'enum attendu est
+**`CHARGE_PUBLICATION`**. Cocher « Chargé de publication » aurait échoué en 400. Corrigé par
+`b108ec8`, avec la liste et `profilsCibles` désormais typés `Role` : la faute devient une erreur de
+compilation plutôt qu'un refus découvert à l'usage. `ADMINISTRATEUR` a été ajouté à la liste, le
+contrat l'acceptant.
