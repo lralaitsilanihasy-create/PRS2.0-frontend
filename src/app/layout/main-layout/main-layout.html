@@ -210,3 +210,9 @@
 @if (dossierNotification(); as d) {
   <app-dossier-consultation [dossier]="d" (closed)="dossierNotification.set(null)" />
 }
+
+<!-- Actualités de l'ouverture de session (spec 2026-08-18) — même niveau d'empilement que la
+     consultation. La liste arrive déjà filtrée par le serveur : si elle est vide, rien ne s'affiche. -->
+@if (actualites().length) {
+  <app-actualites-modal [actualites]="actualites()" (ferme)="actualites.set([])" />
+}

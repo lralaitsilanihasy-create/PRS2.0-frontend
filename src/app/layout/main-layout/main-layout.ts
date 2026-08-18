@@ -18,6 +18,9 @@ import {
 } from '../../services';
 import { NotificationCenter } from '../notification-center/notification-center';
 import { DossierConsultation } from '../../features/circuit/dossier-consultation';
+import { ActualitesModal } from '../../shared/actualites/actualites-modal';
+import { Actualite } from '../../models/actualite.model';
+import { ActualiteService } from '../../services/actualite.services';
 import { Dossier, Role } from '../../models';
 
 /** Entrée de menu du Vérificateur portant le badge du nombre de dossiers restant à traiter. */
@@ -30,7 +33,7 @@ const CHEMIN_A_VERIFIER = '/verificateur/a-verifier';
 @Component({
   selector: 'app-main-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationCenter, DossierConsultation],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationCenter, DossierConsultation, ActualitesModal],
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.scss',
   host: { '[attr.data-role]': 'role()' },
@@ -45,6 +48,7 @@ export class MainLayout {
   private readonly kpiService = inject(KpiService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly vacanceStore = inject(VacanceStore);
+  private readonly actualiteService = inject(ActualiteService);
   /** Vacance du poste PRMP (spec « Mandats PRMP ») — bannière + standby des actions de traitement. */
   readonly vacance = this.vacanceStore.vacance;
   private readonly toast = inject(ToastService);
@@ -108,6 +112,12 @@ export class MainLayout {
   readonly sidebarOpen = signal(false);
   /** Dossier ouvert depuis une notification — la modale est rendue par le layout (hors topbar, cf. template). */
   readonly dossierNotification = signal<Dossier | null>(null);
+  /**
+   * Actualités du profil connecté (spec 2026-08-18). Demandées UNE fois, à la construction du
+   * layout — c'est-à-dire à l'ouverture de session, jamais à chaque navigation. La fermeture vide
+   * la liste : l'annonce ne réapparaît qu'à la prochaine connexion.
+   */
+  readonly actualites = signal<Actualite[]>([]);
 
   // ── Recherche « aller à un dossier par référence » (topbar, PRMP/UGPM) ──
   /** Saisie de la recherche par référence de dossier. */
@@ -223,6 +233,15 @@ export class MainLayout {
         takeUntilDestroyed(),
       )
       .subscribe(() => this.vacanceStore.verifier());
+
+    // Actualités de l'ouverture de session : le serveur renvoie déjà la liste filtrée (profil,
+    // statut, fenêtre de dates, interrupteur global) — vide si la fonctionnalité est coupée.
+    // L'échec est silencieux : une annonce manquante ne doit pas gêner l'entrée dans l'application,
+    // et l'endpoint peut ne pas encore être déployé.
+    this.actualiteService.mesActualites().subscribe({
+      next: (rows) => this.actualites.set(rows ?? []),
+      error: () => this.actualites.set([]),
+    });
 
     const ref = this.auth.ref();
     if (!ref) {

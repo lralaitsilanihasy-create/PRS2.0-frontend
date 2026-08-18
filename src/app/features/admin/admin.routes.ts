@@ -78,6 +78,9 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'comptes/prmp-pieces', loadComponent: () => import('./prmp-pieces-admin').then((m) => m.PrmpPiecesAdmin) },
   { path: 'comptes/ugpm-pieces', loadComponent: () => import('./ugpm-pieces-admin').then((m) => m.UgpmPiecesAdmin) },
 
+  // Actualités affichées à l'ouverture de session (spec 2026-08-18) : CRUD, ciblage par profil,
+  // images JPEG, interrupteur global et historique des archivées.
+  { path: 'actualites', loadComponent: () => import('./actualites-admin').then((m) => m.ActualitesAdmin) },
   { path: 'inscriptions', loadComponent: () => import('./inscriptions-admin').then((m) => m.InscriptionsAdmin) },
   { path: 'rattachements', loadComponent: () => import('./rattachements-admin').then((m) => m.RattachementsAdmin) },
   { path: 'audit', loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage), data: { crud: auditConfig } },
