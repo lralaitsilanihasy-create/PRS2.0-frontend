@@ -111,8 +111,15 @@ import { MarkdownVue } from './markdown-vue';
       &:focus-visible { outline: 2px solid var(--n-800); outline-offset: 2px; }
     }
 
-    .act__visuel { overflow: hidden; background: var(--n-100); }
-    .act__visuel img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    /* L'image respire au lieu de toucher les bords du panneau (demande user). Le fond reste blanc :
+       la marge appartient au modal, pas à une bande colorée derrière la photo. */
+    .act__visuel {
+      display: flex;
+      padding: 1.5rem;
+      background: #fff;
+      overflow: hidden;
+    }
+    .act__visuel img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 2px; }
 
     .act__contenu {
       display: flex;
@@ -185,7 +192,7 @@ import { MarkdownVue } from './markdown-vue';
     /* Sous 52rem, l'image passe au-dessus du texte plutôt que de comprimer les deux colonnes. */
     @media (max-width: 52rem) {
       .act--illustre { grid-template-columns: 1fr; }
-      .act__visuel { max-height: 14rem; }
+      .act__visuel { max-height: 15rem; padding: 1.25rem 1.25rem 0; }
       .act__contenu { padding: 2.2rem 1.5rem 1.8rem; }
     }
   `,
