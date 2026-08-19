@@ -119,22 +119,23 @@ de fond reste entièrement côté serveur.
 **Besoin** : afficher, dans le détail d'un plan de passation, **l'UGPM qui a créé le dossier** —
 l'onglet « Entité contractante » réunit désormais entité, PRMP et unités rattachées.
 
-**L'information existe déjà en base** :  (« login de l'acteur ayant créé le
-dossier — PRMP ou UGPM ») et , tous deux portés par l'entité . Mais
-** ne les expose pas** : le front ne reçoit que 11 champs (idDossier, idTypeDossier,
+**L'information existe déjà en base** : `t_dossier.CREE_PAR` (« login de l'acteur ayant créé le
+dossier — PRMP ou UGPM ») et `SOUMIS_PAR`, tous deux portés par l'entité `Dossier`. Mais
+**`DossierDto` ne les expose pas** : le front ne reçoit que 11 champs (idDossier, idTypeDossier,
 idSousType, idDossierParent, refeDossier, dateRef, statut, idLocalite, idPrmp, idMandatAttrib,
 idEntiteContract). Vérifié le 19/08 sur l'API réelle.
 
-**Demande** : ajouter  et  à  (lecture seule, posés serveur).
+**Demande** : ajouter `creePar` et `soumisPar` à `DossierDto` (lecture seule, posés serveur).
 
 **Deux précisions utiles** :
 
-1.  contient un **login**, pas un identifiant d'UGPM. Le front ne peut le traduire en
-   identité que s'il peut lire les UGPM — or  est réservé à l'ADMINISTRATEUR
+1. `CREE_PAR` contient un **login**, pas un identifiant d'UGPM. Le front ne peut le traduire en
+   identité que s'il peut lire les UGPM — or `GET /api/ugpms/**` est réservé à l'ADMINISTRATEUR
    (403 pour la PRMP et les contrôleurs, mesuré). Sans autre changement, une PRMP verrait donc
    « Créé par UGPM001 » plutôt que le nom de l'agent.
-2. D'où une demande complémentaire, au choix : soit **ouvrir**    à la PRMP concernée (elle consulte ses propres unités), soit joindre au DTO un libellé lisible
-   (). La première option a un autre effet utile : elle supprime le 403 que le front
+2. D'où une demande complémentaire, au choix : soit **ouvrir** `GET /api/ugpms/par-tutelle/{idPrmp}`
+   à la PRMP concernée (elle consulte ses propres unités), soit joindre au DTO un libellé lisible
+   (`creeParNom`). La première option a un autre effet utile : elle supprime le 403 que le front
    doit aujourd'hui rendre silencieux à chaque ouverture du modal.
 
 **État du front** : prêt. Le champ est déclaré optionnel et le bloc « Saisie du dossier » est
