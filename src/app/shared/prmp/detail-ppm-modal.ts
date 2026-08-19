@@ -210,13 +210,24 @@ import { PpmFormFactory } from './ppm-form-factory';
                   <div class="dpm-fiche">
                     <div class="dpm-fiche__titre">✍ Saisie du dossier</div>
                     <dl class="dpm-fiche__liste">
-                      <div><dt>Créé par</dt><dd>{{ a.libelle }}</dd></div>
+                      <!-- ⚠️ Le cas courant est que la PRMP saisisse ET soumette : répéter son nom
+                           puis deux fois le même compte n'apprenait rien. Les deux actes sont donc
+                           réunis sur une ligne quand c'est le même compte, et séparés dès qu'ils
+                           diffèrent — cas qui, lui, mérite l'attention (saisie par une UGPM, puis
+                           soumission par sa PRMP de tutelle). -->
+                      @if (a.memeActeur) {
+                        <div><dt>Créé et soumis par</dt><dd>{{ a.libelle }}</dd></div>
+                      } @else {
+                        <div><dt>Créé par</dt><dd>{{ a.libelle }}</dd></div>
+                      }
                       <!-- Le compte n'est rappelé que s'il apporte quelque chose : quand le nom n'a
                            pas pu être résolu, le libellé EST déjà le login — inutile de le répéter. -->
                       @if (a.login && a.libelle !== a.login) { <div><dt>Compte</dt><dd class="cnm-mono">{{ a.login }}</dd></div> }
-                      @if (a.soumisPar; as s) {
+                      @if (!a.memeActeur && a.soumisPar) {
                         <div><dt>Soumis par</dt><dd>{{ a.soumisParLibelle }}</dd></div>
-                        @if (a.soumisParLibelle !== s) { <div><dt>Compte</dt><dd class="cnm-mono">{{ s }}</dd></div> }
+                        @if (a.soumisParLibelle !== a.soumisPar) {
+                          <div><dt>Compte</dt><dd class="cnm-mono">{{ a.soumisPar }}</dd></div>
+                        }
                       }
                     </dl>
                   </div>
@@ -830,6 +841,8 @@ export class DetailPpmModal implements OnInit {
       login,
       soumisPar,
       soumisParLibelle: soumisPar ? d.soumisParNom || soumisPar : undefined,
+      /** Saisie et soumission par le même compte — le cas courant : une seule ligne suffit. */
+      memeActeur: !!soumisPar && soumisPar === login,
     };
   });
   /** Onglet courant — le plan de passation est le motif d'ouverture le plus fréquent du modal. */
