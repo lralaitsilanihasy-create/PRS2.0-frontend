@@ -28,6 +28,16 @@ export interface Dossier {
   idPrmp?: string;
   /** Mandat d'attribution (lecture seule, figé à la création ; null si la PRMP n'a pas de mandat déclaré). */
   idMandatAttrib?: number | null;
+  /**
+   * ⚠️ Traçabilité — **login** de l'acteur ayant créé le dossier (PRMP **ou UGPM** agissant sous sa
+   * tutelle). La colonne `t_dossier.CREE_PAR` existe côté serveur, mais **n'est pas encore exposée
+   * dans `DossierDto`** (vérifié le 2026-08-19 : le DTO ne renvoie que 11 champs, sans elle).
+   * Le champ est donc optionnel et l'affichage conditionnel : il apparaîtra dès la livraison
+   * backend, sans changement de code ici. Demande consignée dans `docs/demande-backend-2026-08-19.md`.
+   */
+  creePar?: string;
+  /** Idem — login de l'acteur ayant **soumis** le dossier (PRMP uniquement). Même réserve. */
+  soumisPar?: string;
 }
 
 /**

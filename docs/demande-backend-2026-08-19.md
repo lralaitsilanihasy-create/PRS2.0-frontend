@@ -8,7 +8,8 @@
 > | | Sujet | État |
 > |---|---|---|
 > | **A** | API des actualités **non commitée** (22 fichiers) | 🔴 **urgent** |
-> | **B** | Génération du PDF de PV hors du chemin de la requête | 🟠 ouvert |
+> | **B** | Génération du PDF de PV hors du chemin de la requête | ✅ livré (`cd955e0`), recetté : 56 ms |
+> | **C** | Exposer `creePar` / `soumisPar` dans `DossierDto` | 🟠 ouvert |
 > | 0 | Lettre de demande de retrait | ✅ clos (`0a73fde`) |
 > | 1 | API des actualités : conception et livraison | ✅ clos, recetté |
 
@@ -110,6 +111,36 @@ clôturante **et** `documentDisponible` doit indiquer qu'un modèle existe.
 ⚠️ Cela **ne raccourcit pas l'attente d'une seconde** : c'est un pansement d'ergonomie, pour éviter
 qu'un écran figé plusieurs secondes ne se lise comme une panne et n'invite à recliquer. La correction
 de fond reste entièrement côté serveur.
+
+---
+
+## C. 🟠 Exposer l'auteur de la saisie d'un dossier (demande du 19/08, soir)
+
+**Besoin** : afficher, dans le détail d'un plan de passation, **l'UGPM qui a créé le dossier** —
+l'onglet « Entité contractante » réunit désormais entité, PRMP et unités rattachées.
+
+**L'information existe déjà en base** :  (« login de l'acteur ayant créé le
+dossier — PRMP ou UGPM ») et , tous deux portés par l'entité . Mais
+** ne les expose pas** : le front ne reçoit que 11 champs (idDossier, idTypeDossier,
+idSousType, idDossierParent, refeDossier, dateRef, statut, idLocalite, idPrmp, idMandatAttrib,
+idEntiteContract). Vérifié le 19/08 sur l'API réelle.
+
+**Demande** : ajouter  et  à  (lecture seule, posés serveur).
+
+**Deux précisions utiles** :
+
+1.  contient un **login**, pas un identifiant d'UGPM. Le front ne peut le traduire en
+   identité que s'il peut lire les UGPM — or  est réservé à l'ADMINISTRATEUR
+   (403 pour la PRMP et les contrôleurs, mesuré). Sans autre changement, une PRMP verrait donc
+   « Créé par UGPM001 » plutôt que le nom de l'agent.
+2. D'où une demande complémentaire, au choix : soit **ouvrir**    à la PRMP concernée (elle consulte ses propres unités), soit joindre au DTO un libellé lisible
+   (). La première option a un autre effet utile : elle supprime le 403 que le front
+   doit aujourd'hui rendre silencieux à chaque ouverture du modal.
+
+**État du front** : prêt. Le champ est déclaré optionnel et le bloc « Saisie du dossier » est
+conditionnel — masqué aujourd'hui, il s'affichera dès la livraison sans changement de code. Vérifié
+dans les deux cas (champ absent → 2 fiches, aucun bloc, aucune erreur ; champ simulé → bloc présent
+avec « Créé par » et « Soumis par »).
 
 ---
 

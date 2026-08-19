@@ -200,6 +200,24 @@ import { PpmFormFactory } from './ppm-form-factory';
                   }
                 </div>
 
+                <!-- ⚠️ Auteur du dossier (demande user 2026-08-19). La colonne CREE_PAR existe en
+                     base — « login de l'acteur ayant créé le dossier (PRMP ou UGPM) » — mais n'est
+                     pas encore renvoyée par DossierDto : le bloc reste donc masqué jusqu'à la
+                     livraison backend, et s'affichera alors sans autre changement. Si l'UGPM est
+                     identifiable (ADMINISTRATEUR seul, cf. 403 sur /api/ugpms), son identité
+                     complète est montrée ; sinon le login, qui reste une information utile. -->
+                @if (auteurDossier(); as a) {
+                  <div class="dpm-fiche">
+                    <div class="dpm-fiche__titre">✍ Saisie du dossier</div>
+                    <dl class="dpm-fiche__liste">
+                      <div><dt>Créé par</dt><dd>{{ a.libelle }}</dd></div>
+                      @if (a.login) { <div><dt>Compte</dt><dd class="cnm-mono">{{ a.login }}</dd></div> }
+                      @if (a.qualite) { <div><dt>Qualité</dt><dd>{{ a.qualite }}</dd></div> }
+                      @if (dossier()?.soumisPar; as s) { <div><dt>Soumis par</dt><dd class="cnm-mono">{{ s }}</dd></div> }
+                    </dl>
+                  </div>
+                }
+
                 <!-- UGPM : la lecture est réservée à l'ADMINISTRATEUR (403 ailleurs) — le bloc n'est
                      donc affiché que lorsque les données sont réellement accessibles, plutôt que de
                      montrer une section vide sans explication. -->
@@ -745,6 +763,8 @@ export class DetailPpmModal implements OnInit {
   /** Animation de fermeture en cours : retarde l'émission de `fermer` le temps du fondu sortant. */
   readonly closing = signal(false);
   readonly ppm = signal<Ppm | null>(null);
+  /** Dossier porteur du PPM — conservé pour la traçabilité de saisie (créé par / soumis par). */
+  readonly dossier = signal<Dossier | null>(null);
   /** Entité contractante du dossier (fixe) — sert à interdire un réimport d'un PDF d'une autre entité + affichage. */
   readonly dossierEntite = signal<number | null>(null);
   /** Versionnement : idDetail → type de changement vs la version précédente (surlignage du tableau). */
@@ -775,6 +795,31 @@ export class DetailPpmModal implements OnInit {
   readonly ugpmsRattachees = computed(() => {
     const id = this.ppm()?.idPrmp;
     return id ? this.ugpms().filter((u) => u.idPrmpTutelle === id) : [];
+  });
+  /**
+   * Auteur de la saisie : l'UGPM (ou la PRMP) qui a créé le dossier. `creePar` est un **login** ;
+   * on tente de le rattacher à une UGPM connue pour afficher une identité lisible plutôt qu'un
+   * identifiant technique — la correspondance n'est possible que si les UGPM sont lisibles.
+   * `null` tant que le backend n'expose pas le champ : le bloc reste alors masqué.
+   */
+  readonly auteurDossier = computed<{ libelle: string; login?: string; qualite?: string } | null>(() => {
+    const login = this.dossier()?.creePar;
+    if (!login) {
+      return null;
+    }
+    const ugpm = this.ugpms().find((u) => u.login === login || u.idUgpm === login);
+    if (ugpm) {
+      return {
+        libelle: `${ugpm.nomUgpm} ${ugpm.prenomsUgpm}`.trim() || ugpm.idUgpm,
+        login,
+        qualite: ugpm.libelle ? `UGPM · ${ugpm.libelle}` : 'UGPM',
+      };
+    }
+    const prmp = this.prmpDetail();
+    if (prmp && (prmp.idPrmp === login || prmp.emailPrmp === login)) {
+      return { libelle: `${prmp.nomPrmp} ${prmp.prenomsPrmp}`.trim(), login, qualite: 'PRMP' };
+    }
+    return { libelle: login };
   });
   /** Onglet courant — le plan de passation est le motif d'ouverture le plus fréquent du modal. */
   readonly onglet = signal<'entite' | 'ppm' | 'pieces'>('ppm');
@@ -988,6 +1033,7 @@ export class DetailPpmModal implements OnInit {
         this.soaMap.set(new Map(soas.map((s) => [s.soaCode, s.libelle ?? ''])));
         this.capms.set([...capms].sort((a, b) => a.ordre - b.ordre));
         this.ppm.set(ppm);
+        this.dossier.set(dossier);
         this.dossierEntite.set(dossier?.idEntiteContract ?? null);
         this.chargerChangements(dossier);
         const mine = marches.filter((m) => m.idPpm === this.idPpm);
