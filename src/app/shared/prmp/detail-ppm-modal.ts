@@ -4,6 +4,7 @@ import { Output } from '@angular/core';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
+import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../a11y/modale.directive';
@@ -200,9 +201,9 @@ import { PpmFormFactory } from './ppm-form-factory';
                   }
                 </div>
 
-                <!-- ⚠️ Auteur du dossier — livré par le backend le 2026-08-19 (b264cce) : `creePar`
-                     et `soumisPar` (logins) sont accompagnés des noms lisibles `creeParNom` /
-                     `soumisParNom`, résolus SERVEUR (le login n'est pas l'identifiant de l'acteur).
+                <!-- ⚠️ Auteur du dossier — livré par le backend le 2026-08-19 (b264cce) : creePar
+                     et soumisPar (logins) sont accompagnés des noms lisibles creeParNom /
+                     soumisParNom, résolus SERVEUR (le login n'est pas l'identifiant de l'acteur).
                      Plus aucun rapprochement local avec la liste des UGPM : on affiche le nom quand
                      il est résolu, le login sinon — toujours quelque chose d'utile. -->
                 @if (auteurDossier(); as a) {
@@ -219,7 +220,7 @@ import { PpmFormFactory } from './ppm-form-factory';
                   </div>
                 }
 
-                <!-- UGPM rattachées : lues via `GET /api/ugpms/par-tutelle/{idPrmp}`, ouvert à la
+                <!-- UGPM rattachées : lues via GET /api/ugpms/par-tutelle/{idPrmp}, ouvert à la
                      PRMP concernée depuis b264cce. Le bloc reste conditionnel car les contrôleurs,
                      eux, n'ont pas accès au répertoire des UGPM (l'appel n'est alors pas émis). -->
                 @if (ugpmsRattachees().length) {
@@ -756,6 +757,8 @@ export class DetailPpmModal implements OnInit {
   private readonly entiteService = inject(EntiteContractService);
   private readonly prmpService = inject(PrmpService);
   private readonly ugpmService = inject(UgpmService);
+  /** Profil courant : décide si la route « UGPM par tutelle » peut aboutir (pas d'appel voué au 403). */
+  private readonly auth = inject(AuthService);
   private readonly typePieceService = inject(TypePieceJointeService);
   private readonly saisieService = inject(SaisieService);
   private readonly factory = inject(PpmFormFactory);
@@ -792,42 +795,40 @@ export class DetailPpmModal implements OnInit {
     const id = this.ppm()?.idPrmp;
     return id ? this.prmps().find((p) => p.idPrmp === id) ?? null : null;
   });
-  /** UGPM sous la tutelle de cette PRMP — vide hors ADMINISTRATEUR (lecture réservée, 403). */
+  /**
+   * UGPM sous la tutelle de la PRMP du plan. Chargées par `GET /api/ugpms/par-tutelle/{idPrmp}`,
+   * ouvert à la PRMP concernée depuis la livraison backend `b264cce` — vide pour les contrôleurs,
+   * qui n'ont pas accès au répertoire (l'appel n'est alors pas émis, cf. `chargerUgpmsRattachees`).
+   */
   readonly ugpmsRattachees = computed(() => {
     const id = this.ppm()?.idPrmp;
     return id ? this.ugpms().filter((u) => u.idPrmpTutelle === id) : [];
   });
   /**
-   * Auteur de la saisie : l'UGPM (ou la PRMP) qui a créé le dossier. `creePar` est un **login** ;
-   * on tente de le rattacher à une UGPM connue pour afficher une identité lisible plutôt qu'un
-   * identifiant technique — la correspondance n'est possible que si les UGPM sont lisibles.
-   * `null` tant que le backend n'expose pas le champ : le bloc reste alors masqué.
+   * Auteur de la saisie du dossier. Le serveur expose à la fois le **login** (`creePar` /
+   * `soumisPar`) et le **nom lisible** (`creeParNom` / `soumisParNom`) : lui seul peut faire la
+   * jointure login → PRMP / UGPM. On affiche donc le nom dès qu'il est résolu, et le login sinon
+   * (compte supprimé) — sans jamais dépendre de la lecture du répertoire des UGPM.
+   * `null` si le dossier ne porte aucune trace de saisie : le bloc reste alors masqué.
    */
-  readonly auteurDossier = computed<{ libelle: string; login?: string; qualite?: string } | null>(() => {
+  readonly auteurDossier = computed<{
+    libelle: string;
+    login?: string;
+    soumisPar?: string;
+    soumisParLibelle?: string;
+  } | null>(() => {
     const d = this.dossier();
     const login = d?.creePar;
     if (!login) {
       return null;
     }
-    // ⚠️ Depuis le 2026-08-19, le serveur résout lui-même le login en nom (`creeParNom`) — lui seul
-    // peut faire la jointure vers la PRMP / l'UGPM. On le préfère : sans lui, une PRMP ne verrait
-    // qu'un identifiant technique, la lecture des UGPM lui étant refusée (403).
-    if (d?.creeParNom) {
-      return { libelle: d.creeParNom, login };
-    }
-    const ugpm = this.ugpms().find((u) => u.login === login || u.idUgpm === login);
-    if (ugpm) {
-      return {
-        libelle: `${ugpm.nomUgpm} ${ugpm.prenomsUgpm}`.trim() || ugpm.idUgpm,
-        login,
-        qualite: ugpm.libelle ? `UGPM · ${ugpm.libelle}` : 'UGPM',
-      };
-    }
-    const prmp = this.prmpDetail();
-    if (prmp && (prmp.idPrmp === login || prmp.emailPrmp === login)) {
-      return { libelle: `${prmp.nomPrmp} ${prmp.prenomsPrmp}`.trim(), login, qualite: 'PRMP' };
-    }
-    return { libelle: login };
+    const soumisPar = d.soumisPar;
+    return {
+      libelle: d.creeParNom || login,
+      login,
+      soumisPar,
+      soumisParLibelle: soumisPar ? d.soumisParNom || soumisPar : undefined,
+    };
   });
   /** Onglet courant — le plan de passation est le motif d'ouverture le plus fréquent du modal. */
   readonly onglet = signal<'entite' | 'ppm' | 'pieces'>('ppm');
@@ -1021,18 +1022,20 @@ export class DetailPpmModal implements OnInit {
       capms: this.capmService.getAll(),
       // ⚠️ Onglet « Entité contractante » (2026-08-19) : chargé dans LA MÊME vague que le reste —
       // ouvrir l'onglet ne doit déclencher aucun appel ni spinner tardif.
-      // `prmps` et `ugpms` échouent en silence : la lecture des UGPM est réservée à
-      // l'ADMINISTRATEUR (403 pour la PRMP et les contrôleurs), le bloc est alors simplement absent.
+      // `prmps` échoue en silence (lecture réservée selon le profil) : le bloc est alors absent.
+      // Les UGPM ne sont PLUS lues ici : la liste complète est réservée à l'ADMINISTRATEUR et
+      // provoquait un 403 à chaque ouverture du modal. On interroge désormais la route ciblée
+      // `par-tutelle/{idPrmp}` — mais elle exige l'identifiant de la PRMP, connu seulement une fois
+      // le plan chargé : voir `chargerUgpmsRattachees`, déclenché juste après.
       entites: this.entiteService.listeSilencieuse().pipe(catchError(() => of([] as EntiteContract[]))),
       localiteMap: this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']),
       prmps: this.prmpService.listeSilencieuse().pipe(catchError(() => of([] as Prmp[]))),
-      ugpms: this.ugpmService.listeSilencieuse().pipe(catchError(() => of([] as Ugpm[]))),
     }).subscribe({
-      next: ({ ppm, dossier, marches, pieces, benefs, previsions, lots, modeMap, natureMap, entiteMap, compteMap, soas, capms, entites, localiteMap, prmps, ugpms }) => {
+      next: ({ ppm, dossier, marches, pieces, benefs, previsions, lots, modeMap, natureMap, entiteMap, compteMap, soas, capms, entites, localiteMap, prmps }) => {
         this.entites.set(entites);
         this.localiteMap.set(localiteMap);
         this.prmps.set(prmps);
-        this.ugpms.set(ugpms);
+        this.chargerUgpmsRattachees(ppm?.idPrmp);
         this.modeMap.set(modeMap);
         this.natureMap.set(natureMap);
         this.entiteMap.set(entiteMap);
@@ -1055,6 +1058,30 @@ export class DetailPpmModal implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false), // 403/404 → toast centralisé
+    });
+  }
+
+  /**
+   * Unités de gestion rattachées à la PRMP du plan — `GET /api/ugpms/par-tutelle/{idPrmp}`.
+   *
+   * ⚠️ Fin du 403 silencieux (2026-08-19). L'écran lisait auparavant la liste COMPLÈTE des UGPM,
+   * réservée à l'ADMINISTRATEUR : chaque ouverture du modal par une PRMP déclenchait un 403 qu'il
+   * fallait taire. Le backend (`b264cce`) ouvre la route ciblée à la **PRMP concernée**, et on ne
+   * l'appelle que lorsqu'elle peut aboutir — Administrateur, ou titulaire de cette tutelle. Pour
+   * les contrôleurs, **aucune requête n'est émise** : le refus n'est plus masqué, il n'a plus lieu.
+   * Appelé après le chargement principal (l'identifiant de la PRMP vient du plan) ; l'affichage du
+   * bloc ne bloque pas le rendu du modal.
+   */
+  private chargerUgpmsRattachees(idPrmp?: string): void {
+    this.ugpms.set([]);
+    const role = this.auth.role();
+    const sienne = this.auth.ref() === idPrmp && (role === 'PRMP' || role === 'UGPM');
+    if (!idPrmp || !(role === 'ADMINISTRATEUR' || sienne)) {
+      return;
+    }
+    this.ugpmService.parTutelle(idPrmp).subscribe({
+      next: (rows) => this.ugpms.set(rows),
+      error: () => this.ugpms.set([]), // filet : le bloc reste simplement absent
     });
   }
 
