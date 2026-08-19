@@ -200,27 +200,28 @@ import { PpmFormFactory } from './ppm-form-factory';
                   }
                 </div>
 
-                <!-- ⚠️ Auteur du dossier (demande user 2026-08-19). La colonne CREE_PAR existe en
-                     base — « login de l'acteur ayant créé le dossier (PRMP ou UGPM) » — mais n'est
-                     pas encore renvoyée par DossierDto : le bloc reste donc masqué jusqu'à la
-                     livraison backend, et s'affichera alors sans autre changement. Si l'UGPM est
-                     identifiable (ADMINISTRATEUR seul, cf. 403 sur /api/ugpms), son identité
-                     complète est montrée ; sinon le login, qui reste une information utile. -->
+                <!-- ⚠️ Auteur du dossier — livré par le backend le 2026-08-19 (b264cce) : `creePar`
+                     et `soumisPar` (logins) sont accompagnés des noms lisibles `creeParNom` /
+                     `soumisParNom`, résolus SERVEUR (le login n'est pas l'identifiant de l'acteur).
+                     Plus aucun rapprochement local avec la liste des UGPM : on affiche le nom quand
+                     il est résolu, le login sinon — toujours quelque chose d'utile. -->
                 @if (auteurDossier(); as a) {
                   <div class="dpm-fiche">
                     <div class="dpm-fiche__titre">✍ Saisie du dossier</div>
                     <dl class="dpm-fiche__liste">
                       <div><dt>Créé par</dt><dd>{{ a.libelle }}</dd></div>
                       @if (a.login) { <div><dt>Compte</dt><dd class="cnm-mono">{{ a.login }}</dd></div> }
-                      @if (a.qualite) { <div><dt>Qualité</dt><dd>{{ a.qualite }}</dd></div> }
-                      @if (dossier()?.soumisPar; as s) { <div><dt>Soumis par</dt><dd class="cnm-mono">{{ s }}</dd></div> }
+                      @if (a.soumisPar; as s) {
+                        <div><dt>Soumis par</dt><dd>{{ a.soumisParLibelle }}</dd></div>
+                        @if (a.soumisParLibelle !== s) { <div><dt>Compte</dt><dd class="cnm-mono">{{ s }}</dd></div> }
+                      }
                     </dl>
                   </div>
                 }
 
-                <!-- UGPM : la lecture est réservée à l'ADMINISTRATEUR (403 ailleurs) — le bloc n'est
-                     donc affiché que lorsque les données sont réellement accessibles, plutôt que de
-                     montrer une section vide sans explication. -->
+                <!-- UGPM rattachées : lues via `GET /api/ugpms/par-tutelle/{idPrmp}`, ouvert à la
+                     PRMP concernée depuis b264cce. Le bloc reste conditionnel car les contrôleurs,
+                     eux, n'ont pas accès au répertoire des UGPM (l'appel n'est alors pas émis). -->
                 @if (ugpmsRattachees().length) {
                   <div class="dpm-fiche">
                     <div class="dpm-fiche__titre">🏢 Unité(s) de gestion rattachée(s)</div>
@@ -803,9 +804,16 @@ export class DetailPpmModal implements OnInit {
    * `null` tant que le backend n'expose pas le champ : le bloc reste alors masqué.
    */
   readonly auteurDossier = computed<{ libelle: string; login?: string; qualite?: string } | null>(() => {
-    const login = this.dossier()?.creePar;
+    const d = this.dossier();
+    const login = d?.creePar;
     if (!login) {
       return null;
+    }
+    // ⚠️ Depuis le 2026-08-19, le serveur résout lui-même le login en nom (`creeParNom`) — lui seul
+    // peut faire la jointure vers la PRMP / l'UGPM. On le préfère : sans lui, une PRMP ne verrait
+    // qu'un identifiant technique, la lecture des UGPM lui étant refusée (403).
+    if (d?.creeParNom) {
+      return { libelle: d.creeParNom, login };
     }
     const ugpm = this.ugpms().find((u) => u.login === login || u.idUgpm === login);
     if (ugpm) {

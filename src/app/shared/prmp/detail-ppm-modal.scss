@@ -504,9 +504,13 @@
   padding: 1rem 1.1rem;
 }
 
+/* Titres des fiches en orange (demande user 2026-08-19) : ils tranchent sur l'indigo des onglets
+   et sur le bleu du reste du modal, ce qui structure la lecture de l'onglet.
+   Nuance choisie pour le contraste : #C2410C donne 5,18:1 sur le fond blanc des fiches, quand
+   l'orange 600 (#EA580C) tombe à 3,56:1 — sous le seuil AA. */
 .dpm-fiche__titre {
   font-weight: 700;
-  color: var(--c-800);
+  color: #C2410C;
   margin-bottom: 0.75rem;
   font-size: var(--text-base);
 }
