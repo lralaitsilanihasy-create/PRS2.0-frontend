@@ -76,8 +76,10 @@ import { DetailPvModal } from './detail-pv-modal';
                             {{ chargementPdf() === pv.idPv ? 'Chargement…' : '📄 Afficher le PV' }}
                           </button>
                         } @else {
+                          <!-- ⚠️ 2026-08-19 — « indisponible » et non « inexistant » : le document est
+                               produit après la signature, donc absent pendant sa fenêtre d'édition. -->
                           <button type="button" class="btn btn-primary btn-sm" disabled
-                            title="Document non disponible pour ce PV">📄 Afficher le PV</button>
+                            title="Document indisponible pour l'instant — s'il vient d'être signé, l'édition est en cours ; rechargez dans un instant.">📄 Afficher le PV</button>
                         }
                       } @else if (estReferenceComplete(pv.refePv || pv.referencePv)) {
                         <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDetailPv(pv)">Voir détails</button>

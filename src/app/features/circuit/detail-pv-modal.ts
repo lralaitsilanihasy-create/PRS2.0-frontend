@@ -194,7 +194,14 @@ import { StatutBadge } from '../../shared/circuit';
         <!-- Pied -->
         <div class="modal-footer modal-footer-spaced">
           @if (pv().documentDisponible === false) {
-            <span class="text-muted text-sm">Aucun PDF officiel : ce PV n'est pas éligible à la génération de document.</span>
+            <!-- ⚠️ 2026-08-19 — depuis que le document est produit APRÈS la signature (hors requête),
+                 « false » couvre DEUX cas indistinguables ici : édition en cours, ou PV sans modèle.
+                 Le message ne peut donc plus affirmer la non-éligibilité — il l'affirmait à tort
+                 pendant toute la fenêtre de génération, juste après la signature. -->
+            <span class="text-muted text-sm">
+              PDF officiel indisponible pour l'instant. S'il vient d'être signé, le document est en
+              cours d'édition : rouvrez cette fenêtre dans un instant.
+            </span>
           } @else {
             <span class="text-muted text-sm">Document officiel signé</span>
             <button type="button" class="btn btn-secondary" [disabled]="chargementPdf()" (click)="afficherPdf()">
