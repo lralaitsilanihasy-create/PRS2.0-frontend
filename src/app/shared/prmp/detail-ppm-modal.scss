@@ -438,49 +438,55 @@
    ════════════════════════════════════════════════════════════════ */
 .dpm-tabs {
   display: flex;
-  gap: 0.25rem;
-  padding: 0 1.5rem;
-  border-bottom: 1px solid var(--n-200);
-  background: var(--n-50);
+  gap: 0.6rem;
+  padding: 1rem 1.5rem 0.9rem;
+  background: #fff;
   flex-wrap: wrap;
 }
 
+/* Onglets en pastilles (modèle fourni par l'utilisateur, 2026-08-19) : l'onglet courant se lit
+   d'un coup d'œil, sans dépendre d'un simple soulignement. */
 .dpm-tab {
   appearance: none;
   border: 0;
-  background: transparent;
-  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  padding: 0.7rem 1.5rem;
   font: inherit;
   font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--n-500);
+  font-weight: 700;
   cursor: pointer;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -1px;
+  background: var(--c-50);
+  /* ⚠️ Contraste : --c-600 (#0284c7) ne donne que 4,10:1 avec du blanc — sous le seuil AA. Le bleu
+     foncé --c-700 (#0369a1) atteint 5,93:1 en pastille active et 5,57:1 en texte sur fond pâle,
+     pour un rendu identique au modèle. */
+  color: var(--c-700);
+  transition: background 140ms var(--ease-out), color 140ms var(--ease-out);
 
-  &:hover { color: var(--c-700); }
-  &:focus-visible { outline: 2px solid var(--c-600); outline-offset: -3px; }
+  &:hover { background: var(--p-100); }
+  &:focus-visible { outline: 2px solid var(--c-700); outline-offset: 2px; }
 }
 
 .dpm-tab--on {
-  color: var(--c-700);
-  border-bottom-color: var(--c-600);
+  background: var(--c-700);
+  color: #fff;
+  box-shadow: 0 2px 6px rgb(3 105 161 / 30%);
+
+  &:hover { background: var(--c-700); }
 }
 
 /* Compteur discret : le nombre de lignes et de pièces reste lisible sans ouvrir l'onglet. */
 .dpm-tab__n {
   display: inline-block;
-  margin-left: 0.35rem;
-  padding: 0.05rem 0.4rem;
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.45rem;
   border-radius: 999px;
-  background: var(--n-200);
-  color: var(--n-700);
+  background: #fff;
+  color: var(--c-700);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 
-.dpm-tab--on .dpm-tab__n { background: var(--c-100); color: var(--c-800); }
-
+.dpm-tab--on .dpm-tab__n { background: rgb(255 255 255 / 25%); color: #fff; }
 /* Fiches d'identité de l'onglet 1 */
 .dpm-fiches {
   display: grid;
