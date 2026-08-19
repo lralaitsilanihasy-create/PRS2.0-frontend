@@ -23,8 +23,12 @@ import { MarkdownVue } from './markdown-vue';
   imports: [ModaleDirective, MarkdownVue],
   template: `
     <div class="modal-backdrop" [class.closing]="closing()" (click)="fermer()">
+      <!-- Mise en page « lettre d'information » (modèle fourni par l'utilisateur, 2026-08-19) :
+           visuel à gauche, annonce à droite. Sans image, la colonne disparaît et le texte occupe
+           toute la largeur — le modal ne montre jamais un cadre vide. -->
       <div
-        class="modal modal-lg act"
+        class="act"
+        [class.act--illustre]="visuel()"
         role="dialog"
         aria-modal="true"
         [attr.aria-label]="'Actualités — ' + courante().titre"
@@ -32,65 +36,158 @@ import { MarkdownVue } from './markdown-vue';
         (appModaleFermer)="fermer()"
         (click)="$event.stopPropagation()"
       >
-        <div class="modal-header act__head">
-          <div>
-            <span class="act__kicker">📣 Actualités</span>
-            <h2 class="modal-title">{{ courante().titre }}</h2>
-            @if (courante().datePublication) {
-              <span class="act__date">Publiée le {{ courante().datePublication }}</span>
+        <button type="button" class="act__x" aria-label="Fermer les actualités" (click)="fermer()">✕</button>
+
+        @if (visuel(); as img) {
+          <!-- urlBlobSure : le type MIME est forcé, un fichier piégé ne s'exécute pas dans l'origine. -->
+          <div class="act__visuel"><img [src]="img.url" [alt]="img.alt" /></div>
+        }
+
+        <div class="act__contenu">
+          <p class="act__kicker">Actualités</p>
+          <h2 class="act__titre">{{ courante().titre }}</h2>
+          @if (courante().datePublication) {
+            <p class="act__date">Publiée le {{ courante().datePublication }}</p>
+          }
+
+          <div class="act__corps">
+            <app-markdown-vue [markdown]="courante().contenuMd" />
+
+            <!-- Les images au-delà de la première restent dans le corps de l'annonce. -->
+            @for (img of imagesSecondaires(); track img.id) {
+              <figure class="act__figure"><img [src]="img.url" [alt]="img.alt" /></figure>
             }
           </div>
-          <button type="button" class="btn-close" aria-label="Fermer les actualités" (click)="fermer()">✕</button>
-        </div>
 
-        <div class="modal-body act__body">
-          <app-markdown-vue [markdown]="courante().contenuMd" />
-
-          @if (imagesCourantes().length) {
-            <div class="act__images">
-              @for (img of imagesCourantes(); track img.id) {
-                <figure class="act__figure">
-                  <!-- urlBlobSure : le type MIME est forcé, un fichier piégé ne s'exécute pas dans l'origine. -->
-                  <img [src]="img.url" [alt]="img.alt" class="act__img" />
-                </figure>
-              }
-            </div>
-          }
-        </div>
-
-        <div class="modal-footer act__foot">
           @if (actualites().length > 1) {
             <div class="act__nav">
-              <button type="button" class="btn btn-secondary btn-sm" [disabled]="index() === 0" (click)="precedente()">
-                ‹ Précédente
-              </button>
+              <button type="button" class="act__fleche" [disabled]="index() === 0" aria-label="Actualité précédente" (click)="precedente()">‹</button>
               <span class="act__compteur" role="status">{{ index() + 1 }} / {{ actualites().length }}</span>
               <button
                 type="button"
-                class="btn btn-secondary btn-sm"
+                class="act__fleche"
                 [disabled]="index() === actualites().length - 1"
+                aria-label="Actualité suivante"
                 (click)="suivante()"
-              >
-                Suivante ›
-              </button>
+              >›</button>
             </div>
           }
-          <button type="button" class="btn btn-primary" (click)="fermer()">Fermer</button>
+
+          <button type="button" class="act__cta" (click)="fermer()">Fermer</button>
         </div>
       </div>
     </div>
   `,
   styles: `
-    .act__kicker { display: block; font-size: var(--text-xs); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--c-600); }
-    .act__date { font-size: var(--text-sm); color: var(--n-500); }
-    .act__body { max-height: 60vh; overflow-y: auto; }
-    .act__images { display: flex; flex-direction: column; gap: 0.9rem; margin-top: 1rem; }
-    .act__figure { margin: 0; }
-    /* max-width sans width : une petite image garde sa taille au lieu d'être étirée et floue. */
-    .act__img { display: block; max-width: 100%; max-height: 22rem; height: auto; margin: 0 auto; object-fit: contain; border-radius: var(--radius-md); border: 1px solid var(--n-200); }
-    .act__foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-    .act__nav { display: flex; align-items: center; gap: 0.6rem; }
+    /* Panneau : deux colonnes quand une image accompagne l'annonce, une seule sinon. Angles francs
+       et fond blanc plein, conformément au modèle — pas d'en-tête coloré. */
+    .act {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr;
+      width: min(56rem, 94vw);
+      max-height: 90vh;
+      background: #fff;
+      box-shadow: 0 24px 60px rgb(15 23 42 / 22%);
+      overflow: hidden;
+    }
+    .act--illustre { grid-template-columns: 1fr 1fr; }
+
+    .act__x {
+      position: absolute;
+      top: 0.9rem;
+      right: 1rem;
+      z-index: 2;
+      appearance: none;
+      border: 0;
+      background: transparent;
+      font-size: 1.4rem;
+      line-height: 1;
+      color: var(--n-500);
+      cursor: pointer;
+      padding: 0.3rem;
+
+      &:hover { color: var(--n-800); }
+      &:focus-visible { outline: 2px solid var(--n-800); outline-offset: 2px; }
+    }
+
+    .act__visuel { overflow: hidden; background: var(--n-100); }
+    .act__visuel img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+    .act__contenu {
+      display: flex;
+      flex-direction: column;
+      padding: 3rem 2.6rem 2.4rem;
+      overflow-y: auto;
+      text-align: center;
+    }
+
+    .act__kicker { margin: 0 0 0.4rem; font-size: var(--text-xs); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--n-500); }
+
+    /* ⚠️ Serif SYSTÈME et non une fonte web : le projet auto-héberge ses polices (Plus Jakarta Sans,
+       DM Mono) et n'en compte aucune à empattements. En ajouter une alourdirait le chargement de
+       toute l'application pour un seul écran ; Georgia est présente partout, avec repli. */
+    .act__titre {
+      margin: 0;
+      font-family: Georgia, 'Times New Roman', 'Liberation Serif', serif;
+      font-size: clamp(1.9rem, 3.4vw, 2.5rem);
+      line-height: 1.15;
+      font-weight: 700;
+      color: var(--n-900);
+    }
+
+    .act__date { margin: 0.6rem 0 0; font-size: var(--text-sm); color: var(--n-500); }
+
+    /* Le corps reprend l'alignement à gauche : listes et paragraphes se lisent mal centrés. */
+    .act__corps { margin-top: 1.6rem; text-align: left; }
+
+    .act__figure { margin: 1rem 0 0; }
+    .act__figure img { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+
+    .act__nav { display: flex; align-items: center; justify-content: center; gap: 0.9rem; margin-top: 1.6rem; }
+    .act__fleche {
+      appearance: none;
+      border: 1px solid var(--n-300);
+      background: #fff;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      line-height: 1;
+      color: var(--n-700);
+      cursor: pointer;
+
+      &:disabled { opacity: .35; cursor: default; }
+      &:not(:disabled):hover { background: var(--n-100); }
+      &:focus-visible { outline: 2px solid var(--n-800); outline-offset: 2px; }
+    }
     .act__compteur { font-size: var(--text-sm); color: var(--n-500); font-variant-numeric: tabular-nums; }
+
+    /* Bouton pleine largeur, noir sur blanc : 18,1:1 — très au-delà du seuil AA. */
+    .act__cta {
+      margin-top: 1.8rem;
+      appearance: none;
+      border: 0;
+      width: 100%;
+      padding: 0.95rem 1.5rem;
+      background: #111827;
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      cursor: pointer;
+
+      &:hover { background: #000; }
+      &:focus-visible { outline: 3px solid #111827; outline-offset: 2px; }
+    }
+
+    /* Sous 52rem, l'image passe au-dessus du texte plutôt que de comprimer les deux colonnes. */
+    @media (max-width: 52rem) {
+      .act--illustre { grid-template-columns: 1fr; }
+      .act__visuel { max-height: 14rem; }
+      .act__contenu { padding: 2.2rem 1.5rem 1.8rem; }
+    }
   `,
 })
 export class ActualitesModal implements OnDestroy {
@@ -114,6 +211,10 @@ export class ActualitesModal implements OnDestroy {
       .filter((i) => urls.has(i.idImage))
       .map((i) => ({ id: i.idImage, url: urls.get(i.idImage) as string, alt: i.nomFichier || 'Illustration' }));
   });
+  /** Première image : elle occupe la colonne de gauche et donne sa mise en page au modal. */
+  readonly visuel = computed(() => this.imagesCourantes()[0] ?? null);
+  /** Les suivantes accompagnent le texte, dans le corps de l'annonce. */
+  readonly imagesSecondaires = computed(() => this.imagesCourantes().slice(1));
 
   constructor() {
     // Les images de la première actualité sont demandées d'emblée ; les suivantes à la navigation.
