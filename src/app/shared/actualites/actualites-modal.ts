@@ -73,7 +73,6 @@ import { MarkdownVue } from './markdown-vue';
             </div>
           }
 
-          <button type="button" class="act__cta" (click)="fermer()">Fermer</button>
         </div>
       </div>
     </div>
@@ -85,13 +84,14 @@ import { MarkdownVue } from './markdown-vue';
       position: relative;
       display: grid;
       grid-template-columns: 1fr;
-      width: min(56rem, 94vw);
+      width: min(72rem, 95vw);
       max-height: 90vh;
       background: #fff;
       box-shadow: 0 24px 60px rgb(15 23 42 / 22%);
       overflow: hidden;
     }
-    .act--illustre { grid-template-columns: 1fr 1fr; }
+    /* Colonnes déséquilibrées au profit du texte : l'annonce a plus à dire que l'image à montrer. */
+    .act--illustre { grid-template-columns: 0.85fr 1.15fr; }
 
     .act__x {
       position: absolute;
@@ -169,25 +169,6 @@ import { MarkdownVue } from './markdown-vue';
       &:focus-visible { outline: 2px solid var(--n-800); outline-offset: 2px; }
     }
     .act__compteur { font-size: var(--text-sm); color: var(--n-500); font-variant-numeric: tabular-nums; }
-
-    /* Bouton pleine largeur, noir sur blanc : 18,1:1 — très au-delà du seuil AA. */
-    .act__cta {
-      margin-top: 1.8rem;
-      appearance: none;
-      border: 0;
-      width: 100%;
-      padding: 0.95rem 1.5rem;
-      background: #111827;
-      color: #fff;
-      font: inherit;
-      font-weight: 700;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      cursor: pointer;
-
-      &:hover { background: #000; }
-      &:focus-visible { outline: 3px solid #111827; outline-offset: 2px; }
-    }
 
     /* Sous 52rem, l'image passe au-dessus du texte plutôt que de comprimer les deux colonnes. */
     @media (max-width: 52rem) {
