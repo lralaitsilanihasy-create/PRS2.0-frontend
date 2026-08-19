@@ -163,6 +163,93 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 
 ---
 
+## Actualités (⚠️ ressource ajoutée 2026-08-19, spec du 2026-08-18)
+**Ressource** `/api/actualites` — modal d'actualités affiché à chaque ouverture de session des
+utilisateurs **ciblés par leur profil**, édité par l'`ADMINISTRATEUR` sans redéploiement.
+Tables : `t_actualite`, `t_actualite_profil` (ciblage), `t_actualite_image` (binaire dédié).
+
+> ⚠️ **Visibilité (`/mes-actualites`) — filtrage entièrement serveur.** Une actualité est renvoyée si
+> **toutes** les conditions tiennent : (1) interrupteur global `ACTUALITES_ACTIVES` à `true` (sinon liste
+> **vide**) ; (2) `statut = ACTIF` ; (3) le **profil de l'utilisateur authentifié** (JWT/cookie, jamais un
+> paramètre client) figure dans les profils cibles ; (4) `datePublication` nulle ou passée **et**
+> `dateExpiration` nulle ou **non atteinte** (le jour J, elle est atteinte : l'actualité disparaît).
+> Tri : **date de publication effective décroissante** (`datePublication`, sinon date de création).
+> Le front ne reçoit jamais une actualité qu'il devrait masquer lui-même.
+
+> ⚠️ **Cycle de vie.** Création → `statut` **forcé `INACTIF`** (l'activation est un second acte délibéré) ;
+> `ACTIF`/`INACTIF` par le **PUT** (statut `ARCHIVE` au PUT → 400) ; **DELETE = archivage logique**
+> (`ARCHIVE` + `dateArchivage` + `imArchiveur`), jamais de suppression physique — onglet « Historique ».
+> **Expiration = archivage automatique** : la bascule `ACTIF`→`ARCHIVE` se fait **au fil des lectures**
+> (pas de tâche planifiée), avec `imArchiveur` **null** (système). Une actualité `ARCHIVE` n'est **plus
+> modifiable** (PUT/DELETE/ajout d'image → **409**). Toutes les écritures (création, activation,
+> archivage, images, interrupteur) sont **journalisées** dans `t_audit_log` par l'intercepteur d'audit.
+
+> ⚠️ **Contenu markdown brut — HTML refusé (400).** `contenuMd` est stocké tel quel et rendu sans
+> injection HTML côté front ; toute **balise HTML** (ouvrante, fermante ou commentaire) est rejetée dès la
+> saisie. Les usages markdown légitimes de « < » passent (autolien `<https://…>`, comparaison `a < b`).
+> Les **profils cibles** sont les noms d'enum (`PRMP`, `UGPM`, `PRESIDENT`, `CHEF_COMMISSION`,
+> `SECRETAIRE`, `MEMBRE`, `VERIFICATEUR`, `ASSISTANT_CONTROLEUR`, `CHARGE_PUBLICATION`,
+> `ADMINISTRATEUR`) — au moins un (400 si vide ou inconnu) ; `t_actualite_profil` stocke le **nom**
+> (colonne `PROFIL`), pas l'`ID_PROFILE` numérique dont la correspondance n'est pas spécifiée.
+
+> ⚠️ **Images — mêmes garanties que la lettre de retrait (2026-08-17).** `POST /{id}/images` en
+> multipart (partie `fichier`) : **JPEG obligatoire validé par magic-bytes** (`FF D8 FF`, jamais le
+> Content-Type déclaré) → 400 sinon ; **> 10 Mo → 413** ; **redimensionnée au serveur** (largeur max
+> **1600 px**, proportionnel) avant stockage (`bytea` + SHA-256) ; `ordre` = fin de la mini-page.
+> Lecture `GET /{id}/images/{idImage}` : tout authentifié, sortie durcie (liste blanche MIME +
+> `Content-Disposition` assaini + `nosniff` global). Le DTO ne porte que les **métadonnées** des images.
+
+**Champs `ActualiteDto`**
+
+| Champ (JSON) | Type | Obligatoire | Contraintes |
+|---|---|---|---|
+| idActualite | number | Non (auto) | IDENTITY ; ignoré en entrée |
+| titre | string | Oui | @NotBlank, max 200 |
+| contenuMd | string | Oui | Markdown brut — **aucun HTML accepté ni renvoyé** (400) |
+| profilsCibles | string[] | Oui | Au moins un nom d'enum profil (400 si vide/inconnu) ; dédoublonnés |
+| statut | string | Non | `INACTIF` forcé à la création ; `ACTIF`/`INACTIF` par le PUT (null = inchangé) ; `ARCHIVE` par le DELETE seul |
+| datePublication | string (date) | Non | null = visible dès activation |
+| dateExpiration | string (date) | Non | null = sans terme ; antérieure à datePublication → 400 ; atteinte → ARCHIVE auto |
+| images | `ActualiteImageDto[]` | — | **Lecture seule** (serveur) : idImage, nomFichier, taille, ordre — jamais le binaire |
+| dateCreation / imAuteur | — | — | Serveur (JWT) |
+| dateArchivage / imArchiveur | — | — | Serveur ; imArchiveur null = archivage automatique à l'expiration |
+
+**Endpoints**
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/actualites/mes-actualites | — | `ActualiteDto[]` | 200 | Authentifié — modal d'ouverture de session |
+| GET | /api/actualites | — | `ActualiteDto[]` | 200, 403 | ADMINISTRATEUR (Historique compris) ; `?page=&size=` → enveloppe `Page` |
+| GET | /api/actualites/{id} | — | `ActualiteDto` | 200, 403, 404 | ADMINISTRATEUR |
+| POST | /api/actualites | `ActualiteDto` | `ActualiteDto` | 201, 400, 403 | ADMINISTRATEUR — statut forcé INACTIF |
+| PUT | /api/actualites/{id} | `ActualiteDto` | `ActualiteDto` | 200, 400, 403, 404, 409 | ADMINISTRATEUR — 409 si ARCHIVE |
+| DELETE | /api/actualites/{id} | — | — | 204, 403, 404, 409 | ADMINISTRATEUR — **archive**, ne supprime pas |
+| POST | /api/actualites/{id}/images | multipart (`fichier` JPEG) | `ActualiteImageDto` | 201, 400, 403, 404, 409, 413 | ADMINISTRATEUR |
+| GET | /api/actualites/{id}/images/{idImage} | — | binaire `image/jpeg` | 200, 404 | Authentifié |
+| DELETE | /api/actualites/{id}/images/{idImage} | — | — | 204, 403, 404 | ADMINISTRATEUR |
+
+**Exemple — création (Administrateur)**
+```json
+{ "titre": "Nouvelle procédure de dispatch", "contenuMd": "## Ce qui change\n\n- délai ramené à 5 jours…",
+  "profilsCibles": ["PRMP", "MEMBRE"], "datePublication": "2026-09-01", "dateExpiration": "2026-09-30" }
+```
+
+---
+
+## Paramètres système (⚠️ ressource ajoutée 2026-08-19)
+**Ressource** `/api/parametres` — paramètres généraux clé/valeur (`t_parametre` : `CLE`, `VALEUR`,
+`DATE_MAJ`, `IM_ACTEUR`), éditables sans redéploiement. Première clé : **`ACTUALITES_ACTIVES`**,
+l'interrupteur global du modal d'actualités (coupe/rétablit pour tous, d'un coup). **Ligne absente =
+actif** : c'est un coupe-circuit, pas une seconde activation (chaque actualité naît de toute façon
+`INACTIF`).
+
+| Méthode | URL | Corps | Réponse | Statuts | Rôle |
+|---|---|---|---|---|---|
+| GET | /api/parametres/actualites-actives | — | `{ "actif": boolean }` | 200 | Authentifié |
+| PUT | /api/parametres/actualites-actives | `{ "actif": boolean }` | `{ "actif": boolean }` | 200, 400, 403 | ADMINISTRATEUR |
+
+---
+
 ## Anomalies
 **Ressource** `/api/anomalies` — Lecture et écriture : tout utilisateur authentifié (CRUD standard, aucun rôle particulier).
 
@@ -1973,8 +2060,10 @@ et interprété comme un code de **sous-type** (les anciens payloads `{"idTypeDo
 > traitées » — le workflow séquentiel/couleurs est géré côté front. **Vacant** (aucune exigence) si le dossier
 > n'a **pas de grille** (famille/sous-type sans points) → examens historiques et non-PPM non contraints.
 >
-> ⚠️ **PV — document généré (règle ajoutée ; modèles étendus 2026-08-03).** À la **signature finale** du PV
-> (passage à `SIGNE`), le **PDF officiel** est généré **s'il existe un modèle Word pour le cas** — conditions
+> ⚠️ **PV — document généré (règle ajoutée ; modèles étendus 2026-08-03 ; génération post-commit 2026-08-19).**
+> À la **signature finale** du PV (passage à `SIGNE`), le **PDF officiel** est généré **en tâche de fond
+> après commit** (la signature répond immédiatement ; `CHEMIN_DOCUMENT` est renseigné quand le document est
+> prêt — cf. le contrat `documentDisponible` §PvExamenDto), **s'il existe un modèle Word pour le cas** — conditions
 > communes : dossier de **localité centrale** (`ANT`, seuls modèles fournis) et **PPM** comportant au moins une
 > ligne de marché, **quel que soit le mode de passation**. Choix du modèle (`PvDocumentService.modelePour`) :
 >
@@ -3522,9 +3611,21 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 | refePv | string | — (réponse) | max 120 — **référence officielle dérivée du dossier**, générée serveur, **unique** (lecture seule) |
 | idSecretaireSeance | string | — (⚠️ posé à la **clôture de navette**, 2026-08-01) | max 7 — **Secrétaire de séance** : Vérificateur titulaire de la localité **ou** contrôleur couvert par une paire « → Vérificateur » active (⚠️ élargi 2026-08-15 ; validé à `…/pv-examens/{id}/accepter` ; encore accepté à `…/examens/{id}/soumettre` si fourni) |
 | nomSecretaireSeance | string | — (réponse) | nom complet du secrétaire de séance (« prénoms nom »), peuplé serveur — lecture seule |
-| documentDisponible | boolean | — (réponse) | **`true`** si un PDF officiel est réellement disponible : `CHEMIN_DOCUMENT` non nul **ou** PV **éligible** — un **modèle Word existe pour le cas** (avis `FAVR` ou `FAV` + PPM avec ≥ 1 ligne de marché, **quel que soit le mode de passation** et **quelle que soit la localité** — centrale ou régionale —, donc régénérable à la demande ; cf. tableau des modèles §PV) ; **`false`** sinon. Lecture seule, peuplé serveur → le front masque « Télécharger le PDF » et évite un 404 |
+| documentDisponible | boolean | — (réponse) | ⚠️ **Contrat révisé 2026-08-19** — PV **`SIGNE`** : `true` seulement quand le **fichier est prêt maintenant** (`CHEMIN_DOCUMENT` non nul) ; **`false` pendant la fenêtre de génération post-commit** qui suit la signature. PV **non signé** (projet) : sens historique conservé — `true` si le PV est **éligible** (un **modèle Word existe pour le cas** : avis `FAVR`/`FAV`/`DEF` + PPM avec ≥ 1 ligne de marché, **quel que soit le mode de passation** et la localité ; cf. tableau des modèles §PV). Lecture seule, peuplé serveur → le front masque « Télécharger le PDF » tant que c'est `false` |
 
-> ⚠️ **Disponibilité du document (`documentDisponible`) — règle ajoutée.** Le flag reflète la règle « PV — document généré » **et** l'existence effective du fichier : `true` si `t_pv_examen.CHEMIN_DOCUMENT` est renseigné, ou si le PV est éligible à la génération à la demande (`GET /api/pv-examens/{id}/document` régénère alors le PDF). Il reste donc juste après une (re)génération. Un PV non éligible (ex. avis **≠ FAVR**, ou localité **non centrale**, ou dossier **sans PPM**) → `false`, et `…/document` renvoie **404**. *(Le **mode de passation** n'entre plus dans l'éligibilité : un PV FAVR/ANT/PPM en « Demande de cotation » est désormais éligible.)*
+> ⚠️ **Disponibilité du document (`documentDisponible`) — contrat révisé (2026-08-19, génération post-commit).**
+> La génération du PDF (conversion Word, plusieurs secondes) est **sortie du chemin de la signature** : la
+> signature finale marque le PV `SIGNE` et **répond immédiatement** ; le document est produit **après commit**
+> en tâche de fond (`PvDocumentTache`), qui renseigne `CHEMIN_DOCUMENT` quand il est prêt. Dans cet
+> intervalle, `documentDisponible` est **`false`** (option retenue avec le front — `pv-definitifs` et
+> `detail-pv-modal` savent afficher un PV signé sans document) ; il passe à `true` au rafraîchissement
+> suivant. Un **échec de génération ne peut plus faire échouer la signature** (journalisé ; le
+> téléchargement conserve sa **régénération paresseuse** en filet). **Rattrapage des PV signés sans
+> fichier** (antérieurs au correctif ou génération échouée) : leur consultation déclenche la production en
+> arrière-plan — disponible au rafraîchissement suivant, sans requête lente. Un PV non éligible (ex. avis
+> **`NSP`**, ou dossier **sans PPM**) → `false` définitif, et `…/document` renvoie **404**. Le
+> convertisseur Word est **préchauffé au démarrage** (`app.pv.document.prechauffage=true`) pour que la
+> première génération ne paie pas le lancement de Word.
 
 > ⚠️ **Référence du PV (`refePv`) — règle ajoutée.** À la création, le serveur dérive `refePv` du `refeDossier`
 > du dossier rattaché en insérant **`/PV` avant l'année** : `00003/PPM/CNM/2026` → `00003/PPM/CNM/PV/2026`

@@ -29,15 +29,20 @@ export interface Dossier {
   /** Mandat d'attribution (lecture seule, figé à la création ; null si la PRMP n'a pas de mandat déclaré). */
   idMandatAttrib?: number | null;
   /**
-   * ⚠️ Traçabilité — **login** de l'acteur ayant créé le dossier (PRMP **ou UGPM** agissant sous sa
-   * tutelle). La colonne `t_dossier.CREE_PAR` existe côté serveur, mais **n'est pas encore exposée
-   * dans `DossierDto`** (vérifié le 2026-08-19 : le DTO ne renvoie que 11 champs, sans elle).
-   * Le champ est donc optionnel et l'affichage conditionnel : il apparaîtra dès la livraison
-   * backend, sans changement de code ici. Demande consignée dans `docs/demande-backend-2026-08-19.md`.
+   * ⚠️ Traçabilité (exposée par le backend le 2026-08-19) — **login** de l'acteur ayant créé le
+   * dossier (PRMP **ou UGPM** agissant sous sa tutelle). Lecture seule : posé serveur à la création.
    */
   creePar?: string;
-  /** Idem — login de l'acteur ayant **soumis** le dossier (PRMP uniquement). Même réserve. */
+  /** Login de l'acteur ayant **soumis** le dossier (PRMP uniquement). Lecture seule, posé serveur. */
   soumisPar?: string;
+  /**
+   * Nom lisible « Nom Prénoms » correspondant à `creePar`, **résolu par le serveur** (le login n'est
+   * pas l'identifiant de l'acteur : seul le backend peut faire la jointure vers la PRMP / l'UGPM).
+   * `null` si le compte a disparu — on retombe alors sur le login brut.
+   */
+  creeParNom?: string | null;
+  /** Nom lisible correspondant à `soumisPar` ; `null` si non résolvable. */
+  soumisParNom?: string | null;
 }
 
 /**

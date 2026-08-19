@@ -174,6 +174,19 @@ export class UgpmService extends CrudService<Ugpm, string> {
     return this.http.post<Ugpm>(this.baseUrl, req);
   }
 
+  /**
+   * `GET /api/ugpms/par-tutelle/{idPrmp}` — unités rattachées à une PRMP de tutelle.
+   *
+   * ⚠️ Livraison backend `b264cce` (2026-08-19) : contrairement au reste de la ressource, cette
+   * route est ouverte à la **PRMP concernée** (et à ses UGPM) en plus de l'ADMINISTRATEUR — une
+   * PRMP consulte ses propres unités. C'est ce qui permet de ne plus appeler la liste complète,
+   * réservée à l'Administrateur, et donc de supprimer le 403 que l'écran devait taire.
+   * L'appelant vérifie qu'il est légitime avant d'appeler (cf. `detail-ppm-modal`).
+   */
+  parTutelle(idPrmp: string): Observable<Ugpm[]> {
+    return this.http.get<Ugpm[]>(`${this.baseUrl}/par-tutelle/${encodeURIComponent(idPrmp)}`);
+  }
+
   /** `PUT /api/ugpms/{id}` — modifie les champs métier (pas l'id ni le compte). */
   modifier(idUgpm: string, req: ModifierUgpmRequest): Observable<Ugpm> {
     return this.http.put<Ugpm>(`${this.baseUrl}/${idUgpm}`, req);

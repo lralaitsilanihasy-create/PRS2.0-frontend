@@ -211,7 +211,9 @@ import { PpmFormFactory } from './ppm-form-factory';
                     <div class="dpm-fiche__titre">✍ Saisie du dossier</div>
                     <dl class="dpm-fiche__liste">
                       <div><dt>Créé par</dt><dd>{{ a.libelle }}</dd></div>
-                      @if (a.login) { <div><dt>Compte</dt><dd class="cnm-mono">{{ a.login }}</dd></div> }
+                      <!-- Le compte n'est rappelé que s'il apporte quelque chose : quand le nom n'a
+                           pas pu être résolu, le libellé EST déjà le login — inutile de le répéter. -->
+                      @if (a.login && a.libelle !== a.login) { <div><dt>Compte</dt><dd class="cnm-mono">{{ a.login }}</dd></div> }
                       @if (a.soumisPar; as s) {
                         <div><dt>Soumis par</dt><dd>{{ a.soumisParLibelle }}</dd></div>
                         @if (a.soumisParLibelle !== s) { <div><dt>Compte</dt><dd class="cnm-mono">{{ s }}</dd></div> }
