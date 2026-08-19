@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { skipErrorToast } from '../../core/errors/api-error';
 import { environment } from '../../../environments/environment';
 import { Page } from '../../models/common.model';
 
@@ -33,6 +34,19 @@ export abstract class CrudService<T, Id extends string | number = number> {
   /** `GET /api/{resource}` — liste (déjà filtrée par le backend si applicable). */
   list(): Observable<T[]> {
     return this.http.get<T[]>(this.baseUrl);
+  }
+
+  /**
+   * Même chose, mais **sans boîte d'erreur** si l'appel échoue.
+   *
+   * ⚠️ À réserver aux lectures d'**enrichissement** : celles dont l'échec n'empêche pas l'écran de
+   * fonctionner et dont le refus est ATTENDU pour certains profils. Sans cela, un `catchError` ne
+   * suffit pas — l'intercepteur affiche l'erreur avant lui. Cas réel : la fiche UGPM du détail d'un
+   * PPM, réservée à l'ADMINISTRATEUR, faisait surgir « Accès refusé » à chaque ouverture du modal
+   * par une PRMP alors que le bloc était simplement destiné à rester masqué.
+   */
+  listeSilencieuse(): Observable<T[]> {
+    return this.http.get<T[]>(this.baseUrl, { context: skipErrorToast() });
   }
 
   /**

@@ -970,10 +970,10 @@ export class DetailPpmModal implements OnInit {
       // ouvrir l'onglet ne doit déclencher aucun appel ni spinner tardif.
       // `prmps` et `ugpms` échouent en silence : la lecture des UGPM est réservée à
       // l'ADMINISTRATEUR (403 pour la PRMP et les contrôleurs), le bloc est alors simplement absent.
-      entites: this.entiteService.list().pipe(catchError(() => of([] as EntiteContract[]))),
+      entites: this.entiteService.listeSilencieuse().pipe(catchError(() => of([] as EntiteContract[]))),
       localiteMap: this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']),
-      prmps: this.prmpService.list().pipe(catchError(() => of([] as Prmp[]))),
-      ugpms: this.ugpmService.list().pipe(catchError(() => of([] as Ugpm[]))),
+      prmps: this.prmpService.listeSilencieuse().pipe(catchError(() => of([] as Prmp[]))),
+      ugpms: this.ugpmService.listeSilencieuse().pipe(catchError(() => of([] as Ugpm[]))),
     }).subscribe({
       next: ({ ppm, dossier, marches, pieces, benefs, previsions, lots, modeMap, natureMap, entiteMap, compteMap, soas, capms, entites, localiteMap, prmps, ugpms }) => {
         this.entites.set(entites);
