@@ -90,7 +90,9 @@ import { MarkdownVue } from './markdown-vue';
       min-height: min(32rem, 78vh);
       max-height: 90vh;
       background: #fff;
-      box-shadow: 0 24px 60px rgb(15 23 42 / 22%);
+      /* Ombre en deux couches : un halo large qui détache le panneau du fond, et un liseré
+         rapproché qui en dessine le bord — sans bordure, donc sans trait de couleur. */
+      box-shadow: 0 2px 8px rgb(15 23 42 / 12%), 0 32px 80px rgb(15 23 42 / 38%);
       overflow: hidden;
     }
     /* Colonnes déséquilibrées au profit du texte : l'annonce a plus à dire que l'image à montrer. */

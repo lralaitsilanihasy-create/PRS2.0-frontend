@@ -1596,3 +1596,18 @@ textarea.form-control {
 .cnm-stat--amber  { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
 .cnm-stat--purple { background: linear-gradient(135deg, #a855f7, #7c3aed); }
 .cnm-stat--teal   { background: linear-gradient(135deg, #2dd4bf, #0d9488); }
+
+/* ════════════════════════════════════════════════════════════════
+   Anneau de focus des dialogues (2026-08-19)
+   La directive `appModale` pose `tabindex="-1"` sur le conteneur et
+   lui donne le focus à l'ouverture — indispensable pour capter Échap
+   et Tab. Le navigateur dessine alors SON anneau autour du panneau
+   entier, qui se lit comme une bordure bleue parasite.
+   Le retirer est ici sans coût pour l'accessibilité : le conteneur
+   n'est pas atteignable au Tab, le dialogue est visuellement évident,
+   et chaque élément interne garde son propre indicateur de focus.
+   ════════════════════════════════════════════════════════════════ */
+[appmodale]:focus,
+[appmodale]:focus-visible {
+  outline: none;
+}
