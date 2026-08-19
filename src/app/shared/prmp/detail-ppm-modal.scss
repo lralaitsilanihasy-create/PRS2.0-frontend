@@ -429,3 +429,105 @@
    désormais à tous les modals. Les redéfinir ici ferait diverger
    ce modal du reste de l'application.
    ════════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════════
+   Onglets (2026-08-19, demande user) — trois sections : identité de
+   l'entité, plan de passation, pièces jointes. Le modal montrait
+   tout d'un bloc et imposait un long défilement pour atteindre les
+   pièces.
+   ════════════════════════════════════════════════════════════════ */
+.dpm-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--n-200);
+  background: var(--n-50);
+  flex-wrap: wrap;
+}
+
+.dpm-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0.7rem 1rem;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--n-500);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+
+  &:hover { color: var(--c-700); }
+  &:focus-visible { outline: 2px solid var(--c-600); outline-offset: -3px; }
+}
+
+.dpm-tab--on {
+  color: var(--c-700);
+  border-bottom-color: var(--c-600);
+}
+
+/* Compteur discret : le nombre de lignes et de pièces reste lisible sans ouvrir l'onglet. */
+.dpm-tab__n {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--n-200);
+  color: var(--n-700);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.dpm-tab--on .dpm-tab__n { background: var(--c-100); color: var(--c-800); }
+
+/* Fiches d'identité de l'onglet 1 */
+.dpm-fiches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.dpm-fiche {
+  border: 1px solid var(--n-200);
+  border-radius: var(--radius-md);
+  background: #fff;
+  padding: 1rem 1.1rem;
+}
+
+.dpm-fiche__titre {
+  font-weight: 700;
+  color: var(--c-800);
+  margin-bottom: 0.75rem;
+  font-size: var(--text-base);
+}
+
+.dpm-fiche__liste {
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+
+  > div {
+    display: grid;
+    grid-template-columns: 11rem 1fr;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+
+  dt { color: var(--n-500); font-size: var(--text-sm); }
+  dd { margin: 0; color: var(--n-800); font-size: var(--text-sm); overflow-wrap: anywhere; }
+}
+
+/* Séparateur entre plusieurs UGPM rattachées à la même PRMP. */
+.dpm-fiche__liste--sep + .dpm-fiche__liste--sep {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--n-200);
+}
+
+.dpm-fiche__vide { margin: 0; color: var(--n-500); font-size: var(--text-sm); }
+
+@media (max-width: 48rem) {
+  .dpm-fiche__liste > div { grid-template-columns: 1fr; gap: 0.15rem; }
+}

@@ -1,18 +1,19 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Output } from '@angular/core';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../a11y/modale.directive';
-import { AnomalieTranscription, Capm, Compte, Dossier, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, PieceJointeDossier, Ppm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypeChangementLigne, TypePieceJointe } from '../../models';
+import { AnomalieTranscription, Capm, Compte, Dossier, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, EntiteContract, PieceJointeDossier, Ppm, Prmp, Ugpm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypeChangementLigne, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
   DossierService,
   EntiteContractService,
+  LocaliteService,
   LotService,
   MarcheService,
   MarchePrevisionService,
@@ -20,6 +21,8 @@ import {
   ModePassationService,
   NatureService,
   PieceJointeDossierService,
+  PrmpService,
+  UgpmService,
   PpmService,
   ReferenceLookupService,
   SaisieService,
@@ -142,9 +145,82 @@ import { PpmFormFactory } from './ppm-form-factory';
 
         </div>
 
+        <!-- ⚠️ 2026-08-19 (demande user) — trois onglets : identité de l'entité, plan de passation,
+             pièces jointes. Tout est déjà chargé (même vague) : changer d'onglet n'appelle rien. -->
+        <div class="dpm-tabs" role="tablist" aria-label="Sections du plan de passation">
+          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'entite'"
+            [attr.aria-selected]="onglet() === 'entite'" (click)="onglet.set('entite')">
+            Entité contractante
+          </button>
+          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'ppm'"
+            [attr.aria-selected]="onglet() === 'ppm'" (click)="onglet.set('ppm')">
+            Plan de passation <span class="dpm-tab__n">{{ marches().length }}</span>
+          </button>
+          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'pieces'"
+            [attr.aria-selected]="onglet() === 'pieces'" (click)="onglet.set('pieces')">
+            Pièces jointes <span class="dpm-tab__n">{{ pieces().length }}</span>
+          </button>
+        </div>
+
         <!-- ── CORPS ── -->
         <div class="dpm-body">
 
+            @if (onglet() === 'entite') {
+              <div class="dpm-section dpm-fiches" role="tabpanel">
+                <!-- Entité contractante — lisible par tout utilisateur authentifié. -->
+                <div class="dpm-fiche">
+                  <div class="dpm-fiche__titre">🏛 Entité contractante</div>
+                  @if (entiteDetail(); as e) {
+                    <dl class="dpm-fiche__liste">
+                      <div><dt>Libellé</dt><dd>{{ e.libelleEntite || '—' }}</dd></div>
+                      <div><dt>Adresse</dt><dd>{{ e.adresse || '—' }}</dd></div>
+                      <div><dt>Catégorie</dt><dd>{{ e.categorieEntite || '—' }}</dd></div>
+                      <div><dt>Localité</dt><dd>{{ localiteLabel() }}</dd></div>
+                      <div><dt>Niveau hiérarchique</dt><dd>{{ e.niveauHierarchique ?? '—' }}</dd></div>
+                    </dl>
+                  } @else {
+                    <p class="dpm-fiche__vide">{{ entiteLabel() }}</p>
+                  }
+                </div>
+
+                <!-- PRMP signataire du plan — lecture ouverte à tout profil authentifié. -->
+                <div class="dpm-fiche">
+                  <div class="dpm-fiche__titre">👤 Personne responsable des marchés publics</div>
+                  @if (prmpDetail(); as pr) {
+                    <dl class="dpm-fiche__liste">
+                      <div><dt>Identité</dt><dd>{{ pr.nomPrmp }} {{ pr.prenomsPrmp }}</dd></div>
+                      <div><dt>Matricule</dt><dd class="cnm-mono">{{ pr.idPrmp }}</dd></div>
+                      <div><dt>Arrêté de nomination</dt><dd>{{ pr.arreteNomin || '—' }}</dd></div>
+                      <div><dt>Date de nomination</dt><dd>{{ (pr.dateNomin | date: 'dd/MM/yyyy') || '—' }}</dd></div>
+                      <div><dt>Courriel</dt><dd>{{ pr.emailPrmp || '—' }}</dd></div>
+                      <div><dt>Téléphone</dt><dd>{{ pr.telPrmp || '—' }}</dd></div>
+                    </dl>
+                  } @else {
+                    <p class="dpm-fiche__vide">Aucune PRMP rattachée à ce plan.</p>
+                  }
+                </div>
+
+                <!-- UGPM : la lecture est réservée à l'ADMINISTRATEUR (403 ailleurs) — le bloc n'est
+                     donc affiché que lorsque les données sont réellement accessibles, plutôt que de
+                     montrer une section vide sans explication. -->
+                @if (ugpmsRattachees().length) {
+                  <div class="dpm-fiche">
+                    <div class="dpm-fiche__titre">🏢 Unité(s) de gestion rattachée(s)</div>
+                    @for (u of ugpmsRattachees(); track u.idUgpm) {
+                      <dl class="dpm-fiche__liste dpm-fiche__liste--sep">
+                        <div><dt>Identité</dt><dd>{{ u.nomUgpm }} {{ u.prenomsUgpm }}</dd></div>
+                        <div><dt>Matricule</dt><dd class="cnm-mono">{{ u.idUgpm }}</dd></div>
+                        @if (u.libelle) { <div><dt>Libellé</dt><dd>{{ u.libelle }}</dd></div> }
+                        <div><dt>Courriel</dt><dd>{{ u.emailUgpm || '—' }}</dd></div>
+                        <div><dt>Téléphone</dt><dd>{{ u.telUgpm || '—' }}</dd></div>
+                      </dl>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            @if (onglet() === 'ppm') {
             <!-- Lignes de marché -->
             <div class="dpm-section">
               @if (importApercu(); as r) {
@@ -195,7 +271,9 @@ import { PpmFormFactory } from './ppm-form-factory';
                 <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" />
               }
             </div>
+            }
 
+            @if (onglet() === 'pieces') {
             <!-- Pièces jointes -->
             <div class="dpm-section">
               <div class="dpm-section-head">
@@ -319,6 +397,7 @@ import { PpmFormFactory } from './ppm-form-factory';
                 }
               </div>
             </div>
+            }
         </div>
 
         <!-- ── PIED ── -->
@@ -655,6 +734,9 @@ export class DetailPpmModal implements OnInit {
   private readonly modeService = inject(ModePassationService);
   private readonly compteService = inject(CompteService);
   private readonly capmService = inject(CapmService);
+  private readonly entiteService = inject(EntiteContractService);
+  private readonly prmpService = inject(PrmpService);
+  private readonly ugpmService = inject(UgpmService);
   private readonly typePieceService = inject(TypePieceJointeService);
   private readonly saisieService = inject(SaisieService);
   private readonly factory = inject(PpmFormFactory);
@@ -674,6 +756,33 @@ export class DetailPpmModal implements OnInit {
     const id = this.dossierEntite();
     return id != null ? this.entiteMap().get(String(id)) ?? '#' + id : '—';
   });
+  /** Fiche complète de l'entité du dossier (onglet « Entité contractante »). */
+  readonly entiteDetail = computed(() => {
+    const id = this.dossierEntite();
+    return id != null ? this.entites().find((e) => e.idEntiteContract === id) ?? null : null;
+  });
+  /** Localité de l'entité, ou à défaut celle portée par le PPM. */
+  readonly localiteLabel = computed(() => {
+    const id = this.entiteDetail()?.idLocalite ?? this.ppm()?.idLocalite;
+    return id ? this.localiteMap().get(String(id)) ?? id : '—';
+  });
+  /** PRMP signataire du plan (`Ppm.idPrmp`), fiche complète. */
+  readonly prmpDetail = computed(() => {
+    const id = this.ppm()?.idPrmp;
+    return id ? this.prmps().find((p) => p.idPrmp === id) ?? null : null;
+  });
+  /** UGPM sous la tutelle de cette PRMP — vide hors ADMINISTRATEUR (lecture réservée, 403). */
+  readonly ugpmsRattachees = computed(() => {
+    const id = this.ppm()?.idPrmp;
+    return id ? this.ugpms().filter((u) => u.idPrmpTutelle === id) : [];
+  });
+  /** Onglet courant — le plan de passation est le motif d'ouverture le plus fréquent du modal. */
+  readonly onglet = signal<'entite' | 'ppm' | 'pieces'>('ppm');
+  /** Fiches d'identité de l'onglet 1 (UGPM vide hors ADMINISTRATEUR : lecture réservée). */
+  readonly entites = signal<EntiteContract[]>([]);
+  private readonly localiteMap = signal<Map<string, string>>(new Map());
+  readonly prmps = signal<Prmp[]>([]);
+  readonly ugpms = signal<Ugpm[]>([]);
   readonly marches = signal<Marche[]>([]);
   readonly pieces = signal<PieceJointeDossier[]>([]);
   readonly modeMap = signal<Map<string, string>>(new Map());
@@ -857,8 +966,20 @@ export class DetailPpmModal implements OnInit {
       // Liste SOA (dropdown d'édition) + map libellés (affichage) en un seul appel.
       soas: this.soaBenefService.list(),
       capms: this.capmService.getAll(),
+      // ⚠️ Onglet « Entité contractante » (2026-08-19) : chargé dans LA MÊME vague que le reste —
+      // ouvrir l'onglet ne doit déclencher aucun appel ni spinner tardif.
+      // `prmps` et `ugpms` échouent en silence : la lecture des UGPM est réservée à
+      // l'ADMINISTRATEUR (403 pour la PRMP et les contrôleurs), le bloc est alors simplement absent.
+      entites: this.entiteService.list().pipe(catchError(() => of([] as EntiteContract[]))),
+      localiteMap: this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']),
+      prmps: this.prmpService.list().pipe(catchError(() => of([] as Prmp[]))),
+      ugpms: this.ugpmService.list().pipe(catchError(() => of([] as Ugpm[]))),
     }).subscribe({
-      next: ({ ppm, dossier, marches, pieces, benefs, previsions, lots, modeMap, natureMap, entiteMap, compteMap, soas, capms }) => {
+      next: ({ ppm, dossier, marches, pieces, benefs, previsions, lots, modeMap, natureMap, entiteMap, compteMap, soas, capms, entites, localiteMap, prmps, ugpms }) => {
+        this.entites.set(entites);
+        this.localiteMap.set(localiteMap);
+        this.prmps.set(prmps);
+        this.ugpms.set(ugpms);
         this.modeMap.set(modeMap);
         this.natureMap.set(natureMap);
         this.entiteMap.set(entiteMap);
