@@ -85,6 +85,9 @@ import { MarkdownVue } from './markdown-vue';
       display: grid;
       grid-template-columns: 1fr;
       width: min(72rem, 95vw);
+      /* Hauteur plancher : une annonce courte ne doit pas réduire le panneau à un bandeau — le
+         visuel manquerait d'ampleur. Bornée par la fenêtre pour rester ouvrable sur petit écran. */
+      min-height: min(32rem, 78vh);
       max-height: 90vh;
       background: #fff;
       box-shadow: 0 24px 60px rgb(15 23 42 / 22%);
