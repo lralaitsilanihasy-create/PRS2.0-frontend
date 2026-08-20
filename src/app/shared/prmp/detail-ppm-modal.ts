@@ -149,10 +149,14 @@ import { PpmFormFactory } from './ppm-form-factory';
         <!-- ⚠️ 2026-08-19 (demande user) — trois onglets : identité de l'entité, plan de passation,
              pièces jointes. Tout est déjà chargé (même vague) : changer d'onglet n'appelle rien. -->
         <div class="dpm-tabs" role="tablist" aria-label="Sections du plan de passation">
-          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'entite'"
-            [attr.aria-selected]="onglet() === 'entite'" (click)="onglet.set('entite')">
-            Entité contractante
-          </button>
+          <!-- ⚠️ Réservé aux profils qui découvrent le dossier : la PRMP et l'UGPM y liraient leur
+               propre fiche d'identité (cf. afficheIdentites). -->
+          @if (afficheIdentites()) {
+            <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'entite'"
+              [attr.aria-selected]="onglet() === 'entite'" (click)="onglet.set('entite')">
+              Entité contractante
+            </button>
+          }
           <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'ppm'"
             [attr.aria-selected]="onglet() === 'ppm'" (click)="onglet.set('ppm')">
             Plan de passation <span class="dpm-tab__n">{{ marches().length }}</span>
@@ -166,7 +170,7 @@ import { PpmFormFactory } from './ppm-form-factory';
         <!-- ── CORPS ── -->
         <div class="dpm-body">
 
-            @if (onglet() === 'entite') {
+            @if (onglet() === 'entite' && afficheIdentites()) {
               <div class="dpm-section dpm-fiches" role="tabpanel">
                 <!-- Entité contractante — lisible par tout utilisateur authentifié. -->
                 <div class="dpm-fiche">
@@ -829,6 +833,8 @@ export class DetailPpmModal implements OnInit {
     login?: string;
     soumisPar?: string;
     soumisParLibelle?: string;
+    /** Saisie et soumission par le même compte — une seule ligne suffit alors. */
+    memeActeur: boolean;
   } | null>(() => {
     const d = this.dossier();
     const login = d?.creePar;
@@ -844,6 +850,15 @@ export class DetailPpmModal implements OnInit {
       /** Saisie et soumission par le même compte — le cas courant : une seule ligne suffit. */
       memeActeur: !!soumisPar && soumisPar === login,
     };
+  });
+  /**
+   * ⚠️ 2026-08-20 (demande user) — l'onglet « Entité contractante » s'adresse aux profils qui
+   * DÉCOUVRENT le dossier (contrôleurs, administration). La PRMP et l'UGPM y liraient leur propre
+   * fiche : redondant pour elles, et trois requêtes pour rien. L'onglet leur est donc masqué.
+   */
+  readonly afficheIdentites = computed(() => {
+    const r = this.auth.role();
+    return r !== 'PRMP' && r !== 'UGPM';
   });
   /** Onglet courant — le plan de passation est le motif d'ouverture le plus fréquent du modal. */
   readonly onglet = signal<'entite' | 'ppm' | 'pieces'>('ppm');
@@ -1042,9 +1057,9 @@ export class DetailPpmModal implements OnInit {
       // provoquait un 403 à chaque ouverture du modal. On interroge désormais la route ciblée
       // `par-tutelle/{idPrmp}` — mais elle exige l'identifiant de la PRMP, connu seulement une fois
       // le plan chargé : voir `chargerUgpmsRattachees`, déclenché juste après.
-      entites: this.entiteService.listeSilencieuse().pipe(catchError(() => of([] as EntiteContract[]))),
+      entites: this.afficheIdentites() ? this.entiteService.listeSilencieuse().pipe(catchError(() => of([] as EntiteContract[]))) : of([] as EntiteContract[]),
       localiteMap: this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']),
-      prmps: this.prmpService.listeSilencieuse().pipe(catchError(() => of([] as Prmp[]))),
+      prmps: this.afficheIdentites() ? this.prmpService.listeSilencieuse().pipe(catchError(() => of([] as Prmp[]))) : of([] as Prmp[]),
     }).subscribe({
       next: ({ ppm, dossier, marches, pieces, benefs, previsions, lots, modeMap, natureMap, entiteMap, compteMap, soas, capms, entites, localiteMap, prmps }) => {
         this.entites.set(entites);
@@ -1089,9 +1104,12 @@ export class DetailPpmModal implements OnInit {
    */
   private chargerUgpmsRattachees(idPrmp?: string): void {
     this.ugpms.set([]);
-    const role = this.auth.role();
-    const sienne = this.auth.ref() === idPrmp && (role === 'PRMP' || role === 'UGPM');
-    if (!idPrmp || !(role === 'ADMINISTRATEUR' || sienne)) {
+    // ⚠️ 2026-08-20 — l'onglet d'identités ne s'affiche plus pour la PRMP ni l'UGPM : inutile de
+    // charger leurs unités. Restent les profils qui découvrent le dossier — mais `par-tutelle` n'est
+    // ouvert qu'à l'ADMINISTRATEUR et à la PRMP concernée : un contrôleur recevrait un 403. On
+    // n'émet donc pas l'appel plutôt que de le taire (ouverture aux contrôleurs à demander au
+    // backend si le bloc doit leur apparaître).
+    if (!idPrmp || !this.afficheIdentites() || this.auth.role() !== 'ADMINISTRATEUR') {
       return;
     }
     this.ugpmService.parTutelle(idPrmp).subscribe({
