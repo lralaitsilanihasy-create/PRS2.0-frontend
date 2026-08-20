@@ -1013,9 +1013,10 @@ textarea.form-control {
 .modal {
   background: #fff;
   border-radius: var(--radius-lg);
-  box-shadow:
-    0 0 0 0.5px var(--p-200),
-    var(--shadow-xl);
+  /* ⚠️ 2026-08-20 (demande user) — plus de liseré bleu (« 0 0 0 .5px var(--p-200) ») : il se lisait
+     comme une bordure de couleur autour du dialogue. Le panneau se détache désormais par l'ombre
+     seule — un halo large et un liseré rapproché neutres, qui en dessinent le bord sans teinte. */
+  box-shadow: 0 2px 8px rgb(15 23 42 / 12%), 0 24px 64px rgb(15 23 42 / 32%);
   width: 94vw;
   max-width: 680px;
   max-height: 90vh;

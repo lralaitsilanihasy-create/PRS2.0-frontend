@@ -5,36 +5,10 @@
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Structure modale ── */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  /* Flou léger (voir _design-system.scss) : blur(8px) plein écran = ouverture/défilement saccadés. */
-  background: rgba(26, 29, 46, .58);
-  backdrop-filter: blur(2px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  z-index: 1000;
-}
-
-.modal {
-  background: #fff;
-  border-radius: var(--radius-md);
-  box-shadow:
-    0 0 0 0.5px var(--p-200),
-    0 8px 40px rgba(2, 132, 199, .18),
-    0 2px 8px rgba(0, 0, 0, .06);
-  width: 94vw;
-  max-width: 780px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-
-  /* Détail PPM : modal élargi (table à 13 colonnes). */
-  &.dpm-wide { width: 98vw; max-width: min(120rem, 98vw); }
-}
+/* Seule spécificité de ce modal : sa table compte 13 colonnes. Fond, ombre, rayon et hauteur
+   viennent du design system — les redéfinir ici les faisait diverger, et ce bloc portait encore
+   l'ancien liseré bleu retiré le 2026-08-20. */
+.modal.dpm-wide { width: 98vw; max-width: min(120rem, 98vw); }
 
 /* ── Tableau des lignes de marché (édition) ──
    Objectif : tout tient dans la largeur du modal, sans scroll horizontal.
@@ -101,23 +75,6 @@
   border-radius: 50%;
   background: var(--success-text);
   display: inline-block;
-}
-
-.btn-close {
-  width: 28px; height: 28px;
-  border-radius: 7px;
-  background: var(--n-100);
-  border: 0.5px solid var(--n-200);
-  color: var(--n-400);
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-base);
-  transition: var(--transition);
-
-  &:hover { background: var(--n-200); color: var(--n-800); }
 }
 
 /* Édition (modeEdition) : actions d'en-tête, actions par pièce, ligne d'upload. */
