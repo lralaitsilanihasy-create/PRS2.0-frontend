@@ -8,7 +8,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../a11y/modale.directive';
-import { AnomalieTranscription, Capm, Compte, Dossier, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, EntiteContract, PieceJointeDossier, Ppm, Prmp, Ugpm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypeChangementLigne, TypePieceJointe } from '../../models';
+import { AnomalieTranscription, Capm, Compte, Dossier, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, EntiteContract, PieceJointeDossier, Ppm, Prmp, Role, Ugpm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypeChangementLigne, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -35,6 +35,23 @@ import { DatePipe } from '@angular/common';
 import { PpmMarchesTable } from './ppm-marches-table';
 import { PpmSaisieGrid } from './ppm-saisie-grid';
 import { PpmFormFactory } from './ppm-form-factory';
+
+/**
+ * Profils auxquels le backend ouvre `GET /api/ugpms/par-tutelle/{idPrmp}` — **miroir exact** du
+ * `@PreAuthorize` serveur (livraison `b6f4adb`, 2026-08-20) : ceux qui **instruisent** le dossier,
+ * plus l'Administrateur. Le Chargé de publication en est absent (hors instruction → 403), tout
+ * comme la PRMP et l'UGPM, dont la lecture est limitée à leur propre tutelle et à qui cet onglet
+ * est de toute façon masqué. Ce n'est qu'un garde de confort : l'autorité reste le serveur.
+ */
+const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
+  'ADMINISTRATEUR',
+  'PRESIDENT',
+  'CHEF_COMMISSION',
+  'SECRETAIRE',
+  'MEMBRE',
+  'VERIFICATEUR',
+  'ASSISTANT_CONTROLEUR',
+];
 
 /**
  * Modal « Détail PPM » réutilisable (partagé) : en-tête PPM + lignes de marché + pièces jointes du dossier.
@@ -813,9 +830,10 @@ export class DetailPpmModal implements OnInit {
     return id ? this.prmps().find((p) => p.idPrmp === id) ?? null : null;
   });
   /**
-   * UGPM sous la tutelle de la PRMP du plan. Chargées par `GET /api/ugpms/par-tutelle/{idPrmp}`,
-   * ouvert à la PRMP concernée depuis la livraison backend `b264cce` — vide pour les contrôleurs,
-   * qui n'ont pas accès au répertoire (l'appel n'est alors pas émis, cf. `chargerUgpmsRattachees`).
+   * UGPM sous la tutelle de la PRMP du plan, chargées par `GET /api/ugpms/par-tutelle/{idPrmp}`
+   * (cf. `chargerUgpmsRattachees`). Depuis la livraison backend `b6f4adb`, les contrôleurs y ont
+   * accès : le bloc s'affiche pour eux. Hors Administrateur, le serveur renvoie une **vue
+   * restreinte** — identité, matricule, libellé, courriel, téléphone ; ni CIN ni login.
    */
   readonly ugpmsRattachees = computed(() => {
     const id = this.ppm()?.idPrmp;
@@ -1094,22 +1112,22 @@ export class DetailPpmModal implements OnInit {
   /**
    * Unités de gestion rattachées à la PRMP du plan — `GET /api/ugpms/par-tutelle/{idPrmp}`.
    *
-   * ⚠️ Fin du 403 silencieux (2026-08-19). L'écran lisait auparavant la liste COMPLÈTE des UGPM,
-   * réservée à l'ADMINISTRATEUR : chaque ouverture du modal par une PRMP déclenchait un 403 qu'il
-   * fallait taire. Le backend (`b264cce`) ouvre la route ciblée à la **PRMP concernée**, et on ne
-   * l'appelle que lorsqu'elle peut aboutir — Administrateur, ou titulaire de cette tutelle. Pour
-   * les contrôleurs, **aucune requête n'est émise** : le refus n'est plus masqué, il n'a plus lieu.
+   * ⚠️ Fin du 403 silencieux (2026-08-19), puis ouverture aux contrôleurs (2026-08-20). L'écran
+   * lisait au départ la liste COMPLÈTE des UGPM, réservée à l'ADMINISTRATEUR : chaque ouverture du
+   * modal déclenchait un 403 qu'il fallait taire. On interroge désormais la route ciblée, que le
+   * backend (`b6f4adb`) ouvre aux profils qui **instruisent** le dossier — pour toute tutelle et
+   * sans filtre de localité. Le bloc apparaît donc enfin à ceux qui en ont l'usage.
    * Appelé après le chargement principal (l'identifiant de la PRMP vient du plan) ; l'affichage du
    * bloc ne bloque pas le rendu du modal.
    */
   private chargerUgpmsRattachees(idPrmp?: string): void {
     this.ugpms.set([]);
-    // ⚠️ 2026-08-20 — l'onglet d'identités ne s'affiche plus pour la PRMP ni l'UGPM : inutile de
-    // charger leurs unités. Restent les profils qui découvrent le dossier — mais `par-tutelle` n'est
-    // ouvert qu'à l'ADMINISTRATEUR et à la PRMP concernée : un contrôleur recevrait un 403. On
-    // n'émet donc pas l'appel plutôt que de le taire (ouverture aux contrôleurs à demander au
-    // backend si le bloc doit leur apparaître).
-    if (!idPrmp || !this.afficheIdentites() || this.auth.role() !== 'ADMINISTRATEUR') {
+    // Dernier filtre, miroir du @PreAuthorize serveur : le Chargé de publication, hors instruction,
+    // recevrait un 403 — on ne lui émet pas la requête plutôt que d'avoir à la taire. (PRMP et UGPM
+    // sont déjà écartées en amont : l'onglet leur est masqué, et le serveur ne leur ouvrirait de
+    // toute façon que leur propre tutelle.)
+    const role = this.auth.role();
+    if (!idPrmp || !this.afficheIdentites() || !role || !ROLES_UGPM_PAR_TUTELLE.includes(role)) {
       return;
     }
     this.ugpmService.parTutelle(idPrmp).subscribe({
