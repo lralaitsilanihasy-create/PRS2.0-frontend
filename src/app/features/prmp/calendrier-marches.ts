@@ -104,7 +104,7 @@ interface AlerteJalon {
     .cj__k { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); width: 2.9rem; text-align: right; }
     .cj__date { font-variant-numeric: tabular-nums; }
     .cj__reel { color: var(--success-text, #16a34a); font-weight: 600; }
-    .cj__vide { color: var(--n-300); }
+    .cj__vide { color: var(--n-400); }
     .cj__alertes { display: flex; flex-direction: column; gap: 0.3rem; align-items: center; }
     .cj__badge { white-space: nowrap; }
     .cj__badge--imminent { background: var(--warning-bg, #fef3c7); color: var(--warning-text, #b45309); }
