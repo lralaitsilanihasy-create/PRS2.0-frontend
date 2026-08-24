@@ -45,8 +45,21 @@ import {
           </thead>
           <tbody>
             @for (pv of pvs(); track pv.idPv) {
-              <tr class="pva__row" (click)="basculer(pv)">
-                <td class="cnm-mono">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</td>
+              <tr class="pva__row">
+                <td class="cnm-mono">
+                  <!-- <button> et non <tr (click)> : une ligne de tableau ne peut pas devenir
+                       un <button> (imbrication invalide dans <tr>/<td>) — le déclencheur est un
+                       vrai bouton dans la cellule de référence, focalisable et activable au
+                       clavier nativement (Entrée / Espace), sans rôle ni gestion clavier
+                       ajoutés à la main. AUDIT.md A4. -->
+                  <button type="button" class="pva__toggle"
+                    [attr.aria-expanded]="ouvert() === pv.idPv"
+                    [attr.aria-controls]="'pva-detail-' + pv.idPv"
+                    (click)="basculer(pv)">
+                    <span class="pva__chev" [class.is-open]="ouvert() === pv.idPv" aria-hidden="true">▸</span>
+                    {{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}
+                  </button>
+                </td>
                 <td>{{ dossierRef(pv) }}</td>
                 <td><span [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span></td>
                 <td class="cnm-mono">{{ dateSignature(pv) || '—' }}</td>
@@ -56,14 +69,14 @@ import {
                     <span class="badge badge-success">Archivé le {{ pv.dateArchivage }}</span>
                   } @else {
                     <button type="button" class="btn btn-primary btn-sm" [disabled]="archivage() === pv.idPv"
-                      (click)="archiver(pv); $event.stopPropagation()">
+                      (click)="archiver(pv)">
                       {{ archivage() === pv.idPv ? 'Archivage…' : 'Archiver' }}
                     </button>
                   }
                 </td>
               </tr>
               @if (ouvert() === pv.idPv) {
-                <tr class="pva__detail">
+                <tr class="pva__detail" [id]="'pva-detail-' + pv.idPv">
                   <td colspan="5">
                     <dl class="pva__dl">
                       <div><dt>Référence</dt><dd class="cnm-mono">{{ pv.refePv || pv.referencePv || '—' }}</dd></div>
@@ -91,7 +104,12 @@ import {
     </section>
   `,
   styles: `
-    .pva__row { cursor: pointer; }
+    /* Bouton réinitialisé pour reprendre l'apparence texte de l'ancienne cellule, tout en
+       gagnant le focus et l'activation clavier natifs (AUDIT.md A4). */
+    .pva__toggle { display: inline-flex; align-items: center; gap: 0.4rem; background: transparent; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+    .pva__toggle:hover { text-decoration: underline; }
+    .pva__chev { display: inline-block; font-size: 0.7em; color: var(--n-400); transition: transform 0.15s; }
+    .pva__chev.is-open { transform: rotate(90deg); }
     .pva__dl { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
     .pva__dl > div { display: flex; gap: 0.5rem; align-items: baseline; }
     .pva__dl dt { flex: 0 0 11rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
