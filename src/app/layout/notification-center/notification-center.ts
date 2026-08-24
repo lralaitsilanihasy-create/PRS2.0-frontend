@@ -6,6 +6,7 @@ import { routePourNotification } from '../../core/notifications/notification-rou
 import { NotificationsStore } from '../../core/notifications/notifications.store';
 import { Dossier, Notification } from '../../models';
 import { DossierService, NotificationService } from '../../services';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 
 /** Profils disposant d'un écran messagerie (pour router les notifications MESSAGE). */
 const MESSAGERIE_ROLES: Record<string, string> = {
@@ -24,7 +25,7 @@ const MESSAGERIE_ROLES: Record<string, string> = {
 @Component({
   selector: 'app-notification-center',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, ModaleDirective],
   template: `
     <div class="notif">
       <button
@@ -41,7 +42,10 @@ const MESSAGERIE_ROLES: Record<string, string> = {
 
       @if (open()) {
         <div class="notif__backdrop" aria-hidden="true" (click)="open.set(false)"></div>
-        <div class="notif__panel" role="dialog" aria-label="Notifications" (keydown.escape)="open.set(false)">
+        <!-- appModale : panneau ancré à la cloche mais avec un voile plein écran (.notif__backdrop) —
+             même famille que les autres dialogues de l'appli, donc même traitement (AUDIT.md A1) :
+             focus déplacé à l'ouverture, piège de Tab, Échap, restitution du focus à la cloche. -->
+        <div class="notif__panel" role="dialog" aria-label="Notifications" appModale (appModaleFermer)="open.set(false)">
           <div class="notif__head">
             <span class="notif__title">Notifications</span>
             <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="toutLu()" [disabled]="!count()">
