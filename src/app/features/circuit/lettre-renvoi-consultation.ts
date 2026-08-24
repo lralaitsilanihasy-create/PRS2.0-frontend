@@ -9,6 +9,7 @@ import { urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
 import { Dossier, LettreRenvoi, PieceJointeDossier, TypePieceJointe } from '../../models';
 import { DossierService, LettreRenvoiService, PieceJointeDossierService, TypePieceJointeService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { DossierConsultation } from './dossier-consultation';
 
@@ -24,7 +25,7 @@ import { DossierConsultation } from './dossier-consultation';
 @Component({
   selector: 'app-lettre-renvoi-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation],
+  imports: [StatutBadge, DossierConsultation, EtatErreur],
   template: `
     <section class="lrc">
       <header class="page-header">
@@ -33,6 +34,8 @@ import { DossierConsultation } from './dossier-consultation';
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les lettres de renvoi." (reessayer)="charger()" />
       } @else {
         <div class="table-card">
         <table>
@@ -238,6 +241,8 @@ export class LettreRenvoiConsultation {
   readonly piecesUpload = (this.route.snapshot.data['piecesUpload'] as boolean) ?? false;
   readonly titre = (this.route.snapshot.data['title'] as string) ?? 'Lettres de renvoi';
   readonly loading = signal(true);
+  /** Échec du chargement (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly lettres = signal<LettreRenvoi[]>([]);
   readonly ouvert = signal<number | null>(null);
   /** idLettre en cours de signature (désactive le bouton). */
@@ -276,13 +281,23 @@ export class LettreRenvoiConsultation {
         error: () => this.toast.error('Impossible de charger les types de pièces jointes.'),
       });
     }
+    this.charger();
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    this.loading.set(true);
+    this.erreur.set(false);
     const call = this.source === 'mes' ? this.service.getMesLettres() : this.service.getAll();
     call.subscribe({
       next: (rows) => {
         this.lettres.set(rows);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

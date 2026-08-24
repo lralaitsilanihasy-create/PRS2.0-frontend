@@ -22,6 +22,7 @@ import {
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { StatutBadge } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { DossierConsultation } from './dossier-consultation';
 
@@ -57,7 +58,7 @@ interface LigneControleur {
 @Component({
   selector: 'app-dispatchs-controleurs',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, DatePipe, ModaleDirective],
+  imports: [StatutBadge, DossierConsultation, DatePipe, ModaleDirective, EtatErreur],
   template: `
     <section class="dpc">
       <h2 class="dpc__titre"><span aria-hidden="true">📊</span> Dispatchs par contrôleur</h2>
@@ -65,6 +66,8 @@ interface LigneControleur {
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les dispatchs." (reessayer)="charger()" />
       } @else {
         <div class="dpc__kpis">
           <div class="cnm-stat cnm-stat--blue">
@@ -262,6 +265,8 @@ export class DispatchsControleurs implements OnDestroy {
   private readonly toast = inject(ToastService);
 
   readonly loading = signal(true);
+  /** Échec du chargement (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly lignes = signal<LigneControleur[]>([]);
   /** Contrôleur dont la liste des dossiers est dépliée (im), null = tout replié. */
   readonly ouvert = signal<string | null>(null);
@@ -298,7 +303,10 @@ export class DispatchsControleurs implements OnDestroy {
       .subscribe(() => this.charger());
   }
 
-  private charger(): void {
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    this.loading.set(true);
+    this.erreur.set(false);
     forkJoin({
       dossiers: this.dossierService.list(),
       receptions: this.receptionService.list(),
@@ -384,7 +392,10 @@ export class DispatchsControleurs implements OnDestroy {
           });
         }
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

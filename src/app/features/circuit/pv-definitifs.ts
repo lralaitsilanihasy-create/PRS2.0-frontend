@@ -19,6 +19,7 @@ import {
   ReferenceLookupService,
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DetailPvModal } from './detail-pv-modal';
 
 /**
@@ -32,7 +33,7 @@ import { DetailPvModal } from './detail-pv-modal';
 @Component({
   selector: 'app-pv-definitifs',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, StatutBadge, DetailPvModal],
+  imports: [ModaleDirective, StatutBadge, DetailPvModal, EtatErreur],
   template: `
     <section class="pvd">
       <header class="page-header">
@@ -41,6 +42,8 @@ import { DetailPvModal } from './detail-pv-modal';
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les PV définitifs." (reessayer)="charger()" />
       } @else if (pvs().length) {
         <!-- ⚠️ Demande user (2026-08-15) — tableau : référence, entité contractante, date du PV,
              co-signataires, et l'action (le bouton varie selon le profil, comme avant). -->
@@ -157,6 +160,8 @@ export class PvDefinitifs {
   private readonly lookups = inject(ReferenceLookupService);
 
   readonly loading = signal(true);
+  /** Échec du chargement (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly pvs = signal<PvExamen[]>([]);
   // — Jointures pour les colonnes du tableau (entité du dossier, noms des co-signataires) —
   private readonly examens = signal<Examen[]>([]);
@@ -193,6 +198,15 @@ export class PvDefinitifs {
   readonly apercu = signal<{ reference: string; url: SafeResourceUrl; brute: string } | null>(null);
 
   constructor() {
+    this.charger();
+    this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
+    this.lookups.lookup(ControleurService, 'imControleur', ['nomCont', 'prenomsCont']).subscribe((m) => this.controleurMap.set(m));
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    this.loading.set(true);
+    this.erreur.set(false);
     // UNE vague : PV + chaîne de jointure (chaque liste dégrade en silence si un profil n'y a pas accès).
     forkJoin({
       pvs: this.service.definitifs(),
@@ -210,10 +224,11 @@ export class PvDefinitifs {
         this.pvs.set([...pvs].sort((a, b) => this.dateSignature(b).localeCompare(this.dateSignature(a))));
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
-    this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
-    this.lookups.lookup(ControleurService, 'imControleur', ['nomCont', 'prenomsCont']).subscribe((m) => this.controleurMap.set(m));
   }
 
   /**
