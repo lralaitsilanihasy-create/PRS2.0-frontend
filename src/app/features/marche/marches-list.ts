@@ -1,21 +1,30 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { Marche } from '../../models';
 import { MarcheService, PpmService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 const PAGE_SIZE = 15;
 
 /**
  * Liste des Marchés. Peut être filtrée par PPM via le query param `?ppm=<idPpm>`
- * (lien « Voir ses marchés » depuis l'écran PPM). La relation PPM → Marché se
- * reconstruit côté client (jointure sur `idPpm`), faute d'endpoint imbriqué.
+ * (lien « Voir ses marchés » depuis l'écran PPM).
+ *
+ * **Pagination serveur** (AUDIT.md P1) : l'écran ne charge que la page affichée, via
+ * `GET /api/marches?page=&size=&ppm=`. Il téléchargeait auparavant la table entière — scopée au
+ * périmètre de l'appelant, mais entière — pour la filtrer et la découper en mémoire ; le coût
+ * croissait donc linéairement avec la base pour n'afficher que 15 lignes.
+ *
+ * Le filtre PPM est passé au serveur, et non plus appliqué après coup : paginer d'abord puis
+ * filtrer la page servie donnerait des pages incomplètes et un total faux.
  */
 @Component({
   selector: 'app-marches-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, RouterLink],
+  imports: [StatutBadge, RouterLink, EtatErreur],
   template: `
     <section class="marches">
       <header class="marches__header">
@@ -23,7 +32,7 @@ const PAGE_SIZE = 15;
           <span class="cnm-section-label">Domaine PRMP</span>
           <h1 class="marches__title">Marchés</h1>
         </div>
-        <span class="cnm-badge cnm-badge--neutral">{{ visibleMarches().length }} marché(s)</span>
+        <span class="cnm-badge cnm-badge--neutral">{{ total() }} marché(s)</span>
       </header>
 
       @if (ppmFilter()) {
@@ -36,6 +45,10 @@ const PAGE_SIZE = 15;
             Voir tous les marchés
           </a>
         </div>
+      }
+
+      @if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les marchés." (reessayer)="charger()" />
       }
 
       <div class="cnm-table-wrap">
@@ -53,9 +66,11 @@ const PAGE_SIZE = 15;
           </thead>
           <tbody>
             @if (loading()) {
-              <tr><td colspan="7" class="cnm-table__empty">Chargement…</td></tr>
+              <tr><td colspan="7" class="cnm-table__empty" role="status">Chargement…</td></tr>
+            } @else if (erreur()) {
+              <tr><td colspan="7" class="cnm-table__empty">—</td></tr>
             } @else {
-              @for (m of pageItems(); track m.idDetail) {
+              @for (m of marches(); track m.idDetail) {
                 <tr>
                   <td>{{ m.designationMarche || '—' }}</td>
                   <td class="cnm-mono">{{ m.idPpm }}</td>
@@ -134,37 +149,22 @@ export class MarchesList {
   private readonly ppmService = inject(PpmService);
   private readonly route = inject(ActivatedRoute);
 
+  /** Page courante uniquement (au plus PAGE_SIZE lignes), telle que servie. */
   readonly marches = signal<Marche[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement (affiche l'état d'erreur + « Réessayer »). */
+  readonly erreur = signal(false);
   readonly page = signal(0);
+  /** Nombre total de marchés du périmètre filtré — donné par le serveur, plus déduit d'un tableau. */
+  readonly total = signal(0);
+  readonly totalPages = signal(1);
   readonly ppmFilter = signal<string | null>(null);
   readonly ppmRef = signal<string | null>(null);
 
-  readonly visibleMarches = computed(() => {
-    const all = this.marches();
-    const f = this.ppmFilter();
-    return f ? all.filter((m) => String(m.idPpm) === f) : all;
-  });
-  readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.visibleMarches().length / PAGE_SIZE)),
-  );
-  readonly pageItems = computed(() => {
-    const start = this.page() * PAGE_SIZE;
-    return this.visibleMarches().slice(start, start + PAGE_SIZE);
-  });
-
   constructor() {
-    this.loading.set(true);
-    this.service.list().subscribe({
-      next: (rows) => {
-        this.marches.set(rows);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
-
-    // Réagit au filtre PPM passé en query param (lien depuis l'écran PPM).
-    this.route.queryParamMap.subscribe((params) => {
+    // Une seule source de chargement : le query param. S'abonner émet immédiatement, donc le
+    // premier chargement part d'ici — pas d'appel supplémentaire au constructeur (AUDIT.md P7).
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const ppm = params.get('ppm');
       this.ppmFilter.set(ppm);
       this.page.set(0);
@@ -175,6 +175,27 @@ export class MarchesList {
           error: () => this.ppmRef.set(null),
         });
       }
+      this.charger();
+    });
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    const ppm = this.ppmFilter();
+    this.loading.set(true);
+    this.erreur.set(false);
+    this.service.listePage(this.page(), PAGE_SIZE, ppm ? { ppm } : undefined).subscribe({
+      next: (p) => {
+        this.marches.set(p.content);
+        this.total.set(p.totalElements);
+        this.totalPages.set(Math.max(1, p.totalPages));
+        this.loading.set(false);
+      },
+      error: () => {
+        this.marches.set([]);
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 
@@ -186,10 +207,18 @@ export class MarchesList {
   }
 
   prev(): void {
-    this.page.update((p) => Math.max(0, p - 1));
+    if (this.page() === 0) {
+      return;
+    }
+    this.page.update((p) => p - 1);
+    this.charger();
   }
 
   next(): void {
-    this.page.update((p) => Math.min(this.totalPages() - 1, p + 1));
+    if (this.page() >= this.totalPages() - 1) {
+      return;
+    }
+    this.page.update((p) => p + 1);
+    this.charger();
   }
 }
