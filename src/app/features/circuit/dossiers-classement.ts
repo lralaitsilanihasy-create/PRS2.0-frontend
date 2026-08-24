@@ -8,6 +8,7 @@ import { Dossier, TypeDossier } from '../../models';
 import { DemandeRetraitService, DossierService, TypeDossierService } from '../../services';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { ClassementConfig, ClassementGroupe, dossiersDuClassement } from './classement-config';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DispatchsControleurs } from './dispatchs-controleurs';
 import { DossiersCircuitListe } from './dossiers-circuit-liste';
 import { RetraitsValidation } from './retraits-validation';
@@ -26,7 +27,7 @@ export * from './classement-config';
 @Component({
   selector: 'app-dossiers-classement',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DispatchsControleurs, DossiersCircuitListe, RetraitsValidation],
+  imports: [DispatchsControleurs, DossiersCircuitListe, RetraitsValidation, EtatErreur],
   template: `
     <section class="md">
       <header class="page-header">
@@ -52,6 +53,8 @@ export * from './classement-config';
             </div></article>
           }
         </div>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les dossiers." (reessayer)="charger()" />
       } @else {
         <div class="md__kpis">
           <div class="cnm-stat cnm-stat--blue">
@@ -253,6 +256,8 @@ export class DossiersClassement {
 
   readonly types = signal<TypeDossier[]>([]);
   readonly loading = signal(true);
+  /** Échec du chargement des types de dossier (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   /** Groupe déplié sous le classement (liste inline, même motif que « Voir les dossiers ») ; null = replié. */
   readonly selection = signal<{ type: string; groupe: string } | null>(null);
   /** Type dont les demandes de retrait sont dépliées sous le classement ; null = replié. */
@@ -273,19 +278,29 @@ export class DossiersClassement {
   });
 
   constructor() {
+    this.charger();
+    this.chargerCompteurs();
+    // Mutation signalée par le drill-down embarqué (dispatch/réception) → compteurs à jour sans navigation.
+    toObservable(this.dossiersRefresh.revision)
+      .pipe(skip(1), takeUntilDestroyed())
+      .subscribe(() => this.chargerCompteurs());
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    this.loading.set(true);
+    this.erreur.set(false);
     this.typeDossierService.list().subscribe({
       next: (rows) => {
         const rang = (id: string) => DossiersClassement.ORDRE_FAMILLE[id] ?? 99;
         this.types.set([...rows].sort((a, b) => rang(a.idTypeDossier) - rang(b.idTypeDossier)));
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
-    this.chargerCompteurs();
-    // Mutation signalée par le drill-down embarqué (dispatch/réception) → compteurs à jour sans navigation.
-    toObservable(this.dossiersRefresh.revision)
-      .pipe(skip(1), takeUntilDestroyed())
-      .subscribe(() => this.chargerCompteurs());
   }
 
   /** Un seul chargement scopé profil : on ne retient que les statuts couverts par les groupes. */

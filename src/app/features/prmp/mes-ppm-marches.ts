@@ -5,6 +5,7 @@ import { Dossier, Marche, Ppm } from '../../models';
 import { DossierService, MarcheService, PpmService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
 import { DetailPpmModal } from '../../shared/prmp';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /**
@@ -15,7 +16,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 @Component({
   selector: 'app-mes-ppm-marches',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DetailPpmModal],
+  imports: [StatutBadge, DetailPpmModal, EtatErreur],
   template: `
     <section>
       <header class="page-header">
@@ -27,6 +28,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger vos PPM." (reessayer)="charger()" />
       } @else {
         @for (ppm of mesPpms(); track ppm.idPpm) {
           @if (statutPpm(ppm) !== 'BROUILLON') {
@@ -81,6 +84,8 @@ export class MesPpmMarches {
   private readonly ppms = signal<Ppm[]>([]);
   private readonly marches = signal<Marche[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   /** Statut du dossier par idDossier — pour gater l'édition (BROUILLON seulement) et signaler l'état soumis. */
   private readonly dossierStatut = signal<Map<number, string>>(new Map());
 
@@ -115,18 +120,26 @@ export class MesPpmMarches {
     });
   }
 
-  private charger(): void {
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     this.ppmService.list().subscribe({
       next: (r) => this.ppms.set(r),
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
     this.marcheService.list().subscribe({
       next: (r) => {
         this.marches.set(r);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
     this.dossierService.list().subscribe((r) => {
       this.dossierStatut.set(new Map(r.map((d: Dossier) => [d.idDossier, d.statut ?? ''])));

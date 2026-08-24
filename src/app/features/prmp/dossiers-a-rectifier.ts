@@ -11,6 +11,7 @@ import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { Dossier, Notification, ObservationPv } from '../../models';
 import { DossierService, NotificationService, ObservationPvService } from '../../services';
 import { StatutBadge, decomposerObservation } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossierModificationStore } from './dossier-modification.store';
 
 /** Une carte « à rectifier » = un dossier EN_ATTENTE_DECISION_PRMP + ses observations non satisfaites. */
@@ -42,7 +43,7 @@ interface LigneObs {
 @Component({
   selector: 'app-dossiers-a-rectifier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ModaleDirective, StatutBadge, DatePipe],
+  imports: [RouterLink, ModaleDirective, StatutBadge, DatePipe, EtatErreur],
   template: `
     <section>
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -62,6 +63,8 @@ interface LigneObs {
       }
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les dossiers à rectifier." (reessayer)="charger()" />
       } @else if (cartesAffichees().length) {
         <div class="ar-list">
           @for (c of cartesAffichees(); track c.dossier.idDossier) {
@@ -249,6 +252,8 @@ export class DossiersARectifier {
    *  topbar pour que le bouton de retour ne bouge pas quand la liste défile. */
   protected readonly encastre = this.route.snapshot.data['encastre'] === true;
   readonly loading = signal(true);
+  /** Échec du chargement des cartes (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   /** Une carte par dossier EN_ATTENTE_DECISION_PRMP (dédoublonné par dossier). */
   readonly cartes = signal<CarteRectif[]>([]);
   /** ⚠️ Demande user (2026-08-02) — filtre par type (`?type=DDP…`) depuis les cartes « Mes dossiers ». */
@@ -290,8 +295,10 @@ export class DossiersARectifier {
     });
   }
 
-  private charger(): void {
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     forkJoin({
       dossiers: this.dossierService.list('EN_ATTENTE_DECISION_PRMP'),
       notifs: this.notificationService.mes(),
@@ -337,7 +344,10 @@ export class DossiersARectifier {
           this.loading.set(false);
         });
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

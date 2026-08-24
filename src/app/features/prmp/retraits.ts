@@ -9,6 +9,7 @@ import { VacanceStore } from '../../core/vacance/vacance.store';
 import { DemandeRetrait, Dossier } from '../../models';
 import { DemandeRetraitService, DossierService, LocaliteService, ReferenceLookupService } from '../../services';
 import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
@@ -21,7 +22,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 @Component({
   selector: 'app-prmp-retraits',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, StatutBadge, DossierConsultation],
+  imports: [DecimalPipe, StatutBadge, DossierConsultation, EtatErreur],
   template: `
     <section>
       <header class="page-header">
@@ -43,7 +44,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <option [value]="d.idDossier">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</option>
                 }
               </select>
-              @if (!retirables().length && !loading()) {
+              @if (!retirables().length && !loading() && !erreur()) {
                 <span class="form-hint">
                   Aucun dossier éligible au retrait. Un dossier peut être retiré à toute étape du circuit
                   tant que son PV n'est pas signé.
@@ -133,6 +134,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       <h2 class="rt-sub">Mes demandes</h2>
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger vos demandes de retrait." (reessayer)="charger()" />
       } @else {
         <div class="table-card">
           <table>
@@ -244,6 +247,8 @@ export class PrmpRetraits {
   readonly retirables = signal<Dossier[]>([]);
   readonly demandes = signal<DemandeRetrait[]>([]);
   readonly loading = signal(true);
+  /** Échec du chargement (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly saving = signal(false);
   readonly selectedId = signal<number | null>(null);
   readonly motif = signal('');
@@ -346,8 +351,10 @@ export class PrmpRetraits {
     this.selectedId.set(value ? Number(value) : null);
   }
 
-  private charger(): void {
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     // `mes-demandes` marque l'écran consulté côté serveur (remet à zéro le compteur du menu).
     forkJoin({ retirables: this.dossierService.retirables(), demandes: this.service.getMesDemandes() }).subscribe({
       next: (r) => {
@@ -357,7 +364,10 @@ export class PrmpRetraits {
         // Le compteur « demandes de retrait nouvelles » a été remis à zéro serveur → rafraîchir le menu.
         this.dossiersRefresh.notifierChangement();
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

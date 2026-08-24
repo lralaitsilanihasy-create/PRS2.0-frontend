@@ -9,6 +9,7 @@ import {
   ServiceBeneficiaireService,
 } from '../../services';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /**
  * PRMP → ses marchés, présentés comme le PPM officiel (tableau partagé lecture seule :
@@ -19,7 +20,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 @Component({
   selector: 'app-prmp-marches-previsions',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PpmMarchesTable],
+  imports: [PpmMarchesTable, EtatErreur],
   template: `
     <section class="mdp">
       <header class="mdp__header">
@@ -29,6 +30,8 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 
       @if (loading()) {
         <p class="mdp__info" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les marchés." (reessayer)="charger()" />
       } @else {
         @for (prmp of prmps(); track prmp.idPrmp) {
           <div class="cnm-card mdp__prmp">
@@ -102,6 +105,8 @@ export class PrmpMarchesPrevisions {
   private readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
   private readonly previsions = signal<MarchePrevision[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   private readonly expandedPrmp = signal<Set<string>>(new Set());
 
   /** marchés par PRMP : PRMP → PPM (idPrmp) → Marché (idPpm). */
@@ -127,10 +132,19 @@ export class PrmpMarchesPrevisions {
   });
 
   constructor() {
+    this.charger();
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     this.prmpService.list().subscribe({
       next: (r) => this.prmps.set(r),
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
     this.ppmService.list().subscribe({ next: (r) => this.ppms.set(r) });
     this.marcheService.list().subscribe({
@@ -138,7 +152,10 @@ export class PrmpMarchesPrevisions {
         this.marches.set(r);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
     // Bénéficiaires + prévisions en bulk (filtrés ensuite par les marchés de chaque PRMP).
     this.serviceBenefService.list().subscribe({ next: (r) => this.serviceBenefs.set(r) });

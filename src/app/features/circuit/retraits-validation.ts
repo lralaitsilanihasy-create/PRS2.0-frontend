@@ -9,6 +9,7 @@ import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { DemandeRetrait, Dossier } from '../../models';
 import { DemandeRetraitService, DossierService, ReferenceLookupService } from '../../services';
 import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossierConsultation } from './dossier-consultation';
 
 /**
@@ -20,7 +21,7 @@ import { DossierConsultation } from './dossier-consultation';
 @Component({
   selector: 'app-retraits-validation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, RouterLink],
+  imports: [StatutBadge, DossierConsultation, RouterLink, EtatErreur],
   template: `
     <section class="rv">
       <!-- ⚠️ 2026-08-07 — deux usages : écran à part entière (route « …/retraits ») ou panneau DÉPLIÉ sous
@@ -76,6 +77,8 @@ import { DossierConsultation } from './dossier-consultation';
           }
           @if (loading()) {
             <p class="text-muted" role="status">Chargement…</p>
+          } @else if (erreur()) {
+            <app-etat-erreur message="Impossible de charger les demandes de retrait." (reessayer)="charger()" />
           } @else if (onglet() === 'a-valider') {
             <div class="table-card">
             <table>
@@ -219,6 +222,8 @@ export class RetraitsValidation {
   /** idDossier → idTypeDossier, pour rattacher une demande au type de son dossier. */
   private readonly typeParDossier = signal<Map<number, string>>(new Map());
   readonly loading = signal(true);
+  /** Échec du chargement (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly deciding = signal(false);
   readonly refusOpen = signal<number | null>(null);
   readonly refusMotif = signal('');
@@ -280,15 +285,20 @@ export class RetraitsValidation {
     this.charger();
   }
 
-  private charger(): void {
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     const call = this.onglet() === 'historique' ? this.service.historique() : this.service.aValider();
     call.subscribe({
       next: (rows) => {
         this.toutes.set(rows);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

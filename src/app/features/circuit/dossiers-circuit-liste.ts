@@ -22,6 +22,7 @@ import {
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { StatutBadge, examenRectifiable } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { DispatchForm, DispatchItem } from './dispatch-form';
 import { DossierConsultation } from './dossier-consultation';
@@ -37,7 +38,7 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
 @Component({
   selector: 'app-dossiers-circuit-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, DatePipe, DispatchForm, ModaleDirective, ReceptionForm, RouterLink],
+  imports: [StatutBadge, DossierConsultation, DatePipe, DispatchForm, ModaleDirective, ReceptionForm, RouterLink, EtatErreur],
   template: `
     <section>
       @if (!embed()) {
@@ -73,6 +74,8 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les dossiers." (reessayer)="charger()" />
       } @else {
         <div class="table-card">
           @if (embed()) {
@@ -253,6 +256,8 @@ export class DossiersCircuitListe {
   readonly groupe = signal<string>('');
   readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly consulte = signal<Dossier | null>(null);
   /** Dossiers + réceptions dont le formulaire de dispatch est ouvert (1 = unitaire, plusieurs = lot ; null = fermé). */
   readonly dispatchItems = signal<DispatchItem[] | null>(null);
@@ -358,8 +363,10 @@ export class DossiersCircuitListe {
     return this.colonnes().has(c);
   }
 
-  private charger(): void {
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     this.coches.set(new Set()); // la sélection ne survit pas à un changement de type/groupe ni à une recharge
+    this.erreur.set(false);
     const statuts = new Set(this.groupeConfig()?.statuts ?? []);
     if (!this.type() || !statuts.size) {
       this.dossiers.set([]);
@@ -431,7 +438,10 @@ export class DossiersCircuitListe {
         this.dispatchByDossier.set(dispatchByDossier);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

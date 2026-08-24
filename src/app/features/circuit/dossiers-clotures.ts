@@ -8,6 +8,7 @@ import { Dossier, EchangeDto } from '../../models';
 import { DossierService, EntiteContractService, ReferenceLookupService, SaisieService } from '../../services';
 import { MesDossiers } from '../prmp/mes-dossiers';
 import { StatutBadge } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /**
  * « Dossiers vérifiés / clôturés » (Vérificateur) et « Dossiers vérifiés » (PRMP) — LECTURE SEULE.
@@ -18,7 +19,7 @@ import { StatutBadge } from '../../shared/circuit';
 @Component({
   selector: 'app-dossiers-clotures',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, StatutBadge],
+  imports: [RouterLink, StatutBadge, EtatErreur],
   template: `
     <section class="dc">
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -37,6 +38,8 @@ import { StatutBadge } from '../../shared/circuit';
       }
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les dossiers." (reessayer)="charger(pageIndex())" />
       } @else if (dossiersAffiches().length) {
         <ul class="dc__list">
           @for (d of dossiersAffiches(); track d.idDossier) {
@@ -238,6 +241,8 @@ export class DossiersClotures {
   readonly source = this.route.snapshot.data['source'] as 'verifies' | 'prmp-clotures';
   readonly titre = (this.route.snapshot.data['title'] as string) ?? 'Dossiers vérifiés';
   readonly loading = signal(true);
+  /** Échec du chargement (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly dossiers = signal<Dossier[]>([]);
   /** ⚠️ Demande user (2026-08-02) — filtre par type (`?type=DDP…`) depuis les cartes « Mes dossiers » (PRMP). */
   readonly typeFiltre = signal<string | null>(null);
@@ -289,8 +294,10 @@ export class DossiersClotures {
     this.charger(0);
   }
 
-  private charger(page: number): void {
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(page: number): void {
     this.loading.set(true);
+    this.erreur.set(false);
     // Changement de page : on repart d'une liste condensée, sans fil déplié.
     this.ouverts.set(new Set());
     if (this.source === 'prmp-clotures') {
@@ -301,7 +308,10 @@ export class DossiersClotures {
           this.dossiers.set(rows.filter((d) => MesDossiers.STATUTS_VERIFIES.has(d.statut ?? '')));
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: () => {
+          this.loading.set(false);
+          this.erreur.set(true);
+        },
       });
     } else {
       this.dossierService.verifies(page, this.pageSize).subscribe({
@@ -311,7 +321,10 @@ export class DossiersClotures {
           this.dossiers.set(p.content);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: () => {
+          this.loading.set(false);
+          this.erreur.set(true);
+        },
       });
     }
   }
