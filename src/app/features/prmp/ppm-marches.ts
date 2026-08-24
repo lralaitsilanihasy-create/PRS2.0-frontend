@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Marche, Ppm } from '../../models';
 import { MarcheService, PpmService } from '../../services';
 import { DetailPpmModal } from '../../shared/prmp';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /**
  * Liste des PPM (lecture seule, périmètre filtré par le backend selon le profil/localité).
@@ -12,7 +13,7 @@ import { DetailPpmModal } from '../../shared/prmp';
 @Component({
   selector: 'app-ppm-marches',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DetailPpmModal],
+  imports: [DetailPpmModal, EtatErreur],
   template: `
     <section>
       <header class="page-header">
@@ -24,6 +25,8 @@ import { DetailPpmModal } from '../../shared/prmp';
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les PPM." (reessayer)="charger()" />
       } @else {
         @for (ppm of ppms(); track ppm.idPpm) {
           <div class="card ppm-row">
@@ -69,6 +72,8 @@ export class PpmMarches {
   readonly ppms = signal<Ppm[]>([]);
   private readonly marches = signal<Marche[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly detail = signal<{ idDossier: number; idPpm: number } | null>(null);
 
   /** Marchés groupés par idPpm (jointure client sur la FK) — pour le compteur. */
@@ -83,17 +88,29 @@ export class PpmMarches {
   });
 
   constructor() {
+    this.charger();
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     this.ppmService.list().subscribe({
       next: (r) => this.ppms.set(r),
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
     this.marcheService.list().subscribe({
       next: (r) => {
         this.marches.set(r);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

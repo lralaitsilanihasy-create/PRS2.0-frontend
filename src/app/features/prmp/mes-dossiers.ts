@@ -4,6 +4,7 @@ import { forkJoin } from 'rxjs';
 
 import { Dossier, TypeDossier } from '../../models';
 import { DossierService, TypeDossierService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /**
  * Accueil « Mes dossiers » (PRMP) : présente **à l'écran** toute l'arborescence type → statut
@@ -19,7 +20,7 @@ import { DossierService, TypeDossierService } from '../../services';
 @Component({
   selector: 'app-mes-dossiers',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, EtatErreur],
   template: `
     <section class="md">
       <header class="page-header">
@@ -54,6 +55,8 @@ import { DossierService, TypeDossierService } from '../../services';
             </article>
           }
         </div>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger vos dossiers." (reessayer)="charger()" />
       } @else {
         <!-- Bandeau de synthèse (dérivé des compteurs, sans appel réseau). -->
         <div class="md__kpis">
@@ -378,6 +381,8 @@ export class MesDossiers {
 
   readonly types = signal<TypeDossier[]>([]);
   readonly loading = signal(true);
+  /** Échec du chargement des types de dossier (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   /**
    * idTypeDossier → compteurs dérivés côté client. `rectifier` (EN_ATTENTE_DECISION_PRMP) et
    * `verifie` (CLOTURE) sont des SOUS-ENSEMBLES de `soumis` (⚠️ demande user 2026-08-02).
@@ -398,13 +403,23 @@ export class MesDossiers {
   readonly totalDossiers = computed(() => this.totalBrouillons() + this.totalSoumis());
 
   constructor() {
+    this.charger();
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    this.loading.set(true);
+    this.erreur.set(false);
     this.typeDossierService.list().subscribe({
       next: (rows) => {
         const rang = (id: string) => MesDossiers.ORDRE_FAMILLE[id] ?? 99;
         this.types.set([...rows].sort((a, b) => rang(a.idTypeDossier) - rang(b.idTypeDossier)));
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
     // Deux appels scopés PRMP : brouillons via ?statut=BROUILLON ; soumis = liste de base filtrée
     // « hors BROUILLON » en DÉFENSIF (le contrat dit la liste de base hors brouillon, mais une

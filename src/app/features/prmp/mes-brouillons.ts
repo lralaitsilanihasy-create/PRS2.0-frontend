@@ -18,6 +18,7 @@ import {
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { DetailPpmModal } from '../../shared/prmp';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /**
@@ -32,7 +33,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 @Component({
   selector: 'app-mes-brouillons',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DetailPpmModal, ModaleDirective],
+  imports: [DetailPpmModal, ModaleDirective, EtatErreur],
   template: `
     <section>
       <header class="page-header">
@@ -44,6 +45,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger vos brouillons." (reessayer)="charger()" />
       } @else {
         <div class="table-card">
           <table>
@@ -149,6 +152,8 @@ export class MesBrouillons {
 
   readonly brouillons = signal<Dossier[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly submittingId = signal<number | null>(null);
   /** Dossier en attente de confirmation de suppression (null = pas de modale). */
   readonly confirmDossier = signal<Dossier | null>(null);
@@ -180,8 +185,10 @@ export class MesBrouillons {
     });
   }
 
-  private charger(): void {
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     this.dossierService.list('BROUILLON').subscribe({
       next: (rows) => {
         // ⚠️ 2026-08-05 (demande user) — une MISE À JOUR en cours (dossier rattaché à un prédécesseur)
@@ -190,7 +197,10 @@ export class MesBrouillons {
         this.brouillons.set(rows.filter((d) => d.idDossierParent == null));
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
     // Référence PPM (affichage) : `GET /api/ppms` — ne couvre pas les BROUILLON, sans conséquence
     // (leur refeDossier est nul avant réception → « — »).
