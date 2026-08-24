@@ -10,6 +10,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { CreerPrmpRequest, Prmp } from '../../models';
 import { CompteAuthService, PrmpService } from '../../services';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { PrmpPiecesAdmin } from './prmp-pieces-admin';
 
 /**
@@ -23,7 +24,7 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
   selector: 'app-prmp-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule, RouterLink, PrmpPiecesAdmin],
+  imports: [ModaleDirective, ReactiveFormsModule, RouterLink, PrmpPiecesAdmin, EtatErreur],
   template: `
     <div class="pa-wrap">
     <section class="pa cnm-card">
@@ -172,7 +173,11 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
         <h2 class="pa__sub">PRMP existantes ({{ prmps().length }})</h2>
         <input class="form-control pa__search" type="search" placeholder="Rechercher par nom…" (input)="onSearch($any($event.target).value)" />
       </div>
-      @if (prmps().length) {
+      @if (loadingListe()) {
+        <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreurListe()) {
+        <app-etat-erreur message="Impossible de charger les PRMP." (reessayer)="charger()" />
+      } @else if (prmps().length) {
         <div class="table-responsive"><table class="cnm-table">
           <thead><tr><th scope="col">Matricule</th><th scope="col">Nom &amp; prénoms</th><th scope="col" class="col-hide-mobile">Email</th><th scope="col" class="col-hide-mobile">Téléphone</th><th scope="col">Actions</th></tr></thead>
           <tbody>
@@ -292,6 +297,9 @@ export class PrmpAdmin implements OnInit, OnDestroy {
   private readonly toast = inject(ToastService);
 
   readonly prmps = signal<Prmp[]>([]);
+  readonly loadingListe = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreurListe = signal(false);
   readonly submitting = signal(false);
   /** PRMP en cours d'édition (matricule) ; null = mode création. */
   readonly editId = signal<string | null>(null);
@@ -361,8 +369,20 @@ export class PrmpAdmin implements OnInit, OnDestroy {
     const d = this.detailPhoto();
     if (d) URL.revokeObjectURL(d);
   }
-  private charger(): void {
-    this.prmpService.list().subscribe((r) => this.prmps.set(r));
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    this.loadingListe.set(true);
+    this.erreurListe.set(false);
+    this.prmpService.list().subscribe({
+      next: (r) => {
+        this.prmps.set(r);
+        this.loadingListe.set(false);
+      },
+      error: () => {
+        this.loadingListe.set(false);
+        this.erreurListe.set(true);
+      },
+    });
   }
 
   /** Ouvre le panneau « Pièces » d'une PRMP (ferme le détail). */

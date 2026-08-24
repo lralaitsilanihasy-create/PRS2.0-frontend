@@ -9,6 +9,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { InscriptionEnAttente } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { InscriptionService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
 
@@ -21,7 +22,7 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
   selector: 'app-inscriptions-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule],
+  imports: [ModaleDirective, ReactiveFormsModule, EtatErreur],
   template: `
     <div class="ia-wrap">
     <section class="ia">
@@ -32,6 +33,8 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les inscriptions en attente." (reessayer)="charger()" />
       } @else if (inscriptions().length) {
         <div class="table-card">
           <table class="cnm-table">
@@ -175,6 +178,8 @@ export class InscriptionsAdmin implements OnInit, OnDestroy {
 
   readonly inscriptions = signal<InscriptionEnAttente[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   /** Login en cours de traitement (désactive ses boutons). */
   readonly busy = signal<string | null>(null);
   /** Inscription dont le refus est en cours de saisie (modale). */
@@ -252,14 +257,19 @@ export class InscriptionsAdmin implements OnInit, OnDestroy {
     this.charger();
   }
 
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
   charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     this.inscriptionService.enAttente().subscribe({
       next: (rows) => {
         this.inscriptions.set(rows);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

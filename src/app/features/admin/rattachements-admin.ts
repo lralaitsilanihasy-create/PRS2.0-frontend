@@ -5,6 +5,7 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { PrmpEntite } from '../../models';
 import { EntiteContractService, PrmpEntiteService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /** Ligne d'affichage : le lien PRMP↔entité en attente + le libellé de l'entité (jointure). */
 interface RattachementEnAttente {
@@ -22,6 +23,7 @@ interface RattachementEnAttente {
   selector: 'app-rattachements-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [EtatErreur],
   template: `
     <section class="ra">
       <header class="page-header">
@@ -36,6 +38,8 @@ interface RattachementEnAttente {
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les rattachements en attente." (reessayer)="charger()" />
       } @else if (rattachements().length) {
         <div class="table-card">
           <table class="cnm-table">
@@ -77,6 +81,8 @@ export class RattachementsAdmin implements OnInit {
 
   readonly rattachements = signal<RattachementEnAttente[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   /** idPrmpEntite en cours de traitement (désactive ses boutons). */
   readonly busy = signal<number | null>(null);
 
@@ -84,8 +90,10 @@ export class RattachementsAdmin implements OnInit {
     this.charger();
   }
 
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
   charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     forkJoin({ liens: this.prmpEntiteService.list(), entites: this.entiteContractService.list() }).subscribe({
       next: ({ liens, entites }) => {
         const parId = new Map(entites.map((e) => [e.idEntiteContract, e]));
@@ -96,7 +104,10 @@ export class RattachementsAdmin implements OnInit {
         );
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

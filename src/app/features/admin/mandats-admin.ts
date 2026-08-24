@@ -8,6 +8,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Mandat, Prmp } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { MandatService, PrmpService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /** Libellés d'affichage des statuts de mandat. */
 const STATUT_LABELS: Record<string, string> = {
@@ -29,7 +30,7 @@ const STATUT_LABELS: Record<string, string> = {
   selector: 'app-mandats-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule],
+  imports: [ModaleDirective, ReactiveFormsModule, EtatErreur],
   template: `
     <section class="ma">
       <header class="page-header">
@@ -59,6 +60,8 @@ const STATUT_LABELS: Record<string, string> = {
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les mandats." (reessayer)="charger()" />
       } @else {
         <div class="table-card">
           <table>
@@ -201,6 +204,8 @@ export class MandatsAdmin implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   readonly loading = signal(true);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly saving = signal(false);
   readonly mandats = signal<Mandat[]>([]);
   readonly prmps = signal<Prmp[]>([]);
@@ -230,8 +235,10 @@ export class MandatsAdmin implements OnInit {
     this.charger();
   }
 
-  private charger(): void {
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     // ⚠️ Le backend ne matérialise un mandat IMPLICITE (reconstitué depuis t_prmp) que sur une requête
     // filtrée `?prmp=` — la liste globale ne porte que les mandats déclarés (t_mandat). Pour montrer
     // l'état réel de chaque PRMP (implicites compris), on interroge l'historique PAR PRMP en parallèle.
@@ -248,10 +255,16 @@ export class MandatsAdmin implements OnInit {
             this.mandats.set(parPrmp.flat());
             this.loading.set(false);
           },
-          error: () => this.loading.set(false),
+          error: () => {
+            this.loading.set(false);
+            this.erreur.set(true);
+          },
         });
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 
