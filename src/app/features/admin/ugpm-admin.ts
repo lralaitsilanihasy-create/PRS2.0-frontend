@@ -7,6 +7,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { CreerUgpmRequest, ModifierUgpmRequest, Prmp, Ugpm } from '../../models';
 import { CompteAuthService, PrmpService, UgpmService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
 
 /**
@@ -19,7 +20,7 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
   selector: 'app-ugpm-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule, UgpmPiecesAdmin],
+  imports: [ModaleDirective, ReactiveFormsModule, UgpmPiecesAdmin, EtatErreur],
   template: `
     <div class="ua-wrap">
     <section class="ua cnm-card">
@@ -166,7 +167,11 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
       </form>
 
       <h2 class="ua__sub">UGPM existantes ({{ ugpms().length }})</h2>
-      @if (ugpms().length) {
+      @if (loadingListe()) {
+        <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreurListe()) {
+        <app-etat-erreur message="Impossible de charger les UGPM." (reessayer)="charger()" />
+      } @else if (ugpms().length) {
         <div class="table-responsive"><table class="cnm-table">
           <thead><tr><th scope="col">Matricule</th><th scope="col">Responsable</th><th scope="col" class="col-hide-mobile">Libellé</th><th scope="col" class="col-hide-mobile">PRMP de tutelle</th><th scope="col">Actions</th></tr></thead>
           <tbody>
@@ -287,6 +292,9 @@ export class UgpmAdmin implements OnInit, OnDestroy {
 
   readonly prmps = signal<Prmp[]>([]);
   readonly ugpms = signal<Ugpm[]>([]);
+  readonly loadingListe = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreurListe = signal(false);
   readonly submitting = signal(false);
   /** UGPM en cours d'édition (matricule) ; null = mode création. */
   readonly editId = signal<string | null>(null);
@@ -389,8 +397,20 @@ export class UgpmAdmin implements OnInit, OnDestroy {
     this.prmpService.list().subscribe((r) => this.prmps.set(r));
     this.charger();
   }
-  private charger(): void {
-    this.ugpmService.list().subscribe((r) => this.ugpms.set(r));
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    this.loadingListe.set(true);
+    this.erreurListe.set(false);
+    this.ugpmService.list().subscribe({
+      next: (r) => {
+        this.ugpms.set(r);
+        this.loadingListe.set(false);
+      },
+      error: () => {
+        this.loadingListe.set(false);
+        this.erreurListe.set(true);
+      },
+    });
   }
 
   invalide(champ: string): boolean {

@@ -4,6 +4,7 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ModePassation, TypeDmc } from '../../models';
 import { ModePassationService, TypeDmcService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /**
  * Mapping **mode de passation → type de DMC** (ADMINISTRATEUR). Chaque mode porte `idTypeDmc`
@@ -15,6 +16,7 @@ import { ModePassationService, TypeDmcService } from '../../services';
   selector: 'app-dmc-mapping-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [EtatErreur],
   template: `
     <section class="dm">
       <header class="page-header">
@@ -28,6 +30,8 @@ import { ModePassationService, TypeDmcService } from '../../services';
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les modes de passation." (reessayer)="charger()" />
       } @else {
         <div class="table-responsive">
           <table class="cnm-table">
@@ -82,6 +86,8 @@ export class DmcMappingAdmin implements OnInit {
   readonly modes = signal<ModePassation[]>([]);
   readonly types = signal<TypeDmc[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   /** idMode en cours d'enregistrement (désactive son select). */
   readonly saving = signal<number | null>(null);
 
@@ -92,15 +98,22 @@ export class DmcMappingAdmin implements OnInit {
     this.charger();
   }
 
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
   charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
+    // Référentiel secondaire (alimente le <select>) : un échec ne bloque pas l'affichage des
+    // modes eux-mêmes (options simplement absentes) — pas d'état d'erreur dédié.
     this.typeService.list().subscribe({ next: (t) => this.types.set(t), error: () => {} });
     this.modeService.list().subscribe({
       next: (m) => {
         this.modes.set(m);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

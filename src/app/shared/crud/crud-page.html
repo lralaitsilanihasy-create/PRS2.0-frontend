@@ -36,6 +36,8 @@
 
   @if (loading()) {
     <p class="text-muted" role="status">Chargement…</p>
+  } @else if (erreur()) {
+    <app-etat-erreur [message]="'Impossible de charger « ' + config.title + ' ».'" (reessayer)="load()" />
   } @else {
     <div class="table-card">
       <table>

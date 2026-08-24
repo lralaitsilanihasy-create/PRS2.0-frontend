@@ -10,6 +10,7 @@ import { PermissionsService } from '../../core/auth/permissions.service';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { CrudService } from '../../services/api/crud.service';
 import { LectureBadge } from '../security/lecture-badge';
+import { EtatErreur } from '../ui/etat-erreur';
 import { CrudResourceConfig, FieldConfig, RowAction } from './crud-config';
 
 interface ActiveFilter {
@@ -31,7 +32,7 @@ type Row = Record<string, unknown>;
 @Component({
   selector: 'app-crud-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, LectureBadge],
+  imports: [ReactiveFormsModule, RouterLink, LectureBadge, EtatErreur],
   templateUrl: './crud-page.html',
   styleUrl: './crud-page.scss',
 })
@@ -57,6 +58,8 @@ export class CrudPage {
 
   readonly rows = signal<Row[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly formOpen = signal(false);
   readonly formMode = signal<'create' | 'edit'>('create');
   readonly fieldErrors = signal<Record<string, string>>({});
@@ -185,12 +188,16 @@ export class CrudPage {
       return;
     }
     this.loading.set(true);
+    this.erreur.set(false);
     this.service.searchByName(t).subscribe({
       next: (rows) => {
         this.rows.set(rows as Row[]);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 
@@ -199,14 +206,19 @@ export class CrudPage {
     void this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
 
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
   load(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     this.service.list().subscribe({
       next: (rows) => {
         this.rows.set(rows as Row[]);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

@@ -10,6 +10,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Controleur } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { ControleurService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 const IMG_OK = ['image/jpeg', 'image/png'];
 
@@ -23,7 +24,7 @@ const IMG_OK = ['image/jpeg', 'image/png'];
   selector: 'app-controleur-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule],
+  imports: [ModaleDirective, ReactiveFormsModule, EtatErreur],
   template: `
     <div class="ca-wrap">
     <section class="ca cnm-card">
@@ -126,7 +127,11 @@ const IMG_OK = ['image/jpeg', 'image/png'];
         <h2 class="ca__sub">Contrôleurs ({{ controleurs().length }})</h2>
         <input class="form-control ca__search" type="search" placeholder="Rechercher par nom…" (input)="onSearch($any($event.target).value)" />
       </div>
-      @if (controleurs().length) {
+      @if (loadingListe()) {
+        <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreurListe()) {
+        <app-etat-erreur message="Impossible de charger les contrôleurs." (reessayer)="charger()" />
+      } @else if (controleurs().length) {
         <div class="table-responsive"><table class="cnm-table">
           <thead><tr><th scope="col">Matricule</th><th scope="col">Nom &amp; prénoms</th><th scope="col" class="col-hide-mobile">Email</th><th scope="col" class="col-hide-mobile">Localité</th><th scope="col" class="col-hide-mobile">Transversal</th><th scope="col">Actions</th></tr></thead>
           <tbody>
@@ -241,6 +246,9 @@ export class ControleurAdmin implements OnInit, OnDestroy {
   private readonly toast = inject(ToastService);
 
   readonly controleurs = signal<Controleur[]>([]);
+  readonly loadingListe = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreurListe = signal(false);
   readonly submitting = signal(false);
   readonly busyPhoto = signal(false);
   /** Contrôleur en cours d'édition (matricule) ; null = mode création. */
@@ -324,8 +332,20 @@ export class ControleurAdmin implements OnInit, OnDestroy {
     if (prev) URL.revokeObjectURL(prev);
     this.detailPhoto.set(url);
   }
-  private charger(): void {
-    this.controleurService.list().subscribe((r) => this.controleurs.set(r));
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    this.loadingListe.set(true);
+    this.erreurListe.set(false);
+    this.controleurService.list().subscribe({
+      next: (r) => {
+        this.controleurs.set(r);
+        this.loadingListe.set(false);
+      },
+      error: () => {
+        this.loadingListe.set(false);
+        this.erreurListe.set(true);
+      },
+    });
   }
 
   onSearch(term: string): void {

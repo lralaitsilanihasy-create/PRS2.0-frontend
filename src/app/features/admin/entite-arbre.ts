@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { EntiteContract } from '../../models';
 import { EntiteContractService, OrganigrammeService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 interface TreeNode {
   entite: EntiteContract;
@@ -18,7 +19,7 @@ interface TreeNode {
 @Component({
   selector: 'app-entite-arbre',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, EtatErreur],
   template: `
     <section class="arbre">
       <header class="page-header">
@@ -42,6 +43,8 @@ interface TreeNode {
 
       @if (loading()) {
         <p class="arbre__info" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger l'arbre des entités." (reessayer)="charger()" />
       } @else {
         <div class="card arbre__tree">
           @for (node of nodes(); track node.entite.idEntiteContract) {
@@ -116,6 +119,8 @@ export class EntiteArbre {
 
   private readonly entites = signal<EntiteContract[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly organigrammeFilter = signal<string | null>(null);
   readonly organigrammeLabel = signal<string>('');
 
@@ -129,14 +134,7 @@ export class EntiteArbre {
   });
 
   constructor() {
-    this.loading.set(true);
-    this.service.list().subscribe({
-      next: (rows) => {
-        this.entites.set(rows);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    this.charger();
 
     this.route.queryParamMap.subscribe((params) => {
       const org = params.get('organigramme');
@@ -148,6 +146,22 @@ export class EntiteArbre {
           error: () => this.organigrammeLabel.set(`#${org}`),
         });
       }
+    });
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    this.loading.set(true);
+    this.erreur.set(false);
+    this.service.list().subscribe({
+      next: (rows) => {
+        this.entites.set(rows);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 
