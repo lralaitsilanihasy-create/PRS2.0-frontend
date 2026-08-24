@@ -1130,6 +1130,19 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 | idPrmp | string | Non | max 10 — PRMP **d'attribution** (FK `t_prmp`) ; posée à la saisie, **jamais recalculée** ; la PRMP **en fonction** peut aussi agir (cf. *Mandats PRMP*) |
 | idMandatAttrib | number | Non | **lecture seule** — mandat d'attribution (FK `t_mandat`), figé à la création et jamais recalculé ; `null` si la PRMP n'a pas de mandat déclaré (cf. *Mandats PRMP*) |
 | idEntiteContract | number | Non | entité contractante (FK `tr_entite_contract`) ; **choisie à la saisie**, fixe la localité |
+| creePar | string | — (réponse) | ⚠️ **ajouté 2026-08-19** — **login** de l'acteur ayant **créé** le dossier (PRMP ou UGPM de tutelle). **Lecture seule** : posé serveur à la création, toute valeur envoyée est ignorée |
+| soumisPar | string | — (réponse) | **login** de l'acteur ayant **soumis** le dossier (PRMP seule). Lecture seule, posé serveur |
+| creeParNom | string | — (réponse) | **Nom lisible** « Nom Prénoms » correspondant à `creePar`, **résolu serveur** ; `null` si le compte ou l'acteur est introuvable (le front garde alors le login brut) |
+| soumisParNom | string | — (réponse) | Nom lisible correspondant à `soumisPar` ; `null` si non résolvable |
+
+> ⚠️ **Auteur de la saisie (`creePar` / `soumisPar`) — ajouté 2026-08-19 (demande front).** Les deux colonnes
+> existaient en base (`t_dossier.CREE_PAR` / `SOUMIS_PAR`) mais n'étaient pas exposées. Elles portent un
+> **login de compte**, *pas* un identifiant d'acteur : le front ne peut donc pas les traduire lui-même. Le
+> serveur joint donc `login → t_compte_auth → PRMP / UGPM / contrôleur` et renvoie en plus
+> **`creeParNom` / `soumisParNom`** (« Nom Prénoms », même convention que le `nomAffichage` du login). La
+> résolution est faite **en lot** : trois requêtes au plus, quelle que soit la taille de la liste — les
+> listes de dossiers portent donc la même information sans coût par ligne. Un login non résolvable (compte
+> supprimé) laisse le nom à `null`, jamais d'erreur.
 
 > **Cycle de vie & saisie.** On **ne crée pas** un dossier brut : la **façade `/api/saisies`** (réservée PRMP)
 > crée le dossier (statut **`BROUILLON`**) et son contenu. Un brouillon est **invisible des contrôleurs** ;
