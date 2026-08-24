@@ -20,6 +20,7 @@
 > Restent ouverts (aucun bloquant, aucun de sécurité) : P1 (adoption écran par écran des pages), P9 (état d'erreur à étendre au-delà de 4 écrans), A2b (badges sémantiques et boutons secondaires, 17 textes), S9 (choix produit : persistance des interrupteurs de délégation conservée), T3 (e2e versionnés).
 >
 > **2026-08-19** — `0a4fe15` **T1 entamé** : les deux barrières anti-XSS (rendu markdown des actualités, garde-fous de fichiers) sont couvertes, chaque garde vérifiée par mutation ; `862e907` règle d'ouverture de l'examen centralisée et testée (elle vivait recopiée dans trois écrans et y avait divergé) ; `1c4ab1c` **A6 clos** — `scope="col"` sur les 225 en-têtes de colonne, 31 fichiers. Suite : 42 → 83 tests.
+> **2026-08-24** — `7cd6e6e` **P1 amorcé** : premier écran converti à la pagination serveur — `features/marche/marches-list.ts` appelle désormais `listePage(page, 15, { ppm })` au lieu de `list()` (table entière chargée puis filtrée/découpée en mémoire) ; filtre PPM porté au serveur, total affiché lu sur `totalElements`. Reste à étendre aux autres listes au fil de l'eau. **P9** : 5ᵉ écran doté de `<app-etat-erreur>` (il y en avait 4 avant). Suite front 90/90 ; build de prod vérifié (initial 360,65 kB brut / 98,55 kB transféré).
 
 ## Sommaire
 

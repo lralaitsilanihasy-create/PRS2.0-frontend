@@ -1130,6 +1130,19 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 | idPrmp | string | Non | max 10 — PRMP **d'attribution** (FK `t_prmp`) ; posée à la saisie, **jamais recalculée** ; la PRMP **en fonction** peut aussi agir (cf. *Mandats PRMP*) |
 | idMandatAttrib | number | Non | **lecture seule** — mandat d'attribution (FK `t_mandat`), figé à la création et jamais recalculé ; `null` si la PRMP n'a pas de mandat déclaré (cf. *Mandats PRMP*) |
 | idEntiteContract | number | Non | entité contractante (FK `tr_entite_contract`) ; **choisie à la saisie**, fixe la localité |
+| creePar | string | — (réponse) | ⚠️ **ajouté 2026-08-19** — **login** de l'acteur ayant **créé** le dossier (PRMP ou UGPM de tutelle). **Lecture seule** : posé serveur à la création, toute valeur envoyée est ignorée |
+| soumisPar | string | — (réponse) | **login** de l'acteur ayant **soumis** le dossier (PRMP seule). Lecture seule, posé serveur |
+| creeParNom | string | — (réponse) | **Nom lisible** « Nom Prénoms » correspondant à `creePar`, **résolu serveur** ; `null` si le compte ou l'acteur est introuvable (le front garde alors le login brut) |
+| soumisParNom | string | — (réponse) | Nom lisible correspondant à `soumisPar` ; `null` si non résolvable |
+
+> ⚠️ **Auteur de la saisie (`creePar` / `soumisPar`) — ajouté 2026-08-19 (demande front).** Les deux colonnes
+> existaient en base (`t_dossier.CREE_PAR` / `SOUMIS_PAR`) mais n'étaient pas exposées. Elles portent un
+> **login de compte**, *pas* un identifiant d'acteur : le front ne peut donc pas les traduire lui-même. Le
+> serveur joint donc `login → t_compte_auth → PRMP / UGPM / contrôleur` et renvoie en plus
+> **`creeParNom` / `soumisParNom`** (« Nom Prénoms », même convention que le `nomAffichage` du login). La
+> résolution est faite **en lot** : trois requêtes au plus, quelle que soit la taille de la liste — les
+> listes de dossiers portent donc la même information sans coût par ligne. Un login non résolvable (compte
+> supprimé) laisse le nom à `null`, jamais d'erreur.
 
 > **Cycle de vie & saisie.** On **ne crée pas** un dossier brut : la **façade `/api/saisies`** (réservée PRMP)
 > crée le dossier (statut **`BROUILLON`**) et son contenu. Un brouillon est **invisible des contrôleurs** ;
@@ -1387,7 +1400,30 @@ dossier/PPM (désormais réservée Admin).
 **Administration des UGPM** `/api/ugpms` — Réservé au profil **`ADMINISTRATEUR`**. La création alloue à la fois la
 `t_ugpm` (rattachée à sa PRMP de tutelle) et son **compte d'authentification actif** (`TYPE_ACTEUR=UGPM`).
 `GET /par-tutelle/{idPrmp}` liste les UGPM d'une PRMP de tutelle (`idPrmp` = matricule) — **liste vide** si aucune
-(ou PRMP inconnue), pas de 404 (filtre). `GET /par-localite/{idLocalite}` liste les UGPM d'une localité **via la
+(ou PRMP inconnue), pas de 404 (filtre). ⚠️ **Exception d'accès — seule route de la ressource ouverte hors
+Administrateur** :
+
+- la **PRMP concernée** (et ses UGPM, qui partagent son périmètre `ref`) — ses **propres** unités
+  rattachées ; toute **autre** tutelle que la sienne reste refusée (**403**) *(2026-08-19)* ;
+- les **profils contrôleurs** — `PRESIDENT`, `CHEF_COMMISSION`, `SECRETAIRE`, `MEMBRE`, `VERIFICATEUR`,
+  `ASSISTANT_CONTROLEUR` — pour **toute** tutelle et **sans filtre de localité** *(2026-08-20)* : ce sont eux
+  qui instruisent les dossiers et doivent identifier l'unité qui a saisi celui qu'ils examinent. Deux raisons
+  d'écarter le filtre par localité : le répertoire des **PRMP** (`GET /api/prmps`) est déjà lisible **sans
+  filtre** par tout utilisateur authentifié — filtrer l'enfant serait incohérent ; et l'UGPM **n'a pas de
+  localité propre** (elle hérite de celles des entités contractantes actives de sa tutelle, qui peuvent
+  couvrir **plusieurs** localités) — le filtre masquerait précisément l'unité qu'un contrôleur d'une autre
+  localité doit identifier. `CHARGE_PUBLICATION` n'est pas concerné (hors instruction) → **403**.
+
+> ⚠️ **Étendue des données (2026-08-20).** Hors **Administrateur**, `par-tutelle` renvoie une **vue
+> restreinte** : `idUgpm`, `libelle`, `idPrmpTutelle`, `nomUgpm`, `prenomsUgpm`, `emailUgpm`, `telUgpm` —
+> exactement ce qu'affiche l'écran. **`cin`, `dateCin`, `lieuCin` et `login` sont `null`** : la pièce
+> d'identité est une donnée d'état civil sans usage pour l'instruction, et le `login` un identifiant
+> d'authentification qu'il n'y a aucune raison de diffuser (il n'existe que pour la réinitialisation de mot
+> de passe côté Admin). L'Administrateur continue de recevoir la fiche complète. Effet de bord utile : la
+> vue restreinte n'émet **aucune** requête de compte, là où la fiche complète en fait une par ligne.
+
+Le reste de la ressource (liste complète, fiche unitaire, `par-localite`, `par-nom`, écritures, pièces)
+demeure réservé à l'**Administrateur**. `GET /par-localite/{idLocalite}` liste les UGPM d'une localité **via la
 localité de leur PRMP de tutelle** : l'UGPM n'a pas de localité propre, elle hérite du périmètre de sa PRMP
 (rattachée à la localité par ses **entités contractantes actives**, même logique que `GET /api/prmps/par-localite`) —
 **liste vide** si aucune PRMP dans la localité (ou aucune UGPM), pas de 404 (filtre). `GET /par-nom/{nom}`
@@ -1400,7 +1436,7 @@ pas de 404 (filtre).
 | POST | /api/ugpms | **`multipart/form-data`** : part `data` (JSON `CreerUgpmRequest`) + `cin`/`photo` (opt.) | `UgpmDto` | 201, 400, 403, 409 | **ADMINISTRATEUR** |
 | GET | /api/ugpms | — | `UgpmDto[]` | 200, 403 | **ADMINISTRATEUR** |
 | GET | /api/ugpms/{id} | — | `UgpmDto` | 200, 403, 404 | **ADMINISTRATEUR** |
-| GET | /api/ugpms/par-tutelle/{idPrmp} | — | `UgpmDto[]` | 200, 403 | **ADMINISTRATEUR** |
+| GET | /api/ugpms/par-tutelle/{idPrmp} | — | `UgpmDto[]` (vue **restreinte** hors Admin) | 200, 403 | **ADMINISTRATEUR** ; ⚠️ **+ la PRMP concernée** (2026-08-19) ; ⚠️ **+ les profils contrôleurs**, toute tutelle (2026-08-20) |
 | GET | /api/ugpms/par-localite/{idLocalite} | — | `UgpmDto[]` | 200, 403 | **ADMINISTRATEUR** |
 | GET | /api/ugpms/par-nom/{nom} | — | `UgpmDto[]` | 200, 403 | **ADMINISTRATEUR** |
 | PUT | /api/ugpms/{id} | `ModifierUgpmRequest` (**JSON**) | `UgpmDto` | 200, 400, 403, 404, 409 | **ADMINISTRATEUR** |
@@ -3189,7 +3225,11 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 > - `GET /api/notifications/stream` (`text/event-stream`) : flux **SSE** par utilisateur — un événement
 >   `maj` est poussé à **tous les flux du destinataire** à chaque émission de notification et à chaque
 >   marquage lu / non-lu / lire-tout (synchronisation **entre onglets et sessions**). Le front s'y
->   connecte en fetch-stream (Bearer — EventSource ne porte pas d'en-tête) et recharge alors le compteur
+>   connecte en fetch-stream, pas en `EventSource` (qui ne porte pas d'en-tête et n'aurait pas pu envoyer
+>   `Accept: text/event-stream`) — mais **depuis la phase 3 du plan cookie (2026-08-17), l'authentification
+>   ne passe plus par un en-tête `Authorization`** : elle repose sur le cookie HttpOnly `PRS_SESSION`, que
+>   `fetch` envoie automatiquement en même origine (`credentials: 'same-origin'` est le défaut). GET étant
+>   une méthode sûre, aucun jeton XSRF n'est à porter. Le front recharge ensuite le compteur
 >   `GET /mes/non-lues/count` — **le compteur est toujours calculé côté serveur**. Repli : polling 60 s.
 >   Flux expirant (~30 min) avec reconnexion automatique côté client.
 > - Front : écran transverse `/notifications` (tous profils, entrée de menu + lien « Voir toutes les
