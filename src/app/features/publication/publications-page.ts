@@ -7,6 +7,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { Publication } from '../../models';
 import { PublicationService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /**
  * Portail de transparence (§3.7) : gestion des publications par le CHARGE_PUBLICATION.
@@ -15,7 +16,7 @@ import { StatutBadge } from '../../shared/circuit';
 @Component({
   selector: 'app-publications-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, StatutBadge],
+  imports: [ReactiveFormsModule, StatutBadge, EtatErreur],
   template: `
     <section class="pub">
       <header class="page-header">
@@ -52,6 +53,8 @@ import { StatutBadge } from '../../shared/circuit';
 
       @if (loading()) {
         <p class="pub__info" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les publications." (reessayer)="charger()" />
       } @else {
         <div class="table-card">
           <table>
@@ -125,6 +128,8 @@ export class PublicationsPage {
 
   readonly publications = signal<Publication[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly formOpen = signal(false);
   readonly canManage = computed(() => this.permissions.can('PUBLICATION_MANAGE'));
   readonly formError = signal<ApiError | null>(null);
@@ -149,12 +154,16 @@ export class PublicationsPage {
 
   charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     this.service.list().subscribe({
       next: (rows) => {
         this.publications.set(rows);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 
