@@ -74,7 +74,7 @@ import { ModificationChamp, PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-g
           @if (dossier(); as d) {
             <p class="rd-ref">
               <span class="cnm-mono fw-semibold">{{ d.refeDossier || '#' + d.idDossier }}</span>
-              <span class="rd-ref__sep">·</span> {{ entiteLabel() }}
+              <span class="rd-ref__sep">{{ entiteLabel() }}</span>
             </p>
           }
         </div>
@@ -242,7 +242,9 @@ import { ModificationChamp, PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-g
     .rd-frozen__k { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
     .rd-frozen__hint { margin-left: auto; font-size: var(--text-xs); }
     .rd-ref { margin: 0.2rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
-    .rd-ref__sep { margin: 0 0.25rem; color: var(--n-300); }
+    /* Séparateur PUREMENT visuel entre la référence du dossier et son entité — n-300 est
+       calibré bordures/fonds (pas texte, AUDIT.md A2) : plus de « · » coloré, une bordure. */
+    .rd-ref__sep { margin-left: 0.4rem; padding-left: 0.5rem; border-left: 1px solid var(--n-300); }
     .rd-form { padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; }
     .rd-section { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.75rem; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
     /* Numéro d'étape du parcours de rectification (1 observations → 2 pièces → 3 PPM). */

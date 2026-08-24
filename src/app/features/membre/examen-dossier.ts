@@ -391,7 +391,7 @@ interface RowState {
     .exam__piece-etat--done-ras { color: #16A34A; }
     .exam__piece-etat--done-obs { color: #DC2626; }
     .exam__piece-etat--current { color: #4F46E5; }
-    .exam__piece-etat--pending { color: var(--n-300); }
+    .exam__piece-etat--pending { color: var(--n-400); }
     /* <button> : neutraliser les styles natifs (largeur, police, alignement) pour conserver
        exactement le rendu de l'ancienne ligne, tout en gagnant le clavier et le focus. */
     .exam__piece { display: flex; width: 100%; text-align: left; font: inherit; color: inherit; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); }

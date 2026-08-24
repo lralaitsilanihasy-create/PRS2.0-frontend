@@ -68,7 +68,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   <span class="pv-card__dossier">
                     <span class="pv-card__dossier-lbl">Dossier</span>
                     <span class="cnm-mono">{{ dossierRef(pv) }}</span>
-                    @if (dossierEntite(pv); as ent) { <span class="pv-card__sep">·</span>{{ ent }} }
+                    @if (dossierEntite(pv); as ent) { <span class="pv-card__sep">{{ ent }}</span> }
                   </span>
                 </div>
                 <app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" />
@@ -300,7 +300,9 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .pv-card__ref { font-weight: 700; color: var(--c-800); }
     .pv-card__dossier { font-size: var(--text-xs); color: var(--n-500); display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem; }
     .pv-card__dossier-lbl { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--n-400); }
-    .pv-card__sep { color: var(--n-300); }
+    /* Séparateur PUREMENT visuel entre la référence du dossier et son entité — n-300 est
+       calibré bordures/fonds (pas texte, AUDIT.md A2) : plus de « · » coloré, une bordure. */
+    .pv-card__sep { border-left: 1px solid var(--n-300); padding-left: 0.35rem; }
     .pv-content {
       display: flex;
       flex-direction: column;
