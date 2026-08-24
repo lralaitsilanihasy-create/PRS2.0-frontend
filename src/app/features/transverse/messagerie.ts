@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 
 import { ApiError, getFieldError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Message } from '../../models';
 import { MessageService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /**
  * Messagerie interne, réutilisable par tout profil (confidentialité gérée côté backend :
@@ -13,7 +15,7 @@ import { MessageService } from '../../services';
 @Component({
   selector: 'app-messagerie',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, EtatErreur],
   template: `
     <section class="msg">
       <header class="page-header">
@@ -72,6 +74,8 @@ import { MessageService } from '../../services';
       @let liste = tab() === 'recus' ? recus() : envoyes();
       @if (loading()) {
         <p class="msg__info" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les messages." (reessayer)="charger()" />
       } @else {
         <ul class="msg__list">
           @for (m of liste; track m.idMessage) {
@@ -185,6 +189,8 @@ export class Messagerie {
   readonly recus = signal<Message[]>([]);
   readonly envoyes = signal<Message[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly composeOpen = signal(false);
   readonly formError = signal<ApiError | null>(null);
 
@@ -207,18 +213,27 @@ export class Messagerie {
     this.composeOpen.update((v) => !v);
   }
 
+  /**
+   * Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9).
+   * `forkJoin` (et non deux `subscribe` indépendants comme avant) : un seul passage à
+   * `loading = false`, cohérent que les deux appels réussissent ou que l'un échoue.
+   */
   charger(): void {
     this.loading.set(true);
-    this.service.recus().subscribe({
-      next: (rows) => this.recus.set(rows),
-      error: () => this.loading.set(false),
-    });
-    this.service.envoyes().subscribe({
-      next: (rows) => {
-        this.envoyes.set(rows);
+    this.erreur.set(false);
+    forkJoin({
+      recus: this.service.recus(),
+      envoyes: this.service.envoyes(),
+    }).subscribe({
+      next: ({ recus, envoyes }) => {
+        this.recus.set(recus);
+        this.envoyes.set(envoyes);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 
