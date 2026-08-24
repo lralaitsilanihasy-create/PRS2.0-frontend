@@ -10,6 +10,7 @@ import {
   PpmService,
   RegleAlerteService,
 } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /** Alerte d'un jalon d'une ligne : imminent (dans ≤ seuil jours) ou en retard (prévu dépassé, pas de réel). */
 interface AlerteJalon {
@@ -30,6 +31,7 @@ interface AlerteJalon {
 @Component({
   selector: 'app-calendrier-marches',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [EtatErreur],
   template: `
     <section class="cj">
       <header class="page-header">
@@ -46,6 +48,8 @@ interface AlerteJalon {
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger le calendrier des jalons." (reessayer)="charger()" />
       } @else {
         <div class="table-card cj__wrap">
           <table>
@@ -124,6 +128,8 @@ export class CalendrierMarches implements OnInit {
   private static readonly SEUIL_DEFAUT_JOURS = 7;
 
   readonly loading = signal(true);
+  /** Échec du chargement (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   private readonly capmsTous = signal<Capm[]>([]);
   private readonly marches = signal<Marche[]>([]);
   private readonly previsions = signal<MarchePrevision[]>([]);
@@ -192,8 +198,15 @@ export class CalendrierMarches implements OnInit {
   });
 
   ngOnInit(): void {
+    this.charger();
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     // Une seule vague : listes scopées PRMP par le backend ; CAPM trié par ordre pour les colonnes ;
     // échéances (dates réelles) + règles d'alerte (seuils d'imminence par jalon).
+    this.loading.set(true);
+    this.erreur.set(false);
     forkJoin({
       marches: this.marcheService.list(),
       previsions: this.previsionService.list(),
@@ -211,7 +224,10 @@ export class CalendrierMarches implements OnInit {
         this.regles.set(regles);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

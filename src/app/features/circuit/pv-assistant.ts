@@ -14,6 +14,7 @@ import {
   ReceptionService,
   ReferenceLookupService,
 } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /**
  * « PV reçus » (Assistant contrôleur) — **lecture seule** des PV définitifs (signés) reçus en copie.
@@ -26,6 +27,7 @@ import {
 @Component({
   selector: 'app-pv-assistant',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [EtatErreur],
   template: `
     <section class="pva">
       <header class="page-header">
@@ -37,6 +39,8 @@ import {
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les PV reçus." (reessayer)="charger()" />
       } @else {
         <div class="table-card">
         <table>
@@ -129,6 +133,8 @@ export class PvAssistant {
 
   private readonly toast = inject(ToastService);
   readonly loading = signal(true);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly pvs = signal<PvExamen[]>([]);
   readonly ouvert = signal<number | null>(null);
   /** idPv en cours d'archivage (bouton désactivé), null sinon. */
@@ -179,6 +185,13 @@ export class PvAssistant {
       this.ouvert.set(Number(param));
     }
     this.lookups.lookup(AvisService, 'idAvis', ['libelleAvis']).subscribe((m) => this.avisMap.set(m));
+    this.charger();
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    this.loading.set(true);
+    this.erreur.set(false);
     forkJoin({
       pvs: this.pvService.definitifs(),
       examens: this.examenService.list(),
@@ -194,7 +207,10 @@ export class PvAssistant {
         this.pvs.set([...r.pvs].sort((a, b) => this.dateSignature(b).localeCompare(this.dateSignature(a))));
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

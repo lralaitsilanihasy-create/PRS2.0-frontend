@@ -2,17 +2,21 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 
 import { Notification } from '../../models';
 import { NotificationService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /** Liste des notifications de l'utilisateur (lecture). Réutilisable par tout profil. */
 @Component({
   selector: 'app-notifications-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [EtatErreur],
   template: `
     <section class="notifs">
       <h1 class="notifs__title">Notifications</h1>
 
       @if (loading()) {
         <p class="notifs__info" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les notifications." (reessayer)="charger()" />
       } @else {
         <ul class="notifs__list">
           @for (n of notifications(); track n.idNotification) {
@@ -85,15 +89,26 @@ export class NotificationsList {
 
   readonly notifications = signal<Notification[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
 
   constructor() {
+    this.charger();
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     this.service.list().subscribe({
       next: (rows) => {
         this.notifications.set(rows);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 }

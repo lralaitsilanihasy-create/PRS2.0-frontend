@@ -6,6 +6,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier, LettreRenvoi } from '../../models';
 import { DossierService, LettreRenvoiService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /**
  * « Projets de lettre de renvoi » (MEMBRE) — liste des lettres (`GET /api/lettre-renvois`).
@@ -14,7 +15,7 @@ import { StatutBadge } from '../../shared/circuit';
 @Component({
   selector: 'app-lettre-renvois',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge],
+  imports: [StatutBadge, EtatErreur],
   template: `
     <section class="lr">
       <header class="lr__header">
@@ -24,6 +25,8 @@ import { StatutBadge } from '../../shared/circuit';
 
       @if (loading()) {
         <p class="cnm-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les projets de lettre de renvoi." (reessayer)="charger()" />
       } @else {
         <div class="table-responsive"><table class="cnm-table">
           <thead>
@@ -88,6 +91,8 @@ export class LettreRenvoiList {
 
   readonly lettres = signal<LettreRenvoi[]>([]);
   readonly loading = signal(true);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly signature = signal<number | null>(null);
   /** idLettre dont le détail (objet + corps) est déplié. */
   readonly ouvert = signal<number | null>(null);
@@ -105,14 +110,19 @@ export class LettreRenvoiList {
     this.charger();
   }
 
-  private charger(): void {
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     this.service.getAll().subscribe({
       next: (rows) => {
         this.lettres.set(rows);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 

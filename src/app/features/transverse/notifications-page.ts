@@ -6,6 +6,7 @@ import { routePourNotification } from '../../core/notifications/notification-rou
 import { NotificationsStore } from '../../core/notifications/notifications.store';
 import { Dossier, Notification } from '../../models';
 import { DossierService, NotificationService } from '../../services';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 
 /** Profils disposant d'un écran messagerie (routage des notifications MESSAGE). */
@@ -33,7 +34,7 @@ interface GroupeJour {
 @Component({
   selector: 'app-notifications-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DossierConsultation],
+  imports: [DossierConsultation, EtatErreur],
   template: `
     <section class="np">
       <header class="page-header page-header--actions">
@@ -63,6 +64,8 @@ interface GroupeJour {
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les notifications." (reessayer)="charger()" />
       } @else {
         @for (g of groupesAffiches(); track g.libelle) {
           <h2 class="np__jour">{{ g.libelle }}</h2>
@@ -138,6 +141,13 @@ export class NotificationsPage {
   private readonly auth = inject(AuthService);
 
   readonly loading = signal(true);
+  /**
+   * Échec du chargement initial (affiche l'erreur + « Réessayer », AUDIT.md P9). Uniquement posé
+   * par le chargement de PREMIER plan (`avecSpinner`) : le rafraîchissement silencieux déclenché
+   * par le flux temps réel (SSE, cf. l'`effect` du constructeur) ne doit pas effacer une liste déjà
+   * affichée pour un simple accroc réseau transitoire — même logique que le sondage de la cloche.
+   */
+  readonly erreur = signal(false);
   readonly notifs = signal<Notification[]>([]);
   readonly filtreLu = signal<'toutes' | 'non-lues'>('toutes');
   readonly filtreType = signal<string | null>(null);
@@ -181,14 +191,22 @@ export class NotificationsPage {
     });
   }
 
-  private charger(avecSpinner = true): void {
-    if (avecSpinner) this.loading.set(true);
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(avecSpinner = true): void {
+    if (avecSpinner) {
+      this.loading.set(true);
+      this.erreur.set(false);
+    }
     this.service.mes().subscribe({
       next: (rows) => {
         this.notifs.set([...rows].sort((a, b) => (b.dateEnvoi ?? '').localeCompare(a.dateEnvoi ?? '')));
         this.loading.set(false);
+        this.erreur.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        if (avecSpinner) this.erreur.set(true);
+      },
     });
   }
 

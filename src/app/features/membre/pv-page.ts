@@ -36,6 +36,7 @@ import {
   ReferenceLookupService,
 } from '../../services';
 import { PvWorkflow, PV_STATUT_LABELS, StatutBadge, examenRectifiable } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 
 /**
@@ -46,7 +47,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
 @Component({
   selector: 'app-membre-pv',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, PvWorkflow, DossierConsultation, DatePipe, RouterLink],
+  imports: [StatutBadge, PvWorkflow, DossierConsultation, DatePipe, RouterLink, EtatErreur],
   template: `
     <section class="pv">
       <header class="page-header">
@@ -55,6 +56,8 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
 
       @if (loading()) {
         <p class="pv__info" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les projets de PV." (reessayer)="charger()" />
       } @else {
         <ul class="pv__list">
           @for (pv of pvs(); track pv.idPv) {
@@ -388,6 +391,8 @@ export class MembrePv {
 
   readonly pvs = signal<PvExamen[]>([]);
   readonly loading = signal(false);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly selected = signal<PvExamen | null>(null);
   /** ⚠️ 2026-08-03 — dossier ouvert en consultation depuis un projet de PV (null = fermé). */
   readonly dossierConsulte = signal<Dossier | null>(null);
@@ -710,12 +715,16 @@ export class MembrePv {
 
   charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     this.service.list().subscribe({
       next: (rows) => {
         this.pvs.set(rows);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 
