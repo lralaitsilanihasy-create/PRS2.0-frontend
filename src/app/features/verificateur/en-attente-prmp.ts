@@ -11,6 +11,7 @@ import {
   VerificationService,
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 
 /** Une ligne d'historique : observation envoyée par le vérificateur ou rectification reçue de la PRMP. */
@@ -35,7 +36,7 @@ interface CarteAttente {
 @Component({
   selector: 'app-en-attente-prmp',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation],
+  imports: [StatutBadge, DossierConsultation, EtatErreur],
   template: `
     <section class="ep">
       <header class="ep__header">
@@ -50,6 +51,8 @@ interface CarteAttente {
 
       @if (loading()) {
         <p class="cnm-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger les dossiers en attente de rectification PRMP." (reessayer)="charger()" />
       } @else if (cartes().length) {
         <ul class="ep__list">
           @for (c of cartes(); track c.dossier.idDossier) {
@@ -122,6 +125,8 @@ export class EnAttentePrmp {
   private readonly lookups = inject(ReferenceLookupService);
 
   readonly loading = signal(true);
+  /** Échec du chargement de la liste (affiche l'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly cartes = signal<CarteAttente[]>([]);
   readonly consulte = signal<Dossier | null>(null);
   private readonly entiteMap = signal<Map<string, string>>(new Map());
@@ -131,6 +136,13 @@ export class EnAttentePrmp {
       .lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite'])
       .subscribe((m) => this.entiteMap.set(m));
 
+    this.charger();
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  charger(): void {
+    this.loading.set(true);
+    this.erreur.set(false);
     forkJoin({
       dossiers: this.dossierService.enAttentePrmp(),
       receptions: this.receptionService.list(),
@@ -155,7 +167,10 @@ export class EnAttentePrmp {
         );
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 
