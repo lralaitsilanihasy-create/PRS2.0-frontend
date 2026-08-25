@@ -3,15 +3,21 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { TableauBord } from '../../models';
 import { KpiService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 
 /**
  * Tableau de bord KPIs (PRESIDENT / ADMINISTRATEUR) : pipeline par statut, taux de
  * conformité, et top 5 des points de contrôle non conformes — depuis `GET /api/kpis/tableau-bord`.
+ *
+ * Une seule requête sert les trois sections (cartes, pipeline, top 5) : contrairement à un
+ * tableau de bord agrégeant plusieurs sources indépendantes, un échec ici prive réellement
+ * tout l'écran de données — le remplacement complet par `<app-etat-erreur>` est donc le bon
+ * motif (identique aux ~37 écrans déjà traités pour AUDIT.md P9), pas un artifice à tuile.
  */
 @Component({
   selector: 'app-kpi-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge],
+  imports: [StatutBadge, EtatErreur],
   template: `
     <section class="kpi">
       <header class="page-header">
@@ -21,6 +27,8 @@ import { StatutBadge } from '../../shared/circuit';
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger le tableau de bord." (reessayer)="charger()" />
       } @else if (data(); as d) {
         <div class="kpi__cards">
           <article class="cnm-stat cnm-stat--blue">
@@ -144,6 +152,8 @@ export class KpiDashboard {
 
   readonly data = signal<TableauBord | null>(null);
   readonly loading = signal(false);
+  /** Échec du chargement (affiche l'état d'erreur + « Réessayer », AUDIT.md P9). */
+  readonly erreur = signal(false);
 
   readonly pipeline = computed(() => {
     const d = this.data();
@@ -154,13 +164,22 @@ export class KpiDashboard {
   });
 
   constructor() {
+    this.charger();
+  }
+
+  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur. */
+  charger(): void {
     this.loading.set(true);
+    this.erreur.set(false);
     this.kpiService.tableauBord().subscribe({
       next: (d) => {
         this.data.set(d);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
     });
   }
 }
