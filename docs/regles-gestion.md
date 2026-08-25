@@ -61,6 +61,16 @@ Flux complet d'un dossier, avec navette du projet de PV :
 > la consultation d'un PV signé sans fichier (antérieur au correctif) relance la production en arrière-plan.
 > Le convertisseur Word est **préchauffé au démarrage** (première génération sans coût de lancement de Word).
 
+> ⚠️ **Règle ajoutée (2026-08-19) — même règle pour le PDF de la LETTRE DE RENVOI.** La signature d'une
+> lettre (`SOUMIS → SIGNE`, CC ou Président) souffrait du même défaut : la conversion Word se faisait dans
+> sa transaction, si bien qu'un Word absent ou planté **annulait une signature pourtant valide** (et
+> laissait un PDF orphelin sur le FSX). La signature marque désormais la lettre `SIGNE`, applique ses
+> effets métier (suspension de l'examen, retour de navette) et **répond immédiatement** ; le document part
+> **après commit, en tâche de fond**. `LettreRenvoiDto.documentDisponible` (champ ajouté) porte le même
+> contrat que celui du PV signé : **false pendant la fenêtre de génération**, true ensuite. Le
+> téléchargement conserve sa **régénération paresseuse** — réservée aux lettres `SIGNE` : une lettre non
+> signée n'a jamais de PDF officiel.
+
 > ⚠️ **Règle ajoutée (non issue de la brochure d'origine) — statut `DISPATCHE`.** La brochure ne nomme
 > aucun statut de dossier entre `PRET_DISPATCH` et `CLOTURE`. Pour matérialiser l'étape **Dispatch (3)**
 > dans le pipeline, le backend ajoute le statut **`DISPATCHE`** (« dispatché, en attente d'examen ») :
@@ -201,14 +211,29 @@ Le mandat d'une PRMP est matérialisé par la table **`t_mandat`** (`/api/mandat
   `GET /api/ugpms/par-tutelle/{idPrmp}` est aussi ouvert aux profils **Président, Chef de commission,
   Secrétaire, Membre, Vérificateur, Assistant contrôleur**, pour **toute** tutelle et **sans filtre de
   localité** : ce sont eux qui instruisent le dossier et doivent savoir quelle unité l'a établi. Le filtre
-  par localité est volontairement écarté — le répertoire des **PRMP** est déjà national pour tout
-  authentifié, et l'UGPM **n'a pas de localité propre** (elle hérite de celles des entités contractantes
+  par localité est volontairement écarté — le répertoire des **PRMP** est national pour ces mêmes profils,
+  et l'UGPM **n'a pas de localité propre** (elle hérite de celles des entités contractantes
   actives de sa tutelle, éventuellement réparties sur plusieurs localités) : filtrer masquerait justement
   l'unité qu'un contrôleur d'une autre localité doit identifier. **Étendue** : hors Administrateur, la
   réponse est une **vue restreinte** (identité, matricule, libellé, courriel, téléphone) — **ni pièce
   d'identité (`cin`, `dateCin`, `lieuCin`) ni `login`**, réservés à l'Administrateur. Le Chargé de
   publication, hors instruction, n'est pas concerné (403), et le reste de la ressource UGPM demeure
   réservé à l'Administrateur.
+- ⚠️ **Règle ajoutée (2026-08-24) — le répertoire des PRMP suit le même découpage que celui des UGPM.**
+  Les cinq lectures de `/api/prmps` (`GET /`, `/{id}`, `/par-localite/{idLocalite}`,
+  `/par-entite/{idEntiteContract}`, `/par-nom/{nom}`) servaient la fiche **complète** — **`cin`,
+  `dateCin`, `lieuCin` compris** — à **tout** utilisateur authentifié, quels que soient son profil et sa
+  localité. Donnée personnelle, sans usage métier hors gestion des comptes. **Étendue** : la réponse est
+  désormais une **vue réduite** (identité, matricule, arrêté de nomination et sa date, courriel,
+  téléphone) où le triptyque de la pièce d'identité est à **`null`** — les champs conservés étant les
+  mentions d'un **acte administratif** et des coordonnées **de fonction**, nécessaires à l'instruction.
+  Deux exceptions à la vue réduite : l'**Administrateur** (gestion des comptes) et la **PRMP concernée**
+  (claim `ref` = son propre matricule), qui reçoivent la fiche complète. L'arbitrage est fait
+  **ligne à ligne** : une PRMP retrouve sa fiche complète au milieu d'une liste, et reste en vue réduite
+  sur celle d'une consœur. L'**UGPM** en est exclue bien que son claim `ref` porte l'identifiant de sa
+  PRMP de tutelle : partager un périmètre d'instruction n'est pas partager une pièce d'identité. **Accès** :
+  mêmes profils que `GET /api/ugpms/par-tutelle/{idPrmp}` ; le Chargé de publication est refusé (403).
+  L'**écriture** reste réservée à l'Administrateur et manipule les dix champs.
 
 **Rectification en attente de décision PRMP (⚠️ règle ajoutée)**
 
@@ -251,6 +276,38 @@ Le mandat d'une PRMP est matérialisé par la table **`t_mandat`** (`/api/mandat
   - ⚠️ **Règle ajoutée** : pour (situation, nature, montant, localité), `t_regle_passation` calcule l'**ensemble des modes autorisés** (libellés `tr_mode`) avec un **recommandé** (règle la plus prioritaire). La PRMP **choisit** dans cet ensemble ; le serveur **valide** (mode hors ensemble → **409**) ; aucun choix → **recommandé** appliqué ; aucune règle → saisie manuelle (alerte `MODE_NON_DETERMINE`). Aperçu sans enregistrement : `POST /api/regle-passations/suggestion-mode` (renvoie l'ensemble + recommandé + `modeNonDetermine`).
 - Identifiants attribués par le serveur [Auto]
   - ⚠️ **Règle ajoutée** : les PK dossier / PPM / marché sont **allouées par une séquence serveur** (`seq_dossier`/`seq_ppm`/`seq_marche`) ; tout id envoyé par le client est **ignoré** (plus de « identifiant en doublon »). Le formulaire ne saisit plus d'id. **Dette documentée** : séquence applicative (et non `IDENTITY`) pour éviter une refonte massive des fixtures de test sur ces 3 tables centrales ; bascule `IDENTITY` possible plus tard.
+  - ⚠️ **Extension (correction de périmètre des ressources filles)** : la même règle s'applique désormais aux PK
+    **lot** (`t_lot`), **tranche** (`t_tranche`), **date prévisionnelle** (`t_marche_prevision`) et **bénéficiaire**
+    (`t_service_beneficiaire`) — allouées serveur, id client **ignoré**. *(Depuis le 2026-08-25 : par **séquence**
+    — `seq_lot`, `seq_tranche`, `seq_marche_prevision`, `seq_service_beneficiaire` — et non plus par `max+1`.)*
+    Motif : depuis que `GET /api/lots` et `GET /api/marche-previsions` sont
+    **scopés au périmètre**, un client qui allouait son identifiant par `max()` sur la liste reçue — désormais
+    partielle — visait mécaniquement l'enregistrement d'une **autre entité**, que l'écriture aurait **écrasé**.
+  - ⚠️ **Extension (2026-08-25) — journal d'audit et notifications.** Les PK **`t_audit_log`** (`seq_audit_log`)
+    et **`t_notification`** (`seq_notification`) sont elles aussi allouées par **séquence serveur**. Motif propre
+    à ces deux tables : elles sont écrites **à l'intérieur de la transaction métier de l'appelant** — le projet
+    ne pose aucun `Propagation.REQUIRES_NEW`. Avec un `max(id)+1`, deux acteurs agissant à la même seconde
+    lisaient le même maximum, et la violation d'unicité de la **seconde insertion annulait tout l'acte métier** :
+    le dossier n'était pas validé, et l'utilisateur recevait un message de doublon sans rapport avec son action.
+    L'échec ne restait donc pas confiné à la trace ou à l'avis, il **emportait l'opération qu'il accompagnait**.
+  - ⚠️ **Généralisation (2026-08-25) — toutes les PK applicatives.** Le motif « séquence serveur » couvre désormais
+    **14 tables** : aux 4 historiques (`t_dossier`, `t_ppm`, `t_marche`, `t_reception`) s'ajoutent `t_audit_log`,
+    `t_notification`, `t_lot`, `t_tranche`, `t_marche_prevision`, `t_service_beneficiaire`, `t_message`,
+    `t_piece_jointe`, `t_pv_examen`, `t_pv_navette`, `t_prmp_entite`, `tr_entite_contract`,
+    `t_prmp_entite_demande` et `t_changement_ligne`. **Plus aucun `max(id)+1` n'alloue de PK dans le code.**
+    Corollaire pour trois ressources où l'id du corps était encore repris quand le client en fournissait un —
+    **message**, **PV d'examen** et (via son CRUD) **notification** : cet id est maintenant **ignoré**, comme
+    partout ailleurs. Sur PK assignée, `save()` est un **merge** : un id désignant un enregistrement existant
+    l'**écrasait** — pour le PV, statut, avis et signatures compris, alors même que `PUT` sur un PV signé est
+    refusé en 409. Le `POST` offrait la réécriture que le `PUT` interdisait.
+    *(Seule exception assumée : `t_pv_navette.NUM_NAVETTE`, qui n'est pas une PK mais le **rang métier** du
+    mouvement dans SON PV — 1, 2, 3… — affiché à l'utilisateur et repris dans `NB_NAVETTES`. Il reste calculé
+    par `max+1` sur le PV concerné ; une séquence globale le rendrait faux.)*
+  - ⚠️ **Consommation de la séquence — une fois par ligne.** Toute création en lot (saisie d'un PPM, recopie d'une
+    version) doit appeler `nextval` **à chaque ligne écrite**. Allouer une valeur puis l'incrémenter localement
+    laisse la séquence **en retard** sur les lignes réellement insérées : la saisie suivante réattribue des
+    identifiants déjà pris et, `save()` sur PK assignée étant un **merge**, elle **écrase silencieusement** les
+    lignes précédentes au lieu de s'y ajouter — perte de données sans erreur visible.
 - Suppression d'un marché / d'un PPM [Écriture]
   - ⚠️ **Règle ajoutée** : possible **uniquement** si le **dossier rattaché est en BROUILLON** et **propriété** de la PRMP (sinon **403** « Vous n'êtes pas le propriétaire… » / **409** « Opération impossible : le dossier n'est pas un brouillon »). Supprimer un **marché** efface **en cascade** ses **dates prévisionnelles** (`t_marche_prevision`) ; supprimer un **PPM** efface **en cascade** ses **marchés** et leurs prévisions — le tout dans la **même transaction** (la cascade ne touche **que** les enfants de la cible). *(Côté SGBD, un filet de sécurité distingue désormais les violations FK / doublon / valeur obligatoire.)*
 
