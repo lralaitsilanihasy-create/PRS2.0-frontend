@@ -13,8 +13,12 @@
 
 ### Authentification
 - Toutes les routes nécessitent un **jeton JWT**, **sauf** les routes publiques : `POST /api/auth/login`,
-  `POST /api/auth/register/prmp`, `POST /api/auth/register/ugpm`, `GET /api/auth/entites`, `GET /api/auth/prmps`
-  (tout `/api/auth/**`).
+  `POST /api/auth/logout`, `POST /api/auth/register/prmp`, `POST /api/auth/register/ugpm`,
+  `GET /api/auth/entites`.
+- ⚠️ **Exception au sein de `/api/auth/**` (2026-08-24)** : `GET /api/auth/prmps` **n'est plus public** —
+  il exige le rôle **`ADMINISTRATEUR`**. Servi anonymement, il livrait la liste des comptes de connexion
+  existants alors que `POST /api/auth/login` n'est pas limité en débit (énumération de comptes puis
+  martelage). Anonyme → **401**, autre profil authentifié → **403**.
 - Obtenir le jeton via `POST /api/auth/login`, puis l'envoyer sur chaque requête :
   `Authorization: Bearer <token>`.
 - Absence / invalidité du jeton → **401**. Rôle insuffisant → **403**.
@@ -49,10 +53,41 @@ Le rôle de l'utilisateur est porté par le jeton (claim `role`). Valeurs possib
 > signées et des PV définitifs (avis ≠ FAVR immédiatement ; FAVR après clôture du dossier).
 
 ### Clés primaires — IMPORTANT
-**Toutes les entités ont une clé primaire ASSIGNÉE par le client** (pas d'auto-génération).
-Le champ identifiant (le **1er champ** de chaque DTO) **doit être fourni dans le corps d'un POST de
-création** ; l'omettre renvoie **400** (« L'identifiant (clé primaire) est obligatoire à la création »).
-Les exemples de requête ci-dessous incluent donc toujours l'identifiant.
+⚠️ **Deux régimes coexistent** (mis à jour 2026-08-25). Il n'est plus vrai que *toutes* les entités
+ont une PK assignée par le client.
+
+**1. PK allouée par le SERVEUR (séquence).** L'identifiant vient d'une séquence PostgreSQL : **tout id
+envoyé dans le corps d'un POST est IGNORÉ**, et l'id réel figure **dans la réponse**. C'est celui-là,
+jamais celui envoyé, qu'il faut réutiliser pour les appels suivants — sinon **404**, ou pire, l'action
+porte sur l'enregistrement d'un tiers.
+
+| Ressource | Séquence | | Ressource | Séquence |
+|---|---|---|---|---|
+| `/api/dossiers` | `seq_dossier` | | `/api/service-beneficiaires` | `seq_service_beneficiaire` |
+| `/api/ppms` | `seq_ppm` | | `/api/messages` | `seq_message` |
+| `/api/marches` | `seq_marche` | | `/api/pv-examens` | `seq_pv_examen` |
+| `/api/receptions` | `seq_reception` | | `/api/notifications` | `seq_notification` |
+| `/api/lots` | `seq_lot` | | `/api/prmp-entites` | `seq_prmp_entite` |
+| `/api/tranches` | `seq_tranche` | | `/api/marche-previsions` | `seq_marche_prevision` |
+
+Six tables de plus sont sur séquence **sans création exposée au client** : `t_audit_log`
+(`seq_audit_log`) et `t_pv_navette` (`seq_pv_navette`) — POST refusé en **409**, historique immuable ;
+`t_piece_jointe` (`seq_piece_jointe`) — dépôt **multipart** ; `t_prmp_entite_demande`
+(`seq_prmp_entite_demande`) — créées par l'inscription ; `t_changement_ligne` (`seq_changement_ligne`)
+— trace interne, aucun endpoint ; `tr_entite_contract` (`seq_entite_contract`) — **⚠️ uniquement** au
+parcours d'inscription (entité proposée acceptée par l'Administrateur) : `POST /api/entite-contracts`
+attend **toujours** un `idEntiteContract` fourni par le client, et relève donc du régime 2.
+
+**2. PK assignée par le CLIENT.** Pour **toutes les autres** ressources (référentiels, `controleurs`,
+`dispatchs`, `examens`, `delegations`, `copie-dossiers`, `entite-contracts`, …), le champ identifiant
+(le **1er champ** de chaque DTO) **doit être fourni dans le corps d'un POST de création** ; l'omettre
+renvoie **400** (« L'identifiant (clé primaire) est obligatoire à la création »). Les exemples de
+requête de ces ressources incluent donc toujours l'identifiant.
+
+> **Exception isolée** — `/api/marche-previsions` relève du régime 1 (valeur **ignorée**), mais
+> `idPrevision` porte encore `@NotNull` dans son DTO : l'omettre renvoie **400** alors même que la
+> valeur envoyée ne sera pas utilisée. Il faut donc envoyer un nombre quelconque. Les onze autres
+> ressources du régime 1 acceptent l'**absence** du champ.
 
 ### Visibilité par localité
 Pour les ressources du circuit (`dossiers`, `receptions`, `dispatchs`, `examens`, `pv-examens`,
@@ -105,7 +140,9 @@ BROUILLON** pour l'édition, **cohérence type↔contenu** (PPM ⇒ a un PPM ; D
 | 401 | Non authentifié (JWT absent/invalide, ou compte désactivé) |
 | 403 | Interdit (rôle ou périmètre de localité insuffisant) |
 | 404 | Ressource introuvable |
+| 405 | ⚠️ **Verbe non autorisé sur la route** (2026-08-24) — réponse accompagnée de l'en-tête **`Allow`** listant les méthodes acceptées |
 | 409 | Conflit métier (transition d'état interdite, contrainte violée, doublon, suppression interdite) |
+| 500 | Erreur interne — ⚠️ **message générique** : le corps ne porte **aucun** détail d'implémentation ; l'exception complète part au journal serveur |
 
 ### Format d'erreur (`ErrorResponse`)
 ```json
@@ -121,6 +158,13 @@ BROUILLON** pour l'édition, **cohérence type↔contenu** (PPM ⇒ a un PPM ; D
 `erreurs` est un **tableau** d'objets `{ champ, message }`, renseigné uniquement pour les erreurs de
 validation (400) ; **omis** (absent du corps) pour les autres erreurs.
 
+> ⚠️ **500 — corps générique (règle ajoutée 2026-08-24).** Le `message` d'un 500 vaut invariablement
+> « Une erreur interne est survenue. L'incident a été enregistré ; réessayez plus tard. » Auparavant le corps
+> reprenait le texte brut de l'exception : fragment SQL avec ses noms de tables et de colonnes, chemin de
+> fichier du serveur, nom de classe interne — exposés à qui savait provoquer une erreur, y compris depuis les
+> routes publiques. Le détail n'est pas perdu : il est journalisé côté serveur en `ERROR`, avec la trace
+> complète. Le front ne doit donc **jamais** chercher à interpréter le `message` d'un 500.
+
 Un champ **`code`** (string) s'ajoute au corps pour les erreurs métier que le front doit traiter
 **spécifiquement** plutôt qu'en affichant le message brut ; il est **omis** partout ailleurs. Seule valeur
 actuelle : **`VACANCE_PRMP`** (409, cf. *Mandats PRMP*).
@@ -135,7 +179,8 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 |---|---|---|
 | **Validation des champs** (`@Valid`) | un champ obligatoire manque ou ne respecte pas une contrainte (`@NotNull`, `@NotBlank`, `@Size`…) | `message` = « Validation échouée » + tableau **`erreurs`** (`[{ champ, message }]`) renseigné |
 | **Corps illisible / mal formé** (`HttpMessageNotReadableException`) | JSON invalide, mauvais **type** (ex. `idEntiteContract` envoyé en **libellé** au lieu de l'id) ou **date hors ISO** `AAAA-MM-JJ` (ex. `23/06/2026`) | `message` = « Corps de requête invalide ou mal formé. » + **`erreurs`** `[{ champ, message }]` indiquant le **champ fautif** (ex. `dateSignature`, `marches[0].dateFin`) |
-| **Identifiant de création manquant** | POST de création sans la clé primaire (toutes les PK sont **assignées par le client**, cf. *Clés primaires*) | « L'identifiant (clé primaire) est obligatoire à la création… » |
+| **Identifiant de création manquant** | POST de création sans la clé primaire, sur une ressource du **régime 2** (PK assignée par le client — cf. *Clés primaires* ; les ressources du **régime 1** allouent la PK par séquence et **ignorent** l'id envoyé) | « L'identifiant (clé primaire) est obligatoire à la création… » |
+| **Valeur trop longue en base** (`SQLSTATE 22001`) | une valeur dépasse la longueur de sa colonne alors qu'aucun `@Size` ne l'avait arrêtée en amont | `message` = « Valeur trop longue pour un champ de cette ressource. » + **`erreurs`** nommant le champ **quand le pilote cite la colonne** (H2 le fait, PostgreSQL non — le **400** reste rendu dans les deux cas) |
 | **Règle d'entrée métier** (`BadRequestException`) | ex. `POST /api/mon-compte/changer-mot-de-passe` avec ancien mot de passe incorrect ou nouveau identique à l'ancien ; `POST /api/marches` quand la **localité du dossier** est introuvable (mode indéterminable) | message explicite |
 
 #### 403 — Forbidden *(authentifié mais non autorisé ; ne pas réessayer tel quel)*
@@ -151,11 +196,22 @@ quand ils surviennent (mapping centralisé dans `GlobalExceptionHandler`). Côt�
 | **Précondition de circuit non remplie** | l'étape précédente n'est pas atteinte | `dispatch` d'un dossier non `PRET_DISPATCH` ou **doublon** de dispatch ; `examen` d'un dossier non `DISPATCHE` ; **édition d'un examen verrouillé** (dossier `PV_SIGNE`) ; `vérification` hors PV `SIGNE` / avis ≠ `FAVR` / dossier clos |
 | **Autre règle de gestion** | contrainte métier violée | `NUM_PASSAGE = 1` ⟺ `TYPE_PASSAGE = INITIAL` ; `INTERIM_DISPATCH` incohérent avec la localité ; décision de retrait sans observation ; `sens` de navette invalide |
 | **Suppression interdite (immuabilité)** | `DELETE` d'une ressource à traçabilité immuable | `pv-navettes`, `audit-logs` |
+| **Écriture interdite (journal immuable)** | `POST` ou `PUT` sur le journal d'audit : une entrée est *constatée* par le serveur, jamais *déclarée* par un client — ni forgeable, ni réattribuable à un tiers (§3.8) | `POST /api/audit-logs` ; `PUT /api/audit-logs/{id}` |
 | **Vacance de PRMP** (`code: "VACANCE_PRMP"`) | aucune PRMP en fonction à la date de l'action : toute action de traitement côté PRMP/UGPM attend la nomination (pas d'intérim) | `POST /api/dossiers/{id}/soumettre` pendant une transition — message « En attente de nomination de la nouvelle PRMP » |
 | **Mandat : règle de nomination** | 3ᵉ mandat pour la même personne, arrêté réutilisé, reconduction recouvrant le précédent (prolongation déguisée), durée > 3 ans | `POST /api/mandats` (cf. *Mandats PRMP*) |
-| **Violation de contrainte BD** (`DataIntegrityViolationException`) | identifiant en **doublon**, valeur obligatoire manquante (NOT NULL) ou **clé étrangère** inexistante | POST avec un id déjà utilisé, ou référençant une entité inexistante |
+| **Violation de contrainte BD** (`DataIntegrityViolationException`) | identifiant en **doublon** (`23505`) ou **clé étrangère** inexistante (`23503`) | POST avec un id déjà utilisé, ou référençant une entité inexistante — *(NOT NULL `23502` et longueur `22001` donnent un **400**, pas un 409)* |
 
-> Rappel : **401** (non authentifié : JWT absent/invalide ou compte désactivé) et **404** (ressource introuvable) restent distincts des trois ci-dessus.
+> ⚠️ **405 — mauvais verbe (règle ajoutée 2026-08-24).** Un verbe non supporté sur une route existante
+> (ex. `DELETE /api/marches`) renvoie **405** avec l'en-tête **`Allow`** peuplé des méthodes acceptées, et le
+> corps `ErrorResponse` habituel. Auparavant **toute l'API** répondait **500** dans ce cas : le
+> `@ExceptionHandler(Exception.class)` du `GlobalExceptionHandler` interceptait
+> `HttpRequestMethodNotSupportedException` avant le résolveur par défaut de Spring, et publiait en prime le
+> message d'exception. Un client ne pouvait pas distinguer un appel mal formé d'une panne serveur. *(Si le
+> mapping ne fournit aucune méthode supportée, `Allow` est omis plutôt que rendu vide ; le 405 est rendu
+> quand même.)*
+
+> Rappel : **401** (non authentifié : JWT absent/invalide ou compte désactivé), **404** (ressource introuvable)
+> et **405** (verbe non autorisé sur la route, avec `Allow`) restent distincts des trois ci-dessus.
 
 ### Types
 `Integer`/`Long` → `number` ; `String` → `string` ; `Boolean` → `boolean` ; `BigDecimal` → `number` ;
@@ -251,7 +307,7 @@ actif** : c'est un coupe-circuit, pas une seconde activation (chaque actualité 
 ---
 
 ## Anomalies
-**Ressource** `/api/anomalies` — Lecture et écriture : tout utilisateur authentifié (CRUD standard, aucun rôle particulier).
+**Ressource** `/api/anomalies` — **Lecture scopée au périmètre de la ligne de marché signalée** (`ID_DETAIL`, §1/§3.1) : Président/Administrateur voient tout, la PRMP/UGPM les anomalies de ses marchés, les contrôleurs celles de leur localité, tout autre profil une liste vide. Anomalie de **niveau PPM** (`ID_DETAIL` nul) : Président/Administrateur seuls (**403** sinon). **Écriture réservée à l'`ADMINISTRATEUR`** (**403** sinon) — une anomalie est constatée par le serveur (règles `tr_regle_anomalie`), jamais déclarée par un client.
 
 **Champs `AnomalieDto`**
 
@@ -275,11 +331,11 @@ actif** : c'est un coupe-circuit, pas une seconde activation (chaque actualité 
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/anomalies | — | `AnomalieDto[]` | 200 | Authentifié |
-| GET | /api/anomalies/{id} | — | `AnomalieDto` | 200, 404 | Authentifié |
-| POST | /api/anomalies | `AnomalieDto` | `AnomalieDto` | 201, 400, 401 | Authentifié |
-| PUT | /api/anomalies/{id} | `AnomalieDto` | `AnomalieDto` | 200, 400, 404 | Authentifié |
-| DELETE | /api/anomalies/{id} | — | — | 204, 404 | Authentifié |
+| GET | /api/anomalies | — | `AnomalieDto[]` | 200 | Authentifié — **liste scopée** |
+| GET | /api/anomalies/{id} | — | `AnomalieDto` | 200, **403**, 404 | Authentifié — **403 hors périmètre** |
+| POST | /api/anomalies | `AnomalieDto` | `AnomalieDto` | 201, 400, 401, **403** | **ADMINISTRATEUR** |
+| PUT | /api/anomalies/{id} | `AnomalieDto` | `AnomalieDto` | 200, 400, **403**, 404 | **ADMINISTRATEUR** |
+| DELETE | /api/anomalies/{id} | — | — | 204, **403**, 404 | **ADMINISTRATEUR** |
 
 `{id}` = idAnomalie (number).
 
@@ -297,7 +353,8 @@ actif** : c'est un coupe-circuit, pas une seconde activation (chaque actualité 
 ---
 
 ## Authentification
-**Ressource** `/api/auth` — Routes **publiques** (aucun token requis). Pas de CRUD.
+**Ressource** `/api/auth` — Routes **publiques** (aucun token requis), **sauf `GET /api/auth/prmps`**
+qui exige le rôle `ADMINISTRATEUR` (cf. *Authentification* en tête de document). Pas de CRUD.
 
 > ⚠️ **Cookie de session HttpOnly — phase 1 livrée (2026-08-17, plan `docs/plan-cookie-httponly.md`).**
 > - `POST /api/auth/login` pose désormais **aussi** le cookie **`PRS_SESSION`** (`HttpOnly; Secure;
@@ -386,7 +443,7 @@ actif** : c'est un coupe-circuit, pas une seconde activation (chaque actualité 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
 | GET | /api/auth/entites | — | `EntitePubliqueDto[]` | 200 | PUBLIC |
-| GET | /api/auth/prmps | — | `PrmpPubliqueDto[]` | 200 | PUBLIC |
+| GET | /api/auth/prmps | — | `PrmpPubliqueDto[]` | 200, 401, 403 | **ADMINISTRATEUR** |
 | POST | /api/auth/login | `LoginRequest` | `LoginResponse` | 200, 400, 401 | PUBLIC |
 | POST | /api/auth/register/prmp | **`multipart/form-data`** (v2, ci-dessous) ou `RegisterPrmpRequest` (JSON, historique) | `RegisterResponse` | 201, 400, 409 | PUBLIC |
 | POST | /api/auth/register/ugpm | **`multipart/form-data`** : part `data` (`RegisterUgpmRequest`) + `cin` (obligatoire) + `photo` (opt.) | `RegisterResponse` | 201, 400, 409 | PUBLIC |
@@ -411,7 +468,9 @@ actif** : c'est un coupe-circuit, pas une seconde activation (chaque actualité 
 > Le compte est créé **`EN_ATTENTE`** (`TYPE_ACTEUR=UGPM`, `refActeur=idUgpm`) ; la connexion reste refusée
 > (**401**) jusqu'à validation. **`idPrmpTutelle` doit exister**, sinon **409** ; `idUgpm` ou `login` déjà pris
 > → **409**. Les **Administrateurs sont notifiés** (`NOUVELLE_INSCRIPTION`). `GET /api/auth/prmps` expose le
-> **référentiel réduit des PRMP** (`idPrmp`, `nomPrmp`, `prenomsPrmp`) pour le menu « PRMP de tutelle ».
+> **référentiel réduit des PRMP** (`idPrmp`, `nomPrmp`, `prenomsPrmp`) pour le menu « PRMP de tutelle » —
+> ⚠️ **route fermée depuis le 2026-08-24** (rôle `ADMINISTRATEUR` requis, cf. *Authentification*) : elle
+> n'est **pas** appelable depuis l'écran d'inscription anonyme. Aucun écran ne la consommait.
 > La validation suit le **même circuit Administrateur** que la PRMP (voir *Inscriptions* ci-dessous).
 
 **Exemple — login (requête / réponse)**
@@ -722,7 +781,7 @@ si aucun résultat (pas de 404). `{nom}` est un fragment (URL-encoder si espaces
 ---
 
 ## Copies de dossier
-**Ressource** `/api/copie-dossiers` — Lecture / écriture : tout utilisateur authentifié.
+**Ressource** `/api/copie-dossiers` — **Lecture scopée à la localité du dossier** (§1) : Président/Administrateur voient tout, les contrôleurs les copies de leur localité, la PRMP/UGPM une liste vide (**403** sur le détail). **Écriture réservée à l'`ADMINISTRATEUR`** (**403** sinon) — aucun écran ne la consomme ; un accusé de réception posable par tout porteur de jeton attesterait une transmission qui n'a pas eu lieu.
 
 **Champs `CopieDossierDto`**
 
@@ -742,11 +801,11 @@ si aucun résultat (pas de 404). `{nom}` est un fragment (URL-encoder si espaces
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/copie-dossiers | — | `CopieDossierDto[]` | 200 | Authentifié |
-| GET | /api/copie-dossiers/{id} | — | `CopieDossierDto` | 200, 404 | Authentifié |
-| POST | /api/copie-dossiers | `CopieDossierDto` | `CopieDossierDto` | 201, 400 | Authentifié |
-| PUT | /api/copie-dossiers/{id} | `CopieDossierDto` | `CopieDossierDto` | 200, 400, 404 | Authentifié |
-| DELETE | /api/copie-dossiers/{id} | — | — | 204, 404 | Authentifié |
+| GET | /api/copie-dossiers | — | `CopieDossierDto[]` | 200 | Authentifié — **liste scopée** |
+| GET | /api/copie-dossiers/{id} | — | `CopieDossierDto` | 200, **403**, 404 | Authentifié — **403 hors localité** |
+| POST | /api/copie-dossiers | `CopieDossierDto` | `CopieDossierDto` | 201, 400, **403** | **ADMINISTRATEUR** |
+| PUT | /api/copie-dossiers/{id} | `CopieDossierDto` | `CopieDossierDto` | 200, 400, **403**, 404 | **ADMINISTRATEUR** |
+| DELETE | /api/copie-dossiers/{id} | — | — | 204, **403**, 404 | **ADMINISTRATEUR** |
 
 `{id}` = idCopie (number).
 
@@ -1119,7 +1178,7 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idDossier | number | Oui (PK, au POST) | clé primaire |
+| idDossier | number | **Non** (⚠️ ignoré au POST) | PK **allouée serveur** (`seq_dossier`) ; renvoyée dans la réponse |
 | idTypeDossier | string | Non | max 10 — **famille** (`DDP` / `DMC` / `DDM`, ⚠️ codes renommés 2026-07-17) ; déduite du sous-type |
 | idSousType | string | Non | max 20 — **sous-type** (référentiel `/api/sous-type-dossiers`) ; famille **DDP : dérivé serveur** (`PPM` / `PPM-AGPM` selon les marchés, valeur envoyée ignorée) ; **DMC/DDM : choisi à la saisie** |
 | idDossierParent | number | Non | |
@@ -1153,7 +1212,7 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/dossiers | — | `DossierDto[]` | 200, 400 | Authentifié (filtré, hors BROUILLON) — filtres `?statut=` `&type=` `&sousType=` ; ⚠️ **paginable** (`?page=&size=` → enveloppe `Page`, cf. Conventions) |
+| GET | /api/dossiers | — | `DossierDto[]` | 200, 400 | Authentifié (filtré ; les BROUILLON sont masqués aux **contrôleurs**, mais servis à leur **PRMP** et à l'**Administrateur**) — filtres `?statut=` `&type=` `&sousType=` `&brouillon=` ; ⚠️ **paginable** (`?page=&size=` → enveloppe `Page`, cf. Conventions) |
 | GET | /api/dossiers/a-receptionner | — | `DossierDto[]` | 200, 403 | `SECRETAIRE` (titulaire/délégué) ou `ADMINISTRATEUR` |
 | GET | /api/dossiers/a-examiner | — | `DossierDto[]` | 200, 403 | `MEMBRE` (titulaire/délégué) ou `ADMINISTRATEUR` |
 | GET | /api/dossiers/examines | — | `Page<DossierDto>` | 200, 403 | `MEMBRE` (titulaire/délégué) ou `ADMINISTRATEUR` |
@@ -1196,6 +1255,33 @@ relation **1,N** : un point de contrôle a **0..N** lignes. Remplace l'ancien ch
 > `?statut=`, les filtres serveur **`?type=`** (famille : `DDP`/`DMC`/`DDM`) et **`?sousType=`** (ex.
 > `PPM-AGPM`), combinables entre eux ; valeur inconnue du référentiel → **400**. Le scoping de visibilité
 > (localité / PRMP) s'applique toujours d'abord.
+
+> 📌 **Filtre `?brouillon=` (règle ajoutée 2026-08-25).** `GET /api/dossiers` accepte **`?brouillon=true`**
+> (les seuls `BROUILLON`) et **`?brouillon=false`** (**tout sauf** `BROUILLON` — pas seulement `SOUMIS` :
+> `EXAMINE`, `CLOTURE`, `EN_ATTENTE_DECISION_PRMP`… en font partie ; un `statut` nul compte comme
+> non-brouillon, même convention que le dénominateur `compterSoumis`). **Facultatif : absent, la réponse est
+> strictement inchangée.** Toute autre valeur (`?brouillon=oui`) → **400** nommant les valeurs admises — le
+> paramètre est volontairement lu en `String` et converti en service, un `Boolean` lié par Spring donnant un
+> **500 opaque** sur valeur non convertible.
+>
+> Combinable avec `?statut=`, `?type=` et `?sousType=` : les filtres se **cumulent** (ET). Une combinaison
+> contradictoire (`?statut=BROUILLON&brouillon=false`) renvoie donc une **liste vide**, et non une 400.
+>
+> Comme `?type=` / `?sousType=`, il s'applique **à l'intérieur** du périmètre de visibilité (§1) et
+> **avant** le découpage en page : filtrer n'élargit **jamais** le périmètre (une PRMP filtrant par type ne
+> voit pas les dossiers d'une autre), et `totalElements` compte l'ensemble **filtré**.
+>
+> **Origine.** L'écran « Mes dossiers » de la PRMP (`/prmp/dossiers/:type/:groupe`) appliquait ces deux
+> critères — famille et appartenance au groupe BROUILLON — **en mémoire**, après avoir téléchargé la table
+> entière. Il peut désormais demander directement
+> `GET /api/dossiers?type={idTypeDossier}&brouillon={true|false}&page=0&size=N`.
+>
+> ⚠️ **Ce que cela ne règle pas.** La pagination reste **applicative** (cf. « Pagination des grandes
+> listes ») : le serveur constitue la liste filtrée **complète** puis la découpe. Le gain porte sur le
+> **transfert réseau et le parse côté navigateur**, **pas** sur la charge base — le nombre de lignes lues
+> reste le même. Une pagination SQL supposerait de descendre les filtres de visibilité (localité, PRMP
+> propriétaire), aujourd'hui appliqués en Java, dans les requêtes JPQL : chantier de conception distinct,
+> non entrepris ici.
 
 > 📌 **Écran « Dossiers à rectifier » (PRMP).** Il n'existe **pas** d'endpoint dédié : la liste est alimentée
 > par le **filtre serveur** existant `GET /api/dossiers?statut=EN_ATTENTE_DECISION_PRMP` (scopé à la PRMP),
@@ -1408,8 +1494,9 @@ Administrateur** :
 - les **profils contrôleurs** — `PRESIDENT`, `CHEF_COMMISSION`, `SECRETAIRE`, `MEMBRE`, `VERIFICATEUR`,
   `ASSISTANT_CONTROLEUR` — pour **toute** tutelle et **sans filtre de localité** *(2026-08-20)* : ce sont eux
   qui instruisent les dossiers et doivent identifier l'unité qui a saisi celui qu'ils examinent. Deux raisons
-  d'écarter le filtre par localité : le répertoire des **PRMP** (`GET /api/prmps`) est déjà lisible **sans
-  filtre** par tout utilisateur authentifié — filtrer l'enfant serait incohérent ; et l'UGPM **n'a pas de
+  d'écarter le filtre par localité : le répertoire des **PRMP** (`GET /api/prmps`) est lisible **sans filtre
+  de localité** par ces mêmes profils — en **vue réduite** depuis le 2026-08-24, mais toujours à l'échelle
+  nationale — et filtrer l'enfant serait incohérent ; et l'UGPM **n'a pas de
   localité propre** (elle hérite de celles des entités contractantes actives de sa tutelle, qui peuvent
   couvrir **plusieurs** localités) — le filtre masquerait précisément l'unité qu'un contrôleur d'une autre
   localité doit identifier. `CHARGE_PUBLICATION` n'est pas concerné (hors instruction) → **403**.
@@ -1493,6 +1580,9 @@ volumineux → **400** (annule la création si multipart) ; **404** si l'UGPM ou
 > l'id figure **en sortie** (réponse). **Dette documentée** : choix d'une séquence applicative (et non
 > `IDENTITY` JPA) pour éviter une refonte massive des fixtures sur 3 tables centrales — migration vers
 > `IDENTITY` possible ultérieurement.
+> *(⚠️ 2026-08-25 — ce n'est plus un cas particulier : le motif couvre désormais **18 tables**. Voir
+> §« Clés primaires » en tête de document pour la liste complète et le régime applicable à chaque
+> ressource.)*
 
 **Endpoints**
 
@@ -1914,7 +2004,7 @@ et interprété comme un code de **sous-type** (les anciens payloads `{"idTypeDo
 ---
 
 ## Échéances
-**Ressource** `/api/echeances` — Lecture / écriture : tout utilisateur authentifié.
+**Ressource** `/api/echeances` — **Lecture scopée au périmètre de la ligne de marché parente** (`ID_DETAIL`, §1/§3.1) : Président/Administrateur voient tout, la PRMP/UGPM les jalons de ses marchés, les contrôleurs ceux de leur localité, tout autre profil une liste vide. **Écriture réservée à l'`ADMINISTRATEUR`** (**403** sinon) — le calendrier est alimenté par le suivi automatique (§3.1, Module 04) et le seul écran consommateur (calendrier PRMP) est en lecture seule.
 
 **Champs `EcheanceDto`**
 
@@ -1933,11 +2023,11 @@ et interprété comme un code de **sous-type** (les anciens payloads `{"idTypeDo
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/echeances | — | `EcheanceDto[]` | 200 | Authentifié |
-| GET | /api/echeances/{id} | — | `EcheanceDto` | 200, 404 | Authentifié |
-| POST | /api/echeances | `EcheanceDto` | `EcheanceDto` | 201, 400 | Authentifié |
-| PUT | /api/echeances/{id} | `EcheanceDto` | `EcheanceDto` | 200, 400, 404 | Authentifié |
-| DELETE | /api/echeances/{id} | — | — | 204, 404 | Authentifié |
+| GET | /api/echeances | — | `EcheanceDto[]` | 200 | Authentifié — **liste scopée** |
+| GET | /api/echeances/{id} | — | `EcheanceDto` | 200, **403**, 404 | Authentifié — **403 hors périmètre** |
+| POST | /api/echeances | `EcheanceDto` | `EcheanceDto` | 201, 400, **403** | **ADMINISTRATEUR** |
+| PUT | /api/echeances/{id} | `EcheanceDto` | `EcheanceDto` | 200, 400, **403**, 404 | **ADMINISTRATEUR** |
+| DELETE | /api/echeances/{id} | — | — | 204, **403**, 404 | **ADMINISTRATEUR** |
 
 `{id}` = idEcheance (number).
 
@@ -2181,7 +2271,7 @@ de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS →
 | GET | /api/lettre-renvois | — | `LettreRenvoiDto[]` | 200 | Authentifié (filtré, voir ci-dessous) |
 | GET | /api/lettre-renvois/mes-lettres | — | `LettreRenvoiDto[]` | 200 | **PRMP** — lettres `SIGNE` de ses dossiers (lecture seule) |
 | GET | /api/lettre-renvois/{id} | — | `LettreRenvoiDto` | 200, 403, 404 | Authentifié (dans le périmètre) **ou PRMP propriétaire** (lettre `SIGNE`) — voir marquage « lu » |
-| GET | /api/lettre-renvois/{id}/document | — | fichier **PDF** | 200, 403, 404 | Authentifié (périmètre) — document de la lettre signée |
+| GET | /api/lettre-renvois/{id}/document | — | fichier **PDF** | 200, 403, 404 | Authentifié (périmètre) — document de la lettre **signée** (régénéré à la demande s'il n'est pas encore produit ; **404** si la lettre n'est pas signée) |
 | POST | /api/lettre-renvois | `LettreRenvoiDto` | `LettreRenvoiDto` | 201, 400, 403 | **CHEF_COMMISSION / PRESIDENT** (⚠️ 2026-08-01) — création à la clôture de navette (BROUILLON) |
 | PUT | /api/lettre-renvois/{id} | `LettreRenvoiDto` | `LettreRenvoiDto` | 200, 400, 404, 409 | **CHEF_COMMISSION / PRESIDENT** (brouillon : corps) |
 | POST | /api/lettre-renvois/{id}/soumettre | — | `LettreRenvoiDto` | 200, 403, 404, 409 | **CHEF_COMMISSION / PRESIDENT** (BROUILLON→SOUMIS) |
@@ -2213,7 +2303,8 @@ de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS →
 > uniquement** (Président → **403**, message « Seul le Chef de Commission peut signer une lettre de renvoi
 > pour une localité régionale. »).
 >
-> **Document PDF (⚠️ règle ajoutée).** À la signature, le **PDF** de la lettre est **généré** puis **stocké
+> **Document PDF (⚠️ règle ajoutée ; génération post-commit 2026-08-19).** À la signature, le **PDF** de la
+> lettre est **généré en tâche de fond après commit** (la signature répond immédiatement) puis **stocké
 > sur le système de fichiers (FSX)** dans le répertoire **`LR/`** (`storage.lettre-renvoi.path`), sous le nom
 > **`{refLettre}.pdf`** (les `/` remplacés par `_`, ex. `00007_PPM_CNM_LR_2026.pdf`) ; le chemin est
 > conservé dans `t_lettre_renvoi.CHEMIN_DOCUMENT`. Téléchargeable via `GET /api/lettre-renvois/{id}/document`
@@ -2226,11 +2317,36 @@ de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS →
 > un rendu **fidèle au modèle** (positionnement des pointillés d'en-tête et du signataire conformes à Word).
 > La mise en forme et l'**emblème** du modèle sont conservés ; le nom du signataire remplace uniquement le
 > placeholder (aucun libellé de rôle ajouté). _Pré-requis machine/CI : Microsoft Word installé (automation COM)._
+>
+> ⚠️ **Génération post-commit (2026-08-19) — même motif que le PV (cf. §PV « document généré »).** La
+> conversion `.docx → PDF` pilote Word localement (plusieurs secondes, incompressibles) et se faisait
+> **dans la transaction** de `POST /api/lettre-renvois/{id}/signer` : elle y retenait une connexion du pool
+> et le verrou de ligne, et un échec de conversion (Word absent, planté, FSX indisponible) **annulait une
+> signature pourtant valide** — en laissant au passage un PDF orphelin sur le FSX après rollback. La
+> signature marque désormais la lettre `SIGNE` et **répond immédiatement** ; le document est produit
+> **après commit** par une tâche de fond (`LettreRenvoiSigneeEvent` + `LettreRenvoiDocumentTache`), qui
+> renseigne `CHEMIN_DOCUMENT` quand il est prêt. **Un échec de génération ne peut plus faire échouer la
+> signature** (journalisé). Le **contrat de `signer` est inchangé** : il renvoyait déjà un
+> `LettreRenvoiDto`, jamais le PDF.
+>
+> **Fenêtre de génération et `GET /{id}/document`.** Pendant l'intervalle, `documentDisponible` vaut
+> **`false`** (cf. table des champs) — c'est l'indicateur que le front doit lire, comme il le fait déjà
+> pour les PV. Si un client appelle `…/document` malgré tout, la **régénération paresseuse** produit et
+> sert le PDF (lentement, exactement comme la signature le faisait avant) et pose `CHEMIN_DOCUMENT` :
+> **aucun 404 n'apparaît pendant la fenêtre**, le comportement observable du téléchargement est donc
+> inchangé pour un client existant. Cette régénération sert aussi de **rattrapage** des lettres signées
+> dont la génération de fond a échoué. Elle est **réservée aux lettres `SIGNE`** : sur un `BROUILLON` /
+> `SOUMIS`, `…/document` renvoie toujours **404** (jamais de PDF officiel d'une lettre non signée).
+> **Rattrapage à la consultation** : une lettre `SIGNE` sans fichier vue par `GET /api/lettre-renvois`
+> ou `GET /{id}` relance la production en arrière-plan — disponible au rafraîchissement suivant, sans
+> requête lente ; un registre en mémoire dédoublonne les générations concurrentes. Le convertisseur Word
+> des lettres est **préchauffé au démarrage** (`app.lettre-renvoi.document.prechauffage=true`, `false` en
+> test) — il a son propre `IConverter`, distinct de celui des PV.
 
 ---
 
 ## Indicateurs contrôleur
-**Ressource** `/api/indicateur-ctrls` — Lecture / écriture : tout utilisateur authentifié.
+**Ressource** `/api/indicateur-ctrls` — **Lecture au périmètre nominatif** (§1, §3.8 Module 09) : Président/Administrateur voient tous les contrôleurs, un contrôleur ne voit que **ses propres** indicateurs (**403** sur ceux d'un collègue), la PRMP/UGPM une liste vide. **Écriture réservée à l'`ADMINISTRATEUR`** (**403** sinon) — un indicateur de performance éditable par l'agent évalué ne mesure plus rien.
 
 **Champs `IndicateurCtrlDto`**
 
@@ -2248,11 +2364,11 @@ de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS →
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/indicateur-ctrls | — | `IndicateurCtrlDto[]` | 200 | Authentifié |
-| GET | /api/indicateur-ctrls/{id} | — | `IndicateurCtrlDto` | 200, 404 | Authentifié |
-| POST | /api/indicateur-ctrls | `IndicateurCtrlDto` | `IndicateurCtrlDto` | 201, 400 | Authentifié |
-| PUT | /api/indicateur-ctrls/{id} | `IndicateurCtrlDto` | `IndicateurCtrlDto` | 200, 400, 404 | Authentifié |
-| DELETE | /api/indicateur-ctrls/{id} | — | — | 204, 404 | Authentifié |
+| GET | /api/indicateur-ctrls | — | `IndicateurCtrlDto[]` | 200 | Authentifié — **liste scopée** |
+| GET | /api/indicateur-ctrls/{id} | — | `IndicateurCtrlDto` | 200, **403**, 404 | Authentifié — **403 hors périmètre** |
+| POST | /api/indicateur-ctrls | `IndicateurCtrlDto` | `IndicateurCtrlDto` | 201, 400, **403** | **ADMINISTRATEUR** |
+| PUT | /api/indicateur-ctrls/{id} | `IndicateurCtrlDto` | `IndicateurCtrlDto` | 200, 400, **403**, 404 | **ADMINISTRATEUR** |
+| DELETE | /api/indicateur-ctrls/{id} | — | — | 204, **403**, 404 | **ADMINISTRATEUR** |
 
 `{id}` = idIndicateur (number).
 
@@ -2264,7 +2380,7 @@ de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS →
 ---
 
 ## Indicateurs PRMP
-**Ressource** `/api/indicateur-prmps` — Lecture / écriture : tout utilisateur authentifié.
+**Ressource** `/api/indicateur-prmps` — **Lecture au périmètre de propriété** (§1) : Président/Administrateur voient tout, la PRMP (et l'UGPM de sa tutelle) ne voit que **son** bilan (**403** sur celui d'une homologue), tout autre profil une liste vide. **Écriture réservée à l'`ADMINISTRATEUR`** (**403** sinon) — le bilan annuel d'une PRMP ne se corrige pas par la PRMP qu'il évalue.
 
 **Champs `IndicateurPrmpDto`**
 
@@ -2288,11 +2404,11 @@ de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS →
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/indicateur-prmps | — | `IndicateurPrmpDto[]` | 200 | Authentifié |
-| GET | /api/indicateur-prmps/{id} | — | `IndicateurPrmpDto` | 200, 404 | Authentifié |
-| POST | /api/indicateur-prmps | `IndicateurPrmpDto` | `IndicateurPrmpDto` | 201, 400 | Authentifié |
-| PUT | /api/indicateur-prmps/{id} | `IndicateurPrmpDto` | `IndicateurPrmpDto` | 200, 400, 404 | Authentifié |
-| DELETE | /api/indicateur-prmps/{id} | — | — | 204, 404 | Authentifié |
+| GET | /api/indicateur-prmps | — | `IndicateurPrmpDto[]` | 200 | Authentifié — **liste scopée** |
+| GET | /api/indicateur-prmps/{id} | — | `IndicateurPrmpDto` | 200, **403**, 404 | Authentifié — **403 hors périmètre** |
+| POST | /api/indicateur-prmps | `IndicateurPrmpDto` | `IndicateurPrmpDto` | 201, 400, **403** | **ADMINISTRATEUR** |
+| PUT | /api/indicateur-prmps/{id} | `IndicateurPrmpDto` | `IndicateurPrmpDto` | 200, 400, **403**, 404 | **ADMINISTRATEUR** |
+| DELETE | /api/indicateur-prmps/{id} | — | — | 204, **403**, 404 | **ADMINISTRATEUR** |
 
 `{id}` = idIndicateurPrmp (number).
 
@@ -2309,7 +2425,7 @@ de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS →
 ---
 
 ## Instantanés de statistiques
-**Ressource** `/api/snapshot-statss` *(double « s » final)* — Lecture / écriture : tout utilisateur authentifié.
+**Ressource** `/api/snapshot-statss` *(double « s » final)* — **Lecture scopée par localité** (`ID_LOCALITE`, §1) : Président/Administrateur voient tout, les contrôleurs leur localité, la PRMP/UGPM une liste vide. **Agrégat national** (`ID_LOCALITE` nul) : Président/Administrateur seuls (**403** sinon). **Écriture réservée à l'`ADMINISTRATEUR`** (**403** sinon) — l'instantané est un agrégat calculé, pas une donnée déclarative.
 
 **Champs `SnapshotStatsDto`**
 
@@ -2331,24 +2447,40 @@ de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS →
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/snapshot-statss | — | `SnapshotStatsDto[]` | 200 | Authentifié |
-| GET | /api/snapshot-statss/{id} | — | `SnapshotStatsDto` | 200, 404 | Authentifié |
-| POST | /api/snapshot-statss | `SnapshotStatsDto` | `SnapshotStatsDto` | 201, 400 | Authentifié |
-| PUT | /api/snapshot-statss/{id} | `SnapshotStatsDto` | `SnapshotStatsDto` | 200, 400, 404 | Authentifié |
-| DELETE | /api/snapshot-statss/{id} | — | — | 204, 404 | Authentifié |
+| GET | /api/snapshot-statss | — | `SnapshotStatsDto[]` | 200 | Authentifié — **liste scopée** |
+| GET | /api/snapshot-statss/{id} | — | `SnapshotStatsDto` | 200, **403**, 404 | Authentifié — **403 hors localité** |
+| POST | /api/snapshot-statss | `SnapshotStatsDto` | `SnapshotStatsDto` | 201, 400, **403** | **ADMINISTRATEUR** |
+| PUT | /api/snapshot-statss/{id} | `SnapshotStatsDto` | `SnapshotStatsDto` | 200, 400, **403**, 404 | **ADMINISTRATEUR** |
+| DELETE | /api/snapshot-statss/{id} | — | — | 204, **403**, 404 | **ADMINISTRATEUR** |
 
 `{id}` = idSnapshot (number).
 
 ---
 
 ## Journaux d'audit
-**Ressource** `/api/audit-logs` — Réservé à `ADMINISTRATEUR` pour **toutes** les opérations (lecture comprise). Le journal est alimenté **automatiquement** par le système. **DELETE interdit → 409** (journal immuable, §3.8).
+**Ressource** `/api/audit-logs` — Réservé à `ADMINISTRATEUR` pour **toutes** les opérations (lecture comprise). Le journal est alimenté **automatiquement** par le système.
 
-**Champs `AuditLogDto`**
+> ⚠️ **Journal immuable (§3.8) — ressource en lecture seule.** Le journal est la **pièce probante** du
+> contrôle : il est alimenté **exclusivement par le serveur** (l'intercepteur d'audit après chaque écriture
+> réussie, et les services métier pour leurs signaux explicites), qui impute toujours l'entrée au
+> **principal courant**. Les trois verbes d'écriture restent routés mais refusent explicitement,
+> **tous en 409** :
+> - **POST → 409.** Une entrée d'audit est *constatée* par le serveur, jamais *déclarée* par un client :
+>   laisser un appelant poser lui-même `imActeur` reviendrait à lui laisser forger une preuve au nom d'un tiers.
+> - **PUT → 409.** Une entrée écrite ne se réécrit pas — sans cette garde, un acteur pouvait réattribuer
+>   sa propre action à un tiers, la substitution ne laissant elle-même aucune trace.
+> - **DELETE → 409** (contrat historique, inchangé).
+>
+> Ces trois verbes sont fermés **même pour l'`ADMINISTRATEUR`** : c'est précisément l'acteur contre lequel
+> la trace doit rester opposable. Un 409 explicite est préféré à un 405 : l'appelant apprend *pourquoi*
+> l'écriture est refusée, pas seulement que le verbe n'existe pas.
+
+**Champs `AuditLogDto`** — **réponse uniquement** (aucune écriture n'est acceptée sur cette ressource) ;
+la colonne *Obligatoire* décrit les contraintes du modèle, pas un contrat d'entrée.
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idLog | number | Oui (PK, au POST) | clé primaire |
+| idLog | number | — (réponse) | clé primaire, posée par le serveur |
 | dateAction | string (date-time) | Oui | @NotNull |
 | imActeur | string | Non | max 7 |
 | nomTable | string | Non | max 50 |
@@ -2366,8 +2498,8 @@ de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS →
 |---|---|---|---|---|---|
 | GET | /api/audit-logs | — | `AuditLogDto[]` | 200 | ADMINISTRATEUR |
 | GET | /api/audit-logs/{id} | — | `AuditLogDto` | 200, 404 | ADMINISTRATEUR |
-| POST | /api/audit-logs | `AuditLogDto` | `AuditLogDto` | 201, 400, 403 | ADMINISTRATEUR |
-| PUT | /api/audit-logs/{id} | `AuditLogDto` | `AuditLogDto` | 200, 400, 404 | ADMINISTRATEUR |
+| POST | /api/audit-logs | — | — | **409 (interdit)** | ADMINISTRATEUR |
+| PUT | /api/audit-logs/{id} | — | — | **409 (interdit)** | ADMINISTRATEUR |
 | DELETE | /api/audit-logs/{id} | — | — | **409 (interdit)** | ADMINISTRATEUR |
 
 `{id}` = idLog (number).
@@ -2619,15 +2751,27 @@ de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS →
 ---
 
 ## Lots
-**Ressource** `/api/lots` — Lecture / écriture : tout utilisateur authentifié. `GET /par-marche/{idDetail}` liste
-les lots d'une **ligne de marché** (`t_lot.ID_DETAIL`) — **liste vide** si aucun (ou marché inconnu), pas de 404 (filtre).
-`GET /par-dossier/{idDossier}` agrège **tous les lots d'un dossier** (`t_lot.ID_DOSSIER`, toutes ses lignes de marché) en **un seul appel** — même sémantique filtre (liste vide, pas de 404).
+**Ressource** `/api/lots` — ⚠️ **Périmètre hérité de la ligne de marché parente** (correction de sécurité) : un lot
+n'a pas de périmètre propre, il prend celui de son marché (`t_lot.ID_DETAIL`). **Lecture scopée** exactement comme
+`GET /api/marches` : Président/Administrateur voient tout, la PRMP (et l'UGPM sous sa tutelle) ne voit que **les
+siens**, les contrôleurs ceux de **leur localité** (dossier non brouillon), tout autre profil → **liste vide**. Cibler
+un lot ou un marché **hors périmètre** → **403**. **Écriture (POST/PUT/DELETE) réservée `PRMP`/`UGPM`** — mêmes rôles
+que sur `/api/marches` (les lignes d'un PPM appartiennent à la PRMP ; le circuit interne les lit, ne les édite pas) —
+**et** contrôlée sur le périmètre du marché visé (403 si le marché est celui d'une autre entité).
+⚠️ **`idLot` est désormais alloué par le serveur** (`max+1`) : **tout id envoyé par le client est ignoré**, comme sur
+`t_marche` (§ « Identifiants attribués par le serveur »). Sans cela, un client qui alloue son id par `max()` sur la
+liste — désormais **partielle** — viserait le lot d'une autre entité, que l'enregistrement écraserait.
+
+`GET /par-marche/{idDetail}` liste
+les lots d'une **ligne de marché** (`t_lot.ID_DETAIL`) — **liste vide** si aucun (ou marché inconnu), pas de 404 (filtre) ;
+**403** si le marché existe et est hors périmètre.
+`GET /par-dossier/{idDossier}` agrège **tous les lots d'un dossier** (`t_lot.ID_DOSSIER`, toutes ses lignes de marché) en **un seul appel** — même sémantique filtre (liste vide, pas de 404), chaque lot étant filtré sur la visibilité de **sa** ligne de marché (dossier hors périmètre → liste vide, pas de 403).
 
 **Champs `LotDto`**
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idLot | number | Oui (PK, au POST) | clé primaire |
+| idLot | number | **Non** (⚠️ ignoré au POST) | PK **allouée serveur** ; renvoyée dans la réponse |
 | idDossier | number | Oui | @NotNull |
 | idDetail | number | Oui | @NotNull |
 | designationLot | string | Oui | @NotBlank, max 200 |
@@ -2639,19 +2783,19 @@ les lots d'une **ligne de marché** (`t_lot.ID_DETAIL`) — **liste vide** si au
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/lots | — | `LotDto[]` | 200 | Authentifié |
-| GET | /api/lots/{id} | — | `LotDto` | 200, 404 | Authentifié |
-| GET | /api/lots/par-marche/{idDetail} | — | `LotDto[]` | 200 | Authentifié |
-| GET | /api/lots/par-dossier/{idDossier} | — | `LotDto[]` | 200 | Authentifié |
-| POST | /api/lots | `LotDto` | `LotDto` | 201, 400 | Authentifié |
-| PUT | /api/lots/{id} | `LotDto` | `LotDto` | 200, 400, 404 | Authentifié |
-| DELETE | /api/lots/{id} | — | — | 204, 404 | Authentifié |
+| GET | /api/lots | — | `LotDto[]` | 200 | Authentifié — **liste scopée** au périmètre du marché parent |
+| GET | /api/lots/{id} | — | `LotDto` | 200, **403**, 404 | Authentifié — périmètre du marché parent |
+| GET | /api/lots/par-marche/{idDetail} | — | `LotDto[]` | 200, **403** | Authentifié — périmètre du marché parent |
+| GET | /api/lots/par-dossier/{idDossier} | — | `LotDto[]` | 200 | Authentifié — filtré lot par lot (jamais 403) |
+| POST | /api/lots | `LotDto` | `LotDto` | 201, 400, **403** | **PRMP / UGPM** (périmètre du marché visé) |
+| PUT | /api/lots/{id} | `LotDto` | `LotDto` | 200, 400, **403**, 404 | **PRMP / UGPM** (périmètre, origine **et** destination) |
+| DELETE | /api/lots/{id} | — | — | 204, **403**, 404 | **PRMP / UGPM** (périmètre du marché parent) |
 
 `{id}` = idLot (number).
 
 **Exemple — requête**
 ```json
-{ "idLot": 88, "idDossier": 320, "idDetail": 1205, "designationLot": "Fourniture de mobilier - Lot 1", "montLot": 85000000.0, "qteLot": 150, "uniteLot": "unite" }
+{ "idDossier": 320, "idDetail": 1205, "designationLot": "Fourniture de mobilier - Lot 1", "montLot": 85000000.0, "qteLot": 150, "uniteLot": "unite" }
 ```
 
 ---
@@ -2776,12 +2920,12 @@ active (`t_prmp_entite.ACTIF`) sur l'entité contractante du dossier. C'est ce s
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idDetail | number | Oui (PK, au POST) | clé primaire |
-| idDossier | number | Oui | @NotNull |
-| idPpm | number | Oui | @NotNull |
+| idDetail | number | **Non** (⚠️ ignoré au POST) | PK **allouée serveur** (`seq_marche`) ; renvoyée dans la réponse |
+| idDossier | number | Oui | `@NotNull` (groupe `Identite` : **non exigé** en `PATCH .../rectifier`) |
+| idPpm | number | Oui | `@NotNull` (groupe `Identite` : **non exigé** en `PATCH .../rectifier`) |
 | designationMarche | string | Non | max 500 |
 | numCompte | string | Non | max 20 |
-| montEstim | number | Non | |
+| montEstim | number | Non | ⚠️ **≥ 0** (`@PositiveOrZero`) et **≤ 2 décimales** (`numeric(38,2)`, cf. note) |
 | ancienMontEstim | number | Non | |
 | nouvMontEstim | number | Non | |
 | financement | string | Non | max 20 |
@@ -2807,8 +2951,23 @@ active (`t_prmp_entite.ACTIF`) sur l'entité contractante du dossier. C'est ce s
 > repasser par le brouillon**. Statut du dossier **inchangé** (reste `EN_ATTENTE_DECISION_PRMP` jusqu'à
 > `POST /api/dossiers/{id}/resoumettre`). Hors `EN_ATTENTE_DECISION_PRMP` → **409** ; non-propriétaire → **403** ;
 > profil **PRMP strict** (Admin/vérificateur → **403**). Identité **figée** (idDossier, idPpm — **non requis** dans
-> le corps, ignorés s'ils sont envoyés ; le PATCH ne valide pas ces champs). Le `idMode` fourni est conservé
+> le corps, ignorés s'ils sont envoyés : leur `@NotNull` est porté par le groupe de validation `Identite`,
+> que le PATCH n'active pas). ⚠️ **Règle modifiée (2026-08-24)** — les contraintes de **contenu** (`@Size`) sont, elles,
+> **validées** : un corps trop long donne un **400 nommant le champ**, comme en `PUT`. *(Auparavant le corps n'était pas validé du tout :
+> la valeur partait jusqu'à la base et revenait en **409** opaque.)* Le `idMode` fourni est conservé
 > tel quel. Tracé `t_audit_log` (`MODIFICATION_RECTIFICATION`, `NOM_TABLE=t_marche`).
+
+> ⚠️ **`montEstim` — contraintes numériques (règle ajoutée 2026-08-24).** Le montant estimatif reste
+> **facultatif** (`null` = ligne non chiffrée ; l'import PPM émet l'anomalie `CHAMP_MANQUANT`, pas un refus
+> HTTP) et **zéro reste accepté** — mais un montant **négatif** est refusé (**400** nommant `montEstim`), de
+> même qu'un montant à **plus de deux décimales**. Motif : `montEstim` est comparé à la **somme des montants
+> par bénéficiaire** (invariant `Σ ancMontBenef = montEstim`) et sert de base aux écarts du diff de
+> rectification ; un négatif y passait sans bruit. Une **moins-value** ne se saisit jamais comme un montant
+> négatif : elle s'exprime par un `nouvMontEstim` inférieur à `montEstim` — d'où `@PositiveOrZero` et non
+> `@Positive`. La limite décimale reflète la colonne `t_marche.MONT_ESTIM numeric(38,2)`, qui arrondissait
+> jusqu'ici la 3ᵉ décimale **en silence**. S'applique à `POST`, `PUT` **et** `PATCH .../rectifier`.
+> *(`ancienMontEstim`/`nouvMontEstim` restent sans contrainte à ce stade — même colonne, mais aucun invariant
+> serveur ne s'y appuie aujourd'hui.)*
 
 > ⚠️ **`formeMarche` — forme du marché (règle ajoutée 2026-07-18).** Champ de `MarcheDto` (colonne
 > `t_marche.FORME_MARCHE`), liste fermée : **`A_COMMANDE`** (« Marché à commande »), **`CONTRAT_CADRE`**
@@ -2915,7 +3074,12 @@ ouverte**, complétable sans livraison. Le mapping **mode de passation → type 
 ---
 
 ## Dossiers de mise en concurrence (DMC)
-**Ressource** `/api/dmcs` (table `t_dossier_mec`) — Authentifié. **Un DMC par ligne de marché** (relation 1-1 sur
+**Ressource** `/api/dmcs` (table `t_dossier_mec`) — ⚠️ **Réservée à l'`ADMINISTRATEUR`, lectures comprises**
+(correction de sécurité). Aucun écran du front ne consomme cette ressource : plutôt que de lui inventer un périmètre
+qu'aucun usage ne vient valider, elle est **fermée au plus strict** ; la garde s'ouvrira sur un besoin constaté. Le
+**déclenchement interne** (création du DMC, re-dérivation de son type au changement de mode, suppression en cascade
+avec le marché) passe par le service, **pas** par cette façade : il n'est pas concerné.
+**Un DMC par ligne de marché** (relation 1-1 sur
 `idDetail`). Son **type est dérivé du mode de passation** du marché (`tr_mode_passation.ID_TYPE_DMC`, pas d'enum codé
 en dur). Création par un **service dédié** (non câblé automatiquement sur la saisie/soumission). Si le mode n'est pas
 mappé à un type **actif** → **400** avec message de configuration (aucun DMC créé). Une 2ᵉ création pour le même
@@ -2929,14 +3093,19 @@ marché → **409** (unicité). Au **changement de mode** d'un marché, si son D
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| POST | /api/dmcs/par-marche/{idDetail} | — | `DmcDto` | 201, 400, 404, 409 | Authentifié |
-| GET | /api/dmcs/par-marche/{idDetail} | — | `DmcDto` | 200, 404 | Authentifié |
-| GET | /api/dmcs/{id} | — | `DmcDto` | 200, 404 | Authentifié |
+| POST | /api/dmcs/par-marche/{idDetail} | — | `DmcDto` | 201, 400, **403**, 404, 409 | **ADMINISTRATEUR** |
+| GET | /api/dmcs/par-marche/{idDetail} | — | `DmcDto` | 200, **403**, 404 | **ADMINISTRATEUR** |
+| GET | /api/dmcs/{id} | — | `DmcDto` | 200, **403**, 404 | **ADMINISTRATEUR** |
 
 ---
 
 ## Marchés — dates prévisionnelles
-**Ressource** `/api/marche-previsions` — Lecture / écriture : tout utilisateur authentifié.
+**Ressource** `/api/marche-previsions` — ⚠️ **Périmètre hérité de la ligne de marché parente**
+(`t_marche_prevision.ID_DETAIL`, correction de sécurité) : **mêmes règles que `/api/lots`** — lecture scopée comme
+`GET /api/marches`, **403** sur une prévision ou un `?marche=` hors périmètre, **écriture réservée `PRMP`/`UGPM`**
+(le calendrier prévisionnel est la parole de la PRMP ; le circuit le lit pour examiner, ne le modifie pas) et
+contrôlée sur le marché visé. `idPrevision` est **alloué par le serveur** (`max+1`) ; tout id envoyé par le client
+est **ignoré**.
 
 Dates prévisionnelles d'un marché, en relation **1,N** avec `/api/marches` : **une ligne par
 processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) et une `dateFin`
@@ -2947,7 +3116,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idPrevision | number | Oui (PK, au POST) | @NotNull, clé primaire |
+| idPrevision | number | Oui (@NotNull) | ⚠️ **valeur ignorée** : PK **allouée serveur** ; renvoyée dans la réponse |
 | idDetail | number | Oui | @NotNull — FK vers le marché |
 | idCapm | number | Oui | @NotNull — FK vers `t_capm` (processus) |
 | dateDebut | string (date) | Oui | @NotNull — `yyyy-MM-dd` |
@@ -2958,12 +3127,12 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/marche-previsions | — | `MarchePrevisionDto[]` | 200 | Authentifié |
-| GET | /api/marche-previsions?marche={idDetail} | — | `MarchePrevisionDto[]` | 200 | Authentifié |
-| GET | /api/marche-previsions/{id} | — | `MarchePrevisionDto` | 200, 404 | Authentifié |
-| POST | /api/marche-previsions | `MarchePrevisionDto` | `MarchePrevisionDto` | 201, 400 | Authentifié |
-| PUT | /api/marche-previsions/{id} | `MarchePrevisionDto` | `MarchePrevisionDto` | 200, 400, 404 | Authentifié |
-| DELETE | /api/marche-previsions/{id} | — | — | 204, 404 | Authentifié |
+| GET | /api/marche-previsions | — | `MarchePrevisionDto[]` | 200 | Authentifié — **liste scopée** au périmètre du marché parent |
+| GET | /api/marche-previsions?marche={idDetail} | — | `MarchePrevisionDto[]` | 200, **403** | Authentifié — périmètre du marché |
+| GET | /api/marche-previsions/{id} | — | `MarchePrevisionDto` | 200, **403**, 404 | Authentifié — périmètre du marché parent |
+| POST | /api/marche-previsions | `MarchePrevisionDto` | `MarchePrevisionDto` | 201, 400, **403** | **PRMP / UGPM** (périmètre du marché visé) |
+| PUT | /api/marche-previsions/{id} | `MarchePrevisionDto` | `MarchePrevisionDto` | 200, 400, **403**, 404 | **PRMP / UGPM** (périmètre, origine **et** destination) |
+| DELETE | /api/marche-previsions/{id} | — | — | 204, **403**, 404 | **PRMP / UGPM** (périmètre du marché parent) |
 
 `{id}` = idPrevision (number). Le paramètre `marche` filtre par marché (idDetail).
 
@@ -2984,7 +3153,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idMessage | number | Oui (PK, au POST générique) | clé primaire |
+| idMessage | number | **Non** (⚠️ ignoré au POST) | PK **allouée serveur** (`seq_message`) ; renvoyée dans la réponse |
 | idDossier | number | Non | |
 | expediteurIm | string | Oui | @NotBlank, max 7 (forcé à l'utilisateur courant) |
 | destinataireIm | string | Oui | @NotBlank, max 7 |
@@ -3012,7 +3181,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 |---|---|---|---|---|---|
 | GET | /api/messages | — | `MessageDto[]` (filtré à l'utilisateur) | 200 | Authentifié |
 | GET | /api/messages/{id} | — | `MessageDto` | 200, 403, 404 | Expéditeur / destinataire |
-| POST | /api/messages | `MessageDto` | `MessageDto` | 201, 400 | Authentifié |
+| POST | /api/messages | `MessageDto` | `MessageDto` (**PK serveur**) | 201, 400 | Authentifié — `idMessage` du corps **ignoré** |
 | PUT | /api/messages/{id} | `MessageDto` | `MessageDto` | 200, 400, 403, 404 | Expéditeur / destinataire |
 | DELETE | /api/messages/{id} | — | — | 204, 403, 404 | Expéditeur / destinataire |
 | POST | /api/messages/envoyer | `MessageEnvoiRequest` | `MessageDto` | 201, 400 | Authentifié |
@@ -3183,13 +3352,13 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 ---
 
 ## Navettes de PV
-**Ressource** `/api/pv-navettes` — Lecture / écriture (POST/PUT) : tout utilisateur authentifié. **DELETE interdit → 409** (traçabilité immuable, §3.5). `sens` ∈ {`SOUMISSION`, `RETOUR_RECTIF`, `ACCEPTATION`} (sinon **409**).
+**Ressource** `/api/pv-navettes` — **Ressource en lecture seule, scopée à la localité du PV** (§1) : Président/Administrateur voient tout, les contrôleurs les navettes de leur localité, la PRMP/UGPM une liste vide (**403** sur le détail). **Historique immuable (§3.5)** : les trois verbes d'écriture restent routés et refusent en **409** — POST (une navette ne se forge pas), PUT (elle ne se réécrit pas : `IM_ACTEUR`, `DATE_ACTION`, `SENS`, `COMMENTAIRE` sont figés) et DELETE (« aucune navette ne peut être supprimée »). Voie d'écriture unique : le serveur lui-même, à la soumission / au retour en rectification / à l'acceptation d'un projet de PV.
 
 **Champs `PvNavetteDto`**
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idNavette | number | Oui (PK, au POST) | clé primaire |
+| idNavette | number | — (réponse) | PK **allouée serveur** (`seq_pv_navette`) ; POST refusé en **409** (historique immuable) |
 | idPv | number | Oui | @NotNull |
 | numNavette | number | Oui | @NotNull |
 | sens | string | Oui | @NotBlank, max 20 — valeur contrôlée |
@@ -3201,15 +3370,15 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/pv-navettes | — | `PvNavetteDto[]` | 200 | Authentifié |
-| GET | /api/pv-navettes/{id} | — | `PvNavetteDto` | 200, 404 | Authentifié |
-| POST | /api/pv-navettes | `PvNavetteDto` | `PvNavetteDto` | 201, 400, 409 | Authentifié |
-| PUT | /api/pv-navettes/{id} | `PvNavetteDto` | `PvNavetteDto` | 200, 400, 404, 409 | Authentifié |
+| GET | /api/pv-navettes | — | `PvNavetteDto[]` | 200 | Authentifié — **liste scopée** |
+| GET | /api/pv-navettes/{id} | — | `PvNavetteDto` | 200, **403**, 404 | Authentifié — **403 hors localité** |
+| POST | /api/pv-navettes | `PvNavetteDto` | — | **409 (interdit)** | — |
+| PUT | /api/pv-navettes/{id} | `PvNavetteDto` | — | **409 (interdit)** | — |
 | DELETE | /api/pv-navettes/{id} | — | — | **409 (interdit)** | — |
 
 `{id}` = idNavette (number). *En pratique, les navettes sont créées automatiquement par les actions du PV.*
 
-**Exemple — requête**
+**Exemple — réponse** *(lecture seule : POST/PUT/DELETE sont refusés en 409 ; `idNavette` est alloué par `seq_pv_navette`, `numNavette` reste le rang **métier** du mouvement dans SON PV)*
 ```json
 { "idNavette": 905, "idPv": 312, "numNavette": 1, "sens": "SOUMISSION", "imActeur": "MEMANT1", "dateAction": "2026-06-12T09:35:00", "commentaire": "Première soumission" }
 ```
@@ -3242,7 +3411,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idNotification | number | Oui (PK, au POST) | clé primaire |
+| idNotification | number | **Non** (⚠️ ignoré au POST) | PK **allouée serveur** (`seq_notification`) ; renvoyée dans la réponse |
 | idDossier | number | Non | |
 | typeNotif | string | Oui | @NotBlank, max 30 |
 | destinataireIm | string | Non | max 7 — destinataire contrôleur (compat.) |
@@ -3268,7 +3437,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 | POST | /api/notifications/lire-tout | — | `{ "traitees": number }` | 200 | Authentifié (scopé) |
 | GET | /api/notifications | — | `NotificationDto[]` | 200, 403 | ADMINISTRATEUR |
 | GET | /api/notifications/{id} | — | `NotificationDto` | 200, 403, 404 | ADMINISTRATEUR |
-| POST | /api/notifications | `NotificationDto` | `NotificationDto` | 201, 400, 403 | ADMINISTRATEUR |
+| POST | /api/notifications | `NotificationDto` | `NotificationDto` (**PK serveur**) | 201, 400, 403 | ADMINISTRATEUR — `idNotification` du corps **ignoré** |
 | PUT | /api/notifications/{id} | `NotificationDto` | `NotificationDto` | 200, 400, 403, 404 | ADMINISTRATEUR |
 | DELETE | /api/notifications/{id} | — | — | 204, 403, 404 | ADMINISTRATEUR |
 
@@ -3412,7 +3581,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idPpm | number | Oui (PK, au POST) | clé primaire |
+| idPpm | number | **Non** (⚠️ ignoré au POST) | PK **allouée serveur** (`seq_ppm`) ; renvoyée dans la réponse |
 | idDossier | number | Oui | @NotNull |
 | exercice | number | Oui | @NotNull |
 | signataire | string | Oui | @NotBlank, max 210 (auto-rempli « prénoms + nom » PRMP, couvre prénoms 100 + nom 100 + marge ; idem `EditionPpmRequest`) |
@@ -3455,7 +3624,10 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 > par le brouillon**. Statut du dossier **inchangé** (reste `EN_ATTENTE_DECISION_PRMP` jusqu'à
 > `POST /api/dossiers/{id}/resoumettre`). Hors `EN_ATTENTE_DECISION_PRMP` → **409** ; non-propriétaire → **403** ;
 > profil **PRMP strict** (Admin/vérificateur → **403**). Identité **figée** (idDossier, idPrmp, idLocalite —
-> **non requis** dans le corps, ignorés s'ils sont envoyés ; le PATCH ne valide pas ces champs).
+> **non requis** dans le corps, ignorés s'ils sont envoyés : leur `@NotNull` est porté par le groupe de
+> validation `Identite`, que le PATCH n'active pas). ⚠️ **Règle modifiée (2026-08-24)** — les contraintes de
+> **contenu** (`@NotBlank`, `@Size`) **sont validées** : un `signataire` vide ou une `reference` trop longue
+> donne un **400 nommant le champ**, comme en `PUT` (auparavant : aucune validation, puis **409** opaque).
 > Tracé `t_audit_log` (`MODIFICATION_RECTIFICATION`, `NOM_TABLE=t_ppm`).
 > *(DAO/MAOO : sans contenu éditable, donc non concernés. Les lignes de marché se corrigent via
 > `PATCH /api/marches/{id}/rectifier` ; pas d'ajout/suppression de lignes en rectification.)*
@@ -3497,7 +3669,30 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 ---
 
 ## PRMP
-**Ressource** `/api/prmps` — Gestion des comptes PRMP (§3.8) : lecture ouverte ; écriture `ADMINISTRATEUR`. *(Fiche de la personne PRMP, distincte des PPM/marchés qu'elle soumet. Voir aussi l'auto-inscription dans **Authentification**.)*
+**Ressource** `/api/prmps` — Gestion des comptes PRMP (§3.8) : lecture ouverte aux profils du circuit **en vue réduite** ; écriture `ADMINISTRATEUR`. *(Fiche de la personne PRMP, distincte des PPM/marchés qu'elle soumet. Voir aussi l'auto-inscription dans **Authentification**.)*
+
+> ⚠️ **La forme de la réponse dépend du profil** (durcissement 2026-08-24). Les cinq lectures
+> (`GET /`, `/{id}`, `/par-localite/{idLocalite}`, `/par-entite/{idEntiteContract}`, `/par-nom/{nom}`)
+> ne portaient **aucune** garde et servaient la fiche **complète** — numéro de CIN, date et lieu de
+> délivrance compris — à **tout** utilisateur authentifié, quels que soient son profil et sa
+> localité. Donnée personnelle, sans usage métier hors gestion des comptes. Désormais :
+>
+> | Appelant | Réponse |
+> |---|---|
+> | `ADMINISTRATEUR` | **Fiche complète** : les 10 champs de `PrmpDto`. |
+> | La **PRMP concernée** (claim `ref` = `idPrmp` de la ligne) | **Fiche complète** — y compris au milieu d'une liste : l'arbitrage se fait **ligne à ligne**, pas par route. |
+> | Autres profils admis (`PRESIDENT`, `CHEF_COMMISSION`, `SECRETAIRE`, `MEMBRE`, `VERIFICATEUR`, `ASSISTANT_CONTROLEUR`, `UGPM`, PRMP sur la fiche d'une consœur) | **Vue réduite** : `cin`, `dateCin`, `lieuCin` à **`null`** ; les 7 autres champs servis normalement. |
+> | `CHARGE_PUBLICATION`, tout autre profil | **403** — les cinq lectures portent désormais une garde `@PreAuthorize` (même liste de profils que `GET /api/ugpms/par-tutelle/{idPrmp}`). |
+>
+> Les champs conservés en vue réduite (`idPrmp`, `nomPrmp`, `prenomsPrmp`, `arreteNomin`, `dateNomin`,
+> `emailPrmp`, `telPrmp`) sont exactement ceux que consomment les écrans : mentions d'un **acte
+> administratif** et coordonnées **de fonction**, affichées par l'onglet « Entité contractante » du
+> détail d'un plan de passation. Même découpage que la vue restreinte des UGPM
+> (`GET /api/ugpms/par-tutelle/{idPrmp}`) : ni CIN, mais courriel et téléphone.
+>
+> **Aucun changement pour l'écriture** : `POST`/`PUT` renvoient la fiche complète (routes
+> `ADMINISTRATEUR`), et `PUT /{id}` continue d'attendre les 10 champs — l'écran d'administration lit
+> donc bien la fiche complète avant de la réécrire.
 
 **Champs `PrmpDto`**
 
@@ -3508,9 +3703,9 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 | prenomsPrmp | string | Oui | @NotBlank, max 100 |
 | arreteNomin | string | Oui | @NotBlank, max 100 |
 | dateNomin | string (date) | Oui | @NotNull |
-| cin | string | Oui | @NotBlank, max 12 |
-| dateCin | string (date) | Oui | @NotNull |
-| lieuCin | string | Oui | @NotBlank, max 50 |
+| cin | string | Oui (à l'écriture) | @NotBlank, max 12 — **`null` en lecture, hors vue complète** |
+| dateCin | string (date) | Oui (à l'écriture) | @NotNull — **`null` en lecture, hors vue complète** |
+| lieuCin | string | Oui (à l'écriture) | @NotBlank, max 50 — **`null` en lecture, hors vue complète** |
 | emailPrmp | string | Oui | @NotBlank, max 100 |
 | telPrmp | string | Oui | @NotBlank, max 20 |
 
@@ -3532,11 +3727,11 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/prmps | — | `PrmpDto[]` | 200 | Authentifié |
-| GET | /api/prmps/{id} | — | `PrmpDto` | 200, 404 | Authentifié |
-| GET | /api/prmps/par-localite/{idLocalite} | — | `PrmpDto[]` | 200 | Authentifié |
-| GET | /api/prmps/par-entite/{idEntiteContract} | — | `PrmpDto[]` | 200 | Authentifié |
-| GET | /api/prmps/par-nom/{nom} | — | `PrmpDto[]` | 200 | Authentifié |
+| GET | /api/prmps | — | `PrmpDto[]` — **vue réduite** hors Admin/PRMP concernée | 200, 403 | ADMIN, PRMP, UGPM, PRESIDENT, CHEF_COMMISSION, SECRETAIRE, MEMBRE, VERIFICATEUR, ASSISTANT_CONTROLEUR |
+| GET | /api/prmps/{id} | — | `PrmpDto` — **vue réduite** hors Admin/PRMP concernée | 200, 403, 404 | idem |
+| GET | /api/prmps/par-localite/{idLocalite} | — | `PrmpDto[]` — **vue réduite** hors Admin/PRMP concernée | 200, 403 | idem |
+| GET | /api/prmps/par-entite/{idEntiteContract} | — | `PrmpDto[]` — **vue réduite** hors Admin/PRMP concernée | 200, 403 | idem |
+| GET | /api/prmps/par-nom/{nom} | — | `PrmpDto[]` — **vue réduite** hors Admin/PRMP concernée | 200, 403 | idem |
 | POST | /api/prmps | `CreerPrmpRequest` (**JSON**) | `PrmpDto` | 201, 400, 403, 409 | ADMINISTRATEUR |
 | POST | /api/prmps | **`multipart/form-data`** : part `data` (JSON `CreerPrmpRequest`) + `arrete`/`cin`/`photo` (opt.) | `PrmpDto` | 201, 400, 403, 409 | ADMINISTRATEUR |
 | PUT | /api/prmps/{id} | `PrmpDto` | `PrmpDto` | 200, 400, 404 | ADMINISTRATEUR |
@@ -3640,7 +3835,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idPv | number | Oui (PK, au POST) | clé primaire |
+| idPv | number | **Non** (⚠️ ignoré au POST) | PK **allouée serveur** (`seq_pv_examen`) ; renvoyée dans la réponse |
 | idExamen | number | Oui | @NotNull |
 | idAvis | string | Non (⚠️ 2026-08-01) | max 10 — **nullable** : `null` jusqu'à la **clôture de navette** (`…/accepter`, Président/CC) ; requis pour `signer` (409 sinon) |
 | imCtrlPresident | string | Non | max 7 |
@@ -3703,7 +3898,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 | GET | /api/pv-examens/definitifs | — | `PvExamenDto[]` | 200 | Authentifié (filtré) — **PV signés** uniquement |
 | GET | /api/pv-examens/{id} | — | `PvExamenDto` | 200, 404 | Authentifié (filtré) — tout PV (y c. signé) |
 | GET | /api/pv-examens/{id}/document | — | `application/pdf` | 200, 403, 404 | Authentifié (périmètre localité) — **PDF du Projet de PV** |
-| POST | /api/pv-examens | `PvExamenDto` | `PvExamenDto` | 201, 400, 403 | MEMBRE / CC / PRESIDENT |
+| POST | /api/pv-examens | `PvExamenDto` | `PvExamenDto` (**PK serveur**) | 201, 400, 403 | MEMBRE / CC / PRESIDENT — `idPv` du corps **ignoré** |
 | PUT | /api/pv-examens/{id} | `PvExamenDto` | `PvExamenDto` | 200, 400, 404, 409 | MEMBRE / CC / PRESIDENT |
 | DELETE | /api/pv-examens/{id} | — | — | 204, 404 | ADMINISTRATEUR |
 | POST | /api/pv-examens/{id}/soumettre | `PvActionRequest` | `PvExamenDto` | 200, 400, 403, 404, 409 | MEMBRE / CC / PRESIDENT |
@@ -3756,7 +3951,7 @@ processus** (`idCapm` → **CAPM**), chacune avec une `dateDebut` (obligatoire) 
 
 **Exemple — requête (création) / signature**
 ```json
-{ "idPv": 312, "idExamen": 201, "idAvis": "FAV", "imCtrlMembre": "MEMANT1", "statutPv": "BROUILLON", "nbNavettes": 0, "syntheseObservations": "RAS" }
+{ "idExamen": 201, "idAvis": "FAV", "imCtrlMembre": "MEMANT1", "statutPv": "BROUILLON", "nbNavettes": 0, "syntheseObservations": "RAS" }
 ```
 ```json
 { "imActeur": "CTRPRE", "role": "PRESIDENT" }
@@ -3984,13 +4179,13 @@ au dépôt, **aucun archivage** — simple événement tracé).
 ---
 
 ## Services bénéficiaires
-**Ressource** `/api/service-beneficiaires` — Lecture / écriture : tout utilisateur authentifié.
+**Ressource** `/api/service-beneficiaires` — **Lecture scopée au périmètre de la ligne de marché parente** (`ID_DETAIL`, §1/§3.1) : Président/Administrateur voient tout, la PRMP/UGPM les bénéficiaires de ses marchés, les contrôleurs ceux de leur localité, tout autre profil une liste vide. **Écriture réservée à `PRMP` / `UGPM`** (**403** sinon, circuit interne compris — la ventilation d'un PPM appartient à son propriétaire), et le **marché visé est contrôlé** (**403** sur celui d'une autre entité). ⚠️ **PK allouée serveur** : `idBenef` envoyé par le client est ignoré au POST — la liste étant scopée, deux PRMP calculeraient le même `max()+1` et la seconde écraserait la ligne de la première.
 
 **Champs `ServiceBeneficiaireDto`**
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idBenef | number | Oui (PK, au POST) | clé primaire |
+| idBenef | number | **Non** (⚠️ ignoré au POST) | PK **allouée serveur** (`seq_service_beneficiaire`) ; renvoyée dans la réponse |
 | ancMontBenef | number | Non | montant **par bénéficiaire** (ancien / initial) |
 | nouvMontBenef | number | Non | montant **par bénéficiaire** (nouveau) |
 | soaCode | string | Non | **max 25** — FK `tr_soa_beneficiaire` (ex. `00-21-0-J00-00000`) |
@@ -4001,17 +4196,17 @@ au dépôt, **aucun archivage** — simple événement tracé).
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/service-beneficiaires | — | `ServiceBeneficiaireDto[]` | 200 | Authentifié |
-| GET | /api/service-beneficiaires/{id} | — | `ServiceBeneficiaireDto` | 200, 404 | Authentifié |
-| POST | /api/service-beneficiaires | `ServiceBeneficiaireDto` | `ServiceBeneficiaireDto` | 201, 400 | Authentifié |
-| PUT | /api/service-beneficiaires/{id} | `ServiceBeneficiaireDto` | `ServiceBeneficiaireDto` | 200, 400, 404 | Authentifié |
-| DELETE | /api/service-beneficiaires/{id} | — | — | 204, 404 | Authentifié |
+| GET | /api/service-beneficiaires | — | `ServiceBeneficiaireDto[]` | 200 | Authentifié — **liste scopée** |
+| GET | /api/service-beneficiaires/{id} | — | `ServiceBeneficiaireDto` | 200, **403**, 404 | Authentifié — **403 hors périmètre** |
+| POST | /api/service-beneficiaires | `ServiceBeneficiaireDto` | `ServiceBeneficiaireDto` (PK serveur) | 201, 400, **403** | **PRMP / UGPM** — périmètre du marché |
+| PUT | /api/service-beneficiaires/{id} | `ServiceBeneficiaireDto` | `ServiceBeneficiaireDto` | 200, 400, **403**, 404 | **PRMP / UGPM** — périmètre du marché |
+| DELETE | /api/service-beneficiaires/{id} | — | — | 204, **403**, 404 | **PRMP / UGPM** — périmètre du marché |
 
 `{id}` = idBenef (number).
 
 **Exemple — requête**
 ```json
-{ "idBenef": 4501, "ancMontBenef": 120000.0, "nouvMontBenef": 135000.0, "soaCode": "00-21-0-J00-00000", "numCompte": "CPT-BENEF-01", "idDetail": 88 }
+{ "ancMontBenef": 120000.0, "nouvMontBenef": 135000.0, "soaCode": "00-21-0-J00-00000", "numCompte": "CPT-BENEF-01", "idDetail": 88 }
 ```
 
 ---
@@ -4051,7 +4246,7 @@ au dépôt, **aucun archivage** — simple événement tracé).
 ---
 
 ## SOA bénéficiaires
-**Ressource** `/api/soa-beneficiaires` — Lecture / écriture : tout utilisateur authentifié.
+**Ressource** `/api/soa-beneficiaires` — **Référentiel** (code SOA + libellé, aucune donnée de périmètre) : **lecture ouverte à tout utilisateur authentifié**. **Création ouverte à `PRMP` / `UGPM` en plus de l'`ADMINISTRATEUR`** — même motif que `POST /api/entite-contracts` et `POST /api/ministeres` : à l'import d'un PPM, la ventilation cite des codes SOA absents du référentiel, que la PRMP enregistre avant de pouvoir soumettre. **`PUT` et `DELETE` restent `ADMINISTRATEUR`** (**403** sinon) : une PRMP n'a pas à renommer ni retirer un code que d'autres entités utilisent.
 
 **Champs `SoaBeneficiaireDto`**
 
@@ -4066,9 +4261,9 @@ au dépôt, **aucun archivage** — simple événement tracé).
 |---|---|---|---|---|---|
 | GET | /api/soa-beneficiaires | — | `SoaBeneficiaireDto[]` | 200 | Authentifié |
 | GET | /api/soa-beneficiaires/{id} | — | `SoaBeneficiaireDto` | 200, 404 | Authentifié |
-| POST | /api/soa-beneficiaires | `SoaBeneficiaireDto` | `SoaBeneficiaireDto` | 201, 400 | Authentifié |
-| PUT | /api/soa-beneficiaires/{id} | `SoaBeneficiaireDto` | `SoaBeneficiaireDto` | 200, 400, 404 | Authentifié |
-| DELETE | /api/soa-beneficiaires/{id} | — | — | 204, 404 | Authentifié |
+| POST | /api/soa-beneficiaires | `SoaBeneficiaireDto` | `SoaBeneficiaireDto` | 201, 400, **403** | **PRMP / UGPM / ADMINISTRATEUR** |
+| PUT | /api/soa-beneficiaires/{id} | `SoaBeneficiaireDto` | `SoaBeneficiaireDto` | 200, 400, **403**, 404 | **ADMINISTRATEUR** |
+| DELETE | /api/soa-beneficiaires/{id} | — | — | 204, **403**, 404 | **ADMINISTRATEUR** |
 
 `{id}` = soaCode (string).
 
@@ -4080,13 +4275,16 @@ au dépôt, **aucun archivage** — simple événement tracé).
 ---
 
 ## Tranches
-**Ressource** `/api/tranches` — Lecture / écriture : tout utilisateur authentifié.
+**Ressource** `/api/tranches` — ⚠️ **Périmètre hérité de la ligne de marché**, remonté par le lot
+(`t_tranche.ID_LOT` → `t_lot.ID_DETAIL`) : **mêmes règles que `/api/lots`** (lecture scopée, 403 hors périmètre,
+écriture réservée `PRMP`/`UGPM` et contrôlée sur le lot visé). `idTranche` est **alloué par le serveur** (`max+1`) ;
+tout id envoyé par le client est **ignoré**.
 
 **Champs `TrancheDto`**
 
 | Champ (JSON) | Type | Obligatoire | Contraintes |
 |---|---|---|---|
-| idTranche | number | Oui (PK, au POST) | clé primaire |
+| idTranche | number | **Non** (⚠️ ignoré au POST) | PK **allouée serveur** ; renvoyée dans la réponse |
 | lieuTrc | string | Non | max 100 |
 | montTrc | number | Non | |
 | idLot | number | Oui | @NotNull |
@@ -4095,17 +4293,17 @@ au dépôt, **aucun archivage** — simple événement tracé).
 
 | Méthode | URL | Corps | Réponse | Statuts | Rôle |
 |---|---|---|---|---|---|
-| GET | /api/tranches | — | `TrancheDto[]` | 200 | Authentifié |
-| GET | /api/tranches/{id} | — | `TrancheDto` | 200, 404 | Authentifié |
-| POST | /api/tranches | `TrancheDto` | `TrancheDto` | 201, 400 | Authentifié |
-| PUT | /api/tranches/{id} | `TrancheDto` | `TrancheDto` | 200, 400, 404 | Authentifié |
-| DELETE | /api/tranches/{id} | — | — | 204, 404 | Authentifié |
+| GET | /api/tranches | — | `TrancheDto[]` | 200 | Authentifié — **liste scopée** au périmètre du marché parent |
+| GET | /api/tranches/{id} | — | `TrancheDto` | 200, **403**, 404 | Authentifié — périmètre du marché parent |
+| POST | /api/tranches | `TrancheDto` | `TrancheDto` | 201, 400, **403** | **PRMP / UGPM** (périmètre du lot visé) |
+| PUT | /api/tranches/{id} | `TrancheDto` | `TrancheDto` | 200, 400, **403**, 404 | **PRMP / UGPM** (périmètre, origine **et** destination) |
+| DELETE | /api/tranches/{id} | — | — | 204, **403**, 404 | **PRMP / UGPM** (périmètre du marché parent) |
 
 `{id}` = idTranche (number).
 
 **Exemple — requête**
 ```json
-{ "idTranche": 305, "lieuTrc": "Antananarivo - Analakely", "montTrc": 7500000.0, "idLot": 42 }
+{ "lieuTrc": "Antananarivo - Analakely", "montTrc": 7500000.0, "idLot": 42 }
 ```
 
 ---
