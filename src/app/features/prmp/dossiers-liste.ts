@@ -29,13 +29,24 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 /** Groupe de statut du menu « Mes dossiers » : brouillons vs tout ce qui est soumis (non brouillon). */
 type Groupe = 'brouillon' | 'soumis';
 
+const PAGE_SIZE = 20;
+
 /**
  * Liste des dossiers d'un **type** donné (référentiel `type-dossier`) filtrés par **groupe de statut**
  * (`brouillon` = BROUILLON ; `soumis` = tout sauf BROUILLON). Route : `/prmp/dossiers/:type/:groupe`.
  * Écran générique du menu « Mes dossiers » (arborescence type → statut construite dynamiquement).
  *
- * Liste = `GET /api/dossiers` (déjà scopé à la PRMP propriétaire par le backend), filtrée côté client
- * par type + statut. Pour un brouillon : ouvrir/soumettre/supprimer ; pour un dossier soumis : consulter.
+ * **Pagination serveur** (AUDIT.md P1) : `GET /api/dossiers?type=&brouillon=&page=&size=` (déjà scopé à
+ * la PRMP propriétaire par le backend). L'écran téléchargeait auparavant la table entière du profil pour
+ * la filtrer par type + statut en mémoire ; le coût réseau/parse croissait donc avec la base entière pour
+ * n'afficher qu'une page. Le gain porte sur le transfert et le parse navigateur, pas sur la charge base :
+ * le backend continue de construire la liste filtrée complète puis de la découper.
+ *
+ * Le dossier ciblé par la recherche topbar (`?focus=`) peut tomber hors de la page chargée : s'il est
+ * absent de la page reçue, une requête ciblée par id va le chercher et l'affiche en tête (même
+ * surlignage `.dl-row-focus`).
+ *
+ * Pour un brouillon : ouvrir/soumettre/supprimer ; pour un dossier soumis : consulter.
  */
 @Component({
   selector: 'app-dossiers-liste',
@@ -64,7 +75,7 @@ type Groupe = 'brouillon' | 'soumis';
               </tr>
             </thead>
             <tbody>
-              @for (d of dossiers(); track d.idDossier) {
+              @for (d of lignes(); track d.idDossier) {
                 <tr [id]="'dl-row-' + d.idDossier" [class.dl-row-focus]="d.idDossier === focusId()">
                   <td>{{ reference(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
@@ -109,6 +120,23 @@ type Groupe = 'brouillon' | 'soumis';
             </tbody>
           </table>
         </div>
+
+        @if (totalPages() > 1) {
+          <nav class="dl-pager" aria-label="Pagination">
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="page() === 0" (click)="prev()">
+              ‹ Précédent
+            </button>
+            <span class="dl-pager__info">Page {{ page() + 1 }} / {{ totalPages() }} · {{ total() }} dossier(s)</span>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              [disabled]="page() >= totalPages() - 1"
+              (click)="next()"
+            >
+              Suivant ›
+            </button>
+          </nav>
+        }
       }
     </section>
 
@@ -152,6 +180,14 @@ type Groupe = 'brouillon' | 'soumis';
     .actions-end { justify-content: flex-end; }
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .confirm-modal { max-width: 28rem; }
+    .dl-pager {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .dl-pager__info { font-size: var(--text-sm); color: var(--n-500); }
     /* Ligne ciblée par la recherche topbar : flash bleu puis surlignage doux persistant. */
     .dl-row-focus > td { animation: dl-flash 1.8s ease; background: rgba(2, 132, 199, 0.06); }
     @keyframes dl-flash {
@@ -182,12 +218,24 @@ export class DossiersListe {
   readonly type = signal<string>('');
   readonly groupe = signal<Groupe>('brouillon');
 
+  /** Page courante uniquement (au plus PAGE_SIZE dossiers), telle que servie. */
   readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);
   /** Échec du chargement de la liste (affiche l'erreur + « Réessayer »). */
   readonly erreur = signal(false);
+  readonly page = signal(0);
+  /** Nombre total de dossiers du périmètre filtré — donné par le serveur, jamais déduit d'un tableau local. */
+  readonly total = signal(0);
+  readonly totalPages = signal(1);
   /** idDossier à mettre en évidence (arrivée depuis la recherche topbar `?focus=`) ; null = aucun. */
   readonly focusId = signal<number | null>(null);
+  /** Dossier ciblé par `?focus=` mais absent de la page reçue — chargé par id, affiché en tête (`lignes`). */
+  readonly focusRow = signal<Dossier | null>(null);
+  /** Page affichée : la ligne ciblée hors page, en tête, puis la page courante (sans doublon). */
+  readonly lignes = computed(() => {
+    const focus = this.focusRow();
+    return focus ? [focus, ...this.dossiers()] : this.dossiers();
+  });
   readonly submittingId = signal<number | null>(null);
   readonly confirmDossier = signal<Dossier | null>(null);
   readonly suppression = signal<number | null>(null);
@@ -231,12 +279,18 @@ export class DossiersListe {
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((p) => {
       this.type.set(p.get('type') ?? '');
       this.groupe.set(p.get('groupe') === 'soumis' ? 'soumis' : 'brouillon');
+      this.page.set(0);
       this.charger();
     });
-    // Mise en évidence d'un dossier arrivé depuis la recherche topbar (`?focus=`).
+    // Mise en évidence d'un dossier arrivé depuis la recherche topbar (`?focus=`) : si la navigation
+    // ne change que `focus` (même type/groupe, composant réutilisé), `charger()` ci-dessus ne repart
+    // pas — c'est ici qu'il faut trancher si la ligne ciblée est dans la page déjà en main.
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((q) => {
       const f = q.get('focus');
       this.focusId.set(f ? Number(f) : null);
+      // Si un chargement est en cours (montage initial, ou changement de type/groupe déclenché par
+      // le paramMap ci-dessus), son `next()` rappellera `resoudreFocus()` — pas la peine ici.
+      if (!this.loading()) this.resoudreFocus();
     });
     // Recharge quand un autre écran signale un changement (suppression, soumission…).
     // skip(1) : le chargement initial est déjà déclenché par paramMap ci-dessus — un effect
@@ -253,18 +307,16 @@ export class DossiersListe {
     const brouillon = this.groupe() === 'brouillon';
     this.loading.set(true);
     this.erreur.set(false);
-    // `list('BROUILLON')` côté serveur pour les brouillons ; sinon liste complète filtrée « non brouillon ».
-    this.dossierService.list(brouillon ? 'BROUILLON' : undefined).subscribe({
-      next: (rows) => {
-        this.dossiers.set(
-          rows.filter((d) => d.idTypeDossier === type && (brouillon ? d.statut === 'BROUILLON' : d.statut !== 'BROUILLON')),
-        );
+    // `type` + `brouillon` transmis au serveur (contrat livré avec la pagination, cf. doc de classe) :
+    // la page reçue est déjà le bon sous-ensemble. Filtrer après coup casserait la pagination — total
+    // et pages faux, pages incomplètes — donc plus de filtre mémoire ici.
+    this.dossierService.listePage(this.page(), PAGE_SIZE, { type, brouillon: String(brouillon) }).subscribe({
+      next: (p) => {
+        this.dossiers.set(p.content);
+        this.total.set(p.totalElements);
+        this.totalPages.set(Math.max(1, p.totalPages));
         this.loading.set(false);
-        // Défile vers le dossier mis en évidence (recherche topbar), après rendu de la ligne.
-        const fid = this.focusId();
-        if (fid != null) {
-          setTimeout(() => document.getElementById('dl-row-' + fid)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
-        }
+        this.resoudreFocus();
       },
       error: () => {
         this.loading.set(false);
@@ -280,6 +332,51 @@ export class DossiersListe {
       for (const m of marches) ids.set(m.idDossier, m.idPpm);
       this.ppmParDossier.set(ids);
     });
+  }
+
+  /**
+   * Si le dossier ciblé par `?focus=` n'est pas dans la page reçue (pagination), va le chercher par id
+   * et l'affiche en tête (`lignes`, même surlignage `.dl-row-focus`). Sinon, simple défilement vers la
+   * ligne déjà présente — pas de requête superflue si elle est déjà là.
+   */
+  private resoudreFocus(): void {
+    const fid = this.focusId();
+    if (fid == null) {
+      this.focusRow.set(null);
+      return;
+    }
+    if (this.dossiers().some((d) => d.idDossier === fid)) {
+      this.focusRow.set(null);
+      this.defilerVersFocus(fid);
+      return;
+    }
+    this.dossierService.getById(fid).subscribe({
+      next: (d) => {
+        this.focusRow.set(d);
+        this.defilerVersFocus(fid);
+      },
+      // Dossier introuvable (supprimé entre-temps, ou hors périmètre) : pas de ligne en tête, sans erreur bloquante.
+      error: () => this.focusRow.set(null),
+    });
+  }
+
+  /** Défile vers la ligne mise en évidence, après son rendu. */
+  private defilerVersFocus(fid: number): void {
+    setTimeout(() => document.getElementById('dl-row-' + fid)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+  }
+
+  /** Change de page et recharge depuis le serveur — jamais de découpage d'un tableau local. */
+  prev(): void {
+    if (this.page() === 0) return;
+    this.page.update((p) => p - 1);
+    this.charger();
+  }
+
+  /** Change de page et recharge depuis le serveur — jamais de découpage d'un tableau local. */
+  next(): void {
+    if (this.page() >= this.totalPages() - 1) return;
+    this.page.update((p) => p + 1);
+    this.charger();
   }
 
   localiteLabel(d: Dossier): string {
@@ -369,6 +466,7 @@ export class DossiersListe {
       next: () => {
         this.toast.success('Dossier supprimé avec succès.');
         this.dossiers.update((arr) => arr.filter((x) => x.idDossier !== d.idDossier));
+        if (this.focusRow()?.idDossier === d.idDossier) this.focusRow.set(null);
         this.dossiersRefresh.notifierSuppression(d.idDossier);
         this.suppression.set(null);
         this.confirmDossier.set(null);
