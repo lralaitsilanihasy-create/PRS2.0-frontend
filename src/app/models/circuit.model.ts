@@ -172,6 +172,14 @@ export interface LettreRenvoi {
   nomSignataire?: string;
   /** `true` si la lettre a déjà été lue par la PRMP courante (réponse, lecture seule). */
   lue?: boolean;
+  /**
+   * ⚠️ Champ ajouté 2026-08-19 — le PDF officiel est-il prêt à télécharger maintenant
+   * (`CHEMIN_DOCUMENT` non nul) ? `false` pendant la fenêtre de génération **post-commit** qui suit
+   * la signature, puis `true` au rafraîchissement suivant ; `false` aussi pour une lettre non signée
+   * (un brouillon n'a jamais de document). Même contrat que `PvExamen.documentDisponible` pour un
+   * PV signé. `undefined` = information non fournie par le backend.
+   */
+  documentDisponible?: boolean;
   /** ⚠️ Spec navette (2026-08-01) — archivage par l'Assistant contrôleur (lecture seule). */
   dateArchivage?: string;
   imArchiveur?: string;

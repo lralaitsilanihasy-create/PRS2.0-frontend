@@ -2170,6 +2170,7 @@ de PV). Lecture filtrée par profil/localité. Cycle : `BROUILLON → SOUMIS →
 | imSignataire | string | — (réponse) | **posé à la signature** (JWT) — ignoré en entrée |
 | nomSignataire | string | — (réponse) | **nom complet du signataire** (« prénoms nom »), peuplé serveur — lecture seule |
 | lue | boolean | — (réponse) | **lecture seule** — `true` si la lettre a déjà été lue par la PRMP courante (trace `t_lettre_renvoi_lue`) |
+| documentDisponible | boolean | — (réponse) | ⚠️ **champ ajouté 2026-08-19** — **lecture seule** : le **PDF officiel est-il prêt à télécharger maintenant** (`CHEMIN_DOCUMENT` renseigné, ou `DOCUMENT_PDF` pour les anciennes lettres) ? **`false` pendant la fenêtre de génération post-commit** qui suit la signature, puis `true` au rafraîchissement suivant. `false` aussi pour une lettre non signée (un brouillon n'a jamais de document). Même contrat que `PvExamenDto.documentDisponible` pour un PV **signé** |
 
 > **Objet fixe** : l'objet de la lettre est constant (« lettre de renvoi », déjà inscrit en dur dans les modèles Word) — il n'est **plus saisi ni retourné** (champ `objetLettre` supprimé du DTO). S'il est encore envoyé dans le corps de la requête, il est **ignoré** (compat rétroactive du frontend). La colonne `t_lettre_renvoi.OBJET_LETTRE` reste en base pour l'historique mais n'est plus alimentée.
 

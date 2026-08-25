@@ -74,7 +74,13 @@ import { DossierConsultation } from './dossier-consultation';
                     <span class="badge badge-success">Archivée le {{ l.dateArchivage }}</span>
                   }
                   @if (l.statut === 'SIGNE') {
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="telechargerDocument(l)">⬇ PDF</button>
+                    @if (l.documentDisponible === false) {
+                      <!-- ⚠️ Génération post-commit — document pas encore prêt juste après la signature. -->
+                      <button type="button" class="btn btn-secondary btn-sm" disabled
+                        title="Document indisponible pour l'instant — s'il vient d'être signé, l'édition est en cours ; rechargez dans un instant.">⬇ PDF</button>
+                    } @else {
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="telechargerDocument(l)">⬇ PDF</button>
+                    }
                   }
                 </td>
               </tr>
@@ -112,7 +118,13 @@ import { DossierConsultation } from './dossier-consultation';
                     }
                     @if (l.statut === 'SIGNE') {
                       <div class="lrc__detail-foot">
-                        <button type="button" class="btn btn-secondary btn-sm" (click)="telechargerDocument(l)">⬇ Télécharger le PDF</button>
+                        @if (l.documentDisponible === false) {
+                          <!-- ⚠️ Génération post-commit — document pas encore prêt juste après la signature. -->
+                          <button type="button" class="btn btn-secondary btn-sm" disabled
+                            title="Document indisponible pour l'instant — s'il vient d'être signé, l'édition est en cours ; rechargez dans un instant.">⬇ Télécharger le PDF</button>
+                        } @else {
+                          <button type="button" class="btn btn-secondary btn-sm" (click)="telechargerDocument(l)">⬇ Télécharger le PDF</button>
+                        }
                       </div>
                     }
 
@@ -357,7 +369,7 @@ export class LettreRenvoiConsultation {
       error: (err: HttpErrorResponse) =>
         this.toast.error(
           err.status === 404
-            ? "Le document PDF n'est pas disponible pour cette lettre."
+            ? "Document indisponible pour l'instant — s'il vient d'être signé, l'édition est en cours ; réessayez dans un instant."
             : 'Impossible de télécharger le document.',
         ),
     });
