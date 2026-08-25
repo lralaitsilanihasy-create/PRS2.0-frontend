@@ -129,33 +129,64 @@ export class MainLayout {
   /**
    * Résout la saisie sur la référence **affichée** d'un dossier du périmètre (`refeDossier` ou réf. du PPM)
    * et navigue vers sa liste (type × groupe) en le mettant en évidence (`?focus=`). Aucun résultat → toast.
+   *
+   * **Pagination serveur** (constat de relecture, hors AUDIT.md) : deux tables ENTIÈRES (dossiers, ppms)
+   * étaient auparavant téléchargées à chaque recherche pour n'en retenir qu'une ligne. Le filtre
+   * `reference=` (sous-chaîne, insensible à la casse, sur `REFE_DOSSIER`/`REFERENCE`) est désormais
+   * transmis au serveur pour chaque ressource, via `listePage` — même motif que `marches-list.ts` /
+   * `dossiers-liste.ts` — et une seule ligne est demandée (`size=1`) : le premier résultat serveur suffit.
+   *
+   * Le repli sur la référence du PPM reste géré, mais en deux temps : si aucun dossier ne correspond
+   * directement, une correspondance côté PPM ne porte que `idDossier` — `statut`/`idTypeDossier`
+   * manquent pour naviguer, d'où un `GET /api/dossiers/{id}` ciblé dans ce seul cas.
    */
   allerAuDossier(): void {
     const saisie = this.recherche().trim();
     if (!saisie || this.rechercheEnCours()) return;
-    const q = saisie.toLowerCase();
     this.rechercheEnCours.set(true);
-    forkJoin({ dossiers: this.dossierService.list(), ppms: this.ppmService.list() }).subscribe({
+    forkJoin({
+      dossiers: this.dossierService.listePage(0, 1, { reference: saisie }),
+      ppms: this.ppmService.listePage(0, 1, { reference: saisie }),
+    }).subscribe({
       next: ({ dossiers, ppms }) => {
-        this.rechercheEnCours.set(false);
-        const ppmRef = new Map(ppms.map((p) => [p.idDossier, p.reference]));
-        const refDe = (d: { refeDossier?: string; idDossier: number }) =>
-          (d.refeDossier || ppmRef.get(d.idDossier) || '').toLowerCase();
-        const trouve = dossiers.find((d) => refDe(d).includes(q));
-        if (!trouve) {
+        const trouve = dossiers.content[0];
+        if (trouve) {
+          this.rechercheEnCours.set(false);
+          this.naviguerVersDossier(trouve);
+          return;
+        }
+        const viaPpm = ppms.content[0];
+        if (!viaPpm) {
+          this.rechercheEnCours.set(false);
           this.toast.info(`Aucun dossier pour « ${saisie} ».`);
           return;
         }
-        const groupe = trouve.statut === 'BROUILLON' ? 'brouillon' : 'soumis';
-        this.recherche.set('');
-        void this.router.navigate(['/prmp/dossiers', trouve.idTypeDossier, groupe], {
-          queryParams: { focus: trouve.idDossier },
+        // Correspondance trouvée via la référence du PPM : l'objet dossier n'est pas sous la main
+        // (seul idDossier l'est) — requête ciblée pour obtenir statut/idTypeDossier avant de naviguer.
+        this.dossierService.getById(viaPpm.idDossier).subscribe({
+          next: (d) => {
+            this.rechercheEnCours.set(false);
+            this.naviguerVersDossier(d);
+          },
+          error: () => {
+            this.rechercheEnCours.set(false);
+            this.toast.error('Recherche impossible pour le moment.');
+          },
         });
       },
       error: () => {
         this.rechercheEnCours.set(false);
         this.toast.error('Recherche impossible pour le moment.');
       },
+    });
+  }
+
+  /** Navigue vers la liste (type × groupe) du dossier résolu, en le mettant en évidence (`?focus=`). */
+  private naviguerVersDossier(dossier: Dossier): void {
+    const groupe = dossier.statut === 'BROUILLON' ? 'brouillon' : 'soumis';
+    this.recherche.set('');
+    void this.router.navigate(['/prmp/dossiers', dossier.idTypeDossier, groupe], {
+      queryParams: { focus: dossier.idDossier },
     });
   }
 
