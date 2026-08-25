@@ -1,34 +1,94 @@
 import { provideHttpClient } from '@angular/common/http';
+import { HttpRequest } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PpmMarches } from './ppm-marches';
 
 /**
- * AUDIT.md P9 — avant ce chantier, `error: () => this.loading.set(false)` laissait cet écran
- * VIDE en cas d'échec réseau : indiscernable d'un « aucun résultat ». Ce test verrouille le
- * contrat observable : l'échec affiche l'état d'erreur (pas la liste vide), « Réessayer » relance
- * les DEUX appels réseau, et un succès à liste vide reste un état distinct de l'erreur.
+ * Pagination **serveur** de l'écran « PPM & marchés rattachés » (AUDIT.md P1) et — hérité de
+ * l'écran précédent — son état d'erreur réessayable (AUDIT.md P9).
+ *
+ * L'écran téléchargeait la table entière des PPM du périmètre pour l'afficher intégralement.
+ * Contrairement à « Mes PPM & marchés », aucun filtre mémoire ne réduit la liste affichée — rien
+ * n'interdit donc de la paginer côté serveur. Ces tests verrouillent le contrat observable (ce qui
+ * part sur le réseau, l'état exposé), pas le rendu, sauf pour les deux derniers qui verrouillent
+ * en plus le DOM de l'état d'erreur (motif du test P9 d'origine : un `error()` qui ne mettait pas
+ * `erreur` à `true` laissait l'écran VIDE, indiscernable d'un « aucun résultat »).
  */
-describe('PpmMarches — état d\'erreur de la liste (AUDIT.md P9)', () => {
-  let http: HttpTestingController;
+describe('PpmMarches — pagination serveur et état d’erreur', () => {
+  /** Requête GET sur la collection des PPM, quels que soient ses paramètres. */
+  const versPpms = (r: HttpRequest<unknown>) => r.url === '/api/ppms' && r.method === 'GET';
+  /** Référentiel des marchés (join count) : chargé une fois, hors pagination. */
+  const versMarches = (r: HttpRequest<unknown>) => r.url === '/api/marches' && r.method === 'GET';
 
-  beforeEach(() => {
+  function preparer(): { fixture: ComponentFixture<PpmMarches>; http: HttpTestingController } {
     TestBed.configureTestingModule({
       imports: [PpmMarches],
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
-    http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(PpmMarches);
+    return { fixture, http: TestBed.inject(HttpTestingController) };
+  }
+
+  /** Enveloppe `Page` de Spring Data, telle que servie par le backend. */
+  const page = (content: unknown[], totalElements: number, number = 0, size = 15) => ({
+    content,
+    totalElements,
+    totalPages: Math.max(1, Math.ceil(totalElements / size)),
+    number,
+    size,
   });
 
-  afterEach(() => http.verify());
+  it('ne demande que la page affichée, jamais la liste plate', () => {
+    const { fixture, http } = preparer();
 
-  it('affiche l\'état d\'erreur — pas la liste vide — quand /api/ppms échoue, et « Réessayer » relance les appels', () => {
-    const fixture = TestBed.createComponent(PpmMarches);
+    const req = http.expectOne(versPpms);
+    expect(req.request.params.get('page')).toBe('0');
+    expect(req.request.params.get('size')).toBe('15');
+    req.flush(page([{ idPpm: 1 }, { idPpm: 2 }], 57));
+
+    http.expectOne(versMarches).flush([]);
     fixture.detectChanges();
 
-    http.expectOne('/api/ppms').flush('boom', { status: 500, statusText: 'Erreur serveur' });
-    http.expectOne('/api/marches').flush([]);
+    // Le total vient du serveur : il ne peut pas être déduit des 2 lignes reçues.
+    expect(fixture.componentInstance.total()).toBe(57);
+    expect(fixture.componentInstance.ppms()).toHaveLength(2);
+    expect(fixture.componentInstance.totalPages()).toBe(4);
+    http.verify();
+  });
+
+  it('« Suivant » recharge depuis le serveur au lieu de découper un tableau local', () => {
+    const { fixture, http } = preparer();
+    http.expectOne(versPpms).flush(page([{ idPpm: 1 }], 40));
+    http.expectOne(versMarches).flush([]);
+
+    fixture.componentInstance.next();
+
+    const suivante = http.expectOne(versPpms);
+    expect(suivante.request.params.get('page')).toBe('1');
+    suivante.flush(page([{ idPpm: 16 }], 40, 1));
+    expect(fixture.componentInstance.page()).toBe(1);
+    http.verify();
+  });
+
+  it('« Suivant » sur la dernière page n’émet aucune requête', () => {
+    const { fixture, http } = preparer();
+    http.expectOne(versPpms).flush(page([{ idPpm: 1 }], 3));
+    http.expectOne(versMarches).flush([]);
+
+    fixture.componentInstance.next();
+    fixture.componentInstance.next();
+
+    http.verify(); // aucune requête en attente : la borne est respectée
+    expect(fixture.componentInstance.page()).toBe(0);
+  });
+
+  it('affiche l’état d’erreur — pas la liste vide — quand /api/ppms échoue, et « Réessayer » relance les appels', () => {
+    const { fixture, http } = preparer();
+
+    http.expectOne(versPpms).flush('boom', { status: 500, statusText: 'Erreur serveur' });
+    http.expectOne(versMarches).flush([]);
     fixture.detectChanges();
 
     const cmp = fixture.componentInstance;
@@ -42,21 +102,22 @@ describe('PpmMarches — état d\'erreur de la liste (AUDIT.md P9)', () => {
     bouton!.click();
     fixture.detectChanges();
 
-    // Le clic sur « Réessayer » a bien rejoué charger() — mêmes deux appels réseau.
-    http.expectOne('/api/ppms').flush([]);
-    http.expectOne('/api/marches').flush([]);
+    // Le clic sur « Réessayer » a bien rejoué charger() — même page demandée au serveur.
+    const reprise = http.expectOne(versPpms);
+    expect(reprise.request.params.get('page')).toBe('0');
+    reprise.flush(page([], 0));
     fixture.detectChanges();
 
     expect(cmp.erreur()).toBe(false);
     expect(fixture.nativeElement.querySelector('.etat-erreur')).toBeNull();
+    http.verify();
   });
 
-  it('une liste vide réussie reste un état DISTINCT de l\'erreur', () => {
-    const fixture = TestBed.createComponent(PpmMarches);
-    fixture.detectChanges();
+  it('une liste vide réussie reste un état DISTINCT de l’erreur', () => {
+    const { fixture, http } = preparer();
 
-    http.expectOne('/api/ppms').flush([]);
-    http.expectOne('/api/marches').flush([]);
+    http.expectOne(versPpms).flush(page([], 0));
+    http.expectOne(versMarches).flush([]);
     fixture.detectChanges();
 
     const cmp = fixture.componentInstance;
@@ -64,5 +125,6 @@ describe('PpmMarches — état d\'erreur de la liste (AUDIT.md P9)', () => {
     expect(cmp.loading()).toBe(false);
     expect(fixture.nativeElement.querySelector('.etat-erreur')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Aucun PPM dans votre périmètre');
+    http.verify();
   });
 });
