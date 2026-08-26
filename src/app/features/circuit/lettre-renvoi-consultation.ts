@@ -423,7 +423,8 @@ export class LettreRenvoiConsultation {
         a.href = url;
         a.download = p.nomFichier || `piece-${p.idPiece}`;
         a.click();
-        URL.revokeObjectURL(url);
+        // Révocation différée : révoquer immédiatement peut interrompre le téléchargement (ERR_FAILED).
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
       },
       error: (e: ApiError) => this.toast.error(e.message || 'Erreur lors du téléchargement.'),
     });
