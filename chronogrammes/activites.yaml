@@ -37,6 +37,20 @@
 #    aucun rapprochement n'est possible entre les commits et les trois noms.
 #    Le découpage ci-dessous est une proposition par domaine, validée sur le
 #    principe le 26/08 — à corriger ligne à ligne si l'affectation réelle diffère.
+#
+# 7. ÉCRITURE DES `libelle` ET DES `livrable` — un chronogramme se lit en comité
+#    de pilotage, pas dans un éditeur de code.
+#    · `libelle` : groupe nominal en langage métier, nommant ce que l'activité
+#      PRODUIT (jamais ce qui manque). Ni chemin de fichier, ni nom de table, ni
+#      constante d'énumération, ni sigle non explicité.
+#      → « Délais réglementaires d'instruction », pas « Gestion des délais légaux
+#        (ALERTE_DELAI) » ; « Indicateurs de performance… », pas « écrans manquants ».
+#    · `livrable` : ce que l'on peut MONTRER et constater à la fin — un écran, un
+#      document, une capacité — décrit du point de vue de celui qui s'en sert.
+#      → « Décompte du délai légal sur chaque dossier, alerte à l'approche de
+#        l'échéance », pas « calcul + alerte + indicateur ».
+#    · Le détail technique (chemins, commits, noms de tables, statuts serveur)
+#      appartient à `preuve` et à `constat_initial`, qui existent pour ça.
 # =============================================================================
 
 parametres:
@@ -89,8 +103,8 @@ module_planification:
 
   # ---------------------------------------------------------------- S1 → S2
   - id: A01
-    libelle: "Socle applicatif : authentification, guards, habilitations par profil"
-    livrable: "core/auth (service de session, guard, service de permissions), services CRUD génériques"
+    libelle: "Socle d'authentification et d'habilitations"
+    livrable: "Connexion, contrôle d'accès par profil et par entité, socle commun d'appel à l'API"
     debut: 2026-06-17
     duree_jours: 3
     statut: termine
@@ -101,8 +115,8 @@ module_planification:
     preuve: "commit 62f5f9a (17/06) — création de core/auth/{auth.service,auth.guard,permissions.service,permissions}.ts et services/api/crud.service.ts ; couvert par auth.service.spec.ts, auth.guard.spec.ts, permissions.service.spec.ts (suite complète 85/85 au vert, `ng test` du 26/08)"
 
   - id: A02
-    libelle: "Circuit d'instruction de bout en bout : dépôt → réception → dispatch → examen → PV"
-    livrable: "Moteur de workflow partagé + écrans des 6 profils du circuit"
+    libelle: "Circuit d'instruction d'un dossier, du dépôt au procès-verbal"
+    livrable: "Enchaînement dépôt → réception → affectation → examen → procès-verbal, et les écrans des six profils qui l'exercent"
     debut: 2026-06-17
     duree_jours: 7
     statut: termine
@@ -113,8 +127,8 @@ module_planification:
     preuve: "commit 62f5f9a (17/06) — shared/circuit/{circuit-workflow,pv-workflow,circuit-timeline,statut-badge}.ts + circuit-workflow.spec.ts ; features/circuit/{dispatch-form,dossier-consultation,dossiers-pipeline}.ts ; features/membre/{examen-dossier,pv-page}.ts ; features/secretaire/{receptions,enregistrement}.ts ; complété par les 4 commits du 18/06 (worklists de vérification)"
 
   - id: A03
-    libelle: "Demandes de retrait de dossier et décisions Président / Chef de commission"
-    livrable: "Écrans de demande (PRMP) et de validation (P/CC), garde « avant PV signé »"
+    libelle: "Retrait d'un dossier et décision du contrôleur"
+    livrable: "Écran de demande pour l'autorité contractante, écran de décision pour le Président et le Chef de commission, retrait bloqué dès la signature du procès-verbal"
     debut: 2026-06-18
     duree_jours: 4
     statut: termine
@@ -125,8 +139,8 @@ module_planification:
     preuve: "features/circuit/retraits-validation.ts créé le 18/06 ; features/cc/retraits-decision.ts et features/prmp/retraits.ts au commit initial ; règle « retrait impossible dès PV_SIGNE » (409) — commits du 23/06 « message liste vide explicite + erreur 409 dédiée »"
 
   - id: A04
-    libelle: "Rectification PRMP et navette avec le vérificateur"
-    livrable: "Statut EN_ATTENTE_DECISION_PRMP bout-en-bout, écrans « Dossiers à rectifier » et « En attente de rectification »"
+    libelle: "Rectification par l'autorité contractante et navette de vérification"
+    livrable: "Renvoi d'un dossier pour rectification, fil des échanges entre le vérificateur et l'autorité contractante, reprise de l'instruction après correction"
     debut: 2026-06-19
     duree_jours: 3
     statut: termine
@@ -137,8 +151,8 @@ module_planification:
     preuve: "12 commits du 19/06 (« statut EN_ATTENTE_DECISION_PRMP (obs non levées) bout-en-bout », « resoumission après rectification ») ; création de features/prmp/dossiers-a-rectifier.ts et features/verificateur/en-attente-prmp.ts le 19/06"
 
   - id: A05
-    libelle: "Lettre de renvoi et profil Assistant contrôleur"
-    livrable: "Alternative PV / lettre de renvoi, page « à signer », domaine ASSISTANT_CONTROLEUR"
+    libelle: "Lettre de renvoi et intervention de l'assistant contrôleur"
+    livrable: "Seconde issue de l'examen à côté du procès-verbal : rédaction, mise à la signature et consultation de la lettre de renvoi"
     debut: 2026-06-24
     duree_jours: 2
     statut: termine
@@ -150,8 +164,8 @@ module_planification:
 
   # ---------------------------------------------------------------- S2 → S3
   - id: A06
-    libelle: "Design system et migration visuelle de l'ensemble des écrans"
-    livrable: "src/styles/_design-system.scss + migration des écrans de tous les profils"
+    libelle: "Charte graphique et harmonisation de tous les écrans"
+    livrable: "Jeu commun de composants, de couleurs et de typographies, appliqué aux écrans des neuf espaces de travail"
     debut: 2026-06-26
     duree_jours: 2
     statut: termine
@@ -164,7 +178,7 @@ module_planification:
 
   - id: A07
     libelle: "Compteurs de menu et tableaux de bord par profil"
-    livrable: "Badges de comptage des 6 menus, tableau de bord KPI, écran de rapports"
+    livrable: "Nombre de dossiers en attente affiché sur chaque entrée de menu, tableau de bord des indicateurs et écran de rapports"
     debut: 2026-06-29
     duree_jours: 4
     statut: termine
@@ -176,8 +190,8 @@ module_planification:
 
   # ---------------------------------------------------------------- S3 → S5
   - id: A08
-    libelle: "Référentiels administrables (entités, PRMP, UGPM, pièces, modes de passation)"
-    livrable: "21 écrans CRUD d'administration pilotés par configuration"
+    libelle: "Administration des référentiels"
+    livrable: "Écrans de gestion des entités contractantes, des autorités de passation, des unités de gestion, des pièces exigées et des modes de passation"
     debut: 2026-07-03
     duree_jours: 10
     statut: termine
@@ -189,8 +203,8 @@ module_planification:
 
   # ---------------------------------------------------------------- S1 → S6
   - id: A09
-    libelle: "Saisie du plan de passation : grille partagée, import PDF, dates prévisionnelles CAPM"
-    livrable: "shared/prmp/{ppm-saisie-grid,ppm-form-factory,ppm-marches-table}.ts, import PDF avec revue ligne à ligne"
+    libelle: "Saisie du plan de passation et reprise automatique du document PDF"
+    livrable: "Grille de saisie des lignes de marché, import d'un plan au format PDF avec revue ligne à ligne, calendrier prévisionnel par processus de passation"
     debut: 2026-06-23
     duree_jours: 24
     statut: termine
@@ -202,8 +216,8 @@ module_planification:
 
   # ---------------------------------------------------------------- S5 → S7
   - id: A10
-    libelle: "Familles de dossier DDP / DMC / DDM et référentiel des sous-types"
-    livrable: "Choix de famille au dépôt, sous-type dérivé serveur pour DDP, points de contrôle par sous-type"
+    libelle: "Typologie des dossiers : familles et sous-types"
+    livrable: "Choix de la famille au dépôt (planification, mise en concurrence, marché), sous-type déterminé par le serveur, grille de points de contrôle propre à chaque sous-type"
     debut: 2026-07-16
     duree_jours: 8
     statut: termine
@@ -214,8 +228,8 @@ module_planification:
     preuve: "features/prmp/{dossiers-liste,mes-dossiers}.ts créés le 16/07 ; soumettre-dossier.ts:57-61 (`type FamilleDossier = 'DMC' | 'DDM'`) et :947-960 ; models/referentiel.model.ts:184-198 (tr_type_dossier, tr_sous_type_dossier) ; models/circuit.model.ts:13-15"
 
   - id: A11
-    libelle: "Entités contractantes : création à l'import, rattachements, localité dérivée"
-    livrable: "Panneau de résolution d'entité au PDF, écran « Rattachements en attente » (Admin)"
+    libelle: "Rattachement de l'entité contractante au dépôt d'un dossier"
+    livrable: "Reconnaissance ou création de l'entité au moment de l'import, approbation par l'administrateur, localité du dossier déduite de l'entité"
     debut: 2026-07-27
     duree_jours: 1
     statut: termine
@@ -226,8 +240,8 @@ module_planification:
     preuve: "20 commits le 26/07/2026 (dimanche) : « création d'une entité contractante à l'import », « écran Rattachements en attente », « localité de l'entité → localité du dossier dérivée » ; features/admin/rattachements-admin.ts créé le 26/07"
 
   - id: A12
-    libelle: "Écrans « Mes dossiers » par profil et classement des dossiers"
-    livrable: "Files de travail Président, CC, Secrétaire et Membre ; cartes « Dispatchs par contrôleur »"
+    libelle: "Files de travail « Mes dossiers » de chaque profil"
+    livrable: "Écran unique par profil regroupant les dossiers à traiter, classés par étape ; vue de la charge par contrôleur pour le Président"
     debut: 2026-07-27
     duree_jours: 1
     statut: termine
@@ -239,8 +253,8 @@ module_planification:
 
   # ---------------------------------------------------------------- S7 → S8
   - id: A13
-    libelle: "Chantier parallèle et attente backend (interruption)"
-    livrable: "aucun livrable sur ce dépôt"
+    libelle: "Interruption : chantier parallèle et attente du backend"
+    livrable: "Aucun — période sans production sur ce dépôt"
     debut: 2026-07-28
     duree_jours: 10
     statut: termine
@@ -252,8 +266,8 @@ module_planification:
 
   # ---------------------------------------------------------------- S9
   - id: A14
-    libelle: "Délégation ascendante et mandats PRMP"
-    livrable: "Permissions pilotées par t_delegation_profil, écran des mandats, bannière de vacance"
+    libelle: "Délégation ascendante et mandats des autorités de passation"
+    livrable: "Exercice des tâches d'un profil subordonné par son supérieur, journal des mandats et signalement des périodes de vacance"
     debut: 2026-08-11
     duree_jours: 4
     statut: termine
@@ -264,8 +278,8 @@ module_planification:
     preuve: "features/admin/mandats-admin.ts et core/vacance/vacance.store.ts créés le 12/08 ; commit du 14/08 « délégation ascendante pilotée par les données (t_delegation_profil) » puis « écrans des subordonnés chez Président/CC (Lot 2) » ; ba9aa97 (15/08) interrupteurs « Délégations »"
 
   - id: A15
-    libelle: "Notifications temps réel (SSE) et écran transverse"
-    livrable: "core/notifications/notifications.store.ts (flux SSE partagé), écran /notifications, badge cloche"
+    libelle: "Notifications en temps réel"
+    livrable: "Alerte immédiate à l'écran, compteur de messages non lus et écran de consultation ouvert aux dix profils"
     debut: 2026-08-11
     duree_jours: 4
     statut: termine
@@ -276,8 +290,8 @@ module_planification:
     preuve: "core/notifications/notification-route.ts et features/transverse/notifications-page.ts créés le 11/08 (« clic → écran d'action, mapping type × rôle ») ; notifications.store.ts créé le 15/08 au commit 9552c0c"
 
   - id: A16
-    libelle: "Observations du PV, navette post-signature et table PPM commune"
-    livrable: "Cartes d'observation partagées, décisions du vérificateur, réexamen, formulaire de réception partagé"
+    libelle: "Observations du procès-verbal et navette après signature"
+    livrable: "Suivi de chaque observation jusqu'à sa levée, décisions du vérificateur, réexamen d'un dossier rectifié, formulaire de réception commun aux profils"
     debut: 2026-08-11
     duree_jours: 4
     statut: termine
@@ -289,8 +303,8 @@ module_planification:
 
   # ---------------------------------------------------------------- S10
   - id: A17
-    libelle: "Audit technique : traitement des constats sécurité, accessibilité, performance"
-    livrable: "AUDIT.md — 35 constats, corrections livrées et vérifiées"
+    libelle: "Traitement des constats de l'audit technique"
+    livrable: "Correction des 35 constats de sécurité, d'accessibilité, de performance et de dépendances, chacun vérifié et tracé dans AUDIT.md"
     debut: 2026-08-17
     duree_jours: 3
     statut: en_cours
@@ -301,8 +315,8 @@ module_planification:
     preuve: "AUDIT.md §3 dénombre 35 constats (S1-S13, P1-P11, A1-A7, T1-T3, D1). Clos et vérifiés : 27 (dont 9ff24e9 directive appModale, f8dca39 112 routes en loadComponent, b350579 polices + CI, 1216458 contraste AA 114→17 textes, 1c4ab1c scope sur 225 en-têtes). Restent ouverts : P1, P9 (extension), A2b, S9, S12, P10, T1 (entamé), T3 = 8. Avancement = 27/35 = 77 %."
 
   - id: A18
-    libelle: "Session en cookie HttpOnly et passage en même origine"
-    livrable: "proxy /api, apiUrl relative, suppression de tout jeton côté client"
+    libelle: "Sécurisation de la session par cookie"
+    livrable: "Session portée par un cookie inaccessible au JavaScript, application et API servies sous la même origine, plus aucun jeton conservé dans le navigateur"
     debut: 2026-08-17
     duree_jours: 1
     statut: termine
@@ -314,8 +328,8 @@ module_planification:
 
   # ---------------------------------------------------------------- S10 → S11
   - id: A19
-    libelle: "Actualités à la connexion"
-    livrable: "Modal d'actualités + écran d'administration (front) et API /api/actualites (backend)"
+    libelle: "Actualités présentées à la connexion"
+    livrable: "Message d'information affiché à l'ouverture de session, écran d'administration pour le rédiger et le cibler par profil, et le service qui le délivre"
     debut: 2026-08-19
     duree_jours: 1
     statut: en_cours
@@ -326,8 +340,8 @@ module_planification:
     preuve: "Front livré et recetté : 9faaa14 (19/08) « modal à la connexion + administration », shared/actualites/{actualites-modal,markdown,markdown-vue}.ts + markdown.spec.ts, services/actualite.services.ts, features/admin/actualites-admin.ts. API backend NON COMMITÉE : docs/demande-backend-2026-08-19.md §A liste 17 fichiers non suivis par git. Avancement = 1 des 2 moitiés (front livré / API versionnée)."
 
   - id: A20
-    libelle: "Détail du plan de passation en onglets et UGPM rattachées"
-    livrable: "Modal de détail PPM à trois onglets, visibilité des unités de gestion pour les contrôleurs"
+    libelle: "Consultation du plan de passation en onglets"
+    livrable: "Fiche de dossier réorganisée en trois onglets, avec les unités de gestion rattachées enfin visibles par les contrôleurs"
     debut: 2026-08-19
     duree_jours: 2
     statut: termine
@@ -339,7 +353,7 @@ module_planification:
 
   - id: A21
     libelle: "Tests automatisés et intégration continue"
-    livrable: "Suite unitaire, CI GitHub Actions, scénarios e2e versionnés"
+    livrable: "Suite de tests unitaires, exécution automatique à chaque livraison, scénarios de bout en bout versionnés dans le dépôt"
     debut: 2026-08-17
     duree_jours: 3
     statut: en_cours
@@ -352,7 +366,7 @@ module_planification:
   # ---------------------------------------------------------------- S11
   - id: A26
     libelle: "Polissage du module « Dossiers de planification »"
-    livrable: "Reprise de finition des écrans du module de planification avant reprise du développement"
+    livrable: "Reprise de finition des écrans de planification, avant que le développement ne redémarre"
     debut: 2026-08-24
     duree_jours: 5
     statut: en_cours
@@ -373,8 +387,8 @@ module_planification:
 
   # ---------------------------------------------------------------- S11 → S14
   - id: A22
-    libelle: "Gestion des délais légaux d'instruction"
-    livrable: "Calcul du délai réglementaire par dossier, alerte ALERTE_DELAI, indicateur de dépassement"
+    libelle: "Délais réglementaires d'instruction"
+    livrable: "Décompte du délai légal sur chaque dossier, alerte à l'approche de l'échéance et signalement des dépassements"
     debut: 2026-08-31
     duree_jours: 10
     statut: a_venir
@@ -387,8 +401,8 @@ module_planification:
     constat_initial: "Absent du code : 0 occurrence de `ALERTE_DELAI` dans src/ alors que docs/regles-gestion.md:370 et :485 la spécifient. Le seul dispositif temporel livré est features/prmp/calendrier-marches.ts — jalons CAPM du plan de l'autorité contractante (imminent / en retard), et non le délai d'instruction du contrôleur. Trois indicateurs déjà modélisés en dépendent : delaiMoyenExamen, delaiMoyenJours, delaiMoyCorrectionJours (models/pilotage.model.ts:85,101,116)."
 
   - id: A23
-    libelle: "Indicateurs de performance : écrans manquants"
-    livrable: "Écrans « Indicateurs contrôleurs » et « Indicateurs PRMP »"
+    libelle: "Indicateurs de performance des contrôleurs et des autorités de passation"
+    livrable: "Deux écrans de restitution : activité et conformité par contrôleur, puis par autorité de passation et par exercice budgétaire"
     debut: 2026-08-31
     duree_jours: 5
     statut: a_venir
@@ -401,8 +415,8 @@ module_planification:
     constat_initial: "IndicateurCtrl et IndicateurPrmp sont modélisés (models/pilotage.model.ts:76-116) et servis (services/pilotage.services.ts) mais aucun écran ne les affiche. SNAPSHOT_STATS_CONFIG n'est plus référencé par aucune route (pilotage-resources.config.ts:6-11). Livrés par A07 : 3 écrans sur les 5 dénombrés."
 
   - id: A24
-    libelle: "Journal d'audit : écran de recherche dédié"
-    livrable: "Écran de consultation filtrable du journal (acteur, dossier, période, action)"
+    libelle: "Consultation du journal d'audit"
+    livrable: "Écran de recherche du journal, filtrable par acteur, dossier, période et nature de l'action"
     debut: 2026-08-31
     duree_jours: 3
     statut: a_venir
@@ -415,8 +429,8 @@ module_planification:
     constat_initial: "Existant : écran CRUD générique en lecture seule /admin/audit (admin.routes.ts:86, admin-resources.config.ts:571-577) et journal métier par dossier (services/circuit.services.ts:58). Manque un écran de recherche transverse."
 
   - id: A25
-    libelle: "Recette du module 1 et livraison contractuelle"
-    livrable: "Procès-verbal de recette, mise en production du module 1"
+    libelle: "Recette et livraison du module 1"
+    livrable: "Procès-verbal de recette signé et mise en production du module de planification"
     debut: 2026-09-14
     duree_jours: 5
     statut: a_venir
@@ -438,7 +452,7 @@ global_prs2:
 
   - id: G01
     libelle: "Module 1 — Socle transversal et dossiers de planification"
-    livrable: "Authentification, habilitations, référentiels, workflow d'instruction, notifications, journal d'audit, tableaux de bord, contrôle des plans de passation"
+    livrable: "Authentification, habilitations, référentiels, circuit d'instruction, délais réglementaires, notifications, journal d'audit et tableaux de bord — appliqués au contrôle des plans de passation"
     debut: 2026-06-17
     fin: 2026-09-18
     mois: "M1 → M3"
@@ -447,11 +461,11 @@ global_prs2:
     responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
     dependances: []
     jalon: J4
-    preuve: "Inventaire des 14 fonctions du module 1 (constat du 26/08, chaque ligne adossée à un fichier) : 10 implémentées (auth, habilitations, référentiels, dépôt, complétude, affectation, instruction, visa, navette, notifications), 3 partielles (statistiques, journal d'audit, actualités), 1 absente (délais légaux). Avancement = (10×100 + 3×50 + 1×0) / 14 = 82 %."
+    preuve: "Inventaire des 14 fonctions du module 1 (constat du 26/08) : 10 implémentées (authentification, habilitations, référentiels, dépôt, complétude, affectation, instruction, visa, navette, notifications), 3 partielles (statistiques, journal d'audit, actualités), 1 absente (délais réglementaires). Avancement = (10×100 + 3×50 + 1×0) / 14 = 82 %. Le détail fonction par fonction est porté par les activités A01 à A26 de ce fichier, chacune avec sa propre preuve — commit, fichier du dépôt (src/app/…) ou exécution de test."
 
   - id: G02
-    libelle: "Recette, correction et mise en production du module 1"
-    livrable: "PV de recette, déploiement, reprise des réserves"
+    libelle: "Recette et mise en production du module 1"
+    livrable: "Procès-verbal de recette, déploiement en production et reprise des réserves"
     debut: 2026-09-21
     fin: 2026-10-16
     mois: "M4"
@@ -464,8 +478,8 @@ global_prs2:
     preuve: null
 
   - id: G03
-    libelle: "Module 2 — Dossiers de mise en concurrence (DMC)"
-    livrable: "Dossiers d'appel à concurrence, procédures dérogatoires, rapports d'évaluation"
+    libelle: "Module 2 — Dossiers de mise en concurrence"
+    livrable: "Contrôle des dossiers d'appel à concurrence, des procédures dérogatoires et des rapports d'évaluation"
     debut: 2026-09-21
     fin: 2026-11-20
     mois: "M4 → M5"
@@ -479,7 +493,7 @@ global_prs2:
     constat_initial: "Amorce constatée dans le dépôt : le dépôt d'un dossier DMC et son passage dans le circuit générique existent (soumettre-dossier.ts:57-61 et :158, models/prmp.model.ts:312 « saisie sans contenu »), mais aucun contenu métier propre au module (rapport d'évaluation, procédure dérogatoire) n'est implémenté."
 
   - id: G04
-    libelle: "Module 3 — Dossiers de marchés (projets de marchés et avenants)"
+    libelle: "Module 3 — Dossiers de marchés"
     livrable: "Contrôle des projets de marchés et des avenants avant approbation"
     debut: 2026-11-23
     fin: 2027-01-22
@@ -495,7 +509,7 @@ global_prs2:
 
   - id: G05
     libelle: "Module 4 — Actes de gestion contractuelle"
-    livrable: "Contrôle des décisions d'octroi d'indemnité, sursis d'exécution, remise de pénalité, résiliation"
+    livrable: "Contrôle des décisions d'octroi d'indemnité, de sursis d'exécution, de remise de pénalité et de résiliation"
     debut: 2027-01-25
     fin: 2027-03-12
     mois: "M8 → M9"
@@ -509,8 +523,8 @@ global_prs2:
     constat_initial: "Absent du dépôt : 0 occurrence de « indemnité », « sursis », « pénalité » ou « résiliation » dans src/."
 
   - id: G06
-    libelle: "Recette globale, reprise de données et déploiement PRS 2.0"
-    livrable: "Recette des 4 modules, mise en production"
+    libelle: "Recette générale et mise en production de PRS 2.0"
+    livrable: "Recette des quatre modules, reprise des données et déploiement en production"
     debut: 2027-03-15
     fin: 2027-04-16
     mois: "M9 → M10"

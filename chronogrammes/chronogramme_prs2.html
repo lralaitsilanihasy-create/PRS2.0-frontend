@@ -112,7 +112,7 @@
       </tr></thead>
       <tbody><tr class="critique">
         <td class="id">A01 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Socle applicatif : authentification, guards, habilitations par profil</strong><span class="livr">core/auth (service de session, guard, service de permissions), services CRUD génériques</span></td>
+        <td class="lib"><strong>Socle d'authentification et d'habilitations</strong><span class="livr">Connexion, contrôle d'accès par profil et par entité, socle commun d'appel à l'API</span></td>
         <td class="resp">Mr Lanto</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -122,7 +122,7 @@
         <td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">A02 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Circuit d'instruction de bout en bout : dépôt → réception → dispatch → examen → PV</strong><span class="livr">Moteur de workflow partagé + écrans des 6 profils du circuit</span></td>
+        <td class="lib"><strong>Circuit d'instruction d'un dossier, du dépôt au procès-verbal</strong><span class="livr">Enchaînement dépôt → réception → affectation → examen → procès-verbal, et les écrans des six profils qui l'exercent</span></td>
         <td class="resp">Mr Mathieu</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -132,7 +132,7 @@
         <td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A03</td>
-        <td class="lib"><strong>Demandes de retrait de dossier et décisions Président / Chef de commission</strong><span class="livr">Écrans de demande (PRMP) et de validation (P/CC), garde « avant PV signé »</span></td>
+        <td class="lib"><strong>Retrait d'un dossier et décision du contrôleur</strong><span class="livr">Écran de demande pour l'autorité contractante, écran de décision pour le Président et le Chef de commission, retrait bloqué dès la signature du procès-verbal</span></td>
         <td class="resp">Mr Mathieu</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -142,7 +142,7 @@
         <td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A04</td>
-        <td class="lib"><strong>Rectification PRMP et navette avec le vérificateur</strong><span class="livr">Statut EN_ATTENTE_DECISION_PRMP bout-en-bout, écrans « Dossiers à rectifier » et « En attente de rectification »</span></td>
+        <td class="lib"><strong>Rectification par l'autorité contractante et navette de vérification</strong><span class="livr">Renvoi d'un dossier pour rectification, fil des échanges entre le vérificateur et l'autorité contractante, reprise de l'instruction après correction</span></td>
         <td class="resp">Mr Mathieu</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -152,7 +152,7 @@
         <td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A05</td>
-        <td class="lib"><strong>Lettre de renvoi et profil Assistant contrôleur</strong><span class="livr">Alternative PV / lettre de renvoi, page « à signer », domaine ASSISTANT_CONTROLEUR</span></td>
+        <td class="lib"><strong>Lettre de renvoi et intervention de l'assistant contrôleur</strong><span class="livr">Seconde issue de l'examen à côté du procès-verbal : rédaction, mise à la signature et consultation de la lettre de renvoi</span></td>
         <td class="resp">Mr Mathieu</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -162,7 +162,7 @@
         <td class="p"></td><td class="p bar termine"><span class="jalon">◆</span></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A06</td>
-        <td class="lib"><strong>Design system et migration visuelle de l'ensemble des écrans</strong><span class="livr">src/styles/_design-system.scss + migration des écrans de tous les profils</span></td>
+        <td class="lib"><strong>Charte graphique et harmonisation de tous les écrans</strong><span class="livr">Jeu commun de composants, de couleurs et de typographies, appliqué aux écrans des neuf espaces de travail</span></td>
         <td class="resp">Mr Christian</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -172,7 +172,7 @@
         <td class="p"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A07</td>
-        <td class="lib"><strong>Compteurs de menu et tableaux de bord par profil</strong><span class="livr">Badges de comptage des 6 menus, tableau de bord KPI, écran de rapports</span></td>
+        <td class="lib"><strong>Compteurs de menu et tableaux de bord par profil</strong><span class="livr">Nombre de dossiers en attente affiché sur chaque entrée de menu, tableau de bord des indicateurs et écran de rapports</span></td>
         <td class="resp">Mr Christian</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -182,7 +182,7 @@
         <td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A08</td>
-        <td class="lib"><strong>Référentiels administrables (entités, PRMP, UGPM, pièces, modes de passation)</strong><span class="livr">21 écrans CRUD d'administration pilotés par configuration</span></td>
+        <td class="lib"><strong>Administration des référentiels</strong><span class="livr">Écrans de gestion des entités contractantes, des autorités de passation, des unités de gestion, des pièces exigées et des modes de passation</span></td>
         <td class="resp">Mr Christian</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -192,7 +192,7 @@
         <td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">A09 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Saisie du plan de passation : grille partagée, import PDF, dates prévisionnelles CAPM</strong><span class="livr">shared/prmp/{ppm-saisie-grid,ppm-form-factory,ppm-marches-table}.ts, import PDF avec revue ligne à ligne</span></td>
+        <td class="lib"><strong>Saisie du plan de passation et reprise automatique du document PDF</strong><span class="livr">Grille de saisie des lignes de marché, import d'un plan au format PDF avec revue ligne à ligne, calendrier prévisionnel par processus de passation</span></td>
         <td class="resp">Mr Christian</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -202,7 +202,7 @@
         <td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">A10 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Familles de dossier DDP / DMC / DDM et référentiel des sous-types</strong><span class="livr">Choix de famille au dépôt, sous-type dérivé serveur pour DDP, points de contrôle par sous-type</span></td>
+        <td class="lib"><strong>Typologie des dossiers : familles et sous-types</strong><span class="livr">Choix de la famille au dépôt (planification, mise en concurrence, marché), sous-type déterminé par le serveur, grille de points de contrôle propre à chaque sous-type</span></td>
         <td class="resp">Mr Christian</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -212,7 +212,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A11</td>
-        <td class="lib"><strong>Entités contractantes : création à l'import, rattachements, localité dérivée</strong><span class="livr">Panneau de résolution d'entité au PDF, écran « Rattachements en attente » (Admin)</span></td>
+        <td class="lib"><strong>Rattachement de l'entité contractante au dépôt d'un dossier</strong><span class="livr">Reconnaissance ou création de l'entité au moment de l'import, approbation par l'administrateur, localité du dossier déduite de l'entité</span></td>
         <td class="resp">Mr Christian</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -222,7 +222,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">A12 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Écrans « Mes dossiers » par profil et classement des dossiers</strong><span class="livr">Files de travail Président, CC, Secrétaire et Membre ; cartes « Dispatchs par contrôleur »</span></td>
+        <td class="lib"><strong>Files de travail « Mes dossiers » de chaque profil</strong><span class="livr">Écran unique par profil regroupant les dossiers à traiter, classés par étape ; vue de la charge par contrôleur pour le Président</span></td>
         <td class="resp">Mr Mathieu</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -232,7 +232,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"><span class="jalon">◆</span></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A13</td>
-        <td class="lib"><strong>Chantier parallèle et attente backend (interruption)</strong><span class="livr">aucun livrable sur ce dépôt</span></td>
+        <td class="lib"><strong>Interruption : chantier parallèle et attente du backend</strong><span class="livr">Aucun — période sans production sur ce dépôt</span></td>
         <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -242,7 +242,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">A14 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Délégation ascendante et mandats PRMP</strong><span class="livr">Permissions pilotées par t_delegation_profil, écran des mandats, bannière de vacance</span></td>
+        <td class="lib"><strong>Délégation ascendante et mandats des autorités de passation</strong><span class="livr">Exercice des tâches d'un profil subordonné par son supérieur, journal des mandats et signalement des périodes de vacance</span></td>
         <td class="resp">Mr Mathieu</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -252,7 +252,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A15</td>
-        <td class="lib"><strong>Notifications temps réel (SSE) et écran transverse</strong><span class="livr">core/notifications/notifications.store.ts (flux SSE partagé), écran /notifications, badge cloche</span></td>
+        <td class="lib"><strong>Notifications en temps réel</strong><span class="livr">Alerte immédiate à l'écran, compteur de messages non lus et écran de consultation ouvert aux dix profils</span></td>
         <td class="resp">Mr Lanto</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -262,7 +262,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A16</td>
-        <td class="lib"><strong>Observations du PV, navette post-signature et table PPM commune</strong><span class="livr">Cartes d'observation partagées, décisions du vérificateur, réexamen, formulaire de réception partagé</span></td>
+        <td class="lib"><strong>Observations du procès-verbal et navette après signature</strong><span class="livr">Suivi de chaque observation jusqu'à sa levée, décisions du vérificateur, réexamen d'un dossier rectifié, formulaire de réception commun aux profils</span></td>
         <td class="resp">Mr Mathieu</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -272,7 +272,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A17</td>
-        <td class="lib"><strong>Audit technique : traitement des constats sécurité, accessibilité, performance</strong><span class="livr">AUDIT.md — 35 constats, corrections livrées et vérifiées</span></td>
+        <td class="lib"><strong>Traitement des constats de l'audit technique</strong><span class="livr">Correction des 35 constats de sécurité, d'accessibilité, de performance et de dépendances, chacun vérifié et tracé dans AUDIT.md</span></td>
         <td class="resp">Mr Lanto</td>
         <td class="st"><span class="pastille en_retard"></span>en retard</td>
         <td class="pct"><span class="jauge"><i style="width:77%"></i></span>77%</td>
@@ -282,7 +282,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar en_retard"></td><td class="p bar en_retard"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A18</td>
-        <td class="lib"><strong>Session en cookie HttpOnly et passage en même origine</strong><span class="livr">proxy /api, apiUrl relative, suppression de tout jeton côté client</span></td>
+        <td class="lib"><strong>Sécurisation de la session par cookie</strong><span class="livr">Session portée par un cookie inaccessible au JavaScript, application et API servies sous la même origine, plus aucun jeton conservé dans le navigateur</span></td>
         <td class="resp">Mr Lanto</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -292,7 +292,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p"><span class="jalon">◆</span></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A19</td>
-        <td class="lib"><strong>Actualités à la connexion</strong><span class="livr">Modal d'actualités + écran d'administration (front) et API /api/actualites (backend)</span></td>
+        <td class="lib"><strong>Actualités présentées à la connexion</strong><span class="livr">Message d'information affiché à l'ouverture de session, écran d'administration pour le rédiger et le cibler par profil, et le service qui le délivre</span></td>
         <td class="resp">Mr Christian</td>
         <td class="st"><span class="pastille en_retard"></span>en retard</td>
         <td class="pct"><span class="jauge"><i style="width:50%"></i></span>50%</td>
@@ -302,7 +302,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar en_retard"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">A20 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Détail du plan de passation en onglets et UGPM rattachées</strong><span class="livr">Modal de détail PPM à trois onglets, visibilité des unités de gestion pour les contrôleurs</span></td>
+        <td class="lib"><strong>Consultation du plan de passation en onglets</strong><span class="livr">Fiche de dossier réorganisée en trois onglets, avec les unités de gestion rattachées enfin visibles par les contrôleurs</span></td>
         <td class="resp">Mr Christian</td>
         <td class="st"><span class="pastille termine"></span>termine</td>
         <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
@@ -312,7 +312,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A21</td>
-        <td class="lib"><strong>Tests automatisés et intégration continue</strong><span class="livr">Suite unitaire, CI GitHub Actions, scénarios e2e versionnés</span></td>
+        <td class="lib"><strong>Tests automatisés et intégration continue</strong><span class="livr">Suite de tests unitaires, exécution automatique à chaque livraison, scénarios de bout en bout versionnés dans le dépôt</span></td>
         <td class="resp">Mr Lanto</td>
         <td class="st"><span class="pastille en_retard"></span>en retard</td>
         <td class="pct"><span class="jauge"><i style="width:33%"></i></span>33%</td>
@@ -322,7 +322,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar en_retard"></td><td class="p bar en_retard"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">A26 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Polissage du module « Dossiers de planification »</strong><span class="livr">Reprise de finition des écrans du module de planification avant reprise du développement</span></td>
+        <td class="lib"><strong>Polissage du module « Dossiers de planification »</strong><span class="livr">Reprise de finition des écrans de planification, avant que le développement ne redémarre</span></td>
         <td class="resp">Mr Christian</td>
         <td class="st"><span class="pastille en_cours"></span>en cours</td>
         <td class="pct"><span class="jauge"><i style="width:60%"></i></span>60%</td>
@@ -332,7 +332,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar en_cours"></td><td class="p bar en_cours auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">A22 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Gestion des délais légaux d'instruction</strong><span class="livr">Calcul du délai réglementaire par dossier, alerte ALERTE_DELAI, indicateur de dépassement</span></td>
+        <td class="lib"><strong>Délais réglementaires d'instruction</strong><span class="livr">Décompte du délai légal sur chaque dossier, alerte à l'approche de l'échéance et signalement des dépassements</span></td>
         <td class="resp">Mr Mathieu</td>
         <td class="st"><span class="pastille a_venir"></span>a venir</td>
         <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
@@ -342,7 +342,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar a_venir auj"></td><td class="p bar a_venir"></td><td class="p bar a_venir"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A23</td>
-        <td class="lib"><strong>Indicateurs de performance : écrans manquants</strong><span class="livr">Écrans « Indicateurs contrôleurs » et « Indicateurs PRMP »</span></td>
+        <td class="lib"><strong>Indicateurs de performance des contrôleurs et des autorités de passation</strong><span class="livr">Deux écrans de restitution : activité et conformité par contrôleur, puis par autorité de passation et par exercice budgétaire</span></td>
         <td class="resp">Mr Christian</td>
         <td class="st"><span class="pastille a_venir"></span>a venir</td>
         <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
@@ -352,7 +352,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar a_venir auj"></td><td class="p bar a_venir"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">A24</td>
-        <td class="lib"><strong>Journal d'audit : écran de recherche dédié</strong><span class="livr">Écran de consultation filtrable du journal (acteur, dossier, période, action)</span></td>
+        <td class="lib"><strong>Consultation du journal d'audit</strong><span class="livr">Écran de recherche du journal, filtrable par acteur, dossier, période et nature de l'action</span></td>
         <td class="resp">Mr Lanto</td>
         <td class="st"><span class="pastille a_venir"></span>a venir</td>
         <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
@@ -362,7 +362,7 @@
         <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar a_venir auj"></td><td class="p bar a_venir"></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">A25 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Recette du module 1 et livraison contractuelle</strong><span class="livr">Procès-verbal de recette, mise en production du module 1</span></td>
+        <td class="lib"><strong>Recette et livraison du module 1</strong><span class="livr">Procès-verbal de recette signé et mise en production du module de planification</span></td>
         <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
         <td class="st"><span class="pastille a_venir"></span>a venir</td>
         <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
@@ -383,7 +383,7 @@
       </tr></thead>
       <tbody><tr class="critique">
         <td class="id">G01 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Module 1 — Socle transversal et dossiers de planification</strong><span class="livr">Authentification, habilitations, référentiels, workflow d'instruction, notifications, journal d'audit, tableaux de bord, contrôle des plans de passation</span></td>
+        <td class="lib"><strong>Module 1 — Socle transversal et dossiers de planification</strong><span class="livr">Authentification, habilitations, référentiels, circuit d'instruction, délais réglementaires, notifications, journal d'audit et tableaux de bord — appliqués au contrôle des plans de passation</span></td>
         <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
         <td class="st"><span class="pastille en_cours"></span>en cours</td>
         <td class="pct"><span class="jauge"><i style="width:82%"></i></span>82%</td>
@@ -393,7 +393,7 @@
         <td class="p bar en_cours"></td><td class="p bar en_cours"></td><td class="p bar en_cours auj"></td><td class="p bar en_cours"><span class="jalon">◆</span></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr>
         <td class="id">G02</td>
-        <td class="lib"><strong>Recette, correction et mise en production du module 1</strong><span class="livr">PV de recette, déploiement, reprise des réserves</span></td>
+        <td class="lib"><strong>Recette et mise en production du module 1</strong><span class="livr">Procès-verbal de recette, déploiement en production et reprise des réserves</span></td>
         <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
         <td class="st"><span class="pastille a_venir"></span>a venir</td>
         <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
@@ -403,7 +403,7 @@
         <td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p bar a_venir"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">G03 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Module 2 — Dossiers de mise en concurrence (DMC)</strong><span class="livr">Dossiers d'appel à concurrence, procédures dérogatoires, rapports d'évaluation</span></td>
+        <td class="lib"><strong>Module 2 — Dossiers de mise en concurrence</strong><span class="livr">Contrôle des dossiers d'appel à concurrence, des procédures dérogatoires et des rapports d'évaluation</span></td>
         <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
         <td class="st"><span class="pastille a_venir"></span>a venir</td>
         <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
@@ -413,7 +413,7 @@
         <td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p bar a_venir"></td><td class="p bar a_venir"></td><td class="p bar a_venir"><span class="jalon">◆</span></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">G04 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Module 3 — Dossiers de marchés (projets de marchés et avenants)</strong><span class="livr">Contrôle des projets de marchés et des avenants avant approbation</span></td>
+        <td class="lib"><strong>Module 3 — Dossiers de marchés</strong><span class="livr">Contrôle des projets de marchés et des avenants avant approbation</span></td>
         <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
         <td class="st"><span class="pastille a_venir"></span>a venir</td>
         <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
@@ -423,7 +423,7 @@
         <td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p bar a_venir"></td><td class="p bar a_venir"></td><td class="p bar a_venir"><span class="jalon">◆</span></td><td class="p"></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">G05 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Module 4 — Actes de gestion contractuelle</strong><span class="livr">Contrôle des décisions d'octroi d'indemnité, sursis d'exécution, remise de pénalité, résiliation</span></td>
+        <td class="lib"><strong>Module 4 — Actes de gestion contractuelle</strong><span class="livr">Contrôle des décisions d'octroi d'indemnité, de sursis d'exécution, de remise de pénalité et de résiliation</span></td>
         <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
         <td class="st"><span class="pastille a_venir"></span>a venir</td>
         <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
@@ -433,7 +433,7 @@
         <td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar a_venir"></td><td class="p bar a_venir"><span class="jalon">◆</span></td><td class="p"></td>
       </tr><tr class="critique">
         <td class="id">G06 <span class="cc" title="chemin critique">◆</span></td>
-        <td class="lib"><strong>Recette globale, reprise de données et déploiement PRS 2.0</strong><span class="livr">Recette des 4 modules, mise en production</span></td>
+        <td class="lib"><strong>Recette générale et mise en production de PRS 2.0</strong><span class="livr">Recette des quatre modules, reprise des données et déploiement en production</span></td>
         <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
         <td class="st"><span class="pastille a_venir"></span>a venir</td>
         <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
@@ -503,7 +503,7 @@
 
 <section class="bloc">
   <h2>Activités en retard</h2>
-  <ul><li><strong>A17</strong> — Audit technique : traitement des constats sécurité, accessibilité, performance <span class="muted">(fin 19/08/2026, 77 %, Mr Lanto)</span></li><li><strong>A19</strong> — Actualités à la connexion <span class="muted">(fin 19/08/2026, 50 %, Mr Christian)</span></li><li><strong>A21</strong> — Tests automatisés et intégration continue <span class="muted">(fin 19/08/2026, 33 %, Mr Lanto)</span></li></ul>
+  <ul><li><strong>A17</strong> — Traitement des constats de l'audit technique <span class="muted">(fin 19/08/2026, 77 %, Mr Lanto)</span></li><li><strong>A19</strong> — Actualités présentées à la connexion <span class="muted">(fin 19/08/2026, 50 %, Mr Christian)</span></li><li><strong>A21</strong> — Tests automatisés et intégration continue <span class="muted">(fin 19/08/2026, 33 %, Mr Lanto)</span></li></ul>
 </section>
 
 <section class="bloc">
