@@ -1,7 +1,7 @@
 # =============================================================================
 # PRS 2.0 — Modèle de données du chronogramme
 # =============================================================================
-# Source unique du générateur `generer_chronogramme.py`. Aucune donnée de
+# Source unique du générateur `generer_chronogramme.mjs`. Aucune donnée de
 # planning ne doit être codée en dur ailleurs.
 #
 # CONVENTIONS — lire avant toute correction
@@ -69,9 +69,13 @@ parametres:
     - 2026-08-15
 
   # Bornes mensuelles du Gantt global : mois glissants ancrés sur le démarrage.
-  # M1 = 17/06 → 16/07 … M3 = 17/08 → 16/09 … M12 = 17/05 → 16/06/2027.
+  # M1 = 17/06 → 16/07 … M3 = 17/08 → 16/09 … M10 = 17/03 → 16/04/2027.
   # (L'échéance du module 1, 18/09, déborde de deux jours ouvrés sur M4 — c'est voulu.)
-  mois_gantt: 12
+  #
+  # Ramené de 12 à 10 mois le 26/08 : durées des modules 2 et 3 fixées à 2 mois
+  # chacun (au lieu de 3) et du module 4 à 1,5 mois (au lieu de 2) — arbitrage du
+  # pilote. Le projet se termine le 16/04/2027 au lieu du 16/06/2027.
+  mois_gantt: 10
 
   equipe:
     - "Mr Lanto"       # socle, sécurité, qualité
@@ -79,7 +83,7 @@ parametres:
     - "Mr Christian"   # planification et référentiels
 
 # =============================================================================
-# MODULE 1 — socle transversal + dossiers de planification (S1 → S13)
+# MODULE 1 — socle transversal + dossiers de planification (S1 → S14)
 # =============================================================================
 module_planification:
 
@@ -463,59 +467,59 @@ global_prs2:
     libelle: "Module 2 — Dossiers de mise en concurrence (DMC)"
     livrable: "Dossiers d'appel à concurrence, procédures dérogatoires, rapports d'évaluation"
     debut: 2026-09-21
-    fin: 2026-12-16
-    mois: "M4 → M6"
+    fin: 2026-11-20
+    mois: "M4 → M5"
     statut: a_venir
     avancement: 0
     responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
     dependances: [G01]
     jalon: J5
-    note: "Découpage PROPOSÉ — à valider."
+    note: "Durée fixée à 2 mois par le pilote le 26/08 (lundi 21/09 → vendredi 20/11). Le socle transversal étant livré par le module 1, seul le métier propre à la mise en concurrence reste à produire."
     preuve: null
     constat_initial: "Amorce constatée dans le dépôt : le dépôt d'un dossier DMC et son passage dans le circuit générique existent (soumettre-dossier.ts:57-61 et :158, models/prmp.model.ts:312 « saisie sans contenu »), mais aucun contenu métier propre au module (rapport d'évaluation, procédure dérogatoire) n'est implémenté."
 
   - id: G04
     libelle: "Module 3 — Dossiers de marchés (projets de marchés et avenants)"
     livrable: "Contrôle des projets de marchés et des avenants avant approbation"
-    debut: 2026-12-17
-    fin: 2027-03-16
-    mois: "M7 → M9"
+    debut: 2026-11-23
+    fin: 2027-01-22
+    mois: "M6 → M8"
     statut: a_venir
     avancement: 0
     responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
     dependances: [G03]
     jalon: J6
-    note: "Découpage PROPOSÉ — à valider."
+    note: "Durée fixée à 2 mois par le pilote le 26/08 (lundi 23/11 → vendredi 22/01). ⚠️ La fenêtre englobe les fêtes de fin d'année : jours fériés à renseigner dans `parametres.jours_feries` avant tout calcul en jours ouvrés."
     preuve: null
     constat_initial: "Amorce identique à DMC (famille DDM, soumettre-dossier.ts:166) ; aucun projet de marché ni avenant structuré dans le code."
 
   - id: G05
     libelle: "Module 4 — Actes de gestion contractuelle"
     livrable: "Contrôle des décisions d'octroi d'indemnité, sursis d'exécution, remise de pénalité, résiliation"
-    debut: 2027-03-17
-    fin: 2027-05-16
-    mois: "M10 → M11"
+    debut: 2027-01-25
+    fin: 2027-03-12
+    mois: "M8 → M9"
     statut: a_venir
     avancement: 0
     responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
     dependances: [G04]
     jalon: J7
-    note: "Découpage PROPOSÉ — à valider."
+    note: "Durée fixée à 1,5 mois par le pilote le 26/08 (lundi 25/01 → vendredi 12/03). ⚠️ C'est le module le plus serré du plan : contrairement aux modules 2 et 3, il ne dispose d'AUCUNE amorce dans le dépôt (0 occurrence d'indemnité, sursis, pénalité, résiliation)."
     preuve: null
     constat_initial: "Absent du dépôt : 0 occurrence de « indemnité », « sursis », « pénalité » ou « résiliation » dans src/."
 
   - id: G06
     libelle: "Recette globale, reprise de données et déploiement PRS 2.0"
     livrable: "Recette des 4 modules, mise en production"
-    debut: 2027-05-17
-    fin: 2027-06-16
-    mois: "M12"
+    debut: 2027-03-15
+    fin: 2027-04-16
+    mois: "M9 → M10"
     statut: a_venir
     avancement: 0
     responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
     dependances: [G02, G03, G04, G05]
     jalon: J8
-    note: "Découpage PROPOSÉ — à valider."
+    note: "Un mois, durée inchangée : le pilote n'a arbitré que les modules 2, 3 et 4 le 26/08. À revoir si la compression des trois modules reporte de la charge sur la recette globale."
     preuve: null
 
 # =============================================================================
@@ -570,28 +574,28 @@ jalons:
 
   - code: J5
     libelle: "Module 2 — Dossiers de mise en concurrence livré"
-    date_cible: 2026-12-16
+    date_cible: 2026-11-20   # 2 mois pour le module 2 (arbitrage du 26/08)
     statut: a_venir
     criteres_validation: ["À définir avec la maîtrise d'ouvrage — aucune spécification dans le dépôt"]
     preuve: null
 
   - code: J6
     libelle: "Module 3 — Dossiers de marchés livré"
-    date_cible: 2027-03-16
+    date_cible: 2027-01-22   # 2 mois pour le module 3 (arbitrage du 26/08)
     statut: a_venir
     criteres_validation: ["À définir avec la maîtrise d'ouvrage — aucune spécification dans le dépôt"]
     preuve: null
 
   - code: J7
     libelle: "Module 4 — Actes livré"
-    date_cible: 2027-05-16
+    date_cible: 2027-03-12   # 1,5 mois pour le module 4 (arbitrage du 26/08)
     statut: a_venir
     criteres_validation: ["À définir avec la maîtrise d'ouvrage — aucune spécification dans le dépôt"]
     preuve: null
 
   - code: J8
     libelle: "Mise en production PRS 2.0"
-    date_cible: 2027-06-16
+    date_cible: 2027-04-16   # fin de projet avancée de 2 mois
     statut: a_venir
     criteres_validation: ["À définir avec la maîtrise d'ouvrage"]
     preuve: null
