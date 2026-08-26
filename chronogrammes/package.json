@@ -1,0 +1,15 @@
+{
+  "name": "prs2-chronogrammes",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Générateur de chronogrammes PRS 2.0 — autonome, sans lien avec le projet Angular parent",
+  "scripts": {
+    "generer": "node generer_chronogramme.mjs",
+    "test": "node --test test_generer.mjs"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "yaml": "^2.8.0"
+  }
+}

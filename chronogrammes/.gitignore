@@ -1,0 +1,8 @@
+# Le /node_modules du dépôt racine est ancré à la racine : il n'attrape PAS ce
+# dossier-ci. Sans cette règle, `git add chronogrammes/` verserait 2 400+ fichiers
+# de dépendances dans l'historique (cf. AUDIT.md, constat S11).
+node_modules/
+
+# À versionner explicitement : package.json, package-lock.json, activites.yaml,
+# generer_chronogramme.mjs, test_generer.mjs, et les deux livrables générés
+# (chronogramme_prs2.xlsx / .html) — ils font partie du rendu.

@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRS 2.0 — Chronogramme</title>
+<style>
+  @page { size: A4 landscape; margin: 8mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+         color: #0f172a; background: #f8fafc; font-size: 12px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 14px; margin: 0 0 8px; padding-bottom: 6px; border-bottom: 2px solid #1e293b; }
+  .sous { color: #475569; margin: 0 0 16px; font-size: 12px; }
+  .bloc { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; margin-bottom: 14px;
+          break-inside: avoid; }
+  .scroll { overflow-x: auto; }
+
+  /* Synthèse */
+  .synthese { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .carte { background: #fff; border: 1px solid #cbd5e1; border-left: 4px solid #2563eb; border-radius: 6px; padding: 10px 12px; }
+  .carte .v { font-size: 22px; font-weight: 700; line-height: 1.1; }
+  .carte .l { color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .carte .d { color: #334155; font-size: 11px; margin-top: 4px; }
+  .carte.vert { border-left-color: #16a34a; } .carte.rouge { border-left-color: #dc2626; }
+  .carte.orange { border-left-color: #b45309; }
+
+  /* Gantt */
+  table.gantt { border-collapse: collapse; width: 100%; font-size: 10px; }
+  table.gantt th, table.gantt td { border: 1px solid #e2e8f0; padding: 3px 5px; vertical-align: top; }
+  table.gantt thead th { background: #1e293b; color: #fff; font-weight: 600; position: sticky; top: 0; }
+  table.gantt th.p, table.gantt td.p { width: 20px; min-width: 20px; padding: 0; text-align: center; }
+  table.gantt th.p .code { display: block; font-size: 9px; }
+  table.gantt th.p .date { display: block; font-size: 7px; font-weight: 400; opacity: .75; }
+  td.bar.termine   { background: #16a34a; } td.bar.en_cours { background: #2563eb; }
+  td.bar.a_venir   { background: #9ca3af; } td.bar.en_retard { background: #dc2626; }
+  th.auj, td.auj { border-left: 2px solid #b45309 !important; }
+  .jalon { color: #111827; font-weight: 700; font-size: 11px; }
+  td.bar .jalon { color: #fff; }
+  td.id { font-weight: 700; white-space: nowrap; } .cc { color: #b45309; }
+  tr.critique td.id { color: #b45309; }
+  td.lib { min-width: 220px; } td.lib strong { display: block; }
+  td.lib .livr { display: block; color: #64748b; font-size: 9px; margin-top: 2px; }
+  td.resp, td.st, td.dt { white-space: nowrap; } td.dur, td.pct { text-align: center; white-space: nowrap; }
+  .pastille { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+  .pastille.termine { background: #16a34a; } .pastille.en_cours { background: #2563eb; }
+  .pastille.a_venir { background: #9ca3af; } .pastille.en_retard { background: #dc2626; }
+  .jauge { display: inline-block; width: 34px; height: 6px; background: #e2e8f0; border-radius: 3px;
+           overflow: hidden; margin-right: 4px; vertical-align: middle; }
+  .jauge i { display: block; height: 100%; background: #2563eb; }
+
+  /* Jalons */
+  table.jalons { border-collapse: collapse; width: 100%; font-size: 11px; }
+  table.jalons th, table.jalons td { border: 1px solid #e2e8f0; padding: 5px 7px; text-align: left; vertical-align: top; }
+  table.jalons thead th { background: #1e293b; color: #fff; }
+  tr.franchi td.code { color: #16a34a; font-weight: 700; }
+  tr.attente td.code { color: #9ca3af; font-weight: 700; }
+  table.jalons ul { margin: 0; padding-left: 16px; } table.jalons li { margin: 1px 0; }
+
+  /* Légende & divers */
+  .legende { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; font-size: 11px; }
+  .legende .item { display: flex; align-items: center; gap: 5px; }
+  .sw { width: 16px; height: 10px; border-radius: 2px; border: 1px solid #94a3b8; }
+  .muted { color: #64748b; } .ok { color: #16a34a; }
+  .avert ul { margin: 0; padding-left: 18px; color: #7c2d12; }
+  .avert li { margin: 2px 0; }
+  footer { color: #64748b; font-size: 10px; margin-top: 12px; }
+  @media print { body { background: #fff; padding: 0; font-size: 9px; }
+    .bloc { border-color: #94a3b8; } table.gantt thead th { position: static; }
+    .synthese { grid-template-columns: repeat(4, 1fr); } }
+</style>
+</head>
+<body>
+
+<h1>PRS 2.0 — Chronogramme</h1>
+<p class="sous">
+  Contrôle de la passation des marchés publics ·
+  démarrage <strong>17/06/2026</strong> ·
+  arrêté au <strong>26/08/2026</strong> · échéance contractuelle <strong>18/09/2026</strong>
+</p>
+
+<div class="synthese">
+  <div class="carte">
+    <div class="l">Avancement module 1</div>
+    <div class="v">82 %</div>
+    <div class="d">78 % pondéré par les durées · 18/26 activités terminées</div>
+  </div>
+  <div class="carte vert">
+    <div class="l">Jalons franchis</div>
+    <div class="v">3 / 8</div>
+    <div class="d">J1, J2, J3</div>
+  </div>
+  <div class="carte orange">
+    <div class="l">Prochaine échéance</div>
+    <div class="v">18/09/2026</div>
+    <div class="d">J4 — Recette du module 1 — livraison contractuelle · dans 23 jours</div>
+  </div>
+  <div class="carte rouge">
+    <div class="l">Activités en retard</div>
+    <div class="v">3</div>
+    <div class="d">A17, A19, A21</div>
+  </div>
+</div>
+
+<section class="bloc">
+    <h2>Module 1 — socle transversal et dossiers de planification (semaines)</h2>
+    <div class="scroll"><table class="gantt">
+      <thead><tr>
+        <th class="id">ID</th><th class="lib">Activité / livrable</th><th class="resp">Resp.</th>
+        <th class="st">Statut</th><th class="pct">Avanc.</th><th class="dt">Début</th>
+        <th class="dt">Fin</th><th class="dur">j</th><th class="p"><span class="code">S1</span><span class="date">17/06</span></th><th class="p"><span class="code">S2</span><span class="date">24/06</span></th><th class="p"><span class="code">S3</span><span class="date">01/07</span></th><th class="p"><span class="code">S4</span><span class="date">08/07</span></th><th class="p"><span class="code">S5</span><span class="date">15/07</span></th><th class="p"><span class="code">S6</span><span class="date">22/07</span></th><th class="p"><span class="code">S7</span><span class="date">29/07</span></th><th class="p"><span class="code">S8</span><span class="date">05/08</span></th><th class="p"><span class="code">S9</span><span class="date">12/08</span></th><th class="p"><span class="code">S10</span><span class="date">19/08</span></th><th class="p auj"><span class="code">S11</span><span class="date">26/08</span></th><th class="p"><span class="code">S12</span><span class="date">02/09</span></th><th class="p"><span class="code">S13</span><span class="date">09/09</span></th><th class="p"><span class="code">S14</span><span class="date">16/09</span></th>
+      </tr></thead>
+      <tbody><tr class="critique">
+        <td class="id">A01 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Socle applicatif : authentification, guards, habilitations par profil</strong><span class="livr">core/auth (service de session, guard, service de permissions), services CRUD génériques</span></td>
+        <td class="resp">Mr Lanto</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">17/06/2026</td>
+        <td class="dt">19/06/2026</td>
+        <td class="dur">3</td>
+        <td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">A02 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Circuit d'instruction de bout en bout : dépôt → réception → dispatch → examen → PV</strong><span class="livr">Moteur de workflow partagé + écrans des 6 profils du circuit</span></td>
+        <td class="resp">Mr Mathieu</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">17/06/2026</td>
+        <td class="dt">25/06/2026</td>
+        <td class="dur">7</td>
+        <td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A03</td>
+        <td class="lib"><strong>Demandes de retrait de dossier et décisions Président / Chef de commission</strong><span class="livr">Écrans de demande (PRMP) et de validation (P/CC), garde « avant PV signé »</span></td>
+        <td class="resp">Mr Mathieu</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">18/06/2026</td>
+        <td class="dt">23/06/2026</td>
+        <td class="dur">4</td>
+        <td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A04</td>
+        <td class="lib"><strong>Rectification PRMP et navette avec le vérificateur</strong><span class="livr">Statut EN_ATTENTE_DECISION_PRMP bout-en-bout, écrans « Dossiers à rectifier » et « En attente de rectification »</span></td>
+        <td class="resp">Mr Mathieu</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">19/06/2026</td>
+        <td class="dt">23/06/2026</td>
+        <td class="dur">3</td>
+        <td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A05</td>
+        <td class="lib"><strong>Lettre de renvoi et profil Assistant contrôleur</strong><span class="livr">Alternative PV / lettre de renvoi, page « à signer », domaine ASSISTANT_CONTROLEUR</span></td>
+        <td class="resp">Mr Mathieu</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">24/06/2026</td>
+        <td class="dt">25/06/2026</td>
+        <td class="dur">2</td>
+        <td class="p"></td><td class="p bar termine"><span class="jalon">◆</span></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A06</td>
+        <td class="lib"><strong>Design system et migration visuelle de l'ensemble des écrans</strong><span class="livr">src/styles/_design-system.scss + migration des écrans de tous les profils</span></td>
+        <td class="resp">Mr Christian</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">29/06/2026</td>
+        <td class="dt">30/06/2026</td>
+        <td class="dur">2</td>
+        <td class="p"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A07</td>
+        <td class="lib"><strong>Compteurs de menu et tableaux de bord par profil</strong><span class="livr">Badges de comptage des 6 menus, tableau de bord KPI, écran de rapports</span></td>
+        <td class="resp">Mr Christian</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">29/06/2026</td>
+        <td class="dt">02/07/2026</td>
+        <td class="dur">4</td>
+        <td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A08</td>
+        <td class="lib"><strong>Référentiels administrables (entités, PRMP, UGPM, pièces, modes de passation)</strong><span class="livr">21 écrans CRUD d'administration pilotés par configuration</span></td>
+        <td class="resp">Mr Christian</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">03/07/2026</td>
+        <td class="dt">16/07/2026</td>
+        <td class="dur">10</td>
+        <td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">A09 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Saisie du plan de passation : grille partagée, import PDF, dates prévisionnelles CAPM</strong><span class="livr">shared/prmp/{ppm-saisie-grid,ppm-form-factory,ppm-marches-table}.ts, import PDF avec revue ligne à ligne</span></td>
+        <td class="resp">Mr Christian</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">23/06/2026</td>
+        <td class="dt">27/07/2026</td>
+        <td class="dur">24</td>
+        <td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">A10 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Familles de dossier DDP / DMC / DDM et référentiel des sous-types</strong><span class="livr">Choix de famille au dépôt, sous-type dérivé serveur pour DDP, points de contrôle par sous-type</span></td>
+        <td class="resp">Mr Christian</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">16/07/2026</td>
+        <td class="dt">27/07/2026</td>
+        <td class="dur">8</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A11</td>
+        <td class="lib"><strong>Entités contractantes : création à l'import, rattachements, localité dérivée</strong><span class="livr">Panneau de résolution d'entité au PDF, écran « Rattachements en attente » (Admin)</span></td>
+        <td class="resp">Mr Christian</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">27/07/2026</td>
+        <td class="dt">27/07/2026</td>
+        <td class="dur">1</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">A12 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Écrans « Mes dossiers » par profil et classement des dossiers</strong><span class="livr">Files de travail Président, CC, Secrétaire et Membre ; cartes « Dispatchs par contrôleur »</span></td>
+        <td class="resp">Mr Mathieu</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">27/07/2026</td>
+        <td class="dt">27/07/2026</td>
+        <td class="dur">1</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"><span class="jalon">◆</span></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A13</td>
+        <td class="lib"><strong>Chantier parallèle et attente backend (interruption)</strong><span class="livr">aucun livrable sur ce dépôt</span></td>
+        <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">28/07/2026</td>
+        <td class="dt">10/08/2026</td>
+        <td class="dur">10</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">A14 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Délégation ascendante et mandats PRMP</strong><span class="livr">Permissions pilotées par t_delegation_profil, écran des mandats, bannière de vacance</span></td>
+        <td class="resp">Mr Mathieu</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">11/08/2026</td>
+        <td class="dt">14/08/2026</td>
+        <td class="dur">4</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A15</td>
+        <td class="lib"><strong>Notifications temps réel (SSE) et écran transverse</strong><span class="livr">core/notifications/notifications.store.ts (flux SSE partagé), écran /notifications, badge cloche</span></td>
+        <td class="resp">Mr Lanto</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">11/08/2026</td>
+        <td class="dt">14/08/2026</td>
+        <td class="dur">4</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A16</td>
+        <td class="lib"><strong>Observations du PV, navette post-signature et table PPM commune</strong><span class="livr">Cartes d'observation partagées, décisions du vérificateur, réexamen, formulaire de réception partagé</span></td>
+        <td class="resp">Mr Mathieu</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">11/08/2026</td>
+        <td class="dt">14/08/2026</td>
+        <td class="dur">4</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p bar termine"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A17</td>
+        <td class="lib"><strong>Audit technique : traitement des constats sécurité, accessibilité, performance</strong><span class="livr">AUDIT.md — 35 constats, corrections livrées et vérifiées</span></td>
+        <td class="resp">Mr Lanto</td>
+        <td class="st"><span class="pastille en_retard"></span>en retard</td>
+        <td class="pct"><span class="jauge"><i style="width:77%"></i></span>77%</td>
+        <td class="dt">17/08/2026</td>
+        <td class="dt">19/08/2026</td>
+        <td class="dur">3</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar en_retard"></td><td class="p bar en_retard"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A18</td>
+        <td class="lib"><strong>Session en cookie HttpOnly et passage en même origine</strong><span class="livr">proxy /api, apiUrl relative, suppression de tout jeton côté client</span></td>
+        <td class="resp">Mr Lanto</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">17/08/2026</td>
+        <td class="dt">17/08/2026</td>
+        <td class="dur">1</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p"><span class="jalon">◆</span></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A19</td>
+        <td class="lib"><strong>Actualités à la connexion</strong><span class="livr">Modal d'actualités + écran d'administration (front) et API /api/actualites (backend)</span></td>
+        <td class="resp">Mr Christian</td>
+        <td class="st"><span class="pastille en_retard"></span>en retard</td>
+        <td class="pct"><span class="jauge"><i style="width:50%"></i></span>50%</td>
+        <td class="dt">19/08/2026</td>
+        <td class="dt">19/08/2026</td>
+        <td class="dur">1</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar en_retard"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">A20 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Détail du plan de passation en onglets et UGPM rattachées</strong><span class="livr">Modal de détail PPM à trois onglets, visibilité des unités de gestion pour les contrôleurs</span></td>
+        <td class="resp">Mr Christian</td>
+        <td class="st"><span class="pastille termine"></span>termine</td>
+        <td class="pct"><span class="jauge"><i style="width:100%"></i></span>100%</td>
+        <td class="dt">19/08/2026</td>
+        <td class="dt">20/08/2026</td>
+        <td class="dur">2</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar termine"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A21</td>
+        <td class="lib"><strong>Tests automatisés et intégration continue</strong><span class="livr">Suite unitaire, CI GitHub Actions, scénarios e2e versionnés</span></td>
+        <td class="resp">Mr Lanto</td>
+        <td class="st"><span class="pastille en_retard"></span>en retard</td>
+        <td class="pct"><span class="jauge"><i style="width:33%"></i></span>33%</td>
+        <td class="dt">17/08/2026</td>
+        <td class="dt">19/08/2026</td>
+        <td class="dur">3</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar en_retard"></td><td class="p bar en_retard"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">A26 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Polissage du module « Dossiers de planification »</strong><span class="livr">Reprise de finition des écrans du module de planification avant reprise du développement</span></td>
+        <td class="resp">Mr Christian</td>
+        <td class="st"><span class="pastille en_cours"></span>en cours</td>
+        <td class="pct"><span class="jauge"><i style="width:60%"></i></span>60%</td>
+        <td class="dt">24/08/2026</td>
+        <td class="dt">28/08/2026</td>
+        <td class="dur">5</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar en_cours"></td><td class="p bar en_cours auj"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">A22 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Gestion des délais légaux d'instruction</strong><span class="livr">Calcul du délai réglementaire par dossier, alerte ALERTE_DELAI, indicateur de dépassement</span></td>
+        <td class="resp">Mr Mathieu</td>
+        <td class="st"><span class="pastille a_venir"></span>a venir</td>
+        <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
+        <td class="dt">31/08/2026</td>
+        <td class="dt">11/09/2026</td>
+        <td class="dur">10</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar a_venir auj"></td><td class="p bar a_venir"></td><td class="p bar a_venir"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A23</td>
+        <td class="lib"><strong>Indicateurs de performance : écrans manquants</strong><span class="livr">Écrans « Indicateurs contrôleurs » et « Indicateurs PRMP »</span></td>
+        <td class="resp">Mr Christian</td>
+        <td class="st"><span class="pastille a_venir"></span>a venir</td>
+        <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
+        <td class="dt">31/08/2026</td>
+        <td class="dt">04/09/2026</td>
+        <td class="dur">5</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar a_venir auj"></td><td class="p bar a_venir"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">A24</td>
+        <td class="lib"><strong>Journal d'audit : écran de recherche dédié</strong><span class="livr">Écran de consultation filtrable du journal (acteur, dossier, période, action)</span></td>
+        <td class="resp">Mr Lanto</td>
+        <td class="st"><span class="pastille a_venir"></span>a venir</td>
+        <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
+        <td class="dt">31/08/2026</td>
+        <td class="dt">02/09/2026</td>
+        <td class="dur">3</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar a_venir auj"></td><td class="p bar a_venir"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">A25 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Recette du module 1 et livraison contractuelle</strong><span class="livr">Procès-verbal de recette, mise en production du module 1</span></td>
+        <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
+        <td class="st"><span class="pastille a_venir"></span>a venir</td>
+        <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
+        <td class="dt">14/09/2026</td>
+        <td class="dt">18/09/2026</td>
+        <td class="dur">5</td>
+        <td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p bar a_venir"></td><td class="p bar a_venir"><span class="jalon">◆</span></td>
+      </tr></tbody>
+    </table></div>
+  </section>
+<section class="bloc">
+    <h2>Vue globale PRS 2.0 — les 4 modules (mois)</h2>
+    <div class="scroll"><table class="gantt">
+      <thead><tr>
+        <th class="id">ID</th><th class="lib">Activité / livrable</th><th class="resp">Resp.</th>
+        <th class="st">Statut</th><th class="pct">Avanc.</th><th class="dt">Début</th>
+        <th class="dt">Fin</th><th class="dur">j</th><th class="p"><span class="code">M1</span><span class="date">17/06</span></th><th class="p"><span class="code">M2</span><span class="date">17/07</span></th><th class="p auj"><span class="code">M3</span><span class="date">17/08</span></th><th class="p"><span class="code">M4</span><span class="date">17/09</span></th><th class="p"><span class="code">M5</span><span class="date">17/10</span></th><th class="p"><span class="code">M6</span><span class="date">17/11</span></th><th class="p"><span class="code">M7</span><span class="date">17/12</span></th><th class="p"><span class="code">M8</span><span class="date">17/01</span></th><th class="p"><span class="code">M9</span><span class="date">17/02</span></th><th class="p"><span class="code">M10</span><span class="date">17/03</span></th><th class="p"><span class="code">M11</span><span class="date">17/04</span></th><th class="p"><span class="code">M12</span><span class="date">17/05</span></th>
+      </tr></thead>
+      <tbody><tr class="critique">
+        <td class="id">G01 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Module 1 — Socle transversal et dossiers de planification</strong><span class="livr">Authentification, habilitations, référentiels, workflow d'instruction, notifications, journal d'audit, tableaux de bord, contrôle des plans de passation</span></td>
+        <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
+        <td class="st"><span class="pastille en_cours"></span>en cours</td>
+        <td class="pct"><span class="jauge"><i style="width:82%"></i></span>82%</td>
+        <td class="dt">17/06/2026</td>
+        <td class="dt">18/09/2026</td>
+        <td class="dur">67</td>
+        <td class="p bar en_cours"></td><td class="p bar en_cours"></td><td class="p bar en_cours auj"></td><td class="p bar en_cours"><span class="jalon">◆</span></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr>
+        <td class="id">G02</td>
+        <td class="lib"><strong>Recette, correction et mise en production du module 1</strong><span class="livr">PV de recette, déploiement, reprise des réserves</span></td>
+        <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
+        <td class="st"><span class="pastille a_venir"></span>a venir</td>
+        <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
+        <td class="dt">21/09/2026</td>
+        <td class="dt">16/10/2026</td>
+        <td class="dur">20</td>
+        <td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p bar a_venir"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">G03 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Module 2 — Dossiers de mise en concurrence (DMC)</strong><span class="livr">Dossiers d'appel à concurrence, procédures dérogatoires, rapports d'évaluation</span></td>
+        <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
+        <td class="st"><span class="pastille a_venir"></span>a venir</td>
+        <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
+        <td class="dt">21/09/2026</td>
+        <td class="dt">16/12/2026</td>
+        <td class="dur">63</td>
+        <td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p bar a_venir"></td><td class="p bar a_venir"></td><td class="p bar a_venir"><span class="jalon">◆</span></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">G04 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Module 3 — Dossiers de marchés (projets de marchés et avenants)</strong><span class="livr">Contrôle des projets de marchés et des avenants avant approbation</span></td>
+        <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
+        <td class="st"><span class="pastille a_venir"></span>a venir</td>
+        <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
+        <td class="dt">17/12/2026</td>
+        <td class="dt">16/03/2027</td>
+        <td class="dur">64</td>
+        <td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar a_venir"></td><td class="p bar a_venir"></td><td class="p bar a_venir"><span class="jalon">◆</span></td><td class="p"></td><td class="p"></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">G05 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Module 4 — Actes de gestion contractuelle</strong><span class="livr">Contrôle des décisions d'octroi d'indemnité, sursis d'exécution, remise de pénalité, résiliation</span></td>
+        <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
+        <td class="st"><span class="pastille a_venir"></span>a venir</td>
+        <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
+        <td class="dt">17/03/2027</td>
+        <td class="dt">16/05/2027</td>
+        <td class="dur">43</td>
+        <td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar a_venir"></td><td class="p bar a_venir"><span class="jalon">◆</span></td><td class="p"></td>
+      </tr><tr class="critique">
+        <td class="id">G06 <span class="cc" title="chemin critique">◆</span></td>
+        <td class="lib"><strong>Recette globale, reprise de données et déploiement PRS 2.0</strong><span class="livr">Recette des 4 modules, mise en production</span></td>
+        <td class="resp">Mr Lanto, Mr Mathieu, Mr Christian</td>
+        <td class="st"><span class="pastille a_venir"></span>a venir</td>
+        <td class="pct"><span class="jauge"><i style="width:0%"></i></span>0%</td>
+        <td class="dt">17/05/2027</td>
+        <td class="dt">16/06/2027</td>
+        <td class="dur">23</td>
+        <td class="p"></td><td class="p"></td><td class="p auj"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p"></td><td class="p bar a_venir"><span class="jalon">◆</span></td>
+      </tr></tbody>
+    </table></div>
+  </section>
+
+<section class="bloc">
+  <h2>Jalons</h2>
+  <table class="jalons">
+    <thead><tr><th>Code</th><th>Libellé</th><th>Date cible</th><th>Statut</th><th>Critères de validation</th></tr></thead>
+    <tbody><tr class="franchi">
+      <td class="code">◆ J1</td>
+      <td>Circuit d'instruction fonctionnel de bout en bout</td>
+      <td class="dt">25/06/2026</td>
+      <td class="st">franchi</td>
+      <td class="crit"><ul><li>Un dossier parcourt dépôt → réception → dispatch → examen → PV sans intervention manuelle</li><li>Les deux issues de l'examen sont ouvertes : projet de PV ou lettre de renvoi</li><li>Les 6 profils du circuit disposent de leurs écrans</li></ul></td>
+    </tr><tr class="franchi">
+      <td class="code">◆ J2</td>
+      <td>Parcours métier complet sur les 6 profils</td>
+      <td class="dt">27/07/2026</td>
+      <td class="st">franchi</td>
+      <td class="crit"><ul><li>Chaque profil atterrit sur sa file de travail à la connexion</li><li>Les familles DDP / DMC / DDM et les sous-types sont pilotés par référentiel</li><li>L'entité contractante est résolue ou créée au dépôt, avec approbation Admin</li><li>Les écrans redondants sont supprimés au profit de « Mes dossiers »</li></ul></td>
+    </tr><tr class="franchi">
+      <td class="code">◆ J3</td>
+      <td>Socle durci : sécurité, accessibilité, session par cookie</td>
+      <td class="dt">19/08/2026</td>
+      <td class="st">partiellement_franchi</td>
+      <td class="crit"><ul><li>Volet sécurité de l'audit intégralement soldé — ✅ (AUDIT.md : S10 clos le 17/08)</li><li>Aucun jeton côté client, session portée par cookie HttpOnly — ✅ (recette 7/7, 6 profils)</li><li>npm audit sans vulnérabilité ≥ high, bloquant en CI — ✅ (ci.yml)</li><li>Contraste AA sur le texte de l'application — ✅ partiel (114 textes hors seuil → 17)</li><li>8 constats d'audit restent ouverts : P1, P9, A2b, S9, S12, P10, T1, T3 — ❌</li></ul></td>
+    </tr><tr class="attente">
+      <td class="code">◆ J4</td>
+      <td>Recette du module 1 — livraison contractuelle</td>
+      <td class="dt">18/09/2026</td>
+      <td class="st">a_venir</td>
+      <td class="crit"><ul><li>Les 14 fonctions du module 1 sont implémentées, dont les délais légaux d'instruction</li><li>Les 35 constats de l'audit technique sont soldés ou explicitement acceptés</li><li>Scénarios e2e versionnés dans le dépôt (constat T3)</li><li>API des actualités commitée et déployable depuis git</li><li>PV de recette signé</li></ul></td>
+    </tr><tr class="attente">
+      <td class="code">◆ J5</td>
+      <td>Module 2 — Dossiers de mise en concurrence livré</td>
+      <td class="dt">16/12/2026</td>
+      <td class="st">a_venir</td>
+      <td class="crit"><ul><li>À définir avec la maîtrise d'ouvrage — aucune spécification dans le dépôt</li></ul></td>
+    </tr><tr class="attente">
+      <td class="code">◆ J6</td>
+      <td>Module 3 — Dossiers de marchés livré</td>
+      <td class="dt">16/03/2027</td>
+      <td class="st">a_venir</td>
+      <td class="crit"><ul><li>À définir avec la maîtrise d'ouvrage — aucune spécification dans le dépôt</li></ul></td>
+    </tr><tr class="attente">
+      <td class="code">◆ J7</td>
+      <td>Module 4 — Actes livré</td>
+      <td class="dt">16/05/2027</td>
+      <td class="st">a_venir</td>
+      <td class="crit"><ul><li>À définir avec la maîtrise d'ouvrage — aucune spécification dans le dépôt</li></ul></td>
+    </tr><tr class="attente">
+      <td class="code">◆ J8</td>
+      <td>Mise en production PRS 2.0</td>
+      <td class="dt">16/06/2027</td>
+      <td class="st">a_venir</td>
+      <td class="crit"><ul><li>À définir avec la maîtrise d'ouvrage</li></ul></td>
+    </tr></tbody>
+  </table>
+</section>
+
+<section class="bloc">
+  <h2>Activités en retard</h2>
+  <ul><li><strong>A17</strong> — Audit technique : traitement des constats sécurité, accessibilité, performance <span class="muted">(fin 19/08/2026, 77 %, Mr Lanto)</span></li><li><strong>A19</strong> — Actualités à la connexion <span class="muted">(fin 19/08/2026, 50 %, Mr Christian)</span></li><li><strong>A21</strong> — Tests automatisés et intégration continue <span class="muted">(fin 19/08/2026, 33 %, Mr Lanto)</span></li></ul>
+</section>
+
+<section class="bloc">
+  <h2>Chemin critique</h2>
+  <p><strong>Module 1 :</strong> A01 → A02 → A09 → A10 → A12 → A14 → A20 → A26 → A22 → A25</p>
+  <p><strong>Global :</strong> G01 → G03 → G04 → G05 → G06</p>
+  <p class="muted">Chaîne de dépendances de durée cumulée maximale. Les dates observées faisant foi, le générateur ne replanifie pas derrière les dépendances : les chevauchements sont signalés ci-dessous.</p>
+</section>
+
+<section class="bloc">
+  <h2>Légende</h2>
+  <div class="legende">
+    <span class="item"><span class="sw" style="background:#16a34a"></span> Terminé</span>
+    <span class="item"><span class="sw" style="background:#2563eb"></span> En cours</span>
+    <span class="item"><span class="sw" style="background:#9ca3af"></span> À venir</span>
+    <span class="item"><span class="sw" style="background:#dc2626"></span> En retard</span>
+    <span class="item"><span class="jalon">◆</span> Jalon</span>
+    <span class="item"><span class="sw" style="background:#fff;border-left:2px solid #b45309"></span> Ligne « aujourd'hui » (26/08/2026)</span>
+    <span class="item"><span class="cc">◆</span> Activité du chemin critique</span>
+  </div>
+</section>
+
+<section class="bloc avert"><h2>Avertissements de cohérence (15)</h2><ul><li>A06 : début déclaré le 26/06/2026 (jour non ouvré) → décalé au 29/06/2026.</li><li>A02 : démarre le 17/06/2026, avant la fin de sa dépendance A01 (19/06/2026) — chevauchement assumé, non replanifié.</li><li>A03 : démarre le 18/06/2026, avant la fin de sa dépendance A02 (25/06/2026) — chevauchement assumé, non replanifié.</li><li>A04 : démarre le 19/06/2026, avant la fin de sa dépendance A02 (25/06/2026) — chevauchement assumé, non replanifié.</li><li>A05 : démarre le 24/06/2026, avant la fin de sa dépendance A02 (25/06/2026) — chevauchement assumé, non replanifié.</li><li>A07 : démarre le 29/06/2026, avant la fin de sa dépendance A06 (30/06/2026) — chevauchement assumé, non replanifié.</li><li>A09 : démarre le 23/06/2026, avant la fin de sa dépendance A02 (25/06/2026) — chevauchement assumé, non replanifié.</li><li>A10 : démarre le 16/07/2026, avant la fin de sa dépendance A08 (16/07/2026) — chevauchement assumé, non replanifié.</li><li>A10 : démarre le 16/07/2026, avant la fin de sa dépendance A09 (27/07/2026) — chevauchement assumé, non replanifié.</li><li>A11 : démarre le 27/07/2026, avant la fin de sa dépendance A09 (27/07/2026) — chevauchement assumé, non replanifié.</li><li>A12 : démarre le 27/07/2026, avant la fin de sa dépendance A10 (27/07/2026) — chevauchement assumé, non replanifié.</li><li>A12 : démarre le 27/07/2026, avant la fin de sa dépendance A11 (27/07/2026) — chevauchement assumé, non replanifié.</li><li>A17 : statut déclaré « en_cours », calculé « en_retard » (fin 19/08/2026, avancement 77 %).</li><li>A19 : statut déclaré « en_cours », calculé « en_retard » (fin 19/08/2026, avancement 50 %).</li><li>A21 : statut déclaré « en_cours », calculé « en_retard » (fin 19/08/2026, avancement 33 %).</li></ul></section>
+
+<footer>
+  Généré par <code>generer_chronogramme.mjs</code> depuis <code>activites.yaml</code> —
+  jours ouvrés : oui ·
+  jours fériés exclus : 26/06/2026, 15/08/2026.
+  Toute correction se fait dans le YAML, jamais dans cette page.
+</footer>
+
+</body>
+</html>

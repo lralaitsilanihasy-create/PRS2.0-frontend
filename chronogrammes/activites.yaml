@@ -1,0 +1,597 @@
+# =============================================================================
+# PRS 2.0 — Modèle de données du chronogramme
+# =============================================================================
+# Source unique du générateur `generer_chronogramme.py`. Aucune donnée de
+# planning ne doit être codée en dur ailleurs.
+#
+# CONVENTIONS — lire avant toute correction
+#
+# 1. `preuve` est obligatoire pour tout élément `termine` ou `en_cours`. Elle
+#    cite un commit (hash court), un fichier du dépôt, ou une exécution de test.
+#    Un élément `a_venir` porte `preuve: null` ; s'il est daté, la date est une
+#    PROPOSITION à valider — elle est signalée comme telle dans `note`.
+#
+# 2. `avancement` n'est JAMAIS estimé au jugé. Règle :
+#       termine  -> 100
+#       a_venir  -> 0
+#       en_cours -> ratio d'éléments dénombrables clos / total dénombré,
+#                   la formule étant écrite dans le champ `preuve`.
+#
+# 3. Bornage des activités passées : `debut` = date du premier commit du thème,
+#    `duree_jours` = nombre de jours OUVRÉS jusqu'au dernier commit du thème.
+#
+# 4. ⚠️ TENSION CONNUE — jours ouvrés vs activité réelle. Le dépôt montre du
+#    travail massif hors jours ouvrés : 50 commits le ven. 26/06 (férié),
+#    29 le dim. 05/07, 20 le dim. 26/07, 25 le sam. 15/08 (férié), 9 le
+#    dim. 16/08. Avec `jours_ouvres: true` + les deux fériés retenus, trois
+#    activités (A06, A14, A16) démarrent ou culminent sur un jour non ouvré.
+#    Le générateur décale alors le début au premier jour ouvré suivant et le
+#    signale. Pour coller à l'activité réelle, passer `jours_feries: []`.
+#
+# 5. `module_planification` porte `duree_jours` (jours ouvrés) ;
+#    `global_prs2` porte `fin` (bornes mensuelles exactes) et le générateur en
+#    déduit `duree_jours`. Les deux formes sont acceptées partout.
+#
+# 6. ⚠️ RÉPARTITION DES RESPONSABLES — PROPOSÉE, NON DÉDUITE DU DÉPÔT.
+#    Le dépôt ne porte qu'un seul auteur git (503 commits, une seule adresse) :
+#    aucun rapprochement n'est possible entre les commits et les trois noms.
+#    Le découpage ci-dessous est une proposition par domaine, validée sur le
+#    principe le 26/08 — à corriger ligne à ligne si l'affectation réelle diffère.
+# =============================================================================
+
+parametres:
+  projet: "PRS 2.0 — Contrôle de la passation des marchés publics"
+  perimetre_depot: "frontend Angular `frontendprs2` (le backend PRS20 est un dépôt distinct)"
+
+  # Réponses du pilote, 2026-08-26.
+  date_demarrage: 2026-06-17          # 1er commit `62f5f9a` « Initial commit - frontend CNM »
+  date_arrete: 2026-08-26             # date d'observation ; dernier commit du dépôt : 2026-08-20
+  # Échéance décalée de deux jours ouvrés le 26/08 : le polissage du module de
+  # planification (A26, 24 → 28/08) repousse la reprise du développement au 31/08,
+  # ce qui aurait comprimé la recette de 5 à 3 jours. Arbitrage du pilote : garder
+  # 5 jours de recette et déplacer l'échéance, plutôt que raboter la recette.
+  date_fin_contractuelle: 2026-09-18  # ex-16/09
+
+  # ⚠️ 2026-06-17 → 2026-09-18 = 93 jours calendaires, soit 13 semaines + 2 jours
+  # (et non 12 semaines). `semaines_gantt` est un PLANCHER : le générateur étend
+  # la grille autant qu'il faut, ici à 14 colonnes.
+  semaines_gantt: 13
+
+  jours_ouvres: true
+
+  # Calendrier Madagascar, période du module 1 uniquement.
+  # 26/06/2026 = vendredi (Fête de l'Indépendance) — jour effectivement travaillé (50 commits).
+  # 15/08/2026 = samedi (Assomption) — sans effet sur les jours ouvrés.
+  # ⚠️ À COMPLÉTER pour la fenêtre 09/2026 → 06/2027 avant de se fier au calcul
+  #    en jours ouvrés du Gantt global (01/11, 25/12, 01/01, 29/03, 01/05, …).
+  jours_feries:
+    - 2026-06-26
+    - 2026-08-15
+
+  # Bornes mensuelles du Gantt global : mois glissants ancrés sur le démarrage.
+  # M1 = 17/06 → 16/07 … M3 = 17/08 → 16/09 … M12 = 17/05 → 16/06/2027.
+  # (L'échéance du module 1, 18/09, déborde de deux jours ouvrés sur M4 — c'est voulu.)
+  mois_gantt: 12
+
+  equipe:
+    - "Mr Lanto"       # socle, sécurité, qualité
+    - "Mr Mathieu"     # circuit d'instruction
+    - "Mr Christian"   # planification et référentiels
+
+# =============================================================================
+# MODULE 1 — socle transversal + dossiers de planification (S1 → S13)
+# =============================================================================
+module_planification:
+
+  # ---------------------------------------------------------------- S1 → S2
+  - id: A01
+    libelle: "Socle applicatif : authentification, guards, habilitations par profil"
+    livrable: "core/auth (service de session, guard, service de permissions), services CRUD génériques"
+    debut: 2026-06-17
+    duree_jours: 3
+    statut: termine
+    avancement: 100
+    responsable: "Mr Lanto"
+    dependances: []
+    jalon: null
+    preuve: "commit 62f5f9a (17/06) — création de core/auth/{auth.service,auth.guard,permissions.service,permissions}.ts et services/api/crud.service.ts ; couvert par auth.service.spec.ts, auth.guard.spec.ts, permissions.service.spec.ts (suite complète 85/85 au vert, `ng test` du 26/08)"
+
+  - id: A02
+    libelle: "Circuit d'instruction de bout en bout : dépôt → réception → dispatch → examen → PV"
+    livrable: "Moteur de workflow partagé + écrans des 6 profils du circuit"
+    debut: 2026-06-17
+    duree_jours: 7
+    statut: termine
+    avancement: 100
+    responsable: "Mr Mathieu"
+    dependances: [A01]
+    jalon: null
+    preuve: "commit 62f5f9a (17/06) — shared/circuit/{circuit-workflow,pv-workflow,circuit-timeline,statut-badge}.ts + circuit-workflow.spec.ts ; features/circuit/{dispatch-form,dossier-consultation,dossiers-pipeline}.ts ; features/membre/{examen-dossier,pv-page}.ts ; features/secretaire/{receptions,enregistrement}.ts ; complété par les 4 commits du 18/06 (worklists de vérification)"
+
+  - id: A03
+    libelle: "Demandes de retrait de dossier et décisions Président / Chef de commission"
+    livrable: "Écrans de demande (PRMP) et de validation (P/CC), garde « avant PV signé »"
+    debut: 2026-06-18
+    duree_jours: 4
+    statut: termine
+    avancement: 100
+    responsable: "Mr Mathieu"
+    dependances: [A02]
+    jalon: null
+    preuve: "features/circuit/retraits-validation.ts créé le 18/06 ; features/cc/retraits-decision.ts et features/prmp/retraits.ts au commit initial ; règle « retrait impossible dès PV_SIGNE » (409) — commits du 23/06 « message liste vide explicite + erreur 409 dédiée »"
+
+  - id: A04
+    libelle: "Rectification PRMP et navette avec le vérificateur"
+    livrable: "Statut EN_ATTENTE_DECISION_PRMP bout-en-bout, écrans « Dossiers à rectifier » et « En attente de rectification »"
+    debut: 2026-06-19
+    duree_jours: 3
+    statut: termine
+    avancement: 100
+    responsable: "Mr Mathieu"
+    dependances: [A02]
+    jalon: null
+    preuve: "12 commits du 19/06 (« statut EN_ATTENTE_DECISION_PRMP (obs non levées) bout-en-bout », « resoumission après rectification ») ; création de features/prmp/dossiers-a-rectifier.ts et features/verificateur/en-attente-prmp.ts le 19/06"
+
+  - id: A05
+    libelle: "Lettre de renvoi et profil Assistant contrôleur"
+    livrable: "Alternative PV / lettre de renvoi, page « à signer », domaine ASSISTANT_CONTROLEUR"
+    debut: 2026-06-24
+    duree_jours: 2
+    statut: termine
+    avancement: 100
+    responsable: "Mr Mathieu"
+    dependances: [A02]
+    jalon: J1
+    preuve: "features/membre/lettre-renvois.ts créé le 24/06 ; features/circuit/{pv-assistant,lettre-renvoi-consultation}.ts et features/assistant/assistant.routes.ts créés le 25/06 ; 8 commits du 25/06"
+
+  # ---------------------------------------------------------------- S2 → S3
+  - id: A06
+    libelle: "Design system et migration visuelle de l'ensemble des écrans"
+    livrable: "src/styles/_design-system.scss + migration des écrans de tous les profils"
+    debut: 2026-06-26
+    duree_jours: 2
+    statut: termine
+    avancement: 100
+    responsable: "Mr Christian"
+    dependances: [A02]
+    jalon: null
+    note: "⚠️ Début sur un jour férié (26/06) : le générateur décale au 29/06, premier jour ouvré."
+    preuve: "50 commits le 26/06/2026 — pic d'activité du dépôt — dont 18 intitulés « migrer … vers le design system » (layout, PRMP, circuit, CRUD, secrétaire, président, pilotage, admin, auth) ; création de src/styles/_design-system.scss"
+
+  - id: A07
+    libelle: "Compteurs de menu et tableaux de bord par profil"
+    livrable: "Badges de comptage des 6 menus, tableau de bord KPI, écran de rapports"
+    debut: 2026-06-29
+    duree_jours: 4
+    statut: termine
+    avancement: 100
+    responsable: "Mr Christian"
+    dependances: [A06]
+    jalon: null
+    preuve: "13 commits du 29/06 (« compteurs du menu PRMP / Vérificateur / Secrétaire », « compteurs scopés par localité pour le CC ») ; features/pilotage/{kpi-dashboard,rapports-page}.ts et shared/dashboard/dashboard-shell.ts ; endpoint agrégé GET /api/kpis/badges livré au commit fad4ca7"
+
+  # ---------------------------------------------------------------- S3 → S5
+  - id: A08
+    libelle: "Référentiels administrables (entités, PRMP, UGPM, pièces, modes de passation)"
+    livrable: "21 écrans CRUD d'administration pilotés par configuration"
+    debut: 2026-07-03
+    duree_jours: 10
+    statut: termine
+    avancement: 100
+    responsable: "Mr Christian"
+    dependances: [A01]
+    jalon: null
+    preuve: "features/admin/admin-resources.config.ts (~600 lignes) et admin.routes.ts (21 `loadComponent`) ; ugpm-admin.ts créé le 06/07 ; controleur-admin.ts, prmp-admin.ts, inscriptions-admin.ts, prmp-pieces-admin.ts, ugpm-pieces-admin.ts, dmc-mapping-admin.ts créés le 16/07"
+
+  # ---------------------------------------------------------------- S1 → S6
+  - id: A09
+    libelle: "Saisie du plan de passation : grille partagée, import PDF, dates prévisionnelles CAPM"
+    livrable: "shared/prmp/{ppm-saisie-grid,ppm-form-factory,ppm-marches-table}.ts, import PDF avec revue ligne à ligne"
+    debut: 2026-06-23
+    duree_jours: 24
+    statut: termine
+    avancement: 100
+    responsable: "Mr Christian"
+    dependances: [A02]
+    jalon: null
+    preuve: "20 commits du 23/06 (dates prévisionnelles par marché, référentiel CAPM, cohérence chronologique) ; shared/prmp/ppm-marches-table.ts créé le 05/07 ; ppm-form-factory.ts et ppm-saisie-grid.ts créés le 23/07 (« grille de saisie riche partagée », « soumettre consomme la grille partagée ») ; UI d'import .xlsx retirée volontairement le 22/07"
+
+  # ---------------------------------------------------------------- S5 → S7
+  - id: A10
+    libelle: "Familles de dossier DDP / DMC / DDM et référentiel des sous-types"
+    livrable: "Choix de famille au dépôt, sous-type dérivé serveur pour DDP, points de contrôle par sous-type"
+    debut: 2026-07-16
+    duree_jours: 8
+    statut: termine
+    avancement: 100
+    responsable: "Mr Christian"
+    dependances: [A08, A09]
+    jalon: null
+    preuve: "features/prmp/{dossiers-liste,mes-dossiers}.ts créés le 16/07 ; soumettre-dossier.ts:57-61 (`type FamilleDossier = 'DMC' | 'DDM'`) et :947-960 ; models/referentiel.model.ts:184-198 (tr_type_dossier, tr_sous_type_dossier) ; models/circuit.model.ts:13-15"
+
+  - id: A11
+    libelle: "Entités contractantes : création à l'import, rattachements, localité dérivée"
+    livrable: "Panneau de résolution d'entité au PDF, écran « Rattachements en attente » (Admin)"
+    debut: 2026-07-27
+    duree_jours: 1
+    statut: termine
+    avancement: 100
+    responsable: "Mr Christian"
+    dependances: [A08, A09]
+    jalon: null
+    preuve: "20 commits le 26/07/2026 (dimanche) : « création d'une entité contractante à l'import », « écran Rattachements en attente », « localité de l'entité → localité du dossier dérivée » ; features/admin/rattachements-admin.ts créé le 26/07"
+
+  - id: A12
+    libelle: "Écrans « Mes dossiers » par profil et classement des dossiers"
+    livrable: "Files de travail Président, CC, Secrétaire et Membre ; cartes « Dispatchs par contrôleur »"
+    debut: 2026-07-27
+    duree_jours: 1
+    statut: termine
+    avancement: 100
+    responsable: "Mr Mathieu"
+    dependances: [A10, A11]
+    jalon: J2
+    preuve: "features/circuit/{dossiers-classement,dossiers-circuit-liste}.ts créés le 26/07 ; features/president/dispatchs-controleurs.ts créé le 27/07 ; 20 commits du 27/07, dont « écrans redondants supprimés — files d'examen dans Mes dossiers »"
+
+  # ---------------------------------------------------------------- S7 → S8
+  - id: A13
+    libelle: "Chantier parallèle et attente backend (interruption)"
+    livrable: "aucun livrable sur ce dépôt"
+    debut: 2026-07-28
+    duree_jours: 10
+    statut: termine
+    avancement: 100
+    responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
+    dependances: [A12]
+    jalon: null
+    preuve: "0 commit du 28/07/2026 au 10/08/2026 inclus (`git log --pretty=%ad --date=short | sort | uniq -c`) — période qualifiée par le pilote le 26/08 : chantier parallèle / attente"
+
+  # ---------------------------------------------------------------- S9
+  - id: A14
+    libelle: "Délégation ascendante et mandats PRMP"
+    livrable: "Permissions pilotées par t_delegation_profil, écran des mandats, bannière de vacance"
+    debut: 2026-08-11
+    duree_jours: 4
+    statut: termine
+    avancement: 100
+    responsable: "Mr Mathieu"
+    dependances: [A01, A12]
+    jalon: null
+    preuve: "features/admin/mandats-admin.ts et core/vacance/vacance.store.ts créés le 12/08 ; commit du 14/08 « délégation ascendante pilotée par les données (t_delegation_profil) » puis « écrans des subordonnés chez Président/CC (Lot 2) » ; ba9aa97 (15/08) interrupteurs « Délégations »"
+
+  - id: A15
+    libelle: "Notifications temps réel (SSE) et écran transverse"
+    livrable: "core/notifications/notifications.store.ts (flux SSE partagé), écran /notifications, badge cloche"
+    debut: 2026-08-11
+    duree_jours: 4
+    statut: termine
+    avancement: 100
+    responsable: "Mr Lanto"
+    dependances: [A01]
+    jalon: null
+    preuve: "core/notifications/notification-route.ts et features/transverse/notifications-page.ts créés le 11/08 (« clic → écran d'action, mapping type × rôle ») ; notifications.store.ts créé le 15/08 au commit 9552c0c"
+
+  - id: A16
+    libelle: "Observations du PV, navette post-signature et table PPM commune"
+    livrable: "Cartes d'observation partagées, décisions du vérificateur, réexamen, formulaire de réception partagé"
+    debut: 2026-08-11
+    duree_jours: 4
+    statut: termine
+    avancement: 100
+    responsable: "Mr Mathieu"
+    dependances: [A02, A09]
+    jalon: null
+    preuve: "commits du 15/08 : ce4e875 (cartes d'observation + passage vérificateur par décisions), 018ffae (table PPM commune, mise à jour par import, pièces au dépôt), f6db187 (navette post-signature : archivage, réexamen), 7dbb42d (formulaire de réception partagé) ; création de shared/circuit/observation-pv-card.ts, features/circuit/reception-form.ts, features/prmp/{completer-pieces-depot-modal,mise-a-jour-ppm}.ts"
+
+  # ---------------------------------------------------------------- S10
+  - id: A17
+    libelle: "Audit technique : traitement des constats sécurité, accessibilité, performance"
+    livrable: "AUDIT.md — 35 constats, corrections livrées et vérifiées"
+    debut: 2026-08-17
+    duree_jours: 3
+    statut: en_cours
+    avancement: 77
+    responsable: "Mr Lanto"
+    dependances: [A06]
+    jalon: null
+    preuve: "AUDIT.md §3 dénombre 35 constats (S1-S13, P1-P11, A1-A7, T1-T3, D1). Clos et vérifiés : 27 (dont 9ff24e9 directive appModale, f8dca39 112 routes en loadComponent, b350579 polices + CI, 1216458 contraste AA 114→17 textes, 1c4ab1c scope sur 225 en-têtes). Restent ouverts : P1, P9 (extension), A2b, S9, S12, P10, T1 (entamé), T3 = 8. Avancement = 27/35 = 77 %."
+
+  - id: A18
+    libelle: "Session en cookie HttpOnly et passage en même origine"
+    livrable: "proxy /api, apiUrl relative, suppression de tout jeton côté client"
+    debut: 2026-08-17
+    duree_jours: 1
+    statut: termine
+    avancement: 100
+    responsable: "Mr Lanto"
+    dependances: [A01]
+    jalon: J3
+    preuve: "commits 7a252af (phase 0 — proxy /api, URL relative) et 7cbaf14 (phase 2 — session cookie) du 17/08 ; recette 7/7 points rejouée après le flip et parcours métier vérifié sur les 6 profils, tracée dans AUDIT.md ; proxy.conf.json et CLAUDE.md § « Backend associé — MÊME ORIGINE »"
+
+  # ---------------------------------------------------------------- S10 → S11
+  - id: A19
+    libelle: "Actualités à la connexion"
+    livrable: "Modal d'actualités + écran d'administration (front) et API /api/actualites (backend)"
+    debut: 2026-08-19
+    duree_jours: 1
+    statut: en_cours
+    avancement: 50
+    responsable: "Mr Christian"
+    dependances: [A08]
+    jalon: null
+    preuve: "Front livré et recetté : 9faaa14 (19/08) « modal à la connexion + administration », shared/actualites/{actualites-modal,markdown,markdown-vue}.ts + markdown.spec.ts, services/actualite.services.ts, features/admin/actualites-admin.ts. API backend NON COMMITÉE : docs/demande-backend-2026-08-19.md §A liste 17 fichiers non suivis par git. Avancement = 1 des 2 moitiés (front livré / API versionnée)."
+
+  - id: A20
+    libelle: "Détail du plan de passation en onglets et UGPM rattachées"
+    livrable: "Modal de détail PPM à trois onglets, visibilité des unités de gestion pour les contrôleurs"
+    debut: 2026-08-19
+    duree_jours: 2
+    statut: termine
+    avancement: 100
+    responsable: "Mr Christian"
+    dependances: [A09, A14]
+    jalon: null
+    preuve: "commits du 19/08 (« le détail du plan de passation se lit en trois onglets », f2bca57 « fin du 403 silencieux sur les UGPM ») et du 20/08 (« onglet d'identités réservé aux profils qui découvrent le dossier », « les contrôleurs voient enfin les unités de gestion rattachées ») — 3 derniers commits du dépôt"
+
+  - id: A21
+    libelle: "Tests automatisés et intégration continue"
+    livrable: "Suite unitaire, CI GitHub Actions, scénarios e2e versionnés"
+    debut: 2026-08-17
+    duree_jours: 3
+    statut: en_cours
+    avancement: 33
+    responsable: "Mr Lanto"
+    dependances: [A01]
+    jalon: null
+    preuve: "85 tests / 8 fichiers, 100 % au vert (`npx ng test --watch=false`, 2,97 s, exécuté le 26/08). Constats « Tests » de AUDIT.md : T2 clos (.github/workflows/ci.yml, commit b350579 du 17/08 — tests + build + npm audit bloquant), T1 entamé (0a4fe15 du 19/08, barrières anti-XSS couvertes), T3 ouvert (aucun e2e versionné, 0 fichier sous e2e/). Avancement = 1 constat clos sur 3."
+
+  # ---------------------------------------------------------------- S11
+  - id: A26
+    libelle: "Polissage du module « Dossiers de planification »"
+    livrable: "Reprise de finition des écrans du module de planification avant reprise du développement"
+    debut: 2026-08-24
+    duree_jours: 5
+    statut: en_cours
+    avancement: 60
+    responsable: "Mr Christian"
+    dependances: [A09, A16, A20]
+    jalon: null
+    note: >-
+      Déclaré par le pilote le 26/08 (dates annoncées « 24/08 au 28/08 » ; l'année de fin,
+      saisie 2025, a été rétablie à 2026 — seul intervalle cohérent, lundi → vendredi).
+      Le développement ne reprend qu'après : A22, A23 et A24 en dépendent.
+    preuve: >-
+      Avancement = 3 jours ouvrés écoulés sur 5 au 26/08 — RATIO DE TEMPS, non une mesure
+      de travail accompli : arbitrage du pilote faute de mesure disponible.
+      ⚠️ Non observable dans le dépôt : dernier commit `bec0e39` du 20/08, aucun commit
+      depuis. Le polissage des 24, 25 et 26/08 n'est pas versionné — à commiter avant
+      toute relance de la mesure (cf. AUDIT.md, constat S11 sur les livraisons non suivies).
+
+  # ---------------------------------------------------------------- S11 → S14
+  - id: A22
+    libelle: "Gestion des délais légaux d'instruction"
+    livrable: "Calcul du délai réglementaire par dossier, alerte ALERTE_DELAI, indicateur de dépassement"
+    debut: 2026-08-31
+    duree_jours: 10
+    statut: a_venir
+    avancement: 0
+    responsable: "Mr Mathieu"
+    dependances: [A02, A26]
+    jalon: null
+    note: "Reprise du développement au lendemain du polissage (31/08, lundi). Dates PROPOSÉES — à valider. Maintenue dans le périmètre du module 1 : arbitrage du 26/08."
+    preuve: null
+    constat_initial: "Absent du code : 0 occurrence de `ALERTE_DELAI` dans src/ alors que docs/regles-gestion.md:370 et :485 la spécifient. Le seul dispositif temporel livré est features/prmp/calendrier-marches.ts — jalons CAPM du plan de l'autorité contractante (imminent / en retard), et non le délai d'instruction du contrôleur. Trois indicateurs déjà modélisés en dépendent : delaiMoyenExamen, delaiMoyenJours, delaiMoyCorrectionJours (models/pilotage.model.ts:85,101,116)."
+
+  - id: A23
+    libelle: "Indicateurs de performance : écrans manquants"
+    livrable: "Écrans « Indicateurs contrôleurs » et « Indicateurs PRMP »"
+    debut: 2026-08-31
+    duree_jours: 5
+    statut: a_venir
+    avancement: 0
+    responsable: "Mr Christian"
+    dependances: [A07, A26]
+    jalon: null
+    note: "Reprise du développement après le polissage (A26). Dates PROPOSÉES — à valider. Variable d'ajustement identifiée si A22 déborde."
+    preuve: null
+    constat_initial: "IndicateurCtrl et IndicateurPrmp sont modélisés (models/pilotage.model.ts:76-116) et servis (services/pilotage.services.ts) mais aucun écran ne les affiche. SNAPSHOT_STATS_CONFIG n'est plus référencé par aucune route (pilotage-resources.config.ts:6-11). Livrés par A07 : 3 écrans sur les 5 dénombrés."
+
+  - id: A24
+    libelle: "Journal d'audit : écran de recherche dédié"
+    livrable: "Écran de consultation filtrable du journal (acteur, dossier, période, action)"
+    debut: 2026-08-31
+    duree_jours: 3
+    statut: a_venir
+    avancement: 0
+    responsable: "Mr Lanto"
+    dependances: [A01, A26]
+    jalon: null
+    note: "Reprise du développement après le polissage (A26). Dates PROPOSÉES — à valider. Variable d'ajustement identifiée si A22 déborde."
+    preuve: null
+    constat_initial: "Existant : écran CRUD générique en lecture seule /admin/audit (admin.routes.ts:86, admin-resources.config.ts:571-577) et journal métier par dossier (services/circuit.services.ts:58). Manque un écran de recherche transverse."
+
+  - id: A25
+    libelle: "Recette du module 1 et livraison contractuelle"
+    livrable: "Procès-verbal de recette, mise en production du module 1"
+    debut: 2026-09-14
+    duree_jours: 5
+    statut: a_venir
+    avancement: 0
+    responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
+    dependances: [A17, A19, A21, A22, A23, A24]
+    jalon: J4
+    note: >-
+      Démarre au lendemain de A22 (goulot, fin le 11/09) et conserve ses 5 jours ouvrés
+      grâce au décalage d'échéance décidé le 26/08 : 14/09 → 18/09. Dates PROPOSÉES.
+    preuve: null
+
+# =============================================================================
+# GLOBAL PRS 2.0 — les 4 modules sur 12 mois (M1 → M12)
+# Mois glissants ancrés sur le démarrage : M1 = 17/06 → 16/07 … M12 = 17/05 → 16/06/2027.
+# Bornes exprimées en `fin` (dates exactes) ; le générateur en déduit `duree_jours`.
+# =============================================================================
+global_prs2:
+
+  - id: G01
+    libelle: "Module 1 — Socle transversal et dossiers de planification"
+    livrable: "Authentification, habilitations, référentiels, workflow d'instruction, notifications, journal d'audit, tableaux de bord, contrôle des plans de passation"
+    debut: 2026-06-17
+    fin: 2026-09-18
+    mois: "M1 → M3"
+    statut: en_cours
+    avancement: 82
+    responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
+    dependances: []
+    jalon: J4
+    preuve: "Inventaire des 14 fonctions du module 1 (constat du 26/08, chaque ligne adossée à un fichier) : 10 implémentées (auth, habilitations, référentiels, dépôt, complétude, affectation, instruction, visa, navette, notifications), 3 partielles (statistiques, journal d'audit, actualités), 1 absente (délais légaux). Avancement = (10×100 + 3×50 + 1×0) / 14 = 82 %."
+
+  - id: G02
+    libelle: "Recette, correction et mise en production du module 1"
+    livrable: "PV de recette, déploiement, reprise des réserves"
+    debut: 2026-09-21
+    fin: 2026-10-16
+    mois: "M4"
+    statut: a_venir
+    avancement: 0
+    responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
+    dependances: [G01]
+    jalon: null
+    note: "Découpage PROPOSÉ — aucun calendrier contractuel au-delà des 3 mois n'est connu."
+    preuve: null
+
+  - id: G03
+    libelle: "Module 2 — Dossiers de mise en concurrence (DMC)"
+    livrable: "Dossiers d'appel à concurrence, procédures dérogatoires, rapports d'évaluation"
+    debut: 2026-09-21
+    fin: 2026-12-16
+    mois: "M4 → M6"
+    statut: a_venir
+    avancement: 0
+    responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
+    dependances: [G01]
+    jalon: J5
+    note: "Découpage PROPOSÉ — à valider."
+    preuve: null
+    constat_initial: "Amorce constatée dans le dépôt : le dépôt d'un dossier DMC et son passage dans le circuit générique existent (soumettre-dossier.ts:57-61 et :158, models/prmp.model.ts:312 « saisie sans contenu »), mais aucun contenu métier propre au module (rapport d'évaluation, procédure dérogatoire) n'est implémenté."
+
+  - id: G04
+    libelle: "Module 3 — Dossiers de marchés (projets de marchés et avenants)"
+    livrable: "Contrôle des projets de marchés et des avenants avant approbation"
+    debut: 2026-12-17
+    fin: 2027-03-16
+    mois: "M7 → M9"
+    statut: a_venir
+    avancement: 0
+    responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
+    dependances: [G03]
+    jalon: J6
+    note: "Découpage PROPOSÉ — à valider."
+    preuve: null
+    constat_initial: "Amorce identique à DMC (famille DDM, soumettre-dossier.ts:166) ; aucun projet de marché ni avenant structuré dans le code."
+
+  - id: G05
+    libelle: "Module 4 — Actes de gestion contractuelle"
+    livrable: "Contrôle des décisions d'octroi d'indemnité, sursis d'exécution, remise de pénalité, résiliation"
+    debut: 2027-03-17
+    fin: 2027-05-16
+    mois: "M10 → M11"
+    statut: a_venir
+    avancement: 0
+    responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
+    dependances: [G04]
+    jalon: J7
+    note: "Découpage PROPOSÉ — à valider."
+    preuve: null
+    constat_initial: "Absent du dépôt : 0 occurrence de « indemnité », « sursis », « pénalité » ou « résiliation » dans src/."
+
+  - id: G06
+    libelle: "Recette globale, reprise de données et déploiement PRS 2.0"
+    livrable: "Recette des 4 modules, mise en production"
+    debut: 2027-05-17
+    fin: 2027-06-16
+    mois: "M12"
+    statut: a_venir
+    avancement: 0
+    responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
+    dependances: [G02, G03, G04, G05]
+    jalon: J8
+    note: "Découpage PROPOSÉ — à valider."
+    preuve: null
+
+# =============================================================================
+# JALONS
+# =============================================================================
+jalons:
+
+  - code: J1
+    libelle: "Circuit d'instruction fonctionnel de bout en bout"
+    date_cible: 2026-06-25
+    statut: franchi
+    criteres_validation:
+      - "Un dossier parcourt dépôt → réception → dispatch → examen → PV sans intervention manuelle"
+      - "Les deux issues de l'examen sont ouvertes : projet de PV ou lettre de renvoi"
+      - "Les 6 profils du circuit disposent de leurs écrans"
+    preuve: "Écrans du circuit et de la lettre de renvoi créés entre le 17/06 et le 25/06 ; circuit-workflow.spec.ts au vert"
+
+  - code: J2
+    libelle: "Parcours métier complet sur les 6 profils"
+    date_cible: 2026-07-27
+    statut: franchi
+    criteres_validation:
+      - "Chaque profil atterrit sur sa file de travail à la connexion"
+      - "Les familles DDP / DMC / DDM et les sous-types sont pilotés par référentiel"
+      - "L'entité contractante est résolue ou créée au dépôt, avec approbation Admin"
+      - "Les écrans redondants sont supprimés au profit de « Mes dossiers »"
+    preuve: "Commits du 26 et 27/07 (40 au total) ; features/circuit/dossiers-classement.ts, features/president/dispatchs-controleurs.ts"
+
+  - code: J3
+    libelle: "Socle durci : sécurité, accessibilité, session par cookie"
+    date_cible: 2026-08-19
+    statut: partiellement_franchi
+    criteres_validation:
+      - "Volet sécurité de l'audit intégralement soldé — ✅ (AUDIT.md : S10 clos le 17/08)"
+      - "Aucun jeton côté client, session portée par cookie HttpOnly — ✅ (recette 7/7, 6 profils)"
+      - "npm audit sans vulnérabilité ≥ high, bloquant en CI — ✅ (ci.yml)"
+      - "Contraste AA sur le texte de l'application — ✅ partiel (114 textes hors seuil → 17)"
+      - "8 constats d'audit restent ouverts : P1, P9, A2b, S9, S12, P10, T1, T3 — ❌"
+    preuve: "AUDIT.md, suivi des corrections du 16 au 19/08 ; commits 787ec4a → 1c4ab1c"
+
+  - code: J4
+    libelle: "Recette du module 1 — livraison contractuelle"
+    date_cible: 2026-09-18   # ex-16/09, décalé de 2 jours ouvrés le 26/08 (polissage A26)
+    statut: a_venir
+    criteres_validation:
+      - "Les 14 fonctions du module 1 sont implémentées, dont les délais légaux d'instruction"
+      - "Les 35 constats de l'audit technique sont soldés ou explicitement acceptés"
+      - "Scénarios e2e versionnés dans le dépôt (constat T3)"
+      - "API des actualités commitée et déployable depuis git"
+      - "PV de recette signé"
+    preuve: null
+
+  - code: J5
+    libelle: "Module 2 — Dossiers de mise en concurrence livré"
+    date_cible: 2026-12-16
+    statut: a_venir
+    criteres_validation: ["À définir avec la maîtrise d'ouvrage — aucune spécification dans le dépôt"]
+    preuve: null
+
+  - code: J6
+    libelle: "Module 3 — Dossiers de marchés livré"
+    date_cible: 2027-03-16
+    statut: a_venir
+    criteres_validation: ["À définir avec la maîtrise d'ouvrage — aucune spécification dans le dépôt"]
+    preuve: null
+
+  - code: J7
+    libelle: "Module 4 — Actes livré"
+    date_cible: 2027-05-16
+    statut: a_venir
+    criteres_validation: ["À définir avec la maîtrise d'ouvrage — aucune spécification dans le dépôt"]
+    preuve: null
+
+  - code: J8
+    libelle: "Mise en production PRS 2.0"
+    date_cible: 2027-06-16
+    statut: a_venir
+    criteres_validation: ["À définir avec la maîtrise d'ouvrage"]
+    preuve: null

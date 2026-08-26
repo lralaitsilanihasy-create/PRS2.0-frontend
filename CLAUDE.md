@@ -114,3 +114,49 @@ Organisation **par domaine métier**, pas par type technique : il n'y a **pas** 
   `<app-etat-erreur (reessayer)>` dans le corps de la liste en cas d'échec (un toast disparaît,
   l'utilisateur resterait devant un écran vide).
 - **Route de feature** : toujours `loadComponent: () => import(...)`, jamais un import statique.
+
+## Chronogrammes de pilotage (`chronogrammes/`)
+
+Dossier **autonome**, sans lien avec l'application Angular : son propre `package.json`, son
+propre `node_modules` (écarté par `chronogrammes/.gitignore` — le `/node_modules` de la racine
+est ancré et ne l'attrape pas). Ne jamais ajouter ses dépendances au `package.json` du projet.
+
+### Régénérer après une mise à jour d'avancement
+
+1. Corriger **`chronogrammes/activites.yaml`** — c'est la **source unique** : rien n'est codé en
+   dur dans le script, et on ne retouche jamais le `.xlsx` ni le `.html` à la main (ils sont
+   réécrits à chaque exécution).
+2. Lancer :
+   ```bash
+   cd chronogrammes
+   node generer_chronogramme.mjs          # réécrit chronogramme_prs2.xlsx et .html
+   node --test test_generer.mjs           # 55 tests — à faire passer avant de livrer
+   ```
+   (Première utilisation sur une machine neuve : `npm install` dans `chronogrammes/`.)
+3. Lire les **avertissements** affichés en fin d'exécution : ils signalent les incohérences non
+   bloquantes (début tombant un jour non ouvré, activité démarrant avant la fin d'une
+   dépendance, statut déclaré ≠ statut calculé). Ils sont repris dans l'onglet `Parametres` et
+   en bas de la page HTML.
+
+### Règles du modèle — à respecter en éditant le YAML
+
+- **`preuve` obligatoire** pour tout élément `termine` ou `en_cours` : un commit, un fichier, ou
+  une exécution de test. Le générateur **refuse** de produire sans (message explicite, code 1).
+- **Aucun pourcentage au jugé.** `termine` = 100, `a_venir` = 0, `en_cours` = un ratio
+  d'éléments dénombrables dont la formule est écrite dans `preuve`.
+- **`debut` fait foi** : pour une activité passée c'est une observation (date du premier commit
+  du thème). Le générateur ne replanifie **pas** derrière les dépendances — il calcule
+  `fin = debut + duree_jours` en jours ouvrés et se contente de signaler les chevauchements.
+- Une activité porte soit `duree_jours` (jours ouvrés), soit `fin` (date). Les deux formes sont
+  acceptées ; `global_prs2` utilise `fin`.
+- `semaines_gantt` / `mois_gantt` sont des **planchers** : la grille s'étend d'elle-même si une
+  activité déborde.
+- Un `a_venir` daté porte `note: "Dates PROPOSÉES — à valider"` tant que le calendrier n'est pas
+  contractuel.
+
+### Dans le `.xlsx`
+
+`Parametres!$B$2` (date de démarrage) est l'**ancre** : toutes les dates des autres onglets sont
+des formules `=Parametres!$B$2+n` (ou `EDATE(...)` pour les mois). Modifier cette cellule décale
+tout le calendrier. En revanche les **couleurs des barres** sont figées à la génération —
+après un changement dans Excel, relancer le script.
