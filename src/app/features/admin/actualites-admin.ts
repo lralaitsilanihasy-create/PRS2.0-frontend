@@ -137,10 +137,10 @@ const TAILLE_MAX_IMAGE_MO = 10;
     <!-- Formulaire de création / modification -->
     @if (edition(); as a) {
       <div class="modal-backdrop" [class.closing]="closingEdition()" (click)="fermerEdition()">
-        <div class="modal modal-lg" role="dialog" aria-modal="true" [attr.aria-label]="a.idActualite ? 'Modifier l\\'actualité' : 'Nouvelle actualité'"
+        <div class="modal modal-lg" role="dialog" aria-modal="true" [attr.aria-label]="titreEdition()"
              appModale (appModaleFermer)="fermerEdition()" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2 class="modal-title">{{ a.idActualite ? 'Modifier l\\'actualité' : 'Nouvelle actualité' }}</h2>
+            <h2 class="modal-title">{{ titreEdition() }}</h2>
             <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerEdition()">✕</button>
           </div>
 
@@ -308,6 +308,15 @@ export class ActualitesAdmin {
   readonly closingEdition = signal(false);
   readonly closingConsult = signal(false);
   readonly closingArchive = signal(false);
+
+  /**
+   * Titre du formulaire de création / modification. Sorti du gabarit à dessein : une apostrophe
+   * échappée dans une expression inline met en échec l'analyseur de gabarits d'ESLint (le
+   * compilateur Angular, lui, l'accepte) — le texte est identique.
+   */
+  readonly titreEdition = computed(() =>
+    this.edition()?.idActualite ? "Modifier l'actualité" : 'Nouvelle actualité',
+  );
 
   readonly enCours = computed(() => this.toutes().filter((a) => a.statut !== 'ARCHIVE'));
   readonly archivees = computed(() => this.toutes().filter((a) => a.statut === 'ARCHIVE'));

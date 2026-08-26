@@ -53,7 +53,10 @@ export class MontantFrDirective implements ControlValueAccessor {
   /** Parse une saisie libre (espaces, virgule décimale) en nombre, ou `null` si vide/invalide. */
   private parse(saisie: string): number | null {
     const nettoye = saisie
-      .replace(/[\s  ]/g, '')
+      // Espaces de groupement d'un montant collé, échappées en Unicode explicite pour rester
+      // visibles dans le source : insécable (U+00A0) et fine insécable (U+202F, celle que
+      // pose `Intl.NumberFormat('fr-FR')`).
+      .replace(/[\s\u00a0\u202f]/g, '')
       .replace(',', '.')
       .replace(/[^0-9.]/g, '');
     if (nettoye === '') return null;

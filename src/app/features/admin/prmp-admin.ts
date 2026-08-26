@@ -227,7 +227,7 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
       </aside>
     }
     @if (piecesId(); as pid) {
-      <app-prmp-pieces-admin [idPrmp]="pid" (close)="fermerPieces()" />
+      <app-prmp-pieces-admin [idPrmp]="pid" (fermer)="fermerPieces()" />
     }
     </div>
 

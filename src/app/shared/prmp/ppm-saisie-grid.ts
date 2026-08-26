@@ -157,7 +157,7 @@ export interface ModificationChamp {
                       }
                       <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDates(g)"
                         [class.sd__capm-modif]="calendrierModifie(g)"
-                        [title]="calendrierModifie(g) ? 'Dates du calendrier modifiées par l\\'import (détail dans le récapitulatif au-dessus de la grille).' : ''">CAPM</button>
+                        [title]="titreCalendrier(g)">CAPM</button>
                       @if (!datesSaisies(g)) {
                         <span class="sd__dates-manq">⚠ Dates manquantes</span>
                       }
@@ -456,6 +456,16 @@ export class PpmSaisieGrid {
   calendrierModifie(g: FormGroup): boolean {
     return this.modificationsDe(g).some((m) => m.champ.startsWith('capm:'));
   }
+  /**
+   * Info-bulle du bouton « CAPM ». Sortie du gabarit à dessein : une apostrophe échappée dans une
+   * expression inline met en échec l'analyseur de gabarits d'ESLint (le compilateur Angular, lui,
+   * l'accepte) — le texte est identique.
+   */
+  titreCalendrier(g: FormGroup): string {
+    return this.calendrierModifie(g)
+      ? "Dates du calendrier modifiées par l'import (détail dans le récapitulatif au-dessus de la grille)."
+      : '';
+  }
 
   statutDe(g: FormGroup): string {
     return this.statutParUid().get(this.uidDe(g)) ?? '';
@@ -591,7 +601,11 @@ export class PpmSaisieGrid {
     const uid = this.uidDe(g);
     this.lignesValidees.update((s) => {
       const n = new Set(s);
-      n.has(uid) ? n.delete(uid) : n.add(uid);
+      if (n.has(uid)) {
+        n.delete(uid);
+      } else {
+        n.add(uid);
+      }
       return n;
     });
   }

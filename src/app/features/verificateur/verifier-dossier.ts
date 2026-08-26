@@ -7,7 +7,7 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
-import { Dossier, Notification, ObservationPv, PvExamen, TransmissionSigmp } from '../../models';
+import { Dossier, ObservationPv, PvExamen, TransmissionSigmp } from '../../models';
 import {
   AvisService,
   ControleurService,

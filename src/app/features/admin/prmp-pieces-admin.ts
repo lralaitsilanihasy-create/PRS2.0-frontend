@@ -39,15 +39,15 @@ const PIECES: PieceDef[] = [
   template: `
     <section class="pp cnm-card">
       <header class="pp__head">
-        <h1 class="pp__title">Pièces jointes — PRMP {{ idPrmp() || '?' }}</h1>
+        <h1 class="pp__title">Pièces jointes — PRMP {{ idPrmpEffectif() || '?' }}</h1>
         @if (embedded()) {
-          <button type="button" class="btn btn-outline btn-sm" (click)="close.emit()">Fermer</button>
+          <button type="button" class="btn btn-outline btn-sm" (click)="fermer.emit()">Fermer</button>
         } @else {
           <a class="btn btn-outline btn-sm" routerLink="/admin/comptes/prmps">← Retour aux PRMP</a>
         }
       </header>
 
-      @if (!idPrmp()) {
+      @if (!idPrmpEffectif()) {
         <p class="cnm-muted">PRMP non précisée. Revenez à la liste et cliquez « Pièces jointes » sur une ligne.</p>
       } @else {
         <p class="cnm-muted">
@@ -105,14 +105,14 @@ export class PrmpPiecesAdmin {
   private readonly toast = inject(ToastService);
 
   /** Id fourni en mode embarqué (panneau de droite) ; sinon lu depuis le query param en mode page. */
-  readonly idPrmpInput = input<string | null>(null, { alias: 'idPrmp' });
-  readonly close = output<void>();
-  readonly embedded = computed(() => this.idPrmpInput() !== null);
+  readonly idPrmp = input<string | null>(null);
+  readonly fermer = output<void>();
+  readonly embedded = computed(() => this.idPrmp() !== null);
 
   protected readonly pieces = PIECES;
   private readonly idFromRoute = this.route.snapshot.queryParamMap.get('prmp') ?? '';
   /** Id effectif : entrée si embarqué, sinon query param. */
-  readonly idPrmp = computed(() => this.idPrmpInput() ?? this.idFromRoute);
+  readonly idPrmpEffectif = computed(() => this.idPrmp() ?? this.idFromRoute);
   readonly selected = signal<Record<string, File | null>>({ ARRETE_NOMIN: null, CIN: null, PHOTO: null });
   /** Type de pièce en cours d'envoi/consultation (désactive ses boutons). */
   readonly busy = signal<string | null>(null);
@@ -139,7 +139,7 @@ export class PrmpPiecesAdmin {
 
   deposer(p: PieceDef): void {
     const file = this.selected()[p.type];
-    const id = this.idPrmp();
+    const id = this.idPrmpEffectif();
     if (!file || !id) {
       return;
     }
@@ -155,7 +155,7 @@ export class PrmpPiecesAdmin {
   }
 
   telecharger(p: PieceDef): void {
-    const id = this.idPrmp();
+    const id = this.idPrmpEffectif();
     if (!id) {
       return;
     }

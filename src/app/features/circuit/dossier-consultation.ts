@@ -548,6 +548,7 @@ export class DossierConsultation implements OnInit {
         this.localiteMap.set(localiteMap);
         this.entiteMap.set(entiteMap);
         this.pieces.set(pieces);
+        this.journal.set(journal);
         this.loading.set(false);
       });
       return;
@@ -569,6 +570,7 @@ export class DossierConsultation implements OnInit {
       this.localiteMap.set(localiteMap);
       this.entiteMap.set(entiteMap);
       this.pieces.set(pieces);
+      this.journal.set(journal);
       this.modeMap.set(modeMap);
       this.soaMap.set(soaMap);
       this.compteMap.set(compteMap);

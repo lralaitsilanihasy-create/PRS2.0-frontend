@@ -38,15 +38,15 @@ const PIECES: PieceDef[] = [
   template: `
     <section class="up cnm-card">
       <header class="up__head">
-        <h1 class="up__title">Pièces jointes — UGPM {{ idUgpm() || '?' }}</h1>
+        <h1 class="up__title">Pièces jointes — UGPM {{ idUgpmEffectif() || '?' }}</h1>
         @if (embedded()) {
-          <button type="button" class="btn btn-outline btn-sm" (click)="close.emit()">Fermer</button>
+          <button type="button" class="btn btn-outline btn-sm" (click)="fermer.emit()">Fermer</button>
         } @else {
           <a class="btn btn-outline btn-sm" routerLink="/admin/comptes/ugpms">← Retour aux UGPM</a>
         }
       </header>
 
-      @if (!idUgpm()) {
+      @if (!idUgpmEffectif()) {
         <p class="cnm-muted">UGPM non précisée. Revenez à la liste et cliquez « Pièces » sur une ligne.</p>
       } @else {
         <p class="cnm-muted">
@@ -99,14 +99,14 @@ export class UgpmPiecesAdmin {
   private readonly toast = inject(ToastService);
 
   /** Id fourni en mode embarqué (panneau de droite) ; sinon lu depuis le query param en mode page. */
-  readonly idUgpmInput = input<string | null>(null, { alias: 'idUgpm' });
-  readonly close = output<void>();
-  readonly embedded = computed(() => this.idUgpmInput() !== null);
+  readonly idUgpm = input<string | null>(null);
+  readonly fermer = output<void>();
+  readonly embedded = computed(() => this.idUgpm() !== null);
 
   protected readonly pieces = PIECES;
   private readonly idFromRoute = this.route.snapshot.queryParamMap.get('ugpm') ?? '';
   /** Id effectif : entrée si embarqué, sinon query param. */
-  readonly idUgpm = computed(() => this.idUgpmInput() ?? this.idFromRoute);
+  readonly idUgpmEffectif = computed(() => this.idUgpm() ?? this.idFromRoute);
   readonly selected = signal<Record<string, File | null>>({ CIN: null, PHOTO: null });
   /** Type de pièce en cours d'envoi/consultation (désactive ses boutons). */
   readonly busy = signal<string | null>(null);
@@ -133,7 +133,7 @@ export class UgpmPiecesAdmin {
 
   deposer(p: PieceDef): void {
     const file = this.selected()[p.type];
-    const id = this.idUgpm();
+    const id = this.idUgpmEffectif();
     if (!file || !id) {
       return;
     }
@@ -149,7 +149,7 @@ export class UgpmPiecesAdmin {
   }
 
   telecharger(p: PieceDef): void {
-    const id = this.idUgpm();
+    const id = this.idUgpmEffectif();
     if (!id) {
       return;
     }

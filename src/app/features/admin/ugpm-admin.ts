@@ -221,7 +221,7 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
       </aside>
     }
     @if (piecesId(); as pid) {
-      <app-ugpm-pieces-admin [idUgpm]="pid" (close)="fermerPieces()" />
+      <app-ugpm-pieces-admin [idUgpm]="pid" (fermer)="fermerPieces()" />
     }
     </div>
 

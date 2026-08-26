@@ -303,7 +303,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                   <button class="btn btn-outline" type="button" [disabled]="applyingImport()" (click)="annulerImport()">Annuler l'import</button>
                   <button class="btn btn-primary" type="button"
                     [disabled]="applyingImport() || !importPret() || entitePdfDifferente()"
-                    [title]="entitePdfDifferente() ? 'Le PDF concerne une autre entité contractante que le dossier.' : (importPret() ? '' : 'Validez chaque ligne signalée et corrigez les montants incohérents avant d\\'enregistrer.')"
+                    [title]="titreEnregistrerImport()"
                     (click)="enregistrerImport()">
                     {{ applyingImport() ? 'Enregistrement…' : '💾 Enregistrer' }}
                   </button>
@@ -1199,6 +1199,19 @@ export class DetailPpmModal implements OnInit {
   importPret(): boolean {
     const g = this.grid();
     return !!this.importMarches() && !!g && g.nbAValiderRestantes() === 0 && g.benefsCoherents;
+  }
+  /**
+   * Info-bulle du bouton « Enregistrer » de l'import. Sortie du gabarit à dessein : une apostrophe
+   * échappée dans une expression inline met en échec l'analyseur de gabarits d'ESLint (le
+   * compilateur Angular, lui, l'accepte) — les trois textes sont identiques.
+   */
+  titreEnregistrerImport(): string {
+    if (this.entitePdfDifferente()) {
+      return 'Le PDF concerne une autre entité contractante que le dossier.';
+    }
+    return this.importPret()
+      ? ''
+      : "Validez chaque ligne signalée et corrigez les montants incohérents avant d'enregistrer.";
   }
   /** Normalise un nom d'entité pour comparaison tolérante (majuscules, sans accents/diacritiques, espaces réduits). */
   private normEntite(s: string): string {

@@ -23,6 +23,11 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
 
+      # Bloquante sur les erreurs uniquement : les avertissements d'accessibilité des gabarits
+      # sont un chantier à part (cf. AUDIT.md), ils ne doivent pas faire échouer la CI.
+      - name: Analyse statique (ESLint)
+        run: npm run lint
+
       - name: Tests unitaires
         run: npm test
 

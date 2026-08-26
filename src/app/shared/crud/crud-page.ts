@@ -7,7 +7,6 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { CrudService } from '../../services/api/crud.service';
 import { LectureBadge } from '../security/lecture-badge';
 import { CrudResourceConfig, FieldConfig, RowAction } from './crud-config';
