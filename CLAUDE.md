@@ -51,6 +51,7 @@ Organisation **par domaine métier**, pas par type technique : il n'y a **pas** 
 - Toujours typer les réponses d'API avec des **interfaces TypeScript** (pas de `any`).
 - Nommage : fichiers en kebab-case, classes en PascalCase.
 - Privilégier les API Angular modernes : `inject()`, signals quand c'est pertinent.
+- Lint : ESLint 9 (`eslint.config.js`, format plat) — corriger les erreurs avant de livrer, ne pas désactiver une règle sans motif consigné en commentaire.
 
 ## Backend associé — MÊME ORIGINE (depuis le 17/08/2026)
 - L'API s'appelle en **relatif** : `environment.apiUrl = '/api'`, en développement comme en
@@ -77,6 +78,7 @@ Organisation **par domaine métier**, pas par type technique : il n'y a **pas** 
 - Générer un service : `ng generate service services/nom`
 - Build de production : `ng build`
 - Tests : `ng test`
+- Lint : `npm run lint` (ESLint 9, configuration plate `eslint.config.js`) — branché sur la CI
 
 ## Notes pour Claude
 - Respecter l'architecture standalone du projet existant (cf. `app.ts` / `app.config.ts`).
