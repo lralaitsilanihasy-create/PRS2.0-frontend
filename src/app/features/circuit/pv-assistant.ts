@@ -45,8 +45,21 @@ import {
           </thead>
           <tbody>
             @for (pv of pvs(); track pv.idPv) {
-              <tr class="pva__row" (click)="basculer(pv)">
-                <td class="cnm-mono">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</td>
+              <tr>
+                <td>
+                  <!-- <button> et non <tr (click)> : le dépliage du détail doit être atteignable au
+                       clavier (AUDIT.md A4 — la règle ESLint ignore les <tr>). -->
+                  <button
+                    type="button"
+                    class="pva__toggle"
+                    [attr.aria-expanded]="ouvert() === pv.idPv"
+                    [attr.aria-controls]="'pva-detail-' + pv.idPv"
+                    (click)="basculer(pv)"
+                  >
+                    <span class="pva__chev" [class.is-open]="ouvert() === pv.idPv" aria-hidden="true">▾</span>
+                    <span class="cnm-mono">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</span>
+                  </button>
+                </td>
                 <td>{{ dossierRef(pv) }}</td>
                 <td><span [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span></td>
                 <td class="cnm-mono">{{ dateSignature(pv) || '—' }}</td>
@@ -56,7 +69,7 @@ import {
                     <span class="badge badge-success">Archivé le {{ pv.dateArchivage }}</span>
                   } @else {
                     <button type="button" class="btn btn-primary btn-sm" [disabled]="archivage() === pv.idPv"
-                      (click)="archiver(pv); $event.stopPropagation()">
+                      (click)="archiver(pv)">
                       {{ archivage() === pv.idPv ? 'Archivage…' : 'Archiver' }}
                     </button>
                   }
@@ -64,7 +77,7 @@ import {
               </tr>
               @if (ouvert() === pv.idPv) {
                 <tr class="pva__detail">
-                  <td colspan="5">
+                  <td colspan="5" [id]="'pva-detail-' + pv.idPv">
                     <dl class="pva__dl">
                       <div><dt>Référence</dt><dd class="cnm-mono">{{ pv.refePv || pv.referencePv || '—' }}</dd></div>
                       <div><dt>Dossier</dt><dd>{{ dossierRef(pv) }}</dd></div>
@@ -91,7 +104,9 @@ import {
     </section>
   `,
   styles: `
-    .pva__row { cursor: pointer; }
+    .pva__toggle { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+    .pva__chev { flex: none; color: var(--n-400); transition: transform 0.15s; }
+    .pva__chev.is-open { transform: rotate(180deg); }
     .pva__dl { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
     .pva__dl > div { display: flex; gap: 0.5rem; align-items: baseline; }
     .pva__dl dt { flex: 0 0 11rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
