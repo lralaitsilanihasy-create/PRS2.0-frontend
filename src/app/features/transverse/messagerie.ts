@@ -26,23 +26,23 @@ import { MessageService } from '../../services';
       @if (composeOpen()) {
         <form class="card msg__compose" [formGroup]="form" (ngSubmit)="envoyer()" novalidate>
           <div class="form-group">
-            <label class="form-label required">Destinataire (matricule)</label>
-            <input class="form-control" type="text" formControlName="destinataireIm" />
+            <label class="form-label required" for="msg-destinataire">Destinataire (matricule)</label>
+            <input id="msg-destinataire" class="form-control" type="text" formControlName="destinataireIm" />
             @if (fieldErr('destinataireIm')) { <span class="form-error">{{ fieldErr('destinataireIm') }}</span> }
           </div>
           <div class="form-group">
-            <label class="form-label">Sujet</label>
-            <input class="form-control" type="text" formControlName="sujet" />
+            <label class="form-label" for="msg-sujet">Sujet</label>
+            <input id="msg-sujet" class="form-control" type="text" formControlName="sujet" />
             @if (fieldErr('sujet')) { <span class="form-error">{{ fieldErr('sujet') }}</span> }
           </div>
           <div class="form-group">
-            <label class="form-label">Message</label>
-            <textarea class="form-control" rows="3" formControlName="corps"></textarea>
+            <label class="form-label" for="msg-corps">Message</label>
+            <textarea id="msg-corps" class="form-control" rows="3" formControlName="corps"></textarea>
             @if (fieldErr('corps')) { <span class="form-error">{{ fieldErr('corps') }}</span> }
           </div>
           <div class="form-group">
-            <label class="form-label">Dossier lié (facultatif)</label>
-            <input class="form-control" type="number" formControlName="idDossier" />
+            <label class="form-label" for="msg-dossier">Dossier lié (facultatif)</label>
+            <input id="msg-dossier" class="form-control" type="number" formControlName="idDossier" />
           </div>
           <div class="msg__compose-actions">
             <button type="submit" class="btn btn-primary">Envoyer</button>

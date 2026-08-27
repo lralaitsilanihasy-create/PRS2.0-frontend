@@ -19,12 +19,12 @@ import { RapportService } from '../../services';
 
       <div class="rapports__filters">
         <div class="form-group">
-          <label class="form-label">Du</label>
-          <input class="form-control" type="date" [(ngModel)]="from" />
+          <label class="form-label" for="rap-du">Du</label>
+          <input id="rap-du" class="form-control" type="date" [(ngModel)]="from" />
         </div>
         <div class="form-group">
-          <label class="form-label">Au</label>
-          <input class="form-control" type="date" [(ngModel)]="to" />
+          <label class="form-label" for="rap-au">Au</label>
+          <input id="rap-au" class="form-control" type="date" [(ngModel)]="to" />
         </div>
       </div>
 

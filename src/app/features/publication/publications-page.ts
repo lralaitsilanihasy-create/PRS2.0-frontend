@@ -30,18 +30,18 @@ import { StatutBadge } from '../../shared/circuit';
       @if (formOpen()) {
         <form class="card pub__form" [formGroup]="form" (ngSubmit)="creer()" novalidate>
           <div class="form-group">
-            <label class="form-label required">Identifiant</label>
-            <input class="form-control" type="number" formControlName="idPublication" />
+            <label class="form-label required" for="pub-identifiant">Identifiant</label>
+            <input id="pub-identifiant" class="form-control" type="number" formControlName="idPublication" />
             @if (fieldErr('idPublication')) { <span class="form-error">{{ fieldErr('idPublication') }}</span> }
           </div>
           <div class="form-group">
-            <label class="form-label required">Type d'objet</label>
-            <input class="form-control" type="text" formControlName="typeObjet" placeholder="PPM, MARCHE…" />
+            <label class="form-label required" for="pub-type-objet">Type d'objet</label>
+            <input id="pub-type-objet" class="form-control" type="text" formControlName="typeObjet" placeholder="PPM, MARCHE…" />
             @if (fieldErr('typeObjet')) { <span class="form-error">{{ fieldErr('typeObjet') }}</span> }
           </div>
           <div class="form-group">
-            <label class="form-label required">Identifiant de l'objet</label>
-            <input class="form-control" type="number" formControlName="idObjet" />
+            <label class="form-label required" for="pub-id-objet">Identifiant de l'objet</label>
+            <input id="pub-id-objet" class="form-control" type="number" formControlName="idObjet" />
             @if (fieldErr('idObjet')) { <span class="form-error">{{ fieldErr('idObjet') }}</span> }
           </div>
           <div class="pub__form-actions">

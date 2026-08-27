@@ -36,8 +36,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
           <div class="card-header"><span class="card-title">Nouvelle demande</span></div>
           <div class="card-body">
             <div class="form-group">
-              <label class="form-label required">Dossier à retirer</label>
-              <select class="form-control" [value]="selectedId() ?? ''" (change)="onSelect($any($event.target).value)">
+              <label class="form-label required" for="ret-dossier">Dossier à retirer</label>
+              <select id="ret-dossier" class="form-control" [value]="selectedId() ?? ''" (change)="onSelect($any($event.target).value)">
                 <option value="" disabled>— Choisir un dossier —</option>
                 @for (d of retirables(); track d.idDossier) {
                   <option [value]="d.idDossier">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</option>
@@ -73,8 +73,9 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
             }
 
             <div class="form-group">
-              <label class="form-label required">Motif du retrait</label>
+              <label class="form-label required" for="ret-motif">Motif du retrait</label>
               <textarea
+                id="ret-motif"
                 class="form-control"
                 rows="4"
                 [value]="motif()"
