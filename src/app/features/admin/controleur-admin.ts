@@ -5,7 +5,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { ouvrirBlobSur, urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Controleur } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
@@ -305,7 +305,7 @@ export class ControleurAdmin implements OnInit, OnDestroy {
     this.detailPhotoLoading.set(true);
     this.controleurService.downloadPhoto(c.imControleur).subscribe({
       next: (blob) => {
-        this.setDetailPhoto(URL.createObjectURL(blob));
+        this.setDetailPhoto(urlBlobSure(blob));
         this.detailPhotoLoading.set(false);
       },
       error: () => {
@@ -430,7 +430,7 @@ export class ControleurAdmin implements OnInit, OnDestroy {
     this.photo.set(file);
     const prev = this.photoPreview();
     if (prev) URL.revokeObjectURL(prev);
-    this.photoPreview.set(file ? URL.createObjectURL(file) : null);
+    this.photoPreview.set(file ? urlBlobSure(file) : null);
   }
 
   /** Ouvre la photo enregistrée du contrôleur en cours d'édition dans un nouvel onglet. */
@@ -442,9 +442,7 @@ export class ControleurAdmin implements OnInit, OnDestroy {
     this.busyPhoto.set(true);
     this.controleurService.downloadPhoto(id).subscribe({
       next: (blob) => {
-        const url = urlBlobSure(blob);
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        ouvrirBlobSur(blob);
         this.busyPhoto.set(false);
       },
       error: (e: ApiError) => {

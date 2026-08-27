@@ -6,6 +6,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { CreerPrmpRequest, Prmp } from '../../models';
 import { CompteAuthService, PrmpService } from '../../services';
@@ -382,7 +383,7 @@ export class PrmpAdmin implements OnInit, OnDestroy {
     this.detailPhotoLoading.set(true);
     this.prmpService.downloadPiece(p.idPrmp, 'PHOTO').subscribe({
       next: (blob) => {
-        this.setDetailPhoto(URL.createObjectURL(blob));
+        this.setDetailPhoto(urlBlobSure(blob));
         this.detailPhotoLoading.set(false);
       },
       error: () => {
@@ -517,7 +518,7 @@ export class PrmpAdmin implements OnInit, OnDestroy {
   private setPreview(file: File | null): void {
     const prev = this.photoPreview();
     if (prev) URL.revokeObjectURL(prev);
-    this.photoPreview.set(file ? URL.createObjectURL(file) : null);
+    this.photoPreview.set(file ? urlBlobSure(file) : null);
   }
 
   /** Repasse en mode création (formulaire vierge, compte requis). */

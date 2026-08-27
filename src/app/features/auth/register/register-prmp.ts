@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { ApiError } from '../../../core/errors/api-error';
+import { urlBlobSure } from '../../../core/securite/fichiers-surs';
 import { EntitePubliqueDto, RegisterPrmpV2Request } from '../../../models';
 
 interface FieldDef {
@@ -465,7 +466,7 @@ export class RegisterPrmp implements OnDestroy {
   private setPreview(file: File | null): void {
     const prev = this.photoPreview();
     if (prev) URL.revokeObjectURL(prev);
-    this.photoPreview.set(file ? URL.createObjectURL(file) : null);
+    this.photoPreview.set(file ? urlBlobSure(file) : null);
   }
 
   invalid(key: string): boolean {

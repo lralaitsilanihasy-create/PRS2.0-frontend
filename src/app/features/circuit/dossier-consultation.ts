@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, ou
 import { DatePipe } from '@angular/common';
 import { catchError, forkJoin, of } from 'rxjs';
 
-import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { ActionDossier, DiffDossier, Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
@@ -589,7 +589,7 @@ export class DossierConsultation implements OnInit {
       return;
     }
     this.pieceService.telecharger(p.idPiece).subscribe({
-      next: (blob) => window.open(urlBlobSure(blob), '_blank'),
+      next: (blob) => ouvrirBlobSur(blob),
       error: () => this.toast.error("Impossible d'ouvrir la pièce."),
     });
   }

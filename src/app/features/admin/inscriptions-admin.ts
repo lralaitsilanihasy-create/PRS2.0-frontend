@@ -4,7 +4,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { blobSur } from '../../core/securite/fichiers-surs';
+import { blobSur, urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { InscriptionEnAttente } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
@@ -230,8 +230,9 @@ export class InscriptionsAdmin implements OnInit, OnDestroy {
   }
   private setDoc(blob: Blob): void {
     this.clearDoc();
+    // Le type sûr décide de l'aiguillage PDF/image ; `urlBlobSure` est idempotent sur `sur`.
     const sur = blobSur(blob);
-    const url = URL.createObjectURL(sur);
+    const url = urlBlobSure(sur);
     this.currentUrl = url;
     if (sur.type.includes('pdf')) {
       this.viewPdf.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));

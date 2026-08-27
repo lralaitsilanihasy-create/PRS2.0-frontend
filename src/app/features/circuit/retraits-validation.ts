@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { DemandeRetrait, Dossier } from '../../models';
 import { DemandeRetraitService, DossierService, ReferenceLookupService } from '../../services';
 import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
@@ -308,7 +308,7 @@ export class RetraitsValidation {
   ouvrirLettre(r: DemandeRetrait): void {
     if (r.idDemandeRetrait == null) return;
     this.service.document(r.idDemandeRetrait).subscribe({
-      next: (blob) => window.open(urlBlobSure(blob), '_blank'),
+      next: (blob) => ouvrirBlobSur(blob),
       error: () => this.toast.error("La lettre n'est pas disponible pour cette demande."),
     });
   }

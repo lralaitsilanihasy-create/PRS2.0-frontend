@@ -3,7 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { UgpmPieceType, UgpmService } from '../../services';
 
 interface PieceDef {
@@ -156,9 +156,7 @@ export class UgpmPiecesAdmin {
     this.busy.set(p.type);
     this.ugpmService.downloadPiece(id, p.type).subscribe({
       next: (blob) => {
-        const url = urlBlobSure(blob);
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        ouvrirBlobSur(blob);
         this.busy.set(null);
       },
       error: (e: ApiError) => {

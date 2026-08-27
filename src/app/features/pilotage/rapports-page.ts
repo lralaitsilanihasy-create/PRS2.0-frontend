@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { telechargerBlob } from '../../core/securite/fichiers-surs';
 import { RapportService } from '../../services';
 
 /**
@@ -77,13 +78,7 @@ export class RapportsPage {
     this.busy.set(true);
     source.subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        // Révocation différée : révoquer immédiatement peut interrompre le téléchargement (ERR_FAILED).
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        telechargerBlob(blob, filename);
         this.busy.set(false);
       },
       error: () => this.busy.set(false),

@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
+import { ouvrirBlobSur, telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
 import { Dossier, LettreRenvoi, PieceJointeDossier, TypePieceJointe } from '../../models';
 import { DossierService, LettreRenvoiService, PieceJointeDossierService, TypePieceJointeService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
@@ -343,7 +343,7 @@ export class LettreRenvoiConsultation {
       return;
     }
     this.service.document(l.idLettre).subscribe({
-      next: (blob) => window.open(urlBlobSure(blob), '_blank'),
+      next: (blob) => ouvrirBlobSur(blob),
       error: (err: HttpErrorResponse) =>
         this.toast.error(
           err.status === 404
@@ -422,15 +422,7 @@ export class LettreRenvoiConsultation {
       return;
     }
     this.pieceService.telecharger(p.idPiece).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = p.nomFichier || `piece-${p.idPiece}`;
-        a.click();
-        // Révocation différée : révoquer immédiatement peut interrompre le téléchargement (ERR_FAILED).
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      },
+      next: (blob) => telechargerBlob(blob, p.nomFichier || `piece-${p.idPiece}`),
       error: (e: ApiError) => this.toast.error(e.message || 'Erreur lors du téléchargement.'),
     });
   }

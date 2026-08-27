@@ -6,7 +6,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
-import { urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
+import { ouvrirBlobSur, validerFichier } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../a11y/modale.directive';
 import { AnomalieTranscription, Capm, Compte, Dossier, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, EntiteContract, PieceJointeDossier, Ppm, Prmp, Role, Ugpm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypeChangementLigne, TypePieceJointe } from '../../models';
 import {
@@ -1392,7 +1392,7 @@ export class DetailPpmModal implements OnInit {
       return;
     }
     this.pieceService.telecharger(p.idPiece).subscribe({
-      next: (blob) => window.open(urlBlobSure(blob), '_blank'),
+      next: (blob) => ouvrirBlobSur(blob),
       error: () => this.toast.error("Impossible d'ouvrir la pièce."),
     });
   }

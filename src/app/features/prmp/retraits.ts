@@ -4,7 +4,7 @@ import { forkJoin } from 'rxjs';
 
 import { ApiError, getFieldError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { TYPES_PDF, urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
+import { TYPES_PDF, ouvrirBlobSur, validerFichier } from '../../core/securite/fichiers-surs';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { DemandeRetrait, Dossier } from '../../models';
 import { DemandeRetraitService, DossierService, LocaliteService, ReferenceLookupService } from '../../services';
@@ -299,7 +299,7 @@ export class PrmpRetraits {
       return;
     }
     this.service.document(r.idDemandeRetrait).subscribe({
-      next: (blob) => window.open(urlBlobSure(blob), '_blank'),
+      next: (blob) => ouvrirBlobSur(blob),
       error: () => this.toast.error("La lettre n'est pas disponible pour cette demande."),
     });
   }

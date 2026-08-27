@@ -3,7 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { urlBlobSure } from '../../core/securite/fichiers-surs';
+import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { PrmpPieceType, PrmpService } from '../../services';
 
 interface PieceDef {
@@ -162,9 +162,7 @@ export class PrmpPiecesAdmin {
     this.busy.set(p.type);
     this.prmpService.downloadPiece(id, p.type).subscribe({
       next: (blob) => {
-        const url = urlBlobSure(blob);
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        ouvrirBlobSur(blob);
         this.busy.set(null);
       },
       error: (e: ApiError) => {

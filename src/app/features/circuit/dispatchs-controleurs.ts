@@ -21,6 +21,7 @@ import {
 } from '../../services';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { StatutBadge } from '../../shared/circuit';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
@@ -401,7 +402,7 @@ export class DispatchsControleurs implements OnDestroy {
         for (const l of lignes) {
           if (this.photos().has(l.im)) continue;
           this.controleurService.downloadPhoto(l.im).subscribe({
-            next: (blob) => this.photos.update((m) => new Map(m).set(l.im, URL.createObjectURL(blob))),
+            next: (blob) => this.photos.update((m) => new Map(m).set(l.im, urlBlobSure(blob))),
             error: () => {},
           });
         }

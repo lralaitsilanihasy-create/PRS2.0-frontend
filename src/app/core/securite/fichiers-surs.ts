@@ -34,6 +34,46 @@ export function urlBlobSure(blob: Blob): string {
 }
 
 /**
+ * Délai avant révocation d'une URL d'objet remise au navigateur.
+ *
+ * Révoquer dans la foulée du `click()` ou du `window.open()` coupe le flux avant que le
+ * navigateur ait fini de lire le blob : le téléchargement échoue en `ERR_FAILED` et l'onglet
+ * ouvert reste blanc. Une minute laisse la place au transfert, puis rend la mémoire —
+ * ne jamais remplacer ce différé par une révocation immédiate.
+ */
+const DELAI_REVOCATION_MS = 60_000;
+
+/**
+ * Enregistre un blob sur le poste sous `nomFichier`, via un lien `download` synthétique.
+ *
+ * Passe par `blobSur()` : un contenu piégé arrive au disque avec un type inerte, et surtout
+ * l'URL `blob:` créée ici ne peut plus servir de puits actif si le code appelant évolue
+ * (`window.open`, `<iframe>`). Unique manière d'écrire un téléchargement dans ce dépôt.
+ */
+export function telechargerBlob(blob: Blob, nomFichier: string): void {
+  const url = urlBlobSure(blob);
+  const lien = document.createElement('a');
+  lien.href = url;
+  lien.download = nomFichier;
+  lien.click();
+  setTimeout(() => URL.revokeObjectURL(url), DELAI_REVOCATION_MS);
+}
+
+/**
+ * Ouvre un blob dans un nouvel onglet (consultation d'une pièce, d'un PDF, d'une photo).
+ *
+ * Le type MIME est forcé inerte par `blobSur()` — sans quoi un HTML ou un SVG téléversé
+ * s'exécuterait dans l'origine de l'application, l'onglet ouvert partageant cette origine.
+ * L'URL est révoquée en différé (cf. `DELAI_REVOCATION_MS`) : sans cela elle reste vivante
+ * jusqu'au rechargement de l'application.
+ */
+export function ouvrirBlobSur(blob: Blob): void {
+  const url = urlBlobSure(blob);
+  window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), DELAI_REVOCATION_MS);
+}
+
+/**
  * Valide un fichier téléversé (type MIME et taille).
  * Retourne le message d'erreur à afficher, ou `null` si le fichier est acceptable.
  */
