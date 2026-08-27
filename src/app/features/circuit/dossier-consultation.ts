@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { ActionDossier, DiffDossier, Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
   CapmService,
@@ -39,9 +40,9 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 @Component({
   selector: 'app-dossier-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, StatutBadge, PpmMarchesTable],
+  imports: [DatePipe, StatutBadge, PpmMarchesTable, ModaleDirective],
   template: `
-    <div [class.modal-backdrop]="!embedded()" [class.closing]="closing()" (click)="onOverlayClick()">
+    <div [class.modal-backdrop]="!embedded()" [class.closing]="closing()">
       <!-- ⚠️ En modale, le corps n'est monté qu'une fois les données là : sinon le panneau
            s'ouvrait à la taille de son seul en-tête puis grandissait par à-coups (552 → 724 →
            964 px mesurés) PENDANT son animation d'entrée — d'où une ouverture « brusque ».
@@ -54,9 +55,12 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
         class="dc"
         [class.dc--embedded]="embedded()"
         [class.dc--large]="estPpm()"
-        (click)="$event.stopPropagation()"
         [attr.role]="embedded() ? null : 'dialog'"
         [attr.aria-modal]="embedded() ? null : 'true'"
+        [attr.aria-label]="embedded() ? null : 'Consultation — ' + typeLabel()"
+        [appModale]="!embedded()"
+        appModaleClicExterieur
+        (appModaleFermer)="fermer()"
       >
         <!-- ── En-tête ── -->
         <div class="dc-header">
@@ -368,20 +372,13 @@ export class DossierConsultation implements OnInit {
     fermerAvecAnimation(this.closing, () => this.closed.emit());
   }
 
-  /** Clic sur l'overlay : ferme la modale (sans effet en mode embarqué). */
-  onOverlayClick(): void {
-    this.fermer();
-  }
-
-  /**
-   * Échap ferme la consultation. Ce composant ne peut pas porter la directive `appModale`
-   * partagée : le même conteneur est aussi rendu **embarqué** (sans voile, dans une colonne),
-   * où un piège de focus serait nuisible. D'où cet écouteur, neutralisé en mode embarqué.
+  /*
+   * Échap et clic sur le voile sont portés par la directive `appModale`, liée à `!embedded()` :
+   * le même conteneur est aussi rendu **embarqué** (sans voile, dans une colonne), où un piège
+   * de focus serait nuisible — d'où l'entrée qui neutralise la directive dans ce mode. Elle
+   * remplace l'écouteur `document:keydown.escape` et le `(click)` de l'overlay qui vivaient ici :
+   * ce dernier annonçait un `<div>` non focalisable comme cliquable (ESLint a11y).
    */
-  @HostListener('document:keydown.escape')
-  onEchap(): void {
-    this.fermer();
-  }
 
   private readonly ppmService = inject(PpmService);
   private readonly miseAJourService = inject(MiseAJourPpmService);

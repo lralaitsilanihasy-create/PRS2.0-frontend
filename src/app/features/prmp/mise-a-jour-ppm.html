@@ -36,13 +36,13 @@
       <div class="card-header"><span class="card-title">En-tête de la version</span></div>
       <div class="card-body maj__entete">
         <div class="maj__champ">
-          <label>Entité contractante</label>
-          <input class="form-control" [value]="libelleEntite()" disabled />
+          <label for="maj-entite">Entité contractante</label>
+          <input id="maj-entite" class="form-control" [value]="libelleEntite()" disabled />
           <span class="maj__herite">hérité</span>
         </div>
         <div class="maj__champ">
-          <label>Exercice</label>
-          <input class="form-control" [value]="ppm()?.exercice ?? ''" disabled />
+          <label for="maj-exercice">Exercice</label>
+          <input id="maj-exercice" class="form-control" [value]="ppm()?.exercice ?? ''" disabled />
           <span class="maj__herite">hérité</span>
         </div>
         <div class="maj__champ">
@@ -303,10 +303,11 @@
 </section>
 
 @if (apercuOuvert() && diff(); as d) {
-  <div class="maj__overlay" (click)="apercuOuvert.set(false)">
-    <div class="maj__modal" (click)="$event.stopPropagation()">
+  <div class="maj__overlay">
+    <div class="maj__modal" role="dialog" aria-modal="true" aria-labelledby="maj-apercu-titre"
+         appModale appModaleClicExterieur (appModaleFermer)="apercuOuvert.set(false)">
       <header class="maj__modal-head">
-        <h2>Aperçu du diff complet</h2>
+        <h2 id="maj-apercu-titre">Aperçu du diff complet</h2>
         <button type="button" class="maj__fermer" (click)="apercuOuvert.set(false)" aria-label="Fermer">✕</button>
       </header>
       <div class="maj__modal-body">

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, effect, inject, viewChild } from '@angular/core';
 
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { ToastService } from './toast.service';
 
 /**
@@ -14,6 +15,7 @@ import { ToastService } from './toast.service';
 @Component({
   selector: 'app-toast-container',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ModaleDirective],
   template: `
     <div class="toast-container" aria-live="polite" aria-atomic="true">
       @for (toast of toastService.toasts(); track toast.id) {
@@ -37,19 +39,16 @@ import { ToastService } from './toast.service';
     </div>
 
     @if (toastService.alerteCourante(); as alerte) {
-      <div
-        class="alerte-backdrop"
-        (click)="toastService.dismiss(alerte.id)"
-        (keydown.escape)="toastService.dismiss(alerte.id)"
-        tabindex="-1"
-      >
+      <div class="alerte-backdrop">
         <div
           class="alerte alerte--{{ alerte.type }}"
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="alerte-titre"
           aria-describedby="alerte-message"
-          (click)="$event.stopPropagation()"
+          appModale
+          appModaleClicExterieur
+          (appModaleFermer)="toastService.dismiss(alerte.id)"
         >
           <div class="alerte__icone" aria-hidden="true">{{ icone(alerte.type) }}</div>
           <h2 class="alerte__titre" id="alerte-titre">
@@ -88,8 +87,9 @@ export class ToastContainer {
   private readonly boutonFermer = viewChild<ElementRef<HTMLButtonElement>>('boutonFermer');
 
   constructor() {
-    // Le clavier suit le dialogue : Échap ferme, et le focus part du bouton (sinon il resterait
-    // sur le champ de fichier, derrière le fond).
+    // Le clavier suit le dialogue : Échap et le clic sur le fond sont portés par `appModale`
+    // (qui y ajoute le piège de focus et la restitution du focus au déclencheur), et le focus
+    // part du bouton (sinon il resterait sur le champ de fichier, derrière le fond).
     effect(() => {
       const bouton = this.boutonFermer();
       if (bouton) {

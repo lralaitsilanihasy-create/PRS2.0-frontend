@@ -8,6 +8,7 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { CrudService } from '../../services/api/crud.service';
+import { ModaleDirective } from '../a11y/modale.directive';
 import { LectureBadge } from '../security/lecture-badge';
 import { CrudResourceConfig, FieldConfig, RowAction } from './crud-config';
 
@@ -30,7 +31,7 @@ type Row = Record<string, unknown>;
 @Component({
   selector: 'app-crud-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, LectureBadge],
+  imports: [ReactiveFormsModule, RouterLink, LectureBadge, ModaleDirective],
   templateUrl: './crud-page.html',
   styleUrl: './crud-page.scss',
 })

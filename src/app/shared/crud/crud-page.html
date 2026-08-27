@@ -78,35 +78,37 @@
   }
 
   @if (formOpen()) {
-    <div class="modal-backdrop" (click)="closeForm()">
-      <form class="crud__form cnm-form" [formGroup]="form" (ngSubmit)="save()" (click)="$event.stopPropagation()" novalidate>
-        <h2 class="crud__form-title">
+    <div class="modal-backdrop">
+      <form class="crud__form cnm-form" [formGroup]="form" (ngSubmit)="save()" role="dialog" aria-modal="true" aria-labelledby="crud-form-titre" appModale appModaleClicExterieur (appModaleFermer)="closeForm()" novalidate>
+        <h2 class="crud__form-title" id="crud-form-titre">
           {{ formMode() === 'create' ? 'Nouvel enregistrement' : 'Modifier' }}
         </h2>
 
         <div class="cnm-form-grid">
           @for (f of formFields; track f.key) {
-            <label class="form-group">
+            <!-- `for`/`id` explicites : le contrôle est enfoui sous les blocs @if/@switch qui
+                 choisissent son type, hors de portée de la seule imbrication dans le <label>. -->
+            <label class="form-group" [for]="'crud-f-' + f.key">
               <span class="form-label">
                 {{ f.label }}@if (f.required) {<span class="crud__req">*</span>}
               </span>
 
               @if (f.ref) {
-                <select class="form-control" [formControlName]="f.key">
+                <select class="form-control" [id]="'crud-f-' + f.key" [formControlName]="f.key">
                   <option [ngValue]="null">— Sélectionner —</option>
                   @for (opt of refOptionsFor(f.key); track opt.value) {
                     <option [ngValue]="opt.value">{{ opt.label }}</option>
                   }
                 </select>
               } @else if (f.optionsFromData) {
-                <select class="form-control" [formControlName]="f.key">
+                <select class="form-control" [id]="'crud-f-' + f.key" [formControlName]="f.key">
                   <option [ngValue]="null">— Sélectionner —</option>
                   @for (opt of dataOptionsFor(f); track opt.value) {
                     <option [ngValue]="opt.value">{{ opt.label }}</option>
                   }
                 </select>
               } @else if (f.options) {
-                <select class="form-control" [formControlName]="f.key">
+                <select class="form-control" [id]="'crud-f-' + f.key" [formControlName]="f.key">
                   <option [ngValue]="null">— Sélectionner —</option>
                   @for (opt of optionsFixes(f); track opt.value) {
                     <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -115,16 +117,16 @@
               } @else {
                 @switch (f.type) {
                   @case ('boolean') {
-                    <input type="checkbox" [formControlName]="f.key" />
+                    <input type="checkbox" [id]="'crud-f-' + f.key" [formControlName]="f.key" />
                   }
                   @case ('number') {
-                    <input type="number" class="form-control" [formControlName]="f.key" />
+                    <input type="number" class="form-control" [id]="'crud-f-' + f.key" [formControlName]="f.key" />
                   }
                   @case ('date') {
-                    <input type="date" class="form-control" [formControlName]="f.key" />
+                    <input type="date" class="form-control" [id]="'crud-f-' + f.key" [formControlName]="f.key" />
                   }
                   @default {
-                    <input type="text" class="form-control" [formControlName]="f.key" />
+                    <input type="text" class="form-control" [id]="'crud-f-' + f.key" [formControlName]="f.key" />
                   }
                 }
               }

@@ -33,6 +33,7 @@ import {
   ServiceBeneficiaireService,
   TypePieceJointeService,
 } from '../../services';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { DetailPpmModal } from '../../shared/prmp';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
@@ -58,7 +59,7 @@ interface LigneAffichee {
 @Component({
   selector: 'app-mise-a-jour-ppm',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, DossierConsultation, DetailPpmModal],
+  imports: [FormsModule, RouterLink, DossierConsultation, DetailPpmModal, ModaleDirective],
   templateUrl: './mise-a-jour-ppm.html',
   styleUrl: './mise-a-jour-ppm.scss',
 })
