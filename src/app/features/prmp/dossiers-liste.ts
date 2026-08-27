@@ -7,7 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
-import { Dossier } from '../../models';
+import { Dossier, Page } from '../../models';
 import {
   DossierService,
   EntiteContractService,
@@ -51,12 +51,12 @@ type Groupe = 'brouillon' | 'soumis';
         <a class="btn btn-retour-hub" routerLink="/prmp/dossiers">← Mes dossiers</a>
       </header>
 
-      @if (loading()) {
+      @if (premierChargement()) {
         <p class="text-muted" role="status">Chargement…</p>
       } @else if (erreur()) {
         <app-etat-erreur message="Impossible de charger vos dossiers." (reessayer)="charger()" />
       } @else {
-        <div class="table-card">
+        <div class="table-card" [class.dl-chargement]="chargement()">
           <table>
             <thead>
               <tr>
@@ -109,6 +109,37 @@ type Groupe = 'brouillon' | 'soumis';
             </tbody>
           </table>
         </div>
+
+        @if (totalPages() > 1) {
+          <nav class="dl-pager" aria-label="Pages de la liste">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              [disabled]="pageIndex() === 0 || chargement()"
+              (click)="pagePrecedente()"
+            >
+              Précédent
+            </button>
+            <span class="dl-pager__info" aria-live="polite">
+              @if (chargement()) { Chargement… } @else { Page {{ pageIndex() + 1 }} / {{ totalPages() }} }
+            </span>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              [disabled]="pageIndex() + 1 >= totalPages() || chargement()"
+              (click)="pageSuivante()"
+            >
+              Suivant
+            </button>
+          </nav>
+          <!-- Limite assumée : voir chargerPage — le serveur ne sait filtrer qu'un statut EXACT. -->
+          @if (groupe() === 'soumis') {
+            <p class="dl-pager__limite">
+              Les brouillons sont écartés page par page : une page peut compter moins de {{ pageSize }} lignes,
+              et le nombre de pages est un majorant.
+            </p>
+          }
+        }
       }
     </section>
 
@@ -152,6 +183,23 @@ type Groupe = 'brouillon' | 'soumis';
     .actions-end { justify-content: flex-end; }
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .confirm-modal { max-width: 28rem; }
+    /* Changement de page : le tableau reste à l'écran, estompé — le remplacer par « Chargement… »
+       ferait sauter la mise en page à chaque clic sur le pager. */
+    .dl-chargement { opacity: 0.55; transition: opacity 0.15s ease; }
+    .dl-pager {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    .dl-pager__info { font-size: var(--text-sm); color: var(--n-500); font-weight: 600; }
+    .dl-pager__limite {
+      margin: 0.4rem 0 0;
+      text-align: center;
+      font-size: var(--text-sm);
+      color: var(--n-500);
+    }
     /* Ligne ciblée par la recherche topbar : flash bleu puis surlignage doux persistant. */
     .dl-row-focus > td { animation: dl-flash 1.8s ease; background: rgba(2, 132, 199, 0.06); }
     @keyframes dl-flash {
@@ -183,9 +231,22 @@ export class DossiersListe {
   readonly groupe = signal<Groupe>('brouillon');
 
   readonly dossiers = signal<Dossier[]>([]);
-  readonly loading = signal(false);
+  /** Un chargement de page est en cours (estompe le tableau, désactive le pager). */
+  readonly chargement = signal(false);
+  /** Une page a déjà été rendue — distingue le premier chargement d'un changement de page. */
+  private readonly dejaCharge = signal(false);
+  /** Premier chargement de l'écran : le tableau n'existe pas encore, on affiche « Chargement… ». */
+  readonly premierChargement = computed(() => this.chargement() && !this.dejaCharge());
   /** Échec du chargement de la liste (affiche l'erreur + « Réessayer »). */
   readonly erreur = signal(false);
+
+  // ── Pagination serveur (`GET /api/dossiers?page=&size=`, livraison backend 1a83b05) ──
+  /** Taille de page demandée au serveur ; lue par le gabarit pour expliquer la limite du groupe « soumis ». */
+  protected readonly pageSize = 20;
+  /** Index (0-based) de la page affichée. */
+  readonly pageIndex = signal(0);
+  /** Nombre de pages annoncé par le serveur (0 tant qu'aucune page n'est chargée). */
+  readonly totalPages = signal(0);
   /** idDossier à mettre en évidence (arrivée depuis la recherche topbar `?focus=`) ; null = aucun. */
   readonly focusId = signal<number | null>(null);
   readonly submittingId = signal<number | null>(null);
@@ -210,7 +271,7 @@ export class DossiersListe {
   /** Compléments transmis : ferme le modal et recharge la liste (statut revenu SOUMIS). */
   onComplementsTransmis(): void {
     this.completer.set(null);
-    this.charger();
+    this.rafraichir();
   }
 
   /** Libellé du type courant (référentiel), repli sur l'id. */
@@ -241,36 +302,25 @@ export class DossiersListe {
     // Recharge quand un autre écran signale un changement (suppression, soumission…).
     // skip(1) : le chargement initial est déjà déclenché par paramMap ci-dessus — un effect
     // s'exécutant aussi au premier cycle, chaque montage lançait les 3 requêtes deux fois.
+    // ⚠️ On rafraîchit la page COURANTE : un retour en page 1 déplacerait l'utilisateur sous ses yeux.
     toObservable(this.dossiersRefresh.revision)
       .pipe(skip(1), takeUntilDestroyed())
-      .subscribe(() => this.charger());
+      .subscribe(() => this.rafraichir());
   }
 
-  /** Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9). */
+  /**
+   * Chargement complet de l'écran : référentiels d'appoint + première page.
+   * Public : rejoué tel quel par le bouton « Réessayer » de l'état d'erreur (AUDIT.md P9).
+   *
+   * ⚠️ Audit 2026-08-27 (C-1) — la liste est désormais PAGINÉE par le serveur ; les deux
+   * référentiels d'appoint (PPM, marchés) ne sont chargés qu'ICI, une fois par écran : les tourner
+   * de page en page les aurait retéléchargés à chaque clic.
+   */
   charger(): void {
     const type = this.type();
     if (!type) return;
-    const brouillon = this.groupe() === 'brouillon';
-    this.loading.set(true);
-    this.erreur.set(false);
-    // `list('BROUILLON')` côté serveur pour les brouillons ; sinon liste complète filtrée « non brouillon ».
-    this.dossierService.list(brouillon ? 'BROUILLON' : undefined).subscribe({
-      next: (rows) => {
-        this.dossiers.set(
-          rows.filter((d) => d.idTypeDossier === type && (brouillon ? d.statut === 'BROUILLON' : d.statut !== 'BROUILLON')),
-        );
-        this.loading.set(false);
-        // Défile vers le dossier mis en évidence (recherche topbar), après rendu de la ligne.
-        const fid = this.focusId();
-        if (fid != null) {
-          setTimeout(() => document.getElementById('dl-row-' + fid)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
-        }
-      },
-      error: () => {
-        this.loading.set(false);
-        this.erreur.set(true);
-      },
-    });
+    this.dejaCharge.set(false);
+    this.chargerPage(0, true);
     this.ppmService.list().subscribe((ppms) => {
       this.ppmRef.set(new Map(ppms.map((p) => [p.idDossier, p.reference])));
       this.ppmIdParDossier.set(new Map(ppms.map((p) => [p.idDossier, p.idPpm])));
@@ -280,6 +330,119 @@ export class DossiersListe {
       for (const m of marches) ids.set(m.idDossier, m.idPpm);
       this.ppmParDossier.set(ids);
     });
+  }
+
+  /** Recharge la page affichée, sans retoucher aux référentiels d'appoint (après une mutation). */
+  private rafraichir(): void {
+    if (this.type()) {
+      this.chargerPage(this.pageIndex());
+    }
+  }
+
+  /**
+   * Charge une page de `GET /api/dossiers?page=&size=&type=[&statut=]` (tri idDossier croissant
+   * imposé par le serveur).
+   *
+   * <b>Filtres.</b> La FAMILLE (`type`) et, pour les brouillons, le STATUT sont passés au serveur :
+   * ils y sont appliqués en SQL, donc le découpage et les compteurs de pages sont exacts.
+   *
+   * <b>Limite assumée.</b> Le groupe « soumis » signifie « tout SAUF brouillon », que `?statut=`
+   * (égalité stricte) ne sait pas exprimer : ce seul prédicat reste appliqué CÔTÉ CLIENT, sur la
+   * page courante. Conséquences, dites à l'écran : une page peut afficher moins de `pageSize`
+   * lignes, et `totalPages` majore le nombre réel de pages. La sémantique de la liste, elle, est
+   * intacte — aucun brouillon n'est jamais montré dans « Déposés ».
+   */
+  private chargerPage(page: number, chercherFocus = false): void {
+    if (!this.type()) return;
+    this.chargement.set(true);
+    this.erreur.set(false);
+    this.dossierService.listePage(page, this.pageSize, this.filtresServeur()).subscribe({
+      next: (p) => {
+        this.appliquerPage(p);
+        // Le dossier mis en évidence peut se trouver sur une AUTRE page que la première : on va le
+        // chercher (voir `positionnerSurFocus`) plutôt que de le laisser silencieusement invisible.
+        const fid = this.focusId();
+        if (chercherFocus && fid != null && !p.content.some((d) => d.idDossier === fid) && p.totalPages > 1) {
+          this.positionnerSurFocus(fid, 1, p.totalPages - 1);
+        }
+      },
+      error: () => {
+        this.chargement.set(false);
+        this.erreur.set(true);
+      },
+    });
+  }
+
+  /** Filtres transmis au serveur pour la liste courante (cf. la limite du groupe « soumis »). */
+  private filtresServeur(): Record<string, string> {
+    const type = this.type();
+    return this.groupe() === 'brouillon' ? { type, statut: 'BROUILLON' } : { type };
+  }
+
+  /** Installe une page reçue : contenu (filtre client du groupe « soumis »), position, total. */
+  private appliquerPage(p: Page<Dossier>): void {
+    const brouillon = this.groupe() === 'brouillon';
+    this.dossiers.set(brouillon ? p.content : p.content.filter((d) => d.statut !== 'BROUILLON'));
+    this.pageIndex.set(p.number);
+    this.totalPages.set(p.totalPages);
+    this.chargement.set(false);
+    this.dejaCharge.set(true);
+    // Défile vers le dossier mis en évidence (recherche topbar), après rendu de la ligne.
+    const fid = this.focusId();
+    if (fid != null) {
+      setTimeout(() => document.getElementById('dl-row-' + fid)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+    }
+  }
+
+  /**
+   * Ouvre la page qui contient le dossier arrivé de la recherche topbar (`?focus=`).
+   *
+   * Avant la pagination, la liste entière était à l'écran : le dossier cherché y était forcément.
+   * Une page ne le contient plus qu'une fois sur N — sans quoi la recherche mènerait à une liste
+   * où la ligne promise est absente. Le serveur trie par `idDossier` CROISSANT (tri imposé,
+   * cf. `Pagination.page`) : les pages sont donc ordonnées par identifiant, et une **dichotomie**
+   * trouve la bonne en log₂(N) requêtes d'une page — sans jamais retélécharger la table.
+   *
+   * Échec silencieux si l'intervalle se referme (dossier disparu entre-temps, ou écarté par le
+   * filtre client du groupe « soumis ») : la page déjà affichée reste, simplement sans surlignage.
+   */
+  private positionnerSurFocus(fid: number, bas: number, haut: number): void {
+    if (bas > haut) return;
+    const milieu = Math.floor((bas + haut) / 2);
+    this.chargement.set(true);
+    this.dossierService.listePage(milieu, this.pageSize, this.filtresServeur()).subscribe({
+      next: (p) => {
+        const ids = p.content.map((d) => d.idDossier);
+        const premier = ids[0];
+        const dernier = ids[ids.length - 1];
+        if (premier === undefined || dernier === undefined) {
+          this.chargement.set(false);
+          return;
+        }
+        if (fid < premier) {
+          this.positionnerSurFocus(fid, bas, milieu - 1);
+        } else if (fid > dernier) {
+          this.positionnerSurFocus(fid, milieu + 1, haut);
+        } else {
+          this.appliquerPage(p);
+        }
+      },
+      error: () => {
+        this.chargement.set(false);
+        this.erreur.set(true);
+      },
+    });
+  }
+
+  pagePrecedente(): void {
+    if (this.pageIndex() > 0) {
+      this.chargerPage(this.pageIndex() - 1);
+    }
+  }
+  pageSuivante(): void {
+    if (this.pageIndex() + 1 < this.totalPages()) {
+      this.chargerPage(this.pageIndex() + 1);
+    }
   }
 
   localiteLabel(d: Dossier): string {
@@ -326,8 +489,11 @@ export class DossiersListe {
   fermerDetail(): void {
     this.detail.set(null);
   }
+  /**
+   * ⚠️ `notifierChangement()` suffit à recharger CET écran (il observe `revision`) : l'appel local
+   * qui l'accompagnait doublait chaque rechargement après une modification.
+   */
   onModifie(): void {
-    this.charger();
     this.dossiersRefresh.notifierChangement();
   }
 
@@ -337,8 +503,8 @@ export class DossiersListe {
       next: (res) => {
         this.toast.success(`Dossier soumis${res.refeDossier ? ' · réf. ' + res.refeDossier : ''}.`);
         this.submittingId.set(null);
+        // Recharge la page courante par la révision partagée (même remarque que `onModifie`).
         this.dossiersRefresh.notifierChangement();
-        this.charger();
       },
       error: (e: ApiError) => {
         this.submittingId.set(null);
