@@ -95,6 +95,11 @@ Organisation **par domaine métier**, pas par type technique : il n'y a **pas** 
 - **Modale** : poser la directive `appModale` (`shared/a11y`) sur le conteneur du dialogue —
   elle apporte le focus initial, sa restitution, Échap et le piège de Tab. Y ajouter un
   `aria-label`, et un `aria-label` sur tout bouton réduit à un symbole (✕, ⤴…).
+  Pour fermer au clic sur le voile, ajouter le drapeau `appModaleClicExterieur` sur ce même
+  conteneur — **jamais** un `(click)` sur le voile (ni le `(click)="$event.stopPropagation()"`
+  sur le dialogue qu'il obligeait à écrire). Un voile n'est pas un élément interactif : lui poser
+  `tabindex`/`role`/`keydown` pour satisfaire ESLint ajouterait une tabulation sans nom
+  accessible dans un piège de focus. Échap est l'équivalent clavier du clic sur le voile.
 - **Élément cliquable** : utiliser `<button>`, jamais `<div (click)>` — sinon l'action est
   inaccessible au clavier.
 - **Champ de formulaire** : un nom accessible stable (`<label>` ou `aria-label`) ; le texte de
