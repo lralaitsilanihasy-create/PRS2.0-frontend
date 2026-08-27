@@ -88,4 +88,10 @@ export interface ErrorResponse {
   message: string;
   path: string;
   erreurs?: { champ: string; message: string }[];
+  /**
+   * Code métier stable qui qualifie l'erreur quand le seul statut HTTP ne suffit pas à la distinguer.
+   * Renseigné par les handlers dédiés du backend — ex. `VACANCE_PRMP`, `CONFLIT_VERSION` (verrou
+   * optimiste, cf. `backend/docs/plan-conflit-version.md`) — absent sur les erreurs génériques.
+   */
+  code?: string;
 }

@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { ApiError } from '../../core/errors/api-error';
+import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import { VacanceStore } from '../../core/vacance/vacance.store';
@@ -1996,9 +1996,12 @@ export class SoumettreDossier {
       idMode: v.idMode ?? undefined,
     };
     const idDetail = this.editId();
+    // Verrou optimiste : le corps du PUT est construit champ à champ, `version` doit y être ajoutée
+    // explicitement — on la reprend de la ligne chargée (cf. backend/docs/plan-conflit-version.md).
+    const version = idDetail !== null ? this.marches().find((m) => m.idDetail === idDetail)?.version : undefined;
     const op =
       idDetail !== null
-        ? this.marcheService.update(idDetail, { idDetail, idDossier: d.idDossier, ...champs })
+        ? this.marcheService.update(idDetail, { idDetail, idDossier: d.idDossier, version, ...champs })
         : this.marcheService.createMarche(d.idDossier, champs);
     op.subscribe({
       next: () => {
@@ -2007,7 +2010,16 @@ export class SoumettreDossier {
         this.toast.success('Ligne enregistrée.');
         this.rechargerMarches();
       },
-      error: (e: ApiError) => this.echec(e),
+      error: (e: ApiError) => {
+        if (estConflitVersion(e)) {
+          // La ligne a bougé ailleurs : saisie fermée (perdue, le toast le dit) et relecture serveur.
+          this.submitting.set(false);
+          this.ligneOuverte.set(false);
+          this.rechargerMarches();
+          return;
+        }
+        this.echec(e);
+      },
     });
   }
   supprimer(m: Marche): void {

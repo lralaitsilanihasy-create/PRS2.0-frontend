@@ -38,6 +38,8 @@ export interface Ppm {
    * → pièce AGPM requise à la soumission. Ignoré en écriture.
    */
   agpmRequis?: boolean;
+  /** Verrou optimiste : à renvoyer telle quelle au PUT (périmée → 409 `CONFLIT_VERSION`) ; absente = dernier écrit gagne. */
+  version?: number;
 }
 
 /** Marché (détail d'un dossier). PK = idDetail. */
@@ -63,6 +65,8 @@ export interface Marche {
   idLigneOrigine?: number;
   /** ⚠️ 2026-08-05 — ligne supprimée logiquement dans cette version : restaurable, jamais effacée. */
   supprimee?: boolean;
+  /** Verrou optimiste : à renvoyer telle quelle au PUT (périmée → 409 `CONFLIT_VERSION`) ; absente = dernier écrit gagne. */
+  version?: number;
 }
 
 /** ⚠️ 2026-08-05 — statut d'une ligne relativement à la version précédente du PPM. */

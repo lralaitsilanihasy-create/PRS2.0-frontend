@@ -43,6 +43,8 @@ export interface Dossier {
   creeParNom?: string | null;
   /** Nom lisible correspondant à `soumisPar` ; `null` si non résolvable. */
   soumisParNom?: string | null;
+  /** Verrou optimiste : à renvoyer telle quelle au PUT (périmée → 409 `CONFLIT_VERSION`) ; absente = dernier écrit gagne. */
+  version?: number;
 }
 
 /**
@@ -175,6 +177,8 @@ export interface LettreRenvoi {
   /** ⚠️ Spec navette (2026-08-01) — archivage par l'Assistant contrôleur (lecture seule). */
   dateArchivage?: string;
   imArchiveur?: string;
+  /** Verrou optimiste : à renvoyer telle quelle au PUT (périmée → 409 `CONFLIT_VERSION`) ; absente = dernier écrit gagne. */
+  version?: number;
 }
 
 /** Résultat d'un point de contrôle examiné — par ligne de marché (portée LIGNE) ou au niveau dossier (DOSSIER). */
@@ -238,6 +242,8 @@ export interface PvExamen {
   /** ⚠️ Spec navette (2026-08-01) — archivage par l'Assistant contrôleur (lecture seule). */
   dateArchivage?: string;
   imArchiveur?: string;
+  /** Verrou optimiste : à renvoyer telle quelle au PUT (périmée → 409 `CONFLIT_VERSION`) ; absente = dernier écrit gagne. */
+  version?: number;
 }
 
 /**

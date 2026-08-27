@@ -13,8 +13,29 @@ export interface ApiError {
   message: string;
   /** Erreurs de validation par champ (présent surtout en 400). */
   fieldErrors?: Record<string, string>;
+  /**
+   * Code métier stable renvoyé par le backend (`ErrorResponse.code`) quand le statut HTTP ne suffit
+   * pas à distinguer le cas — ex. `CONFLIT_VERSION` parmi les 409. Absent sur les erreurs génériques.
+   */
+  code?: string;
   /** Réponse HTTP brute, pour les cas particuliers. */
   raw: HttpErrorResponse;
+}
+
+/**
+ * 409 de verrou optimiste : la ressource a été modifiée par une autre opération depuis son
+ * chargement, l'écriture n'a pas eu lieu. Contrat back/front figé dans
+ * `backend/docs/plan-conflit-version.md` (constante `ConflitVersionException.CODE`).
+ */
+export const CODE_CONFLIT_VERSION = 'CONFLIT_VERSION';
+
+/**
+ * Indique qu'une erreur est le conflit de version. Un écran d'édition qui reçoit ce cas
+ * **recharge sa ressource** : la version qu'il détenait est périmée, réessayer telle quelle
+ * reconflicterait à coup sûr. Pas de fusion automatique des saisies (cf. plan).
+ */
+export function estConflitVersion(value: unknown): boolean {
+  return isApiError(value) && value.code === CODE_CONFLIT_VERSION;
 }
 
 /**
@@ -46,8 +67,17 @@ export function getFieldError(error: unknown, field: string): string | undefined
   return isApiError(error) ? error.fieldErrors?.[field] : undefined;
 }
 
-/** Titre court catégorisant l'erreur, par code HTTP (affiché en gras dans le toast). */
-export function errorTitle(status: number): string {
+/**
+ * Titre court catégorisant l'erreur (affiché en gras dans le toast).
+ *
+ * Le code métier prime sur le statut quand il est renseigné : un 409 de verrou optimiste n'est pas
+ * une « Action impossible » (l'action était légitime), c'est une donnée qui a bougé sous les pieds
+ * de l'utilisateur — le titre doit le dire, le message du backend indiquant la marche à suivre.
+ */
+export function errorTitle(status: number, code?: string): string {
+  if (code === CODE_CONFLIT_VERSION) {
+    return 'Donnée modifiée entre-temps';
+  }
   switch (status) {
     case 0:
       return 'Connexion';
@@ -77,8 +107,11 @@ export function toApiError(err: HttpErrorResponse): ApiError {
     hasStructuredBody && Array.isArray(body.erreurs)
       ? Object.fromEntries(body.erreurs.map((e) => [e.champ, e.message] as const))
       : undefined;
+  // Code métier des handlers dédiés (VACANCE_PRMP, CONFLIT_VERSION…) : seul moyen de distinguer
+  // deux erreurs de même statut. Absent des 409 génériques (règle métier, doublon, FK).
+  const code = hasStructuredBody && typeof body.code === 'string' ? body.code : undefined;
 
-  return { status: err.status, message, fieldErrors, raw: err };
+  return { status: err.status, message, fieldErrors, code, raw: err };
 }
 
 /** Message par défaut quand le backend ne fournit pas de `ErrorResponse` exploitable. */

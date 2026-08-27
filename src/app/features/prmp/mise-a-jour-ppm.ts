@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
-import { ApiError } from '../../core/errors/api-error';
+import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import {
@@ -255,19 +255,39 @@ export class MiseAJourPpm {
       return;
     }
     this.enregistrement.set(true);
+    // `p` est le plan tel que renvoyé par le serveur (chargement, puis réponse du PUT précédent) :
+    // le spread embarque donc la `version` COURANTE — verrou optimiste, cf. plan-conflit-version.md.
     this.ppmService
       .update(p.idPpm, { ...p, signataire: this.signataire(), dateSignature: this.dateSignature(), motifMaj: this.motif().trim() })
       .subscribe({
         next: (maj) => {
+          // Réponse = version incrémentée : la reposer évite un 409 au prochain enregistrement.
           this.ppm.set(maj);
           this.enregistrement.set(false);
           this.toast.success('En-tête de la mise à jour enregistré.');
         },
         error: (e: ApiError) => {
           this.enregistrement.set(false);
+          if (estConflitVersion(e)) {
+            this.rechargerEntete(p.idPpm);
+            return; // Toast centralisé (« Donnée modifiée entre-temps ») : pas de second message.
+          }
           this.toast.error(e.message || 'Enregistrement impossible.');
         },
       });
+  }
+
+  /**
+   * Conflit de version : l'en-tête a été modifié ailleurs depuis son chargement. On le relit pour
+   * repartir de l'état serveur — la saisie en cours est perdue, le toast a dit de recommencer.
+   */
+  private rechargerEntete(idPpm: number): void {
+    this.ppmService.getById(idPpm).subscribe((p) => {
+      this.ppm.set(p);
+      this.signataire.set(p.signataire ?? '');
+      this.dateSignature.set(p.dateSignature ?? '');
+      this.motif.set(p.motifMaj ?? '');
+    });
   }
 
   // ------------------------------------------------------------------ lignes

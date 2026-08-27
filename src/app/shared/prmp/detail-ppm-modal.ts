@@ -3,7 +3,7 @@ import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } fr
 import { Output } from '@angular/core';
 import { catchError, forkJoin, of } from 'rxjs';
 
-import { ApiError } from '../../core/errors/api-error';
+import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure, validerFichier } from '../../core/securite/fichiers-surs';
@@ -1337,10 +1337,12 @@ export class DetailPpmModal implements OnInit {
     const v = this.headerForm.getRawValue();
     this.submittingHeader.set(true);
     this.headerErrors.set({});
-    // Entité / référence / signataire fixés serveur → renvoyés inchangés.
+    // Entité / référence / signataire fixés serveur → renvoyés inchangés. Le spread embarque aussi
+    // `version` (verrou optimiste) : le serveur refuse le PUT si le plan a bougé depuis le chargement.
     const body: Ppm = { ...p, exercice: v.exercice, dateSignature: v.dateSignature, libelle: v.libelle || undefined };
     this.ppmService.update(p.idPpm, body).subscribe({
       next: (updated) => {
+        // La réponse porte la version incrémentée : la reposer permet d'enchaîner une 2e édition.
         this.ppm.set(updated);
         this.submittingHeader.set(false);
         this.editHeaderOpen.set(false);
@@ -1349,6 +1351,12 @@ export class DetailPpmModal implements OnInit {
       },
       error: (e: ApiError) => {
         this.submittingHeader.set(false);
+        if (estConflitVersion(e)) {
+          // Le plan a changé ailleurs : la saisie est perdue (le toast centralisé le dit), on repart du serveur.
+          this.editHeaderOpen.set(false);
+          this.charger();
+          return;
+        }
         this.headerErrors.set(e.fieldErrors ?? {});
       },
     });
@@ -2015,10 +2023,13 @@ export class DetailPpmModal implements OnInit {
     };
     const editing = this.editingMarche();
     if (editing) {
-      this.marcheService.update(body.idDetail, body).subscribe({
+      // Corps construit champ à champ : `version` n'y entre pas toute seule, on la reprend de la
+      // ligne chargée (verrou optimiste — absente, le dernier écrit gagnerait en silence).
+      const corps: Marche = { ...body, version: editing.version };
+      this.marcheService.update(corps.idDetail, corps).subscribe({
         next: (updated) =>
           this.reconcilierDates(
-            body.idDetail,
+            corps.idDetail,
             this.createOriginalDates(),
             v.datesPrev ?? [],
             () => {
@@ -2032,6 +2043,12 @@ export class DetailPpmModal implements OnInit {
           ),
         error: (e: ApiError) => {
           this.submittingCreate.set(false);
+          if (estConflitVersion(e)) {
+            // La ligne a changé ailleurs : on ferme la saisie (perdue) et on repart du serveur.
+            this.annulerCreation();
+            this.charger();
+            return;
+          }
           this.createErrors.set(e.fieldErrors ?? {});
         },
       });

@@ -5,7 +5,7 @@ import { Observable, Subject, catchError, concatMap, forkJoin, map, of, shareRep
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { ApiError } from '../../core/errors/api-error';
+import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import {
@@ -1046,6 +1046,8 @@ export class ExamenDossier implements OnDestroy {
         switchMap((idExamen) => this.examenService.soumettre(idExamen, {})),
         // La synthèse ne fait pas partie d'ExamenSoumissionRequest : on la persiste via une MAJ du PV créé
         // (encore BROUILLON) — PUT /api/pv-examens/{id}.
+        // `pv` sort tout juste de la soumission : le spread renvoie donc la `version` COURANTE
+        // (verrou optimiste, portée par le modèle) — ce PUT ne peut pas conflicter.
         switchMap((pv) => {
           const synthese = this.synthese().trim();
           return synthese ? this.pvExamenService.update(pv.idPv, { ...pv, syntheseObservations: synthese }) : of(pv);
@@ -1236,6 +1238,8 @@ export class ExamenDossier implements OnDestroy {
           const pv = this.existingPv();
           const synthese = this.synthese().trim() || undefined;
           if (pv) {
+            // Le spread renvoie la `version` du PV chargé (verrou optimiste) : si un autre acteur l'a
+            // touché entre-temps, le serveur répond 409 CONFLIT_VERSION plutôt que d'écraser.
             return this.pvExamenService.update(pv.idPv, { ...pv, syntheseObservations: synthese });
           }
           // Aucun projet de PV (examen créé sans soumission) → le créer DIRECTEMENT
@@ -1266,7 +1270,27 @@ export class ExamenDossier implements OnDestroy {
             void this.router.navigate(['/membre/mes-dossiers']);
           }
         },
-        error: (_e: ApiError) => this.saving.set(false), // 409 (verrouillé) / 403 → toast centralisé
+        error: (e: ApiError) => {
+          this.saving.set(false); // 409 (verrouillé) / 403 → toast centralisé
+          if (estConflitVersion(e)) {
+            this.rechargerPv();
+          }
+        },
       });
+  }
+
+  /**
+   * Conflit de version sur le projet de PV : un autre acteur l'a modifié depuis son chargement.
+   * On le relit pour repartir de l'état serveur — la synthèse saisie est perdue, comme l'annonce le
+   * toast (« Rechargez puis réessayez »), et la version fraîche permet de réessayer sans reconflicter.
+   */
+  private rechargerPv(): void {
+    const idPv = this.existingPv()?.idPv;
+    if (idPv == null) return;
+    this.pvExamenService.getById(idPv).subscribe((pv) => {
+      this.existingPv.set(pv);
+      this.pvs.update((arr) => arr.map((p) => (p.idPv === pv.idPv ? pv : p)));
+      this.synthese.set(pv.syntheseObservations ?? '');
+    });
   }
 }

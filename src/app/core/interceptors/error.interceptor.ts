@@ -15,6 +15,10 @@ import { ToastService } from '../notifications/toast.service';
  * - Affiche automatiquement un toast adapté au code (sauf si la requête a opté pour
  *   `skipErrorToast()`, ou en 400 avec `fieldErrors` — laissé au formulaire).
  * - En 401, purge la session et redirige vers la page de connexion.
+ * - Cas dédié du 409 `CONFLIT_VERSION` (verrou optimiste) : titre « Donnée modifiée entre-temps »
+ *   au lieu du générique « Action impossible », le message du backend portant la marche à suivre
+ *   (« Rechargez puis réessayez. »). L'erreur reste propagée : l'écran d'édition recharge ensuite
+ *   sa ressource (cf. `backend/docs/plan-conflit-version.md`).
  *
  * Rappel : le backend reste l'autorité ; ici on ne fait que présenter ses réponses.
  */
@@ -35,7 +39,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       if (!req.context.get(SKIP_ERROR_TOAST) && shouldToast(apiError)) {
-        toast.error(apiError.message, errorTitle(apiError.status));
+        toast.error(apiError.message, errorTitle(apiError.status, apiError.code));
       }
 
       return throwError(() => apiError);
