@@ -430,6 +430,9 @@ export class DemandeRetraitService extends CrudService<DemandeRetrait> {
    * `POST /api/demande-retraits` (**multipart**, PRMP) — la lettre de demande de retrait datée et
    * signée est **obligatoire** (règle 2026-08-17) : part `data` (JSON) + part `fichier` (PDF).
    * Le serveur valide le PDF par ses magic-bytes et refuse en 400 sinon (la demande n'est pas créée).
+   *
+   * ⚠️ **Seule voie de création.** L'endpoint n'accepte plus de corps JSON depuis cette règle :
+   * le `create()` hérité de `CrudService` échouerait en 415.
    */
   creerAvecLettre(demande: DemandeRetrait, fichier: File): Observable<DemandeRetrait> {
     const fd = new FormData();
@@ -464,14 +467,5 @@ export class DemandeRetraitService extends CrudService<DemandeRetrait> {
   /** `POST /{id}/refuser` — REFUSEE (motif → obsDecision côté serveur). */
   refuser(id: number, motif: string): Observable<DemandeRetrait> {
     return this.http.post<DemandeRetrait>(`${this.baseUrl}/${id}/refuser`, { motif });
-  }
-
-  /**
-   * `POST /api/demande-retraits` (PRMP) — crée une demande ; corps réduit à `{ idDossier, motifRetrait }`
-   * (identité/date/statut posés serveur). `skipErrorToast` : l'écran affiche ses messages dédiés
-   * (400 par champ, 409 « PV déjà signé » / demande déjà EN_ATTENTE, 403 non-propriétaire).
-   */
-  creer(body: DemandeRetrait): Observable<DemandeRetrait> {
-    return this.http.post<DemandeRetrait>(this.baseUrl, body, { context: skipErrorToast() });
   }
 }

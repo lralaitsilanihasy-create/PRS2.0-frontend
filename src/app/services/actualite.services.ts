@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
@@ -52,10 +53,17 @@ export class ActualiteService extends CrudService<Actualite> {
   }
 }
 
-/** Interrupteur global des actualités — coupe la fonctionnalité pour tous, d'un seul geste. */
+/**
+ * Interrupteur global des actualités — coupe la fonctionnalité pour tous, d'un seul geste.
+ *
+ * ⚠️ **N'hérite délibérément pas de `CrudService`** : il n'existe pas de ressource `/api/parametres`.
+ * Le service n'expose que les deux appels réels du contrat (`/parametres/actualites-actives`) ;
+ * hériter du CRUD générique aurait offert `list()`, `getById()`, `create()`… pointant vers des
+ * chemins inexistants côté serveur — un 404 garanti au premier appelant qui s'y fierait.
+ */
 @Injectable({ providedIn: 'root' })
-export class ParametreActualitesService extends CrudService<ParametreActualites> {
-  protected readonly resource = 'parametres';
+export class ParametreActualitesService {
+  private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiUrl}/parametres/actualites-actives`;
 
   /** `GET /api/parametres/actualites-actives`. */
