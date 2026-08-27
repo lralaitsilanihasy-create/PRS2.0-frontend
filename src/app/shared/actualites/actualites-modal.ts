@@ -22,7 +22,7 @@ import { MarkdownVue } from './markdown-vue';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ModaleDirective, MarkdownVue],
   template: `
-    <div class="modal-backdrop" [class.closing]="closing()" (click)="fermer()">
+    <div class="modal-backdrop" [class.closing]="closing()">
       <!-- Mise en page « lettre d'information » (modèle fourni par l'utilisateur, 2026-08-19) :
            visuel à gauche, annonce à droite. Sans image, la colonne disparaît et le texte occupe
            toute la largeur — le modal ne montre jamais un cadre vide. -->
@@ -33,8 +33,8 @@ import { MarkdownVue } from './markdown-vue';
         aria-modal="true"
         [attr.aria-label]="'Actualités — ' + courante().titre"
         appModale
+        appModaleClicExterieur
         (appModaleFermer)="fermer()"
-        (click)="$event.stopPropagation()"
       >
         <button type="button" class="act__x" aria-label="Fermer les actualités" (click)="fermer()">✕</button>
 

@@ -212,8 +212,8 @@ export interface ModificationChamp {
     }
 
     @if (datesCible()) {
-      <div class="modal-backdrop" [class.closing]="closingDates()" (click)="fermerDatesAnime()">
-        <div class="modal confirm-modal cnm-form sd__dates-modal" role="dialog" aria-modal="true" aria-label="CAPM du marché" appModale (appModaleFermer)="fermerDatesAnime()" (click)="$event.stopPropagation()">
+      <div class="modal-backdrop" [class.closing]="closingDates()">
+        <div class="modal confirm-modal cnm-form sd__dates-modal" role="dialog" aria-modal="true" aria-label="CAPM du marché" appModale appModaleClicExterieur (appModaleFermer)="fermerDatesAnime()">
           <div class="modal-header-plain">
             <span class="modal-title">CAPM du marché</span>
           </div>
@@ -257,8 +257,8 @@ export interface ModificationChamp {
     }
 
     @if (lotsCible()) {
-      <div class="modal-backdrop" [class.closing]="closingLots()" (click)="fermerLotsAnime()">
-        <div class="modal confirm-modal cnm-form sd__lots-modal" role="dialog" aria-modal="true" aria-label="Lots du marché" appModale (appModaleFermer)="fermerLotsAnime()" (click)="$event.stopPropagation()">
+      <div class="modal-backdrop" [class.closing]="closingLots()">
+        <div class="modal confirm-modal cnm-form sd__lots-modal" role="dialog" aria-modal="true" aria-label="Lots du marché" appModale appModaleClicExterieur (appModaleFermer)="fermerLotsAnime()">
           <div class="modal-header-plain">
             <span class="modal-title">Lots (allotissement) du marché</span>
           </div>

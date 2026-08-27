@@ -66,11 +66,11 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, DatePipe, ModaleDirective, PpmMarchesTable, PpmSaisieGrid],
   template: `
-    <div class="modal-backdrop" [class.closing]="closing()" (click)="emitFermer()">
+    <div class="modal-backdrop" [class.closing]="closing()">
       @if (loading()) {
         <div class="spinner-wrap"><div class="spinner"></div></div>
       } @else {
-      <div class="modal dpm-wide" role="dialog" aria-modal="true" aria-label="Détail du plan de passation" appModale (appModaleFermer)="emitFermer()" (click)="$event.stopPropagation()">
+      <div class="modal dpm-wide" role="dialog" aria-modal="true" aria-label="Détail du plan de passation" appModale appModaleClicExterieur (appModaleFermer)="emitFermer()">
 
         <!-- ── HEADER ── -->
         <div class="dpm-header">
@@ -477,8 +477,8 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     </div>
 
     @if (modalMarche(); as m) {
-      <div class="dpm__overlay" (click)="fermerDates()">
-        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Dates du marché" appModale (appModaleFermer)="fermerDates()">
+      <div class="dpm__overlay">
+        <div class="dpm dpm--sm cnm-card" role="dialog" aria-modal="true" aria-label="Dates du marché" appModale appModaleClicExterieur (appModaleFermer)="fermerDates()">
           <header class="dpm__head">
             <h2 class="dpm__title">Dates prévisionnelles — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
             <button type="button" class="dpm__close" aria-label="Fermer" (click)="fermerDates()">&times;</button>
@@ -508,8 +508,8 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
 
     @if (editMarche(); as m) {
       @if (editForm(); as ef) {
-        <div class="dpm__overlay" (click)="annulerEdition()">
-          <form class="dpm dpm--sm cnm-card" [formGroup]="ef" (ngSubmit)="enregistrerEdition()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Modifier le marché" appModale (appModaleFermer)="annulerEdition()" novalidate>
+        <div class="dpm__overlay">
+          <form class="dpm dpm--sm cnm-card" [formGroup]="ef" (ngSubmit)="enregistrerEdition()" role="dialog" aria-modal="true" aria-label="Modifier le marché" appModale appModaleClicExterieur (appModaleFermer)="annulerEdition()" novalidate>
             <header class="dpm__head">
               <h2 class="dpm__title">Modifier les dates — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
               <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerEdition()">&times;</button>
@@ -555,8 +555,8 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     }
 
     @if (editBenefMarche(); as m) {
-      <div class="dpm__overlay" (click)="annulerBenefs()">
-        <form class="dpm cnm-card" [formGroup]="benefForm" (ngSubmit)="enregistrerBenefs()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Services bénéficiaires du marché" appModale (appModaleFermer)="annulerBenefs()" novalidate>
+      <div class="dpm__overlay">
+        <form class="dpm cnm-card" [formGroup]="benefForm" (ngSubmit)="enregistrerBenefs()" role="dialog" aria-modal="true" aria-label="Services bénéficiaires du marché" appModale appModaleClicExterieur (appModaleFermer)="annulerBenefs()" novalidate>
           <header class="dpm__head">
             <h2 class="dpm__title">Services bénéficiaires — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
             <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerBenefs()">&times;</button>
@@ -594,8 +594,8 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     }
 
     @if (editLotMarche(); as m) {
-      <div class="dpm__overlay" (click)="annulerLots()">
-        <form class="dpm cnm-card" [formGroup]="lotForm" (ngSubmit)="enregistrerLots()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Lots du marché" appModale (appModaleFermer)="annulerLots()" novalidate>
+      <div class="dpm__overlay">
+        <form class="dpm cnm-card" [formGroup]="lotForm" (ngSubmit)="enregistrerLots()" role="dialog" aria-modal="true" aria-label="Lots du marché" appModale appModaleClicExterieur (appModaleFermer)="annulerLots()" novalidate>
           <header class="dpm__head">
             <h2 class="dpm__title">Lots (allotissement) — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
             <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerLots()">&times;</button>
@@ -623,8 +623,8 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     }
 
     @if (createOpen()) {
-      <div class="dpm__overlay" (click)="annulerCreation()">
-        <form class="dpm dpm--sm cnm-card" [formGroup]="createForm" (ngSubmit)="enregistrerMarche()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Nouveau marché" appModale (appModaleFermer)="annulerCreation()" novalidate>
+      <div class="dpm__overlay">
+        <form class="dpm dpm--sm cnm-card" [formGroup]="createForm" (ngSubmit)="enregistrerMarche()" role="dialog" aria-modal="true" aria-label="Nouveau marché" appModale appModaleClicExterieur (appModaleFermer)="annulerCreation()" novalidate>
           <header class="dpm__head">
             <h2 class="dpm__title">
               {{ editingMarche() ? 'Modifier le marché #' + editingMarche()!.idDetail : 'Nouveau marché — PPM ' + (ppm()?.reference || '#' + idPpm) }}
@@ -709,8 +709,8 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     }
 
     @if (confirmState(); as c) {
-      <div class="dpm__overlay" (click)="annulerSuppression()">
-        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annulerSuppression()">
+      <div class="dpm__overlay">
+        <div class="dpm dpm--sm cnm-card" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale appModaleClicExterieur (appModaleFermer)="annulerSuppression()">
           <header class="dpm__head">
             <h2 class="dpm__title">{{ c.kind === 'ppm' ? 'Supprimer le PPM' : 'Supprimer le marché' }}</h2>
             <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerSuppression()">&times;</button>
@@ -730,8 +730,8 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     }
 
     @if (reimportRefus(); as ref) {
-      <div class="dpm__overlay" (click)="reimportRefus.set(null)">
-        <div class="dpm dpm--sm cnm-card" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Réimport refusé" appModale (appModaleFermer)="reimportRefus.set(null)">
+      <div class="dpm__overlay">
+        <div class="dpm dpm--sm cnm-card" role="alertdialog" aria-modal="true" aria-label="Réimport refusé" appModale appModaleClicExterieur (appModaleFermer)="reimportRefus.set(null)">
           <header class="dpm__head">
             <h2 class="dpm__title">🚫 Réimport impossible</h2>
             <button type="button" class="dpm__close" aria-label="Fermer" (click)="reimportRefus.set(null)">&times;</button>
