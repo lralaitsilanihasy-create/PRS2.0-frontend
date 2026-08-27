@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { filter, forkJoin, skip } from 'rxjs';
+import { filter, skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
@@ -13,7 +13,6 @@ import {
   ControleurService,
   DossierService,
   KpiService,
-  PpmService,
   PrmpService,
 } from '../../services';
 import { NotificationCenter } from '../notification-center/notification-center';
@@ -53,7 +52,6 @@ export class MainLayout {
   private readonly prmpService = inject(PrmpService);
   private readonly controleurService = inject(ControleurService);
   private readonly dossierService = inject(DossierService);
-  private readonly ppmService = inject(PpmService);
   private readonly kpiService = inject(KpiService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly vacanceStore = inject(VacanceStore);
@@ -137,24 +135,39 @@ export class MainLayout {
   readonly rechercheEnCours = signal(false);
   /** La recherche cible l'espace `/prmp` → réservée aux profils qui y accèdent. */
   readonly peutRechercher = computed(() => this.role() === 'PRMP' || this.role() === 'UGPM');
+  /** Longueur minimale acceptée par `GET /api/dossiers/recherche` — en deçà, le serveur répond 400. */
+  private static readonly LONGUEUR_MIN_RECHERCHE = 2;
   /**
    * Résout la saisie sur la référence **affichée** d'un dossier du périmètre (`refeDossier` ou réf. du PPM)
    * et navigue vers sa liste (type × groupe) en le mettant en évidence (`?focus=`). Aucun résultat → toast.
+   *
+   * ⚠️ Audit 2026-08-27 (C-1) — la résolution se fait désormais **côté serveur**
+   * (`GET /api/dossiers/recherche?q=`, 10 résultats allégés au plus, scopés comme la liste des
+   * dossiers). Auparavant, CHAQUE recherche téléchargeait la liste COMPLÈTE des dossiers *et* celle
+   * des PPM pour retrouver une ligne en JavaScript : deux tables entières transférées et parsées.
+   * La saisie de moins de deux caractères est écartée ici, sans appel — le serveur la refuserait (400).
    */
   allerAuDossier(): void {
     const saisie = this.recherche().trim();
     if (!saisie || this.rechercheEnCours()) return;
-    const q = saisie.toLowerCase();
+    if (saisie.length < MainLayout.LONGUEUR_MIN_RECHERCHE) {
+      this.toast.info(`Saisissez au moins ${MainLayout.LONGUEUR_MIN_RECHERCHE} caractères pour rechercher.`);
+      return;
+    }
     this.rechercheEnCours.set(true);
-    forkJoin({ dossiers: this.dossierService.list(), ppms: this.ppmService.list() }).subscribe({
-      next: ({ dossiers, ppms }) => {
+    this.dossierService.rechercher(saisie).subscribe({
+      next: (resultats) => {
         this.rechercheEnCours.set(false);
-        const ppmRef = new Map(ppms.map((p) => [p.idDossier, p.reference]));
-        const refDe = (d: { refeDossier?: string; idDossier: number }) =>
-          (d.refeDossier || ppmRef.get(d.idDossier) || '').toLowerCase();
-        const trouve = dossiers.find((d) => refDe(d).includes(q));
+        // Le serveur rend les plus récents d'abord : le premier est le meilleur candidat, comme
+        // l'était le premier `find` de l'ancienne résolution côté client.
+        const trouve = resultats[0];
         if (!trouve) {
           this.toast.info(`Aucun dossier pour « ${saisie} ».`);
+          return;
+        }
+        // La liste de destination est indexée par famille : sans elle, pas d'URL à construire.
+        if (!trouve.idTypeDossier) {
+          this.toast.info(`Le dossier « ${trouve.reference ?? trouve.idDossier} » n'a pas de famille renseignée.`);
           return;
         }
         const groupe = trouve.statut === 'BROUILLON' ? 'brouillon' : 'soumis';

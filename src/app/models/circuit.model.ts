@@ -7,6 +7,23 @@ import {
   PvSignataireRole,
 } from './common.model';
 
+/**
+ * Résultat **allégé** de la résolution d'une référence (`GET /api/dossiers/recherche?q=`).
+ *
+ * Volontairement plus pauvre que `Dossier` : une recherche par référence n'a pas à divulguer la
+ * localité, la PRMP propriétaire ni les auteurs. Ne porte que de quoi afficher un résultat et y
+ * naviguer — `idTypeDossier` et `statut` désignent la liste de destination (type × groupe).
+ */
+export interface RechercheDossier {
+  idDossier: number;
+  /** Référence officielle du dossier, posée à la réception (`null` avant). */
+  refeDossier: string | null;
+  /** Référence **affichée** et effectivement cherchée : `refeDossier`, sinon celle du PPM rattaché. */
+  reference: string | null;
+  idTypeDossier: string | null;
+  statut: StatutDossier;
+}
+
 /** Dossier soumis au contrôle. Lecture filtrée par localité. */
 export interface Dossier {
   idDossier: number;

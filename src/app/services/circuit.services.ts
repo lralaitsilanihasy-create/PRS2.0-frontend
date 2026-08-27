@@ -25,6 +25,7 @@ import {
   PvNavette,
   Reception,
   ReceptionExiste,
+  RechercheDossier,
   StatutDossier,
   TransmissionSigmp,
   Verification,
@@ -44,6 +45,20 @@ export class DossierService extends CrudService<Dossier> {
   override list(statut?: StatutDossier): Observable<Dossier[]> {
     const options = statut ? { params: new HttpParams().set('statut', statut) } : undefined;
     return this.http.get<Dossier[]>(this.baseUrl, options);
+  }
+
+  /**
+   * `GET /api/dossiers/recherche?q=` — résout une saisie en dossiers du périmètre, **10 au plus**,
+   * les plus récents d'abord. La recherche porte sur la référence du dossier **ou** sur celle de son
+   * PPM (la topbar affiche l'une ou l'autre selon l'avancement) ; insensible à la casse, sous-chaîne.
+   *
+   * ⚠️ Le serveur exige **2 caractères minimum** (400 en deçà) : filtrer côté appelant avant d'appeler
+   * (cf. `LONGUEUR_MIN_RECHERCHE`), une saisie plus courte ne discriminant rien de toute façon.
+   */
+  rechercher(q: string): Observable<RechercheDossier[]> {
+    return this.http.get<RechercheDossier[]>(`${this.baseUrl}/recherche`, {
+      params: new HttpParams().set('q', q),
+    });
   }
 
   /** `GET /api/dossiers/a-receptionner` (Secrétaire/Admin) — SOUMIS sans réception, filtré serveur (pas de N+1). */
