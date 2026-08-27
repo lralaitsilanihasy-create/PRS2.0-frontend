@@ -181,6 +181,9 @@
           <span class="profile-badge" [class]="'profile-badge ' + role()">{{ role() }}</span>
         </span>
       </div>
+      <button type="button" class="btn btn-outline btn-sm" (click)="motDePasseOuvert.set(true)">
+        Mot de passe
+      </button>
     }
     <button type="button" class="btn btn-outline btn-sm" (click)="logout()">Déconnexion</button>
   </div>
@@ -215,4 +218,10 @@
      consultation. La liste arrive déjà filtrée par le serveur : si elle est vide, rien ne s'affiche. -->
 @if (actualites().length) {
   <app-actualites-modal [actualites]="actualites()" (ferme)="actualites.set([])" />
+}
+
+<!-- « Changer mon mot de passe » (tous profils) — rendu ici pour les mêmes raisons
+     d'empilement que la consultation ci-dessus. -->
+@if (motDePasseOuvert()) {
+  <app-changer-mot-de-passe-modal (ferme)="motDePasseOuvert.set(false)" />
 }

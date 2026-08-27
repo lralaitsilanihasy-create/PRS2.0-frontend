@@ -18,6 +18,7 @@ import {
 } from '../../services';
 import { NotificationCenter } from '../notification-center/notification-center';
 import { DossierConsultation } from '../../features/circuit/dossier-consultation';
+import { ChangerMotDePasseModal } from '../../features/auth/mon-compte/changer-mot-de-passe-modal';
 import { ActualitesModal } from '../../shared/actualites/actualites-modal';
 import { Actualite } from '../../models/actualite.model';
 import { ActualiteService } from '../../services/actualite.services';
@@ -33,7 +34,15 @@ const CHEMIN_A_VERIFIER = '/verificateur/a-verifier';
 @Component({
   selector: 'app-main-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationCenter, DossierConsultation, ActualitesModal],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    NotificationCenter,
+    DossierConsultation,
+    ActualitesModal,
+    ChangerMotDePasseModal,
+  ],
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.scss',
   host: { '[attr.data-role]': 'role()' },
@@ -118,6 +127,8 @@ export class MainLayout {
    * la liste : l'annonce ne réapparaît qu'à la prochaine connexion.
    */
   readonly actualites = signal<Actualite[]>([]);
+  /** Modale « Changer mon mot de passe » (tous profils), ouverte depuis la topbar. */
+  readonly motDePasseOuvert = signal(false);
 
   // ── Recherche « aller à un dossier par référence » (topbar, PRMP/UGPM) ──
   /** Saisie de la recherche par référence de dossier. */
