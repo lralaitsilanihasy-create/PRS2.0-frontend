@@ -22,6 +22,7 @@ import {
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { StatutBadge } from '../../shared/circuit';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { DossierConsultation } from './dossier-consultation';
 
@@ -57,7 +58,7 @@ interface LigneControleur {
 @Component({
   selector: 'app-dispatchs-controleurs',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, DatePipe, ModaleDirective],
+  imports: [StatutBadge, DossierConsultation, DatePipe, ModaleDirective, EtatErreur],
   template: `
     <section class="dpc">
       <h2 class="dpc__titre"><span aria-hidden="true">📊</span> Dispatchs par contrôleur</h2>
@@ -65,6 +66,8 @@ interface LigneControleur {
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
+      } @else if (erreur()) {
+        <app-etat-erreur message="Impossible de charger la répartition des dispatchs." (reessayer)="charger()" />
       } @else {
         <div class="dpc__kpis">
           <div class="cnm-stat cnm-stat--blue">
@@ -262,6 +265,8 @@ export class DispatchsControleurs implements OnDestroy {
   private readonly toast = inject(ToastService);
 
   readonly loading = signal(true);
+  /** Échec du croisement : la section affiche l'erreur et propose de relancer (AUDIT.md P9). */
+  readonly erreur = signal(false);
   readonly lignes = signal<LigneControleur[]>([]);
   /** Contrôleur dont la liste des dossiers est dépliée (im), null = tout replié. */
   readonly ouvert = signal<string | null>(null);
@@ -298,18 +303,38 @@ export class DispatchsControleurs implements OnDestroy {
       .subscribe(() => this.charger());
   }
 
-  private charger(): void {
+  /**
+   * ⚠️ Audit 2026-08-27 (C-1) — cette statistique croisait SEPT listes complètes. Deux réductions
+   * étaient possibles sans rien ajouter au serveur ; les autres listes restent telles quelles.
+   *
+   * 1. Les dossiers ne sont plus demandés en entier : seuls ceux qui sont ENCORE EN COURS côté
+   *    commission entrent dans le décompte (`STATUTS_EN_COURS` ci-dessous, filtre jusqu'ici posé en
+   *    JavaScript sur toute la table). `?statut=` sait le faire en SQL — brouillons, dossiers
+   *    clôturés, retirés et tout l'historique ne traversent plus le réseau. Deux requêtes plutôt
+   *    qu'une, mais d'un volume sans commune mesure, et le résultat est identique au dossier près.
+   * 2. Les examens sont DIFFÉRÉS (voir `chargerExamensEnCours`) : ils n'alimentent qu'un badge.
+   *
+   * <b>Ce qu'il resterait à faire côté serveur.</b> Réceptions et dispatchs restent demandés en
+   * entier : l'attribution courante d'un dossier, c'est son DERNIER dispatch, et le lien dispatch →
+   * dossier passe par la réception — deux jointures que seul le serveur peut faire. Un endpoint qui
+   * rendrait directement les attributions en cours (contrôleur, dossier, date du dernier dispatch,
+   * examen commencé) remplacerait à lui seul les six listes restantes. `/api/receptions` accepte un
+   * `idDossier` unique, ce qui n'aide pas ici : ce serait une requête par dossier.
+   */
+  charger(): void {
+    this.loading.set(true);
+    this.erreur.set(false);
     forkJoin({
-      dossiers: this.dossierService.list(),
+      dossiersDispatches: this.dossierService.list('DISPATCHE'),
+      dossiersExamines: this.dossierService.list('EXAMINE'),
       receptions: this.receptionService.list(),
       dispatchs: this.dispatchService.list(),
       controleurs: this.controleurService.list(),
       profiles: this.profileService.list(),
       delegations: this.delegationProfilService.list(),
-      examens: this.examenService.list(),
     }).subscribe({
-      next: ({ dossiers, receptions, dispatchs, controleurs, profiles, delegations, examens }) => {
-        const dossierById = new Map(dossiers.map((d) => [d.idDossier, d]));
+      next: ({ dossiersDispatches, dossiersExamines, receptions, dispatchs, controleurs, profiles, delegations }) => {
+        const dossierById = new Map([...dossiersDispatches, ...dossiersExamines].map((d) => [d.idDossier, d]));
         const recDossier = new Map(receptions.map((r) => [r.idReception, r.idDossier]));
         // Dernier dispatch par dossier (attribution courante — même règle que le drill-down circuit).
         const dernier = new Map<number, (typeof dispatchs)[number]>();
@@ -324,6 +349,8 @@ export class DispatchsControleurs implements OnDestroy {
         const parControleur = new Map<string, DossierAttribue[]>();
         // Un dossier sort de la statistique dès la signature de son PV définitif (PV_SIGNE et au-delà) :
         // seuls les dossiers encore en cours côté commission comptent (DISPATCHE / EXAMINE).
+        // ⚠️ Ce prédicat est désormais appliqué CÔTÉ SERVEUR (les deux `list(statut)` ci-dessus) ;
+        // il reste ici comme garde — `dossierById` ne contient plus rien d'autre.
         const STATUTS_EN_COURS = new Set(['DISPATCHE', 'EXAMINE']);
         // §3.5 — un CC / Président n'exerce la tâche du Membre que par DÉLÉGATION DE PROFIL active :
         // sans délégation « son profil → Membre » active, ses attributions ne sont pas affichées.
@@ -353,13 +380,8 @@ export class DispatchsControleurs implements OnDestroy {
           ajouter(disp.imCtrlMembre, idDossier, disp);
         }
         // Brouillons d'examen (dossier encore DISPATCHE mais examen commencé) → badge « Examen en cours ».
-        const dossierParDispatch = new Map([...dernier.entries()].map(([idD, disp]) => [disp.idDispatch, idD]));
-        const brouillons = new Set<number>();
-        for (const e of examens) {
-          const idD = e.idDispatch != null ? dossierParDispatch.get(e.idDispatch) : undefined;
-          if (idD != null) brouillons.add(idD);
-        }
-        this.dossiersAvecExamen.set(brouillons);
+        // Demandés APRÈS coup : les attendre retardait toutes les cartes derrière une table entière.
+        this.chargerExamensEnCours(new Map([...dernier.entries()].map(([idD, disp]) => [disp.idDispatch, idD])));
         const lignes: LigneControleur[] = [...parControleur.entries()].map(([im, liste]) => {
           const c = ctrlById.get(im);
           return {
@@ -384,7 +406,30 @@ export class DispatchsControleurs implements OnDestroy {
           });
         }
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.erreur.set(true);
+      },
+    });
+  }
+
+  /**
+   * Badge « Examen en cours » : dossiers encore DISPATCHE dont un examen est commencé.
+   *
+   * Chargé HORS du croisement principal — il ne conditionne qu'un badge, et l'échec le laisse
+   * simplement absent. `GET /api/examens` n'accepte aucun filtre : la liste arrive entière.
+   */
+  private chargerExamensEnCours(dossierParDispatch: Map<number, number>): void {
+    this.examenService.list().subscribe({
+      next: (examens) => {
+        const avecExamen = new Set<number>();
+        for (const e of examens) {
+          const idD = e.idDispatch != null ? dossierParDispatch.get(e.idDispatch) : undefined;
+          if (idD != null) avecExamen.add(idD);
+        }
+        this.dossiersAvecExamen.set(avecExamen);
+      },
+      error: () => this.dossiersAvecExamen.set(new Set()),
     });
   }
 
