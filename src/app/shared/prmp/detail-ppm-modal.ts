@@ -36,6 +36,7 @@ import { PpmMarchesTable } from './ppm-marches-table';
 import { PpmSaisieGrid } from './ppm-saisie-grid';
 import { PpmFormFactory } from './ppm-form-factory';
 import { CibleSuppression, DpmConfirmationSuppression } from './dpm-confirmation-suppression';
+import { DpmDatesMarche, libelleCapm } from './dpm-dates-marche';
 import { DpmReimportRefuse } from './dpm-reimport-refuse';
 
 /**
@@ -73,6 +74,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     PpmMarchesTable,
     PpmSaisieGrid,
     DpmConfirmationSuppression,
+    DpmDatesMarche,
     DpmReimportRefuse,
   ],
   template: `
@@ -487,33 +489,13 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     </div>
 
     @if (modalMarche(); as m) {
-      <div class="dpm__overlay">
-        <div class="dpm dpm--sm cnm-card" role="dialog" aria-modal="true" aria-label="Dates du marché" appModale appModaleClicExterieur (appModaleFermer)="fermerDates()">
-          <header class="dpm__head">
-            <h2 class="dpm__title">Dates prévisionnelles — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
-            <button type="button" class="dpm__close" aria-label="Fermer" (click)="fermerDates()">&times;</button>
-          </header>
-          <div class="dpm__body dpm__body--pad">
-            @if (modalLoading()) {
-              <p class="dpm__info" role="status">Chargement des dates…</p>
-            } @else if (modalData().length) {
-              <table class="cnm-table">
-                <thead><tr><th scope="col">Processus</th><th scope="col">Période prévisionnelle</th></tr></thead>
-                <tbody>
-                  @for (d of modalData(); track d.idPrevision) {
-                    <tr><td>{{ capmLabel(d.idCapm) }}</td><td class="cnm-mono">{{ d.dateDebut || '—' }} → {{ d.dateFin || '—' }}</td></tr>
-                  }
-                </tbody>
-              </table>
-            } @else {
-              <p class="dpm__info">Aucune date prévisionnelle pour ce marché.</p>
-            }
-          </div>
-          <footer class="dpm__foot">
-            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="fermerDates()">Fermer</button>
-          </footer>
-        </div>
-      </div>
+      <app-dpm-dates-marche
+        [marche]="m"
+        [capms]="capms()"
+        [chargement]="modalLoading()"
+        [dates]="modalData()"
+        (fermer)="fermerDates()"
+      />
     }
 
     @if (editMarche(); as m) {
@@ -1472,7 +1454,7 @@ export class DetailPpmModal implements OnInit {
 
   // — Dates prévisionnelles par processus CAPM (création + édition) —
   capmLabel(id: number): string {
-    return this.capms().find((c) => c.idCapm === id)?.libelleProcessus ?? '#' + id;
+    return libelleCapm(this.capms(), id);
   }
   procErreur(idCapm: number | null): string | undefined {
     return idCapm == null ? undefined : this.procErreurs()[idCapm];
