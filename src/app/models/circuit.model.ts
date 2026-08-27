@@ -172,7 +172,12 @@ export interface LettreRenvoi {
   imSignataire?: string;
   /** Nom complet du signataire (« prénoms nom »), peuplé serveur — lecture seule. */
   nomSignataire?: string;
-  /** `true` si la lettre a déjà été lue par la PRMP courante (réponse, lecture seule). */
+  /**
+   * `true` si la lettre a déjà été lue par l'**agent connecté** (réponse, lecture seule).
+   * ⚠️ Règle modifiée (2026-08-27) — le suivi de lecture est **individuel** (par compte) et non
+   * plus partagé par la tutelle : la consultation par une UGPM ne vaut plus lecture pour sa PRMP,
+   * et réciproquement. Forme de l'API inchangée (le serveur peuple le drapeau pour le connecté).
+   */
   lue?: boolean;
   /** ⚠️ Spec navette (2026-08-01) — archivage par l'Assistant contrôleur (lecture seule). */
   dateArchivage?: string;

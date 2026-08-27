@@ -305,7 +305,8 @@ export class MainLayout {
             c['/prmp/mes-brouillons'] = compteurs['brouillons'] ?? 0;
             c['/prmp/ppm-marches'] = compteurs['ppmMarches'] ?? 0;
             c['/prmp/dossiers-verifies'] = compteurs['dossiersVerifies'] ?? 0;
-            // Lettres SIGNE non encore lues → badge sur le hub « Examen de dossiers ».
+            // Lettres SIGNE que l'agent connecté n'a pas encore lues (⚠️ 2026-08-27 : décompte par
+            // agent, plus par tutelle) → badge sur le hub « Examen de dossiers ».
             c['/prmp/resultat-examen'] = compteurs['lettresRenvoi'] ?? 0;
             // Demandes passées à ACCEPTEE/REFUSEE depuis ma dernière consultation (calcul serveur).
             c['/prmp/retraits'] = compteurs['demandesRetraitNouvelles'] ?? 0;

@@ -133,7 +133,11 @@ export interface CompteursPrmp {
   ppmMarches: number;
   dossiersARectifier: number;
   dossiersVerifies: number;
-  /** Lettres de renvoi SIGNE non encore lues. */
+  /**
+   * Lettres de renvoi SIGNE que **l'agent connecté** n'a pas encore lues.
+   * ⚠️ Règle modifiée (2026-08-27) — décompte par agent : la consultation par une UGPM ne
+   * décrémente plus le compteur de sa PRMP de tutelle.
+   */
   lettresRenvoi: number;
   /** Demandes passées à ACCEPTEE/REFUSEE depuis ma dernière consultation de l'écran. */
   demandesRetraitNouvelles: number;

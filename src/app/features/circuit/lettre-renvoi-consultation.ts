@@ -226,7 +226,10 @@ export class LettreRenvoiConsultation {
   private readonly auth = inject(AuthService);
 
   private readonly source = (this.route.snapshot.data['source'] as 'mes' | 'localite') ?? 'localite';
-  /** PRMP (`source = 'mes'`) : distingue les lettres lues / non lues et marque « lu » à l'ouverture. */
+  /**
+   * PRMP (`source = 'mes'`) : distingue les lettres lues / non lues et marque « lu » à l'ouverture.
+   * ⚠️ 2026-08-27 — « lue » s'entend **par agent connecté**, plus par tutelle.
+   */
   readonly afficherLue = this.source === 'mes';
   /** CC / Président : autorise la signature des lettres SOUMIS. */
   readonly signable = (this.route.snapshot.data['signable'] as boolean) ?? false;
@@ -297,6 +300,8 @@ export class LettreRenvoiConsultation {
       this.pieceService.getByDossier(l.idDossier).subscribe((rows) => this.pieces.set(rows));
     }
     // PRMP : consulter le détail marque la lettre « lue » côté serveur (GET /{id}).
+    // ⚠️ Règle modifiée (2026-08-27) — la trace est posée pour le SEUL agent connecté : la lecture
+    // d'une UGPM n'éteint plus le badge de sa PRMP de tutelle (appel et forme de réponse inchangés).
     // On reflète l'état localement et on notifie le menu pour décrémenter le compteur.
     if (ouverture && this.afficherLue && l.lue === false && l.idLettre != null) {
       this.service.getById(l.idLettre).subscribe({
