@@ -35,6 +35,8 @@ import { DatePipe } from '@angular/common';
 import { PpmMarchesTable } from './ppm-marches-table';
 import { PpmSaisieGrid } from './ppm-saisie-grid';
 import { PpmFormFactory } from './ppm-form-factory';
+import { CibleSuppression, DpmConfirmationSuppression } from './dpm-confirmation-suppression';
+import { DpmReimportRefuse } from './dpm-reimport-refuse';
 
 /**
  * Profils auxquels le backend ouvre `GET /api/ugpms/par-tutelle/{idPrmp}` — **miroir exact** du
@@ -64,7 +66,15 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
 @Component({
   selector: 'app-detail-ppm-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, ModaleDirective, PpmMarchesTable, PpmSaisieGrid],
+  imports: [
+    ReactiveFormsModule,
+    DatePipe,
+    ModaleDirective,
+    PpmMarchesTable,
+    PpmSaisieGrid,
+    DpmConfirmationSuppression,
+    DpmReimportRefuse,
+  ],
   template: `
     <div class="modal-backdrop" [class.closing]="closing()">
       @if (loading()) {
@@ -709,48 +719,20 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     }
 
     @if (confirmState(); as c) {
-      <div class="dpm__overlay">
-        <div class="dpm dpm--sm cnm-card" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale appModaleClicExterieur (appModaleFermer)="annulerSuppression()">
-          <header class="dpm__head">
-            <h2 class="dpm__title">{{ c.kind === 'ppm' ? 'Supprimer le PPM' : 'Supprimer le marché' }}</h2>
-            <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerSuppression()">&times;</button>
-          </header>
-          <div class="dpm__body dpm__body--pad">
-            <p>{{ messageSuppression(c) }}</p>
-            <p class="cnm-muted">Action irréversible.</p>
-          </div>
-          <footer class="dpm__foot">
-            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerSuppression()">Annuler</button>
-            <button type="button" class="cnm-btn cnm-btn--danger" [disabled]="confirmBusy()" (click)="confirmerSuppression()">
-              {{ confirmBusy() ? 'Suppression…' : 'Supprimer définitivement' }}
-            </button>
-          </footer>
-        </div>
-      </div>
+      <app-dpm-confirmation-suppression
+        [cible]="c"
+        [busy]="confirmBusy()"
+        (annuler)="annulerSuppression()"
+        (confirmer)="confirmerSuppression()"
+      />
     }
 
     @if (reimportRefus(); as ref) {
-      <div class="dpm__overlay">
-        <div class="dpm dpm--sm cnm-card" role="alertdialog" aria-modal="true" aria-label="Réimport refusé" appModale appModaleClicExterieur (appModaleFermer)="reimportRefus.set(null)">
-          <header class="dpm__head">
-            <h2 class="dpm__title">🚫 Réimport impossible</h2>
-            <button type="button" class="dpm__close" aria-label="Fermer" (click)="reimportRefus.set(null)">&times;</button>
-          </header>
-          <div class="dpm__body dpm__body--pad">
-            <p>
-              Ce PDF concerne l'entité contractante <strong>« {{ ref.autorite }} »</strong>, alors que le dossier
-              concerne <strong>« {{ entiteLabel() }} »</strong>.
-            </p>
-            <p class="cnm-muted">
-              L'entité d'un dossier ne peut pas changer. <strong>Les données actuelles n'ont pas été modifiées.</strong>
-              Importez un PPM de la même entité.
-            </p>
-          </div>
-          <footer class="dpm__foot">
-            <button type="button" class="cnm-btn cnm-btn--primary" (click)="reimportRefus.set(null)">Compris</button>
-          </footer>
-        </div>
-      </div>
+      <app-dpm-reimport-refuse
+        [autorite]="ref.autorite"
+        [entite]="entiteLabel()"
+        (fermer)="reimportRefus.set(null)"
+      />
     }
 
   `,
@@ -988,7 +970,7 @@ export class DetailPpmModal implements OnInit {
   readonly submittingLot = signal(false);
 
   // Suppression (marché ou PPM)
-  readonly confirmState = signal<{ kind: 'marche' | 'ppm'; id: number; label: string; count: number | null } | null>(null);
+  readonly confirmState = signal<CibleSuppression | null>(null);
   readonly confirmBusy = signal(false);
 
   readonly natures = signal<Nature[]>([]);
@@ -1932,13 +1914,6 @@ export class DetailPpmModal implements OnInit {
         this.confirmState.update((c) => (c && c.kind === 'marche' && c.id === m.idDetail ? { ...c, count: rows.length } : c)),
       error: () => {},
     });
-  }
-  messageSuppression(c: { kind: 'marche' | 'ppm'; label: string; count: number | null }): string {
-    if (c.kind === 'ppm') {
-      return `Supprimer le PPM « ${c.label} » ? Cela supprimera aussi ses ${c.count ?? 0} marché(s) et toutes leurs dates prévisionnelles.`;
-    }
-    const n = c.count == null ? '…' : c.count;
-    return `Supprimer le marché « ${c.label} » et ses ${n} date(s) prévisionnelle(s) ?`;
   }
   annulerSuppression(): void {
     if (!this.confirmBusy()) {

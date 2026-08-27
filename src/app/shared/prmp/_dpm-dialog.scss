@@ -1,0 +1,53 @@
+/* ════════════════════════════════════════════════════════════════
+   Habillage commun des SOUS-DIALOGUES du détail PPM (voile, carte,
+   en-tête, corps, pied). Extrait de `detail-ppm-modal.scss` lors du
+   découpage des sous-dialogs en composants (audit 2026-08-27) : ces
+   règles vivaient dans le style du parent, dont l'encapsulation ne
+   touche plus le DOM d'un composant enfant.
+
+   Règles reprises telles quelles — aucun changement d'apparence.
+   ════════════════════════════════════════════════════════════════ */
+.dpm__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  background: rgba(26, 29, 46, 0.58);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cnm-space-4);
+}
+.dpm {
+  width: 100%;
+  min-width: 0;
+  /* Élargi (était 32rem) : les lignes bénéficiaires/lots (4-5 champs) tiennent sans trop se replier. */
+  max-width: 52rem;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #fff;
+  border: 0.5px solid var(--n-200);
+  box-shadow: var(--shadow-xl);
+}
+/* Variante « compacte » (Voir/Modifier dates, création marché : moins de champs) — élargie aussi
+   mais un peu moins que les formulaires larges. Doit suivre `.dpm` pour l'emporter (même spécificité). */
+.dpm--sm { max-width: 44rem; }
+.dpm__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cnm-space-3);
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 0.5px solid var(--n-200);
+}
+.dpm__title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--n-800); }
+.dpm__close { background: transparent; border: 0; color: var(--n-400); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+.dpm__close:hover { color: var(--n-800); }
+.dpm__body--pad { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: var(--cnm-space-2); }
+.dpm__info { color: var(--n-500); padding: 0.5rem 0; }
+.dpm__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); padding: 1rem 1.5rem; border-top: 0.5px solid var(--n-200); }
+
+@media (max-width: 768px) {
+  .dpm__overlay { padding: 0; align-items: flex-end; }
+  .dpm { max-width: 100%; border-radius: 12px 12px 0 0; }
+}
