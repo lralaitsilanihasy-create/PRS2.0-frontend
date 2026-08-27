@@ -35,8 +35,10 @@ import { DatePipe } from '@angular/common';
 import { PpmMarchesTable } from './ppm-marches-table';
 import { PpmSaisieGrid } from './ppm-saisie-grid';
 import { PpmFormFactory } from './ppm-form-factory';
+import { DpmBenefsMarche } from './dpm-benefs-marche';
 import { CibleSuppression, DpmConfirmationSuppression } from './dpm-confirmation-suppression';
 import { DpmDatesMarche, libelleCapm } from './dpm-dates-marche';
+import { DpmLotsMarche } from './dpm-lots-marche';
 import { DpmReimportRefuse } from './dpm-reimport-refuse';
 
 /**
@@ -73,8 +75,10 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     ModaleDirective,
     PpmMarchesTable,
     PpmSaisieGrid,
+    DpmBenefsMarche,
     DpmConfirmationSuppression,
     DpmDatesMarche,
+    DpmLotsMarche,
     DpmReimportRefuse,
   ],
   template: `
@@ -547,71 +551,29 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     }
 
     @if (editBenefMarche(); as m) {
-      <div class="dpm__overlay">
-        <form class="dpm cnm-card" [formGroup]="benefForm" (ngSubmit)="enregistrerBenefs()" role="dialog" aria-modal="true" aria-label="Services bénéficiaires du marché" appModale appModaleClicExterieur (appModaleFermer)="annulerBenefs()" novalidate>
-          <header class="dpm__head">
-            <h2 class="dpm__title">Services bénéficiaires — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
-            <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerBenefs()">&times;</button>
-          </header>
-          <div class="dpm__body dpm__body--pad">
-            @for (ctrl of benefLignes(); track $index) {
-              <div class="dpm-benef-edit-row" [formGroup]="ctrl">
-                <select class="form-control" formControlName="soaCode" aria-label="Service bénéficiaire">
-                  <option [ngValue]="null">— Service bénéficiaire —</option>
-                  @for (s of soaList(); track s.soaCode) {
-                    <option [ngValue]="s.soaCode">{{ s.soaCode }}{{ s.libelle ? ' · ' + s.libelle : '' }}</option>
-                  }
-                </select>
-                <select class="form-control" formControlName="numCompte" aria-label="Compte">
-                  <option [ngValue]="null">— Compte —</option>
-                  @for (c of comptes(); track c.numCompte) {
-                    <option [ngValue]="c.numCompte">{{ c.numCompte }}{{ c.libelle ? ' · ' + c.libelle : '' }}</option>
-                  }
-                </select>
-                <input class="form-control" type="number" formControlName="ancMontBenef" placeholder="Montant" aria-label="Montant" />
-                <input class="form-control" type="number" formControlName="nouvMontBenef" placeholder="Nouveau montant" aria-label="Nouveau montant" />
-                <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerBenef($index)" aria-label="Retirer">✕</button>
-              </div>
-            } @empty {
-              <p class="dpm__info">Aucun bénéficiaire. Ajoutez-en un.</p>
-            }
-            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ajouterBenef()">+ Ajouter un bénéficiaire</button>
-          </div>
-          <footer class="dpm__foot">
-            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerBenefs()">Annuler</button>
-            <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submittingBenef()">Enregistrer</button>
-          </footer>
-        </form>
-      </div>
+      <app-dpm-benefs-marche
+        [marche]="m"
+        [formulaire]="benefForm"
+        [soaList]="soaList()"
+        [comptes]="comptes()"
+        [busy]="submittingBenef()"
+        (ajouter)="ajouterBenef()"
+        (retirer)="retirerBenef($event)"
+        (annuler)="annulerBenefs()"
+        (enregistrer)="enregistrerBenefs()"
+      />
     }
 
     @if (editLotMarche(); as m) {
-      <div class="dpm__overlay">
-        <form class="dpm cnm-card" [formGroup]="lotForm" (ngSubmit)="enregistrerLots()" role="dialog" aria-modal="true" aria-label="Lots du marché" appModale appModaleClicExterieur (appModaleFermer)="annulerLots()" novalidate>
-          <header class="dpm__head">
-            <h2 class="dpm__title">Lots (allotissement) — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
-            <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerLots()">&times;</button>
-          </header>
-          <div class="dpm__body dpm__body--pad">
-            @for (ctrl of lotLignes(); track $index) {
-              <div class="dpm-benef-edit-row" [formGroup]="ctrl">
-                <input class="form-control" type="text" formControlName="designationLot" placeholder="Désignation du lot *" aria-label="Désignation du lot" />
-                <input class="form-control" type="number" formControlName="montLot" placeholder="Montant" aria-label="Montant" />
-                <input class="form-control" type="number" formControlName="qteLot" placeholder="Quantité" aria-label="Quantité" />
-                <input class="form-control" type="text" formControlName="uniteLot" placeholder="Unité" aria-label="Unité" />
-                <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="retirerLot($index)" aria-label="Retirer">✕</button>
-              </div>
-            } @empty {
-              <p class="dpm__info">Aucun lot. Ajoutez-en un pour allotir ce marché.</p>
-            }
-            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="ajouterLot()">+ Ajouter un lot</button>
-          </div>
-          <footer class="dpm__foot">
-            <button type="button" class="cnm-btn cnm-btn--ghost" (click)="annulerLots()">Annuler</button>
-            <button type="submit" class="cnm-btn cnm-btn--primary" [disabled]="submittingLot()">Enregistrer</button>
-          </footer>
-        </form>
-      </div>
+      <app-dpm-lots-marche
+        [marche]="m"
+        [formulaire]="lotForm"
+        [busy]="submittingLot()"
+        (ajouter)="ajouterLot()"
+        (retirer)="retirerLot($event)"
+        (annuler)="annulerLots()"
+        (enregistrer)="enregistrerLots()"
+      />
     }
 
     @if (createOpen()) {
@@ -1638,9 +1600,6 @@ export class DetailPpmModal implements OnInit {
   }
 
   // — Édition des services bénéficiaires d'un marché (CRUD + réconciliation) —
-  benefLignes(): FormGroup[] {
-    return (this.benefForm.get('lignes') as FormArray).controls as FormGroup[];
-  }
   private ligneBenef(b?: ServiceBeneficiaire): FormGroup {
     return this.fb.group({
       idBenef: [b?.idBenef ?? null],
@@ -1738,9 +1697,6 @@ export class DetailPpmModal implements OnInit {
   /** Lots d'un marché (lecture seule, pour le compteur du bouton). */
   lotsDe(idDetail: number): Lot[] {
     return this.lotParDetail().get(idDetail) ?? [];
-  }
-  lotLignes(): FormGroup[] {
-    return (this.lotForm.get('lignes') as FormArray).controls as FormGroup[];
   }
   private ligneLot(l?: Lot): FormGroup {
     return this.fb.group({

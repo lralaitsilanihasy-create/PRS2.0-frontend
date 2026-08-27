@@ -47,6 +47,10 @@
 .dpm__info { color: var(--n-500); padding: 0.5rem 0; }
 .dpm__foot { display: flex; justify-content: flex-end; gap: var(--cnm-space-2); padding: 1rem 1.5rem; border-top: 0.5px solid var(--n-200); }
 
+/* Ligne de contrôles répétable des sous-dialogues d'édition (bénéficiaires, lots). */
+.dpm-benef-edit-row { display: flex; align-items: center; gap: var(--cnm-space-2); flex-wrap: wrap; margin-bottom: var(--cnm-space-2); }
+.dpm-benef-edit-row .form-control { flex: 1; min-width: 8rem; }
+
 @media (max-width: 768px) {
   .dpm__overlay { padding: 0; align-items: flex-end; }
   .dpm { max-width: 100%; border-radius: 12px 12px 0 0; }
