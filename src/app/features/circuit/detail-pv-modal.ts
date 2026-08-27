@@ -35,8 +35,8 @@ import { StatutBadge } from '../../shared/circuit';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ModaleDirective, StatutBadge],
   template: `
-    <div class="modal-backdrop" [class.closing]="closing()" (click)="fermerModal()">
-      <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Détail du PV" appModale (appModaleFermer)="fermerModal()" (click)="$event.stopPropagation()">
+    <div class="modal-backdrop" [class.closing]="closing()">
+      <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Détail du PV" appModale appModaleClicExterieur (appModaleFermer)="fermerModal()">
         <!-- En-tête -->
         <div class="modal-header">
           <div>
@@ -215,8 +215,8 @@ import { StatutBadge } from '../../shared/circuit';
     <!-- Visionneuse du PDF officiel signé (même modèle que « PV définitifs » PRMP) : le lecteur du
          navigateur offre déjà impression / enregistrement. -->
     @if (apercu(); as ap) {
-      <div class="modal-backdrop" [class.closing]="closingApercu()" (click)="fermerApercuAnime()">
-        <div class="modal modal-lg dpv-viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV" appModale (appModaleFermer)="fermerApercuAnime()" (click)="$event.stopPropagation()">
+      <div class="modal-backdrop" [class.closing]="closingApercu()">
+        <div class="modal modal-lg dpv-viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV" appModale appModaleClicExterieur (appModaleFermer)="fermerApercuAnime()">
           <div class="modal-header">
             <div>
               <div class="dpv-head-top">

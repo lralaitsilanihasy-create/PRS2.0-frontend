@@ -42,16 +42,16 @@ interface LigneControle {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ModaleDirective, ReactiveFormsModule, SlicePipe, StatutBadge],
   template: `
-    <div class="modal-backdrop" [class.closing]="closingD()" (click)="fermerDAnime()">
+    <div class="modal-backdrop" [class.closing]="closingD()">
       <form
         class="modal cnm-form rf-modal"
         [formGroup]="form"
         (ngSubmit)="enregistrer()"
-        (click)="$event.stopPropagation()"
         role="dialog"
         aria-modal="true"
         aria-label="Réception du dossier"
         appModale
+        appModaleClicExterieur
         (appModaleFermer)="fermerDAnime()"
         novalidate
       >

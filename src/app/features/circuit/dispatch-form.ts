@@ -48,7 +48,6 @@ export interface DispatchItem {
         class="modal cnm-form"
         [formGroup]="form"
         (ngSubmit)="enregistrer()"
-        (click)="$event.stopPropagation()"
         role="dialog"
         aria-modal="true"
         [attr.aria-label]="titre()"

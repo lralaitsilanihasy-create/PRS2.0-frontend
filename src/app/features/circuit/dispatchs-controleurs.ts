@@ -170,8 +170,8 @@ interface LigneControleur {
       <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
     }
     @if (retrait(); as r) {
-      <div class="modal-backdrop" [class.closing]="closingRetrait()" (click)="fermerRetrait()">
-        <div class="modal dpc__confirm" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Retrait du dossier dispatché" appModale (appModaleFermer)="fermerRetrait()">
+      <div class="modal-backdrop" [class.closing]="closingRetrait()">
+        <div class="modal dpc__confirm" role="alertdialog" aria-modal="true" aria-label="Retrait du dossier dispatché" appModale appModaleClicExterieur (appModaleFermer)="fermerRetrait()">
           <div class="modal-body">
             <p>
               Retirer le dossier <strong>{{ r.a.dossier.refeDossier || '#' + r.a.dossier.idDossier }}</strong> à

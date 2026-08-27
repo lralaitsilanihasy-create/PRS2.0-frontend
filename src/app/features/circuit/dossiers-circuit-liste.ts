@@ -189,8 +189,8 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
       <app-reception-form [dossier]="d" (closed)="receptionItem.set(null)" (saved)="onReception($event)" />
     }
     @if (annulation(); as d) {
-      <div class="modal-backdrop" [class.closing]="closingAnnulation()" (click)="fermerAnnulation()">
-        <div class="modal dcl__confirm" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Confirmation d'annulation" appModale (appModaleFermer)="fermerAnnulation()">
+      <div class="modal-backdrop" [class.closing]="closingAnnulation()">
+        <div class="modal dcl__confirm" role="alertdialog" aria-modal="true" aria-label="Confirmation d'annulation" appModale appModaleClicExterieur (appModaleFermer)="fermerAnnulation()">
           <div class="modal-body">
             <p>
               Retirer le dossier <strong>{{ d.refeDossier || '#' + d.idDossier }}</strong> à

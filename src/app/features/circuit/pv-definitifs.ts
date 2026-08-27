@@ -105,8 +105,8 @@ import { DetailPvModal } from './detail-pv-modal';
 
     <!-- ⚠️ 2026-08-02 (PRMP) — visionneuse du PDF officiel signé, affichée directement au clic. -->
     @if (apercu(); as ap) {
-      <div class="modal-backdrop" [class.closing]="closingApercu()" (click)="fermerApercuAnime()">
-        <div class="modal modal-lg pvd__viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV définitif" appModale (appModaleFermer)="fermerApercuAnime()" (click)="$event.stopPropagation()">
+      <div class="modal-backdrop" [class.closing]="closingApercu()">
+        <div class="modal modal-lg pvd__viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV définitif" appModale appModaleClicExterieur (appModaleFermer)="fermerApercuAnime()">
           <div class="modal-header">
             <div>
               <div class="pvd__viewer-top">
