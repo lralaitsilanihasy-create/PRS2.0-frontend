@@ -1,6 +1,5 @@
 import { CrudResourceConfig } from '../../shared/crud/crud-config';
 import {
-  AuditLogService,
   AvisService,
   CapmService,
   CatCompteService,
@@ -568,26 +567,14 @@ export const COMPTES: AdminResource[] = [
   },
 ];
 
-/** Sécurité : journal d'audit (lecture seule) et sessions utilisateur (ADMINISTRATEUR). */
+/**
+ * Sécurité : sessions utilisateur (ADMINISTRATEUR).
+ *
+ * ⚠️ Le journal d'audit est parti d'ici le 2026-08-27 : `t_audit_log` grossit sans fin et le CRUD
+ * générique en demandait la totalité. Il a désormais son écran dédié, paginé et filtré
+ * (`features/admin/audit-logs-admin.ts`).
+ */
 export const SECURITE: AdminResource[] = [
-  {
-    slug: 'audit-logs',
-    config: {
-      title: "Journal d'audit",
-      service: AuditLogService,
-      idKey: 'idLog',
-      readOnly: true,
-      fields: [
-        { key: 'idLog', label: 'ID', type: 'number' },
-        { key: 'dateAction', label: 'Date' },
-        { key: 'imActeur', label: 'Acteur' },
-        { key: 'nomTable', label: 'Table' },
-        { key: 'idEnregistrement', label: 'Enregistrement' },
-        { key: 'typeAction', label: 'Action' },
-        { key: 'champModifie', label: 'Champ' },
-      ],
-    },
-  },
   {
     slug: 'session-utilisateurs',
     config: {

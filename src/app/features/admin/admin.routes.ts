@@ -35,7 +35,6 @@ const compteLinks = [
   // Écran dédié : mandats PRMP (nomination / reconduction / abrogation — pas un CRUD générique).
   { label: 'Mandats PRMP', path: '/admin/comptes/mandats' },
 ];
-const auditConfig = SECURITE.find((r) => r.slug === 'audit-logs')!.config;
 const sessionConfig = SECURITE.find((r) => r.slug === 'session-utilisateurs')!.config;
 
 /**
@@ -83,7 +82,9 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'actualites', loadComponent: () => import('./actualites-admin').then((m) => m.ActualitesAdmin) },
   { path: 'inscriptions', loadComponent: () => import('./inscriptions-admin').then((m) => m.InscriptionsAdmin) },
   { path: 'rattachements', loadComponent: () => import('./rattachements-admin').then((m) => m.RattachementsAdmin) },
-  { path: 'audit', loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage), data: { crud: auditConfig } },
+  // Écran dédié : journal d'audit paginé et filtré (table, acteur, période) — la table croît sans
+  // fin, le CRUD générique en demandait la totalité (⚠️ audit 2026-08-27, C-1).
+  { path: 'audit', loadComponent: () => import('./audit-logs-admin').then((m) => m.AuditLogsAdmin) },
   { path: 'sessions', loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage), data: { crud: sessionConfig } },
   { path: 'rapports', loadComponent: () => import('../pilotage/rapports-page').then((m) => m.RapportsPage) },
   { path: 'ppm-marches', loadComponent: () => import('../prmp/ppm-marches').then((m) => m.PpmMarches) },
