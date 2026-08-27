@@ -40,7 +40,27 @@ module.exports = tseslint.config(
         "error",
         { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      // Acquis de l'audit sécurité : une URL `blob:` hérite de l'origine de l'application, si bien
+      // qu'un HTML ou un SVG téléversé, restitué tel quel dans un `window.open` ou une `<iframe>`,
+      // y exécuterait son script. Le seul endroit du dépôt qui a le droit d'appeler
+      // `URL.createObjectURL` est donc `core/securite/fichiers-surs` (override ci-dessous), qui force
+      // un type MIME inerte au passage. Sans cette règle, la protection se perd au premier
+      // copier-coller — elle avait déjà été recopiée douze fois avant d'être recentralisée.
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "URL",
+          property: "createObjectURL",
+          message:
+            "Passer par urlBlobSure() / telechargerBlob() / ouvrirBlobSur() (core/securite/fichiers-surs) : une URL blob: brute rend exécutable un fichier téléversé dans l'origine de l'application.",
+        },
+      ],
     },
+  },
+  {
+    // Le module des fichiers sûrs EST l'implémentation de la garde : il lui faut l'appel brut.
+    files: ["src/app/core/securite/fichiers-surs.ts"],
+    rules: { "no-restricted-properties": "off" },
   },
   {
     files: ["**/*.html"],

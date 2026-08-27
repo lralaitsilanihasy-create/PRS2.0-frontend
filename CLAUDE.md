@@ -92,6 +92,10 @@ Organisation **par domaine métier**, pas par type technique : il n'y a **pas** 
   (`core/securite/fichiers-surs`) — jamais `URL.createObjectURL(blob)` brut : un HTML ou SVG
   téléversé s'exécuterait dans l'origine de l'application. Tout téléversement passe par
   `validerFichier()` (type et taille).
+  Pour les deux gestes complets, ne rien réécrire : `telechargerBlob(blob, nom)` enregistre sur
+  le poste, `ouvrirBlobSur(blob)` ouvre un nouvel onglet — assainissement et révocation différée
+  compris. ESLint (`no-restricted-properties`) refuse tout appel à `URL.createObjectURL` hors de
+  `core/securite/fichiers-surs.ts` : la règle est le garde-fou du motif, pas une formalité.
 - **Modale** : poser la directive `appModale` (`shared/a11y`) sur le conteneur du dialogue —
   elle apporte le focus initial, sa restitution, Échap et le piège de Tab. Y ajouter un
   `aria-label`, et un `aria-label` sur tout bouton réduit à un symbole (✕, ⤴…).
