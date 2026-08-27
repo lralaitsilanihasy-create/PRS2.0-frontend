@@ -62,7 +62,8 @@ export interface EntitePubliqueDto {
 /** Entité « non listée » proposée à l'inscription (validée plus tard par l'admin). */
 export interface EntiteNonListee {
   libelle: string;
-  adresse?: string;
+  /** Obligatoire : le backend la refuse vide (`@NotBlank` sur `EntiteNonListeeRequest`). */
+  adresse: string;
   idLocalite: string;
   categorie?: string;
 }

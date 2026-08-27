@@ -36,12 +36,14 @@ export const ACTUALITE_STATUT_LABELS: Record<StatutActualite, string> = {
   ARCHIVE: 'Archivée',
 };
 
-/** Image d'une actualité — JPEG uniquement, redimensionnée au serveur avant stockage. */
+/**
+ * Image d'une actualité — JPEG uniquement, redimensionnée au serveur avant stockage.
+ * Champ à champ le `ActualiteImageDto` du backend : jamais le binaire, servi par
+ * `GET /api/actualites/{id}/images/{idImage}`.
+ */
 export interface ActualiteImage {
   idImage: number;
-  idActualite: number;
   nomFichier: string;
-  format?: string;
   taille?: number;
   /** Position dans la mini-page. */
   ordre?: number;

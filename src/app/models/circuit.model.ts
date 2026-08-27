@@ -98,6 +98,12 @@ export interface Dispatch {
   imCtrlCc?: string;
   imCtrlMembre?: string;
   dateDispatch?: string;
+  /**
+   * Date et heure de **pré-dispatch** = réception du dossier par le secrétaire (la plus récente
+   * du dossier), au format `yyyy-MM-dd HH:mm`. Posée par le serveur, **lecture seule** ;
+   * `undefined` si le dossier n'a encore aucune réception.
+   */
+  datePredispatch?: string;
   dateCtrlAssigne?: string;
   instructions?: string;
   /** Président → false ; CC dans sa localité → false ; CC hors localité → true (sinon 409). */

@@ -206,7 +206,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                               <input class="form-control" maxlength="5" [value]="d.idLocalite" (input)="updateDecl(i, { idLocalite: $any($event.target).value })" />
                             </label>
                             <label class="form-group">
-                              <span class="form-label">Adresse</span>
+                              <span class="form-label">Adresse *</span>
                               <input class="form-control" [value]="d.adresse" (input)="updateDecl(i, { adresse: $any($event.target).value })" />
                             </label>
                             <label class="form-group">
@@ -537,15 +537,19 @@ export class RegisterPrmp implements OnDestroy {
       .filter((d) => d.mode === 'existante' && d.idEntite != null)
       .map((d) => d.idEntite as number);
     const entitesNonListees = this.declarations()
-      .filter((d) => d.mode === 'proposee' && d.libelle.trim() && d.idLocalite.trim())
+      // L'adresse est retenue au même titre que le libellé et la localité : le backend la refuse
+      // vide (`@NotBlank`), une proposition incomplète repartait en 400 sans que rien ne le dise.
+      .filter((d) => d.mode === 'proposee' && d.libelle.trim() && d.idLocalite.trim() && d.adresse.trim())
       .map((d) => ({
         libelle: d.libelle.trim(),
-        adresse: d.adresse.trim() || undefined,
+        adresse: d.adresse.trim(),
         idLocalite: d.idLocalite.trim(),
         categorie: d.categorie.trim() || undefined,
       }));
     if (idEntites.length + entitesNonListees.length === 0) {
-      this.entitesError.set('Déclarez au moins une entité (existante ou proposée, avec libellé et code localité).');
+      this.entitesError.set(
+        'Déclarez au moins une entité (existante ou proposée, avec libellé, code localité et adresse).',
+      );
       return;
     }
 
