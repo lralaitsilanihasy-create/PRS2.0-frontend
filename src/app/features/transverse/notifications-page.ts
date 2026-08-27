@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { routePourNotification } from '../../core/notifications/notification-route';
@@ -175,10 +177,11 @@ export class NotificationsPage {
   constructor() {
     this.charger();
     // Temps réel : toute révision du store (SSE / autre onglet / action locale) recharge la liste.
-    effect(() => {
-      this.store.revision();
-      this.charger(false);
-    });
+    // skip(1) : le chargement initial est déjà déclenché ci-dessus — un effect s'exécutant aussi au
+    // premier cycle, chaque montage lançait `GET /notifications/mes` deux fois (motif dossiers-liste).
+    toObservable(this.store.revision)
+      .pipe(skip(1), takeUntilDestroyed())
+      .subscribe(() => this.charger(false));
   }
 
   private charger(avecSpinner = true): void {
