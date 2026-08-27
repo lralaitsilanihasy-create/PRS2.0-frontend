@@ -278,8 +278,11 @@
 }
 
 /* ════════════════════════════════════════════════════════════════
-   Sous-modals (Voir/Modifier dates, créer/éditer marché, confirmation)
-   — inchangés (préservés depuis la version précédente).
+   Sous-modals restés dans ce composant : « Modifier les dates » et
+   « Nouveau marché ». Les cinq autres sont des composants dédiés qui
+   reprennent cet habillage via le partiel `_dpm-dialog.scss` — le style
+   d'un parent n'atteint pas le DOM d'un enfant (encapsulation émulée).
+   Les deux copies doivent donc rester alignées.
    ════════════════════════════════════════════════════════════════ */
 .dpm__overlay {
   position: fixed;
@@ -332,8 +335,6 @@
   border-radius: var(--radius-sm);
 }
 .dpm-date-row { display: flex; align-items: center; gap: var(--cnm-space-2); }
-.dpm-benef-edit-row { display: flex; align-items: center; gap: var(--cnm-space-2); flex-wrap: wrap; margin-bottom: var(--cnm-space-2); }
-.dpm-benef-edit-row .form-control { flex: 1; min-width: 8rem; }
 .dpm-date-row .form-control { flex: 1; }
 .dpm-date-err { color: var(--danger-text); display: block; }
 
