@@ -232,8 +232,8 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
     </div>
 
     @if (confirmDelete(); as p) {
-      <div class="modal-backdrop" [class.closing]="closingSuppression()" (click)="fermerSuppressionAnime()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="fermerSuppressionAnime()">
+      <div class="modal-backdrop" [class.closing]="closingSuppression()">
+        <div class="modal confirm-modal cnm-card" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale appModaleClicExterieur (appModaleFermer)="fermerSuppressionAnime()">
           <div class="modal-header-plain"><span class="modal-title">Supprimer la PRMP</span></div>
           <div class="modal-body">
             Supprimer la PRMP <strong>{{ p.idPrmp }}</strong> ({{ p.nomPrmp }} {{ p.prenomsPrmp }}) et son compte ?

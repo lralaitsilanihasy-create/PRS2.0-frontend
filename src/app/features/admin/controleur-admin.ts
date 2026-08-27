@@ -181,8 +181,8 @@ const IMG_OK = ['image/jpeg', 'image/png'];
     </div>
 
     @if (confirmDelete(); as c) {
-      <div class="modal-backdrop" [class.closing]="closingSuppression()" (click)="fermerSuppressionAnime()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="fermerSuppressionAnime()">
+      <div class="modal-backdrop" [class.closing]="closingSuppression()">
+        <div class="modal confirm-modal cnm-card" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale appModaleClicExterieur (appModaleFermer)="fermerSuppressionAnime()">
           <div class="modal-header-plain"><span class="modal-title">Supprimer le contrôleur</span></div>
           <div class="modal-body">
             Supprimer le contrôleur <strong>{{ c.imControleur }}</strong> ({{ c.nomCont }} {{ c.prenomsCont }}), son compte et sa photo ?

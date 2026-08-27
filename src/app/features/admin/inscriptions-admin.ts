@@ -121,8 +121,8 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
     </div>
 
     @if (refuseFor(); as i) {
-      <div class="modal-backdrop" [class.closing]="closingRefus()" (click)="fermerRefusAnime()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Refus de l'inscription" appModale (appModaleFermer)="fermerRefusAnime()">
+      <div class="modal-backdrop" [class.closing]="closingRefus()">
+        <div class="modal confirm-modal cnm-card" role="dialog" aria-modal="true" aria-label="Refus de l'inscription" appModale appModaleClicExterieur (appModaleFermer)="fermerRefusAnime()">
           <div class="modal-header-plain"><span class="modal-title">Refuser l'inscription — {{ i.login }}</span></div>
           <div class="modal-body">
             <label class="form-group">

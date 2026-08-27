@@ -226,8 +226,8 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
     </div>
 
     @if (confirmDelete(); as u) {
-      <div class="modal-backdrop" [class.closing]="closingSuppression()" (click)="fermerSuppressionAnime()">
-        <div class="modal confirm-modal cnm-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="fermerSuppressionAnime()">
+      <div class="modal-backdrop" [class.closing]="closingSuppression()">
+        <div class="modal confirm-modal cnm-card" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale appModaleClicExterieur (appModaleFermer)="fermerSuppressionAnime()">
           <div class="modal-header-plain"><span class="modal-title">Supprimer l'UGPM</span></div>
           <div class="modal-body">
             Supprimer l'UGPM <strong>{{ u.idUgpm }}</strong> ({{ u.nomUgpm }} {{ u.prenomsUgpm }}) et son compte de connexion ?

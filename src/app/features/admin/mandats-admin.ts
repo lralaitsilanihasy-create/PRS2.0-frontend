@@ -100,8 +100,8 @@ const STATUT_LABELS: Record<string, string> = {
 
     <!-- Nomination / reconduction : nouvel arrêté OBLIGATOIRE, dates neuves (jamais une prolongation). -->
     @if (creationOuverte()) {
-      <div class="modal-backdrop" [class.closing]="closingCreation()" (click)="fermerCreationAnime()">
-        <form class="modal confirm-modal cnm-form" [formGroup]="form" (ngSubmit)="creer()" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Nomination d'une PRMP" appModale (appModaleFermer)="fermerCreationAnime()" novalidate>
+      <div class="modal-backdrop" [class.closing]="closingCreation()">
+        <form class="modal confirm-modal cnm-form" [formGroup]="form" (ngSubmit)="creer()" role="dialog" aria-modal="true" aria-label="Nomination d'une PRMP" appModale appModaleClicExterieur (appModaleFermer)="fermerCreationAnime()" novalidate>
           <div class="modal-header-plain"><span class="modal-title">Nouveau mandat (nomination / reconduction)</span></div>
           <div class="modal-body">
             <label class="form-group">
@@ -140,8 +140,8 @@ const STATUT_LABELS: Record<string, string> = {
 
     <!-- Abrogation : fin de fonction avant terme, motif obligatoire. -->
     @if (abrogation(); as m) {
-      <div class="modal-backdrop" [class.closing]="closingAbrogation()" (click)="fermerAbrogationAnime()">
-        <form class="modal confirm-modal cnm-form" [formGroup]="formAbrogation" (ngSubmit)="abroger(m)" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Abrogation du mandat" appModale (appModaleFermer)="fermerAbrogationAnime()" novalidate>
+      <div class="modal-backdrop" [class.closing]="closingAbrogation()">
+        <form class="modal confirm-modal cnm-form" [formGroup]="formAbrogation" (ngSubmit)="abroger(m)" role="alertdialog" aria-modal="true" aria-label="Abrogation du mandat" appModale appModaleClicExterieur (appModaleFermer)="fermerAbrogationAnime()" novalidate>
           <div class="modal-header-plain"><span class="modal-title">Abroger le mandat — {{ m.idPrmp }} ({{ m.refArrete }})</span></div>
           <div class="modal-body">
             <p class="text-muted">
