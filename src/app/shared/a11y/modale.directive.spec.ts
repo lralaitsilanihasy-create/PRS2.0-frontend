@@ -15,7 +15,10 @@ import { ModaleDirective } from './modale.directive';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ModaleDirective],
   template: `
-    <div class="au-dessus" (click)="clicsAuDessus.set(clicsAuDessus() + 1)">
+    <!-- La sonde de propagation de .au-dessus est posée par le test en addEventListener :
+         écrite en (click) ici, elle serait un div cliquable sans équivalent clavier — le
+         motif même que ce chantier supprime, et ESLint ne distingue pas une sonde d'une IHM. -->
+    <div class="au-dessus">
     <div class="voile">
       <div
         class="modal"
@@ -39,13 +42,14 @@ import { ModaleDirective } from './modale.directive';
 class HoteModaleTest {
   readonly actif = signal(true);
   readonly fermetures = signal(0);
-  readonly clicsAuDessus = signal(0);
   readonly volatilePresent = signal(true);
 }
 
 describe('ModaleDirective', () => {
   let fixture: ComponentFixture<HoteModaleTest>;
   let hote: HoteModaleTest;
+  /** Sonde de propagation : ce qui remonte au-delà du voile. */
+  let clicsAuDessus: number;
 
   const el = <T extends HTMLElement>(sel: string): T =>
     fixture.nativeElement.querySelector(sel) as T;
@@ -55,6 +59,8 @@ describe('ModaleDirective', () => {
     fixture = TestBed.createComponent(HoteModaleTest);
     hote = fixture.componentInstance;
     fixture.detectChanges();
+    clicsAuDessus = 0;
+    el('.au-dessus').addEventListener('click', () => (clicsAuDessus += 1));
   });
 
   describe('clic sur le voile', () => {
@@ -78,12 +84,12 @@ describe('ModaleDirective', () => {
 
     it('arrête un clic intérieur au niveau du voile, comme le faisait stopPropagation()', () => {
       el('.dedans').click();
-      expect(hote.clicsAuDessus()).toBe(0);
+      expect(clicsAuDessus).toBe(0);
     });
 
     it('laisse en revanche remonter le clic sur le voile lui-même', () => {
       el('.voile').click();
-      expect(hote.clicsAuDessus()).toBe(1);
+      expect(clicsAuDessus).toBe(1);
     });
   });
 

@@ -51,17 +51,15 @@ module.exports = tseslint.config(
     rules: {
       // `!= null` couvre null ET undefined en une comparaison — idiome assumé.
       "@angular-eslint/template/eqeqeq": ["error", { allowNullOrUndefined: true }],
-      // Passées en avertissement (non bloquantes) plutôt que corrigées en masse ici, pour
-      // ne pas mêler le chantier d'outillage à des changements de comportement UI :
-      // - click-events-have-key-events / interactive-supports-focus : surtout le clic sur le
-      //   fond des modales (fermeture déjà doublée d'Échap par la directive appModale) et des
-      //   lignes cliquables à côté de vrais <button>. Le vrai correctif (tabindex/role/keydown)
-      //   est un chantier a11y à part — cf. AUDIT.md.
-      "@angular-eslint/template/click-events-have-key-events": "warn",
-      "@angular-eslint/template/interactive-supports-focus": "warn",
-      // - label-has-associated-control : occurrences autour de composants du design system
-      //   sans id/for exposé vers leur contrôle natif interne.
-      "@angular-eslint/template/label-has-associated-control": "warn",
+      // `click-events-have-key-events`, `interactive-supports-focus` et
+      // `label-has-associated-control` ont été tolérées en avertissement le temps du chantier
+      // a11y (124 occurrences). Celui-ci est soldé (2026-08-27) : elles reprennent la sévérité
+      // « error » de `templateAccessibility`, seul moyen d'empêcher le motif de revenir.
+      //
+      // Si l'une d'elles se déclenche sur un voile de modale, le correctif n'est **jamais**
+      // d'ajouter tabindex/role/keydown au voile — ce serait une tabulation sans nom accessible
+      // dans un piège de focus. C'est `appModaleClicExterieur` (cf. shared/a11y) qu'il faut
+      // poser sur le dialogue, Échap étant l'équivalent clavier du clic sur le voile.
     },
   }
 );
