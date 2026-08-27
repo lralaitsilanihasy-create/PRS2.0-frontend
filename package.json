@@ -3,7 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "verifier-assets": "node scripts/verifier-assets-locaux.mjs",
+    "prestart": "npm run verifier-assets",
     "start": "ng serve",
+    "prebuild": "npm run verifier-assets",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
