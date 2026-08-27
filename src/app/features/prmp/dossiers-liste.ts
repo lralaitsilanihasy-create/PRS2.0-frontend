@@ -297,7 +297,17 @@ export class DossiersListe {
     // Mise en évidence d'un dossier arrivé depuis la recherche topbar (`?focus=`).
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((q) => {
       const f = q.get('focus');
-      this.focusId.set(f ? Number(f) : null);
+      const fid = f ? Number(f) : null;
+      this.focusId.set(fid);
+      // Recherche relancée depuis la liste DÉJÀ affichée : `paramMap` ne réémet pas (mêmes type et
+      // groupe), c'est donc ici qu'il faut aller chercher la page du dossier — ou simplement y
+      // défiler s'il est sous les yeux.
+      if (fid == null || !this.dejaCharge()) return;
+      if (this.dossiers().some((d) => d.idDossier === fid)) {
+        this.defilerVersFocus();
+      } else {
+        this.positionnerSurFocus(fid, 0, Math.max(0, this.totalPages() - 1));
+      }
     });
     // Recharge quand un autre écran signale un changement (suppression, soumission…).
     // skip(1) : le chargement initial est déjà déclenché par paramMap ci-dessus — un effect
@@ -387,11 +397,17 @@ export class DossiersListe {
     this.totalPages.set(p.totalPages);
     this.chargement.set(false);
     this.dejaCharge.set(true);
-    // Défile vers le dossier mis en évidence (recherche topbar), après rendu de la ligne.
+    this.defilerVersFocus();
+  }
+
+  /** Défile vers le dossier mis en évidence (recherche topbar), après rendu de sa ligne. */
+  private defilerVersFocus(): void {
     const fid = this.focusId();
-    if (fid != null) {
-      setTimeout(() => document.getElementById('dl-row-' + fid)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
-    }
+    if (fid == null) return;
+    setTimeout(
+      () => document.getElementById('dl-row-' + fid)?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+      60,
+    );
   }
 
   /**
@@ -407,7 +423,10 @@ export class DossiersListe {
    * filtre client du groupe « soumis ») : la page déjà affichée reste, simplement sans surlignage.
    */
   private positionnerSurFocus(fid: number, bas: number, haut: number): void {
-    if (bas > haut) return;
+    if (bas > haut) {
+      this.chargement.set(false);
+      return;
+    }
     const milieu = Math.floor((bas + haut) / 2);
     this.chargement.set(true);
     this.dossierService.listePage(milieu, this.pageSize, this.filtresServeur()).subscribe({
