@@ -5,7 +5,7 @@ import { forkJoin } from 'rxjs';
 
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
-import { Dispatch, Dossier, Examen, PvExamen, Reception, Verification } from '../../models';
+import { Dispatch, Dossier, Examen, Page, PvExamen, Reception, Verification } from '../../models';
 import {
   DispatchService,
   DossierService,
@@ -89,6 +89,15 @@ import { DetailPvModal } from './detail-pv-modal';
             </li>
           }
         </ul>
+
+        <!-- File de travail sans endpoint paginé : le reste est déjà chargé, on le RÉVÈLE. -->
+        @if (resteARendre() > 0) {
+          <div class="pipeline__pager">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="voirPlus()">
+              Voir plus ({{ resteARendre() }} restants)
+            </button>
+          </div>
+        }
 
         @if (paginee && totalPages() > 1) {
           <div class="pipeline__pager">
@@ -193,8 +202,17 @@ export class DossiersPipeline {
     | 'verifies'
     | 'en-attente-prmp'
     | undefined;
-  /** Sources paginées (historiques server-side). */
-  protected readonly paginee = this.source === 'examines' || this.source === 'verifies';
+  /**
+   * Sources paginées **par le serveur** : les deux historiques (`/examines`, `/verifies`) et, depuis
+   * l'audit 2026-08-27 (C-1), le pipeline générique du tableau de bord — `GET /api/dossiers` sait
+   * désormais rendre une page (livraison backend 1a83b05).
+   *
+   * Les trois autres sources sont des FILES DE TRAVAIL servies par des endpoints dédiés
+   * (`/a-examiner`, `/a-verifier`, `/en-attente-prmp`) qui n'ont pas de variante paginée : elles
+   * relèvent du rendu incrémental côté client (voir `limiteRendu`).
+   */
+  protected readonly paginee =
+    this.source === 'examines' || this.source === 'verifies' || this.source === undefined;
   readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);
   /** Échec du chargement : la liste affiche l'erreur et le bouton « Réessayer » (AUDIT.md P9). */
@@ -231,8 +249,32 @@ export class DossiersPipeline {
     return this.pvSigneParDossier().get(d.idDossier) ?? null;
   }
 
-  /** Dossiers affichés (déjà scopés/exclusifs côté serveur — aucun filtre client). */
-  readonly visibleDossiers = computed(() => this.dossiers());
+  /**
+   * Rendu incrémental des files de travail (⚠️ audit 2026-08-27, C-1).
+   *
+   * Ces trois files n'ont pas d'endpoint paginé : leur liste arrive entière. Rien n'obligeait pour
+   * autant à en poser TOUT le DOM d'un coup — chaque carte porte une frise de 7 étapes. On en rend
+   * un paquet, puis d'autres à la demande : la pagination porte ici sur l'AFFICHAGE, pas sur le
+   * réseau, et c'est dit tel quel à l'utilisateur (« Voir plus »).
+   */
+  private static readonly PAS_RENDU = 20;
+  private readonly limiteRendu = signal(DossiersPipeline.PAS_RENDU);
+
+  /**
+   * Dossiers affichés (déjà scopés/exclusifs côté serveur — aucun filtre client).
+   * Source paginée : la page telle quelle. File de travail : la tranche déjà dévoilée.
+   */
+  readonly visibleDossiers = computed(() =>
+    this.paginee ? this.dossiers() : this.dossiers().slice(0, this.limiteRendu()),
+  );
+  /** Nombre de dossiers chargés mais pas encore rendus (0 sur une source paginée). */
+  readonly resteARendre = computed(() =>
+    this.paginee ? 0 : Math.max(0, this.dossiers().length - this.limiteRendu()),
+  );
+  /** Dévoile le paquet suivant (aucune requête : les dossiers sont déjà en mémoire). */
+  voirPlus(): void {
+    this.limiteRendu.update((n) => n + DossiersPipeline.PAS_RENDU);
+  }
 
   // Collections du circuit (scopées par profil) pour dater les étapes franchies.
   private readonly receptions = signal<Reception[]>([]);
@@ -286,6 +328,7 @@ export class DossiersPipeline {
   charger(): void {
     this.loading.set(true);
     this.erreur.set(false);
+    this.limiteRendu.set(DossiersPipeline.PAS_RENDU);
     if (this.source === 'a-verifier') {
       // a-verifier renvoie EN_VERIFICATION + EN_ATTENTE_DECISION_PRMP ; tri par date de réception DESC.
       // ⚠️ La chaîne dispatchs/examens + les PV DÉFINITIFS accompagnent chaque dossier (bouton « PV définitif »).
@@ -346,9 +389,14 @@ export class DossiersPipeline {
         });
       }
     } else {
-      // Pipeline générique (dashboard) : toutes les ressources pour dater la frise.
+      // Pipeline générique (dashboard) : une PAGE de dossiers (⚠️ audit 2026-08-27, C-1 — la liste
+      // entière était téléchargée), plus les collections du circuit qui datent la frise.
+      // ⚠️ Ces cinq collections restent demandées EN ENTIER : dater les 7 étapes d'un dossier exige
+      // de remonter la chaîne réception → dispatch → examen → PV → vérification, et aucune d'elles
+      // ne se filtre par dossier côté serveur. Elles ne sont chargées qu'ICI, une fois : changer de
+      // page ne redemande que la page de dossiers.
       forkJoin({
-        dossiers: this.dossierService.list(),
+        page: this.dossierService.listePage(0, this.pageSize),
         receptions: this.receptionService.list(),
         dispatchs: this.dispatchService.list(),
         examens: this.examenService.list(),
@@ -356,35 +404,39 @@ export class DossiersPipeline {
         verifications: this.verificationService.list(),
       }).subscribe({
         next: (r) => {
-          this.dossiers.set(r.dossiers);
           this.receptions.set(r.receptions);
           this.dispatchs.set(r.dispatchs);
           this.examens.set(r.examens);
           this.pvs.set(r.pvs);
           this.verifications.set(r.verifications);
-          this.loading.set(false);
+          this.appliquerPage(r.page);
         },
         error: () => this.echec(),
       });
     }
   }
 
-  /** Charge une page d'un historique paginé ('examines' ou 'verifies' selon la source). */
+  /** Charge une page de la source paginée courante (historiques Membre/Vérificateur, ou pipeline générique). */
   private chargerPage(page: number): void {
     this.loading.set(true);
     const call =
       this.source === 'verifies'
         ? this.dossierService.verifies(page, this.pageSize)
-        : this.dossierService.examines(page, this.pageSize);
+        : this.source === 'examines'
+          ? this.dossierService.examines(page, this.pageSize)
+          : this.dossierService.listePage(page, this.pageSize);
     call.subscribe({
-      next: (p) => {
-        this.dossiers.set(p.content);
-        this.pageIndex.set(p.number);
-        this.totalPages.set(p.totalPages);
-        this.loading.set(false);
-      },
+      next: (p) => this.appliquerPage(p),
       error: () => this.echec(),
     });
+  }
+
+  /** Installe une page reçue (contenu, position, total). */
+  private appliquerPage(p: Page<Dossier>): void {
+    this.dossiers.set(p.content);
+    this.pageIndex.set(p.number);
+    this.totalPages.set(p.totalPages);
+    this.loading.set(false);
   }
   prevPage(): void {
     if (this.pageIndex() > 0) {
@@ -443,7 +495,8 @@ export class DossiersPipeline {
     const exs = this.examens();
     const pvs = this.pvs();
     const verifs = this.verifications();
-    for (const d of this.dossiers()) {
+    // Bornée aux dossiers RENDUS : ce croisement est en O(dossiers × collections du circuit).
+    for (const d of this.visibleDossiers()) {
       const rOfD = recs.filter((r) => r.idDossier === d.idDossier);
       const recIds = new Set(rOfD.map((r) => r.idReception));
       const dOfD = disps.filter((x) => recIds.has(x.idReception));
@@ -482,7 +535,7 @@ export class DossiersPipeline {
   private readonly sublabelsByDossier = computed(() => {
     const dates = this.datesByDossier();
     const map = new Map<number, string[]>();
-    for (const d of this.dossiers()) {
+    for (const d of this.visibleDossiers()) {
       const datesDossier = dates.get(d.idDossier) ?? [];
       const active = etapeIndexForDossier(d.statut);
       map.set(
