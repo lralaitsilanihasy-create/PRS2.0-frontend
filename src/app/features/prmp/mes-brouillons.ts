@@ -95,8 +95,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     </section>
 
     @if (confirmDossier(); as d) {
-      <div class="modal-backdrop" [class.closing]="closingSuppression()" (click)="annulerSuppression()">
-        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="alertdialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annulerSuppression()">
+      <div class="modal-backdrop" [class.closing]="closingSuppression()">
+        <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-label="Confirmation de suppression" appModale appModaleClicExterieur (appModaleFermer)="annulerSuppression()">
           <div class="modal-header-plain">
             <span class="modal-title">Supprimer ce dossier ?</span>
             <button type="button" class="btn-close-plain" aria-label="Fermer" [disabled]="suppression() !== null" (click)="annulerSuppression()">✕</button>

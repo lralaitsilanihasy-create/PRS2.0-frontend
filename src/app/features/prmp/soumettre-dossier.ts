@@ -574,8 +574,8 @@ interface ApercuDossier {
       }
 
       @if (apercu(); as a) {
-        <div class="modal-backdrop" [class.closing]="closingApercu()" (click)="fermerApercuAnime()">
-          <div class="modal sd__apercu cnm-form" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Aperçu du dossier" appModale (appModaleFermer)="fermerApercuAnime()">
+        <div class="modal-backdrop" [class.closing]="closingApercu()">
+          <div class="modal sd__apercu cnm-form" role="dialog" aria-modal="true" aria-label="Aperçu du dossier" appModale appModaleClicExterieur (appModaleFermer)="fermerApercuAnime()">
             <div class="modal-header-plain">
               <span class="modal-title">Aperçu du dossier à créer</span>
               <button type="button" class="btn btn-secondary btn-sm" (click)="fermerApercu()" aria-label="Fermer">✕</button>

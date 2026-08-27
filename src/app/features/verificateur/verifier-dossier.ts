@@ -230,8 +230,8 @@ interface Echange {
     </section>
 
     @if (confirmOpen()) {
-      <div class="modal-backdrop" [class.closing]="closingTransmission()" (click)="fermerTransmissionAnime()">
-        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Transmission de la décision" appModale (appModaleFermer)="fermerTransmissionAnime()">
+      <div class="modal-backdrop" [class.closing]="closingTransmission()">
+        <div class="modal confirm-modal" role="dialog" aria-modal="true" aria-label="Transmission de la décision" appModale appModaleClicExterieur (appModaleFermer)="fermerTransmissionAnime()">
           <div class="modal-header-plain">
             <span class="modal-title">Transmettre à la PRMP pour rectification ?</span>
             <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerTransmissionAnime()">✕</button>

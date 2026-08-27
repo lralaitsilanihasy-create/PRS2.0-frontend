@@ -141,11 +141,12 @@ interface LigneObs {
                   }
 
                   <div class="form-group ar-form">
-                    <label class="form-label required">Description des rectifications effectuées</label>
+                    <label class="form-label required" [attr.for]="'dar-rectifications-' + cleDe(c)">Description des rectifications effectuées</label>
                     <textarea
                       class="form-control"
                       rows="2"
                       maxlength="255"
+                      [id]="'dar-rectifications-' + cleDe(c)"
                       [value]="motif(cleDe(c))"
                       (input)="setMotif(cleDe(c), $any($event.target).value)"
                     ></textarea>
@@ -175,8 +176,8 @@ interface LigneObs {
     </section>
 
     @if (confirmCle() !== null) {
-      <div class="modal-backdrop" [class.closing]="closingResoumission()" (click)="fermerResoumissionAnime()">
-        <div class="modal confirm-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Confirmation de resoumission" appModale (appModaleFermer)="fermerResoumissionAnime()">
+      <div class="modal-backdrop" [class.closing]="closingResoumission()">
+        <div class="modal confirm-modal" role="dialog" aria-modal="true" aria-label="Confirmation de resoumission" appModale appModaleClicExterieur (appModaleFermer)="fermerResoumissionAnime()">
           <div class="modal-header-plain">
             <span class="modal-title">Resoumettre au vérificateur ?</span>
             <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerResoumissionAnime()">✕</button>
