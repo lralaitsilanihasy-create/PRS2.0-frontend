@@ -79,7 +79,9 @@ const FILTRES_VIDES: FiltresAudit = { table: '', acteur: '', du: '', au: '' };
       } @else if (erreur()) {
         <app-etat-erreur message="Impossible de charger le journal d'audit." (reessayer)="recharger()" />
       } @else {
-        <div class="table-card" [class.al--chargement]="chargement()">
+        <!-- Hauteur réservée : le message n'apparaît pas « en poussant » le tableau vers le bas. -->
+        <p class="al__etat" role="status">@if (chargement()) { Chargement de la page… }</p>
+        <div class="table-card" [attr.aria-busy]="chargement()">
           <table>
             <thead>
               <tr>
@@ -120,9 +122,7 @@ const FILTRES_VIDES: FiltresAudit = { table: '', acteur: '', du: '', au: '' };
             >
               Précédent
             </button>
-            <span class="al__pager-info" aria-live="polite">
-              @if (chargement()) { Chargement… } @else { Page {{ pageIndex() + 1 }} / {{ totalPages() }} }
-            </span>
+            <span class="al__pager-info">Page {{ pageIndex() + 1 }} / {{ totalPages() }}</span>
             <button
               type="button"
               class="btn btn-secondary btn-sm"
@@ -148,8 +148,14 @@ const FILTRES_VIDES: FiltresAudit = { table: '', acteur: '', du: '', au: '' };
     .al__filtre { margin: 0; flex: 1 1 11rem; min-width: 9rem; }
     .al__filtres-actions { display: flex; gap: 0.5rem; }
     .al__aide { margin: 0 0 1rem; font-size: var(--text-sm); color: var(--n-500); }
-    /* Changement de page : le tableau reste en place, estompé. */
-    .al--chargement { opacity: 0.55; transition: opacity 0.15s ease; }
+    /* Changement de page : le tableau reste en place ET lisible — l'estomper aurait fait passer son
+       texte sous le contraste AA ; l'attente est dite par une ligne de statut à hauteur réservée. */
+    .al__etat {
+      margin: 0 0 0.35rem;
+      min-height: 1.15rem;
+      font-size: var(--text-sm);
+      color: var(--n-500);
+    }
     .al__vide { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .al__pager {
       display: flex;

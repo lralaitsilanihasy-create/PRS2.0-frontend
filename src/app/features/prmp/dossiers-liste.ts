@@ -56,7 +56,9 @@ type Groupe = 'brouillon' | 'soumis';
       } @else if (erreur()) {
         <app-etat-erreur message="Impossible de charger vos dossiers." (reessayer)="charger()" />
       } @else {
-        <div class="table-card" [class.dl-chargement]="chargement()">
+        <!-- Hauteur réservée : le message n'apparaît pas « en poussant » le tableau vers le bas. -->
+        <p class="dl-etat" role="status">@if (chargement()) { Chargement de la page… }</p>
+        <div class="table-card" [attr.aria-busy]="chargement()">
           <table>
             <thead>
               <tr>
@@ -120,9 +122,7 @@ type Groupe = 'brouillon' | 'soumis';
             >
               Précédent
             </button>
-            <span class="dl-pager__info" aria-live="polite">
-              @if (chargement()) { Chargement… } @else { Page {{ pageIndex() + 1 }} / {{ totalPages() }} }
-            </span>
+            <span class="dl-pager__info">Page {{ pageIndex() + 1 }} / {{ totalPages() }}</span>
             <button
               type="button"
               class="btn btn-secondary btn-sm"
@@ -183,9 +183,15 @@ type Groupe = 'brouillon' | 'soumis';
     .actions-end { justify-content: flex-end; }
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .confirm-modal { max-width: 28rem; }
-    /* Changement de page : le tableau reste à l'écran, estompé — le remplacer par « Chargement… »
-       ferait sauter la mise en page à chaque clic sur le pager. */
-    .dl-chargement { opacity: 0.55; transition: opacity 0.15s ease; }
+    /* Changement de page : le tableau RESTE à l'écran et lisible (le remplacer par « Chargement… »
+       ferait sauter la mise en page à chaque clic) ; l'attente est dite par une ligne de statut à
+       hauteur réservée — estomper le tableau aurait fait passer son texte sous le contraste AA. */
+    .dl-etat {
+      margin: 0 0 0.35rem;
+      min-height: 1.15rem;
+      font-size: var(--text-sm);
+      color: var(--n-500);
+    }
     .dl-pager {
       display: flex;
       align-items: center;
