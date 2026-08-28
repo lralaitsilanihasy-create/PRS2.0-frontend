@@ -7,7 +7,7 @@ import { PermissionsService } from '../../core/auth/permissions.service';
 import { Dossier, TypeDossier } from '../../models';
 import { DemandeRetraitService, DossierService, TypeDossierService } from '../../services';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
-import { ClassementConfig, ClassementGroupe, dossiersDuClassement } from './classement-config';
+import { ClassementConfig, ClassementGroupe, dossiersDuClassement, separerGroupesParDelegation } from './classement-config';
 import { DispatchsControleurs } from './dispatchs-controleurs';
 import { DossiersCircuitListe } from './dossiers-circuit-liste';
 import { RetraitsValidation } from './retraits-validation';
@@ -93,37 +93,49 @@ export * from './classement-config';
                 }
               </div>
 
+              <!-- ⚠️ Demande user (2026-08-28) — deux sections : les tâches du profil connecté, puis
+                   celles exercées par délégation sous leur propre intitulé. Elles étaient
+                   intercalées (« Réceptions » et « Enregistrement » avant « Pré-dispatch »). -->
               <div class="md__rows">
-                @for (g of groupesVisibles(); track g.key) {
-                  <button type="button" class="md__row" [class.md__row--actif]="estSelection(t.idTypeDossier, g.key)" (click)="choisir(t.idTypeDossier, g.key)">
-                    <span class="md__row-ic" [class.md__row-ic--a]="g.kind === 'a'" [class.md__row-ic--b]="g.kind === 'b'" aria-hidden="true">{{ g.icon }}</span>
-                    <span class="md__row-label">{{ g.label }}
-                      @if (delegationDe(g); as prof) {
-                        <span class="md__deleg" [title]="'Tâche du profil ' + prof + ' — exercée par délégation active.'">⤴ {{ prof }}</span>
-                      }
-                    </span>
-                    <span class="md__row-count">{{ compte(t.idTypeDossier, g.key) }}</span>
-                    <span class="md__row-arrow" aria-hidden="true">›</span>
-                  </button>
-                }
-                <!-- ⚠️ 2026-08-07 (demande user) — les demandes de retrait rejoignent la carte du type
-                     concerné, à la place de leur entrée de menu, et se déplient SOUS les cartes comme
-                     les autres lignes (même geste que Pré-dispatch / Dispatch). La ligne reste affichée
-                     à zéro : c'est le seul chemin vers l'écran, il ne doit pas disparaître. -->
-                @if (cfg.retraitsPath) {
-                  <button
-                    type="button"
-                    class="md__row md__row--lien"
-                    [class.md__row--actif]="estSelectionRetrait(t.idTypeDossier)"
-                    (click)="choisirRetraits(t.idTypeDossier)"
-                  >
-                    <span class="md__row-ic md__row-ic--r" aria-hidden="true">↩</span>
-                    <span class="md__row-label">Demandes de retrait</span>
-                    <span class="md__row-count" [class.md__row-count--alerte]="retraitsDe(t.idTypeDossier) > 0">
-                      {{ retraitsDe(t.idTypeDossier) }}
-                    </span>
-                    <span class="md__row-arrow" aria-hidden="true">›</span>
-                  </button>
+                @for (sec of sectionsGroupes(); track sec.cle) {
+                  @if (sec.titre) {
+                    <div class="md__rows-sep">
+                      <span class="md__rows-sep-texte">{{ sec.titre }}</span>
+                      <span class="md__rows-sep-marque" aria-hidden="true">⤴</span>
+                    </div>
+                  }
+                  @for (g of sec.items; track g.key) {
+                    <button type="button" class="md__row" [class.md__row--actif]="estSelection(t.idTypeDossier, g.key)" (click)="choisir(t.idTypeDossier, g.key)">
+                      <span class="md__row-ic" [class.md__row-ic--a]="g.kind === 'a'" [class.md__row-ic--b]="g.kind === 'b'" aria-hidden="true">{{ g.icon }}</span>
+                      <span class="md__row-label">{{ g.label }}
+                        @if (delegationDe(g); as prof) {
+                          <span class="md__deleg" [title]="'Tâche du profil ' + prof + ' — exercée par délégation active.'">⤴ {{ prof }}</span>
+                        }
+                      </span>
+                      <span class="md__row-count">{{ compte(t.idTypeDossier, g.key) }}</span>
+                      <span class="md__row-arrow" aria-hidden="true">›</span>
+                    </button>
+                  }
+                  <!-- ⚠️ 2026-08-07 (demande user) — les demandes de retrait rejoignent la carte du type
+                       concerné, à la place de leur entrée de menu, et se déplient SOUS les cartes comme
+                       les autres lignes (même geste que Pré-dispatch / Dispatch). La ligne reste affichée
+                       à zéro : c'est le seul chemin vers l'écran, il ne doit pas disparaître — d'où son
+                       rattachement à la section « propre », qui existe toujours, fût-elle vide. -->
+                  @if (sec.cle === 'propre' && cfg.retraitsPath) {
+                    <button
+                      type="button"
+                      class="md__row md__row--lien"
+                      [class.md__row--actif]="estSelectionRetrait(t.idTypeDossier)"
+                      (click)="choisirRetraits(t.idTypeDossier)"
+                    >
+                      <span class="md__row-ic md__row-ic--r" aria-hidden="true">↩</span>
+                      <span class="md__row-label">Demandes de retrait</span>
+                      <span class="md__row-count" [class.md__row-count--alerte]="retraitsDe(t.idTypeDossier) > 0">
+                        {{ retraitsDe(t.idTypeDossier) }}
+                      </span>
+                      <span class="md__row-arrow" aria-hidden="true">›</span>
+                    </button>
+                  }
                 }
               </div>
             </div></article>
@@ -187,6 +199,11 @@ export * from './classement-config';
     /* Badge « tâche exercée par délégation » (spec 2026-08-14) — discret, absent chez le titulaire. */
     .md__deleg { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.45rem; border-radius: var(--radius-full); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em; background: var(--c-50); color: var(--c-800); border: 1px solid var(--c-100); vertical-align: middle; }
     .md__deleg--tuile { margin-left: 0; margin-top: 0.15rem; align-self: flex-start; }
+    /* Intitulé de section des lignes (demande user 2026-08-28) : sépare les tâches du profil de
+       celles exercées par délégation. Étiquette de rubrique, jamais cliquable — un filet et une
+       capitale espacée, rien qui puisse se confondre avec une ligne de la carte. */
+    .md__rows-sep { display: flex; align-items: center; gap: 0.35rem; margin: 0.55rem 0 0.15rem; padding-top: 0.55rem; border-top: 1px solid var(--n-100); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--n-500); }
+    .md__rows-sep-marque { font-size: 0.72rem; }
     .md__row-count { margin-left: auto; min-width: 1.5rem; padding: 0 0.45rem; background: var(--n-100); color: var(--n-600); border-radius: var(--radius-full); font-weight: 700; font-size: var(--text-sm); text-align: center; font-variant-numeric: tabular-nums; }
     .md__row:hover .md__row-count { background: var(--p-100); color: var(--p-600); }
     .md__row-arrow { color: var(--n-400); font-size: 1.1rem; line-height: 1; transition: transform 130ms var(--ease-out), color 130ms var(--ease-out); }
@@ -226,7 +243,30 @@ export class DossiersClassement {
     if (g.delegation) exigences.push(this.permissions.peutExecuter(g.delegation));
     return exigences.length === 0 || exigences.some(Boolean);
   }
-  readonly groupesVisibles = computed(() => this.cfg.groupes.filter((g) => this.groupePermis(g)));
+  /**
+   * Groupes affichables, RANGÉS : d'abord ceux du profil connecté, puis ceux exercés par délégation.
+   *
+   * ⚠️ Demande user (2026-08-28) — même exigence que pour la barre latérale : ne pas mélanger. Dans
+   * les cartes, « Réceptions » et « Enregistrement » (tâches du Secrétaire) s'intercalaient AVANT
+   * « Pré-dispatch » et « Dispatch », qui sont les tâches propres du Président et du CC.
+   *
+   * La clé de partage est `delegationDe(g)`, pas le champ `delegation` : « Réceptions » ne porte pas
+   * ce champ mais est bien exercé par délégation chez P/CC (via son `actionReception` et la capacité
+   * RECEPTION_WRITE). Trier sur le champ seul laisserait « Réceptions » du mauvais côté.
+   */
+  readonly groupesVisibles = computed(() => {
+    const permis = this.cfg.groupes.filter((g) => this.groupePermis(g));
+    return [...permis.filter((g) => !this.delegationDe(g)), ...permis.filter((g) => !!this.delegationDe(g))];
+  });
+
+  /**
+   * Les mêmes groupes, scindés en sections pour les lignes des cartes. Le partage vit dans
+   * `separerGroupesParDelegation` (module `classement-config`), où il est testé — notamment le fait
+   * que la section « propre » subsiste vide, pour ne pas emporter la ligne « Demandes de retrait ».
+   */
+  readonly sectionsGroupes = computed(() =>
+    separerGroupesParDelegation(this.groupesVisibles(), (g) => !!this.delegationDe(g)),
+  );
 
   /**
    * Profil TITULAIRE de la tâche du groupe quand elle n'est exercée que PAR DÉLÉGATION (badge

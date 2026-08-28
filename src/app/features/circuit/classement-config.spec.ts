@@ -1,0 +1,81 @@
+import {
+  CIRCUIT_GROUPES,
+  ClassementGroupe,
+  GROUPE_ENREGISTREMENT,
+  GROUPE_RECEPTIONS,
+  separerGroupesParDelegation,
+} from './classement-config';
+
+/**
+ * ⚠️ Demande user (2026-08-28) : « il reste encore les menus dans les cards ». Les tâches exercées
+ * par délégation ne doivent pas être mélangées à celles du profil connecté, dans les cartes de
+ * « Mes dossiers » comme dans la barre latérale.
+ *
+ * Le prédicat de délégation est injecté (il dépend de l'utilisateur, pas de la configuration) : on
+ * le simule ici par le décor réel des groupes du circuit.
+ */
+describe('separerGroupesParDelegation', () => {
+  /** Ce que voit un Président / CC : Réceptions et Enregistrement sont exercés par délégation. */
+  const commeDelegue = (g: ClassementGroupe) => g.key === 'receptions' || g.key === 'enregistrement';
+  /** Ce que voit le Secrétaire : il est TITULAIRE de ces tâches, rien n'est délégué. */
+  const commeTitulaire = () => false;
+
+  it('Président / CC : deux sections, les tâches propres d’abord', () => {
+    const sections = separerGroupesParDelegation(CIRCUIT_GROUPES, commeDelegue);
+    expect(sections.map((s) => s.cle)).toEqual(['propre', 'delegation']);
+    expect(sections[0].items.map((g) => g.key)).toEqual(['pre-dispatch', 'dispatch']);
+    expect(sections[1].items.map((g) => g.key)).toEqual(['receptions', 'enregistrement']);
+    expect(sections[1].titre).toBe('Exercé par délégation');
+  });
+
+  it('AUCUN MÉLANGE dans les deux sens', () => {
+    const [propres, delegues] = separerGroupesParDelegation(CIRCUIT_GROUPES, commeDelegue);
+    expect(propres.items.some(commeDelegue)).toBe(false);
+    expect(delegues.items.every(commeDelegue)).toBe(true);
+  });
+
+  it('aucun groupe perdu ni dupliqué', () => {
+    const sections = separerGroupesParDelegation(CIRCUIT_GROUPES, commeDelegue);
+    const cles = sections.flatMap((s) => s.items.map((g) => g.key));
+    expect(cles.length).toBe(CIRCUIT_GROUPES.length);
+    expect(new Set(cles).size).toBe(CIRCUIT_GROUPES.length);
+  });
+
+  it('Secrétaire (titulaire) : une seule section, sans intitulé — son écran est inchangé', () => {
+    const sections = separerGroupesParDelegation(CIRCUIT_GROUPES, commeTitulaire);
+    expect(sections.length).toBe(1);
+    expect(sections[0].cle).toBe('propre');
+    expect(sections[0].titre).toBeNull();
+    expect(sections[0].items.map((g) => g.key)).toEqual(CIRCUIT_GROUPES.map((g) => g.key));
+  });
+
+  // ⚠️ ANTI-RÉGRESSION — la ligne « Demandes de retrait » est ACCROCHÉE à la section « propre »
+  // dans le gabarit, et c'est le seul chemin vers cet écran (règle du 2026-08-07). Filtrer les
+  // sections vides la ferait disparaître pour un profil dont toutes les tâches sont déléguées.
+  it('la section « propre » subsiste même VIDE — sinon le lien « Demandes de retrait » tombe avec elle', () => {
+    const sections = separerGroupesParDelegation([GROUPE_RECEPTIONS, GROUPE_ENREGISTREMENT], () => true);
+    expect(sections.map((s) => s.cle)).toEqual(['propre', 'delegation']);
+    expect(sections[0].items).toEqual([]);
+  });
+
+  it('la section déléguée, elle, disparaît quand elle est vide', () => {
+    const sections = separerGroupesParDelegation(CIRCUIT_GROUPES, () => false);
+    expect(sections.map((s) => s.cle)).toEqual(['propre']);
+  });
+
+  it('l’ORDRE d’origine est préservé dans chaque section', () => {
+    const [propres, delegues] = separerGroupesParDelegation(CIRCUIT_GROUPES, commeDelegue);
+    expect(propres.items.map((g) => g.key)).toEqual(
+      CIRCUIT_GROUPES.filter((g) => !commeDelegue(g)).map((g) => g.key),
+    );
+    expect(delegues.items.map((g) => g.key)).toEqual(
+      CIRCUIT_GROUPES.filter(commeDelegue).map((g) => g.key),
+    );
+  });
+
+  it('une liste vide ne produit qu’une section propre vide', () => {
+    expect(separerGroupesParDelegation([], () => false)).toEqual([
+      { cle: 'propre', titre: null, items: [] },
+    ]);
+  });
+});

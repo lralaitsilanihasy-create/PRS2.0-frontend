@@ -119,3 +119,39 @@ export function dossiersDuClassement(cfg: ClassementConfig, dossiers: DossierSer
   }
   return dossiers.list();
 }
+
+/** Une section de lignes dans une carte de classement. */
+export interface SectionGroupes {
+  cle: 'propre' | 'delegation';
+  titre: string | null;
+  items: ClassementGroupe[];
+}
+
+/**
+ * Scinde les groupes d'une carte : d'abord les tâches du profil connecté, puis celles exercées par
+ * délégation ascendante.
+ *
+ * ⚠️ Demande user (2026-08-28) : « ne pas mélanger », même exigence que pour la barre latérale.
+ * Dans les cartes, « Réceptions » et « Enregistrement » (tâches du Secrétaire) s'intercalaient avant
+ * « Pré-dispatch » et « Dispatch », propres au Président et au CC.
+ *
+ * Le prédicat est INJECTÉ parce que la réponse dépend de l'utilisateur connecté, pas de la
+ * configuration : « Réceptions » ne porte pas le champ `delegation` mais est bien exercé par
+ * délégation chez P/CC (via son `actionReception`). Trier sur le champ seul le laisserait du
+ * mauvais côté. C'est `DossiersClassement.delegationDe` qui tranche à l'exécution.
+ *
+ * ⚠️ La section « propre » est TOUJOURS rendue, même vide : c'est elle qui porte la ligne
+ * « Demandes de retrait », seul chemin vers cet écran (règle du 2026-08-07). La filtrer sur
+ * `items.length` la ferait disparaître avec sa dernière tâche.
+ */
+export function separerGroupesParDelegation(
+  groupes: ClassementGroupe[],
+  estDelegue: (g: ClassementGroupe) => boolean,
+): SectionGroupes[] {
+  const delegues = groupes.filter(estDelegue);
+  const sections: SectionGroupes[] = [
+    { cle: 'propre', titre: null, items: groupes.filter((g) => !estDelegue(g)) },
+  ];
+  if (delegues.length) sections.push({ cle: 'delegation', titre: 'Exercé par délégation', items: delegues });
+  return sections;
+}
