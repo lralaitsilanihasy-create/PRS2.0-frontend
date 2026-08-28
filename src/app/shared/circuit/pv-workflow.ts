@@ -13,6 +13,7 @@ import {
   PV_STATUT_LABELS,
   peutAccepter,
   peutRetourner,
+  peutSAutoProposer,
   peutSigner,
   peutSoumettre,
   pvSignataireRole,
@@ -325,9 +326,12 @@ export class PvWorkflow {
       .filter((c) => c.idLocalite === loc && c.idProfile != null && /v[ée]rificateur/i.test(libs.get(c.idProfile) ?? ''))
       .map((c) => ({ id: c.imControleur, label: [c.nomCont, c.prenomsCont].filter(Boolean).join(' ') || c.imControleur }));
     const ref = this.auth.ref();
-    if (ref && this.auth.role() !== 'VERIFICATEUR' && this.permissions.peutExecuter('VERIFICATEUR') && !options.some((o) => o.id === ref)) {
-      const moi = this.controleurs().find((c) => c.imControleur === ref);
-      const nom = moi ? [moi.nomCont, moi.prenomsCont].filter(Boolean).join(' ') : ref;
+    // ⚠️ 2026-08-28 — la paire ne suffit pas : `ControleurDirectory.peutEtreSecretaireSeance` exige
+    // EN PLUS que le secrétaire de séance soit de la localité du dossier (§3.3). Voir `peutSAutoProposer`.
+    const moi = ref ? this.controleurs().find((c) => c.imControleur === ref) : undefined;
+    const eligible = !!moi && peutSAutoProposer(moi.idLocalite, loc);
+    if (ref && moi && eligible && this.auth.role() !== 'VERIFICATEUR' && this.permissions.peutExecuter('VERIFICATEUR') && !options.some((o) => o.id === ref)) {
+      const nom = [moi.nomCont, moi.prenomsCont].filter(Boolean).join(' ') || ref;
       options.unshift({ id: ref, label: `${nom} — moi-même ⤴ (délégation du profil Vérificateur)` });
     }
     return options;

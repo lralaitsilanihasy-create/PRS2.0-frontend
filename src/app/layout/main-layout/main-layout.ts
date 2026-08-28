@@ -6,7 +6,7 @@ import { filter, skip } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { ToastService } from '../../core/notifications/toast.service';
-import { NavItem, navFor } from '../../core/navigation/navigation';
+import { NavItem, navFor, separerParDelegation } from '../../core/navigation/navigation';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 import {
@@ -80,7 +80,7 @@ export class MainLayout {
    * `delegation` n'apparaît que si le profil courant peut exécuter les tâches de ce profil (paire
    * active de t_delegation_profil) — le menu suit la base, zéro code.
    */
-  readonly navItems = computed(() =>
+  private readonly navItems = computed(() =>
     navFor(this.auth.role())
       .filter((item) => !item.delegation || this.permissions.peutExecuter(item.delegation))
       .map((item) =>
@@ -89,6 +89,24 @@ export class MainLayout {
           : item,
       ),
   );
+
+  /**
+   * ⚠️ Demande user (2026-08-28) — le menu est scindé en DEUX SECTIONS : d'abord les entrées du
+   * profil connecté, puis, sous un intitulé propre, celles exercées par délégation ascendante.
+   * Auparavant les deux étaient intercalées (« Vérifications » et « Archivage des PV » tombaient
+   * entre « Examen de dossiers » et « Rapports ») : rien ne disait au Président ce qui relevait de
+   * sa fonction et ce qu'il exerçait à la place d'un subordonné. Le badge ⤴ le signalait entrée par
+   * entrée, pas d'un coup d'œil.
+   *
+   * On enveloppe la liste plutôt que de dupliquer le rendu : le gabarit garde UNE seule boucle
+   * d'affichage d'entrée, et une entrée déléguée qui gagnerait des sous-entrées continuerait de
+   * s'afficher correctement.
+   *
+   * Une section vide n'est pas rendue — un profil sans délégation active (Membre, Secrétaire…)
+   * retrouve exactement son menu d'avant. Le partage lui-même vit dans `separerParDelegation`
+   * (module `navigation`), où il est testé sur les menus réels.
+   */
+  readonly navSections = computed(() => separerParDelegation(this.navItems()));
   /** Nom de l'utilisateur courant (résolu depuis sa fiche PRMP / contrôleur). */
   readonly displayName = signal('');
   /** Initiales (1 à 2 lettres) pour l'avatar du bloc profil de la sidebar. */

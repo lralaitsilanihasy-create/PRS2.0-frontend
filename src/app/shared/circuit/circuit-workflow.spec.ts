@@ -4,6 +4,7 @@ import {
   etapeIndexForDossier,
   peutAccepter,
   peutRetourner,
+  peutSAutoProposer,
   examenRectifiable,
   peutSigner,
   peutSoumettre,
@@ -142,6 +143,30 @@ describe('circuit-workflow', () => {
       expect(PV_STATUT_LABELS.BROUILLON).toBe('Brouillon');
       expect(PV_STATUT_LABELS.SIGNE).toBe('Signé');
       expect(PV_STATUT_LABELS.PROJET_ACCEPTE).toBe('Projet accepté');
+    });
+  });
+
+  // ⚠️ Règle 2026-08-28, née d'un retour de la session backend : trois gardes serveur exigent, EN
+  // PLUS de la paire de délégation, que l'acteur soit de la localité du dossier (§3.3). Sans elle,
+  // un Chef de commission d'une autre commission voyait « moi-même ⤴ » et récoltait un 403.
+  describe('peutSAutoProposer (localité — §3.3)', () => {
+    it('le contrôleur SANS localité passe partout : c’est le cas du Président', () => {
+      expect(peutSAutoProposer(null, 'ANT')).toBe(true);
+      expect(peutSAutoProposer(undefined, 'ANT')).toBe(true);
+      expect(peutSAutoProposer(null, null)).toBe(true);
+    });
+
+    it('même localité que le dossier : accepté', () => {
+      expect(peutSAutoProposer('ANT', 'ANT')).toBe(true);
+    });
+
+    it('AUTRE localité : refusé — c’est le cas du CC d’une autre commission', () => {
+      expect(peutSAutoProposer('ANT', 'FIA')).toBe(false);
+    });
+
+    it('un dossier sans localité ne rend pas éligible un contrôleur qui en a une', () => {
+      expect(peutSAutoProposer('ANT', null)).toBe(false);
+      expect(peutSAutoProposer('ANT', undefined)).toBe(false);
     });
   });
 });

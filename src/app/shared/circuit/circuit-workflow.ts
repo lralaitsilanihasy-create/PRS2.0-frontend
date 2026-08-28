@@ -216,6 +216,35 @@ export function examenRectifiable(statutPv: StatutPv | null | undefined, statutD
   return pvALaMainDuMembre && dossierOuvert;
 }
 
+/**
+ * Puis-je me proposer moi-même (« moi-même ⤴ ») pour une tâche que j'exerce par délégation
+ * ascendante sur CE dossier ?
+ *
+ * ⚠️ Règle 2026-08-28, signalée par la session backend. La paire active ne suffit pas : trois
+ * gardes serveur exigent EN PLUS que l'acteur soit de la localité du dossier —
+ * `DispatchService.validerAttributaireMembre`, `ControleurDirectory.peutEtreSecretaireSeance` et
+ * `PvExamenService.exigerRedacteurDuProjet` (§3.3). Un contrôleur **sans localité** — le Président
+ * — passe partout ; un Chef de commission couvert par la paire mais rattaché à une AUTRE
+ * commission est refusé.
+ *
+ * Le front filtrait déjà les candidats par localité, mais ajoutait « moi-même ⤴ » sur la seule
+ * délégation : un CC d'une autre localité voyait l'option et récoltait un 403 à la soumission.
+ * Tant que les interrupteurs existaient, l'option restait masquée par défaut et le cas ne se
+ * présentait pas ; leur retrait (délégation automatique) l'a rendu atteignable.
+ *
+ * Extrait ici plutôt que recopié dans les deux écrans concernés : c'est exactement ce qui était
+ * arrivé à la règle d'ouverture de l'examen, recopiée trois fois puis divergente.
+ *
+ * @param localiteControleur localité du contrôleur courant (`null` = aucune, donc partout)
+ * @param localiteDossier    localité du dossier visé
+ */
+export function peutSAutoProposer(
+  localiteControleur: string | null | undefined,
+  localiteDossier: string | null | undefined,
+): boolean {
+  return localiteControleur == null || localiteControleur === localiteDossier;
+}
+
 // --- Étape attendue d'un dossier selon son statut (orientation pour le pipeline) ---
 
 /** Étape attendue d'un dossier + qui peut l'exécuter + capacité requise. */

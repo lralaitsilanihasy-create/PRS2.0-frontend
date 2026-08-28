@@ -13,7 +13,17 @@
   <div class="sidebar-logo">CNM</div>
 
   <nav class="sidebar-nav" aria-label="Navigation principale">
-    @for (item of navItems(); track item.path) {
+    <!-- ⚠️ Demande user (2026-08-28) — deux sections : les entrées du profil connecté, puis celles
+         exercées PAR DÉLÉGATION sous leur propre intitulé. Elles étaient auparavant intercalées.
+         La boucle d'affichage d'une entrée reste unique : seul l'enrobage en sections est nouveau. -->
+    @for (section of navSections(); track section.cle) {
+      @if (section.titre) {
+        <div class="sidebar-nav__titre">
+          <span class="sidebar-nav__titre-texte">{{ section.titre }}</span>
+          <span class="sidebar-nav__titre-marque" aria-hidden="true">⤴</span>
+        </div>
+      }
+    @for (item of section.items; track item.path) {
       @if (item.children) {
         <button
           type="button"
@@ -99,6 +109,7 @@
           }
         </a>
       }
+    }
     }
   </nav>
 

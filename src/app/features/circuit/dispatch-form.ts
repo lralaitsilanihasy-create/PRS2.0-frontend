@@ -8,6 +8,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { Controleur, Dispatch, Dossier, Reception } from '../../models';
+import { peutSAutoProposer } from '../../shared/circuit';
 import {
   ControleurService,
   DispatchService,
@@ -228,13 +229,19 @@ export class DispatchForm {
    * base — permet le circuit court « je dispatche → je m'attribue → j'examine » sans passer par un
    * Membre (la signature « part Membre » du PV, non déléguable, revient alors à l'attributaire = soi).
    * Paire désactivée → l'option disparaît, zéro code (le CC la perd tant que CC → Membre est inactive).
+   *
+   * ⚠️ 2026-08-28 — la paire ne suffit pas : `DispatchService.validerAttributaireMembre` exige EN
+   * PLUS que l'attributaire soit de la localité du dossier (§3.3). Sans ce filtre, un CC d'une
+   * autre commission voyait « moi-même ⤴ » et récoltait un 403 à la soumission — voir
+   * `peutSAutoProposer`.
    */
   readonly membreOptions = computed(() => {
     const options = this.optionsParRole(/membre/i);
     const ref = this.auth.ref();
-    if (ref && this.auth.role() !== 'MEMBRE' && this.permissions.peutExecuter('MEMBRE') && !options.some((o) => o.id === ref)) {
-      const moi = this.controleurs().find((c) => c.imControleur === ref);
-      const nom = moi ? [moi.nomCont, moi.prenomsCont].filter(Boolean).join(' ') : ref;
+    const moi = ref ? this.controleurs().find((c) => c.imControleur === ref) : undefined;
+    const eligible = !!moi && peutSAutoProposer(moi.idLocalite, this.items()[0]?.dossier.idLocalite);
+    if (ref && moi && eligible && this.auth.role() !== 'MEMBRE' && this.permissions.peutExecuter('MEMBRE') && !options.some((o) => o.id === ref)) {
+      const nom = [moi.nomCont, moi.prenomsCont].filter(Boolean).join(' ') || ref;
       options.unshift({ id: ref, label: `${nom} — moi-même ⤴ (délégation du profil Membre)` });
     }
     return options;

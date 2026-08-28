@@ -17,6 +17,27 @@ export interface NavItem {
 }
 
 /**
+ * Sépare un menu en deux blocs : les entrées du profil connecté, puis celles exercées PAR
+ * DÉLÉGATION ascendante.
+ *
+ * ⚠️ Demande user (2026-08-28) : « ne pas mélanger ». Les entrées déléguées étaient déclarées au
+ * fil du menu — chez le Président, « Vérifications » et « Archivage des PV » tombaient entre
+ * « Examen de dossiers » et « Rapports ». Le badge ⤴ les signalait une par une, mais rien ne
+ * distinguait d'un coup d'œil ce qui relève de sa fonction de ce qu'il exerce à la place d'un
+ * subordonné.
+ *
+ * La séparation est faite ICI, sur la donnée, et non par l'ordre de déclaration du menu : ajouter
+ * une entrée déléguée n'importe où dans `menuCommission` la place au bon endroit sans y penser.
+ * Un bloc vide est omis — un profil sans délégation retrouve exactement son menu d'avant.
+ */
+export function separerParDelegation(items: NavItem[]): { cle: string; titre: string | null; items: NavItem[] }[] {
+  return [
+    { cle: 'propre', titre: null, items: items.filter((i) => !i.delegation) },
+    { cle: 'delegation', titre: 'Exercé par délégation', items: items.filter((i) => !!i.delegation) },
+  ].filter((s) => s.items.length > 0);
+}
+
+/**
  * Menu commun **Président / Chef de commission** (demande user 2026-08-04 : « les menus gauches de ces
  * deux profils doivent être les mêmes »). Les deux rôles conduisent la même commission, à un périmètre
  * près (national vs localité) que le **backend** scope déjà : les écrans sont identiques, seules les

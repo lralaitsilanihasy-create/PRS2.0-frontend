@@ -209,6 +209,29 @@
 
 /* Le panneau d'interrupteurs « Délégations ⤴ » a été retiré le 2026-08-28 : la délégation
    ascendante est automatique, il n'y a plus de réglage à afficher dans la barre latérale. */
+
+/* Intitulé de section du menu (demande user 2026-08-28) : sépare les entrées du profil connecté
+   de celles exercées par délégation. Un simple filet et une capitale espacée — c'est une étiquette
+   de rubrique, pas une entrée cliquable : rien qui puisse se confondre avec un lien. */
+.sidebar-nav__titre {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.9rem 0.75rem 0.3rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  /* Volontairement discret, mais AU-DESSUS du seuil AA : c'est du texte, pas un ornement
+     (acquis A2 de l'audit — ne pas éclaircir davantage). */
+  color: rgba(255, 255, 255, 0.62);
+}
+.sidebar-nav__titre-marque {
+  font-size: 0.78rem;
+  opacity: 0.8;
+}
 /* Lien d'évitement : hors écran, ramené visuellement dès qu'il reçoit le focus clavier. */
 .lien-evitement {
   position: absolute;
