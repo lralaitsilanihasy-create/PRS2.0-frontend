@@ -4,6 +4,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { skip } from 'rxjs';
 
 import { PermissionsService } from '../../core/auth/permissions.service';
+import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { Dossier, TypeDossier } from '../../models';
 import { DemandeRetraitService, DossierService, TypeDossierService } from '../../services';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
@@ -99,12 +100,22 @@ export * from './classement-config';
               <div class="md__rows">
                 @for (sec of sectionsGroupes(); track sec.cle) {
                   @if (sec.titre) {
-                    <div class="md__rows-sep">
+                    <!-- ⚠️ Demande user (2026-08-28) — la rubrique se replie, d'un geste partagé
+                         avec la barre latérale. Repli d'AFFICHAGE : aucun droit n'est retiré.
+                         L'intitulé reste visible, sinon rien ne permettrait de la rouvrir. -->
+                    <button
+                      type="button"
+                      class="md__rows-sep"
+                      [attr.aria-expanded]="delegationsAffichees()"
+                      [title]="(delegationsAffichees() ? 'Replier' : 'Déplier') + ' les tâches exercées par délégation (sans effet sur vos droits).'"
+                      (click)="basculerDelegations()"
+                    >
                       <span class="md__rows-sep-texte">{{ sec.titre }}</span>
                       <span class="md__rows-sep-marque" aria-hidden="true">⤴</span>
-                    </div>
+                      <span class="md__rows-sep-chevron" [class.md__rows-sep-chevron--ouvert]="delegationsAffichees()" aria-hidden="true">›</span>
+                    </button>
                   }
-                  @for (g of sec.items; track g.key) {
+                  @for (g of (sec.titre && !delegationsAffichees() ? [] : sec.items); track g.key) {
                     <button type="button" class="md__row" [class.md__row--actif]="estSelection(t.idTypeDossier, g.key)" (click)="choisir(t.idTypeDossier, g.key)">
                       <span class="md__row-ic" [class.md__row-ic--a]="g.kind === 'a'" [class.md__row-ic--b]="g.kind === 'b'" aria-hidden="true">{{ g.icon }}</span>
                       <span class="md__row-label">{{ g.label }}
@@ -202,8 +213,12 @@ export * from './classement-config';
     /* Intitulé de section des lignes (demande user 2026-08-28) : sépare les tâches du profil de
        celles exercées par délégation. Étiquette de rubrique, jamais cliquable — un filet et une
        capitale espacée, rien qui puisse se confondre avec une ligne de la carte. */
-    .md__rows-sep { display: flex; align-items: center; gap: 0.35rem; margin: 0.55rem 0 0.15rem; padding-top: 0.55rem; border-top: 1px solid var(--n-100); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--n-500); }
+    .md__rows-sep { display: flex; align-items: center; gap: 0.35rem; width: 100%; margin: 0.55rem 0 0.15rem; padding: 0.55rem 0 0.1rem; border: 0; border-top: 1px solid var(--n-100); background: transparent; font: inherit; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; text-align: left; color: var(--n-500); cursor: pointer; transition: var(--transition); }
+    .md__rows-sep:hover { color: var(--n-700); }
     .md__rows-sep-marque { font-size: 0.72rem; }
+    /* Chevron : pointe à droite replié, vers le bas déplié. */
+    .md__rows-sep-chevron { margin-left: auto; font-size: 0.9rem; line-height: 1; transition: transform 0.15s ease; }
+    .md__rows-sep-chevron--ouvert { transform: rotate(90deg); }
     .md__row-count { margin-left: auto; min-width: 1.5rem; padding: 0 0.45rem; background: var(--n-100); color: var(--n-600); border-radius: var(--radius-full); font-weight: 700; font-size: var(--text-sm); text-align: center; font-variant-numeric: tabular-nums; }
     .md__row:hover .md__row-count { background: var(--p-100); color: var(--p-600); }
     .md__row-arrow { color: var(--n-400); font-size: 1.1rem; line-height: 1; transition: transform 130ms var(--ease-out), color 130ms var(--ease-out); }
@@ -267,6 +282,20 @@ export class DossiersClassement {
   readonly sectionsGroupes = computed(() =>
     separerGroupesParDelegation(this.groupesVisibles(), (g) => !!this.delegationDe(g)),
   );
+
+  /**
+   * Repli des rubriques déléguées (demande user 2026-08-28), partagé avec la barre latérale : un
+   * seul geste range les tâches déléguées partout. Repli d'AFFICHAGE — aucun droit n'est retiré,
+   * contrairement aux interrupteurs du 15/08 (cf. `DelegationsAffichageStore`).
+   *
+   * Les tuiles du bandeau KPI, elles, restent complètes : replier range les lignes d'action, pas
+   * les compteurs — un Président qui a rangé les réceptions doit continuer de voir qu'il en reste.
+   */
+  private readonly delegationsAffichage = inject(DelegationsAffichageStore);
+  readonly delegationsAffichees = this.delegationsAffichage.affichees;
+  basculerDelegations(): void {
+    this.delegationsAffichage.basculer();
+  }
 
   /**
    * Profil TITULAIRE de la tâche du groupe quand elle n'est exercée que PAR DÉLÉGATION (badge

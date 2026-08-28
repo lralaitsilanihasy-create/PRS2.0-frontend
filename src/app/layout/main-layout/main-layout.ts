@@ -5,6 +5,7 @@ import { filter, skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
+import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { ToastService } from '../../core/notifications/toast.service';
 import { NavItem, navFor, separerParDelegation } from '../../core/navigation/navigation';
 import { PermissionsService } from '../../core/auth/permissions.service';
@@ -107,6 +108,17 @@ export class MainLayout {
    * (module `navigation`), où il est testé sur les menus réels.
    */
   readonly navSections = computed(() => separerParDelegation(this.navItems()));
+
+  /**
+   * Repli des rubriques déléguées (demande user 2026-08-28), partagé avec les cartes de
+   * « Mes dossiers » : un seul geste range les tâches déléguées partout. Repli d'AFFICHAGE — aucun
+   * droit n'est retiré, contrairement aux interrupteurs du 15/08 (cf. `DelegationsAffichageStore`).
+   */
+  private readonly delegationsAffichage = inject(DelegationsAffichageStore);
+  readonly delegationsAffichees = this.delegationsAffichage.affichees;
+  basculerDelegations(): void {
+    this.delegationsAffichage.basculer();
+  }
   /** Nom de l'utilisateur courant (résolu depuis sa fiche PRMP / contrôleur). */
   readonly displayName = signal('');
   /** Initiales (1 à 2 lettres) pour l'avatar du bloc profil de la sidebar. */

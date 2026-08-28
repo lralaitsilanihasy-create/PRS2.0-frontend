@@ -18,11 +18,22 @@
          La boucle d'affichage d'une entrée reste unique : seul l'enrobage en sections est nouveau. -->
     @for (section of navSections(); track section.cle) {
       @if (section.titre) {
-        <div class="sidebar-nav__titre">
+        <!-- ⚠️ Demande user (2026-08-28) — la rubrique se replie. C'est un repli d'AFFICHAGE :
+             la délégation reste exercée, seules les entrées sont rangées. L'intitulé demeure
+             toujours visible, sans quoi il n'y aurait aucun moyen de les rouvrir. -->
+        <button
+          type="button"
+          class="sidebar-nav__titre"
+          [attr.aria-expanded]="delegationsAffichees()"
+          [title]="(delegationsAffichees() ? 'Replier' : 'Déplier') + ' les tâches exercées par délégation (sans effet sur vos droits).'"
+          (click)="basculerDelegations()"
+        >
           <span class="sidebar-nav__titre-texte">{{ section.titre }}</span>
           <span class="sidebar-nav__titre-marque" aria-hidden="true">⤴</span>
-        </div>
+          <span class="sidebar-nav__titre-chevron" [class.sidebar-nav__titre-chevron--ouvert]="delegationsAffichees()" aria-hidden="true">›</span>
+        </button>
       }
+      @if (!section.titre || delegationsAffichees()) {
     @for (item of section.items; track item.path) {
       @if (item.children) {
         <button
@@ -110,6 +121,7 @@
         </a>
       }
     }
+      }
     }
   </nav>
 
