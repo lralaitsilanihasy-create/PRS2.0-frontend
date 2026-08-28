@@ -66,33 +66,76 @@ import {
           </button>
         }
         @if (canSigner()) {
-          <!-- ⚠️ Règle ajoutée (2026-08-02) : une signature par rôle — déjà signé ⇒ bouton désactivé. -->
+          <!-- ⚠️ Règle ajoutée (2026-08-02) : une signature par rôle — déjà signé ⇒ bouton désactivé.
+               ⚠️ Co-signature (2026-08-28) : le Président / CC passe par le panneau de désignation ;
+               le Membre désigné signe directement. Les deux encarts d'auto-co-signature ont disparu
+               avec la règle qui les portait. -->
           <!-- [disabled] pendant la requête : garde anti-double-clic (le serveur pose un verrou
                pessimiste en miroir). -->
-          <button *appCan="'PV_SIGNER'" type="button" class="btn btn-primary" [disabled]="dejaSigne() || saving()"
-            [title]="dejaSigne() ? 'Vous avez déjà signé ce PV — en attente des autres signataires.' : ''"
-            (click)="signer()">
-            {{ dejaSigne() ? 'Signé ✓' : saving() ? 'Signature…' : 'Signer' }}
+          <button *appCan="'PV_SIGNER'" type="button" class="btn btn-primary"
+            [disabled]="dejaSigne() || saving() || partMembreFermee()"
+            [title]="dejaSigne()
+              ? 'Vous avez déjà signé ce PV — en attente des autres signataires.'
+              : partMembreFermee()
+                ? 'La part Membre n’est pas encore ouverte : le Président ou le Chef de commission doit d’abord signer et désigner le co-signataire.'
+                : ''"
+            (click)="doitDesigner() ? toggleDesignation() : signer()">
+            {{ dejaSigne() ? 'Signé ✓' : saving() ? 'Signature…' : doitDesigner() ? 'Signer et désigner…' : 'Signer' }}
           </button>
           @if (dejaSigne()) {
             <span class="pv-workflow__deja-signe">Vous avez déjà signé — en attente des autres signataires.</span>
-          } @else if (coSignatureRestante()) {
-            <!-- ⚠️ Règle 2026-08-15 : auto-co-signature — la part Membre est posée, le même
-                 utilisateur enchaîne sur sa part de rôle et clôt seul la signature du PV. -->
+          } @else if (partMembreFermee()) {
+            <!-- ⚠️ Ordre B — la part Membre ne s'ouvre qu'après la désignation par le P/CC. -->
             <span class="pv-workflow__deja-signe">
-              ⤴ Part Membre signée — votre signature vaudra maintenant la
-              <strong>part {{ roleSignatureLabel() }}</strong> (auto-co-signature par délégation) : le PV
-              sera <strong>signé</strong>.
+              La <strong>part Membre</strong> n'est pas encore ouverte : le Président ou le Chef de
+              commission doit d'abord signer et désigner le Membre co-signataire.
             </span>
-          } @else if (signeCommeAttributaire()) {
-            <!-- ⚠️ Auto-attribution (délégation ascendante) : la 1ʳᵉ signature vaut PART MEMBRE ; la
-                 part de rôle suit (auto-co-signature) ou reste co-signable par un autre signataire. -->
+          } @else if (estDesigne()) {
             <span class="pv-workflow__deja-signe">
-              ⤴ Vous êtes l'attributaire : votre signature vaudra la <strong>part Membre</strong>. Vous
-              pourrez ensuite signer vous-même la part {{ partRoleLabel() }} (auto-co-signature par
-              délégation) — ou la laisser à un autre signataire.
+              Vous avez été <strong>désigné co-signataire</strong> de ce PV : votre signature posera la
+              <strong>part Membre</strong> et clôturera la signature.
             </span>
           }
+          @if (attenteCoSignature()) {
+            <span class="pv-workflow__deja-signe">
+              En attente de la co-signature de <strong>{{ nomMembreDesigne() }}</strong>.
+            </span>
+          }
+        }
+
+        <!-- ⚠️ Co-signature (2026-08-28) — le Président / CC désigne le Membre appelé à co-signer,
+             au moment de signer. Obligatoire côté serveur : Membre de la LOCALITÉ du dossier et
+             différent du signataire (le PV est co-signé par deux personnes distinctes). -->
+        @if (designationOuverte()) {
+          <div class="pv-workflow__retour pv-workflow__retour--accept cnm-form">
+            <span class="pv-workflow__retour-label">Signature — désignation du Membre co-signataire</span>
+            <span class="form-hint">
+              Votre signature pose votre part. Le Membre que vous désignez ici posera la part Membre :
+              le PV est signé par deux personnes distinctes.
+            </span>
+            <label class="form-group">
+              <span class="form-label">Membre co-signataire *</span>
+              <select class="form-control" [value]="membreChoisi() ?? ''"
+                (change)="membreChoisi.set($any($event.target).value || null)">
+                <option value="" [selected]="!membreChoisi()">— Sélectionner —</option>
+                @for (m of membreOptions(); track m.id) {
+                  <option [value]="m.id" [selected]="m.id === membreChoisi()">{{ m.label }}</option>
+                }
+              </select>
+            </label>
+            @if (!membreOptions().length) {
+              <span class="form-hint pv-workflow__alerte" role="status">
+                Aucun Membre de la localité du dossier n'est disponible pour co-signer. Le PV ne peut pas
+                être signé tant qu'un Membre n'y est pas rattaché.
+              </span>
+            }
+            <div class="pv-workflow__retour-actions">
+              <button type="button" class="btn btn-outline" (click)="toggleDesignation()">Annuler</button>
+              <button type="button" class="btn btn-primary" [disabled]="!membreChoisi() || saving()" (click)="signer()">
+                {{ saving() ? 'Signature…' : 'Signer et désigner' }}
+              </button>
+            </div>
+          </div>
         }
       </div>
 
@@ -227,6 +270,14 @@ import {
       color: var(--n-500);
       font-style: italic;
     }
+    /* Impasse de co-signature : aucun Membre de la localité n'est disponible. Ce n'est pas un
+       simple conseil — le PV ne peut pas être signé — donc la couleur d'alerte, pas celle d'un
+       texte d'aide. */
+    .pv-workflow__alerte {
+      color: var(--danger-text);
+      font-weight: 600;
+      font-style: normal;
+    }
     .pv-workflow__retour {
       display: flex;
       flex-direction: column;
@@ -343,38 +394,64 @@ export class PvWorkflow {
   readonly canAccepter = computed(() => peutAccepter(this.pv().statutPv));
   readonly canSigner = computed(() => peutSigner(this.pv().statutPv));
   /** L'utilisateur courant est l'ATTRIBUTAIRE du PV (`imCtrlMembre` = son matricule). */
-  private readonly estAttributaire = computed(
-    () => !!this.pv().imCtrlMembre && this.pv().imCtrlMembre === this.auth.ref(),
-  );
+  // ⚠️ 2026-08-28 — `estAttributaire` a été retiré : il servait à faire signer la part Membre par
+  // l'attributaire. Celle-ci revient désormais au Membre DÉSIGNÉ (voir `estDesigne`) ; `imCtrlMembre`
+  // ne dit plus que QUI A EXAMINÉ — c'est lui qu'imprime le PV officiel.
   /**
-   * Rôle sous lequel le signataire courant signe — la PROCHAINE part à poser. ⚠️ Délégation
-   * ascendante (auto-attribution) : l'attributaire signe d'abord la **part Membre** (`role=MEMBRE`,
-   * acte d'identité, non déléguable). ⚠️ Règle 2026-08-15 (annule la séparation des signataires) :
-   * le verrou « une signature par personne » est LEVÉ pour le P/CC attributaire — part Membre posée,
-   * le même utilisateur enchaîne sur SA part de rôle (auto-co-signature, conditionnée côté serveur à
-   * la paire « → Membre » active : 403 si elle a été désactivée entre-temps). Le circuit court se
-   * clôt donc seul : deux actions successives, PV → SIGNE.
+   * Rôle sous lequel le signataire courant signe — simplement celui de son profil.
+   *
+   * ⚠️ Co-signature (backend `e8b5b2e`, 2026-08-28) — l'aiguillage « l'attributaire signe d'abord la
+   * part Membre » a disparu avec l'auto-co-signature. La part Membre appartient désormais au Membre
+   * DÉSIGNÉ par le Président ou le CC, et le désigné est nécessairement un Membre de la localité :
+   * son profil suffit donc à déterminer sa part. Un P/CC ne signe plus que la sienne.
    */
-  readonly roleSignature = computed<PvSignataireRole | null>(() => {
-    if (this.estAttributaire() && this.pv().dateSignatureMembre == null) return 'MEMBRE';
-    return pvSignataireRole(this.auth.role());
+  readonly roleSignature = computed<PvSignataireRole | null>(() => pvSignataireRole(this.auth.role()));
+
+  /**
+   * ⚠️ Ordre B (arbitrage du pilote, 2026-08-28) — le Président / CC DÉSIGNE le Membre co-signataire
+   * au moment de signer. Le champ est obligatoire côté serveur (`designerMembreCoSignataire`, 409
+   * si absent), doit viser un Membre de la localité du dossier et différer du signataire.
+   */
+  readonly doitDesigner = computed(() => {
+    const r = this.roleSignature();
+    return r === 'PRESIDENT' || r === 'CC';
   });
-  /** L'utilisateur signe la part Membre en tant qu'ATTRIBUTAIRE alors que son profil n'est pas Membre. */
-  readonly signeCommeAttributaire = computed(() => this.roleSignature() === 'MEMBRE' && this.auth.role() !== 'MEMBRE');
-  /** Part Membre posée par l'attributaire P/CC → sa part de rôle reste à signer (auto-co-signature). */
-  readonly coSignatureRestante = computed(
-    () =>
-      this.estAttributaire() &&
-      this.auth.role() !== 'MEMBRE' &&
-      this.pv().dateSignatureMembre != null &&
-      !this.dejaSigne(),
+  /** Membre déjà désigné sur ce PV — `null` tant que le P/CC n'a pas signé (ou PV d'avant la règle). */
+  readonly membreDesigne = computed(() => this.pv().imMembreCoSignataire ?? null);
+  /** Nom du Membre désigné, servi par le backend — évite un appel pour l'afficher. */
+  readonly nomMembreDesigne = computed(() => this.pv().nomMembreCoSignataire || this.membreDesigne() || '');
+  /** L'utilisateur courant est le Membre désigné : la part Membre lui revient, à lui seul. */
+  readonly estDesigne = computed(() => !!this.membreDesigne() && this.membreDesigne() === this.auth.ref());
+  /**
+   * La part Membre est-elle encore fermée ? Sous l'ordre B, elle ne s'ouvre qu'APRÈS la désignation :
+   * un Membre qui signerait spontanément avant viderait de son objet le choix du P/CC (409 serveur).
+   */
+  readonly partMembreFermee = computed(() => this.roleSignature() === 'MEMBRE' && !this.membreDesigne());
+  /** Part de rôle posée, en attente de la co-signature du Membre désigné. */
+  readonly attenteCoSignature = computed(
+    () => !!this.membreDesigne() && this.pv().dateSignatureMembre == null && this.roleSignature() !== 'MEMBRE',
   );
-  /** Libellé humain de la part de rôle courante (hint d'auto-co-signature). */
-  readonly roleSignatureLabel = computed(() =>
-    this.roleSignature() === 'PRESIDENT' ? 'Président' : this.roleSignature() === 'CC' ? 'Chef de commission' : 'Membre',
-  );
-  /** Libellé de la part de rôle du PROFIL courant (hint avant la part Membre de l'attributaire). */
-  readonly partRoleLabel = computed(() => (this.auth.role() === 'PRESIDENT' ? 'Président' : 'Chef de commission'));
+
+  /** Panneau de désignation ouvert (le P/CC choisit son co-signataire avant de signer). */
+  readonly designationOuverte = signal(false);
+  /** Matricule du Membre choisi dans le panneau. */
+  readonly membreChoisi = signal<string | null>(null);
+
+  /**
+   * Membres éligibles à la co-signature : ceux de la LOCALITÉ du dossier (§3.3, garde serveur
+   * `ControleurDirectory.peutEtreMembreCoSignataire` — sans exemption pour un contrôleur sans
+   * localité, contrairement au Secrétaire de séance), moins soi-même : le PV est co-signé par deux
+   * personnes distinctes. Aucun appel supplémentaire, les contrôleurs sont déjà chargés.
+   */
+  readonly membreOptions = computed(() => {
+    const loc = this.idLocalite();
+    const libs = this.profileLib();
+    const moi = this.auth.ref();
+    return this.controleurs()
+      .filter((c) => c.idLocalite === loc && c.idProfile != null && /membre/i.test(libs.get(c.idProfile) ?? ''))
+      .filter((c) => c.imControleur !== moi)
+      .map((c) => ({ id: c.imControleur, label: [c.nomCont, c.prenomsCont].filter(Boolean).join(' ') || c.imControleur }));
+  });
   /**
    * ⚠️ Règle ajoutée (2026-08-02) — une signature par rôle : le signataire courant a déjà posé la
    * sienne (date du rôle renseignée) ⇒ bouton « Signer » désactivé (garde 409 miroir côté backend).
@@ -588,26 +665,55 @@ export class PvWorkflow {
     });
   }
 
+  /** Ouvre / referme le panneau de désignation du co-signataire (Président et CC). */
+  toggleDesignation(): void {
+    this.designationOuverte.update((v) => !v);
+  }
+
+  /**
+   * Signe la part du profil courant. Pour le Président et le CC, la désignation du Membre
+   * co-signataire accompagne la signature dans le MÊME appel (`imMembreCoSignataire`) — c'est le
+   * contrat serveur, et cela évite un état intermédiaire « désigné mais non signé ».
+   */
   signer(): void {
     const acteur = this.acteur();
     if (!acteur) {
       return;
     }
-    // Attributaire (auto-attribution par délégation) → part MEMBRE ; sinon le rôle du profil.
     const role = this.roleSignature();
     if (!role) {
       this.toast.error("Votre profil n'est pas signataire du PV.");
       return;
     }
+    const designe = this.doitDesigner() ? this.membreChoisi() : null;
+    if (this.doitDesigner() && !designe) {
+      this.toast.error('Désignez le Membre appelé à co-signer le PV avant de signer.');
+      return;
+    }
     this.saving.set(true);
-    this.pvService.signer(this.pv().idPv, { imActeur: acteur, role }).subscribe({
-      next: (pv) => {
-        this.saving.set(false);
-        // Part intermédiaire (ex. part Membre de l'attributaire, auto-co-signature à suivre) ≠ PV complet.
-        this.onSuccess(pv, pv.statutPv === 'SIGNE' ? 'PV signé.' : 'Signature enregistrée — en attente des autres parts.');
-      },
-      error: () => this.saving.set(false), // 409/403 → toast centralisé
-    });
+    this.pvService
+      .signer(this.pv().idPv, { imActeur: acteur, role, ...(designe ? { imMembreCoSignataire: designe } : {}) })
+      .subscribe({
+        next: (pv) => {
+          this.saving.set(false);
+          this.designationOuverte.set(false);
+          this.membreChoisi.set(null);
+          this.onSuccess(
+            pv,
+            pv.statutPv === 'SIGNE'
+              ? 'PV signé.'
+              : designe
+                ? `Signature enregistrée — en attente de la co-signature de ${this.nomDe(designe)}.`
+                : 'Signature enregistrée — en attente des autres parts.',
+          );
+        },
+        error: () => this.saving.set(false), // 409/403 → toast centralisé
+      });
+  }
+
+  /** Nom lisible d'un matricule parmi les options de co-signature (repli : le matricule). */
+  private nomDe(im: string): string {
+    return this.membreOptions().find((o) => o.id === im)?.label ?? im;
   }
 
   private acteur(): string | null {

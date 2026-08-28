@@ -249,6 +249,16 @@ export interface PvExamen {
   idSecretaireSeance?: string;
   /** Nom complet du secrétaire de séance, peuplé serveur — lecture seule. */
   nomSecretaireSeance?: string;
+  /**
+   * ⚠️ Co-signature (backend `e8b5b2e`, 2026-08-28) — Membre DÉSIGNÉ par le Président ou le CC pour
+   * signer la part Membre. À ne pas confondre avec `imCtrlMembre`, qui reste **qui a examiné** :
+   * depuis cette règle, ce sont deux personnes possiblement distinctes. La part Membre appartient au
+   * désigné, et à lui seul — l'attributaire n'y a plus droit du seul fait d'avoir instruit.
+   * `null` sur les PV signés avant la règle (le PV 2, notamment) : trace correcte, non reconstituée.
+   */
+  imMembreCoSignataire?: string;
+  /** Nom complet du Membre co-signataire, peuplé serveur — évite un appel pour l'afficher. */
+  nomMembreCoSignataire?: string;
   syntheseObservations?: string;
   statutPv: StatutPv;
   nbNavettes: number;
@@ -430,4 +440,10 @@ export interface PvActionRequest {
   idAvis?: string;
   /** Vérificateur (localité du dossier) désigné Secrétaire de séance — requis pour `accepter`. */
   idSecretaireSeance?: string;
+  /**
+   * ⚠️ Co-signature (2026-08-28) — Membre appelé à co-signer, **obligatoire pour `signer` en rôle
+   * PRESIDENT ou CC** (409 sinon). Doit être un Membre de la localité du dossier et différent du
+   * signataire : le PV est co-signé par deux personnes distinctes. Ignoré pour le rôle MEMBRE.
+   */
+  imMembreCoSignataire?: string;
 }

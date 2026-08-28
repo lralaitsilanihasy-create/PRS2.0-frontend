@@ -73,6 +73,12 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   if ((type === 'PV_A_RECTIFIER' || type === 'PV_ACCEPTE') && role === 'MEMBRE') {
     return { genre: 'route', commands: ['/membre/pv'] };
   }
+  // ⚠️ Co-signature (backend e8b5b2e, 2026-08-28) — le Membre DÉSIGNÉ par le Président / CC est
+  // appelé à poser la part Membre. Type distinct de PV_A_VALIDER, qui vise le P/CC pour la navette :
+  // les confondre enverrait le Membre sur un écran qui ne lui est pas destiné.
+  if (type === 'PV_A_COSIGNER' && role === 'MEMBRE') {
+    return { genre: 'route', commands: ['/membre/pv'] };
+  }
   // — PRMP : PV signé et lettre de renvoi vivent dans le hub « Examen de dossiers » ; observations → à rectifier.
   if (type === 'PV_SIGNE' && role === 'PRMP') return { genre: 'route', commands: ['/prmp/resultat-examen/pv-definitifs'] };
   if (type === 'OBSERVATION_VERIFICATION' && role === 'PRMP') return { genre: 'route', commands: ['/prmp/a-rectifier'] };
