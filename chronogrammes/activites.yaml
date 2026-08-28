@@ -59,7 +59,9 @@ parametres:
 
   # Réponses du pilote, 2026-08-26.
   date_demarrage: 2026-06-17          # 1er commit `62f5f9a` « Initial commit - frontend CNM »
-  date_arrete: 2026-08-26             # date d'observation ; dernier commit du dépôt : 2026-08-20
+  # Réarrêté le 28/08 après un `git pull` : 39 commits étaient arrivés depuis le 20/08
+  # (7 le 26/08, 32 le 27/08 — deux chantiers d'audit et un nouvel écran de journal).
+  date_arrete: 2026-08-28             # date d'observation ; dernier commit du dépôt : 2026-08-27
   # Échéance décalée de deux jours ouvrés le 26/08 : le polissage du module de
   # planification (A26, 24 → 28/08) repousse la reprise du développement au 31/08,
   # ce qui aurait comprimé la recette de 5 à 3 jours. Arbitrage du pilote : garder
@@ -308,11 +310,20 @@ module_planification:
     debut: 2026-08-17
     duree_jours: 3
     statut: en_cours
-    avancement: 77
+    avancement: 83
     responsable: "Mr Lanto"
     dependances: [A06]
     jalon: null
-    preuve: "AUDIT.md §3 dénombre 35 constats (S1-S13, P1-P11, A1-A7, T1-T3, D1). Clos et vérifiés : 27 (dont 9ff24e9 directive appModale, f8dca39 112 routes en loadComponent, b350579 polices + CI, 1216458 contraste AA 114→17 textes, 1c4ab1c scope sur 225 en-têtes). Restent ouverts : P1, P9 (extension), A2b, S9, S12, P10, T1 (entamé), T3 = 8. Avancement = 27/35 = 77 %."
+    preuve: >-
+      AUDIT.md §3 dénombre 35 constats (S1-S13, P1-P11, A1-A7, T1-T3, D1), auxquels s'ajoute
+      C-1 issu du nouvel audit global du 27/08 — soit 36. Clos et vérifiés : 30.
+      Chantiers du 27/08 (AUDIT.md, deux entrées) : les 124 avertissements ESLint
+      d'accessibilité soldés (6523668 → 1d097e5, 8 commits, 34 fichiers — le clic sur le voile
+      passe dans la directive appModale) ; P1 ENFIN ADOPTÉ (238293b → b103221, 20 commits :
+      recherche de la topbar résolue côté serveur, « Mes dossiers » et pipeline paginés,
+      rendu incrémental des trois files sans endpoint paginé) ; P9 étendu ; C-1 clos le
+      jour même. Restent ouverts : A2b, S9, S12, P10, T1 (entamé), T3 = 6.
+      Avancement = 30/36 = 83 % (était 27/35 = 77 % au 26/08).
 
   - id: A18
     libelle: "Sécurisation de la session par cookie"
@@ -332,12 +343,22 @@ module_planification:
     livrable: "Message d'information affiché à l'ouverture de session, écran d'administration pour le rédiger et le cibler par profil, et le service qui le délivre"
     debut: 2026-08-19
     duree_jours: 1
-    statut: en_cours
-    avancement: 50
+    statut: termine
+    avancement: 100
     responsable: "Mr Christian"
     dependances: [A08]
     jalon: null
-    preuve: "Front livré et recetté : 9faaa14 (19/08) « modal à la connexion + administration », shared/actualites/{actualites-modal,markdown,markdown-vue}.ts + markdown.spec.ts, services/actualite.services.ts, features/admin/actualites-admin.ts. API backend NON COMMITÉE : docs/demande-backend-2026-08-19.md §A liste 17 fichiers non suivis par git. Avancement = 1 des 2 moitiés (front livré / API versionnée)."
+    preuve: >-
+      Front : commit 9faaa14 (19/08) « modal à la connexion + administration » —
+      shared/actualites/{actualites-modal,markdown,markdown-vue}.ts + markdown.spec.ts,
+      services/actualite.services.ts, features/admin/actualites-admin.ts.
+      API : commit backend 51620f4 du 19/08 également (dépôt PRS20) — ActualiteController,
+      ActualiteDto, entités Actualite / ActualiteImage / ActualiteProfil, enum StatutActualite,
+      tous suivis par git. CORRECTION DU 28/08 : l'activité était portée à 50 % au motif que
+      l'API n'était pas versionnée. C'était exact au moment où docs/demande-backend-2026-08-19.md
+      a été écrit, en cours de journée, mais le backend a commité le soir même — le document
+      décrivait une situation en vol, pas un état final. Leçon : vérifier le dépôt concerné,
+      pas la demande qui lui a été adressée.
 
   - id: A20
     libelle: "Consultation du plan de passation en onglets"
@@ -361,7 +382,15 @@ module_planification:
     responsable: "Mr Lanto"
     dependances: [A01]
     jalon: null
-    preuve: "85 tests / 8 fichiers, 100 % au vert (`npx ng test --watch=false`, 2,97 s, exécuté le 26/08). Constats « Tests » de AUDIT.md : T2 clos (.github/workflows/ci.yml, commit b350579 du 17/08 — tests + build + npm audit bloquant), T1 entamé (0a4fe15 du 19/08, barrières anti-XSS couvertes), T3 ouvert (aucun e2e versionné, 0 fichier sous e2e/). Avancement = 1 constat clos sur 3."
+    preuve: >-
+      106 tests / 12 fichiers, 100 % au vert (`npx ng test --watch=false`, exécuté le 28/08 —
+      était 85 / 8 au 26/08). Progression tracée dans AUDIT.md : 42 → 83 (19/08) → 93 (a11y du
+      27/08, directive de modale couverte) → 106 (contrat de la recherche serveur et de la
+      pagination, 238293b). La CI exécute désormais aussi ESLint 9 (.github/workflows/ci.yml).
+      Constats « Tests » : T2 clos (CI, b350579 du 17/08), T1 toujours ENTAMÉ (la couverture
+      progresse mais n'est ni mesurée ni au niveau visé), T3 OUVERT (aucun scénario e2e
+      versionné). Avancement = 1 constat clos sur 3 — inchangé malgré la croissance des tests :
+      c'est la couverture mesurée et les e2e qui manquent, pas le nombre de cas.
 
   # ---------------------------------------------------------------- S11
   - id: A26
@@ -370,20 +399,22 @@ module_planification:
     debut: 2026-08-24
     duree_jours: 5
     statut: en_cours
-    avancement: 60
+    avancement: 80
     responsable: "Mr Christian"
     dependances: [A09, A16, A20]
     jalon: null
     note: >-
       Déclaré par le pilote le 26/08 (dates annoncées « 24/08 au 28/08 » ; l'année de fin,
       saisie 2025, a été rétablie à 2026 — seul intervalle cohérent, lundi → vendredi).
-      Le développement ne reprend qu'après : A22, A23 et A24 en dépendent.
+      Le développement reprend après : A22 et A23 en dépendent (A24, livré le 27/08, n'a
+      pas attendu). ⚠️ Clôture à confirmer par le pilote : le 28/08 est le dernier jour.
     preuve: >-
-      Avancement = 3 jours ouvrés écoulés sur 5 au 26/08 — RATIO DE TEMPS, non une mesure
-      de travail accompli : arbitrage du pilote faute de mesure disponible.
-      ⚠️ Non observable dans le dépôt : dernier commit `bec0e39` du 20/08, aucun commit
-      depuis. Le polissage des 24, 25 et 26/08 n'est pas versionné — à commiter avant
-      toute relance de la mesure (cf. AUDIT.md, constat S11 sur les livraisons non suivies).
+      RÉSERVE LEVÉE LE 28/08 — le travail est versionné. Le chronogramme du 26/08 notait
+      « aucun commit depuis bec0e39 du 20/08 » ; il y en a eu 39 depuis, dont 32 le 27/08.
+      Pour la part planification : sortie des sous-dialogues du détail PPM (7dfc4d8, bf991eb,
+      2faf937, f5cf8ec), pagination serveur de « Mes dossiers » (2f51efa), voiles de modales
+      rendus au décor (9bcf8e3). Avancement = 4 jours ouvrés révolus sur 5 au matin du 28/08
+      — RATIO DE TEMPS, non une mesure de travail accompli.
 
   # ---------------------------------------------------------------- S11 → S14
   - id: A22
@@ -417,16 +448,20 @@ module_planification:
   - id: A24
     libelle: "Consultation du journal d'audit"
     livrable: "Écran de recherche du journal, filtrable par acteur, dossier, période et nature de l'action"
-    debut: 2026-08-31
-    duree_jours: 3
-    statut: a_venir
-    avancement: 0
+    debut: 2026-08-27
+    duree_jours: 1
+    statut: termine
+    avancement: 100
     responsable: "Mr Lanto"
-    dependances: [A01, A26]
+    dependances: [A01]
     jalon: null
-    note: "Reprise du développement après le polissage (A26). Dates PROPOSÉES — à valider. Variable d'ajustement identifiée si A22 déborde."
-    preuve: null
-    constat_initial: "Existant : écran CRUD générique en lecture seule /admin/audit (admin.routes.ts:86, admin-resources.config.ts:571-577) et journal métier par dossier (services/circuit.services.ts:58). Manque un écran de recherche transverse."
+    preuve: >-
+      Livré le 27/08, en avance sur la date proposée (31/08) et sans attendre la fin du
+      polissage : commit ad40144 « le journal d'audit se lit page par page, filtré par table,
+      acteur et période ». Écran dédié features/admin/audit-logs-admin.ts, routé en
+      admin.routes.ts:87 — il remplace le CRUD générique qui demandait la table entière
+      (constat C-1 du nouvel audit du 27/08). État d'erreur avec reprise branché au passage
+      (constat P9). AUDIT.md, entrée du 27/08.
 
   - id: A25
     libelle: "Recette et livraison du module 1"
@@ -457,11 +492,22 @@ global_prs2:
     fin: 2026-09-18
     mois: "M1 → M3"
     statut: en_cours
-    avancement: 82
+    avancement: 89
     responsable: "Mr Lanto, Mr Mathieu, Mr Christian"
     dependances: []
     jalon: J4
-    preuve: "Inventaire des 14 fonctions du module 1 (constat du 26/08) : 10 implémentées (authentification, habilitations, référentiels, dépôt, complétude, affectation, instruction, visa, navette, notifications), 3 partielles (statistiques, journal d'audit, actualités), 1 absente (délais réglementaires). Avancement = (10×100 + 3×50 + 1×0) / 14 = 82 %. Le détail fonction par fonction est porté par les activités A01 à A26 de ce fichier, chacune avec sa propre preuve — commit, fichier du dépôt (src/app/…) ou exécution de test."
+    preuve: >-
+      Inventaire des 14 fonctions du module 1, réexaminé le 28/08 : 12 implémentées
+      (authentification, habilitations, référentiels, dépôt, complétude, affectation,
+      instruction, visa, navette, notifications, journal d'audit, actualités), 1 partielle
+      (statistiques — les écrans d'indicateurs par contrôleur et par autorité de passation
+      manquent, cf. A23), 1 absente (délais réglementaires, cf. A22).
+      Avancement = (12×100 + 1×50 + 1×0) / 14 = 89 %.
+      Deux fonctions ont changé de statut depuis le 26/08 : le journal d'audit passe de
+      partielle à implémentée (écran dédié livré le 27/08, A24) et les actualités de partielle
+      à implémentée (l'API backend était en réalité commitée dès le 19/08, A19).
+      Le détail fonction par fonction est porté par les activités A01 à A26 de ce fichier,
+      chacune avec sa propre preuve — commit, fichier du dépôt (src/app/…) ou exécution de test.
 
   - id: G02
     libelle: "Recette et mise en production du module 1"
