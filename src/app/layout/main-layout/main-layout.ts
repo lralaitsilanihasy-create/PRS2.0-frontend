@@ -89,18 +89,6 @@ export class MainLayout {
           : item,
       ),
   );
-  /**
-   * ⚠️ Demande user (2026-08-15) — interrupteurs « Délégations » : les tâches déléguées ne
-   * s'affichent qu'en ACTIVANT l'interrupteur du profil correspondant (opt-in séparé par profil,
-   * défaut désactivé, persisté par matricule). Le menu et tous les écrans suivent `peutExecuter`.
-   */
-  readonly delegationsDisponibles = this.permissions.delegationsDisponibles;
-  exerceDelegation(r: Role): boolean {
-    return this.permissions.exerce(r);
-  }
-  basculerDelegation(r: Role): void {
-    this.permissions.basculerExercice(r);
-  }
   /** Nom de l'utilisateur courant (résolu depuis sa fiche PRMP / contrôleur). */
   readonly displayName = signal('');
   /** Initiales (1 à 2 lettres) pour l'avatar du bloc profil de la sidebar. */

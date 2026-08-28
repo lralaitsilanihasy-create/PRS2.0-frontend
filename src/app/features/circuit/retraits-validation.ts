@@ -53,19 +53,14 @@ import { DossierConsultation } from './dossier-consultation';
 
       <!-- ⚠️ 2026-08-17 (demande user) — sans cette explication, l'écran est MUET : la liste
            s'affiche mais la colonne d'actions reste vide, sans que rien n'indique pourquoi.
-           Cas courant : un Président qui n'a pas activé la délégation « Chef de commission ». -->
+           2026-08-28 : la branche « activez l'interrupteur » a disparu avec les interrupteurs —
+           la délégation étant automatique, un Président voit désormais les boutons d'emblée et
+           n'atteint plus ce message. Il ne reste que le cas de la vraie consultation seule. -->
       @if (onglet() === 'a-valider' && !canDecide() && liste().length) {
         <div class="alert alert-info rv__info" role="status">
-          @if (peutParDelegation()) {
-            <strong>Décision indisponible pour le moment.</strong>
-            Accepter ou refuser un retrait relève du <strong>Chef de commission</strong> : activez
-            <strong>« Chef de commission »</strong> dans le panneau <strong>Délégations ⤴</strong>, en bas
-            de la barre latérale, et les boutons apparaîtront sur chaque ligne.
-          } @else {
-            <strong>Consultation seule.</strong>
-            La décision sur une demande de retrait est réservée au <strong>Chef de commission</strong>
-            (ou au Président exerçant cette délégation).
-          }
+          <strong>Consultation seule.</strong>
+          La décision sur une demande de retrait est réservée au <strong>Chef de commission</strong>
+          (ou au Président, qui l'exerce par délégation).
         </div>
       }
 
@@ -227,15 +222,6 @@ export class RetraitsValidation {
   private readonly dossierMap = signal<Map<string, string>>(new Map());
 
   readonly canDecide = computed(() => this.permissions.can('DEMANDE_RETRAIT_DECISION'));
-
-  /**
-   * Vrai si l'utilisateur POURRAIT décider en activant la délégation « Chef de commission »
-   * (paire active en base, mais interrupteur éteint) : cas du Président. Sert à afficher le
-   * mode d'emploi plutôt qu'un simple « non autorisé ».
-   */
-  readonly peutParDelegation = computed(
-    () => !this.canDecide() && this.permissions.delegationsDisponibles().includes('CHEF_COMMISSION'),
-  );
 
   constructor() {
     this.lookups.lookup(DossierService, 'idDossier', ['refeDossier']).subscribe((m) => this.dossierMap.set(m));

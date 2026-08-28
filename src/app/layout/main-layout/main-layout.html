@@ -102,27 +102,9 @@
     }
   </nav>
 
-  <!-- ⚠️ Demande user (2026-08-15) — interrupteurs « Délégations » : chaque profil délégué (paire
-       active en base) s'exerce par OPT-IN séparé ; désactivé (défaut) = ses tâches sont masquées
-       partout (menu, groupes, boutons, options « moi-même ⤴ »). N'élargit jamais les droits. -->
-  @if (delegationsDisponibles().length) {
-    <div class="sidebar-delegations">
-      <div class="sidebar-delegations__titre">Délégations ⤴</div>
-      @for (r of delegationsDisponibles(); track r) {
-        <button
-          type="button"
-          class="sidebar-delegations__item"
-          [class.sidebar-delegations__item--on]="exerceDelegation(r)"
-          [attr.aria-pressed]="exerceDelegation(r)"
-          [title]="(exerceDelegation(r) ? 'Masquer' : 'Afficher') + ' les tâches du profil ' + delegationLabel(r) + ' (délégation active).'"
-          (click)="basculerDelegation(r)"
-        >
-          <span class="sidebar-delegations__label">{{ delegationLabel(r) }}</span>
-          <span class="sidebar-delegations__switch" aria-hidden="true"></span>
-        </button>
-      }
-    </div>
-  }
+  <!-- ⚠️ 2026-08-28 — le panneau d'interrupteurs « Délégations ⤴ » est retiré : la délégation
+       ascendante est AUTOMATIQUE (demande user). Une paire active en base suffit ; les tâches du
+       profil délégué apparaissent d'office, signalées par le badge ⤴ sur l'entrée de menu. -->
 
   @if (login()) {
     @if (role() === 'PRMP') {

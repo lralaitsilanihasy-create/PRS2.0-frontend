@@ -31,6 +31,28 @@ interface StoredSession extends Omit<LoginResponse, 'token'> {
 const STORAGE_KEY = 'cnm.session';
 
 /**
+ * Préfixe des préférences « délégations exercées », retirées le 2026-08-28 avec les interrupteurs
+ * (la délégation ascendante est redevenue automatique). Les postes déjà utilisés en conservent une
+ * clé par matricule : elle ne sert plus à rien mais nomme encore qui s'est connecté là. On la balaie
+ * à la déconnexion — c'est la rémanence d'identité sur poste partagé que visait le constat S9.
+ * À supprimer quand le parc aura tourné.
+ */
+const PREFIXE_DELEGATIONS_OBSOLETE = 'cnm.delegations-exercees.';
+
+function purgerDelegationsExercees(): void {
+  try {
+    const aRetirer: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const cle = localStorage.key(i);
+      if (cle?.startsWith(PREFIXE_DELEGATIONS_OBSOLETE)) aRetirer.push(cle);
+    }
+    for (const cle of aRetirer) localStorage.removeItem(cle);
+  } catch {
+    // Stockage indisponible (mode privé, quota) : rien à purger, rien à signaler.
+  }
+}
+
+/**
  * Source unique de vérité de l'identité courante côté frontend.
  *
  * Expose le profil, la localité et la référence de l'utilisateur via des signals,
@@ -172,6 +194,7 @@ export class AuthService {
     this.session.set(null);
     localStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(STORAGE_KEY);
+    purgerDelegationsExercees();
     this.http
       .post<void>(`${environment.apiUrl}/auth/logout`, null, { context: skipErrorToast() })
       .subscribe({ error: () => {} });
