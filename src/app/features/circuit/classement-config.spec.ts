@@ -4,6 +4,7 @@ import {
   GROUPE_ENREGISTREMENT,
   GROUPE_RECEPTIONS,
   separerGroupesParDelegation,
+  statutsPartages,
 } from './classement-config';
 
 /**
@@ -77,5 +78,41 @@ describe('separerGroupesParDelegation', () => {
     expect(separerGroupesParDelegation([], () => false)).toEqual([
       { cle: 'propre', titre: null, items: [] },
     ]);
+  });
+});
+
+
+/**
+ * ⚠️ Demande user (2026-08-28) : « lever l'ambiguïté ». Un Président lisait 3 + 0 + 1 + 3 = 7 en
+ * face d'un total affiché à 4. Les deux chiffres sont justes : les tuiles comptent par groupe, le
+ * total compte des dossiers DISTINCTS — et deux groupes couvrent le même statut.
+ */
+describe('statutsPartages', () => {
+  it('repère PRET_DISPATCH, couvert à la fois par « Pré-dispatch » et « Enregistrement »', () => {
+    const partages = statutsPartages(CIRCUIT_GROUPES);
+    expect(partages.length).toBe(1);
+    expect(partages[0].statut).toBe('PRET_DISPATCH');
+    expect(partages[0].labels.sort()).toEqual(['Enregistrement', 'Pré-dispatch']);
+  });
+
+  it('ne signale RIEN quand aucun statut n’est partagé', () => {
+    const sansRecouvrement = CIRCUIT_GROUPES.filter((g) => g.key !== 'enregistrement');
+    expect(statutsPartages(sansRecouvrement)).toEqual([]);
+  });
+
+  it('les statuts couverts par un seul groupe ne sont jamais signalés', () => {
+    const statuts = statutsPartages(CIRCUIT_GROUPES).map((p) => p.statut);
+    expect(statuts).not.toContain('SOUMIS');
+    expect(statuts).not.toContain('DISPATCHE');
+  });
+
+  it('remonte tous les groupes concernés, pas seulement deux', () => {
+    const g = (key: string, statuts: string[]): ClassementGroupe => ({ key, label: key, statuts, icon: '', kind: 'a' });
+    const partages = statutsPartages([g('a', ['X']), g('b', ['X']), g('c', ['X'])]);
+    expect(partages).toEqual([{ statut: 'X', labels: ['a', 'b', 'c'] }]);
+  });
+
+  it('une liste vide ne partage rien', () => {
+    expect(statutsPartages([])).toEqual([]);
   });
 });

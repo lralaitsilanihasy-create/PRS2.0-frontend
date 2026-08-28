@@ -8,7 +8,7 @@ import { DelegationsAffichageStore } from '../../core/preferences/delegations-af
 import { Dossier, TypeDossier } from '../../models';
 import { DemandeRetraitService, DossierService, TypeDossierService } from '../../services';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
-import { ClassementConfig, ClassementGroupe, dossiersDuClassement, separerGroupesParDelegation } from './classement-config';
+import { ClassementConfig, ClassementGroupe, dossiersDuClassement, separerGroupesParDelegation, statutsPartages } from './classement-config';
 import { DispatchsControleurs } from './dispatchs-controleurs';
 import { DossiersCircuitListe } from './dossiers-circuit-liste';
 import { RetraitsValidation } from './retraits-validation';
@@ -60,6 +60,13 @@ export * from './classement-config';
             <div class="cnm-stat__body">
               <div class="cnm-stat__value">{{ totalDossiers() }}</div>
               <div class="cnm-stat__label">Total dossiers</div>
+              <!-- ⚠️ Demande user (2026-08-28) — la somme des tuiles ne tombe pas sur le total :
+                   « Pré-dispatch » et « Enregistrement » couvrent le même statut. La phrase est du
+                   VRAI TEXTE, pas une infobulle : une explication qu'il faut survoler pour lire
+                   n'existe pas au clavier ni au lecteur d'écran. -->
+              @if (explicationTotal(); as note) {
+                <p class="md__note-total">{{ note }}</p>
+              }
             </div>
           </div>
           @for (g of groupesVisibles(); track g.key) {
@@ -85,7 +92,13 @@ export * from './classement-config';
                   <h2 class="md__title">{{ t.libelleType || t.idTypeDossier }}</h2>
                   <span class="md__code">{{ t.idTypeDossier }}</span>
                 </div>
-                <span class="md__total">{{ total(t.idTypeDossier) }}</span>
+                <!-- Même compte que la tuile « Total dossiers », à l'échelle du type : des dossiers
+                     DISTINCTS. Le nom accessible le dit, car le seul chiffre ne le dit pas. -->
+                <span
+                  class="md__total"
+                  [attr.aria-label]="total(t.idTypeDossier) + ' dossiers distincts pour ce type'"
+                  [title]="explicationTotal() ?? ''"
+                >{{ total(t.idTypeDossier) }}</span>
               </div>
 
               <div class="md__bar" [class.md__bar--empty]="total(t.idTypeDossier) === 0" role="img" [attr.aria-label]="repartitionLabel(t.idTypeDossier)">
@@ -210,6 +223,10 @@ export * from './classement-config';
     /* Badge « tâche exercée par délégation » (spec 2026-08-14) — discret, absent chez le titulaire. */
     .md__deleg { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.45rem; border-radius: var(--radius-full); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em; background: var(--c-50); color: var(--c-800); border: 1px solid var(--c-100); vertical-align: middle; }
     .md__deleg--tuile { margin-left: 0; margin-top: 0.15rem; align-self: flex-start; }
+    /* Note explicative du total (demande user 2026-08-28) : dit pourquoi la somme des tuiles ne
+       tombe pas sur le total. Petite, mais du texte réel — et sur fond coloré de la tuile bleue,
+       donc en blanc légèrement voilé plutôt qu'en gris (le contraste doit tenir). */
+    .md__note-total { margin: 0.25rem 0 0; max-width: 22rem; font-size: 0.66rem; line-height: 1.35; font-weight: 500; color: rgba(255, 255, 255, 0.92); }
     /* Intitulé de section des lignes (demande user 2026-08-28) : sépare les tâches du profil de
        celles exercées par délégation. Étiquette de rubrique, jamais cliquable — un filet et une
        capitale espacée, rien qui puisse se confondre avec une ligne de la carte. */
@@ -339,6 +356,30 @@ export class DossiersClassement {
     let n = 0;
     for (const v of this.distincts().values()) n += v;
     return n;
+  });
+
+  /**
+   * Explication du décalage entre la somme des tuiles et le total — `null` quand il n'y en a pas.
+   *
+   * ⚠️ Demande user (2026-08-28) : « lever l'ambiguïté ». Un Président lisait 3 Pré-dispatch,
+   * 0 Dispatch, 1 Réception et 3 Enregistrement, soit 7, en face d'un total affiché à 4. Les deux
+   * chiffres sont justes mais ne comptent pas la même chose : les tuiles comptent par groupe, le
+   * total compte des dossiers DISTINCTS — et « Pré-dispatch » et « Enregistrement » couvrent le
+   * même statut. Sans un mot d'explication, l'écran donne l'impression de se tromper.
+   *
+   * La phrase n'apparaît QUE si l'écart existe réellement à l'écran : un recouvrement structurel
+   * sans dossier dans le statut concerné ne mérite pas qu'on encombre le bandeau.
+   */
+  readonly explicationTotal = computed<string | null>(() => {
+    const somme = this.groupesVisibles().reduce((s, g) => s + this.totalGroupe(g.key), 0);
+    if (somme <= this.totalDossiers()) return null;
+    const visibles = new Set(this.groupesVisibles().map((g) => g.label));
+    const partages = statutsPartages(this.groupesVisibles()).filter((p) =>
+      p.labels.every((l) => visibles.has(l)),
+    );
+    if (!partages.length) return null;
+    const paires = partages.map((p) => p.labels.join(' » et « ')).join(' ; ');
+    return `Dossiers distincts : un même dossier figure à la fois dans « ${paires} » — deux vues de la même donnée. Le total ne le compte qu'une fois.`;
   });
 
   constructor() {

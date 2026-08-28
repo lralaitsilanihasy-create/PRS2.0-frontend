@@ -155,3 +155,25 @@ export function separerGroupesParDelegation(
   if (delegues.length) sections.push({ cle: 'delegation', titre: 'Exercé par délégation', items: delegues });
   return sections;
 }
+
+/**
+ * Statuts couverts par PLUSIEURS groupes à la fois, avec les libellés des groupes concernés.
+ *
+ * ⚠️ 2026-08-28 — sert à lever une ambiguïté de lecture signalée par le pilote : la somme des
+ * tuiles ne tombe pas sur le total. Chez Président/CC, « Pré-dispatch » et « Enregistrement »
+ * couvrent tous deux `PRET_DISPATCH` — ce sont deux vues de la même donnée (« lequel dispatcher ? »
+ * d'un côté, le registre du Secrétaire de l'autre). Les mêmes dossiers y figurent donc deux fois,
+ * quand le total, lui, compte en dossiers DISTINCTS.
+ *
+ * Calculé depuis la configuration plutôt qu'écrit en dur : si un groupe change de statuts, ou si un
+ * troisième vient recouvrir les autres, l'explication affichée suit sans qu'on y pense.
+ */
+export function statutsPartages(groupes: ClassementGroupe[]): { statut: string; labels: string[] }[] {
+  const parStatut = new Map<string, string[]>();
+  for (const g of groupes) {
+    for (const s of g.statuts) parStatut.set(s, [...(parStatut.get(s) ?? []), g.label]);
+  }
+  return [...parStatut.entries()]
+    .filter(([, labels]) => labels.length > 1)
+    .map(([statut, labels]) => ({ statut, labels }));
+}
