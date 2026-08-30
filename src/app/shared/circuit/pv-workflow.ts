@@ -667,7 +667,16 @@ export class PvWorkflow {
 
   /** Ouvre / referme le panneau de désignation du co-signataire (Président et CC). */
   toggleDesignation(): void {
-    this.designationOuverte.update((v) => !v);
+    const ouverture = !this.designationOuverte();
+    this.designationOuverte.set(ouverture);
+    if (ouverture) {
+      // ⚠️ 2026-08-30 — défaut constaté à l'écran : `chargerReferentiels()` n'était appelé que par
+      // `toggleAccepter`. Un Président ou un CC qui va DIRECTEMENT à la signature — le cas normal
+      // quand le PV a été accepté lors d'une visite précédente — ouvrait donc la désignation avec
+      // une liste de contrôleurs vide, et lisait « aucun Membre disponible » alors que la
+      // commission en compte un. Les tests ne pouvaient pas le voir : ils n'ouvrent pas de panneau.
+      this.chargerReferentiels();
+    }
   }
 
   /**
