@@ -17,7 +17,7 @@
 > **Recette de la phase 2 exécutée en réel (17/08)** : connexion ✓ ; jeton introuvable côté client (ni `localStorage`, ni `sessionStorage`, ni `document.cookie`) ✓ ; **aucun en-tête `Authorization` émis** ✓ ; mutation métier acceptée avec `X-XSRF-TOKEN` posé automatiquement par Angular (`POST /notifications/lire-tout` → 200) ✓ ; session conservée au rechargement (F5) ✓ ; flux SSE authentifié par cookie, stable ✓ ; déconnexion → cookie vidé et écran protégé redirigé vers le login ✓. Le backend tourne déjà en **mode exclusif** (`token: null` dans le corps du login).
 > **Plan cookie TERMINÉ (17/08)** — phases 0 et 2 côté front (`7a252af`, `7cbaf14`), 1 et 3 côté backend (`21ef41e`, `63a6e28`). Le mode **exclusif** est actif : le jeton n'existe plus nulle part côté client, ni stocké ni dans le corps des réponses. Recette rejouée après le flip : 7/7 points, puis parcours métier vérifié sur les **6 profils** (PRMP, Secrétaire, CC, Membre, Vérificateur, Administrateur) — aucun 401/403. ⚠️ Conséquence à connaître : **aucun client non-navigateur ne peut plus obtenir de jeton** (`/api/auth/login` renvoie `token: null`) — tout harnais externe en `Authorization: Bearer` doit passer au cookie. Phase 4 (préfixe `__Host-`, refresh glissant, révocation) laissée ouverte, non exigée par l'audit.
 > **S10 clos (17/08)** : plus aucun mot de passe littéral ni IP interne dans la documentation ; exemples de login mis à jour (`token: null`, mode exclusif) avec l'avertissement pour les clients non-navigateur. Scan de contrôle sur **tout le dépôt suivi** : aucun identifiant de démonstration résiduel. **Le volet sécurité de l'audit est intégralement soldé.**
-> Restent ouverts (aucun bloquant, aucun de sécurité) : P1 (adoption écran par écran des pages), P9 (état d'erreur à étendre au-delà de 4 écrans), A2b (badges sémantiques et boutons secondaires, 17 textes), S9 (choix produit : persistance des interrupteurs de délégation conservée), T3 (e2e versionnés).
+> Restent ouverts (aucun bloquant, aucun de sécurité) : P1 (adoption écran par écran des pages), P9 (état d'erreur à étendre au-delà de 4 écrans), A2b (badges sémantiques et boutons secondaires, 17 textes), T3 (e2e versionnés).
 >
 > **2026-08-19** — `0a4fe15` **T1 entamé** : les deux barrières anti-XSS (rendu markdown des actualités, garde-fous de fichiers) sont couvertes, chaque garde vérifiée par mutation ; `862e907` règle d'ouverture de l'examen centralisée et testée (elle vivait recopiée dans trois écrans et y avait divergé) ; `1c4ab1c` **A6 clos** — `scope="col"` sur les 225 en-têtes de colonne, 31 fichiers. Suite : 42 → 83 tests.
 >
@@ -26,6 +26,8 @@
 > Gagné au passage : `toast-container`, `crud-page` et l'aperçu de `mise-a-jour-ppm` deviennent de vrais dialogues (piège de focus, restitution du focus, nom accessible) ; `dossier-consultation` perd son écouteur `document:keydown.escape` bricolé — la directive accepte désormais `[appModale]="false"` pour les conteneurs rendus tantôt en modale, tantôt intégrés à la page. Les 15 intitulés de champ signalés sont reliés à leur contrôle par `for`/`id`, dont deux dérivés d'une clé de ligne — un identifiant fixe aurait été dupliqué dans le DOM par le `@for` qui les entoure. Suite : 85 → 93 tests (la directive est désormais couverte, y compris le cas de la cible retirée du DOM par son propre gestionnaire).
 >
 > **2026-08-27 — P1 enfin adopté, en clôture de l'audit global du même jour** (`238293b` → `b103221`, 20 commits). Second chantier de la journée, distinct du précédent (ESLint a11y ci-dessus) : la pagination outillée depuis des semaines (`CrudService.listePage`) mais jamais branchée (constat P1, rouvert par l'audit global du 27/08) est désormais adoptée écran par écran. La **topbar** résout sa recherche côté serveur (`GET /api/dossiers/recherche`, au lieu de télécharger dossiers + PPM entiers à chaque frappe) ; **« Mes dossiers »** et le **tableau de bord du pipeline** paginent côté serveur ; les trois files sans endpoint paginé (à examiner, à vérifier, en attente PRMP) passent en **rendu incrémental** (`limiteRendu` + bouton « Voir plus », le DOM ne pose plus tout d'un coup — la pagination porte sur l'affichage, pas sur le réseau) ; la statistique des dispatchs cesse de redemander tous les dossiers. **P9** (état d'erreur avec Réessayer) est étendu au journal d'audit et au croisement des dispatchs. Nouvel écran **journal d'audit dédié** (`audit-logs-admin`), filtré par table/acteur/période, paginé serveur — pas un `CrudPage` générique, seule ressource en lecture seule avec ses propres filtres. Sécurité des fichiers : un **verrou ESLint** interdit désormais `URL.createObjectURL` hors de `core/securite/fichiers-surs.ts` (un seul chemin pour remettre un blob au navigateur, aperçus PDF compris). Et l'écran « changer mon mot de passe » — outillé depuis longtemps côté service, jamais relié à aucun bouton — est enfin **branché** depuis la topbar. Suite : 93 → 106 tests.
+>
+> **2026-08-28 — S9 clos, devenu sans objet** (`23d7e7f`) : le retrait des interrupteurs de délégation — la délégation ascendante redevient automatique, décision produit — supprime la couche qui écrivait `cnm.delegations-exercees.<matricule>`. La clé n'est **plus jamais écrite** ; `logout()` balaie en outre les clés résiduelles des postes déjà utilisés ([auth.service.ts:40-53](src/app/core/auth/auth.service.ts#L40), purge à supprimer quand le parc aura tourné). Le « choix produit » qui maintenait S9 ouvert (persistance voulue des interrupteurs) a été renversé — la rémanence d'identité sur poste partagé disparaît avec lui.
 
 ## Sommaire
 
@@ -95,7 +97,7 @@ Criticité : 🔴 Critique · 🟠 Élevé · 🟡 Moyen · ⚪ Faible
 | S6 | `index.html:1-19` | Aucune CSP, aucun header de sécurité déclaré | Sécurité | 🟡 | Pas de défense en profondeur contre S2 |
 | S7 | `pv-page.ts:506-555` | `document.write` avec interpolations brutes (`${titre}`) dans une fenêtre same-origin | Sécurité | 🟡 | XSS si référence hostile |
 | S8 | `index.html:9-14` | Google Fonts (11 fichiers de police) : tiers sur le chemin critique + transfert d'IP hors UE | Sécurité/RGPD/Perf | 🟡 | Contentieux RGPD établi ; render-blocking |
-| S9 | `permissions.service.ts:130` + `auth.service.ts:149-153` | `logout()` ne purge pas `cnm.delegations-exercees.<matricule>` | RGPD | 🟡 | Rémanence d'identité sur poste partagé |
+| S9 ✅ | `permissions.service.ts:130` + `auth.service.ts:149-153` | `logout()` ne purge pas `cnm.delegations-exercees.<matricule>` — **sans objet depuis le 28/08** (`23d7e7f`) : les interrupteurs sont supprimés, la clé n'est plus écrite, et `logout()` balaie les résidus | RGPD | 🟡 | Rémanence d'identité sur poste partagé |
 | S10 ✅ | `docs/api-endpoints.md` | Identifiants de démo réels committés — **corrigé le 17/08** : mots de passe remplacés par des libellés neutres, IP interne d'exemple remplacée par la plage de documentation (RFC 5737) | Sécurité | 🟡 | Comptes valides exposés dans le dépôt |
 | S11 | `.gitignore` | `screenshots/` et `output/` non ignorés (captures avec noms/matricules) | RGPD | 🟡 | Commit accidentel de données personnelles |
 | S12 | `notifications.store.ts:73-98` | SSE en `fetch` brut hors interceptors : un 401 reboucle toutes les 5 s sans déconnecter | Sécurité | ⚪ | Session zombie côté flux |
@@ -217,7 +219,7 @@ Aucun timer de purge, pas de lecture de la claim `exp`, pas de refresh. L'expira
 
 ### 5.5 🟡 RGPD (S9-S11)
 
-- `logout()` ([auth.service.ts:149-153](src/app/core/auth/auth.service.ts#L149)) ne purge que `cnm.session` : la clé `cnm.delegations-exercees.<MATRICULE>` **survit à la déconnexion** et révèle l'identité du dernier utilisateur du poste.
+- ✅ *(clos le 28/08, sans objet — voir le suivi en tête)* `logout()` ([auth.service.ts:149-153](src/app/core/auth/auth.service.ts#L149)) ne purge que `cnm.session` : la clé `cnm.delegations-exercees.<MATRICULE>` **survit à la déconnexion** et révèle l'identité du dernier utilisateur du poste.
 - Identifiants de démonstration réels committés dans `docs/api-endpoints.md:293,313,508,2962` (+ un JWT d'exemple tronqué l.297).
 - `screenshots/` et `output/` (captures d'écrans avec noms/matricules, présentations) ne sont **ni ignorés ni suivis** → risque de commit accidentel. À ajouter au `.gitignore`.
 - Bon point : **une seule** occurrence `console.*` dans tout `src/` (`main.ts:6`, erreur de bootstrap), aucune télémétrie, aucun tracker.
@@ -341,7 +343,7 @@ private armerExpiration(expiresAt: number): void {
 ```
 (Et à terme : cookie `HttpOnly; Secure; SameSite=Strict` posé par le backend plutôt que `localStorage` ; à défaut, `remember = false` par défaut.)
 
-### 9.3 Purge complète au logout (S9)
+### 9.3 Purge complète au logout (S9) — ✅ sans objet depuis le 28/08 (la clé n'est plus écrite ; une purge de transition balaie les résidus)
 
 ```ts
 logout(): void {
@@ -451,7 +453,7 @@ jobs:
 | `git rm --cached .claude/settings.local.json` + `.gitignore` (+ `screenshots/`, `output/`) + **rotation du mot de passe postgres** | S1, S11 | 15 min |
 | `ng update @angular/cli @angular/core` puis `npm update` → 0 vulnérabilité | D1 | 30 min |
 | Helper `urlBlobSure()` substitué aux 10 `createObjectURL` | S2 | 2 h |
-| Timer de déconnexion à l'expiration + purge `cnm.*` au logout | S5, S9 | 1 h |
+| Timer de déconnexion à l'expiration + purge `cnm.*` au logout — S5 fait le 16/08, S9 sans objet le 28/08 | S5, S9 | 1 h |
 | Bump de `revision` seulement si le compteur change ; polling suspendu si SSE actif / onglet caché | P3 | 1 h |
 | `aria-label` sur les 7 boutons ✕ ; `aria-labelledby` sur les 28 dialogs (titres déjà présents) ; `aria-label` dynamique sur la cloche | A5, A6 | 2 h |
 | Supprimer le double chargement (`paramMap` seul, l'`effect` avec `skip(1)`) | P7 | 1 h |
