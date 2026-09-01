@@ -59,7 +59,7 @@ import { StatutBadge } from '../../shared/circuit';
                   @if (pv().idAvis) {
                     <span [class]="avisClasse(pv().idAvis)">{{ avisLabel(pv().idAvis) }}</span>
                   } @else {
-                    <span class="dpv-attente">En attente de clôture de navette</span>
+                    <span class="dpv-attente">En attente du visa</span>
                   }
                 </span>
               </div>
@@ -391,7 +391,7 @@ export class DetailPvModal implements OnInit {
       });
   }
 
-  /** Libellé de l'avis — « — » tant qu'il n'est pas posé (clôture de navette, Président/CC). */
+  /** Libellé de l'avis — « — » sur un PV de l'ancien contrat sans avis (le visa le fournira). */
   avisLabel(id?: string): string {
     return id ? this.avisMap().get(id) ?? id : '—';
   }

@@ -128,7 +128,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                           @if (pv.idAvis) {
                             <span [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span>
                           } @else {
-                            <span class="pv-entete__attente">En attente de clôture de navette</span>
+                            <span class="pv-entete__attente">En attente du visa</span>
                           }
                         </span>
                       </div>
@@ -521,7 +521,7 @@ export class MembrePv {
       ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract
       : '—';
   }
-  /** Localité du dossier du PV (candidats Secrétaire de séance à la clôture de navette). */
+  /** Localité du dossier du PV (candidats Secrétaire de séance et co-signataire au visa). */
   dossierLocalite(pv: PvExamen): string | null {
     return this.dossierByExamen().get(pv.idExamen)?.idLocalite ?? null;
   }
@@ -633,7 +633,7 @@ export class MembrePv {
   label(pv: PvExamen): string {
     return PV_STATUT_LABELS[pv.statutPv];
   }
-  /** Libellé de l'avis — « — » tant qu'il n'est pas posé (clôture de navette, Président/CC). */
+  /** Libellé de l'avis — « — » sur un PV de l'ancien contrat sans avis (le visa le fournira). */
   avisLabel(id?: string): string {
     return id ? this.avisMap().get(id) ?? id : '—';
   }

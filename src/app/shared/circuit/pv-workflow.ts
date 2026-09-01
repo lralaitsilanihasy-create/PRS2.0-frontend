@@ -11,24 +11,28 @@ import { CanDirective } from '../security/can.directive';
 import { StatutBadge } from './statut-badge';
 import {
   PV_STATUT_LABELS,
-  peutAccepter,
   peutRetourner,
   peutSAutoProposer,
   peutSigner,
   peutSoumettre,
+  peutViser,
   pvSignataireRole,
 } from './circuit-workflow';
 
 /**
- * Actions de workflow d'un PV d'examen (soumettre / retourner / accepter / signer),
+ * Actions de workflow d'un PV d'examen (soumettre / retourner / viser / signer),
  * reflétant la machine d'états du §3. Chaque action est proposée seulement si :
  *  - le statut courant l'autorise (état), ET
  *  - le profil possède la capacité correspondante (`*appCan`).
  *
- * ⚠️ Règle modifiée (2026-08-01) — CLÔTURE DE NAVETTE : « Accepter le projet » (Président/CC)
- * renseigne l'avis global + le Secrétaire de séance (obligatoires, panneau dédié) ; l'action
- * « Lettre de renvoi » (brouillon + soumission) est disponible à cette même étape, pour les
- * mêmes rôles. Le Membre ne pose plus ni avis ni secrétaire.
+ * ⚠️ Visa unique (2026-08-31) — la clôture de navette est UN SEUL GESTE, le « visa », qui remplace
+ * « Accepter le projet » puis « Signer et désigner… » : l'avis du Membre (émis à la soumission de
+ * l'examen, modifiable ici), le Secrétaire de séance, le Membre co-signataire, et la part de
+ * signature du rôle, en un POST. Réservé au DISPATCHEUR du dossier — contrainte d'IDENTITÉ (403
+ * serveur, délégation comprise : le dispatcheur suit qui a POSTÉ le dispatch, pas le rang — un
+ * Président compétent partout est refusé si c'est le CC qui a dispatché, et l'écran doit en écrire
+ * la raison, sinon elle paraît arbitraire). La « Lettre de renvoi » reste disponible à cette étape,
+ * au rôle. `signer` ne concerne plus que la part MEMBRE, ouverte APRÈS le visa (ordre B conservé).
  *
  * Le composant exécute l'action puis émet le PV mis à jour via `(changed)`.
  * Le backend valide réellement la transition (409 en cas d'enchaînement interdit).
@@ -50,45 +54,59 @@ import {
             Soumettre le projet
           </button>
         }
-        @if (canAccepter()) {
-          <button *appCan="'PV_ACCEPTER'" type="button" class="btn btn-success" (click)="toggleAccepter()">
-            Accepter le projet
-          </button>
+        @if (canViser()) {
+          @if (estDispatcheur()) {
+            <button *appCan="'PV_SIGNER'" type="button" class="btn btn-success" (click)="toggleViser()">
+              {{ pv().statutPv === 'PROJET_ACCEPTE' ? 'Compléter le visa…' : 'Viser…' }}
+            </button>
+          } @else if (nomDispatcheur()) {
+            <!-- ⚠️ Contrainte d'identité : le dispatcheur suit qui a POSTÉ le dispatch, pas le rang.
+                 Sans cette raison écrite, le refus paraîtrait arbitraire (recette backend). -->
+            <span class="pv-workflow__deja-signe">
+              Seul <strong>{{ nomDispatcheur() }}</strong> — qui a effectué le dispatch de ce dossier —
+              peut viser ce PV.
+            </span>
+          }
         }
         @if (canRetourner()) {
           <button *appCan="'PV_RETOURNER'" type="button" class="btn btn-warning" (click)="toggleRetour()">
             Retourner pour rectification
           </button>
         }
-        @if (canAccepter()) {
+        @if (canLettre()) {
           <button *appCan="'PV_ACCEPTER'" type="button" class="btn btn-outline" (click)="toggleLettre()">
             Lettre de renvoi
           </button>
         }
-        @if (canSigner()) {
+        @if (canSignerMembre()) {
           <!-- ⚠️ Règle ajoutée (2026-08-02) : une signature par rôle — déjà signé ⇒ bouton désactivé.
-               ⚠️ Co-signature (2026-08-28) : le Président / CC passe par le panneau de désignation ;
-               le Membre désigné signe directement. Les deux encarts d'auto-co-signature ont disparu
-               avec la règle qui les portait. -->
+               ⚠️ Visa unique (2026-08-31) : seule la part MEMBRE passe encore par ce bouton — le
+               Président / CC pose la sienne au visa. Elle revient au Membre DÉSIGNÉ, à lui seul. -->
           <!-- [disabled] pendant la requête : garde anti-double-clic (le serveur pose un verrou
                pessimiste en miroir). -->
           <button *appCan="'PV_SIGNER'" type="button" class="btn btn-primary"
-            [disabled]="dejaSigne() || saving() || partMembreFermee()"
+            [disabled]="dejaSigne() || saving() || partMembreFermee() || pasLeDesigne()"
             [title]="dejaSigne()
               ? 'Vous avez déjà signé ce PV — en attente des autres signataires.'
               : partMembreFermee()
-                ? 'La part Membre n’est pas encore ouverte : le Président ou le Chef de commission doit d’abord signer et désigner le co-signataire.'
-                : ''"
-            (click)="doitDesigner() ? toggleDesignation() : signer()">
-            {{ dejaSigne() ? 'Signé ✓' : saving() ? 'Signature…' : doitDesigner() ? 'Signer et désigner…' : 'Signer' }}
+                ? 'La part Membre n’est pas encore ouverte : le visa du Président ou du Chef de commission désigne d’abord le co-signataire.'
+                : pasLeDesigne()
+                  ? 'La part Membre revient au Membre désigné au visa.'
+                  : ''"
+            (click)="signer()">
+            {{ dejaSigne() ? 'Signé ✓' : saving() ? 'Signature…' : 'Signer' }}
           </button>
           @if (dejaSigne()) {
             <span class="pv-workflow__deja-signe">Vous avez déjà signé — en attente des autres signataires.</span>
           } @else if (partMembreFermee()) {
-            <!-- ⚠️ Ordre B — la part Membre ne s'ouvre qu'après la désignation par le P/CC. -->
+            <!-- ⚠️ Ordre B conservé — la part Membre ne s'ouvre qu'après le visa (qui désigne). -->
             <span class="pv-workflow__deja-signe">
-              La <strong>part Membre</strong> n'est pas encore ouverte : le Président ou le Chef de
-              commission doit d'abord signer et désigner le Membre co-signataire.
+              La <strong>part Membre</strong> n'est pas encore ouverte : le visa du Président ou du
+              Chef de commission désigne d'abord le Membre co-signataire.
+            </span>
+          } @else if (pasLeDesigne()) {
+            <span class="pv-workflow__deja-signe">
+              La part Membre revient à <strong>{{ nomMembreDesigne() }}</strong>, désigné co-signataire au visa.
             </span>
           } @else if (estDesigne()) {
             <span class="pv-workflow__deja-signe">
@@ -96,46 +114,11 @@ import {
               <strong>part Membre</strong> et clôturera la signature.
             </span>
           }
-          @if (attenteCoSignature()) {
-            <span class="pv-workflow__deja-signe">
-              En attente de la co-signature de <strong>{{ nomMembreDesigne() }}</strong>.
-            </span>
-          }
         }
-
-        <!-- ⚠️ Co-signature (2026-08-28) — le Président / CC désigne le Membre appelé à co-signer,
-             au moment de signer. Obligatoire côté serveur : Membre de la LOCALITÉ du dossier et
-             différent du signataire (le PV est co-signé par deux personnes distinctes). -->
-        @if (designationOuverte()) {
-          <div class="pv-workflow__retour pv-workflow__retour--accept cnm-form">
-            <span class="pv-workflow__retour-label">Signature — désignation du Membre co-signataire</span>
-            <span class="form-hint">
-              Votre signature pose votre part. Le Membre que vous désignez ici posera la part Membre :
-              le PV est signé par deux personnes distinctes.
-            </span>
-            <label class="form-group">
-              <span class="form-label">Membre co-signataire *</span>
-              <select class="form-control" [value]="membreChoisi() ?? ''"
-                (change)="membreChoisi.set($any($event.target).value || null)">
-                <option value="" [selected]="!membreChoisi()">— Sélectionner —</option>
-                @for (m of membreOptions(); track m.id) {
-                  <option [value]="m.id" [selected]="m.id === membreChoisi()">{{ m.label }}</option>
-                }
-              </select>
-            </label>
-            @if (!membreOptions().length) {
-              <span class="form-hint pv-workflow__alerte" role="status">
-                Aucun Membre de la localité du dossier n'est disponible pour co-signer. Le PV ne peut pas
-                être signé tant qu'un Membre n'y est pas rattaché.
-              </span>
-            }
-            <div class="pv-workflow__retour-actions">
-              <button type="button" class="btn btn-outline" (click)="toggleDesignation()">Annuler</button>
-              <button type="button" class="btn btn-primary" [disabled]="!membreChoisi() || saving()" (click)="signer()">
-                {{ saving() ? 'Signature…' : 'Signer et désigner' }}
-              </button>
-            </div>
-          </div>
+        @if (attenteCoSignature()) {
+          <span class="pv-workflow__deja-signe">
+            En attente de la co-signature de <strong>{{ nomMembreDesigne() }}</strong>.
+          </span>
         }
       </div>
 
@@ -169,10 +152,17 @@ import {
         </div>
       }
 
-      <!-- ⚠️ Clôture de la navette (Président/CC) : avis global + Secrétaire de séance obligatoires. -->
-      @if (accepterOuvert()) {
+      <!-- ⚠️ Visa unique (2026-08-31) — clôture de la navette EN UN GESTE (Président/CC dispatcheur) :
+           avis du Membre modifiable, Secrétaire de séance et Membre co-signataire obligatoires, et la
+           part de signature du rôle posée dans le même POST. -->
+      @if (viserOuvert()) {
         <div class="pv-workflow__retour pv-workflow__retour--accept cnm-form">
-          <span class="pv-workflow__retour-label">Clôture de la navette — avis global et Secrétaire de séance</span>
+          <span class="pv-workflow__retour-label">Visa — clôture de la navette</span>
+          <span class="form-hint">
+            Le visa clôt la navette en un geste : il arrête l'avis, désigne le Secrétaire de séance et
+            le Membre co-signataire, et pose <strong>votre part de signature</strong>. Le Membre désigné
+            posera la part Membre : le PV est signé par deux personnes distinctes.
+          </span>
           @if (avisSuggereHint(); as hint) { <span class="form-hint">{{ hint }}</span> }
           <!-- [selected] sur les options : les référentiels arrivent APRÈS l'ouverture du panneau,
                [value] seul ne serait pas ré-appliqué au rendu des options (pré-sélection perdue). -->
@@ -184,6 +174,9 @@ import {
                 <option [value]="a.idAvis" [selected]="a.idAvis === avisChoisi()">{{ a.libelleAvis || a.idAvis }}</option>
               }
             </select>
+            @if (pv().idAvis) {
+              <span class="form-hint">Pré-rempli avec l'avis émis par le Membre à l'examen — le changer ici le remplace.</span>
+            }
           </label>
           <label class="form-group">
             <span class="form-label">Secrétaire de séance *</span>
@@ -195,11 +188,27 @@ import {
             </select>
             <span class="form-hint">Vérificateur de la localité du dossier, désigné au PV.</span>
           </label>
-          @if (accepterErreur()) { <span class="form-error">{{ accepterErreur() }}</span> }
+          <label class="form-group">
+            <span class="form-label">Membre co-signataire *</span>
+            <select class="form-control" [value]="membreChoisi() ?? ''"
+              (change)="membreChoisi.set($any($event.target).value || null)">
+              <option value="" [selected]="!membreChoisi()">— Sélectionner —</option>
+              @for (m of membreOptions(); track m.id) {
+                <option [value]="m.id" [selected]="m.id === membreChoisi()">{{ m.label }}</option>
+              }
+            </select>
+          </label>
+          @if (!membreOptions().length) {
+            <span class="form-hint pv-workflow__alerte" role="status">
+              Aucun Membre de la localité du dossier n'est disponible pour co-signer. Le PV ne peut pas
+              être visé tant qu'un Membre n'y est pas rattaché.
+            </span>
+          }
+          @if (viserErreur()) { <span class="form-error">{{ viserErreur() }}</span> }
           <div class="pv-workflow__retour-actions">
-            <button type="button" class="btn btn-outline" (click)="toggleAccepter()">Annuler</button>
-            <button type="button" class="btn btn-success" [disabled]="saving()" (click)="confirmerAcceptation()">
-              {{ saving() ? 'Acceptation…' : 'Accepter le projet' }}
+            <button type="button" class="btn btn-outline" (click)="toggleViser()">Annuler</button>
+            <button type="button" class="btn btn-success" [disabled]="saving()" (click)="confirmerVisa()">
+              {{ saving() ? 'Visa…' : 'Viser et signer ma part' }}
             </button>
           </div>
         </div>
@@ -344,15 +353,15 @@ export class PvWorkflow {
 
   readonly retourOuvert = signal(false);
   readonly soumettreOuvert = signal(false);
-  /** Panneau « clôture de navette » (avis + secrétaire, Président/CC). */
-  readonly accepterOuvert = signal(false);
+  /** Panneau « visa » (avis + secrétaire + co-signataire + part de signature, Président/CC dispatcheur). */
+  readonly viserOuvert = signal(false);
   /** Panneau « lettre de renvoi » (Président/CC, même étape). */
   readonly lettreOuvert = signal(false);
   readonly saving = signal(false);
 
   readonly avisChoisi = signal<string | null>(null);
   readonly secretaireChoisi = signal<string | null>(null);
-  readonly accepterErreur = signal<string | null>(null);
+  readonly viserErreur = signal<string | null>(null);
   readonly corpsLettre = signal('');
   /** Lettres de renvoi de l'examen du PV (affichées dans le panneau lettre). */
   readonly lettres = signal<LettreRenvoi[]>([]);
@@ -391,8 +400,31 @@ export class PvWorkflow {
   readonly statutLabel = computed(() => PV_STATUT_LABELS[this.pv().statutPv]);
   readonly canSoumettre = computed(() => peutSoumettre(this.pv().statutPv));
   readonly canRetourner = computed(() => peutRetourner(this.pv().statutPv));
-  readonly canAccepter = computed(() => peutAccepter(this.pv().statutPv));
-  readonly canSigner = computed(() => peutSigner(this.pv().statutPv));
+  /**
+   * ⚠️ Visa unique (2026-08-31) — le visa s'offre au rôle P/CC tant que sa part n'est pas posée :
+   * sur PROJET_SOUMIS (cas normal) et sur PROJET_ACCEPTE (PV accepté sous l'ancien contrat, à
+   * compléter). L'identité du dispatcheur est vérifiée à part (`estDispatcheur`) pour pouvoir
+   * ÉCRIRE la raison du refus au lieu de faire disparaître le bouton sans explication.
+   */
+  readonly canViser = computed(() => {
+    const r = this.roleSignature();
+    return peutViser(this.pv().statutPv) && (r === 'PRESIDENT' || r === 'CC') && !this.dejaSigne();
+  });
+  /**
+   * Le connecté est-il LE dispatcheur du dossier (`imDispatcheur` du DTO) ? Contrainte d'IDENTITÉ
+   * (403 serveur même sous délégation active). DTO muet (backend antérieur) → optimiste, le serveur
+   * tranche — même philosophie que `DELEGATIONS_OPTIMISTES`.
+   */
+  readonly estDispatcheur = computed(() => {
+    const d = this.pv().imDispatcheur;
+    return d == null || d === this.auth.ref();
+  });
+  /** Nom du dispatcheur, servi par le backend — pour écrire la raison du refus. */
+  readonly nomDispatcheur = computed(() => this.pv().nomDispatcheur || this.pv().imDispatcheur || '');
+  /** La lettre de renvoi reste une issue de la navette ouverte au rôle (pas au seul dispatcheur). */
+  readonly canLettre = computed(() => this.pv().statutPv === 'PROJET_SOUMIS');
+  /** Part MEMBRE seule — le Président/CC pose la sienne au visa. */
+  readonly canSignerMembre = computed(() => peutSigner(this.pv().statutPv) && this.roleSignature() === 'MEMBRE');
   /** L'utilisateur courant est l'ATTRIBUTAIRE du PV (`imCtrlMembre` = son matricule). */
   // ⚠️ 2026-08-28 — `estAttributaire` a été retiré : il servait à faire signer la part Membre par
   // l'attributaire. Celle-ci revient désormais au Membre DÉSIGNÉ (voir `estDesigne`) ; `imCtrlMembre`
@@ -407,24 +439,20 @@ export class PvWorkflow {
    */
   readonly roleSignature = computed<PvSignataireRole | null>(() => pvSignataireRole(this.auth.role()));
 
-  /**
-   * ⚠️ Ordre B (arbitrage du pilote, 2026-08-28) — le Président / CC DÉSIGNE le Membre co-signataire
-   * au moment de signer. Le champ est obligatoire côté serveur (`designerMembreCoSignataire`, 409
-   * si absent), doit viser un Membre de la localité du dossier et différer du signataire.
-   */
-  readonly doitDesigner = computed(() => {
-    const r = this.roleSignature();
-    return r === 'PRESIDENT' || r === 'CC';
-  });
-  /** Membre déjà désigné sur ce PV — `null` tant que le P/CC n'a pas signé (ou PV d'avant la règle). */
+  /** Membre déjà désigné sur ce PV — `null` tant que le P/CC n'a pas visé (ou PV d'avant la règle). */
   readonly membreDesigne = computed(() => this.pv().imMembreCoSignataire ?? null);
   /** Nom du Membre désigné, servi par le backend — évite un appel pour l'afficher. */
   readonly nomMembreDesigne = computed(() => this.pv().nomMembreCoSignataire || this.membreDesigne() || '');
   /** L'utilisateur courant est le Membre désigné : la part Membre lui revient, à lui seul. */
   readonly estDesigne = computed(() => !!this.membreDesigne() && this.membreDesigne() === this.auth.ref());
+  /** Un autre Membre a été désigné : la part n'est pas la sienne (403 serveur) — raison écrite. */
+  readonly pasLeDesigne = computed(
+    () => this.roleSignature() === 'MEMBRE' && !!this.membreDesigne() && !this.estDesigne(),
+  );
   /**
-   * La part Membre est-elle encore fermée ? Sous l'ordre B, elle ne s'ouvre qu'APRÈS la désignation :
-   * un Membre qui signerait spontanément avant viderait de son objet le choix du P/CC (409 serveur).
+   * La part Membre est-elle encore fermée ? Sous l'ordre B, elle ne s'ouvre qu'APRÈS le visa (qui
+   * désigne) : un Membre qui signerait spontanément avant viderait de son objet le choix du P/CC
+   * (409 serveur).
    */
   readonly partMembreFermee = computed(() => this.roleSignature() === 'MEMBRE' && !this.membreDesigne());
   /** Part de rôle posée, en attente de la co-signature du Membre désigné. */
@@ -432,9 +460,7 @@ export class PvWorkflow {
     () => !!this.membreDesigne() && this.pv().dateSignatureMembre == null && this.roleSignature() !== 'MEMBRE',
   );
 
-  /** Panneau de désignation ouvert (le P/CC choisit son co-signataire avant de signer). */
-  readonly designationOuverte = signal(false);
-  /** Matricule du Membre choisi dans le panneau. */
+  /** Matricule du Membre co-signataire choisi dans le panneau de visa. */
   readonly membreChoisi = signal<string | null>(null);
 
   /**
@@ -497,20 +523,26 @@ export class PvWorkflow {
     // asynchrone du parent), pré-sélectionne l'avis suggéré tant que l'utilisateur n'a rien choisi.
     effect(() => {
       const suggestion = this.avisSuggere();
-      if (suggestion && this.accepterOuvert() && !this.avisChoisi()) {
+      if (suggestion && this.viserOuvert() && !this.avisChoisi()) {
         this.avisChoisi.set(suggestion);
       }
     });
   }
 
-  /** Ouvre le panneau de clôture (pré-rempli du PV, sinon de la suggestion) et charge les référentiels. */
-  toggleAccepter(): void {
-    const opening = !this.accepterOuvert();
-    this.accepterOuvert.set(opening);
+  /**
+   * Ouvre le panneau de visa (pré-rempli du PV — avis du Membre, secrétaire éventuel — sinon de la
+   * suggestion) et charge les référentiels.
+   * ⚠️ 2026-08-30 — leçon conservée du panneau de désignation : charger les référentiels À CHAQUE
+   * ouverture de panneau, quel que soit le chemin d'arrivée, sinon liste vide et fausse impasse.
+   */
+  toggleViser(): void {
+    const opening = !this.viserOuvert();
+    this.viserOuvert.set(opening);
     if (opening) {
-      this.accepterErreur.set(null);
+      this.viserErreur.set(null);
       this.avisChoisi.set(this.pv().idAvis ?? this.avisSuggere());
       this.secretaireChoisi.set(this.pv().idSecretaireSeance ?? null);
+      this.membreChoisi.set(null);
       this.chargerReferentiels();
     }
   }
@@ -582,32 +614,47 @@ export class PvWorkflow {
       });
   }
 
-  /** Clôture de la navette : avis global + Secrétaire de séance OBLIGATOIRES (règle 2026-08-01). */
-  confirmerAcceptation(): void {
+  /**
+   * ⚠️ Visa unique (2026-08-31) — clôture de la navette en UN POST : avis (toujours envoyé, la
+   * valeur affichée fait foi — la renvoyer identique est sans effet), Secrétaire de séance et
+   * Membre co-signataire obligatoires, part de signature du rôle posée par le serveur.
+   */
+  confirmerVisa(): void {
     const acteur = this.acteur();
     if (!acteur) {
       return;
     }
     const idAvis = this.avisChoisi();
     if (!idAvis) {
-      this.accepterErreur.set("Sélectionnez l'avis global (obligatoire pour clore la navette).");
+      this.viserErreur.set("Sélectionnez l'avis global (obligatoire pour viser).");
       return;
     }
     const idSecretaireSeance = this.secretaireChoisi();
     if (!idSecretaireSeance) {
-      this.accepterErreur.set('Désignez le Secrétaire de séance (Vérificateur de la localité du dossier).');
+      this.viserErreur.set('Désignez le Secrétaire de séance (Vérificateur de la localité du dossier).');
       return;
     }
-    this.accepterErreur.set(null);
+    const imMembreCoSignataire = this.membreChoisi();
+    if (!imMembreCoSignataire) {
+      this.viserErreur.set('Désignez le Membre appelé à co-signer le PV.');
+      return;
+    }
+    this.viserErreur.set(null);
     this.saving.set(true);
-    this.pvService.accepter(this.pv().idPv, { imActeur: acteur, idAvis, idSecretaireSeance }).subscribe({
-      next: (pv) => {
-        this.saving.set(false);
-        this.accepterOuvert.set(false);
-        this.onSuccess(pv, 'Projet accepté — navette close (avis et secrétaire posés).');
-      },
-      error: () => this.saving.set(false), // 400/409 → toast centralisé (message backend)
-    });
+    this.pvService
+      .viser(this.pv().idPv, { imActeur: acteur, idAvis, idSecretaireSeance, imMembreCoSignataire })
+      .subscribe({
+        next: (pv) => {
+          this.saving.set(false);
+          this.viserOuvert.set(false);
+          this.membreChoisi.set(null);
+          this.onSuccess(
+            pv,
+            `PV visé — votre part est signée ; en attente de la co-signature de ${this.nomDe(imMembreCoSignataire)}.`,
+          );
+        },
+        error: () => this.saving.set(false), // 400/403/409 → toast centralisé (message backend)
+      });
   }
 
   retourner(commentaire: string): void {
@@ -665,59 +712,31 @@ export class PvWorkflow {
     });
   }
 
-  /** Ouvre / referme le panneau de désignation du co-signataire (Président et CC). */
-  toggleDesignation(): void {
-    const ouverture = !this.designationOuverte();
-    this.designationOuverte.set(ouverture);
-    if (ouverture) {
-      // ⚠️ 2026-08-30 — défaut constaté à l'écran : `chargerReferentiels()` n'était appelé que par
-      // `toggleAccepter`. Un Président ou un CC qui va DIRECTEMENT à la signature — le cas normal
-      // quand le PV a été accepté lors d'une visite précédente — ouvrait donc la désignation avec
-      // une liste de contrôleurs vide, et lisait « aucun Membre disponible » alors que la
-      // commission en compte un. Les tests ne pouvaient pas le voir : ils n'ouvrent pas de panneau.
-      this.chargerReferentiels();
-    }
-  }
-
   /**
-   * Signe la part du profil courant. Pour le Président et le CC, la désignation du Membre
-   * co-signataire accompagne la signature dans le MÊME appel (`imMembreCoSignataire`) — c'est le
-   * contrat serveur, et cela évite un état intermédiaire « désigné mais non signé ».
+   * Signe la part MEMBRE — la seule qui passe encore par `signer` depuis le visa unique
+   * (2026-08-31) : le Président / CC pose la sienne au visa, et un `signer(PRESIDENT|CC)`
+   * recevrait 409 du serveur.
    */
   signer(): void {
     const acteur = this.acteur();
     if (!acteur) {
       return;
     }
-    const role = this.roleSignature();
-    if (!role) {
-      this.toast.error("Votre profil n'est pas signataire du PV.");
-      return;
-    }
-    const designe = this.doitDesigner() ? this.membreChoisi() : null;
-    if (this.doitDesigner() && !designe) {
-      this.toast.error('Désignez le Membre appelé à co-signer le PV avant de signer.');
+    if (this.roleSignature() !== 'MEMBRE') {
+      this.toast.error('Votre part de signature se pose au visa, pas ici.');
       return;
     }
     this.saving.set(true);
-    this.pvService
-      .signer(this.pv().idPv, { imActeur: acteur, role, ...(designe ? { imMembreCoSignataire: designe } : {}) })
-      .subscribe({
-        next: (pv) => {
-          this.saving.set(false);
-          this.designationOuverte.set(false);
-          this.membreChoisi.set(null);
-          this.onSuccess(
-            pv,
-            pv.statutPv === 'SIGNE'
-              ? 'PV signé.'
-              : designe
-                ? `Signature enregistrée — en attente de la co-signature de ${this.nomDe(designe)}.`
-                : 'Signature enregistrée — en attente des autres parts.',
-          );
-        },
-        error: () => this.saving.set(false), // 409/403 → toast centralisé
-      });
+    this.pvService.signer(this.pv().idPv, { imActeur: acteur, role: 'MEMBRE' }).subscribe({
+      next: (pv) => {
+        this.saving.set(false);
+        this.onSuccess(
+          pv,
+          pv.statutPv === 'SIGNE' ? 'PV signé.' : 'Signature enregistrée — en attente des autres parts.',
+        );
+      },
+      error: () => this.saving.set(false), // 409/403 → toast centralisé
+    });
   }
 
   /** Nom lisible d'un matricule parmi les options de co-signature (repli : le matricule). */

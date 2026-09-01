@@ -2,12 +2,12 @@ import {
   CIRCUIT_ETAPES,
   PV_STATUT_LABELS,
   etapeIndexForDossier,
-  peutAccepter,
   peutRetourner,
   peutSAutoProposer,
   examenRectifiable,
   peutSigner,
   peutSoumettre,
+  peutViser,
   pvSignataireRole,
   statutSeverity,
 } from './circuit-workflow';
@@ -90,14 +90,22 @@ describe('circuit-workflow', () => {
       expect(peutSoumettre('SIGNE')).toBe(false);
     });
 
-    it('retourner et accepter : seulement PROJET_SOUMIS', () => {
+    it('retourner : seulement PROJET_SOUMIS', () => {
       expect(peutRetourner('PROJET_SOUMIS')).toBe(true);
-      expect(peutAccepter('PROJET_SOUMIS')).toBe(true);
       expect(peutRetourner('BROUILLON')).toBe(false);
-      expect(peutAccepter('PROJET_ACCEPTE')).toBe(false);
     });
 
-    it('signer : seulement PROJET_ACCEPTE', () => {
+    // ⚠️ Visa unique (2026-08-31) : PROJET_SOUMIS (cas normal) + PROJET_ACCEPTE (PV accepté sous
+    // l'ancien contrat, part du rôle à compléter — le composant vérifie la part et le dispatcheur).
+    it('viser : PROJET_SOUMIS, et PROJET_ACCEPTE en transition', () => {
+      expect(peutViser('PROJET_SOUMIS')).toBe(true);
+      expect(peutViser('PROJET_ACCEPTE')).toBe(true);
+      expect(peutViser('BROUILLON')).toBe(false);
+      expect(peutViser('EN_RECTIFICATION')).toBe(false);
+      expect(peutViser('SIGNE')).toBe(false);
+    });
+
+    it('signer (part Membre) : seulement PROJET_ACCEPTE', () => {
       expect(peutSigner('PROJET_ACCEPTE')).toBe(true);
       expect(peutSigner('PROJET_SOUMIS')).toBe(false);
       expect(peutSigner('SIGNE')).toBe(false);

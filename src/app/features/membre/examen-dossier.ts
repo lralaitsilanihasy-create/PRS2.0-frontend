@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Observable, Subject, catchError, concatMap, forkJoin, map, of, shareReplay, switchMap } from 'rxjs';
@@ -67,12 +67,13 @@ interface RowState {
  * (en-tête + lignes de marché en libellés, listes scopées filtrées par idDossier, libellés
  * en cache) + formulaire d'examen (grille des points de contrôle, synthèse des observations).
  *
- * ⚠️ Règle modifiée (2026-08-01) — le Membre ne renseigne QUE la synthèse : l'avis global, le
- * Secrétaire de séance et la lettre de renvoi appartiennent à la CLÔTURE DE NAVETTE du projet
- * de PV (écran « Projets de PV », Président/CC uniquement).
+ * ⚠️ Visa unique (2026-08-31, inverse la règle du 01/08) — le Membre ÉMET SON AVIS à la fin de
+ * l'examen (pré-rempli par la suggestion, modifiable, obligatoire à la soumission) ; le Président
+ * ou le CC pourra l'ajuster au VISA qui clôt la navette (écran « Projets de PV »), où se désignent
+ * aussi le Secrétaire de séance et le Membre co-signataire. La lettre de renvoi reste au P/CC.
  *
  * Enregistrement : POST /examens → POST /examen-details ×N + POST /pv-examens (BROUILLON),
- * ce qui matérialise le « projet de PV » (points de contrôle + synthèse, sans avis). Le backend
+ * ce qui matérialise le « projet de PV » (points de contrôle + synthèse + avis). Le backend
  * reste l'autorité (409 si non DISPATCHE, 403 hors localité) ; erreurs via l'intercepteur.
  */
 @Component({
@@ -320,15 +321,26 @@ interface RowState {
                 @if (estEtapeAvis()) {
                   @if (syntheseEditable()) {
                     <h3 class="exam__sub">Synthèse des observations (projet de PV)</h3>
-                    <p class="form-hint">Tous les points de contrôle ont été traités. Le projet de PV = résultats des points de contrôle + votre synthèse.</p>
+                    <p class="form-hint">Tous les points de contrôle ont été traités. Le projet de PV = résultats des points de contrôle + votre synthèse + votre avis.</p>
                     <label class="form-group">
                       <span class="form-label">Synthèse des observations</span>
                       <textarea class="form-control" rows="4" [value]="synthese()" (input)="synthese.set($any($event.target).value)"></textarea>
                     </label>
-                    <p class="form-hint">L'avis global et le Secrétaire de séance seront renseignés par le Président ou le Chef de Commission à la clôture de la navette du projet de PV.</p>
+                    <!-- ⚠️ Visa unique (2026-08-31) — l'avis est ÉMIS PAR LE MEMBRE ici (règle du 01/08 inversée). -->
+                    <label class="form-group">
+                      <span class="form-label">Avis global *</span>
+                      <select class="form-control" [value]="avis() ?? ''" (change)="avis.set($any($event.target).value || null)">
+                        <option value="" [selected]="!avis()">— Sélectionner —</option>
+                        @for (a of aviss(); track a.idAvis) {
+                          <option [value]="a.idAvis" [selected]="a.idAvis === avis()">{{ a.libelleAvis || a.idAvis }}</option>
+                        }
+                      </select>
+                      <span class="form-hint">{{ avisSuggereHint() }}</span>
+                    </label>
+                    <p class="form-hint">Votre avis pourra être ajusté par le Président ou le Chef de commission au visa qui clôt la navette du projet de PV ; le Secrétaire de séance et le Membre co-signataire y seront désignés.</p>
                   } @else if (mode() === 'edit') {
                     <h3 class="exam__sub">Synthèse des observations (projet de PV)</h3>
-                    @if (avis()) { <p class="form-hint"><strong>Avis global (clôture de navette) :</strong> {{ avisLabel(avis()) }}</p> }
+                    @if (avis()) { <p class="form-hint"><strong>Avis global :</strong> {{ avisLabel(avis()) }}</p> }
                     @if (synthese()) { <p class="form-hint"><strong>Synthèse :</strong> {{ synthese() }}</p> }
                     <p class="form-hint">Le projet de PV a déjà été soumis : la suite se joue dans « Projets de PV ».</p>
                   }
@@ -484,7 +496,11 @@ export class ExamenDossier implements OnDestroy {
   private readonly pvs = signal<PvExamen[]>([]);
 
   readonly dateExamen = signal(new Date().toISOString().slice(0, 10));
-  /** Avis global du PV — LECTURE SEULE ici (posé à la clôture de navette par le Président/CC). */
+  /**
+   * Avis global du PV — ÉMIS PAR LE MEMBRE à la soumission (⚠️ visa unique 2026-08-31, règle du
+   * 01/08 inversée), modifiable tant que le PV est entre ses mains ; le Président/CC peut encore
+   * l'ajuster au visa.
+   */
   readonly avis = signal<string | null>(null);
   readonly synthese = signal('');
   /**
@@ -500,6 +516,21 @@ export class ExamenDossier implements OnDestroy {
   private readonly examenPieces = signal<ExamenPiece[]>([]);
   /** Erreur de l'étape pièce courante (observation manquante). */
   readonly pieceErreur = signal<string | null>(null);
+
+  /** Observations relevées (points OBS + pièces OBS) — source de la suggestion d'avis. */
+  private readonly nbObservations = computed(() => {
+    const pts = [...this.resultats().values()].filter((st) => st.statut === 'OBS').length;
+    const pcs = [...this.resultatsPieces().values()].filter((p) => p.statut === 'OBS').length;
+    return pts + pcs;
+  });
+  /** ⚠️ Règle de cohérence — ≥ 1 observation → FAVR suggéré (FAV refusé serveur) ; 0 → FAV. */
+  readonly avisSuggere = computed(() => (this.nbObservations() > 0 ? 'FAVR' : 'FAV'));
+  readonly avisSuggereHint = computed(() => {
+    const n = this.nbObservations();
+    return n > 0
+      ? `Avis suggéré : « Favorable avec réserves » — ${n} observation(s) relevée(s) (points de contrôle + pièces jointes).`
+      : 'Avis suggéré : « Favorable » — aucune observation relevée à l\'examen.';
+  });
 
   // — Workflow séquentiel : une ligne active à la fois, de haut en bas, puis étape dossier, puis avis. —
   /** Étape courante : 0..N-1 = marchés ; N = points DOSSIER (si présents) ; dernière = avis global. */
@@ -640,6 +671,15 @@ export class ExamenDossier implements OnDestroy {
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.avisService.list().subscribe((a) => this.aviss.set(a));
+
+    // ⚠️ Visa unique (2026-08-31) — pré-sélectionne l'avis suggéré à l'arrivée sur l'étape
+    // Synthèse, tant que le Membre n'a rien choisi (même patron que le panneau de visa de
+    // pv-workflow : un effect qui écrit, jamais un computed).
+    effect(() => {
+      if (this.estEtapeAvis() && this.syntheseEditable() && !this.avis()) {
+        this.avis.set(this.avisSuggere());
+      }
+    });
 
     this.loadingPieces.set(true);
     // Dossier partagé : consommé par le forkJoin ET par la grille (dérivée de son sous-type), un seul GET.
@@ -1028,8 +1068,10 @@ export class ExamenDossier implements OnDestroy {
   }
 
   /**
-   * Création — « Soumettre l'examen » : toutes les lignes/pièces traitées + synthèse, crée le projet
-   * de PV. ⚠️ Règle modifiée (2026-08-01) — SANS avis ni secrétaire (posés à la clôture de navette).
+   * Création — « Soumettre l'examen » : toutes les lignes/pièces traitées + synthèse + AVIS, crée
+   * le projet de PV. ⚠️ Visa unique (2026-08-31, inverse la règle du 01/08) — l'avis du Membre part
+   * avec la soumission (cohérence validée serveur : ≥ 1 observation → FAV refusé) ; le Secrétaire
+   * de séance reste posé au visa.
    */
   soumettre(): void {
     if (!this.dossier() || this.idDispatch() == null) return;
@@ -1038,12 +1080,17 @@ export class ExamenDossier implements OnDestroy {
       return;
     }
     if (!this.observationsCompletes()) return;
+    const idAvis = this.avis();
+    if (!idAvis) {
+      this.formError.set('Sélectionnez votre avis global — il accompagne la soumission de l\'examen.');
+      return;
+    }
     this.formError.set(null);
     this.saving.set(true);
-    // Réconciliation FINALE (tous les résultats statués), puis soumission (corps vide : ni avis ni secrétaire).
+    // Réconciliation FINALE (tous les résultats statués), puis soumission avec l'avis du Membre.
     this.sauvegarderProgression()
       .pipe(
-        switchMap((idExamen) => this.examenService.soumettre(idExamen, {})),
+        switchMap((idExamen) => this.examenService.soumettre(idExamen, { idAvis })),
         // La synthèse ne fait pas partie d'ExamenSoumissionRequest : on la persiste via une MAJ du PV créé
         // (encore BROUILLON) — PUT /api/pv-examens/{id}.
         // `pv` sort tout juste de la soumission : le spread renvoie donc la `version` COURANTE
@@ -1232,7 +1279,10 @@ export class ExamenDossier implements OnDestroy {
           return calls.length ? forkJoin(calls) : of([]);
         }),
         // Projet de PV éditable : on met à jour (PV BROUILLON existant) ou on le CRÉE (aucun PV encore),
-        // pour persister la synthèse. ⚠️ L'avis n'est PAS touché ici (clôture de navette, Président/CC).
+        // pour persister la synthèse ET l'avis. ⚠️ Visa unique (2026-08-31) — l'avis est celui du
+        // MEMBRE tant que le PV est entre ses mains (rectification comprise : il peut le changer d'un
+        // cycle à l'autre) ; le Président/CC pourra encore l'ajuster au visa, où la cohérence est
+        // revalidée par le serveur.
         switchMap(() => {
           if (!this.pvEditable()) return of(null);
           const pv = this.existingPv();
@@ -1240,7 +1290,11 @@ export class ExamenDossier implements OnDestroy {
           if (pv) {
             // Le spread renvoie la `version` du PV chargé (verrou optimiste) : si un autre acteur l'a
             // touché entre-temps, le serveur répond 409 CONFLIT_VERSION plutôt que d'écraser.
-            return this.pvExamenService.update(pv.idPv, { ...pv, syntheseObservations: synthese });
+            return this.pvExamenService.update(pv.idPv, {
+              ...pv,
+              idAvis: this.avis() ?? pv.idAvis,
+              syntheseObservations: synthese,
+            });
           }
           // Aucun projet de PV (examen créé sans soumission) → le créer DIRECTEMENT
           // (POST /api/pv-examens). On n'utilise pas la façade examens/{id}/soumettre :
@@ -1249,6 +1303,7 @@ export class ExamenDossier implements OnDestroy {
             idPv: this.nextId(this.pvs().map((p) => p.idPv)),
             idExamen,
             imCtrlMembre: this.auth.ref() ?? '', // @NotBlank requis ; valeur ignorée (dérivée du dispatch)
+            idAvis: this.avis() ?? undefined,
             statutPv: 'BROUILLON',
             nbNavettes: 0,
             syntheseObservations: synthese,

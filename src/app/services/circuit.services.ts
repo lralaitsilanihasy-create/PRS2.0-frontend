@@ -205,8 +205,9 @@ export class ExamenService extends CrudService<Examen> {
 
   /**
    * `POST /api/examens/{id}/soumettre` (MEMBRE) — produit toujours le **projet de PV**.
-   * ⚠️ Règle modifiée (2026-08-01) — `idAvis`/`idSecretaireSeance` OPTIONNELS : posés à la clôture
-   * de navette (`/pv-examens/{id}/accepter`, Président/CC). `skipErrorToast` : messages dédiés.
+   * ⚠️ Visa unique (2026-08-31) — `idAvis` = l'avis DU MEMBRE, cohérence validée serveur (≥ 1
+   * observation → FAV refusé) ; le front l'exige, l'obligation serveur (400) arrive au lot 2.
+   * Le Secrétaire de séance reste posé au visa. `skipErrorToast` : messages dédiés.
    */
   soumettre(id: number, body: ExamenSoumissionRequest): Observable<PvExamen> {
     return this.http.post<PvExamen>(`${this.baseUrl}/${id}/soumettre`, body, { context: skipErrorToast() });
@@ -383,14 +384,18 @@ export class PvExamenService extends CrudService<PvExamen> {
   }
 
   /**
-   * Accepter le projet (PROJET_SOUMIS → PROJET_ACCEPTE) — clôture de navette, Président/CC.
-   * ⚠️ Règle ajoutée (2026-08-01) — `idAvis` + `idSecretaireSeance` obligatoires (400 sinon).
+   * ⚠️ Visa unique (2026-08-31) — clôture de la navette EN UN GESTE, remplace `accepter` +
+   * `signer(role=PRESIDENT|CC)` : avis éventuellement remplacé (absent = celui du Membre conservé),
+   * Secrétaire de séance + Membre co-signataire posés (obligatoires, 400), part de signature du
+   * rôle dérivée du profil — PROJET_SOUMIS → PROJET_ACCEPTE. Réservé au DISPATCHEUR du dossier
+   * (403 sinon, délégation active comprise). Également accepté sur un PROJET_ACCEPTE dont la part
+   * du rôle n'est pas signée (PV acceptés sous l'ancien contrat).
    */
-  accepter(id: number, body: PvActionRequest): Observable<PvExamen> {
-    return this.http.post<PvExamen>(`${this.baseUrl}/${id}/accepter`, body);
+  viser(id: number, body: PvActionRequest): Observable<PvExamen> {
+    return this.http.post<PvExamen>(`${this.baseUrl}/${id}/viser`, body);
   }
 
-  /** Signer (passe à SIGNE quand Membre + (Président ou CC) ont signé ; `role` obligatoire). */
+  /** Signer sa part — rôle MEMBRE seul depuis le visa unique (PRESIDENT/CC → 409 vers `viser`) ; passe à SIGNE quand les deux parts sont posées. */
   signer(id: number, body: PvActionRequest): Observable<PvExamen> {
     return this.http.post<PvExamen>(`${this.baseUrl}/${id}/signer`, body);
   }

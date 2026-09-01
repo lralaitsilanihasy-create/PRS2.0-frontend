@@ -166,12 +166,14 @@ export interface ObservationControle {
 
 /**
  * Corps de `POST /api/examens/{id}/soumettre` : produit toujours un projet de PV.
- * ⚠️ Règle modifiée (2026-08-01) — le Membre ne renseigne PLUS l'avis ni le secrétaire à la
- * soumission : ils sont posés à la clôture de navette (`/pv-examens/{id}/accepter`, Président/CC).
+ * ⚠️ Visa unique (2026-08-31) — le Membre ÉMET SON AVIS à la soumission (inversion de la règle du
+ * 01/08) ; cohérence validée serveur (≥ 1 observation → FAV refusé, 409). Le Secrétaire de séance,
+ * lui, reste posé au visa (`/pv-examens/{id}/viser`, Président/CC dispatcheur).
  */
 export interface ExamenSoumissionRequest {
+  /** Avis du Membre — exigé par le front ; l'obligation serveur (400) arrive au lot 2 backend. */
   idAvis?: string;
-  /** Matricule du Vérificateur désigné Secrétaire de séance (optionnel — posé à la clôture de navette). */
+  /** Matricule du Vérificateur désigné Secrétaire de séance (optionnel — posé au visa). */
   idSecretaireSeance?: string;
 }
 
@@ -240,12 +242,16 @@ export interface ExamenPiece {
 export interface PvExamen {
   idPv: number;
   idExamen: number;
-  /** ⚠️ Règle modifiée (2026-08-01) — nullable : l'avis est posé à la clôture de navette (accepter, Président/CC). */
+  /**
+   * ⚠️ Visa unique (2026-08-31) — avis ÉMIS PAR LE MEMBRE à la soumission de l'examen, modifiable
+   * par le Président/CC au visa. Encore null sur les PV soumis sous la règle du 01/08 : le visa doit
+   * alors le fournir (409 serveur sinon).
+   */
   idAvis?: string;
   imCtrlPresident?: string;
   imCtrlCc?: string;
   imCtrlMembre: string;
-  /** Vérificateur désigné Secrétaire de séance (posé à la clôture de navette). */
+  /** Vérificateur désigné Secrétaire de séance (posé au visa). */
   idSecretaireSeance?: string;
   /** Nom complet du secrétaire de séance, peuplé serveur — lecture seule. */
   nomSecretaireSeance?: string;
@@ -259,6 +265,15 @@ export interface PvExamen {
   imMembreCoSignataire?: string;
   /** Nom complet du Membre co-signataire, peuplé serveur — évite un appel pour l'afficher. */
   nomMembreCoSignataire?: string;
+  /**
+   * ⚠️ Visa unique (2026-08-31) — dispatcheur du dossier (`imCtrlDispatch` du dernier dispatch),
+   * SEUL habilité à viser : contrainte d'IDENTITÉ (403 serveur, même pour un Président ou sous une
+   * paire de délégation active — il suit QUI A POSTÉ le dispatch, pas le rang). Sert à conditionner
+   * le bouton « Viser » sans appel supplémentaire.
+   */
+  imDispatcheur?: string;
+  /** Nom complet du dispatcheur, peuplé serveur — pour écrire la raison du refus aux autres P/CC. */
+  nomDispatcheur?: string;
   syntheseObservations?: string;
   statutPv: StatutPv;
   nbNavettes: number;
@@ -428,22 +443,25 @@ export interface DemandeRetrait {
 }
 
 /**
- * Corps des actions de workflow du PV (`/soumettre`, `/retourner`, `/accepter`, `/signer`).
- * `commentaire` obligatoire pour `retourner` ; `role` obligatoire pour `signer`.
- * ⚠️ Règle ajoutée (2026-08-01) — `idAvis` + `idSecretaireSeance` obligatoires pour `accepter`
- * (clôture de navette, Président/CC) ; ignorés par les autres actions.
+ * Corps des actions de workflow du PV (`/soumettre`, `/retourner`, `/viser`, `/signer`).
+ * `commentaire` obligatoire pour `retourner` ; `role` obligatoire pour `signer` — MEMBRE seul
+ * depuis le visa unique (PRESIDENT/CC y reçoivent 409 : leur part passe par `viser`).
+ * ⚠️ Visa unique (2026-08-31) — pour `viser` : `idSecretaireSeance` + `imMembreCoSignataire`
+ * obligatoires (400), `idAvis` optionnel (absent = avis du Membre conservé, fourni = remplacé,
+ * cohérence revalidée), `imActeur` ignoré (l'acteur est la session), pas de `role` (la part
+ * signée est dérivée du profil de l'acteur).
  */
 export interface PvActionRequest {
   imActeur: string;
   commentaire?: string;
   role?: PvSignataireRole;
   idAvis?: string;
-  /** Vérificateur (localité du dossier) désigné Secrétaire de séance — requis pour `accepter`. */
+  /** Vérificateur (localité du dossier) désigné Secrétaire de séance — requis pour `viser`. */
   idSecretaireSeance?: string;
   /**
-   * ⚠️ Co-signature (2026-08-28) — Membre appelé à co-signer, **obligatoire pour `signer` en rôle
-   * PRESIDENT ou CC** (409 sinon). Doit être un Membre de la localité du dossier et différent du
-   * signataire : le PV est co-signé par deux personnes distinctes. Ignoré pour le rôle MEMBRE.
+   * ⚠️ Co-signature (2026-08-28, reprise par `viser` le 31/08) — Membre appelé à co-signer,
+   * obligatoire pour `viser` (400). Doit être un Membre de la localité du dossier et différent du
+   * signataire : le PV est co-signé par deux personnes distinctes. Ignoré pour `signer` (MEMBRE).
    */
   imMembreCoSignataire?: string;
 }

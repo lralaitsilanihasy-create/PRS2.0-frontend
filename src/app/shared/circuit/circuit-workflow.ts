@@ -187,9 +187,16 @@ export function peutSoumettre(statut: StatutPv): boolean {
 export function peutRetourner(statut: StatutPv): boolean {
   return statut === 'PROJET_SOUMIS';
 }
-export function peutAccepter(statut: StatutPv): boolean {
-  return statut === 'PROJET_SOUMIS';
+/**
+ * ⚠️ Visa unique (2026-08-31) — le visa (avis + Secrétaire de séance + co-signataire + part de
+ * signature, un seul geste) s'offre sur PROJET_SOUMIS, et encore sur PROJET_ACCEPTE pour COMPLÉTER
+ * un PV accepté sous l'ancien contrat dont la part du rôle n'est pas signée. Le composant vérifie
+ * en plus la part déjà posée et l'identité du dispatcheur ; le serveur garde les deux (403/409).
+ */
+export function peutViser(statut: StatutPv): boolean {
+  return statut === 'PROJET_SOUMIS' || statut === 'PROJET_ACCEPTE';
 }
+/** Part MEMBRE uniquement depuis le visa unique — le Président/CC signe la sienne au visa. */
 export function peutSigner(statut: StatutPv): boolean {
   return statut === 'PROJET_ACCEPTE';
 }
