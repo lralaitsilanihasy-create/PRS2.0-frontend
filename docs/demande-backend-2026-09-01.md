@@ -80,3 +80,34 @@ Comme toujours : tests (400 sans note, 403 hors P/CC, 403 CC hors localité, che
 **mention « par intérim » présente sur un PV de localité régionale et ABSENTE sur un PV Centrale**),
 docs (`api-endpoints`, `regles-gestion`), **commit + push complet, fichiers neufs compris — les
 `.docx` modifiés aussi**.
+
+---
+
+## Addendum (01/09, après livraison) — REFONTE DU MODÈLE : la mention rejoint le bloc VISA
+
+> Votre livraison a posé la mention sous « Étaient présents », faute de ligne de signature P/CC dans
+> les 12 modèles, et a renvoyé au pilote la décision de créer l'emplacement manquant. **Arbitrage
+> rendu : refonte du formulaire officiel**, avec trois sous-arbitrages :
+>
+> | | Question | Décision |
+> |---|---|---|
+> | R1 | Portée de la ligne du viseur | **Tous les PV** — le bloc VISA nomme toujours le viseur (nom + qualité), la mention s'y ajoute quand c'est un intérim |
+> | R2 | Localité Centrale | **Ligne aussi, toujours SANS mention** — centrale et régionale partagent la même structure ; l'arbitrage 4 est préservé (rien ne révèle l'intérim en Centrale) |
+> | R3 | « Étaient présents » | **La mention y est RETIRÉE** (déménagement) — la liste de présence redevient une simple liste ; un seul endroit fait foi, celui de l'acte |
+
+Concrètement, pour les **12 modèles PV** (les 2 lettres de renvoi ne sont pas concernées) :
+
+1. Le **bloc VISA** gagne un emplacement « viseur » : nom complet + qualité (Président de la CNM /
+   Chef de commission), peuplé serveur à la génération pour TOUT PV — visa normal comme intérim,
+   Centrale comme régional.
+2. Sur un PV de **localité autre que Centrale visé par intérim**, cette ligne porte en plus la
+   mention **« par intérim »**. Partout ailleurs : jamais de mention (Centrale intérim comprise —
+   arbitrage 4).
+3. La mention livrée sous « Étaient présents » est **retirée** des modèles et du code.
+4. Libellé exact de la ligne : proposez (ex. « Visé par : NOM Prénoms, Chef de commission — par
+   intérim ») — le pilote validera sur un rendu.
+
+Méthode : c'est une **dérivation des 12 modèles** — les quatre pièges connus s'appliquent cette
+fois (POI, `xml:space`, `<w:t/>`, ordre des patchs). Étendre le test `PvDocumentService.contexte(pv)`
+(hors Word, dans la CI) : ligne du viseur présente sur tous les PV, mention seulement régional ×
+intérim, « Étaient présents » sans mention. Les `.docx` modifiés font partie du commit.
