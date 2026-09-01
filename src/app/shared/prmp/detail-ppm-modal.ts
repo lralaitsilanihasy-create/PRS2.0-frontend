@@ -322,6 +322,15 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                     mode="import"
                   />
                 }
+                <!-- ⚠️ Fiche de présentation (2026-09-01) — la justification GLOBALE accompagne le PUT
+                     (la garde serveur l'exige si une liste de la fiche est non vide) ; les
+                     justifications PAR LIGNE se saisissent dans la grille ci-dessus. -->
+                <label class="form-group dpm-justif-globale">
+                  <span class="form-label">Justification de la fiche de présentation</span>
+                  <textarea class="form-control" rows="2" [value]="justifFicheImport()"
+                    (input)="justifFicheImport.set($any($event.target).value)"
+                    placeholder="Justification globale (bas de la fiche de présentation)…"></textarea>
+                </label>
                 <div class="dpm-apercu-actions">
                   <button class="btn btn-outline" type="button" [disabled]="applyingImport()" (click)="annulerImport()">Annuler l'import</button>
                   <button class="btn btn-primary" type="button"
@@ -371,7 +380,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                             <td>{{ l.objet }}</td>
                             <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
                             <td>{{ l.modeLibelle }}</td>
-                            <td class="cnm-muted">À compléter</td>
+                            <td>@if (l.justifModeDerogatoire) { {{ l.justifModeDerogatoire }} } @else { <span class="cnm-muted">À compléter</span> }</td>
                           </tr>
                         }
                       </tbody>
@@ -393,7 +402,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                             <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
                             <td>{{ l.modeLibelle }}</td>
                             <td>{{ l.delaiJours }} jours <span class="cnm-muted">(minimum du mode : {{ l.delaiMinJours }})</span></td>
-                            <td class="cnm-muted">À compléter</td>
+                            <td>@if (l.justifDelaiAmenage) { {{ l.justifDelaiAmenage }} } @else { <span class="cnm-muted">À compléter</span> }</td>
                           </tr>
                         }
                       </tbody>
@@ -422,6 +431,12 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                   </div>
                 } @else {
                   <p class="cnm-muted">Aucun contrat-cadre.</p>
+                }
+
+                @if (fiche().nbMarchesConcernes > 0 || ppm()?.justificationFiche) {
+                  <p class="dpm-fp-justif"><u>Justification :</u>
+                    @if (ppm()?.justificationFiche) { {{ ppm()!.justificationFiche }} } @else { <span class="cnm-muted">À compléter</span> }
+                  </p>
                 }
               </div>
             }
@@ -923,6 +938,8 @@ export class DetailPpmModal implements OnInit {
   readonly importMarches = signal<FormArray | null>(null);
   /** Anomalies de transcription par ligne (clé = uid), calculées à l'import — pilotent la revue de la grille. */
   readonly anomaliesImport = signal<Map<number, AnomalieTranscription[]>>(new Map());
+  /** ⚠️ Fiche de présentation (2026-09-01) — justification GLOBALE éditée au panneau de réimport (pré-remplie de l'existante). */
+  readonly justifFicheImport = signal('');
   /** Grille de saisie partagée (prévisualisation d'import) — lue pour conditionner « Enregistrer ». */
   readonly grid = viewChild(PpmSaisieGrid);
   readonly applyingImport = signal(false);
@@ -1209,6 +1226,9 @@ export class DetailPpmModal implements OnInit {
         this.importApercu.set(r);
         this.importMarches.set(arr);
         this.anomaliesImport.set(anomMap);
+        // ⚠️ Fiche de présentation (2026-09-01) — la justification GLOBALE part avec le PUT (garde
+        // serveur si une liste de la fiche est non vide) : pré-remplie de l'existante, éditable.
+        this.justifFicheImport.set(this.ppm()?.justificationFiche ?? '');
       },
       error: () => this.importEnCours.set(false), // 400 PDF illisible → toast centralisé
     });
@@ -1268,6 +1288,8 @@ export class DetailPpmModal implements OnInit {
       signataire: p.signataire,
       reference: p.reference,
       marches: lignes,
+      // ⚠️ Fiche de présentation (2026-09-01) — toujours renvoyée (éditée au panneau d'import).
+      justificationFiche: this.justifFicheImport().trim() || undefined,
     };
     this.saisieService.editionPpm(this.idDossier, req).subscribe({
       next: () => {
@@ -2037,7 +2059,14 @@ export class DetailPpmModal implements OnInit {
     if (editing) {
       // Corps construit champ à champ : `version` n'y entre pas toute seule, on la reprend de la
       // ligne chargée (verrou optimiste — absente, le dernier écrit gagnerait en silence).
-      const corps: Marche = { ...body, version: editing.version };
+      // ⚠️ Fiche de présentation (2026-09-01) — les justifications sont PRÉSERVÉES au passage (même
+      // piège que formeMarche : omises, elles seraient effacées à chaque édition de la ligne).
+      const corps: Marche = {
+        ...body,
+        version: editing.version,
+        justifModeDerogatoire: editing.justifModeDerogatoire,
+        justifDelaiAmenage: editing.justifDelaiAmenage,
+      };
       this.marcheService.update(corps.idDetail, corps).subscribe({
         next: (updated) =>
           this.reconcilierDates(

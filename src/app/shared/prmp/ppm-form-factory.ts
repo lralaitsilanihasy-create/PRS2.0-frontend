@@ -64,6 +64,10 @@ export class PpmFormFactory {
       natureLibelle: [''],
       modeLibelle: [''],
       formeMarche: ['QUANTITE_FIXE' as FormeMarche],
+      // ⚠️ Fiche de présentation (2026-09-01) — justifications exigées par le serveur (400) quand
+      // il classe la ligne (mode dérogatoire / délai aménagé) ; saisies sous la grille.
+      justifModeDerogatoire: [''],
+      justifDelaiAmenage: [''],
       beneficiaires: this.fb.array([this.ligneBeneficiaire()]),
       lots: this.fb.array([] as FormGroup[]),
       processus: this.fb.array([] as FormGroup[]),
@@ -208,6 +212,8 @@ export class PpmFormFactory {
       natureLibelle: (l['natureLibelle'] as string)?.trim() || undefined,
       modeLibelle: (l['modeLibelle'] as string)?.trim() || undefined,
       formeMarche: (l['formeMarche'] as FormeMarche) || undefined,
+      justifModeDerogatoire: (l['justifModeDerogatoire'] as string)?.trim() || undefined,
+      justifDelaiAmenage: (l['justifDelaiAmenage'] as string)?.trim() || undefined,
       beneficiaires: beneficiaires.length ? beneficiaires : undefined,
       lots: lots.length ? lots : undefined,
       processus: ((l['processus'] as Record<string, unknown>[]) ?? []).map((p) => ({

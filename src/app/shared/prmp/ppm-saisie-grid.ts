@@ -5,8 +5,9 @@ import { ModaleDirective } from '../a11y/modale.directive';
 import { fermerAvecAnimation } from '../a11y/fermeture-animee';
 import { AutosizeDirective } from '../autosize.directive';
 import { MontantFrDirective } from '../montant-fr.directive';
-import { AnomalieTranscription, Capm, Compte, FORME_MARCHE_LIBELLES, FormeMarche, ModePassation, Nature, SoaBeneficiaire } from '../../models';
+import { AnomalieTranscription, Capm, Compte, FORME_MARCHE_LIBELLES, FormeMarche, Marche, MarchePrevision, ModePassation, Nature, SoaBeneficiaire } from '../../models';
 import { PpmFormFactory } from './ppm-form-factory';
+import { calculerFichePresentation } from './fiche-presentation';
 
 /**
  * Un champ d'une ligne importée qui diffère du dossier examiné (rectification, 2026-08-15).
@@ -193,6 +194,30 @@ export interface ModificationChamp {
         </table>
       </div>
     }
+    <!-- ⚠️ Fiche de présentation (2026-09-01) — justifications exigées à l'ÉCRITURE du plan (garde
+         serveur 400 par champ). La section vit DANS la grille partagée : la saisie initiale ET le
+         réimport du détail PPM l'ont d'office. Classement par la MÊME fonction pure que la fiche
+         (< strict, deux dates exigées, plancher requis) — diverger ferait bloquer à tort. -->
+    @if (lignesAJustifier().length) {
+      <div class="psg-justifs">
+        <h3 class="psg-justifs__titre">Justifications — fiche de présentation</h3>
+        <p class="psg-justifs__hint">
+          Exigées à l'enregistrement : chaque marché à <strong>mode dérogatoire</strong> ou à
+          <strong>délai aménagé</strong> doit être justifié (les textes alimentent la fiche de présentation).
+        </p>
+        @for (j of lignesAJustifier(); track j.idx + '-' + j.type) {
+          <label class="psg-justifs__item" [class.psg-justifs__item--manquante]="!ctrlJustif(j).value?.trim()">
+            <span class="psg-justifs__lbl">
+              Ligne {{ j.idx + 1 }} — {{ j.objet || 'sans objet' }} ·
+              @if (j.type === 'mode') { <strong>mode dérogatoire</strong> ({{ j.modeLibelle }}) }
+              @else { <strong>délai aménagé</strong> ({{ j.delaiJours }} jours, minimum du mode : {{ j.delaiMinJours }}) }
+            </span>
+            <textarea class="form-control" rows="2" [formControl]="ctrlJustif(j)"
+              [placeholder]="j.type === 'mode' ? 'Justification du mode dérogatoire…' : 'Justification du délai aménagé…'"></textarea>
+          </label>
+        }
+      </div>
+    }
     <datalist id="psg-modes">@for (m of modesList(); track m.idMode) { <option [value]="m.libelle"></option> }</datalist>
     <datalist id="psg-comptes">@for (c of comptes(); track c.numCompte) { <option [value]="c.numCompte">{{ c.libelle }}</option> }</datalist>
     <datalist id="psg-soa">@for (s of soaList(); track s.soaCode) { <option [value]="s.soaCode">{{ s.libelle }}</option> }</datalist>
@@ -315,6 +340,14 @@ export interface ModificationChamp {
     /* Validation par ligne : ligne/badge « validé » (vert) + barre de progression. */
     .sd__row-valide td { background: rgba(34, 197, 94, 0.12); }
     .sd__badge-valide { display: inline-block; font-size: var(--text-xs); font-weight: 700; color: #fff; background: #22C55E; border: 1px solid #16A34A; border-radius: 999px; padding: 0.1rem 0.45rem; cursor: help; }
+    /* Justifications de la fiche de présentation (2026-09-01) : sous la grille, une entrée par justification due. */
+    .psg-justifs { margin-top: 1rem; padding: 0.9rem 1rem; background: var(--warning-bg, #fef3c7); border: 1px solid var(--warning-bdr, #fcd34d); border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: 0.6rem; }
+    .psg-justifs__titre { margin: 0; font-size: var(--text-md); font-weight: 700; }
+    .psg-justifs__hint { margin: 0; font-size: var(--text-sm); color: var(--n-500); }
+    .psg-justifs__item { display: flex; flex-direction: column; gap: 0.25rem; }
+    .psg-justifs__item--manquante .psg-justifs__lbl { color: var(--danger-text, #b91c1c); }
+    .psg-justifs__lbl { font-size: var(--text-sm); }
+    .psg-justifs__item textarea { resize: vertical; background: #fff; }
     .sd__validation { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: var(--text-sm); font-weight: 600; color: var(--n-600, #475569); margin-top: 0.75rem; }
     .sd__validation--ok { color: #15803D; }
     /* Bouton « Valider » remarquable : vert plein, léger relief. */
@@ -873,6 +906,79 @@ export class PpmSaisieGrid {
   }
   lotsExplicites(g: FormGroup): boolean {
     return (g.get('lots') as FormArray).length > 0;
+  }
+
+  // — Justifications de la fiche de présentation (2026-09-01) —
+  /**
+   * Lignes que le SERVEUR classera dérogatoires ou à délais aménagés à l'écriture — recalculées en
+   * direct par la MÊME fonction pure que la fiche (mode résolu par libellé, dates des processus
+   * saisis). Une entrée par justification due (un marché peut cumuler les deux).
+   */
+  lignesAJustifier(): {
+    g: FormGroup;
+    idx: number;
+    objet: string;
+    modeLibelle: string;
+    type: 'mode' | 'delai';
+    delaiJours?: number | null;
+    delaiMinJours?: number | null;
+  }[] {
+    const arr = this.marches();
+    if (!arr) return [];
+    const tous = arr.controls as FormGroup[];
+    const groupes = tous.filter((g) => this.factory.ligneNonVide(g.getRawValue() as Record<string, unknown>));
+    const modes = this.modesList();
+    const modeParLibelle = new Map(modes.map((m) => [(m.libelle ?? '').trim().toLowerCase(), m]));
+    const fauxMarches: Marche[] = [];
+    const previsions: MarchePrevision[] = [];
+    groupes.forEach((g, i) => {
+      const l = g.getRawValue() as Record<string, unknown>;
+      const idDetail = i + 1;
+      const mode = modeParLibelle.get(((l['modeLibelle'] as string) ?? '').trim().toLowerCase());
+      fauxMarches.push({
+        idDetail,
+        idDossier: 0,
+        idPpm: 0,
+        designationMarche: (l['designationMarche'] as string) || '',
+        idMode: mode?.idMode,
+        formeMarche: (l['formeMarche'] as FormeMarche) || undefined,
+      } as Marche);
+      for (const p of (l['processus'] as Record<string, unknown>[]) ?? []) {
+        const idCapm = p['idCapm'] as number | null;
+        const dateDebut = p['dateDebut'] as string | null;
+        if (idCapm != null && dateDebut) previsions.push({ idPrevision: 0, idDetail, idCapm, dateDebut } as MarchePrevision);
+      }
+    });
+    const fiche = calculerFichePresentation(fauxMarches, previsions, modes, this.capms());
+    const versEntree = (idDetail: number) => {
+      const g = groupes[idDetail - 1];
+      return { g, idx: tous.indexOf(g), objet: ((g.getRawValue() as Record<string, unknown>)['designationMarche'] as string) ?? '' };
+    };
+    return [
+      ...fiche.derogatoires.map((l) => ({ ...versEntree(l.idDetail), modeLibelle: l.modeLibelle, type: 'mode' as const })),
+      ...fiche.delaisAmenages.map((l) => ({
+        ...versEntree(l.idDetail),
+        modeLibelle: l.modeLibelle,
+        type: 'delai' as const,
+        delaiJours: l.delaiJours,
+        delaiMinJours: l.delaiMinJours,
+      })),
+    ];
+  }
+
+  /** Contrôle de justification d'une entrée (mode dérogatoire ou délai aménagé). */
+  ctrlJustif(j: { g: FormGroup; type: 'mode' | 'delai' }): FormControl {
+    return j.g.get(j.type === 'mode' ? 'justifModeDerogatoire' : 'justifDelaiAmenage') as FormControl;
+  }
+
+  /** Justifications encore vides — libellés pour la garde des écrans parents (blancs = absents, comme le serveur). */
+  justificationsManquantes(): string[] {
+    return this.lignesAJustifier()
+      .filter((j) => !((this.ctrlJustif(j).value as string) ?? '').trim())
+      .map(
+        (j) =>
+          `Ligne ${j.idx + 1}${j.objet ? ' (' + j.objet.slice(0, 60) + ')' : ''} — justification du ${j.type === 'mode' ? 'mode dérogatoire' : 'délai aménagé'}`,
+      );
   }
   lotControls(): FormGroup[] {
     return this.lotsForm.controls as FormGroup[];

@@ -98,6 +98,8 @@ interface ApercuDossier {
   pieces: { libelle: string; nom: string }[];
   /** ⚠️ Demande user (2026-09-01) — la fiche de présentation, calculée sur le même instantané. */
   fiche: FichePresentation;
+  /** Justification globale saisie (bas de la fiche) — vide = « À compléter ». */
+  justificationFiche: string;
 }
 
 /**
@@ -374,6 +376,18 @@ interface ApercuDossier {
               [mode]="importe() ? 'import' : 'manuel'"
             />
 
+            <!-- ⚠️ Fiche de présentation (2026-09-01) — la « Justification : » GLOBALE du formulaire,
+                 exigée dès qu'une des trois listes de la fiche est non vide (garde serveur 400).
+                 Les justifications PAR LIGNE se saisissent dans la grille ci-dessus. -->
+            @if (ficheSaisie().nbMarchesConcernes > 0) {
+              <label class="form-group sd__justif-globale" [class.sd__justif-globale--manquante]="justificationGlobaleManquante()">
+                <span class="form-label">Justification de la fiche de présentation *</span>
+                <textarea class="form-control" rows="3" formControlName="justificationFiche"
+                  placeholder="Justification globale (bas de la fiche de présentation)…"></textarea>
+                <span class="form-hint">Reprise en bas de la fiche — obligatoire dès qu'un marché figure dans l'une des trois listes.</span>
+              </label>
+            }
+
             <div class="sd__pieces">
               <h2 class="sd__sub">Pièces jointes</h2>
               <!-- ⚠️ Demande user (2026-09-01) — seules les pièces À FOURNIR sont listées : les
@@ -433,10 +447,22 @@ interface ApercuDossier {
               </div>
             }
 
+            @if (justificationsFicheManquantes().length) {
+              <div class="alert alert-warning">
+                <span aria-hidden="true">⚠</span>
+                <div>
+                  <div class="sd__warn-title">Justifications de la fiche de présentation manquantes</div>
+                  <ul class="sd__warn-list">
+                    @for (j of justificationsFicheManquantes(); track $index) { <li>{{ j }}</li> }
+                  </ul>
+                </div>
+              </div>
+            }
+
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite()">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite() || justificationsFicheManquantes().length > 0">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -676,7 +702,8 @@ interface ApercuDossier {
                       <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Justification</th></tr></thead>
                       <tbody>
                         @for (l of a.fiche.derogatoires; track l.idDetail) {
-                          <tr><td>{{ l.objet }}</td><td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td><td class="cnm-muted">À compléter</td></tr>
+                          <tr><td>{{ l.objet }}</td><td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td>
+                            <td>@if (l.justifModeDerogatoire) { {{ l.justifModeDerogatoire }} } @else { <span class="cnm-muted">À compléter</span> }</td></tr>
                         }
                       </tbody>
                     </table>
@@ -690,7 +717,8 @@ interface ApercuDossier {
                       <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th><th scope="col">Justifications</th></tr></thead>
                       <tbody>
                         @for (l of a.fiche.delaisAmenages; track l.idDetail) {
-                          <tr><td>{{ l.objet }}</td><td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td><td>{{ l.delaiJours }} jours <span class="cnm-muted">(minimum du mode : {{ l.delaiMinJours }})</span></td><td class="cnm-muted">À compléter</td></tr>
+                          <tr><td>{{ l.objet }}</td><td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td><td>{{ l.delaiJours }} jours <span class="cnm-muted">(minimum du mode : {{ l.delaiMinJours }})</span></td>
+                            <td>@if (l.justifDelaiAmenage) { {{ l.justifDelaiAmenage }} } @else { <span class="cnm-muted">À compléter</span> }</td></tr>
                         }
                       </tbody>
                     </table>
@@ -710,6 +738,12 @@ interface ApercuDossier {
                     </table>
                   </div>
                 } @else { <p class="cnm-muted">Aucun contrat-cadre.</p> }
+
+                @if (a.fiche.nbMarchesConcernes > 0 || a.justificationFiche) {
+                  <p class="sd__fiche-justif"><u>Justification :</u>
+                    @if (a.justificationFiche) { {{ a.justificationFiche }} } @else { <span class="cnm-muted">À compléter</span> }
+                  </p>
+                }
               </div>
 
               @if (apercuAvertissements(a).length) {
@@ -837,6 +871,11 @@ interface ApercuDossier {
     /* Second document de l'aperçu : la fiche de présentation, séparée du plan. */
     .sd__fiche-doc { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 2px solid var(--n-200); }
     .sd__fiche-sub { margin: 1rem 0 0.4rem; font-size: var(--text-md); font-weight: 700; }
+    .sd__fiche-justif { margin-top: 1rem; }
+    /* Justification globale de la fiche (2026-09-01) — signalée tant qu'elle manque. */
+    .sd__justif-globale { margin-top: 0.9rem; }
+    .sd__justif-globale--manquante .form-label { color: var(--danger-text, #b91c1c); }
+    .sd__justif-globale textarea { resize: vertical; }
     .ppm-doc { background: #fff; color: #000; padding: 1rem 1.25rem; font-size: 0.8rem; }
     .ppm-doc__titre { text-align: center; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem; text-transform: uppercase; }
     .ppm-doc__entete { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
@@ -1047,6 +1086,10 @@ export class SoumettreDossier {
     exercice: [new Date().getFullYear(), Validators.required],
     dateSignature: ['', Validators.required],
     marches: this.fb.array([] as FormGroup[]),
+    // ⚠️ Fiche de présentation (2026-09-01) — « Justification : » globale, exigée par le serveur
+    // (400) dès qu'une des trois listes de la fiche est non vide. Obligation contextuelle : gardée
+    // par `justificationsFicheManquantes()`, pas par un Validators.required permanent.
+    justificationFiche: [''],
   });
 
   readonly dossierForm = this.fb.nonNullable.group({
@@ -1583,9 +1626,27 @@ export class SoumettreDossier {
     const pieces = this.typesPiece()
       .filter((t) => this.pieces().has(t.idTypePiece))
       .map((t) => ({ libelle: t.libellePiece, nom: this.pieces().get(t.idTypePiece)!.name }));
-    // ⚠️ Demande user (2026-09-01) — la FICHE DE PRESENTATION se visualise dès la création : même
-    // fonction pure que l'onglet du détail PPM, nourrie d'un instantané du formulaire (le mode est
-    // résolu par LIBELLÉ — saisie libre — pour retrouver sa catégorie et son délai plancher).
+    this.apercu.set({
+      entite: ent?.libelle ?? '—',
+      adresse: ent?.adresse ?? '—',
+      localite: this.localiteLabel(),
+      exercice: (v.exercice as number | null) ?? null,
+      signataire: this.signataireConnecte(),
+      dateSignature: this.dateFr(v.dateSignature as string),
+      marches,
+      pieces,
+      fiche: this.ficheSaisie(),
+      justificationFiche: ((v.justificationFiche as string) ?? '').trim(),
+    });
+  }
+
+  /**
+   * ⚠️ Fiche de présentation (2026-09-01) — instantané du formulaire → MÊME fonction pure que
+   * l'onglet du détail PPM (mode résolu par LIBELLÉ — saisie libre — pour retrouver sa catégorie et
+   * son plancher ; justifications embarquées pour l'affichage). Méthode et non computed : elle lit
+   * l'état du formulaire, qui n'est pas un signal — même motif qu'`agpmRequisSaisie`.
+   */
+  ficheSaisie(): FichePresentation {
     const modeParLibelle = new Map(this.modesList().map((m) => [(m.libelle ?? '').trim().toLowerCase(), m]));
     const fauxMarches: Marche[] = [];
     const fauxPrevisions: MarchePrevision[] = [];
@@ -1603,6 +1664,8 @@ export class SoumettreDossier {
           montEstim: (l['montEstim'] as number | null) ?? undefined,
           idMode: mode?.idMode,
           formeMarche: (l['formeMarche'] as FormeMarche) || undefined,
+          justifModeDerogatoire: (l['justifModeDerogatoire'] as string) || undefined,
+          justifDelaiAmenage: (l['justifDelaiAmenage'] as string) || undefined,
         } as Marche);
         for (const p of (l['processus'] as Record<string, unknown>[]) ?? []) {
           const idCapm = p['idCapm'] as number | null;
@@ -1612,17 +1675,26 @@ export class SoumettreDossier {
           }
         }
       });
-    this.apercu.set({
-      entite: ent?.libelle ?? '—',
-      adresse: ent?.adresse ?? '—',
-      localite: this.localiteLabel(),
-      exercice: (v.exercice as number | null) ?? null,
-      signataire: this.signataireConnecte(),
-      dateSignature: this.dateFr(v.dateSignature as string),
-      marches,
-      pieces,
-      fiche: calculerFichePresentation(fauxMarches, fauxPrevisions, this.modesList(), this.capms()),
-    });
+    return calculerFichePresentation(fauxMarches, fauxPrevisions, this.modesList(), this.capms());
+  }
+
+  /** La justification GLOBALE manque alors que la fiche a du contenu (règle : exigée si ≥1 liste non vide). */
+  justificationGlobaleManquante(): boolean {
+    if (this.ficheSaisie().nbMarchesConcernes === 0) return false;
+    return !((this.ppmForm.getRawValue().justificationFiche as string) ?? '').trim();
+  }
+
+  /**
+   * ⚠️ Fiche de présentation (2026-09-01) — justifications exigées encore vides : lignes (via la
+   * grille partagée, mêmes bornes de classement que le serveur) + globale. Bloque la création,
+   * en miroir de la garde serveur 400.
+   */
+  justificationsFicheManquantes(): string[] {
+    const manques = [...(this.grid()?.justificationsManquantes() ?? [])];
+    if (this.justificationGlobaleManquante()) {
+      manques.push('Justification globale de la fiche de présentation (bas du formulaire)');
+    }
+    return manques;
   }
   fermerApercu(): void {
     this.apercu.set(null);
@@ -1875,6 +1947,13 @@ export class SoumettreDossier {
       this.toast.error('Veuillez fournir toutes les pièces obligatoires.');
       return;
     }
+    // ⚠️ Fiche de présentation (2026-09-01) — miroir de la garde serveur 400 : chaque ligne classée
+    // (mode dérogatoire / délai aménagé) et la globale doivent être justifiées AVANT la création.
+    const justifsManquantes = this.justificationsFicheManquantes();
+    if (justifsManquantes.length) {
+      this.toast.error('Veuillez saisir les justifications de la fiche de présentation (' + justifsManquantes.length + ' manquante(s)).');
+      return;
+    }
     this.pieceErreurs.set(new Set());
     this.formError.set(null);
     this.submitting.set(true);
@@ -1918,6 +1997,9 @@ export class SoumettreDossier {
         natureLibelle: (l['natureLibelle'] as string)?.trim() || undefined,
         modeLibelle: (l['modeLibelle'] as string)?.trim() || undefined,
         formeMarche: (l['formeMarche'] as FormeMarche) || undefined,
+        // ⚠️ Fiche de présentation (2026-09-01) — justifications par ligne (exigées par la garde serveur).
+        justifModeDerogatoire: (l['justifModeDerogatoire'] as string)?.trim() || undefined,
+        justifDelaiAmenage: (l['justifDelaiAmenage'] as string)?.trim() || undefined,
         // Bénéficiaires (SOA + montants) — le serveur crée une t_service_beneficiaire par élément.
         beneficiaires: beneficiaires.length ? beneficiaires : undefined,
         // Lots (allotissement) — optionnels ; le serveur crée une t_lot par élément (aucun contrôle de somme).
@@ -1937,6 +2019,8 @@ export class SoumettreDossier {
           exercice: v.exercice,
           dateSignature: v.dateSignature,
           marches,
+          // ⚠️ Fiche de présentation (2026-09-01) — justification globale (exigée si la fiche a du contenu).
+          justificationFiche: ((v.justificationFiche as string) ?? '').trim() || undefined,
         },
         this.pieces(),
       )

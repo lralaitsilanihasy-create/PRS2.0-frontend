@@ -25,6 +25,10 @@ export interface LigneFiche {
   delaiJours: number | null;
   /** Plancher du mode (`delaiMinJours`) ; `null` si le référentiel n'en déclare pas. */
   delaiMinJours: number | null;
+  /** ⚠️ 2026-09-01 — justification saisie à la création (liste 1) ; vide → « À compléter » à l'affichage. */
+  justifModeDerogatoire?: string;
+  /** Justification saisie à la création (liste 2). */
+  justifDelaiAmenage?: string;
 }
 
 export interface FichePresentation {
@@ -77,6 +81,8 @@ export function calculerFichePresentation(
       modeLibelle: mode?.libelle ?? '',
       delaiJours,
       delaiMinJours: mode?.delaiMinJours ?? null,
+      justifModeDerogatoire: m.justifModeDerogatoire?.trim() || undefined,
+      justifDelaiAmenage: m.justifDelaiAmenage?.trim() || undefined,
     };
     if (mode?.categorie === 'DEROGATOIRE') {
       derogatoires.push(ligne);

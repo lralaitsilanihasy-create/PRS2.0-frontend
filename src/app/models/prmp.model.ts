@@ -38,6 +38,12 @@ export interface Ppm {
    * → pièce AGPM requise à la soumission. Ignoré en écriture.
    */
   agpmRequis?: boolean;
+  /**
+   * ⚠️ Fiche de présentation (2026-09-01) — la « Justification : » GLOBALE du bas du formulaire,
+   * exigée (400) dès qu'une des trois listes de la fiche est non vide (les contrats-cadres n'ont
+   * pas de colonne par ligne : elle les couvre). `null` sur les plans d'avant la règle.
+   */
+  justificationFiche?: string;
   /** Verrou optimiste : à renvoyer telle quelle au PUT (périmée → 409 `CONFLIT_VERSION`) ; absente = dernier écrit gagne. */
   version?: number;
 }
@@ -58,6 +64,16 @@ export interface Marche {
   idMode?: number;
   /** Forme du marché (relevée dans l'objet à l'import, sinon défaut serveur `QUANTITE_FIXE`). */
   formeMarche?: FormeMarche;
+  /**
+   * ⚠️ Fiche de présentation (2026-09-01, migration V13) — justifications SAISIES À LA CRÉATION,
+   * exigées par le serveur (400 par champ) quand SA classification l'impose : mode dérogatoire
+   * (catégorie du mode) et délai aménagé (ouverture − lancement < delaiMinJours, strict). Un marché
+   * peut cumuler les deux. `null` sur les plans d'avant la règle → « À compléter » à l'affichage.
+   * ⚠️ Toute ÉCRITURE du marché doit RE-ENVOYER ces champs (comme `formeMarche`), sinon effacés.
+   */
+  justifModeDerogatoire?: string;
+  /** Justification du délai aménagé — mêmes règles que `justifModeDerogatoire`. */
+  justifDelaiAmenage?: string;
   /**
    * ⚠️ 2026-08-05 (versionnement) — identité de la ligne **à travers les versions** du PPM, posée par
    * le serveur. `idDetail` ne l'identifie que dans un dossier : une copie en v2 a une nouvelle PK.
@@ -263,6 +279,10 @@ export interface SaisieMarcheLigne {
   modeLibelle?: string;
   /** Forme du marché — optionnelle (absente → défaut serveur `QUANTITE_FIXE`). */
   formeMarche?: FormeMarche;
+  /** ⚠️ Fiche de présentation (2026-09-01) — exigée si le SERVEUR classe la ligne dérogatoire (400 sinon) ; blancs = absents. */
+  justifModeDerogatoire?: string;
+  /** ⚠️ Fiche de présentation (2026-09-01) — exigée si le SERVEUR classe la ligne à délai aménagé (400 sinon). */
+  justifDelaiAmenage?: string;
   /** Ventilation par bénéficiaire (SOA + montants) — le serveur crée une `t_service_beneficiaire` par élément. */
   beneficiaires?: SaisieMarcheBeneficiaire[];
   /** Lots (allotissement) — le serveur crée une `t_lot` par élément ; descriptifs, aucun contrôle de somme. */
@@ -286,6 +306,8 @@ export interface SaisiePpmRequest {
   exercice: number;
   dateSignature: string;
   marches?: SaisieMarcheLigne[];
+  /** ⚠️ Fiche de présentation (2026-09-01) — justification globale, exigée (400) si ≥1 liste de la fiche est non vide. */
+  justificationFiche?: string;
 }
 
 /**
@@ -305,6 +327,8 @@ export interface EditionPpmRequest {
    */
   motifMaj?: string;
   marches?: SaisieMarcheLigne[];
+  /** ⚠️ Fiche de présentation (2026-09-01) — justification globale ; la garde du PUT l'exige si une liste de la fiche est non vide. */
+  justificationFiche?: string;
 }
 
 /** Corps de `POST /api/saisies/ppm/{idDossier}/mise-a-jour` — le motif est obligatoire (400 si vide). */
