@@ -373,19 +373,21 @@ interface ApercuDossier {
 
             <div class="sd__pieces">
               <h2 class="sd__sub">Pièces jointes</h2>
-              @if (!typesPiece().length) {
-                <p class="cnm-muted">Aucune pièce attendue pour ce type de dossier.</p>
+              <!-- ⚠️ Demande user (2026-09-01) — seules les pièces À FOURNIR sont listées : les
+                   obligatoires, plus l'AGPM quand un mode déclencheur l'exige. Les optionnelles ne
+                   sont ni proposées ni affichées ici. -->
+              @if (!typesPieceVisibles().length) {
+                <p class="cnm-muted">Aucune pièce à fournir pour ce type de dossier.</p>
               }
-              @for (t of typesPiece(); track t.idTypePiece) {
+              @for (t of typesPieceVisibles(); track t.idTypePiece) {
                 <div class="sd__piece" [class.sd__piece--manquante]="t.obligatoire && !pieces().has(t.idTypePiece)">
                   <span class="sd__piece-lbl">📎 {{ t.libellePiece }}</span>
                   <div class="sd__piece-right">
                     @if (t.obligatoire) {
                       <span class="badge badge-danger">obligatoire</span>
-                    } @else if (t.code === 'AGPM' && agpmRequisSaisie()) {
-                      <span class="badge badge-warning">requise (appel d'offres ouvert)</span>
                     } @else {
-                      <span class="badge badge-neutral">optionnel</span>
+                      <!-- Seule l'AGPM rendue exigée par un mode déclencheur passe le filtre sans être obligatoire. -->
+                      <span class="badge badge-warning">requise (appel d'offres ouvert)</span>
                     }
                     @if (pieceNom(t.idTypePiece); as nom) {
                       <span class="sd__piece-file">{{ nom }} · {{ pieceTaille(t.idTypePiece) }}</span>
@@ -479,18 +481,15 @@ interface ApercuDossier {
             <!-- Pièces jointes : rattachées à la FAMILLE (référentiel type-piece-jointes), connues dès l'entrée. -->
             <div class="sd__pieces">
               <h2 class="sd__sub">Pièces jointes</h2>
-              @if (!typesPiece().length) {
-                <p class="cnm-muted">Aucune pièce attendue pour cette famille de dossier.</p>
+              <!-- ⚠️ Demande user (2026-09-01) — mêmes règles que la branche PPM : optionnelles masquées. -->
+              @if (!typesPieceVisibles().length) {
+                <p class="cnm-muted">Aucune pièce à fournir pour cette famille de dossier.</p>
               }
-                @for (t of typesPiece(); track t.idTypePiece) {
+                @for (t of typesPieceVisibles(); track t.idTypePiece) {
                   <div class="sd__piece" [class.sd__piece--manquante]="t.obligatoire && !pieces().has(t.idTypePiece)">
                     <span class="sd__piece-lbl">📎 {{ t.libellePiece }}</span>
                     <div class="sd__piece-right">
-                      @if (t.obligatoire) {
-                        <span class="badge badge-danger">obligatoire</span>
-                      } @else {
-                        <span class="badge badge-neutral">optionnel</span>
-                      }
+                      <span class="badge badge-danger">obligatoire</span>
                       @if (pieceNom(t.idTypePiece); as nom) {
                         <span class="sd__piece-file">{{ nom }} · {{ pieceTaille(t.idTypePiece) }}</span>
                         <button type="button" class="btn btn-secondary btn-sm" (click)="retirerPiece(t.idTypePiece)" aria-label="Retirer">✕</button>
@@ -1047,6 +1046,16 @@ export class SoumettreDossier {
   agpmManquanteSaisie(): boolean {
     const t = this.agpmType();
     return this.agpmRequisSaisie() && t != null && !this.pieces().has(t.idTypePiece);
+  }
+
+  /**
+   * ⚠️ Demande user (2026-09-01) — pièces AFFICHÉES à la saisie : les obligatoires, plus l'AGPM
+   * quand un mode déclencheur la rend exigée (sinon impossible de la joindre au moment où elle
+   * compte). Les optionnelles ne sont ni proposées ni listées. Méthode (pas un computed) : le
+   * critère AGPM lit l'état du formulaire, qui n'est pas un signal — même motif qu'`agpmRequisSaisie`.
+   */
+  typesPieceVisibles(): TypePieceJointe[] {
+    return this.typesPiece().filter((t) => t.obligatoire || (t.code === 'AGPM' && this.agpmRequisSaisie()));
   }
 
   readonly marcheForm = this.fb.nonNullable.group({
