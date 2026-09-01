@@ -500,3 +500,8 @@
 @media (max-width: 48rem) {
   .dpm-fiche__liste > div { grid-template-columns: 1fr; gap: 0.15rem; }
 }
+
+/* Onglet « Fiche de présentation » (2026-09-01) — trois listes au format du formulaire officiel. */
+.dpm-fp-note { margin: 0 0 12px; font-size: var(--text-sm); }
+.dpm-fp-titre { margin: 18px 0 8px; font-size: var(--text-md); font-weight: 700; color: var(--n-800); }
+.dpm-fp-titre:first-of-type { margin-top: 0; }

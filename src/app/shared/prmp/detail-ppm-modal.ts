@@ -38,6 +38,7 @@ import { PpmFormFactory } from './ppm-form-factory';
 import { DpmBenefsMarche } from './dpm-benefs-marche';
 import { CibleSuppression, DpmConfirmationSuppression } from './dpm-confirmation-suppression';
 import { DpmDatesMarche, libelleCapm } from './dpm-dates-marche';
+import { calculerFichePresentation } from './fiche-presentation';
 import { DpmLotsMarche } from './dpm-lots-marche';
 import { DpmReimportRefuse } from './dpm-reimport-refuse';
 
@@ -194,6 +195,12 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
             [attr.aria-selected]="onglet() === 'ppm'" (click)="onglet.set('ppm')">
             Plan de passation <span class="dpm-tab__n">{{ marches().length }}</span>
           </button>
+          <!-- ⚠️ Demande user (2026-09-01) — la « Fiche de présentation » officielle, DÉRIVÉE des
+               marchés saisis à la création : rien de plus n'est chargé, rien n'est persisté. -->
+          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'fiche'"
+            [attr.aria-selected]="onglet() === 'fiche'" (click)="onglet.set('fiche')">
+            Fiche de présentation <span class="dpm-tab__n">{{ fiche().nbMarchesConcernes }}</span>
+          </button>
           <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'pieces'"
             [attr.aria-selected]="onglet() === 'pieces'" (click)="onglet.set('pieces')">
             Pièces jointes <span class="dpm-tab__n">{{ pieces().length }}</span>
@@ -341,6 +348,82 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                 <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" />
               }
             </div>
+            }
+
+            <!-- ⚠️ Demande user (2026-09-01) — reprend la FORME de la « Fiche de présentation »
+                 officielle (pièce du dépôt) : trois listes dérivées du plan. Les JUSTIFICATIONS
+                 restent à compléter sur la fiche signée — l'écran les signale, il ne les saisit pas. -->
+            @if (onglet() === 'fiche') {
+              <div class="dpm-section" role="tabpanel">
+                <p class="dpm-fp-note cnm-muted">
+                  Listes établies depuis les marchés du plan — même forme que la fiche de présentation
+                  jointe au dépôt. Les justifications sont à compléter sur la fiche signée.
+                </p>
+
+                <h3 class="dpm-fp-titre">1. Liste des marchés à passer par mode dérogatoire avec justifications</h3>
+                @if (fiche().derogatoires.length) {
+                  <div class="table-responsive">
+                    <table class="cnm-table">
+                      <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Justification</th></tr></thead>
+                      <tbody>
+                        @for (l of fiche().derogatoires; track l.idDetail) {
+                          <tr>
+                            <td>{{ l.objet }}</td>
+                            <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
+                            <td>{{ l.modeLibelle }}</td>
+                            <td class="cnm-muted">À compléter</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <p class="cnm-muted">Aucun marché à passer par mode dérogatoire.</p>
+                }
+
+                <h3 class="dpm-fp-titre">2. Liste des marchés à délais aménagés avec justifications</h3>
+                @if (fiche().delaisAmenages.length) {
+                  <div class="table-responsive">
+                    <table class="cnm-table">
+                      <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th><th scope="col">Justifications</th></tr></thead>
+                      <tbody>
+                        @for (l of fiche().delaisAmenages; track l.idDetail) {
+                          <tr>
+                            <td>{{ l.objet }}</td>
+                            <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
+                            <td>{{ l.modeLibelle }}</td>
+                            <td>{{ l.delaiJours }} jours <span class="cnm-muted">(minimum du mode : {{ l.delaiMinJours }})</span></td>
+                            <td class="cnm-muted">À compléter</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <p class="cnm-muted">Aucun marché à délais aménagés.</p>
+                }
+
+                <h3 class="dpm-fp-titre">3. Liste des contrats-cadres</h3>
+                @if (fiche().contratsCadres.length) {
+                  <div class="table-responsive">
+                    <table class="cnm-table">
+                      <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th></tr></thead>
+                      <tbody>
+                        @for (l of fiche().contratsCadres; track l.idDetail) {
+                          <tr>
+                            <td>{{ l.objet }}</td>
+                            <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
+                            <td>{{ l.modeLibelle }}</td>
+                            <td>@if (l.delaiJours != null) { {{ l.delaiJours }} jours } @else { — }</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else {
+                  <p class="cnm-muted">Aucun contrat-cadre.</p>
+                }
+              </div>
             }
 
             @if (onglet() === 'pieces') {
@@ -805,7 +888,7 @@ export class DetailPpmModal implements OnInit {
     return r !== 'PRMP' && r !== 'UGPM';
   });
   /** Onglet courant — le plan de passation est le motif d'ouverture le plus fréquent du modal. */
-  readonly onglet = signal<'entite' | 'ppm' | 'pieces'>('ppm');
+  readonly onglet = signal<'entite' | 'ppm' | 'fiche' | 'pieces'>('ppm');
   /** Fiches d'identité de l'onglet 1 (UGPM vide hors ADMINISTRATEUR : lecture réservée). */
   readonly entites = signal<EntiteContract[]>([]);
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -952,6 +1035,19 @@ export class DetailPpmModal implements OnInit {
   });
   /** Dates prévisionnelles (bulk, lecture seule sous chaque marché). */
   readonly previsions = signal<MarchePrevision[]>([]);
+
+  /**
+   * ⚠️ Demande user (2026-09-01) — onglet « Fiche de présentation » : les trois listes du
+   * formulaire officiel, DÉRIVÉES du plan (fonction pure testée, rien de persisté).
+   */
+  readonly fiche = computed(() =>
+    calculerFichePresentation(this.marches(), this.previsions(), this.modes(), this.capms()),
+  );
+
+  /** Montant au format français (« — » si absent) — même rendu que la table des marchés. */
+  montantFr(v?: number): string {
+    return v == null ? '—' : new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(v);
+  }
   /** idDetail → ses dates prévisionnelles (triées par ordre CAPM). */
   private readonly prevParDetail = computed(() => {
     const map = new Map<number, MarchePrevision[]>();
@@ -987,7 +1083,9 @@ export class DetailPpmModal implements OnInit {
       benefs: this.serviceBenefService.list(),
       previsions: this.previsionService.list(),
       lots: this.lotService.list(),
-      modeMap: this.lookups.lookup(ModePassationService, 'idMode', ['libelle']),
+      // ⚠️ Fiche de présentation (2026-09-01) — la LISTE complète des modes (categorie,
+      // delaiMinJours) remplace le simple lookup de libellés : un seul appel, deux usages.
+      modes: this.modeService.list(),
       natureMap: this.lookups.lookup(NatureService, 'idNature', ['libelle']),
       entiteMap: this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']),
       compteMap: this.lookups.lookup(CompteService, 'numCompte', ['libelle']),
@@ -1005,12 +1103,13 @@ export class DetailPpmModal implements OnInit {
       localiteMap: this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']),
       prmps: this.afficheIdentites() ? this.prmpService.listeSilencieuse().pipe(catchError(() => of([] as Prmp[]))) : of([] as Prmp[]),
     }).subscribe({
-      next: ({ ppm, dossier, marches, pieces, benefs, previsions, lots, modeMap, natureMap, entiteMap, compteMap, soas, capms, entites, localiteMap, prmps }) => {
+      next: ({ ppm, dossier, marches, pieces, benefs, previsions, lots, modes, natureMap, entiteMap, compteMap, soas, capms, entites, localiteMap, prmps }) => {
         this.entites.set(entites);
         this.localiteMap.set(localiteMap);
         this.prmps.set(prmps);
         this.chargerUgpmsRattachees(ppm?.idPrmp);
-        this.modeMap.set(modeMap);
+        this.modes.set(modes);
+        this.modeMap.set(new Map(modes.map((m) => [String(m.idMode), m.libelle ?? ''])));
         this.natureMap.set(natureMap);
         this.entiteMap.set(entiteMap);
         this.compteMap.set(compteMap);
