@@ -16,7 +16,7 @@ import {
  * le simule ici par le décor réel des groupes du circuit.
  */
 describe('separerGroupesParDelegation', () => {
-  /** Ce que voit un Président / CC : Réceptions et Enregistrement sont exercés par délégation. */
+  /** Ce que voit un Président / CC : Réceptions et Enregistrés sont exercés par délégation. */
   const commeDelegue = (g: ClassementGroupe) => g.key === 'receptions' || g.key === 'enregistrement';
   /** Ce que voit le Secrétaire : il est TITULAIRE de ces tâches, rien n'est délégué. */
   const commeTitulaire = () => false;
@@ -88,11 +88,11 @@ describe('separerGroupesParDelegation', () => {
  * total compte des dossiers DISTINCTS — et deux groupes couvrent le même statut.
  */
 describe('statutsPartages', () => {
-  it('repère PRET_DISPATCH, couvert à la fois par « Pré-dispatch » et « Enregistrement »', () => {
+  it('repère PRET_DISPATCH, couvert à la fois par « Pré-dispatch » et « Enregistrés »', () => {
     const partages = statutsPartages(CIRCUIT_GROUPES);
     expect(partages.length).toBe(1);
     expect(partages[0].statut).toBe('PRET_DISPATCH');
-    expect(partages[0].labels.sort()).toEqual(['Enregistrement', 'Pré-dispatch']);
+    expect(partages[0].labels.sort()).toEqual(['Enregistrés', 'Pré-dispatch']);
   });
 
   it('ne signale RIEN quand aucun statut n’est partagé', () => {

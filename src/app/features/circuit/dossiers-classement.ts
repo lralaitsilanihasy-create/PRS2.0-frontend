@@ -61,7 +61,7 @@ export * from './classement-config';
               <div class="cnm-stat__value">{{ totalDossiers() }}</div>
               <div class="cnm-stat__label">Total dossiers</div>
               <!-- ⚠️ Demande user (2026-08-28) — la somme des tuiles ne tombe pas sur le total :
-                   « Pré-dispatch » et « Enregistrement » couvrent le même statut. La phrase est du
+                   « Pré-dispatch » et « Enregistrés » couvrent le même statut. La phrase est du
                    VRAI TEXTE, pas une infobulle : une explication qu'il faut survoler pour lire
                    n'existe pas au clavier ni au lecteur d'écran. -->
               @if (explicationTotal(); as note) {
@@ -109,7 +109,7 @@ export * from './classement-config';
 
               <!-- ⚠️ Demande user (2026-08-28) — deux sections : les tâches du profil connecté, puis
                    celles exercées par délégation sous leur propre intitulé. Elles étaient
-                   intercalées (« Réceptions » et « Enregistrement » avant « Pré-dispatch »). -->
+                   intercalées (« Réceptions » et « Enregistrés » avant « Pré-dispatch »). -->
               <div class="md__rows">
                 @for (sec of sectionsGroupes(); track sec.cle) {
                   @if (sec.titre) {
@@ -271,7 +271,7 @@ export class DossiersClassement {
     if (g.actionReception) exigences.push(this.permissions.can('RECEPTION_WRITE'));
     if (g.actionDispatch || g.actionAnnulerDispatch) exigences.push(this.permissions.can('DISPATCH_WRITE'));
     if (g.actionExamen || g.actionModifierExamen) exigences.push(this.permissions.can('EXAMEN_WRITE'));
-    // Groupe sans action rattaché à un profil délégable (ex. Enregistrement) : identité ou délégation exercée.
+    // Groupe sans action rattaché à un profil délégable (ex. Enregistrés) : identité ou délégation exercée.
     if (g.delegation) exigences.push(this.permissions.peutExecuter(g.delegation));
     return exigences.length === 0 || exigences.some(Boolean);
   }
@@ -279,7 +279,7 @@ export class DossiersClassement {
    * Groupes affichables, RANGÉS : d'abord ceux du profil connecté, puis ceux exercés par délégation.
    *
    * ⚠️ Demande user (2026-08-28) — même exigence que pour la barre latérale : ne pas mélanger. Dans
-   * les cartes, « Réceptions » et « Enregistrement » (tâches du Secrétaire) s'intercalaient AVANT
+   * les cartes, « Réceptions » et « Enregistrés » (tâches du Secrétaire) s'intercalaient AVANT
    * « Pré-dispatch » et « Dispatch », qui sont les tâches propres du Président et du CC.
    *
    * La clé de partage est `delegationDe(g)`, pas le champ `delegation` : « Réceptions » ne porte pas
@@ -344,7 +344,7 @@ export class DossiersClassement {
   /** Type dont les demandes de retrait sont dépliées sous le classement ; null = replié. */
   readonly selectionRetrait = signal<string | null>(null);
   /** idTypeDossier → { groupeKey → compte }. ⚠️ Un dossier peut compter dans PLUSIEURS groupes
-   * (statut partagé, ex. PRET_DISPATCH ∈ Enregistrement ET Pré-dispatch) — les totaux utilisent
+   * (statut partagé, ex. PRET_DISPATCH ∈ Enregistrés ET Pré-dispatch) — les totaux utilisent
    * `distincts`, jamais la somme des groupes. */
   private readonly compteurs = signal<Map<string, Record<string, number>>>(new Map());
   /** idTypeDossier → nombre de dossiers DISTINCTS couverts par au moins un groupe. */
@@ -362,9 +362,9 @@ export class DossiersClassement {
    * Explication du décalage entre la somme des tuiles et le total — `null` quand il n'y en a pas.
    *
    * ⚠️ Demande user (2026-08-28) : « lever l'ambiguïté ». Un Président lisait 3 Pré-dispatch,
-   * 0 Dispatch, 1 Réception et 3 Enregistrement, soit 7, en face d'un total affiché à 4. Les deux
+   * 0 Dispatch, 1 Réception et 3 Enregistrés, soit 7, en face d'un total affiché à 4. Les deux
    * chiffres sont justes mais ne comptent pas la même chose : les tuiles comptent par groupe, le
-   * total compte des dossiers DISTINCTS — et « Pré-dispatch » et « Enregistrement » couvrent le
+   * total compte des dossiers DISTINCTS — et « Pré-dispatch » et « Enregistrés » couvrent le
    * même statut. Sans un mot d'explication, l'écran donne l'impression de se tromper.
    *
    * La phrase n'apparaît QUE si l'écart existe réellement à l'écran : un recouvrement structurel

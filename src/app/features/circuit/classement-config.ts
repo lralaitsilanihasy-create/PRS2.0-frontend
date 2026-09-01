@@ -20,7 +20,7 @@ export interface ClassementGroupe {
   colonnes?: ColonneCircuit[];
   /** Propose l'action « Dispatcher » dans la liste (gardée par la capacité DISPATCH_WRITE). */
   actionDispatch?: boolean;
-  /** Propose « Enregistrer » la réception initiale (gardée par RECEPTION_WRITE, dossier sans réception). */
+  /** Propose « Attribuer un numéro » — la réception initiale (gardée par RECEPTION_WRITE, dossier sans réception). */
   actionReception?: boolean;
   /** Propose « Retirer » (annuler le dispatch → retour pré-dispatch ; gardée par DISPATCH_WRITE). */
   actionAnnulerDispatch?: boolean;
@@ -29,7 +29,7 @@ export interface ClassementGroupe {
   /** Propose « Modifier l'examen » (même cible) tant que le dossier est EXAMINE et son PV non soumis. */
   actionModifierExamen?: boolean;
   /**
-   * Groupe SANS action propre à un profil délégable (ex. « Enregistrement » du Secrétaire) : visible
+   * Groupe SANS action propre à un profil délégable (ex. « Enregistrés » du Secrétaire) : visible
    * seulement si `peutExecuter(delegation)` — identité chez le titulaire, paire active ET exercée
    * ailleurs (2026-08-15, parité des tâches du subordonné chez P/CC).
    */
@@ -59,7 +59,7 @@ export interface ClassementConfig {
 }
 
 /**
- * File de réception du Secrétaire (SOUMIS → « Enregistrer ») — TITULAIRE : Secrétaire ; montée aussi
+ * File de réception du Secrétaire (SOUMIS → « Attribuer un numéro ») — TITULAIRE : Secrétaire ; montée aussi
  * chez Président/CC par DÉLÉGATION ASCENDANTE (paire active en base ; le groupe est masqué sinon,
  * cf. `DossiersClassement.groupesVisibles`).
  */
@@ -80,8 +80,8 @@ export const GROUPE_RECEPTIONS: ClassementGroupe = {
  * dossiers DISTINCTS (cf. `DossiersClassement.grouper`).
  */
 export const GROUPE_ENREGISTREMENT: ClassementGroupe = {
-  key: 'enregistrement',
-  label: 'Enregistrement',
+  key: 'enregistrement', // clé de ROUTE — ne pas renommer avec le libellé
+  label: 'Enregistrés', // « Enregistrement » → « Enregistrés » (demande user 2026-09-01)
   statuts: ['PRET_DISPATCH'],
   icon: '📚',
   kind: 'b',
@@ -132,7 +132,7 @@ export interface SectionGroupes {
  * délégation ascendante.
  *
  * ⚠️ Demande user (2026-08-28) : « ne pas mélanger », même exigence que pour la barre latérale.
- * Dans les cartes, « Réceptions » et « Enregistrement » (tâches du Secrétaire) s'intercalaient avant
+ * Dans les cartes, « Réceptions » et « Enregistrés » (tâches du Secrétaire) s'intercalaient avant
  * « Pré-dispatch » et « Dispatch », propres au Président et au CC.
  *
  * Le prédicat est INJECTÉ parce que la réponse dépend de l'utilisateur connecté, pas de la
@@ -160,7 +160,7 @@ export function separerGroupesParDelegation(
  * Statuts couverts par PLUSIEURS groupes à la fois, avec les libellés des groupes concernés.
  *
  * ⚠️ 2026-08-28 — sert à lever une ambiguïté de lecture signalée par le pilote : la somme des
- * tuiles ne tombe pas sur le total. Chez Président/CC, « Pré-dispatch » et « Enregistrement »
+ * tuiles ne tombe pas sur le total. Chez Président/CC, « Pré-dispatch » et « Enregistrés »
  * couvrent tous deux `PRET_DISPATCH` — ce sont deux vues de la même donnée (« lequel dispatcher ? »
  * d'un côté, le registre du Secrétaire de l'autre). Les mêmes dossiers y figurent donc deux fois,
  * quand le total, lui, compte en dossiers DISTINCTS.

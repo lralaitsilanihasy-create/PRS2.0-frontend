@@ -148,7 +148,7 @@ import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classe
                           class="btn btn-primary btn-sm"
                           [title]="permissions.parDelegation('RECEPTION_WRITE') ? 'Tâche du profil Secrétaire — exercée par délégation active.' : ''"
                           (click)="receptionItem.set(d)"
-                        >Enregistrer</button>
+                        >Attribuer un numéro</button>
                       }
                       @if (peutAnnulerDispatch(d)) {
                         <button type="button" class="btn btn-danger btn-sm" (click)="annulation.set(d)">Retirer</button>
@@ -316,7 +316,7 @@ export class DossiersCircuitListe {
     const rows = this.dossiers().filter((d) => this.peutDispatcher(d) && d.idLocalite === loc);
     return rows.length > 0 && rows.every((d) => set.has(d.idDossier));
   });
-  /** Ce groupe propose-t-il « Enregistrer » la réception ? (config `actionReception` — espace Secrétaire). */
+  /** Ce groupe propose-t-il « Attribuer un numéro » (enregistrer la réception) ? (config `actionReception` — espace Secrétaire). */
   private readonly aActionReception = computed(() => !!this.groupeConfig()?.actionReception);
   /** Ce groupe propose-t-il « Retirer » (annuler le dispatch) ? (config `actionAnnulerDispatch`). */
   private readonly aActionAnnulerDispatch = computed(() => !!this.groupeConfig()?.actionAnnulerDispatch);
@@ -532,7 +532,7 @@ export class DossiersCircuitListe {
   aExamenEnCours(d: Dossier): boolean {
     return d.statut === 'DISPATCHE' && this.dossiersAvecExamen().has(d.idDossier);
   }
-  /** « Enregistrer » la réception : offert par le groupe (actionReception), autorisé (RECEPTION_WRITE) et dossier sans réception (règle « à réceptionner »). */
+  /** « Attribuer un numéro » (enregistrer la réception) : offert par le groupe (actionReception), autorisé (RECEPTION_WRITE) et dossier sans réception (règle « à réceptionner »). */
   peutReceptionner(d: Dossier): boolean {
     return this.aActionReception() && this.permissions.can('RECEPTION_WRITE') && !this.recByDossier().has(d.idDossier);
   }
