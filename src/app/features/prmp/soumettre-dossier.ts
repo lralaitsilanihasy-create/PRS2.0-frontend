@@ -446,7 +446,9 @@ interface ApercuDossier {
                 <span aria-hidden="true">ℹ️</span>
                 <div>Un marché est saisi en « appel d'offres ouvert » : la pièce <strong>AGPM</strong>
                   (Avis Général de Passation de Marché) sera <strong>exigée à la soumission</strong>.
-                  Le brouillon peut être créé sans elle ; joignez-la avant de soumettre.</div>
+                  Le brouillon peut être créé sans elle ; joignez-la avant de soumettre.
+                  Le <strong>projet d'AGPM</strong> dérivé de votre plan est visible dans
+                  l'<strong>Aperçu</strong> ci-dessous, avec la fiche de présentation.</div>
               </div>
             }
 
