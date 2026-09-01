@@ -9,7 +9,7 @@
 > | 1 | Forme de la justification | **Note d'intérim TÉLÉVERSÉE (PDF)**, jointe au visa |
 > | 2 | Qui enregistre, quand | **L'intérimaire lui-même, au moment du visa** (auto-déclaration tracée) |
 > | 3 | Localité du CC intérimaire | **Garde maintenue** : un CC ne vise par intérim que dans SA localité ; seul le Président supplée partout |
-> | 4 | Trace sur le document PV | **Aucune mention** — trace interne seulement (base + journal d'audit) |
+> | 4 | Trace sur le document PV | **RÉVISÉ le 01/09** — dépend de la localité du dossier : **Centrale = aucune mention** (trace interne seulement) ; **toute autre localité = mention « par intérim » NÉCESSAIRE** sur la ligne de signature du P/CC, posée côté serveur |
 
 ---
 
@@ -41,9 +41,16 @@ déjà au dispatch (CC hors localité en l'absence du Président) — mais avec 
     supplée partout.
   - Tout le reste du `viser` est inchangé (avis, secrétaire, co-signataire, part de signature,
     transition, verrous).
-- **Trace interne** : qui a visé par intérim, quand, et le chemin de la note (table dédiée ou
-  colonnes sur `t_pv_examen`, à votre main) + entrée au journal d'audit. **Aucune mention sur le
-  document PV généré** (arbitrage 4) — ne pas reproduire le motif « (par délégation) ».
+- **Trace interne** (toutes localités) : qui a visé par intérim, quand, et le chemin de la note
+  (table dédiée ou colonnes sur `t_pv_examen`, à votre main) + entrée au journal d'audit.
+- **Mention sur le document PV** (arbitrage 4 RÉVISÉ) : dépend de la **localité du dossier** —
+  - **Centrale** : aucune mention, le PV imprime le signataire tel quel ;
+  - **toute autre localité** : la ligne de signature du Président/CC porte la mention
+    **« par intérim »**, posée côté serveur à la génération (même mécanique que « (par
+    délégation) » du Secrétaire de séance).
+  - ⚠️ La mention se joue dans les **modèles régionaux** (les variantes centrale/régionale des
+    14 `.docx` existent déjà) : vérifier les MODÈLES, pas seulement le Java — et gare aux quatre
+    pièges connus de leur dérivation (POI, `xml:space`, `<w:t/>`, ordre des patchs).
 - **DTO** : exposer `viseParInterim: boolean` (et de quoi télécharger la note — cf. question 2
   ci-dessous) pour la consultation.
 - **Notification `PV_A_VALIDER`** : inchangée (ciblée dispatcheur, repli large existant) —
@@ -69,5 +76,7 @@ déjà au dispatch (CC hors localité en l'absence du Président) — mais avec 
 - Consultation : indicateur « visé par intérim » + téléchargement de la note selon la réponse à la
   question 2.
 
-Comme toujours : tests (400 sans note, 403 hors P/CC, 403 CC hors localité, chemin normal intact),
-docs (`api-endpoints`, `regles-gestion`), **commit + push complet, fichiers neufs compris**.
+Comme toujours : tests (400 sans note, 403 hors P/CC, 403 CC hors localité, chemin normal intact,
+**mention « par intérim » présente sur un PV de localité régionale et ABSENTE sur un PV Centrale**),
+docs (`api-endpoints`, `regles-gestion`), **commit + push complet, fichiers neufs compris — les
+`.docx` modifiés aussi**.
