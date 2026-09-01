@@ -47,9 +47,11 @@ export class Login {
       error: (err: ApiError) => {
         this.submitting.set(false);
         // 401 = identifiants invalides OU compte désactivé : on affiche le message backend si présent.
-        this.errorMessage.set(
-          err.status === 401 ? err.message || 'Identifiants invalides.' : err.message,
-        );
+        const message = err.status === 401 ? err.message || 'Identifiants invalides.' : err.message;
+        // Boîte de dialogue centrée (règle maison du 06/08 : un refus s'accuse réception) ;
+        // le bandeau en ligne reste comme rappel une fois le dialogue fermé.
+        this.toast.error(message, 'Connexion refusée');
+        this.errorMessage.set(message);
       },
     });
   }
