@@ -14,6 +14,25 @@ export interface Controleur {
   transversal: boolean;
 }
 
+/**
+ * ⚠️ Rattachements (2026-09-01) — chaînes **Membre → Vérificateur → Assistant** qui routent la
+ * boucle FAVR post-visa (vérification/validation SIGMP par le Vérificateur rattaché au Membre
+ * examinateur, archivage par l'Assistant rattaché à ce Vérificateur). CIBLAGE de files, PAS une
+ * garde : un collègue de la localité peut toujours agir. Distinct d'`idSuperieur` (hiérarchie).
+ * `profilAttendu` (VERIFICATEUR pour un Membre, ASSISTANT_CONTROLEUR pour un Vérificateur) est
+ * résolu serveur pour peupler la liste de choix sans rejouer la règle côté front.
+ */
+export interface RattachementDto {
+  imControleur: string;
+  nomControleur?: string;
+  profil: 'MEMBRE' | 'VERIFICATEUR' | (string & {});
+  idLocalite?: string | null;
+  /** Rattaché courant — `null` = chaîne incomplète (état NORMAL : repli localité, pas une erreur). */
+  imRattache?: string | null;
+  nomRattache?: string | null;
+  profilAttendu: 'VERIFICATEUR' | 'ASSISTANT_CONTROLEUR' | (string & {});
+}
+
 /** Fiche de la personne PRMP. PK = `idPrmp` = **matricule** (identifiant unifié, comme les contrôleurs). */
 /** Statut d'un mandat PRMP — dérivé serveur à la date du jour (`ABROGE` prime, sinon la période décide). */
 export type StatutMandat = 'ACTIF' | 'EN_TRANSITION' | 'ACHEVE' | 'ABROGE';

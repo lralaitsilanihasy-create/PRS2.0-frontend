@@ -14,6 +14,7 @@ import {
   ModifierUgpmRequest,
   Organigramme,
   Prmp,
+  RattachementDto,
   Ugpm,
 } from '../models';
 
@@ -61,6 +62,25 @@ export class ControleurService extends CrudService<Controleur, string> {
       responseType: 'blob',
       context: skipErrorToast(),
     });
+  }
+
+  /**
+   * ⚠️ Rattachements (2026-09-01) — `GET /api/controleurs/rattachements` : porteurs de chaîne
+   * (Membres et Vérificateurs) avec leur rattaché courant. Ouvert à Admin / Président / CC (le CC
+   * reçoit sa seule localité). Sous-ressource dédiée — le `PUT /api/controleurs/{id}` général reste
+   * réservé à l'Admin (l'ouvrir aurait donné au P/CC l'écriture du profil et de la localité).
+   */
+  rattachements(): Observable<RattachementDto[]> {
+    return this.http.get<RattachementDto[]>(`${this.baseUrl}/rattachements`);
+  }
+
+  /**
+   * `PUT /api/controleurs/{im}/rattachement` — pose (`imRattache`) ou retire (`imRattache: null`)
+   * le rattaché. 403 hors Admin/P/CC ou CC hors localité ; 409 profil sans chaîne, profil du
+   * rattaché incorrect, inter-localités, auto-rattachement ; 404 matricule inconnu.
+   */
+  majRattachement(im: string, imRattache: string | null): Observable<RattachementDto> {
+    return this.http.put<RattachementDto>(`${this.baseUrl}/${encodeURIComponent(im)}/rattachement`, { imRattache });
   }
 }
 

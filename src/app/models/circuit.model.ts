@@ -60,6 +60,20 @@ export interface Dossier {
   creeParNom?: string | null;
   /** Nom lisible correspondant à `soumisPar` ; `null` si non résolvable. */
   soumisParNom?: string | null;
+  /**
+   * ⚠️ Rattachements (2026-09-01) — Vérificateur CIBLE de la boucle FAVR post-visa : le rattaché du
+   * Membre EXAMINATEUR (pas le co-signataire), résolu serveur, présent en unitaire ET en liste.
+   * `null` = chaîne incomplète, repli localité — état NORMAL, aucun badge. ⚠️ Ciblage SANS garde :
+   * tout Vérificateur de la localité peut agir — ne JAMAIS griser l'action d'un dossier « d'autrui »,
+   * ce serait inventer une règle que le serveur n'applique pas.
+   */
+  imVerificateurCible?: string | null;
+  /** Nom complet du Vérificateur cible, résolu serveur. */
+  nomVerificateurCible?: string | null;
+  /** Assistant CIBLE de l'archivage (rattaché du Vérificateur ayant validé) — mêmes règles : null normal, ciblage sans garde. */
+  imAssistantCible?: string | null;
+  /** Nom complet de l'Assistant cible, résolu serveur. */
+  nomAssistantCible?: string | null;
   /** Verrou optimiste : à renvoyer telle quelle au PUT (périmée → 409 `CONFLIT_VERSION`) ; absente = dernier écrit gagne. */
   version?: number;
 }

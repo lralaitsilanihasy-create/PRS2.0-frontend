@@ -35,6 +35,8 @@ export const CC_ROUTES: Routes = [
   },
   { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_CC } },
   { path: 'mes-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_CC } },
+  // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le CC administre SA localité (scopé serveur).
+  { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
   // « Dispatch des dossiers » retiré : dossiers dispatchés consultables dans « Mes dossiers ».
   // Même hub que le Président (cf. president.routes.ts) : les deux profils partagent leurs écrans.
   // Les listes s'ouvrent sous les cartes via ces routes ENFANTS, qui portent les mêmes `data` que les

@@ -62,6 +62,9 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // gardés par capacités, mêmes paires).
     { label: 'Vérifications', path: `${base}/verifications`, icon: '🔎', delegation: 'VERIFICATEUR' },
     { label: 'Archivage des PV', path: `${base}/pv-examens`, icon: '🗄', delegation: 'ASSISTANT_CONTROLEUR' },
+    // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant, administrées par
+    // Admin + Président (partout) + CC (sa localité) : droit PROPRE du P/CC, pas une délégation.
+    { label: 'Chaînes de contrôle', path: `${base}/chaines-controle`, icon: '⛓' },
     // « PPM & marchés » et « Marchés & dates prév. » : retirés du menu des DEUX profils
     // (demande user 2026-08-04). Routes conservées de part et d'autre — cf. president.routes.ts / cc.routes.ts.
     // ⚠️ 2026-08-07 (demande user) — « Demandes de retrait » quitte le menu : une demande porte sur un
@@ -157,6 +160,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Tableau de bord global', path: '/admin/tableau-de-bord', icon: '▤' },
     { label: 'Inscriptions en attente', path: '/admin/inscriptions', icon: '📝' },
     { label: 'Rattachements en attente', path: '/admin/rattachements', icon: '🔗' },
+    { label: 'Chaînes de contrôle', path: '/admin/chaines-controle', icon: '⛓' },
     { label: 'Actualités', path: '/admin/actualites', icon: '📣' },
     { label: 'Référentiels', path: '/admin/referentiels', icon: '⚙' },
     { label: 'Comptes & hiérarchie', path: '/admin/comptes', icon: '👥' },

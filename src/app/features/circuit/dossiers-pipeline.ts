@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { Dispatch, Dossier, Examen, Page, PvExamen, Reception, Verification } from '../../models';
@@ -57,6 +58,14 @@ import { DetailPvModal } from './detail-pv-modal';
               @let info = etapeInfo(d);
               <div class="dossier-card__head">
                 <span class="dossier-card__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (source) { · {{ entiteLabel(d) }}}</span>
+                <!-- ⚠️ Rattachements (2026-09-01) — badge de CIBLAGE seulement : null = chaîne
+                     incomplète, rien à afficher ; et aucune action n'est retirée sur les dossiers
+                     ciblés sur un collègue (pas de garde serveur). -->
+                @if (cibleVerif(d); as c) {
+                  <span class="pipeline__cible" [class.pipeline__cible--moi]="c.moi">
+                    {{ c.moi ? 'À vérifier par vous' : 'À vérifier par ' + c.nom }}
+                  </span>
+                }
                 <div class="dossier-card__head-right">
                   <app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" />
                   <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
@@ -156,6 +165,22 @@ import { DetailPvModal } from './detail-pv-modal';
       color: var(--n-800);
       font-size: var(--text-md);
     }
+    /* Badge de ciblage (rattachements) : discret pour un collègue, accentué pour « les miens ». */
+    .pipeline__cible {
+      font-size: var(--text-sm);
+      color: var(--n-500);
+      background: var(--c-50);
+      border: 1px solid var(--c-100);
+      border-radius: var(--radius-lg);
+      padding: 0.1rem 0.55rem;
+      white-space: nowrap;
+    }
+    .pipeline__cible--moi {
+      color: var(--p-700, #1d4ed8);
+      background: var(--p-50, #eff6ff);
+      border-color: var(--p-200, #bfdbfe);
+      font-weight: 600;
+    }
     .pipeline__pager {
       display: flex;
       align-items: center;
@@ -183,6 +208,7 @@ export class DossiersPipeline {
   private readonly pvService = inject(PvExamenService);
   private readonly verificationService = inject(VerificationService);
   private readonly permissions = inject(PermissionsService);
+  private readonly auth = inject(AuthService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly entiteMap = signal<Map<string, string>>(new Map());
@@ -318,6 +344,27 @@ export class DossiersPipeline {
       .subscribe((idDossier) => this.dossiers.update((arr) => arr.filter((d) => d.idDossier !== idDossier)));
   }
 
+  /**
+   * ⚠️ Rattachements (2026-09-01) — dans les files Vérificateur, les dossiers dont je suis le
+   * Vérificateur CIBLE remontent en tête (« les miens », tri stable : l'ordre serveur est conservé
+   * dans chaque groupe). CIBLAGE seulement — aucune action n'est retirée sur les autres dossiers.
+   */
+  private prioriserMesCibles(rows: Dossier[]): Dossier[] {
+    const ref = this.auth.ref();
+    if (!ref) return rows;
+    return [...rows].sort(
+      (a, b) => (b.imVerificateurCible === ref ? 1 : 0) - (a.imVerificateurCible === ref ? 1 : 0),
+    );
+  }
+
+  /** Badge de ciblage (files Vérificateur) — `null` (chaîne incomplète, repli localité) = aucun badge. */
+  cibleVerif(d: Dossier): { moi: boolean; nom: string } | null {
+    if (this.source !== 'a-verifier' && this.source !== 'en-attente-prmp') return null;
+    const im = d.imVerificateurCible;
+    if (!im) return null;
+    return { moi: im === this.auth.ref(), nom: d.nomVerificateurCible || im };
+  }
+
   /** Échec de chargement : le corps de la liste affiche l'erreur et propose de relancer (AUDIT.md P9). */
   private echec(): void {
     this.loading.set(false);
@@ -352,8 +399,10 @@ export class DossiersPipeline {
             }
           }
           this.dossiers.set(
-            [...dossiers].sort((a, b) =>
-              (dateRecept.get(b.idDossier) ?? '').localeCompare(dateRecept.get(a.idDossier) ?? ''),
+            this.prioriserMesCibles(
+              [...dossiers].sort((a, b) =>
+                (dateRecept.get(b.idDossier) ?? '').localeCompare(dateRecept.get(a.idDossier) ?? ''),
+              ),
             ),
           );
           this.loading.set(false);
@@ -366,7 +415,7 @@ export class DossiersPipeline {
         this.source === 'en-attente-prmp' ? this.dossierService.enAttentePrmp() : this.dossierService.aExaminer();
       call.subscribe({
         next: (rows) => {
-          this.dossiers.set(rows);
+          this.dossiers.set(this.source === 'en-attente-prmp' ? this.prioriserMesCibles(rows) : rows);
           this.loading.set(false);
         },
         error: () => this.echec(),

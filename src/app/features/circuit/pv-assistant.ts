@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Dispatch, Dossier, Examen, PvExamen, Reception } from '../../models';
@@ -68,6 +69,13 @@ import {
                   @if (pv.dateArchivage) {
                     <span class="badge badge-success">Archivé le {{ pv.dateArchivage }}</span>
                   } @else {
+                    <!-- ⚠️ Rattachements (2026-09-01) — badge de CIBLAGE seulement (null = repli
+                         localité, rien) ; le bouton reste offert à tout Assistant : pas de garde. -->
+                    @if (cibleArchivage(pv); as c) {
+                      <span class="pva__cible" [class.pva__cible--moi]="c.moi">
+                        {{ c.moi ? 'À archiver par vous' : 'À archiver par ' + c.nom }}
+                      </span>
+                    }
                     <button type="button" class="btn btn-primary btn-sm" [disabled]="archivage() === pv.idPv"
                       (click)="archiver(pv)">
                       {{ archivage() === pv.idPv ? 'Archivage…' : 'Archiver' }}
@@ -107,6 +115,24 @@ import {
     .pva__toggle { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
     .pva__chev { flex: none; color: var(--n-400); transition: transform 0.15s; }
     .pva__chev.is-open { transform: rotate(180deg); }
+    /* Badge de ciblage (rattachements) : discret pour un collègue, accentué pour « les miens ». */
+    .pva__cible {
+      display: inline-block;
+      margin-right: 0.5rem;
+      font-size: var(--text-sm);
+      color: var(--n-500);
+      background: var(--c-50);
+      border: 1px solid var(--c-100);
+      border-radius: var(--radius-lg);
+      padding: 0.1rem 0.55rem;
+      white-space: nowrap;
+    }
+    .pva__cible--moi {
+      color: var(--p-700, #1d4ed8);
+      background: var(--p-50, #eff6ff);
+      border-color: var(--p-200, #bfdbfe);
+      font-weight: 600;
+    }
     .pva__dl { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
     .pva__dl > div { display: flex; gap: 0.5rem; align-items: baseline; }
     .pva__dl dt { flex: 0 0 11rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
@@ -123,6 +149,7 @@ export class PvAssistant {
   private readonly receptionService = inject(ReceptionService);
   private readonly dossierService = inject(DossierService);
   private readonly lookups = inject(ReferenceLookupService);
+  private readonly auth = inject(AuthService);
 
   private readonly toast = inject(ToastService);
   readonly loading = signal(true);
@@ -188,11 +215,32 @@ export class PvAssistant {
         this.dispatchs.set(r.dispatchs);
         this.receptions.set(r.receptions);
         this.dossiers.set(r.dossiers);
-        this.pvs.set([...r.pvs].sort((a, b) => this.dateSignature(b).localeCompare(this.dateSignature(a))));
+        // ⚠️ Rattachements (2026-09-01) — « les miens » (imAssistantCible = moi, non archivés) en
+        // tête, puis l'ordre par date de signature (tri stable). Ciblage sans garde.
+        const ref = this.auth.ref();
+        this.pvs.set(
+          [...r.pvs]
+            .sort((a, b) => this.dateSignature(b).localeCompare(this.dateSignature(a)))
+            .sort((a, b) => (this.estMaCible(b, ref) ? 1 : 0) - (this.estMaCible(a, ref) ? 1 : 0)),
+        );
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  /** Le PV (non archivé) est-il ciblé sur moi via son dossier (`imAssistantCible`) ? */
+  private estMaCible(pv: PvExamen, ref: string | null): boolean {
+    if (!ref || pv.dateArchivage) return false;
+    return this.dossierByExamen().get(pv.idExamen)?.imAssistantCible === ref;
+  }
+
+  /** Badge de ciblage d'archivage — `null` (chaîne incomplète, repli localité) = aucun badge. */
+  cibleArchivage(pv: PvExamen): { moi: boolean; nom: string } | null {
+    const d = this.dossierByExamen().get(pv.idExamen);
+    const im = d?.imAssistantCible;
+    if (!im) return null;
+    return { moi: im === this.auth.ref(), nom: d?.nomAssistantCible || im };
   }
 
   basculer(pv: PvExamen): void {

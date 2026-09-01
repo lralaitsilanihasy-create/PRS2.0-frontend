@@ -82,6 +82,9 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'actualites', loadComponent: () => import('./actualites-admin').then((m) => m.ActualitesAdmin) },
   { path: 'inscriptions', loadComponent: () => import('./inscriptions-admin').then((m) => m.InscriptionsAdmin) },
   { path: 'rattachements', loadComponent: () => import('./rattachements-admin').then((m) => m.RattachementsAdmin) },
+  // ⚠️ Rattachements Membre→Vérificateur→Assistant (2026-09-01) — « chaines-controle » car
+  // « rattachements » est pris (PRMP↔entité, ci-dessus).
+  { path: 'chaines-controle', loadComponent: () => import('./chaines-controle').then((m) => m.ChainesControle) },
   // Écran dédié : journal d'audit paginé et filtré (table, acteur, période) — la table croît sans
   // fin, le CRUD générique en demandait la totalité (⚠️ audit 2026-08-27, C-1).
   { path: 'audit', loadComponent: () => import('./audit-logs-admin').then((m) => m.AuditLogsAdmin) },
