@@ -59,9 +59,10 @@ parametres:
 
   # Réponses du pilote, 2026-08-26.
   date_demarrage: 2026-06-17          # 1er commit `62f5f9a` « Initial commit - frontend CNM »
-  # Réarrêté le 28/08 après un `git pull` : 39 commits étaient arrivés depuis le 20/08
-  # (7 le 26/08, 32 le 27/08 — deux chantiers d'audit et un nouvel écran de journal).
-  date_arrete: 2026-08-28             # date d'observation ; dernier commit du dépôt : 2026-08-27
+  # Réarrêté le 01/09 : le développement a repris dès le soir du 28/08 sur un chantier
+  # arbitré en cours de route (A27 — visa du PV puis chaînes de contrôle), livré et
+  # recetté le 01/09. Il décale A22/A23 de 2 jours ouvrés — voir leurs notes.
+  date_arrete: 2026-09-01             # date d'observation ; dernier commit du dépôt : 2026-09-01
   # Échéance décalée de deux jours ouvrés le 26/08 : le polissage du module de
   # planification (A26, 24 → 28/08) repousse la reprise du développement au 31/08,
   # ce qui aurait comprimé la recette de 5 à 3 jours. Arbitrage du pilote : garder
@@ -310,20 +311,22 @@ module_planification:
     debut: 2026-08-17
     duree_jours: 3
     statut: en_cours
-    avancement: 83
+    avancement: 86
     responsable: "Mr Lanto"
     dependances: [A06]
     jalon: null
     preuve: >-
       AUDIT.md §3 dénombre 35 constats (S1-S13, P1-P11, A1-A7, T1-T3, D1), auxquels s'ajoute
-      C-1 issu du nouvel audit global du 27/08 — soit 36. Clos et vérifiés : 30.
+      C-1 issu du nouvel audit global du 27/08 — soit 36. Clos et vérifiés : 31.
       Chantiers du 27/08 (AUDIT.md, deux entrées) : les 124 avertissements ESLint
       d'accessibilité soldés (6523668 → 1d097e5, 8 commits, 34 fichiers — le clic sur le voile
       passe dans la directive appModale) ; P1 ENFIN ADOPTÉ (238293b → b103221, 20 commits :
       recherche de la topbar résolue côté serveur, « Mes dossiers » et pipeline paginés,
       rendu incrémental des trois files sans endpoint paginé) ; P9 étendu ; C-1 clos le
-      jour même. Restent ouverts : A2b, S9, S12, P10, T1 (entamé), T3 = 6.
-      Avancement = 30/36 = 83 % (était 27/35 = 77 % au 26/08).
+      jour même. S9 CLOS le 31/08 (ffd84a8) : rendu sans objet par le retrait des
+      interrupteurs de délégation (23d7e7f, 28/08) — la clé n'est plus écrite, purge au
+      logout, cinq mentions annotées dans AUDIT.md. Restent ouverts : A2b, S12, P10,
+      T1 (entamé), T3 = 5. Avancement = 31/36 = 86 % (était 30/36 = 83 % au 28/08).
 
   - id: A18
     libelle: "Sécurisation de la session par cookie"
@@ -383,14 +386,14 @@ module_planification:
     dependances: [A01]
     jalon: null
     preuve: >-
-      106 tests / 12 fichiers, 100 % au vert (`npx ng test --watch=false`, exécuté le 28/08 —
-      était 85 / 8 au 26/08). Progression tracée dans AUDIT.md : 42 → 83 (19/08) → 93 (a11y du
-      27/08, directive de modale couverte) → 106 (contrat de la recherche serveur et de la
-      pagination, 238293b). La CI exécute désormais aussi ESLint 9 (.github/workflows/ci.yml).
-      Constats « Tests » : T2 clos (CI, b350579 du 17/08), T1 toujours ENTAMÉ (la couverture
-      progresse mais n'est ni mesurée ni au niveau visé), T3 OUVERT (aucun scénario e2e
-      versionné). Avancement = 1 constat clos sur 3 — inchangé malgré la croissance des tests :
-      c'est la couverture mesurée et les e2e qui manquent, pas le nombre de cas.
+      136 tests / 15 fichiers, 100 % au vert (`npx ng test --watch=false`, exécuté le 01/09 —
+      était 106 / 12 au 28/08). Progression tracée dans AUDIT.md : 42 → 83 (19/08) → 93 (a11y du
+      27/08) → 106 (recherche serveur et pagination, 238293b) → 136 (visa unique : peutViser et
+      la machine d'états couverts, 9e2f2cf). La CI exécute aussi ESLint 9 (.github/workflows/ci.yml).
+      Constats « Tests » : T2 clos (CI, b350579 du 17/08), T1 toujours ENTAMÉ (couverture ni
+      mesurée ni au niveau visé), T3 toujours OUVERT — les recettes Playwright du 01/09 (visa,
+      intérim, chaînes de contrôle : 22/22, 31/31, 16/16) ont tourné depuis le répertoire de
+      session, AUCUN scénario n'est versionné dans le dépôt. Avancement = 1 constat clos sur 3.
 
   # ---------------------------------------------------------------- S11
   - id: A26
@@ -398,50 +401,79 @@ module_planification:
     livrable: "Reprise de finition des écrans de planification, avant que le développement ne redémarre"
     debut: 2026-08-24
     duree_jours: 5
-    statut: en_cours
-    avancement: 80
+    statut: termine
+    avancement: 100
     responsable: "Mr Christian"
     dependances: [A09, A16, A20]
     jalon: null
     note: >-
       Déclaré par le pilote le 26/08 (dates annoncées « 24/08 au 28/08 » ; l'année de fin,
       saisie 2025, a été rétablie à 2026 — seul intervalle cohérent, lundi → vendredi).
-      Le développement reprend après : A22 et A23 en dépendent (A24, livré le 27/08, n'a
-      pas attendu). ⚠️ Clôture à confirmer par le pilote : le 28/08 est le dernier jour.
+      Clôture CONSTATÉE le 01/09 : la fenêtre est révolue et le développement a effectivement
+      repris (A27 dès le soir du 28/08).
     preuve: >-
-      RÉSERVE LEVÉE LE 28/08 — le travail est versionné. Le chronogramme du 26/08 notait
-      « aucun commit depuis bec0e39 du 20/08 » ; il y en a eu 39 depuis, dont 32 le 27/08.
-      Pour la part planification : sortie des sous-dialogues du détail PPM (7dfc4d8, bf991eb,
-      2faf937, f5cf8ec), pagination serveur de « Mes dossiers » (2f51efa), voiles de modales
-      rendus au décor (9bcf8e3). Avancement = 4 jours ouvrés révolus sur 5 au matin du 28/08
-      — RATIO DE TEMPS, non une mesure de travail accompli.
+      Fenêtre du 24 au 28/08 révolue à l'arrêté du 01/09, développement repris (7c89f00 le
+      28/08 au soir — A27). Travail versionné : sortie des sous-dialogues du détail PPM
+      (7dfc4d8, bf991eb, 2faf937, f5cf8ec), pagination serveur de « Mes dossiers » (2f51efa),
+      voiles de modales rendus au décor (9bcf8e3), 39 commits entre le 20 et le 28/08.
 
-  # ---------------------------------------------------------------- S11 → S14
+  # ---------------------------------------------------------------- S11 → S12
+  - id: A27
+    libelle: "Visa du procès-verbal et chaînes de contrôle nominatives"
+    livrable: "Avis émis par le Membre dès l'examen, clôture de la navette en un seul visa réservé au dispatcheur, suppléance par intérim justifiée par une note, et rattachements Membre → Vérificateur → Assistant ciblant la vérification et l'archivage"
+    debut: 2026-08-28
+    duree_jours: 3
+    statut: termine
+    avancement: 100
+    responsable: "Mr Mathieu"
+    dependances: [A14, A16]
+    jalon: null
+    note: >-
+      Chantier arbitré par le pilote EN COURS DE ROUTE (règles énoncées les 31/08 et 01/09,
+      quatre trains d'arbitrages tracés dans docs/demande-backend-2026-08-31.md et
+      docs/demande-backend-2026-09-01*.md, tous clôturés). Il occupe les 3 jours ouvrés
+      28/08 → 01/09 et décale d'autant la reprise de A22 et A23.
+    preuve: >-
+      Front : 7c89f00+0117b57 (co-signataire désigné, 28-30/08), 9e2f2cf (visa unique — avis du
+      Membre à la soumission, visa du dispatcheur), e24c767 (visa par intérim, note PDF),
+      1934f6d+3eac6d8 (chaînes de contrôle : écran Admin/P/CC, files ciblées) — le backend PRS20
+      a livré en miroir jusqu'à f7cfe66. Recettes RÉELLES du 01/09 : PV#8 (visa normal) et PV#9
+      (visa par intérim) signés de bout en bout, chaînes posées à l'écran (16/16) ; e2e Playwright
+      par interception 22/22 puis 31/31 ; en prime, cause racine CSRF (rotation du jeton ×
+      rafales) prouvée côté front et corrigée côté serveur, contre-recettée 4/4.
+
+  # ---------------------------------------------------------------- S12 → S14
   - id: A22
     libelle: "Délais réglementaires d'instruction"
     livrable: "Décompte du délai légal sur chaque dossier, alerte à l'approche de l'échéance et signalement des dépassements"
-    debut: 2026-08-31
+    debut: 2026-09-02
     duree_jours: 10
     statut: a_venir
     avancement: 0
     responsable: "Mr Mathieu"
-    dependances: [A02, A26]
+    dependances: [A02, A26, A27]
     jalon: null
-    note: "Reprise du développement au lendemain du polissage (31/08, lundi). Dates PROPOSÉES — à valider. Maintenue dans le périmètre du module 1 : arbitrage du 26/08."
+    note: >-
+      Reprise décalée de 2 jours ouvrés par A27 (était 31/08, devient 02/09). Dates PROPOSÉES —
+      à valider. ⚠️ CONSÉQUENCE À ARBITRER : à 10 jours ouvrés, A22 finit le 15/09 ; la recette
+      A25 (5 jours) porterait la fin au 22/09, soit 2 jours ouvrés AU-DELÀ de l'échéance du
+      18/09. Trois issues possibles — comprimer A22, chevaucher recette et fin de A22, ou
+      décaler l'échéance — l'arbitrage appartient au pilote. Maintenue dans le périmètre du
+      module 1 : arbitrage du 26/08.
     preuve: null
     constat_initial: "Absent du code : 0 occurrence de `ALERTE_DELAI` dans src/ alors que docs/regles-gestion.md:370 et :485 la spécifient. Le seul dispositif temporel livré est features/prmp/calendrier-marches.ts — jalons CAPM du plan de l'autorité contractante (imminent / en retard), et non le délai d'instruction du contrôleur. Trois indicateurs déjà modélisés en dépendent : delaiMoyenExamen, delaiMoyenJours, delaiMoyCorrectionJours (models/pilotage.model.ts:85,101,116)."
 
   - id: A23
     libelle: "Indicateurs de performance des contrôleurs et des autorités de passation"
     livrable: "Deux écrans de restitution : activité et conformité par contrôleur, puis par autorité de passation et par exercice budgétaire"
-    debut: 2026-08-31
+    debut: 2026-09-02
     duree_jours: 5
     statut: a_venir
     avancement: 0
     responsable: "Mr Christian"
-    dependances: [A07, A26]
+    dependances: [A07, A26, A27]
     jalon: null
-    note: "Reprise du développement après le polissage (A26). Dates PROPOSÉES — à valider. Variable d'ajustement identifiée si A22 déborde."
+    note: "Reprise décalée de 2 jours ouvrés par A27 (était 31/08, devient 02/09) ; fin le 08/09, sans impact sur l'échéance. Dates PROPOSÉES — à valider. Variable d'ajustement identifiée si A22 déborde."
     preuve: null
     constat_initial: "IndicateurCtrl et IndicateurPrmp sont modélisés (models/pilotage.model.ts:76-116) et servis (services/pilotage.services.ts) mais aucun écran ne les affiche. SNAPSHOT_STATS_CONFIG n'est plus référencé par aucune route (pilotage-resources.config.ts:6-11). Livrés par A07 : 3 écrans sur les 5 dénombrés."
 
@@ -474,8 +506,9 @@ module_planification:
     dependances: [A17, A19, A21, A22, A23, A24]
     jalon: J4
     note: >-
-      Démarre au lendemain de A22 (goulot, fin le 11/09) et conserve ses 5 jours ouvrés
-      grâce au décalage d'échéance décidé le 26/08 : 14/09 → 18/09. Dates PROPOSÉES.
+      Dates du 26/08 CONSERVÉES (14 → 18/09) mais désormais EN CONFLIT avec A22 décalée
+      (fin 15/09) : le générateur le signale. Voir la note de A22 — l'arbitrage (compression,
+      chevauchement ou décalage d'échéance) appartient au pilote. Dates PROPOSÉES.
     preuve: null
 
 # =============================================================================
@@ -506,7 +539,10 @@ global_prs2:
       Deux fonctions ont changé de statut depuis le 26/08 : le journal d'audit passe de
       partielle à implémentée (écran dédié livré le 27/08, A24) et les actualités de partielle
       à implémentée (l'API backend était en réalité commitée dès le 19/08, A19).
-      Le détail fonction par fonction est porté par les activités A01 à A26 de ce fichier,
+      Réexaminé le 01/09 : INCHANGÉ à 89 % — le chantier A27 (visa, intérim, chaînes de
+      contrôle) approfondit des fonctions déjà comptées implémentées (visa, navette,
+      habilitations) sans faire bouger les deux manquantes (délais, statistiques).
+      Le détail fonction par fonction est porté par les activités A01 à A27 de ce fichier,
       chacune avec sa propre preuve — commit, fichier du dépôt (src/app/…) ou exécution de test.
 
   - id: G02
