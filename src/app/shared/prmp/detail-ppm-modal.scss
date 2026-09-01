@@ -508,3 +508,6 @@
 .dpm-fp-justif { margin-top: 14px; }
 .dpm-justif-globale { margin: 10px 0 4px; textarea { resize: vertical; } }
 .dpm-fp-nature { margin: 0 0 10px; }
+/* Projet d AGPM (2026-09-01) : en-tete du document officiel sur deux colonnes. */
+.dpm-agpm-titre { text-align: center; }
+.dpm-agpm-entete { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 12px; p { margin: 0 0 4px; } }

@@ -39,6 +39,7 @@ import { DpmBenefsMarche } from './dpm-benefs-marche';
 import { CibleSuppression, DpmConfirmationSuppression } from './dpm-confirmation-suppression';
 import { DpmDatesMarche, libelleCapm } from './dpm-dates-marche';
 import { calculerFichePresentation } from './fiche-presentation';
+import { calculerAgpm } from './agpm';
 import { DpmLotsMarche } from './dpm-lots-marche';
 import { DpmReimportRefuse } from './dpm-reimport-refuse';
 
@@ -200,6 +201,12 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
           <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'fiche'"
             [attr.aria-selected]="onglet() === 'fiche'" (click)="onglet.set('fiche')">
             Fiche de présentation <span class="dpm-tab__n">{{ fiche().nbMarchesConcernes }}</span>
+          </button>
+          <!-- ⚠️ Demande user (2026-09-01) — le « Projet d'AGPM », dérivé du plan comme la fiche :
+               marchés dont le mode déclenche l'AGPM (drapeau administrable du référentiel). -->
+          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'agpm'"
+            [attr.aria-selected]="onglet() === 'agpm'" (click)="onglet.set('agpm')">
+            Projet d'AGPM <span class="dpm-tab__n">{{ agpm().length }}</span>
           </button>
           <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'pieces'"
             [attr.aria-selected]="onglet() === 'pieces'" (click)="onglet.set('pieces')">
@@ -446,6 +453,50 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                     @if (ppm()?.justificationFiche) { {{ ppm()!.justificationFiche }} } @else { <span class="cnm-muted">À compléter</span> }
                     @if (ppm()?.motifMaj) { — <strong>Motif de la mise à jour :</strong> {{ ppm()!.motifMaj }} }
                   </p>
+                }
+              </div>
+            }
+
+            <!-- ⚠️ Demande user (2026-09-01) — « Projet d'AGPM » au format du modèle officiel :
+                 en-tête du document + tableau des marchés en mode déclencheur d'AGPM. DÉRIVÉ du
+                 plan (créé de fait à la création / mise à jour du dossier), rien de persisté —
+                 la pièce AGPM signée reste, elle, une pièce jointe. -->
+            @if (onglet() === 'agpm') {
+              <div class="dpm-section" role="tabpanel">
+                <h3 class="dpm-fp-titre dpm-agpm-titre">AVIS GENERAL DE PASSATION DES MARCHES POUR L'ANNEE {{ ppm()?.exercice ?? '____' }}</h3>
+                <div class="dpm-agpm-entete">
+                  <div>
+                    <p><u>Autorité Contractante</u> : <strong>{{ entiteLabel() }}</strong></p>
+                    <p><u>Nom de la PRMP</u> : <strong>{{ ppm()?.signataire || '—' }}</strong></p>
+                  </div>
+                  <div>
+                    <p><u>Date d'établissement du Document initial</u> : {{ dateCourt(ppm()?.datePpmInit || ppm()?.dateSignature) }}</p>
+                    <p><u>Numéro et date de la dernière mise à jour</u> : {{ ppm()?.numMajPrec ?? 0 }}@if (ppm()?.dateMajPrec) { - {{ dateCourt(ppm()?.dateMajPrec) }} }</p>
+                    <p><u>Numéro de la présente mise à jour</u> : {{ ppm()?.numMaj ?? 0 }}</p>
+                  </div>
+                </div>
+                @if (agpm().length) {
+                  <div class="table-responsive">
+                    <table class="cnm-table">
+                      <thead><tr><th scope="col">Compte</th><th scope="col">Nature</th><th scope="col">Objet</th><th scope="col">Montant estimatif du marché</th><th scope="col">Financement</th><th scope="col">Mode de passation</th><th scope="col">Date du DAO</th></tr></thead>
+                      <tbody>
+                        @for (l of agpm(); track l.idDetail) {
+                          <tr>
+                            <td class="cnm-mono">{{ l.compte || '—' }}</td>
+                            <td>{{ l.nature || '—' }}</td>
+                            <td>{{ l.objet }}</td>
+                            <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
+                            <td>{{ l.financement || '—' }}</td>
+                            <td>{{ l.modeLibelle }}</td>
+                            <td class="cnm-mono">{{ dateCourt(l.dateDao) }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                  <p class="dpm-fp-note cnm-muted">Date du DAO = date prévisionnelle de lancement du marché.</p>
+                } @else {
+                  <p class="cnm-muted">Aucun marché en mode déclencheur d'AGPM — l'avis est sans objet pour ce plan.</p>
                 }
               </div>
             }
@@ -912,7 +963,7 @@ export class DetailPpmModal implements OnInit {
     return r !== 'PRMP' && r !== 'UGPM';
   });
   /** Onglet courant — le plan de passation est le motif d'ouverture le plus fréquent du modal. */
-  readonly onglet = signal<'entite' | 'ppm' | 'fiche' | 'pieces'>('ppm');
+  readonly onglet = signal<'entite' | 'ppm' | 'fiche' | 'agpm' | 'pieces'>('ppm');
   /** Fiches d'identité de l'onglet 1 (UGPM vide hors ADMINISTRATEUR : lecture réservée). */
   readonly entites = signal<EntiteContract[]>([]);
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -1082,6 +1133,27 @@ export class DetailPpmModal implements OnInit {
   libelleVersionFiche(): string {
     const n = this.ppm()?.numMaj ?? 0;
     return n > 0 ? `Mise à jour n° ${n}` : 'Initial';
+  }
+
+  /**
+   * ⚠️ Demande user (2026-09-01) — « Projet d'AGPM » dérivé du plan : marchés dont le mode porte
+   * `declencheAgpm` (fonction pure testée) ; nature résolue par le référentiel d'affichage.
+   */
+  readonly agpm = computed(() =>
+    calculerAgpm(
+      this.marches(),
+      this.previsions(),
+      this.modes(),
+      this.capms(),
+      new Map([...this.natureMap()].map(([k, v]) => [Number(k), v])),
+    ),
+  );
+
+  /** Date `yyyy-MM-dd` → `dd/MM/yyyy` (« — » si absente) — format des documents officiels. */
+  dateCourt(iso?: string | null): string {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-');
+    return y && m && d ? `${d}/${m}/${y}` : iso;
   }
   /** idDetail → ses dates prévisionnelles (triées par ordre CAPM). */
   private readonly prevParDetail = computed(() => {

@@ -13,6 +13,7 @@ import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
 import { FichePresentation, calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
+import { LigneAgpm, calculerAgpm } from '../../shared/prmp/agpm';
 import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import {
@@ -100,6 +101,8 @@ interface ApercuDossier {
   fiche: FichePresentation;
   /** Justification globale saisie (bas de la fiche) — vide = « À compléter ». */
   justificationFiche: string;
+  /** ⚠️ Demande user (2026-09-01) — le projet d'AGPM, calculé sur le même instantané (modes déclencheurs). */
+  agpm: LigneAgpm[];
 }
 
 /**
@@ -745,6 +748,50 @@ interface ApercuDossier {
                   </p>
                 }
               </div>
+
+              <!-- ⚠️ Demande user (2026-09-01) — le PROJET D'AGPM, troisième document de l'aperçu :
+                   marchés en mode déclencheur d'AGPM (drapeau administrable), au format du modèle
+                   officiel. Rendu seulement quand l'avis a des lignes (sinon sans objet). -->
+              @if (a.agpm.length) {
+                <div class="ppm-doc sd__fiche-doc">
+                  <h1 class="ppm-doc__titre">AVIS GENERAL DE PASSATION DES MARCHES POUR L'ANNEE {{ a.exercice ?? '____' }}</h1>
+                  <div class="ppm-doc__entete">
+                    <div>
+                      <p><u>Autorité Contractante</u> : <strong>{{ a.entite }}</strong></p>
+                      <p><u>Nom de la PRMP</u> : <strong>{{ a.signataire || '—' }}</strong></p>
+                      <p><u>Adresse</u> : <strong>{{ a.adresse }}</strong></p>
+                    </div>
+                    <div>
+                      <p><u>Date d'établissement du Document initial</u> : {{ a.dateSignature || '—' }}</p>
+                      <p><u>Numéro et date de la dernière mise à jour</u> : 0</p>
+                      <p><u>Numéro de la présente mise à jour</u> : 0</p>
+                    </div>
+                  </div>
+                  <div class="ppm-doc__table-wrap">
+                    <table class="ppm-doc__table">
+                      <thead><tr><th scope="col">COMPTE</th><th scope="col">NATURE</th><th scope="col">OBJET</th><th scope="col">MONTANT ESTIMATIF du MARCHE</th><th scope="col">FINANCEMENT</th><th scope="col">MODE DE PASSATION</th><th scope="col">DATE du DAO</th></tr></thead>
+                      <tbody>
+                        @for (l of a.agpm; track l.idDetail) {
+                          <tr>
+                            <td>{{ l.compte }}</td>
+                            <td>{{ l.nature }}</td>
+                            <td class="ppm-doc__objet">{{ l.objet }}</td>
+                            <td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td>
+                            <td>{{ l.financement }}</td>
+                            <td>{{ l.modeLibelle }}</td>
+                            <td class="ppm-doc__date">{{ dateFr(l.dateDao) }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="ppm-doc__pied">
+                    <p>Fait à ______________________________, le _ _ /_ _ /_ _ _ _</p>
+                    <p class="ppm-doc__prmp">LA PERSONNE RESPONSABLE DES MARCHES PUBLICS</p>
+                    <p><strong>{{ a.signataire || '' }}</strong></p>
+                  </div>
+                </div>
+              }
 
               @if (apercuAvertissements(a).length) {
                 <div class="alert alert-warning sd__ap-alertes">
@@ -1637,18 +1684,20 @@ export class SoumettreDossier {
       pieces,
       fiche: this.ficheSaisie(),
       justificationFiche: ((v.justificationFiche as string) ?? '').trim(),
+      agpm: this.agpmSaisie(),
     });
   }
 
   /**
-   * ⚠️ Fiche de présentation (2026-09-01) — instantané du formulaire → MÊME fonction pure que
-   * l'onglet du détail PPM (mode résolu par LIBELLÉ — saisie libre — pour retrouver sa catégorie et
-   * son plancher ; justifications embarquées pour l'affichage). Méthode et non computed : elle lit
-   * l'état du formulaire, qui n'est pas un signal — même motif qu'`agpmRequisSaisie`.
+   * ⚠️ Fiche de présentation & AGPM (2026-09-01) — instantané du formulaire, PARTAGÉ par les deux
+   * documents dérivés : lignes non vides converties en pseudo-marchés (mode résolu par LIBELLÉ —
+   * saisie libre — pour retrouver catégorie, plancher et drapeau AGPM), prévisions des processus
+   * saisis. Méthodes et non computed : l'état du formulaire n'est pas un signal (motif
+   * `agpmRequisSaisie`).
    */
-  ficheSaisie(): FichePresentation {
+  private instantaneFormulaire(): { fauxMarches: (Marche & { natureLibelle?: string })[]; fauxPrevisions: MarchePrevision[] } {
     const modeParLibelle = new Map(this.modesList().map((m) => [(m.libelle ?? '').trim().toLowerCase(), m]));
-    const fauxMarches: Marche[] = [];
+    const fauxMarches: (Marche & { natureLibelle?: string })[] = [];
     const fauxPrevisions: MarchePrevision[] = [];
     this.marcheControls()
       .filter((g) => this.ligneNonVide(g.getRawValue() as Record<string, unknown>))
@@ -1662,11 +1711,14 @@ export class SoumettreDossier {
           idPpm: 0,
           designationMarche: (l['designationMarche'] as string) || '',
           montEstim: (l['montEstim'] as number | null) ?? undefined,
+          numCompte: (l['numCompte'] as string) || undefined,
+          financement: (l['financement'] as string) || undefined,
           idMode: mode?.idMode,
           formeMarche: (l['formeMarche'] as FormeMarche) || undefined,
           justifModeDerogatoire: (l['justifModeDerogatoire'] as string) || undefined,
           justifDelaiAmenage: (l['justifDelaiAmenage'] as string) || undefined,
-        } as Marche);
+          natureLibelle: (l['natureLibelle'] as string) || undefined,
+        } as Marche & { natureLibelle?: string });
         for (const p of (l['processus'] as Record<string, unknown>[]) ?? []) {
           const idCapm = p['idCapm'] as number | null;
           const dateDebut = p['dateDebut'] as string | null;
@@ -1675,7 +1727,18 @@ export class SoumettreDossier {
           }
         }
       });
+    return { fauxMarches, fauxPrevisions };
+  }
+
+  ficheSaisie(): FichePresentation {
+    const { fauxMarches, fauxPrevisions } = this.instantaneFormulaire();
     return calculerFichePresentation(fauxMarches, fauxPrevisions, this.modesList(), this.capms());
+  }
+
+  /** ⚠️ Demande user (2026-09-01) — le projet d'AGPM sur le même instantané (modes `declencheAgpm`). */
+  agpmSaisie(): LigneAgpm[] {
+    const { fauxMarches, fauxPrevisions } = this.instantaneFormulaire();
+    return calculerAgpm(fauxMarches, fauxPrevisions, this.modesList(), this.capms());
   }
 
   /** La justification GLOBALE manque alors que la fiche a du contenu (règle : exigée si ≥1 liste non vide). */
