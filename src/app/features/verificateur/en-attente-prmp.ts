@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { Dossier } from '../../models';
 import {
   DossierService,
@@ -56,6 +57,12 @@ interface CarteAttente {
             <li class="cnm-card ep__item">
               <div class="ep__item-head">
                 <span class="ep__ref">{{ c.dossier.refeDossier || ('Dossier #' + c.dossier.idDossier) }} · {{ entiteLabel(c.dossier) }}</span>
+                <!-- ⚠️ Rattachements (2026-09-01) — CIBLAGE seulement : null (chaîne incomplète) = rien. -->
+                @if (cible(c.dossier); as ci) {
+                  <span class="ep__cible" [class.ep__cible--moi]="ci.moi">
+                    {{ ci.moi ? 'À vérifier par vous' : 'À vérifier par ' + ci.nom }}
+                  </span>
+                }
                 <app-statut-badge [statut]="c.dossier.statut" [label]="'À rectifier'" />
                 <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm ep__details" (click)="consulte.set(c.dossier)">
                   Voir détails
@@ -103,6 +110,22 @@ interface CarteAttente {
     .ep__item { padding: var(--cnm-space-3) var(--cnm-space-4); }
     .ep__item-head { display: flex; align-items: center; gap: var(--cnm-space-2); }
     .ep__ref { font-weight: var(--cnm-fw-semibold); }
+    /* Badge de ciblage (rattachements) : discret pour un collègue, accentué pour « les miens ». */
+    .ep__cible {
+      font-size: var(--cnm-fs-micro);
+      color: var(--cnm-text-3);
+      background: var(--c-50);
+      border: 1px solid var(--c-100);
+      border-radius: var(--radius-lg);
+      padding: 0.1rem 0.55rem;
+      white-space: nowrap;
+    }
+    .ep__cible--moi {
+      color: var(--p-700, #1d4ed8);
+      background: var(--p-50, #eff6ff);
+      border-color: var(--p-200, #bfdbfe);
+      font-weight: var(--cnm-fw-semibold);
+    }
     .ep__details { margin-left: auto; }
     .ep__hist { margin-top: var(--cnm-space-2); }
     .ep__hist-title { margin: 0 0 var(--cnm-space-1); font-size: var(--cnm-fs-micro); text-transform: uppercase; letter-spacing: 0.04em; color: var(--cnm-text-3); }
@@ -120,6 +143,7 @@ export class EnAttentePrmp {
   private readonly verificationService = inject(VerificationService);
   private readonly notificationService = inject(NotificationService);
   private readonly lookups = inject(ReferenceLookupService);
+  private readonly auth = inject(AuthService);
 
   readonly loading = signal(true);
   readonly cartes = signal<CarteAttente[]>([]);
@@ -151,7 +175,13 @@ export class EnAttentePrmp {
               .map((n) => ({ type: 'rectif' as const, texte: n.corps as string, date: n.dateEnvoi ?? '' }));
             const echanges = [...obs, ...rectif].sort((a, b) => a.date.localeCompare(b.date));
             return { dossier: d, echanges };
-          }),
+          })
+            // ⚠️ Rattachements (2026-09-01) — « les miens » en tête (tri stable), ciblage sans garde.
+            .sort(
+              (a, b) =>
+                (b.dossier.imVerificateurCible === this.auth.ref() ? 1 : 0) -
+                (a.dossier.imVerificateurCible === this.auth.ref() ? 1 : 0),
+            ),
         );
         this.loading.set(false);
       },
@@ -163,5 +193,12 @@ export class EnAttentePrmp {
     return d.idEntiteContract != null
       ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract
       : '—';
+  }
+
+  /** Badge de ciblage (rattachements) — `null` (chaîne incomplète, repli localité) = aucun badge. */
+  cible(d: Dossier): { moi: boolean; nom: string } | null {
+    const im = d.imVerificateurCible;
+    if (!im) return null;
+    return { moi: im === this.auth.ref(), nom: d.nomVerificateurCible || im };
   }
 }

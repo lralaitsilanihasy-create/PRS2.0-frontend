@@ -3,6 +3,7 @@ import { SlicePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
@@ -86,6 +87,11 @@ interface Echange {
                 <div><dt>Localité</dt><dd>{{ localiteLabel() }}</dd></div>
                 <div><dt>Statut</dt><dd><app-statut-badge [statut]="dossier()!.statut" /></dd></div>
                 <div><dt>Avis du PV</dt><dd>{{ avisLabel() }}</dd></div>
+                <!-- ⚠️ Rattachements (2026-09-01) — CIBLAGE seulement : absent si chaîne incomplète
+                     (repli localité, état normal), et aucune action n'en dépend (pas de garde). -->
+                @if (dossier()!.nomVerificateurCible; as nom) {
+                  <div><dt>Vérificateur cible</dt><dd>{{ nom }}{{ dossier()!.imVerificateurCible === monRef ? ' (vous)' : '' }}</dd></div>
+                }
               </dl>
               @if (synthese()) {
                 <p class="vf__synthese"><strong>Observations / réserves :</strong> {{ synthese() }}</p>
@@ -303,6 +309,8 @@ export class VerifierDossier {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  /** Matricule du connecté — pour la mention « (vous) » sur le Vérificateur cible. */
+  protected readonly monRef = inject(AuthService).ref();
   private readonly sigmpService = inject(TransmissionSigmpService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly dossierService = inject(DossierService);

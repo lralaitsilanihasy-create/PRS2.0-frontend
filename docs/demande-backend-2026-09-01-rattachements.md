@@ -1,5 +1,11 @@
 # Demande au backend `PRS20` — 1ᵉʳ septembre 2026 — Rattachements Membre → Vérificateur → Assistant
 
+> ✅ **CLÔTURÉE le 01/09** — backend livré (`f7cfe66`, sous-ressource `/api/controleurs/{im}/rattachement`,
+> `RattachementDto.profilAttendu`, cibles sur `DossierDto`, 647 tests) ; front livré (`1934f6d` :
+> écran « Chaînes de contrôle » chez Admin/P/CC, badges et tri « les miens » dans les files, null
+> sans badge, aucune action grisée) ; recette réelle 16/16 (chaînes MEMANT1→VERANT1→ASSANT1 posées
+> par l'écran, GET scopé pour le CC vérifié).
+>
 > Document destiné à la session backend. Émis depuis le front `frontendprs2`. **Nouvelle règle
 > d'organisation arbitrée par le pilote le 01/09** — troisième demande du jour, indépendante des
 > deux closes (visa unique, intérim). Backend d'abord ; le front suivra.
