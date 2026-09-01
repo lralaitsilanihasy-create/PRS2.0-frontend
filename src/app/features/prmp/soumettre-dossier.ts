@@ -12,7 +12,8 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
-import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
+import { FichePresentation, calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
+import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import {
   CapmService,
@@ -95,6 +96,8 @@ interface ApercuDossier {
   dateSignature: string;
   marches: ApercuMarche[];
   pieces: { libelle: string; nom: string }[];
+  /** ⚠️ Demande user (2026-09-01) — la fiche de présentation, calculée sur le même instantané. */
+  fiche: FichePresentation;
 }
 
 /**
@@ -659,6 +662,56 @@ interface ApercuDossier {
                 </div>
               </div>
 
+              <!-- ⚠️ Demande user (2026-09-01) — la FICHE DE PRESENTATION du dossier, visualisée dès
+                   la création : mêmes trois listes que l'onglet du détail PPM (formulaire officiel),
+                   dérivées de la grille ci-dessus. Justifications à compléter sur la fiche signée. -->
+              <div class="ppm-doc sd__fiche-doc">
+                <h1 class="ppm-doc__titre">FICHE DE PRESENTATION</h1>
+                <p><u>Nature du dossier</u> : <strong>Projet de Plan de passation des marchés de l'année {{ a.exercice ?? '____' }}, Initial</strong></p>
+
+                <h2 class="sd__fiche-sub">1. Liste des marchés à passer par mode dérogatoire avec justifications</h2>
+                @if (a.fiche.derogatoires.length) {
+                  <div class="ppm-doc__table-wrap">
+                    <table class="ppm-doc__table">
+                      <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Justification</th></tr></thead>
+                      <tbody>
+                        @for (l of a.fiche.derogatoires; track l.idDetail) {
+                          <tr><td>{{ l.objet }}</td><td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td><td class="cnm-muted">À compléter</td></tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else { <p class="cnm-muted">Aucun marché à passer par mode dérogatoire.</p> }
+
+                <h2 class="sd__fiche-sub">2. Liste des marchés à délais aménagés avec justifications</h2>
+                @if (a.fiche.delaisAmenages.length) {
+                  <div class="ppm-doc__table-wrap">
+                    <table class="ppm-doc__table">
+                      <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th><th scope="col">Justifications</th></tr></thead>
+                      <tbody>
+                        @for (l of a.fiche.delaisAmenages; track l.idDetail) {
+                          <tr><td>{{ l.objet }}</td><td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td><td>{{ l.delaiJours }} jours <span class="cnm-muted">(minimum du mode : {{ l.delaiMinJours }})</span></td><td class="cnm-muted">À compléter</td></tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else { <p class="cnm-muted">Aucun marché à délais aménagés.</p> }
+
+                <h2 class="sd__fiche-sub">3. Liste des contrats-cadres</h2>
+                @if (a.fiche.contratsCadres.length) {
+                  <div class="ppm-doc__table-wrap">
+                    <table class="ppm-doc__table">
+                      <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th></tr></thead>
+                      <tbody>
+                        @for (l of a.fiche.contratsCadres; track l.idDetail) {
+                          <tr><td>{{ l.objet }}</td><td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td><td>@if (l.delaiJours != null) { {{ l.delaiJours }} jours } @else { — }</td></tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else { <p class="cnm-muted">Aucun contrat-cadre.</p> }
+              </div>
+
               @if (apercuAvertissements(a).length) {
                 <div class="alert alert-warning sd__ap-alertes">
                   <span aria-hidden="true">⚠</span>
@@ -781,6 +834,9 @@ interface ApercuDossier {
     .sd__sub { margin: 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
     .sd__apercu { max-width: min(112rem, 98vw); max-height: 92vh; display: flex; flex-direction: column; }
     .sd__apercu .modal-body { overflow-y: auto; }
+    /* Second document de l'aperçu : la fiche de présentation, séparée du plan. */
+    .sd__fiche-doc { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 2px solid var(--n-200); }
+    .sd__fiche-sub { margin: 1rem 0 0.4rem; font-size: var(--text-md); font-weight: 700; }
     .ppm-doc { background: #fff; color: #000; padding: 1rem 1.25rem; font-size: 0.8rem; }
     .ppm-doc__titre { text-align: center; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem; text-transform: uppercase; }
     .ppm-doc__entete { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
@@ -1527,6 +1583,35 @@ export class SoumettreDossier {
     const pieces = this.typesPiece()
       .filter((t) => this.pieces().has(t.idTypePiece))
       .map((t) => ({ libelle: t.libellePiece, nom: this.pieces().get(t.idTypePiece)!.name }));
+    // ⚠️ Demande user (2026-09-01) — la FICHE DE PRESENTATION se visualise dès la création : même
+    // fonction pure que l'onglet du détail PPM, nourrie d'un instantané du formulaire (le mode est
+    // résolu par LIBELLÉ — saisie libre — pour retrouver sa catégorie et son délai plancher).
+    const modeParLibelle = new Map(this.modesList().map((m) => [(m.libelle ?? '').trim().toLowerCase(), m]));
+    const fauxMarches: Marche[] = [];
+    const fauxPrevisions: MarchePrevision[] = [];
+    this.marcheControls()
+      .filter((g) => this.ligneNonVide(g.getRawValue() as Record<string, unknown>))
+      .forEach((g, i) => {
+        const l = g.getRawValue() as Record<string, unknown>;
+        const idDetail = i + 1;
+        const mode = modeParLibelle.get(((l['modeLibelle'] as string) ?? '').trim().toLowerCase());
+        fauxMarches.push({
+          idDetail,
+          idDossier: 0,
+          idPpm: 0,
+          designationMarche: (l['designationMarche'] as string) || '',
+          montEstim: (l['montEstim'] as number | null) ?? undefined,
+          idMode: mode?.idMode,
+          formeMarche: (l['formeMarche'] as FormeMarche) || undefined,
+        } as Marche);
+        for (const p of (l['processus'] as Record<string, unknown>[]) ?? []) {
+          const idCapm = p['idCapm'] as number | null;
+          const dateDebut = p['dateDebut'] as string | null;
+          if (idCapm != null && dateDebut) {
+            fauxPrevisions.push({ idPrevision: 0, idDetail, idCapm, dateDebut } as MarchePrevision);
+          }
+        }
+      });
     this.apercu.set({
       entite: ent?.libelle ?? '—',
       adresse: ent?.adresse ?? '—',
@@ -1536,6 +1621,7 @@ export class SoumettreDossier {
       dateSignature: this.dateFr(v.dateSignature as string),
       marches,
       pieces,
+      fiche: calculerFichePresentation(fauxMarches, fauxPrevisions, this.modesList(), this.capms()),
     });
   }
   fermerApercu(): void {
