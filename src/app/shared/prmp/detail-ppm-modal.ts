@@ -364,9 +364,14 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                  restent à compléter sur la fiche signée — l'écran les signale, il ne les saisit pas. -->
             @if (onglet() === 'fiche') {
               <div class="dpm-section" role="tabpanel">
+                <!-- ⚠️ Demande user (2026-09-01, mise à jour) — le libellé de version remplace
+                     « Initial » sur une version de mise à jour (numMaj > 0). -->
+                <p class="dpm-fp-nature"><u>Nature du dossier</u> :
+                  <strong>Projet de Plan de passation des marchés de l'année {{ ppm()?.exercice ?? '____' }}, {{ libelleVersionFiche() }}</strong>
+                </p>
                 <p class="dpm-fp-note cnm-muted">
                   Listes établies depuis les marchés du plan — même forme que la fiche de présentation
-                  jointe au dépôt. Les justifications sont à compléter sur la fiche signée.
+                  jointe au dépôt.
                 </p>
 
                 <h3 class="dpm-fp-titre">1. Liste des marchés à passer par mode dérogatoire avec justifications</h3>
@@ -433,9 +438,13 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                   <p class="cnm-muted">Aucun contrat-cadre.</p>
                 }
 
-                @if (fiche().nbMarchesConcernes > 0 || ppm()?.justificationFiche) {
+                <!-- ⚠️ Demande user (2026-09-01, mise à jour) — le MOTIF de la mise à jour s'AJOUTE
+                     à la justification du bas des listes (une version de mise à jour porte toujours
+                     son motif, même quand la justification manque encore — cas de l'import). -->
+                @if (fiche().nbMarchesConcernes > 0 || ppm()?.justificationFiche || ppm()?.motifMaj) {
                   <p class="dpm-fp-justif"><u>Justification :</u>
                     @if (ppm()?.justificationFiche) { {{ ppm()!.justificationFiche }} } @else { <span class="cnm-muted">À compléter</span> }
+                    @if (ppm()?.motifMaj) { — <strong>Motif de la mise à jour :</strong> {{ ppm()!.motifMaj }} }
                   </p>
                 }
               </div>
@@ -1064,6 +1073,15 @@ export class DetailPpmModal implements OnInit {
   /** Montant au format français (« — » si absent) — même rendu que la table des marchés. */
   montantFr(v?: number): string {
     return v == null ? '—' : new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(v);
+  }
+
+  /**
+   * ⚠️ Demande user (2026-09-01) — libellé de version de la fiche : « Initial » pour le plan
+   * d'origine, « Mise à jour n° N » (numMaj) pour une version de mise à jour.
+   */
+  libelleVersionFiche(): string {
+    const n = this.ppm()?.numMaj ?? 0;
+    return n > 0 ? `Mise à jour n° ${n}` : 'Initial';
   }
   /** idDetail → ses dates prévisionnelles (triées par ordre CAPM). */
   private readonly prevParDetail = computed(() => {
