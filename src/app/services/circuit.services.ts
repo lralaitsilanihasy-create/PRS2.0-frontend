@@ -395,6 +395,29 @@ export class PvExamenService extends CrudService<PvExamen> {
     return this.http.post<PvExamen>(`${this.baseUrl}/${id}/viser`, body);
   }
 
+  /**
+   * ⚠️ Visa PAR INTÉRIM (2026-09-01) — même geste, en multipart : partie `data` (le corps JSON du
+   * visa) + partie `noteInterim` (PDF justifiant l'absence du dispatcheur, type lu sur les octets).
+   * 400 « note requise » pour un P/CC du périmètre sans note ; 403 pour un CC d'une autre localité
+   * (aucune note ne l'autoriserait) ; un dispatcheur qui joint une note obtient le visa normal
+   * (note ignorée).
+   */
+  viserParInterim(id: number, body: PvActionRequest, note: File): Observable<PvExamen> {
+    const form = new FormData();
+    form.append('data', new Blob([JSON.stringify(body)], { type: 'application/json' }));
+    form.append('noteInterim', note, note.name);
+    return this.http.post<PvExamen>(`${this.baseUrl}/${id}/viser`, form);
+  }
+
+  /**
+   * `GET /{id}/note-interim` — le PDF de la note d'intérim. Accès plus étroit que le PV :
+   * contrôleurs du périmètre + Administrateur, **403 PRMP** (l'arbitrage du 01/09 retire l'intérim
+   * du PV central — ouvrir la note à la PRMP le rétablirait par une autre porte).
+   */
+  noteInterim(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/note-interim`, { responseType: 'blob' });
+  }
+
   /** Signer sa part — rôle MEMBRE seul depuis le visa unique (PRESIDENT/CC → 409 vers `viser`) ; passe à SIGNE quand les deux parts sont posées. */
   signer(id: number, body: PvActionRequest): Observable<PvExamen> {
     return this.http.post<PvExamen>(`${this.baseUrl}/${id}/signer`, body);

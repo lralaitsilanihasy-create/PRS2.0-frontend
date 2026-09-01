@@ -267,13 +267,21 @@ export interface PvExamen {
   nomMembreCoSignataire?: string;
   /**
    * ⚠️ Visa unique (2026-08-31) — dispatcheur du dossier (`imCtrlDispatch` du dernier dispatch),
-   * SEUL habilité à viser : contrainte d'IDENTITÉ (403 serveur, même pour un Président ou sous une
-   * paire de délégation active — il suit QUI A POSTÉ le dispatch, pas le rang). Sert à conditionner
-   * le bouton « Viser » sans appel supplémentaire.
+   * habilité à viser : contrainte d'IDENTITÉ qui suit QUI A POSTÉ le dispatch, pas le rang.
+   * ⚠️ Intérim (2026-09-01) — l'exception : un autre P/CC DU PÉRIMÈTRE (Président partout, CC dans
+   * sa localité) peut viser en joignant la note d'intérim — sans note c'est un 400 « note requise »,
+   * pas un interdit ; le 403 reste pour un CC d'une autre localité (aucune note ne l'autoriserait)
+   * et les profils hors P/CC. Sert à conditionner les boutons sans appel supplémentaire.
    */
   imDispatcheur?: string;
   /** Nom complet du dispatcheur, peuplé serveur — pour écrire la raison du refus aux autres P/CC. */
   nomDispatcheur?: string;
+  /** ⚠️ Intérim (2026-09-01) — le visa a été posé par intérim (trace ; mention sur le document PV pour les seules localités régionales, sous « Étaient présents »). */
+  viseParInterim?: boolean;
+  /** Nom du fichier de la note d'intérim téléversée au visa. */
+  noteInterimNom?: string;
+  /** Le PDF de la note est téléchargeable (`GET /{id}/note-interim`) — contrôleurs du périmètre + Admin, 403 PRMP. */
+  noteInterimDisponible?: boolean;
   syntheseObservations?: string;
   statutPv: StatutPv;
   nbNavettes: number;

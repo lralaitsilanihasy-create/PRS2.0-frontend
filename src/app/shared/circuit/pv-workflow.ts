@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
+import { ouvrirBlobSur, validerFichier } from '../../core/securite/fichiers-surs';
 import { Avis, Controleur, LettreRenvoi, PvExamen, PvSignataireRole } from '../../models';
 import { AvisService, ControleurService, LettreRenvoiService, ProfileService, PvExamenService } from '../../services';
 import { CanDirective } from '../security/can.directive';
@@ -34,6 +35,12 @@ import {
  * la raison, sinon elle paraît arbitraire). La « Lettre de renvoi » reste disponible à cette étape,
  * au rôle. `signer` ne concerne plus que la part MEMBRE, ouverte APRÈS le visa (ordre B conservé).
  *
+ * ⚠️ Intérim (2026-09-01) — l'exception à la contrainte du dispatcheur : un P/CC du PÉRIMÈTRE
+ * (Président partout, CC dans sa localité) vise en joignant la NOTE D'INTÉRIM (PDF) qui justifie
+ * l'absence — même panneau, en multipart. Sans note c'est un 400, pas un interdit ; le 403 reste
+ * pour un CC d'une autre localité, à qui le bouton n'est pas proposé (distinction 400/403 du
+ * backend, rendue à l'écran). Mention « par intérim » posée serveur sur les seuls PV régionaux.
+ *
  * Le composant exécute l'action puis émet le PV mis à jour via `(changed)`.
  * Le backend valide réellement la transition (409 en cas d'enchaînement interdit).
  */
@@ -59,13 +66,31 @@ import {
             <button *appCan="'PV_SIGNER'" type="button" class="btn btn-success" (click)="toggleViser()">
               {{ pv().statutPv === 'PROJET_ACCEPTE' ? 'Compléter le visa…' : 'Viser…' }}
             </button>
+          } @else if (peutSuppleer()) {
+            <!-- ⚠️ Intérim (2026-09-01) — pour un P/CC DU PÉRIMÈTRE, l'absence de note est un 400,
+                 pas un interdit : la raison écrite s'accompagne de son issue. -->
+            <span class="pv-workflow__deja-signe">
+              Le visa revient à <strong>{{ nomDispatcheur() }}</strong>, qui a effectué le dispatch de
+              ce dossier. En son absence, vous pouvez le suppléer en joignant la note d'intérim.
+            </span>
+            <button *appCan="'PV_SIGNER'" type="button" class="btn btn-outline" (click)="toggleViser(true)">
+              Viser par intérim…
+            </button>
           } @else if (nomDispatcheur()) {
-            <!-- ⚠️ Contrainte d'identité : le dispatcheur suit qui a POSTÉ le dispatch, pas le rang.
-                 Sans cette raison écrite, le refus paraîtrait arbitraire (recette backend). -->
+            <!-- CC d'une autre localité : 403 serveur, aucune note ne l'autoriserait — pas de bouton. -->
             <span class="pv-workflow__deja-signe">
               Seul <strong>{{ nomDispatcheur() }}</strong> — qui a effectué le dispatch de ce dossier —
-              peut viser ce PV.
+              peut viser ce PV ; votre localité ne vous permet pas de le suppléer par intérim.
             </span>
+          }
+        }
+        @if (pv().viseParInterim) {
+          <span class="pv-workflow__deja-signe">Visé <strong>par intérim</strong>.</span>
+          @if (pv().noteInterimDisponible) {
+            <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirNoteInterim()"
+              title="Ouvrir la note d'intérim (PDF) jointe au visa">
+              Note d'intérim
+            </button>
           }
         }
         @if (canRetourner()) {
@@ -157,12 +182,24 @@ import {
            part de signature du rôle posée dans le même POST. -->
       @if (viserOuvert()) {
         <div class="pv-workflow__retour pv-workflow__retour--accept cnm-form">
-          <span class="pv-workflow__retour-label">Visa — clôture de la navette</span>
+          <span class="pv-workflow__retour-label">{{ interim() ? 'Visa par intérim — clôture de la navette' : 'Visa — clôture de la navette' }}</span>
           <span class="form-hint">
             Le visa clôt la navette en un geste : il arrête l'avis, désigne le Secrétaire de séance et
             le Membre co-signataire, et pose <strong>votre part de signature</strong>. Le Membre désigné
             posera la part Membre : le PV est signé par deux personnes distinctes.
           </span>
+          @if (interim()) {
+            <!-- ⚠️ Intérim (2026-09-01) — la note EST la justification (l'absence n'est pas vérifiable
+                 serveur) ; PDF seul, type lu sur les octets côté backend, validé en miroir ici. -->
+            <label class="form-group">
+              <span class="form-label">Note d'intérim (PDF) *</span>
+              <input type="file" class="form-control" accept="application/pdf" (change)="choisirNote($event)" />
+              <span class="form-hint">
+                Elle justifie l'absence de {{ nomDispatcheur() }} et reste consultable par la
+                commission ; elle engage votre responsabilité de signataire.
+              </span>
+            </label>
+          }
           @if (avisSuggereHint(); as hint) { <span class="form-hint">{{ hint }}</span> }
           <!-- [selected] sur les options : les référentiels arrivent APRÈS l'ouverture du panneau,
                [value] seul ne serait pas ré-appliqué au rendu des options (pré-sélection perdue). -->
@@ -208,7 +245,7 @@ import {
           <div class="pv-workflow__retour-actions">
             <button type="button" class="btn btn-outline" (click)="toggleViser()">Annuler</button>
             <button type="button" class="btn btn-success" [disabled]="saving()" (click)="confirmerVisa()">
-              {{ saving() ? 'Visa…' : 'Viser et signer ma part' }}
+              {{ saving() ? 'Visa…' : interim() ? 'Viser par intérim' : 'Viser et signer ma part' }}
             </button>
           </div>
         </div>
@@ -421,6 +458,19 @@ export class PvWorkflow {
   });
   /** Nom du dispatcheur, servi par le backend — pour écrire la raison du refus. */
   readonly nomDispatcheur = computed(() => this.pv().nomDispatcheur || this.pv().imDispatcheur || '');
+  /**
+   * ⚠️ Intérim (2026-09-01) — un P/CC non dispatcheur DU PÉRIMÈTRE peut viser en joignant la note
+   * d'intérim : Président (sans localité) partout, CC dans SA localité seulement (contrairement à
+   * l'INTERIM_DISPATCH du dispatch, la garde de localité est MAINTENUE — 403 serveur, aucune note ne
+   * l'autoriserait ; le bouton doit donc être proposé au premier cas et ABSENT au second — c'est la
+   * distinction 400/403 du backend, rendue à l'écran). Même règle de périmètre §3.3 que
+   * `peutSAutoProposer`, avec la localité de session.
+   */
+  readonly peutSuppleer = computed(() => {
+    const r = this.roleSignature();
+    if (r !== 'PRESIDENT' && r !== 'CC') return false;
+    return peutSAutoProposer(this.auth.localite(), this.idLocalite());
+  });
   /** La lettre de renvoi reste une issue de la navette ouverte au rôle (pas au seul dispatcheur). */
   readonly canLettre = computed(() => this.pv().statutPv === 'PROJET_SOUMIS');
   /** Part MEMBRE seule — le Président/CC pose la sienne au visa. */
@@ -462,6 +512,10 @@ export class PvWorkflow {
 
   /** Matricule du Membre co-signataire choisi dans le panneau de visa. */
   readonly membreChoisi = signal<string | null>(null);
+  /** Le panneau de visa est ouvert en mode INTÉRIM (note d'intérim exigée). */
+  readonly interim = signal(false);
+  /** Note d'intérim choisie (PDF validé par `validerFichier`). */
+  readonly noteChoisie = signal<File | null>(null);
 
   /**
    * Membres éligibles à la co-signature : ceux de la LOCALITÉ du dossier (§3.3, garde serveur
@@ -535,16 +589,43 @@ export class PvWorkflow {
    * ⚠️ 2026-08-30 — leçon conservée du panneau de désignation : charger les référentiels À CHAQUE
    * ouverture de panneau, quel que soit le chemin d'arrivée, sinon liste vide et fausse impasse.
    */
-  toggleViser(): void {
+  toggleViser(interimMode = false): void {
     const opening = !this.viserOuvert();
     this.viserOuvert.set(opening);
     if (opening) {
+      this.interim.set(interimMode);
+      this.noteChoisie.set(null);
       this.viserErreur.set(null);
       this.avisChoisi.set(this.pv().idAvis ?? this.avisSuggere());
       this.secretaireChoisi.set(this.pv().idSecretaireSeance ?? null);
       this.membreChoisi.set(null);
       this.chargerReferentiels();
     }
+  }
+
+  /** Note d'intérim : PDF seul, taille plafonnée — validation miroir de la garde serveur (type lu sur les octets). */
+  choisirNote(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    if (!file) {
+      this.noteChoisie.set(null);
+      return;
+    }
+    const erreur = validerFichier(file, ['application/pdf']);
+    if (erreur) {
+      this.noteChoisie.set(null);
+      this.viserErreur.set(erreur);
+      (event.target as HTMLInputElement).value = '';
+      return;
+    }
+    this.viserErreur.set(null);
+    this.noteChoisie.set(file);
+  }
+
+  /** Ouvre le PDF de la note d'intérim dans un nouvel onglet (type inerte forcé par `blobSur`). */
+  ouvrirNoteInterim(): void {
+    this.pvService.noteInterim(this.pv().idPv).subscribe({
+      next: (blob) => ouvrirBlobSur(blob),
+    });
   }
   toggleLettre(): void {
     const opening = !this.lettreOuvert();
@@ -639,22 +720,31 @@ export class PvWorkflow {
       this.viserErreur.set('Désignez le Membre appelé à co-signer le PV.');
       return;
     }
+    const note = this.noteChoisie();
+    if (this.interim() && !note) {
+      this.viserErreur.set("Joignez la note d'intérim (PDF) qui justifie l'absence du dispatcheur.");
+      return;
+    }
     this.viserErreur.set(null);
     this.saving.set(true);
-    this.pvService
-      .viser(this.pv().idPv, { imActeur: acteur, idAvis, idSecretaireSeance, imMembreCoSignataire })
-      .subscribe({
-        next: (pv) => {
-          this.saving.set(false);
-          this.viserOuvert.set(false);
-          this.membreChoisi.set(null);
-          this.onSuccess(
-            pv,
-            `PV visé — votre part est signée ; en attente de la co-signature de ${this.nomDe(imMembreCoSignataire)}.`,
-          );
-        },
-        error: () => this.saving.set(false), // 400/403/409 → toast centralisé (message backend)
-      });
+    const body = { imActeur: acteur, idAvis, idSecretaireSeance, imMembreCoSignataire };
+    const visa$ =
+      this.interim() && note
+        ? this.pvService.viserParInterim(this.pv().idPv, body, note)
+        : this.pvService.viser(this.pv().idPv, body);
+    visa$.subscribe({
+      next: (pv) => {
+        this.saving.set(false);
+        this.viserOuvert.set(false);
+        this.membreChoisi.set(null);
+        this.noteChoisie.set(null);
+        this.onSuccess(
+          pv,
+          `PV visé${this.interim() ? ' par intérim' : ''} — votre part est signée ; en attente de la co-signature de ${this.nomDe(imMembreCoSignataire)}.`,
+        );
+      },
+      error: () => this.saving.set(false), // 400/403/409 → toast centralisé (message backend)
+    });
   }
 
   retourner(commentaire: string): void {
