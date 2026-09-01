@@ -1,5 +1,11 @@
 # Demande au backend `PRS20` — 1ᵉʳ septembre 2026 — Visa par intérim
 
+> ✅ **CLÔTURÉE le 01/09** — intérim livré et recetté en réel (PV#9 : note PDF, 403 PRMP vérifié) ;
+> refonte du bloc VISA livrée (`a1cdd56`, les 12 `.docx` au commit) et **rendu validé par le
+> pilote** (libellé + emplacement, cellule droite du bloc VISA). Au passage, la cause racine des 401
+> de sauvegarde a été prouvée (rotation du cookie CSRF × rafales concurrentes) et corrigée à la
+> racine (`JetonCsrfParSession`, jeton stable par session), contre-recettée 4/4 côté front.
+>
 > Document destiné à la session backend. Émis depuis le front `frontendprs2` (visa unique adopté,
 > commit `9e2f2cf`, poussé). **Extension de la contrainte du dispatcheur, arbitrée par le pilote le
 > 01/09** — complète la demande du 31/08 (`demande-backend-2026-08-31.md`, livrée).

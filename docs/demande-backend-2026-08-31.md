@@ -1,5 +1,9 @@
 # Demande au backend `PRS20` — 31 août 2026 — « Visa unique »
 
+> ✅ **CLÔTURÉE le 01/09** — backend livré (visa unique + lot 2 idAvis obligatoire), front aligné
+> (`9e2f2cf`), recette réelle des deux parcours (PV#8 visa normal, PV#9 intérim) passée de bout en
+> bout. Voir aussi la demande du 01/09 (intérim + refonte du bloc VISA), close le même jour.
+>
 > Document destiné à la session backend. Émis depuis le front `frontendprs2` (dernier commit
 > `ffd84a8`, poussé). **Réforme du contrat de la navette du PV, arbitrée par le pilote le 31/08** —
 > le front suivra une fois le backend livré (rien n'est codé côté front en anticipation).
