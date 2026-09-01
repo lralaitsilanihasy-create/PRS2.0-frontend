@@ -112,6 +112,8 @@ export class MiseAJourPpm {
   readonly benefs = signal<ServiceBeneficiaire[]>([]);
   private readonly natures = signal<Map<number, string>>(new Map());
   private readonly modes = signal<Map<number, string>>(new Map());
+  /** Référentiel complet des modes — pour le drapeau `declencheAgpm` (filtre des pièces). */
+  private readonly modesRef = signal<ModePassation[]>([]);
 
   /** Marchés + statut de changement, lignes supprimées rejetées en fin de tableau. */
   readonly lignes = computed<LigneAffichee[]>(() => {
@@ -132,14 +134,24 @@ export class MiseAJourPpm {
   private static readonly TYPES_HISTORIQUE = new Set([22, 23]);
   readonly piecesHistorique = computed(() => this.pieces().filter((p) => MiseAJourPpm.TYPES_HISTORIQUE.has(p.idTypePiece)));
 
+  /** ⚠️ Demande user (2026-09-01) — l'AGPM est EXIGÉE quand la nouvelle version comporte ≥1 marché en mode déclencheur (drapeau administrable, lignes supprimées exclues). */
+  private readonly agpmExigee = computed(() => {
+    const declencheurs = new Set(this.modesRef().filter((m) => m.declencheAgpm).map((m) => m.idMode));
+    return this.marches().some((m) => !m.supprimee && m.idMode != null && declencheurs.has(m.idMode));
+  });
+
   /**
    * Types de pièce attendus (hors historique, joint par le serveur). Les pièces sont **reprises du
-   * dossier d'origine** : chaque rang montre donc le fichier en place, remplaçable. Un type sans pièce
-   * reste proposé au dépôt — c'est le cas d'une pièce optionnelle absente du dossier précédent.
+   * dossier d'origine** : chaque rang montre donc le fichier en place, remplaçable.
+   * ⚠️ Demande user (2026-09-01) — mêmes règles qu'à la création : seules les pièces À FOURNIR sont
+   * listées (les obligatoires, plus l'AGPM quand la nouvelle version l'exige). Les optionnelles ne
+   * sont ni proposées ni affichées ; une optionnelle reprise du dossier précédent reste attachée,
+   * simplement sans rang ici.
    */
   readonly typesADeposer = computed(() =>
     this.typesPiece()
       .filter((t) => !MiseAJourPpm.TYPES_HISTORIQUE.has(t.idTypePiece))
+      .filter((t) => t.obligatoire || (t.code === 'AGPM' && this.agpmExigee()))
       // Même ordre qu'à la saisie : le référentiel porte un `ordre` d'affichage.
       .sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
   /** Pièce en place pour ce type (reprise du dossier précédent, ou déposée ici), s'il y en a une. */
@@ -208,6 +220,7 @@ export class MiseAJourPpm {
         this.benefs.set(r.benefs);
         this.natures.set(new Map(r.natures.map((n) => [n.idNature, n.libelle ?? ''])));
         this.modes.set(new Map(r.modes.map((m) => [m.idMode, m.libelle ?? ''])));
+        this.modesRef.set(r.modes);
         // En-tête du PPM : GET /api/ppms exclut les brouillons → lecture à l'unité via une ligne.
         const idPpm = miennes[0]?.idPpm;
         if (idPpm == null) {

@@ -224,7 +224,8 @@
                 } @else if (t.obligatoire) {
                   <span class="badge badge-danger">obligatoire</span>
                 } @else {
-                  <span class="badge badge-neutral">optionnel</span>
+                  <!-- Seule l'AGPM rendue exigée par un mode déclencheur passe le filtre sans être obligatoire. -->
+                  <span class="badge badge-warning">requise (appel d'offres ouvert)</span>
                 }
                 @if (pieceDe(t.idTypePiece); as p) {
                   <span class="maj__piece-file">actuellement : {{ p.nomFichier }}</span>
@@ -240,7 +241,7 @@
               </div>
             </div>
           } @empty {
-            <p class="text-muted">Aucune pièce attendue pour ce type de dossier.</p>
+            <p class="text-muted">Aucune pièce à fournir pour ce type de dossier.</p>
           }
         </div>
         <p class="form-hint">
