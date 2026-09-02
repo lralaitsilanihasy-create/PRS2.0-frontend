@@ -128,23 +128,25 @@ interface RowState {
                      Fiche / Plan / Projet d'AGPM (si le sous-type en a) / Pièces.
                      L'onglet SUIT l'étape de la grille (effect) : le document contrôlé est affiché. -->
                 <div class="exam__tabs" role="tablist" aria-label="Contenu du dossier">
-                  <!-- Ordre (pilote 02/09) : la fiche de présentation passe AVANT le plan. -->
+                  <!-- Ordre (pilote 02/09) : la fiche de présentation passe AVANT le plan.
+                       ⚠️ Chaque onglet AMÈNE sa grille dans « Consigner l'examen » quand elle est
+                       atteignable (ouvrirOnglet) — arbitrage pilote 02/09. -->
                   <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'fiche'"
-                    [attr.aria-selected]="ongletContenu() === 'fiche'" (click)="ongletContenu.set('fiche')">
+                    [attr.aria-selected]="ongletContenu() === 'fiche'" (click)="ouvrirOnglet('fiche')">
                     Fiche de présentation <span class="exam__tab-n">{{ ficheDoc().nbMarchesConcernes }}</span>
                   </button>
                   <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'ppm'"
-                    [attr.aria-selected]="ongletContenu() === 'ppm'" (click)="ongletContenu.set('ppm')">
+                    [attr.aria-selected]="ongletContenu() === 'ppm'" (click)="ouvrirOnglet('ppm')">
                     Plan de passation <span class="exam__tab-n">{{ marches().length }}</span>
                   </button>
                   @if (agpmDoc().length || hasEtapeAgpm()) {
                     <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'agpm'"
-                      [attr.aria-selected]="ongletContenu() === 'agpm'" (click)="ongletContenu.set('agpm')">
+                      [attr.aria-selected]="ongletContenu() === 'agpm'" (click)="ouvrirOnglet('agpm')">
                       Projet d'AGPM <span class="exam__tab-n">{{ agpmDoc().length }}</span>
                     </button>
                   }
                   <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'pieces'"
-                    [attr.aria-selected]="ongletContenu() === 'pieces'" (click)="ongletContenu.set('pieces')">
+                    [attr.aria-selected]="ongletContenu() === 'pieces'" (click)="ouvrirOnglet('pieces')">
                     Pièces jointes <span class="exam__tab-n">{{ pieces().length }}</span>
                   </button>
                 </div>
@@ -1165,6 +1167,37 @@ export class ExamenDossier implements OnDestroy {
       (i === this.etapeAvis() && this.toutTraite());
     if (atteignable) this.etape.set(i);
   }
+  /**
+   * ⚠️ Arbitrage pilote (2026-09-02) — l'onglet AMÈNE sa grille : cliquer « Fiche de
+   * présentation » (ou AGPM, Pièces, Plan) place « Consigner l'examen » sur l'étape
+   * correspondante quand elle est ATTEIGNABLE (la séquence lignes → pièces → fiche → AGPM →
+   * dossier reste la règle) ; sinon le document s'affiche quand même et un mot explique la
+   * séquence — le clic muet donnait l'impression qu'aucune grille n'existait.
+   */
+  ouvrirOnglet(o: 'ppm' | 'fiche' | 'agpm' | 'pieces'): void {
+    this.ongletContenu.set(o);
+    const avant = this.etape();
+    if (o === 'fiche' && this.hasEtapeFiche() && !this.estEtapeFiche()) {
+      this.allerEtape(this.etapeFicheIdx());
+      if (this.etape() === avant && avant < this.etapeFicheIdx()) {
+        this.toast.info(
+          "La grille de la fiche de présentation s'ouvrira après les lignes et les pièces — l'examen est séquentiel. Le document reste consultable ici.",
+        );
+      }
+    } else if (o === 'agpm' && this.hasEtapeAgpm() && !this.estEtapeAgpm()) {
+      this.allerEtape(this.etapeAgpmIdx());
+      if (this.etape() === avant && avant < this.etapeAgpmIdx()) {
+        this.toast.info(
+          "La grille de l'AGPM s'ouvrira après les lignes, les pièces et la fiche — l'examen est séquentiel. Le document reste consultable ici.",
+        );
+      }
+    } else if (o === 'pieces' && this.nbPieces() > 0 && !this.estEtapePiece() && !this.toutesPiecesStatuees()) {
+      this.allerEtape(this.nbLignes() + this.frontierePiece());
+    } else if (o === 'ppm' && !this.estEtapeMarche() && this.frontiere() < this.nbLignes()) {
+      this.allerEtape(this.frontiere());
+    }
+  }
+
   /** Rouvre la ligne cliquée dans le tableau (repasse « en cours » ; son état RAS/observation est recalculé après re-validation). */
   ouvrirLigne(m: Marche): void {
     const i = this.marches().findIndex((x) => x.idDetail === m.idDetail);
