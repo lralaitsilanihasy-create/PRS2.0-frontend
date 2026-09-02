@@ -74,6 +74,10 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
             }
           </div>
 
+          <!-- ⚠️ Demande pilote (2026-09-02) — le chronométrage occupe l'espace vide À DROITE du
+               titre (l'en-tête d'identité étant replié par défaut, la place était perdue). -->
+          <div class="dc-header-corps">
+          <div class="dc-header-gauche">
           <div class="dc-title">{{ dossier().refeDossier || ('Dossier #' + dossier().idDossier) }}</div>
 
           <div class="dc-subtitle">
@@ -127,6 +131,19 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
             }
           </div>
           }
+          </div>
+
+          <!-- Chronométrage & délais (2026-09-01, déplacé dans l'en-tête le 02/09) : chargé DANS
+               la vague unique (donnees) ; zone absente pour un dossier hors circuit. -->
+          @if (chronoDossier(); as chrono) {
+            @if (chrono.taches.length || chrono.etapeCourante || chrono.datePrevisionnelleFin || chrono.debutCompteur) {
+              <div class="dc-header-droite">
+                <div class="dc-chrono-titre"><span aria-hidden="true">⏱</span> Chronométrage &amp; délais</div>
+                <app-chronometrage-dossier [idDossier]="dossier().idDossier" [donnees]="chrono" />
+              </div>
+            }
+          }
+          </div>
         </div>
 
         <!-- ── Corps ── (une seule vague : tout est affiché quand TOUT est chargé — pas de sauts) -->
@@ -219,23 +236,6 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
           </div>
           }
 
-          <!-- Chronométrage & délais (règle 2026-09-01) : date prévisionnelle de fin, compteurs
-               brut/net CNM, occurrences de tâches — chargé DANS la vague unique (donnees). Section
-               absente pour un dossier hors circuit (brouillon, backend muet). -->
-          @if (chronoDossier(); as chrono) {
-            @if (chrono.taches.length || chrono.etapeCourante || chrono.datePrevisionnelleFin || chrono.debutCompteur) {
-              <div class="dc-section">
-                <div class="dc-section-head">
-                  <div class="section-block-title">
-                    <div class="section-icon">⏱</div>
-                    <span class="section-label">Chronométrage &amp; délais</span>
-                  </div>
-                </div>
-                <app-chronometrage-dossier [idDossier]="dossier().idDossier" [donnees]="chrono" />
-              </div>
-            }
-          }
-
           <!-- Journal des actions (spec « Mandats PRMP ») : qui a agi, quand et sous quel mandat.
                L'OPÉRATEUR d'une action peut différer de la PRMP d'attribution (figée) — il est alors marqué. -->
           @if (journal().length) {
@@ -318,6 +318,12 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 
     /* En-tête */
     .dc-header { padding: 18px 24px 16px; border-bottom: 0.5px solid var(--n-200); flex-shrink: 0; }
+    /* Corps de l'en-tête (2026-09-02) : identité à gauche, chronométrage dans l'espace vide à droite. */
+    .dc-header-corps { display: flex; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap; }
+    .dc-header-gauche { flex: 1 1 20rem; min-width: 17rem; }
+    .dc-header-droite { flex: 2 1 32rem; min-width: 0; border-left: 0.5px solid var(--n-200); padding-left: 1.5rem; }
+    .dc-chrono-titre { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--n-400); margin-bottom: 8px; }
+    @media (max-width: 60rem) { .dc-header-droite { border-left: none; padding-left: 0; } }
     .dc-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 0.75rem; }
     .dc-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .dc-chip { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 2px 9px; border-radius: var(--radius-full); }

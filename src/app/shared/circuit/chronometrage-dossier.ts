@@ -232,10 +232,19 @@ import {
       border-bottom: 1px solid var(--n-200);
       white-space: nowrap;
     }
+    /* Neutralise la bande bleue globale (design system : \`thead tr { background: --grad-primary }\`
+       + \`th\` en blanc) : ici l'en-tête est discret — sans cela le libellé gris devenait
+       illisible sur le dégradé bleu. */
+    .chrono__table thead tr {
+      background: transparent;
+    }
     .chrono__table th {
       font-size: var(--text-xs);
       color: var(--n-400);
       font-weight: 600;
+      background: transparent;
+      text-transform: none;
+      letter-spacing: normal;
     }
     .chrono__row--encours td {
       background: var(--primary-50, #eff6ff);
