@@ -28,7 +28,6 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ChronometrageDossier, StatutBadge } from '../../shared/circuit';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
-import { EnTetePliable } from '../../shared/ui/entete-pliable';
 
 /**
  * Consultation d'un dossier en LECTURE SEULE (modale réutilisable).
@@ -83,18 +82,18 @@ import { EnTetePliable } from '../../shared/ui/entete-pliable';
             <span class="dc-sep">·</span>
             <i aria-hidden="true">📅</i>
             <span>{{ dossier().dateRef || '—' }}</span>
-            <!-- ⚠️ Demande pilote (2026-09-02) — préférence PARTAGÉE (EnTetePliable) : replier ici
-                 replie aussi le Détail PPM, et réciproquement. -->
+            <!-- ⚠️ Demande pilote (2026-09-02, précisée) — l'en-tête d'identité est MASQUÉ à
+                 CHAQUE ouverture ; le bouton le déplie à la demande (état local au modal). -->
             <button type="button" class="btn btn-ghost btn-sm dc-toggle-entete"
-              [attr.aria-expanded]="!entete.replie()" (click)="entete.basculer()">
-              {{ entete.libelle() }}
+              [attr.aria-expanded]="!enteteReplie()" (click)="enteteReplie.set(!enteteReplie())">
+              {{ enteteReplie() ? "▸ Afficher l'en-tête" : "▾ Masquer l'en-tête" }}
             </button>
           </div>
 
           <!-- ⚠️ 2026-08-14 (demande user) — en-tête ÉPURÉ : seuls Entité contractante, Localité,
                Référence PRMP, Exercice, Signataire et Mise à jour restent (Type est déjà en chip,
                la date réf. dans le sous-titre ; PRMP d'attribution/dates de signature retirés). -->
-          @if (!entete.replie()) {
+          @if (!enteteReplie()) {
           <div class="dc-meta">
             <div class="dc-meta-row">
               <span class="dc-meta-label">Entité contractante</span>
@@ -418,8 +417,8 @@ export class DossierConsultation implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly auth = inject(AuthService);
-  /** Repli de l'en-tête d'identité — préférence PARTAGÉE avec le Détail PPM (même sorte d'en-tête). */
-  readonly entete = inject(EnTetePliable);
+  /** En-tête d'identité replié — MASQUÉ par défaut à chaque ouverture (demande pilote 02/09). */
+  readonly enteteReplie = signal(true);
 
   /** La référence PPM interne (ex. « 00018/MLF/PPM/2026 ») n'est montrée qu'aux profils PRMP, UGPM et Secrétaire. */
   readonly montrerReferencePpm = computed(() => ['PRMP', 'UGPM', 'SECRETAIRE'].includes(this.auth.role() ?? ''));

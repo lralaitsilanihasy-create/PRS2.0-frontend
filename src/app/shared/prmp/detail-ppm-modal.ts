@@ -35,7 +35,6 @@ import { DatePipe } from '@angular/common';
 import { PpmMarchesTable } from './ppm-marches-table';
 import { PpmSaisieGrid } from './ppm-saisie-grid';
 import { PpmFormFactory } from './ppm-form-factory';
-import { EnTetePliable } from '../ui/entete-pliable';
 import { DpmBenefsMarche } from './dpm-benefs-marche';
 import { CibleSuppression, DpmConfirmationSuppression } from './dpm-confirmation-suppression';
 import { DpmDatesMarche, libelleCapm } from './dpm-dates-marche';
@@ -123,16 +122,16 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
             <span class="dpm-sep">·</span>
             <i aria-hidden="true">📅</i>
             <span>Exercice {{ ppm()?.exercice }}</span>
-            <!-- ⚠️ Demande pilote (2026-09-02) — préférence PARTAGÉE entre tous les modals de la
-                 même sorte (EnTetePliable) : replier ici replie aussi la consultation du dossier. -->
+            <!-- ⚠️ Demande pilote (2026-09-02, précisée) — l'en-tête d'identité est MASQUÉ à
+                 CHAQUE ouverture ; le bouton le déplie à la demande (état local au modal). -->
             <button type="button" class="btn btn-ghost btn-sm dpm-toggle-entete"
-              [attr.aria-expanded]="!entete.replie()" (click)="entete.basculer()">
-              {{ entete.libelle() }}
+              [attr.aria-expanded]="!enteteReplie()" (click)="enteteReplie.set(!enteteReplie())">
+              {{ enteteReplie() ? "▸ Afficher l'en-tête" : "▾ Masquer l'en-tête" }}
             </button>
           </div>
 
           <!-- Métadonnées : une par ligne (éditables inline en modeEdition — l'édition force l'affichage) -->
-          @if (!entete.replie() || editHeaderOpen()) {
+          @if (!enteteReplie() || editHeaderOpen()) {
           <div class="dpm-meta" [formGroup]="headerForm">
             <div class="dpm-meta-row">
               <span class="dpm-meta-label">Référence PRMP</span>
@@ -889,8 +888,8 @@ export class DetailPpmModal implements OnInit {
   private readonly typePieceService = inject(TypePieceJointeService);
   private readonly saisieService = inject(SaisieService);
   private readonly factory = inject(PpmFormFactory);
-  /** Repli de l'en-tête d'identité — préférence PARTAGÉE entre les modals de la même sorte. */
-  readonly entete = inject(EnTetePliable);
+  /** En-tête d'identité replié — MASQUÉ par défaut à chaque ouverture (demande pilote 02/09). */
+  readonly enteteReplie = signal(true);
 
   readonly loading = signal(true);
   /** Animation de fermeture en cours : retarde l'émission de `fermer` le temps du fondu sortant. */
