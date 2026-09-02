@@ -459,13 +459,17 @@ interface RowState {
        (_ppm-table.scss) : l'encapsulation émulée empêche d'atteindre ici le DOM du composant
        partagé — même motif que _dpm-dialog.scss. */
     .exam__panel--consigner { position: sticky; top: 0.75rem; max-height: calc(100vh - 13rem); overflow-y: auto; }
-    /* Onglets du contenu (2026-09-02) : même langage que le détail PPM. Marge haute demandée par
-       le pilote (02/09) — la ligne collait aux informations du dossier au-dessus. */
-    .exam__tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 1.1rem 0 0.9rem; }
-    .exam__tab { display: inline-flex; align-items: center; gap: 6px; padding: 0.4rem 0.9rem; border-radius: var(--radius-full); border: 1px solid var(--n-200); background: var(--n-50); color: var(--n-600); font-weight: 600; font-size: var(--text-sm); cursor: pointer; }
-    .exam__tab--on { background: var(--grad-primary); border-color: transparent; color: #fff; }
-    .exam__tab-n { font-size: var(--text-xs); background: rgb(255 255 255 / 0.25); border: 1px solid var(--n-200); border-radius: var(--radius-full); padding: 0 6px; }
-    .exam__tab--on .exam__tab-n { border-color: transparent; }
+    /* Onglets du contenu (2026-09-02) : MÊMES couleurs orange clair que les onglets du détail PPM
+       (demande pilote 02/09) — un seul langage d'onglets de dossier. Marge haute : la ligne
+       collait aux informations du dossier au-dessus. */
+    .exam__tabs { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 1.1rem 0 0.9rem; }
+    .exam__tab { appearance: none; border: 0; border-radius: 10px; padding: 0.55rem 1.1rem; font: inherit; font-size: var(--text-sm); font-weight: 700; cursor: pointer; background: #FFF7ED; color: #C2410C; transition: background 140ms var(--ease-out), color 140ms var(--ease-out); }
+    .exam__tab:hover { background: #FFEDD5; }
+    .exam__tab:focus-visible { outline: 2px solid #C2410C; outline-offset: 2px; }
+    .exam__tab--on { background: #C2410C; color: #fff; box-shadow: 0 2px 6px rgb(194 65 12 / 32%); }
+    .exam__tab--on:hover { background: #9A3412; }
+    .exam__tab-n { display: inline-block; margin-left: 0.45rem; padding: 0.05rem 0.45rem; border-radius: 999px; background: #fff; color: #C2410C; font-size: var(--text-xs); }
+    .exam__tab--on .exam__tab-n { background: rgb(255 255 255 / 25%); color: #fff; }
     @media (max-width: 75rem) {
       .exam__panel--contenu, .exam__panel--consigner { max-height: none; overflow: visible; position: static; }
     }
