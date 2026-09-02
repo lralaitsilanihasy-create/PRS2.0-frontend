@@ -370,7 +370,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                  officielle (pièce du dépôt) : trois listes dérivées du plan. Les JUSTIFICATIONS
                  restent à compléter sur la fiche signée — l'écran les signale, il ne les saisit pas. -->
             @if (onglet() === 'fiche') {
-              <div class="dpm-section" role="tabpanel">
+              <div class="dpm-section dpm-doc-panel" role="tabpanel">
                 <!-- ⚠️ Demande user (2026-09-01, mise à jour) — le libellé de version remplace
                      « Initial » sur une version de mise à jour (numMaj > 0). -->
                 <p class="dpm-fp-nature"><u>Nature du dossier</u> :
@@ -462,7 +462,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                  plan (créé de fait à la création / mise à jour du dossier), rien de persisté —
                  la pièce AGPM signée reste, elle, une pièce jointe. -->
             @if (onglet() === 'agpm') {
-              <div class="dpm-section" role="tabpanel">
+              <div class="dpm-section dpm-doc-panel" role="tabpanel">
                 <h3 class="dpm-fp-titre dpm-agpm-titre">AVIS GENERAL DE PASSATION DES MARCHES POUR L'ANNEE {{ ppm()?.exercice ?? '____' }}</h3>
                 <div class="dpm-agpm-entete">
                   <div>

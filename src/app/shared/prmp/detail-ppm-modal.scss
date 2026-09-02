@@ -28,6 +28,22 @@
   .td-actions { flex-wrap: wrap; }
 }
 
+/* ── Onglets « Fiche de présentation » et « Projet d'AGPM » (demande pilote 2026-09-02) ──
+   Les textes longs (objet du marché, justifications) reviennent à la ligne et le tableau suit la
+   largeur de l'écran — JAMAIS de défilement horizontal. Même motif que .dpm-marches : le `td`
+   global du design-system est en `nowrap`, on l'override pour ces deux onglets seulement.
+   Montants et dates (.cnm-mono) restent insécables ; la largeur des colonnes se répartit d'elle-
+   même (layout auto : le texte long prend la place restante, les colonnes courtes restent courtes). */
+.dpm-doc-panel {
+  .table-responsive { overflow-x: visible; }
+  .table-responsive table { min-width: 0; }
+  th { white-space: normal; }
+  /* break-word (pas anywhere) : coupe aux espaces, un mot entier n'est scindé qu'en dernier
+     recours — « Fournitures » ne devient pas « Fournitu / res » dans une colonne étroite. */
+  td { white-space: normal; overflow-wrap: break-word; vertical-align: top; }
+  td.cnm-mono { white-space: nowrap; }
+}
+
 /* ── Header ── */
 .dpm-header {
   padding: 18px 24px 16px;
