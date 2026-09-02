@@ -168,7 +168,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     <div><dt>Membre</dt><dd>{{ signataire(pv.imCtrlMembre, pv.dateSignatureMembre) }}</dd></div>
                     <div><dt>Chef de commission</dt><dd>{{ signataire(pv.imCtrlCc, pv.dateSignatureCc) }}</dd></div>
                     <div><dt>Président</dt><dd>{{ signataire(pv.imCtrlPresident, pv.dateSignaturePresident) }}</dd></div>
-                    <div><dt>Secrétaire de séance</dt><dd>{{ pv.nomSecretaireSeance || '—' }}</dd></div>
+                    <!-- Notion retirée du cycle le 02/09 : la ligne ne subsiste que sur les PV historiques qui en portent un. -->
+                    @if (pv.nomSecretaireSeance || pv.idSecretaireSeance) {
+                      <div><dt>Secrétaire de séance</dt><dd>{{ pv.nomSecretaireSeance || pv.idSecretaireSeance }}</dd></div>
+                    }
                   </dl>
 
                   <div class="pv-grille-head">

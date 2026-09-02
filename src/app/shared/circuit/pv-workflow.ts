@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, ou
 import { forkJoin } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { PermissionsService } from '../../core/auth/permissions.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, validerFichier } from '../../core/securite/fichiers-surs';
@@ -177,16 +176,16 @@ import {
         </div>
       }
 
-      <!-- ⚠️ Visa unique (2026-08-31) — clôture de la navette EN UN GESTE (Président/CC dispatcheur) :
-           avis du Membre modifiable, Secrétaire de séance et Membre co-signataire obligatoires, et la
-           part de signature du rôle posée dans le même POST. -->
+      <!-- ⚠️ Visa unique (2026-08-31, allégé 02/09 : le Secrétaire de séance a disparu du cycle) —
+           clôture de la navette EN UN GESTE (Président/CC dispatcheur) : avis du Membre modifiable,
+           Membre co-signataire obligatoire, et la part de signature du rôle posée dans le même POST. -->
       @if (viserOuvert()) {
         <div class="pv-workflow__retour pv-workflow__retour--accept cnm-form">
           <span class="pv-workflow__retour-label">{{ interim() ? 'Visa par intérim — clôture de la navette' : 'Visa — clôture de la navette' }}</span>
           <span class="form-hint">
-            Le visa clôt la navette en un geste : il arrête l'avis, désigne le Secrétaire de séance et
-            le Membre co-signataire, et pose <strong>votre part de signature</strong>. Le Membre désigné
-            posera la part Membre : le PV est signé par deux personnes distinctes.
+            Le visa clôt la navette en un geste : il arrête l'avis, désigne le Membre co-signataire,
+            et pose <strong>votre part de signature</strong>. Le Membre désigné posera la part
+            Membre : le PV est signé par deux personnes distinctes.
           </span>
           @if (interim()) {
             <!-- ⚠️ Intérim (2026-09-01) — la note EST la justification (l'absence n'est pas vérifiable
@@ -214,16 +213,6 @@ import {
             @if (pv().idAvis) {
               <span class="form-hint">Pré-rempli avec l'avis émis par le Membre à l'examen — le changer ici le remplace.</span>
             }
-          </label>
-          <label class="form-group">
-            <span class="form-label">Secrétaire de séance *</span>
-            <select class="form-control" [value]="secretaireChoisi() ?? ''" (change)="secretaireChoisi.set($any($event.target).value || null)">
-              <option value="" [selected]="!secretaireChoisi()">— Sélectionner —</option>
-              @for (v of verificateurOptions(); track v.id) {
-                <option [value]="v.id" [selected]="v.id === secretaireChoisi()">{{ v.label }}</option>
-              }
-            </select>
-            <span class="form-hint">Vérificateur de la localité du dossier, désigné au PV.</span>
           </label>
           <label class="form-group">
             <span class="form-label">Membre co-signataire *</span>
@@ -372,12 +361,11 @@ export class PvWorkflow {
   private readonly profileService = inject(ProfileService);
   private readonly lettreService = inject(LettreRenvoiService);
   private readonly auth = inject(AuthService);
-  private readonly permissions = inject(PermissionsService);
   private readonly toast = inject(ToastService);
 
   /** PV courant. */
   readonly pv = input.required<PvExamen>();
-  /** Localité du dossier du PV (candidats Secrétaire de séance = Vérificateurs de cette localité). */
+  /** Localité du dossier du PV (périmètre de l'intérim et candidats Membre co-signataire). */
   readonly idLocalite = input<string | null>(null);
   /**
    * Nombre d'observations de l'examen (points de contrôle + pièces jointes), fourni par le parent.
@@ -390,14 +378,13 @@ export class PvWorkflow {
 
   readonly retourOuvert = signal(false);
   readonly soumettreOuvert = signal(false);
-  /** Panneau « visa » (avis + secrétaire + co-signataire + part de signature, Président/CC dispatcheur). */
+  /** Panneau « visa » (avis + co-signataire + part de signature, Président/CC dispatcheur). */
   readonly viserOuvert = signal(false);
   /** Panneau « lettre de renvoi » (Président/CC, même étape). */
   readonly lettreOuvert = signal(false);
   readonly saving = signal(false);
 
   readonly avisChoisi = signal<string | null>(null);
-  readonly secretaireChoisi = signal<string | null>(null);
   readonly viserErreur = signal<string | null>(null);
   readonly corpsLettre = signal('');
   /** Lettres de renvoi de l'examen du PV (affichées dans le panneau lettre). */
@@ -408,32 +395,6 @@ export class PvWorkflow {
   private readonly profileLib = signal<Map<number, string>>(new Map());
   /** Référentiels (avis / contrôleurs / profils) chargés une seule fois, à l'ouverture du panneau. */
   private refsCharges = false;
-  /**
-   * Candidats Secrétaire de séance : Vérificateurs TITULAIRES de la localité + « moi-même » (⤴
-   * délégation du profil Vérificateur — décision 2026-08-15 qui ANNULE le statu quo du même jour)
-   * quand la paire « profil courant → Vérificateur » est ACTIVE en base : le Président/CC qui accepte
-   * peut se désigner lui-même (garde backend en miroir « titulaire OU délégation », 409 sinon —
-   * mention « (par délégation) » posée sur le document PV côté serveur). Paire désactivée → l'option
-   * disparaît, zéro code.
-   */
-  readonly verificateurOptions = computed(() => {
-    const loc = this.idLocalite();
-    const libs = this.profileLib();
-    const options = this.controleurs()
-      .filter((c) => c.idLocalite === loc && c.idProfile != null && /v[ée]rificateur/i.test(libs.get(c.idProfile) ?? ''))
-      .map((c) => ({ id: c.imControleur, label: [c.nomCont, c.prenomsCont].filter(Boolean).join(' ') || c.imControleur }));
-    const ref = this.auth.ref();
-    // ⚠️ 2026-08-28 — la paire ne suffit pas : `ControleurDirectory.peutEtreSecretaireSeance` exige
-    // EN PLUS que le secrétaire de séance soit de la localité du dossier (§3.3). Voir `peutSAutoProposer`.
-    const moi = ref ? this.controleurs().find((c) => c.imControleur === ref) : undefined;
-    const eligible = !!moi && peutSAutoProposer(moi.idLocalite, loc);
-    if (ref && moi && eligible && this.auth.role() !== 'VERIFICATEUR' && this.permissions.peutExecuter('VERIFICATEUR') && !options.some((o) => o.id === ref)) {
-      const nom = [moi.nomCont, moi.prenomsCont].filter(Boolean).join(' ') || ref;
-      options.unshift({ id: ref, label: `${nom} — moi-même ⤴ (délégation du profil Vérificateur)` });
-    }
-    return options;
-  });
-
   readonly statutLabel = computed(() => PV_STATUT_LABELS[this.pv().statutPv]);
   readonly canSoumettre = computed(() => peutSoumettre(this.pv().statutPv));
   readonly canRetourner = computed(() => peutRetourner(this.pv().statutPv));
@@ -584,8 +545,8 @@ export class PvWorkflow {
   }
 
   /**
-   * Ouvre le panneau de visa (pré-rempli du PV — avis du Membre, secrétaire éventuel — sinon de la
-   * suggestion) et charge les référentiels.
+   * Ouvre le panneau de visa (pré-rempli de l'avis du Membre, sinon de la suggestion) et charge
+   * les référentiels.
    * ⚠️ 2026-08-30 — leçon conservée du panneau de désignation : charger les référentiels À CHAQUE
    * ouverture de panneau, quel que soit le chemin d'arrivée, sinon liste vide et fausse impasse.
    */
@@ -597,7 +558,6 @@ export class PvWorkflow {
       this.noteChoisie.set(null);
       this.viserErreur.set(null);
       this.avisChoisi.set(this.pv().idAvis ?? this.avisSuggere());
-      this.secretaireChoisi.set(this.pv().idSecretaireSeance ?? null);
       this.membreChoisi.set(null);
       this.chargerReferentiels();
     }
@@ -697,8 +657,9 @@ export class PvWorkflow {
 
   /**
    * ⚠️ Visa unique (2026-08-31) — clôture de la navette en UN POST : avis (toujours envoyé, la
-   * valeur affichée fait foi — la renvoyer identique est sans effet), Secrétaire de séance et
-   * Membre co-signataire obligatoires, part de signature du rôle posée par le serveur.
+   * valeur affichée fait foi — la renvoyer identique est sans effet) et Membre co-signataire
+   * obligatoires, part de signature du rôle posée par le serveur. Le Secrétaire de séance a
+   * DISPARU du cycle (règle du 01/09, backend `8ae307a`) : plus de champ, rien d'envoyé.
    */
   confirmerVisa(): void {
     const acteur = this.acteur();
@@ -708,11 +669,6 @@ export class PvWorkflow {
     const idAvis = this.avisChoisi();
     if (!idAvis) {
       this.viserErreur.set("Sélectionnez l'avis global (obligatoire pour viser).");
-      return;
-    }
-    const idSecretaireSeance = this.secretaireChoisi();
-    if (!idSecretaireSeance) {
-      this.viserErreur.set('Désignez le Secrétaire de séance (Vérificateur de la localité du dossier).');
       return;
     }
     const imMembreCoSignataire = this.membreChoisi();
@@ -727,7 +683,7 @@ export class PvWorkflow {
     }
     this.viserErreur.set(null);
     this.saving.set(true);
-    const body = { imActeur: acteur, idAvis, idSecretaireSeance, imMembreCoSignataire };
+    const body = { imActeur: acteur, idAvis, imMembreCoSignataire };
     const visa$ =
       this.interim() && note
         ? this.pvService.viserParInterim(this.pv().idPv, body, note)

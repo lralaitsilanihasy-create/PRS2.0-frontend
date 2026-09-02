@@ -106,7 +106,10 @@ import { StatutBadge } from '../../shared/circuit';
                 <tr><td>Membre</td><td>{{ signataire(pv().imCtrlMembre, pv().dateSignatureMembre) }}</td></tr>
                 <tr><td>Chef de commission</td><td>{{ signataire(pv().imCtrlCc, pv().dateSignatureCc) }}</td></tr>
                 <tr><td>Président</td><td>{{ signataire(pv().imCtrlPresident, pv().dateSignaturePresident) }}</td></tr>
-                <tr><td>Secrétaire de séance</td><td>{{ pv().nomSecretaireSeance || '—' }}</td></tr>
+                <!-- Notion retirée du cycle le 02/09 : ligne réservée aux PV historiques qui en portent un. -->
+                @if (pv().nomSecretaireSeance || pv().idSecretaireSeance) {
+                  <tr><td>Secrétaire de séance</td><td>{{ pv().nomSecretaireSeance || pv().idSecretaireSeance }}</td></tr>
+                }
               </tbody>
             </table>
           </div>

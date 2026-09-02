@@ -94,7 +94,10 @@ import {
                       <div><dt>Signature membre</dt><dd class="cnm-mono">{{ pv.dateSignatureMembre || '—' }}</dd></div>
                       <div><dt>Signature CC</dt><dd class="cnm-mono">{{ pv.dateSignatureCc || '—' }}</dd></div>
                       <div><dt>Signature président</dt><dd class="cnm-mono">{{ pv.dateSignaturePresident || '—' }}</dd></div>
-                      <div><dt>Secrétaire de séance</dt><dd>{{ pv.nomSecretaireSeance || '—' }}</dd></div>
+                      <!-- Notion retirée du cycle le 02/09 : ligne réservée aux PV historiques qui en portent un. -->
+                      @if (pv.nomSecretaireSeance || pv.idSecretaireSeance) {
+                        <div><dt>Secrétaire de séance</dt><dd>{{ pv.nomSecretaireSeance || pv.idSecretaireSeance }}</dd></div>
+                      }
                       @if (pv.syntheseObservations) {
                         <div><dt>Synthèse</dt><dd class="pva__synthese">{{ pv.syntheseObservations }}</dd></div>
                       }

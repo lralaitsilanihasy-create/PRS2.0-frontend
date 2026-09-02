@@ -227,10 +227,11 @@ export function examenRectifiable(statutPv: StatutPv | null | undefined, statutD
  * Puis-je me proposer moi-même (« moi-même ⤴ ») pour une tâche que j'exerce par délégation
  * ascendante sur CE dossier ?
  *
- * ⚠️ Règle 2026-08-28, signalée par la session backend. La paire active ne suffit pas : trois
- * gardes serveur exigent EN PLUS que l'acteur soit de la localité du dossier —
- * `DispatchService.validerAttributaireMembre`, `ControleurDirectory.peutEtreSecretaireSeance` et
- * `PvExamenService.exigerRedacteurDuProjet` (§3.3). Un contrôleur **sans localité** — le Président
+ * ⚠️ Règle 2026-08-28, signalée par la session backend. La paire active ne suffit pas : les gardes
+ * serveur exigent EN PLUS que l'acteur soit de la localité du dossier —
+ * `DispatchService.validerAttributaireMembre` et `PvExamenService.exigerRedacteurDuProjet` (§3.3 ;
+ * `peutEtreSecretaireSeance` en faisait partie jusqu'au retrait de la notion le 02/09, `8ae307a`).
+ * La même règle borne aussi le périmètre du visa par intérim. Un contrôleur **sans localité** — le Président
  * — passe partout ; un Chef de commission couvert par la paire mais rattaché à une AUTRE
  * commission est refusé.
  *

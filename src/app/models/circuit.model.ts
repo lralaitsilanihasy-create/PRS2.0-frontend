@@ -181,14 +181,13 @@ export interface ObservationControle {
 /**
  * Corps de `POST /api/examens/{id}/soumettre` : produit toujours un projet de PV.
  * ⚠️ Visa unique (2026-08-31) — le Membre ÉMET SON AVIS à la soumission (inversion de la règle du
- * 01/08) ; cohérence validée serveur (≥ 1 observation → FAV refusé, 409). Le Secrétaire de séance,
- * lui, reste posé au visa (`/pv-examens/{id}/viser`, Président/CC dispatcheur).
+ * 01/08) ; cohérence validée serveur (≥ 1 observation → FAV refusé, 409). Le Secrétaire de séance
+ * a DISPARU du cycle (règle du 01/09, backend `8ae307a`) : le champ n'est plus envoyé nulle part
+ * (un client non à jour qui l'enverrait encore serait ignoré, jamais refusé).
  */
 export interface ExamenSoumissionRequest {
   /** Avis du Membre — exigé par le front ; l'obligation serveur (400) arrive au lot 2 backend. */
   idAvis?: string;
-  /** Matricule du Vérificateur désigné Secrétaire de séance (optionnel — posé au visa). */
-  idSecretaireSeance?: string;
 }
 
 /**
@@ -265,9 +264,14 @@ export interface PvExamen {
   imCtrlPresident?: string;
   imCtrlCc?: string;
   imCtrlMembre: string;
-  /** Vérificateur désigné Secrétaire de séance (posé au visa). */
+  /**
+   * ⚠️ HISTORIQUE — la notion de Secrétaire de séance a disparu du cycle (règle du 01/09, backend
+   * `8ae307a`) : plus jamais posé, `null` sur tout PV visé depuis. Conservé en LECTURE pour les PV
+   * antérieurs (un PV est un acte officiel, sa trace n'est pas réécrite) ; l'affichage est
+   * conditionnel à sa présence.
+   */
   idSecretaireSeance?: string;
-  /** Nom complet du secrétaire de séance, peuplé serveur — lecture seule. */
+  /** Nom complet du secrétaire de séance historique, peuplé serveur — lecture seule. */
   nomSecretaireSeance?: string;
   /**
    * ⚠️ Co-signature (backend `e8b5b2e`, 2026-08-28) — Membre DÉSIGNÉ par le Président ou le CC pour
@@ -468,18 +472,17 @@ export interface DemandeRetrait {
  * Corps des actions de workflow du PV (`/soumettre`, `/retourner`, `/viser`, `/signer`).
  * `commentaire` obligatoire pour `retourner` ; `role` obligatoire pour `signer` — MEMBRE seul
  * depuis le visa unique (PRESIDENT/CC y reçoivent 409 : leur part passe par `viser`).
- * ⚠️ Visa unique (2026-08-31) — pour `viser` : `idSecretaireSeance` + `imMembreCoSignataire`
- * obligatoires (400), `idAvis` optionnel (absent = avis du Membre conservé, fourni = remplacé,
- * cohérence revalidée), `imActeur` ignoré (l'acteur est la session), pas de `role` (la part
- * signée est dérivée du profil de l'acteur).
+ * ⚠️ Visa unique (2026-08-31, allégé 02/09) — pour `viser` : `imMembreCoSignataire` obligatoire
+ * (400), `idAvis` optionnel (absent = avis du Membre conservé, fourni = remplacé, cohérence
+ * revalidée), `imActeur` ignoré (l'acteur est la session), pas de `role` (la part signée est
+ * dérivée du profil de l'acteur). Le Secrétaire de séance a disparu du cycle (backend `8ae307a`) :
+ * le champ n'existe plus dans ce corps.
  */
 export interface PvActionRequest {
   imActeur: string;
   commentaire?: string;
   role?: PvSignataireRole;
   idAvis?: string;
-  /** Vérificateur (localité du dossier) désigné Secrétaire de séance — requis pour `viser`. */
-  idSecretaireSeance?: string;
   /**
    * ⚠️ Co-signature (2026-08-28, reprise par `viser` le 31/08) — Membre appelé à co-signer,
    * obligatoire pour `viser` (400). Doit être un Membre de la localité du dossier et différent du
