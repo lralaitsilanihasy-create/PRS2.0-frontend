@@ -33,9 +33,33 @@
 .ppm-table-large .ppm-table {
   min-width: 100rem;
 }
+/* Le défilement (2 axes) vit dans la zone hôte (.exam__contenu-defilant) : le cadre interne ne
+   doit plus créer son propre contexte de défilement, sinon l'en-tête collant ci-dessous ne
+   suivrait que lui (et jamais le défilement vertical du panneau). */
+.ppm-table-large .ppm-table-wrap {
+  overflow: visible;
+}
+/* ⚠️ Demande pilote (2026-09-02) — l'EN-TÊTE DU TABLEAU reste visible pendant le défilement
+   vertical. Collant sur le THEAD ENTIER (ce tableau a un en-tête à DEUX rangées : des th collants
+   individuellement se seraient tous accrochés à top:0 et chevauchés). Fond posé par cellule :
+   un en-tête collant sans fond laisserait les lignes transparaître. */
+.ppm-table-large .ppm-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.ppm-table-large .ppm-table thead th {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+}
 @media (max-width: 75rem) {
   .ppm-table-large .ppm-table {
     min-width: 0;
+  }
+  .ppm-table-large .ppm-table-wrap {
+    overflow-x: auto;
+  }
+  .ppm-table-large .ppm-table thead {
+    position: static;
   }
 }
 

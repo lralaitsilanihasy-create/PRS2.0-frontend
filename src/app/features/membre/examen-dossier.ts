@@ -111,7 +111,11 @@ interface RowState {
         <div class="exam__grid">
           <div class="card exam__panel exam__panel--contenu">
             <div class="card-header"><span class="card-title">Contenu du dossier</span></div>
-            <div class="card-body">
+            <div class="card-body exam__contenu-corps">
+              <!-- ⚠️ Demande pilote (2026-09-02) — l'EN-TÊTE (infos + onglets) est FIGÉ : seule la
+                   zone du dessous défile, et l'en-tête du tableau PPM y reste collant (variante
+                   globale ppm-table-large). -->
+              <div class="exam__contenu-fixe">
               <dl class="exam__info">
                 <div><dt>Type</dt><dd>{{ typeLabel() }}</dd></div>
                 <div><dt>Entité contractante</dt><dd>{{ entiteLabel() }}</dd></div>
@@ -121,7 +125,7 @@ interface RowState {
               </dl>
               @if (estPpm()) {
                 <!-- ⚠️ Demande pilote (2026-09-02) — contenu EN ONGLETS, comme le détail PPM :
-                     Plan / Fiche de présentation / Projet d'AGPM (si le sous-type en a) / Pièces.
+                     Fiche / Plan / Projet d'AGPM (si le sous-type en a) / Pièces.
                      L'onglet SUIT l'étape de la grille (effect) : le document contrôlé est affiché. -->
                 <div class="exam__tabs" role="tablist" aria-label="Contenu du dossier">
                   <!-- Ordre (pilote 02/09) : la fiche de présentation passe AVANT le plan. -->
@@ -144,7 +148,11 @@ interface RowState {
                     Pièces jointes <span class="exam__tab-n">{{ pieces().length }}</span>
                   </button>
                 </div>
+              }
+              </div>
 
+              <div class="exam__contenu-defilant">
+              @if (estPpm()) {
                 @if (ongletContenu() === 'ppm') {
                   @if (ppm(); as p) {
                     <h3 class="exam__sub">PPM — {{ p.reference || ('#' + p.idPpm) }}</h3>
@@ -247,6 +255,7 @@ interface RowState {
                 }
               </div>
               }
+              </div>
             </div>
           </div>
 
@@ -455,7 +464,13 @@ interface RowState {
     /* ⚠️ Demande pilote (2026-09-02) — le dossier s'affiche à 100 % de sa taille et DÉFILE dans son
        panneau (les deux axes) ; « Consigner l'examen » reste à l'écran (sticky, défilement propre).
        Les deux panneaux sont bornés à la hauteur de la fenêtre, chacun avec son ascenseur. */
-    .exam__panel--contenu { max-height: calc(100vh - 13rem); overflow: auto; }
+    /* ⚠️ 2026-09-02 (précisé) — l'EN-TÊTE du panneau (infos + onglets) est FIGÉ : le panneau ne
+       défile plus lui-même, c'est la zone .exam__contenu-defilant qui porte les deux ascenseurs ;
+       l'en-tête du tableau PPM y est collant (variante globale ppm-table-large). */
+    .exam__panel--contenu { max-height: calc(100vh - 13rem); display: flex; flex-direction: column; overflow: hidden; }
+    .exam__panel--contenu .exam__contenu-corps { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+    .exam__contenu-fixe { flex-shrink: 0; }
+    .exam__contenu-defilant { flex: 1; min-height: 0; overflow: auto; }
     /* La largeur confortable du tableau vient de la variante GLOBALE .ppm-table-large
        (_ppm-table.scss) : l'encapsulation émulée empêche d'atteindre ici le DOM du composant
        partagé — même motif que _dpm-dialog.scss. */
@@ -472,7 +487,9 @@ interface RowState {
     .exam__tab-n { display: inline-block; margin-left: 0.45rem; padding: 0.05rem 0.45rem; border-radius: 999px; background: #fff; color: #C2410C; font-size: var(--text-xs); }
     .exam__tab--on .exam__tab-n { background: rgb(255 255 255 / 25%); color: #fff; }
     @media (max-width: 75rem) {
-      .exam__panel--contenu, .exam__panel--consigner { max-height: none; overflow: visible; position: static; }
+      .exam__panel--contenu, .exam__panel--consigner { max-height: none; overflow: visible; position: static; display: block; }
+      .exam__panel--contenu .exam__contenu-corps { display: block; overflow: visible; }
+      .exam__contenu-defilant { overflow: visible; }
     }
     /* Sous ~1200px, on empile (côte à côte devient illisible). */
     @media (max-width: 75rem) { .exam__grid { grid-template-columns: 1fr; } }
