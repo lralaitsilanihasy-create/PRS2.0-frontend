@@ -196,6 +196,13 @@
   i { font-size: 12px; font-style: normal; }
 }
 
+/* Repli de l'en-tête (2026-09-02) : bouton discret en bout de sous-titre. */
+.dpm-toggle-entete {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--n-500);
+}
+
 .dpm-sep { opacity: .4; }
 
 /* Métadonnées ligne par ligne */

@@ -35,6 +35,7 @@ import { DatePipe } from '@angular/common';
 import { PpmMarchesTable } from './ppm-marches-table';
 import { PpmSaisieGrid } from './ppm-saisie-grid';
 import { PpmFormFactory } from './ppm-form-factory';
+import { EnTetePliable } from '../ui/entete-pliable';
 import { DpmBenefsMarche } from './dpm-benefs-marche';
 import { CibleSuppression, DpmConfirmationSuppression } from './dpm-confirmation-suppression';
 import { DpmDatesMarche, libelleCapm } from './dpm-dates-marche';
@@ -115,16 +116,23 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
           <!-- Ligne 2 : titre -->
           <div class="dpm-title">{{ ppm()?.reference || 'PPM #' + idPpm }}</div>
 
-          <!-- Ligne 3 : localité · exercice -->
+          <!-- Ligne 3 : localité · exercice · repli de l'en-tête -->
           <div class="dpm-subtitle">
             <i aria-hidden="true">📍</i>
             <span>{{ ppm()?.idLocalite || '—' }}</span>
             <span class="dpm-sep">·</span>
             <i aria-hidden="true">📅</i>
             <span>Exercice {{ ppm()?.exercice }}</span>
+            <!-- ⚠️ Demande pilote (2026-09-02) — préférence PARTAGÉE entre tous les modals de la
+                 même sorte (EnTetePliable) : replier ici replie aussi la consultation du dossier. -->
+            <button type="button" class="btn btn-ghost btn-sm dpm-toggle-entete"
+              [attr.aria-expanded]="!entete.replie()" (click)="entete.basculer()">
+              {{ entete.libelle() }}
+            </button>
           </div>
 
-          <!-- Métadonnées : une par ligne (éditables inline en modeEdition) -->
+          <!-- Métadonnées : une par ligne (éditables inline en modeEdition — l'édition force l'affichage) -->
+          @if (!entete.replie() || editHeaderOpen()) {
           <div class="dpm-meta" [formGroup]="headerForm">
             <div class="dpm-meta-row">
               <span class="dpm-meta-label">Référence PRMP</span>
@@ -167,6 +175,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
               </div>
             }
           </div>
+          }
 
           @if (editHeaderOpen()) {
             <div class="dpm-header-savebar">
@@ -880,6 +889,8 @@ export class DetailPpmModal implements OnInit {
   private readonly typePieceService = inject(TypePieceJointeService);
   private readonly saisieService = inject(SaisieService);
   private readonly factory = inject(PpmFormFactory);
+  /** Repli de l'en-tête d'identité — préférence PARTAGÉE entre les modals de la même sorte. */
+  readonly entete = inject(EnTetePliable);
 
   readonly loading = signal(true);
   /** Animation de fermeture en cours : retarde l'émission de `fermer` le temps du fondu sortant. */

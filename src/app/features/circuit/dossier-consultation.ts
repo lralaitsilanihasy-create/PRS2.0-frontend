@@ -28,6 +28,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ChronometrageDossier, StatutBadge } from '../../shared/circuit';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
+import { EnTetePliable } from '../../shared/ui/entete-pliable';
 
 /**
  * Consultation d'un dossier en LECTURE SEULE (modale réutilisable).
@@ -82,11 +83,18 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
             <span class="dc-sep">·</span>
             <i aria-hidden="true">📅</i>
             <span>{{ dossier().dateRef || '—' }}</span>
+            <!-- ⚠️ Demande pilote (2026-09-02) — préférence PARTAGÉE (EnTetePliable) : replier ici
+                 replie aussi le Détail PPM, et réciproquement. -->
+            <button type="button" class="btn btn-ghost btn-sm dc-toggle-entete"
+              [attr.aria-expanded]="!entete.replie()" (click)="entete.basculer()">
+              {{ entete.libelle() }}
+            </button>
           </div>
 
           <!-- ⚠️ 2026-08-14 (demande user) — en-tête ÉPURÉ : seuls Entité contractante, Localité,
                Référence PRMP, Exercice, Signataire et Mise à jour restent (Type est déjà en chip,
                la date réf. dans le sous-titre ; PRMP d'attribution/dates de signature retirés). -->
+          @if (!entete.replie()) {
           <div class="dc-meta">
             <div class="dc-meta-row">
               <span class="dc-meta-label">Entité contractante</span>
@@ -119,6 +127,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
               }
             }
           </div>
+          }
         </div>
 
         <!-- ── Corps ── (une seule vague : tout est affiché quand TOUT est chargé — pas de sauts) -->
@@ -324,6 +333,8 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
     .dc-title { font-size: 20px; font-weight: 700; color: var(--n-800); letter-spacing: -.025em; line-height: 1.1; margin-bottom: 6px; }
     .dc-subtitle { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--n-400); margin-bottom: 14px; }
     .dc-subtitle i { font-size: 12px; font-style: normal; }
+    /* Repli de l'en-tête (2026-09-02) : bouton discret en bout de sous-titre. */
+    .dc-toggle-entete { margin-left: auto; font-size: var(--text-xs); color: var(--n-500); }
     .dc-sep { opacity: .4; }
     .dc-meta { background: var(--n-50); border: 0.5px solid var(--n-200); border-radius: 10px; overflow: hidden; }
     .dc-meta-row { display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-bottom: 0.5px solid var(--n-200); }
@@ -407,6 +418,8 @@ export class DossierConsultation implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly auth = inject(AuthService);
+  /** Repli de l'en-tête d'identité — préférence PARTAGÉE avec le Détail PPM (même sorte d'en-tête). */
+  readonly entete = inject(EnTetePliable);
 
   /** La référence PPM interne (ex. « 00018/MLF/PPM/2026 ») n'est montrée qu'aux profils PRMP, UGPM et Secrétaire. */
   readonly montrerReferencePpm = computed(() => ['PRMP', 'UGPM', 'SECRETAIRE'].includes(this.auth.role() ?? ''));
