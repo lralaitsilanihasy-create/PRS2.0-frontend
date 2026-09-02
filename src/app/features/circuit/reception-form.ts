@@ -179,7 +179,8 @@ interface LigneControle {
   styles: `
     .rf-modal { max-width: 48rem; }
     /* En-tête : titre + référence, ✕ calé à droite. */
-    .rf-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    /* Titre décalé un peu vers le bas et la droite (demande pilote 02/09) : il collait au coin du modal. */
+    .rf-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 0.9rem 0 0 1.1rem; }
     .rf-header__titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .rf-header__ref { font-size: var(--text-sm); color: var(--n-400); }
     /* Bandeau d'identification en tuiles. */
@@ -264,17 +265,24 @@ export class ReceptionForm implements OnInit {
   /** Saisie locale d'observation par type de pièce (envoyée avec la décision cliquée). */
   private readonly observations = signal<Map<number, string>>(new Map());
 
-  /** Lignes du contrôle : chaque type attendu confronté au dépôt + sa dernière décision. */
+  /**
+   * Lignes du contrôle : chaque type attendu confronté au dépôt + sa dernière décision.
+   * ⚠️ Demande pilote (2026-09-02) — seules les OBLIGATOIRES s'affichent, plus les facultatives
+   * réellement DÉPOSÉES (le Secrétaire doit pouvoir les contrôler) : les lignes « facultative non
+   * déposée / Manquante » n'étaient que du bruit, comme aux écrans de création et de mise à jour.
+   */
   readonly lignes = computed<LigneControle[]>(() => {
     const parType = new Map<number, PieceJointeDossier>();
     for (const p of this.pieces()) {
       if (p.idTypePiece != null && !parType.has(p.idTypePiece)) parType.set(p.idTypePiece, p);
     }
-    return this.typesAttendus().map((t) => ({
-      type: t,
-      piece: parType.get(t.idTypePiece) ?? null,
-      decision: this.decisions().get(t.idTypePiece) ?? null,
-    }));
+    return this.typesAttendus()
+      .map((t) => ({
+        type: t,
+        piece: parType.get(t.idTypePiece) ?? null,
+        decision: this.decisions().get(t.idTypePiece) ?? null,
+      }))
+      .filter((l) => l.type.obligatoire || l.piece !== null);
   });
   readonly nbVerifiees = computed(() => this.lignes().filter((l) => l.decision !== null).length);
   /** Pièces OBLIGATOIRES non encore déclarées conformes (miroir client de la garde serveur). */
