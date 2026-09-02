@@ -474,7 +474,10 @@ interface RowState {
     /* La largeur confortable du tableau vient de la variante GLOBALE .ppm-table-large
        (_ppm-table.scss) : l'encapsulation émulée empêche d'atteindre ici le DOM du composant
        partagé — même motif que _dpm-dialog.scss. */
-    .exam__panel--consigner { position: sticky; top: 0.75rem; max-height: calc(100vh - 13rem); overflow-y: auto; }
+    /* ⚠️ 2026-09-02 (précisé) — PAS d'ascenseur propre sur « Consigner l'examen » : le panneau
+       s'affiche en pleine hauteur, la page défile s'il est long. Le panneau du contenu, lui,
+       reste borné avec son défilement interne et ses en-têtes figés. */
+    .exam__panel--consigner { align-self: start; }
     /* Onglets du contenu (2026-09-02) : MÊMES couleurs orange clair que les onglets du détail PPM
        (demande pilote 02/09) — un seul langage d'onglets de dossier. Marge haute : la ligne
        collait aux informations du dossier au-dessus. */
@@ -487,7 +490,7 @@ interface RowState {
     .exam__tab-n { display: inline-block; margin-left: 0.45rem; padding: 0.05rem 0.45rem; border-radius: 999px; background: #fff; color: #C2410C; font-size: var(--text-xs); }
     .exam__tab--on .exam__tab-n { background: rgb(255 255 255 / 25%); color: #fff; }
     @media (max-width: 75rem) {
-      .exam__panel--contenu, .exam__panel--consigner { max-height: none; overflow: visible; position: static; display: block; }
+      .exam__panel--contenu { max-height: none; overflow: visible; display: block; }
       .exam__panel--contenu .exam__contenu-corps { display: block; overflow: visible; }
       .exam__contenu-defilant { overflow: visible; }
     }
