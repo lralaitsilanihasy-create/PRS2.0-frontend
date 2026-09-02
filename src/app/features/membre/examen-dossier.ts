@@ -459,8 +459,9 @@ interface RowState {
        (_ppm-table.scss) : l'encapsulation émulée empêche d'atteindre ici le DOM du composant
        partagé — même motif que _dpm-dialog.scss. */
     .exam__panel--consigner { position: sticky; top: 0.75rem; max-height: calc(100vh - 13rem); overflow-y: auto; }
-    /* Onglets du contenu (2026-09-02) : même langage que le détail PPM. */
-    .exam__tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+    /* Onglets du contenu (2026-09-02) : même langage que le détail PPM. Marge haute demandée par
+       le pilote (02/09) — la ligne collait aux informations du dossier au-dessus. */
+    .exam__tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 1.1rem 0 0.9rem; }
     .exam__tab { display: inline-flex; align-items: center; gap: 6px; padding: 0.4rem 0.9rem; border-radius: var(--radius-full); border: 1px solid var(--n-200); background: var(--n-50); color: var(--n-600); font-weight: 600; font-size: var(--text-sm); cursor: pointer; }
     .exam__tab--on { background: var(--grad-primary); border-color: transparent; color: #fff; }
     .exam__tab-n { font-size: var(--text-xs); background: rgb(255 255 255 / 0.25); border: 1px solid var(--n-200); border-radius: var(--radius-full); padding: 0 6px; }
