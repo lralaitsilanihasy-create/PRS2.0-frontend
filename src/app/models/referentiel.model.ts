@@ -128,8 +128,13 @@ export interface PointsCtrl {
   idTypeDossier: string;
   /** Sous-type ciblé (doit appartenir à la famille, sinon 400) ; `null`/absent = point **commun** à la famille. */
   idSousType?: string | null;
-  /** Portée d'évaluation : `LIGNE` (par ligne de marché) ou `DOSSIER` (inter-lignes, ex. fractionnement). Défaut serveur `LIGNE`. */
-  portee?: 'LIGNE' | 'DOSSIER';
+  /**
+   * Portée d'évaluation : `LIGNE` (par ligne de marché), `DOSSIER` (inter-lignes, ex.
+   * fractionnement), et depuis le 02/09 (backend `f361de9`) `FICHE` / `AGPM` — la fiche de
+   * présentation et le projet d'AGPM ont chacun LEUR grille dans l'examen. Tout ce qui n'est pas
+   * `LIGNE` s'évalue UNE fois (résultat stocké `idDetail = null`). Défaut serveur `LIGNE`.
+   */
+  portee?: 'LIGNE' | 'DOSSIER' | 'FICHE' | 'AGPM';
 }
 
 /** Profil (référentiel RBAC). */

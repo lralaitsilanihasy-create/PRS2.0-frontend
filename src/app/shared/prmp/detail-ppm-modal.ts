@@ -35,6 +35,8 @@ import { DatePipe } from '@angular/common';
 import { PpmMarchesTable } from './ppm-marches-table';
 import { PpmSaisieGrid } from './ppm-saisie-grid';
 import { PpmFormFactory } from './ppm-form-factory';
+import { FichePresentationDoc } from './fiche-presentation-doc';
+import { AgpmDoc } from './agpm-doc';
 import { DpmBenefsMarche } from './dpm-benefs-marche';
 import { CibleSuppression, DpmConfirmationSuppression } from './dpm-confirmation-suppression';
 import { DpmDatesMarche, libelleCapm } from './dpm-dates-marche';
@@ -82,6 +84,8 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     DpmDatesMarche,
     DpmLotsMarche,
     DpmReimportRefuse,
+    FichePresentationDoc,
+    AgpmDoc,
   ],
   template: `
     <div class="modal-backdrop" [class.closing]="closing()">
@@ -378,90 +382,15 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                  officielle (pièce du dépôt) : trois listes dérivées du plan. Les JUSTIFICATIONS
                  restent à compléter sur la fiche signée — l'écran les signale, il ne les saisit pas. -->
             @if (onglet() === 'fiche') {
-              <div class="dpm-section dpm-doc-panel" role="tabpanel">
-                <!-- ⚠️ Demande user (2026-09-01, mise à jour) — le libellé de version remplace
-                     « Initial » sur une version de mise à jour (numMaj > 0). -->
-                <p class="dpm-fp-nature"><u>Nature du dossier</u> :
-                  <strong>Projet de Plan de passation des marchés de l'année {{ ppm()?.exercice ?? '____' }}, {{ libelleVersionFiche() }}</strong>
-                </p>
-                <p class="dpm-fp-note cnm-muted">
-                  Listes établies depuis les marchés du plan — même forme que la fiche de présentation
-                  jointe au dépôt.
-                </p>
-
-                <h3 class="dpm-fp-titre">1. Liste des marchés à passer par mode dérogatoire avec justifications</h3>
-                @if (fiche().derogatoires.length) {
-                  <div class="table-responsive">
-                    <table class="cnm-table">
-                      <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Justification</th></tr></thead>
-                      <tbody>
-                        @for (l of fiche().derogatoires; track l.idDetail) {
-                          <tr>
-                            <td>{{ l.objet }}</td>
-                            <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
-                            <td>{{ l.modeLibelle }}</td>
-                            <td>@if (l.justifModeDerogatoire) { {{ l.justifModeDerogatoire }} } @else { <span class="cnm-muted">À compléter</span> }</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
-                } @else {
-                  <p class="cnm-muted">Aucun marché à passer par mode dérogatoire.</p>
-                }
-
-                <h3 class="dpm-fp-titre">2. Liste des marchés à délais aménagés avec justifications</h3>
-                @if (fiche().delaisAmenages.length) {
-                  <div class="table-responsive">
-                    <table class="cnm-table">
-                      <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th><th scope="col">Justifications</th></tr></thead>
-                      <tbody>
-                        @for (l of fiche().delaisAmenages; track l.idDetail) {
-                          <tr>
-                            <td>{{ l.objet }}</td>
-                            <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
-                            <td>{{ l.modeLibelle }}</td>
-                            <td>{{ l.delaiJours }} jours <span class="cnm-muted">(minimum du mode : {{ l.delaiMinJours }})</span></td>
-                            <td>@if (l.justifDelaiAmenage) { {{ l.justifDelaiAmenage }} } @else { <span class="cnm-muted">À compléter</span> }</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
-                } @else {
-                  <p class="cnm-muted">Aucun marché à délais aménagés.</p>
-                }
-
-                <h3 class="dpm-fp-titre">3. Liste des contrats-cadres</h3>
-                @if (fiche().contratsCadres.length) {
-                  <div class="table-responsive">
-                    <table class="cnm-table">
-                      <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th></tr></thead>
-                      <tbody>
-                        @for (l of fiche().contratsCadres; track l.idDetail) {
-                          <tr>
-                            <td>{{ l.objet }}</td>
-                            <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
-                            <td>{{ l.modeLibelle }}</td>
-                            <td>@if (l.delaiJours != null) { {{ l.delaiJours }} jours } @else { — }</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
-                } @else {
-                  <p class="cnm-muted">Aucun contrat-cadre.</p>
-                }
-
-                <!-- ⚠️ Demande user (2026-09-01, mise à jour) — le MOTIF de la mise à jour s'AJOUTE
-                     à la justification du bas des listes (une version de mise à jour porte toujours
-                     son motif, même quand la justification manque encore — cas de l'import). -->
-                @if (fiche().nbMarchesConcernes > 0 || ppm()?.justificationFiche || ppm()?.motifMaj) {
-                  <p class="dpm-fp-justif"><u>Justification :</u>
-                    @if (ppm()?.justificationFiche) { {{ ppm()!.justificationFiche }} } @else { <span class="cnm-muted">À compléter</span> }
-                    @if (ppm()?.motifMaj) { — <strong>Motif de la mise à jour :</strong> {{ ppm()!.motifMaj }} }
-                  </p>
-                }
+              <div class="dpm-section" role="tabpanel">
+                <!-- Rendu partagé (2026-09-02) : même document dans l'examen — source unique. -->
+                <app-fiche-presentation-doc
+                  [fiche]="fiche()"
+                  [exercice]="ppm()?.exercice"
+                  [libelleVersion]="libelleVersionFiche()"
+                  [justificationFiche]="ppm()?.justificationFiche"
+                  [motifMaj]="ppm()?.motifMaj"
+                />
               </div>
             }
 
@@ -470,42 +399,18 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                  plan (créé de fait à la création / mise à jour du dossier), rien de persisté —
                  la pièce AGPM signée reste, elle, une pièce jointe. -->
             @if (onglet() === 'agpm') {
-              <div class="dpm-section dpm-doc-panel" role="tabpanel">
-                <h3 class="dpm-fp-titre dpm-agpm-titre">AVIS GENERAL DE PASSATION DES MARCHES POUR L'ANNEE {{ ppm()?.exercice ?? '____' }}</h3>
-                <div class="dpm-agpm-entete">
-                  <div>
-                    <p><u>Autorité Contractante</u> : <strong>{{ entiteLabel() }}</strong></p>
-                    <p><u>Nom de la PRMP</u> : <strong>{{ ppm()?.signataire || '—' }}</strong></p>
-                  </div>
-                  <div>
-                    <p><u>Date d'établissement du Document initial</u> : {{ dateCourt(ppm()?.datePpmInit || ppm()?.dateSignature) }}</p>
-                    <p><u>Numéro et date de la dernière mise à jour</u> : {{ ppm()?.numMajPrec ?? 0 }}@if (ppm()?.dateMajPrec) { - {{ dateCourt(ppm()?.dateMajPrec) }} }</p>
-                    <p><u>Numéro de la présente mise à jour</u> : {{ ppm()?.numMaj ?? 0 }}</p>
-                  </div>
-                </div>
-                @if (agpm().length) {
-                  <div class="table-responsive">
-                    <table class="cnm-table">
-                      <thead><tr><th scope="col">Compte</th><th scope="col">Nature</th><th scope="col">Objet</th><th scope="col">Montant estimatif du marché</th><th scope="col">Financement</th><th scope="col">Mode de passation</th><th scope="col">Date du DAO</th></tr></thead>
-                      <tbody>
-                        @for (l of agpm(); track l.idDetail) {
-                          <tr>
-                            <td class="cnm-mono">{{ l.compte || '—' }}</td>
-                            <td>{{ l.nature || '—' }}</td>
-                            <td>{{ l.objet }}</td>
-                            <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
-                            <td>{{ l.financement || '—' }}</td>
-                            <td>{{ l.modeLibelle }}</td>
-                            <td class="cnm-mono">{{ dateCourt(l.dateDao) }}</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
-                  <p class="dpm-fp-note cnm-muted">Date du DAO = date prévisionnelle de lancement du marché.</p>
-                } @else {
-                  <p class="cnm-muted">Aucun marché en mode déclencheur d'AGPM — l'avis est sans objet pour ce plan.</p>
-                }
+              <div class="dpm-section" role="tabpanel">
+                <!-- Rendu partagé (2026-09-02) : même document dans l'examen — source unique. -->
+                <app-agpm-doc
+                  [lignes]="agpm()"
+                  [exercice]="ppm()?.exercice"
+                  [entite]="entiteLabel()"
+                  [signataire]="ppm()?.signataire"
+                  [dateInitiale]="ppm()?.datePpmInit || ppm()?.dateSignature"
+                  [numMajPrec]="ppm()?.numMajPrec"
+                  [dateMajPrec]="ppm()?.dateMajPrec"
+                  [numMaj]="ppm()?.numMaj"
+                />
               </div>
             }
 

@@ -28,21 +28,7 @@
   .td-actions { flex-wrap: wrap; }
 }
 
-/* ── Onglets « Fiche de présentation » et « Projet d'AGPM » (demande pilote 2026-09-02) ──
-   Les textes longs (objet du marché, justifications) reviennent à la ligne et le tableau suit la
-   largeur de l'écran — JAMAIS de défilement horizontal. Même motif que .dpm-marches : le `td`
-   global du design-system est en `nowrap`, on l'override pour ces deux onglets seulement.
-   Montants et dates (.cnm-mono) restent insécables ; la largeur des colonnes se répartit d'elle-
-   même (layout auto : le texte long prend la place restante, les colonnes courtes restent courtes). */
-.dpm-doc-panel {
-  .table-responsive { overflow-x: visible; }
-  .table-responsive table { min-width: 0; }
-  th { white-space: normal; }
-  /* break-word (pas anywhere) : coupe aux espaces, un mot entier n'est scindé qu'en dernier
-     recours — « Fournitures » ne devient pas « Fournitu / res » dans une colonne étroite. */
-  td { white-space: normal; overflow-wrap: break-word; vertical-align: top; }
-  td.cnm-mono { white-space: nowrap; }
-}
+/* (Les overrides de tableau des onglets Fiche/AGPM ont suivi les composants partagés.) */
 
 /* ── Header ── */
 .dpm-header {
@@ -525,12 +511,7 @@
 }
 
 /* Onglet « Fiche de présentation » (2026-09-01) — trois listes au format du formulaire officiel. */
-.dpm-fp-note { margin: 0 0 12px; font-size: var(--text-sm); }
-.dpm-fp-titre { margin: 18px 0 8px; font-size: var(--text-md); font-weight: 700; color: var(--n-800); }
-.dpm-fp-titre:first-of-type { margin-top: 0; }
-.dpm-fp-justif { margin-top: 14px; }
+/* Fiche de présentation & Projet d'AGPM : rendus par les composants PARTAGÉS
+   fiche-presentation-doc / agpm-doc depuis le 2026-09-02 (mêmes documents dans l'examen) —
+   leurs styles vivent chez eux. */
 .dpm-justif-globale { margin: 10px 0 4px; textarea { resize: vertical; } }
-.dpm-fp-nature { margin: 0 0 10px; }
-/* Projet d AGPM (2026-09-01) : en-tete du document officiel sur deux colonnes. */
-.dpm-agpm-titre { text-align: center; }
-.dpm-agpm-entete { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 12px; p { margin: 0 0 4px; } }

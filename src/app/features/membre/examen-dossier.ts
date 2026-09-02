@@ -10,12 +10,14 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import {
   Avis,
+  Capm,
   Dossier,
   Examen,
   ExamenDetail,
   ExamenPiece,
   Marche,
   MarchePrevision,
+  ModePassation,
   ObservationControle,
   PieceJointeDossier,
   PointsCtrl,
@@ -26,6 +28,7 @@ import {
 } from '../../models';
 import {
   AvisService,
+  CapmService,
   DispatchService,
   DossierService,
   EntiteContractService,
@@ -37,6 +40,7 @@ import {
   MarchePrevisionService,
   MiseAJourPpmService,
   ModePassationService,
+  NatureService,
   PieceJointeDossierService,
   PointsCtrlService,
   PpmService,
@@ -48,6 +52,10 @@ import {
 } from '../../services';
 import { ChronometrageDossier, StatutBadge, examenRectifiable } from '../../shared/circuit';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
+import { calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
+import { calculerAgpm } from '../../shared/prmp/agpm';
+import { FichePresentationDoc } from '../../shared/prmp/fiche-presentation-doc';
+import { AgpmDoc } from '../../shared/prmp/agpm-doc';
 
 /** Une ligne « AU LIEU DE / LIRE » saisie pour un point non conforme. */
 interface ObsLigne {
@@ -79,7 +87,7 @@ interface RowState {
 @Component({
   selector: 'app-examen-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, PpmMarchesTable, ChronometrageDossier],
+  imports: [StatutBadge, PpmMarchesTable, ChronometrageDossier, FichePresentationDoc, AgpmDoc],
   template: `
     <section class="exam">
       <header class="page-header">
@@ -112,19 +120,67 @@ interface RowState {
                 <div><dt>Date réf.</dt><dd class="cnm-mono">{{ dossier()!.dateRef || '—' }}</dd></div>
               </dl>
               @if (estPpm()) {
-                @if (ppm(); as p) {
-                  <h3 class="exam__sub">PPM — {{ p.reference || ('#' + p.idPpm) }}</h3>
-                  <dl class="exam__info">
-                    <div><dt>Exercice</dt><dd>{{ p.exercice }}</dd></div>
-                    <div><dt>Signataire</dt><dd>{{ p.signataire || '—' }}</dd></div>
-                  </dl>
-                }
-                <!-- ppm-table-large (variante globale) : le tableau garde sa taille lisible et
-                     défile DANS le panneau — demande pilote 2026-09-02, propre à l'examen. -->
-                <div class="exam__marches ppm-table-large">
-                  <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [rowStateFn]="etatLigneFn" (rowClick)="ouvrirLigne($event)" />
+                <!-- ⚠️ Demande pilote (2026-09-02) — contenu EN ONGLETS, comme le détail PPM :
+                     Plan / Fiche de présentation / Projet d'AGPM (si le sous-type en a) / Pièces.
+                     L'onglet SUIT l'étape de la grille (effect) : le document contrôlé est affiché. -->
+                <div class="exam__tabs" role="tablist" aria-label="Contenu du dossier">
+                  <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'ppm'"
+                    [attr.aria-selected]="ongletContenu() === 'ppm'" (click)="ongletContenu.set('ppm')">
+                    Plan de passation <span class="exam__tab-n">{{ marches().length }}</span>
+                  </button>
+                  <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'fiche'"
+                    [attr.aria-selected]="ongletContenu() === 'fiche'" (click)="ongletContenu.set('fiche')">
+                    Fiche de présentation <span class="exam__tab-n">{{ ficheDoc().nbMarchesConcernes }}</span>
+                  </button>
+                  @if (agpmDoc().length || hasEtapeAgpm()) {
+                    <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'agpm'"
+                      [attr.aria-selected]="ongletContenu() === 'agpm'" (click)="ongletContenu.set('agpm')">
+                      Projet d'AGPM <span class="exam__tab-n">{{ agpmDoc().length }}</span>
+                    </button>
+                  }
+                  <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'pieces'"
+                    [attr.aria-selected]="ongletContenu() === 'pieces'" (click)="ongletContenu.set('pieces')">
+                    Pièces jointes <span class="exam__tab-n">{{ pieces().length }}</span>
+                  </button>
                 </div>
+
+                @if (ongletContenu() === 'ppm') {
+                  @if (ppm(); as p) {
+                    <h3 class="exam__sub">PPM — {{ p.reference || ('#' + p.idPpm) }}</h3>
+                    <dl class="exam__info">
+                      <div><dt>Exercice</dt><dd>{{ p.exercice }}</dd></div>
+                      <div><dt>Signataire</dt><dd>{{ p.signataire || '—' }}</dd></div>
+                    </dl>
+                  }
+                  <!-- ppm-table-large (variante globale) : le tableau garde sa taille lisible et
+                       défile DANS le panneau — demande pilote 2026-09-02, propre à l'examen. -->
+                  <div class="exam__marches ppm-table-large">
+                    <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [rowStateFn]="etatLigneFn" (rowClick)="ouvrirLigne($event)" />
+                  </div>
+                }
+                @if (ongletContenu() === 'fiche') {
+                  <app-fiche-presentation-doc
+                    [fiche]="ficheDoc()"
+                    [exercice]="ppm()?.exercice"
+                    [libelleVersion]="libelleVersionFiche()"
+                    [justificationFiche]="ppm()?.justificationFiche"
+                    [motifMaj]="ppm()?.motifMaj"
+                  />
+                }
+                @if (ongletContenu() === 'agpm') {
+                  <app-agpm-doc
+                    [lignes]="agpmDoc()"
+                    [exercice]="ppm()?.exercice"
+                    [entite]="entiteLabel()"
+                    [signataire]="ppm()?.signataire"
+                    [dateInitiale]="ppm()?.datePpmInit || ppm()?.dateSignature"
+                    [numMajPrec]="ppm()?.numMajPrec"
+                    [dateMajPrec]="ppm()?.dateMajPrec"
+                    [numMaj]="ppm()?.numMaj"
+                  />
+                }
               }
+              @if (!estPpm() || ongletContenu() === 'pieces') {
               <div class="exam__pieces">
                 <h3 class="exam__sub">Pièces jointes</h3>
                 @if (loadingPieces()) {
@@ -189,6 +245,7 @@ interface RowState {
                   @if (!pieces().length) { <p class="cnm-muted">Aucune pièce jointe.</p> }
                 }
               </div>
+              }
             </div>
           </div>
 
@@ -222,6 +279,17 @@ interface RowState {
                       <span class="exam__step-dot"></span>Pièce {{ i + 1 }}
                     </button>
                   }
+                  <!-- ⚠️ 2026-09-02 — la fiche de présentation et l'AGPM ont chacun LEUR grille. -->
+                  @if (hasEtapeFiche()) {
+                    <button type="button" class="exam__step exam__step--{{ etatOngletFiche() }}" (click)="allerEtape(etapeFicheIdx())">
+                      <span class="exam__step-dot"></span>Fiche
+                    </button>
+                  }
+                  @if (hasEtapeAgpm()) {
+                    <button type="button" class="exam__step exam__step--{{ etatOngletAgpm() }}" (click)="allerEtape(etapeAgpmIdx())">
+                      <span class="exam__step-dot"></span>AGPM
+                    </button>
+                  }
                   @if (hasEtapeDossier()) {
                     <button type="button" class="exam__step exam__step--{{ etatOngletDossier() }}" (click)="allerEtape(etapeDossierIdx())">
                       <span class="exam__step-dot"></span>Dossier
@@ -244,6 +312,12 @@ interface RowState {
                   @if (pieceCourante(); as p) {
                     <p class="exam__point-desc cnm-muted">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }} — cliquez la pièce dans la liste de gauche pour l'aperçu.</p>
                   }
+                } @else if (estEtapeFiche()) {
+                  <h3 class="exam__sub">Fiche de présentation — grille de contrôle</h3>
+                  <p class="exam__point-desc cnm-muted">Le document dérivé est affiché à gauche (onglet « Fiche de présentation ») — évalué une fois pour le dossier.</p>
+                } @else if (estEtapeAgpm()) {
+                  <h3 class="exam__sub">Projet d'AGPM — grille de contrôle</h3>
+                  <p class="exam__point-desc cnm-muted">Le document dérivé est affiché à gauche (onglet « Projet d'AGPM ») — évalué une fois pour le dossier.</p>
                 } @else if (estEtapeDossier()) {
                   <h3 class="exam__sub">Contrôles au niveau du dossier</h3>
                   <p class="exam__point-desc cnm-muted">Points inter-lignes (ex. fractionnement, cohérence) — évalués une fois pour le dossier.</p>
@@ -321,7 +395,7 @@ interface RowState {
                   <div class="exam__foot">
                     @if (etape() > 0) { <button type="button" class="btn btn-outline" (click)="allerEtape(etape() - 1)">Précédent</button> }
                     <button type="button" class="btn btn-primary" [disabled]="mode() === 'locked' || !etapeCouranteStatuee()" (click)="validerEtape()">
-                      {{ estEtapeDossier() ? 'Valider les contrôles dossier' : estEtapePiece() ? 'Valider la pièce et continuer' : 'Valider la ligne et continuer' }}
+                      {{ estEtapeDossier() ? 'Valider les contrôles dossier' : estEtapeFiche() ? 'Valider la fiche et continuer' : estEtapeAgpm() ? "Valider l'AGPM et continuer" : estEtapePiece() ? 'Valider la pièce et continuer' : 'Valider la ligne et continuer' }}
                     </button>
                   </div>
                 }
@@ -385,6 +459,12 @@ interface RowState {
        (_ppm-table.scss) : l'encapsulation émulée empêche d'atteindre ici le DOM du composant
        partagé — même motif que _dpm-dialog.scss. */
     .exam__panel--consigner { position: sticky; top: 0.75rem; max-height: calc(100vh - 13rem); overflow-y: auto; }
+    /* Onglets du contenu (2026-09-02) : même langage que le détail PPM. */
+    .exam__tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+    .exam__tab { display: inline-flex; align-items: center; gap: 6px; padding: 0.4rem 0.9rem; border-radius: var(--radius-full); border: 1px solid var(--n-200); background: var(--n-50); color: var(--n-600); font-weight: 600; font-size: var(--text-sm); cursor: pointer; }
+    .exam__tab--on { background: var(--grad-primary); border-color: transparent; color: #fff; }
+    .exam__tab-n { font-size: var(--text-xs); background: rgb(255 255 255 / 0.25); border: 1px solid var(--n-200); border-radius: var(--radius-full); padding: 0 6px; }
+    .exam__tab--on .exam__tab-n { border-color: transparent; }
     @media (max-width: 75rem) {
       .exam__panel--contenu, .exam__panel--consigner { max-height: none; overflow: visible; position: static; }
     }
@@ -484,6 +564,8 @@ export class ExamenDossier implements OnDestroy {
   private readonly pieceService = inject(PieceJointeDossierService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly lookups = inject(ReferenceLookupService);
+  private readonly modeService = inject(ModePassationService);
+  private readonly capmService = inject(CapmService);
 
   readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
   readonly loading = signal(true);
@@ -560,29 +642,54 @@ export class ExamenDossier implements OnDestroy {
   readonly pointsLigne = computed(() => this.points().filter((p) => (p.portee ?? 'LIGNE') === 'LIGNE'));
   /** Points de portée DOSSIER (inter-lignes, évalués une fois). */
   readonly pointsDossier = computed(() => this.points().filter((p) => p.portee === 'DOSSIER'));
+  /**
+   * ⚠️ Demande pilote (2026-09-02, backend `f361de9`) — la FICHE DE PRÉSENTATION et l'AGPM ont
+   * chacun LEUR grille : points de portée FICHE / AGPM, servis par la grille effective du
+   * sous-type (FICHE = commun famille DDP ; AGPM = spécifique PPM-AGPM — un dossier sans AGPM
+   * n'en reçoit jamais). Évalués UNE fois, stockés comme les points DOSSIER (idDetail null).
+   */
+  readonly pointsFiche = computed(() => this.points().filter((p) => p.portee === 'FICHE'));
+  readonly pointsAgpm = computed(() => this.points().filter((p) => p.portee === 'AGPM'));
+  /** Tous les points évalués UNE fois (DOSSIER + FICHE + AGPM) — init, persistance, complétude. */
+  readonly pointsHorsLigne = computed(() => this.points().filter((p) => (p.portee ?? 'LIGNE') !== 'LIGNE'));
   readonly nbLignes = computed(() => this.marches().length);
   readonly hasEtapeDossier = computed(() => this.pointsDossier().length > 0);
+  readonly hasEtapeFiche = computed(() => this.pointsFiche().length > 0);
+  readonly hasEtapeAgpm = computed(() => this.pointsAgpm().length > 0);
   /** Pièces dans l'ordre des étapes « Pièce N » (initiales puis après renvoi — même ordre que la liste). */
   readonly piecesOrdonnees = computed(() => [...this.piecesInitiales(), ...this.piecesApresRenvoi()].filter((p) => p.idPiece != null));
   readonly nbPieces = computed(() => this.piecesOrdonnees().length);
-  /** Index de l'étape « contrôles dossier » (après les marchés + les pièces). */
-  readonly etapeDossierIdx = computed(() => this.nbLignes() + this.nbPieces());
-  /** Index de l'étape « avis global » (après les marchés + les pièces + l'éventuelle étape dossier). */
-  readonly etapeAvis = computed(() => this.nbLignes() + this.nbPieces() + (this.hasEtapeDossier() ? 1 : 0));
+  /** Fil : lignes → pièces → Fiche → AGPM → Dossier → Synthèse (les étapes absentes se retirent). */
+  readonly etapeFicheIdx = computed(() => this.nbLignes() + this.nbPieces());
+  readonly etapeAgpmIdx = computed(() => this.etapeFicheIdx() + (this.hasEtapeFiche() ? 1 : 0));
+  /** Index de l'étape « contrôles dossier » (après lignes, pièces, fiche et AGPM éventuelles). */
+  readonly etapeDossierIdx = computed(() => this.etapeAgpmIdx() + (this.hasEtapeAgpm() ? 1 : 0));
+  /** Index de l'étape « avis global » (dernière du fil). */
+  readonly etapeAvis = computed(() => this.etapeDossierIdx() + (this.hasEtapeDossier() ? 1 : 0));
   readonly estEtapeMarche = computed(() => this.etape() < this.nbLignes());
   /** ⚠️ Règle ajoutée — étapes « Pièce N » : chaque pièce jointe est examinée une par une. */
-  readonly estEtapePiece = computed(() => this.etape() >= this.nbLignes() && this.etape() < this.etapeDossierIdx());
+  readonly estEtapePiece = computed(() => this.etape() >= this.nbLignes() && this.etape() < this.nbLignes() + this.nbPieces());
+  readonly estEtapeFiche = computed(() => this.hasEtapeFiche() && this.etape() === this.etapeFicheIdx());
+  readonly estEtapeAgpm = computed(() => this.hasEtapeAgpm() && this.etape() === this.etapeAgpmIdx());
   readonly estEtapeDossier = computed(() => this.hasEtapeDossier() && this.etape() === this.etapeDossierIdx());
   readonly estEtapeAvis = computed(() => this.etape() >= this.etapeAvis());
   readonly indexPieceCourante = computed(() => (this.estEtapePiece() ? this.etape() - this.nbLignes() : -1));
   readonly pieceCourante = computed(() => (this.estEtapePiece() ? this.piecesOrdonnees()[this.indexPieceCourante()] ?? null : null));
   /** Marché de l'étape courante (null hors étape marché). */
   readonly marcheCourant = computed(() => (this.estEtapeMarche() ? this.marches()[this.etape()] ?? null : null));
-  /** idDetail associé à l'étape courante (null pour l'étape dossier). */
+  /** idDetail associé à l'étape courante (null pour les étapes fiche / AGPM / dossier). */
   readonly idDetailCourant = computed(() => this.marcheCourant()?.idDetail ?? null);
-  /** Points affichés à l'étape courante : LIGNE (marché) ou DOSSIER, sinon aucun (avis). */
+  /** Points affichés à l'étape courante : LIGNE (marché), FICHE, AGPM ou DOSSIER — sinon aucun (avis). */
   readonly pointsCourants = computed(() =>
-    this.estEtapeMarche() ? this.pointsLigne() : this.estEtapeDossier() ? this.pointsDossier() : [],
+    this.estEtapeMarche()
+      ? this.pointsLigne()
+      : this.estEtapeFiche()
+        ? this.pointsFiche()
+        : this.estEtapeAgpm()
+          ? this.pointsAgpm()
+          : this.estEtapeDossier()
+            ? this.pointsDossier()
+            : [],
   );
 
   // — États DÉRIVÉS des statuts (pas d'état manuel « validé ») : un point/une ligne est « examiné » dès qu'il est statué. —
@@ -597,6 +704,11 @@ export class ExamenDossier implements OnDestroy {
   /** Tous les points DOSSIER sont-ils statués ? */
   readonly dossierStatue = computed(() => this.pointsDossier().every((p) => this.resultat(null, p.idPointCtrl).statut !== null));
   readonly dossierAObs = computed(() => this.pointsDossier().some((p) => this.resultat(null, p.idPointCtrl).statut === 'OBS'));
+  /** Mêmes états pour les grilles FICHE et AGPM (2026-09-02). */
+  readonly ficheStatuee = computed(() => this.pointsFiche().every((p) => this.resultat(null, p.idPointCtrl).statut !== null));
+  readonly ficheAObs = computed(() => this.pointsFiche().some((p) => this.resultat(null, p.idPointCtrl).statut === 'OBS'));
+  readonly agpmStatuee = computed(() => this.pointsAgpm().every((p) => this.resultat(null, p.idPointCtrl).statut !== null));
+  readonly agpmAObs = computed(() => this.pointsAgpm().some((p) => this.resultat(null, p.idPointCtrl).statut === 'OBS'));
   /** Première étape marché non encore statuée (frontière atteignable) ; `nbLignes` si toutes faites. */
   readonly frontiere = computed(() => {
     const idx = this.marches().findIndex((m) => !this.ligneStatuee(m.idDetail));
@@ -614,15 +726,21 @@ export class ExamenDossier implements OnDestroy {
       ? this.idDetailCourant() != null && this.ligneStatuee(this.idDetailCourant() as number)
       : this.estEtapePiece()
         ? this.pieceStatuee(this.pieceCourante()?.idPiece)
-        : this.estEtapeDossier()
-          ? this.dossierStatue()
-          : true,
+        : this.estEtapeFiche()
+          ? this.ficheStatuee()
+          : this.estEtapeAgpm()
+            ? this.agpmStatuee()
+            : this.estEtapeDossier()
+              ? this.dossierStatue()
+              : true,
   );
-  /** Lignes + pièces + étape dossier toutes traitées ? (condition d'ouverture de l'avis). */
+  /** Lignes + pièces + fiche + AGPM + étape dossier toutes traitées ? (condition d'ouverture de l'avis). */
   readonly toutTraite = computed(
     () =>
       this.marches().every((m) => this.ligneStatuee(m.idDetail)) &&
       this.toutesPiecesStatuees() &&
+      (!this.hasEtapeFiche() || this.ficheStatuee()) &&
+      (!this.hasEtapeAgpm() || this.agpmStatuee()) &&
       (!this.hasEtapeDossier() || this.dossierStatue()),
   );
 
@@ -630,6 +748,32 @@ export class ExamenDossier implements OnDestroy {
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   private readonly entiteMap = signal<Map<string, string>>(new Map());
   private readonly modeMap = signal<Map<string, string>>(new Map());
+  private readonly natureMap = signal<Map<string, string>>(new Map());
+
+  // ── Fiche de présentation & Projet d'AGPM DANS l'examen (demande pilote 2026-09-02) ──
+  /** Référentiels COMPLETS (les lookups ne portent que les libellés — les calculs veulent les objets). */
+  private readonly modesRef = signal<ModePassation[]>([]);
+  private readonly capmsRef = signal<Capm[]>([]);
+  /** Onglet actif du panneau « Contenu du dossier » (dossiers DDP seulement). */
+  readonly ongletContenu = signal<'ppm' | 'fiche' | 'agpm' | 'pieces'>('ppm');
+  /** Les deux documents dérivés — mêmes fonctions pures que le détail PPM et l'aperçu de création. */
+  readonly ficheDoc = computed(() =>
+    calculerFichePresentation(this.marches(), this.previsions(), this.modesRef(), this.capmsRef()),
+  );
+  readonly agpmDoc = computed(() =>
+    calculerAgpm(
+      this.marches(),
+      this.previsions(),
+      this.modesRef(),
+      this.capmsRef(),
+      new Map([...this.natureMap()].map(([k, v]) => [Number(k), v])),
+    ),
+  );
+  /** « Initial » ou « Mise à jour n° N » — même libellé que l'onglet du détail PPM. */
+  readonly libelleVersionFiche = computed(() => {
+    const n = this.ppm()?.numMaj ?? 0;
+    return n > 0 ? `Mise à jour n° ${n}` : 'Initial';
+  });
 
   /**
    * Mode déduit du statut : DISPATCHE → création ; EXAMINE → édition ; A_REEXAMINER → édition
@@ -690,7 +834,20 @@ export class ExamenDossier implements OnDestroy {
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
+    this.lookups.lookup(NatureService, 'idNature', ['libelle']).subscribe((m) => this.natureMap.set(m));
     this.avisService.list().subscribe((a) => this.aviss.set(a));
+    // Référentiels complets pour la fiche/AGPM dérivées (delaiMinJours, derogatoire, declencheAgpm…).
+    this.modeService.list().subscribe((m) => this.modesRef.set(m));
+    this.capmService.list().subscribe((c) => this.capmsRef.set(c));
+
+    // ⚠️ 2026-09-02 — le contenu affiché SUIT l'étape en cours : ligne → Plan, pièce → Pièces,
+    // fiche → Fiche, AGPM → AGPM (le document à contrôler est sous les yeux du Membre).
+    effect(() => {
+      if (this.estEtapeMarche()) this.ongletContenu.set('ppm');
+      else if (this.estEtapePiece()) this.ongletContenu.set('pieces');
+      else if (this.estEtapeFiche()) this.ongletContenu.set('fiche');
+      else if (this.estEtapeAgpm()) this.ongletContenu.set('agpm');
+    });
 
     // ⚠️ Visa unique (2026-08-31) — pré-sélectionne l'avis suggéré à l'arrivée sur l'étape
     // Synthèse, tant que le Membre n'a rien choisi (même patron que le panneau de visa de
@@ -757,12 +914,13 @@ export class ExamenDossier implements OnDestroy {
           .filter((p) => p.idTypeDossier === r.dossier.idTypeDossier) // no-op sur la grille serveur ; filtre famille en repli
           .sort((a, b) => (a.ordrePointCtrl ?? 0) - (b.ordrePointCtrl ?? 0));
         this.points.set(pts);
-        // Init des résultats : chaque point LIGNE × chaque marché, + chaque point DOSSIER (clé « D »). NON statué par défaut.
+        // Init des résultats : chaque point LIGNE × chaque marché, + chaque point HORS LIGNE
+        // (DOSSIER / FICHE / AGPM — clé « D », évalués une fois). NON statué par défaut.
         const ligne = pts.filter((p) => (p.portee ?? 'LIGNE') === 'LIGNE');
-        const dossierPts = pts.filter((p) => p.portee === 'DOSSIER');
+        const horsLigne = pts.filter((p) => (p.portee ?? 'LIGNE') !== 'LIGNE');
         const map = new Map<string, RowState>();
         for (const m of mines) for (const p of ligne) map.set(this.cle(m.idDetail, p.idPointCtrl), { statut: null, observations: [] });
-        for (const p of dossierPts) map.set(this.cle(null, p.idPointCtrl), { statut: null, observations: [] });
+        for (const p of horsLigne) map.set(this.cle(null, p.idPointCtrl), { statut: null, observations: [] });
         // Pré-remplissage depuis l'examen existant du dispatch — dossier EXAMINE (édition) OU dossier
         // encore DISPATCHE avec un BROUILLON de progression (⚠️ règle ajoutée : sauvegarde à chaque étape).
         const idDispatch = this.idDispatch();
@@ -921,6 +1079,17 @@ export class ExamenDossier implements OnDestroy {
     if (this.dossierStatue()) return this.dossierAObs() ? 'done-obs' : 'done-ras';
     return 'pending';
   }
+  /** États des puces Fiche / AGPM (2026-09-02) — mêmes codes visuels. */
+  etatOngletFiche(): 'current' | 'done-ras' | 'done-obs' | 'pending' {
+    if (this.estEtapeFiche()) return 'current';
+    if (this.ficheStatuee()) return this.ficheAObs() ? 'done-obs' : 'done-ras';
+    return 'pending';
+  }
+  etatOngletAgpm(): 'current' | 'done-ras' | 'done-obs' | 'pending' {
+    if (this.estEtapeAgpm()) return 'current';
+    if (this.agpmStatuee()) return this.agpmAObs() ? 'done-obs' : 'done-ras';
+    return 'pending';
+  }
   /** Classe visuelle d'un point selon son statut (bordure gauche colorée). */
   statutClasse(statut: StatutPoint): 'ras' | 'obs' | 'vide' {
     return statut === 'RAS' ? 'ras' : statut === 'OBS' ? 'obs' : 'vide';
@@ -953,13 +1122,20 @@ export class ExamenDossier implements OnDestroy {
     this.etape.update((e) => Math.min(e + 1, this.etapeAvis()));
     this.declencherSauvegarde(); // brouillon serveur : la progression survit à un départ de la page
   }
-  /** Navigation : lignes jusqu'à leur frontière, puis pièces jusqu'à la leur, puis dossier/avis si atteints. */
+  /** Navigation : lignes jusqu'à leur frontière, puis pièces, puis fiche → AGPM → dossier → avis, dans l'ordre. */
   allerEtape(i: number): void {
     const lignesFaites = this.frontiere() === this.nbLignes();
+    const piecesFaites = lignesFaites && this.toutesPiecesStatuees();
     const atteignable =
       (i < this.nbLignes() && i <= this.frontiere()) ||
-      (i >= this.nbLignes() && i < this.etapeDossierIdx() && lignesFaites && i - this.nbLignes() <= this.frontierePiece()) ||
-      (this.hasEtapeDossier() && i === this.etapeDossierIdx() && lignesFaites && this.toutesPiecesStatuees()) ||
+      (i >= this.nbLignes() && i < this.nbLignes() + this.nbPieces() && lignesFaites && i - this.nbLignes() <= this.frontierePiece()) ||
+      (this.hasEtapeFiche() && i === this.etapeFicheIdx() && piecesFaites) ||
+      (this.hasEtapeAgpm() && i === this.etapeAgpmIdx() && piecesFaites && (!this.hasEtapeFiche() || this.ficheStatuee())) ||
+      (this.hasEtapeDossier() &&
+        i === this.etapeDossierIdx() &&
+        piecesFaites &&
+        (!this.hasEtapeFiche() || this.ficheStatuee()) &&
+        (!this.hasEtapeAgpm() || this.agpmStatuee())) ||
       (i === this.etapeAvis() && this.toutTraite());
     if (atteignable) this.etape.set(i);
   }
@@ -1007,13 +1183,13 @@ export class ExamenDossier implements OnDestroy {
   ngOnDestroy(): void {
     this.revoquer();
   }
-  /** Liste plate des résultats à persister : (marché × point LIGNE) + (point DOSSIER, `idDetail` null). */
+  /** Liste plate des résultats à persister : (marché × point LIGNE) + (points HORS LIGNE — dossier/fiche/AGPM, `idDetail` null). */
   private entreesResultats(): { idDetail: number | null; idPt: number; st: RowState }[] {
     const out: { idDetail: number | null; idPt: number; st: RowState }[] = [];
     for (const m of this.marches())
       for (const p of this.pointsLigne())
         out.push({ idDetail: m.idDetail, idPt: p.idPointCtrl, st: this.resultat(m.idDetail, p.idPointCtrl) });
-    for (const p of this.pointsDossier()) out.push({ idDetail: null, idPt: p.idPointCtrl, st: this.resultat(null, p.idPointCtrl) });
+    for (const p of this.pointsHorsLigne()) out.push({ idDetail: null, idPt: p.idPointCtrl, st: this.resultat(null, p.idPointCtrl) });
     return out;
   }
   /** Résultats de pièces à persister (pièces statuées uniquement). */
@@ -1096,7 +1272,7 @@ export class ExamenDossier implements OnDestroy {
   soumettre(): void {
     if (!this.dossier() || this.idDispatch() == null) return;
     if (!this.toutTraite()) {
-      this.formError.set('Traitez toutes les lignes de marché, toutes les pièces jointes (et l\'étape dossier) avant de soumettre.');
+      this.formError.set('Traitez toutes les lignes de marché, toutes les pièces jointes, la fiche de présentation, l\'AGPM et l\'étape dossier avant de soumettre.');
       return;
     }
     if (!this.observationsCompletes()) return;
@@ -1237,10 +1413,12 @@ export class ExamenDossier implements OnDestroy {
     this.saveTrigger.next();
   }
 
-  /** Point de reprise d'un brouillon : première ligne non statuée, sinon première pièce, sinon dossier, sinon avis. */
+  /** Point de reprise d'un brouillon : première ligne non statuée, sinon première pièce, sinon fiche → AGPM → dossier, sinon avis. */
   private calculerReprise(): number {
     if (this.frontiere() < this.nbLignes()) return this.frontiere();
     if (this.frontierePiece() < this.nbPieces()) return this.nbLignes() + this.frontierePiece();
+    if (this.hasEtapeFiche() && !this.ficheStatuee()) return this.etapeFicheIdx();
+    if (this.hasEtapeAgpm() && !this.agpmStatuee()) return this.etapeAgpmIdx();
     if (this.hasEtapeDossier() && !this.dossierStatue()) return this.etapeDossierIdx();
     return this.etapeAvis();
   }
