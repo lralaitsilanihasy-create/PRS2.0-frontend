@@ -124,13 +124,14 @@ interface RowState {
                      Plan / Fiche de présentation / Projet d'AGPM (si le sous-type en a) / Pièces.
                      L'onglet SUIT l'étape de la grille (effect) : le document contrôlé est affiché. -->
                 <div class="exam__tabs" role="tablist" aria-label="Contenu du dossier">
-                  <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'ppm'"
-                    [attr.aria-selected]="ongletContenu() === 'ppm'" (click)="ongletContenu.set('ppm')">
-                    Plan de passation <span class="exam__tab-n">{{ marches().length }}</span>
-                  </button>
+                  <!-- Ordre (pilote 02/09) : la fiche de présentation passe AVANT le plan. -->
                   <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'fiche'"
                     [attr.aria-selected]="ongletContenu() === 'fiche'" (click)="ongletContenu.set('fiche')">
                     Fiche de présentation <span class="exam__tab-n">{{ ficheDoc().nbMarchesConcernes }}</span>
+                  </button>
+                  <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'ppm'"
+                    [attr.aria-selected]="ongletContenu() === 'ppm'" (click)="ongletContenu.set('ppm')">
+                    Plan de passation <span class="exam__tab-n">{{ marches().length }}</span>
                   </button>
                   @if (agpmDoc().length || hasEtapeAgpm()) {
                     <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'agpm'"

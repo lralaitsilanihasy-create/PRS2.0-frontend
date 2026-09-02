@@ -204,15 +204,16 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
               Entité contractante
             </button>
           }
-          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'ppm'"
-            [attr.aria-selected]="onglet() === 'ppm'" (click)="onglet.set('ppm')">
-            Plan de passation <span class="dpm-tab__n">{{ marches().length }}</span>
-          </button>
-          <!-- ⚠️ Demande user (2026-09-01) — la « Fiche de présentation » officielle, DÉRIVÉE des
-               marchés saisis à la création : rien de plus n'est chargé, rien n'est persisté. -->
+          <!-- ⚠️ Demande user (2026-09-01, ordre revu 02/09 : la fiche passe AVANT le plan) — la
+               « Fiche de présentation » officielle, DÉRIVÉE des marchés saisis à la création :
+               rien de plus n'est chargé, rien n'est persisté. -->
           <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'fiche'"
             [attr.aria-selected]="onglet() === 'fiche'" (click)="onglet.set('fiche')">
             Fiche de présentation <span class="dpm-tab__n">{{ fiche().nbMarchesConcernes }}</span>
+          </button>
+          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'ppm'"
+            [attr.aria-selected]="onglet() === 'ppm'" (click)="onglet.set('ppm')">
+            Plan de passation <span class="dpm-tab__n">{{ marches().length }}</span>
           </button>
           <!-- ⚠️ Demande user (2026-09-01) — le « Projet d'AGPM », dérivé du plan comme la fiche :
                marchés dont le mode déclenche l'AGPM (drapeau administrable du référentiel). -->
