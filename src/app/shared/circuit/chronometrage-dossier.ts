@@ -175,6 +175,12 @@ import {
     }
     .chrono__prevision {
       margin-left: auto;
+      font-weight: 600;
+    }
+    /* La date — l'information que tout le bloc sert — en couleur vive (demande pilote 02/09). */
+    .chrono__prevision strong {
+      color: var(--p-600);
+      font-size: var(--text-md);
     }
     .chrono--compact .chrono__prevision {
       margin-left: 0;

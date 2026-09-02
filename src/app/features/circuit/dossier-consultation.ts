@@ -321,11 +321,20 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
        et le chronométrage se partagent la même rangée — même niveau. */
     .dc-header-corps { display: flex; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap; }
     .dc-header-gauche { flex: 1 1 26rem; min-width: 22rem; max-width: 44rem; }
-    .dc-header-droite { flex: 2 1 32rem; min-width: 0; border-left: 0.5px solid var(--n-200); padding-left: 1.5rem; }
-    /* En-tête replié : le chronométrage est seul sur la rangée — pas de liseré orphelin. */
-    .dc-header-droite:first-child { border-left: none; padding-left: 0; }
-    .dc-chrono-titre { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--n-400); margin-bottom: 8px; }
-    @media (max-width: 60rem) { .dc-header-droite { border-left: none; padding-left: 0; } }
+    /* ⚠️ Demande pilote (2026-09-02) — bloc en COULEUR VIVE : carte teintée du bleu primaire,
+       accent appuyé à gauche, titre et date prévisionnelle en vif. Le contenu reste sur fond
+       clair pour la lisibilité du tableau des tâches. */
+    .dc-header-droite {
+      flex: 2 1 32rem;
+      min-width: 0;
+      background: linear-gradient(135deg, #e0f2fe, #f0f9ff 55%, #fff);
+      border: 1px solid var(--p-200, #bae6fd);
+      border-left: 5px solid var(--p-500);
+      border-radius: 12px;
+      padding: 12px 16px 14px;
+      box-shadow: 0 1px 3px rgb(2 132 199 / 0.12);
+    }
+    .dc-chrono-titre { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--p-600); margin-bottom: 8px; }
     .dc-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 0.75rem; }
     .dc-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .dc-chip { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 2px 9px; border-radius: var(--radius-full); }
