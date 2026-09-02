@@ -60,6 +60,9 @@ import { LigneAgpm } from './agpm';
     th { white-space: normal; }
     td { white-space: normal; overflow-wrap: break-word; vertical-align: top; }
     td.cnm-mono { white-space: nowrap; }
+    /* ⚠️ Demande pilote (02/09) — en-tête des tableaux À LA COULEUR DE L'ONGLET (orange des
+       onglets de dossier, #C2410C), texte blanc. */
+    .cnm-table thead th { background: #C2410C; color: #fff; }
   `,
 })
 export class AgpmDoc {
