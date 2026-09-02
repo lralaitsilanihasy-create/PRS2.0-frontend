@@ -101,7 +101,7 @@ interface RowState {
           </div>
         </div>
         <div class="exam__grid">
-          <div class="card exam__panel">
+          <div class="card exam__panel exam__panel--contenu">
             <div class="card-header"><span class="card-title">Contenu du dossier</span></div>
             <div class="card-body">
               <dl class="exam__info">
@@ -119,7 +119,9 @@ interface RowState {
                     <div><dt>Signataire</dt><dd>{{ p.signataire || '—' }}</dd></div>
                   </dl>
                 }
-                <div class="exam__marches">
+                <!-- ppm-table-large (variante globale) : le tableau garde sa taille lisible et
+                     défile DANS le panneau — demande pilote 2026-09-02, propre à l'examen. -->
+                <div class="exam__marches ppm-table-large">
                   <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [rowStateFn]="etatLigneFn" (rowClick)="ouvrirLigne($event)" />
                 </div>
               }
@@ -190,7 +192,7 @@ interface RowState {
             </div>
           </div>
 
-          <div class="card exam__panel">
+          <div class="card exam__panel exam__panel--consigner">
             <div class="card-header"><span class="card-title">Consigner l'examen</span></div>
             <div class="card-body cnm-form">
               @if (mode() === 'locked') {
@@ -375,6 +377,17 @@ interface RowState {
        reste confortable. minmax(0, ...) empêche le tableau de forcer la colonne au-delà de sa part. */
     .exam__chrono { margin-bottom: 0.75rem; }
     .exam__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: 0.75rem; align-items: start; }
+    /* ⚠️ Demande pilote (2026-09-02) — le dossier s'affiche à 100 % de sa taille et DÉFILE dans son
+       panneau (les deux axes) ; « Consigner l'examen » reste à l'écran (sticky, défilement propre).
+       Les deux panneaux sont bornés à la hauteur de la fenêtre, chacun avec son ascenseur. */
+    .exam__panel--contenu { max-height: calc(100vh - 13rem); overflow: auto; }
+    /* La largeur confortable du tableau vient de la variante GLOBALE .ppm-table-large
+       (_ppm-table.scss) : l'encapsulation émulée empêche d'atteindre ici le DOM du composant
+       partagé — même motif que _dpm-dialog.scss. */
+    .exam__panel--consigner { position: sticky; top: 0.75rem; max-height: calc(100vh - 13rem); overflow-y: auto; }
+    @media (max-width: 75rem) {
+      .exam__panel--contenu, .exam__panel--consigner { max-height: none; overflow: visible; position: static; }
+    }
     /* Sous ~1200px, on empile (côte à côte devient illisible). */
     @media (max-width: 75rem) { .exam__grid { grid-template-columns: 1fr; } }
     .exam__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }

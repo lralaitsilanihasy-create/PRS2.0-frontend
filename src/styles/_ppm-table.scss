@@ -25,6 +25,20 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* ⚠️ Variante « à 100 % de sa taille » (demande pilote 2026-09-02, écran d'EXAMEN) : posée par le
+   PARENT sur le conteneur du tableau, elle rend aux 13 colonnes une largeur lisible — le
+   défilement horizontal vit alors dans le panneau hôte (borné et `overflow: auto`), pas dans la
+   page. Globale car l'encapsulation émulée interdit au parent d'atteindre le DOM du composant
+   partagé. Sur écran étroit (empilement), on retombe sur le 100 % compressé. */
+.ppm-table-large .ppm-table {
+  min-width: 100rem;
+}
+@media (max-width: 75rem) {
+  .ppm-table-large .ppm-table {
+    min-width: 0;
+  }
+}
+
 .ppm-table {
   width: 100%;
   table-layout: fixed;
