@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Dispatch, Dossier, Examen, PvExamen, Reception } from '../../models';
+import { ChronometrageDossier } from '../../shared/circuit';
 import {
   AvisService,
   DispatchService,
@@ -27,6 +28,7 @@ import {
 @Component({
   selector: 'app-pv-assistant',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ChronometrageDossier],
   template: `
     <section class="pva">
       <header class="page-header">
@@ -102,6 +104,10 @@ import {
                         <div><dt>Synthèse</dt><dd class="pva__synthese">{{ pv.syntheseObservations }}</dd></div>
                       }
                     </dl>
+                    <!-- Chronométrage (2026-09-01) : prise en charge de l'étape ARCHIVAGE (hors compteur global). -->
+                    @if (idDossierDe(pv); as idDos) {
+                      <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" />
+                    }
                   </td>
                 </tr>
               }
@@ -252,6 +258,10 @@ export class PvAssistant {
   dossierRef(pv: PvExamen): string {
     const d = this.dossierByExamen().get(pv.idExamen);
     return d ? d.refeDossier || 'Dossier #' + d.idDossier : '—';
+  }
+  /** Dossier du PV — pour le chronométrage (prise en charge ARCHIVAGE). */
+  idDossierDe(pv: PvExamen): number | null {
+    return this.dossierByExamen().get(pv.idExamen)?.idDossier ?? null;
   }
   avisLabel(id?: string): string {
     return id ? this.avisMap().get(id) ?? id : '—';

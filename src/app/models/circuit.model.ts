@@ -1,4 +1,5 @@
 import {
+  Role,
   StatutDossier,
   StatutPv,
   SensNavette,
@@ -74,8 +75,126 @@ export interface Dossier {
   imAssistantCible?: string | null;
   /** Nom complet de l'Assistant cible, résolu serveur. */
   nomAssistantCible?: string | null;
+  /**
+   * ⚠️ Chronométrage (2026-09-01, backend `c66db71`) — date prévisionnelle d'achèvement du
+   * traitement CNM, **calculée serveur** en jours ouvrés (aujourd'hui + reste de l'étape en cours +
+   * prévisions des étapes restantes ; une étape en dépassement compte 0 : la date GLISSE au lieu de
+   * mentir). `null` hors circuit (brouillon, clos, retiré). Présente en unitaire ET en liste,
+   * résolue en lot serveur. Aucun calcul de date côté front.
+   */
+  datePrevisionnelleFin?: string | null;
+  /** Vrai quand la balle est CHEZ LA PRMP (statut suspensif) : la date prévisionnelle glisse d'autant. */
+  attentePrmp?: boolean;
+  /** Étape de circuit ouverte (`EtapeCircuit`) ; `null` si aucune tâche CNM ne court. */
+  etapeCourante?: EtapeCircuit | null;
   /** Verrou optimiste : à renvoyer telle quelle au PUT (périmée → 409 `CONFLIT_VERSION`) ; absente = dernier écrit gagne. */
   version?: number;
+}
+
+// ─── Chronométrage et prévision des délais (règle du pilote 2026-09-01, backend `c66db71`) ───────
+
+/**
+ * Les huit étapes chronométrées du circuit, dans l'ordre de parcours. La vérification et la
+ * transmission SIGMP sont DEUX étapes (EN_ATTENTE_DECISION_PRMP tombe entre les deux actes) ;
+ * ARCHIVAGE est chronométrée mais HORS compteur global (la règle arrête le chronomètre à la
+ * validation sur SIGMP).
+ */
+export type EtapeCircuit =
+  | 'RECEPTION'
+  | 'DISPATCH'
+  | 'EXAMEN'
+  | 'VISA'
+  | 'COSIGNATURE'
+  | 'VERIFICATION'
+  | 'TRANSMISSION_SIGMP'
+  | 'ARCHIVAGE';
+
+/** Libellés d'affichage des étapes (le référentiel des délais sert aussi les siens, `libelle`). */
+export const ETAPE_CIRCUIT_LABELS: Record<EtapeCircuit, string> = {
+  RECEPTION: 'Réception & enregistrement',
+  DISPATCH: 'Dispatch',
+  EXAMEN: 'Examen',
+  VISA: 'Visa',
+  COSIGNATURE: 'Co-signature',
+  VERIFICATION: 'Vérification',
+  TRANSMISSION_SIGMP: 'Transmission SIGMP',
+  ARCHIVAGE: 'Archivage',
+};
+
+/**
+ * Profil NOMINAL porteur de chaque étape (miroir de `EtapeCircuit.porteur()` serveur) — sert à
+ * MONTRER le bouton « Prendre en charge » au bon profil ; délégations résolues par
+ * `PermissionsService.peutExecuter`, la garde qui tranche reste le serveur (403).
+ */
+export const ETAPE_CIRCUIT_PORTEURS: Record<EtapeCircuit, Role> = {
+  RECEPTION: 'SECRETAIRE',
+  DISPATCH: 'CHEF_COMMISSION',
+  EXAMEN: 'MEMBRE',
+  VISA: 'CHEF_COMMISSION',
+  COSIGNATURE: 'MEMBRE',
+  VERIFICATION: 'VERIFICATEUR',
+  TRANSMISSION_SIGMP: 'VERIFICATEUR',
+  ARCHIVAGE: 'ASSISTANT_CONTROLEUR',
+};
+
+/**
+ * Une occurrence de tâche chronométrée. Append-only : un réexamen, une navette de visa, un passage
+ * FAVR supplémentaire créent chacun une occurrence de plus (`occurrence` = 1, 2, 3…) — c'est ce qui
+ * rend visible le nombre d'aller-retours.
+ */
+export interface TacheDossier {
+  etape: EtapeCircuit;
+  occurrence: number;
+  imActeur?: string | null;
+  /** « prénoms nom » résolu serveur ; null si matricule inconnu. */
+  nomActeur?: string | null;
+  /** Profil sous lequel l'acteur a agi (délégation / intérim compris). */
+  profil?: string | null;
+  /** Horodatage à la seconde ; = `fin` (durée nulle) quand le geste a été posé sans prise en charge. */
+  priseEnCharge?: string | null;
+  /** `null` tant que la tâche est en cours. */
+  fin?: string | null;
+  previsionJours?: number | null;
+  /** Vrai si la prévision vient du référentiel des délais standards, pas d'une saisie. */
+  previsionStandard: boolean;
+  /** Durée effective en jours ouvrés ; pour une tâche en cours, le temps déjà écoulé. */
+  dureeJoursOuvres: number;
+  enCours: boolean;
+}
+
+/** `GET /api/dossiers/{id}/chronometrage` — matière de la frise (occurrences + compteurs globaux). */
+export interface Chronometrage {
+  idDossier: number;
+  /** De la plus ancienne à la plus récente. */
+  taches: TacheDossier[];
+  /** Clôture de RECEPTION (enregistrement) ; null si pas encore atteinte. */
+  debutCompteur?: string | null;
+  /** Clôture de TRANSMISSION_SIGMP ; null tant que le dossier court. */
+  finCompteur?: string | null;
+  /** Compteur BRUT : enregistrement → SIGMP, à la lettre de la règle. */
+  dureeBruteJoursOuvres: number;
+  /** Compteur NET CNM : le brut moins les attentes PRMP — c'est lui qui juge la CNM. */
+  dureeNetteJoursOuvres: number;
+  /** Cumul des fenêtres où la balle était chez la PRMP. */
+  attentePrmpJoursOuvres: number;
+  etapeCourante?: EtapeCircuit | null;
+  attentePrmp: boolean;
+  datePrevisionnelleFin?: string | null;
+}
+
+/** Corps de `POST /api/dossiers/{id}/prise-en-charge` — rejoué sur une tâche ouverte, il CORRIGE la prévision. */
+export interface PriseEnChargeRequest {
+  /** Jours ouvrés, entier ≥ 1 (400 sinon). */
+  previsionJours: number;
+}
+
+/** Délai standard d'une étape — référentiel administrable (PUT réservé à l'Administrateur). */
+export interface DelaiStandard {
+  etape: EtapeCircuit;
+  /** Jours ouvrés, ≥ 1 (400 sinon). */
+  delaiJours: number;
+  /** Libellé d'affichage, servi par le backend. */
+  libelle?: string;
 }
 
 /**

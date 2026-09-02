@@ -35,7 +35,7 @@ import {
   ReceptionService,
   ReferenceLookupService,
 } from '../../services';
-import { PvWorkflow, PV_STATUT_LABELS, StatutBadge, examenRectifiable } from '../../shared/circuit';
+import { ChronometrageDossier, PvWorkflow, PV_STATUT_LABELS, StatutBadge, examenRectifiable } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 
 /**
@@ -46,7 +46,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
 @Component({
   selector: 'app-membre-pv',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, PvWorkflow, DossierConsultation, DatePipe, RouterLink],
+  imports: [StatutBadge, PvWorkflow, DossierConsultation, DatePipe, RouterLink, ChronometrageDossier],
   template: `
     <section class="pv">
       <header class="page-header">
@@ -270,6 +270,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     <p class="pv__info">Aucune navette pour ce PV.</p>
                   }
                 </div>
+                <!-- Chronométrage (2026-09-01) : prise en charge des étapes VISA / COSIGNATURE. -->
+                @if (idDossierDe(pv); as idDos) {
+                  <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" />
+                }
                 <app-pv-workflow [pv]="pv" [idLocalite]="dossierLocalite(pv)"
                   [nbObservationsExamen]="nbObservations() + nbObservationsPieces()" (changed)="onChanged($event)" />
               }
@@ -524,9 +528,13 @@ export class MembrePv {
       ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract
       : '—';
   }
-  /** Localité du dossier du PV (candidats Secrétaire de séance et co-signataire au visa). */
+  /** Localité du dossier du PV (périmètre de l'intérim et candidats co-signataires au visa). */
   dossierLocalite(pv: PvExamen): string | null {
     return this.dossierByExamen().get(pv.idExamen)?.idLocalite ?? null;
+  }
+  /** Dossier du PV — pour le chronométrage (prise en charge VISA / COSIGNATURE). */
+  idDossierDe(pv: PvExamen): number | null {
+    return this.dossierByExamen().get(pv.idExamen)?.idDossier ?? null;
   }
   /**
    * ⚠️ 2026-08-18 — « Rectifier l'examen » depuis le retour de navette. La règle d'ouverture de

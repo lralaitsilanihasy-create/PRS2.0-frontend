@@ -5,7 +5,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
-import { ActionDossier, DiffDossier, Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
+import { ActionDossier, Chronometrage, DiffDossier, Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -26,7 +26,7 @@ import {
 } from '../../services';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
-import { StatutBadge } from '../../shared/circuit';
+import { ChronometrageDossier, StatutBadge } from '../../shared/circuit';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 
 /**
@@ -40,7 +40,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 @Component({
   selector: 'app-dossier-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, StatutBadge, PpmMarchesTable, ModaleDirective],
+  imports: [DatePipe, StatutBadge, PpmMarchesTable, ModaleDirective, ChronometrageDossier],
   template: `
     <div [class.modal-backdrop]="!embedded()" [class.closing]="closing()">
       <!-- ⚠️ En modale, le corps n'est monté qu'une fois les données là : sinon le panneau
@@ -209,6 +209,23 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
                 }
               </div>
           </div>
+          }
+
+          <!-- Chronométrage & délais (règle 2026-09-01) : date prévisionnelle de fin, compteurs
+               brut/net CNM, occurrences de tâches — chargé DANS la vague unique (donnees). Section
+               absente pour un dossier hors circuit (brouillon, backend muet). -->
+          @if (chronoDossier(); as chrono) {
+            @if (chrono.taches.length || chrono.etapeCourante || chrono.datePrevisionnelleFin || chrono.debutCompteur) {
+              <div class="dc-section">
+                <div class="dc-section-head">
+                  <div class="section-block-title">
+                    <div class="section-icon">⏱</div>
+                    <span class="section-label">Chronométrage &amp; délais</span>
+                  </div>
+                </div>
+                <app-chronometrage-dossier [idDossier]="dossier().idDossier" [donnees]="chrono" />
+              </div>
+            }
           }
 
           <!-- Journal des actions (spec « Mandats PRMP ») : qui a agi, quand et sous quel mandat.
@@ -421,6 +438,8 @@ export class DossierConsultation implements OnInit {
   }
   /** Journal MÉTIER des actions (spec « Mandats PRMP ») — vide si le backend ne le sert pas encore. */
   readonly journal = signal<ActionDossier[]>([]);
+  /** Chronométrage du dossier (2026-09-01) — `null` si le backend ne le sert pas (section masquée). */
+  readonly chronoDossier = signal<Chronometrage | null>(null);
   readonly marches = signal<Marche[]>([]);
   readonly pieces = signal<PieceJointeDossier[]>([]);
   /** Une seule vague de rendu : le corps s'affiche quand TOUT est chargé (données + référentiels). */
@@ -538,14 +557,17 @@ export class DossierConsultation implements OnInit {
       // mouvement se superposait à l'animation d'ouverture, d'où une entrée « brusque ».
       // Silencieux : un dossier sans journal (ou un backend antérieur) n'affiche pas la section.
       journal: this.dossierService.journal(id).pipe(catchError(() => of([] as ActionDossier[]))),
+      // Chronométrage (2026-09-01) : DANS la vague, silencieux — un échec cache la section, sans dialogue.
+      chrono: this.dossierService.chronometrage(id, true).pipe(catchError(() => of(null as Chronometrage | null))),
     };
     if (!this.estPpm()) {
-      forkJoin(commun).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal }) => {
+      forkJoin(commun).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono }) => {
         this.typeMap.set(typeMap);
         this.localiteMap.set(localiteMap);
         this.entiteMap.set(entiteMap);
         this.pieces.set(pieces);
         this.journal.set(journal);
+        this.chronoDossier.set(chrono);
         this.loading.set(false);
       });
       return;
@@ -562,12 +584,13 @@ export class DossierConsultation implements OnInit {
       marches: this.marcheService.list().pipe(catchError(() => of([] as Marche[]))),
       benefs: this.serviceBenefService.list().pipe(catchError(() => of([] as ServiceBeneficiaire[]))),
       previsions: this.previsionService.list().pipe(catchError(() => of([] as MarchePrevision[]))),
-    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, modeMap, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions }) => {
+    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, modeMap, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions }) => {
       this.typeMap.set(typeMap);
       this.localiteMap.set(localiteMap);
       this.entiteMap.set(entiteMap);
       this.pieces.set(pieces);
       this.journal.set(journal);
+      this.chronoDossier.set(chrono);
       this.modeMap.set(modeMap);
       this.soaMap.set(soaMap);
       this.compteMap.set(compteMap);

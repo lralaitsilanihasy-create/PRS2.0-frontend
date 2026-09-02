@@ -161,6 +161,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Inscriptions en attente', path: '/admin/inscriptions', icon: '📝' },
     { label: 'Rattachements en attente', path: '/admin/rattachements', icon: '🔗' },
     { label: 'Chaînes de contrôle', path: '/admin/chaines-controle', icon: '⛓' },
+    { label: 'Délais standards', path: '/admin/delais-standards', icon: '⏱' },
     { label: 'Actualités', path: '/admin/actualites', icon: '📣' },
     { label: 'Référentiels', path: '/admin/referentiels', icon: '⚙' },
     { label: 'Comptes & hiérarchie', path: '/admin/comptes', icon: '👥' },

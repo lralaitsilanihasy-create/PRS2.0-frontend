@@ -6,6 +6,7 @@ import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
   ActionDossier,
+  Chronometrage,
   CopieDossier,
   DemandeRetrait,
   Dispatch,
@@ -27,6 +28,7 @@ import {
   ReceptionExiste,
   RechercheDossier,
   StatutDossier,
+  TacheDossier,
   TransmissionSigmp,
   Verification,
   VerificationPieceDepot,
@@ -72,6 +74,29 @@ export class DossierService extends CrudService<Dossier> {
    */
   journal(idDossier: number): Observable<ActionDossier[]> {
     return this.http.get<ActionDossier[]>(`${this.baseUrl}/${idDossier}/journal`);
+  }
+
+  /**
+   * `POST /api/dossiers/{id}/prise-en-charge` (chronométrage 2026-09-01) — le porteur de l'étape
+   * courante prend le dossier en charge et pose sa prévision (jours ouvrés, ≥ 1). Rejoué sur une
+   * tâche encore ouverte, il CORRIGE la prévision sans créer d'occurrence. 403 hors porteur
+   * (délégations/intérim résolus serveur), 409 si aucune étape n'est ouverte.
+   */
+  priseEnCharge(idDossier: number, previsionJours: number): Observable<TacheDossier> {
+    return this.http.post<TacheDossier>(`${this.baseUrl}/${idDossier}/prise-en-charge`, {
+      previsionJours,
+    });
+  }
+
+  /**
+   * `GET /api/dossiers/{id}/chronometrage` — occurrences de tâches + compteurs (matière de la
+   * frise). `silencieux` pour les lectures d'enrichissement (modale de consultation) : l'échec ne
+   * doit pas faire surgir de dialogue, la section reste simplement absente.
+   */
+  chronometrage(idDossier: number, silencieux = false): Observable<Chronometrage> {
+    return this.http.get<Chronometrage>(`${this.baseUrl}/${idDossier}/chronometrage`, {
+      context: silencieux ? skipErrorToast() : undefined,
+    });
   }
 
   /** `GET /api/dossiers/a-examiner` (Membre/Admin) — ses dossiers DISPATCHE + A_REEXAMINER (réexamen après lettre de renvoi), scopé serveur. */

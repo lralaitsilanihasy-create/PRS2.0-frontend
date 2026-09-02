@@ -46,7 +46,7 @@ import {
   ServiceBeneficiaireService,
   TypeDossierService,
 } from '../../services';
-import { StatutBadge, examenRectifiable } from '../../shared/circuit';
+import { ChronometrageDossier, StatutBadge, examenRectifiable } from '../../shared/circuit';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 
 /** Une ligne « AU LIEU DE / LIRE » saisie pour un point non conforme. */
@@ -79,7 +79,7 @@ interface RowState {
 @Component({
   selector: 'app-examen-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, PpmMarchesTable],
+  imports: [StatutBadge, PpmMarchesTable, ChronometrageDossier],
   template: `
     <section class="exam">
       <header class="page-header">
@@ -94,6 +94,12 @@ interface RowState {
       } @else if (!dossier()) {
         <p class="text-muted">Dossier introuvable ou hors de votre périmètre.</p>
       } @else {
+        <!-- Chronométrage (2026-09-01) : prise en charge de l'étape EXAMEN + prévision. -->
+        <div class="card exam__chrono">
+          <div class="card-body">
+            <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" />
+          </div>
+        </div>
         <div class="exam__grid">
           <div class="card exam__panel">
             <div class="card-header"><span class="card-title">Contenu du dossier</span></div>
@@ -367,6 +373,7 @@ interface RowState {
     /* Colonne gauche (contenu du dossier + tableau dense des marchés) plus large que la grille de
        contrôle : le tableau tient sans scroll horizontal, le formulaire de droite (champs courts)
        reste confortable. minmax(0, ...) empêche le tableau de forcer la colonne au-delà de sa part. */
+    .exam__chrono { margin-bottom: 0.75rem; }
     .exam__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: 0.75rem; align-items: start; }
     /* Sous ~1200px, on empile (côte à côte devient illisible). */
     @media (max-width: 75rem) { .exam__grid { grid-template-columns: 1fr; } }

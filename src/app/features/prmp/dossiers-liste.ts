@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { skip } from 'rxjs';
@@ -40,7 +41,7 @@ type Groupe = 'brouillon' | 'soumis';
 @Component({
   selector: 'app-dossiers-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DetailPpmModal, EtatErreur, ModaleDirective, StatutBadge, CompleterPiecesDepotModal],
+  imports: [RouterLink, DatePipe, DetailPpmModal, EtatErreur, ModaleDirective, StatutBadge, CompleterPiecesDepotModal],
   template: `
     <section>
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -62,7 +63,7 @@ type Groupe = 'brouillon' | 'soumis';
           <table>
             <thead>
               <tr>
-                <th scope="col">Référence</th><th scope="col">Entité contractante</th><th scope="col">Statut</th><th scope="col">Sous-type</th><th scope="col">Localité</th><th scope="col" class="r">Actions</th>
+                <th scope="col">Référence</th><th scope="col">Entité contractante</th><th scope="col">Statut</th><th scope="col">Sous-type</th><th scope="col">Localité</th><th scope="col">Fin prévue</th><th scope="col" class="r">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -73,6 +74,14 @@ type Groupe = 'brouillon' | 'soumis';
                   <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
                   <td>{{ sousTypeLabel(d) }}</td>
                   <td>{{ localiteLabel(d) }}</td>
+                  <!-- Chronométrage (2026-09-01) : date calculée SERVEUR, présente sur les listes.
+                       ⏸ = balle chez la PRMP (la date glisse tant qu'elle n'a pas rendu la main). -->
+                  <td class="cnm-mono">
+                    {{ d.datePrevisionnelleFin ? (d.datePrevisionnelleFin | date: 'dd/MM/yyyy') : '—' }}
+                    @if (d.attentePrmp) {
+                      <span class="dl-attente" title="En attente de votre action (compléments, pièces ou rectification) — la date prévisionnelle glisse tant que le dossier ne revient pas à la CNM.">⏸ à vous</span>
+                    }
+                  </td>
                   <td>
                     <div class="td-actions actions-end">
                       <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrir(d)">Ouvrir</button>
@@ -106,7 +115,7 @@ type Groupe = 'brouillon' | 'soumis';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="6" class="empty-cell">{{ messageVide() }}</td></tr>
+                <tr><td colspan="7" class="empty-cell">{{ messageVide() }}</td></tr>
               }
             </tbody>
           </table>
@@ -186,6 +195,17 @@ type Groupe = 'brouillon' | 'soumis';
     /* Changement de page : le tableau RESTE à l'écran et lisible (le remplacer par « Chargement… »
        ferait sauter la mise en page à chaque clic) ; l'attente est dite par une ligne de statut à
        hauteur réservée — estomper le tableau aurait fait passer son texte sous le contraste AA. */
+    .dl-attente {
+      display: inline-block;
+      margin-left: 0.35rem;
+      padding: 0.05rem 0.4rem;
+      border-radius: 999px;
+      font-size: var(--text-xs);
+      color: var(--warning-700, #92400e);
+      background: var(--warning-50, #fffbeb);
+      border: 1px solid var(--warning-200, #fde68a);
+      white-space: nowrap;
+    }
     .dl-etat {
       margin: 0 0 0.35rem;
       min-height: 1.15rem;

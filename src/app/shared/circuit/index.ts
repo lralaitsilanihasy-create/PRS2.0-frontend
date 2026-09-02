@@ -7,3 +7,4 @@ export * from './statut-badge';
 export * from './circuit-timeline';
 export * from './observation-pv-card';
 export * from './pv-workflow';
+export * from './chronometrage-dossier';

@@ -18,7 +18,7 @@ import {
   TypePieceJointeService,
   VerificationPieceDepotService,
 } from '../../services';
-import { StatutBadge } from '../../shared/circuit';
+import { ChronometrageDossier, StatutBadge } from '../../shared/circuit';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 
 /** Ligne du contrôle de complétude : type attendu + pièce déposée (ou non) + dernière décision. */
@@ -40,7 +40,7 @@ interface LigneControle {
 @Component({
   selector: 'app-reception-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule, SlicePipe, StatutBadge],
+  imports: [ModaleDirective, ReactiveFormsModule, SlicePipe, StatutBadge, ChronometrageDossier],
   template: `
     <div class="modal-backdrop" [class.closing]="closingD()">
       <form
@@ -64,6 +64,9 @@ interface LigneControle {
         </header>
 
         <div class="modal-body">
+          <!-- Chronométrage (2026-09-01) : prise en charge de l'étape RECEPTION + prévision. -->
+          <app-chronometrage-dossier [idDossier]="dossier().idDossier" [compact]="true" />
+
           <!-- Bandeau d'identification (tuiles, même langage que l'en-tête des PV). -->
           <div class="rf-bandeau">
             <div class="rf-tuile">

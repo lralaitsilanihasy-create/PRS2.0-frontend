@@ -9,6 +9,7 @@ import {
   CatCompte,
   CategorieEntite,
   Compte,
+  DelaiStandard,
   DelegationProfil,
   EntiteContract,
   Localite,
@@ -38,6 +39,16 @@ export class AvisService extends CrudService<Avis, string> {
 @Injectable({ providedIn: 'root' })
 export class CatCompteService extends CrudService<CatCompte, string> {
   protected readonly resource = 'cat-comptes';
+}
+
+/**
+ * Référentiel des délais standards par étape du circuit (chronométrage 2026-09-01). `list()` rend
+ * TOUJOURS les huit étapes (repli serveur à 1 jour si la table en manque une) ; `update(etape, dto)`
+ * = `PUT /api/delais-standards/{etape}` (Administrateur, 400 si `delaiJours < 1`).
+ */
+@Injectable({ providedIn: 'root' })
+export class DelaiStandardService extends CrudService<DelaiStandard, string> {
+  protected readonly resource = 'delais-standards';
 }
 
 /** Référentiel des catégories d'entité contractante (`/api/categorie-entites`, PK = libellé). */

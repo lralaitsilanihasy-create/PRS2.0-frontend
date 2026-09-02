@@ -1,0 +1,345 @@
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
+
+import { AuthService } from '../../core/auth/auth.service';
+import { PermissionsService } from '../../core/auth/permissions.service';
+import { ToastService } from '../../core/notifications/toast.service';
+import { DossierService } from '../../services';
+import {
+  Chronometrage,
+  ETAPE_CIRCUIT_LABELS,
+  ETAPE_CIRCUIT_PORTEURS,
+  EtapeCircuit,
+} from '../../models';
+
+/**
+ * Chronométrage d'un dossier (règle du pilote 2026-09-01, backend `c66db71`) : prise en charge de
+ * l'étape courante avec saisie de la prévision, et restitution — date prévisionnelle de fin,
+ * compteurs brut / net CNM, occurrences de tâches.
+ *
+ * Deux présentations :
+ * - `compact` (écrans de travail des profils) : l'état de l'étape courante + le geste « Prendre en
+ *   charge » — rien d'autre, l'écran reste au métier ;
+ * - complet (consultation du dossier) : la même chose PLUS les compteurs et le tableau des tâches.
+ *
+ * Le bouton n'apparaît qu'au profil PORTEUR de l'étape (`ETAPE_CIRCUIT_PORTEURS`, délégations via
+ * `PermissionsService.peutExecuter`) — mais la garde qui tranche reste le serveur (403/409, message
+ * en dialogue). Aucun calcul de date côté front : tout vient de `GET /chronometrage`.
+ */
+@Component({
+  selector: 'app-chronometrage-dossier',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [DatePipe],
+  template: `
+    @if (chrono(); as c) {
+      <div class="chrono" [class.chrono--compact]="compact()">
+        <!-- État courant + prise en charge -->
+        <div class="chrono__etat">
+          @if (c.attentePrmp) {
+            <span class="chrono__attente" role="status">
+              ⏸ En attente de la PRMP — aucune tâche CNM ne court ; la date prévisionnelle glisse
+              tant que la PRMP n'a pas rendu la main.
+            </span>
+          } @else if (c.etapeCourante; as etape) {
+            <span class="chrono__etape">Étape en cours : <strong>{{ etapeLabel(etape) }}</strong></span>
+            @if (tacheEnCours(); as t) {
+              <span class="chrono__pec">
+                Prise en charge par {{ t.nomActeur || t.imActeur }} le
+                {{ t.priseEnCharge | date: 'dd/MM/yyyy HH:mm' }} — prévision
+                {{ t.previsionJours }} j ouvrés{{ t.previsionStandard ? ' (délai standard)' : '' }},
+                {{ t.dureeJoursOuvres }} j écoulés.
+              </span>
+              @if (estMaTache()) {
+                <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirSaisie(t.previsionJours)">
+                  Corriger ma prévision
+                </button>
+              }
+            } @else if (peutPrendreEnCharge()) {
+              <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirSaisie(null)">
+                Prendre en charge
+              </button>
+            } @else {
+              <span class="chrono__pec">Pas encore prise en charge.</span>
+            }
+          } @else if (c.finCompteur) {
+            <span class="chrono__pec">Traitement CNM achevé (validation SIGMP le {{ c.finCompteur | date: 'dd/MM/yyyy' }}).</span>
+          }
+          @if (c.datePrevisionnelleFin) {
+            <span class="chrono__prevision">
+              Fin de traitement prévue le <strong class="cnm-mono">{{ c.datePrevisionnelleFin | date: 'dd/MM/yyyy' }}</strong>
+            </span>
+          }
+        </div>
+
+        <!-- Saisie de la prévision (ouverte par le bouton) -->
+        @if (saisieOuverte()) {
+          <div class="chrono__saisie cnm-form">
+            <label class="form-group">
+              <span class="form-label">Ma prévision pour cette étape (jours ouvrés) *</span>
+              <input
+                type="number"
+                class="form-control chrono__jours"
+                min="1"
+                step="1"
+                [value]="previsionSaisie()"
+                (input)="previsionSaisie.set($any($event.target).value)"
+              />
+              <span class="form-hint">
+                Entier ≥ 1 — elle alimente la date prévisionnelle annoncée à la PRMP ; corrigeable
+                tant que la tâche est ouverte.
+              </span>
+            </label>
+            @if (erreurSaisie()) { <span class="form-error">{{ erreurSaisie() }}</span> }
+            <div class="chrono__saisie-actions">
+              <button type="button" class="btn btn-outline btn-sm" (click)="saisieOuverte.set(false)">Annuler</button>
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="saving()" (click)="confirmer()">
+                {{ saving() ? 'Enregistrement…' : 'Confirmer' }}
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Restitution complète : compteurs + tâches -->
+        @if (!compact()) {
+          <dl class="chrono__compteurs">
+            <div><dt>Enregistrement</dt><dd class="cnm-mono">{{ c.debutCompteur ? (c.debutCompteur | date: 'dd/MM/yyyy HH:mm') : '—' }}</dd></div>
+            <div><dt>Validation SIGMP</dt><dd class="cnm-mono">{{ c.finCompteur ? (c.finCompteur | date: 'dd/MM/yyyy HH:mm') : '—' }}</dd></div>
+            <div><dt>Durée brute</dt><dd>{{ c.dureeBruteJoursOuvres }} j ouvrés</dd></div>
+            <div>
+              <dt>Durée nette CNM</dt>
+              <dd>{{ c.dureeNetteJoursOuvres }} j ouvrés
+                @if (c.attentePrmpJoursOuvres > 0) {
+                  <span class="chrono__hint">(attentes PRMP décomptées : {{ c.attentePrmpJoursOuvres }} j)</span>
+                }
+              </dd>
+            </div>
+          </dl>
+          @if (c.taches.length) {
+            <div class="chrono__table-wrap">
+              <table class="chrono__table">
+                <thead>
+                  <tr>
+                    <th scope="col">Étape</th>
+                    <th scope="col">Passage</th>
+                    <th scope="col">Acteur</th>
+                    <th scope="col">Prise en charge</th>
+                    <th scope="col">Fin</th>
+                    <th scope="col">Prévu</th>
+                    <th scope="col">Effectif</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (t of c.taches; track t.etape + '-' + t.occurrence) {
+                    <tr [class.chrono__row--encours]="t.enCours">
+                      <td>{{ etapeLabel(t.etape) }}</td>
+                      <td class="cnm-mono">{{ t.occurrence }}</td>
+                      <td>{{ t.nomActeur || t.imActeur || '—' }}</td>
+                      <td class="cnm-mono">{{ t.priseEnCharge ? (t.priseEnCharge | date: 'dd/MM HH:mm') : '—' }}</td>
+                      <td class="cnm-mono">{{ t.fin ? (t.fin | date: 'dd/MM HH:mm') : 'en cours' }}</td>
+                      <td>{{ t.previsionJours != null ? t.previsionJours + ' j' + (t.previsionStandard ? ' (std)' : '') : '—' }}</td>
+                      <td>{{ t.dureeJoursOuvres }} j</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="chrono__vide">Aucune tâche chronométrée pour l'instant.</p>
+          }
+        }
+      </div>
+    } @else if (chargement()) {
+      <p class="chrono__vide" role="status">Chargement du chronométrage…</p>
+    }
+  `,
+  styles: `
+    .chrono {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .chrono__etat {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem 1rem;
+      font-size: var(--text-sm);
+      color: var(--n-500);
+    }
+    .chrono__attente {
+      color: var(--warning-700, #92400e);
+      background: var(--warning-50, #fffbeb);
+      border: 1px solid var(--warning-200, #fde68a);
+      border-radius: 6px;
+      padding: 0.35rem 0.6rem;
+    }
+    .chrono__prevision {
+      margin-left: auto;
+    }
+    .chrono--compact .chrono__prevision {
+      margin-left: 0;
+    }
+    .chrono__saisie {
+      border: 1px solid var(--n-200);
+      border-radius: 8px;
+      padding: 0.75rem;
+      max-width: 26rem;
+    }
+    .chrono__jours {
+      max-width: 8rem;
+    }
+    .chrono__saisie-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+    .chrono__compteurs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 2rem;
+      margin: 0;
+    }
+    .chrono__compteurs div {
+      display: flex;
+      gap: 0.4rem;
+      align-items: baseline;
+    }
+    .chrono__compteurs dt {
+      font-size: var(--text-xs);
+      color: var(--n-400);
+    }
+    .chrono__compteurs dd {
+      margin: 0;
+      font-size: var(--text-sm);
+      color: var(--n-500);
+    }
+    .chrono__hint {
+      color: var(--n-400);
+      font-size: var(--text-xs);
+    }
+    .chrono__table-wrap {
+      overflow-x: auto;
+    }
+    .chrono__table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+    }
+    .chrono__table th,
+    .chrono__table td {
+      text-align: left;
+      padding: 0.35rem 0.6rem;
+      border-bottom: 1px solid var(--n-200);
+      white-space: nowrap;
+    }
+    .chrono__table th {
+      font-size: var(--text-xs);
+      color: var(--n-400);
+      font-weight: 600;
+    }
+    .chrono__row--encours td {
+      background: var(--primary-50, #eff6ff);
+    }
+    .chrono__vide {
+      font-size: var(--text-sm);
+      color: var(--n-400);
+      margin: 0;
+    }
+  `,
+})
+export class ChronometrageDossier {
+  private readonly dossierService = inject(DossierService);
+  private readonly auth = inject(AuthService);
+  private readonly permissions = inject(PermissionsService);
+  private readonly toast = inject(ToastService);
+
+  /** Dossier chronométré. */
+  readonly idDossier = input.required<number>();
+  /** Présentation réduite (écrans de travail) : état + geste, sans compteurs ni tableau. */
+  readonly compact = input(false);
+  /**
+   * Chronométrage déjà chargé par l'hôte (modale « une seule vague » : le parent l'ajoute à son
+   * `forkJoin` et le passe ici). Absent → le composant fait son propre GET.
+   */
+  readonly donnees = input<Chronometrage | undefined>(undefined);
+
+  readonly chrono = signal<Chronometrage | null>(null);
+  readonly chargement = signal(false);
+  readonly saisieOuverte = signal(false);
+  readonly previsionSaisie = signal('');
+  readonly erreurSaisie = signal<string | null>(null);
+  readonly saving = signal(false);
+
+  readonly tacheEnCours = computed(() => this.chrono()?.taches.find((t) => t.enCours) ?? null);
+  readonly estMaTache = computed(() => {
+    const t = this.tacheEnCours();
+    return !!t && !!t.imActeur && t.imActeur === this.auth.ref();
+  });
+  /**
+   * Montrer le geste au porteur NOMINAL de l'étape (délégations comprises) — jamais grisé : en cas
+   * de doute le serveur tranche (403 écrit en dialogue). La PRMP, elle, ne porte aucune étape.
+   */
+  readonly peutPrendreEnCharge = computed(() => {
+    const etape = this.chrono()?.etapeCourante;
+    if (!etape || this.chrono()?.attentePrmp) {
+      return false;
+    }
+    const porteur = ETAPE_CIRCUIT_PORTEURS[etape];
+    const role = this.auth.role();
+    return role === porteur || role === 'ADMINISTRATEUR' || this.permissions.peutExecuter(porteur);
+  });
+
+  constructor() {
+    // Rechargement piloté par les inputs : l'écran hôte peut changer de dossier sans recréer le
+    // composant ; des données fournies par l'hôte (modale) court-circuitent le GET.
+    effect(() => {
+      const fournies = this.donnees();
+      const id = this.idDossier();
+      if (fournies) {
+        this.chrono.set(fournies);
+        return;
+      }
+      this.chargerChronometrage(id);
+    });
+  }
+
+  etapeLabel(etape: EtapeCircuit | string): string {
+    return ETAPE_CIRCUIT_LABELS[etape as EtapeCircuit] ?? etape;
+  }
+
+  ouvrirSaisie(previsionActuelle: number | null | undefined): void {
+    this.erreurSaisie.set(null);
+    this.previsionSaisie.set(previsionActuelle != null ? String(previsionActuelle) : '');
+    this.saisieOuverte.set(true);
+  }
+
+  confirmer(): void {
+    const jours = Number(this.previsionSaisie());
+    if (!Number.isInteger(jours) || jours < 1) {
+      this.erreurSaisie.set('La prévision est un nombre entier de jours ouvrés, au moins 1.');
+      return;
+    }
+    this.erreurSaisie.set(null);
+    this.saving.set(true);
+    this.dossierService.priseEnCharge(this.idDossier(), jours).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.saisieOuverte.set(false);
+        this.toast.success(`Prise en charge enregistrée — prévision ${jours} j ouvrés.`);
+        this.chargerChronometrage(this.idDossier());
+      },
+      error: () => this.saving.set(false), // 400/403/409 → dialogue centralisé (message backend)
+    });
+  }
+
+  private chargerChronometrage(id: number): void {
+    this.chargement.set(true);
+    this.dossierService.chronometrage(id).subscribe({
+      next: (c) => {
+        this.chrono.set(c);
+        this.chargement.set(false);
+      },
+      error: () => this.chargement.set(false),
+    });
+  }
+}

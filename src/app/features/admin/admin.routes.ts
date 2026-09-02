@@ -85,6 +85,8 @@ export const ADMIN_ROUTES: Routes = [
   // ⚠️ Rattachements Membre→Vérificateur→Assistant (2026-09-01) — « chaines-controle » car
   // « rattachements » est pris (PRMP↔entité, ci-dessus).
   { path: 'chaines-controle', loadComponent: () => import('./chaines-controle').then((m) => m.ChainesControle) },
+  // ⚠️ Chronométrage (2026-09-01) — délais standards par étape (PUT réservé à l'Administrateur).
+  { path: 'delais-standards', loadComponent: () => import('./delais-standards').then((m) => m.DelaisStandards) },
   // Écran dédié : journal d'audit paginé et filtré (table, acteur, période) — la table croît sans
   // fin, le CRUD générique en demandait la totalité (⚠️ audit 2026-08-27, C-1).
   { path: 'audit', loadComponent: () => import('./audit-logs-admin').then((m) => m.AuditLogsAdmin) },
