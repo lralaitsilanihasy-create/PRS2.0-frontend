@@ -154,11 +154,15 @@ export interface TacheDossier {
   priseEnCharge?: string | null;
   /** `null` tant que la tâche est en cours. */
   fin?: string | null;
-  previsionJours?: number | null;
+  /** ⚠️ HEURES ouvrées depuis le 02/09 (backend `c8d987a`) : 8 h = 1 jour ouvré. */
+  previsionHeures?: number | null;
   /** Vrai si la prévision vient du référentiel des délais standards, pas d'une saisie. */
   previsionStandard: boolean;
-  /** Durée effective en jours ouvrés ; pour une tâche en cours, le temps déjà écoulé. */
-  dureeJoursOuvres: number;
+  /**
+   * Durée effective en HEURES ouvrées (fenêtre de service 08 h-16 h côté serveur — même échelle
+   * que la prévision) ; pour une tâche en cours, le temps déjà écoulé.
+   */
+  dureeHeuresOuvrees: number;
   enCours: boolean;
 }
 
@@ -171,28 +175,32 @@ export interface Chronometrage {
   debutCompteur?: string | null;
   /** Clôture de TRANSMISSION_SIGMP ; null tant que le dossier court. */
   finCompteur?: string | null;
-  /** Compteur BRUT : enregistrement → SIGMP, à la lettre de la règle. */
-  dureeBruteJoursOuvres: number;
-  /** Compteur NET CNM : le brut moins les attentes PRMP — c'est lui qui juge la CNM. */
-  dureeNetteJoursOuvres: number;
-  /** Cumul des fenêtres où la balle était chez la PRMP. */
-  attentePrmpJoursOuvres: number;
+  /** Compteur BRUT (heures ouvrées) : enregistrement → SIGMP, à la lettre de la règle. */
+  dureeBruteHeuresOuvrees: number;
+  /** Compteur NET CNM (heures ouvrées) : le brut moins les attentes PRMP — c'est lui qui juge la CNM. */
+  dureeNetteHeuresOuvrees: number;
+  /** Cumul des fenêtres où la balle était chez la PRMP (heures ouvrées). */
+  attentePrmpHeuresOuvrees: number;
   etapeCourante?: EtapeCircuit | null;
   attentePrmp: boolean;
   datePrevisionnelleFin?: string | null;
 }
 
-/** Corps de `POST /api/dossiers/{id}/prise-en-charge` — rejoué sur une tâche ouverte, il CORRIGE la prévision. */
+/**
+ * Corps de `POST /api/dossiers/{id}/prise-en-charge` — rejoué sur une tâche ouverte, il CORRIGE la
+ * prévision. ⚠️ `previsionJours` (unité d'avant le 02/09) part en 400 explicite : 5 « jours » lus
+ * comme 5 heures fausseraient la date sans bruit.
+ */
 export interface PriseEnChargeRequest {
-  /** Jours ouvrés, entier ≥ 1 (400 sinon). */
-  previsionJours: number;
+  /** HEURES ouvrées (8 h = 1 jour ouvré), entier ≥ 1 (400 sinon). */
+  previsionHeures: number;
 }
 
 /** Délai standard d'une étape — référentiel administrable (PUT réservé à l'Administrateur). */
 export interface DelaiStandard {
   etape: EtapeCircuit;
-  /** Jours ouvrés, ≥ 1 (400 sinon). */
-  delaiJours: number;
+  /** HEURES ouvrées (8 h = 1 jour ouvré), ≥ 1 (400 sinon) ; repli serveur à 8 h si l'étape manque. */
+  delaiHeures: number;
   /** Libellé d'affichage, servi par le backend. */
   libelle?: string;
 }

@@ -77,14 +77,15 @@ export class DossierService extends CrudService<Dossier> {
   }
 
   /**
-   * `POST /api/dossiers/{id}/prise-en-charge` (chronométrage 2026-09-01) — le porteur de l'étape
-   * courante prend le dossier en charge et pose sa prévision (jours ouvrés, ≥ 1). Rejoué sur une
-   * tâche encore ouverte, il CORRIGE la prévision sans créer d'occurrence. 403 hors porteur
-   * (délégations/intérim résolus serveur), 409 si aucune étape n'est ouverte.
+   * `POST /api/dossiers/{id}/prise-en-charge` (chronométrage 2026-09-01, HEURES ouvrées depuis le
+   * 02/09) — le porteur de l'étape courante prend le dossier en charge et pose sa prévision
+   * (heures ouvrées, 8 h = 1 jour ouvré, ≥ 1). Rejoué sur une tâche encore ouverte, il CORRIGE la
+   * prévision sans créer d'occurrence. 403 hors porteur (délégations/intérim résolus serveur),
+   * 409 si aucune étape n'est ouverte.
    */
-  priseEnCharge(idDossier: number, previsionJours: number): Observable<TacheDossier> {
+  priseEnCharge(idDossier: number, previsionHeures: number): Observable<TacheDossier> {
     return this.http.post<TacheDossier>(`${this.baseUrl}/${idDossier}/prise-en-charge`, {
-      previsionJours,
+      previsionHeures,
     });
   }
 

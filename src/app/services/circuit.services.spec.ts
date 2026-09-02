@@ -57,11 +57,11 @@ describe('DossierService.rechercher', () => {
 });
 
 /**
- * Chronométrage (2026-09-01, backend `c66db71`). Deux détails de contrat que rien d'autre ne
- * surveille : le sous-chemin `/prise-en-charge` avec le corps `{ previsionJours }` (le serveur
- * refuse < 1 en 400 — le composant filtre avant, mais l'URL et le nom du champ ne sont testés
- * qu'ici), et le référentiel `/api/delais-standards` dont le PUT est adressé PAR ÉTAPE (clé
- * string, pas un id numérique).
+ * Chronométrage (2026-09-01, backend `c66db71` ; HEURES ouvrées depuis le 02/09, `c8d987a`).
+ * Deux détails de contrat que rien d'autre ne surveille : le sous-chemin `/prise-en-charge` avec
+ * le corps `{ previsionHeures }` (l'ancien `previsionJours` part en 400 explicite — 5 « jours »
+ * lus comme 5 heures fausseraient la date sans bruit), et le référentiel `/api/delais-standards`
+ * dont le PUT est adressé PAR ÉTAPE (clé string, pas un id numérique).
  */
 describe('Chronométrage — DossierService et DelaiStandardService', () => {
   beforeEach(() => {
@@ -72,17 +72,17 @@ describe('Chronométrage — DossierService et DelaiStandardService', () => {
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('poste la prise en charge avec la prévision en jours ouvrés', () => {
+  it('poste la prise en charge avec la prévision en heures ouvrées', () => {
     const service = TestBed.inject(DossierService);
     const http = TestBed.inject(HttpTestingController);
 
     let tache: TacheDossier | undefined;
-    service.priseEnCharge(42, 4).subscribe((t) => (tache = t));
+    service.priseEnCharge(42, 16).subscribe((t) => (tache = t));
 
     const req = http.expectOne('/api/dossiers/42/prise-en-charge');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ previsionJours: 4 });
-    req.flush({ etape: 'EXAMEN', occurrence: 1, previsionJours: 4, previsionStandard: false, dureeJoursOuvres: 0, enCours: true });
+    expect(req.request.body).toEqual({ previsionHeures: 16 });
+    req.flush({ etape: 'EXAMEN', occurrence: 1, previsionHeures: 16, previsionStandard: false, dureeHeuresOuvrees: 0, enCours: true });
     expect(tache?.etape).toBe('EXAMEN');
   });
 
@@ -95,7 +95,7 @@ describe('Chronométrage — DossierService et DelaiStandardService', () => {
 
     const req = http.expectOne('/api/dossiers/42/chronometrage');
     expect(req.request.method).toBe('GET');
-    req.flush({ idDossier: 42, taches: [], dureeBruteJoursOuvres: 0, dureeNetteJoursOuvres: 0, attentePrmpJoursOuvres: 0, attentePrmp: false });
+    req.flush({ idDossier: 42, taches: [], dureeBruteHeuresOuvrees: 0, dureeNetteHeuresOuvrees: 0, attentePrmpHeuresOuvrees: 0, attentePrmp: false });
     expect(chrono?.idDossier).toBe(42);
   });
 
@@ -103,11 +103,11 @@ describe('Chronométrage — DossierService et DelaiStandardService', () => {
     const service = TestBed.inject(DelaiStandardService);
     const http = TestBed.inject(HttpTestingController);
 
-    service.update('EXAMEN', { etape: 'EXAMEN', delaiJours: 6 }).subscribe();
+    service.update('EXAMEN', { etape: 'EXAMEN', delaiHeures: 40 }).subscribe();
 
     const req = http.expectOne('/api/delais-standards/EXAMEN');
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body.delaiJours).toBe(6);
-    req.flush({ etape: 'EXAMEN', delaiJours: 6, libelle: 'Examen' });
+    expect(req.request.body.delaiHeures).toBe(40);
+    req.flush({ etape: 'EXAMEN', delaiHeures: 40, libelle: 'Examen' });
   });
 });

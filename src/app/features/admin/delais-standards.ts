@@ -5,11 +5,12 @@ import { DelaiStandard, ETAPE_CIRCUIT_LABELS, EtapeCircuit } from '../../models'
 import { DelaiStandardService } from '../../services';
 
 /**
- * ⚠️ Chronométrage (2026-09-01) — écran « Délais standards » : le délai par défaut de chaque étape
- * du circuit, en jours ouvrés. Il fournit la prévision des étapes non encore prises en charge — la
- * date annoncée à la PRMP existe donc dès la soumission — et il est remplacé, dossier par dossier,
- * par la prévision réellement saisie à la prise en charge. Le GET rend TOUJOURS les huit étapes
- * (repli serveur à 1 jour), le PUT est réservé à l'Administrateur (400 si < 1).
+ * ⚠️ Chronométrage (2026-09-01, HEURES ouvrées depuis le 02/09 — backend `c8d987a`) — écran
+ * « Délais standards » : le délai par défaut de chaque étape du circuit, en heures ouvrées
+ * (8 h = 1 jour ouvré). Il fournit la prévision des étapes non encore prises en charge — la date
+ * annoncée à la PRMP existe donc dès la soumission — et il est remplacé, dossier par dossier, par
+ * la prévision réellement saisie à la prise en charge. Le GET rend TOUJOURS les huit étapes
+ * (repli serveur à 8 h), le PUT est réservé à l'Administrateur (400 si < 1).
  */
 @Component({
   selector: 'app-delais-standards',
@@ -23,10 +24,11 @@ import { DelaiStandardService } from '../../services';
       <!-- Un seul <span> : .alert est en flex, des <strong> nus deviendraient des colonnes. -->
       <p class="alert alert-info">
         <span>
-          Ces délais (en <strong>jours ouvrés</strong>) servent de prévision par défaut aux étapes que
-          personne n'a encore prises en charge : ils alimentent la <strong>date prévisionnelle de
-          fin</strong> annoncée à la PRMP dès la soumission. À la prise en charge d'une étape, la
-          prévision saisie par le porteur remplace le délai standard — pour ce dossier seulement.
+          Ces délais (en <strong>heures ouvrées</strong> — 8 h = 1 jour ouvré) servent de prévision
+          par défaut aux étapes que personne n'a encore prises en charge : ils alimentent la
+          <strong>date prévisionnelle de fin</strong> annoncée à la PRMP dès la soumission. À la
+          prise en charge d'une étape, la prévision saisie par le porteur remplace le délai
+          standard — pour ce dossier seulement.
         </span>
       </p>
 
@@ -36,7 +38,7 @@ import { DelaiStandardService } from '../../services';
         <div class="table-responsive">
           <table class="cnm-table">
             <thead>
-              <tr><th scope="col">Étape</th><th scope="col">Délai standard (jours ouvrés)</th><th scope="col"></th></tr>
+              <tr><th scope="col">Étape</th><th scope="col">Délai standard (heures ouvrées)</th><th scope="col"></th></tr>
             </thead>
             <tbody>
               @for (d of delais(); track d.etape) {
@@ -54,7 +56,7 @@ import { DelaiStandardService } from '../../services';
                       class="form-control dst__jours"
                       min="1"
                       step="1"
-                      [value]="saisies()[d.etape] ?? d.delaiJours"
+                      [value]="saisies()[d.etape] ?? d.delaiHeures"
                       [attr.aria-label]="'Délai standard — ' + (d.libelle || etapeLabel(d.etape))"
                       (input)="saisir(d.etape, $any($event.target).value)"
                     />
@@ -121,17 +123,17 @@ export class DelaisStandards implements OnInit {
 
   modifie(d: DelaiStandard): boolean {
     const saisie = this.saisies()[d.etape];
-    return saisie != null && saisie !== '' && Number(saisie) !== d.delaiJours;
+    return saisie != null && saisie !== '' && Number(saisie) !== d.delaiHeures;
   }
 
   enregistrer(d: DelaiStandard): void {
-    const jours = Number(this.saisies()[d.etape]);
-    if (!Number.isInteger(jours) || jours < 1) {
-      this.toast.error('Le délai standard est un nombre entier de jours ouvrés, au moins 1.');
+    const heures = Number(this.saisies()[d.etape]);
+    if (!Number.isInteger(heures) || heures < 1) {
+      this.toast.error("Le délai standard est un nombre entier d'heures ouvrées, au moins 1 (8 h = 1 jour ouvré).");
       return;
     }
     this.saving.set(d.etape);
-    this.service.update(d.etape, { ...d, delaiJours: jours }).subscribe({
+    this.service.update(d.etape, { ...d, delaiHeures: heures }).subscribe({
       next: (maj) => {
         this.saving.set(null);
         this.delais.update((rows) => rows.map((r) => (r.etape === maj.etape ? maj : r)));
@@ -140,7 +142,7 @@ export class DelaisStandards implements OnInit {
           delete copie[d.etape];
           return copie;
         });
-        this.toast.success(`Délai standard de « ${maj.libelle || this.etapeLabel(maj.etape)} » : ${maj.delaiJours} j ouvrés.`);
+        this.toast.success(`Délai standard de « ${maj.libelle || this.etapeLabel(maj.etape)} » : ${maj.delaiHeures} h ouvrées.`);
       },
       error: () => this.saving.set(null), // 400/403 → dialogue centralisé (message backend)
     });

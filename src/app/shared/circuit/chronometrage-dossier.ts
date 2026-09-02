@@ -46,11 +46,11 @@ import {
               <span class="chrono__pec">
                 Prise en charge par {{ t.nomActeur || t.imActeur }} le
                 {{ t.priseEnCharge | date: 'dd/MM/yyyy HH:mm' }} — prévision
-                {{ t.previsionJours }} j ouvrés{{ t.previsionStandard ? ' (délai standard)' : '' }},
-                {{ t.dureeJoursOuvres }} j écoulés.
+                {{ heuresLabel(t.previsionHeures) }}{{ t.previsionStandard ? ' (délai standard)' : '' }},
+                {{ t.dureeHeuresOuvrees }} h écoulées.
               </span>
               @if (estMaTache()) {
-                <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirSaisie(t.previsionJours)">
+                <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirSaisie(t.previsionHeures)">
                   Corriger ma prévision
                 </button>
               }
@@ -75,7 +75,7 @@ import {
         @if (saisieOuverte()) {
           <div class="chrono__saisie cnm-form">
             <label class="form-group">
-              <span class="form-label">Ma prévision pour cette étape (jours ouvrés) *</span>
+              <span class="form-label">Ma prévision pour cette étape (heures ouvrées) *</span>
               <input
                 type="number"
                 class="form-control chrono__jours"
@@ -85,8 +85,8 @@ import {
                 (input)="previsionSaisie.set($any($event.target).value)"
               />
               <span class="form-hint">
-                Entier ≥ 1 — elle alimente la date prévisionnelle annoncée à la PRMP ; corrigeable
-                tant que la tâche est ouverte.
+                Entier ≥ 1 — 8 h ouvrées = 1 jour ouvré. Elle alimente la date prévisionnelle
+                annoncée à la PRMP ; corrigeable tant que la tâche est ouverte.
               </span>
             </label>
             @if (erreurSaisie()) { <span class="form-error">{{ erreurSaisie() }}</span> }
@@ -104,12 +104,12 @@ import {
           <dl class="chrono__compteurs">
             <div><dt>Enregistrement</dt><dd class="cnm-mono">{{ c.debutCompteur ? (c.debutCompteur | date: 'dd/MM/yyyy HH:mm') : '—' }}</dd></div>
             <div><dt>Validation SIGMP</dt><dd class="cnm-mono">{{ c.finCompteur ? (c.finCompteur | date: 'dd/MM/yyyy HH:mm') : '—' }}</dd></div>
-            <div><dt>Durée brute</dt><dd>{{ c.dureeBruteJoursOuvres }} j ouvrés</dd></div>
+            <div><dt>Durée brute</dt><dd>{{ heuresLabel(c.dureeBruteHeuresOuvrees) }}</dd></div>
             <div>
               <dt>Durée nette CNM</dt>
-              <dd>{{ c.dureeNetteJoursOuvres }} j ouvrés
-                @if (c.attentePrmpJoursOuvres > 0) {
-                  <span class="chrono__hint">(attentes PRMP décomptées : {{ c.attentePrmpJoursOuvres }} j)</span>
+              <dd>{{ heuresLabel(c.dureeNetteHeuresOuvrees) }}
+                @if (c.attentePrmpHeuresOuvrees > 0) {
+                  <span class="chrono__hint">(attentes PRMP décomptées : {{ c.attentePrmpHeuresOuvrees }} h)</span>
                 }
               </dd>
             </div>
@@ -136,8 +136,8 @@ import {
                       <td>{{ t.nomActeur || t.imActeur || '—' }}</td>
                       <td class="cnm-mono">{{ t.priseEnCharge ? (t.priseEnCharge | date: 'dd/MM HH:mm') : '—' }}</td>
                       <td class="cnm-mono">{{ t.fin ? (t.fin | date: 'dd/MM HH:mm') : 'en cours' }}</td>
-                      <td>{{ t.previsionJours != null ? t.previsionJours + ' j' + (t.previsionStandard ? ' (std)' : '') : '—' }}</td>
-                      <td>{{ t.dureeJoursOuvres }} j</td>
+                      <td>{{ t.previsionHeures != null ? heuresLabel(t.previsionHeures) + (t.previsionStandard ? ' (std)' : '') : '—' }}</td>
+                      <td>{{ t.dureeHeuresOuvrees }} h</td>
                     </tr>
                   }
                 </tbody>
@@ -307,6 +307,21 @@ export class ChronometrageDossier {
     return ETAPE_CIRCUIT_LABELS[etape as EtapeCircuit] ?? etape;
   }
 
+  /**
+   * « 40 h (5 j) » — l'équivalent jours (8 h ouvrées = 1 jour ouvré, backend `c8d987a`) n'est
+   * ajouté qu'à partir d'une journée, avec au plus une décimale (12 h → « 12 h (1,5 j) »).
+   */
+  heuresLabel(heures: number | null | undefined): string {
+    if (heures == null) {
+      return '—';
+    }
+    if (heures < 8) {
+      return `${heures} h`;
+    }
+    const jours = Math.round((heures / 8) * 10) / 10;
+    return `${heures} h (${String(jours).replace('.', ',')} j)`;
+  }
+
   ouvrirSaisie(previsionActuelle: number | null | undefined): void {
     this.erreurSaisie.set(null);
     this.previsionSaisie.set(previsionActuelle != null ? String(previsionActuelle) : '');
@@ -314,18 +329,18 @@ export class ChronometrageDossier {
   }
 
   confirmer(): void {
-    const jours = Number(this.previsionSaisie());
-    if (!Number.isInteger(jours) || jours < 1) {
-      this.erreurSaisie.set('La prévision est un nombre entier de jours ouvrés, au moins 1.');
+    const heures = Number(this.previsionSaisie());
+    if (!Number.isInteger(heures) || heures < 1) {
+      this.erreurSaisie.set("La prévision est un nombre entier d'heures ouvrées, au moins 1 (8 h = 1 jour ouvré).");
       return;
     }
     this.erreurSaisie.set(null);
     this.saving.set(true);
-    this.dossierService.priseEnCharge(this.idDossier(), jours).subscribe({
+    this.dossierService.priseEnCharge(this.idDossier(), heures).subscribe({
       next: () => {
         this.saving.set(false);
         this.saisieOuverte.set(false);
-        this.toast.success(`Prise en charge enregistrée — prévision ${jours} j ouvrés.`);
+        this.toast.success(`Prise en charge enregistrée — prévision ${this.heuresLabel(heures)}.`);
         this.chargerChronometrage(this.idDossier());
       },
       error: () => this.saving.set(false), // 400/403/409 → dialogue centralisé (message backend)
