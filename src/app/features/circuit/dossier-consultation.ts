@@ -74,10 +74,6 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
             }
           </div>
 
-          <!-- ⚠️ Demande pilote (2026-09-02) — le chronométrage occupe l'espace vide À DROITE du
-               titre (l'en-tête d'identité étant replié par défaut, la place était perdue). -->
-          <div class="dc-header-corps">
-          <div class="dc-header-gauche">
           <div class="dc-title">{{ dossier().refeDossier || ('Dossier #' + dossier().idDossier) }}</div>
 
           <div class="dc-subtitle">
@@ -94,11 +90,15 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
             </button>
           </div>
 
+          <!-- ⚠️ Demande pilote (2026-09-02, précisée 2×) — l'identité et le chronométrage se
+               partagent la MÊME rangée, sous la ligne de titre : le bloc « Chronométrage & délais »
+               est AU MÊME NIVEAU que l'en-tête d'identité (qui reste repliable). -->
+          <div class="dc-header-corps">
           <!-- ⚠️ 2026-08-14 (demande user) — en-tête ÉPURÉ : seuls Entité contractante, Localité,
                Référence PRMP, Exercice, Signataire et Mise à jour restent (Type est déjà en chip,
                la date réf. dans le sous-titre ; PRMP d'attribution/dates de signature retirés). -->
           @if (!enteteReplie()) {
-          <div class="dc-meta">
+          <div class="dc-meta dc-header-gauche">
             <div class="dc-meta-row">
               <span class="dc-meta-label">Entité contractante</span>
               <span class="dc-meta-value">{{ entiteLabel() }}</span>
@@ -131,9 +131,8 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
             }
           </div>
           }
-          </div>
 
-          <!-- Chronométrage & délais (2026-09-01, déplacé dans l'en-tête le 02/09) : chargé DANS
+          <!-- Chronométrage & délais (2026-09-01, dans l'en-tête depuis le 02/09) : chargé DANS
                la vague unique (donnees) ; zone absente pour un dossier hors circuit. -->
           @if (chronoDossier(); as chrono) {
             @if (chrono.taches.length || chrono.etapeCourante || chrono.datePrevisionnelleFin || chrono.debutCompteur) {
@@ -318,10 +317,13 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 
     /* En-tête */
     .dc-header { padding: 18px 24px 16px; border-bottom: 0.5px solid var(--n-200); flex-shrink: 0; }
-    /* Corps de l'en-tête (2026-09-02) : identité à gauche, chronométrage dans l'espace vide à droite. */
+    /* Corps de l'en-tête (2026-09-02, précisé 2×) : SOUS la ligne de titre, l'identité (repliable)
+       et le chronométrage se partagent la même rangée — même niveau. */
     .dc-header-corps { display: flex; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap; }
-    .dc-header-gauche { flex: 1 1 20rem; min-width: 17rem; }
+    .dc-header-gauche { flex: 1 1 26rem; min-width: 22rem; max-width: 44rem; }
     .dc-header-droite { flex: 2 1 32rem; min-width: 0; border-left: 0.5px solid var(--n-200); padding-left: 1.5rem; }
+    /* En-tête replié : le chronométrage est seul sur la rangée — pas de liseré orphelin. */
+    .dc-header-droite:first-child { border-left: none; padding-left: 0; }
     .dc-chrono-titre { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--n-400); margin-bottom: 8px; }
     @media (max-width: 60rem) { .dc-header-droite { border-left: none; padding-left: 0; } }
     .dc-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 0.75rem; }
