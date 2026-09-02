@@ -1025,11 +1025,16 @@ export class SoumettreDossier {
   readonly ligneOuverte = signal(false);
   readonly editId = signal<number | null>(null);
 
-  /** Entités de la PRMP courante (id, libellé, localité dérivée). */
-  readonly entites = signal<{ idEntiteContract: number; libelle: string; idLocalite?: string; adresse?: string }[]>([]);
+  /** Entités de la PRMP courante (id, libellé, localité dérivée) — fiches du référentiel : `localiteConnue` implicite. */
+  readonly entites = signal<{ idEntiteContract: number; libelle: string; idLocalite?: string; adresse?: string; localiteConnue?: boolean }[]>([]);
   readonly selectedEntiteId = signal<number | null>(null);
-  /** Entité du PPM importé hors du périmètre PRMP — ajoutée aux options pour l'afficher/sélectionner (§3.1). */
-  readonly entiteImportee = signal<{ idEntiteContract: number; libelle: string; idLocalite?: string; adresse?: string } | null>(null);
+  /**
+   * Entité du PPM importé hors du périmètre PRMP — ajoutée aux options pour l'afficher/sélectionner
+   * (§3.1), enrichie depuis le référentiel déjà chargé (libellé officiel, LOCALITÉ). `localiteConnue`
+   * distingue « fiche lue au référentiel » (l'absence de localité est alors un fait) de « fiche
+   * introuvable » (localité simplement inconnue du front — ne rien affirmer).
+   */
+  readonly entiteImportee = signal<{ idEntiteContract: number; libelle: string; idLocalite?: string; adresse?: string; localiteConnue?: boolean } | null>(null);
   /** Options du sélecteur d'entité = entités du PRMP + éventuelle entité importée hors périmètre. */
   readonly optionsEntite = computed(() => {
     const base = this.entites();
@@ -1059,6 +1064,8 @@ export class SoumettreDossier {
   readonly organigrammes = signal<Organigramme[]>([]);
   /** Entités contractantes de catégorie MINISTERE (par organigramme) → entité parente best-effort. */
   private ministereEntites: EntiteContract[] = [];
+  /** Référentiel complet des entités (fiche par id) — nourrit l'option « hors périmètre » de l'import. */
+  private entitesReferentiel = new Map<number, EntiteContract>();
   /** Organigrammes du ministère choisi (le champ Organigramme reste cohérent avec le ministère d'appartenance). */
   readonly organigrammesDuMinistere = computed(() => {
     const id = this.ministereChoisi();
@@ -1116,12 +1123,15 @@ export class SoumettreDossier {
    * Entité sélectionnée sans localité → le dépôt est **impossible** (le backend dérive la localité du
    * dossier de l'entité et renvoie 400 « entité sans localité »). On bloque la création côté front avec
    * un message clair plutôt que de laisser découvrir le 400 à la soumission.
+   * ⚠️ 2026-09-02 (fausse alerte signalée par le pilote) — l'absence n'est AFFIRMÉE que si la fiche de
+   * l'entité est connue (`localiteConnue !== false`) : l'option fabriquée à l'import d'un PPM hors
+   * périmètre ne portait pas la localité, et l'écran accusait à tort une entité d'en manquer.
    */
   readonly entiteSansLocalite = computed(() => {
     const id = this.selectedEntiteId();
     if (id == null) return false;
     const ent = this.optionsEntite().find((e) => e.idEntiteContract === id);
-    return !!ent && !ent.idLocalite;
+    return !!ent && !ent.idLocalite && ent.localiteConnue !== false;
   });
 
   /** Seule la PRMP peut soumettre ; l'UGPM saisit/édite mais ne soumet pas (bouton masqué, backend 403). */
@@ -1257,6 +1267,8 @@ export class SoumettreDossier {
     forkJoin({ liens: this.prmpEntiteService.list(), entites: this.entiteContractService.list() }).subscribe(
       ({ liens, entites }) => {
         const parId = new Map(entites.map((e) => [e.idEntiteContract, e]));
+        // Référentiel COMPLET conservé : l'import y retrouve la fiche (localité !) d'une entité hors périmètre.
+        this.entitesReferentiel = parId;
         const miennes = liens
           .filter((l) => l.idPrmp === ref && l.actif)
           .map((l) => parId.get(l.idEntiteContract))
@@ -1836,9 +1848,20 @@ export class SoumettreDossier {
     const idEntiteImportee = r.idEntiteContract;
     const entiteHorsPerimetre =
       idEntiteImportee != null && !this.entites().some((e) => e.idEntiteContract === idEntiteImportee);
+    // ⚠️ 2026-09-02 — l'option « hors périmètre » reprend la FICHE du référentiel (déjà chargé) :
+    // sans cela elle n'avait pas de localité et l'écran accusait à tort l'entité d'en manquer
+    // (« contactez l'administrateur ») alors qu'elle était simplement inconnue du front. Fiche
+    // introuvable (référentiel pas encore chargé) → localiteConnue=false, on n'affirme rien.
+    const fiche = idEntiteImportee != null ? this.entitesReferentiel.get(idEntiteImportee) : undefined;
     this.entiteImportee.set(
       entiteHorsPerimetre
-        ? { idEntiteContract: idEntiteImportee!, libelle: `${r.autoriteContractante ?? '#' + idEntiteImportee} — hors périmètre` }
+        ? {
+            idEntiteContract: idEntiteImportee!,
+            libelle: `${fiche?.libelleEntite ?? r.autoriteContractante ?? '#' + idEntiteImportee} — hors périmètre`,
+            idLocalite: fiche?.idLocalite,
+            adresse: fiche?.adresse,
+            localiteConnue: !!fiche,
+          }
         : null,
     );
     this.autoriteImportee.set(r.autoriteContractante ?? null);
