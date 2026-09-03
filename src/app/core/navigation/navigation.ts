@@ -64,7 +64,7 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // délégation »), plus dans les cartes de « Mes dossiers » ; les files « À examiner / Examinés »
     // du Membre, elles, sont DANS ces cartes (rubrique déléguée). Une SEULE entrée combinée
     // (demande du même jour) : le dépôt entre en Réceptions et ressort en Enregistrés.
-    { label: 'Réceptions & Enregistrés', path: `${base}/secretariat`, icon: '📥', delegation: 'SECRETAIRE' },
+    { label: 'Réception & Enregistrement', path: `${base}/secretariat`, icon: '📥', delegation: 'SECRETAIRE' },
     { label: 'Vérifications', path: `${base}/verifications`, icon: '🔎', delegation: 'VERIFICATEUR' },
     { label: 'Archivage des PV', path: `${base}/pv-examens`, icon: '🗄', delegation: 'ASSISTANT_CONTROLEUR' },
     // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant, administrées par

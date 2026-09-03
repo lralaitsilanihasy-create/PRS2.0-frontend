@@ -28,7 +28,7 @@ const CLASSEMENT_PRESIDENT = { subtitle: 'Domaine Président', base: '/president
 /** ⚠️ Demande pilote (2026-09-03) — les tâches du Secrétaire quittent les cartes de « Mes dossiers »
  *  pour UNE entrée de menu « Exercé par délégation » (les deux groupes COMBINÉS — le dépôt entre en
  *  Réceptions et ressort en Enregistrés, un seul écran suffit). */
-const CLASSEMENT_SECRETARIAT_PRESIDENT = { subtitle: 'Domaine Président', titre: 'Réceptions & Enregistrés', base: '/president/secretariat', groupes: [GROUPE_RECEPTIONS, GROUPE_ENREGISTREMENT] };
+const CLASSEMENT_SECRETARIAT_PRESIDENT = { subtitle: 'Domaine Président', titre: 'Réception & Enregistrement', base: '/president/secretariat', groupes: [GROUPE_RECEPTIONS, GROUPE_ENREGISTREMENT] };
 
 /** Espace Président (lazy, sous roleGuard PRESIDENT). */
 export const PRESIDENT_ROUTES: Routes = [
