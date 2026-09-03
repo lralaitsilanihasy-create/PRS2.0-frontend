@@ -548,13 +548,18 @@ export class DossiersCircuitListe {
     return this.auth.role() !== 'CHEF_COMMISSION' || disp.imCtrlDispatch === this.auth.ref();
   }
   /**
-   * ⚠️ Demande pilote (2026-09-03) — « Retirer » (RENDRE) dans MA file « À examiner » : le CC (ou le
-   * Président auto-attribué) renvoie au pré-dispatch un dossier DISPATCHE dont il est l'attributaire
-   * — annulation du dispatch, le dossier retourne dans le circuit de dispatch.
+   * ⚠️ Demande pilote (2026-09-03, arbitrage FINAL) — « Retirer » (RENDRE) dans MA file « À
+   * examiner » : renvoyer au pré-dispatch un dossier DISPATCHE dont je suis l'attributaire, mais
+   * SEULEMENT si j'en suis AUSSI le dispatcheur (« pas d'auto-retrait » : un dossier que le
+   * Président a dispatché au CC ne se rend pas — c'est le Président, dispatcheur, qui le retire
+   * depuis SON groupe Dispatch). Reste couvert : le Président auto-attribué (« moi-même ⤴ »)
+   * remet le dossier au pool, et le CC qui a repris un dossier qu'il avait lui-même dispatché.
    */
   peutRendre(d: Dossier): boolean {
     if (!this.aActionRendre() || !this.canDispatch() || d.statut !== 'DISPATCHE') return false;
-    return this.dispatchByDossier().get(d.idDossier)?.imCtrlMembre === this.auth.ref();
+    const disp = this.dispatchByDossier().get(d.idDossier);
+    const ref = this.auth.ref();
+    return !!disp && !!ref && disp.imCtrlMembre === ref && disp.imCtrlDispatch === ref;
   }
   /** Le retrait est-il une REPRISE ? (CC retirant un dossier qu'il a confié à un Membre — il lui revient.) */
   estReprise(d: Dossier): boolean {
