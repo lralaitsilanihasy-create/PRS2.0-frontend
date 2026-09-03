@@ -1,6 +1,6 @@
 import { forkJoin, map, Observable } from 'rxjs';
 
-import { Dossier, Role } from '../../models';
+import { Dossier, estLocaliteCentrale, Role } from '../../models';
 import { DossierService } from '../../services';
 
 /** Colonnes optionnelles de la liste (drill-down), selon le groupe. */
@@ -56,6 +56,17 @@ export interface ClassementConfig {
    * remplace l'entrée de menu : une demande de retrait porte toujours sur un dossier, donc sur un type.
    */
   retraitsPath?: string;
+}
+
+/**
+ * ⚠️ Demande pilote (2026-09-03) — un dossier de la localité CENTRALE (CNM) ne passe pas par le CC
+ * au pré-dispatch : seul le Président a ce privilège. Le dossier est donc EXCLU des groupes à action
+ * « Dispatcher » pour le rôle CHEF_COMMISSION — compteurs du classement ET lignes du drill-down.
+ * Les commissions régionales (CRM) et les autres groupes (Enregistrés, Réceptions…) sont inchangés ;
+ * la garde serveur miroir (403 au POST /api/dispatchs) fait l'objet de la demande backend du même jour.
+ */
+export function dossierExcluDuGroupe(g: ClassementGroupe, d: Dossier, role: Role | null): boolean {
+  return !!g.actionDispatch && role === 'CHEF_COMMISSION' && estLocaliteCentrale(d.idLocalite);
 }
 
 /**

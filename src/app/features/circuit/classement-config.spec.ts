@@ -1,6 +1,8 @@
+import { Dossier } from '../../models';
 import {
   CIRCUIT_GROUPES,
   ClassementGroupe,
+  dossierExcluDuGroupe,
   GROUPE_ENREGISTREMENT,
   GROUPE_RECEPTIONS,
   separerGroupesParDelegation,
@@ -114,5 +116,39 @@ describe('statutsPartages', () => {
 
   it('une liste vide ne partage rien', () => {
     expect(statutsPartages([])).toEqual([]);
+  });
+});
+
+
+/**
+ * ⚠️ Demande pilote (2026-09-03) : « Pour le dossier de localité centrale (CNM), le CC ne doit pas
+ * voir les dossiers pour pré-dispatch. Seul le Président en a ce privilège. » L'exclusion ne touche
+ * QUE les groupes à action « Dispatcher » et QUE le rôle CHEF_COMMISSION sur un dossier CENTRAL —
+ * commissions régionales et autres groupes inchangés.
+ */
+describe('dossierExcluDuGroupe (pré-dispatch central, demande pilote 2026-09-03)', () => {
+  const preDispatch = CIRCUIT_GROUPES.find((g) => g.key === 'pre-dispatch')!;
+  const enregistrement = GROUPE_ENREGISTREMENT;
+  const dossier = (idLocalite: string): Dossier => ({ idDossier: 1, idLocalite, statut: 'PRET_DISPATCH' }) as Dossier;
+
+  it('EXCLU : CC × dossier central × groupe « Pré-dispatch »', () => {
+    expect(dossierExcluDuGroupe(preDispatch, dossier('ANT'), 'CHEF_COMMISSION')).toBe(true);
+  });
+
+  it('le Président garde son privilège sur le dossier central', () => {
+    expect(dossierExcluDuGroupe(preDispatch, dossier('ANT'), 'PRESIDENT')).toBe(false);
+  });
+
+  it('une commission RÉGIONALE est inchangée : son CC dispatche toujours', () => {
+    expect(dossierExcluDuGroupe(preDispatch, dossier('TOA'), 'CHEF_COMMISSION')).toBe(false);
+  });
+
+  it('les groupes SANS action « Dispatcher » ne sont pas touchés (registre « Enregistrés »)', () => {
+    expect(dossierExcluDuGroupe(enregistrement, dossier('ANT'), 'CHEF_COMMISSION')).toBe(false);
+  });
+
+  it('un dossier sans localité, ou un rôle absent, n’est jamais exclu', () => {
+    expect(dossierExcluDuGroupe(preDispatch, { idDossier: 1, statut: 'PRET_DISPATCH' } as Dossier, 'CHEF_COMMISSION')).toBe(false);
+    expect(dossierExcluDuGroupe(preDispatch, dossier('ANT'), null)).toBe(false);
   });
 });

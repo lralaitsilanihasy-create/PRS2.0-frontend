@@ -61,6 +61,23 @@ export interface Localite {
    * documents officiels (« A <chef-lieu>, le … ») ; à défaut, `libelleLocalite` est utilisé.
    */
   chefLieu?: string;
+  /** ⚠️ Demandé au backend (2026-09-03) — vrai pour la localité CENTRALE (CNM) ; pas encore servi. */
+  estCentrale?: boolean;
+}
+
+/**
+ * ⚠️ Demande pilote (2026-09-03) — localité CENTRALE (CNM) : repli MIROIR de la constante backend
+ * `Localite.ID_CENTRALE` ('ANT'), sa source unique côté serveur (segment « CNM » des références,
+ * modèles de PV centraux, lettres de renvoi). Le champ `estCentrale`, une fois servi par
+ * /api/localites (demande backend 2026-09-03), prime sur cette constante.
+ */
+export const ID_LOCALITE_CENTRALE_REPLI = 'ANT';
+
+/** La localité est-elle la CENTRALE (CNM) ? — champ servi s'il est fourni, sinon repli miroir. */
+export function estLocaliteCentrale(idLocalite: string | null | undefined, referentiel?: readonly Localite[]): boolean {
+  if (!idLocalite) return false;
+  const servie = referentiel?.find((l) => l.idLocalite === idLocalite)?.estCentrale;
+  return servie ?? idLocalite === ID_LOCALITE_CENTRALE_REPLI;
 }
 
 /** Ministère. */

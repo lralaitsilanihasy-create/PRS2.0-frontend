@@ -3,12 +3,13 @@ import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { skip } from 'rxjs';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { Dossier, TypeDossier } from '../../models';
 import { DemandeRetraitService, DossierService, TypeDossierService } from '../../services';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
-import { ClassementConfig, ClassementGroupe, dossiersDuClassement, separerGroupesParDelegation, statutsPartages } from './classement-config';
+import { ClassementConfig, ClassementGroupe, dossierExcluDuGroupe, dossiersDuClassement, separerGroupesParDelegation, statutsPartages } from './classement-config';
 import { DispatchsControleurs } from './dispatchs-controleurs';
 import { DossiersCircuitListe } from './dossiers-circuit-liste';
 import { RetraitsValidation } from './retraits-validation';
@@ -256,6 +257,7 @@ export class DossiersClassement {
   private readonly demandeRetraitService = inject(DemandeRetraitService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly permissions = inject(PermissionsService);
+  private readonly auth = inject(AuthService);
 
   /** Config du classement (statique, fournie par la route). */
   readonly cfg = this.route.snapshot.data['classement'] as ClassementConfig;
@@ -447,9 +449,11 @@ export class DossiersClassement {
   private grouper(rows: Dossier[]): void {
     const m = new Map<string, Record<string, number>>();
     const dist = new Map<string, number>();
+    const role = this.auth.role();
     for (const d of rows) {
       if (!d.idTypeDossier || !d.statut) continue;
-      const groupes = this.cfg.groupes.filter((g) => g.statuts.includes(d.statut!));
+      // Pré-dispatch d'un dossier CENTRAL : privilège du seul Président (demande pilote 2026-09-03).
+      const groupes = this.cfg.groupes.filter((g) => g.statuts.includes(d.statut!) && !dossierExcluDuGroupe(g, d, role));
       if (!groupes.length) continue;
       const rec = m.get(d.idTypeDossier) ?? {};
       for (const g of groupes) rec[g.key] = (rec[g.key] ?? 0) + 1;

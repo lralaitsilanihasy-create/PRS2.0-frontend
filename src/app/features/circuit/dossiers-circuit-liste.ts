@@ -19,6 +19,7 @@ import {
   ReferenceLookupService,
   TypeDossierService,
 } from '../../services';
+import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { StatutBadge, examenRectifiable } from '../../shared/circuit';
@@ -26,7 +27,7 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { DispatchForm, DispatchItem } from './dispatch-form';
 import { DossierConsultation } from './dossier-consultation';
 import { ReceptionForm } from './reception-form';
-import { ClassementConfig, ColonneCircuit, dossiersDuClassement } from './classement-config';
+import { ClassementConfig, ColonneCircuit, dossierExcluDuGroupe, dossiersDuClassement } from './classement-config';
 
 /**
  * Liste des dossiers d'un **type** et d'un **groupe** de classement (statuts issus de `data.classement`),
@@ -241,6 +242,7 @@ export class DossiersCircuitListe {
   private readonly pvExamenService = inject(PvExamenService);
   private readonly lookups = inject(ReferenceLookupService);
   protected readonly permissions = inject(PermissionsService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
@@ -378,7 +380,15 @@ export class DossiersCircuitListe {
       pvs: this.aActionModifierExamen() ? this.pvExamenService.list() : of([]),
     }).subscribe({
       next: ({ dossiers, receptions, dispatchs, examens, pvs }) => {
-        this.dossiers.set(dossiers.filter((d) => d.idTypeDossier === this.type() && !!d.statut && statuts.has(d.statut)));
+        // Pré-dispatch d'un dossier CENTRAL : privilège du seul Président (demande pilote 2026-09-03)
+        // — même exclusion que les compteurs du classement (`dossierExcluDuGroupe`).
+        const g = this.groupeConfig();
+        const role = this.auth.role();
+        this.dossiers.set(
+          dossiers.filter(
+            (d) => d.idTypeDossier === this.type() && !!d.statut && statuts.has(d.statut) && (!g || !dossierExcluDuGroupe(g, d, role)),
+          ),
+        );
         // idDossier → dernière réception (par date) ; idReception → réception (pour relier les dispatchs).
         const recById = new Map<number, Reception>();
         const recByDossier = new Map<number, Reception>();
