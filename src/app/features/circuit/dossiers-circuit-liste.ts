@@ -141,7 +141,15 @@ import { ClassementConfig, ColonneCircuit, dossierExcluDuGroupe, dossiersDuClass
                     <div class="td-actions actions-end">
                       <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
                       @if (peutDispatcher(d); as rec) {
-                        <button type="button" class="btn btn-primary btn-sm" (click)="dispatchItems.set([{ dossier: d, reception: rec }])">Dispatcher</button>
+                        <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirDispatch(d, rec)">Dispatcher</button>
+                      }
+                      @if (peutReattribuer(d)) {
+                        <button
+                          type="button"
+                          class="btn btn-primary btn-sm"
+                          title="Ce dossier vous a été dispatché : réattribuez-le à un Membre de votre commission — ou examinez-le vous-même."
+                          (click)="ouvrirReattribution(d)"
+                        >Dispatcher</button>
                       }
                       @if (peutReceptionner(d)) {
                         <button
@@ -184,7 +192,7 @@ import { ClassementConfig, ColonneCircuit, dossierExcluDuGroupe, dossiersDuClass
       <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
     }
     @if (dispatchItems(); as its) {
-      <app-dispatch-form [items]="its" (closed)="dispatchItems.set(null)" (saved)="onDispatched()" />
+      <app-dispatch-form [items]="its" [reattribution]="reattribution()" (closed)="fermerDispatch()" (saved)="onDispatched()" />
     }
     @if (receptionItem(); as d) {
       <app-reception-form [dossier]="d" (closed)="receptionItem.set(null)" (saved)="onReception($event)" />
@@ -258,6 +266,8 @@ export class DossiersCircuitListe {
   readonly consulte = signal<Dossier | null>(null);
   /** Dossiers + réceptions dont le formulaire de dispatch est ouvert (1 = unitaire, plusieurs = lot ; null = fermé). */
   readonly dispatchItems = signal<DispatchItem[] | null>(null);
+  /** Dispatch existant à RÉATTRIBUER (mode PUT du formulaire) ; null = dispatch classique (POST). */
+  readonly reattribution = signal<Dispatch | null>(null);
   /** idDossier cochés pour le dispatch en lot (contrainte : une seule localité). */
   readonly coches = signal<Set<number>>(new Set());
   /** Dossier dont le formulaire de réception est ouvert (null = fermé). */
@@ -302,6 +312,8 @@ export class DossiersCircuitListe {
   private readonly canDispatch = computed(() => this.permissions.can('DISPATCH_WRITE'));
   /** Ce groupe propose-t-il l'action « Dispatcher » ? (config `actionDispatch`). */
   private readonly aActionDispatch = computed(() => !!this.groupeConfig()?.actionDispatch);
+  /** Ce groupe propose-t-il la réattribution ? (config `actionReattribuer`). */
+  private readonly aActionReattribuer = computed(() => !!this.groupeConfig()?.actionReattribuer);
   /** Colonne de sélection (dispatch en lot) affichée ? — mêmes conditions que l'action « Dispatcher ». */
   readonly avecSelection = computed(() => this.aActionDispatch() && this.canDispatch());
   /** Localité de la sélection courante (celle du premier dossier coché ; null = sélection vide). */
@@ -466,6 +478,30 @@ export class DossiersCircuitListe {
     if (!this.aActionDispatch() || !this.canDispatch()) return null;
     return this.recDispatchable().get(d.idDossier) ?? null;
   }
+  /**
+   * ⚠️ Demande pilote (2026-09-03) — « Dispatcher » (réattribuer) : dossier DISPATCHE dont JE suis
+   * l'attributaire (ex. Président → CC en localité centrale : le CC examine OU confie à un Membre),
+   * tant que l'examen n'est pas commencé (au-delà, passer par « Retirer »). PUT sur le dispatch.
+   */
+  peutReattribuer(d: Dossier): Dispatch | null {
+    if (!this.aActionReattribuer() || !this.canDispatch() || d.statut !== 'DISPATCHE') return null;
+    if (this.dossiersAvecExamen().has(d.idDossier)) return null;
+    const disp = this.dispatchByDossier().get(d.idDossier);
+    return disp && disp.imCtrlMembre === this.auth.ref() ? disp : null;
+  }
+  /** Ouvre le formulaire en mode réattribution (dispatch existant + dossier). */
+  ouvrirReattribution(d: Dossier): void {
+    const disp = this.peutReattribuer(d);
+    const rec = this.recByDossier().get(d.idDossier);
+    if (!disp || !rec) return;
+    this.reattribution.set(disp);
+    this.dispatchItems.set([{ dossier: d, reception: rec }]);
+  }
+  /** Ouvre le formulaire en mode dispatch classique (POST) — le mode réattribution est réarmé à null. */
+  ouvrirDispatch(d: Dossier, rec: Reception): void {
+    this.reattribution.set(null);
+    this.dispatchItems.set([{ dossier: d, reception: rec }]);
+  }
   /** « Retirer » : offert par le groupe, autorisé (DISPATCH_WRITE), dossier DISPATCHE avec un dispatch connu. */
   peutAnnulerDispatch(d: Dossier): boolean {
     return (
@@ -532,7 +568,10 @@ export class DossiersCircuitListe {
       const rec = set.has(d.idDossier) ? this.recDispatchable().get(d.idDossier) : undefined;
       if (rec) items.push({ dossier: d, reception: rec });
     }
-    if (items.length) this.dispatchItems.set(items);
+    if (items.length) {
+      this.reattribution.set(null);
+      this.dispatchItems.set(items);
+    }
   }
   /** « Modifier l'examen » : offert par le groupe, tant que l'examen est ouvert (règle partagée). */
   examenModifiable(d: Dossier): boolean {
@@ -548,8 +587,14 @@ export class DossiersCircuitListe {
   }
   /** Après dispatch réussi (unitaire ou lot) : les dossiers passent DISPATCHE et quittent la liste → recharge
    * + notification (classement parent, stat « Dispatchs par contrôleur », badges de nav). */
+  /** Fermeture du formulaire de dispatch (Échap, Annuler) — le mode réattribution retombe avec lui. */
+  fermerDispatch(): void {
+    this.dispatchItems.set(null);
+    this.reattribution.set(null);
+  }
   onDispatched(): void {
     this.dispatchItems.set(null);
+    this.reattribution.set(null);
     this.charger();
     this.dossiersRefresh.notifierChangement();
   }

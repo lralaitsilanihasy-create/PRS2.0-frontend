@@ -71,6 +71,13 @@ export interface DispatchItem {
             </div>
             <p class="df__lot-hint">Le même dispatch (CC, Membre, date, instructions) sera appliqué à chaque dossier.</p>
           }
+          @if (reattribution()) {
+            <p class="df__lot-hint">
+              Ce dossier vous a été dispatché : réattribuez-le à un Membre de votre commission — ou fermez
+              cette fenêtre et examinez-le vous-même. Le dossier reste dispatché ; le Membre choisi devient
+              l'attributaire.
+            </p>
+          }
           @if (!sansAssociationCc()) {
             <label class="form-group">
               <span class="form-label">Chef de commission</span>
@@ -131,7 +138,7 @@ export interface DispatchItem {
             @if (submitting()) {
               Dispatch en cours…
             } @else {
-              {{ items().length > 1 ? '📤 Dispatcher les ' + items().length + ' dossiers' : '📤 Dispatcher' }}
+              {{ items().length > 1 ? '📤 Dispatcher les ' + items().length + ' dossiers' : reattribution() ? '📤 Réattribuer' : '📤 Dispatcher' }}
             }
           </button>
         </footer>
@@ -165,6 +172,13 @@ export interface DispatchItem {
 export class DispatchForm {
   /** Dossiers à dispatcher (1 = unitaire, plusieurs = lot mono-localité). */
   readonly items = input.required<DispatchItem[]>();
+  /**
+   * ⚠️ Demande pilote (2026-09-03) — mode RÉATTRIBUTION : le dispatch existant à re-cibler
+   * (unitaire). Cas d'usage : le Président a dispatché AU CC (localité centrale) — le CC choisit
+   * d'examiner lui-même ou de réattribuer à un Membre de sa commission. La soumission fait un
+   * PUT sur ce dispatch (le dossier reste DISPATCHE) au lieu d'un POST.
+   */
+  readonly reattribution = input<Dispatch | null>(null);
   readonly saved = output<void>();
   readonly closed = output<void>();
   /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
@@ -197,7 +211,8 @@ export class DispatchForm {
     const its = this.items();
     if (its.length > 1) return `Dispatcher ${its.length} dossiers`;
     const d = its[0]?.dossier;
-    return d ? `Dispatcher — ${d.refeDossier || 'Dossier #' + d.idDossier}` : 'Dispatcher';
+    const verbe = this.reattribution() ? 'Réattribuer' : 'Dispatcher';
+    return d ? `${verbe} — ${d.refeDossier || 'Dossier #' + d.idDossier}` : verbe;
   });
   /** Contexte affiché sous le titre : « Entité · Localité » (dossier unitaire) ou la localité du lot. */
   readonly sousTitre = computed(() => {
@@ -256,7 +271,10 @@ export class DispatchForm {
         }
       }
     }
-    return options;
+    // Réattribution : l'attributaire ACTUEL (soi, le plus souvent) est retiré — le geste consiste
+    // précisément à confier le dossier à quelqu'un d'autre.
+    const actuel = this.reattribution()?.imCtrlMembre;
+    return actuel ? options.filter((o) => o.id !== actuel) : options;
   });
 
   /** Suffixe de charge d'un membre pour l'option (« — 2 en cours » ; rien si 0). */
@@ -322,6 +340,12 @@ export class DispatchForm {
     });
     this.attributaireChoisi.set(this.form.controls.imCtrlMembre.value);
     this.form.controls.imCtrlMembre.valueChanges.subscribe((v) => this.attributaireChoisi.set(v));
+    // Réattribution : les instructions du dispatch d'origine sont reprises (modifiables) — la date,
+    // elle, reste celle du jour (c'est un nouveau geste de dispatch).
+    effect(() => {
+      const re = this.reattribution();
+      if (re && this.form.controls.instructions.pristine) this.form.controls.instructions.setValue(re.instructions ?? '');
+    });
     // Pré-sélection du CC de la localité (résolu côté serveur s'il est omis) pour que le dispatcheur
     // voie qui sera informé — modifiable. Sans objet quand l'association n'a pas lieu (champ masqué).
     effect(() => {
@@ -345,6 +369,30 @@ export class DispatchForm {
     }
     this.submitting.set(true);
     const v = this.form.getRawValue();
+    // ── Mode RÉATTRIBUTION (demande pilote 2026-09-03) : PUT sur le dispatch existant — le dossier
+    // reste DISPATCHE, seul l'attributaire change (imCtrlCc omis : normalisé côté serveur, jamais
+    // l'attributaire ; dispatcheur = identité du JWT).
+    const re = this.reattribution();
+    if (re) {
+      const body: Dispatch = {
+        ...re,
+        imCtrlDispatch: this.auth.ref() ?? re.imCtrlDispatch,
+        imCtrlCc: undefined,
+        imCtrlMembre: v.imCtrlMembre ?? undefined,
+        dateDispatch: v.dateDispatch || re.dateDispatch,
+        instructions: v.instructions || undefined,
+      };
+      this.dispatchService.update(re.idDispatch, body).subscribe({
+        next: () => {
+          this.submitting.set(false);
+          this.toast.success('Dossier réattribué.');
+          this.saved.emit();
+        },
+        // Erreur déjà toastée par l'intercepteur centralisé : modal laissé ouvert pour corriger.
+        error: () => this.submitting.set(false),
+      });
+      return;
+    }
     const commun = {
       imCtrlDispatch: this.auth.ref() ?? undefined,
       // Pas d'association hors « Président → Membre » : imCtrlCc omis (règle 2026-08-15).

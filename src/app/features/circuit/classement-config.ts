@@ -24,6 +24,13 @@ export interface ClassementGroupe {
   actionReception?: boolean;
   /** Propose « Retirer » (annuler le dispatch → retour pré-dispatch ; gardée par DISPATCH_WRITE). */
   actionAnnulerDispatch?: boolean;
+  /**
+   * ⚠️ Demande pilote (2026-09-03) — propose « Dispatcher » (réattribuer) sur un dossier DISPATCHE
+   * dont l'utilisateur est l'ATTRIBUTAIRE et dont l'examen n'est pas commencé : le P/CC qui a reçu
+   * le dossier (ex. Président → CC en localité centrale) choisit de l'examiner lui-même ou de le
+   * confier à un Membre (PUT sur le dispatch existant — le dossier reste DISPATCHE).
+   */
+  actionReattribuer?: boolean;
   /** Propose l'action « Examiner » dans la liste (→ `/membre/examiner/:idDossier`, espace Membre). */
   actionExamen?: boolean;
   /** Propose « Modifier l'examen » (même cible) tant que le dossier est EXAMINE et son PV non soumis. */
@@ -116,6 +123,7 @@ export const CIRCUIT_GROUPES: ClassementGroupe[] = [
     kind: 'b',
     colonnes: ['reception', 'dateDispatch', 'attributaire'],
     actionAnnulerDispatch: true,
+    actionReattribuer: true,
     actionExamen: true,
   },
 ];

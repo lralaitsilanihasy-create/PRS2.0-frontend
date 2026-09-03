@@ -22,7 +22,7 @@ CC resterait accepté.
 
 ## Demandes
 
-### 1. Garde : écriture d'un dispatch d'un dossier central réservée au Président
+### 1. Garde : écriture d'un dispatch d'un dossier central réservée au Président — SAUF réattribution par l'attributaire
 
 Toute écriture sur `t_dispatch` (POST `/api/dispatchs`, PUT, **intérim compris**) portant sur un
 dossier dont la localité est la centrale (`Localite.estCentrale(...)` via la réception → dossier)
@@ -31,14 +31,32 @@ est refusée en **403** quand le profil courant est `CHEF_COMMISSION` :
 > « Le dispatch d'un dossier de la Commission nationale (localité centrale) relève du seul
 > Président. »
 
+**⚠️ Dérogation (précision pilote du même jour)** : « Pour la localité centrale (CNM), le CC peut
+dispatcher ou examiner le dossier que le président lui a dispatché. » Le CC **attributaire courant**
+d'un dispatch (le Président le lui a confié — « Chef de commission ⤴ ») peut le **RÉATTRIBUER** :
+`PUT /api/dispatchs/{id}` reste **autorisé** au CC quand `existing.imCtrlMembre` = son IM, même sur
+un dossier central (le front vient de livrer ce geste — bouton « Dispatcher » du groupe Dispatch,
+PUT avec le nouveau `imCtrlMembre`). La garde 403 ne vise donc que : le POST initial, un PUT sur un
+dispatch dont il n'est PAS l'attributaire, et l'intérim.
+
 - Garde par **profil courant** (comme `normaliserAssociationCc`) : le dispatch est un droit natif
   du CC — les paires de `t_delegation_profil` ne jouent pas ici.
 - **Annulation** (`/api/dispatchs/{id}/annuler`, « Retirer ») d'un dispatch de dossier central par
-  un CC : **même garde recommandée** (gérer le dispatch central = même privilège ; l'annulation
-  ramène le dossier en pré-dispatch). Appliquer par défaut ; le pilote peut arbitrer autrement.
+  un CC : autorisée quand il en est l'**attributaire** (symétrie avec la réattribution — rendre le
+  dossier au Président), 403 sinon. Le pilote peut arbitrer autrement.
 - Ne change PAS : la **copie CC** d'un dispatch Président → Membre de la centrale (le CC suit le
   circuit), l'attribution **au** CC par le Président (« Chef de commission ⤴ », fa457d9 — c'est le
   Président qui dispatche), et tout ce qui concerne les localités régionales.
+
+### 1 bis. Réattribution : notification et garde d'examen
+
+Le `update()` actuel ne notifie personne et accepte un re-ciblage même examen entamé. Pour le geste
+de réattribution (changement d'`imCtrlMembre`) :
+
+- **Notifier le nouvel attributaire** (`EXAMEN_A_FAIRE`, comme `notifierMembreAssigne` au POST) —
+  aujourd'hui le Membre reçoit le dossier dans sa file sans notification.
+- **409 si un examen existe déjà** sur ce dispatch (le circuit propre passe par « Retirer », qui
+  purge l'aval) — le front n'offre le bouton que sans examen commencé, garde miroir demandée.
 
 ### 2. Notification « Dossier prêt à dispatcher » re-routée
 
@@ -59,7 +77,11 @@ le front suivra sans redéploiement coordonné.
 1. CC (`CCANT01`) POST `/api/dispatchs` sur un dossier de localité `ANT` → **403** message ci-dessus.
 2. Président (`PRES001`) même POST → accepté (comportement actuel).
 3. CC d'une localité régionale, dossier de SA localité → accepté (anti-régression décision A).
-4. CC annule un dispatch d'un dossier central → 403 (si arbitrage confirmé) ; régional → accepté.
-5. Transition `PRET_DISPATCH` d'un dossier central → notification au Président, **aucune** au CC ;
+4. **Réattribution** : Président dispatche AU CC (`imCtrlMembre=CCANT01`) puis `CCANT01` PUT le même
+   dispatch avec `imCtrlMembre=MEMANT1` → accepté, dossier toujours `DISPATCHE`, notification
+   `EXAMEN_A_FAIRE` à `MEMANT1` ; le même PUT par un CC **non attributaire** → 403.
+5. Réattribution avec un examen déjà entamé sur le dispatch → **409**.
+6. CC attributaire annule son dispatch central → accepté ; CC non attributaire → 403.
+7. Transition `PRET_DISPATCH` d'un dossier central → notification au Président, **aucune** au CC ;
    dossier régional → les deux, comme avant.
-6. GET `/api/localites` → `estCentrale: true` pour `ANT`, `false` ailleurs.
+8. GET `/api/localites` → `estCentrale: true` pour `ANT`, `false` ailleurs.
