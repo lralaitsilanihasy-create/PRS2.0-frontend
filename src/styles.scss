@@ -465,6 +465,57 @@ a:hover {
   gap: var(--cnm-space-3);
 }
 
+/* =============================================================================
+   Onglets d'éléments de dossier (2026-09-03) — langage UNIQUE, en orange :
+   fiche de présentation / plan de passation / projet d'AGPM / pièces jointes.
+   Classes GLOBALES : consultation du dossier (et tout écran futur) — le détail
+   PPM (.dpm-tab), l'examen (.exam__tab) et l'aperçu (.sd__ap-tab) portent les
+   mêmes valeurs localement, à faire converger ici à l'occasion.
+   ============================================================================= */
+
+.onglets-dossier {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.onglets-dossier__tab {
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  padding: 0.55rem 1.1rem;
+  font: inherit;
+  font-size: var(--cnm-fs-sm);
+  font-weight: 700;
+  cursor: pointer;
+  background: #fff7ed;
+  color: #c2410c;
+  transition: background 140ms ease, color 140ms ease;
+}
+.onglets-dossier__tab:hover { background: #ffedd5; }
+.onglets-dossier__tab:focus-visible { outline: 2px solid #c2410c; outline-offset: 2px; }
+.onglets-dossier__tab--on {
+  background: #c2410c;
+  color: #fff;
+  box-shadow: 0 2px 6px rgb(194 65 12 / 32%);
+}
+.onglets-dossier__tab--on:hover { background: #9a3412; }
+
+.onglets-dossier__n {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: #fff;
+  color: #c2410c;
+  font-size: var(--cnm-fs-xs);
+}
+.onglets-dossier__tab--on .onglets-dossier__n {
+  background: rgb(255 255 255 / 25%);
+  color: #fff;
+}
+
 /* Grille multi-colonnes auto-responsive (se replie seule selon la largeur). */
 .cnm-form-grid {
   display: grid;

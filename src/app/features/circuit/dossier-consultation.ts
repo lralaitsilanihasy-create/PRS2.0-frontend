@@ -5,7 +5,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
-import { ActionDossier, Chronometrage, DiffDossier, Dossier, Marche, MarchePrevision, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
+import { ActionDossier, Capm, Chronometrage, DiffDossier, Dossier, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -28,6 +28,10 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ChronometrageDossier, StatutBadge } from '../../shared/circuit';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
+import { FichePresentationDoc } from '../../shared/prmp/fiche-presentation-doc';
+import { AgpmDoc } from '../../shared/prmp/agpm-doc';
+import { calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
+import { calculerAgpm } from '../../shared/prmp/agpm';
 
 /**
  * Consultation d'un dossier en LECTURE SEULE (modale réutilisable).
@@ -40,7 +44,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 @Component({
   selector: 'app-dossier-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, StatutBadge, PpmMarchesTable, ModaleDirective, ChronometrageDossier],
+  imports: [DatePipe, StatutBadge, PpmMarchesTable, ModaleDirective, ChronometrageDossier, FichePresentationDoc, AgpmDoc],
   template: `
     <div [class.modal-backdrop]="!embedded()" [class.closing]="closing()">
       <!-- ⚠️ En modale, le corps n'est monté qu'une fois les données là : sinon le panneau
@@ -151,12 +155,64 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
             <div class="spinner-wrap dc-load"><div class="spinner"></div></div>
           } @else {
           @if (estPpm()) {
-            <div class="dc-section">
-              <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [legendeTitre]="legendeChangements()" [detailsChangements]="detailsChangements()" />
+            <!-- ⚠️ Demande pilote (2026-09-03) — chaque élément du dossier EN ONGLET : fiche de
+                 présentation / plan / projet d'AGPM (si lignes) / pièces jointes — même langage
+                 (classes GLOBALES onglets-dossier) que le détail PPM, l'examen et l'aperçu. -->
+            <div class="onglets-dossier" role="tablist" aria-label="Éléments du dossier">
+              <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'fiche'"
+                [attr.aria-selected]="ongletDossier() === 'fiche'" (click)="ongletDossier.set('fiche')">
+                Fiche de présentation <span class="onglets-dossier__n">{{ ficheDoc().nbMarchesConcernes }}</span>
+              </button>
+              <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'ppm'"
+                [attr.aria-selected]="ongletDossier() === 'ppm'" (click)="ongletDossier.set('ppm')">
+                Plan de passation <span class="onglets-dossier__n">{{ marches().length }}</span>
+              </button>
+              @if (agpmDoc().length) {
+                <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'agpm'"
+                  [attr.aria-selected]="ongletDossier() === 'agpm'" (click)="ongletDossier.set('agpm')">
+                  Projet d'AGPM <span class="onglets-dossier__n">{{ agpmDoc().length }}</span>
+                </button>
+              }
+              <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'pieces'"
+                [attr.aria-selected]="ongletDossier() === 'pieces'" (click)="ongletDossier.set('pieces')">
+                Pièces jointes <span class="onglets-dossier__n">{{ pieces().length }}</span>
+              </button>
             </div>
+
+            @if (ongletDossier() === 'ppm') {
+              <div class="dc-section">
+                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [legendeTitre]="legendeChangements()" [detailsChangements]="detailsChangements()" />
+              </div>
+            }
+            @if (ongletDossier() === 'fiche') {
+              <div class="dc-section">
+                <app-fiche-presentation-doc
+                  [fiche]="ficheDoc()"
+                  [exercice]="ppm()?.exercice"
+                  [libelleVersion]="libelleVersionFiche()"
+                  [justificationFiche]="ppm()?.justificationFiche"
+                  [motifMaj]="ppm()?.motifMaj"
+                />
+              </div>
+            }
+            @if (ongletDossier() === 'agpm') {
+              <div class="dc-section">
+                <app-agpm-doc
+                  [lignes]="agpmDoc()"
+                  [exercice]="ppm()?.exercice"
+                  [entite]="entiteLabel()"
+                  [signataire]="ppm()?.signataire"
+                  [dateInitiale]="ppm()?.datePpmInit || ppm()?.dateSignature"
+                  [numMajPrec]="ppm()?.numMajPrec"
+                  [dateMajPrec]="ppm()?.dateMajPrec"
+                  [numMaj]="ppm()?.numMaj"
+                />
+              </div>
+            }
           }
 
-          <!-- Pièces jointes (tous dossiers) -->
+          <!-- Pièces jointes (onglet pour un PPM ; section directe pour les autres familles) -->
+          @if (!estPpm() || ongletDossier() === 'pieces') {
           <div class="dc-section">
             <div class="dc-section-head">
               <div class="section-block-title">
@@ -267,6 +323,7 @@ import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
                 </tbody>
               </table>
             </div>
+          }
           }
         </div>
 
@@ -425,6 +482,8 @@ export class DossierConsultation implements OnInit {
    */
 
   private readonly ppmService = inject(PpmService);
+  private readonly modeService = inject(ModePassationService);
+  private readonly capmService = inject(CapmService);
   private readonly miseAJourService = inject(MiseAJourPpmService);
   private readonly marcheService = inject(MarcheService);
   private readonly serviceBenefService = inject(ServiceBeneficiaireService);
@@ -469,6 +528,30 @@ export class DossierConsultation implements OnInit {
   readonly journal = signal<ActionDossier[]>([]);
   /** Chronométrage du dossier (2026-09-01) — `null` si le backend ne le sert pas (section masquée). */
   readonly chronoDossier = signal<Chronometrage | null>(null);
+
+  // ── Onglets du dossier (2026-09-03) : fiche / plan / AGPM / pièces ──
+  /** Onglet actif — ouverture sur le plan, comme le détail PPM. */
+  readonly ongletDossier = signal<'ppm' | 'fiche' | 'agpm' | 'pieces'>('ppm');
+  /** Référentiels COMPLETS des calculs dérivés (les lookups ne portent que des libellés). */
+  private readonly modesRef = signal<ModePassation[]>([]);
+  private readonly capmsRef = signal<Capm[]>([]);
+  /** Documents dérivés — mêmes fonctions pures que le détail PPM, l'examen et l'aperçu. */
+  readonly ficheDoc = computed(() =>
+    calculerFichePresentation(this.marches(), this.previsions(), this.modesRef(), this.capmsRef()),
+  );
+  readonly agpmDoc = computed(() =>
+    calculerAgpm(
+      this.marches(),
+      this.previsions(),
+      this.modesRef(),
+      this.capmsRef(),
+      new Map([...this.natureMap()].map(([k, v]) => [Number(k), v])),
+    ),
+  );
+  readonly libelleVersionFiche = computed(() => {
+    const n = this.ppm()?.numMaj ?? 0;
+    return n > 0 ? `Mise à jour n° ${n}` : 'Initial';
+  });
   readonly marches = signal<Marche[]>([]);
   readonly pieces = signal<PieceJointeDossier[]>([]);
   /** Une seule vague de rendu : le corps s'affiche quand TOUT est chargé (données + référentiels). */
@@ -478,6 +561,7 @@ export class DossierConsultation implements OnInit {
   /** ⚠️ 2026-08-03 — versions CORRIGÉES déposées pendant la rectification (distinctes des originales). */
   readonly piecesCorrigees = computed(() => this.pieces().filter((p) => !p.apresLettreRenvoi && p.versionCorrigee));
   private readonly modeMap = signal<Map<string, string>>(new Map());
+  private readonly natureMap = signal<Map<string, string>>(new Map());
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   private readonly entiteMap = signal<Map<string, string>>(new Map());
@@ -609,11 +693,14 @@ export class DossierConsultation implements OnInit {
       capmMap: this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).pipe(catchError(() => of(new Map<string, string>()))),
       // Natures : utilisées par le tableau partagé — préchargées ici pour que son premier rendu soit complet.
       natureMap: this.lookups.lookup(NatureService, 'idNature', ['libelle']).pipe(catchError(() => of(new Map<string, string>()))),
+      // Référentiels COMPLETS des documents dérivés (onglets fiche / AGPM, 2026-09-03).
+      modesRef: this.modeService.list().pipe(catchError(() => of([] as ModePassation[]))),
+      capmsRef: this.capmService.list().pipe(catchError(() => of([] as Capm[]))),
       ppms: this.ppmService.list().pipe(catchError(() => of([] as Ppm[]))),
       marches: this.marcheService.list().pipe(catchError(() => of([] as Marche[]))),
       benefs: this.serviceBenefService.list().pipe(catchError(() => of([] as ServiceBeneficiaire[]))),
       previsions: this.previsionService.list().pipe(catchError(() => of([] as MarchePrevision[]))),
-    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, modeMap, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions }) => {
+    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, modeMap, natureMap, modesRef, capmsRef, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions }) => {
       this.typeMap.set(typeMap);
       this.localiteMap.set(localiteMap);
       this.entiteMap.set(entiteMap);
@@ -621,6 +708,9 @@ export class DossierConsultation implements OnInit {
       this.journal.set(journal);
       this.chronoDossier.set(chrono);
       this.modeMap.set(modeMap);
+      this.natureMap.set(natureMap);
+      this.modesRef.set(modesRef);
+      this.capmsRef.set(capmsRef);
       this.soaMap.set(soaMap);
       this.compteMap.set(compteMap);
       this.capmMap.set(capmMap);
