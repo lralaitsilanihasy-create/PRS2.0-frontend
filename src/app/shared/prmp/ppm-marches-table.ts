@@ -1,14 +1,11 @@
 import { ChangeDetectionStrategy, Component, OnInit, TemplateRef, computed, contentChild, inject, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { forkJoin } from 'rxjs';
-
-import { FORME_MARCHE_LIBELLES, Marche, MarchePrevision, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
+import { Marche, MarchePrevision, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
 import {
   CapmService,
   ModePassationService,
   NatureService,
   ReferenceLookupService,
-  TypeDmcService,
 } from '../../services';
 
 /** Bénéficiaire d'une ligne (placeholder vide `{}` si aucun, pour garder une ligne). */
@@ -30,13 +27,6 @@ interface MarcheRow {
   montEstim?: number | null;
   nouvMontEstim?: number | null;
   mode: string;
-  /** Type de DMC **dérivé** du mode (code court + libellé en tooltip) ; absent si mode non mappé. */
-  typeDmcCode?: string;
-  typeDmcLibelle?: string;
-  /** Catégorie du mode (`tr_mode_passation.CATEGORIE`) : NORMAL / DEROGATOIRE ; absente si non classé. */
-  categorieMode?: 'NORMAL' | 'DEROGATOIRE';
-  /** Libellé de la forme du marché — vide si `QUANTITE_FIXE` (défaut non affiché, seules les exceptions le sont). */
-  formeLibelle: string;
   financement: string;
   benefRows: BenefRow[];
   dateLancement: string;
@@ -126,24 +116,10 @@ interface MarcheRow {
                     <td [attr.rowspan]="m.benefRows.length" class="pmt-objet ppm-objet">{{ m.objet }}</td>
                     <td [attr.rowspan]="m.benefRows.length" class="ppm-mont">{{ montantFmt(m.montEstim) }}</td>
                     <td [attr.rowspan]="m.benefRows.length" class="ppm-mont">{{ montantFmt(m.nouvMontEstim) }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="ppm-c">
-                      {{ m.mode }}
-                      @if (m.typeDmcCode) {
-                        <span class="badge pmt-dmc" [title]="m.typeDmcLibelle || ''">{{ m.typeDmcCode }}</span>
-                      } @else if (m.mode) {
-                        <span class="badge badge-warning pmt-dmc" title="Aucun type de DMC mappé pour ce mode. Configurez le mapping en administration.">DMC ?</span>
-                      }
-                      @if (m.formeLibelle) {
-                        <span class="badge pmt-forme" title="Forme du marché">{{ m.formeLibelle }}</span>
-                      }
-                      @if (m.categorieMode) {
-                        <span
-                          class="badge pmt-cat"
-                          [class.pmt-cat--derogatoire]="m.categorieMode === 'DEROGATOIRE'"
-                          title="Catégorie du mode de passation"
-                        >{{ m.categorieMode === 'DEROGATOIRE' ? 'Dérogatoire' : 'Normal' }}</span>
-                      }
-                    </td>
+                    <!-- ⚠️ Demande pilote (2026-09-03) — le SEUL libellé du mode, sans badges
+                         (type DMC, forme, catégorie) : règle valable pour tout affichage du mode
+                         de passation, tout profil — ce tableau partagé est la source unique. -->
+                    <td [attr.rowspan]="m.benefRows.length" class="ppm-c">{{ m.mode }}</td>
                     <td [attr.rowspan]="m.benefRows.length" class="ppm-c">{{ m.financement }}</td>
                   }
                   <td class="ppm-c">{{ b.soaCode || '' }}</td>
@@ -177,13 +153,7 @@ interface MarcheRow {
        ⚠️ Ne pas y remettre « min-width », « border 1px solid #000 » ni un fond d'en-tête : c'est ce qui
        imposait le défilement horizontal et l'ancien rendu « document ». */
     .pmt td.pmt-objet { white-space: pre-wrap; }
-    /* Badge de type de DMC (dérivé) : compact pour cette table dense ; libellé complet en tooltip. */
-    .pmt .pmt-dmc { display: inline-block; margin-top: 2px; font-size: 0.62rem; padding: 0 3px; line-height: 1.4; }
-    /* Badge de forme du marché (affiché seulement hors défaut « à quantité fixe »). */
-    .pmt .pmt-forme { display: inline-block; margin-top: 2px; font-size: 0.62rem; padding: 0 3px; line-height: 1.4; background: var(--p-50, #eef2ff); color: var(--p-600, #4f46e5); border: 1px solid var(--p-200, #c7d2fe); }
-    /* Catégorie du mode (référentiel) : Normal discret, Dérogatoire en avertissement. Non classé = rien. */
-    .pmt .pmt-cat { display: inline-block; margin-top: 2px; font-size: 0.62rem; padding: 0 3px; line-height: 1.4; background: var(--n-100, #f4f4f5); color: var(--n-600, #52525b); border: 1px solid var(--n-200, #e4e4e7); }
-    .pmt .pmt-cat--derogatoire { background: var(--warning-bg, #fef3c7); color: var(--warning-text, #b45309); border-color: var(--warning-text, #b45309); }
+    /* (Badges type DMC / forme / catégorie retirés le 2026-09-03 : la colonne Mode n'affiche que le libellé.) */
     .pmt-empty { color: var(--n-400, #71717a); margin: 0; }
     /* Versionnement : lignes changées vs version précédente — fonds pastel distincts + liseré gauche.
        Déclarées AVANT les états d'examen pour que l'examen (workflow actif) garde la priorité visuelle. */
@@ -253,34 +223,16 @@ export class PpmMarchesTable implements OnInit {
   }
 
   private readonly lookups = inject(ReferenceLookupService);
-  private readonly modeService = inject(ModePassationService);
-  private readonly typeDmcService = inject(TypeDmcService);
   private readonly natureMap = signal<Map<string, string>>(new Map());
   private readonly modeMap = signal<Map<string, string>>(new Map());
   private readonly capmMap = signal<Map<string, string>>(new Map());
-  /** idMode → type de DMC dérivé (code + libellé), pour les modes mappés à un type. */
-  private readonly modeTypeMap = signal<Map<number, { code: string; libelle: string }>>(new Map());
-  /** idMode → catégorie du mode (NORMAL / DEROGATOIRE) — absent si non classé. */
-  private readonly modeCategorieMap = signal<Map<number, 'NORMAL' | 'DEROGATOIRE'>>(new Map());
 
+  // ⚠️ Demande pilote (2026-09-03) — la colonne Mode n'affiche plus QUE le libellé : la dérivation
+  // type DMC / catégorie / forme (badges) et son chargement (modes + types-dmc) ont été retirés.
   ngOnInit(): void {
     this.lookups.lookup(NatureService, 'idNature', ['libelle']).subscribe((m) => this.natureMap.set(m));
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).subscribe((m) => this.capmMap.set(m));
-    // Type de DMC dérivé du mode : idMode → idTypeDmc → code/libellé. Chargé une fois (pas d'appel par
-    // ligne), modes et types en parallèle (une seule vague de rendu).
-    forkJoin({ modes: this.modeService.list(), types: this.typeDmcService.list() }).subscribe(({ modes, types }) => {
-      const typeById = new Map(types.map((t) => [t.idTypeDmc, t]));
-      const map = new Map<number, { code: string; libelle: string }>();
-      const catMap = new Map<number, 'NORMAL' | 'DEROGATOIRE'>();
-      for (const md of modes) {
-        const t = md.idTypeDmc != null ? typeById.get(md.idTypeDmc) : undefined;
-        if (t) map.set(md.idMode, { code: t.code, libelle: t.libelle });
-        if (md.categorie) catMap.set(md.idMode, md.categorie);
-      }
-      this.modeTypeMap.set(map);
-      this.modeCategorieMap.set(catMap);
-    });
   }
 
   /** Lignes mises en forme (libellés résolus, bénéficiaires et dates regroupés par marché). */
@@ -309,7 +261,6 @@ export class PpmMarchesTable implements OnInit {
         return p ? this.dateFr(p.dateDebut) : '';
       };
       const benefs = benefByDetail.get(m.idDetail) ?? [];
-      const dmc = m.idMode != null ? this.modeTypeMap().get(m.idMode) : undefined;
       return {
         source: m,
         nature: this.lbl(this.natureMap(), m.idNature),
@@ -317,11 +268,6 @@ export class PpmMarchesTable implements OnInit {
         montEstim: m.montEstim,
         nouvMontEstim: m.nouvMontEstim,
         mode: this.lbl(this.modeMap(), m.idMode),
-        typeDmcCode: dmc?.code,
-        typeDmcLibelle: dmc?.libelle,
-        categorieMode: m.idMode != null ? this.modeCategorieMap().get(m.idMode) : undefined,
-        // Forme affichée seulement hors défaut (« À quantité fixe » sur chaque ligne serait du bruit).
-        formeLibelle: m.formeMarche && m.formeMarche !== 'QUANTITE_FIXE' ? FORME_MARCHE_LIBELLES[m.formeMarche] : '',
         financement: m.financement ?? '',
         benefRows: benefs.length
           ? benefs.map((b) => ({ soaCode: b.soaCode, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }))
