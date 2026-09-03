@@ -605,9 +605,10 @@ interface ApercuDossier {
       @if (apercu(); as a) {
         <div class="modal-backdrop" [class.closing]="closingApercu()">
           <div class="modal sd__apercu cnm-form" role="dialog" aria-modal="true" aria-label="Aperçu du dossier" appModale appModaleClicExterieur (appModaleFermer)="fermerApercuAnime()">
-            <div class="modal-header-plain">
+            <!-- ⚠️ Demande pilote (03/09) — titre décalé du coin, ✕ supprimé : Échap, le clic sur
+                 le voile (appModaleClicExterieur) et le bouton « Fermer » du pied suffisent. -->
+            <div class="modal-header-plain sd__apercu-header">
               <span class="modal-title">Aperçu du dossier à créer</span>
-              <button type="button" class="btn btn-secondary btn-sm" (click)="fermerApercu()" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body">
               <!-- ⚠️ Demande pilote (2026-09-03) — les trois documents de l'aperçu EN ONGLETS
@@ -960,6 +961,8 @@ interface ApercuDossier {
     .ppm-doc__pied p { margin: 0.2rem 0; }
     .ppm-doc__prmp { margin-top: 1rem; font-weight: 700; text-transform: uppercase; }
     .sd__ap-alertes { margin-top: 1rem; }
+    /* Titre de l'aperçu décalé du coin du modal (demande pilote 03/09). */
+    .sd__apercu-header { padding: 1rem 0 0.35rem 1.25rem; }
     /* Onglets de l'aperçu (2026-09-03) : mêmes couleurs orange que les onglets de dossier. */
     .sd__ap-tabs { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; }
     .sd__ap-tab { appearance: none; border: 0; border-radius: 10px; padding: 0.55rem 1.1rem; font: inherit; font-size: var(--text-sm); font-weight: 700; cursor: pointer; background: #FFF7ED; color: #C2410C; transition: background 140ms var(--ease-out), color 140ms var(--ease-out); }
