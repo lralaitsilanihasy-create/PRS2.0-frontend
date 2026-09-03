@@ -549,14 +549,15 @@ export class DossiersCircuitListe {
   }
   /**
    * ⚠️ Demande pilote (2026-09-03, arbitrage FINAL) — « Retirer » (RENDRE) dans MA file « À
-   * examiner » : renvoyer au pré-dispatch un dossier DISPATCHE dont je suis l'attributaire, mais
-   * SEULEMENT si j'en suis AUSSI le dispatcheur (« pas d'auto-retrait » : un dossier que le
-   * Président a dispatché au CC ne se rend pas — c'est le Président, dispatcheur, qui le retire
-   * depuis SON groupe Dispatch). Reste couvert : le Président auto-attribué (« moi-même ⤴ »)
-   * remet le dossier au pool, et le CC qui a repris un dossier qu'il avait lui-même dispatché.
+   * examiner » : renvoyer au pré-dispatch un dossier DISPATCHE que je me suis MOI-MÊME attribué.
+   * « Pas d'auto-retrait » chez le CC, SANS exception : un dossier qui lui est attribué ne se rend
+   * jamais — même après une REPRISE, où le PUT l'enregistre comme dispatcheur (identité JWT), la
+   * provenance reste le dispatch du Président, seul habilité à le retirer (depuis SON groupe
+   * Dispatch). Ne reste couvert que le Président auto-attribué (« moi-même ⤴ »).
    */
   peutRendre(d: Dossier): boolean {
     if (!this.aActionRendre() || !this.canDispatch() || d.statut !== 'DISPATCHE') return false;
+    if (this.auth.role() === 'CHEF_COMMISSION') return false;
     const disp = this.dispatchByDossier().get(d.idDossier);
     const ref = this.auth.ref();
     return !!disp && !!ref && disp.imCtrlMembre === ref && disp.imCtrlDispatch === ref;

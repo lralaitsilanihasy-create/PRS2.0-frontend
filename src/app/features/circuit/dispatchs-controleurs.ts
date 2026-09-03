@@ -474,7 +474,10 @@ export class DispatchsControleurs implements OnDestroy {
    */
   peutRetirer(a: DossierAttribue): boolean {
     if (!this.permissions.can('DISPATCH_WRITE')) return false;
-    return this.auth.role() !== 'CHEF_COMMISSION' || a.dispatch.imCtrlDispatch === this.auth.ref();
+    if (this.auth.role() !== 'CHEF_COMMISSION') return true;
+    // CC : uniquement la REPRISE d'un dossier qu'il a confié à un Membre — jamais d'auto-retrait
+    // de sa propre attribution, même s'il en est devenu le dispatcheur via une reprise (2026-09-03).
+    return a.dispatch.imCtrlDispatch === this.auth.ref() && a.dispatch.imCtrlMembre !== this.auth.ref();
   }
   /** Le retrait est-il une REPRISE ? (CC retirant un dossier confié à un Membre — il lui revient.) */
   estReprise(a: DossierAttribue): boolean {

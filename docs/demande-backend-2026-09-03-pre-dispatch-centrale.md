@@ -49,7 +49,10 @@ dispatch dont il n'est PAS l'attributaire, et l'intérim.
   restreint. **Arbitrage pilote confirmé (fin de journée)** : « pas d'auto-retrait » — le CC
   ATTRIBUTAIRE d'un dossier dispatché par le Président ne peut PAS le rendre lui-même, c'est le
   Président (dispatcheur) qui le lui retire. NB : une réattribution par le CC pose
-  `imCtrlDispatch` = son IM (JWT) — il peut donc retirer ensuite, ce qui est voulu.
+  `imCtrlDispatch` = son IM (JWT) — il peut donc RETIRER AU MEMBRE ensuite (reprise), ce qui est
+  voulu. **Recommandation complémentaire** : refuser aussi (403) l'annulation quand l'appelant CC
+  est à la fois dispatcheur ET attributaire (cas post-reprise : auto-retrait par l'API alors que le
+  front ne l'offre plus) — « demandez le retrait au Président ».
 - Ne change PAS : la **copie CC** d'un dispatch Président → Membre de la centrale (le CC suit le
   circuit), l'attribution **au** CC par le Président (« Chef de commission ⤴ », fa457d9 — c'est le
   Président qui dispatche), et tout ce qui concerne les localités régionales.
