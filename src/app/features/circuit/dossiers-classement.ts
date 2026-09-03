@@ -34,7 +34,7 @@ export * from './classement-config';
       <header class="page-header">
         <div>
           <div class="page-subtitle">{{ cfg.subtitle }}</div>
-          <h1 class="page-title">Mes dossiers</h1>
+          <h1 class="page-title">{{ cfg.titre ?? 'Mes dossiers' }}</h1>
         </div>
       </header>
       <p class="md__intro">Retrouvez les dossiers par <strong>type</strong> et par <strong>étape du circuit</strong>.</p>
@@ -329,8 +329,10 @@ export class DossiersClassement {
     // Groupe sans action rattaché à un profil (`delegation`) : badge chez le non-titulaire seulement.
     if (g.delegation === 'SECRETAIRE' && this.permissions.parDelegation('RECEPTION_WRITE')) return 'Secrétaire';
     if (g.actionReception && this.permissions.parDelegation('RECEPTION_WRITE')) return 'Secrétaire';
+    // « Examinés » (actionModifierExamen seul) est aussi une file du Membre : sans cette branche,
+    // il tomberait côté « propre » pendant que « À examiner » part côté délégation (2026-09-03).
     if (
-      g.actionExamen &&
+      (g.actionExamen || g.actionModifierExamen) &&
       !g.actionDispatch &&
       !g.actionAnnulerDispatch &&
       !g.actionReception &&

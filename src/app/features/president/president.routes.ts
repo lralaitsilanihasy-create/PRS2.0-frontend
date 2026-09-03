@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 
-import { CIRCUIT_GROUPES } from '../circuit/dossiers-classement';
+import { CIRCUIT_GROUPES, MEMBRE_GROUPES } from '../circuit/dossiers-classement';
 
 
 
@@ -25,6 +25,10 @@ import { CIRCUIT_GROUPES } from '../circuit/dossiers-classement';
  *  + section « Dispatchs par contrôleur » sous le classement. */
 const CLASSEMENT_PRESIDENT = { subtitle: 'Domaine Président', base: '/president/mes-dossiers', groupes: CIRCUIT_GROUPES, statDispatchsControleurs: true, retraitsPath: '/president/retraits' };
 
+/** ⚠️ Demande pilote (2026-09-03) — files du Membre chez le Président (auto-attribution « moi-même ⤴ ») :
+ *  « À examiner » / « Examinés » IM-scopées, mêmes groupes que l'espace Membre (source unique). */
+const CLASSEMENT_EXAMEN_PRESIDENT = { subtitle: 'Domaine Président', titre: 'Dossiers à examiner', base: '/president/examen-dossiers', groupes: MEMBRE_GROUPES, source: 'membre' as const };
+
 /** Espace Président (lazy, sous roleGuard PRESIDENT). */
 export const PRESIDENT_ROUTES: Routes = [
   { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
@@ -35,6 +39,8 @@ export const PRESIDENT_ROUTES: Routes = [
   },
   { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_PRESIDENT } },
   { path: 'mes-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_PRESIDENT } },
+  { path: 'examen-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_EXAMEN_PRESIDENT } },
+  { path: 'examen-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_EXAMEN_PRESIDENT } },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le Président administre partout.
   { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
   // « Dispatchs par contrôleur » : section embarquée dans « Mes dossiers » (plus d'écran dédié).

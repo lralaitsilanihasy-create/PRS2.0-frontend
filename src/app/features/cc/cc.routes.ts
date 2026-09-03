@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 
-import { CIRCUIT_GROUPES } from '../circuit/dossiers-classement';
+import { CIRCUIT_GROUPES, MEMBRE_GROUPES } from '../circuit/dossiers-classement';
 
 
 
@@ -25,6 +25,11 @@ import { CIRCUIT_GROUPES } from '../circuit/dossiers-classement';
  *  + section « Dispatchs par contrôleur » (les Membres de SA commission — listes scopées serveur). */
 const CLASSEMENT_CC = { subtitle: 'Domaine Chef de commission', base: '/cc/mes-dossiers', groupes: CIRCUIT_GROUPES, statDispatchsControleurs: true, retraitsPath: '/cc/retraits' };
 
+/** ⚠️ Demande pilote (2026-09-03) — files du Membre chez le CC : le CC attributaire d'un dossier
+ *  dispatché par le Président retrouve « À examiner » / « Examinés » (files IM-scopées serveur),
+ *  comme un Membre. Entrée de menu conditionnée à la paire CC → Membre (délégation). */
+const CLASSEMENT_EXAMEN_CC = { subtitle: 'Domaine Chef de commission', titre: 'Dossiers à examiner', base: '/cc/examen-dossiers', groupes: MEMBRE_GROUPES, source: 'membre' as const };
+
 /** Espace Chef de commission (lazy, sous roleGuard CHEF_COMMISSION). */
 export const CC_ROUTES: Routes = [
   { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
@@ -35,6 +40,8 @@ export const CC_ROUTES: Routes = [
   },
   { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_CC } },
   { path: 'mes-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_CC } },
+  { path: 'examen-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_EXAMEN_CC } },
+  { path: 'examen-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_EXAMEN_CC } },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le CC administre SA localité (scopé serveur).
   { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
   // « Dispatch des dossiers » retiré : dossiers dispatchés consultables dans « Mes dossiers ».

@@ -60,6 +60,10 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // par Président/CC : entrées affichées SEULEMENT si la paire est active en base (champ `delegation`).
     // Les tâches Secrétaire (réceptions) et Membre (Examiner) vivent dans « Mes dossiers » (groupes/actions
     // gardés par capacités, mêmes paires).
+    // ⚠️ Demande pilote (2026-09-03) — files du Membre chez P/CC : le P/CC ATTRIBUTAIRE d'un dossier
+    // (dispatché par le Président, ou auto-attribué) retrouve « À examiner » / « Examinés » comme un
+    // Membre (classement source 'membre', IM-scopé serveur). Piloté par la paire « → Membre ».
+    { label: 'Dossiers à examiner', path: `${base}/examen-dossiers`, icon: '🔍', delegation: 'MEMBRE' },
     { label: 'Vérifications', path: `${base}/verifications`, icon: '🔎', delegation: 'VERIFICATEUR' },
     { label: 'Archivage des PV', path: `${base}/pv-examens`, icon: '🗄', delegation: 'ASSISTANT_CONTROLEUR' },
     // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant, administrées par

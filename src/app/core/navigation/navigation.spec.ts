@@ -26,10 +26,11 @@ describe('separerParDelegation', () => {
     }
   });
 
-  it('menu du Président : « Vérifications » et « Archivage des PV » passent en section déléguée', () => {
-    // Elles étaient déclarées entre « Examen de dossiers » et « Rapports ».
+  it('menu du Président : les entrées déléguées passent en section déléguée', () => {
+    // « Vérifications »/« Archivage » étaient déclarées entre « Examen de dossiers » et « Rapports » ;
+    // « Dossiers à examiner » (files du Membre, 2026-09-03) les rejoint.
     const [propres, delegues] = separerParDelegation(navFor('PRESIDENT'));
-    expect(delegues.items.map((i) => i.label)).toEqual(['Vérifications', 'Archivage des PV']);
+    expect(delegues.items.map((i) => i.label)).toEqual(['Dossiers à examiner', 'Vérifications', 'Archivage des PV']);
     expect(propres.items.map((i) => i.label)).not.toContain('Vérifications');
     expect(propres.items.map((i) => i.label)).toContain('Rapports');
   });

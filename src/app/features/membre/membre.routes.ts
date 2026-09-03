@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 
-import { ClassementConfig, ClassementGroupe } from '../circuit/dossiers-classement';
+import { ClassementConfig, MEMBRE_GROUPES } from '../circuit/dossiers-classement';
 
 
 
@@ -9,11 +9,8 @@ import { ClassementConfig, ClassementGroupe } from '../circuit/dossiers-classeme
 
 
 
-/** Groupes du Membre : à examiner (DISPATCHE + A_REEXAMINER, réexamen après lettre de renvoi) vs examinés (historique `/examines`). */
-const MEMBRE_GROUPES: ClassementGroupe[] = [
-  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE', 'A_REEXAMINER'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true },
-  { key: 'examines', label: 'Examinés', statuts: ['EXAMINE', 'PV_SIGNE', 'EN_VERIFICATION', 'CLOTURE'], icon: '✅', kind: 'b', colonnes: ['dateDispatch'], actionModifierExamen: true },
-];
+// MEMBRE_GROUPES vit dans classement-config (source unique) : partagé avec l'écran
+// « Dossiers à examiner » monté chez Président/CC par délégation (2026-09-03).
 
 /** Classement « Mes dossiers » (Membre) : cartes par type × {à examiner, examinés}, SES dossiers attribués. */
 const CLASSEMENT_MEMBRE: ClassementConfig = { subtitle: 'Domaine Membre', base: '/membre/mes-dossiers', groupes: MEMBRE_GROUPES, source: 'membre' };

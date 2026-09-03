@@ -45,6 +45,8 @@ export interface ClassementGroupe {
 /** Config d'un écran de classement, passée via `data.classement` de la route. */
 export interface ClassementConfig {
   subtitle: string;
+  /** Titre de la page (défaut : « Mes dossiers »). */
+  titre?: string;
   /** Base des liens de drill-down (ex. '/president/mes-dossiers'). */
   base: string;
   groupes: ClassementGroupe[];
@@ -137,6 +139,18 @@ export const CIRCUIT_GROUPES: ClassementGroupe[] = [
     actionReattribuer: true,
     actionExamen: true,
   },
+];
+
+/**
+ * Groupes du Membre : à examiner (DISPATCHE + A_REEXAMINER, réexamen après lettre de renvoi) vs
+ * examinés (historique `/examines`). SOURCE UNIQUE : l'espace Membre (« Mes dossiers ») et l'écran
+ * « Dossiers à examiner » monté chez Président/CC (délégation Membre — demande pilote 2026-09-03 :
+ * le CC attributaire d'un dossier dispatché par le Président doit retrouver ses files À examiner /
+ * Examinés, comme un Membre) partagent ces groupes, servis par les files IM-scopées du serveur.
+ */
+export const MEMBRE_GROUPES: ClassementGroupe[] = [
+  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE', 'A_REEXAMINER'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true },
+  { key: 'examines', label: 'Examinés', statuts: ['EXAMINE', 'PV_SIGNE', 'EN_VERIFICATION', 'CLOTURE'], icon: '✅', kind: 'b', colonnes: ['dateDispatch'], actionModifierExamen: true },
 ];
 
 /** Dossiers couverts par un classement, selon sa source (voir `ClassementConfig.source`). */
