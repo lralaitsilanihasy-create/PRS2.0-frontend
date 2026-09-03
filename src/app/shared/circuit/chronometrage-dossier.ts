@@ -285,7 +285,16 @@ export class ChronometrageDossier {
   readonly erreurSaisie = signal<string | null>(null);
   readonly saving = signal(false);
 
-  readonly tacheEnCours = computed(() => this.chrono()?.taches.find((t) => t.enCours) ?? null);
+  /**
+   * Tâche en cours DE L'ÉTAPE COURANTE seulement. ⚠️ Constat de recette (03/09) : la transmission
+   * directe à SIGMP d'un avis FAV ne clôt pas l'occurrence VERIFICATION — une tâche d'une AUTRE
+   * étape restée ouverte ne doit ni s'afficher comme l'état courant, ni bloquer la prise en charge
+   * (trou signalé au backend ; elle reste visible dans le tableau des passages).
+   */
+  readonly tacheEnCours = computed(() => {
+    const etape = this.chrono()?.etapeCourante;
+    return this.chrono()?.taches.find((t) => t.enCours && t.etape === etape) ?? null;
+  });
   readonly estMaTache = computed(() => {
     const t = this.tacheEnCours();
     return !!t && !!t.imActeur && t.imActeur === this.auth.ref();
