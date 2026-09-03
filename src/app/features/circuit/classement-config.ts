@@ -31,6 +31,15 @@ export interface ClassementGroupe {
    * confier à un Membre (PUT sur le dispatch existant — le dossier reste DISPATCHE).
    */
   actionReattribuer?: boolean;
+  /**
+   * ⚠️ Demande pilote (2026-09-03) — propose « Retirer » (RENDRE) sur un dossier DISPATCHE dont
+   * l'utilisateur est l'ATTRIBUTAIRE : le CC (ou le Président auto-attribué) renvoie le dossier au
+   * pré-dispatch (annulation du dispatch — il n'en est plus l'attributaire). Gardé par
+   * DISPATCH_WRITE — invisible chez le Membre. ⚠️ Distinct d'`actionAnnulerDispatch` : ce dernier
+   * sert AUSSI de marqueur du groupe « gestion » (`dossierAttribueAMoi`) — le réutiliser ici
+   * exclurait mes attributions de ma propre file.
+   */
+  actionRendre?: boolean;
   /** Propose l'action « Examiner » dans la liste (→ `/membre/examiner/:idDossier`, espace Membre). */
   actionExamen?: boolean;
   /** Propose « Modifier l'examen » (même cible) tant que le dossier est EXAMINE et son PV non soumis. */
@@ -174,7 +183,7 @@ export const MEMBRE_GROUPES: ClassementGroupe[] = [
   // `actionReattribuer` : chez P/CC (DISPATCH_WRITE), un dossier de MA file s'examine OU se réattribue
   // à un Membre — le geste vit ICI, pas dans « Dispatch », qui exclut mes attributions (2026-09-03).
   // Invisible chez le Membre (pas la capacité), zéro code.
-  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE', 'A_REEXAMINER'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true, actionReattribuer: true },
+  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE', 'A_REEXAMINER'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true, actionReattribuer: true, actionRendre: true },
   { key: 'examines', label: 'Examinés', statuts: ['EXAMINE', 'PV_SIGNE', 'EN_VERIFICATION', 'CLOTURE'], icon: '✅', kind: 'b', colonnes: ['dateDispatch'], actionModifierExamen: true },
 ];
 

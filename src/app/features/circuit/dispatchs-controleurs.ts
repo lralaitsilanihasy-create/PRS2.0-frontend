@@ -179,17 +179,27 @@ interface LigneControleur {
       <div class="modal-backdrop" [class.closing]="closingRetrait()">
         <div class="modal dpc__confirm" role="alertdialog" aria-modal="true" aria-label="Retrait du dossier dispatché" appModale appModaleClicExterieur (appModaleFermer)="fermerRetrait()">
           <div class="modal-body">
-            <p>
-              Retirer le dossier <strong>{{ r.a.dossier.refeDossier || '#' + r.a.dossier.idDossier }}</strong> à
-              <strong>{{ r.nom }}</strong> ?
-            </p>
-            @if (retraitEstReprise()) {
+            @if (estRendu(r.a)) {
+              <p>Rendre le dossier <strong>{{ r.a.dossier.refeDossier || '#' + r.a.dossier.idDossier }}</strong> ?</p>
+              <p class="dpc__confirm-hint">
+                Vous <strong>rendez</strong> le dossier : il retournera en <strong>Pré-dispatch</strong>
+                et vous n'en serez plus l'attributaire. Tout examen déjà commencé sera supprimé.
+              </p>
+            } @else if (estReprise(r.a)) {
+              <p>
+                Retirer le dossier <strong>{{ r.a.dossier.refeDossier || '#' + r.a.dossier.idDossier }}</strong> à
+                <strong>{{ r.nom }}</strong> ?
+              </p>
               <p class="dpc__confirm-hint">
                 Le dossier <strong>vous reviendra</strong> : il rejoindra vos dossiers
                 « <strong>À examiner</strong> » (vous pourrez l'examiner ou le réattribuer) — il ne
                 repart pas en pré-dispatch.
               </p>
             } @else {
+              <p>
+                Retirer le dossier <strong>{{ r.a.dossier.refeDossier || '#' + r.a.dossier.idDossier }}</strong> à
+                <strong>{{ r.nom }}</strong> ?
+              </p>
               <p class="dpc__confirm-hint">
                 Le dispatch sera annulé et le dossier reviendra en <strong>Pré-dispatch</strong> (re-dispatchable).
                 @if (r.a.dossier.statut === 'EXAMINE') {
@@ -202,7 +212,7 @@ interface LigneControleur {
           <div class="modal-footer">
             <button type="button" class="btn btn-outline" (click)="fermerRetrait()">Annuler</button>
             <button type="button" class="btn btn-danger" [disabled]="retraitEnCours()" (click)="confirmerRetrait()">
-              {{ retraitEnCours() ? 'Retrait…' : 'Retirer le dossier' }}
+              {{ retraitEnCours() ? 'Retrait…' : estRendu(r.a) ? 'Rendre le dossier' : 'Retirer le dossier' }}
             </button>
           </div>
         </div>
@@ -466,8 +476,14 @@ export class DispatchsControleurs implements OnDestroy {
     if (!this.permissions.can('DISPATCH_WRITE')) return false;
     return this.auth.role() !== 'CHEF_COMMISSION' || a.dispatch.imCtrlDispatch === this.auth.ref();
   }
-  /** Le retrait du CC est une REPRISE (le dossier lui revient), pas une annulation — voir `confirmerRetrait`. */
-  readonly retraitEstReprise = computed(() => this.auth.role() === 'CHEF_COMMISSION');
+  /** Le retrait est-il une REPRISE ? (CC retirant un dossier confié à un Membre — il lui revient.) */
+  estReprise(a: DossierAttribue): boolean {
+    return this.auth.role() === 'CHEF_COMMISSION' && a.dispatch.imCtrlMembre !== this.auth.ref();
+  }
+  /** Le retrait est-il un RENVOI de MA propre attribution ? (rendre au pré-dispatch.) */
+  estRendu(a: DossierAttribue): boolean {
+    return a.dispatch.imCtrlMembre === this.auth.ref();
+  }
   /** Animation de sortie du modal de retrait. */
   readonly closingRetrait = signal(false);
   /** Ferme le modal de retrait en jouant l'animation de sortie. */
@@ -476,10 +492,11 @@ export class DispatchsControleurs implements OnDestroy {
   }
 
   /**
-   * Confirme le retrait. ⚠️ Demande pilote (2026-09-03) : chez le CC, le dossier retiré au Membre
-   * LUI REVIENT (réattribution à soi-même — PUT, dossier toujours DISPATCHE, dans SA file « À
-   * examiner ») au lieu de repartir en pré-dispatch chez le Président qui le lui avait confié.
-   * Le Président, lui, annule (purge examen/PV côté serveur, dossier → PRET_DISPATCH chez lui).
+   * Confirme le retrait — trois gestes (demandes pilote 2026-09-03) :
+   * - REPRISE (CC × dossier confié à un Membre) : réattribution à soi-même (PUT, dossier toujours
+   *   DISPATCHE, retour dans SA file « À examiner ») — il ne repart PAS chez le Président ;
+   * - RENDU (attributaire = moi) : annulation — le dossier retourne en pré-dispatch ;
+   * - ANNULATION classique (Président × dossier attribué à autrui) : retour PRET_DISPATCH.
    */
   confirmerRetrait(): void {
     const r = this.retrait();
@@ -493,7 +510,7 @@ export class DispatchsControleurs implements OnDestroy {
       // En erreur (404/409 : état changé ailleurs), le toast centralisé a déjà parlé — on resynchronise.
       this.dossiersRefresh.notifierChangement();
     };
-    if (this.retraitEstReprise()) {
+    if (this.estReprise(r.a)) {
       const moi = this.auth.ref();
       const body: Dispatch = {
         ...r.a.dispatch,
@@ -509,7 +526,7 @@ export class DispatchsControleurs implements OnDestroy {
       return;
     }
     this.dispatchService.annuler(r.a.idDispatch).subscribe({
-      next: () => fin('Dossier retiré : de retour en pré-dispatch.'),
+      next: () => fin(this.estRendu(r.a) ? 'Dossier rendu : de retour en pré-dispatch.' : 'Dossier retiré : de retour en pré-dispatch.'),
       error: () => fin(null),
     });
   }

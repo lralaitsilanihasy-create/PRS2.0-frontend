@@ -45,9 +45,11 @@ dispatch dont il n'est PAS l'attributaire, et l'intérim.
   jour, remplace la version « attributaire »)** : « Le CC ne doit pas pouvoir retirer le dossier
   qu'il n'a pas dispatché. Par contre, il peut retirer le dossier s'il est le dispatcheur de ce
   dossier. » Garde **GÉNÉRALE** (toutes localités, pas seulement la centrale) : un CC n'annule que
-  si `dispatch.imCtrlDispatch` = son IM, **403** sinon ; le Président n'est pas restreint. NB : une
-  réattribution par le CC pose `imCtrlDispatch` = son IM (JWT) — il peut donc retirer ensuite, ce
-  qui est voulu.
+  s'il est le **dispatcheur** (`imCtrlDispatch` = son IM) **OU l'attributaire** (`imCtrlMembre` =
+  son IM — geste « RENDRE » : le CC renvoie au pré-dispatch un dossier que le Président lui avait
+  confié, précision pilote du même jour), **403** sinon ; le Président n'est pas restreint. NB :
+  une réattribution par le CC pose `imCtrlDispatch` = son IM (JWT) — il peut donc retirer ensuite,
+  ce qui est voulu.
 - Ne change PAS : la **copie CC** d'un dispatch Président → Membre de la centrale (le CC suit le
   circuit), l'attribution **au** CC par le Président (« Chef de commission ⤴ », fa457d9 — c'est le
   Président qui dispatche), et tout ce qui concerne les localités régionales.
@@ -97,8 +99,9 @@ le front suivra sans redéploiement coordonné.
    `EXAMEN_A_FAIRE` à `MEMANT1` ; le même PUT par un CC **non attributaire** → 403.
 5. Réattribution avec un examen déjà entamé sur le dispatch → **409**.
 6. **Annulation** : CC annule un dispatch dont il est le DISPATCHEUR (`imCtrlDispatch` = lui, y
-   compris après sa propre réattribution) → accepté ; CC sur un dispatch fait par le Président
-   (même dans sa localité, centrale ou régionale) → **403** ; Président → accepté partout.
+   compris après sa propre réattribution) → accepté ; CC **attributaire** (« rendre » un dossier
+   que le Président lui a dispatché) → accepté ; CC ni dispatcheur ni attributaire (dispatch du
+   Président vers un Membre, même dans sa localité) → **403** ; Président → accepté partout.
 7. Transition `PRET_DISPATCH` d'un dossier central → notification au Président, **aucune** au CC ;
    dossier régional → les deux, comme avant.
 8. GET `/api/localites` → `estCentrale: true` pour `ANT`, `false` ailleurs.

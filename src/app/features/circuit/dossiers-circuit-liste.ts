@@ -162,6 +162,14 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
                       @if (peutAnnulerDispatch(d)) {
                         <button type="button" class="btn btn-danger btn-sm" (click)="annulation.set(d)">Retirer</button>
                       }
+                      @if (peutRendre(d)) {
+                        <button
+                          type="button"
+                          class="btn btn-danger btn-sm"
+                          title="Rendre le dossier : il retourne en pré-dispatch — vous n'en serez plus l'attributaire."
+                          (click)="annulation.set(d)"
+                        >Retirer</button>
+                      }
                       @if (aActionExamen()) {
                         <a
                           class="btn btn-primary btn-sm"
@@ -201,15 +209,24 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
       <div class="modal-backdrop" [class.closing]="closingAnnulation()">
         <div class="modal dcl__confirm" role="alertdialog" aria-modal="true" aria-label="Confirmation d'annulation" appModale appModaleClicExterieur (appModaleFermer)="fermerAnnulation()">
           <div class="modal-body">
-            <p>
-              Retirer le dossier <strong>{{ d.refeDossier || '#' + d.idDossier }}</strong> à
-              <strong>{{ attributaire(d) }}</strong> ?
-            </p>
-            @if (retraitEstReprise()) {
+            @if (estRendu(d)) {
+              <p>Rendre le dossier <strong>{{ d.refeDossier || '#' + d.idDossier }}</strong> ?</p>
+            } @else {
+              <p>
+                Retirer le dossier <strong>{{ d.refeDossier || '#' + d.idDossier }}</strong> à
+                <strong>{{ attributaire(d) }}</strong> ?
+              </p>
+            }
+            @if (estReprise(d)) {
               <p class="dcl__confirm-hint">
                 Le dossier <strong>vous reviendra</strong> : il rejoindra vos dossiers
                 « <strong>À examiner</strong> » (vous pourrez l'examiner ou le réattribuer) — il ne
                 repart pas en pré-dispatch.
+              </p>
+            } @else if (estRendu(d)) {
+              <p class="dcl__confirm-hint">
+                Vous <strong>rendez</strong> le dossier : il retournera en <strong>Pré-dispatch</strong>
+                et vous n'en serez plus l'attributaire. Tout examen déjà commencé sera supprimé.
               </p>
             } @else {
               <p class="dcl__confirm-hint">
@@ -221,7 +238,7 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
           <div class="modal-footer">
             <button type="button" class="btn btn-outline" (click)="fermerAnnulation()">Annuler</button>
             <button type="button" class="btn btn-danger" [disabled]="annulationEnCours()" (click)="confirmerAnnulation()">
-              {{ annulationEnCours() ? 'Retrait…' : 'Retirer le dossier' }}
+              {{ annulationEnCours() ? 'Retrait…' : estRendu(d) ? 'Rendre le dossier' : 'Retirer le dossier' }}
             </button>
           </div>
         </div>
@@ -322,6 +339,8 @@ export class DossiersCircuitListe {
   private readonly aActionDispatch = computed(() => !!this.groupeConfig()?.actionDispatch);
   /** Ce groupe propose-t-il la réattribution ? (config `actionReattribuer`). */
   private readonly aActionReattribuer = computed(() => !!this.groupeConfig()?.actionReattribuer);
+  /** Ce groupe propose-t-il « Retirer » (rendre au pré-dispatch) sur MES attributions ? (config `actionRendre`). */
+  private readonly aActionRendre = computed(() => !!this.groupeConfig()?.actionRendre);
   /** Colonne de sélection (dispatch en lot) affichée ? — mêmes conditions que l'action « Dispatcher ». */
   readonly avecSelection = computed(() => this.aActionDispatch() && this.canDispatch());
   /** Localité de la sélection courante (celle du premier dossier coché ; null = sélection vide). */
@@ -520,7 +539,7 @@ export class DossiersCircuitListe {
    * « Retirer » : offert par le groupe, autorisé (DISPATCH_WRITE), dossier DISPATCHE avec un
    * dispatch connu. ⚠️ Demande pilote (2026-09-03) : le CC ne retire QUE les dossiers qu'il a
    * lui-même dispatchés (dispatcheur = lui) — un dispatch du Président ne se retire pas sous lui ;
-   * il peut en revanche l'examiner ou le réattribuer. Le Président n'est pas restreint.
+   * il peut en revanche l'examiner, le réattribuer, ou le RENDRE (cf. `peutRendre`).
    */
   peutAnnulerDispatch(d: Dossier): boolean {
     if (!this.aActionAnnulerDispatch() || !this.canDispatch() || d.statut !== 'DISPATCHE') return false;
@@ -528,13 +547,30 @@ export class DossiersCircuitListe {
     if (!disp) return false;
     return this.auth.role() !== 'CHEF_COMMISSION' || disp.imCtrlDispatch === this.auth.ref();
   }
-  /** Le retrait du CC est une REPRISE (le dossier lui revient en « À examiner »), pas une annulation. */
-  readonly retraitEstReprise = computed(() => this.auth.role() === 'CHEF_COMMISSION');
   /**
-   * Confirme le retrait. ⚠️ Demande pilote (2026-09-03) : chez le CC, le dossier retiré au Membre
-   * LUI REVIENT (réattribution à soi-même — PUT, dossier toujours DISPATCHE, dans SA file « À
-   * examiner ») au lieu de repartir en pré-dispatch chez le Président qui le lui avait confié.
-   * Le Président, lui, annule (retour PRET_DISPATCH côté serveur).
+   * ⚠️ Demande pilote (2026-09-03) — « Retirer » (RENDRE) dans MA file « À examiner » : le CC (ou le
+   * Président auto-attribué) renvoie au pré-dispatch un dossier DISPATCHE dont il est l'attributaire
+   * — annulation du dispatch, le dossier retourne dans le circuit de dispatch.
+   */
+  peutRendre(d: Dossier): boolean {
+    if (!this.aActionRendre() || !this.canDispatch() || d.statut !== 'DISPATCHE') return false;
+    return this.dispatchByDossier().get(d.idDossier)?.imCtrlMembre === this.auth.ref();
+  }
+  /** Le retrait est-il une REPRISE ? (CC retirant un dossier qu'il a confié à un Membre — il lui revient.) */
+  estReprise(d: Dossier): boolean {
+    return this.auth.role() === 'CHEF_COMMISSION' && this.dispatchByDossier().get(d.idDossier)?.imCtrlMembre !== this.auth.ref();
+  }
+  /** Le retrait est-il un RENVOI de MA propre attribution ? (rendre au pré-dispatch.) */
+  estRendu(d: Dossier): boolean {
+    return this.dispatchByDossier().get(d.idDossier)?.imCtrlMembre === this.auth.ref();
+  }
+  /**
+   * Confirme le retrait — trois gestes (demandes pilote 2026-09-03) :
+   * - REPRISE (CC × dossier confié à un Membre) : réattribution à soi-même (PUT, dossier toujours
+   *   DISPATCHE, retour dans SA file « À examiner ») — il ne repart PAS chez le Président ;
+   * - RENDU (attributaire = moi) : annulation — le dossier retourne en pré-dispatch (le CC rend au
+   *   Président ce qu'il lui avait confié ; le Président remet au pool ce qu'il s'était attribué) ;
+   * - ANNULATION classique (Président × dossier attribué à autrui) : retour PRET_DISPATCH.
    */
   confirmerAnnulation(): void {
     const d = this.annulation();
@@ -549,7 +585,7 @@ export class DossiersCircuitListe {
       this.charger();
       this.dossiersRefresh.notifierChangement();
     };
-    if (this.retraitEstReprise()) {
+    if (this.estReprise(d)) {
       const moi = this.auth.ref();
       const body: Dispatch = {
         ...disp,
@@ -565,7 +601,7 @@ export class DossiersCircuitListe {
       return;
     }
     this.dispatchService.annuler(disp.idDispatch).subscribe({
-      next: () => fin('Dossier retiré : de retour en pré-dispatch.'),
+      next: () => fin(this.estRendu(d) ? 'Dossier rendu : de retour en pré-dispatch.' : 'Dossier retiré : de retour en pré-dispatch.'),
       error: () => fin(null),
     });
   }
