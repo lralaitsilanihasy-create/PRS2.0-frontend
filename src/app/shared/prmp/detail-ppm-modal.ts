@@ -427,18 +427,9 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
               </div>
 
               <div class="pieces-card">
-                @if (agpmRequise()) {
-                  <div class="dpm-agpm" [class.dpm-agpm--ok]="!agpmManquante()" role="note">
-                    <span class="dpm-agpm-ic" aria-hidden="true">{{ agpmManquante() ? '⚠️' : '✅' }}</span>
-                    @if (agpmManquante()) {
-                      <span>Ce PPM comporte un marché en « appel d'offres ouvert » : la pièce
-                        <strong>AGPM</strong> (Avis Général de Passation de Marché) est
-                        <strong>requise</strong> avant la soumission.</span>
-                    } @else {
-                      <span>Pièce <strong>AGPM</strong> requise — bien fournie.</span>
-                    }
-                  </div>
-                }
+                <!-- ⚠️ Règle allégée (03/09, backend 4473fe7) — la pièce AGPM n'est plus requise :
+                     le bandeau « requise / bien fournie » est retiré, le projet d'AGPM dérivé
+                     (onglet dédié) tient ce rôle. -->
                 @if (piecesInitiales().length > 0) {
                   <div class="pieces-group">
                     <div class="pieces-group-hd">
@@ -945,16 +936,8 @@ export class DetailPpmModal implements OnInit {
     return !!r && this.pdfEntiteDifferente(r);
   });
 
-  // — AGPM conditionnel : le PPM porte `agpmRequis` (autorité backend) ; pièce repérée par code stable. —
-  /** Type de pièce AGPM parmi les pièces attendues (chargées en modeEdition). */
-  private readonly agpmType = computed(() => this.typesPiece().find((t) => t.code === 'AGPM') ?? null);
-  /** Le backend requiert-il l'AGPM pour ce PPM ? (`agpmRequis`, lecture seule). */
-  readonly agpmRequise = computed(() => this.ppm()?.agpmRequis === true && this.agpmType() != null);
-  /** AGPM requis mais pièce non encore déposée. */
-  readonly agpmManquante = computed(() => {
-    const t = this.agpmType();
-    return this.agpmRequise() && t != null && !this.pieces().some((p) => p.idTypePiece === t.idTypePiece);
-  });
+  // (Bandeau « pièce AGPM requise » retiré le 03/09 — backend 4473fe7 : le projet d'AGPM dérivé
+  //  remplace la pièce, `agpmRequis` du DTO ne pilote plus rien ici.)
 
   // Consultation des dates d'un marché
   readonly modalMarche = signal<Marche | null>(null);

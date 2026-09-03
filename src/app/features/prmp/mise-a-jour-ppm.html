@@ -221,11 +221,10 @@
                   <!-- Le plan lui-même change par définition dans une mise à jour : le signaler
                        explicitement, sinon on croit pouvoir soumettre avec l'ancien. -->
                   <span class="badge badge-warning">nouvelle version attendue</span>
-                } @else if (t.obligatoire) {
-                  <span class="badge badge-danger">obligatoire</span>
                 } @else {
-                  <!-- Seule l'AGPM rendue exigée par un mode déclencheur passe le filtre sans être obligatoire. -->
-                  <span class="badge badge-warning">requise (appel d'offres ouvert)</span>
+                  <!-- Seules les OBLIGATOIRES passent le filtre depuis le 03/09 (la pièce AGPM
+                       n'est plus requise — le projet d'AGPM dérivé tient ce rôle). -->
+                  <span class="badge badge-danger">obligatoire</span>
                 }
                 @if (pieceDe(t.idTypePiece); as p) {
                   <span class="maj__piece-file">actuellement : {{ p.nomFichier }}</span>

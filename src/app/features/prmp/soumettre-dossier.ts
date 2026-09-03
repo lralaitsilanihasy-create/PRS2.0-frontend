@@ -393,9 +393,10 @@ interface ApercuDossier {
 
             <div class="sd__pieces">
               <h2 class="sd__sub">Pièces jointes</h2>
-              <!-- ⚠️ Demande user (2026-09-01) — seules les pièces À FOURNIR sont listées : les
-                   obligatoires, plus l'AGPM quand un mode déclencheur l'exige. Les optionnelles ne
-                   sont ni proposées ni affichées ici. -->
+              <!-- ⚠️ Demande user (2026-09-01, allégée 03/09) — seules les pièces OBLIGATOIRES
+                   sont listées. La pièce AGPM n'est plus requise (backend 4473fe7) : le projet
+                   d'AGPM dérivé du plan tient ce rôle — comme les autres optionnelles, elle
+                   n'est ni proposée ni affichée ici. -->
               @if (!typesPieceVisibles().length) {
                 <p class="cnm-muted">Aucune pièce à fournir pour ce type de dossier.</p>
               }
@@ -403,12 +404,7 @@ interface ApercuDossier {
                 <div class="sd__piece" [class.sd__piece--manquante]="t.obligatoire && !pieces().has(t.idTypePiece)">
                   <span class="sd__piece-lbl">📎 {{ t.libellePiece }}</span>
                   <div class="sd__piece-right">
-                    @if (t.obligatoire) {
-                      <span class="badge badge-danger">obligatoire</span>
-                    } @else {
-                      <!-- Seule l'AGPM rendue exigée par un mode déclencheur passe le filtre sans être obligatoire. -->
-                      <span class="badge badge-warning">requise (appel d'offres ouvert)</span>
-                    }
+                    <span class="badge badge-danger">obligatoire</span>
                     @if (pieceNom(t.idTypePiece); as nom) {
                       <span class="sd__piece-file">{{ nom }} · {{ pieceTaille(t.idTypePiece) }}</span>
                       <button type="button" class="btn btn-secondary btn-sm" (click)="retirerPiece(t.idTypePiece)" aria-label="Retirer">✕</button>
@@ -441,14 +437,14 @@ interface ApercuDossier {
               </div>
             }
 
-            @if (agpmManquanteSaisie()) {
+            <!-- ⚠️ Règle allégée (03/09, backend 4473fe7) — la pièce AGPM n'est plus requise : le
+                 projet d'AGPM DÉRIVÉ du plan tient ce rôle. Simple renvoi de découverte. -->
+            @if (agpmRequisSaisie()) {
               <div class="alert alert-info">
                 <span aria-hidden="true">ℹ️</span>
-                <div>Un marché est saisi en « appel d'offres ouvert » : la pièce <strong>AGPM</strong>
-                  (Avis Général de Passation de Marché) sera <strong>exigée à la soumission</strong>.
-                  Le brouillon peut être créé sans elle ; joignez-la avant de soumettre.
-                  Le <strong>projet d'AGPM</strong> dérivé de votre plan est visible dans
-                  l'<strong>Aperçu</strong> ci-dessous, avec la fiche de présentation.</div>
+                <div>Un marché est saisi en « appel d'offres ouvert » : le <strong>projet
+                  d'AGPM</strong> dérivé de votre plan est visible dans l'<strong>Aperçu</strong>
+                  ci-dessous, avec la fiche de présentation. Aucune pièce AGPM à téléverser.</div>
               </div>
             }
 
@@ -1181,14 +1177,18 @@ export class SoumettreDossier {
     return this.ppmForm.valid && this.piecesObligatoiresManquantes().length === 0;
   }
 
-  // — AGPM conditionnel (hint non bloquant) : reflète la règle backend sans la dupliquer en dur. —
+  // — AGPM : simple renvoi de découverte vers le projet dérivé (la PIÈCE n'est plus requise, 03/09). —
   /** Libellés (normalisés) des modes déclencheurs d'AGPM, d'après le référentiel des modes existants. */
   private agpmModeLabels(): Set<string> {
     return new Set(
       this.modesList().filter((m) => m.declencheAgpm).map((m) => (m.libelle ?? '').trim().toLowerCase()),
     );
   }
-  /** ≥1 marché saisi avec un mode déclencheur → AGPM exigée à la soumission (règle backend). */
+  /**
+   * ≥1 marché saisi avec un mode déclencheur → le projet d'AGPM dérivé existe (renvoi vers
+   * l'Aperçu). ⚠️ Règle allégée (03/09, backend `4473fe7`) : la pièce téléversée n'est plus
+   * exigée — le projet dérivé tient ce rôle.
+   */
   agpmRequisSaisie(): boolean {
     const labels = this.agpmModeLabels();
     if (!labels.size) return false;
@@ -1196,24 +1196,14 @@ export class SoumettreDossier {
       labels.has(((g.get('modeLibelle')?.value as string) ?? '').trim().toLowerCase()),
     );
   }
-  /** Type de pièce AGPM (code stable) parmi les pièces attendues. */
-  agpmType(): TypePieceJointe | undefined {
-    return this.typesPiece().find((t) => t.code === 'AGPM');
-  }
-  /** AGPM requis (mode déclencheur saisi) mais pièce non fournie — avertissement non bloquant. */
-  agpmManquanteSaisie(): boolean {
-    const t = this.agpmType();
-    return this.agpmRequisSaisie() && t != null && !this.pieces().has(t.idTypePiece);
-  }
 
   /**
-   * ⚠️ Demande user (2026-09-01) — pièces AFFICHÉES à la saisie : les obligatoires, plus l'AGPM
-   * quand un mode déclencheur la rend exigée (sinon impossible de la joindre au moment où elle
-   * compte). Les optionnelles ne sont ni proposées ni listées. Méthode (pas un computed) : le
-   * critère AGPM lit l'état du formulaire, qui n'est pas un signal — même motif qu'`agpmRequisSaisie`.
+   * ⚠️ Demande user (2026-09-01, allégée 03/09) — pièces AFFICHÉES à la saisie : les OBLIGATOIRES
+   * seules (la pièce AGPM n'est plus requise — backend `4473fe7` — et redevient une optionnelle,
+   * jamais listée). Méthode et non computed, par symétrie avec `agpmRequisSaisie`.
    */
   typesPieceVisibles(): TypePieceJointe[] {
-    return this.typesPiece().filter((t) => t.obligatoire || (t.code === 'AGPM' && this.agpmRequisSaisie()));
+    return this.typesPiece().filter((t) => t.obligatoire);
   }
 
   readonly marcheForm = this.fb.nonNullable.group({

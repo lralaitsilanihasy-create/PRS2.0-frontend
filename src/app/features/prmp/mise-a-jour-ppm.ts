@@ -134,24 +134,18 @@ export class MiseAJourPpm {
   private static readonly TYPES_HISTORIQUE = new Set([22, 23]);
   readonly piecesHistorique = computed(() => this.pieces().filter((p) => MiseAJourPpm.TYPES_HISTORIQUE.has(p.idTypePiece)));
 
-  /** ⚠️ Demande user (2026-09-01) — l'AGPM est EXIGÉE quand la nouvelle version comporte ≥1 marché en mode déclencheur (drapeau administrable, lignes supprimées exclues). */
-  private readonly agpmExigee = computed(() => {
-    const declencheurs = new Set(this.modesRef().filter((m) => m.declencheAgpm).map((m) => m.idMode));
-    return this.marches().some((m) => !m.supprimee && m.idMode != null && declencheurs.has(m.idMode));
-  });
-
   /**
    * Types de pièce attendus (hors historique, joint par le serveur). Les pièces sont **reprises du
    * dossier d'origine** : chaque rang montre donc le fichier en place, remplaçable.
-   * ⚠️ Demande user (2026-09-01) — mêmes règles qu'à la création : seules les pièces À FOURNIR sont
-   * listées (les obligatoires, plus l'AGPM quand la nouvelle version l'exige). Les optionnelles ne
-   * sont ni proposées ni affichées ; une optionnelle reprise du dossier précédent reste attachée,
-   * simplement sans rang ici.
+   * ⚠️ Demande user (2026-09-01, allégée 03/09) — mêmes règles qu'à la création : seules les
+   * OBLIGATOIRES sont listées. La pièce AGPM n'est plus requise (backend `4473fe7` — le projet
+   * d'AGPM dérivé tient ce rôle) et redevient une optionnelle : ni proposée ni affichée ; une
+   * optionnelle reprise du dossier précédent reste attachée, simplement sans rang ici.
    */
   readonly typesADeposer = computed(() =>
     this.typesPiece()
       .filter((t) => !MiseAJourPpm.TYPES_HISTORIQUE.has(t.idTypePiece))
-      .filter((t) => t.obligatoire || (t.code === 'AGPM' && this.agpmExigee()))
+      .filter((t) => t.obligatoire)
       // Même ordre qu'à la saisie : le référentiel porte un `ordre` d'affichage.
       .sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)));
   /** Pièce en place pour ce type (reprise du dossier précédent, ou déposée ici), s'il y en a une. */
