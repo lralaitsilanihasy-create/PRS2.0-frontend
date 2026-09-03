@@ -5,7 +5,7 @@ import { forkJoin, skip } from 'rxjs';
 
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
-import { Controleur, Dossier } from '../../models';
+import { Controleur, Dispatch, Dossier } from '../../models';
 import {
   ControleurService,
   DelegationProfilService,
@@ -31,11 +31,10 @@ import { DossierConsultation } from './dossier-consultation';
 /** Un dossier attribué à un contrôleur par le dernier dispatch (rôle joué : Membre attributaire ou CC). */
 interface DossierAttribue {
   dossier: Dossier;
-  /** Dispatch d'attribution (cible de l'action « Retirer »). */
+  /** Dispatch d'attribution COMPLET (cible du « Retirer » : annulation, ou REPRISE par le CC — 2026-09-03). */
+  dispatch: Dispatch;
   idDispatch: number;
   dateDispatch?: string;
-  /** Dispatcheur (auteur du dispatch) — le CC ne peut retirer QUE ses propres dispatchs (2026-09-03). */
-  imCtrlDispatch?: string;
 }
 /** Carte de la statistique : un contrôleur et ses dossiers dispatchés. */
 interface LigneControleur {
@@ -184,13 +183,21 @@ interface LigneControleur {
               Retirer le dossier <strong>{{ r.a.dossier.refeDossier || '#' + r.a.dossier.idDossier }}</strong> à
               <strong>{{ r.nom }}</strong> ?
             </p>
-            <p class="dpc__confirm-hint">
-              Le dispatch sera annulé et le dossier reviendra en <strong>Pré-dispatch</strong> (re-dispatchable).
-              @if (r.a.dossier.statut === 'EXAMINE') {
-                <strong>L'examen déjà produit (et son éventuel projet de PV) sera supprimé.</strong>
-              }
-              Le Membre sera notifié.
-            </p>
+            @if (retraitEstReprise()) {
+              <p class="dpc__confirm-hint">
+                Le dossier <strong>vous reviendra</strong> : il rejoindra vos dossiers
+                « <strong>À examiner</strong> » (vous pourrez l'examiner ou le réattribuer) — il ne
+                repart pas en pré-dispatch.
+              </p>
+            } @else {
+              <p class="dpc__confirm-hint">
+                Le dispatch sera annulé et le dossier reviendra en <strong>Pré-dispatch</strong> (re-dispatchable).
+                @if (r.a.dossier.statut === 'EXAMINE') {
+                  <strong>L'examen déjà produit (et son éventuel projet de PV) sera supprimé.</strong>
+                }
+                Le Membre sera notifié.
+              </p>
+            }
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline" (click)="fermerRetrait()">Annuler</button>
@@ -372,7 +379,7 @@ export class DispatchsControleurs implements OnDestroy {
           const dossier = im ? dossierById.get(idDossier) : undefined;
           if (!im || !dossier || !estAffichable(im) || !STATUTS_EN_COURS.has(dossier.statut ?? '')) return;
           const liste = parControleur.get(im) ?? [];
-          liste.push({ dossier, idDispatch: disp.idDispatch, dateDispatch: disp.dateDispatch, imCtrlDispatch: disp.imCtrlDispatch });
+          liste.push({ dossier, dispatch: disp, idDispatch: disp.idDispatch, dateDispatch: disp.dateDispatch });
           parControleur.set(im, liste);
         };
         // ⚠️ 2026-08-17 (demande user) — SEULE la part attributaire (`imCtrlMembre`) est comptée.
@@ -457,8 +464,10 @@ export class DispatchsControleurs implements OnDestroy {
    */
   peutRetirer(a: DossierAttribue): boolean {
     if (!this.permissions.can('DISPATCH_WRITE')) return false;
-    return this.auth.role() !== 'CHEF_COMMISSION' || a.imCtrlDispatch === this.auth.ref();
+    return this.auth.role() !== 'CHEF_COMMISSION' || a.dispatch.imCtrlDispatch === this.auth.ref();
   }
+  /** Le retrait du CC est une REPRISE (le dossier lui revient), pas une annulation — voir `confirmerRetrait`. */
+  readonly retraitEstReprise = computed(() => this.auth.role() === 'CHEF_COMMISSION');
   /** Animation de sortie du modal de retrait. */
   readonly closingRetrait = signal(false);
   /** Ferme le modal de retrait en jouant l'animation de sortie. */
@@ -466,26 +475,42 @@ export class DispatchsControleurs implements OnDestroy {
     fermerAvecAnimation(this.closingRetrait, () => this.retrait.set(null));
   }
 
-  /** Confirme le retrait : annule le dispatch (purge examen/PV côté serveur, dossier → PRET_DISPATCH). */
+  /**
+   * Confirme le retrait. ⚠️ Demande pilote (2026-09-03) : chez le CC, le dossier retiré au Membre
+   * LUI REVIENT (réattribution à soi-même — PUT, dossier toujours DISPATCHE, dans SA file « À
+   * examiner ») au lieu de repartir en pré-dispatch chez le Président qui le lui avait confié.
+   * Le Président, lui, annule (purge examen/PV côté serveur, dossier → PRET_DISPATCH chez lui).
+   */
   confirmerRetrait(): void {
     const r = this.retrait();
     if (!r) return;
     this.retraitEnCours.set(true);
+    const fin = (message: string | null) => {
+      if (message) this.toast.success(message);
+      this.retraitEnCours.set(false);
+      this.retrait.set(null);
+      // La notification recharge cette stat (abonnement revision) + classement + badges.
+      // En erreur (404/409 : état changé ailleurs), le toast centralisé a déjà parlé — on resynchronise.
+      this.dossiersRefresh.notifierChangement();
+    };
+    if (this.retraitEstReprise()) {
+      const moi = this.auth.ref();
+      const body: Dispatch = {
+        ...r.a.dispatch,
+        imCtrlDispatch: moi ?? r.a.dispatch.imCtrlDispatch,
+        imCtrlCc: undefined,
+        imCtrlMembre: moi ?? undefined,
+        dateDispatch: new Date().toISOString().slice(0, 10),
+      };
+      this.dispatchService.update(r.a.dispatch.idDispatch, body).subscribe({
+        next: () => fin('Dossier repris : de retour dans vos dossiers à examiner.'),
+        error: () => fin(null),
+      });
+      return;
+    }
     this.dispatchService.annuler(r.a.idDispatch).subscribe({
-      next: () => {
-        this.toast.success('Dossier retiré : de retour en pré-dispatch.');
-        this.retraitEnCours.set(false);
-        this.retrait.set(null);
-        // La notification recharge cette stat (abonnement revision) + classement + badges.
-        this.dossiersRefresh.notifierChangement();
-      },
-      error: () => {
-        // 404/409 = l'état a changé ailleurs (déjà retiré, PV signé…) : toast centralisé (message
-        // backend) + fermeture et resynchronisation pour faire disparaître la ligne périmée.
-        this.retraitEnCours.set(false);
-        this.retrait.set(null);
-        this.dossiersRefresh.notifierChangement();
-      },
+      next: () => fin('Dossier retiré : de retour en pré-dispatch.'),
+      error: () => fin(null),
     });
   }
   /** Initiales de l'avatar (deux premiers mots du nom). */

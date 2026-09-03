@@ -52,15 +52,26 @@ dispatch dont il n'est PAS l'attributaire, et l'intérim.
   circuit), l'attribution **au** CC par le Président (« Chef de commission ⤴ », fa457d9 — c'est le
   Président qui dispatche), et tout ce qui concerne les localités régionales.
 
-### 1 bis. Réattribution : notification et garde d'examen
+### 1 bis. Réattribution : notifications et garde d'examen
 
 Le `update()` actuel ne notifie personne et accepte un re-ciblage même examen entamé. Pour le geste
 de réattribution (changement d'`imCtrlMembre`) :
 
 - **Notifier le nouvel attributaire** (`EXAMEN_A_FAIRE`, comme `notifierMembreAssigne` au POST) —
-  aujourd'hui le Membre reçoit le dossier dans sa file sans notification.
+  **sauf s'il est le dispatcheur lui-même** (cas « reprise », voir ci-dessous : pas
+  d'auto-notification).
+- **Notifier l'ANCIEN attributaire** que le dossier lui est retiré (aujourd'hui il disparaît de sa
+  file en silence).
 - **409 si un examen existe déjà** sur ce dispatch (le circuit propre passe par « Retirer », qui
   purge l'aval) — le front n'offre le bouton que sans examen commencé, garde miroir demandée.
+
+**⚠️ Précision pilote (même jour) — « Retirer » du CC = REPRISE, pas annulation** : « après avoir
+retiré un dossier assigné à un membre, ce dossier doit […] revenir parmi les dossiers à examiner
+[du CC], et non pas revenir vers le président qui a dispatché ce dossier au CC. » Le front
+n'appelle donc plus `/annuler` pour un CC : son « Retirer » fait un **PUT de réattribution vers
+lui-même** (`imCtrlMembre` = lui, dossier toujours `DISPATCHE`, retour dans SA file « À
+examiner »). `/annuler` (retour `PRET_DISPATCH` + purge) reste le geste du **Président**. La garde
+403 du point 1 (annulation par un CC non dispatcheur) reste utile en défense.
 
 ### 2. Notification « Dossier prêt à dispatcher » re-routée
 

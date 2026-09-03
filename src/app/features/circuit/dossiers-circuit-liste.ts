@@ -205,10 +205,18 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
               Retirer le dossier <strong>{{ d.refeDossier || '#' + d.idDossier }}</strong> à
               <strong>{{ attributaire(d) }}</strong> ?
             </p>
-            <p class="dcl__confirm-hint">
-              Le dispatch sera annulé : le dossier reviendra en <strong>Pré-dispatch</strong> (re-dispatchable),
-              tout examen déjà commencé sera supprimé et le Membre sera notifié.
-            </p>
+            @if (retraitEstReprise()) {
+              <p class="dcl__confirm-hint">
+                Le dossier <strong>vous reviendra</strong> : il rejoindra vos dossiers
+                « <strong>À examiner</strong> » (vous pourrez l'examiner ou le réattribuer) — il ne
+                repart pas en pré-dispatch.
+              </p>
+            } @else {
+              <p class="dcl__confirm-hint">
+                Le dispatch sera annulé : le dossier reviendra en <strong>Pré-dispatch</strong> (re-dispatchable),
+                tout examen déjà commencé sera supprimé et le Membre sera notifié.
+              </p>
+            }
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline" (click)="fermerAnnulation()">Annuler</button>
@@ -520,28 +528,45 @@ export class DossiersCircuitListe {
     if (!disp) return false;
     return this.auth.role() !== 'CHEF_COMMISSION' || disp.imCtrlDispatch === this.auth.ref();
   }
-  /** Confirme le retrait : annule le dernier dispatch du dossier (retour PRET_DISPATCH côté serveur). */
+  /** Le retrait du CC est une REPRISE (le dossier lui revient en « À examiner »), pas une annulation. */
+  readonly retraitEstReprise = computed(() => this.auth.role() === 'CHEF_COMMISSION');
+  /**
+   * Confirme le retrait. ⚠️ Demande pilote (2026-09-03) : chez le CC, le dossier retiré au Membre
+   * LUI REVIENT (réattribution à soi-même — PUT, dossier toujours DISPATCHE, dans SA file « À
+   * examiner ») au lieu de repartir en pré-dispatch chez le Président qui le lui avait confié.
+   * Le Président, lui, annule (retour PRET_DISPATCH côté serveur).
+   */
   confirmerAnnulation(): void {
     const d = this.annulation();
     const disp = d ? this.dispatchByDossier().get(d.idDossier) : undefined;
     if (!d || !disp) return;
     this.annulationEnCours.set(true);
+    const fin = (message: string | null) => {
+      // En erreur (404/409 : état changé ailleurs), le toast centralisé a déjà parlé — on resynchronise.
+      if (message) this.toast.success(message);
+      this.annulationEnCours.set(false);
+      this.annulation.set(null);
+      this.charger();
+      this.dossiersRefresh.notifierChangement();
+    };
+    if (this.retraitEstReprise()) {
+      const moi = this.auth.ref();
+      const body: Dispatch = {
+        ...disp,
+        imCtrlDispatch: moi ?? disp.imCtrlDispatch,
+        imCtrlCc: undefined,
+        imCtrlMembre: moi ?? undefined,
+        dateDispatch: new Date().toISOString().slice(0, 10),
+      };
+      this.dispatchService.update(disp.idDispatch, body).subscribe({
+        next: () => fin('Dossier repris : de retour dans vos dossiers à examiner.'),
+        error: () => fin(null),
+      });
+      return;
+    }
     this.dispatchService.annuler(disp.idDispatch).subscribe({
-      next: () => {
-        this.toast.success('Dossier retiré : de retour en pré-dispatch.');
-        this.annulationEnCours.set(false);
-        this.annulation.set(null);
-        this.charger();
-        this.dossiersRefresh.notifierChangement();
-      },
-      error: () => {
-        // 404/409 = l'état a changé ailleurs (déjà retiré, PV signé…) : toast centralisé (message
-        // backend) + fermeture et resynchronisation pour faire disparaître la ligne périmée.
-        this.annulationEnCours.set(false);
-        this.annulation.set(null);
-        this.charger();
-        this.dossiersRefresh.notifierChangement();
-      },
+      next: () => fin('Dossier retiré : de retour en pré-dispatch.'),
+      error: () => fin(null),
     });
   }
   /** Cochable = sélection vide, déjà cochée, ou même localité que la sélection (lot mono-localité). */
