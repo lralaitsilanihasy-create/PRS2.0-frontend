@@ -15,6 +15,7 @@ import {
   ClassementGroupe,
   dossierAttribueAMoi,
   dossierExcluDuGroupe,
+  dossierHorsFileAttribuee,
   dossiersDuClassement,
   groupeMasquePourProfil,
   separerGroupesParDelegation,
@@ -425,7 +426,7 @@ export class DossiersClassement {
    * le DossierDto ne l'expose pas. Membre/Secrétaire : aucun appel en plus.
    */
   private chargerCompteurs(): void {
-    const avecDispatch = this.cfg.groupes.some((g) => g.actionAnnulerDispatch);
+    const avecDispatch = this.cfg.groupes.some((g) => g.actionAnnulerDispatch || g.attribueAMoi);
     forkJoin({
       rows: dossiersDuClassement(this.cfg, this.dossierService),
       receptions: avecDispatch ? this.receptionService.list() : of([]),
@@ -482,12 +483,15 @@ export class DossiersClassement {
     for (const d of rows) {
       if (!d.idTypeDossier || !d.statut) continue;
       // Pré-dispatch d'un dossier CENTRAL : privilège du seul Président ; « Dispatch » exclut les
-      // dossiers dont JE suis l'attributaire — ils vivent dans « Dossiers à examiner » (2026-09-03).
+      // dossiers dont JE suis l'attributaire — ils vivent dans les files « À examiner / Examinés »
+      // (`attribueAMoi`), qui ne retiennent QUE mes attributions (2026-09-03).
+      const attributaire = attributaires.get(d.idDossier);
       const groupes = this.cfg.groupes.filter(
         (g) =>
           g.statuts.includes(d.statut!) &&
           !dossierExcluDuGroupe(g, d, role) &&
-          !dossierAttribueAMoi(g, attributaires.get(d.idDossier), ref),
+          !dossierAttribueAMoi(g, attributaire, ref) &&
+          !dossierHorsFileAttribuee(g, attributaire, ref),
       );
       if (!groupes.length) continue;
       const rec = m.get(d.idTypeDossier) ?? {};

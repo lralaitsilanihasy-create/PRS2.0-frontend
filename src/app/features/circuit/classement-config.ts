@@ -41,6 +41,13 @@ export interface ClassementGroupe {
    * ailleurs (2026-08-15, parité des tâches du subordonné chez P/CC).
    */
   delegation?: Role;
+  /**
+   * ⚠️ Demande pilote (2026-09-03) — file DÉRIVÉE : le groupe ne retient que les dossiers dont
+   * l'utilisateur est l'ATTRIBUTAIRE du dernier dispatch. Sert aux files « À examiner / Examinés »
+   * montées DANS les cartes de « Mes dossiers » P/CC (le classement n'a qu'une source — la liste
+   * générale — là où l'espace Membre utilise les files serveur via `source: 'membre'`).
+   */
+  attribueAMoi?: boolean;
 }
 /** Config d'un écran de classement, passée via `data.classement` de la route. */
 export interface ClassementConfig {
@@ -100,6 +107,11 @@ export function dossierAttribueAMoi(g: ClassementGroupe, attributaire: string | 
   return !!g.actionAnnulerDispatch && !!ref && attributaire === ref;
 }
 
+/** Miroir de `dossierAttribueAMoi` pour les files dérivées : un groupe `attribueAMoi` ne retient QUE mes attributions. */
+export function dossierHorsFileAttribuee(g: ClassementGroupe, attributaire: string | undefined, ref: string | null): boolean {
+  return !!g.attribueAMoi && (!ref || attributaire !== ref);
+}
+
 /**
  * idDossier → attributaire (`imCtrlMembre`) du DERNIER dispatch — même règle de jointure
  * réception → dispatch que le drill-down et « Dispatchs par contrôleur ».
@@ -153,12 +165,35 @@ export const GROUPE_ENREGISTREMENT: ClassementGroupe = {
 };
 
 /**
- * Groupes du circuit (Président / CC) : réceptions + enregistrement (délégation Secrétaire),
- * pré-dispatch (en attente) et dispatch (dispatché — « Examiner » par délégation Membre).
+ * Groupes du Membre : à examiner (DISPATCHE + A_REEXAMINER, réexamen après lettre de renvoi) vs
+ * examinés (historique `/examines`). SOURCE UNIQUE : l'espace Membre (« Mes dossiers », files
+ * IM-scopées du serveur via `source: 'membre'`) et les files dérivées des cartes P/CC
+ * ({@link GROUPES_MES_EXAMENS}) partagent ces groupes.
+ */
+export const MEMBRE_GROUPES: ClassementGroupe[] = [
+  // `actionReattribuer` : chez P/CC (DISPATCH_WRITE), un dossier de MA file s'examine OU se réattribue
+  // à un Membre — le geste vit ICI, pas dans « Dispatch », qui exclut mes attributions (2026-09-03).
+  // Invisible chez le Membre (pas la capacité), zéro code.
+  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE', 'A_REEXAMINER'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true, actionReattribuer: true },
+  { key: 'examines', label: 'Examinés', statuts: ['EXAMINE', 'PV_SIGNE', 'EN_VERIFICATION', 'CLOTURE'], icon: '✅', kind: 'b', colonnes: ['dateDispatch'], actionModifierExamen: true },
+];
+
+/**
+ * Files du Membre DÉRIVÉES pour les cartes de « Mes dossiers » P/CC (⚠️ demande pilote 2026-09-03 :
+ * « mettre les menus [À examiner / Examinés] dans les cards Exercé par délégation ») : mêmes groupes
+ * que l'espace Membre, mais calculés depuis la LISTE GÉNÉRALE via l'attributaire du dernier
+ * dispatch (`attribueAMoi`) — le classement n'a qu'une source de données.
+ */
+export const GROUPES_MES_EXAMENS: ClassementGroupe[] = MEMBRE_GROUPES.map((g) => ({ ...g, attribueAMoi: true }));
+
+/**
+ * Groupes du circuit (Président / CC) : pré-dispatch (en attente), dispatch (gestion — sans mes
+ * attributions), et les files « À examiner / Examinés » (délégation Membre, dérivées).
+ * ⚠️ 2026-09-03 (demande pilote) — les tâches du SECRÉTAIRE (Réceptions, Enregistrés) ne vivent
+ * plus dans ces cartes : elles ont leurs entrées de MENU « Exercé par délégation » (navigation),
+ * chacune vers son propre classement.
  */
 export const CIRCUIT_GROUPES: ClassementGroupe[] = [
-  GROUPE_RECEPTIONS,
-  GROUPE_ENREGISTREMENT,
   { key: 'pre-dispatch', label: 'Pré-dispatch', statuts: ['PRET_DISPATCH'], icon: '📤', kind: 'a', colonnes: ['reception'], actionDispatch: true },
   {
     key: 'dispatch',
@@ -170,21 +205,7 @@ export const CIRCUIT_GROUPES: ClassementGroupe[] = [
     actionAnnulerDispatch: true,
     actionExamen: true,
   },
-];
-
-/**
- * Groupes du Membre : à examiner (DISPATCHE + A_REEXAMINER, réexamen après lettre de renvoi) vs
- * examinés (historique `/examines`). SOURCE UNIQUE : l'espace Membre (« Mes dossiers ») et l'écran
- * « Dossiers à examiner » monté chez Président/CC (délégation Membre — demande pilote 2026-09-03 :
- * le CC attributaire d'un dossier dispatché par le Président doit retrouver ses files À examiner /
- * Examinés, comme un Membre) partagent ces groupes, servis par les files IM-scopées du serveur.
- */
-export const MEMBRE_GROUPES: ClassementGroupe[] = [
-  // `actionReattribuer` : chez P/CC (DISPATCH_WRITE), un dossier de MA file s'examine OU se réattribue
-  // à un Membre — le geste vit ICI, pas dans « Dispatch », qui exclut mes attributions (2026-09-03).
-  // Invisible chez le Membre (pas la capacité), zéro code.
-  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE', 'A_REEXAMINER'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true, actionReattribuer: true },
-  { key: 'examines', label: 'Examinés', statuts: ['EXAMINE', 'PV_SIGNE', 'EN_VERIFICATION', 'CLOTURE'], icon: '✅', kind: 'b', colonnes: ['dateDispatch'], actionModifierExamen: true },
+  ...GROUPES_MES_EXAMENS,
 ];
 
 /** Dossiers couverts par un classement, selon sa source (voir `ClassementConfig.source`). */

@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 
-import { CIRCUIT_GROUPES, MEMBRE_GROUPES } from '../circuit/dossiers-classement';
+import { CIRCUIT_GROUPES, GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../circuit/dossiers-classement';
 
 
 
@@ -25,10 +25,10 @@ import { CIRCUIT_GROUPES, MEMBRE_GROUPES } from '../circuit/dossiers-classement'
  *  + section « Dispatchs par contrôleur » (les Membres de SA commission — listes scopées serveur). */
 const CLASSEMENT_CC = { subtitle: 'Domaine Chef de commission', base: '/cc/mes-dossiers', groupes: CIRCUIT_GROUPES, statDispatchsControleurs: true, retraitsPath: '/cc/retraits' };
 
-/** ⚠️ Demande pilote (2026-09-03) — files du Membre chez le CC : le CC attributaire d'un dossier
- *  dispatché par le Président retrouve « À examiner » / « Examinés » (files IM-scopées serveur),
- *  comme un Membre. Entrée de menu conditionnée à la paire CC → Membre (délégation). */
-const CLASSEMENT_EXAMEN_CC = { subtitle: 'Domaine Chef de commission', titre: 'Dossiers à examiner', base: '/cc/examen-dossiers', groupes: MEMBRE_GROUPES, source: 'membre' as const };
+/** ⚠️ Demande pilote (2026-09-03) — les tâches du Secrétaire quittent les cartes de « Mes dossiers » :
+ *  chacune a son entrée de menu « Exercé par délégation » et son propre classement. */
+const CLASSEMENT_RECEPTIONS_CC = { subtitle: 'Domaine Chef de commission', titre: 'Réceptions', base: '/cc/receptions', groupes: [GROUPE_RECEPTIONS] };
+const CLASSEMENT_ENREGISTRES_CC = { subtitle: 'Domaine Chef de commission', titre: 'Enregistrés', base: '/cc/enregistres', groupes: [GROUPE_ENREGISTREMENT] };
 
 /** Espace Chef de commission (lazy, sous roleGuard CHEF_COMMISSION). */
 export const CC_ROUTES: Routes = [
@@ -40,8 +40,10 @@ export const CC_ROUTES: Routes = [
   },
   { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_CC } },
   { path: 'mes-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_CC } },
-  { path: 'examen-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_EXAMEN_CC } },
-  { path: 'examen-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_EXAMEN_CC } },
+  { path: 'receptions', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_RECEPTIONS_CC } },
+  { path: 'receptions/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_RECEPTIONS_CC } },
+  { path: 'enregistres', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_ENREGISTRES_CC } },
+  { path: 'enregistres/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_ENREGISTRES_CC } },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le CC administre SA localité (scopé serveur).
   { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
   // « Dispatch des dossiers » retiré : dossiers dispatchés consultables dans « Mes dossiers ».

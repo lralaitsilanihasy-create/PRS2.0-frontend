@@ -28,9 +28,10 @@ describe('separerParDelegation', () => {
 
   it('menu du Président : les entrées déléguées passent en section déléguée', () => {
     // « Vérifications »/« Archivage » étaient déclarées entre « Examen de dossiers » et « Rapports » ;
-    // « Dossiers à examiner » (files du Membre, 2026-09-03) les rejoint.
+    // « Réceptions » et « Enregistrés » (tâches du Secrétaire, 2026-09-03) les rejoignent — les files
+    // du Membre, elles, vivent dans les CARTES de « Mes dossiers », pas dans le menu.
     const [propres, delegues] = separerParDelegation(navFor('PRESIDENT'));
-    expect(delegues.items.map((i) => i.label)).toEqual(['Dossiers à examiner', 'Vérifications', 'Archivage des PV']);
+    expect(delegues.items.map((i) => i.label)).toEqual(['Réceptions', 'Enregistrés', 'Vérifications', 'Archivage des PV']);
     expect(propres.items.map((i) => i.label)).not.toContain('Vérifications');
     expect(propres.items.map((i) => i.label)).toContain('Rapports');
   });

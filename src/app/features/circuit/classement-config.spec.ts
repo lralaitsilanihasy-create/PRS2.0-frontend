@@ -5,9 +5,11 @@ import {
   ClassementGroupe,
   dossierAttribueAMoi,
   dossierExcluDuGroupe,
+  dossierHorsFileAttribuee,
   GROUPE_ENREGISTREMENT,
   GROUPE_RECEPTIONS,
   groupeMasquePourProfil,
+  GROUPES_MES_EXAMENS,
   MEMBRE_GROUPES,
   separerGroupesParDelegation,
   statutsPartages,
@@ -22,16 +24,17 @@ import {
  * le simule ici par le décor réel des groupes du circuit.
  */
 describe('separerGroupesParDelegation', () => {
-  /** Ce que voit un Président / CC : Réceptions et Enregistrés sont exercés par délégation. */
-  const commeDelegue = (g: ClassementGroupe) => g.key === 'receptions' || g.key === 'enregistrement';
-  /** Ce que voit le Secrétaire : il est TITULAIRE de ces tâches, rien n'est délégué. */
+  /** Ce que voit un Président / CC : les files du Membre (À examiner / Examinés) sont déléguées.
+   *  (⚠️ 2026-09-03 — les tâches du Secrétaire ont quitté ces cartes pour le MENU délégué.) */
+  const commeDelegue = (g: ClassementGroupe) => g.key === 'a-examiner' || g.key === 'examines';
+  /** Ce que voit un TITULAIRE des tâches : rien n'est délégué. */
   const commeTitulaire = () => false;
 
   it('Président / CC : deux sections, les tâches propres d’abord', () => {
     const sections = separerGroupesParDelegation(CIRCUIT_GROUPES, commeDelegue);
     expect(sections.map((s) => s.cle)).toEqual(['propre', 'delegation']);
     expect(sections[0].items.map((g) => g.key)).toEqual(['pre-dispatch', 'dispatch']);
-    expect(sections[1].items.map((g) => g.key)).toEqual(['receptions', 'enregistrement']);
+    expect(sections[1].items.map((g) => g.key)).toEqual(['a-examiner', 'examines']);
     expect(sections[1].titre).toBe('Exercé par délégation');
   });
 
@@ -48,7 +51,7 @@ describe('separerGroupesParDelegation', () => {
     expect(new Set(cles).size).toBe(CIRCUIT_GROUPES.length);
   });
 
-  it('Secrétaire (titulaire) : une seule section, sans intitulé — son écran est inchangé', () => {
+  it('titulaire des tâches : une seule section, sans intitulé — son écran est inchangé', () => {
     const sections = separerGroupesParDelegation(CIRCUIT_GROUPES, commeTitulaire);
     expect(sections.length).toBe(1);
     expect(sections[0].cle).toBe('propre');
@@ -94,22 +97,23 @@ describe('separerGroupesParDelegation', () => {
  * total compte des dossiers DISTINCTS — et deux groupes couvrent le même statut.
  */
 describe('statutsPartages', () => {
-  it('repère PRET_DISPATCH, couvert à la fois par « Pré-dispatch » et « Enregistrés »', () => {
+  it('repère DISPATCHE et A_REEXAMINER, couverts par « Dispatch » ET « À examiner » (2026-09-03)', () => {
+    // Le recouvrement structurel existe, mais la VENTILATION est exclusive (attribué à moi ou non) :
+    // la note d'explication ne s'affiche que si la somme des tuiles dépasse réellement le total.
     const partages = statutsPartages(CIRCUIT_GROUPES);
-    expect(partages.length).toBe(1);
-    expect(partages[0].statut).toBe('PRET_DISPATCH');
-    expect(partages[0].labels.sort()).toEqual(['Enregistrés', 'Pré-dispatch']);
+    expect(partages.map((p) => p.statut).sort()).toEqual(['A_REEXAMINER', 'DISPATCHE']);
+    for (const p of partages) expect(p.labels.sort()).toEqual(['Dispatch', 'À examiner']);
   });
 
   it('ne signale RIEN quand aucun statut n’est partagé', () => {
-    const sansRecouvrement = CIRCUIT_GROUPES.filter((g) => g.key !== 'enregistrement');
+    const sansRecouvrement = CIRCUIT_GROUPES.filter((g) => g.key !== 'a-examiner');
     expect(statutsPartages(sansRecouvrement)).toEqual([]);
   });
 
   it('les statuts couverts par un seul groupe ne sont jamais signalés', () => {
     const statuts = statutsPartages(CIRCUIT_GROUPES).map((p) => p.statut);
-    expect(statuts).not.toContain('SOUMIS');
-    expect(statuts).not.toContain('DISPATCHE');
+    expect(statuts).not.toContain('PRET_DISPATCH');
+    expect(statuts).not.toContain('EXAMINE');
   });
 
   it('remonte tous les groupes concernés, pas seulement deux', () => {
@@ -205,5 +209,37 @@ describe('dossierAttribueAMoi (Dispatch sans mes attributions, demande pilote 20
       { idReception: 10, imCtrlMembre: 'MEMANT1', dateDispatch: '2026-09-03T13:00' },
     ];
     expect(attributairesParDossier(receptions, dispatchs).get(1)).toBe('MEMANT1');
+  });
+});
+
+
+/**
+ * ⚠️ Demande pilote (2026-09-03) — les files « À examiner / Examinés » vivent DANS les cartes de
+ * « Mes dossiers » P/CC (rubrique « Exercé par délégation »), dérivées de la liste générale : elles
+ * ne retiennent QUE mes attributions — la ventilation Dispatch / À examiner est donc EXCLUSIVE.
+ */
+describe('dossierHorsFileAttribuee (files dérivées des cartes P/CC, 2026-09-03)', () => {
+  const aExaminer = GROUPES_MES_EXAMENS.find((g) => g.key === 'a-examiner')!;
+  const dispatch = CIRCUIT_GROUPES.find((g) => g.key === 'dispatch')!;
+
+  it('la file dérivée ne retient que MES attributions', () => {
+    expect(dossierHorsFileAttribuee(aExaminer, 'CCANT01', 'CCANT01')).toBe(false);
+    expect(dossierHorsFileAttribuee(aExaminer, 'MEMANT1', 'CCANT01')).toBe(true);
+    expect(dossierHorsFileAttribuee(aExaminer, undefined, 'CCANT01')).toBe(true);
+  });
+
+  it('EXCLUSIVITÉ Dispatch / À examiner : un dossier DISPATCHE tombe dans UN SEUL des deux', () => {
+    for (const attributaire of ['CCANT01', 'MEMANT1', undefined]) {
+      const dansDispatch = !dossierAttribueAMoi(dispatch, attributaire, 'CCANT01');
+      const dansFile = !dossierHorsFileAttribuee(aExaminer, attributaire, 'CCANT01');
+      expect(dansDispatch !== dansFile).toBe(true);
+    }
+  });
+
+  it('CIRCUIT_GROUPES : les files dérivées y sont, les tâches du Secrétaire n’y sont plus (menu délégué)', () => {
+    expect(CIRCUIT_GROUPES.map((g) => g.key)).toEqual(['pre-dispatch', 'dispatch', 'a-examiner', 'examines']);
+    expect(GROUPES_MES_EXAMENS.every((g) => g.attribueAMoi)).toBe(true);
+    // L'espace Membre, lui, garde des groupes SANS le drapeau : le scoping y vient de `source: 'membre'`.
+    expect(MEMBRE_GROUPES.every((g) => !g.attribueAMoi)).toBe(true);
   });
 });

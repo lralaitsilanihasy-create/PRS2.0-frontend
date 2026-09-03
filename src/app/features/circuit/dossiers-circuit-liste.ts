@@ -27,7 +27,7 @@ import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { DispatchForm, DispatchItem } from './dispatch-form';
 import { DossierConsultation } from './dossier-consultation';
 import { ReceptionForm } from './reception-form';
-import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGroupe, dossiersDuClassement } from './classement-config';
+import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGroupe, dossierHorsFileAttribuee, dossiersDuClassement } from './classement-config';
 
 /**
  * Liste des dossiers d'un **type** et d'un **groupe** de classement (statuts issus de `data.classement`),
@@ -409,19 +409,19 @@ export class DossiersCircuitListe {
           if (!prec || (disp.dateDispatch ?? '') >= (prec.dateDispatch ?? '')) dispatchByDossier.set(idDossier, disp);
         }
         // Mêmes exclusions que les compteurs du classement (demandes pilote 2026-09-03) : pré-dispatch
-        // d'un dossier CENTRAL réservé au Président (`dossierExcluDuGroupe`), et « Dispatch » sans les
-        // dossiers dont JE suis l'attributaire (`dossierAttribueAMoi` — ils vivent dans « À examiner »).
+        // d'un dossier CENTRAL réservé au Président (`dossierExcluDuGroupe`), « Dispatch » sans les
+        // dossiers dont JE suis l'attributaire (`dossierAttribueAMoi`), et files « À examiner /
+        // Examinés » dérivées qui ne retiennent QUE mes attributions (`dossierHorsFileAttribuee`).
         const g = this.groupeConfig();
         const role = this.auth.role();
         const ref = this.auth.ref();
         this.dossiers.set(
-          dossiers.filter(
-            (d) =>
-              d.idTypeDossier === this.type() &&
-              !!d.statut &&
-              statuts.has(d.statut) &&
-              (!g || (!dossierExcluDuGroupe(g, d, role) && !dossierAttribueAMoi(g, dispatchByDossier.get(d.idDossier)?.imCtrlMembre, ref))),
-          ),
+          dossiers.filter((d) => {
+            if (d.idTypeDossier !== this.type() || !d.statut || !statuts.has(d.statut)) return false;
+            if (!g) return true;
+            const attributaire = dispatchByDossier.get(d.idDossier)?.imCtrlMembre;
+            return !dossierExcluDuGroupe(g, d, role) && !dossierAttribueAMoi(g, attributaire, ref) && !dossierHorsFileAttribuee(g, attributaire, ref);
+          }),
         );
         // Réception « à dispatcher » : la réception complète du dossier, non encore dispatchée (idem worklist pré-dispatch).
         const dispatched = new Set(dispatchs.map((d) => d.idReception));
