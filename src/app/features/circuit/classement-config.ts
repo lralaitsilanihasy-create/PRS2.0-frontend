@@ -90,6 +90,38 @@ export function groupeMasquePourProfil(g: ClassementGroupe, role: Role | null, l
 }
 
 /**
+ * ⚠️ Demande pilote (2026-09-03, suite) — « si le président fait un dispatch vers CC, il doit être
+ * dans À examiner et non pas dans Dispatch. Par contre, si ce dossier est dispatché à son tour à un
+ * membre, en ce moment-là il doit être dans le Dispatch. » Un dossier dont JE suis l'ATTRIBUTAIRE
+ * est une tâche d'EXAMEN (files « Dossiers à examiner »), pas de gestion : il est EXCLU du groupe
+ * « Dispatch » (compteurs et drill-down) tant que je ne l'ai pas réattribué (attributaire ≠ moi).
+ */
+export function dossierAttribueAMoi(g: ClassementGroupe, attributaire: string | undefined, ref: string | null): boolean {
+  return !!g.actionAnnulerDispatch && !!ref && attributaire === ref;
+}
+
+/**
+ * idDossier → attributaire (`imCtrlMembre`) du DERNIER dispatch — même règle de jointure
+ * réception → dispatch que le drill-down et « Dispatchs par contrôleur ».
+ */
+export function attributairesParDossier(
+  receptions: readonly { idReception: number; idDossier: number }[],
+  dispatchs: readonly { idReception: number; imCtrlMembre?: string; dateDispatch?: string }[],
+): Map<number, string> {
+  const recDossier = new Map(receptions.map((r) => [r.idReception, r.idDossier]));
+  const dernier = new Map<number, { imCtrlMembre?: string; dateDispatch?: string }>();
+  for (const disp of dispatchs) {
+    const idDossier = recDossier.get(disp.idReception);
+    if (idDossier == null) continue;
+    const prec = dernier.get(idDossier);
+    if (!prec || (disp.dateDispatch ?? '') >= (prec.dateDispatch ?? '')) dernier.set(idDossier, disp);
+  }
+  const m = new Map<number, string>();
+  for (const [idDossier, disp] of dernier) if (disp.imCtrlMembre) m.set(idDossier, disp.imCtrlMembre);
+  return m;
+}
+
+/**
  * File de réception du Secrétaire (SOUMIS → « Attribuer un numéro ») — TITULAIRE : Secrétaire ; montée aussi
  * chez Président/CC par DÉLÉGATION ASCENDANTE (paire active en base ; le groupe est masqué sinon,
  * cf. `DossiersClassement.groupesVisibles`).
@@ -136,7 +168,6 @@ export const CIRCUIT_GROUPES: ClassementGroupe[] = [
     kind: 'b',
     colonnes: ['reception', 'dateDispatch', 'attributaire'],
     actionAnnulerDispatch: true,
-    actionReattribuer: true,
     actionExamen: true,
   },
 ];
@@ -149,7 +180,10 @@ export const CIRCUIT_GROUPES: ClassementGroupe[] = [
  * Examinés, comme un Membre) partagent ces groupes, servis par les files IM-scopées du serveur.
  */
 export const MEMBRE_GROUPES: ClassementGroupe[] = [
-  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE', 'A_REEXAMINER'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true },
+  // `actionReattribuer` : chez P/CC (DISPATCH_WRITE), un dossier de MA file s'examine OU se réattribue
+  // à un Membre — le geste vit ICI, pas dans « Dispatch », qui exclut mes attributions (2026-09-03).
+  // Invisible chez le Membre (pas la capacité), zéro code.
+  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE', 'A_REEXAMINER'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true, actionReattribuer: true },
   { key: 'examines', label: 'Examinés', statuts: ['EXAMINE', 'PV_SIGNE', 'EN_VERIFICATION', 'CLOTURE'], icon: '✅', kind: 'b', colonnes: ['dateDispatch'], actionModifierExamen: true },
 ];
 

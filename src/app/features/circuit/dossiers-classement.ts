@@ -1,15 +1,25 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { skip } from 'rxjs';
+import { forkJoin, of, skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { Dossier, TypeDossier } from '../../models';
-import { DemandeRetraitService, DossierService, TypeDossierService } from '../../services';
+import { DemandeRetraitService, DispatchService, DossierService, ReceptionService, TypeDossierService } from '../../services';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
-import { ClassementConfig, ClassementGroupe, dossierExcluDuGroupe, dossiersDuClassement, groupeMasquePourProfil, separerGroupesParDelegation, statutsPartages } from './classement-config';
+import {
+  attributairesParDossier,
+  ClassementConfig,
+  ClassementGroupe,
+  dossierAttribueAMoi,
+  dossierExcluDuGroupe,
+  dossiersDuClassement,
+  groupeMasquePourProfil,
+  separerGroupesParDelegation,
+  statutsPartages,
+} from './classement-config';
 import { DispatchsControleurs } from './dispatchs-controleurs';
 import { DossiersCircuitListe } from './dossiers-circuit-liste';
 import { RetraitsValidation } from './retraits-validation';
@@ -255,6 +265,8 @@ export class DossiersClassement {
   private readonly typeDossierService = inject(TypeDossierService);
   private readonly dossierService = inject(DossierService);
   private readonly demandeRetraitService = inject(DemandeRetraitService);
+  private readonly receptionService = inject(ReceptionService);
+  private readonly dispatchService = inject(DispatchService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly permissions = inject(PermissionsService);
   private readonly auth = inject(AuthService);
@@ -406,11 +418,21 @@ export class DossiersClassement {
       .subscribe(() => this.chargerCompteurs());
   }
 
-  /** Un seul chargement scopé profil : on ne retient que les statuts couverts par les groupes. */
+  /**
+   * Un seul chargement scopé profil : on ne retient que les statuts couverts par les groupes.
+   * Réceptions + dispatchs ne sont joints QUE si un groupe « Dispatch » existe (P/CC) : ils portent
+   * l'attributaire du dernier dispatch, nécessaire à l'exclusion « attribué à moi » (2026-09-03) —
+   * le DossierDto ne l'expose pas. Membre/Secrétaire : aucun appel en plus.
+   */
   private chargerCompteurs(): void {
-    dossiersDuClassement(this.cfg, this.dossierService).subscribe({
-      next: (rows) => {
-        this.grouper(rows);
+    const avecDispatch = this.cfg.groupes.some((g) => g.actionAnnulerDispatch);
+    forkJoin({
+      rows: dossiersDuClassement(this.cfg, this.dossierService),
+      receptions: avecDispatch ? this.receptionService.list() : of([]),
+      dispatchs: avecDispatch ? this.dispatchService.list() : of([]),
+    }).subscribe({
+      next: ({ rows, receptions, dispatchs }) => {
+        this.grouper(rows, attributairesParDossier(receptions, dispatchs));
         if (this.cfg.retraitsPath) {
           this.chargerRetraits(rows);
         }
@@ -452,14 +474,21 @@ export class DossiersClassement {
   }
 
   /** Ventile chaque dossier dans TOUS les groupes couvrant son statut, et compte les distincts. */
-  private grouper(rows: Dossier[]): void {
+  private grouper(rows: Dossier[], attributaires: Map<number, string>): void {
     const m = new Map<string, Record<string, number>>();
     const dist = new Map<string, number>();
     const role = this.auth.role();
+    const ref = this.auth.ref();
     for (const d of rows) {
       if (!d.idTypeDossier || !d.statut) continue;
-      // Pré-dispatch d'un dossier CENTRAL : privilège du seul Président (demande pilote 2026-09-03).
-      const groupes = this.cfg.groupes.filter((g) => g.statuts.includes(d.statut!) && !dossierExcluDuGroupe(g, d, role));
+      // Pré-dispatch d'un dossier CENTRAL : privilège du seul Président ; « Dispatch » exclut les
+      // dossiers dont JE suis l'attributaire — ils vivent dans « Dossiers à examiner » (2026-09-03).
+      const groupes = this.cfg.groupes.filter(
+        (g) =>
+          g.statuts.includes(d.statut!) &&
+          !dossierExcluDuGroupe(g, d, role) &&
+          !dossierAttribueAMoi(g, attributaires.get(d.idDossier), ref),
+      );
       if (!groupes.length) continue;
       const rec = m.get(d.idTypeDossier) ?? {};
       for (const g of groupes) rec[g.key] = (rec[g.key] ?? 0) + 1;

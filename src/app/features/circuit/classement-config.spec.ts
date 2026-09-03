@@ -1,11 +1,14 @@
 import { Dossier } from '../../models';
 import {
+  attributairesParDossier,
   CIRCUIT_GROUPES,
   ClassementGroupe,
+  dossierAttribueAMoi,
   dossierExcluDuGroupe,
   GROUPE_ENREGISTREMENT,
   GROUPE_RECEPTIONS,
   groupeMasquePourProfil,
+  MEMBRE_GROUPES,
   separerGroupesParDelegation,
   statutsPartages,
 } from './classement-config';
@@ -163,5 +166,44 @@ describe('dossierExcluDuGroupe (pré-dispatch central, demande pilote 2026-09-03
     expect(groupeMasquePourProfil(preDispatch, 'CHEF_COMMISSION', 'TOA')).toBe(false);
     expect(groupeMasquePourProfil(preDispatch, 'PRESIDENT', null)).toBe(false);
     expect(groupeMasquePourProfil(enregistrement, 'CHEF_COMMISSION', 'ANT')).toBe(false);
+  });
+});
+
+
+/**
+ * ⚠️ Demande pilote (2026-09-03, suite) : « si le président fait un dispatch vers CC, il doit être
+ * dans À examiner et non pas dans Dispatch. Par contre, si ce dossier est dispatché à son tour à un
+ * membre, en ce moment-là il doit être dans le Dispatch. »
+ */
+describe('dossierAttribueAMoi (Dispatch sans mes attributions, demande pilote 2026-09-03)', () => {
+  const dispatch = CIRCUIT_GROUPES.find((g) => g.key === 'dispatch')!;
+  const aExaminer = MEMBRE_GROUPES.find((g) => g.key === 'a-examiner')!;
+
+  it('EXCLU du groupe « Dispatch » : le dossier m’est attribué (il vit dans « À examiner »)', () => {
+    expect(dossierAttribueAMoi(dispatch, 'CCANT01', 'CCANT01')).toBe(true);
+  });
+
+  it('réattribué à un Membre → il REVIENT dans « Dispatch »', () => {
+    expect(dossierAttribueAMoi(dispatch, 'MEMANT1', 'CCANT01')).toBe(false);
+  });
+
+  it('ne touche jamais les files « À examiner », ni sans dispatch ou sans session', () => {
+    expect(dossierAttribueAMoi(aExaminer, 'CCANT01', 'CCANT01')).toBe(false);
+    expect(dossierAttribueAMoi(dispatch, undefined, 'CCANT01')).toBe(false);
+    expect(dossierAttribueAMoi(dispatch, 'CCANT01', null)).toBe(false);
+  });
+
+  it('le geste « Réattribuer » a suivi le dossier : porté par « À examiner », plus par « Dispatch »', () => {
+    expect(aExaminer.actionReattribuer).toBe(true);
+    expect(dispatch.actionReattribuer).toBeUndefined();
+  });
+
+  it('attributairesParDossier : le DERNIER dispatch fait foi', () => {
+    const receptions = [{ idReception: 10, idDossier: 1 }];
+    const dispatchs = [
+      { idReception: 10, imCtrlMembre: 'CCANT01', dateDispatch: '2026-09-03T10:00' },
+      { idReception: 10, imCtrlMembre: 'MEMANT1', dateDispatch: '2026-09-03T13:00' },
+    ];
+    expect(attributairesParDossier(receptions, dispatchs).get(1)).toBe('MEMANT1');
   });
 });
