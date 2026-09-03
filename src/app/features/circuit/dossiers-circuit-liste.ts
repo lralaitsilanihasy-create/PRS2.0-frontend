@@ -502,14 +502,17 @@ export class DossiersCircuitListe {
     this.reattribution.set(null);
     this.dispatchItems.set([{ dossier: d, reception: rec }]);
   }
-  /** « Retirer » : offert par le groupe, autorisé (DISPATCH_WRITE), dossier DISPATCHE avec un dispatch connu. */
+  /**
+   * « Retirer » : offert par le groupe, autorisé (DISPATCH_WRITE), dossier DISPATCHE avec un
+   * dispatch connu. ⚠️ Demande pilote (2026-09-03) : le CC ne retire QUE les dossiers qu'il a
+   * lui-même dispatchés (dispatcheur = lui) — un dispatch du Président ne se retire pas sous lui ;
+   * il peut en revanche l'examiner ou le réattribuer. Le Président n'est pas restreint.
+   */
   peutAnnulerDispatch(d: Dossier): boolean {
-    return (
-      this.aActionAnnulerDispatch() &&
-      this.canDispatch() &&
-      d.statut === 'DISPATCHE' &&
-      this.dispatchByDossier().has(d.idDossier)
-    );
+    if (!this.aActionAnnulerDispatch() || !this.canDispatch() || d.statut !== 'DISPATCHE') return false;
+    const disp = this.dispatchByDossier().get(d.idDossier);
+    if (!disp) return false;
+    return this.auth.role() !== 'CHEF_COMMISSION' || disp.imCtrlDispatch === this.auth.ref();
   }
   /** Confirme le retrait : annule le dernier dispatch du dossier (retour PRET_DISPATCH côté serveur). */
   confirmerAnnulation(): void {

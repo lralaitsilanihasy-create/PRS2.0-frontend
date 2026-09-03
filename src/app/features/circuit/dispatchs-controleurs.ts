@@ -19,6 +19,7 @@ import {
   ReferenceLookupService,
   TypeDossierService,
 } from '../../services';
+import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
@@ -33,6 +34,8 @@ interface DossierAttribue {
   /** Dispatch d'attribution (cible de l'action « Retirer »). */
   idDispatch: number;
   dateDispatch?: string;
+  /** Dispatcheur (auteur du dispatch) — le CC ne peut retirer QUE ses propres dispatchs (2026-09-03). */
+  imCtrlDispatch?: string;
 }
 /** Carte de la statistique : un contrôleur et ses dossiers dispatchés. */
 interface LigneControleur {
@@ -156,7 +159,7 @@ interface LigneControleur {
                     <td>
                       <div class="td-actions dpc__actions-end">
                         <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(a.dossier)">Voir détails</button>
-                        @if (peutRetirer()) {
+                        @if (peutRetirer(a)) {
                           <button type="button" class="btn btn-danger btn-sm" (click)="retrait.set({ a, nom: l.nom })">Retirer</button>
                         }
                       </div>
@@ -263,6 +266,7 @@ export class DispatchsControleurs implements OnDestroy {
   private readonly lookups = inject(ReferenceLookupService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly permissions = inject(PermissionsService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
 
   readonly loading = signal(true);
@@ -368,7 +372,7 @@ export class DispatchsControleurs implements OnDestroy {
           const dossier = im ? dossierById.get(idDossier) : undefined;
           if (!im || !dossier || !estAffichable(im) || !STATUTS_EN_COURS.has(dossier.statut ?? '')) return;
           const liste = parControleur.get(im) ?? [];
-          liste.push({ dossier, idDispatch: disp.idDispatch, dateDispatch: disp.dateDispatch });
+          liste.push({ dossier, idDispatch: disp.idDispatch, dateDispatch: disp.dateDispatch, imCtrlDispatch: disp.imCtrlDispatch });
           parControleur.set(im, liste);
         };
         // ⚠️ 2026-08-17 (demande user) — SEULE la part attributaire (`imCtrlMembre`) est comptée.
@@ -445,9 +449,15 @@ export class DispatchsControleurs implements OnDestroy {
   basculer(im: string): void {
     this.ouvert.set(this.ouvert() === im ? null : im);
   }
-  /** « Retirer » offert ? (DISPATCH_WRITE ; les dossiers listés sont tous DISPATCHE/EXAMINE, donc annulables). */
-  peutRetirer(): boolean {
-    return this.permissions.can('DISPATCH_WRITE');
+  /**
+   * « Retirer » offert ? (DISPATCH_WRITE ; les dossiers listés sont tous DISPATCHE/EXAMINE, donc
+   * annulables). ⚠️ Demande pilote (2026-09-03) : le CC ne retire QUE les dossiers qu'il a
+   * lui-même dispatchés (dispatcheur = lui) — un dispatch du Président ne se retire pas sous lui ;
+   * il peut en revanche l'examiner ou le réattribuer. Le Président n'est pas restreint.
+   */
+  peutRetirer(a: DossierAttribue): boolean {
+    if (!this.permissions.can('DISPATCH_WRITE')) return false;
+    return this.auth.role() !== 'CHEF_COMMISSION' || a.imCtrlDispatch === this.auth.ref();
   }
   /** Animation de sortie du modal de retrait. */
   readonly closingRetrait = signal(false);
