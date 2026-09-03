@@ -76,9 +76,9 @@ export interface DispatchItem {
               <span class="form-label">Chef de commission</span>
               <select class="form-control" formControlName="imCtrlCc">
                 <option [ngValue]="null">— Sélectionner —</option>
-                @for (o of ccOptions(); track o.id) { <option [ngValue]="o.id">{{ o.label }}</option> }
+                @for (o of ccOptionsAssociation(); track o.id) { <option [ngValue]="o.id">{{ o.label }}</option> }
               </select>
-              @if (ccOptions().length) {
+              @if (ccOptionsAssociation().length) {
                 <span class="form-hint">Associé automatiquement : le CC reçoit copie du dispatch et suit le circuit du dossier.</span>
               } @else {
                 <span class="form-hint">Aucun CC pour cette localité.</span>
@@ -244,6 +244,18 @@ export class DispatchForm {
       const nom = [moi.nomCont, moi.prenomsCont].filter(Boolean).join(' ') || ref;
       options.unshift({ id: ref, label: `${nom} — moi-même ⤴ (délégation du profil Membre)` });
     }
+    // ⚠️ Demande pilote (2026-09-03) — le Président peut dispatcher AU Chef de commission : quand
+    // la paire CC → Membre est ACTIVE, les CC de la localité du dossier sont attributaires valides
+    // (garde backend `validerAttributaireMembre` via peutExercer). Paire désactivée → option
+    // disparue, zéro code. L'association/copie CC ne désigne jamais l'attributaire lui-même
+    // (normalisée côté serveur).
+    if (this.permissions.paireActiveEntre('CHEF_COMMISSION', 'MEMBRE')) {
+      for (const cc of this.optionsParRole(/chef.*commission/i)) {
+        if (!options.some((o) => o.id === cc.id)) {
+          options.push({ id: cc.id, label: `${cc.label} — Chef de commission ⤴ (délégation du profil Membre)` });
+        }
+      }
+    }
     return options;
   });
 
@@ -264,8 +276,17 @@ export class DispatchForm {
   readonly sansAssociationCc = computed(() => {
     if (this.auth.role() === 'CHEF_COMMISSION') return true;
     const ref = this.auth.ref();
-    return !!ref && this.attributaireChoisi() === ref;
+    const attrib = this.attributaireChoisi();
+    if (!!ref && attrib === ref) return true;
+    // ⚠️ 2026-09-03 — attributaire = un CC (délégation du profil Membre) : l'association ne désigne
+    // jamais l'attributaire (miroir normaliserAssociationCc) ; sans AUTRE CC dans la localité, pas
+    // de copie possible → champ masqué.
+    const ccs = this.ccOptions();
+    return !!attrib && ccs.some((o) => o.id === attrib) && !ccs.some((o) => o.id !== attrib);
   });
+
+  /** Options de la copie CC : jamais l'attributaire lui-même (règle miroir du backend). */
+  readonly ccOptionsAssociation = computed(() => this.ccOptions().filter((o) => o.id !== this.attributaireChoisi()));
 
   constructor() {
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
@@ -304,8 +325,10 @@ export class DispatchForm {
     // Pré-sélection du CC de la localité (résolu côté serveur s'il est omis) pour que le dispatcheur
     // voie qui sera informé — modifiable. Sans objet quand l'association n'a pas lieu (champ masqué).
     effect(() => {
-      const opts = this.ccOptions();
+      const opts = this.ccOptionsAssociation();
       const ctrl = this.form.controls.imCtrlCc;
+      // L'attributaire choisi ne peut pas rester en copie (son option a disparu de la liste).
+      if (ctrl.value !== null && this.attributaireChoisi() === ctrl.value) ctrl.setValue(opts[0]?.id ?? null);
       if (!this.sansAssociationCc() && opts.length && ctrl.value === null && ctrl.pristine) ctrl.setValue(opts[0].id);
     });
   }

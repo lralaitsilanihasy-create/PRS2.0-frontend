@@ -148,6 +148,25 @@ describe('PermissionsService', () => {
     });
   });
 
+  // ⚠️ 2026-09-03 (demande user) — le Président dispatche AU CC : le front propose un TIERS comme
+  // attributaire délégué, donc interroge la paire indépendamment du rôle courant.
+  describe('paireActiveEntre (attributaire tiers, demande user 2026-09-03)', () => {
+    it('paire active en base → vraie, quel que soit le rôle connecté', () => {
+      expect(configure('PRESIDENT').paireActiveEntre('CHEF_COMMISSION', 'MEMBRE')).toBe(true);
+    });
+
+    it('PILOTÉ PAR LES DONNÉES : paire désactivée → fausse, zéro changement de code', () => {
+      const delegations = PAIRES_OFFICIELLES.map((d) =>
+        d.idDelegation === 7 ? { ...d, actif: false } : d,
+      );
+      expect(configure('PRESIDENT', delegations).paireActiveEntre('CHEF_COMMISSION', 'MEMBRE')).toBe(false);
+    });
+
+    it('paire inexistante dans la table → fausse', () => {
+      expect(configure('PRESIDENT').paireActiveEntre('SECRETAIRE', 'MEMBRE')).toBe(false);
+    });
+  });
+
   // ⚠️ 2026-08-28 (demande user) — la délégation ascendante est AUTOMATIQUE. Ce bloc testait
   // l'inverse : l'opt-in par interrupteur du 15/08, éteint par défaut. Il teste désormais que
   // rien ne s'interpose plus entre une paire active et l'apparition des tâches déléguées.

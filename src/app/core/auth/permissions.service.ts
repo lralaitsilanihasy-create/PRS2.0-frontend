@@ -94,6 +94,17 @@ export class PermissionsService {
   // QUELLES paires existent — seulement si l'on peut agir, ce que répond `peutExecuter`.
 
 
+  /**
+   * ⚠️ Demande pilote (2026-09-03) — la paire (delegant → delegue) est-elle active, INDÉPENDAMMENT
+   * du rôle courant ? Sert à proposer un TIERS comme attributaire d'une tâche déléguée (ex. le
+   * Président dispatche AU Chef de commission : l'option n'existe que si CC → Membre est active —
+   * paire désactivée, option disparue, zéro code). Le backend reste l'autorité (peutExercer, 400).
+   */
+  paireActiveEntre(delegant: Role, delegue: Role): boolean {
+    this.assurerChargement();
+    return this.paireActive(delegant, delegue);
+  }
+
   /** La paire (delegant → delegue) est-elle active ? (table serveur, repli optimiste avant chargement). */
   private paireActive(delegant: Role, delegue: Role): boolean {
     const paires = this.paires();
