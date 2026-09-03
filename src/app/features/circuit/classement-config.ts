@@ -77,6 +77,17 @@ export function dossierExcluDuGroupe(g: ClassementGroupe, d: Dossier, role: Role
 }
 
 /**
+ * ⚠️ Suite (question pilote du même jour : « le menu pre-dispatch est-il encore utile dans ce
+ * profil ? ») — chez le CC de la localité CENTRALE, le groupe « Pré-dispatch » est masqué en ENTIER
+ * (tuile KPI + ligne des cartes) : tous ses dossiers sont centraux, le groupe resterait
+ * définitivement à zéro. Les CC régionaux et le Président le gardent — même discriminant que
+ * `dossierExcluDuGroupe`, appliqué à la localité de l'UTILISATEUR (un CC ne voit que la sienne).
+ */
+export function groupeMasquePourProfil(g: ClassementGroupe, role: Role | null, localiteUtilisateur: string | null): boolean {
+  return !!g.actionDispatch && role === 'CHEF_COMMISSION' && estLocaliteCentrale(localiteUtilisateur);
+}
+
+/**
  * File de réception du Secrétaire (SOUMIS → « Attribuer un numéro ») — TITULAIRE : Secrétaire ; montée aussi
  * chez Président/CC par DÉLÉGATION ASCENDANTE (paire active en base ; le groupe est masqué sinon,
  * cf. `DossiersClassement.groupesVisibles`).

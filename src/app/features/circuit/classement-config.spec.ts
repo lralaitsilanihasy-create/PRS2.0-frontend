@@ -5,6 +5,7 @@ import {
   dossierExcluDuGroupe,
   GROUPE_ENREGISTREMENT,
   GROUPE_RECEPTIONS,
+  groupeMasquePourProfil,
   separerGroupesParDelegation,
   statutsPartages,
 } from './classement-config';
@@ -150,5 +151,17 @@ describe('dossierExcluDuGroupe (pré-dispatch central, demande pilote 2026-09-03
   it('un dossier sans localité, ou un rôle absent, n’est jamais exclu', () => {
     expect(dossierExcluDuGroupe(preDispatch, { idDossier: 1, statut: 'PRET_DISPATCH' } as Dossier, 'CHEF_COMMISSION')).toBe(false);
     expect(dossierExcluDuGroupe(preDispatch, dossier('ANT'), null)).toBe(false);
+  });
+
+  // Question pilote (même jour) : « le menu pre-dispatch est-il encore utile dans ce profil ? » —
+  // non, chez le CC CENTRAL : le groupe entier (tuile + ligne) disparaît, il resterait à zéro.
+  it('groupe « Pré-dispatch » MASQUÉ en entier chez le CC de la localité centrale', () => {
+    expect(groupeMasquePourProfil(preDispatch, 'CHEF_COMMISSION', 'ANT')).toBe(true);
+  });
+
+  it('le groupe reste affiché : CC régional, Président (sans localité), autres groupes', () => {
+    expect(groupeMasquePourProfil(preDispatch, 'CHEF_COMMISSION', 'TOA')).toBe(false);
+    expect(groupeMasquePourProfil(preDispatch, 'PRESIDENT', null)).toBe(false);
+    expect(groupeMasquePourProfil(enregistrement, 'CHEF_COMMISSION', 'ANT')).toBe(false);
   });
 });

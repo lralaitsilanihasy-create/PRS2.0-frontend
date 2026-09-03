@@ -9,7 +9,7 @@ import { DelegationsAffichageStore } from '../../core/preferences/delegations-af
 import { Dossier, TypeDossier } from '../../models';
 import { DemandeRetraitService, DossierService, TypeDossierService } from '../../services';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
-import { ClassementConfig, ClassementGroupe, dossierExcluDuGroupe, dossiersDuClassement, separerGroupesParDelegation, statutsPartages } from './classement-config';
+import { ClassementConfig, ClassementGroupe, dossierExcluDuGroupe, dossiersDuClassement, groupeMasquePourProfil, separerGroupesParDelegation, statutsPartages } from './classement-config';
 import { DispatchsControleurs } from './dispatchs-controleurs';
 import { DossiersCircuitListe } from './dossiers-circuit-liste';
 import { RetraitsValidation } from './retraits-validation';
@@ -289,7 +289,11 @@ export class DossiersClassement {
    * RECEPTION_WRITE). Trier sur le champ seul laisserait « Réceptions » du mauvais côté.
    */
   readonly groupesVisibles = computed(() => {
-    const permis = this.cfg.groupes.filter((g) => this.groupePermis(g));
+    // Pré-dispatch masqué chez le CC de la localité CENTRALE (question pilote 2026-09-03) :
+    // le groupe y resterait définitivement à zéro, seul le Président dispatche ces dossiers.
+    const permis = this.cfg.groupes.filter(
+      (g) => this.groupePermis(g) && !groupeMasquePourProfil(g, this.auth.role(), this.auth.localite()),
+    );
     return [...permis.filter((g) => !this.delegationDe(g)), ...permis.filter((g) => !!this.delegationDe(g))];
   });
 
