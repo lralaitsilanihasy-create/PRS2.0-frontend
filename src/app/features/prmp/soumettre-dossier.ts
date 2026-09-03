@@ -610,6 +610,26 @@ interface ApercuDossier {
               <button type="button" class="btn btn-secondary btn-sm" (click)="fermerApercu()" aria-label="Fermer">✕</button>
             </div>
             <div class="modal-body">
+              <!-- ⚠️ Demande pilote (2026-09-03) — les trois documents de l'aperçu EN ONGLETS
+                   (fiche en tête, comme partout) au lieu d'un empilement. -->
+              <div class="sd__ap-tabs" role="tablist" aria-label="Documents du dossier">
+                <button type="button" class="sd__ap-tab" role="tab" [class.sd__ap-tab--on]="ongletApercu() === 'fiche'"
+                  [attr.aria-selected]="ongletApercu() === 'fiche'" (click)="ongletApercu.set('fiche')">
+                  Fiche de présentation <span class="sd__ap-tab-n">{{ a.fiche.nbMarchesConcernes }}</span>
+                </button>
+                <button type="button" class="sd__ap-tab" role="tab" [class.sd__ap-tab--on]="ongletApercu() === 'ppm'"
+                  [attr.aria-selected]="ongletApercu() === 'ppm'" (click)="ongletApercu.set('ppm')">
+                  Plan de passation <span class="sd__ap-tab-n">{{ a.marches.length }}</span>
+                </button>
+                @if (a.agpm.length) {
+                  <button type="button" class="sd__ap-tab" role="tab" [class.sd__ap-tab--on]="ongletApercu() === 'agpm'"
+                    [attr.aria-selected]="ongletApercu() === 'agpm'" (click)="ongletApercu.set('agpm')">
+                    Projet d'AGPM <span class="sd__ap-tab-n">{{ a.agpm.length }}</span>
+                  </button>
+                }
+              </div>
+
+              @if (ongletApercu() === 'ppm') {
               <div class="ppm-doc">
                 <h1 class="ppm-doc__titre">PLAN DE PASSATION DES MARCHES POUR L'ANNEE {{ a.exercice ?? '____' }}</h1>
                 <div class="ppm-doc__entete">
@@ -688,10 +708,12 @@ interface ApercuDossier {
                   <p><strong>{{ a.signataire || '' }}</strong></p>
                 </div>
               </div>
+              }
 
-              <!-- ⚠️ Demande user (2026-09-01) — la FICHE DE PRESENTATION du dossier, visualisée dès
-                   la création : mêmes trois listes que l'onglet du détail PPM (formulaire officiel),
-                   dérivées de la grille ci-dessus. Justifications à compléter sur la fiche signée. -->
+              <!-- ⚠️ Demande user (2026-09-01, en onglet depuis le 03/09) — la FICHE DE
+                   PRESENTATION du dossier, visualisée dès la création : mêmes trois listes que
+                   l'onglet du détail PPM, dérivées de la grille de saisie. -->
+              @if (ongletApercu() === 'fiche') {
               <div class="ppm-doc sd__fiche-doc">
                 <h1 class="ppm-doc__titre">FICHE DE PRESENTATION</h1>
                 <p><u>Nature du dossier</u> : <strong>Projet de Plan de passation des marchés de l'année {{ a.exercice ?? '____' }}, Initial</strong></p>
@@ -746,11 +768,12 @@ interface ApercuDossier {
                   </p>
                 }
               </div>
+              }
 
-              <!-- ⚠️ Demande user (2026-09-01) — le PROJET D'AGPM, troisième document de l'aperçu :
-                   marchés en mode déclencheur d'AGPM (drapeau administrable), au format du modèle
-                   officiel. Rendu seulement quand l'avis a des lignes (sinon sans objet). -->
-              @if (a.agpm.length) {
+              <!-- ⚠️ Demande user (2026-09-01, en onglet depuis le 03/09) — le PROJET D'AGPM :
+                   marchés en mode déclencheur (drapeau administrable), au format du modèle
+                   officiel. Onglet présent seulement quand l'avis a des lignes. -->
+              @if (ongletApercu() === 'agpm' && a.agpm.length) {
                 <div class="ppm-doc sd__fiche-doc">
                   <h1 class="ppm-doc__titre">AVIS GENERAL DE PASSATION DES MARCHES POUR L'ANNEE {{ a.exercice ?? '____' }}</h1>
                   <div class="ppm-doc__entete">
@@ -937,6 +960,15 @@ interface ApercuDossier {
     .ppm-doc__pied p { margin: 0.2rem 0; }
     .ppm-doc__prmp { margin-top: 1rem; font-weight: 700; text-transform: uppercase; }
     .sd__ap-alertes { margin-top: 1rem; }
+    /* Onglets de l'aperçu (2026-09-03) : mêmes couleurs orange que les onglets de dossier. */
+    .sd__ap-tabs { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .sd__ap-tab { appearance: none; border: 0; border-radius: 10px; padding: 0.55rem 1.1rem; font: inherit; font-size: var(--text-sm); font-weight: 700; cursor: pointer; background: #FFF7ED; color: #C2410C; transition: background 140ms var(--ease-out), color 140ms var(--ease-out); }
+    .sd__ap-tab:hover { background: #FFEDD5; }
+    .sd__ap-tab:focus-visible { outline: 2px solid #C2410C; outline-offset: 2px; }
+    .sd__ap-tab--on { background: #C2410C; color: #fff; box-shadow: 0 2px 6px rgb(194 65 12 / 32%); }
+    .sd__ap-tab--on:hover { background: #9A3412; }
+    .sd__ap-tab-n { display: inline-block; margin-left: 0.45rem; padding: 0.05rem 0.45rem; border-radius: 999px; background: #fff; color: #C2410C; font-size: var(--text-xs); }
+    .sd__ap-tab--on .sd__ap-tab-n { background: rgb(255 255 255 / 25%); color: #fff; }
     .sd__ap-pieces { margin-top: 0.75rem; font-size: var(--text-sm); }
     .confirm-modal { max-width: 36rem; }
     .table-card td { white-space: normal; }
@@ -1159,6 +1191,8 @@ export class SoumettreDossier {
   readonly importe = signal(false);
   /** Snapshot lecture seule du dossier à créer (aperçu) ; null = fermé. Ne crée rien. */
   readonly apercu = signal<ApercuDossier | null>(null);
+  /** Onglet actif de l'aperçu (2026-09-03) — fiche en tête, ouverture sur le plan (comme le détail PPM). */
+  readonly ongletApercu = signal<'ppm' | 'fiche' | 'agpm'>('ppm');
 
   /** Référentiel CAPM (processus de marché), trié par `ordre` ASC. */
   readonly capms = signal<Capm[]>([]);
@@ -1677,6 +1711,7 @@ export class SoumettreDossier {
     const pieces = this.typesPiece()
       .filter((t) => this.pieces().has(t.idTypePiece))
       .map((t) => ({ libelle: t.libellePiece, nom: this.pieces().get(t.idTypePiece)!.name }));
+    this.ongletApercu.set('ppm'); // chaque ouverture repart sur le plan
     this.apercu.set({
       entite: ent?.libelle ?? '—',
       adresse: ent?.adresse ?? '—',
