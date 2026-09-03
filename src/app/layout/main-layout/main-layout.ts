@@ -22,7 +22,7 @@ import { ChangerMotDePasseModal } from '../../features/auth/mon-compte/changer-m
 import { ActualitesModal } from '../../shared/actualites/actualites-modal';
 import { Actualite } from '../../models/actualite.model';
 import { ActualiteService } from '../../services/actualite.services';
-import { Dossier, Role } from '../../models';
+import { Dossier, estLocaliteCentrale, Role } from '../../models';
 
 /** Entrée de menu du Vérificateur portant le badge du nombre de dossiers restant à traiter. */
 const CHEMIN_A_VERIFIER = '/verificateur/a-verifier';
@@ -358,7 +358,11 @@ export class MainLayout {
             c['/president/mes-dossiers'] = compteurs['predispatch'] ?? 0;
             break;
           case 'CHEF_COMMISSION':
-            c['/cc/mes-dossiers'] = compteurs['predispatch'] ?? 0;
+            // ⚠️ 2026-09-03 — le pré-dispatch des dossiers CENTRAUX relève du seul Président : chez
+            // le CC de la centrale, ce compteur désignerait des dossiers que son écran ne montre
+            // plus (incohérence pastille 2 / total 1 relevée par le pilote) → pastille supprimée.
+            // Les CC régionaux gardent leur « à dispatcher ».
+            c['/cc/mes-dossiers'] = estLocaliteCentrale(this.auth.localite()) ? 0 : compteurs['predispatch'] ?? 0;
             break;
           case 'SECRETAIRE':
             c['/secretaire/mes-dossiers'] = compteurs['aReceptionner'] ?? 0;
