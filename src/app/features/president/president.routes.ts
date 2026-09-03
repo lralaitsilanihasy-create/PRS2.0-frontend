@@ -25,10 +25,10 @@ import { CIRCUIT_GROUPES, GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../ci
  *  + section « Dispatchs par contrôleur » sous le classement. */
 const CLASSEMENT_PRESIDENT = { subtitle: 'Domaine Président', base: '/president/mes-dossiers', groupes: CIRCUIT_GROUPES, statDispatchsControleurs: true, retraitsPath: '/president/retraits' };
 
-/** ⚠️ Demande pilote (2026-09-03) — les tâches du Secrétaire quittent les cartes de « Mes dossiers » :
- *  chacune a son entrée de menu « Exercé par délégation » et son propre classement. */
-const CLASSEMENT_RECEPTIONS_PRESIDENT = { subtitle: 'Domaine Président', titre: 'Réceptions', base: '/president/receptions', groupes: [GROUPE_RECEPTIONS] };
-const CLASSEMENT_ENREGISTRES_PRESIDENT = { subtitle: 'Domaine Président', titre: 'Enregistrés', base: '/president/enregistres', groupes: [GROUPE_ENREGISTREMENT] };
+/** ⚠️ Demande pilote (2026-09-03) — les tâches du Secrétaire quittent les cartes de « Mes dossiers »
+ *  pour UNE entrée de menu « Exercé par délégation » (les deux groupes COMBINÉS — le dépôt entre en
+ *  Réceptions et ressort en Enregistrés, un seul écran suffit). */
+const CLASSEMENT_SECRETARIAT_PRESIDENT = { subtitle: 'Domaine Président', titre: 'Réceptions & Enregistrés', base: '/president/secretariat', groupes: [GROUPE_RECEPTIONS, GROUPE_ENREGISTREMENT] };
 
 /** Espace Président (lazy, sous roleGuard PRESIDENT). */
 export const PRESIDENT_ROUTES: Routes = [
@@ -40,10 +40,8 @@ export const PRESIDENT_ROUTES: Routes = [
   },
   { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_PRESIDENT } },
   { path: 'mes-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_PRESIDENT } },
-  { path: 'receptions', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_RECEPTIONS_PRESIDENT } },
-  { path: 'receptions/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_RECEPTIONS_PRESIDENT } },
-  { path: 'enregistres', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_ENREGISTRES_PRESIDENT } },
-  { path: 'enregistres/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_ENREGISTRES_PRESIDENT } },
+  { path: 'secretariat', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_SECRETARIAT_PRESIDENT } },
+  { path: 'secretariat/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_SECRETARIAT_PRESIDENT } },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le Président administre partout.
   { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
   // « Dispatchs par contrôleur » : section embarquée dans « Mes dossiers » (plus d'écran dédié).

@@ -60,11 +60,11 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // par Président/CC : entrées affichées SEULEMENT si la paire est active en base (champ `delegation`).
     // Les tâches Secrétaire (réceptions) et Membre (Examiner) vivent dans « Mes dossiers » (groupes/actions
     // gardés par capacités, mêmes paires).
-    // ⚠️ Demande pilote (2026-09-03) — les tâches du SECRÉTAIRE vivent ICI (menus « Exercé par
+    // ⚠️ Demande pilote (2026-09-03) — les tâches du SECRÉTAIRE vivent ICI (menu « Exercé par
     // délégation »), plus dans les cartes de « Mes dossiers » ; les files « À examiner / Examinés »
-    // du Membre, elles, sont DANS ces cartes (rubrique déléguée). Pilotées par les paires actives.
-    { label: 'Réceptions', path: `${base}/receptions`, icon: '📥', delegation: 'SECRETAIRE' },
-    { label: 'Enregistrés', path: `${base}/enregistres`, icon: '📚', delegation: 'SECRETAIRE' },
+    // du Membre, elles, sont DANS ces cartes (rubrique déléguée). Une SEULE entrée combinée
+    // (demande du même jour) : le dépôt entre en Réceptions et ressort en Enregistrés.
+    { label: 'Réceptions & Enregistrés', path: `${base}/secretariat`, icon: '📥', delegation: 'SECRETAIRE' },
     { label: 'Vérifications', path: `${base}/verifications`, icon: '🔎', delegation: 'VERIFICATEUR' },
     { label: 'Archivage des PV', path: `${base}/pv-examens`, icon: '🗄', delegation: 'ASSISTANT_CONTROLEUR' },
     // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant, administrées par
