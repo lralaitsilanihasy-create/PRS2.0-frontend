@@ -26,7 +26,7 @@ import {
   TypeDossierService,
   VerificationService,
 } from '../../services';
-import { ObservationPvCard, StatutBadge } from '../../shared/circuit';
+import { ChronometrageDossier, ObservationPvCard, StatutBadge } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 import { DetailPvModal } from '../circuit/detail-pv-modal';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
@@ -50,7 +50,7 @@ interface Echange {
 @Component({
   selector: 'app-verifier-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SlicePipe, StatutBadge, DossierConsultation, DetailPvModal, ModaleDirective, ObservationPvCard],
+  imports: [ChronometrageDossier, SlicePipe, StatutBadge, DossierConsultation, DetailPvModal, ModaleDirective, ObservationPvCard],
   template: `
     <section class="vf">
       <header class="page-header">
@@ -65,6 +65,18 @@ interface Echange {
         réserve). Statuez chaque observation du PV — levée (définitive) ou maintenue ; quand toutes sont
         levées, le dossier passe à la transmission SIGMP.
       </div>
+
+      <!-- Chronométrage : prise en charge des étapes VERIFICATION / TRANSMISSION_SIGMP.
+           ⚠️ Demande pilote (2026-09-04) — AUCUNE action sans prise en charge. -->
+      <div class="card"><div class="card-body">
+        <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" (actionAutorisee)="actionAutorisee.set($event)" />
+        @if (!actionAutorisee()) {
+          <p class="vf__verrou" role="status">
+            🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en charge
+            marque le début de votre action et alimente le chronométrage.
+          </p>
+        }
+      </div></div>
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
@@ -152,7 +164,9 @@ interface Echange {
                   <p class="form-hint">La transmission est enregistrée côté PRS 2.0 (interop SIGMP) puis le PV part automatiquement chez l'Assistant contrôleur pour archivage.</p>
                   <div class="vf__foot">
                     <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
-                    <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="transmettreSigmp()">
+                    <button type="button" class="btn btn-primary" [disabled]="saving() || !actionAutorisee()"
+                      [title]="!actionAutorisee() ? 'Prenez en charge le dossier (bouton « Prendre en charge » en haut) avant de transmettre.' : ''"
+                      (click)="transmettreSigmp()">
                       {{ saving() ? 'Transmission…' : 'Transmettre la décision à SIGMP' }}
                     </button>
                   </div>
@@ -222,7 +236,9 @@ interface Echange {
                 @if (formError()) { <span class="form-error">{{ formError() }}</span> }
                 <div class="vf__foot">
                   <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
-                  <button type="button" class="btn btn-primary" [disabled]="saving() || !toutesStatuees()" (click)="enregistrer()">
+                  <button type="button" class="btn btn-primary" [disabled]="saving() || !toutesStatuees() || !actionAutorisee()"
+                    [title]="!actionAutorisee() ? 'Prenez en charge le dossier (bouton « Prendre en charge » en haut) avant la saisie.' : ''"
+                    (click)="enregistrer()">
                     {{ saving() ? 'Enregistrement…' : 'Enregistrer le passage' }}
                   </button>
                 </div>
@@ -263,6 +279,8 @@ interface Echange {
     }
   `,
   styles: `
+    /* « Aucune action sans prise en charge » (2026-09-04). */
+    .vf__verrou { margin: 0.6rem 0 0; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
     /* ⚠️ 2026-08-06 — à gauche la consultation du dossier (tableau des marchés, 14 colonnes), à droite
        le panneau de décision : la part du dossier passe de 1,3 à 1,9 pour que ses en-têtes respirent. */
     .vf__grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 0.75rem; align-items: start; }
@@ -327,6 +345,8 @@ export class VerifierDossier {
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly formError = signal<string | null>(null);
+  /** ⚠️ Demande pilote (2026-09-04) — « aucune action sans prise en charge » (émis par le widget chronométrage). */
+  readonly actionAutorisee = signal(false);
   /** Modale de confirmation avant transmission à la PRMP (obsLevees = false). */
   readonly confirmOpen = signal(false);
 

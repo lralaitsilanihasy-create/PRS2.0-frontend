@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -277,6 +277,14 @@ export class ChronometrageDossier {
    * `forkJoin` et le passe ici). Absent → le composant fait son propre GET.
    */
   readonly donnees = input<Chronometrage | undefined>(undefined);
+  /**
+   * ⚠️ Demande pilote (2026-09-04) — « aucune action sans prise en charge » : émet `true` quand
+   * l'utilisateur peut agir sur le dossier — soit il n'est PAS le porteur de l'étape courante
+   * (l'écran ne le concerne pas : édition, consultation), soit SA prise en charge est enregistrée.
+   * `false` tant que le chronométrage n'est pas chargé et tant que le porteur n'a pas cliqué
+   * « Prendre en charge ». Les écrans d'action verrouillent leurs panneaux sur ce signal.
+   */
+  readonly actionAutorisee = output<boolean>();
 
   readonly chrono = signal<Chronometrage | null>(null);
   readonly chargement = signal(false);
@@ -324,6 +332,11 @@ export class ChronometrageDossier {
         return;
       }
       this.chargerChronometrage(id);
+    });
+    // « Aucune action sans prise en charge » (2026-09-04) — recalculé à chaque (re)chargement.
+    effect(() => {
+      const c = this.chrono();
+      this.actionAutorisee.emit(!!c && (!this.peutPrendreEnCharge() || this.estMaTache()));
     });
   }
 

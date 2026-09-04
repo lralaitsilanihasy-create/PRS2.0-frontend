@@ -8,7 +8,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { Controleur, Dispatch, Dossier, Reception } from '../../models';
-import { peutSAutoProposer } from '../../shared/circuit';
+import { ChronometrageDossier, peutSAutoProposer } from '../../shared/circuit';
 import {
   ControleurService,
   DispatchService,
@@ -42,7 +42,7 @@ export interface DispatchItem {
 @Component({
   selector: 'app-dispatch-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule],
+  imports: [ChronometrageDossier, ModaleDirective, ReactiveFormsModule],
   template: `
     <div class="modal-backdrop" [class.closing]="closingDispatch()">
       <form
@@ -63,6 +63,22 @@ export interface DispatchItem {
           }
         </header>
         <div class="modal-body">
+          <!-- ⚠️ Demande pilote (2026-09-04) — AUCUNE action sans prise en charge : le dispatch
+               unitaire exige la prise en charge de l'étape (la réattribution en est exemptée — le
+               CC réattribue précisément parce qu'il ne commence PAS l'examen). -->
+          @if (items().length === 1 && !reattribution()) {
+            <app-chronometrage-dossier
+              [idDossier]="items()[0].dossier.idDossier"
+              [compact]="true"
+              (actionAutorisee)="priseEnChargeOk.set($event)"
+            />
+            @if (!actionAutorisee()) {
+              <p class="df__verrou" role="status">
+                🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en charge
+                marque le début de votre action et alimente le chronométrage.
+              </p>
+            }
+          }
           @if (items().length > 1) {
             <div class="df__lot">
               @for (it of items(); track it.dossier.idDossier) {
@@ -134,7 +150,12 @@ export interface DispatchItem {
         </div>
         <footer class="modal-footer">
           <button type="button" class="btn btn-outline" [disabled]="submitting()" (click)="fermerDispatchAnime()">Annuler</button>
-          <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="submitting() || !actionAutorisee()"
+            [title]="!actionAutorisee() ? 'Prenez en charge le dossier (bouton « Prendre en charge » ci-dessus) avant de dispatcher.' : ''"
+          >
             @if (submitting()) {
               Dispatch en cours…
             } @else {
@@ -167,6 +188,8 @@ export interface DispatchItem {
     .df__lot { display: flex; flex-wrap: wrap; gap: 0.4rem; }
     .df__lot-ref { padding: 0.18rem 0.6rem; background: var(--p-50); color: var(--p-600); border: 1px solid var(--p-200); border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: 600; }
     .df__lot-hint { margin: 0.5rem 0 0.75rem; color: var(--n-500); font-size: var(--text-sm); }
+    /* « Aucune action sans prise en charge » (2026-09-04). */
+    .df__verrou { margin: 0.6rem 0 0.75rem; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
   `,
 })
 export class DispatchForm {
@@ -200,6 +223,10 @@ export class DispatchForm {
   private readonly lookups = inject(ReferenceLookupService);
 
   readonly submitting = signal(false);
+  /** ⚠️ Demande pilote (2026-09-04) — prise en charge du widget (dispatch unitaire seulement). */
+  readonly priseEnChargeOk = signal(false);
+  /** Dispatch autorisé : lot (pas de widget), réattribution (exemptée), ou prise en charge faite. */
+  readonly actionAutorisee = computed(() => this.items().length > 1 || !!this.reattribution() || this.priseEnChargeOk());
   private readonly controleurs = signal<Controleur[]>([]);
   private readonly profileLib = signal<Map<number, string>>(new Map());
   private readonly entiteMap = signal<Map<string, string>>(new Map());

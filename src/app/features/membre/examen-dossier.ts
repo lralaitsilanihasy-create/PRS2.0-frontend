@@ -105,7 +105,7 @@ interface RowState {
         <!-- Chronométrage (2026-09-01) : prise en charge de l'étape EXAMEN + prévision. -->
         <div class="card exam__chrono">
           <div class="card-body">
-            <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" />
+            <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" (actionAutorisee)="actionAutorisee.set($event)" />
           </div>
         </div>
         <div class="exam__grid">
@@ -263,7 +263,16 @@ interface RowState {
 
           <div class="card exam__panel exam__panel--consigner">
             <div class="card-header"><span class="card-title">Consigner l'examen</span></div>
-            <div class="card-body cnm-form">
+            <!-- ⚠️ Demande pilote (2026-09-04) — AUCUNE action sans prise en charge : le panneau est
+                 verrouillé tant que le porteur de l'étape courante n'a pas cliqué « Prendre en
+                 charge » (bandeau chronométrage en haut de l'écran). -->
+            @if (!actionAutorisee()) {
+              <div class="exam__verrou" role="status">
+                🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » (bandeau en haut de l'écran) :
+                la prise en charge marque le début de votre action et alimente le chronométrage.
+              </div>
+            }
+            <div class="card-body cnm-form" [class.exam__corps--verrouille]="!actionAutorisee()">
               @if (mode() === 'locked') {
                 <p class="form-hint">Examen verrouillé (PV signé / dossier clôturé) — lecture seule.</p>
               }
@@ -480,6 +489,10 @@ interface RowState {
        s'affiche en pleine hauteur, la page défile s'il est long. Le panneau du contenu, lui,
        reste borné avec son défilement interne et ses en-têtes figés. */
     .exam__panel--consigner { align-self: start; }
+    /* « Aucune action sans prise en charge » (2026-09-04) : panneau grisé et inerte tant que le
+       porteur de l'étape n'a pas pris en charge — le contenu reste lisible, pas cliquable. */
+    .exam__verrou { margin: 0.75rem 1.1rem 0; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
+    .exam__corps--verrouille { pointer-events: none; opacity: 0.45; }
     /* Onglets du contenu (2026-09-02) : MÊMES couleurs orange clair que les onglets du détail PPM
        (demande pilote 02/09) — un seul langage d'onglets de dossier. Marge haute : la ligne
        collait aux informations du dossier au-dessus. */
@@ -804,6 +817,9 @@ export class ExamenDossier implements OnDestroy {
   private readonly capmsRef = signal<Capm[]>([]);
   /** Onglet actif du panneau « Contenu du dossier » (dossiers DDP seulement). */
   readonly ongletContenu = signal<'ppm' | 'fiche' | 'agpm' | 'pieces'>('ppm');
+  /** ⚠️ Demande pilote (2026-09-04) — « aucune action sans prise en charge » : émis par le widget
+   *  chronométrage ; faux tant que le porteur de l'étape courante n'a pas pris en charge. */
+  readonly actionAutorisee = signal(false);
   /** Les deux documents dérivés — mêmes fonctions pures que le détail PPM et l'aperçu de création. */
   readonly ficheDoc = computed(() =>
     calculerFichePresentation(this.marches(), this.previsions(), this.modesRef(), this.capmsRef()),

@@ -65,8 +65,16 @@ interface LigneControle {
 
         <div class="modal-body">
           <!-- Chronométrage (2026-09-01) : prise en charge de l'étape RECEPTION + prévision. -->
-          <app-chronometrage-dossier [idDossier]="dossier().idDossier" [compact]="true" />
+          <app-chronometrage-dossier [idDossier]="dossier().idDossier" [compact]="true" (actionAutorisee)="actionAutorisee.set($event)" />
 
+          <!-- ⚠️ Demande pilote (2026-09-04) — AUCUNE action sans prise en charge. -->
+          @if (!actionAutorisee()) {
+            <div class="rf-verrou" role="status">
+              🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en charge
+              marque le début de votre action et alimente le chronométrage.
+            </div>
+          }
+          <div [class.rf-corps--verrouille]="!actionAutorisee()">
           <!-- Bandeau d'identification (tuiles, même langage que l'en-tête des PV). -->
           <div class="rf-bandeau">
             <div class="rf-tuile">
@@ -159,17 +167,18 @@ interface LigneControle {
             <span class="form-label">Observation générale (réception)</span>
             <textarea class="form-control" rows="2" formControlName="observation"></textarea>
           </label>
+          </div>
         </div>
 
         <footer class="modal-footer">
           <button type="button" class="btn btn-outline" (click)="fermerDAnime()">Annuler</button>
           @if (defauts()) {
-            <button type="button" class="btn btn-warning" [disabled]="signalement()" (click)="notifierPrmp()">
+            <button type="button" class="btn btn-warning" [disabled]="signalement() || !actionAutorisee()" (click)="notifierPrmp()">
               {{ signalement() ? 'Notification…' : 'Notifier la PRMP (pièces manquantes)' }}
             </button>
           }
-          <button type="submit" class="btn btn-primary" [disabled]="submitting() || bloquantes().length > 0"
-            [title]="bloquantes().length ? 'Vérifiez et déclarez conformes toutes les pièces obligatoires.' : ''">
+          <button type="submit" class="btn btn-primary" [disabled]="submitting() || bloquantes().length > 0 || !actionAutorisee()"
+            [title]="!actionAutorisee() ? 'Prenez en charge le dossier (bouton « Prendre en charge » ci-dessus).' : bloquantes().length ? 'Vérifiez et déclarez conformes toutes les pièces obligatoires.' : ''">
             {{ submitting() ? 'Enregistrement…' : 'Enregistrer la réception' }}
           </button>
         </footer>
@@ -178,6 +187,9 @@ interface LigneControle {
   `,
   styles: `
     .rf-modal { max-width: 48rem; }
+    /* « Aucune action sans prise en charge » (2026-09-04) : corps grisé et inerte avant la prise en charge. */
+    .rf-verrou { margin: 0.75rem 0; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
+    .rf-corps--verrouille { pointer-events: none; opacity: 0.45; }
     /* En-tête : titre + référence, ✕ calé à droite. */
     /* Titre décalé un peu vers le bas et la droite (demande pilote 02/09) : il collait au coin du modal. */
     .rf-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 0.9rem 0 0 1.1rem; }
@@ -254,6 +266,8 @@ export class ReceptionForm implements OnInit {
 
   readonly submitting = signal(false);
   readonly signalement = signal(false);
+  /** ⚠️ Demande pilote (2026-09-04) — « aucune action sans prise en charge » (émis par le widget chronométrage). */
+  readonly actionAutorisee = signal(false);
   readonly decisionEnCours = signal(false);
   readonly chargementCtrl = signal(true);
   private readonly localiteMap = signal<Map<string, string>>(new Map());

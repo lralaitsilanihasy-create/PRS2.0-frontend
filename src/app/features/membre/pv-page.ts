@@ -272,10 +272,19 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                 </div>
                 <!-- Chronométrage (2026-09-01) : prise en charge des étapes VISA / COSIGNATURE. -->
                 @if (idDossierDe(pv); as idDos) {
-                  <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" />
+                  <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" (actionAutorisee)="majAutorisation(pv.idPv, $event)" />
+                  <!-- ⚠️ Demande pilote (2026-09-04) — AUCUNE action sans prise en charge. -->
+                  @if (!autorisation(pv.idPv)) {
+                    <div class="pv__verrou" role="status">
+                      🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en
+                      charge marque le début de votre action et alimente le chronométrage.
+                    </div>
+                  }
                 }
-                <app-pv-workflow [pv]="pv" [idLocalite]="dossierLocalite(pv)"
-                  [nbObservationsExamen]="nbObservations() + nbObservationsPieces()" (changed)="onChanged($event)" />
+                <div [class.pv__actions--verrouillees]="!autorisation(pv.idPv)">
+                  <app-pv-workflow [pv]="pv" [idLocalite]="dossierLocalite(pv)"
+                    [nbObservationsExamen]="nbObservations() + nbObservationsPieces()" (changed)="onChanged($event)" />
+                </div>
               }
             </li>
           } @empty {
@@ -292,6 +301,9 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
   `,
   styles: `
     .pv__info { color: var(--n-500); padding: 0.5rem 0; }
+    /* « Aucune action sans prise en charge » (2026-09-04) : actions du PV inertes avant la prise en charge. */
+    .pv__verrou { margin: 0.5rem 0; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
+    .pv__actions--verrouillees { pointer-events: none; opacity: 0.45; }
     .pv__list {
       list-style: none;
       margin: 0;
@@ -535,6 +547,15 @@ export class MembrePv {
   /** Dossier du PV — pour le chronométrage (prise en charge VISA / COSIGNATURE). */
   idDossierDe(pv: PvExamen): number | null {
     return this.dossierByExamen().get(pv.idExamen)?.idDossier ?? null;
+  }
+  /** ⚠️ Demande pilote (2026-09-04) — « aucune action sans prise en charge », par PV (widget par carte). */
+  private readonly autorisations = signal<Map<number, boolean>>(new Map());
+  majAutorisation(idPv: number, autorise: boolean): void {
+    this.autorisations.update((m) => new Map(m).set(idPv, autorise));
+  }
+  /** Autorisé par défaut SEULEMENT sans widget (pas de dossier lié) — le widget émet dès son premier calcul. */
+  autorisation(idPv: number): boolean {
+    return this.autorisations().get(idPv) ?? true;
   }
   /**
    * ⚠️ 2026-08-18 — « Rectifier l'examen » depuis le retour de navette. La règle d'ouverture de
