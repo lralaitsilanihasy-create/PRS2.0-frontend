@@ -136,6 +136,7 @@ interface LigneControleur {
                   <th scope="col">Entité contractante</th>
                   <th scope="col">Type</th>
                   <th scope="col">Date dispatch</th>
+                  <th scope="col">Instructions</th>
                   <th scope="col">Statut</th>
                   <th scope="col">Localité</th>
                   <th scope="col" class="r">Actions</th>
@@ -148,6 +149,8 @@ interface LigneControleur {
                     <td>{{ entiteLabel(a.dossier) }}</td>
                     <td>{{ typeLabel(a.dossier) }}</td>
                     <td style="white-space:nowrap;">{{ (a.dateDispatch | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
+                    <!-- Consignes du dispatcheur (demande pilote 2026-09-04) — texte long mis à la ligne. -->
+                    <td class="dpc__instructions">{{ a.dispatch.instructions || '—' }}</td>
                     <td>
                       @if (a.dossier.statut) { <app-statut-badge [statut]="a.dossier.statut" /> } @else { — }
                       @if (a.dossier.statut === 'DISPATCHE' && dossiersAvecExamen().has(a.dossier.idDossier)) {
@@ -269,6 +272,8 @@ interface LigneControleur {
     .dpc__confirm-hint { margin: 0.5rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
     /* Brouillon d'examen (couleur « en cours » de l'examen : indigo). */
     .dpc__brouillon { margin-left: 0.4rem; background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE; }
+    /* Consignes du dispatcheur : texte long possible — retour à la ligne, largeur bornée. */
+    .dpc__instructions { max-width: 22rem; white-space: normal; overflow-wrap: break-word; color: var(--n-500); }
     .dpc__empty { grid-column: 1 / -1; text-align: center; color: var(--n-400); padding: 1.5rem; background: #fff; border: 1px dashed var(--n-200); border-radius: 16px; }
   `,
 })
