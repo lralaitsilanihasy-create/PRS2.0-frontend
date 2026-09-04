@@ -620,6 +620,13 @@ export class DossierConsultation implements OnInit {
       TRANSMISSION_COMPLEMENTS_DEPOT: 'Compléments de dépôt',
       SUPPRESSION: 'Suppression',
       MISE_A_JOUR: 'Mise à jour',
+      // ⚠️ Demande pilote (2026-09-04) — gestes du circuit de dispatch, consignés par le backend
+      // (demande 2026-09-04-journal-circuit) : libellés prêts, inertes tant que rien n'est servi.
+      RECEPTION: 'Réception',
+      DISPATCH: 'Dispatch',
+      REATTRIBUTION: 'Réattribution',
+      REPRISE: 'Reprise par le dispatcheur',
+      RETRAIT_DISPATCH: 'Retrait du dispatch',
     };
     return labels[type] ?? type;
   }
