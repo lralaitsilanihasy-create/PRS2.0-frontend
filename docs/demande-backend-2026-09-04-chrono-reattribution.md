@@ -20,13 +20,16 @@ Président, qui produit bien un `DISPATCH#2`).
 ## Demande
 
 À la **réattribution** (`PUT /api/dispatchs/{id}` changeant l'attributaire) : consigner une tâche
-**`DISPATCH` occurrence n+1** au nom du **CC réattributeur** — même modèle que le dispatch :
-instantanée (prise en charge = fin = l'horodatage du geste), **prévision standard** de l'étape.
-Rien d'autre ne change (la date prévisionnelle de fin reste calculée comme aujourd'hui ; l'étape
-courante reste EXAMEN).
+**`DISPATCH` occurrence n+1** au nom de **l'AUTEUR du geste** — quel que soit son profil (CC
+central comme dans le constat, CC régional sur ses propres dispatchs, Président si le serveur
+l'autorise) — même modèle que le dispatch : instantanée (prise en charge = fin = l'horodatage du
+geste), **prévision standard** de l'étape. Rien d'autre ne change (la date prévisionnelle de fin
+reste calculée comme aujourd'hui ; l'étape courante reste EXAMEN).
 
-Périmètre : le geste de réattribution seul. La **reprise** (le CC se remet le dossier) et le
-**retrait** suivent la même logique si c'est à coût nul ; sinon, les laisser hors lot.
+Périmètre : tout geste qui **change l'attributaire** hors dispatch initial — réattribution, et par
+la même règle la **reprise** (le CC se remet le dossier) et le « **rendre** » du Membre si le
+modèle le permet à coût nul ; sinon, les laisser hors lot en le disant. Le retrait + re-dispatch
+du Président produit déjà son occurrence (anti-régression seulement).
 
 ## Tests attendus
 
