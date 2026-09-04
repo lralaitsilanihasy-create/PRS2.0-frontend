@@ -59,7 +59,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       } @else {
         <ul class="pv__list">
           @for (pv of pvs(); track pv.idPv) {
-            <li class="card pv-card">
+            <li class="card pv-card" [class.pv-card--open]="selected()?.idPv === pv.idPv">
               <div class="pv-card__head">
                 <!-- ⚠️ Demande user (2026-08-03) — le projet de PV est ACCOMPAGNÉ de son dossier :
                      référence + entité visibles dès la liste, et consultation complète du dossier
@@ -91,7 +91,9 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   <!-- Chronométrage EN TÊTE (demande pilote 2026-09-04 : « Prendre en charge »
                        toujours en haut) : prise en charge des étapes VISA / COSIGNATURE. -->
                   @if (idDossierDe(pv); as idDos) {
-                    <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" [attributaire]="attributaireDe(pv)" [pecPermise]="pecPermiseDe(pv)" (actionAutorisee)="majAutorisation(pv.idPv, $event)" />
+                    <div class="pv-chrono-strip">
+                      <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" [attributaire]="attributaireDe(pv)" [pecPermise]="pecPermiseDe(pv)" (actionAutorisee)="majAutorisation(pv.idPv, $event)" />
+                    </div>
                     @if (!autorisation(pv.idPv)) {
                       <div class="pv__verrou" role="status">
                         🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en
@@ -345,30 +347,40 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       flex-direction: column;
       gap: 0.75rem;
     }
-    .pv-card { padding: 0.875rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    /* Mise en forme d'ensemble (demande pilote 2026-09-04) : carte ouverte mise en relief,
+       respirations et ombrages cohérents sur toutes les rubriques. */
+    .pv-card { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; }
+    .pv-card--open { border-color: var(--c-200, #c7d2fe); box-shadow: 0 10px 28px rgba(30, 27, 75, 0.1); }
     .pv-card__head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
     /* Identité : référence du PV + dossier d'origine (⚠️ 2026-08-03). */
-    .pv-card__ident { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 14rem; }
-    .pv-card__ref { font-weight: 700; color: var(--c-800); }
+    .pv-card__ident { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; min-width: 14rem; }
+    .pv-card__ref { font-weight: 700; font-size: var(--text-md); color: var(--c-800); letter-spacing: -0.01em; }
     .pv-card__dossier { font-size: var(--text-xs); color: var(--n-500); display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem; }
     .pv-card__dossier-lbl { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--n-400); }
     .pv-card__sep { color: var(--n-300); }
     .pv-content {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.75rem;
       border-top: 1px solid var(--c-100);
-      padding-top: 0.75rem;
+      padding-top: 1rem;
+    }
+    /* Le chronométrage ouvre le détail : posé sur sa propre bande, il ne flotte plus dans la page. */
+    .pv-chrono-strip {
+      background: var(--n-50, #f8fafc);
+      border: 1px solid var(--n-200);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 0.95rem;
     }
     .pv-content td { white-space: normal; }
     .pv-info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
     .pv-info > div { display: flex; gap: 0.5rem; align-items: baseline; }
     .pv-info dt { flex: 0 0 11rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
     .pv-info dd { margin: 0; color: var(--n-700); }
-    /* En-tête du projet de PV : bandeau référence + tuiles (libellé au-dessus de la valeur). */
-    .pv-entete { display: flex; flex-direction: column; gap: 0.75rem; background: var(--c-50); border: 1px solid var(--c-100); border-radius: var(--radius-lg); padding: 0.875rem 1rem; }
-    .pv-entete__titre { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-    .pv-entete__ref { font-size: var(--text-lg); font-weight: 700; color: var(--c-800); }
+    /* En-tête du projet de PV : fiche d'identité — dégradé doux, référence en grand, filet interne. */
+    .pv-entete { display: flex; flex-direction: column; gap: 0.8rem; background: linear-gradient(180deg, var(--c-50), #fff); border: 1px solid var(--c-100); border-radius: var(--radius-lg); padding: 1rem 1.15rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05); }
+    .pv-entete__titre { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.6rem; border-bottom: 1px dashed var(--c-100); }
+    .pv-entete__ref { font-size: var(--text-xl, 1.25rem); font-weight: 800; color: var(--c-800); letter-spacing: -0.015em; }
     .pv-entete__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem 1rem; }
     .pv-entete__item { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
     .pv-entete__item--large { grid-column: span 2; }
@@ -383,10 +395,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .pv-synthese__texte { margin: 0; font-size: var(--text-sm); color: var(--n-700); white-space: pre-wrap; }
     /* Titres de section (présentation 2026-09-04) : intitulé discret + filet séparateur — chaque
        rubrique du PV se détache clairement de la précédente. */
-    .pv-sub { margin: 1.2rem 0 0.15rem; padding-top: 1rem; border-top: 1px solid var(--n-100); font-size: var(--text-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; color: var(--n-400); display: flex; align-items: center; gap: 0.45rem; }
+    .pv-sub { margin: 1.35rem 0 0.5rem; padding-top: 1rem; border-top: 1px solid var(--n-100); font-size: var(--text-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; color: var(--n-400); display: flex; align-items: center; gap: 0.45rem; }
     /* Tuiles des signataires : rôle, nom, état de la part — vert quand la signature est posée. */
     .pv-sig { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.6rem; }
-    .pv-sig__tuile { display: flex; flex-direction: column; gap: 0.2rem; border: 1px solid var(--n-200); border-left: 3px solid var(--n-300); border-radius: var(--radius-md); background: #fff; padding: 0.6rem 0.85rem; }
+    .pv-sig__tuile { display: flex; flex-direction: column; gap: 0.2rem; border: 1px solid var(--n-200); border-left: 3px solid var(--n-300); border-radius: var(--radius-md); background: #fff; padding: 0.7rem 0.95rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06); }
     .pv-sig__tuile--ok { border-left-color: #22C55E; background: #F6FEF9; }
     .pv-sig__role { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); font-weight: 700; }
     .pv-sig__nom { font-weight: 700; color: var(--n-800); }
