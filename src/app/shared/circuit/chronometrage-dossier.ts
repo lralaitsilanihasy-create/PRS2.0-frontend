@@ -50,14 +50,17 @@ import {
                 {{ t.dureeHeuresOuvrees }} h écoulées.
               </span>
               @if (estMaTache()) {
-                <button type="button" class="btn btn-outline btn-sm" (click)="ouvrirSaisie(t.previsionHeures)">
+                <button type="button" class="btn btn-outline btn-sm" [disabled]="saisieOuverte() || saving()" (click)="ouvrirSaisie(t.previsionHeures)">
                   Corriger ma prévision
                 </button>
               }
             } @else if (peutPrendreEnCharge()) {
               <!-- ⚠️ Demande pilote (2026-09-04) — bouton TRÈS repérable : c'est le geste qui ouvre
-                   toute action du profil (couleur vive, dérogation assumée aux tokens). -->
-              <button type="button" class="chrono__cta" (click)="ouvrirSaisie(null)">
+                   toute action du profil (couleur vive, dérogation assumée aux tokens). DÉSACTIVÉ
+                   dès que l'action est déclenchée (saisie ouverte / enregistrement en cours) ; une
+                   fois la prise en charge enregistrée, il cède la place à l'état « Prise en charge
+                   par… ». -->
+              <button type="button" class="chrono__cta" [disabled]="saisieOuverte() || saving()" (click)="ouvrirSaisie(null)">
                 ⏱ Prendre en charge
               </button>
             } @else {
@@ -184,9 +187,15 @@ import {
       box-shadow: 0 3px 10px rgba(234, 88, 12, 0.45);
       transition: transform 120ms var(--ease-out), box-shadow 120ms var(--ease-out);
     }
-    .chrono__cta:hover {
+    .chrono__cta:hover:not(:disabled) {
       transform: translateY(-1px);
       box-shadow: 0 5px 14px rgba(234, 88, 12, 0.55);
+    }
+    /* Action déclenchée (saisie ouverte / enregistrement) : bouton inerte, sans relief. */
+    .chrono__cta:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
     }
     .chrono__attente {
       color: var(--warning-700, #92400e);
