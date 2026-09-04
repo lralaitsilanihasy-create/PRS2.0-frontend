@@ -209,6 +209,14 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     }
                   </div>
 
+                  <!-- ⚠️ Demande pilote (2026-09-04, 2ᵉ) — les actions du PV AU-DESSUS de la grille
+                       de contrôle (plus de descente en bas de page pour viser/retourner) ; le
+                       VERROU de prise en charge s'applique inchangé. -->
+                  <div [class.pv__actions--verrouillees]="!autorisation(pv.idPv)">
+                    <app-pv-workflow [pv]="pv" [idLocalite]="dossierLocalite(pv)"
+                      [nbObservationsExamen]="nbObservations() + nbObservationsPieces()" (changed)="onChanged($event)" />
+                  </div>
+
                   <div class="pv-grille-head">
                     <h3 class="pv-sub">☑️ Grille de contrôle</h3>
                     @if (details().length) {
@@ -304,12 +312,6 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   } @else {
                     <p class="pv__info">Aucune navette pour ce PV.</p>
                   }
-                </div>
-                <!-- ⚠️ Demande pilote (2026-09-04) — AUCUNE action sans prise en charge (widget en
-                     tête du détail ; ici seul le VERROU s'applique aux actions du PV). -->
-                <div [class.pv__actions--verrouillees]="!autorisation(pv.idPv)">
-                  <app-pv-workflow [pv]="pv" [idLocalite]="dossierLocalite(pv)"
-                    [nbObservationsExamen]="nbObservations() + nbObservationsPieces()" (changed)="onChanged($event)" />
                 </div>
               }
             </li>
