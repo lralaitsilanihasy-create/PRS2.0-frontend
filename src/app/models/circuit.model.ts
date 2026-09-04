@@ -411,6 +411,16 @@ export interface PvExamen {
   /** Nom complet du Membre co-signataire, peuplé serveur — évite un appel pour l'afficher. */
   nomMembreCoSignataire?: string;
   /**
+   * ⚠️ Navette à DEUX NIVEAUX (2026-09-04, backend `f648254`) — dossier dispatché Président → CC
+   * puis réattribué CC → Membre : niveau courant de la navette. `'CC'` = le PV est chez le Chef de
+   * commission (accepter/retourner) ; `'PRESIDENT'` = transmis au Président (viser/retourner au
+   * CC) ; absent = navette SIMPLE (contrat inchangé). C'est LUI qui décide du panneau à ouvrir.
+   */
+  niveauNavette?: 'CC' | 'PRESIDENT';
+  /** CC désigné co-signataire au visa (combinaisons P+CC[+M]) — sa part CC passe par `signer(CC)`. */
+  imCcCoSignataire?: string;
+  nomCcCoSignataire?: string;
+  /**
    * ⚠️ Visa unique (2026-08-31) — dispatcheur du dossier (`imCtrlDispatch` du dernier dispatch),
    * habilité à viser : contrainte d'IDENTITÉ qui suit QUI A POSTÉ le dispatch, pas le rang.
    * ⚠️ Intérim (2026-09-01) — l'exception : un autre P/CC DU PÉRIMÈTRE (Président partout, CC dans
@@ -616,4 +626,11 @@ export interface PvActionRequest {
    * signataire : le PV est co-signé par deux personnes distinctes. Ignoré pour `signer` (MEMBRE).
    */
   imMembreCoSignataire?: string;
+  /**
+   * ⚠️ Navette à deux niveaux (2026-09-04) — visa du PRÉSIDENT : 1 à 2 co-signataires parmi
+   * {CC du circuit, Membre examinateur, autre Membre de la centrale}. `imMembreCoSignataire` seul
+   * reste accepté (rétro-compatibilité — équivaut à `[lui]`). Gardes serveur : jamais l'acteur
+   * lui-même, désigné hors localité → 400.
+   */
+  coSignataires?: string[];
 }

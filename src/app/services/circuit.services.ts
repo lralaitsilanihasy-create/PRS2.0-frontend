@@ -422,6 +422,15 @@ export class PvExamenService extends CrudService<PvExamen> {
   }
 
   /**
+   * ⚠️ Navette à DEUX NIVEAUX (2026-09-04, backend `f648254`) — `POST /{id}/accepter` ROUVERT pour
+   * le CC du circuit sur un dossier Président → CC → Membre : « accepté au niveau CC, transmis au
+   * Président » (niveauNavette CC → PRESIDENT, notification Président). 410 Gone hors deux-niveaux.
+   */
+  accepter(id: number, body: PvActionRequest): Observable<PvExamen> {
+    return this.http.post<PvExamen>(`${this.baseUrl}/${id}/accepter`, body);
+  }
+
+  /**
    * ⚠️ Visa PAR INTÉRIM (2026-09-01) — même geste, en multipart : partie `data` (le corps JSON du
    * visa) + partie `noteInterim` (PDF justifiant l'absence du dispatcheur, type lu sur les octets).
    * 400 « note requise » pour un P/CC du périmètre sans note ; 403 pour un CC d'une autre localité

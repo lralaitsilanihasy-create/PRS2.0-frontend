@@ -178,16 +178,23 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   <h3 class="pv-sub">✍️ Signataires</h3>
                   <!-- Tuiles d'état de signature (présentation 2026-09-04) : qui, et où en est chaque part. -->
                   <div class="pv-sig">
-                    <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureMembre">
-                      <span class="pv-sig__role">Membre</span>
-                      <span class="pv-sig__nom">{{ acteurNom(pv.imCtrlMembre) || '—' }}</span>
-                      <span class="pv-sig__etat">{{ pv.dateSignatureMembre ? '✓ Signé le ' + pv.dateSignatureMembre : 'Signature en attente' }}</span>
-                    </div>
-                    <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureCc">
-                      <span class="pv-sig__role">Chef de commission</span>
-                      <span class="pv-sig__nom">{{ acteurNom(pv.imCtrlCc) || '—' }}</span>
-                      <span class="pv-sig__etat">{{ pv.dateSignatureCc ? '✓ Signé le ' + pv.dateSignatureCc : 'Signature en attente' }}</span>
-                    </div>
+                    <!-- ⚠️ Deux niveaux (2026-09-04) : après le visa du Président, seules les parts
+                         DÉSIGNÉES existent — la tuile d'un rôle non retenu est masquée ; le nom
+                         affiché est celui du désigné (qui peut différer de l'examinateur). -->
+                    @if (!masquerTuileMembre(pv)) {
+                      <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureMembre">
+                        <span class="pv-sig__role">Membre</span>
+                        <span class="pv-sig__nom">{{ pv.nomMembreCoSignataire || acteurNom(pv.imCtrlMembre) || '—' }}</span>
+                        <span class="pv-sig__etat">{{ pv.dateSignatureMembre ? '✓ Signé le ' + pv.dateSignatureMembre : 'Signature en attente' }}</span>
+                      </div>
+                    }
+                    @if (!masquerTuileCc(pv)) {
+                      <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureCc">
+                        <span class="pv-sig__role">Chef de commission</span>
+                        <span class="pv-sig__nom">{{ pv.nomCcCoSignataire || acteurNom(pv.imCtrlCc) || '—' }}</span>
+                        <span class="pv-sig__etat">{{ pv.dateSignatureCc ? '✓ Signé le ' + pv.dateSignatureCc : 'Signature en attente' }}</span>
+                      </div>
+                    }
                     <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignaturePresident">
                       <span class="pv-sig__role">Président</span>
                       <span class="pv-sig__nom">{{ acteurNom(pv.imCtrlPresident) || '—' }}</span>
@@ -591,6 +598,13 @@ export class MembrePv {
   /** Autorisé par défaut SEULEMENT sans widget (pas de dossier lié) — le widget émet dès son premier calcul. */
   autorisation(idPv: number): boolean {
     return this.autorisations().get(idPv) ?? true;
+  }
+  /** ⚠️ Deux niveaux (2026-09-04) : après le visa, seules les parts DÉSIGNÉES existent — tuile masquée sinon. */
+  masquerTuileMembre(pv: PvExamen): boolean {
+    return pv.niveauNavette != null && pv.dateSignaturePresident != null && !pv.imMembreCoSignataire && pv.dateSignatureMembre == null;
+  }
+  masquerTuileCc(pv: PvExamen): boolean {
+    return pv.niveauNavette != null && pv.dateSignaturePresident != null && !pv.imCcCoSignataire && pv.dateSignatureCc == null;
   }
   /** Attributaire COURANT du dispatch de l'examen du PV (`imCtrlMembre`, réattributions comprises). */
   private attributaireDe(pv: PvExamen): string | undefined {
