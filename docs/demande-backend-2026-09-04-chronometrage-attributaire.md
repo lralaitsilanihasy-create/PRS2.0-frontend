@@ -1,5 +1,9 @@
 # Demande backend — `GET /dossiers/{id}/chronometrage` : servir l'attributaire courant
 
+> ✅ **CLÔTURÉE le 04/09** — backend livré (`4ee9c0b`, 760 tests) et contre-recetté en réel :
+> dossier réattribué → `attributaire` = l'assignataire courant (MEMANT1), non dispatché → null ;
+> la consultation du dossier masque le CTA chez le CC sans changement front (repli DTO du widget).
+
 **Date** : 2026-09-04 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote du
 jour (session CCANT01, PV en rectification sur un dossier attribué à Rina).
 

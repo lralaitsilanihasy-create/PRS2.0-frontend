@@ -186,9 +186,8 @@ export interface Chronometrage {
   datePrevisionnelleFin?: string | null;
   /**
    * Attributaire courant du dossier (`imCtrlMembre` du dispatch, réattributions comprises) — la
-   * prise en charge d'EXAMEN lui est réservée (`5225529`, 403 même par délégation). ⚠️ Champ
-   * DEMANDÉ au backend (demande-backend-2026-09-04-chronometrage-attributaire.md) : absent tant
-   * que non livré — le widget replie alors sur la règle du porteur nominal.
+   * prise en charge d'EXAMEN lui est réservée (`5225529`, 403 même par délégation). Servi depuis
+   * `4ee9c0b` ; `null` tant que le dossier n'est pas dispatché.
    */
   attributaire?: string | null;
 }
