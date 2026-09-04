@@ -682,8 +682,14 @@ export class ExamenDossier implements OnDestroy {
   readonly pointsHorsLigne = computed(() => this.points().filter((p) => (p.portee ?? 'LIGNE') !== 'LIGNE'));
   readonly nbLignes = computed(() => this.marches().length);
   readonly hasEtapeDossier = computed(() => this.pointsDossier().length > 0);
-  readonly hasEtapeFiche = computed(() => this.pointsFiche().length > 0);
-  readonly hasEtapeAgpm = computed(() => this.pointsAgpm().length > 0);
+  /**
+   * ⚠️ Demande pilote (2026-09-04) — « on ne contrôle pas le vide » : la grille de la fiche (resp.
+   * de l'AGPM) est SAUTÉE quand le document dérivé n'a aucun contenu (fiche sans marché dérogatoire,
+   * ni délai aménagé, ni contrat-cadre ; AGPM sans ligne). Le document reste consultable dans son
+   * onglet. Garde serveur miroir : demande backend 2026-09-04-completude-fiche-vide.
+   */
+  readonly hasEtapeFiche = computed(() => this.pointsFiche().length > 0 && this.ficheDoc().nbMarchesConcernes > 0);
+  readonly hasEtapeAgpm = computed(() => this.pointsAgpm().length > 0 && this.agpmDoc().length > 0);
   /** Pièces dans l'ordre des étapes « Pièce N » (initiales puis après renvoi — même ordre que la liste). */
   readonly piecesOrdonnees = computed(() => [...this.piecesInitiales(), ...this.piecesApresRenvoi()].filter((p) => p.idPiece != null));
   readonly nbPieces = computed(() => this.piecesOrdonnees().length);
