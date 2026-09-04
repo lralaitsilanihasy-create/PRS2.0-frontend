@@ -37,6 +37,8 @@ import {
   ReferenceLookupService,
 } from '../../services';
 import { ChronometrageDossier, PvWorkflow, PV_STATUT_LABELS, StatutBadge, examenRectifiable } from '../../shared/circuit';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 
 /**
@@ -47,7 +49,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
 @Component({
   selector: 'app-membre-pv',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, PvWorkflow, DossierConsultation, DatePipe, RouterLink, ChronometrageDossier],
+  imports: [StatutBadge, PvWorkflow, DossierConsultation, DatePipe, RouterLink, ChronometrageDossier, ModaleDirective],
   template: `
     <section class="pv">
       <header class="page-header">
@@ -85,15 +87,32 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                           📂 Voir le dossier
                         </button>
                       }
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="selectionner(pv)">
-                        {{ selected()?.idPv === pv.idPv ? 'Masquer' : 'Gérer' }}
-                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="selectionner(pv)">Gérer</button>
                     </div>
                   </td>
                 </tr>
-                @if (selected()?.idPv === pv.idPv) {
-                  <tr class="pv-row-detail">
-                    <td colspan="5">
+              } @empty {
+                <tr><td colspan="5" class="pv__info">Aucun projet de PV en cours.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ⚠️ Demande pilote (2026-09-04) : le détail « Gérer » s'ouvre en MODALE — directive
+             appModale (focus, Échap, piège de Tab) + fermeture au clic sur le voile. -->
+        @if (selected(); as pv) {
+          <div class="modal-backdrop" [class.closing]="closingDetail()">
+            <div class="modal modal-lg pv-modal" role="dialog" aria-modal="true"
+              [attr.aria-label]="'Projet de PV ' + (pv.refePv || pv.referencePv || pv.idPv)"
+              appModale appModaleClicExterieur (appModaleFermer)="fermerDetail()">
+              <div class="modal-header">
+                <div class="pv-modal__titre">
+                  <h2 class="modal-title">{{ pv.refePv || pv.referencePv || ('Projet de PV #' + pv.idPv) }}</h2>
+                  <app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" />
+                </div>
+                <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerDetail()">✕</button>
+              </div>
+              <div class="modal-body">
                       <div class="pv-content" #pvContent>
                   <div class="pv-print-bar">
                     <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Imprimer" aria-label="Imprimer">🖨 Imprimer</button>
@@ -349,15 +368,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     <p class="pv__info">Aucune navette pour ce PV.</p>
                   }
                       </div>
-                    </td>
-                  </tr>
-                }
-              } @empty {
-                <tr><td colspan="5" class="pv__info">Aucun projet de PV en cours.</td></tr>
-              }
-            </tbody>
-          </table>
-        </div>
+              </div>
+            </div>
+          </div>
+        }
       }
     </section>
 
@@ -379,8 +393,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     /* Tableau de liste (demande pilote 2026-09-04) : même style que « PV définitifs ». */
     .pv-row__ref { font-weight: 700; color: var(--c-800); }
     .pv-row__actions { justify-content: flex-end; }
-    /* Rangée du détail ouvert : fond légèrement crème, pleine largeur, sans hover de tableau. */
-    .pv-row-detail > td { background: #fbfcff; padding: 1rem 1.25rem; }
+    /* Modale du détail (demande pilote 2026-09-04) : large — le contenu porte tableaux et fiches. */
+    .pv-modal { width: min(1240px, 96vw); max-width: 96vw; }
+    .pv-modal__titre { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; min-width: 0; }
+    .pv-modal .modal-title { margin: 0; }
     .pv-content {
       display: flex;
       flex-direction: column;
@@ -510,6 +526,12 @@ export class MembrePv {
   readonly pvs = signal<PvExamen[]>([]);
   readonly loading = signal(false);
   readonly selected = signal<PvExamen | null>(null);
+  /** Animation de sortie de la modale du détail (voir `fermerAvecAnimation`). */
+  readonly closingDetail = signal(false);
+  /** Ferme la modale du détail en jouant l'animation (voile, Échap, bouton ✕). */
+  fermerDetail(): void {
+    fermerAvecAnimation(this.closingDetail, () => this.selected.set(null));
+  }
   /** ⚠️ 2026-08-03 — dossier ouvert en consultation depuis un projet de PV (null = fermé). */
   readonly dossierConsulte = signal<Dossier | null>(null);
 
