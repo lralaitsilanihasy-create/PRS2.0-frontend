@@ -137,12 +137,16 @@ import { calculerAgpm } from '../../shared/prmp/agpm';
           }
 
           <!-- Chronométrage & délais (2026-09-01, dans l'en-tête depuis le 02/09) : chargé DANS
-               la vague unique (donnees) ; zone absente pour un dossier hors circuit. -->
+               la vague unique (donnees) ; zone absente pour un dossier hors circuit.
+               ⚠️ Constat pilote (2026-09-04, écran Vérifier) : la consultation est une RESTITUTION —
+               le geste « Prendre en charge » vit sur le bandeau compact des écrans d'action, qui
+               l'affichent déjà en tête ; ici il faisait DOUBLON (deux boutons sur le même écran).
+               pecPermise=false : compteurs et passages restent, le geste disparaît. -->
           @if (chronoDossier(); as chrono) {
             @if (chrono.taches.length || chrono.etapeCourante || chrono.datePrevisionnelleFin || chrono.debutCompteur) {
               <div class="dc-header-droite">
                 <div class="dc-chrono-titre"><span aria-hidden="true">⏱</span> Chronométrage &amp; délais</div>
-                <app-chronometrage-dossier [idDossier]="dossier().idDossier" [donnees]="chrono" />
+                <app-chronometrage-dossier [idDossier]="dossier().idDossier" [donnees]="chrono" [pecPermise]="false" />
               </div>
             }
           }
