@@ -1,5 +1,10 @@
 # Demande backend — Prise en charge : garde d'acteur sur VISA et COSIGNATURE
 
+> ✅ **CLÔTURÉE le 04/09** — backend livré (`1a92f5a`, 765 tests) et contre-recetté en réel 4/4
+> (cycle deux-niveaux neuf, dossier purgé après) : niveau CC → PEC Président 403 / CC 200 ;
+> niveau PRESIDENT → PEC CC 403 / Président 200 ; COSIGNATURE → non-désigné 403, désignés 200 ;
+> `acteursAttendus` = [CC] → [PRES001] → [désignés] selon l'état, messages 403 nominatifs.
+
 **Date** : 2026-09-04 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote —
 suite directe de `5225529` (garde EXAMEN) et `4ee9c0b` (attributaire au DTO).
 

@@ -192,9 +192,8 @@ export interface Chronometrage {
   attributaire?: string | null;
   /**
    * Acteurs que la garde de `prise-en-charge` accepterait pour l'étape courante (VISA par niveau
-   * de navette, COSIGNATURE = les désignés…). ⚠️ Champ DEMANDÉ au backend
-   * (demande-backend-2026-09-04-pec-garde-visa-cosignature.md) : absent tant que non livré ;
-   * liste vide ou nulle = non close (intérim du périmètre) → règle du porteur nominal.
+   * de navette, COSIGNATURE = les désignés…). Servi depuis `1a92f5a` ; liste vide ou nulle = non
+   * close (intérim du périmètre) → règle du porteur nominal.
    */
   acteursAttendus?: string[] | null;
 }
