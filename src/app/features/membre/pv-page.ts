@@ -212,7 +212,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   <!-- ⚠️ Demande pilote (2026-09-04, 2ᵉ) — les actions du PV AU-DESSUS de la grille
                        de contrôle (plus de descente en bas de page pour viser/retourner) ; le
                        VERROU de prise en charge s'applique inchangé. -->
-                  <div [class.pv__actions--verrouillees]="!autorisation(pv.idPv)">
+                  <div class="pv__bande-actions" [class.pv__actions--verrouillees]="!autorisation(pv.idPv)">
                     <app-pv-workflow [pv]="pv" [idLocalite]="dossierLocalite(pv)"
                       [nbObservationsExamen]="nbObservations() + nbObservationsPieces()" (changed)="onChanged($event)" />
                   </div>
@@ -331,6 +331,17 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .pv__info { color: var(--n-500); padding: 0.5rem 0; }
     /* « Aucune action sans prise en charge » (2026-09-04) : actions du PV inertes avant la prise en charge. */
     .pv__verrou { margin: 0.5rem 0; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
+    /* Bande des actions du PV (demande pilote 2026-09-04) : couleur REMARQUABLE — même dérogation
+       assumée aux tokens que le bouton de prise en charge, l'endroit où l'on agit saute aux yeux. */
+    .pv__bande-actions {
+      margin: 0.75rem 0 1rem;
+      padding: 0.65rem 1rem;
+      background: linear-gradient(90deg, #EEF2FF, #FAF5FF);
+      border: 1px solid #C7D2FE;
+      border-left: 6px solid #6366F1;
+      border-radius: var(--radius-md);
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.16);
+    }
     .pv__actions--verrouillees { pointer-events: none; opacity: 0.45; }
     .pv__list {
       list-style: none;
