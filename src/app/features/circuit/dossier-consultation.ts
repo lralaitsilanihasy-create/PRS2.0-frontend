@@ -293,13 +293,13 @@ import { calculerAgpm } from '../../shared/prmp/agpm';
 
           <!-- Journal des actions (spec « Mandats PRMP ») : qui a agi, quand et sous quel mandat.
                L'OPÉRATEUR d'une action peut différer de la PRMP d'attribution (figée) — il est alors marqué. -->
-          @if (journal().length) {
+          @if (journalVisible().length) {
             <div class="dc-section">
               <div class="dc-section-head">
                 <div class="section-block-title">
                   <div class="section-icon">🕘</div>
                   <span class="section-label">Journal des actions</span>
-                  <span class="section-count">{{ journal().length }} action(s)</span>
+                  <span class="section-count">{{ journalVisible().length }} action(s)</span>
                 </div>
               </div>
               <table class="dc-journal">
@@ -307,7 +307,7 @@ import { calculerAgpm } from '../../shared/prmp/agpm';
                   <tr><th scope="col">Date</th><th scope="col">Action</th><th scope="col">Opérateur</th><th scope="col">Détail</th></tr>
                 </thead>
                 <tbody>
-                  @for (a of journal(); track a.idAction) {
+                  @for (a of journalVisible(); track a.idAction) {
                     <tr>
                       <td class="dc-journal__date">{{ a.dateAction | date: 'dd/MM/yyyy HH:mm' }}</td>
                       <td>{{ actionLabel(a.typeAction) }}</td>
@@ -526,6 +526,33 @@ export class DossierConsultation implements OnInit {
   }
   /** Journal MÉTIER des actions (spec « Mandats PRMP ») — vide si le backend ne le sert pas encore. */
   readonly journal = signal<ActionDossier[]>([]);
+  /**
+   * ⚠️ Demande pilote (2026-09-04) — chaque profil voit le journal À PARTIR de son entrée dans le
+   * circuit (« son action ») jusqu'à la fin du traitement : le Secrétaire depuis la Réception, le
+   * Président et le CC depuis le Dispatch, le Membre depuis l'attribution qui le concerne
+   * (Réattribution, à défaut Dispatch). La PRMP, l'Admin et les profils sans action journalisée
+   * voient tout. Section masquée tant que le profil n'est pas entré dans le circuit.
+   */
+  readonly journalVisible = computed(() => {
+    const rows = this.journal();
+    const depuis = (types: string[]) => {
+      const i = rows.findIndex((a) => types.includes(a.typeAction));
+      return i < 0 ? [] : rows.slice(i);
+    };
+    switch (this.auth.role()) {
+      case 'SECRETAIRE':
+        return depuis(['RECEPTION']);
+      case 'PRESIDENT':
+      case 'CHEF_COMMISSION':
+        return depuis(['DISPATCH']);
+      case 'MEMBRE': {
+        const re = depuis(['REATTRIBUTION']);
+        return re.length ? re : depuis(['DISPATCH']);
+      }
+      default:
+        return rows;
+    }
+  });
   /** Chronométrage du dossier (2026-09-01) — `null` si le backend ne le sert pas (section masquée). */
   readonly chronoDossier = signal<Chronometrage | null>(null);
 
