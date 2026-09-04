@@ -91,7 +91,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   <!-- Chronométrage EN TÊTE (demande pilote 2026-09-04 : « Prendre en charge »
                        toujours en haut) : prise en charge des étapes VISA / COSIGNATURE. -->
                   @if (idDossierDe(pv); as idDos) {
-                    <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" [attributaire]="attributaireDe(pv)" (actionAutorisee)="majAutorisation(pv.idPv, $event)" />
+                    <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" [attributaire]="attributaireDe(pv)" [pecPermise]="pecPermiseDe(pv)" (actionAutorisee)="majAutorisation(pv.idPv, $event)" />
                     @if (!autorisation(pv.idPv)) {
                       <div class="pv__verrou" role="status">
                         🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en
@@ -605,6 +605,25 @@ export class MembrePv {
   }
   masquerTuileCc(pv: PvExamen): boolean {
     return pv.niveauNavette != null && pv.dateSignaturePresident != null && !pv.imCcCoSignataire && pv.dateSignatureCc == null;
+  }
+  /**
+   * ⚠️ Constat pilote (04/09, dossier 100286) : le CC, son acceptation faite, prenait la tâche
+   * VISA du niveau PRÉSIDENT et verrouillait le Président. Verdict de PEC dérivé de l'état du PV
+   * — VISA d'un deux-niveaux : le CC DISPATCHEUR à l'étage CC, un PRESIDENT à l'étage Président ;
+   * COSIGNATURE : les désignés seulement. `undefined` ailleurs (navette simple : dispatcheur +
+   * intérim du périmètre, le serveur tranche ; rectification : l'input `attributaire` couvre).
+   */
+  pecPermiseDe(pv: PvExamen): boolean | undefined {
+    if (pv.statutPv === 'PROJET_SOUMIS' && pv.niveauNavette != null) {
+      return pv.niveauNavette === 'CC'
+        ? this.auth.ref() === pv.imDispatcheur
+        : this.auth.role() === 'PRESIDENT';
+    }
+    if (pv.statutPv === 'PROJET_ACCEPTE') {
+      const moi = this.auth.ref();
+      return moi != null && [pv.imCcCoSignataire, pv.imMembreCoSignataire].includes(moi);
+    }
+    return undefined;
   }
   /**
    * Attributaire COURANT du dispatch de l'examen du PV (`imCtrlMembre`, réattributions comprises).

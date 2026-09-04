@@ -316,6 +316,14 @@ export class ChronometrageDossier {
    */
   readonly attributaire = input<string | null | undefined>(undefined);
   /**
+   * ⚠️ Constat pilote (04/09, dossier 100286) : après son acceptation, le CC se voyait encore
+   * offrir « Prendre en charge » — la tâche VISA du niveau PRÉSIDENT prise à tort verrouillait le
+   * Président (tâche d'autrui, 409, déblocage SQL). Verdict de l'HÔTE sur la PEC de l'étape
+   * courante quand il en sait plus que le widget (étage de navette, co-signataires désignés) :
+   * `false` masque le geste, `true` le montre, `undefined` laisse les règles du widget.
+   */
+  readonly pecPermise = input<boolean | undefined>(undefined);
+  /**
    * ⚠️ Demande pilote (2026-09-04) — « aucune action sans prise en charge » : émet `true` quand
    * l'utilisateur peut agir sur le dossier — soit il n'est PAS le porteur de l'étape courante
    * (l'écran ne le concerne pas : édition, consultation), soit SA prise en charge est enregistrée.
@@ -354,6 +362,11 @@ export class ChronometrageDossier {
     if (!etape || this.chrono()?.attentePrmp) {
       return false;
     }
+    // L'hôte qui connaît le PV (étage de navette, désignés) tranche avant les règles génériques.
+    const permise = this.pecPermise();
+    if (permise !== undefined) {
+      return permise;
+    }
     // EXAMEN est réservé à l'attributaire (403 serveur même par délégation) : quand il est connu
     // — fourni par l'hôte, sinon servi par le DTO — ne pas offrir un geste voué au refus.
     if (etape === 'EXAMEN') {
@@ -361,6 +374,12 @@ export class ChronometrageDossier {
       if (attributaire != null) {
         return attributaire === this.auth.ref();
       }
+    }
+    // Acteurs attendus de l'étape courante, servis par le DTO (demande
+    // 2026-09-04-pec-garde-visa-cosignature) : liste close → seuls eux voient le geste.
+    const attendus = this.chrono()?.acteursAttendus;
+    if (attendus?.length) {
+      return attendus.includes(this.auth.ref() ?? '');
     }
     const porteur = ETAPE_CIRCUIT_PORTEURS[etape];
     const role = this.auth.role();
