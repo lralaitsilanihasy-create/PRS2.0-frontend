@@ -75,9 +75,11 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // ⚠️ 2026-08-07 (demande user) — « Demandes de retrait » quitte le menu : une demande porte sur un
     // dossier, donc sur un type, et figure désormais en ligne dans la carte de type correspondante de
     // « Mes dossiers » (config `retraitsPath`). Route conservée, atteinte avec `?type=`.
-    { label: 'Rapports', path: `${base}/rapports`, icon: '📊' },
-    { label: 'Statistiques', path: `${base}/statistiques`, icon: '📈' },
-    { label: 'Messagerie', path: `${base}/messagerie`, icon: '✉' },
+    // ⚠️ Demande pilote (2026-09-04) — « Rapports », « Statistiques » et « Messagerie » retirés du
+    // menu POUR LE MOMENT (routes et écrans conservés) : ré-activer en décommentant.
+    // { label: 'Rapports', path: `${base}/rapports`, icon: '📊' },
+    // { label: 'Statistiques', path: `${base}/statistiques`, icon: '📈' },
+    // { label: 'Messagerie', path: `${base}/messagerie`, icon: '✉' },
     // ⚠️ Spec notifications (2026-08-02) — écran transverse, chemin absolu commun à tous les profils.
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ];
@@ -128,7 +130,8 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   SECRETAIRE: [
     { label: 'Tableau de bord', path: '/secretaire/tableau-de-bord', icon: '▤' },
     { label: 'Mes dossiers', path: '/secretaire/mes-dossiers', icon: '📁' },
-    { label: 'Messagerie', path: '/secretaire/messagerie', icon: '✉' },
+    // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
+    // { label: 'Messagerie', path: '/secretaire/messagerie', icon: '✉' },
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   MEMBRE: [
@@ -137,7 +140,8 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Projets de PV', path: '/membre/pv', icon: '📝' },
     { label: 'Projets de lettre de renvoi', path: '/membre/lettre-renvois', icon: '✉' },
     { label: 'PV définitifs', path: '/membre/pv-definitifs', icon: '✅' },
-    { label: 'Messagerie', path: '/membre/messagerie', icon: '✉' },
+    // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
+    // { label: 'Messagerie', path: '/membre/messagerie', icon: '✉' },
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   VERIFICATEUR: [
@@ -146,14 +150,16 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     // (EN_ATTENTE_DECISION_PRMP) figurent déjà dans « À vérifier », badgés « En attente PRMP » et en
     // lecture seule ; leur historique d'échanges s'affiche dans l'écran de vérification. Route conservée.
     { label: 'Vérifiés / clôturés', path: '/verificateur/verifies', icon: '🗂' },
-    { label: 'Messagerie', path: '/verificateur/messagerie', icon: '✉' },
+    // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
+    // { label: 'Messagerie', path: '/verificateur/messagerie', icon: '✉' },
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   ASSISTANT_CONTROLEUR: [
     { label: 'Tableau de bord', path: '/assistant/tableau-de-bord', icon: '▤' },
     { label: 'Lettres de renvoi reçues', path: '/assistant/lettre-renvois', icon: '✉' },
     { label: 'PV reçus', path: '/assistant/pv-examens', icon: '📄' },
-    { label: 'Messagerie', path: '/assistant/messagerie', icon: '✉' },
+    // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
+    // { label: 'Messagerie', path: '/assistant/messagerie', icon: '✉' },
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   CHARGE_PUBLICATION: [
@@ -174,7 +180,8 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Marchés & dates prév.', path: '/admin/marches-previsions', icon: '📆' },
     { label: 'Journal d’audit', path: '/admin/audit', icon: '🛡' },
     { label: 'Sessions', path: '/admin/sessions', icon: '🔑' },
-    { label: 'Rapports', path: '/admin/rapports', icon: '📊' },
+    // Rapports retirés du menu pour le moment (demande pilote 2026-09-04) — route conservée.
+    // { label: 'Rapports', path: '/admin/rapports', icon: '📊' },
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
 };

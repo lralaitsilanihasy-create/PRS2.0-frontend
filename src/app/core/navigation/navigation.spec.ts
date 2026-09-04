@@ -33,7 +33,8 @@ describe('separerParDelegation', () => {
     const [propres, delegues] = separerParDelegation(navFor('PRESIDENT'));
     expect(delegues.items.map((i) => i.label)).toEqual(['Réception & Enregistrement', 'Vérifications', 'Archivage des PV']);
     expect(propres.items.map((i) => i.label)).not.toContain('Vérifications');
-    expect(propres.items.map((i) => i.label)).toContain('Rapports');
+    // « Rapports »/« Statistiques »/« Messagerie » sont retirés du menu pour le moment (2026-09-04).
+    expect(propres.items.map((i) => i.label)).toContain('Chaînes de contrôle');
   });
 
   it('l’ORDRE des entrées propres est préservé (le menu du profil ne se réorganise pas)', () => {
