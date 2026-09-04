@@ -163,19 +163,35 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     </div>
                   }
 
-                  <h3 class="pv-sub">Signataires</h3>
-                  <dl class="pv-info">
-                    <div><dt>Membre</dt><dd>{{ signataire(pv.imCtrlMembre, pv.dateSignatureMembre) }}</dd></div>
-                    <div><dt>Chef de commission</dt><dd>{{ signataire(pv.imCtrlCc, pv.dateSignatureCc) }}</dd></div>
-                    <div><dt>Président</dt><dd>{{ signataire(pv.imCtrlPresident, pv.dateSignaturePresident) }}</dd></div>
-                    <!-- Notion retirée du cycle le 02/09 : la ligne ne subsiste que sur les PV historiques qui en portent un. -->
+                  <h3 class="pv-sub">✍️ Signataires</h3>
+                  <!-- Tuiles d'état de signature (présentation 2026-09-04) : qui, et où en est chaque part. -->
+                  <div class="pv-sig">
+                    <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureMembre">
+                      <span class="pv-sig__role">Membre</span>
+                      <span class="pv-sig__nom">{{ acteurNom(pv.imCtrlMembre) || '—' }}</span>
+                      <span class="pv-sig__etat">{{ pv.dateSignatureMembre ? '✓ Signé le ' + pv.dateSignatureMembre : 'Signature en attente' }}</span>
+                    </div>
+                    <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureCc">
+                      <span class="pv-sig__role">Chef de commission</span>
+                      <span class="pv-sig__nom">{{ acteurNom(pv.imCtrlCc) || '—' }}</span>
+                      <span class="pv-sig__etat">{{ pv.dateSignatureCc ? '✓ Signé le ' + pv.dateSignatureCc : 'Signature en attente' }}</span>
+                    </div>
+                    <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignaturePresident">
+                      <span class="pv-sig__role">Président</span>
+                      <span class="pv-sig__nom">{{ acteurNom(pv.imCtrlPresident) || '—' }}</span>
+                      <span class="pv-sig__etat">{{ pv.dateSignaturePresident ? '✓ Signé le ' + pv.dateSignaturePresident : 'Signature en attente' }}</span>
+                    </div>
+                    <!-- Notion retirée du cycle le 02/09 : la tuile ne subsiste que sur les PV historiques qui en portent un. -->
                     @if (pv.nomSecretaireSeance || pv.idSecretaireSeance) {
-                      <div><dt>Secrétaire de séance</dt><dd>{{ pv.nomSecretaireSeance || pv.idSecretaireSeance }}</dd></div>
+                      <div class="pv-sig__tuile">
+                        <span class="pv-sig__role">Secrétaire de séance</span>
+                        <span class="pv-sig__nom">{{ pv.nomSecretaireSeance || pv.idSecretaireSeance }}</span>
+                      </div>
                     }
-                  </dl>
+                  </div>
 
                   <div class="pv-grille-head">
-                    <h3 class="pv-sub">Grille de contrôle</h3>
+                    <h3 class="pv-sub">☑️ Grille de contrôle</h3>
                     @if (details().length) {
                       <!-- ⚠️ Par défaut : seuls les points AVEC OBSERVATION sont listés ; bascule vers la grille complète. -->
                       <button type="button" class="btn btn-secondary btn-sm" (click)="grilleComplete.set(!grilleComplete())">
@@ -197,7 +213,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                           @for (d of g.rows; track d.idDetailExamen) {
                             <tr>
                               <td>{{ pointLabel(d.idPtControle) }}</td>
-                              <td>{{ d.conforme ? 'Conforme' : 'Non conforme' }}</td>
+                              <td><span class="pv-res" [class.pv-res--obs]="!d.conforme">{{ d.conforme ? 'Conforme' : 'Non conforme' }}</span></td>
                               <td>
                                 @if (!d.conforme && observationsTriees(d).length) {
                                   <table class="obs-pv-table">
@@ -222,7 +238,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   }
 
                   <div class="pv-grille-head">
-                    <h3 class="pv-sub">Pièces jointes</h3>
+                    <h3 class="pv-sub">📎 Pièces jointes</h3>
                     @if (examenPiecesPv().length) {
                       <!-- ⚠️ Même bascule que la grille : observations seulement (défaut) ↔ toutes les pièces. -->
                       <button type="button" class="btn btn-secondary btn-sm" (click)="piecesCompletes.set(!piecesCompletes())">
@@ -240,7 +256,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                         @for (ep of piecesAffichees(); track ep.idExamenPiece) {
                           <tr>
                             <td>{{ pieceLabel(ep.idPiece) }}</td>
-                            <td>{{ ep.conforme ? 'Conforme' : 'Non conforme' }}</td>
+                            <td><span class="pv-res" [class.pv-res--obs]="!ep.conforme">{{ ep.conforme ? 'Conforme' : 'Non conforme' }}</span></td>
                             <td>{{ ep.observation || '—' }}</td>
                           </tr>
                         }
@@ -250,7 +266,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     <p class="pv__info">Aucun examen de pièce pour ce PV.</p>
                   }
 
-                  <h3 class="pv-sub">Historique des navettes</h3>
+                  <h3 class="pv-sub">🔁 Historique des navettes</h3>
                   @if (navettes().length) {
                     <table>
                       <thead><tr><th scope="col">#</th><th scope="col">Sens</th><th scope="col">Acteur</th><th scope="col">Date</th><th scope="col">Commentaire</th></tr></thead>
@@ -348,7 +364,20 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .pv-synthese { display: flex; flex-direction: column; gap: 0.3rem; background: var(--c-50); border: 1px solid var(--c-100); border-left: 3px solid var(--c-500, #4f46e5); border-radius: var(--radius-md); padding: 0.75rem 1rem; }
     .pv-synthese__lbl { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--c-800); }
     .pv-synthese__texte { margin: 0; font-size: var(--text-sm); color: var(--n-700); white-space: pre-wrap; }
-    .pv-sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
+    /* Titres de section (présentation 2026-09-04) : intitulé discret + filet séparateur — chaque
+       rubrique du PV se détache clairement de la précédente. */
+    .pv-sub { margin: 1.2rem 0 0.15rem; padding-top: 1rem; border-top: 1px solid var(--n-100); font-size: var(--text-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; color: var(--n-400); display: flex; align-items: center; gap: 0.45rem; }
+    /* Tuiles des signataires : rôle, nom, état de la part — vert quand la signature est posée. */
+    .pv-sig { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.6rem; }
+    .pv-sig__tuile { display: flex; flex-direction: column; gap: 0.2rem; border: 1px solid var(--n-200); border-left: 3px solid var(--n-300); border-radius: var(--radius-md); background: #fff; padding: 0.6rem 0.85rem; }
+    .pv-sig__tuile--ok { border-left-color: #22C55E; background: #F6FEF9; }
+    .pv-sig__role { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); font-weight: 700; }
+    .pv-sig__nom { font-weight: 700; color: var(--n-800); }
+    .pv-sig__etat { font-size: var(--text-xs); color: var(--n-400); }
+    .pv-sig__tuile--ok .pv-sig__etat { color: #15803D; font-weight: 600; }
+    /* Résultat d'un point / d'une pièce : badge sobre (vert conforme, ambre observation). */
+    .pv-res { display: inline-block; padding: 0.15rem 0.6rem; border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 700; background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; white-space: nowrap; }
+    .pv-res--obs { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
     /* Rangée d'en-tête de groupe (ligne de marché / dossier) dans la grille de contrôle. */
     .pv-grp td { background: var(--c-50); color: var(--c-800); font-weight: 700; font-size: var(--text-sm); border-top: 2px solid var(--c-100); }
     /* Titre de la grille + bascule « observations seulement / tout afficher ». */
@@ -383,7 +412,9 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       .pv-retour .pv-retour__cta:hover { transform: none; }
     }
     .obs-pv-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-    .obs-pv-table th { text-align: center; font-weight: 600; padding: 0.2rem 0.5rem; border-bottom: 1px solid var(--c-100); background: none; text-transform: none; letter-spacing: normal; color: var(--n-700); }
+    /* Neutralise la bande bleue globale (thead tr en dégradé) : ce sous-tableau reste discret. */
+    .obs-pv-table thead tr { background: transparent; }
+    .obs-pv-table th { text-align: left; font-weight: 700; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0.5rem; border-bottom: 1px solid var(--n-200); background: none; color: var(--n-400); }
     .obs-pv-table td { padding: 0.2rem 0.5rem; vertical-align: top; border-bottom: 1px solid var(--c-100); word-wrap: break-word; white-space: normal; }
   `,
 })
@@ -644,8 +675,19 @@ export class MembrePv {
         `.pv-grp td{background:#EEF2F7;font-weight:700;font-size:12px;color:#1a2230}` +
         `.pv-grille-ok{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:8px 12px;color:#15803D;font-size:13px;font-weight:600;margin:6px 0}` +
         `.obs-pv-table{margin:0}` +
-        `.obs-pv-table th{background:none;border:none;border-bottom:1px solid #ddd;text-transform:none;letter-spacing:normal;color:#444;text-align:center}` +
+        `.obs-pv-table th{background:none;border:none;border-bottom:1px solid #ddd;text-transform:uppercase;font-size:10px;letter-spacing:.06em;color:#888;text-align:left}` +
         `.obs-pv-table td{border:none;border-bottom:1px solid #eee;vertical-align:top}` +
+        // Présentation 2026-09-04 : titres de section, tuiles signataires, badges de résultat.
+        `.pv-sub{margin:14px 0 4px;padding-top:10px;border-top:1px solid #E5E7EB;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:#888}` +
+        `.pv-sig{display:flex;flex-wrap:wrap;gap:8px}` +
+        `.pv-sig__tuile{border:1px solid #E5E7EB;border-left:3px solid #CBD5E1;border-radius:6px;padding:8px 12px;min-width:170px}` +
+        `.pv-sig__tuile--ok{border-left-color:#22C55E;background:#F6FEF9}` +
+        `.pv-sig__role{display:block;text-transform:uppercase;font-size:9px;letter-spacing:.08em;color:#888;font-weight:700}` +
+        `.pv-sig__nom{display:block;font-weight:700;font-size:13px}` +
+        `.pv-sig__etat{display:block;font-size:11px;color:#666}` +
+        `.pv-sig__tuile--ok .pv-sig__etat{color:#15803D;font-weight:600}` +
+        `.pv-res{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;background:#F0FDF4;color:#15803D;border:1px solid #BBF7D0}` +
+        `.pv-res--obs{background:#FFFBEB;color:#B45309;border-color:#FDE68A}` +
         `button,.pv-print-bar{display:none!important}` +
         `</style></head><body><h1>${heading}</h1>${el.innerHTML}</body></html>`,
     );
