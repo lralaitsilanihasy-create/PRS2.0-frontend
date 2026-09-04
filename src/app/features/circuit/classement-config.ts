@@ -212,7 +212,10 @@ export const CIRCUIT_GROUPES: ClassementGroupe[] = [
     kind: 'b',
     colonnes: ['reception', 'dateDispatch', 'attributaire'],
     actionAnnulerDispatch: true,
-    actionExamen: true,
+    // ⚠️ Demande pilote (2026-09-03 soir) — PAS d'« Examiner » ici : « celui qui a dispatché le
+    // dossier n'a plus accès à l'examen de ce même dossier ; le CC en copie non plus ». Ce groupe
+    // ne contient QUE des dossiers attribués à d'autres (dossierAttribueAMoi) — seul l'ASSIGNATAIRE
+    // examine, depuis SA file « À examiner ». Garde serveur miroir : demande backend du même jour.
   },
   ...GROUPES_MES_EXAMENS,
 ];

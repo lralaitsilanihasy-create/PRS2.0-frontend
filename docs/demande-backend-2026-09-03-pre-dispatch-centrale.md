@@ -78,6 +78,21 @@ lui-même** (`imCtrlMembre` = lui, dossier toujours `DISPATCHE`, retour dans SA 
 examiner »). `/annuler` (retour `PRET_DISPATCH` + purge) reste le geste du **Président**. La garde
 403 du point 1 (annulation par un CC non dispatcheur) reste utile en défense.
 
+### 1 ter. Examen réservé à l'ATTRIBUTAIRE — supprimer l'exemption « délégation »
+
+> « Celui qui a dispatché le dossier à quelqu'un ne doit plus avoir accès à l'examen de ce même
+> dossier. De même, celui qui n'est pas assignataire, mais qui a reçu une copie (CC) du dossier,
+> ne peut pas non plus examiner. » (pilote, 2026-09-03 soir)
+
+`ExamenService.exigerMembreAttributaire` compare l'appelant à `imCtrlMembre` **seulement quand son
+profil est MEMBRE** — un CC ou un Président « par délégation » passe sans contrôle. Supprimer cette
+exemption : la garde s'applique à **tout profil** — seul l'attributaire COURANT du dernier dispatch
+du dossier peut créer, modifier et soumettre l'examen (403 explicite sinon). Ni le dispatcheur, ni
+le CC associé en copie, ni un autre contrôleur de la localité n'examinent. (Le P/CC attributaire —
+« Chef de commission ⤴ », « moi-même ⤴ », réattribution — reste bien sûr autorisé : il EST
+l'attributaire.) Le front vient de retirer le bouton « Examiner » du groupe Dispatch — seule la
+file « À examiner » (scopée attributaire) y mène encore.
+
 ### 2. Notification « Dossier prêt à dispatcher » re-routée
 
 `ReceptionService.declencherPretDispatch` notifie aujourd'hui « le Président (toutes localités) et
@@ -104,6 +119,9 @@ le front suivra sans redéploiement coordonné.
 6. **Annulation** : CC annule un dispatch dont il est le DISPATCHEUR (`imCtrlDispatch` = lui, y
    compris après sa propre réattribution) → accepté ; CC NON dispatcheur → **403**, qu'il soit
    attributaire (pas d'auto-retrait — le Président retire) ou tiers ; Président → accepté partout.
-7. Transition `PRET_DISPATCH` d'un dossier central → notification au Président, **aucune** au CC ;
+7. **Examen** : le Président (dispatcheur) ou le CC en copie tente de créer/soumettre l'examen d'un
+   dossier attribué à un Membre → **403** ; l'attributaire (Membre, ou CC/Président attributaire)
+   → accepté (anti-régression : circuit court « moi-même ⤴ » intact).
+8. Transition `PRET_DISPATCH` d'un dossier central → notification au Président, **aucune** au CC ;
    dossier régional → les deux, comme avant.
-8. GET `/api/localites` → `estCentrale: true` pour `ANT`, `false` ailleurs.
+9. GET `/api/localites` → `estCentrale: true` pour `ANT`, `false` ailleurs.
