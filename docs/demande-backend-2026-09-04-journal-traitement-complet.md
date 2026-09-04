@@ -1,5 +1,12 @@
 # Demande backend — Journal du dossier : raconter le traitement JUSQU'AU BOUT
 
+> ✅ **CLÔTURÉE le 04/09** — backend livré (`ed162e8`, 772 tests, option FUSION À LA LECTURE) et
+> contre-recetté en réel : 00002 et 00003 racontent rétroactivement tout le traitement (soumissions
+> d'examen avec n° de navette, retours commentés, transmission au Président, visa avec avis et
+> désignés, 3 signatures, PV signé). Front `?` : libellés des 9 types + rangs de visibilité
+> hiérarchique (examen/signature rang Membre, visa rang CC, vérification rang Vérificateur,
+> PV_SIGNE visible de tous). Nota : les signatures, datées sans heure en base, sortent à 23:59.
+
 **Date** : 2026-09-04 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote
 (dossier 00002) — « le journal s'arrête à la réattribution de 05:21, alors que le chronométrage va
 jusqu'à la co-signature de 12:13 ».

@@ -37,6 +37,16 @@ describe('circuit-workflow', () => {
       expect(tacheChronoVisiblePour('PRMP', 'VISA')).toBe(true);
       expect(tacheChronoVisiblePour('ADMINISTRATEUR', 'DISPATCH')).toBe(true);
     });
+    it('journal complet (ed162e8) : examen/signature au rang Membre, visa au rang CC, PV signé visible de tous', () => {
+      expect(actionJournalVisiblePour('MEMBRE', 'SOUMISSION_EXAMEN')).toBe(true);
+      expect(actionJournalVisiblePour('MEMBRE', 'SIGNATURE')).toBe(true);
+      expect(actionJournalVisiblePour('MEMBRE', 'VISA')).toBe(false);
+      expect(actionJournalVisiblePour('VERIFICATEUR', 'SOUMISSION_EXAMEN')).toBe(false);
+      expect(actionJournalVisiblePour('VERIFICATEUR', 'PV_SIGNE')).toBe(true);
+      expect(actionJournalVisiblePour('VERIFICATEUR', 'DECISION_VERIFICATION')).toBe(true);
+      expect(actionJournalVisiblePour('ASSISTANT_CONTROLEUR', 'DECISION_VERIFICATION')).toBe(false);
+      expect(actionJournalVisiblePour('ASSISTANT_CONTROLEUR', 'ARCHIVAGE')).toBe(true);
+    });
     it('journal : les gestes de dispatch sont réservés au CC et au-dessus ; les actes PRMP visibles de tous', () => {
       expect(actionJournalVisiblePour('VERIFICATEUR', 'REATTRIBUTION')).toBe(false);
       expect(actionJournalVisiblePour('MEMBRE', 'DISPATCH')).toBe(false);

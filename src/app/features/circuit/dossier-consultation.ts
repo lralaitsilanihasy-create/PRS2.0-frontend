@@ -642,6 +642,17 @@ export class DossierConsultation implements OnInit {
       REATTRIBUTION: 'Réattribution',
       REPRISE: 'Reprise par le dispatcheur',
       RETRAIT_DISPATCH: 'Retrait du dispatch',
+      // ⚠️ Journal COMPLET (2026-09-04 soir, backend ed162e8, fusion à la lecture) : le traitement
+      // raconté jusqu'au bout — examen, navette, visa, signatures, vérification, SIGMP, archivage.
+      SOUMISSION_EXAMEN: "Soumission d'examen",
+      RETOUR_RECTIFICATION: 'Retour pour rectification',
+      TRANSMISSION_PRESIDENT: 'Transmission au Président',
+      VISA: 'Visa',
+      SIGNATURE: 'Signature',
+      PV_SIGNE: 'PV signé',
+      DECISION_VERIFICATION: 'Passage de vérification',
+      TRANSMISSION_SIGMP: 'Transmission SIGMP',
+      ARCHIVAGE: 'Archivage',
     };
     return labels[type] ?? type;
   }

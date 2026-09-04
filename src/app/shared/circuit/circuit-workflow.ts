@@ -37,13 +37,26 @@ const RANG_ETAPE_CHRONO: Record<string, number> = {
   ARCHIVAGE: 2,
 };
 
-/** Rang du geste consigné au journal (types inconnus ou PRMP → 0, visibles de tous). */
+/**
+ * Rang du geste consigné au journal (types inconnus ou PRMP → 0, visibles de tous).
+ * ⚠️ Journal COMPLET (ed162e8) : SIGNATURE couvre les trois parts — rang Membre, car le Membre
+ * co-signe le MÊME document (les tuiles Signataires montrent déjà l'état de chaque part) ;
+ * PV_SIGNE est l'aboutissement du dossier : visible de tous, comme les actes de la PRMP.
+ */
 const RANG_ACTION_JOURNAL: Record<string, number> = {
   RECEPTION: 1,
   DISPATCH: 5,
   RETRAIT_DISPATCH: 5,
   REATTRIBUTION: 5,
   REPRISE: 5,
+  SOUMISSION_EXAMEN: 4,
+  RETOUR_RECTIFICATION: 5,
+  TRANSMISSION_PRESIDENT: 5,
+  VISA: 5,
+  SIGNATURE: 4,
+  DECISION_VERIFICATION: 3,
+  TRANSMISSION_SIGMP: 3,
+  ARCHIVAGE: 2,
 };
 
 /** Rang hiérarchique du connecté — `Infinity` pour les profils hors chaîne (PRMP, Admin) : tout voir. */
