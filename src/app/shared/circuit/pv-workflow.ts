@@ -543,6 +543,13 @@ export class PvWorkflow {
   readonly canViser = computed(() => {
     const r = this.roleSignature();
     if (!peutViser(this.pv().statutPv) || this.dejaSigne()) return false;
+    // ⚠️ Constat pilote (2026-09-04) : sur PROJET_ACCEPTE, « Compléter le visa… » ne vaut que pour
+    // un PV accepté sous l'ANCIEN contrat, au visa INCOMPLET. Un visa qui a désigné son ou ses
+    // co-signataires est complet — il ne reste que les signatures (le CC désigné voyait encore le
+    // panneau de visa avec son sélecteur de Membre vide).
+    if (this.pv().statutPv === 'PROJET_ACCEPTE' && (this.pv().imMembreCoSignataire || this.pv().imCcCoSignataire)) {
+      return false;
+    }
     if (this.estDeuxNiveaux()) return this.niveau() === 'PRESIDENT' && r === 'PRESIDENT';
     return r === 'PRESIDENT' || r === 'CC';
   });
