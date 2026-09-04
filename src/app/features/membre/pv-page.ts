@@ -57,33 +57,44 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       @if (loading()) {
         <p class="pv__info" role="status">Chargement…</p>
       } @else {
-        <ul class="pv__list">
-          @for (pv of pvs(); track pv.idPv) {
-            <li class="card pv-card" [class.pv-card--open]="selected()?.idPv === pv.idPv">
-              <div class="pv-card__head">
-                <!-- ⚠️ Demande user (2026-08-03) — le projet de PV est ACCOMPAGNÉ de son dossier :
-                     référence + entité visibles dès la liste, et consultation complète du dossier
-                     (PPM, marchés, pièces jointes) sans quitter l'écran. -->
-                <div class="pv-card__ident">
-                  <span class="pv-card__ref">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</span>
-                  <span class="pv-card__dossier">
-                    <span class="pv-card__dossier-lbl">Dossier</span>
-                    <span class="cnm-mono">{{ dossierRef(pv) }}</span>
-                    @if (dossierEntite(pv); as ent) { <span class="pv-card__sep">·</span>{{ ent }} }
-                  </span>
-                </div>
-                <app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" />
-                @if (dossierDe(pv); as d) {
-                  <button type="button" class="btn btn-outline btn-sm" (click)="dossierConsulte.set(d)">
-                    📂 Voir le dossier
-                  </button>
-                }
-                <button type="button" class="btn btn-secondary" (click)="selectionner(pv)">
-                  {{ selected()?.idPv === pv.idPv ? 'Masquer' : 'Gérer' }}
-                </button>
-              </div>
-              @if (selected()?.idPv === pv.idPv) {
-                <div class="pv-content" #pvContent>
+        <!-- ⚠️ Demande pilote (2026-09-04) : MÊME présentation que le tableau des PV définitifs
+             (table-card à colonnes, référence + entité dès la liste — 2026-08-03) ; le détail
+             « Gérer » s'ouvre dans une rangée pleine largeur sous la ligne. -->
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Référence</th>
+                <th scope="col">Dossier</th>
+                <th scope="col">Entité contractante</th>
+                <th scope="col">Statut</th>
+                <th scope="col" class="r">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (pv of pvs(); track pv.idPv) {
+                <tr>
+                  <td><span class="pv-row__ref">{{ pv.refePv || pv.referencePv || ('PV #' + pv.idPv) }}</span></td>
+                  <td class="cnm-mono" style="white-space:nowrap;">{{ dossierRef(pv) }}</td>
+                  <td>{{ dossierEntite(pv) }}</td>
+                  <td><app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" /></td>
+                  <td>
+                    <div class="td-actions pv-row__actions">
+                      @if (dossierDe(pv); as d) {
+                        <button type="button" class="btn btn-outline btn-sm" (click)="dossierConsulte.set(d)">
+                          📂 Voir le dossier
+                        </button>
+                      }
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="selectionner(pv)">
+                        {{ selected()?.idPv === pv.idPv ? 'Masquer' : 'Gérer' }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                @if (selected()?.idPv === pv.idPv) {
+                  <tr class="pv-row-detail">
+                    <td colspan="5">
+                      <div class="pv-content" #pvContent>
                   <div class="pv-print-bar">
                     <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Imprimer" aria-label="Imprimer">🖨 Imprimer</button>
                     <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Enregistrer au format PDF" aria-label="Enregistrer au format PDF">📄 PDF</button>
@@ -337,13 +348,16 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   } @else {
                     <p class="pv__info">Aucune navette pour ce PV.</p>
                   }
-                </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              } @empty {
+                <tr><td colspan="5" class="pv__info">Aucun projet de PV en cours.</td></tr>
               }
-            </li>
-          } @empty {
-            <li class="pv__info">Aucun projet de PV en cours.</li>
-          }
-        </ul>
+            </tbody>
+          </table>
+        </div>
       }
     </section>
 
@@ -362,25 +376,11 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       margin: 0.9rem 0 1.1rem;
     }
     .pv__actions--verrouillees { pointer-events: none; opacity: 0.45; }
-    .pv__list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    /* Mise en forme d'ensemble (demande pilote 2026-09-04) : carte ouverte mise en relief,
-       respirations et ombrages cohérents sur toutes les rubriques. */
-    .pv-card { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; }
-    .pv-card--open { border-color: var(--c-200, #c7d2fe); box-shadow: 0 10px 28px rgba(30, 27, 75, 0.1); }
-    .pv-card__head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-    /* Identité : référence du PV + dossier d'origine (⚠️ 2026-08-03). */
-    .pv-card__ident { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; min-width: 14rem; }
-    .pv-card__ref { font-weight: 700; font-size: var(--text-md); color: var(--c-800); letter-spacing: -0.01em; }
-    .pv-card__dossier { font-size: var(--text-xs); color: var(--n-500); display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem; }
-    .pv-card__dossier-lbl { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--n-400); }
-    .pv-card__sep { color: var(--n-300); }
+    /* Tableau de liste (demande pilote 2026-09-04) : même style que « PV définitifs ». */
+    .pv-row__ref { font-weight: 700; color: var(--c-800); }
+    .pv-row__actions { justify-content: flex-end; }
+    /* Rangée du détail ouvert : fond légèrement crème, pleine largeur, sans hover de tableau. */
+    .pv-row-detail > td { background: #fbfcff; padding: 1rem 1.25rem; }
     .pv-content {
       display: flex;
       flex-direction: column;
