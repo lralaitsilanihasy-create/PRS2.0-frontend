@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { ToastService } from '../../core/notifications/toast.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import {
   Dispatch,
@@ -434,6 +435,7 @@ export class MembrePv {
   private readonly dossierService = inject(DossierService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly permissions = inject(PermissionsService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   readonly pvs = signal<PvExamen[]>([]);
@@ -590,17 +592,28 @@ export class MembrePv {
   autorisation(idPv: number): boolean {
     return this.autorisations().get(idPv) ?? true;
   }
+  /** Attributaire COURANT du dispatch de l'examen du PV (`imCtrlMembre`, réattributions comprises). */
+  private attributaireDe(pv: PvExamen): string | undefined {
+    const exam = this.examens().find((e) => e.idExamen === pv.idExamen);
+    if (exam?.idDispatch == null) return undefined;
+    return this.dispatchs().find((d) => d.idDispatch === exam.idDispatch)?.imCtrlMembre;
+  }
   /**
    * ⚠️ 2026-08-18 — « Rectifier l'examen » depuis le retour de navette. La règle d'ouverture de
    * l'examen est partagée (`examenRectifiable`) avec la liste des dossiers examinés et l'écran
    * d'examen : elle avait divergé entre ces trois écrans, au point de rendre la rectification
-   * impossible. S'y ajoute ici la capacité d'écriture — le CC voit le motif, mais n'a pas à
-   * rectifier l'examen du Membre.
+   * impossible.
+   *
+   * ⚠️ 2026-09-04 — « seul l'ASSIGNATAIRE examine » (règle pilote, garde serveur d24c115) : la
+   * capacité EXAMEN_WRITE ne suffit plus — le Président et le CC la portent par délégation mais
+   * n'ont pas à rectifier l'examen d'autrui. Le bouton n'apparaît qu'à l'attributaire courant du
+   * dispatch ; les autres voient le motif du retour, sans le geste.
    */
   peutRectifier(pv: PvExamen): boolean {
     return (
       pv.statutPv === 'EN_RECTIFICATION' &&
       this.permissions.can('EXAMEN_WRITE') &&
+      this.attributaireDe(pv) === this.auth.ref() &&
       examenRectifiable(pv.statutPv, this.dossierByExamen().get(pv.idExamen)?.statut)
     );
   }
