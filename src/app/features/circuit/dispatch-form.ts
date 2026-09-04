@@ -340,12 +340,9 @@ export class DispatchForm {
     });
     this.attributaireChoisi.set(this.form.controls.imCtrlMembre.value);
     this.form.controls.imCtrlMembre.valueChanges.subscribe((v) => this.attributaireChoisi.set(v));
-    // Réattribution : les instructions du dispatch d'origine sont reprises (modifiables) — la date,
-    // elle, reste celle du jour (c'est un nouveau geste de dispatch).
-    effect(() => {
-      const re = this.reattribution();
-      if (re && this.form.controls.instructions.pristine) this.form.controls.instructions.setValue(re.instructions ?? '');
-    });
+    // ⚠️ Demande pilote (2026-09-04) — réattribution : le champ « Instructions » part VIERGE. Les
+    // consignes du dispatcheur d'origine (le Président) s'adressaient au CC, pas au Membre : le CC
+    // rédige les siennes (le PUT remplace — champ vide = plus d'instruction sur le dispatch).
     // Pré-sélection du CC de la localité (résolu côté serveur s'il est omis) pour que le dispatcheur
     // voie qui sera informé — modifiable. Sans objet quand l'association n'a pas lieu (champ masqué).
     effect(() => {
