@@ -4,7 +4,7 @@ import { Dossier, estLocaliteCentrale, Role } from '../../models';
 import { DossierService } from '../../services';
 
 /** Colonnes optionnelles de la liste (drill-down), selon le groupe. */
-export type ColonneCircuit = 'reception' | 'dateDispatch' | 'attributaire';
+export type ColonneCircuit = 'reception' | 'dateDispatch' | 'attributaire' | 'instructions';
 
 /** Un groupe de classement (colonne du classement) : libellé + statuts couverts + habillage. */
 export interface ClassementGroupe {
@@ -183,7 +183,9 @@ export const MEMBRE_GROUPES: ClassementGroupe[] = [
   // `actionReattribuer` : chez P/CC (DISPATCH_WRITE), un dossier de MA file s'examine OU se réattribue
   // à un Membre — le geste vit ICI, pas dans « Dispatch », qui exclut mes attributions (2026-09-03).
   // Invisible chez le Membre (pas la capacité), zéro code.
-  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE', 'A_REEXAMINER'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch'], actionExamen: true, actionReattribuer: true, actionRendre: true },
+  // Colonne « Instructions » (demande pilote 2026-09-04) : les consignes du dispatcheur, visibles
+  // dans la file de l'attributaire — c'est à lui qu'elles s'adressent.
+  { key: 'a-examiner', label: 'À examiner', statuts: ['DISPATCHE', 'A_REEXAMINER'], icon: '🔍', kind: 'a', colonnes: ['dateDispatch', 'instructions'], actionExamen: true, actionReattribuer: true, actionRendre: true },
   { key: 'examines', label: 'Examinés', statuts: ['EXAMINE', 'PV_SIGNE', 'EN_VERIFICATION', 'CLOTURE'], icon: '✅', kind: 'b', colonnes: ['dateDispatch'], actionModifierExamen: true },
 ];
 

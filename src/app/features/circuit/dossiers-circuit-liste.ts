@@ -96,6 +96,7 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
                 <th scope="col">Entité contractante</th>
                 @if (aColonne('reception')) { <th scope="col">Réception sec.</th> }
                 @if (aColonne('dateDispatch')) { <th scope="col">Date dispatch</th> }
+                @if (aColonne('instructions')) { <th scope="col">Instructions</th> }
                 @if (aColonne('attributaire')) { <th scope="col">Attributaire</th> }
                 <th scope="col">Statut</th>
                 <th scope="col">Localité</th>
@@ -126,6 +127,9 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
                   }
                   @if (aColonne('dateDispatch')) {
                     <td style="white-space:nowrap;">{{ (dateDispatch(d) | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
+                  }
+                  @if (aColonne('instructions')) {
+                    <td class="dcl__instructions">{{ instructionsDe(d) || '—' }}</td>
                   }
                   @if (aColonne('attributaire')) {
                     <td>{{ attributaire(d) }}</td>
@@ -264,6 +268,8 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
     .dcl__confirm-hint { margin: 0.5rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
     /* Brouillon d'examen (couleur « en cours » de l'examen : indigo). */
     .dcl__brouillon { margin-left: 0.4rem; background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE; }
+    /* Consignes du dispatcheur : texte long possible — retour à la ligne, largeur bornée. */
+    .dcl__instructions { max-width: 22rem; white-space: normal; overflow-wrap: break-word; color: var(--n-500); }
   `,
 })
 export class DossiersCircuitListe {
@@ -505,6 +511,10 @@ export class DossiersCircuitListe {
   attributaire(d: Dossier): string {
     const im = this.dispatchByDossier().get(d.idDossier)?.imCtrlMembre;
     return im ? this.controleurMap().get(im) ?? im : '—';
+  }
+  /** Consignes du dernier dispatch (colonne « Instructions » — demande pilote 2026-09-04). */
+  instructionsDe(d: Dossier): string {
+    return this.dispatchByDossier().get(d.idDossier)?.instructions ?? '';
   }
   /** Réception à dispatcher pour ce dossier si l'action est offerte (groupe) et autorisée (DISPATCH_WRITE) ; sinon null. */
   peutDispatcher(d: Dossier): Reception | null {
