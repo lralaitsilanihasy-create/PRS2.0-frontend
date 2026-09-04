@@ -1,5 +1,9 @@
 # Demande backend — Prise en charge : garde d'acteur, et occurrences par niveau de navette
 
+> ✅ **CLÔTURÉE le 04/09** — backend livré (`5225529`, 753 tests) et contre-recetté en réel 5/5
+> (403 non-attributaire, 409 tâche d'autrui, VISA#1/#2 par niveau, 1 COSIGNATURE par désigné,
+> `nomCcCoSignataire` peuplé) — dossier 100290, PV 14 SIGNE, aucune réassignation SQL.
+
 **Date** : 2026-09-04 · **Demandeur** : frontend · **Origine** : constats de la recette réelle du
 cycle à deux niveaux (dossier 100285, PV 12) — trois réassignations SQL ont été nécessaires pour la
 terminer.

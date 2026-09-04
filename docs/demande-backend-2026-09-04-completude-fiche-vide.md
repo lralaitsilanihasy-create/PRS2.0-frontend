@@ -1,5 +1,9 @@
 # Demande backend — Complétude d'examen : « on ne contrôle pas le vide »
 
+> ✅ **CLÔTURÉE le 04/09** — backend livré (`b7a47e8`) et contre-recetté en réel : fiche vide →
+> soumission sans points FICHE acceptée (dossier 100291) ; ≥1 dérogatoire → 400 « 3 évaluations
+> manquantes » puis acceptée une fois les 3 points FICHE statués (dossier 100292).
+
 **Date** : 2026-09-04 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : demande pilote
 
 > « S'il n'y a pas de contenu dans un onglet, sauter le contrôle car on ne contrôle pas le vide. »

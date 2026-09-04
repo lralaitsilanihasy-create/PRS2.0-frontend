@@ -1,5 +1,8 @@
 # Demande backend — Navette du PV à DEUX NIVEAUX et co-signature élargie (dossiers Président → CC → Membre)
 
+> ✅ **CLÔTURÉE le 04/09** — backend livré (`f648254`, 748 tests) + front `7520345` ; recette réelle
+> complète (PV 00002 : niveau CC → accepter → visa Président P+CC+M → 3 signatures → SIGNE).
+
 **Date** : 2026-09-04 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : spec pilote du jour
 
 > « Pour le dossier de dispatch à deux niveaux (Président vers CC, puis CC vers Membre), la navette

@@ -1,5 +1,8 @@
 # Demande backend — Journal du circuit : consigner les gestes de dispatch (réattributions, reprises, retraits)
 
+> ✅ **CLÔTURÉE le 04/09** — backend livré (`d24c115` + consigne au détail `177ced0`), affiché dans
+> la consultation (DISPATCH/REATTRIBUTION/REPRISE/RETRAIT_DISPATCH), contre-recetté en réel.
+
 **Date** : 2026-09-04 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : demande pilote
 
 > « Est-ce qu'on peut faire apparaître les réattributions du CC et le retrait — c'est-à-dire toutes

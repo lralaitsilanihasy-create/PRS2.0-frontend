@@ -1,5 +1,8 @@
 # Demande backend — Pré-dispatch des dossiers de la localité CENTRALE : privilège du seul Président
 
+> ✅ **CLÔTURÉE le 04/09** — backend livré (`d24c115`, run 29) et contre-recetté en réel toute verte
+> (gardes 403, notifications, journal du circuit).
+
 **Date** : 2026-09-03 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : demande pilote du jour
 
 > « Pour le dossier de localité centrale (CNM), le CC ne doit pas voir les dossiers pour
