@@ -55,8 +55,10 @@ import {
                 </button>
               }
             } @else if (peutPrendreEnCharge()) {
-              <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirSaisie(null)">
-                Prendre en charge
+              <!-- ⚠️ Demande pilote (2026-09-04) — bouton TRÈS repérable : c'est le geste qui ouvre
+                   toute action du profil (couleur vive, dérogation assumée aux tokens). -->
+              <button type="button" class="chrono__cta" (click)="ouvrirSaisie(null)">
+                ⏱ Prendre en charge
               </button>
             } @else {
               <span class="chrono__pec">Pas encore prise en charge.</span>
@@ -165,6 +167,26 @@ import {
       gap: 0.5rem 1rem;
       font-size: var(--text-sm);
       color: var(--n-500);
+    }
+    /* « Prendre en charge » (demande pilote 2026-09-04) : couleur vive orange→rouge, facile à
+       repérer — même dérogation assumée aux tokens que le fuchsia du dispatch en lot. */
+    .chrono__cta {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+      font-size: var(--text-sm);
+      font-weight: 800;
+      color: #fff;
+      padding: 0.5rem 1.15rem;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, #f97316, #dc2626);
+      box-shadow: 0 3px 10px rgba(234, 88, 12, 0.45);
+      transition: transform 120ms var(--ease-out), box-shadow 120ms var(--ease-out);
+    }
+    .chrono__cta:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 14px rgba(234, 88, 12, 0.55);
     }
     .chrono__attente {
       color: var(--warning-700, #92400e);

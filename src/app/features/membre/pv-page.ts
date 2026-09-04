@@ -87,6 +87,17 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Imprimer" aria-label="Imprimer">🖨 Imprimer</button>
                     <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Enregistrer au format PDF" aria-label="Enregistrer au format PDF">📄 PDF</button>
                   </div>
+                  <!-- Chronométrage EN TÊTE (demande pilote 2026-09-04 : « Prendre en charge »
+                       toujours en haut) : prise en charge des étapes VISA / COSIGNATURE. -->
+                  @if (idDossierDe(pv); as idDos) {
+                    <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" (actionAutorisee)="majAutorisation(pv.idPv, $event)" />
+                    @if (!autorisation(pv.idPv)) {
+                      <div class="pv__verrou" role="status">
+                        🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en
+                        charge marque le début de votre action et alimente le chronométrage.
+                      </div>
+                    }
+                  }
                   @if (pv.statutPv === 'EN_RECTIFICATION' && dernierRetour()) {
                     <!-- ⚠️ 2026-08-18 — le retour se lit ici : l'accès à la correction doit y être
                          aussi. Sans ce lien, le Membre ne dispose que de « Soumettre le projet » et
@@ -286,17 +297,8 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     <p class="pv__info">Aucune navette pour ce PV.</p>
                   }
                 </div>
-                <!-- Chronométrage (2026-09-01) : prise en charge des étapes VISA / COSIGNATURE. -->
-                @if (idDossierDe(pv); as idDos) {
-                  <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" (actionAutorisee)="majAutorisation(pv.idPv, $event)" />
-                  <!-- ⚠️ Demande pilote (2026-09-04) — AUCUNE action sans prise en charge. -->
-                  @if (!autorisation(pv.idPv)) {
-                    <div class="pv__verrou" role="status">
-                      🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en
-                      charge marque le début de votre action et alimente le chronométrage.
-                    </div>
-                  }
-                }
+                <!-- ⚠️ Demande pilote (2026-09-04) — AUCUNE action sans prise en charge (widget en
+                     tête du détail ; ici seul le VERROU s'applique aux actions du PV). -->
                 <div [class.pv__actions--verrouillees]="!autorisation(pv.idPv)">
                   <app-pv-workflow [pv]="pv" [idLocalite]="dossierLocalite(pv)"
                     [nbObservationsExamen]="nbObservations() + nbObservationsPieces()" (changed)="onChanged($event)" />

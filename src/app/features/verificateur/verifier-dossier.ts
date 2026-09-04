@@ -60,14 +60,9 @@ interface Echange {
         </div>
       </header>
 
-      <div class="alert alert-info">
-        Vérification possible uniquement sur un dossier en vérification (PV signé, avis favorable avec
-        réserve). Statuez chaque observation du PV — levée (définitive) ou maintenue ; quand toutes sont
-        levées, le dossier passe à la transmission SIGMP.
-      </div>
-
-      <!-- Chronométrage : prise en charge des étapes VERIFICATION / TRANSMISSION_SIGMP.
-           ⚠️ Demande pilote (2026-09-04) — AUCUNE action sans prise en charge. -->
+      <!-- Chronométrage EN TÊTE (demande pilote 2026-09-04 : « Prendre en charge » toujours en
+           haut) : prise en charge des étapes VERIFICATION / TRANSMISSION_SIGMP — AUCUNE action
+           sans prise en charge. -->
       <div class="card"><div class="card-body">
         <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" (actionAutorisee)="actionAutorisee.set($event)" />
         @if (!actionAutorisee()) {
@@ -77,6 +72,12 @@ interface Echange {
           </p>
         }
       </div></div>
+
+      <div class="alert alert-info">
+        Vérification possible uniquement sur un dossier en vérification (PV signé, avis favorable avec
+        réserve). Statuez chaque observation du PV — levée (définitive) ou maintenue ; quand toutes sont
+        levées, le dossier passe à la transmission SIGMP.
+      </div>
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
