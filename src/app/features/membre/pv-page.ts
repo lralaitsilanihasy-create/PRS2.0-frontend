@@ -84,6 +84,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
               </div>
               @if (selected()?.idPv === pv.idPv) {
                 <div class="pv-content" #pvContent>
+                  <div class="pv-print-bar">
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Imprimer" aria-label="Imprimer">🖨 Imprimer</button>
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Enregistrer au format PDF" aria-label="Enregistrer au format PDF">📄 PDF</button>
+                  </div>
                   <!-- Chronométrage EN TÊTE (demande pilote 2026-09-04 : « Prendre en charge »
                        toujours en haut) : prise en charge des étapes VISA / COSIGNATURE. -->
                   @if (idDossierDe(pv); as idDos) {
@@ -119,14 +123,9 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   }
                   <!-- En-tête du projet de PV : référence + tuiles d'identification (avis en badge coloré). -->
                   <div class="pv-entete">
-                    <!-- ⚠️ Dédoublonnage (2026-09-04) : le statut vit dans la tête de carte et la
-                         barre de décision — la fiche porte l'identité et les OUTILS (impression). -->
                     <div class="pv-entete__titre">
                       <span class="pv-entete__ref">{{ pv.refePv || pv.referencePv || ('Projet de PV #' + pv.idPv) }}</span>
-                      <div class="pv-entete__outils">
-                        <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Imprimer" aria-label="Imprimer">🖨 Imprimer</button>
-                        <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Enregistrer au format PDF" aria-label="Enregistrer au format PDF">📄 PDF</button>
-                      </div>
+                      <app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" />
                     </div>
                     <div class="pv-entete__grid">
                       <div class="pv-entete__item pv-entete__item--large">
@@ -374,13 +373,6 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       padding: 0.65rem 0.95rem;
     }
     .pv-content td { white-space: normal; }
-    /* Tableaux du détail (grille, navettes) : en-têtes ALLÉGÉS — la bande bleue globale alourdit
-       un écran qui en compte deux ; petites capitales grises + filet, cellules aérées (même
-       neutralisation que le sous-tableau d'observations et le chronométrage). Sélecteurs en
-       enfants directs : le sous-tableau imbriqué garde son propre réglage. */
-    .pv-content > table > thead > tr { background: transparent; }
-    .pv-content > table > thead th { background: none; color: var(--n-400); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; text-align: left; padding: 0.45rem 0.6rem; border-bottom: 2px solid var(--c-100); }
-    .pv-content > table > tbody > tr > td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--n-100); vertical-align: top; }
     .pv-info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
     .pv-info > div { display: flex; gap: 0.5rem; align-items: baseline; }
     .pv-info dt { flex: 0 0 11rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
@@ -389,7 +381,6 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .pv-entete { display: flex; flex-direction: column; gap: 0.8rem; background: linear-gradient(180deg, var(--c-50), #fff); border: 1px solid var(--c-100); border-radius: var(--radius-lg); padding: 1rem 1.15rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05); }
     .pv-entete__titre { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.6rem; border-bottom: 1px dashed var(--c-100); }
     .pv-entete__ref { font-size: var(--text-xl, 1.25rem); font-weight: 800; color: var(--c-800); letter-spacing: -0.015em; }
-    .pv-entete__outils { margin-left: auto; display: flex; gap: 0.5rem; }
     .pv-entete__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem 1rem; }
     .pv-entete__item { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
     .pv-entete__item--large { grid-column: span 2; }
@@ -398,9 +389,8 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .pv-entete__val { font-weight: 600; color: var(--n-700); overflow-wrap: anywhere; }
     .pv-entete__val .badge { font-weight: 700; }
     .pv-entete__attente { font-weight: 500; font-style: italic; color: var(--n-400); }
-    /* Synthèse du Membre : panneau dédié, liseré accent — sur BLANC pour se distinguer de la
-       fiche d'identité bleutée qui la précède. */
-    .pv-synthese { display: flex; flex-direction: column; gap: 0.3rem; background: #fff; border: 1px solid var(--n-200); border-left: 3px solid var(--c-500, #4f46e5); border-radius: var(--radius-md); padding: 0.75rem 1rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05); }
+    /* Synthèse du Membre : panneau dédié, liseré accent (même langage visuel que l'examen). */
+    .pv-synthese { display: flex; flex-direction: column; gap: 0.3rem; background: var(--c-50); border: 1px solid var(--c-100); border-left: 3px solid var(--c-500, #4f46e5); border-radius: var(--radius-md); padding: 0.75rem 1rem; }
     .pv-synthese__lbl { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--c-800); }
     .pv-synthese__texte { margin: 0; font-size: var(--text-sm); color: var(--n-700); white-space: pre-wrap; }
     /* Titres de section (présentation 2026-09-04) : intitulé discret + filet séparateur — chaque
@@ -423,6 +413,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .pv-grille-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
     /* Examen entièrement conforme (mode observations) : constat vert, pas de tableau vide. */
     .pv-grille-ok { margin: 0; padding: 0.5rem 0.75rem; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--radius-md); color: #15803D; font-size: var(--text-sm); font-weight: 600; }
+    .pv-print-bar { display: flex; justify-content: flex-end; gap: 0.5rem; }
     /* Le retour de navette porte son action : le motif à gauche, « Rectifier » à droite. */
     .pv-retour { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
     .pv-retour .btn { flex-shrink: 0; text-decoration: none; }
