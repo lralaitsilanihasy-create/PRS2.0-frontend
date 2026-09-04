@@ -279,27 +279,27 @@ interface RowState {
               @if (!points().length) {
                 <p class="text-muted">Aucun point de contrôle défini pour ce type de dossier.</p>
               } @else {
-                <!-- Fil d'étapes : un marché après l'autre, puis chaque PIÈCE JOINTE une par une, puis dossier, puis avis. -->
+                <!-- Fil d'étapes (⚠️ ordre pilote 2026-09-04) : Fiche → lignes du plan → AGPM →
+                     pièces une par une → dossier → avis. -->
                 <div class="exam__steps">
-                  @for (m of marches(); track m.idDetail; let i = $index) {
-                    <button type="button" class="exam__step exam__step--{{ etatOngletMarche(i) }}" (click)="allerEtape(i)">
-                      <span class="exam__step-dot"></span>Ligne {{ i + 1 }}
-                    </button>
-                  }
-                  @for (p of piecesOrdonnees(); track p.idPiece; let i = $index) {
-                    <button type="button" class="exam__step exam__step--{{ etatOngletPiece(i) }}" (click)="allerEtape(nbLignes() + i)">
-                      <span class="exam__step-dot"></span>Pièce {{ i + 1 }}
-                    </button>
-                  }
-                  <!-- ⚠️ 2026-09-02 — la fiche de présentation et l'AGPM ont chacun LEUR grille. -->
                   @if (hasEtapeFiche()) {
                     <button type="button" class="exam__step exam__step--{{ etatOngletFiche() }}" (click)="allerEtape(etapeFicheIdx())">
                       <span class="exam__step-dot"></span>Fiche
                     </button>
                   }
+                  @for (m of marches(); track m.idDetail; let i = $index) {
+                    <button type="button" class="exam__step exam__step--{{ etatOngletMarche(i) }}" (click)="allerEtape(offsetLignes() + i)">
+                      <span class="exam__step-dot"></span>Ligne {{ i + 1 }}
+                    </button>
+                  }
                   @if (hasEtapeAgpm()) {
                     <button type="button" class="exam__step exam__step--{{ etatOngletAgpm() }}" (click)="allerEtape(etapeAgpmIdx())">
                       <span class="exam__step-dot"></span>AGPM
+                    </button>
+                  }
+                  @for (p of piecesOrdonnees(); track p.idPiece; let i = $index) {
+                    <button type="button" class="exam__step exam__step--{{ etatOngletPiece(i) }}" (click)="allerEtape(offsetPieces() + i)">
+                      <span class="exam__step-dot"></span>Pièce {{ i + 1 }}
                     </button>
                   }
                   @if (hasEtapeDossier()) {
@@ -317,7 +317,7 @@ interface RowState {
                 }
 
                 @if (estEtapeMarche()) {
-                  <h3 class="exam__sub">Ligne {{ etape() + 1 }} / {{ nbLignes() }} — grille de contrôle</h3>
+                  <h3 class="exam__sub">Ligne {{ indexMarcheCourant() + 1 }} / {{ nbLignes() }} — grille de contrôle</h3>
                   @if (marcheCourant(); as m) { <p class="exam__point-desc cnm-muted">{{ m.designationMarche || ('Ligne #' + m.idDetail) }}</p> }
                 } @else if (estEtapePiece()) {
                   <h3 class="exam__sub">Pièce {{ indexPieceCourante() + 1 }} / {{ nbPieces() }} — grille de contrôle</h3>
@@ -687,24 +687,38 @@ export class ExamenDossier implements OnDestroy {
   /** Pièces dans l'ordre des étapes « Pièce N » (initiales puis après renvoi — même ordre que la liste). */
   readonly piecesOrdonnees = computed(() => [...this.piecesInitiales(), ...this.piecesApresRenvoi()].filter((p) => p.idPiece != null));
   readonly nbPieces = computed(() => this.piecesOrdonnees().length);
-  /** Fil : lignes → pièces → Fiche → AGPM → Dossier → Synthèse (les étapes absentes se retirent). */
-  readonly etapeFicheIdx = computed(() => this.nbLignes() + this.nbPieces());
-  readonly etapeAgpmIdx = computed(() => this.etapeFicheIdx() + (this.hasEtapeFiche() ? 1 : 0));
-  /** Index de l'étape « contrôles dossier » (après lignes, pièces, fiche et AGPM éventuelles). */
-  readonly etapeDossierIdx = computed(() => this.etapeAgpmIdx() + (this.hasEtapeAgpm() ? 1 : 0));
+  /**
+   * Fil (⚠️ ORDRE pilote 2026-09-04) : Fiche → lignes du plan → AGPM → pièces → Dossier → Synthèse
+   * (les étapes absentes se retirent) — la grille de la fiche passe AVANT les lignes du PPM, et
+   * l'AGPM suit immédiatement le PPM.
+   */
+  readonly etapeFicheIdx = computed(() => 0);
+  /** Index de la première étape « ligne » (décalée de 1 si la fiche a sa grille). */
+  readonly offsetLignes = computed(() => (this.hasEtapeFiche() ? 1 : 0));
+  readonly etapeAgpmIdx = computed(() => this.offsetLignes() + this.nbLignes());
+  /** Index de la première étape « pièce » (après l'AGPM éventuelle). */
+  readonly offsetPieces = computed(() => this.etapeAgpmIdx() + (this.hasEtapeAgpm() ? 1 : 0));
+  /** Index de l'étape « contrôles dossier » (après fiche, lignes, AGPM et pièces éventuelles). */
+  readonly etapeDossierIdx = computed(() => this.offsetPieces() + this.nbPieces());
   /** Index de l'étape « avis global » (dernière du fil). */
   readonly etapeAvis = computed(() => this.etapeDossierIdx() + (this.hasEtapeDossier() ? 1 : 0));
-  readonly estEtapeMarche = computed(() => this.etape() < this.nbLignes());
-  /** ⚠️ Règle ajoutée — étapes « Pièce N » : chaque pièce jointe est examinée une par une. */
-  readonly estEtapePiece = computed(() => this.etape() >= this.nbLignes() && this.etape() < this.nbLignes() + this.nbPieces());
   readonly estEtapeFiche = computed(() => this.hasEtapeFiche() && this.etape() === this.etapeFicheIdx());
+  readonly estEtapeMarche = computed(
+    () => this.etape() >= this.offsetLignes() && this.etape() < this.offsetLignes() + this.nbLignes(),
+  );
+  /** Index de la ligne courante dans `marches()` (−1 hors étape marché). */
+  readonly indexMarcheCourant = computed(() => (this.estEtapeMarche() ? this.etape() - this.offsetLignes() : -1));
+  /** ⚠️ Règle ajoutée — étapes « Pièce N » : chaque pièce jointe est examinée une par une. */
+  readonly estEtapePiece = computed(
+    () => this.etape() >= this.offsetPieces() && this.etape() < this.offsetPieces() + this.nbPieces(),
+  );
   readonly estEtapeAgpm = computed(() => this.hasEtapeAgpm() && this.etape() === this.etapeAgpmIdx());
   readonly estEtapeDossier = computed(() => this.hasEtapeDossier() && this.etape() === this.etapeDossierIdx());
   readonly estEtapeAvis = computed(() => this.etape() >= this.etapeAvis());
-  readonly indexPieceCourante = computed(() => (this.estEtapePiece() ? this.etape() - this.nbLignes() : -1));
+  readonly indexPieceCourante = computed(() => (this.estEtapePiece() ? this.etape() - this.offsetPieces() : -1));
   readonly pieceCourante = computed(() => (this.estEtapePiece() ? this.piecesOrdonnees()[this.indexPieceCourante()] ?? null : null));
   /** Marché de l'étape courante (null hors étape marché). */
-  readonly marcheCourant = computed(() => (this.estEtapeMarche() ? this.marches()[this.etape()] ?? null : null));
+  readonly marcheCourant = computed(() => (this.estEtapeMarche() ? this.marches()[this.indexMarcheCourant()] ?? null : null));
   /** idDetail associé à l'étape courante (null pour les étapes fiche / AGPM / dossier). */
   readonly idDetailCourant = computed(() => this.marcheCourant()?.idDetail ?? null);
   /** Points affichés à l'étape courante : LIGNE (marché), FICHE, AGPM ou DOSSIER — sinon aucun (avis). */
@@ -1082,7 +1096,7 @@ export class ExamenDossier implements OnDestroy {
   }
   /** État d'un onglet « Pièce N » (pastille de progression). */
   etatOngletPiece(i: number): 'current' | 'done-ras' | 'done-obs' | 'pending' {
-    if (this.etape() === this.nbLignes() + i) return 'current';
+    if (this.etape() === this.offsetPieces() + i) return 'current';
     const p = this.piecesOrdonnees()[i];
     if (p && this.pieceStatuee(p.idPiece)) return this.pieceAObs(p.idPiece) ? 'done-obs' : 'done-ras';
     return 'pending';
@@ -1096,7 +1110,7 @@ export class ExamenDossier implements OnDestroy {
   };
   /** État d'un onglet marché (pour la pastille de progression). */
   etatOngletMarche(i: number): 'current' | 'done-ras' | 'done-obs' | 'pending' {
-    if (this.etape() === i) return 'current';
+    if (this.etape() === this.offsetLignes() + i) return 'current';
     const idDetail = this.marches()[i]?.idDetail;
     if (idDetail != null && this.ligneStatuee(idDetail)) return this.ligneAObs(idDetail) ? 'done-obs' : 'done-ras';
     return 'pending';
@@ -1146,24 +1160,22 @@ export class ExamenDossier implements OnDestroy {
     }
     this.pointErreurs.set(err);
     if (err.size) return;
-    // Avance vers l'étape suivante (marché suivant → pièces → dossier → synthèse). L'état « traité » est dérivé des statuts.
+    // Avance vers l'étape suivante (fiche → lignes → AGPM → pièces → dossier → synthèse). L'état « traité » est dérivé des statuts.
     this.etape.update((e) => Math.min(e + 1, this.etapeAvis()));
     this.declencherSauvegarde(); // brouillon serveur : la progression survit à un départ de la page
   }
-  /** Navigation : lignes jusqu'à leur frontière, puis pièces, puis fiche → AGPM → dossier → avis, dans l'ordre. */
+  /** Navigation (⚠️ ordre pilote 2026-09-04) : fiche d'abord, puis lignes jusqu'à leur frontière, puis AGPM → pièces → dossier → avis. */
   allerEtape(i: number): void {
-    const lignesFaites = this.frontiere() === this.nbLignes();
-    const piecesFaites = lignesFaites && this.toutesPiecesStatuees();
+    const ficheFaite = !this.hasEtapeFiche() || this.ficheStatuee();
+    const lignesFaites = ficheFaite && this.frontiere() === this.nbLignes();
+    const agpmFait = lignesFaites && (!this.hasEtapeAgpm() || this.agpmStatuee());
+    const piecesFaites = agpmFait && this.toutesPiecesStatuees();
     const atteignable =
-      (i < this.nbLignes() && i <= this.frontiere()) ||
-      (i >= this.nbLignes() && i < this.nbLignes() + this.nbPieces() && lignesFaites && i - this.nbLignes() <= this.frontierePiece()) ||
-      (this.hasEtapeFiche() && i === this.etapeFicheIdx() && piecesFaites) ||
-      (this.hasEtapeAgpm() && i === this.etapeAgpmIdx() && piecesFaites && (!this.hasEtapeFiche() || this.ficheStatuee())) ||
-      (this.hasEtapeDossier() &&
-        i === this.etapeDossierIdx() &&
-        piecesFaites &&
-        (!this.hasEtapeFiche() || this.ficheStatuee()) &&
-        (!this.hasEtapeAgpm() || this.agpmStatuee())) ||
+      (this.hasEtapeFiche() && i === this.etapeFicheIdx()) || // la fiche OUVRE le fil : toujours atteignable
+      (i >= this.offsetLignes() && i < this.offsetLignes() + this.nbLignes() && ficheFaite && i - this.offsetLignes() <= this.frontiere()) ||
+      (this.hasEtapeAgpm() && i === this.etapeAgpmIdx() && lignesFaites) ||
+      (i >= this.offsetPieces() && i < this.offsetPieces() + this.nbPieces() && agpmFait && i - this.offsetPieces() <= this.frontierePiece()) ||
+      (this.hasEtapeDossier() && i === this.etapeDossierIdx() && piecesFaites) ||
       (i === this.etapeAvis() && this.toutTraite());
     if (atteignable) this.etape.set(i);
   }
@@ -1177,31 +1189,39 @@ export class ExamenDossier implements OnDestroy {
   ouvrirOnglet(o: 'ppm' | 'fiche' | 'agpm' | 'pieces'): void {
     this.ongletContenu.set(o);
     const avant = this.etape();
+    // ⚠️ Ordre pilote (2026-09-04) : fiche → lignes → AGPM → pièces. La fiche ouvre le fil, elle
+    // est toujours atteignable ; les autres onglets expliquent la séquence quand leur tour n'est
+    // pas venu (le document reste consultable).
     if (o === 'fiche' && this.hasEtapeFiche() && !this.estEtapeFiche()) {
       this.allerEtape(this.etapeFicheIdx());
-      if (this.etape() === avant && avant < this.etapeFicheIdx()) {
+    } else if (o === 'ppm' && !this.estEtapeMarche() && this.frontiere() < this.nbLignes()) {
+      this.allerEtape(this.offsetLignes() + this.frontiere());
+      if (this.etape() === avant && avant < this.offsetLignes()) {
         this.toast.info(
-          "La grille de la fiche de présentation s'ouvrira après les lignes et les pièces — l'examen est séquentiel. Le document reste consultable ici.",
+          "La grille des lignes du plan s'ouvrira après la fiche de présentation — l'examen est séquentiel. Le document reste consultable ici.",
         );
       }
     } else if (o === 'agpm' && this.hasEtapeAgpm() && !this.estEtapeAgpm()) {
       this.allerEtape(this.etapeAgpmIdx());
       if (this.etape() === avant && avant < this.etapeAgpmIdx()) {
         this.toast.info(
-          "La grille de l'AGPM s'ouvrira après les lignes, les pièces et la fiche — l'examen est séquentiel. Le document reste consultable ici.",
+          "La grille de l'AGPM s'ouvrira après la fiche de présentation et les lignes du plan — l'examen est séquentiel. Le document reste consultable ici.",
         );
       }
     } else if (o === 'pieces' && this.nbPieces() > 0 && !this.estEtapePiece() && !this.toutesPiecesStatuees()) {
-      this.allerEtape(this.nbLignes() + this.frontierePiece());
-    } else if (o === 'ppm' && !this.estEtapeMarche() && this.frontiere() < this.nbLignes()) {
-      this.allerEtape(this.frontiere());
+      this.allerEtape(this.offsetPieces() + this.frontierePiece());
+      if (this.etape() === avant && avant < this.offsetPieces()) {
+        this.toast.info(
+          "Les grilles des pièces s'ouvriront après la fiche, les lignes du plan et l'AGPM — l'examen est séquentiel. Les documents restent consultables ici.",
+        );
+      }
     }
   }
 
   /** Rouvre la ligne cliquée dans le tableau (repasse « en cours » ; son état RAS/observation est recalculé après re-validation). */
   ouvrirLigne(m: Marche): void {
     const i = this.marches().findIndex((x) => x.idDetail === m.idDetail);
-    if (i >= 0) this.allerEtape(i);
+    if (i >= 0) this.allerEtape(this.offsetLignes() + i);
   }
   /** Ouvre/ferme l'aperçu inline d'une pièce sous son nom (une seule à la fois). */
   togglePiece(p: PieceJointeDossier): void {
@@ -1472,12 +1492,12 @@ export class ExamenDossier implements OnDestroy {
     this.saveTrigger.next();
   }
 
-  /** Point de reprise d'un brouillon : première ligne non statuée, sinon première pièce, sinon fiche → AGPM → dossier, sinon avis. */
+  /** Point de reprise d'un brouillon (ordre pilote 2026-09-04) : fiche, sinon première ligne non statuée, sinon AGPM, sinon première pièce, sinon dossier, sinon avis. */
   private calculerReprise(): number {
-    if (this.frontiere() < this.nbLignes()) return this.frontiere();
-    if (this.frontierePiece() < this.nbPieces()) return this.nbLignes() + this.frontierePiece();
     if (this.hasEtapeFiche() && !this.ficheStatuee()) return this.etapeFicheIdx();
+    if (this.frontiere() < this.nbLignes()) return this.offsetLignes() + this.frontiere();
     if (this.hasEtapeAgpm() && !this.agpmStatuee()) return this.etapeAgpmIdx();
+    if (this.frontierePiece() < this.nbPieces()) return this.offsetPieces() + this.frontierePiece();
     if (this.hasEtapeDossier() && !this.dossierStatue()) return this.etapeDossierIdx();
     return this.etapeAvis();
   }
