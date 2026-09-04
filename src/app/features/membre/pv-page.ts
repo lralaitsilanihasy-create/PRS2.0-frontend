@@ -127,45 +127,68 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                       <span class="pv-entete__ref">{{ pv.refePv || pv.referencePv || ('Projet de PV #' + pv.idPv) }}</span>
                       <app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" />
                     </div>
+                    <!-- ⚠️ Demande pilote (2026-09-04) : reprendre les COULEURS du tableau de bord
+                         « Mes dossiers » — chaque donnée porte sa pastille au même dégradé. -->
                     <div class="pv-entete__grid">
                       <div class="pv-entete__item pv-entete__item--large">
-                        <span class="pv-entete__lbl">Dossier</span>
-                        <span class="pv-entete__val cnm-mono">{{ dossierRef(pv) }}</span>
+                        <span class="pv-chip pv-chip--blue">📁</span>
+                        <span class="pv-entete__txt">
+                          <span class="pv-entete__lbl">Dossier</span>
+                          <span class="pv-entete__val cnm-mono">{{ dossierRef(pv) }}</span>
+                        </span>
                       </div>
                       <div class="pv-entete__item pv-entete__item--large">
-                        <span class="pv-entete__lbl">Entité contractante</span>
-                        <span class="pv-entete__val">{{ dossierEntite(pv) }}</span>
-                      </div>
-                      <div class="pv-entete__item">
-                        <span class="pv-entete__lbl">Avis global</span>
-                        <span class="pv-entete__val">
-                          @if (pv.idAvis) {
-                            <span [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span>
-                          } @else {
-                            <span class="pv-entete__attente">En attente du visa</span>
-                          }
+                        <span class="pv-chip pv-chip--indigo">🏛️</span>
+                        <span class="pv-entete__txt">
+                          <span class="pv-entete__lbl">Entité contractante</span>
+                          <span class="pv-entete__val">{{ dossierEntite(pv) }}</span>
                         </span>
                       </div>
                       <div class="pv-entete__item">
-                        <span class="pv-entete__lbl">Navettes</span>
-                        <span class="pv-entete__val">{{ pv.nbNavettes }}</span>
+                        <span class="pv-chip pv-chip--amber">⚖️</span>
+                        <span class="pv-entete__txt">
+                          <span class="pv-entete__lbl">Avis global</span>
+                          <span class="pv-entete__val">
+                            @if (pv.idAvis) {
+                              <span [class]="avisClasse(pv.idAvis)">{{ avisLabel(pv.idAvis) }}</span>
+                            } @else {
+                              <span class="pv-entete__attente">En attente du visa</span>
+                            }
+                          </span>
+                        </span>
+                      </div>
+                      <div class="pv-entete__item">
+                        <span class="pv-chip pv-chip--purple">🔁</span>
+                        <span class="pv-entete__txt">
+                          <span class="pv-entete__lbl">Navettes</span>
+                          <span class="pv-entete__val">{{ pv.nbNavettes }}</span>
+                        </span>
                       </div>
                       @if (pv.dateSoumissionInitiale) {
                         <div class="pv-entete__item">
-                          <span class="pv-entete__lbl">Soumis le</span>
-                          <span class="pv-entete__val cnm-mono">{{ pv.dateSoumissionInitiale }}</span>
+                          <span class="pv-chip pv-chip--teal">📤</span>
+                          <span class="pv-entete__txt">
+                            <span class="pv-entete__lbl">Soumis le</span>
+                            <span class="pv-entete__val cnm-mono">{{ pv.dateSoumissionInitiale }}</span>
+                          </span>
                         </div>
                       }
                       @if (pv.dateAcceptation) {
                         <div class="pv-entete__item">
-                          <span class="pv-entete__lbl">Accepté le</span>
-                          <span class="pv-entete__val cnm-mono">{{ pv.dateAcceptation }}</span>
+                          <span class="pv-chip pv-chip--green">✅</span>
+                          <span class="pv-entete__txt">
+                            <span class="pv-entete__lbl">Accepté le</span>
+                            <span class="pv-entete__val cnm-mono">{{ pv.dateAcceptation }}</span>
+                          </span>
                         </div>
                       }
                       @if (pv.datePv) {
                         <div class="pv-entete__item">
-                          <span class="pv-entete__lbl">Date PV</span>
-                          <span class="pv-entete__val cnm-mono">{{ pv.datePv }}</span>
+                          <span class="pv-chip pv-chip--orange">📅</span>
+                          <span class="pv-entete__txt">
+                            <span class="pv-entete__lbl">Date PV</span>
+                            <span class="pv-entete__val cnm-mono">{{ pv.datePv }}</span>
+                          </span>
                         </div>
                       }
                     </div>
@@ -177,27 +200,27 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     </div>
                   }
 
-                  <h3 class="pv-sub">✍️ Signataires</h3>
+                  <h3 class="pv-sub"><span class="pv-chip pv-chip--sm pv-chip--indigo">✍️</span> Signataires</h3>
                   <!-- Tuiles d'état de signature (présentation 2026-09-04) : qui, et où en est chaque part. -->
                   <div class="pv-sig">
                     <!-- ⚠️ Deux niveaux (2026-09-04) : après le visa du Président, seules les parts
                          DÉSIGNÉES existent — la tuile d'un rôle non retenu est masquée ; le nom
                          affiché est celui du désigné (qui peut différer de l'examinateur). -->
                     @if (!masquerTuileMembre(pv)) {
-                      <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureMembre">
+                      <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureMembre" [class.pv-sig__tuile--attente]="!pv.dateSignatureMembre">
                         <span class="pv-sig__role">Membre</span>
                         <span class="pv-sig__nom">{{ pv.nomMembreCoSignataire || acteurNom(pv.imCtrlMembre) || '—' }}</span>
                         <span class="pv-sig__etat">{{ pv.dateSignatureMembre ? '✓ Signé le ' + pv.dateSignatureMembre : 'Signature en attente' }}</span>
                       </div>
                     }
                     @if (!masquerTuileCc(pv)) {
-                      <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureCc">
+                      <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignatureCc" [class.pv-sig__tuile--attente]="!pv.dateSignatureCc">
                         <span class="pv-sig__role">Chef de commission</span>
                         <span class="pv-sig__nom">{{ pv.nomCcCoSignataire || acteurNom(pv.imCtrlCc) || '—' }}</span>
                         <span class="pv-sig__etat">{{ pv.dateSignatureCc ? '✓ Signé le ' + pv.dateSignatureCc : 'Signature en attente' }}</span>
                       </div>
                     }
-                    <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignaturePresident">
+                    <div class="pv-sig__tuile" [class.pv-sig__tuile--ok]="pv.dateSignaturePresident" [class.pv-sig__tuile--attente]="!pv.dateSignaturePresident">
                       <span class="pv-sig__role">Président</span>
                       <span class="pv-sig__nom">{{ acteurNom(pv.imCtrlPresident) || '—' }}</span>
                       <span class="pv-sig__etat">{{ pv.dateSignaturePresident ? '✓ Signé le ' + pv.dateSignaturePresident : 'Signature en attente' }}</span>
@@ -220,7 +243,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   </div>
 
                   <div class="pv-grille-head">
-                    <h3 class="pv-sub">☑️ Grille de contrôle</h3>
+                    <h3 class="pv-sub"><span class="pv-chip pv-chip--sm pv-chip--blue">☑️</span> Grille de contrôle</h3>
                     @if (details().length) {
                       <!-- ⚠️ Par défaut : seuls les points AVEC OBSERVATION sont listés ; bascule vers la grille complète. -->
                       <button type="button" class="btn btn-secondary btn-sm" (click)="grilleComplete.set(!grilleComplete())">
@@ -267,7 +290,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   }
 
                   <div class="pv-grille-head">
-                    <h3 class="pv-sub">📎 Pièces jointes</h3>
+                    <h3 class="pv-sub"><span class="pv-chip pv-chip--sm pv-chip--teal">📎</span> Pièces jointes</h3>
                     @if (examenPiecesPv().length) {
                       <!-- ⚠️ Même bascule que la grille : observations seulement (défaut) ↔ toutes les pièces. -->
                       <button type="button" class="btn btn-secondary btn-sm" (click)="piecesCompletes.set(!piecesCompletes())">
@@ -295,7 +318,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     <p class="pv__info">Aucun examen de pièce pour ce PV.</p>
                   }
 
-                  <h3 class="pv-sub">🔁 Historique des navettes</h3>
+                  <h3 class="pv-sub"><span class="pv-chip pv-chip--sm pv-chip--purple">🔁</span> Historique des navettes</h3>
                   @if (navettes().length) {
                     <table>
                       <thead><tr><th scope="col">#</th><th scope="col">Sens</th><th scope="col">Acteur</th><th scope="col">Date</th><th scope="col">Commentaire</th></tr></thead>
@@ -381,10 +404,22 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .pv-entete { display: flex; flex-direction: column; gap: 0.8rem; background: linear-gradient(180deg, var(--c-50), #fff); border: 1px solid var(--c-100); border-radius: var(--radius-lg); padding: 1rem 1.15rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05); }
     .pv-entete__titre { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; padding-bottom: 0.6rem; border-bottom: 1px dashed var(--c-100); }
     .pv-entete__ref { font-size: var(--text-xl, 1.25rem); font-weight: 800; color: var(--c-800); letter-spacing: -0.015em; }
-    .pv-entete__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem 1rem; }
-    .pv-entete__item { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+    .pv-entete__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.75rem 1rem; }
+    .pv-entete__item { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+    .pv-entete__txt { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
     .pv-entete__item--large { grid-column: span 2; }
     @media (max-width: 48rem) { .pv-entete__item--large { grid-column: span 1; } }
+    /* Pastilles d'icônes aux dégradés du tableau de bord « Mes dossiers » (.cnm-stat--*) —
+       demande pilote 2026-09-04 : les mêmes couleurs vivent ici. */
+    .pv-chip { flex-shrink: 0; width: 2.3rem; height: 2.3rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem; color: #fff; border-radius: var(--radius-md); box-shadow: 0 3px 8px rgba(15, 23, 42, 0.18); }
+    .pv-chip--sm { width: 1.75rem; height: 1.75rem; font-size: 0.85rem; border-radius: 8px; }
+    .pv-chip--blue { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+    .pv-chip--indigo { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+    .pv-chip--green { background: linear-gradient(135deg, #22c55e, #16a34a); }
+    .pv-chip--amber { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+    .pv-chip--orange { background: linear-gradient(135deg, #fb923c, #ea580c); }
+    .pv-chip--purple { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+    .pv-chip--teal { background: linear-gradient(135deg, #2dd4bf, #0d9488); }
     .pv-entete__lbl { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
     .pv-entete__val { font-weight: 600; color: var(--n-700); overflow-wrap: anywhere; }
     .pv-entete__val .badge { font-weight: 700; }
@@ -400,10 +435,13 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
     .pv-sig { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.6rem; }
     .pv-sig__tuile { display: flex; flex-direction: column; gap: 0.2rem; border: 1px solid var(--n-200); border-left: 3px solid var(--n-300); border-radius: var(--radius-md); background: #fff; padding: 0.7rem 0.95rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06); }
     .pv-sig__tuile--ok { border-left-color: #22C55E; background: #F6FEF9; }
+    /* Part en attente : ambre — mêmes codes que « À examiner / Examinés » du tableau de bord. */
+    .pv-sig__tuile--attente { border-left-color: #F59E0B; background: #FFFDF5; }
     .pv-sig__role { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); font-weight: 700; }
     .pv-sig__nom { font-weight: 700; color: var(--n-800); }
     .pv-sig__etat { font-size: var(--text-xs); color: var(--n-400); }
     .pv-sig__tuile--ok .pv-sig__etat { color: #15803D; font-weight: 600; }
+    .pv-sig__tuile--attente .pv-sig__etat { color: #B45309; }
     /* Résultat d'un point / d'une pièce : badge sobre (vert conforme, ambre observation). */
     .pv-res { display: inline-block; padding: 0.15rem 0.6rem; border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 700; background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; white-space: nowrap; }
     .pv-res--obs { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
