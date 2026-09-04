@@ -1,5 +1,10 @@
 # Demande backend — Chronométrage : la RÉATTRIBUTION laisse sa trace (tâche DISPATCH n+1)
 
+> ✅ **CLÔTURÉE le 04/09** — backend livré (`ed86707`, 769 tests) et contre-recetté en réel (décor
+> purgé) : réattribution → DISPATCH#2 au nom du CC, reprise → DISPATCH#3, toutes instantanées en
+> prévision standard ; journal et chronométrage racontent le même chemin. « Rendre » du Membre
+> hors lot (aucun endpoint de ce nom) ; aucun changement front.
+
 **Date** : 2026-09-04 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : vérification pilote
 du tableau « Chronométrage & délais » (dossier 100286, écran Vérifier).
 
