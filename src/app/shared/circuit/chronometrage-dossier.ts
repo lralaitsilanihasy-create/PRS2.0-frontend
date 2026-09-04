@@ -11,6 +11,7 @@ import {
   ETAPE_CIRCUIT_PORTEURS,
   EtapeCircuit,
 } from '../../models';
+import { tacheChronoVisiblePour } from './circuit-workflow';
 
 /**
  * Chronométrage d'un dossier (règle du pilote 2026-09-01, backend `c66db71`) : prise en charge de
@@ -119,7 +120,7 @@ import {
               </dd>
             </div>
           </dl>
-          @if (c.taches.length) {
+          @if (tachesVisibles().length) {
             <div class="chrono__table-wrap">
               <table class="chrono__table">
                 <thead>
@@ -134,7 +135,7 @@ import {
                   </tr>
                 </thead>
                 <tbody>
-                  @for (t of c.taches; track t.etape + '-' + t.occurrence) {
+                  @for (t of tachesVisibles(); track t.etape + '-' + t.occurrence) {
                     <tr [class.chrono__row--encours]="t.enCours">
                       <td>{{ etapeLabel(t.etape) }}</td>
                       <td class="cnm-mono">{{ t.occurrence }}</td>
@@ -353,6 +354,14 @@ export class ChronometrageDossier {
     const t = this.tacheEnCours();
     return !!t && !!t.imActeur && t.imActeur === this.auth.ref();
   });
+  /**
+   * ⚠️ Demande pilote (2026-09-04) — VISIBILITÉ HIÉRARCHIQUE de la table des passages : chaque
+   * profil voit ses lignes et celles de ses subordonnés, jamais celles de ses supérieurs
+   * (PRMP et Admin : tout). Les compteurs globaux et l'état de l'étape courante restent.
+   */
+  readonly tachesVisibles = computed(() =>
+    (this.chrono()?.taches ?? []).filter((t) => tacheChronoVisiblePour(this.auth.role(), t.etape)),
+  );
   /**
    * Montrer le geste au porteur NOMINAL de l'étape (délégations comprises) — jamais grisé : en cas
    * de doute le serveur tranche (403 écrit en dialogue). La PRMP, elle, ne porte aucune étape.

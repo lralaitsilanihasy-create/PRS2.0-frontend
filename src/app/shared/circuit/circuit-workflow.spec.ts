@@ -1,6 +1,7 @@
 import {
   CIRCUIT_ETAPES,
   PV_STATUT_LABELS,
+  actionJournalVisiblePour,
   etapeIndexForDossier,
   peutRetourner,
   peutSAutoProposer,
@@ -10,9 +11,42 @@ import {
   peutViser,
   pvSignataireRole,
   statutSeverity,
+  tacheChronoVisiblePour,
 } from './circuit-workflow';
 
 describe('circuit-workflow', () => {
+  // ⚠️ Demande pilote (2026-09-04) : chacun voit ses lignes et celles de ses subordonnés,
+  // jamais celles de ses supérieurs ; PRMP et Admin voient tout.
+  describe('visibilité hiérarchique (journal + chronométrage)', () => {
+    it('le Vérificateur ne voit ni le dispatch ni l’examen, mais la réception et sa vérification', () => {
+      expect(tacheChronoVisiblePour('VERIFICATEUR', 'DISPATCH')).toBe(false);
+      expect(tacheChronoVisiblePour('VERIFICATEUR', 'EXAMEN')).toBe(false);
+      expect(tacheChronoVisiblePour('VERIFICATEUR', 'VISA')).toBe(false);
+      expect(tacheChronoVisiblePour('VERIFICATEUR', 'RECEPTION')).toBe(true);
+      expect(tacheChronoVisiblePour('VERIFICATEUR', 'VERIFICATION')).toBe(true);
+      expect(tacheChronoVisiblePour('VERIFICATEUR', 'ARCHIVAGE')).toBe(true);
+    });
+    it('le Membre voit son examen et sa co-signature, pas le visa ni le dispatch', () => {
+      expect(tacheChronoVisiblePour('MEMBRE', 'EXAMEN')).toBe(true);
+      expect(tacheChronoVisiblePour('MEMBRE', 'COSIGNATURE')).toBe(true);
+      expect(tacheChronoVisiblePour('MEMBRE', 'VISA')).toBe(false);
+      expect(tacheChronoVisiblePour('MEMBRE', 'DISPATCH')).toBe(false);
+    });
+    it('le Président, la PRMP et l’Admin voient tout', () => {
+      expect(tacheChronoVisiblePour('PRESIDENT', 'DISPATCH')).toBe(true);
+      expect(tacheChronoVisiblePour('PRMP', 'VISA')).toBe(true);
+      expect(tacheChronoVisiblePour('ADMINISTRATEUR', 'DISPATCH')).toBe(true);
+    });
+    it('journal : les gestes de dispatch sont réservés au CC et au-dessus ; les actes PRMP visibles de tous', () => {
+      expect(actionJournalVisiblePour('VERIFICATEUR', 'REATTRIBUTION')).toBe(false);
+      expect(actionJournalVisiblePour('MEMBRE', 'DISPATCH')).toBe(false);
+      expect(actionJournalVisiblePour('CHEF_COMMISSION', 'RETRAIT_DISPATCH')).toBe(true);
+      expect(actionJournalVisiblePour('SECRETAIRE', 'RECEPTION')).toBe(true);
+      expect(actionJournalVisiblePour('ASSISTANT_CONTROLEUR', 'CREATION')).toBe(true);
+      expect(actionJournalVisiblePour('SECRETAIRE', 'SOUMISSION')).toBe(true);
+    });
+  });
+
   describe('CIRCUIT_ETAPES', () => {
     it('décrit les 7 étapes du circuit dans l’ordre', () => {
       expect(CIRCUIT_ETAPES).toHaveLength(7);

@@ -8,6 +8,60 @@ import { PvSignataireRole, Role, StatutPv } from '../../models';
  * Reflet UX du workflow ; le backend reste l'autorité sur les transitions (409).
  */
 
+/**
+ * ⚠️ Demande pilote (2026-09-04) — VISIBILITÉ HIÉRARCHIQUE du journal des actions et de la table
+ * des passages du chronométrage : chaque profil voit SES lignes et celles de ses SUBORDONNÉS,
+ * jamais celles de ses supérieurs. Chaîne CNM : Président > Chef de commission > Membre >
+ * Vérificateur > Assistant > Secrétaire. La PRMP (le client, hors hiérarchie) et
+ * l'Administrateur voient tout ; les actes de la PRMP (création, soumission…) sont l'objet même
+ * du dossier — rang 0, visibles de tous.
+ */
+export const RANG_HIERARCHIE: Partial<Record<Role, number>> = {
+  SECRETAIRE: 1,
+  ASSISTANT_CONTROLEUR: 2,
+  VERIFICATEUR: 3,
+  MEMBRE: 4,
+  CHEF_COMMISSION: 5,
+  PRESIDENT: 6,
+};
+
+/** Rang du geste d'une tâche de chronométrage — le porteur nominal de l'étape. */
+const RANG_ETAPE_CHRONO: Record<string, number> = {
+  RECEPTION: 1,
+  DISPATCH: 5,
+  EXAMEN: 4,
+  VISA: 5,
+  COSIGNATURE: 4,
+  VERIFICATION: 3,
+  TRANSMISSION_SIGMP: 3,
+  ARCHIVAGE: 2,
+};
+
+/** Rang du geste consigné au journal (types inconnus ou PRMP → 0, visibles de tous). */
+const RANG_ACTION_JOURNAL: Record<string, number> = {
+  RECEPTION: 1,
+  DISPATCH: 5,
+  RETRAIT_DISPATCH: 5,
+  REATTRIBUTION: 5,
+  REPRISE: 5,
+};
+
+/** Rang hiérarchique du connecté — `Infinity` pour les profils hors chaîne (PRMP, Admin) : tout voir. */
+function rangDuRole(role: Role | null | undefined): number {
+  if (!role) return Infinity;
+  return RANG_HIERARCHIE[role] ?? Infinity;
+}
+
+/** Une tâche de chronométrage (par son étape) est-elle visible pour ce rôle ? */
+export function tacheChronoVisiblePour(role: Role | null | undefined, etape: string): boolean {
+  return (RANG_ETAPE_CHRONO[etape] ?? 0) <= rangDuRole(role);
+}
+
+/** Une action du journal (par son type) est-elle visible pour ce rôle ? */
+export function actionJournalVisiblePour(role: Role | null | undefined, typeAction: string): boolean {
+  return (RANG_ACTION_JOURNAL[typeAction] ?? 0) <= rangDuRole(role);
+}
+
 /** Étape ordonnée du circuit (pour la timeline). */
 export interface CircuitEtape {
   key: string;
