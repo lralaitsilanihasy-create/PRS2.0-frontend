@@ -343,38 +343,56 @@ import {
     </div>
   `,
   styles: `
+    /* Barre de DÉCISION du PV (demande pilote 2026-09-04) : dégradé indigo profond, statut en
+       petites capitales, filet séparateur avant les gestes — remarquable ET professionnelle.
+       Même dérogation assumée aux tokens que le bouton de prise en charge. */
     .pv-workflow {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
+      background: linear-gradient(120deg, #1e1b4b, #312e81 48%, #4338ca);
+      border-radius: var(--radius-lg);
+      padding: 0.9rem 1.15rem;
+      box-shadow: 0 8px 20px rgba(30, 27, 75, 0.28);
     }
     .pv-workflow__state {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.6rem;
     }
     .pv-workflow__label {
-      font-size: var(--text-sm);
-      color: var(--n-500);
-      font-weight: 600;
+      font-size: var(--text-xs);
+      color: #c7d2fe;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
     .pv-workflow__actions {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 0.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.16);
+      padding-top: 0.75rem;
+    }
+    /* Sur fond sombre, les boutons « outline » gardent leur contraste. */
+    .pv-workflow__actions .btn-outline {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.08);
     }
     .pv-workflow__deja-signe {
       font-size: var(--text-sm);
-      color: var(--n-500);
+      color: #c7d2fe;
       font-style: italic;
     }
     /* Navette à deux niveaux : où est le PV (2026-09-04). */
     .pv-workflow__niveau {
       font-size: var(--text-sm);
-      color: var(--c-800);
-      background: var(--c-50);
-      border: 1px solid var(--c-100);
+      color: #e0e7ff;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: var(--radius-full);
       padding: 0.2rem 0.7rem;
     }
