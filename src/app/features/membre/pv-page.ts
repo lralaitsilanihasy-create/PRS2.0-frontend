@@ -396,6 +396,11 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       padding: 0.65rem 0.95rem;
     }
     .pv-content td { white-space: normal; }
+    /* ⚠️ Demande pilote (2026-09-04) : les tableaux du détail (grille, navettes) portent le MÊME
+       dégradé indigo que la barre de décision — un seul langage sombre sur l'écran. Sélecteurs en
+       enfants directs : le sous-tableau d'observations imbriqué garde son réglage discret. */
+    .pv-content > table { border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 2px 8px rgba(30, 27, 75, 0.12); }
+    .pv-content > table > thead > tr { background: linear-gradient(120deg, #1e1b4b, #312e81 48%, #4338ca); }
     .pv-info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
     .pv-info > div { display: flex; gap: 0.5rem; align-items: baseline; }
     .pv-info dt { flex: 0 0 11rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--n-400); }
