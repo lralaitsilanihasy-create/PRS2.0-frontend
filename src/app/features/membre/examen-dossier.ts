@@ -105,7 +105,7 @@ interface RowState {
         <!-- Chronométrage (2026-09-01) : prise en charge de l'étape EXAMEN + prévision. -->
         <div class="card exam__chrono">
           <div class="card-body">
-            <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" (actionAutorisee)="actionAutorisee.set($event)" />
+            <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" [attributaire]="attributaire()" (actionAutorisee)="actionAutorisee.set($event)" />
           </div>
         </div>
         <div class="exam__grid">
@@ -632,6 +632,8 @@ export class ExamenDossier implements OnDestroy {
   readonly loadingPiece = signal<number | null>(null);
   private currentObjectUrl: string | null = null;
   readonly idDispatch = signal<number | null>(null);
+  /** Attributaire courant du dispatch — la PEC d'EXAMEN lui est réservée (403 sinon, `5225529`). */
+  readonly attributaire = signal<string | null>(null);
   readonly points = signal<PointsCtrl[]>([]);
   readonly aviss = signal<Avis[]>([]);
   private readonly examens = signal<Examen[]>([]);
@@ -973,7 +975,9 @@ export class ExamenDossier implements OnDestroy {
         const recIds = new Set(
           r.receptions.filter((x) => x.idDossier === this.idDossier).map((x) => x.idReception),
         );
-        this.idDispatch.set(r.dispatchs.find((d) => recIds.has(d.idReception))?.idDispatch ?? null);
+        const dispatch = r.dispatchs.find((d) => recIds.has(d.idReception));
+        this.idDispatch.set(dispatch?.idDispatch ?? null);
+        this.attributaire.set(dispatch?.imCtrlMembre ?? null);
         const pts = r.points
           .filter((p) => p.idTypeDossier === r.dossier.idTypeDossier) // no-op sur la grille serveur ; filtre famille en repli
           .sort((a, b) => (a.ordrePointCtrl ?? 0) - (b.ordrePointCtrl ?? 0));

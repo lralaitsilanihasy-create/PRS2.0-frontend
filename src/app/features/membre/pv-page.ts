@@ -91,7 +91,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   <!-- Chronométrage EN TÊTE (demande pilote 2026-09-04 : « Prendre en charge »
                        toujours en haut) : prise en charge des étapes VISA / COSIGNATURE. -->
                   @if (idDossierDe(pv); as idDos) {
-                    <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" (actionAutorisee)="majAutorisation(pv.idPv, $event)" />
+                    <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" [attributaire]="attributaireDe(pv)" (actionAutorisee)="majAutorisation(pv.idPv, $event)" />
                     @if (!autorisation(pv.idPv)) {
                       <div class="pv__verrou" role="status">
                         🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en
@@ -606,8 +606,11 @@ export class MembrePv {
   masquerTuileCc(pv: PvExamen): boolean {
     return pv.niveauNavette != null && pv.dateSignaturePresident != null && !pv.imCcCoSignataire && pv.dateSignatureCc == null;
   }
-  /** Attributaire COURANT du dispatch de l'examen du PV (`imCtrlMembre`, réattributions comprises). */
-  private attributaireDe(pv: PvExamen): string | undefined {
+  /**
+   * Attributaire COURANT du dispatch de l'examen du PV (`imCtrlMembre`, réattributions comprises).
+   * Public : le template le passe au widget de chronométrage (PEC d'EXAMEN réservée à lui).
+   */
+  attributaireDe(pv: PvExamen): string | undefined {
     const exam = this.examens().find((e) => e.idExamen === pv.idExamen);
     if (exam?.idDispatch == null) return undefined;
     return this.dispatchs().find((d) => d.idDispatch === exam.idDispatch)?.imCtrlMembre;

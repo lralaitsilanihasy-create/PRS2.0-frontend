@@ -309,6 +309,13 @@ export class ChronometrageDossier {
    */
   readonly donnees = input<Chronometrage | undefined>(undefined);
   /**
+   * Attributaire COURANT du dossier (`imCtrlMembre` du dispatch, réattributions comprises).
+   * ⚠️ « Seul l'assignataire examine » (backend `d24c115`/`5225529`) : la prise en charge d'EXAMEN
+   * lui est réservée — 403 pour tout autre, MÊME par délégation. Quand l'hôte le fournit, le geste
+   * n'est montré qu'à lui ; `undefined` = hôte sans cette donnée (règle du porteur nominal seule).
+   */
+  readonly attributaire = input<string | null | undefined>(undefined);
+  /**
    * ⚠️ Demande pilote (2026-09-04) — « aucune action sans prise en charge » : émet `true` quand
    * l'utilisateur peut agir sur le dossier — soit il n'est PAS le porteur de l'étape courante
    * (l'écran ne le concerne pas : édition, consultation), soit SA prise en charge est enregistrée.
@@ -346,6 +353,14 @@ export class ChronometrageDossier {
     const etape = this.chrono()?.etapeCourante;
     if (!etape || this.chrono()?.attentePrmp) {
       return false;
+    }
+    // EXAMEN est réservé à l'attributaire (403 serveur même par délégation) : quand il est connu
+    // — fourni par l'hôte, sinon servi par le DTO — ne pas offrir un geste voué au refus.
+    if (etape === 'EXAMEN') {
+      const attributaire = this.attributaire() ?? this.chrono()?.attributaire;
+      if (attributaire != null) {
+        return attributaire === this.auth.ref();
+      }
     }
     const porteur = ETAPE_CIRCUIT_PORTEURS[etape];
     const role = this.auth.role();
