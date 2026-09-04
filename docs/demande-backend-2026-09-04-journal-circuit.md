@@ -53,11 +53,27 @@ voient déjà. Rien à ouvrir.
 `REPRISE`, `RETRAIT_DISPATCH`, `RECEPTION`) — dès que le backend les écrit, ils s'affichent dans le
 « Journal des actions » sans autre livraison.
 
+## Complément (2026-09-04, après livraison d24c115) — la CONSIGNE dans le détail
+
+> « Comment savoir que le dossier a été dispatché au CC avec instruction avant de le dispatcher au
+> membre ? » (pilote) — le dispatch ne garde que la DERNIÈRE consigne (le PUT remplace) ; celle du
+> Président au CC disparaît à la réattribution.
+
+Ajouter la consigne au `detail` des lignes `DISPATCH` et `REATTRIBUTION` quand elle existe :
+
+- `DISPATCH` : `à {nom}` + ` — consigne : « {instructions} »` ;
+- `REATTRIBUTION` : `de {ancien} à {nouveau}` + ` — consigne : « {instructions} »` (la NOUVELLE,
+  celle du réattribueur).
+
+Le `detail` est déjà tronqué à 500 caractères (`tronquer`) — suffisant. Aucun changement front :
+la colonne Détail du journal affiche le texte tel quel.
+
 ## Tests attendus
 
 1. Président dispatche au CC → ligne `DISPATCH` (« à Rabe Chef ANT »), opérateur = Président,
-   sans mandat ni marqueur PRMP.
-2. CC réattribue à un Membre → `REATTRIBUTION` (« de Rabe Chef ANT à RAFIDIMANANA Rina »).
+   sans mandat ni marqueur PRMP — **consigne incluse dans le détail** si fournie.
+2. CC réattribue à un Membre → `REATTRIBUTION` (« de Rabe Chef ANT à RAFIDIMANANA Rina »),
+   **avec la consigne du CC** si fournie.
 3. CC reprend le dossier au Membre → `REPRISE` (« reprise à RAFIDIMANANA Rina »).
 4. Président retire → `RETRAIT_DISPATCH` — la ligne SURVIT à la suppression du dispatch et au
    re-dispatch suivant (append-only).
