@@ -1,0 +1,91 @@
+#!/bin/sh
+#
+# ⚠️ GARDE DES DOCUMENTS DE CONTRAT — dépôt frontendprs2
+#
+# POURQUOI CE HOOK EXISTE. Trois documents partagés (api-endpoints, regles-gestion,
+# plan-cookie-httponly) ont leur SOURCE UNIQUE dans le dépôt backend PRS20 depuis le 2026-08-26.
+# Ici, ce ne sont que des STUBS-POINTEURS de quelques lignes. Ils ont pourtant été écrasés
+# plusieurs fois par leur version longue, recopiée dans docs/ par un outil local puis emportée
+# par un « git add -A » dans un commit qui parlait d'autre chose (dernier cas : 2beba5e, un
+# commit de navigation qui a ajouté 6636 lignes de documentation sans que personne le voie).
+#
+# Le problème n'est pas la recopie : c'est qu'elle passe INAPERÇUE et n'est découverte
+# qu'après coup, quand quelqu'un compare les deux dépôts. Ce hook la rend bruyante.
+#
+# CE QU'IL FAIT. Il refuse un commit qui met en scène :
+#   - un document-pointeur devenu long (au-delà de STUB_MAX lignes) — signe qu'il a été
+#     remplacé par la version backend ;
+#   - un document qui n'existe QUE côté backend et qui réapparaît ici.
+#
+# CE QU'IL NE FAIT PAS. Il ne touche à rien, ne réécrit rien, n'efface rien : il s'arrête et
+# vous dit quoi retirer de l'index. Éditer légitimement un stub (corriger le texte du
+# pointeur) reste possible tant qu'il reste court.
+#
+# ACTIVATION (une fois par clone) :
+#     git config core.hooksPath .githooks
+#
+# CONTOURNEMENT ASSUMÉ, si vous savez ce que vous faites :
+#     git commit --no-verify
+
+set -u
+
+# Un stub-pointeur fait une dizaine de lignes. 40 laisse de la marge pour l'étoffer sans
+# déclencher la garde, tout en restant à deux ordres de grandeur des versions réelles
+# (api-endpoints en compte plus de 5000).
+STUB_MAX=40
+
+# Documents dont la source unique est le dépôt backend : ici, ils doivent rester des stubs.
+POINTEURS="docs/api-endpoints.md docs/regles-gestion.md docs/plan-cookie-httponly.md"
+
+# Documents qui n'ont AUCUNE raison d'exister dans ce dépôt : leur simple présence dans
+# l'index est le symptôme de la même recopie.
+BACKEND_SEUL="docs/derivation-modeles-docx.md"
+
+faute=0
+
+# --- 1. Les pointeurs sont-ils encore des pointeurs ? -------------------------------------
+for f in $POINTEURS; do
+    git diff --cached --name-only --diff-filter=ACMR -- "$f" | grep -q . || continue
+    lignes=$(git show ":$f" 2>/dev/null | wc -l | tr -d ' ')
+    [ -n "$lignes" ] || continue
+    if [ "$lignes" -gt "$STUB_MAX" ]; then
+        printf '\n  ✗ %s : %s lignes dans l index (un stub-pointeur en fait ~10).\n' "$f" "$lignes"
+        printf '    Ce fichier a ete ECRASE par sa version du depot backend.\n'
+        faute=1
+    fi
+done
+
+# --- 2. Un document backend-seul a-t-il reparu ? ------------------------------------------
+for f in $BACKEND_SEUL; do
+    if git diff --cached --name-only --diff-filter=ACMR -- "$f" | grep -q .; then
+        printf '\n  ✗ %s : ce document vit UNIQUEMENT dans le depot backend.\n' "$f"
+        printf '    Sa presence ici est une copie, pas une source.\n'
+        faute=1
+    fi
+done
+
+if [ "$faute" -ne 0 ]; then
+    cat <<'FIN'
+
+  ────────────────────────────────────────────────────────────────────────────
+  COMMIT REFUSE — documents de contrat backend recopies dans le depot front.
+
+  Ces documents ont leur SOURCE UNIQUE dans PRS20 (depuis le 2026-08-26).
+  Ce depot n en garde que des pointeurs de quelques lignes.
+
+  Pour reparer, retirez-les de l index et restaurez le pointeur :
+
+      git restore --staged --worktree -- <fichier>
+
+  Puis cherchez ce qui les a deposes dans docs/ : c est la vraie cause, et
+  elle recommencera au prochain « git add -A » tant qu elle n est pas traitee.
+
+  Si vous modifiez volontairement un pointeur, gardez-le court (< 40 lignes).
+  Passage en force assume : git commit --no-verify
+  ────────────────────────────────────────────────────────────────────────────
+
+FIN
+    exit 1
+fi
+
+exit 0
