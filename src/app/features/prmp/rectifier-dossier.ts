@@ -46,6 +46,7 @@ import {
 import { ObservationPvCard } from '../../shared/circuit';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { ModificationChamp, PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
+import { entiteImportDifferente } from '../../shared/prmp/entite-import';
 
 /**
  * « Rectifier le dossier » (PRMP, statut `EN_ATTENTE_DECISION_PRMP`).
@@ -430,10 +431,12 @@ export class RectifierDossier {
       next: (r) => {
         this.importEnCours.set(false);
         // Entité du PDF ≠ entité du dossier → refus (l'entité d'un dossier est fixe).
+        // ⚠️ Constat pilote (2026-09-05) : garde partagée `entiteImportDifferente` — refuse AUSSI
+        // une entité hors référentiel au nom différent (« FONDS ROUTIER » passait, faute d'id).
         const entiteDossier = this.dossier()?.idEntiteContract ?? null;
-        if (r.idEntiteContract != null && entiteDossier != null && r.idEntiteContract !== entiteDossier) {
+        if (entiteImportDifferente(r.idEntiteContract, r.autoriteContractante, entiteDossier, this.entiteLabel())) {
           this.importErreur.set(
-            `Ce PDF concerne l'entité « ${(r.autoriteContractante ?? '').trim() || r.idEntiteContract} » — le dossier concerne « ${this.entiteLabel()} ». Importez le PPM rectifié de la même entité.`,
+            `Ce PDF concerne l'entité « ${(r.autoriteContractante ?? '').trim() || r.idEntiteContract || 'inconnue'} » — le dossier concerne « ${this.entiteLabel()} ». Importez le PPM rectifié de la même entité.`,
           );
           return;
         }

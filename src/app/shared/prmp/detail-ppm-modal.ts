@@ -44,6 +44,7 @@ import { calculerFichePresentation } from './fiche-presentation';
 import { calculerAgpm } from './agpm';
 import { DpmLotsMarche } from './dpm-lots-marche';
 import { DpmReimportRefuse } from './dpm-reimport-refuse';
+import { entiteImportDifferente } from './entite-import';
 
 /**
  * Profils auxquels le backend ouvre `GET /api/ugpms/par-tutelle/{idPrmp}` — **miroir exact** du
@@ -924,11 +925,13 @@ export class DetailPpmModal implements OnInit {
    */
   private pdfEntiteDifferente(r: SaisiePpmImportResult): boolean {
     const de = this.dossierEntite();
-    if (r.idEntiteContract != null) return de != null && r.idEntiteContract !== de;
-    // Entité du PDF non résolue → comparaison par nom (sinon on ne bloque pas, faute de base de comparaison).
-    const dossNom = de != null ? this.normEntite(this.entiteMap().get(String(de)) ?? '') : '';
-    const pdfNom = this.normEntite(r.autoriteContractante ?? '');
-    return !!dossNom && !!pdfNom && dossNom !== pdfNom;
+    // Logique PARTAGÉE avec la rectification (entite-import.ts) depuis le constat 2026-09-05.
+    return entiteImportDifferente(
+      r.idEntiteContract,
+      r.autoriteContractante,
+      de,
+      de != null ? this.entiteMap().get(String(de)) ?? '' : '',
+    );
   }
   /** Défense : la prévisualisation en cours porte-t-elle une entité ≠ dossier ? (normalement jamais chargée si ≠). */
   readonly entitePdfDifferente = computed(() => {
@@ -1246,15 +1249,6 @@ export class DetailPpmModal implements OnInit {
     return this.importPret()
       ? ''
       : "Validez chaque ligne signalée et corrigez les montants incohérents avant d'enregistrer.";
-  }
-  /** Normalise un nom d'entité pour comparaison tolérante (majuscules, sans accents/diacritiques, espaces réduits). */
-  private normEntite(s: string): string {
-    return s
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toUpperCase();
   }
   /** Enregistre le remplacement : `PUT /api/saisies/ppm/{idDossier}` (réconciliation — lignes actuelles retirées). */
   enregistrerImport(): void {
