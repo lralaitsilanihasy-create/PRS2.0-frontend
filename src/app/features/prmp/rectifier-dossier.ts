@@ -47,6 +47,7 @@ import { ObservationPvCard } from '../../shared/circuit';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { ModificationChamp, PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
 import { entiteImportDifferente } from '../../shared/prmp/entite-import';
+import { DpmReimportRefuse } from '../../shared/prmp/dpm-reimport-refuse';
 
 /**
  * « Rectifier le dossier » (PRMP, statut `EN_ATTENTE_DECISION_PRMP`).
@@ -65,7 +66,7 @@ import { entiteImportDifferente } from '../../shared/prmp/entite-import';
 @Component({
   selector: 'app-rectifier-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ObservationPvCard, PpmSaisieGrid],
+  imports: [ObservationPvCard, PpmSaisieGrid, DpmReimportRefuse],
   template: `
     <section>
       <header class="page-header">
@@ -187,6 +188,11 @@ import { entiteImportDifferente } from '../../shared/prmp/entite-import';
               <input type="file" accept=".pdf,application/pdf" hidden (change)="importerPdf($event)" [disabled]="importEnCours()" />
             </label>
             @if (importErreur(); as e) { <p class="form-error" role="alert">{{ e }}</p> }
+            <!-- ⚠️ Demande pilote (2026-09-05) — refus d'entité en BOÎTE DE DIALOGUE (même
+                 sous-dialogue que le réimport du détail PPM), entité acceptée nommée en clair. -->
+            @if (refusEntite(); as refus) {
+              <app-dpm-reimport-refuse [autorite]="refus.autorite" [entite]="entiteLabel()" (fermer)="refusEntite.set(null)" />
+            }
           </div>
         } @else {
           <!-- PRÉVISUALISATION : grille partagée (identique soumission / réimport) — rien n'est écrit
@@ -340,6 +346,11 @@ export class RectifierDossier {
   // — Import (prévisualisation ; rien n'est écrit avant « Enregistrer la rectification ») —
   readonly importEnCours = signal(false);
   readonly importErreur = signal<string | null>(null);
+  /**
+   * Refus d'entité (⚠️ demande pilote 2026-09-05) : annoncé en BOÎTE DE DIALOGUE — même
+   * sous-dialogue que le réimport du détail PPM, entité acceptée nommée en clair (null = fermé).
+   */
+  readonly refusEntite = signal<{ autorite: string } | null>(null);
   readonly importApercu = signal<SaisiePpmImportResult | null>(null);
   readonly importMarches = signal<FormArray | null>(null);
   readonly anomaliesImport = signal<Map<number, AnomalieTranscription[]>>(new Map());
@@ -432,12 +443,13 @@ export class RectifierDossier {
         this.importEnCours.set(false);
         // Entité du PDF ≠ entité du dossier → refus (l'entité d'un dossier est fixe).
         // ⚠️ Constat pilote (2026-09-05) : garde partagée `entiteImportDifferente` — refuse AUSSI
-        // une entité hors référentiel au nom différent (« FONDS ROUTIER » passait, faute d'id).
+        // une entité hors référentiel au nom différent (« FONDS ROUTIER » passait, faute d'id) ;
+        // le refus s'annonce en BOÎTE DE DIALOGUE (règle des avertissements), entité acceptée nommée.
         const entiteDossier = this.dossier()?.idEntiteContract ?? null;
         if (entiteImportDifferente(r.idEntiteContract, r.autoriteContractante, entiteDossier, this.entiteLabel())) {
-          this.importErreur.set(
-            `Ce PDF concerne l'entité « ${(r.autoriteContractante ?? '').trim() || r.idEntiteContract || 'inconnue'} » — le dossier concerne « ${this.entiteLabel()} ». Importez le PPM rectifié de la même entité.`,
-          );
+          this.refusEntite.set({
+            autorite: (r.autoriteContractante ?? '').trim() || String(r.idEntiteContract ?? 'inconnue'),
+          });
           return;
         }
         const arr = this.factoryArray(r);

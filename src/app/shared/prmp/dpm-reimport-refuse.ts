@@ -28,7 +28,11 @@ import { ModaleDirective } from '../a11y/modale.directive';
           </p>
           <p class="cnm-muted">
             L'entité d'un dossier ne peut pas changer. <strong>Les données actuelles n'ont pas été modifiées.</strong>
-            Importez un PPM de la même entité.
+          </p>
+          <!-- ⚠️ Demande pilote (2026-09-05) : nommer EXPLICITEMENT l'entité acceptée. -->
+          <p class="dpm__entite-acceptee">
+            ✓ Entité contractante acceptée : <strong>« {{ entite() }} »</strong> — seul un PPM de
+            cette entité sera importé.
           </p>
         </div>
         <footer class="dpm__foot">

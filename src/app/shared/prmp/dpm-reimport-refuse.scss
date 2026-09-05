@@ -1,1 +1,13 @@
 @use 'dpm-dialog';
+
+/* L'entité ACCEPTÉE, nommée en clair (demande pilote 2026-09-05) : encart vert, lisible d'un
+   coup d'œil sous le motif du refus. */
+.dpm__entite-acceptee {
+  margin: 0.5rem 0 0;
+  padding: 0.6rem 0.85rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  color: #15803d;
+  font-size: var(--text-sm);
+}
