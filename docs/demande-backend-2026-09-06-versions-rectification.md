@@ -1,9 +1,11 @@
 # Demande backend — Rectifications : conserver CHAQUE version du PPM (historique du dossier)
 
-> ✅ **BACKEND LIVRÉ le 06/09** (`6d9ba29` sur `main`, 776 tests verts, Word compris) — voir la
-> **note de livraison** en fin de document. ⚠️ Le chemin est **`/versions-archivees`**, pas `/versions`
-> (déjà pris par la chaîne des mises à jour que le front consomme). Front : section « Historique des
-> versions » à livrer.
+> ✅ **CLÔTURÉE le 06/09** — backend livré (`6d9ba29`, V18, `GET /api/dossiers/{id}/versions-archivees`
+> et `/{numero}`, 776 tests verts, Word compris) ; front livré (`05f3a19` : onglet « Historique des
+> versions » dans la consultation du dossier, build + lint + 180 tests verts) ; **recette réelle
+> Playwright 20/20** (Vérificateur VERANT1, dossier jetable cloné de 00002 puis purgé — 00002 intact).
+> Les deux notes de livraison sont en fin de document. ⚠️ Le chemin est **`/versions-archivees`**, pas
+> `/versions` (déjà pris par la chaîne des mises à jour que le front consomme).
 
 **Date** : 2026-09-06 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : demande pilote
 (écran « Rectifier le dossier », 00002) — « garder les versions non rectifiées et la version
@@ -107,3 +109,64 @@ Les trois cas demandés (deux cycles → deux versions avec leurs propres montan
 immuabilité 405 + trigger ; dossier jamais rectifié → liste vide, 404 sur un numéro inconnu, 409
 conservé sur le diff), plus la reprise dégradée (collections reconstituées depuis les empreintes,
 archivage du cycle suivant à la suite sans rien effacer).
+
+---
+
+## Note de livraison front — 2026-09-06 (`frontendprs2`, commit `05f3a19`)
+
+Section « Historique des versions » livrée dans la **consultation du dossier**
+(`features/circuit/dossier-consultation.ts`), donc dans les 8 écrans qui l'ouvrent en modale et les
+3 qui l'embarquent — tous les profils du circuit, PRMP comprise.
+
+### Ce que voit l'utilisateur
+
+- Un **onglet « Historique des versions »**, dans la barre d'onglets du dossier (fiche / plan / AGPM /
+  pièces), **visible seulement s'il existe au moins une version archivée** : un dossier jamais rectifié
+  n'a pas d'onglet vide. Le compteur = versions archivées **+ la courante**.
+- Une **liste des versions**, au langage du journal des actions : la **version courante en tête**
+  (badge « Version courante », numéro = archivées + 1, nombre de marchés du dossier), puis les versions
+  archivées **de la plus récente à la plus ancienne** — numéro, origine (« Rectification »), date
+  `dd/MM/yyyy HH:mm`, auteur (nom de la PRMP, à défaut login), cycle, nombre de lignes.
+- Un bouton **« Afficher »** par version. La version sélectionnée est rendue **dans le même tableau
+  partagé que le plan courant** (`<app-ppm-marches-table>`, lecture seule, sans surlignage — une archive
+  n'est comparée à rien), sous un **bandeau d'identité** : « Version n° X · archivée le … à … par … ·
+  Rectification, cycle N · réf. … · signé le … ». La ligne affichée est marquée « Affichée ». Par défaut,
+  c'est la version courante qui est affichée.
+- Le contenu d'une version est **chargé à la demande** (indicateur `role="status"`), **gardé en cache**
+  pour la durée de la consultation (une archive est immuable), et un échec affiche l'état d'erreur
+  standard avec **« Réessayer »**.
+- L'onglet **Plan de passation** est inchangé : surlignage et légende « Rectification : » du diff du
+  dernier cycle restent en place.
+
+### Ce que ça change dans le code
+
+- `models/prmp.model.ts` : `VersionArchivee`, `VersionArchiveeDetail`, `LigneVersion` et ses
+  collections (`BeneficiaireVersion`, `LotVersion`, `PrevisionVersion`), miroir du contrat backend.
+- `services/prmp.services.ts` (`MiseAJourPpmService`) : `versionsArchivees(idDossier, silencieux)` et
+  `versionArchivee(idDossier, numero)`. ⚠️ **`/versions-archivees` ≠ `/versions`** : le second reste
+  la chaîne des mises à jour (`versions()`, `Dossier[]`).
+- `features/circuit/version-archivee-vue.ts` : fonction **pure** qui projette une version en
+  `Marche[]` / `ServiceBeneficiaire[]` / `MarchePrevision[]` pour le tableau partagé (identifiants
+  d'enfants synthétiques négatifs ; les lots restent disponibles dans `detail`).
+- La liste des versions entre dans la **vague unique** de la consultation, en silence (`skipErrorToast`) :
+  un 403 ou un backend antérieur masque simplement l'onglet.
+
+### Vérifications
+
+- `npx ng build`, `npm run lint`, `npx ng test --watch=false` : **180 tests verts** (dont 2 specs
+  nouvelles : projection pure ; URL du service avec la garde « jamais `/versions` »).
+- **Recette réelle** (backend local sur `6d9ba29`, V18 appliquée) : dossier jetable **cloné de 00002**
+  (dossier, PPM, marché, bénéficiaire, prévision, réception), deux cycles de rectification joués par
+  l'API en PRMP001, puis **Playwright** en Vérificateur VERANT1 depuis « Dossiers à vérifier » →
+  « Voir détails » : **20 contrôles sur 20** (onglet et compteur, ordre de la liste, version courante
+  affichée par défaut, version 1 = état d'origine à 500 000,00, version 2 = fin de cycle 1 à
+  550 000,00, bandeau, retour à la courante, légende du plan intacte, aucune erreur console). Le jetable a
+  été **purgé** ; **00002 n'a été ni rectifié ni versionné** — sa première rectification créera sa
+  version n° 1.
+
+### À savoir pour la suite
+
+- Une version **reprise d'avant la V18** s'affiche telle que le serveur la reconstitue (mode dégradé
+  documenté dans la note backend) : ne pas y voir une régression du tableau.
+- Les files du Vérificateur (`a-verifier`, `en-attente-prmp`) exigent une **réception** dans sa localité
+  — à prévoir pour toute recette sur un dossier créé à la main.
