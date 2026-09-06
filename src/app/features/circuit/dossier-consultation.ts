@@ -147,15 +147,11 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
           @if (chronoDossier(); as chrono) {
             @if (chrono.taches.length || chrono.etapeCourante || chrono.datePrevisionnelleFin || chrono.debutCompteur) {
               <div class="dc-header-droite">
-                <!-- ⚠️ Demande pilote (2026-09-06) — REPLIÉ à chaque ouverture, comme l'en-tête
-                     d'identité : le titre est le bouton qui déplie. -->
-                <button type="button" class="dc-toggle-bloc dc-chrono-titre"
-                  [attr.aria-expanded]="!chronoReplie()" (click)="chronoReplie.set(!chronoReplie())">
-                  {{ chronoReplie() ? '▸' : '▾' }} <span aria-hidden="true">⏱</span> Chronométrage &amp; délais
+                <!-- ⚠️ Demande pilote (2026-09-06, précisée) — un BOUTON ; le contenu s'ouvre en
+                     FENÊTRE MODALE (sous-dialogue) par-dessus la consultation. -->
+                <button type="button" class="dc-toggle-bloc dc-chrono-titre" (click)="chronoOuvert.set(true)">
+                  <span aria-hidden="true">⏱</span> Chronométrage &amp; délais…
                 </button>
-                @if (!chronoReplie()) {
-                  <app-chronometrage-dossier [idDossier]="dossier().idDossier" [donnees]="chrono" [pecPermise]="false" />
-                }
               </div>
             }
           }
@@ -405,16 +401,62 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
           @if (journalVisible().length) {
             <div class="dc-section">
               <div class="dc-section-head">
-                <!-- ⚠️ Demande pilote (2026-09-06) — REPLIÉ à chaque ouverture ; le titre déplie. -->
-                <button type="button" class="dc-toggle-bloc section-block-title"
-                  [attr.aria-expanded]="!journalReplie()" (click)="journalReplie.set(!journalReplie())">
+                <!-- ⚠️ Demande pilote (2026-09-06, précisée) — un BOUTON ; le journal s'ouvre en
+                     FENÊTRE MODALE (sous-dialogue). -->
+                <button type="button" class="dc-toggle-bloc section-block-title" (click)="journalOuvert.set(true)">
                   <div class="section-icon">🕘</div>
-                  <span class="section-label">Journal des actions</span>
+                  <span class="section-label">Journal des actions…</span>
                   <span class="section-count">{{ journalVisible().length }} action(s)</span>
-                  <span class="dc-toggle-caret" aria-hidden="true">{{ journalReplie() ? '▸' : '▾' }}</span>
                 </button>
               </div>
-              @if (!journalReplie()) {
+            </div>
+          }
+          }
+        </div>
+
+        <!-- ── Pied ── -->
+        @if (!embedded()) {
+          <footer class="dc-foot">
+            <div class="dc-foot-info">
+              @if (estPpm()) { <strong>{{ marches().length }}</strong> marché(s) · }
+              <strong>{{ pieces().length }}</strong> pièce(s) jointe(s)
+            </div>
+            <button type="button" class="btn btn-ghost" (click)="fermer()">Fermer</button>
+          </footer>
+        }
+      </div>
+      }
+
+      <!-- ⚠️ Demande pilote (2026-09-06, précisée) — restitutions en SOUS-DIALOGUES : le bouton
+           ouvre une fenêtre modale par-dessus la consultation (Échap, clic voile, ✕). -->
+      @if (chronoOuvert()) {
+        <div class="modal-backdrop">
+          <div class="modal modal-lg dc-sousmodal" role="dialog" aria-modal="true"
+            [attr.aria-label]="'Chronométrage et délais — ' + (dossier().refeDossier || dossier().idDossier)"
+            appModale appModaleClicExterieur (appModaleFermer)="chronoOuvert.set(false)">
+            <div class="modal-header">
+              <h2 class="modal-title"><span aria-hidden="true">⏱</span> Chronométrage &amp; délais</h2>
+              <button type="button" class="btn-close" aria-label="Fermer" (click)="chronoOuvert.set(false)">✕</button>
+            </div>
+            <div class="modal-body dc-sousmodal__corps">
+              @if (chronoDossier(); as chrono) {
+                <app-chronometrage-dossier [idDossier]="dossier().idDossier" [donnees]="chrono" [pecPermise]="false" />
+              }
+            </div>
+          </div>
+        </div>
+      }
+      @if (journalOuvert()) {
+        <div class="modal-backdrop">
+          <div class="modal modal-lg dc-sousmodal" role="dialog" aria-modal="true"
+            [attr.aria-label]="'Journal des actions — ' + (dossier().refeDossier || dossier().idDossier)"
+            appModale appModaleClicExterieur (appModaleFermer)="journalOuvert.set(false)">
+            <div class="modal-header">
+              <h2 class="modal-title"><span aria-hidden="true">🕘</span> Journal des actions
+                <span class="section-count">{{ journalVisible().length }} action(s)</span></h2>
+              <button type="button" class="btn-close" aria-label="Fermer" (click)="journalOuvert.set(false)">✕</button>
+            </div>
+            <div class="modal-body dc-sousmodal__corps">
               <table class="dc-journal">
                 <thead>
                   <tr><th scope="col">Date</th><th scope="col">Action</th><th scope="col">Opérateur</th><th scope="col">Détail</th></tr>
@@ -435,23 +477,9 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                   }
                 </tbody>
               </table>
-              }
             </div>
-          }
-          }
+          </div>
         </div>
-
-        <!-- ── Pied ── -->
-        @if (!embedded()) {
-          <footer class="dc-foot">
-            <div class="dc-foot-info">
-              @if (estPpm()) { <strong>{{ marches().length }}</strong> marché(s) · }
-              <strong>{{ pieces().length }}</strong> pièce(s) jointe(s)
-            </div>
-            <button type="button" class="btn btn-ghost" (click)="fermer()">Fermer</button>
-          </footer>
-        }
-      </div>
       }
     </div>
   `,
@@ -533,13 +561,14 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
     .dc-subtitle i { font-size: 12px; font-style: normal; }
     /* Repli de l'en-tête (2026-09-02) : bouton discret en bout de sous-titre. */
     .dc-toggle-entete { margin-left: auto; font-size: var(--text-xs); color: var(--n-500); }
-    /* Titres-boutons des blocs repliables (2026-09-06) : l'apparence du titre, le geste en plus. */
+    /* Titres-boutons des restitutions (2026-09-06) : l'apparence du titre, le geste en plus. */
     .dc-toggle-bloc { appearance: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; text-align: left; }
     .dc-toggle-bloc:focus-visible { outline: 2px solid var(--p-500); outline-offset: 2px; border-radius: 4px; }
-    .dc-toggle-caret { color: var(--n-400); margin-left: 0.35rem; }
     button.dc-chrono-titre { display: block; width: 100%; margin-bottom: 0; }
-    button.dc-chrono-titre[aria-expanded='true'] { margin-bottom: 8px; }
     button.section-block-title { display: flex; align-items: center; }
+    /* Sous-dialogues des restitutions : larges (tables), corps défilant. */
+    .dc-sousmodal { width: min(1100px, 95vw); max-width: 95vw; }
+    .dc-sousmodal__corps { overflow: auto; }
     .dc-sep { opacity: .4; }
     .dc-meta { background: var(--n-50); border: 0.5px solid var(--n-200); border-radius: 10px; overflow: hidden; }
     .dc-meta-row { display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-bottom: 0.5px solid var(--n-200); }
@@ -628,12 +657,12 @@ export class DossierConsultation implements OnInit {
   /** En-tête d'identité replié — MASQUÉ par défaut à chaque ouverture (demande pilote 02/09). */
   readonly enteteReplie = signal(true);
   /**
-   * ⚠️ Demande pilote (2026-09-06) — même règle que l'en-tête d'identité pour TOUTES les
-   * restitutions de la consultation : « Chronométrage & délais » et « Journal des actions »
-   * sont REPLIÉS à chaque ouverture, leur titre-bouton les déplie.
+   * ⚠️ Demande pilote (2026-09-06, précisée le jour même) — les restitutions « Chronométrage &
+   * délais » et « Journal des actions » ne s'affichent qu'à la demande : un BOUTON dans la
+   * consultation, le contenu en FENÊTRE MODALE par-dessus (sous-dialogue appModale).
    */
-  readonly chronoReplie = signal(true);
-  readonly journalReplie = signal(true);
+  readonly chronoOuvert = signal(false);
+  readonly journalOuvert = signal(false);
 
   /** La référence PPM interne (ex. « 00018/MLF/PPM/2026 ») n'est montrée qu'aux profils PRMP, UGPM et Secrétaire. */
   readonly montrerReferencePpm = computed(() => ['PRMP', 'UGPM', 'SECRETAIRE'].includes(this.auth.role() ?? ''));
