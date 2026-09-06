@@ -204,7 +204,7 @@ interface LigneObs {
                   </div>
                   <div class="ar-item__foot">
                     @if (!estModifie(c)) {
-                      <span class="form-hint">Veuillez modifier le dossier avant de resoumettre.</span>
+                      <span class="form-hint">Importez d'abord le PPM rectifié (« Modifier le dossier ») : la resoumission ne s'ouvre qu'après son enregistrement.</span>
                     }
                     <button
                       type="button"
@@ -319,23 +319,24 @@ export class DossiersARectifier {
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
     this.lookups.lookup(SousTypeDossierService, 'idSousType', ['libelleSousType']).subscribe((m) => this.sousTypeMap.set(m));
-    // Retour de l'édition du PPM : les dossiers ouverts en édition deviennent « modifiés ».
-    this.modifications.consommerRetours();
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((q) => this.typeFiltre.set(q.get('type')));
     this.charger();
   }
 
-  /** Le dossier de cette carte a-t-il été ouvert en édition puis re-visité ? (active « Resoumettre »). */
+  /**
+   * ⚠️ Règle durcie (2026-09-06) : la rectification de cette carte a-t-elle été réellement
+   * ENREGISTRÉE (import de PPM rectifié validé) ? C'est elle qui active « Resoumettre ».
+   */
   estModifie(c: CarteRectif): boolean {
-    return this.modifications.estModifie(c.dossier.idDossier);
+    return this.modifications.estRectifie(c.dossier.idDossier);
   }
 
   /**
-   * Clic « Modifier le dossier » : mémorise l'intention et navigue vers le **formulaire de rectification
-   * restreint** du dossier concerné (`idDossier` de la carte), avec un `returnUrl` vers « Dossiers à rectifier ».
+   * Clic « Modifier le dossier » : navigue vers le **formulaire de rectification restreint** du
+   * dossier concerné, avec un `returnUrl` vers « Dossiers à rectifier ». C'est l'ENREGISTREMENT
+   * de l'import là-bas qui posera le drapeau « rectifié » — pas le simple aller-retour.
    */
   modifierDossier(c: CarteRectif): void {
-    this.modifications.partirEnEdition(c.dossier.idDossier);
     this.router.navigate(['/prmp/rectifier', c.dossier.idDossier], {
       queryParams: { returnUrl: '/prmp/a-rectifier' },
     });
@@ -429,7 +430,7 @@ export class DossiersARectifier {
   demanderResoumission(c: CarteRectif): void {
     const cle = this.cleDe(c);
     if (!this.estModifie(c)) {
-      this.errors.update((e) => ({ ...e, [cle]: 'Veuillez modifier le dossier avant de resoumettre.' }));
+      this.errors.update((e) => ({ ...e, [cle]: "Importez d'abord le PPM rectifié (« Modifier le dossier ») avant de resoumettre." }));
       return;
     }
     if (!this.motif(cle).trim()) {

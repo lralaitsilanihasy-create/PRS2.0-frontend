@@ -1,56 +1,39 @@
 import { Injectable, signal } from '@angular/core';
 
 /**
- * Mémoire (inter-navigation) des dossiers « à rectifier » que la PRMP a ouverts en édition.
+ * Mémoire (inter-navigation) des dossiers « à rectifier » dont la RECTIFICATION PAR IMPORT a été
+ * réellement ENREGISTRÉE.
  *
- * Sur l'écran « Dossiers à rectifier », le bouton « Resoumettre » d'une carte n'est actif que si
- * son dossier a été modifié, c.-à-d. la PRMP a navigué vers l'édition du PPM (`/prmp/ppm-marches`)
- * puis est revenue sur cet écran. Le composant de route étant détruit/recréé à chaque aller-retour,
- * l'état est porté ici (`providedIn: 'root'`, survit à la navigation), isolé par `idDossier`.
+ * ⚠️ Règle durcie (2026-09-06, demande pilote) : « Resoumettre le dossier » ne s'active qu'après
+ * un import de PPM rectifié enregistré — un simple aller-retour sur l'écran de rectification ne
+ * suffit plus (l'ancien magasin marquait « modifié » au retour de navigation, sans rien vérifier).
+ * L'écran « Rectifier le dossier » pose le drapeau au succès du `PUT /api/saisies/ppm/{id}` ;
+ * « Dossiers à rectifier » le lit ; la resoumission réussie le consomme. Le composant de route
+ * étant détruit/recréé à chaque aller-retour, l'état est porté ici (`providedIn: 'root'`).
  *
  * NB : garde-fou purement UX — le contrat `POST /api/dossiers/{id}/resoumettre` n'expose aucun
- * champ « dossier modifié ».
+ * champ « dossier rectifié » ; le serveur reste l'autorité.
  */
 @Injectable({ providedIn: 'root' })
 export class DossierModificationStore {
-  /** Dossiers partis en édition (clic « Modifier ») et pas encore confirmés au retour. */
-  private readonly enEdition = new Set<number>();
-  /** Dossiers considérés « modifiés » (retour d'édition effectué). */
-  private readonly _modifies = signal<Set<number>>(new Set());
+  /** Dossiers dont une rectification a été enregistrée depuis l'arrivée sur « à rectifier ». */
+  private readonly _rectifies = signal<Set<number>>(new Set());
 
-  /** Clic « Modifier le dossier » : mémorise l'intention avant de quitter l'écran. */
-  partirEnEdition(idDossier: number): void {
-    this.enEdition.add(idDossier);
+  /** Appelé par « Rectifier le dossier » au SUCCÈS de l'enregistrement de l'import. */
+  marquerRectifie(idDossier: number): void {
+    this._rectifies.update((s) => new Set(s).add(idDossier));
   }
 
-  /**
-   * À l'ouverture de « Dossiers à rectifier » : tout dossier parti en édition devient « modifié »
-   * (la PRMP est revenue). À appeler une fois à la construction du composant.
-   */
-  consommerRetours(): void {
-    if (!this.enEdition.size) {
-      return;
-    }
-    this._modifies.update((s) => {
-      const n = new Set(s);
-      for (const id of this.enEdition) {
-        n.add(id);
-      }
-      return n;
-    });
-    this.enEdition.clear();
+  estRectifie(idDossier: number): boolean {
+    return this._rectifies().has(idDossier);
   }
 
-  estModifie(idDossier: number): boolean {
-    return this._modifies().has(idDossier);
-  }
-
-  /** Après resoumission réussie : le dossier quitte l'état « modifié ». */
+  /** Après resoumission réussie : le dossier repart au vérificateur, le drapeau est consommé. */
   reinitialiser(idDossier: number): void {
-    if (!this._modifies().has(idDossier)) {
+    if (!this._rectifies().has(idDossier)) {
       return;
     }
-    this._modifies.update((s) => {
+    this._rectifies.update((s) => {
       const n = new Set(s);
       n.delete(idDossier);
       return n;

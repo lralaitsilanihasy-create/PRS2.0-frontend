@@ -48,6 +48,7 @@ import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { ModificationChamp, PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
 import { entiteImportDifferente } from '../../shared/prmp/entite-import';
 import { DpmReimportRefuse } from '../../shared/prmp/dpm-reimport-refuse';
+import { DossierModificationStore } from './dossier-modification.store';
 
 /**
  * « Rectifier le dossier » (PRMP, statut `EN_ATTENTE_DECISION_PRMP`).
@@ -287,6 +288,7 @@ export class RectifierDossier {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly modifications = inject(DossierModificationStore);
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);
   private readonly dossierService = inject(DossierService);
@@ -634,6 +636,8 @@ export class RectifierDossier {
     this.saisieService.editionPpm(this.idDossier, req).subscribe({
       next: () => {
         this.saving.set(false);
+        // ⚠️ Règle durcie (2026-09-06) : c'est CE succès — et lui seul — qui ouvre « Resoumettre ».
+        this.modifications.marquerRectifie(this.idDossier);
         this.toast.success(
           'Rectification enregistrée depuis le PPM importé — resoumettez le dossier en vérification depuis « Dossiers à rectifier ».',
         );
