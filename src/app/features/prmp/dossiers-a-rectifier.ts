@@ -9,7 +9,15 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { Dossier, Notification, ObservationPv } from '../../models';
-import { DossierService, NotificationService, ObservationPvService } from '../../services';
+import {
+  DossierService,
+  EntiteContractService,
+  LocaliteService,
+  NotificationService,
+  ObservationPvService,
+  ReferenceLookupService,
+  SousTypeDossierService,
+} from '../../services';
 import { StatutBadge, decomposerObservation } from '../../shared/circuit';
 import { DossierModificationStore } from './dossier-modification.store';
 
@@ -62,21 +70,43 @@ interface LigneObs {
       }
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
-      } @else if (cartesAffichees().length) {
-        <div class="ar-list">
-          @for (c of cartesAffichees(); track c.dossier.idDossier) {
-            <div class="card ar-item">
-              <!-- ⚠️ Demande user (2026-08-15) — carte REPLIÉE par défaut : seule la ligne d'en-tête
-                   est visible, le détail (tableau des observations + resoumission) s'ouvre au clic. -->
-              <button type="button" class="ar-item__head" (click)="basculer(c)" [attr.aria-expanded]="estOuvert(c)">
-                <span class="ar-item__ref">Dossier {{ c.dossier.refeDossier || '#' + c.dossier.idDossier }}</span>
-                <app-statut-badge [statut]="c.dossier.statut" [label]="'À rectifier'" />
-                <span class="ar-item__nb">{{ c.obsPv.length }} observation(s) à satisfaire</span>
-                <span class="ar-item__date">{{ (c.latest?.dateEnvoi | date: 'dd/MM/yyyy HH:mm') || '—' }}</span>
-                <span class="ar-item__chevron" [class.ar-item__chevron--ouvert]="estOuvert(c)" aria-hidden="true">›</span>
-              </button>
-
-              @if (estOuvert(c)) {
+      } @else {
+        <!-- ⚠️ Demande pilote (2026-09-06) — MÊME tableau que la liste des dossiers (Déposés…) :
+             table-card à 7 colonnes ; « Ouvrir » déplie le détail (observations + resoumission)
+             dans une rangée pleine largeur — la ligne reste repliée par défaut (règle 2026-08-15). -->
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Référence</th><th scope="col">Entité contractante</th><th scope="col">Statut</th><th scope="col">Sous-type</th><th scope="col">Localité</th><th scope="col">Fin traitement CNM</th><th scope="col" class="r">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of cartesAffichees(); track c.dossier.idDossier) {
+                <tr>
+                  <td>{{ c.dossier.refeDossier || ('Dossier #' + c.dossier.idDossier) }}</td>
+                  <td>{{ entiteLabel(c.dossier) }}</td>
+                  <td><app-statut-badge [statut]="c.dossier.statut" [label]="'À rectifier'" /></td>
+                  <td>{{ sousTypeLabel(c.dossier) }}</td>
+                  <td>{{ localiteLabel(c.dossier) }}</td>
+                  <td class="cnm-mono">
+                    {{ c.dossier.datePrevisionnelleFin ? (c.dossier.datePrevisionnelleFin | date: 'dd/MM/yyyy') : '—' }}
+                    @if (c.dossier.attentePrmp) {
+                      <span class="ar-attente" title="En attente de votre rectification — la date prévisionnelle glisse tant que le dossier ne revient pas à la CNM.">⏸ à vous</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="td-actions actions-end">
+                      <span class="ar-item__nb">{{ c.obsPv.length }} obs.</span>
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="basculer(c)" [attr.aria-expanded]="estOuvert(c)">
+                        {{ estOuvert(c) ? 'Fermer' : 'Ouvrir' }}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                @if (estOuvert(c)) {
+                  <tr class="ar-row-detail">
+                    <td colspan="7">
                 <div class="ar-item__corps">
                   <div class="ar-item__actions">
                     <!-- Surbrillance demandée (2026-08-15) : c'est LE geste attendu de la PRMP. -->
@@ -166,12 +196,15 @@ interface LigneObs {
                     </button>
                   </div>
                 </div>
+                    </td>
+                  </tr>
+                }
+              } @empty {
+                <tr><td colspan="7" class="empty-cell">Aucun dossier à rectifier.</td></tr>
               }
-            </div>
-          }
+            </tbody>
+          </table>
         </div>
-      } @else {
-        <p class="text-muted">Aucun dossier à rectifier.</p>
       }
     </section>
 
@@ -196,17 +229,11 @@ interface LigneObs {
     }
   `,
   styles: `
-    .ar-list { display: flex; flex-direction: column; gap: 0.75rem; }
-    .ar-item { padding: 0; border-left: 4px solid var(--warning-text); overflow: hidden; }
-    /* En-tête cliquable (carte repliée par défaut). */
-    .ar-item__head { display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.85rem 1.25rem; border: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; transition: var(--transition); }
-    .ar-item__head:hover { background: var(--c-50); }
-    .ar-item__ref { font-weight: 700; color: var(--c-800); font-size: var(--text-sm); }
-    .ar-item__nb { color: var(--warning-text); font-size: var(--text-xs); font-weight: 700; }
-    .ar-item__date { margin-left: auto; color: var(--n-400); font-size: var(--text-xs); }
-    .ar-item__chevron { color: var(--n-400); font-weight: 700; transition: transform 0.15s ease; }
-    .ar-item__chevron--ouvert { transform: rotate(90deg); }
-    .ar-item__corps { padding: 0 1.25rem 1rem; }
+    /* Rangée de détail sous la ligne du tableau : liseré ambre — c'est la zone d'action PRMP. */
+    .ar-row-detail > td { background: #fffdf6; border-left: 4px solid var(--warning-text); }
+    .ar-item__nb { color: var(--warning-text); font-size: var(--text-xs); font-weight: 700; white-space: nowrap; }
+    .ar-attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg, #fffbeb); border: 1px solid var(--warning-bdr, #fde68a); color: var(--warning-text, #92400e); font-size: var(--text-xs); white-space: nowrap; }
+    .ar-item__corps { padding: 0.5rem 0.35rem; }
     .ar-item__actions { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
     /* ⚠️ Surbrillance demandée (2026-08-15) : bouton rempli ambre + halo — impossible à manquer. */
     .ar-item__modifier {
@@ -244,6 +271,11 @@ export class DossiersARectifier {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly modifications = inject(DossierModificationStore);
+  private readonly lookups = inject(ReferenceLookupService);
+  /** Libellés des colonnes du tableau (référentiels en cache partagé). */
+  private readonly entiteMap = signal<Map<string, string>>(new Map());
+  private readonly localiteMap = signal<Map<string, string>>(new Map());
+  private readonly sousTypeMap = signal<Map<string, string>>(new Map());
 
   private readonly route = inject(ActivatedRoute);
   /** Rendu SOUS les cartes de « Mes dossiers » (route enfant) : l'en-tête se colle alors sous la
@@ -269,6 +301,9 @@ export class DossiersARectifier {
   readonly confirmCle = signal<number | null>(null);
 
   constructor() {
+    this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
+    this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
+    this.lookups.lookup(SousTypeDossierService, 'idSousType', ['libelleSousType']).subscribe((m) => this.sousTypeMap.set(m));
     // Retour de l'édition du PPM : les dossiers ouverts en édition deviennent « modifiés ».
     this.modifications.consommerRetours();
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((q) => this.typeFiltre.set(q.get('type')));
@@ -434,6 +469,19 @@ export class DossiersARectifier {
         this.errors.update((er) => ({ ...er, [cle]: msg }));
       },
     });
+  }
+
+  entiteLabel(d: Dossier): string {
+    return d.idEntiteContract != null
+      ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract
+      : '—';
+  }
+  localiteLabel(d: Dossier): string {
+    return d.idLocalite ? this.localiteMap().get(d.idLocalite) ?? d.idLocalite : '—';
+  }
+  /** Libellé du sous-type (repli sur le code ; « — » si non renseigné). */
+  sousTypeLabel(d: Dossier): string {
+    return d.idSousType ? this.sousTypeMap().get(d.idSousType) ?? d.idSousType : '—';
   }
 
   /** Matricule du vérificateur extrait du corps de la notification (« le vérificateur X a relevé… »). */

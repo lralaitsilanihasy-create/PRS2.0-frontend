@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier, EchangeDto } from '../../models';
-import { DossierService, EntiteContractService, ReferenceLookupService, SaisieService } from '../../services';
+import { DossierService, EntiteContractService, LocaliteService, ReferenceLookupService, SaisieService, SousTypeDossierService } from '../../services';
 import { MesDossiers } from '../prmp/mes-dossiers';
 import { StatutBadge } from '../../shared/circuit';
 
@@ -18,7 +19,7 @@ import { StatutBadge } from '../../shared/circuit';
 @Component({
   selector: 'app-dossiers-clotures',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, StatutBadge],
+  imports: [RouterLink, StatutBadge, DatePipe],
   template: `
     <section class="dc">
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -37,94 +38,118 @@ import { StatutBadge } from '../../shared/circuit';
       }
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
-      } @else if (dossiersAffiches().length) {
-        <ul class="dc__list">
-          @for (d of dossiersAffiches(); track d.idDossier) {
-            <li class="card dc__item">
-              <button
-                type="button"
-                class="dc__head"
-                [attr.aria-expanded]="estOuvert(d.idDossier)"
-                (click)="basculer(d)"
-              >
-                <span class="dc__chevron" aria-hidden="true">{{ estOuvert(d.idDossier) ? '▾' : '▸' }}</span>
-                <span class="dc__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }} · {{ entiteLabel(d) }}</span>
-                <!-- Statut réel : la liste PRMP couvre toute la phase de vérification (2026-08-03). -->
-                <app-statut-badge [statut]="d.statut" />
-              </button>
-
-              <!-- ⚠️ 2026-08-05 — versionnement : la mise à jour n'est ouverte que sur un PPM dont la
-                   Commission a rendu sa décision. Le backend refuse les autres cas (409) ; le bouton
-                   n'apparaît donc que là où l'action aboutira. -->
-              <!-- Bouton réservé à l'écran d'ACTION : « Dossiers vérifiés » reste en lecture seule. -->
-              @if (source === 'prmp-clotures' && modeMaj() && majPossible(d)) {
-                <div class="dc__maj">
-                  @if (majEnCoursPour(d); as version) {
-                    <!-- Une mise à jour est déjà ouverte sur ce plan : on la reprend, on n'en ouvre pas
-                         une seconde (le serveur la refuserait, et ce serait incompréhensible). -->
-                    <p class="dc__maj-reprise">Une mise à jour est en cours sur ce plan — rien n'est encore effectif.</p>
-                    <div class="dc__maj-actions">
-                      <a class="btn btn-primary btn-sm" [routerLink]="['/prmp/mise-a-jour', version]">Reprendre la mise à jour</a>
-                    </div>
-                  } @else if (majPour() === d.idDossier) {
-                    <!-- Motif exigé AVANT toute création : c'est lui qui justifie la version dans l'historique. -->
-                    <label class="dc__maj-label" [attr.for]="'motif-' + d.idDossier">
-                      Motif de la mise à jour <span class="dc__maj-requis">obligatoire</span>
-                    </label>
-                    <textarea
-                      class="form-control"
-                      rows="2"
-                      [id]="'motif-' + d.idDossier"
-                      [value]="motifMaj()"
-                      (input)="motifMaj.set($any($event.target).value)"
-                      placeholder="Ce qui justifie cette nouvelle version du plan"
-                    ></textarea>
-                    <div class="dc__maj-actions">
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="annulerMiseAJour()">Annuler</button>
-                      <button type="button" class="btn btn-primary btn-sm" [disabled]="majEnCours() || !motifMaj().trim()" (click)="demarrerMiseAJour(d)">
-                        {{ majEnCours() ? 'Création…' : 'Ouvrir la mise à jour' }}
-                      </button>
-                    </div>
-                  } @else {
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirMotif(d)">
-                      ✎ Mettre à jour ce PPM
-                    </button>
-                  }
-                </div>
-              }
-
-              @if (estOuvert(d.idDossier)) {
-                <div class="dc__hist">
-                  @if (chargeEnCours(d.idDossier)) {
-                    <p class="text-muted" role="status">Chargement de l'historique…</p>
-                  } @else {
-                    <h3 class="dc__hist-title">Historique des échanges</h3>
-                    @if (echangesDe(d.idDossier).length) {
-                      <ul class="dc__ech">
-                        @for (e of echangesDe(d.idDossier); track $index; let last = $last) {
-                          <li
-                            class="dc__ech-item"
-                            [class.dc__ech-item--rectif]="e.type === 'RECTIFICATION'"
-                            [class.dc__ech-item--final]="last && e.obsLevees"
-                          >
-                            <span class="dc__ech-meta cnm-mono">{{ e.date }} · {{ e.acteur }}</span>
-                            <span class="dc__ech-label">{{ e.type === 'OBSERVATION' ? 'Observation' : 'Rectification PRMP reçue' }}</span>
-                            <span class="dc__ech-text">{{ e.texte }}</span>
-                            @if (e.type === 'OBSERVATION' && e.obsLevees) {
-                              <span class="badge badge-success">{{ last ? 'Dossier clôturé — observations levées' : 'Observations levées' }}</span>
-                            }
-                          </li>
-                        }
-                      </ul>
-                    } @else {
-                      <p class="text-muted">Aucun échange enregistré.</p>
+      } @else {
+        <!-- ⚠️ Demande pilote (2026-09-06) — MÊME tableau que la liste des dossiers (Déposés…) :
+             table-card à 7 colonnes ; « Ouvrir » déplie l'historique des échanges dans une rangée
+             pleine largeur, le versionnement garde ses gestes dans la colonne Actions. -->
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Référence</th><th scope="col">Entité contractante</th><th scope="col">Statut</th><th scope="col">Sous-type</th><th scope="col">Localité</th><th scope="col">Fin traitement CNM</th><th scope="col" class="r">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of dossiersAffiches(); track d.idDossier) {
+                <tr>
+                  <td>{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</td>
+                  <td>{{ entiteLabel(d) }}</td>
+                  <!-- Statut réel : la liste PRMP couvre toute la phase de vérification (2026-08-03). -->
+                  <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
+                  <td>{{ sousTypeLabel(d) }}</td>
+                  <td>{{ localiteLabel(d) }}</td>
+                  <td class="cnm-mono">
+                    {{ d.datePrevisionnelleFin ? (d.datePrevisionnelleFin | date: 'dd/MM/yyyy') : '—' }}
+                    @if (d.attentePrmp) {
+                      <span class="dc__attente" title="En attente de votre action — la date prévisionnelle glisse tant que le dossier ne revient pas à la CNM.">⏸ à vous</span>
                     }
-                  }
-                </div>
+                  </td>
+                  <td>
+                    <div class="td-actions actions-end">
+                      <button type="button" class="btn btn-secondary btn-sm" [attr.aria-expanded]="estOuvert(d.idDossier)" (click)="basculer(d)">
+                        {{ estOuvert(d.idDossier) ? 'Fermer' : 'Ouvrir' }}
+                      </button>
+                      <!-- ⚠️ 2026-08-05 — versionnement : la mise à jour n'est ouverte que sur un PPM
+                           dont la Commission a rendu sa décision (409 sinon) ; écran d'ACTION seul. -->
+                      @if (source === 'prmp-clotures' && modeMaj() && majPossible(d)) {
+                        @if (majEnCoursPour(d); as version) {
+                          <a class="btn btn-primary btn-sm" [routerLink]="['/prmp/mise-a-jour', version]"
+                            title="Une mise à jour est déjà en cours sur ce plan — rien n'est encore effectif : on la reprend.">Reprendre la mise à jour</a>
+                        } @else {
+                          <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirMotif(d)">✎ Mettre à jour</button>
+                        }
+                      }
+                    </div>
+                  </td>
+                </tr>
+                @if (source === 'prmp-clotures' && modeMaj() && majPour() === d.idDossier && !majEnCoursPour(d)) {
+                  <tr class="dc__row-detail">
+                    <td colspan="7">
+                      <!-- Motif exigé AVANT toute création : c'est lui qui justifie la version dans l'historique. -->
+                      <div class="dc__maj">
+                        <label class="dc__maj-label" [attr.for]="'motif-' + d.idDossier">
+                          Motif de la mise à jour <span class="dc__maj-requis">obligatoire</span>
+                        </label>
+                        <textarea
+                          class="form-control"
+                          rows="2"
+                          [id]="'motif-' + d.idDossier"
+                          [value]="motifMaj()"
+                          (input)="motifMaj.set($any($event.target).value)"
+                          placeholder="Ce qui justifie cette nouvelle version du plan"
+                        ></textarea>
+                        <div class="dc__maj-actions">
+                          <button type="button" class="btn btn-secondary btn-sm" (click)="annulerMiseAJour()">Annuler</button>
+                          <button type="button" class="btn btn-primary btn-sm" [disabled]="majEnCours() || !motifMaj().trim()" (click)="demarrerMiseAJour(d)">
+                            {{ majEnCours() ? 'Création…' : 'Ouvrir la mise à jour' }}
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+                @if (estOuvert(d.idDossier)) {
+                  <tr class="dc__row-detail">
+                    <td colspan="7">
+                      <div class="dc__hist">
+                        @if (chargeEnCours(d.idDossier)) {
+                          <p class="text-muted" role="status">Chargement de l'historique…</p>
+                        } @else {
+                          <h3 class="dc__hist-title">Historique des échanges</h3>
+                          @if (echangesDe(d.idDossier).length) {
+                            <ul class="dc__ech">
+                              @for (e of echangesDe(d.idDossier); track $index; let last = $last) {
+                                <li
+                                  class="dc__ech-item"
+                                  [class.dc__ech-item--rectif]="e.type === 'RECTIFICATION'"
+                                  [class.dc__ech-item--final]="last && e.obsLevees"
+                                >
+                                  <span class="dc__ech-meta cnm-mono">{{ e.date }} · {{ e.acteur }}</span>
+                                  <span class="dc__ech-label">{{ e.type === 'OBSERVATION' ? 'Observation' : 'Rectification PRMP reçue' }}</span>
+                                  <span class="dc__ech-text">{{ e.texte }}</span>
+                                  @if (e.type === 'OBSERVATION' && e.obsLevees) {
+                                    <span class="badge badge-success">{{ last ? 'Dossier clôturé — observations levées' : 'Observations levées' }}</span>
+                                  }
+                                </li>
+                              }
+                            </ul>
+                          } @else {
+                            <p class="text-muted">Aucun échange enregistré.</p>
+                          }
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              } @empty {
+                <tr><td colspan="7" class="empty-cell">
+                  @if (modeMaj()) { Aucun plan n'est en état d'être mis à jour : la Commission doit d'abord avoir rendu sa décision. }
+                  @else { Aucun dossier clôturé. }
+                </td></tr>
               }
-            </li>
-          }
-        </ul>
+            </tbody>
+          </table>
+        </div>
 
         @if (source === 'verifies' && totalPages() > 1) {
           <div class="dc__pager">
@@ -133,23 +158,14 @@ import { StatutBadge } from '../../shared/circuit';
             <button type="button" class="btn btn-secondary btn-sm" [disabled]="pageIndex() + 1 >= totalPages()" (click)="nextPage()">Suivant</button>
           </div>
         }
-      } @else if (modeMaj()) {
-        <p class="text-muted">
-          Aucun plan n'est en état d'être mis à jour : la Commission doit d'abord avoir rendu sa décision.
-        </p>
-      } @else {
-        <p class="text-muted">Aucun dossier clôturé.</p>
       }
     </section>
   `,
   styles: `
-    .dc__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-    .dc__item { padding: 0; overflow: hidden; }
-    .dc__head { width: 100%; display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.1rem; background: none; border: 0; cursor: pointer; text-align: left; font: inherit; color: inherit; }
-    .dc__head:hover { background: var(--c-50); }
-    .dc__chevron { color: var(--n-400); width: 1em; flex: none; }
-    .dc__ref { font-weight: 700; color: var(--c-800); }
-    .dc__hist { padding: 0 1.1rem 0.75rem; }
+    /* Rangée de détail (historique / motif de mise à jour) sous la ligne du tableau. */
+    .dc__row-detail > td { background: #fbfcff; }
+    .dc__attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg, #fffbeb); border: 1px solid var(--warning-bdr, #fde68a); color: var(--warning-text, #92400e); font-size: var(--text-xs); white-space: nowrap; }
+    .dc__hist { padding: 0.25rem 0.35rem; }
     .dc__hist-title { margin: 0 0 0.4rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
     .dc__ech { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
     .dc__ech-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; padding: 0.25rem 0.5rem; border-left: 2px solid var(--c-100); }
@@ -264,11 +280,15 @@ export class DossiersClotures {
   readonly totalPages = signal(0);
   private readonly pageSize = 10;
   private readonly entiteMap = signal<Map<string, string>>(new Map());
+  private readonly localiteMap = signal<Map<string, string>>(new Map());
+  private readonly sousTypeMap = signal<Map<string, string>>(new Map());
 
   constructor() {
     this.lookups
       .lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite'])
       .subscribe((m) => this.entiteMap.set(m));
+    this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
+    this.lookups.lookup(SousTypeDossierService, 'idSousType', ['libelleSousType']).subscribe((m) => this.sousTypeMap.set(m));
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((q) => {
       this.typeFiltre.set(q.get('type'));
       const maj = q.get('maj') === '1';
@@ -381,5 +401,12 @@ export class DossiersClotures {
     return d.idEntiteContract != null
       ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract
       : '—';
+  }
+  localiteLabel(d: Dossier): string {
+    return d.idLocalite ? this.localiteMap().get(d.idLocalite) ?? d.idLocalite : '—';
+  }
+  /** Libellé du sous-type (repli sur le code ; « — » si non renseigné). */
+  sousTypeLabel(d: Dossier): string {
+    return d.idSousType ? this.sousTypeMap().get(d.idSousType) ?? d.idSousType : '—';
   }
 }
