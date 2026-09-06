@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
-import { FormArray, FormGroup } from '@angular/forms';
+import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -123,7 +123,7 @@ import { DossierModificationStore } from './dossier-modification.store';
         <div class="card rd-frozen">
           <span class="rd-frozen__item"><span class="rd-frozen__k">Référence PRMP</span> <span class="fw-semibold">{{ p.reference || '—' }}</span></span>
           <span class="rd-frozen__item"><span class="rd-frozen__k">Lignes de marché</span> <span class="fw-semibold">{{ nbLignesActuelles() }}</span></span>
-          <span class="rd-frozen__hint text-muted">Identité et structure figées — la rectification met à jour le contenu des lignes.</span>
+          <span class="rd-frozen__hint text-muted">Identité figée — la rectification met à jour le contenu des lignes ; l'écart de structure est toléré jusqu'à 3 ajouts et 3 retraits.</span>
         </div>
 
         <!-- ⚠️ 2026-08-02 (demande user ×2) — la rectification couvre AUSSI les pièces jointes, mais
@@ -182,8 +182,8 @@ import { DossierModificationStore } from './dossier-modification.store';
               <span class="rd-drop__titre">{{ importEnCours() ? 'Analyse du PDF…' : 'Importer le PPM rectifié (PDF)' }}</span>
               <span class="rd-drop__hint">
                 Le PDF est analysé puis présenté en prévisualisation — rien n'est enregistré avant votre
-                validation. Même entité contractante, mêmes {{ nbLignesActuelles() }} ligne(s) de marché
-                que le dossier examiné.
+                validation. Même entité contractante ; jusqu'à 3 ajouts et 3 retraits de lignes tolérés
+                par rapport aux {{ nbLignesActuelles() }} ligne(s) du dossier examiné.
               </span>
               <span class="btn btn-primary rd-drop__btn">Choisir le fichier…</span>
               <input type="file" accept=".pdf,application/pdf" hidden (change)="importerPdf($event)" [disabled]="importEnCours()" />
@@ -200,15 +200,21 @@ import { DossierModificationStore } from './dossier-modification.store';
                tant qu'« Enregistrer la rectification » n'est pas cliqué. -->
           <div class="alert alert-warning">
             ⚠ <strong>Prévisualisation du PPM rectifié</strong> — {{ nbLignesImportees() }} ligne(s) lue(s)
-            pour {{ nbLignesActuelles() }} ligne(s) du dossier. Chaque ligne est appariée à la ligne
-            correspondante du dossier examiné (structure figée). Signataire et référence actuels conservés.
-            <strong>Rien n'est enregistré avant validation.</strong>
+            pour {{ nbLignesActuelles() }} ligne(s) du dossier, appariées par position. Signataire et
+            référence actuels conservés. <strong>Rien n'est enregistré avant validation.</strong>
           </div>
-          @if (!structureOk()) {
+          @if (!ecartOk()) {
             <div class="alert alert-danger" role="alert">
-              Le PPM rectifié comporte {{ nbLignesImportees() }} ligne(s) alors que le dossier examiné en
-              comporte {{ nbLignesActuelles() }} : la structure du dossier est figée (ni ajout ni retrait).
-              Corrigez le document puis réimportez-le.
+              Le PPM rectifié ajoute {{ nbCreations() }} ligne(s) et en retire {{ nbSuppressions() }} :
+              l'écart maximal autorisé est de <strong>3 dans chaque sens</strong>. Ajustez la grille
+              (« ✕ » retire une ligne, « + Ajouter une ligne » en crée une) ou corrigez le document
+              puis réimportez-le.
+            </div>
+          } @else if (nbCreations() || nbSuppressions()) {
+            <div class="alert alert-info">
+              Écart accepté : <strong>{{ nbCreations() }} ajout(s)</strong> ·
+              <strong>{{ nbSuppressions() }} retrait(s)</strong> — dans la limite de 3 par sens
+              (règle du 06/09). Les lignes nouvelles portent le badge « Nouvelle ».
             </div>
           }
           @if (importMarches(); as arr) {
@@ -229,8 +235,8 @@ import { DossierModificationStore } from './dossier-modification.store';
           <div class="rd-foot">
             <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="annulerImport()">Annuler l'import</button>
             <button type="button" class="btn btn-primary"
-              [disabled]="saving() || !importPret() || !structureOk()"
-              [title]="structureOk() ? (importPret() ? '' : 'Validez chaque ligne signalée et corrigez les montants incohérents.') : 'Le nombre de lignes doit être identique à celui du dossier examiné.'"
+              [disabled]="saving() || !importPret() || !ecartOk()"
+              [title]="ecartOk() ? (importPret() ? '' : 'Validez chaque ligne signalée et corrigez les montants incohérents.') : 'Au plus 3 ajouts et 3 retraits de lignes par rapport au dossier examiné.'"
               (click)="enregistrerRectification()">
               {{ saving() ? 'Enregistrement…' : '💾 Enregistrer la rectification' }}
             </button>
@@ -358,10 +364,26 @@ export class RectifierDossier {
   readonly anomaliesImport = signal<Map<number, AnomalieTranscription[]>>(new Map());
   readonly grid = viewChild(PpmSaisieGrid);
   readonly nbLignesImportees = computed(() => this.importMarches()?.length ?? 0);
-  /** Structure figée : autant de lignes importées que de lignes du dossier examiné. */
-  readonly structureOk = computed(
-    () => this.nbLignesImportees() > 0 && this.nbLignesImportees() === this.nbLignesActuelles(),
-  );
+  /**
+   * ⚠️ Écart TOLÉRÉ (règle pilote 2026-09-06, backend `94c273b`) : la structure n'est plus figée —
+   * jusqu'à 3 CRÉATIONS (lignes sans idDetail) et 3 SUPPRESSIONS (idDetail omis) par rectification.
+   * Méthodes (pas des computed) : la grille ajoute/retire des lignes en MUTANT le FormArray, sans
+   * repasser par le signal — l'événement du clic suffit à rafraîchir le gabarit OnPush.
+   */
+  private lignesAppariees(): number {
+    const arr = this.importMarches();
+    return arr ? (arr.controls as FormGroup[]).filter((g) => g.get('idDetailRectif')?.value != null).length : 0;
+  }
+  nbCreations(): number {
+    const arr = this.importMarches();
+    return arr ? arr.length - this.lignesAppariees() : 0;
+  }
+  nbSuppressions(): number {
+    return Math.max(0, this.nbLignesActuelles() - this.lignesAppariees());
+  }
+  ecartOk(): boolean {
+    return (this.importMarches()?.length ?? 0) > 0 && this.nbCreations() <= 3 && this.nbSuppressions() <= 3;
+  }
 
   constructor() {
     const ret = this.route.snapshot.queryParamMap.get('returnUrl');
@@ -470,8 +492,15 @@ export class RectifierDossier {
   private factoryArray(r: SaisiePpmImportResult): FormArray {
     const arr = new FormArray<FormGroup>([]);
     const anomMap = new Map<number, AnomalieTranscription[]>();
+    const actuels = this.marchesActuels();
+    let i = 0;
     for (const m of r.marches ?? []) {
       const g = this.factory.construireMarcheDepuisImport(m, this.capms(), this.modes());
+      // ⚠️ Écart toléré (2026-09-06, backend 94c273b) : appariement par position AU MONTAGE — la
+      // ligne apparée porte l'idDetail du dossier ; au-delà du dossier, pas d'idDetail (CRÉATION).
+      // Retirer une ligne appariée (✕) = SUPPRESSION (son idDetail sera omis à l'enregistrement).
+      g.addControl('idDetailRectif', new FormControl<number | null>(actuels[i]?.idDetail ?? null));
+      i++;
       arr.push(g);
       const anom = (m.anomalies ?? []).filter((a) => a.type !== 'REFERENTIEL_INCONNU');
       if (anom.length) {
@@ -517,11 +546,14 @@ export class RectifierDossier {
    */
   private calculerComparaison(arr: FormArray): void {
     const actuels = this.marchesActuels();
-    if (!arr.length || arr.length !== actuels.length) {
+    if (!arr.length) {
       this.modifsImport.set(new Map());
       this.statutsImport.set(new Map());
       return;
     }
+    // ⚠️ Écart toléré (2026-09-06) : appariement par idDetail porté par la ligne (posé au montage),
+    // plus par index — une ligne sans appariement est marquée NOUVELLE (création).
+    const parId = new Map(actuels.map((x) => [x.idDetail, x]));
     const txt = RectifierDossier.texte;
     const num = RectifierDossier.nombre;
     const fmt = RectifierDossier.fmtMontant;
@@ -531,10 +563,14 @@ export class RectifierDossier {
     const modifs = new Map<number, ModificationChamp[]>();
     const statuts = new Map<number, string>();
 
-    for (let i = 0; i < arr.length; i++) {
-      const g = arr.at(i) as FormGroup;
+    for (const g of arr.controls as FormGroup[]) {
       const v = g.getRawValue() as Record<string, unknown>;
-      const m = actuels[i];
+      const idDetailRectif = g.get('idDetailRectif')?.value as number | null;
+      const m = idDetailRectif != null ? parId.get(idDetailRectif) : undefined;
+      if (!m) {
+        statuts.set(g.get('uid')!.value as number, 'NOUVELLE');
+        continue;
+      }
       const liste: ModificationChamp[] = [];
       const champTexte = (champ: string, libelle: string, imp: string, act: string) => {
         if (imp.localeCompare(act, 'fr', { sensitivity: 'base' }) !== 0) {
@@ -600,30 +636,41 @@ export class RectifierDossier {
   }
 
   /**
-   * Enregistre la rectification : `PUT /api/saisies/ppm/{idDossier}` — chaque ligne importée est
-   * appariée PAR POSITION à la ligne existante (idDetail conservé : l'examen et le périmètre des
-   * observations référencent ces lignes). Signataire / référence actuels conservés.
+   * Enregistre la rectification : `PUT /api/saisies/ppm/{idDossier}` — chaque ligne APPARIÉE garde
+   * l'idDetail posé au montage (l'examen et le périmètre des observations les référencent) ;
+   * ⚠️ écart toléré (2026-09-06, backend `94c273b`) : lignes sans idDetail = CRÉATIONS (≤ 3),
+   * idDetail omis = SUPPRESSIONS (≤ 3). Signataire / référence actuels conservés.
    */
   enregistrerRectification(): void {
     const r = this.importApercu();
     const p = this.ppm();
     const arr = this.importMarches();
-    if (!r || !p || !arr || !this.structureOk()) {
+    if (!r || !p || !arr || !this.ecartOk()) {
       return;
     }
     const actuels = this.marchesActuels();
-    const lignes: SaisieMarcheLigne[] = (arr.controls as FormGroup[])
-      .map((g) => g.getRawValue() as Record<string, unknown>)
-      .filter((l) => this.factory.ligneNonVide(l))
-      .map((l) => this.factory.payloadDepuisMarche(l));
-    if (lignes.length !== actuels.length) {
+    const groupes = (arr.controls as FormGroup[]).filter((g) =>
+      this.factory.ligneNonVide(g.getRawValue() as Record<string, unknown>),
+    );
+    const lignes: SaisieMarcheLigne[] = groupes.map((g) => {
+      const l = this.factory.payloadDepuisMarche(g.getRawValue() as Record<string, unknown>);
+      const idDetail = g.get('idDetailRectif')?.value as number | null;
+      if (idDetail != null) {
+        l.idDetail = idDetail;
+      }
+      return l;
+    });
+    const appariees = new Set(
+      groupes.map((g) => g.get('idDetailRectif')?.value as number | null).filter((x) => x != null),
+    );
+    const creations = lignes.length - appariees.size;
+    const suppressions = actuels.filter((m) => !appariees.has(m.idDetail)).length;
+    if (creations > 3 || suppressions > 3) {
       this.error.set(
-        `Le PPM rectifié comporte ${lignes.length} ligne(s) non vide(s) pour ${actuels.length} ligne(s) du dossier : structure figée.`,
+        `Le PPM rectifié ajoute ${creations} ligne(s) et en retire ${suppressions} : l'écart maximal autorisé est de 3 dans chaque sens.`,
       );
       return;
     }
-    // Appariement par position → idDetail conservés (mise à jour en place, ni ajout ni retrait).
-    lignes.forEach((l, i) => (l.idDetail = actuels[i].idDetail));
     const req: EditionPpmRequest = {
       exercice: r.exercice ?? p.exercice,
       dateSignature: r.dateSignature ?? p.dateSignature,

@@ -1,5 +1,14 @@
 # Demande backend — Rectification : tolérer jusqu'à 3 ajouts et 3 retraits de lignes
 
+> ✅ **CLÔTURÉE le 06/09** — backend livré (`94c273b`, migration **V19** : `ID_DETAIL_EXAMEN` fige
+> le lien observation→marché au snapshot du PV ; garde d'écart en façade, créations/retraits dans
+> MarcheService, protection des observations non levées, 4 tests `RectificationEcartIntegrationTest`) ;
+> front livré (appariement par idDetail posé au montage, créations sans idDetail, suppressions par
+> « ✕ », gardes miroirs et messages, badge « Nouvelle » — vérifié par interception : 4 créations
+> refusées, 1 création acceptée). Nota : le diff sert le type **NOUVELLE** (pas « AJOUTEE ») —
+> celui que le front affiche déjà. ⚠️ Backend local : redémarrer pour appliquer la V19 avant toute
+> recette réelle. Trois arbitrages backend soumis au pilote (voir rapport du 06/09).
+
 **Date** : 2026-09-06 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : règle pilote du
 jour — « lors de la rectification du dossier de planification, il est interdit d'ajouter ou de
 retirer PLUS DE 3 lignes du PPM à rectifier » : l'écart devient permis, mais borné.
