@@ -147,8 +147,15 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
           @if (chronoDossier(); as chrono) {
             @if (chrono.taches.length || chrono.etapeCourante || chrono.datePrevisionnelleFin || chrono.debutCompteur) {
               <div class="dc-header-droite">
-                <div class="dc-chrono-titre"><span aria-hidden="true">⏱</span> Chronométrage &amp; délais</div>
-                <app-chronometrage-dossier [idDossier]="dossier().idDossier" [donnees]="chrono" [pecPermise]="false" />
+                <!-- ⚠️ Demande pilote (2026-09-06) — REPLIÉ à chaque ouverture, comme l'en-tête
+                     d'identité : le titre est le bouton qui déplie. -->
+                <button type="button" class="dc-toggle-bloc dc-chrono-titre"
+                  [attr.aria-expanded]="!chronoReplie()" (click)="chronoReplie.set(!chronoReplie())">
+                  {{ chronoReplie() ? '▸' : '▾' }} <span aria-hidden="true">⏱</span> Chronométrage &amp; délais
+                </button>
+                @if (!chronoReplie()) {
+                  <app-chronometrage-dossier [idDossier]="dossier().idDossier" [donnees]="chrono" [pecPermise]="false" />
+                }
               </div>
             }
           }
@@ -398,12 +405,16 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
           @if (journalVisible().length) {
             <div class="dc-section">
               <div class="dc-section-head">
-                <div class="section-block-title">
+                <!-- ⚠️ Demande pilote (2026-09-06) — REPLIÉ à chaque ouverture ; le titre déplie. -->
+                <button type="button" class="dc-toggle-bloc section-block-title"
+                  [attr.aria-expanded]="!journalReplie()" (click)="journalReplie.set(!journalReplie())">
                   <div class="section-icon">🕘</div>
                   <span class="section-label">Journal des actions</span>
                   <span class="section-count">{{ journalVisible().length }} action(s)</span>
-                </div>
+                  <span class="dc-toggle-caret" aria-hidden="true">{{ journalReplie() ? '▸' : '▾' }}</span>
+                </button>
               </div>
+              @if (!journalReplie()) {
               <table class="dc-journal">
                 <thead>
                   <tr><th scope="col">Date</th><th scope="col">Action</th><th scope="col">Opérateur</th><th scope="col">Détail</th></tr>
@@ -424,6 +435,7 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                   }
                 </tbody>
               </table>
+              }
             </div>
           }
           }
@@ -521,6 +533,13 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
     .dc-subtitle i { font-size: 12px; font-style: normal; }
     /* Repli de l'en-tête (2026-09-02) : bouton discret en bout de sous-titre. */
     .dc-toggle-entete { margin-left: auto; font-size: var(--text-xs); color: var(--n-500); }
+    /* Titres-boutons des blocs repliables (2026-09-06) : l'apparence du titre, le geste en plus. */
+    .dc-toggle-bloc { appearance: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; text-align: left; }
+    .dc-toggle-bloc:focus-visible { outline: 2px solid var(--p-500); outline-offset: 2px; border-radius: 4px; }
+    .dc-toggle-caret { color: var(--n-400); margin-left: 0.35rem; }
+    button.dc-chrono-titre { display: block; width: 100%; margin-bottom: 0; }
+    button.dc-chrono-titre[aria-expanded='true'] { margin-bottom: 8px; }
+    button.section-block-title { display: flex; align-items: center; }
     .dc-sep { opacity: .4; }
     .dc-meta { background: var(--n-50); border: 0.5px solid var(--n-200); border-radius: 10px; overflow: hidden; }
     .dc-meta-row { display: flex; align-items: center; gap: 10px; padding: 7px 14px; border-bottom: 0.5px solid var(--n-200); }
@@ -608,6 +627,13 @@ export class DossierConsultation implements OnInit {
   private readonly auth = inject(AuthService);
   /** En-tête d'identité replié — MASQUÉ par défaut à chaque ouverture (demande pilote 02/09). */
   readonly enteteReplie = signal(true);
+  /**
+   * ⚠️ Demande pilote (2026-09-06) — même règle que l'en-tête d'identité pour TOUTES les
+   * restitutions de la consultation : « Chronométrage & délais » et « Journal des actions »
+   * sont REPLIÉS à chaque ouverture, leur titre-bouton les déplie.
+   */
+  readonly chronoReplie = signal(true);
+  readonly journalReplie = signal(true);
 
   /** La référence PPM interne (ex. « 00018/MLF/PPM/2026 ») n'est montrée qu'aux profils PRMP, UGPM et Secrétaire. */
   readonly montrerReferencePpm = computed(() => ['PRMP', 'UGPM', 'SECRETAIRE'].includes(this.auth.role() ?? ''));
