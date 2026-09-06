@@ -39,6 +39,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                    suit les DATES, le statut se lit dans « Mes dossiers » et la consultation. -->
               <tr>
                 <th scope="col">Référence</th>
+                <th scope="col">Soumission</th>
                 <th scope="col">Enregistrement CNM</th>
                 <th scope="col">Fin traitement CNM</th>
                 <th scope="col" class="r">Actions</th>
@@ -48,6 +49,8 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
               @for (d of dossiers(); track d.idDossier) {
                 <tr>
                   <td>{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</td>
+                  <!-- Soumission par la PRMP (champ demandé au backend — « — » tant que non servi). -->
+                  <td class="cnm-mono">{{ d.dateSoumission ? (d.dateSoumission | date: 'dd/MM/yyyy') : '—' }}</td>
                   <!-- Enregistrement = réception du dossier par le Secrétaire (premier passage). -->
                   <td class="cnm-mono">{{ enregistrement(d) ? (enregistrement(d) | date: 'dd/MM/yyyy') : '—' }}</td>
                   <td class="cnm-mono">
@@ -63,7 +66,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="4" class="empty-cell">Aucun dossier déposé à la CNM.</td></tr>
+                <tr><td colspan="5" class="empty-cell">Aucun dossier déposé à la CNM.</td></tr>
               }
             </tbody>
           </table>

@@ -85,10 +85,15 @@ export interface Dossier {
   datePrevisionnelleFin?: string | null;
   /**
    * Date d'ENREGISTREMENT CNM (clôture de la RECEPTION par le Secrétaire — `debutCompteur` du
-   * chronométrage). ⚠️ Champ DEMANDÉ au backend (demande 2026-09-06-date-enregistrement-dossier) :
-   * absent tant que non livré — le « Suivi des délais CNM » affiche alors « — ».
+   * chronométrage). Servie depuis `b32db82` (résolue en lot avec la date prévisionnelle).
    */
   dateEnregistrement?: string | null;
+  /**
+   * Date/heure de SOUMISSION du dossier par la PRMP (déjà persistée serveur — la réception la sert
+   * au Secrétaire). ⚠️ Champ DEMANDÉ au backend (demande 2026-09-06-date-soumission-dossier) :
+   * absent tant que non livré — le « Suivi des dossiers CNM » affiche alors « — ».
+   */
+  dateSoumission?: string | null;
   /** Vrai quand la balle est CHEZ LA PRMP (statut suspensif) : la date prévisionnelle glisse d'autant. */
   attentePrmp?: boolean;
   /** Étape de circuit ouverte (`EtapeCircuit`) ; `null` si aucune tâche CNM ne court. */
