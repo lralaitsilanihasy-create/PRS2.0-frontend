@@ -149,12 +149,12 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
           @if (chronoDispo() || journalVisible().length) {
             <div class="dc-header-droite dc-restitutions">
               @if (chronoDispo()) {
-                <button type="button" class="dc-toggle-bloc dc-chrono-titre" (click)="chronoOuvert.set(true)">
+                <button type="button" class="dc-toggle-bloc dc-chrono-titre dc-btn-chrono" (click)="chronoOuvert.set(true)">
                   <span aria-hidden="true">⏱</span> Chronométrage &amp; délais…
                 </button>
               }
               @if (journalVisible().length) {
-                <button type="button" class="dc-toggle-bloc dc-chrono-titre" (click)="journalOuvert.set(true)">
+                <button type="button" class="dc-toggle-bloc dc-chrono-titre dc-btn-journal" (click)="journalOuvert.set(true)">
                   <span aria-hidden="true">🕘</span> Journal des actions… ({{ journalVisible().length }})
                 </button>
               }
@@ -557,8 +557,14 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
     .dc-toggle-bloc { appearance: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; text-align: left; }
     .dc-toggle-bloc:focus-visible { outline: 2px solid var(--p-500); outline-offset: 2px; border-radius: 4px; }
     button.dc-chrono-titre { display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 0; }
-    /* Bande des restitutions : les deux boutons côte à côte (demande pilote 2026-09-06, 2ᵉ). */
-    .dc-restitutions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 1.5rem; }
+    /* Bande des restitutions : les deux boutons côte à côte (demande pilote 2026-09-06, 2ᵉ),
+       chacun en PASTILLE de sa couleur (3ᵉ précision) — bleu chrono, violet journal. */
+    .dc-restitutions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.75rem; }
+    .dc-restitutions .dc-toggle-bloc { padding: 5px 12px; border-radius: var(--radius-full); border: 1px solid; }
+    .dc-restitutions .dc-btn-chrono { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+    .dc-restitutions .dc-btn-chrono:hover { background: #bae6fd; }
+    .dc-restitutions .dc-btn-journal { background: #ede9fe; border-color: #c4b5fd; color: #6d28d9; }
+    .dc-restitutions .dc-btn-journal:hover { background: #ddd6fe; }
     /* Sous-dialogues des restitutions : larges (tables), corps défilant. */
     .dc-sousmodal { width: min(1100px, 95vw); max-width: 95vw; }
     .dc-sousmodal__corps { overflow: auto; }
