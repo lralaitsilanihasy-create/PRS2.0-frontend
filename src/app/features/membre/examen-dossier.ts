@@ -978,12 +978,15 @@ export class ExamenDossier implements OnDestroy {
           .sort((a, b) => (a.ordrePointCtrl ?? 0) - (b.ordrePointCtrl ?? 0));
         this.points.set(pts);
         // Init des résultats : chaque point LIGNE × chaque marché, + chaque point HORS LIGNE
-        // (DOSSIER / FICHE / AGPM — clé « D », évalués une fois). NON statué par défaut.
+        // (DOSSIER / FICHE / AGPM — clé « D », évalués une fois).
+        // ⚠️ Demande pilote (2026-09-06) : chaque point de la grille de contrôle est RAS par DÉFAUT
+        // — l'assignataire ne bascule sur « Observation » que les points où il relève une
+        // irrégularité (un examen sans anomalie ne demande alors aucun clic point par point).
         const ligne = pts.filter((p) => (p.portee ?? 'LIGNE') === 'LIGNE');
         const horsLigne = pts.filter((p) => (p.portee ?? 'LIGNE') !== 'LIGNE');
         const map = new Map<string, RowState>();
-        for (const m of mines) for (const p of ligne) map.set(this.cle(m.idDetail, p.idPointCtrl), { statut: null, observations: [] });
-        for (const p of horsLigne) map.set(this.cle(null, p.idPointCtrl), { statut: null, observations: [] });
+        for (const m of mines) for (const p of ligne) map.set(this.cle(m.idDetail, p.idPointCtrl), { statut: 'RAS', observations: [] });
+        for (const p of horsLigne) map.set(this.cle(null, p.idPointCtrl), { statut: 'RAS', observations: [] });
         // Pré-remplissage depuis l'examen existant du dispatch — dossier EXAMINE (édition) OU dossier
         // encore DISPATCHE avec un BROUILLON de progression (⚠️ règle ajoutée : sauvegarde à chaque étape).
         const idDispatch = this.idDispatch();
