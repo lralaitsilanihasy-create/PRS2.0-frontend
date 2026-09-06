@@ -103,9 +103,9 @@ import { FichePresentation } from './fiche-presentation';
     th { white-space: normal; }
     td { white-space: normal; overflow-wrap: break-word; vertical-align: top; }
     td.cnm-mono { white-space: nowrap; }
-    /* ⚠️ Demande pilote (02/09) — en-tête des tableaux À LA COULEUR DE L'ONGLET (orange des
-       onglets de dossier, #C2410C), texte blanc. */
-    .cnm-table thead th { background: #C2410C; color: #fff; }
+    /* ⚠️ Demande pilote (06/09, remplace celle du 02/09) — en-têtes des tableaux de la fiche en
+       VERT (texte blanc, contraste AA), plus l'orange des onglets. */
+    .cnm-table thead th { background: #15803D; color: #fff; }
   `,
 })
 export class FichePresentationDoc {
