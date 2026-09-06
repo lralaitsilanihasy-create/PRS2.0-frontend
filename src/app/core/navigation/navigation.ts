@@ -97,7 +97,7 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
 export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   PRMP: [
     // ⚠️ Demande pilote (2026-09-06) — l'entrée du tableau de bord devient le suivi des délais.
-    { label: 'Suivi des délais CNM', path: '/prmp/tableau-de-bord', icon: '⏱' },
+    { label: 'Suivi des dossiers CNM', path: '/prmp/tableau-de-bord', icon: '⏱' },
     // « Mes dossiers » = page dédiée (cartes type → statut) ; l'arborescence s'affiche à l'écran.
     { label: 'Mes dossiers', path: '/prmp/dossiers', icon: '🗂' },
     // « Soumettre un dossier » : retiré du menu (demande user 2026-08-02) — la saisie s'ouvre par type

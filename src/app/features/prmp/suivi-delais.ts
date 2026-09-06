@@ -4,26 +4,26 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { Dossier, Reception } from '../../models';
 import { DossierService, ReceptionService } from '../../services';
-import { StatutBadge } from '../../shared/circuit';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 
 /**
- * ⚠️ Demande pilote (2026-09-06) — le « Tableau de bord » PRMP devient « SUIVI DES DÉLAIS CNM » :
+ * ⚠️ Demande pilote (2026-09-06) — le « Tableau de bord » PRMP devient « SUIVI DES DOSSIERS CNM » :
  * un tableau par dossier déposé — référence, date d'ENREGISTREMENT CNM (la réception par le
  * Secrétaire, premier passage) et FIN DE TRAITEMENT prévue (chronométrage serveur,
  * `datePrevisionnelleFin` ; ⏸ quand la balle est chez la PRMP et que la date glisse).
+ * Précisé le jour même : PAS de colonne Statut — l'écran suit les dates, rien d'autre.
  */
 @Component({
   selector: 'app-suivi-delais',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, StatutBadge, EtatErreur, DossierConsultation],
+  imports: [DatePipe, EtatErreur, DossierConsultation],
   template: `
     <section>
       <header class="page-header">
         <div>
           <div class="page-subtitle">Domaine PRMP</div>
-          <h1 class="page-title">Suivi des délais CNM</h1>
+          <h1 class="page-title">Suivi des dossiers CNM</h1>
         </div>
       </header>
 
@@ -35,9 +35,10 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
         <div class="table-card">
           <table>
             <thead>
+              <!-- ⚠️ Demande pilote (2026-09-06, précisée) : PAS de colonne Statut ici — l'écran
+                   suit les DATES, le statut se lit dans « Mes dossiers » et la consultation. -->
               <tr>
                 <th scope="col">Référence</th>
-                <th scope="col">Statut</th>
                 <th scope="col">Enregistrement CNM</th>
                 <th scope="col">Fin traitement CNM</th>
                 <th scope="col" class="r">Actions</th>
@@ -47,7 +48,6 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
               @for (d of dossiers(); track d.idDossier) {
                 <tr>
                   <td>{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</td>
-                  <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
                   <!-- Enregistrement = réception du dossier par le Secrétaire (premier passage). -->
                   <td class="cnm-mono">{{ enregistrement(d) ? (enregistrement(d) | date: 'dd/MM/yyyy') : '—' }}</td>
                   <td class="cnm-mono">
@@ -63,7 +63,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="empty-cell">Aucun dossier déposé à la CNM.</td></tr>
+                <tr><td colspan="4" class="empty-cell">Aucun dossier déposé à la CNM.</td></tr>
               }
             </tbody>
           </table>
