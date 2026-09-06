@@ -385,58 +385,14 @@
    tout d'un bloc et imposait un long défilement pour atteindre les
    pièces.
    ════════════════════════════════════════════════════════════════ */
+/* ⚠️ Convergence (2026-09-06) : les boutons portent la classe partagée `onglets-dossier__tab`
+   (couleur par onglet : fiche verte, plan bleu, AGPM/pièces/entité orange) ; ce conteneur ne
+   garde que le padding et le fond propres au modal. */
 .dpm-tabs {
-  display: flex;
-  gap: 0.6rem;
   padding: 1rem 1.5rem 0.9rem;
   background: #fff;
-  flex-wrap: wrap;
+  margin-bottom: 0;
 }
-
-/* Onglets en pastilles (modèle fourni par l'utilisateur, 2026-08-19) : l'onglet courant se lit
-   d'un coup d'œil, sans dépendre d'un simple soulignement.
-   ⚠️ ORANGE et non bleu (demande user) : le bleu primaire sert déjà, dans ce même modal, aux chips
-   d'en-tête, au bouton d'import et à l'en-tête du tableau — les onglets s'y fondaient.
-   Contrastes mesurés : 5,18:1 en pastille active (blanc sur #C2410C), 4,88:1 en inactive et
-   4,52:1 au survol — au-dessus du seuil AA de 4,5, mais de peu : ne pas éclaircir ces fonds. */
-.dpm-tab {
-  appearance: none;
-  border: 0;
-  border-radius: 10px;
-  padding: 0.7rem 1.5rem;
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  cursor: pointer;
-  background: #FFF7ED;
-  color: #C2410C;
-  transition: background 140ms var(--ease-out), color 140ms var(--ease-out);
-
-  &:hover { background: #FFEDD5; }
-  &:focus-visible { outline: 2px solid #C2410C; outline-offset: 2px; }
-}
-
-.dpm-tab--on {
-  background: #C2410C;
-  color: #fff;
-  box-shadow: 0 2px 6px rgb(194 65 12 / 32%);
-
-  &:hover { background: #9A3412; }
-}
-
-/* Compteur discret : le nombre de lignes et de pièces reste lisible sans ouvrir l'onglet. */
-.dpm-tab__n {
-  display: inline-block;
-  margin-left: 0.45rem;
-  padding: 0.05rem 0.45rem;
-  border-radius: 999px;
-  background: #fff;
-  color: #C2410C;
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-}
-
-.dpm-tab--on .dpm-tab__n { background: rgb(255 255 255 / 25%); color: #fff; }
 /* Fiches d'identité de l'onglet 1 */
 .dpm-fiches {
   display: grid;

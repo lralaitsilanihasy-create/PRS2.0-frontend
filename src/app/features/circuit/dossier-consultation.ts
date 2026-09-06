@@ -176,11 +176,13 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                  présentation / plan / projet d'AGPM (si lignes) / pièces jointes — même langage
                  (classes GLOBALES onglets-dossier) que le détail PPM, l'examen et l'aperçu. -->
             <div class="onglets-dossier" role="tablist" aria-label="Éléments du dossier">
-              <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'fiche'"
+              <!-- ⚠️ Demande pilote (2026-09-06) : chaque onglet à la COULEUR des bandes de son
+                   contenu — fiche verte, plan bleu, AGPM orange, historique gris. -->
+              <button type="button" class="onglets-dossier__tab onglets-dossier__tab--vert" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'fiche'"
                 [attr.aria-selected]="ongletDossier() === 'fiche'" (click)="ongletDossier.set('fiche')">
                 Fiche de présentation <span class="onglets-dossier__n">{{ ficheDoc().nbMarchesConcernes }}</span>
               </button>
-              <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'ppm'"
+              <button type="button" class="onglets-dossier__tab onglets-dossier__tab--bleu" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'ppm'"
                 [attr.aria-selected]="ongletDossier() === 'ppm'" (click)="ongletDossier.set('ppm')">
                 Plan de passation <span class="onglets-dossier__n">{{ marches().length }}</span>
               </button>
@@ -199,7 +201,7 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                    existe au moins une version archivée (un « Historique (0) » serait du bruit).
                    Compteur = versions archivées + la courante. -->
               @if (versionsArchivees().length) {
-                <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'historique'"
+                <button type="button" class="onglets-dossier__tab onglets-dossier__tab--gris" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'historique'"
                   [attr.aria-selected]="ongletDossier() === 'historique'" (click)="ongletDossier.set('historique')">
                   Historique des versions <span class="onglets-dossier__n">{{ versionsArchivees().length + 1 }}</span>
                 </button>
@@ -297,11 +299,11 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                          fonctions pures que le dossier courant. (Les pièces jointes ne se versionnent
                          pas : l'onglet Pièces garde originaux ET versions corrigées, rien ne s'y perd.) -->
                     <div class="onglets-dossier dc-hist-sousonglets" role="tablist" aria-label="Composantes de la version affichée">
-                      <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletVersion() === 'plan'"
+                      <button type="button" class="onglets-dossier__tab onglets-dossier__tab--bleu" role="tab" [class.onglets-dossier__tab--on]="ongletVersion() === 'plan'"
                         [attr.aria-selected]="ongletVersion() === 'plan'" (click)="ongletVersion.set('plan')">
                         Plan de passation <span class="onglets-dossier__n">{{ vue.marches.length }}</span>
                       </button>
-                      <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletVersion() === 'fiche'"
+                      <button type="button" class="onglets-dossier__tab onglets-dossier__tab--vert" role="tab" [class.onglets-dossier__tab--on]="ongletVersion() === 'fiche'"
                         [attr.aria-selected]="ongletVersion() === 'fiche'" (click)="ongletVersion.set('fiche')">
                         Fiche de présentation <span class="onglets-dossier__n">{{ ficheVersion()?.nbMarchesConcernes ?? 0 }}</span>
                       </button>

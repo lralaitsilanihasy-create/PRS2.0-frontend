@@ -127,27 +127,29 @@ interface RowState {
                 <!-- ⚠️ Demande pilote (2026-09-02) — contenu EN ONGLETS, comme le détail PPM :
                      Fiche / Plan / Projet d'AGPM (si le sous-type en a) / Pièces.
                      L'onglet SUIT l'étape de la grille (effect) : le document contrôlé est affiché. -->
-                <div class="exam__tabs" role="tablist" aria-label="Contenu du dossier">
+                <!-- ⚠️ Convergence (2026-09-06) : onglets partagés (classe onglets-dossier), chacun
+                     à la COULEUR de son contenu (fiche verte, plan bleu, AGPM/pièces orange). -->
+                <div class="onglets-dossier" role="tablist" aria-label="Contenu du dossier">
                   <!-- Ordre (pilote 02/09) : la fiche de présentation passe AVANT le plan.
                        ⚠️ Chaque onglet AMÈNE sa grille dans « Consigner l'examen » quand elle est
                        atteignable (ouvrirOnglet) — arbitrage pilote 02/09. -->
-                  <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'fiche'"
+                  <button type="button" class="onglets-dossier__tab onglets-dossier__tab--vert" role="tab" [class.onglets-dossier__tab--on]="ongletContenu() === 'fiche'"
                     [attr.aria-selected]="ongletContenu() === 'fiche'" (click)="ouvrirOnglet('fiche')">
-                    Fiche de présentation <span class="exam__tab-n">{{ ficheDoc().nbMarchesConcernes }}</span>
+                    Fiche de présentation <span class="onglets-dossier__n">{{ ficheDoc().nbMarchesConcernes }}</span>
                   </button>
-                  <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'ppm'"
+                  <button type="button" class="onglets-dossier__tab onglets-dossier__tab--bleu" role="tab" [class.onglets-dossier__tab--on]="ongletContenu() === 'ppm'"
                     [attr.aria-selected]="ongletContenu() === 'ppm'" (click)="ouvrirOnglet('ppm')">
-                    Plan de passation <span class="exam__tab-n">{{ marches().length }}</span>
+                    Plan de passation <span class="onglets-dossier__n">{{ marches().length }}</span>
                   </button>
                   @if (agpmDoc().length || hasEtapeAgpm()) {
-                    <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'agpm'"
+                    <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletContenu() === 'agpm'"
                       [attr.aria-selected]="ongletContenu() === 'agpm'" (click)="ouvrirOnglet('agpm')">
-                      Projet d'AGPM <span class="exam__tab-n">{{ agpmDoc().length }}</span>
+                      Projet d'AGPM <span class="onglets-dossier__n">{{ agpmDoc().length }}</span>
                     </button>
                   }
-                  <button type="button" class="exam__tab" role="tab" [class.exam__tab--on]="ongletContenu() === 'pieces'"
+                  <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletContenu() === 'pieces'"
                     [attr.aria-selected]="ongletContenu() === 'pieces'" (click)="ouvrirOnglet('pieces')">
-                    Pièces jointes <span class="exam__tab-n">{{ pieces().length }}</span>
+                    Pièces jointes <span class="onglets-dossier__n">{{ pieces().length }}</span>
                   </button>
                 </div>
               }
@@ -496,14 +498,7 @@ interface RowState {
     /* Onglets du contenu (2026-09-02) : MÊMES couleurs orange clair que les onglets du détail PPM
        (demande pilote 02/09) — un seul langage d'onglets de dossier. Marge haute : la ligne
        collait aux informations du dossier au-dessus. */
-    .exam__tabs { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 1.1rem 0 0.9rem; }
-    .exam__tab { appearance: none; border: 0; border-radius: 10px; padding: 0.55rem 1.1rem; font: inherit; font-size: var(--text-sm); font-weight: 700; cursor: pointer; background: #FFF7ED; color: #C2410C; transition: background 140ms var(--ease-out), color 140ms var(--ease-out); }
-    .exam__tab:hover { background: #FFEDD5; }
-    .exam__tab:focus-visible { outline: 2px solid #C2410C; outline-offset: 2px; }
-    .exam__tab--on { background: #C2410C; color: #fff; box-shadow: 0 2px 6px rgb(194 65 12 / 32%); }
-    .exam__tab--on:hover { background: #9A3412; }
-    .exam__tab-n { display: inline-block; margin-left: 0.45rem; padding: 0.05rem 0.45rem; border-radius: 999px; background: #fff; color: #C2410C; font-size: var(--text-xs); }
-    .exam__tab--on .exam__tab-n { background: rgb(255 255 255 / 25%); color: #fff; }
+    /* Onglets convergés vers la classe partagée onglets-dossier (globale) — 2026-09-06. */
     @media (max-width: 75rem) {
       .exam__panel--contenu { max-height: none; overflow: visible; display: block; }
       .exam__panel--contenu .exam__contenu-corps { display: block; overflow: visible; }

@@ -516,6 +516,33 @@ a:hover {
   color: #fff;
 }
 
+/* ⚠️ Demande pilote (2026-09-06) — la couleur de l'ONGLET suit celle des bandes de SON contenu :
+   fiche de présentation = VERT (#15803D), plan de passation = BLEU (thead global #0284C7),
+   historique des versions = GRIS (table sobre) ; AGPM et pièces gardent l'orange historique. */
+.onglets-dossier__tab--vert { background: #f0fdf4; color: #15803d; }
+.onglets-dossier__tab--vert:hover { background: #dcfce7; }
+.onglets-dossier__tab--vert:focus-visible { outline-color: #15803d; }
+.onglets-dossier__tab--vert .onglets-dossier__n { color: #15803d; }
+.onglets-dossier__tab--vert.onglets-dossier__tab--on { background: #15803d; color: #fff; box-shadow: 0 2px 6px rgb(21 128 61 / 32%); }
+.onglets-dossier__tab--vert.onglets-dossier__tab--on:hover { background: #166534; }
+.onglets-dossier__tab--vert.onglets-dossier__tab--on .onglets-dossier__n { color: #fff; }
+
+.onglets-dossier__tab--bleu { background: #f0f9ff; color: #0284c7; }
+.onglets-dossier__tab--bleu:hover { background: #e0f2fe; }
+.onglets-dossier__tab--bleu:focus-visible { outline-color: #0284c7; }
+.onglets-dossier__tab--bleu .onglets-dossier__n { color: #0284c7; }
+.onglets-dossier__tab--bleu.onglets-dossier__tab--on { background: #0284c7; color: #fff; box-shadow: 0 2px 6px rgb(2 132 199 / 32%); }
+.onglets-dossier__tab--bleu.onglets-dossier__tab--on:hover { background: #075985; }
+.onglets-dossier__tab--bleu.onglets-dossier__tab--on .onglets-dossier__n { color: #fff; }
+
+.onglets-dossier__tab--gris { background: #f1f5f9; color: #475569; }
+.onglets-dossier__tab--gris:hover { background: #e2e8f0; }
+.onglets-dossier__tab--gris:focus-visible { outline-color: #475569; }
+.onglets-dossier__tab--gris .onglets-dossier__n { color: #475569; }
+.onglets-dossier__tab--gris.onglets-dossier__tab--on { background: #475569; color: #fff; box-shadow: 0 2px 6px rgb(71 85 105 / 32%); }
+.onglets-dossier__tab--gris.onglets-dossier__tab--on:hover { background: #334155; }
+.onglets-dossier__tab--gris.onglets-dossier__tab--on .onglets-dossier__n { color: #fff; }
+
 /* Grille multi-colonnes auto-responsive (se replie seule selon la largeur). */
 .cnm-form-grid {
   display: grid;

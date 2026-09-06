@@ -196,11 +196,13 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
 
         <!-- ⚠️ 2026-08-19 (demande user) — trois onglets : identité de l'entité, plan de passation,
              pièces jointes. Tout est déjà chargé (même vague) : changer d'onglet n'appelle rien. -->
-        <div class="dpm-tabs" role="tablist" aria-label="Sections du plan de passation">
+        <!-- ⚠️ Convergence (2026-09-06) : onglets partagés (classe onglets-dossier), chacun à la
+             COULEUR de son contenu (fiche verte, plan bleu, AGPM/pièces/entité orange). -->
+        <div class="dpm-tabs onglets-dossier" role="tablist" aria-label="Sections du plan de passation">
           <!-- ⚠️ Réservé aux profils qui découvrent le dossier : la PRMP et l'UGPM y liraient leur
                propre fiche d'identité (cf. afficheIdentites). -->
           @if (afficheIdentites()) {
-            <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'entite'"
+            <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="onglet() === 'entite'"
               [attr.aria-selected]="onglet() === 'entite'" (click)="onglet.set('entite')">
               Entité contractante
             </button>
@@ -208,23 +210,23 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
           <!-- ⚠️ Demande user (2026-09-01, ordre revu 02/09 : la fiche passe AVANT le plan) — la
                « Fiche de présentation » officielle, DÉRIVÉE des marchés saisis à la création :
                rien de plus n'est chargé, rien n'est persisté. -->
-          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'fiche'"
+          <button type="button" class="onglets-dossier__tab onglets-dossier__tab--vert" role="tab" [class.onglets-dossier__tab--on]="onglet() === 'fiche'"
             [attr.aria-selected]="onglet() === 'fiche'" (click)="onglet.set('fiche')">
-            Fiche de présentation <span class="dpm-tab__n">{{ fiche().nbMarchesConcernes }}</span>
+            Fiche de présentation <span class="onglets-dossier__n">{{ fiche().nbMarchesConcernes }}</span>
           </button>
-          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'ppm'"
+          <button type="button" class="onglets-dossier__tab onglets-dossier__tab--bleu" role="tab" [class.onglets-dossier__tab--on]="onglet() === 'ppm'"
             [attr.aria-selected]="onglet() === 'ppm'" (click)="onglet.set('ppm')">
-            Plan de passation <span class="dpm-tab__n">{{ marches().length }}</span>
+            Plan de passation <span class="onglets-dossier__n">{{ marches().length }}</span>
           </button>
           <!-- ⚠️ Demande user (2026-09-01) — le « Projet d'AGPM », dérivé du plan comme la fiche :
                marchés dont le mode déclenche l'AGPM (drapeau administrable du référentiel). -->
-          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'agpm'"
+          <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="onglet() === 'agpm'"
             [attr.aria-selected]="onglet() === 'agpm'" (click)="onglet.set('agpm')">
-            Projet d'AGPM <span class="dpm-tab__n">{{ agpm().length }}</span>
+            Projet d'AGPM <span class="onglets-dossier__n">{{ agpm().length }}</span>
           </button>
-          <button type="button" class="dpm-tab" role="tab" [class.dpm-tab--on]="onglet() === 'pieces'"
+          <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="onglet() === 'pieces'"
             [attr.aria-selected]="onglet() === 'pieces'" (click)="onglet.set('pieces')">
-            Pièces jointes <span class="dpm-tab__n">{{ pieces().length }}</span>
+            Pièces jointes <span class="onglets-dossier__n">{{ pieces().length }}</span>
           </button>
         </div>
 
