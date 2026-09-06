@@ -21,6 +21,8 @@ import {
   ServiceBeneficiaire,
   SoaBeneficiaire,
   Tranche,
+  VersionArchivee,
+  VersionArchiveeDetail,
 } from '../models';
 
 /** Domaine PRMP : PPM, marchés et leurs détails. Écriture : tout utilisateur authentifié. */
@@ -243,6 +245,31 @@ export class MiseAJourPpmService {
   /** `GET /api/dossiers/{id}/versions` — chaîne complète, **la plus récente d'abord**. */
   versions(idDossier: number): Observable<Dossier[]> {
     return this.http.get<Dossier[]>(`${this.apiUrl}/dossiers/${idDossier}/versions`);
+  }
+
+  /**
+   * ⚠️ 2026-09-06 (demande pilote, backend `6d9ba29`) — `GET /api/dossiers/{id}/versions-archivees` :
+   * historique des **rectifications** du dossier (la version remplacée à chaque cycle, figée), de la plus
+   * ancienne à la plus récente. **Liste vide (200)** pour un dossier jamais rectifié — pas de 409,
+   * contrairement au diff. Même périmètre de lecture que `/diff-rectification`.
+   * ⚠️ Chemin distinct de `/versions` (chaîne des mises à jour, chaque version étant un dossier).
+   */
+  versionsArchivees(idDossier: number, silencieux = false): Observable<VersionArchivee[]> {
+    // `silencieux` : chargé dans la vague de la consultation — un 403 ne doit pas ouvrir de dialogue,
+    // l'onglet « Historique des versions » n'apparaît simplement pas.
+    return this.http.get<VersionArchivee[]>(
+      `${this.apiUrl}/dossiers/${idDossier}/versions-archivees`,
+      silencieux ? { context: skipErrorToast() } : {},
+    );
+  }
+
+  /**
+   * `GET /api/dossiers/{id}/versions-archivees/{numero}` — contenu complet d'une version archivée, en
+   * lecture seule (en-tête + lignes avec bénéficiaires, lots, dates prévisionnelles). 404 si le numéro
+   * n'existe pas pour ce dossier.
+   */
+  versionArchivee(idDossier: number, numero: number): Observable<VersionArchiveeDetail> {
+    return this.http.get<VersionArchiveeDetail>(`${this.apiUrl}/dossiers/${idDossier}/versions-archivees/${numero}`);
   }
 
   /**

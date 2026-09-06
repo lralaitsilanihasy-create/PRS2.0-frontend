@@ -5,7 +5,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
-import { ActionDossier, Capm, Chronometrage, DiffDossier, Dossier, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne } from '../../models';
+import { ActionDossier, Capm, Chronometrage, DiffDossier, Dossier, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, VersionArchivee } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -32,6 +32,8 @@ import { FichePresentationDoc } from '../../shared/prmp/fiche-presentation-doc';
 import { AgpmDoc } from '../../shared/prmp/agpm-doc';
 import { calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { calculerAgpm } from '../../shared/prmp/agpm';
+import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
 
 /**
  * Consultation d'un dossier en LECTURE SEULE (modale réutilisable).
@@ -44,7 +46,7 @@ import { calculerAgpm } from '../../shared/prmp/agpm';
 @Component({
   selector: 'app-dossier-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, StatutBadge, PpmMarchesTable, ModaleDirective, ChronometrageDossier, FichePresentationDoc, AgpmDoc],
+  imports: [DatePipe, StatutBadge, PpmMarchesTable, ModaleDirective, ChronometrageDossier, FichePresentationDoc, AgpmDoc, EtatErreur],
   template: `
     <div [class.modal-backdrop]="!embedded()" [class.closing]="closing()">
       <!-- ⚠️ En modale, le corps n'est monté qu'une fois les données là : sinon le panneau
@@ -181,11 +183,107 @@ import { calculerAgpm } from '../../shared/prmp/agpm';
                 [attr.aria-selected]="ongletDossier() === 'pieces'" (click)="ongletDossier.set('pieces')">
                 Pièces jointes <span class="onglets-dossier__n">{{ pieces().length }}</span>
               </button>
+              <!-- ⚠️ Demande pilote (2026-09-06, backend 6d9ba29) — HISTORIQUE DES VERSIONS : chaque
+                   rectification archive la version qu'elle remplace ; l'onglet n'apparaît que s'il
+                   existe au moins une version archivée (un « Historique (0) » serait du bruit).
+                   Compteur = versions archivées + la courante. -->
+              @if (versionsArchivees().length) {
+                <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'historique'"
+                  [attr.aria-selected]="ongletDossier() === 'historique'" (click)="ongletDossier.set('historique')">
+                  Historique des versions <span class="onglets-dossier__n">{{ versionsArchivees().length + 1 }}</span>
+                </button>
+              }
             </div>
 
             @if (ongletDossier() === 'ppm') {
               <div class="dc-section">
                 <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [legendeTitre]="legendeChangements()" [detailsChangements]="detailsChangements()" />
+              </div>
+            }
+            @if (ongletDossier() === 'historique') {
+              <div class="dc-section">
+                <div class="dc-section-head">
+                  <div class="section-block-title">
+                    <div class="section-icon">🗂</div>
+                    <span class="section-label">Historique des versions</span>
+                    <span class="section-count">{{ versionsArchivees().length }} version(s) archivée(s)</span>
+                  </div>
+                </div>
+                <p class="dc-hist-intro">
+                  Chaque rectification archive la version qu'elle remplace, telle qu'elle était. La version
+                  courante est celle du dossier. Sélectionnez une version pour l'afficher en lecture seule.
+                </p>
+                <!-- Même langage que le journal (dc-journal) : la plus récente en tête, la courante d'abord. -->
+                <table class="dc-journal dc-hist" aria-label="Versions du dossier">
+                  <thead>
+                    <tr>
+                      <th scope="col">N°</th><th scope="col">Origine</th><th scope="col">Date</th><th scope="col">Auteur</th>
+                      <th scope="col" class="dc-hist__num">Cycle</th><th scope="col" class="dc-hist__num">Lignes</th><th scope="col" class="dc-hist__action">Affichage</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr [class.dc-hist__on]="versionAffichee() === null">
+                      <td class="dc-hist__num">{{ versionsArchivees().length + 1 }}</td>
+                      <td><span class="badge dc-hist__courante">Version courante</span></td>
+                      <td class="dc-journal__date">—</td>
+                      <td>—</td>
+                      <td class="dc-hist__num">—</td>
+                      <td class="dc-hist__num">{{ marches().length }}</td>
+                      <td class="dc-hist__action">
+                        @if (versionAffichee() === null) {
+                          <span class="dc-hist__affichee" aria-current="true">Affichée</span>
+                        } @else {
+                          <button type="button" class="btn btn-ghost btn-sm" (click)="afficherVersionCourante()">Afficher</button>
+                        }
+                      </td>
+                    </tr>
+                    @for (v of versionsArchiveesRecentesDAbord(); track v.numero) {
+                      <tr [class.dc-hist__on]="versionAffichee() === v.numero">
+                        <td class="dc-hist__num">{{ v.numero }}</td>
+                        <td>{{ origineLabel(v.origine) }}</td>
+                        <td class="dc-journal__date">{{ v.dateVersion | date: 'dd/MM/yyyy HH:mm' }}</td>
+                        <td>{{ v.nomAuteur || v.auteur || v.idPrmpAuteur || '—' }}</td>
+                        <td class="dc-hist__num">{{ v.cycle ?? '—' }}</td>
+                        <td class="dc-hist__num">{{ v.nbLignes }}</td>
+                        <td class="dc-hist__action">
+                          @if (versionAffichee() === v.numero) {
+                            <span class="dc-hist__affichee" aria-current="true">Affichée</span>
+                          } @else {
+                            <button type="button" class="btn btn-ghost btn-sm" (click)="afficherVersion(v)" [attr.aria-label]="'Afficher la version n° ' + v.numero">Afficher</button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+
+                <!-- La version sélectionnée, dans le MÊME tableau partagé que le plan courant (lecture seule,
+                     sans surlignage : une version archivée n'est comparée à rien). -->
+                <div class="dc-hist-vue">
+                  @if (versionAffichee() === null) {
+                    <div class="dc-hist-bandeau">
+                      <span class="badge dc-hist__courante">Version courante</span>
+                      <span>{{ marches().length }} marché(s) · état actuel du dossier</span>
+                    </div>
+                    <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
+                  } @else if (versionChargement()) {
+                    <div class="spinner-wrap dc-load" role="status" aria-label="Chargement de la version"><div class="spinner"></div></div>
+                  } @else if (versionErreur()) {
+                    <app-etat-erreur [message]="'Chargement impossible de la version n° ' + versionAffichee() + '.'" (reessayer)="reessayerVersion()" />
+                  } @else if (versionVue(); as vue) {
+                    <div class="dc-hist-bandeau">
+                      <span class="badge dc-hist__archivee">Version n° {{ vue.detail.version.numero }}</span>
+                      <span>
+                        archivée le {{ vue.detail.version.dateVersion | date: 'dd/MM/yyyy à HH:mm' }}
+                        par {{ vue.detail.version.nomAuteur || vue.detail.version.auteur || vue.detail.version.idPrmpAuteur || '—' }}
+                        · {{ origineLabel(vue.detail.version.origine) }}@if (vue.detail.version.cycle != null) {, cycle {{ vue.detail.version.cycle }}}
+                        @if (vue.detail.version.reference) { · réf. {{ vue.detail.version.reference }} }
+                        @if (vue.detail.version.dateSignature) { · signé le {{ vue.detail.version.dateSignature | date: 'dd/MM/yyyy' }} }
+                      </span>
+                    </div>
+                    <app-ppm-marches-table [marches]="vue.marches" [beneficiaires]="vue.beneficiaires" [previsions]="vue.previsions" />
+                  }
+                </div>
               </div>
             }
             @if (ongletDossier() === 'fiche') {
@@ -349,6 +447,17 @@ import { calculerAgpm } from '../../shared/prmp/agpm';
     /* Attente avant montage du panneau : discrète, sans cadre — le panneau qui suit doit être la
        PREMIÈRE forme pleine que l'œil voit apparaître. */
     .dc-attente { display: flex; align-items: center; justify-content: center; padding: 3rem; }
+    /* Historique des versions (2026-09-06) : liste au langage du journal, version affichée marquée,
+       bandeau d'identité au-dessus du tableau partagé. Tokens du design system uniquement. */
+    .dc-hist-intro { margin: 0 0 12px; font-size: 12.5px; color: var(--n-500); }
+    .dc-hist { margin-bottom: 14px; }
+    .dc-hist th.dc-hist__num, .dc-hist td.dc-hist__num { text-align: right; font-variant-numeric: tabular-nums; }
+    .dc-hist th.dc-hist__action, .dc-hist td.dc-hist__action { text-align: right; white-space: nowrap; }
+    .dc-hist tbody tr.dc-hist__on td { background: var(--info-bg); }
+    .dc-hist__affichee { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--info-text); }
+    .dc-hist__courante { background: var(--success-bg); color: var(--success-text); }
+    .dc-hist__archivee { background: var(--n-100); color: var(--n-500); }
+    .dc-hist-bandeau { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; font-size: 12.5px; color: var(--n-500); }
     .dc {
       width: 100%;
       /* Jamais plus large que la zone utile du backdrop (100 % = viewport − padding), quel que soit le zoom. */
@@ -544,9 +653,80 @@ export class DossierConsultation implements OnInit {
   /** Chronométrage du dossier (2026-09-01) — `null` si le backend ne le sert pas (section masquée). */
   readonly chronoDossier = signal<Chronometrage | null>(null);
 
-  // ── Onglets du dossier (2026-09-03) : fiche / plan / AGPM / pièces ──
+  // ── Onglets du dossier (2026-09-03) : fiche / plan / AGPM / pièces / historique (2026-09-06) ──
   /** Onglet actif — ouverture sur le plan, comme le détail PPM. */
-  readonly ongletDossier = signal<'ppm' | 'fiche' | 'agpm' | 'pieces'>('ppm');
+  readonly ongletDossier = signal<'ppm' | 'fiche' | 'agpm' | 'pieces' | 'historique'>('ppm');
+
+  // ── Historique des versions (⚠️ demande pilote 2026-09-06, backend 6d9ba29) ──
+  /**
+   * Versions ARCHIVÉES du dossier (`GET /dossiers/{id}/versions-archivees`) : la version remplacée à
+   * chaque cycle de rectification. Chargées DANS la vague, en silence : vide = jamais rectifié (ou
+   * hors périmètre), l'onglet n'apparaît pas. La version courante n'en fait pas partie.
+   */
+  readonly versionsArchivees = signal<VersionArchivee[]>([]);
+  /** La plus récente en tête — même sens de lecture que la chaîne des mises à jour et le journal. */
+  readonly versionsArchiveesRecentesDAbord = computed(() => [...this.versionsArchivees()].sort((a, b) => b.numero - a.numero));
+  /** Numéro de la version archivée affichée dans l'onglet ; `null` = la version courante (le dossier). */
+  readonly versionAffichee = signal<number | null>(null);
+  readonly versionChargement = signal(false);
+  readonly versionErreur = signal(false);
+  /** Contenu de la version archivée affichée, projeté pour le tableau partagé. */
+  readonly versionVue = signal<VueVersionArchivee | null>(null);
+  /** Une version archivée est immuable : chargée une fois, gardée pour la durée de la consultation. */
+  private readonly versionsChargees = new Map<number, VueVersionArchivee>();
+
+  afficherVersionCourante(): void {
+    this.versionAffichee.set(null);
+    this.versionVue.set(null);
+    this.versionErreur.set(false);
+    this.versionChargement.set(false);
+  }
+
+  /** Affiche une version archivée : depuis le cache si déjà lue, sinon un GET (indicateur + reprise). */
+  afficherVersion(v: VersionArchivee): void {
+    this.versionAffichee.set(v.numero);
+    this.versionErreur.set(false);
+    const connue = this.versionsChargees.get(v.numero);
+    if (connue) {
+      this.versionVue.set(connue);
+      this.versionChargement.set(false);
+      return;
+    }
+    this.versionVue.set(null);
+    this.versionChargement.set(true);
+    this.miseAJourService.versionArchivee(this.dossier().idDossier, v.numero).subscribe({
+      next: (detail) => {
+        const vue = vueVersionArchivee(detail, this.dossier().idDossier, this.ppm()?.idPpm ?? 0);
+        this.versionsChargees.set(v.numero, vue);
+        // L'utilisateur a pu cliquer ailleurs pendant la lecture : ne pas écraser sa sélection.
+        if (this.versionAffichee() === v.numero) {
+          this.versionVue.set(vue);
+          this.versionChargement.set(false);
+        }
+      },
+      error: () => {
+        if (this.versionAffichee() === v.numero) {
+          this.versionChargement.set(false);
+          this.versionErreur.set(true);
+        }
+      },
+    });
+  }
+
+  reessayerVersion(): void {
+    const numero = this.versionAffichee();
+    const v = numero == null ? undefined : this.versionsArchivees().find((x) => x.numero === numero);
+    if (v) this.afficherVersion(v);
+  }
+
+  /** Libellé de l'origine d'une version (code brut si inconnu — le backend reste l'autorité). */
+  origineLabel(origine: string): string {
+    switch (origine) {
+      case 'RECTIFICATION': return 'Rectification';
+      case 'MISE_A_JOUR': return 'Mise à jour';
+      default: return origine;
+    }
+  }
   /** Référentiels COMPLETS des calculs dérivés (les lookups ne portent que des libellés). */
   private readonly modesRef = signal<ModePassation[]>([]);
   private readonly capmsRef = signal<Capm[]>([]);
@@ -733,7 +913,11 @@ export class DossierConsultation implements OnInit {
       marches: this.marcheService.list().pipe(catchError(() => of([] as Marche[]))),
       benefs: this.serviceBenefService.list().pipe(catchError(() => of([] as ServiceBeneficiaire[]))),
       previsions: this.previsionService.list().pipe(catchError(() => of([] as MarchePrevision[]))),
-    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, modeMap, natureMap, modesRef, capmsRef, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions }) => {
+      // ⚠️ Historique des versions (2026-09-06) : DANS la vague, silencieux — vide si jamais rectifié
+      // ou hors périmètre (403), l'onglet n'apparaît alors pas. Le contenu d'une version se lit à la demande.
+      versionsArchivees: this.miseAJourService.versionsArchivees(id, true).pipe(catchError(() => of([] as VersionArchivee[]))),
+    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, modeMap, natureMap, modesRef, capmsRef, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions, versionsArchivees }) => {
+      this.versionsArchivees.set(versionsArchivees);
       this.typeMap.set(typeMap);
       this.localiteMap.set(localiteMap);
       this.entiteMap.set(entiteMap);

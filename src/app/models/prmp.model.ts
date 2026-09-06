@@ -132,6 +132,96 @@ export interface DiffDossier {
   lignes: LigneDiff[];
 }
 
+/** ⚠️ 2026-09-06 — ce qui a produit une version archivée (`MISE_A_JOUR` réservé, jamais servi à ce jour). */
+export type OrigineVersion = 'RECTIFICATION' | 'MISE_A_JOUR';
+
+/**
+ * ⚠️ 2026-09-06 (demande pilote, backend `6d9ba29`) — en-tête d'une **version archivée** d'un dossier :
+ * la version que chaque rectification a **remplacée**, figée au premier `PUT saisies/ppm` du cycle.
+ * `GET /api/dossiers/{id}/versions-archivees`, de la plus ancienne à la plus récente ; **liste vide**
+ * pour un dossier jamais rectifié. La version **courante** n'y figure pas : c'est le dossier lui-même
+ * (son numéro = archivées + 1). ⚠️ Ne pas confondre avec `/versions`, la chaîne des **mises à jour**.
+ */
+export interface VersionArchivee {
+  idDossier: number;
+  /** Numéro d'ordre d'archivage (1, 2, …) — clé de `/versions-archivees/{numero}`. */
+  numero: number;
+  origine: OrigineVersion;
+  /** Itération de rectification (resoumissions + 1 au moment du gel). */
+  cycle?: number;
+  /** ISO date-heure du gel. */
+  dateVersion: string;
+  /** PRMP opératrice (celle du jeton, ou la PRMP de tutelle d'un agent UGPM). */
+  idPrmpAuteur?: string;
+  nomAuteur?: string;
+  /** Login réel de l'auteur du geste. */
+  auteur?: string;
+  nbLignes: number;
+  /** En-tête du PPM au moment du gel — `null` pour la version reprise d'avant la V18. */
+  exercice?: number;
+  reference?: string;
+  signataire?: string;
+  dateSignature?: string;
+}
+
+/** Un service bénéficiaire figé (mêmes champs que `ServiceBeneficiaire`, sans identifiants). */
+export interface BeneficiaireVersion {
+  soaCode?: string;
+  numCompte?: string;
+  ancMontBenef?: number;
+  nouvMontBenef?: number;
+}
+
+/** Un lot figé (mêmes champs que `Lot`, sans identifiants). */
+export interface LotVersion {
+  designationLot?: string;
+  montLot?: number;
+  qteLot?: number;
+  uniteLot?: string;
+}
+
+/** Une date prévisionnelle figée ; `ordre` = ordre d'affichage **actuel** du processus (référentiel). */
+export interface PrevisionVersion {
+  idCapm: number;
+  ordre?: number;
+  dateDebut?: string;
+  dateFin?: string;
+}
+
+/** Une ligne de marché telle qu'elle était dans la version — mêmes champs que `Marche`, plus ses collections. */
+export interface LigneVersion {
+  idDetail: number;
+  idLigneOrigine?: number;
+  designationMarche?: string;
+  numCompte?: string;
+  montEstim?: number;
+  ancienMontEstim?: number;
+  nouvMontEstim?: number;
+  financement?: string;
+  statut?: string;
+  idNature?: number;
+  idMode?: number;
+  formeMarche?: string;
+  supprimee?: boolean;
+  justifModeDerogatoire?: string;
+  justifDelaiAmenage?: string;
+  beneficiaires: BeneficiaireVersion[];
+  lots: LotVersion[];
+  processus: PrevisionVersion[];
+}
+
+/**
+ * Réponse de `GET /api/dossiers/{id}/versions-archivees/{numero}` — contenu **complet, lecture seule**
+ * d'une version archivée (404 si le numéro n'existe pas ; toute autre méthode → 405).
+ * ⚠️ Version reprise d'avant la V18 : collections **reconstituées** depuis les empreintes, en mode
+ * dégradé (désignations de lots en minuscules, `uniteLot`/`numCompte` de bénéficiaire absents, un
+ * seul montant par bénéficiaire porté par `nouvMontBenef`) — à afficher tel quel.
+ */
+export interface VersionArchiveeDetail {
+  version: VersionArchivee;
+  lignes: LigneVersion[];
+}
+
 /**
  * Date prévisionnelle d'un marché (relation 1,N avec Marché via idDetail) — **une ligne par processus
  * CAPM** (`idCapm`), avec sa période `dateDebut`/`dateFin`. `ordre` (réponse) vient de `t_capm.ordre`.
