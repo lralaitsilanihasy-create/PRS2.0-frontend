@@ -23,9 +23,11 @@ import { PPM_CONFIG } from '../circuit/circuit-resources.config';
 export const PRMP_ROUTES: Routes = [
   { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
   {
+    // ⚠️ Demande pilote (2026-09-06) — le tableau de bord PRMP devient « Suivi des délais CNM » :
+    // tableau référence · enregistrement CNM (réception Secrétaire) · fin de traitement prévue.
     path: 'tableau-de-bord',
-    loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline),
-    data: { title: 'Mes dossiers' },
+    loadComponent: () => import('./suivi-delais').then((m) => m.SuiviDelais),
+    data: { title: 'Suivi des délais CNM' },
   },
   { path: 'a-rectifier', loadComponent: () => import('./dossiers-a-rectifier').then((m) => m.DossiersARectifier) },
   // Formulaire restreint de rectification en place (en-tête PPM + lignes marché) ; returnUrl en query param.
