@@ -72,8 +72,8 @@ interface LigneObs {
         <p class="text-muted" role="status">Chargement…</p>
       } @else {
         <!-- ⚠️ Demande pilote (2026-09-06) — MÊME tableau que la liste des dossiers (Déposés…) :
-             table-card à 7 colonnes ; « Ouvrir » déplie le détail (observations + resoumission)
-             dans une rangée pleine largeur — la ligne reste repliée par défaut (règle 2026-08-15). -->
+             table-card à 7 colonnes ; « Ouvrir » ouvre le détail (observations + resoumission)
+             en FENÊTRE MODALE (précision du jour). -->
         <div class="table-card">
           <table>
             <thead>
@@ -98,15 +98,35 @@ interface LigneObs {
                   <td>
                     <div class="td-actions actions-end">
                       <span class="ar-item__nb">{{ c.obsPv.length }} obs.</span>
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="basculer(c)" [attr.aria-expanded]="estOuvert(c)">
-                        {{ estOuvert(c) ? 'Fermer' : 'Ouvrir' }}
-                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="carteOuverte.set(c)">Ouvrir</button>
                     </div>
                   </td>
                 </tr>
-                @if (estOuvert(c)) {
-                  <tr class="ar-row-detail">
-                    <td colspan="7">
+              } @empty {
+                <tr><td colspan="7" class="empty-cell">Aucun dossier à rectifier.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <!-- ⚠️ Demande pilote (2026-09-06, précisée) — le détail s'ouvre en FENÊTRE MODALE au clic
+         sur « Ouvrir » : observations non satisfaites + resoumission, rien ne change au fond. -->
+    @if (carteOuverte(); as c) {
+      <div class="modal-backdrop" [class.closing]="closingDetail()">
+        <div class="modal modal-lg ar-modal" role="dialog" aria-modal="true"
+          [attr.aria-label]="'Rectifier — ' + (c.dossier.refeDossier || c.dossier.idDossier)"
+          appModale appModaleClicExterieur (appModaleFermer)="fermerDetail()">
+          <div class="modal-header">
+            <div class="ar-modal__titre">
+              <h2 class="modal-title">{{ c.dossier.refeDossier || ('Dossier #' + c.dossier.idDossier) }}</h2>
+              <app-statut-badge [statut]="c.dossier.statut" [label]="'À rectifier'" />
+              <span class="ar-item__nb">{{ c.obsPv.length }} observation(s) à satisfaire</span>
+            </div>
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerDetail()">✕</button>
+          </div>
+          <div class="modal-body">
                 <div class="ar-item__corps">
                   <div class="ar-item__actions">
                     <!-- Surbrillance demandée (2026-08-15) : c'est LE geste attendu de la PRMP. -->
@@ -196,17 +216,10 @@ interface LigneObs {
                     </button>
                   </div>
                 </div>
-                    </td>
-                  </tr>
-                }
-              } @empty {
-                <tr><td colspan="7" class="empty-cell">Aucun dossier à rectifier.</td></tr>
-              }
-            </tbody>
-          </table>
+          </div>
         </div>
-      }
-    </section>
+      </div>
+    }
 
     @if (confirmCle() !== null) {
       <div class="modal-backdrop" [class.closing]="closingResoumission()">
@@ -229,8 +242,10 @@ interface LigneObs {
     }
   `,
   styles: `
-    /* Rangée de détail sous la ligne du tableau : liseré ambre — c'est la zone d'action PRMP. */
-    .ar-row-detail > td { background: #fffdf6; border-left: 4px solid var(--warning-text); }
+    /* Modale du détail : large (tableau des observations), titre composé, liseré ambre d'identité. */
+    .ar-modal { width: min(1100px, 95vw); max-width: 95vw; border-left: 4px solid var(--warning-text); }
+    .ar-modal__titre { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; min-width: 0; }
+    .ar-modal__titre .modal-title { margin: 0; }
     .ar-item__nb { color: var(--warning-text); font-size: var(--text-xs); font-weight: 700; white-space: nowrap; }
     .ar-attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg, #fffbeb); border: 1px solid var(--warning-bdr, #fde68a); color: var(--warning-text, #92400e); font-size: var(--text-xs); white-space: nowrap; }
     .ar-item__corps { padding: 0.5rem 0.35rem; }
@@ -382,19 +397,13 @@ export class DossiersARectifier {
     return c.latest?.idNotification ?? c.dossier.idDossier;
   }
 
-  // ── Dépliage (2026-08-15 : cartes repliées par défaut, détail au clic) ──
-  /** idDossier des cartes dépliées. */
-  private readonly ouverts = signal<Set<number>>(new Set());
-  estOuvert(c: CarteRectif): boolean {
-    return this.ouverts().has(c.dossier.idDossier);
-  }
-  basculer(c: CarteRectif): void {
-    this.ouverts.update((s) => {
-      const n = new Set(s);
-      if (n.has(c.dossier.idDossier)) n.delete(c.dossier.idDossier);
-      else n.add(c.dossier.idDossier);
-      return n;
-    });
+  // ── Détail en modale (2026-09-06 : « Ouvrir » ouvre la fenêtre, appModale) ──
+  /** Carte dont le détail est ouvert en modale (null = fermée). */
+  readonly carteOuverte = signal<CarteRectif | null>(null);
+  /** Animation de sortie de la modale du détail. */
+  readonly closingDetail = signal(false);
+  fermerDetail(): void {
+    fermerAvecAnimation(this.closingDetail, () => this.carteOuverte.set(null));
   }
 
   /** Lignes du tableau : libellé figé décomposé (contexte / au lieu de / lire / demande libre). */
@@ -450,6 +459,7 @@ export class DossiersARectifier {
       next: () => {
         this.toast.success('Dossier resoumis au vérificateur.');
         this.saving.set(null);
+        this.carteOuverte.set(null); // le dossier quitte la liste : la modale se ferme avec lui
         this.modifications.reinitialiser(idDossier);
         this.motifs.update((mm) => {
           const n = { ...mm };

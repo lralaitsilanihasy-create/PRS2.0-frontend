@@ -9,6 +9,7 @@ import { Dossier, EchangeDto } from '../../models';
 import { DossierService, EntiteContractService, LocaliteService, ReferenceLookupService, SaisieService, SousTypeDossierService } from '../../services';
 import { MesDossiers } from '../prmp/mes-dossiers';
 import { StatutBadge } from '../../shared/circuit';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
 
 /**
  * « Dossiers vérifiés / clôturés » (Vérificateur) et « Dossiers vérifiés » (PRMP) — LECTURE SEULE.
@@ -19,7 +20,7 @@ import { StatutBadge } from '../../shared/circuit';
 @Component({
   selector: 'app-dossiers-clotures',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, StatutBadge, DatePipe],
+  imports: [RouterLink, StatutBadge, DatePipe, ModaleDirective],
   template: `
     <section class="dc">
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -66,9 +67,7 @@ import { StatutBadge } from '../../shared/circuit';
                   </td>
                   <td>
                     <div class="td-actions actions-end">
-                      <button type="button" class="btn btn-secondary btn-sm" [attr.aria-expanded]="estOuvert(d.idDossier)" (click)="basculer(d)">
-                        {{ estOuvert(d.idDossier) ? 'Fermer' : 'Ouvrir' }}
-                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirHistorique(d)">Ouvrir</button>
                       <!-- ⚠️ 2026-08-05 — versionnement : la mise à jour n'est ouverte que sur un PPM
                            dont la Commission a rendu sa décision (409 sinon) ; écran d'ACTION seul. -->
                       @if (source === 'prmp-clotures' && modeMaj() && majPossible(d)) {
@@ -82,65 +81,6 @@ import { StatutBadge } from '../../shared/circuit';
                     </div>
                   </td>
                 </tr>
-                @if (source === 'prmp-clotures' && modeMaj() && majPour() === d.idDossier && !majEnCoursPour(d)) {
-                  <tr class="dc__row-detail">
-                    <td colspan="7">
-                      <!-- Motif exigé AVANT toute création : c'est lui qui justifie la version dans l'historique. -->
-                      <div class="dc__maj">
-                        <label class="dc__maj-label" [attr.for]="'motif-' + d.idDossier">
-                          Motif de la mise à jour <span class="dc__maj-requis">obligatoire</span>
-                        </label>
-                        <textarea
-                          class="form-control"
-                          rows="2"
-                          [id]="'motif-' + d.idDossier"
-                          [value]="motifMaj()"
-                          (input)="motifMaj.set($any($event.target).value)"
-                          placeholder="Ce qui justifie cette nouvelle version du plan"
-                        ></textarea>
-                        <div class="dc__maj-actions">
-                          <button type="button" class="btn btn-secondary btn-sm" (click)="annulerMiseAJour()">Annuler</button>
-                          <button type="button" class="btn btn-primary btn-sm" [disabled]="majEnCours() || !motifMaj().trim()" (click)="demarrerMiseAJour(d)">
-                            {{ majEnCours() ? 'Création…' : 'Ouvrir la mise à jour' }}
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                }
-                @if (estOuvert(d.idDossier)) {
-                  <tr class="dc__row-detail">
-                    <td colspan="7">
-                      <div class="dc__hist">
-                        @if (chargeEnCours(d.idDossier)) {
-                          <p class="text-muted" role="status">Chargement de l'historique…</p>
-                        } @else {
-                          <h3 class="dc__hist-title">Historique des échanges</h3>
-                          @if (echangesDe(d.idDossier).length) {
-                            <ul class="dc__ech">
-                              @for (e of echangesDe(d.idDossier); track $index; let last = $last) {
-                                <li
-                                  class="dc__ech-item"
-                                  [class.dc__ech-item--rectif]="e.type === 'RECTIFICATION'"
-                                  [class.dc__ech-item--final]="last && e.obsLevees"
-                                >
-                                  <span class="dc__ech-meta cnm-mono">{{ e.date }} · {{ e.acteur }}</span>
-                                  <span class="dc__ech-label">{{ e.type === 'OBSERVATION' ? 'Observation' : 'Rectification PRMP reçue' }}</span>
-                                  <span class="dc__ech-text">{{ e.texte }}</span>
-                                  @if (e.type === 'OBSERVATION' && e.obsLevees) {
-                                    <span class="badge badge-success">{{ last ? 'Dossier clôturé — observations levées' : 'Observations levées' }}</span>
-                                  }
-                                </li>
-                              }
-                            </ul>
-                          } @else {
-                            <p class="text-muted">Aucun échange enregistré.</p>
-                          }
-                        }
-                      </div>
-                    </td>
-                  </tr>
-                }
               } @empty {
                 <tr><td colspan="7" class="empty-cell">
                   @if (modeMaj()) { Aucun plan n'est en état d'être mis à jour : la Commission doit d'abord avoir rendu sa décision. }
@@ -159,11 +99,95 @@ import { StatutBadge } from '../../shared/circuit';
           </div>
         }
       }
+
+      <!-- ⚠️ Demande pilote (2026-09-06, précisée) — l'historique s'ouvre en FENÊTRE MODALE. -->
+      @if (histoirePour(); as d) {
+        <div class="modal-backdrop">
+          <div class="modal modal-lg dcm-modal" role="dialog" aria-modal="true"
+            [attr.aria-label]="'Historique des échanges — ' + (d.refeDossier || d.idDossier)"
+            appModale appModaleClicExterieur (appModaleFermer)="histoirePour.set(null)">
+            <div class="modal-header">
+              <div class="dcm-modal__titre">
+                <h2 class="modal-title">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</h2>
+                <app-statut-badge [statut]="d.statut" />
+              </div>
+              <button type="button" class="btn-close" aria-label="Fermer" (click)="histoirePour.set(null)">✕</button>
+            </div>
+            <div class="modal-body">
+              <div class="dc__hist">
+                @if (chargeEnCours(d.idDossier)) {
+                  <p class="text-muted" role="status">Chargement de l'historique…</p>
+                } @else {
+                  <h3 class="dc__hist-title">Historique des échanges</h3>
+                  @if (echangesDe(d.idDossier).length) {
+                    <ul class="dc__ech">
+                      @for (e of echangesDe(d.idDossier); track $index; let last = $last) {
+                        <li
+                          class="dc__ech-item"
+                          [class.dc__ech-item--rectif]="e.type === 'RECTIFICATION'"
+                          [class.dc__ech-item--final]="last && e.obsLevees"
+                        >
+                          <span class="dc__ech-meta cnm-mono">{{ e.date }} · {{ e.acteur }}</span>
+                          <span class="dc__ech-label">{{ e.type === 'OBSERVATION' ? 'Observation' : 'Rectification PRMP reçue' }}</span>
+                          <span class="dc__ech-text">{{ e.texte }}</span>
+                          @if (e.type === 'OBSERVATION' && e.obsLevees) {
+                            <span class="badge badge-success">{{ last ? 'Dossier clôturé — observations levées' : 'Observations levées' }}</span>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  } @else {
+                    <p class="text-muted">Aucun échange enregistré.</p>
+                  }
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Motif exigé AVANT toute création de mise à jour — en fenêtre modale lui aussi. -->
+      @if (majDossier(); as d) {
+        <div class="modal-backdrop">
+          <div class="modal dcm-modal dcm-modal--maj" role="dialog" aria-modal="true"
+            [attr.aria-label]="'Mise à jour du PPM — ' + (d.refeDossier || d.idDossier)"
+            appModale appModaleClicExterieur (appModaleFermer)="annulerMiseAJour()">
+            <div class="modal-header">
+              <h2 class="modal-title">✎ Mettre à jour le PPM — {{ d.refeDossier || ('Dossier #' + d.idDossier) }}</h2>
+              <button type="button" class="btn-close" aria-label="Fermer" (click)="annulerMiseAJour()">✕</button>
+            </div>
+            <div class="modal-body">
+              <div class="dc__maj">
+                <label class="dc__maj-label" [attr.for]="'motif-' + d.idDossier">
+                  Motif de la mise à jour <span class="dc__maj-requis">obligatoire</span>
+                </label>
+                <textarea
+                  class="form-control"
+                  rows="3"
+                  [id]="'motif-' + d.idDossier"
+                  [value]="motifMaj()"
+                  (input)="motifMaj.set($any($event.target).value)"
+                  placeholder="Ce qui justifie cette nouvelle version du plan"
+                ></textarea>
+                <div class="dc__maj-actions">
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="annulerMiseAJour()">Annuler</button>
+                  <button type="button" class="btn btn-primary btn-sm" [disabled]="majEnCours() || !motifMaj().trim()" (click)="demarrerMiseAJour(d)">
+                    {{ majEnCours() ? 'Création…' : 'Ouvrir la mise à jour' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
     </section>
   `,
   styles: `
-    /* Rangée de détail (historique / motif de mise à jour) sous la ligne du tableau. */
-    .dc__row-detail > td { background: #fbfcff; }
+    /* Modales du détail (historique / motif de mise à jour) — larges pour le fil des échanges. */
+    .dcm-modal { width: min(1000px, 95vw); max-width: 95vw; }
+    .dcm-modal--maj { width: min(44rem, 95vw); }
+    .dcm-modal__titre { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; min-width: 0; }
+    .dcm-modal__titre .modal-title { margin: 0; }
     .dc__attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg, #fffbeb); border: 1px solid var(--warning-bdr, #fde68a); color: var(--warning-text, #92400e); font-size: var(--text-xs); white-space: nowrap; }
     .dc__hist { padding: 0.25rem 0.35rem; }
     .dc__hist-title { margin: 0 0 0.4rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
@@ -274,8 +298,13 @@ export class DossiersClotures {
   private readonly historiques = signal<Record<number, EchangeDto[]>>({});
   /** Dossiers dont le fil est en cours de chargement. */
   private readonly chargement = signal<Set<number>>(new Set());
-  /** Dossiers dépliés (plusieurs autorisés simultanément). */
-  private readonly ouverts = signal<Set<number>>(new Set());
+  /** Dossier dont l'historique des échanges est ouvert en MODALE (2026-09-06 ; null = fermée). */
+  readonly histoirePour = signal<Dossier | null>(null);
+  /** Dossier dont le motif de mise à jour est ouvert en modale (dérivé de `majPour`). */
+  readonly majDossier = computed(() => {
+    const id = this.majPour();
+    return id != null ? this.dossiers().find((d) => d.idDossier === id) ?? null : null;
+  });
   readonly pageIndex = signal(0);
   readonly totalPages = signal(0);
   private readonly pageSize = 10;
@@ -311,8 +340,8 @@ export class DossiersClotures {
 
   private charger(page: number): void {
     this.loading.set(true);
-    // Changement de page : on repart d'une liste condensée, sans fil déplié.
-    this.ouverts.set(new Set());
+    // Changement de page : la modale d'historique éventuelle ne suit pas la nouvelle page.
+    this.histoirePour.set(null);
     if (this.source === 'prmp-clotures') {
       // ⚠️ Demande user (2026-08-03) — « Vérifiés » (PRMP) couvre TOUTE la phase de vérification :
       // un dossier rectifié puis resoumis (EN_VERIFICATION) y figure, jusqu'à la clôture.
@@ -336,9 +365,6 @@ export class DossiersClotures {
     }
   }
 
-  estOuvert(id: number): boolean {
-    return this.ouverts().has(id);
-  }
   chargeEnCours(id: number): boolean {
     return this.chargement().has(id);
   }
@@ -347,21 +373,13 @@ export class DossiersClotures {
   }
 
   /**
-   * Clic sur un dossier : déplie/replie le fil (toggle). Au premier dépliage seulement, charge
+   * « Ouvrir » : ouvre l'historique en MODALE. Au premier clic seulement, charge
    * `GET /api/dossiers/{id}/historique-echanges` (jamais au chargement de la liste) ; le résultat
    * est mis en cache (échec → fil vide).
    */
-  basculer(d: Dossier): void {
+  ouvrirHistorique(d: Dossier): void {
     const id = d.idDossier;
-    const ouverts = new Set(this.ouverts());
-    if (ouverts.has(id)) {
-      ouverts.delete(id);
-      this.ouverts.set(ouverts);
-      return;
-    }
-    ouverts.add(id);
-    this.ouverts.set(ouverts);
-
+    this.histoirePour.set(d);
     if (this.historiques()[id] !== undefined || this.chargement().has(id)) {
       return;
     }
