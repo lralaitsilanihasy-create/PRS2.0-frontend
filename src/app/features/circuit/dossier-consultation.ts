@@ -145,8 +145,11 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                l'affichent déjà en tête ; ici il faisait DOUBLON (deux boutons sur le même écran).
                pecPermise=false : compteurs et passages restent, le geste disparaît. -->
           <!-- ⚠️ Demande pilote (2026-09-06, précisée 2×) — les DEUX boutons de restitution côte à
-               côte dans la même bande ; chacun ouvre sa FENÊTRE MODALE (sous-dialogue). -->
-          @if (chronoDispo() || journalVisible().length) {
+               côte dans la même bande ; chacun ouvre sa FENÊTRE MODALE (sous-dialogue).
+               Précision du 06/09 au soir : PAS de restitution pour la PRMP ni son UGPM — le
+               chronométrage et le journal sont des vues INTERNES CNM ; le client suit ses dates
+               sur « Suivi des dossiers CNM ». -->
+          @if (restitutionsVisibles() && (chronoDispo() || journalVisible().length)) {
             <div class="dc-header-droite dc-restitutions">
               @if (chronoDispo()) {
                 <button type="button" class="dc-toggle-bloc dc-chrono-titre dc-btn-chrono" (click)="chronoOuvert.set(true)">
@@ -712,6 +715,11 @@ export class DossierConsultation implements OnInit {
     const c = this.chronoDossier();
     return !!c && !!(c.taches.length || c.etapeCourante || c.datePrevisionnelleFin || c.debutCompteur);
   });
+  /**
+   * ⚠️ Demande pilote (2026-09-06) — chronométrage et journal sont des restitutions INTERNES CNM :
+   * masquées pour la PRMP et son UGPM (leur suivi des dates vit sur « Suivi des dossiers CNM »).
+   */
+  readonly restitutionsVisibles = computed(() => !['PRMP', 'UGPM'].includes(this.auth.role() ?? ''));
 
   /** La référence PPM interne (ex. « 00018/MLF/PPM/2026 ») n'est montrée qu'aux profils PRMP, UGPM et Secrétaire. */
   readonly montrerReferencePpm = computed(() => ['PRMP', 'UGPM', 'SECRETAIRE'].includes(this.auth.role() ?? ''));
