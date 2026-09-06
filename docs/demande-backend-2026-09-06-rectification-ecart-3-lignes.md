@@ -6,8 +6,9 @@
 > front livré (appariement par idDetail posé au montage, créations sans idDetail, suppressions par
 > « ✕ », gardes miroirs et messages, badge « Nouvelle » — vérifié par interception : 4 créations
 > refusées, 1 création acceptée). Nota : le diff sert le type **NOUVELLE** (pas « AJOUTEE ») —
-> celui que le front affiche déjà. ⚠️ Backend local : redémarrer pour appliquer la V19 avant toute
-> recette réelle. Trois arbitrages backend soumis au pilote (voir rapport du 06/09).
+> celui que le front affiche déjà. Backend local redémarré sur `b32db82` le 06/09 (V19 appliquée).
+> Trois arbitrages backend soumis au pilote — détaillés dans la **note de livraison backend** en fin
+> de document.
 
 **Date** : 2026-09-06 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : règle pilote du
 jour — « lors de la rectification du dossier de planification, il est interdit d'ajouter ou de
@@ -59,3 +60,68 @@ les `idDetail` omis.
 3. Suppression d'une ligne portant une observation non levée → 400 nominatif (si la proposition 3
    est retenue).
 4. Rectification à structure identique → comportement actuel inchangé (anti-régression).
+
+---
+
+## Note de livraison backend — 2026-09-06 (`PRS20`, commit `94c273b`)
+
+Les quatre points de la demande sont livrés, la proposition 3 est **retenue**. Suite complète verte
+(780 tests). Référence du contrat : `docs/api-endpoints.md` du backend (bloc « Rectification PAR IMPORT
+du PPM », § Saisies) et `docs/regles-gestion.md` (règle pilote 2026-09-06, « Rectification en attente de
+décision PRMP »). Migration Flyway **`V19`**.
+
+### Contrat du `PUT /api/saisies/ppm/{id}` en rectification
+
+- Ligne **avec `idDetail`** : mise à jour en place, inchangé. Ligne **sans `idDetail`** : **création**,
+  mêmes validations qu'à la saisie (≥ 1 processus, Σ bénéficiaires, justifications de la fiche), tracée
+  `CREATION_RECTIFICATION`. `idDetail` du dossier **absent du corps** : **retrait**, cascade complète du
+  DELETE marché (DMC, lots/tranches, bénéficiaires, prévisions, anomalies, échéances), tracé
+  `SUPPRESSION_RECTIFICATION`.
+- **Garde évaluée avant l'archivage V18 et avant toute écriture** : un refus ne laisse aucune trace,
+  pas même une version archivée.
+  - plus de 3 créations OU plus de 3 retraits → **400** : « Le PPM rectifié ajoute N ligne(s) et en
+    retire M : l'écart maximal autorisé est de 3 dans chaque sens. » ;
+  - `idDetail` **étranger au dossier** → **400** nominatif (« …référence un marché (n° X) qui n'appartient
+    pas au dossier — une ligne nouvelle s'envoie sans idDetail ») : ce n'est pas une création
+    silencieuse, c'est une erreur d'appariement ;
+  - retrait d'une ligne portant une **observation du PV non levée** (ÉMISE ou MAINTENUE) → **400**
+    nominatif (« …la ligne « … » (n° X) porte une observation du PV non levée — elle ne peut pas être
+    retirée, la rectification doit y répondre. »).
+- Les messages sont à afficher **tels quels** (`message` de l'erreur 400).
+- `POST`/`DELETE /api/marches` restent réservés au BROUILLON : seule la façade tient la borne de 3.
+
+### Ce qui ne change pas
+
+- **Versions archivées (V18)** : la version remplacée est archivée avant, telle quelle, lignes retirées
+  comprises.
+- **`/diff-rectification`** : même DTO, mêmes types — une ligne ajoutée sort en **`NOUVELLE`** (le doc
+  de demande disait « AJOUTEE » : le type réel est celui du diff des mises à jour, que le front affiche
+  déjà), une ligne retirée en **`SUPPRIMEE`** avec `idDetail` nul, libellé et `idLigneOrigine` repris de
+  la version archivée.
+- Les `idDetail` conservés continuent de porter le périmètre de l'examen et des observations.
+
+### Trois arbitrages pris sans le pilote, à lui faire valider
+
+1. **Les lignes d'examen et les observations d'une ligne retirée sont conservées** (histoire de
+   l'instruction, `t_examen_detail.ID_DETAIL` sans FK) ; seuls le marché et ses enfants métier
+   disparaissent.
+2. **Protection des observations : ce qui la rend possible, et sa limite.** Une observation « point »
+   sans ligne détaillée « Au lieu de / Lire » n'était rattachée à aucune ligne d'examen, donc à aucun
+   marché. La **V19** ajoute `t_observation_pv.ID_DETAIL_EXAMEN`, figé au snapshot du PV pour toute
+   observation « point », avec reprise des observations existantes quand une ligne détaillée le
+   permettait. Une observation **antérieure sans ligne détaillée reste irrattachable et ne protège rien**
+   — choix : mieux vaut un retrait de trop qu'un blocage sans motif visible.
+3. Une ligne **déjà supprimée logiquement** dans une version de mise à jour (`supprimee`) n'est ni comptée
+   dans l'écart ni retouchée par la rectification.
+
+### Tests livrés (`RectificationEcartIntegrationTest`)
+
+Les quatre cas demandés : écart 3/3 accepté (contenu, version archivée à 5 lignes, diff NOUVELLE ×3 /
+SUPPRIMEE ×3) ; 4 créations, 4 retraits et `idDetail` étranger refusés **sans aucune écriture** ; retrait
+d'une ligne à observation non levée refusé puis accepté une fois l'observation levée (lignes d'examen et
+observation conservées) ; structure identique inchangée.
+
+### Environnement
+
+Backend local redémarré sur `b32db82` le 06/09 : V19 appliquée sur la base de dev. Les migrations V18
+et V19 sont **idempotentes** et rejouables.
