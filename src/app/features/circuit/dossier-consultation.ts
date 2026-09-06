@@ -144,16 +144,21 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                le geste « Prendre en charge » vit sur le bandeau compact des écrans d'action, qui
                l'affichent déjà en tête ; ici il faisait DOUBLON (deux boutons sur le même écran).
                pecPermise=false : compteurs et passages restent, le geste disparaît. -->
-          @if (chronoDossier(); as chrono) {
-            @if (chrono.taches.length || chrono.etapeCourante || chrono.datePrevisionnelleFin || chrono.debutCompteur) {
-              <div class="dc-header-droite">
-                <!-- ⚠️ Demande pilote (2026-09-06, précisée) — un BOUTON ; le contenu s'ouvre en
-                     FENÊTRE MODALE (sous-dialogue) par-dessus la consultation. -->
+          <!-- ⚠️ Demande pilote (2026-09-06, précisée 2×) — les DEUX boutons de restitution côte à
+               côte dans la même bande ; chacun ouvre sa FENÊTRE MODALE (sous-dialogue). -->
+          @if (chronoDispo() || journalVisible().length) {
+            <div class="dc-header-droite dc-restitutions">
+              @if (chronoDispo()) {
                 <button type="button" class="dc-toggle-bloc dc-chrono-titre" (click)="chronoOuvert.set(true)">
                   <span aria-hidden="true">⏱</span> Chronométrage &amp; délais…
                 </button>
-              </div>
-            }
+              }
+              @if (journalVisible().length) {
+                <button type="button" class="dc-toggle-bloc dc-chrono-titre" (click)="journalOuvert.set(true)">
+                  <span aria-hidden="true">🕘</span> Journal des actions… ({{ journalVisible().length }})
+                </button>
+              }
+            </div>
           }
           </div>
         </div>
@@ -398,19 +403,6 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
 
           <!-- Journal des actions (spec « Mandats PRMP ») : qui a agi, quand et sous quel mandat.
                L'OPÉRATEUR d'une action peut différer de la PRMP d'attribution (figée) — il est alors marqué. -->
-          @if (journalVisible().length) {
-            <div class="dc-section">
-              <div class="dc-section-head">
-                <!-- ⚠️ Demande pilote (2026-09-06, précisée) — un BOUTON ; le journal s'ouvre en
-                     FENÊTRE MODALE (sous-dialogue). -->
-                <button type="button" class="dc-toggle-bloc section-block-title" (click)="journalOuvert.set(true)">
-                  <div class="section-icon">🕘</div>
-                  <span class="section-label">Journal des actions…</span>
-                  <span class="section-count">{{ journalVisible().length }} action(s)</span>
-                </button>
-              </div>
-            </div>
-          }
           }
         </div>
 
@@ -564,8 +556,9 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
     /* Titres-boutons des restitutions (2026-09-06) : l'apparence du titre, le geste en plus. */
     .dc-toggle-bloc { appearance: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; text-align: left; }
     .dc-toggle-bloc:focus-visible { outline: 2px solid var(--p-500); outline-offset: 2px; border-radius: 4px; }
-    button.dc-chrono-titre { display: block; width: 100%; margin-bottom: 0; }
-    button.section-block-title { display: flex; align-items: center; }
+    button.dc-chrono-titre { display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 0; }
+    /* Bande des restitutions : les deux boutons côte à côte (demande pilote 2026-09-06, 2ᵉ). */
+    .dc-restitutions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 1.5rem; }
     /* Sous-dialogues des restitutions : larges (tables), corps défilant. */
     .dc-sousmodal { width: min(1100px, 95vw); max-width: 95vw; }
     .dc-sousmodal__corps { overflow: auto; }
@@ -663,6 +656,11 @@ export class DossierConsultation implements OnInit {
    */
   readonly chronoOuvert = signal(false);
   readonly journalOuvert = signal(false);
+  /** Le chronométrage a-t-il quelque chose à montrer ? (conditionne son bouton dans la bande) */
+  readonly chronoDispo = computed(() => {
+    const c = this.chronoDossier();
+    return !!c && !!(c.taches.length || c.etapeCourante || c.datePrevisionnelleFin || c.debutCompteur);
+  });
 
   /** La référence PPM interne (ex. « 00018/MLF/PPM/2026 ») n'est montrée qu'aux profils PRMP, UGPM et Secrétaire. */
   readonly montrerReferencePpm = computed(() => ['PRMP', 'UGPM', 'SECRETAIRE'].includes(this.auth.role() ?? ''));
