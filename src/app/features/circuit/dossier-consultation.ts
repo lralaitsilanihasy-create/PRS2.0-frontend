@@ -289,7 +289,47 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                         @if (vue.detail.version.dateSignature) { · signé le {{ vue.detail.version.dateSignature | date: 'dd/MM/yyyy' }} }
                       </span>
                     </div>
-                    <app-ppm-marches-table [marches]="vue.marches" [beneficiaires]="vue.beneficiaires" [previsions]="vue.previsions" />
+                    <!-- ⚠️ Demande pilote (2026-09-06) — les COMPOSANTES de la version archivée :
+                         fiche de présentation et AGPM DÉRIVÉS des lignes figées, par les MÊMES
+                         fonctions pures que le dossier courant. (Les pièces jointes ne se versionnent
+                         pas : l'onglet Pièces garde originaux ET versions corrigées, rien ne s'y perd.) -->
+                    <div class="onglets-dossier dc-hist-sousonglets" role="tablist" aria-label="Composantes de la version affichée">
+                      <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletVersion() === 'plan'"
+                        [attr.aria-selected]="ongletVersion() === 'plan'" (click)="ongletVersion.set('plan')">
+                        Plan de passation <span class="onglets-dossier__n">{{ vue.marches.length }}</span>
+                      </button>
+                      <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletVersion() === 'fiche'"
+                        [attr.aria-selected]="ongletVersion() === 'fiche'" (click)="ongletVersion.set('fiche')">
+                        Fiche de présentation <span class="onglets-dossier__n">{{ ficheVersion()?.nbMarchesConcernes ?? 0 }}</span>
+                      </button>
+                      @if (agpmVersion().length) {
+                        <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletVersion() === 'agpm'"
+                          [attr.aria-selected]="ongletVersion() === 'agpm'" (click)="ongletVersion.set('agpm')">
+                          Projet d'AGPM <span class="onglets-dossier__n">{{ agpmVersion().length }}</span>
+                        </button>
+                      }
+                    </div>
+                    @if (ongletVersion() === 'plan') {
+                      <app-ppm-marches-table [marches]="vue.marches" [beneficiaires]="vue.beneficiaires" [previsions]="vue.previsions" />
+                    }
+                    @if (ongletVersion() === 'fiche') {
+                      @if (ficheVersion(); as fiche) {
+                        <app-fiche-presentation-doc
+                          [fiche]="fiche"
+                          [exercice]="vue.detail.version.exercice ?? ppm()?.exercice"
+                          [libelleVersion]="'Version n° ' + vue.detail.version.numero + ' (archivée)'"
+                        />
+                      }
+                    }
+                    @if (ongletVersion() === 'agpm') {
+                      <app-agpm-doc
+                        [lignes]="agpmVersion()"
+                        [exercice]="vue.detail.version.exercice ?? ppm()?.exercice"
+                        [entite]="entiteLabel()"
+                        [signataire]="vue.detail.version.signataire ?? ppm()?.signataire"
+                        [dateInitiale]="vue.detail.version.dateSignature ?? ppm()?.dateSignature"
+                      />
+                    }
                   }
                 </div>
               </div>
@@ -490,6 +530,9 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
     .dc-hist__courante { background: var(--success-bg); color: var(--success-text); }
     .dc-hist__archivee { background: var(--n-100); color: var(--n-500); }
     .dc-hist-bandeau { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; font-size: 12.5px; color: var(--n-500); }
+    /* Sous-onglets des composantes d'une version archivée (2026-09-06) : mêmes classes partagées,
+       en plus discret que la barre principale du dossier. */
+    .dc-hist-sousonglets { margin: 0 0 10px; }
     .dc {
       width: 100%;
       /* Jamais plus large que la zone utile du backdrop (100 % = viewport − padding), quel que soit le zoom. */
@@ -735,18 +778,42 @@ export class DossierConsultation implements OnInit {
   readonly versionVue = signal<VueVersionArchivee | null>(null);
   /** Une version archivée est immuable : chargée une fois, gardée pour la durée de la consultation. */
   private readonly versionsChargees = new Map<number, VueVersionArchivee>();
+  /**
+   * ⚠️ Demande pilote (2026-09-06) — COMPOSANTES de la version archivée : sous-onglet actif
+   * (plan / fiche / AGPM) et documents DÉRIVÉS des lignes figées, par les mêmes fonctions pures
+   * que le dossier courant. Rouvert sur le plan à chaque changement de version.
+   */
+  readonly ongletVersion = signal<'plan' | 'fiche' | 'agpm'>('plan');
+  readonly ficheVersion = computed(() => {
+    const vue = this.versionVue();
+    return vue ? calculerFichePresentation(vue.marches, vue.previsions, this.modesRef(), this.capmsRef()) : null;
+  });
+  readonly agpmVersion = computed(() => {
+    const vue = this.versionVue();
+    return vue
+      ? calculerAgpm(
+          vue.marches,
+          vue.previsions,
+          this.modesRef(),
+          this.capmsRef(),
+          new Map([...this.natureMap()].map(([k, v]) => [Number(k), v])),
+        )
+      : [];
+  });
 
   afficherVersionCourante(): void {
     this.versionAffichee.set(null);
     this.versionVue.set(null);
     this.versionErreur.set(false);
     this.versionChargement.set(false);
+    this.ongletVersion.set('plan');
   }
 
   /** Affiche une version archivée : depuis le cache si déjà lue, sinon un GET (indicateur + reprise). */
   afficherVersion(v: VersionArchivee): void {
     this.versionAffichee.set(v.numero);
     this.versionErreur.set(false);
+    this.ongletVersion.set('plan');
     const connue = this.versionsChargees.get(v.numero);
     if (connue) {
       this.versionVue.set(connue);
