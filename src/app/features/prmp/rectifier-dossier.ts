@@ -204,11 +204,12 @@ import { DossierModificationStore } from './dossier-modification.store';
             référence actuels conservés. <strong>Rien n'est enregistré avant validation.</strong>
           </div>
           @if (!ecartOk()) {
+            <!-- ⚠️ Règle pilote (2026-09-06, précisée) : le PDF est la SEULE voie de rectification
+                 des lignes — l'écart se corrige dans le DOCUMENT, jamais dans la grille. -->
             <div class="alert alert-danger" role="alert">
               Le PPM rectifié ajoute {{ nbCreations() }} ligne(s) et en retire {{ nbSuppressions() }} :
-              l'écart maximal autorisé est de <strong>3 dans chaque sens</strong>. Ajustez la grille
-              (« ✕ » retire une ligne, « + Ajouter une ligne » en crée une) ou corrigez le document
-              puis réimportez-le.
+              l'écart maximal autorisé est de <strong>3 dans chaque sens</strong>. Corrigez le
+              document PDF puis réimportez-le.
             </div>
           } @else if (nbCreations() || nbSuppressions()) {
             <div class="alert alert-info">
@@ -231,6 +232,22 @@ import { DossierModificationStore } from './dossier-modification.store';
               mode="import"
             />
           }
+          <!-- ⚠️ Règle pilote (2026-09-06) : la SEULE saisie permise hors import — la justification
+               GLOBALE de la fiche de présentation (les justifications par ligne se saisissent dans
+               la grille). Exigée par le serveur (400) si la fiche comporte des marchés dérogatoires,
+               délais aménagés ou contrats-cadres. -->
+          <div class="form-group rd-justif">
+            <label class="form-label" for="rd-justif-fiche">Justification de la fiche de présentation (globale)</label>
+            <textarea
+              id="rd-justif-fiche"
+              class="form-control"
+              rows="2"
+              [value]="justifFiche()"
+              (input)="justifFiche.set($any($event.target).value)"
+              placeholder="Justification commune des marchés dérogatoires / délais aménagés / contrats-cadres de la fiche"
+            ></textarea>
+            <span class="form-hint">Seule saisie permise en dehors de l'import du PDF — avec les justifications par ligne de la grille.</span>
+          </div>
           @if (error(); as e) { <p class="form-error" role="alert">{{ e }}</p> }
           <div class="rd-foot">
             <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="annulerImport()">Annuler l'import</button>
@@ -338,6 +355,8 @@ export class RectifierDossier {
   /** idPiece dont la version corrigée est en cours d'envoi (null sinon). */
   readonly uploadPiece = signal<number | null>(null);
   private readonly returnUrl = signal('/prmp/a-rectifier');
+  /** ⚠️ Règle pilote (2026-09-06) : justification GLOBALE de la fiche — seule saisie hors import. */
+  readonly justifFiche = signal('');
 
   // — Référentiels de la grille partagée —
   readonly natures = signal<Nature[]>([]);
@@ -424,6 +443,8 @@ export class RectifierDossier {
         this.capms.set(capms);
         const ppm = ppms.find((p) => p.idDossier === this.idDossier) ?? null;
         this.ppm.set(ppm);
+        // Justification globale de la fiche : pré-remplie de l'existante (seule saisie hors import).
+        this.justifFiche.set(ppm?.justificationFiche ?? '');
         if (ppm) {
           this.marchesActuels.set(
             marches.filter((m) => m.idPpm === ppm.idPpm).sort((a, b) => (a.idDetail ?? 0) - (b.idDetail ?? 0)),
@@ -677,6 +698,9 @@ export class RectifierDossier {
       signataire: p.signataire,
       reference: p.reference,
       marches: lignes,
+      // Justification globale de la fiche (seule saisie hors import) — exigée par la garde V13
+      // si la fiche comporte des dérogatoires / délais aménagés / contrats-cadres.
+      justificationFiche: this.justifFiche().trim() || undefined,
     };
     this.error.set(null);
     this.saving.set(true);

@@ -69,7 +69,11 @@ export interface ModificationChamp {
     }
 
     <div class="sd__lignes-head">
-      <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterMarche()">+ Ajouter une ligne</button>
+      <!-- ⚠️ Règle pilote (2026-09-06) : en mode IMPORT, le PDF est la SEULE source des lignes —
+           pas d'ajout manuel (l'écart de structure se corrige dans le document, pas dans la grille). -->
+      @if (!isImport()) {
+        <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterMarche()">+ Ajouter une ligne</button>
+      }
     </div>
     @if (!marcheControls().length) {
       <p class="cnm-muted">Aucun marché. Vous pouvez enregistrer sans marché et en ajouter plus tard.</p>
