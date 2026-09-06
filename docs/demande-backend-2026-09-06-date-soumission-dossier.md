@@ -1,8 +1,9 @@
 # Demande backend — Servir la date de SOUMISSION sur le DTO dossier
 
 **Date** : 2026-09-06 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : demande pilote —
-le « Suivi des dossiers CNM » (PRMP) gagne une colonne **Soumission** entre la référence et
-l'enregistrement CNM.
+le « Suivi des dossiers CNM » (PRMP) gagne une colonne **« Dépôt du dossier »** entre la référence
+et l'enregistrement CNM. Terme métier précisé par le pilote : **la date de soumission EST la date
+de dépôt du dossier** — même donnée, le contrat garde le nom `dateSoumission`.
 
 ## Constat
 
