@@ -127,9 +127,12 @@ interface ApercuDossier {
           <div class="page-subtitle">Domaine PRMP</div>
           <h1 class="page-title">Saisir &amp; soumettre un dossier</h1>
         </div>
-        <!-- Retour aux cartes « Mes dossiers » (PRMP seulement — l'UGPM n'a pas cet écran). -->
+        <!-- Retour de navigation : la PRMP vers ses cartes « Mes dossiers », l'UGPM (qui n'a pas cet
+             écran) vers « Mes brouillons » — même bouton, apparence alignée (demande pilote 2026-09-07). -->
         @if (estPrmp()) {
           <a class="btn btn-retour-hub" routerLink="/prmp/dossiers">← Mes dossiers</a>
+        } @else {
+          <a class="btn btn-retour-hub" routerLink="/prmp/mes-brouillons">← Mes brouillons</a>
         }
       </header>
 
