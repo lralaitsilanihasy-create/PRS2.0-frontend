@@ -85,7 +85,7 @@ interface Echange {
         <p class="text-muted">Dossier introuvable ou hors de votre périmètre.</p>
       } @else {
         <div class="vf__grid">
-          <div class="card vf__details">
+          <div class="card vf__details ppm-table-large">
             <app-dossier-consultation [dossier]="dossier()!" [embedded]="true" />
           </div>
 
@@ -285,8 +285,12 @@ interface Echange {
     /* ⚠️ 2026-08-06 — à gauche la consultation du dossier (tableau des marchés, 14 colonnes), à droite
        le panneau de décision : la part du dossier passe de 1,3 à 1,9 pour que ses en-têtes respirent. */
     .vf__grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 0.75rem; align-items: start; }
-    .vf__right { display: flex; flex-direction: column; gap: 0.75rem; }
-    .vf__details { overflow: hidden; }
+    /* ⚠️ Demande pilote (2026-09-07) — le tableau du plan est trop serré dans la colonne : la variante
+       globale « ppm-table-large » lui rend une largeur lisible (min-width, en-tête collant), et l'hôte
+       borné porte les deux ascenseurs. Les cartes de droite sont FIGÉES (sticky) : Contexte + décision
+       restent visibles pendant qu'on parcourt le tableau. */
+    .vf__details { max-height: calc(100vh - 14rem); overflow: auto; }
+    .vf__right { display: flex; flex-direction: column; gap: 0.75rem; position: sticky; top: 0.75rem; align-self: start; max-height: calc(100vh - 14rem); overflow-y: auto; }
     .vf__info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
     .vf__info > div { display: flex; gap: 0.5rem; align-items: baseline; }
     .vf__info dt { flex: 0 0 9rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); }
@@ -314,7 +318,11 @@ interface Echange {
     /* Décision transmise à SIGMP : constat vert (spec navette). */
     .vf__sigmp-ok { margin: 0 0 0.5rem; padding: 0.5rem 0.75rem; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--radius-md); color: #15803D; font-size: var(--text-sm); font-weight: 600; }
     .confirm-modal { max-width: 30rem; }
-    @media (max-width: 60rem) { .vf__grid { grid-template-columns: 1fr; } }
+    @media (max-width: 60rem) {
+      .vf__grid { grid-template-columns: 1fr; }
+      /* Empilé : plus de hauteur bornée ni de sticky (sinon double ascenseur peu ergonomique). */
+      .vf__details, .vf__right { max-height: none; overflow: visible; position: static; }
+    }
   `,
 })
 export class VerifierDossier {

@@ -564,6 +564,11 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
       box-shadow: none;
       border-radius: 0;
     }
+    /* ⚠️ Embarquée (seul l'écran Vérificateur) : le corps NE crée PAS son propre contexte de
+       défilement — c'est le panneau HÔTE (borné, .vf__details) qui porte l'ascenseur, sinon l'en-tête
+       collant du tableau (variante ppm-table-large) s'accrocherait à ce corps-ci et disparaîtrait au
+       défilement de l'hôte. */
+    .dc--embedded .dc-body { overflow: visible; }
 
     /* En-tête */
     .dc-header { padding: 18px 24px 16px; border-bottom: 0.5px solid var(--n-200); flex-shrink: 0; }
