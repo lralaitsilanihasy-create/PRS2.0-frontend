@@ -87,7 +87,10 @@ export interface ModificationChamp {
             @if (statutParUid().size) { <col style="width: 6%" /> }
             <col style="width: 7%" /><col style="width: 13%" /><col style="width: 8%" /><col style="width: 8%" />
             <col style="width: 7%" /><col style="width: 6%" /><col style="width: 7%" /><col style="width: 8%" />
-            <col style="width: 6%" /><col style="width: 8%" /><col style="width: 8%" /><col style="width: 11%" />
+            <col style="width: 6%" /><col style="width: 8%" /><col style="width: 8%" />
+            <!-- ⚠️ Dates prévisionnelles (demande pilote 2026-09-07) : même présentation que le brouillon. -->
+            <col style="width: 6%" /><col style="width: 6%" /><col style="width: 6%" />
+            <col style="width: 11%" />
           </colgroup>
           <!-- scope : en-tête à DEUX niveaux (rowspan/colspan) — sans lui, la relation entre les
                colonnes et les champs est indevinable en navigation cellule par cellule (AUDIT.md A3). -->
@@ -107,6 +110,11 @@ export interface ModificationChamp {
               <th rowspan="2" scope="col">Forme</th>
               <th rowspan="2" scope="col">Financement</th>
               <th colspan="4" scope="colgroup">Informations sur le bénéficiaire</th>
+              <!-- ⚠️ Dates prévisionnelles (demande pilote 2026-09-07) : dérivées des processus CAPM,
+                   en LECTURE — même présentation que le tableau du brouillon (édition via le bouton CAPM). -->
+              <th rowspan="2" scope="col">Date prév. de lancement</th>
+              <th rowspan="2" scope="col">Date prév. ouverture des plis</th>
+              <th rowspan="2" scope="col">Date prév. d'attribution</th>
               <th rowspan="2" scope="col">Actions</th>
             </tr>
             <tr>
@@ -156,6 +164,10 @@ export interface ModificationChamp {
                     </div>
                   </td>
                   @if (first) {
+                    <!-- Dates prévisionnelles (lecture) — dérivées des processus CAPM de la ligne. -->
+                    <td [attr.rowspan]="rowspanBenef(g)" class="sd__c-date">{{ datePrev(g, 'LANCEMENT') }}</td>
+                    <td [attr.rowspan]="rowspanBenef(g)" class="sd__c-date">{{ datePrev(g, 'OUVERTURE') }}</td>
+                    <td [attr.rowspan]="rowspanBenef(g)" class="sd__c-date">{{ datePrev(g, 'ATTRIBUTION') }}</td>
                     <td [attr.rowspan]="rowspanBenef(g)" class="sd__marche-actions">
                       @if (!isImport()) {
                         <button type="button" class="btn btn-secondary btn-sm" (click)="ajouterBeneficiaire(g)">+ bénéficiaire</button>
@@ -382,6 +394,8 @@ export interface ModificationChamp {
     .sd__marche-actions .btn { white-space: normal; }
     .sd__dates-manq { color: var(--warning-text); font-size: var(--text-sm); font-weight: 700; }
     .sd__num { text-align: center; font-weight: 700; color: var(--n-400); font-variant-numeric: tabular-nums; }
+    /* Dates prévisionnelles (lecture, dérivées des processus CAPM) — demande pilote 2026-09-07. */
+    .sd__c-date { text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--n-600); }
     /* Statut de version (colonne optionnelle) — même code couleur que l'aperçu du diff. */
     .psg-statut {
       display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
@@ -723,6 +737,24 @@ export class PpmSaisieGrid {
   }
   datesSaisies(g: FormGroup): boolean {
     return this.nbProcessus(g) > 0;
+  }
+  /**
+   * ⚠️ Dates prévisionnelles (demande pilote 2026-09-07) — même dérivation que le tableau du
+   * brouillon : la date de DÉBUT du processus CAPM dont le libellé contient le mot-clé
+   * (LANCEMENT / OUVERTURE / ATTRIBUTION), formatée dd/MM/yyyy ; '—' si absent. Lecture seule
+   * (l'édition passe par le bouton CAPM).
+   */
+  datePrev(g: FormGroup, motCle: string): string {
+    const libelles = new Map(this.capms().map((c) => [c.idCapm, (c.libelleProcessus ?? '').toUpperCase()]));
+    for (const p of (g.get('processus') as FormArray).controls) {
+      const idCapm = p.get('idCapm')?.value as number | null;
+      const dateDebut = p.get('dateDebut')?.value as string | null;
+      if (idCapm != null && dateDebut && (libelles.get(idCapm) ?? '').includes(motCle)) {
+        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateDebut);
+        return m ? `${m[3]}/${m[2]}/${m[1]}` : dateDebut;
+      }
+    }
+    return '—';
   }
   procControls(): FormGroup[] {
     return this.datesForm.controls as FormGroup[];
