@@ -233,7 +233,7 @@ export interface ModificationChamp {
           ✓ {{ nbValidees() }} / {{ nbAValider() }} ligne(s) signalée(s) validée(s)@if (nbAValiderRestantes()) { — validez chaque ligne (bouton « Valider ») pour enregistrer. }
         </span>
         @if (nbAValiderRestantes()) {
-          <button type="button" class="btn btn-success btn-sm" (click)="toutValider()">✓ Tout valider</button>
+          <button type="button" class="btn btn-sm sd__valider-btn" (click)="toutValider()">✓ Tout valider</button>
         } @else {
           <button type="button" class="btn btn-ghost btn-sm" (click)="toutInvalider()">↩ Tout dé-valider</button>
         }
