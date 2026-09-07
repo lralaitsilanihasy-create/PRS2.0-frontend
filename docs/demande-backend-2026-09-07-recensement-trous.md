@@ -1,5 +1,19 @@
 # Recensement des trous backend ouverts — au 07/09/2026
 
+> ✅ **LES TROIS TROUS LIVRÉS le 07/09** (backend `399c1c0`, `RecensementTrousIntegrationTest` couvre
+> les 3 cas, sans migration) :
+> - **T1** — retrait dérivé au journal, **contre-recetté en réel** (voir la demande dédiée) ✅
+> - **T2** — `POST /api/sigmp-transmissions` clôt l'occurrence VERIFICATION ouverte si elle existe (et
+>   n'en invente jamais). Le front appelait DÉJÀ le bon endpoint (`sigmp-transmissions`) — aucun code
+>   à changer. Recette réelle du chemin FAV-direct à jouer sur le prochain circuit complet (00002).
+> - **T3** — arbitrage rendu : l'import PDF reste **permissif** (un PDF ne porte pas de justification),
+>   la garde est posée au `POST /api/dossiers/{id}/soumettre` (400 par champ, mêmes qu'à la saisie).
+>   Le front affiche déjà ces 400 — l'écran de mise à jour par import doit s'attendre à un refus à la
+>   soumission tant que la grille n'est pas complétée. À vérifier à la recette 00002.
+>
+> ⚠️ Coquille corrigée : le chemin réel de la transmission est **`/api/sigmp-transmissions`** (et non
+> `/transmissions-sigmp`).
+
 > Vue consolidée à l'usage de la session backend. Trois trous appellent une correction serveur ;
 > deux points sont des **arbitrages à valider par le pilote** (aucune action backend tant que non
 > tranché) ; les correctifs déjà faits côté front sont rappelés pour éviter les doublons.
@@ -23,7 +37,7 @@
   l'occurrence de chronométrage **VERIFICATION** ouverte n'est jamais close — `DATE_FIN` reste vide
   à jamais. Le chemin MAINTENUE (avec passage) clôt bien VERIFICATION : **seul** le chemin FAV direct
   laisse la tâche ouverte.
-- **Demande** : au `POST /transmissions-sigmp`, **clore l'occurrence VERIFICATION encore ouverte**
+- **Demande** : au `POST /api/sigmp-transmissions`, **clore l'occurrence VERIFICATION encore ouverte**
   du dossier (comme le ferait un passage vérificateur) avant/à l'ouverture de l'étape SIGMP.
 - **Mitigation front déjà en place** (`f121dbc`) : `tacheEnCours` = tâche de l'ÉTAPE COURANTE seule,
   une occurrence étrangère restée ouverte ne bloque plus la prise en charge — mais la donnée de

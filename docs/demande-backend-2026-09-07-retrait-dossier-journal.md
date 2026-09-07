@@ -1,5 +1,12 @@
 # Signalement backend — Le retrait d'un dossier n'apparaît pas dans le journal des actions
 
+> ✅ **CLÔTURÉ le 07/09** — backend livré (`399c1c0`) et **contre-recetté en réel** sur #100299
+> (retrofit, sans rien rejouer) : le journal renvoie désormais 7 actions, dont `DEMANDE_RETRAIT`
+> (08:23:03, opérateur PRMP, « motif : Test ») et `RETRAIT_ACCEPTE` (08:23:50, opérateur PRES001,
+> « PRET_DISPATCH → BROUILLON » — l'état réel correctement dérivé). Les trois types proposés ont été
+> retenus tels quels ; les libellés front (`7c86e4a`) s'activent seuls. Rendu vérifié à l'écran
+> (profil Président, modale « Journal des actions »).
+
 **Date** : 2026-09-07 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote sur
 un dossier réel (00002/MTP/PPM/2026, id **100299**) dont le journal saute d'une réception à une
 nouvelle soumission sans mentionner le retrait qui a permis ce retour en brouillon.
