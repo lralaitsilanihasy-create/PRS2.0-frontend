@@ -4,10 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, of } from 'rxjs';
 
-import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { ModaleDirective } from '../../shared/a11y/modale.directive';
-import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { Dossier, Notification, ObservationPv } from '../../models';
 import {
   DossierService,
@@ -18,7 +15,7 @@ import {
   ReferenceLookupService,
   SousTypeDossierService,
 } from '../../services';
-import { ChronometrageDossier, StatutBadge, decomposerObservation } from '../../shared/circuit';
+import { StatutBadge } from '../../shared/circuit';
 import { DossierModificationStore } from './dossier-modification.store';
 
 /** Une carte « à rectifier » = un dossier EN_ATTENTE_DECISION_PRMP + ses observations non satisfaites. */
@@ -32,25 +29,17 @@ interface CarteRectif {
   obsPv: ObservationPv[];
 }
 
-/** Ligne du tableau des observations : libellé figé décomposé en colonnes. */
-interface LigneObs {
-  obs: ObservationPv;
-  contexte: string;
-  auLieuDe: string | null;
-  lire: string | null;
-  demande: string | null;
-}
-
 /**
  * « Dossiers à rectifier » (PRMP) : **une seule carte par dossier** EN_ATTENTE_DECISION_PRMP, alimentée par
  * `GET /api/dossiers?statut=EN_ATTENTE_DECISION_PRMP`. Les observations du vérificateur (notifications
  * OBSERVATION_VERIFICATION du dossier) sont **regroupées** dans un historique trié décroissant, la plus
- * récente mise en évidence. La PRMP saisit un motif de rectification puis resoumet le dossier.
+ * récente mise en évidence. ⚠️ Écran unique (2026-09-07) : « Ouvrir » mène directement à l'écran
+ * « Rectifier le dossier » (prise en charge + import + description + resoumettre) — plus de modale.
  */
 @Component({
   selector: 'app-dossiers-a-rectifier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ModaleDirective, StatutBadge, DatePipe, ChronometrageDossier],
+  imports: [RouterLink, StatutBadge, DatePipe],
   template: `
     <section>
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -71,9 +60,9 @@ interface LigneObs {
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
       } @else {
-        <!-- ⚠️ Demande pilote (2026-09-06) — MÊME tableau que la liste des dossiers (Déposés…) :
-             table-card à 7 colonnes ; « Ouvrir » ouvre le détail (observations + resoumission)
-             en FENÊTRE MODALE (précision du jour). -->
+        <!-- MÊME tableau que la liste des dossiers (Déposés…) : table-card à 7 colonnes.
+             ⚠️ Écran unique (2026-09-07) — « Ouvrir » mène à l'écran « Rectifier le dossier »
+             (prise en charge + import + description + resoumettre), plus de modale. -->
         <div class="table-card">
           <table>
             <thead>
@@ -98,7 +87,7 @@ interface LigneObs {
                   <td>
                     <div class="td-actions actions-end">
                       <span class="ar-item__nb">{{ c.obsPv.length }} obs.</span>
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="actionAutorisee.set(false); carteOuverte.set(c)">Ouvrir</button>
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="modifierDossier(c)">Ouvrir</button>
                     </div>
                   </td>
                 </tr>
@@ -111,188 +100,13 @@ interface LigneObs {
       }
     </section>
 
-    <!-- ⚠️ Demande pilote (2026-09-06, précisée) — le détail s'ouvre en FENÊTRE MODALE au clic
-         sur « Ouvrir » : observations non satisfaites + resoumission, rien ne change au fond. -->
-    @if (carteOuverte(); as c) {
-      <div class="modal-backdrop" [class.closing]="closingDetail()">
-        <div class="modal modal-lg ar-modal" role="dialog" aria-modal="true"
-          [attr.aria-label]="'Rectifier — ' + (c.dossier.refeDossier || c.dossier.idDossier)"
-          appModale appModaleClicExterieur (appModaleFermer)="fermerDetail()">
-          <div class="modal-header">
-            <div class="ar-modal__titre">
-              <h2 class="modal-title">{{ c.dossier.refeDossier || ('Dossier #' + c.dossier.idDossier) }}</h2>
-              <app-statut-badge [statut]="c.dossier.statut" [label]="'À rectifier'" />
-              <span class="ar-item__nb">{{ c.obsPv.length }} observation(s) à satisfaire</span>
-            </div>
-            <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerDetail()">✕</button>
-          </div>
-          <div class="modal-body">
-                <!-- ⚠️ Demande pilote (2026-09-07) — « aucune action sans prise en charge » étendue à
-                     la PRMP : prise en charge de l'étape RECTIFICATION_PRMP (backend 9439700) avant de
-                     rectifier ou resoumettre. Verrou UI en miroir des gardes serveur (409). -->
-                <app-chronometrage-dossier [idDossier]="c.dossier.idDossier" [compact]="true" (actionAutorisee)="actionAutorisee.set($event)" />
-                @if (!actionAutorisee()) {
-                  <div class="ar-verrou" role="status">
-                    🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en
-                    charge marque le début de votre rectification et alimente le chronométrage.
-                  </div>
-                }
-                <div class="ar-item__corps" [class.ar-corps--verrouille]="!actionAutorisee()">
-                  <div class="ar-item__actions">
-                    <!-- Surbrillance demandée (2026-08-15) : c'est LE geste attendu de la PRMP. -->
-                    <button type="button" class="btn ar-item__modifier" [disabled]="!actionAutorisee()" (click)="modifierDossier(c)">
-                      ✎ Modifier le dossier
-                    </button>
-                    @if (c.latest) {
-                      <span class="ar-item__meta">Dernière transmission : {{ (c.latest.dateEnvoi | date: 'dd/MM/yyyy HH:mm') || '—' }} · vérificateur {{ verificateurDe(c.latest) }}</span>
-                    }
-                  </div>
-
-                  <h3 class="ar-hist__title">Observations du PV restées non satisfaites</h3>
-                  @if (lignesObs(c).length) {
-                    <div class="table-card ar-table">
-                      <table>
-                        <!-- Largeurs imposées (2026-08-15) : « Au lieu de » / « Lire » élargies, « Observation »
-                             resserrée (le libellé passe à la ligne — table-layout fixed + overflow-wrap). -->
-                        <colgroup>
-                          <col style="width: 4%" />
-                          <col style="width: 11%" />
-                          <col style="width: 33%" />
-                          <col style="width: 19%" />
-                          <col style="width: 19%" />
-                          <col style="width: 14%" />
-                        </colgroup>
-                        <thead>
-                          <tr>
-                            <th scope="col">N°</th>
-                            <th scope="col">Origine</th>
-                            <th scope="col">Observation</th>
-                            <th scope="col">Au lieu de</th>
-                            <th scope="col">Lire</th>
-                            <th scope="col">Statut</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (l of lignesObs(c); track l.obs.idObservationPv; let i = $index) {
-                            <tr>
-                              <td class="cnm-mono">{{ i + 1 }}</td>
-                              <td>{{ l.obs.source === 'PIECE' ? 'Pièce jointe' : 'Grille de contrôle' }}</td>
-                              <td>
-                                {{ l.contexte }}
-                                @if (l.demande) { <div class="ar-table__demande">{{ l.demande }}</div> }
-                              </td>
-                              <td class="ar-table__avant">{{ l.auLieuDe ?? '—' }}</td>
-                              <td class="ar-table__apres">{{ l.lire ?? '—' }}</td>
-                              <td>
-                                <span class="ar-table__statut" [class.ar-table__statut--maintenue]="l.obs.statut === 'MAINTENUE'">
-                                  {{ statutObs(l.obs) }}
-                                </span>
-                                @if (l.obs.statut === 'MAINTENUE' && l.obs.precision) {
-                                  <div class="ar-table__precision">« {{ l.obs.precision }} »</div>
-                                }
-                              </td>
-                            </tr>
-                          }
-                        </tbody>
-                      </table>
-                    </div>
-                  } @else {
-                    <p class="text-muted">Aucune observation restante — resoumettez après modification.</p>
-                  }
-
-                  <div class="form-group ar-form">
-                    <label class="form-label required" [attr.for]="'dar-rectifications-' + cleDe(c)">Description des rectifications effectuées</label>
-                    <textarea
-                      class="form-control"
-                      rows="2"
-                      maxlength="255"
-                      [id]="'dar-rectifications-' + cleDe(c)"
-                      [value]="motif(cleDe(c))"
-                      (input)="setMotif(cleDe(c), $any($event.target).value)"
-                    ></textarea>
-                    @if (errPour(cleDe(c))) { <span class="form-error">{{ errPour(cleDe(c)) }}</span> }
-                  </div>
-                  <div class="ar-item__foot">
-                    @if (!estModifie(c)) {
-                      <span class="form-hint">Importez d'abord le PPM rectifié (« Modifier le dossier ») : la resoumission ne s'ouvre qu'après son enregistrement.</span>
-                    }
-                    <button
-                      type="button"
-                      class="btn btn-primary btn-sm"
-                      [disabled]="saving() === cleDe(c) || !estModifie(c) || !actionAutorisee()"
-                      (click)="demanderResoumission(c)"
-                    >
-                      {{ saving() === cleDe(c) ? 'Resoumission…' : 'Resoumettre le dossier' }}
-                    </button>
-                  </div>
-                </div>
-          </div>
-        </div>
-      </div>
-    }
-
-    @if (confirmCle() !== null) {
-      <div class="modal-backdrop" [class.closing]="closingResoumission()">
-        <div class="modal confirm-modal" role="dialog" aria-modal="true" aria-label="Confirmation de resoumission" appModale appModaleClicExterieur (appModaleFermer)="fermerResoumissionAnime()">
-          <div class="modal-header-plain">
-            <span class="modal-title">Resoumettre au vérificateur ?</span>
-            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerResoumissionAnime()">✕</button>
-          </div>
-          <div class="modal-body">
-            <p>Ce dossier sera renvoyé au vérificateur avec votre motif de rectification.</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline" (click)="fermerResoumissionAnime()">Annuler</button>
-            <button type="button" class="btn btn-primary" (click)="confirmerResoumission()">
-              Confirmer la resoumission
-            </button>
-          </div>
-        </div>
-      </div>
-    }
   `,
   styles: `
-    /* Modale du détail : large (tableau des observations), titre composé, liseré ambre d'identité. */
-    .ar-modal { width: min(1100px, 95vw); max-width: 95vw; border-left: 4px solid var(--warning-text); }
-    .ar-modal__titre { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; min-width: 0; }
-    .ar-modal__titre .modal-title { margin: 0; }
     .ar-item__nb { color: var(--warning-text); font-size: var(--text-xs); font-weight: 700; white-space: nowrap; }
     .ar-attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg, #fffbeb); border: 1px solid var(--warning-bdr, #fde68a); color: var(--warning-text, #92400e); font-size: var(--text-xs); white-space: nowrap; }
-    .ar-item__corps { padding: 0.5rem 0.35rem; }
-    /* Verrou « aucune action sans prise en charge » (2026-09-07) : bandeau + corps grisé/inerte avant PEC. */
-    .ar-verrou { margin: 0.6rem 0; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
-    .ar-corps--verrouille { pointer-events: none; opacity: 0.45; }
-    .ar-item__actions { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
-    /* ⚠️ Surbrillance demandée (2026-08-15) : bouton rempli ambre + halo — impossible à manquer. */
-    .ar-item__modifier {
-      background: #F59E0B; color: #fff; font-weight: 800; border: 0;
-      box-shadow: 0 0 0 3px #FDE68A, 0 6px 14px rgba(180, 83, 9, 0.35);
-    }
-    .ar-item__modifier:hover { background: #D97706; color: #fff; box-shadow: 0 0 0 3px #FCD34D, 0 6px 14px rgba(180, 83, 9, 0.45); }
-    .ar-item__meta { color: var(--n-400); font-size: var(--text-xs); }
-    .ar-hist__title { margin: 0 0 0.4rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
-    /* Tableau des observations non satisfaites — largeurs du colgroup respectées, contenu à la ligne. */
-    .ar-table table { width: 100%; table-layout: fixed; }
-    .ar-table td { overflow-wrap: anywhere; white-space: normal; vertical-align: top; }
-    .ar-table__demande { color: var(--n-500); font-size: var(--text-xs); margin-top: 0.15rem; }
-    .ar-table__avant { color: #B91C1C; text-decoration: line-through; }
-    .ar-table__apres { color: #15803D; font-weight: 600; }
-    .ar-table__statut { display: inline-block; font-size: var(--text-xs); font-weight: 700; padding: 0.1rem 0.55rem; border-radius: 999px; background: var(--c-50); color: var(--n-500); white-space: nowrap; }
-    .ar-table__statut--maintenue { background: var(--warning-bg); color: var(--warning-text); }
-    .ar-table__precision { color: var(--warning-text); font-size: var(--text-xs); margin-top: 0.2rem; }
-    .ar-form { margin-top: 0.75rem; }
-    .ar-item__foot { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; }
-    .confirm-modal { max-width: 28rem; }
   `,
 })
 export class DossiersARectifier {
-  /** Animation de sortie du modal (voir `fermerAvecAnimation`). */
-  readonly closingResoumission = signal(false);
-  /** Ferme le modal en jouant l'animation de sortie (voile, Échap, boutons). */
-  fermerResoumissionAnime(): void {
-    fermerAvecAnimation(this.closingResoumission, () => this.annulerResoumission());
-  }
-
   private readonly dossierService = inject(DossierService);
   private readonly notificationService = inject(NotificationService);
   private readonly observationPvService = inject(ObservationPvService);
@@ -319,14 +133,6 @@ export class DossiersARectifier {
     return t ? this.cartes().filter((c) => c.dossier.idTypeDossier === t) : this.cartes();
   });
 
-  /** Saisie du motif par carte (clé = cleDe(c), unique par dossier). */
-  readonly motifs = signal<Record<number, string>>({});
-  /** Erreurs de resoumission par carte (clé = cleDe(c)). */
-  readonly errors = signal<Record<number, string>>({});
-  /** Clé de carte en cours de resoumission (désactive son bouton). */
-  readonly saving = signal<number | null>(null);
-  /** Clé de la carte dont la confirmation est ouverte (null = fermée). */
-  readonly confirmCle = signal<number | null>(null);
 
   constructor() {
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
@@ -406,98 +212,6 @@ export class DossiersARectifier {
     });
   }
 
-  /** Clé d'isolement du champ motif d'une carte = id de la dernière notification, sinon id du dossier. */
-  cleDe(c: CarteRectif): number {
-    return c.latest?.idNotification ?? c.dossier.idDossier;
-  }
-
-  // ── Détail en modale (2026-09-06 : « Ouvrir » ouvre la fenêtre, appModale) ──
-  /** Carte dont le détail est ouvert en modale (null = fermée). */
-  readonly carteOuverte = signal<CarteRectif | null>(null);
-  /** ⚠️ « Aucune action sans prise en charge » (2026-09-07) — émis par le widget chronométrage :
-      false tant que la PRMP n'a pas pris en charge l'étape RECTIFICATION_PRMP. Verrouille modifier/resoumettre. */
-  readonly actionAutorisee = signal(false);
-  /** Animation de sortie de la modale du détail. */
-  readonly closingDetail = signal(false);
-  fermerDetail(): void {
-    fermerAvecAnimation(this.closingDetail, () => this.carteOuverte.set(null));
-  }
-
-  /** Lignes du tableau : libellé figé décomposé (contexte / au lieu de / lire / demande libre). */
-  lignesObs(c: CarteRectif): LigneObs[] {
-    return c.obsPv.map((obs) => ({ obs, ...decomposerObservation(obs.libelle ?? '') }));
-  }
-  statutObs(o: ObservationPv): string {
-    if (o.statut === 'MAINTENUE') return `Maintenue${o.iteration != null ? ' (itér. ' + o.iteration + ')' : ''}`;
-    return 'Émise';
-  }
-
-  motif(cle: number): string {
-    return this.motifs()[cle] ?? '';
-  }
-  setMotif(cle: number, v: string): void {
-    this.motifs.update((m) => ({ ...m, [cle]: v }));
-  }
-  errPour(cle: number): string | undefined {
-    return this.errors()[cle];
-  }
-
-  /** Vérifie le motif de CETTE carte puis ouvre la confirmation. */
-  demanderResoumission(c: CarteRectif): void {
-    const cle = this.cleDe(c);
-    if (!this.estModifie(c)) {
-      this.errors.update((e) => ({ ...e, [cle]: "Importez d'abord le PPM rectifié (« Modifier le dossier ») avant de resoumettre." }));
-      return;
-    }
-    if (!this.motif(cle).trim()) {
-      this.errors.update((e) => ({ ...e, [cle]: 'Veuillez décrire les corrections apportées.' }));
-      return;
-    }
-    this.errors.update((e) => ({ ...e, [cle]: '' }));
-    this.confirmCle.set(cle);
-  }
-  annulerResoumission(): void {
-    this.confirmCle.set(null);
-  }
-  /** Resoumet le dossier de la carte confirmée avec SON propre motif (EN_ATTENTE_DECISION_PRMP → EN_VERIFICATION). */
-  confirmerResoumission(): void {
-    const cle = this.confirmCle();
-    if (cle == null) {
-      return;
-    }
-    const c = this.cartes().find((x) => this.cleDe(x) === cle);
-    this.confirmCle.set(null);
-    if (!c) {
-      return;
-    }
-    const idDossier = c.dossier.idDossier;
-    this.saving.set(cle);
-    this.dossierService.resoumettre(idDossier, { motifRectification: this.motif(cle).trim() }).subscribe({
-      next: () => {
-        this.toast.success('Dossier resoumis au vérificateur.');
-        this.saving.set(null);
-        this.carteOuverte.set(null); // le dossier quitte la liste : la modale se ferme avec lui
-        this.modifications.reinitialiser(idDossier);
-        this.motifs.update((mm) => {
-          const n = { ...mm };
-          delete n[cle];
-          return n;
-        });
-        this.charger();
-      },
-      error: (e: ApiError) => {
-        this.saving.set(null);
-        const msg =
-          e.status === 400
-            ? 'Le motif de rectification est obligatoire.'
-            : e.status === 409
-              ? "Ce dossier n'est pas en attente de rectification."
-              : e.message || 'Erreur lors de la resoumission.';
-        this.errors.update((er) => ({ ...er, [cle]: msg }));
-      },
-    });
-  }
-
   entiteLabel(d: Dossier): string {
     return d.idEntiteContract != null
       ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract
@@ -509,12 +223,6 @@ export class DossiersARectifier {
   /** Libellé du sous-type (repli sur le code ; « — » si non renseigné). */
   sousTypeLabel(d: Dossier): string {
     return d.idSousType ? this.sousTypeMap().get(d.idSousType) ?? d.idSousType : '—';
-  }
-
-  /** Matricule du vérificateur extrait du corps de la notification (« le vérificateur X a relevé… »). */
-  verificateurDe(m: Notification): string {
-    const match = /le vérificateur (\S+) a relevé/.exec(m.corps ?? '');
-    return match ? match[1] : '—';
   }
 
 }

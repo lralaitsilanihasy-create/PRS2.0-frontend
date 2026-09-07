@@ -43,7 +43,7 @@ import {
   ServiceBeneficiaireService,
   SoaBeneficiaireService,
 } from '../../services';
-import { ObservationPvCard } from '../../shared/circuit';
+import { ChronometrageDossier, ObservationPvCard } from '../../shared/circuit';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { ModificationChamp, PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
 import { entiteImportDifferente } from '../../shared/prmp/entite-import';
@@ -67,7 +67,7 @@ import { DossierModificationStore } from './dossier-modification.store';
 @Component({
   selector: 'app-rectifier-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ObservationPvCard, PpmSaisieGrid, DpmReimportRefuse],
+  imports: [ObservationPvCard, PpmSaisieGrid, DpmReimportRefuse, ChronometrageDossier],
   template: `
     <section>
       <header class="page-header">
@@ -94,6 +94,17 @@ import { DossierModificationStore } from './dossier-modification.store';
           rectifié (PDF)</strong> : c'est l'import qui enregistre la rectification. Le dossier reste
           « à rectifier » jusqu'à la resoumission.
         </div>
+
+        <!-- ⚠️ Demande pilote (2026-09-07) — « aucune action sans prise en charge » : la rectification
+             (import) et la resoumission ne s'ouvrent qu'après la prise en charge de l'étape
+             RECTIFICATION_PRMP. Verrou UI en miroir des gardes serveur 409. -->
+        <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" (actionAutorisee)="actionAutorisee.set($event)" />
+        @if (!actionAutorisee()) {
+          <div class="rd-verrou" role="status">
+            🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en charge
+            marque le début de votre rectification et alimente le chronométrage.
+          </div>
+        }
 
         <!-- ⚠️ Spec « circuit des observations FAVR » (2026-08-02) — rectifications demandées = les
              observations du PV, PÉRIMÈTRE FIGÉ (aucune exigence nouvelle possible). Lecture seule. -->
@@ -175,7 +186,7 @@ import { DossierModificationStore } from './dossier-modification.store';
 
         @if (!importApercu()) {
           <!-- Import du PPM rectifié : SEULE voie de rectification (zone d'import mise en valeur). -->
-          <div class="card rd-form rd-import">
+          <div class="card rd-form rd-import" [class.rd-corps--verrouille]="!actionAutorisee()">
             <h2 class="rd-section"><span class="rd-step">3</span> Importer le PPM rectifié (PDF)</h2>
             <label class="rd-drop" [class.rd-drop--busy]="importEnCours()">
               <span class="rd-drop__icone" aria-hidden="true">{{ importEnCours() ? '⏳' : '📄' }}</span>
@@ -252,11 +263,33 @@ import { DossierModificationStore } from './dossier-modification.store';
           <div class="rd-foot">
             <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="annulerImport()">Annuler l'import</button>
             <button type="button" class="btn btn-primary"
-              [disabled]="saving() || !importPret() || !ecartOk()"
+              [disabled]="saving() || !importPret() || !ecartOk() || !actionAutorisee()"
               [title]="ecartOk() ? (importPret() ? '' : 'Validez chaque ligne signalée et corrigez les montants incohérents.') : 'Au plus 3 ajouts et 3 retraits de lignes par rapport au dossier examiné.'"
               (click)="enregistrerRectification()">
               {{ saving() ? 'Enregistrement…' : '💾 Enregistrer la rectification' }}
             </button>
+          </div>
+        }
+
+        <!-- ⚠️ Écran unique (2026-09-07, demande pilote) — après l'enregistrement de la rectification,
+             la PRMP décrit et resoumet ICI même : plus de retour au modal « Dossiers à rectifier ». -->
+        @if (rectifieEnregistre()) {
+          <div class="card rd-form">
+            <h2 class="rd-section"><span class="rd-step">4</span> Décrire et resoumettre</h2>
+            <p class="alert alert-success">✓ Rectification enregistrée depuis le PPM importé.</p>
+            <div class="form-group">
+              <label class="form-label required" for="rd-motif">Description des rectifications effectuées</label>
+              <textarea id="rd-motif" class="form-control" rows="2" maxlength="255"
+                [value]="motifRectif()" (input)="motifRectif.set($any($event.target).value)"></textarea>
+              @if (errResoum(); as e) { <span class="form-error">{{ e }}</span> }
+            </div>
+            <div class="rd-foot">
+              <button type="button" class="btn btn-primary"
+                [disabled]="resoumission() || !motifRectif().trim() || !actionAutorisee()"
+                (click)="resoumettre()">
+                {{ resoumission() ? 'Resoumission…' : 'Resoumettre le dossier' }}
+              </button>
+            </div>
           </div>
         }
       } @else {
@@ -282,6 +315,9 @@ import { DossierModificationStore } from './dossier-modification.store';
     .rd-chip--warn { background: var(--warning-bg); color: var(--warning-text); }
     .rd-chip--ok { background: #DCFCE7; color: #15803D; }
     .rd-foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
+    /* Verrou « aucune action sans prise en charge » (2026-09-07). */
+    .rd-verrou { margin: 0.6rem 0 0.75rem; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
+    .rd-corps--verrouille { pointer-events: none; opacity: 0.45; }
     /* Zone d'import du PPM rectifié (étape 3) — appel à l'action central. */
     .rd-drop { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1.75rem 1.5rem; border: 2px dashed var(--c-300); border-radius: var(--radius-lg); background: var(--c-50); cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s; }
     .rd-drop:hover { border-color: var(--c-600); background: var(--c-100); }
@@ -329,7 +365,8 @@ export class RectifierDossier {
   private readonly lookups = inject(ReferenceLookupService);
   private readonly factory = inject(PpmFormFactory);
 
-  private readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
+  /** Public : lu dans le template (binding du widget de chronométrage). */
+  readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -346,6 +383,18 @@ export class RectifierDossier {
   readonly statutsImport = signal<Map<number, string>>(new Map());
   readonly nbLignesActuelles = computed(() => this.marchesActuels().length);
   readonly error = signal<string | null>(null);
+  /** ⚠️ « Aucune action sans prise en charge » (2026-09-07) — émis par le widget chronométrage :
+      false tant que la PRMP n'a pas pris en charge l'étape RECTIFICATION_PRMP. Verrouille import + resoumettre. */
+  readonly actionAutorisee = signal(false);
+  /** ⚠️ Écran unique (2026-09-07) — passé à true après l'enregistrement de la rectification (PUT saisies/ppm) :
+      révèle « Décrire et resoumettre » sur CE même écran, plus de retour au modal. */
+  readonly rectifieEnregistre = signal(false);
+  /** Saisie de la description des rectifications (envoyée à la resoumission). */
+  readonly motifRectif = signal('');
+  /** Resoumission en cours. */
+  readonly resoumission = signal(false);
+  /** Erreur de resoumission (400/409 affichés en clair). */
+  readonly errResoum = signal<string | null>(null);
   /** ⚠️ Spec observations FAVR (2026-08-02) — observations du PV (périmètre figé), lecture seule. */
   readonly observations = signal<ObservationPv[]>([]);
   /** Pièces jointes du dossier (la rectification couvre aussi les pièces — versions corrigées). */
@@ -709,14 +758,40 @@ export class RectifierDossier {
         this.saving.set(false);
         // ⚠️ Règle durcie (2026-09-06) : c'est CE succès — et lui seul — qui ouvre « Resoumettre ».
         this.modifications.marquerRectifie(this.idDossier);
-        this.toast.success(
-          'Rectification enregistrée depuis le PPM importé — resoumettez le dossier en vérification depuis « Dossiers à rectifier ».',
-        );
-        this.router.navigateByUrl(this.returnUrl());
+        // ⚠️ Écran unique (2026-09-07) : on RESTE sur l'écran et on révèle « Décrire et resoumettre »
+        // (plus de retour au modal). L'aperçu importé reste affiché au-dessus, en trace.
+        this.rectifieEnregistre.set(true);
+        this.toast.success('Rectification enregistrée — décrivez-la puis resoumettez le dossier ci-dessous.');
       },
       error: (e: ApiError) => {
         this.saving.set(false);
         this.error.set(e.message || 'Erreur lors de l\'enregistrement de la rectification.');
+      },
+    });
+  }
+
+  /**
+   * ⚠️ Écran unique (2026-09-07) — resoumettre le dossier rectifié DEPUIS cet écran : la description
+   * est obligatoire (miroir du 400 serveur), la resoumission rouvre la vérification. Retour à la
+   * liste « Dossiers à rectifier » au succès. Gardée serveur (409) si non pris en charge.
+   */
+  resoumettre(): void {
+    const motif = this.motifRectif().trim();
+    if (!motif) {
+      this.errResoum.set('La description des rectifications effectuées est obligatoire.');
+      return;
+    }
+    this.errResoum.set(null);
+    this.resoumission.set(true);
+    this.dossierService.resoumettre(this.idDossier, { motifRectification: motif }).subscribe({
+      next: () => {
+        this.resoumission.set(false);
+        this.toast.success('Dossier resoumis — il repart en vérification.');
+        this.router.navigateByUrl(this.returnUrl());
+      },
+      error: (e: ApiError) => {
+        this.resoumission.set(false);
+        this.errResoum.set(e.message || 'Resoumission impossible.');
       },
     });
   }
