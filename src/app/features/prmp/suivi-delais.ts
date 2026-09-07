@@ -54,10 +54,18 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   <td class="cnm-mono">{{ d.dateSoumission ? (d.dateSoumission | date: 'dd/MM/yyyy') : '—' }}</td>
                   <!-- Enregistrement = réception du dossier par le Secrétaire (premier passage). -->
                   <td class="cnm-mono">{{ enregistrement(d) ? (enregistrement(d) | date: 'dd/MM/yyyy') : '—' }}</td>
+                  <!-- ⚠️ Demande pilote (2026-09-07) : la « Fin traitement CNM » est une PROJECTION serveur
+                       (aujourd'hui + durée standard restante) présente dès la soumission. On la MASQUE tant que
+                       le dossier n'est pas ENREGISTRÉ : le traitement CNM n'a pas encore commencé (le compteur
+                       démarre à l'enregistrement = debutCompteur), afficher une fin avant serait trompeur. -->
                   <td class="cnm-mono">
-                    {{ d.datePrevisionnelleFin ? (d.datePrevisionnelleFin | date: 'dd/MM/yyyy') : '—' }}
-                    @if (d.attentePrmp) {
-                      <span class="sdl-attente" title="En attente de votre action (compléments, pièces ou rectification) — la date prévisionnelle glisse tant que le dossier ne revient pas à la CNM.">⏸ à vous</span>
+                    @if (enregistrement(d)) {
+                      {{ d.datePrevisionnelleFin ? (d.datePrevisionnelleFin | date: 'dd/MM/yyyy') : '—' }}
+                      @if (d.attentePrmp) {
+                        <span class="sdl-attente" title="En attente de votre action (compléments, pièces ou rectification) — la date prévisionnelle glisse tant que le dossier ne revient pas à la CNM.">⏸ à vous</span>
+                      }
+                    } @else {
+                      —
                     }
                   </td>
                   <td>
