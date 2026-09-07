@@ -1,5 +1,21 @@
 # Demande au backend `PRS20` — 7 septembre 2026 — PPM-AGPM pour tout appel d'offres + référence dossier ET numéro de PV reflétant le sous-type
 
+> ✅ **LIVRÉ le 07/09 (migration V21) et CONTRE-RECETTÉ en réel.** Trois causes distinctes corrigées :
+> (1) le drapeau `declencheAgpm` reste la source de vérité (administrable) — V21 le pose sur TOUTE la
+> famille « appel d'offres » (ouvert, restreint, préqualification…) et un mode créé à la volée le dérive
+> de son libellé ; l'appel à manifestation d'intérêt en est exclu. (2) La référence initiale du PPM
+> codait `PPM` en dur (posée à la création, avant tout marché) ; (3) elle était reprise telle quelle par
+> la réception. Le segment de type est désormais **recomposé à chaque bascule du sous-type, sans
+> consommer de numéro**, repéré par sa valeur (pas sa position — les deux formats de réf. sont couverts).
+> **Périmètre/cohérence** : la référence suit le sous-type **tant qu'aucun PV n'est signé, puis gèle**
+> (document imprimé/cité) ; dossier + réf. PPM + réception + PV mis à jour **d'un seul geste** (seul écart
+> résiduel : rectification d'un dossier déjà passé en commission). `refePv` dérive bien du `refeDossier`
+> (insertion « /PV », **sans** recomposer de code) — confirmé. Reprise V21 sur #100299 (PV « projet
+> accepté ») vérifiée en réel côté front : dossier=`00002/MTP/PPM-AGPM/2026`, PV=`00002/MTP/PPM-AGPM/PV/2026`,
+> ancien segment disparu, et la **jointure PV↔dossier retombe exactement** sur la réf. du dossier
+> (écran Projets de PV : les deux références alignées). 11 tests backend (dont les 4 de la recette, la
+> bascule dans les deux sens sans consommation de numéro, le gel après signature, la recomposition à l'unité).
+
 **Date** : 2026-09-07 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote sur
 #100299 — le dossier est de sous-type **PPM-AGPM** mais sa référence porte le segment **PPM**.
 
