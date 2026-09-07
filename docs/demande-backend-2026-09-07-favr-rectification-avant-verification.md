@@ -42,7 +42,9 @@ Examen (Membre, FAVR) → Visa (P/CC) → Cosignature
    → PRMP/UGPM rectifie sur la base des observations, puis VALIDE (resoumet)
    → EN_VERIFICATION  (1er passage du vérificateur = APRÈS rectification)
        · VÉRIFICATEUR NOTIFIÉ ici, pas avant
-       · « Levée » DÉSORMAIS POSSIBLE dès ce passage (le rappel a déjà eu lieu)
+       · CHOIX RÉEL dès ce 1er passage entre MAINTENUE et LEVÉE (les DEUX disponibles, le dossier
+         étant déjà rectifié) : LEVÉE si la rectification satisfait → SIGMP ; MAINTENUE sinon
+         → nouveau retour PRMP pour rectification (la boucle continue)
    → transmission SIGMP → archivage → CLOTURE
 ```
 
