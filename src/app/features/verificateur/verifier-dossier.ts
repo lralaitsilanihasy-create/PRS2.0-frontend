@@ -304,7 +304,10 @@ interface Echange {
     .vf__ech-item--rectif { border-left-color: var(--warning-text); }
     .vf__ech-meta { color: var(--n-400); font-size: var(--text-xs); }
     .vf__ech-text { font-size: var(--text-sm); }
-    .vf__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; }
+    /* ⚠️ Demande pilote (2026-09-07) — le pied d'action reste TOUJOURS visible : épinglé en bas du
+       panneau droit (qui défile), sinon « Enregistrer le passage » tombe sous le pli quand la liste
+       d'observations est longue. Fond opaque pour ne pas laisser transparaître le contenu défilé. */
+    .vf__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; position: sticky; bottom: 0; background: #fff; padding-bottom: 0.25rem; }
     .vf__alert { margin: 0; font-size: var(--text-sm); background: var(--warning-bg); color: var(--warning-text); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); }
     /* ⚠️ Spec observations FAVR — liste des observations du PV (cartes partagées + décisions projetées). */
     .vf__obs { list-style: none; margin: 0.5rem 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
