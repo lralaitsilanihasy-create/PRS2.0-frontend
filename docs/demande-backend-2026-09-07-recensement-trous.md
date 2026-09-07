@@ -5,7 +5,9 @@
 > - **T1** — retrait dérivé au journal, **contre-recetté en réel** (voir la demande dédiée) ✅
 > - **T2** — `POST /api/sigmp-transmissions` clôt l'occurrence VERIFICATION ouverte si elle existe (et
 >   n'en invente jamais). Le front appelait DÉJÀ le bon endpoint (`sigmp-transmissions`) — aucun code
->   à changer. Recette réelle du chemin FAV-direct à jouer sur le prochain circuit complet (00002).
+>   à changer. ✅ **CONTRE-RECETTÉ RÉEL 07/09** (dossier jetable 100303 mené en circuit FAV complet
+>   jusqu'à CLOTURE) : occurrence VERIFICATION `dateFin:null` AVANT la transmission, `dateFin` posée
+>   APRÈS → l'occurrence se clôt.
 > - **T3** — arbitrage rendu : l'import PDF reste **permissif** (un PDF ne porte pas de justification),
 >   la garde est posée au `POST /api/dossiers/{id}/soumettre` (400 par champ, mêmes qu'à la saisie).
 >   Le front affiche déjà ces 400 — l'écran de mise à jour par import doit s'attendre à un refus à la
