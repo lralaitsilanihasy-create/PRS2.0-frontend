@@ -126,7 +126,10 @@ export type EtapeCircuit =
   | 'COSIGNATURE'
   | 'VERIFICATION'
   | 'TRANSMISSION_SIGMP'
-  | 'ARCHIVAGE';
+  | 'ARCHIVAGE'
+  // ⚠️ 2026-09-07 — prise en charge de la RECTIFICATION par la PRMP (état EN_ATTENTE_DECISION_PRMP,
+  // porteur PRMP, hors compteur net CNM). Sert le verrou « aucune action sans prise en charge ».
+  | 'RECTIFICATION_PRMP';
 
 /** Libellés d'affichage des étapes (le référentiel des délais sert aussi les siens, `libelle`). */
 export const ETAPE_CIRCUIT_LABELS: Record<EtapeCircuit, string> = {
@@ -138,6 +141,7 @@ export const ETAPE_CIRCUIT_LABELS: Record<EtapeCircuit, string> = {
   VERIFICATION: 'Vérification',
   TRANSMISSION_SIGMP: 'Transmission SIGMP',
   ARCHIVAGE: 'Archivage',
+  RECTIFICATION_PRMP: 'Rectification PRMP',
 };
 
 /**
@@ -154,6 +158,7 @@ export const ETAPE_CIRCUIT_PORTEURS: Record<EtapeCircuit, Role> = {
   VERIFICATION: 'VERIFICATEUR',
   TRANSMISSION_SIGMP: 'VERIFICATEUR',
   ARCHIVAGE: 'ASSISTANT_CONTROLEUR',
+  RECTIFICATION_PRMP: 'PRMP',
 };
 
 /**

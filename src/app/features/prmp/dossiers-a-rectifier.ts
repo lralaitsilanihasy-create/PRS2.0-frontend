@@ -18,7 +18,7 @@ import {
   ReferenceLookupService,
   SousTypeDossierService,
 } from '../../services';
-import { StatutBadge, decomposerObservation } from '../../shared/circuit';
+import { ChronometrageDossier, StatutBadge, decomposerObservation } from '../../shared/circuit';
 import { DossierModificationStore } from './dossier-modification.store';
 
 /** Une carte « à rectifier » = un dossier EN_ATTENTE_DECISION_PRMP + ses observations non satisfaites. */
@@ -50,7 +50,7 @@ interface LigneObs {
 @Component({
   selector: 'app-dossiers-a-rectifier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ModaleDirective, StatutBadge, DatePipe],
+  imports: [RouterLink, ModaleDirective, StatutBadge, DatePipe, ChronometrageDossier],
   template: `
     <section>
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -98,7 +98,7 @@ interface LigneObs {
                   <td>
                     <div class="td-actions actions-end">
                       <span class="ar-item__nb">{{ c.obsPv.length }} obs.</span>
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="carteOuverte.set(c)">Ouvrir</button>
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="actionAutorisee.set(false); carteOuverte.set(c)">Ouvrir</button>
                     </div>
                   </td>
                 </tr>
@@ -127,10 +127,20 @@ interface LigneObs {
             <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerDetail()">✕</button>
           </div>
           <div class="modal-body">
-                <div class="ar-item__corps">
+                <!-- ⚠️ Demande pilote (2026-09-07) — « aucune action sans prise en charge » étendue à
+                     la PRMP : prise en charge de l'étape RECTIFICATION_PRMP (backend 9439700) avant de
+                     rectifier ou resoumettre. Verrou UI en miroir des gardes serveur (409). -->
+                <app-chronometrage-dossier [idDossier]="c.dossier.idDossier" [compact]="true" (actionAutorisee)="actionAutorisee.set($event)" />
+                @if (!actionAutorisee()) {
+                  <div class="ar-verrou" role="status">
+                    🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en
+                    charge marque le début de votre rectification et alimente le chronométrage.
+                  </div>
+                }
+                <div class="ar-item__corps" [class.ar-corps--verrouille]="!actionAutorisee()">
                   <div class="ar-item__actions">
                     <!-- Surbrillance demandée (2026-08-15) : c'est LE geste attendu de la PRMP. -->
-                    <button type="button" class="btn ar-item__modifier" (click)="modifierDossier(c)">
+                    <button type="button" class="btn ar-item__modifier" [disabled]="!actionAutorisee()" (click)="modifierDossier(c)">
                       ✎ Modifier le dossier
                     </button>
                     @if (c.latest) {
@@ -209,7 +219,7 @@ interface LigneObs {
                     <button
                       type="button"
                       class="btn btn-primary btn-sm"
-                      [disabled]="saving() === cleDe(c) || !estModifie(c)"
+                      [disabled]="saving() === cleDe(c) || !estModifie(c) || !actionAutorisee()"
                       (click)="demanderResoumission(c)"
                     >
                       {{ saving() === cleDe(c) ? 'Resoumission…' : 'Resoumettre le dossier' }}
@@ -249,6 +259,9 @@ interface LigneObs {
     .ar-item__nb { color: var(--warning-text); font-size: var(--text-xs); font-weight: 700; white-space: nowrap; }
     .ar-attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg, #fffbeb); border: 1px solid var(--warning-bdr, #fde68a); color: var(--warning-text, #92400e); font-size: var(--text-xs); white-space: nowrap; }
     .ar-item__corps { padding: 0.5rem 0.35rem; }
+    /* Verrou « aucune action sans prise en charge » (2026-09-07) : bandeau + corps grisé/inerte avant PEC. */
+    .ar-verrou { margin: 0.6rem 0; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
+    .ar-corps--verrouille { pointer-events: none; opacity: 0.45; }
     .ar-item__actions { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
     /* ⚠️ Surbrillance demandée (2026-08-15) : bouton rempli ambre + halo — impossible à manquer. */
     .ar-item__modifier {
@@ -401,6 +414,9 @@ export class DossiersARectifier {
   // ── Détail en modale (2026-09-06 : « Ouvrir » ouvre la fenêtre, appModale) ──
   /** Carte dont le détail est ouvert en modale (null = fermée). */
   readonly carteOuverte = signal<CarteRectif | null>(null);
+  /** ⚠️ « Aucune action sans prise en charge » (2026-09-07) — émis par le widget chronométrage :
+      false tant que la PRMP n'a pas pris en charge l'étape RECTIFICATION_PRMP. Verrouille modifier/resoumettre. */
+  readonly actionAutorisee = signal(false);
   /** Animation de sortie de la modale du détail. */
   readonly closingDetail = signal(false);
   fermerDetail(): void {

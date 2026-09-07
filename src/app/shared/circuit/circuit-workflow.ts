@@ -35,6 +35,8 @@ const RANG_ETAPE_CHRONO: Record<string, number> = {
   VERIFICATION: 3,
   TRANSMISSION_SIGMP: 3,
   ARCHIVAGE: 2,
+  // Rectification par la PRMP (client) : acte transversal, visible de tous comme les actes PRMP (rang 0).
+  RECTIFICATION_PRMP: 0,
 };
 
 /**

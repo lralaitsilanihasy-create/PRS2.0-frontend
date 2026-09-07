@@ -36,7 +36,7 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
       <div class="chrono" [class.chrono--compact]="compact()">
         <!-- État courant + prise en charge -->
         <div class="chrono__etat">
-          @if (c.attentePrmp) {
+          @if (c.attentePrmp && !estEtapePorteePrmp()) {
             <span class="chrono__attente" role="status">
               ⏸ En attente de la PRMP — aucune tâche CNM ne court ; la date prévisionnelle glisse
               tant que la PRMP n'a pas rendu la main.
@@ -368,7 +368,15 @@ export class ChronometrageDossier {
    */
   readonly peutPrendreEnCharge = computed(() => {
     const etape = this.chrono()?.etapeCourante;
-    if (!etape || this.chrono()?.attentePrmp) {
+    if (!etape) {
+      return false;
+    }
+    // La PRMP (le client) ne porte pas les étapes CNM : si la balle est chez elle SUR UNE ÉTAPE
+    // NON-PRMP, aucun geste. ⚠️ Exception (2026-09-07) : `RECTIFICATION_PRMP` est PORTÉE par la PRMP —
+    // elle DOIT s'y prendre en charge (le reste de la méthode tranche via `acteursAttendus`, liste
+    // close servie par le DTO). Sans cette levée, le widget masquerait le bouton et autoriserait
+    // l'action sans prise en charge — l'inverse de la garde voulue.
+    if (this.chrono()?.attentePrmp && ETAPE_CIRCUIT_PORTEURS[etape] !== 'PRMP') {
       return false;
     }
     // L'hôte qui connaît le PV (étage de navette, désignés) tranche avant les règles génériques.
@@ -393,6 +401,16 @@ export class ChronometrageDossier {
     const porteur = ETAPE_CIRCUIT_PORTEURS[etape];
     const role = this.auth.role();
     return role === porteur || role === 'ADMINISTRATEUR' || this.permissions.peutExecuter(porteur);
+  });
+
+  /**
+   * L'étape courante est-elle PORTÉE par la PRMP (`RECTIFICATION_PRMP`) ? Dans ce cas, la balle est
+   * chez la PRMP MAIS elle a un geste (prise en charge) : le template ne doit PAS afficher le message
+   * « ⏸ En attente de la PRMP » (qui masque le bouton), mais l'étape courante + « Prendre en charge ».
+   */
+  readonly estEtapePorteePrmp = computed(() => {
+    const etape = this.chrono()?.etapeCourante;
+    return !!etape && ETAPE_CIRCUIT_PORTEURS[etape] === 'PRMP';
   });
 
   constructor() {
