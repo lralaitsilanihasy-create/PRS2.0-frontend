@@ -54,3 +54,36 @@ repli sur les jointures actuelles quand le champ n'est pas servi.
 2. Cohérence : `datesEtapes.RECEPTION` = `dateEnregistrement`.
 3. Le Président lit `datesEtapes` sur `GET /api/dossiers` alors que `dispatchs`/`examens` restent
    vides (portée inchangée).
+
+---
+
+## Note de livraison backend — 2026-09-07 (`PRS20`, commits `9b21ee3` puis `d364f1a`)
+
+`DossierDto.datesEtapes` : les **sept clés sont toujours présentes**, une étape non atteinte vaut `null`
+(Jackson sérialise les nulls dans ce projet — ne comptez pas sur l'absence de clé). Dérivé dans
+`ChronometrageService.datesEtapes` depuis les **mêmes tâches** déjà chargées en lot pour
+`datePrevisionnelleFin` et `dateEnregistrement` : **aucune requête de plus**, quelle que soit la taille de
+la liste.
+
+### La règle de datation, en une phrase
+
+**Le franchissement se juge sur le STATUT, la date vient des TÂCHES.** Une tâche close ne suffit pas : le
+dossier doit avoir dépassé l'étape.
+
+| Clé | Datée quand | Source de la date |
+|---|---|---|
+| `RECEPTION` | toujours si réceptionné | clôture de `RECEPTION` — **identique à `dateEnregistrement`**, par construction (même méthode) |
+| `DISPATCH` | statut ≥ dispatché | clôture du dernier `DISPATCH` |
+| `EXAMEN`, `PROJET_PV` | statut ≥ examiné | clôture du dernier `EXAMEN` (le projet de PV en naît — même date) |
+| `PV_SIGNE` | PV au statut `SIGNE` | dernière `COSIGNATURE`, à défaut `VISA` |
+| `VERIFICATION` | observations levées | clôture de la `VERIFICATION` |
+| `CLOTURE` | statut `CLOTURE` | `ARCHIVAGE`, à défaut `TRANSMISSION_SIGMP` |
+
+### ⚠️ Correctif du soir même (`d364f1a`), révélé par un dossier réel
+
+Un dispatch **annulé** ramène le dossier à `PRET_DISPATCH` mais laisse ses tâches closes derrière lui :
+`DISPATCH`, `EXAMEN` et `PROJET_PV` étaient datés à tort. Ils suivent désormais la même règle que les
+autres — statut d'abord. Idem pour un **réexamen** (`A_REEXAMINER`), qui remet `EXAMEN` à `null`.
+
+Autrement dit : la frise peut **perdre** une date si le dossier recule dans le circuit. C'est voulu — elle
+raconte où en est le dossier, pas tout ce qui lui est arrivé (ça, c'est le journal).

@@ -55,3 +55,44 @@ d'examen du journal (le chronométrage restant la trace complète).
 1. Dispatch → examen soumis → retour au Membre pour rectification : la tâche EXAMEN rouverte est au
    nom de l'attributaire (ou absente jusqu'à sa prise en charge) — **jamais** `PRES001`.
 2. Aucune tâche EXAMEN instantanée (prise en charge = fin) créée par une transition du Président.
+
+---
+
+## Note de livraison backend — 2026-09-07 (`PRS20`, commit `d364f1a`)
+
+Sans migration. Tests : `ExamenAttributaireEtJournalPurgeIntegrationTest` (les 2 cas attendus, plus la
+survie du journal à l'annulation d'un dispatch).
+
+### C1 — l'examen fantôme : la cause
+
+La soumission du projet de PV clôt l'étape `EXAMEN`. Quand aucune tâche n'est ouverte, le chronométrage en
+créait une **instantanée au nom de l'appelant** — d'où `EXAMEN#2` à `PRES001` quand le Président
+re-soumettait **pour** le Membre (ce que la délégation Président → Membre autorise).
+
+`ChronometrageService.cloturerExamen` raisonne désormais sur l'**attributaire du dispatch** : elle clôt sa
+tâche ouverte s'il en a une ; sinon, l'occurrence instantanée n'est créée **que si l'appelant est
+l'attributaire** (tolérance historique du Membre qui soumet sans prise en charge). Un tiers ne laisse
+**aucune** tâche : le chronométrage ne prête pas un examen à qui ne l'a pas fait. Même principe que la
+garde d'acteur du visa et de la co-signature (`1a92f5a`).
+
+### C2 — le journal après purge : la troisième voie
+
+Ni « persister au fil de l'eau » (refonte de neuf gestes, et doublons avec les dérivés) ni « documenter la
+perte ». `JournalDossierService.figerTraitement` **copie les événements dérivés en lignes de
+`t_action_dossier` juste avant** que la purge du circuit n'efface leurs sources — à l'annulation d'un
+dispatch comme au retrait accepté. Une seule écriture, exactement ce que le journal montrait la seconde
+d'avant ; rien n'est écrit en double tant que les sources vivent ; idempotent par construction (après la
+purge, plus rien n'est dérivable).
+
+⚠️ **Pour le front** : ces copies portent un `idAction` réel, contrairement aux mêmes événements servis en
+dérivé. Le type et l'instant restent la bonne clé d'identification.
+
+⚠️ **Non rétroactif, par nature** : le journal d'un dossier purgé **avant** ce correctif ne récupère pas
+l'examen perdu — la source avait déjà disparu. Les prochains retraits, eux, gardent leur histoire.
+
+### Correctif inclus dans le même commit
+
+Le dossier réel a révélé une incohérence sur `datesEtapes` (livré la veille) : `DISPATCH`, `EXAMEN` et
+`PROJET_PV` étaient datés à partir de tâches closes alors que le statut était revenu à `PRET_DISPATCH`
+(dispatch annulé). Ils ne sont désormais datés que si le **statut a dépassé l'étape** — même principe que
+`PV_SIGNE`, `VERIFICATION` et `CLOTURE`. Un réexamen (`A_REEXAMINER`) remet également `EXAMEN` à `null`.

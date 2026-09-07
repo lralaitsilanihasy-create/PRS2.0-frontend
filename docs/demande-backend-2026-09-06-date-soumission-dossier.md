@@ -33,3 +33,33 @@ Le front est prêt : la colonne « Soumission » affiche « — » tant que le c
 1. Dossier soumis → `dateSoumission` du DTO = celle de la réception (même source).
 2. Brouillon → `null`.
 3. La PRMP lit le champ sur `GET /api/dossiers` (portée des réceptions inchangée).
+
+---
+
+## Note de livraison backend — 2026-09-07 (`PRS20`, commit `9b21ee3`, migration **V20**)
+
+`DossierDto.dateSoumission` (date-heure ISO, nullable) est mappée depuis la **colonne de l'entité** :
+aucune requête de plus sur les listes, et lecture seule (jamais reprise d'un corps de requête).
+
+### ⚠️ Un écart avec la demande, et pourquoi
+
+La demande supposait que `ReceptionDto.dateSoumission` portait déjà l'horodatage de la soumission. En
+réalité, `t_dossier.DATE_SOUMISSION` était écrite **à la création du brouillon** : le Secrétaire lisait une
+**date de saisie** sous un nom de soumission, et un brouillon en portait toujours une. Servir cette valeur
+telle quelle aurait contredit à la fois « `null` pour un brouillon » et le terme du pilote (« la date de
+soumission EST la date de dépôt »).
+
+J'ai donc corrigé la **sémantique à la source** plutôt que de maquiller le DTO :
+
+- la date est posée par `POST /api/dossiers/{id}/soumettre`, et **plus** à la création ;
+- un **retrait accepté l'efface** avec le retour en brouillon — le dépôt est annulé avec le retrait ;
+- **V20 reprend l'existant depuis le journal** : dernière action `SOUMISSION` pour les dossiers soumis,
+  `null` pour les brouillons jamais soumis, valeur conservée pour un dossier hors brouillon antérieur au
+  journal.
+
+**Conséquence à connaître** : sur d'anciens dossiers, la date de soumission affichée au Secrétaire a pu
+**changer** — elle dit maintenant la vraie date de dépôt, plus celle de la saisie. Si quelqu'un s'en
+étonne, c'est cette reprise.
+
+Le Secrétaire (`ReceptionDto.dateSoumission`, format `yyyy-MM-dd HH:mm`) et la PRMP (`DossierDto`, ISO)
+lisent désormais **la même colonne**, donc la même valeur.

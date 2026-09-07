@@ -16,9 +16,9 @@
 > (écran Projets de PV : les deux références alignées). 11 tests backend (dont les 4 de la recette, la
 > bascule dans les deux sens sans consommation de numéro, le gel après signature, la recomposition à l'unité).
 >
-> ⚠️ **RÉOUVERTURE PARTIELLE (précision pilote 07/09) — AMI À RÉINTÉGRER SOUS SEUIL.** V21 a exclu
-> l'appel à manifestation d'intérêt en bloc ; or l'AMI **doit déclencher l'AGPM au-delà d'un seuil de
-> montant** (valeur à déterminer par le pilote). Voir « Suite » ci-dessous.
+> ✅ **SUITE LIVRÉE le 07/09 (migration V22)** — l'AMI sort de l'exclusion et déclenche l'AGPM **sous
+> condition de montant**, en deux morceaux administrables : `agpmSiSeuil` sur le mode et le paramètre
+> `AGPM_SEUIL_MONTANT`. ⚠️ **Seuil `0` par défaut** (tout AMI déclenche) — voir la note de livraison en fin.
 
 **Date** : 2026-09-07 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote sur
 #100299 — le dossier est de sous-type **PPM-AGPM** mais sa référence porte le segment **PPM**.
@@ -127,3 +127,51 @@ est déjà visible côté front par le champ `idSousType` (libellé « … et Av
    référence `…/PPM/…` (inchangé).
 4. Sur un dossier `PPM-AGPM`, produire le projet de PV → **`refePv = …/PPM-AGPM/PV/…`** (cohérent avec
    le dossier), et la jointure PV↔dossier (`refePv.replace('/PV/','/')`) retombe sur le `refeDossier`.
+
+---
+
+## Note de livraison backend — 2026-09-07 (`PRS20`, commit `a346d9b`)
+
+Deux migrations : **V21** (tout appel d'offres + segment de référence) et **V22** (AMI conditionnel).
+Contrat complet : `docs/regles-gestion.md`, section « Sous-type PPM / PPM-AGPM et référence du dossier » ;
+`docs/api-endpoints.md`, § Paramètres système et § Modes de passation. Suite : 821 tests verts.
+
+### V21 — ce que la bannière ne dit pas
+
+- La méthode de recomposition (`ReferenceService.remplacerSegmentSousType`) remplace le **dernier**
+  segment valant `PPM` ou `PPM-AGPM` : une entité dont l'acronyme vaudrait « PPM » n'est pas renommée par
+  erreur, et le segment `/PV/` n'est jamais confondu.
+- La propagation part de `recalculerSousTypeDdp`, seul endroit où le sous-type bascule. Elle touche
+  `t_dossier.REFE_DOSSIER`, `t_ppm.REFERENCE` (celle qu'un **retrait accepté restaure** — c'est le
+  scénario exact de #100299) et `t_pv_examen.REFE_PV`, dans la même transaction.
+
+### V22 — l'AMI, sous condition de montant
+
+- **Deux drapeaux distincts sur le mode** : `declencheAgpm` (inconditionnel — les appels d'offres) et
+  **`agpmSiSeuil`** (conditionnel — l'AMI). Indépendants, tous deux administrables depuis l'écran des modes,
+  tous deux exposés sur `ModePassationDto`. Un mode créé à la volée par un import PDF les dérive de son
+  libellé, faute de mieux — mais c'est ensuite le drapeau qui fait foi, jamais le libellé.
+- **Le seuil** : `GET`/`PUT /api/parametres/agpm-seuil-montant` → `{ "seuil": number }`. Lecture ouverte à
+  tout authentifié (l'écran d'administration l'affiche, et le seuil explique pourquoi un plan est — ou
+  n'est pas — en `PPM-AGPM`) ; écriture réservée à l'**Administrateur** ; valeur négative → **400**.
+  Prend effet **immédiatement** : `agpmRequis` est lu, pas stocké.
+- **Trois arbitrages**, à faire valider par le pilote :
+  1. **Le seuil par défaut est `0`**, donc tout marché AMI déclenche tant qu'il n'a pas saisi le sien.
+     C'est la seule valeur que la demande ne fixait pas. Le défaut penche du côté de la publicité :
+     manquer un AGPM dû est un manquement réglementaire, en produire un de trop ne l'est pas. Une saisie
+     suffit à le resserrer.
+  2. **Le montant retenu est celui en vigueur** — le nouveau montant estimatif s'il a été posé, l'initial
+     sinon. Un marché **sans montant** ne franchit aucun seuil.
+  3. **La borne est incluse** (`≥ seuil`) : un montant égal au seuil déclenche.
+- **La comparaison est par marché**, jamais sur le total du dossier : un test le verrouille explicitement
+  (deux marchés AMI sous le seuil dont la somme le dépasse **ne** déclenchent **pas**).
+- **Source unique** : `AgpmService` répond à « ce plan requiert-il un AGPM ? » pour ses trois
+  consommateurs — le sous-type du dossier, la grille d'examen (« on ne contrôle pas le vide ») et le
+  drapeau `agpmRequis` du PPM. Ils ne peuvent plus se contredire au premier ajustement du seuil.
+
+### Côté front
+
+Rien à changer, comme annoncé : `declencheAgpm` / `agpmRequis` / `idSousType` / `refeDossier` / `refePv`
+sont reflétés du serveur. Deux ajouts **disponibles** si l'écran d'administration veut les exposer :
+`ModePassationDto.agpmSiSeuil` (case à cocher, à côté de `declencheAgpm`) et le seuil sur
+`/api/parametres/agpm-seuil-montant`.

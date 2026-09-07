@@ -67,3 +67,30 @@ Les libellés côté front sont déjà prêts pour `DEMANDE_RETRAIT`, `RETRAIT_A
 Sur un dossier jetable : Créer → Soumettre → Réceptionner → Demander un retrait → l'accepter (CC/
 Président) → re-soumettre. `GET /dossiers/{id}/journal` doit alors intercaler, entre la 1re réception
 et la 2e soumission, `DEMANDE_RETRAIT` (PRMP, 08:23:03) puis `RETRAIT_ACCEPTE` (PRES001, 08:23:50).
+
+---
+
+## Note de livraison backend — 2026-09-07 (`PRS20`, commit `399c1c0`)
+
+Dérivation à la lecture, dans `JournalTraitementService`, donc **rétroactive** : rien à rejouer, #100299
+s'est complété à la relecture. Types retenus : ceux que vous proposiez.
+
+| `typeAction` | Instant | Opérateur | Détail |
+|---|---|---|---|
+| `DEMANDE_RETRAIT` | `dateDemande` | la **PRMP** (`idPrmpOperateur` **posé**) | « Demande de retrait — motif : … » |
+| `RETRAIT_ACCEPTE` | `dateDecision` | le décideur (`imCtrlCc`) | « Retrait accepté — {état d'avant} -> BROUILLON » |
+| `RETRAIT_REFUSE` | `dateDecision` | le décideur | « Retrait refusé — {obsDecision} » |
+
+### Le point délicat : l'« état d'avant »
+
+`t_demande_retrait` ne stocke **pas** le statut du dossier au moment du retrait. Il est donc **relu dans le
+journal** : la dernière action de circuit antérieure à la décision (`SOUMISSION` → `SOUMIS`, `RECEPTION` →
+`PRET_DISPATCH`, `DISPATCH` → `DISPATCHE`, `SOUMISSION_EXAMEN` → `EXAMINE`). Sur #100299, cela donne bien
+« `PRET_DISPATCH` -> `BROUILLON` ». Si l'état reste indéterminable, le détail dit simplement « retour en
+BROUILLON » plutôt que d'affirmer un statut faux.
+
+Cette relecture est fiable parce qu'un correctif du même jour (`d364f1a`) **fige les événements de
+traitement avant la purge du circuit** : un retrait n'efface plus l'histoire dont il a besoin.
+
+⚠️ **Pour le front** : ces trois types portent un `idAction` **réel** (ce sont des lignes dérivées mais
+issues d'entités identifiées) ; ne supposez pas qu'un événement dérivé n'a jamais d'identifiant.

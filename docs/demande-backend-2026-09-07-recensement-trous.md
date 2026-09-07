@@ -69,3 +69,37 @@
 - **« Aucune pièce attendue » pour un DDP** → comportement correct (DDP n'a que des pièces
   facultatives ; seules obligatoires + facultatives déposées s'affichent). Nuance de libellé
   éventuelle, sans impact backend.
+
+---
+
+## Note de livraison backend — 2026-09-07 (`PRS20`, commit `399c1c0`)
+
+Les trois trous sont fermés, sans migration de schéma pour T2 et T3. Suite : 796 tests verts à ce commit.
+Tests : `RecensementTrousIntegrationTest` (3 cas, un par trou).
+
+### T1 — le retrait au journal
+
+Dérivé de `t_demande_retrait` **à la lecture**, donc rétroactif : `DEMANDE_RETRAIT` (opérateur = la PRMP,
+`idPrmpOperateur` posé — donc **pas** de marqueur « opérateur ≠ attributaire »), `RETRAIT_ACCEPTE`
+(opérateur = le décideur), `RETRAIT_REFUSE` (avec l'observation). Les trois noms sont ceux que vous
+proposiez. Détail dans `docs/demande-backend-2026-09-07-retrait-dossier-journal.md`.
+
+### T2 — la transmission SIGMP directe
+
+⚠️ **Le chemin réel est `POST /api/sigmp-transmissions`**, pas `/transmissions-sigmp` comme écrit dans le
+recensement — à corriger dans vos notes. Il clôt désormais l'occurrence `VERIFICATION` **ouverte** du
+dossier (`ChronometrageService.cloturerSiOuverte`), et **n'en crée jamais** : un dossier jamais pris en
+charge ne se voit pas inventer une tâche. Le trou est **reconfirmé** par le test, sur le chemin FAV direct.
+
+### T3 — les justifications hors import : arbitrage rendu
+
+**L'écart à l'import reste volontaire** — un PDF ne porte aucune justification, et y appliquer la garde
+bloquerait tout import d'un plan dérogatoire. Plutôt que de documenter le trou, je l'ai **fermé ailleurs** :
+`POST /api/dossiers/{id}/soumettre` exige les justifications d'un dossier **DDP**, sur ses **lignes
+stockées** (non supprimées) et la globale du PPM, avec les **mêmes 400 par champ** qu'à la saisie
+(`marches[i].justifModeDerogatoire`, `marches[i].justifDelaiAmenage`, `justificationFiche`).
+
+C'est le point où **tous les chemins convergent** : cela couvre aussi les PATCH de rectification champ à
+champ, que la demande ne mentionnait pas. Conséquence pour le front : un plan importé sans justification
+part en **400 à la soumission** — l'écran de mise à jour par import doit donc laisser compléter la grille
+avant de soumettre. Les erreurs sont déjà affichées telles quelles par l'intercepteur.

@@ -1,5 +1,13 @@
 # Demande au backend `PRS20` — 7 septembre 2026 — FAVR : rectification PRMP AVANT la vérification
 
+> ✅ **LIVRÉ le 07/09** (backend `a346d9b`, 821 tests verts) — la co-signature d'un FAVR envoie le PV
+> définitif **et les observations** à la PRMP (`EN_ATTENTE_DECISION_PRMP`, compteur net suspendu) ; le
+> vérificateur n'est **ni notifié ni sollicité**, et le dossier n'apparaît dans **aucune** de ses files tant
+> qu'il n'a jamais statué dessus. La **resoumission** ouvre la vérification et le notifie alors
+> (`PV_A_VERIFIER`, ciblé par rattachement). **`leveePossible` vaut `true`** dès le premier passage ; le
+> passage « rappel » a disparu, la boucle est conservée. **Cas FAV : inchangé, confirmé par un test.**
+> Détail et points d'attention : **note de livraison** en fin de document.
+>
 > Règle pilote (07/09) : réordonnancer le circuit **après la cosignature** pour un avis
 > **« Favorable avec réserves » (FAVR)**. Backend d'abord (machine à états + notifications) ;
 > le front suivra.
@@ -88,3 +96,58 @@ vérificateur transmet directement au SIGMP (comportement actuel, cf. correctif 
 4. Vérifier : le dossier entre en `EN_VERIFICATION`, le vérificateur est **notifié maintenant**, et
    « Levée » est **possible dès son premier passage**.
 5. Vérification → SIGMP → archivage → CLOTURE.
+
+---
+
+## Note de livraison backend — 2026-09-07 (`PRS20`, commit `a346d9b`)
+
+Les quatre points de la demande sont livrés, sans migration. Contrat : `docs/regles-gestion.md` (la règle
+du 2026-08-15 y est explicitement marquée **REMPLACÉE**) et `docs/api-endpoints.md` (§ branchement
+post-signature, § observations-pv). Suite : **821 tests verts**.
+
+### Le circuit livré
+
+| Moment | Dossier | PRMP | Vérificateur |
+|---|---|---|---|
+| **Co-signature FAVR** | `EXAMINE` → **`EN_ATTENTE_DECISION_PRMP`** (compteur net **suspendu**) | `PV_SIGNE` **+ `OBSERVATION_VERIFICATION`** portant les réserves | **rien** — ni notification, ni file |
+| **Resoumission PRMP** | → **`EN_VERIFICATION`** | — | **`PV_A_VERIFIER`**, ciblé par **rattachement** (repli : les vérificateurs de la localité) |
+| **1ᵉʳ passage** | `LEVEE` → `OBSERVATIONS_LEVEES` ; `MAINTENUE` → retour PRMP | rappel si maintenue | `leveePossible = true` |
+
+### Ce que j'ai ajouté au-delà de la demande, et pourquoi
+
+- **Le silence n'était pas que dans les notifications.** `GET /api/dossiers/a-verifier` et
+  `/en-attente-prmp` incluaient tout dossier `EN_ATTENTE_DECISION_PRMP` : le vérificateur aurait vu
+  arriver un dossier qui ne le concernait pas encore. Ces deux listes (et leurs compteurs) **excluent
+  désormais** les dossiers en attente de PRMP **sur lesquels aucun passage de vérification n'existe**. Un
+  dossier qui boucle, lui, reste sous ses yeux en lecture seule — comme avant.
+- **Le ciblage par rattachement a été déplacé, pas perdu.** Il vivait sur la notification émise à la
+  signature ; il est maintenant porté par celle de la resoumission, au **premier contact** du
+  vérificateur. La règle du 2026-09-01 tient donc toujours.
+- **Le type de notification distingue les deux moments** : `PV_A_VERIFIER` au premier contact (le
+  vérificateur découvre le dossier), `RECTIFICATION_PRMP` aux tours suivants (il le retrouve).
+
+### Points d'attention
+
+- ⚠️ **La PRMP reçoit `OBSERVATION_VERIFICATION` à deux moments** : à la co-signature (les réserves du PV)
+  puis à chaque observation maintenue (le rappel). Même type, donc même écran côté front. Si vous voulez
+  les distinguer visuellement, demandez un type dédié — je ne l'ai pas créé pour ne pas multiplier les
+  types sur une distinction que le corps du message porte déjà.
+- Le **compteur net CNM** se suspend dès la co-signature et reprend à la resoumission : sur un FAVR, le
+  temps de rectification n'est plus imputé à la Commission, y compris pour le premier tour.
+- La `leveePossible` est **toujours `true`** ; la méthode est conservée (et non remplacée par un littéral)
+  pour que le champ garde son sens et qu'une condition future ait où se loger.
+
+### Tests
+
+`FavrRectificationAvantVerificationIntegrationTest` suit la recette de contre-vérification : silence total
+avant rectification (notifications **et** files **et** compteurs), notification PRMP portant les réserves,
+ouverture par la resoumission avec notification ciblée, levée possible au premier passage, boucle
+conservée, et **cas FAV inchangé**. S'y ajoutent **8 classes existantes mises à jour** : elles encodaient
+l'ancien ordre (dossier en vérification après signature, levée refusée au premier passage), et disent
+maintenant le contraire — c'est la meilleure preuve que le réordonnancement mord.
+
+### Côté front — ce qui peut être retiré
+
+Comme annoncé dans la demande : le message « premier passage = rappel » et le grisé de « Levée » n'ont
+plus lieu d'être (`leveePossible` les pilote et vaut `true`). La PRMP peut entrer dans son écran de
+rectification depuis la notification `OBSERVATION_VERIFICATION`, qui porte l'objet PV **et** le dossier.
