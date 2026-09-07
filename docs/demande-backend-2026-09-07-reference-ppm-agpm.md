@@ -100,11 +100,12 @@ appels d'offres, déclencheurs sans condition).
 
 - L'AMI ne peut donc pas être un simple `declencheAgpm` booléen : c'est un **déclenchement
   conditionnel au montant**. Un marché passé par AMI déclenche l'AGPM **ssi son montant ≥ seuil**.
-- **La valeur du seuil est à déterminer par le pilote** — merci de la rendre **administrable** (un
-  paramètre configurable, pas une constante en dur), pour qu'il la fixe et l'ajuste sans redéploiement.
-- Point à confirmer (recommandation front, à valider pilote) : le seuil se compare au **montant estimé
-  du marché AMI** (comparaison par marché, cohérente avec la dérivation par marché déjà en place),
-  et non au total du dossier. À trancher.
+- ✅ **Décidé (pilote 07/09) — seuil ADMINISTRABLE** : la valeur du seuil est un **paramètre
+  configurable** (pas une constante en dur), fixé et ajusté par le pilote depuis l'administration,
+  sans redéploiement. (La valeur numérique elle-même sera saisie dans l'admin, pas dans le code.)
+- ✅ **Décidé (pilote 07/09) — base de comparaison = le montant estimé de CHAQUE marché AMI**
+  (comparaison **par marché**, cohérente avec la dérivation par marché déjà en place — PAS le total
+  du dossier).
 - Modes hors appel d'offres (consultation des prix, gré à gré) : toujours `PPM`, inchangés.
 
 Conséquence : un plan comportant un marché AMI **au-dessus du seuil** devient `PPM-AGPM` (référence et
