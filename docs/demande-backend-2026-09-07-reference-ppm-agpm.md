@@ -15,6 +15,10 @@
 > ancien segment disparu, et la **jointure PV↔dossier retombe exactement** sur la réf. du dossier
 > (écran Projets de PV : les deux références alignées). 11 tests backend (dont les 4 de la recette, la
 > bascule dans les deux sens sans consommation de numéro, le gel après signature, la recomposition à l'unité).
+>
+> ⚠️ **RÉOUVERTURE PARTIELLE (précision pilote 07/09) — AMI À RÉINTÉGRER SOUS SEUIL.** V21 a exclu
+> l'appel à manifestation d'intérêt en bloc ; or l'AMI **doit déclencher l'AGPM au-delà d'un seuil de
+> montant** (valeur à déterminer par le pilote). Voir « Suite » ci-dessous.
 
 **Date** : 2026-09-07 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote sur
 #100299 — le dossier est de sous-type **PPM-AGPM** mais sa référence porte le segment **PPM**.
@@ -87,6 +91,24 @@ Point à trancher côté backend : le **périmètre temporel**.
 - Les références **déjà attribuées** (comme #100299) sont probablement **immuables** (imprimées /
   officielles) — les laisser telles quelles, sauf si le pilote demande explicitement une migration.
   Merci d'indiquer ce que vous retenez.
+
+## Suite (07/09) — l'AMI déclenche l'AGPM AU-DELÀ D'UN SEUIL (réouverture)
+
+V21 a exclu l'appel à manifestation d'intérêt du déclenchement. **Correction pilote : l'AMI EST une
+procédure déclenchant l'AGPM, mais seulement au-delà d'un SEUIL de montant** (contrairement aux autres
+appels d'offres, déclencheurs sans condition).
+
+- L'AMI ne peut donc pas être un simple `declencheAgpm` booléen : c'est un **déclenchement
+  conditionnel au montant**. Un marché passé par AMI déclenche l'AGPM **ssi son montant ≥ seuil**.
+- **La valeur du seuil est à déterminer par le pilote** — merci de la rendre **administrable** (un
+  paramètre configurable, pas une constante en dur), pour qu'il la fixe et l'ajuste sans redéploiement.
+- Point à confirmer (recommandation front, à valider pilote) : le seuil se compare au **montant estimé
+  du marché AMI** (comparaison par marché, cohérente avec la dérivation par marché déjà en place),
+  et non au total du dossier. À trancher.
+- Modes hors appel d'offres (consultation des prix, gré à gré) : toujours `PPM`, inchangés.
+
+Conséquence : un plan comportant un marché AMI **au-dessus du seuil** devient `PPM-AGPM` (référence et
+PV compris, via la mécanique déjà livrée) ; en-dessous du seuil, il reste `PPM`.
 
 ## Côté front — rien à changer
 
