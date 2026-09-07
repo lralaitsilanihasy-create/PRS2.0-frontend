@@ -104,21 +104,21 @@ export interface ModificationChamp {
               }
               <th rowspan="2" scope="col">Nature</th>
               <th rowspan="2" scope="col">Objet</th>
-              <th rowspan="2" scope="col">Montant estimé</th>
-              <th rowspan="2" scope="col">Nouveau montant</th>
+              <th rowspan="2" scope="col">Montant estimatif initial</th>
+              <th rowspan="2" scope="col">Nouveau montant estimatif</th>
               <th rowspan="2" scope="col">Mode de passation</th>
               <th rowspan="2" scope="col">Forme</th>
               <th rowspan="2" scope="col">Financement</th>
-              <th colspan="4" scope="colgroup">Informations sur le bénéficiaire</th>
+              <th colspan="4" scope="colgroup">Informations sur le Bénéficiaire</th>
               <!-- ⚠️ Dates prévisionnelles (demande pilote 2026-09-07) : dérivées des processus CAPM,
                    en LECTURE — même présentation que le tableau du brouillon (édition via le bouton CAPM). -->
-              <th rowspan="2" scope="col">Date prév. de lancement</th>
-              <th rowspan="2" scope="col">Date prév. ouverture des plis</th>
-              <th rowspan="2" scope="col">Date prév. d'attribution</th>
+              <th rowspan="2" scope="col">Date prévisionnelle de lancement</th>
+              <th rowspan="2" scope="col">Date prévisionnelle ouverture des plis</th>
+              <th rowspan="2" scope="col">Date prévisionnelle d'attribution</th>
               <th rowspan="2" scope="col">Actions</th>
             </tr>
             <tr>
-              <th scope="col">Service bénéficiaire</th><th scope="col">Compte</th><th scope="col">Montant</th><th scope="col">Nouveau montant</th>
+              <th scope="col">Service bénéficiaire</th><th scope="col">Compte</th><th scope="col">Montant estimatif par bénéficiaire</th><th scope="col">Nouveau montant estimatif par bénéficiaire</th>
             </tr>
           </thead>
           @for (g of marcheControls(); track uidDe(g); let idx = $index) {
@@ -138,8 +138,8 @@ export interface ModificationChamp {
                          Le numéro de ligne y est repris pour situer le champ (AUDIT.md A3). -->
                     <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'natureLibelle')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature" [attr.aria-label]="'Nature — ligne ' + (idx + 1)"></textarea></td>
                     <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'objet')" [class.sd__cell-modif]="estChampModifie(g, 'designationMarche')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet" [attr.aria-label]="'Objet du marché — ligne ' + (idx + 1)"></textarea></td>
-                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'montEstim')" [class.sd__cell-modif]="estChampModifie(g, 'montEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" [attr.aria-label]="'Montant estimé — ligne ' + (idx + 1)" /></td>
-                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'nouvMontEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" [attr.aria-label]="'Nouveau montant estimé (si révisé) — ligne ' + (idx + 1)" /></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'montEstim')" [class.sd__cell-modif]="estChampModifie(g, 'montEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" [attr.aria-label]="'Montant estimatif initial — ligne ' + (idx + 1)" /></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'nouvMontEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" [attr.aria-label]="'Nouveau montant estimatif (si révisé) — ligne ' + (idx + 1)" /></td>
                     <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'modeLibelle')"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="psg-modes" placeholder="Mode" [attr.aria-label]="'Mode de passation — ligne ' + (idx + 1)" /></td>
                     <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'formeMarche')">
                       <select class="form-control" [formControl]="ctrl(g, 'formeMarche')" [attr.aria-label]="'Forme du marché — ligne ' + (idx + 1)">
@@ -156,10 +156,10 @@ export interface ModificationChamp {
                     }
                   </td>
                   <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':numCompte')"><input class="form-control" type="text" [formControl]="bctrl(b, 'numCompte')" list="psg-comptes" placeholder="Compte" [attr.aria-label]="'Compte — ligne ' + (idx + 1) + ', bénéficiaire ' + (i + 1)" /></td>
-                  <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':ancMontBenef')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'ancMontBenef')" [attr.aria-label]="'Montant du bénéficiaire — ligne ' + (idx + 1) + ', bénéficiaire ' + (i + 1)" /></td>
+                  <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':ancMontBenef')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'ancMontBenef')" [attr.aria-label]="'Montant estimatif par bénéficiaire — ligne ' + (idx + 1) + ', bénéficiaire ' + (i + 1)" /></td>
                   <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':nouvMontBenef')">
                     <div class="sd__benef-cell">
-                      <input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'nouvMontBenef')" placeholder="(si révisé)" [attr.aria-label]="'Nouveau montant du bénéficiaire (si révisé) — ligne ' + (idx + 1) + ', bénéficiaire ' + (i + 1)" />
+                      <input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="bctrl(b, 'nouvMontBenef')" placeholder="(si révisé)" [attr.aria-label]="'Nouveau montant estimatif par bénéficiaire (si révisé) — ligne ' + (idx + 1) + ', bénéficiaire ' + (i + 1)" />
                       <button type="button" class="btn btn-secondary btn-sm" [disabled]="beneficiairesControls(g).length === 1" (click)="retirerBeneficiaire(g, i)" aria-label="Retirer le bénéficiaire">✕</button>
                     </div>
                   </td>
