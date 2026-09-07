@@ -103,6 +103,13 @@ export interface ModePassation {
    */
   declencheAgpm?: boolean;
   /**
+   * Drapeau data-driven (`tr_mode_passation.AGPM_SI_SEUIL`) : ce mode déclenche l'AGPM **au-delà d'un
+   * seuil de montant** (cas de l'appel à manifestation d'intérêt), et non inconditionnellement. Le
+   * seuil lui-même est un paramètre système (`/api/parametres/agpm-seuil-montant`, écran Admin
+   * « Seuil AGPM »). Administrable via `mode-passations`, comme `declencheAgpm`.
+   */
+  agpmSiSeuil?: boolean;
+  /**
    * Modèle CAPM partagé (`tr_mode_passation.ID_MODE_MODELE_CAPM`) : mode dont ce mode réutilise le
    * modèle détaillé de processus (ex. CPO / Appel à manifestation d'intérêt → « Appel d'offres ouvert »).
    * `null` = pas de partage. Administrable via `mode-passations`.

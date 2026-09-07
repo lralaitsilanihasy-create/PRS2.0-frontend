@@ -251,7 +251,8 @@ export const REFERENTIELS: AdminResource[] = [
         },
         { key: 'description', label: 'Description' },
         { key: 'publiciteRequise', label: 'Publicité requise', type: 'boolean' },
-        { key: 'declencheAgpm', label: 'Déclenche AGPM', type: 'boolean' },
+        { key: 'declencheAgpm', label: 'Déclenche AGPM (sans condition)', type: 'boolean' },
+        { key: 'agpmSiSeuil', label: 'Déclenche AGPM au-delà du seuil (AMI)', type: 'boolean' },
         { key: 'delaiMinJours', label: 'Délai min. (jours)', type: 'number' },
         { key: 'baseLegale', label: 'Base légale' },
         {
