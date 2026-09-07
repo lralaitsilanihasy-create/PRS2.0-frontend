@@ -1,5 +1,13 @@
 # Signalement backend — Examen fantôme au chronométrage + examen absent du journal après retrait
 
+> ✅ **CLÔTURÉ le 07/09** — backend livré (`d364f1a`) et contre-recetté en réel (décor neuf, purgé
+> après) : (C1) après un retour de navette déclenché par le Président, AUCUNE tâche EXAMEN à son nom
+> — les tâches restent RECEPTION/DISPATCH/EXAMEN(Rina)/VISA(Président) ; (C2) les événements
+> SOUMISSION_EXAMEN et RETOUR_RECTIFICATION sont figés dans `t_action_dossier` juste avant la purge
+> — ils survivent à l'annulation du dispatch (PV purgé, 404 confirmé), avec un identifiant réel et
+> la même visibilité hiérarchique. ⚠️ Prospectif : la tâche EXAMEN#2 déjà présente sur 00001 et son
+> examen déjà purgé du journal ne sont pas rattrapés — seuls les prochains gestes sont corrects.
+
 **Date** : 2026-09-07 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : deux constats
 pilote sur le dossier réel 00001 (id 100295), après le parcours :
 Création → Soumission → Réception → Dispatch (→ Rina) → Examen#1 (Rina, clos) → Visa#1 (Président,
