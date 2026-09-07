@@ -421,47 +421,28 @@ export class DossiersPipeline {
         error: () => this.echec(),
       });
     } else if (this.paginee) {
+      // Dashboard (source undefined) ET « Dossiers examinés » (source 'examines') sont paginés.
       this.chargerPage(0);
-      // « Dossiers examinés » (Membre) : charger PV + examens + dispatchs + réceptions pour masquer
-      // « Modifier l'examen » dès que le projet de PV est soumis (statut ≠ BROUILLON).
-      if (this.source === 'examines') {
+      // ⚠️ Les collections du circuit datent la frise (dashboard) et masquent « Modifier l'examen »
+      // (examinés). Chargées EN ENTIER une seule fois (aucune ne se filtre par dossier côté serveur ;
+      // audit C-1). ⚠️ 2026-09-07 : sur le DASHBOARD, la frise préfère `Dossier.datesEtapes` du DTO
+      // (servi avec la page, indépendant de la portée) — ces collections ne sont qu'un REPLI pour
+      // les profils qui les voient (dispatchs/examens sont vides pour le Président).
+      if (this.source === 'examines' || this.source === undefined) {
         forkJoin({
           pvs: this.pvService.list(),
           examens: this.examenService.list(),
           dispatchs: this.dispatchService.list(),
           receptions: this.receptionService.list(),
+          verifications: this.verificationService.list(),
         }).subscribe((r) => {
           this.pvs.set(r.pvs);
           this.examens.set(r.examens);
           this.dispatchs.set(r.dispatchs);
           this.receptions.set(r.receptions);
+          this.verifications.set(r.verifications);
         });
       }
-    } else {
-      // Pipeline générique (dashboard) : une PAGE de dossiers (⚠️ audit 2026-08-27, C-1 — la liste
-      // entière était téléchargée), plus les collections du circuit qui datent la frise.
-      // ⚠️ Ces cinq collections restent demandées EN ENTIER : dater les 7 étapes d'un dossier exige
-      // de remonter la chaîne réception → dispatch → examen → PV → vérification, et aucune d'elles
-      // ne se filtre par dossier côté serveur. Elles ne sont chargées qu'ICI, une fois : changer de
-      // page ne redemande que la page de dossiers.
-      forkJoin({
-        page: this.dossierService.listePage(0, this.pageSize),
-        receptions: this.receptionService.list(),
-        dispatchs: this.dispatchService.list(),
-        examens: this.examenService.list(),
-        pvs: this.pvService.list(),
-        verifications: this.verificationService.list(),
-      }).subscribe({
-        next: (r) => {
-          this.receptions.set(r.receptions);
-          this.dispatchs.set(r.dispatchs);
-          this.examens.set(r.examens);
-          this.pvs.set(r.pvs);
-          this.verifications.set(r.verifications);
-          this.appliquerPage(r.page);
-        },
-        error: () => this.echec(),
-      });
     }
   }
 
@@ -557,7 +538,8 @@ export class DossiersPipeline {
       const vOfD = verifs.filter((v) => recIds.has(v.idReception) || (v.idPv != null && pvIds.has(v.idPv)));
       const recInit = rOfD.find((r) => r.numPassage === 1) ?? rOfD[0];
       const pv = pOfD[0];
-      map.set(d.idDossier, [
+      // Dates par jointure (valables pour les profils qui voient dispatchs/examens).
+      const parJointure = [
         recInit?.dateReception,
         dOfD[0]?.dateDispatch,
         eOfD[0]?.dateExamen,
@@ -565,7 +547,15 @@ export class DossiersPipeline {
         pv?.datePv ?? pv?.dateSignatureMembre ?? pv?.dateSignaturePresident ?? pv?.dateSignatureCc,
         vOfD[0]?.dateVerif,
         d.statut === 'CLOTURE' ? (vOfD.find((v) => v.obsLevees)?.dateVerif ?? vOfD[0]?.dateVerif) : undefined,
-      ]);
+      ];
+      // ⚠️ Dates d'étapes du DTO (chronométrage, en lot — demande 2026-09-07) : PRIORITAIRES car
+      // indépendantes de la portée (le Président « toutes localités » a dispatchs/examens vides).
+      // Repli sur la jointure étape par étape tant que le champ n'est pas servi.
+      const parChrono = d.datesEtapes;
+      map.set(
+        d.idDossier,
+        CIRCUIT_ETAPES.map((e, i) => (parChrono?.[e.key] ?? undefined) || parJointure[i]),
+      );
     }
     return map;
   });
@@ -589,11 +579,25 @@ export class DossiersPipeline {
       const active = etapeIndexForDossier(d.statut);
       map.set(
         d.idDossier,
-        CIRCUIT_ETAPES.map((_, i) => datesDossier[i] || (i === active ? statutDossierLabel(d.statut) : '')),
+        CIRCUIT_ETAPES.map((_, i) =>
+          datesDossier[i]
+            ? DossiersPipeline.dateCourte(datesDossier[i] as string)
+            : i === active
+              ? statutDossierLabel(d.statut)
+              : '',
+        ),
       );
     }
     return map;
   });
+  /**
+   * `dd/MM/yyyy` depuis une date/heure serveur (`yyyy-MM-dd[THH:mm]` ou `yyyy-MM-dd HH:mm`) : on
+   * lit les 10 premiers caractères (la partie date, quel que soit le séparateur d'heure).
+   */
+  private static dateCourte(s: string): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : s;
+  }
   /** Référence STABLE (voir `sublabelsByDossier`) — ne jamais reconstruire le tableau ici. */
   private static readonly SANS_LIBELLE: string[] = [];
   sublabels(d: Dossier): string[] {

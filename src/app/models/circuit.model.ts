@@ -94,6 +94,14 @@ export interface Dossier {
    * absent tant que non livré — le « Suivi des dossiers CNM » affiche alors « — ».
    */
   dateSoumission?: string | null;
+  /**
+   * Dates de FRANCHISSEMENT de chaque étape de la frise (dérivées du chronométrage, en lot) —
+   * clés alignées sur `CIRCUIT_ETAPES` (RECEPTION, DISPATCH, EXAMEN, PROJET_PV, PV_SIGNE,
+   * VERIFICATION, CLOTURE). ⚠️ Champ DEMANDÉ au backend (demande 2026-09-07-dates-etapes-dossier) :
+   * absent tant que non livré — la frise retombe sur les jointures réception/dispatch/examen, qui
+   * sont vides pour un profil hors portée (le Président « toutes localités »).
+   */
+  datesEtapes?: Record<string, string | null> | null;
   /** Vrai quand la balle est CHEZ LA PRMP (statut suspensif) : la date prévisionnelle glisse d'autant. */
   attentePrmp?: boolean;
   /** Étape de circuit ouverte (`EtapeCircuit`) ; `null` si aucune tâche CNM ne court. */
