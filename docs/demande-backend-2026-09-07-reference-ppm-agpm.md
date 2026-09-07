@@ -1,4 +1,4 @@
-# Demande au backend `PRS20` — 7 septembre 2026 — La référence doit refléter le sous-type PPM-AGPM
+# Demande au backend `PRS20` — 7 septembre 2026 — PPM-AGPM pour tout appel d'offres + référence reflétant le sous-type
 
 **Date** : 2026-09-07 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote sur
 #100299 — le dossier est de sous-type **PPM-AGPM** mais sa référence porte le segment **PPM**.
@@ -18,19 +18,34 @@ PPM       → « Plan de Passation de Marché »
 PPM-AGPM  → « Plan de Passation de Marché et Avis Général de Passation de Marché »
 ```
 
-Le dossier déclenche l'AGPM (marchés en appel d'offres ouvert) → son sous-type dérivé est
-`PPM-AGPM`, et l'onglet « Projet d'AGPM » est présent. Or le **générateur de référence a utilisé le
-code de base `PPM`** et non le code du sous-type réel — la référence ne distingue pas un plan simple
-d'un plan avec AGPM, alors que les deux sous-types ont des grilles de contrôle (7 vs 8 points) et des
-modèles de PV différents.
+Le dossier déclenche l'AGPM → son sous-type dérivé est `PPM-AGPM`, et l'onglet « Projet d'AGPM » est
+présent. Or le **générateur de référence a utilisé le code de base `PPM`** et non le code du sous-type
+réel — la référence ne distingue pas un plan simple d'un plan avec AGPM, alors que les deux sous-types
+ont des grilles de contrôle (7 vs 8 points) et des modèles de PV différents.
 
-## Demande (arbitrage pilote 07/09 : « refléter le sous-type »)
+## Demande 1 — la règle de déclenchement : TOUT appel d'offres (précision pilote 07/09)
+
+⚠️ **Point le plus important.** Le sous-type `PPM-AGPM` (et `agpmRequis` / `declencheAgpm`) doit être
+dérivé dès qu'au moins un marché du plan est passé par **appel d'offres, quelle que soit la variante** :
+ouvert, **restreint**, **avec préqualification**, en deux étapes, etc. — **pas seulement l'appel
+d'offres ouvert**. L'AGPM (Avis Général de Passation de Marché) est requis pour les procédures
+d'appel d'offres en général.
+
+Côté données, la dérivation semble pilotée par le **drapeau `declencheAgpm` porté par chaque mode**
+(référentiel des modes de passation, administrable). Aujourd'hui seul « Appel d'offres ouvert » paraît
+flagué. Merci donc de **flaguer `declencheAgpm = true` sur tous les modes d'appel d'offres** (restreint,
+avec préqualification, etc.) — ou d'ajuster la logique de dérivation pour couvrir toute la famille
+« appel d'offres » — de sorte que ces plans deviennent `PPM-AGPM`. Les modes hors appel d'offres
+(consultation des prix, gré à gré / entente directe…) restent `PPM`.
+
+## Demande 2 — la référence reflète le sous-type dérivé (arbitrage pilote 07/09)
 
 Le **segment de type de la référence** d'un dossier de planification (DDP) doit reprendre le **code
 du sous-type dérivé** :
 
-- plan déclenchant l'AGPM → sous-type `PPM-AGPM` → référence **`00002/MTP/PPM-AGPM/2026`** ;
-- plan simple → sous-type `PPM` → référence `00002/MTP/PPM/2026` (inchangé).
+- plan déclenchant l'AGPM (≥1 marché en appel d'offres, toutes variantes) → sous-type `PPM-AGPM` →
+  référence **`00002/MTP/PPM-AGPM/2026`** ;
+- plan sans appel d'offres → sous-type `PPM` → référence `00002/MTP/PPM/2026` (inchangé).
 
 Point à trancher côté backend : le **périmètre temporel**.
 - Les **nouvelles** références (à la génération, à la réception) : à corriger.
@@ -47,6 +62,8 @@ est déjà visible côté front par le champ `idSousType` (libellé « … et Av
 
 ## Recette de contre-vérification
 
-1. Créer un DDP avec au moins un marché en **appel d'offres ouvert** (déclenche l'AGPM) → sous-type
-   dérivé `PPM-AGPM` → à la réception, la référence doit être `…/PPM-AGPM/…`.
-2. Créer un DDP **sans** mode déclencheur → sous-type `PPM` → référence `…/PPM/…` (inchangé).
+1. Créer un DDP avec au moins un marché en **appel d'offres ouvert** → `PPM-AGPM` → réf. `…/PPM-AGPM/…`.
+2. Créer un DDP avec au moins un marché en **appel d'offres restreint** (et un autre **avec
+   préqualification**) → `PPM-AGPM` aussi → réf. `…/PPM-AGPM/…` (c'est le cœur de la précision).
+3. Créer un DDP **sans aucun appel d'offres** (consultation des prix, gré à gré) → sous-type `PPM` →
+   référence `…/PPM/…` (inchangé).
