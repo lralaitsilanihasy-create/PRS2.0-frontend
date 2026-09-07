@@ -960,6 +960,12 @@ export class DossierConsultation implements OnInit {
       REATTRIBUTION: 'Réattribution',
       REPRISE: 'Reprise par le dispatcheur',
       RETRAIT_DISPATCH: 'Retrait du dispatch',
+      // ⚠️ Retrait du DOSSIER par la PRMP (demande 2026-09-07-retrait-dossier-journal) : demande +
+      // décision du CC/Président (SOUMIS -> BROUILLON). Libellés prêts, inertes tant que le backend
+      // ne dérive pas ces types depuis t_demande_retrait ; noms à aligner sur son choix final.
+      DEMANDE_RETRAIT: 'Demande de retrait',
+      RETRAIT_ACCEPTE: 'Retrait accepté',
+      RETRAIT_REFUSE: 'Retrait refusé',
       // ⚠️ Journal COMPLET (2026-09-04 soir, backend ed162e8, fusion à la lecture) : le traitement
       // raconté jusqu'au bout — examen, navette, visa, signatures, vérification, SIGMP, archivage.
       SOUMISSION_EXAMEN: "Soumission d'examen",
