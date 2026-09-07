@@ -1,5 +1,9 @@
 # Demande au backend `PRS20` — 2 septembre 2026 — La fiche de présentation et l'AGPM entrent dans l'examen
 
+> ✅ **LIVRÉ** — grille de contrôle propre à la fiche et à l'AGPM (portée FICHE/DOSSIER en plus de
+> LIGNE). Ordre d'examen figé le 04/09 : Fiche → lignes → AGPM → pièces → Dossier → Synthèse, avec
+> « on ne contrôle pas le vide » des DEUX côtés (front `8b7c3a4`, backend `b7a47e8` contre-recetté).
+
 > Document destiné à la session backend. Émis depuis le front `frontendprs2`. **Règle du pilote,
 > 02/09** : « faire entrer la fiche de présentation et l'AGPM (s'il y en a) dans l'examen de
 > dossier — chacun d'eux a SA PROPRE grille de contrôle ». Backend d'abord, le front suivra

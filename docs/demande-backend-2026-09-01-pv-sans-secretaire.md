@@ -1,5 +1,9 @@
 # Demande au backend `PRS20` — 1ᵉʳ septembre 2026 — Le PV perd son Secrétaire de séance
 
+> ✅ **LIVRÉ le 01/09** — backend `8ae307a` (+ `407bddc` : dernière porte d'écriture du secrétaire
+> fermée, `PvExamenMapper.toEntity` copiait encore `idSecretaireSeance` à la création du PV) + front
+> `974a21b` (le panneau « Viser » perd le Secrétaire de séance). La notion disparaît du cycle du PV.
+
 > Document destiné à la session backend. Émis depuis le front `frontendprs2`. **Règle du pilote,
 > 01/09** : « supprimer du projet de PV et du PV définitif le Secrétaire de séance » — la notion
 > disparaît du cycle du PV, désignation comprise. Backend d'abord, le front suivra.

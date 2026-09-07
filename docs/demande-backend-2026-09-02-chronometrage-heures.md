@@ -1,5 +1,9 @@
 # Demande au backend `PRS20` — 2 septembre 2026 — Le chronométrage passe en HEURES ouvrées
 
+> ✅ **LIVRÉ le 02/09** — backend `c8d987a` (tout en heures ouvrées, 8 h = 1 jour ouvré, fenêtre de
+> service 08 h-16 h, V15 rejouable, invariance verrouillée par test : tout-standard = 112 h = 14 j) +
+> front `848f269` (équivalence « 40 h (5 j) » en décimale FR, smoke réel migration + PUT 40→48→40).
+
 > Document destiné à la session backend. Émis depuis le front `frontendprs2`. **Règle du pilote,
 > 02/09** : « mettre le délai standard en heure de jour ouvré » — révision de l'unité du
 > chronométrage livré hier (`c66db71`). Backend d'abord, le front suivra.

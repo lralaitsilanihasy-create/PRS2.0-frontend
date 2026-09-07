@@ -1,5 +1,11 @@
 # Demande au backend `PRS20` — 1ᵉʳ septembre 2026 — Justifications de la fiche de présentation
 
+> ✅ **LIVRÉ le 01/09** — backend V13 + front `831753b` (saisie dans la grille partagée + globale,
+> création bloquée en miroir du 400 par champ, recette 9/9). ⚠️ La mise à jour PAR IMPORT échappait
+> d'abord à la garde (import PDF sans justification) — **trou fermé le 07/09** (backend `399c1c0`) :
+> l'import reste permissif, la garde est posée au `POST /api/dossiers/{id}/soumettre` (400 par champ,
+> le front les affiche déjà). Recette du refus par import à jouer sur 00002.
+
 > Document destiné à la session backend. Émis depuis le front `frontendprs2`. **Règle arbitrée par
 > le pilote le 01/09** — backend d'abord, le front suivra. Contexte : le front rend désormais la
 > « Fiche de présentation » officielle du dossier de planification, DÉRIVÉE du plan (onglet du

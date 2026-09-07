@@ -1,5 +1,9 @@
 # Demande au backend `PRS20` — 1ᵉʳ septembre 2026 — Chronométrage et prévision des délais de traitement
 
+> ✅ **LIVRÉ le 01/09** — backend `c66db71` (8 étapes, 3 statuts suspensifs, V14) + front `6c83d51`
+> (`<app-chronometrage-dossier>`, colonne « Fin prévue » PRMP, écran Admin délais standards).
+> ⚠️ Unité **révisée en heures ouvrées** dès le 02/09 (voir `demande-backend-2026-09-02-chronometrage-heures.md`).
+
 > Document destiné à la session backend. Émis depuis le front `frontendprs2`. **Règle du pilote,
 > 01/09** : permettre à la PRMP de connaître la **date prévisionnelle d'achèvement** du traitement
 > de son dossier à la CNM. Backend d'abord, le front suivra.

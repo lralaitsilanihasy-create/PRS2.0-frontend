@@ -1,5 +1,9 @@
 # Demande au backend `PRS20` — 3 septembre 2026 — La pièce AGPM n'est plus requise
 
+> ✅ **LIVRÉ** — la pièce jointe « Avis Général de Passation de Marché » n'est plus requise (le projet
+> d'AGPM dérivé du plan suffit) ; front `a0175b1` (la pièce AGPM n'est plus requise) + `7df2f88`
+> (fiche, plan, AGPM et pièces en onglets à la consultation).
+
 > Document destiné à la session backend. Émis depuis le front `frontendprs2`. **Règle du pilote,
 > 03/09** : « pour le plan de passation ayant un mode en appel d'offres ouvert, la pièce jointe
 > Avis Général de Passation de Marché n'est plus requise — on a déjà l'AGPM » : le **projet
