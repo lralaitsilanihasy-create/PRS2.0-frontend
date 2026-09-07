@@ -1,5 +1,12 @@
 # Demande backend — Servir la date de SOUMISSION sur le DTO dossier
 
+> ✅ **CLÔTURÉE le 07/09** — backend livré (**V20**) : `DossierDto.dateSoumission` nullable, posée
+> au `POST /soumettre` (plus à la création du brouillon), effacée au retour en brouillon (retrait) ;
+> reprise V20 depuis le journal. Découverte : la colonne était écrite à la CRÉATION — le Secrétaire
+> lisait une date de saisie sous un nom de soumission ; sémantique corrigée à la source, il lit
+> désormais la vraie date de dépôt. Contre-recette front verte : « Dépôt du dossier » = 06/09 sur le
+> Suivi des dossiers CNM (dossier réel). Aucun changement front (colonne déjà câblée).
+
 **Date** : 2026-09-06 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : demande pilote —
 le « Suivi des dossiers CNM » (PRMP) gagne une colonne **« Dépôt du dossier »** entre la référence
 et l'enregistrement CNM. Terme métier précisé par le pilote : **la date de soumission EST la date

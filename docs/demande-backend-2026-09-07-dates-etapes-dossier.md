@@ -1,5 +1,15 @@
 # Demande backend — Servir les DATES DES ÉTAPES du circuit sur le DTO dossier
 
+> ✅ **CLÔTURÉE le 07/09** — backend livré : `DossierDto.datesEtapes` aux 7 clés (toujours présentes,
+> null si l'étape n'est pas franchie), dérivé en lot dans `ChronometrageService.datesEtapes` (aucun
+> N+1), `RECEPTION` = `dateEnregistrement` par construction. ⚠️ Règle affinée à la livraison
+> (dossier réel) : le franchissement se juge sur le STATUT, pas sur l'existence de la tâche —
+> DISPATCH/EXAMEN/PROJET_PV redeviennent null après annulation de dispatch ou réexamen ; PV_SIGNE
+> daté à la dernière signature seulement ; VERIFICATION aux observations levées ; CLOTURE au statut
+> clôturé. PROJET_PV = clôture d'EXAMEN (repli, pas de tâche de soumission). Contre-recette front
+> verte : frise Président datée sans dispatchs/examens (portée), RECEPTION = dateEnregistrement.
+> Aucun changement front (frise déjà câblée sur datesEtapes).
+
 **Date** : 2026-09-07 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : demande pilote —
 la frise du circuit (tableau de bord, « Pipeline — toutes localités ») doit porter **la date de
 chaque étape franchie** sous son point (Réception, Dispatch, Examen, Projet PV, PV signé,
