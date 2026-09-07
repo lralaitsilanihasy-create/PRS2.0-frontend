@@ -1,4 +1,4 @@
-# Demande au backend `PRS20` — 7 septembre 2026 — PPM-AGPM pour tout appel d'offres + référence reflétant le sous-type
+# Demande au backend `PRS20` — 7 septembre 2026 — PPM-AGPM pour tout appel d'offres + référence dossier ET numéro de PV reflétant le sous-type
 
 **Date** : 2026-09-07 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote sur
 #100299 — le dossier est de sous-type **PPM-AGPM** mais sa référence porte le segment **PPM**.
@@ -47,6 +47,25 @@ du sous-type dérivé** :
   référence **`00002/MTP/PPM-AGPM/2026`** ;
 - plan sans appel d'offres → sous-type `PPM` → référence `00002/MTP/PPM/2026` (inchangé).
 
+## Demande 3 — le numéro de PV reflète aussi le sous-type (précision pilote 07/09)
+
+Le **numéro de PV** doit lui aussi refléter le sous-type. Aujourd'hui, pour #100299 :
+
+```
+refePv = "00002/MTP/PPM/PV/2026"   (attendu : "00002/MTP/PPM-AGPM/PV/2026")
+```
+
+Le contrat dit que `refePv` = `refeDossier` avec « /PV » inséré avant l'année. Donc **corriger la
+référence du dossier (Demande 2) doit propager automatiquement** le sous-type au PV — À CONDITION que
+la dérivation lise le `refeDossier` corrigé et ne recompose pas un code `PPM` indépendamment. Merci de
+le **confirmer** (idéalement dériver `refePv` du `refeDossier` déjà généré).
+
+⚠️ **Contrainte de cohérence — les deux DOIVENT bouger ensemble.** Le front relie un PV à son dossier
+en reconstruisant la référence : `refePv.replace('/PV/', '/')` doit retomber sur `refeDossier`
+(fallback pour les profils dont la chaîne est servie vide, ex. PRMP). Si le dossier passait à
+`…/PPM-AGPM/…` mais que le PV restait `…/PPM/…` (ou l'inverse), **cette jointure casserait**. Le
+round-trip reste exact tant que les deux portent le même segment — vérifié côté front, rien à y changer.
+
 Point à trancher côté backend : le **périmètre temporel**.
 - Les **nouvelles** références (à la génération, à la réception) : à corriger.
 - Les références **déjà attribuées** (comme #100299) sont probablement **immuables** (imprimées /
@@ -67,3 +86,5 @@ est déjà visible côté front par le champ `idSousType` (libellé « … et Av
    préqualification**) → `PPM-AGPM` aussi → réf. `…/PPM-AGPM/…` (c'est le cœur de la précision).
 3. Créer un DDP **sans aucun appel d'offres** (consultation des prix, gré à gré) → sous-type `PPM` →
    référence `…/PPM/…` (inchangé).
+4. Sur un dossier `PPM-AGPM`, produire le projet de PV → **`refePv = …/PPM-AGPM/PV/…`** (cohérent avec
+   le dossier), et la jointure PV↔dossier (`refePv.replace('/PV/','/')`) retombe sur le `refeDossier`.
