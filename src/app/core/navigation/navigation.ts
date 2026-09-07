@@ -174,6 +174,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Rattachements en attente', path: '/admin/rattachements', icon: '🔗' },
     { label: 'Chaînes de contrôle', path: '/admin/chaines-controle', icon: '⛓' },
     { label: 'Délais standards', path: '/admin/delais-standards', icon: '⏱' },
+    { label: 'Seuil AGPM (AMI)', path: '/admin/agpm-seuil', icon: '📊' },
     { label: 'Actualités', path: '/admin/actualites', icon: '📣' },
     { label: 'Référentiels', path: '/admin/referentiels', icon: '⚙' },
     { label: 'Comptes & hiérarchie', path: '/admin/comptes', icon: '👥' },

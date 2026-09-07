@@ -220,3 +220,13 @@ export interface SousTypeDossier {
   /** FK famille (`tr_type_dossier` : DDP / DMC / DDM) ; famille inconnue → 404. */
   idTypeDossier: string;
 }
+
+/**
+ * Paramètre système ADMINISTRABLE : seuil de MONTANT au-delà duquel un marché en appel à
+ * manifestation d'intérêt (AMI) déclenche l'AGPM (donc bascule le sous-type en PPM-AGPM). Livré
+ * backend `GET`/`PUT /api/parametres/agpm-seuil-montant` — défaut 0 (tout AMI déclenche), borne
+ * incluse, comparaison par marché. Les autres appels d'offres déclenchent sans condition.
+ */
+export interface ParametreAgpmSeuil {
+  seuil: number;
+}

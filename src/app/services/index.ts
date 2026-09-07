@@ -4,6 +4,7 @@
  */
 export * from './api/crud.service';
 export * from './referentiel.services';
+export * from './parametres.services';
 export * from './comptes.services';
 export * from './circuit.services';
 export * from './prmp.services';
