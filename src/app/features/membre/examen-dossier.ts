@@ -1356,8 +1356,22 @@ export class ExamenDossier implements OnDestroy {
     return (ids.length ? Math.max(...ids) : 0) + 1;
   }
 
+  /**
+   * ⚠️ 2026-09-08 — l'écran d'examen est PARTAGÉ (Membre, mais aussi CC / Président par délégation
+   * ascendante ou redispatch au CC). Les redirections doivent rester DANS l'espace courant, sinon un
+   * CC/Président tombe sur « Accès refusé » (les routes `/membre/*` sont réservées au Membre).
+   */
+  private espaceCourant(): string {
+    return this.router.url.split('/')[1] || 'membre';
+  }
+  /** Liste « Projets de PV » de l'espace : directe chez le Membre, sous le hub `resultat-examen` chez le CC / le Président. */
+  private routeProjetsPv(): unknown[] {
+    const e = this.espaceCourant();
+    return e === 'membre' ? ['/membre', 'pv'] : ['/' + e, 'resultat-examen', 'pv'];
+  }
+
   annuler(): void {
-    void this.router.navigate(['/membre/tableau-de-bord']);
+    void this.router.navigate(['/' + this.espaceCourant(), 'tableau-de-bord']);
   }
 
   /** Mode édition (dossier EXAMINE) : met à jour l'examen + ses détails (pas de nouveau PV/lettre). */
@@ -1408,8 +1422,9 @@ export class ExamenDossier implements OnDestroy {
           this.toast.success('Examen soumis · projet de PV créé (points de contrôle + synthèse).');
           // ⚠️ Demande pilote (2026-09-08) — enchaîner directement sur la GESTION du projet de PV :
           // on passe l'id du PV créé en query param, la liste « Projets de PV » ouvre son modal
-          // automatiquement (plus besoin de cliquer « Gérer »).
-          void this.router.navigate(['/membre/pv'], { queryParams: { gerer: pv.idPv } });
+          // automatiquement (plus besoin de cliquer « Gérer »). Route de l'ESPACE courant (le CC /
+          // le Président y accèdent aussi — /membre/pv leur serait refusé).
+          void this.router.navigate(this.routeProjetsPv(), { queryParams: { gerer: pv.idPv } });
         },
         error: (e: ApiError) => {
           this.saving.set(false);
@@ -1627,10 +1642,10 @@ export class ExamenDossier implements OnDestroy {
             this.toast.success(
               'Réexamen enregistré — soumettez de nouveau le projet de PV au Président / Chef de commission pour reprendre la navette.',
             );
-            void this.router.navigate(['/membre/pv']);
+            void this.router.navigate(this.routeProjetsPv());
           } else {
             this.toast.success('Examen modifié.');
-            void this.router.navigate(['/membre/mes-dossiers']);
+            void this.router.navigate(['/' + this.espaceCourant(), 'mes-dossiers']);
           }
         },
         error: (e: ApiError) => {
