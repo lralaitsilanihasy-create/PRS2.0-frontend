@@ -72,7 +72,7 @@ interface CarteRectif {
             </thead>
             <tbody>
               @for (c of cartesAffichees(); track c.dossier.idDossier) {
-                <tr>
+                <tr [class.cnm-row-cloture]="c.dossier.datesEtapes?.['CLOTURE']">
                   <td>{{ c.dossier.refeDossier || ('Dossier #' + c.dossier.idDossier) }}</td>
                   <td>{{ entiteLabel(c.dossier) }}</td>
                   <td><app-statut-badge [statut]="c.dossier.statut" [label]="'À rectifier'" /></td>

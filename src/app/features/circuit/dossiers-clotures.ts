@@ -52,7 +52,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
             </thead>
             <tbody>
               @for (d of dossiersAffiches(); track d.idDossier) {
-                <tr>
+                <tr [class.cnm-row-cloture]="d.datesEtapes?.['CLOTURE']">
                   <td>{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
                   <!-- Statut réel : la liste PRMP couvre toute la phase de vérification (2026-08-03). -->

@@ -68,7 +68,7 @@ type Groupe = 'brouillon' | 'soumis';
             </thead>
             <tbody>
               @for (d of dossiers(); track d.idDossier) {
-                <tr [id]="'dl-row-' + d.idDossier" [class.dl-row-focus]="d.idDossier === focusId()">
+                <tr [id]="'dl-row-' + d.idDossier" [class.dl-row-focus]="d.idDossier === focusId()" [class.cnm-row-cloture]="d.datesEtapes?.['CLOTURE']">
                   <td>{{ reference(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
                   <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>

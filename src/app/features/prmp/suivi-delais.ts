@@ -47,7 +47,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
             </thead>
             <tbody>
               @for (d of dossiers(); track d.idDossier) {
-                <tr>
+                <tr [class.cnm-row-cloture]="d.datesEtapes?.['CLOTURE']">
                   <td>{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</td>
                   <!-- ⚠️ Terme métier (pilote 2026-09-06) : la date de SOUMISSION est la date de
                        DÉPÔT du dossier — même donnée (champ demandé au backend, « — » sinon). -->

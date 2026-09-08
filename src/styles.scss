@@ -130,6 +130,12 @@ a:hover {
   color: var(--success-text);
   font-weight: 600;
 }
+/* LIGNE entière d'un dossier CLÔTURÉ (fin de traitement atteinte) — teinte verte « terminé » pour la
+   distinguer des dossiers en cours (demande pilote 2026-09-08). Fond sur les cellules (le fond de la
+   rangée est masqué par celui des td dans les tableaux). */
+tr.cnm-row-cloture > td {
+  background: var(--success-bg);
+}
 
 /**
  * Masquage VISUEL seul : le texte reste lu par les lecteurs d'écran (à la différence de
