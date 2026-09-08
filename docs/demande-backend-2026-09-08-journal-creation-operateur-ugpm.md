@@ -3,10 +3,9 @@
 > ✅ **CLÔTURÉ le 08/09** — backend livré (`7794f88`, 830 tests) et **contre-recetté en réel** sur
 > #100305 (rétroactif, sans réimport) : la ligne `CREATION` porte désormais `nomOperateur` =
 > « RALAITSILANIHASY Lantonirina Annick » (l'UGPM `creePar`), la `SOUMISSION` reste la PRMP. Front : rien
-> à changer. ⚠️ **Deux points laissés à l'arbitrage du pilote** (voir la note de livraison en bas) :
-> (1) incohérence d'ORDRE des mots (« NOM Prénoms » en création vs « Prénoms Nom » en soumission pour la
-> même personne) ; (2) les AUTRES gestes d'un agent UGPM (RESOUMISSION, MISE_A_JOUR) portent encore le nom
-> de sa PRMP de tutelle — même écart, non étendu sans décision.
+> à changer. ⚠️ **Deux points arbitrés par le pilote le 08/09** (voir « Arbitrages rendus » en bas) :
+> (1) **UNIFORMISER** l'ordre des noms sur toutes les lignes du journal ; (2) **ÉTENDRE** la dérivation
+> à TOUS les gestes d'un agent UGPM (auteur réel, pas la PRMP de tutelle). → **2ᵉ tour côté backend.**
 
 **Date** : 2026-09-08 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote — un
 dossier **créé par une UGPM** puis **soumis par la PRMP** apparaît dans le journal des actions avec la
@@ -115,3 +114,39 @@ antérieur à la colonne), puis le nom stocké. Un nom connu n'est **jamais** re
 cohérence journal ↔ `creeParNom` vérifiée sur la même réponse) ; l'UGPM crée et la PRMP soumet, deux
 opérateurs distincts ; une ligne écrite **avant** le correctif se corrige à la relecture sans que la base
 bouge ; et les replis, qui conservent le nom stocké quand le créateur est inconnu ou absent.
+
+---
+
+## Arbitrages rendus par le pilote — 2026-09-08 (2ᵉ tour, à traiter par le backend)
+
+Le pilote a tranché les deux points de la note de livraison. **Aucun impact front attendu** (la colonne
+« Opérateur » affiche `nomOperateur` tel que servi). Les deux corrections sont côté backend.
+
+### ① Uniformiser l'ordre des noms — **OUI**
+
+Toutes les lignes du journal doivent afficher les noms d'opérateur selon **une seule et même
+convention**, quelle que soit la source (`creeParNom` de l'annuaire des unités, ou l'annuaire des PRMP).
+Aujourd'hui la CRÉATION rend « NOM Prénoms » et la SOUMISSION « Prénoms Nom » pour une même personne :
+c'est cette double convention dans un même tableau qui est refusée.
+
+- **Convention cible suggérée : « NOM Prénoms »** (nom de famille en tête), qui est la forme
+  administrative usuelle des documents officiels — mais le choix de la convention canonique vous revient,
+  du moment qu'elle est **identique sur toutes les lignes** du journal. À appliquer à la lecture (comme
+  le reste de la fusion), donc rétroactif.
+
+### ② Étendre la dérivation à TOUS les gestes d'un agent UGPM — **OUI (auteur réel)**
+
+Le journal doit nommer **l'auteur réel de chaque geste**, pas l'opérateur sous mandat. Toute action
+consignée effectuée par un agent UGPM (`RESOUMISSION`, `MISE_A_JOUR`, et toute autre du même ordre) doit
+porter le **nom de l'UGPM** qui l'a réellement faite, exactement comme la `CREATION` le fait désormais —
+et non le nom de sa PRMP de tutelle. C'est le prolongement cohérent du constat d'origine, sur les lignes
+que la première livraison n'avait pas couvertes.
+
+- Même mécanique que ① : dérivation à la lecture, rétroactive, mêmes replis (auteur réel connu →
+  jamais remplacé par un login brut).
+- `idPrmpOperateur` : on garde le raisonnement de la 1ʳᵉ livraison (PRMP de tutelle, pour ne pas allumer
+  le marqueur « opérateur ≠ attributaire ») — **seul le nom affiché change de source.**
+
+> Contre-recette du 2ᵉ tour : sur un dossier créé + soumis par la même PRMP, les deux lignes affichent le
+> même ordre de nom ; sur un dossier resoumis / mis à jour par une UGPM, ces lignes portent le nom de
+> l'UGPM (`creeParNom`) et non celui de la PRMP.
