@@ -83,6 +83,19 @@ describe('errorInterceptor — 409 CONFLIT_VERSION', () => {
     expect(toast.error).toHaveBeenCalledWith('Transition non autorisée dans l’état actuel du dossier.', 'Action impossible');
   });
 
+  it('réseau injoignable (backend Fetch, status 0) : message français, PAS le brut « Failed to fetch »', () => {
+    const http = TestBed.inject(HttpClient);
+    const ctrl = TestBed.inject(HttpTestingController);
+    let recue: ApiError | undefined;
+    http.get('/api/aviss').subscribe({ error: (e: ApiError) => (recue = e) });
+    // Avec withFetch(), un réseau coupé remonte un TypeError('Failed to fetch') dans err.error, status 0.
+    ctrl.expectOne('/api/aviss').error(new TypeError('Failed to fetch') as unknown as ProgressEvent);
+
+    expect(recue?.status).toBe(0);
+    expect(recue?.message).toBe('Service indisponible : impossible de joindre le serveur.');
+    expect(toast.error).toHaveBeenCalledWith('Service indisponible : impossible de joindre le serveur.', 'Connexion');
+  });
+
   it('ne toaste toujours pas un 400 porteur d’erreurs de champ (laissé au formulaire)', () => {
     const erreur = putEnEchec({
       timestamp: '2026-08-27T10:15:00',

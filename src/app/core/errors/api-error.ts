@@ -99,7 +99,16 @@ export function errorTitle(status: number, code?: string): string {
 /** Normalise une `HttpErrorResponse` en `ApiError`. */
 export function toApiError(err: HttpErrorResponse): ApiError {
   const body = err.error as Partial<ErrorResponse> | string | null;
-  const hasStructuredBody = typeof body === 'object' && body !== null;
+  // ⚠️ Backend Fetch d'Angular (`withFetch`, app.config) : un réseau injoignable (status 0) place dans
+  // `err.error` un `TypeError` dont `.message` vaut « Failed to fetch » — et l'ancien backend XHR y
+  // met un `ProgressEvent`. Ni l'un ni l'autre n'est un `ErrorResponse` du backend : sans ce garde, on
+  // affichait « Failed to fetch » au lieu du message français par défaut du statut. On ne lit donc
+  // `.message`/`.erreurs`/`.code` que sur un vrai corps structuré (objet JSON parsé).
+  const hasStructuredBody =
+    typeof body === 'object' &&
+    body !== null &&
+    !(body instanceof Error) &&
+    !(typeof Event !== 'undefined' && body instanceof Event);
 
   const message = hasStructuredBody && body.message ? body.message : defaultMessage(err.status);
   // Backend : `erreurs: [{ champ, message }]` (validation 400) → indexé par champ pour les formulaires.
