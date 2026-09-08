@@ -199,10 +199,16 @@ interface Echange {
               @if (observations().length) {
                 <ul class="vf__obs">
                   @for (o of observations(); track o.idObservationPv; let i = $index) {
-                    <li>
+                    <!-- ⚠️ 2026-09-08 (constat pilote) — une observation encore SANS décision est
+                         surlignée (liseré ambre + « À statuer ») pour qu'on la repère dans la liste
+                         quand « Enregistrer le passage » reste grisé. -->
+                    <li [class.vf__obs-item--todo]="o.statut !== 'LEVEE' && !verrouille() && !decisionDe(o.idObservationPv)">
                       <app-observation-pv-card [obs]="o" [numero]="i + 1">
                         @if (o.statut !== 'LEVEE' && !verrouille()) {
                           <div class="vf__obs-actions">
+                            @if (!decisionDe(o.idObservationPv)) {
+                              <span class="vf__obs-todo">⏳ À statuer</span>
+                            }
                             <!-- ⚠️ Règle 2026-08-15 : levée impossible avant la première rectification
                                  de la PRMP (leveePossible=false au premier passage — le rappel) ;
                                  grisée en miroir de la garde 409 serveur. -->
@@ -242,8 +248,9 @@ interface Echange {
                      ne sont pas statuées, même après la prise en charge : on le dit explicitement. -->
                 @if (actionAutorisee() && !toutesStatuees()) {
                   <p class="vf__hint-statuer" role="status">
-                    ⚠ {{ nbAStatuer() }} observation(s) restent à statuer (levée ou maintenue) : « Enregistrer
-                    le passage » s'activera quand toutes seront décidées.
+                    ⚠ {{ nbAStatuer() }} observation(s) restent à statuer (levée ou maintenue) — repérez-les
+                    dans la liste au liseré ambre « À statuer ». « Enregistrer le passage » s'activera quand
+                    toutes seront décidées.
                   </p>
                 }
               }
@@ -336,6 +343,9 @@ interface Echange {
     /* ⚠️ Spec observations FAVR — liste des observations du PV (cartes partagées + décisions projetées). */
     .vf__obs { list-style: none; margin: 0.5rem 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .vf__obs-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; border-top: 1px dashed var(--c-100); padding-top: 0.4rem; }
+    /* ⚠️ 2026-09-08 — observation encore sans décision : liseré ambre + pastille « À statuer ». */
+    .vf__obs-item--todo > app-observation-pv-card { display: block; border-left: 3px solid var(--warning-text, #b45309); border-radius: var(--radius-md); background: var(--warning-bg, #fffbeb); }
+    .vf__obs-todo { font-size: var(--text-xs); font-weight: 700; color: var(--warning-text); background: #fff; border: 1px solid var(--warning-bdr, #fde68a); border-radius: var(--radius-full); padding: 0.05rem 0.5rem; }
     .vf__obs-opt { display: inline-flex; gap: 0.3rem; align-items: center; font-size: var(--text-sm); cursor: pointer; }
     .vf__obs-opt--ok { color: #15803D; }
     /* Levée indisponible (premier passage = rappel) : grisée, l'infobulle explique la règle. */
