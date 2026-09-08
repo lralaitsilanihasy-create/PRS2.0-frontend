@@ -1,5 +1,13 @@
 # Signalement backend — La réattribution laisse l'occurrence EXAMEN du précédent assignataire OUVERTE
 
+> ✅ **CLÔTURÉ le 08/09** — backend livré (`8ad814c`, 835 tests, migration `V23`) et **contre-recetté en
+> réel sur #100305**, les 3 points verts : ① `EXAMEN #1` (MEMANT1) porte `fin: 07:18:38` = l'instant EXACT
+> du redispatch, `enCours=false`, plus aucune occurrence EXAMEN ouverte ; ② le CC (`CCANT01`) voit enfin le
+> bouton **« Prendre en charge »** (« Prise en charge par Rina » disparu) ; ③ après sa PEC, **`EXAMEN #2`
+> ouverte à son nom** (08:05), `EXAMEN #1` restant close, verrou levé, examen déblocable. Le correctif FERME
+> l'occurrence sortante à la réattribution (symétrique du DISPATCH n+1) ; V23 a fermé l'orpheline déjà en
+> base (un WRITE, non rétroactif). Front : **rien changé**.
+
 **Date** : 2026-09-08 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote — un
 dossier **retiré puis redispatché à un nouvel assignataire** pendant l'examen bloque ce dernier : le
 chronométrage affiche « Prise en charge par _l'ancien assignataire_ » et **aucun bouton « Prendre en
