@@ -1404,9 +1404,12 @@ export class ExamenDossier implements OnDestroy {
         }),
       )
       .subscribe({
-        next: () => {
+        next: (pv: PvExamen) => {
           this.toast.success('Examen soumis · projet de PV créé (points de contrôle + synthèse).');
-          void this.router.navigate(['/membre/pv']);
+          // ⚠️ Demande pilote (2026-09-08) — enchaîner directement sur la GESTION du projet de PV :
+          // on passe l'id du PV créé en query param, la liste « Projets de PV » ouvre son modal
+          // automatiquement (plus besoin de cliquer « Gérer »).
+          void this.router.navigate(['/membre/pv'], { queryParams: { gerer: pv.idPv } });
         },
         error: (e: ApiError) => {
           this.saving.set(false);

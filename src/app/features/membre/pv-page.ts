@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { ToastService } from '../../core/notifications/toast.service';
@@ -522,9 +522,19 @@ export class MembrePv {
   private readonly permissions = inject(PermissionsService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly pvs = signal<PvExamen[]>([]);
   readonly loading = signal(false);
+  /**
+   * ⚠️ Demande pilote (2026-09-08) — arrivée depuis « Soumettre l'examen » avec `?gerer=<idPv>` :
+   * le modal de gestion du PV s'ouvre TOUT SEUL (plus besoin de cliquer « Gérer »). `chaineChargee`
+   * signale que la jointure PV→dossier est prête, pour que le modal s'ouvre avec un contenu complet
+   * (chronométrage, marchés). `autoOuvertFait` garantit une ouverture unique.
+   */
+  private readonly autoOuvrirId = signal<number | null>(null);
+  private readonly chaineChargee = signal(false);
+  private autoOuvertFait = false;
   readonly selected = signal<PvExamen | null>(null);
   /** Animation de sortie de la modale du détail (voir `fermerAvecAnimation`). */
   readonly closingDetail = signal(false);
@@ -633,6 +643,21 @@ export class MembrePv {
   };
 
   constructor() {
+    // ⚠️ Demande pilote (2026-09-08) — `?gerer=<idPv>` posé par « Soumettre l'examen » : ouvrir le
+    // modal de gestion du PV dès que la liste ET la jointure dossier sont prêtes (contenu complet).
+    const g = this.route.snapshot.queryParamMap.get('gerer');
+    this.autoOuvrirId.set(g != null && /^\d+$/.test(g) ? Number(g) : null);
+    effect(() => {
+      const id = this.autoOuvrirId();
+      if (id == null || this.autoOuvertFait) return;
+      if (this.loading() || !this.chaineChargee()) return; // attendre PVs + jointure dossier
+      this.autoOuvertFait = true; // une seule fois, même si le PV n'est plus dans la liste
+      this.autoOuvrirId.set(null);
+      void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+      const pv = this.pvs().find((p) => p.idPv === id);
+      if (pv) this.selectionner(pv);
+    });
+
     this.charger();
     this.lookups.lookup(AvisService, 'idAvis', ['libelleAvis']).subscribe((m) => this.avisMap.set(m));
     this.lookups.lookup(PointsCtrlService, 'idPointCtrl', ['libelPointCtrl']).subscribe((m) => this.pointsMap.set(m));
@@ -649,6 +674,7 @@ export class MembrePv {
       this.dispatchs.set(dispatchs);
       this.receptions.set(receptions);
       this.dossiers.set(dossiers);
+      this.chaineChargee.set(true);
     });
   }
 
