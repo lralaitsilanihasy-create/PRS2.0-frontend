@@ -227,3 +227,32 @@ deux points de la contre-recette, la rétroactivité sur une ligne écrite avant
 et la cohérence journal ↔ `creeParNom`. Un test existant sur la reprise de traitement par une PRMP
 successeur encodait l'ancien ordre : mis à jour, avec la raison en commentaire — c'est la meilleure
 preuve que la convention a changé partout.
+
+---
+
+## Clôture — habilitation UGPM tranchée, 2026-09-08 (`PRS20`, commit `e9db492`)
+
+Le pilote a répondu à la question laissée ouverte en fin de 2ᵉ tour : **on garde création seule**.
+L'UGPM saisit et crée le dossier ; les **actes formels** — soumission, resoumission, transmission de
+compléments — restent à la PRMP. La formule retenue : **« l'UGPM saisit, la PRMP engage »**.
+
+**Aucun code n'a bougé.** Les `hasRole('PRMP')` de `/soumettre`, `/resoumettre` et
+`/transmettre-complements*` restent en place, et une UGPM continue d'y recevoir **403**. Le commit ne
+touche que les deux documents de référence : c'est un enregistrement de décision, pas une livraison.
+
+- La décision est écrite dans `docs/regles-gestion.md` et `docs/api-endpoints.md`, et la règle du
+  **2026-08-26** qui posait déjà ce partage est marquée **reconfirmée**. La question s'était reposée
+  d'elle-même en étendant le journal ; mieux vaut une trace qui dit pourquoi elle a été refermée dans le
+  même sens qu'un silence laissant croire à un oubli.
+- ⚠️ **La dérivation « auteur réel » reste en place, dormante.** Elle porte sur l'auteur de chaque ligne
+  et non sur le type d'action : elle corrige déjà les lignes de cette forme présentes en base, et
+  vaudrait sans retouche si ce partage des rôles évoluait un jour. Une consigne est posée aux deux
+  endroits : **ne pas la spécialiser à `CREATION`** pour « simplifier » — ce serait reconduire
+  exactement le défaut d'origine.
+- **Conséquence pour la recette** : le point (2) de la contre-recette du 2ᵉ tour n'est pas jouable, et
+  ne le sera pas. Il n'existe aucun chemin pour produire un dossier resoumis par une UGPM. Le point (1)
+  — ordre de nom identique sur toutes les lignes — reste, lui, entièrement vérifiable à l'écran.
+
+**Chantier journal clos des deux côtés.** Récapitulatif des trois livraisons : `7794f88` (la création
+porte son auteur réel), `4b391a5` (ordre uniforme + auteur réel sur toutes les lignes), `e9db492`
+(habilitation tranchée, documentation).
