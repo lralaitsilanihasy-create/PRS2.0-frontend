@@ -223,13 +223,15 @@ export interface Chronometrage {
 }
 
 /**
- * Corps de `POST /api/dossiers/{id}/prise-en-charge` — rejoué sur une tâche ouverte, il CORRIGE la
- * prévision. ⚠️ `previsionJours` (unité d'avant le 02/09) part en 400 explicite : 5 « jours » lus
- * comme 5 heures fausseraient la date sans bruit.
+ * Corps de `POST /api/dossiers/{id}/prise-en-charge`. ⚠️ Depuis 2026-09-08 (`af875f9`) le corps est
+ * **optionnel** : absent → le serveur pose le délai standard admin de l'étape courante
+ * (`previsionStandard=true`) ; le front ne l'envoie plus (le bouton ne fait que déclencher le chrono).
+ * `previsionHeures` reste accepté par l'API (override/compat). `previsionJours` (unité d'avant le
+ * 02/09) part toujours en 400 explicite : 5 « jours » lus comme 5 heures fausseraient la date sans bruit.
  */
 export interface PriseEnChargeRequest {
-  /** HEURES ouvrées (8 h = 1 jour ouvré), entier ≥ 1 (400 sinon). */
-  previsionHeures: number;
+  /** HEURES ouvrées (8 h = 1 jour ouvré), entier ≥ 1 (400 sinon) ; OPTIONNEL (absent → standard admin). */
+  previsionHeures?: number;
 }
 
 /** Délai standard d'une étape — référentiel administrable (PUT réservé à l'Administrateur). */

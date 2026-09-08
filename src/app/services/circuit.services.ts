@@ -78,15 +78,16 @@ export class DossierService extends CrudService<Dossier> {
 
   /**
    * `POST /api/dossiers/{id}/prise-en-charge` (chronométrage 2026-09-01, HEURES ouvrées depuis le
-   * 02/09) — le porteur de l'étape courante prend le dossier en charge et pose sa prévision
-   * (heures ouvrées, 8 h = 1 jour ouvré, ≥ 1). Rejoué sur une tâche encore ouverte, il CORRIGE la
-   * prévision sans créer d'occurrence. 403 hors porteur (délégations/intérim résolus serveur),
-   * 409 si aucune étape n'est ouverte.
+   * 02/09) — le porteur de l'étape courante prend le dossier en charge : le geste DÉCLENCHE le
+   * chronométrage. ⚠️ Depuis 2026-09-08 (`af875f9`) le corps est **vide** : la prévision est le
+   * délai standard admin de l'étape courante, posé par le serveur (`previsionStandard=true`) —
+   * plus de saisie côté porteur. `previsionHeures` reste accepté par l'API (override/compat) mais le
+   * front ne l'envoie plus. 403 hors porteur (délégations/intérim résolus serveur), 409 si aucune
+   * étape n'est ouverte.
    */
-  priseEnCharge(idDossier: number, previsionHeures: number): Observable<TacheDossier> {
-    return this.http.post<TacheDossier>(`${this.baseUrl}/${idDossier}/prise-en-charge`, {
-      previsionHeures,
-    });
+  priseEnCharge(idDossier: number, previsionHeures?: number): Observable<TacheDossier> {
+    const body = previsionHeures != null ? { previsionHeures } : {};
+    return this.http.post<TacheDossier>(`${this.baseUrl}/${idDossier}/prise-en-charge`, body);
   }
 
   /**

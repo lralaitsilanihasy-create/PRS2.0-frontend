@@ -50,18 +50,12 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
                 {{ heuresLabel(t.previsionHeures) }}{{ t.previsionStandard ? ' (délai standard)' : '' }},
                 {{ t.dureeHeuresOuvrees }} h écoulées.
               </span>
-              @if (estMaTache()) {
-                <button type="button" class="btn btn-outline btn-sm" [disabled]="saisieOuverte() || saving()" (click)="ouvrirSaisie(t.previsionHeures)">
-                  Corriger ma prévision
-                </button>
-              }
             } @else if (peutPrendreEnCharge()) {
-              <!-- ⚠️ Demande pilote (2026-09-04) — bouton TRÈS repérable : c'est le geste qui ouvre
-                   toute action du profil (couleur vive, dérogation assumée aux tokens). DÉSACTIVÉ
-                   dès que l'action est déclenchée (saisie ouverte / enregistrement en cours) ; une
-                   fois la prise en charge enregistrée, il cède la place à l'état « Prise en charge
-                   par… ». -->
-              <button type="button" class="chrono__cta" [disabled]="saisieOuverte() || saving()" (click)="ouvrirSaisie(null)">
+              <!-- ⚠️ Demande pilote (2026-09-08) — le bouton ne DEMANDE PLUS de prévision : il ne sert
+                   qu'à DÉCLENCHER le chrono. La prévision est le délai standard admin de l'étape, posé
+                   par le serveur (corps vide accepté, backend af875f9). Un seul clic, désactivé le
+                   temps de l'enregistrement, puis il cède la place à l'état « Prise en charge par… ». -->
+              <button type="button" class="chrono__cta" [disabled]="saving()" (click)="prendreEnCharge()">
                 ⏱ Prendre en charge
               </button>
             } @else {
@@ -76,34 +70,6 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
             </span>
           }
         </div>
-
-        <!-- Saisie de la prévision (ouverte par le bouton) -->
-        @if (saisieOuverte()) {
-          <div class="chrono__saisie cnm-form">
-            <label class="form-group">
-              <span class="form-label">Ma prévision pour cette étape (heures ouvrées) *</span>
-              <input
-                type="number"
-                class="form-control chrono__jours"
-                min="1"
-                step="1"
-                [value]="previsionSaisie()"
-                (input)="previsionSaisie.set($any($event.target).value)"
-              />
-              <span class="form-hint">
-                Entier ≥ 1 — 8 h ouvrées = 1 jour ouvré. Elle alimente la date prévisionnelle
-                annoncée à la PRMP ; corrigeable tant que la tâche est ouverte.
-              </span>
-            </label>
-            @if (erreurSaisie()) { <span class="form-error">{{ erreurSaisie() }}</span> }
-            <div class="chrono__saisie-actions">
-              <button type="button" class="btn btn-outline btn-sm" (click)="saisieOuverte.set(false)">Annuler</button>
-              <button type="button" class="btn btn-primary btn-sm" [disabled]="saving()" (click)="confirmer()">
-                {{ saving() ? 'Enregistrement…' : 'Confirmer' }}
-              </button>
-            </div>
-          </div>
-        }
 
         <!-- Restitution complète : compteurs + tâches -->
         @if (!compact()) {
@@ -217,20 +183,6 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
     .chrono--compact .chrono__prevision {
       margin-left: 0;
     }
-    .chrono__saisie {
-      border: 1px solid var(--n-200);
-      border-radius: 8px;
-      padding: 0.75rem;
-      max-width: 26rem;
-    }
-    .chrono__jours {
-      max-width: 8rem;
-    }
-    .chrono__saisie-actions {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: flex-end;
-    }
     .chrono__compteurs {
       display: flex;
       flex-wrap: wrap;
@@ -335,9 +287,6 @@ export class ChronometrageDossier {
 
   readonly chrono = signal<Chronometrage | null>(null);
   readonly chargement = signal(false);
-  readonly saisieOuverte = signal(false);
-  readonly previsionSaisie = signal('');
-  readonly erreurSaisie = signal<string | null>(null);
   readonly saving = signal(false);
 
   /**
@@ -451,28 +400,21 @@ export class ChronometrageDossier {
     return `${heures} h (${String(jours).replace('.', ',')} j)`;
   }
 
-  ouvrirSaisie(previsionActuelle: number | null | undefined): void {
-    this.erreurSaisie.set(null);
-    this.previsionSaisie.set(previsionActuelle != null ? String(previsionActuelle) : '');
-    this.saisieOuverte.set(true);
-  }
-
-  confirmer(): void {
-    const heures = Number(this.previsionSaisie());
-    if (!Number.isInteger(heures) || heures < 1) {
-      this.erreurSaisie.set("La prévision est un nombre entier d'heures ouvrées, au moins 1 (8 h = 1 jour ouvré).");
-      return;
-    }
-    this.erreurSaisie.set(null);
+  /**
+   * ⚠️ Demande pilote (2026-09-08) — « Prendre en charge » NE DEMANDE PLUS de prévision : un seul
+   * appel, corps vide, le serveur pose le délai standard admin de l'étape courante (`af875f9`,
+   * `previsionStandard=true`). Le geste ne sert qu'à DÉCLENCHER le chronométrage. La garde d'identité
+   * reste serveur (403 hors porteur / 409 aucune étape ouverte → dialogue centralisé).
+   */
+  prendreEnCharge(): void {
     this.saving.set(true);
-    this.dossierService.priseEnCharge(this.idDossier(), heures).subscribe({
+    this.dossierService.priseEnCharge(this.idDossier()).subscribe({
       next: () => {
         this.saving.set(false);
-        this.saisieOuverte.set(false);
-        this.toast.success(`Prise en charge enregistrée — prévision ${this.heuresLabel(heures)}.`);
+        this.toast.success('Prise en charge enregistrée — chronométrage démarré.');
         this.chargerChronometrage(this.idDossier());
       },
-      error: () => this.saving.set(false), // 400/403/409 → dialogue centralisé (message backend)
+      error: () => this.saving.set(false), // 403/409 → dialogue centralisé (message backend)
     });
   }
 

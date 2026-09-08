@@ -1,5 +1,13 @@
 # Demande backend — « Prendre en charge » sans saisie : prévision = délai standard admin par défaut
 
+> ✅ **CLÔTURÉ le 08/09** — backend livré (`af875f9`, sans migration : `previsionHeures` optionnel,
+> corps vide accepté ; RECTIFICATION_PRMP **non ajouté au référentiel**, repli serveur) + front livré
+> (bouton qui déclenche direct, saisie ET « Corriger ma prévision » retirés). **Contre-recetté en réel**
+> (dossier frais 100310, étape EXAMEN) : clic « Prendre en charge » → **aucun panneau de saisie**, chrono
+> démarré avec **« prévision 40 h (5 j) (délai standard) »** (standard admin EXAMEN, `previsionStandard=true`).
+> ⚠️ « Corriger ma prévision » retiré (choix front : plus de prévision manuelle) ; l'API accepte toujours
+> un `previsionHeures` explicite (compat/override) mais le front n'en envoie plus.
+
 **Date** : 2026-09-08 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : demande pilote — le
 bouton **« Prendre en charge »** ne doit **plus demander de prévision**. Il ne sert qu'à **déclencher le
 chronométrage** de l'étape ; la prévision doit être prise **par défaut** sur le **délai standard
