@@ -8,12 +8,14 @@ import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import {
+  Capm,
   DiffDossier,
   Dossier,
   EntiteContract,
   FORME_MARCHE_LIBELLES,
   LigneDiff,
   Marche,
+  MarchePrevision,
   ModePassation,
   Nature,
   PieceJointeDossier,
@@ -22,9 +24,11 @@ import {
   TypePieceJointe,
 } from '../../models';
 import {
+  CapmService,
   DossierService,
   EntiteContractService,
   MarcheService,
+  MarchePrevisionService,
   MiseAJourPpmService,
   ModePassationService,
   NatureService,
@@ -35,6 +39,7 @@ import {
 } from '../../services';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { DetailPpmModal } from '../../shared/prmp';
+import { calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
@@ -77,6 +82,8 @@ export class MiseAJourPpm {
   private readonly benefService = inject(ServiceBeneficiaireService);
   private readonly natureService = inject(NatureService);
   private readonly modeService = inject(ModePassationService);
+  private readonly capmService = inject(CapmService);
+  private readonly previsionService = inject(MarchePrevisionService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
   readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
@@ -121,6 +128,41 @@ export class MiseAJourPpm {
   private readonly modes = signal<Map<number, string>>(new Map());
   /** Référentiel complet des modes — pour le drapeau `declencheAgpm` (filtre des pièces). */
   private readonly modesRef = signal<ModePassation[]>([]);
+  /** ⚠️ Parité création (2026-09-08) — CAPM + prévisions : nécessaires pour DÉRIVER la fiche de
+   *  présentation (marchés dérogatoires / à délai aménagé / contrats-cadres) du plan de cette version. */
+  private readonly capms = signal<Capm[]>([]);
+  private readonly previsions = signal<MarchePrevision[]>([]);
+  /** Justification GLOBALE de la fiche de présentation (bas de fiche) — saisie ICI, saisissable comme à
+   *  la création ; persistée avec l'en-tête (`PUT /api/ppms`). Initialisée de l'existante. */
+  readonly justifFiche = signal('');
+  /**
+   * Fiche de présentation DÉRIVÉE du plan de cette version (mêmes fonctions pures que la création /
+   * le détail PPM) : listes des marchés dérogatoires, à délai aménagé, contrats-cadres — celles qui
+   * exigent une justification. Recalculée à chaque import / édition de ligne.
+   */
+  readonly fiche = computed(() =>
+    calculerFichePresentation(this.marches(), this.previsions(), this.modesRef(), this.capms()),
+  );
+  /**
+   * ⚠️ Parité création (2026-09-08) — justifications MANQUANTES, en miroir de la garde serveur (400 à
+   * la soumission) : chaque marché dérogatoire sans `justifModeDerogatoire`, chaque marché à délai
+   * aménagé sans `justifDelaiAmenage`, et la justification globale si au moins un marché figure dans
+   * l'une des trois listes. Bloque « Créer la mise à jour » et alimente l'avertissement.
+   */
+  readonly justificationsManquantes = computed<string[]>(() => {
+    const f = this.fiche();
+    const manques: string[] = [];
+    for (const l of f.derogatoires) {
+      if (!l.justifModeDerogatoire) manques.push(`Ligne « ${l.objet} » — justification du mode dérogatoire`);
+    }
+    for (const l of f.delaisAmenages) {
+      if (!l.justifDelaiAmenage) manques.push(`Ligne « ${l.objet} » — justification du délai aménagé`);
+    }
+    if (f.nbMarchesConcernes > 0 && !this.justifFiche().trim()) {
+      manques.push('Justification globale de la fiche de présentation (bas du formulaire)');
+    }
+    return manques;
+  });
 
   /** Marchés + statut de changement, lignes supprimées rejetées en fin de tableau. */
   readonly lignes = computed<LigneAffichee[]>(() => {
@@ -182,7 +224,8 @@ export class MiseAJourPpm {
     const p = this.ppm();
     return !!p && (this.signataire() !== (p.signataire ?? '')
       || this.dateSignature() !== (p.dateSignature ?? '')
-      || this.motif() !== (p.motifMaj ?? ''));
+      || this.motif() !== (p.motifMaj ?? '')
+      || this.justifFiche() !== (p.justificationFiche ?? ''));
   });
 
   constructor() {
@@ -204,6 +247,10 @@ export class MiseAJourPpm {
       benefs: this.benefService.list().pipe(catchError(() => of([] as ServiceBeneficiaire[]))),
       natures: this.natureService.list().pipe(catchError(() => of([] as Nature[]))),
       modes: this.modeService.list().pipe(catchError(() => of([] as ModePassation[]))),
+      // ⚠️ Parité création (2026-09-08) — pour DÉRIVER la fiche de présentation (dérogatoires / délais /
+      // contrats-cadres) et donc valider les justifications, comme à la création / au détail PPM.
+      capms: this.capmService.getAll().pipe(catchError(() => of([] as Capm[]))),
+      previsions: this.previsionService.list().pipe(catchError(() => of([] as MarchePrevision[]))),
     }).subscribe({
       next: (r) => {
         this.dossier.set(r.dossier);
@@ -222,6 +269,10 @@ export class MiseAJourPpm {
         this.natures.set(new Map(r.natures.map((n) => [n.idNature, n.libelle ?? ''])));
         this.modes.set(new Map(r.modes.map((m) => [m.idMode, m.libelle ?? ''])));
         this.modesRef.set(r.modes);
+        // ⚠️ Parité création (2026-09-08) — CAPM + prévisions des lignes de cette version, pour dériver la fiche.
+        this.capms.set(r.capms);
+        const idsDetail = new Set(miennes.map((m) => m.idDetail));
+        this.previsions.set(r.previsions.filter((p) => idsDetail.has(p.idDetail)));
         // En-tête du PPM : GET /api/ppms exclut les brouillons → lecture à l'unité via une ligne.
         const idPpm = miennes[0]?.idPpm;
         if (idPpm == null) {
@@ -234,6 +285,7 @@ export class MiseAJourPpm {
             this.signataire.set(p.signataire ?? '');
             this.dateSignature.set(p.dateSignature ?? '');
             this.motif.set(p.motifMaj ?? '');
+            this.justifFiche.set(p.justificationFiche ?? '');
             this.chargement.set(false);
           },
           error: () => this.chargement.set(false),
@@ -272,11 +324,19 @@ export class MiseAJourPpm {
     // `p` est le plan tel que renvoyé par le serveur (chargement, puis réponse du PUT précédent) :
     // le spread embarque donc la `version` COURANTE — verrou optimiste, cf. plan-conflit-version.md.
     this.ppmService
-      .update(p.idPpm, { ...p, signataire: this.signataire(), dateSignature: this.dateSignature(), motifMaj: this.motif().trim() })
+      .update(p.idPpm, {
+        ...p,
+        signataire: this.signataire(),
+        dateSignature: this.dateSignature(),
+        motifMaj: this.motif().trim(),
+        // ⚠️ Parité création (2026-09-08) — justification globale de la fiche, persistée avec l'en-tête.
+        justificationFiche: this.justifFiche().trim() || undefined,
+      })
       .subscribe({
         next: (maj) => {
           // Réponse = version incrémentée : la reposer évite un 409 au prochain enregistrement.
           this.ppm.set(maj);
+          this.justifFiche.set(maj.justificationFiche ?? '');
           this.enregistrement.set(false);
           this.toast.success('En-tête de la mise à jour enregistré.');
         },
@@ -301,6 +361,7 @@ export class MiseAJourPpm {
       this.signataire.set(p.signataire ?? '');
       this.dateSignature.set(p.dateSignature ?? '');
       this.motif.set(p.motifMaj ?? '');
+      this.justifFiche.set(p.justificationFiche ?? '');
     });
   }
 
@@ -487,6 +548,19 @@ export class MiseAJourPpm {
   creerLaMiseAJour(): void {
     if (!this.motif().trim()) {
       this.toast.error('Le motif de la mise à jour est obligatoire avant de soumettre.');
+      return;
+    }
+    // ⚠️ Parité création (2026-09-08) — miroir de la garde serveur : pas de mise à jour tant qu'un
+    // marché dérogatoire / à délai aménagé n'est pas justifié, ni sans la justification globale.
+    const manques = this.justificationsManquantes();
+    if (manques.length) {
+      this.toast.error('Justifications de la fiche de présentation manquantes : ' + manques.join(' ; ') + '.');
+      return;
+    }
+    // La justification globale vit dans l'en-tête (PUT ppms) : si l'en-tête n'est pas enregistré, le
+    // serveur ne l'a pas encore et refuserait la soumission — on demande de l'enregistrer d'abord.
+    if (this.enteteModifiee()) {
+      this.toast.error('Enregistrez d\'abord l\'en-tête (dont la justification globale) avec « Enregistrer l\'en-tête », puis créez la mise à jour.');
       return;
     }
     this.enregistrement.set(true);

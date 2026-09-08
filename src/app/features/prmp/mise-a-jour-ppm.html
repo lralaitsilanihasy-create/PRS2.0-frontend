@@ -58,6 +58,16 @@
           <textarea id="maj-motif" class="form-control" rows="2" [ngModel]="motif()" (ngModelChange)="motif.set($event)" name="motif"
                     placeholder="Ce qui justifie cette nouvelle version du plan"></textarea>
         </div>
+        <!-- ⚠️ Parité création (pilote 2026-09-08) — justification GLOBALE de la fiche de présentation,
+             exigée par le serveur dès qu'un marché dérogatoire / à délai aménagé / contrat-cadre figure
+             au plan. Saisie ICI, persistée avec l'en-tête. -->
+        @if (fiche().nbMarchesConcernes > 0) {
+          <div class="maj__champ maj__champ--large">
+            <label for="maj-justif-fiche">Justification de la fiche de présentation <span class="maj__requis">obligatoire</span></label>
+            <textarea id="maj-justif-fiche" class="form-control" rows="2" [ngModel]="justifFiche()" (ngModelChange)="justifFiche.set($event)" name="justifFiche"
+                      placeholder="Justification commune des marchés dérogatoires / délais aménagés / contrats-cadres de la fiche"></textarea>
+          </div>
+        }
         <div class="maj__entete-actions">
           <button type="button" class="btn btn-secondary btn-sm" [disabled]="enregistrement() || !enteteModifiee()" (click)="enregistrerEntete()">
             Enregistrer l'en-tête
@@ -288,6 +298,24 @@
       </div>
     </div>
 
+    <!-- ⚠️ Parité création (pilote 2026-09-08) — la fiche de présentation exige une justification pour
+         chaque marché dérogatoire / à délai aménagé (saisie dans « Modifier le détail » de la ligne) et
+         une justification globale (en-tête). On liste ce qui manque et on bloque la création. -->
+    @if (justificationsManquantes(); as manques) {
+      @if (manques.length) {
+        <div class="alert alert-warning maj__manques">
+          <strong>Justifications à compléter avant de créer la mise à jour :</strong>
+          <ul>
+            @for (m of manques; track m) { <li>{{ m }}</li> }
+          </ul>
+          <p class="form-hint">
+            Justification d'une ligne : ouvrez <em>« Modifier le détail »</em> de la ligne concernée.
+            Justification globale : le champ de l'en-tête (pensez à <em>« Enregistrer l'en-tête »</em>).
+          </p>
+        </div>
+      }
+    }
+
     <!-- ⑤ Aperçu du diff, distinct de la soumission finale. -->
     <div class="maj__final">
       <!-- ⚠️ Parité création (pilote 2026-09-08) — aperçu du dossier COMPOSÉ (Fiche / Plan / AGPM /
@@ -295,7 +323,7 @@
       <button type="button" class="btn btn-secondary" (click)="apercuDossierOuvert.set(true)">👁 Aperçu du dossier</button>
       <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu du diff complet</button>
       <button type="button" class="btn btn-ghost" [disabled]="enregistrement()" (click)="abandonner()">Abandonner la mise à jour</button>
-      <button type="button" class="btn btn-primary" [disabled]="enregistrement() || sansChangement()" (click)="creerLaMiseAJour()">
+      <button type="button" class="btn btn-primary" [disabled]="enregistrement() || sansChangement() || justificationsManquantes().length > 0" (click)="creerLaMiseAJour()">
         Créer la mise à jour
       </button>
     </div>
