@@ -499,6 +499,10 @@ interface RowState {
        (demande pilote 02/09) — un seul langage d'onglets de dossier. Marge haute : la ligne
        collait aux informations du dossier au-dessus. */
     /* Onglets convergés vers la classe partagée onglets-dossier (globale) — 2026-09-06. */
+    /* ⚠️ Demande pilote (2026-09-08) — aérer AU-DESSUS des onglets : le global onglets-dossier n'a
+       qu'une marge basse ; on rétablit ici la marge haute (scopée à l'en-tête figé de l'examen)
+       pour décoller la rangée d'onglets de la liste d'infos du dossier. */
+    .exam__contenu-fixe .onglets-dossier { margin-top: 1.25rem; }
     @media (max-width: 75rem) {
       .exam__panel--contenu { max-height: none; overflow: visible; display: block; }
       .exam__panel--contenu .exam__contenu-corps { display: block; overflow: visible; }
