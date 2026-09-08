@@ -150,3 +150,71 @@ que la première livraison n'avait pas couvertes.
 > Contre-recette du 2ᵉ tour : sur un dossier créé + soumis par la même PRMP, les deux lignes affichent le
 > même ordre de nom ; sur un dossier resoumis / mis à jour par une UGPM, ces lignes portent le nom de
 > l'UGPM (`creeParNom`) et non celui de la PRMP.
+
+---
+
+## Note de livraison backend — 2ᵉ tour — 2026-09-08 (`PRS20`, commit `4b391a5`)
+
+Les deux arbitrages sont livrés, sans migration, **rien à changer côté front**. Contrat :
+`docs/regles-gestion.md` (§ journal du dossier) et `docs/api-endpoints.md` (§ Journal des actions).
+Suite : **832 tests verts**.
+
+### ① Convention canonique retenue : « NOM Prénoms »
+
+C'est celle que vous suggériez, et celle que servait déjà `creeParNom`. Elle vit désormais à **un seul
+endroit** (`ActeurDirectory.nomCanonique`) où passent les **trois** annuaires — unités, PRMP,
+contrôleurs — ainsi que le nom d'affichage du login. Le défaut ne venait pas d'un annuaire fautif mais
+de l'**absence de source unique** : c'est elle qui manquait, pas une correction dans chacun.
+
+Dérivée à la lecture, donc **rétroactive** : une ligne écrite « Prénoms Nom » se relit « NOM Prénoms »,
+sans reprise de données et sans rien réécrire en base.
+
+### ② L'auteur réel, sur toutes les lignes — avec une nuance de mécanique
+
+Le nom est dérivé de l'auteur **de chaque ligne**, et non du `creeParNom` du dossier. Le résultat est le
+même dans le cas que vous décrivez, mais il reste juste quand deux agents différents interviennent :
+prendre `creeParNom` à la lettre aurait nommé le **créateur** sur toutes les lignes, y compris sur un
+geste posé par quelqu'un d'autre. La `CREATION` garde sa source propre (`CREE_PAR`), qui fait foi même
+quand la ligne est muette.
+
+L'auteur d'une ligne n'a pas toujours la même forme : *login* pour une action consignée, *matricule* de
+contrôleur pour un événement dérivé ou une copie figée, *identifiant de PRMP* pour une demande de
+retrait. Les trois annuaires sont donc interrogés, chacun **une seule fois** par lecture de journal.
+Sans résolution, le nom stocké est conservé — jamais remplacé par un identifiant brut.
+`idPrmpOperateur` ne bouge pas, comme au 1ᵉʳ tour.
+
+### ⚠️ La contre-recette (2) ne pourra pas être jouée telle quelle
+
+**Une UGPM ne peut pas resoumettre ni mettre à jour** : `/soumettre`, `/resoumettre` et
+`/transmettre-complements*` portent `@PreAuthorize("hasRole('PRMP')")` et répondent **403** à une unité.
+La **création** est aujourd'hui son seul geste consigné. Il n'existe donc aucun chemin, dans l'interface
+comme dans l'API, pour produire un dossier « resoumis par une UGPM ».
+
+L'arbitrage ② est néanmoins appliqué **en général** — la dérivation porte sur l'auteur de la ligne, pas
+sur son type. Concrètement : elle corrige déjà les lignes de cette forme présentes en base, et elle
+vaudra sans retouche le jour où les droits s'ouvriront. Le test de non-régression l'éprouve sur la forme
+des lignes (`RESOUMISSION` et `MISE_A_JOUR` dont l'auteur est l'UGPM) **et** vérifie le 403.
+
+> ⚠️ **Point à arbitrer, s'il vous intéresse** : faut-il qu'une UGPM puisse resoumettre ou transmettre
+> des compléments pour la PRMP dont elle dépend ? C'est une décision sur les **habilitations**, pas sur
+> le journal — dites-le et je la traite comme une demande à part entière.
+
+### Ce que vous verrez changer sans l'avoir demandé
+
+- Sur un dossier créé **et** soumis par la même PRMP, la ligne de soumission passe de « Prénoms Nom » à
+  « NOM Prénoms ». C'est l'effet voulu de ① : les deux lignes s'écrivent enfin pareil.
+- Les lignes de **contrôleur** (dispatch, réattribution, réception…) et les **événements dérivés** (visa,
+  signatures, vérification, SIGMP) adoptent la même convention. Ils étaient dans l'ancien ordre eux
+  aussi ; les laisser aurait reconduit le défaut sur les deux tiers du tableau.
+- Le nom d'auteur des **versions archivées** (`/versions-archivees`) suit la même convention, la
+  résolution étant partagée — mais là il est **stocké**, pas dérivé : seules les versions archivées à
+  partir de maintenant portent le nouvel ordre, les précédentes gardent celui qu'elles ont figé. C'est
+  cohérent avec le principe d'une version archivée, immuable par construction. Aucune autre donnée ne bouge.
+
+### Tests
+
+`JournalOperateurReelIntegrationTest` (renommé — son sujet déborde la seule création), six tests : les
+deux points de la contre-recette, la rétroactivité sur une ligne écrite avant le correctif, les replis,
+et la cohérence journal ↔ `creeParNom`. Un test existant sur la reprise de traitement par une PRMP
+successeur encodait l'ancien ordre : mis à jour, avec la raison en commentaire — c'est la meilleure
+preuve que la convention a changé partout.
