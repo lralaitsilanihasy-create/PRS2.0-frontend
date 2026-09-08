@@ -238,8 +238,9 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                     <tr [class.dc-hist__on]="versionAffichee() === null">
                       <td class="dc-hist__num">{{ versionsArchivees().length + 1 }}</td>
                       <td><span class="badge dc-hist__courante">Version courante</span></td>
-                      <td class="dc-journal__date">—</td>
-                      <td>—</td>
+                      <!-- ⚠️ 2026-09-08 : la courante porte la date/auteur de la dernière rectification, le geste qui l'a produite. -->
+                      <td class="dc-journal__date" [title]="derniereRectification() ? 'Produite par la dernière rectification' : ''">{{ derniereRectification()?.dateVersion ? (derniereRectification()!.dateVersion | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+                      <td>{{ derniereRectification() ? (derniereRectification()!.nomAuteur || derniereRectification()!.auteur || derniereRectification()!.idPrmpAuteur || '—') : '—' }}</td>
                       <td class="dc-hist__num">—</td>
                       <td class="dc-hist__num">{{ marches().length }}</td>
                       <td class="dc-hist__action">
@@ -785,6 +786,12 @@ export class DossierConsultation implements OnInit {
   readonly versionsArchivees = signal<VersionArchivee[]>([]);
   /** La plus récente en tête — même sens de lecture que la chaîne des mises à jour et le journal. */
   readonly versionsArchiveesRecentesDAbord = computed(() => [...this.versionsArchivees()].sort((a, b) => b.numero - a.numero));
+  /**
+   * ⚠️ 2026-09-08 (constat pilote) — la version COURANTE est l'état PRODUIT par la DERNIÈRE
+   * rectification : sa date et son auteur sont ceux de la version archivée la plus récente (le geste
+   * qui a remplacé la précédente et créé la courante). `null` si le dossier n'a jamais été rectifié.
+   */
+  readonly derniereRectification = computed(() => this.versionsArchiveesRecentesDAbord()[0] ?? null);
   /** Numéro de la version archivée affichée dans l'onglet ; `null` = la version courante (le dossier). */
   readonly versionAffichee = signal<number | null>(null);
   readonly versionChargement = signal(false);

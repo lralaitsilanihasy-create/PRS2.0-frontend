@@ -235,10 +235,18 @@ interface Echange {
                     PRMP pour rectification (rappel généré automatiquement — uniquement les observations du PV).</p>
                 }
                 @if (formError()) { <span class="form-error">{{ formError() }}</span> }
+                <!-- ⚠️ 2026-09-08 (constat pilote) — le bouton reste grisé tant que TOUTES les observations
+                     ne sont pas statuées, même après la prise en charge : on le dit explicitement. -->
+                @if (actionAutorisee() && !toutesStatuees()) {
+                  <p class="vf__hint-statuer" role="status">
+                    ⚠ {{ nbAStatuer() }} observation(s) restent à statuer (levée ou maintenue) : « Enregistrer
+                    le passage » s'activera quand toutes seront décidées.
+                  </p>
+                }
                 <div class="vf__foot">
                   <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
                   <button type="button" class="btn btn-primary" [disabled]="saving() || !toutesStatuees() || !actionAutorisee()"
-                    [title]="!actionAutorisee() ? 'Prenez en charge le dossier (bouton « Prendre en charge » en haut) avant la saisie.' : ''"
+                    [title]="!actionAutorisee() ? 'Prenez en charge le dossier (bouton « Prendre en charge » en haut) avant la saisie.' : (!toutesStatuees() ? 'Statuez chaque observation restante (levée ou maintenue) avant d’enregistrer le passage.' : '')"
                     (click)="enregistrer()">
                     {{ saving() ? 'Enregistrement…' : 'Enregistrer le passage' }}
                   </button>
@@ -309,6 +317,8 @@ interface Echange {
        d'observations est longue. Fond opaque pour ne pas laisser transparaître le contenu défilé. */
     .vf__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; position: sticky; bottom: 0; background: #fff; padding-bottom: 0.25rem; }
     .vf__alert { margin: 0; font-size: var(--text-sm); background: var(--warning-bg); color: var(--warning-text); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); }
+    /* ⚠️ 2026-09-08 — explication du grisage de « Enregistrer le passage » (observations à statuer). */
+    .vf__hint-statuer { margin: 0.5rem 0 0; font-size: var(--text-sm); background: var(--warning-bg); color: var(--warning-text); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); }
     /* ⚠️ Spec observations FAVR — liste des observations du PV (cartes partagées + décisions projetées). */
     .vf__obs { list-style: none; margin: 0.5rem 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .vf__obs-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; border-top: 1px dashed var(--c-100); padding-top: 0.4rem; }
@@ -398,6 +408,9 @@ export class VerifierDossier {
   readonly restantes = computed(() => this.observations().filter((o) => o.statut !== 'LEVEE'));
   /** Vrai quand chaque observation restante a reçu une décision. */
   readonly toutesStatuees = computed(() => this.restantes().every((o) => this.decisions().has(o.idObservationPv)));
+  /** ⚠️ 2026-09-08 (constat pilote) — observations restantes SANS décision : sert à expliquer pourquoi
+   *  « Enregistrer le passage » reste grisé (la prise en charge seule ne suffit pas). */
+  readonly nbAStatuer = computed(() => this.restantes().filter((o) => !this.decisions().has(o.idObservationPv)).length);
   readonly nbMaintenues = computed(
     () => [...this.decisions().values()].filter((d) => d.decision === 'MAINTENUE').length,
   );
