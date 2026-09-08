@@ -3,9 +3,18 @@
 > ✅ **CLÔTURÉ le 08/09** — backend livré (`7794f88`, 830 tests) et **contre-recetté en réel** sur
 > #100305 (rétroactif, sans réimport) : la ligne `CREATION` porte désormais `nomOperateur` =
 > « RALAITSILANIHASY Lantonirina Annick » (l'UGPM `creePar`), la `SOUMISSION` reste la PRMP. Front : rien
-> à changer. ⚠️ **Deux points arbitrés par le pilote le 08/09** (voir « Arbitrages rendus » en bas) :
-> (1) **UNIFORMISER** l'ordre des noms sur toutes les lignes du journal ; (2) **ÉTENDRE** la dérivation
-> à TOUS les gestes d'un agent UGPM (auteur réel, pas la PRMP de tutelle). → **2ᵉ tour côté backend.**
+> à changer.
+>
+> ✅ **2ᵉ TOUR CLÔTURÉ le 08/09** — backend livré (`4b391a5`, 832 tests) + note front (`356dee3`). ①
+> **Ordre uniformisé** en « NOM Prénoms » (source unique `ActeurDirectory.nomCanonique`, toutes les
+> lignes, rétroactif) — **contre-recetté réel sur #100305** : SOUMISSION « La Personne Randrianarivo » →
+> **« Randrianarivo La Personne »**, RÉCEPTION « Secretaire ANT Rasoa » → **« Rasoa Secretaire ANT »**,
+> les 3 lignes enfin identiques. ② **Auteur réel étendu** à toute ligne (dérivé de l'auteur DE LA LIGNE,
+> pas de `creeParNom`) — appliqué en général mais **NON REJOUABLE en recette** : une UGPM ne peut ni
+> resoumettre ni transmettre de compléments (`/soumettre`, `/resoumettre`, `/transmettre-complements*` =
+> `hasRole('PRMP')`, 403), la création reste son seul geste consigné. Front : rien à changer.
+> ⚠️ **Question d'HABILITATION ouverte, distincte du journal** : faut-il qu'une UGPM puisse resoumettre /
+> transmettre des compléments pour sa PRMP ? Tant que non, ② n'a pas d'effet visible.
 
 **Date** : 2026-09-08 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat pilote — un
 dossier **créé par une UGPM** puis **soumis par la PRMP** apparaît dans le journal des actions avec la
