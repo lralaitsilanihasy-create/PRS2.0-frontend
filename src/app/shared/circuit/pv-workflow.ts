@@ -504,7 +504,17 @@ export class PvWorkflow {
   /** Référentiels (avis / contrôleurs / profils) chargés une seule fois, à l'ouverture du panneau. */
   private refsCharges = false;
   readonly statutLabel = computed(() => PV_STATUT_LABELS[this.pv().statutPv]);
-  readonly canSoumettre = computed(() => peutSoumettre(this.pv().statutPv));
+  /**
+   * ⚠️ Règle pilote (2026-09-08) — la soumission (et la re-soumission après rectification) du projet
+   * de PV revient à CELUI QUI A EXAMINÉ, pas au dispatcheur. Le bouton était offert à tout porteur de
+   * la capacité `PV_SOUMETTRE` (CC / Président par délégation compris) : un Président dispatcheur
+   * pouvait soumettre le PV d'un examen fait par le CC (le journal le nommait alors, à tort). On le
+   * réserve à l'examinateur (`imCtrlMembre` du PV = `imExaminateur`), dans le même esprit que « seul
+   * l'assignataire examine » (`d24c115`). Garde d'enforcement côté serveur demandée en parallèle.
+   */
+  readonly canSoumettre = computed(
+    () => peutSoumettre(this.pv().statutPv) && this.auth.ref() != null && this.auth.ref() === this.imExaminateur(),
+  );
   /**
    * ⚠️ Navette à DEUX NIVEAUX (2026-09-04, backend `f648254`) — dossier Président → CC → Membre :
    * `niveauNavette` (servi) dit OÙ est le PV. Niveau CC : le CC accepte (transmet au Président) ou
