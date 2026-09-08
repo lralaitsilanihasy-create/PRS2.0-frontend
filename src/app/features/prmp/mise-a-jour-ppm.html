@@ -68,11 +68,8 @@
                       placeholder="Justification commune des marchés dérogatoires / délais aménagés / contrats-cadres de la fiche"></textarea>
           </div>
         }
-        <div class="maj__entete-actions">
-          <button type="button" class="btn btn-secondary btn-sm" [disabled]="enregistrement() || !enteteModifiee()" (click)="enregistrerEntete()">
-            Enregistrer l'en-tête
-          </button>
-        </div>
+        <!-- ⚠️ Bouton unique (pilote 2026-09-08) : l'en-tête n'a plus son propre « Enregistrer » — tout se
+             sauvegarde par « Enregistrer », en bas, à gauche de « Créer la mise à jour ». -->
       </div>
     </div>
 
@@ -318,15 +315,11 @@
                   <span class="maj__justif-type">Mode dérogatoire</span>
                   <span class="maj__justif-objet">{{ l.objet }}</span>
                   @if (l.modeLibelle) { <span class="maj__justif-mode">— {{ l.modeLibelle }}</span> }
+                  @if (justifLigneModifiee(l.idDetail, 'mode')) { <span class="maj__justif-dirty">● non enregistrée</span> }
                 </label>
-                <div class="maj__justif-edit">
-                  <textarea [id]="'jmode-' + l.idDetail" class="form-control" rows="2"
-                            [ngModel]="justifLigneValeur(l.idDetail, 'mode')" (ngModelChange)="majJustifLigne(l.idDetail, 'mode', $event)"
-                            [ngModelOptions]="{ standalone: true }" placeholder="Justification du mode dérogatoire…"></textarea>
-                  <button type="button" class="btn btn-secondary btn-sm"
-                          [disabled]="justifLigneEnCours() !== null || !justifLigneModifiee(l.idDetail, 'mode')"
-                          (click)="enregistrerJustifLigne(l.idDetail, 'mode')">Enregistrer</button>
-                </div>
+                <textarea [id]="'jmode-' + l.idDetail" class="form-control" rows="2"
+                          [ngModel]="justifLigneValeur(l.idDetail, 'mode')" (ngModelChange)="majJustifLigne(l.idDetail, 'mode', $event)"
+                          [ngModelOptions]="{ standalone: true }" placeholder="Justification du mode dérogatoire…"></textarea>
               </div>
             }
             @for (l of f.delaisAmenages; track l.idDetail) {
@@ -334,18 +327,14 @@
                 <label [for]="'jdelai-' + l.idDetail" class="maj__justif-lbl">
                   <span class="maj__justif-type">Délai aménagé</span>
                   <span class="maj__justif-objet">{{ l.objet }}</span>
+                  @if (justifLigneModifiee(l.idDetail, 'delai')) { <span class="maj__justif-dirty">● non enregistrée</span> }
                 </label>
-                <div class="maj__justif-edit">
-                  <textarea [id]="'jdelai-' + l.idDetail" class="form-control" rows="2"
-                            [ngModel]="justifLigneValeur(l.idDetail, 'delai')" (ngModelChange)="majJustifLigne(l.idDetail, 'delai', $event)"
-                            [ngModelOptions]="{ standalone: true }" placeholder="Justification du délai aménagé…"></textarea>
-                  <button type="button" class="btn btn-secondary btn-sm"
-                          [disabled]="justifLigneEnCours() !== null || !justifLigneModifiee(l.idDetail, 'delai')"
-                          (click)="enregistrerJustifLigne(l.idDetail, 'delai')">Enregistrer</button>
-                </div>
+                <textarea [id]="'jdelai-' + l.idDetail" class="form-control" rows="2"
+                          [ngModel]="justifLigneValeur(l.idDetail, 'delai')" (ngModelChange)="majJustifLigne(l.idDetail, 'delai', $event)"
+                          [ngModelOptions]="{ standalone: true }" placeholder="Justification du délai aménagé…"></textarea>
               </div>
             }
-            <p class="form-hint">La justification <strong>globale</strong> se saisit dans l'en-tête, en haut de l'écran (« Enregistrer l'en-tête »).</p>
+            <p class="form-hint">La justification <strong>globale</strong> se saisit dans l'en-tête, en haut de l'écran. Tout se sauvegarde d'un coup avec « Enregistrer », en bas.</p>
           </div>
         </div>
       }
@@ -363,7 +352,7 @@
           </ul>
           <p class="form-hint">
             Justification d'une ligne : le bloc <em>« Justifications de la fiche de présentation — par ligne »</em> ci-dessus.
-            Justification globale : le champ de l'en-tête (pensez à <em>« Enregistrer l'en-tête »</em>).
+            Justification globale : le champ de l'en-tête. Puis <em>« Enregistrer »</em>, en bas.
           </p>
         </div>
       }
@@ -376,7 +365,12 @@
       <button type="button" class="btn btn-secondary" (click)="apercuDossierOuvert.set(true)">👁 Aperçu du dossier</button>
       <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu du diff complet</button>
       <button type="button" class="btn btn-ghost" [disabled]="enregistrement()" (click)="abandonner()">Abandonner la mise à jour</button>
-      <button type="button" class="btn btn-primary" [disabled]="enregistrement() || sansChangement() || justificationsManquantes().length > 0" (click)="creerLaMiseAJour()">
+      <!-- ⚠️ Bouton unique (pilote 2026-09-08) : remplace « Enregistrer l'en-tête » et les « Enregistrer »
+           par ligne — persiste l'en-tête ET toutes les justifs de ligne éditées, à gauche de « Créer ». -->
+      <button type="button" class="btn btn-secondary" [disabled]="enregistrement() || !aDesModifications()" (click)="enregistrerTout()">
+        {{ enregistrement() ? 'Enregistrement…' : '💾 Enregistrer' }}
+      </button>
+      <button type="button" class="btn btn-primary" [disabled]="enregistrement() || sansChangement() || justificationsManquantes().length > 0 || aDesModifications()" (click)="creerLaMiseAJour()">
         Créer la mise à jour
       </button>
     </div>

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 
 import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -167,12 +167,10 @@ export class MiseAJourPpm {
   /**
    * ⚠️ Parité création (pilote 2026-09-08) — ÉDITION INLINE des justifications PAR LIGNE (mode dérogatoire /
    * délai aménagé), pour retoucher un héritage sans re-importer le PPM. Brouillon par clé `idDetail:mode|delai` ;
-   * la valeur affichée est le brouillon s'il existe, sinon celle du marché. `justifLigneEnCours` = clé en cours
-   * d'enregistrement (désactive le bouton). L'écriture RE-ENVOIE la ligne entière (modèle plat, verrou `version`)
-   * en ne changeant que la justif visée — l'autre justif est préservée (sinon effacée, cf. Marche.justif*).
+   * la valeur affichée est le brouillon s'il existe, sinon celle du marché. L'écriture est portée par le bouton
+   * unique `enregistrerTout()` (pilote 2026-09-08) : plus de bouton par ligne.
    */
   private readonly justifLigneDrafts = signal<Map<string, string>>(new Map());
-  readonly justifLigneEnCours = signal<string | null>(null);
 
   private cleJustif(idDetail: number, type: 'mode' | 'delai'): string {
     return `${idDetail}:${type}`;
@@ -192,7 +190,7 @@ export class MiseAJourPpm {
       return copie;
     });
   }
-  /** Le brouillon diffère-t-il de la valeur persistée du marché ? (active le bouton « Enregistrer »). */
+  /** Le brouillon diffère-t-il de la valeur persistée du marché ? (surligne la ligne + alimente le save unique). */
   justifLigneModifiee(idDetail: number, type: 'mode' | 'delai'): boolean {
     const cle = this.cleJustif(idDetail, type);
     if (!this.justifLigneDrafts().has(cle)) {
@@ -202,37 +200,81 @@ export class MiseAJourPpm {
     const actuel = (type === 'mode' ? m?.justifModeDerogatoire : m?.justifDelaiAmenage) ?? '';
     return (this.justifLigneDrafts().get(cle) ?? '').trim() !== actuel.trim();
   }
-  enregistrerJustifLigne(idDetail: number, type: 'mode' | 'delai'): void {
-    const m = this.marches().find((x) => x.idDetail === idDetail);
-    if (!m) {
+
+  /**
+   * ⚠️ Bouton unique (pilote 2026-09-08) — remplace « Enregistrer l'en-tête » et les « Enregistrer » par ligne :
+   * un seul geste persiste l'en-tête (si modifié) ET toutes les justifs de ligne éditées, en une salve
+   * `forkJoin`. Chaque tâche repose sa réponse serveur dans l'état (verrou de version) ; une erreur (dont 409)
+   * recharge tout pour repartir de la vérité serveur.
+   */
+  enregistrerTout(): void {
+    const p = this.ppm();
+    if (!p) {
       return;
     }
-    const cle = this.cleJustif(idDetail, type);
-    const valeur = this.justifLigneValeur(idDetail, type).trim() || undefined;
-    this.justifLigneEnCours.set(cle);
-    const corps: Marche = {
-      ...m,
-      justifModeDerogatoire: type === 'mode' ? valeur : m.justifModeDerogatoire,
-      justifDelaiAmenage: type === 'delai' ? valeur : m.justifDelaiAmenage,
-    };
-    this.marcheService.update(idDetail, corps).subscribe({
-      next: (maj) => {
-        // Réponse serveur (version incrémentée) reposée dans marches() → fiche() + garde se recalculent.
-        this.marches.update((arr) => arr.map((x) => (x.idDetail === idDetail ? maj : x)));
-        this.justifLigneDrafts.update((map) => {
-          const copie = new Map(map);
-          copie.delete(cle);
-          return copie;
-        });
-        this.justifLigneEnCours.set(null);
-        this.toast.success('Justification enregistrée.');
+    if (this.enteteModifiee() && !this.motif().trim()) {
+      this.toast.error('Le motif de la mise à jour est obligatoire.');
+      return;
+    }
+    const taches: Observable<Ppm | Marche>[] = [];
+    if (this.enteteModifiee()) {
+      // `p` porte la version COURANTE (verrou optimiste) : le spread l'embarque.
+      taches.push(
+        this.ppmService
+          .update(p.idPpm, {
+            ...p,
+            signataire: this.signataire(),
+            dateSignature: this.dateSignature(),
+            motifMaj: this.motif().trim(),
+            justificationFiche: this.justifFiche().trim() || undefined,
+          })
+          .pipe(
+            tap((maj) => {
+              this.ppm.set(maj);
+              this.justifFiche.set(maj.justificationFiche ?? '');
+            }),
+          ),
+      );
+    }
+    for (const { idDetail, type } of this.lignesJustifModifiees()) {
+      const m = this.marches().find((x) => x.idDetail === idDetail);
+      if (!m) {
+        continue;
+      }
+      const valeur = this.justifLigneValeur(idDetail, type).trim() || undefined;
+      const corps: Marche = {
+        ...m,
+        justifModeDerogatoire: type === 'mode' ? valeur : m.justifModeDerogatoire,
+        justifDelaiAmenage: type === 'delai' ? valeur : m.justifDelaiAmenage,
+      };
+      const cle = this.cleJustif(idDetail, type);
+      taches.push(
+        this.marcheService.update(idDetail, corps).pipe(
+          tap((maj) => {
+            this.marches.update((arr) => arr.map((x) => (x.idDetail === idDetail ? maj : x)));
+            this.justifLigneDrafts.update((map) => {
+              const copie = new Map(map);
+              copie.delete(cle);
+              return copie;
+            });
+          }),
+        ),
+      );
+    }
+    if (!taches.length) {
+      return;
+    }
+    this.enregistrement.set(true);
+    forkJoin(taches).subscribe({
+      next: () => {
+        this.enregistrement.set(false);
+        this.toast.success('Modifications enregistrées.');
       },
       error: (e: ApiError) => {
-        this.justifLigneEnCours.set(null);
+        this.enregistrement.set(false);
         if (estConflitVersion(e)) {
-          // La ligne a changé ailleurs : on recharge tout pour repartir de l'état serveur.
-          this.charger();
-          return; // Toast centralisé « Donnée modifiée entre-temps ».
+          this.charger(); // Toast centralisé « Donnée modifiée entre-temps » ; on repart de l'état serveur.
+          return;
         }
         this.toast.error(e.message || 'Enregistrement impossible.');
       },
@@ -302,6 +344,20 @@ export class MiseAJourPpm {
       || this.motif() !== (p.motifMaj ?? '')
       || this.justifFiche() !== (p.justificationFiche ?? ''));
   });
+  /** Justifs de ligne dont le brouillon diffère du marché (à écrire au prochain « Enregistrer »). */
+  readonly lignesJustifModifiees = computed<{ idDetail: number; type: 'mode' | 'delai' }[]>(() => {
+    const out: { idDetail: number; type: 'mode' | 'delai' }[] = [];
+    for (const cle of this.justifLigneDrafts().keys()) {
+      const [idStr, type] = cle.split(':') as [string, 'mode' | 'delai'];
+      const idDetail = Number(idStr);
+      if (this.justifLigneModifiee(idDetail, type)) {
+        out.push({ idDetail, type });
+      }
+    }
+    return out;
+  });
+  /** Y a-t-il quelque chose à enregistrer ? (en-tête OU au moins une justif de ligne) — pilote le bouton unique. */
+  readonly aDesModifications = computed(() => this.enteteModifiee() || this.lignesJustifModifiees().length > 0);
 
   constructor() {
     this.charger();
@@ -381,62 +437,6 @@ export class MiseAJourPpm {
     }).subscribe(({ marches, diff }) => {
       this.marches.set(marches.filter((m) => m.idDossier === this.idDossier));
       this.diff.set(diff);
-    });
-  }
-
-  // ------------------------------------------------------------------ en-tête
-
-  enregistrerEntete(): void {
-    const p = this.ppm();
-    if (!p) {
-      return;
-    }
-    if (!this.motif().trim()) {
-      this.toast.error('Le motif de la mise à jour est obligatoire.');
-      return;
-    }
-    this.enregistrement.set(true);
-    // `p` est le plan tel que renvoyé par le serveur (chargement, puis réponse du PUT précédent) :
-    // le spread embarque donc la `version` COURANTE — verrou optimiste, cf. plan-conflit-version.md.
-    this.ppmService
-      .update(p.idPpm, {
-        ...p,
-        signataire: this.signataire(),
-        dateSignature: this.dateSignature(),
-        motifMaj: this.motif().trim(),
-        // ⚠️ Parité création (2026-09-08) — justification globale de la fiche, persistée avec l'en-tête.
-        justificationFiche: this.justifFiche().trim() || undefined,
-      })
-      .subscribe({
-        next: (maj) => {
-          // Réponse = version incrémentée : la reposer évite un 409 au prochain enregistrement.
-          this.ppm.set(maj);
-          this.justifFiche.set(maj.justificationFiche ?? '');
-          this.enregistrement.set(false);
-          this.toast.success('En-tête de la mise à jour enregistré.');
-        },
-        error: (e: ApiError) => {
-          this.enregistrement.set(false);
-          if (estConflitVersion(e)) {
-            this.rechargerEntete(p.idPpm);
-            return; // Toast centralisé (« Donnée modifiée entre-temps ») : pas de second message.
-          }
-          this.toast.error(e.message || 'Enregistrement impossible.');
-        },
-      });
-  }
-
-  /**
-   * Conflit de version : l'en-tête a été modifié ailleurs depuis son chargement. On le relit pour
-   * repartir de l'état serveur — la saisie en cours est perdue, le toast a dit de recommencer.
-   */
-  private rechargerEntete(idPpm: number): void {
-    this.ppmService.getById(idPpm).subscribe((p) => {
-      this.ppm.set(p);
-      this.signataire.set(p.signataire ?? '');
-      this.dateSignature.set(p.dateSignature ?? '');
-      this.motif.set(p.motifMaj ?? '');
-      this.justifFiche.set(p.justificationFiche ?? '');
     });
   }
 
@@ -657,10 +657,10 @@ export class MiseAJourPpm {
       this.toast.error('Justifications de la fiche de présentation manquantes : ' + manques.join(' ; ') + '.');
       return;
     }
-    // La justification globale vit dans l'en-tête (PUT ppms) : si l'en-tête n'est pas enregistré, le
-    // serveur ne l'a pas encore et refuserait la soumission — on demande de l'enregistrer d'abord.
-    if (this.enteteModifiee()) {
-      this.toast.error('Enregistrez d\'abord l\'en-tête (dont la justification globale) avec « Enregistrer l\'en-tête », puis créez la mise à jour.');
+    // Des saisies non enregistrées (en-tête ou justif de ligne) ne sont pas encore côté serveur : il
+    // refuserait la soumission — on demande d'enregistrer d'abord avec le bouton « Enregistrer ».
+    if (this.aDesModifications()) {
+      this.toast.error('Des modifications ne sont pas enregistrées : cliquez « Enregistrer » avant de créer la mise à jour.');
       return;
     }
     this.enregistrement.set(true);
