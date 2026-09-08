@@ -60,7 +60,12 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
                   <td>{{ sousTypeLabel(d) }}</td>
                   <td>{{ localiteLabel(d) }}</td>
                   <td class="cnm-mono">
-                    {{ d.datePrevisionnelleFin ? (d.datePrevisionnelleFin | date: 'dd/MM/yyyy') : '—' }}
+                    <!-- ⚠️ 2026-09-08 (constat pilote) — ces dossiers sont TERMINAUX (clos / SIGMP) :
+                         datePrevisionnelleFin y est null (projection). La « Fin traitement CNM » est
+                         alors la date de CLÔTURE réelle (datesEtapes.CLOTURE), sinon la projection. -->
+                    @if (finTraitement(d); as fin) {
+                      {{ fin | date: 'dd/MM/yyyy' }}
+                    } @else { — }
                     @if (d.attentePrmp) {
                       <span class="dc__attente" title="En attente de votre action — la date prévisionnelle glisse tant que le dossier ne revient pas à la CNM.">⏸ à vous</span>
                     }
@@ -426,5 +431,14 @@ export class DossiersClotures {
   /** Libellé du sous-type (repli sur le code ; « — » si non renseigné). */
   sousTypeLabel(d: Dossier): string {
     return d.idSousType ? this.sousTypeMap().get(d.idSousType) ?? d.idSousType : '—';
+  }
+  /**
+   * ⚠️ 2026-09-08 (constat pilote) — « Fin traitement CNM ». Cet écran ne liste que des dossiers
+   * TERMINAUX (CLÔTURE / décision transmise à SIGMP) pour lesquels `datePrevisionnelleFin` (projection)
+   * est `null` — d'où le « — » systématique. La fin RÉELLE est la date de CLÔTURE
+   * (`datesEtapes.CLOTURE`, dérivée du chronométrage), avec repli sur la projection quand elle manque.
+   */
+  finTraitement(d: Dossier): string | null {
+    return d.datesEtapes?.['CLOTURE'] ?? d.datePrevisionnelleFin ?? null;
   }
 }
