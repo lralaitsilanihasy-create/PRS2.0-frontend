@@ -90,9 +90,9 @@ import { DossierModificationStore } from './dossier-modification.store';
         <p class="text-muted" role="status">Chargement…</p>
       } @else if (ppm(); as p) {
         <div class="alert alert-info">
-          Corrigez votre PPM selon les observations du PV ci-dessous, puis <strong>importez le PPM
-          rectifié (PDF)</strong> : c'est l'import qui enregistre la rectification. Le dossier reste
-          « à rectifier » jusqu'à la resoumission.
+          Corrigez votre PPM selon les observations du PV ci-dessous, <strong>importez le PPM
+          rectifié (PDF)</strong>, décrivez vos corrections, puis un seul bouton
+          <strong>enregistre la rectification et resoumet le dossier</strong>.
         </div>
 
         <!-- ⚠️ Demande pilote (2026-09-07) — « aucune action sans prise en charge » : la rectification
@@ -260,36 +260,30 @@ import { DossierModificationStore } from './dossier-modification.store';
             <span class="form-hint">Seule saisie permise en dehors de l'import du PDF — avec les justifications par ligne de la grille.</span>
           </div>
           @if (error(); as e) { <p class="form-error" role="alert">{{ e }}</p> }
-          <div class="rd-foot">
-            <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="annulerImport()">Annuler l'import</button>
-            <button type="button" class="btn btn-primary"
-              [disabled]="saving() || !importPret() || !ecartOk() || !actionAutorisee()"
-              [title]="ecartOk() ? (importPret() ? '' : 'Validez chaque ligne signalée et corrigez les montants incohérents.') : 'Au plus 3 ajouts et 3 retraits de lignes par rapport au dossier examiné.'"
-              (click)="enregistrerRectification()">
-              {{ saving() ? 'Enregistrement…' : '💾 Enregistrer la rectification' }}
-            </button>
+          <!-- ⚠️ Geste unique (pilote 2026-09-08) — la description est saisie ICI, et UN SEUL bouton
+               enregistre la rectification (import PUT) PUIS resoumet le dossier (POST). Plus de
+               deux temps. Si la resoumission échoue après un import réussi, la rectification reste
+               enregistrée et un nouveau clic ne fait QUE resoumettre. -->
+          <div class="form-group rd-motif-combo">
+            <label class="form-label required" for="rd-motif">Description des rectifications effectuées</label>
+            <textarea id="rd-motif" class="form-control" rows="2" maxlength="255"
+              [value]="motifRectif()" (input)="motifRectif.set($any($event.target).value)"
+              placeholder="Décrivez les corrections apportées (envoyée avec la resoumission)"></textarea>
           </div>
-        }
-
-        <!-- ⚠️ Écran unique (2026-09-07, demande pilote) — après l'enregistrement de la rectification,
-             la PRMP décrit et resoumet ICI même : plus de retour au modal « Dossiers à rectifier ». -->
-        @if (rectifieEnregistre()) {
-          <div class="card rd-form">
-            <h2 class="rd-section"><span class="rd-step">4</span> Décrire et resoumettre</h2>
-            <p class="alert alert-success">✓ Rectification enregistrée depuis le PPM importé.</p>
-            <div class="form-group">
-              <label class="form-label required" for="rd-motif">Description des rectifications effectuées</label>
-              <textarea id="rd-motif" class="form-control" rows="2" maxlength="255"
-                [value]="motifRectif()" (input)="motifRectif.set($any($event.target).value)"></textarea>
-              @if (errResoum(); as e) { <span class="form-error">{{ e }}</span> }
-            </div>
-            <div class="rd-foot">
-              <button type="button" class="btn btn-primary"
-                [disabled]="resoumission() || !motifRectif().trim() || !actionAutorisee()"
-                (click)="resoumettre()">
-                {{ resoumission() ? 'Resoumission…' : 'Resoumettre le dossier' }}
-              </button>
-            </div>
+          @if (rectifieEnregistre()) {
+            <p class="alert alert-success">✓ Rectification enregistrée — il ne reste qu'à resoumettre (nouveau clic).</p>
+          }
+          @if (errResoum(); as e) { <p class="form-error" role="alert">{{ e }}</p> }
+          <div class="rd-foot">
+            @if (!rectifieEnregistre()) {
+              <button type="button" class="btn btn-outline" [disabled]="saving() || resoumission()" (click)="annulerImport()">Annuler l'import</button>
+            }
+            <button type="button" class="btn btn-primary"
+              [disabled]="saving() || resoumission() || !importPret() || !ecartOk() || !actionAutorisee() || !motifRectif().trim()"
+              [title]="ecartOk() ? (importPret() ? '' : 'Validez chaque ligne signalée et corrigez les montants incohérents.') : 'Au plus 3 ajouts et 3 retraits de lignes par rapport au dossier examiné.'"
+              (click)="enregistrerEtResoumettre()">
+              {{ resoumission() ? 'Resoumission…' : (saving() ? 'Enregistrement…' : '💾 Enregistrer et resoumettre le dossier') }}
+            </button>
           </div>
         }
       } @else {
@@ -706,17 +700,18 @@ export class RectifierDossier {
   }
 
   /**
-   * Enregistre la rectification : `PUT /api/saisies/ppm/{idDossier}` — chaque ligne APPARIÉE garde
-   * l'idDetail posé au montage (l'examen et le périmètre des observations les référencent) ;
-   * ⚠️ écart toléré (2026-09-06, backend `94c273b`) : lignes sans idDetail = CRÉATIONS (≤ 3),
-   * idDetail omis = SUPPRESSIONS (≤ 3). Signataire / référence actuels conservés.
+   * Construit la requête d'édition (import → `PUT /api/saisies/ppm/{idDossier}`) — chaque ligne
+   * APPARIÉE garde l'idDetail posé au montage (l'examen et le périmètre des observations les
+   * référencent) ; ⚠️ écart toléré (2026-09-06, backend `94c273b`) : lignes sans idDetail =
+   * CRÉATIONS (≤ 3), idDetail omis = SUPPRESSIONS (≤ 3). Signataire / référence actuels conservés.
+   * Renvoie `null` (et pose `error`) si l'aperçu manque ou si l'écart dépasse la tolérance.
    */
-  enregistrerRectification(): void {
+  private construireEditionRequest(): EditionPpmRequest | null {
     const r = this.importApercu();
     const p = this.ppm();
     const arr = this.importMarches();
     if (!r || !p || !arr || !this.ecartOk()) {
-      return;
+      return null;
     }
     const actuels = this.marchesActuels();
     const groupes = (arr.controls as FormGroup[]).filter((g) =>
@@ -739,9 +734,9 @@ export class RectifierDossier {
       this.error.set(
         `Le PPM rectifié ajoute ${creations} ligne(s) et en retire ${suppressions} : l'écart maximal autorisé est de 3 dans chaque sens.`,
       );
-      return;
+      return null;
     }
-    const req: EditionPpmRequest = {
+    return {
       exercice: r.exercice ?? p.exercice,
       dateSignature: r.dateSignature ?? p.dateSignature,
       signataire: p.signataire,
@@ -751,17 +746,40 @@ export class RectifierDossier {
       // si la fiche comporte des dérogatoires / délais aménagés / contrats-cadres.
       justificationFiche: this.justifFiche().trim() || undefined,
     };
+  }
+
+  /**
+   * ⚠️ Geste unique (pilote 2026-09-08) — enregistre la rectification (import `PUT`) PUIS resoumet le
+   * dossier (`POST /resoumettre`), en un seul bouton. La description est saisie en amont.
+   * ⚠️ Reprise sûre : si l'enregistrement a DÉJÀ réussi (échec de la resoumission au coup précédent),
+   * on NE RÉ-IMPORTE PAS — on ne fait que resoumettre. La garde serveur (409 hors prise en charge)
+   * reste l'autorité.
+   */
+  enregistrerEtResoumettre(): void {
+    const motif = this.motifRectif().trim();
+    if (!motif) {
+      this.errResoum.set('La description des rectifications effectuées est obligatoire.');
+      return;
+    }
+    this.errResoum.set(null);
+    // Rectification déjà enregistrée (reprise après échec de resoumission) : resoumettre seulement.
+    if (this.rectifieEnregistre()) {
+      this.lancerResoumission(motif);
+      return;
+    }
+    const req = this.construireEditionRequest();
+    if (!req) {
+      return;
+    }
     this.error.set(null);
     this.saving.set(true);
     this.saisieService.editionPpm(this.idDossier, req).subscribe({
       next: () => {
-        this.saving.set(false);
-        // ⚠️ Règle durcie (2026-09-06) : c'est CE succès — et lui seul — qui ouvre « Resoumettre ».
+        // ⚠️ Règle durcie (2026-09-06) : c'est CE succès qui « acquiert » la rectification.
         this.modifications.marquerRectifie(this.idDossier);
-        // ⚠️ Écran unique (2026-09-07) : on RESTE sur l'écran et on révèle « Décrire et resoumettre »
-        // (plus de retour au modal). L'aperçu importé reste affiché au-dessus, en trace.
         this.rectifieEnregistre.set(true);
-        this.toast.success('Rectification enregistrée — décrivez-la puis resoumettez le dossier ci-dessous.');
+        // Enchaîne directement la resoumission — plus de second clic.
+        this.lancerResoumission(motif);
       },
       error: (e: ApiError) => {
         this.saving.set(false);
@@ -770,28 +788,21 @@ export class RectifierDossier {
     });
   }
 
-  /**
-   * ⚠️ Écran unique (2026-09-07) — resoumettre le dossier rectifié DEPUIS cet écran : la description
-   * est obligatoire (miroir du 400 serveur), la resoumission rouvre la vérification. Retour à la
-   * liste « Dossiers à rectifier » au succès. Gardée serveur (409) si non pris en charge.
-   */
-  resoumettre(): void {
-    const motif = this.motifRectif().trim();
-    if (!motif) {
-      this.errResoum.set('La description des rectifications effectuées est obligatoire.');
-      return;
-    }
-    this.errResoum.set(null);
+  /** Resoumission du dossier rectifié (`POST /resoumettre`). Retour à la liste au succès ; en cas
+   *  d'échec, la rectification reste enregistrée (le bouton ne fera alors QUE resoumettre). */
+  private lancerResoumission(motif: string): void {
     this.resoumission.set(true);
     this.dossierService.resoumettre(this.idDossier, { motifRectification: motif }).subscribe({
       next: () => {
+        this.saving.set(false);
         this.resoumission.set(false);
-        this.toast.success('Dossier resoumis — il repart en vérification.');
+        this.toast.success('Rectification enregistrée et dossier resoumis — il repart en vérification.');
         this.router.navigateByUrl(this.returnUrl());
       },
       error: (e: ApiError) => {
+        this.saving.set(false);
         this.resoumission.set(false);
-        this.errResoum.set(e.message || 'Resoumission impossible.');
+        this.errResoum.set(e.message || 'Resoumission impossible (la rectification, elle, est enregistrée).');
       },
     });
   }
