@@ -525,6 +525,8 @@ export class PvWorkflow {
   readonly niveau = computed(() => this.pv().niveauNavette ?? null);
   readonly canRetourner = computed(() => {
     if (!peutRetourner(this.pv().statutPv)) return false;
+    // L'examinateur ne renvoie pas son propre examen (séparation des rôles, cf. estExaminateur).
+    if (this.estExaminateur()) return false;
     if (!this.estDeuxNiveaux()) return true;
     // Étage par étage : au niveau CC c'est le CC qui retourne (au Membre) ; au niveau Président,
     // le Président (au CC).
@@ -553,6 +555,9 @@ export class PvWorkflow {
   readonly canViser = computed(() => {
     const r = this.roleSignature();
     if (!peutViser(this.pv().statutPv) || this.dejaSigne()) return false;
+    // ⚠️ Séparation des rôles (2026-09-08) : l'examinateur ne vise JAMAIS son propre examen — ni en
+    // direct, ni par intérim (masque TOUT le bloc visa, `estViseurAttendu`/`peutSuppleer` compris).
+    if (this.estExaminateur()) return false;
     // ⚠️ Constat pilote (2026-09-04) : sur PROJET_ACCEPTE, « Compléter le visa… » ne vaut que pour
     // un PV accepté sous l'ANCIEN contrat, au visa INCOMPLET. Un visa qui a désigné son ou ses
     // co-signataires est complet — il ne reste que les signatures (le CC désigné voyait encore le
@@ -575,6 +580,15 @@ export class PvWorkflow {
   readonly estDispatcheur = computed(() => {
     const d = this.pv().imDispatcheur;
     return d == null || d === this.auth.ref();
+  });
+  /**
+   * ⚠️ Séparation des rôles (règle pilote 2026-09-08) — le connecté est-il l'EXAMINATEUR du PV
+   * (`imCtrlMembre`) ? Il ne VISE ni ne RETOURNE jamais son propre examen, même quand l'examen a été
+   * dispatché à un CC/Président (qui cumulerait sinon examen + visa). Le visa reste au dispatcheur.
+   */
+  readonly estExaminateur = computed(() => {
+    const ref = this.auth.ref();
+    return ref != null && ref === this.pv().imCtrlMembre;
   });
   /** Nom du dispatcheur, servi par le backend — pour écrire la raison du refus. */
   readonly nomDispatcheur = computed(() => this.pv().nomDispatcheur || this.pv().imDispatcheur || '');
