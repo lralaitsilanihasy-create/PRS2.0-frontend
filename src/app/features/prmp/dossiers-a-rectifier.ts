@@ -79,7 +79,13 @@ interface CarteRectif {
                   <td>{{ sousTypeLabel(c.dossier) }}</td>
                   <td>{{ localiteLabel(c.dossier) }}</td>
                   <td class="cnm-mono">
-                    {{ c.dossier.datePrevisionnelleFin ? (c.dossier.datePrevisionnelleFin | date: 'dd/MM/yyyy') : '—' }}
+                    <!-- ⚠️ 2026-09-08 (règle pilote, valable partout) — dossier CLOS : date de CLÔTURE
+                         avec l'heure (datesEtapes.CLOTURE) ; sinon la projection (jour). -->
+                    @if (c.dossier.datesEtapes?.['CLOTURE']; as clot) {
+                      {{ clot | date: 'dd/MM/yyyy HH:mm' }}
+                    } @else if (c.dossier.datePrevisionnelleFin) {
+                      {{ c.dossier.datePrevisionnelleFin | date: 'dd/MM/yyyy' }}
+                    } @else { — }
                     @if (c.dossier.attentePrmp) {
                       <span class="ar-attente" title="En attente de votre rectification — la date prévisionnelle glisse tant que le dossier ne revient pas à la CNM.">⏸ à vous</span>
                     }

@@ -62,7 +62,7 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
               <span class="chrono__pec">Pas encore prise en charge.</span>
             }
           } @else if (c.finCompteur) {
-            <span class="chrono__pec">Traitement CNM achevé (validation SIGMP le {{ c.finCompteur | date: 'dd/MM/yyyy' }}).</span>
+            <span class="chrono__pec">Traitement CNM achevé (validation SIGMP le {{ c.finCompteur | date: 'dd/MM/yyyy HH:mm' }}).</span>
           }
           @if (c.datePrevisionnelleFin) {
             <span class="chrono__prevision">

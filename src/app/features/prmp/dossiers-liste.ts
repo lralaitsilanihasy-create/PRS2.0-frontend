@@ -77,7 +77,13 @@ type Groupe = 'brouillon' | 'soumis';
                   <!-- Chronométrage (2026-09-01) : date calculée SERVEUR, présente sur les listes.
                        ⏸ = balle chez la PRMP (la date glisse tant qu'elle n'a pas rendu la main). -->
                   <td class="cnm-mono">
-                    {{ d.datePrevisionnelleFin ? (d.datePrevisionnelleFin | date: 'dd/MM/yyyy') : '—' }}
+                    <!-- ⚠️ 2026-09-08 (règle pilote, valable partout) — un dossier CLOS montre sa date de
+                         CLÔTURE réelle AVEC L'HEURE (datesEtapes.CLOTURE) ; sinon la projection (jour). -->
+                    @if (d.datesEtapes?.['CLOTURE']; as clot) {
+                      {{ clot | date: 'dd/MM/yyyy HH:mm' }}
+                    } @else if (d.datePrevisionnelleFin) {
+                      {{ d.datePrevisionnelleFin | date: 'dd/MM/yyyy' }}
+                    } @else { — }
                     @if (d.attentePrmp) {
                       <span class="dl-attente" title="En attente de votre action (compléments, pièces ou rectification) — la date prévisionnelle glisse tant que le dossier ne revient pas à la CNM.">⏸ à vous</span>
                     }
