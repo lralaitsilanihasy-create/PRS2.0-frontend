@@ -106,6 +106,25 @@
   border-radius: var(--radius-sm); padding: 0.1rem 0.4rem;
 }
 
+/* ---- justifications par ligne (édition inline) ---- */
+.maj__justifs { display: flex; flex-direction: column; gap: 0.85rem; }
+.maj__justif {
+  border: 1px solid var(--n-100); border-radius: var(--radius-md); padding: 0.65rem 0.85rem;
+  border-left: 3px solid var(--n-300);
+}
+.maj__justif--vide { border-left-color: var(--warning-bdr, #fde68a); background: var(--warning-bg, #fffbeb); }
+.maj__justif-lbl { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem; margin-bottom: 0.4rem; }
+.maj__justif-type {
+  font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
+  color: var(--warning-text, #92400e); background: var(--warning-bg, #fffbeb);
+  border: 1px solid var(--warning-bdr, #fde68a); border-radius: var(--radius-full); padding: 0.05rem 0.5rem;
+}
+.maj__justif-objet { font-weight: 600; }
+.maj__justif-mode { color: var(--n-500); font-size: var(--text-sm); }
+.maj__justif-edit { display: flex; align-items: flex-start; gap: 0.5rem; }
+.maj__justif-edit textarea { flex: 1; }
+.maj__justif-edit .btn { flex: 0 0 auto; margin-top: 0.1rem; }
+
 /* ---- actions finales ---- */
 .maj__final { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
 .maj__hint-fin { text-align: right; }

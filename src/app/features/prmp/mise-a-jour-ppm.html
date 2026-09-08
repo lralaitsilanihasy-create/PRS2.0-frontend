@@ -298,9 +298,56 @@
       </div>
     </div>
 
+    <!-- ⚠️ Parité création (pilote 2026-09-08) — ÉDITION INLINE des justifications PAR LIGNE : retoucher un
+         héritage (mode dérogatoire / délai aménagé) sans re-importer le PPM. Lignes dérivées de la fiche ;
+         chaque enregistrement ré-écrit le marché (verrou de version) sans toucher au reste. -->
+    @if (fiche(); as f) {
+      @if (f.derogatoires.length || f.delaisAmenages.length) {
+        <div class="card maj__panel">
+          <div class="card-header"><span class="card-title">Justifications de la fiche de présentation — par ligne</span></div>
+          <div class="card-body maj__justifs">
+            @for (l of f.derogatoires; track l.idDetail) {
+              <div class="maj__justif" [class.maj__justif--vide]="!justifLigneValeur(l.idDetail, 'mode').trim()">
+                <label [for]="'jmode-' + l.idDetail" class="maj__justif-lbl">
+                  <span class="maj__justif-type">Mode dérogatoire</span>
+                  <span class="maj__justif-objet">{{ l.objet }}</span>
+                  @if (l.modeLibelle) { <span class="maj__justif-mode">— {{ l.modeLibelle }}</span> }
+                </label>
+                <div class="maj__justif-edit">
+                  <textarea [id]="'jmode-' + l.idDetail" class="form-control" rows="2"
+                            [ngModel]="justifLigneValeur(l.idDetail, 'mode')" (ngModelChange)="majJustifLigne(l.idDetail, 'mode', $event)"
+                            [ngModelOptions]="{ standalone: true }" placeholder="Justification du mode dérogatoire…"></textarea>
+                  <button type="button" class="btn btn-secondary btn-sm"
+                          [disabled]="justifLigneEnCours() !== null || !justifLigneModifiee(l.idDetail, 'mode')"
+                          (click)="enregistrerJustifLigne(l.idDetail, 'mode')">Enregistrer</button>
+                </div>
+              </div>
+            }
+            @for (l of f.delaisAmenages; track l.idDetail) {
+              <div class="maj__justif" [class.maj__justif--vide]="!justifLigneValeur(l.idDetail, 'delai').trim()">
+                <label [for]="'jdelai-' + l.idDetail" class="maj__justif-lbl">
+                  <span class="maj__justif-type">Délai aménagé</span>
+                  <span class="maj__justif-objet">{{ l.objet }}</span>
+                </label>
+                <div class="maj__justif-edit">
+                  <textarea [id]="'jdelai-' + l.idDetail" class="form-control" rows="2"
+                            [ngModel]="justifLigneValeur(l.idDetail, 'delai')" (ngModelChange)="majJustifLigne(l.idDetail, 'delai', $event)"
+                            [ngModelOptions]="{ standalone: true }" placeholder="Justification du délai aménagé…"></textarea>
+                  <button type="button" class="btn btn-secondary btn-sm"
+                          [disabled]="justifLigneEnCours() !== null || !justifLigneModifiee(l.idDetail, 'delai')"
+                          (click)="enregistrerJustifLigne(l.idDetail, 'delai')">Enregistrer</button>
+                </div>
+              </div>
+            }
+            <p class="form-hint">La justification <strong>globale</strong> se saisit dans l'en-tête, en haut de l'écran (« Enregistrer l'en-tête »).</p>
+          </div>
+        </div>
+      }
+    }
+
     <!-- ⚠️ Parité création (pilote 2026-09-08) — la fiche de présentation exige une justification pour
-         chaque marché dérogatoire / à délai aménagé (saisie dans « Modifier le détail » de la ligne) et
-         une justification globale (en-tête). On liste ce qui manque et on bloque la création. -->
+         chaque marché dérogatoire / à délai aménagé (bloc ci-dessus) et une justification globale (en-tête).
+         On liste ce qui manque et on bloque la création. -->
     @if (justificationsManquantes(); as manques) {
       @if (manques.length) {
         <div class="alert alert-warning maj__manques">
@@ -309,7 +356,7 @@
             @for (m of manques; track m) { <li>{{ m }}</li> }
           </ul>
           <p class="form-hint">
-            Justification d'une ligne : ouvrez <em>« Modifier le détail »</em> de la ligne concernée.
+            Justification d'une ligne : le bloc <em>« Justifications de la fiche de présentation — par ligne »</em> ci-dessus.
             Justification globale : le champ de l'en-tête (pensez à <em>« Enregistrer l'en-tête »</em>).
           </p>
         </div>

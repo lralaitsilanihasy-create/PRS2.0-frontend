@@ -164,6 +164,81 @@ export class MiseAJourPpm {
     return manques;
   });
 
+  /**
+   * ⚠️ Parité création (pilote 2026-09-08) — ÉDITION INLINE des justifications PAR LIGNE (mode dérogatoire /
+   * délai aménagé), pour retoucher un héritage sans re-importer le PPM. Brouillon par clé `idDetail:mode|delai` ;
+   * la valeur affichée est le brouillon s'il existe, sinon celle du marché. `justifLigneEnCours` = clé en cours
+   * d'enregistrement (désactive le bouton). L'écriture RE-ENVOIE la ligne entière (modèle plat, verrou `version`)
+   * en ne changeant que la justif visée — l'autre justif est préservée (sinon effacée, cf. Marche.justif*).
+   */
+  private readonly justifLigneDrafts = signal<Map<string, string>>(new Map());
+  readonly justifLigneEnCours = signal<string | null>(null);
+
+  private cleJustif(idDetail: number, type: 'mode' | 'delai'): string {
+    return `${idDetail}:${type}`;
+  }
+  justifLigneValeur(idDetail: number, type: 'mode' | 'delai'): string {
+    const brouillon = this.justifLigneDrafts().get(this.cleJustif(idDetail, type));
+    if (brouillon !== undefined) {
+      return brouillon;
+    }
+    const m = this.marches().find((x) => x.idDetail === idDetail);
+    return (type === 'mode' ? m?.justifModeDerogatoire : m?.justifDelaiAmenage) ?? '';
+  }
+  majJustifLigne(idDetail: number, type: 'mode' | 'delai', valeur: string): void {
+    this.justifLigneDrafts.update((map) => {
+      const copie = new Map(map);
+      copie.set(this.cleJustif(idDetail, type), valeur);
+      return copie;
+    });
+  }
+  /** Le brouillon diffère-t-il de la valeur persistée du marché ? (active le bouton « Enregistrer »). */
+  justifLigneModifiee(idDetail: number, type: 'mode' | 'delai'): boolean {
+    const cle = this.cleJustif(idDetail, type);
+    if (!this.justifLigneDrafts().has(cle)) {
+      return false;
+    }
+    const m = this.marches().find((x) => x.idDetail === idDetail);
+    const actuel = (type === 'mode' ? m?.justifModeDerogatoire : m?.justifDelaiAmenage) ?? '';
+    return (this.justifLigneDrafts().get(cle) ?? '').trim() !== actuel.trim();
+  }
+  enregistrerJustifLigne(idDetail: number, type: 'mode' | 'delai'): void {
+    const m = this.marches().find((x) => x.idDetail === idDetail);
+    if (!m) {
+      return;
+    }
+    const cle = this.cleJustif(idDetail, type);
+    const valeur = this.justifLigneValeur(idDetail, type).trim() || undefined;
+    this.justifLigneEnCours.set(cle);
+    const corps: Marche = {
+      ...m,
+      justifModeDerogatoire: type === 'mode' ? valeur : m.justifModeDerogatoire,
+      justifDelaiAmenage: type === 'delai' ? valeur : m.justifDelaiAmenage,
+    };
+    this.marcheService.update(idDetail, corps).subscribe({
+      next: (maj) => {
+        // Réponse serveur (version incrémentée) reposée dans marches() → fiche() + garde se recalculent.
+        this.marches.update((arr) => arr.map((x) => (x.idDetail === idDetail ? maj : x)));
+        this.justifLigneDrafts.update((map) => {
+          const copie = new Map(map);
+          copie.delete(cle);
+          return copie;
+        });
+        this.justifLigneEnCours.set(null);
+        this.toast.success('Justification enregistrée.');
+      },
+      error: (e: ApiError) => {
+        this.justifLigneEnCours.set(null);
+        if (estConflitVersion(e)) {
+          // La ligne a changé ailleurs : on recharge tout pour repartir de l'état serveur.
+          this.charger();
+          return; // Toast centralisé « Donnée modifiée entre-temps ».
+        }
+        this.toast.error(e.message || 'Enregistrement impossible.');
+      },
+    });
+  }
+
   /** Marchés + statut de changement, lignes supprimées rejetées en fin de tableau. */
   readonly lignes = computed<LigneAffichee[]>(() => {
     const parOrigine = new Map<number, LigneDiff>();
