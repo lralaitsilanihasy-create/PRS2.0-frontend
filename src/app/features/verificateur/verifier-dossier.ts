@@ -178,9 +178,13 @@ interface Echange {
           <!-- ⚠️ Spec « circuit des observations FAVR » (2026-08-02) — plus AUCUNE saisie libre : le
                vérificateur statue une à une les observations du PV (périmètre figé), LEVÉE (définitive)
                ou MAINTENUE (+ précision facultative). Le rappel PRMP est auto-généré des maintenues. -->
-          <div class="card vf__panel">
+          <div class="card vf__panel vf__panel--passage">
             <div class="card-header"><span class="card-title">Observations du PV — passage de vérification</span></div>
-            <div class="card-body">
+            <!-- ⚠️ 2026-09-08 (constat pilote) — la LISTE des observations défile à l'intérieur
+                 (vf__scroll) et le pied « Enregistrer le passage » reste FIXE en bas (plus sticky) :
+                 la dernière observation n'est plus cachée derrière le bouton. -->
+            <div class="card-body vf__passage-body">
+              <div class="vf__scroll">
               @if (verrouille()) {
                 <p class="form-hint">{{ messageVerrou() }}</p>
               } @else if (observations().length) {
@@ -234,7 +238,6 @@ interface Echange {
                   <p class="vf__alert">⚠ {{ nbMaintenues() }} observation(s) maintenue(s) : le dossier sera transmis à la
                     PRMP pour rectification (rappel généré automatiquement — uniquement les observations du PV).</p>
                 }
-                @if (formError()) { <span class="form-error">{{ formError() }}</span> }
                 <!-- ⚠️ 2026-09-08 (constat pilote) — le bouton reste grisé tant que TOUTES les observations
                      ne sont pas statuées, même après la prise en charge : on le dit explicitement. -->
                 @if (actionAutorisee() && !toutesStatuees()) {
@@ -243,6 +246,10 @@ interface Echange {
                     le passage » s'activera quand toutes seront décidées.
                   </p>
                 }
+              }
+              </div>
+              @if (!verrouille() && restantes().length) {
+                @if (formError()) { <span class="form-error">{{ formError() }}</span> }
                 <div class="vf__foot">
                   <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
                   <button type="button" class="btn btn-primary" [disabled]="saving() || !toutesStatuees() || !actionAutorisee()"
@@ -298,7 +305,14 @@ interface Echange {
        borné porte les deux ascenseurs. Les cartes de droite sont FIGÉES (sticky) : Contexte + décision
        restent visibles pendant qu'on parcourt le tableau. */
     .vf__details { max-height: calc(100vh - 14rem); overflow: auto; }
-    .vf__right { display: flex; flex-direction: column; gap: 0.75rem; position: sticky; top: 0.75rem; align-self: start; max-height: calc(100vh - 14rem); overflow-y: auto; }
+    .vf__right { display: flex; flex-direction: column; gap: 0.75rem; position: sticky; top: 0.75rem; align-self: start; max-height: calc(100vh - 14rem); overflow: hidden; }
+    /* ⚠️ 2026-09-08 (constat pilote) — le contexte garde sa hauteur ; la carte de passage prend le
+       reste et fait DÉFILER sa liste en interne (vf__scroll), pied fixe en bas → la dernière
+       observation n'est plus masquée par « Enregistrer le passage ». */
+    .vf__right > .vf__panel:not(.vf__panel--passage) { flex: 0 0 auto; }
+    .vf__panel--passage { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .vf__passage-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .vf__scroll { flex: 1; min-height: 0; overflow-y: auto; }
     .vf__info { display: flex; flex-direction: column; gap: 0.35rem; margin: 0; }
     .vf__info > div { display: flex; gap: 0.5rem; align-items: baseline; }
     .vf__info dt { flex: 0 0 9rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); }
@@ -312,10 +326,10 @@ interface Echange {
     .vf__ech-item--rectif { border-left-color: var(--warning-text); }
     .vf__ech-meta { color: var(--n-400); font-size: var(--text-xs); }
     .vf__ech-text { font-size: var(--text-sm); }
-    /* ⚠️ Demande pilote (2026-09-07) — le pied d'action reste TOUJOURS visible : épinglé en bas du
-       panneau droit (qui défile), sinon « Enregistrer le passage » tombe sous le pli quand la liste
-       d'observations est longue. Fond opaque pour ne pas laisser transparaître le contenu défilé. */
-    .vf__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; position: sticky; bottom: 0; background: #fff; padding-bottom: 0.25rem; }
+    /* ⚠️ Demande pilote (2026-09-07, revu 2026-09-08) — le pied d'action reste TOUJOURS visible. Il
+       n'est PLUS sticky (il masquait la dernière observation) : la LISTE défile dans vf__scroll et le
+       pied est un bloc FIXE hors défilement, au bas de la carte de passage (flex: none). */
+    .vf__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; background: #fff; flex: none; margin-top: 0.5rem; }
     .vf__alert { margin: 0; font-size: var(--text-sm); background: var(--warning-bg); color: var(--warning-text); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); }
     /* ⚠️ 2026-09-08 — explication du grisage de « Enregistrer le passage » (observations à statuer). */
     .vf__hint-statuer { margin: 0.5rem 0 0; font-size: var(--text-sm); background: var(--warning-bg); color: var(--warning-text); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); }
@@ -333,8 +347,10 @@ interface Echange {
     .confirm-modal { max-width: 30rem; }
     @media (max-width: 60rem) {
       .vf__grid { grid-template-columns: 1fr; }
-      /* Empilé : plus de hauteur bornée ni de sticky (sinon double ascenseur peu ergonomique). */
+      /* Empilé : plus de hauteur bornée ni de sticky (sinon double ascenseur peu ergonomique) ; la
+         carte de passage et sa liste redeviennent un flux normal (la PAGE défile). */
       .vf__details, .vf__right { max-height: none; overflow: visible; position: static; }
+      .vf__panel--passage, .vf__passage-body, .vf__scroll { min-height: 0; overflow: visible; display: block; }
     }
   `,
 })
