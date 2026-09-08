@@ -82,7 +82,7 @@ interface CarteRectif {
                     <!-- ⚠️ 2026-09-08 (règle pilote, valable partout) — dossier CLOS : date de CLÔTURE
                          avec l'heure (datesEtapes.CLOTURE) ; sinon la projection (jour). -->
                     @if (c.dossier.datesEtapes?.['CLOTURE']; as clot) {
-                      {{ clot | date: 'dd/MM/yyyy HH:mm' }}
+                      <span class="cnm-fin-cloture">{{ clot | date: 'dd/MM/yyyy HH:mm' }}</span>
                     } @else if (c.dossier.datePrevisionnelleFin) {
                       {{ c.dossier.datePrevisionnelleFin | date: 'dd/MM/yyyy' }}
                     } @else { — }

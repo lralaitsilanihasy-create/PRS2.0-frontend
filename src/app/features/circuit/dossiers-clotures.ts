@@ -65,7 +65,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
                          date de CLÔTURE réelle (datesEtapes.CLOTURE), affichée AVEC L'HEURE (demande
                          pilote) ; la projection (date sans heure) reste au format jour. -->
                     @if (d.datesEtapes?.['CLOTURE']; as clot) {
-                      {{ clot | date: 'dd/MM/yyyy HH:mm' }}
+                      <span class="cnm-fin-cloture">{{ clot | date: 'dd/MM/yyyy HH:mm' }}</span>
                     } @else if (d.datePrevisionnelleFin) {
                       {{ d.datePrevisionnelleFin | date: 'dd/MM/yyyy' }}
                     } @else { — }

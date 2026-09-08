@@ -124,6 +124,13 @@ a:hover {
   color: var(--cnm-text-2);
 }
 
+/* Date de CLÔTURE (« Fin traitement CNM » d'un dossier clos) — vert « terminé » (demande pilote
+   2026-09-08). Réservée à la fin RÉELLE ; la projection reste au style neutre. */
+.cnm-fin-cloture {
+  color: var(--success-text);
+  font-weight: 600;
+}
+
 /**
  * Masquage VISUEL seul : le texte reste lu par les lecteurs d'écran (à la différence de
  * `display: none`). Sert à nommer un champ dont le libellé n'est porté que par une icône ou un

@@ -80,7 +80,7 @@ type Groupe = 'brouillon' | 'soumis';
                     <!-- ⚠️ 2026-09-08 (règle pilote, valable partout) — un dossier CLOS montre sa date de
                          CLÔTURE réelle AVEC L'HEURE (datesEtapes.CLOTURE) ; sinon la projection (jour). -->
                     @if (d.datesEtapes?.['CLOTURE']; as clot) {
-                      {{ clot | date: 'dd/MM/yyyy HH:mm' }}
+                      <span class="cnm-fin-cloture">{{ clot | date: 'dd/MM/yyyy HH:mm' }}</span>
                     } @else if (d.datePrevisionnelleFin) {
                       {{ d.datePrevisionnelleFin | date: 'dd/MM/yyyy' }}
                     } @else { — }

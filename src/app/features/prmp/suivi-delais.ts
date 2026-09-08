@@ -61,7 +61,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   <td class="cnm-mono">
                     @if (enregistrement(d)) {
                       @if (d.datesEtapes?.['CLOTURE']; as clot) {
-                        {{ clot | date: 'dd/MM/yyyy HH:mm' }}
+                        <span class="cnm-fin-cloture">{{ clot | date: 'dd/MM/yyyy HH:mm' }}</span>
                       } @else if (d.datePrevisionnelleFin) {
                         {{ d.datePrevisionnelleFin | date: 'dd/MM/yyyy' }}
                       } @else { — }
