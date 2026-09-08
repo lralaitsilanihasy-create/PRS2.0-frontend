@@ -104,6 +104,13 @@ export class MiseAJourPpm {
   readonly origineConsultee = signal<Dossier | null>(null);
   /** Détail complet du PPM en édition (bénéficiaires, lots, dates prévisionnelles). */
   readonly detailOuvert = signal(false);
+  /**
+   * ⚠️ Parité avec la création (demande pilote 2026-09-08) — APERÇU du dossier composé : onglets
+   * Fiche de présentation / Plan de passation / Projet d'AGPM / Pièces jointes, dérivés du plan de
+   * cette version. On réutilise `DetailPpmModal` en LECTURE SEULE (`modeEdition=false`) : il monte déjà
+   * ces 4 onglets à partir du même calcul partagé — rien à redériver ici.
+   */
+  readonly apercuDossierOuvert = signal(false);
 
   /**
    * ⚠️ 2026-08-05 (demande user) — le tableau reprend la STRUCTURE de la grille de saisie : nature, mode,

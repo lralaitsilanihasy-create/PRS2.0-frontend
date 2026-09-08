@@ -290,6 +290,9 @@
 
     <!-- ⑤ Aperçu du diff, distinct de la soumission finale. -->
     <div class="maj__final">
+      <!-- ⚠️ Parité création (pilote 2026-09-08) — aperçu du dossier COMPOSÉ (Fiche / Plan / AGPM /
+           Pièces), dérivé du plan de cette version, en lecture seule. -->
+      <button type="button" class="btn btn-secondary" (click)="apercuDossierOuvert.set(true)">👁 Aperçu du dossier</button>
       <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu du diff complet</button>
       <button type="button" class="btn btn-ghost" [disabled]="enregistrement()" (click)="abandonner()">Abandonner la mise à jour</button>
       <button type="button" class="btn btn-primary" [disabled]="enregistrement() || sansChangement()" (click)="creerLaMiseAJour()">
@@ -354,5 +357,17 @@
     [modeEdition]="true"
     (fermer)="fermerDetailComplet()"
     (modifie)="fermerDetailComplet()"
+  />
+}
+
+<!-- ⚠️ Parité création (pilote 2026-09-08) — APERÇU du dossier composé, en LECTURE SEULE : la même
+     modale de détail PPM, sans édition, monte les 4 onglets Fiche / Plan / AGPM / Pièces dérivés du
+     plan de cette version. -->
+@if (apercuDossierOuvert() && ppm(); as p) {
+  <app-detail-ppm-modal
+    [idDossier]="idDossier"
+    [idPpm]="p.idPpm"
+    [modeEdition]="false"
+    (fermer)="apercuDossierOuvert.set(false)"
   />
 }
