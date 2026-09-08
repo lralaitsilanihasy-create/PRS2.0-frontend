@@ -60,7 +60,11 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                        démarre à l'enregistrement = debutCompteur), afficher une fin avant serait trompeur. -->
                   <td class="cnm-mono">
                     @if (enregistrement(d)) {
-                      @if (finTraitement(d); as fin) { {{ fin | date: 'dd/MM/yyyy' }} } @else { — }
+                      @if (d.datesEtapes?.['CLOTURE']; as clot) {
+                        {{ clot | date: 'dd/MM/yyyy HH:mm' }}
+                      } @else if (d.datePrevisionnelleFin) {
+                        {{ d.datePrevisionnelleFin | date: 'dd/MM/yyyy' }}
+                      } @else { — }
                       @if (d.attentePrmp) {
                         <span class="sdl-attente" title="En attente de votre action (compléments, pièces ou rectification) — la date prévisionnelle glisse tant que le dossier ne revient pas à la CNM.">⏸ à vous</span>
                       }
@@ -146,13 +150,5 @@ export class SuiviDelais {
    */
   enregistrement(d: Dossier): string | null {
     return d.dateEnregistrement ?? this.receptions().get(d.idDossier)?.dateReception ?? null;
-  }
-  /**
-   * ⚠️ 2026-09-08 (constat pilote) — « Fin traitement CNM » : pour un dossier CLOS c'est la date de
-   * CLÔTURE réelle (`datesEtapes.CLOTURE`, `datePrevisionnelleFin` étant `null` une fois le circuit
-   * terminé) ; sinon la projection serveur. Masquée en amont tant que le dossier n'est pas enregistré.
-   */
-  finTraitement(d: Dossier): string | null {
-    return d.datesEtapes?.['CLOTURE'] ?? d.datePrevisionnelleFin ?? null;
   }
 }
