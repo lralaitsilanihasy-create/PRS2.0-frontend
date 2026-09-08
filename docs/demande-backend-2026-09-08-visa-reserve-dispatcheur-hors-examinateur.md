@@ -9,10 +9,17 @@ l'examinateur qui viserait son propre examen — rupture de la séparation des r
 
 Le **visa** — et par cohérence le **retour pour rectification** — d'un projet de PV est réservé au
 **dispatcheur** du dossier. L'**EXAMINATEUR** (`imCtrlMembre` du PV / assignataire du dispatch) ne vise
-**JAMAIS** son propre examen, **même s'il est CC ou Président** (cas d'un examen redispatché au CC), et
+**PAS** son propre examen, **même s'il est CC ou Président** (cas d'un examen redispatché au CC), et
 **même par la voie de l'intérim** (suppléance d'un P/CC du périmètre). Séparation des rôles : celui qui
 examine ne vise pas. Même esprit que « la soumission revient à l'examinateur »
 (`docs/demande-backend-2026-09-08-soumission-pv-reservee-examinateur.md`), pris à l'envers.
+
+> ⚠️ **EXCEPTION (précision pilote 2026-09-08) — l'examinateur QUI EST AUSSI LE DISPATCHEUR.** Par
+> **délégation de profil**, une même personne peut dispatcher le dossier **à elle-même** puis l'examiner
+> (`imCtrlMembre == imDispatcheur`). Dans ce cas, elle cumule **légitimement** examen + soumission +
+> **visa** — elle N'est PAS bloquée. Le critère n'est donc pas « est l'examinateur » mais **« est
+> l'examinateur ET n'est pas le dispatcheur »**. La soumission, elle, reste inchangée : elle revient à
+> l'examinateur, que celui-ci soit ou non le dispatcheur (donc ce cas peut aussi soumettre).
 
 ## Constat (réel, navette simple)
 
@@ -33,11 +40,15 @@ navette simple, et rien n'exclut l'examinateur de la suppléance par intérim.
 Sur les endpoints de **visa** (`POST /api/pv-examens/{idPv}/viser`, y compris la variante **intérim**
 avec note) et de **retour** (`POST /api/pv-examens/{idPv}/retourner`) d'une **navette simple** :
 
-- **403** si l'appelant est l'**examinateur** du PV (`imCtrlMembre`) — quel que soit son rôle, et **y
-  compris s'il tenterait de suppléer par intérim**. Message explicite (dialogue front) : le visa revient
-  au dispatcheur, l'examinateur ne vise pas son propre examen.
+- **403** si l'appelant est l'**examinateur** du PV (`imCtrlMembre`) **ET n'est pas le dispatcheur**
+  (`imCtrlMembre != imDispatcheur`) — quel que soit son rôle, et **y compris s'il tenterait de suppléer
+  par intérim**. Message explicite (dialogue front) : le visa revient au dispatcheur, l'examinateur ne
+  vise pas son propre examen.
+- **EXCEPTION** : si `imCtrlMembre == imDispatcheur` (examinateur = dispatcheur, délégation de profil),
+  **200** — cette personne cumule légitimement examen + soumission + visa.
 - Le **dispatcheur** (`imDispatcheur`) garde le visa/retour ; un **suppléant par intérim** légitime
-  (P/CC du périmètre) le garde AUSSI **tant qu'il n'est pas l'examinateur**.
+  (P/CC du périmètre) le garde AUSSI **tant qu'il n'est pas l'examinateur** (au sens ci-dessus :
+  examinateur ≠ dispatcheur).
 - Idéalement, refléter cette réserve dans `acteursAttendus` de l'étape VISA (navette simple) pour que le
   front s'aligne sans règle dupliquée — au minimum, la garde 403 fait foi.
 - La navette à DEUX niveaux garde ses règles d'étage existantes (déjà livrées, `1a92f5a`) ; ce point ne
@@ -45,18 +56,24 @@ avec note) et de **retour** (`POST /api/pv-examens/{idPv}/retourner`) d'une **na
 
 ## Côté front — déjà fait
 
-- `pv-workflow.ts` : `canViser` et `canRetourner` renvoient `false` pour l'examinateur
-  (`estExaminateur = auth.ref() === pv.imCtrlMembre`) → masque TOUT le bloc visa, `estViseurAttendu` et
-  la suppléance par intérim (`peutSuppleer`) compris.
-- `pv-page.ts` : `pecPermiseDe` renvoie `false` pour l'examinateur sur `PROJET_SOUMIS` → pas de
-  « Prendre en charge » du VISA pour lui (le widget de chronométrage n'offre plus le geste).
-- Vérifié en réel : CC examinateur → aucune action visa/retour ; Président dispatcheur → visa/retour
-  offerts. La garde serveur reste l'autorité (un appel direct doit être refusé).
+- `pv-workflow.ts` : `canViser` et `canRetourner` renvoient `false` pour l'examinateur **non
+  dispatcheur** (`estExaminateur && !estDispatcheur`, avec `estExaminateur = auth.ref() ===
+  pv.imCtrlMembre` et `estDispatcheur = imDispatcheur == null || imDispatcheur === auth.ref()`) → masque
+  TOUT le bloc visa, `estViseurAttendu` et la suppléance par intérim (`peutSuppleer`) compris. Un
+  examinateur = dispatcheur garde le bloc.
+- `pv-page.ts` : `pecPermiseDe` renvoie `false` sur `PROJET_SOUMIS` pour l'examinateur **définitivement
+  ≠ dispatcheur** (`imDispatcheur != null && auth.ref() !== imDispatcheur`) → pas de « Prendre en
+  charge » du VISA pour lui.
+- Vérifié en réel : CC examinateur (≠ dispatcheur) → aucune action visa/retour ; Président dispatcheur →
+  visa/retour offerts. La garde serveur reste l'autorité (un appel direct doit être refusé).
 
 ## Contre-recette attendue
 
-1. Examen fait par l'assignataire A (ici CC) ; PV `PROJET_SOUMIS`, navette simple.
-2. `POST …/viser` (direct ou intérim) par **A** (l'examinateur) → **403** nommant le dispatcheur.
-3. Le même par le **dispatcheur** → **200** ; par un **P/CC suppléant du périmètre non-examinateur**
+1. Examen fait par l'assignataire A (ici CC), **dispatché par B** (≠ A) ; PV `PROJET_SOUMIS`, navette simple.
+2. `POST …/viser` (direct ou intérim) par **A** (examinateur ≠ dispatcheur) → **403** nommant le dispatcheur.
+3. Le même par le **dispatcheur B** → **200** ; par un **P/CC suppléant du périmètre non-examinateur**
    (avec note d'intérim) → **200**.
-4. `POST …/retourner` par **A** → **403** ; par le dispatcheur → **200**.
+4. `POST …/retourner` par **A** → **403** ; par le dispatcheur B → **200**.
+5. **EXCEPTION** — dossier dispatché par C **à lui-même** (`imDispatcheur == imCtrlMembre == C`, délégation
+   de profil) puis examiné par C : `POST …/soumettre` par C → **200**, puis `POST …/viser` par C → **200**
+   (il cumule légitimement examen + soumission + visa).

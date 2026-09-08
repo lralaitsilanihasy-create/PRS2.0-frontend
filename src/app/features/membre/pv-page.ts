@@ -725,10 +725,12 @@ export class MembrePv {
    */
   pecPermiseDe(pv: PvExamen): boolean | undefined {
     if (pv.statutPv === 'PROJET_SOUMIS') {
-      // ⚠️ Séparation des rôles (règle pilote 2026-09-08) : l'EXAMINATEUR (`imCtrlMembre`) ne vise
-      // jamais son propre examen — même s'il est CC/Président (examen dispatché au CC). Pas de PEC
-      // visa pour lui ; le visa reste au dispatcheur (le reste des règles ci-dessous inchangé).
-      if (this.auth.ref() != null && this.auth.ref() === pv.imCtrlMembre) {
+      // ⚠️ Séparation des rôles (règle pilote 2026-09-08) : l'EXAMINATEUR (`imCtrlMembre`) ne prend pas
+      // en charge le visa de son propre examen — même s'il est CC/Président (examen dispatché au CC).
+      // EXCEPTION : s'il est AUSSI le DISPATCHEUR (délégation de profil, il a dispatché à lui-même), il
+      // garde le visa → on ne bloque que l'examinateur DÉFINITIVEMENT ≠ dispatcheur.
+      const moi = this.auth.ref();
+      if (moi != null && moi === pv.imCtrlMembre && pv.imDispatcheur != null && moi !== pv.imDispatcheur) {
         return false;
       }
       if (pv.niveauNavette != null) {

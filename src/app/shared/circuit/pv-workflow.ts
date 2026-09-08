@@ -525,8 +525,8 @@ export class PvWorkflow {
   readonly niveau = computed(() => this.pv().niveauNavette ?? null);
   readonly canRetourner = computed(() => {
     if (!peutRetourner(this.pv().statutPv)) return false;
-    // L'examinateur ne renvoie pas son propre examen (séparation des rôles, cf. estExaminateur).
-    if (this.estExaminateur()) return false;
+    // L'examinateur ne renvoie pas son propre examen — SAUF s'il est aussi le dispatcheur (délégation).
+    if (this.estExaminateur() && !this.estDispatcheur()) return false;
     if (!this.estDeuxNiveaux()) return true;
     // Étage par étage : au niveau CC c'est le CC qui retourne (au Membre) ; au niveau Président,
     // le Président (au CC).
@@ -555,9 +555,11 @@ export class PvWorkflow {
   readonly canViser = computed(() => {
     const r = this.roleSignature();
     if (!peutViser(this.pv().statutPv) || this.dejaSigne()) return false;
-    // ⚠️ Séparation des rôles (2026-09-08) : l'examinateur ne vise JAMAIS son propre examen — ni en
+    // ⚠️ Séparation des rôles (2026-09-08) : l'examinateur ne vise pas son propre examen — ni en
     // direct, ni par intérim (masque TOUT le bloc visa, `estViseurAttendu`/`peutSuppleer` compris).
-    if (this.estExaminateur()) return false;
+    // EXCEPTION (pilote 2026-09-08) : si l'examinateur est AUSSI le DISPATCHEUR (délégation de profil
+    // — il a dispatché à lui-même), il garde le visa. On ne bloque donc que l'examinateur NON dispatcheur.
+    if (this.estExaminateur() && !this.estDispatcheur()) return false;
     // ⚠️ Constat pilote (2026-09-04) : sur PROJET_ACCEPTE, « Compléter le visa… » ne vaut que pour
     // un PV accepté sous l'ANCIEN contrat, au visa INCOMPLET. Un visa qui a désigné son ou ses
     // co-signataires est complet — il ne reste que les signatures (le CC désigné voyait encore le
