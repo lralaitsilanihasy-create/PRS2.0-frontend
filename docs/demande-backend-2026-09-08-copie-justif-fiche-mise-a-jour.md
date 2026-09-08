@@ -1,5 +1,15 @@
 # Demande backend — La copie de mise à jour doit porter les justifications de la fiche
 
+> ✅ **CLÔTURÉ le 08/09** — backend livré (`61aebb8` : correction du deep-copy dans le service de mise à
+> jour + test dédié, avec la note « le chemin du réimport était juste, il ne trouvait simplement rien à
+> conserver ») et backend redémarré. **Contre-recette réelle** : brouillon périmé 100311 abandonné (204),
+> mise à jour fraîche **100312** de 100308 (201) → la copie hérite des **justifs par ligne**
+> (`"rectification1"` / `"Rectification"`) **et** de la **justif globale** (`t_ppm.justificationFiche =
+> "Juste globale correction"`). UI 100312 : champ globale pré-rempli, **plus aucun** « Justifications à
+> compléter ». Le correctif agit au moment du geste → les mises à jour ouvertes AVANT le redémarrage
+> gardent leurs justifs à `null` (100311 supprimé, non concerné). Front inchangé (garde-fou `a0fa796` déjà
+> correct).
+
 **Date** : 2026-09-08 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : parité création livrée
 côté front (`a0fa796`) — l'écran de mise à jour du PPM exige désormais, comme la création, les
 justifications de la **fiche de présentation** (marchés dérogatoires / à délai aménagé). Le pilote a
