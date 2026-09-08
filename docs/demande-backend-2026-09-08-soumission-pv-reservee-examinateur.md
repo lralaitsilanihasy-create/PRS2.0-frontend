@@ -1,5 +1,14 @@
 # Demande backend — Réserver la SOUMISSION du projet de PV à l'examinateur
 
+> ✅ **CLÔTURÉ le 08/09** — backend livré (`c6834a2`, 5 tests dédiés + 2 réécrits « examen fantôme »,
+> `imActeur` du corps documenté comme **décoratif** = l'appelant authentifié fait foi) et **contre-recetté
+> en réel** sur un dossier frais (100307, PV BROUILLON #27, examinateur MEMANT1) : `POST
+> /api/pv-examens/27/soumettre` par **PRES001** (dispatcheur) → **403** « Soumission réservée à
+> l'examinateur du dossier (RAFIDIMANANA Rina)… même par délégation », par **CCANT01** (copie) → **403**
+> même message, par **MEMANT1** (examinateur) → **200** (PV `PROJET_SOUMIS`, navette #1 `imActeur=MEMANT1`).
+> Front `90ebe18` (bouton masqué aux non-examinateurs). ⚠️ 2 points backend laissés à l'arbitrage : la
+> ligne soumettre↔éditer (fermer l'édition aussi ?), déjà couvert par la garde côté soumission.
+
 **Date** : 2026-09-08 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat + arbitrage
 pilote — un **Président dispatcheur** a pu **soumettre le projet de PV** d'un examen réalisé par le
 **CC** (à qui il avait redispatché le dossier). Le journal a alors nommé le Président comme opérateur de
