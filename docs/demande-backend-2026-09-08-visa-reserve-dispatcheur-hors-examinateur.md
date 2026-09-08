@@ -1,5 +1,19 @@
 # Demande backend — Le visa (et le retour) exclut l'EXAMINATEUR, même par intérim
 
+> ✅ **CLÔTURÉ le 08/09** — backend livré (`05fa5a6`, 6 tests, garde sur viser + retourner + PEC de
+> l'étape visa ; `acteursAttendus` laissé null, motivé dans la note backend) et **contre-recetté en réel**,
+> les deux branches vertes :
+> - **(a) examinateur ≠ dispatcheur** (CC examine, Président dispatche — PV 28) : `POST /viser` par le CC →
+>   **403** « Le visa revient au dispatcheur (RANDRIANARISON…) : l'examinateur ne vise pas son propre
+>   examen — pas même en suppléant par intérim », `POST /retourner` par le CC → **403**,
+>   `POST /prise-en-charge` (visa) par le CC → **403** ; `POST /prise-en-charge` par le Président
+>   (dispatcheur) → **200**.
+> - **(b) examinateur = dispatcheur** (Président dispatche à lui-même — PV 29, `imCtrlMembre =
+>   imDispatcheur = PRES001`) : `POST /soumettre` par PRES001 → **200**, `POST /prise-en-charge` (visa) →
+>   **200**. L'exception tient : il cumule examen + soumission + visa.
+>
+> Front `e3ea9ae` + exception `6d8a9fa`.
+
 **Date** : 2026-09-08 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : constat + arbitrage
 pilote — quand le **Président dispatche l'examen au CC**, le CC examine puis se voyait proposer de
 **viser** le même dossier (visa direct OU **par intérim**, étant P/CC de la localité). C'est
