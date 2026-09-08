@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators';
 
 import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
-import { TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
+import { ouvrirBlobSur, TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
 import {
   Capm,
   DiffDossier,
@@ -605,6 +605,31 @@ export class MiseAJourPpm {
 
   libellePiece(p: PieceJointeDossier): string {
     return this.libellesPiece().get(p.idTypePiece) || ('Pièce n°' + p.idTypePiece);
+  }
+
+  /** idPiece dont on télécharge le contenu (désactive/anime le bouton « Voir » le temps du transfert). */
+  readonly pieceEnOuverture = signal<number | null>(null);
+
+  /**
+   * ⚠️ Demande pilote (2026-09-08) — visualiser une pièce jointe (PV du dossier précédent, PPM antérieurs)
+   * dans un nouvel onglet. Contenu binaire via `telecharger()`, ouvert par `ouvrirBlobSur()` : type MIME
+   * assaini + révocation différée (cf. AUDIT — jamais `URL.createObjectURL` brut). Le PDF s'affiche inline.
+   */
+  voirPiece(p: PieceJointeDossier): void {
+    if (p.idPiece == null) {
+      return;
+    }
+    this.pieceEnOuverture.set(p.idPiece);
+    this.pieceService.telecharger(p.idPiece).subscribe({
+      next: (blob) => {
+        this.pieceEnOuverture.set(null);
+        ouvrirBlobSur(blob);
+      },
+      error: (e: ApiError) => {
+        this.pieceEnOuverture.set(null);
+        this.toast.error(e.message || 'Ouverture de la pièce impossible.');
+      },
+    });
   }
 
   // ------------------------------------------------------------------ actions finales

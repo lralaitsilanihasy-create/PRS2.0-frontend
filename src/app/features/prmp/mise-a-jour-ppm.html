@@ -283,6 +283,12 @@
               <span class="maj__piece-lbl">📎 {{ libellePiece(p) }}</span>
               <div class="maj__piece-right">
                 <span class="maj__piece-file">{{ p.nomFichier || '—' }}</span>
+                <!-- ⚠️ Demande pilote (2026-09-08) — visualiser la pièce (PV précédent / PPM antérieurs)
+                     dans un nouvel onglet, via le chemin sécurisé ouvrirBlobSur (AUDIT). -->
+                <button type="button" class="btn btn-secondary btn-sm"
+                        [disabled]="pieceEnOuverture() !== null" (click)="voirPiece(p)">
+                  {{ pieceEnOuverture() === p.idPiece ? 'Ouverture…' : '👁 Voir' }}
+                </button>
                 <span class="maj__piece-tag">repris</span>
               </div>
             </li>
