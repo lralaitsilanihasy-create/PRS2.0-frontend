@@ -144,31 +144,50 @@ export class MiseAJourPpm {
     calculerFichePresentation(this.marches(), this.previsions(), this.modesRef(), this.capms()),
   );
   /**
-   * ⚠️ Parité création (2026-09-08) — justifications MANQUANTES, en miroir de la garde serveur (400 à
-   * la soumission) : chaque marché dérogatoire sans `justifModeDerogatoire`, chaque marché à délai
-   * aménagé sans `justifDelaiAmenage`, et la justification globale si au moins un marché figure dans
-   * l'une des trois listes. Bloque « Créer la mise à jour » et alimente l'avertissement.
+   * ⚠️ Décision pilote (2026-09-08) — `idDetail` des lignes NOUVELLES de cette version (diff). SEULES
+   * leurs justifications se saisissent : celles des lignes REPRISES sont des héritages, en lecture seule.
+   */
+  readonly idsLignesNouvelles = computed<Set<number>>(
+    () =>
+      new Set(
+        (this.diff()?.lignes ?? [])
+          .filter((l) => l.type === 'NOUVELLE')
+          .map((l) => l.idDetail)
+          .filter((x): x is number => x != null),
+      ),
+  );
+  /** La justif d'une ligne est-elle saisissable ? OUI pour une ligne NOUVELLE ; une ligne reprise = héritage (lecture seule). */
+  justifEditable(idDetail: number): boolean {
+    return this.idsLignesNouvelles().has(idDetail);
+  }
+
+  /**
+   * ⚠️ Décision pilote (2026-09-08) — justifications MANQUANTES, en miroir de la garde serveur (400) mais
+   * bornées à ce que la PRMP peut saisir ICI : chaque marché dérogatoire / à délai aménagé **NOUVEAU** sans
+   * justif, plus la justification globale (créée pour la mise à jour). Les lignes REPRISES ont leur justif
+   * héritée (fiable, non modifiable) : on ne les redemande pas. Bloque « Créer » + alimente l'avertissement.
    */
   readonly justificationsManquantes = computed<string[]>(() => {
     const f = this.fiche();
+    const nouvelles = this.idsLignesNouvelles();
     const manques: string[] = [];
     for (const l of f.derogatoires) {
-      if (!l.justifModeDerogatoire) manques.push(`Ligne « ${l.objet} » — justification du mode dérogatoire`);
+      if (nouvelles.has(l.idDetail) && !l.justifModeDerogatoire) manques.push(`Nouvelle ligne « ${l.objet} » — justification du mode dérogatoire`);
     }
     for (const l of f.delaisAmenages) {
-      if (!l.justifDelaiAmenage) manques.push(`Ligne « ${l.objet} » — justification du délai aménagé`);
+      if (nouvelles.has(l.idDetail) && !l.justifDelaiAmenage) manques.push(`Nouvelle ligne « ${l.objet} » — justification du délai aménagé`);
     }
     if (f.nbMarchesConcernes > 0 && !this.justifFiche().trim()) {
-      manques.push('Justification globale de la fiche de présentation (bas du formulaire)');
+      manques.push('Justification globale de la fiche de présentation (en-tête)');
     }
     return manques;
   });
 
   /**
-   * ⚠️ Parité création (pilote 2026-09-08) — ÉDITION INLINE des justifications PAR LIGNE (mode dérogatoire /
-   * délai aménagé), pour retoucher un héritage sans re-importer le PPM. Brouillon par clé `idDetail:mode|delai` ;
-   * la valeur affichée est le brouillon s'il existe, sinon celle du marché. L'écriture est portée par le bouton
-   * unique `enregistrerTout()` (pilote 2026-09-08) : plus de bouton par ligne.
+   * ⚠️ Décision pilote (2026-09-08) — SAISIE des justifications par ligne, réservée aux lignes NOUVELLES
+   * (`justifEditable`) : une ligne reprise garde sa justif héritée, en lecture seule. Brouillon par clé
+   * `idDetail:mode|delai` ; la valeur affichée est le brouillon s'il existe, sinon celle du marché. L'écriture
+   * est portée par le bouton unique `enregistrerTout()` : plus de bouton par ligne.
    */
   private readonly justifLigneDrafts = signal<Map<string, string>>(new Map());
 

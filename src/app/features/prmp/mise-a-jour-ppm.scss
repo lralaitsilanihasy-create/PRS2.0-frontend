@@ -122,6 +122,17 @@
 .maj__justif-objet { font-weight: 600; }
 .maj__justif-mode { color: var(--n-500); font-size: var(--text-sm); }
 .maj__justif-dirty { color: var(--warning-text, #92400e); font-size: var(--text-xs); font-weight: 700; white-space: nowrap; }
+.maj__justif-neuve {
+  font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
+  color: var(--success-text, #059669); background: var(--success-bg, #ecfdf5);
+  border: 1px solid var(--success-text, #059669); border-radius: var(--radius-full); padding: 0.02rem 0.45rem;
+}
+.maj__justif-herite {
+  font-size: var(--text-xs); font-weight: 600; color: var(--n-500);
+  background: var(--n-100); border-radius: var(--radius-full); padding: 0.02rem 0.45rem;
+}
+/* Justif d'une ligne reprise : lecture seule (héritage non modifiable). */
+.maj__justif-ro { margin: 0; padding: 0.4rem 0.6rem; background: var(--n-50, #f8fafc); border: 1px solid var(--n-100); border-radius: var(--radius-md); color: var(--n-700, #334155); white-space: pre-wrap; }
 
 /* ---- actions finales ---- */
 .maj__final { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }

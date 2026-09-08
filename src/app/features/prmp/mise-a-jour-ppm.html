@@ -301,40 +301,64 @@
       </div>
     </div>
 
-    <!-- ⚠️ Parité création (pilote 2026-09-08) — ÉDITION INLINE des justifications PAR LIGNE : retoucher un
-         héritage (mode dérogatoire / délai aménagé) sans re-importer le PPM. Lignes dérivées de la fiche ;
-         chaque enregistrement ré-écrit le marché (verrou de version) sans toucher au reste. -->
+    <!-- ⚠️ Décision pilote (2026-09-08) — la SAISIE d'une justif de ligne est réservée aux lignes NOUVELLES
+         (mode dérogatoire ajouté par cette version) ; la justif d'une ligne REPRISE est un HÉRITAGE, affichée
+         en lecture seule. La justif globale, elle, se crée pour la mise à jour dans l'en-tête. -->
     @if (fiche(); as f) {
       @if (f.derogatoires.length || f.delaisAmenages.length) {
         <div class="card maj__panel">
           <div class="card-header"><span class="card-title">Justifications de la fiche de présentation — par ligne</span></div>
           <div class="card-body maj__justifs">
             @for (l of f.derogatoires; track l.idDetail) {
-              <div class="maj__justif" [class.maj__justif--vide]="!justifLigneValeur(l.idDetail, 'mode').trim()">
-                <label [for]="'jmode-' + l.idDetail" class="maj__justif-lbl">
+              <div class="maj__justif" [class.maj__justif--vide]="justifEditable(l.idDetail) && !justifLigneValeur(l.idDetail, 'mode').trim()">
+                <div class="maj__justif-lbl">
                   <span class="maj__justif-type">Mode dérogatoire</span>
                   <span class="maj__justif-objet">{{ l.objet }}</span>
                   @if (l.modeLibelle) { <span class="maj__justif-mode">— {{ l.modeLibelle }}</span> }
-                  @if (justifLigneModifiee(l.idDetail, 'mode')) { <span class="maj__justif-dirty">● non enregistrée</span> }
-                </label>
-                <textarea [id]="'jmode-' + l.idDetail" class="form-control" rows="2"
-                          [ngModel]="justifLigneValeur(l.idDetail, 'mode')" (ngModelChange)="majJustifLigne(l.idDetail, 'mode', $event)"
-                          [ngModelOptions]="{ standalone: true }" placeholder="Justification du mode dérogatoire…"></textarea>
+                  @if (justifEditable(l.idDetail)) {
+                    <span class="maj__justif-neuve">nouvelle ligne</span>
+                    @if (justifLigneModifiee(l.idDetail, 'mode')) { <span class="maj__justif-dirty">● non enregistrée</span> }
+                  } @else {
+                    <span class="maj__justif-herite">hérité</span>
+                  }
+                </div>
+                @if (justifEditable(l.idDetail)) {
+                  <textarea [id]="'jmode-' + l.idDetail" class="form-control" rows="2"
+                            [attr.aria-label]="'Justification du mode dérogatoire — ' + l.objet"
+                            [ngModel]="justifLigneValeur(l.idDetail, 'mode')" (ngModelChange)="majJustifLigne(l.idDetail, 'mode', $event)"
+                            [ngModelOptions]="{ standalone: true }" placeholder="Justification du mode dérogatoire…"></textarea>
+                } @else {
+                  <p class="maj__justif-ro">{{ justifLigneValeur(l.idDetail, 'mode') || '—' }}</p>
+                }
               </div>
             }
             @for (l of f.delaisAmenages; track l.idDetail) {
-              <div class="maj__justif" [class.maj__justif--vide]="!justifLigneValeur(l.idDetail, 'delai').trim()">
-                <label [for]="'jdelai-' + l.idDetail" class="maj__justif-lbl">
+              <div class="maj__justif" [class.maj__justif--vide]="justifEditable(l.idDetail) && !justifLigneValeur(l.idDetail, 'delai').trim()">
+                <div class="maj__justif-lbl">
                   <span class="maj__justif-type">Délai aménagé</span>
                   <span class="maj__justif-objet">{{ l.objet }}</span>
-                  @if (justifLigneModifiee(l.idDetail, 'delai')) { <span class="maj__justif-dirty">● non enregistrée</span> }
-                </label>
-                <textarea [id]="'jdelai-' + l.idDetail" class="form-control" rows="2"
-                          [ngModel]="justifLigneValeur(l.idDetail, 'delai')" (ngModelChange)="majJustifLigne(l.idDetail, 'delai', $event)"
-                          [ngModelOptions]="{ standalone: true }" placeholder="Justification du délai aménagé…"></textarea>
+                  @if (justifEditable(l.idDetail)) {
+                    <span class="maj__justif-neuve">nouvelle ligne</span>
+                    @if (justifLigneModifiee(l.idDetail, 'delai')) { <span class="maj__justif-dirty">● non enregistrée</span> }
+                  } @else {
+                    <span class="maj__justif-herite">hérité</span>
+                  }
+                </div>
+                @if (justifEditable(l.idDetail)) {
+                  <textarea [id]="'jdelai-' + l.idDetail" class="form-control" rows="2"
+                            [attr.aria-label]="'Justification du délai aménagé — ' + l.objet"
+                            [ngModel]="justifLigneValeur(l.idDetail, 'delai')" (ngModelChange)="majJustifLigne(l.idDetail, 'delai', $event)"
+                            [ngModelOptions]="{ standalone: true }" placeholder="Justification du délai aménagé…"></textarea>
+                } @else {
+                  <p class="maj__justif-ro">{{ justifLigneValeur(l.idDetail, 'delai') || '—' }}</p>
+                }
               </div>
             }
-            <p class="form-hint">La justification <strong>globale</strong> se saisit dans l'en-tête, en haut de l'écran. Tout se sauvegarde d'un coup avec « Enregistrer », en bas.</p>
+            <p class="form-hint">
+              Vous saisissez la justification des <strong>nouvelles lignes</strong> dérogatoires ; celles des
+              lignes reprises sont <strong>héritées</strong> et non modifiables. La justification <strong>globale</strong>
+              se crée dans l'en-tête, en haut. Tout se sauvegarde d'un coup avec « Enregistrer », en bas.
+            </p>
           </div>
         </div>
       }
@@ -351,7 +375,7 @@
             @for (m of manques; track m) { <li>{{ m }}</li> }
           </ul>
           <p class="form-hint">
-            Justification d'une ligne : le bloc <em>« Justifications de la fiche de présentation — par ligne »</em> ci-dessus.
+            Nouvelle ligne : sa justif se saisit dans le bloc <em>« Justifications de la fiche de présentation — par ligne »</em> ci-dessus.
             Justification globale : le champ de l'en-tête. Puis <em>« Enregistrer »</em>, en bas.
           </p>
         </div>
