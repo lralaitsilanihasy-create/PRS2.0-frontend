@@ -290,7 +290,9 @@ export const REFERENTIELS: AdminResource[] = [
       fields: [
         { key: 'code', label: 'Code', pk: true, required: true },
         { key: 'libelle', label: 'Libellé', required: true },
-        { key: 'ordre', label: 'Ordre', type: 'number' },
+        // ⚠️ Demande pilote (2026-09-09) — Ordre AUTOMATIQUE (max+1 à la création) et MASQUÉ (formulaire ET
+        // liste) : l'utilisateur ne le saisit pas. `autoId` = calcul client + champ caché mais envoyé au POST.
+        { key: 'ordre', label: 'Ordre', type: 'number', autoId: true, hideInList: true },
         { key: 'actif', label: 'Actif', type: 'boolean' },
       ],
     },
