@@ -86,7 +86,7 @@ interface MarcheRow {
               <th scope="col" rowspan="2" class="ppm-c">MODE DE PASSATION</th>
               <th scope="col" rowspan="2" class="ppm-c">FINANCEMENT</th>
               <!-- ⚠️ Statut de marché (pilote 2026-09-09) — référentiel administrable, tous profils. -->
-              <th scope="col" rowspan="2" class="ppm-c">STATUT</th>
+              <th scope="col" rowspan="2" class="ppm-c">STATUT DU MARCHÉ</th>
               <th scope="col" colspan="4" class="ppm-c">Informations sur le Bénéficiaire</th>
               <th scope="col" rowspan="2" class="ppm-c">DATE PREVISIONNELLE DE LANCEMENT</th>
               <th scope="col" rowspan="2" class="ppm-c">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>

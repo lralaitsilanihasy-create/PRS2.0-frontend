@@ -100,7 +100,7 @@ export interface ModificationChamp {
               <!-- ⚠️ 2026-08-05 — colonne OPTIONNELLE, alimentée par la mise à jour d'un PPM : statut de
                    la ligne vis-à-vis de la version précédente. Absente partout ailleurs (saisie, réimport). -->
               @if (statutParUid().size) {
-                <th rowspan="2" scope="col">Statut</th>
+                <th rowspan="2" scope="col">État</th>
               }
               <th rowspan="2" scope="col">Nature</th>
               <th rowspan="2" scope="col">Objet</th>
@@ -110,7 +110,7 @@ export interface ModificationChamp {
               <th rowspan="2" scope="col">Forme</th>
               <th rowspan="2" scope="col">Financement</th>
               <!-- ⚠️ Statut de marché (pilote 2026-09-09) — référentiel administrable /api/statut-marches. -->
-              <th rowspan="2" scope="col">Statut</th>
+              <th rowspan="2" scope="col">Statut du marché</th>
               <th colspan="4" scope="colgroup">Informations sur le Bénéficiaire</th>
               <!-- ⚠️ Dates prévisionnelles (demande pilote 2026-09-07) : dérivées des processus CAPM,
                    en LECTURE — même présentation que le tableau du brouillon (édition via le bouton CAPM). -->
