@@ -106,6 +106,9 @@
   border-radius: var(--radius-sm); padding: 0.1rem 0.4rem;
 }
 
+/* ---- panneau « état des marchés supprimés » : action obligatoire, liseré d'alerte ---- */
+.maj__panel--alerte { border: 1px solid var(--warning-bdr, #fde68a); border-left: 4px solid var(--warning-text, #92400e); }
+
 /* ---- justifications par ligne (édition inline) ---- */
 .maj__justifs { display: flex; flex-direction: column; gap: 0.85rem; }
 .maj__justif {

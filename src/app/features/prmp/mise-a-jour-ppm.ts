@@ -131,6 +131,8 @@ export class MiseAJourPpm {
   private readonly modes = signal<Map<number, string>>(new Map());
   /** Statut de marché : code → libellé (référentiel administrable, colonne « Statut du marché »). */
   private readonly statutsMarche = signal<Map<string, string>>(new Map());
+  /** Référentiel brut des statuts (pour la liste déroulante des états supprimés — ordre + actif + code). */
+  private readonly statutsRef = signal<StatutMarche[]>([]);
   /** Référentiel complet des modes — pour le drapeau `declencheAgpm` (filtre des pièces). */
   private readonly modesRef = signal<ModePassation[]>([]);
   /** ⚠️ Parité création (2026-09-08) — CAPM + prévisions : nécessaires pour DÉRIVER la fiche de
@@ -285,6 +287,27 @@ export class MiseAJourPpm {
         ),
       );
     }
+    // ⚠️ État des marchés supprimés (pilote 2026-09-09) : écrire chaque état choisi sur son marché.
+    for (const idDetail of this.statutsSupprimesModifies()) {
+      const m = this.marches().find((x) => x.idDetail === idDetail);
+      if (!m) {
+        continue;
+      }
+      const code = this.statutSupprimeDrafts().get(idDetail) || undefined;
+      const corps: Marche = { ...m, statut: code };
+      taches.push(
+        this.marcheService.update(idDetail, corps).pipe(
+          tap((maj) => {
+            this.marches.update((arr) => arr.map((x) => (x.idDetail === idDetail ? maj : x)));
+            this.statutSupprimeDrafts.update((map) => {
+              const copie = new Map(map);
+              copie.delete(idDetail);
+              return copie;
+            });
+          }),
+        ),
+      );
+    }
     if (!taches.length) {
       return;
     }
@@ -380,8 +403,78 @@ export class MiseAJourPpm {
     }
     return out;
   });
-  /** Y a-t-il quelque chose à enregistrer ? (en-tête OU au moins une justif de ligne) — pilote le bouton unique. */
-  readonly aDesModifications = computed(() => this.enteteModifiee() || this.lignesJustifModifiees().length > 0);
+  /** Y a-t-il quelque chose à enregistrer ? (en-tête, justif de ligne, ou état d'un marché supprimé) — bouton unique. */
+  readonly aDesModifications = computed(
+    () => this.enteteModifiee() || this.lignesJustifModifiees().length > 0 || this.statutsSupprimesModifies().length > 0,
+  );
+
+  // ------------------------------------------------------------------ état des marchés supprimés (pilote 2026-09-09)
+
+  /**
+   * ⚠️ Règle pilote (2026-09-09) — à l'import d'une mise à jour, un marché **supprimé** dont le mode est
+   * « Consultation des Prix Ouverte » ou « Achat Direct » doit se voir attribuer un **état de marché
+   * TERMINAL** (≠ « Prévu ») avant que la mise à jour ne soit créée. Modes comparés par libellé normalisé
+   * (la variante « … PIP » est hors périmètre, libellé différent).
+   */
+  private static readonly MODES_SUPPRIME_CONCERNES = new Set(['consultation des prix ouverte', 'achat direct']);
+  private modeConcerne(m: Marche): boolean {
+    const lib = (this.libelleMode(m) ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+    return MiseAJourPpm.MODES_SUPPRIME_CONCERNES.has(lib);
+  }
+  /** Marchés supprimés de cette version dont le mode impose de déclarer un état terminal. */
+  readonly marchesSupprimesAStatuer = computed<LigneAffichee[]>(() =>
+    this.lignes().filter((l) => l.marche.supprimee === true && this.modeConcerne(l.marche)),
+  );
+  /** États TERMINAUX proposables (référentiel actif, hors « Prévu »), triés par ordre. */
+  readonly statutsTerminaux = computed<StatutMarche[]>(() =>
+    this.statutsRef()
+      .filter((s) => s.actif !== false && s.code !== 'PREVU')
+      .sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)),
+  );
+
+  /** Brouillon d'état par marché supprimé (idDetail → code) — écrit au prochain « Enregistrer ». */
+  private readonly statutSupprimeDrafts = signal<Map<number, string>>(new Map());
+  /** Valeur affichée dans la liste : le brouillon s'il existe ; sinon l'état enregistré s'il est TERMINAL (≠ Prévu), sinon vide. */
+  statutSupprimeValeur(idDetail: number): string {
+    const draft = this.statutSupprimeDrafts().get(idDetail);
+    if (draft !== undefined) {
+      return draft;
+    }
+    const m = this.marches().find((x) => x.idDetail === idDetail);
+    return m?.statut && m.statut !== 'PREVU' ? m.statut : '';
+  }
+  majStatutSupprime(idDetail: number, code: string): void {
+    this.statutSupprimeDrafts.update((map) => {
+      const copie = new Map(map);
+      copie.set(idDetail, code);
+      return copie;
+    });
+  }
+  /** Le marché a-t-il un état terminal RENSEIGNÉ (valeur courante non vide et ≠ Prévu) ? */
+  statutSupprimeRenseigne(m: Marche): boolean {
+    const v = this.statutSupprimeValeur(m.idDetail);
+    return !!v && v !== 'PREVU';
+  }
+  /** Brouillon d'état supprimé différent de l'état enregistré (à écrire) — indicateur « non enregistré ». */
+  statutSupprimeModifie(idDetail: number): boolean {
+    const draft = this.statutSupprimeDrafts().get(idDetail);
+    if (draft === undefined) {
+      return false;
+    }
+    const m = this.marches().find((x) => x.idDetail === idDetail);
+    return draft !== (m?.statut ?? '');
+  }
+  /** idDetail des états supprimés dont le brouillon diffère de l'enregistré (alimente Enregistrer). */
+  readonly statutsSupprimesModifies = computed<number[]>(() =>
+    [...this.statutSupprimeDrafts().keys()].filter((id) => this.statutSupprimeModifie(id)),
+  );
+  /**
+   * Marchés concernés dont l'état terminal N'EST PAS encore ENREGISTRÉ (état serveur = Prévu/vide) — bloque
+   * « Créer la mise à jour » et alimente l'avertissement. Fondé sur l'état persisté (`marches()`), pas le brouillon.
+   */
+  readonly marchesSupprimesNonRenseignes = computed<LigneAffichee[]>(() =>
+    this.marchesSupprimesAStatuer().filter((l) => !(l.marche.statut && l.marche.statut !== 'PREVU')),
+  );
 
   constructor() {
     this.charger();
@@ -425,6 +518,7 @@ export class MiseAJourPpm {
         this.natures.set(new Map(r.natures.map((n) => [n.idNature, n.libelle ?? ''])));
         this.modes.set(new Map(r.modes.map((m) => [m.idMode, m.libelle ?? ''])));
         this.statutsMarche.set(new Map(r.statutsMarche.map((s) => [s.code, s.libelle ?? ''])));
+        this.statutsRef.set(r.statutsMarche);
         this.modesRef.set(r.modes);
         // ⚠️ Parité création (2026-09-08) — CAPM + prévisions des lignes de cette version, pour dériver la fiche.
         this.capms.set(r.capms);
@@ -687,10 +781,19 @@ export class MiseAJourPpm {
       this.toast.error('Justifications de la fiche de présentation manquantes : ' + manques.join(' ; ') + '.');
       return;
     }
-    // Des saisies non enregistrées (en-tête ou justif de ligne) ne sont pas encore côté serveur : il
-    // refuserait la soumission — on demande d'enregistrer d'abord avec le bouton « Enregistrer ».
+    // Des saisies non enregistrées (en-tête, justif de ligne, ou état d'un marché supprimé) ne sont pas
+    // encore côté serveur : il refuserait la soumission — on demande d'enregistrer d'abord.
     if (this.aDesModifications()) {
       this.toast.error('Des modifications ne sont pas enregistrées : cliquez « Enregistrer » avant de créer la mise à jour.');
+      return;
+    }
+    // ⚠️ Règle pilote (2026-09-09) — un marché supprimé en « Consultation des Prix Ouverte » / « Achat
+    // Direct » doit porter un état terminal (≠ Prévu) avant création.
+    const nonRenseignes = this.marchesSupprimesNonRenseignes();
+    if (nonRenseignes.length) {
+      this.toast.error(
+        'État à renseigner pour ' + nonRenseignes.length + ' marché(s) supprimé(s) (Consultation des Prix Ouverte / Achat Direct) avant de créer la mise à jour.',
+      );
       return;
     }
     this.enregistrement.set(true);

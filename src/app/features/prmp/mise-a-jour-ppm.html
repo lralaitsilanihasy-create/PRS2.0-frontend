@@ -388,6 +388,45 @@
       }
     }
 
+    <!-- ⚠️ Règle pilote (2026-09-09) — un marché SUPPRIMÉ en « Consultation des Prix Ouverte » / « Achat
+         Direct » doit se voir attribuer un ÉTAT TERMINAL (≠ Prévu) avant création. Saisie obligatoire. -->
+    @if (marchesSupprimesAStatuer(); as concernes) {
+      @if (concernes.length) {
+        <div class="card maj__panel maj__panel--alerte">
+          <div class="card-header"><span class="card-title">État des marchés supprimés — obligatoire</span></div>
+          <div class="card-body maj__justifs">
+            <p class="form-hint">
+              Ces marchés sont <strong>supprimés</strong> du plan et en <em>Consultation des Prix Ouverte</em> ou
+              <em>Achat Direct</em> : déclarez leur <strong>état de marché</strong> (un état terminal, pas « Prévu »)
+              avant de créer la mise à jour. Puis <em>« Enregistrer »</em>, en bas.
+            </p>
+            @for (l of concernes; track l.marche.idDetail) {
+              <div class="maj__justif" [class.maj__justif--vide]="!statutSupprimeRenseigne(l.marche)">
+                <div class="maj__justif-lbl">
+                  <span class="maj__justif-type">Supprimé</span>
+                  <span class="maj__justif-objet">{{ l.marche.designationMarche || '—' }}</span>
+                  <span class="maj__justif-mode">— {{ libelleMode(l.marche) }}</span>
+                  @if (statutSupprimeModifie(l.marche.idDetail)) { <span class="maj__justif-dirty">● non enregistré</span> }
+                </div>
+                <select class="form-control" [attr.aria-label]="'État du marché supprimé — ' + (l.marche.designationMarche || '')"
+                        [ngModel]="statutSupprimeValeur(l.marche.idDetail)" (ngModelChange)="majStatutSupprime(l.marche.idDetail, $event)"
+                        [ngModelOptions]="{ standalone: true }">
+                  <option value="">— À renseigner —</option>
+                  @for (s of statutsTerminaux(); track s.code) { <option [value]="s.code">{{ s.libelle }}</option> }
+                </select>
+              </div>
+            }
+            @if (!statutsTerminaux().length) {
+              <p class="form-hint maj__manques">
+                Aucun état terminal n'est disponible : l'Administrateur doit d'abord ajouter des « Statuts de marché »
+                autres que « Prévu » (écran Admin) pour pouvoir renseigner ces marchés.
+              </p>
+            }
+          </div>
+        </div>
+      }
+    }
+
     <!-- ⑤ Aperçu du diff, distinct de la soumission finale. -->
     <div class="maj__final">
       <!-- ⚠️ Parité création (pilote 2026-09-08) — aperçu du dossier COMPOSÉ (Fiche / Plan / AGPM /
@@ -400,7 +439,7 @@
       <button type="button" class="btn btn-secondary" [disabled]="enregistrement() || !aDesModifications()" (click)="enregistrerTout()">
         {{ enregistrement() ? 'Enregistrement…' : '💾 Enregistrer' }}
       </button>
-      <button type="button" class="btn btn-primary" [disabled]="enregistrement() || sansChangement() || justificationsManquantes().length > 0 || aDesModifications()" (click)="creerLaMiseAJour()">
+      <button type="button" class="btn btn-primary" [disabled]="enregistrement() || sansChangement() || justificationsManquantes().length > 0 || aDesModifications() || marchesSupprimesNonRenseignes().length > 0" (click)="creerLaMiseAJour()">
         Créer la mise à jour
       </button>
     </div>
