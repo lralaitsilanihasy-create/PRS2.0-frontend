@@ -94,6 +94,13 @@ export interface FieldConfig {
    * au lieu de `key`. Le formulaire continue d'utiliser `key` (l'id envoyé en écriture).
    */
   displayKey?: string;
+  /**
+   * Pré-remplit ce champ CODE à la création avec un SLUG du champ indiqué (majuscules, accents retirés,
+   * caractères non alphanumériques → `_`), tant que l'utilisateur ne l'a pas saisi lui-même. Le champ
+   * reste **visible et éditable** (override possible) ; l'unicité reste garantie par la PK côté serveur.
+   * Ex. `code` dérivé de `libelle` (« Annulé » → `ANNULE`).
+   */
+  slugFrom?: string;
 }
 
 /**

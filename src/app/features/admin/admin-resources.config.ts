@@ -288,7 +288,9 @@ export const REFERENTIELS: AdminResource[] = [
       writeCapability: 'REFERENTIEL_WRITE',
       note: 'Valeurs proposées dans la colonne « Statut » de la grille de saisie d\'un dossier. Le code PREVU est indélébile (désactivez-le plutôt) ; un statut désactivé n\'est plus proposé mais reste valide sur les marchés qui le portent.',
       fields: [
-        { key: 'code', label: 'Code', pk: true, required: true },
+        // ⚠️ Demande pilote (2026-09-09) — Code VISIBLE mais DÉRIVÉ du libellé (« Annulé » → ANNULE) tant
+        // que l'utilisateur ne le saisit pas lui-même ; il reste éditable, l'unicité tenue par la PK serveur.
+        { key: 'code', label: 'Code', pk: true, required: true, slugFrom: 'libelle' },
         { key: 'libelle', label: 'Libellé', required: true },
         // ⚠️ Demande pilote (2026-09-09) — Ordre AUTOMATIQUE (max+1 à la création) et MASQUÉ (formulaire ET
         // liste) : l'utilisateur ne le saisit pas. `autoId` = calcul client + champ caché mais envoyé au POST.

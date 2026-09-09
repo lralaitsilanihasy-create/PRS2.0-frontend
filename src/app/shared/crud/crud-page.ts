@@ -396,8 +396,36 @@ export class CrudPage {
           }
         });
       }
+      // Code dérivé d'un libellé (`slugFrom`) : à la création, suit la source et propose son slug tant que
+      // l'utilisateur n'a pas saisi le code lui-même (il reste éditable pour un override).
+      for (const field of this.config.fields) {
+        if (!field.slugFrom) {
+          continue;
+        }
+        const sourceCtrl = fg.get(field.slugFrom);
+        const codeCtrl = fg.get(field.key);
+        if (!sourceCtrl || !codeCtrl) {
+          continue;
+        }
+        sourceCtrl.valueChanges.subscribe((v) => {
+          if (!codeCtrl.dirty) {
+            codeCtrl.setValue(this.slugCode(v), { emitEvent: false });
+          }
+        });
+      }
     }
     return fg;
+  }
+
+  /** Slug d'un libellé pour un code de référentiel : MAJUSCULES, sans accents, non-alphanumérique → `_`. */
+  private slugCode(v: unknown): string {
+    return String(v ?? '')
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 40);
   }
 
   /** Prochain ordre dans le groupe : max des lignes de même valeur de regroupement + 1 (1 si aucune). */
