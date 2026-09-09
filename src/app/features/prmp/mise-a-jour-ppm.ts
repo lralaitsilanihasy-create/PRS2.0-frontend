@@ -21,6 +21,7 @@ import {
   PieceJointeDossier,
   Ppm,
   ServiceBeneficiaire,
+  StatutMarche,
   TypePieceJointe,
 } from '../../models';
 import {
@@ -35,6 +36,7 @@ import {
   PieceJointeDossierService,
   PpmService,
   ServiceBeneficiaireService,
+  StatutMarcheService,
   TypePieceJointeService,
 } from '../../services';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
@@ -84,6 +86,7 @@ export class MiseAJourPpm {
   private readonly modeService = inject(ModePassationService);
   private readonly capmService = inject(CapmService);
   private readonly previsionService = inject(MarchePrevisionService);
+  private readonly statutMarcheService = inject(StatutMarcheService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
   readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
@@ -126,6 +129,8 @@ export class MiseAJourPpm {
   readonly benefs = signal<ServiceBeneficiaire[]>([]);
   private readonly natures = signal<Map<number, string>>(new Map());
   private readonly modes = signal<Map<number, string>>(new Map());
+  /** Statut de marché : code → libellé (référentiel administrable, colonne « Statut du marché »). */
+  private readonly statutsMarche = signal<Map<string, string>>(new Map());
   /** Référentiel complet des modes — pour le drapeau `declencheAgpm` (filtre des pièces). */
   private readonly modesRef = signal<ModePassation[]>([]);
   /** ⚠️ Parité création (2026-09-08) — CAPM + prévisions : nécessaires pour DÉRIVER la fiche de
@@ -397,6 +402,7 @@ export class MiseAJourPpm {
       benefs: this.benefService.list().pipe(catchError(() => of([] as ServiceBeneficiaire[]))),
       natures: this.natureService.list().pipe(catchError(() => of([] as Nature[]))),
       modes: this.modeService.list().pipe(catchError(() => of([] as ModePassation[]))),
+      statutsMarche: this.statutMarcheService.list().pipe(catchError(() => of([] as StatutMarche[]))),
       // ⚠️ Parité création (2026-09-08) — pour DÉRIVER la fiche de présentation (dérogatoires / délais /
       // contrats-cadres) et donc valider les justifications, comme à la création / au détail PPM.
       capms: this.capmService.getAll().pipe(catchError(() => of([] as Capm[]))),
@@ -418,6 +424,7 @@ export class MiseAJourPpm {
         this.benefs.set(r.benefs);
         this.natures.set(new Map(r.natures.map((n) => [n.idNature, n.libelle ?? ''])));
         this.modes.set(new Map(r.modes.map((m) => [m.idMode, m.libelle ?? ''])));
+        this.statutsMarche.set(new Map(r.statutsMarche.map((s) => [s.code, s.libelle ?? ''])));
         this.modesRef.set(r.modes);
         // ⚠️ Parité création (2026-09-08) — CAPM + prévisions des lignes de cette version, pour dériver la fiche.
         this.capms.set(r.capms);
@@ -474,6 +481,10 @@ export class MiseAJourPpm {
   }
   libelleForme(m: Marche): string {
     return m.formeMarche ? FORME_MARCHE_LIBELLES[m.formeMarche] ?? m.formeMarche : '—';
+  }
+  /** Libellé du statut de marché (référentiel) ; à défaut le code brut, « — » si non renseigné. */
+  libelleStatutMarche(m: Marche): string {
+    return m.statut ? this.statutsMarche().get(m.statut) ?? m.statut : '—';
   }
   /** Montant au format français, comme la grille de saisie (espaces fines, 2 décimales). */
   montant(v?: number | null): string {

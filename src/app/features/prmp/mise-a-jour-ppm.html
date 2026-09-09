@@ -130,6 +130,7 @@
             <col class="maj__w-mode" />
             <col class="maj__w-forme" />
             <col class="maj__w-financement" />
+            <col class="maj__w-mode" />
             <col class="maj__w-soa" />
             <col class="maj__w-compte" />
             <col class="maj__w-mont" />
@@ -147,6 +148,10 @@
               <th scope="col" rowspan="2" class="ppm-c">Mode de passation</th>
               <th scope="col" rowspan="2" class="ppm-c">Forme</th>
               <th scope="col" rowspan="2" class="ppm-c">Financement</th>
+              <!-- ⚠️ Statut de marché (pilote 2026-09-09) — référentiel administrable, en lecture seule ici
+                   (édité via « Modifier le détail »). Nommé « Statut du marché » pour le distinguer de la
+                   colonne « Statut » (statut de la ligne vis-à-vis de la version précédente). -->
+              <th scope="col" rowspan="2" class="ppm-c">Statut du marché</th>
               <th scope="col" colspan="4" class="ppm-c">Informations sur le bénéficiaire</th>
               <th scope="col" rowspan="2" class="ppm-c">Actions</th>
             </tr>
@@ -183,6 +188,7 @@
                     <td [attr.rowspan]="benefsDe(l.marche).length" class="ppm-c">{{ libelleMode(l.marche) }}</td>
                     <td [attr.rowspan]="benefsDe(l.marche).length" class="ppm-c">{{ libelleForme(l.marche) }}</td>
                     <td [attr.rowspan]="benefsDe(l.marche).length" class="ppm-c">{{ l.marche.financement || '—' }}</td>
+                    <td [attr.rowspan]="benefsDe(l.marche).length" class="ppm-c">{{ libelleStatutMarche(l.marche) }}</td>
                   }
                   <td class="ppm-c">{{ b?.soaCode || '—' }}</td>
                   <td class="ppm-c">{{ b?.numCompte || '—' }}</td>
