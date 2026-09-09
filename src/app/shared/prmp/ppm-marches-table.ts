@@ -6,6 +6,7 @@ import {
   ModePassationService,
   NatureService,
   ReferenceLookupService,
+  StatutMarcheService,
 } from '../../services';
 
 /** Bénéficiaire d'une ligne (placeholder vide `{}` si aucun, pour garder une ligne). */
@@ -28,6 +29,8 @@ interface MarcheRow {
   nouvMontEstim?: number | null;
   mode: string;
   financement: string;
+  /** Libellé du statut de marché (référentiel /api/statut-marches) — vide si non renseigné. */
+  statut: string;
   benefRows: BenefRow[];
   dateLancement: string;
   dateOuverture: string;
@@ -69,7 +72,7 @@ interface MarcheRow {
           <colgroup>
             @if (rowStateFn()) { <col style="width: 3%" /> }
             <col style="width: 7%" /><col style="width: 17%" /><col style="width: 8%" /><col style="width: 8%" />
-            <col style="width: 8%" /><col style="width: 7%" /><col style="width: 7%" /><col style="width: 5%" />
+            <col style="width: 8%" /><col style="width: 7%" /><col style="width: 6%" /><col style="width: 7%" /><col style="width: 5%" />
             <col style="width: 8%" /><col style="width: 8%" /><col style="width: 6%" /><col style="width: 6%" /><col style="width: 6%" />
             @if (actionsTpl()) { <col style="width: 9%" /> }
           </colgroup>
@@ -82,6 +85,8 @@ interface MarcheRow {
               <th scope="col" rowspan="2" class="ppm-c">NOUVEAU MONTANT ESTIMATIF</th>
               <th scope="col" rowspan="2" class="ppm-c">MODE DE PASSATION</th>
               <th scope="col" rowspan="2" class="ppm-c">FINANCEMENT</th>
+              <!-- ⚠️ Statut de marché (pilote 2026-09-09) — référentiel administrable, tous profils. -->
+              <th scope="col" rowspan="2" class="ppm-c">STATUT</th>
               <th scope="col" colspan="4" class="ppm-c">Informations sur le Bénéficiaire</th>
               <th scope="col" rowspan="2" class="ppm-c">DATE PREVISIONNELLE DE LANCEMENT</th>
               <th scope="col" rowspan="2" class="ppm-c">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
@@ -121,6 +126,7 @@ interface MarcheRow {
                          de passation, tout profil — ce tableau partagé est la source unique. -->
                     <td [attr.rowspan]="m.benefRows.length" class="ppm-c">{{ m.mode }}</td>
                     <td [attr.rowspan]="m.benefRows.length" class="ppm-c">{{ m.financement }}</td>
+                    <td [attr.rowspan]="m.benefRows.length" class="ppm-c">{{ m.statut }}</td>
                   }
                   <td class="ppm-c">{{ b.soaCode || '' }}</td>
                   <td class="ppm-c">{{ b.numCompte || '' }}</td>
@@ -226,6 +232,8 @@ export class PpmMarchesTable implements OnInit {
   private readonly natureMap = signal<Map<string, string>>(new Map());
   private readonly modeMap = signal<Map<string, string>>(new Map());
   private readonly capmMap = signal<Map<string, string>>(new Map());
+  /** Statut de marché : code → libellé (référentiel administrable, colonne « Statut » — pilote 2026-09-09). */
+  private readonly statutMap = signal<Map<string, string>>(new Map());
 
   // ⚠️ Demande pilote (2026-09-03) — la colonne Mode n'affiche plus QUE le libellé : la dérivation
   // type DMC / catégorie / forme (badges) et son chargement (modes + types-dmc) ont été retirés.
@@ -233,6 +241,9 @@ export class PpmMarchesTable implements OnInit {
     this.lookups.lookup(NatureService, 'idNature', ['libelle']).subscribe((m) => this.natureMap.set(m));
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).subscribe((m) => this.capmMap.set(m));
+    // ⚠️ Statut de marché (pilote 2026-09-09) : visible dans TOUT affichage du PPM, tous profils — ce
+    // tableau partagé est la source unique. Code → libellé résolu comme nature/mode.
+    this.lookups.lookup(StatutMarcheService, 'code', ['libelle']).subscribe((m) => this.statutMap.set(m));
   }
 
   /** Lignes mises en forme (libellés résolus, bénéficiaires et dates regroupés par marché). */
@@ -269,6 +280,8 @@ export class PpmMarchesTable implements OnInit {
         nouvMontEstim: m.nouvMontEstim,
         mode: this.lbl(this.modeMap(), m.idMode),
         financement: m.financement ?? '',
+        // Libellé du statut ; à défaut le code brut (statut désactivé/inconnu) ; vide si non renseigné.
+        statut: m.statut ? this.statutMap().get(m.statut) ?? m.statut : '',
         benefRows: benefs.length
           ? benefs.map((b) => ({ soaCode: b.soaCode, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }))
           : [{}],
