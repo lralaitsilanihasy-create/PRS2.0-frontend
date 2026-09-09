@@ -14,7 +14,7 @@ import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
 import { FichePresentation, calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { LigneAgpm, calculerAgpm } from '../../shared/prmp/agpm';
-import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, TypePieceJointe } from '../../models';
+import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, StatutMarche, TypePieceJointe } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import {
   CapmService,
@@ -36,6 +36,7 @@ import {
   SaisieService,
   SoaBeneficiaireService,
   SousTypeDossierService,
+  StatutMarcheService,
   TypePieceJointeService,
 } from '../../services';
 
@@ -375,6 +376,7 @@ interface ApercuDossier {
               [marches]="marchesArray"
               [natures]="natures()"
               [modesList]="modesList()"
+              [statuts]="statuts()"
               [comptes]="comptes()"
               [soaList]="soaList()"
               [capms]="capms()"
@@ -1003,6 +1005,7 @@ export class SoumettreDossier {
   private readonly categorieEntiteService = inject(CategorieEntiteService);
   private readonly sousTypeService = inject(SousTypeDossierService);
   private readonly natureService = inject(NatureService);
+  private readonly statutMarcheService = inject(StatutMarcheService);
   private readonly modeService = inject(ModePassationService);
   private readonly compteService = inject(CompteService);
   private readonly soaService = inject(SoaBeneficiaireService);
@@ -1018,6 +1021,7 @@ export class SoumettreDossier {
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   readonly natures = signal<Nature[]>([]);
   readonly modesList = signal<ModePassation[]>([]);
+  readonly statuts = signal<StatutMarche[]>([]);
   readonly comptes = signal<Compte[]>([]);
   readonly soaList = signal<SoaBeneficiaire[]>([]);
   /** Libellés saisis pour les SOA inconnus (clé = soaCode). */
@@ -1322,6 +1326,7 @@ export class SoumettreDossier {
     this.marcheRefsLoaded = true;
     this.natureService.list().subscribe((r) => this.natures.set(r));
     this.modeService.list().subscribe((r) => this.modesList.set(r));
+    this.statutMarcheService.list().subscribe((r) => this.statuts.set(r));
     this.compteService.list().subscribe((r) => this.comptes.set(r));
     this.soaService.list().subscribe((r) => this.soaList.set(r));
   }

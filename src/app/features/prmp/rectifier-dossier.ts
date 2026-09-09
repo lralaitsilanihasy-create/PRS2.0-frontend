@@ -24,6 +24,7 @@ import {
   SaisiePpmImportResult,
   ServiceBeneficiaire,
   SoaBeneficiaire,
+  StatutMarche,
 } from '../../models';
 import {
   CapmService,
@@ -42,6 +43,7 @@ import {
   SaisieService,
   ServiceBeneficiaireService,
   SoaBeneficiaireService,
+  StatutMarcheService,
 } from '../../services';
 import { ChronometrageDossier, ObservationPvCard } from '../../shared/circuit';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
@@ -234,6 +236,7 @@ import { DossierModificationStore } from './dossier-modification.store';
               [marches]="arr"
               [natures]="natures()"
               [modesList]="modes()"
+              [statuts]="statuts()"
               [comptes]="comptes()"
               [soaList]="soaList()"
               [capms]="capms()"
@@ -346,6 +349,7 @@ export class RectifierDossier {
   private readonly marcheService = inject(MarcheService);
   private readonly dossierService = inject(DossierService);
   private readonly natureService = inject(NatureService);
+  private readonly statutMarcheService = inject(StatutMarcheService);
   private readonly compteService = inject(CompteService);
   private readonly modePassationService = inject(ModePassationService);
   private readonly soaBenefService = inject(SoaBeneficiaireService);
@@ -403,6 +407,7 @@ export class RectifierDossier {
 
   // — Référentiels de la grille partagée —
   readonly natures = signal<Nature[]>([]);
+  readonly statuts = signal<StatutMarche[]>([]);
   readonly modes = signal<ModePassation[]>([]);
   readonly comptes = signal<Compte[]>([]);
   readonly soaList = signal<SoaBeneficiaire[]>([]);
@@ -462,6 +467,7 @@ export class RectifierDossier {
       marches: this.marcheService.list(),
       dossier: this.dossierService.getById(this.idDossier),
       natures: this.natureService.list(),
+      statuts: this.statutMarcheService.list(),
       comptes: this.compteService.list(),
       modes: this.modePassationService.list(),
       soas: this.soaBenefService.list(),
@@ -472,7 +478,7 @@ export class RectifierDossier {
       benefs: this.serviceBeneficiaireService.list().pipe(catchError(() => of([] as ServiceBeneficiaire[]))),
       previsions: this.marchePrevisionService.list().pipe(catchError(() => of([] as MarchePrevision[]))),
     }).subscribe({
-      next: ({ ppms, marches, dossier, natures, comptes, modes, soas, capms, observations, pieces, examenPieces, benefs, previsions }) => {
+      next: ({ ppms, marches, dossier, natures, statuts, comptes, modes, soas, capms, observations, pieces, examenPieces, benefs, previsions }) => {
         this.observations.set(observations);
         this.pieces.set(pieces);
         this.examenPieceVersPiece.set(
@@ -480,6 +486,7 @@ export class RectifierDossier {
         );
         this.dossier.set(dossier);
         this.natures.set(natures);
+        this.statuts.set(statuts);
         this.comptes.set(comptes);
         this.modes.set(modes);
         this.soaList.set(soas);

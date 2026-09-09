@@ -8,7 +8,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, validerFichier } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../a11y/modale.directive';
-import { AnomalieTranscription, Capm, Compte, Dossier, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, EntiteContract, PieceJointeDossier, Ppm, Prmp, Role, Ugpm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, TypeChangementLigne, TypePieceJointe } from '../../models';
+import { AnomalieTranscription, Capm, Compte, Dossier, EditionPpmRequest, FORME_MARCHE_LIBELLES, FormeMarche, Lot, Marche, MarchePrevision, ModePassation, Nature, EntiteContract, PieceJointeDossier, Ppm, Prmp, Role, Ugpm, SaisieMarcheLigne, SaisiePpmImportResult, ServiceBeneficiaire, SoaBeneficiaire, StatutMarche, TypeChangementLigne, TypePieceJointe } from '../../models';
 import {
   CapmService,
   CompteService,
@@ -29,6 +29,7 @@ import {
   SaisieService,
   ServiceBeneficiaireService,
   SoaBeneficiaireService,
+  StatutMarcheService,
   TypePieceJointeService,
 } from '../../services';
 import { DatePipe } from '@angular/common';
@@ -338,6 +339,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                     [marches]="arr"
                     [natures]="natures()"
                     [modesList]="modes()"
+                    [statuts]="statuts()"
                     [comptes]="comptes()"
                     [soaList]="soaList()"
                     [capms]="capms()"
@@ -777,6 +779,7 @@ export class DetailPpmModal implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
   private readonly natureService = inject(NatureService);
+  private readonly statutMarcheService = inject(StatutMarcheService);
   private readonly modeService = inject(ModePassationService);
   private readonly compteService = inject(CompteService);
   private readonly capmService = inject(CapmService);
@@ -983,6 +986,7 @@ export class DetailPpmModal implements OnInit {
 
   readonly natures = signal<Nature[]>([]);
   readonly modes = signal<ModePassation[]>([]);
+  readonly statuts = signal<StatutMarche[]>([]);
   readonly comptes = signal<Compte[]>([]);
   /** Options du select « Forme du marché » (liste fermée, libellés d'affichage). */
   readonly formes = (Object.entries(FORME_MARCHE_LIBELLES) as [FormeMarche, string][]).map(([code, libelle]) => ({ code, libelle }));
@@ -2002,11 +2006,13 @@ export class DetailPpmModal implements OnInit {
     forkJoin({
       natures: this.natureService.list(),
       modes: this.modeService.list(),
+      statuts: this.statutMarcheService.list(),
       comptes: this.compteService.list(),
     }).subscribe({
       next: (r) => {
         this.natures.set(r.natures);
         this.modes.set(r.modes);
+        this.statuts.set(r.statuts);
         this.comptes.set(r.comptes);
         this.refsLoaded = true;
         this.refsLoading.set(false);

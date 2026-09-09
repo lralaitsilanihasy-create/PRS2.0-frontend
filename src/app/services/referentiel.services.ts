@@ -16,6 +16,7 @@ import {
   Ministere,
   ModePassation,
   Nature,
+  StatutMarche,
   PointsCtrl,
   Profile,
   RegleAlerte,
@@ -113,6 +114,12 @@ export class ModePassationService extends CrudService<ModePassation> {
 @Injectable({ providedIn: 'root' })
 export class NatureService extends CrudService<Nature> {
   protected readonly resource = 'natures';
+}
+
+/** Statuts de marché (`/api/statut-marches`, référentiel administrable — V24). PK = `code`. */
+@Injectable({ providedIn: 'root' })
+export class StatutMarcheService extends CrudService<StatutMarche> {
+  protected readonly resource = 'statut-marches';
 }
 
 /** Types de DMC (`/api/type-dmc`) — référentiel administrable ; le mapping mode→type vit sur `ModePassation.idTypeDmc`. */

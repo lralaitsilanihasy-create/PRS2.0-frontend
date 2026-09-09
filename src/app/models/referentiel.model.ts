@@ -141,6 +141,22 @@ export interface Nature {
   description?: string;
 }
 
+/**
+ * Statut d'une ligne de marché (`/api/statut-marches`, référentiel administrable — backend `eb1b1ce`,
+ * migration V24). PK = `code` string en MAJUSCULES. Écriture réservée ADMINISTRATEUR ; le serveur valide
+ * le code à toute écriture de marché (400 si inconnu) et applique `PREVU` par défaut à omission. `PREVU`
+ * est indélébile (409 → désactiver) ; un code `actif:false` reste accepté à l'écriture (il guide la saisie,
+ * ne filtre pas la validation).
+ */
+export interface StatutMarche {
+  code: string;
+  libelle: string;
+  /** Ordre d'affichage dans la liste déroulante (croissant). */
+  ordre?: number;
+  /** `false` = masqué à la sélection d'un nouveau statut, mais toujours accepté s'il est déjà porté. */
+  actif?: boolean;
+}
+
 /** Point de contrôle (grille d'examen) — porté par une famille, affinable par sous-type. */
 export interface PointsCtrl {
   idPointCtrl: number;

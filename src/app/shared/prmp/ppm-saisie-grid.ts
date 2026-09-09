@@ -5,7 +5,7 @@ import { ModaleDirective } from '../a11y/modale.directive';
 import { fermerAvecAnimation } from '../a11y/fermeture-animee';
 import { AutosizeDirective } from '../autosize.directive';
 import { MontantFrDirective } from '../montant-fr.directive';
-import { AnomalieTranscription, Capm, Compte, FORME_MARCHE_LIBELLES, FormeMarche, Marche, MarchePrevision, ModePassation, Nature, SoaBeneficiaire } from '../../models';
+import { AnomalieTranscription, Capm, Compte, FORME_MARCHE_LIBELLES, FormeMarche, Marche, MarchePrevision, ModePassation, Nature, SoaBeneficiaire, StatutMarche } from '../../models';
 import { PpmFormFactory } from './ppm-form-factory';
 import { calculerFichePresentation } from './fiche-presentation';
 
@@ -86,7 +86,7 @@ export interface ModificationChamp {
             <col style="width: 3%" />
             @if (statutParUid().size) { <col style="width: 6%" /> }
             <col style="width: 7%" /><col style="width: 13%" /><col style="width: 8%" /><col style="width: 8%" />
-            <col style="width: 7%" /><col style="width: 6%" /><col style="width: 7%" /><col style="width: 8%" />
+            <col style="width: 7%" /><col style="width: 6%" /><col style="width: 7%" /><col style="width: 6%" /><col style="width: 8%" />
             <col style="width: 6%" /><col style="width: 8%" /><col style="width: 8%" />
             <!-- ⚠️ Dates prévisionnelles (demande pilote 2026-09-07) : même présentation que le brouillon. -->
             <col style="width: 6%" /><col style="width: 6%" /><col style="width: 6%" />
@@ -109,6 +109,8 @@ export interface ModificationChamp {
               <th rowspan="2" scope="col">Mode de passation</th>
               <th rowspan="2" scope="col">Forme</th>
               <th rowspan="2" scope="col">Financement</th>
+              <!-- ⚠️ Statut de marché (pilote 2026-09-09) — référentiel administrable /api/statut-marches. -->
+              <th rowspan="2" scope="col">Statut</th>
               <th colspan="4" scope="colgroup">Informations sur le Bénéficiaire</th>
               <!-- ⚠️ Dates prévisionnelles (demande pilote 2026-09-07) : dérivées des processus CAPM,
                    en LECTURE — même présentation que le tableau du brouillon (édition via le bouton CAPM). -->
@@ -147,6 +149,13 @@ export interface ModificationChamp {
                       </select>
                     </td>
                     <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'financement')"><input class="form-control" type="text" [formControl]="ctrl(g, 'financement')" placeholder="Financement" [attr.aria-label]="'Financement — ligne ' + (idx + 1)" /></td>
+                    <!-- ⚠️ Statut de marché (pilote 2026-09-09) : liste déroulante du référentiel administrable
+                         (actifs triés + le code déjà porté même désactivé). Défaut serveur = PREVU. -->
+                    <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'statut')">
+                      <select class="form-control" [formControl]="ctrl(g, 'statut')" [attr.aria-label]="'Statut du marché — ligne ' + (idx + 1)">
+                        @for (s of statutsPour(g); track s.code) { <option [value]="s.code">{{ s.libelle }}</option> }
+                      </select>
+                    </td>
                   }
                   <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':soaCode')">
                     @if (bctrl(b, 'soaCode').value) {
@@ -453,6 +462,8 @@ export class PpmSaisieGrid {
   readonly marches = input<FormArray | null>(null);
   readonly natures = input<Nature[]>([]);
   readonly modesList = input<ModePassation[]>([]);
+  /** Référentiel administrable des statuts de marché (colonne « Statut » — pilote 2026-09-09). */
+  readonly statuts = input<StatutMarche[]>([]);
   readonly comptes = input<Compte[]>([]);
   readonly soaList = input<SoaBeneficiaire[]>([]);
   readonly capms = input<Capm[]>([]);
@@ -605,6 +616,22 @@ export class PpmSaisieGrid {
   }
   ctrl(g: FormGroup, nom: string): FormControl {
     return this.resoudre(g, nom);
+  }
+  /**
+   * ⚠️ Statut de marché (pilote 2026-09-09) — options de la liste déroulante d'une ligne : les statuts ACTIFS
+   * du référentiel (triés par `ordre`), plus le code déjà porté par la ligne s'il n'y figure pas (désactivé
+   * ou hérité) — sinon on ne pourrait ni l'afficher ni le ré-enregistrer (le serveur l'accepte, cf. règle backend).
+   */
+  statutsPour(g: FormGroup): StatutMarche[] {
+    const actifs = this.statuts()
+      .filter((s) => s.actif !== false)
+      .sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+    const courant = ((this.ctrl(g, 'statut').value as string) ?? '').trim();
+    if (courant && !actifs.some((s) => s.code === courant)) {
+      const connu = this.statuts().find((s) => s.code === courant);
+      return [...actifs, connu ?? { code: courant, libelle: courant, actif: false }];
+    }
+    return actifs;
   }
   bctrl(b: FormGroup, nom: string): FormControl {
     return this.resoudre(b, nom);
