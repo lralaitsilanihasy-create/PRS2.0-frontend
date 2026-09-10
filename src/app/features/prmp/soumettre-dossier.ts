@@ -1075,7 +1075,7 @@ export class SoumettreDossier {
   /** Nom de l'autorité contractante lue dans le PDF (contexte du panneau de résolution). */
   readonly autoriteImportee = signal<string | null>(null);
 
-  // ── Enregistrement d'une nouvelle entité contractante pendant l'import (modèle A : création PRMP directe) ──
+  // ── Enregistrement d'une nouvelle entité contractante pendant l'import (modèle A : création directe PRMP + UGPM) ──
   /** Formulaire de création d'entité affiché dans le panneau de résolution. */
   readonly creationEntite = signal(false);
   /** Enregistrement de l'entité en cours (POST). */
@@ -1520,7 +1520,8 @@ export class SoumettreDossier {
   }
   /**
    * ⚠️ Règle ajoutée — ministère d'appartenance ABSENT du référentiel : créé à la volée par la PRMP
-   * (`POST /api/ministeres`, ouvert PRMP comme la création d'entité), avec son **organigramme actif**
+   * ou l'UGPM (`POST /api/ministeres`, ouvert **PRMP + UGPM** depuis le 2026-09-10, comme la création
+   * d'entité), avec son **organigramme actif**
    * (`POST /api/organigrammes`, requis par le formulaire d'entité), puis sélectionné automatiquement.
    * PK client = max+1 (convention référentiels).
    */
@@ -1555,7 +1556,10 @@ export class SoumettreDossier {
    * Enregistre la nouvelle entité (`POST /api/entite-contracts`). Le rattachement PRMP↔entité est
    * auto-créé **en attente** (`actif=false`) côté serveur, puis **activé par l'ADMIN** (écran
    * « Rattachements en attente ») : l'entité n'est donc **pas** sélectionnable immédiatement — pas
-   * d'auto-sélection. Requiert l'ouverture du POST à la PRMP + l'auto-affectation en attente (sinon 403).
+   * d'auto-sélection. POST ouvert **PRMP + UGPM** (backend `58f8344`, 2026-09-10) ; pour une UGPM, le
+   * rattachement en attente cible sa **PRMP de tutelle** (son `ref` de session = l'idPrmp de tutelle,
+   * ex. UGPM002 → IMP001), si bien qu'après approbation ADMIN l'entité est sélectionnable par la PRMP
+   * ET ses UGPM. Contre-recette réelle 2026-09-10 : 201 en UGPM002, visible des deux profils.
    */
   creerEntite(): void {
     if (this.nouvEntiteForm.invalid) {
