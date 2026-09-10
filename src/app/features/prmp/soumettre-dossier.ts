@@ -1829,7 +1829,7 @@ export class SoumettreDossier {
       if (m.coherenceErr) w.push(`« ${nom} » : ${m.coherenceErr}`);
       if (m.sansDates) w.push(`« ${nom} » : aucune date prévisionnelle (au moins un processus est obligatoire).`);
       if ((m.designationMarche ?? '').length > OBJET_MARCHE_MAX)
-        w.push(`Marché ${i + 1} : l'objet dépasse ${OBJET_MARCHE_MAX} caractères (${(m.designationMarche ?? '').length}) — raccourcissez-le.`);
+        w.push(`Marché ${i + 1} : l'objet dépasse la limite serveur de ${OBJET_MARCHE_MAX} caractères (${(m.designationMarche ?? '').length}).`);
     });
     return w;
   }
@@ -2075,11 +2075,13 @@ export class SoumettreDossier {
       this.toast.error('Bénéficiaires : la somme des montants par bénéficiaire doit égaler le montant du marché.');
       return;
     }
-    // Objet du marché : miroir de la garde serveur `@Size(max=500)` (sinon 400 par ligne).
+    // Objet du marché : miroir de la garde serveur `@Size(max=500)` (sinon 400 par ligne). ⚠️ Limite
+    // transitoire — le pilote a acté son relèvement (décision « désignation intégrale » du 2026-07-18 :
+    // l'énumération des lots reste VOULUE dans l'objet) ; bumper OBJET_MARCHE_MAX à la livraison backend.
     const objetsLongs = this.lignesObjetTropLong();
     if (objetsLongs.length) {
       this.toast.error(
-        `L'objet du marché dépasse ${OBJET_MARCHE_MAX} caractères sur la/les ligne(s) ${objetsLongs.join(', ')} — raccourcissez-le (le détail des lots va dans la section « Lots », pas dans l'objet).`,
+        `L'objet du marché dépasse la limite serveur de ${OBJET_MARCHE_MAX} caractères sur la/les ligne(s) ${objetsLongs.join(', ')}.`,
       );
       return;
     }
