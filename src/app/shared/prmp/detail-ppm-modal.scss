@@ -453,3 +453,10 @@
    fiche-presentation-doc / agpm-doc depuis le 2026-09-02 (mêmes documents dans l'examen) —
    leurs styles vivent chez eux. */
 .dpm-justif-globale { margin: 10px 0 4px; textarea { resize: vertical; } }
+
+/* Sélecteur de version des onglets « PPM/AGPM antérieures » (pilote 2026-09-10). */
+.dpm-vsel {
+  display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.85rem;
+  label { font-weight: 600; color: var(--n-600, #52525b); white-space: nowrap; }
+  select { max-width: 32rem; }
+}

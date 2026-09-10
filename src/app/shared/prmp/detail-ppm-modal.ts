@@ -229,6 +229,18 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
             [attr.aria-selected]="onglet() === 'pieces'" (click)="onglet.set('pieces')">
             Pièces jointes <span class="onglets-dossier__n">{{ pieces().length }}</span>
           </button>
+          <!-- ⚠️ Demande pilote (2026-09-10) — versions ANTÉRIEURES de la chaîne de mise à jour, en
+               tableaux dérivés (plan + AGPM). Onglets présents seulement s'il en existe. -->
+          @if (versionsAnterieures().length) {
+            <button type="button" class="onglets-dossier__tab onglets-dossier__tab--bleu" role="tab" [class.onglets-dossier__tab--on]="onglet() === 'ppm-ant'"
+              [attr.aria-selected]="onglet() === 'ppm-ant'" (click)="onglet.set('ppm-ant')">
+              PPM antérieures <span class="onglets-dossier__n">{{ versionsAnterieures().length }}</span>
+            </button>
+            <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="onglet() === 'agpm-ant'"
+              [attr.aria-selected]="onglet() === 'agpm-ant'" (click)="onglet.set('agpm-ant')">
+              AGPM antérieures <span class="onglets-dossier__n">{{ versionsAnterieures().length }}</span>
+            </button>
+          }
         </div>
 
         <!-- ── CORPS ── -->
@@ -416,6 +428,45 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                   [numMajPrec]="ppm()?.numMajPrec"
                   [dateMajPrec]="ppm()?.dateMajPrec"
                   [numMaj]="ppm()?.numMaj"
+                />
+              </div>
+            }
+
+            <!-- ⚠️ Demande pilote (2026-09-10) — PLAN d'une version ANTÉRIEURE (dérivé, lecture seule). -->
+            @if (onglet() === 'ppm-ant') {
+              <div class="dpm-section" role="tabpanel">
+                <div class="dpm-vsel">
+                  <label for="dpm-vsel-ppm">Version antérieure</label>
+                  <select id="dpm-vsel-ppm" class="form-control" (change)="versionAnterieureSel.set(+$any($event.target).value)">
+                    @for (v of versionsAnterieures(); track v.idDossier) {
+                      <option [value]="v.idDossier" [selected]="v.idDossier === versionAnterieureSel()">{{ libelleVersionAnt(v) }}</option>
+                    }
+                  </select>
+                </div>
+                <app-ppm-marches-table [marches]="marchesVersionSel()" [beneficiaires]="benefsVersionSel()" [previsions]="previsionsVersionSel()" />
+              </div>
+            }
+
+            <!-- ⚠️ Demande pilote (2026-09-10) — AGPM d'une version ANTÉRIEURE (dérivé de son plan). -->
+            @if (onglet() === 'agpm-ant') {
+              <div class="dpm-section" role="tabpanel">
+                <div class="dpm-vsel">
+                  <label for="dpm-vsel-agpm">Version antérieure</label>
+                  <select id="dpm-vsel-agpm" class="form-control" (change)="versionAnterieureSel.set(+$any($event.target).value)">
+                    @for (v of versionsAnterieures(); track v.idDossier) {
+                      <option [value]="v.idDossier" [selected]="v.idDossier === versionAnterieureSel()">{{ libelleVersionAnt(v) }}</option>
+                    }
+                  </select>
+                </div>
+                <app-agpm-doc
+                  [lignes]="agpmVersionSel()"
+                  [exercice]="ppmVersionSel()?.exercice"
+                  [entite]="entiteLabel()"
+                  [signataire]="ppmVersionSel()?.signataire"
+                  [dateInitiale]="ppmVersionSel()?.datePpmInit || ppmVersionSel()?.dateSignature"
+                  [numMajPrec]="ppmVersionSel()?.numMajPrec"
+                  [dateMajPrec]="ppmVersionSel()?.dateMajPrec"
+                  [numMaj]="ppmVersionSel()?.numMaj"
                 />
               </div>
             }
@@ -876,7 +927,7 @@ export class DetailPpmModal implements OnInit {
     return r !== 'PRMP' && r !== 'UGPM';
   });
   /** Onglet courant — le plan de passation est le motif d'ouverture le plus fréquent du modal. */
-  readonly onglet = signal<'entite' | 'ppm' | 'fiche' | 'agpm' | 'pieces'>('ppm');
+  readonly onglet = signal<'entite' | 'ppm' | 'fiche' | 'agpm' | 'pieces' | 'ppm-ant' | 'agpm-ant'>('ppm');
   /** Fiches d'identité de l'onglet 1 (UGPM vide hors ADMINISTRATEUR : lecture réservée). */
   readonly entites = signal<EntiteContract[]>([]);
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -1057,6 +1108,74 @@ export class DetailPpmModal implements OnInit {
     ),
   );
 
+  // ─────────────────────────────────────────────────────────────────────────────────────────────
+  // ⚠️ Onglets « PPM antérieures » / « AGPM antérieures » (demande pilote 2026-09-10) — les versions
+  // PRÉCÉDENTES de la chaîne de mise à jour, en TABLEAUX DÉRIVÉS (plan + AGPM), avec un sélecteur de
+  // version. Pas d'endpoint « contenu d'une version » : on reconstruit à partir des listes globales.
+  // ─────────────────────────────────────────────────────────────────────────────────────────────
+  /** Listes globales conservées (au-delà du PPM courant) pour dériver le contenu des versions antérieures. */
+  private readonly marchesTous = signal<Marche[]>([]);
+  private readonly previsionsTous = signal<MarchePrevision[]>([]);
+  private readonly benefsTous = signal<ServiceBeneficiaire[]>([]);
+  /** Chaîne des versions (GET /versions) + PPM par id (en-tête d'AGPM d'une version). */
+  readonly versionsChaine = signal<Dossier[]>([]);
+  private readonly ppmsParId = signal<Map<number, Ppm>>(new Map());
+  /** idDossier de la version antérieure sélectionnée dans les deux onglets. */
+  readonly versionAnterieureSel = signal<number | null>(null);
+
+  /** Ancêtres de la version courante (parent immédiat en tête), remontés par `idDossierParent`. */
+  readonly versionsAnterieures = computed<Dossier[]>(() => {
+    const parId = new Map(this.versionsChaine().map((v) => [v.idDossier, v]));
+    const out: Dossier[] = [];
+    let pid = parId.get(this.idDossier)?.idDossierParent ?? this.dossier()?.idDossierParent ?? null;
+    const vus = new Set<number>();
+    while (pid != null && parId.has(pid) && !vus.has(pid)) {
+      vus.add(pid);
+      const p = parId.get(pid)!;
+      out.push(p);
+      pid = p.idDossierParent ?? null;
+    }
+    return out;
+  });
+  private readonly versionSelDossier = computed<Dossier | null>(() => {
+    const id = this.versionAnterieureSel();
+    return id == null ? null : this.versionsAnterieures().find((v) => v.idDossier === id) ?? null;
+  });
+  /** Plan (marchés non supprimés) de la version antérieure sélectionnée. */
+  readonly marchesVersionSel = computed<Marche[]>(() => {
+    const v = this.versionSelDossier();
+    return v ? this.marchesTous().filter((m) => m.idDossier === v.idDossier) : [];
+  });
+  private readonly detailIdsVersionSel = computed(() => new Set(this.marchesVersionSel().map((m) => m.idDetail)));
+  readonly previsionsVersionSel = computed<MarchePrevision[]>(() =>
+    this.previsionsTous().filter((p) => this.detailIdsVersionSel().has(p.idDetail)),
+  );
+  readonly benefsVersionSel = computed<ServiceBeneficiaire[]>(() =>
+    this.benefsTous().filter((b) => this.detailIdsVersionSel().has(b.idDetail)),
+  );
+  /** AGPM DÉRIVÉ de la version antérieure sélectionnée (même fonction pure que l'onglet courant). */
+  readonly agpmVersionSel = computed(() =>
+    calculerAgpm(
+      this.marchesVersionSel(),
+      this.previsionsVersionSel(),
+      this.modes(),
+      this.capms(),
+      new Map([...this.natureMap()].map(([k, v]) => [Number(k), v])),
+    ),
+  );
+  /** PPM (en-tête) de la version antérieure sélectionnée — via l'idPpm de ses marchés. */
+  readonly ppmVersionSel = computed<Ppm | null>(() => {
+    const idPpm = this.marchesVersionSel()[0]?.idPpm;
+    return idPpm != null ? this.ppmsParId().get(idPpm) ?? null : null;
+  });
+  /** Libellé d'une version antérieure pour le sélecteur (« Initial » / « Mise à jour n° N » + référence). */
+  libelleVersionAnt(v: Dossier): string {
+    const idPpm = this.marchesTous().find((m) => m.idDossier === v.idDossier)?.idPpm;
+    const n = (idPpm != null ? this.ppmsParId().get(idPpm)?.numMaj : 0) ?? 0;
+    const ref = v.refeDossier ? ' · ' + v.refeDossier : '';
+    return (n > 0 ? `Mise à jour n° ${n}` : 'Version initiale') + ref;
+  }
+
   /** Date `yyyy-MM-dd` → `dd/MM/yyyy` (« — » si absente) — format des documents officiels. */
   dateCourt(iso?: string | null): string {
     if (!iso) return '—';
@@ -1135,6 +1254,11 @@ export class DetailPpmModal implements OnInit {
         this.dossier.set(dossier);
         this.dossierEntite.set(dossier?.idEntiteContract ?? null);
         this.chargerChangements(dossier);
+        // Listes globales conservées pour dériver les versions antérieures (onglets dédiés).
+        this.marchesTous.set(marches);
+        this.previsionsTous.set(previsions);
+        this.benefsTous.set(benefs);
+        this.chargerVersionsAnterieures(dossier);
         const mine = marches.filter((m) => m.idPpm === this.idPpm);
         this.marches.set(mine);
         this.pieces.set(pieces);
@@ -1190,6 +1314,29 @@ export class DetailPpmModal implements OnInit {
         this.changements.set(m);
       },
       error: () => {},
+    });
+  }
+
+  /**
+   * ⚠️ Onglets « PPM/AGPM antérieures » (pilote 2026-09-10) — chargés SEULEMENT pour un dossier issu d'une
+   * mise à jour (`idDossierParent` renseigné). On récupère la chaîne des versions et les en-têtes de PPM
+   * (numMaj/exercice/signataire pour l'AGPM d'une version). Le contenu (plan) se dérive des listes globales
+   * déjà chargées, filtrées par `idDossier`. Appels silencieux : un échec laisse simplement les onglets absents.
+   */
+  private chargerVersionsAnterieures(dossier: Dossier | null | undefined): void {
+    this.versionsChaine.set([]);
+    this.versionAnterieureSel.set(null);
+    if (dossier?.idDossierParent == null) {
+      return;
+    }
+    forkJoin({
+      versions: this.miseAJourService.versions(dossier.idDossier).pipe(catchError(() => of([] as Dossier[]))),
+      ppms: this.ppmService.list().pipe(catchError(() => of([] as Ppm[]))),
+    }).subscribe(({ versions, ppms }) => {
+      this.ppmsParId.set(new Map(ppms.map((p) => [p.idPpm, p])));
+      this.versionsChaine.set(versions);
+      // Sélection par défaut : la version antérieure la plus récente (parent immédiat).
+      this.versionAnterieureSel.set(this.versionsAnterieures()[0]?.idDossier ?? null);
     });
   }
 
