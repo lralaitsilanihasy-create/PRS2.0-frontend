@@ -25,6 +25,7 @@ import {
   PvExamen,
   ServiceBeneficiaire,
   TypeChangementLigne,
+  PerimetreExamen,
 } from '../../models';
 import {
   AvisService,
@@ -51,7 +52,7 @@ import {
   TypeDossierService,
 } from '../../services';
 import { ChronometrageDossier, StatutBadge, examenRectifiable } from '../../shared/circuit';
-import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
+import { PpmMarchesTable, RowExamState } from '../../shared/prmp/ppm-marches-table';
 import { calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { calculerAgpm } from '../../shared/prmp/agpm';
 import { FichePresentationDoc } from '../../shared/prmp/fiche-presentation-doc';
@@ -168,7 +169,7 @@ interface RowState {
                   <!-- ppm-table-large (variante globale) : le tableau garde sa taille lisible et
                        défile DANS le panneau — demande pilote 2026-09-02, propre à l'examen. -->
                   <div class="exam__marches ppm-table-large">
-                    <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [rowStateFn]="etatLigneFn" (rowClick)="ouvrirLigne($event)" />
+                    <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [inclureSupprimees]="examenScope()" [rowStateFn]="etatLigneFn" (rowClick)="ouvrirLigne($event)" />
                   </div>
                 }
                 @if (ongletContenu() === 'fiche') {
@@ -298,7 +299,7 @@ interface RowState {
                       <span class="exam__step-dot"></span>Fiche
                     </button>
                   }
-                  @for (m of marches(); track m.idDetail; let i = $index) {
+                  @for (m of marchesExamen(); track m.idDetail; let i = $index) {
                     <button type="button" class="exam__step exam__step--{{ etatOngletMarche(i) }}" (click)="allerEtape(offsetLignes() + i)">
                       <span class="exam__step-dot"></span>Ligne {{ i + 1 }}
                     </button>
@@ -616,6 +617,11 @@ export class ExamenDossier implements OnDestroy {
   readonly ppm = signal<Ppm | null>(null);
   /** Versionnement : idDetail → type de changement vs la version précédente (surlignage du tableau). */
   readonly changements = signal<Map<number, TypeChangementLigne> | null>(null);
+  /**
+   * ⚠️ Périmètre d'examen d'une mise à jour (pilote 2026-09-10, backend `5d51d4b`) — AUTORITÉ serveur, même
+   * calcul que la garde de complétude : n'examiner que les lignes changées. `null` tant que non chargé.
+   */
+  readonly perimetre = signal<PerimetreExamen | null>(null);
   readonly marches = signal<Marche[]>([]);
   /** Bénéficiaires + dates prévisionnelles des marchés du dossier (pour le tableau PPM partagé). */
   readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
@@ -693,17 +699,53 @@ export class ExamenDossier implements OnDestroy {
   readonly pointsFiche = computed(() => this.points().filter((p) => p.portee === 'FICHE'));
   readonly pointsAgpm = computed(() => this.points().filter((p) => p.portee === 'AGPM'));
   /** Tous les points évalués UNE fois (DOSSIER + FICHE + AGPM) — init, persistance, complétude. */
-  readonly pointsHorsLigne = computed(() => this.points().filter((p) => (p.portee ?? 'LIGNE') !== 'LIGNE'));
-  readonly nbLignes = computed(() => this.marches().length);
-  readonly hasEtapeDossier = computed(() => this.pointsDossier().length > 0);
+  readonly pointsHorsLigne = computed(() => this.points().filter((p) => (p.portee ?? 'LIGNE') !== 'LIGNE' && p.portee !== 'SUPPRESSION'));
+
+  // ── Périmètre d'examen (pilote 2026-09-10) : n'examiner que les lignes changées d'une mise à jour ──
+  private readonly aExaminerMap = computed(() => new Map((this.perimetre()?.lignes ?? []).map((l) => [l.idDetail, l.aExaminer])));
+  private readonly constatMap = computed(() => new Map((this.perimetre()?.lignes ?? []).map((l) => [l.idDetail, l.constatRequis])));
+  /** Examen SCOPÉ (mise à jour avec périmètre servi) ? Sinon tout le plan est examiné (comportement historique). */
+  readonly examenScope = computed(() => this.perimetre()?.miseAJour === true);
+  /** Point de CONSTAT de suppression (portée SUPPRESSION, ID semé) — évalué sur une ligne retirée. */
+  readonly pointsSuppression = computed(() => this.points().filter((p) => p.portee === 'SUPPRESSION'));
+  /** La ligne demande-t-elle le CONSTAT de retrait (grille = point SUPPRESSION, pas la grille LIGNE) ? */
+  estConstat(idDetail: number): boolean {
+    return this.constatMap().get(idDetail) === true;
+  }
+  /** La ligne est-elle HORS examen (inchangée, déjà validée à la version précédente) ? */
+  estHorsExamen(idDetail: number): boolean {
+    return this.examenScope() && !this.aExaminerMap().get(idDetail) && !this.constatMap().get(idDetail);
+  }
+  /** Grille applicable à une ligne : SUPPRESSION pour un constat, sinon la grille LIGNE. */
+  pointsPourLigne(idDetail: number): PointsCtrl[] {
+    return this.estConstat(idDetail) ? this.pointsSuppression() : this.pointsLigne();
+  }
+  /** Marchés effectivement soumis à examen, dans l'ordre du plan : dans un examen scopé, seulement le périmètre. */
+  readonly marchesExamen = computed<Marche[]>(() => {
+    if (!this.examenScope()) return this.marches();
+    return this.marches().filter((m) => this.aExaminerMap().get(m.idDetail) || this.constatMap().get(m.idDetail));
+  });
+  readonly nbLignes = computed(() => this.marchesExamen().length);
+  /** Points HORS ligne (fiche/AGPM/dossier) réellement à examiner selon le périmètre (init, persistance, complétude). */
+  readonly pointsHorsLigneAExaminer = computed(() => {
+    const perim = this.perimetre();
+    const scope = perim?.miseAJour === true;
+    return this.pointsHorsLigne().filter((p) =>
+      p.portee === 'FICHE' ? !scope || perim!.ficheAExaminer
+        : p.portee === 'AGPM' ? !scope || perim!.agpmAExaminer
+          : p.portee === 'DOSSIER' ? !scope || perim!.dossierAExaminer
+            : true,
+    );
+  });
+  readonly hasEtapeDossier = computed(() => this.pointsDossier().length > 0 && (this.perimetre()?.dossierAExaminer ?? true));
   /**
    * ⚠️ Demande pilote (2026-09-04) — « on ne contrôle pas le vide » : la grille de la fiche (resp.
    * de l'AGPM) est SAUTÉE quand le document dérivé n'a aucun contenu (fiche sans marché dérogatoire,
    * ni délai aménagé, ni contrat-cadre ; AGPM sans ligne). Le document reste consultable dans son
    * onglet. Garde serveur miroir : demande backend 2026-09-04-completude-fiche-vide.
    */
-  readonly hasEtapeFiche = computed(() => this.pointsFiche().length > 0 && this.ficheDoc().nbMarchesConcernes > 0);
-  readonly hasEtapeAgpm = computed(() => this.pointsAgpm().length > 0 && this.agpmDoc().length > 0);
+  readonly hasEtapeFiche = computed(() => this.pointsFiche().length > 0 && this.ficheDoc().nbMarchesConcernes > 0 && (this.perimetre()?.ficheAExaminer ?? true));
+  readonly hasEtapeAgpm = computed(() => this.pointsAgpm().length > 0 && this.agpmDoc().length > 0 && (this.perimetre()?.agpmAExaminer ?? true));
   /** Pièces dans l'ordre des étapes « Pièce N » (initiales puis après renvoi — même ordre que la liste). */
   readonly piecesOrdonnees = computed(() => [...this.piecesInitiales(), ...this.piecesApresRenvoi()].filter((p) => p.idPiece != null));
   readonly nbPieces = computed(() => this.piecesOrdonnees().length);
@@ -738,13 +780,13 @@ export class ExamenDossier implements OnDestroy {
   readonly indexPieceCourante = computed(() => (this.estEtapePiece() ? this.etape() - this.offsetPieces() : -1));
   readonly pieceCourante = computed(() => (this.estEtapePiece() ? this.piecesOrdonnees()[this.indexPieceCourante()] ?? null : null));
   /** Marché de l'étape courante (null hors étape marché). */
-  readonly marcheCourant = computed(() => (this.estEtapeMarche() ? this.marches()[this.indexMarcheCourant()] ?? null : null));
+  readonly marcheCourant = computed(() => (this.estEtapeMarche() ? this.marchesExamen()[this.indexMarcheCourant()] ?? null : null));
   /** idDetail associé à l'étape courante (null pour les étapes fiche / AGPM / dossier). */
   readonly idDetailCourant = computed(() => this.marcheCourant()?.idDetail ?? null);
   /** Points affichés à l'étape courante : LIGNE (marché), FICHE, AGPM ou DOSSIER — sinon aucun (avis). */
   readonly pointsCourants = computed(() =>
     this.estEtapeMarche()
-      ? this.pointsLigne()
+      ? this.pointsPourLigne(this.idDetailCourant() ?? -1)
       : this.estEtapeFiche()
         ? this.pointsFiche()
         : this.estEtapeAgpm()
@@ -755,13 +797,15 @@ export class ExamenDossier implements OnDestroy {
   );
 
   // — États DÉRIVÉS des statuts (pas d'état manuel « validé ») : un point/une ligne est « examiné » dès qu'il est statué. —
-  /** Tous les points LIGNE d'un marché sont-ils statués (RAS ou OBS) ? */
+  /** Tous les points applicables d'un marché sont-ils statués ? (grille LIGNE, ou point SUPPRESSION pour un
+   *  constat ; une ligne HORS examen = inchangée est réputée déjà validée). */
   ligneStatuee(idDetail: number): boolean {
-    return this.pointsLigne().every((p) => this.resultat(idDetail, p.idPointCtrl).statut !== null);
+    if (this.estHorsExamen(idDetail)) return true;
+    return this.pointsPourLigne(idDetail).every((p) => this.resultat(idDetail, p.idPointCtrl).statut !== null);
   }
   /** Le marché porte-t-il ≥1 observation (→ « examinée avec observation ») ? */
   ligneAObs(idDetail: number): boolean {
-    return this.pointsLigne().some((p) => this.resultat(idDetail, p.idPointCtrl).statut === 'OBS');
+    return this.pointsPourLigne(idDetail).some((p) => this.resultat(idDetail, p.idPointCtrl).statut === 'OBS');
   }
   /** Tous les points DOSSIER sont-ils statués ? */
   readonly dossierStatue = computed(() => this.pointsDossier().every((p) => this.resultat(null, p.idPointCtrl).statut !== null));
@@ -773,7 +817,7 @@ export class ExamenDossier implements OnDestroy {
   readonly agpmAObs = computed(() => this.pointsAgpm().some((p) => this.resultat(null, p.idPointCtrl).statut === 'OBS'));
   /** Première étape marché non encore statuée (frontière atteignable) ; `nbLignes` si toutes faites. */
   readonly frontiere = computed(() => {
-    const idx = this.marches().findIndex((m) => !this.ligneStatuee(m.idDetail));
+    const idx = this.marchesExamen().findIndex((m) => !this.ligneStatuee(m.idDetail));
     return idx === -1 ? this.nbLignes() : idx;
   });
   /** Première pièce non statuée (frontière des étapes pièces) ; `nbPieces` si toutes examinées. */
@@ -799,7 +843,7 @@ export class ExamenDossier implements OnDestroy {
   /** Lignes + pièces + fiche + AGPM + étape dossier toutes traitées ? (condition d'ouverture de l'avis). */
   readonly toutTraite = computed(
     () =>
-      this.marches().every((m) => this.ligneStatuee(m.idDetail)) &&
+      this.marchesExamen().every((m) => this.ligneStatuee(m.idDetail)) &&
       this.toutesPiecesStatuees() &&
       (!this.hasEtapeFiche() || this.ficheStatuee()) &&
       (!this.hasEtapeAgpm() || this.agpmStatuee()) &&
@@ -941,11 +985,15 @@ export class ExamenDossier implements OnDestroy {
       examens: this.examenService.list(),
       details: this.examenDetailService.list(),
       pvs: this.pvExamenService.list(),
+      // ⚠️ Périmètre d'examen (pilote 2026-09-10) : AUTORITÉ serveur des lignes à examiner (mise à jour).
+      perimetre: this.miseAJourService.perimetreExamen(this.idDossier).pipe(catchError(() => of(null))),
       benefs: this.serviceBenefService.list(),
       previsions: this.previsionService.list(),
     }).subscribe({
       next: (r) => {
         this.dossier.set(r.dossier);
+        // ⚠️ Périmètre d'examen posé AVANT l'init des résultats (il en scope les points par ligne).
+        this.perimetre.set(r.perimetre);
         // Dossier issu d'une mise à jour → diff vs version précédente (surlignage). Appel silencieux :
         // 403 (le diff est aujourd'hui réservé au PRMP propriétaire) / 409 → pas de surlignage.
         if (r.dossier.idDossierParent != null) {
@@ -986,11 +1034,28 @@ export class ExamenDossier implements OnDestroy {
         // ⚠️ Demande pilote (2026-09-06) : chaque point de la grille de contrôle est RAS par DÉFAUT
         // — l'assignataire ne bascule sur « Observation » que les points où il relève une
         // irrégularité (un examen sans anomalie ne demande alors aucun clic point par point).
-        const ligne = pts.filter((p) => (p.portee ?? 'LIGNE') === 'LIGNE');
-        const horsLigne = pts.filter((p) => (p.portee ?? 'LIGNE') !== 'LIGNE');
+        // ⚠️ Périmètre (pilote 2026-09-10) : dans un examen scopé (mise à jour), n'initialiser QUE les points
+        // à examiner — grille LIGNE pour les modifiés/nouveaux, point SUPPRESSION pour les supprimés (constat),
+        // rien pour les inchangés ; fiche/AGPM seulement si concernés, dossier toujours.
+        const perim = r.perimetre;
+        const scope = perim?.miseAJour === true;
+        const aExam = new Map((perim?.lignes ?? []).map((l) => [l.idDetail, l.aExaminer]));
+        const constat = new Map((perim?.lignes ?? []).map((l) => [l.idDetail, l.constatRequis]));
+        const ptsLigne = pts.filter((p) => (p.portee ?? 'LIGNE') === 'LIGNE');
+        const ptsSupp = pts.filter((p) => p.portee === 'SUPPRESSION');
+        const ptsFiche = pts.filter((p) => p.portee === 'FICHE');
+        const ptsAgpm = pts.filter((p) => p.portee === 'AGPM');
+        const ptsDossier = pts.filter((p) => p.portee === 'DOSSIER');
         const map = new Map<string, RowState>();
-        for (const m of mines) for (const p of ligne) map.set(this.cle(m.idDetail, p.idPointCtrl), { statut: 'RAS', observations: [] });
-        for (const p of horsLigne) map.set(this.cle(null, p.idPointCtrl), { statut: 'RAS', observations: [] });
+        for (const m of mines) {
+          const enPerimetre = !scope || aExam.get(m.idDetail) === true || constat.get(m.idDetail) === true;
+          if (!enPerimetre) continue; // ligne inchangée : rien à examiner
+          const grille = scope && constat.get(m.idDetail) === true ? ptsSupp : ptsLigne;
+          for (const p of grille) map.set(this.cle(m.idDetail, p.idPointCtrl), { statut: 'RAS', observations: [] });
+        }
+        if (!scope || perim!.ficheAExaminer) for (const p of ptsFiche) map.set(this.cle(null, p.idPointCtrl), { statut: 'RAS', observations: [] });
+        if (!scope || perim!.agpmAExaminer) for (const p of ptsAgpm) map.set(this.cle(null, p.idPointCtrl), { statut: 'RAS', observations: [] });
+        if (!scope || perim!.dossierAExaminer) for (const p of ptsDossier) map.set(this.cle(null, p.idPointCtrl), { statut: 'RAS', observations: [] });
         // Pré-remplissage depuis l'examen existant du dispatch — dossier EXAMINE (édition) OU dossier
         // encore DISPATCHE avec un BROUILLON de progression (⚠️ règle ajoutée : sauvegarde à chaque étape).
         const idDispatch = this.idDispatch();
@@ -1130,16 +1195,17 @@ export class ExamenDossier implements OnDestroy {
     return 'pending';
   }
 
-  /** État visuel d'une ligne de marché (pour la table partagée) : traitée / en cours / à venir. */
-  readonly etatLigneFn = (idDetail: number): 'current' | 'done-ras' | 'done-obs' | 'pending' => {
+  /** État visuel d'une ligne de marché (pour la table partagée) : hors examen / traitée / en cours / à venir. */
+  readonly etatLigneFn = (idDetail: number): RowExamState => {
+    if (this.estHorsExamen(idDetail)) return 'hors'; // inchangée : déjà validée à la version précédente
     if (this.idDetailCourant() === idDetail) return 'current';
     if (this.ligneStatuee(idDetail)) return this.ligneAObs(idDetail) ? 'done-obs' : 'done-ras';
     return 'pending';
   };
-  /** État d'un onglet marché (pour la pastille de progression). */
+  /** État d'un onglet marché (pour la pastille de progression) — indexé sur les lignes EXAMINÉES. */
   etatOngletMarche(i: number): 'current' | 'done-ras' | 'done-obs' | 'pending' {
     if (this.etape() === this.offsetLignes() + i) return 'current';
-    const idDetail = this.marches()[i]?.idDetail;
+    const idDetail = this.marchesExamen()[i]?.idDetail;
     if (idDetail != null && this.ligneStatuee(idDetail)) return this.ligneAObs(idDetail) ? 'done-obs' : 'done-ras';
     return 'pending';
   }
@@ -1248,7 +1314,8 @@ export class ExamenDossier implements OnDestroy {
 
   /** Rouvre la ligne cliquée dans le tableau (repasse « en cours » ; son état RAS/observation est recalculé après re-validation). */
   ouvrirLigne(m: Marche): void {
-    const i = this.marches().findIndex((x) => x.idDetail === m.idDetail);
+    if (this.estHorsExamen(m.idDetail)) return; // ligne inchangée (hors examen) : non cliquable
+    const i = this.marchesExamen().findIndex((x) => x.idDetail === m.idDetail);
     if (i >= 0) this.allerEtape(this.offsetLignes() + i);
   }
   /** Ouvre/ferme l'aperçu inline d'une pièce sous son nom (une seule à la fois). */
@@ -1293,10 +1360,12 @@ export class ExamenDossier implements OnDestroy {
   /** Liste plate des résultats à persister : (marché × point LIGNE) + (points HORS LIGNE — dossier/fiche/AGPM, `idDetail` null). */
   private entreesResultats(): { idDetail: number | null; idPt: number; st: RowState }[] {
     const out: { idDetail: number | null; idPt: number; st: RowState }[] = [];
-    for (const m of this.marches())
-      for (const p of this.pointsLigne())
+    // ⚠️ Périmètre (pilote 2026-09-10) : seulement les lignes du périmètre, avec leur grille applicable
+    // (LIGNE, ou SUPPRESSION pour un constat), + les points hors-ligne réellement à examiner.
+    for (const m of this.marchesExamen())
+      for (const p of this.pointsPourLigne(m.idDetail))
         out.push({ idDetail: m.idDetail, idPt: p.idPointCtrl, st: this.resultat(m.idDetail, p.idPointCtrl) });
-    for (const p of this.pointsHorsLigne()) out.push({ idDetail: null, idPt: p.idPointCtrl, st: this.resultat(null, p.idPointCtrl) });
+    for (const p of this.pointsHorsLigneAExaminer()) out.push({ idDetail: null, idPt: p.idPointCtrl, st: this.resultat(null, p.idPointCtrl) });
     return out;
   }
   /** Résultats de pièces à persister (pièces statuées uniquement). */

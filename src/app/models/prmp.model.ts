@@ -132,6 +132,33 @@ export interface DiffDossier {
   lignes: LigneDiff[];
 }
 
+/**
+ * ⚠️ Périmètre d'examen d'une MISE À JOUR (`GET /api/dossiers/{id}/perimetre-examen`, backend `5d51d4b`).
+ * Autorité SERVEUR : dit, ligne par ligne, ce qui doit être examiné — MÊME calcul que la garde de
+ * complétude à la soumission (le front n'a rien à re-déduire du diff). Fondé sur la TRACE FIGÉE à la
+ * soumission de la version ; sans trace (dossier initial ou non soumis), tout est `aExaminer:true` (examen
+ * complet, non-régression). Pour un dossier non issu d'une mise à jour, `miseAJour:false`.
+ */
+export interface PerimetreExamenLigne {
+  idDetail: number;
+  designation: string;
+  /** Type de changement vs version précédente ; `null` hors mise à jour ou sans trace. */
+  typeChangement?: TypeChangementLigne | null;
+  /** La ligne passe la grille de contrôle LIGNE complète (marché modifié / nouveau / restauré). */
+  aExaminer: boolean;
+  /** La ligne (SUPPRIMÉE) demande le CONSTAT de retrait (point de portée SUPPRESSION), pas la grille LIGNE. */
+  constatRequis: boolean;
+}
+export interface PerimetreExamen {
+  idDossier: number;
+  idDossierParent?: number | null;
+  miseAJour: boolean;
+  ficheAExaminer: boolean;
+  agpmAExaminer: boolean;
+  dossierAExaminer: boolean;
+  lignes: PerimetreExamenLigne[];
+}
+
 /** ⚠️ 2026-09-06 — ce qui a produit une version archivée (`MISE_A_JOUR` réservé, jamais servi à ce jour). */
 export type OrigineVersion = 'RECTIFICATION' | 'MISE_A_JOUR';
 

@@ -171,10 +171,12 @@ export interface PointsCtrl {
   /**
    * Portée d'évaluation : `LIGNE` (par ligne de marché), `DOSSIER` (inter-lignes, ex.
    * fractionnement), et depuis le 02/09 (backend `f361de9`) `FICHE` / `AGPM` — la fiche de
-   * présentation et le projet d'AGPM ont chacun LEUR grille dans l'examen. Tout ce qui n'est pas
-   * `LIGNE` s'évalue UNE fois (résultat stocké `idDetail = null`). Défaut serveur `LIGNE`.
+   * présentation et le projet d'AGPM ont chacun LEUR grille dans l'examen. `SUPPRESSION` (backend
+   * `5d51d4b`, 2026-09-10) = CONSTAT de retrait d'une ligne supprimée d'une mise à jour, évalué sur
+   * l'`idDetail` de la ligne retirée. `DOSSIER`/`FICHE`/`AGPM` s'évaluent UNE fois (`idDetail = null`).
+   * Défaut serveur `LIGNE`.
    */
-  portee?: 'LIGNE' | 'DOSSIER' | 'FICHE' | 'AGPM';
+  portee?: 'LIGNE' | 'DOSSIER' | 'FICHE' | 'AGPM' | 'SUPPRESSION';
 }
 
 /** Profil (référentiel RBAC). */

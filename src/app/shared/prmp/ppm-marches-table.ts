@@ -17,7 +17,7 @@ interface BenefRow {
   nouvMontBenef?: number | null;
 }
 /** État visuel d'une ligne dans l'examen séquentiel. */
-export type RowExamState = 'current' | 'done-ras' | 'done-obs' | 'pending';
+export type RowExamState = 'current' | 'done-ras' | 'done-obs' | 'pending' | 'hors';
 
 /** Ligne de marché mise en forme pour le tableau (libellés résolus, dates par jalon). */
 interface MarcheRow {
@@ -102,17 +102,19 @@ interface MarcheRow {
               @for (b of m.benefRows; track $index; let first = $first) {
                 <tr [class]="rowClass(m.source)"
                     [class.pmt-lead]="first"
-                    [class.pmt-clickable]="rowStateFn()"
+                    [class.pmt-clickable]="rowStateFn() && etat(m.source) !== 'hors'"
                     [attr.title]="detailDe(m.source)"
                     (click)="onRowClick(m.source)">
                   @if (first) {
-                    <!-- État d'examen : ✓ vert = examinée sans observation ; ✗ rouge = avec observation(s) ; ● = en cours. -->
+                    <!-- État d'examen : ✓ vert = examinée sans observation ; ✗ rouge = avec observation(s) ; ● = en cours ;
+                         – gris = hors examen (inchangée d'une mise à jour, déjà validée). -->
                     @if (rowStateFn()) {
                       <td [attr.rowspan]="m.benefRows.length" class="pmt-etat">
                         @switch (etat(m.source)) {
                           @case ('done-ras') { <span class="pmt-etat-ok" title="Examinée — sans observation">✓</span> }
                           @case ('done-obs') { <span class="pmt-etat-obs" title="Examinée — avec observation(s)">✗</span> }
                           @case ('current') { <span class="pmt-etat-cur" title="Ligne en cours d'examen">●</span> }
+                          @case ('hors') { <span class="pmt-etat-hors" title="Hors examen — inchangée, déjà validée à la version précédente">–</span> }
                           @default { <span class="pmt-etat-att" title="À examiner">•</span> }
                         }
                       </td>
@@ -185,12 +187,19 @@ interface MarcheRow {
     .pmt tbody tr.pmt-row-done-ras.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #22C55E; }
     .pmt tbody tr.pmt-row-done-obs > td { background: #FEF2F2; }
     .pmt tbody tr.pmt-row-done-obs.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #DC2626; }
+    /* ⚠️ 2026-09-10 — HORS examen (ligne inchangée d'une mise à jour, déjà validée) : ligne grisée, non
+       cliquable, marqueur « – ». Et lignes SUPPRIMÉES (constat) : objet barré, fond gris. */
+    .pmt tbody tr.pmt-row-hors > td { background: #f8fafc; color: var(--n-400, #94a3b8); }
+    .pmt tbody tr.pmt-row-hors.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 var(--n-300, #d4d4d8); }
+    .pmt tbody tr.pmt-supprimee > td { background: #fafafa; color: var(--n-400, #94a3b8); }
+    .pmt tbody tr.pmt-supprimee td.pmt-objet { text-decoration: line-through; }
     /* Colonne d'état (mode examen) : marqueur centré, gros et contrasté. */
     .pmt td.pmt-etat { text-align: center; vertical-align: middle; font-size: 1.05rem; font-weight: 800; }
     .pmt-etat-ok { color: #16A34A; }
     .pmt-etat-obs { color: #DC2626; }
     .pmt-etat-cur { color: #4F46E5; }
     .pmt-etat-att { color: var(--n-300, #d4d4d8); }
+    .pmt-etat-hors { color: var(--n-300, #d4d4d8); }
   `,
 })
 export class PpmMarchesTable implements OnInit {
@@ -207,6 +216,8 @@ export class PpmMarchesTable implements OnInit {
    * `current` (en cours), `done-ras` (examinée, RAS), `done-obs` (examinée avec observation), `pending` (à examiner).
    */
   readonly rowStateFn = input<((idDetail: number) => RowExamState | null) | null>(null);
+  /** ⚠️ 2026-09-10 — inclure les lignes SUPPRIMÉES (examen d'une mise à jour : constat de retrait). Défaut : masquées. */
+  readonly inclureSupprimees = input(false);
   /** Émis au clic sur une ligne (le `Marche` cliqué) — sert à rouvrir une ligne déjà examinée. Actif seulement si `rowStateFn` est fourni. */
   readonly rowClick = output<Marche>();
   /**
@@ -263,9 +274,10 @@ export class PpmMarchesTable implements OnInit {
     const capm = this.capmMap();
     // ⚠️ 2026-08-05 (versionnement des PPM) — une ligne SUPPRIMÉE d'une version est conservée en base
     // (restaurable, jamais effacée) mais ne fait plus partie du plan : elle est donc absente de toute
-    // vue « officielle » du PPM (consultation, détail, grille d'examen, dates prévisionnelles).
-    // L'écran de mise à jour, lui, a sa propre table et continue de les montrer, grisées.
-    return this.marches().filter((m) => !m.supprimee).map((m) => {
+    // vue « officielle » du PPM (consultation, détail, dates prévisionnelles).
+    // ⚠️ 2026-09-10 — sauf `inclureSupprimees` (examen d'une mise à jour) : les supprimées y sont montrées
+    // pour le CONSTAT de retrait. L'écran de mise à jour, lui, a sa propre table.
+    return this.marches().filter((m) => this.inclureSupprimees() || !m.supprimee).map((m) => {
       const prevs = prevByDetail.get(m.idDetail) ?? [];
       const dateDe = (kw: string): string => {
         const p = prevs.find((x) => (capm.get(String(x.idCapm)) ?? '').toUpperCase().includes(kw));
@@ -302,11 +314,13 @@ export class PpmMarchesTable implements OnInit {
     const t = this.changements()?.get(m.idDetail);
     return t && t !== 'INCHANGEE' ? t : null;
   }
-  /** Classes de la ligne : état d'examen (prioritaire visuellement) + changement de version. */
+  /** Classes de la ligne : état d'examen (prioritaire visuellement) + changement de version + supprimée. */
   rowClass(m: Marche): string {
     const exam = this.etat(m);
     const chg = this.chg(m);
-    return [exam ? 'pmt-row-' + exam : '', chg ? 'pmt-chg-' + chg.toLowerCase() : ''].filter(Boolean).join(' ');
+    return [exam ? 'pmt-row-' + exam : '', chg ? 'pmt-chg-' + chg.toLowerCase() : '', m.supprimee ? 'pmt-supprimee' : '']
+      .filter(Boolean)
+      .join(' ');
   }
   /** Types de changement présents parmi les lignes affichées (pilote la légende, dans un ordre stable). */
   readonly typesPresents = computed<TypeChangementLigne[]>(() => {
@@ -328,9 +342,9 @@ export class PpmMarchesTable implements OnInit {
       default: return t;
     }
   }
-  /** Clic sur une ligne : ne réémet que si un état séquentiel est actif (contexte examen). */
+  /** Clic sur une ligne : ne réémet que si un état séquentiel est actif ET la ligne n'est pas hors examen. */
   onRowClick(m: Marche): void {
-    if (this.rowStateFn()) this.rowClick.emit(m);
+    if (this.rowStateFn() && this.etat(m) !== 'hors') this.rowClick.emit(m);
   }
 
   private lbl(map: Map<string, string>, id?: number): string {

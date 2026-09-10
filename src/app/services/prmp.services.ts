@@ -7,6 +7,7 @@ import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
   DiffDossier,
+  PerimetreExamen,
   Dossier,
   EditionPpmRequest,
   Lot,
@@ -245,6 +246,15 @@ export class MiseAJourPpmService {
   /** `GET /api/dossiers/{id}/versions` — chaîne complète, **la plus récente d'abord**. */
   versions(idDossier: number): Observable<Dossier[]> {
     return this.http.get<Dossier[]>(`${this.apiUrl}/dossiers/${idDossier}/versions`);
+  }
+
+  /**
+   * `GET /api/dossiers/{id}/perimetre-examen` (backend `5d51d4b`) — ce qui doit être examiné, ligne par
+   * ligne, pour ce dossier : MÊME calcul que la garde de complétude à la soumission (autorité serveur).
+   * Fondé sur la trace figée à la soumission ; sans trace / hors mise à jour → tout est à examiner.
+   */
+  perimetreExamen(idDossier: number): Observable<PerimetreExamen> {
+    return this.http.get<PerimetreExamen>(`${this.apiUrl}/dossiers/${idDossier}/perimetre-examen`);
   }
 
   /**
