@@ -20,6 +20,13 @@ export interface ModificationChamp {
 }
 
 /**
+ * Longueur maximale de l'objet d'un marché — **miroir de la garde serveur** `@Size(max=500)` sur
+ * `designationMarche` (sinon 400 « size must be between 0 and 500 » à la création). Exporté pour que
+ * le parent (soumission) conditionne son bouton « Créer » sur la même limite.
+ */
+export const OBJET_MARCHE_MAX = 500;
+
+/**
  * Grille **éditable partagée** de saisie des marchés d'un PPM : table façon PPM (marché + bénéficiaires
  * + lots + processus/CAPM), revue de transcription (bandeaux auto-corrigé / à vérifier, surlignage
  * cellules, validation par ligne) et modals CAPM & Lots. Portée par la soumission d'un dossier ET le
@@ -139,7 +146,7 @@ export interface ModificationChamp {
                          suffit pas (il disparaît à la saisie) et trois champs n'en avaient aucun.
                          Le numéro de ligne y est repris pour situer le champ (AUDIT.md A3). -->
                     <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'natureLibelle')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'natureLibelle')" placeholder="Nature" [attr.aria-label]="'Nature — ligne ' + (idx + 1)"></textarea></td>
-                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'objet')" [class.sd__cell-modif]="estChampModifie(g, 'designationMarche')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet" [attr.aria-label]="'Objet du marché — ligne ' + (idx + 1)"></textarea></td>
+                    <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'objet')" [class.sd__cell-modif]="estChampModifie(g, 'designationMarche')"><textarea class="form-control sd__c-wrap" rows="1" appAutosize [formControl]="ctrl(g, 'designationMarche')" placeholder="Objet" [attr.maxlength]="objetMax" [attr.aria-label]="'Objet du marché — ligne ' + (idx + 1)"></textarea>@if (objetTropLong(g)) { <span class="form-error psg-objet-err">Objet : {{ objetLen(g) }} car. (max {{ objetMax }}) — raccourcissez-le.</span> }</td>
                     <td [attr.rowspan]="rowspanBenef(g)" [class]="classeCellule(g, 'montEstim')" [class.sd__cell-modif]="estChampModifie(g, 'montEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'montEstim')" [attr.aria-label]="'Montant estimatif initial — ligne ' + (idx + 1)" /></td>
                     <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'nouvMontEstim')"><input class="form-control sd__c-mont" type="text" inputmode="decimal" appMontantFr [formControl]="ctrl(g, 'nouvMontEstim')" placeholder="(si révisé)" [attr.aria-label]="'Nouveau montant estimatif (si révisé) — ligne ' + (idx + 1)" /></td>
                     <td [attr.rowspan]="rowspanBenef(g)" [class.sd__cell-modif]="estChampModifie(g, 'modeLibelle')"><input class="form-control" type="text" [formControl]="ctrl(g, 'modeLibelle')" list="psg-modes" placeholder="Mode" [attr.aria-label]="'Mode de passation — ligne ' + (idx + 1)" /></td>
@@ -428,6 +435,7 @@ export interface ModificationChamp {
     .sd__dates-modal .modal-body { overflow-y: auto; }
     .sd-proc-clear:disabled { opacity: 0.35; cursor: default; }
     .sd-proc-err { color: var(--danger-text); display: block; }
+    .psg-objet-err { display: block; margin-top: 0.2rem; font-size: var(--text-xs); white-space: normal; overflow-wrap: anywhere; }
     /* Modals lots & dates : plus larges que le confirm-modal standard pour laisser respirer les champs. */
     .modal.sd__lots-modal, .modal.sd__dates-modal { max-width: 54rem; }
     .sd__lots-modal .modal-header-plain, .sd__dates-modal .modal-header-plain { padding: 1.25rem 1.5rem 0.5rem; }
@@ -643,6 +651,18 @@ export class PpmSaisieGrid {
   /** Rowspan des colonnes marché = nombre de lignes bénéficiaires (au moins 1). */
   rowspanBenef(g: FormGroup): number {
     return Math.max(1, this.beneficiairesControls(g).length);
+  }
+
+  // — Longueur de l'objet (miroir @Size(max=500) serveur) —
+  /** Limite d'objet exposée au template (attribut `maxlength` + message inline). */
+  readonly objetMax = OBJET_MARCHE_MAX;
+  /** Longueur actuelle de l'objet d'un marché. */
+  objetLen(g: FormGroup): number {
+    return String(g.get('designationMarche')?.value ?? '').length;
+  }
+  /** L'objet dépasse-t-il la limite serveur ? (le PDF importé empile parfois les lots dans l'objet.) */
+  objetTropLong(g: FormGroup): boolean {
+    return this.objetLen(g) > OBJET_MARCHE_MAX;
   }
 
   // — Revue de transcription (anomalies) —

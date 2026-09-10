@@ -11,7 +11,7 @@ import { VacanceStore } from '../../core/vacance/vacance.store';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
-import { PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
+import { OBJET_MARCHE_MAX, PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
 import { FichePresentation, calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { LigneAgpm, calculerAgpm } from '../../shared/prmp/agpm';
 import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, StatutMarche, TypePieceJointe } from '../../models';
@@ -468,7 +468,7 @@ interface ApercuDossier {
             <footer class="sd__foot">
               <button type="button" class="btn btn-outline" (click)="retourChoix()">Retour</button>
               <button type="button" class="btn btn-secondary" (click)="ouvrirApercu()">Aperçu</button>
-              <button type="submit" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite() || justificationsFicheManquantes().length > 0">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || lignesObjetTropLong().length > 0 || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite() || justificationsFicheManquantes().length > 0">
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
@@ -838,7 +838,7 @@ interface ApercuDossier {
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-outline" (click)="fermerApercuAnime()">Fermer</button>
-              <button type="button" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite()" (click)="fermerApercu(); creerPpm()">
+              <button type="button" class="btn btn-primary" [disabled]="submitting() || vacance() || !ppmFormValide || !benefsCoherents || lignesObjetTropLong().length > 0 || (grid()?.nbAValiderRestantes() ?? 0) > 0 || entiteSansLocalite()" (click)="fermerApercu(); creerPpm()">
                 Créer le dossier
               </button>
             </div>
@@ -1656,6 +1656,18 @@ export class SoumettreDossier {
   get benefsCoherents(): boolean {
     return this.marcheControls().every((g) => this.erreurCoherenceBenefs(g) === null);
   }
+  /**
+   * Lignes (n° affiché) dont l'objet dépasse la limite serveur `@Size(max=500)` sur `designationMarche`
+   * — miroir de la garde backend (sinon 400 « size must be between 0 and 500 »). Cas typique : un PDF de
+   * CONTRAT CADRE qui empile l'énumération des lots dans l'objet. Bloque la création tant qu'il en reste.
+   */
+  lignesObjetTropLong(): number[] {
+    const nums: number[] = [];
+    this.marcheControls().forEach((g, i) => {
+      if (String(g.get('designationMarche')?.value ?? '').length > OBJET_MARCHE_MAX) nums.push(i + 1);
+    });
+    return nums;
+  }
 
   // — Aperçu du dossier à créer (lecture seule ; ne crée rien) —
   /** Libellé d'un processus CAPM (pour l'affichage). */
@@ -1816,6 +1828,8 @@ export class SoumettreDossier {
       const nom = m.designationMarche || `marché ${i + 1}`;
       if (m.coherenceErr) w.push(`« ${nom} » : ${m.coherenceErr}`);
       if (m.sansDates) w.push(`« ${nom} » : aucune date prévisionnelle (au moins un processus est obligatoire).`);
+      if ((m.designationMarche ?? '').length > OBJET_MARCHE_MAX)
+        w.push(`Marché ${i + 1} : l'objet dépasse ${OBJET_MARCHE_MAX} caractères (${(m.designationMarche ?? '').length}) — raccourcissez-le.`);
     });
     return w;
   }
@@ -2059,6 +2073,14 @@ export class SoumettreDossier {
     // Cohérence des montants par bénéficiaire (règle serveur) : Σ par bénéficiaire = montant du marché.
     if (!this.benefsCoherents) {
       this.toast.error('Bénéficiaires : la somme des montants par bénéficiaire doit égaler le montant du marché.');
+      return;
+    }
+    // Objet du marché : miroir de la garde serveur `@Size(max=500)` (sinon 400 par ligne).
+    const objetsLongs = this.lignesObjetTropLong();
+    if (objetsLongs.length) {
+      this.toast.error(
+        `L'objet du marché dépasse ${OBJET_MARCHE_MAX} caractères sur la/les ligne(s) ${objetsLongs.join(', ')} — raccourcissez-le (le détail des lots va dans la section « Lots », pas dans l'objet).`,
+      );
       return;
     }
     // Pièces obligatoires : toutes doivent être fournies (vérif. backend renforcée à la soumission).
