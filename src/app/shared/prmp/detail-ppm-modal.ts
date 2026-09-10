@@ -435,7 +435,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
             <!-- ⚠️ Demande pilote (2026-09-10) — PLAN d'une version ANTÉRIEURE (dérivé, lecture seule). -->
             @if (onglet() === 'ppm-ant') {
               <div class="dpm-section" role="tabpanel">
-                <div class="dpm-vsel">
+                <div class="dpm-vsel dpm-vsel--ppm">
                   <label for="dpm-vsel-ppm">Version antérieure</label>
                   <select id="dpm-vsel-ppm" class="form-control" (change)="versionAnterieureSel.set(+$any($event.target).value)">
                     @for (v of versionsAnterieures(); track v.idDossier) {
@@ -450,7 +450,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
             <!-- ⚠️ Demande pilote (2026-09-10) — AGPM d'une version ANTÉRIEURE (dérivé de son plan). -->
             @if (onglet() === 'agpm-ant') {
               <div class="dpm-section" role="tabpanel">
-                <div class="dpm-vsel">
+                <div class="dpm-vsel dpm-vsel--agpm">
                   <label for="dpm-vsel-agpm">Version antérieure</label>
                   <select id="dpm-vsel-agpm" class="form-control" (change)="versionAnterieureSel.set(+$any($event.target).value)">
                     @for (v of versionsAnterieures(); track v.idDossier) {

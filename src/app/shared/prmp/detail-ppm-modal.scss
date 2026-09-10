@@ -454,9 +454,21 @@
    leurs styles vivent chez eux. */
 .dpm-justif-globale { margin: 10px 0 4px; textarea { resize: vertical; } }
 
-/* Sélecteur de version des onglets « PPM/AGPM antérieures » (pilote 2026-09-10). */
+/* Sélecteur de version des onglets « PPM/AGPM antérieures » (pilote 2026-09-10). Couleur DIFFÉRENCIÉE
+   par contenu, reprise des onglets : PPM = bleu (#0284c7), AGPM = orange (#c2410c). */
 .dpm-vsel {
   display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.85rem;
-  label { font-weight: 600; color: var(--n-600, #52525b); white-space: nowrap; }
-  select { max-width: 32rem; }
+  padding: 0.4rem 0.6rem; border-left: 3px solid var(--n-300, #d4d4d8); border-radius: var(--radius-md, 6px);
+  label { font-weight: 700; white-space: nowrap; }
+  select { max-width: 32rem; border-width: 2px; }
+}
+.dpm-vsel--ppm {
+  background: #f0f9ff; border-left-color: #0284c7;
+  label { color: #0284c7; }
+  select { border-color: #0284c7; }
+}
+.dpm-vsel--agpm {
+  background: #fff7ed; border-left-color: #c2410c;
+  label { color: #c2410c; }
+  select { border-color: #c2410c; }
 }
