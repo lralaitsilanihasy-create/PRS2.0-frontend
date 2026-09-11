@@ -20,11 +20,12 @@ export interface ModificationChamp {
 }
 
 /**
- * Longueur maximale de l'objet d'un marché — **miroir de la garde serveur** `@Size(max=500)` sur
- * `designationMarche` (sinon 400 « size must be between 0 and 500 » à la création). Exporté pour que
- * le parent (soumission) conditionne son bouton « Créer » sur la même limite.
+ * Longueur maximale de l'objet d'un marché — **miroir de la garde serveur** `@Size(max=4000)` sur
+ * `designationMarche` (colonne `text` depuis la migration backend V27, 2026-09-10 ; la borne 500 d'origine
+ * contredisait la décision « désignation intégrale » qui garde les lots dans l'objet). Reflète la borne
+ * effective de validation (4000), pour que le parent (soumission) conditionne « Créer » à l'identique.
  */
-export const OBJET_MARCHE_MAX = 500;
+export const OBJET_MARCHE_MAX = 4000;
 
 /**
  * Grille **éditable partagée** de saisie des marchés d'un PPM : table façon PPM (marché + bénéficiaires
