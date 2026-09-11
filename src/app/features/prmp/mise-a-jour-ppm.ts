@@ -652,11 +652,26 @@ export class MiseAJourPpm {
           `PPM importé — ${r.modifiees} modifiée(s), ${r.nouvelles} nouvelle(s), ${r.supprimees} supprimée(s). Vérifiez avant de créer la mise à jour.`,
         );
       },
-      // ⚠️ Pas de toast ici : l'intercepteur d'erreurs affiche déjà le message du serveur (sinon il
-      // paraît en double — très voyant sur le refus de changement d'entité, qui est long).
-      error: () => this.enregistrement.set(false),
+      // L'intercepteur affiche déjà les erreurs SANS `fieldErrors` (ex. le refus de changement d'entité,
+      // message long) — on n'y ajoute rien pour ne pas doubler. MAIS il SUPPRIME le toast des 400 porteurs
+      // de `fieldErrors` (laissés au formulaire) : cet écran n'ayant pas de champ où les poser, l'import
+      // échouait alors EN SILENCE. On les remonte donc ici, en situant le marché fautif.
+      error: (e: ApiError) => {
+        this.enregistrement.set(false);
+        const champs = e.fieldErrors ? Object.entries(e.fieldErrors) : [];
+        if (champs.length) {
+          const detail = champs.map(([champ, msg]) => `${this.libelleChampImport(champ)} : ${msg}`).join(' · ');
+          this.toast.error(detail, "Import de la mise à jour impossible");
+        }
+      },
     });
     input.value = '';
+  }
+
+  /** « marches[1].beneficiaires » → « Marché 2 » (n° 1-based) pour situer une erreur d'import à l'écran. */
+  private libelleChampImport(champ: string): string {
+    const m = /^marches\[(\d+)\]/.exec(champ);
+    return m ? `Marché ${Number(m[1]) + 1}` : champ;
   }
 
   /**
