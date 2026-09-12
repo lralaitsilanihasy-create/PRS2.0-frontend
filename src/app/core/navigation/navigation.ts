@@ -147,7 +147,9 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   MEMBRE: [
-    { label: 'Tableau de bord', path: '/membre/tableau-de-bord', icon: '▤' },
+    // ⚠️ Demande pilote (2026-09-12) — même libellé que le P/CC (« Tous les dossiers »), même écran (le
+    // pipeline `tableau-de-bord`) ; route inchangée.
+    { label: 'Tous les dossiers', path: '/membre/tableau-de-bord', icon: '▤' },
     { label: 'Mes dossiers', path: '/membre/mes-dossiers', icon: '📁' },
     { label: 'Projets de PV', path: '/membre/pv', icon: '📝' },
     { label: 'Projets de lettre de renvoi', path: '/membre/lettre-renvois', icon: '✉' },
