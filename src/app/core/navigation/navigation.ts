@@ -50,7 +50,9 @@ export function separerParDelegation(items: NavItem[]): { cle: string; titre: st
  */
 function menuCommission(base: '/president' | '/cc'): NavItem[] {
   return [
-    { label: 'Tableau de bord', path: `${base}/tableau-de-bord`, icon: '▤' },
+    // ⚠️ Demande pilote (2026-09-12) — « Tableau de bord » renommé « Tous les dossiers » (le pipeline
+    // liste les dossiers du périmètre) ; route inchangée. S'applique à Président ET CC (menu partagé).
+    { label: 'Tous les dossiers', path: `${base}/tableau-de-bord`, icon: '▤' },
     { label: 'Mes dossiers', path: `${base}/mes-dossiers`, icon: '📁' },
     // ⚠️ 2026-08-06 (demande user) — « Projets de PV », « PV définitifs » et « Lettres de renvoi »
     // sont regroupés dans un écran-hub à cartes : ce sont les trois productions d'un même examen.
