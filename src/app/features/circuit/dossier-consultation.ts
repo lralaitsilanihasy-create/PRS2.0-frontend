@@ -707,12 +707,13 @@ export class DossierConsultation implements OnInit {
   readonly montrerReferencePpm = computed(() => ['PRMP', 'UGPM', 'SECRETAIRE'].includes(this.auth.role() ?? ''));
 
   /**
-   * ⚠️ Demande pilote (2026-09-12) — l'historique des versions (cycles de RECTIFICATION du dossier) n'est
-   * PAS montré au Vérificateur : il vérifie la décision, pas le détail des corrections internes du circuit.
-   * Onglet masqué (et son contenu gardé) tant qu'il y a ≥1 version archivée ET que le rôle n'est pas VÉRIFICATEUR.
+   * ⚠️ Demande pilote (2026-09-12) — l'historique des versions (cycles de RECTIFICATION du dossier) est
+   * réservé au **Vérificateur SEULEMENT** : c'est son outil pour suivre comment le plan a été corrigé au
+   * fil des observations. Masqué pour tous les autres profils. Onglet (et contenu) visibles seulement s'il
+   * y a ≥1 version archivée ET que le rôle est VÉRIFICATEUR.
    */
   readonly historiqueVersionsVisible = computed(
-    () => this.versionsArchivees().length > 0 && this.auth.role() !== 'VERIFICATEUR',
+    () => this.versionsArchivees().length > 0 && this.auth.role() === 'VERIFICATEUR',
   );
 
   readonly ppm = signal<Ppm | null>(null);
