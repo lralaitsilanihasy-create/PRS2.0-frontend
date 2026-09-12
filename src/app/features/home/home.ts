@@ -21,8 +21,9 @@ export class Home {
   private readonly router = inject(Router);
 
   constructor() {
-    // À l'ouverture de session : la PRMP atterrit sur « Mes dossiers » ; le Membre, le
-    // Secrétaire, le Président et le CC sur leur classement « Mes dossiers ».
+    // À l'ouverture de session : la PRMP atterrit sur « Mes dossiers » ; le Membre et le Secrétaire sur
+    // leur classement « Mes dossiers » ; le Président et le CC sur « Tous les dossiers » (⚠️ 2026-09-12 :
+    // « Mes dossiers » retiré des espaces P/CC — le tableau de bord porte toute action par dossier).
     if (this.auth.role() === 'MEMBRE') {
       void this.router.navigateByUrl('/membre/mes-dossiers', { replaceUrl: true });
     } else if (this.auth.role() === 'SECRETAIRE') {
@@ -30,9 +31,9 @@ export class Home {
     } else if (this.auth.role() === 'PRMP') {
       void this.router.navigateByUrl('/prmp/dossiers', { replaceUrl: true });
     } else if (this.auth.role() === 'PRESIDENT') {
-      void this.router.navigateByUrl('/president/mes-dossiers', { replaceUrl: true });
+      void this.router.navigateByUrl('/president/tableau-de-bord', { replaceUrl: true });
     } else if (this.auth.role() === 'CHEF_COMMISSION') {
-      void this.router.navigateByUrl('/cc/mes-dossiers', { replaceUrl: true });
+      void this.router.navigateByUrl('/cc/tableau-de-bord', { replaceUrl: true });
     }
   }
 

@@ -63,7 +63,7 @@ export interface ClassementConfig {
   subtitle: string;
   /** Titre de la page (défaut : « Mes dossiers »). */
   titre?: string;
-  /** Base des liens de drill-down (ex. '/president/mes-dossiers'). */
+  /** Base des liens de drill-down (ex. '/membre/mes-dossiers'). */
   base: string;
   groupes: ClassementGroupe[];
   /**

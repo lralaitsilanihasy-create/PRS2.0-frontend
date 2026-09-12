@@ -355,14 +355,16 @@ export class MainLayout {
             this.alerts.update((a) => ({ ...a, '/prmp/a-rectifier': compteurs['dossiersARectifier'] ?? 0 }));
             break;
           case 'PRESIDENT':
-            c['/president/mes-dossiers'] = compteurs['predispatch'] ?? 0;
+            // ⚠️ 2026-09-12 — « Mes dossiers » retiré : la pastille « à dispatcher » passe sur
+            // « Tous les dossiers » (le tableau de bord, où l'action Dispatcher vit désormais).
+            c['/president/tableau-de-bord'] = compteurs['predispatch'] ?? 0;
             break;
           case 'CHEF_COMMISSION':
             // ⚠️ 2026-09-03 — le pré-dispatch des dossiers CENTRAUX relève du seul Président : chez
             // le CC de la centrale, ce compteur désignerait des dossiers que son écran ne montre
             // plus (incohérence pastille 2 / total 1 relevée par le pilote) → pastille supprimée.
-            // Les CC régionaux gardent leur « à dispatcher ».
-            c['/cc/mes-dossiers'] = estLocaliteCentrale(this.auth.localite()) ? 0 : compteurs['predispatch'] ?? 0;
+            // Les CC régionaux gardent leur « à dispatcher ». ⚠️ 2026-09-12 : pastille sur « Tous les dossiers ».
+            c['/cc/tableau-de-bord'] = estLocaliteCentrale(this.auth.localite()) ? 0 : compteurs['predispatch'] ?? 0;
             break;
           case 'SECRETAIRE':
             c['/secretaire/mes-dossiers'] = compteurs['aReceptionner'] ?? 0;

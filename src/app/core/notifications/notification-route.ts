@@ -47,17 +47,13 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   if (!base) return null;
   const type = n.typeNotif ?? '';
 
-  // — Dossier complet, à dispatcher (Président / CC) → drill-down pré-dispatch de « Mes dossiers »
-  //   (l'action Dispatcher y vit) ; le segment :type exige l'idTypeDossier du dossier (résolu par l'appelant).
+  // — Dossier complet, à dispatcher (Président / CC) → « Tous les dossiers » (l'action Dispatcher y vit
+  //   dans la colonne Actions). ⚠️ 2026-09-12 : « Mes dossiers » retiré des espaces P/CC.
   if (type === 'PRET_DISPATCH' && (role === 'PRESIDENT' || role === 'CHEF_COMMISSION')) {
-    return {
-      genre: 'route-type-dossier',
-      versCommands: (t) => [`/${base}/mes-dossiers`, t, 'pre-dispatch'],
-      repli: [`/${base}/mes-dossiers`],
-    };
+    return { genre: 'route', commands: [`/${base}/tableau-de-bord`] };
   }
-  // — Dossier soumis → files de réception (Secrétaire) / suivi (CC).
-  if (type === 'DOSSIER_SOUMIS') return { genre: 'route', commands: [`/${base}/mes-dossiers`] };
+  // — Dossier soumis → « Tous les dossiers » (réception / suivi).
+  if (type === 'DOSSIER_SOUMIS') return { genre: 'route', commands: [`/${base}/tableau-de-bord`] };
   // — Examen (Membre) : directement l'écran d'examen du dossier.
   if ((type === 'EXAMEN_A_FAIRE' || type === 'PIECE_AJOUTEE_APRES_RENVOI') && role === 'MEMBRE' && n.idDossier != null) {
     return { genre: 'route', commands: ['/membre/examiner', String(n.idDossier)] };
@@ -111,15 +107,11 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   if (type === 'COMPLEMENTS_TRANSMIS' && role === 'MEMBRE' && n.idDossier != null) {
     return { genre: 'route', commands: ['/membre/examiner', String(n.idDossier)] };
   }
-  // — CC : copie de dispatch → drill-down dispatch de « Mes dossiers » ; annulation → hub.
+  // — CC : copie de dispatch / annulation → « Tous les dossiers » (⚠️ 2026-09-12 : « Mes dossiers » retiré).
   if (type === 'DISPATCH_CC' && role === 'CHEF_COMMISSION') {
-    return {
-      genre: 'route-type-dossier',
-      versCommands: (t) => ['/cc/mes-dossiers', t, 'dispatch'],
-      repli: ['/cc/mes-dossiers'],
-    };
+    return { genre: 'route', commands: ['/cc/tableau-de-bord'] };
   }
-  if (type === 'DISPATCH_ANNULE' && role === 'CHEF_COMMISSION') return { genre: 'route', commands: ['/cc/mes-dossiers'] };
+  if (type === 'DISPATCH_ANNULE' && role === 'CHEF_COMMISSION') return { genre: 'route', commands: ['/cc/tableau-de-bord'] };
   // — Chargé de publication : dossier clôturé éligible → écran des publications.
   if (type === 'CLOTURE_ELIGIBLE' && role === 'CHARGE_PUBLICATION') {
     return { genre: 'route', commands: ['/publication/publications'] };

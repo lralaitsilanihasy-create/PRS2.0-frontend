@@ -53,7 +53,9 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // ⚠️ Demande pilote (2026-09-12) — « Tableau de bord » renommé « Tous les dossiers » (le pipeline
     // liste les dossiers du périmètre) ; route inchangée. S'applique à Président ET CC (menu partagé).
     { label: 'Tous les dossiers', path: `${base}/tableau-de-bord`, icon: '▤' },
-    { label: 'Mes dossiers', path: `${base}/mes-dossiers`, icon: '📁' },
+    // ⚠️ Demande pilote (2026-09-12) — « Mes dossiers » RETIRÉ (P/CC) : « Tous les dossiers » porte
+    // désormais toute action par dossier dans sa colonne Actions (dispatch, examen — délégation Membre
+    // comprise) ; le classement par type et les compteurs faisaient double emploi.
     // ⚠️ Demande pilote (2026-09-12) — la section « Dispatchs par contrôleur » quitte « Mes dossiers »
     // pour sa propre entrée de menu « Répartition de dispatch » (écran dédié, composant autonome).
     { label: 'Répartition de dispatch', path: `${base}/repartition-dispatch`, icon: '📊' },

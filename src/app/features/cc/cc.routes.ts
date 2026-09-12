@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 
-import { CIRCUIT_GROUPES, GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../circuit/dossiers-classement';
+import { GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../circuit/dossiers-classement';
 
 
 
@@ -21,9 +21,9 @@ import { CIRCUIT_GROUPES, GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../ci
 
 
 
-/** Classement « Mes dossiers » (CC) : cartes par type × {pré-dispatch, dispatch}, scopé à sa localité.
- *  La section « Dispatchs par contrôleur » a son propre écran « Répartition de dispatch » (voir route). */
-const CLASSEMENT_CC = { subtitle: 'Domaine Chef de commission', base: '/cc/mes-dossiers', groupes: CIRCUIT_GROUPES, retraitsPath: '/cc/retraits' };
+// ⚠️ Demande pilote (2026-09-12) — « Mes dossiers » RETIRÉ (P/CC) : « Tous les dossiers » (tableau de
+// bord) porte toute action par dossier dans sa colonne Actions. Le classement `CLASSEMENT_CC` et ses
+// routes `mes-dossiers` sont supprimés ; « Dispatchs par contrôleur » vit dans « Répartition de dispatch ».
 
 /** ⚠️ Demande pilote (2026-09-03) — les tâches du Secrétaire quittent les cartes de « Mes dossiers »
  *  pour UNE entrée de menu « Exercé par délégation » (les deux groupes COMBINÉS — le dépôt entre en
@@ -38,8 +38,6 @@ export const CC_ROUTES: Routes = [
     loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline),
     data: { title: 'Dossiers de ma localité' },
   },
-  { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_CC } },
-  { path: 'mes-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_CC } },
   { path: 'secretariat', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_SECRETARIAT_CC } },
   { path: 'secretariat/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_SECRETARIAT_CC } },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le CC administre SA localité (scopé serveur).
