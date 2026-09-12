@@ -169,7 +169,9 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   ASSISTANT_CONTROLEUR: [
-    { label: 'Tableau de bord', path: '/assistant/tableau-de-bord', icon: '▤' },
+    // ⚠️ Demande pilote (2026-09-12) — même libellé que P/CC/Membre (« Tous les dossiers »), même écran
+    // (pipeline `tableau-de-bord`) ; route inchangée.
+    { label: 'Tous les dossiers', path: '/assistant/tableau-de-bord', icon: '▤' },
     { label: 'Lettres de renvoi reçues', path: '/assistant/lettre-renvois', icon: '✉' },
     { label: 'PV reçus', path: '/assistant/pv-examens', icon: '📄' },
     // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
