@@ -1,9 +1,6 @@
 import { Routes } from '@angular/router';
 
 
-import { GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../circuit/dossiers-classement';
-
-
 
 
 
@@ -26,10 +23,9 @@ import { GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../circuit/dossiers-cl
 // ses routes `mes-dossiers` sont supprimés ; la section « Dispatchs par contrôleur » vit dans son propre
 // écran « Répartition de dispatch ».
 
-/** ⚠️ Demande pilote (2026-09-03) — les tâches du Secrétaire quittent les cartes de « Mes dossiers »
- *  pour UNE entrée de menu « Exercé par délégation » (les deux groupes COMBINÉS — le dépôt entre en
- *  Réceptions et ressort en Enregistrés, un seul écran suffit). */
-const CLASSEMENT_SECRETARIAT_PRESIDENT = { subtitle: 'Domaine Président', titre: 'Réception & Enregistrement', base: '/president/secretariat', groupes: [GROUPE_RECEPTIONS, GROUPE_ENREGISTREMENT] };
+// ⚠️ Demande pilote (2026-09-12) — « Réception & Enregistrement » (délégation Secrétaire) RETIRÉ des
+// espaces P/CC : son unique action « Attribuer un numéro » est inline dans « Tous les dossiers ». Le
+// classement `CLASSEMENT_SECRETARIAT_PRESIDENT` et les routes `secretariat` sont supprimés.
 
 /** Espace Président (lazy, sous roleGuard PRESIDENT). */
 export const PRESIDENT_ROUTES: Routes = [
@@ -39,8 +35,6 @@ export const PRESIDENT_ROUTES: Routes = [
     loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline),
     data: { title: 'Tous types de dossiers confondus' },
   },
-  { path: 'secretariat', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_SECRETARIAT_PRESIDENT } },
-  { path: 'secretariat/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_SECRETARIAT_PRESIDENT } },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le Président administre partout.
   { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
   // ⚠️ Demande pilote (2026-09-12) — « Répartition de dispatch » quitte « Mes dossiers » pour son propre

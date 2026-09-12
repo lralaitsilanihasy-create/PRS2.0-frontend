@@ -1,9 +1,6 @@
 import { Routes } from '@angular/router';
 
 
-import { GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../circuit/dossiers-classement';
-
-
 
 
 
@@ -25,10 +22,9 @@ import { GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../circuit/dossiers-cl
 // bord) porte toute action par dossier dans sa colonne Actions. Le classement `CLASSEMENT_CC` et ses
 // routes `mes-dossiers` sont supprimés ; « Dispatchs par contrôleur » vit dans « Répartition de dispatch ».
 
-/** ⚠️ Demande pilote (2026-09-03) — les tâches du Secrétaire quittent les cartes de « Mes dossiers »
- *  pour UNE entrée de menu « Exercé par délégation » (les deux groupes COMBINÉS — le dépôt entre en
- *  Réceptions et ressort en Enregistrés, un seul écran suffit). */
-const CLASSEMENT_SECRETARIAT_CC = { subtitle: 'Domaine Chef de commission', titre: 'Réception & Enregistrement', base: '/cc/secretariat', groupes: [GROUPE_RECEPTIONS, GROUPE_ENREGISTREMENT] };
+// ⚠️ Demande pilote (2026-09-12) — « Réception & Enregistrement » (délégation Secrétaire) RETIRÉ des
+// espaces P/CC : son unique action « Attribuer un numéro » est inline dans « Tous les dossiers ». Le
+// classement `CLASSEMENT_SECRETARIAT_CC` et les routes `secretariat` sont supprimés.
 
 /** Espace Chef de commission (lazy, sous roleGuard CHEF_COMMISSION). */
 export const CC_ROUTES: Routes = [
@@ -38,8 +34,6 @@ export const CC_ROUTES: Routes = [
     loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline),
     data: { title: 'Dossiers de ma localité' },
   },
-  { path: 'secretariat', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_SECRETARIAT_CC } },
-  { path: 'secretariat/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_SECRETARIAT_CC } },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le CC administre SA localité (scopé serveur).
   { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
   // ⚠️ Demande pilote (2026-09-12) — « Répartition de dispatch » quitte « Mes dossiers » pour son propre

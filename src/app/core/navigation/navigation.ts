@@ -69,13 +69,12 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     { label: 'Demandes de retrait', path: `${base}/retraits`, icon: '↩' },
     // ⚠️ Délégation ascendante (spec 2026-08-14) — tâches du Vérificateur et de l'Assistant exercées
     // par Président/CC : entrées affichées SEULEMENT si la paire est active en base (champ `delegation`).
-    // Les tâches Secrétaire (réceptions) et Membre (Examiner) vivent dans « Mes dossiers » (groupes/actions
-    // gardés par capacités, mêmes paires).
-    // ⚠️ Demande pilote (2026-09-03) — les tâches du SECRÉTAIRE vivent ICI (menu « Exercé par
-    // délégation »), plus dans les cartes de « Mes dossiers » ; les files « À examiner / Examinés »
-    // du Membre, elles, sont DANS ces cartes (rubrique déléguée). Une SEULE entrée combinée
-    // (demande du même jour) : le dépôt entre en Réceptions et ressort en Enregistrés.
-    { label: 'Réception & Enregistrement', path: `${base}/secretariat`, icon: '📥', delegation: 'SECRETAIRE' },
+    // Les tâches Secrétaire (Attribuer un numéro) et Membre (Examiner) vivent dans « Tous les dossiers »
+    // (actions inline gardées par capacités, mêmes paires).
+    // ⚠️ Demande pilote (2026-09-12) — « Réception & Enregistrement » RETIRÉ du menu délégué : son unique
+    // action (« Attribuer un numéro ») est désormais inline dans « Tous les dossiers ». Restent les deux
+    // délégations sans équivalent inline complet : Vérifications (PV joint, avis, ciblage) et Archivage
+    // des PV (liste de PV, action de clôture).
     { label: 'Vérifications', path: `${base}/verifications`, icon: '🔎', delegation: 'VERIFICATEUR' },
     { label: 'Archivage des PV', path: `${base}/pv-examens`, icon: '🗄', delegation: 'ASSISTANT_CONTROLEUR' },
     // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant, administrées par
