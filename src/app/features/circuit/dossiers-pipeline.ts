@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -12,6 +13,7 @@ import {
   DossierService,
   EntiteContractService,
   ExamenService,
+  LocaliteService,
   PvExamenService,
   ReceptionService,
   ReferenceLookupService,
@@ -38,11 +40,15 @@ import { DetailPvModal } from './detail-pv-modal';
 @Component({
   selector: 'app-dossiers-pipeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, StatutBadge, CircuitTimeline, DossierConsultation, DetailPvModal, EtatErreur],
+  imports: [RouterLink, NgTemplateOutlet, StatutBadge, CircuitTimeline, DossierConsultation, DetailPvModal, EtatErreur],
   template: `
     <section class="pipeline">
-      <header class="page-header">
+      <header class="page-header pipeline__header">
         <h1 class="page-title">{{ title }}</h1>
+        <div class="pipeline__vue" role="group" aria-label="Choix de l'affichage">
+          <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'frise'" [class.btn-outline]="vue() !== 'frise'" [attr.aria-pressed]="vue() === 'frise'" (click)="setVue('frise')">Frise</button>
+          <button type="button" class="btn btn-sm" [class.btn-primary]="vue() === 'tableau'" [class.btn-outline]="vue() !== 'tableau'" [attr.aria-pressed]="vue() === 'tableau'" (click)="setVue('tableau')">Tableau</button>
+        </div>
       </header>
 
       @if (loading()) {
@@ -51,6 +57,39 @@ import { DetailPvModal } from './detail-pv-modal';
         <app-etat-erreur message="Impossible de charger les dossiers." (reessayer)="charger()" />
       } @else if (visibleDossiers().length === 0) {
         <p class="text-muted">{{ messageVide }}</p>
+      } @else {
+        @if (vue() === 'tableau') {
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Référence</th>
+                <th scope="col">Entité contractante</th>
+                <th scope="col">Localité</th>
+                <th scope="col">Statut</th>
+                <th scope="col">Date de réception</th>
+                <th scope="col" class="r">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of visibleDossiers(); track d.idDossier) {
+                @let info = etapeInfo(d);
+                <tr>
+                  <td>{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</td>
+                  <td>{{ entiteLabel(d) }}</td>
+                  <td>{{ localiteLabel(d) }}</td>
+                  <td><app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" /></td>
+                  <td style="white-space:nowrap;">{{ dateReceptionFmt(d) || '—' }}</td>
+                  <td>
+                    <div class="td-actions actions-end">
+                      <ng-container [ngTemplateOutlet]="actionsTpl" [ngTemplateOutletContext]="{ $implicit: d, info }" />
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       } @else {
         <ul class="pipeline__list">
           @for (d of visibleDossiers(); track d.idDossier) {
@@ -68,28 +107,7 @@ import { DetailPvModal } from './detail-pv-modal';
                 }
                 <div class="dossier-card__head-right">
                   <app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" />
-                  <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
-                  @if (showExamenAction && info.cle === 'EXAMEN' && peutAgir(info)) {
-                    <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Examiner</a>
-                  }
-                  @if (examenModifiable(d)) {
-                    <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Modifier l'examen</a>
-                  }
-                  <!-- ⚠️ File Vérificateur : le dossier à vérifier est ACCOMPAGNÉ de son PV définitif. -->
-                  @if (showVerifAction && pvSigne(d); as p) {
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="pvDetail.set(p)">PV définitif</button>
-                  }
-                  @if (showVerifAction && d.statut === 'EN_VERIFICATION') {
-                    <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">
-                      {{ pvSigne(d)?.idAvis === 'FAVR' ? 'Vérifier' : 'Transmettre la décision' }}
-                    </a>
-                  }
-                  @if (showVerifAction && d.statut === 'OBSERVATIONS_LEVEES') {
-                    <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Transmettre à SIGMP</a>
-                  }
-                  @if (showVerifAction && (d.statut === 'EN_ATTENTE_DECISION_PRMP' || d.statut === 'DECISION_TRANSMISE_SIGMP')) {
-                    <a class="btn btn-secondary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Voir</a>
-                  }
+                  <ng-container [ngTemplateOutlet]="actionsTpl" [ngTemplateOutletContext]="{ $implicit: d, info }" />
                 </div>
               </div>
               @if (showTimeline) {
@@ -98,6 +116,7 @@ import { DetailPvModal } from './detail-pv-modal';
             </li>
           }
         </ul>
+        }
 
         <!-- File de travail sans endpoint paginé : le reste est déjà chargé, on le RÉVÈLE. -->
         @if (resteARendre() > 0) {
@@ -118,6 +137,32 @@ import { DetailPvModal } from './detail-pv-modal';
       }
     </section>
 
+    <!-- Actions d'un dossier — partagées par la frise (cartes) et le tableau (colonne Actions). -->
+    <ng-template #actionsTpl let-d let-info="info">
+      <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
+      @if (showExamenAction && info.cle === 'EXAMEN' && peutAgir(info)) {
+        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Examiner</a>
+      }
+      @if (examenModifiable(d)) {
+        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Modifier l'examen</a>
+      }
+      <!-- ⚠️ File Vérificateur : le dossier à vérifier est ACCOMPAGNÉ de son PV définitif. -->
+      @if (showVerifAction && pvSigne(d); as p) {
+        <button type="button" class="btn btn-secondary btn-sm" (click)="pvDetail.set(p)">PV définitif</button>
+      }
+      @if (showVerifAction && d.statut === 'EN_VERIFICATION') {
+        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">
+          {{ pvSigne(d)?.idAvis === 'FAVR' ? 'Vérifier' : 'Transmettre la décision' }}
+        </a>
+      }
+      @if (showVerifAction && d.statut === 'OBSERVATIONS_LEVEES') {
+        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Transmettre à SIGMP</a>
+      }
+      @if (showVerifAction && (d.statut === 'EN_ATTENTE_DECISION_PRMP' || d.statut === 'DECISION_TRANSMISE_SIGMP')) {
+        <a class="btn btn-secondary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Voir</a>
+      }
+    </ng-template>
+
     @if (consulte(); as d) {
       <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
     }
@@ -126,6 +171,10 @@ import { DetailPvModal } from './detail-pv-modal';
     }
   `,
   styles: `
+    .pipeline__header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .pipeline__vue { display: inline-flex; gap: 0.35rem; }
+    .table-card table td .td-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .table-card table td .actions-end { justify-content: flex-end; }
     .pipeline__list {
       list-style: none;
       margin: 0;
@@ -212,6 +261,9 @@ export class DossiersPipeline {
   private readonly lookups = inject(ReferenceLookupService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly entiteMap = signal<Map<string, string>>(new Map());
+  private readonly localiteMap = signal<Map<string, string>>(new Map());
+  /** Affichage : frise (cartes) ou tableau ; choix mémorisé par navigateur (localStorage). */
+  readonly vue = signal<'frise' | 'tableau'>(this.lireVue());
 
   protected readonly title = (this.route.snapshot.data['title'] as string) ?? 'Dossiers';
   /** Frise du circuit par dossier ; désactivable via `route.data.timeline === false`. */
@@ -332,12 +384,15 @@ export class DossiersPipeline {
 
   constructor() {
     this.charger();
-    // Libellés d'entité (cache partagé) — pour les files Membre qui les affichent.
-    if (this.source) {
-      this.lookups
-        .lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite'])
-        .subscribe((m) => this.entiteMap.set(m));
-    }
+    // Libellés d'entité + localité (cache partagé) — colonnes « Entité contractante » / « Localité » de
+    // la vue tableau (chargés inconditionnellement : sur le dashboard `source` est nul mais le tableau
+    // les affiche) et files Membre qui montrent déjà l'entité.
+    this.lookups
+      .lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite'])
+      .subscribe((m) => this.entiteMap.set(m));
+    this.lookups
+      .lookup(LocaliteService, 'idLocalite', ['libelleLocalite'])
+      .subscribe((m) => this.localiteMap.set(m));
     // Suppression d'un dossier propagée depuis un autre écran → retrait local immédiat de sa carte.
     this.dossiersRefresh.supprime$
       .pipe(takeUntilDestroyed())
@@ -510,6 +565,35 @@ export class DossiersPipeline {
     return d.idEntiteContract != null
       ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract
       : '—';
+  }
+
+  /** Libellé de la localité du dossier (cache) — colonne « Localité » du tableau. */
+  localiteLabel(d: Dossier): string {
+    return d.idLocalite ? this.localiteMap().get(d.idLocalite) ?? d.idLocalite : '—';
+  }
+
+  /** Date de réception (1ʳᵉ étape du circuit) formatée `jj/mm/aaaa`, vide si non franchie. */
+  dateReceptionFmt(d: Dossier): string {
+    const iso = this.datesByDossier().get(d.idDossier)?.[0];
+    return iso ? DossiersPipeline.dateCourte(iso) : '';
+  }
+
+  /** Lecture du choix d'affichage mémorisé (tolère un localStorage indisponible/bloqué). */
+  private lireVue(): 'frise' | 'tableau' {
+    try {
+      return localStorage.getItem('cnm-pipeline-vue') === 'tableau' ? 'tableau' : 'frise';
+    } catch {
+      return 'frise';
+    }
+  }
+  /** Bascule l'affichage et mémorise le choix (best-effort). */
+  setVue(v: 'frise' | 'tableau'): void {
+    this.vue.set(v);
+    try {
+      localStorage.setItem('cnm-pipeline-vue', v);
+    } catch {
+      /* localStorage indisponible : le choix ne persiste pas, sans conséquence. */
+    }
   }
 
   /** Libellé contextuel du badge dans la file Vérificateur : « En attente PRMP » pour EN_ATTENTE_DECISION_PRMP. */
