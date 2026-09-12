@@ -167,6 +167,9 @@ import { ReceptionForm } from './reception-form';
       @if (peutExaminerDash(d)) {
         <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">{{ d.statut === 'A_REEXAMINER' ? 'Réexaminer' : 'Examiner' }}</a>
       }
+      @if (peutModifierExamenDash(d)) {
+        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Modifier l'examen</a>
+      }
       @if (peutVerifierDash(d)) {
         <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Vérifier</a>
       }
@@ -461,6 +464,20 @@ export class DossiersPipeline {
       (d.statut === 'DISPATCHE' || d.statut === 'A_REEXAMINER') &&
       this.permissions.can('EXAMEN_WRITE') &&
       this.dispatchByDossier().get(d.idDossier)?.imCtrlMembre === this.auth.ref()
+    );
+  }
+  /**
+   * « Modifier l'examen » : dossier déjà EXAMINÉ attribué à MOI, tant que son projet de PV n'est pas
+   * soumis. Reprend, INLINE sur le tableau de bord, la seule action que portait la file « Examinés »
+   * (délégation Membre) — pour que « Tous les dossiers » reste complet sans onglet séparé.
+   */
+  peutModifierExamenDash(d: Dossier): boolean {
+    return (
+      this.dashboard &&
+      d.statut === 'EXAMINE' &&
+      this.permissions.can('EXAMEN_WRITE') &&
+      this.dispatchByDossier().get(d.idDossier)?.imCtrlMembre === this.auth.ref() &&
+      !this.pvSoumisDossiers().has(d.idDossier)
     );
   }
   /** « Vérifier » : dossier en vérification, et je porte la vérification. */
