@@ -226,50 +226,22 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                   Chaque rectification archive la version qu'elle remplace, telle qu'elle était. La version
                   courante est celle du dossier. Sélectionnez une version pour l'afficher en lecture seule.
                 </p>
-                <!-- Même langage que le journal (dc-journal) : la plus récente en tête, la courante d'abord. -->
-                <table class="dc-journal dc-hist" aria-label="Versions du dossier">
-                  <thead>
-                    <tr>
-                      <th scope="col">N°</th><th scope="col">Origine</th><th scope="col">Date</th><th scope="col">Auteur</th>
-                      <th scope="col" class="dc-hist__num">Cycle</th><th scope="col" class="dc-hist__num">Lignes</th><th scope="col" class="dc-hist__action">Affichage</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr [class.dc-hist__on]="versionAffichee() === null">
-                      <td class="dc-hist__num">{{ versionsArchivees().length + 1 }}</td>
-                      <td><span class="badge dc-hist__courante">Version courante</span></td>
-                      <!-- ⚠️ 2026-09-08 : la courante porte la date/auteur de la dernière rectification, le geste qui l'a produite. -->
-                      <td class="dc-journal__date" [title]="derniereRectification() ? 'Produite par la dernière rectification' : ''">{{ derniereRectification()?.dateVersion ? (derniereRectification()!.dateVersion | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
-                      <td>{{ derniereRectification() ? (derniereRectification()!.nomAuteur || derniereRectification()!.auteur || derniereRectification()!.idPrmpAuteur || '—') : '—' }}</td>
-                      <td class="dc-hist__num">—</td>
-                      <td class="dc-hist__num">{{ marches().length }}</td>
-                      <td class="dc-hist__action">
-                        @if (versionAffichee() === null) {
-                          <span class="dc-hist__affichee" aria-current="true">Affichée</span>
-                        } @else {
-                          <button type="button" class="btn btn-ghost btn-sm" (click)="afficherVersionCourante()">Afficher</button>
-                        }
-                      </td>
-                    </tr>
+                <!-- Sélecteur de version (demande pilote 2026-09-12) : la plus récente en tête, la
+                     courante d'abord ; les métadonnées de la version choisie sont reprises dans le
+                     bandeau ci-dessous. -->
+                <div class="dc-hist__select">
+                  <label for="dc-hist-version">Version à afficher</label>
+                  <select id="dc-hist-version" class="form-control" (change)="choisirVersion($any($event.target).value)">
+                    <option value="courante" [selected]="versionAffichee() === null">
+                      Version courante (n° {{ versionsArchivees().length + 1 }}) — {{ marches().length }} ligne(s)@if (derniereRectification()?.dateVersion) {, {{ derniereRectification()!.dateVersion | date: 'dd/MM/yyyy HH:mm' }}}
+                    </option>
                     @for (v of versionsArchiveesRecentesDAbord(); track v.numero) {
-                      <tr [class.dc-hist__on]="versionAffichee() === v.numero">
-                        <td class="dc-hist__num">{{ v.numero }}</td>
-                        <td>{{ origineLabel(v.origine) }}</td>
-                        <td class="dc-journal__date">{{ v.dateVersion | date: 'dd/MM/yyyy HH:mm' }}</td>
-                        <td>{{ v.nomAuteur || v.auteur || v.idPrmpAuteur || '—' }}</td>
-                        <td class="dc-hist__num">{{ v.cycle ?? '—' }}</td>
-                        <td class="dc-hist__num">{{ v.nbLignes }}</td>
-                        <td class="dc-hist__action">
-                          @if (versionAffichee() === v.numero) {
-                            <span class="dc-hist__affichee" aria-current="true">Affichée</span>
-                          } @else {
-                            <button type="button" class="btn btn-ghost btn-sm" (click)="afficherVersion(v)" [attr.aria-label]="'Afficher la version n° ' + v.numero">Afficher</button>
-                          }
-                        </td>
-                      </tr>
+                      <option [value]="v.numero" [selected]="versionAffichee() === v.numero">
+                        Version n° {{ v.numero }} — {{ origineLabel(v.origine) }}@if (v.cycle != null) {, cycle {{ v.cycle }}} · {{ v.dateVersion | date: 'dd/MM/yyyy HH:mm' }} · {{ v.nbLignes }} ligne(s)
+                      </option>
                     }
-                  </tbody>
-                </table>
+                  </select>
+                </div>
 
                 <!-- La version sélectionnée, dans le MÊME tableau partagé que le plan courant (lecture seule,
                      sans surlignage : une version archivée n'est comparée à rien). -->
@@ -528,6 +500,9 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
     /* Historique des versions (2026-09-06) : liste au langage du journal, version affichée marquée,
        bandeau d'identité au-dessus du tableau partagé. Tokens du design system uniquement. */
     .dc-hist-intro { margin: 0 0 12px; font-size: 12.5px; color: var(--n-500); }
+    .dc-hist__select { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 16px; flex-wrap: wrap; }
+    .dc-hist__select label { font-weight: 600; color: var(--n-700); }
+    .dc-hist__select select { max-width: 44rem; }
     .dc-hist { margin-bottom: 14px; }
     .dc-hist th.dc-hist__num, .dc-hist td.dc-hist__num { text-align: right; font-variant-numeric: tabular-nums; }
     .dc-hist th.dc-hist__action, .dc-hist td.dc-hist__action { text-align: right; white-space: nowrap; }
@@ -822,6 +797,17 @@ export class DossierConsultation implements OnInit {
         )
       : [];
   });
+
+  /** Sélecteur de version (change) : « courante » → version du dossier, sinon la version archivée choisie. */
+  choisirVersion(val: string): void {
+    if (val === 'courante') {
+      this.afficherVersionCourante();
+      return;
+    }
+    const num = Number(val);
+    const v = this.versionsArchivees().find((x) => x.numero === num);
+    if (v) this.afficherVersion(v);
+  }
 
   afficherVersionCourante(): void {
     this.versionAffichee.set(null);
