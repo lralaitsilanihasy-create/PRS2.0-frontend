@@ -233,11 +233,11 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                   <label for="dc-hist-version">Version à afficher</label>
                   <select id="dc-hist-version" class="form-control" (change)="choisirVersion($any($event.target).value)">
                     <option value="courante" [selected]="versionAffichee() === null">
-                      Version courante (n° {{ versionsArchivees().length + 1 }}) — {{ marches().length }} ligne(s)@if (derniereRectification()?.dateVersion) {, {{ derniereRectification()!.dateVersion | date: 'dd/MM/yyyy HH:mm' }}}
+                      En vigueur (n° {{ versionsArchivees().length + 1 }}) — {{ marches().length }} ligne(s)@if (derniereRectification()?.dateVersion) {, {{ derniereRectification()!.dateVersion | date: 'dd/MM/yyyy HH:mm' }}}
                     </option>
                     @for (v of versionsArchiveesRecentesDAbord(); track v.numero) {
                       <option [value]="v.numero" [selected]="versionAffichee() === v.numero">
-                        Version n° {{ v.numero }} — {{ origineLabel(v.origine) }}@if (v.cycle != null) {, cycle {{ v.cycle }}} · {{ v.dateVersion | date: 'dd/MM/yyyy HH:mm' }} · {{ v.nbLignes }} ligne(s)
+                        {{ origineLabel(v.origine) }} n° {{ v.numero }}@if (v.cycle != null) {, cycle {{ v.cycle }}} · {{ v.dateVersion | date: 'dd/MM/yyyy HH:mm' }} · {{ v.nbLignes }} ligne(s)
                       </option>
                     }
                   </select>
@@ -248,7 +248,7 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                 <div class="dc-hist-vue">
                   @if (versionAffichee() === null) {
                     <div class="dc-hist-bandeau">
-                      <span class="badge dc-hist__courante">Version courante</span>
+                      <span class="badge dc-hist__courante">En vigueur</span>
                       <span>{{ marches().length }} marché(s) · état actuel du dossier</span>
                     </div>
                     <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
@@ -258,11 +258,10 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                     <app-etat-erreur [message]="'Chargement impossible de la version n° ' + versionAffichee() + '.'" (reessayer)="reessayerVersion()" />
                   } @else if (versionVue(); as vue) {
                     <div class="dc-hist-bandeau">
-                      <span class="badge dc-hist__archivee">Version n° {{ vue.detail.version.numero }}</span>
+                      <span class="badge dc-hist__archivee">{{ origineLabel(vue.detail.version.origine) }} n° {{ vue.detail.version.numero }}</span>
                       <span>
                         archivée le {{ vue.detail.version.dateVersion | date: 'dd/MM/yyyy à HH:mm' }}
-                        par {{ vue.detail.version.nomAuteur || vue.detail.version.auteur || vue.detail.version.idPrmpAuteur || '—' }}
-                        · {{ origineLabel(vue.detail.version.origine) }}@if (vue.detail.version.cycle != null) {, cycle {{ vue.detail.version.cycle }}}
+                        par {{ vue.detail.version.nomAuteur || vue.detail.version.auteur || vue.detail.version.idPrmpAuteur || '—' }}@if (vue.detail.version.cycle != null) { · cycle {{ vue.detail.version.cycle }} }
                         @if (vue.detail.version.reference) { · réf. {{ vue.detail.version.reference }} }
                         @if (vue.detail.version.dateSignature) { · signé le {{ vue.detail.version.dateSignature | date: 'dd/MM/yyyy' }} }
                       </span>
