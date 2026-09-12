@@ -31,6 +31,8 @@ import {
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossierConsultation } from './dossier-consultation';
 import { DetailPvModal } from './detail-pv-modal';
+import { DispatchForm, DispatchItem } from './dispatch-form';
+import { ReceptionForm } from './reception-form';
 
 /**
  * Pipeline des dossiers (lecture seule) : liste filtrée par le backend selon le
@@ -40,7 +42,7 @@ import { DetailPvModal } from './detail-pv-modal';
 @Component({
   selector: 'app-dossiers-pipeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, NgTemplateOutlet, StatutBadge, CircuitTimeline, DossierConsultation, DetailPvModal, EtatErreur],
+  imports: [RouterLink, NgTemplateOutlet, StatutBadge, CircuitTimeline, DossierConsultation, DetailPvModal, EtatErreur, DispatchForm, ReceptionForm],
   template: `
     <section class="pipeline">
       <header class="page-header pipeline__header">
@@ -154,6 +156,23 @@ import { DetailPvModal } from './detail-pv-modal';
     <!-- Actions d'un dossier — partagées par la frise (cartes) et le tableau (colonne Actions). -->
     <ng-template #actionsTpl let-d let-info="info">
       <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
+      <!-- Actions contextuelles du TABLEAU DE BORD (2026-09-12) : l'action à faire par dossier, selon
+           son statut ET la capacité du profil (inline, comme « Mes dossiers »). -->
+      @if (peutReceptionnerDash(d)) {
+        <button type="button" class="btn btn-primary btn-sm" (click)="receptionItem.set(d)">Attribuer un numéro</button>
+      }
+      @if (dispatchableDe(d); as rec) {
+        <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirDispatch(d, rec)">Dispatcher</button>
+      }
+      @if (peutExaminerDash(d)) {
+        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">{{ d.statut === 'A_REEXAMINER' ? 'Réexaminer' : 'Examiner' }}</a>
+      }
+      @if (peutVerifierDash(d)) {
+        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Vérifier</a>
+      }
+      @if (peutTransmettreDash(d)) {
+        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Transmettre à SIGMP</a>
+      }
       @if (showExamenAction && info.cle === 'EXAMEN' && peutAgir(info)) {
         <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Examiner</a>
       }
@@ -182,6 +201,12 @@ import { DetailPvModal } from './detail-pv-modal';
     }
     @if (pvDetail(); as p) {
       <app-detail-pv-modal [pv]="p" (fermer)="pvDetail.set(null)" />
+    }
+    @if (dispatchItems(); as its) {
+      <app-dispatch-form [items]="its" (closed)="fermerDispatch()" (saved)="onDispatched()" />
+    }
+    @if (receptionItem(); as d) {
+      <app-reception-form [dossier]="d" (closed)="receptionItem.set(null)" (saved)="onReception()" />
     }
   `,
   styles: `
@@ -379,6 +404,94 @@ export class DossiersPipeline {
   private readonly examens = signal<Examen[]>([]);
   private readonly pvs = signal<PvExamen[]>([]);
   private readonly verifications = signal<Verification[]>([]);
+
+  // ── Actions contextuelles du TABLEAU DE BORD (demande pilote 2026-09-12) : l'action à faire par
+  //    dossier, selon son STATUT et la capacité du profil (mêmes gestes que « Mes dossiers », inline). ──
+  /** Vue tableau de bord (source non définie) : seule à porter les actions contextuelles. */
+  private get dashboard(): boolean {
+    return this.source === undefined;
+  }
+  /** idDossier → dernière réception (par date). */
+  private readonly recByDossier = computed(() => {
+    const m = new Map<number, Reception>();
+    for (const r of this.receptions()) {
+      const prec = m.get(r.idDossier);
+      if (!prec || (r.dateReception ?? '') >= (prec.dateReception ?? '')) m.set(r.idDossier, r);
+    }
+    return m;
+  });
+  /** idDossier → dernier dispatch (via sa réception) — donne l'attributaire courant. */
+  private readonly dispatchByDossier = computed(() => {
+    const recById = new Map(this.receptions().map((r) => [r.idReception, r]));
+    const m = new Map<number, Dispatch>();
+    for (const disp of this.dispatchs()) {
+      const idD = recById.get(disp.idReception)?.idDossier;
+      if (idD == null) continue;
+      const prec = m.get(idD);
+      if (!prec || (disp.dateDispatch ?? '') >= (prec.dateDispatch ?? '')) m.set(idD, disp);
+    }
+    return m;
+  });
+  /** idDossier → réception COMPLÈTE non encore dispatchée (= la réception à passer au formulaire). */
+  private readonly recDispatchable = computed(() => {
+    const dispatched = new Set(this.dispatchs().map((d) => d.idReception));
+    const recComplete = new Map<number, Reception>();
+    for (const r of this.receptions()) {
+      const prec = recComplete.get(r.idDossier);
+      if (!prec || (r.complet && !prec.complet)) recComplete.set(r.idDossier, r);
+    }
+    const m = new Map<number, Reception>();
+    for (const [idD, r] of recComplete) if (!dispatched.has(r.idReception)) m.set(idD, r);
+    return m;
+  });
+
+  /** « Attribuer un numéro » : dossier déposé, non encore réceptionné, et je porte la réception. */
+  peutReceptionnerDash(d: Dossier): boolean {
+    return this.dashboard && d.statut === 'SOUMIS' && this.permissions.can('RECEPTION_WRITE') && !this.recByDossier().has(d.idDossier);
+  }
+  /** « Dispatcher » : dossier numéroté (PRET_DISPATCH), je peux dispatcher — renvoie la réception à dispatcher. */
+  dispatchableDe(d: Dossier): Reception | null {
+    if (!this.dashboard || d.statut !== 'PRET_DISPATCH' || !this.permissions.can('DISPATCH_WRITE')) return null;
+    return this.recDispatchable().get(d.idDossier) ?? null;
+  }
+  /** « Examiner / Réexaminer » : dossier dispatché à MOI (attributaire courant), et je porte l'examen. */
+  peutExaminerDash(d: Dossier): boolean {
+    return (
+      this.dashboard &&
+      (d.statut === 'DISPATCHE' || d.statut === 'A_REEXAMINER') &&
+      this.permissions.can('EXAMEN_WRITE') &&
+      this.dispatchByDossier().get(d.idDossier)?.imCtrlMembre === this.auth.ref()
+    );
+  }
+  /** « Vérifier » : dossier en vérification, et je porte la vérification. */
+  peutVerifierDash(d: Dossier): boolean {
+    return this.dashboard && d.statut === 'EN_VERIFICATION' && this.permissions.can('VERIFICATION_WRITE');
+  }
+  /** « Transmettre à SIGMP » : observations levées, et je porte la vérification. */
+  peutTransmettreDash(d: Dossier): boolean {
+    return this.dashboard && d.statut === 'OBSERVATIONS_LEVEES' && this.permissions.can('VERIFICATION_WRITE');
+  }
+
+  /** Dossier + réception dont le formulaire de dispatch est ouvert (null = fermé). */
+  readonly dispatchItems = signal<DispatchItem[] | null>(null);
+  /** Dossier dont le formulaire de réception est ouvert (null = fermé). */
+  readonly receptionItem = signal<Dossier | null>(null);
+  ouvrirDispatch(d: Dossier, rec: Reception): void {
+    this.dispatchItems.set([{ dossier: d, reception: rec }]);
+  }
+  fermerDispatch(): void {
+    this.dispatchItems.set(null);
+  }
+  onDispatched(): void {
+    this.dispatchItems.set(null);
+    this.charger();
+    this.dossiersRefresh.notifierChangement();
+  }
+  onReception(): void {
+    this.receptionItem.set(null);
+    this.charger();
+    this.dossiersRefresh.notifierChangement();
+  }
 
   /**
    * idDossier dont le projet de PV est déjà SOUMIS (statut ≠ BROUILLON) — l'examen n'est alors plus
