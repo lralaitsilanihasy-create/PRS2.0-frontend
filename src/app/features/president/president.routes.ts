@@ -36,7 +36,7 @@ export const PRESIDENT_ROUTES: Routes = [
   {
     path: 'tableau-de-bord',
     loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline),
-    data: { title: 'Pipeline — toutes localités' },
+    data: { title: 'Tous types de dossiers confondus' },
   },
   { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_PRESIDENT } },
   { path: 'mes-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_PRESIDENT } },
