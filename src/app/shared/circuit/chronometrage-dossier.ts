@@ -1,9 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { PermissionsService } from '../../core/auth/permissions.service';
-import { ToastService } from '../../core/notifications/toast.service';
 import { DossierService } from '../../services';
 import {
   Chronometrage,
@@ -14,18 +12,15 @@ import {
 import { tacheChronoVisiblePour } from './circuit-workflow';
 
 /**
- * Chronométrage d'un dossier (règle du pilote 2026-09-01, backend `c66db71`) : prise en charge de
- * l'étape courante avec saisie de la prévision, et restitution — date prévisionnelle de fin,
- * compteurs brut / net CNM, occurrences de tâches.
+ * Chronométrage d'un dossier — RESTITUTION PURE (backend `9648729`, 2026-09-12) : plus de « prise en
+ * charge ». Le délai de chaque étape se mesure **automatiquement** (entrée → fin, dérivé des
+ * transitions horodatées) ; le widget n'affiche que l'état courant, la date prévisionnelle de fin, les
+ * compteurs (brut / net CNM) et le tableau des passages. Aucun geste, aucun calcul de date côté front :
+ * tout vient de `GET /chronometrage`.
  *
  * Deux présentations :
- * - `compact` (écrans de travail des profils) : l'état de l'étape courante + le geste « Prendre en
- *   charge » — rien d'autre, l'écran reste au métier ;
- * - complet (consultation du dossier) : la même chose PLUS les compteurs et le tableau des tâches.
- *
- * Le bouton n'apparaît qu'au profil PORTEUR de l'étape (`ETAPE_CIRCUIT_PORTEURS`, délégations via
- * `PermissionsService.peutExecuter`) — mais la garde qui tranche reste le serveur (403/409, message
- * en dialogue). Aucun calcul de date côté front : tout vient de `GET /chronometrage`.
+ * - `compact` (écrans de travail) : état de l'étape courante + fin prévue seulement ;
+ * - complet (consultation) : la même chose PLUS les compteurs et le tableau des passages.
  */
 @Component({
   selector: 'app-chronometrage-dossier',
@@ -34,7 +29,7 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
   template: `
     @if (chrono(); as c) {
       <div class="chrono" [class.chrono--compact]="compact()">
-        <!-- État courant + prise en charge -->
+        <!-- État de l'étape courante + date prévisionnelle de fin -->
         <div class="chrono__etat">
           @if (c.attentePrmp && !estEtapePorteePrmp()) {
             <span class="chrono__attente" role="status">
@@ -43,24 +38,6 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
             </span>
           } @else if (c.etapeCourante; as etape) {
             <span class="chrono__etape">Étape en cours : <strong>{{ etapeLabel(etape) }}</strong></span>
-            @if (tacheEnCours(); as t) {
-              <span class="chrono__pec">
-                Prise en charge par {{ t.nomActeur || t.imActeur }} le
-                {{ t.priseEnCharge | date: 'dd/MM/yyyy HH:mm' }} — prévision
-                {{ heuresLabel(t.previsionHeures) }}{{ t.previsionStandard ? ' (délai standard)' : '' }},
-                {{ t.dureeHeuresOuvrees }} h écoulées.
-              </span>
-            } @else if (peutPrendreEnCharge()) {
-              <!-- ⚠️ Demande pilote (2026-09-08) — le bouton ne DEMANDE PLUS de prévision : il ne sert
-                   qu'à DÉCLENCHER le chrono. La prévision est le délai standard admin de l'étape, posé
-                   par le serveur (corps vide accepté, backend af875f9). Un seul clic, désactivé le
-                   temps de l'enregistrement, puis il cède la place à l'état « Prise en charge par… ». -->
-              <button type="button" class="chrono__cta" [disabled]="saving()" (click)="prendreEnCharge()">
-                ⏱ Prendre en charge
-              </button>
-            } @else {
-              <span class="chrono__pec">Pas encore prise en charge.</span>
-            }
           } @else if (c.finCompteur) {
             <span class="chrono__pec">Traitement CNM achevé (validation SIGMP le <span class="cnm-fin-cloture">{{ c.finCompteur | date: 'dd/MM/yyyy HH:mm' }}</span>).</span>
           }
@@ -71,7 +48,7 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
           }
         </div>
 
-        <!-- Restitution complète : compteurs + tâches -->
+        <!-- Restitution complète : compteurs + passages -->
         @if (!compact()) {
           <dl class="chrono__compteurs">
             <div><dt>Enregistrement</dt><dd class="cnm-mono">{{ c.debutCompteur ? (c.debutCompteur | date: 'dd/MM/yyyy HH:mm') : '—' }}</dd></div>
@@ -86,7 +63,7 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
               </dd>
             </div>
           </dl>
-          @if (tachesVisibles().length) {
+          @if (etapesVisibles().length) {
             <div class="chrono__table-wrap">
               <table class="chrono__table">
                 <thead>
@@ -94,29 +71,27 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
                     <th scope="col">Étape</th>
                     <th scope="col">Passage</th>
                     <th scope="col">Acteur</th>
-                    <th scope="col">Prise en charge</th>
+                    <th scope="col">Entrée</th>
                     <th scope="col">Fin</th>
-                    <th scope="col">Prévu</th>
-                    <th scope="col">Effectif</th>
+                    <th scope="col">Durée</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (t of tachesVisibles(); track t.etape + '-' + t.occurrence) {
-                    <tr [class.chrono__row--encours]="t.enCours">
-                      <td>{{ etapeLabel(t.etape) }}</td>
-                      <td class="cnm-mono">{{ t.occurrence }}</td>
-                      <td>{{ t.nomActeur || t.imActeur || '—' }}</td>
-                      <td class="cnm-mono">{{ t.priseEnCharge ? (t.priseEnCharge | date: 'dd/MM HH:mm') : '—' }}</td>
-                      <td class="cnm-mono">{{ t.fin ? (t.fin | date: 'dd/MM HH:mm') : 'en cours' }}</td>
-                      <td>{{ t.previsionHeures != null ? heuresLabel(t.previsionHeures) + (t.previsionStandard ? ' (std)' : '') : '—' }}</td>
-                      <td>{{ t.dureeHeuresOuvrees }} h</td>
+                  @for (e of etapesVisibles(); track e.etape + '-' + e.occurrence) {
+                    <tr [class.chrono__row--encours]="e.enCours">
+                      <td>{{ etapeLabel(e.etape) }}</td>
+                      <td class="cnm-mono">{{ e.occurrence }}</td>
+                      <td>{{ e.nomActeur || e.imActeur || '—' }}</td>
+                      <td class="cnm-mono">{{ e.entree ? (e.entree | date: 'dd/MM HH:mm') : '—' }}</td>
+                      <td class="cnm-mono">{{ e.fin ? (e.fin | date: 'dd/MM HH:mm') : 'en cours' }}</td>
+                      <td>{{ e.dureeHeuresOuvrees }} h</td>
                     </tr>
                   }
                 </tbody>
               </table>
             </div>
           } @else {
-            <p class="chrono__vide">Aucune tâche chronométrée pour l'instant.</p>
+            <p class="chrono__vide">Aucun passage chronométré pour l'instant.</p>
           }
         }
       </div>
@@ -137,32 +112,6 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
       gap: 0.5rem 1rem;
       font-size: var(--text-sm);
       color: var(--n-500);
-    }
-    /* « Prendre en charge » (demande pilote 2026-09-04) : couleur vive orange→rouge, facile à
-       repérer — même dérogation assumée aux tokens que le fuchsia du dispatch en lot. */
-    .chrono__cta {
-      appearance: none;
-      border: 0;
-      cursor: pointer;
-      font: inherit;
-      font-size: var(--text-sm);
-      font-weight: 800;
-      color: #fff;
-      padding: 0.5rem 1.15rem;
-      border-radius: var(--radius-full);
-      background: linear-gradient(135deg, #f97316, #dc2626);
-      box-shadow: 0 3px 10px rgba(234, 88, 12, 0.45);
-      transition: transform 120ms var(--ease-out), box-shadow 120ms var(--ease-out);
-    }
-    .chrono__cta:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 5px 14px rgba(234, 88, 12, 0.55);
-    }
-    /* Action déclenchée (saisie ouverte / enregistrement) : bouton inerte, sans relief. */
-    .chrono__cta:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-      box-shadow: none;
     }
     .chrono__attente {
       color: var(--warning-700, #92400e);
@@ -249,113 +198,33 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
 export class ChronometrageDossier {
   private readonly dossierService = inject(DossierService);
   private readonly auth = inject(AuthService);
-  private readonly permissions = inject(PermissionsService);
-  private readonly toast = inject(ToastService);
 
   /** Dossier chronométré. */
   readonly idDossier = input.required<number>();
-  /** Présentation réduite (écrans de travail) : état + geste, sans compteurs ni tableau. */
+  /** Présentation réduite (écrans de travail) : état + fin prévue, sans compteurs ni tableau. */
   readonly compact = input(false);
   /**
    * Chronométrage déjà chargé par l'hôte (modale « une seule vague » : le parent l'ajoute à son
    * `forkJoin` et le passe ici). Absent → le composant fait son propre GET.
    */
   readonly donnees = input<Chronometrage | undefined>(undefined);
-  /**
-   * Attributaire COURANT du dossier (`imCtrlMembre` du dispatch, réattributions comprises).
-   * ⚠️ « Seul l'assignataire examine » (backend `d24c115`/`5225529`) : la prise en charge d'EXAMEN
-   * lui est réservée — 403 pour tout autre, MÊME par délégation. Quand l'hôte le fournit, le geste
-   * n'est montré qu'à lui ; `undefined` = hôte sans cette donnée (règle du porteur nominal seule).
-   */
-  readonly attributaire = input<string | null | undefined>(undefined);
-  /**
-   * ⚠️ Constat pilote (04/09, dossier 100286) : après son acceptation, le CC se voyait encore
-   * offrir « Prendre en charge » — la tâche VISA du niveau PRÉSIDENT prise à tort verrouillait le
-   * Président (tâche d'autrui, 409, déblocage SQL). Verdict de l'HÔTE sur la PEC de l'étape
-   * courante quand il en sait plus que le widget (étage de navette, co-signataires désignés) :
-   * `false` masque le geste, `true` le montre, `undefined` laisse les règles du widget.
-   */
-  readonly pecPermise = input<boolean | undefined>(undefined);
-  /**
-   * ⚠️ Demande pilote (2026-09-04) — « aucune action sans prise en charge » : émet `true` quand
-   * l'utilisateur peut agir sur le dossier — soit il n'est PAS le porteur de l'étape courante
-   * (l'écran ne le concerne pas : édition, consultation), soit SA prise en charge est enregistrée.
-   * `false` tant que le chronométrage n'est pas chargé et tant que le porteur n'a pas cliqué
-   * « Prendre en charge ». Les écrans d'action verrouillent leurs panneaux sur ce signal.
-   */
-  readonly actionAutorisee = output<boolean>();
 
   readonly chrono = signal<Chronometrage | null>(null);
   readonly chargement = signal(false);
-  readonly saving = signal(false);
 
   /**
-   * Tâche en cours DE L'ÉTAPE COURANTE seulement. ⚠️ Constat de recette (03/09) : la transmission
-   * directe à SIGMP d'un avis FAV ne clôt pas l'occurrence VERIFICATION — une tâche d'une AUTRE
-   * étape restée ouverte ne doit ni s'afficher comme l'état courant, ni bloquer la prise en charge
-   * (trou signalé au backend ; elle reste visible dans le tableau des passages).
+   * ⚠️ Demande pilote (2026-09-04) — VISIBILITÉ HIÉRARCHIQUE du tableau des passages : chaque profil
+   * voit ses lignes et celles de ses subordonnés, jamais celles de ses supérieurs (PRMP et Admin :
+   * tout). Les compteurs globaux et l'état de l'étape courante restent.
    */
-  readonly tacheEnCours = computed(() => {
-    const etape = this.chrono()?.etapeCourante;
-    return this.chrono()?.taches.find((t) => t.enCours && t.etape === etape) ?? null;
-  });
-  readonly estMaTache = computed(() => {
-    const t = this.tacheEnCours();
-    return !!t && !!t.imActeur && t.imActeur === this.auth.ref();
-  });
-  /**
-   * ⚠️ Demande pilote (2026-09-04) — VISIBILITÉ HIÉRARCHIQUE de la table des passages : chaque
-   * profil voit ses lignes et celles de ses subordonnés, jamais celles de ses supérieurs
-   * (PRMP et Admin : tout). Les compteurs globaux et l'état de l'étape courante restent.
-   */
-  readonly tachesVisibles = computed(() =>
-    (this.chrono()?.taches ?? []).filter((t) => tacheChronoVisiblePour(this.auth.role(), t.etape)),
+  readonly etapesVisibles = computed(() =>
+    (this.chrono()?.etapes ?? []).filter((e) => tacheChronoVisiblePour(this.auth.role(), e.etape)),
   );
-  /**
-   * Montrer le geste au porteur NOMINAL de l'étape (délégations comprises) — jamais grisé : en cas
-   * de doute le serveur tranche (403 écrit en dialogue). La PRMP, elle, ne porte aucune étape.
-   */
-  readonly peutPrendreEnCharge = computed(() => {
-    const etape = this.chrono()?.etapeCourante;
-    if (!etape) {
-      return false;
-    }
-    // La PRMP (le client) ne porte pas les étapes CNM : si la balle est chez elle SUR UNE ÉTAPE
-    // NON-PRMP, aucun geste. ⚠️ Exception (2026-09-07) : `RECTIFICATION_PRMP` est PORTÉE par la PRMP —
-    // elle DOIT s'y prendre en charge (le reste de la méthode tranche via `acteursAttendus`, liste
-    // close servie par le DTO). Sans cette levée, le widget masquerait le bouton et autoriserait
-    // l'action sans prise en charge — l'inverse de la garde voulue.
-    if (this.chrono()?.attentePrmp && ETAPE_CIRCUIT_PORTEURS[etape] !== 'PRMP') {
-      return false;
-    }
-    // L'hôte qui connaît le PV (étage de navette, désignés) tranche avant les règles génériques.
-    const permise = this.pecPermise();
-    if (permise !== undefined) {
-      return permise;
-    }
-    // EXAMEN est réservé à l'attributaire (403 serveur même par délégation) : quand il est connu
-    // — fourni par l'hôte, sinon servi par le DTO — ne pas offrir un geste voué au refus.
-    if (etape === 'EXAMEN') {
-      const attributaire = this.attributaire() ?? this.chrono()?.attributaire;
-      if (attributaire != null) {
-        return attributaire === this.auth.ref();
-      }
-    }
-    // Acteurs attendus de l'étape courante, servis par le DTO (demande
-    // 2026-09-04-pec-garde-visa-cosignature) : liste close → seuls eux voient le geste.
-    const attendus = this.chrono()?.acteursAttendus;
-    if (attendus?.length) {
-      return attendus.includes(this.auth.ref() ?? '');
-    }
-    const porteur = ETAPE_CIRCUIT_PORTEURS[etape];
-    const role = this.auth.role();
-    return role === porteur || role === 'ADMINISTRATEUR' || this.permissions.peutExecuter(porteur);
-  });
 
   /**
    * L'étape courante est-elle PORTÉE par la PRMP (`RECTIFICATION_PRMP`) ? Dans ce cas, la balle est
-   * chez la PRMP MAIS elle a un geste (prise en charge) : le template ne doit PAS afficher le message
-   * « ⏸ En attente de la PRMP » (qui masque le bouton), mais l'étape courante + « Prendre en charge ».
+   * chez la PRMP mais l'étape *est* sa rectification : le template affiche « Étape en cours :
+   * Rectification PRMP », pas « ⏸ En attente de la PRMP ».
    */
   readonly estEtapePorteePrmp = computed(() => {
     const etape = this.chrono()?.etapeCourante;
@@ -373,11 +242,6 @@ export class ChronometrageDossier {
         return;
       }
       this.chargerChronometrage(id);
-    });
-    // « Aucune action sans prise en charge » (2026-09-04) — recalculé à chaque (re)chargement.
-    effect(() => {
-      const c = this.chrono();
-      this.actionAutorisee.emit(!!c && (!this.peutPrendreEnCharge() || this.estMaTache()));
     });
   }
 
@@ -398,24 +262,6 @@ export class ChronometrageDossier {
     }
     const jours = Math.round((heures / 8) * 10) / 10;
     return `${heures} h (${String(jours).replace('.', ',')} j)`;
-  }
-
-  /**
-   * ⚠️ Demande pilote (2026-09-08) — « Prendre en charge » NE DEMANDE PLUS de prévision : un seul
-   * appel, corps vide, le serveur pose le délai standard admin de l'étape courante (`af875f9`,
-   * `previsionStandard=true`). Le geste ne sert qu'à DÉCLENCHER le chronométrage. La garde d'identité
-   * reste serveur (403 hors porteur / 409 aucune étape ouverte → dialogue centralisé).
-   */
-  prendreEnCharge(): void {
-    this.saving.set(true);
-    this.dossierService.priseEnCharge(this.idDossier()).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.toast.success('Prise en charge enregistrée — chronométrage démarré.');
-        this.chargerChronometrage(this.idDossier());
-      },
-      error: () => this.saving.set(false), // 403/409 → dialogue centralisé (message backend)
-    });
   }
 
   private chargerChronometrage(id: number): void {

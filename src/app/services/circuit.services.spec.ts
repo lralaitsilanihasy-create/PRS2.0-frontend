@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { Chronometrage, RechercheDossier, TacheDossier } from '../models';
+import { Chronometrage, RechercheDossier } from '../models';
 import { DossierService } from './circuit.services';
 import { DelaiStandardService } from './referentiel.services';
 
@@ -57,11 +57,10 @@ describe('DossierService.rechercher', () => {
 });
 
 /**
- * Chronométrage (2026-09-01, backend `c66db71` ; HEURES ouvrées depuis le 02/09, `c8d987a`).
- * Deux détails de contrat que rien d'autre ne surveille : le sous-chemin `/prise-en-charge` avec
- * le corps `{ previsionHeures }` (l'ancien `previsionJours` part en 400 explicite — 5 « jours »
- * lus comme 5 heures fausseraient la date sans bruit), et le référentiel `/api/delais-standards`
- * dont le PUT est adressé PAR ÉTAPE (clé string, pas un id numérique).
+ * Chronométrage (2026-09-01 ; refonte AUTO sans prise en charge 2026-09-12, backend `9648729`).
+ * Détail de contrat que rien d'autre ne surveille : le référentiel `/api/delais-standards` dont le
+ * PUT est adressé PAR ÉTAPE (clé string, pas un id numérique). La lecture `/chronometrage` sert
+ * désormais `etapes[]` (plus `taches[]`).
  */
 describe('Chronométrage — DossierService et DelaiStandardService', () => {
   beforeEach(() => {
@@ -72,20 +71,6 @@ describe('Chronométrage — DossierService et DelaiStandardService', () => {
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  it('poste la prise en charge avec la prévision en heures ouvrées', () => {
-    const service = TestBed.inject(DossierService);
-    const http = TestBed.inject(HttpTestingController);
-
-    let tache: TacheDossier | undefined;
-    service.priseEnCharge(42, 16).subscribe((t) => (tache = t));
-
-    const req = http.expectOne('/api/dossiers/42/prise-en-charge');
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ previsionHeures: 16 });
-    req.flush({ etape: 'EXAMEN', occurrence: 1, previsionHeures: 16, previsionStandard: false, dureeHeuresOuvrees: 0, enCours: true });
-    expect(tache?.etape).toBe('EXAMEN');
-  });
-
   it('lit le chronométrage du dossier (compteurs + occurrences)', () => {
     const service = TestBed.inject(DossierService);
     const http = TestBed.inject(HttpTestingController);
@@ -95,7 +80,7 @@ describe('Chronométrage — DossierService et DelaiStandardService', () => {
 
     const req = http.expectOne('/api/dossiers/42/chronometrage');
     expect(req.request.method).toBe('GET');
-    req.flush({ idDossier: 42, taches: [], dureeBruteHeuresOuvrees: 0, dureeNetteHeuresOuvrees: 0, attentePrmpHeuresOuvrees: 0, attentePrmp: false });
+    req.flush({ idDossier: 42, etapes: [], dureeBruteHeuresOuvrees: 0, dureeNetteHeuresOuvrees: 0, attentePrmpHeuresOuvrees: 0, attentePrmp: false });
     expect(chrono?.idDossier).toBe(42);
   });
 

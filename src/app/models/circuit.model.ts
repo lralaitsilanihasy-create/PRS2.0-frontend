@@ -166,7 +166,7 @@ export const ETAPE_CIRCUIT_PORTEURS: Record<EtapeCircuit, Role> = {
  * FAVR supplémentaire créent chacun une occurrence de plus (`occurrence` = 1, 2, 3…) — c'est ce qui
  * rend visible le nombre d'aller-retours.
  */
-export interface TacheDossier {
+export interface PassageEtape {
   etape: EtapeCircuit;
   occurrence: number;
   imActeur?: string | null;
@@ -174,17 +174,17 @@ export interface TacheDossier {
   nomActeur?: string | null;
   /** Profil sous lequel l'acteur a agi (délégation / intérim compris). */
   profil?: string | null;
-  /** Horodatage à la seconde ; = `fin` (durée nulle) quand le geste a été posé sans prise en charge. */
-  priseEnCharge?: string | null;
-  /** `null` tant que la tâche est en cours. */
-  fin?: string | null;
-  /** ⚠️ HEURES ouvrées depuis le 02/09 (backend `c8d987a`) : 8 h = 1 jour ouvré. */
-  previsionHeures?: number | null;
-  /** Vrai si la prévision vient du référentiel des délais standards, pas d'une saisie. */
-  previsionStandard: boolean;
   /**
-   * Durée effective en HEURES ouvrées (fenêtre de service 08 h-16 h côté serveur — même échelle
-   * que la prévision) ; pour une tâche en cours, le temps déjà écoulé.
+   * ⚠️ Chronométrage AUTOMATIQUE (2026-09-12, backend `9648729`) — horodatage d'ENTRÉE dans l'étape,
+   * **dérivé** (fin du passage précédent, dépôt du dossier, ou sortie d'attente PRMP) ; `null` quand
+   * aucune borne antérieure n'est connue (la durée vaut alors 0). Remplace `priseEnCharge`.
+   */
+  entree?: string | null;
+  /** `null` tant que l'étape est en cours. */
+  fin?: string | null;
+  /**
+   * Durée effective en HEURES ouvrées (`fin − entree`, fenêtre de service 08 h-16 h côté serveur) ;
+   * pour l'étape en cours, le temps déjà écoulé.
    */
   dureeHeuresOuvrees: number;
   enCours: boolean;
@@ -193,8 +193,8 @@ export interface TacheDossier {
 /** `GET /api/dossiers/{id}/chronometrage` — matière de la frise (occurrences + compteurs globaux). */
 export interface Chronometrage {
   idDossier: number;
-  /** De la plus ancienne à la plus récente. */
-  taches: TacheDossier[];
+  /** Passages d'étape, de la plus ancienne à la plus récente (append-only ; le dernier = étape en cours si `enCours`). */
+  etapes: PassageEtape[];
   /** Clôture de RECEPTION (enregistrement) ; null si pas encore atteinte. */
   debutCompteur?: string | null;
   /** Clôture de TRANSMISSION_SIGMP ; null tant que le dossier court. */
@@ -214,24 +214,6 @@ export interface Chronometrage {
    * `4ee9c0b` ; `null` tant que le dossier n'est pas dispatché.
    */
   attributaire?: string | null;
-  /**
-   * Acteurs que la garde de `prise-en-charge` accepterait pour l'étape courante (VISA par niveau
-   * de navette, COSIGNATURE = les désignés…). Servi depuis `1a92f5a` ; liste vide ou nulle = non
-   * close (intérim du périmètre) → règle du porteur nominal.
-   */
-  acteursAttendus?: string[] | null;
-}
-
-/**
- * Corps de `POST /api/dossiers/{id}/prise-en-charge`. ⚠️ Depuis 2026-09-08 (`af875f9`) le corps est
- * **optionnel** : absent → le serveur pose le délai standard admin de l'étape courante
- * (`previsionStandard=true`) ; le front ne l'envoie plus (le bouton ne fait que déclencher le chrono).
- * `previsionHeures` reste accepté par l'API (override/compat). `previsionJours` (unité d'avant le
- * 02/09) part toujours en 400 explicite : 5 « jours » lus comme 5 heures fausseraient la date sans bruit.
- */
-export interface PriseEnChargeRequest {
-  /** HEURES ouvrées (8 h = 1 jour ouvré), entier ≥ 1 (400 sinon) ; OPTIONNEL (absent → standard admin). */
-  previsionHeures?: number;
 }
 
 /** Délai standard d'une étape — référentiel administrable (PUT réservé à l'Administrateur). */

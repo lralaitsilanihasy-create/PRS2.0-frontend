@@ -139,11 +139,9 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
           }
 
           <!-- Chronométrage & délais (2026-09-01, dans l'en-tête depuis le 02/09) : chargé DANS
-               la vague unique (donnees) ; zone absente pour un dossier hors circuit.
-               ⚠️ Constat pilote (2026-09-04, écran Vérifier) : la consultation est une RESTITUTION —
-               le geste « Prendre en charge » vit sur le bandeau compact des écrans d'action, qui
-               l'affichent déjà en tête ; ici il faisait DOUBLON (deux boutons sur le même écran).
-               pecPermise=false : compteurs et passages restent, le geste disparaît. -->
+               la vague unique (donnees) ; zone absente pour un dossier hors circuit. Depuis la refonte
+               2026-09-12 (backend 9648729), le widget est une pure RESTITUTION (plus de « prise en
+               charge ») — rien à masquer. -->
           <!-- ⚠️ Demande pilote (2026-09-06, précisée 2×) — les DEUX boutons de restitution côte à
                côte dans la même bande ; chacun ouvre sa FENÊTRE MODALE (sous-dialogue).
                Précision du 06/09 au soir : PAS de restitution pour la PRMP ni son UGPM — le
@@ -449,7 +447,7 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
             </div>
             <div class="modal-body dc-sousmodal__corps">
               @if (chronoDossier(); as chrono) {
-                <app-chronometrage-dossier [idDossier]="dossier().idDossier" [donnees]="chrono" [pecPermise]="false" />
+                <app-chronometrage-dossier [idDossier]="dossier().idDossier" [donnees]="chrono" />
               }
             </div>
           </div>
@@ -695,7 +693,7 @@ export class DossierConsultation implements OnInit {
   /** Le chronométrage a-t-il quelque chose à montrer ? (conditionne son bouton dans la bande) */
   readonly chronoDispo = computed(() => {
     const c = this.chronoDossier();
-    return !!c && !!(c.taches.length || c.etapeCourante || c.datePrevisionnelleFin || c.debutCompteur);
+    return !!c && !!(c.etapes.length || c.etapeCourante || c.datePrevisionnelleFin || c.debutCompteur);
   });
   /**
    * ⚠️ Demande pilote (2026-09-06) — chronométrage et journal sont des restitutions INTERNES CNM :

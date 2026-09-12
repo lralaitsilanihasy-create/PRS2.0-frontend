@@ -118,18 +118,12 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Imprimer" aria-label="Imprimer">🖨 Imprimer</button>
                     <button type="button" class="btn btn-secondary btn-sm" (click)="imprimer(pv)" title="Enregistrer au format PDF" aria-label="Enregistrer au format PDF">📄 PDF</button>
                   </div>
-                  <!-- Chronométrage EN TÊTE (demande pilote 2026-09-04 : « Prendre en charge »
-                       toujours en haut) : prise en charge des étapes VISA / COSIGNATURE. -->
+                  <!-- Chronométrage EN TÊTE : restitution de l'état + fin prévue (plus de « prise en
+                       charge » depuis 2026-09-12, backend 9648729). -->
                   @if (idDossierDe(pv); as idDos) {
                     <div class="pv-chrono-strip">
-                      <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" [attributaire]="attributaireDe(pv)" [pecPermise]="pecPermiseDe(pv)" (actionAutorisee)="majAutorisation(pv.idPv, $event)" />
+                      <app-chronometrage-dossier [idDossier]="idDos" [compact]="true" />
                     </div>
-                    @if (!autorisation(pv.idPv)) {
-                      <div class="pv__verrou" role="status">
-                        🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en
-                        charge marque le début de votre action et alimente le chronométrage.
-                      </div>
-                    }
                   }
                   @if (pv.statutPv === 'EN_RECTIFICATION' && dernierRetour()) {
                     <!-- ⚠️ 2026-08-18 — le retour se lit ici : l'accès à la correction doit y être
@@ -264,10 +258,8 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     }
                   </div>
 
-                  <!-- ⚠️ Demande pilote (2026-09-04, 2ᵉ) — les actions du PV AU-DESSUS de la grille
-                       de contrôle (plus de descente en bas de page pour viser/retourner) ; le
-                       VERROU de prise en charge s'applique inchangé. -->
-                  <div class="pv__bande-actions" [class.pv__actions--verrouillees]="!autorisation(pv.idPv)">
+                  <!-- Les actions du PV AU-DESSUS de la grille de contrôle (viser / retourner / signer). -->
+                  <div class="pv__bande-actions">
                     <app-pv-workflow [pv]="pv" [idLocalite]="dossierLocalite(pv)"
                       [nbObservationsExamen]="nbObservations() + nbObservationsPieces()" (changed)="onChanged($event)" />
                   </div>
@@ -700,15 +692,6 @@ export class MembrePv {
   idDossierDe(pv: PvExamen): number | null {
     return this.dossierByExamen().get(pv.idExamen)?.idDossier ?? null;
   }
-  /** ⚠️ Demande pilote (2026-09-04) — « aucune action sans prise en charge », par PV (widget par carte). */
-  private readonly autorisations = signal<Map<number, boolean>>(new Map());
-  majAutorisation(idPv: number, autorise: boolean): void {
-    this.autorisations.update((m) => new Map(m).set(idPv, autorise));
-  }
-  /** Autorisé par défaut SEULEMENT sans widget (pas de dossier lié) — le widget émet dès son premier calcul. */
-  autorisation(idPv: number): boolean {
-    return this.autorisations().get(idPv) ?? true;
-  }
   /** ⚠️ Deux niveaux (2026-09-04) : après le visa, seules les parts DÉSIGNÉES existent — tuile masquée sinon. */
   masquerTuileMembre(pv: PvExamen): boolean {
     return pv.niveauNavette != null && pv.dateSignaturePresident != null && !pv.imMembreCoSignataire && pv.dateSignatureMembre == null;
@@ -717,37 +700,8 @@ export class MembrePv {
     return pv.niveauNavette != null && pv.dateSignaturePresident != null && !pv.imCcCoSignataire && pv.dateSignatureCc == null;
   }
   /**
-   * ⚠️ Constat pilote (04/09, dossier 100286) : le CC, son acceptation faite, prenait la tâche
-   * VISA du niveau PRÉSIDENT et verrouillait le Président. Verdict de PEC dérivé de l'état du PV
-   * — VISA d'un deux-niveaux : le CC DISPATCHEUR à l'étage CC, un PRESIDENT à l'étage Président ;
-   * COSIGNATURE : les désignés seulement. `undefined` ailleurs (navette simple : dispatcheur +
-   * intérim du périmètre, le serveur tranche ; rectification : l'input `attributaire` couvre).
-   */
-  pecPermiseDe(pv: PvExamen): boolean | undefined {
-    if (pv.statutPv === 'PROJET_SOUMIS') {
-      // ⚠️ Séparation des rôles (règle pilote 2026-09-08) : l'EXAMINATEUR (`imCtrlMembre`) ne prend pas
-      // en charge le visa de son propre examen — même s'il est CC/Président (examen dispatché au CC).
-      // EXCEPTION : s'il est AUSSI le DISPATCHEUR (délégation de profil, il a dispatché à lui-même), il
-      // garde le visa → on ne bloque que l'examinateur DÉFINITIVEMENT ≠ dispatcheur.
-      const moi = this.auth.ref();
-      if (moi != null && moi === pv.imCtrlMembre && pv.imDispatcheur != null && moi !== pv.imDispatcheur) {
-        return false;
-      }
-      if (pv.niveauNavette != null) {
-        return pv.niveauNavette === 'CC'
-          ? this.auth.ref() === pv.imDispatcheur
-          : this.auth.role() === 'PRESIDENT';
-      }
-    }
-    if (pv.statutPv === 'PROJET_ACCEPTE') {
-      const moi = this.auth.ref();
-      return moi != null && [pv.imCcCoSignataire, pv.imMembreCoSignataire].includes(moi);
-    }
-    return undefined;
-  }
-  /**
    * Attributaire COURANT du dispatch de l'examen du PV (`imCtrlMembre`, réattributions comprises).
-   * Public : le template le passe au widget de chronométrage (PEC d'EXAMEN réservée à lui).
+   * Sert de garde à « Rectifier l'examen » (`peutRectifier` : seul l'assignataire rectifie).
    */
   attributaireDe(pv: PvExamen): string | undefined {
     const exam = this.examens().find((e) => e.idExamen === pv.idExamen);

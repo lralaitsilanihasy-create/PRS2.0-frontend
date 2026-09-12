@@ -28,7 +28,6 @@ import {
   ReceptionExiste,
   RechercheDossier,
   StatutDossier,
-  TacheDossier,
   TransmissionSigmp,
   Verification,
   VerificationPieceDepot,
@@ -76,19 +75,9 @@ export class DossierService extends CrudService<Dossier> {
     return this.http.get<ActionDossier[]>(`${this.baseUrl}/${idDossier}/journal`);
   }
 
-  /**
-   * `POST /api/dossiers/{id}/prise-en-charge` (chronométrage 2026-09-01, HEURES ouvrées depuis le
-   * 02/09) — le porteur de l'étape courante prend le dossier en charge : le geste DÉCLENCHE le
-   * chronométrage. ⚠️ Depuis 2026-09-08 (`af875f9`) le corps est **vide** : la prévision est le
-   * délai standard admin de l'étape courante, posé par le serveur (`previsionStandard=true`) —
-   * plus de saisie côté porteur. `previsionHeures` reste accepté par l'API (override/compat) mais le
-   * front ne l'envoie plus. 403 hors porteur (délégations/intérim résolus serveur), 409 si aucune
-   * étape n'est ouverte.
-   */
-  priseEnCharge(idDossier: number, previsionHeures?: number): Observable<TacheDossier> {
-    const body = previsionHeures != null ? { previsionHeures } : {};
-    return this.http.post<TacheDossier>(`${this.baseUrl}/${idDossier}/prise-en-charge`, body);
-  }
+  /* ⚠️ `POST /api/dossiers/{id}/prise-en-charge` SUPPRIMÉ (backend `9648729`, 2026-09-12) : plus de
+     « prise en charge ». Le délai de chaque étape se mesure automatiquement (entrée → fin), voir
+     `GET /chronometrage`. */
 
   /**
    * `GET /api/dossiers/{id}/chronometrage` — occurrences de tâches + compteurs (matière de la

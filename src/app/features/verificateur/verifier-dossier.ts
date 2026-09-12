@@ -60,17 +60,10 @@ interface Echange {
         </div>
       </header>
 
-      <!-- Chronométrage EN TÊTE (demande pilote 2026-09-04 : « Prendre en charge » toujours en
-           haut) : prise en charge des étapes VERIFICATION / TRANSMISSION_SIGMP — AUCUNE action
-           sans prise en charge. -->
+      <!-- Chronométrage EN TÊTE : restitution de l'état + fin prévue (plus de « prise en charge »
+           depuis 2026-09-12, backend 9648729). -->
       <div class="card"><div class="card-body">
-        <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" (actionAutorisee)="actionAutorisee.set($event)" />
-        @if (!actionAutorisee()) {
-          <p class="vf__verrou" role="status">
-            🔒 Cliquez d'abord « <strong>Prendre en charge</strong> » ci-dessus : la prise en charge
-            marque le début de votre action et alimente le chronométrage.
-          </p>
-        }
+        <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" />
       </div></div>
 
       <div class="alert alert-info">
@@ -165,8 +158,7 @@ interface Echange {
                   <p class="form-hint">La transmission est enregistrée côté PRS 2.0 (interop SIGMP) puis le PV part automatiquement chez l'Assistant contrôleur pour archivage.</p>
                   <div class="vf__foot">
                     <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
-                    <button type="button" class="btn btn-primary" [disabled]="saving() || !actionAutorisee()"
-                      [title]="!actionAutorisee() ? 'Prenez en charge le dossier (bouton « Prendre en charge » en haut) avant de transmettre.' : ''"
+                    <button type="button" class="btn btn-primary" [disabled]="saving()"
                       (click)="transmettreSigmp()">
                       {{ saving() ? 'Transmission…' : 'Transmettre la décision à SIGMP' }}
                     </button>
@@ -245,8 +237,8 @@ interface Echange {
                     PRMP pour rectification (rappel généré automatiquement — uniquement les observations du PV).</p>
                 }
                 <!-- ⚠️ 2026-09-08 (constat pilote) — le bouton reste grisé tant que TOUTES les observations
-                     ne sont pas statuées, même après la prise en charge : on le dit explicitement. -->
-                @if (actionAutorisee() && !toutesStatuees()) {
+                     ne sont pas statuées : on le dit explicitement. -->
+                @if (!toutesStatuees()) {
                   <p class="vf__hint-statuer" role="status">
                     ⚠ {{ nbAStatuer() }} observation(s) restent à statuer (levée ou maintenue) — repérez-les
                     dans la liste au liseré ambre « À statuer ». « Enregistrer le passage » s'activera quand
@@ -259,8 +251,8 @@ interface Echange {
                 @if (formError()) { <span class="form-error">{{ formError() }}</span> }
                 <div class="vf__foot">
                   <button type="button" class="btn btn-outline" (click)="annuler()">Retour</button>
-                  <button type="button" class="btn btn-primary" [disabled]="saving() || !toutesStatuees() || !actionAutorisee()"
-                    [title]="!actionAutorisee() ? 'Prenez en charge le dossier (bouton « Prendre en charge » en haut) avant la saisie.' : (!toutesStatuees() ? 'Statuez chaque observation restante (levée ou maintenue) avant d’enregistrer le passage.' : '')"
+                  <button type="button" class="btn btn-primary" [disabled]="saving() || !toutesStatuees()"
+                    [title]="!toutesStatuees() ? 'Statuez chaque observation restante (levée ou maintenue) avant d’enregistrer le passage.' : ''"
                     (click)="enregistrer()">
                     {{ saving() ? 'Enregistrement…' : 'Enregistrer le passage' }}
                   </button>
@@ -303,7 +295,6 @@ interface Echange {
   `,
   styles: `
     /* « Aucune action sans prise en charge » (2026-09-04). */
-    .vf__verrou { margin: 0.6rem 0 0; padding: 0.6rem 0.9rem; border: 1px solid #FDE68A; background: #FFFBEB; color: #92400E; border-radius: 8px; font-size: var(--text-sm); }
     /* ⚠️ 2026-08-06 — à gauche la consultation du dossier (tableau des marchés, 14 colonnes), à droite
        le panneau de décision : la part du dossier passe de 1,3 à 1,9 pour que ses en-têtes respirent. */
     .vf__grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 0.75rem; align-items: start; }
@@ -388,8 +379,6 @@ export class VerifierDossier {
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly formError = signal<string | null>(null);
-  /** ⚠️ Demande pilote (2026-09-04) — « aucune action sans prise en charge » (émis par le widget chronométrage). */
-  readonly actionAutorisee = signal(false);
   /** Modale de confirmation avant transmission à la PRMP (obsLevees = false). */
   readonly confirmOpen = signal(false);
 
