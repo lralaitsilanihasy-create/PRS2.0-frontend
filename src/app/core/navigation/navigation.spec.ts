@@ -27,11 +27,11 @@ describe('separerParDelegation', () => {
   });
 
   it('menu du Président : les entrées déléguées passent en section déléguée', () => {
-    // « Vérifications »/« Archivage » étaient déclarées entre « Examen de dossiers » et « Rapports » ;
-    // « Réception & Enregistrement » (tâches du Secrétaire COMBINÉES, 2026-09-03) les rejoint — les
-    // files du Membre, elles, vivent dans les CARTES de « Mes dossiers », pas dans le menu.
+    // ⚠️ 2026-09-12 — « Réception & Enregistrement » (délégation Secrétaire) a quitté le menu délégué :
+    // son unique action « Numéroter » est inline dans « Tous les dossiers » (comme l'examen du Membre).
+    // Restent les deux délégations sans équivalent inline complet : Vérifications et Archivage des PV.
     const [propres, delegues] = separerParDelegation(navFor('PRESIDENT'));
-    expect(delegues.items.map((i) => i.label)).toEqual(['Réception & Enregistrement', 'Vérifications', 'Archivage des PV']);
+    expect(delegues.items.map((i) => i.label)).toEqual(['Vérifications', 'Archivage des PV']);
     expect(propres.items.map((i) => i.label)).not.toContain('Vérifications');
     // « Rapports »/« Statistiques »/« Messagerie » sont retirés du menu pour le moment (2026-09-04).
     expect(propres.items.map((i) => i.label)).toContain('Chaînes de contrôle');
