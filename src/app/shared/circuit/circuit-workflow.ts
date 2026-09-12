@@ -85,7 +85,9 @@ export interface CircuitEtape {
 
 /** Les 7 étapes visibles du circuit, dans l'ordre (PRET_DISPATCH = statut interne rattaché à Dispatch). */
 export const CIRCUIT_ETAPES: readonly CircuitEtape[] = [
-  { key: 'RECEPTION', label: 'Réception' },
+  // ⚠️ Demande pilote (2026-09-12) — l'étape « Réception » de la frise est renommée « Initial » (aligné
+  // sur le statut SOUMIS → « Initial »). La CLÉ reste `RECEPTION` (clé backend `datesEtapes`, à NE PAS changer).
+  { key: 'RECEPTION', label: 'Initial' },
   { key: 'DISPATCH', label: 'Dispatch' },
   { key: 'EXAMEN', label: 'Examen' },
   { key: 'PROJET_PV', label: 'Projet PV' },
