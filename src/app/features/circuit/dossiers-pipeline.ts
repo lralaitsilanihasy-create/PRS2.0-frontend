@@ -87,8 +87,10 @@ import { ReceptionForm } from './reception-form';
             <tbody>
               @for (d of dossiersFiltres(); track d.idDossier) {
                 @let info = etapeInfo(d);
-                <tr>
-                  <td>{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</td>
+                <tr class="ligne-clic">
+                  <!-- Toute la ligne ouvre la consultation : bouton sur la référence (nom accessible +
+                       clavier) dont la zone cliquable est étendue à la ligne (overlay ::after). -->
+                  <td><button type="button" class="lien-ligne" (click)="consulte.set(d)">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</button></td>
                   <td style="white-space:nowrap;">{{ dateReceptionFmt(d) || '—' }}</td>
                   <td>{{ typeDossierLabel(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
@@ -112,7 +114,7 @@ import { ReceptionForm } from './reception-form';
             <li class="dossier-card">
               @let info = etapeInfo(d);
               <div class="dossier-card__head">
-                <span class="dossier-card__ref">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (source) { · {{ entiteLabel(d) }}}</span>
+                <button type="button" class="dossier-card__ref lien-ligne" (click)="consulte.set(d)">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (source) { · {{ entiteLabel(d) }}}</button>
                 <!-- ⚠️ Rattachements (2026-09-01) — badge de CIBLAGE seulement : null = chaîne
                      incomplète, rien à afficher ; et aucune action n'est retirée sur les dossiers
                      ciblés sur un collègue (pas de garde serveur). -->
@@ -155,11 +157,11 @@ import { ReceptionForm } from './reception-form';
 
     <!-- Actions d'un dossier — partagées par la frise (cartes) et le tableau (colonne Actions). -->
     <ng-template #actionsTpl let-d let-info="info">
-      <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
+      <!-- « Voir détails » retiré (2026-09-12) : la consultation s'ouvre en cliquant la ligne / la carte. -->
       <!-- Actions contextuelles du TABLEAU DE BORD (2026-09-12) : l'action à faire par dossier, selon
            son statut ET la capacité du profil (inline, comme « Mes dossiers »). -->
       @if (peutReceptionnerDash(d)) {
-        <button type="button" class="btn btn-primary btn-sm" (click)="receptionItem.set(d)">Attribuer un numéro</button>
+        <button type="button" class="btn btn-primary btn-sm" (click)="receptionItem.set(d)">Numéroter</button>
       }
       @if (dispatchableDe(d); as rec) {
         <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirDispatch(d, rec)">Dispatcher</button>
@@ -220,6 +222,14 @@ import { ReceptionForm } from './reception-form';
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .table-card table td .td-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
     .table-card table td .actions-end { justify-content: flex-end; }
+    /* Ligne cliquable : la référence est un vrai bouton (nom accessible + clavier) dont la zone
+       cliquable est ÉTENDUE à toute la ligne via un overlay ::after ; pas de (click) sur <tr>. */
+    .table-card table tr.ligne-clic { position: relative; cursor: pointer; }
+    .table-card table tr.ligne-clic:hover td { background: var(--n-50); }
+    .lien-ligne { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+    .lien-ligne::after { content: ''; position: absolute; inset: 0; }
+    /* Les boutons d'action passent AU-DESSUS de l'overlay → cliquables indépendamment du clic-ligne. */
+    .table-card table tr.ligne-clic .btn { position: relative; z-index: 1; }
     .pipeline__list {
       list-style: none;
       margin: 0;
@@ -228,8 +238,10 @@ import { ReceptionForm } from './reception-form';
       flex-direction: column;
       gap: 0.75rem;
     }
-    /* Carte de dossier : relief doux + élévation au survol, cohérent avec le design system. */
+    /* Carte de dossier : relief doux + élévation au survol, cohérent avec le design system.
+       position:relative ancre l'overlay du bouton-référence (clic n'importe où sur la carte ouvre le détail). */
     .dossier-card {
+      position: relative;
       background: #fff;
       border: 1px solid var(--n-200);
       border-radius: var(--radius-lg);
@@ -239,8 +251,11 @@ import { ReceptionForm } from './reception-form';
       flex-direction: column;
       gap: 0.6rem;
       transition: var(--transition);
+      cursor: pointer;
     }
     .dossier-card:hover { border-color: var(--p-200); box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+    /* Boutons d'action de la carte AU-DESSUS de l'overlay (cliquables indépendamment). */
+    .dossier-card .btn { position: relative; z-index: 1; }
     .dossier-card__head {
       display: flex;
       align-items: center;

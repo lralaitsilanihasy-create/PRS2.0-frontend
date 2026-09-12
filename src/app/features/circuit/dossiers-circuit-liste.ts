@@ -161,7 +161,7 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
                           class="btn btn-primary btn-sm"
                           [title]="permissions.parDelegation('RECEPTION_WRITE') ? 'Tâche du profil Secrétaire — exercée par délégation active.' : ''"
                           (click)="receptionItem.set(d)"
-                        >Attribuer un numéro</button>
+                        >Numéroter</button>
                       }
                       @if (peutAnnulerDispatch(d)) {
                         <button type="button" class="btn btn-danger btn-sm" (click)="annulation.set(d)">Retirer</button>
