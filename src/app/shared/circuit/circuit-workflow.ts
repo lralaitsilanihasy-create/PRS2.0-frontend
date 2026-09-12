@@ -153,8 +153,10 @@ export const PV_STATUT_LABELS: Record<StatutPv, string> = {
 /** Libellés lisibles des statuts de dossier (affichage ; les codes restent l'autorité). */
 export const DOSSIER_STATUT_LABELS: Record<string, string> = {
   BROUILLON: 'Brouillon',
-  SOUMIS: 'Déposé',
-  PRET_DISPATCH: 'Prêt à dispatcher',
+  // ⚠️ Demande pilote (2026-09-12) — libellés du début de cycle renommés : SOUMIS (étape Réception) →
+  // « Initial », PRET_DISPATCH (pré-dispatch, dossier numéroté à la réception) → « Numéroté ».
+  SOUMIS: 'Initial',
+  PRET_DISPATCH: 'Numéroté',
   DISPATCHE: 'Dispatché',
   EN_EXAMEN: 'En examen',
   EXAMINE: 'Examiné',
