@@ -58,6 +58,10 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // sont regroupés dans un écran-hub à cartes : ce sont les trois productions d'un même examen.
     // Les trois écrans et leurs routes sont inchangés, seul le chemin d'accès l'est.
     { label: 'Examen de dossiers', path: `${base}/resultat-examen`, icon: '📑' },
+    // ⚠️ Demande pilote (2026-09-12) — « Demandes de retrait » REMISE au menu latéral (elle reste aussi
+    // en ligne dans les cartes de « Mes dossiers » via `retraitsPath`). Sans `?type=`, l'écran liste TOUS
+    // les types (bandeau « Voir tous les types »).
+    { label: 'Demandes de retrait', path: `${base}/retraits`, icon: '↩' },
     // ⚠️ Délégation ascendante (spec 2026-08-14) — tâches du Vérificateur et de l'Assistant exercées
     // par Président/CC : entrées affichées SEULEMENT si la paire est active en base (champ `delegation`).
     // Les tâches Secrétaire (réceptions) et Membre (Examiner) vivent dans « Mes dossiers » (groupes/actions
@@ -74,9 +78,9 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     { label: 'Chaînes de contrôle', path: `${base}/chaines-controle`, icon: '⛓' },
     // « PPM & marchés » et « Marchés & dates prév. » : retirés du menu des DEUX profils
     // (demande user 2026-08-04). Routes conservées de part et d'autre — cf. president.routes.ts / cc.routes.ts.
-    // ⚠️ 2026-08-07 (demande user) — « Demandes de retrait » quitte le menu : une demande porte sur un
-    // dossier, donc sur un type, et figure désormais en ligne dans la carte de type correspondante de
-    // « Mes dossiers » (config `retraitsPath`). Route conservée, atteinte avec `?type=`.
+    // ⚠️ 2026-08-07 « Demandes de retrait » avait quitté le menu (accès en ligne dans les cartes de
+    // « Mes dossiers » via `retraitsPath`, `?type=`) — REMISE au menu le 2026-09-12 (demande pilote,
+    // entrée ajoutée plus haut) ; les deux accès coexistent.
     // ⚠️ Demande pilote (2026-09-04) — « Rapports », « Statistiques » et « Messagerie » retirés du
     // menu POUR LE MOMENT (routes et écrans conservés) : ré-activer en décommentant.
     // { label: 'Rapports', path: `${base}/rapports`, icon: '📊' },
