@@ -14,7 +14,8 @@ const CLASSEMENT_SECRETAIRE = { subtitle: 'Domaine Secrétaire', base: '/secreta
 /** Espace Secrétaire (lazy, sous roleGuard SECRETAIRE). */
 export const SECRETAIRE_ROUTES: Routes = [
   { path: '', redirectTo: 'mes-dossiers', pathMatch: 'full' },
-  { path: 'tableau-de-bord', loadComponent: () => import('./secretaire-dashboard').then((m) => m.SecretaireDashboard) },
+  // ⚠️ Demande pilote (2026-09-12) — « Tableau de bord » retiré du profil Secrétaire (route + composant
+  // supprimés) ; l'atterrissage se fait sur « Mes dossiers ».
   { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_SECRETAIRE } },
   { path: 'mes-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_SECRETAIRE } },
   { path: 'messagerie', loadComponent: () => import('../transverse/messagerie').then((m) => m.Messagerie) },

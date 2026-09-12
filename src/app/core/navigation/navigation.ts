@@ -129,7 +129,8 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   PRESIDENT: menuCommission('/president'),
   CHEF_COMMISSION: menuCommission('/cc'),
   SECRETAIRE: [
-    { label: 'Tableau de bord', path: '/secretaire/tableau-de-bord', icon: '▤' },
+    // ⚠️ Demande pilote (2026-09-12) — « Tableau de bord » retiré du profil Secrétaire (écran + route
+    // supprimés) : le Secrétaire travaille depuis « Mes dossiers ».
     { label: 'Mes dossiers', path: '/secretaire/mes-dossiers', icon: '📁' },
     // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Messagerie', path: '/secretaire/messagerie', icon: '✉' },
