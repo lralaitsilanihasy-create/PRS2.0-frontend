@@ -59,33 +59,47 @@ import { DetailPvModal } from './detail-pv-modal';
         <p class="text-muted">{{ messageVide }}</p>
       } @else {
         @if (vue() === 'tableau') {
+        <div class="pipeline__search">
+          <input
+            type="search"
+            class="form-control"
+            [value]="recherche()"
+            (input)="recherche.set($any($event.target).value)"
+            placeholder="Rechercher par mot-clé (référence, entité, localité, statut, type…)"
+            aria-label="Rechercher un dossier"
+          />
+        </div>
         <div class="table-card">
           <table>
             <thead>
               <tr>
                 <th scope="col">Référence</th>
+                <th scope="col">Date de réception</th>
+                <th scope="col">Type de dossier</th>
                 <th scope="col">Entité contractante</th>
                 <th scope="col">Localité</th>
                 <th scope="col">Statut</th>
-                <th scope="col">Date de réception</th>
                 <th scope="col" class="r">Actions</th>
               </tr>
             </thead>
             <tbody>
-              @for (d of visibleDossiers(); track d.idDossier) {
+              @for (d of dossiersFiltres(); track d.idDossier) {
                 @let info = etapeInfo(d);
                 <tr>
                   <td>{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</td>
+                  <td style="white-space:nowrap;">{{ dateReceptionFmt(d) || '—' }}</td>
+                  <td>{{ typeDossierLabel(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
                   <td>{{ localiteLabel(d) }}</td>
                   <td><app-statut-badge [statut]="d.statut" [label]="badgeLabel(d.statut)" /></td>
-                  <td style="white-space:nowrap;">{{ dateReceptionFmt(d) || '—' }}</td>
                   <td>
                     <div class="td-actions actions-end">
                       <ng-container [ngTemplateOutlet]="actionsTpl" [ngTemplateOutletContext]="{ $implicit: d, info }" />
                     </div>
                   </td>
                 </tr>
+              } @empty {
+                <tr><td colspan="7" class="empty-cell">Aucun dossier ne correspond à la recherche.</td></tr>
               }
             </tbody>
           </table>
@@ -173,6 +187,9 @@ import { DetailPvModal } from './detail-pv-modal';
   styles: `
     .pipeline__header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
     .pipeline__vue { display: inline-flex; gap: 0.35rem; }
+    .pipeline__search { margin-bottom: 0.75rem; }
+    .pipeline__search .form-control { max-width: 32rem; }
+    .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .table-card table td .td-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
     .table-card table td .actions-end { justify-content: flex-end; }
     .pipeline__list {
@@ -264,6 +281,8 @@ export class DossiersPipeline {
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   /** Affichage : frise (cartes) ou tableau ; choix mémorisé par navigateur (localStorage). */
   readonly vue = signal<'frise' | 'tableau'>(this.lireVue());
+  /** Recherche par mot-clé du tableau (filtre client sur les colonnes affichées). */
+  readonly recherche = signal('');
 
   protected readonly title = (this.route.snapshot.data['title'] as string) ?? 'Dossiers';
   /** Frise du circuit par dossier ; désactivable via `route.data.timeline === false`. */
@@ -577,6 +596,39 @@ export class DossiersPipeline {
     const iso = this.datesByDossier().get(d.idDossier)?.[0];
     return iso ? DossiersPipeline.dateCourte(iso) : '';
   }
+
+  /**
+   * Type de dossier affiché en CODE concis (`idSousType`, ex. « PPM-AGPM », celui de la référence) plutôt
+   * qu'en libellé (le libellé du sous-type est une phrase entière, illisible en colonne). Repli famille.
+   */
+  typeDossierLabel(d: Dossier): string {
+    return d.idSousType ?? d.idTypeDossier ?? '—';
+  }
+
+  /**
+   * Dossiers du tableau après filtre par mot-clé : chaque mot saisi doit apparaître dans l'une des
+   * colonnes affichées (référence, date, type, entité, localité, statut). Filtre CLIENT — porte sur la
+   * page chargée (le dashboard est paginé serveur).
+   */
+  readonly dossiersFiltres = computed(() => {
+    const q = this.recherche().trim().toLowerCase();
+    const base = this.visibleDossiers();
+    if (!q) return base;
+    const mots = q.split(/\s+/);
+    return base.filter((d) => {
+      const hay = [
+        d.refeDossier ?? 'Dossier #' + d.idDossier,
+        this.dateReceptionFmt(d),
+        this.typeDossierLabel(d),
+        this.entiteLabel(d),
+        this.localiteLabel(d),
+        d.statut ? statutDossierLabel(d.statut) : '',
+      ]
+        .join(' ')
+        .toLowerCase();
+      return mots.every((m) => hay.includes(m));
+    });
+  });
 
   /** Lecture du choix d'affichage mémorisé (tolère un localStorage indisponible/bloqué). */
   private lireVue(): 'frise' | 'tableau' {
