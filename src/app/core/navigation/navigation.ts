@@ -54,6 +54,9 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // liste les dossiers du périmètre) ; route inchangée. S'applique à Président ET CC (menu partagé).
     { label: 'Tous les dossiers', path: `${base}/tableau-de-bord`, icon: '▤' },
     { label: 'Mes dossiers', path: `${base}/mes-dossiers`, icon: '📁' },
+    // ⚠️ Demande pilote (2026-09-12) — la section « Dispatchs par contrôleur » quitte « Mes dossiers »
+    // pour sa propre entrée de menu « Répartition de dispatch » (écran dédié, composant autonome).
+    { label: 'Répartition de dispatch', path: `${base}/repartition-dispatch`, icon: '📊' },
     // ⚠️ 2026-08-06 (demande user) — « Projets de PV », « PV définitifs » et « Lettres de renvoi »
     // sont regroupés dans un écran-hub à cartes : ce sont les trois productions d'un même examen.
     // Les trois écrans et leurs routes sont inchangés, seul le chemin d'accès l'est.

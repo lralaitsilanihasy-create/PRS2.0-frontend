@@ -21,9 +21,9 @@ import { CIRCUIT_GROUPES, GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../ci
 
 
 
-/** Classement « Mes dossiers » (CC) : cartes par type × {pré-dispatch, dispatch}, scopé à sa localité,
- *  + section « Dispatchs par contrôleur » (les Membres de SA commission — listes scopées serveur). */
-const CLASSEMENT_CC = { subtitle: 'Domaine Chef de commission', base: '/cc/mes-dossiers', groupes: CIRCUIT_GROUPES, statDispatchsControleurs: true, retraitsPath: '/cc/retraits' };
+/** Classement « Mes dossiers » (CC) : cartes par type × {pré-dispatch, dispatch}, scopé à sa localité.
+ *  La section « Dispatchs par contrôleur » a son propre écran « Répartition de dispatch » (voir route). */
+const CLASSEMENT_CC = { subtitle: 'Domaine Chef de commission', base: '/cc/mes-dossiers', groupes: CIRCUIT_GROUPES, retraitsPath: '/cc/retraits' };
 
 /** ⚠️ Demande pilote (2026-09-03) — les tâches du Secrétaire quittent les cartes de « Mes dossiers »
  *  pour UNE entrée de menu « Exercé par délégation » (les deux groupes COMBINÉS — le dépôt entre en
@@ -44,6 +44,9 @@ export const CC_ROUTES: Routes = [
   { path: 'secretariat/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_SECRETARIAT_CC } },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le CC administre SA localité (scopé serveur).
   { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
+  // ⚠️ Demande pilote (2026-09-12) — « Répartition de dispatch » quitte « Mes dossiers » pour son propre
+  // écran + entrée de menu (composant autonome, scopé serveur — les Membres de SA commission pour le CC).
+  { path: 'repartition-dispatch', loadComponent: () => import('../circuit/dispatchs-controleurs').then((m) => m.DispatchsControleurs), data: { title: 'Répartition de dispatch' } },
   // « Dispatch des dossiers » retiré : dossiers dispatchés consultables dans « Mes dossiers ».
   // Même hub que le Président (cf. president.routes.ts) : les deux profils partagent leurs écrans.
   // Les listes s'ouvrent sous les cartes via ces routes ENFANTS, qui portent les mêmes `data` que les

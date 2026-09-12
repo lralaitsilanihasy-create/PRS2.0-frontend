@@ -21,9 +21,9 @@ import { CIRCUIT_GROUPES, GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../ci
 
 
 
-/** Classement « Mes dossiers » (Président) : cartes par type × {pré-dispatch, dispatch}, toutes localités,
- *  + section « Dispatchs par contrôleur » sous le classement. */
-const CLASSEMENT_PRESIDENT = { subtitle: 'Domaine Président', base: '/president/mes-dossiers', groupes: CIRCUIT_GROUPES, statDispatchsControleurs: true, retraitsPath: '/president/retraits' };
+/** Classement « Mes dossiers » (Président) : cartes par type × {pré-dispatch, dispatch}, toutes localités.
+ *  La section « Dispatchs par contrôleur » a son propre écran « Répartition de dispatch » (voir route). */
+const CLASSEMENT_PRESIDENT = { subtitle: 'Domaine Président', base: '/president/mes-dossiers', groupes: CIRCUIT_GROUPES, retraitsPath: '/president/retraits' };
 
 /** ⚠️ Demande pilote (2026-09-03) — les tâches du Secrétaire quittent les cartes de « Mes dossiers »
  *  pour UNE entrée de menu « Exercé par délégation » (les deux groupes COMBINÉS — le dépôt entre en
@@ -44,7 +44,9 @@ export const PRESIDENT_ROUTES: Routes = [
   { path: 'secretariat/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_SECRETARIAT_PRESIDENT } },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le Président administre partout.
   { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
-  // « Dispatchs par contrôleur » : section embarquée dans « Mes dossiers » (plus d'écran dédié).
+  // ⚠️ Demande pilote (2026-09-12) — « Répartition de dispatch » quitte « Mes dossiers » pour son propre
+  // écran + entrée de menu (le composant est autonome, scopé serveur — toutes localités pour le Président).
+  { path: 'repartition-dispatch', loadComponent: () => import('../circuit/dispatchs-controleurs').then((m) => m.DispatchsControleurs), data: { title: 'Répartition de dispatch' } },
   // Pré-dispatch et « Dispatch des dossiers » retirés : classement + action de dispatch dans « Mes dossiers ».
   // ⚠️ 2026-08-06 (demande user) — hub « Résultat examen » : une seule entrée de menu pour les trois
   // écrans produits par l'examen (projets de PV, PV définitifs, lettres de renvoi). Les routes des
