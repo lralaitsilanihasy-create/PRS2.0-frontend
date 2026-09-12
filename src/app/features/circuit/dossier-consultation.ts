@@ -200,7 +200,7 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                    rectification archive la version qu'elle remplace ; l'onglet n'apparaît que s'il
                    existe au moins une version archivée (un « Historique (0) » serait du bruit).
                    Compteur = versions archivées + la courante. -->
-              @if (versionsArchivees().length) {
+              @if (historiqueVersionsVisible()) {
                 <button type="button" class="onglets-dossier__tab onglets-dossier__tab--gris" role="tab" [class.onglets-dossier__tab--on]="ongletDossier() === 'historique'"
                   [attr.aria-selected]="ongletDossier() === 'historique'" (click)="ongletDossier.set('historique')">
                   Historique des versions <span class="onglets-dossier__n">{{ versionsArchivees().length + 1 }}</span>
@@ -213,7 +213,7 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                 <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [legendeTitre]="legendeChangements()" [detailsChangements]="detailsChangements()" />
               </div>
             }
-            @if (ongletDossier() === 'historique') {
+            @if (ongletDossier() === 'historique' && historiqueVersionsVisible()) {
               <div class="dc-section">
                 <div class="dc-section-head">
                   <div class="section-block-title">
@@ -705,6 +705,15 @@ export class DossierConsultation implements OnInit {
 
   /** La référence PPM interne (ex. « 00018/MLF/PPM/2026 ») n'est montrée qu'aux profils PRMP, UGPM et Secrétaire. */
   readonly montrerReferencePpm = computed(() => ['PRMP', 'UGPM', 'SECRETAIRE'].includes(this.auth.role() ?? ''));
+
+  /**
+   * ⚠️ Demande pilote (2026-09-12) — l'historique des versions (cycles de RECTIFICATION du dossier) n'est
+   * PAS montré au Vérificateur : il vérifie la décision, pas le détail des corrections internes du circuit.
+   * Onglet masqué (et son contenu gardé) tant qu'il y a ≥1 version archivée ET que le rôle n'est pas VÉRIFICATEUR.
+   */
+  readonly historiqueVersionsVisible = computed(
+    () => this.versionsArchivees().length > 0 && this.auth.role() !== 'VERIFICATEUR',
+  );
 
   readonly ppm = signal<Ppm | null>(null);
   /** Versionnement : idDetail → type de changement vs la version précédente (surlignage du tableau). */
