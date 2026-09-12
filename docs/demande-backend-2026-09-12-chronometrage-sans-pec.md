@@ -36,18 +36,17 @@ du moment où le dossier **entre** dans une étape/un processus jusqu'au moment 
   en charge ». À la place, par étape : `entree`, `fin?`, `dureeHeuresOuvrees`. Conserver les totaux
   `dureeBruteHeuresOuvrees` (entrée circuit → SIGMP) et `datePrevisionnelleFin` si toujours pertinents.
 
-## Points à trancher (pilote + backend)
+## Décisions pilote (2026-09-12) — tranchées
 
-1. **Brut vs net CNM.** Aujourd'hui : `dureeBrute` (total) et `dureeNette` (= brut − attentes PRMP,
-   statuts suspensifs). La règle « entrée → fin d'étape » mesure la durée **de chaque étape** ; faut-il
-   toujours **exclure** les périodes où la balle est chez la PRMP (statuts suspensifs) du total « net CNM »,
-   ou compter le **brut** de bout en bout ? (Les deux totaux peuvent coexister comme aujourd'hui.)
-2. **« Fin de traitement prévue ».** La prévision venait de la saisie **à la PEC**. Sans PEC, elle se calcule
-   sur les **délais standards** (référentiel `tr_delai_standard`, 8 étapes, écran Admin « Délais standards »).
-   On conserve ce référentiel comme **objectif par étape** et la fin prévue = somme des délais standards
-   restants ? (à confirmer)
-3. Les **8 étapes** du chronométrage (modèle `c66db71`) restent-elles la maille, ou aligne-t-on sur les
-   transitions de statut réelles ?
+1. **NET CNM conservé.** On garde la distinction : `dureeBruteHeuresOuvrees` (total de bout en bout) **et**
+   `dureeNetteHeuresOuvrees` (= brut − attentes PRMP). C'est le **NET** qui juge la CNM. Les périodes où la
+   **balle est chez la PRMP** (statuts suspensifs) restent **exclues** du net — la mesure « entrée → fin
+   d'étape » ne compte donc, au net, que le temps réellement CNM.
+2. **« Fin de traitement prévue » = délais standards.** Le référentiel `tr_delai_standard` (8 étapes) et
+   l'écran Admin « Délais standards » sont **conservés** comme objectifs par étape ; sans PEC, la fin prévue
+   se calcule sur ces délais standards (plus sur une prévision saisie). **OK pilote.**
+3. La **maille par étape** (les 8 étapes du modèle `c66db71`) reste la référence pour les durées — détail
+   d'implémentation laissé au backend, du moment que le net exclut bien les attentes PRMP.
 
 ## Côté front — à faire APRÈS livraison (rien avant : le backend porte encore la PEC)
 
