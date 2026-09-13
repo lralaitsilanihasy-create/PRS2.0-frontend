@@ -46,13 +46,14 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                 <th scope="col">Enregistrement CNM</th>
                 <th scope="col">Fin traitement CNM</th>
                 <th scope="col">Statut</th>
-                <th scope="col" class="r">Actions</th>
               </tr>
             </thead>
             <tbody>
               @for (d of dossiers(); track d.idDossier) {
-                <tr [class.cnm-row-cloture]="d.datesEtapes?.['CLOTURE']">
-                  <td>{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</td>
+                <tr class="ligne-clic" [class.cnm-row-cloture]="d.datesEtapes?.['CLOTURE']">
+                  <!-- Ligne cliquable : la référence est un vrai bouton (nom accessible + clavier) dont
+                       la zone cliquable est étendue à la ligne (overlay ::after) — pas de (click) sur <tr>. -->
+                  <td><button type="button" class="lien-ligne" (click)="consulte.set(d)">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</button></td>
                   <!-- ⚠️ Terme métier (pilote 2026-09-06) : la date de SOUMISSION est la date de
                        DÉPÔT du dossier — même donnée (champ demandé au backend, « — » sinon). -->
                   <td class="cnm-mono">{{ d.dateSoumission ? (d.dateSoumission | date: 'dd/MM/yyyy') : '—' }}</td>
@@ -77,14 +78,9 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                     }
                   </td>
                   <td><app-statut-badge [statut]="d.statut" /></td>
-                  <td>
-                    <div class="td-actions actions-end">
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
-                    </div>
-                  </td>
                 </tr>
               } @empty {
-                <tr><td colspan="6" class="empty-cell">Aucun dossier déposé à la CNM.</td></tr>
+                <tr><td colspan="5" class="empty-cell">Aucun dossier déposé à la CNM.</td></tr>
               }
             </tbody>
           </table>
@@ -98,6 +94,12 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
   `,
   styles: `
     .sdl-attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg, #fffbeb); border: 1px solid var(--warning-bdr, #fde68a); color: var(--warning-text, #92400e); font-size: var(--text-xs); white-space: nowrap; }
+    /* Ligne cliquable : la référence est un vrai bouton (nom accessible + clavier) dont la zone
+       cliquable est ÉTENDUE à toute la ligne via un overlay ::after ; pas de (click) sur <tr>. */
+    .table-card table tr.ligne-clic { position: relative; cursor: pointer; }
+    .table-card table tr.ligne-clic:hover td { background: var(--n-50); }
+    .lien-ligne { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+    .lien-ligne::after { content: ''; position: absolute; inset: 0; }
   `,
 })
 export class SuiviDelais {
