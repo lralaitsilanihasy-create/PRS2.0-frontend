@@ -110,8 +110,11 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   PRMP: [
     // ⚠️ Demande pilote (2026-09-06) — l'entrée du tableau de bord devient le suivi des délais.
     { label: 'Suivi des dossiers CNM', path: '/prmp/tableau-de-bord', icon: '⏱' },
-    // « Mes dossiers » = page dédiée (cartes type → statut) ; l'arborescence s'affiche à l'écran.
-    { label: 'Mes dossiers', path: '/prmp/dossiers', icon: '🗂' },
+    // ⚠️ Demande pilote (2026-09-13) — « Mes dossiers » (cartes type × statut) RETIRÉ du menu : « Suivi
+    // des dossiers CNM » liste désormais TOUS les dossiers (brouillons, à-rectifier compris) avec colonne
+    // Type et actions inline (Soumettre / Rectifier). La route `/prmp/dossiers` reste montée (elle sert
+    // encore la notif « compléter les pièces » et la recherche de dossier de la topbar), mais n'est plus
+    // au menu ni à l'atterrissage.
     // ⚠️ Demande pilote (2026-09-13) — REMIS au menu (ils vivaient dans les cartes de « Mes dossiers ») :
     // la saisie d'un dossier et la mise à jour d'un PPM (liste des vérifiés en mode `?maj=1`). « Soumettre
     // un dossier » avait été retiré le 2026-08-02 ; le pilote le réintroduit comme raccourci d'entrée.

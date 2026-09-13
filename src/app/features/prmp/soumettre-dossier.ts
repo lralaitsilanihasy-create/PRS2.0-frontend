@@ -131,7 +131,7 @@ interface ApercuDossier {
         <!-- Retour de navigation : la PRMP vers ses cartes « Mes dossiers », l'UGPM (qui n'a pas cet
              écran) vers « Mes brouillons » — même bouton, apparence alignée (demande pilote 2026-09-07). -->
         @if (estPrmp()) {
-          <a class="btn btn-retour-hub" routerLink="/prmp/dossiers">← Mes dossiers</a>
+          <a class="btn btn-retour-hub" routerLink="/prmp/tableau-de-bord">← Suivi des dossiers CNM</a>
         } @else {
           <a class="btn btn-retour-hub" routerLink="/prmp/mes-brouillons">← Mes brouillons</a>
         }

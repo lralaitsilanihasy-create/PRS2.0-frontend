@@ -819,7 +819,7 @@ export class MiseAJourPpm {
         this.toast.success(
           `Mise à jour créée${res.refeDossier ? ' · réf. ' + res.refeDossier : ''} — la version précédente est désormais « Remplacé ».`,
         );
-        void this.router.navigate(['/prmp/dossiers']);
+        void this.router.navigate(['/prmp/tableau-de-bord']);
       },
       error: (e: ApiError) => {
         this.enregistrement.set(false);
@@ -835,7 +835,7 @@ export class MiseAJourPpm {
         this.enregistrement.set(false);
         this.dossiersRefresh.notifierChangement();
         this.toast.success('Mise à jour abandonnée — le PPM en vigueur est inchangé.');
-        void this.router.navigate(['/prmp/dossiers']);
+        void this.router.navigate(['/prmp/tableau-de-bord']);
       },
       error: (e: ApiError) => {
         this.enregistrement.set(false);

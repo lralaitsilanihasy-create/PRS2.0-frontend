@@ -29,7 +29,8 @@ export class Home {
     } else if (this.auth.role() === 'SECRETAIRE') {
       void this.router.navigateByUrl('/secretaire/mes-dossiers', { replaceUrl: true });
     } else if (this.auth.role() === 'PRMP') {
-      void this.router.navigateByUrl('/prmp/dossiers', { replaceUrl: true });
+      // ⚠️ 2026-09-13 : « Mes dossiers » retiré du menu PRMP → atterrissage sur « Suivi des dossiers CNM ».
+      void this.router.navigateByUrl('/prmp/tableau-de-bord', { replaceUrl: true });
     } else if (this.auth.role() === 'PRESIDENT') {
       void this.router.navigateByUrl('/president/tableau-de-bord', { replaceUrl: true });
     } else if (this.auth.role() === 'CHEF_COMMISSION') {

@@ -11,6 +11,7 @@ import { DossierService, ReceptionService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { StatutBadge } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
+import { CompleterPiecesDepotModal } from './completer-pieces-depot-modal';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /**
@@ -25,7 +26,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 @Component({
   selector: 'app-suivi-delais',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, RouterLink, EtatErreur, StatutBadge, DossierConsultation],
+  imports: [DatePipe, RouterLink, EtatErreur, StatutBadge, DossierConsultation, CompleterPiecesDepotModal],
   template: `
     <section>
       <header class="page-header">
@@ -48,6 +49,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                    que le reste de l'app (libellés Initial/Numéroté/… via statutDossierLabel). -->
               <tr>
                 <th scope="col">Référence</th>
+                <th scope="col">Type</th>
                 <th scope="col">Dépôt du dossier</th>
                 <th scope="col">Enregistrement CNM</th>
                 <th scope="col">Fin traitement CNM</th>
@@ -61,6 +63,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <!-- Ligne cliquable : la référence est un vrai bouton (nom accessible + clavier) dont
                        la zone cliquable est étendue à la ligne (overlay ::after) — pas de (click) sur <tr>. -->
                   <td><button type="button" class="lien-ligne" (click)="consulte.set(d)">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</button></td>
+                  <!-- Type de dossier en CODE concis (sous-type de la référence, ex. PPM-AGPM ; repli famille). -->
+                  <td>{{ typeDossierLabel(d) }}</td>
                   <!-- ⚠️ Terme métier (pilote 2026-09-06) : la date de SOUMISSION est la date de
                        DÉPÔT du dossier — même donnée (champ demandé au backend, « — » sinon). -->
                   <td class="cnm-mono">{{ d.dateSoumission ? (d.dateSoumission | date: 'dd/MM/yyyy') : '—' }}</td>
@@ -85,8 +89,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                     }
                   </td>
                   <td><app-statut-badge [statut]="d.statut" /></td>
-                  <!-- Actions contextuelles (le clic-ligne reste pour le détail) : Rectifier un dossier
-                       à rectifier, Soumettre un brouillon — chacune affichée seulement quand elle s'applique. -->
+                  <!-- Actions contextuelles (le clic-ligne reste pour le détail) : Rectifier, Soumettre un
+                       brouillon, Compléter les pièces d'un dépôt — chacune affichée seulement si elle s'applique. -->
                   <td>
                     <div class="td-actions actions-end">
                       @if (d.statut === 'EN_ATTENTE_DECISION_PRMP') {
@@ -101,11 +105,14 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                           (click)="soumettre(d)"
                         >Soumettre</button>
                       }
+                      @if (d.statut === 'EN_ATTENTE_COMPLEMENTS_DEPOT') {
+                        <button type="button" class="btn btn-warning btn-sm" (click)="completer.set(d)">Compléter les pièces</button>
+                      }
                     </div>
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="6" class="empty-cell">Aucun dossier à la CNM.</td></tr>
+                <tr><td colspan="7" class="empty-cell">Aucun dossier à la CNM.</td></tr>
               }
             </tbody>
           </table>
@@ -115,6 +122,9 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 
     @if (consulte(); as d) {
       <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
+    }
+    @if (completer(); as d) {
+      <app-completer-pieces-depot-modal [dossier]="d" (transmis)="onComplementsTransmis()" (fermer)="completer.set(null)" />
     }
   `,
   styles: `
@@ -147,6 +157,8 @@ export class SuiviDelais {
   private readonly receptions = signal<Map<number, Reception>>(new Map());
   /** Dossier ouvert en consultation lecture seule (null = fermé). */
   readonly consulte = signal<Dossier | null>(null);
+  /** Dossier ouvert dans le modal « Compléter les pièces » (EN_ATTENTE_COMPLEMENTS_DEPOT ; null = fermé). */
+  readonly completer = signal<Dossier | null>(null);
 
   /**
    * Tous les dossiers de la PRMP, plus récents d'abord. ⚠️ 2026-09-13 (demande pilote) : les BROUILLONS
@@ -170,11 +182,12 @@ export class SuiviDelais {
       // explicitement (dédoublonnage par idDossier ci-dessous) pour que le tableau porte TOUS les dossiers.
       aRectifier: this.dossierService.list('EN_ATTENTE_DECISION_PRMP').pipe(catchError(() => of([] as Dossier[]))),
       brouillons: this.dossierService.list('BROUILLON').pipe(catchError(() => of([] as Dossier[]))),
+      aCompleter: this.dossierService.list('EN_ATTENTE_COMPLEMENTS_DEPOT').pipe(catchError(() => of([] as Dossier[]))),
       receptions: this.receptionService.list().pipe(catchError(() => of([] as Reception[]))),
     }).subscribe({
-      next: ({ dossiers, aRectifier, brouillons, receptions }) => {
+      next: ({ dossiers, aRectifier, brouillons, aCompleter, receptions }) => {
         const parId = new Map<number, Dossier>();
-        for (const d of [...dossiers, ...aRectifier, ...brouillons]) parId.set(d.idDossier, d);
+        for (const d of [...dossiers, ...aRectifier, ...brouillons, ...aCompleter]) parId.set(d.idDossier, d);
         this.tous.set([...parId.values()]);
         const parDossier = new Map<number, Reception>();
         for (const r of receptions) {
@@ -199,6 +212,18 @@ export class SuiviDelais {
    */
   enregistrement(d: Dossier): string | null {
     return d.dateEnregistrement ?? this.receptions().get(d.idDossier)?.dateReception ?? null;
+  }
+
+  /** Type de dossier en CODE concis (`idSousType`, ex. « PPM-AGPM » ; repli famille `idTypeDossier`). */
+  typeDossierLabel(d: Dossier): string {
+    return d.idSousType ?? d.idTypeDossier ?? '—';
+  }
+
+  /** Compléments transmis (dossier revenu SOUMIS) : ferme le modal, recharge, propage aux autres écrans. */
+  onComplementsTransmis(): void {
+    this.completer.set(null);
+    this.charger();
+    this.dossiersRefresh.notifierChangement();
   }
 
   /**

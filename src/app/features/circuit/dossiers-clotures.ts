@@ -30,7 +30,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
         </div>
         <!-- Retour aux cartes « Mes dossiers » — uniquement pour la variante PRMP (écran partagé). -->
         @if (source === 'prmp-clotures') {
-          <a class="btn btn-retour-hub" routerLink="/prmp/dossiers">← Mes dossiers</a>
+          <a class="btn btn-retour-hub" routerLink="/prmp/tableau-de-bord">← Suivi des dossiers CNM</a>
         }
       </header>
 

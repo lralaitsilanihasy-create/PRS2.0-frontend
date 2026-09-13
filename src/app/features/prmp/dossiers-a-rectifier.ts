@@ -47,7 +47,7 @@ interface CarteRectif {
           <div class="page-subtitle">Domaine PRMP</div>
           <h1 class="page-title">Dossiers à rectifier</h1>
         </div>
-        <a class="btn btn-retour-hub" routerLink="/prmp/dossiers">← Mes dossiers</a>
+        <a class="btn btn-retour-hub" routerLink="/prmp/tableau-de-bord">← Suivi des dossiers CNM</a>
       </header>
 
       <div class="alert alert-info">
