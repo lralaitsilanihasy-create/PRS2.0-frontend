@@ -14,6 +14,9 @@ const CLASSEMENT_SECRETAIRE = { subtitle: 'Domaine Secrétaire', base: '/secreta
 /** Espace Secrétaire (lazy, sous roleGuard SECRETAIRE). */
 export const SECRETAIRE_ROUTES: Routes = [
   { path: '', redirectTo: 'mes-dossiers', pathMatch: 'full' },
+  // ⚠️ Demande pilote (2026-09-13) — écran « Tous les dossiers » (pipeline partagé) : liste à plat des
+  // dossiers du Secrétaire (réceptions + enregistrés), avec l'action « Numéroter » inline sur les réceptions.
+  { path: 'tableau-de-bord', loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline), data: { title: 'Tous les dossiers' } },
   // ⚠️ Demande pilote (2026-09-12) — « Tableau de bord » retiré du profil Secrétaire (route + composant
   // supprimés) ; l'atterrissage se fait sur « Mes dossiers ».
   { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_SECRETAIRE } },
