@@ -5,6 +5,8 @@ export interface NavItem {
   label: string;
   /** Chemin de route (implémenté progressivement aux étapes suivantes). */
   path: string;
+  /** Paramètres de requête du lien (ex. `{ maj: 1 }`) — bindés en `[queryParams]` dans la barre latérale. */
+  queryParams?: Record<string, string | number>;
   icon?: string;
   /** Sous-entrées affichées en retrait sous cette entrée (jusqu'à deux niveaux d'imbrication). */
   children?: NavItem[];
@@ -110,8 +112,11 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Suivi des dossiers CNM', path: '/prmp/tableau-de-bord', icon: '⏱' },
     // « Mes dossiers » = page dédiée (cartes type → statut) ; l'arborescence s'affiche à l'écran.
     { label: 'Mes dossiers', path: '/prmp/dossiers', icon: '🗂' },
-    // « Soumettre un dossier » : retiré du menu (demande user 2026-08-02) — la saisie s'ouvre par type
-    // via la ligne « Créer » des cartes « Mes dossiers » (?famille=), route conservée.
+    // ⚠️ Demande pilote (2026-09-13) — REMIS au menu (ils vivaient dans les cartes de « Mes dossiers ») :
+    // la saisie d'un dossier et la mise à jour d'un PPM (liste des vérifiés en mode `?maj=1`). « Soumettre
+    // un dossier » avait été retiré le 2026-08-02 ; le pilote le réintroduit comme raccourci d'entrée.
+    { label: 'Saisir & soumettre un dossier', path: '/prmp/soumettre-dossier', icon: '✏' },
+    { label: 'Mettre à jour un PPM', path: '/prmp/dossiers/verifies', queryParams: { maj: 1 }, icon: '🔄' },
     // « Créer compte UGPM » : déplacé dans le PIED de la barre latérale (à la place de la carte profil,
     // redondante avec la topbar) — cf. main-layout.html (demande user 2026-08-02).
     // « Dossiers à rectifier » / « Dossiers vérifiés » : retirés du menu (demande user 2026-08-02) —

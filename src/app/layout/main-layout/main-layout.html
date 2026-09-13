@@ -101,6 +101,7 @@
         <a
           class="nav-item"
           [routerLink]="item.path"
+          [queryParams]="item.queryParams ?? null"
           routerLinkActive="active"
           [title]="item.delegation ? 'Tâche du profil ' + delegationLabel(item.delegation) + ' — exercée par délégation active.' : ''"
         >
