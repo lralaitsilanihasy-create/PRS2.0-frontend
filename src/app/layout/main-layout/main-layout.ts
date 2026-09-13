@@ -313,7 +313,7 @@ export class MainLayout {
     // Le compteur Vérificateur reste le miroir exact de sa file (il décroît de lui-même à la
     // transmission SIGMP) ; le CC gagne le même badge « à dispatcher » que le Président.
     const role = this.auth.role();
-    if (role && ['PRMP', 'SECRETAIRE', 'VERIFICATEUR', 'PRESIDENT', 'CHEF_COMMISSION'].includes(role)) {
+    if (role && ['PRMP', 'SECRETAIRE', 'VERIFICATEUR', 'PRESIDENT', 'CHEF_COMMISSION', 'MEMBRE'].includes(role)) {
       this.rafraichirBadges();
       this.router.events
         .pipe(
@@ -372,6 +372,11 @@ export class MainLayout {
             break;
           case 'VERIFICATEUR':
             c[CHEMIN_A_VERIFIER] = compteurs['aVerifier'] ?? 0;
+            break;
+          case 'MEMBRE':
+            // ⚠️ Demande pilote (2026-09-13) — pastille « Tous les dossiers » = nb de dossiers portant le
+            // bouton « Examiner » (à-examiner : DISPATCHE/A_REEXAMINER attribués), servi par le badges agrégé.
+            c['/membre/tableau-de-bord'] = compteurs['aExaminer'] ?? 0;
             break;
         }
         this.counts.set(Object.fromEntries(Object.entries(c).filter(([, n]) => n > 0)));
