@@ -116,7 +116,9 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     // la saisie d'un dossier et la mise à jour d'un PPM (liste des vérifiés en mode `?maj=1`). « Soumettre
     // un dossier » avait été retiré le 2026-08-02 ; le pilote le réintroduit comme raccourci d'entrée.
     { label: 'Saisir & soumettre un dossier', path: '/prmp/soumettre-dossier', icon: '✏' },
-    { label: 'Mettre à jour un PPM', path: '/prmp/dossiers/verifies', queryParams: { maj: 1 }, icon: '🔄' },
+    // ⚠️ Route AUTONOME `dossiers-verifies` (pas l'enfant `dossiers/verifies` qui s'affiche SOUS les
+    // cartes de « Mes dossiers ») : l'écran ne montre QUE le tableau des vérifiés en mode mise à jour.
+    { label: 'Mettre à jour un PPM', path: '/prmp/dossiers-verifies', queryParams: { maj: 1 }, icon: '🔄' },
     // « Créer compte UGPM » : déplacé dans le PIED de la barre latérale (à la place de la carte profil,
     // redondante avec la topbar) — cf. main-layout.html (demande user 2026-08-02).
     // « Dossiers à rectifier » / « Dossiers vérifiés » : retirés du menu (demande user 2026-08-02) —
