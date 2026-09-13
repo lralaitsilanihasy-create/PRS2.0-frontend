@@ -5,6 +5,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { Dossier, Reception } from '../../models';
 import { DossierService, ReceptionService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
+import { StatutBadge } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 
 /**
@@ -12,12 +13,13 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
  * un tableau par dossier déposé — référence, date d'ENREGISTREMENT CNM (la réception par le
  * Secrétaire, premier passage) et FIN DE TRAITEMENT prévue (chronométrage serveur,
  * `datePrevisionnelleFin` ; ⏸ quand la balle est chez la PRMP et que la date glisse).
- * Précisé le jour même : PAS de colonne Statut — l'écran suit les dates, rien d'autre.
+ * ⚠️ 2026-09-13 : colonne Statut RÉINTRODUITE (le pilote revient sur le choix du 2026-09-06 de n'y
+ * mettre que des dates) — badge de statut partagé, à droite des dates.
  */
 @Component({
   selector: 'app-suivi-delais',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, EtatErreur, DossierConsultation],
+  imports: [DatePipe, EtatErreur, StatutBadge, DossierConsultation],
   template: `
     <section>
       <header class="page-header">
@@ -35,13 +37,15 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
         <div class="table-card">
           <table>
             <thead>
-              <!-- ⚠️ Demande pilote (2026-09-06, précisée) : PAS de colonne Statut ici — l'écran
-                   suit les DATES, le statut se lit dans « Mes dossiers » et la consultation. -->
+              <!-- ⚠️ 2026-09-13 (demande pilote) — colonne Statut AJOUTÉE : elle avait été écartée le
+                   2026-09-06 (« l'écran suit les dates »), le pilote la réintroduit. Même badge partagé
+                   que le reste de l'app (libellés Initial/Numéroté/… via statutDossierLabel). -->
               <tr>
                 <th scope="col">Référence</th>
                 <th scope="col">Dépôt du dossier</th>
                 <th scope="col">Enregistrement CNM</th>
                 <th scope="col">Fin traitement CNM</th>
+                <th scope="col">Statut</th>
                 <th scope="col" class="r">Actions</th>
               </tr>
             </thead>
@@ -72,6 +76,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                       —
                     }
                   </td>
+                  <td><app-statut-badge [statut]="d.statut" /></td>
                   <td>
                     <div class="td-actions actions-end">
                       <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
@@ -79,7 +84,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="empty-cell">Aucun dossier déposé à la CNM.</td></tr>
+                <tr><td colspan="6" class="empty-cell">Aucun dossier déposé à la CNM.</td></tr>
               }
             </tbody>
           </table>
