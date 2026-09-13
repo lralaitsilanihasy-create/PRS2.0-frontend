@@ -1414,10 +1414,9 @@ export class ExamenDossier implements OnDestroy {
   private espaceCourant(): string {
     return this.router.url.split('/')[1] || 'membre';
   }
-  /** Liste « Projets de PV » de l'espace : directe chez le Membre, sous le hub `resultat-examen` chez le CC / le Président. */
+  /** Liste « Projets de PV » de l'espace : sous le hub `resultat-examen` chez TOUS les profils (Membre inclus depuis 2026-09-13). */
   private routeProjetsPv(): unknown[] {
-    const e = this.espaceCourant();
-    return e === 'membre' ? ['/membre', 'pv'] : ['/' + e, 'resultat-examen', 'pv'];
+    return ['/' + this.espaceCourant(), 'resultat-examen', 'pv'];
   }
 
   annuler(): void {

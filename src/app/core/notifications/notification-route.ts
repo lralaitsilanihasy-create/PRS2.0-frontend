@@ -67,13 +67,13 @@ export function routePourNotification(n: Notification, role: string | null): Cib
     return { genre: 'route', commands: [`/${base}/resultat-examen/pv`] };
   }
   if ((type === 'PV_A_RECTIFIER' || type === 'PV_ACCEPTE') && role === 'MEMBRE') {
-    return { genre: 'route', commands: ['/membre/pv'] };
+    return { genre: 'route', commands: ['/membre/resultat-examen/pv'] };
   }
   // ⚠️ Co-signature (backend e8b5b2e, 2026-08-28) — le Membre DÉSIGNÉ par le Président / CC est
   // appelé à poser la part Membre. Type distinct de PV_A_VALIDER, qui vise le P/CC pour la navette :
   // les confondre enverrait le Membre sur un écran qui ne lui est pas destiné.
   if (type === 'PV_A_COSIGNER' && role === 'MEMBRE') {
-    return { genre: 'route', commands: ['/membre/pv'] };
+    return { genre: 'route', commands: ['/membre/resultat-examen/pv'] };
   }
   // — PRMP : PV signé et lettre de renvoi vivent dans le hub « Examen de dossiers » ; observations → à rectifier.
   if (type === 'PV_SIGNE' && role === 'PRMP') return { genre: 'route', commands: ['/prmp/resultat-examen/pv-definitifs'] };
@@ -126,7 +126,7 @@ export function routePourNotification(n: Notification, role: string | null): Cib
 
   // — Replis par OBJET (types non mappés individuellement).
   if (n.typeObjet === 'PV') {
-    if (role === 'MEMBRE') return { genre: 'route', commands: ['/membre/pv'] };
+    if (role === 'MEMBRE') return { genre: 'route', commands: ['/membre/resultat-examen/pv'] };
     if (role === 'PRMP') return { genre: 'route', commands: ['/prmp/resultat-examen/pv-definitifs'] };
     if (role === 'PRESIDENT' || role === 'CHEF_COMMISSION') return { genre: 'route', commands: [`/${base}/resultat-examen/pv`] };
   }

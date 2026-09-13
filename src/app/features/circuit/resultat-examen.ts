@@ -73,6 +73,41 @@ const CARTES_PRMP: CarteResultat[] = [
 ];
 
 /**
+ * Variante MEMBRE (demande pilote 2026-09-13) : un seul écran « PV et lettres de renvoi » qui
+ * regroupe les trois entrées jusque-là séparées — Projets de PV, Projets de lettre de renvoi, PV
+ * définitifs. Mêmes écrans, mêmes sources que le P/CC (l'ordre suit les libellés du menu Membre).
+ */
+const CARTES_MEMBRE: CarteResultat[] = [
+  {
+    cle: 'projets',
+    icone: '📝',
+    titre: 'Projets de PV',
+    description: "PV d'examen en cours de navette : à gérer, soumettre et faire signer.",
+    suffixe: 'pv',
+    unite: 'projet',
+    aTraiter: true,
+  },
+  {
+    cle: 'definitifs',
+    icone: '✅',
+    titre: 'PV définitifs',
+    description: 'PV signés par la Commission — consultables et téléchargeables.',
+    suffixe: 'pv-definitifs',
+    unite: 'PV',
+    aTraiter: false,
+  },
+  {
+    cle: 'lettres',
+    icone: '✉',
+    titre: 'Projets de lettre de renvoi',
+    description: 'Lettres de renvoi produites à l’issue de l’examen, adressées à la PRMP.',
+    suffixe: 'lettre-renvois',
+    unite: 'lettre',
+    aTraiter: false,
+  },
+];
+
+/**
  * **Résultat de l'examen** — écran de regroupement (demande user 2026-08-06 : « mettre dans un écran
  * appelé résultat examen, en card : Projets de PV, PV définitifs, Lettres de renvoi »).
  *
@@ -93,9 +128,10 @@ const CARTES_PRMP: CarteResultat[] = [
       <header class="page-header">
         <div>
           <div class="page-subtitle">{{ sousTitre() }}</div>
-          <!-- ⚠️ Demande pilote (2026-09-13) — côté PRMP le hub ne produit que PV définitifs + lettres de
-               renvoi : titre « PV et lettres de renvoi ». P/CC gardent « Examen de dossiers » (projets de PV inclus). -->
-          <h1 class="page-title">{{ estPrmp() ? 'PV et lettres de renvoi' : 'Examen de dossiers' }}</h1>
+          <!-- ⚠️ Demande pilote (2026-09-13) — PRMP et MEMBRE affichent « PV et lettres de renvoi »
+               (le Membre y regroupe Projets de PV + Projets de lettre de renvoi + PV définitifs).
+               P/CC gardent « Examen de dossiers ». -->
+          <h1 class="page-title">{{ estPrmp() || estMembre() ? 'PV et lettres de renvoi' : 'Examen de dossiers' }}</h1>
         </div>
       </header>
       @if (estPrmp()) {
@@ -205,17 +241,23 @@ export class ResultatExamen implements OnInit {
   /** URL courante, suivie pour savoir quelle carte est ouverte (le hub reste monté pendant la navigation). */
   private readonly urlCourante = signal(this.router.url);
 
-  /** `/president`, `/cc` ou `/prmp` selon le profil connecté — les suffixes de route sont identiques. */
+  /** `/president`, `/cc`, `/prmp` ou `/membre` selon le profil connecté — les suffixes de route sont identiques. */
   protected readonly base = computed(() => {
     const url = this.urlCourante();
     if (url.startsWith('/prmp')) return '/prmp';
+    if (url.startsWith('/membre')) return '/membre';
     return url.startsWith('/cc') ? '/cc' : '/president';
   });
   /** Variante PRMP : deux cartes (SES PV définitifs, SES lettres), pas de projets de PV. */
   protected readonly estPrmp = computed(() => this.base() === '/prmp');
-  protected readonly cartes = computed(() => (this.estPrmp() ? CARTES_PRMP : CARTES));
+  /** Variante MEMBRE (2026-09-13) : trois cartes, écran « PV et lettres de renvoi ». */
+  protected readonly estMembre = computed(() => this.base() === '/membre');
+  protected readonly cartes = computed(() =>
+    this.estPrmp() ? CARTES_PRMP : this.estMembre() ? CARTES_MEMBRE : CARTES,
+  );
   protected readonly sousTitre = computed(() => {
     if (this.estPrmp()) return 'Domaine PRMP';
+    if (this.estMembre()) return 'Domaine Membre';
     return this.base() === '/cc' ? 'Domaine Chef de Commission' : 'Domaine Président';
   });
 

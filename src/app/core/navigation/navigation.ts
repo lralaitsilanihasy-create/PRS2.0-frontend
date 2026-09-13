@@ -172,9 +172,11 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     // ⚠️ Demande pilote (2026-09-13) — « Mes dossiers » (cartes type × statut) RETIRÉ : « Tous les
     // dossiers » (pipeline) porte déjà les dossiers à examiner/examinés avec les actions inline
     // (Examiner / Réexaminer / Modifier l'examen) et la pastille « à examiner ». Route conservée.
-    { label: 'Projets de PV', path: '/membre/pv', icon: '📝' },
-    { label: 'Projets de lettre de renvoi', path: '/membre/lettre-renvois', icon: '✉' },
-    { label: 'PV définitifs', path: '/membre/pv-definitifs', icon: '✅' },
+    // ⚠️ Demande pilote (2026-09-13) — « Projets de PV », « Projets de lettre de renvoi » et « PV
+    // définitifs » FUSIONNÉS dans un seul écran-hub « PV et lettres de renvoi » (comme le PRMP) : les
+    // trois listes s'ouvrent sous des cartes. Anciens liens `/membre/{pv,lettre-renvois,pv-definitifs}`
+    // redirigés vers le hub (voir membre.routes.ts).
+    { label: 'PV et lettres de renvoi', path: '/membre/resultat-examen', icon: '📝' },
     // Messagerie retirée du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Messagerie', path: '/membre/messagerie', icon: '✉' },
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
