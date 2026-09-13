@@ -205,7 +205,6 @@ export class MainLayout {
   private readonly badgeSeverites: Record<string, string> = {
     '/prmp/mes-brouillons': 'i',
     '/prmp/ppm-marches': 'i',
-    '/prmp/dossiers-verifies': 's',
     '/prmp/resultat-examen': 'd',
     '/prmp/retraits': 'd',
     [CHEMIN_A_VERIFIER]: 'i',
@@ -346,7 +345,8 @@ export class MainLayout {
             // compteur sans item correspondant n'affiche simplement rien.
             c['/prmp/mes-brouillons'] = compteurs['brouillons'] ?? 0;
             c['/prmp/ppm-marches'] = compteurs['ppmMarches'] ?? 0;
-            c['/prmp/dossiers-verifies'] = compteurs['dossiersVerifies'] ?? 0;
+            // ⚠️ Demande pilote (2026-09-13) — plus de pastille sur « Mettre à jour un PPM »
+            // (`/prmp/dossiers-verifies`) : le compteur serveur `dossiersVerifies` n'est plus affiché.
             // Lettres SIGNE que l'agent connecté n'a pas encore lues (⚠️ 2026-08-27 : décompte par
             // agent, plus par tutelle) → badge sur le hub « Examen de dossiers ».
             c['/prmp/resultat-examen'] = compteurs['lettresRenvoi'] ?? 0;

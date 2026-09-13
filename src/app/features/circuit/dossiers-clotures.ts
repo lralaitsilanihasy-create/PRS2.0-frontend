@@ -11,6 +11,7 @@ import { DossierService, EntiteContractService, LocaliteService, ReferenceLookup
 import { MesDossiers } from '../prmp/mes-dossiers';
 import { StatutBadge } from '../../shared/circuit';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { DossierConsultation } from './dossier-consultation';
 
 /**
  * « Dossiers vérifiés / clôturés » (Vérificateur) et « Dossiers vérifiés » (PRMP) — LECTURE SEULE.
@@ -21,7 +22,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
 @Component({
   selector: 'app-dossiers-clotures',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, StatutBadge, DatePipe, ModaleDirective],
+  imports: [RouterLink, StatutBadge, DatePipe, ModaleDirective, DossierConsultation],
   template: `
     <section class="dc">
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -51,8 +52,11 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
             </thead>
             <tbody>
               @for (d of dossiersAffiches(); track d.idDossier) {
-                <tr [class.cnm-row-cloture]="d.datesEtapes?.['CLOTURE']">
-                  <td>{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</td>
+                <tr class="ligne-clic" [class.cnm-row-cloture]="d.datesEtapes?.['CLOTURE']">
+                  <!-- ⚠️ Demande pilote (2026-09-13) — ligne cliquable → consultation du dossier : bouton
+                       sur la référence dont le ::after recouvre toute la ligne (jamais un (click) sur
+                       le tr, inaccessible au clavier) ; les boutons d'action passent au-dessus (z-index). -->
+                  <td><button type="button" class="lien-ligne" (click)="consulte.set(d)">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</button></td>
                   <td>{{ entiteLabel(d) }}</td>
                   <!-- Statut réel : la liste PRMP couvre toute la phase de vérification (2026-08-03). -->
                   <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
@@ -74,10 +78,19 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
                   </td>
                   <td>
                     <div class="td-actions actions-end">
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirHistorique(d)">Ouvrir</button>
+                      <!-- ⚠️ Demande pilote (2026-09-13) — sur « Mettre à jour un PPM », pas de bouton « Ouvrir »
+                           (historique des échanges) : l'écran ne porte que le geste de mise à jour. Le
+                           Vérificateur (« Vérifiés / clôturés », même composant) le garde. -->
+                      @if (!modeMaj()) {
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirHistorique(d)">Ouvrir</button>
+                      }
                       <!-- ⚠️ 2026-08-05 — versionnement : la mise à jour n'est ouverte que sur un PPM
-                           dont la Commission a rendu sa décision (409 sinon) ; écran d'ACTION seul. -->
-                      @if (source === 'prmp-clotures' && modeMaj() && majPossible(d)) {
+                           dont la Commission a rendu sa décision (409 sinon) ; écran d'ACTION seul.
+                           ⚠️ Demande pilote (2026-09-13) — seule la DERNIÈRE version se met à jour : dès
+                           qu'une mise à jour a été créée (soumise), le plan d'origine perd le bouton et sort
+                           de la liste ; tant qu'elle n'est qu'un brouillon, on la REPREND d'ici (seul accès
+                           au brouillon, absent de « Mes brouillons » par construction). -->
+                      @if (source === 'prmp-clotures' && modeMaj() && majPossible(d) && estDerniereVersion(d)) {
                         @if (majEnCoursPour(d); as version) {
                           <a class="btn btn-primary btn-sm" [routerLink]="['/prmp/mise-a-jour', version]"
                             title="Une mise à jour est déjà en cours sur ce plan — rien n'est encore effectif : on la reprend.">Reprendre la mise à jour</a>
@@ -105,6 +118,11 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
             <button type="button" class="btn btn-secondary btn-sm" [disabled]="pageIndex() + 1 >= totalPages()" (click)="nextPage()">Suivant</button>
           </div>
         }
+      }
+
+      <!-- Consultation du dossier (clic sur la ligne, 2026-09-13) — même modale que les autres listes. -->
+      @if (consulte(); as d) {
+        <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
       }
 
       <!-- ⚠️ Demande pilote (2026-09-06, précisée) — l'historique s'ouvre en FENÊTRE MODALE. -->
@@ -195,6 +213,15 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
     .dcm-modal--maj { width: min(44rem, 95vw); }
     .dcm-modal__titre { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; min-width: 0; }
     .dcm-modal__titre .modal-title { margin: 0; }
+    /* Ligne cliquable (2026-09-13, même motif que « Suivi des dossiers CNM ») : la référence est un vrai
+       bouton (nom accessible + clavier) dont la zone cliquable est ÉTENDUE à toute la ligne via un
+       overlay ::after ; pas de (click) sur <tr>. */
+    .table-card table tr.ligne-clic { position: relative; cursor: pointer; }
+    .table-card table tr.ligne-clic:hover td { background: var(--n-50); }
+    .lien-ligne { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+    .lien-ligne::after { content: ''; position: absolute; inset: 0; }
+    /* Les boutons d'action passent AU-DESSUS de l'overlay → cliquables indépendamment du clic-ligne. */
+    .table-card table tr.ligne-clic .btn { position: relative; z-index: 1; }
     .dc__attente { display: inline-block; margin-left: 0.35rem; padding: 0.05rem 0.4rem; border-radius: var(--radius-full); background: var(--warning-bg, #fffbeb); border: 1px solid var(--warning-bdr, #fde68a); color: var(--warning-text, #92400e); font-size: var(--text-xs); white-space: nowrap; }
     .dc__hist { padding: 0.25rem 0.35rem; }
     .dc__hist-title { margin: 0 0 0.4rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
@@ -241,10 +268,22 @@ export class DossiersClotures {
   readonly motifMaj = signal('');
   /** idDossier du plan → version en cours ouverte dessus (brouillon rattaché). */
   private readonly versionsEnCours = signal<Map<number, number>>(new Map());
+  /**
+   * ⚠️ Demande pilote (2026-09-13) — plans qui ont DÉJÀ un successeur SOUMIS (une mise à jour créée,
+   * enfant par `idDossierParent` hors brouillon) : ils ne sont plus la dernière version. Dérivé de la
+   * liste générale (`list()` n'inclut pas les brouillons — ceux-ci vivent dans `versionsEnCours`),
+   * indépendamment du statut du parent, que le backend l'ait basculé `REMPLACE` ou non.
+   */
+  private readonly successeursSoumis = signal<Set<number>>(new Set());
 
   /** Version de mise à jour déjà ouverte sur ce plan, s'il y en a une. */
   majEnCoursPour(d: Dossier): number | undefined {
     return this.versionsEnCours().get(d.idDossier);
+  }
+
+  /** Dernière version de sa chaîne = aucune mise à jour soumise ne la remplace (un brouillon ne compte pas). */
+  estDerniereVersion(d: Dossier): boolean {
+    return !this.successeursSoumis().has(d.idDossier);
   }
 
   /** Seule une famille DDP (plan de passation) se versionne. */
@@ -301,7 +340,8 @@ export class DossiersClotures {
   readonly dossiersAffiches = computed(() => {
     const t = this.typeFiltre();
     const base = t ? this.dossiers().filter((d) => d.idTypeDossier === t) : this.dossiers();
-    return this.modeMaj() ? base.filter((d) => this.majPossible(d)) : base;
+    // Mode mise à jour : seuls les plans versionnables ET derniers de leur chaîne (2026-09-13).
+    return this.modeMaj() ? base.filter((d) => this.majPossible(d) && this.estDerniereVersion(d)) : base;
   });
   /** Cache des fils par dossier (chargés à la demande) ; absence de clé = pas encore chargé. */
   private readonly historiques = signal<Record<number, EchangeDto[]>>({});
@@ -309,6 +349,8 @@ export class DossiersClotures {
   private readonly chargement = signal<Set<number>>(new Set());
   /** Dossier dont l'historique des échanges est ouvert en MODALE (2026-09-06 ; null = fermée). */
   readonly histoirePour = signal<Dossier | null>(null);
+  /** Dossier ouvert en consultation par clic sur sa ligne (2026-09-13 ; null = fermée). */
+  readonly consulte = signal<Dossier | null>(null);
   /** Dossier dont le motif de mise à jour est ouvert en modale (dérivé de `majPour`). */
   readonly majDossier = computed(() => {
     const id = this.majPour();
@@ -356,6 +398,11 @@ export class DossiersClotures {
       // un dossier rectifié puis resoumis (EN_VERIFICATION) y figure, jusqu'à la clôture.
       this.dossierService.list().subscribe({
         next: (rows) => {
+          // Successeurs SOUMIS lus sur les lignes NON filtrées : un enfant en cours de circuit
+          // (SOUMIS, DISPATCHE…) n'est pas « vérifié » mais remplace bien son parent (2026-09-13).
+          this.successeursSoumis.set(
+            new Set(rows.filter((d) => d.idDossierParent != null && d.statut !== 'BROUILLON').map((d) => d.idDossierParent as number)),
+          );
           this.dossiers.set(rows.filter((d) => MesDossiers.STATUTS_VERIFIES.has(d.statut ?? '')));
           this.loading.set(false);
         },
