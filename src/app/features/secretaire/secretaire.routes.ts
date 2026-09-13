@@ -1,25 +1,13 @@
 import { Routes } from '@angular/router';
 
-import { ClassementGroupe, GROUPE_ENREGISTREMENT, GROUPE_RECEPTIONS } from '../circuit/dossiers-classement';
-
-
-
-
-/** Groupes du Secrétaire : à réceptionner vs réceptionné-enregistré (groupes PARTAGÉS avec P/CC via délégation). */
-const SECRETAIRE_GROUPES: ClassementGroupe[] = [GROUPE_RECEPTIONS, GROUPE_ENREGISTREMENT];
-
-/** Classement « Mes dossiers » (Secrétaire) : cartes par type × {réceptions, enregistrement}, sa localité. */
-const CLASSEMENT_SECRETAIRE = { subtitle: 'Domaine Secrétaire', base: '/secretaire/mes-dossiers', groupes: SECRETAIRE_GROUPES };
-
-/** Espace Secrétaire (lazy, sous roleGuard SECRETAIRE). */
+/**
+ * Espace Secrétaire (lazy, sous roleGuard SECRETAIRE).
+ * ⚠️ Demande pilote (2026-09-13) — « Mes dossiers » (cartes par type × {réceptions, enregistrés})
+ * RETIRÉ : « Tous les dossiers » (pipeline partagé) porte à plat les réceptions + enregistrés, avec
+ * l'action « Numéroter » inline. Atterrissage sur « Tous les dossiers ».
+ */
 export const SECRETAIRE_ROUTES: Routes = [
-  { path: '', redirectTo: 'mes-dossiers', pathMatch: 'full' },
-  // ⚠️ Demande pilote (2026-09-13) — écran « Tous les dossiers » (pipeline partagé) : liste à plat des
-  // dossiers du Secrétaire (réceptions + enregistrés), avec l'action « Numéroter » inline sur les réceptions.
+  { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
   { path: 'tableau-de-bord', loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline), data: { title: 'Tous les dossiers' } },
-  // ⚠️ Demande pilote (2026-09-12) — « Tableau de bord » retiré du profil Secrétaire (route + composant
-  // supprimés) ; l'atterrissage se fait sur « Mes dossiers ».
-  { path: 'mes-dossiers', loadComponent: () => import('../circuit/dossiers-classement').then((m) => m.DossiersClassement), data: { classement: CLASSEMENT_SECRETAIRE } },
-  { path: 'mes-dossiers/:type/:groupe', loadComponent: () => import('../circuit/dossiers-circuit-liste').then((m) => m.DossiersCircuitListe), data: { classement: CLASSEMENT_SECRETAIRE } },
   { path: 'messagerie', loadComponent: () => import('../transverse/messagerie').then((m) => m.Messagerie) },
 ];

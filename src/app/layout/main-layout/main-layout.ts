@@ -367,7 +367,8 @@ export class MainLayout {
             c['/cc/tableau-de-bord'] = estLocaliteCentrale(this.auth.localite()) ? 0 : compteurs['predispatch'] ?? 0;
             break;
           case 'SECRETAIRE':
-            c['/secretaire/mes-dossiers'] = compteurs['aReceptionner'] ?? 0;
+            // ⚠️ 2026-09-13 — « Mes dossiers » retiré : la pastille « à réceptionner » passe sur « Tous les dossiers ».
+            c['/secretaire/tableau-de-bord'] = compteurs['aReceptionner'] ?? 0;
             break;
           case 'VERIFICATEUR':
             c[CHEMIN_A_VERIFIER] = compteurs['aVerifier'] ?? 0;

@@ -27,7 +27,8 @@ export class Home {
     if (this.auth.role() === 'MEMBRE') {
       void this.router.navigateByUrl('/membre/mes-dossiers', { replaceUrl: true });
     } else if (this.auth.role() === 'SECRETAIRE') {
-      void this.router.navigateByUrl('/secretaire/mes-dossiers', { replaceUrl: true });
+      // ⚠️ 2026-09-13 : « Mes dossiers » retiré du Secrétaire → atterrissage sur « Tous les dossiers ».
+      void this.router.navigateByUrl('/secretaire/tableau-de-bord', { replaceUrl: true });
     } else if (this.auth.role() === 'PRMP') {
       // ⚠️ 2026-09-13 : « Mes dossiers » retiré du menu PRMP → atterrissage sur « Suivi des dossiers CNM ».
       void this.router.navigateByUrl('/prmp/tableau-de-bord', { replaceUrl: true });
