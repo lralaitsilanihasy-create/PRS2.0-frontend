@@ -164,37 +164,37 @@ import { ReceptionForm } from './reception-form';
         <button type="button" class="btn btn-vert btn-sm" (click)="receptionItem.set(d)">Numéroter</button>
       }
       @if (dispatchableDe(d); as rec) {
-        <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirDispatch(d, rec)">Dispatcher</button>
+        <button type="button" class="btn btn-vert btn-sm" (click)="ouvrirDispatch(d, rec)">Dispatcher</button>
       }
       @if (peutExaminerDash(d)) {
-        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">{{ d.statut === 'A_REEXAMINER' ? 'Réexaminer' : 'Examiner' }}</a>
+        <a class="btn btn-vert btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">{{ d.statut === 'A_REEXAMINER' ? 'Réexaminer' : 'Examiner' }}</a>
       }
       @if (peutModifierExamenDash(d)) {
-        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Modifier l'examen</a>
+        <a class="btn btn-vert btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Modifier l'examen</a>
       }
       @if (peutVerifierDash(d)) {
-        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Vérifier</a>
+        <a class="btn btn-vert btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Vérifier</a>
       }
       @if (peutTransmettreDash(d)) {
-        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Transmettre à SIGMP</a>
+        <a class="btn btn-vert btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Transmettre à SIGMP</a>
       }
       @if (showExamenAction && info.cle === 'EXAMEN' && peutAgir(info)) {
-        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Examiner</a>
+        <a class="btn btn-vert btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Examiner</a>
       }
       @if (examenModifiable(d)) {
-        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Modifier l'examen</a>
+        <a class="btn btn-vert btn-sm" [routerLink]="[espace, 'examiner', d.idDossier]">Modifier l'examen</a>
       }
       <!-- ⚠️ File Vérificateur : le dossier à vérifier est ACCOMPAGNÉ de son PV définitif. -->
       @if (showVerifAction && pvSigne(d); as p) {
         <button type="button" class="btn btn-secondary btn-sm" (click)="pvDetail.set(p)">PV définitif</button>
       }
       @if (showVerifAction && d.statut === 'EN_VERIFICATION') {
-        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">
+        <a class="btn btn-vert btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">
           {{ pvSigne(d)?.idAvis === 'FAVR' ? 'Vérifier' : 'Transmettre la décision' }}
         </a>
       }
       @if (showVerifAction && d.statut === 'OBSERVATIONS_LEVEES') {
-        <a class="btn btn-primary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Transmettre à SIGMP</a>
+        <a class="btn btn-vert btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Transmettre à SIGMP</a>
       }
       @if (showVerifAction && (d.statut === 'EN_ATTENTE_DECISION_PRMP' || d.statut === 'DECISION_TRANSMISE_SIGMP')) {
         <a class="btn btn-secondary btn-sm" [routerLink]="[espace, 'verifier', d.idDossier]">Voir</a>
