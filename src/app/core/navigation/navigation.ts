@@ -126,9 +126,10 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     // redondante avec la topbar) — cf. main-layout.html (demande user 2026-08-02).
     // « Dossiers à rectifier » / « Dossiers vérifiés » : retirés du menu (demande user 2026-08-02) —
     // accessibles par type via les cartes « Mes dossiers » (lignes À rectifier / Vérifiés), routes conservées.
-    // ⚠️ 2026-08-12 (demande user) — « Mes lettres de renvoi » et « PV définitifs » regroupés dans le
-    // hub « Examen de dossiers » (même modèle que Président/CC, variante PRMP à deux cartes).
-    { label: 'Examen de dossiers', path: '/prmp/resultat-examen', icon: '📑' },
+    // ⚠️ 2026-08-12 (demande user) — « Mes lettres de renvoi » et « PV définitifs » regroupés dans un
+    // hub à deux cartes (même composant que Président/CC). ⚠️ 2026-09-13 (demande pilote) — renommé
+    // « PV et lettres de renvoi » côté PRMP (le hub P/CC garde « Examen de dossiers », il a les projets de PV).
+    { label: 'PV et lettres de renvoi', path: '/prmp/resultat-examen', icon: '📑' },
     { label: 'Demandes de retrait', path: '/prmp/retraits', icon: '↩' },
     { label: 'Calendrier', path: '/prmp/calendrier', icon: '📅' },
     // ⚠️ Spec notifications (2026-08-02) — écran transverse, présent dans TOUS les profils.

@@ -93,7 +93,9 @@ const CARTES_PRMP: CarteResultat[] = [
       <header class="page-header">
         <div>
           <div class="page-subtitle">{{ sousTitre() }}</div>
-          <h1 class="page-title">Examen de dossiers</h1>
+          <!-- ⚠️ Demande pilote (2026-09-13) — côté PRMP le hub ne produit que PV définitifs + lettres de
+               renvoi : titre « PV et lettres de renvoi ». P/CC gardent « Examen de dossiers » (projets de PV inclus). -->
+          <h1 class="page-title">{{ estPrmp() ? 'PV et lettres de renvoi' : 'Examen de dossiers' }}</h1>
         </div>
       </header>
       @if (estPrmp()) {
