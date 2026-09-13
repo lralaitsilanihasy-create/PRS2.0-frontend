@@ -157,6 +157,8 @@
 .maj__modal-head h2 { margin: 0; font-size: 1.1rem; }
 .maj__fermer { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--n-500); }
 .maj__modal-body { padding: 1rem 1.25rem; overflow: auto; }
+/* Pied de modale (2026-09-13, modale d'import des états supprimés) : actions à droite, filet au-dessus. */
+.maj__modal-foot { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 0.75rem 1.25rem 1rem; border-top: 1px solid var(--n-100); }
 .maj__recap-fort { font-weight: 700; margin: 0 0 0.75rem; }
 .maj__apercu { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
 .maj__apercu-ligne { border: 1px solid var(--n-100); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; }

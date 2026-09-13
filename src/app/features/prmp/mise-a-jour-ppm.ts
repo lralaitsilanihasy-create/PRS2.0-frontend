@@ -290,7 +290,32 @@ export class MiseAJourPpm {
         ),
       );
     }
-    // ⚠️ État des marchés supprimés (pilote 2026-09-09) : écrire chaque état choisi sur son marché.
+    // ⚠️ État des marchés supprimés (pilote 2026-09-09) : écrire chaque état choisi sur son marché —
+    // tâches partagées avec la modale d'import (2026-09-13).
+    taches.push(...this.tachesStatutsSupprimes());
+    if (!taches.length) {
+      return;
+    }
+    this.enregistrement.set(true);
+    forkJoin(taches).subscribe({
+      next: () => {
+        this.enregistrement.set(false);
+        this.toast.success('Modifications enregistrées.');
+      },
+      error: (e: ApiError) => {
+        this.enregistrement.set(false);
+        if (estConflitVersion(e)) {
+          this.charger(); // Toast centralisé « Donnée modifiée entre-temps » ; on repart de l'état serveur.
+          return;
+        }
+        this.toast.error(e.message || 'Enregistrement impossible.');
+      },
+    });
+  }
+
+  /** Tâches d'écriture des états choisis pour les marchés supprimés — partagées entre « Enregistrer » et la modale d'import. */
+  private tachesStatutsSupprimes(): Observable<Marche>[] {
+    const taches: Observable<Marche>[] = [];
     for (const idDetail of this.statutsSupprimesModifies()) {
       const m = this.marches().find((x) => x.idDetail === idDetail);
       if (!m) {
@@ -311,19 +336,31 @@ export class MiseAJourPpm {
         ),
       );
     }
+    return taches;
+  }
+
+  /**
+   * Modale d'import (2026-09-13) : enregistre les états choisis puis se ferme. Rien à écrire = fermeture
+   * simple ; un 409 recharge (vérité serveur) ; le panneau et la garde restent pour ce qui manque encore.
+   */
+  enregistrerStatutsSupprimes(): void {
+    const taches = this.tachesStatutsSupprimes();
     if (!taches.length) {
+      this.statutsModalOuvert.set(false);
       return;
     }
     this.enregistrement.set(true);
     forkJoin(taches).subscribe({
       next: () => {
         this.enregistrement.set(false);
-        this.toast.success('Modifications enregistrées.');
+        this.toast.success('États des marchés supprimés enregistrés.');
+        this.statutsModalOuvert.set(false);
       },
       error: (e: ApiError) => {
         this.enregistrement.set(false);
         if (estConflitVersion(e)) {
-          this.charger(); // Toast centralisé « Donnée modifiée entre-temps » ; on repart de l'état serveur.
+          this.statutsModalOuvert.set(false);
+          this.charger();
           return;
         }
         this.toast.error(e.message || 'Enregistrement impossible.');
@@ -478,6 +515,14 @@ export class MiseAJourPpm {
   readonly marchesSupprimesNonRenseignes = computed<LigneAffichee[]>(() =>
     this.marchesSupprimesAStatuer().filter((l) => !(l.marche.statut && l.marche.statut !== 'PREVU')),
   );
+  /**
+   * ⚠️ Demande pilote (2026-09-13) — la question est posée À L'IMPORT : dès que le PDF importé supprime des
+   * marchés CPO / Achat Direct sans état terminal, une MODALE les liste avec leur sélecteur d'état (même
+   * brouillon, même persistance que le panneau). Le panneau et la garde restent le filet de sécurité
+   * (« Plus tard », rechargement, arrivée directe sur un brouillon).
+   */
+  private readonly demandeStatutsApresImport = signal(false);
+  readonly statutsModalOuvert = signal(false);
 
   constructor() {
     this.charger();
@@ -527,6 +572,15 @@ export class MiseAJourPpm {
         this.capms.set(r.capms);
         const idsDetail = new Set(miennes.map((m) => m.idDetail));
         this.previsions.set(r.previsions.filter((p) => idsDetail.has(p.idDetail)));
+        // ⚠️ Demande pilote (2026-09-13) — après un IMPORT seulement : poser la question des états des
+        // marchés supprimés CPO / Achat Direct dès que les lignes relues sont là (marchés, diff, modes,
+        // référentiel des états tous posés au-dessus) — jamais sur un simple chargement de l'écran.
+        if (this.demandeStatutsApresImport()) {
+          this.demandeStatutsApresImport.set(false);
+          if (this.marchesSupprimesNonRenseignes().length) {
+            this.statutsModalOuvert.set(true);
+          }
+        }
         // En-tête du PPM : GET /api/ppms exclut les brouillons → lecture à l'unité via une ligne.
         const idPpm = miennes[0]?.idPpm;
         if (idPpm == null) {
@@ -648,6 +702,9 @@ export class MiseAJourPpm {
       next: (diff) => {
         this.enregistrement.set(false);
         this.diff.set(diff);
+        // ⚠️ 2026-09-13 — l'import est le moment de DEMANDER l'état des marchés supprimés CPO / Achat
+        // Direct : la modale s'ouvre une fois les lignes relues (voir `charger()`).
+        this.demandeStatutsApresImport.set(true);
         // Les lignes ont changé côté serveur : on relit tout pour que le tableau suive.
         this.charger();
         const r = diff.recap;

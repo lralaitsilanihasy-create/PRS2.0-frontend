@@ -488,6 +488,58 @@
   </div>
 }
 
+<!-- ⚠️ Demande pilote (2026-09-13) — À L'IMPORT, demander l'état des marchés SUPPRIMÉS en Consultation des
+     Prix Ouverte / Achat Direct : même sélecteur, même brouillon, même persistance que le panneau « État des
+     marchés supprimés » (qui reste, avec la garde de création, pour « Plus tard »). Fermeture par bouton. -->
+@if (statutsModalOuvert() && marchesSupprimesAStatuer(); as concernes) {
+  <div class="maj__overlay">
+    <div class="maj__modal" role="dialog" aria-modal="true" aria-labelledby="maj-statuts-titre"
+         appModale (appModaleFermer)="statutsModalOuvert.set(false)">
+      <header class="maj__modal-head">
+        <h2 id="maj-statuts-titre">État des marchés supprimés — {{ marchesSupprimesNonRenseignes().length }} à renseigner</h2>
+        <button type="button" class="maj__fermer" (click)="statutsModalOuvert.set(false)" aria-label="Fermer">✕</button>
+      </header>
+      <div class="maj__modal-body maj__justifs">
+        <p class="form-hint">
+          L'import a <strong>supprimé</strong> du plan des marchés en <em>Consultation des Prix Ouverte</em> ou
+          <em>Achat Direct</em> : déclarez pour chacun son <strong>état de marché</strong> (un état terminal, pas
+          « Prévu »). Vous pourrez aussi le faire plus tard dans le panneau « État des marchés supprimés » —
+          la création de la mise à jour reste bloquée tant qu'un état manque.
+        </p>
+        @for (l of concernes; track l.marche.idDetail) {
+          <div class="maj__justif" [class.maj__justif--vide]="!statutSupprimeRenseigne(l.marche)">
+            <div class="maj__justif-lbl">
+              <span class="maj__justif-type">Supprimé</span>
+              <span class="maj__justif-objet">{{ l.marche.designationMarche || '—' }}</span>
+              <span class="maj__justif-mode">— {{ libelleMode(l.marche) }}</span>
+              @if (statutSupprimeModifie(l.marche.idDetail)) { <span class="maj__justif-dirty">● non enregistré</span> }
+            </div>
+            <select class="form-control" [attr.aria-label]="'État du marché supprimé — ' + (l.marche.designationMarche || '')"
+                    [ngModel]="statutSupprimeValeur(l.marche.idDetail)" (ngModelChange)="majStatutSupprime(l.marche.idDetail, $event)"
+                    [ngModelOptions]="{ standalone: true }">
+              <option value="">— À renseigner —</option>
+              @for (s of statutsTerminaux(); track s.code) { <option [value]="s.code">{{ s.libelle }}</option> }
+            </select>
+          </div>
+        }
+        @if (!statutsTerminaux().length) {
+          <p class="form-hint maj__manques">
+            Aucun état terminal n'est disponible : l'Administrateur doit d'abord ajouter des « Statuts de marché »
+            autres que « Prévu » (écran Admin).
+          </p>
+        }
+      </div>
+      <div class="maj__modal-foot">
+        <button type="button" class="btn btn-ghost" (click)="statutsModalOuvert.set(false)">Plus tard</button>
+        <button type="button" class="btn btn-primary" [disabled]="enregistrement() || !statutsSupprimesModifies().length"
+                (click)="enregistrerStatutsSupprimes()">
+          {{ enregistrement() ? 'Enregistrement…' : 'Enregistrer les états' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
 @if (origineConsultee(); as origine) {
   <app-dossier-consultation [dossier]="origine" (closed)="origineConsultee.set(null)" />
 }
