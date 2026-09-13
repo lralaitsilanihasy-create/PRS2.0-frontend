@@ -313,9 +313,12 @@ interface LigneControleur {
     .dpc__chip-total { color: var(--n-500); font-size: var(--text-sm); }
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
     /* Modal « Dossiers d'un contrôleur » : large (8 colonnes), corps défilable, table à défilement horizontal. */
-    .dpc__modal { width: min(1180px, 96vw); max-width: min(1180px, 96vw); }
-    .dpc__modal .modal-body { max-height: 72vh; overflow: auto; }
+    /* ⚠️ 2026-09-13 (demande pilote) — modal ÉLARGI pour éviter le défilement horizontal de la table
+       (8 colonnes) ; le contenu long passe à la ligne plutôt que de déborder. */
+    .dpc__modal { width: min(1500px, 96vw); max-width: min(1500px, 96vw); }
+    .dpc__modal .modal-body { max-height: 74vh; overflow-y: auto; }
     .dpc__modal .table-card { overflow-x: auto; }
+    .dpc__modal .dpc__instructions { white-space: normal; word-break: break-word; }
 
     .dpc__voir { margin-top: 0.6rem; padding: 0.5rem 0.75rem; border-radius: var(--radius-full); border: 1.5px solid var(--dpc-accent); background: #fff; color: var(--dpc-accent); font-weight: 700; cursor: pointer; transition: var(--transition); }
     .dpc__voir:hover { background: var(--dpc-accent); color: #fff; }
