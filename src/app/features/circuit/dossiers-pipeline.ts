@@ -71,10 +71,26 @@ import { ReceptionForm } from './reception-form';
             aria-label="Rechercher un dossier"
           />
         </div>
+        <!-- Dispatch EN LOT (2026-09-13) : la sélection multi-lignes ouvre le même DispatchForm avec N
+             dossiers (mêmes CC/Membre/date/instructions, N POST séquentiels). Contrainte mono-localité. -->
+        @if (avecSelection && coches().size >= 2) {
+          <div class="alert alert-info pipeline__lot">
+            <span><strong>{{ coches().size }}</strong> dossiers sélectionnés (même localité)</span>
+            <span class="pipeline__lot-actions">
+              <button type="button" class="btn btn-outline btn-sm" (click)="deselectionner()">Tout décocher</button>
+              <button type="button" class="btn btn-vert btn-sm" (click)="dispatcherSelection()">Dispatcher la sélection ({{ coches().size }})</button>
+            </span>
+          </div>
+        }
         <div class="table-card">
           <table>
             <thead>
               <tr>
+                @if (avecSelection) {
+                  <th scope="col" class="pipeline__cocher-col">
+                    <input type="checkbox" [checked]="toutEstCoche()" (change)="toutCocher()" aria-label="Tout sélectionner (dispatchables d'une localité)" title="Tout sélectionner (dispatchables d'une localité)" />
+                  </th>
+                }
                 <th scope="col">Référence</th>
                 <th scope="col">Date de réception</th>
                 <th scope="col">Type de dossier</th>
@@ -88,6 +104,13 @@ import { ReceptionForm } from './reception-form';
               @for (d of dossiersFiltres(); track d.idDossier) {
                 @let info = etapeInfo(d);
                 <tr class="ligne-clic">
+                  @if (avecSelection) {
+                    <td class="pipeline__cocher-col">
+                      @if (dispatchableDe(d)) {
+                        <input type="checkbox" [checked]="coches().has(d.idDossier)" [disabled]="!cochable(d)" [title]="cochable(d) ? 'Sélectionner pour un dispatch en lot' : 'Sélection limitée à une seule localité'" (click)="$event.stopPropagation()" (change)="basculerCoche(d.idDossier)" [attr.aria-label]="'Sélectionner ' + (d.refeDossier || ('Dossier #' + d.idDossier))" />
+                      }
+                    </td>
+                  }
                   <!-- Toute la ligne ouvre la consultation : bouton sur la référence (nom accessible +
                        clavier) dont la zone cliquable est étendue à la ligne (overlay ::after). -->
                   <td><button type="button" class="lien-ligne" (click)="consulte.set(d)">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</button></td>
@@ -103,7 +126,7 @@ import { ReceptionForm } from './reception-form';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="7" class="empty-cell">Aucun dossier ne correspond à la recherche.</td></tr>
+                <tr><td [attr.colspan]="avecSelection ? 8 : 7" class="empty-cell">Aucun dossier ne correspond à la recherche.</td></tr>
               }
             </tbody>
           </table>
@@ -222,6 +245,11 @@ import { ReceptionForm } from './reception-form';
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .table-card table td .td-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
     .table-card table td .actions-end { justify-content: flex-end; }
+    /* Dispatch en lot : barre de sélection + colonne case à cocher (au-dessus de l'overlay de ligne). */
+    .pipeline__lot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .pipeline__lot-actions { display: inline-flex; gap: 0.5rem; flex-wrap: wrap; }
+    .pipeline__cocher-col { width: 2.5rem; text-align: center; }
+    .table-card table tr.ligne-clic .pipeline__cocher-col input[type="checkbox"] { position: relative; z-index: 1; cursor: pointer; }
     /* Ligne cliquable : la référence est un vrai bouton (nom accessible + clavier) dont la zone
        cliquable est ÉTENDUE à toute la ligne via un overlay ::after ; pas de (click) sur <tr>. */
     .table-card table tr.ligne-clic { position: relative; cursor: pointer; }
@@ -516,6 +544,7 @@ export class DossiersPipeline {
   }
   onDispatched(): void {
     this.dispatchItems.set(null);
+    this.coches.set(new Set());
     this.charger();
     this.dossiersRefresh.notifierChangement();
   }
@@ -523,6 +552,68 @@ export class DossiersPipeline {
     this.receptionItem.set(null);
     this.charger();
     this.dossiersRefresh.notifierChangement();
+  }
+
+  // ── Dispatch EN LOT (demande pilote 2026-09-13) : sélection multi-lignes → un seul DispatchForm avec
+  //    N dossiers (mêmes CC/Membre/date/instructions, N POST séquentiels). Contrainte mono-localité. ──
+  /** idDossier cochés pour le lot. */
+  readonly coches = signal<Set<number>>(new Set());
+  /** Colonne/barre de sélection : sur le tableau de bord, si le profil peut dispatcher (DISPATCH_WRITE). */
+  protected get avecSelection(): boolean {
+    return this.dashboard && this.permissions.can('DISPATCH_WRITE');
+  }
+  /** Ligne dispatchable (réception complète non dispatchée + capacité) — comme le bouton « Dispatcher » unitaire. */
+  private estDispatchable(d: Dossier): boolean {
+    return this.dispatchableDe(d) != null;
+  }
+  /** Localité de la sélection (celle du 1er coché ; null = vide) — contrainte lot mono-localité. */
+  private readonly localiteSelection = computed(() => {
+    const set = this.coches();
+    if (!set.size) return null;
+    return this.dossiers().find((d) => set.has(d.idDossier))?.idLocalite ?? null;
+  });
+  /** « Tout sélectionner » actif = toutes les lignes dispatchables de la localité de sélection cochées. */
+  readonly toutEstCoche = computed(() => {
+    const set = this.coches();
+    if (!set.size) return false;
+    const loc = this.localiteSelection();
+    const rows = this.dossiersFiltres().filter((d) => this.estDispatchable(d) && d.idLocalite === loc);
+    return rows.length > 0 && rows.every((d) => set.has(d.idDossier));
+  });
+  /** Cochable = sélection vide, déjà cochée, ou même localité que la sélection (lot mono-localité). */
+  cochable(d: Dossier): boolean {
+    const set = this.coches();
+    return !set.size || set.has(d.idDossier) || d.idLocalite === this.localiteSelection();
+  }
+  basculerCoche(idDossier: number): void {
+    const next = new Set(this.coches());
+    if (next.has(idDossier)) next.delete(idDossier);
+    else next.add(idDossier);
+    this.coches.set(next);
+  }
+  /** En-tête : coche toutes les dispatchables de la localité de la 1ʳᵉ ligne dispatchable ; re-clic = tout décocher. */
+  toutCocher(): void {
+    if (this.coches().size) {
+      this.deselectionner();
+      return;
+    }
+    const rows = this.dossiersFiltres().filter((d) => this.estDispatchable(d));
+    if (!rows.length) return;
+    const loc = rows[0].idLocalite;
+    this.coches.set(new Set(rows.filter((d) => d.idLocalite === loc).map((d) => d.idDossier)));
+  }
+  deselectionner(): void {
+    this.coches.set(new Set());
+  }
+  /** Ouvre le DispatchForm en LOT : chaque dossier coché avec sa réception dispatchable. */
+  dispatcherSelection(): void {
+    const set = this.coches();
+    const items: DispatchItem[] = [];
+    for (const d of this.dossiers()) {
+      const rec = set.has(d.idDossier) ? this.recDispatchable().get(d.idDossier) : undefined;
+      if (rec) items.push({ dossier: d, reception: rec });
+    }
+    if (items.length) this.dispatchItems.set(items);
   }
 
   /**
@@ -595,6 +686,7 @@ export class DossiersPipeline {
     this.loading.set(true);
     this.erreur.set(false);
     this.limiteRendu.set(DossiersPipeline.PAS_RENDU);
+    this.coches.set(new Set()); // la sélection de lot ne survit pas à un rechargement (les dossiers changent).
     if (this.source === 'a-verifier') {
       // a-verifier renvoie EN_VERIFICATION + EN_ATTENTE_DECISION_PRMP ; tri par date de réception DESC.
       // ⚠️ La chaîne dispatchs/examens + les PV DÉFINITIFS accompagnent chaque dossier (bouton « PV définitif »).
