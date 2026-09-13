@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { Dossier, EchangeDto } from '../../models';
@@ -25,7 +26,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
     <section class="dc">
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
         <div>
-          <div class="page-subtitle">{{ source === 'prmp-clotures' ? 'Domaine PRMP' : 'Domaine Vérificateur' }}</div>
+          <div class="page-subtitle">{{ source === 'prmp-clotures' ? domaine() : 'Domaine Vérificateur' }}</div>
           <h1 class="page-title">{{ titreAffiche() }}</h1>
         </div>
         <!-- Retour aux cartes « Mes dossiers » — uniquement pour la variante PRMP (écran partagé). -->
@@ -222,6 +223,8 @@ export class DossiersClotures {
   /** Rendu SOUS les cartes de « Mes dossiers » (route enfant) : l'en-tête se colle alors sous la
    *  topbar pour que le bouton de retour ne bouge pas quand la liste défile. */
   protected readonly encastre = this.route.snapshot.data['encastre'] === true;
+  /** Libellé de section pour la variante PRMP : « Domaine UGPM » (compte UGPM) ou « Domaine PRMP ». */
+  protected readonly domaine = inject(AuthService).domainePrmpLabel;
   private readonly router = inject(Router);
   private readonly dossierService = inject(DossierService);
   private readonly lookups = inject(ReferenceLookupService);

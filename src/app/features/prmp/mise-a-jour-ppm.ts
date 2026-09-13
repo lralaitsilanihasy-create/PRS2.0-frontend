@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, estConflitVersion } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, TYPES_PDF, validerFichier } from '../../core/securite/fichiers-surs';
@@ -73,6 +74,8 @@ interface LigneAffichee {
 export class MiseAJourPpm {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  /** Libellé de section : « Domaine UGPM » pour un compte UGPM, « Domaine PRMP » sinon (écran partagé). */
+  protected readonly domaine = inject(AuthService).domainePrmpLabel;
   private readonly toast = inject(ToastService);
   private readonly dossierService = inject(DossierService);
   private readonly ppmService = inject(PpmService);

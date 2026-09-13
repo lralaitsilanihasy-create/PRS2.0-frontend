@@ -125,7 +125,7 @@ interface ApercuDossier {
     <section class="sd">
       <header class="page-header page-header--actions">
         <div>
-          <div class="page-subtitle">Domaine PRMP</div>
+          <div class="page-subtitle">{{ domaine() }}</div>
           <h1 class="page-title">Saisir &amp; soumettre un dossier</h1>
         </div>
         <!-- Retour de navigation : la PRMP vers ses cartes « Mes dossiers », l'UGPM (qui n'a pas cet
@@ -983,6 +983,8 @@ export class SoumettreDossier {
     fermerAvecAnimation(this.closingApercu, () => this.fermerApercu());
   }
   private readonly auth = inject(AuthService);
+  /** Libellé de section : « Domaine UGPM » pour un compte UGPM, « Domaine PRMP » sinon (écran partagé). */
+  protected readonly domaine = this.auth.domainePrmpLabel;
   private readonly vacanceStore = inject(VacanceStore);
   /** Vacance du poste PRMP (spec « Mandats PRMP ») — création/soumission suspendues. */
   readonly vacance = this.vacanceStore.vacance;

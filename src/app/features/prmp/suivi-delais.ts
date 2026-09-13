@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
@@ -31,7 +32,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     <section>
       <header class="page-header">
         <div>
-          <div class="page-subtitle">Domaine PRMP</div>
+          <div class="page-subtitle">{{ domaine() }}</div>
           <h1 class="page-title">Suivi des dossiers CNM</h1>
         </div>
       </header>
@@ -93,10 +94,10 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                        brouillon, Compléter les pièces d'un dépôt — chacune affichée seulement si elle s'applique. -->
                   <td>
                     <div class="td-actions actions-end">
-                      @if (d.statut === 'EN_ATTENTE_DECISION_PRMP') {
+                      @if (estPrmp() && d.statut === 'EN_ATTENTE_DECISION_PRMP') {
                         <a class="btn btn-primary btn-sm" [routerLink]="['/prmp/rectifier', d.idDossier]" [queryParams]="{ returnUrl: '/prmp/tableau-de-bord' }">Rectifier</a>
                       }
-                      @if (d.statut === 'BROUILLON') {
+                      @if (estPrmp() && d.statut === 'BROUILLON') {
                         <button
                           type="button"
                           class="btn btn-success btn-sm"
@@ -105,7 +106,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                           (click)="soumettre(d)"
                         >Soumettre</button>
                       }
-                      @if (d.statut === 'EN_ATTENTE_COMPLEMENTS_DEPOT') {
+                      @if (estPrmp() && d.statut === 'EN_ATTENTE_COMPLEMENTS_DEPOT') {
                         <button type="button" class="btn btn-warning btn-sm" (click)="completer.set(d)">Compléter les pièces</button>
                       }
                     </div>
@@ -145,6 +146,14 @@ export class SuiviDelais {
   private readonly toast = inject(ToastService);
   private readonly vacanceStore = inject(VacanceStore);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
+  private readonly auth = inject(AuthService);
+  /** Libellé de section : « Domaine UGPM » pour un compte UGPM, « Domaine PRMP » sinon (écran partagé). */
+  protected readonly domaine = this.auth.domainePrmpLabel;
+  /**
+   * Actions de la colonne Actions RÉSERVÉES à la PRMP : l'UGPM partage cet écran (vue seule) mais ne
+   * soumet/rectifie/complète pas (backend 403). `estPrmp` masque ces boutons pour un compte UGPM.
+   */
+  protected readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
   /** Vacance du poste PRMP (spec « Mandats PRMP ») — soumission suspendue. */
   readonly vacance = this.vacanceStore.vacance;
   /** idDossier en cours de soumission (bouton désactivé + anti double-clic). */

@@ -84,6 +84,12 @@ export class AuthService {
 
   /** Profil métier courant, ou null. */
   readonly role = computed<Role | null>(() => this.session()?.role ?? null);
+  /**
+   * Libellé de section de l'espace `/prmp` (partagé par la PRMP et l'UGPM de tutelle) : « Domaine UGPM »
+   * pour un compte UGPM, « Domaine PRMP » sinon. ⚠️ 2026-09-13 — évite que les écrans du PRMP, réutilisés
+   * tels quels par l'UGPM, affichent « Domaine PRMP » à un utilisateur UGPM.
+   */
+  readonly domainePrmpLabel = computed(() => (this.role() === 'UGPM' ? 'Domaine UGPM' : 'Domaine PRMP'));
   /** Localité de rattachement ; `null` = toutes localités (Président/Admin). */
   readonly localite = computed<string | null>(() => this.session()?.localite ?? null);
   /** Matricule contrôleur ou identifiant PRMP de l'utilisateur courant. */

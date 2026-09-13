@@ -37,7 +37,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
     <section>
       <header class="page-header">
         <div>
-          <div class="page-subtitle">Domaine PRMP</div>
+          <div class="page-subtitle">{{ domaine() }}</div>
           <h1 class="page-title">Mes brouillons</h1>
         </div>
       </header>
@@ -144,6 +144,8 @@ export class MesBrouillons {
   private readonly router = inject(Router);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly auth = inject(AuthService);
+  /** Libellé de section : « Domaine UGPM » pour un compte UGPM, « Domaine PRMP » sinon (écran partagé). */
+  protected readonly domaine = this.auth.domainePrmpLabel;
   /** Seule la PRMP soumet ; l'UGPM ouvre/édite ses brouillons mais ne soumet pas (bouton masqué). */
   readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
 
