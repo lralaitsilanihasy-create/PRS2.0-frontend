@@ -169,7 +169,9 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     // ⚠️ Demande pilote (2026-09-12) — même libellé que le P/CC (« Tous les dossiers »), même écran (le
     // pipeline `tableau-de-bord`) ; route inchangée.
     { label: 'Tous les dossiers', path: '/membre/tableau-de-bord', icon: '▤' },
-    { label: 'Mes dossiers', path: '/membre/mes-dossiers', icon: '📁' },
+    // ⚠️ Demande pilote (2026-09-13) — « Mes dossiers » (cartes type × statut) RETIRÉ : « Tous les
+    // dossiers » (pipeline) porte déjà les dossiers à examiner/examinés avec les actions inline
+    // (Examiner / Réexaminer / Modifier l'examen) et la pastille « à examiner ». Route conservée.
     { label: 'Projets de PV', path: '/membre/pv', icon: '📝' },
     { label: 'Projets de lettre de renvoi', path: '/membre/lettre-renvois', icon: '✉' },
     { label: 'PV définitifs', path: '/membre/pv-definitifs', icon: '✅' },

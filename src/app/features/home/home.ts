@@ -21,11 +21,11 @@ export class Home {
   private readonly router = inject(Router);
 
   constructor() {
-    // À l'ouverture de session : la PRMP atterrit sur « Mes dossiers » ; le Membre et le Secrétaire sur
-    // leur classement « Mes dossiers » ; le Président et le CC sur « Tous les dossiers » (⚠️ 2026-09-12 :
-    // « Mes dossiers » retiré des espaces P/CC — le tableau de bord porte toute action par dossier).
+    // À l'ouverture de session : chaque profil atterrit sur « Tous les dossiers » (le tableau de bord
+    // porte toute action par dossier). ⚠️ 2026-09-12/13 : « Mes dossiers » retiré des espaces P/CC,
+    // Secrétaire, PRMP puis Membre — plus de classement d'atterrissage.
     if (this.auth.role() === 'MEMBRE') {
-      void this.router.navigateByUrl('/membre/mes-dossiers', { replaceUrl: true });
+      void this.router.navigateByUrl('/membre/tableau-de-bord', { replaceUrl: true });
     } else if (this.auth.role() === 'SECRETAIRE') {
       // ⚠️ 2026-09-13 : « Mes dossiers » retiré du Secrétaire → atterrissage sur « Tous les dossiers ».
       void this.router.navigateByUrl('/secretaire/tableau-de-bord', { replaceUrl: true });
