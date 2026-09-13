@@ -137,54 +137,69 @@ interface LigneControleur {
           </table>
         </div>
 
-        @if (ligneOuverte(); as l) {
-          <div class="table-card">
-            <div class="dpc__detail-titre">Dossiers dispatchés à {{ l.nom }}</div>
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Référence</th>
-                  <th scope="col">Entité contractante</th>
-                  <th scope="col">Type</th>
-                  <th scope="col">Date dispatch</th>
-                  <th scope="col">Instructions</th>
-                  <th scope="col">Statut</th>
-                  <th scope="col">Localité</th>
-                  <th scope="col" class="r">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (a of l.dossiers; track a.dossier.idDossier) {
-                  <tr>
-                    <td>{{ a.dossier.refeDossier || '#' + a.dossier.idDossier }}</td>
-                    <td>{{ entiteLabel(a.dossier) }}</td>
-                    <td>{{ typeLabel(a.dossier) }}</td>
-                    <td style="white-space:nowrap;">{{ (a.dateDispatch | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
-                    <!-- Consignes du dispatcheur (demande pilote 2026-09-04) — texte long mis à la ligne. -->
-                    <td class="dpc__instructions">{{ a.dispatch.instructions || '—' }}</td>
-                    <td>
-                      @if (a.dossier.statut) { <app-statut-badge [statut]="a.dossier.statut" /> } @else { — }
-                      @if (a.dossier.statut === 'DISPATCHE' && dossiersAvecExamen().has(a.dossier.idDossier)) {
-                        <span class="badge dpc__brouillon" title="Un examen est commencé (brouillon enregistré par le Membre).">Examen en cours</span>
-                      }
-                    </td>
-                    <td>{{ localiteLabel(a.dossier) }}</td>
-                    <td>
-                      <div class="td-actions dpc__actions-end">
-                        <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(a.dossier)">Voir détails</button>
-                        @if (peutRetirer(a)) {
-                          <button type="button" class="btn btn-danger btn-sm" (click)="retrait.set({ a, nom: l.nom })">Retirer</button>
-                        }
-                      </div>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
+        <!-- ⚠️ Demande pilote (2026-09-13) — la liste des dossiers d'un contrôleur s'affiche en MODAL
+             (voir plus bas, hors <section>), ouverte au clic sur la ligne. -->
       }
     </section>
+
+    <!-- Dossiers d'un contrôleur — MODAL (clic sur la ligne). -->
+    @if (ligneOuverte(); as l) {
+      <div class="modal-backdrop">
+        <div class="modal modal-xl dpc__modal" role="dialog" aria-modal="true" [attr.aria-label]="'Dossiers dispatchés à ' + l.nom" appModale appModaleClicExterieur (appModaleFermer)="fermerDetail()">
+          <div class="modal-header">
+            <h2 class="modal-title">Dossiers dispatchés à {{ l.nom }}</h2>
+            <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerDetail()">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Référence</th>
+                    <th scope="col">Entité contractante</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Date dispatch</th>
+                    <th scope="col">Instructions</th>
+                    <th scope="col">Statut</th>
+                    <th scope="col">Localité</th>
+                    <th scope="col" class="r">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (a of l.dossiers; track a.dossier.idDossier) {
+                    <tr>
+                      <td>{{ a.dossier.refeDossier || '#' + a.dossier.idDossier }}</td>
+                      <td>{{ entiteLabel(a.dossier) }}</td>
+                      <td>{{ typeLabel(a.dossier) }}</td>
+                      <td style="white-space:nowrap;">{{ (a.dateDispatch | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
+                      <!-- Consignes du dispatcheur (demande pilote 2026-09-04) — texte long mis à la ligne. -->
+                      <td class="dpc__instructions">{{ a.dispatch.instructions || '—' }}</td>
+                      <td>
+                        @if (a.dossier.statut) { <app-statut-badge [statut]="a.dossier.statut" /> } @else { — }
+                        @if (a.dossier.statut === 'DISPATCHE' && dossiersAvecExamen().has(a.dossier.idDossier)) {
+                          <span class="badge dpc__brouillon" title="Un examen est commencé (brouillon enregistré par le Membre).">Examen en cours</span>
+                        }
+                      </td>
+                      <td>{{ localiteLabel(a.dossier) }}</td>
+                      <td>
+                        <div class="td-actions dpc__actions-end">
+                          <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(a.dossier)">Voir détails</button>
+                          @if (peutRetirer(a)) {
+                            <button type="button" class="btn btn-danger btn-sm" (click)="retrait.set({ a, nom: l.nom })">Retirer</button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="8" class="empty-cell">Aucun dossier.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
 
     @if (consulte(); as d) {
       <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
@@ -297,6 +312,10 @@ interface LigneControleur {
     .dpc__chip--4 { background: #f2e9f8; color: #7a4ba0; }
     .dpc__chip-total { color: var(--n-500); font-size: var(--text-sm); }
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
+    /* Modal « Dossiers d'un contrôleur » : large (8 colonnes), corps défilable, table à défilement horizontal. */
+    .dpc__modal { width: min(1180px, 96vw); max-width: min(1180px, 96vw); }
+    .dpc__modal .modal-body { max-height: 72vh; overflow: auto; }
+    .dpc__modal .table-card { overflow-x: auto; }
 
     .dpc__voir { margin-top: 0.6rem; padding: 0.5rem 0.75rem; border-radius: var(--radius-full); border: 1.5px solid var(--dpc-accent); background: #fff; color: var(--dpc-accent); font-weight: 700; cursor: pointer; transition: var(--transition); }
     .dpc__voir:hover { background: var(--dpc-accent); color: #fff; }
@@ -506,6 +525,10 @@ export class DispatchsControleurs implements OnDestroy {
 
   basculer(im: string): void {
     this.ouvert.set(this.ouvert() === im ? null : im);
+  }
+  /** Ferme le modal « Dossiers d'un contrôleur » (✕, Échap, clic hors du dialogue). */
+  fermerDetail(): void {
+    this.ouvert.set(null);
   }
   /**
    * « Retirer » offert ? (DISPATCH_WRITE ; les dossiers listés sont tous DISPATCHE/EXAMINE, donc
