@@ -33,7 +33,9 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       <header class="page-header">
         <div>
           <div class="page-subtitle">{{ domaine() }}</div>
-          <h1 class="page-title">Suivi des dossiers CNM</h1>
+          <!-- ⚠️ Demande pilote (2026-09-13) — titre « Tous les dossiers » pour l'UGPM (aligné sur les autres
+               profils) ; la PRMP garde « Suivi des dossiers CNM » (nom choisi le 2026-09-06, cadrage délais). -->
+          <h1 class="page-title">{{ estPrmp() ? 'Suivi des dossiers CNM' : 'Tous les dossiers' }}</h1>
         </div>
       </header>
 

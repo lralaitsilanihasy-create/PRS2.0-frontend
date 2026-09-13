@@ -140,9 +140,10 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   // sont accessibles à l'UGPM. « Mes lettres de renvoi » retiré : GET /api/lettre-renvois/mes-lettres
   // est réservé PRMP (403). « Dossiers vérifiés » (GET /api/dossiers?statut=CLOTURE, scopé) est OK.
   UGPM: [
-    // ⚠️ Demande pilote (2026-09-13) — « Suivi des dossiers CNM » ouvert à l'UGPM (vue seule : les actions
-    // Soumettre/Rectifier/Compléter y sont masquées pour un compte UGPM, cf. `estPrmp` dans suivi-delais).
-    { label: 'Suivi des dossiers CNM', path: '/prmp/tableau-de-bord', icon: '⏱' },
+    // ⚠️ Demande pilote (2026-09-13) — écran partagé du PRMP ouvert à l'UGPM en VUE SEULE (actions
+    // Soumettre/Rectifier/Compléter masquées, cf. `estPrmp` dans suivi-delais). Libellé « Tous les
+    // dossiers » côté UGPM (le PRMP garde « Suivi des dossiers CNM », son cadrage délais).
+    { label: 'Tous les dossiers', path: '/prmp/tableau-de-bord', icon: '⏱' },
     { label: 'Saisir un dossier', path: '/prmp/soumettre-dossier', icon: '📨' },
     { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: '🗒' },
     { label: 'Dossiers vérifiés', path: '/prmp/dossiers-verifies', icon: '✅' },
