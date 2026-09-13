@@ -8,7 +8,7 @@ import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { Dossier, Reception } from '../../models';
-import { DossierService, ReceptionService } from '../../services';
+import { DossierService, EntiteContractService, LocaliteService, ReceptionService, ReferenceLookupService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { StatutBadge } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
@@ -51,8 +51,9 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
               <tr>
                 <th scope="col">Référence</th>
                 <th scope="col">Type</th>
+                <th scope="col">Entité contractante</th>
+                <th scope="col">Localité</th>
                 <th scope="col">Dépôt du dossier</th>
-                <th scope="col">Enregistrement CNM</th>
                 <th scope="col">Fin traitement CNM</th>
                 <th scope="col">Statut</th>
                 <th scope="col" class="r">Actions</th>
@@ -66,12 +67,14 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <td><button type="button" class="lien-ligne" (click)="consulte.set(d)">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</button></td>
                   <!-- Type de dossier en CODE concis (sous-type de la référence, ex. PPM-AGPM ; repli famille). -->
                   <td>{{ typeDossierLabel(d) }}</td>
+                  <td>{{ entiteLabel(d) }}</td>
+                  <td>{{ localiteLabel(d) }}</td>
                   <!-- ⚠️ Terme métier (pilote 2026-09-06) : la date de SOUMISSION est la date de
                        DÉPÔT du dossier — même donnée (champ demandé au backend, « — » sinon). -->
                   <td class="cnm-mono">{{ d.dateSoumission ? (d.dateSoumission | date: 'dd/MM/yyyy') : '—' }}</td>
-                  <!-- Enregistrement = réception du dossier par le Secrétaire (premier passage). -->
-                  <td class="cnm-mono">{{ enregistrement(d) ? (enregistrement(d) | date: 'dd/MM/yyyy') : '—' }}</td>
-                  <!-- ⚠️ Demande pilote (2026-09-07) : la « Fin traitement CNM » est une PROJECTION serveur
+                  <!-- ⚠️ Demande pilote (2026-09-13) — colonne « Enregistrement CNM » retirée ; la méthode
+                       enregistrement() reste utilisée pour DÉCIDER l'affichage de la fin (compteur = enregistrement).
+                       ⚠️ Demande pilote (2026-09-07) : la « Fin traitement CNM » est une PROJECTION serveur
                        (aujourd'hui + durée standard restante) présente dès la soumission. On la MASQUE tant que
                        le dossier n'est pas ENREGISTRÉ : le traitement CNM n'a pas encore commencé (le compteur
                        démarre à l'enregistrement = debutCompteur), afficher une fin avant serait trompeur. -->
@@ -113,7 +116,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="7" class="empty-cell">Aucun dossier à la CNM.</td></tr>
+                <tr><td colspan="8" class="empty-cell">Aucun dossier à la CNM.</td></tr>
               }
             </tbody>
           </table>
@@ -147,6 +150,10 @@ export class SuiviDelais {
   private readonly vacanceStore = inject(VacanceStore);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly auth = inject(AuthService);
+  private readonly lookups = inject(ReferenceLookupService);
+  /** Libellés d'entité contractante / localité (cache partagé) — colonnes du tableau, sans appel par ligne. */
+  private readonly entiteMap = signal<Map<string, string>>(new Map());
+  private readonly localiteMap = signal<Map<string, string>>(new Map());
   /** Libellé de section : « Domaine UGPM » pour un compte UGPM, « Domaine PRMP » sinon (écran partagé). */
   protected readonly domaine = this.auth.domainePrmpLabel;
   /**
@@ -180,6 +187,9 @@ export class SuiviDelais {
 
   constructor() {
     this.charger();
+    // Libellés d'entité / localité (cache partagé) — colonnes « Entité contractante » / « Localité ».
+    this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
+    this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
   }
 
   charger(): void {
@@ -226,6 +236,16 @@ export class SuiviDelais {
   /** Type de dossier en CODE concis (`idSousType`, ex. « PPM-AGPM » ; repli famille `idTypeDossier`). */
   typeDossierLabel(d: Dossier): string {
     return d.idSousType ?? d.idTypeDossier ?? '—';
+  }
+
+  /** Libellé de l'entité contractante du dossier (cache, sans appel par ligne ; repli sur l'id). */
+  entiteLabel(d: Dossier): string {
+    return d.idEntiteContract != null ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract : '—';
+  }
+
+  /** Libellé de la localité du dossier (cache ; repli sur le code). */
+  localiteLabel(d: Dossier): string {
+    return d.idLocalite ? this.localiteMap().get(d.idLocalite) ?? d.idLocalite : '—';
   }
 
   /** Compléments transmis (dossier revenu SOUMIS) : ferme le modal, recharge, propage aux autres écrans. */
