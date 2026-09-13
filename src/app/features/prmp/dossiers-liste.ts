@@ -311,7 +311,7 @@ export class DossiersListe {
   readonly titre = computed(() => `${this.typeLabel()} — ${this.groupe() === 'brouillon' ? 'Brouillons' : 'Déposés'}`);
   readonly messageVide = computed(() =>
     this.groupe() === 'brouillon'
-      ? 'Aucun brouillon de ce type. Saisissez un dossier depuis « Saisir & soumettre ».'
+      ? 'Aucun brouillon de ce type. Créez un dossier depuis « Créer dossier ».'
       : 'Aucun dossier déposé de ce type.',
   );
 

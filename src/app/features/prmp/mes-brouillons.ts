@@ -86,7 +86,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="empty-cell">Aucun brouillon. Saisissez un dossier depuis « Saisir &amp; soumettre ».</td></tr>
+                <tr><td colspan="5" class="empty-cell">Aucun brouillon. Créez un dossier depuis « Créer dossier ».</td></tr>
               }
             </tbody>
           </table>

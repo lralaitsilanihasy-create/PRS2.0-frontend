@@ -126,13 +126,11 @@ interface ApercuDossier {
       <header class="page-header page-header--actions">
         <div>
           <div class="page-subtitle">{{ domaine() }}</div>
-          <h1 class="page-title">Saisir &amp; soumettre un dossier</h1>
+          <h1 class="page-title">Créer dossier</h1>
         </div>
-        <!-- Retour de navigation : la PRMP vers ses cartes « Mes dossiers », l'UGPM (qui n'a pas cet
-             écran) vers « Mes brouillons » — même bouton, apparence alignée (demande pilote 2026-09-07). -->
-        @if (estPrmp()) {
-          <a class="btn btn-retour-hub" routerLink="/prmp/tableau-de-bord">← Suivi des dossiers CNM</a>
-        } @else {
+        <!-- ⚠️ Demande pilote (2026-09-13) — bouton retour PRMP retiré (navigation par le menu). L'UGPM
+             garde « ← Mes brouillons » (retour vers sa liste après saisie). -->
+        @if (!estPrmp()) {
           <a class="btn btn-retour-hub" routerLink="/prmp/mes-brouillons">← Mes brouillons</a>
         }
       </header>

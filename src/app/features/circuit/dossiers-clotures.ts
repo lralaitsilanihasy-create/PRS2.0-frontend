@@ -29,10 +29,8 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
           <div class="page-subtitle">{{ source === 'prmp-clotures' ? domaine() : 'Domaine Vérificateur' }}</div>
           <h1 class="page-title">{{ titreAffiche() }}</h1>
         </div>
-        <!-- Retour aux cartes « Mes dossiers » — uniquement pour la variante PRMP (écran partagé). -->
-        @if (source === 'prmp-clotures') {
-          <a class="btn btn-retour-hub" routerLink="/prmp/tableau-de-bord">← Suivi des dossiers CNM</a>
-        }
+        <!-- ⚠️ Demande pilote (2026-09-13) — bouton retour « ← Suivi des dossiers CNM » retiré de « Mettre
+             à jour un PPM » / « Dossiers vérifiés » : la navigation se fait par le menu latéral. -->
       </header>
 
       @if (!modeMaj() && typeFiltre(); as t) {

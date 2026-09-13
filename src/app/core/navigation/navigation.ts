@@ -118,7 +118,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     // ⚠️ Demande pilote (2026-09-13) — REMIS au menu (ils vivaient dans les cartes de « Mes dossiers ») :
     // la saisie d'un dossier et la mise à jour d'un PPM (liste des vérifiés en mode `?maj=1`). « Soumettre
     // un dossier » avait été retiré le 2026-08-02 ; le pilote le réintroduit comme raccourci d'entrée.
-    { label: 'Saisir & soumettre un dossier', path: '/prmp/soumettre-dossier', icon: '✏' },
+    { label: 'Créer dossier', path: '/prmp/soumettre-dossier', icon: '✏' },
     // ⚠️ Route AUTONOME `dossiers-verifies` (pas l'enfant `dossiers/verifies` qui s'affiche SOUS les
     // cartes de « Mes dossiers ») : l'écran ne montre QUE le tableau des vérifiés en mode mise à jour.
     { label: 'Mettre à jour un PPM', path: '/prmp/dossiers-verifies', queryParams: { maj: 1 }, icon: '🔄' },
@@ -144,7 +144,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     // Soumettre/Rectifier/Compléter masquées, cf. `estPrmp` dans suivi-delais). Libellé « Tous les
     // dossiers » côté UGPM (le PRMP garde « Suivi des dossiers CNM », son cadrage délais).
     { label: 'Tous les dossiers', path: '/prmp/tableau-de-bord', icon: '⏱' },
-    { label: 'Saisir un dossier', path: '/prmp/soumettre-dossier', icon: '📨' },
+    { label: 'Créer dossier', path: '/prmp/soumettre-dossier', icon: '📨' },
     { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: '🗒' },
     // ⚠️ Demande pilote (2026-09-13) — « Dossiers vérifiés » RETIRÉ du menu UGPM : les dossiers vérifiés
     // sont visibles dans « Tous les dossiers » (avec leur badge de statut). Route conservée (le PRMP s'en
