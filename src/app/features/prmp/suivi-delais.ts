@@ -130,10 +130,15 @@ export class SuiviDelais {
     this.erreur.set(false);
     forkJoin({
       dossiers: this.dossierService.list(),
+      // ⚠️ 2026-09-13 (demande pilote) — inclure AUSSI les « à rectifier » (EN_ATTENTE_DECISION_PRMP)
+      // au cas où la liste scopée ne les remonte pas : fusion dédoublonnée par idDossier ci-dessous.
+      aRectifier: this.dossierService.list('EN_ATTENTE_DECISION_PRMP').pipe(catchError(() => of([] as Dossier[]))),
       receptions: this.receptionService.list().pipe(catchError(() => of([] as Reception[]))),
     }).subscribe({
-      next: ({ dossiers, receptions }) => {
-        this.tous.set(dossiers);
+      next: ({ dossiers, aRectifier, receptions }) => {
+        const parId = new Map<number, Dossier>();
+        for (const d of [...dossiers, ...aRectifier]) parId.set(d.idDossier, d);
+        this.tous.set([...parId.values()]);
         const parDossier = new Map<number, Reception>();
         for (const r of receptions) {
           const connue = parDossier.get(r.idDossier);
