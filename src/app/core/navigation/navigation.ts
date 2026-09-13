@@ -146,7 +146,9 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Tous les dossiers', path: '/prmp/tableau-de-bord', icon: '⏱' },
     { label: 'Saisir un dossier', path: '/prmp/soumettre-dossier', icon: '📨' },
     { label: 'Mes brouillons', path: '/prmp/mes-brouillons', icon: '🗒' },
-    { label: 'Dossiers vérifiés', path: '/prmp/dossiers-verifies', icon: '✅' },
+    // ⚠️ Demande pilote (2026-09-13) — « Dossiers vérifiés » RETIRÉ du menu UGPM : les dossiers vérifiés
+    // sont visibles dans « Tous les dossiers » (avec leur badge de statut). Route conservée (le PRMP s'en
+    // sert pour « Mettre à jour un PPM », /prmp/dossiers-verifies?maj=1).
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   // ⚠️ Président et Chef de commission partagent EXACTEMENT le même menu : ne pas éditer l'un des deux
