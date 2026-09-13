@@ -102,6 +102,15 @@ export interface Dossier {
    * sont vides pour un profil hors portée (le Président « toutes localités »).
    */
   datesEtapes?: Record<string, string | null> | null;
+  /**
+   * ACTEURS de chaque étape de la frise (demande 2026-09-13-acteurs-etapes-dossier, livrée le jour
+   * même) — mêmes 7 clés que `datesEtapes`, toujours présentes, valeur = nom nu « Prénoms Nom »,
+   * `null` si l'étape n'est pas franchie. Invariant serveur : nommé ⇔ daté (même passage). ⚠️
+   * `DISPATCH` = l'ATTRIBUTAIRE courant (réattributions comprises), volontairement ≠ du passage
+   * DISPATCH du chronométrage (au nom du dispatcheur). `PV_SIGNE` = « Membre · CC · Président »,
+   * parts effectivement signées. Le front ajoute les préfixes (« Attribué à … »).
+   */
+  acteursEtapes?: Record<string, string | null> | null;
   /** Vrai quand la balle est CHEZ LA PRMP (statut suspensif) : la date prévisionnelle glisse d'autant. */
   attentePrmp?: boolean;
   /** Étape de circuit ouverte (`EtapeCircuit`) ; `null` si aucune tâche CNM ne court. */

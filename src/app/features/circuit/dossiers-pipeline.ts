@@ -9,6 +9,7 @@ import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { Dispatch, Dossier, Examen, Page, PvExamen, Reception, Verification } from '../../models';
 import {
+  ControleurService,
   DispatchService,
   DossierService,
   EntiteContractService,
@@ -152,7 +153,7 @@ import { ReceptionForm } from './reception-form';
                 </div>
               </div>
               @if (showTimeline) {
-                <app-circuit-timeline [active]="etape(d)" [sublabels]="sublabels(d)" />
+                <app-circuit-timeline [active]="etape(d)" [sublabels]="sublabels(d)" [acteurs]="acteurs(d)" />
               }
             </li>
           }
@@ -350,6 +351,8 @@ export class DossiersPipeline {
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly entiteMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
+  /** Matricule → « nom prénoms » (référentiel des contrôleurs, en cache) : acteurs de la frise. */
+  private readonly controleurMap = signal<Map<string, string>>(new Map());
   /** Affichage : frise (cartes) ou tableau ; choix mémorisé par navigateur (localStorage). */
   readonly vue = signal<'frise' | 'tableau'>(this.lireVue());
   /** Recherche par mot-clé du tableau (filtre client sur les colonnes affichées). */
@@ -648,6 +651,11 @@ export class DossiersPipeline {
     this.lookups
       .lookup(LocaliteService, 'idLocalite', ['libelleLocalite'])
       .subscribe((m) => this.localiteMap.set(m));
+    // ⚠️ 2026-09-13 — noms des acteurs de la frise (infobulle au survol) : même référentiel que les
+    // écrans PV, chargé UNE fois et partagé (cache `ReferenceLookupService`).
+    this.lookups
+      .lookup(ControleurService, 'imControleur', ['nomCont', 'prenomsCont'])
+      .subscribe((m) => this.controleurMap.set(m));
     // Suppression d'un dossier propagée depuis un autre écran → retrait local immédiat de sa carte.
     this.dossiersRefresh.supprime$
       .pipe(takeUntilDestroyed())
@@ -975,6 +983,86 @@ export class DossiersPipeline {
   private static readonly SANS_LIBELLE: string[] = [];
   sublabels(d: Dossier): string[] {
     return this.sublabelsByDossier().get(d.idDossier) ?? DossiersPipeline.SANS_LIBELLE;
+  }
+
+  /**
+   * ⚠️ Demande pilote (2026-09-13) — au survol de chaque point de la frise, l'ACTEUR de l'étape.
+   * Source PRIORITAIRE : `acteursEtapes` du DTO (backend, en lot, indépendant de la portée — le
+   * Président « toutes localités » et la PRMP y lisent l'attributaire alors que leurs jointures sont
+   * vides). Repli clé par clé sur la jointure locale (réception → dispatch → examen → PV → vérif,
+   * matricules résolus par le référentiel des contrôleurs) tant que le champ n'est pas servi — même
+   * schéma que `datesEtapes`, pour que l'infobulle et la date d'un point viennent de la même source.
+   * Une phrase par étape (« Examiné par … ») lève l'ambiguïté « qui a fait quoi » ; entrée vide =
+   * pas de bulle. Mémoïsé comme `sublabelsByDossier` : référence stable pour l'OnPush de la frise.
+   */
+  private readonly acteursByDossier = computed(() => {
+    const noms = this.controleurMap();
+    const recs = this.receptions();
+    const disps = this.dispatchs();
+    const exs = this.examens();
+    const pvs = this.pvs();
+    const verifs = this.verifications();
+    const nom = (im?: string | null): string => (im ? (noms.get(im) ?? '') : '');
+    const map = new Map<number, string[]>();
+    for (const d of this.visibleDossiers()) {
+      const rOfD = recs.filter((r) => r.idDossier === d.idDossier);
+      const recIds = new Set(rOfD.map((r) => r.idReception));
+      const dOfD = disps.filter((x) => recIds.has(x.idReception));
+      const dispIds = new Set(dOfD.map((x) => x.idDispatch));
+      const eOfD = exs.filter((e) => e.idDispatch != null && dispIds.has(e.idDispatch));
+      const exIds = new Set(eOfD.map((e) => e.idExamen));
+      const pOfD = pvs.filter((p) => exIds.has(p.idExamen));
+      const pvIds = new Set(pOfD.map((p) => p.idPv));
+      const vOfD = verifs.filter((v) => recIds.has(v.idReception) || (v.idPv != null && pvIds.has(v.idPv)));
+      const recInit = rOfD.find((r) => r.numPassage === 1) ?? rOfD[0];
+      const pv = pOfD[0];
+      // Signataires EFFECTIFS du PV (part datée), dans l'ordre Membre · CC · Président.
+      const parts: [string | null | undefined, string | null | undefined][] = [
+        [pv?.dateSignatureMembre, pv?.imCtrlMembre],
+        [pv?.dateSignatureCc, pv?.imCtrlCc],
+        [pv?.dateSignaturePresident, pv?.imCtrlPresident],
+      ];
+      const signataires = parts.filter(([date]) => !!date).map(([, im]) => nom(im)).filter(Boolean).join(' · ');
+      // Noms par JOINTURE, alignés sur CIRCUIT_ETAPES (RECEPTION, DISPATCH, EXAMEN, PROJET_PV, PV_SIGNE,
+      // VERIFICATION, CLOTURE) — repli quand le DTO ne sert pas la clé.
+      const parJointure = [
+        nom(recInit?.imCtrlRecept),
+        nom(dOfD[0]?.imCtrlMembre),
+        nom(eOfD[0]?.imCtrlMembre),
+        nom(pv?.imCtrlMembre),
+        signataires,
+        nom(vOfD[0]?.imCtrlVerif),
+        nom((vOfD.find((v) => v.obsLevees) ?? vOfD[0])?.imCtrlVerif),
+      ];
+      // ⚠️ Acteurs du DTO (`acteursEtapes`, noms nus) PRIORITAIRES ; repli clé par clé sur la jointure.
+      const parDto = d.acteursEtapes;
+      map.set(
+        d.idDossier,
+        CIRCUIT_ETAPES.map((e, i) =>
+          DossiersPipeline.phrase(DossiersPipeline.PREFIXES_ACTEUR[i], (parDto?.[e.key] ?? undefined) || parJointure[i]),
+        ),
+      );
+    }
+    return map;
+  });
+  /** Préfixe de l'infobulle par étape, aligné sur `CIRCUIT_ETAPES` (le backend sert des noms nus). */
+  private static readonly PREFIXES_ACTEUR: readonly string[] = [
+    'Réceptionné par',
+    'Attribué à',
+    'Examiné par',
+    'Projet de PV rédigé par',
+    'Signé par',
+    'Vérifié par',
+    'Clôturé par',
+  ];
+  /** « Préfixe Nom » ; chaîne vide (aucune infobulle) quand le nom est inconnu. */
+  private static phrase(prefixe: string, nom: string): string {
+    return nom ? `${prefixe} ${nom}` : '';
+  }
+  /** Référence STABLE (voir `acteursByDossier`) — ne jamais reconstruire le tableau ici. */
+  private static readonly SANS_ACTEUR: string[] = [];
+  acteurs(d: Dossier): string[] {
+    return this.acteursByDossier().get(d.idDossier) ?? DossiersPipeline.SANS_ACTEUR;
   }
 
   etapeInfo(d: Dossier): EtapeInfo {

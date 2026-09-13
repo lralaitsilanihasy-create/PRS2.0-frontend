@@ -9,6 +9,8 @@ import { CIRCUIT_ETAPES } from './circuit-workflow';
  * - `active` : index (0-based) de l'étape courante ; `-1` = hors flux / légende.
  * - `sublabels` : texte court sous chaque point (statut, ou date d'étape franchie pour un
  *   dossier précis). Index aligné sur `CIRCUIT_ETAPES`.
+ * - `acteurs` : ⚠️ demande pilote (2026-09-13) — infobulle au survol de chaque point : l'acteur de
+ *   l'étape (« Examiné par … »). Index aligné sur `CIRCUIT_ETAPES` ; entrée vide = pas de bulle.
  *
  * Couleurs issues du design system (tokens) ; défilement horizontal sur petit écran.
  */
@@ -24,7 +26,10 @@ import { CIRCUIT_ETAPES } from './circuit-workflow';
           [class.ct__step--current]="i === active()"
         >
           <span class="ct__name">{{ etape.label }}</span>
-          <span class="ct__node"><span class="ct__dot"></span></span>
+          <!-- Infobulle native : le nom de l'acteur de l'étape, quand il est connu (survol du point). -->
+          <span class="ct__node" [class.ct__node--info]="!!acteurs()[i]" [attr.title]="acteurs()[i] || null">
+            <span class="ct__dot"></span>
+          </span>
           <span class="ct__sub">{{ sublabels()[i] || '' }}</span>
         </li>
       }
@@ -86,6 +91,8 @@ import { CIRCUIT_ETAPES } from './circuit-workflow';
       background: var(--n-100);
       border: 2px solid var(--n-200);
     }
+    /* Point porteur d'une infobulle (acteur de l'étape) : curseur d'aide pour signaler le survol. */
+    .ct__node--info { cursor: help; }
     .ct__sub {
       font-size: var(--text-xs);
       color: var(--n-500);
@@ -107,6 +114,8 @@ export class CircuitTimeline {
   readonly active = input<number>(0);
   /** Libellé court sous chaque point (statut ou date d'étape franchie). */
   readonly sublabels = input<(string | null | undefined)[]>([]);
+  /** Infobulle par point (acteur de l'étape, « Examiné par … ») ; entrée vide = pas de bulle. */
+  readonly acteurs = input<(string | null | undefined)[]>([]);
 
   protected readonly etapes = CIRCUIT_ETAPES;
 }
