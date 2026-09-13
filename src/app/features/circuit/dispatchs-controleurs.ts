@@ -44,6 +44,8 @@ interface LigneControleur {
   /** Prénom(s) seul(s) — affiché sur la carte. */
   prenom: string;
   profil: string;
+  /** Localité de rattachement du contrôleur (colonne « Localité » du tableau). */
+  idLocalite?: string | null;
   dossiers: DossierAttribue[];
 }
 
@@ -89,41 +91,50 @@ interface LigneControleur {
           </div>
         </div>
 
-        <div class="dpc__grid">
-          @for (l of lignes(); track l.im; let i = $index) {
-            <article class="dpc__card">
-              <span class="dpc__rank">#{{ i + 1 }}</span>
-              <div class="dpc__avatar dpc__avatar--{{ i % 4 }}">
-                @if (photoDe(l.im); as ph) {
-                  <img class="dpc__photo" [src]="ph" [alt]="'Photo de ' + l.nom" />
-                } @else {
-                  <span class="dpc__initiales" aria-hidden="true">{{ initiales(l.nom) }}</span>
-                }
-              </div>
-              <div class="dpc__role">{{ l.profil }}</div>
-              <h3 class="dpc__nom">{{ l.prenom }}</h3>
-              <div class="dpc__total">
-                <span class="dpc__total-nb">{{ l.dossiers.length }}</span>
-                <span class="dpc__total-lbl">dossier{{ l.dossiers.length > 1 ? 's' : '' }} au total</span>
-              </div>
-              <ul class="dpc__types">
-                @for (t of typesDe(l); track t.libelle; let j = $index) {
-                  <li class="dpc__type">
-                    <div class="dpc__type-head">
-                      <span>{{ t.libelle }}</span>
-                      <span class="dpc__type-nb">{{ t.count }}</span>
-                    </div>
-                    <div class="dpc__tbar"><span class="dpc__tbar-fill dpc__tbar--{{ j % 5 }}" [style.width.%]="t.pct"></span></div>
-                  </li>
-                }
-              </ul>
-              <button type="button" class="dpc__voir" (click)="basculer(l.im)">
-                {{ ouvert() === l.im ? 'Masquer les dossiers' : 'Voir les dossiers' }}
-              </button>
-            </article>
-          } @empty {
-            <div class="dpc__empty">Aucun dossier dispatché pour le moment.</div>
-          }
+        <!-- ⚠️ Demande pilote (2026-09-13) — présentation en TABLEAU (Photo · Nom et prénoms · Localité ·
+             Dossiers par type) ; un clic sur la ligne déplie ses dossiers (détail sous le tableau). -->
+        <div class="table-card dpc__table">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Photo</th>
+                <th scope="col">Nom et prénoms</th>
+                <th scope="col">Localité</th>
+                <th scope="col">Dossiers par type</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of lignes(); track l.im; let i = $index) {
+                <tr class="dpc__row" [class.dpc__row--ouvert]="ouvert() === l.im">
+                  <td>
+                    <span class="dpc__ava dpc__ava--{{ i % 4 }}">
+                      @if (photoDe(l.im); as ph) {
+                        <img [src]="ph" [alt]="'Photo de ' + l.nom" />
+                      } @else {
+                        <span aria-hidden="true">{{ initiales(l.nom) }}</span>
+                      }
+                    </span>
+                  </td>
+                  <td>
+                    <!-- Ligne cliquable : bouton sur le nom (nom accessible + clavier), zone étendue à la ligne. -->
+                    <button type="button" class="dpc__lien" (click)="basculer(l.im)" [attr.aria-expanded]="ouvert() === l.im" [attr.aria-label]="'Voir les dossiers de ' + l.nom">{{ l.nom }}</button>
+                    <div class="dpc__role-cell">{{ l.profil }}</div>
+                  </td>
+                  <td>{{ localiteControleur(l) }}</td>
+                  <td>
+                    <span class="dpc__chips">
+                      @for (t of typesDe(l); track t.libelle; let j = $index) {
+                        <span class="dpc__chip dpc__chip--{{ j % 5 }}" [title]="t.libelle">{{ typeCourt(t.libelle) }} · {{ t.count }}</span>
+                      }
+                      <span class="dpc__chip-total">total {{ l.dossiers.length }}</span>
+                    </span>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="empty-cell">Aucun dossier dispatché pour le moment.</td></tr>
+              }
+            </tbody>
+          </table>
         </div>
 
         @if (ligneOuverte(); as l) {
@@ -262,6 +273,30 @@ interface LigneControleur {
     .dpc__tbar--2 { background: #7b85d4; }
     .dpc__tbar--3 { background: #38b2a0; }
     .dpc__tbar--4 { background: #b187c9; }
+
+    /* ⚠️ 2026-09-13 — présentation en TABLEAU : avatar compact, ligne cliquable (overlay), chips par type. */
+    .dpc__table td { vertical-align: middle; }
+    .dpc__row { position: relative; cursor: pointer; }
+    .dpc__row:hover td { background: var(--n-50); }
+    .dpc__row--ouvert td { background: var(--c-50, #eef2ff); }
+    .dpc__ava { width: 2.6rem; height: 2.6rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; font-size: 0.82rem; font-weight: 800; flex: none; }
+    .dpc__ava img { width: 100%; height: 100%; object-fit: cover; }
+    .dpc__ava--0 { background: linear-gradient(160deg, #e8687e, #f29cab); }
+    .dpc__ava--1 { background: linear-gradient(160deg, #f0a05a, #f6c489); }
+    .dpc__ava--2 { background: linear-gradient(160deg, #7b85d4, #a3abe8); }
+    .dpc__ava--3 { background: linear-gradient(160deg, #38b2a0, #7bd4c6); }
+    .dpc__lien { background: none; border: 0; padding: 0; margin: 0; font: inherit; font-weight: 700; color: var(--n-800); text-align: left; cursor: pointer; }
+    .dpc__lien::after { content: ''; position: absolute; inset: 0; }
+    .dpc__role-cell { font-size: var(--text-sm); color: var(--n-500); }
+    .dpc__chips { display: inline-flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+    .dpc__chip { padding: 0.15rem 0.6rem; border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: 600; white-space: nowrap; }
+    .dpc__chip--0 { background: #fce7ec; color: #b03a52; }
+    .dpc__chip--1 { background: #e8eafc; color: #4b53a8; }
+    .dpc__chip--2 { background: #e3f5f0; color: #1f8a76; }
+    .dpc__chip--3 { background: #fdefe0; color: #a5642a; }
+    .dpc__chip--4 { background: #f2e9f8; color: #7a4ba0; }
+    .dpc__chip-total { color: var(--n-500); font-size: var(--text-sm); }
+    .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
 
     .dpc__voir { margin-top: 0.6rem; padding: 0.5rem 0.75rem; border-radius: var(--radius-full); border: 1.5px solid var(--dpc-accent); background: #fff; color: var(--dpc-accent); font-weight: 700; cursor: pointer; transition: var(--transition); }
     .dpc__voir:hover { background: var(--dpc-accent); color: #fff; }
@@ -416,6 +451,7 @@ export class DispatchsControleurs implements OnDestroy {
             nom: c ? [c.nomCont, c.prenomsCont].filter(Boolean).join(' ') || im : im,
             prenom: c?.prenomsCont || c?.nomCont || im,
             profil: c?.idProfile != null ? profilLib.get(c.idProfile) ?? '—' : '—',
+            idLocalite: c?.idLocalite,
             dossiers: [...liste].sort((a, b) => (b.dateDispatch ?? '').localeCompare(a.dateDispatch ?? '')),
           };
         });
@@ -560,6 +596,14 @@ export class DispatchsControleurs implements OnDestroy {
   }
   typeLabel(d: Dossier): string {
     return d.idTypeDossier ? this.typeMap().get(d.idTypeDossier) ?? d.idTypeDossier : '—';
+  }
+  /** Libellé de la localité de rattachement du contrôleur (colonne « Localité » ; repli sur le code). */
+  localiteControleur(l: LigneControleur): string {
+    return l.idLocalite ? this.localiteMap().get(l.idLocalite) ?? l.idLocalite : '—';
+  }
+  /** Libellé de type raccourci pour le chip « Dossiers par type » (retire le préfixe « Dossier de/d' »). */
+  typeCourt(libelle: string): string {
+    return libelle.replace(/^Dossier d(?:e |')/i, '').trim() || libelle;
   }
   entiteLabel(d: Dossier): string {
     return d.idEntiteContract != null ? this.entiteMap().get(String(d.idEntiteContract)) ?? '#' + d.idEntiteContract : '—';
