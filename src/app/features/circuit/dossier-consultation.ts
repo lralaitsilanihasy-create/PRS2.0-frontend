@@ -26,7 +26,7 @@ import {
 } from '../../services';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
-import { ChronometrageDossier, StatutBadge, actionJournalVisiblePour } from '../../shared/circuit';
+import { ChronometrageDossier, StatutBadge } from '../../shared/circuit';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 import { FichePresentationDoc } from '../../shared/prmp/fiche-presentation-doc';
 import { AgpmDoc } from '../../shared/prmp/agpm-doc';
@@ -742,16 +742,13 @@ export class DossierConsultation implements OnInit {
   /** Journal MÉTIER des actions (spec « Mandats PRMP ») — vide si le backend ne le sert pas encore. */
   readonly journal = signal<ActionDossier[]>([]);
   /**
-   * ⚠️ Demande pilote (2026-09-04, RÈGLE RÉVISÉE le soir même) — VISIBILITÉ HIÉRARCHIQUE : chaque
-   * profil voit SES actions et celles de ses SUBORDONNÉS, jamais celles de ses supérieurs
-   * (constat : le Vérificateur lisait les consignes entre Président et CC). Remplace la fenêtre
-   * temporelle « depuis son entrée dans le circuit ». Les actes de la PRMP (création, soumission…)
-   * sont l'objet du dossier : visibles de tous ; la PRMP et l'Admin voient tout.
+   * ⚠️ Demande pilote (2026-09-13) — le JOURNAL DES ACTIONS n'est PLUS filtré par profil : tous les
+   * profils voient le journal complet (constat : le Membre ne voyait que 3 lignes — Création,
+   * Soumission, Réception — les dispatch/réattributions rang 5 lui étaient masqués, alors que le
+   * chronométrage, lui, tracait bien tous les passages). REMPLACE la visibilité hiérarchique du
+   * 2026-09-04 sur le journal. (Le chronométrage conserve sa propre règle, cf. `tacheChronoVisiblePour`.)
    */
-  readonly journalVisible = computed(() => {
-    const role = this.auth.role();
-    return this.journal().filter((a) => actionJournalVisiblePour(role, a.typeAction));
-  });
+  readonly journalVisible = computed(() => this.journal());
   /** Chronométrage du dossier (2026-09-01) — `null` si le backend ne le sert pas (section masquée). */
   readonly chronoDossier = signal<Chronometrage | null>(null);
 
