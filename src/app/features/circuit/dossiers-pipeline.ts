@@ -161,7 +161,7 @@ import { ReceptionForm } from './reception-form';
       <!-- Actions contextuelles du TABLEAU DE BORD (2026-09-12) : l'action à faire par dossier, selon
            son statut ET la capacité du profil (inline, comme « Mes dossiers »). -->
       @if (peutReceptionnerDash(d)) {
-        <button type="button" class="btn btn-primary btn-sm" (click)="receptionItem.set(d)">Numéroter</button>
+        <button type="button" class="btn btn-vert btn-sm" (click)="receptionItem.set(d)">Numéroter</button>
       }
       @if (dispatchableDe(d); as rec) {
         <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirDispatch(d, rec)">Dispatcher</button>

@@ -886,6 +886,19 @@ textarea.form-control {
     }
   }
 
+  /* Vert PLEIN (call-to-action), pendant vert du `.btn-primary` bleu (≠ `.btn-success` doux/pâle). */
+  &.btn-vert {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 4px 16px rgba(22, 163, 74, 0.4);
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+  }
+
   &.btn-warning {
     background: var(--warning-bg);
     color: var(--warning-text);
