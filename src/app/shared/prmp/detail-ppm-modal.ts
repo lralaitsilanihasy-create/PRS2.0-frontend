@@ -38,6 +38,7 @@ import { PpmSaisieGrid } from './ppm-saisie-grid';
 import { PpmFormFactory } from './ppm-form-factory';
 import { FichePresentationDoc } from './fiche-presentation-doc';
 import { AgpmDoc } from './agpm-doc';
+import { DocumentVisionneuse } from '../ui/document-visionneuse';
 import { DpmBenefsMarche } from './dpm-benefs-marche';
 import { CibleSuppression, DpmConfirmationSuppression } from './dpm-confirmation-suppression';
 import { DpmDatesMarche, libelleCapm } from './dpm-dates-marche';
@@ -88,6 +89,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     DpmReimportRefuse,
     FichePresentationDoc,
     AgpmDoc,
+    DocumentVisionneuse,
   ],
   template: `
     <div class="modal-backdrop" [class.closing]="closing()">
@@ -379,19 +381,27 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                 </div>
               } @else if (modeEdition) {
                 <!-- Même affichage que la lecture (format PPM officiel : montants, mode, forme, financement,
-                     bénéficiaires, dates) + colonne ACTIONS injectée dans la table partagée. -->
-                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()">
-                  <ng-template #rowActions let-m>
-                    <div class="dpm-actions-stack">
-                      <button class="btn btn-secondary btn-sm" type="button" (click)="voirDates(m)">Voir dates</button>
-                      <button class="btn btn-secondary btn-sm" type="button" (click)="modifierBenefs(m)">Bénéficiaires</button>
-                      <button class="btn btn-secondary btn-sm" type="button" (click)="modifierLots(m)">Lots ({{ lotsDe(m.idDetail).length }})</button>
-                      <button class="btn btn-outline btn-sm" type="button" (click)="modifierMarche(m)">Modifier</button>
-                    </div>
-                  </ng-template>
-                </app-ppm-marches-table>
+                     bénéficiaires, dates) + colonne ACTIONS injectée dans la table partagée.
+                     ⚠️ 2026-09-14 — la colonne d'outils est HORS document (sans bordure, dans la marge
+                     droite de la feuille) ; le statut du marché s'y range, en tête. -->
+                <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc">
+                  <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()">
+                    <ng-template #rowActions let-m>
+                      <div class="dpm-actions-stack">
+                        <button class="btn btn-secondary btn-sm" type="button" (click)="voirDates(m)">Voir dates</button>
+                        <button class="btn btn-secondary btn-sm" type="button" (click)="modifierBenefs(m)">Bénéficiaires</button>
+                        <button class="btn btn-secondary btn-sm" type="button" (click)="modifierLots(m)">Lots ({{ lotsDe(m.idDetail).length }})</button>
+                        <button class="btn btn-outline btn-sm" type="button" (click)="modifierMarche(m)">Modifier</button>
+                      </div>
+                    </ng-template>
+                  </app-ppm-marches-table>
+                </app-document-visionneuse>
               } @else {
-                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" />
+                <!-- ⚠️ 2026-09-14 (décision des chefs) — le plan dans sa feuille officielle ; statut et
+                     versionnement en annotations, masquables. -->
+                <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc">
+                  <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" />
+                </app-document-visionneuse>
               }
             </div>
             }
@@ -402,13 +412,15 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
             @if (onglet() === 'fiche') {
               <div class="dpm-section" role="tabpanel">
                 <!-- Rendu partagé (2026-09-02) : même document dans l'examen — source unique. -->
-                <app-fiche-presentation-doc
-                  [fiche]="fiche()"
-                  [exercice]="ppm()?.exercice"
-                  [libelleVersion]="libelleVersionFiche()"
-                  [justificationFiche]="ppm()?.justificationFiche"
-                  [motifMaj]="ppm()?.motifMaj"
-                />
+                <app-document-visionneuse>
+                  <app-fiche-presentation-doc
+                    [fiche]="fiche()"
+                    [exercice]="ppm()?.exercice"
+                    [libelleVersion]="libelleVersionFiche()"
+                    [justificationFiche]="ppm()?.justificationFiche"
+                    [motifMaj]="ppm()?.motifMaj"
+                  />
+                </app-document-visionneuse>
               </div>
             }
 
@@ -419,16 +431,18 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
             @if (onglet() === 'agpm') {
               <div class="dpm-section" role="tabpanel">
                 <!-- Rendu partagé (2026-09-02) : même document dans l'examen — source unique. -->
-                <app-agpm-doc
-                  [lignes]="agpm()"
-                  [exercice]="ppm()?.exercice"
-                  [entite]="entiteLabel()"
-                  [signataire]="ppm()?.signataire"
-                  [dateInitiale]="ppm()?.datePpmInit || ppm()?.dateSignature"
-                  [numMajPrec]="ppm()?.numMajPrec"
-                  [dateMajPrec]="ppm()?.dateMajPrec"
-                  [numMaj]="ppm()?.numMaj"
-                />
+                <app-document-visionneuse>
+                  <app-agpm-doc
+                    [lignes]="agpm()"
+                    [exercice]="ppm()?.exercice"
+                    [entite]="entiteLabel()"
+                    [signataire]="ppm()?.signataire"
+                    [dateInitiale]="ppm()?.datePpmInit || ppm()?.dateSignature"
+                    [numMajPrec]="ppm()?.numMajPrec"
+                    [dateMajPrec]="ppm()?.dateMajPrec"
+                    [numMaj]="ppm()?.numMaj"
+                  />
+                </app-document-visionneuse>
               </div>
             }
 
@@ -443,7 +457,9 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                     }
                   </select>
                 </div>
-                <app-ppm-marches-table [marches]="marchesVersionSel()" [beneficiaires]="benefsVersionSel()" [previsions]="previsionsVersionSel()" />
+                <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc">
+                  <app-ppm-marches-table [marches]="marchesVersionSel()" [beneficiaires]="benefsVersionSel()" [previsions]="previsionsVersionSel()" />
+                </app-document-visionneuse>
               </div>
             }
 
@@ -458,16 +474,18 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
                     }
                   </select>
                 </div>
-                <app-agpm-doc
-                  [lignes]="agpmVersionSel()"
-                  [exercice]="ppmVersionSel()?.exercice"
-                  [entite]="entiteLabel()"
-                  [signataire]="ppmVersionSel()?.signataire"
-                  [dateInitiale]="ppmVersionSel()?.datePpmInit || ppmVersionSel()?.dateSignature"
-                  [numMajPrec]="ppmVersionSel()?.numMajPrec"
-                  [dateMajPrec]="ppmVersionSel()?.dateMajPrec"
-                  [numMaj]="ppmVersionSel()?.numMaj"
-                />
+                <app-document-visionneuse>
+                  <app-agpm-doc
+                    [lignes]="agpmVersionSel()"
+                    [exercice]="ppmVersionSel()?.exercice"
+                    [entite]="entiteLabel()"
+                    [signataire]="ppmVersionSel()?.signataire"
+                    [dateInitiale]="ppmVersionSel()?.datePpmInit || ppmVersionSel()?.dateSignature"
+                    [numMajPrec]="ppmVersionSel()?.numMajPrec"
+                    [dateMajPrec]="ppmVersionSel()?.dateMajPrec"
+                    [numMaj]="ppmVersionSel()?.numMaj"
+                  />
+                </app-document-visionneuse>
               </div>
             }
 
@@ -928,6 +946,11 @@ export class DetailPpmModal implements OnInit {
   });
   /** Onglet courant — le plan de passation est le motif d'ouverture le plus fréquent du modal. */
   readonly onglet = signal<'entite' | 'ppm' | 'fiche' | 'agpm' | 'pieces' | 'ppm-ant' | 'agpm-ant'>('ppm');
+  /**
+   * ⚠️ 2026-09-14 (décision des chefs) — annotations des documents officiels visibles (état d'examen,
+   * statut du marché, versionnement…) : un seul interrupteur pour tous les onglets de l'écran.
+   */
+  readonly annotationsDoc = signal(true);
   /** Fiches d'identité de l'onglet 1 (UGPM vide hors ADMINISTRATEUR : lecture réservée). */
   readonly entites = signal<EntiteContract[]>([]);
   private readonly localiteMap = signal<Map<string, string>>(new Map());

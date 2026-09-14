@@ -57,6 +57,7 @@ import { calculerFichePresentation } from '../../shared/prmp/fiche-presentation'
 import { calculerAgpm } from '../../shared/prmp/agpm';
 import { FichePresentationDoc } from '../../shared/prmp/fiche-presentation-doc';
 import { AgpmDoc } from '../../shared/prmp/agpm-doc';
+import { DocumentVisionneuse } from '../../shared/ui/document-visionneuse';
 
 /** Une ligne « AU LIEU DE / LIRE » saisie pour un point non conforme. */
 interface ObsLigne {
@@ -88,7 +89,7 @@ interface RowState {
 @Component({
   selector: 'app-examen-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, PpmMarchesTable, ChronometrageDossier, FichePresentationDoc, AgpmDoc],
+  imports: [StatutBadge, PpmMarchesTable, ChronometrageDossier, FichePresentationDoc, AgpmDoc, DocumentVisionneuse],
   template: `
     <section class="exam">
       <header class="page-header">
@@ -167,31 +168,39 @@ interface RowState {
                     </dl>
                   }
                   <!-- ppm-table-large (variante globale) : le tableau garde sa taille lisible et
-                       défile DANS le panneau — demande pilote 2026-09-02, propre à l'examen. -->
+                       défile DANS le panneau — demande pilote 2026-09-02, propre à l'examen.
+                       ⚠️ 2026-09-14 (décision des chefs) — le plan dans sa feuille officielle : état
+                       d'examen, statut et versionnement en annotations, masquables. -->
                   <div class="exam__marches ppm-table-large">
-                    <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [inclureSupprimees]="examenScope()" [rowStateFn]="etatLigneFn" (rowClick)="ouvrirLigne($event)" />
+                    <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc">
+                      <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [inclureSupprimees]="examenScope()" [rowStateFn]="etatLigneFn" (rowClick)="ouvrirLigne($event)" />
+                    </app-document-visionneuse>
                   </div>
                 }
                 @if (ongletContenu() === 'fiche') {
-                  <app-fiche-presentation-doc
-                    [fiche]="ficheDoc()"
-                    [exercice]="ppm()?.exercice"
-                    [libelleVersion]="libelleVersionFiche()"
-                    [justificationFiche]="ppm()?.justificationFiche"
-                    [motifMaj]="ppm()?.motifMaj"
-                  />
+                  <app-document-visionneuse>
+                    <app-fiche-presentation-doc
+                      [fiche]="ficheDoc()"
+                      [exercice]="ppm()?.exercice"
+                      [libelleVersion]="libelleVersionFiche()"
+                      [justificationFiche]="ppm()?.justificationFiche"
+                      [motifMaj]="ppm()?.motifMaj"
+                    />
+                  </app-document-visionneuse>
                 }
                 @if (ongletContenu() === 'agpm') {
-                  <app-agpm-doc
-                    [lignes]="agpmDoc()"
-                    [exercice]="ppm()?.exercice"
-                    [entite]="entiteLabel()"
-                    [signataire]="ppm()?.signataire"
-                    [dateInitiale]="ppm()?.datePpmInit || ppm()?.dateSignature"
-                    [numMajPrec]="ppm()?.numMajPrec"
-                    [dateMajPrec]="ppm()?.dateMajPrec"
-                    [numMaj]="ppm()?.numMaj"
-                  />
+                  <app-document-visionneuse>
+                    <app-agpm-doc
+                      [lignes]="agpmDoc()"
+                      [exercice]="ppm()?.exercice"
+                      [entite]="entiteLabel()"
+                      [signataire]="ppm()?.signataire"
+                      [dateInitiale]="ppm()?.datePpmInit || ppm()?.dateSignature"
+                      [numMajPrec]="ppm()?.numMajPrec"
+                      [dateMajPrec]="ppm()?.dateMajPrec"
+                      [numMaj]="ppm()?.numMaj"
+                    />
+                  </app-document-visionneuse>
                 }
               }
               @if (!estPpm() || ongletContenu() === 'pieces') {
@@ -477,7 +486,7 @@ interface RowState {
     .exam__contenu-fixe { flex-shrink: 0; }
     .exam__contenu-defilant { flex: 1; min-height: 0; overflow: auto; }
     /* La largeur confortable du tableau vient de la variante GLOBALE .ppm-table-large
-       (_ppm-table.scss) : l'encapsulation émulée empêche d'atteindre ici le DOM du composant
+       (_document-officiel.scss depuis le 2026-09-14) : l'encapsulation émulée empêche d'atteindre ici le DOM du composant
        partagé — même motif que _dpm-dialog.scss. */
     /* ⚠️ 2026-09-02 (précisé) — PAS d'ascenseur propre sur « Consigner l'examen » : le panneau
        s'affiche en pleine hauteur, la page défile s'il est long. Le panneau du contenu, lui,
@@ -847,6 +856,11 @@ export class ExamenDossier implements OnDestroy {
   private readonly capmsRef = signal<Capm[]>([]);
   /** Onglet actif du panneau « Contenu du dossier » (dossiers DDP seulement). */
   readonly ongletContenu = signal<'ppm' | 'fiche' | 'agpm' | 'pieces'>('ppm');
+  /**
+   * ⚠️ 2026-09-14 (décision des chefs) — annotations des documents officiels visibles (état d'examen,
+   * statut du marché, versionnement…) : un seul interrupteur pour tous les onglets de l'écran.
+   */
+  readonly annotationsDoc = signal(true);
   /** Les deux documents dérivés — mêmes fonctions pures que le détail PPM et l'aperçu de création. */
   readonly ficheDoc = computed(() =>
     calculerFichePresentation(this.marches(), this.previsions(), this.modesRef(), this.capmsRef()),

@@ -30,6 +30,7 @@ import { ChronometrageDossier, StatutBadge } from '../../shared/circuit';
 import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
 import { FichePresentationDoc } from '../../shared/prmp/fiche-presentation-doc';
 import { AgpmDoc } from '../../shared/prmp/agpm-doc';
+import { DocumentVisionneuse } from '../../shared/ui/document-visionneuse';
 import { calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { calculerAgpm } from '../../shared/prmp/agpm';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
@@ -46,7 +47,7 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
 @Component({
   selector: 'app-dossier-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, StatutBadge, PpmMarchesTable, ModaleDirective, ChronometrageDossier, FichePresentationDoc, AgpmDoc, EtatErreur],
+  imports: [DatePipe, StatutBadge, PpmMarchesTable, ModaleDirective, ChronometrageDossier, FichePresentationDoc, AgpmDoc, EtatErreur, DocumentVisionneuse],
   template: `
     <div [class.modal-backdrop]="!embedded()" [class.closing]="closing()">
       <!-- ⚠️ En modale, le corps n'est monté qu'une fois les données là : sinon le panneau
@@ -207,8 +208,12 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
             </div>
 
             @if (ongletDossier() === 'ppm') {
+              <!-- ⚠️ 2026-09-14 (décision des chefs) — documents officiels dans leur feuille ; statut et
+                   versionnement en annotations, masquables (interrupteur commun aux onglets). -->
               <div class="dc-section">
-                <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [legendeTitre]="legendeChangements()" [detailsChangements]="detailsChangements()" />
+                <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc">
+                  <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [legendeTitre]="legendeChangements()" [detailsChangements]="detailsChangements()" />
+                </app-document-visionneuse>
               </div>
             }
             @if (ongletDossier() === 'historique' && historiqueVersionsVisible()) {
@@ -249,7 +254,9 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                       <span class="badge dc-hist__courante">En vigueur</span>
                       <span>{{ marches().length }} marché(s) · état actuel du dossier</span>
                     </div>
-                    <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
+                    <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc">
+                      <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" />
+                    </app-document-visionneuse>
                   } @else if (versionChargement()) {
                     <div class="spinner-wrap dc-load" role="status" aria-label="Chargement de la version"><div class="spinner"></div></div>
                   } @else if (versionErreur()) {
@@ -285,25 +292,31 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
                       }
                     </div>
                     @if (ongletVersion() === 'plan') {
-                      <app-ppm-marches-table [marches]="vue.marches" [beneficiaires]="vue.beneficiaires" [previsions]="vue.previsions" />
+                      <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc">
+                        <app-ppm-marches-table [marches]="vue.marches" [beneficiaires]="vue.beneficiaires" [previsions]="vue.previsions" />
+                      </app-document-visionneuse>
                     }
                     @if (ongletVersion() === 'fiche') {
                       @if (ficheVersion(); as fiche) {
-                        <app-fiche-presentation-doc
-                          [fiche]="fiche"
-                          [exercice]="vue.detail.version.exercice ?? ppm()?.exercice"
-                          [libelleVersion]="'Version n° ' + vue.detail.version.numero + ' (archivée)'"
-                        />
+                        <app-document-visionneuse>
+                          <app-fiche-presentation-doc
+                            [fiche]="fiche"
+                            [exercice]="vue.detail.version.exercice ?? ppm()?.exercice"
+                            [libelleVersion]="'Version n° ' + vue.detail.version.numero + ' (archivée)'"
+                          />
+                        </app-document-visionneuse>
                       }
                     }
                     @if (ongletVersion() === 'agpm') {
-                      <app-agpm-doc
-                        [lignes]="agpmVersion()"
-                        [exercice]="vue.detail.version.exercice ?? ppm()?.exercice"
-                        [entite]="entiteLabel()"
-                        [signataire]="vue.detail.version.signataire ?? ppm()?.signataire"
-                        [dateInitiale]="vue.detail.version.dateSignature ?? ppm()?.dateSignature"
-                      />
+                      <app-document-visionneuse>
+                        <app-agpm-doc
+                          [lignes]="agpmVersion()"
+                          [exercice]="vue.detail.version.exercice ?? ppm()?.exercice"
+                          [entite]="entiteLabel()"
+                          [signataire]="vue.detail.version.signataire ?? ppm()?.signataire"
+                          [dateInitiale]="vue.detail.version.dateSignature ?? ppm()?.dateSignature"
+                        />
+                      </app-document-visionneuse>
                     }
                   }
                 </div>
@@ -311,27 +324,31 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
             }
             @if (ongletDossier() === 'fiche') {
               <div class="dc-section">
-                <app-fiche-presentation-doc
-                  [fiche]="ficheDoc()"
-                  [exercice]="ppm()?.exercice"
-                  [libelleVersion]="libelleVersionFiche()"
-                  [justificationFiche]="ppm()?.justificationFiche"
-                  [motifMaj]="ppm()?.motifMaj"
-                />
+                <app-document-visionneuse>
+                  <app-fiche-presentation-doc
+                    [fiche]="ficheDoc()"
+                    [exercice]="ppm()?.exercice"
+                    [libelleVersion]="libelleVersionFiche()"
+                    [justificationFiche]="ppm()?.justificationFiche"
+                    [motifMaj]="ppm()?.motifMaj"
+                  />
+                </app-document-visionneuse>
               </div>
             }
             @if (ongletDossier() === 'agpm') {
               <div class="dc-section">
-                <app-agpm-doc
-                  [lignes]="agpmDoc()"
-                  [exercice]="ppm()?.exercice"
-                  [entite]="entiteLabel()"
-                  [signataire]="ppm()?.signataire"
-                  [dateInitiale]="ppm()?.datePpmInit || ppm()?.dateSignature"
-                  [numMajPrec]="ppm()?.numMajPrec"
-                  [dateMajPrec]="ppm()?.dateMajPrec"
-                  [numMaj]="ppm()?.numMaj"
-                />
+                <app-document-visionneuse>
+                  <app-agpm-doc
+                    [lignes]="agpmDoc()"
+                    [exercice]="ppm()?.exercice"
+                    [entite]="entiteLabel()"
+                    [signataire]="ppm()?.signataire"
+                    [dateInitiale]="ppm()?.datePpmInit || ppm()?.dateSignature"
+                    [numMajPrec]="ppm()?.numMajPrec"
+                    [dateMajPrec]="ppm()?.dateMajPrec"
+                    [numMaj]="ppm()?.numMaj"
+                  />
+                </app-document-visionneuse>
               </div>
             }
           }
@@ -755,6 +772,11 @@ export class DossierConsultation implements OnInit {
   // ── Onglets du dossier (2026-09-03) : fiche / plan / AGPM / pièces / historique (2026-09-06) ──
   /** Onglet actif — ouverture sur le plan, comme le détail PPM. */
   readonly ongletDossier = signal<'ppm' | 'fiche' | 'agpm' | 'pieces' | 'historique'>('ppm');
+  /**
+   * ⚠️ 2026-09-14 (décision des chefs) — annotations des documents officiels visibles (statut du
+   * marché, versionnement, état d'examen…) : un seul interrupteur pour tous les onglets de l'écran.
+   */
+  readonly annotationsDoc = signal(true);
 
   // ── Historique des versions (⚠️ demande pilote 2026-09-06, backend 6d9ba29) ──
   /**
