@@ -278,3 +278,59 @@
 .page-content:focus {
   outline: none;
 }
+
+/* ⚠️ Mode « concentration » (refonte ergonomique, lot 2 — route `data.concentration`, l'examen) :
+   la barre latérale se range en TIROIR, comme sous 768 px (mêmes règles que _responsive.scss), et
+   la page récupère sa largeur. Repliée, elle est aussi `visibility: hidden` : ses liens hors écran
+   ne restent pas dans l'ordre de tabulation. */
+:host(.layout--concentration) {
+  .sidebar {
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 220ms ease, visibility 0s linear 220ms;
+
+    &.open {
+      transform: translateX(0);
+      visibility: visible;
+      box-shadow: var(--shadow-xl);
+      transition: transform 220ms ease;
+    }
+  }
+
+  .sidebar-overlay {
+    display: block;
+
+    &.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    &:not(.visible) {
+      pointer-events: none;
+    }
+  }
+
+  .sidebar-toggle {
+    display: flex;
+  }
+
+  .topbar {
+    left: 0;
+  }
+
+  .page-content {
+    margin-left: 0;
+  }
+
+  .page-inner {
+    padding: 1rem 1.25rem;
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host(.layout--concentration) .sidebar,
+  :host(.layout--concentration) .sidebar.open {
+    transition: none;
+  }
+}

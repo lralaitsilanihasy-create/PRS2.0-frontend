@@ -65,7 +65,7 @@ export const PRESIDENT_ROUTES: Routes = [
   { path: 'circuit/pv-definitifs', loadComponent: () => import('../circuit/pv-definitifs').then((m) => m.PvDefinitifs) },
   { path: 'retraits', loadComponent: () => import('../circuit/retraits-validation').then((m) => m.RetraitsValidation) },
   // — Délégation ascendante : tâches des subordonnés exercées DANS cet espace (paires en base). —
-  { path: 'examiner/:idDossier', loadComponent: () => import('../membre/examen-dossier').then((m) => m.ExamenDossier), data: { title: 'Examiner un dossier' } },
+  { path: 'examiner/:idDossier', loadComponent: () => import('../membre/examen-dossier').then((m) => m.ExamenDossier), data: { title: 'Examiner un dossier', concentration: true } },
   { path: 'verifications', loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline), data: { title: 'Dossiers à vérifier', timeline: false, source: 'a-verifier', verifAction: true } },
   { path: 'verifier/:idDossier', loadComponent: () => import('../verificateur/verifier-dossier').then((m) => m.VerifierDossier) },
   { path: 'en-attente-prmp', loadComponent: () => import('../verificateur/en-attente-prmp').then((m) => m.EnAttentePrmp) },

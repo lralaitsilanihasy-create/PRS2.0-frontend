@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -28,6 +28,20 @@ import { Dossier, estLocaliteCentrale, Role } from '../../models';
 const CHEMIN_A_VERIFIER = '/verificateur/a-verifier';
 
 /**
+ * ⚠️ Refonte ergonomique, lot 2 (2026-09-14) — MODE « CONCENTRATION » : une route qui déclare
+ * `data: { concentration: true }` (l'examen d'un dossier) replie la barre latérale, pour rendre au
+ * document et à la grille de contrôle la largeur d'un portable 15 pouces (1366 px). Le menu reste à
+ * un clic : il s'ouvre en tiroir par le bouton de l'en-tête, comme sur tablette. La donnée est
+ * cherchée sur toute la branche activée (une route enfant peut la porter).
+ */
+export function routeEnConcentration(racine: ActivatedRouteSnapshot | null): boolean {
+  for (let r = racine; r; r = r.firstChild) {
+    if (r.data?.['concentration'] === true) return true;
+  }
+  return false;
+}
+
+/**
  * Coquille applicative pour les utilisateurs connectés : en-tête (identité + déconnexion),
  * barre latérale dont les entrées sont filtrées selon le profil, et zone de contenu routée.
  */
@@ -45,7 +59,7 @@ const CHEMIN_A_VERIFIER = '/verificateur/a-verifier';
   ],
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.scss',
-  host: { '[attr.data-role]': 'role()' },
+  host: { '[attr.data-role]': 'role()', '[class.layout--concentration]': 'concentration()' },
 })
 export class MainLayout {
   private readonly auth = inject(AuthService);
@@ -133,8 +147,10 @@ export class MainLayout {
   readonly counts = signal<Record<string, number>>({});
   /** Compteurs d'alerte (badge rouge) à côté de certaines entrées (clé = chemin). */
   readonly alerts = signal<Record<string, number>>({});
-  /** Sidebar ouverte en mode drawer (tablette / mobile). Sans effet sur desktop. */
+  /** Sidebar ouverte en mode drawer (tablette / mobile, ou mode concentration). Sans effet sinon. */
   readonly sidebarOpen = signal(false);
+  /** Route courante en mode « concentration » : barre latérale repliée en tiroir (`routeEnConcentration`). */
+  readonly concentration = signal(false);
   /** Dossier ouvert depuis une notification — la modale est rendue par le layout (hors topbar, cf. template). */
   readonly dossierNotification = signal<Dossier | null>(null);
   /**
@@ -262,6 +278,7 @@ export class MainLayout {
       )
       .subscribe(() => {
         this.sidebarOpen.set(false);
+        this.concentration.set(routeEnConcentration(this.router.routerState.snapshot.root));
         this.annoncerPage();
       });
 
