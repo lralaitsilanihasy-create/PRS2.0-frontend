@@ -367,7 +367,7 @@ export class CrudPage {
       if (field.hideInForm) continue;
       const locked = this.formMode() === 'edit' && !!field.pk;
       const fallback = field.type === 'boolean' ? false : null;
-      let initial = model ? (model[field.key] ?? fallback) : fallback;
+      let initial = model ? (model[field.key] ?? fallback) : (field.defaultValue ?? fallback);
       // PK auto-générée : à la création, valeur = max(ids existants) + 1 (le champ reste masqué).
       if (field.autoId && this.formMode() === 'create') {
         initial = this.nextAutoId(field);

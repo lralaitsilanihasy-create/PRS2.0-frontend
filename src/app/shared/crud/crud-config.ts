@@ -71,6 +71,11 @@ export interface FieldConfig {
    */
   options?: (string | number | { value: string | number; label: string })[];
   /**
+   * Valeur pré-remplie à la **création** (sans effet en modification : la valeur de la ligne prime).
+   * Ex. la portée d'un point de contrôle, `LIGNE` par défaut comme côté serveur.
+   */
+  defaultValue?: string | number | boolean;
+  /**
    * Si défini, la valeur (un id) est affichée via le libellé du référentiel lié ; en formulaire,
    * le champ devient une **liste déroulante** des enregistrements du référentiel.
    */

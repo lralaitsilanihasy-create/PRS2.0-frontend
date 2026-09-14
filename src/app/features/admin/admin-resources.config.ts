@@ -348,7 +348,7 @@ export const REFERENTIELS: AdminResource[] = [
       service: PointsCtrlService,
       idKey: 'idPointCtrl',
       writeCapability: 'REFERENTIEL_WRITE',
-      note: 'Grille d\'examen : un point porte sa famille (DDP/DMC/DDM) et, en option, un sous-type ciblé — vide = commun à toute la famille. Un sous-type hors de la famille du point est refusé (400).',
+      note: 'Grille d\'examen : un point porte sa famille (DDP/DMC/DDM) et, en option, un sous-type ciblé — vide = commun à toute la famille. Un sous-type hors de la famille du point est refusé (400). La portée range le point dans sa grille : par ligne de marché, une fois pour le dossier, la fiche de présentation ou le projet d\'AGPM (sous-type PPM-AGPM), ou constat sur les lignes retirées par une mise à jour.',
       fields: [
         // PK technique sans signification métier : masquée de la liste et du formulaire (auto max+1 à la création).
         { key: 'idPointCtrl', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
@@ -366,6 +366,23 @@ export const REFERENTIELS: AdminResource[] = [
           key: 'idSousType',
           label: 'Sous-type (vide = commun)',
           ref: { service: SousTypeDossierService, idKey: 'idSousType', labelKeys: ['libelleSousType'] },
+        },
+        // ⚠️ Audit 2026-09-14 (E3) — sans ce champ, le formulaire n'envoyait pas la portée : toute
+        // modification repassait le point en LIGNE (il sortait de sa grille FICHE, AGPM, DOSSIER ou
+        // SUPPRESSION) et la création ne produisait que des points LIGNE. Codes = enum backend
+        // `PorteePointCtrl`.
+        {
+          key: 'portee',
+          label: 'Portée',
+          required: true,
+          defaultValue: 'LIGNE',
+          options: [
+            { value: 'LIGNE', label: 'Par ligne de marché' },
+            { value: 'DOSSIER', label: 'Dossier (une fois, inter-lignes)' },
+            { value: 'FICHE', label: 'Fiche de présentation' },
+            { value: 'AGPM', label: "Projet d'AGPM" },
+            { value: 'SUPPRESSION', label: 'Lignes retirées (constat de suppression)' },
+          ],
         },
       ],
     },
