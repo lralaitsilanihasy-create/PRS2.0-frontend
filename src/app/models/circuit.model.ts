@@ -67,13 +67,14 @@ export interface Dossier {
    * `null` = chaîne incomplète, repli localité — état NORMAL, aucun badge. ⚠️ Ciblage SANS garde :
    * tout Vérificateur de la localité peut agir — ne JAMAIS griser l'action d'un dossier « d'autrui »,
    * ce serait inventer une règle que le serveur n'applique pas.
+   * Toujours `null` pour PRMP/UGPM — vues internes CNM (audit 2026-09-14, C2), comme les trois suivants.
    */
   imVerificateurCible?: string | null;
-  /** Nom complet du Vérificateur cible, résolu serveur. */
+  /** Nom complet du Vérificateur cible, résolu serveur. `null` pour PRMP/UGPM. */
   nomVerificateurCible?: string | null;
-  /** Assistant CIBLE de l'archivage (rattaché du Vérificateur ayant validé) — mêmes règles : null normal, ciblage sans garde. */
+  /** Assistant CIBLE de l'archivage (rattaché du Vérificateur ayant validé) — mêmes règles : null normal, ciblage sans garde. `null` pour PRMP/UGPM. */
   imAssistantCible?: string | null;
-  /** Nom complet de l'Assistant cible, résolu serveur. */
+  /** Nom complet de l'Assistant cible, résolu serveur. `null` pour PRMP/UGPM. */
   nomAssistantCible?: string | null;
   /**
    * ⚠️ Chronométrage (2026-09-01, backend `c66db71`) — date prévisionnelle d'achèvement du
@@ -109,6 +110,7 @@ export interface Dossier {
    * `DISPATCH` = l'ATTRIBUTAIRE courant (réattributions comprises), volontairement ≠ du passage
    * DISPATCH du chronométrage (au nom du dispatcheur). `PV_SIGNE` = « Membre · CC · Président »,
    * parts effectivement signées. Le front ajoute les préfixes (« Attribué à … »).
+   * ⚠️ `null` en entier pour PRMP/UGPM — vues internes CNM (audit 2026-09-14, C2) ; `datesEtapes` reste servi.
    */
   acteursEtapes?: Record<string, string | null> | null;
   /** Vrai quand la balle est CHEZ LA PRMP (statut suspensif) : la date prévisionnelle glisse d'autant. */
@@ -178,8 +180,9 @@ export const ETAPE_CIRCUIT_PORTEURS: Record<EtapeCircuit, Role> = {
 export interface PassageEtape {
   etape: EtapeCircuit;
   occurrence: number;
+  /** `null` pour PRMP/UGPM — vues internes CNM (audit 2026-09-14, C2). */
   imActeur?: string | null;
-  /** « prénoms nom » résolu serveur ; null si matricule inconnu. */
+  /** « prénoms nom » résolu serveur ; null si matricule inconnu, et toujours pour PRMP/UGPM (audit 2026-09-14, C2). */
   nomActeur?: string | null;
   /** Profil sous lequel l'acteur a agi (délégation / intérim compris). */
   profil?: string | null;
@@ -220,7 +223,8 @@ export interface Chronometrage {
   /**
    * Attributaire courant du dossier (`imCtrlMembre` du dispatch, réattributions comprises) — la
    * prise en charge d'EXAMEN lui est réservée (`5225529`, 403 même par délégation). Servi depuis
-   * `4ee9c0b` ; `null` tant que le dossier n'est pas dispatché.
+   * `4ee9c0b` ; `null` tant que le dossier n'est pas dispatché, et toujours pour PRMP/UGPM — vues
+   * internes CNM (audit 2026-09-14, C2).
    */
   attributaire?: string | null;
 }
@@ -456,16 +460,17 @@ export interface PvExamen {
    * sa localité) peut viser en joignant la note d'intérim — sans note c'est un 400 « note requise »,
    * pas un interdit ; le 403 reste pour un CC d'une autre localité (aucune note ne l'autoriserait)
    * et les profils hors P/CC. Sert à conditionner les boutons sans appel supplémentaire.
+   * ⚠️ `null` pour PRMP/UGPM — vues internes CNM (audit 2026-09-14, C2), comme les quatre suivants.
    */
-  imDispatcheur?: string;
-  /** Nom complet du dispatcheur, peuplé serveur — pour écrire la raison du refus aux autres P/CC. */
-  nomDispatcheur?: string;
-  /** ⚠️ Intérim (2026-09-01) — le visa a été posé par intérim (trace ; mention sur le document PV pour les seules localités régionales, sous « Étaient présents »). */
-  viseParInterim?: boolean;
-  /** Nom du fichier de la note d'intérim téléversée au visa. */
-  noteInterimNom?: string;
-  /** Le PDF de la note est téléchargeable (`GET /{id}/note-interim`) — contrôleurs du périmètre + Admin, 403 PRMP. */
-  noteInterimDisponible?: boolean;
+  imDispatcheur?: string | null;
+  /** Nom complet du dispatcheur, peuplé serveur — pour écrire la raison du refus aux autres P/CC. `null` pour PRMP/UGPM. */
+  nomDispatcheur?: string | null;
+  /** ⚠️ Intérim (2026-09-01) — le visa a été posé par intérim (trace ; mention sur le document PV pour les seules localités régionales, sous « Étaient présents »). `null` pour PRMP/UGPM (secret de l'intérim). */
+  viseParInterim?: boolean | null;
+  /** Nom du fichier de la note d'intérim téléversée au visa. `null` pour PRMP/UGPM. */
+  noteInterimNom?: string | null;
+  /** Le PDF de la note est téléchargeable (`GET /{id}/note-interim`) — contrôleurs du périmètre + Admin, 403 PRMP. `null` pour PRMP/UGPM. */
+  noteInterimDisponible?: boolean | null;
   syntheseObservations?: string;
   statutPv: StatutPv;
   nbNavettes: number;
