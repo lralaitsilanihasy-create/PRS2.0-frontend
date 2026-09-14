@@ -1018,6 +1018,10 @@ export class DossierConsultation implements OnInit {
     // source de données est tolérante à l'échec (of(...)) : le toast centralisé signale l'erreur,
     // le reste du modal s'affiche quand même. Les lookups (shareReplay) sont mis en cache : les
     // rouvrir — ou le tableau partagé qui les redemande — les résout alors de façon synchrone.
+    // ⚠️ Audit 2026-09-14 (C2) — journal et chronométrage sont des vues INTERNES CNM : pour la PRMP et
+    // son UGPM, on ne les DEMANDE pas (le serveur répond 403 au journal et sert un chronométrage sans
+    // acteurs) au lieu de les charger pour les masquer ensuite.
+    const restitutions = this.restitutionsVisibles();
     const commun = {
       typeMap: this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).pipe(catchError(() => of(new Map<string, string>()))),
       localiteMap: this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).pipe(catchError(() => of(new Map<string, string>()))),
@@ -1028,9 +1032,13 @@ export class DossierConsultation implements OnInit {
       // s'ajoutait après coup et faisait grandir le panneau déjà affiché (+52 px mesurés) — le
       // mouvement se superposait à l'animation d'ouverture, d'où une entrée « brusque ».
       // Silencieux : un dossier sans journal (ou un backend antérieur) n'affiche pas la section.
-      journal: this.dossierService.journal(id).pipe(catchError(() => of([] as ActionDossier[]))),
+      journal: restitutions
+        ? this.dossierService.journal(id).pipe(catchError(() => of([] as ActionDossier[])))
+        : of([] as ActionDossier[]),
       // Chronométrage (2026-09-01) : DANS la vague, silencieux — un échec cache la section, sans dialogue.
-      chrono: this.dossierService.chronometrage(id, true).pipe(catchError(() => of(null as Chronometrage | null))),
+      chrono: restitutions
+        ? this.dossierService.chronometrage(id, true).pipe(catchError(() => of(null as Chronometrage | null)))
+        : of(null as Chronometrage | null),
     };
     if (!this.estPpm()) {
       forkJoin(commun).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono }) => {
