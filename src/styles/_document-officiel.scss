@@ -1,0 +1,579 @@
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   DOCUMENT OFFICIEL — plan de passation (PPM), fiche de présentation, projet d'AGPM.
+
+   ⚠️ Décision des chefs (2026-09-14, chantier « refonte ergonomique », lot 1) : le PPM reste tel
+   qu'il est présenté dans le PDF officiel, et la même logique vaut pour la fiche de présentation et
+   le projet d'AGPM. L'application affiche ces documents comme une FEUILLE ; tout ce qui lui est
+   propre (état d'examen, versionnement, statut du marché, observations) est une ANNOTATION posée
+   par-dessus ou en marge, qu'on peut masquer — jamais une colonne ajoutée ni un style qui change
+   le document.
+
+   Quatre couches :
+   ① .doc-visionneuse — le fond gris sur lequel la feuille est posée ;
+   ② .doc-feuille     — la page : fond blanc, ombre légère, texte noir, Arial/Helvetica ;
+   ③ le document      — .doc-titre, .doc-entete, .doc-table, .doc-pied : règles reprises de
+                        l'aperçu officiel de la saisie (ex-« .ppm-doc », soumettre-dossier.ts) ;
+   ④ les annotations  — .doc-annot et ses variantes. Les gouttières qui les accueillent
+                        (.doc-gouttiere-g / -d) sont portées par le COMPOSANT qui les pose, pas
+                        par la feuille : un document sans annotation garde des marges normales, et
+                        le composant reste lisible hors de la feuille.
+   Le modificateur .doc-annotations-masquees, posé sur la feuille ou sur la racine d'un document,
+   retire toutes les annotations et referme les gouttières : on voit le document seul.
+
+   Écrans cibles : portables 15 pouces — 1366×768 à 100 %, ou 1536×864 à 125 % (1229 px CSS).
+   Le tableau est FLUIDE : `table-layout: fixed` + largeurs en %, texte qui revient à la ligne, pas
+   de zoom par transformation. Seule exception, provisoire : les hôtes à panneau latéral
+   (.ppm-table-large, en bas de fichier).
+
+   Contrastes vérifiés (WCAG AA) : texte ≥ 4,5:1, formes porteuses de sens ≥ 3:1 — valeurs en regard.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Gouttière gauche : marqueur d'état (20 px) + filet de la ligne courante. Avec le rembourrage de
+     la feuille (20 px), la table démarre à 48 px du bord, comme la maquette (46 px). */
+  --doc-gouttiere-g: 1.75rem;
+  /* Gouttière droite : étiquette du statut du marché. */
+  --doc-gouttiere-d: 4.5rem;
+  --doc-police: Arial, Helvetica, sans-serif;
+}
+
+/* ── ① Visionneuse ─────────────────────────────────────────────────────────────────────────── */
+
+/* Composant hôte (shared/ui/document-visionneuse) : un élément personnalisé est « inline ». */
+app-document-visionneuse {
+  display: block;
+  min-width: 0;
+}
+
+.doc-visionneuse {
+  background: #dfe5ec;
+  padding: 0.875rem 1rem;
+  border-radius: 10px;
+  min-width: 0;
+}
+
+/* Barre au-dessus de la visionneuse : interrupteur « Annotations ». */
+.doc-barre {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.doc-interrupteur {
+  appearance: none;
+  height: 1.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.65rem;
+  border: 1px solid #cfd8e3;
+  border-radius: 7px;
+  background: #fff;
+  color: #34405a; /* 10,4:1 sur blanc */
+  font: 600 0.78125rem/1 var(--font-base);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.doc-interrupteur[aria-pressed='true'] {
+  background: #f0f9ff;
+  border-color: #7dd3fc;
+  color: #075985; /* 7,1:1 sur #f0f9ff */
+}
+/* Piste de l'interrupteur : l'état se lit aussi par la position du curseur, pas seulement la couleur. */
+.doc-interrupteur__piste {
+  position: relative;
+  flex-shrink: 0;
+  width: 1.625rem;
+  height: 0.9375rem;
+  border-radius: 999px;
+  background: #667299; /* 4,7:1 sur blanc */
+  transition: background 0.15s ease;
+}
+.doc-interrupteur__piste::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(0.9375rem - 4px);
+  height: calc(0.9375rem - 4px);
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+.doc-interrupteur[aria-pressed='true'] .doc-interrupteur__piste {
+  background: #0369a1; /* 5,9:1 sur blanc */
+}
+.doc-interrupteur[aria-pressed='true'] .doc-interrupteur__piste::after {
+  transform: translateX(0.6875rem);
+}
+@media (prefers-reduced-motion: reduce) {
+  .doc-interrupteur__piste,
+  .doc-interrupteur__piste::after {
+    transition: none;
+  }
+}
+
+/* ── ② Feuille ─────────────────────────────────────────────────────────────────────────────── */
+
+.doc-feuille {
+  background: #fff;
+  color: #000;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18), 0 8px 24px -12px rgba(15, 23, 42, 0.25);
+  padding: 1.125rem 1.25rem;
+  font: 0.78125rem/1.35 var(--doc-police);
+  min-width: 0;
+}
+.doc-feuille p {
+  line-height: 1.35;
+}
+
+/* ── ③ Document (règles de l'aperçu officiel) ─────────────────────────────────────────────── */
+
+/* Titre : les h1-h4 du design system imposent police, couleur et interlettrage — neutralisés. */
+.doc-titre {
+  margin: 0 0 0.75rem;
+  text-align: center;
+  font: 700 1rem/1.2 var(--doc-police);
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: #000;
+}
+
+.doc-sous-titre {
+  margin: 1rem 0 0.4rem;
+  font: 700 0.8125rem/1.3 var(--doc-police);
+  letter-spacing: 0;
+  color: #000;
+}
+
+.doc-entete {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+.doc-entete p {
+  margin: 0.15rem 0;
+}
+
+.doc-paragraphe {
+  margin: 0 0 0.6rem;
+}
+
+/* Mention « À compléter » d'un champ vide du document. */
+.doc-a-completer {
+  color: #586586; /* --n-500, 5,8:1 sur blanc */
+  font-style: italic;
+}
+
+.doc-pied {
+  margin-top: 1.75rem;
+  text-align: right;
+}
+.doc-pied p {
+  margin: 0.2rem 0;
+}
+.doc-prmp {
+  margin-top: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Tableau officiel — bordures noires 1 px, en-têtes #f0f0f0, montants à droite, dates centrées.
+   Le design system pose sur les éléments NUS `table`/`th`/`td`/`thead tr` un fond dégradé, des
+   majuscules, un interlettrage, `nowrap` et de grands rembourrages : tout est neutralisé ici. */
+.doc-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font: 0.65625rem/1.3 var(--doc-police);
+  color: #000;
+}
+.doc-table thead tr,
+.doc-table tbody tr,
+.doc-table tbody tr:hover {
+  background: none;
+}
+.doc-table th,
+.doc-table td {
+  border: 1px solid #000;
+  padding: 3px 4px;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  color: #000;
+  background: #fff;
+  font-family: var(--doc-police);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.doc-table th {
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.59375rem;
+  line-height: 1.2;
+  background: #f0f0f0;
+  /* Rembourrage latéral resserré : à 125 % (1229 px), « COMPTE » tient dans sa colonne de 5 %. */
+  padding-inline: 2px;
+}
+.doc-table td {
+  font-size: inherit;
+}
+/* Le design system retire la bordure basse de la DERNIÈRE rangée (`tbody tr:last-child td`) : le
+   document, lui, se ferme par un filet. */
+.doc-table tbody tr:last-child > td:not(.doc-hors-feuille) {
+  border-bottom: 1px solid #000;
+}
+/* Montants : à droite. Le séparateur de milliers est une espace SÉCABLE (montantOfficiel) : dans
+   une colonne étroite, un montant revient à la ligne entre deux groupes de chiffres, jamais au
+   milieu d'un groupe. */
+.doc-table td.doc-num {
+  text-align: right;
+}
+.doc-table td.doc-date {
+  text-align: center;
+  white-space: nowrap;
+  font-size: 0.625rem;
+  padding: 3px 2px;
+}
+/* Objet : retours à la ligne de la saisie conservés. ⚠️ À poser sur l'élément qui porte le TEXTE
+   SEUL (cellule sans autre enfant, ou <span> intérieur) : sur une cellule qui contient aussi des
+   annotations, `pre-wrap` rendrait visibles les blancs d'indentation du gabarit. */
+.doc-table .doc-objet {
+  white-space: pre-wrap;
+}
+.doc-table td.doc-vide {
+  text-align: center;
+  color: #586586;
+  font-style: italic;
+  padding: 0.6rem 4px;
+}
+
+/* Colonne d'OUTILS de l'application (écrans d'édition PRMP) : hors du document — ni bordure, ni
+   fond gris ; la bordure droite de la dernière colonne officielle reste celle du document. */
+.doc-table th.doc-hors-feuille,
+.doc-table td.doc-hors-feuille {
+  border: 0;
+  background: transparent;
+  padding: 0 0 0.5rem 0.5rem;
+  text-align: center;
+  font-family: var(--font-base);
+}
+.doc-table th.doc-hors-feuille {
+  color: #586586;
+  vertical-align: bottom;
+}
+
+/* ── ④ Annotations ─────────────────────────────────────────────────────────────────────────── */
+
+/* Gouttières portées par la racine du document qui pose des annotations. */
+.doc-gouttiere-g {
+  padding-left: var(--doc-gouttiere-g);
+}
+.doc-gouttiere-d {
+  padding-right: var(--doc-gouttiere-d);
+}
+
+/* Cellules d'ancrage des annotations de marge (première et dernière colonnes officielles). */
+.doc-table td.doc-ancre-g,
+.doc-table td.doc-ancre-d {
+  position: relative;
+}
+
+/* Texte d'annotation : police de l'application, pour ne jamais se confondre avec le document. */
+.doc-note {
+  margin: 0 0 0.75rem;
+  font: 0.75rem/1.4 var(--font-base);
+  color: #586586; /* 5,8:1 sur blanc */
+}
+
+.doc-note-en-ligne {
+  font: 0.6875rem/1.3 var(--font-base);
+  color: #586586;
+}
+
+/* Légende du versionnement (puces aux fonds des lignes surlignées). */
+.doc-legende {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem;
+  font: 0.75rem/1.3 var(--font-base);
+}
+.doc-legende__titre {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #586586;
+}
+.doc-legende__puce {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  color: #000;
+}
+.doc-legende__puce.doc-chg--modifiee { background: #fef3c7; border: 1px solid #b45309; }
+.doc-legende__puce.doc-chg--nouvelle { background: #dcfce7; border: 1px solid #15803d; }
+.doc-legende__puce.doc-chg--restauree { background: #e0f2fe; border: 1px solid #0369a1; }
+
+/* Marqueur d'état d'examen, dans la gouttière gauche de la première cellule de la ligne. Formes
+   dessinées en CSS (plus de glyphes ✓ ✗ ● • –) ; le libellé accessible et l'infobulle sont portés
+   par l'élément. */
+.doc-marqueur {
+  position: absolute;
+  top: 0.125rem;
+  left: calc(-1 * var(--doc-gouttiere-g) + 0.125rem);
+  width: 1.25rem;
+  height: 1.25rem;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1.5px solid #667299;
+  background: #fff;
+}
+.doc-marqueur::before,
+.doc-marqueur::after {
+  content: '';
+  position: absolute;
+}
+/* Examinée sans observation : coche verte (#047857 sur #ecfdf5 = 5,2:1). */
+.doc-marqueur--ras {
+  background: #ecfdf5;
+  border-color: #059669;
+}
+.doc-marqueur--ras::before {
+  left: 50%;
+  top: 45%;
+  width: 0.3rem;
+  height: 0.55rem;
+  border: solid #047857;
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -55%) rotate(45deg);
+}
+/* Avec observation : point d'exclamation ambre (#92400e sur #fffbeb = 6,8:1). */
+.doc-marqueur--obs {
+  background: #fffbeb;
+  border-color: #b45309;
+}
+.doc-marqueur--obs::before {
+  left: 50%;
+  top: 0.2rem;
+  width: 2px;
+  height: 0.42rem;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: #92400e;
+}
+.doc-marqueur--obs::after {
+  left: 50%;
+  bottom: 0.2rem;
+  width: 2px;
+  height: 2px;
+  margin-left: -1px;
+  background: #92400e;
+}
+/* En cours : disque bleu plein (#0284c7 sur blanc = 4,1:1), point blanc. */
+.doc-marqueur--cours {
+  background: #0284c7;
+  border-color: #0284c7;
+}
+.doc-marqueur--cours::before {
+  left: 50%;
+  top: 50%;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%);
+}
+/* À examiner : anneau vide (#667299 sur blanc = 4,7:1). */
+.doc-marqueur--attente {
+  background: #fff;
+}
+/* Hors examen : trait horizontal gris (#586586 sur #f1f5f9 = 5,3:1). */
+.doc-marqueur--hors {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+.doc-marqueur--hors::before {
+  left: 50%;
+  top: 50%;
+  width: 0.5rem;
+  height: 2px;
+  background: #586586;
+  transform: translate(-50%, -50%);
+}
+
+/* Ligne cliquable (examen : rouvrir une ligne) — le geste n'est pas une annotation, il reste actif. */
+.doc-table tr.doc-ligne--cliquable {
+  cursor: pointer;
+}
+
+/* Versionnement : fonds existants de l'application (Modifiée / Nouvelle / Restaurée). */
+.doc-table tr.doc-chg--modifiee > td:not(.doc-hors-feuille) { background: #fef3c7; }
+.doc-table tr.doc-chg--nouvelle > td:not(.doc-hors-feuille) { background: #dcfce7; }
+.doc-table tr.doc-chg--restauree > td:not(.doc-hors-feuille) { background: #e0f2fe; }
+
+/* Ligne supprimée (constat d'une mise à jour) : objet barré, fond gris. */
+.doc-table tr.doc-ligne--supprimee > td:not(.doc-hors-feuille) { background: #f1f5f9; }
+.doc-table tr.doc-ligne--supprimee .doc-objet { text-decoration: line-through; }
+
+/* Ligne courante : fond bleu très clair + filet bleu dans la gouttière. Déclarée APRÈS le
+   versionnement : la ligne en cours d'examen garde la priorité visuelle. */
+.doc-table tr.doc-ligne--courante > td:not(.doc-hors-feuille) { background: #e7f3fb; }
+.doc-table tr.doc-ligne--courante > td.doc-ancre-g::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  left: -0.3125rem;
+  width: 3px;
+  border-radius: 2px;
+  background: #0284c7;
+}
+
+/* Cellule observée : encadré ambre (#b45309 sur #fff1c7 = 4,5:1) + pastille numérotée. */
+.doc-table tr > td.doc-cellule--observee {
+  position: relative;
+  background: #fff1c7;
+  box-shadow: inset 0 0 0 1.5px #b45309;
+}
+/* Montant observé (aligné à droite) : place pour la pastille, qui masquerait ses derniers chiffres. */
+.doc-table tr > td.doc-cellule--observee.doc-num {
+  padding-right: 0.625rem;
+}
+.doc-pastilles {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+}
+/* Pastilles d'un marqueur de ligne (fiche, AGPM) : accrochées au coin du marqueur. */
+.doc-marqueur .doc-pastilles {
+  top: -0.45rem;
+  right: -0.55rem;
+}
+.doc-pastille {
+  min-width: 1.0625rem;
+  height: 1.0625rem;
+  box-sizing: border-box;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: #b45309;
+  color: #fff; /* 5,0:1 */
+  font: 700 0.625rem/1.0625rem var(--font-base);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Statut du marché : étiquette dans la gouttière droite, à hauteur de la ligne. Une seule ligne,
+   tronquée au besoin (le libellé complet est dans l'infobulle) : une étiquette sur deux lignes
+   chevaucherait celle de la ligne suivante quand la rangée est basse. */
+.doc-statut {
+  position: absolute;
+  top: 0.125rem;
+  left: calc(100% + 0.375rem);
+  width: calc(var(--doc-gouttiere-d) - 0.625rem);
+  box-sizing: border-box;
+  padding: 1px 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #eef2f7;
+  color: #1e3a5f; /* 10,2:1 */
+  font: 600 0.625rem/1.25 var(--font-base);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Dans un écran d'édition, la colonne d'outils occupe la marge : l'étiquette s'y range, en tête. */
+.doc-table td.doc-hors-feuille .doc-statut {
+  position: static;
+  display: block;
+  width: auto;
+  margin: 0 0 0.35rem;
+  text-align: center;
+  white-space: normal;
+}
+
+/* ── Masquage de toutes les annotations ────────────────────────────────────────────────────── */
+
+.doc-annotations-masquees .doc-annot {
+  display: none !important;
+}
+.doc-annotations-masquees.doc-gouttiere-g,
+.doc-annotations-masquees .doc-gouttiere-g {
+  padding-left: 0;
+}
+.doc-annotations-masquees.doc-gouttiere-d,
+.doc-annotations-masquees .doc-gouttiere-d {
+  padding-right: 0;
+}
+.doc-annotations-masquees .doc-table tbody tr > td:not(.doc-hors-feuille) {
+  background: #fff;
+  box-shadow: none;
+}
+.doc-annotations-masquees .doc-table tr > td.doc-ancre-g::after {
+  content: none;
+}
+.doc-annotations-masquees .doc-table tr.doc-ligne--supprimee {
+  display: none;
+}
+.doc-annotations-masquees .doc-table tr.doc-ligne--supprimee .doc-objet {
+  text-decoration: none;
+}
+
+/* ── Écrans étroits ─────────────────────────────────────────────────────────────────────────── */
+
+/* Filet de sécurité hors cible (tablette, téléphone) : la feuille défile dans sa visionneuse. */
+@media (max-width: 48rem) {
+  .doc-visionneuse {
+    overflow-x: auto;
+    padding: 0.5rem;
+  }
+  .doc-feuille {
+    padding: 0.75rem;
+  }
+}
+
+/* ── Hôtes à panneau latéral (.ppm-table-large : examen du Membre, vérification) ───────────── */
+
+/* ⚠️ PROVISOIRE (2026-09-14) — dans ces écrans, le document partage la largeur avec un panneau de
+   décision : à 1366 px il ne reste que ~700 px, où 13 colonnes fluides deviennent illisibles. En
+   attendant la refonte de ces écrans (lots suivants), le plan garde une largeur lisible et DÉFILE
+   dans le panneau hôte (demandes pilote 02/09 et 07/09) : la feuille et la visionneuse s'élargissent
+   avec lui. L'en-tête du tableau reste collant pendant le défilement vertical. */
+.ppm-table-large .doc-visionneuse,
+.ppm-table-large .doc-feuille {
+  width: fit-content;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+/* 76rem : le plan y garde la largeur qu'il a dans la consultation plein écran à 1366 px (table
+   ≈ 1100 px, gouttières comprises). */
+.ppm-table-large .doc-ppm {
+  min-width: 76rem;
+}
+.ppm-table-large .doc-table--ppm thead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+@media (max-width: 75rem) {
+  .ppm-table-large .doc-visionneuse,
+  .ppm-table-large .doc-feuille {
+    width: auto;
+  }
+  .ppm-table-large .doc-ppm {
+    min-width: 0;
+  }
+  .ppm-table-large .doc-table--ppm thead {
+    position: static;
+  }
+}

@@ -4,6 +4,8 @@
 @use 'styles/responsive';
 /* Présentation commune des tableaux du dossier de planification (voir le fichier pour la règle). */
 @use 'styles/ppm-table';
+/* Documents officiels (PPM, fiche de présentation, AGPM) au format du PDF + annotations (2026-09-14). */
+@use 'styles/document-officiel';
 
 /* =============================================================================
    COUCHE DE COMPATIBILITÉ — Le design system actif est « C » (violet, Plus Jakarta
