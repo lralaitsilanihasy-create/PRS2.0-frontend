@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Injector,
+  OnDestroy,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Observable, Subject, catchError, concatMap, forkJoin, map, of, shareReplay, switchMap } from 'rxjs';
@@ -11,6 +22,8 @@ import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import {
   Avis,
   Capm,
+  Chronometrage,
+  DelaiStandard,
   Dossier,
   Examen,
   ExamenDetail,
@@ -30,6 +43,7 @@ import {
 import {
   AvisService,
   CapmService,
+  DelaiStandardService,
   DispatchService,
   DossierService,
   EntiteContractService,
@@ -51,36 +65,85 @@ import {
   ServiceBeneficiaireService,
   TypeDossierService,
 } from '../../services';
-import { ChronometrageDossier, StatutBadge, examenRectifiable } from '../../shared/circuit';
+import { ModaleDirective } from '../../shared/a11y/modale.directive';
+import { examenRectifiable } from '../../shared/circuit';
 import { PpmMarchesTable, RowExamState } from '../../shared/prmp/ppm-marches-table';
 import { calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { calculerAgpm } from '../../shared/prmp/agpm';
 import { FichePresentationDoc } from '../../shared/prmp/fiche-presentation-doc';
 import { AgpmDoc } from '../../shared/prmp/agpm-doc';
+import {
+  COLONNES_PPM_OFFICIEL,
+  CelluleCliquee,
+  ChampPpmOfficiel,
+  ListeFichePresentation,
+  ObservationCellule,
+  ObservationLigne,
+  ObservationLigneFiche,
+  dateOfficielle,
+  documentDuChamp,
+  libelleChampCible,
+  montantOfficiel,
+} from '../../shared/prmp/document-officiel';
 import { DocumentVisionneuse } from '../../shared/ui/document-visionneuse';
+import { Icone } from '../../shared/ui/icone';
+import { ExamenGrille } from './examen/examen-grille';
+import {
+  ActionGrille,
+  CleEtapeParcours,
+  EntreeParcours,
+  GroupeRecap,
+  ObsLigne,
+  ObservationNumerotee,
+  OptionCible,
+  PointVue,
+  ResultatPiece,
+  RowState,
+  VueGrille,
+  aDuTexte,
+  construireParcours,
+  delaiExamen,
+  lignesViseesParConsigne,
+  numerosEnTexte,
+  pluriel,
+  raisonValidationImpossible,
+} from './examen/examen-modele';
+import { ExamenParcours } from './examen/examen-parcours';
+import { ExamenSynthese } from './examen/examen-synthese';
 
-/** Une ligne « AU LIEU DE / LIRE » saisie pour un point non conforme. */
-interface ObsLigne {
-  auLieuDe: string;
-  lire: string;
-}
-/** Statut explicite d'un point de contrôle : `null` = non statué, `RAS` = conforme, `OBS` = avec observation. */
-type StatutPoint = 'RAS' | 'OBS' | null;
-interface RowState {
-  statut: StatutPoint;
-  /** Lignes d'observation (statut OBS) ; vide sinon. */
-  observations: ObsLigne[];
+type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'pieces';
+
+/** Proposition « Observer cette cellule » ouverte sur le document. */
+interface PropositionCellule {
+  cellule: CelluleCliquee;
+  /** Clé du résultat visé : la ligne pour un point LIGNE, `null` pour un point évalué une fois. */
+  idDetail: number | null;
+  points: PointsCtrl[];
+  libelle: string;
+  left: number;
+  top: number | null;
+  bottom: number | null;
 }
 
 /**
- * Écran d'examen d'un dossier dispatché (profil Membre) : consultation en lecture seule
- * (en-tête + lignes de marché en libellés, listes scopées filtrées par idDossier, libellés
- * en cache) + formulaire d'examen (grille des points de contrôle, synthèse des observations).
+ * Écran d'examen d'un dossier dispatché (profil Membre, et CC / Président par délégation).
+ *
+ * ⚠️ REFONTE ERGONOMIQUE, LOT 2 (2026-09-14 — maquettes `ExamenLigne` et `ExamenSynthese` validées
+ * par Mathieu et ses chefs) : en-tête compact (référence, entité, consigne du dispatch, délai tiré du
+ * chronométrage) ; parcours en six étapes cochées ; documents au format du PDF officiel avec
+ * l'examen en annotations (marge d'état, ligne en cours, cellules observées numérotées) ; grille de
+ * contrôle en panneau droit repliable, qui dit pourquoi une validation est impossible ; geste
+ * « Observer cette cellule » (cible `champ` / `idMarcheCible` / `idBenefCible`, contrat V30) ;
+ * synthèse avant soumission. La route passe l'application en mode « concentration » (barre
+ * latérale en tiroir) : l'écran tient à 1366 px sans défilement horizontal.
+ *
+ * Inchangé : la règle séquentielle et l'ordre des étapes (pilote 2026-09-04), RAS par défaut
+ * (2026-09-06), le périmètre d'une mise à jour (2026-09-10), les enregistrements (brouillon de
+ * progression à chaque validation, soumission, modification, réexamen), les messages.
  *
  * ⚠️ Visa unique (2026-08-31, inverse la règle du 01/08) — le Membre ÉMET SON AVIS à la fin de
  * l'examen (pré-rempli par la suggestion, modifiable, obligatoire à la soumission) ; le Président
- * ou le CC pourra l'ajuster au VISA qui clôt la navette (écran « Projets de PV »), où se désignent
- * aussi le Secrétaire de séance et le Membre co-signataire. La lettre de renvoi reste au P/CC.
+ * ou le CC pourra l'ajuster au VISA qui clôt la navette (écran « Projets de PV »).
  *
  * Enregistrement : POST /examens → POST /examen-details ×N + POST /pv-examens (BROUILLON),
  * ce qui matérialise le « projet de PV » (points de contrôle + synthèse + avis). Le backend
@@ -89,499 +152,292 @@ interface RowState {
 @Component({
   selector: 'app-examen-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, PpmMarchesTable, ChronometrageDossier, FichePresentationDoc, AgpmDoc, DocumentVisionneuse],
+  imports: [
+    PpmMarchesTable,
+    FichePresentationDoc,
+    AgpmDoc,
+    DocumentVisionneuse,
+    Icone,
+    ModaleDirective,
+    ExamenParcours,
+    ExamenGrille,
+    ExamenSynthese,
+  ],
   template: `
-    <section class="exam">
-      <header class="page-header">
-        <div>
-          <div class="page-subtitle">Domaine Membre</div>
-          <h1 class="page-title">{{ mode() === 'edit' ? 'Modifier l\\'examen' : 'Examiner' }} — {{ dossier()?.refeDossier || ('Dossier #' + idDossier) }}</h1>
-        </div>
-      </header>
-
+    <section class="exam" [class.exam--synthese]="estEtapeAvis() && points().length > 0">
       @if (loading()) {
-        <p class="text-muted" role="status">Chargement…</p>
+        <p class="exam__info" role="status">Chargement…</p>
       } @else if (!dossier()) {
-        <p class="text-muted">Dossier introuvable ou hors de votre périmètre.</p>
+        <h1 class="exam__h1-seul">Examen</h1>
+        <p class="exam__info">Dossier introuvable ou hors de votre périmètre.</p>
       } @else {
-        <!-- Chronométrage (2026-09-01) : suivi de l'étape EXAMEN + prévision (affichage seul). -->
-        <div class="card exam__chrono">
-          <div class="card-body">
-            <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" />
+        <header class="tete">
+          <div class="tete__id">
+            <h1 class="tete__h1">
+              <span class="tete__sur">{{ surtitre() }} </span>
+              <span class="tete__ref">{{ dossier()!.refeDossier || 'Dossier #' + idDossier }}</span>
+            </h1>
+            <span class="tete__ent" [attr.title]="descriptionDossier()">{{ descriptionDossier() }}</span>
           </div>
-        </div>
-        <div class="exam__grid">
-          <div class="card exam__panel exam__panel--contenu">
-            <div class="card-header"><span class="card-title">Contenu du dossier</span></div>
-            <div class="card-body exam__contenu-corps">
-              <!-- ⚠️ Demande pilote (2026-09-02) — l'EN-TÊTE (infos + onglets) est FIGÉ : seule la
-                   zone du dessous défile, et l'en-tête du tableau PPM y reste collant (variante
-                   globale ppm-table-large). -->
-              <div class="exam__contenu-fixe">
-              <dl class="exam__info">
-                <div><dt>Type</dt><dd>{{ typeLabel() }}</dd></div>
-                <div><dt>Entité contractante</dt><dd>{{ entiteLabel() }}</dd></div>
-                <div><dt>Localité</dt><dd>{{ localiteLabel() }}</dd></div>
-                <div><dt>Statut</dt><dd><app-statut-badge [statut]="dossier()!.statut" /></dd></div>
-                <div><dt>Date réf.</dt><dd class="cnm-mono">{{ dossier()!.dateRef || '—' }}</dd></div>
-              </dl>
-              @if (estPpm()) {
-                <!-- ⚠️ Demande pilote (2026-09-02) — contenu EN ONGLETS, comme le détail PPM :
-                     Fiche / Plan / Projet d'AGPM (si le sous-type en a) / Pièces.
-                     L'onglet SUIT l'étape de la grille (effect) : le document contrôlé est affiché. -->
-                <!-- ⚠️ Convergence (2026-09-06) : onglets partagés (classe onglets-dossier), chacun
-                     à la COULEUR de son contenu (fiche verte, plan bleu, AGPM/pièces orange). -->
-                <div class="onglets-dossier" role="tablist" aria-label="Contenu du dossier">
-                  <!-- Ordre (pilote 02/09) : la fiche de présentation passe AVANT le plan.
-                       ⚠️ Chaque onglet AMÈNE sa grille dans « Consigner l'examen » quand elle est
-                       atteignable (ouvrirOnglet) — arbitrage pilote 02/09. -->
-                  <button type="button" class="onglets-dossier__tab onglets-dossier__tab--vert" role="tab" [class.onglets-dossier__tab--on]="ongletContenu() === 'fiche'"
-                    [attr.aria-selected]="ongletContenu() === 'fiche'" (click)="ouvrirOnglet('fiche')">
-                    Fiche de présentation <span class="onglets-dossier__n">{{ ficheDoc().nbMarchesConcernes }}</span>
-                  </button>
-                  <button type="button" class="onglets-dossier__tab onglets-dossier__tab--bleu" role="tab" [class.onglets-dossier__tab--on]="ongletContenu() === 'ppm'"
-                    [attr.aria-selected]="ongletContenu() === 'ppm'" (click)="ouvrirOnglet('ppm')">
-                    Plan de passation <span class="onglets-dossier__n">{{ marches().length }}</span>
-                  </button>
-                  @if (agpmDoc().length || hasEtapeAgpm()) {
-                    <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletContenu() === 'agpm'"
-                      [attr.aria-selected]="ongletContenu() === 'agpm'" (click)="ouvrirOnglet('agpm')">
-                      Projet d'AGPM <span class="onglets-dossier__n">{{ agpmDoc().length }}</span>
-                    </button>
-                  }
-                  <button type="button" class="onglets-dossier__tab" role="tab" [class.onglets-dossier__tab--on]="ongletContenu() === 'pieces'"
-                    [attr.aria-selected]="ongletContenu() === 'pieces'" (click)="ouvrirOnglet('pieces')">
-                    Pièces jointes <span class="onglets-dossier__n">{{ pieces().length }}</span>
-                  </button>
-                </div>
-              }
-              </div>
+          <div class="tete__droite">
+            @if (consigne(); as c) {
+              <!-- Tronquée dans l'en-tête à 1366 px : un clic la déplie en entier sous l'en-tête. -->
+              <button type="button" class="consigne" [attr.aria-expanded]="consigneDepliee()" [attr.title]="c" (click)="consigneDepliee.set(!consigneDepliee())">
+                <app-icone nom="message" [taille]="15" />
+                <span class="consigne__txt">Consigne : <b>« {{ c }} »</b></span>
+              </button>
+            }
+            @if (delai(); as d) {
+              <p class="delai delai--{{ d.genre }}">
+                <app-icone [nom]="d.genre === 'pause' ? 'pause' : 'clock'" [taille]="15" />{{ d.libelle }}
+              </p>
+            }
+            <label class="tete__date">
+              <span>Date<span class="cnm-sr-only"> d'examen</span></span>
+              <input type="date" [value]="dateExamen()" [disabled]="mode() === 'locked'" (input)="dateExamen.set(valeurDe($event))" />
+            </label>
+          </div>
+        </header>
+        @if (consigneDepliee() && consigne()) {
+          <p class="consigne-complete"><app-icone nom="message" [taille]="15" /><span>Consigne du dispatch : « {{ consigne() }} »</span></p>
+        }
 
-              <div class="exam__contenu-defilant">
-              @if (estPpm()) {
-                @if (ongletContenu() === 'ppm') {
-                  @if (ppm(); as p) {
-                    <h3 class="exam__sub">PPM — {{ p.reference || ('#' + p.idPpm) }}</h3>
-                    <dl class="exam__info">
-                      <div><dt>Exercice</dt><dd>{{ p.exercice }}</dd></div>
-                      <div><dt>Signataire</dt><dd>{{ p.signataire || '—' }}</dd></div>
-                    </dl>
-                  }
-                  <!-- ppm-table-large (variante globale) : le tableau garde sa taille lisible et
-                       défile DANS le panneau — demande pilote 2026-09-02, propre à l'examen.
-                       ⚠️ 2026-09-14 (décision des chefs) — le plan dans sa feuille officielle : état
-                       d'examen, statut et versionnement en annotations, masquables. -->
-                  <div class="exam__marches ppm-table-large">
-                    <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc">
-                      <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [inclureSupprimees]="examenScope()" [rowStateFn]="etatLigneFn" (rowClick)="ouvrirLigne($event)" />
-                    </app-document-visionneuse>
+        @if (mode() === 'locked') {
+          <p class="alerte" role="status">Examen verrouillé (PV signé / dossier clôturé) : lecture seule.</p>
+        }
+        @if (idDispatch() == null) {
+          <p class="alerte" role="status">Aucun dispatch trouvé pour ce dossier : examen impossible.</p>
+        }
+        @if (!points().length) {
+          <p class="alerte" role="status">Aucun point de contrôle défini pour ce type de dossier.</p>
+        } @else {
+          <app-examen-parcours [etapes]="parcours()" (choisir)="allerGroupe($event)" />
+        }
+
+        @if (!estEtapeAvis() || !points().length) {
+          <div class="cols" [class.cols--repliee]="!grilleOuverte() || !points().length">
+            <section class="doc" aria-label="Documents du dossier">
+              <div class="doc__barre">
+                @if (onglets().length > 1) {
+                  <div class="doc__onglets" role="tablist" aria-label="Documents du dossier">
+                    @for (o of onglets(); track o.cle) {
+                      <button
+                        type="button"
+                        role="tab"
+                        class="dtab"
+                        [id]="'onglet-doc-' + o.cle"
+                        aria-controls="panneau-doc"
+                        [attr.aria-selected]="ongletAffiche() === o.cle"
+                        [attr.tabindex]="ongletAffiche() === o.cle ? 0 : -1"
+                        (click)="ouvrirOnglet(o.cle)"
+                        (keydown)="naviguerOnglets($event)"
+                      >
+                        {{ o.libelle }}@if (o.nombre != null) { <small>{{ o.nombre }}</small> }
+                      </button>
+                    }
                   </div>
-                }
-                @if (ongletContenu() === 'fiche') {
-                  <app-document-visionneuse>
-                    <app-fiche-presentation-doc
-                      [fiche]="ficheDoc()"
-                      [exercice]="ppm()?.exercice"
-                      [libelleVersion]="libelleVersionFiche()"
-                      [justificationFiche]="ppm()?.justificationFiche"
-                      [motifMaj]="ppm()?.motifMaj"
-                    />
-                  </app-document-visionneuse>
-                }
-                @if (ongletContenu() === 'agpm') {
-                  <app-document-visionneuse>
-                    <app-agpm-doc
-                      [lignes]="agpmDoc()"
-                      [exercice]="ppm()?.exercice"
-                      [entite]="entiteLabel()"
-                      [signataire]="ppm()?.signataire"
-                      [dateInitiale]="ppm()?.datePpmInit || ppm()?.dateSignature"
-                      [numMajPrec]="ppm()?.numMajPrec"
-                      [dateMajPrec]="ppm()?.dateMajPrec"
-                      [numMaj]="ppm()?.numMaj"
-                    />
-                  </app-document-visionneuse>
-                }
-              }
-              @if (!estPpm() || ongletContenu() === 'pieces') {
-              <div class="exam__pieces">
-                <h3 class="exam__sub">Pièces jointes</h3>
-                @if (loadingPieces()) {
-                  <p class="cnm-muted" role="status">Chargement des pièces…</p>
                 } @else {
-                  @if (piecesInitiales().length) {
-                    <div class="exam__pieces-grp">
-                      <span class="exam__pieces-pill">Pièces initiales · {{ piecesInitiales().length }}</span>
-                      @for (p of piecesInitiales(); track p.idPiece; let i = $index) {
-                        <!-- <button> et non <div> : l'ouverture d'une pièce doit être atteignable
-                             au clavier — c'est l'action centrale de l'écran d'examen (AUDIT.md A4). -->
-                        <button
-                          type="button"
-                          class="exam__piece exam__piece--{{ etatPiece(p) }}"
-                          [class.is-open]="openPiece() === p.idPiece"
-                          [attr.aria-expanded]="openPiece() === p.idPiece"
-                          [attr.aria-controls]="'piece-vue-' + p.idPiece"
-                          (click)="togglePiece(p)"
-                        >
-                          <span class="exam__piece-etat exam__piece-etat--{{ etatPiece(p) }}" aria-hidden="true">{{ marqueurPiece(p) }}</span>
-                          <span class="exam__piece-idx">{{ i + 1 }}</span>
-                          <span class="exam__piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
-                          @if (p.format) { <span class="badge exam__piece-fmt">{{ p.format }}</span> }
-                          <span class="exam__piece-chev" [class.is-open]="openPiece() === p.idPiece" aria-hidden="true">▾</span>
-                        </button>
-                        @if (openPiece() === p.idPiece) {
-                          <div class="exam__piece-view" [id]="'piece-vue-' + p.idPiece">
-                            @if (loadingPiece() === p.idPiece) { <p class="cnm-muted exam__piece-loading" role="status">Chargement de l'aperçu…</p> }
-                            @else if (openUrl(); as u) { <iframe [src]="u" class="exam__piece-frame" title="Aperçu de la pièce"></iframe> }
-                          </div>
-                        }
-                      }
-                    </div>
-                  }
-                  @if (piecesApresRenvoi().length) {
-                    <div class="exam__pieces-grp">
-                      <span class="exam__pieces-pill exam__pieces-pill--lr">Après lettre de renvoi · {{ piecesApresRenvoi().length }}</span>
-                      @for (p of piecesApresRenvoi(); track p.idPiece; let i = $index) {
-                        <button
-                          type="button"
-                          class="exam__piece exam__piece--{{ etatPiece(p) }}"
-                          [class.is-open]="openPiece() === p.idPiece"
-                          [attr.aria-expanded]="openPiece() === p.idPiece"
-                          [attr.aria-controls]="'piece-vue-' + p.idPiece"
-                          (click)="togglePiece(p)"
-                        >
-                          <span class="exam__piece-etat exam__piece-etat--{{ etatPiece(p) }}" aria-hidden="true">{{ marqueurPiece(p) }}</span>
-                          <span class="exam__piece-idx exam__piece-idx--lr">{{ i + 1 }}</span>
-                          <span class="exam__piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
-                          @if (p.format) { <span class="badge exam__piece-fmt">{{ p.format }}</span> }
-                          <span class="exam__piece-chev" [class.is-open]="openPiece() === p.idPiece" aria-hidden="true">▾</span>
-                        </button>
-                        @if (openPiece() === p.idPiece) {
-                          <div class="exam__piece-view" [id]="'piece-vue-' + p.idPiece">
-                            @if (loadingPiece() === p.idPiece) { <p class="cnm-muted exam__piece-loading" role="status">Chargement de l'aperçu…</p> }
-                            @else if (openUrl(); as u) { <iframe [src]="u" class="exam__piece-frame" title="Aperçu de la pièce"></iframe> }
-                          </div>
-                        }
-                      }
-                    </div>
-                  }
-                  @if (!pieces().length) { <p class="cnm-muted">Aucune pièce jointe.</p> }
+                  <h2 class="doc__titre">Pièces jointes <small>{{ nbPieces() }}</small></h2>
                 }
-              </div>
-              }
-              </div>
-            </div>
-          </div>
-
-          <div class="card exam__panel exam__panel--consigner">
-            <div class="card-header"><span class="card-title">Consigner l'examen</span></div>
-            <div class="card-body cnm-form">
-              @if (mode() === 'locked') {
-                <p class="form-hint">Examen verrouillé (PV signé / dossier clôturé) — lecture seule.</p>
-              }
-              @if (idDispatch() == null) {
-                <p class="form-hint">Aucun dispatch trouvé pour ce dossier : examen impossible.</p>
-              }
-
-              <label class="form-group">
-                <span class="form-label">Date d'examen</span>
-                <input class="form-control" type="date" [value]="dateExamen()" (input)="dateExamen.set($any($event.target).value)" />
-              </label>
-
-              @if (!points().length) {
-                <p class="text-muted">Aucun point de contrôle défini pour ce type de dossier.</p>
-              } @else {
-                <!-- Fil d'étapes (⚠️ ordre pilote 2026-09-04) : Fiche → lignes du plan → AGPM →
-                     pièces une par une → dossier → avis. -->
-                <div class="exam__steps">
-                  @if (hasEtapeFiche()) {
-                    <button type="button" class="exam__step exam__step--{{ etatOngletFiche() }}" (click)="allerEtape(etapeFicheIdx())">
-                      <span class="exam__step-dot"></span>Fiche
-                    </button>
-                  }
-                  @for (m of marchesExamen(); track m.idDetail; let i = $index) {
-                    <button type="button" class="exam__step exam__step--{{ etatOngletMarche(i) }}" (click)="allerEtape(offsetLignes() + i)">
-                      <span class="exam__step-dot"></span>Ligne {{ i + 1 }}
-                    </button>
-                  }
-                  @if (hasEtapeAgpm()) {
-                    <button type="button" class="exam__step exam__step--{{ etatOngletAgpm() }}" (click)="allerEtape(etapeAgpmIdx())">
-                      <span class="exam__step-dot"></span>AGPM
-                    </button>
-                  }
-                  @for (p of piecesOrdonnees(); track p.idPiece; let i = $index) {
-                    <button type="button" class="exam__step exam__step--{{ etatOngletPiece(i) }}" (click)="allerEtape(offsetPieces() + i)">
-                      <span class="exam__step-dot"></span>Pièce {{ i + 1 }}
-                    </button>
-                  }
-                  @if (hasEtapeDossier()) {
-                    <button type="button" class="exam__step exam__step--{{ etatOngletDossier() }}" (click)="allerEtape(etapeDossierIdx())">
-                      <span class="exam__step-dot"></span>Dossier
-                    </button>
-                  }
-                  <button type="button" class="exam__step" [class.exam__step--current]="estEtapeAvis()"
-                    [disabled]="!toutTraite()" (click)="allerEtape(etapeAvis())">
-                    <span class="exam__step-dot"></span>Synthèse
+                <span class="doc__esp"></span>
+                @if (ongletAffiche() === 'ppm') {
+                  <span class="legende" aria-hidden="true">
+                    <span><i class="lg lg--ras"></i>RAS</span>
+                    <span><i class="lg lg--obs"></i>Observation</span>
+                    <span><i class="lg lg--attente"></i>À examiner</span>
+                  </span>
+                }
+                @if (ongletAffiche() !== 'pieces') {
+                  <button
+                    type="button"
+                    class="doc-interrupteur"
+                    [attr.aria-pressed]="annotationsDoc()"
+                    title="Afficher ou masquer ce que l'application ajoute au document : état d'examen, versionnement, statut du marché, observations"
+                    (click)="annotationsDoc.set(!annotationsDoc())"
+                  >
+                    <span class="doc-interrupteur__piste" aria-hidden="true"></span>Annotations
                   </button>
-                </div>
-                @if (mode() === 'create') {
-                  <p class="form-hint">💾 Progression enregistrée automatiquement à chaque validation — vous pouvez quitter et reprendre plus tard, l'examen n'est transmis qu'à la soumission.</p>
                 }
+              </div>
 
-                @if (estEtapeMarche()) {
-                  <h3 class="exam__sub">Ligne {{ indexMarcheCourant() + 1 }} / {{ nbLignes() }} — grille de contrôle</h3>
-                  @if (marcheCourant(); as m) { <p class="exam__point-desc cnm-muted">{{ m.designationMarche || ('Ligne #' + m.idDetail) }}</p> }
-                } @else if (estEtapePiece()) {
-                  <h3 class="exam__sub">Pièce {{ indexPieceCourante() + 1 }} / {{ nbPieces() }} — grille de contrôle</h3>
-                  @if (pieceCourante(); as p) {
-                    <p class="exam__point-desc cnm-muted">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }} — cliquez la pièce dans la liste de gauche pour l'aperçu.</p>
-                  }
-                } @else if (estEtapeFiche()) {
-                  <h3 class="exam__sub">Fiche de présentation — grille de contrôle</h3>
-                  <p class="exam__point-desc cnm-muted">Le document dérivé est affiché à gauche (onglet « Fiche de présentation ») — évalué une fois pour le dossier.</p>
-                } @else if (estEtapeAgpm()) {
-                  <h3 class="exam__sub">Projet d'AGPM — grille de contrôle</h3>
-                  <p class="exam__point-desc cnm-muted">Le document dérivé est affiché à gauche (onglet « Projet d'AGPM ») — évalué une fois pour le dossier.</p>
-                } @else if (estEtapeDossier()) {
-                  <h3 class="exam__sub">Contrôles au niveau du dossier</h3>
-                  <p class="exam__point-desc cnm-muted">Points inter-lignes (ex. fractionnement, cohérence) — évalués une fois pour le dossier.</p>
-                }
-
-                @if (!estEtapeAvis()) {
-                  <!-- Étape pièce : un seul contrôle RAS / Observation (texte libre), mêmes codes visuels que les points. -->
-                  @if (estEtapePiece()) {
-                    @if (pieceCourante(); as pc) {
-                      <div class="exam__point exam__point--{{ statutClasse(resultatPiece(pc.idPiece).statut) }}">
-                        <div class="exam__point-head">
-                          <span class="exam__point-lbl">{{ pc.libellePiece || pc.nomFichier || ('Pièce #' + pc.idPiece) }} *</span>
-                          <div class="exam__statut" role="radiogroup">
-                            <label class="exam__statut-opt exam__statut-opt--ras" [class.is-active]="resultatPiece(pc.idPiece).statut === 'RAS'">
-                              <input type="radio" [name]="'piece-' + pc.idPiece"
-                                [checked]="resultatPiece(pc.idPiece).statut === 'RAS'" [disabled]="mode() === 'locked'"
-                                (change)="setStatutPiece(pc.idPiece, 'RAS')" />
-                              RAS
-                            </label>
-                            <label class="exam__statut-opt exam__statut-opt--obs" [class.is-active]="resultatPiece(pc.idPiece).statut === 'OBS'">
-                              <input type="radio" [name]="'piece-' + pc.idPiece"
-                                [checked]="resultatPiece(pc.idPiece).statut === 'OBS'" [disabled]="mode() === 'locked'"
-                                (change)="setStatutPiece(pc.idPiece, 'OBS')" />
-                              Observation
-                            </label>
-                          </div>
+              <div
+                class="doc__corps"
+                id="panneau-doc"
+                [attr.role]="onglets().length > 1 ? 'tabpanel' : null"
+                [attr.aria-labelledby]="onglets().length > 1 ? 'onglet-doc-' + ongletAffiche() : null"
+                (scroll)="fermerProposition()"
+              >
+                @switch (ongletAffiche()) {
+                  @case ('ppm') {
+                    <app-document-visionneuse class="doc-entete-collante" [annotations]="annotationsDoc()">
+                      <h3 class="doc-titre">PLAN DE PASSATION DES MARCHES POUR L'ANNEE {{ ppm()?.exercice ?? '____' }}</h3>
+                      <div class="doc-entete">
+                        <div>
+                          <p><u>Autorité Contractante</u> : <strong>{{ entiteLabel() }}</strong></p>
+                          <p><u>Nom de la PRMP</u> : <strong>{{ ppm()?.signataire || '—' }}</strong></p>
                         </div>
-                        @if (resultatPiece(pc.idPiece).statut === 'OBS') {
-                          <div class="exam__obs">
-                            <textarea class="form-control" rows="3" placeholder="Observation sur la pièce…"
-                              [value]="resultatPiece(pc.idPiece).observation" [disabled]="mode() === 'locked'"
-                              (input)="setObservationPiece(pc.idPiece, $any($event.target).value)"></textarea>
-                            @if (pieceErreur()) { <span class="form-error exam__obs-err">{{ pieceErreur() }}</span> }
-                          </div>
-                        }
-                      </div>
-                    }
-                  }
-                  @for (p of pointsCourants(); track p.idPointCtrl) {
-                    <div class="exam__point exam__point--{{ statutClasse(resultat(idDetailCourant(), p.idPointCtrl).statut) }}">
-                      <div class="exam__point-head">
-                        <span class="exam__point-lbl">{{ p.libelPointCtrl || ('Point #' + p.idPointCtrl) }}{{ p.obligatoire ? ' *' : '' }}</span>
-                        <div class="exam__statut" role="radiogroup">
-                          <label class="exam__statut-opt exam__statut-opt--ras" [class.is-active]="resultat(idDetailCourant(), p.idPointCtrl).statut === 'RAS'">
-                            <input type="radio" [name]="'st-' + idDetailCourant() + '-' + p.idPointCtrl"
-                              [checked]="resultat(idDetailCourant(), p.idPointCtrl).statut === 'RAS'" [disabled]="mode() === 'locked'"
-                              (change)="setStatut(idDetailCourant(), p.idPointCtrl, 'RAS')" />
-                            RAS
-                          </label>
-                          <label class="exam__statut-opt exam__statut-opt--obs" [class.is-active]="resultat(idDetailCourant(), p.idPointCtrl).statut === 'OBS'">
-                            <input type="radio" [name]="'st-' + idDetailCourant() + '-' + p.idPointCtrl"
-                              [checked]="resultat(idDetailCourant(), p.idPointCtrl).statut === 'OBS'" [disabled]="mode() === 'locked'"
-                              (change)="setStatut(idDetailCourant(), p.idPointCtrl, 'OBS')" />
-                            Observation
-                          </label>
+                        <div>
+                          <p><u>Date d'établissement du Document initial</u> : {{ dateDoc(ppm()?.datePpmInit || ppm()?.dateSignature) }}</p>
+                          <p><u>Numéro de la présente mise à jour</u> : {{ ppm()?.numMaj ?? 0 }}</p>
                         </div>
                       </div>
-                      @if (p.decriptPointCtrl) { <p class="exam__point-desc cnm-muted">{{ p.decriptPointCtrl }}</p> }
-                      @if (resultat(idDetailCourant(), p.idPointCtrl).statut === 'OBS') {
-                        <div class="exam__obs">
-                          <div class="exam__obs-header"><span>AU LIEU DE</span><span>LIRE</span><span class="exam__obs-actions"></span></div>
-                          @for (o of resultat(idDetailCourant(), p.idPointCtrl).observations; track $index) {
-                            <div class="exam__obs-row">
-                              <textarea class="form-control" rows="2" placeholder="Au lieu de…" [value]="o.auLieuDe" (input)="setAuLieuDe(idDetailCourant(), p.idPointCtrl, $index, $any($event.target).value)"></textarea>
-                              <textarea class="form-control" rows="2" placeholder="Lire…" [value]="o.lire" (input)="setLire(idDetailCourant(), p.idPointCtrl, $index, $any($event.target).value)"></textarea>
-                              <button type="button" class="btn btn-secondary btn-sm exam__obs-del" (click)="retirerLigne(idDetailCourant(), p.idPointCtrl, $index)" aria-label="Retirer">✕</button>
-                            </div>
-                          } @empty { <p class="text-muted">Aucune ligne.</p> }
-                          <button type="button" class="btn btn-secondary btn-sm exam__obs-add" (click)="ajouterLigne(idDetailCourant(), p.idPointCtrl)">+ Ajouter une ligne</button>
-                          @if (pointErreur(p.idPointCtrl)) { <span class="form-error exam__obs-err">{{ pointErreur(p.idPointCtrl) }}</span> }
+                      <app-ppm-marches-table
+                        [marches]="marches()"
+                        [beneficiaires]="serviceBenefs()"
+                        [previsions]="previsions()"
+                        [changements]="changements()"
+                        [inclureSupprimees]="examenScope()"
+                        [rowStateFn]="etatLigneFn"
+                        [observations]="observationsPpm()"
+                        [celluleObservableFn]="celluleObservableFn()"
+                        (rowClick)="ouvrirLigne($event)"
+                        (celluleClick)="proposerObservation($event)"
+                      />
+                    </app-document-visionneuse>
+                  }
+                  @case ('fiche') {
+                    <app-document-visionneuse [annotations]="annotationsDoc()">
+                      <app-fiche-presentation-doc
+                        [fiche]="ficheDoc()"
+                        [exercice]="ppm()?.exercice"
+                        [libelleVersion]="libelleVersionFiche()"
+                        [justificationFiche]="ppm()?.justificationFiche"
+                        [motifMaj]="ppm()?.motifMaj"
+                        [observations]="observationsFiche()"
+                        [observable]="estEtapeFiche() && mode() !== 'locked'"
+                        (celluleClick)="proposerObservation($event)"
+                      />
+                    </app-document-visionneuse>
+                  }
+                  @case ('agpm') {
+                    <app-document-visionneuse [annotations]="annotationsDoc()">
+                      <app-agpm-doc
+                        [lignes]="agpmDoc()"
+                        [exercice]="ppm()?.exercice"
+                        [entite]="entiteLabel()"
+                        [signataire]="ppm()?.signataire"
+                        [dateInitiale]="ppm()?.datePpmInit || ppm()?.dateSignature"
+                        [numMajPrec]="ppm()?.numMajPrec"
+                        [dateMajPrec]="ppm()?.dateMajPrec"
+                        [numMaj]="ppm()?.numMaj"
+                        [observations]="observationsAgpm()"
+                        [observable]="estEtapeAgpm() && mode() !== 'locked'"
+                        (celluleClick)="proposerObservation($event)"
+                      />
+                    </app-document-visionneuse>
+                  }
+                  @case ('pieces') {
+                    <div class="pj">
+                      @if (loadingPieces()) {
+                        <p class="exam__info" role="status">Chargement des pièces…</p>
+                      } @else if (!piecesOrdonnees().length) {
+                        <p class="exam__info">Aucune pièce jointe.</p>
+                      } @else {
+                        <ul class="pj__liste" aria-label="Pièces jointes du dossier">
+                          @for (groupe of groupesPieces(); track groupe.cle) {
+                            <li class="pj__groupe" [class.pj__groupe--lr]="groupe.cle === 'lr'">{{ groupe.libelle }} · {{ groupe.pieces.length }}</li>
+                            @for (p of groupe.pieces; track p.idPiece) {
+                              <li>
+                                <!-- <button> : l'ouverture d'une pièce reste atteignable au clavier (AUDIT.md A4). -->
+                                <button type="button" class="pj__item" [class.is-open]="openPiece() === p.idPiece" [attr.aria-pressed]="openPiece() === p.idPiece" (click)="choisirPiece(p)">
+                                  <span class="pj__etat pj__etat--{{ etatPiece(p) }}" role="img" [attr.aria-label]="libelleEtatPiece(p)">
+                                    @if (etatPiece(p) === 'done-ras') { <app-icone nom="check" [taille]="11" /> }
+                                  </span>
+                                  <span class="pj__idx">{{ rangPiece(p) }}</span>
+                                  <span class="pj__nom">{{ libellePiece(p) }}</span>
+                                  @if (p.format) { <span class="pj__fmt">{{ p.format }}</span> }
+                                </button>
+                              </li>
+                            }
+                          }
+                        </ul>
+                        <div class="pj__apercu">
+                          @if (openPiece() == null) {
+                            <p class="exam__info">Sélectionnez une pièce pour l'afficher.</p>
+                          } @else if (loadingPiece() === openPiece()) {
+                            <p class="exam__info" role="status">Chargement de l'aperçu…</p>
+                          } @else if (openUrl(); as u) {
+                            <iframe [src]="u" class="pj__cadre" [title]="'Aperçu de la pièce : ' + libellePieceOuverte()"></iframe>
+                          }
                         </div>
                       }
                     </div>
                   }
-                  <div class="exam__foot">
-                    @if (etape() > 0) { <button type="button" class="btn btn-outline" (click)="allerEtape(etape() - 1)">Précédent</button> }
-                    <button type="button" class="btn btn-primary" [disabled]="mode() === 'locked' || !etapeCouranteStatuee()" (click)="validerEtape()">
-                      {{ estEtapeDossier() ? 'Valider les contrôles dossier' : estEtapeFiche() ? 'Valider la fiche et continuer' : estEtapeAgpm() ? "Valider l'AGPM et continuer" : estEtapePiece() ? 'Valider la pièce et continuer' : 'Valider la ligne et continuer' }}
-                    </button>
-                  </div>
                 }
+              </div>
+            </section>
 
-                @if (estEtapeAvis()) {
-                  @if (syntheseEditable()) {
-                    <h3 class="exam__sub">Synthèse des observations (projet de PV)</h3>
-                    <p class="form-hint">Tous les points de contrôle ont été traités. Le projet de PV = résultats des points de contrôle + votre synthèse + votre avis.</p>
-                    <label class="form-group">
-                      <span class="form-label">Synthèse des observations</span>
-                      <textarea class="form-control" rows="4" [value]="synthese()" (input)="synthese.set($any($event.target).value)"></textarea>
-                    </label>
-                    <!-- ⚠️ Visa unique (2026-08-31) — l'avis est ÉMIS PAR LE MEMBRE ici (règle du 01/08 inversée). -->
-                    <label class="form-group">
-                      <span class="form-label">Avis global *</span>
-                      <select class="form-control" [value]="avis() ?? ''" (change)="avis.set($any($event.target).value || null)">
-                        <option value="" [selected]="!avis()">— Sélectionner —</option>
-                        @for (a of aviss(); track a.idAvis) {
-                          <option [value]="a.idAvis" [selected]="a.idAvis === avis()">{{ a.libelleAvis || a.idAvis }}</option>
-                        }
-                      </select>
-                      <span class="form-hint">{{ avisSuggereHint() }}</span>
-                    </label>
-                    <p class="form-hint">Votre avis pourra être ajusté par le Président ou le Chef de commission au visa qui clôt la navette du projet de PV ; le Secrétaire de séance et le Membre co-signataire y seront désignés.</p>
-                  } @else if (mode() === 'edit') {
-                    <h3 class="exam__sub">Synthèse des observations (projet de PV)</h3>
-                    @if (avis()) { <p class="form-hint"><strong>Avis global :</strong> {{ avisLabel(avis()) }}</p> }
-                    @if (synthese()) { <p class="form-hint"><strong>Synthèse :</strong> {{ synthese() }}</p> }
-                    <p class="form-hint">Le projet de PV a déjà été soumis : la suite se joue dans « Projets de PV ».</p>
-                  }
-                  @if (formError()) { <span class="form-error">{{ formError() }}</span> }
-                  <div class="exam__foot">
-                    <button type="button" class="btn btn-outline" (click)="allerEtape(etape() - 1)">Précédent</button>
-                    <button type="button" class="btn btn-outline" (click)="annuler()">Annuler</button>
-                    @if (mode() === 'create') {
-                      <button type="button" class="btn btn-primary" [disabled]="saving() || idDispatch() == null" (click)="soumettre()">{{ saving() ? 'Enregistrement…' : "Soumettre l'examen" }}</button>
-                    } @else if (mode() === 'edit') {
-                      <button type="button" class="btn btn-primary" [disabled]="saving() || idDispatch() == null" (click)="enregistrer()">{{ saving() ? 'Enregistrement…' : estReexamen() ? 'Enregistrer le réexamen' : "Modifier l'examen" }}</button>
-                    }
-                  </div>
-                }
-              }
-            </div>
+            @if (points().length) {
+              <app-examen-grille [vue]="vueGrille()" [ouverte]="grilleOuverte()" [enregistre]="derniereSauvegarde()" (action)="surActionGrille($event)" />
+            }
           </div>
-        </div>
-      }
+        } @else {
+          <app-examen-synthese
+            [groupes]="recap()"
+            [nbObservations]="observationsNumerotees().length"
+            [consigne]="rappelConsigne()"
+            [mode]="mode()"
+            [estReexamen]="estReexamen()"
+            [editable]="syntheseEditable()"
+            [synthese]="synthese()"
+            [avis]="avis()"
+            [avisLibelle]="avis() ? avisLabel(avis()) : null"
+            [aviss]="aviss()"
+            [avisHint]="avisSuggereHint()"
+            [apres]="apresSoumission()"
+            [formError]="formError()"
+            [saving]="saving()"
+            [dispatchConnu]="idDispatch() != null"
+            [libellePrecedent]="libelleRetourSynthese()"
+            (modifier)="modifierObservation($event)"
+            (syntheseChange)="synthese.set($event)"
+            (avisChange)="avis.set($event)"
+            (soumettre)="soumettre()"
+            (enregistrer)="enregistrer()"
+            (precedent)="allerEtape(etape() - 1)"
+            (annuler)="annuler()"
+          />
+        }
 
+        @if (proposition(); as prop) {
+          <div
+            class="prop"
+            role="dialog"
+            aria-label="Observer cette cellule"
+            appModale
+            (appModaleFermer)="fermerProposition()"
+            [style.left.px]="prop.left"
+            [style.top.px]="prop.top"
+            [style.bottom.px]="prop.bottom"
+          >
+            <div class="prop__tete">
+              <span>Observer « {{ prop.libelle }} »</span>
+              <button type="button" class="prop__fermer" aria-label="Fermer" (click)="fermerProposition()"><app-icone nom="x" [taille]="14" /></button>
+            </div>
+            @if (prop.cellule.valeur) {
+              <p class="prop__valeur">Au lieu de : « {{ prop.cellule.valeur }} »</p>
+            }
+            <p class="prop__question">Au titre du point :</p>
+            <ul class="prop__points">
+              @for (pt of prop.points; track pt.idPointCtrl; let i = $index) {
+                <li>
+                  <button type="button" class="prop__point" (click)="observerCellule(pt.idPointCtrl)">
+                    <span class="prop__rang">{{ i + 1 }}.</span>{{ pt.libelPointCtrl || 'Point #' + pt.idPointCtrl }}
+                  </button>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      }
     </section>
   `,
-  styles: `
-    /* Colonne gauche (contenu du dossier + tableau dense des marchés) plus large que la grille de
-       contrôle : le tableau tient sans scroll horizontal, le formulaire de droite (champs courts)
-       reste confortable. minmax(0, ...) empêche le tableau de forcer la colonne au-delà de sa part. */
-    .exam__chrono { margin-bottom: 0.75rem; }
-    .exam__grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: 0.75rem; align-items: start; }
-    /* ⚠️ Demande pilote (2026-09-02) — le dossier s'affiche à 100 % de sa taille et DÉFILE dans son
-       panneau (les deux axes) ; « Consigner l'examen » reste à l'écran (sticky, défilement propre).
-       Les deux panneaux sont bornés à la hauteur de la fenêtre, chacun avec son ascenseur. */
-    /* ⚠️ 2026-09-02 (précisé) — l'EN-TÊTE du panneau (infos + onglets) est FIGÉ : le panneau ne
-       défile plus lui-même, c'est la zone .exam__contenu-defilant qui porte les deux ascenseurs ;
-       l'en-tête du tableau PPM y est collant (variante globale ppm-table-large). */
-    .exam__panel--contenu { max-height: calc(100vh - 13rem); display: flex; flex-direction: column; overflow: hidden; }
-    .exam__panel--contenu .exam__contenu-corps { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
-    .exam__contenu-fixe { flex-shrink: 0; }
-    .exam__contenu-defilant { flex: 1; min-height: 0; overflow: auto; }
-    /* La largeur confortable du tableau vient de la variante GLOBALE .ppm-table-large
-       (_document-officiel.scss depuis le 2026-09-14) : l'encapsulation émulée empêche d'atteindre ici le DOM du composant
-       partagé — même motif que _dpm-dialog.scss. */
-    /* ⚠️ 2026-09-02 (précisé) — PAS d'ascenseur propre sur « Consigner l'examen » : le panneau
-       s'affiche en pleine hauteur, la page défile s'il est long. Le panneau du contenu, lui,
-       reste borné avec son défilement interne et ses en-têtes figés. */
-    .exam__panel--consigner { align-self: start; }
-    /* Onglets du contenu (2026-09-02) : MÊMES couleurs orange clair que les onglets du détail PPM
-       (demande pilote 02/09) — un seul langage d'onglets de dossier. Marge haute : la ligne
-       collait aux informations du dossier au-dessus. */
-    /* Onglets convergés vers la classe partagée onglets-dossier (globale) — 2026-09-06. */
-    /* ⚠️ Demande pilote (2026-09-08) — aérer AU-DESSUS des onglets : le global onglets-dossier n'a
-       qu'une marge basse ; on rétablit ici la marge haute (scopée à l'en-tête figé de l'examen)
-       pour décoller la rangée d'onglets de la liste d'infos du dossier. */
-    .exam__contenu-fixe .onglets-dossier { margin-top: 1.25rem; }
-    @media (max-width: 75rem) {
-      .exam__panel--contenu { max-height: none; overflow: visible; display: block; }
-      .exam__panel--contenu .exam__contenu-corps { display: block; overflow: visible; }
-      .exam__contenu-defilant { overflow: visible; }
-    }
-    /* Sous ~1200px, on empile (côte à côte devient illisible). */
-    @media (max-width: 75rem) { .exam__grid { grid-template-columns: 1fr; } }
-    .exam__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
-    /* Fil d'étapes séquentielles (une ligne à la fois → dossier → avis). */
-    .exam__steps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.25rem 0 0.75rem; }
-    .exam__step { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.75rem; border: 1px solid #E5E7EB; border-radius: 999px; background: #fff; color: var(--n-600, #475569); font-size: var(--text-sm); font-weight: 600; cursor: pointer; transition: var(--transition); }
-    .exam__step:disabled { opacity: 0.5; cursor: not-allowed; }
-    .exam__step-dot { width: 0.55rem; height: 0.55rem; border-radius: 999px; background: #D1D5DB; flex: none; }
-    /* Pastilles alignées sur la palette sobre des lignes du tableau (indigo / vert / ambre). */
-    .exam__step--pending { background: #F9FAFB; }
-    .exam__step--pending .exam__step-dot { background: #D1D5DB; }
-    .exam__step--current { background: #EEF2FF; color: #4338CA; border-color: #6366F1; }
-    .exam__step--current .exam__step-dot { background: #6366F1; }
-    .exam__step--done-ras { background: #F0FDF4; color: #15803D; border-color: #22C55E; }
-    .exam__step--done-ras .exam__step-dot { background: #22C55E; }
-    /* Avec observation = ROUGE (aligné sur le tableau des lignes et la liste des pièces : ✗ rouge). */
-    .exam__step--done-obs { background: #FEF2F2; color: #B91C1C; border-color: #DC2626; }
-    .exam__step--done-obs .exam__step-dot { background: #DC2626; }
-    .exam__info { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0; }
-    .exam__info dt { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); }
-    .exam__info dd { margin: 2px 0 0; }
-    .exam__marches { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.25rem; }
-    /* Pièces jointes du dossier (liste + téléchargement) sous les lignes de marché. */
-    .exam__pieces { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
-    .exam__pieces-grp { display: flex; flex-direction: column; gap: 0.35rem; }
-    .exam__pieces-pill { align-self: flex-start; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--info-text, #2563eb); background: var(--info-bg, #eff6ff); padding: 0.15rem 0.5rem; border-radius: 999px; }
-    .exam__pieces-pill--lr { color: #B45309; background: #FFFBEB; }
-    /* États d'examen des pièces — mêmes couleurs que le tableau des lignes (en cours indigo / ✓ vert / ✗ rouge). */
-    .exam__piece--current { background: #E0E7FF; box-shadow: inset 5px 0 0 #4F46E5; }
-    .exam__piece--done-ras { background: #F0FDF4; box-shadow: inset 3px 0 0 #22C55E; }
-    .exam__piece--done-obs { background: #FEF2F2; box-shadow: inset 3px 0 0 #DC2626; }
-    .exam__piece-etat { flex: 0 0 auto; width: 1.1rem; text-align: center; font-weight: 800; font-size: 1rem; }
-    .exam__piece-etat--done-ras { color: #16A34A; }
-    .exam__piece-etat--done-obs { color: #DC2626; }
-    .exam__piece-etat--current { color: #4F46E5; }
-    .exam__piece-etat--pending { color: var(--n-300); }
-    /* <button> : neutraliser les styles natifs (largeur, police, alignement) pour conserver
-       exactement le rendu de l'ancienne ligne, tout en gagnant le clavier et le focus. */
-    .exam__piece { display: flex; width: 100%; text-align: left; font: inherit; color: inherit; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; background: #fff; border: 1px solid var(--c-100); border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); }
-    .exam__piece:hover { border-color: var(--c-200, #c7d2fe); background: var(--c-50); }
-    .exam__piece.is-open { border-color: var(--info-text, #2563eb); background: var(--info-bg, #eff6ff); }
-    .exam__piece-idx { flex: none; width: 1.4rem; height: 1.4rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--info-bg, #eff6ff); color: var(--info-text, #2563eb); font-size: var(--text-xs); font-weight: 700; }
-    .exam__piece-idx--lr { background: #FFFBEB; color: #B45309; }
-    .exam__piece-name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
-    .exam__piece-fmt { flex: none; font-size: 0.6rem; }
-    .exam__piece-chev { flex: none; color: var(--n-400); transition: transform 0.15s; }
-    .exam__piece-chev.is-open { transform: rotate(180deg); }
-    .exam__piece-view { border: 1px solid var(--c-100); border-radius: var(--radius-md); overflow: hidden; }
-    .exam__piece-frame { width: 100%; height: 600px; border: 0; display: block; background: #fff; }
-    .exam__piece-loading { padding: 1rem; margin: 0; }
-    .exam__point { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; background: var(--c-50); border: 1px solid var(--c-100); border-left: 3px solid #D1D5DB; border-radius: var(--radius-md); transition: var(--transition); }
-    .exam__point--ras { background: #F0FDF4; border-color: #DCFCE7; border-left-color: #22C55E; }
-    .exam__point--obs { background: #FFFBEB; border-color: #FEF3C7; border-left-color: #F59E0B; }
-    .exam__point-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-    .exam__point-lbl { font-weight: 500; }
-    .exam__point-desc { font-size: var(--text-sm); margin: 0; }
-    /* Choix mutuellement exclusif RAS / Observation (aucun par défaut ⇒ point non statué). */
-    .exam__statut { display: inline-flex; gap: 0.35rem; flex: none; }
-    .exam__statut-opt { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.6rem; border: 1px solid #E5E7EB; border-radius: 999px; background: #fff; font-size: var(--text-sm); font-weight: 600; color: var(--n-500); cursor: pointer; white-space: nowrap; transition: var(--transition); }
-    .exam__statut-opt input { margin: 0; }
-    .exam__statut-opt--ras.is-active { background: #F0FDF4; color: #15803D; border-color: #22C55E; }
-    .exam__statut-opt--obs.is-active { background: #FFFBEB; color: #B45309; border-color: #F59E0B; }
-    .exam__obs { display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start; }
-    .exam__obs-header, .exam__obs-row { display: flex; gap: 0.75rem; align-items: flex-start; align-self: stretch; }
-    .exam__obs-header span:first-child, .exam__obs-header span:nth-child(2) { flex: 1 1 0; text-align: center; font-weight: 700; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--n-400); }
-    .exam__obs-actions { width: 2rem; }
-    .exam__obs-row textarea { flex: 1 1 0; min-height: 2.5rem; resize: none; word-wrap: break-word; white-space: pre-wrap; }
-    .exam__obs-del { width: 2rem; align-self: flex-start; margin-top: 0.3rem; }
-    .exam__obs-err { color: var(--danger-text); }
-    /* flex-wrap : la barre d'actions se replie si le panneau (droite, 30%) est trop étroit pour les 3 boutons. */
-    .exam__foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 0.75rem; margin-top: 0.5rem; }
-    @media (max-width: 60rem) { .exam__grid { grid-template-columns: 1fr; } }
-  `,
+  styleUrl: './examen-dossier.scss',
 })
 export class ExamenDossier implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly dossierService = inject(DossierService);
@@ -603,6 +459,7 @@ export class ExamenDossier implements OnDestroy {
   private readonly lookups = inject(ReferenceLookupService);
   private readonly modeService = inject(ModePassationService);
   private readonly capmService = inject(CapmService);
+  private readonly delaiStandardService = inject(DelaiStandardService);
 
   readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
   readonly loading = signal(true);
@@ -627,17 +484,26 @@ export class ExamenDossier implements OnDestroy {
   readonly loadingPieces = signal(false);
   readonly piecesInitiales = computed(() => this.pieces().filter((p) => !p.apresLettreRenvoi));
   readonly piecesApresRenvoi = computed(() => this.pieces().filter((p) => p.apresLettreRenvoi));
-  /** Aperçu inline : pièce ouverte (idPiece), son URL blob sécurisée, et le chargement éventuel. */
+  /** Aperçu : pièce ouverte (idPiece), son URL blob sécurisée, et le chargement éventuel. */
   readonly openPiece = signal<number | null>(null);
   readonly openUrl = signal<SafeResourceUrl | null>(null);
   readonly loadingPiece = signal<number | null>(null);
   private currentObjectUrl: string | null = null;
   readonly idDispatch = signal<number | null>(null);
+  /** Consigne donnée au dispatch (`instructions`), s'il y en a une. */
+  readonly consigne = signal<string | null>(null);
+  /** Consigne affichée en entier sous l'en-tête (elle y est tronquée faute de place). */
+  readonly consigneDepliee = signal(false);
   readonly points = signal<PointsCtrl[]>([]);
   readonly aviss = signal<Avis[]>([]);
   private readonly examens = signal<Examen[]>([]);
   private readonly details = signal<ExamenDetail[]>([]);
   private readonly pvs = signal<PvExamen[]>([]);
+
+  /** Chronométrage du dossier et délais standards : matière de la puce de délai de l'en-tête. */
+  private readonly chrono = signal<Chronometrage | null>(null);
+  private readonly delais = signal<DelaiStandard[]>([]);
+  readonly delai = computed(() => delaiExamen(this.chrono(), this.delais()));
 
   readonly dateExamen = signal(new Date().toISOString().slice(0, 10));
   /**
@@ -655,11 +521,27 @@ export class ExamenDossier implements OnDestroy {
   /** Erreur « ≥1 ligne obligatoire » par point non conforme de l'étape courante (clé = idPtControle). */
   readonly pointErreurs = signal<Map<number, string>>(new Map());
   /** ⚠️ Règle ajoutée — résultats d'examen des PIÈCES JOINTES, une par une (clé = idPiece). */
-  private readonly resultatsPieces = signal<Map<number, { statut: 'RAS' | 'OBS' | null; observation: string }>>(new Map());
+  private readonly resultatsPieces = signal<Map<number, ResultatPiece>>(new Map());
   /** Résultats de pièces persistés (`/api/examen-pieces`) — réconciliation en mode édition + PK max+1. */
   private readonly examenPieces = signal<ExamenPiece[]>([]);
   /** Erreur de l'étape pièce courante (observation manquante). */
   readonly pieceErreur = signal<string | null>(null);
+
+  /**
+   * Étapes VALIDÉES (bouton « Valider… », ou résultat déjà enregistré au chargement) — clés `F`, `A`,
+   * `D`, `L<idDetail>`, `P<idPiece>`. Sert l'affichage de la progression (parcours, marge du plan) :
+   * avec le RAS par défaut (2026-09-06), « statué » ne dit plus ce que le Membre a déjà parcouru.
+   * La règle séquentielle, elle, reste fondée sur les statuts (inchangée).
+   */
+  readonly etapesValidees = signal<ReadonlySet<string>>(new Set());
+  /** Heure du dernier brouillon de progression réellement enregistré (« Enregistré à … »). */
+  readonly derniereSauvegarde = signal<string | null>(null);
+  /** Grille de contrôle dépliée (panneau droit) ou repliée en languette. */
+  readonly grilleOuverte = signal(true);
+  /** Proposition « Observer cette cellule » ouverte. */
+  readonly proposition = signal<PropositionCellule | null>(null);
+  /** Le clic de cellule qui vient d'ouvrir une proposition ne doit pas, en remontant, changer de ligne. */
+  private clicCelluleTraite = false;
 
   /** Observations relevées (points OBS + pièces OBS) — source de la suggestion d'avis. */
   private readonly nbObservations = computed(() => {
@@ -720,6 +602,9 @@ export class ExamenDossier implements OnDestroy {
     return this.marches().filter((m) => this.aExaminerMap().get(m.idDetail) || this.constatMap().get(m.idDetail));
   });
   readonly nbLignes = computed(() => this.marchesExamen().length);
+  /** Lignes affichées par le plan (mêmes règles que le tableau) : leur rang est le numéro « Ligne N ». */
+  private readonly lignesDuPlan = computed(() => this.marches().filter((m) => this.examenScope() || !m.supprimee));
+  private readonly rangsDuPlan = computed(() => new Map(this.lignesDuPlan().map((m, i) => [m.idDetail, i + 1])));
   /** Points HORS ligne (fiche/AGPM/dossier) réellement à examiner selon le périmètre (init, persistance, complétude). */
   readonly pointsHorsLigneAExaminer = computed(() => {
     const perim = this.perimetre();
@@ -803,12 +688,9 @@ export class ExamenDossier implements OnDestroy {
   }
   /** Tous les points DOSSIER sont-ils statués ? */
   readonly dossierStatue = computed(() => this.pointsDossier().every((p) => this.resultat(null, p.idPointCtrl).statut !== null));
-  readonly dossierAObs = computed(() => this.pointsDossier().some((p) => this.resultat(null, p.idPointCtrl).statut === 'OBS'));
   /** Mêmes états pour les grilles FICHE et AGPM (2026-09-02). */
   readonly ficheStatuee = computed(() => this.pointsFiche().every((p) => this.resultat(null, p.idPointCtrl).statut !== null));
-  readonly ficheAObs = computed(() => this.pointsFiche().some((p) => this.resultat(null, p.idPointCtrl).statut === 'OBS'));
   readonly agpmStatuee = computed(() => this.pointsAgpm().every((p) => this.resultat(null, p.idPointCtrl).statut !== null));
-  readonly agpmAObs = computed(() => this.pointsAgpm().some((p) => this.resultat(null, p.idPointCtrl).statut === 'OBS'));
   /** Première étape marché non encore statuée (frontière atteignable) ; `nbLignes` si toutes faites. */
   readonly frontiere = computed(() => {
     const idx = this.marchesExamen().findIndex((m) => !this.ligneStatuee(m.idDetail));
@@ -820,20 +702,6 @@ export class ExamenDossier implements OnDestroy {
     return idx === -1 ? this.nbPieces() : idx;
   });
   readonly toutesPiecesStatuees = computed(() => this.piecesOrdonnees().every((p) => this.pieceStatuee(p.idPiece)));
-  /** Tous les points de l'étape courante sont-ils statués (→ « Valider » activable) ? */
-  readonly etapeCouranteStatuee = computed(() =>
-    this.estEtapeMarche()
-      ? this.idDetailCourant() != null && this.ligneStatuee(this.idDetailCourant() as number)
-      : this.estEtapePiece()
-        ? this.pieceStatuee(this.pieceCourante()?.idPiece)
-        : this.estEtapeFiche()
-          ? this.ficheStatuee()
-          : this.estEtapeAgpm()
-            ? this.agpmStatuee()
-            : this.estEtapeDossier()
-              ? this.dossierStatue()
-              : true,
-  );
   /** Lignes + pièces + fiche + AGPM + étape dossier toutes traitées ? (condition d'ouverture de l'avis). */
   readonly toutTraite = computed(
     () =>
@@ -854,8 +722,9 @@ export class ExamenDossier implements OnDestroy {
   /** Référentiels COMPLETS (les lookups ne portent que les libellés — les calculs veulent les objets). */
   private readonly modesRef = signal<ModePassation[]>([]);
   private readonly capmsRef = signal<Capm[]>([]);
-  /** Onglet actif du panneau « Contenu du dossier » (dossiers DDP seulement). */
-  readonly ongletContenu = signal<'ppm' | 'fiche' | 'agpm' | 'pieces'>('ppm');
+  /** Onglet actif de la zone document (dossiers DDP ; les autres n'ont que les pièces). */
+  readonly ongletContenu = signal<OngletDocument>('ppm');
+  readonly ongletAffiche = computed<OngletDocument>(() => (this.estPpm() ? this.ongletContenu() : 'pieces'));
   /**
    * ⚠️ 2026-09-14 (décision des chefs) — annotations des documents officiels visibles (état d'examen,
    * statut du marché, versionnement…) : un seul interrupteur pour tous les onglets de l'écran.
@@ -926,12 +795,426 @@ export class ExamenDossier implements OnDestroy {
     return id != null ? this.entiteMap().get(String(id)) ?? '#' + id : '—';
   });
 
+  // ── En-tête ─────────────────────────────────────────────────────────────────────────────────
+  readonly surtitre = computed(() =>
+    this.mode() === 'locked' ? 'Examen (lecture seule)' : this.estReexamen() ? 'Réexamen' : this.mode() === 'edit' ? "Modifier l'examen" : 'Examen',
+  );
+  /** « Entité · 14 lignes · 1 590 000 000 Ar » (PPM) ou « Type · Entité · Localité ». */
+  readonly descriptionDossier = computed(() => {
+    if (!this.estPpm()) return [this.typeLabel(), this.entiteLabel(), this.localiteLabel()].filter((x) => x && x !== '—').join(' · ');
+    const lignes = this.lignesDuPlan().filter((m) => !m.supprimee);
+    const total = lignes.reduce((s, m) => s + Number(m.nouvMontEstim ?? m.montEstim ?? 0), 0);
+    const montant = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(total);
+    return `${this.entiteLabel()} · ${pluriel(lignes.length, 'ligne')} · ${montant} Ar`;
+  });
+  /** Lignes du plan désignées par la consigne (numéros du plan), quand le texte les nomme. */
+  private readonly lignesVisees = computed(() => lignesViseesParConsigne(this.consigne()));
+
+  // ── Zone document ───────────────────────────────────────────────────────────────────────────
+  readonly onglets = computed<{ cle: OngletDocument; libelle: string; nombre: number | null }[]>(() => {
+    if (!this.estPpm()) return [{ cle: 'pieces', libelle: 'Pièces jointes', nombre: this.nbPieces() }];
+    return [
+      { cle: 'ppm' as const, libelle: 'Plan de passation', nombre: this.lignesDuPlan().length },
+      { cle: 'fiche' as const, libelle: 'Fiche de présentation', nombre: this.ficheDoc().nbMarchesConcernes },
+      ...(this.agpmDoc().length || this.hasEtapeAgpm() ? [{ cle: 'agpm' as const, libelle: "Projet d'AGPM", nombre: this.agpmDoc().length }] : []),
+      { cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() },
+    ];
+  });
+  readonly groupesPieces = computed(() =>
+    [
+      { cle: 'init', libelle: 'Pièces initiales', pieces: this.piecesOrdonnees().filter((p) => !p.apresLettreRenvoi) },
+      { cle: 'lr', libelle: 'Après lettre de renvoi', pieces: this.piecesOrdonnees().filter((p) => p.apresLettreRenvoi) },
+    ].filter((g) => g.pieces.length),
+  );
+  /**
+   * Lignes du plan qui proposent « Observer cette cellule » : la ligne en cours (hors constat de
+   * retrait, qui n'accepte aucune cellule), ou toutes les lignes examinées à l'étape des contrôles
+   * du dossier. Recalculée à chaque étape : le tableau reçoit une nouvelle fonction.
+   */
+  readonly celluleObservableFn = computed<((idDetail: number) => boolean) | null>(() => {
+    if (this.mode() === 'locked') return null;
+    const courant = this.idDetailCourant();
+    if (courant != null) return this.estConstat(courant) ? null : (id: number) => id === courant;
+    if (this.estEtapeDossier()) return (id: number) => !this.estHorsExamen(id);
+    return null;
+  });
+
+  // ── Observations numérotées (numérotation globale = pastilles du document) ─────────────────
+  readonly observationsNumerotees = computed<ObservationNumerotee[]>(() => {
+    const out: Omit<ObservationNumerotee, 'numero'>[] = [];
+    const vide = { cellule: null, champ: null, idMarcheCible: null, idBenefCible: null, auLieuDe: '', lire: '', texte: null };
+    const pousser = (groupe: ObservationNumerotee['groupe'], etape: number, titre: string, idDetail: number | null, pts: PointsCtrl[]): void => {
+      for (const p of pts) {
+        const st = this.resultat(idDetail, p.idPointCtrl);
+        if (st.statut !== 'OBS') continue;
+        st.observations.forEach((o, index) => {
+          if (!aDuTexte(o)) return;
+          out.push({
+            ...vide,
+            groupe,
+            etape,
+            titre,
+            sousTitre: p.libelPointCtrl || `Point #${p.idPointCtrl}`,
+            cellule: o.champ ? libelleChampCible(o.champ) : null,
+            auLieuDe: o.auLieuDe.trim(),
+            lire: o.lire.trim(),
+            idDetail,
+            idPt: p.idPointCtrl,
+            index,
+            idPiece: null,
+            champ: o.champ ?? null,
+            idMarcheCible: o.champ ? o.idMarcheCible ?? idDetail : null,
+            idBenefCible: o.champ ? o.idBenefCible ?? null : null,
+          });
+        });
+      }
+    };
+    if (this.hasEtapeFiche()) pousser('fiche', this.etapeFicheIdx(), 'Fiche de présentation', null, this.pointsFiche());
+    this.marchesExamen().forEach((m, i) =>
+      pousser('lignes', this.offsetLignes() + i, this.libelleLigne(m.idDetail), m.idDetail, this.pointsPourLigne(m.idDetail)),
+    );
+    if (this.hasEtapeAgpm()) pousser('agpm', this.etapeAgpmIdx(), "Projet d'AGPM", null, this.pointsAgpm());
+    this.piecesOrdonnees().forEach((p, i) => {
+      const r = this.resultatPiece(p.idPiece);
+      if (r.statut !== 'OBS') return;
+      out.push({ ...vide, groupe: 'pieces', etape: this.offsetPieces() + i, titre: `Pièce ${i + 1}`, sousTitre: this.libellePiece(p), texte: r.observation.trim(), idDetail: null, idPt: null, index: 0, idPiece: p.idPiece ?? null });
+    });
+    if (this.hasEtapeDossier()) pousser('dossier', this.etapeDossierIdx(), 'Contrôles du dossier', null, this.pointsDossier());
+    return out.map((o, i) => ({ ...o, numero: i + 1 }));
+  });
+  /** Cellules observées du plan (encadré + pastille), bénéficiaire compris. */
+  readonly observationsPpm = computed<ObservationCellule[]>(() =>
+    this.observationsNumerotees()
+      .filter((o) => o.champ && documentDuChamp(o.champ) === 'PPM' && o.idMarcheCible != null)
+      .map((o) => ({ idDetail: o.idMarcheCible as number, champ: o.champ as ChampPpmOfficiel, numero: o.numero, idBenef: o.idBenefCible })),
+  );
+  readonly observationsFiche = computed<ObservationLigneFiche[]>(() =>
+    this.observationsNumerotees()
+      .filter((o) => o.champ && documentDuChamp(o.champ) === 'FICHE' && o.idMarcheCible != null)
+      .map((o) => ({ idDetail: o.idMarcheCible as number, numero: o.numero, liste: (o.champ as string).split('.')[0] as ListeFichePresentation })),
+  );
+  readonly observationsAgpm = computed<ObservationLigne[]>(() =>
+    this.observationsNumerotees()
+      .filter((o) => o.champ && documentDuChamp(o.champ) === 'AGPM' && o.idMarcheCible != null)
+      .map((o) => ({ idDetail: o.idMarcheCible as number, numero: o.numero })),
+  );
+
+  // ── Parcours ────────────────────────────────────────────────────────────────────────────────
+  readonly parcours = computed(() => {
+    const v = this.etapesValidees();
+    const obs = this.observationsNumerotees();
+    const nbObs = (g: string): number => obs.filter((o) => o.groupe === g).length;
+    const perim = this.perimetre();
+    const scope = perim?.miseAJour === true;
+    const ppm = this.estPpm();
+    const entrees: EntreeParcours[] = [
+      {
+        cle: 'fiche',
+        masquee: !ppm && !this.hasEtapeFiche(),
+        sansObjet: this.hasEtapeFiche() ? null : !this.pointsFiche().length ? 'Sans objet pour ce dossier' : scope && !perim?.ficheAExaminer ? 'Sans objet — inchangée' : 'Sans objet — fiche vide',
+        total: this.hasEtapeFiche() ? 1 : 0,
+        faites: v.has('F') ? 1 : 0,
+        nbObservations: nbObs('fiche'),
+        courante: this.estEtapeFiche(),
+        accessible: this.hasEtapeFiche() && this.estAtteignable(this.etapeFicheIdx()),
+      },
+      {
+        cle: 'lignes',
+        masquee: !ppm && this.nbLignes() === 0,
+        sansObjet: this.nbLignes() ? null : this.marches().length ? 'Sans objet — aucune ligne à examiner' : 'Sans objet — aucune ligne',
+        total: this.nbLignes(),
+        faites: this.marchesExamen().filter((m) => v.has('L' + m.idDetail)).length,
+        nbObservations: nbObs('lignes'),
+        courante: this.estEtapeMarche(),
+        accessible: this.nbLignes() > 0 && this.estAtteignable(this.offsetLignes()),
+      },
+      {
+        cle: 'agpm',
+        masquee: !ppm && !this.hasEtapeAgpm(),
+        sansObjet: this.hasEtapeAgpm() ? null : !this.pointsAgpm().length ? 'Sans objet pour ce plan' : scope && !perim?.agpmAExaminer ? 'Sans objet — inchangé' : 'Sans objet — aucune ligne AGPM',
+        total: this.hasEtapeAgpm() ? 1 : 0,
+        faites: v.has('A') ? 1 : 0,
+        nbObservations: nbObs('agpm'),
+        courante: this.estEtapeAgpm(),
+        accessible: this.hasEtapeAgpm() && this.estAtteignable(this.etapeAgpmIdx()),
+      },
+      {
+        cle: 'pieces',
+        masquee: false,
+        sansObjet: this.nbPieces() ? null : 'Sans objet — aucune pièce',
+        total: this.nbPieces(),
+        faites: this.piecesOrdonnees().filter((p) => v.has('P' + p.idPiece)).length,
+        nbObservations: nbObs('pieces'),
+        courante: this.estEtapePiece(),
+        accessible: this.nbPieces() > 0 && this.estAtteignable(this.offsetPieces()),
+      },
+      {
+        cle: 'dossier',
+        masquee: false,
+        sansObjet: this.hasEtapeDossier() ? null : this.pointsDossier().length ? 'Sans objet — inchangé' : 'Sans objet — aucun contrôle',
+        total: this.hasEtapeDossier() ? 1 : 0,
+        faites: v.has('D') ? 1 : 0,
+        nbObservations: nbObs('dossier'),
+        courante: this.estEtapeDossier(),
+        accessible: this.hasEtapeDossier() && this.estAtteignable(this.etapeDossierIdx()),
+      },
+      {
+        cle: 'synthese',
+        masquee: false,
+        sansObjet: null,
+        total: 1,
+        faites: 0,
+        nbObservations: 0,
+        courante: this.estEtapeAvis(),
+        accessible: this.toutTraite(),
+      },
+    ];
+    return construireParcours(entrees);
+  });
+
+  // ── Grille de contrôle ──────────────────────────────────────────────────────────────────────
+  /** Cellules du document proposées à la « cellule visée » (ligne en cours, hors constat). */
+  readonly optionsCible = computed<OptionCible[]>(() => {
+    const m = this.marcheCourant();
+    if (!m || this.estConstat(m.idDetail)) return [];
+    const benefs = this.serviceBenefs().filter((b) => b.idDetail === m.idDetail);
+    const out: OptionCible[] = [];
+    for (const col of COLONNES_PPM_OFFICIEL) {
+      if (!col.beneficiaire) {
+        out.push({ cle: `${col.champ}|`, libelle: col.libelle, champ: col.champ, idBenef: null, valeur: this.valeurCellule(m, col.champ, null) });
+        continue;
+      }
+      for (const b of benefs) {
+        const libelle = benefs.length > 1 ? `${col.libelle} · ${b.soaCode ?? '#' + b.idBenef}` : col.libelle;
+        out.push({ cle: `${col.champ}|${b.idBenef}`, libelle, champ: col.champ, idBenef: b.idBenef, valeur: this.valeurCellule(m, col.champ, b) });
+      }
+    }
+    return out;
+  });
+
+  readonly vueGrille = computed<VueGrille>(() => {
+    const verrouille = this.mode() === 'locked';
+    const numeros = this.observationsNumerotees();
+    const erreurs = this.pointErreurs();
+    const idDetail = this.idDetailCourant();
+    const points: PointVue[] = this.pointsCourants().map((p, i) => {
+      const st = this.resultat(idDetail, p.idPointCtrl);
+      return {
+        idPt: p.idPointCtrl,
+        rang: i + 1,
+        libelle: p.libelPointCtrl || `Point #${p.idPointCtrl}`,
+        description: p.decriptPointCtrl || null,
+        obligatoire: p.obligatoire,
+        statut: st.statut,
+        observations: st.observations.map((o, index) => ({
+          index,
+          numero: numeros.find((n) => n.idPt === p.idPointCtrl && n.idDetail === idDetail && n.index === index)?.numero ?? null,
+          auLieuDe: o.auLieuDe,
+          lire: o.lire,
+          cellule: o.champ ? libelleChampCible(o.champ) : null,
+          cleCible: o.champ ? `${o.champ}|${o.idBenefCible ?? ''}` : '',
+        })),
+        erreur: erreurs.get(p.idPointCtrl) ?? null,
+      };
+    });
+    const resume = {
+      ras: points.filter((p) => p.statut === 'RAS').length,
+      obs: points.filter((p) => p.statut === 'OBS').length,
+      aRenseigner: points.filter((p) => p.statut === null || (p.statut === 'OBS' && !p.observations.some((o) => o.auLieuDe.trim() || o.lire.trim()))).length,
+    };
+    const base = { points, resume, piece: null, options: [] as OptionCible[], verrouille, justifications: [] as VueGrille['justifications'], puces: [] as VueGrille['puces'] };
+    const precedent = this.etape() > 0 ? 'Précédent' : null;
+    const raison = (objet: string): string | null =>
+      raisonValidationImpossible({ verrouille, objet, points: points.map((p) => ({ rang: p.rang, statut: p.statut, observations: this.resultat(idDetail, p.idPt).observations })) });
+
+    const m = this.marcheCourant();
+    if (m) {
+      const i = this.indexMarcheCourant();
+      const rang = this.rangLigne(m.idDetail);
+      const suivant = this.marchesExamen()[i + 1];
+      const precedente = this.marchesExamen()[i - 1];
+      const puces: VueGrille['puces'] = [];
+      const nature = this.natureMap().get(String(m.idNature));
+      if (nature) puces.push({ texte: nature });
+      if (m.idMode != null) puces.push({ texte: this.modeLabel(m.idMode) });
+      const montant = m.nouvMontEstim ?? m.montEstim;
+      if (montant != null) puces.push({ texte: `${montantOfficiel(montant)} Ar`, mono: true });
+      const chg = this.changements()?.get(m.idDetail);
+      if (m.supprimee) puces.push({ texte: 'Ligne supprimée' });
+      else if (chg === 'MODIFIEE') puces.push({ texte: 'Modifiée' });
+      else if (chg === 'NOUVELLE') puces.push({ texte: 'Nouvelle' });
+      else if (chg === 'RESTAUREE') puces.push({ texte: 'Restaurée' });
+      if (this.lignesVisees()?.has(rang)) puces.push({ texte: 'Consigne', consigne: true });
+      const fiche = this.ficheDoc();
+      const justifications: VueGrille['justifications'] = [];
+      const derog = fiche.derogatoires.find((l) => l.idDetail === m.idDetail)?.justifModeDerogatoire;
+      if (derog) justifications.push({ titre: 'Justification du mode dérogatoire', texte: derog });
+      const amenage = fiche.delaisAmenages.find((l) => l.idDetail === m.idDetail)?.justifDelaiAmenage;
+      if (amenage) justifications.push({ titre: 'Justification du délai aménagé', texte: amenage });
+      return {
+        ...base,
+        eyebrow: this.examenScope()
+          ? `Ligne ${rang} du plan · ${i + 1} sur ${this.nbLignes()} à examiner${this.estConstat(m.idDetail) ? ' · constat de retrait' : ''}`
+          : `Ligne ${rang} sur ${this.lignesDuPlan().length}`,
+        titre: m.designationMarche || `Ligne #${m.idDetail}`,
+        puces,
+        justifications,
+        options: verrouille ? [] : this.optionsCible(),
+        raison: raison(`la ligne ${rang}`),
+        libelleValider: suivant ? `Valider la ligne ${rang} et passer à la ${this.rangLigne(suivant.idDetail)}` : `Valider la ligne ${rang} et continuer`,
+        libellePrecedent: precedente ? `Ligne ${this.rangLigne(precedente.idDetail)}` : precedent,
+      };
+    }
+    const pc = this.pieceCourante();
+    if (pc) {
+      const i = this.indexPieceCourante();
+      const r = this.resultatPiece(pc.idPiece);
+      const puces: VueGrille['puces'] = [];
+      if (pc.format) puces.push({ texte: pc.format });
+      puces.push({ texte: pc.apresLettreRenvoi ? 'Après lettre de renvoi' : 'Pièce initiale' });
+      return {
+        ...base,
+        eyebrow: `Pièce ${i + 1} sur ${this.nbPieces()}`,
+        titre: this.libellePiece(pc),
+        puces,
+        piece: {
+          idPiece: pc.idPiece as number,
+          libelle: this.libellePiece(pc),
+          statut: r.statut,
+          observation: r.observation,
+          numero: numeros.find((n) => n.idPiece === pc.idPiece)?.numero ?? null,
+          erreur: this.pieceErreur(),
+        },
+        resume: { ras: r.statut === 'RAS' ? 1 : 0, obs: r.statut === 'OBS' ? 1 : 0, aRenseigner: r.statut === null || (r.statut === 'OBS' && !r.observation.trim()) ? 1 : 0 },
+        raison: raisonValidationImpossible({ verrouille, objet: `la pièce ${i + 1}`, points: [], piece: r }),
+        libelleValider: i + 1 < this.nbPieces() ? `Valider la pièce ${i + 1} et passer à la ${i + 2}` : `Valider la pièce ${i + 1} et continuer`,
+        libellePrecedent: i > 0 ? `Pièce ${i}` : precedent,
+      };
+    }
+    if (this.estEtapeFiche()) {
+      return {
+        ...base,
+        eyebrow: 'Fiche de présentation',
+        titre: 'Contrôle de la fiche de présentation',
+        puces: [{ texte: this.ficheDoc().nbMarchesConcernes > 1 ? `${this.ficheDoc().nbMarchesConcernes} marchés concernés` : '1 marché concerné' }],
+        raison: raison('la fiche'),
+        libelleValider: 'Valider la fiche et continuer',
+        libellePrecedent: precedent,
+      };
+    }
+    if (this.estEtapeAgpm()) {
+      return {
+        ...base,
+        eyebrow: "Projet d'AGPM",
+        titre: "Contrôle du projet d'AGPM",
+        puces: [{ texte: pluriel(this.agpmDoc().length, 'ligne') }],
+        raison: raison("l'AGPM"),
+        libelleValider: "Valider l'AGPM et continuer",
+        libellePrecedent: precedent,
+      };
+    }
+    return {
+      ...base,
+      eyebrow: 'Contrôles du dossier',
+      titre: 'Points inter-lignes : fractionnement, cohérence',
+      raison: raison('les contrôles du dossier'),
+      libelleValider: 'Valider les contrôles du dossier',
+      libellePrecedent: precedent,
+    };
+  });
+
+  // ── Synthèse ────────────────────────────────────────────────────────────────────────────────
+  readonly recap = computed<GroupeRecap[]>(() => {
+    const obs = this.observationsNumerotees();
+    return this.parcours()
+      .filter((e): e is typeof e & { cle: GroupeRecap['cle'] } => e.cle !== 'synthese')
+      .map((e) => {
+        const liste = obs.filter((o) => o.groupe === e.cle);
+        const sansObjet = e.etat === 'sans-objet';
+        let sousTitre: string | null = null;
+        let sansObservation: string | null = null;
+        if (!sansObjet && e.cle === 'lignes') {
+          const n = this.nbLignes();
+          sousTitre = n > 1 ? `${n} lignes examinées` : '1 ligne examinée';
+          const avec = new Set(liste.map((o) => o.idDetail));
+          const sans = this.marchesExamen().filter((m) => !avec.has(m.idDetail)).length;
+          sansObservation = sans ? `${pluriel(sans, 'ligne')} sans observation` : null;
+        }
+        if (!sansObjet && e.cle === 'pieces') {
+          const n = this.nbPieces();
+          sousTitre = n > 1 ? `${n} pièces examinées` : '1 pièce examinée';
+          const sans = n - liste.length;
+          sansObservation = sans ? `${pluriel(sans, 'pièce')} sans observation` : null;
+        }
+        return {
+          cle: e.cle,
+          numero: e.numero,
+          libelle: e.libelle,
+          sansObjet,
+          sousTitre,
+          statut: sansObjet
+            ? { texte: 'Sans objet', genre: 'na' as const }
+            : liste.length
+              ? { texte: pluriel(liste.length, 'observation'), genre: 'obs' as const }
+              : { texte: 'RAS', genre: 'ok' as const },
+          observations: liste,
+          sansObservation,
+        };
+      });
+  });
+  /** Rappel de la consigne en tête du récapitulatif, avec les lignes visées quand elles se lisent. */
+  readonly rappelConsigne = computed(() => {
+    const c = this.consigne();
+    if (!c) return null;
+    const visees = this.lignesVisees();
+    if (!visees || !this.estPpm()) return `Consigne du dispatch : « ${c} »`;
+    const avecObs = [...new Set(this.observationsNumerotees().filter((o) => o.groupe === 'lignes' && o.idDetail != null).map((o) => this.rangLigne(o.idDetail as number)))].filter((r) => visees.has(r));
+    return (
+      `Consigne du dispatch : « ${c} » — lignes ${numerosEnTexte([...visees])} ; ` +
+      (avecObs.length ? `observations sur ${avecObs.length > 1 ? 'les lignes' : 'la ligne'} ${numerosEnTexte(avecObs)}.` : 'aucune observation sur ces lignes.')
+    );
+  });
+  /** Ce qui se passe réellement après le bouton de la synthèse (circuit en place, rien d'inventé). */
+  readonly apresSoumission = computed<string[]>(() => {
+    const n = this.observationsNumerotees().length;
+    if (this.mode() === 'create') {
+      return [
+        `Le projet de PV est créé en brouillon avec ${n ? pluriel(n, 'observation') : 'aucune observation'}, votre synthèse et votre avis.`,
+        'Vous arrivez dans « Projets de PV » : relisez-le, puis soumettez-le au Président ou au Chef de commission qui vous a confié le dossier — la navette suit le circuit en place.',
+        'Au visa, votre avis peut être ajusté ; un projet retourné pour rectification revient dans vos « Projets de PV ».',
+      ];
+    }
+    if (this.mode() !== 'edit') return [];
+    if (this.estReexamen()) {
+      return [
+        'Les résultats du réexamen, la synthèse et l\'avis sont enregistrés sur le projet de PV.',
+        'Vous arrivez dans « Projets de PV » : soumettez-le de nouveau pour reprendre la navette.',
+      ];
+    }
+    return this.pvEditable()
+      ? ["Les modifications de l'examen, la synthèse et l'avis sont enregistrés sur le projet de PV.", 'Le projet de PV poursuit ensuite son circuit depuis « Projets de PV ».']
+      : ["Les résultats de l'examen sont mis à jour.", 'Le projet de PV, déjà soumis, suit son circuit dans « Projets de PV ».'];
+  });
+  readonly libelleRetourSynthese = computed(() => {
+    if (this.hasEtapeDossier()) return 'Revenir aux contrôles du dossier';
+    if (this.nbPieces()) return 'Revenir à la dernière pièce';
+    if (this.hasEtapeAgpm()) return "Revenir à l'AGPM";
+    if (this.nbLignes()) return 'Revenir à la dernière ligne';
+    if (this.hasEtapeFiche()) return 'Revenir à la fiche';
+    return 'Précédent';
+  });
+
   constructor() {
     // Brouillon serveur : les sauvegardes de progression s'exécutent une par une (concatMap) ;
     // une erreur n'interrompt pas la file (toast centralisé, la prochaine validation resauvegarde tout).
     this.saveTrigger
       .pipe(
-        concatMap(() => this.sauvegarderProgression().pipe(catchError(() => of(null)))),
+        concatMap(() =>
+          this.sauvegarderProgression().pipe(
+            map(() => this.derniereSauvegarde.set(this.heureCourante())),
+            catchError(() => of(null)),
+          ),
+        ),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -944,14 +1227,44 @@ export class ExamenDossier implements OnDestroy {
     // Référentiels complets pour la fiche/AGPM dérivées (delaiMinJours, derogatoire, declencheAgpm…).
     this.modeService.list().subscribe((m) => this.modesRef.set(m));
     this.capmService.list().subscribe((c) => this.capmsRef.set(c));
+    // Délai de l'en-tête (remplace la carte chrono compacte, qui faisait déjà ce GET) + délais
+    // standards (lecture ouverte à tout authentifié) — enrichissement : un échec retire la puce.
+    this.dossierService.chronometrage(this.idDossier, true).subscribe({ next: (c) => this.chrono.set(c), error: () => {} });
+    this.delaiStandardService.listeSilencieuse().subscribe({ next: (d) => this.delais.set(d), error: () => {} });
 
     // ⚠️ 2026-09-02 — le contenu affiché SUIT l'étape en cours : ligne → Plan, pièce → Pièces,
-    // fiche → Fiche, AGPM → AGPM (le document à contrôler est sous les yeux du Membre).
+    // fiche → Fiche, AGPM → AGPM (le document à contrôler est sous les yeux du Membre) ; contrôles
+    // du dossier → Plan (lot 2 : les points inter-lignes se lisent sur le plan).
     effect(() => {
       if (this.estEtapeMarche()) this.ongletContenu.set('ppm');
       else if (this.estEtapePiece()) this.ongletContenu.set('pieces');
       else if (this.estEtapeFiche()) this.ongletContenu.set('fiche');
       else if (this.estEtapeAgpm()) this.ongletContenu.set('agpm');
+      else if (this.estEtapeDossier()) this.ongletContenu.set('ppm');
+    });
+    // Étape « Pièce N » : la pièce s'affiche d'elle-même dans la zone document.
+    effect(() => {
+      const p = this.pieceCourante();
+      if (p?.idPiece == null) return;
+      untracked(() => {
+        if (this.openPiece() !== p.idPiece) this.ouvrirPiece(p);
+      });
+    });
+    // Toute proposition « Observer cette cellule » se referme quand l'étape change.
+    effect(() => {
+      this.etape();
+      untracked(() => this.proposition.set(null));
+    });
+    // La ligne en cours reste visible dans le document.
+    effect(() => {
+      if (this.idDetailCourant() == null) return;
+      afterNextRender(
+        () => {
+          const ligne = document.querySelector('.doc__corps tr.doc-ligne--courante') as (HTMLElement & { scrollIntoView?: (o: ScrollIntoViewOptions) => void }) | null;
+          ligne?.scrollIntoView?.({ block: 'nearest' });
+        },
+        { injector: this.injector },
+      );
     });
 
     // ⚠️ Visa unique (2026-08-31) — pré-sélectionne l'avis suggéré à l'arrivée sur l'étape
@@ -1020,6 +1333,7 @@ export class ExamenDossier implements OnDestroy {
         );
         const dispatch = r.dispatchs.find((d) => recIds.has(d.idReception));
         this.idDispatch.set(dispatch?.idDispatch ?? null);
+        this.consigne.set(dispatch?.instructions?.trim() || null);
         const pts = r.points
           .filter((p) => p.idTypeDossier === r.dossier.idTypeDossier) // no-op sur la grille serveur ; filtre famille en repli
           .sort((a, b) => (a.ordrePointCtrl ?? 0) - (b.ordrePointCtrl ?? 0));
@@ -1064,18 +1378,35 @@ export class ExamenDossier implements OnDestroy {
             this.avis.set(pv.idAvis ?? null);
             this.synthese.set(pv.syntheseObservations ?? '');
           }
+          const valides = new Set<string>();
+          const porteeDe = new Map(pts.map((p) => [p.idPointCtrl, p.portee]));
           for (const det of r.details.filter((d) => d.idExamen === ex.idExamen)) {
             map.set(this.cle(det.idDetail ?? null, det.idPtControle), {
               statut: det.conforme ? 'RAS' : 'OBS',
-              observations: (det.observations ?? []).map((o) => ({ auLieuDe: o.auLieuDe ?? '', lire: o.lire ?? '' })),
+              // Cible de cellule (V30) reprise telle quelle : l'encadrement se recalcule depuis elle.
+              observations: (det.observations ?? []).map((o) => ({
+                auLieuDe: o.auLieuDe ?? '',
+                lire: o.lire ?? '',
+                champ: o.champ ?? null,
+                idMarcheCible: o.idMarcheCible ?? null,
+                idBenefCible: o.idBenefCible ?? null,
+              })),
             });
+            // Un résultat déjà enregistré vaut étape validée (affichage de la progression).
+            if (det.idDetail != null) valides.add('L' + det.idDetail);
+            else {
+              const portee = porteeDe.get(det.idPtControle);
+              valides.add(portee === 'FICHE' ? 'F' : portee === 'AGPM' ? 'A' : 'D');
+            }
           }
           // Résultats des PIÈCES de l'examen existant (⚠️ règle ajoutée : examen pièce par pièce).
-          const mapPieces = new Map<number, { statut: 'RAS' | 'OBS' | null; observation: string }>();
+          const mapPieces = new Map<number, ResultatPiece>();
           for (const ep of r.examenPieces.filter((x) => x.idExamen === ex.idExamen)) {
             mapPieces.set(ep.idPiece, { statut: ep.conforme ? 'RAS' : 'OBS', observation: ep.observation ?? '' });
+            valides.add('P' + ep.idPiece);
           }
           this.resultatsPieces.set(mapPieces);
+          this.etapesValidees.set(valides);
         }
         this.resultats.set(map);
         if (ex) {
@@ -1117,6 +1448,9 @@ export class ExamenDossier implements OnDestroy {
       return next;
     });
   }
+  private patchObservation(idDetail: number | null, idPt: number, i: number, patch: Partial<ObsLigne>): void {
+    this.patchResultat(idDetail, idPt, { observations: this.resultat(idDetail, idPt).observations.map((o, idx) => (idx === i ? { ...o, ...patch } : o)) });
+  }
   /** Statut d'un point : RAS → conforme (observations vidées) ; OBS → non conforme (amorce une ligne vide). */
   setStatut(idDetail: number | null, idPt: number, statut: 'RAS' | 'OBS'): void {
     if (statut === 'RAS') {
@@ -1133,17 +1467,17 @@ export class ExamenDossier implements OnDestroy {
     this.patchResultat(idDetail, idPt, { observations: this.resultat(idDetail, idPt).observations.filter((_, idx) => idx !== i) });
   }
   setAuLieuDe(idDetail: number | null, idPt: number, i: number, v: string): void {
-    this.patchResultat(idDetail, idPt, { observations: this.resultat(idDetail, idPt).observations.map((o, idx) => (idx === i ? { ...o, auLieuDe: v } : o)) });
+    this.patchObservation(idDetail, idPt, i, { auLieuDe: v });
   }
   setLire(idDetail: number | null, idPt: number, i: number, v: string): void {
-    this.patchResultat(idDetail, idPt, { observations: this.resultat(idDetail, idPt).observations.map((o, idx) => (idx === i ? { ...o, lire: v } : o)) });
+    this.patchObservation(idDetail, idPt, i, { lire: v });
   }
   pointErreur(id: number): string | undefined {
     return this.pointErreurs().get(id);
   }
 
   // — Examen des pièces jointes, une par une (⚠️ règle ajoutée) —
-  resultatPiece(idPiece: number | undefined): { statut: 'RAS' | 'OBS' | null; observation: string } {
+  resultatPiece(idPiece: number | undefined): ResultatPiece {
     return (idPiece != null && this.resultatsPieces().get(idPiece)) || { statut: null, observation: '' };
   }
   setStatutPiece(idPiece: number | undefined, statut: 'RAS' | 'OBS'): void {
@@ -1171,60 +1505,62 @@ export class ExamenDossier implements OnDestroy {
   pieceAObs(idPiece: number | undefined): boolean {
     return this.resultatPiece(idPiece).statut === 'OBS';
   }
-  /** État visuel d'une pièce (liste de gauche + onglet) — mêmes états/couleurs que le tableau des lignes. */
+  /** État visuel d'une pièce (liste de la zone document) — mêmes états que la marge du plan. */
   etatPiece(p: PieceJointeDossier): 'current' | 'done-ras' | 'done-obs' | 'pending' {
     if (this.pieceCourante()?.idPiece === p.idPiece) return 'current';
-    if (this.pieceStatuee(p.idPiece)) return this.pieceAObs(p.idPiece) ? 'done-obs' : 'done-ras';
+    if (this.pieceAObs(p.idPiece)) return 'done-obs';
+    if (this.etapesValidees().has('P' + p.idPiece)) return 'done-ras';
     return 'pending';
   }
-  /** Marqueur de la liste des pièces : ✓ (RAS) / ✗ (observation) / ● (en cours) / • (à examiner). */
-  marqueurPiece(p: PieceJointeDossier): string {
+  libelleEtatPiece(p: PieceJointeDossier): string {
     const e = this.etatPiece(p);
-    return e === 'done-ras' ? '✓' : e === 'done-obs' ? '✗' : e === 'current' ? '●' : '•';
+    return e === 'current' ? "Pièce en cours d'examen" : e === 'done-obs' ? 'Pièce avec observation' : e === 'done-ras' ? 'Pièce examinée — sans observation' : 'Pièce à examiner';
   }
-  /** État d'un onglet « Pièce N » (pastille de progression). */
-  etatOngletPiece(i: number): 'current' | 'done-ras' | 'done-obs' | 'pending' {
-    if (this.etape() === this.offsetPieces() + i) return 'current';
-    const p = this.piecesOrdonnees()[i];
-    if (p && this.pieceStatuee(p.idPiece)) return this.pieceAObs(p.idPiece) ? 'done-obs' : 'done-ras';
-    return 'pending';
+  libellePiece(p: PieceJointeDossier): string {
+    return p.libellePiece || p.nomFichier || 'Pièce #' + p.idPiece;
+  }
+  rangPiece(p: PieceJointeDossier): number {
+    return this.piecesOrdonnees().findIndex((x) => x.idPiece === p.idPiece) + 1;
+  }
+  libellePieceOuverte(): string {
+    const p = this.piecesOrdonnees().find((x) => x.idPiece === this.openPiece());
+    return p ? this.libellePiece(p) : '';
   }
 
-  /** État visuel d'une ligne de marché (pour la table partagée) : hors examen / traitée / en cours / à venir. */
+  /**
+   * État d'une ligne dans la marge du plan : hors examen / en cours / avec observation / validée /
+   * à examiner. « Validée » suit les étapes réellement passées (`etapesValidees`), pas le RAS par défaut.
+   */
   readonly etatLigneFn = (idDetail: number): RowExamState => {
     if (this.estHorsExamen(idDetail)) return 'hors'; // inchangée : déjà validée à la version précédente
     if (this.idDetailCourant() === idDetail) return 'current';
-    if (this.ligneStatuee(idDetail)) return this.ligneAObs(idDetail) ? 'done-obs' : 'done-ras';
+    if (this.ligneAObs(idDetail)) return 'done-obs';
+    if (this.etapesValidees().has('L' + idDetail)) return 'done-ras';
     return 'pending';
   };
-  /** État d'un onglet marché (pour la pastille de progression) — indexé sur les lignes EXAMINÉES. */
-  etatOngletMarche(i: number): 'current' | 'done-ras' | 'done-obs' | 'pending' {
-    if (this.etape() === this.offsetLignes() + i) return 'current';
-    const idDetail = this.marchesExamen()[i]?.idDetail;
-    if (idDetail != null && this.ligneStatuee(idDetail)) return this.ligneAObs(idDetail) ? 'done-obs' : 'done-ras';
-    return 'pending';
+
+  /** Rang d'une ligne dans le plan affiché (« Ligne 6 »). */
+  rangLigne(idDetail: number): number {
+    return this.rangsDuPlan().get(idDetail) ?? this.marchesExamen().findIndex((m) => m.idDetail === idDetail) + 1;
   }
-  /** État de l'onglet dossier. */
-  etatOngletDossier(): 'current' | 'done-ras' | 'done-obs' | 'pending' {
-    if (this.estEtapeDossier()) return 'current';
-    if (this.dossierStatue()) return this.dossierAObs() ? 'done-obs' : 'done-ras';
-    return 'pending';
+  libelleLigne(idDetail: number): string {
+    return `Ligne ${this.rangLigne(idDetail)}`;
   }
-  /** États des puces Fiche / AGPM (2026-09-02) — mêmes codes visuels. */
-  etatOngletFiche(): 'current' | 'done-ras' | 'done-obs' | 'pending' {
-    if (this.estEtapeFiche()) return 'current';
-    if (this.ficheStatuee()) return this.ficheAObs() ? 'done-obs' : 'done-ras';
-    return 'pending';
+
+  /** Clé de l'étape séquentielle `i` dans `etapesValidees` (null pour la synthèse). */
+  private cleEtape(i: number): string | null {
+    if (this.hasEtapeFiche() && i === this.etapeFicheIdx()) return 'F';
+    if (i >= this.offsetLignes() && i < this.offsetLignes() + this.nbLignes()) return 'L' + this.marchesExamen()[i - this.offsetLignes()].idDetail;
+    if (this.hasEtapeAgpm() && i === this.etapeAgpmIdx()) return 'A';
+    if (i >= this.offsetPieces() && i < this.offsetPieces() + this.nbPieces()) return 'P' + this.piecesOrdonnees()[i - this.offsetPieces()].idPiece;
+    if (this.hasEtapeDossier() && i === this.etapeDossierIdx()) return 'D';
+    return null;
   }
-  etatOngletAgpm(): 'current' | 'done-ras' | 'done-obs' | 'pending' {
-    if (this.estEtapeAgpm()) return 'current';
-    if (this.agpmStatuee()) return this.agpmAObs() ? 'done-obs' : 'done-ras';
-    return 'pending';
+  private marquerValidee(i: number): void {
+    const cle = this.cleEtape(i);
+    if (cle && !this.etapesValidees().has(cle)) this.etapesValidees.update((s) => new Set([...s, cle]));
   }
-  /** Classe visuelle d'un point selon son statut (bordure gauche colorée). */
-  statutClasse(statut: StatutPoint): 'ras' | 'obs' | 'vide' {
-    return statut === 'RAS' ? 'ras' : statut === 'OBS' ? 'obs' : 'vide';
-  }
+
   /** Valide l'étape courante (points OBS ⇒ ≥1 observation) et avance. Bouton activable seulement si tout est statué. */
   validerEtape(): void {
     // Étape pièce : statut requis (gate du bouton) + observation non vide si « Observation ».
@@ -1235,6 +1571,7 @@ export class ExamenDossier implements OnDestroy {
         return;
       }
       this.pieceErreur.set(null);
+      this.marquerValidee(this.etape());
       this.etape.update((e) => Math.min(e + 1, this.etapeAvis()));
       this.declencherSauvegarde(); // brouillon serveur : la progression survit à un départ de la page
       return;
@@ -1250,32 +1587,80 @@ export class ExamenDossier implements OnDestroy {
     this.pointErreurs.set(err);
     if (err.size) return;
     // Avance vers l'étape suivante (fiche → lignes → AGPM → pièces → dossier → synthèse). L'état « traité » est dérivé des statuts.
+    this.marquerValidee(this.etape());
     this.etape.update((e) => Math.min(e + 1, this.etapeAvis()));
     this.declencherSauvegarde(); // brouillon serveur : la progression survit à un départ de la page
   }
-  /** Navigation (⚠️ ordre pilote 2026-09-04) : fiche d'abord, puis lignes jusqu'à leur frontière, puis AGPM → pièces → dossier → avis. */
-  allerEtape(i: number): void {
+  /** Règle séquentielle (⚠️ ordre pilote 2026-09-04) : fiche d'abord, puis lignes jusqu'à leur frontière, puis AGPM → pièces → dossier → avis. */
+  estAtteignable(i: number): boolean {
     const ficheFaite = !this.hasEtapeFiche() || this.ficheStatuee();
     const lignesFaites = ficheFaite && this.frontiere() === this.nbLignes();
     const agpmFait = lignesFaites && (!this.hasEtapeAgpm() || this.agpmStatuee());
     const piecesFaites = agpmFait && this.toutesPiecesStatuees();
-    const atteignable =
+    return (
       (this.hasEtapeFiche() && i === this.etapeFicheIdx()) || // la fiche OUVRE le fil : toujours atteignable
       (i >= this.offsetLignes() && i < this.offsetLignes() + this.nbLignes() && ficheFaite && i - this.offsetLignes() <= this.frontiere()) ||
       (this.hasEtapeAgpm() && i === this.etapeAgpmIdx() && lignesFaites) ||
       (i >= this.offsetPieces() && i < this.offsetPieces() + this.nbPieces() && agpmFait && i - this.offsetPieces() <= this.frontierePiece()) ||
       (this.hasEtapeDossier() && i === this.etapeDossierIdx() && piecesFaites) ||
-      (i === this.etapeAvis() && this.toutTraite());
-    if (atteignable) this.etape.set(i);
+      (i === this.etapeAvis() && this.toutTraite())
+    );
+  }
+  allerEtape(i: number): void {
+    if (this.estAtteignable(i)) this.etape.set(i);
+  }
+  /**
+   * Clic sur une étape du parcours : la première sous-étape encore à valider (sinon la première), si
+   * la règle séquentielle l'autorise ; sinon un mot explique la séquence (le clic muet donnait
+   * l'impression que rien n'existait — même principe que les onglets, arbitrage pilote 02/09).
+   */
+  allerGroupe(cle: CleEtapeParcours): void {
+    const v = this.etapesValidees();
+    let cible: number;
+    switch (cle) {
+      case 'fiche':
+        cible = this.etapeFicheIdx();
+        break;
+      case 'lignes': {
+        const i = this.marchesExamen().findIndex((m) => !v.has('L' + m.idDetail));
+        cible = this.offsetLignes() + Math.max(i, 0);
+        break;
+      }
+      case 'agpm':
+        cible = this.etapeAgpmIdx();
+        break;
+      case 'pieces': {
+        const i = this.piecesOrdonnees().findIndex((p) => !v.has('P' + p.idPiece));
+        cible = this.offsetPieces() + Math.max(i, 0);
+        break;
+      }
+      case 'dossier':
+        cible = this.etapeDossierIdx();
+        break;
+      default:
+        cible = this.etapeAvis();
+    }
+    if (this.estAtteignable(cible)) {
+      this.etape.set(cible);
+      return;
+    }
+    const messages: Record<CleEtapeParcours, string> = {
+      fiche: "La fiche de présentation n'a pas de contrôle à mener pour ce dossier.",
+      lignes: "Les lignes du plan s'ouvrent après la fiche de présentation — l'examen est séquentiel.",
+      agpm: "Le projet d'AGPM s'ouvre après la fiche de présentation et les lignes du plan — l'examen est séquentiel.",
+      pieces: "Les pièces jointes s'ouvrent après la fiche, les lignes du plan et l'AGPM — l'examen est séquentiel.",
+      dossier: "Les contrôles du dossier s'ouvrent quand les étapes précédentes sont traitées — l'examen est séquentiel.",
+      synthese: "La synthèse s'ouvre quand toutes les étapes de contrôle sont traitées.",
+    };
+    this.toast.info(messages[cle]);
   }
   /**
    * ⚠️ Arbitrage pilote (2026-09-02) — l'onglet AMÈNE sa grille : cliquer « Fiche de
-   * présentation » (ou AGPM, Pièces, Plan) place « Consigner l'examen » sur l'étape
-   * correspondante quand elle est ATTEIGNABLE (la séquence lignes → pièces → fiche → AGPM →
-   * dossier reste la règle) ; sinon le document s'affiche quand même et un mot explique la
-   * séquence — le clic muet donnait l'impression qu'aucune grille n'existait.
+   * présentation » (ou AGPM, Pièces, Plan) place la grille de contrôle sur l'étape
+   * correspondante quand elle est ATTEIGNABLE (la séquence reste la règle) ; sinon le document
+   * s'affiche quand même et un mot explique la séquence.
    */
-  ouvrirOnglet(o: 'ppm' | 'fiche' | 'agpm' | 'pieces'): void {
+  ouvrirOnglet(o: OngletDocument): void {
     this.ongletContenu.set(o);
     const avant = this.etape();
     // ⚠️ Ordre pilote (2026-09-04) : fiche → lignes → AGPM → pièces. La fiche ouvre le fil, elle
@@ -1306,42 +1691,183 @@ export class ExamenDossier implements OnDestroy {
       }
     }
   }
+  /** Onglets documentaires au clavier (motif ARIA « tabs », activation manuelle) : flèches, Début, Fin. */
+  naviguerOnglets(ev: KeyboardEvent): void {
+    const onglets = Array.from((ev.currentTarget as HTMLElement).parentElement?.querySelectorAll<HTMLElement>('[role="tab"]') ?? []);
+    const i = onglets.indexOf(document.activeElement as HTMLElement);
+    if (i < 0) return;
+    const cible = ev.key === 'ArrowRight' ? (i + 1) % onglets.length : ev.key === 'ArrowLeft' ? (i - 1 + onglets.length) % onglets.length : ev.key === 'Home' ? 0 : ev.key === 'End' ? onglets.length - 1 : -1;
+    if (cible < 0) return;
+    ev.preventDefault();
+    onglets[cible].focus();
+  }
 
   /** Rouvre la ligne cliquée dans le tableau (repasse « en cours » ; son état RAS/observation est recalculé après re-validation). */
   ouvrirLigne(m: Marche): void {
+    if (this.clicCelluleTraite) {
+      this.clicCelluleTraite = false; // le clic de cellule a ouvert une proposition : on reste sur l'étape
+      return;
+    }
     if (this.estHorsExamen(m.idDetail)) return; // ligne inchangée (hors examen) : non cliquable
     const i = this.marchesExamen().findIndex((x) => x.idDetail === m.idDetail);
     if (i >= 0) this.allerEtape(this.offsetLignes() + i);
   }
-  /** Ouvre/ferme l'aperçu inline d'une pièce sous son nom (une seule à la fois). */
-  togglePiece(p: PieceJointeDossier): void {
-    if (p.idPiece == null) return;
-    if (this.openPiece() === p.idPiece) {
-      this.fermerPiece();
-      return;
+
+  // ── Grille : gestes ─────────────────────────────────────────────────────────────────────────
+  surActionGrille(a: ActionGrille): void {
+    const idDetail = this.idDetailCourant();
+    switch (a.type) {
+      case 'statut':
+        this.setStatut(idDetail, a.idPt, a.statut);
+        break;
+      case 'auLieuDe':
+        this.setAuLieuDe(idDetail, a.idPt, a.index, a.valeur);
+        break;
+      case 'lire':
+        this.setLire(idDetail, a.idPt, a.index, a.valeur);
+        break;
+      case 'ajouter':
+        this.ajouterLigne(idDetail, a.idPt);
+        break;
+      case 'retirer':
+        this.retirerLigne(idDetail, a.idPt, a.index);
+        break;
+      case 'cible': {
+        const opt = this.optionsCible().find((o) => o.cle === a.cle);
+        const o = this.resultat(idDetail, a.idPt).observations[a.index];
+        if (!o) break;
+        this.patchObservation(
+          idDetail,
+          a.idPt,
+          a.index,
+          opt
+            ? { champ: opt.champ, idMarcheCible: idDetail, idBenefCible: opt.idBenef, auLieuDe: o.auLieuDe.trim() ? o.auLieuDe : opt.valeur }
+            : { champ: null, idMarcheCible: null, idBenefCible: null },
+        );
+        break;
+      }
+      case 'statutPiece':
+        this.setStatutPiece(this.pieceCourante()?.idPiece, a.statut);
+        break;
+      case 'observationPiece':
+        this.setObservationPiece(this.pieceCourante()?.idPiece, a.valeur);
+        break;
+      case 'precedent':
+        this.allerEtape(this.etape() - 1);
+        break;
+      case 'valider':
+        this.validerEtape();
+        break;
+      case 'basculer':
+        this.grilleOuverte.update((v) => !v);
+        break;
     }
+  }
+
+  // ── « Observer cette cellule » ──────────────────────────────────────────────────────────────
+  /**
+   * Clic sur une cellule du document : à l'étape qui la contrôle (ligne en cours, contrôles du
+   * dossier, fiche, AGPM), propose d'ouvrir une observation au titre d'un point de la grille.
+   * Ailleurs, rien : le clic de ligne garde son rôle (aller à cette ligne).
+   */
+  proposerObservation(c: CelluleCliquee): void {
+    if (this.mode() === 'locked') return;
+    const doc = documentDuChamp(c.champ);
+    let idDetail: number | null = null;
+    let points: PointsCtrl[] = [];
+    if (doc === 'PPM' && this.estEtapeMarche()) {
+      if (c.idDetail !== this.idDetailCourant() || this.estConstat(c.idDetail)) return;
+      idDetail = c.idDetail;
+      points = this.pointsPourLigne(c.idDetail);
+    } else if (doc === 'PPM' && this.estEtapeDossier()) {
+      if (this.estHorsExamen(c.idDetail)) return;
+      points = this.pointsDossier();
+    } else if (doc === 'FICHE' && this.estEtapeFiche()) {
+      points = this.pointsFiche();
+    } else if (doc === 'AGPM' && this.estEtapeAgpm()) {
+      points = this.pointsAgpm();
+    }
+    if (!points.length) return;
+    this.clicCelluleTraite = doc === 'PPM';
+    const r = c.element.getBoundingClientRect();
+    const largeur = 300;
+    const enBas = r.bottom < window.innerHeight * 0.6;
+    this.proposition.set({
+      cellule: c,
+      idDetail,
+      points,
+      libelle: libelleChampCible(c.champ),
+      left: Math.max(8, Math.min(r.left, window.innerWidth - largeur - 8)),
+      top: enBas ? r.bottom + 6 : null,
+      bottom: enBas ? null : window.innerHeight - r.top + 6,
+    });
+  }
+  /** Ouvre l'observation au titre du point choisi : « Au lieu de » pré-rempli, cible mémorisée. */
+  observerCellule(idPt: number): void {
+    const prop = this.proposition();
+    if (!prop) return;
+    const { cellule: c, idDetail } = prop;
+    const st = this.resultat(idDetail, idPt);
+    const cible: ObsLigne = { auLieuDe: c.valeur, lire: '', champ: c.champ, idMarcheCible: c.idDetail, idBenefCible: c.idBenef };
+    const existantes = st.statut === 'OBS' ? st.observations : [];
+    // La ligne vide amorcée par « Observation » est réutilisée plutôt que doublée.
+    const libre = existantes.findIndex((o) => !aDuTexte(o) && !o.champ);
+    const index = libre >= 0 ? libre : existantes.length;
+    const observations = libre >= 0 ? existantes.map((o, i) => (i === libre ? cible : o)) : [...existantes, cible];
+    this.patchResultat(idDetail, idPt, { statut: 'OBS', observations });
+    this.pointErreurs.update((m) => {
+      const n = new Map(m);
+      n.delete(idPt);
+      return n;
+    });
+    this.proposition.set(null);
+    this.clicCelluleTraite = false;
+    this.grilleOuverte.set(true);
+    this.focaliserApresRendu(`obs-lire-${idPt}-${index}`);
+  }
+  fermerProposition(): void {
+    if (this.proposition()) this.proposition.set(null);
+    this.clicCelluleTraite = false;
+  }
+  /** Synthèse → « Modifier » : retour à l'étape de l'observation, champ « Lire » ou observation de pièce sous le curseur. */
+  modifierObservation(o: ObservationNumerotee): void {
+    this.allerEtape(o.etape);
+    this.grilleOuverte.set(true);
+    this.focaliserApresRendu(o.idPiece != null ? 'obs-piece' : `obs-lire-${o.idPt}-${o.index}`);
+  }
+  private focaliserApresRendu(id: string): void {
+    afterNextRender(() => document.getElementById(id)?.focus(), { injector: this.injector });
+  }
+
+  /** Clic sur une pièce de la liste : aperçu ; pendant les étapes pièces, la grille la suit. */
+  choisirPiece(p: PieceJointeDossier): void {
+    if (p.idPiece == null) return;
+    const i = this.piecesOrdonnees().findIndex((x) => x.idPiece === p.idPiece);
+    if (this.estEtapePiece() && i >= 0) this.allerEtape(this.offsetPieces() + i);
+    if (this.openPiece() !== p.idPiece) this.ouvrirPiece(p);
+  }
+  /** Ouvre l'aperçu d'une pièce (une seule à la fois) — URL blob assainie (`fichiers-surs`). */
+  ouvrirPiece(p: PieceJointeDossier): void {
+    if (p.idPiece == null) return;
+    const idPiece = p.idPiece;
     this.revoquer();
     this.openUrl.set(null);
-    this.openPiece.set(p.idPiece);
-    this.loadingPiece.set(p.idPiece);
-    this.pieceService.telecharger(p.idPiece).subscribe({
+    this.openPiece.set(idPiece);
+    this.loadingPiece.set(idPiece);
+    this.pieceService.telecharger(idPiece).subscribe({
       next: (blob) => {
+        if (this.openPiece() !== idPiece) return; // une autre pièce a été demandée entre-temps
         this.currentObjectUrl = urlBlobSure(blob);
         this.openUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.currentObjectUrl));
         this.loadingPiece.set(null);
       },
       error: () => {
+        if (this.openPiece() !== idPiece) return;
         this.loadingPiece.set(null);
         this.openPiece.set(null);
         this.toast.error("Impossible d'ouvrir la pièce.");
       },
     });
-  }
-  private fermerPiece(): void {
-    this.revoquer();
-    this.openPiece.set(null);
-    this.openUrl.set(null);
-    this.loadingPiece.set(null);
   }
   private revoquer(): void {
     if (this.currentObjectUrl) {
@@ -1374,14 +1900,22 @@ export class ExamenDossier implements OnDestroy {
         observation: e.st.statut === 'OBS' ? e.st.observation.trim() || undefined : undefined,
       }));
   }
-  /** Observations à envoyer pour un point (vide sauf statut OBS ; ordre 1-based). */
+  /**
+   * Observations à envoyer pour un point (vide sauf statut OBS ; ordre 1-based). ⚠️ V30 (2026-09-14) —
+   * la cellule visée part avec sa ligne (`champ`, `idMarcheCible`, `idBenefCible`), champs facultatifs.
+   */
   private observationsBody(st: RowState): ObservationControle[] {
     if (st.statut !== 'OBS') {
       return [];
     }
     return st.observations
       .filter((o) => o.auLieuDe.trim() || o.lire.trim())
-      .map((o, i) => ({ auLieuDe: o.auLieuDe.trim() || undefined, lire: o.lire.trim() || undefined, ordre: i + 1 }));
+      .map((o, i) => ({
+        auLieuDe: o.auLieuDe.trim() || undefined,
+        lire: o.lire.trim() || undefined,
+        ordre: i + 1,
+        ...(o.champ ? { champ: o.champ, idMarcheCible: o.idMarcheCible ?? null, idBenefCible: o.idBenefCible ?? null } : {}),
+      }));
   }
 
   modeLabel(id?: number): string {
@@ -1393,6 +1927,39 @@ export class ExamenDossier implements OnDestroy {
   }
   montant(v?: number): string {
     return v === null || v === undefined ? '—' : new Intl.NumberFormat('fr-FR').format(v);
+  }
+  dateDoc(iso?: string | null): string {
+    return dateOfficielle(iso) || '—';
+  }
+  valeurDe(ev: Event): string {
+    return (ev.target as HTMLInputElement).value;
+  }
+  private heureCourante(): string {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+  /** Valeur affichée d'une cellule du plan (pré-remplissage « Au lieu de » depuis la cellule visée). */
+  private valeurCellule(m: Marche, champ: ChampPpmOfficiel, b: ServiceBeneficiaire | null): string {
+    const date = (motCle: string): string => {
+      const capm = new Map(this.capmsRef().map((c) => [c.idCapm, (c.libelleProcessus ?? '').toUpperCase()]));
+      const p = this.previsions().find((x) => x.idDetail === m.idDetail && (capm.get(x.idCapm) ?? '').includes(motCle));
+      return dateOfficielle(p?.dateDebut);
+    };
+    switch (champ) {
+      case 'nature': return m.idNature != null ? this.natureMap().get(String(m.idNature)) ?? '' : '';
+      case 'objet': return m.designationMarche ?? '';
+      case 'montEstim': return montantOfficiel(m.montEstim);
+      case 'nouvMontEstim': return montantOfficiel(m.nouvMontEstim);
+      case 'mode': return m.idMode != null ? this.modeLabel(m.idMode) : '';
+      case 'financement': return m.financement ?? '';
+      case 'soa': return b?.soaCode ?? '';
+      case 'compte': return b?.numCompte ?? '';
+      case 'montBenef': return montantOfficiel(b?.ancMontBenef);
+      case 'nouvMontBenef': return montantOfficiel(b?.nouvMontBenef);
+      case 'lancement': return date('LANCEMENT');
+      case 'ouverture': return date('OUVERTURE');
+      case 'attribution': return date('ATTRIBUTION');
+    }
   }
   /** Contrôle final : tout point est statué, et tout point OBS a ≥1 observation. Sinon toast + false. */
   private observationsCompletes(): boolean {
@@ -1442,6 +2009,11 @@ export class ExamenDossier implements OnDestroy {
     const idDispatch = this.idDispatch();
     if (!this.dossier() || idDispatch == null) return;
     if (!this.observationsCompletes()) return;
+    // ⚠️ Refonte lot 2 (maquette ExamenSynthese validée) — la synthèse est obligatoire dès qu'elle est saisissable.
+    if (this.pvEditable() && !this.synthese().trim()) {
+      this.formError.set('Rédigez la synthèse des observations : elle accompagne votre avis dans le projet de PV.');
+      return;
+    }
     this.formError.set(null);
     this.saving.set(true);
     this.modifier(idDispatch);
@@ -1463,6 +2035,11 @@ export class ExamenDossier implements OnDestroy {
     const idAvis = this.avis();
     if (!idAvis) {
       this.formError.set('Sélectionnez votre avis global — il accompagne la soumission de l\'examen.');
+      return;
+    }
+    // ⚠️ Refonte lot 2 (maquette ExamenSynthese validée) — la synthèse des observations est obligatoire.
+    if (!this.synthese().trim()) {
+      this.formError.set('Rédigez la synthèse des observations : elle accompagne votre avis dans le projet de PV.');
       return;
     }
     this.formError.set(null);

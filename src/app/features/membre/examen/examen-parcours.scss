@@ -1,0 +1,131 @@
+/* Parcours de l'examen (maquette ExamenLigne) — six cartes compactes sur une rangée. */
+:host {
+  display: block;
+}
+
+.parcours__liste {
+  display: grid;
+  grid-template-columns: repeat(var(--nb-etapes, 6), minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.parcours__item {
+  display: flex;
+  min-width: 0;
+}
+
+.pc {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem 0.6rem 0.45rem;
+  border: 1px solid #e0e6f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #152033;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+button.pc:hover {
+  border-color: #7dd3fc;
+}
+button.pc[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+button.pc[aria-disabled='true']:hover {
+  border-color: #e0e6f0;
+}
+
+.pc__t {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.pc__l {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pc__n {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e8edf5;
+  color: #34405a; /* 9,1:1 */
+  font: 600 0.6875rem/1 var(--cnm-mono);
+}
+.pc__s {
+  font-size: 0.75rem;
+  color: #5b6784; /* 5,6:1 sur blanc */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pc__b {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: #e6ebf3;
+  overflow: hidden;
+}
+.pc__b i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: #0284c7;
+}
+
+/* Terminée : pastille verte cochée, barre verte. */
+.pc--terminee .pc__n {
+  background: #047857; /* blanc 5,5:1 */
+  color: #fff;
+}
+.pc--terminee .pc__b i {
+  background: #10b981;
+}
+
+/* Courante : cadre et halo bleus. */
+.pc--courante {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px #e0f2fe;
+}
+.pc--courante .pc__n {
+  background: #0369a1; /* blanc 5,9:1 */
+  color: #fff;
+}
+
+/* Sans objet : carte grisée, non interactive. */
+.pc--sans-objet {
+  background: #f5f7fa;
+  cursor: default;
+}
+.pc--sans-objet .pc__t {
+  color: #5b6784;
+}
+
+@media (max-width: 60rem) {
+  .parcours__liste {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc {
+    transition: none;
+  }
+}

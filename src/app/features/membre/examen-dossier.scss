@@ -1,0 +1,357 @@
+/* Écran d'examen refondu (refonte ergonomique, lot 2 — maquettes ExamenLigne / ExamenSynthese).
+   L'écran occupe la hauteur de la fenêtre : en-tête, parcours, puis document et grille, chacun avec
+   son défilement interne. Largeur : aucun défilement horizontal de la page à 1366 px (mode
+   concentration : la barre latérale est en tiroir, la page garde 1 rem / 1,25 rem de marges). */
+:host {
+  display: block;
+}
+
+.exam {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  /* 3 rem : barre du haut ; 2 rem : marges verticales de la page en mode concentration. */
+  height: calc(100dvh - 5rem);
+  min-height: 34rem;
+  min-width: 0;
+}
+.exam__info {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.8125rem;
+  color: #5b6784;
+}
+.exam__h1-seul {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+/* ── En-tête compact ── */
+/* Une seule ligne : quand la place manque, la consigne se tronque d'abord (elle se déplie au clic),
+   l'entité ensuite (infobulle). */
+.tete {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  min-width: 0;
+}
+/* L'identification garde sa largeur ; la partie droite prend le reste (base 0) et la consigne s'y
+   tronque jusqu'à 6,5 rem. Si même ainsi rien ne tient (entité très longue), la partie droite passe
+   à la ligne plutôt que de faire défiler la page. */
+.tete__id {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+}
+.tete__h1 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0;
+  flex: none;
+  font-size: inherit;
+  letter-spacing: 0;
+}
+.tete__sur {
+  font: 800 0.71875rem/1 var(--font-base);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0369a1;
+}
+.tete__ref {
+  font: 500 1.125rem/1.1 var(--cnm-mono);
+  letter-spacing: -0.02em;
+  color: #152033;
+}
+.tete__ent {
+  min-width: 0;
+  font-size: 0.875rem;
+  color: #34405a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tete__droite {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  flex: 1 1 0;
+}
+.tete__droite > * { flex: none; }
+.consigne,
+.delai {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.25rem 0.55rem;
+  border-radius: 8px;
+  font-size: 0.78125rem;
+  white-space: nowrap;
+}
+.tete__droite > .consigne {
+  flex: 1 1 0;
+  max-width: 26rem;
+  min-width: 6.5rem;
+  /* Taille intrinsèque ignorée : la consigne ne réclame pas sa longueur, elle prend la place restante. */
+  contain: inline-size;
+}
+.consigne {
+  appearance: none;
+  border: 1px solid #bae6fd;
+  background: #f0f9ff;
+  color: #34405a;
+  font-family: var(--font-base);
+  text-align: left;
+  cursor: pointer;
+}
+.consigne:hover { border-color: #7dd3fc; }
+.consigne-complete {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  background: #f0f9ff;
+  font-size: 0.8125rem;
+  color: #152033;
+}
+.consigne-complete app-icone { color: #0369a1; margin-top: 1px; }
+.consigne app-icone { color: #0369a1; }
+.consigne__txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.consigne b { color: #152033; }
+.delai { font-weight: 700; border: 1px solid #cbd5e1; background: #f8fafc; color: #1e3a5f; }
+.delai--bientot { border-color: #7dd3fc; background: #f0f9ff; color: #075985; }
+.delai--retard { border-color: #fecaca; background: #fef2f2; color: #b91c1c; }
+.delai--pause { border-color: #cbd5e1; background: #f1f5f9; color: #34405a; }
+.delai--info { font-weight: 600; }
+.tete__date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #34405a;
+}
+.tete__date input {
+  height: 1.875rem;
+  padding: 0 0.4rem;
+  border: 1px solid #d0d8e8;
+  border-radius: 7px;
+  font: 0.78125rem var(--font-base);
+  color: #152033;
+  background: #fff;
+}
+
+.alerte {
+  flex: none;
+  margin: 0;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  background: #fffbeb;
+  font-size: 0.8125rem;
+  color: #92400e;
+}
+
+/* ── Colonnes : document | grille ── */
+.cols {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  gap: 0.75rem;
+}
+.cols--repliee {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.doc {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e0e6f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.doc__barre {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0 0.6rem;
+  border-bottom: 1px solid #e0e6f0;
+  flex-wrap: wrap;
+}
+.doc__onglets { display: flex; align-items: stretch; gap: 0.1rem; min-width: 0; flex-wrap: wrap; }
+.dtab {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: -1px;
+  padding: 0.65rem 0.55rem 0.55rem;
+  border: 0;
+  border-bottom: 2.5px solid transparent;
+  background: transparent;
+  color: #34405a;
+  font: 700 0.8125rem/1 var(--font-base);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dtab:hover { color: #075985; }
+.dtab[aria-selected='true'] { color: #0369a1; border-bottom-color: #0369a1; }
+.dtab small,
+.doc__titre small {
+  padding: 0 0.35rem;
+  border-radius: 9px;
+  background: #edf1f6;
+  color: #34405a;
+  font: 500 0.6875rem/1.1rem var(--cnm-mono);
+}
+.doc__titre { margin: 0; font: 700 0.8125rem/1 var(--font-base); letter-spacing: 0; color: #152033; display: flex; gap: 0.4rem; align-items: center; }
+.doc__esp { flex: 1; }
+.legende { display: inline-flex; align-items: center; gap: 0.6rem; font-size: 0.71875rem; color: #5b6784; white-space: nowrap; }
+.legende > span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.lg { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 50%; box-sizing: border-box; }
+.lg--ras { background: #ecfdf5; border: 1.5px solid #059669; }
+.lg--obs { background: #fffbeb; border: 1.5px solid #b45309; }
+.lg--attente { border: 1.5px solid #667299; }
+
+.doc__corps {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overflow-x: hidden;
+  background: #dfe5ec;
+}
+
+/* ── Pièces jointes dans la zone document ── */
+.pj {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  gap: 0.75rem;
+  height: 100%;
+  min-height: 0;
+  padding: 0.75rem;
+  box-sizing: border-box;
+}
+.pj__liste { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.3rem; overflow-y: auto; min-height: 0; }
+.pj__groupe {
+  margin-top: 0.25rem;
+  font-size: 0.65625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #075985;
+}
+.pj__groupe--lr { color: #92400e; }
+.pj__item {
+  appearance: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid #e0e6f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #152033;
+  font: 0.78125rem/1.3 var(--font-base);
+  text-align: left;
+  cursor: pointer;
+}
+.pj__item:hover { border-color: #7dd3fc; }
+.pj__item.is-open { border-color: #0369a1; box-shadow: inset 3px 0 0 #0369a1; }
+.pj__etat {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1.5px solid #667299;
+  background: #fff;
+  color: #047857;
+}
+.pj__etat--done-ras { background: #ecfdf5; border-color: #059669; }
+.pj__etat--done-obs { background: #fffbeb; border-color: #b45309; box-shadow: inset 0 0 0 3px #fffbeb, inset 0 0 0 10px #b45309; }
+.pj__etat--current { background: #0284c7; border-color: #0284c7; box-shadow: inset 0 0 0 3px #0284c7, inset 0 0 0 10px #fff; }
+.pj__idx { flex: none; font: 600 0.6875rem/1 var(--cnm-mono); color: #5b6784; }
+.pj__nom { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.pj__fmt { flex: none; padding: 0 0.3rem; border-radius: 4px; background: #edf1f6; font-size: 0.625rem; color: #34405a; }
+.pj__apercu { min-width: 0; min-height: 0; display: flex; background: #fff; border-radius: 8px; overflow: hidden; }
+.pj__cadre { flex: 1; width: 100%; min-height: 20rem; border: 0; display: block; background: #fff; }
+
+/* ── Proposition « Observer cette cellule » ── */
+.prop {
+  position: fixed;
+  z-index: 60;
+  width: 18.75rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0.55rem 0.65rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.3);
+  font-size: 0.8125rem;
+  color: #152033;
+}
+.prop__tete { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; font-weight: 800; }
+.prop__fermer {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #34405a;
+  cursor: pointer;
+}
+.prop__fermer:hover { background: #f1f5f9; }
+.prop__valeur { margin: 0.2rem 0 0; font-size: 0.75rem; color: #92400e; overflow-wrap: anywhere; }
+.prop__question { margin: 0.4rem 0 0.25rem; font-size: 0.71875rem; font-weight: 700; color: #5b6784; }
+.prop__points { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.25rem; }
+.prop__point {
+  appearance: none;
+  width: 100%;
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid #e0e6f0;
+  border-radius: 7px;
+  background: #fff;
+  color: #152033;
+  font: 600 0.78125rem/1.3 var(--font-base);
+  text-align: left;
+  cursor: pointer;
+}
+.prop__point:hover { border-color: #fcd34d; background: #fffbeb; }
+.prop__rang { font-family: var(--cnm-mono); color: #5b6784; }
+
+/* ── Écrans étroits (hors cible) : on empile et la page défile. ── */
+@media (max-width: 60rem) {
+  .exam { height: auto; min-height: 0; }
+  .tete, .tete__droite { flex-wrap: wrap; }
+  .cols, .cols--repliee { grid-template-columns: 1fr; }
+  .doc__corps { max-height: 70vh; }
+  .pj { grid-template-columns: 1fr; }
+}
