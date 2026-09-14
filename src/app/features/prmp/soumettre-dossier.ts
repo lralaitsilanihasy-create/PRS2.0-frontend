@@ -12,6 +12,9 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { DetailPpmModal } from '../../shared/prmp/detail-ppm-modal';
 import { PpmFormFactory } from '../../shared/prmp/ppm-form-factory';
 import { OBJET_MARCHE_MAX, PpmSaisieGrid } from '../../shared/prmp/ppm-saisie-grid';
+import { PpmMarchesTable } from '../../shared/prmp/ppm-marches-table';
+import { LignePpmOfficielle } from '../../shared/prmp/document-officiel';
+import { DocumentVisionneuse } from '../../shared/ui/document-visionneuse';
 import { FichePresentation, calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { LigneAgpm, calculerAgpm } from '../../shared/prmp/agpm';
 import { AnomalieTranscription, Capm, Compte, Dossier, EntiteContract, FormeMarche, Marche, MarchePrevision, Ministere, ModePassation, Nature, Organigramme, SaisieImportMarche, SaisieMarcheLigne, SaisieMarcheLot, SaisiePpmImportResult, SoaBeneficiaire, SousTypeDossier, StatutMarche, TypePieceJointe } from '../../models';
@@ -120,7 +123,7 @@ interface ApercuDossier {
 @Component({
   selector: 'app-soumettre-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, DetailPpmModal, ModaleDirective, PpmSaisieGrid],
+  imports: [ReactiveFormsModule, RouterLink, DetailPpmModal, ModaleDirective, PpmSaisieGrid, PpmMarchesTable, DocumentVisionneuse],
   template: `
     <section class="sd">
       <header class="page-header page-header--actions">
@@ -635,9 +638,13 @@ interface ApercuDossier {
               </div>
 
               @if (ongletApercu() === 'ppm') {
-              <div class="ppm-doc">
-                <h1 class="ppm-doc__titre">PLAN DE PASSATION DES MARCHES POUR L'ANNEE {{ a.exercice ?? '____' }}</h1>
-                <div class="ppm-doc__entete">
+              <!-- ⚠️ 2026-09-14 (décision des chefs, refonte ergonomique lot 1) — le plan s'affiche
+                   dans la FEUILLE OFFICIELLE PARTAGÉE : titre, en-tête et pied restent propres à
+                   l'aperçu, le tableau est celui de toutes les consultations (app-ppm-marches-table,
+                   lignes déjà mises en forme) — plus de copie locale du gabarit. -->
+              <app-document-visionneuse>
+                <h1 class="doc-titre">PLAN DE PASSATION DES MARCHES POUR L'ANNEE {{ a.exercice ?? '____' }}</h1>
+                <div class="doc-entete">
                   <div>
                     <p><u>Autorité Contractante</u> : <strong>{{ a.entite }}</strong></p>
                     <p><u>Nom de la PRMP</u> : <strong>{{ a.signataire || '—' }}</strong></p>
@@ -650,138 +657,83 @@ interface ApercuDossier {
                   </div>
                 </div>
 
-                <div class="ppm-doc__table-wrap">
-                  <table class="ppm-doc__table">
-                    <colgroup>
-                      <col style="width: 6%" /><col style="width: 18%" /><col style="width: 8%" /><col style="width: 8%" />
-                      <col style="width: 8%" /><col style="width: 5%" /><col style="width: 8%" /><col style="width: 5%" />
-                      <col style="width: 8%" /><col style="width: 8%" /><col style="width: 6%" /><col style="width: 6%" /><col style="width: 6%" />
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        <th scope="col" rowspan="2">NATURE</th>
-                        <th scope="col" rowspan="2">OBJET</th>
-                        <th scope="col" rowspan="2">MONTANT ESTIMATIF INITIAL</th>
-                        <th scope="col" rowspan="2">NOUVEAU MONTANT ESTIMATIF</th>
-                        <th scope="col" rowspan="2">MODE DE PASSATION</th>
-                        <th scope="col" rowspan="2">FINANCEMENT</th>
-                        <th scope="col" colspan="4">Informations sur le Bénéficiaire</th>
-                        <th scope="col" rowspan="2">DATE PREVISIONNELLE DE LANCEMENT</th>
-                        <th scope="col" rowspan="2">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
-                        <th scope="col" rowspan="2">DATE PREVISIONNELLE D'ATTRIBUTION</th>
-                      </tr>
-                      <tr>
-                        <th scope="col">SERVICE BENEFICIAIRE</th>
-                        <th scope="col">COMPTE</th>
-                        <th scope="col">MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
-                        <th scope="col">NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (m of a.marches; track $index) {
-                        @for (b of m.benefRows; track $index; let first = $first) {
-                          <tr>
-                            @if (first) {
-                              <td [attr.rowspan]="m.benefRows.length">{{ m.natureLibelle || '' }}</td>
-                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__objet">{{ m.designationMarche || '' }}</td>
-                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__num">{{ montantFmt(m.montEstim) }}</td>
-                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__num">{{ montantFmt(m.nouvMontEstim) }}</td>
-                              <td [attr.rowspan]="m.benefRows.length">{{ m.modeLibelle || '' }}</td>
-                              <td [attr.rowspan]="m.benefRows.length">{{ m.financement || '' }}</td>
-                            }
-                            <td>{{ b.soaCode || b.soaLibelle || '' }}</td>
-                            <td>{{ b.numCompte || '' }}</td>
-                            <td class="ppm-doc__num">{{ montantFmt(b.ancMontBenef) }}</td>
-                            <td class="ppm-doc__num">{{ montantFmt(b.nouvMontBenef) }}</td>
-                            @if (first) {
-                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__date">{{ m.dateLancement }}</td>
-                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__date">{{ m.dateOuverture }}</td>
-                              <td [attr.rowspan]="m.benefRows.length" class="ppm-doc__date">{{ m.dateAttribution }}</td>
-                            }
-                          </tr>
-                        }
-                      } @empty {
-                        <tr><td colspan="13" class="cnm-muted">Aucun marché saisi.</td></tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
+                <app-ppm-marches-table [lignes]="apercuLignesPpm()" messageVide="Aucun marché saisi." />
 
-                <div class="ppm-doc__pied">
+                <div class="doc-pied">
                   <p>Fait à ______________________________, le _ _ /_ _ /_ _ _ _</p>
-                  <p class="ppm-doc__prmp">LA PERSONNE RESPONSABLE DES MARCHES PUBLICS</p>
+                  <p class="doc-prmp">LA PERSONNE RESPONSABLE DES MARCHES PUBLICS</p>
                   <p><strong>{{ a.signataire || '' }}</strong></p>
                 </div>
-              </div>
+              </app-document-visionneuse>
               }
 
               <!-- ⚠️ Demande user (2026-09-01, en onglet depuis le 03/09) — la FICHE DE
                    PRESENTATION du dossier, visualisée dès la création : mêmes trois listes que
                    l'onglet du détail PPM, dérivées de la grille de saisie. -->
               @if (ongletApercu() === 'fiche') {
-              <div class="ppm-doc sd__fiche-doc">
-                <h1 class="ppm-doc__titre">FICHE DE PRESENTATION</h1>
+              <app-document-visionneuse>
+                <h1 class="doc-titre">FICHE DE PRESENTATION</h1>
                 <p><u>Nature du dossier</u> : <strong>Projet de Plan de passation des marchés de l'année {{ a.exercice ?? '____' }}, Initial</strong></p>
 
-                <h2 class="sd__fiche-sub">1. Liste des marchés à passer par mode dérogatoire avec justifications</h2>
+                <h2 class="doc-sous-titre">1. Liste des marchés à passer par mode dérogatoire avec justifications</h2>
                 @if (a.fiche.derogatoires.length) {
-                  <div class="ppm-doc__table-wrap">
-                    <table class="ppm-doc__table">
+                  <div>
+                    <table class="doc-table">
                       <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Justification</th></tr></thead>
                       <tbody>
                         @for (l of a.fiche.derogatoires; track l.idDetail) {
-                          <tr><td>{{ l.objet }}</td><td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td>
-                            <td>@if (l.justifModeDerogatoire) { {{ l.justifModeDerogatoire }} } @else { <span class="cnm-muted">À compléter</span> }</td></tr>
+                          <tr><td>{{ l.objet }}</td><td class="doc-num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td>
+                            <td>@if (l.justifModeDerogatoire) { {{ l.justifModeDerogatoire }} } @else { <span class="doc-a-completer">À compléter</span> }</td></tr>
                         }
                       </tbody>
                     </table>
                   </div>
-                } @else { <p class="cnm-muted">Aucun marché à passer par mode dérogatoire.</p> }
+                } @else { <p class="doc-paragraphe">Aucun marché à passer par mode dérogatoire.</p> }
 
-                <h2 class="sd__fiche-sub">2. Liste des marchés à délais aménagés avec justifications</h2>
+                <h2 class="doc-sous-titre">2. Liste des marchés à délais aménagés avec justifications</h2>
                 @if (a.fiche.delaisAmenages.length) {
-                  <div class="ppm-doc__table-wrap">
-                    <table class="ppm-doc__table">
+                  <div>
+                    <table class="doc-table">
                       <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th><th scope="col">Justifications</th></tr></thead>
                       <tbody>
                         @for (l of a.fiche.delaisAmenages; track l.idDetail) {
-                          <tr><td>{{ l.objet }}</td><td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td><td>{{ l.delaiJours }} jours <span class="cnm-muted">(minimum du mode : {{ l.delaiMinJours }})</span></td>
-                            <td>@if (l.justifDelaiAmenage) { {{ l.justifDelaiAmenage }} } @else { <span class="cnm-muted">À compléter</span> }</td></tr>
+                          <tr><td>{{ l.objet }}</td><td class="doc-num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td><td>{{ l.delaiJours }} jours <span class="doc-note-en-ligne">(minimum du mode : {{ l.delaiMinJours }})</span></td>
+                            <td>@if (l.justifDelaiAmenage) { {{ l.justifDelaiAmenage }} } @else { <span class="doc-a-completer">À compléter</span> }</td></tr>
                         }
                       </tbody>
                     </table>
                   </div>
-                } @else { <p class="cnm-muted">Aucun marché à délais aménagés.</p> }
+                } @else { <p class="doc-paragraphe">Aucun marché à délais aménagés.</p> }
 
-                <h2 class="sd__fiche-sub">3. Liste des contrats-cadres</h2>
+                <h2 class="doc-sous-titre">3. Liste des contrats-cadres</h2>
                 @if (a.fiche.contratsCadres.length) {
-                  <div class="ppm-doc__table-wrap">
-                    <table class="ppm-doc__table">
+                  <div>
+                    <table class="doc-table">
                       <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th></tr></thead>
                       <tbody>
                         @for (l of a.fiche.contratsCadres; track l.idDetail) {
-                          <tr><td>{{ l.objet }}</td><td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td><td>@if (l.delaiJours != null) { {{ l.delaiJours }} jours } @else { — }</td></tr>
+                          <tr><td>{{ l.objet }}</td><td class="doc-num">{{ montantFmt(l.montant) }}</td><td>{{ l.modeLibelle }}</td><td>@if (l.delaiJours != null) { {{ l.delaiJours }} jours } @else { — }</td></tr>
                         }
                       </tbody>
                     </table>
                   </div>
-                } @else { <p class="cnm-muted">Aucun contrat-cadre.</p> }
+                } @else { <p class="doc-paragraphe">Aucun contrat-cadre.</p> }
 
                 @if (a.fiche.nbMarchesConcernes > 0 || a.justificationFiche) {
-                  <p class="sd__fiche-justif"><u>Justification :</u>
-                    @if (a.justificationFiche) { {{ a.justificationFiche }} } @else { <span class="cnm-muted">À compléter</span> }
+                  <p class="doc-paragraphe sd__fiche-justif"><u>Justification :</u>
+                    @if (a.justificationFiche) { {{ a.justificationFiche }} } @else { <span class="doc-a-completer">À compléter</span> }
                   </p>
                 }
-              </div>
+              </app-document-visionneuse>
               }
 
               <!-- ⚠️ Demande user (2026-09-01, en onglet depuis le 03/09) — le PROJET D'AGPM :
                    marchés en mode déclencheur (drapeau administrable), au format du modèle
                    officiel. Onglet présent seulement quand l'avis a des lignes. -->
               @if (ongletApercu() === 'agpm' && a.agpm.length) {
-                <div class="ppm-doc sd__fiche-doc">
-                  <h1 class="ppm-doc__titre">AVIS GENERAL DE PASSATION DES MARCHES POUR L'ANNEE {{ a.exercice ?? '____' }}</h1>
-                  <div class="ppm-doc__entete">
+                <app-document-visionneuse>
+                  <h1 class="doc-titre">AVIS GENERAL DE PASSATION DES MARCHES POUR L'ANNEE {{ a.exercice ?? '____' }}</h1>
+                  <div class="doc-entete">
                     <div>
                       <p><u>Autorité Contractante</u> : <strong>{{ a.entite }}</strong></p>
                       <p><u>Nom de la PRMP</u> : <strong>{{ a.signataire || '—' }}</strong></p>
@@ -793,30 +745,30 @@ interface ApercuDossier {
                       <p><u>Numéro de la présente mise à jour</u> : 0</p>
                     </div>
                   </div>
-                  <div class="ppm-doc__table-wrap">
-                    <table class="ppm-doc__table">
+                  <div>
+                    <table class="doc-table">
                       <thead><tr><th scope="col">COMPTE</th><th scope="col">NATURE</th><th scope="col">OBJET</th><th scope="col">MONTANT ESTIMATIF du MARCHE</th><th scope="col">FINANCEMENT</th><th scope="col">MODE DE PASSATION</th><th scope="col">DATE du DAO</th></tr></thead>
                       <tbody>
                         @for (l of a.agpm; track l.idDetail) {
                           <tr>
                             <td>{{ l.compte }}</td>
                             <td>{{ l.nature }}</td>
-                            <td class="ppm-doc__objet">{{ l.objet }}</td>
-                            <td class="ppm-doc__num">{{ montantFmt(l.montant) }}</td>
+                            <td class="doc-objet">{{ l.objet }}</td>
+                            <td class="doc-num">{{ montantFmt(l.montant) }}</td>
                             <td>{{ l.financement }}</td>
                             <td>{{ l.modeLibelle }}</td>
-                            <td class="ppm-doc__date">{{ dateFr(l.dateDao) }}</td>
+                            <td class="doc-date">{{ dateFr(l.dateDao) }}</td>
                           </tr>
                         }
                       </tbody>
                     </table>
                   </div>
-                  <div class="ppm-doc__pied">
+                  <div class="doc-pied">
                     <p>Fait à ______________________________, le _ _ /_ _ /_ _ _ _</p>
-                    <p class="ppm-doc__prmp">LA PERSONNE RESPONSABLE DES MARCHES PUBLICS</p>
+                    <p class="doc-prmp">LA PERSONNE RESPONSABLE DES MARCHES PUBLICS</p>
                     <p><strong>{{ a.signataire || '' }}</strong></p>
                   </div>
-                </div>
+                </app-document-visionneuse>
               }
 
               @if (apercuAvertissements(a).length) {
@@ -941,29 +893,12 @@ interface ApercuDossier {
     .sd__sub { margin: 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
     .sd__apercu { max-width: min(112rem, 98vw); max-height: 92vh; display: flex; flex-direction: column; }
     .sd__apercu .modal-body { overflow-y: auto; }
-    /* Second document de l'aperçu : la fiche de présentation, séparée du plan. */
-    .sd__fiche-doc { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 2px solid var(--n-200); }
-    .sd__fiche-sub { margin: 1rem 0 0.4rem; font-size: var(--text-md); font-weight: 700; }
+    /* Documents de l'aperçu : feuille officielle partagée (styles/_document-officiel.scss, 2026-09-14). */
     .sd__fiche-justif { margin-top: 1rem; }
     /* Justification globale de la fiche (2026-09-01) — signalée tant qu'elle manque. */
     .sd__justif-globale { margin-top: 0.9rem; }
     .sd__justif-globale--manquante .form-label { color: var(--danger-text, #b91c1c); }
     .sd__justif-globale textarea { resize: vertical; }
-    .ppm-doc { background: #fff; color: #000; padding: 1rem 1.25rem; font-size: 0.8rem; }
-    .ppm-doc__titre { text-align: center; font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem; text-transform: uppercase; }
-    .ppm-doc__entete { display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
-    .ppm-doc__entete p { margin: 0.15rem 0; }
-    .ppm-doc__table-wrap { overflow-x: auto; }
-    /* table-layout: fixed + colgroup en % → le tableau tient dans la fenêtre ; le contenu long (OBJET) revient à la ligne au lieu de déborder. */
-    .ppm-doc__table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 0.72rem; }
-    .ppm-doc__table th, .ppm-doc__table td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
-    .ppm-doc__table th { text-align: center; font-weight: 700; background: #f0f0f0; color: #000; }
-    .ppm-doc__num { text-align: right; }
-    .ppm-doc__date { text-align: center; white-space: nowrap; }
-    .ppm-doc__objet { white-space: pre-wrap; }
-    .ppm-doc__pied { margin-top: 1.75rem; text-align: right; }
-    .ppm-doc__pied p { margin: 0.2rem 0; }
-    .ppm-doc__prmp { margin-top: 1rem; font-weight: 700; text-transform: uppercase; }
     .sd__ap-alertes { margin-top: 1rem; }
     /* Titre de l'aperçu décalé du coin du modal (demande pilote 03/09). */
     .sd__apercu-header { padding: 1rem 0 0.35rem 1.25rem; }
@@ -1194,6 +1129,30 @@ export class SoumettreDossier {
   readonly importe = signal(false);
   /** Snapshot lecture seule du dossier à créer (aperçu) ; null = fermé. Ne crée rien. */
   readonly apercu = signal<ApercuDossier | null>(null);
+  /**
+   * Lignes de l'aperçu mises en forme pour le tableau officiel partagé (2026-09-14). Rang = clé de
+   * ligne (la saisie n'a pas encore d'identifiant) ; le code SOA, à défaut son libellé.
+   */
+  readonly apercuLignesPpm = computed<LignePpmOfficielle[]>(() =>
+    (this.apercu()?.marches ?? []).map((m, i) => ({
+      idDetail: i + 1,
+      nature: m.natureLibelle ?? '',
+      objet: m.designationMarche ?? '',
+      montEstim: m.montEstim,
+      nouvMontEstim: m.nouvMontEstim,
+      mode: m.modeLibelle ?? '',
+      financement: m.financement ?? '',
+      beneficiaires: m.benefRows.map((b) => ({
+        soaCode: b.soaCode || b.soaLibelle,
+        numCompte: b.numCompte,
+        ancMontBenef: b.ancMontBenef,
+        nouvMontBenef: b.nouvMontBenef,
+      })),
+      dateLancement: m.dateLancement,
+      dateOuverture: m.dateOuverture,
+      dateAttribution: m.dateAttribution,
+    })),
+  );
   /** Onglet actif de l'aperçu (2026-09-03) — fiche en tête, ouverture sur le plan (comme le détail PPM). */
   readonly ongletApercu = signal<'ppm' | 'fiche' | 'agpm'>('ppm');
 

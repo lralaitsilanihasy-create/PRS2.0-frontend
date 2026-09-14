@@ -8,40 +8,66 @@ import {
   ReferenceLookupService,
   StatutMarcheService,
 } from '../../services';
+import { DocumentVisionneuse } from '../ui/document-visionneuse';
+import {
+  AUCUN_NUMERO,
+  BeneficiairePpmOfficiel,
+  COLONNES_PPM_OFFICIEL,
+  ChampPpmOfficiel,
+  GROUPE_BENEFICIAIRE_PPM,
+  LIBELLES_ETAT_EXAMEN,
+  LignePpmOfficielle,
+  MARQUEUR_ETAT_EXAMEN,
+  ObservationCellule,
+  RowExamState,
+  cleCellule,
+  dateOfficielle,
+  enteteAvecCesures,
+  grouperNumeros,
+  libelleObservations,
+  montantOfficiel,
+} from './document-officiel';
 
-/** Bénéficiaire d'une ligne (placeholder vide `{}` si aucun, pour garder une ligne). */
-interface BenefRow {
-  soaCode?: string;
-  numCompte?: string;
-  ancMontBenef?: number | null;
-  nouvMontBenef?: number | null;
-}
-/** État visuel d'une ligne dans l'examen séquentiel. */
-export type RowExamState = 'current' | 'done-ras' | 'done-obs' | 'pending' | 'hors';
+export type { RowExamState } from './document-officiel';
 
-/** Ligne de marché mise en forme pour le tableau (libellés résolus, dates par jalon). */
-interface MarcheRow {
-  /** Marché d'origine — contexte transmis au template d'actions optionnel (`#rowActions`). */
-  source: Marche;
-  nature: string;
-  objet: string;
-  montEstim?: number | null;
-  nouvMontEstim?: number | null;
-  mode: string;
-  financement: string;
-  /** Libellé du statut de marché (référentiel /api/statut-marches) — vide si non renseigné. */
-  statut: string;
-  benefRows: BenefRow[];
-  dateLancement: string;
-  dateOuverture: string;
-  dateAttribution: string;
+/** Ligne affichée : la ligne officielle + le marché d'origine quand il existe (contexte des actions). */
+interface LigneAffichee extends LignePpmOfficielle {
+  source: Marche | null;
 }
+
+/** Classe d'alignement de chaque colonne officielle (règles de l'aperçu officiel). */
+const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
+  nature: 'doc-ancre-g',
+  objet: '',
+  montEstim: 'doc-num',
+  nouvMontEstim: 'doc-num',
+  mode: '',
+  financement: '',
+  soa: '',
+  compte: '',
+  montBenef: 'doc-num',
+  nouvMontBenef: 'doc-num',
+  lancement: 'doc-date',
+  ouverture: 'doc-date',
+  attribution: 'doc-date doc-ancre-d',
+};
 
 /**
- * Affichage **lecture seule** des lignes de marché d'un PPM, mis en forme comme le PPM officiel
- * (mêmes colonnes que la saisie / l'aperçu). Reçoit les données déjà chargées (marchés,
- * bénéficiaires, prévisions) et **résout lui-même** les libellés (nature / mode / CAPM) via le
- * cache `ReferenceLookupService`. Réutilisable dans tous les écrans / profils.
+ * Plan de passation au FORMAT DU PDF OFFICIEL (lecture seule) : les 13 colonnes du PDF, dans son
+ * ordre et à ses largeurs, bordures noires, en-têtes gris clair. Réutilisable dans tous les écrans
+ * et profils ; à envelopper dans `<app-document-visionneuse>` pour la présentation en feuille.
+ *
+ * Deux formes d'entrée : les données chargées (`marches`, `beneficiaires`, `previsions` — le
+ * tableau résout lui-même nature / mode / CAPM / statut via le cache `ReferenceLookupService`), ou
+ * des lignes déjà mises en forme (`lignes`, aperçu d'une saisie non enregistrée).
+ *
+ * ⚠️ 2026-09-14 (décision des chefs, refonte ergonomique lot 1) — ce que l'application ajoute au
+ * document est une ANNOTATION, jamais une colonne, masquable d'un coup (`annotations`, ou
+ * l'interrupteur de la visionneuse) :
+ * - état d'examen (`rowStateFn`) → marqueur dans la marge gauche de la ligne ;
+ * - statut du marché → étiquette dans la marge droite ;
+ * - versionnement (`changements`) → surlignage de la ligne, légende, infobulle avant → après ;
+ * - observations (`observations`) → cellule encadrée + pastille numérotée.
  */
 @Component({
   selector: 'app-ppm-marches-table',
@@ -49,158 +75,117 @@ interface MarcheRow {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgTemplateOutlet],
   template: `
-    @if (rows().length) {
-      <!-- Légende du versionnement : visible seulement si au moins une ligne diffère de la version
-           précédente (le surlignage doit rester lisible dans TOUS les profils qui voient ce tableau). -->
-      @if (typesPresents().length) {
-        <div class="pmt-legende">
-          <span class="pmt-legende-titre">{{ legendeTitre() }}</span>
+    <div
+      class="doc-ppm"
+      [class.doc-gouttiere-g]="avecMarqueurs()"
+      [class.doc-gouttiere-d]="avecStatutsEnMarge()"
+      [class.doc-annotations-masquees]="!annot()"
+    >
+      <!-- Légende du versionnement (annotation) : seulement si au moins une ligne diffère de la
+           version précédente — le surlignage doit rester lisible dans TOUS les profils. -->
+      @if (annot() && typesPresents().length) {
+        <div class="doc-annot doc-legende">
+          <span class="doc-legende__titre">{{ legendeTitre() }}</span>
           @for (t of typesPresents(); track t) {
-            <span class="pmt-legende-chip" [class]="'pmt-legende-chip--' + t.toLowerCase()">{{ chgLabel(t) }}</span>
+            <span class="doc-legende__puce" [class]="'doc-chg--' + t.toLowerCase()">{{ chgLabel(t) }}</span>
           }
         </div>
       }
-      <!-- ⚠️ 2026-08-06 — présentation COMMUNE à tous les tableaux du dossier de planification
-           (« .ppm-table », styles/_ppm-table.scss) : le tableau tient dans l'écran, seules les
-           colonnes d'identité restent à gauche. « .pmt » ne porte plus que ce qui lui est propre
-           (états d'examen, badges). -->
-      <div class="pmt-wrap ppm-table-wrap">
-        <table class="pmt ppm-table">
-          <!-- Largeurs calibrées sur le plus long libellé d'en-tête d'un mot seul (FINANCEMENT,
-               COMPTE) et sur un montant à 10 chiffres, qui ne doivent jamais se couper. Les deux
-               colonnes optionnelles portent la somme au-delà de 100 % : le navigateur normalise. -->
-          <colgroup>
-            @if (rowStateFn()) { <col style="width: 3%" /> }
-            <col style="width: 7%" /><col style="width: 17%" /><col style="width: 8%" /><col style="width: 8%" />
-            <col style="width: 8%" /><col style="width: 7%" /><col style="width: 6%" /><col style="width: 7%" /><col style="width: 5%" />
-            <col style="width: 8%" /><col style="width: 8%" /><col style="width: 6%" /><col style="width: 6%" /><col style="width: 6%" />
-            @if (actionsTpl()) { <col style="width: 9%" /> }
-          </colgroup>
-          <thead>
-            <tr>
-              @if (rowStateFn()) { <th scope="col" rowspan="2" class="ppm-c" title="État d'examen de la ligne"></th> }
-              <th scope="col" rowspan="2">NATURE</th>
-              <th scope="col" rowspan="2">OBJET</th>
-              <th scope="col" rowspan="2" class="ppm-c">MONTANT ESTIMATIF INITIAL</th>
-              <th scope="col" rowspan="2" class="ppm-c">NOUVEAU MONTANT ESTIMATIF</th>
-              <th scope="col" rowspan="2" class="ppm-c">MODE DE PASSATION</th>
-              <th scope="col" rowspan="2" class="ppm-c">FINANCEMENT</th>
-              <!-- ⚠️ Statut de marché (pilote 2026-09-09) — référentiel administrable, tous profils. -->
-              <th scope="col" rowspan="2" class="ppm-c">STATUT DU MARCHÉ</th>
-              <th scope="col" colspan="4" class="ppm-c">Informations sur le Bénéficiaire</th>
-              <th scope="col" rowspan="2" class="ppm-c">DATE PREVISIONNELLE DE LANCEMENT</th>
-              <th scope="col" rowspan="2" class="ppm-c">DATE PREVISIONNELLE OUVERTURE DES PLIS</th>
-              <th scope="col" rowspan="2" class="ppm-c">DATE PREVISIONNELLE D'ATTRIBUTION</th>
-              @if (actionsTpl()) { <th scope="col" rowspan="2" class="ppm-c">ACTIONS</th> }
-            </tr>
-            <tr>
-              <th scope="col" class="ppm-c">SERVICE BENEFICIAIRE</th><th scope="col" class="ppm-c">COMPTE</th><th scope="col" class="ppm-c">MONTANT ESTIMATIF PAR BENEFICIAIRE</th><th scope="col" class="ppm-c">NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (m of rows(); track $index) {
-              @for (b of m.benefRows; track $index; let first = $first) {
-                <tr [class]="rowClass(m.source)"
-                    [class.pmt-lead]="first"
-                    [class.pmt-clickable]="rowStateFn() && etat(m.source) !== 'hors'"
-                    [attr.title]="detailDe(m.source)"
-                    (click)="onRowClick(m.source)">
-                  @if (first) {
-                    <!-- État d'examen : ✓ vert = examinée sans observation ; ✗ rouge = avec observation(s) ; ● = en cours ;
-                         – gris = hors examen (inchangée d'une mise à jour, déjà validée). -->
-                    @if (rowStateFn()) {
-                      <td [attr.rowspan]="m.benefRows.length" class="pmt-etat">
-                        @switch (etat(m.source)) {
-                          @case ('done-ras') { <span class="pmt-etat-ok" title="Examinée — sans observation">✓</span> }
-                          @case ('done-obs') { <span class="pmt-etat-obs" title="Examinée — avec observation(s)">✗</span> }
-                          @case ('current') { <span class="pmt-etat-cur" title="Ligne en cours d'examen">●</span> }
-                          @case ('hors') { <span class="pmt-etat-hors" title="Hors examen — inchangée, déjà validée à la version précédente">–</span> }
-                          @default { <span class="pmt-etat-att" title="À examiner">•</span> }
-                        }
-                      </td>
-                    }
-                    <td [attr.rowspan]="m.benefRows.length">{{ m.nature }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="pmt-objet ppm-objet">{{ m.objet }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="ppm-mont">{{ montantFmt(m.montEstim) }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="ppm-mont">{{ montantFmt(m.nouvMontEstim) }}</td>
-                    <!-- ⚠️ Demande pilote (2026-09-03) — le SEUL libellé du mode, sans badges
-                         (type DMC, forme, catégorie) : règle valable pour tout affichage du mode
-                         de passation, tout profil — ce tableau partagé est la source unique. -->
-                    <td [attr.rowspan]="m.benefRows.length" class="ppm-c">{{ m.mode }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="ppm-c">{{ m.financement }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="ppm-c">{{ m.statut }}</td>
-                  }
-                  <td class="ppm-c">{{ b.soaCode || '' }}</td>
-                  <td class="ppm-c">{{ b.numCompte || '' }}</td>
-                  <td class="ppm-mont">{{ montantFmt(b.ancMontBenef) }}</td>
-                  <td class="ppm-mont">{{ montantFmt(b.nouvMontBenef) }}</td>
-                  @if (first) {
-                    <td [attr.rowspan]="m.benefRows.length" class="ppm-date">{{ m.dateLancement }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="ppm-date">{{ m.dateOuverture }}</td>
-                    <td [attr.rowspan]="m.benefRows.length" class="ppm-date">{{ m.dateAttribution }}</td>
-                    @if (actionsTpl(); as tpl) {
-                      <td [attr.rowspan]="m.benefRows.length" class="pmt-actions ppm-actions">
-                        <ng-container [ngTemplateOutlet]="tpl" [ngTemplateOutletContext]="{ $implicit: m.source }" />
-                      </td>
-                    }
-                  }
-                </tr>
+      <table class="doc-table doc-table--ppm">
+        <colgroup>
+          @for (c of colonnes; track c.champ) {
+            <col [style.width.%]="c.largeur" />
+          }
+          <!-- Colonne d'outils des écrans d'édition : hors du document (la somme dépasse 100 %,
+               le navigateur réduit les colonnes officielles en gardant leurs proportions). -->
+          @if (actionsTpl()) { <col style="width: 9%" /> }
+        </colgroup>
+        <thead>
+          <tr>
+            @for (c of colonnes; track c.champ) {
+              @if (!c.beneficiaire) {
+                <th scope="col" rowspan="2">{{ c.entete }}</th>
+              } @else if (c.champ === premiereColonneBenef) {
+                <th scope="col" [attr.colspan]="colonnesBenef.length">{{ groupeBenef }}</th>
               }
             }
-          </tbody>
-        </table>
-      </div>
-    } @else {
-      <p class="pmt-empty">Aucune ligne de marché.</p>
-    }
+            @if (actionsTpl()) { <th scope="col" rowspan="2" class="doc-hors-feuille">ACTIONS</th> }
+          </tr>
+          <tr>
+            @for (c of colonnesBenef; track c.champ) {
+              <th scope="col">{{ c.entete }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of rows(); track m.idDetail) {
+            @let etatLigne = etatDe(m);
+            @for (b of m.beneficiaires; track $index; let first = $first) {
+              <tr
+                [class]="classeLigne(m)"
+                [class.doc-ligne--cliquable]="!!rowStateFn() && etatLigne !== 'hors'"
+                [attr.title]="annot() ? detailDe(m) : null"
+                (click)="onRowClick(m)"
+              >
+                <!-- Une cellule par colonne officielle, dans l'ordre du PDF : les colonnes du marché
+                     n'existent qu'à la première rangée (rowspan), celles du bénéficiaire à chacune. -->
+                @for (c of colonnes; track c.champ) {
+                  @if (first || c.beneficiaire) {
+                    @let obs = observationsDe(m, c.champ);
+                    <td
+                      [attr.rowspan]="c.beneficiaire ? null : m.beneficiaires.length"
+                      [attr.data-champ]="c.champ"
+                      [class]="classeColonne[c.champ]"
+                      [class.doc-cellule--observee]="obs.length > 0"
+                    >
+                      @if (c.champ === 'nature' && annot() && etatLigne) {
+                        <span
+                          class="doc-annot doc-marqueur"
+                          [class]="'doc-marqueur--' + marqueurEtat[etatLigne]"
+                          role="img"
+                          [attr.aria-label]="libelleEtat[etatLigne]"
+                          [attr.title]="libelleEtat[etatLigne]"
+                        ></span>
+                      }
+                      @if (obs.length && first) {
+                        <span class="doc-annot doc-pastilles" role="img" [attr.aria-label]="libelleObs(obs)">
+                          @for (n of obs; track n) { <span class="doc-pastille" aria-hidden="true">{{ n }}</span> }
+                        </span>
+                      }
+                      <!-- Objet : texte seul dans son <span> (retours à la ligne de la saisie conservés,
+                           sans rendre visibles les blancs du gabarit). -->
+                      @if (c.champ === 'objet') {
+                        <span class="doc-objet">{{ m.objet }}</span>
+                      } @else {
+                        {{ valeur(m, b, c.champ) }}
+                      }
+                      @if (c.champ === 'attribution' && avecStatutsEnMarge() && m.statut) {
+                        <span class="doc-annot doc-statut" [attr.title]="'Statut du marché : ' + m.statut"><span class="cnm-sr-only">Statut du marché : </span>{{ m.statut }}</span>
+                      }
+                    </td>
+                  }
+                }
+                @if (first && actionsTpl(); as tpl) {
+                  <td [attr.rowspan]="m.beneficiaires.length" class="doc-hors-feuille">
+                    @if (annot() && m.statut) {
+                      <span class="doc-annot doc-statut" [attr.title]="'Statut du marché : ' + m.statut"><span class="cnm-sr-only">Statut du marché : </span>{{ m.statut }}</span>
+                    }
+                    @if (m.source) {
+                      <ng-container [ngTemplateOutlet]="tpl" [ngTemplateOutletContext]="{ $implicit: m.source }" />
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          } @empty {
+            <tr><td class="doc-vide" [attr.colspan]="colonnes.length + (actionsTpl() ? 1 : 0)">{{ messageVide() }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
   `,
-  styles: `
-    /* ⚠️ 2026-08-06 — cadre, largeurs, retours à la ligne, alignements et en-tête bleu viennent
-       désormais de « .ppm-table » (styles/_ppm-table.scss), commun à tous les tableaux du dossier de
-       planification. Ce qui suit est PROPRE à ce tableau : états d'examen et badges.
-       ⚠️ Ne pas y remettre « min-width », « border 1px solid #000 » ni un fond d'en-tête : c'est ce qui
-       imposait le défilement horizontal et l'ancien rendu « document ». */
-    .pmt td.pmt-objet { white-space: pre-wrap; }
-    /* (Badges type DMC / forme / catégorie retirés le 2026-09-03 : la colonne Mode n'affiche que le libellé.) */
-    .pmt-empty { color: var(--n-400, #71717a); margin: 0; }
-    /* Versionnement : lignes changées vs version précédente — fonds pastel distincts + liseré gauche.
-       Déclarées AVANT les états d'examen pour que l'examen (workflow actif) garde la priorité visuelle. */
-    .pmt tbody tr.pmt-chg-modifiee > td { background: #FEF3C7; }
-    .pmt tbody tr.pmt-chg-modifiee.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #F59E0B; }
-    .pmt tbody tr.pmt-chg-nouvelle > td { background: #DCFCE7; }
-    .pmt tbody tr.pmt-chg-nouvelle.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #16A34A; }
-    .pmt tbody tr.pmt-chg-restauree > td { background: #E0F2FE; }
-    .pmt tbody tr.pmt-chg-restauree.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #0284C7; }
-    /* Légende (chips aux mêmes fonds que les lignes). */
-    .pmt-legende { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.45rem; font-size: var(--text-xs, 0.75rem); }
-    .pmt-legende-titre { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--n-400, #71717a); }
-    .pmt-legende-chip { padding: 0.1rem 0.5rem; border-radius: 999px; font-weight: 600; color: #000; }
-    .pmt-legende-chip--modifiee { background: #FEF3C7; border: 1px solid #F59E0B; }
-    .pmt-legende-chip--nouvelle { background: #DCFCE7; border: 1px solid #16A34A; }
-    .pmt-legende-chip--restauree { background: #E0F2FE; border: 1px solid #0284C7; }
-    /* États d'examen séquentiel : à examiner (neutre) / EN COURS (indigo appuyé, bien visible) /
-       examinée RAS (vert + ✓) / examinée avec observation (rouge + ✗). */
-    .pmt tbody tr.pmt-clickable { cursor: pointer; }
-    .pmt tbody tr.pmt-row-current > td { background: #E0E7FF; }
-    .pmt tbody tr.pmt-row-current.pmt-lead > td:first-child { box-shadow: inset 5px 0 0 #4F46E5; }
-    .pmt tbody tr.pmt-row-done-ras > td { background: #F0FDF4; }
-    .pmt tbody tr.pmt-row-done-ras.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #22C55E; }
-    .pmt tbody tr.pmt-row-done-obs > td { background: #FEF2F2; }
-    .pmt tbody tr.pmt-row-done-obs.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 #DC2626; }
-    /* ⚠️ 2026-09-10 — HORS examen (ligne inchangée d'une mise à jour, déjà validée) : ligne grisée, non
-       cliquable, marqueur « – ». Et lignes SUPPRIMÉES (constat) : objet barré, fond gris. */
-    .pmt tbody tr.pmt-row-hors > td { background: #f8fafc; color: var(--n-400, #94a3b8); }
-    .pmt tbody tr.pmt-row-hors.pmt-lead > td:first-child { box-shadow: inset 3px 0 0 var(--n-300, #d4d4d8); }
-    .pmt tbody tr.pmt-supprimee > td { background: #fafafa; color: var(--n-400, #94a3b8); }
-    .pmt tbody tr.pmt-supprimee td.pmt-objet { text-decoration: line-through; }
-    /* Colonne d'état (mode examen) : marqueur centré, gros et contrasté. */
-    .pmt td.pmt-etat { text-align: center; vertical-align: middle; font-size: 1.05rem; font-weight: 800; }
-    .pmt-etat-ok { color: #16A34A; }
-    .pmt-etat-obs { color: #DC2626; }
-    .pmt-etat-cur { color: #4F46E5; }
-    .pmt-etat-att { color: var(--n-300, #d4d4d8); }
-    .pmt-etat-hors { color: var(--n-300, #d4d4d8); }
-  `,
+  // Présentation : styles/_document-officiel.scss (globale, partagée avec la fiche, l'AGPM et
+  // l'aperçu de la saisie). Rien de propre ici, pour que le document ait un seul rendu.
 })
 export class PpmMarchesTable implements OnInit {
   /** Marchés à afficher (déjà chargés par l'écran appelant). */
@@ -209,11 +194,17 @@ export class PpmMarchesTable implements OnInit {
   readonly beneficiaires = input<ServiceBeneficiaire[]>([]);
   /** Dates prévisionnelles de ces marchés (regroupées par idDetail en interne). */
   readonly previsions = input<MarchePrevision[]>([]);
-  /** Colonne ACTIONS optionnelle : template projeté `#rowActions` (contexte = le `Marche` de la ligne). */
+  /**
+   * Lignes DÉJÀ mises en forme (libellés résolus) — remplacent `marches`/`beneficiaires`/`previsions`
+   * quand elles sont fournies. Sert à l'aperçu d'une saisie non enregistrée (pas de `Marche`, donc ni
+   * actions ni clic de ligne).
+   */
+  readonly lignes = input<LignePpmOfficielle[] | null>(null);
+  /** Colonne d'outils optionnelle, HORS document : template projeté `#rowActions` (contexte = le `Marche`). */
   readonly actionsTpl = contentChild<TemplateRef<unknown>>('rowActions');
   /**
-   * État visuel optionnel d'une ligne (examen séquentiel) → classe de fond :
-   * `current` (en cours), `done-ras` (examinée, RAS), `done-obs` (examinée avec observation), `pending` (à examiner).
+   * État d'examen optionnel d'une ligne (examen séquentiel) → marqueur dans la marge gauche :
+   * `current` (en cours), `done-ras`, `done-obs`, `pending` (à examiner), `hors` (hors examen).
    */
   readonly rowStateFn = input<((idDetail: number) => RowExamState | null) | null>(null);
   /** ⚠️ 2026-09-10 — inclure les lignes SUPPRIMÉES (examen d'une mise à jour : constat de retrait). Défaut : masquées. */
@@ -222,8 +213,8 @@ export class PpmMarchesTable implements OnInit {
   readonly rowClick = output<Marche>();
   /**
    * Versionnement (optionnel) : idDetail → type de changement vs la version précédente
-   * (`GET /api/dossiers/{id}/diff`). Les lignes MODIFIEE / NOUVELLE / RESTAUREE reçoivent un fond
-   * distinctif + une légende ; INCHANGEE reste neutre (les SUPPRIMEE ne figurent pas dans ce tableau).
+   * (`GET /api/dossiers/{id}/diff`). Les lignes MODIFIEE / NOUVELLE / RESTAUREE sont surlignées et
+   * légendées ; INCHANGEE reste neutre (les SUPPRIMEE ne figurent pas dans ce tableau).
    */
   readonly changements = input<Map<number, TypeChangementLigne> | null>(null);
   /** Titre de la légende du surlignage (« Mise à jour : » par défaut ; « Rectification : » au diff de rectification). */
@@ -233,32 +224,60 @@ export class PpmMarchesTable implements OnInit {
    * en infobulle sur la ligne surlignée (2026-08-15, visibilité de la rectification au vérificateur).
    */
   readonly detailsChangements = input<Map<number, string> | null>(null);
+  /** Annotations visibles (défaut). `false` = le document seul, tel que le PDF. */
+  readonly annotations = input(true);
+  /**
+   * Observations posées sur des cellules (encadré ambre + pastille numérotée). Aucun écran ne les
+   * fournit encore : l'examen ligne par ligne s'en servira (lot suivant).
+   */
+  readonly observations = input<readonly ObservationCellule[]>([]);
+  /** Texte de la rangée affichée quand il n'y a aucune ligne. */
+  readonly messageVide = input('Aucune ligne de marché.');
 
-  /** Infobulle de la ligne : détail des champs changés, seulement si la ligne est surlignée. */
-  detailDe(m: Marche): string | null {
-    return this.chg(m) ? this.detailsChangements()?.get(m.idDetail) ?? null : null;
-  }
+  /** Colonnes officielles, intitulés prêts à l'affichage (césures des mots longs). */
+  readonly colonnes = COLONNES_PPM_OFFICIEL.map((c) => ({ ...c, entete: enteteAvecCesures(c.libelle) }));
+  readonly colonnesBenef = this.colonnes.filter((c) => c.beneficiaire);
+  readonly premiereColonneBenef = this.colonnesBenef[0]?.champ;
+  readonly groupeBenef = GROUPE_BENEFICIAIRE_PPM;
+  readonly classeColonne = CLASSE_COLONNE;
+  readonly marqueurEtat = MARQUEUR_ETAT_EXAMEN;
+  readonly libelleEtat = LIBELLES_ETAT_EXAMEN;
 
   private readonly lookups = inject(ReferenceLookupService);
+  /** Visionneuse englobante éventuelle : son interrupteur « Annotations » s'applique à ce tableau. */
+  private readonly visionneuse = inject(DocumentVisionneuse, { optional: true });
   private readonly natureMap = signal<Map<string, string>>(new Map());
   private readonly modeMap = signal<Map<string, string>>(new Map());
   private readonly capmMap = signal<Map<string, string>>(new Map());
-  /** Statut de marché : code → libellé (référentiel administrable, colonne « Statut » — pilote 2026-09-09). */
+  /** Statut de marché : code → libellé (référentiel administrable — pilote 2026-09-09). */
   private readonly statutMap = signal<Map<string, string>>(new Map());
+
+  /** Annotations effectivement visibles : l'entrée du tableau ET l'interrupteur de la visionneuse. */
+  readonly annot = computed(() => this.annotations() && (this.visionneuse?.annotations() ?? true));
 
   // ⚠️ Demande pilote (2026-09-03) — la colonne Mode n'affiche plus QUE le libellé : la dérivation
   // type DMC / catégorie / forme (badges) et son chargement (modes + types-dmc) ont été retirés.
   ngOnInit(): void {
+    // Lignes déjà mises en forme (aperçu) : rien à résoudre, aucun référentiel à charger.
+    if (this.lignes()) return;
     this.lookups.lookup(NatureService, 'idNature', ['libelle']).subscribe((m) => this.natureMap.set(m));
     this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).subscribe((m) => this.modeMap.set(m));
     this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).subscribe((m) => this.capmMap.set(m));
-    // ⚠️ Statut de marché (pilote 2026-09-09) : visible dans TOUT affichage du PPM, tous profils — ce
-    // tableau partagé est la source unique. Code → libellé résolu comme nature/mode.
+    // ⚠️ Statut de marché (pilote 2026-09-09) : visible dans TOUT affichage du PPM, tous profils — en
+    // annotation de marge depuis le 2026-09-14. Code → libellé résolu comme nature/mode.
     this.lookups.lookup(StatutMarcheService, 'code', ['libelle']).subscribe((m) => this.statutMap.set(m));
   }
 
   /** Lignes mises en forme (libellés résolus, bénéficiaires et dates regroupés par marché). */
-  readonly rows = computed<MarcheRow[]>(() => {
+  readonly rows = computed<LigneAffichee[]>(() => {
+    const fournies = this.lignes();
+    const lignes: LigneAffichee[] = fournies
+      ? fournies.map((l) => ({ ...l, source: null }))
+      : this.lignesDepuisMarches();
+    return lignes.map((l) => (l.beneficiaires.length ? l : { ...l, beneficiaires: [{} as BeneficiairePpmOfficiel] }));
+  });
+
+  private lignesDepuisMarches(): LigneAffichee[] {
     const benefByDetail = new Map<number, ServiceBeneficiaire[]>();
     for (const b of this.beneficiaires()) {
       const l = benefByDetail.get(b.idDetail) ?? [];
@@ -276,49 +295,106 @@ export class PpmMarchesTable implements OnInit {
     // (restaurable, jamais effacée) mais ne fait plus partie du plan : elle est donc absente de toute
     // vue « officielle » du PPM (consultation, détail, dates prévisionnelles).
     // ⚠️ 2026-09-10 — sauf `inclureSupprimees` (examen d'une mise à jour) : les supprimées y sont montrées
-    // pour le CONSTAT de retrait. L'écran de mise à jour, lui, a sa propre table.
-    return this.marches().filter((m) => this.inclureSupprimees() || !m.supprimee).map((m) => {
-      const prevs = prevByDetail.get(m.idDetail) ?? [];
-      const dateDe = (kw: string): string => {
-        const p = prevs.find((x) => (capm.get(String(x.idCapm)) ?? '').toUpperCase().includes(kw));
-        return p ? this.dateFr(p.dateDebut) : '';
-      };
-      const benefs = benefByDetail.get(m.idDetail) ?? [];
-      return {
-        source: m,
-        nature: this.lbl(this.natureMap(), m.idNature),
-        objet: m.designationMarche ?? '',
-        montEstim: m.montEstim,
-        nouvMontEstim: m.nouvMontEstim,
-        mode: this.lbl(this.modeMap(), m.idMode),
-        financement: m.financement ?? '',
-        // Libellé du statut ; à défaut le code brut (statut désactivé/inconnu) ; vide si non renseigné.
-        statut: m.statut ? this.statutMap().get(m.statut) ?? m.statut : '',
-        benefRows: benefs.length
-          ? benefs.map((b) => ({ soaCode: b.soaCode, numCompte: b.numCompte, ancMontBenef: b.ancMontBenef, nouvMontBenef: b.nouvMontBenef }))
-          : [{}],
-        dateLancement: dateDe('LANCEMENT'),
-        dateOuverture: dateDe('OUVERTURE'),
-        dateAttribution: dateDe('ATTRIBUTION'),
-      };
-    });
-  });
+    // pour le CONSTAT de retrait — c'est une annotation : annotations masquées, elles disparaissent.
+    const avecSupprimees = this.inclureSupprimees() && this.annot();
+    return this.marches()
+      .filter((m) => avecSupprimees || !m.supprimee)
+      .map((m) => {
+        const prevs = prevByDetail.get(m.idDetail) ?? [];
+        const dateDe = (kw: string): string => {
+          const p = prevs.find((x) => (capm.get(String(x.idCapm)) ?? '').toUpperCase().includes(kw));
+          return p ? dateOfficielle(p.dateDebut) : '';
+        };
+        return {
+          source: m,
+          idDetail: m.idDetail,
+          nature: this.lbl(this.natureMap(), m.idNature),
+          objet: m.designationMarche ?? '',
+          montEstim: m.montEstim,
+          nouvMontEstim: m.nouvMontEstim,
+          mode: this.lbl(this.modeMap(), m.idMode),
+          financement: m.financement ?? '',
+          // Libellé du statut ; à défaut le code brut (statut désactivé/inconnu) ; vide si non renseigné.
+          statut: m.statut ? this.statutMap().get(m.statut) ?? m.statut : '',
+          beneficiaires: (benefByDetail.get(m.idDetail) ?? []).map((b) => ({
+            soaCode: b.soaCode,
+            numCompte: b.numCompte,
+            ancMontBenef: b.ancMontBenef,
+            nouvMontBenef: b.nouvMontBenef,
+          })),
+          dateLancement: dateDe('LANCEMENT'),
+          dateOuverture: dateDe('OUVERTURE'),
+          dateAttribution: dateDe('ATTRIBUTION'),
+        };
+      });
+  }
 
-  /** État visuel d'une ligne (délègue au `rowStateFn` fourni ; `null` si aucun). */
-  etat(m: Marche): RowExamState | null {
+  /** Marqueurs d'état présents → la gouttière gauche est réservée. */
+  readonly avecMarqueurs = computed(() => this.annot() && !!this.rowStateFn() && this.rows().length > 0);
+  /**
+   * Statuts à poser en marge droite. Dans un écran d'édition, la colonne d'outils occupe cette marge :
+   * le statut s'y range, et la gouttière n'est pas réservée.
+   */
+  readonly avecStatutsEnMarge = computed(() => this.annot() && !this.actionsTpl() && this.rows().some((r) => !!r.statut));
+
+  /** Observations indexées par cellule (`idDetail|champ` → numéros triés). */
+  private readonly observationsParCellule = computed(() =>
+    grouperNumeros(this.observations(), (o) => cleCellule(o.idDetail, o.champ), (o) => o.numero),
+  );
+
+  /** Numéros des observations d'une cellule (tableau partagé vide si aucune ou annotations masquées). */
+  observationsDe(m: LignePpmOfficielle, champ: ChampPpmOfficiel): readonly number[] {
+    if (!this.annot()) return AUCUN_NUMERO;
+    return this.observationsParCellule().get(cleCellule(m.idDetail, champ)) ?? AUCUN_NUMERO;
+  }
+
+  libelleObs(numeros: readonly number[]): string {
+    return libelleObservations(numeros);
+  }
+
+  /** Valeur affichée d'une cellule, au format du document officiel. */
+  valeur(m: LignePpmOfficielle, b: BeneficiairePpmOfficiel, champ: ChampPpmOfficiel): string {
+    switch (champ) {
+      case 'nature': return m.nature;
+      case 'objet': return m.objet;
+      case 'montEstim': return montantOfficiel(m.montEstim);
+      case 'nouvMontEstim': return montantOfficiel(m.nouvMontEstim);
+      case 'mode': return m.mode;
+      case 'financement': return m.financement;
+      case 'soa': return b.soaCode ?? '';
+      case 'compte': return b.numCompte ?? '';
+      case 'montBenef': return montantOfficiel(b.ancMontBenef);
+      case 'nouvMontBenef': return montantOfficiel(b.nouvMontBenef);
+      case 'lancement': return m.dateLancement;
+      case 'ouverture': return m.dateOuverture;
+      case 'attribution': return m.dateAttribution;
+    }
+  }
+
+  /** Infobulle de la ligne : détail des champs changés, seulement si la ligne est surlignée. */
+  detailDe(m: LignePpmOfficielle): string | null {
+    return this.chg(m) ? this.detailsChangements()?.get(m.idDetail) ?? null : null;
+  }
+
+  /** État d'examen d'une ligne (délègue au `rowStateFn` fourni ; `null` si aucun). */
+  etatDe(m: LignePpmOfficielle): RowExamState | null {
     const fn = this.rowStateFn();
     return fn ? fn(m.idDetail) : null;
   }
   /** Type de changement d'une ligne (hors INCHANGEE) — `null` si pas de diff fourni. */
-  private chg(m: Marche): TypeChangementLigne | null {
+  private chg(m: LignePpmOfficielle): TypeChangementLigne | null {
     const t = this.changements()?.get(m.idDetail);
     return t && t !== 'INCHANGEE' ? t : null;
   }
-  /** Classes de la ligne : état d'examen (prioritaire visuellement) + changement de version + supprimée. */
-  rowClass(m: Marche): string {
-    const exam = this.etat(m);
+  /** Classes d'annotation de la ligne : en cours d'examen, changement de version, supprimée. */
+  classeLigne(m: LigneAffichee): string {
+    if (!this.annot()) return '';
     const chg = this.chg(m);
-    return [exam ? 'pmt-row-' + exam : '', chg ? 'pmt-chg-' + chg.toLowerCase() : '', m.supprimee ? 'pmt-supprimee' : '']
+    return [
+      this.etatDe(m) === 'current' ? 'doc-ligne--courante' : '',
+      chg ? 'doc-chg--' + chg.toLowerCase() : '',
+      m.source?.supprimee ? 'doc-ligne--supprimee' : '',
+    ]
       .filter(Boolean)
       .join(' ');
   }
@@ -327,8 +403,8 @@ export class PpmMarchesTable implements OnInit {
     const ch = this.changements();
     if (!ch) return [];
     const presents = new Set<TypeChangementLigne>();
-    for (const m of this.marches()) {
-      if (m.supprimee) continue;
+    for (const m of this.rows()) {
+      if (m.source?.supprimee) continue;
       const t = ch.get(m.idDetail);
       if (t && t !== 'INCHANGEE') presents.add(t);
     }
@@ -343,23 +419,15 @@ export class PpmMarchesTable implements OnInit {
     }
   }
   /** Clic sur une ligne : ne réémet que si un état séquentiel est actif ET la ligne n'est pas hors examen. */
-  onRowClick(m: Marche): void {
-    if (this.rowStateFn() && this.etat(m) !== 'hors') this.rowClick.emit(m);
+  onRowClick(m: LigneAffichee): void {
+    if (m.source && this.rowStateFn() && this.etatDe(m) !== 'hors') this.rowClick.emit(m.source);
   }
 
   private lbl(map: Map<string, string>, id?: number): string {
     return id === null || id === undefined ? '' : map.get(String(id)) ?? `#${id}`;
   }
-  /** Montant avec séparateur de milliers **visible** (espace insécable) et 2 décimales, ou '' si absent. */
+  /** Montant au format du document officiel (conservé pour les appelants existants). */
   montantFmt(v?: number | null): string {
-    if (v === null || v === undefined) return '';
-    const [ent, dec] = Math.abs(Number(v)).toFixed(2).split('.');
-    return (Number(v) < 0 ? '-' : '') + ent.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ',' + dec;
-  }
-  /** Date ISO `yyyy-MM-dd` → `dd/MM/yyyy` (vide si absente). */
-  private dateFr(iso?: string | null): string {
-    if (!iso) return '';
-    const [y, m, d] = iso.split('-');
-    return y && m && d ? `${d}/${m}/${y}` : iso;
+    return montantOfficiel(v);
   }
 }
