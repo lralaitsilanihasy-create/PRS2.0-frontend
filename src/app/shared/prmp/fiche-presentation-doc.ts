@@ -1,111 +1,138 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 
+import { DocumentVisionneuse } from '../ui/document-visionneuse';
+import {
+  AUCUN_NUMERO,
+  ListeFichePresentation,
+  ObservationLigneFiche,
+  grouperNumeros,
+  libelleObservations,
+  montantOfficiel,
+} from './document-officiel';
 import { FichePresentation } from './fiche-presentation';
 
 /**
  * « Fiche de présentation » — rendu UNIQUE du document dérivé (3 listes + justification globale),
- * partagé entre l'onglet du détail PPM et l'écran d'examen (⚠️ demande pilote 2026-09-02 : la fiche
- * entre dans l'examen avec sa propre grille — même document sous les yeux du Membre).
- * Les données arrivent CALCULÉES (`calculerFichePresentation`) : le composant n'appelle rien.
+ * partagé entre l'onglet du détail PPM, la consultation et l'écran d'examen (⚠️ demande pilote
+ * 2026-09-02 : la fiche entre dans l'examen avec sa propre grille — même document sous les yeux du
+ * Membre). Les données arrivent CALCULÉES (`calculerFichePresentation`) : le composant n'appelle rien.
+ *
+ * ⚠️ 2026-09-14 (décision des chefs, refonte ergonomique lot 1) — présentée comme la feuille
+ * officielle (bordures noires, en-têtes gris clair, Arial) : à envelopper dans
+ * `<app-document-visionneuse>`. La mention d'origine des listes et les observations par ligne sont
+ * des annotations, masquables.
  */
 @Component({
   selector: 'app-fiche-presentation-doc',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [NgTemplateOutlet],
   template: `
-    <p class="fpd-nature"><u>Nature du dossier</u> :
-      <strong>Projet de Plan de passation des marchés de l'année {{ exercice() ?? '____' }}, {{ libelleVersion() }}</strong>
-    </p>
-    <p class="fpd-note cnm-muted">
-      Listes établies depuis les marchés du plan — même forme que la fiche de présentation jointe au dépôt.
-    </p>
+    <div class="doc-document" [class.doc-gouttiere-g]="avecMarqueurs()" [class.doc-annotations-masquees]="!annot()">
+      <h3 class="doc-titre">FICHE DE PRESENTATION</h3>
+      <p class="doc-paragraphe"><u>Nature du dossier</u> :
+        <strong>Projet de Plan de passation des marchés de l'année {{ exercice() ?? '____' }}, {{ libelleVersion() }}</strong>
+      </p>
+      @if (annot()) {
+        <p class="doc-annot doc-note">
+          Listes établies depuis les marchés du plan — même forme que la fiche de présentation jointe au dépôt.
+        </p>
+      }
 
-    <h3 class="fpd-titre">1. Liste des marchés à passer par mode dérogatoire avec justifications</h3>
-    @if (fiche().derogatoires.length) {
-      <div class="table-responsive">
-        <table class="cnm-table">
+      <h4 class="doc-sous-titre">1. Liste des marchés à passer par mode dérogatoire avec justifications</h4>
+      @if (fiche().derogatoires.length) {
+        <table class="doc-table doc-table--fiche">
+          <colgroup><col style="width: 34%" /><col style="width: 14%" /><col style="width: 18%" /><col style="width: 34%" /></colgroup>
           <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Justification</th></tr></thead>
           <tbody>
             @for (l of fiche().derogatoires; track l.idDetail) {
               <tr>
-                <td>{{ l.objet }}</td>
-                <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
+                <td class="doc-ancre-g">
+                  <ng-container [ngTemplateOutlet]="marqueur" [ngTemplateOutletContext]="{ $implicit: observationsDe(l.idDetail, 'derogatoires') }" />
+                  <span class="doc-objet">{{ l.objet }}</span>
+                </td>
+                <td class="doc-num">{{ montantFr(l.montant) }}</td>
                 <td>{{ l.modeLibelle }}</td>
-                <td>@if (l.justifModeDerogatoire) { {{ l.justifModeDerogatoire }} } @else { <span class="cnm-muted">À compléter</span> }</td>
+                <td>@if (l.justifModeDerogatoire) { {{ l.justifModeDerogatoire }} } @else { <span class="doc-a-completer">À compléter</span> }</td>
               </tr>
             }
           </tbody>
         </table>
-      </div>
-    } @else {
-      <p class="cnm-muted">Aucun marché à passer par mode dérogatoire.</p>
-    }
+      } @else {
+        <p class="doc-paragraphe">Aucun marché à passer par mode dérogatoire.</p>
+      }
 
-    <h3 class="fpd-titre">2. Liste des marchés à délais aménagés avec justifications</h3>
-    @if (fiche().delaisAmenages.length) {
-      <div class="table-responsive">
-        <table class="cnm-table">
+      <h4 class="doc-sous-titre">2. Liste des marchés à délais aménagés avec justifications</h4>
+      @if (fiche().delaisAmenages.length) {
+        <table class="doc-table doc-table--fiche">
+          <colgroup><col style="width: 28%" /><col style="width: 13%" /><col style="width: 16%" /><col style="width: 15%" /><col style="width: 28%" /></colgroup>
           <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th><th scope="col">Justifications</th></tr></thead>
           <tbody>
             @for (l of fiche().delaisAmenages; track l.idDetail) {
               <tr>
-                <td>{{ l.objet }}</td>
-                <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
+                <td class="doc-ancre-g">
+                  <ng-container [ngTemplateOutlet]="marqueur" [ngTemplateOutletContext]="{ $implicit: observationsDe(l.idDetail, 'delaisAmenages') }" />
+                  <span class="doc-objet">{{ l.objet }}</span>
+                </td>
+                <td class="doc-num">{{ montantFr(l.montant) }}</td>
                 <td>{{ l.modeLibelle }}</td>
-                <td>{{ l.delaiJours }} jours <span class="cnm-muted">(minimum du mode : {{ l.delaiMinJours }})</span></td>
-                <td>@if (l.justifDelaiAmenage) { {{ l.justifDelaiAmenage }} } @else { <span class="cnm-muted">À compléter</span> }</td>
+                <td>{{ l.delaiJours }} jours @if (annot()) { <span class="doc-annot doc-note-en-ligne">(minimum du mode : {{ l.delaiMinJours }})</span> }</td>
+                <td>@if (l.justifDelaiAmenage) { {{ l.justifDelaiAmenage }} } @else { <span class="doc-a-completer">À compléter</span> }</td>
               </tr>
             }
           </tbody>
         </table>
-      </div>
-    } @else {
-      <p class="cnm-muted">Aucun marché à délais aménagés.</p>
-    }
+      } @else {
+        <p class="doc-paragraphe">Aucun marché à délais aménagés.</p>
+      }
 
-    <h3 class="fpd-titre">3. Liste des contrats-cadres</h3>
-    @if (fiche().contratsCadres.length) {
-      <div class="table-responsive">
-        <table class="cnm-table">
+      <h4 class="doc-sous-titre">3. Liste des contrats-cadres</h4>
+      @if (fiche().contratsCadres.length) {
+        <table class="doc-table doc-table--fiche">
+          <colgroup><col style="width: 40%" /><col style="width: 18%" /><col style="width: 22%" /><col style="width: 20%" /></colgroup>
           <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th></tr></thead>
           <tbody>
             @for (l of fiche().contratsCadres; track l.idDetail) {
               <tr>
-                <td>{{ l.objet }}</td>
-                <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
+                <td class="doc-ancre-g">
+                  <ng-container [ngTemplateOutlet]="marqueur" [ngTemplateOutletContext]="{ $implicit: observationsDe(l.idDetail, 'contratsCadres') }" />
+                  <span class="doc-objet">{{ l.objet }}</span>
+                </td>
+                <td class="doc-num">{{ montantFr(l.montant) }}</td>
                 <td>{{ l.modeLibelle }}</td>
                 <td>@if (l.delaiJours != null) { {{ l.delaiJours }} jours } @else { — }</td>
               </tr>
             }
           </tbody>
         </table>
-      </div>
-    } @else {
-      <p class="cnm-muted">Aucun contrat-cadre.</p>
-    }
+      } @else {
+        <p class="doc-paragraphe">Aucun contrat-cadre.</p>
+      }
 
-    @if (fiche().nbMarchesConcernes > 0 || justificationFiche() || motifMaj()) {
-      <p class="fpd-justif"><u>Justification :</u>
-        @if (justificationFiche()) { {{ justificationFiche() }} } @else { <span class="cnm-muted">À compléter</span> }
-        @if (motifMaj()) { — <strong>Motif de la mise à jour :</strong> {{ motifMaj() }} }
-      </p>
-    }
+      @if (fiche().nbMarchesConcernes > 0 || justificationFiche() || motifMaj()) {
+        <p class="doc-paragraphe doc-justif"><u>Justification :</u>&ngsp;
+          @if (justificationFiche()) { {{ justificationFiche() }} } @else { <span class="doc-a-completer">À compléter</span> }
+          @if (motifMaj()) { — <strong>Motif de la mise à jour :</strong> {{ motifMaj() }} }
+        </p>
+      }
+    </div>
+
+    <!-- Marqueur d'observation de ligne (annotation) : forme « ! » dans la marge + pastille(s). -->
+    <ng-template #marqueur let-numeros>
+      @if (numeros.length) {
+        <span class="doc-annot doc-marqueur doc-marqueur--obs" role="img" [attr.aria-label]="libelleObs(numeros)" [attr.title]="libelleObs(numeros)">
+          <span class="doc-pastilles" aria-hidden="true">
+            @for (n of numeros; track n) { <span class="doc-pastille">{{ n }}</span> }
+          </span>
+        </span>
+      }
+    </ng-template>
   `,
+  // ⚠️ 2026-09-14 (décision des chefs) — plus d'en-têtes VERTS (demande pilote du 06/09, qui
+  // remplaçait l'orange du 02/09) ni de tableau « cnm-table » : la fiche reprend la feuille
+  // officielle commune (styles/_document-officiel.scss), en-têtes gris clair et bordures noires.
   styles: `
-    .fpd-nature { margin: 0 0 10px; }
-    .fpd-note { margin: 0 0 12px; font-size: var(--text-sm); }
-    .fpd-titre { margin: 18px 0 8px; font-size: var(--text-md); font-weight: 700; color: var(--n-800); }
-    .fpd-titre:first-of-type { margin-top: 0; }
-    .fpd-justif { margin-top: 14px; }
-    /* Textes longs à la ligne, jamais de défilement horizontal (demande pilote 02/09) : le td
-       global du design system est en nowrap, la bande bleue vient de thead tr — neutralisés ici. */
-    .table-responsive { overflow-x: visible; }
-    .table-responsive table { min-width: 0; }
-    th { white-space: normal; }
-    td { white-space: normal; overflow-wrap: break-word; vertical-align: top; }
-    td.cnm-mono { white-space: nowrap; }
-    /* ⚠️ Demande pilote (06/09, remplace celle du 02/09) — en-têtes des tableaux de la fiche en
-       VERT (texte blanc, contraste AA), plus l'orange des onglets. */
-    .cnm-table thead th { background: #15803D; color: #fff; }
+    .doc-justif { margin-top: 0.9rem; }
   `,
 })
 export class FichePresentationDoc {
@@ -118,9 +145,40 @@ export class FichePresentationDoc {
   readonly justificationFiche = input<string | null | undefined>(null);
   /** Motif de la mise à jour (versions numMaj > 0), ajouté à la justification. */
   readonly motifMaj = input<string | null | undefined>(null);
+  /** Annotations visibles (défaut). `false` = le document seul. */
+  readonly annotations = input(true);
+  /**
+   * Observations par ligne (marqueur de marge + pastille). `liste` absente = la ligne dans toutes
+   * les listes où figure le marché. Aucun écran ne les fournit encore (examen, lot suivant).
+   */
+  readonly observations = input<readonly ObservationLigneFiche[]>([]);
 
-  /** Montant au format français (« — » si absent) — même rendu que la table des marchés. */
+  private readonly visionneuse = inject(DocumentVisionneuse, { optional: true });
+  /** Annotations effectivement visibles : l'entrée ET l'interrupteur de la visionneuse englobante. */
+  readonly annot = computed(() => this.annotations() && (this.visionneuse?.annotations() ?? true));
+  readonly avecMarqueurs = computed(() => this.annot() && this.observations().length > 0);
+
+  private readonly parLigne = computed(() =>
+    grouperNumeros(this.observations(), (o) => `${o.liste ?? '*'}|${o.idDetail}`, (o) => o.numero),
+  );
+
+  /** Numéros des observations d'une ligne d'une liste (celles de la liste + celles sans liste). */
+  observationsDe(idDetail: number, liste: ListeFichePresentation): readonly number[] {
+    if (!this.annot()) return AUCUN_NUMERO;
+    const index = this.parLigne();
+    const propres = index.get(`${liste}|${idDetail}`) ?? AUCUN_NUMERO;
+    const communes = index.get(`*|${idDetail}`) ?? AUCUN_NUMERO;
+    if (!communes.length) return propres;
+    if (!propres.length) return communes;
+    return [...new Set([...propres, ...communes])].sort((a, b) => a - b);
+  }
+
+  libelleObs(numeros: readonly number[]): string {
+    return libelleObservations(numeros);
+  }
+
+  /** Montant au format du document officiel (« — » si absent) — même rendu que le plan de passation. */
   montantFr(v?: number): string {
-    return v == null ? '—' : new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(v);
+    return v == null ? '—' : montantOfficiel(v);
   }
 }

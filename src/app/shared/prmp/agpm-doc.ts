@@ -1,68 +1,87 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
+import { DocumentVisionneuse } from '../ui/document-visionneuse';
+import { AUCUN_NUMERO, ObservationLigne, grouperNumeros, libelleObservations, montantOfficiel } from './document-officiel';
 import { LigneAgpm } from './agpm';
 
 /**
  * « Projet d'AGPM » — rendu UNIQUE du document dérivé (en-tête officiel + tableau des marchés en
- * mode déclencheur d'AGPM), partagé entre l'onglet du détail PPM et l'écran d'examen (⚠️ demande
- * pilote 2026-09-02 : l'AGPM entre dans l'examen avec sa propre grille). Les lignes arrivent
- * CALCULÉES (`calculerAgpm`) : le composant n'appelle rien.
+ * mode déclencheur d'AGPM), partagé entre l'onglet du détail PPM, la consultation et l'écran
+ * d'examen (⚠️ demande pilote 2026-09-02 : l'AGPM entre dans l'examen avec sa propre grille). Les
+ * lignes arrivent CALCULÉES (`calculerAgpm`) : le composant n'appelle rien.
+ *
+ * ⚠️ 2026-09-14 (décision des chefs, refonte ergonomique lot 1) — présenté comme la feuille
+ * officielle (bordures noires, en-têtes gris clair, intitulés du modèle officiel) : à envelopper
+ * dans `<app-document-visionneuse>`. La note sur la date du DAO et les observations par ligne sont
+ * des annotations, masquables.
  */
 @Component({
   selector: 'app-agpm-doc',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <h3 class="agd-titre">AVIS GENERAL DE PASSATION DES MARCHES POUR L'ANNEE {{ exercice() ?? '____' }}</h3>
-    <div class="agd-entete">
-      <div>
-        <p><u>Autorité Contractante</u> : <strong>{{ entite() || '—' }}</strong></p>
-        <p><u>Nom de la PRMP</u> : <strong>{{ signataire() || '—' }}</strong></p>
+    <div class="doc-document" [class.doc-gouttiere-g]="avecMarqueurs()" [class.doc-annotations-masquees]="!annot()">
+      <h3 class="doc-titre">AVIS GENERAL DE PASSATION DES MARCHES POUR L'ANNEE {{ exercice() ?? '____' }}</h3>
+      <div class="doc-entete">
+        <div>
+          <p><u>Autorité Contractante</u> : <strong>{{ entite() || '—' }}</strong></p>
+          <p><u>Nom de la PRMP</u> : <strong>{{ signataire() || '—' }}</strong></p>
+        </div>
+        <div>
+          <p><u>Date d'établissement du Document initial</u> : {{ dateCourt(dateInitiale()) }}</p>
+          <p><u>Numéro et date de la dernière mise à jour</u> : {{ numMajPrec() ?? 0 }}@if (dateMajPrec()) { - {{ dateCourt(dateMajPrec()) }} }</p>
+          <p><u>Numéro de la présente mise à jour</u> : {{ numMaj() ?? 0 }}</p>
+        </div>
       </div>
-      <div>
-        <p><u>Date d'établissement du Document initial</u> : {{ dateCourt(dateInitiale()) }}</p>
-        <p><u>Numéro et date de la dernière mise à jour</u> : {{ numMajPrec() ?? 0 }}@if (dateMajPrec()) { - {{ dateCourt(dateMajPrec()) }} }</p>
-        <p><u>Numéro de la présente mise à jour</u> : {{ numMaj() ?? 0 }}</p>
-      </div>
-    </div>
-    @if (lignes().length) {
-      <div class="table-responsive">
-        <table class="cnm-table">
-          <thead><tr><th scope="col">Compte</th><th scope="col">Nature</th><th scope="col">Objet</th><th scope="col">Montant estimatif du marché</th><th scope="col">Financement</th><th scope="col">Mode de passation</th><th scope="col">Date du DAO</th></tr></thead>
+      @if (lignes().length) {
+        <!-- Intitulés du modèle officiel (mêmes que l'aperçu de la saisie). -->
+        <table class="doc-table doc-table--agpm">
+          <colgroup>
+            <col style="width: 9%" /><col style="width: 12%" /><col style="width: 31%" /><col style="width: 14%" />
+            <col style="width: 10%" /><col style="width: 14%" /><col style="width: 10%" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">COMPTE</th><th scope="col">NATURE</th><th scope="col">OBJET</th><th scope="col">MONTANT ESTIMATIF du MARCHE</th>
+              <th scope="col">FINANCEMENT</th><th scope="col">MODE DE PASSATION</th><th scope="col">DATE du DAO</th>
+            </tr>
+          </thead>
           <tbody>
             @for (l of lignes(); track l.idDetail) {
+              @let obs = observationsDe(l.idDetail);
               <tr>
-                <td class="cnm-mono">{{ l.compte || '—' }}</td>
+                <td class="doc-ancre-g">
+                  @if (obs.length) {
+                    <span class="doc-annot doc-marqueur doc-marqueur--obs" role="img" [attr.aria-label]="libelleObs(obs)" [attr.title]="libelleObs(obs)">
+                      <span class="doc-pastilles" aria-hidden="true">
+                        @for (n of obs; track n) { <span class="doc-pastille">{{ n }}</span> }
+                      </span>
+                    </span>
+                  }
+                  {{ l.compte || '—' }}
+                </td>
                 <td>{{ l.nature || '—' }}</td>
-                <td>{{ l.objet }}</td>
-                <td class="cnm-mono">{{ montantFr(l.montant) }}</td>
+                <td class="doc-objet">{{ l.objet }}</td>
+                <td class="doc-num">{{ montantFr(l.montant) }}</td>
                 <td>{{ l.financement || '—' }}</td>
                 <td>{{ l.modeLibelle }}</td>
-                <td class="cnm-mono">{{ dateCourt(l.dateDao) }}</td>
+                <td class="doc-date">{{ dateCourt(l.dateDao) }}</td>
               </tr>
             }
           </tbody>
         </table>
-      </div>
-      <p class="agd-note cnm-muted">Date du DAO = date prévisionnelle de lancement du marché.</p>
-    } @else {
-      <p class="cnm-muted">Aucun marché en mode déclencheur d'AGPM — l'avis est sans objet pour ce plan.</p>
-    }
+        @if (annot()) {
+          <p class="doc-annot doc-note doc-note--apres">Date du DAO = date prévisionnelle de lancement du marché.</p>
+        }
+      } @else {
+        <p class="doc-paragraphe">Aucun marché en mode déclencheur d'AGPM — l'avis est sans objet pour ce plan.</p>
+      }
+    </div>
   `,
+  // ⚠️ 2026-09-14 (décision des chefs) — plus d'en-tête ORANGE « à la couleur de l'onglet » (demande
+  // pilote du 02/09) ni de tableau « cnm-table » : l'avis reprend la feuille officielle commune
+  // (styles/_document-officiel.scss), en-têtes gris clair et bordures noires.
   styles: `
-    .agd-titre { margin: 0 0 10px; font-size: var(--text-md); font-weight: 700; color: var(--n-800); text-align: center; }
-    .agd-entete { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 12px; }
-    .agd-entete p { margin: 0 0 4px; }
-    .agd-note { margin: 8px 0 0; font-size: var(--text-sm); }
-    /* Textes longs à la ligne, jamais de défilement horizontal (demande pilote 02/09) : le td
-       global du design system est en nowrap, la bande bleue vient de thead tr — neutralisés ici. */
-    .table-responsive { overflow-x: visible; }
-    .table-responsive table { min-width: 0; }
-    th { white-space: normal; }
-    td { white-space: normal; overflow-wrap: break-word; vertical-align: top; }
-    td.cnm-mono { white-space: nowrap; }
-    /* ⚠️ Demande pilote (02/09) — en-tête des tableaux À LA COULEUR DE L'ONGLET (orange des
-       onglets de dossier, #C2410C), texte blanc. */
-    .cnm-table thead th { background: #C2410C; color: #fff; }
+    .doc-note--apres { margin: 0.5rem 0 0; }
   `,
 })
 export class AgpmDoc {
@@ -76,9 +95,30 @@ export class AgpmDoc {
   readonly numMajPrec = input<number | null | undefined>(null);
   readonly dateMajPrec = input<string | null | undefined>(null);
   readonly numMaj = input<number | null | undefined>(null);
+  /** Annotations visibles (défaut). `false` = le document seul. */
+  readonly annotations = input(true);
+  /** Observations par ligne (marqueur de marge + pastille). Aucun écran ne les fournit encore (examen, lot suivant). */
+  readonly observations = input<readonly ObservationLigne[]>([]);
 
+  private readonly visionneuse = inject(DocumentVisionneuse, { optional: true });
+  /** Annotations effectivement visibles : l'entrée ET l'interrupteur de la visionneuse englobante. */
+  readonly annot = computed(() => this.annotations() && (this.visionneuse?.annotations() ?? true));
+  readonly avecMarqueurs = computed(() => this.annot() && this.observations().length > 0);
+  private readonly parLigne = computed(() => grouperNumeros(this.observations(), (o) => o.idDetail, (o) => o.numero));
+
+  /** Numéros des observations d'une ligne (tableau partagé vide si aucune ou annotations masquées). */
+  observationsDe(idDetail: number): readonly number[] {
+    if (!this.annot()) return AUCUN_NUMERO;
+    return this.parLigne().get(idDetail) ?? AUCUN_NUMERO;
+  }
+
+  libelleObs(numeros: readonly number[]): string {
+    return libelleObservations(numeros);
+  }
+
+  /** Montant au format du document officiel (« — » si absent) — même rendu que le plan de passation. */
   montantFr(v?: number): string {
-    return v == null ? '—' : new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(v);
+    return v == null ? '—' : montantOfficiel(v);
   }
   /** Date `yyyy-MM-dd` → `dd/MM/yyyy` (« — » si absente) — format des documents officiels. */
   dateCourt(iso?: string | null): string {
