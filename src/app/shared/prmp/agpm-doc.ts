@@ -1,7 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { DocumentVisionneuse } from '../ui/document-visionneuse';
-import { AUCUN_NUMERO, ObservationLigne, grouperNumeros, libelleObservations, montantOfficiel } from './document-officiel';
+import {
+  AUCUN_NUMERO,
+  COLONNES_AGPM_CIBLE,
+  CelluleCliquee,
+  ObservationLigne,
+  grouperNumeros,
+  libelleObservations,
+  montantOfficiel,
+} from './document-officiel';
 import { LigneAgpm } from './agpm';
 
 /**
@@ -45,11 +53,11 @@ import { LigneAgpm } from './agpm';
               <th scope="col">FINANCEMENT</th><th scope="col">MODE DE PASSATION</th><th scope="col">DATE du DAO</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody [class.doc-corps--observable]="observable()">
             @for (l of lignes(); track l.idDetail) {
               @let obs = observationsDe(l.idDetail);
               <tr>
-                <td class="doc-ancre-g">
+                <td class="doc-ancre-g" (click)="cliquer($event, l, 'compte')">
                   @if (obs.length) {
                     <span class="doc-annot doc-marqueur doc-marqueur--obs" role="img" [attr.aria-label]="libelleObs(obs)" [attr.title]="libelleObs(obs)">
                       <span class="doc-pastilles" aria-hidden="true">
@@ -59,12 +67,12 @@ import { LigneAgpm } from './agpm';
                   }
                   {{ l.compte || '—' }}
                 </td>
-                <td>{{ l.nature || '—' }}</td>
-                <td class="doc-objet">{{ l.objet }}</td>
-                <td class="doc-num">{{ montantFr(l.montant) }}</td>
-                <td>{{ l.financement || '—' }}</td>
-                <td>{{ l.modeLibelle }}</td>
-                <td class="doc-date">{{ dateCourt(l.dateDao) }}</td>
+                <td (click)="cliquer($event, l, 'nature')">{{ l.nature || '—' }}</td>
+                <td class="doc-objet" (click)="cliquer($event, l, 'objet')">{{ l.objet }}</td>
+                <td class="doc-num" (click)="cliquer($event, l, 'montEstim')">{{ montantFr(l.montant) }}</td>
+                <td (click)="cliquer($event, l, 'financement')">{{ l.financement || '—' }}</td>
+                <td (click)="cliquer($event, l, 'mode')">{{ l.modeLibelle }}</td>
+                <td class="doc-date" (click)="cliquer($event, l, 'dateDao')">{{ dateCourt(l.dateDao) }}</td>
               </tr>
             }
           </tbody>
@@ -97,8 +105,12 @@ export class AgpmDoc {
   readonly numMaj = input<number | null | undefined>(null);
   /** Annotations visibles (défaut). `false` = le document seul. */
   readonly annotations = input(true);
-  /** Observations par ligne (marqueur de marge + pastille). Aucun écran ne les fournit encore (examen, lot suivant). */
+  /** Observations par ligne (marqueur de marge + pastille) — fournies par l'examen (codes `agpm.`, refonte lot 2). */
   readonly observations = input<readonly ObservationLigne[]>([]);
+  /** Cellules proposant « Observer cette cellule » (survol + clic émis) — l'examen, étape de l'AGPM. */
+  readonly observable = input(false);
+  /** Clic sur une cellule, émis seulement si `observable` : code `agpm.…`, valeur affichée. */
+  readonly celluleClick = output<CelluleCliquee>();
 
   private readonly visionneuse = inject(DocumentVisionneuse, { optional: true });
   /** Annotations effectivement visibles : l'entrée ET l'interrupteur de la visionneuse englobante. */
@@ -114,6 +126,20 @@ export class AgpmDoc {
 
   libelleObs(numeros: readonly number[]): string {
     return libelleObservations(numeros);
+  }
+
+  cliquer(ev: MouseEvent, l: LigneAgpm, colonne: (typeof COLONNES_AGPM_CIBLE)[number]): void {
+    if (!this.observable()) return;
+    const valeurs: Record<(typeof COLONNES_AGPM_CIBLE)[number], string> = {
+      compte: l.compte ?? '',
+      nature: l.nature ?? '',
+      objet: l.objet,
+      montEstim: l.montant == null ? '' : montantOfficiel(l.montant),
+      financement: l.financement ?? '',
+      mode: l.modeLibelle,
+      dateDao: l.dateDao ? this.dateCourt(l.dateDao) : '',
+    };
+    this.celluleClick.emit({ idDetail: l.idDetail, champ: `agpm.${colonne}`, idBenef: null, valeur: valeurs[colonne], element: ev.currentTarget as HTMLElement });
   }
 
   /** Montant au format du document officiel (« — » si absent) — même rendu que le plan de passation. */

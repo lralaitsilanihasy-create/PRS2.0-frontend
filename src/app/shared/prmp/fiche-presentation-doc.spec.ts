@@ -69,6 +69,25 @@ describe('FichePresentationDoc — feuille officielle', () => {
     expect(racine().querySelector('.doc-document')?.classList).toContain('doc-gouttiere-g');
   });
 
+  it("« Observer cette cellule » : émet le code préfixé de la liste et la valeur affichée, seulement si observable", () => {
+    const emis: { idDetail: number; champ: string; valeur: string }[] = [];
+    fixture.componentInstance.celluleClick.subscribe(({ idDetail, champ, valeur }) => emis.push({ idDetail, champ, valeur }));
+    const justification = (): HTMLElement => racine().querySelectorAll<HTMLElement>('tbody')[0].querySelectorAll('td')[3];
+    justification().click();
+    expect(emis).toEqual([]);
+    expect(racine().querySelector('.doc-corps--observable')).toBeNull();
+
+    fixture.componentRef.setInput('observable', true);
+    fixture.detectChanges();
+    expect(racine().querySelectorAll('.doc-corps--observable').length).toBe(2);
+    justification().click();
+    (racine().querySelectorAll<HTMLElement>('tbody')[1].querySelectorAll('td')[3] as HTMLElement).click();
+    expect(emis).toEqual([
+      { idDetail: 6, champ: 'derogatoires.justification', valeur: 'Prestataire unique' },
+      { idDetail: 6, champ: 'delaisAmenages.delaiRemise', valeur: '10 jours' },
+    ]);
+  });
+
   it("masque ses annotations (mention d'origine, observations) sans toucher au document", () => {
     fixture.componentRef.setInput('observations', [{ idDetail: 6, numero: 1 }]);
     fixture.detectChanges();

@@ -336,6 +336,17 @@ export interface ObservationControle {
   auLieuDe?: string;
   lire?: string;
   ordre: number;
+  /**
+   * ⚠️ V30 (2026-09-14, demande-backend-2026-09-14-observation-cellule-document) — CELLULE du document
+   * visée, champs FACULTATIFS (absents = pas de cible, comportement antérieur). `champ` : code de la
+   * liste fermée — colonne du PPM (`mode`, `montBenef`…), ou code préfixé de la fiche
+   * (`derogatoires.justification`…) / de l'AGPM (`agpm.dateDao`…). Voir `ChampCible`.
+   */
+  champ?: string | null;
+  /** Ligne visée (`t_marche.ID_DETAIL`) — forcée à la ligne du résultat pour un point LIGNE, obligatoire sinon dès qu'un champ est posé. */
+  idMarcheCible?: number | null;
+  /** Bénéficiaire visé (`t_service_beneficiaire.ID_BENEF`) — colonnes par bénéficiaire seulement. */
+  idBenefCible?: number | null;
 }
 
 /**
@@ -542,6 +553,12 @@ export interface ObservationPv {
   /** Dernière itération statuée. */
   iteration?: number;
   historique?: SuiviObservation[];
+  /** ⚠️ V30 (2026-09-14) — cellule visée, recopiée de l'observation d'examen (cf. `ObservationControle`). */
+  champ?: string | null;
+  idMarcheCible?: number | null;
+  idBenefCible?: number | null;
+  /** Document de la cellule, déduit du code par le serveur ; `null` sans cible. */
+  documentCible?: 'PPM' | 'FICHE' | 'AGPM' | null;
 }
 
 /** Une décision d'itération sur une observation (historique, traçabilité). */

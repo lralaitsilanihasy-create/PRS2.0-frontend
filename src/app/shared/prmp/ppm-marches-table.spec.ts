@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 import { Marche, MarchePrevision, ServiceBeneficiaire } from '../../models';
 import { CapmService, ModePassationService, NatureService, ReferenceLookupService, StatutMarcheService } from '../../services';
 import { DocumentVisionneuse } from '../ui/document-visionneuse';
-import { COLONNES_PPM_OFFICIEL, LignePpmOfficielle, ObservationCellule, RowExamState, montantOfficiel } from './document-officiel';
+import { COLONNES_PPM_OFFICIEL, CelluleCliquee, LignePpmOfficielle, ObservationCellule, RowExamState, montantOfficiel } from './document-officiel';
 import { PpmMarchesTable } from './ppm-marches-table';
 
 /**
@@ -64,7 +64,9 @@ const PREVISIONS: MarchePrevision[] = [
         [previsions]="previsions"
         [rowStateFn]="etatFn"
         [observations]="observations()"
+        [celluleObservableFn]="observableFn"
         (rowClick)="cliques.push($event.idDetail)"
+        (celluleClick)="cellules.push($event)"
       />
     </app-document-visionneuse>
   `,
@@ -81,6 +83,8 @@ class HotePpmTest {
   ]);
   readonly etatFn = (idDetail: number): RowExamState | null => this.etats.get(idDetail) ?? null;
   readonly cliques: number[] = [];
+  readonly observableFn = (idDetail: number): boolean => idDetail === 2;
+  readonly cellules: CelluleCliquee[] = [];
 }
 
 describe('PpmMarchesTable — format du PDF officiel', () => {
@@ -228,6 +232,40 @@ describe('PpmMarchesTable — annotations', () => {
     expect(cellule.querySelector('.doc-pastilles')?.getAttribute('aria-label')).toBe('Observation n° 2');
     // Les autres cellules restent intactes.
     expect(racine().querySelectorAll('.doc-cellule--observee').length).toBe(1);
+  });
+
+  it("n'encadre que le bénéficiaire visé d'une colonne par bénéficiaire (idBenefCible)", () => {
+    hote.observations.set([{ idDetail: 2, champ: 'compte', numero: 3, idBenef: 3 }]);
+    fixture.detectChanges();
+    const [rangee1, rangee2] = Array.from(racine().querySelectorAll<HTMLElement>('tbody tr')).slice(1, 3);
+    const compte1 = rangee1.querySelector('td[data-champ="compte"]') as HTMLElement;
+    const compte2 = rangee2.querySelector('td[data-champ="compte"]') as HTMLElement;
+    expect(compte1.classList).not.toContain('doc-cellule--observee');
+    expect(compte2.classList).toContain('doc-cellule--observee');
+    expect(compte2.querySelector('.doc-pastille')?.textContent?.trim()).toBe('3');
+
+    // Sans bénéficiaire visé : toutes les rangées de la ligne, une seule pastille (première rangée).
+    hote.observations.set([{ idDetail: 2, champ: 'compte', numero: 4 }]);
+    fixture.detectChanges();
+    expect(compte1.classList).toContain('doc-cellule--observee');
+    expect(compte2.classList).toContain('doc-cellule--observee');
+    expect(racine().querySelectorAll('.doc-pastille').length).toBe(1);
+  });
+
+  it('« Observer cette cellule » : seules les lignes désignées sont observables, le clic émet code, bénéficiaire et valeur affichée', () => {
+    const rangees = Array.from(racine().querySelectorAll<HTMLElement>('tbody tr'));
+    expect(rangees[0].querySelector('td.doc-cellule--observable')).toBeNull();
+    expect(rangees[1].querySelectorAll('td.doc-cellule--observable').length).toBe(13);
+
+    (rangees[2].querySelector('td[data-champ="montBenef"]') as HTMLElement).click();
+    (rangees[1].querySelector('td[data-champ="mode"]') as HTMLElement).click();
+    expect(hote.cellules.map(({ idDetail, champ, idBenef, valeur }) => ({ idDetail, champ, idBenef, valeur }))).toEqual([
+      { idDetail: 2, champ: 'montBenef', idBenef: 3, valeur: '130 000 000,00' },
+      { idDetail: 2, champ: 'mode', idBenef: null, valeur: "Appel d'Offres Ouvert" },
+    ]);
+    expect(hote.cellules[1].element.getAttribute('data-champ')).toBe('mode');
+    // Le clic de ligne suit, inchangé.
+    expect(hote.cliques).toEqual([2, 2]);
   });
 
   it("l'interrupteur « Annotations » masque tout : marqueurs, statuts, pastilles, surlignage et gouttières", () => {

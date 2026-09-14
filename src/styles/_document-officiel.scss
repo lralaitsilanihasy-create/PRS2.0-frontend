@@ -234,9 +234,15 @@ app-document-visionneuse {
 .doc-table td.doc-num {
   text-align: right;
 }
+/* Dates : jamais coupées au hasard (ni `anywhere`, ni `break-word`). Le plan pose une coupure
+   possible après le mois (<wbr>, « 05/10/ » + « 2026 ») : dans une colonne trop étroite pour la date
+   entière (examen à 1366 px, grille ouverte — refonte lot 2), elle passe sur deux lignes au lieu de
+   déborder sur la cellule voisine ; ailleurs, elle tient sur une ligne. */
 .doc-table td.doc-date {
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
   font-size: 0.625rem;
   padding: 3px 2px;
 }
@@ -472,6 +478,36 @@ app-document-visionneuse {
   white-space: nowrap;
 }
 
+/* « Observer cette cellule » (examen, refonte lot 2) : au survol d'une cellule observable, un
+   cadre bleu et une bulle qui nomme le geste. La bulle n'est pas lue (texte alternatif vide) : le
+   geste clavier équivalent est le choix de la « cellule visée » dans la grille de contrôle. Ce
+   n'est pas une annotation : il reste actif quand les annotations sont masquées. */
+.doc-table td.doc-cellule--observable,
+.doc-table .doc-corps--observable > tr > td {
+  position: relative;
+  cursor: cell;
+}
+.doc-table td.doc-cellule--observable:hover,
+.doc-table .doc-corps--observable > tr > td:hover {
+  box-shadow: inset 0 0 0 2px #0284c7; /* 4,1:1 sur blanc — forme ≥ 3:1 */
+}
+.doc-table td.doc-cellule--observable:hover::before,
+.doc-table .doc-corps--observable > tr > td:hover::before {
+  content: 'Observer cette cellule' / '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #0f1b2d;
+  color: #fff; /* 17:1 */
+  font: 700 0.6875rem/1 var(--font-base);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* Statut du marché : étiquette dans la gouttière droite, à hauteur de la ligne. Une seule ligne,
    tronquée au besoin (le libellé complet est dans l'infobulle) : une étiquette sur deux lignes
    chevaucherait celle de la ligne suivante quand la rangée est basse. */
@@ -542,13 +578,15 @@ app-document-visionneuse {
   }
 }
 
-/* ── Hôtes à panneau latéral (.ppm-table-large : examen du Membre, vérification) ───────────── */
+/* ── Hôtes à panneau latéral (.ppm-table-large : vérification) ─────────────────────────────── */
 
 /* ⚠️ PROVISOIRE (2026-09-14) — dans ces écrans, le document partage la largeur avec un panneau de
    décision : à 1366 px il ne reste que ~700 px, où 13 colonnes fluides deviennent illisibles. En
    attendant la refonte de ces écrans (lots suivants), le plan garde une largeur lisible et DÉFILE
    dans le panneau hôte (demandes pilote 02/09 et 07/09) : la feuille et la visionneuse s'élargissent
-   avec lui. L'en-tête du tableau reste collant pendant le défilement vertical. */
+   avec lui. L'en-tête du tableau reste collant pendant le défilement vertical.
+   L'examen du Membre n'en dépend plus depuis sa refonte (lot 2) : mode concentration et grille
+   repliable lui rendent la largeur, le plan y reste fluide (classe .doc-entete-collante). */
 .ppm-table-large .doc-visionneuse,
 .ppm-table-large .doc-feuille {
   width: fit-content;
@@ -576,4 +614,14 @@ app-document-visionneuse {
   .ppm-table-large .doc-table--ppm thead {
     position: static;
   }
+}
+
+/* ── Document fluide dans une zone défilante (examen refondu, lot 2) ───────────────────────── */
+
+/* L'en-tête du plan reste collant pendant le défilement vertical de la zone document, sans
+   largeur imposée : le tableau suit la largeur disponible (aucun défilement horizontal). */
+.doc-entete-collante .doc-table--ppm thead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
 }

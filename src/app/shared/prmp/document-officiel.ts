@@ -94,6 +94,8 @@ export interface BeneficiairePpmOfficiel {
   numCompte?: string;
   ancMontBenef?: number | null;
   nouvMontBenef?: number | null;
+  /** Identifiant du bénéficiaire (`t_service_beneficiaire.ID_BENEF`) — cible d'une observation par bénéficiaire. */
+  idBenef?: number | null;
 }
 
 /**
@@ -141,11 +143,92 @@ export const MARQUEUR_ETAT_EXAMEN: Readonly<Record<RowExamState, string>> = {
   hors: 'hors',
 };
 
-/** Observation posée sur une CELLULE du PPM (encadré + pastille numérotée). */
+/**
+ * Observation posée sur une CELLULE du PPM (encadré + pastille numérotée).
+ * ⚠️ 2026-09-14 (contrat V30, `idBenefCible`) — pour une colonne PAR BÉNÉFICIAIRE, `idBenef` n'encadre
+ * que la rangée de ce bénéficiaire ; absent, toutes les rangées de la ligne le sont. Ignoré ailleurs.
+ */
 export interface ObservationCellule {
   idDetail: number;
   champ: ChampPpmOfficiel;
   numero: number;
+  idBenef?: number | null;
+}
+
+/** Colonnes du PPM qui portent une valeur PAR BÉNÉFICIAIRE (seules à accepter `idBenefCible`). */
+export const CHAMPS_PPM_BENEFICIAIRE: readonly ChampPpmOfficiel[] = COLONNES_PPM_OFFICIEL.filter((c) => c.beneficiaire).map((c) => c.champ);
+
+// ── Cible d'une observation dans un document (contrat V30, liste fermée de codes) ──────────────
+// Les préfixes disent le document : sans point = PPM, `derogatoires.` / `delaisAmenages.` /
+// `contratsCadres.` = fiche de présentation, `agpm.` = projet d'AGPM.
+
+/** Colonnes observables de chaque liste de la fiche de présentation. */
+export const COLONNES_FICHE_CIBLE = {
+  derogatoires: ['objet', 'montEstim', 'mode', 'justification'],
+  delaisAmenages: ['objet', 'montEstim', 'mode', 'delaiRemise', 'justification'],
+  contratsCadres: ['objet', 'montEstim', 'mode', 'delaiRemise'],
+} as const;
+
+export type ChampFicheOfficiel = {
+  [L in keyof typeof COLONNES_FICHE_CIBLE]: `${L}.${(typeof COLONNES_FICHE_CIBLE)[L][number]}`;
+}[keyof typeof COLONNES_FICHE_CIBLE];
+
+/** Colonnes observables du projet d'AGPM. */
+export const COLONNES_AGPM_CIBLE = ['compte', 'nature', 'objet', 'montEstim', 'financement', 'mode', 'dateDao'] as const;
+export type ChampAgpmOfficiel = `agpm.${(typeof COLONNES_AGPM_CIBLE)[number]}`;
+
+/** Code de cellule accepté par le serveur (`ObservationControle.champ`). */
+export type ChampCible = ChampPpmOfficiel | ChampFicheOfficiel | ChampAgpmOfficiel;
+
+/** Document d'un code de cellule (déduit du préfixe, comme `documentCible` côté serveur). */
+export function documentDuChamp(champ: string | null | undefined): 'PPM' | 'FICHE' | 'AGPM' | null {
+  if (!champ) return null;
+  if (champ.startsWith('agpm.')) return 'AGPM';
+  return champ.includes('.') ? 'FICHE' : 'PPM';
+}
+
+const LIBELLES_LISTES_FICHE: Readonly<Record<ListeFichePresentation, string>> = {
+  derogatoires: 'Mode dérogatoire',
+  delaisAmenages: 'Délais aménagés',
+  contratsCadres: 'Contrats-cadres',
+};
+const LIBELLES_COLONNES_DERIVEES: Readonly<Record<string, string>> = {
+  objet: 'Objet du marché',
+  montEstim: 'Montant estimatif',
+  mode: 'Mode de passation',
+  justification: 'Justification',
+  delaiRemise: 'Délai de remise des offres',
+  compte: 'Compte',
+  nature: 'Nature',
+  financement: 'Financement',
+  dateDao: 'Date du DAO',
+};
+
+/**
+ * Intitulé humain d'une cellule visée : l'en-tête imprimé pour le PPM (« MODE DE PASSATION »), la
+ * liste et la colonne pour la fiche (« Mode dérogatoire · Justification »), « AGPM · Date du DAO ».
+ */
+export function libelleChampCible(champ: string): string {
+  const ppm = COLONNES_PPM_OFFICIEL.find((c) => c.champ === champ);
+  if (ppm) return ppm.libelle;
+  const [prefixe, colonne] = champ.split('.');
+  const libelleColonne = LIBELLES_COLONNES_DERIVEES[colonne] ?? colonne ?? champ;
+  if (prefixe === 'agpm') return `AGPM · ${libelleColonne}`;
+  const liste = LIBELLES_LISTES_FICHE[prefixe as ListeFichePresentation];
+  return liste ? `${liste} · ${libelleColonne}` : champ;
+}
+
+/**
+ * Clic sur une cellule d'un document officiel (geste « Observer cette cellule » de l'examen) :
+ * la ligne, le code de la cellule, le bénéficiaire pour une colonne par bénéficiaire, la valeur
+ * AFFICHÉE (pré-remplit « Au lieu de ») et la cellule elle-même (ancrage de la proposition).
+ */
+export interface CelluleCliquee {
+  idDetail: number;
+  champ: ChampCible;
+  idBenef: number | null;
+  valeur: string;
+  element: HTMLElement;
 }
 
 /** Observation posée sur une LIGNE d'un document (marqueur de marge + pastille numérotée). */
@@ -178,9 +261,9 @@ export function grouperNumeros<T>(items: readonly T[], cle: (item: T) => string 
   return parCle;
 }
 
-/** Clé d'indexation d'une cellule observée. */
-export function cleCellule(idDetail: number, champ: ChampPpmOfficiel): string {
-  return `${idDetail}|${champ}`;
+/** Clé d'indexation d'une cellule observée (`*` = sans bénéficiaire visé). */
+export function cleCellule(idDetail: number, champ: ChampPpmOfficiel, idBenef?: number | null): string {
+  return `${idDetail}|${champ}|${idBenef ?? '*'}`;
 }
 
 /** Libellé accessible d'un ensemble d'observations (« Observation n° 2 », « Observations n° 1, 3 »). */

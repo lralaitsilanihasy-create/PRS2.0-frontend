@@ -12,7 +12,9 @@ import { DocumentVisionneuse } from '../ui/document-visionneuse';
 import {
   AUCUN_NUMERO,
   BeneficiairePpmOfficiel,
+  CHAMPS_PPM_BENEFICIAIRE,
   COLONNES_PPM_OFFICIEL,
+  CelluleCliquee,
   ChampPpmOfficiel,
   GROUPE_BENEFICIAIRE_PPM,
   LIBELLES_ETAT_EXAMEN,
@@ -131,12 +133,17 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
                      n'existent qu'à la première rangée (rowspan), celles du bénéficiaire à chacune. -->
                 @for (c of colonnes; track c.champ) {
                   @if (first || c.beneficiaire) {
-                    @let obs = observationsDe(m, c.champ);
+                    @let cel = celluleAnnotee(m, c.champ, b, first);
+                    @let obs = cel.pastilles;
+                    <!-- Clic de cellule : geste « Observer cette cellule » de l'examen (sans écouteur,
+                         sans effet). Le clic de LIGNE, sur la rangée, reste émis ensuite. -->
                     <td
                       [attr.rowspan]="c.beneficiaire ? null : m.beneficiaires.length"
                       [attr.data-champ]="c.champ"
                       [class]="classeColonne[c.champ]"
-                      [class.doc-cellule--observee]="obs.length > 0"
+                      [class.doc-cellule--observee]="cel.encadree"
+                      [class.doc-cellule--observable]="estObservable(m)"
+                      (click)="cliquerCellule($event, m, b, c.champ)"
                     >
                       @if (c.champ === 'nature' && annot() && etatLigne) {
                         <span
@@ -147,7 +154,7 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
                           [attr.title]="libelleEtat[etatLigne]"
                         ></span>
                       }
-                      @if (obs.length && first) {
+                      @if (obs.length) {
                         <span class="doc-annot doc-pastilles" role="img" [attr.aria-label]="libelleObs(obs)">
                           @for (n of obs; track n) { <span class="doc-pastille" aria-hidden="true">{{ n }}</span> }
                         </span>
@@ -156,6 +163,11 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
                            sans rendre visibles les blancs du gabarit). -->
                       @if (c.champ === 'objet') {
                         <span class="doc-objet">{{ m.objet }}</span>
+                      } @else if (estColonneDate(c.champ)) {
+                        <!-- Date « jj/mm/ » + « aaaa » : dans une colonne étroite (examen à 1366 px, grille
+                             ouverte), elle revient à la ligne après le mois au lieu de déborder. -->
+                        @let d = valeur(m, b, c.champ);
+                        {{ d.slice(0, 6) }}<wbr />{{ d.slice(6) }}
                       } @else {
                         {{ valeur(m, b, c.champ) }}
                       }
@@ -227,10 +239,17 @@ export class PpmMarchesTable implements OnInit {
   /** Annotations visibles (défaut). `false` = le document seul, tel que le PDF. */
   readonly annotations = input(true);
   /**
-   * Observations posées sur des cellules (encadré ambre + pastille numérotée). Aucun écran ne les
-   * fournit encore : l'examen ligne par ligne s'en servira (lot suivant).
+   * Observations posées sur des cellules (encadré ambre + pastille numérotée) — fournies par l'examen
+   * (refonte, lot 2) depuis la cible des observations (`champ`, `idMarcheCible`, `idBenefCible`).
    */
   readonly observations = input<readonly ObservationCellule[]>([]);
+  /**
+   * Lignes dont les cellules proposent « Observer cette cellule » (survol + clic émis) — l'examen :
+   * la ligne en cours, ou toutes à l'étape des contrôles du dossier. `null` = aucune.
+   */
+  readonly celluleObservableFn = input<((idDetail: number) => boolean) | null>(null);
+  /** Clic sur une cellule d'une ligne enregistrée (`Marche`) : code, bénéficiaire, valeur affichée. */
+  readonly celluleClick = output<CelluleCliquee>();
   /** Texte de la rangée affichée quand il n'y a aucune ligne. */
   readonly messageVide = input('Aucune ligne de marché.');
 
@@ -317,6 +336,7 @@ export class PpmMarchesTable implements OnInit {
           // Libellé du statut ; à défaut le code brut (statut désactivé/inconnu) ; vide si non renseigné.
           statut: m.statut ? this.statutMap().get(m.statut) ?? m.statut : '',
           beneficiaires: (benefByDetail.get(m.idDetail) ?? []).map((b) => ({
+            idBenef: b.idBenef,
             soaCode: b.soaCode,
             numCompte: b.numCompte,
             ancMontBenef: b.ancMontBenef,
@@ -337,15 +357,59 @@ export class PpmMarchesTable implements OnInit {
    */
   readonly avecStatutsEnMarge = computed(() => this.annot() && !this.actionsTpl() && this.rows().some((r) => !!r.statut));
 
-  /** Observations indexées par cellule (`idDetail|champ` → numéros triés). */
+  /**
+   * Observations indexées par cellule (`idDetail|champ|idBenef` → numéros triés). Le bénéficiaire
+   * n'entre dans la clé que pour une colonne par bénéficiaire ; ailleurs, et sans cible, il vaut `*`.
+   */
   private readonly observationsParCellule = computed(() =>
-    grouperNumeros(this.observations(), (o) => cleCellule(o.idDetail, o.champ), (o) => o.numero),
+    grouperNumeros(
+      this.observations(),
+      (o) => cleCellule(o.idDetail, o.champ, CHAMPS_PPM_BENEFICIAIRE.includes(o.champ) ? o.idBenef : null),
+      (o) => o.numero,
+    ),
   );
 
   /** Numéros des observations d'une cellule (tableau partagé vide si aucune ou annotations masquées). */
   observationsDe(m: LignePpmOfficielle, champ: ChampPpmOfficiel): readonly number[] {
     if (!this.annot()) return AUCUN_NUMERO;
     return this.observationsParCellule().get(cleCellule(m.idDetail, champ)) ?? AUCUN_NUMERO;
+  }
+
+  /**
+   * Annotation d'une cellule rendue. Colonne par bénéficiaire : la rangée d'un bénéficiaire est
+   * encadrée par les observations qui le visent et par celles sans bénéficiaire ; ces dernières ne
+   * posent leur pastille qu'une fois, sur la première rangée.
+   */
+  celluleAnnotee(m: LignePpmOfficielle, champ: ChampPpmOfficiel, b: BeneficiairePpmOfficiel, first: boolean): { encadree: boolean; pastilles: readonly number[] } {
+    const communes = this.observationsDe(m, champ);
+    if (!CHAMPS_PPM_BENEFICIAIRE.includes(champ) || b.idBenef == null || !this.annot()) {
+      return { encadree: communes.length > 0, pastilles: first ? communes : AUCUN_NUMERO };
+    }
+    const propres = this.observationsParCellule().get(cleCellule(m.idDetail, champ, b.idBenef)) ?? AUCUN_NUMERO;
+    const pastilles = first && communes.length ? [...new Set([...communes, ...propres])].sort((x, y) => x - y) : propres;
+    return { encadree: communes.length > 0 || propres.length > 0, pastilles };
+  }
+
+  estColonneDate(champ: ChampPpmOfficiel): boolean {
+    return champ === 'lancement' || champ === 'ouverture' || champ === 'attribution';
+  }
+
+  /** La ligne propose-t-elle « Observer cette cellule » ? */
+  estObservable(m: LigneAffichee): boolean {
+    const fn = this.celluleObservableFn();
+    return !!fn && !!m.source && fn(m.idDetail);
+  }
+
+  /** Clic sur une cellule : émis pour une ligne enregistrée, avec la valeur telle qu'affichée. */
+  cliquerCellule(ev: MouseEvent, m: LigneAffichee, b: BeneficiairePpmOfficiel, champ: ChampPpmOfficiel): void {
+    if (!m.source) return;
+    this.celluleClick.emit({
+      idDetail: m.idDetail,
+      champ,
+      idBenef: CHAMPS_PPM_BENEFICIAIRE.includes(champ) ? b.idBenef ?? null : null,
+      valeur: this.valeur(m, b, champ),
+      element: ev.currentTarget as HTMLElement,
+    });
   }
 
   libelleObs(numeros: readonly number[]): string {

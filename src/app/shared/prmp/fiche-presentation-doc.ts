@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 
 import { DocumentVisionneuse } from '../ui/document-visionneuse';
 import {
   AUCUN_NUMERO,
+  CelluleCliquee,
+  ChampFicheOfficiel,
   ListeFichePresentation,
   ObservationLigneFiche,
   grouperNumeros,
@@ -44,16 +46,16 @@ import { FichePresentation } from './fiche-presentation';
         <table class="doc-table doc-table--fiche">
           <colgroup><col style="width: 34%" /><col style="width: 14%" /><col style="width: 18%" /><col style="width: 34%" /></colgroup>
           <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Justification</th></tr></thead>
-          <tbody>
+          <tbody [class.doc-corps--observable]="observable()">
             @for (l of fiche().derogatoires; track l.idDetail) {
               <tr>
-                <td class="doc-ancre-g">
+                <td class="doc-ancre-g" (click)="cliquer($event, l.idDetail, 'derogatoires.objet', l.objet)">
                   <ng-container [ngTemplateOutlet]="marqueur" [ngTemplateOutletContext]="{ $implicit: observationsDe(l.idDetail, 'derogatoires') }" />
                   <span class="doc-objet">{{ l.objet }}</span>
                 </td>
-                <td class="doc-num">{{ montantFr(l.montant) }}</td>
-                <td>{{ l.modeLibelle }}</td>
-                <td>@if (l.justifModeDerogatoire) { {{ l.justifModeDerogatoire }} } @else { <span class="doc-a-completer">À compléter</span> }</td>
+                <td class="doc-num" (click)="cliquer($event, l.idDetail, 'derogatoires.montEstim', montantFr(l.montant))">{{ montantFr(l.montant) }}</td>
+                <td (click)="cliquer($event, l.idDetail, 'derogatoires.mode', l.modeLibelle)">{{ l.modeLibelle }}</td>
+                <td (click)="cliquer($event, l.idDetail, 'derogatoires.justification', l.justifModeDerogatoire ?? '')">@if (l.justifModeDerogatoire) { {{ l.justifModeDerogatoire }} } @else { <span class="doc-a-completer">À compléter</span> }</td>
               </tr>
             }
           </tbody>
@@ -67,17 +69,17 @@ import { FichePresentation } from './fiche-presentation';
         <table class="doc-table doc-table--fiche">
           <colgroup><col style="width: 28%" /><col style="width: 13%" /><col style="width: 16%" /><col style="width: 15%" /><col style="width: 28%" /></colgroup>
           <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th><th scope="col">Justifications</th></tr></thead>
-          <tbody>
+          <tbody [class.doc-corps--observable]="observable()">
             @for (l of fiche().delaisAmenages; track l.idDetail) {
               <tr>
-                <td class="doc-ancre-g">
+                <td class="doc-ancre-g" (click)="cliquer($event, l.idDetail, 'delaisAmenages.objet', l.objet)">
                   <ng-container [ngTemplateOutlet]="marqueur" [ngTemplateOutletContext]="{ $implicit: observationsDe(l.idDetail, 'delaisAmenages') }" />
                   <span class="doc-objet">{{ l.objet }}</span>
                 </td>
-                <td class="doc-num">{{ montantFr(l.montant) }}</td>
-                <td>{{ l.modeLibelle }}</td>
-                <td>{{ l.delaiJours }} jours @if (annot()) { <span class="doc-annot doc-note-en-ligne">(minimum du mode : {{ l.delaiMinJours }})</span> }</td>
-                <td>@if (l.justifDelaiAmenage) { {{ l.justifDelaiAmenage }} } @else { <span class="doc-a-completer">À compléter</span> }</td>
+                <td class="doc-num" (click)="cliquer($event, l.idDetail, 'delaisAmenages.montEstim', montantFr(l.montant))">{{ montantFr(l.montant) }}</td>
+                <td (click)="cliquer($event, l.idDetail, 'delaisAmenages.mode', l.modeLibelle)">{{ l.modeLibelle }}</td>
+                <td (click)="cliquer($event, l.idDetail, 'delaisAmenages.delaiRemise', l.delaiJours + ' jours')">{{ l.delaiJours }} jours @if (annot()) { <span class="doc-annot doc-note-en-ligne">(minimum du mode : {{ l.delaiMinJours }})</span> }</td>
+                <td (click)="cliquer($event, l.idDetail, 'delaisAmenages.justification', l.justifDelaiAmenage ?? '')">@if (l.justifDelaiAmenage) { {{ l.justifDelaiAmenage }} } @else { <span class="doc-a-completer">À compléter</span> }</td>
               </tr>
             }
           </tbody>
@@ -91,16 +93,16 @@ import { FichePresentation } from './fiche-presentation';
         <table class="doc-table doc-table--fiche">
           <colgroup><col style="width: 40%" /><col style="width: 18%" /><col style="width: 22%" /><col style="width: 20%" /></colgroup>
           <thead><tr><th scope="col">Objet du marché</th><th scope="col">Montant estimatif</th><th scope="col">Mode de passation</th><th scope="col">Délai de remise des offres</th></tr></thead>
-          <tbody>
+          <tbody [class.doc-corps--observable]="observable()">
             @for (l of fiche().contratsCadres; track l.idDetail) {
               <tr>
-                <td class="doc-ancre-g">
+                <td class="doc-ancre-g" (click)="cliquer($event, l.idDetail, 'contratsCadres.objet', l.objet)">
                   <ng-container [ngTemplateOutlet]="marqueur" [ngTemplateOutletContext]="{ $implicit: observationsDe(l.idDetail, 'contratsCadres') }" />
                   <span class="doc-objet">{{ l.objet }}</span>
                 </td>
-                <td class="doc-num">{{ montantFr(l.montant) }}</td>
-                <td>{{ l.modeLibelle }}</td>
-                <td>@if (l.delaiJours != null) { {{ l.delaiJours }} jours } @else { — }</td>
+                <td class="doc-num" (click)="cliquer($event, l.idDetail, 'contratsCadres.montEstim', montantFr(l.montant))">{{ montantFr(l.montant) }}</td>
+                <td (click)="cliquer($event, l.idDetail, 'contratsCadres.mode', l.modeLibelle)">{{ l.modeLibelle }}</td>
+                <td (click)="cliquer($event, l.idDetail, 'contratsCadres.delaiRemise', l.delaiJours != null ? l.delaiJours + ' jours' : '')">@if (l.delaiJours != null) { {{ l.delaiJours }} jours } @else { — }</td>
               </tr>
             }
           </tbody>
@@ -149,9 +151,14 @@ export class FichePresentationDoc {
   readonly annotations = input(true);
   /**
    * Observations par ligne (marqueur de marge + pastille). `liste` absente = la ligne dans toutes
-   * les listes où figure le marché. Aucun écran ne les fournit encore (examen, lot suivant).
+   * les listes où figure le marché. Fournies par l'examen (refonte, lot 2) depuis la cible des
+   * observations (codes préfixés `derogatoires.`, `delaisAmenages.`, `contratsCadres.`).
    */
   readonly observations = input<readonly ObservationLigneFiche[]>([]);
+  /** Cellules proposant « Observer cette cellule » (survol + clic émis) — l'examen, étape de la fiche. */
+  readonly observable = input(false);
+  /** Clic sur une cellule, émis seulement si `observable` : code préfixé de la liste, valeur affichée. */
+  readonly celluleClick = output<CelluleCliquee>();
 
   private readonly visionneuse = inject(DocumentVisionneuse, { optional: true });
   /** Annotations effectivement visibles : l'entrée ET l'interrupteur de la visionneuse englobante. */
@@ -175,6 +182,11 @@ export class FichePresentationDoc {
 
   libelleObs(numeros: readonly number[]): string {
     return libelleObservations(numeros);
+  }
+
+  cliquer(ev: MouseEvent, idDetail: number, champ: ChampFicheOfficiel, valeur: string): void {
+    if (!this.observable()) return;
+    this.celluleClick.emit({ idDetail, champ, idBenef: null, valeur, element: ev.currentTarget as HTMLElement });
   }
 
   /** Montant au format du document officiel (« — » si absent) — même rendu que le plan de passation. */

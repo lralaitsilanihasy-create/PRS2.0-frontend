@@ -22,13 +22,15 @@ const LIGNES: LigneAgpm[] = [
   imports: [AgpmDoc, DocumentVisionneuse],
   template: `
     <app-document-visionneuse [interrupteur]="true">
-      <app-agpm-doc [lignes]="lignes" [exercice]="2026" [observations]="observations()" />
+      <app-agpm-doc [lignes]="lignes" [exercice]="2026" [observations]="observations()" [observable]="observable()" (celluleClick)="cellules.push($event.champ + '=' + $event.valeur + '@' + $event.idDetail)" />
     </app-document-visionneuse>
   `,
 })
 class HoteAgpmTest {
   readonly lignes = LIGNES;
   readonly observations = signal<ObservationLigne[]>([]);
+  readonly observable = signal(false);
+  readonly cellules: string[] = [];
 }
 
 describe('AgpmDoc — feuille officielle', () => {
@@ -73,5 +75,18 @@ describe('AgpmDoc — feuille officielle', () => {
 
     expect(racine().querySelectorAll('.doc-annot').length).toBe(0);
     expect(racine().querySelectorAll('tbody tr').length).toBe(2);
+  });
+
+  it("« Observer cette cellule » : code agpm.* et valeur au format du document, seulement si observable", () => {
+    const cellule = (rangee: number, colonne: number): HTMLElement =>
+      racine().querySelectorAll('tbody tr')[rangee].querySelectorAll<HTMLElement>('td')[colonne];
+    cellule(0, 6).click();
+    expect(fixture.componentInstance.cellules).toEqual([]);
+
+    fixture.componentInstance.observable.set(true);
+    fixture.detectChanges();
+    cellule(0, 6).click();
+    cellule(1, 3).click();
+    expect(fixture.componentInstance.cellules).toEqual(['agpm.dateDao=05/10/2026@1', 'agpm.montEstim=380 000 000,00@2']);
   });
 });
