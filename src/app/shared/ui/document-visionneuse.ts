@@ -32,7 +32,9 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
       </div>
     }
     <div class="doc-visionneuse">
-      <div class="doc-feuille" [class.doc-annotations-masquees]="!annotations()">
+      <!-- lang="fr" : la feuille est un document français (césures, lecteurs d'écran), quelle que
+           soit la langue de la page qui l'accueille. -->
+      <div class="doc-feuille" lang="fr" [class.doc-annotations-masquees]="!annotations()">
         <ng-content />
       </div>
     </div>

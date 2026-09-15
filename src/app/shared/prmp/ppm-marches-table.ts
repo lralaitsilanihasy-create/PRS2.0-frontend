@@ -9,6 +9,7 @@ import {
   StatutMarcheService,
 } from '../../services';
 import { DocumentVisionneuse } from '../ui/document-visionneuse';
+import { TexteCesure } from '../ui/texte-cesure';
 import {
   AUCUN_NUMERO,
   BeneficiairePpmOfficiel,
@@ -24,7 +25,6 @@ import {
   RowExamState,
   cleCellule,
   dateOfficielle,
-  enteteAvecCesures,
   grouperNumeros,
   libelleObservations,
   montantOfficiel,
@@ -75,7 +75,7 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
   selector: 'app-ppm-marches-table',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, TexteCesure],
   template: `
     <div
       class="doc-ppm"
@@ -106,16 +106,16 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
           <tr>
             @for (c of colonnes; track c.champ) {
               @if (!c.beneficiaire) {
-                <th scope="col" rowspan="2">{{ c.entete }}</th>
+                <th scope="col" rowspan="2" [appTexteCesure]="c.libelle"></th>
               } @else if (c.champ === premiereColonneBenef) {
-                <th scope="col" [attr.colspan]="colonnesBenef.length">{{ groupeBenef }}</th>
+                <th scope="col" [attr.colspan]="colonnesBenef.length" [appTexteCesure]="groupeBenef"></th>
               }
             }
             @if (actionsTpl()) { <th scope="col" rowspan="2" class="doc-hors-feuille">ACTIONS</th> }
           </tr>
           <tr>
             @for (c of colonnesBenef; track c.champ) {
-              <th scope="col">{{ c.entete }}</th>
+              <th scope="col" [appTexteCesure]="c.libelle"></th>
             }
           </tr>
         </thead>
@@ -159,20 +159,23 @@ const CLASSE_COLONNE: Readonly<Record<ChampPpmOfficiel, string>> = {
                           @for (n of obs; track n) { <span class="doc-pastille" aria-hidden="true">{{ n }}</span> }
                         </span>
                       }
-                      <!-- Objet : texte seul dans son <span> (retours à la ligne de la saisie conservés,
-                           sans rendre visibles les blancs du gabarit). -->
+                      <!-- Textes : écrits mot à mot (TexteCesure) — un mot ne se coupe que s'il est plus
+                           large que sa colonne, à une syllabe, avec un trait d'union. L'objet garde les
+                           retours à la ligne de la saisie. Montants et dates ont leurs propres coupures. -->
                       @if (c.champ === 'objet') {
-                        <span class="doc-objet">{{ m.objet }}</span>
+                        <span class="doc-objet" [appTexteCesure]="m.objet"></span>
                       } @else if (estColonneDate(c.champ)) {
                         <!-- Date « jj/mm/ » + « aaaa » : dans une colonne étroite (examen à 1366 px, grille
                              ouverte), elle revient à la ligne après le mois au lieu de déborder. -->
                         @let d = valeur(m, b, c.champ);
                         {{ d.slice(0, 6) }}<wbr />{{ d.slice(6) }}
-                      } @else {
+                      } @else if (classeColonne[c.champ] === 'doc-num') {
                         {{ valeur(m, b, c.champ) }}
+                      } @else {
+                        <span class="doc-texte" [appTexteCesure]="valeur(m, b, c.champ)"></span>
                       }
                       @if (c.champ === 'attribution' && avecStatutsEnMarge() && m.statut) {
-                        <span class="doc-annot doc-statut" [attr.title]="'Statut du marché : ' + m.statut"><span class="cnm-sr-only">Statut du marché : </span>{{ m.statut }}</span>
+                        <span class="doc-annot doc-statut" [attr.title]="'Statut du marché : ' + m.statut"><span class="cnm-sr-only">Statut du marché : </span><span [appTexteCesure]="m.statut"></span></span>
                       }
                     </td>
                   }
@@ -253,8 +256,8 @@ export class PpmMarchesTable implements OnInit {
   /** Texte de la rangée affichée quand il n'y a aucune ligne. */
   readonly messageVide = input('Aucune ligne de marché.');
 
-  /** Colonnes officielles, intitulés prêts à l'affichage (césures des mots longs). */
-  readonly colonnes = COLONNES_PPM_OFFICIEL.map((c) => ({ ...c, entete: enteteAvecCesures(c.libelle) }));
+  /** Colonnes officielles (intitulés écrits mot à mot, césures syllabiques comprises : `TexteCesure`). */
+  readonly colonnes = COLONNES_PPM_OFFICIEL;
   readonly colonnesBenef = this.colonnes.filter((c) => c.beneficiaire);
   readonly premiereColonneBenef = this.colonnesBenef[0]?.champ;
   readonly groupeBenef = GROUPE_BENEFICIAIRE_PPM;

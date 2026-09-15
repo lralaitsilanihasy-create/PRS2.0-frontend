@@ -29,6 +29,9 @@ const REFERENTIELS = new Map<Type<unknown>, Map<string, string>>([
   ],
   [StatutMarcheService, new Map([['PREVU', 'Prévu']])],
 ]);
+/** Texte d'une cellule tel qu'il se lit, sans les césures conditionnelles (U+00AD) de l'affichage. */
+const sansCesure = (el: Element | null): string => (el?.textContent ?? '').replace(/\u00AD/g, '').replace(/\s+/g, ' ').trim();
+
 const lookupStub = {
   appels: 0,
   lookup(service: unknown) {
@@ -136,13 +139,20 @@ describe('PpmMarchesTable — format du PDF officiel', () => {
       'SERVICE BENEFICIAIRE', 'COMPTE', 'MONTANT ESTIMATIF PAR BENEFICIAIRE', 'NOUVEAU MONTANT ESTIMATIF PAR BENEFICIAIRE',
     ]);
     expect(tous('th').some((th) => /statut/i.test(th.textContent ?? ''))).toBe(false);
-    // Les mots longs se coupent à une syllabe (césure conditionnelle), pas n'importe où.
-    expect(rangee1.querySelectorAll('th')[5].textContent).toBe('FINAN\u00ADCEMENT');
+    // Intitulés écrits mot à mot, césures syllabiques posées : un mot ne se coupe qu'à une syllabe.
+    const financement = rangee1.querySelectorAll('th')[5];
+    expect(Array.from(financement.querySelectorAll('.doc-mot')).map((m) => m.textContent)).toEqual(['FI\u00ADNAN\u00ADCE\u00ADMENT']);
+    expect(rangee2.querySelectorAll('th')[1].textContent).toBe('COMP\u00ADTE');
   });
 
   it('met en forme les valeurs comme le PDF : libellés résolus, montants à séparateur sécable, dates dd/MM/yyyy', () => {
-    const cellule = (champ: string) => racine().querySelector(`tbody tr td[data-champ="${champ}"]`)?.textContent?.trim();
+    const cellule = (champ: string) => sansCesure(racine().querySelector(`tbody tr td[data-champ="${champ}"]`));
     expect(cellule('nature')).toBe('Fournitures');
+    // Nature et mode : un mot par boîte, césures conditionnelles posées dans les mots longs.
+    expect(racine().querySelector('td[data-champ="nature"] .doc-mot')?.textContent).toBe('Four\u00ADni\u00ADtures');
+    expect(Array.from(racine().querySelectorAll('tbody tr:first-child td[data-champ="mode"] .doc-mot')).map((m) => m.textContent)).toEqual(['Ap\u00ADpel', "d'Offres", 'Ou\u00ADvert']);
+    // Montants : texte seul, coupé entre groupes de chiffres (espace sécable), jamais en boîtes.
+    expect(racine().querySelector('td[data-champ="montEstim"] .doc-mot')).toBeNull();
     expect(cellule('mode')).toBe("Appel d'Offres Ouvert");
     expect(cellule('montEstim')).toBe('1 590 000 000,00');
     expect(cellule('lancement')).toBe('05/10/2026');
@@ -187,7 +197,7 @@ describe('PpmMarchesTable — format du PDF officiel', () => {
     f.detectChanges();
     const el = f.nativeElement as HTMLElement;
     expect(lookupStub.appels).toBe(0);
-    expect(el.querySelector('td[data-champ="nature"]')?.textContent?.trim()).toBe('Travaux');
+    expect(sansCesure(el.querySelector('td[data-champ="nature"]'))).toBe('Travaux');
     // Aucun bénéficiaire : une rangée vide garde les 13 cellules.
     expect(el.querySelectorAll('tbody tr td').length).toBe(13);
   });
@@ -289,7 +299,7 @@ describe('PpmMarchesTable — annotations', () => {
     expect(racine().querySelector('.doc-feuille')?.classList).toContain('doc-annotations-masquees');
     // Le document, lui, est intact : mêmes 13 colonnes, mêmes valeurs.
     expect(racine().querySelectorAll('colgroup col').length).toBe(13);
-    expect(racine().querySelector('td[data-champ="objet"]')?.textContent?.trim()).toBe('Fourniture de matériels informatiques');
+    expect(sansCesure(racine().querySelector('td[data-champ="objet"]'))).toBe('Fourniture de matériels informatiques');
   });
 
   it('garde le clic de ligne, sauf hors examen', () => {

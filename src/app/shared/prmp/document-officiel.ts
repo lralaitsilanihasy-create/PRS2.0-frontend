@@ -59,31 +59,10 @@ export const COLONNES_PPM_OFFICIEL: readonly ColonnePpmOfficielle[] = [
   { champ: 'attribution', libelle: "DATE PREVISIONNELLE D'ATTRIBUTION", largeur: 6 },
 ];
 
-/**
- * Coupures syllabiques (U+00AD, césure conditionnelle) des seuls mots qui ne tiennent pas dans leur
- * colonne (5-6 %) aux largeurs cibles. Pas davantage : le navigateur remplit la ligne au plus près
- * et couperait aussi un mot qui aurait tenu seul sur la ligne suivante (« PASSA-TION »).
- */
-const CESURES_ENTETE: Readonly<Record<string, string>> = {
-  FINANCEMENT: 'FINAN\u00ADCEMENT',
-  PREVISIONNELLE: 'PREVI\u00ADSION\u00ADNELLE',
-  LANCEMENT: 'LANCE\u00ADMENT',
-  OUVERTURE: 'OUVER\u00ADTURE',
-  "D'ATTRIBUTION": "D'ATTRI\u00ADBUTION",
-};
-
-/**
- * Intitulé d'en-tête prêt à l'affichage : les colonnes du PDF sont étroites (5 à 8 %) et leurs mots
- * longs (« PREVISIONNELLE », « FINANCEMENT ») ne tiennent pas sur une ligne. Une césure
- * conditionnelle les coupe à une syllabe, avec un tiret, au lieu de les trancher n'importe où
- * (« LANCEMEN/T »). Invisible quand le mot tient ; ignorée par les lecteurs d'écran.
- */
-export function enteteAvecCesures(libelle: string): string {
-  return libelle
-    .split(' ')
-    .map((mot) => CESURES_ENTETE[mot] ?? mot)
-    .join(' ');
-}
+// Les intitulés et les textes des colonnes étroites (5 à 8 %) se coupent à une syllabe, avec un
+// trait d'union, seulement quand un mot est plus large que sa colonne : `shared/ui/cesure.ts`
+// (règles) et `shared/ui/texte-cesure.ts` (rendu mot à mot). Ils remplacent la table de césures des
+// seuls en-têtes du lot 1, qui laissait « Fournit|ures » ou « COMPT|E » se trancher n'importe où.
 
 /** Intitulé du groupe d'en-tête qui coiffe les 4 colonnes bénéficiaire. */
 export const GROUPE_BENEFICIAIRE_PPM = 'Informations sur le Bénéficiaire';
