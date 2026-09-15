@@ -164,6 +164,8 @@ export class EtapePv {
   private readonly lecture$ = new Subject<number | null>();
   private readonly comptage$ = new Subject<number | null>();
   private focusServi: FocusNavette | null = null;
+  /** Transition faite, gestes pas encore relus par la page : pas de « geste indisponible » fantôme. */
+  private enTransition = false;
 
   constructor() {
     this.lecture$
@@ -180,6 +182,11 @@ export class EtapePv {
       )
       .subscribe((n) => this.nbObservations.set(n));
 
+    // Gestes relus (nouvelle navette servie) : la comparaison avec le rendu de `PvWorkflow` reprend.
+    effect(() => {
+      this.navette();
+      this.enTransition = false;
+    });
     // Un autre PV (relecture après un geste) : relu. Le même : on garde celui que `PvWorkflow` a rendu.
     effect(() => {
       const id = this.idPv();
@@ -197,7 +204,9 @@ export class EtapePv {
         const l = this.lecture();
         const servis = this.navette().gestes;
         let manquants: readonly GesteAFaire[] = [];
-        if (l.etat === 'echec') manquants = servis;
+        // Juste après une transition, le PV est à jour mais les gestes pas encore relus : ne rien conclure.
+        if (this.enTransition) manquants = [];
+        else if (l.etat === 'echec') manquants = servis;
         else if (l.etat === 'pret') {
           const zone = this.zone().nativeElement;
           const offerts = boutonsWorkflow(zone);
@@ -228,6 +237,7 @@ export class EtapePv {
 
   /** `PvWorkflow` a fait sa transition et rend le PV à jour : il s'affiche aussitôt, la page relit le reste. */
   apresTransition(pv: PvExamen): void {
+    this.enTransition = true;
     this.lecture.set({ etat: 'pret', pv });
     this.changed.emit();
   }

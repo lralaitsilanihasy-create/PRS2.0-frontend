@@ -178,6 +178,12 @@ describe('Page dossier — navette du projet de PV (lot L4-F4)', () => {
     demandees = [];
     scenario = { ...scenario, gestes: reponse('MEMBRE', []), transition: { ...brouillon, statutPv: 'PROJET_SOUMIS' } };
     cliquer('Soumettre le projet');
+    http.expectOne({ method: 'POST', url: '/api/pv-examens/12/soumettre' }).flush(scenario.transition ?? PV);
+    demandees.push('POST /api/pv-examens/12/soumettre');
+    harness.detectChanges();
+    // PV à jour, gestes pas encore relus : le bouton a disparu, mais aucun « geste indisponible » fantôme.
+    expect(boutonsWorkflow()).not.toContain('Soumettre le projet');
+    expect(racine().querySelector('.ep__indispo')).toBeNull();
     repondre();
     expect(demandees[0]).toBe('POST /api/pv-examens/12/soumettre');
     expect(demandees.slice(1).sort()).toEqual(['GET /api/dossiers/42', 'GET /api/dossiers/42/gestes']);
