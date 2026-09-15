@@ -7,7 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { ToastService } from '../../core/notifications/toast.service';
-import { NavItem, navFor, separerParDelegation } from '../../core/navigation/navigation';
+import { NavItem, cheminAFaire, navFor, separerParDelegation } from '../../core/navigation/navigation';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 import {
@@ -329,7 +329,8 @@ export class MainLayout {
     // Le compteur Vérificateur reste le miroir exact de sa file (il décroît de lui-même à la
     // transmission SIGMP) ; le CC gagne le même badge « à dispatcher » que le Président.
     const role = this.auth.role();
-    if (role && ['PRMP', 'SECRETAIRE', 'VERIFICATEUR', 'PRESIDENT', 'CHEF_COMMISSION', 'MEMBRE'].includes(role)) {
+    // ⚠️ 2026-09-15 — l'Assistant et l'UGPM rejoignent la liste : leur seule pastille est « À faire ».
+    if (role && ['PRMP', 'UGPM', 'SECRETAIRE', 'VERIFICATEUR', 'ASSISTANT_CONTROLEUR', 'PRESIDENT', 'CHEF_COMMISSION', 'MEMBRE'].includes(role)) {
       this.rafraichirBadges();
       this.router.events
         .pipe(
@@ -352,7 +353,7 @@ export class MainLayout {
    */
   private rafraichirBadges(): void {
     this.kpiService.badges().subscribe({
-      next: ({ compteurs }) => {
+      next: ({ compteurs, aFaire }) => {
         const c: Record<string, number> = {};
         switch (this.auth.role()) {
           case 'PRMP':
@@ -396,6 +397,10 @@ export class MainLayout {
             c['/membre/tableau-de-bord'] = compteurs['aExaminer'] ?? 0;
             break;
         }
+        // ⚠️ Refonte ergonomique (2026-09-15) — pastille « À faire » : gestes attendus du connecté, même
+        // calcul serveur que l'écran. Champ facultatif : absent (backend qui ne le sert pas) ou nul, rien.
+        const aFaireChemin = cheminAFaire(this.auth.role());
+        if (aFaireChemin && typeof aFaire === 'number') c[aFaireChemin] = aFaire;
         this.counts.set(Object.fromEntries(Object.entries(c).filter(([, n]) => n > 0)));
       },
       error: () => {},

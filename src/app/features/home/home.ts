@@ -1,13 +1,33 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { navFlat } from '../../core/navigation/navigation';
+import { isApiError } from '../../core/errors/api-error';
+import { cheminAFaire, navFlat } from '../../core/navigation/navigation';
+import { Role } from '../../models';
+import { DossierService } from '../../services';
+import { estAFaireIndisponible } from './a-faire/a-faire-modele';
+
+/** Atterrissage d'avant l'accueil « À faire » (repli) ; un profil absent reste sur cette page. */
+const ATTERRISSAGE_HISTORIQUE: Readonly<Partial<Record<Role, string>>> = {
+  // ⚠️ 2026-09-12/13 : « Mes dossiers » retiré des espaces P/CC, Secrétaire, PRMP puis Membre — chaque
+  // profil atterrissait sur « Tous les dossiers » (le tableau de bord porte toute action par dossier).
+  MEMBRE: '/membre/tableau-de-bord',
+  SECRETAIRE: '/secretaire/tableau-de-bord',
+  PRMP: '/prmp/tableau-de-bord',
+  PRESIDENT: '/president/tableau-de-bord',
+  CHEF_COMMISSION: '/cc/tableau-de-bord',
+};
 
 /**
- * Accueil après connexion, adapté au profil : rappelle l'identité courante et liste
- * les modules accessibles au rôle. Les tableaux de bord dédiés par profil le
- * remplaceront au fil des étapes 8 à 13.
+ * Accueil après connexion.
+ *
+ * ⚠️ Refonte ergonomique (2026-09-15) — les huit profils du circuit atterrissent sur « À faire »
+ * (`/<espace>/a-faire`). L'accueil SONDE d'abord `GET /api/dossiers/a-faire` : servi, il y conduit en
+ * transmettant la réponse (pas de second appel) ; pas encore servi (404, 501, route inconnue du
+ * backend…), il retombe sur l'atterrissage d'avant. Une panne passagère conduit quand même à « À faire »,
+ * qui l'affiche avec « Réessayer ». Les autres profils, et les repliés sans atterrissage dédié
+ * (Vérificateur, Assistant, UGPM), gardent cette page : identité et modules du rôle.
  */
 @Component({
   selector: 'app-home',
@@ -19,24 +39,29 @@ import { navFlat } from '../../core/navigation/navigation';
 export class Home {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly dossierService = inject(DossierService);
+
+  /** Sonde en cours : la page n'affiche qu'un indicateur, le temps de choisir l'atterrissage. */
+  readonly redirection = signal(false);
 
   constructor() {
-    // À l'ouverture de session : chaque profil atterrit sur « Tous les dossiers » (le tableau de bord
-    // porte toute action par dossier). ⚠️ 2026-09-12/13 : « Mes dossiers » retiré des espaces P/CC,
-    // Secrétaire, PRMP puis Membre — plus de classement d'atterrissage.
-    if (this.auth.role() === 'MEMBRE') {
-      void this.router.navigateByUrl('/membre/tableau-de-bord', { replaceUrl: true });
-    } else if (this.auth.role() === 'SECRETAIRE') {
-      // ⚠️ 2026-09-13 : « Mes dossiers » retiré du Secrétaire → atterrissage sur « Tous les dossiers ».
-      void this.router.navigateByUrl('/secretaire/tableau-de-bord', { replaceUrl: true });
-    } else if (this.auth.role() === 'PRMP') {
-      // ⚠️ 2026-09-13 : « Mes dossiers » retiré du menu PRMP → atterrissage sur « Suivi des dossiers CNM ».
-      void this.router.navigateByUrl('/prmp/tableau-de-bord', { replaceUrl: true });
-    } else if (this.auth.role() === 'PRESIDENT') {
-      void this.router.navigateByUrl('/president/tableau-de-bord', { replaceUrl: true });
-    } else if (this.auth.role() === 'CHEF_COMMISSION') {
-      void this.router.navigateByUrl('/cc/tableau-de-bord', { replaceUrl: true });
-    }
+    const role = this.auth.role();
+    const aFaire = cheminAFaire(role);
+    if (!aFaire) return;
+    this.redirection.set(true);
+    this.dossierService.aFaire(false).subscribe({
+      next: (reponse) => void this.router.navigateByUrl(aFaire, { replaceUrl: true, state: { aFaire: reponse } }),
+      error: (e: unknown) => {
+        if (isApiError(e) && e.status === 401) return; // session expirée : l'intercepteur mène au login
+        if (!estAFaireIndisponible(e)) {
+          void this.router.navigateByUrl(aFaire, { replaceUrl: true });
+          return;
+        }
+        const historique = role ? ATTERRISSAGE_HISTORIQUE[role] : undefined;
+        if (historique) void this.router.navigateByUrl(historique, { replaceUrl: true });
+        else this.redirection.set(false);
+      },
+    });
   }
 
   readonly role = this.auth.role;

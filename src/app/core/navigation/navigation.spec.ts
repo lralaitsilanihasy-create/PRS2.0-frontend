@@ -1,4 +1,5 @@
-import { NavItem, navFor, separerParDelegation } from './navigation';
+import { Role } from '../../models';
+import { NavItem, cheminAFaire, navFor, separerParDelegation } from './navigation';
 
 /**
  * ⚠️ Demande user (2026-08-28) : « séparer tous les menus de délégation de profil, à ne pas
@@ -63,5 +64,32 @@ describe('separerParDelegation', () => {
 
   it('un menu vide ne produit aucune section', () => {
     expect(separerParDelegation([])).toEqual([]);
+  });
+});
+
+describe('Entrée « À faire » (refonte ergonomique, 2026-09-15)', () => {
+  it('ouvre le menu des huit profils du circuit, dans leur espace', () => {
+    const attendus: [Role, string][] = [
+      ['PRESIDENT', '/president/a-faire'],
+      ['CHEF_COMMISSION', '/cc/a-faire'],
+      ['SECRETAIRE', '/secretaire/a-faire'],
+      ['MEMBRE', '/membre/a-faire'],
+      ['VERIFICATEUR', '/verificateur/a-faire'],
+      ['ASSISTANT_CONTROLEUR', '/assistant/a-faire'],
+      ['PRMP', '/prmp/a-faire'],
+      ['UGPM', '/prmp/a-faire'],
+    ];
+    for (const [role, chemin] of attendus) {
+      expect(navFor(role)[0]).toMatchObject({ label: 'À faire', path: chemin });
+      expect(cheminAFaire(role)).toBe(chemin);
+    }
+  });
+
+  it("absente des profils qui gardent leur accueil (Administrateur, Chargé de publication)", () => {
+    for (const role of ['ADMINISTRATEUR', 'CHARGE_PUBLICATION'] as const) {
+      expect(navFor(role).map((i) => i.label)).not.toContain('À faire');
+      expect(cheminAFaire(role)).toBeNull();
+    }
+    expect(cheminAFaire(null)).toBeNull();
   });
 });

@@ -10,6 +10,8 @@ import { PermissionsService } from '../../core/auth/permissions.service';
 import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { ActualiteService } from '../../services/actualite.services';
+import { KpiService } from '../../services';
+import { BadgesMenu } from '../../models';
 import { MainLayout, routeEnConcentration } from './main-layout';
 
 @Component({ selector: 'app-ecran-factice', template: '<h1>Écran</h1>' })
@@ -87,5 +89,57 @@ describe('Mode « concentration » de la coquille (refonte ergonomique, lot 2)',
       // La navigation referme le tiroir.
       expect(hote.querySelector('.sidebar')?.classList.contains('open')).toBe(false);
     });
+  });
+});
+
+describe('Pastille « À faire » du menu (refonte ergonomique, 2026-09-15)', () => {
+  const monter = async (badges: BadgesMenu) => {
+    TestBed.configureTestingModule({
+      imports: [MainLayout],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([{ path: 'membre/a-faire', component: EcranFactice }]),
+        {
+          provide: AuthService,
+          useValue: {
+            role: signal('MEMBRE'),
+            login: signal('MEMBANT1'),
+            localite: signal('ANT'),
+            // Un matricule : sans lui, la coquille ne demande pas les pastilles.
+            ref: () => 'MEMBANT1',
+            nomAffichage: () => 'RAKOTO Jean',
+            typeActeur: () => 'CONTROLEUR',
+            // Pas de session réelle : le flux de notifications reste éteint.
+            isAuthenticated: () => false,
+            logout: () => undefined,
+          },
+        },
+        { provide: KpiService, useValue: { badges: () => of(badges) } },
+        { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: PermissionsService, useValue: { peutExecuter: () => false } },
+        { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
+        { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MainLayout);
+    await TestBed.inject(Router).navigateByUrl('/membre/a-faire');
+    fixture.detectChanges();
+    const entree = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a.nav-item')).find((a) => a.textContent?.includes('À faire')) as HTMLElement;
+    return entree;
+  };
+
+  it('affiche badges.aFaire sur « À faire », en tête du menu', async () => {
+    const entree = await monter({ profil: 'MEMBRE', compteurs: { aExaminer: 2 }, aFaire: 5 });
+    expect(entree.getAttribute('href')).toBe('/membre/a-faire');
+    expect(entree.querySelector('.nav-badge')?.textContent?.trim()).toBe('5');
+  });
+
+  it('pas de pastille quand le champ est absent (backend qui ne le sert pas), nul ou à zéro', async () => {
+    expect((await monter({ profil: 'MEMBRE', compteurs: { aExaminer: 2 } })).querySelector('.nav-badge')).toBeNull();
+    TestBed.resetTestingModule();
+    expect((await monter({ profil: 'MEMBRE', compteurs: {}, aFaire: null })).querySelector('.nav-badge')).toBeNull();
+    TestBed.resetTestingModule();
+    expect((await monter({ profil: 'MEMBRE', compteurs: {}, aFaire: 0 })).querySelector('.nav-badge')).toBeNull();
   });
 });

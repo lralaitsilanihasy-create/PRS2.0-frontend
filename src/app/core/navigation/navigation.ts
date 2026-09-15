@@ -19,6 +19,34 @@ export interface NavItem {
 }
 
 /**
+ * Refonte ergonomique (2026-09-15) — profils servis par l'accueil « À faire »
+ * (`GET /api/dossiers/a-faire`, demande 2026-09-14-accueil-a-faire) → préfixe de leur espace, où l'écran
+ * est monté (`/<espace>/a-faire`). L'UGPM agit dans l'espace de sa PRMP. Administrateur et Chargé de
+ * publication gardent leur accueil (403 serveur).
+ */
+export const ESPACES_A_FAIRE: Readonly<Partial<Record<Role, string>>> = {
+  PRESIDENT: 'president',
+  CHEF_COMMISSION: 'cc',
+  SECRETAIRE: 'secretaire',
+  MEMBRE: 'membre',
+  VERIFICATEUR: 'verificateur',
+  ASSISTANT_CONTROLEUR: 'assistant',
+  PRMP: 'prmp',
+  UGPM: 'prmp',
+};
+
+/** Chemin de l'accueil « À faire » du profil, `null` s'il n'en a pas. */
+export function cheminAFaire(role: Role | null): string | null {
+  const espace = role ? ESPACES_A_FAIRE[role] : undefined;
+  return espace ? `/${espace}/a-faire` : null;
+}
+
+/** Entrée « À faire », en tête du menu des profils concernés (pastille : `badges.aFaire`). */
+function entreeAFaire(espace: string): NavItem {
+  return { label: 'À faire', path: `/${espace}/a-faire`, icon: '📥' };
+}
+
+/**
  * Sépare un menu en deux blocs : les entrées du profil connecté, puis celles exercées PAR
  * DÉLÉGATION ascendante.
  *
@@ -52,6 +80,7 @@ export function separerParDelegation(items: NavItem[]): { cle: string; titre: st
  */
 function menuCommission(base: '/president' | '/cc'): NavItem[] {
   return [
+    entreeAFaire(base.slice(1)),
     // ⚠️ Demande pilote (2026-09-12) — « Tableau de bord » renommé « Tous les dossiers » (le pipeline
     // liste les dossiers du périmètre) ; route inchangée. S'applique à Président ET CC (menu partagé).
     { label: 'Tous les dossiers', path: `${base}/tableau-de-bord`, icon: '▤' },
@@ -108,6 +137,7 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
  */
 export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   PRMP: [
+    entreeAFaire('prmp'),
     // ⚠️ Demande pilote (2026-09-06) — l'entrée du tableau de bord devient le suivi des délais.
     { label: 'Suivi des dossiers CNM', path: '/prmp/tableau-de-bord', icon: '⏱' },
     // ⚠️ Demande pilote (2026-09-13) — « Mes dossiers » (cartes type × statut) RETIRÉ du menu : « Suivi
@@ -140,6 +170,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   // sont accessibles à l'UGPM. « Mes lettres de renvoi » retiré : GET /api/lettre-renvois/mes-lettres
   // est réservé PRMP (403). « Dossiers vérifiés » (GET /api/dossiers?statut=CLOTURE, scopé) est OK.
   UGPM: [
+    entreeAFaire('prmp'),
     // ⚠️ Demande pilote (2026-09-13) — écran partagé du PRMP ouvert à l'UGPM en VUE SEULE (actions
     // Soumettre/Rectifier/Compléter masquées, cf. `estPrmp` dans suivi-delais). Libellé « Tous les
     // dossiers » côté UGPM (le PRMP garde « Suivi des dossiers CNM », son cadrage délais).
@@ -156,6 +187,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   PRESIDENT: menuCommission('/president'),
   CHEF_COMMISSION: menuCommission('/cc'),
   SECRETAIRE: [
+    entreeAFaire('secretaire'),
     // ⚠️ Demande pilote (2026-09-13) — « Tous les dossiers » (pipeline partagé) : liste à plat des dossiers
     // du Secrétaire (réceptions + enregistrés), action « Numéroter » inline sur les réceptions.
     // ⚠️ Demande pilote (2026-09-13) — « Mes dossiers » (cartes) RETIRÉ : « Tous les dossiers » (pipeline)
@@ -166,6 +198,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   MEMBRE: [
+    entreeAFaire('membre'),
     // ⚠️ Demande pilote (2026-09-12) — même libellé que le P/CC (« Tous les dossiers »), même écran (le
     // pipeline `tableau-de-bord`) ; route inchangée.
     { label: 'Tous les dossiers', path: '/membre/tableau-de-bord', icon: '▤' },
@@ -182,6 +215,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   VERIFICATEUR: [
+    entreeAFaire('verificateur'),
     { label: 'À vérifier', path: '/verificateur/a-verifier', icon: '✔' },
     // « En attente PRMP » : retiré du menu (demande user 2026-08-04) — sous-vue redondante. Ces dossiers
     // (EN_ATTENTE_DECISION_PRMP) figurent déjà dans « À vérifier », badgés « En attente PRMP » et en
@@ -192,6 +226,7 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Notifications', path: '/notifications', icon: '🔔' },
   ],
   ASSISTANT_CONTROLEUR: [
+    entreeAFaire('assistant'),
     // ⚠️ Demande pilote (2026-09-12) — même libellé que P/CC/Membre (« Tous les dossiers »), même écran
     // (pipeline `tableau-de-bord`) ; route inchangée.
     { label: 'Tous les dossiers', path: '/assistant/tableau-de-bord', icon: '▤' },

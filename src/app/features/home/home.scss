@@ -77,3 +77,11 @@
     font-size: var(--cnm-fs-md);
   }
 }
+
+/* Sonde de l’accueil « À faire » (quelques centaines de ms au plus) : un mot plutôt qu’une page qui clignote. */
+.home__attente {
+  margin: 0;
+  padding: 1rem 0;
+  font-size: var(--text-md);
+  color: var(--n-500);
+}
