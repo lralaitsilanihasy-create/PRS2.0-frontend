@@ -609,7 +609,7 @@ interface ApercuDossier {
       }
 
       @if (apercu(); as a) {
-        <div class="modal-backdrop" [class.closing]="closingApercu()">
+        <div class="modal-backdrop modal-backdrop--sans-flou" [class.closing]="closingApercu()">
           <div class="modal sd__apercu cnm-form" role="dialog" aria-modal="true" aria-label="Aperçu du dossier" appModale appModaleClicExterieur (appModaleFermer)="fermerApercuAnime()">
             <!-- ⚠️ Demande pilote (03/09) — titre décalé du coin, ✕ supprimé : Échap, le clic sur
                  le voile (appModaleClicExterieur) et le bouton « Fermer » du pied suffisent. -->

@@ -92,7 +92,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     DocumentVisionneuse,
   ],
   template: `
-    <div class="modal-backdrop" [class.closing]="closing()">
+    <div class="modal-backdrop modal-backdrop--sans-flou" [class.closing]="closing()">
       @if (loading()) {
         <div class="spinner-wrap"><div class="spinner"></div></div>
       } @else {

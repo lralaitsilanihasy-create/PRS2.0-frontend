@@ -49,7 +49,7 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, StatutBadge, PpmMarchesTable, ModaleDirective, ChronometrageDossier, FichePresentationDoc, AgpmDoc, EtatErreur, DocumentVisionneuse],
   template: `
-    <div [class.modal-backdrop]="!embedded()" [class.closing]="closing()">
+    <div [class.modal-backdrop]="!embedded()" [class.modal-backdrop--sans-flou]="!embedded()" [class.closing]="closing()">
       <!-- ⚠️ En modale, le corps n'est monté qu'une fois les données là : sinon le panneau
            s'ouvrait à la taille de son seul en-tête puis grandissait par à-coups (552 → 724 →
            964 px mesurés) PENDANT son animation d'entrée — d'où une ouverture « brusque ».

@@ -1003,6 +1003,16 @@ textarea.form-control {
   > * { animation: modal-rise 260ms var(--ease-out, ease-out); margin: auto; }
 }
 
+/* Voile SANS flou : modales-documents dont le corps défile sur toute la hauteur (plan de passation
+   en consultation, détail PPM, aperçu avant soumission). Un `backdrop-filter` recompose son flou
+   plein écran à CHAQUE image du défilement de tout ce qu'il contient. Mesuré le 15/09 sur un plan de
+   130 lignes à 1366×900 : 30 à 47 → 16 à 17 ms/image en rendu logiciel ; sur GPU intégré (Intel UHD),
+   16 → 11 ms/image et une ouverture deux fois plus longue (1,2 s au lieu de 0,6 s). Un flou posé sur
+   une couche à part, sous le panneau, coûte encore plus (59 ms/image) : seul le retirer règle le problème.
+   Compromis visuel : ces panneaux couvrent presque tout l'écran, le flou ne se voyait que dans leurs
+   marges (1,5 rem sur les côtés, 5 vh en haut et en bas) ; la teinte du voile ne change pas. */
+.modal-backdrop.modal-backdrop--sans-flou { backdrop-filter: none; }
+
 @keyframes modal-fade { from { opacity: 0; } }
 @keyframes modal-rise { from { opacity: 0; transform: translateY(18px) scale(.94); } }
 
