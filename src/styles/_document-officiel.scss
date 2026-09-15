@@ -593,6 +593,16 @@ app-document-visionneuse {
 
 /* ── Écrans étroits ─────────────────────────────────────────────────────────────────────────── */
 
+/* Portable 15" à 125 % (1536 px → 1229 px CSS) : les colonnes de 5 % descendent à 35 px et même la
+   syllabe « COMP- » n'y tenait plus (coupée sans trait d'union, mesuré). Intitulés à 9 px et
+   rembourrage latéral d'1 px : chaque intitulé se coupe encore à une syllabe. */
+@media (max-width: 81.25rem) {
+  .doc-table th {
+    font-size: 0.5625rem;
+    padding-inline: 1px;
+  }
+}
+
 /* Filet de sécurité hors cible (tablette, téléphone) : la feuille défile dans sa visionneuse. */
 @media (max-width: 48rem) {
   /* Feuille à 0,75 rem de rembourrage : les annotations y débordent moins, les gouttières s'élargissent. */
