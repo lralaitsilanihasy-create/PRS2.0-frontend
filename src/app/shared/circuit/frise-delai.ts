@@ -125,18 +125,29 @@ export function friseDossier(source: AFaireTache | Dossier): EtapeFriseVue[] {
   return estTache(source) ? frise(source.dossier, source.urgence === 'EN_PAUSE') : frise(source, source.attentePrmp === true);
 }
 
+/**
+ * ⚠️ Recette L4-Q2 (2026-09-16), défaut (i) — un dossier revenu en BROUILLON après un retrait accepté
+ * garde les dates et les acteurs de son ancien circuit : le serveur les sert encore, mais le circuit à
+ * la CNM a été effacé et ces traces ne disent plus rien (« Réception 15/09 » sur un brouillon qui
+ * n'a plus été reçu). La frise d'un brouillon repart donc VIERGE — aucune date, aucun acteur ; seule
+ * l'étape courante reste marquée, puisque le dossier attend bien d'être soumis.
+ *
+ * Un brouillon jamais soumis n'a de toute façon ni date ni acteur : la règle ne change que le cas du
+ * retrait. Elle est posée ici, à l'affichage, et vaut aussi pour la frise d'« À faire ».
+ */
 function frise(d: EtapesDatees, pause: boolean): EtapeFriseVue[] {
   const courante = etapeIndexForDossier(d.statut ?? undefined);
+  const vierge = d.statut === 'BROUILLON';
   return CIRCUIT_ETAPES.map((e, i) => {
     const cle = e.key as EtapeFrise;
-    const date = d.datesEtapes?.[cle] ?? null;
+    const date = (vierge ? null : d.datesEtapes?.[cle]) ?? null;
     const etat = i < courante ? 'faite' : i === courante ? (pause ? 'pause' : 'courante') : 'a-venir';
     return {
       cle,
       libelle: e.label,
       etat,
       date: date ? jourMois(date) : etat === 'courante' ? 'en cours' : etat === 'pause' ? 'en pause' : '',
-      acteur: d.acteursEtapes?.[cle] ?? null,
+      acteur: (vierge ? null : d.acteursEtapes?.[cle]) ?? null,
     };
   });
 }

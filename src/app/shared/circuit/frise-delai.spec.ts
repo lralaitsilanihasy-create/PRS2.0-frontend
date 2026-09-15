@@ -38,6 +38,17 @@ describe('Frise et délai — sur un dossier comme sur une tâche', () => {
     expect(frise[2].date).toBe('en cours');
   });
 
+  /**
+   * Recette L4-Q2, défaut (i) : un dossier renvoyé en brouillon par un retrait accepté garde les dates
+   * et les acteurs de son ancien circuit, que le serveur sert encore. Elles ne veulent plus rien dire.
+   */
+  it('brouillon issu d’un retrait : la frise repart vierge, malgré les dates de l’ancien circuit', () => {
+    const retire = friseDossier({ ...dossierDe(visa), statut: 'BROUILLON' });
+    expect(retire.every((e) => e.acteur === null)).toBe(true);
+    expect(retire.map((e) => e.date)).toEqual(['en cours', '', '', '', '', '', '']);
+    expect(retire.map((e) => e.etat)).toEqual(['courante', 'a-venir', 'a-venir', 'a-venir', 'a-venir', 'a-venir', 'a-venir']);
+  });
+
   it("le délai se lit sur l'étape courante servie avec les gestes (paire urgence + délai)", () => {
     const etapeCourante = { urgence: visa.urgence, delai: visa.delai };
     expect(delaiLigne(etapeCourante)).toEqual(delaiLigne(visa));
