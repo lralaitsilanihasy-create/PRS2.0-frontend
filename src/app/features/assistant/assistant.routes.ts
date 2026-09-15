@@ -8,6 +8,9 @@ import { Routes } from '@angular/router';
 /** Espace Assistant contrôleur (lazy, sous roleGuard ASSISTANT_CONTROLEUR) — lecture seule. */
 export const ASSISTANT_ROUTES: Routes = [
   { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
+  // Refonte ergonomique (2026-09-15) — accueil « À faire » : les gestes que le serveur attribue au connecté
+  // (demande 2026-09-14-accueil-a-faire). Monté dans l'espace pour que chaque geste y reste.
+  { path: 'a-faire', loadComponent: () => import('../home/a-faire').then((m) => m.AFaireEcran), data: { title: 'À faire' } },
   { path: 'tableau-de-bord', loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline), data: { title: 'Dossiers de ma localité' } },
   // `:idLettre` / `:idPv` : liens de notification (LETTRE_RENVOI_COPIE / PV_DEFINITIF_COPIE / CLOTURE_COPIE_ASSISTANT).
   { path: 'lettre-renvois', loadComponent: () => import('../circuit/lettre-renvoi-consultation').then((m) => m.LettreRenvoiConsultation), data: { source: 'localite', title: 'Lettres de renvoi reçues', archivable: true } },

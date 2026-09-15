@@ -1,0 +1,196 @@
+/* Aperçu du dossier sélectionné (maquette Main, colonne droite ~380 px). Couleurs de texte vérifiées
+   au contraste AA sur blanc : #152033 15:1, #34405a 10:1, #5b6784 5,6:1, #0369a1 5,9:1,
+   #b91c1c 6,5:1, #b45309 5,0:1, #047857 5,5:1. */
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.ap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem 1.05rem 1.1rem;
+  background: #fff;
+  border: 1px solid #e0e6f0;
+  border-radius: 14px;
+  color: #152033;
+}
+.ap__lbl {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #5b6784;
+}
+.ap__ref {
+  margin: -0.45rem 0 0;
+  font: 500 1.125rem/1.2 var(--cnm-mono);
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.ap__ref--sans {
+  font: 800 1.0625rem/1.2 var(--font-base);
+}
+.ap__ent {
+  margin: -0.55rem 0 0;
+  font-size: 0.8125rem;
+  color: #34405a;
+}
+.ap__puces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+}
+.ap__statut {
+  padding: 0.1rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.15rem;
+}
+.ap__statut--info { background: #e0f2fe; color: #075985; }
+.ap__statut--warning { background: #fef3c7; color: #92400e; }
+.ap__statut--success { background: #d1fae5; color: #065f46; }
+.ap__statut--danger { background: #fee2e2; color: #b91c1c; }
+.ap__statut--neutral { background: #e8edf5; color: #34405a; }
+.ap__puce {
+  padding: 0 0.4rem;
+  border: 1px solid #e0e6f0;
+  border-radius: 5px;
+  font: 500 0.71875rem/1.15rem var(--cnm-mono);
+  color: #34405a;
+  background: #fff;
+}
+
+/* ── Frise des sept étapes ── */
+/* Sept colonnes d'≈ 50 px à 380 px : la frise mord sur la marge de la carte, et un libellé plus long que
+   sa colonne (« Vérification ») déborde sur ses voisins, plus courts, plutôt que de se couper en deux. */
+.frise {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin: 0 -0.5rem;
+  padding: 0.15rem 0 0;
+  list-style: none;
+}
+.frise::before {
+  content: '';
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 0.65rem;
+  height: 2px;
+  background: #dbe3ee;
+}
+.frise__e {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  text-align: center;
+  min-width: 0;
+}
+.frise__pt {
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #c5d0de;
+}
+.frise__e--faite .frise__pt { background: #0284c7; border-color: #0284c7; }
+.frise__e--courante .frise__pt { border-color: #0284c7; box-shadow: 0 0 0 4px #bae6fd; }
+.frise__e--pause .frise__pt { border-color: #d97706; box-shadow: 0 0 0 4px #fde68a; }
+.frise__l {
+  font-size: 0.625rem;
+  line-height: 1.15;
+  font-weight: 600;
+  color: #34405a;
+  white-space: nowrap;
+}
+.frise__e--a-venir .frise__l { font-weight: 500; color: #5b6784; }
+.frise__d {
+  min-height: 0.7rem;
+  font: 400 0.65625rem/1 var(--cnm-mono);
+  color: #5b6784;
+}
+
+/* ── Prochaine action ── */
+.suite {
+  padding: 0.7rem 0.75rem;
+  background: #f7f9fc;
+  border: 1px solid #edf1f7;
+  border-radius: 10px;
+}
+.suite__l {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #5b6784;
+}
+.suite__t {
+  margin: 0.1rem 0 0.3rem;
+  font-size: 0.96875rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.suite__d {
+  margin: 0 0 0.3rem;
+  font-size: 0.78125rem;
+  font-weight: 700;
+}
+.suite__d--retard { color: #b91c1c; }
+.suite__d--bientot { color: #b45309; }
+.suite__d--ok { color: #047857; }
+.suite__d--sans,
+.suite__d--pause { color: #5b6784; }
+.suite__d--suivi { color: #0369a1; }
+
+.barre {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: #e6ebf3;
+  overflow: hidden;
+}
+.barre__r {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+.barre__r--retard { background: #dc2626; }
+.barre__r--bientot { background: #d97706; }
+.barre__r--ok { background: #10b981; }
+.barre__r--sans,
+.barre__r--pause { background: #cbd5e1; }
+.barre__r--suivi { background: #bae6fd; }
+
+/* ── Faits ── */
+.faits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+}
+.faits__f {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 0.6rem;
+  font-size: 0.8125rem;
+}
+.faits__f dt { color: #5b6784; }
+.faits__f dd { margin: 0; color: #152033; overflow-wrap: anywhere; }
+
+.ap__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.ap__actions .btn {
+  justify-content: center;
+  width: 100%;
+  min-height: 2.5rem;
+}
