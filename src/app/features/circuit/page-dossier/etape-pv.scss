@@ -1,8 +1,8 @@
 /* Navette du projet de PV dans le panneau de l'étape (page dossier, lot L4-F4).
    L'hôte s'efface (`display: contents`) : la navette et le volet deviennent des cellules de la grille du
    panneau (`.ec`, deux colonnes) — la navette sous le titre, le volet dans la colonne de droite, sur la
-   hauteur du panneau. `PvWorkflow` garde sa barre de décision indigo (demande pilote du 04/09) : il n'est
-   mis en page que par son conteneur. Textes au contraste AA sur blanc : #152033 15:1, #34405a 10:1,
+   hauteur du panneau. `PvWorkflow` n'est mis en page — et, depuis la recette Q2, habillé — que par son
+   conteneur ; son fichier n'est pas touché. Textes au contraste AA sur blanc : #152033 15:1, #34405a 10:1,
    #5b6784 5,6:1, #0369a1 5,9:1 ; #9a3412 7,3:1 sur #fff7ed. */
 :host {
   display: contents;
@@ -18,6 +18,41 @@
 .ep__workflow {
   display: block;
   min-width: 0;
+}
+
+/* ⚠️ Recette L4-Q2 (2026-09-16), défaut (g) — dans la page dossier, la barre de décision du PV
+   détonnait : dégradé indigo profond et ombre portée au beau milieu d'un panneau blanc, alors qu'elle
+   n'est plus une section à elle seule mais la suite du titre de l'étape. `PvWorkflow` n'est PAS
+   modifié (12 commits du patron, plan L4 §7) : la page l'habille depuis SON conteneur. `::ng-deep`
+   est le seul moyen de traverser l'encapsulation d'un composant qu'on ne touche pas ; placé sous
+   `:host`, il ne sort pas de `app-etape-pv` — la barre garde son dégradé partout ailleurs.
+   Contrastes sur #f4f7fb : #34405a 9,5:1, #5b6784 5,4:1. */
+:host ::ng-deep .ep .ep__workflow .pv-workflow {
+  gap: 0.7rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #dbe3ee;
+  background: #f4f7fb;
+  box-shadow: none;
+}
+:host ::ng-deep .ep .ep__workflow .pv-workflow__label {
+  color: #5b6784;
+}
+:host ::ng-deep .ep .ep__workflow .pv-workflow__actions {
+  border-top-color: #dbe3ee;
+  padding-top: 0.7rem;
+}
+:host ::ng-deep .ep .ep__workflow .pv-workflow__actions .btn-outline {
+  color: #34405a;
+  border-color: #cbd5e5;
+  background: #fff;
+}
+:host ::ng-deep .ep .ep__workflow .pv-workflow__deja-signe {
+  color: #5b6784;
+}
+:host ::ng-deep .ep .ep__workflow .pv-workflow__niveau {
+  color: #34405a;
+  border-color: #cbd5e5;
+  background: #fff;
 }
 .ep__attente {
   display: flex;
