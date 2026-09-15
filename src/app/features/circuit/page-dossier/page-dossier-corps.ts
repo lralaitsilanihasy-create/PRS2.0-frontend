@@ -22,7 +22,7 @@ import { BarreCollante } from './barre-collante';
 import { FocusNavette } from './etape-pv';
 import { EtapeCourante } from './etape-courante';
 import { EtatGestes, GesteBouton, VueEtape, ciblePage, famillePage, gesteDemande, montantGestes, vueEtape } from './etape-courante-modele';
-import { RetourPage, etapesPage, referenceDossier } from './page-dossier-modele';
+import { RetourPage, SuiteGeste, etapesPage, referenceDossier } from './page-dossier-modele';
 
 /** Hauteur de la barre du haut de l'application (fixe, `.topbar`). */
 const HAUT_TOPBAR = 48;
@@ -166,7 +166,7 @@ const HAUT_TOPBAR = 48;
           @if (vue(); as v) {
             <app-etape-courante #panneau [vue]="v" [occupe]="occupe()" [idLocalite]="dossier().idLocalite ?? null" [lienPv]="lienPv()"
               [gesteFocus]="focusNavette()" [suiviRetrait]="suiviRetrait()" (agir)="agir($event)" (navetteChangee)="apresGeste()"
-              (retraitDecide)="apresGeste()" />
+              (retraitDecide)="apresGeste($event === 'acceptee' ? 'retrait-accepte' : null)" />
           }
         }
       }
@@ -247,7 +247,7 @@ export class PageDossierCorps implements OnInit {
   readonly gesteDemande = input<string | null>(null);
 
   /** Un geste a réussi : relire le dossier et ses gestes (relecture légère, sans recréer la page). */
-  readonly gesteReussi = output<void>();
+  readonly gesteReussi = output<SuiteGeste>();
   readonly relancerGestes = output<void>();
   /** `?geste=` a été lu (servi ou non) : la page le retire de l'URL. */
   readonly gesteTraite = output<void>();
@@ -400,11 +400,11 @@ export class PageDossierCorps implements OnInit {
   }
 
   /** Geste accompli dans une modale : on reste sur la page, qui relit le dossier et ses gestes. */
-  apresGeste(): void {
+  apresGeste(suite: SuiteGeste = null): void {
     this.modale.set(null);
     this.titreApresGeste = true;
     this.dossiersRefresh.notifierChangement();
-    this.gesteReussi.emit();
+    this.gesteReussi.emit(suite);
   }
 
   /** URL de la page, `?geste=` retiré : le retour des écrans de travail. */

@@ -38,6 +38,9 @@ export interface DemandeADecider {
   demandeeLe: string | null;
 }
 
+/** Issue d'une décision : acceptée, refusée, ou `null` quand la demande a changé ailleurs (404, 409). */
+export type IssueRetrait = 'acceptee' | 'refusee' | null;
+
 type LectureDemande = { etat: 'chargement' } | { etat: 'pret'; demande: DemandeRetrait } | { etat: 'echec' };
 
 /**
@@ -186,9 +189,10 @@ export class DecisionRetrait {
   /** La page prépare un geste ou relit le dossier : les boutons attendent. */
   readonly occupe = input(false);
   /**
-   * La demande a été décidée — ou a changé ailleurs (404, 409) : la page relit le dossier et ses gestes.
+   * La demande a été décidée — ou a changé ailleurs (404, 409, `null`) : la page relit le dossier et ses
+   * gestes. Acceptée, le dossier redevenu brouillon peut sortir du périmètre du décideur.
    */
-  readonly changed = output<void>();
+  readonly changed = output<IssueRetrait>();
 
   private readonly service = inject(DemandeRetraitService);
   private readonly toast = inject(ToastService);
@@ -280,7 +284,7 @@ export class DecisionRetrait {
       .subscribe({
         next: () => {
           this.toast.success('Demande acceptée — dossier renvoyé en brouillon.');
-          this.apresDecision();
+          this.apresDecision('acceptee');
         },
         error: (err: unknown) => this.echec(err),
       });
@@ -337,7 +341,7 @@ export class DecisionRetrait {
         next: () => {
           this.confirmation.set(false);
           this.toast.success('Demande refusée.');
-          this.apresDecision();
+          this.apresDecision('refusee');
         },
         error: (err: unknown) => {
           this.enCours.set(null);
@@ -347,16 +351,16 @@ export class DecisionRetrait {
       });
   }
 
-  private apresDecision(): void {
+  private apresDecision(issue: 'acceptee' | 'refusee'): void {
     this.enCours.set(null);
     this.refusOuvert.set(false);
     this.transition.set(true);
-    this.changed.emit();
+    this.changed.emit(issue);
   }
 
   /** Refus et conflits : l'intercepteur les présente. 404 ou 409 : la demande a changé ailleurs, la page relit. */
   private echec(err: unknown): void {
     this.enCours.set(null);
-    if (isApiError(err) && [404, 409].includes(err.status)) this.changed.emit();
+    if (isApiError(err) && [404, 409].includes(err.status)) this.changed.emit(null);
   }
 }

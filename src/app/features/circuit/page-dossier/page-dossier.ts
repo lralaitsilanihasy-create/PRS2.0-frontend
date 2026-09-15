@@ -10,11 +10,19 @@ import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
 import { EtatGestes, classerEchecGestes } from './etape-courante-modele';
 import { PageDossierCorps } from './page-dossier-corps';
-import { EchecOuverture, classerEchec, lireIdDossier, retourPage } from './page-dossier-modele';
+import { EchecOuverture, SuiteGeste, classerEchec, lireIdDossier, retourPage } from './page-dossier-modele';
 
-type EtatOuverture = { etat: 'chargement' } | { etat: 'pret'; dossier: Dossier } | { etat: EchecOuverture };
+/** `retire` : relecture refusée (403) juste après l'acceptation d'un retrait — le dossier a quitté le périmètre. */
+type FinOuverture = EchecOuverture | 'retire';
+type EtatOuverture = { etat: 'chargement' } | { etat: 'pret'; dossier: Dossier } | { etat: FinOuverture };
 
-const ECHECS: Record<EchecOuverture, { message: string; aide: string; reprise: boolean }> = {
+const ECHECS: Record<FinOuverture, { message: string; aide: string; reprise: boolean }> = {
+  // Lot L4-F5 — sans ce cas, le Chef de commission qui accepte un retrait lirait « hors de votre périmètre ».
+  retire: {
+    message: 'Retrait accepté : le dossier est revenu en brouillon chez la PRMP.',
+    aide: "Son circuit à la CNM est effacé ; il sort de votre périmètre jusqu'à ce que la PRMP le soumette à nouveau.",
+    reprise: false,
+  },
   interdit: {
     message: 'Ce dossier est hors de votre périmètre.',
     aide: "Il relève d'une autre localité ou d'une autre autorité contractante.",
@@ -60,7 +68,7 @@ const ECHECS: Record<EchecOuverture, { message: string; aide: string; reprise: b
         [gestes]="gestes()"
         [relecture]="relecture()"
         [gesteDemande]="gesteDemande()"
-        (gesteReussi)="relire()"
+        (gesteReussi)="relire($event)"
         (relancerGestes)="relancerGestes()"
         (gesteTraite)="retirerGesteDemande()"
       />
@@ -106,8 +114,11 @@ export class PageDossier {
   readonly gestes = signal<EtatGestes>({ etat: 'chargement' });
   /** Relecture du dossier et de ses gestes après un geste : les boutons attendent. */
   readonly relecture = signal(false);
-  /** `dossier: false` : les gestes seuls (ouverture, Réessayer) ; `true` : relecture après un geste. `null` annule. */
-  private readonly lecture$ = new Subject<{ id: number; dossier: boolean } | null>();
+  /**
+   * `dossier: false` : les gestes seuls (ouverture, Réessayer) ; `true` : relecture après un geste, avec ce
+   * que le geste laisse attendre (`suite`). `null` annule.
+   */
+  private readonly lecture$ = new Subject<{ id: number; dossier: boolean; suite?: SuiteGeste } | null>();
 
   readonly retour = computed(() => retourPage(this.returnUrl(), this.auth.role()));
   /** Lien du fil d'Ariane : un `UrlTree`, pour que Ctrl+clic ouvre un onglet avec les paramètres du retour. */
@@ -165,7 +176,10 @@ export class PageDossier {
           this.relecture.set(true);
           const ouverture$ = this.dossiers.lire(demande.id).pipe(
             map((dossier): EtatOuverture => ({ etat: 'pret', dossier })),
-            catchError((err: unknown) => of<EtatOuverture>({ etat: classerEchec(err) })),
+            catchError((err: unknown) => {
+              const echec = classerEchec(err);
+              return of<EtatOuverture>({ etat: echec === 'interdit' && demande.suite === 'retrait-accepte' ? 'retire' : echec });
+            }),
           );
           return forkJoin({ gestes: gestes$, ouverture: ouverture$ }).pipe(finalize(() => this.relecture.set(false)));
         }),
@@ -182,9 +196,9 @@ export class PageDossier {
   }
 
   /** Après un geste réussi : le dossier et ses gestes, rien d'autre (le corps et ses documents restent). */
-  relire(): void {
+  relire(suite: SuiteGeste = null): void {
     const o = this.ouverture();
-    if (o.etat === 'pret') this.lecture$.next({ id: o.dossier.idDossier, dossier: true });
+    if (o.etat === 'pret') this.lecture$.next({ id: o.dossier.idDossier, dossier: true, suite });
   }
 
   relancerGestes(): void {

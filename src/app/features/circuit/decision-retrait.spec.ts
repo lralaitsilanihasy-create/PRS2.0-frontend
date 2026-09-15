@@ -65,6 +65,8 @@ interface Scenario {
   demande?: DemandeRetrait | { status: number };
   /** `GET /api/demande-retraits` (PRMP). */
   demandes?: DemandeRetrait[];
+  /** Relecture du dossier et de ses gestes refusée (le dossier a quitté le périmètre). */
+  relectureRefusee?: number;
 }
 
 describe('Décision de retrait — motif de refus (règle)', () => {
@@ -148,7 +150,8 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
         const url = req.request.urlWithParams;
         demandees.push(`GET ${url}`);
         const demande = scenario.demande ?? DEMANDE;
-        if (url === '/api/dossiers/42') req.flush(scenario.dossier ?? DOSSIER);
+        if ((url === '/api/dossiers/42' || url === '/api/dossiers/42/gestes') && scenario.relectureRefusee) req.flush({ message: 'x' }, { status: scenario.relectureRefusee, statusText: 'x' });
+        else if (url === '/api/dossiers/42') req.flush(scenario.dossier ?? DOSSIER);
         else if (url === '/api/dossiers/42/gestes') req.flush(scenario.gestes);
         else if (url === '/api/demande-retraits/77') {
           if ('status' in demande) req.flush({ message: 'x' }, { status: demande.status, statusText: 'x' });
@@ -283,6 +286,37 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
     expect(texte(q('.ec__titre'))).toBe('Brouillon, pas encore soumis à la CNM');
     expect(texte(q('h1'))).toBe('00003/DGB/PPM/2026');
     expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  describe('le dossier sort du périmètre du décideur à la relecture (403)', () => {
+    it('CC qui accepte : la page dit que le retrait est accepté et le dossier revenu chez la PRMP — pas « hors de votre périmètre »', async () => {
+      await ouvrir('CHEF_COMMISSION', '/cc/dossier/42', { gestes: reponse('CHEF_COMMISSION', [retrait()]) }, 'CCANT01', 'ANT');
+      scenario = { ...scenario, relectureRefusee: 403 };
+      cliquer('Accepter le retrait');
+      http.expectOne({ method: 'POST', url: '/api/demande-retraits/77/accepter' }).flush({ ...DEMANDE, statut: 'ACCEPTEE' });
+      harness.detectChanges();
+      repondre();
+      const etat = texte(q('app-page-dossier app-etat-erreur'));
+      expect(etat).toContain('Retrait accepté : le dossier est revenu en brouillon chez la PRMP.');
+      expect(etat).not.toContain('hors de votre périmètre');
+      expect(q('app-page-dossier-corps')).toBeNull();
+      expect(q('.pd-ariane__retour')?.textContent).toContain('À faire');
+      expect(toast.success).toHaveBeenCalledWith('Demande acceptée — dossier renvoyé en brouillon.');
+      expect(toast.error).not.toHaveBeenCalled();
+    });
+
+    it('contre-épreuve — après un refus, un 403 reste « hors de votre périmètre »', async () => {
+      await ouvrir('CHEF_COMMISSION', '/cc/dossier/42', { gestes: reponse('CHEF_COMMISSION', [retrait()]) }, 'CCANT01', 'ANT');
+      scenario = { ...scenario, relectureRefusee: 403 };
+      cliquer('Refuser…');
+      saisir('Pièces justificatives insuffisantes');
+      cliquer('Refuser la demande');
+      cliquer('Confirmer le refus');
+      http.expectOne({ method: 'POST', url: '/api/demande-retraits/77/refuser' }).flush({ ...DEMANDE, statut: 'REFUSEE' });
+      harness.detectChanges();
+      repondre();
+      expect(texte(q('app-page-dossier app-etat-erreur'))).toContain('Ce dossier est hors de votre périmètre.');
+    });
   });
 
   it('conflit (409) : présenté par l’intercepteur, la page relit ; la demande encore servie, le formulaire revient', async () => {

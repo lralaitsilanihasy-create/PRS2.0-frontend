@@ -101,6 +101,12 @@ export const estPartieControlee = (role: Role | null): boolean => role === 'PRMP
 
 export type EchecOuverture = 'interdit' | 'introuvable' | 'echec';
 
+/**
+ * Ce qu'un geste réussi laisse attendre de la relecture. `retrait-accepte` (lot L4-F5) : le dossier est
+ * redevenu un brouillon, son circuit effacé — hors du Président, les contrôleurs n'y ont plus accès (403).
+ */
+export type SuiteGeste = 'retrait-accepte' | null;
+
 /** 403 : hors périmètre ; 404 (ou 400 sur l'identifiant) : introuvable ; le reste : échec à réessayer. */
 export function classerEchec(err: unknown): EchecOuverture {
   if (!isApiError(err)) return 'echec';

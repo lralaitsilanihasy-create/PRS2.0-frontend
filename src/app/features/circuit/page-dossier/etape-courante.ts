@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input
 import { Dossier, GesteAFaire } from '../../../models';
 import { Icone } from '../../../shared/ui/icone';
 import { CibleGeste } from '../../home/a-faire/a-faire-navigation';
-import { DecisionRetrait } from '../decision-retrait';
+import { DecisionRetrait, IssueRetrait } from '../decision-retrait';
 import { GesteBouton, VueEtape } from './etape-courante-modele';
 import { EtapePv, FocusNavette } from './etape-pv';
 import { SuiviRetrait } from './suivi-retrait';
@@ -86,7 +86,7 @@ import { SuiviRetrait } from './suivi-retrait';
       @if (retraitDevant()) {
         @if (vue().retrait; as r) {
           <!-- Lot F5 : la décision est le geste principal — sous le titre, le volet de la demande à droite. -->
-          <app-decision-retrait [demande]="r" [occupe]="occupe()" (changed)="retraitDecide.emit()" />
+          <app-decision-retrait [demande]="r" [occupe]="occupe()" (changed)="retraitDecide.emit($event)" />
         }
       }
       @if (vue().navette; as n) {
@@ -103,7 +103,7 @@ import { SuiviRetrait } from './suivi-retrait';
       @if (!retraitDevant()) {
         @if (vue().retrait; as r) {
           <!-- Lot F5 : un autre geste passe avant — la décision prend sa rangée, sous un intertitre. -->
-          <app-decision-retrait [demande]="r" [suite]="true" [occupe]="occupe()" (changed)="retraitDecide.emit()" />
+          <app-decision-retrait [demande]="r" [suite]="true" [occupe]="occupe()" (changed)="retraitDecide.emit($event)" />
         }
       }
     </section>
@@ -126,7 +126,7 @@ export class EtapeCourante {
   /** Lot F5 — PRMP : le dossier dont la page suit la demande de retrait ; `null` pour tout autre profil. */
   readonly suiviRetrait = input<Dossier | null>(null);
   /** Lot F5 — la demande de retrait a été décidée (ou a changé ailleurs). */
-  readonly retraitDecide = output<void>();
+  readonly retraitDecide = output<IssueRetrait>();
 
   /** Lot F5 — la décision de retrait est le geste principal servi : son formulaire vient en premier. */
   readonly retraitDevant = computed(() => this.vue().retrait !== null && this.vue().principal?.geste === 'DECIDER_RETRAIT');
