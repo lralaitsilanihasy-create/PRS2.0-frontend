@@ -143,3 +143,39 @@ describe('Pastille « À faire » du menu (refonte ergonomique, 2026-09-15)', ()
     expect((await monter({ profil: 'MEMBRE', compteurs: {}, aFaire: 0 })).querySelector('.nav-badge')).toBeNull();
   });
 });
+
+describe('Bannière de vacance du poste PRMP (recette du 2026-09-15)', () => {
+  /**
+   * Un conteneur flex (`.alert`) range chaque enfant direct dans sa colonne : du texte et un <strong>
+   * posés côte à côte y devenaient trois ou quatre colonnes. Le message doit tenir dans UN enfant.
+   */
+  const enfantsDirectsMixtes = (el: Element): boolean =>
+    Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim() !== '') && el.children.length > 0;
+
+  it('le message tient dans un seul bloc : pas de texte à côté du <strong>', async () => {
+    TestBed.configureTestingModule({
+      imports: [MainLayout],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([{ path: 'prmp/tableau-de-bord', component: EcranFactice }]),
+        {
+          provide: AuthService,
+          useValue: { role: signal('PRMP'), login: signal('PRMP001'), localite: signal('ANT'), ref: () => null, nomAffichage: () => null, typeActeur: () => 'PRMP', isAuthenticated: () => false, logout: () => undefined },
+        },
+        { provide: VacanceStore, useValue: { vacance: signal(true), verifier: () => undefined } },
+        { provide: PermissionsService, useValue: { peutExecuter: () => false } },
+        { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
+        { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MainLayout);
+    await TestBed.inject(Router).navigateByUrl('/prmp/tableau-de-bord');
+    fixture.detectChanges();
+    const banniere = (fixture.nativeElement as HTMLElement).querySelector('.alert.vacance-banniere') as HTMLElement;
+    expect(banniere).not.toBeNull();
+    expect(enfantsDirectsMixtes(banniere)).toBe(false);
+    expect(banniere.children.length).toBe(1);
+    expect(banniere.querySelector('span > strong')?.textContent).toBe('En attente de nomination de la nouvelle PRMP');
+  });
+});

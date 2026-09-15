@@ -22,8 +22,8 @@ import { ModePassationService, TypeDmcService } from '../../services';
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
       <p class="alert alert-info">
-        Le type de DMC d'un marché est <strong>dérivé</strong> de son mode de passation. Associez chaque mode à un type ;
-        les modes <strong>non mappés</strong> sont signalés.
+        <span>Le type de DMC d'un marché est <strong>dérivé</strong> de son mode de passation. Associez chaque mode à un type ;
+        les modes <strong>non mappés</strong> sont signalés.</span>
       </p>
 
       @if (loading()) {

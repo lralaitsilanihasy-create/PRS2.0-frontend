@@ -91,10 +91,12 @@ import { DossierModificationStore } from './dossier-modification.store';
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>
       } @else if (ppm(); as p) {
+        <!-- ⚠️ 2026-09-15 (recette) — « .alert » est un conteneur flex : texte et <strong> posés en
+             enfants directs y devenaient quatre colonnes. Le message tient dans UN seul <span>. -->
         <div class="alert alert-info">
-          Corrigez votre PPM selon les observations du PV ci-dessous, <strong>importez le PPM
+          <span>Corrigez votre PPM selon les observations du PV ci-dessous, <strong>importez le PPM
           rectifié (PDF)</strong>, décrivez vos corrections, puis un seul bouton
-          <strong>enregistre la rectification et resoumet le dossier</strong>.
+          <strong>enregistre la rectification et resoumet le dossier</strong>.</span>
         </div>
 
         <app-chronometrage-dossier [idDossier]="idDossier" [compact]="true" />
@@ -203,23 +205,23 @@ import { DossierModificationStore } from './dossier-modification.store';
           <!-- PRÉVISUALISATION : grille partagée (identique soumission / réimport) — rien n'est écrit
                tant qu'« Enregistrer la rectification » n'est pas cliqué. -->
           <div class="alert alert-warning">
-            ⚠ <strong>Prévisualisation du PPM rectifié</strong> — {{ nbLignesImportees() }} ligne(s) lue(s)
+            <span>⚠ <strong>Prévisualisation du PPM rectifié</strong> — {{ nbLignesImportees() }} ligne(s) lue(s)
             pour {{ nbLignesActuelles() }} ligne(s) du dossier, appariées par position. Signataire et
-            référence actuels conservés. <strong>Rien n'est enregistré avant validation.</strong>
+            référence actuels conservés. <strong>Rien n'est enregistré avant validation.</strong></span>
           </div>
           @if (!ecartOk()) {
             <!-- ⚠️ Règle pilote (2026-09-06, précisée) : le PDF est la SEULE voie de rectification
                  des lignes — l'écart se corrige dans le DOCUMENT, jamais dans la grille. -->
             <div class="alert alert-danger" role="alert">
-              Le PPM rectifié ajoute {{ nbCreations() }} ligne(s) et en retire {{ nbSuppressions() }} :
+              <span>Le PPM rectifié ajoute {{ nbCreations() }} ligne(s) et en retire {{ nbSuppressions() }} :
               l'écart maximal autorisé est de <strong>3 dans chaque sens</strong>. Corrigez le
-              document PDF puis réimportez-le.
+              document PDF puis réimportez-le.</span>
             </div>
           } @else if (nbCreations() || nbSuppressions()) {
             <div class="alert alert-info">
-              Écart accepté : <strong>{{ nbCreations() }} ajout(s)</strong> ·
+              <span>Écart accepté : <strong>{{ nbCreations() }} ajout(s)</strong> ·
               <strong>{{ nbSuppressions() }} retrait(s)</strong> — dans la limite de 3 par sens
-              (règle du 06/09). Les lignes nouvelles portent le badge « Nouvelle ».
+              (règle du 06/09). Les lignes nouvelles portent le badge « Nouvelle ».</span>
             </div>
           }
           @if (importMarches(); as arr) {

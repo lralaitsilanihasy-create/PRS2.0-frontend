@@ -58,9 +58,9 @@ import { DossierConsultation } from './dossier-consultation';
            n'atteint plus ce message. Il ne reste que le cas de la vraie consultation seule. -->
       @if (onglet() === 'a-valider' && !canDecide() && liste().length) {
         <div class="alert alert-info rv__info" role="status">
-          <strong>Consultation seule.</strong>
+          <span><strong>Consultation seule.</strong>
           La décision sur une demande de retrait est réservée au <strong>Chef de commission</strong>
-          (ou au Président, qui l'exerce par délégation).
+          (ou au Président, qui l'exerce par délégation).</span>
         </div>
       }
 

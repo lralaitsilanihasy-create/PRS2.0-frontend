@@ -204,10 +204,11 @@
   <div class="page-inner">
     <!-- Vacance du poste PRMP (spec « Mandats PRMP », §5) : aucun mandat actif → standby explicite. -->
     @if (vacance()) {
+      <!-- « .alert » est un conteneur flex : le message tient dans UN seul <span> (recette du 2026-09-15). -->
       <div class="alert alert-warning vacance-banniere" role="status">
-        ⏸ <strong>En attente de nomination de la nouvelle PRMP</strong> — le poste est vacant : le
+        <span>⏸ <strong>En attente de nomination de la nouvelle PRMP</strong> — le poste est vacant : le
         traitement des dossiers est suspendu (création, modification, soumission, retraits). Les actions
-        redeviendront disponibles automatiquement dès la nomination effective du nouveau titulaire.
+        redeviendront disponibles automatiquement dès la nomination effective du nouveau titulaire.</span>
       </div>
     }
     <router-outlet />

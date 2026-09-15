@@ -340,12 +340,14 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
             <div class="dpm-section">
               @if (importApercu(); as r) {
                 <!-- PRÉVISUALISATION de l'import : RIEN n'est écrit tant qu'« Enregistrer » n'est pas cliqué. -->
+                <!-- « .alert » est un conteneur flex : le message tient dans UN seul <span> (sinon texte
+                     et <strong> s'y rangent en colonnes — recette du 2026-09-15). -->
                 <div class="alert alert-warning">
-                  ⚠ <strong>Prévisualisation de l'import</strong> — {{ importMarches()?.length ?? 0 }} marché(s) du PDF
+                  <span>⚠ <strong>Prévisualisation de l'import</strong> — {{ importMarches()?.length ?? 0 }} marché(s) du PDF
                   remplaceront les {{ marches().length }} ligne(s) actuelle(s). <strong>Modifications non
                   enregistrées.</strong> En-tête (exercice, date de signature) repris du PDF à l'enregistrement ;
                   pièces jointes conservées ; entité et référence inchangées{{ r.autoriteContractante ? ' (PDF : « ' + r.autoriteContractante + ' »)' : '' }}.
-                  @if (r.avertissements?.length) { {{ r.avertissements!.length }} avertissement(s) d'import. }
+                  @if (r.avertissements?.length) { {{ r.avertissements!.length }} avertissement(s) d'import. }</span>
                 </div>
                 <!-- Grille éditable partagée (identique à la soumission) : édition, revue de transcription, validation par ligne. -->
                 @if (importMarches(); as arr) {
@@ -610,8 +612,8 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
         <!-- ── PIED ── -->
         <div class="modal-footer modal-footer-spaced">
           <div class="modal-footer-info">
-            <strong>{{ marches().length }}</strong> marché(s) ·
-            <strong>{{ pieces().length }}</strong> pièce(s) jointe(s)
+            <span><strong>{{ marches().length }}</strong> marché(s) ·
+            <strong>{{ pieces().length }}</strong> pièce(s) jointe(s)</span>
           </div>
           @if (soumissible) {
             <div class="dpm-foot-actions">
