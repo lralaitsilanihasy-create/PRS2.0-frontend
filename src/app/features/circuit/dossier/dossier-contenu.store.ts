@@ -1,5 +1,5 @@
 import { Injectable, Signal, computed, inject, signal } from '@angular/core';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { ActionDossier, Capm, Chronometrage, DiffDossier, Dossier, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, VersionArchivee } from '../../../models';
@@ -24,6 +24,27 @@ import {
 import { calculerFichePresentation } from '../../../shared/prmp/fiche-presentation';
 import { calculerAgpm } from '../../../shared/prmp/agpm';
 import { VueVersionArchivee, vueVersionArchivee } from '../version-archivee-vue';
+
+/** Profils admis par le serveur aux lectures du versionnement (`LECTURE_CIRCUIT`, `MiseAJourPpmController`). */
+const PROFILS_LECTURE_VERSIONS: readonly string[] = [
+  'PRMP',
+  'PRESIDENT',
+  'CHEF_COMMISSION',
+  'SECRETAIRE',
+  'MEMBRE',
+  'VERIFICATEUR',
+  'ASSISTANT_CONTROLEUR',
+  'ADMINISTRATEUR',
+];
+
+/** Versions archivées du dossier et, s'il a été rectifié, le diff de son dernier cycle. */
+interface VersionsEtRectification {
+  versionsArchivees: VersionArchivee[];
+  diffRectification: DiffDossier | null;
+}
+
+/** Statuts où un cycle de rectification a pu avoir lieu (sondage du diff de rectification). */
+const STATUTS_RECTIFIABLES: readonly string[] = ['EN_ATTENTE_DECISION_PRMP', 'EN_VERIFICATION', 'OBSERVATIONS_LEVEES', 'DECISION_TRANSMISE_SIGMP', 'CLOTURE'];
 
 /**
  * Contenu d'un dossier en LECTURE SEULE, partagé par les blocs de `features/circuit/dossier/`.
@@ -71,6 +92,14 @@ export class DossierContenuStore {
 
   /** La référence PPM interne (ex. « 00018/MLF/PPM/2026 ») n'est montrée qu'aux profils PRMP, UGPM et Secrétaire. */
   readonly montrerReferencePpm = computed(() => ['PRMP', 'UGPM', 'SECRETAIRE'].includes(this.auth.role() ?? ''));
+
+  /**
+   * Lecture du versionnement (diff de mise à jour, diff de rectification, versions archivées) : seuls
+   * les profils que le serveur y admet (`LECTURE_CIRCUIT` de `MiseAJourPpmController`). L'UGPM et le
+   * Chargé de publication en sont exclus : les leur demander ne produisait qu'un 403 muet à chaque
+   * ouverture (lot L4-F2, plan §8.2). Le rendu ne change pas : ces réponses ne leur montraient rien.
+   */
+  readonly lectureVersionsPermise = computed(() => PROFILS_LECTURE_VERSIONS.includes(this.auth.role() ?? ''));
 
   /**
    * ⚠️ Demande pilote (2026-09-12) — l'historique des versions (cycles de RECTIFICATION du dossier) est
@@ -305,30 +334,16 @@ export class DossierContenuStore {
   charger(dossier: Signal<Dossier>): void {
     this.source.set(dossier);
     const id = this.dossier().idDossier;
+    const lectureVersions = this.lectureVersionsPermise();
     // Dossier issu d'une mise à jour → diff vs version précédente pour surligner les lignes changées.
     // Appel SILENCIEUX (hors vague principale) : 403/409 → pas de surlignage, l'affichage reste complet.
-    if (this.dossier().idDossierParent != null) {
+    // Pas demandé aux profils que le serveur refuse (UGPM : 403 assuré).
+    if (this.dossier().idDossierParent != null && lectureVersions) {
       this.miseAJourService.diff(id, true).subscribe({
         // Le diff de RECTIFICATION prime (changement le plus récent) : ne pas l'écraser si les deux
         // sondages répondent (ordre d'arrivée non garanti).
         next: (diff) => {
           if (!this.diffRectifApplique) this.appliquerDiff(diff, 'Mise à jour :');
-        },
-        error: () => {},
-      });
-    }
-    // ⚠️ 2026-08-15 — phase de vérification : diff du DERNIER cycle de RECTIFICATION (état
-    // pré-correction figé au premier PUT saisies/ppm → état courant), pour que le vérificateur (et
-    // tout profil qui consulte) voie ce que la PRMP a changé. Sondage silencieux (404/409 = jamais
-    // rectifié → rien) ; s'il existe, il PRIME sur le diff de versions (changement le plus récent).
-    const STATUTS_RECTIFIABLES = ['EN_ATTENTE_DECISION_PRMP', 'EN_VERIFICATION', 'OBSERVATIONS_LEVEES', 'DECISION_TRANSMISE_SIGMP', 'CLOTURE'];
-    if (STATUTS_RECTIFIABLES.includes(this.dossier().statut ?? '')) {
-      this.miseAJourService.diffRectification(id, true).subscribe({
-        next: (diff) => {
-          if (diff.lignes.some((l) => l.type !== 'INCHANGEE')) {
-            this.diffRectifApplique = true;
-            this.appliquerDiff(diff, 'Rectification :');
-          }
         },
         error: () => {},
       });
@@ -389,9 +404,34 @@ export class DossierContenuStore {
       previsions: this.previsionService.list().pipe(catchError(() => of([] as MarchePrevision[]))),
       // ⚠️ Historique des versions (2026-09-06) : DANS la vague, silencieux — vide si jamais rectifié
       // ou hors périmètre (403), l'onglet n'apparaît alors pas. Le contenu d'une version se lit à la demande.
-      versionsArchivees: this.miseAJourService.versionsArchivees(id, true).pipe(catchError(() => of([] as VersionArchivee[]))),
-    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, modeMap, natureMap, modesRef, capmsRef, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions, versionsArchivees }) => {
-      this.versionsArchivees.set(versionsArchivees);
+      // Pas demandé aux profils que le serveur refuse (UGPM) : l'onglet leur est de toute façon masqué.
+      // ⚠️ 2026-08-15 — phase de vérification : diff du DERNIER cycle de RECTIFICATION (état
+      // pré-correction figé au premier PUT saisies/ppm → état courant), pour que le vérificateur (et
+      // tout profil qui consulte) voie ce que la PRMP a changé ; il PRIME sur le diff de versions
+      // (changement le plus récent). Le serveur le calcule contre la dernière version archivée
+      // d'origine RECTIFICATION et répond 409 sans elle : il n'est donc demandé qu'APRÈS les versions
+      // archivées, et seulement si l'une d'elles est une rectification (lot L4-F2 : plus de 409 muet à
+      // chaque ouverture d'un dossier jamais rectifié). Toujours DANS la vague : pas de surlignage tardif.
+      versions: lectureVersions
+        ? this.miseAJourService.versionsArchivees(id, true).pipe(
+            catchError(() => of([] as VersionArchivee[])),
+            switchMap((versionsArchivees) =>
+              STATUTS_RECTIFIABLES.includes(this.dossier().statut ?? '') && versionsArchivees.some((v) => v.origine === 'RECTIFICATION')
+                ? this.miseAJourService.diffRectification(id, true).pipe(
+                    map((diffRectification): VersionsEtRectification => ({ versionsArchivees, diffRectification })),
+                    catchError(() => of<VersionsEtRectification>({ versionsArchivees, diffRectification: null })),
+                  )
+                : of<VersionsEtRectification>({ versionsArchivees, diffRectification: null }),
+            ),
+          )
+        : of<VersionsEtRectification>({ versionsArchivees: [], diffRectification: null }),
+    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, modeMap, natureMap, modesRef, capmsRef, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions, versions }) => {
+      this.versionsArchivees.set(versions.versionsArchivees);
+      const diffRectif = versions.diffRectification;
+      if (diffRectif && diffRectif.lignes.some((l) => l.type !== 'INCHANGEE')) {
+        this.diffRectifApplique = true;
+        this.appliquerDiff(diffRectif, 'Rectification :');
+      }
       this.typeMap.set(typeMap);
       this.localiteMap.set(localiteMap);
       this.entiteMap.set(entiteMap);

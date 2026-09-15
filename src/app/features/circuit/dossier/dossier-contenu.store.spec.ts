@@ -4,7 +4,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { Dossier, Role, VersionArchivee } from '../../../models';
+import { DiffDossier, Dossier, Role, VersionArchivee } from '../../../models';
 import { DossierContenuStore } from './dossier-contenu.store';
 
 const TOUS_LES_PROFILS: Role[] = [
@@ -86,12 +86,14 @@ describe('DossierContenuStore — règles par profil', () => {
 
   for (const role of TOUS_LES_PROFILS) {
     const attendu = role === 'VERIFICATEUR';
+    // L'UGPM et le Chargé de publication ne lisent pas le versionnement (403 serveur) : rien n'est demandé.
+    const lues = role !== 'UGPM' && role !== 'CHARGE_PUBLICATION';
     it(`${role} : onglet historique ${attendu ? 'visible' : 'masqué'} quand une version est archivée`, () => {
       const { store, http } = creer(role);
       store.charger(signal(PPM_EN_VERIFICATION));
       repondre(http, [VERSION]);
       expect(store.loading()).toBe(false);
-      expect(store.versionsArchivees().length).toBe(1);
+      expect(store.versionsArchivees().length).toBe(lues ? 1 : 0);
       expect(store.historiqueVersionsVisible()).toBe(attendu);
     });
   }
@@ -142,5 +144,76 @@ describe('DossierContenuStore — vague et versions archivées', () => {
     expect(store.versionAffichee()).toBe(1);
     expect(store.versionChargement()).toBe(false);
     expect(store.versionVue()?.detail.version.numero).toBe(1);
+  });
+});
+
+/**
+ * Lot L4-F2 — plus de 403 ni de 409 muets à l'ouverture (plan L4, §8.2). Vaut pour la modale de
+ * consultation comme pour la page dossier : les deux passent par ce store.
+ */
+describe('DossierContenuStore — lectures du versionnement demandées à bon escient', () => {
+  /** Mise à jour d'un PPM, en vérification : sonde le diff de mise à jour ET le diff de rectification. */
+  const MISE_A_JOUR_EN_VERIFICATION: Dossier = { ...PPM_EN_VERIFICATION, idDossierParent: 41 };
+  const DIFF_RECTIFICATION: DiffDossier = {
+    idDossier: 42,
+    fige: false,
+    recap: { inchangees: 0, modifiees: 1, nouvelles: 0, supprimees: 0, restaurees: 0, total: 1 },
+    lignes: [{ idDetail: 7, idLigneOrigine: 7, type: 'MODIFIEE', apparieePar: 'ORIGINE', champs: [{ champ: 'montEstim', avant: '10', apres: '12' }] }],
+  };
+
+  for (const role of ['UGPM', 'CHARGE_PUBLICATION'] as const) {
+    it(`${role} : ni diff, ni diff de rectification, ni versions archivées (le serveur répond 403)`, () => {
+      const { store, http } = creer(role);
+      store.charger(signal(MISE_A_JOUR_EN_VERIFICATION));
+      expect(store.lectureVersionsPermise()).toBe(false);
+      expect(appels(http, 'diff').length).toBe(0);
+      expect(appels(http, 'versions-archivees').length).toBe(0);
+      repondre(http, []);
+      expect(appels(http, 'diff-rectification').length).toBe(0);
+      expect(store.loading()).toBe(false);
+    });
+  }
+
+  for (const role of ['PRMP', 'PRESIDENT', 'CHEF_COMMISSION', 'SECRETAIRE', 'MEMBRE', 'VERIFICATEUR', 'ASSISTANT_CONTROLEUR', 'ADMINISTRATEUR'] as const) {
+    it(`${role} : diff de mise à jour et versions archivées demandés une fois chacun`, () => {
+      const { store, http } = creer(role);
+      store.charger(signal(MISE_A_JOUR_EN_VERIFICATION));
+      expect(store.lectureVersionsPermise()).toBe(true);
+      expect(appels(http, 'diff').length).toBe(1);
+      expect(appels(http, 'versions-archivees').length).toBe(1);
+    });
+  }
+
+  it('dossier jamais rectifié : le diff de rectification n’est pas demandé (le serveur répondrait 409)', () => {
+    const { store, http } = creer('VERIFICATEUR');
+    store.charger(signal(PPM_EN_VERIFICATION));
+    expect(appels(http, 'diff-rectification').length).toBe(0);
+    appels(http, 'versions-archivees').forEach((r) => r.flush([]));
+    expect(appels(http, 'diff-rectification').length).toBe(0);
+    repondre(http, []);
+    expect(store.loading()).toBe(false);
+    expect(store.changements()).toBeNull();
+  });
+
+  it('dossier rectifié : le diff du dernier cycle est lu après les versions, et appliqué dans la vague', () => {
+    const { store, http } = creer('VERIFICATEUR');
+    store.charger(signal(PPM_EN_VERIFICATION));
+    appels(http, 'versions-archivees').forEach((r) => r.flush([VERSION]));
+    const diff = appels(http, 'diff-rectification');
+    expect(diff.length).toBe(1);
+    diff[0].flush(DIFF_RECTIFICATION);
+    expect(store.loading()).toBe(true);
+    repondre(http, [VERSION]);
+    expect(store.loading()).toBe(false);
+    expect(store.legendeChangements()).toBe('Rectification :');
+    expect(store.changements()?.get(7)).toBe('MODIFIEE');
+    expect(store.detailsChangements()?.get(7)).toBe('montEstim : 10 → 12');
+  });
+
+  it('statut hors rectification : pas de diff de rectification, même avec une version archivée', () => {
+    const { store, http } = creer('PRESIDENT');
+    store.charger(signal({ ...PPM_EN_VERIFICATION, statut: 'DISPATCHE' }));
+    appels(http, 'versions-archivees').forEach((r) => r.flush([VERSION]));
+    expect(appels(http, 'diff-rectification').length).toBe(0);
   });
 });
