@@ -113,6 +113,43 @@ export interface DelaiEtape {
   texte: string;
 }
 
+/**
+ * ⚠️ Recette L4-Q2 (2026-09-16), défaut (j) — le TITRE du panneau dit la SITUATION, le bouton dit
+ * l'ACTION. Le titre reprenait le libellé long du geste : « Dispatcher le dossier » s'affichait deux
+ * fois, en titre et sur le bouton juste dessous. Table exhaustive : un code de geste nouveau ne
+ * compile pas tant qu'il n'a pas sa phrase de situation. Chaîne vide = pas de geste à faire (VOIR,
+ * SUIVRE) : le titre reste celui de l'état du dossier (`titreEtat`).
+ *
+ * Règle de rédaction : dire où EN EST le dossier et ce qui est attendu, jamais le verbe du bouton.
+ */
+export const TITRES_SITUATION: Readonly<Record<GesteAFaire, string>> = {
+  NUMEROTER: 'Dépôt arrivé de la PRMP',
+  DISPATCHER: 'En attente de dispatch',
+  REATTRIBUER: "En attente d'attribution à un Membre",
+  EXAMINER: 'Dossier attribué pour examen',
+  REEXAMINER: 'Pièces complémentaires reçues',
+  SOUMETTRE_PV: 'Examen terminé, projet de PV rédigé',
+  REPRENDRE_EXAMEN: 'Projet de PV retourné pour rectification',
+  ACCEPTER: 'Projet de PV soumis par le Membre',
+  RETOURNER: 'Projet de PV soumis, décision attendue',
+  VISER: 'Projet de PV en attente de visa',
+  SIGNER: 'PV visé, en attente des signatures',
+  SIGNER_LETTRE: 'Lettre de renvoi en attente de signature',
+  DECIDER_RETRAIT: 'Retrait demandé par la PRMP',
+  VERIFIER: 'Levée des observations à contrôler',
+  TRANSMETTRE_DECISION: 'Vérification faite, SIGMP en attente',
+  TRANSMETTRE_SIGMP: 'Vérification faite, SIGMP en attente',
+  ARCHIVER_PV: 'Dernière étape avant la clôture',
+  ARCHIVER_LETTRE: 'Lettre de renvoi signée',
+  SOUMETTRE: 'Brouillon pas encore transmis à la CNM',
+  COMPLETER_BROUILLON: 'Brouillon en préparation',
+  COMPLETER_PIECES_DEPOT: 'Dépôt incomplet',
+  TRANSMETTRE_COMPLEMENTS: 'Lettre de renvoi reçue',
+  RECTIFIER: 'Dossier renvoyé par la CNM',
+  VOIR: '',
+  SUIVRE: '',
+};
+
 export interface VueEtape {
   /** « Étape 3 sur 7 » ; vide hors circuit (dossier retiré). */
   etape: string;
@@ -325,7 +362,10 @@ export function vueEtape(d: Dossier, g: GestesDossier, role: Role | null): VueEt
   // Le geste principal se joue dans un formulaire du panneau, dont le volet dit déjà l'avis (navette) ou le
   // motif (retrait) : ni phrase guide qui le répète, ni colonne de faits concurrente.
   const volet = (navette !== null && famillePrincipale === 'navette') || (retrait !== null && famillePrincipale === 'retrait');
-  const note = tachePrincipale && (principal || gesteEtat === 'VOIR') && !volet ? noteCourte(tachePrincipale) : '';
+  const titre = principal ? TITRES_SITUATION[principal.geste] || principal.libelle : titreEtat(d, g, partieControlee, gesteEtat);
+  const noteBrute = tachePrincipale && (principal || gesteEtat === 'VOIR') && !volet ? noteCourte(tachePrincipale) : '';
+  // La phrase guide ne redit pas le titre (« Lettre de renvoi signée » de part et d'autre).
+  const note = noteBrute === titre ? '' : noteBrute;
   // Un fait que la phrase guide dit déjà (« Favorable ») n'est pas répété à côté ; le volet du PV les remplace.
   // Le motif du retrait est aussi servi sur les autres lignes du dossier : le volet de la décision le porte déjà.
   const faits =
@@ -336,7 +376,7 @@ export function vueEtape(d: Dossier, g: GestesDossier, role: Role | null): VueEt
     etape: i >= 0 ? `Étape ${i + 1} sur ${CIRCUIT_ETAPES.length}` : '',
     fleche: i >= 0 ? `${(((i + 0.5) / CIRCUIT_ETAPES.length) * 100).toFixed(2)}%` : null,
     porteur,
-    titre: principal ? principal.libelle : titreEtat(d, g, partieControlee, gesteEtat),
+    titre,
     note,
     delai: delaiEtape(g, role),
     mode: principal?.mode ?? null,

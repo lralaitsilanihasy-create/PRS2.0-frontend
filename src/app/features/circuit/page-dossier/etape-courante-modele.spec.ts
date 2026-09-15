@@ -4,7 +4,8 @@ import { ApiError } from '../../../core/errors/api-error';
 import { AFaireDelai, AFaireTache, Dossier, GestesDossier, Role } from '../../../models';
 import { exempleAFairePresident, exempleAFairePrmp } from '../../home/a-faire/a-faire-contrat.exemple';
 import { cibleGeste } from '../../home/a-faire/a-faire-navigation';
-import { ciblePage, classerEchecGestes, famillePage, gesteDemande, gestesBoutons, montantGestes, navettePv, retraitADecider, voletPv, vueEtape } from './etape-courante-modele';
+import { LIBELLES_GESTES } from '../../home/a-faire/a-faire-libelles';
+import { GESTES_ETAT, TITRES_SITUATION, ciblePage, classerEchecGestes, famillePage, gesteDemande, gestesBoutons, montantGestes, navettePv, retraitADecider, voletPv, vueEtape } from './etape-courante-modele';
 
 const erreur = (status: number): ApiError => ({ status, message: 'x', raw: new HttpErrorResponse({ status }) });
 
@@ -21,6 +22,29 @@ function reponse(taches: AFaireTache[], etapeCourante: GestesDossier['etapeCoura
 const dossier = (partiel: Partial<Dossier>): Dossier => ({ idDossier: 42, refeDossier: '00042/PPM/CNM/2026', statut: 'PRET_DISPATCH', ...partiel });
 
 describe('Page dossier — étape en cours (règles)', () => {
+  /** Recette L4-Q2, défaut (j) : le titre dit la situation, le bouton dit l'action — jamais la même phrase. */
+  describe('titres de situation', () => {
+    it('chaque geste a une phrase de situation, distincte du libellé de son bouton', () => {
+      for (const [code, titre] of Object.entries(TITRES_SITUATION)) {
+        const geste = code as keyof typeof TITRES_SITUATION;
+        if (GESTES_ETAT.includes(geste)) {
+          expect(titre).toBe('');
+          continue;
+        }
+        expect(titre, code).not.toBe('');
+        expect(titre, code).not.toBe(LIBELLES_GESTES[geste].long);
+        expect(titre, code).not.toBe(LIBELLES_GESTES[geste].court);
+      }
+    });
+
+    it('la phrase guide ne redit pas le titre', () => {
+      // ARCHIVER_LETTRE : `noteCourte` dit « Lettre de renvoi signée », le titre aussi.
+      const v = vueEtape(dossier({ statut: 'PV_SIGNE' }), reponse([tache({ section: 'LETTRES_A_ARCHIVER', geste: 'ARCHIVER_LETTRE' })]), 'ASSISTANT_CONTROLEUR');
+      expect(v.titre).toBe('Lettre de renvoi signée');
+      expect(v.note).toBe('');
+    });
+  });
+
   describe('gestes servis', () => {
     it('dans l’ordre du serveur : geste puis secondaires, tâche par tâche ; VOIR et SUIVRE n’en sont pas ; un code, un bouton', () => {
       const boutons = gestesBoutons([
@@ -90,7 +114,7 @@ describe('Page dossier — étape en cours (règles)', () => {
         'CHEF_COMMISSION',
       );
       expect(v.navette).toEqual({ tache: expect.objectContaining({ section: 'PV_A_VISER' }), idPv: 12, gestes: ['VISER', 'RETOURNER'] });
-      expect(v.titre).toBe('Viser le projet de PV');
+      expect(v.titre).toBe('Projet de PV en attente de visa');
       expect([v.porteur, v.mode]).toEqual(['à vous par intérim', 'Par intérim']);
       // Le volet dit l'avis : ni phrase guide qui le répète, ni colonne de faits concurrente.
       expect(v.note).toBe('');
@@ -144,7 +168,7 @@ describe('Page dossier — étape en cours (règles)', () => {
     it('servie seule : la demande (référence, motif, date), titre du geste ; ni phrase guide ni faits, le volet les porte', () => {
       const v = vueEtape(dossier({ statut: 'DISPATCHE' }), reponse([retrait()]), 'CHEF_COMMISSION');
       expect(v.retrait).toEqual({ tache: expect.objectContaining({ section: 'RETRAITS_A_DECIDER' }), idDemandeRetrait: 77, motif: 'Doublon avec un autre plan', demandeeLe: '2026-09-15T23:57:48.376888' });
-      expect(v.titre).toBe('Examiner la demande de retrait');
+      expect(v.titre).toBe('Retrait demandé par la PRMP');
       expect([v.principal?.geste, v.porteur, v.note, v.faits, v.horsPanneau, v.navette]).toEqual(['DECIDER_RETRAIT', 'à vous', '', [], [], null]);
     });
 
@@ -163,7 +187,7 @@ describe('Page dossier — étape en cours (règles)', () => {
       const cc = vueEtape(dossier({ statut: 'EXAMINE' }), reponse([retrait(), visa]), 'CHEF_COMMISSION');
       expect([cc.principal?.geste, cc.navette?.gestes, cc.retrait?.idDemandeRetrait, cc.horsPanneau, cc.note, cc.faits]).toEqual(['DECIDER_RETRAIT', ['VISER', 'RETOURNER'], 77, [], '', []]);
       const president = vueEtape(dossier({ statut: 'EXAMINE' }), reponse([{ ...visa, rang: 1, mode: 'TITULAIRE' }, retrait({ rang: 2 })]), 'PRESIDENT');
-      expect([president.principal?.geste, president.titre, president.retrait?.idDemandeRetrait]).toEqual(['VISER', 'Viser le projet de PV', 77]);
+      expect([president.principal?.geste, president.titre, president.retrait?.idDemandeRetrait]).toEqual(['VISER', 'Projet de PV en attente de visa', 77]);
     });
 
     it('règle C2 : jamais pour la PRMP ni l’UGPM, même sur une doublure qui la servirait', () => {
@@ -180,7 +204,7 @@ describe('Page dossier — étape en cours (règles)', () => {
       expect(v.etape).toBe('Étape 2 sur 7');
       expect(v.fleche).toBe('21.43%');
       expect(v.porteur).toBe('à vous');
-      expect(v.titre).toBe('Dispatcher le dossier');
+      expect(v.titre).toBe('En attente de dispatch');
       expect(v.principal?.geste).toBe('DISPATCHER');
       expect(v.delai).toEqual({ genre: 'bientot', texte: expect.stringMatching(/^Reste 3 h · avant mer\.? 16\/09, 10:43$/) });
       expect(v.mode).toBeNull();
@@ -235,7 +259,7 @@ describe('Page dossier — étape en cours (règles)', () => {
         const rectifier = { ...exempleAFairePrmp().taches[1], faits: { ...exempleAFairePrmp().taches[1].faits, consigneDispatch: 'Voir avec Jean Claude Rakoto' } };
         const v = vueEtape(nommee('EN_ATTENTE_DECISION_PRMP'), reponse([rectifier], pause, 'PRMP'), 'PRMP');
         expect(v.porteur).toBe('à vous');
-        expect(v.titre).toBe('Rectifier puis resoumettre le dossier');
+        expect(v.titre).toBe('Dossier renvoyé par la CNM');
         expect(v.delai).toEqual({ genre: 'pause', texte: 'En pause · chez vous depuis le 15/09' });
         expect(textes(v)).not.toMatch(/Rakoto|Andriatsimahavandy|Reste|avant|retard|Consigne/);
       });

@@ -163,7 +163,7 @@ describe('Page dossier — navette du projet de PV (lot L4-F4)', () => {
     // Le bouton offert porte la marque des gestes du panneau : parité, barre collante et `?geste=` le retrouvent.
     expect(Array.from(racine().querySelectorAll('app-etape-courante [data-geste]')).map((b) => b.getAttribute('data-geste'))).toEqual(['SOUMETTRE_PV']);
     expect(racine().querySelector('.ep__indispo')).toBeNull();
-    expect(texte(racine().querySelector('.ec__titre'))).toBe('Soumettre le projet de PV');
+    expect(texte(racine().querySelector('.ec__titre'))).toBe('Examen terminé, projet de PV rédigé');
     const volet = texte(racine().querySelector('.ep-volet'));
     expect(volet).toContain('Ce que dit le projet de PV');
     expect(volet).toContain('Avis du MembreFavorable avec réserves');

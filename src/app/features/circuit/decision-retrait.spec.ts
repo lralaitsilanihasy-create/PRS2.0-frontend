@@ -178,7 +178,7 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
   it('Président, demande seule : le formulaire sous le titre, le volet de la demande et sa lettre ; un seul geste marqué', async () => {
     await ouvrir('PRESIDENT', '/president/dossier/42', { gestes: reponse('PRESIDENT', [retrait()]) });
 
-    expect(texte(q('.ec__titre'))).toBe('Examiner la demande de retrait');
+    expect(texte(q('.ec__titre'))).toBe('Retrait demandé par la PRMP');
     expect(q('app-etape-courante app-decision-retrait')).not.toBeNull();
     expect(q('.dr__titre')).toBeNull();
     expect(q('.dr')?.getAttribute('aria-labelledby')).toBe('ec-titre');
@@ -343,7 +343,7 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
 
     it('CC : le retrait (titulaire) passe avant le visa par intérim — sous le titre ; la navette prend la rangée suivante', async () => {
       await ouvrir('CHEF_COMMISSION', '/cc/dossier/42', { gestes: reponse('CHEF_COMMISSION', [retrait({ rang: 1 }), visa(2, 'INTERIM')]), dossier: { ...DOSSIER, statut: 'EXAMINE' } }, 'CCANT01', 'ANT');
-      expect(texte(q('.ec__titre'))).toBe('Examiner la demande de retrait');
+      expect(texte(q('.ec__titre'))).toBe('Retrait demandé par la PRMP');
       expect(avant(q('.dr'), q('.ep'))).toBe(true);
       expect(q('app-etape-pv')?.classList.contains('ep-hote--suite')).toBe(true);
       expect(q('app-decision-retrait')?.classList.contains('dr-hote--suite')).toBe(false);
@@ -352,7 +352,7 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
 
     it('Président : le visa passe avant — la décision en suite, sous son intertitre, sans second bouton plein', async () => {
       await ouvrir('PRESIDENT', '/president/dossier/42', { gestes: reponse('PRESIDENT', [visa(1, 'TITULAIRE'), retrait({ rang: 2 })]), dossier: { ...DOSSIER, statut: 'EXAMINE' } });
-      expect(texte(q('.ec__titre'))).toBe('Viser le projet de PV');
+      expect(texte(q('.ec__titre'))).toBe('Projet de PV en attente de visa');
       expect(avant(q('.ep'), q('.dr'))).toBe(true);
       expect(q('app-etape-pv')?.classList.contains('ep-hote--suite')).toBe(false);
       expect(q('app-decision-retrait')?.classList.contains('dr-hote--suite')).toBe(true);
