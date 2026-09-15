@@ -28,6 +28,12 @@ const FOCALISABLES =
  *
  * L'entrée `appModale` accepte une valeur : `[appModale]="false"` rend la directive inerte,
  * pour les conteneurs rendus tantôt en modale, tantôt intégrés à la page (`dossier-consultation`).
+ *
+ * ⚠️ Recette L4-Q2 (2026-09-16), défauts (e) et (k) — la restitution du focus ne peut pas se contenter
+ * du déclencheur : il a souvent disparu quand la modale se ferme (bouton retiré du DOM par le geste
+ * qu'il a lancé) ou n'avait jamais le focus à l'ouverture (bouton désactivé pendant la requête : le
+ * focus est déjà retombé sur `<body>`). `body.focus()` ne fait rien — plus d'Échap, plus de Tab, plus
+ * rien à annoncer. Voir `cibleRetour()` pour l'ordre des replis.
  */
 @Directive({ selector: '[appModale]' })
 export class ModaleDirective implements AfterViewInit, OnDestroy {
@@ -67,8 +73,32 @@ export class ModaleDirective implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.appModale()) {
-      this.declencheur?.focus();
+      this.cibleRetour()?.focus();
     }
+  }
+
+  /**
+   * Où revient le focus à la fermeture :
+   * 1. **une modale encore ouverte** au-dessus de l'écran (la dernière du document) garde le focus —
+   *    une visionneuse refermée sous sa modale lui rend la main, qui reçoit de nouveau Échap ; le
+   *    déclencheur ne l'emporte que s'il est DANS cette modale ;
+   * 2. sinon le **déclencheur**, s'il est encore dans le document et recevable (ni `<body>`, ni
+   *    désactivé) ;
+   * 3. sinon le **point de reprise de l'écran**, `[data-focus-repli]` — un seul par écran, posé sur
+   *    le titre de l'étape ou, à défaut, sur le titre de la page.
+   *
+   * Sans aucun des trois : on ne touche à rien (le focus reste là où l'application l'a mis).
+   */
+  private cibleRetour(): HTMLElement | null {
+    const hote = this.el.nativeElement;
+    const restantes = Array.from(
+      document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]'),
+    ).filter((e) => e !== hote && !hote.contains(e) && e.isConnected);
+    const sommet = restantes[restantes.length - 1] ?? null;
+    const d = this.declencheur;
+    const recevable = !!d && d !== document.body && d.isConnected && !(d as HTMLButtonElement).disabled;
+    if (recevable && (!sommet || sommet.contains(d))) return d;
+    return sommet ?? document.querySelector<HTMLElement>('[data-focus-repli]');
   }
 
   @HostListener('keydown.escape', ['$event'])

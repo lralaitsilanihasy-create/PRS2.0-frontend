@@ -87,7 +87,9 @@ const ECHECS: Record<FinOuverture, { message: string; aide: string; reprise: boo
             <span class="cnm-sr-only">Chargement du dossier…</span>
           </div>
         } @else {
-          <h1 class="pd-ref">{{ titre() }}</h1>
+          <!-- Point de reprise du focus (recette L4-Q2, défaut (e)) : sans panneau — retrait accepté,
+               hors périmètre, panne — la modale de succès rend la main ici, pas au corps de page. -->
+          <h1 class="pd-ref" tabindex="-1" data-focus-repli>{{ titre() }}</h1>
           @if (echec(); as e) {
             @if (ouverture().etat === 'retire') {
               <!-- Lot L4-F5 : l'issue d'un geste réussi, pas une erreur — annoncée comme telle. -->

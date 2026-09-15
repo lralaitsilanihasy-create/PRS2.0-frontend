@@ -95,7 +95,9 @@ const HAUT_TOPBAR = 48;
 
       <header class="pd-tete">
         <div class="pd-id">
-          <h1 class="pd-ref" [class.pd-ref--sans]="!dossier().refeDossier">{{ reference() }}</h1>
+          <!-- Point de reprise du focus (recette L4-Q2, défaut (e)) : le titre de l'étape quand il existe,
+               sinon celui de la page — un seul data-focus-repli à l'écran, cf. ModaleDirective. -->
+          <h1 class="pd-ref" tabindex="-1" [attr.data-focus-repli]="vue() ? null : ''" [class.pd-ref--sans]="!dossier().refeDossier">{{ reference() }}</h1>
           <p class="pd-ent">
             @if (!contenu.loading()) {
               {{ ligneEntite() }}

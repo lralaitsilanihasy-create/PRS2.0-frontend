@@ -34,7 +34,9 @@ import { SuiviRetrait } from './suivi-retrait';
         <p class="ec__sur">
           {{ vue().etape }}@if (vue().etape && vue().porteur) { · }{{ vue().porteur }}
         </p>
-        <h2 class="ec__titre" id="ec-titre" tabindex="-1">{{ vue().titre }}</h2>
+        <!-- data-focus-repli : le point de reprise de l'écran (recette L4-Q2, défaut (e)) — une modale
+             dont le déclencheur a disparu y rend le focus plutôt que de le laisser tomber au corps de page. -->
+        <h2 class="ec__titre" id="ec-titre" tabindex="-1" data-focus-repli>{{ vue().titre }}</h2>
         @if (vue().delai || vue().mode) {
           <p class="ec__marques">
             @if (vue().delai; as d) {
