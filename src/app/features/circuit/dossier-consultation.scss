@@ -1,0 +1,102 @@
+/* Coquille de la consultation : voile, panneau, en-tête, sous-dialogues et pied. Les styles des blocs
+   (identité, documents, pièces, versions, journal) vivent avec eux, dans ./dossier/. */
+
+/* Attente avant montage du panneau : discrète, sans cadre — le panneau qui suit doit être la
+   PREMIÈRE forme pleine que l'œil voit apparaître. */
+.dc-attente { display: flex; align-items: center; justify-content: center; padding: 3rem; }
+.dc {
+  width: 100%;
+  /* Jamais plus large que la zone utile du backdrop (100 % = viewport − padding), quel que soit le zoom. */
+  max-width: min(96rem, 100%);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 0 0 0.5px var(--p-200), var(--shadow-xl);
+}
+/* ⚠️ 2026-08-06 (demande user) — un dossier de PLANIFICATION porte le tableau des marchés et ses
+   15 colonnes : à 96rem, les en-têtes d'un mot long (« PREVISIONNELLE ») débordaient sur la colonne
+   voisine. Le modal prend alors toute la largeur utile. Les autres types de dossier, eux, n'ont
+   que des champs : les élargir ne ferait qu'étirer du vide. */
+.dc--large {
+  max-width: min(118rem, 100%);
+}
+.dc--embedded {
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  box-shadow: none;
+  border-radius: 0;
+}
+/* ⚠️ Embarquée (seul l'écran Vérificateur) : le corps NE crée PAS son propre contexte de
+   défilement — c'est le panneau HÔTE (borné, .vf__details) qui porte l'ascenseur, sinon l'en-tête
+   collant du plan (.doc-entete-collante) s'accrocherait à ce corps-ci et disparaîtrait au
+   défilement de l'hôte. Marges resserrées (2026-09-15) : la largeur va au document (celles des
+   sections : `DossierDocuments`). */
+.dc--embedded .dc-body { overflow: visible; }
+.dc--embedded .dc-header { padding: 14px 16px 12px; }
+
+/* En-tête */
+.dc-header { padding: 18px 24px 16px; border-bottom: 0.5px solid var(--n-200); flex-shrink: 0; }
+/* Corps de l'en-tête (2026-09-02, précisé 2×) : SOUS la ligne de titre, l'identité (repliable)
+   et le chronométrage se partagent la même rangée — même niveau. */
+.dc-header-corps { display: flex; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap; }
+.dc-header-gauche { flex: 1 1 26rem; min-width: 22rem; max-width: 44rem; }
+/* ⚠️ Demande pilote (2026-09-02) — bloc en COULEUR VIVE : carte teintée du bleu primaire,
+   accent appuyé à gauche, titre et date prévisionnelle en vif. Le contenu reste sur fond
+   clair pour la lisibilité du tableau des tâches. */
+.dc-header-droite {
+  flex: 2 1 32rem;
+  min-width: 0;
+  background: linear-gradient(135deg, #e0f2fe, #f0f9ff 55%, #fff);
+  border: 1px solid var(--p-200, #bae6fd);
+  border-left: 5px solid var(--p-500);
+  border-radius: 12px;
+  padding: 12px 16px 14px;
+  box-shadow: 0 1px 3px rgb(2 132 199 / 0.12);
+}
+.dc-chrono-titre { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--p-600); margin-bottom: 8px; }
+.dc-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 0.75rem; }
+.dc-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dc-chip { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 2px 9px; border-radius: var(--radius-full); }
+.dc-chip-type { background: var(--p-50); color: var(--p-600); }
+.dc-close {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: var(--n-100); border: 0.5px solid var(--n-200); color: var(--n-400);
+  font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-base); transition: var(--transition); flex-shrink: 0;
+}
+.dc-close:hover { background: var(--n-200); color: var(--n-800); }
+.dc-title { font-size: 20px; font-weight: 700; color: var(--n-800); letter-spacing: -.025em; line-height: 1.1; margin-bottom: 6px; }
+.dc-subtitle { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--n-400); margin-bottom: 14px; }
+.dc-subtitle i { font-size: 12px; font-style: normal; }
+/* Repli de l'en-tête (2026-09-02) : bouton discret en bout de sous-titre. */
+.dc-toggle-entete { margin-left: auto; font-size: var(--text-xs); color: var(--n-500); }
+/* Titres-boutons des restitutions (2026-09-06) : l'apparence du titre, le geste en plus. */
+.dc-toggle-bloc { appearance: none; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; text-align: left; }
+.dc-toggle-bloc:focus-visible { outline: 2px solid var(--p-500); outline-offset: 2px; border-radius: 4px; }
+button.dc-chrono-titre { display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 0; }
+/* Bande des restitutions : les deux boutons côte à côte (demande pilote 2026-09-06, 2ᵉ),
+   chacun en PASTILLE de sa couleur (3ᵉ précision) — bleu chrono, violet journal. */
+.dc-restitutions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.75rem; }
+.dc-restitutions .dc-toggle-bloc { padding: 5px 12px; border-radius: var(--radius-full); border: 1px solid; }
+.dc-restitutions .dc-btn-chrono { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+.dc-restitutions .dc-btn-chrono:hover { background: #bae6fd; }
+.dc-restitutions .dc-btn-journal { background: #ede9fe; border-color: #c4b5fd; color: #6d28d9; }
+.dc-restitutions .dc-btn-journal:hover { background: #ddd6fe; }
+/* Sous-dialogues des restitutions : larges (tables), corps défilant. */
+.dc-sousmodal { width: min(1100px, 95vw); max-width: 95vw; }
+.dc-sousmodal__corps { overflow: auto; }
+.dc-sep { opacity: .4; }
+
+/* Corps — overscroll contenu : la molette ne « fuit » pas vers la page derrière. */
+.dc-body { overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--p-200) transparent; overscroll-behavior: contain; }
+/* Hauteur réservée pendant le chargement : le contenu remplace le spinner sans saut brutal. */
+.dc-load { min-height: 18rem; }
+
+/* Pied */
+.dc-foot { border-top: 0.5px solid var(--n-200); padding: 11px 24px; display: flex; align-items: center; justify-content: space-between; background: var(--p-50); flex-shrink: 0; }
+.dc-foot-info { font-size: 11.5px; color: var(--n-400); }
+.dc-foot-info strong { color: var(--p-600); font-weight: 600; }
