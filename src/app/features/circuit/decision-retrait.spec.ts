@@ -345,25 +345,31 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
       { ...DEMANDE, idDemandeRetrait: 11, idDossier: 43, statut: 'EN_ATTENTE' },
     ];
 
-    it('PRMP : ni formulaire ni lecture de la demande', async () => {
+    it('PRMP : ni formulaire ni lecture de la demande ; l’état de SA dernière demande, décidée par « la Commission nationale des marchés »', async () => {
       await ouvrir('PRMP', '/prmp/dossier/42', { gestes: reponse('PRMP', [retrait(), tache('EN_COURS_CNM', 'SUIVRE', { rang: 2, urgence: 'SUIVI' })]), demandes: DEMANDES }, 'PRMP001');
       expect(q('app-decision-retrait, .dr, .dr-volet')).toBeNull();
-      expect(demandees.filter((d) => d.includes('demande-retraits'))).toEqual([]);
+      expect(demandees.filter((d) => /demande-retraits\/\d+|mes-demandes/.test(d))).toEqual([]);
+      expect(demandees.filter((d) => d === 'GET /api/demande-retraits')).toHaveLength(1);
+      const suivi = texte(q('app-suivi-retrait'));
+      expect(texte(q('app-suivi-retrait app-statut-badge'))).toBe('Refusée');
+      expect(suivi).toContain('Demande de retrait refusée le 16/09 par la Commission nationale des marchés : le dossier poursuit son circuit.');
+      expect(texte(q('.sr__motif'))).toBe('Motif du refus « Pièces justificatives insuffisantes »');
       const dom = toutLeDom();
       for (const nom of CONTROLEURS) expect(dom, nom).not.toContain(nom);
     });
 
-    it('UGPM : aucune requête de demande de retrait, aucun nom', async () => {
+    it('UGPM : aucune requête de demande de retrait, aucun suivi, aucun nom', async () => {
       await ouvrir('UGPM', '/prmp/dossier/42', { gestes: reponse('UGPM', [retrait(), tache('EN_COURS_CNM', 'SUIVRE', { rang: 2, urgence: 'SUIVI' })]), demandes: DEMANDES }, 'PRMP001');
       expect(demandees.filter((d) => d.includes('demande-retraits'))).toEqual([]);
-      expect(q('app-decision-retrait')).toBeNull();
+      expect(q('app-decision-retrait, app-suivi-retrait')).toBeNull();
       const dom = toutLeDom();
       for (const nom of CONTROLEURS) expect(dom, nom).not.toContain(nom);
     });
 
-    it('contre-épreuve — Président : le formulaire', async () => {
+    it('contre-épreuve — Président : le formulaire, et aucun suivi « PRMP »', async () => {
       await ouvrir('PRESIDENT', '/president/dossier/42', { gestes: reponse('PRESIDENT', [retrait()]), demandes: DEMANDES });
       expect(q('app-decision-retrait')).not.toBeNull();
+      expect(q('app-suivi-retrait')).toBeNull();
       expect(demandees).not.toContain('GET /api/demande-retraits');
     });
   });

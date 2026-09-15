@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, viewChild } from '@angular/core';
 
-import { GesteAFaire } from '../../../models';
+import { Dossier, GesteAFaire } from '../../../models';
 import { Icone } from '../../../shared/ui/icone';
 import { CibleGeste } from '../../home/a-faire/a-faire-navigation';
 import { DecisionRetrait } from '../decision-retrait';
 import { GesteBouton, VueEtape } from './etape-courante-modele';
 import { EtapePv, FocusNavette } from './etape-pv';
+import { SuiviRetrait } from './suivi-retrait';
 
 /**
  * Panneau de l'étape en cours (page dossier, lot L4-F3 — maquette `GuideDossier`, étape ouverte sous la
@@ -21,11 +22,12 @@ import { EtapePv, FocusNavette } from './etape-pv';
  * après un autre geste) : ils suivent le rang du serveur, comme le titre du panneau. Le formulaire du geste
  * principal vient sous le titre, son volet sur deux lignes à droite ; l'autre prend la rangée suivante,
  * son volet en face (`suite`).
+ * Pour la PRMP, `SuiviRetrait` dit où en est sa demande — sans nommer le décideur (règle C2).
  */
 @Component({
   selector: 'app-etape-courante',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icone, EtapePv, DecisionRetrait],
+  imports: [Icone, EtapePv, DecisionRetrait, SuiviRetrait],
   template: `
     <section class="ec" [class.ec--seul]="!vue().faits.length && !vue().navette && !vue().retrait" [style.--ec-fleche]="vue().fleche" aria-labelledby="ec-titre">
       <div class="ec__corps">
@@ -45,6 +47,9 @@ import { EtapePv, FocusNavette } from './etape-pv';
         }
         @if (vue().note) {
           <p class="ec__note">{{ vue().note }}</p>
+        }
+        @if (suiviRetrait(); as d) {
+          <app-suivi-retrait [dossier]="d" />
         }
         @if (vue().navette || vue().retrait) {
           @if (vue().horsPanneau.length) {
@@ -118,6 +123,8 @@ export class EtapeCourante {
   readonly agir = output<GesteBouton>();
   /** Lot F4 — une transition de la navette a réussi. */
   readonly navetteChangee = output<void>();
+  /** Lot F5 — PRMP : le dossier dont la page suit la demande de retrait ; `null` pour tout autre profil. */
+  readonly suiviRetrait = input<Dossier | null>(null);
   /** Lot F5 — la demande de retrait a été décidée (ou a changé ailleurs). */
   readonly retraitDecide = output<void>();
 

@@ -37,7 +37,7 @@ const HAUT_TOPBAR = 48;
  * autres mènent à leur écran de travail, avec `returnUrl` vers la page. Après un geste réussi, la page
  * relit le dossier et ses gestes (`gesteReussi`), les pastilles du menu se recalculent, on reste ici.
  * Lot F4 : la navette du projet de PV se joue dans le panneau (`EtapePv`) ; sa transition suit le même chemin.
- * Lot F5 : la décision de retrait aussi (`DecisionRetrait`).
+ * Lot F5 : la décision de retrait aussi (`DecisionRetrait`) ; la PRMP y lit l'état de sa demande.
  *
  * Règle C2 (audit 2026-09-14) : pour la PRMP et l'UGPM, ni journal ni chronométrage (le store ne les
  * demande pas, les boutons n'existent pas), la frise ne porte que des dates, et le panneau ne dit ni qui
@@ -165,7 +165,7 @@ const HAUT_TOPBAR = 48;
         @case ('pret') {
           @if (vue(); as v) {
             <app-etape-courante #panneau [vue]="v" [occupe]="occupe()" [idLocalite]="dossier().idLocalite ?? null" [lienPv]="lienPv()"
-              [gesteFocus]="focusNavette()" (agir)="agir($event)" (navetteChangee)="apresGeste()"
+              [gesteFocus]="focusNavette()" [suiviRetrait]="suiviRetrait()" (agir)="agir($event)" (navetteChangee)="apresGeste()"
               (retraitDecide)="apresGeste()" />
           }
         }
@@ -298,6 +298,8 @@ export class PageDossierCorps implements OnInit {
   });
   /** Lot F4 — `?geste=` de navette servi : focus sur son bouton dans `PvWorkflow`. */
   readonly focusNavette = signal<FocusNavette | null>(null);
+  /** Lot F5 — la PRMP suit sa demande de retrait sur la page ; l'UGPM n'a pas l'écran des demandes. */
+  readonly suiviRetrait = computed(() => (this.auth.role() === 'PRMP' ? this.dossier() : null));
 
   private readonly panneau = viewChild('panneau', { read: EtapeCourante });
   private readonly panneauEl = viewChild('panneau', { read: ElementRef });
