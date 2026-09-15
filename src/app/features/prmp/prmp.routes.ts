@@ -25,6 +25,8 @@ export const PRMP_ROUTES: Routes = [
   // Refonte ergonomique (2026-09-15) — accueil « À faire » : les gestes que le serveur attribue au connecté
   // (demande 2026-09-14-accueil-a-faire). Monté dans l'espace pour que chaque geste y reste.
   { path: 'a-faire', loadComponent: () => import('../home/a-faire').then((m) => m.AFaireEcran), data: { title: 'À faire' } },
+  // Refonte ergonomique (lot L4-F2) — page d'un dossier, en lecture seule ; alias partageable `/dossier/:idDossier`.
+  { path: 'dossier/:idDossier', loadComponent: () => import('../circuit/page-dossier/page-dossier').then((m) => m.PageDossier), data: { title: 'Dossier', concentration: true } },
   {
     // ⚠️ Demande pilote (2026-09-06) — le tableau de bord PRMP devient « Suivi des dossiers CNM » :
     // tableau référence · enregistrement CNM (réception Secrétaire) · fin de traitement prévue.

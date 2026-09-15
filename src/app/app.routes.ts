@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { authGuard, roleGuard } from './core/auth/auth.guard';
+import { dossierAliasGuard } from './core/navigation/dossier-alias.guard';
 
 /**
  * Routes de l'application.
@@ -35,6 +36,14 @@ export const routes: Routes = [
         path: 'acces-refuse',
         loadComponent: () =>
           import('./features/errors/access-denied').then((m) => m.AccessDenied),
+      },
+      {
+        // Refonte ergonomique (lot L4-F2) — alias partageable d'un dossier : la garde redirige vers
+        // `/<espace>/dossier/:idDossier` (paramètres conservés) ; Administrateur et Chargé de
+        // publication vers `/acces-refuse`. Le serveur tranche le périmètre.
+        path: 'dossier/:idDossier',
+        canActivate: [dossierAliasGuard],
+        children: [],
       },
       {
         // ⚠️ Spec notifications (2026-08-02) — écran dédié, TRANSVERSE (tous profils authentifiés).
