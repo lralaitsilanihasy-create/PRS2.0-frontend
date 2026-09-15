@@ -19,7 +19,7 @@ import {
   PvExamenService,
   ReferenceLookupService,
 } from '../../services';
-import { StatutBadge } from '../../shared/circuit';
+import { PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
 
 /**
  * Modal « Détail PV » réutilisable (lecture seule) — MÊME MODÈLE que l'écran « Projets de PV » :
@@ -36,12 +36,12 @@ import { StatutBadge } from '../../shared/circuit';
   imports: [ModaleDirective, StatutBadge],
   template: `
     <div class="modal-backdrop" [class.closing]="closing()">
-      <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Détail du PV" appModale appModaleClicExterieur (appModaleFermer)="fermerModal()">
+      <div class="modal modal-lg" role="dialog" aria-modal="true" [attr.aria-label]="definitif() ? 'Détail du PV' : 'Détail du projet de PV'" appModale appModaleClicExterieur (appModaleFermer)="fermerModal()">
         <!-- En-tête -->
         <div class="modal-header">
           <div>
             <div class="dpv-head-top">
-              <app-statut-badge [statut]="pv().statutPv" [label]="'Définitif'" />
+              <app-statut-badge [statut]="pv().statutPv" [label]="libelleStatut()" />
               <span class="text-muted text-sm">{{ pv().datePv || '—' }}</span>
             </div>
             <h2 class="modal-title">{{ pv().refePv || pv().referencePv || ('PV #' + pv().idPv) }}</h2>
@@ -196,7 +196,10 @@ import { StatutBadge } from '../../shared/circuit';
 
         <!-- Pied -->
         <div class="modal-footer modal-footer-spaced">
-          @if (pv().documentDisponible === false) {
+          @if (pv().documentDisponible === false && !definitif()) {
+            <!-- Page dossier (lot L4-F4) : la modale s'ouvre aussi sur un PROJET en navette. -->
+            <span class="text-muted text-sm">Aucun document PDF pour ce projet de PV à ce stade de la navette.</span>
+          } @else if (pv().documentDisponible === false) {
             <!-- ⚠️ 2026-08-19 — depuis que le document est produit APRÈS la signature (hors requête),
                  « false » couvre DEUX cas indistinguables ici : édition en cours, ou PV sans modèle.
                  Le message ne peut donc plus affirmer la non-éligibilité — il l'affirmait à tort
@@ -206,7 +209,7 @@ import { StatutBadge } from '../../shared/circuit';
               cours d'édition : rouvrez cette fenêtre dans un instant.
             </span>
           } @else {
-            <span class="text-muted text-sm">Document officiel signé</span>
+            <span class="text-muted text-sm">{{ libelleDocument() }}</span>
             <button type="button" class="btn btn-secondary" [disabled]="chargementPdf()" (click)="afficherPdf()">
               {{ chargementPdf() ? 'Chargement…' : '📄 Afficher' }}
             </button>
@@ -223,8 +226,8 @@ import { StatutBadge } from '../../shared/circuit';
           <div class="modal-header">
             <div>
               <div class="dpv-head-top">
-                <app-statut-badge [statut]="pv().statutPv" [label]="'Définitif'" />
-                <span class="text-muted text-sm">Document officiel signé</span>
+                <app-statut-badge [statut]="pv().statutPv" [label]="libelleStatut()" />
+                <span class="text-muted text-sm">{{ libelleDocument() }}</span>
               </div>
               <h2 class="modal-title">{{ ap.reference }}</h2>
             </div>
@@ -283,6 +286,14 @@ export class DetailPvModal implements OnInit {
   readonly pv = input.required<PvExamen>();
   /** Fermeture demandée (× / backdrop). */
   readonly fermer = output<void>();
+
+  /**
+   * Page dossier (lot L4-F4) — « Voir le projet de PV » ouvre aussi cette modale sur un PROJET en navette :
+   * elle ne l'annonce plus « Définitif » ni « Document officiel signé ». Un PV signé garde ses libellés.
+   */
+  readonly definitif = computed(() => this.pv().statutPv === 'SIGNE');
+  readonly libelleStatut = computed(() => (this.definitif() ? 'Définitif' : PV_STATUT_LABELS[this.pv().statutPv]));
+  readonly libelleDocument = computed(() => (this.definitif() ? 'Document officiel signé' : 'Document du projet de PV'));
 
   private readonly pvService = inject(PvExamenService);
   private readonly detailService = inject(ExamenDetailService);
