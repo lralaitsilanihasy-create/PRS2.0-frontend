@@ -2,7 +2,7 @@
 
 **Date** : 2026-09-14 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : refonte ergonomique, maquette validée par Mathieu et ses chefs (`maquettes-design/src/Main.tpl.html`, `data.js`). Chaque profil arrive sur « À faire » : des sections par geste, triées par urgence, une action principale par ligne et un délai en heures ouvrées.
 
-> **Statut : arbitrages en attente** (voir fin de document). Les parties B1 à B3 du découpage ne dépendent pas de ces arbitrages ; B4 (l'endpoint) les attend.
+> **Statut : arbitrages adoptés le 15/09, réversibles** (voir fin de document). Le backend implémente l'endpoint en parallèle ; le front est développé contre ce contrat (JSON du §2, tableau du §3) et se replie sur l'atterrissage historique tant que la route n'est pas servie.
 
 ## Constat
 
@@ -157,18 +157,20 @@ Administrateur et Chargé de publication ; lettres de renvoi non lues et décisi
 ## Côté front
 
 - Écran `features/home/a-faire.ts`, monté en `loadComponent` dans le `*.routes.ts` de chaque espace (`/<espace>/a-faire`), pour que les liens d'action restent dans l'espace du profil.
-- `home.ts` redirige les huit profils vers cet écran ; repli sur l'atterrissage actuel tant que l'endpoint répond 404.
+- `home.ts` redirige les huit profils vers cet écran ; repli sur l'atterrissage actuel tant que l'endpoint n'est pas servi. ⚠️ Constat du 15/09 : sur un backend sans la route, `GET /api/dossiers/a-faire` tombe sur `GET /api/dossiers/{id}` et répond **400** (`id` : « valeur numérique attendue »), pas 404. Le front traite comme « non servi » : 403, 404, 405, 501, et ce 400 précis.
 - `DossierService.aFaire(delegations)` et interfaces `AFaire*` ; chaque geste ouvre l'écran existant qui le porte.
 - Vues « Par étape » et « Par localité » : regroupement côté client. L'aperçu du dossier se construit à partir de `dossier`, `delai` et `faits`, sans appel supplémentaire.
 - Badge de menu : `badges.aFaire`.
 - « Tous les dossiers » reste en place, réaligné sur ce contrat dans un second temps.
 
-## Arbitrages en attente (Mathieu ou le pilote)
+## Arbitrages adoptés le 15/09
 
-1. Bloc délégation : replier les lignes réalisables par délégation, intérim ou collègue, hors compteurs et hors badge ? (proposé : oui ; sans cela, le Président verrait toutes les réceptions et vérifications du pays)
-2. PRET_DISPATCH régional chez le Président : bloc délégation (proposé) ou liste principale ?
-3. CC attributaire d'un dossier central : action principale « Attribuer à un Membre » (proposé) ou « Examiner » ?
-4. Seuil « bientôt » : reste ≤ max(2 h, 35 % du standard), figé dans le code (proposé) ?
-5. Archivage par délégation du Président : la maquette le propose mais le serveur le refuse. Retirer de la maquette (proposé) ou changer la règle ?
-6. UGPM : même accueil que la PRMP avec des gestes de préparation (proposé), ou exclue en v1 ?
-7. Sections réelles absentes de la maquette (« Projets de PV à soumettre », « à accepter », « Lettres de renvoi à signer / à archiver », « À archiver ») : les ajouter (proposé) ?
+Adoptés par Mathieu le 15/09, **réversibles** : chacun tient dans une règle du §3 ou dans l'écran, sans migration.
+
+1. **Bloc délégation replié, hors compteurs et hors badge.** Les lignes `DELEGATION`, `INTERIM`, `COLLEGUE` et `SUPPLEANCE` restent dans `delegations` ; par défaut seuls leurs totaux sont servis, les lignes le sont avec `delegations=true`, au dépli.
+2. **PRET_DISPATCH régional chez le Président : bloc délégation** (`SUPPLEANCE`), pas la liste principale.
+3. **CC attributaire d'un dossier central : action principale « Attribuer à un Membre »** (`REATTRIBUER`) tant que l'examen n'est pas entamé.
+4. **Seuil « bientôt » : reste ≤ max(2 h, ⌈35 % du standard⌉)**, figé dans le code.
+5. **Pas d'archivage par délégation pour le Président** : ni `A_ARCHIVER` ni `LETTRES_A_ARCHIVER` chez lui ; la règle serveur reste inchangée (retrait de la maquette).
+6. **UGPM incluse** : même accueil que la PRMP, avec des gestes de préparation (`COMPLETER_BROUILLON`) et jamais de soumission.
+7. **Sections du circuit réel ajoutées** : « Projets de PV à soumettre », « à accepter », « Lettres de renvoi à signer / à archiver », « PV à archiver », en plus de celles de la maquette.
