@@ -1,15 +1,15 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { AFaire, AFaireTache, Dispatch, Dossier, GesteAFaire } from '../../models';
-import { DispatchService, DossierService, ReceptionService } from '../../services';
+import { DossierService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { Icone } from '../../shared/ui/icone';
 import { DispatchForm, DispatchItem } from '../circuit/dispatch-form';
 import { DossierConsultation } from '../circuit/dossier-consultation';
+import { ModaleGeste, OuvrirGeste } from '../circuit/gestes/ouvrir-geste';
 import { ReceptionForm } from '../circuit/reception-form';
 import { CompleterPiecesDepotModal } from '../prmp/completer-pieces-depot-modal';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
@@ -29,12 +29,8 @@ import {
 } from './a-faire/a-faire-modele';
 import { cibleGeste } from './a-faire/a-faire-navigation';
 
-/** Modale existante ouverte par-dessus l'accueil (gestes sans lien profond). */
-type ModaleOuverte =
-  | { type: 'reception'; dossier: Dossier }
-  | { type: 'dispatch'; items: DispatchItem[]; reattribution: Dispatch | null }
-  | { type: 'pieces-depot'; dossier: Dossier }
-  | { type: 'consultation'; dossier: Dossier };
+/** Modale existante ouverte par-dessus l'accueil (gestes sans lien profond) : `features/circuit/gestes/ouvrir-geste.ts`. */
+type ModaleOuverte = ModaleGeste;
 
 const VUES: readonly { cle: VueAFaire; libelle: string }[] = [
   { cle: 'urgence', libelle: 'Par urgence' },
@@ -218,8 +214,7 @@ export class AFaireEcran {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly dossierService = inject(DossierService);
-  private readonly receptionService = inject(ReceptionService);
-  private readonly dispatchService = inject(DispatchService);
+  private readonly ouvrirGeste = inject(OuvrirGeste);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -357,8 +352,8 @@ export class AFaireEcran {
     const taches = (this.donnees()?.taches ?? []).filter((t) => this.coches().has(cleTache(t)) && t.refs.idReception != null);
     if (!taches.length) return;
     this.ouverture.set('lot');
-    forkJoin(taches.map((t) => forkJoin({ dossier: this.dossierService.getById(t.dossier.idDossier), reception: this.receptionService.getById(t.refs.idReception as number) }))).subscribe({
-      next: (items) => this.ouvrirModale({ type: 'dispatch', items, reattribution: null }),
+    this.ouvrirGeste.preparerLot(taches).subscribe({
+      next: (m) => this.ouvrirModale(m),
       error: () => this.ouverture.set(null),
     });
   }
@@ -374,30 +369,10 @@ export class AFaireEcran {
       return;
     }
     this.ouverture.set(cleTache(t));
-    const dossier$ = this.dossierService.getById(t.dossier.idDossier);
-    const fin = { error: () => this.ouverture.set(null) };
-    switch (cible.modale) {
-      case 'reception':
-        dossier$.subscribe({ ...fin, next: (dossier) => this.ouvrirModale({ type: 'reception', dossier }) });
-        break;
-      case 'pieces-depot':
-        dossier$.subscribe({ ...fin, next: (dossier) => this.ouvrirModale({ type: 'pieces-depot', dossier }) });
-        break;
-      case 'consultation':
-        dossier$.subscribe({ ...fin, next: (dossier) => this.ouvrirModale({ type: 'consultation', dossier }) });
-        break;
-      case 'dispatch':
-      case 'reattribution':
-        forkJoin({
-          dossier: dossier$,
-          reception: this.receptionService.getById(t.refs.idReception as number),
-          dispatch: cible.modale === 'reattribution' ? this.dispatchService.getById(t.refs.idDispatch as number) : of(null),
-        }).subscribe({
-          ...fin,
-          next: ({ dossier, reception, dispatch }) => this.ouvrirModale({ type: 'dispatch', items: [{ dossier, reception }], reattribution: dispatch }),
-        });
-        break;
-    }
+    this.ouvrirGeste.preparer(cible.modale, t).subscribe({
+      next: (m) => this.ouvrirModale(m),
+      error: () => this.ouverture.set(null),
+    });
   }
 
   private ouvrirModale(m: ModaleOuverte): void {
