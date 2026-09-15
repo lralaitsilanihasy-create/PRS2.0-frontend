@@ -18,6 +18,7 @@ import {
   ExamenDetail,
   ExamenPiece,
   ExamenSoumissionRequest,
+  GestesDossier,
   LettreRenvoi,
   ObservationControle,
   ObservationPv,
@@ -84,6 +85,15 @@ export class DossierService extends CrudService<Dossier> {
    */
   lire(idDossier: number): Observable<Dossier> {
     return this.http.get<Dossier>(`${this.baseUrl}/${idDossier}`, { context: skipErrorToast() });
+  }
+
+  /**
+   * `GET /api/dossiers/{id}/gestes` — page dossier (lot L4) : gestes du connecté sur ce dossier et délai
+   * de son étape en cours, calculés comme « À faire ». Silencieux : la page affiche elle-même l'état, et
+   * se replie en lecture seule tant que le backend ne sert pas la route (404, 405 ou 400).
+   */
+  gestes(idDossier: number): Observable<GestesDossier> {
+    return this.http.get<GestesDossier>(`${this.baseUrl}/${idDossier}/gestes`, { context: skipErrorToast() });
   }
 
   /** `GET /api/dossiers/a-receptionner` (Secrétaire/Admin) — SOUMIS sans réception, filtré serveur (pas de N+1). */

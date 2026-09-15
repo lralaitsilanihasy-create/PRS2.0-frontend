@@ -178,3 +178,34 @@ export interface AFaire {
   taches: AFaireTache[];
   delegations: AFaireDelegations;
 }
+
+/**
+ * Page dossier (refonte ergonomique, lot L4) — `GET /api/dossiers/{id}/gestes` : le calcul d'« À faire »
+ * rejoué sur UN dossier (plan `docs/plan-refonte-L4-page-dossier.md`, §6). Toutes les clés sont toujours
+ * présentes, à `null` quand elles ne s'appliquent pas.
+ */
+
+/**
+ * Étape en cours du dossier, indépendamment des gestes du connecté : servie même quand `taches` est
+ * vide (un Membre qui consulte le dossier d'un collègue voit le délai). Urgence : mêmes seuils que les
+ * lignes chronométrées, `EN_PAUSE` sur un statut suspensif, `HORS_DELAI` pour un brouillon, **jamais**
+ * `SUIVI`. ⚠️ Servie aussi à la PRMP et à l'UGPM : le front ne leur en montre que la pause (règle
+ * pilote du 06/09).
+ */
+export interface EtapeCouranteDossier {
+  urgence: UrgenceTache;
+  delai: AFaireDelai;
+}
+
+export interface GestesDossier {
+  idDossier: number;
+  profil: Role;
+  genereLe: string;
+  /** `null` hors des statuts actifs de l'appelant (CLOTURE, RETIRE, REMPLACE, PV_SIGNE ; BROUILLON pour un contrôleur). */
+  etapeCourante: EtapeCouranteDossier | null;
+  /**
+   * TOUTES les lignes du connecté sur ce dossier, de la forme exacte d'« À faire » : `TITULAIRE`
+   * d'abord, puis délégation, intérim, collègue et suppléance ; `rang` numéroté depuis 1 sur toute la liste.
+   */
+  taches: AFaireTache[];
+}

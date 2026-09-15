@@ -2,7 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { Chronometrage, RechercheDossier } from '../models';
+import { SKIP_ERROR_TOAST } from '../core/errors/api-error';
+import { Chronometrage, GestesDossier, RechercheDossier } from '../models';
 import { DossierService } from './circuit.services';
 import { DelaiStandardService } from './referentiel.services';
 
@@ -94,5 +95,35 @@ describe('Chronométrage — DossierService et DelaiStandardService', () => {
     expect(req.request.method).toBe('PUT');
     expect(req.request.body.delaiHeures).toBe(40);
     req.flush({ etape: 'EXAMEN', delaiHeures: 40, libelle: 'Examen' });
+  });
+});
+
+/**
+ * Page dossier (lot L4-F3) — `GET /api/dossiers/{id}/gestes`. Une sous-ressource du dossier, pas un
+ * filtre d'« À faire » ; et SILENCIEUSE : la page affiche elle-même son repli en lecture seule quand le
+ * backend ne sert pas encore la route, un toast ferait croire à une panne.
+ */
+describe('DossierService.gestes', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+  });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('lit la sous-ressource du dossier, sans boîte d’erreur', () => {
+    const service = TestBed.inject(DossierService);
+    const http = TestBed.inject(HttpTestingController);
+
+    let recu: GestesDossier | undefined;
+    service.gestes(1052).subscribe((g) => (recu = g));
+
+    const req = http.expectOne('/api/dossiers/1052/gestes');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.context.get(SKIP_ERROR_TOAST)).toBe(true);
+    http.expectNone((r) => r.url === '/api/dossiers/a-faire');
+    req.flush({ idDossier: 1052, profil: 'PRESIDENT', genereLe: '2026-09-15T10:00:00.123456', etapeCourante: null, taches: [] });
+    expect(recu?.idDossier).toBe(1052);
   });
 });
