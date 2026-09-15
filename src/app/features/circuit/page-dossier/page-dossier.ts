@@ -89,7 +89,18 @@ const ECHECS: Record<FinOuverture, { message: string; aide: string; reprise: boo
         } @else {
           <h1 class="pd-ref">{{ titre() }}</h1>
           @if (echec(); as e) {
-            <app-etat-erreur class="pd-erreur" [message]="e.message" [aide]="e.aide" [reprise]="e.reprise" (reessayer)="relancer()" />
+            @if (ouverture().etat === 'retire') {
+              <!-- Lot L4-F5 : l'issue d'un geste réussi, pas une erreur — annoncée comme telle. -->
+              <div class="pd-retire" role="status">
+                <app-icone nom="check" [taille]="20" />
+                <div>
+                  <p class="pd-retire__message">{{ e.message }}</p>
+                  <p class="pd-retire__aide">{{ e.aide }}</p>
+                </div>
+              </div>
+            } @else {
+              <app-etat-erreur class="pd-erreur" [message]="e.message" [aide]="e.aide" [reprise]="e.reprise" (reessayer)="relancer()" />
+            }
           }
         }
       </div>

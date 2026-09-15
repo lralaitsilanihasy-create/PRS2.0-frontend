@@ -296,9 +296,12 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
       http.expectOne({ method: 'POST', url: '/api/demande-retraits/77/accepter' }).flush({ ...DEMANDE, statut: 'ACCEPTEE' });
       harness.detectChanges();
       repondre();
-      const etat = texte(q('app-page-dossier app-etat-erreur'));
+      const etat = texte(q('app-page-dossier .pd-retire'));
       expect(etat).toContain('Retrait accepté : le dossier est revenu en brouillon chez la PRMP.');
-      expect(etat).not.toContain('hors de votre périmètre');
+      expect(q('app-page-dossier .pd-retire')?.getAttribute('role')).toBe('status');
+      // Une issue, pas une erreur : ni bloc d'erreur, ni « hors de votre périmètre ».
+      expect(q('app-page-dossier app-etat-erreur')).toBeNull();
+      expect(texte(racine())).not.toContain('hors de votre périmètre');
       expect(q('app-page-dossier-corps')).toBeNull();
       expect(q('.pd-ariane__retour')?.textContent).toContain('À faire');
       expect(toast.success).toHaveBeenCalledWith('Demande acceptée — dossier renvoyé en brouillon.');
