@@ -1,6 +1,7 @@
 import { isApiError } from '../../../core/errors/api-error';
-import { AFaire, AFaireCompteurs, AFaireTache, EtapeFrise, Role, SectionAFaire } from '../../../models';
-import { CIRCUIT_ETAPES, etapeIndexForDossier, statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
+import { AFaire, AFaireCompteurs, AFaireTache, Role, SectionAFaire } from '../../../models';
+import { statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
+import { DelaiLigne, GenreDelai, delaiLigne, heures, jourMois, lireDate } from '../../../shared/circuit/frise-delai';
 import { NomIcone } from '../../../shared/ui/icone';
 import {
   LIBELLES_AVIS,
@@ -17,20 +18,17 @@ import {
  * de « qui agit » ici : le serveur les calcule (contrat 2026-09-14-accueil-a-faire), l'écran les montre.
  */
 
+/*
+ * Frise des sept étapes, délai d'une étape et formats de date de base : extraits dans
+ * `shared/circuit/frise-delai.ts` (lot L4-F2) pour servir aussi sur la page dossier. Réexportés ici :
+ * l'accueil et ses specs les importent toujours depuis ce fichier.
+ */
+export { delaiLigne, friseDossier, heures, jourMois, lireDate } from '../../../shared/circuit/frise-delai';
+export type { DelaiLigne, EtapeFriseVue, GenreDelai } from '../../../shared/circuit/frise-delai';
+
 // ── Formats ───────────────────────────────────────────────────────────────────────────────────
 
-/** `yyyy-MM-ddTHH:mm[:ss]` ou `yyyy-MM-dd` (heure locale du serveur) → Date ; `null` si illisible. */
-export function lireDate(v: string | null | undefined): Date | null {
-  if (!v) return null;
-  const d = new Date(v.length === 10 ? `${v}T00:00:00` : v.replace(' ', 'T'));
-  return Number.isNaN(d.getTime()) ? null : d;
-}
 const deux = (n: number): string => String(n).padStart(2, '0');
-/** « 11/09 » */
-export function jourMois(v: string | null | undefined): string {
-  const d = lireDate(v);
-  return d ? `${deux(d.getDate())}/${deux(d.getMonth() + 1)}` : '';
-}
 /** « 11/09/2026 » */
 export function dateComplete(v: string | null | undefined): string {
   const d = lireDate(v);
@@ -47,10 +45,6 @@ export function echeanceTexte(v: string | null | undefined): string {
   if (!d) return '';
   const jour = new Intl.DateTimeFormat('fr-FR', { weekday: 'short' }).format(d);
   return `${jour} ${jourMois(v)}, ${deux(d.getHours())}:${deux(d.getMinutes())}`;
-}
-/** Heures ouvrées : entier, ou une décimale au plus. */
-export function heures(n: number): string {
-  return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(Math.abs(n));
 }
 function pluriel(n: number, singulier: string, plurielForme = singulier + 's'): string {
   return `${n} ${n > 1 ? plurielForme : singulier}`;
@@ -96,8 +90,6 @@ export function phraseAccueil(c: AFaireCompteurs, profil: Role | null): string {
   return c.enRetard ? `${n} actions vous attendent, dont ${c.enRetard} en retard.` : `${n} actions vous attendent. Aucune n'est en retard.`;
 }
 
-export type GenreDelai = 'retard' | 'bientot' | 'ok' | 'sans' | 'pause' | 'suivi';
-
 export interface CompteurAffiche {
   cle: keyof AFaireCompteurs;
   nombre: number;
@@ -127,57 +119,6 @@ export function compteursAffiches(c: AFaireCompteurs, profil: Role | null): Comp
 }
 
 // ── Ligne ─────────────────────────────────────────────────────────────────────────────────────
-
-export interface DelaiLigne {
-  genre: GenreDelai;
-  /**
-   * Ligne : « Reste 5 h », « 1 h de retard », « En pause », « Fin prévue le 24/09 »… — COURT : la
-   * colonne du délai fait 9,25 rem. ⚠️ 2026-09-15 (recette) : « En pause · depuis le 12/09 » y était
-   * tronqué ; la date passe au sous-texte, rien n'est perdu.
-   */
-  texte: string;
-  /** Ligne, sous la barre : « 9 h sur 8 h », « Depuis le 12/09 », « Compteur suspendu »… */
-  sousTexte: string;
-  /** Aperçu (plus large) : la phrase entière, « En pause · depuis le 12/09 » ; l'échéance s'y ajoute. */
-  texteApercu: string;
-  /** Remplissage de la barre (0-100). */
-  pourcentage: number;
-}
-
-/** Délai d'une ligne, lu dans `delai` selon la classe d'urgence servie (aucun recalcul). */
-export function delaiLigne(t: AFaireTache): DelaiLigne {
-  const d = t.delai;
-  const sur = d.ecouleHeures != null && d.standardHeures ? `${heures(d.ecouleHeures)} h sur ${heures(d.standardHeures)} h` : '';
-  const simple = (genre: GenreDelai, texte: string, sousTexte: string, pourcentage: number): DelaiLigne => ({ genre, texte, sousTexte, texteApercu: texte, pourcentage });
-  switch (t.urgence) {
-    case 'EN_RETARD':
-      if (d.restantHeures == null) break;
-      return simple('retard', `${heures(d.restantHeures)} h de retard`, sur, 100);
-    case 'BIENTOT':
-    case 'DANS_LES_DELAIS': {
-      if (d.restantHeures == null) break;
-      const pct = d.ecouleHeures != null && d.standardHeures ? Math.min(100, Math.max(0, Math.round((d.ecouleHeures / d.standardHeures) * 100))) : 0;
-      return simple(t.urgence === 'BIENTOT' ? 'bientot' : 'ok', `Reste ${heures(d.restantHeures)} h`, sur, pct);
-    }
-    case 'EN_PAUSE': {
-      const depuis = d.pauseDepuis ? jourMois(d.pauseDepuis) : '';
-      return {
-        genre: 'pause',
-        texte: 'En pause',
-        sousTexte: depuis ? `Depuis le ${depuis}` : 'Compteur suspendu',
-        texteApercu: depuis ? `En pause · depuis le ${depuis}` : 'En pause · compteur suspendu',
-        pourcentage: 100,
-      };
-    }
-    case 'SUIVI':
-      return simple('suivi', d.datePrevisionnelleFin ? `Fin prévue le ${jourMois(d.datePrevisionnelleFin)}` : 'En cours', 'Suivi seulement', 0);
-    case 'HORS_DELAI':
-      return simple('sans', 'Hors délai CNM', 'Pas encore transmis', 0);
-    case 'SANS_DELAI':
-      break;
-  }
-  return simple('sans', 'Sans délai', d.entree ? `Depuis le ${jourMois(d.entree)}` : '', 0);
-}
 
 /** Référence en police mono, ou « Dépôt du 11/09 à 09:30 » avant la réception. */
 export function referenceLigne(t: AFaireTache): { texte: string; sansReference: boolean } {
@@ -337,34 +278,6 @@ export function grouperTaches(taches: readonly AFaireTache[], vue: VueAFaire, a:
 }
 
 // ── Aperçu ────────────────────────────────────────────────────────────────────────────────────
-
-export interface EtapeFriseVue {
-  cle: EtapeFrise;
-  libelle: string;
-  etat: 'faite' | 'courante' | 'pause' | 'a-venir';
-  /** « 11/09 », « en cours », « en pause » ou vide. */
-  date: string;
-  /** Acteur de l'étape ; `null` pour la PRMP et l'UGPM (règle C2) ou étape non franchie. */
-  acteur: string | null;
-}
-
-/** Frise des sept étapes, depuis `datesEtapes` et `acteursEtapes` (absents pour la PRMP et l'UGPM). */
-export function friseDossier(t: AFaireTache): EtapeFriseVue[] {
-  const courante = etapeIndexForDossier(t.dossier.statut);
-  const pause = t.urgence === 'EN_PAUSE';
-  return CIRCUIT_ETAPES.map((e, i) => {
-    const cle = e.key as EtapeFrise;
-    const date = t.dossier.datesEtapes?.[cle] ?? null;
-    const etat = i < courante ? 'faite' : i === courante ? (pause ? 'pause' : 'courante') : 'a-venir';
-    return {
-      cle,
-      libelle: e.label,
-      etat,
-      date: date ? jourMois(date) : etat === 'courante' ? 'en cours' : etat === 'pause' ? 'en pause' : '',
-      acteur: t.dossier.acteursEtapes?.[cle] ?? null,
-    };
-  });
-}
 
 export interface FaitApercu {
   libelle: string;
