@@ -42,7 +42,7 @@ import { delaiLigne, echeanceTexte, faitsApercu, friseDossier, referenceLigne } 
       <div class="suite">
         <p class="suite__l">Prochaine action · vous</p>
         <p class="suite__t">{{ geste().long }}</p>
-        <p class="suite__d suite__d--{{ delai().genre }}">{{ delai().texte }}@if (echeance()) { · avant {{ echeance() }} }</p>
+        <p class="suite__d suite__d--{{ delai().genre }}">{{ delai().texteApercu }}@if (echeance()) { · avant {{ echeance() }} }</p>
         <span class="barre" aria-hidden="true"><i class="barre__r barre__r--{{ delai().genre }}" [style.width.%]="delai().pourcentage"></i></span>
       </div>
 

@@ -47,14 +47,40 @@ describe('Accueil « À faire » — règles pures', () => {
   });
 
   it('délai lu dans la réponse, selon la classe servie', () => {
-    expect(delaiLigne(enRetard)).toEqual({ genre: 'retard', texte: '1 h de retard', sousTexte: '9 h sur 8 h', pourcentage: 100 });
-    expect(delaiLigne(bientot)).toEqual({ genre: 'bientot', texte: 'Reste 2 h', sousTexte: '6 h sur 8 h', pourcentage: 75 });
+    expect(delaiLigne(enRetard)).toEqual({ genre: 'retard', texte: '1 h de retard', sousTexte: '9 h sur 8 h', texteApercu: '1 h de retard', pourcentage: 100 });
+    expect(delaiLigne(bientot)).toEqual({ genre: 'bientot', texte: 'Reste 2 h', sousTexte: '6 h sur 8 h', texteApercu: 'Reste 2 h', pourcentage: 75 });
     expect(delaiLigne(dansLesDelais)).toMatchObject({ genre: 'ok', texte: 'Reste 7 h', pourcentage: 13 });
-    expect(delaiLigne(retrait)).toEqual({ genre: 'sans', texte: 'Sans délai', sousTexte: 'Depuis le 12/09', pourcentage: 0 });
+    expect(delaiLigne(retrait)).toEqual({ genre: 'sans', texte: 'Sans délai', sousTexte: 'Depuis le 12/09', texteApercu: 'Sans délai', pourcentage: 0 });
     const [brouillon, rectifier, suivi] = prmp.taches;
-    expect(delaiLigne(rectifier)).toMatchObject({ genre: 'pause', texte: 'En pause · depuis le 12/09', sousTexte: 'Compteur suspendu' });
+    // La date de pause passe sous la barre (ligne) ; l'aperçu, plus large, garde la phrase entière.
+    expect(delaiLigne(rectifier)).toMatchObject({ genre: 'pause', texte: 'En pause', sousTexte: 'Depuis le 12/09', texteApercu: 'En pause · depuis le 12/09' });
     expect(delaiLigne(brouillon)).toMatchObject({ genre: 'sans', texte: 'Hors délai CNM' });
     expect(delaiLigne(suivi)).toMatchObject({ genre: 'suivi', texte: 'Fin prévue le 16/09' });
+  });
+
+  it('textes de délai de la ligne : courts dans tous les cas, jamais tronqués (recette du 15/09)', () => {
+    // Colonne du délai : 9,25 rem, texte en gras 13 px — 19 caractères y tiennent sur une ligne
+    // (« Fin prévue le 24/09 », mesuré à 1366 px) ; sous-texte en police mono 11,5 px : 20 caractères.
+    const avec = (urgence: typeof enRetard.urgence, delai: Partial<typeof enRetard.delai>) => delaiLigne({ ...enRetard, urgence, delai: { ...enRetard.delai, ...delai } });
+    const cas = [
+      avec('EN_RETARD', { standardHeures: 8, ecouleHeures: 1257.5, restantHeures: -1249.5 }),
+      avec('BIENTOT', { standardHeures: 120, ecouleHeures: 118.5, restantHeures: 1.5 }),
+      avec('DANS_LES_DELAIS', { standardHeures: 120, ecouleHeures: 1.5, restantHeures: 118.5 }),
+      avec('EN_PAUSE', { pauseDepuis: '2026-09-28T10:46:53' }),
+      avec('EN_PAUSE', { pauseDepuis: null }),
+      avec('SUIVI', { datePrevisionnelleFin: '2026-12-31' }),
+      avec('SUIVI', { datePrevisionnelleFin: null }),
+      avec('SANS_DELAI', { entree: '2026-09-12T09:00:00' }),
+      avec('HORS_DELAI', {}),
+    ];
+    const lu = (x: string): string => x.replace(/\u202f/g, ' '); // Intl sépare les milliers par une espace fine insécable
+    expect(cas.map((c) => lu(c.texte))).toEqual(['1 249,5 h de retard', 'Reste 1,5 h', 'Reste 118,5 h', 'En pause', 'En pause', 'Fin prévue le 31/12', 'En cours', 'Sans délai', 'Hors délai CNM']);
+    expect(cas.map((c) => lu(c.sousTexte))).toEqual(['1 257,5 h sur 8 h', '118,5 h sur 120 h', '1,5 h sur 120 h', 'Depuis le 28/09', 'Compteur suspendu', 'Suivi seulement', 'Suivi seulement', 'Depuis le 12/09', 'Pas encore transmis']);
+    for (const c of cas) {
+      expect(c.texte.length).toBeLessThanOrEqual(19);
+      expect(c.sousTexte.length).toBeLessThanOrEqual(20);
+    }
+    expect(cas[4].texteApercu).toBe('En pause · compteur suspendu');
   });
 
   it('référence mono, ou dépôt daté ; note courte tirée des faits', () => {

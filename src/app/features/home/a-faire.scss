@@ -300,12 +300,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Textes d'urgence : JAMAIS tronqués (recette du 2026-09-15, « En pause · depuis le 1… »). Les
+   formulations sont courtes (a-faire-modele, `delaiLigne`) ; si une valeur extrême dépasse malgré
+   tout la colonne, elle revient à la ligne au lieu de perdre sa fin. */
 .af-l__dt {
   font-size: 0.8125rem;
   font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .af-l__dt--retard { color: #b91c1c; }
 .af-l__dt--bientot { color: #b45309; }
@@ -317,9 +319,8 @@
   min-height: 0.9rem;
   font: 400 0.71875rem/1.2 var(--cnm-mono);
   color: #5b6784;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .af-barre {
   display: block;

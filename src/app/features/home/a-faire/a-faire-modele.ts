@@ -130,10 +130,16 @@ export function compteursAffiches(c: AFaireCompteurs, profil: Role | null): Comp
 
 export interface DelaiLigne {
   genre: GenreDelai;
-  /** « Reste 5 h », « 1 h de retard », « En pause · depuis le 12/09 », « Fin prévue le 24/09 »… */
+  /**
+   * Ligne : « Reste 5 h », « 1 h de retard », « En pause », « Fin prévue le 24/09 »… — COURT : la
+   * colonne du délai fait 9,25 rem. ⚠️ 2026-09-15 (recette) : « En pause · depuis le 12/09 » y était
+   * tronqué ; la date passe au sous-texte, rien n'est perdu.
+   */
   texte: string;
-  /** « 9 h sur 8 h », « Compteur suspendu »… */
+  /** Ligne, sous la barre : « 9 h sur 8 h », « Depuis le 12/09 », « Compteur suspendu »… */
   sousTexte: string;
+  /** Aperçu (plus large) : la phrase entière, « En pause · depuis le 12/09 » ; l'échéance s'y ajoute. */
+  texteApercu: string;
   /** Remplissage de la barre (0-100). */
   pourcentage: number;
 }
@@ -142,31 +148,35 @@ export interface DelaiLigne {
 export function delaiLigne(t: AFaireTache): DelaiLigne {
   const d = t.delai;
   const sur = d.ecouleHeures != null && d.standardHeures ? `${heures(d.ecouleHeures)} h sur ${heures(d.standardHeures)} h` : '';
+  const simple = (genre: GenreDelai, texte: string, sousTexte: string, pourcentage: number): DelaiLigne => ({ genre, texte, sousTexte, texteApercu: texte, pourcentage });
   switch (t.urgence) {
     case 'EN_RETARD':
       if (d.restantHeures == null) break;
-      return { genre: 'retard', texte: `${heures(d.restantHeures)} h de retard`, sousTexte: sur, pourcentage: 100 };
+      return simple('retard', `${heures(d.restantHeures)} h de retard`, sur, 100);
     case 'BIENTOT':
     case 'DANS_LES_DELAIS': {
       if (d.restantHeures == null) break;
       const pct = d.ecouleHeures != null && d.standardHeures ? Math.min(100, Math.max(0, Math.round((d.ecouleHeures / d.standardHeures) * 100))) : 0;
-      return { genre: t.urgence === 'BIENTOT' ? 'bientot' : 'ok', texte: `Reste ${heures(d.restantHeures)} h`, sousTexte: sur, pourcentage: pct };
+      return simple(t.urgence === 'BIENTOT' ? 'bientot' : 'ok', `Reste ${heures(d.restantHeures)} h`, sur, pct);
     }
-    case 'EN_PAUSE':
+    case 'EN_PAUSE': {
+      const depuis = d.pauseDepuis ? jourMois(d.pauseDepuis) : '';
       return {
         genre: 'pause',
-        texte: d.pauseDepuis ? `En pause · depuis le ${jourMois(d.pauseDepuis)}` : 'En pause',
-        sousTexte: 'Compteur suspendu',
+        texte: 'En pause',
+        sousTexte: depuis ? `Depuis le ${depuis}` : 'Compteur suspendu',
+        texteApercu: depuis ? `En pause · depuis le ${depuis}` : 'En pause · compteur suspendu',
         pourcentage: 100,
       };
+    }
     case 'SUIVI':
-      return { genre: 'suivi', texte: d.datePrevisionnelleFin ? `Fin prévue le ${jourMois(d.datePrevisionnelleFin)}` : 'En cours', sousTexte: 'Suivi seulement', pourcentage: 0 };
+      return simple('suivi', d.datePrevisionnelleFin ? `Fin prévue le ${jourMois(d.datePrevisionnelleFin)}` : 'En cours', 'Suivi seulement', 0);
     case 'HORS_DELAI':
-      return { genre: 'sans', texte: 'Hors délai CNM', sousTexte: 'Pas encore transmis', pourcentage: 0 };
+      return simple('sans', 'Hors délai CNM', 'Pas encore transmis', 0);
     case 'SANS_DELAI':
       break;
   }
-  return { genre: 'sans', texte: 'Sans délai', sousTexte: d.entree ? `Depuis le ${jourMois(d.entree)}` : '', pourcentage: 0 };
+  return simple('sans', 'Sans délai', d.entree ? `Depuis le ${jourMois(d.entree)}` : '', 0);
 }
 
 /** Référence en police mono, ou « Dépôt du 11/09 à 09:30 » avant la réception. */

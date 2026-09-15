@@ -144,6 +144,8 @@ describe('Accueil « À faire » (écran)', () => {
     expect(apercu.querySelector('.frise__e--pause')).not.toBeNull();
     expect(texte(apercu.querySelector('.faits'))).not.toContain('Examiné par');
     expect(texte(apercu.querySelector('.suite__d'))).toBe('En pause · depuis le 12/09');
+    // Ligne : texte court, la date sous la barre (plus rien de tronqué dans la colonne du délai).
+    expect(texte(tous('.af-l__delai')[1])).toBe('En pause Depuis le 12/09');
   });
 
   it('bloc délégation : replié, hors compteurs, lignes demandées au dépli seulement', async () => {
