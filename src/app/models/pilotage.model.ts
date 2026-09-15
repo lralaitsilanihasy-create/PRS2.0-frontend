@@ -169,6 +169,12 @@ export interface CompteursVerificateur {
 export interface BadgesMenu {
   profil: string;
   compteurs: Record<string, number>;
+  /**
+   * Gestes attendus du connecté — même calcul que `compteurs.aFaire` de `GET /api/dossiers/a-faire`
+   * (demande 2026-09-14-accueil-a-faire, §5). Absent tant que le backend ne le sert pas, `null` pour
+   * l'Administrateur et le Chargé de publication : pas de pastille dans ces cas.
+   */
+  aFaire?: number | null;
 }
 
 /** Réponse de `GET /api/kpis/tableau-bord` (PRESIDENT / ADMINISTRATEUR). */

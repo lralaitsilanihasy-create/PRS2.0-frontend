@@ -8,3 +8,4 @@ export * from './comptes.model';
 export * from './pilotage.model';
 export * from './transparence.model';
 export * from './admin.model';
+export * from './a-faire.model';

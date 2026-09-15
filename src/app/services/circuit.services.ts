@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
+  AFaire,
   ActionDossier,
   Chronometrage,
   CopieDossier,
@@ -59,6 +60,21 @@ export class DossierService extends CrudService<Dossier> {
   rechercher(q: string): Observable<RechercheDossier[]> {
     return this.http.get<RechercheDossier[]>(`${this.baseUrl}/recherche`, {
       params: new HttpParams().set('q', q),
+    });
+  }
+
+  /**
+   * `GET /api/dossiers/a-faire?delegations=` — accueil « À faire » : gestes attendus du connecté,
+   * sections, compteurs et délais calculés serveur (demande 2026-09-14-accueil-a-faire). Par défaut,
+   * seuls les TOTAUX du bloc délégation sont servis ; `delegations` en demande les lignes.
+   *
+   * Silencieux : l'écran affiche lui-même l'échec (`app-etat-erreur`), et l'accueil sonde l'endpoint
+   * pour se replier sur l'atterrissage historique tant que le backend ne le sert pas.
+   */
+  aFaire(delegations = false): Observable<AFaire> {
+    return this.http.get<AFaire>(`${this.baseUrl}/a-faire`, {
+      params: new HttpParams().set('delegations', delegations),
+      context: skipErrorToast(),
     });
   }
 
