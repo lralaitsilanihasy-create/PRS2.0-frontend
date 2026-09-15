@@ -78,6 +78,14 @@ export class DossierService extends CrudService<Dossier> {
     });
   }
 
+  /**
+   * `GET /api/dossiers/{id}` sans boîte d'erreur — lecture d'ouverture de la page dossier, qui affiche
+   * elle-même le refus (403 : hors périmètre), l'absence (404) ou l'échec, en un seul message.
+   */
+  lire(idDossier: number): Observable<Dossier> {
+    return this.http.get<Dossier>(`${this.baseUrl}/${idDossier}`, { context: skipErrorToast() });
+  }
+
   /** `GET /api/dossiers/a-receptionner` (Secrétaire/Admin) — SOUMIS sans réception, filtré serveur (pas de N+1). */
   aReceptionner(): Observable<Dossier[]> {
     return this.http.get<Dossier[]>(`${this.baseUrl}/a-receptionner`);

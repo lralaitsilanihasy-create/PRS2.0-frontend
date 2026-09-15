@@ -17,9 +17,11 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       <span class="etat-erreur__icone" aria-hidden="true">⚠</span>
       <div class="etat-erreur__corps">
         <p class="etat-erreur__titre">{{ message() }}</p>
-        <p class="etat-erreur__aide">Vérifiez votre connexion, puis réessayez.</p>
+        <p class="etat-erreur__aide">{{ aide() }}</p>
       </div>
-      <button type="button" class="btn btn-secondary btn-sm" (click)="reessayer.emit()">Réessayer</button>
+      @if (reprise()) {
+        <button type="button" class="btn btn-secondary btn-sm" (click)="reessayer.emit()">Réessayer</button>
+      }
     </div>
   `,
   styles: `
@@ -42,5 +44,12 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 export class EtatErreur {
   /** Message principal — décrire ce qui n'a pas pu être chargé. */
   readonly message = input('Le chargement a échoué.');
+  /** Phrase d'aide sous le message. */
+  readonly aide = input('Vérifiez votre connexion, puis réessayez.');
+  /**
+   * Propose « Réessayer » (défaut). `false` quand une nouvelle tentative n'y changerait rien : refus
+   * ou absence de la ressource (page dossier, lot L4-F2 : 403 hors périmètre, 404).
+   */
+  readonly reprise = input(true);
   readonly reessayer = output<void>();
 }

@@ -1,0 +1,247 @@
+/* Page dossier (refonte ergonomique, lot L4-F2 — maquette GuideDossier, direction C). Mode
+   « concentration » : la barre latérale est en tiroir, la page garde 1 rem / 1,25 rem de marges.
+   Largeur : aucun défilement horizontal à 1366 px ni à 1229 px (125 %) — tout est fluide, le plan
+   se contente de la largeur de la page. Couleurs de texte au contraste AA sur #eef2f9 et sur blanc :
+   #152033 14:1, #34405a 9:1, #5b6784 5,0:1, #0369a1 5,3:1. */
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.pd {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  min-width: 0;
+  color: #152033;
+}
+
+/* ── Fil d'Ariane et outils ── */
+.pd-fil {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  min-height: 2rem;
+}
+.pd-ariane {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  font-size: 0.875rem;
+  color: #5b6784;
+}
+.pd-ariane__retour {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #0369a1;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.pd-ariane__retour:hover { text-decoration: underline; }
+.pd-ariane__retour:focus-visible { outline: 2px solid #0369a1; outline-offset: 2px; }
+.pd-ariane__sep { flex: none; color: #5b6784; }
+.pd-ariane__ici {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 0.875rem/1.2 var(--cnm-mono);
+  color: #152033;
+}
+.pd-outils {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.pd-outil {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fff;
+}
+.pd-outil__n {
+  min-width: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 10px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+/* ── Identité ── */
+.pd-tete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  min-width: 0;
+}
+.pd-id {
+  flex: 1 1 28rem;
+  min-width: 0;
+}
+.pd-ref {
+  margin: 0;
+  font: 500 1.75rem/1.15 var(--cnm-mono);
+  letter-spacing: -0.035em;
+  color: #152033;
+  overflow-wrap: anywhere;
+}
+.pd-ref--sans {
+  font: 800 1.5rem/1.2 var(--font-base);
+  letter-spacing: -0.02em;
+}
+/* Réservée pendant la vague : les libellés arrivent sans faire sauter la frise. */
+.pd-ent {
+  margin: 0.25rem 0 0;
+  min-height: 1.5rem;
+  font-size: 1rem;
+  color: #34405a;
+}
+.pd-puces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  min-height: 1.6rem;
+}
+.pd-puce {
+  padding: 0 0.5rem;
+  border: 1px solid #dbe3ee;
+  border-radius: 6px;
+  background: #fff;
+  font: 500 0.78125rem/1.45rem var(--cnm-mono);
+  color: #34405a;
+  white-space: nowrap;
+}
+.pd-deplier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.1rem 0.4rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0369a1;
+  cursor: pointer;
+}
+.pd-deplier:hover { background: #e0f2fe; }
+.pd-deplier:focus-visible { outline: 2px solid #0369a1; outline-offset: 1px; }
+.pd-fin {
+  margin: 0;
+  text-align: right;
+  font-size: 0.84375rem;
+  color: #5b6784;
+}
+.pd-fin b {
+  display: block;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: #152033;
+}
+.pd-identite {
+  max-width: 44rem;
+}
+
+/* ── Frise des sept étapes ── */
+.pd-frise {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pd-etape {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  text-align: center;
+  cursor: default;
+}
+/* Trait qui relie l'étape à la précédente, sous les pastilles. */
+.pd-etape::before {
+  content: '';
+  position: absolute;
+  top: 0.9rem;
+  left: -50%;
+  width: 100%;
+  height: 3px;
+  background: #dbe3ee;
+}
+.pd-etape:first-child::before { display: none; }
+.pd-etape--faite::before,
+.pd-etape--courante::before,
+.pd-etape--pause::before { background: #7dd3fc; }
+/* Au-dessus du trait de l'étape suivante, peint après elle dans l'ordre du document. */
+.pd-etape__pt {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  border: 2px solid #c5d0de;
+  border-radius: 50%;
+  background: #fff;
+  font: 700 0.8125rem/1 var(--cnm-mono);
+  color: #5b6784;
+}
+.pd-etape--faite .pd-etape__pt { border-color: #0369a1; background: #0369a1; color: #fff; }
+.pd-etape--courante .pd-etape__pt { border: 3px solid #0369a1; color: #0369a1; box-shadow: 0 0 0 5px #d6ecfa; }
+.pd-etape--pause .pd-etape__pt { border: 3px solid #b45309; color: #b45309; box-shadow: 0 0 0 5px #fde68a; }
+.pd-etape__l {
+  max-width: 100%;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #152033;
+}
+.pd-etape--a-venir .pd-etape__l { font-weight: 600; color: #5b6784; }
+.pd-etape__d {
+  min-height: 1rem;
+  font: 400 0.75rem/1.3 var(--cnm-mono);
+  color: #5b6784;
+}
+.pd-etape--pause .pd-etape__d { color: #b45309; }
+
+/* ── Documents ── */
+/* Les blocs (onglets, visionneuse) apportent leurs marges : la section ne fait que les accueillir. */
+.pd-documents {
+  min-width: 0;
+  margin-top: 0.25rem;
+}
+.pd-attente {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}
+.pd-erreur {
+  display: block;
+  max-width: 48rem;
+}
+
+/* ── Sous-dialogues Journal et Délais ── */
+.pd-sousmodal .modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pd-sousmodal { width: min(1100px, 95vw); max-width: 95vw; }
+.pd-sousmodal__corps { overflow: auto; }
