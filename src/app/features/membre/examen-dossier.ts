@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  HostListener,
   Injector,
   OnDestroy,
   afterNextRender,
@@ -17,6 +18,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError, estConflitVersion } from '../../core/errors/api-error';
+import { SortieProtegee } from '../../core/navigation/sortie-protegee';
 import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import {
@@ -85,12 +87,14 @@ import {
   libelleChampCible,
   montantOfficiel,
 } from '../../shared/prmp/document-officiel';
+import { ConfirmationSortie } from '../../shared/ui/confirmation-sortie';
 import { DocumentVisionneuse } from '../../shared/ui/document-visionneuse';
 import { Icone } from '../../shared/ui/icone';
 import { ExamenGrille } from './examen/examen-grille';
 import {
   ActionGrille,
   CleEtapeParcours,
+  EmpreinteExamen,
   EntreeParcours,
   GroupeRecap,
   ObsLigne,
@@ -103,7 +107,10 @@ import {
   aDuTexte,
   construireParcours,
   delaiExamen,
+  empreintePiece,
+  empreintePoint,
   lignesViseesParConsigne,
+  modificationsNonEnregistrees,
   numerosEnTexte,
   pluriel,
   raisonValidationImpossible,
@@ -141,6 +148,10 @@ interface PropositionCellule {
  * (2026-09-06), le périmètre d'une mise à jour (2026-09-10), les enregistrements (brouillon de
  * progression à chaque validation, soumission, modification, réexamen), les messages.
  *
+ * Ajustements du 2026-09-15 (décisions de Mathieu) : synthèse facultative (avis seul obligatoire) ;
+ * parcours fidèle — le brouillon n'enregistre que les étapes validées, la reprise suit ces étapes ;
+ * confirmation avant de quitter l'écran avec des saisies non enregistrées (`beforeunload` compris).
+ *
  * ⚠️ Visa unique (2026-08-31, inverse la règle du 01/08) — le Membre ÉMET SON AVIS à la fin de
  * l'examen (pré-rempli par la suggestion, modifiable, obligatoire à la soumission) ; le Président
  * ou le CC pourra l'ajuster au VISA qui clôt la navette (écran « Projets de PV »).
@@ -162,6 +173,7 @@ interface PropositionCellule {
     ExamenParcours,
     ExamenGrille,
     ExamenSynthese,
+    ConfirmationSortie,
   ],
   template: `
     <section class="exam" [class.exam--synthese]="estEtapeAvis() && points().length > 0">
@@ -431,10 +443,19 @@ interface PropositionCellule {
         }
       }
     </section>
+
+    @if (sortieDemandee()) {
+      <app-confirmation-sortie
+        titre="Quitter l'examen sans enregistrer ?"
+        message="Des résultats saisis n'ont pas encore été enregistrés : ils seront perdus. L'examen enregistre votre progression à chaque étape validée ; la synthèse et l'avis, à la soumission."
+        (rester)="repondreSortie(false)"
+        (quitter)="repondreSortie(true)"
+      />
+    }
   `,
   styleUrl: './examen-dossier.scss',
 })
-export class ExamenDossier implements OnDestroy {
+export class ExamenDossier implements OnDestroy, SortieProtegee {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
@@ -536,6 +557,17 @@ export class ExamenDossier implements OnDestroy {
   readonly etapesValidees = signal<ReadonlySet<string>>(new Set());
   /** Heure du dernier brouillon de progression réellement enregistré (« Enregistré à … »). */
   readonly derniereSauvegarde = signal<string | null>(null);
+  /**
+   * ⚠️ 2026-09-15 (décision de Mathieu) — ce qu'un rechargement rendrait : empreinte posée au
+   * chargement, tenue à jour à chaque enregistrement réussi. L'écart avec l'écran = modifications
+   * non enregistrées (confirmation de sortie, `beforeunload`). `null` tant que rien n'est chargé.
+   */
+  private readonly empreinteEnregistree = signal<EmpreinteExamen | null>(null);
+  /** Confirmation de sortie ouverte (le routeur attend la réponse). */
+  readonly sortieDemandee = signal(false);
+  private resoudreSortie: ((quitter: boolean) => void) | null = null;
+  /** Soumission ou modification réussie : la navigation qui suit ne doit rien demander. */
+  private sortieLibre = false;
   /** Grille de contrôle dépliée (panneau droit) ou repliée en languette. */
   readonly grilleOuverte = signal(true);
   /** Proposition « Observer cette cellule » ouverte. */
@@ -1272,7 +1304,10 @@ export class ExamenDossier implements OnDestroy {
     // pv-workflow : un effect qui écrit, jamais un computed).
     effect(() => {
       if (this.estEtapeAvis() && this.syntheseEditable() && !this.avis()) {
-        this.avis.set(this.avisSuggere());
+        const suggere = this.avisSuggere();
+        this.avis.set(suggere);
+        // Pré-sélection automatique, rejouée à chaque arrivée : ce n'est pas une modification du Membre.
+        untracked(() => this.empreinteEnregistree.update((e) => (e && e.avis == null ? { ...e, avis: suggere } : e)));
       }
     });
 
@@ -1409,6 +1444,7 @@ export class ExamenDossier implements OnDestroy {
           this.etapesValidees.set(valides);
         }
         this.resultats.set(map);
+        this.empreinteEnregistree.set(this.empreinteCourante());
         if (ex) {
           if (r.dossier.statut === 'EXAMINE') {
             // Examen déjà réalisé (tout statué) → l'avis est directement accessible (navigation libre).
@@ -2009,11 +2045,7 @@ export class ExamenDossier implements OnDestroy {
     const idDispatch = this.idDispatch();
     if (!this.dossier() || idDispatch == null) return;
     if (!this.observationsCompletes()) return;
-    // ⚠️ Refonte lot 2 (maquette ExamenSynthese validée) — la synthèse est obligatoire dès qu'elle est saisissable.
-    if (this.pvEditable() && !this.synthese().trim()) {
-      this.formError.set('Rédigez la synthèse des observations : elle accompagne votre avis dans le projet de PV.');
-      return;
-    }
+    // Synthèse facultative (décision du 2026-09-15 : retour au comportement d'avant la refonte).
     this.formError.set(null);
     this.saving.set(true);
     this.modifier(idDispatch);
@@ -2037,15 +2069,12 @@ export class ExamenDossier implements OnDestroy {
       this.formError.set('Sélectionnez votre avis global — il accompagne la soumission de l\'examen.');
       return;
     }
-    // ⚠️ Refonte lot 2 (maquette ExamenSynthese validée) — la synthèse des observations est obligatoire.
-    if (!this.synthese().trim()) {
-      this.formError.set('Rédigez la synthèse des observations : elle accompagne votre avis dans le projet de PV.');
-      return;
-    }
+    // Synthèse facultative (décision du 2026-09-15 : retour au comportement d'avant la refonte).
     this.formError.set(null);
     this.saving.set(true);
-    // Réconciliation FINALE (tous les résultats statués), puis soumission avec l'avis du Membre.
-    this.sauvegarderProgression()
+    // Réconciliation FINALE (tous les résultats statués, étapes validées ou non — la garde de
+    // complétude du serveur les exige tous), puis soumission avec l'avis du Membre.
+    this.sauvegarderProgression(true)
       .pipe(
         switchMap((idExamen) => this.examenService.soumettre(idExamen, { idAvis })),
         // La synthèse ne fait pas partie d'ExamenSoumissionRequest : on la persiste via une MAJ du PV créé
@@ -2064,6 +2093,7 @@ export class ExamenDossier implements OnDestroy {
           // on passe l'id du PV créé en query param, la liste « Projets de PV » ouvre son modal
           // automatiquement (plus besoin de cliquer « Gérer »). Route de l'ESPACE courant (le CC /
           // le Président y accèdent aussi — /membre/pv leur serait refusé).
+          this.sortieLibre = true;
           void this.router.navigate(this.routeProjetsPv(), { queryParams: { gerer: pv.idPv } });
         },
         error: (e: ApiError) => {
@@ -2103,6 +2133,8 @@ export class ExamenDossier implements OnDestroy {
         map(() => {
           this.existingExamenId.set(idExamen);
           this.examens.update((arr) => [...arr, examen]);
+          // La date part avec la création de l'examen : c'est désormais elle qu'un rechargement relirait.
+          this.empreinteEnregistree.update((ref) => (ref ? { ...ref, date: examen.dateExamen ?? ref.date } : ref));
           return idExamen;
         }),
         catchError((e) => {
@@ -2116,21 +2148,44 @@ export class ExamenDossier implements OnDestroy {
   }
 
   /**
-   * ⚠️ Règle ajoutée — SAUVEGARDE DE PROGRESSION (brouillon serveur) : garantit l'examen puis
-   * réconcilie tous les résultats **statués** (détails par (idDetail, idPtControle) ; pièces par
-   * idPiece) — création ou mise à jour, jamais les points non statués. Appelée à chaque validation
-   * d'étape et avant la soumission (l'état serveur reflète toujours la dernière situation).
+   * Clé de l'étape (dans `etapesValidees`) qui porte un résultat : `L<idDetail>` pour une ligne,
+   * `F` / `A` / `D` pour un point évalué une fois, selon sa portée.
    */
-  private sauvegarderProgression(): Observable<number> {
+  private cleEtapeDuResultat(idDetail: number | null, idPt: number): string {
+    if (idDetail != null) return 'L' + idDetail;
+    const portee = this.points().find((p) => p.idPointCtrl === idPt)?.portee;
+    return portee === 'FICHE' ? 'F' : portee === 'AGPM' ? 'A' : 'D';
+  }
+
+  /**
+   * ⚠️ Règle ajoutée — SAUVEGARDE DE PROGRESSION (brouillon serveur) : garantit l'examen puis
+   * réconcilie les résultats **statués** (détails par (idDetail, idPtControle) ; pièces par
+   * idPiece) — création ou mise à jour, jamais les points non statués.
+   *
+   * ⚠️ 2026-09-15 (décision de Mathieu, « parcours fidèle ») — le BROUILLON n'envoie que les résultats
+   * des étapes que le Membre a réellement VALIDÉES : avec le RAS par défaut, tout envoyer faisait
+   * relire au rechargement chaque étape comme validée, et la reprise sautait à la synthèse. Le
+   * contrat le permet : la complétude n'est contrôlée qu'à la soumission. `complet` (soumission) :
+   * tous les résultats statués, comme la garde de complétude du serveur les exige.
+   */
+  private sauvegarderProgression(complet = false): Observable<number> {
     return this.ensureExamen().pipe(
       switchMap((idExamen) => {
         const calls: Observable<unknown>[] = [];
+        const validees = this.etapesValidees();
         const detailParCle = new Map(
           this.details().filter((d) => d.idExamen === idExamen).map((d) => [this.cle(d.idDetail ?? null, d.idPtControle), d]),
         );
         let idd = this.nextId(this.details().map((d) => d.idDetailExamen));
         const nouveauxDetails: ExamenDetail[] = [];
-        for (const e of this.entreesResultats().filter((x) => x.st.statut !== null)) {
+        // Empreintes de ce qui part : elles deviennent l'état enregistré quand le serveur a répondu.
+        const pointsEnvoyes = new Map<string, string>();
+        const piecesEnvoyees = new Map<number, string>();
+        const retenus = this.entreesResultats().filter(
+          (x) => x.st.statut !== null && (complet || validees.has(this.cleEtapeDuResultat(x.idDetail, x.idPt))),
+        );
+        for (const e of retenus) {
+          pointsEnvoyes.set(this.cle(e.idDetail, e.idPt), empreintePoint(e.st));
           const existing = detailParCle.get(this.cle(e.idDetail, e.idPt));
           const body: ExamenDetail = {
             idDetailExamen: existing?.idDetailExamen ?? idd++,
@@ -2146,7 +2201,8 @@ export class ExamenDossier implements OnDestroy {
         const pieceParId = new Map(this.examenPieces().filter((x) => x.idExamen === idExamen).map((x) => [x.idPiece, x]));
         let idp = this.nextId(this.examenPieces().map((x) => x.idExamenPiece));
         const nouvellesPieces: ExamenPiece[] = [];
-        for (const e of this.entreesPieces()) {
+        for (const e of this.entreesPieces().filter((x) => complet || validees.has('P' + x.idPiece))) {
+          piecesEnvoyees.set(e.idPiece, empreintePiece(this.resultatPiece(e.idPiece)));
           const existing = pieceParId.get(e.idPiece);
           const body: ExamenPiece = {
             idExamenPiece: existing?.idExamenPiece ?? idp++,
@@ -2163,6 +2219,9 @@ export class ExamenDossier implements OnDestroy {
             // Caches locaux → la prochaine réconciliation mettra à jour au lieu de recréer.
             if (nouveauxDetails.length) this.details.update((arr) => [...arr, ...nouveauxDetails]);
             if (nouvellesPieces.length) this.examenPieces.update((arr) => [...arr, ...nouvellesPieces]);
+            this.empreinteEnregistree.update((ref) =>
+              ref ? { ...ref, points: new Map([...ref.points, ...pointsEnvoyes]), pieces: new Map([...ref.pieces, ...piecesEnvoyees]) } : ref,
+            );
             return idExamen;
           }),
         );
@@ -2178,13 +2237,20 @@ export class ExamenDossier implements OnDestroy {
     this.saveTrigger.next();
   }
 
-  /** Point de reprise d'un brouillon (ordre pilote 2026-09-04) : fiche, sinon première ligne non statuée, sinon AGPM, sinon première pièce, sinon dossier, sinon avis. */
+  /**
+   * Point de reprise d'un brouillon (ordre pilote 2026-09-04) : première étape non VALIDÉE — fiche,
+   * lignes, AGPM, pièces, dossier, sinon synthèse. ⚠️ 2026-09-15 : fondée sur les étapes validées et
+   * non plus sur les statuts, que le RAS par défaut rend tous « statués » dès l'ouverture.
+   */
   private calculerReprise(): number {
-    if (this.hasEtapeFiche() && !this.ficheStatuee()) return this.etapeFicheIdx();
-    if (this.frontiere() < this.nbLignes()) return this.offsetLignes() + this.frontiere();
-    if (this.hasEtapeAgpm() && !this.agpmStatuee()) return this.etapeAgpmIdx();
-    if (this.frontierePiece() < this.nbPieces()) return this.offsetPieces() + this.frontierePiece();
-    if (this.hasEtapeDossier() && !this.dossierStatue()) return this.etapeDossierIdx();
+    const v = this.etapesValidees();
+    if (this.hasEtapeFiche() && !v.has('F')) return this.etapeFicheIdx();
+    const ligne = this.marchesExamen().findIndex((m) => !v.has('L' + m.idDetail));
+    if (ligne >= 0) return this.offsetLignes() + ligne;
+    if (this.hasEtapeAgpm() && !v.has('A')) return this.etapeAgpmIdx();
+    const piece = this.piecesOrdonnees().findIndex((p) => !v.has('P' + p.idPiece));
+    if (piece >= 0) return this.offsetPieces() + piece;
+    if (this.hasEtapeDossier() && !v.has('D')) return this.etapeDossierIdx();
     return this.etapeAvis();
   }
 
@@ -2276,6 +2342,7 @@ export class ExamenDossier implements OnDestroy {
       )
       .subscribe({
         next: () => {
+          this.sortieLibre = true;
           // ⚠️ Réexamen (2026-08-02) : la navette ne repart qu'à la RE-SOUMISSION du projet de PV
           // (le dossier repasse alors EXAMINE côté serveur) → on guide vers « Projets de PV ».
           if (this.estReexamen()) {
@@ -2309,6 +2376,45 @@ export class ExamenDossier implements OnDestroy {
       this.existingPv.set(pv);
       this.pvs.update((arr) => arr.map((p) => (p.idPv === pv.idPv ? pv : p)));
       this.synthese.set(pv.syntheseObservations ?? '');
+      this.empreinteEnregistree.update((e) => (e ? { ...e, synthese: pv.syntheseObservations ?? '' } : e));
     });
+  }
+
+  // ── Modifications non enregistrées : confirmation de sortie ────────────────────────────────
+  /** Empreinte de ce que l'écran affiche (même forme que l'empreinte enregistrée). */
+  private empreinteCourante(): EmpreinteExamen {
+    return {
+      points: new Map([...this.resultats()].map(([cle, st]) => [cle, empreintePoint(st)])),
+      pieces: new Map([...this.resultatsPieces()].map(([id, r]) => [id, empreintePiece(r)])),
+      synthese: this.synthese(),
+      avis: this.avis(),
+      date: this.dateExamen(),
+    };
+  }
+  /** Reste-t-il des saisies qu'un rechargement ferait perdre ? (jamais en lecture seule) */
+  aDesModificationsNonEnregistrees(): boolean {
+    const enregistree = this.empreinteEnregistree();
+    if (this.sortieLibre || !enregistree || this.mode() === 'locked') return false;
+    return modificationsNonEnregistrees(this.empreinteCourante(), enregistree);
+  }
+  /** Garde `canDeactivate` : rien à perdre → on part ; sinon la modale de confirmation décide. */
+  autoriserSortie(): boolean | Promise<boolean> {
+    if (!this.aDesModificationsNonEnregistrees()) return true;
+    this.resoudreSortie?.(false); // une demande précédente restée ouverte vaut « rester »
+    this.sortieDemandee.set(true);
+    return new Promise<boolean>((resoudre) => (this.resoudreSortie = resoudre));
+  }
+  repondreSortie(quitter: boolean): void {
+    const resoudre = this.resoudreSortie;
+    this.resoudreSortie = null;
+    this.sortieDemandee.set(false);
+    resoudre?.(quitter);
+  }
+  /** Fermeture ou rechargement de l'onglet : seule la boîte native du navigateur est permise ici. */
+  @HostListener('window:beforeunload', ['$event'])
+  avantDechargement(ev: BeforeUnloadEvent): void {
+    if (!this.aDesModificationsNonEnregistrees()) return;
+    ev.preventDefault();
+    ev.returnValue = ''; // navigateurs qui ignorent encore preventDefault()
   }
 }

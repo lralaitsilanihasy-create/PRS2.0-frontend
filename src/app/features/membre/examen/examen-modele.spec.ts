@@ -3,9 +3,13 @@ import {
   EntreeParcours,
   ajouterHeuresOuvrees,
   construireParcours,
+  EmpreinteExamen,
   delaiExamen,
+  empreintePiece,
+  empreintePoint,
   formatEcheance,
   lignesViseesParConsigne,
+  modificationsNonEnregistrees,
   numerosEnTexte,
   raisonValidationImpossible,
 } from './examen-modele';
@@ -128,6 +132,31 @@ describe('Examen refondu — règles pures (lot 2)', () => {
       expect(numerosEnTexte([6, 9])).toBe('6 et 9');
       expect(numerosEnTexte([3, 5, 9])).toBe('3, 5 et 9');
       expect(numerosEnTexte([4])).toBe('4');
+    });
+  });
+  describe('modifications non enregistrées (2026-09-15)', () => {
+    it("l'empreinte d'un point ignore ce que le serveur n'enregistrerait pas", () => {
+      expect(empreintePoint({ statut: 'RAS', observations: [] })).toBe('RAS');
+      expect(empreintePoint(undefined)).toBe('');
+      const obs = empreintePoint({ statut: 'OBS', observations: [{ auLieuDe: 'Gré à gré', lire: 'AOO' }] });
+      // Espaces, ligne vide et cible résiduelle sans champ : même enregistrement.
+      expect(empreintePoint({ statut: 'OBS', observations: [{ auLieuDe: ' Gré à gré ', lire: 'AOO' }, { auLieuDe: '', lire: ' ' }] })).toBe(obs);
+      expect(empreintePoint({ statut: 'OBS', observations: [{ auLieuDe: 'Gré à gré', lire: 'AOO', champ: null, idMarcheCible: 4 }] })).toBe(obs);
+      // Une cellule visée, elle, change l'enregistrement ; un point basculé sans texte aussi.
+      expect(empreintePoint({ statut: 'OBS', observations: [{ auLieuDe: 'Gré à gré', lire: 'AOO', champ: 'mode', idMarcheCible: 4 }] })).not.toBe(obs);
+      expect(empreintePoint({ statut: 'OBS', observations: [{ auLieuDe: '', lire: '' }] })).not.toBe('RAS');
+      expect(empreintePiece({ statut: 'OBS', observation: ' Non signée ' })).toBe(empreintePiece({ statut: 'OBS', observation: 'Non signée' }));
+    });
+
+    it('compare état affiché et état enregistré, clé absente = non statuée', () => {
+      const base: EmpreinteExamen = { points: new Map([['1:11', 'RAS']]), pieces: new Map(), synthese: '', avis: 'FAV', date: '2026-09-15' };
+      expect(modificationsNonEnregistrees({ ...base, synthese: '  ' }, base)).toBe(false);
+      expect(modificationsNonEnregistrees({ ...base, points: new Map([['1:11', 'RAS'], ['2:11', '']]) }, base)).toBe(false);
+      expect(modificationsNonEnregistrees({ ...base, points: new Map([['1:11', 'OBS[]']]) }, base)).toBe(true);
+      expect(modificationsNonEnregistrees({ ...base, pieces: new Map([[100, 'RAS']]) }, base)).toBe(true);
+      expect(modificationsNonEnregistrees({ ...base, avis: 'FAVR' }, base)).toBe(true);
+      expect(modificationsNonEnregistrees({ ...base, date: '2026-09-14' }, base)).toBe(true);
+      expect(modificationsNonEnregistrees({ ...base, synthese: 'Deux réserves.' }, base)).toBe(true);
     });
   });
 });

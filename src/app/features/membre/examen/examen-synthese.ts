@@ -8,8 +8,8 @@ import { GroupeRecap, ObservationNumerotee, pluriel } from './examen-modele';
  * Étape 6 de l'examen, « Synthèse et avis » (maquette `ExamenSynthese`, appréciée par les chefs le
  * 2026-09-14) : à gauche le RÉCAPITULATIF de toutes les observations, regroupées par étape et
  * numérotées comme les pastilles du document, chacune avec « Modifier » qui ramène à l'endroit ; à
- * droite la synthèse et l'avis (tous deux obligatoires), ce qui se passe réellement après la
- * soumission, et les boutons existants.
+ * droite la synthèse (facultative, comme avant la refonte — décision du 2026-09-15) et l'avis
+ * (obligatoire), ce qui se passe réellement après la soumission, et les boutons existants.
  *
  * Composant de présentation : l'écran fournit les données et exécute les gestes.
  */
@@ -79,8 +79,8 @@ import { GroupeRecap, ObservationNumerotee, pluriel } from './examen-modele';
         <div class="avis">
           @if (editable()) {
             <label class="fld">
-              <span class="fld__l">Synthèse des observations <em aria-hidden="true">*</em><span class="cnm-sr-only"> (obligatoire)</span></span>
-              <textarea class="ta" rows="4" aria-required="true" [value]="synthese()" (input)="syntheseChange.emit(valeurDe($event))"></textarea>
+              <span class="fld__l">Synthèse des observations</span>
+              <textarea class="ta" rows="4" [value]="synthese()" (input)="syntheseChange.emit(valeurDe($event))"></textarea>
             </label>
             <fieldset class="fld">
               <legend class="fld__l">Avis global <em aria-hidden="true">*</em><span class="cnm-sr-only"> (obligatoire)</span></legend>

@@ -9,6 +9,7 @@ import {
   Chronometrage,
   Dispatch,
   Dossier,
+  Examen,
   ExamenDetail,
   Marche,
   PieceJointeDossier,
@@ -84,12 +85,15 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
   let fixture: ComponentFixture<ExamenDossier>;
   let ecran: ExamenDossier;
   let creations: ExamenDetail[];
+  let soumissions: { idExamen: number; corps: { idAvis: string } }[];
   const racine = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const texte = (sel: string): string => (racine().querySelector(sel)?.textContent ?? '').replace(/\s+/g, ' ').trim();
   const rendre = (): void => fixture.detectChanges();
 
-  beforeEach(async () => {
+  /** Monte l'écran ; `reprise` simule un brouillon déjà enregistré (examen + détails). */
+  const monter = async (reprise: { examens: Examen[]; details: ExamenDetail[] } = { examens: [], details: [] }): Promise<void> => {
     creations = [];
+    soumissions = [];
     const liste = <T>(rows: T[]) => ({ list: () => of(rows) });
     TestBed.configureTestingModule({
       imports: [ExamenDossier],
@@ -108,10 +112,17 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
         { provide: ReceptionService, useValue: liste(RECEPTIONS) },
         { provide: DispatchService, useValue: liste(DISPATCHS) },
         { provide: PointsCtrlService, useValue: { grille: () => of(POINTS), list: () => of(POINTS) } },
-        { provide: ExamenService, useValue: { ...liste([]), create: () => of({}), soumettre: () => of({ idPv: 5, idExamen: 1 }) } },
+        {
+          provide: ExamenService,
+          useValue: {
+            ...liste(reprise.examens),
+            create: () => of({}),
+            soumettre: (idExamen: number, corps: { idAvis: string }) => (soumissions.push({ idExamen, corps }), of({ idPv: 5, idExamen })),
+          },
+        },
         {
           provide: ExamenDetailService,
-          useValue: { ...liste([]), create: (d: ExamenDetail) => (creations.push(d), of(d)), update: (_: number, d: ExamenDetail) => of(d) },
+          useValue: { ...liste(reprise.details), create: (d: ExamenDetail) => (creations.push(d), of(d)), update: (_: number, d: ExamenDetail) => of(d) },
         },
         { provide: PvExamenService, useValue: { ...liste([] as PvExamen[]), update: () => of({}) } },
         { provide: MiseAJourPpmService, useValue: { perimetreExamen: () => of(null), diff: () => NEVER } },
@@ -128,7 +139,9 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     rendre();
     await fixture.whenStable();
     rendre();
-  });
+  };
+
+  beforeEach(() => monter());
 
   const etapeParcours = (libelle: string): HTMLElement =>
     Array.from(racine().querySelectorAll<HTMLElement>('.pc')).find((e) => e.textContent?.includes(libelle)) as HTMLElement;
@@ -234,8 +247,8 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(detail.observations).toEqual([
       { auLieuDe: "Appel d'Offres Ouvert", lire: 'Consultation de prix ouverte', ordre: 1, champ: 'mode', idMarcheCible: 1, idBenefCible: null },
     ]);
-    // Sans cible, la ligne d'observation part comme avant (aucun champ ajouté).
-    expect(creations.find((d) => d.idDetail === 2 && d.idPtControle === 11)?.observations).toEqual([]);
+    // Un point RAS de la même ligne part comme avant, sans observation ni cible.
+    expect(creations.find((d) => d.idDetail === 1 && d.idPtControle === 12)?.observations).toEqual([]);
   });
 
   it('« Cellule visée » (équivalent clavier) : un bénéficiaire précis, valeur reprise dans « Au lieu de »', () => {
@@ -250,7 +263,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(ecran.resultat(2, 11).observations[0]).toEqual({ auLieuDe: '2441', lire: '', champ: 'compte', idMarcheCible: 2, idBenefCible: 31 });
   });
 
-  it('synthèse : récapitulatif numéroté par étape, « Modifier » ramène à l\'endroit, synthèse obligatoire', () => {
+  it("synthèse : récapitulatif numéroté par étape, « Modifier » ramène à l'endroit, synthèse facultative", () => {
     valider(); // ligne 1
     choisirObservation(12); // ligne 2, point 2
     saisir('obs-lire-12-0', 'Lancement avant ouverture des plis');
@@ -280,11 +293,12 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(texte('.recap__consigne')).toContain('lignes 2 et 3 ; observations sur la ligne 2.');
     expect(texte('.next')).toContain('Le projet de PV est créé en brouillon avec 2 observations');
 
-    // Soumettre sans synthèse : refusé, avec la raison.
-    (racine().querySelector('.avis__principal') as HTMLButtonElement).click();
-    rendre();
-    expect(texte('.form-error')).toBe('Rédigez la synthèse des observations : elle accompagne votre avis dans le projet de PV.');
     expect(ecran.avis()).toBe('FAVR'); // avis suggéré pré-sélectionné (règle de cohérence)
+    // Synthèse facultative (2026-09-15) : ni astérisque ni champ requis ; l'avis reste obligatoire.
+    const libelles = Array.from(racine().querySelectorAll('.fld__l')).map((l) => (l.textContent ?? '').replace(/\s+/g, ' ').trim());
+    expect(libelles[0]).toBe('Synthèse des observations');
+    expect(racine().querySelector('.avis textarea')?.hasAttribute('aria-required')).toBe(false);
+    expect(libelles[1]).toContain('Avis global');
 
     // « Modifier » l'observation 1 : retour à la ligne 2.
     (racine().querySelector('.o .lien') as HTMLButtonElement).click();
@@ -292,5 +306,134 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(ecran.estEtapeAvis()).toBe(false);
     expect(texte('.grille__eyebrow')).toBe('Ligne 2 sur 3');
     expect((racine().querySelector('#obs-lire-12-0') as HTMLTextAreaElement).value).toBe('Lancement avant ouverture des plis');
+
+    // Retour à la synthèse, soumission SANS synthèse : acceptée, avec l'avis du Membre.
+    etapeParcours('Synthèse et avis').click();
+    rendre();
+    (racine().querySelector('.avis__principal') as HTMLButtonElement).click();
+    rendre();
+    expect(texte('.form-error')).toBe('');
+    expect(soumissions).toEqual([{ idExamen: 1, corps: { idAvis: 'FAVR' } }]);
+    expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith(['/membre', 'resultat-examen', 'pv'], { queryParams: { gerer: 5 } });
+  });
+
+  it("sans avis, la soumission reste refusée (l'avis global demeure obligatoire)", () => {
+    valider();
+    valider();
+    valider();
+    choisirPiece(100, 0);
+    valider();
+    choisirPiece(101, 0);
+    valider();
+    valider();
+    ecran.avis.set(null);
+    ecran.soumettre();
+    rendre();
+    expect(texte('.form-error')).toBe("Sélectionnez votre avis global — il accompagne la soumission de l'examen.");
+    expect(soumissions).toEqual([]);
+  });
+
+  describe('parcours fidèle (2026-09-15)', () => {
+    it("le brouillon n'enregistre que les résultats des étapes validées", () => {
+      valider(); // ligne 1 seulement
+      expect(creations.map((d) => [d.idDetail, d.idPtControle])).toEqual([
+        [1, 11],
+        [1, 12],
+      ]);
+      valider(); // ligne 2 : elle part à son tour, la ligne 3 et le contrôle du dossier attendent
+      expect(creations.filter((d) => d.idDetail === 2)).toHaveLength(2);
+      expect(creations.filter((d) => d.idDetail === 3 || d.idDetail == null)).toEqual([]);
+    });
+
+    it('à la soumission, tous les résultats partent (la garde de complétude du serveur les exige)', () => {
+      etapeParcours('Synthèse et avis').click(); // inaccessible tant que les pièces ne sont pas statuées
+      rendre();
+      expect(ecran.estEtapeAvis()).toBe(false);
+      ecran.setStatutPiece(100, 'RAS');
+      ecran.setStatutPiece(101, 'RAS');
+      ecran.allerGroupe('synthese');
+      rendre();
+      expect(ecran.estEtapeAvis()).toBe(true);
+      expect(etapeParcours('Lignes du plan').textContent).toContain('0 sur 3'); // rien de validé à la main
+      (racine().querySelector('.avis__principal') as HTMLButtonElement).click();
+      rendre();
+      expect(creations).toHaveLength(7); // 3 lignes × 2 points + le contrôle du dossier
+      expect(soumissions).toHaveLength(1);
+    });
+
+    it('au rechargement, seules les étapes enregistrées sont cochées et la reprise suit la première non validée', async () => {
+      TestBed.resetTestingModule();
+      await monter({
+        examens: [{ idExamen: 1, idDispatch: 9, imCtrlMembre: 'IM1', dateExamen: '2026-09-14' }],
+        details: [
+          { idDetailExamen: 1, idExamen: 1, idDetail: 1, idPtControle: 11, conforme: true, observations: [] },
+          { idDetailExamen: 2, idExamen: 1, idDetail: 1, idPtControle: 12, conforme: true, observations: [] },
+        ],
+      });
+      expect(etapeParcours('Lignes du plan').textContent).toContain('1 sur 3');
+      expect(etapeParcours('Contrôles du dossier').textContent).toContain('À faire');
+      expect(texte('.grille__eyebrow')).toBe('Ligne 2 sur 3');
+      expect(ecran.etatLigneFn(1)).toBe('done-ras');
+      expect(ecran.etatLigneFn(3)).toBe('pending');
+      expect(ecran.aDesModificationsNonEnregistrees()).toBe(false);
+    });
+  });
+
+  describe('confirmation de sortie (2026-09-15)', () => {
+    const avantDechargement = (): boolean => {
+      const ev = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(ev);
+      return ev.defaultPrevented;
+    };
+
+    it("ne demande rien tant que rien n'a changé, ni après un enregistrement", () => {
+      expect(ecran.autoriserSortie()).toBe(true);
+      expect(avantDechargement()).toBe(false);
+      choisirObservation(11);
+      saisir('obs-lire-11-0', 'Consultation de prix ouverte');
+      valider(); // brouillon enregistré
+      expect(ecran.aDesModificationsNonEnregistrees()).toBe(false);
+      expect(ecran.autoriserSortie()).toBe(true);
+      expect(avantDechargement()).toBe(false);
+    });
+
+    it('une saisie non enregistrée ouvre la modale : « Rester » annule la navigation, « Quitter » la laisse partir', async () => {
+      choisirObservation(11);
+      expect(avantDechargement()).toBe(true); // fermeture de l'onglet : boîte native
+
+      const rester = ecran.autoriserSortie() as Promise<boolean>;
+      rendre();
+      const modale = racine().querySelector('app-confirmation-sortie [role="alertdialog"]') as HTMLElement;
+      expect(modale.getAttribute('aria-label')).toBe("Quitter l'examen sans enregistrer ?");
+      expect(modale.hasAttribute('appmodale')).toBe(true);
+      const boutons = Array.from(modale.querySelectorAll<HTMLButtonElement>('.modal-footer button'));
+      expect(boutons.map((b) => b.textContent?.trim())).toEqual(['Quitter sans enregistrer', "Rester sur l'écran"]);
+      boutons[1].click();
+      rendre();
+      expect(await rester).toBe(false);
+      expect(racine().querySelector('app-confirmation-sortie')).toBeNull();
+
+      const quitter = ecran.autoriserSortie() as Promise<boolean>;
+      rendre();
+      (racine().querySelector('app-confirmation-sortie .btn-danger') as HTMLButtonElement).click();
+      rendre();
+      expect(await quitter).toBe(true);
+    });
+
+    it('la synthèse saisie compte, pas l’avis pré-sélectionné automatiquement', () => {
+      valider();
+      valider();
+      valider();
+      choisirPiece(100, 0);
+      valider();
+      choisirPiece(101, 0);
+      valider();
+      valider();
+      expect(ecran.estEtapeAvis()).toBe(true);
+      expect(ecran.avis()).toBe('FAV');
+      expect(ecran.aDesModificationsNonEnregistrees()).toBe(false);
+      ecran.synthese.set('RAS sur l’ensemble du plan.');
+      expect(ecran.aDesModificationsNonEnregistrees()).toBe(true);
+    });
   });
 });

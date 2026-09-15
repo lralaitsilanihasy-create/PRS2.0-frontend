@@ -38,6 +38,60 @@ export function aDuTexte(o: ObsLigne): boolean {
   return !!(o.auLieuDe.trim() || o.lire.trim());
 }
 
+// ── Modifications non enregistrées ────────────────────────────────────────────────────────────
+
+/**
+ * Empreinte d'un résultat de point, telle que le serveur le conserverait : statut, lignes
+ * d'observation porteuses de texte (rognées), cellule visée. Deux résultats de même empreinte
+ * donnent le même enregistrement ; une ligne vide ou un espace final ne sont pas des modifications.
+ */
+export function empreintePoint(st: RowState | undefined): string {
+  if (!st || st.statut === null) return '';
+  if (st.statut === 'RAS') return 'RAS';
+  const lignes = st.observations
+    .filter(aDuTexte)
+    .map((o) => [o.auLieuDe.trim(), o.lire.trim(), o.champ ?? null, o.champ ? o.idMarcheCible ?? null : null, o.champ ? o.idBenefCible ?? null : null]);
+  return 'OBS' + JSON.stringify(lignes);
+}
+
+/** Empreinte d'un résultat de pièce (même principe). */
+export function empreintePiece(r: ResultatPiece | undefined): string {
+  if (!r || r.statut === null) return '';
+  return r.statut === 'RAS' ? 'RAS' : 'OBS' + r.observation.trim();
+}
+
+/**
+ * Ce que l'écran rendrait à un rechargement (résultats persistés ou par défaut, synthèse, avis,
+ * date), ou ce qu'il affiche maintenant : la comparaison des deux dit s'il reste des modifications
+ * non enregistrées.
+ */
+export interface EmpreinteExamen {
+  /** Clé de résultat (`idDetail:idPt`, `D:idPt`) → `empreintePoint`. */
+  points: ReadonlyMap<string, string>;
+  /** idPiece → `empreintePiece`. */
+  pieces: ReadonlyMap<number, string>;
+  synthese: string;
+  avis: string | null;
+  date: string;
+}
+
+function mapsDifferent<K>(a: ReadonlyMap<K, string>, b: ReadonlyMap<K, string>): boolean {
+  for (const [k, v] of a) if ((b.get(k) ?? '') !== v) return true;
+  for (const [k, v] of b) if ((a.get(k) ?? '') !== v) return true;
+  return false;
+}
+
+/** L'état affiché diffère-t-il de l'état enregistré ? */
+export function modificationsNonEnregistrees(courant: EmpreinteExamen, enregistre: EmpreinteExamen): boolean {
+  return (
+    courant.synthese.trim() !== enregistre.synthese.trim() ||
+    (courant.avis ?? null) !== (enregistre.avis ?? null) ||
+    courant.date !== enregistre.date ||
+    mapsDifferent(courant.points, enregistre.points) ||
+    mapsDifferent(courant.pieces, enregistre.pieces)
+  );
+}
+
 // ── Parcours en six étapes ────────────────────────────────────────────────────────────────────
 
 export type CleEtapeParcours = 'fiche' | 'lignes' | 'agpm' | 'pieces' | 'dossier' | 'synthese';

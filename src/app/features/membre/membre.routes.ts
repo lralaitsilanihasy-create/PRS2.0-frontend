@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { sortieProtegeeGuard } from '../../core/navigation/sortie-protegee';
 
 /** Espace Membre (lazy, sous roleGuard MEMBRE). */
 export const MEMBRE_ROUTES: Routes = [
@@ -14,7 +15,7 @@ export const MEMBRE_ROUTES: Routes = [
   // casser un signet ou une notification. (MEMBRE_GROUPES reste dans classement-config, encore
   // utilisé — via GROUPES_MES_EXAMENS — par l'écran « Dossiers à examiner » monté chez P/CC.)
   { path: 'mes-dossiers', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
-  { path: 'examiner/:idDossier', loadComponent: () => import('./examen-dossier').then((m) => m.ExamenDossier), data: { title: 'Examiner un dossier', concentration: true } },
+  { path: 'examiner/:idDossier', loadComponent: () => import('./examen-dossier').then((m) => m.ExamenDossier), data: { title: 'Examiner un dossier', concentration: true }, canDeactivate: [sortieProtegeeGuard] },
   // ⚠️ Demande pilote (2026-09-13) — hub « PV et lettres de renvoi » : un seul écran (même composant
   // que P/CC, variante Membre à trois cartes) regroupant Projets de PV, Projets de lettre de renvoi et
   // PV définitifs ; chaque liste s'ouvre SOUS les cartes (routes enfants, comme le P/CC).
