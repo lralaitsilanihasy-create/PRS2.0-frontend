@@ -17,8 +17,9 @@ describe('Icone', () => {
     expect(svg.querySelector('path')?.getAttribute('d')).toBe('M5 12.5l4.5 4.5L19 7.5');
   });
 
-  it('reprend le jeu complet des icônes des maquettes', () => {
-    expect(NOMS_ICONES.length).toBe(40);
+  it('reprend le jeu complet des icônes des maquettes, plus celles du menu (2026-09-15)', () => {
+    expect(NOMS_ICONES.length).toBe(43);
+    for (const nom of ['link', 'globe', 'key']) expect(NOMS_ICONES).toContain(nom);
     for (const nom of ['clock', 'message', 'alert', 'chevl', 'chev', 'pen', 'edit', 'send', 'eye', 'x', 'plus']) {
       expect(NOMS_ICONES).toContain(nom);
     }

@@ -1,5 +1,6 @@
 import { Role } from '../../models';
-import { NavItem, cheminAFaire, navFor, separerParDelegation } from './navigation';
+import { NOMS_ICONES } from '../../shared/ui/icone';
+import { NAV_BY_ROLE, NavItem, cheminAFaire, navFor, separerParDelegation } from './navigation';
 
 /**
  * ⚠️ Demande user (2026-08-28) : « séparer tous les menus de délégation de profil, à ne pas
@@ -91,5 +92,25 @@ describe('Entrée « À faire » (refonte ergonomique, 2026-09-15)', () => {
       expect(cheminAFaire(role)).toBeNull();
     }
     expect(cheminAFaire(null)).toBeNull();
+  });
+});
+
+describe('Icônes du menu (refonte ergonomique, lot 5 — 2026-09-15)', () => {
+  const toutes = (items: NavItem[]): NavItem[] => items.flatMap((i) => [i, ...toutes(i.children ?? [])]);
+  const EMOJI = /\p{Extended_Pictographic}/u;
+
+  it('chaque entrée de chaque profil porte une icône SVG existante, jamais un emoji', () => {
+    const entrees = Object.values(NAV_BY_ROLE).flatMap(toutes);
+    expect(entrees.length).toBeGreaterThan(40);
+    const fautives = entrees.filter((i) => !i.icon || !NOMS_ICONES.includes(i.icon) || EMOJI.test(i.icon) || EMOJI.test(i.label)).map((i) => `${i.label} : ${i.icon}`);
+    expect(fautives).toEqual([]);
+  });
+
+  it('même geste, même icône d’un profil à l’autre', () => {
+    const icone = (role: Role, label: string) => navFor(role).find((i) => i.label === label)?.icon;
+    for (const role of ['PRESIDENT', 'CHEF_COMMISSION', 'SECRETAIRE', 'MEMBRE', 'VERIFICATEUR', 'ASSISTANT_CONTROLEUR', 'PRMP', 'UGPM'] as const) {
+      expect(icone(role, 'À faire')).toBe('inbox');
+    }
+    for (const role of Object.keys(NAV_BY_ROLE) as Role[]) expect(icone(role, 'Notifications')).toBe('bell');
   });
 });

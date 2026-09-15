@@ -69,4 +69,14 @@ describe("Accueil — atterrissage sur « À faire », avec repli", () => {
     expect(naviguer).not.toHaveBeenCalled();
     expect((fixture.nativeElement as HTMLElement).querySelector('[role="status"]')).toBeNull();
   });
+
+  it("accueil générique : icônes SVG sur les cartes « Vos modules » et le portail, aucun emoji", () => {
+    const { fixture } = monter('ADMINISTRATEUR', () => of(exempleAFairePresident()));
+    const page = fixture.nativeElement as HTMLElement;
+    const cartes = Array.from(page.querySelectorAll('.home-card'));
+    expect(cartes.length).toBe(14);
+    expect(cartes.every((c) => c.querySelector('app-icone svg path'))).toBe(true);
+    expect(page.querySelector('.portail-banner app-icone svg')).not.toBeNull();
+    expect(/\p{Extended_Pictographic}/u.test(page.textContent ?? '')).toBe(false);
+  });
 });

@@ -29,7 +29,7 @@
           (click)="basculerDelegations()"
         >
           <span class="sidebar-nav__titre-texte">{{ section.titre }}</span>
-          <span class="sidebar-nav__titre-marque" aria-hidden="true">⤴</span>
+          <app-icone class="sidebar-nav__titre-marque" nom="deleg" [taille]="14" />
           <span class="sidebar-nav__titre-chevron" [class.sidebar-nav__titre-chevron--ouvert]="delegationsAffichees()" aria-hidden="true">›</span>
         </button>
       }
@@ -44,7 +44,7 @@
           (click)="toggle(item)"
         >
           @if (item.icon) {
-            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+            <app-icone class="nav-icon" [nom]="item.icon" [taille]="18" />
           }
           <span class="nav-label">{{ item.label }}</span>
           <span class="nav-chevron" aria-hidden="true">›</span>
@@ -61,7 +61,7 @@
                 (click)="toggle(child)"
               >
                 @if (child.icon) {
-                  <span class="nav-icon" aria-hidden="true">{{ child.icon }}</span>
+                  <app-icone class="nav-icon" [nom]="child.icon" [taille]="18" />
                 }
                 <span class="nav-label">{{ child.label }}</span>
                 <span class="nav-chevron" aria-hidden="true">›</span>
@@ -87,7 +87,7 @@
                 routerLinkActive="active"
               >
                 @if (child.icon) {
-                  <span class="nav-icon" aria-hidden="true">{{ child.icon }}</span>
+                  <app-icone class="nav-icon" [nom]="child.icon" [taille]="18" />
                 }
                 <span class="nav-label">{{ child.label }}</span>
                 @if (countFor(child.path) !== undefined) {
@@ -106,12 +106,13 @@
           [title]="item.delegation ? 'Tâche du profil ' + delegationLabel(item.delegation) + ' — exercée par délégation active.' : ''"
         >
           @if (item.icon) {
-            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+            <app-icone class="nav-icon" [nom]="item.icon" [taille]="18" />
           }
           <span class="nav-label">{{ item.label }}</span>
-          <!-- ⤴ = tâche d'un profil subordonné, exercée par DÉLÉGATION (paire active de t_delegation_profil). -->
+          <!-- Flèche montante = tâche d'un profil subordonné, exercée par DÉLÉGATION (paire active de
+               t_delegation_profil). Icône SVG depuis le 2026-09-15 (plus d'emoji dans la coquille). -->
           @if (item.delegation) {
-            <span class="nav-deleg" aria-hidden="true">⤴</span>
+            <app-icone class="nav-deleg" nom="deleg" [taille]="14" />
           }
           @if (countFor(item.path) !== undefined) {
             <span [class]="'nav-badge ' + badgeSeverity(item.path)">{{ countFor(item.path) }}</span>
@@ -135,7 +136,7 @@
       <!-- ⚠️ Demande user (2026-08-02) : « Créer compte UGPM » remplace la carte profil en bas de la
            barre latérale (l'identité est déjà affichée dans la topbar). -->
       <a class="sidebar-profile sidebar-profile--action" routerLink="/prmp/creer-ugpm" routerLinkActive="active">
-        <div class="avatar">👤</div>
+        <div class="avatar"><app-icone nom="users" [taille]="16" /></div>
         <div class="info">
           <div class="name">Créer compte UGPM</div>
           <div class="role">Compte rattaché à votre PRMP</div>
@@ -164,7 +165,7 @@
     >☰</button>
     @if (peutRechercher()) {
       <form class="topbar-search" (submit)="allerAuDossier(); $event.preventDefault()">
-        <span class="topbar-search__ic" aria-hidden="true">🔍</span>
+        <app-icone class="topbar-search__ic" nom="search" [taille]="14" />
         <input
           type="search"
           class="topbar-search__input"

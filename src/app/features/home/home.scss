@@ -35,8 +35,7 @@
   border-radius: var(--cnm-radius);
 
   &__icon {
-    font-size: 1.5rem;
-    line-height: 1;
+    color: var(--cnm-brand);
   }
 
   &__body {
@@ -74,7 +73,7 @@
   }
 
   &__icon {
-    font-size: var(--cnm-fs-md);
+    color: var(--cnm-brand);
   }
 }
 

@@ -20,6 +20,7 @@ import { NotificationCenter } from '../notification-center/notification-center';
 import { DossierConsultation } from '../../features/circuit/dossier-consultation';
 import { ChangerMotDePasseModal } from '../../features/auth/mon-compte/changer-mot-de-passe-modal';
 import { ActualitesModal } from '../../shared/actualites/actualites-modal';
+import { Icone } from '../../shared/ui/icone';
 import { Actualite } from '../../models/actualite.model';
 import { ActualiteService } from '../../services/actualite.services';
 import { Dossier, estLocaliteCentrale, Role } from '../../models';
@@ -56,6 +57,7 @@ export function routeEnConcentration(racine: ActivatedRouteSnapshot | null): boo
     DossierConsultation,
     ActualitesModal,
     ChangerMotDePasseModal,
+    Icone,
   ],
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.scss',

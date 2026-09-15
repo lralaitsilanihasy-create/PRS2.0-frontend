@@ -46,6 +46,10 @@ const ICONES = {
   exit: 'M14 4h5v16h-5 M10 8l-4 4 4 4 M6 12h10',
   table: 'M4 5h16v14H4z M4 10h16 M4 15h16 M10 5v14',
   save: 'M5 4h11l3 3v13H5z M8 4v5h7V4 M8 20v-6h8v6',
+  // Ajouts du 2026-09-15 (menu et accueil sans emoji) — même grille, même trait.
+  link: 'M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2 M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2',
+  globe: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18z M3 12h18 M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9 M12 3c-2.5 2.6-3.8 5.6-3.8 9s1.3 6.4 3.8 9',
+  key: 'M8 11a4 4 0 1 0 0 8a4 4 0 1 0 0-8z M10.8 12.2 20 3 M17 6l3 3 M14.5 8.5l2 2',
 } as const;
 
 export type NomIcone = keyof typeof ICONES;

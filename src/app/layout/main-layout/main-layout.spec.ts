@@ -179,3 +179,34 @@ describe('Bannière de vacance du poste PRMP (recette du 2026-09-15)', () => {
     expect(banniere.querySelector('span > strong')?.textContent).toBe('En attente de nomination de la nouvelle PRMP');
   });
 });
+
+describe('Barre latérale et en-tête sans emoji (refonte ergonomique, lot 5 — 2026-09-15)', () => {
+  it('icônes SVG pour chaque entrée, le marqueur de délégation et la recherche ; aucun emoji', async () => {
+    TestBed.configureTestingModule({
+      imports: [MainLayout],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([{ path: 'president/a-faire', component: EcranFactice }]),
+        {
+          provide: AuthService,
+          useValue: { role: signal('PRESIDENT'), login: signal('PRESID1'), localite: signal(null), ref: () => null, nomAffichage: () => null, typeActeur: () => 'CONTROLEUR', isAuthenticated: () => false, logout: () => undefined },
+        },
+        { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: PermissionsService, useValue: { peutExecuter: () => true } },
+        { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
+        { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MainLayout);
+    await TestBed.inject(Router).navigateByUrl('/president/a-faire');
+    fixture.detectChanges();
+    const hote = fixture.nativeElement as HTMLElement;
+    const entrees = Array.from(hote.querySelectorAll('.sidebar a.nav-item'));
+    expect(entrees.length).toBeGreaterThan(5);
+    expect(entrees.every((a) => a.querySelector('app-icone.nav-icon svg'))).toBe(true);
+    expect(hote.querySelectorAll('.sidebar app-icone.nav-deleg').length).toBe(2);
+    expect(hote.querySelector('.sidebar-nav__titre app-icone')).not.toBeNull();
+    expect(/\p{Extended_Pictographic}/u.test(hote.querySelector('.sidebar')?.textContent ?? '')).toBe(false);
+  });
+});

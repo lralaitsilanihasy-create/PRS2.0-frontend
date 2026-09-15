@@ -6,6 +6,7 @@ import { isApiError } from '../../core/errors/api-error';
 import { cheminAFaire, navFlat } from '../../core/navigation/navigation';
 import { Role } from '../../models';
 import { DossierService } from '../../services';
+import { Icone } from '../../shared/ui/icone';
 import { estAFaireIndisponible } from './a-faire/a-faire-modele';
 
 /** Atterrissage d'avant l'accueil « À faire » (repli) ; un profil absent reste sur cette page. */
@@ -32,7 +33,7 @@ const ATTERRISSAGE_HISTORIQUE: Readonly<Partial<Record<Role, string>>> = {
 @Component({
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, Icone],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })

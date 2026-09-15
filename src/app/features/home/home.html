@@ -9,7 +9,7 @@
     </p>
 
     <section class="portail-banner" aria-label="Portail de transparence">
-      <span class="portail-banner__icon" aria-hidden="true">🌐</span>
+      <app-icone class="portail-banner__icon" nom="globe" [taille]="24" />
       <div class="portail-banner__body">
         <strong class="portail-banner__title">Portail de transparence</strong>
         <span class="portail-banner__text">
@@ -30,7 +30,7 @@
       @for (m of modules(); track m.path) {
         <a class="home-card" [routerLink]="m.path">
           @if (m.icon) {
-            <span class="home-card__icon" aria-hidden="true">{{ m.icon }}</span>
+            <app-icone class="home-card__icon" [nom]="m.icon" [taille]="20" />
           }
           <span class="home-card__label">{{ m.label }}</span>
         </a>

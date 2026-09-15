@@ -6,6 +6,7 @@ import { routePourNotification } from '../../core/notifications/notification-rou
 import { NotificationsStore } from '../../core/notifications/notifications.store';
 import { Dossier, Notification } from '../../models';
 import { DossierService, NotificationService } from '../../services';
+import { Icone } from '../../shared/ui/icone';
 
 /** Profils disposant d'un écran messagerie (pour router les notifications MESSAGE). */
 const MESSAGERIE_ROLES: Record<string, string> = {
@@ -24,7 +25,7 @@ const MESSAGERIE_ROLES: Record<string, string> = {
 @Component({
   selector: 'app-notification-center',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, Icone],
   template: `
     <div class="notif">
       <button
@@ -35,7 +36,7 @@ const MESSAGERIE_ROLES: Record<string, string> = {
         [attr.aria-expanded]="open()"
         [attr.aria-label]="count() > 0 ? 'Notifications, ' + count() + ' non lue(s)' : 'Notifications'"
       >
-        <span aria-hidden="true">🔔</span>
+        <app-icone nom="bell" [taille]="20" />
         @if (count() > 0) { <span class="notif__badge" aria-hidden="true">{{ count() > 99 ? '99+' : count() }}</span> }
       </button>
 
@@ -72,7 +73,7 @@ const MESSAGERIE_ROLES: Record<string, string> = {
   `,
   styles: `
     .notif { position: relative; display: inline-flex; }
-    .notif__bell { position: relative; background: transparent; border: 0; cursor: pointer; font-size: 1.15rem; line-height: 1; padding: 4px; }
+    .notif__bell { position: relative; display: inline-flex; background: transparent; border: 0; cursor: pointer; line-height: 1; padding: 4px; color: #34405a; }
     .notif__badge { position: absolute; top: -2px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--cnm-danger-fg); color: #fff; font-size: 10px; font-weight: var(--cnm-fw-semibold); display: flex; align-items: center; justify-content: center; }
     .notif__backdrop { position: fixed; inset: 0; z-index: 1040; }
     .notif__panel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 1041; width: 22rem; max-width: 90vw; max-height: 70vh; overflow: auto; background: var(--cnm-surface); border: 1px solid var(--cnm-border); border-radius: var(--cnm-radius); box-shadow: var(--cnm-shadow); }
