@@ -194,6 +194,30 @@ describe('Page dossier — étape en cours (règles)', () => {
       for (const role of ['PRMP', 'UGPM'] as const) expect(vueEtape(dossier({ statut: 'DISPATCHE' }), reponse([retrait()], null, role), role).retrait).toBeNull();
       expect(retraitADecider(gestesBoutons([tache({ geste: 'DISPATCHER' })]))).toBeNull();
     });
+
+    /**
+     * Recette L4-Q2, défaut (h) : la décision de retrait n'a pas de délai, le dossier si. « Reste 35 h »
+     * sous « Examiner la demande de retrait » se lisait comme le délai de la décision.
+     */
+    describe('délai affiché : celui de l’étape, et il le dit', () => {
+      const examen: GestesDossier['etapeCourante'] = { urgence: 'DANS_LES_DELAIS', delai: { ...DELAI_VIDE, etape: 'EXAMEN', entree: '2026-09-15T10:00:00', standardHeures: 40, ecouleHeures: 5, restantHeures: 35, echeance: '2026-09-21T10:00:00' } };
+
+      it('décision de retrait : le délai nomme l’étape qu’il mesure', () => {
+        const v = vueEtape(dossier({ statut: 'DISPATCHE' }), reponse([retrait()], examen), 'CHEF_COMMISSION');
+        expect(v.delai?.texte).toMatch(/^Étape examen : reste 35 h · avant /);
+      });
+
+      it('même étape, autre geste principal : le délai reste celui de F3, sans préfixe', () => {
+        const autre = tache({ section: 'A_EXAMINER', geste: 'EXAMINER', rang: 1, refs });
+        const v = vueEtape(dossier({ statut: 'DISPATCHE' }), reponse([autre, retrait({ rang: 2 })], examen), 'MEMBRE');
+        expect(v.delai?.texte).toMatch(/^Reste 35 h · avant /);
+      });
+
+      it('étape non chronométrée : rien plutôt qu’un délai dont on ne peut pas dire l’objet', () => {
+        const sansEtape: GestesDossier['etapeCourante'] = { urgence: 'DANS_LES_DELAIS', delai: { ...examen.delai, etape: null } };
+        expect(vueEtape(dossier({ statut: 'DISPATCHE' }), reponse([retrait()], sansEtape), 'CHEF_COMMISSION').delai).toBeNull();
+      });
+    });
   });
 
   describe('panneau', () => {

@@ -322,8 +322,16 @@ function titreEtat(d: Dossier, g: GestesDossier, partieControlee: boolean, geste
   return i >= 0 ? `${CIRCUIT_ETAPES[i].label} en cours` : statutDossierLabel(d.statut);
 }
 
-/** Délai de l'étape. PRMP et UGPM : la pause seule, sans reste ni échéance (règle pilote du 06/09). */
-function delaiEtape(g: GestesDossier, role: Role | null): DelaiEtape | null {
+/**
+ * Délai de l'étape. PRMP et UGPM : la pause seule, sans reste ni échéance (règle pilote du 06/09).
+ *
+ * ⚠️ Recette L4-Q2 (2026-09-16), défaut (h) — le délai affiché est TOUJOURS celui de l'étape du
+ * dossier, jamais celui du geste. Quand le geste principal se joue HORS de cette étape (la décision
+ * de retrait, qui n'a pas de délai propre), « Reste 35 h » sous « Examiner la demande de retrait » se
+ * lisait comme le délai de la décision. On nomme alors l'étape qu'il mesure ; sans nom d'étape
+ * chronométrée, on ne peut rien dire à quoi il se rapporte — le délai n'est pas affiché.
+ */
+function delaiEtape(g: GestesDossier, role: Role | null, nommerEtape = false): DelaiEtape | null {
   const e = g.etapeCourante;
   if (!e) return null;
   if (estPartieControlee(role)) {
@@ -334,7 +342,10 @@ function delaiEtape(g: GestesDossier, role: Role | null): DelaiEtape | null {
   const l = delaiLigne(e);
   const echeance = ['EN_RETARD', 'BIENTOT', 'DANS_LES_DELAIS'].includes(e.urgence) ? echeanceTexte(e.delai.echeance) : '';
   const complement = echeance ? `avant ${echeance}` : l.genre === 'sans' ? l.sousTexte : '';
-  return { genre: l.genre, texte: [l.texteApercu, complement].filter(Boolean).join(' · ') };
+  const texte = [l.texteApercu, complement].filter(Boolean).join(' · ');
+  if (!nommerEtape) return { genre: l.genre, texte };
+  const etape = e.delai.etape ? LIBELLES_ETAPES_CIRCUIT[e.delai.etape] : '';
+  return etape ? { genre: l.genre, texte: `Étape ${etape} : ${texte.charAt(0).toLowerCase()}${texte.slice(1)}` } : null;
 }
 
 /** Vue du panneau de l'étape en cours, pour ce connecté. */
@@ -378,7 +389,8 @@ export function vueEtape(d: Dossier, g: GestesDossier, role: Role | null): VueEt
     porteur,
     titre,
     note,
-    delai: delaiEtape(g, role),
+    // Le délai reste celui de l'étape ; nommée quand le geste principal se joue en dehors d'elle.
+    delai: delaiEtape(g, role, famillePrincipale === 'retrait'),
     mode: principal?.mode ?? null,
     principal,
     secondaires: boutons.slice(1),
