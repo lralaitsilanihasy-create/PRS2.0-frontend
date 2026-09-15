@@ -4,7 +4,7 @@ import { AFaireTache, Dossier, ETAPE_CIRCUIT_PORTEURS, GesteAFaire, GestesDossie
 import { CIRCUIT_ETAPES, etapeIndexForDossier, statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
 import { GenreDelai, delaiLigne, jourMois } from '../../../shared/circuit/frise-delai';
 import { NomIcone } from '../../../shared/ui/icone';
-import { LIBELLES_GESTES, LIBELLES_MODES } from '../../home/a-faire/a-faire-libelles';
+import { LIBELLES_ETAPES_CIRCUIT, LIBELLES_GESTES, LIBELLES_MODES } from '../../home/a-faire/a-faire-libelles';
 import { FaitApercu, echeanceTexte, faitsApercu, noteCourte } from '../../home/a-faire/a-faire-modele';
 import { CibleGeste, cibleGeste } from '../../home/a-faire/a-faire-navigation';
 import { estPartieControlee } from './page-dossier-modele';
@@ -191,7 +191,14 @@ function titreEtat(d: Dossier, g: GestesDossier, partieControlee: boolean, geste
       return partieControlee ? 'Brouillon' : 'Brouillon, pas encore soumis à la CNM';
   }
   if (!g.etapeCourante) return statutDossierLabel(d.statut);
-  if (partieControlee) return d.attentePrmp ? 'En attente de la PRMP' : 'En cours à la Commission nationale des marchés';
+  if (d.attentePrmp || g.etapeCourante.urgence === 'EN_PAUSE') return 'En attente de la PRMP';
+  if (partieControlee) return 'En cours à la Commission nationale des marchés';
+  // L'étape chronométrée est plus précise que la colonne de la frise (« Archivage en cours » plutôt que « Vérification »).
+  const chrono = g.etapeCourante.delai.etape;
+  if (chrono) {
+    const libelle = LIBELLES_ETAPES_CIRCUIT[chrono];
+    return `${libelle.charAt(0).toUpperCase()}${libelle.slice(1)} en cours`;
+  }
   const i = etapeIndexForDossier(d.statut);
   return i >= 0 ? `${CIRCUIT_ETAPES[i].label} en cours` : statutDossierLabel(d.statut);
 }

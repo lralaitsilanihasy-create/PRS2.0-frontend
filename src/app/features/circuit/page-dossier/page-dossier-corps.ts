@@ -153,7 +153,7 @@ const HAUT_TOPBAR = 48;
         }
         @case ('indisponible') {
           <p class="pd-lecture-seule">
-            <app-icone nom="eye" [taille]="16" />Lecture seule : ce serveur ne sert pas encore les gestes d'un dossier. Ils restent accessibles depuis vos écrans habituels.
+            <app-icone nom="eye" [taille]="16" />Lecture seule : les gestes de ce dossier ne sont pas servis ici. Ils restent accessibles depuis vos écrans habituels.
           </p>
         }
         @case ('echec') {
