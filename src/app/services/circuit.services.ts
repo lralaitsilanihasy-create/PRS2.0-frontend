@@ -274,9 +274,15 @@ export class ExamenDetailService extends CrudService<ExamenDetail> {
 export class ExamenPieceService extends CrudService<ExamenPiece> {
   protected readonly resource = 'examen-pieces';
 
-  /** `GET /api/examen-pieces?examen={idExamen}` — résultats des pièces d'UN examen. */
-  byExamen(idExamen: number): Observable<ExamenPiece[]> {
-    return this.http.get<ExamenPiece[]>(this.baseUrl, { params: new HttpParams().set('examen', idExamen) });
+  /**
+   * `GET /api/examen-pieces?examen={idExamen}` — résultats des pièces d'UN examen. `silencieux` pour une
+   * lecture d'enrichissement (compte d'observations de la page dossier) : l'échec n'ouvre aucun dialogue.
+   */
+  byExamen(idExamen: number, silencieux = false): Observable<ExamenPiece[]> {
+    return this.http.get<ExamenPiece[]>(this.baseUrl, {
+      params: new HttpParams().set('examen', idExamen),
+      context: silencieux ? skipErrorToast() : undefined,
+    });
   }
 }
 
@@ -422,6 +428,14 @@ export class ObservationControleService extends CrudService<ObservationControle>
 @Injectable({ providedIn: 'root' })
 export class PvExamenService extends CrudService<PvExamen> {
   protected readonly resource = 'pv-examens';
+
+  /**
+   * `GET /api/pv-examens/{id}` sans boîte d'erreur — la page dossier (lot L4-F4) lit le projet de PV de
+   * sa navette et affiche elle-même un refus ou une panne dans le panneau de l'étape, avec « Réessayer ».
+   */
+  lire(idPv: number): Observable<PvExamen> {
+    return this.http.get<PvExamen>(`${this.baseUrl}/${idPv}`, { context: skipErrorToast() });
+  }
 
   /** Soumettre le projet (BROUILLON|EN_RECTIFICATION → PROJET_SOUMIS). */
   soumettre(id: number, body: PvActionRequest): Observable<PvExamen> {

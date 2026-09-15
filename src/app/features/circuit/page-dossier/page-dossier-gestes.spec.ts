@@ -6,6 +6,7 @@ import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { PermissionsService } from '../../../core/auth/permissions.service';
 import { errorInterceptor } from '../../../core/interceptors/error.interceptor';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { AFaireDelai, AFaireTache, Dispatch, Dossier, EtapeCouranteDossier, GesteAFaire, GestesDossier, ModeTache, Reception, Role, SectionAFaire } from '../../../models';
@@ -104,7 +105,9 @@ describe('Page dossier — étape en cours et gestes (lot L4-F3)', () => {
           { path: ':espace/dossier/:idDossier', component: PageDossier },
           { path: '**', component: Vide },
         ]),
-        { provide: AuthService, useValue: { role: signal<Role | null>(role), logout: vi.fn() } },
+        // `ref` et `localite` : lus par `PvWorkflow`, monté pour la navette du PV (lot F4) ; toutes capacités.
+        { provide: AuthService, useValue: { role: signal<Role | null>(role), ref: signal<string | null>('PRESID1'), localite: signal<string | null>(null), logout: vi.fn() } },
+        { provide: PermissionsService, useValue: { can: () => true } },
         { provide: ToastService, useValue: toast },
         { provide: DossiersRefreshStore, useValue: refresh },
       ],
@@ -132,6 +135,8 @@ describe('Page dossier — étape en cours et gestes (lot L4-F3)', () => {
           else req.flush(gestes);
         } else if (url === '/api/receptions/7') req.flush({ idReception: 7, idDossier: 42 });
         else if (url === '/api/dispatchs/3') req.flush({ idDispatch: 3, idReception: 7 });
+        // Projet de PV de la navette (lot F4) : soumis, visé par intérim (le dispatcheur est un autre).
+        else if (url === '/api/pv-examens/12') req.flush({ idPv: 12, idExamen: 9, imCtrlMembre: 'MEMANT1', statutPv: 'PROJET_SOUMIS', nbNavettes: 1, imDispatcheur: 'CCANT01' });
         else if (url.endsWith('/chronometrage')) req.flush(null);
         else req.flush([]);
       }

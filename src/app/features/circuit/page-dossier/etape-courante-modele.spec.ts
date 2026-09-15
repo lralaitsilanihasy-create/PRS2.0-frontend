@@ -4,7 +4,7 @@ import { ApiError } from '../../../core/errors/api-error';
 import { AFaireDelai, AFaireTache, Dossier, GestesDossier, Role } from '../../../models';
 import { exempleAFairePresident, exempleAFairePrmp } from '../../home/a-faire/a-faire-contrat.exemple';
 import { cibleGeste } from '../../home/a-faire/a-faire-navigation';
-import { ciblePage, classerEchecGestes, famillePage, gesteDemande, gestesBoutons, montantGestes, vueEtape } from './etape-courante-modele';
+import { ciblePage, classerEchecGestes, famillePage, gesteDemande, gestesBoutons, montantGestes, navettePv, voletPv, vueEtape } from './etape-courante-modele';
 
 const erreur = (status: number): ApiError => ({ status, message: 'x', raw: new HttpErrorResponse({ status }) });
 
@@ -64,11 +64,74 @@ describe('Page dossier — étape en cours (règles)', () => {
       expect(ciblePage('SIGNER_LETTRE', t, 'cc', page)).toEqual({ type: 'route', commandes: ['/cc', 'lettre-renvois', 5], ciblee: true, queryParams: { returnUrl: page } });
     });
 
-    it('lots F4 et F5 : navette du PV et retrait gardent PROVISOIREMENT la cible d’« À faire »', () => {
-      for (const g of ['SOUMETTRE_PV', 'ACCEPTER', 'VISER', 'RETOURNER', 'SIGNER', 'DECIDER_RETRAIT'] as const) {
-        expect(famillePage(g)).toBe('provisoire');
-        expect(ciblePage(g, t, 'president', page)).toEqual(cibleGeste(g, t, 'president'));
+    it('lot F4 : la navette du PV se joue dans le panneau ; la gestion du PV, sans returnUrl, n’est plus qu’un repli', () => {
+      for (const g of ['SOUMETTRE_PV', 'ACCEPTER', 'VISER', 'RETOURNER', 'SIGNER'] as const) {
+        expect(famillePage(g)).toBe('navette');
+        expect(ciblePage(g, t, 'president', page)).toEqual({ type: 'route', commandes: ['/president', 'resultat-examen', 'pv'], ciblee: true, queryParams: { gerer: 12 } });
       }
+    });
+
+    it('lot F5 : la décision de retrait garde PROVISOIREMENT la cible d’« À faire »', () => {
+      expect(famillePage('DECIDER_RETRAIT')).toBe('provisoire');
+      expect(ciblePage('DECIDER_RETRAIT', t, 'president', page)).toEqual(cibleGeste('DECIDER_RETRAIT', t, 'president'));
+    });
+  });
+
+  describe('navette du projet de PV (lot F4)', () => {
+    const faits = (partiel: Partial<AFaireTache['faits']>): AFaireTache['faits'] => ({ ...tache({}).faits, idAvis: null, nbObservations: null, dernierRetourNavette: null, partsAttendues: null, consigneDispatch: null, ...partiel });
+    const refs = { idReception: 7, idDispatch: 3, idExamen: 9, idPv: 12, idLettre: null, idDemandeRetrait: null };
+    const visa: GestesDossier['etapeCourante'] = { urgence: 'DANS_LES_DELAIS', delai: { ...DELAI_VIDE, etape: 'VISA', entree: '2026-09-15T10:00:00', standardHeures: 16, ecouleHeures: 2, restantHeures: 14, echeance: '2026-09-17T10:00:00' } };
+
+    it('servie : les gestes de navette de toutes les lignes, la ligne la mieux rangée, son PV', () => {
+      const v = vueEtape(
+        dossier({ statut: 'EXAMINE' }),
+        reponse([tache({ section: 'LETTRES_A_SIGNER', geste: 'SIGNER_LETTRE', rang: 2, refs }), tache({ section: 'PV_A_VISER', geste: 'VISER', gestesSecondaires: ['RETOURNER'], rang: 1, mode: 'INTERIM', refs, faits: faits({ idAvis: 'FAVR' }) })], visa),
+        'CHEF_COMMISSION',
+      );
+      expect(v.navette).toEqual({ tache: expect.objectContaining({ section: 'PV_A_VISER' }), idPv: 12, gestes: ['VISER', 'RETOURNER'] });
+      expect(v.titre).toBe('Viser le projet de PV');
+      expect([v.porteur, v.mode]).toEqual(['à vous par intérim', 'Par intérim']);
+      // Le volet dit l'avis : ni phrase guide qui le répète, ni colonne de faits concurrente.
+      expect(v.note).toBe('');
+      expect(v.faits).toEqual([]);
+      expect(v.horsNavette.map((b) => b.geste)).toEqual(['SIGNER_LETTRE']);
+      // La barre collante garde le geste principal servi.
+      expect(v.principal?.geste).toBe('VISER');
+    });
+
+    it('non servie : aucune navette, le panneau de F3 inchangé', () => {
+      const v = vueEtape(dossier({ statut: 'PRET_DISPATCH' }), reponse([tache({ geste: 'DISPATCHER' })]), 'PRESIDENT');
+      expect([v.navette, v.horsNavette]).toEqual([null, []]);
+      expect(navettePv(gestesBoutons([tache({ geste: 'ARCHIVER_PV' })]))).toBeNull();
+    });
+
+    it('règle C2 : jamais pour la PRMP ni l’UGPM, même sur une doublure qui la servirait', () => {
+      for (const role of ['PRMP', 'UGPM'] as const) {
+        const v = vueEtape(dossier({ statut: 'EXAMINE' }), reponse([tache({ section: 'PV_A_VISER', geste: 'VISER', refs })], visa, role), role);
+        expect(v.navette).toBeNull();
+      }
+    });
+
+    it('volet : avis, observations de l’examen, dernier retour, parts attendues, examinateur', () => {
+      const t = tache({
+        section: 'PV_A_VISER',
+        geste: 'VISER',
+        dossier: { ...tache({}).dossier, acteursEtapes: { EXAMEN: 'Lalatiana Ravao' } },
+        faits: faits({ idAvis: 'FAVR', nbObservations: null, dernierRetourNavette: 'Préciser le montant', partsAttendues: ['MEMBRE', 'CC'] }),
+      });
+      expect(voletPv(t, 3)).toEqual([
+        { libelle: 'Avis du Membre', valeur: 'Favorable avec réserves' },
+        { libelle: 'Observations', valeur: '3 observations' },
+        { libelle: 'Dernier retour', valeur: '« Préciser le montant »' },
+        { libelle: 'Parts attendues', valeur: 'Membre et Chef de commission' },
+        { libelle: 'Examiné par', valeur: 'Lalatiana Ravao' },
+      ]);
+      // Compte de l'examen inconnu : repli sur le périmètre figé servi, sinon la ligne est omise.
+      expect(voletPv(t, null).map((f) => f.libelle)).not.toContain('Observations');
+      expect(voletPv({ ...t, faits: faits({ nbObservations: 2 }) }, null)).toContainEqual({ libelle: 'Observations', valeur: '2 observations' });
+      expect(voletPv(t, 0)).toContainEqual({ libelle: 'Observations', valeur: 'Aucune observation' });
+      expect(voletPv({ ...t, section: 'PV_A_SIGNER', faits: faits({ idAvis: 'FAV' }) }, 0)[0]).toEqual({ libelle: 'Avis arrêté au visa', valeur: 'Favorable' });
+      expect(voletPv({ ...t, faits: faits({}) }, 0)[0]).toEqual({ libelle: 'Avis du Membre', valeur: 'Non renseigné' });
     });
   });
 

@@ -1,22 +1,26 @@
-import { ChangeDetectionStrategy, Component, ElementRef, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, input, output, viewChild } from '@angular/core';
 
+import { GesteAFaire } from '../../../models';
 import { Icone } from '../../../shared/ui/icone';
+import { CibleGeste } from '../../home/a-faire/a-faire-navigation';
 import { GesteBouton, VueEtape } from './etape-courante-modele';
+import { EtapePv, FocusNavette } from './etape-pv';
 
 /**
  * Panneau de l'étape en cours (page dossier, lot L4-F3 — maquette `GuideDossier`, étape ouverte sous la
  * frise) : où en est le dossier, qui porte l'étape, son délai, puis les gestes que le serveur ouvre au
  * connecté. Composant de présentation : la page exécute les gestes (`agir`).
  *
- * Lots F4 et F5 : la navette du projet de PV et la décision de retrait viendront dans ce panneau ; en
- * attendant, leurs boutons mènent à la cible d'« À faire » (`ciblePage`).
+ * Lot F4 : quand le serveur sert un geste de la navette du projet de PV, le panneau monte `EtapePv`
+ * (`PvWorkflow` tel quel, et le volet « Ce que dit le projet de PV » à la place des faits) ; les autres
+ * gestes servis restent en boutons à côté. Lot F5 : la décision de retrait viendra aussi dans ce panneau.
  */
 @Component({
   selector: 'app-etape-courante',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icone],
+  imports: [Icone, EtapePv],
   template: `
-    <section class="ec" [class.ec--seul]="!vue().faits.length" [style.--ec-fleche]="vue().fleche" aria-labelledby="ec-titre">
+    <section class="ec" [class.ec--seul]="!vue().faits.length && !vue().navette" [style.--ec-fleche]="vue().fleche" aria-labelledby="ec-titre">
       <div class="ec__corps">
         <p class="ec__sur">
           {{ vue().etape }}@if (vue().etape && vue().porteur) { · }{{ vue().porteur }}
@@ -35,7 +39,20 @@ import { GesteBouton, VueEtape } from './etape-courante-modele';
         @if (vue().note) {
           <p class="ec__note">{{ vue().note }}</p>
         }
-        @if (vue().principal; as p) {
+        @if (vue().navette) {
+          @if (vue().horsNavette.length) {
+            <div class="ec__actions" [attr.aria-busy]="occupe()">
+              @for (s of vue().horsNavette; track s.cle) {
+                <button type="button" class="btn btn-outline ec__second" [attr.data-geste]="s.geste" [disabled]="occupe()" (click)="agir.emit(s)">
+                  <app-icone [nom]="s.icone" [taille]="16" />{{ s.libelle }}
+                  @if (s.mode && s.mode !== vue().mode) {
+                    <span class="ec-mode ec-mode--bouton">{{ s.mode }}</span>
+                  }
+                </button>
+              }
+            </div>
+          }
+        } @else if (vue().principal; as p) {
           <div class="ec__actions" [attr.aria-busy]="occupe()">
             <button type="button" class="btn btn-primary ec__principal" [attr.data-geste]="p.geste" [disabled]="occupe()" (click)="agir.emit(p)">
               <app-icone [nom]="p.icone" [taille]="16" />{{ p.libelle }}
@@ -51,7 +68,10 @@ import { GesteBouton, VueEtape } from './etape-courante-modele';
           </div>
         }
       </div>
-      @if (vue().faits.length) {
+      @if (vue().navette; as n) {
+        <!-- Lot F4 : la navette sous le titre, le volet du projet de PV dans la colonne de droite. -->
+        <app-etape-pv [navette]="n" [idLocalite]="idLocalite()" [lienPv]="lienPv()" [gesteFocus]="gesteFocus()" (changed)="navetteChangee.emit()" />
+      } @else if (vue().faits.length) {
         <dl class="ec__faits">
           @for (f of vue().faits; track f.libelle) {
             <div class="ec__fait"><dt>{{ f.libelle }}</dt><dd>{{ f.valeur }}</dd></div>
@@ -66,13 +86,31 @@ export class EtapeCourante {
   readonly vue = input.required<VueEtape>();
   /** Une modale se prépare (lectures en cours) : les gestes attendent. */
   readonly occupe = input(false);
+  /** Lot F4 — localité du dossier, pour `PvWorkflow` (intérim, Membres co-signataires). */
+  readonly idLocalite = input<string | null>(null);
+  /** Lot F4 — gestion du projet de PV, repli d'un geste de navette indisponible. */
+  readonly lienPv = input<CibleGeste | null>(null);
+  /** Lot F4 — `?geste=` de navette servi : son bouton dans `PvWorkflow` reçoit le focus. */
+  readonly gesteFocus = input<FocusNavette | null>(null);
   readonly agir = output<GesteBouton>();
+  /** Lot F4 — une transition de la navette a réussi. */
+  readonly navetteChangee = output<void>();
 
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly etapePv = viewChild(EtapePv);
 
-  /** Bouton d'un geste servi, le principal par défaut (focus à l'arrivée par `?geste=`, retour depuis la barre collante). */
-  bouton(geste?: string): HTMLButtonElement | null {
+  /**
+   * Bouton d'un geste servi, le principal par défaut (focus à l'arrivée par `?geste=`, retour depuis la
+   * barre collante). Navette du PV : le bouton que `PvWorkflow` offre pour ce geste, sinon le titre.
+   */
+  bouton(geste?: GesteAFaire): HTMLElement | null {
+    const pv = this.etapePv();
+    if (pv) {
+      const cible = geste ?? this.vue().principal?.geste;
+      const dansPv = cible ? pv.bouton(cible) : null;
+      if (dansPv) return dansPv;
+    }
     const selecteur = geste ? `button[data-geste="${geste}"]` : 'button.ec__principal';
-    return this.hote.nativeElement.querySelector<HTMLButtonElement>(selecteur);
+    return this.hote.nativeElement.querySelector<HTMLButtonElement>(selecteur) ?? (pv ? this.hote.nativeElement.querySelector<HTMLElement>('.ec__titre') : null);
   }
 }

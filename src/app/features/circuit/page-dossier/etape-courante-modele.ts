@@ -4,7 +4,7 @@ import { AFaireTache, Dossier, ETAPE_CIRCUIT_PORTEURS, GesteAFaire, GestesDossie
 import { CIRCUIT_ETAPES, etapeIndexForDossier, statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
 import { GenreDelai, delaiLigne, jourMois } from '../../../shared/circuit/frise-delai';
 import { NomIcone } from '../../../shared/ui/icone';
-import { LIBELLES_ETAPES_CIRCUIT, LIBELLES_GESTES, LIBELLES_MODES } from '../../home/a-faire/a-faire-libelles';
+import { LIBELLES_AVIS, LIBELLES_ETAPES_CIRCUIT, LIBELLES_GESTES, LIBELLES_MODES } from '../../home/a-faire/a-faire-libelles';
 import { FaitApercu, echeanceTexte, faitsApercu, noteCourte } from '../../home/a-faire/a-faire-modele';
 import { CibleGeste, cibleGeste } from '../../home/a-faire/a-faire-navigation';
 import { estPartieControlee } from './page-dossier-modele';
@@ -40,12 +40,13 @@ export function classerEchecGestes(err: unknown): EtatGestes {
  * Où s'exécute un geste sur la page (§3.3) :
  * - `modale` : par-dessus la page (numérotation, dispatch, réattribution, pièces du dépôt) ;
  * - `lien` : l'écran de travail existant, avec `returnUrl` vers la page ;
- * - `provisoire` : navette du PV (lot F4) et décision de retrait (lot F5) — même cible qu'« À faire ».
+ * - `navette` : DANS le panneau, par `PvWorkflow` (lot F4 : soumettre, accepter, viser, retourner, signer) ;
+ * - `provisoire` : décision de retrait (lot F5) — même cible qu'« À faire ».
  */
-export type FamillePage = 'modale' | 'lien' | 'provisoire';
+export type FamillePage = 'modale' | 'lien' | 'navette' | 'provisoire';
 
-/** Lot F4 : ces gestes viendront DANS le panneau (`PvWorkflow`). */
-const GESTES_NAVETTE_PV: readonly GesteAFaire[] = ['SOUMETTRE_PV', 'ACCEPTER', 'VISER', 'RETOURNER', 'SIGNER'];
+/** Lot F4 : la navette du projet de PV, dans le panneau (`EtapePv`, qui monte `PvWorkflow` tel quel). */
+export const GESTES_NAVETTE_PV: readonly GesteAFaire[] = ['SOUMETTRE_PV', 'ACCEPTER', 'VISER', 'RETOURNER', 'SIGNER'];
 /** Lot F5 : formulaire court dans le panneau. */
 const GESTES_RETRAIT: readonly GesteAFaire[] = ['DECIDER_RETRAIT'];
 /** Aucun bouton : une phrase d'état (§3.3). */
@@ -82,7 +83,8 @@ export function gestesBoutons(taches: readonly AFaireTache[]): GesteBouton[] {
 }
 
 export function famillePage(geste: GesteAFaire): FamillePage {
-  if (GESTES_NAVETTE_PV.includes(geste) || GESTES_RETRAIT.includes(geste)) return 'provisoire';
+  if (GESTES_NAVETTE_PV.includes(geste)) return 'navette';
+  if (GESTES_RETRAIT.includes(geste)) return 'provisoire';
   return ['NUMEROTER', 'DISPATCHER', 'REATTRIBUER', 'COMPLETER_PIECES_DEPOT'].includes(geste) ? 'modale' : 'lien';
 }
 
@@ -91,14 +93,15 @@ export function famillePage(geste: GesteAFaire): FamillePage {
  * - les écrans de travail reçoivent `returnUrl` vers la page (seule la rectification le lit aujourd'hui) ;
  * - la « consultation » (repli d'un dispatch sans réception) n'a pas lieu d'être : on y est — `null`.
  *
- * Lot F4 : SOUMETTRE_PV, ACCEPTER, VISER, RETOURNER et SIGNER mènent PROVISOIREMENT à la cible
- * d'« À faire » (la gestion du projet de PV), inchangée, en attendant la navette dans le panneau.
+ * Navette du PV (lot F4) : le geste s'exécute dans le panneau. La cible d'« À faire » (gestion du projet
+ * de PV, `?gerer=<idPv>`) ne sert plus que de LIEN DE REPLI, quand `PvWorkflow` ne propose pas un geste
+ * que le serveur sert (« geste indisponible sur cet écran ») ; cet écran ne lit pas `returnUrl`.
  * Lot F5 : DECIDER_RETRAIT mène PROVISOIREMENT à la liste des retraits, comme « À faire ».
  */
 export function ciblePage(geste: GesteAFaire, t: AFaireTache, espace: string, urlPage: string): CibleGeste | null {
   const cible = cibleGeste(geste, t, espace);
   if (cible.type === 'modale') return cible.modale === 'consultation' ? null : cible;
-  if (famillePage(geste) === 'provisoire') return cible;
+  if (famillePage(geste) !== 'lien') return cible;
   return { ...cible, queryParams: { ...cible.queryParams, returnUrl: urlPage } };
 }
 
@@ -126,6 +129,58 @@ export interface VueEtape {
   principal: GesteBouton | null;
   secondaires: GesteBouton[];
   faits: FaitApercu[];
+  /**
+   * Lot F4 : la navette du projet de PV, si le serveur en sert un geste. Le panneau monte alors `EtapePv`
+   * (`PvWorkflow` et le volet « Ce que dit le projet de PV », qui prend la place des faits).
+   */
+  navette: NavettePv | null;
+  /** Avec la navette : les AUTRES gestes servis (lettre, retrait…), en boutons à côté de `PvWorkflow`. */
+  horsNavette: GesteBouton[];
+}
+
+// ── Navette du projet de PV (lot F4) ──────────────────────────────────────────────────────────
+
+/**
+ * Navette servie au connecté : les gestes de navette de TOUTES ses lignes, dans l'ordre du serveur, et
+ * la ligne la mieux rangée qui en porte un (ses `refs.idPv`, ses `faits`). Un dossier n'a qu'un PV en cours.
+ */
+export interface NavettePv {
+  tache: AFaireTache;
+  idPv: number | null;
+  gestes: GesteAFaire[];
+}
+
+export function navettePv(boutons: readonly GesteBouton[]): NavettePv | null {
+  const miens = boutons.filter((b) => famillePage(b.geste) === 'navette');
+  return miens.length ? { tache: miens[0].tache, idPv: miens[0].tache.refs.idPv, gestes: miens.map((b) => b.geste) } : null;
+}
+
+const LIBELLES_PARTS: Readonly<Record<string, string>> = { MEMBRE: 'Membre', CC: 'Chef de commission', PRESIDENT: 'Président' };
+
+const pluriel = (n: number, mot: string): string => `${n} ${mot}${n > 1 ? 's' : ''}`;
+
+/**
+ * Volet « Ce que dit le projet de PV » : avis, nombre d'observations, dernier retour de navette, parts de
+ * signature attendues, examinateur — tirés des faits servis, sans appel.
+ *
+ * ⚠️ `nbObservations` : le compte de l'EXAMEN (points de contrôle et pièces non conformes), lu par
+ * `EtapePv` — celui que la garde du visa oppose à l'avis. `faits.nbObservations` compte le périmètre FIGÉ
+ * à la signature d'un PV FAVR : il est nul pendant toute la navette et ne sert que de repli.
+ * `null` : compte inconnu (lecture en cours ou refusée) — la ligne est omise plutôt que fausse.
+ */
+export function voletPv(t: AFaireTache, nbObservations: number | null): FaitApercu[] {
+  const f = t.faits;
+  const out: FaitApercu[] = [];
+  const pousser = (libelle: string, valeur: string | null | undefined): void => {
+    if (valeur) out.push({ libelle, valeur });
+  };
+  pousser(t.section === 'PV_A_SIGNER' ? 'Avis arrêté au visa' : 'Avis du Membre', f.idAvis ? LIBELLES_AVIS[f.idAvis] ?? f.idAvis : 'Non renseigné');
+  const n = nbObservations ?? f.nbObservations;
+  pousser('Observations', n == null ? null : n ? pluriel(n, 'observation') : 'Aucune observation');
+  pousser('Dernier retour', f.dernierRetourNavette ? `« ${f.dernierRetourNavette} »` : null);
+  pousser('Parts attendues', f.partsAttendues?.length ? f.partsAttendues.map((p) => LIBELLES_PARTS[p] ?? p).join(' et ') : null);
+  pousser('Examiné par', t.dossier.acteursEtapes?.EXAMEN);
+  return out;
 }
 
 const PORTEURS_MODE: Readonly<Record<ModeTache, string>> = {
@@ -233,9 +288,13 @@ export function vueEtape(d: Dossier, g: GestesDossier, role: Role | null): VueEt
   else if (partieControlee) porteur = d.attentePrmp ? (role === 'PRMP' ? 'à vous' : 'à la PRMP') : g.etapeCourante || gesteEtat ? 'à la Commission nationale des marchés' : '';
   else porteur = g.etapeCourante ? porteurCnm(d, g) : '';
 
-  const note = tachePrincipale && (principal || gesteEtat === 'VOIR') ? noteCourte(tachePrincipale) : '';
-  // Un fait que la phrase guide dit déjà (« Favorable ») n'est pas répété à côté.
-  const faits = tachePrincipale ? faitsApercu(tachePrincipale).filter((f) => !FAITS_REDONDANTS.includes(f.libelle) && f.valeur !== note) : [];
+  // Navette du PV : jamais pour la partie contrôlée (règle C2) — le serveur ne la lui sert pas, et le
+  // panneau n'en demanderait pas le PV quand bien même.
+  const navette = partieControlee ? null : navettePv(boutons);
+  // Le volet du projet de PV dit l'avis et les observations : la phrase guide ne les répète pas.
+  const note = tachePrincipale && (principal || gesteEtat === 'VOIR') && !(navette && principal && famillePage(principal.geste) === 'navette') ? noteCourte(tachePrincipale) : '';
+  // Un fait que la phrase guide dit déjà (« Favorable ») n'est pas répété à côté ; le volet du PV les remplace.
+  const faits = tachePrincipale && !navette ? faitsApercu(tachePrincipale).filter((f) => !FAITS_REDONDANTS.includes(f.libelle) && f.valeur !== note) : [];
   return {
     etape: i >= 0 ? `Étape ${i + 1} sur ${CIRCUIT_ETAPES.length}` : '',
     fleche: i >= 0 ? `${(((i + 0.5) / CIRCUIT_ETAPES.length) * 100).toFixed(2)}%` : null,
@@ -247,6 +306,8 @@ export function vueEtape(d: Dossier, g: GestesDossier, role: Role | null): VueEt
     principal,
     secondaires: boutons.slice(1),
     faits: partieControlee ? faits.filter((f) => FAITS_PARTIE_CONTROLEE.includes(f.libelle)) : faits,
+    navette,
+    horsNavette: navette ? boutons.filter((b) => famillePage(b.geste) !== 'navette') : [],
   };
 }
 

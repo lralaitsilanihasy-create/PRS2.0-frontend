@@ -19,6 +19,7 @@ import { DossierJournal } from '../dossier/dossier-journal';
 import { ModaleGeste, OuvrirGeste } from '../gestes/ouvrir-geste';
 import { ReceptionForm } from '../reception-form';
 import { BarreCollante } from './barre-collante';
+import { FocusNavette } from './etape-pv';
 import { EtapeCourante } from './etape-courante';
 import { EtatGestes, GesteBouton, VueEtape, ciblePage, famillePage, gesteDemande, montantGestes, vueEtape } from './etape-courante-modele';
 import { RetourPage, etapesPage, referenceDossier } from './page-dossier-modele';
@@ -35,6 +36,7 @@ const HAUT_TOPBAR = 48;
  * Numérotation, dispatch, réattribution et pièces du dépôt s'ouvrent en modale par-dessus la page ; les
  * autres mènent à leur écran de travail, avec `returnUrl` vers la page. Après un geste réussi, la page
  * relit le dossier et ses gestes (`gesteReussi`), les pastilles du menu se recalculent, on reste ici.
+ * Lot F4 : la navette du projet de PV se joue dans le panneau (`EtapePv`) ; sa transition suit le même chemin.
  *
  * Règle C2 (audit 2026-09-14) : pour la PRMP et l'UGPM, ni journal ni chronométrage (le store ne les
  * demande pas, les boutons n'existent pas), la frise ne porte que des dates, et le panneau ne dit ni qui
@@ -161,7 +163,8 @@ const HAUT_TOPBAR = 48;
         }
         @case ('pret') {
           @if (vue(); as v) {
-            <app-etape-courante #panneau [vue]="v" [occupe]="occupe()" (agir)="agir($event)" />
+            <app-etape-courante #panneau [vue]="v" [occupe]="occupe()" [idLocalite]="dossier().idLocalite ?? null" [lienPv]="lienPv()"
+              [gesteFocus]="focusNavette()" (agir)="agir($event)" (navetteChangee)="apresGeste()" />
           }
         }
       }
@@ -286,6 +289,13 @@ export class PageDossierCorps implements OnInit {
   readonly ouverture = signal<string | null>(null);
   readonly modale = signal<ModaleGeste | null>(null);
   readonly occupe = computed(() => this.ouverture() !== null || this.relecture());
+  /** Lot F4 — gestion du projet de PV : lien de repli d'un geste de navette que `PvWorkflow` n'offre pas. */
+  readonly lienPv = computed(() => {
+    const n = this.vue()?.navette;
+    return n ? ciblePage(n.gestes[0], n.tache, this.espace, this.urlPage()) : null;
+  });
+  /** Lot F4 — `?geste=` de navette servi : focus sur son bouton dans `PvWorkflow`. */
+  readonly focusNavette = signal<FocusNavette | null>(null);
 
   private readonly panneau = viewChild('panneau', { read: EtapeCourante });
   private readonly panneauEl = viewChild('panneau', { read: ElementRef });
@@ -329,7 +339,11 @@ export class PageDossierCorps implements OnInit {
         const bouton = vue ? gesteDemande(brut, [vue.principal, ...vue.secondaires].filter((b): b is GesteBouton => b !== null)) : null;
         if (!bouton) return;
         // Geste court : sa modale s'ouvre. Écran de travail : le bouton reçoit le focus, sans quitter la page.
-        if (famillePage(bouton.geste) === 'modale') this.agir(bouton);
+        // Navette du PV : le bouton de `PvWorkflow`, dès que le projet de PV est lu — rien ne se déclenche
+        // (soumettre, accepter et signer partent sans confirmation).
+        const famille = famillePage(bouton.geste);
+        if (famille === 'modale') this.agir(bouton);
+        else if (famille === 'navette') this.focusNavette.set({ geste: bouton.geste });
         else setTimeout(() => this.panneau()?.bouton(bouton.geste)?.focus());
       });
     });
@@ -350,6 +364,11 @@ export class PageDossierCorps implements OnInit {
   /** Exécute un geste servi : sa modale par-dessus la page, ou son écran de travail. */
   agir(b: GesteBouton): void {
     if (this.occupe() || this.modale()) return;
+    // Navette du PV (lot F4) : elle se joue dans le panneau — la barre collante y ramène le focus.
+    if (famillePage(b.geste) === 'navette') {
+      this.panneau()?.bouton(b.geste)?.focus();
+      return;
+    }
     const cible = ciblePage(b.geste, b.tache, this.espace, this.urlPage());
     if (!cible) return;
     if (cible.type === 'route') {
