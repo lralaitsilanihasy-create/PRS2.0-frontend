@@ -47,6 +47,14 @@ import { SuiviRetrait } from './suivi-retrait';
             }
           </p>
         }
+        @if (vue().retourNavette; as r) {
+          <!-- Recette L4-Q2, défaut (f) : ce que le Président ou le Chef de commission a écrit en
+               retournant le projet de PV — étiqueté, jamais noyé dans la phrase guide. -->
+          <p class="ec__retour">
+            <app-icone nom="return" [taille]="16" />
+            <span><b class="ec__retour-l">Motif du retour</b> « {{ r }} »</span>
+          </p>
+        }
         @if (vue().note) {
           <p class="ec__note">{{ vue().note }}</p>
         }

@@ -161,6 +161,13 @@ export interface VueEtape {
   titre: string;
   /** Phrase guide, tirée des faits servis (« Numéroté le 11/09 », « 2 observations maintenues par la CNM »…). */
   note: string;
+  /**
+   * ⚠️ Recette L4-Q2 (2026-09-16), défaut (f) — commentaire du dernier retour de navette, quand c'est
+   * LUI qui dit ce qu'on attend du connecté (« Merci de vérifier le montant de la ligne 1… »). Il ne
+   * passait que par la phrase guide, sans étiquette : rien ne disait que ce texte venait du Président
+   * ou du Chef de commission. `null` quand un volet le porte déjà (« Dernier retour » de la navette).
+   */
+  retourNavette: string | null;
   delai: DelaiEtape | null;
   /** À quel titre le connecté agit, si ce n'est pas en titulaire. */
   mode: string | null;
@@ -231,6 +238,13 @@ const pluriel = (n: number, mot: string): string => `${n} ${mot}${n > 1 ? 's' : 
  * `EtapePv` — celui que la garde du visa oppose à l'avis. `faits.nbObservations` compte le périmètre FIGÉ
  * à la signature d'un PV FAVR : il est nul pendant toute la navette et ne sert que de repli.
  * `null` : compte inconnu (lecture en cours ou refusée) — la ligne est omise plutôt que fausse.
+ *
+ * ⚠️ « Examiné par » (message du backend, 2026-09-16) : `acteursEtapes.EXAMEN` suivra l'ATTRIBUTAIRE
+ * courant, et reste VIDE tant que le projet de PV n'est pas soumis, réattribution mise à part. La ligne
+ * est alors OMISE — comme toutes les autres de ce volet, qui ne montre que ce que le serveur affirme.
+ * Écrire « Non renseigné » ferait passer pour une lacune ce qui n'est qu'une étape non franchie ; et à
+ * la soumission, c'est le Membre lui-même qui lit le volet. Jamais de repli sur le `nomActeur` du
+ * passage EXAMEN du chronométrage : il dit « par qui », pas « à qui ».
  */
 export function voletPv(t: AFaireTache, nbObservations: number | null): FaitApercu[] {
   const f = t.faits;
@@ -374,14 +388,23 @@ export function vueEtape(d: Dossier, g: GestesDossier, role: Role | null): VueEt
   // motif (retrait) : ni phrase guide qui le répète, ni colonne de faits concurrente.
   const volet = (navette !== null && famillePrincipale === 'navette') || (retrait !== null && famillePrincipale === 'retrait');
   const titre = principal ? TITRES_SITUATION[principal.geste] || principal.libelle : titreEtat(d, g, partieControlee, gesteEtat);
+  // Défaut (f) : le commentaire du retour, étiqueté, quand aucun volet ne le porte déjà. Jamais pour la
+  // partie contrôlée — c'est un échange interne à la CNM (règle C2).
+  const retourNavette = !partieControlee && !volet && !navette && principal ? tachePrincipale?.faits.dernierRetourNavette ?? null : null;
   const noteBrute = tachePrincipale && (principal || gesteEtat === 'VOIR') && !volet ? noteCourte(tachePrincipale) : '';
-  // La phrase guide ne redit pas le titre (« Lettre de renvoi signée » de part et d'autre).
-  const note = noteBrute === titre ? '' : noteBrute;
+  // La phrase guide ne redit ni le titre (« Lettre de renvoi signée »), ni le bloc du retour.
+  const note = noteBrute === titre || (retourNavette && noteBrute.includes(retourNavette)) ? '' : noteBrute;
   // Un fait que la phrase guide dit déjà (« Favorable ») n'est pas répété à côté ; le volet du PV les remplace.
   // Le motif du retrait est aussi servi sur les autres lignes du dossier : le volet de la décision le porte déjà.
   const faits =
     tachePrincipale && !navette && !volet
-      ? faitsApercu(tachePrincipale).filter((f) => !FAITS_REDONDANTS.includes(f.libelle) && f.valeur !== note && !(retrait && f.libelle === 'Motif du retrait'))
+      ? faitsApercu(tachePrincipale).filter(
+          (f) =>
+            !FAITS_REDONDANTS.includes(f.libelle) &&
+            f.valeur !== note &&
+            !(retourNavette && f.libelle === 'Dernier retour') &&
+            !(retrait && f.libelle === 'Motif du retrait'),
+        )
       : [];
   return {
     etape: i >= 0 ? `Étape ${i + 1} sur ${CIRCUIT_ETAPES.length}` : '',
@@ -389,6 +412,7 @@ export function vueEtape(d: Dossier, g: GestesDossier, role: Role | null): VueEt
     porteur,
     titre,
     note,
+    retourNavette,
     // Le délai reste celui de l'étape ; nommée quand le geste principal se joue en dehors d'elle.
     delai: delaiEtape(g, role, famillePrincipale === 'retrait'),
     mode: principal?.mode ?? null,

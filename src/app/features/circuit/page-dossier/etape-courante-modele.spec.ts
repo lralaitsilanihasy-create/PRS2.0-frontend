@@ -158,6 +158,46 @@ describe('Page dossier — étape en cours (règles)', () => {
       expect(voletPv({ ...t, section: 'PV_A_SIGNER', faits: faits({ idAvis: 'FAV' }) }, 0)[0]).toEqual({ libelle: 'Avis arrêté au visa', valeur: 'Favorable' });
       expect(voletPv({ ...t, faits: faits({}) }, 0)[0]).toEqual({ libelle: 'Avis du Membre', valeur: 'Non renseigné' });
     });
+
+    it('« Examiné par » : la ligne est omise tant que le serveur ne nomme personne (message backend du 16/09)', () => {
+      // Sans réattribution, `acteursEtapes.EXAMEN` reste vide jusqu'à la soumission du projet de PV.
+      const t = tache({ section: 'PV_A_SOUMETTRE', geste: 'SOUMETTRE_PV', refs, dossier: { ...tache({}).dossier, acteursEtapes: {} }, faits: faits({ idAvis: 'FAVR' }) });
+      expect(voletPv(t, 1).map((f) => f.libelle)).not.toContain('Examiné par');
+      expect(voletPv(t, 1).map((f) => f.libelle)).toEqual(['Avis du Membre', 'Observations']);
+    });
+  });
+
+  /** Recette L4-Q2, défaut (f) : le motif du retour de navette, étiqueté, là où il dit ce qu'on attend. */
+  describe('motif du retour de navette', () => {
+    const refs = { idReception: 7, idDispatch: 3, idExamen: 9, idPv: 12, idLettre: null, idDemandeRetrait: null };
+    const MOTIF = 'Merci de vérifier le montant de la ligne 1.';
+    const reprise = (): AFaireTache =>
+      tache({ section: 'PV_A_REPRENDRE', geste: 'REPRENDRE_EXAMEN', refs, faits: { ...tache({}).faits, dernierRetourNavette: MOTIF } });
+
+    it('REPRENDRE_EXAMEN : le motif est porté à part, sans doublon dans la phrase guide ni dans les faits', () => {
+      const v = vueEtape(dossier({ statut: 'EXAMINE' }), reponse([reprise()]), 'MEMBRE');
+      expect(v.retourNavette).toBe(MOTIF);
+      expect(v.note).toBe('');
+      expect(v.faits.map((f) => f.libelle)).not.toContain('Dernier retour');
+    });
+
+    it('sans retour servi : rien, et la phrase guide reprend sa place', () => {
+      const sansMotif = tache({ section: 'PV_A_REPRENDRE', geste: 'REPRENDRE_EXAMEN', refs, faits: { ...tache({}).faits, dernierRetourNavette: null } });
+      const v = vueEtape(dossier({ statut: 'EXAMINE' }), reponse([sansMotif]), 'MEMBRE');
+      expect(v.retourNavette).toBeNull();
+      expect(v.note).toBe('Retourné pour rectification');
+    });
+
+    it('navette montée dans le panneau : c’est son volet qui porte « Dernier retour », pas le bloc', () => {
+      const visa = tache({ section: 'PV_A_VISER', geste: 'VISER', refs, faits: { ...tache({}).faits, dernierRetourNavette: MOTIF } });
+      expect(vueEtape(dossier({ statut: 'EXAMINE' }), reponse([visa]), 'PRESIDENT').retourNavette).toBeNull();
+    });
+
+    it('règle C2 : jamais pour la PRMP ni l’UGPM — c’est un échange interne à la CNM', () => {
+      for (const role of ['PRMP', 'UGPM'] as const) {
+        expect(vueEtape(dossier({ statut: 'EXAMINE' }), reponse([reprise()], null, role), role).retourNavette).toBeNull();
+      }
+    });
   });
 
   describe('décision de retrait (lot F5)', () => {
