@@ -81,6 +81,7 @@ describe('Page dossier', () => {
         const url = req.request.urlWithParams;
         demandees.push(url);
         if (url === `/api/dossiers/${dossier.idDossier}`) req.flush(dossier);
+        else if (url === `/api/dossiers/${dossier.idDossier}/gestes`) req.flush({ idDossier: dossier.idDossier, profil: 'PRESIDENT', genereLe: '2026-09-15T10:00:00.1', etapeCourante: null, taches: [] });
         else if (url.endsWith('/chronometrage')) req.flush(null);
         else if (url.endsWith('/journal')) req.flush([{ idAction: 1, typeAction: 'DISPATCH', dateAction: '2026-09-07T09:00:00', auteur: 'CCANT01', nomOperateur: 'Solofo Rakotondrabe' }]);
         else if (url === '/api/ppms') req.flush([PPM]);

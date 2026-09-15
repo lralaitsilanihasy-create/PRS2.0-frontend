@@ -245,3 +245,45 @@
 }
 .pd-sousmodal { width: min(1100px, 95vw); max-width: 95vw; }
 .pd-sousmodal__corps { overflow: auto; }
+
+/* ── Étape en cours (lot L4-F3) ── */
+/* En-tête collant du plan : sous la barre du haut (48 px), et sous la barre collante quand elle est dépliée.
+   Il glisse de 3 px SOUS la barre qui le précède (plus haute dans l'empilement) : au ras, une frange des
+   lignes défilées restait visible entre les deux au défilement (recette du 15/09, captures à 4×). */
+.pd-documents {
+  --doc-entete-top: 45px;
+}
+:host(.pd--barre) .pd-documents {
+  --doc-entete-top: calc(48px + 3.25rem - 3px);
+}
+/* Hauteur réservée voisine de celle du panneau : les documents ne sautent pas à l'arrivée des gestes. */
+.pd-etape-attente {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 7.5rem;
+  padding: 1rem 1.5rem;
+  border: 1px dashed #bfdcef;
+  border-radius: 16px;
+  background: #f8fbfe;
+  font-size: 0.875rem;
+  color: #5b6784;
+}
+.pd-etape-attente .spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-width: 2px;
+  margin: 0;
+}
+.pd-lecture-seule {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #5b6784;
+}
+.pd-etape-erreur {
+  display: block;
+  max-width: 48rem;
+}

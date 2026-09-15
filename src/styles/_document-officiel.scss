@@ -627,6 +627,7 @@ app-document-visionneuse {
    largeur disponible (aucun défilement horizontal). */
 .doc-entete-collante .doc-table--ppm thead {
   position: sticky;
-  top: 0;
+  /* 0 dans une zone défilante ; sous les barres fixes quand la fenêtre défile (page dossier, lot L4-F3). */
+  top: var(--doc-entete-top, 0);
   z-index: 3;
 }

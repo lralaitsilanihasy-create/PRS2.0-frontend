@@ -1,0 +1,100 @@
+/* Barre collante de la page dossier (lot L4-F3). Fixe sous la barre du haut (48 px, z-index 99), au-dessus
+   de l'en-tête collant du plan (z-index 3) ; la page décale d'autant cet en-tête quand la barre est
+   dépliée (--pd-barre-h). Mode concentration : la barre latérale est en tiroir, la barre prend toute la
+   largeur. Couleurs de texte au contraste AA : #152033 15:1, #34405a 10:1 sur blanc. */
+:host {
+  position: fixed;
+  top: 48px;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 140ms ease, transform 140ms ease, visibility 0s linear 140ms;
+  pointer-events: none;
+}
+:host(.bc--visible) {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition: opacity 140ms ease, transform 140ms ease;
+  pointer-events: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  :host,
+  :host(.bc--visible) {
+    transition: none;
+  }
+}
+
+.bc {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  height: 3.25rem;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid #bfdcef;
+  background: #fff;
+  box-shadow: 0 10px 24px -18px rgba(3, 105, 161, 0.55);
+  color: #152033;
+  min-width: 0;
+}
+.bc__ref {
+  flex: none;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 0.9375rem/1.2 var(--cnm-mono);
+  letter-spacing: -0.02em;
+}
+.bc__etape {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0369a1;
+}
+.bc__titre {
+  margin-left: 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #34405a;
+}
+.bc__delai {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid;
+  border-radius: 7px;
+  font-size: 0.78125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bc__delai--retard { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.bc__delai--bientot { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+.bc__delai--ok { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+.bc__delai--sans { background: #f4f7fb; border-color: #dbe3ee; color: #34405a; }
+.bc__delai--pause { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+.bc__delai--suivi { background: #f0f9ff; border-color: #bae6fd; color: #075985; }
+.bc__geste {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .bc__titre { display: none; }
+}

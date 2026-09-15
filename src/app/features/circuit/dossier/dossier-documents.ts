@@ -61,7 +61,7 @@ import { DossierVersions } from './dossier-versions';
              versionnement en annotations, masquables (interrupteur commun aux onglets).
              Embarquée (vérification), l'en-tête du plan reste collant dans le panneau hôte qui défile. -->
         <div class="dc-section">
-          <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc" [class.doc-entete-collante]="embedded()">
+          <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc" [class.doc-entete-collante]="embedded() || enteteCollante()">
             <app-ppm-marches-table [marches]="contenu.marches()" [beneficiaires]="contenu.serviceBenefs()" [previsions]="contenu.previsions()" [changements]="contenu.changements()" [legendeTitre]="contenu.legendeChangements()" [detailsChangements]="contenu.detailsChangements()" />
           </app-document-visionneuse>
         </div>
@@ -137,6 +137,11 @@ export class DossierDocuments {
   protected readonly contenu = inject(DossierContenuStore);
   /** Embarqué dans un panneau hôte qui défile (vérification) : en-tête du plan collant, marges resserrées. */
   readonly embedded = input(false);
+  /**
+   * En-tête du plan collant pendant le défilement de la FENÊTRE (page dossier, lot L4-F3) : il se loge sous
+   * la barre du haut et sous la barre collante de la page (`--doc-entete-top`, posé par la page).
+   */
+  readonly enteteCollante = input(false);
 
   // ── Onglets du dossier (2026-09-03) : fiche / plan / AGPM / pièces / historique (2026-09-06) ──
   /** Onglet actif — ouverture sur le plan, comme le détail PPM. */

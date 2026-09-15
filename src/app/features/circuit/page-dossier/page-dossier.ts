@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink, UrlTree } from '@angular/router';
-import { Subject, catchError, combineLatest, distinctUntilChanged, map, of, startWith, switchMap } from 'rxjs';
+import { EMPTY, Observable, Subject, catchError, combineLatest, distinctUntilChanged, finalize, forkJoin, map, of, startWith, switchMap } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { Dossier } from '../../../models';
 import { DossierService } from '../../../services';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
+import { EtatGestes, classerEchecGestes } from './etape-courante-modele';
 import { PageDossierCorps } from './page-dossier-corps';
 import { EchecOuverture, classerEchec, lireIdDossier, retourPage } from './page-dossier-modele';
 
@@ -16,7 +17,7 @@ type EtatOuverture = { etat: 'chargement' } | { etat: 'pret'; dossier: Dossier }
 const ECHECS: Record<EchecOuverture, { message: string; aide: string; reprise: boolean }> = {
   interdit: {
     message: 'Ce dossier est hors de votre périmètre.',
-    aide: "Il relève d'une autre localité ou d'une autre autorité contractante : le serveur ne vous en ouvre pas la consultation.",
+    aide: "Il relève d'une autre localité ou d'une autre autorité contractante.",
     reprise: false,
   },
   introuvable: {
@@ -40,6 +41,11 @@ const ECHECS: Record<EchecOuverture, { message: string; aide: string; reprise: b
  * introuvable (404), échec — en UN seul message, sans toast. Le dossier chargé est confié à
  * `PageDossierCorps`, qui fournit son `DossierContenuStore` : changer de dossier sans quitter la route
  * repasse par le chargement, qui démonte le corps — un store neuf par dossier.
+ *
+ * Lot L4-F3 : une fois le dossier ouvert, la page lit ses gestes (`GET /api/dossiers/{id}/gestes`), en
+ * parallèle de la vague des documents. Après un geste, elle RELIT le dossier et ses gestes seulement —
+ * le corps, ses documents et son store restent en place. `?geste=` est confié au corps, qui ne le
+ * déclenche que s'il est servi, puis retiré de l'URL.
  */
 @Component({
   selector: 'app-page-dossier',
@@ -47,7 +53,17 @@ const ECHECS: Record<EchecOuverture, { message: string; aide: string; reprise: b
   imports: [RouterLink, EtatErreur, Icone, PageDossierCorps],
   template: `
     @if (dossierCharge(); as dossier) {
-      <app-page-dossier-corps [dossier]="dossier" [retour]="retour()" [retourLien]="retourLien()" />
+      <app-page-dossier-corps
+        [dossier]="dossier"
+        [retour]="retour()"
+        [retourLien]="retourLien()"
+        [gestes]="gestes()"
+        [relecture]="relecture()"
+        [gesteDemande]="gesteDemande()"
+        (gesteReussi)="relire()"
+        (relancerGestes)="relancerGestes()"
+        (gesteTraite)="retirerGesteDemande()"
+      />
     } @else {
       <div class="pd">
         <div class="pd-fil">
@@ -84,6 +100,14 @@ export class PageDossier {
 
   private readonly idDossier = toSignal(this.route.paramMap.pipe(map((p) => lireIdDossier(p.get('idDossier')))), { initialValue: null });
   private readonly returnUrl = toSignal(this.route.queryParamMap.pipe(map((q) => q.get('returnUrl'))), { initialValue: null });
+  readonly gesteDemande = toSignal(this.route.queryParamMap.pipe(map((q) => q.get('geste'))), { initialValue: null });
+
+  /** Gestes du dossier ouvert ; relus avec lui après un geste. */
+  readonly gestes = signal<EtatGestes>({ etat: 'chargement' });
+  /** Relecture du dossier et de ses gestes après un geste : les boutons attendent. */
+  readonly relecture = signal(false);
+  /** `dossier: false` : les gestes seuls (ouverture, Réessayer) ; `true` : relecture après un geste. `null` annule. */
+  private readonly lecture$ = new Subject<{ id: number; dossier: boolean } | null>();
 
   readonly retour = computed(() => retourPage(this.returnUrl(), this.auth.role()));
   /** Lien du fil d'Ariane : un `UrlTree`, pour que Ctrl+clic ouvre un onglet avec les paramètres du retour. */
@@ -121,10 +145,55 @@ export class PageDossier {
         }),
         takeUntilDestroyed(),
       )
-      .subscribe((o) => this.ouverture.set(o));
+      .subscribe((o) => {
+        this.ouverture.set(o);
+        this.lecture$.next(o.etat === 'pret' ? { id: o.dossier.idDossier, dossier: false } : null);
+      });
+
+    this.lecture$
+      .pipe(
+        switchMap((demande) => {
+          if (!demande) return EMPTY;
+          const gestes$: Observable<EtatGestes> = this.dossiers.gestes(demande.id).pipe(
+            map((gestes): EtatGestes => ({ etat: 'pret', gestes })),
+            catchError((err: unknown) => of(classerEchecGestes(err))),
+          );
+          if (!demande.dossier) {
+            this.gestes.set({ etat: 'chargement' });
+            return gestes$.pipe(map((gestes) => ({ gestes, ouverture: null })));
+          }
+          this.relecture.set(true);
+          const ouverture$ = this.dossiers.lire(demande.id).pipe(
+            map((dossier): EtatOuverture => ({ etat: 'pret', dossier })),
+            catchError((err: unknown) => of<EtatOuverture>({ etat: classerEchec(err) })),
+          );
+          return forkJoin({ gestes: gestes$, ouverture: ouverture$ }).pipe(finalize(() => this.relecture.set(false)));
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe(({ gestes, ouverture }) => {
+        if (ouverture) this.ouverture.set(ouverture);
+        this.gestes.set(gestes);
+      });
   }
 
   relancer(): void {
     this.relance$.next();
+  }
+
+  /** Après un geste réussi : le dossier et ses gestes, rien d'autre (le corps et ses documents restent). */
+  relire(): void {
+    const o = this.ouverture();
+    if (o.etat === 'pret') this.lecture$.next({ id: o.dossier.idDossier, dossier: true });
+  }
+
+  relancerGestes(): void {
+    const o = this.ouverture();
+    if (o.etat === 'pret') this.lecture$.next({ id: o.dossier.idDossier, dossier: false });
+  }
+
+  /** `?geste=` lu : retiré de l'URL (sans nouvelle entrée d'historique), il ne rejouera pas au retour. */
+  retirerGesteDemande(): void {
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { geste: null }, queryParamsHandling: 'merge', replaceUrl: true });
   }
 }
