@@ -405,6 +405,9 @@ export class PageDossierCorps implements OnInit {
   apresGeste(suite: SuiteGeste = null): void {
     this.modale.set(null);
     this.titreApresGeste = true;
+    // Recette L4-Q2, défaut (m) : le geste vient d'écrire au journal et de clore un passage du
+    // chronométrage — les deux restitutions se relisent, le reste de la vague reste en place.
+    this.contenu.rafraichirRestitutions();
     this.dossiersRefresh.notifierChangement();
     this.gesteReussi.emit(suite);
   }

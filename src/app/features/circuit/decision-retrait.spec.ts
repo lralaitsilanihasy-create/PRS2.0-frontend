@@ -265,7 +265,8 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
     expect(racine().querySelectorAll('.dr button:not([disabled])').length).toBe(0);
 
     repondre();
-    expect(demandees.sort()).toEqual(['GET /api/dossiers/42', 'GET /api/dossiers/42/gestes']);
+    // Recette L4-Q2, défaut (m) : le journal et le chronométrage sont relus avec le dossier et ses gestes — le geste vient d'y écrire ; le reste de la vague, non.
+    expect(demandees.sort()).toEqual(['GET /api/dossiers/42', 'GET /api/dossiers/42/chronometrage', 'GET /api/dossiers/42/gestes', 'GET /api/dossiers/42/journal']);
     expect(refresh.notifierChangement).toHaveBeenCalledTimes(1);
     expect(q('app-page-dossier-corps')).toBe(corps);
     expect(q('app-decision-retrait')).toBeNull();

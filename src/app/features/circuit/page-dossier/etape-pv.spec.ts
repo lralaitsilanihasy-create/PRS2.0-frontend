@@ -186,7 +186,7 @@ describe('Page dossier — navette du projet de PV (lot L4-F4)', () => {
     expect(racine().querySelector('.ep__indispo')).toBeNull();
     repondre();
     expect(demandees[0]).toBe('POST /api/pv-examens/12/soumettre');
-    expect(demandees.slice(1).sort()).toEqual(['GET /api/dossiers/42', 'GET /api/dossiers/42/gestes']);
+    expect(demandees.slice(1).sort()).toEqual(['GET /api/dossiers/42', 'GET /api/dossiers/42/chronometrage', 'GET /api/dossiers/42/gestes', 'GET /api/dossiers/42/journal']);
     expect(toast.success).toHaveBeenCalledWith('Projet soumis.');
     expect(refresh.notifierChangement).toHaveBeenCalledTimes(1);
     expect(racine().querySelector('app-page-dossier-corps')).toBe(corps);

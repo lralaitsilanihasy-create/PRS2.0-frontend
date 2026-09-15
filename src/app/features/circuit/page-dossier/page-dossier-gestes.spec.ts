@@ -241,7 +241,8 @@ describe('Page dossier — étape en cours et gestes (lot L4-F3)', () => {
     // Pendant la relecture, les gestes attendent.
     expect((racine().querySelector('.ec__principal') as HTMLButtonElement).disabled).toBe(true);
     repondre(reponse('PRESIDENT', [], chrono('DANS_LES_DELAIS', { etape: 'EXAMEN', restantHeures: 40, standardHeures: 40, ecouleHeures: 0, entree: '2026-09-15T21:00:00' })), { ...DOSSIER, statut: 'DISPATCHE' });
-    expect(demandees.sort()).toEqual(['/api/dossiers/42', '/api/dossiers/42/gestes']);
+    // Recette L4-Q2, défaut (m) : les deux restitutions suivent le geste (compteur du bouton « Journal ») ; ni documents ni référentiels.
+    expect(demandees.sort()).toEqual(['/api/dossiers/42', '/api/dossiers/42/chronometrage', '/api/dossiers/42/gestes', '/api/dossiers/42/journal']);
     // Même corps (documents et store en place), étape suivante affichée.
     expect(racine().querySelector('app-page-dossier-corps')).toBe(corps);
     expect(texte(racine().querySelector('.ec__titre'))).toBe('Examen en cours');

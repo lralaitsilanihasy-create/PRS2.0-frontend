@@ -330,6 +330,29 @@ export class DossierContenuStore {
     return id != null ? this.entiteMap().get(String(id)) ?? '#' + id : '—';
   });
 
+  /**
+   * ⚠️ Recette L4-Q2 (2026-09-16), défaut (m) — les RESTITUTIONS seules, relues après un geste fait
+   * sur la page dossier. Le geste vient d'écrire une ligne au journal et de clore un passage du
+   * chronométrage : sans cela le compteur du bouton « Journal » restait sur sa valeur d'ouverture
+   * jusqu'au prochain rechargement. Le reste de la vague — documents, plan, pièces, référentiels —
+   * n'est PAS relu : c'est tout l'intérêt de la relecture légère de la page.
+   *
+   * Silencieux (comme dans la vague) : un échec laisse les valeurs précédentes plutôt que de vider
+   * une section déjà affichée. Rien n'est demandé à la PRMP ni à l'UGPM (règle C2).
+   */
+  rafraichirRestitutions(): void {
+    if (!this.source() || !this.restitutionsVisibles()) return;
+    const id = this.dossier().idDossier;
+    this.dossierService
+      .journal(id)
+      .pipe(catchError(() => of(null as ActionDossier[] | null)))
+      .subscribe((journal) => journal && this.journal.set(journal));
+    this.dossierService
+      .chronometrage(id, true)
+      .pipe(catchError(() => of(null as Chronometrage | null)))
+      .subscribe((chrono) => chrono && this.chronoDossier.set(chrono));
+  }
+
   /** Lance la vague unique pour le dossier de l'hôte (appelé une fois, dans son `ngOnInit`). */
   charger(dossier: Signal<Dossier>): void {
     this.source.set(dossier);

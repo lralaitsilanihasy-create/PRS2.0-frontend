@@ -84,6 +84,39 @@ describe('DossierContenuStore — règles par profil', () => {
     });
   }
 
+  /**
+   * Recette L4-Q2, défaut (m) : après un geste fait sur la page dossier, le journal et le chronométrage
+   * sont relus — eux SEULS. Sans cela, le compteur du bouton « Journal » restait sur sa valeur
+   * d'ouverture jusqu'au prochain rechargement.
+   */
+  describe('relecture des restitutions après un geste', () => {
+    it('contrôleur : journal et chronométrage relus, rien d’autre', () => {
+      const { store, http } = creer('PRESIDENT');
+      store.charger(signal(PPM_EN_VERIFICATION));
+      repondre(http, []);
+      store.rafraichirRestitutions();
+      expect(appels(http, 'journal').length).toBe(1);
+      expect(appels(http, 'chronometrage').length).toBe(1);
+      expect(http.match(() => true).length).toBe(0);
+    });
+
+    for (const role of ['PRMP', 'UGPM'] as const) {
+      it(`${role} : rien n’est demandé (règle C2)`, () => {
+        const { store, http } = creer(role);
+        store.charger(signal(PPM_EN_VERIFICATION));
+        repondre(http, []);
+        store.rafraichirRestitutions();
+        expect(http.match(() => true).length).toBe(0);
+      });
+    }
+
+    it('sans charger() : aucun appel, aucune exception', () => {
+      const { store, http } = creer('PRESIDENT');
+      store.rafraichirRestitutions();
+      expect(http.match(() => true).length).toBe(0);
+    });
+  });
+
   for (const role of TOUS_LES_PROFILS) {
     const attendu = role === 'VERIFICATEUR';
     // L'UGPM et le Chargé de publication ne lisent pas le versionnement (403 serveur) : rien n'est demandé.
