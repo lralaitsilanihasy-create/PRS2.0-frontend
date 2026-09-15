@@ -93,6 +93,9 @@ describe('Accueil « À faire » (écran)', () => {
     expect(texte(premiere.querySelector('.af-l__delai'))).toBe('1 h de retard 9 h sur 8 h');
     expect(premiere.querySelector('.af-l__act')?.getAttribute('aria-label')).toBe('Dispatcher — 00015/DGSR/DAO/2026');
     expect(texte(sections[0].querySelector('.af-sec__lot'))).toBe('Dispatcher la sélection');
+    // Une action, un verbe : l'aperçu de la ligne sélectionnée reprend le verbe du bouton de ligne.
+    expect(texte(racine().querySelector('.suite__t'))).toBe('Dispatcher le dossier');
+    expect(texte(racine().querySelector('.ap__principal'))).toBe('Dispatcher le dossier');
     expect(aFaire).toHaveBeenCalledTimes(1);
     expect(aFaire).toHaveBeenCalledWith(false);
   });

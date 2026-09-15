@@ -40,37 +40,43 @@ export const LIBELLES_SECTIONS: Readonly<Record<SectionAFaire, LibelleSection>> 
 /** L'UGPM prépare sans soumettre (arbitrage 6 du 2026-09-15) : ses brouillons sont « à compléter ». */
 export const TITRE_BROUILLONS_UGPM = 'Brouillons à compléter';
 
+/**
+ * ⚠️ 2026-09-15 (recette) — UNE action, UN verbe : chez le Président, la ligne disait « Dispatcher » et
+ * le bouton de l'aperçu « Attribuer le dossier à un Membre ». Le libellé long (aperçu : « Prochaine
+ * action » et bouton principal) reprend désormais le verbe du bouton de ligne et n'y ajoute qu'un
+ * complément (« Dispatcher le dossier », « Numéroter le dépôt ») — règle vérifiée par un test.
+ */
 export interface LibelleGeste {
   /** Bouton de la ligne. */
   court: string;
-  /** « Prochaine action » de l'aperçu. */
+  /** « Prochaine action » et bouton de l'aperçu : le MÊME verbe que `court`, plus un complément. */
   long: string;
   icone: NomIcone;
 }
 
 export const LIBELLES_GESTES: Readonly<Record<GesteAFaire, LibelleGeste>> = {
-  NUMEROTER: { court: 'Numéroter', long: 'Contrôler les pièces et numéroter', icone: 'hash' },
-  DISPATCHER: { court: 'Dispatcher', long: 'Attribuer le dossier à un Membre', icone: 'send' },
+  NUMEROTER: { court: 'Numéroter', long: 'Numéroter le dépôt', icone: 'hash' },
+  DISPATCHER: { court: 'Dispatcher', long: 'Dispatcher le dossier', icone: 'send' },
   EXAMINER: { court: 'Examiner', long: 'Examiner le dossier', icone: 'search' },
-  REATTRIBUER: { court: 'Attribuer à un Membre', long: 'Attribuer le dossier à un Membre de la commission', icone: 'users' },
-  REEXAMINER: { court: 'Réexaminer', long: 'Examiner les pièces complémentaires', icone: 'search' },
-  SOUMETTRE_PV: { court: 'Soumettre le PV', long: 'Relire et soumettre le projet de PV', icone: 'send' },
+  REATTRIBUER: { court: 'Attribuer à un Membre', long: 'Attribuer le dossier à un Membre', icone: 'users' },
+  REEXAMINER: { court: 'Réexaminer', long: 'Réexaminer avec les pièces complémentaires', icone: 'search' },
+  SOUMETTRE_PV: { court: 'Soumettre le PV', long: 'Soumettre le projet de PV', icone: 'send' },
   REPRENDRE_EXAMEN: { court: "Reprendre l'examen", long: "Reprendre l'examen retourné", icone: 'edit' },
   ACCEPTER: { court: 'Accepter', long: 'Accepter le projet de PV', icone: 'check' },
   RETOURNER: { court: 'Retourner', long: 'Retourner le projet pour rectification', icone: 'return' },
   VISER: { court: 'Viser', long: 'Viser le projet de PV', icone: 'pen' },
-  SIGNER: { court: 'Signer ma part', long: 'Signer le PV', icone: 'pen' },
+  SIGNER: { court: 'Signer ma part', long: 'Signer ma part du PV', icone: 'pen' },
   SIGNER_LETTRE: { court: 'Signer la lettre', long: 'Signer la lettre de renvoi', icone: 'pen' },
-  DECIDER_RETRAIT: { court: 'Examiner la demande', long: 'Accepter ou refuser la demande de retrait', icone: 'undo' },
-  VERIFIER: { court: 'Vérifier', long: 'Statuer sur les observations', icone: 'shield' },
+  DECIDER_RETRAIT: { court: 'Examiner la demande', long: 'Examiner la demande de retrait', icone: 'undo' },
+  VERIFIER: { court: 'Vérifier', long: 'Vérifier les observations du PV', icone: 'shield' },
   TRANSMETTRE_DECISION: { court: 'Transmettre la décision', long: 'Transmettre la décision à SIGMP', icone: 'send' },
   TRANSMETTRE_SIGMP: { court: 'Transmettre à SIGMP', long: 'Transmettre la décision à SIGMP', icone: 'send' },
   ARCHIVER_PV: { court: 'Archiver', long: 'Archiver le PV', icone: 'archive' },
   ARCHIVER_LETTRE: { court: 'Archiver', long: 'Archiver la lettre de renvoi', icone: 'archive' },
-  VOIR: { court: 'Voir', long: 'Suivre le retour de la PRMP', icone: 'eye' },
-  SOUMETTRE: { court: 'Soumettre', long: 'Relire et soumettre le dossier', icone: 'send' },
+  VOIR: { court: 'Voir', long: 'Voir le dossier', icone: 'eye' },
+  SOUMETTRE: { court: 'Soumettre', long: 'Soumettre le dossier', icone: 'send' },
   COMPLETER_BROUILLON: { court: 'Compléter', long: 'Compléter le brouillon', icone: 'edit' },
-  COMPLETER_PIECES_DEPOT: { court: 'Compléter les pièces', long: 'Déposer les pièces manquantes', icone: 'clip' },
+  COMPLETER_PIECES_DEPOT: { court: 'Compléter les pièces', long: 'Compléter les pièces du dépôt', icone: 'clip' },
   TRANSMETTRE_COMPLEMENTS: { court: 'Transmettre les pièces', long: 'Transmettre les pièces complémentaires', icone: 'clip' },
   RECTIFIER: { court: 'Rectifier', long: 'Rectifier puis resoumettre le dossier', icone: 'edit' },
   SUIVRE: { court: 'Suivre', long: "Suivre l'avancement à la CNM", icone: 'eye' },
