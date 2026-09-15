@@ -37,6 +37,7 @@ const HAUT_TOPBAR = 48;
  * autres mènent à leur écran de travail, avec `returnUrl` vers la page. Après un geste réussi, la page
  * relit le dossier et ses gestes (`gesteReussi`), les pastilles du menu se recalculent, on reste ici.
  * Lot F4 : la navette du projet de PV se joue dans le panneau (`EtapePv`) ; sa transition suit le même chemin.
+ * Lot F5 : la décision de retrait aussi (`DecisionRetrait`).
  *
  * Règle C2 (audit 2026-09-14) : pour la PRMP et l'UGPM, ni journal ni chronométrage (le store ne les
  * demande pas, les boutons n'existent pas), la frise ne porte que des dates, et le panneau ne dit ni qui
@@ -164,7 +165,8 @@ const HAUT_TOPBAR = 48;
         @case ('pret') {
           @if (vue(); as v) {
             <app-etape-courante #panneau [vue]="v" [occupe]="occupe()" [idLocalite]="dossier().idLocalite ?? null" [lienPv]="lienPv()"
-              [gesteFocus]="focusNavette()" (agir)="agir($event)" (navetteChangee)="apresGeste()" />
+              [gesteFocus]="focusNavette()" (agir)="agir($event)" (navetteChangee)="apresGeste()"
+              (retraitDecide)="apresGeste()" />
           }
         }
       }
@@ -340,10 +342,12 @@ export class PageDossierCorps implements OnInit {
         if (!bouton) return;
         // Geste court : sa modale s'ouvre. Écran de travail : le bouton reçoit le focus, sans quitter la page.
         // Navette du PV : le bouton de `PvWorkflow`, dès que le projet de PV est lu — rien ne se déclenche
-        // (soumettre, accepter et signer partent sans confirmation).
+        // (soumettre, accepter et signer partent sans confirmation). Décision de retrait : le formulaire, pas
+        // « Accepter le retrait » — une touche Entrée ne doit pas renvoyer un dossier en brouillon.
         const famille = famillePage(bouton.geste);
         if (famille === 'modale') this.agir(bouton);
         else if (famille === 'navette') this.focusNavette.set({ geste: bouton.geste });
+        else if (famille === 'retrait') setTimeout(() => this.panneau()?.zoneRetrait()?.focus());
         else setTimeout(() => this.panneau()?.bouton(bouton.geste)?.focus());
       });
     });
@@ -364,8 +368,9 @@ export class PageDossierCorps implements OnInit {
   /** Exécute un geste servi : sa modale par-dessus la page, ou son écran de travail. */
   agir(b: GesteBouton): void {
     if (this.occupe() || this.modale()) return;
-    // Navette du PV (lot F4) : elle se joue dans le panneau — la barre collante y ramène le focus.
-    if (famillePage(b.geste) === 'navette') {
+    // Navette du PV (lot F4) et décision de retrait (lot F5) : elles se jouent dans le panneau — la barre
+    // collante y ramène le focus.
+    if (['navette', 'retrait'].includes(famillePage(b.geste))) {
       this.panneau()?.bouton(b.geste)?.focus();
       return;
     }

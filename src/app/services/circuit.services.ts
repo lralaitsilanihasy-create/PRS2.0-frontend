@@ -565,6 +565,14 @@ export class DemandeRetraitService extends CrudService<DemandeRetrait> {
     return this.http.get(`${this.baseUrl}/${id}/document`, { responseType: 'blob' });
   }
 
+  /**
+   * `GET /api/demande-retraits/{id}` sans boîte d'erreur — la page dossier (lot L4-F5) lit la demande à
+   * décider pour proposer sa lettre signée ; un échec reste dans le panneau, sans toast à l'ouverture.
+   */
+  lire(id: number): Observable<DemandeRetrait> {
+    return this.http.get<DemandeRetrait>(`${this.baseUrl}/${id}`, { context: skipErrorToast() });
+  }
+
   /** `GET /api/demande-retraits/a-valider` — EN_ATTENTE de la localité (CC/Président). */
   aValider(): Observable<DemandeRetrait[]> {
     return this.http.get<DemandeRetrait[]>(`${this.baseUrl}/a-valider`);

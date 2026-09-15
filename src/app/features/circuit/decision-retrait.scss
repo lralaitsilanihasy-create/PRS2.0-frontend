@@ -1,0 +1,223 @@
+/* Décision de retrait dans le panneau de l'étape (page dossier, lot L4-F5).
+   L'hôte s'efface (`display: contents`) : le formulaire et le volet deviennent des cellules de la grille du
+   panneau (`.ec`, deux colonnes) — le formulaire sous le titre, le volet dans la colonne de droite, comme la
+   navette du projet de PV (lot F4). En suite d'un autre geste, la décision prend sa propre rangée.
+   Textes au contraste AA sur blanc : #152033 15:1, #34405a 10:1, #5b6784 5,6:1, #0369a1 5,9:1 ;
+   #991b1b 8,3:1 sur #fef2f2. */
+:host {
+  display: contents;
+}
+
+.dr {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+  min-width: 0;
+  outline: none;
+}
+.dr:focus-visible {
+  outline: 2px solid #0369a1;
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+.dr__titre {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #0369a1;
+}
+.dr__aide {
+  margin: 0;
+  max-width: 64ch;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #34405a;
+}
+.dr__aide b {
+  color: #152033;
+}
+.dr__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.dr__actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.dr__refuser,
+.dr__accepter.btn-outline {
+  background: #fff;
+}
+.dr__refus {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+  max-width: 44rem;
+}
+.dr__label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #152033;
+}
+.dr__label-aide {
+  font-weight: 500;
+  color: #5b6784;
+}
+.dr__motif {
+  width: 100%;
+  min-height: 4.5rem;
+  resize: vertical;
+}
+.dr__erreur {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #991b1b;
+}
+.dr__erreur app-icone {
+  margin-top: 0.1rem;
+}
+.dr__attente {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.6rem 1rem;
+  border: 1px dashed #bfdcef;
+  border-radius: 10px;
+  background: #f8fbfe;
+  font-size: 0.875rem;
+  color: #34405a;
+}
+.dr__attente .spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-width: 2px;
+}
+
+/* ── Volet « La demande de la PRMP » ── */
+.dr-volet {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+  display: grid;
+  justify-items: start;
+  gap: 0.55rem;
+  min-width: 0;
+  padding-left: 1.5rem;
+  border-left: 1px solid #e5ebf3;
+}
+.dr-volet__titre {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #0369a1;
+}
+.dr-volet__faits {
+  display: grid;
+  gap: 0.45rem;
+  width: 100%;
+  margin: 0;
+  font-size: 0.84375rem;
+}
+.dr-volet__fait {
+  display: grid;
+  grid-template-columns: minmax(0, 7rem) minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: baseline;
+}
+.dr-volet__fait dt {
+  color: #5b6784;
+}
+.dr-volet__fait dd {
+  margin: 0;
+  font-weight: 600;
+  color: #152033;
+  overflow-wrap: anywhere;
+}
+/* Le motif est du texte libre : il ne doit pas allonger le panneau au point de chasser les boutons. */
+.dr-volet__fait--motif dd {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  overflow: hidden;
+  font-weight: 500;
+  white-space: pre-line;
+}
+.dr-volet__discret {
+  font-weight: 500;
+  color: #5b6784;
+}
+.dr-volet__lien {
+  margin-left: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: #0369a1;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.dr-volet__lettre {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fff;
+}
+
+/* En suite d'un autre geste : sa rangée à lui, séparée de ce qui précède. Le volet reste en face. */
+:host(.dr-hote--suite) .dr,
+:host(.dr-hote--suite) .dr-volet {
+  grid-row: auto;
+  padding-top: 0.9rem;
+  border-top: 1px solid #e5ebf3;
+}
+
+/* ── Confirmation du refus ── */
+.dr-conf {
+  max-width: 34rem;
+}
+.dr-conf__texte {
+  margin: 0 0 0.6rem;
+  color: #34405a;
+}
+.dr-conf__motif {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  border-left: 3px solid #fecaca;
+  border-radius: 0 8px 8px 0;
+  background: #fef2f2;
+  font-weight: 600;
+  color: #152033;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .dr-volet,
+  :host(.dr-hote--suite) .dr-volet {
+    grid-column: 1;
+    grid-row: auto;
+    padding: 0.75rem 0 0;
+    border-left: 0;
+    border-top: 1px solid #e5ebf3;
+  }
+}

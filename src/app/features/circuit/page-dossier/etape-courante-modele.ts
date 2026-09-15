@@ -41,13 +41,13 @@ export function classerEchecGestes(err: unknown): EtatGestes {
  * - `modale` : par-dessus la page (numérotation, dispatch, réattribution, pièces du dépôt) ;
  * - `lien` : l'écran de travail existant, avec `returnUrl` vers la page ;
  * - `navette` : DANS le panneau, par `PvWorkflow` (lot F4 : soumettre, accepter, viser, retourner, signer) ;
- * - `provisoire` : décision de retrait (lot F5) — même cible qu'« À faire ».
+ * - `retrait` : DANS le panneau, par `DecisionRetrait` (lot F5 : accepter, ou refuser avec motif).
  */
-export type FamillePage = 'modale' | 'lien' | 'navette' | 'provisoire';
+export type FamillePage = 'modale' | 'lien' | 'navette' | 'retrait';
 
 /** Lot F4 : la navette du projet de PV, dans le panneau (`EtapePv`, qui monte `PvWorkflow` tel quel). */
 export const GESTES_NAVETTE_PV: readonly GesteAFaire[] = ['SOUMETTRE_PV', 'ACCEPTER', 'VISER', 'RETOURNER', 'SIGNER'];
-/** Lot F5 : formulaire court dans le panneau. */
+/** Lot F5 : formulaire court dans le panneau (`DecisionRetrait`). */
 const GESTES_RETRAIT: readonly GesteAFaire[] = ['DECIDER_RETRAIT'];
 /** Aucun bouton : une phrase d'état (§3.3). */
 export const GESTES_ETAT: readonly GesteAFaire[] = ['VOIR', 'SUIVRE'];
@@ -84,7 +84,7 @@ export function gestesBoutons(taches: readonly AFaireTache[]): GesteBouton[] {
 
 export function famillePage(geste: GesteAFaire): FamillePage {
   if (GESTES_NAVETTE_PV.includes(geste)) return 'navette';
-  if (GESTES_RETRAIT.includes(geste)) return 'provisoire';
+  if (GESTES_RETRAIT.includes(geste)) return 'retrait';
   return ['NUMEROTER', 'DISPATCHER', 'REATTRIBUER', 'COMPLETER_PIECES_DEPOT'].includes(geste) ? 'modale' : 'lien';
 }
 
@@ -96,7 +96,8 @@ export function famillePage(geste: GesteAFaire): FamillePage {
  * Navette du PV (lot F4) : le geste s'exécute dans le panneau. La cible d'« À faire » (gestion du projet
  * de PV, `?gerer=<idPv>`) ne sert plus que de LIEN DE REPLI, quand `PvWorkflow` ne propose pas un geste
  * que le serveur sert (« geste indisponible sur cet écran ») ; cet écran ne lit pas `returnUrl`.
- * Lot F5 : DECIDER_RETRAIT mène PROVISOIREMENT à la liste des retraits, comme « À faire ».
+ * Décision de retrait (lot F5) : elle se prend dans le panneau ; la liste des demandes, cible d'« À faire »,
+ * n'est plus une destination de la page.
  */
 export function ciblePage(geste: GesteAFaire, t: AFaireTache, espace: string, urlPage: string): CibleGeste | null {
   const cible = cibleGeste(geste, t, espace);
@@ -134,8 +135,34 @@ export interface VueEtape {
    * (`PvWorkflow` et le volet « Ce que dit le projet de PV », qui prend la place des faits).
    */
   navette: NavettePv | null;
-  /** Avec la navette : les AUTRES gestes servis (lettre, retrait…), en boutons à côté de `PvWorkflow`. */
-  horsNavette: GesteBouton[];
+  /**
+   * Lot F5 : la décision de retrait, si le serveur la sert. Le panneau monte alors `DecisionRetrait`
+   * (accepter, ou refuser avec motif, et le volet « La demande de la PRMP »).
+   */
+  retrait: RetraitADecider | null;
+  /**
+   * Avec la navette ou la décision de retrait : les AUTRES gestes servis (lettre, dispatch…), en boutons
+   * à côté des formulaires du panneau. Vide sinon (le panneau de F3 : `principal` et `secondaires`).
+   */
+  horsPanneau: GesteBouton[];
+}
+
+// ── Décision de retrait (lot F5) ──────────────────────────────────────────────────────────────
+
+/**
+ * Demande de retrait à décider, telle que la sert la ligne RETRAITS_A_DECIDER : sa référence, le motif
+ * de la PRMP et la date de la demande (l'entrée du délai de cette ligne, sans étape chronométrée).
+ */
+export interface RetraitADecider {
+  tache: AFaireTache;
+  idDemandeRetrait: number | null;
+  motif: string | null;
+  demandeeLe: string | null;
+}
+
+export function retraitADecider(boutons: readonly GesteBouton[]): RetraitADecider | null {
+  const b = boutons.find((x) => famillePage(x.geste) === 'retrait');
+  return b ? { tache: b.tache, idDemandeRetrait: b.tache.refs.idDemandeRetrait, motif: b.tache.faits.motifRetrait, demandeeLe: b.tache.delai.entree } : null;
 }
 
 // ── Navette du projet de PV (lot F4) ──────────────────────────────────────────────────────────
@@ -291,10 +318,20 @@ export function vueEtape(d: Dossier, g: GestesDossier, role: Role | null): VueEt
   // Navette du PV : jamais pour la partie contrôlée (règle C2) — le serveur ne la lui sert pas, et le
   // panneau n'en demanderait pas le PV quand bien même.
   const navette = partieControlee ? null : navettePv(boutons);
-  // Le volet du projet de PV dit l'avis et les observations : la phrase guide ne les répète pas.
-  const note = tachePrincipale && (principal || gesteEtat === 'VOIR') && !(navette && principal && famillePage(principal.geste) === 'navette') ? noteCourte(tachePrincipale) : '';
+  // Décision de retrait : réservée au Président et au Chef de commission — jamais montée pour la partie
+  // contrôlée, même sur une réponse qui la servirait.
+  const retrait = partieControlee ? null : retraitADecider(boutons);
+  const famillePrincipale = principal ? famillePage(principal.geste) : null;
+  // Le geste principal se joue dans un formulaire du panneau, dont le volet dit déjà l'avis (navette) ou le
+  // motif (retrait) : ni phrase guide qui le répète, ni colonne de faits concurrente.
+  const volet = (navette !== null && famillePrincipale === 'navette') || (retrait !== null && famillePrincipale === 'retrait');
+  const note = tachePrincipale && (principal || gesteEtat === 'VOIR') && !volet ? noteCourte(tachePrincipale) : '';
   // Un fait que la phrase guide dit déjà (« Favorable ») n'est pas répété à côté ; le volet du PV les remplace.
-  const faits = tachePrincipale && !navette ? faitsApercu(tachePrincipale).filter((f) => !FAITS_REDONDANTS.includes(f.libelle) && f.valeur !== note) : [];
+  // Le motif du retrait est aussi servi sur les autres lignes du dossier : le volet de la décision le porte déjà.
+  const faits =
+    tachePrincipale && !navette && !volet
+      ? faitsApercu(tachePrincipale).filter((f) => !FAITS_REDONDANTS.includes(f.libelle) && f.valeur !== note && !(retrait && f.libelle === 'Motif du retrait'))
+      : [];
   return {
     etape: i >= 0 ? `Étape ${i + 1} sur ${CIRCUIT_ETAPES.length}` : '',
     fleche: i >= 0 ? `${(((i + 0.5) / CIRCUIT_ETAPES.length) * 100).toFixed(2)}%` : null,
@@ -307,7 +344,8 @@ export function vueEtape(d: Dossier, g: GestesDossier, role: Role | null): VueEt
     secondaires: boutons.slice(1),
     faits: partieControlee ? faits.filter((f) => FAITS_PARTIE_CONTROLEE.includes(f.libelle)) : faits,
     navette,
-    horsNavette: navette ? boutons.filter((b) => famillePage(b.geste) !== 'navette') : [],
+    retrait,
+    horsPanneau: navette || retrait ? boutons.filter((b) => !['navette', 'retrait'].includes(famillePage(b.geste))) : [],
   };
 }
 

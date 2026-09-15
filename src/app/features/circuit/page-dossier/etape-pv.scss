@@ -109,6 +109,15 @@
   background: #fff;
 }
 
+/* Lot F5 — la navette après la décision de retrait, mieux rangée par le serveur (page dossier) : sa rangée à
+   elle, sous celle de la décision, le volet en face. Classe posée par `EtapeCourante` sur l'hôte. */
+:host(.ep-hote--suite) .ep,
+:host(.ep-hote--suite) .ep-volet {
+  grid-row: auto;
+  padding-top: 0.9rem;
+  border-top: 1px solid #e5ebf3;
+}
+
 @media (max-width: 1100px) {
   .ep-volet {
     grid-column: 1;

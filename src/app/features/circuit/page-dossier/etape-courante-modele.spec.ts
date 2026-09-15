@@ -4,7 +4,7 @@ import { ApiError } from '../../../core/errors/api-error';
 import { AFaireDelai, AFaireTache, Dossier, GestesDossier, Role } from '../../../models';
 import { exempleAFairePresident, exempleAFairePrmp } from '../../home/a-faire/a-faire-contrat.exemple';
 import { cibleGeste } from '../../home/a-faire/a-faire-navigation';
-import { ciblePage, classerEchecGestes, famillePage, gesteDemande, gestesBoutons, montantGestes, navettePv, voletPv, vueEtape } from './etape-courante-modele';
+import { ciblePage, classerEchecGestes, famillePage, gesteDemande, gestesBoutons, montantGestes, navettePv, retraitADecider, voletPv, vueEtape } from './etape-courante-modele';
 
 const erreur = (status: number): ApiError => ({ status, message: 'x', raw: new HttpErrorResponse({ status }) });
 
@@ -71,8 +71,9 @@ describe('Page dossier — étape en cours (règles)', () => {
       }
     });
 
-    it('lot F5 : la décision de retrait garde PROVISOIREMENT la cible d’« À faire »', () => {
-      expect(famillePage('DECIDER_RETRAIT')).toBe('provisoire');
+    it('lot F5 : la décision de retrait se prend dans le panneau ; la liste d’« À faire » n’est plus une destination', () => {
+      expect(famillePage('DECIDER_RETRAIT')).toBe('retrait');
+      // Cible inchangée côté « À faire » (liste des demandes) : la page ne s'en sert pas pour agir.
       expect(ciblePage('DECIDER_RETRAIT', t, 'president', page)).toEqual(cibleGeste('DECIDER_RETRAIT', t, 'president'));
     });
   });
@@ -94,14 +95,14 @@ describe('Page dossier — étape en cours (règles)', () => {
       // Le volet dit l'avis : ni phrase guide qui le répète, ni colonne de faits concurrente.
       expect(v.note).toBe('');
       expect(v.faits).toEqual([]);
-      expect(v.horsNavette.map((b) => b.geste)).toEqual(['SIGNER_LETTRE']);
+      expect(v.horsPanneau.map((b) => b.geste)).toEqual(['SIGNER_LETTRE']);
       // La barre collante garde le geste principal servi.
       expect(v.principal?.geste).toBe('VISER');
     });
 
     it('non servie : aucune navette, le panneau de F3 inchangé', () => {
       const v = vueEtape(dossier({ statut: 'PRET_DISPATCH' }), reponse([tache({ geste: 'DISPATCHER' })]), 'PRESIDENT');
-      expect([v.navette, v.horsNavette]).toEqual([null, []]);
+      expect([v.navette, v.retrait, v.horsPanneau]).toEqual([null, null, []]);
       expect(navettePv(gestesBoutons([tache({ geste: 'ARCHIVER_PV' })]))).toBeNull();
     });
 
@@ -132,6 +133,42 @@ describe('Page dossier — étape en cours (règles)', () => {
       expect(voletPv(t, 0)).toContainEqual({ libelle: 'Observations', valeur: 'Aucune observation' });
       expect(voletPv({ ...t, section: 'PV_A_SIGNER', faits: faits({ idAvis: 'FAV' }) }, 0)[0]).toEqual({ libelle: 'Avis arrêté au visa', valeur: 'Favorable' });
       expect(voletPv({ ...t, faits: faits({}) }, 0)[0]).toEqual({ libelle: 'Avis du Membre', valeur: 'Non renseigné' });
+    });
+  });
+
+  describe('décision de retrait (lot F5)', () => {
+    const refs = { idReception: 7, idDispatch: 3, idExamen: 9, idPv: 12, idLettre: null, idDemandeRetrait: 77 };
+    const retrait = (autres: Partial<AFaireTache> = {}): AFaireTache =>
+      tache({ section: 'RETRAITS_A_DECIDER', geste: 'DECIDER_RETRAIT', urgence: 'SANS_DELAI', rang: 1, refs, delai: { ...DELAI_VIDE, entree: '2026-09-15T23:57:48.376888' }, faits: { ...tache({}).faits, motifRetrait: 'Doublon avec un autre plan' }, ...autres });
+
+    it('servie seule : la demande (référence, motif, date), titre du geste ; ni phrase guide ni faits, le volet les porte', () => {
+      const v = vueEtape(dossier({ statut: 'DISPATCHE' }), reponse([retrait()]), 'CHEF_COMMISSION');
+      expect(v.retrait).toEqual({ tache: expect.objectContaining({ section: 'RETRAITS_A_DECIDER' }), idDemandeRetrait: 77, motif: 'Doublon avec un autre plan', demandeeLe: '2026-09-15T23:57:48.376888' });
+      expect(v.titre).toBe('Examiner la demande de retrait');
+      expect([v.principal?.geste, v.porteur, v.note, v.faits, v.horsPanneau, v.navette]).toEqual(['DECIDER_RETRAIT', 'à vous', '', [], [], null]);
+    });
+
+    it('après un autre geste : le geste principal reste, ses faits aussi — sans le motif du retrait, que porte le volet', () => {
+      const autre = tache({ section: 'A_DISPATCHER', geste: 'DISPATCHER', rang: 1, refs, faits: { ...tache({}).faits, motifRetrait: 'Doublon avec un autre plan', consigneDispatch: null } });
+      const v = vueEtape(dossier({}), reponse([autre, retrait({ rang: 2 })]), 'PRESIDENT');
+      expect(v.principal?.geste).toBe('DISPATCHER');
+      expect(v.retrait?.idDemandeRetrait).toBe(77);
+      expect(v.horsPanneau.map((b) => b.geste)).toEqual(['DISPATCHER']);
+      expect(v.note).not.toBe('');
+      expect(v.faits.map((f) => f.libelle)).not.toContain('Motif du retrait');
+    });
+
+    it('avec la navette : les deux formulaires, dans l’ordre du serveur ; la phrase guide suit le geste principal', () => {
+      const visa = tache({ section: 'PV_A_VISER', geste: 'VISER', gestesSecondaires: ['RETOURNER'], rang: 2, mode: 'INTERIM', refs });
+      const cc = vueEtape(dossier({ statut: 'EXAMINE' }), reponse([retrait(), visa]), 'CHEF_COMMISSION');
+      expect([cc.principal?.geste, cc.navette?.gestes, cc.retrait?.idDemandeRetrait, cc.horsPanneau, cc.note, cc.faits]).toEqual(['DECIDER_RETRAIT', ['VISER', 'RETOURNER'], 77, [], '', []]);
+      const president = vueEtape(dossier({ statut: 'EXAMINE' }), reponse([{ ...visa, rang: 1, mode: 'TITULAIRE' }, retrait({ rang: 2 })]), 'PRESIDENT');
+      expect([president.principal?.geste, president.titre, president.retrait?.idDemandeRetrait]).toEqual(['VISER', 'Viser le projet de PV', 77]);
+    });
+
+    it('règle C2 : jamais pour la PRMP ni l’UGPM, même sur une doublure qui la servirait', () => {
+      for (const role of ['PRMP', 'UGPM'] as const) expect(vueEtape(dossier({ statut: 'DISPATCHE' }), reponse([retrait()], null, role), role).retrait).toBeNull();
+      expect(retraitADecider(gestesBoutons([tache({ geste: 'DISPATCHER' })]))).toBeNull();
     });
   });
 
