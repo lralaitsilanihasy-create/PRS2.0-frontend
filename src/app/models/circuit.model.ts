@@ -605,7 +605,11 @@ export interface DossierResoumissionRequest {
 export interface EchangeDto {
   type: 'OBSERVATION' | 'RECTIFICATION';
   date: string;
-  acteur: string;
+  /**
+   * Matricule de l'auteur. Nul pour la PRMP sur une OBSERVATION (vues internes CNM, correctif backend
+   * du 2026-09-15) : l'identité du vérificateur ne sort pas de la Commission.
+   */
+  acteur: string | null;
   texte: string;
   /** Renseigné pour OBSERVATION (true = passage de clôture) ; null/absent pour RECTIFICATION. */
   obsLevees?: boolean;

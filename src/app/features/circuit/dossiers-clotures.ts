@@ -152,7 +152,7 @@ import { DossierConsultation } from './dossier-consultation';
                           [class.dc__ech-item--rectif]="e.type === 'RECTIFICATION'"
                           [class.dc__ech-item--final]="last && e.obsLevees"
                         >
-                          <span class="dc__ech-meta cnm-mono">{{ e.date }} · {{ e.acteur }}</span>
+                          <span class="dc__ech-meta cnm-mono">{{ e.date }}@if (acteurEchange(e); as auteur) { · {{ auteur }}}</span>
                           <span class="dc__ech-label">{{ e.type === 'OBSERVATION' ? 'Observation' : 'Rectification PRMP reçue' }}</span>
                           <span class="dc__ech-text">{{ e.texte }}</span>
                           @if (e.type === 'OBSERVATION' && e.obsLevees) {
@@ -426,6 +426,15 @@ export class DossiersClotures {
   }
   echangesDe(id: number): EchangeDto[] {
     return this.historiques()[id] ?? [];
+  }
+
+  /**
+   * Auteur affiché d'un échange. ⚠️ Vues internes CNM (correctif du 2026-09-15) : pour la PRMP, le
+   * serveur ne sert plus le matricule du vérificateur sur les OBSERVATION (`acteur` nul) — on nomme
+   * alors l'institution, jamais un contrôleur. Chaîne vide si rien à afficher (pas de séparateur orphelin).
+   */
+  acteurEchange(e: EchangeDto): string {
+    return e.acteur ?? (e.type === 'OBSERVATION' ? 'Commission nationale des marchés' : '');
   }
 
   /**
