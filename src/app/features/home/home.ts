@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { libelleRole, libelleTypeActeur } from '../../core/auth/libelles-profils';
 import { isApiError } from '../../core/errors/api-error';
 import { cheminAFaire, navFlat } from '../../core/navigation/navigation';
 import { Role } from '../../models';
@@ -70,6 +71,9 @@ export class Home {
   /** « Nom Prénoms » résolu au login (serveur) — repli sur le login pour une session antérieure. */
   readonly nomAffiche = computed(() => this.auth.nomAffichage() || this.auth.login() || '');
   readonly typeActeur = this.auth.typeActeur;
+  /** Libellés français du profil et du type d'acteur (plus de code brut, recette du 2026-09-15). */
+  readonly roleLibelle = computed(() => libelleRole(this.auth.role()));
+  readonly typeActeurLibelle = computed(() => libelleTypeActeur(this.auth.typeActeur()));
   readonly perimetre = computed(() => this.auth.localite() ?? 'Toutes localités');
   readonly modules = computed(() => navFlat(this.auth.role()));
   /** Seul le Chargé de publication peut réellement accéder au portail (GET réservé). */

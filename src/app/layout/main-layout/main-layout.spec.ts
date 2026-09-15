@@ -208,5 +208,12 @@ describe('Barre latérale et en-tête sans emoji (refonte ergonomique, lot 5 —
     expect(hote.querySelectorAll('.sidebar app-icone.nav-deleg').length).toBe(2);
     expect(hote.querySelector('.sidebar-nav__titre app-icone')).not.toBeNull();
     expect(/\p{Extended_Pictographic}/u.test(hote.querySelector('.sidebar')?.textContent ?? '')).toBe(false);
+    // Profil en français dans la pastille de l'en-tête et la carte profil — la couleur suit le code.
+    const pastille = hote.querySelector('.topbar-user .profile-badge') as HTMLElement;
+    expect(pastille.textContent?.trim()).toBe('Président');
+    expect(pastille.classList).toContain('PRESIDENT');
+    expect(hote.querySelector('.sidebar-profile .role')?.textContent?.trim()).toBe('Président');
+    // Infobulle d'une entrée déléguée : le profil délégué en clair.
+    expect(hote.querySelector('.sidebar a.nav-item[title]:not([title=""])')?.getAttribute('title')).toMatch(/^Tâche du profil (Contrôleur vérificateur|Assistant contrôleur) — /);
   });
 });

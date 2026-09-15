@@ -147,7 +147,7 @@
         <div class="avatar">{{ initials() }}</div>
         <div class="info">
           <div class="name">{{ displayName() || login() }}</div>
-          <div class="role">{{ role() }}</div>
+          <div class="role">{{ roleLibelle() }}</div>
         </div>
       </div>
     }
@@ -185,7 +185,8 @@
         <span class="topbar-user__avatar">{{ initials() }}</span>
         <span class="topbar-user__meta">
           <span class="topbar-user__name">{{ displayName() || login() }}</span>
-          <span class="profile-badge" [class]="'profile-badge ' + role()">{{ role() }}</span>
+          <!-- La classe garde le code (couleur par profil) ; le texte, lui, est le libellé français. -->
+          <span class="profile-badge" [class]="'profile-badge ' + role()">{{ roleLibelle() }}</span>
         </span>
       </div>
       <button type="button" class="btn btn-outline btn-sm" (click)="motDePasseOuvert.set(true)">

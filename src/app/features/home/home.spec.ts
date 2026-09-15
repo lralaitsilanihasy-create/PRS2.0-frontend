@@ -79,4 +79,15 @@ describe("Accueil — atterrissage sur « À faire », avec repli", () => {
     expect(page.querySelector('.portail-banner app-icone svg')).not.toBeNull();
     expect(/\p{Extended_Pictographic}/u.test(page.textContent ?? '')).toBe(false);
   });
+
+  it("accueil générique : profil et type d'acteur en français, jamais le code brut", () => {
+    const { fixture } = monter('ADMINISTRATEUR', () => of(exempleAFairePresident()));
+    const meta = ((fixture.nativeElement as HTMLElement).querySelector('.home__meta')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    expect(meta).toBe('Profil : Administrateur · Type : Contrôleur · Périmètre : ANT');
+    TestBed.resetTestingModule();
+    // Repli d'un profil du circuit sans atterrissage dédié : l'accueil générique, libellé long.
+    const verif = monter('VERIFICATEUR', () => throwError(() => erreur(404)));
+    verif.fixture.detectChanges();
+    expect((verif.fixture.nativeElement as HTMLElement).querySelector('.home__meta strong')?.textContent).toBe('Contrôleur vérificateur');
+  });
 });

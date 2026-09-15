@@ -4,6 +4,7 @@ import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink, RouterLinkAc
 import { filter, skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { libelleRole } from '../../core/auth/libelles-profils';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -81,16 +82,15 @@ export class MainLayout {
   readonly login = this.auth.login;
   readonly localite = this.auth.localite;
   private readonly permissions = inject(PermissionsService);
-  /** Libellé humain d'un profil délégué (infobulle du marqueur ⤴ du menu). */
-  private static readonly LIBELLES_PROFILS: Partial<Record<Role, string>> = {
-    SECRETAIRE: 'Secrétaire',
-    MEMBRE: 'Membre',
-    VERIFICATEUR: 'Contrôleur vérificateur',
-    ASSISTANT_CONTROLEUR: 'Assistant contrôleur',
-    CHEF_COMMISSION: 'Chef de commission',
-  };
+  /**
+   * Libellé français du profil connecté (pastille de l'en-tête, carte profil de la barre latérale) —
+   * plus jamais le code brut (« CHEF_COMMISSION »), recette du 2026-09-15. Fichier unique :
+   * core/auth/libelles-profils.ts.
+   */
+  readonly roleLibelle = computed(() => libelleRole(this.role()));
+  /** Libellé humain d'un profil délégué (infobulle du marqueur de délégation du menu). */
   delegationLabel(role: Role): string {
-    return MainLayout.LIBELLES_PROFILS[role] ?? role;
+    return libelleRole(role);
   }
   /**
    * Menu du profil, filtré par la DÉLÉGATION ASCENDANTE (spec 2026-08-14) : une entrée portant

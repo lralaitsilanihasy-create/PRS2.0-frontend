@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { LIBELLES_ROLES } from '../../core/auth/libelles-profils';
 import { ToastService } from '../../core/notifications/toast.service';
 import { validerFichier } from '../../core/securite/fichiers-surs';
 import { ACTUALITE_STATUT_LABELS, Actualite, StatutActualite } from '../../models/actualite.model';
@@ -18,18 +19,9 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
  * (400). Une première version portait « PUBLICATION » au lieu de `CHARGE_PUBLICATION` ; le type
  * rend désormais l'erreur impossible à compiler plutôt qu'à découvrir à l'envoi.
  */
-const PROFILS: readonly { id: Role; label: string }[] = [
-  { id: 'PRMP', label: 'PRMP' },
-  { id: 'UGPM', label: 'UGPM' },
-  { id: 'SECRETAIRE', label: 'Secrétaire' },
-  { id: 'PRESIDENT', label: 'Président' },
-  { id: 'CHEF_COMMISSION', label: 'Chef de commission' },
-  { id: 'MEMBRE', label: 'Membre' },
-  { id: 'VERIFICATEUR', label: 'Contrôleur vérificateur' },
-  { id: 'ASSISTANT_CONTROLEUR', label: 'Assistant contrôleur' },
-  { id: 'CHARGE_PUBLICATION', label: 'Chargé de publication' },
-  { id: 'ADMINISTRATEUR', label: 'Administrateur' },
-];
+const PROFILS: readonly { id: Role; label: string }[] = (
+  ['PRMP', 'UGPM', 'SECRETAIRE', 'PRESIDENT', 'CHEF_COMMISSION', 'MEMBRE', 'VERIFICATEUR', 'ASSISTANT_CONTROLEUR', 'CHARGE_PUBLICATION', 'ADMINISTRATEUR'] as const
+).map((id) => ({ id, label: LIBELLES_ROLES[id] })); // libellés : fichier unique core/auth/libelles-profils.ts
 
 /** JPEG uniquement (spec) ; 10 Mo — le serveur redimensionne ensuite pour l'affichage. */
 const TYPES_IMAGE = ['image/jpeg'] as const;
