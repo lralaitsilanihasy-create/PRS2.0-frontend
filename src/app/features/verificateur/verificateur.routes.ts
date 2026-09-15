@@ -22,7 +22,9 @@ export const VERIFICATEUR_ROUTES: Routes = [
     loadComponent: () => import('../circuit/dossiers-clotures').then((m) => m.DossiersClotures),
     data: { title: 'Dossiers vérifiés / clôturés', source: 'verifies' },
   },
-  { path: 'verifier/:idDossier', loadComponent: () => import('./verifier-dossier').then((m) => m.VerifierDossier) },
+  // Refonte ergonomique (2026-09-15) — mode « concentration », comme l'examen : la barre latérale se range en
+  // tiroir et le plan de passation retrouve sa largeur (fluide, sans défilement horizontal à 1366 px).
+  { path: 'verifier/:idDossier', loadComponent: () => import('./verifier-dossier').then((m) => m.VerifierDossier), data: { title: 'Vérifier un dossier', concentration: true } },
   // Retiré du menu (demande user 2026-08-04) : redondant avec « À vérifier ». Route conservée.
   { path: 'en-attente-prmp', loadComponent: () => import('./en-attente-prmp').then((m) => m.EnAttentePrmp) },
   { path: 'messagerie', loadComponent: () => import('../transverse/messagerie').then((m) => m.Messagerie) },

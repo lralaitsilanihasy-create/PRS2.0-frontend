@@ -209,9 +209,10 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
 
             @if (ongletDossier() === 'ppm') {
               <!-- ⚠️ 2026-09-14 (décision des chefs) — documents officiels dans leur feuille ; statut et
-                   versionnement en annotations, masquables (interrupteur commun aux onglets). -->
+                   versionnement en annotations, masquables (interrupteur commun aux onglets).
+                   Embarquée (vérification), l'en-tête du plan reste collant dans le panneau hôte qui défile. -->
               <div class="dc-section">
-                <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc">
+                <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc" [class.doc-entete-collante]="embedded()">
                   <app-ppm-marches-table [marches]="marches()" [beneficiaires]="serviceBenefs()" [previsions]="previsions()" [changements]="changements()" [legendeTitre]="legendeChangements()" [detailsChangements]="detailsChangements()" />
                 </app-document-visionneuse>
               </div>
@@ -556,9 +557,11 @@ import { VueVersionArchivee, vueVersionArchivee } from './version-archivee-vue';
     }
     /* ⚠️ Embarquée (seul l'écran Vérificateur) : le corps NE crée PAS son propre contexte de
        défilement — c'est le panneau HÔTE (borné, .vf__details) qui porte l'ascenseur, sinon l'en-tête
-       collant du tableau (variante ppm-table-large) s'accrocherait à ce corps-ci et disparaîtrait au
-       défilement de l'hôte. */
+       collant du plan (.doc-entete-collante) s'accrocherait à ce corps-ci et disparaîtrait au
+       défilement de l'hôte. Marges resserrées (2026-09-15) : la largeur va au document. */
     .dc--embedded .dc-body { overflow: visible; }
+    .dc--embedded .dc-header { padding: 14px 16px 12px; }
+    .dc--embedded .dc-section { padding: 12px 16px; }
 
     /* En-tête */
     .dc-header { padding: 18px 24px 16px; border-bottom: 0.5px solid var(--n-200); flex-shrink: 0; }

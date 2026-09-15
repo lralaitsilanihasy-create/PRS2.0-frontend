@@ -78,7 +78,7 @@ interface Echange {
         <p class="text-muted">Dossier introuvable ou hors de votre périmètre.</p>
       } @else {
         <div class="vf__grid">
-          <div class="card vf__details ppm-table-large">
+          <div class="card vf__details">
             <app-dossier-consultation [dossier]="dossier()!" [embedded]="true" />
           </div>
 
@@ -295,13 +295,16 @@ interface Echange {
   `,
   styles: `
     /* « Aucune action sans prise en charge » (2026-09-04). */
-    /* ⚠️ 2026-08-06 — à gauche la consultation du dossier (tableau des marchés, 14 colonnes), à droite
-       le panneau de décision : la part du dossier passe de 1,3 à 1,9 pour que ses en-têtes respirent. */
-    .vf__grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 0.75rem; align-items: start; }
-    /* ⚠️ Demande pilote (2026-09-07) — le tableau du plan est trop serré dans la colonne : la variante
-       globale « ppm-table-large » lui rend une largeur lisible (min-width, en-tête collant), et l'hôte
-       borné porte les deux ascenseurs. Les cartes de droite sont FIGÉES (sticky) : Contexte + décision
-       restent visibles pendant qu'on parcourt le tableau. */
+    /* ⚠️ Refonte ergonomique (2026-09-15, recette) — à gauche la consultation du dossier, à droite le
+       panneau de décision, à LARGEUR FIXE (22 rem, comme la grille de l'examen) : tout le reste va au
+       document. Avec le mode « concentration » de la route (barre latérale en tiroir), le plan de
+       passation est FLUIDE — ses 13 colonnes tiennent sans défilement horizontal à 1366 px comme à
+       1536 px ; la variante provisoire « ppm-table-large » (largeur minimale, plan qui défilait dans le
+       panneau) est retirée. */
+    .vf__grid { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 0.75rem; align-items: start; }
+    /* ⚠️ Demande pilote (2026-09-07) — l'hôte borné porte l'ascenseur VERTICAL et l'en-tête du plan y
+       reste collant ; les cartes de droite sont FIGÉES (sticky) : Contexte + décision restent visibles
+       pendant qu'on parcourt le tableau. */
     .vf__details { max-height: calc(100vh - 14rem); overflow: auto; }
     .vf__right { display: flex; flex-direction: column; gap: 0.75rem; position: sticky; top: 0.75rem; align-self: start; }
     /* ⚠️ 2026-09-08 (demande pilote) — la carte de passage ÉPOUSE son contenu : PAS de défilement
@@ -345,8 +348,10 @@ interface Echange {
     .confirm-modal { max-width: 30rem; }
     @media (max-width: 60rem) {
       .vf__grid { grid-template-columns: 1fr; }
-      /* Empilé : plus de hauteur bornée ni de sticky sur la colonne (la PAGE défile). */
-      .vf__details, .vf__right { max-height: none; overflow: visible; position: static; }
+      /* Empilé : la colonne de décision n'est plus figée (la PAGE défile) ; le document garde son
+         panneau borné, pour que l'en-tête collant du plan reste accroché à lui (comme l'examen). */
+      .vf__details { max-height: 70vh; }
+      .vf__right { position: static; }
     }
   `,
 })

@@ -28,8 +28,9 @@
 }
 
 /* ⚠️ 2026-09-14 — la variante « .ppm-table-large » (hôtes à panneau latéral : examen, vérification)
-   ne visait que le tableau des marchés en lecture, devenu le document officiel : elle vit désormais
-   dans _document-officiel.scss. Les tableaux de SAISIE (grille, mise à jour) gardent ce fichier. */
+   ne visait que le tableau des marchés en lecture, devenu le document officiel ; passée dans
+   _document-officiel.scss, elle y a disparu le 2026-09-15 (plan fluide partout). Les tableaux de
+   SAISIE (grille, mise à jour) gardent ce fichier. */
 
 .ppm-table {
   width: 100%;

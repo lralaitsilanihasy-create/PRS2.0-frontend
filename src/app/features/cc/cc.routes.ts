@@ -67,7 +67,7 @@ export const CC_ROUTES: Routes = [
   // — Délégation ascendante : tâches des subordonnés exercées DANS cet espace (paires en base). —
   { path: 'examiner/:idDossier', loadComponent: () => import('../membre/examen-dossier').then((m) => m.ExamenDossier), data: { title: 'Examiner un dossier', concentration: true }, canDeactivate: [sortieProtegeeGuard] },
   { path: 'verifications', loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline), data: { title: 'Dossiers à vérifier', timeline: false, source: 'a-verifier', verifAction: true } },
-  { path: 'verifier/:idDossier', loadComponent: () => import('../verificateur/verifier-dossier').then((m) => m.VerifierDossier) },
+  { path: 'verifier/:idDossier', loadComponent: () => import('../verificateur/verifier-dossier').then((m) => m.VerifierDossier), data: { title: 'Vérifier un dossier', concentration: true } },
   { path: 'en-attente-prmp', loadComponent: () => import('../verificateur/en-attente-prmp').then((m) => m.EnAttentePrmp) },
   { path: 'pv-examens', loadComponent: () => import('../circuit/pv-assistant').then((m) => m.PvAssistant) },
   { path: 'pv-examens/:idPv', loadComponent: () => import('../circuit/pv-assistant').then((m) => m.PvAssistant) },

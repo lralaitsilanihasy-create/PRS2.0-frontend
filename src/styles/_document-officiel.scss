@@ -22,8 +22,8 @@
 
    Écrans cibles : portables 15 pouces — 1366×768 à 100 %, ou 1536×864 à 125 % (1229 px CSS).
    Le tableau est FLUIDE : `table-layout: fixed` + largeurs en %, texte qui revient à la ligne, pas
-   de zoom par transformation. Seule exception, provisoire : les hôtes à panneau latéral
-   (.ppm-table-large, en bas de fichier).
+   de zoom par transformation. Plus d'exception depuis le 2026-09-15 : la vérification, dernier hôte
+   à panneau latéral qui faisait défiler le plan (.ppm-table-large), est passée au plan fluide.
 
    Contrastes vérifiés (WCAG AA) : texte ≥ 4,5:1, formes porteuses de sens ≥ 3:1 — valeurs en regard.
    ══════════════════════════════════════════════════════════════════════════════════════════════ */
@@ -610,48 +610,11 @@ app-document-visionneuse {
   }
 }
 
-/* ── Hôtes à panneau latéral (.ppm-table-large : vérification) ─────────────────────────────── */
+/* ── Document fluide dans une zone défilante (examen refondu, lot 2 ; vérification) ────────── */
 
-/* ⚠️ PROVISOIRE (2026-09-14) — dans ces écrans, le document partage la largeur avec un panneau de
-   décision : à 1366 px il ne reste que ~700 px, où 13 colonnes fluides deviennent illisibles. En
-   attendant la refonte de ces écrans (lots suivants), le plan garde une largeur lisible et DÉFILE
-   dans le panneau hôte (demandes pilote 02/09 et 07/09) : la feuille et la visionneuse s'élargissent
-   avec lui. L'en-tête du tableau reste collant pendant le défilement vertical.
-   L'examen du Membre n'en dépend plus depuis sa refonte (lot 2) : mode concentration et grille
-   repliable lui rendent la largeur, le plan y reste fluide (classe .doc-entete-collante). */
-.ppm-table-large .doc-visionneuse,
-.ppm-table-large .doc-feuille {
-  width: fit-content;
-  min-width: 100%;
-  box-sizing: border-box;
-}
-/* 76rem : le plan y garde la largeur qu'il a dans la consultation plein écran à 1366 px (table
-   ≈ 1100 px, gouttières comprises). */
-.ppm-table-large .doc-ppm {
-  min-width: 76rem;
-}
-.ppm-table-large .doc-table--ppm thead {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-}
-@media (max-width: 75rem) {
-  .ppm-table-large .doc-visionneuse,
-  .ppm-table-large .doc-feuille {
-    width: auto;
-  }
-  .ppm-table-large .doc-ppm {
-    min-width: 0;
-  }
-  .ppm-table-large .doc-table--ppm thead {
-    position: static;
-  }
-}
-
-/* ── Document fluide dans une zone défilante (examen refondu, lot 2) ───────────────────────── */
-
-/* L'en-tête du plan reste collant pendant le défilement vertical de la zone document, sans
-   largeur imposée : le tableau suit la largeur disponible (aucun défilement horizontal). */
+/* L'en-tête du plan reste collant pendant le défilement vertical de la zone document (examen) ou du
+   panneau hôte (vérification, consultation embarquée), sans largeur imposée : le tableau suit la
+   largeur disponible (aucun défilement horizontal). */
 .doc-entete-collante .doc-table--ppm thead {
   position: sticky;
   top: 0;
