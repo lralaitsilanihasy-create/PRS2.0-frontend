@@ -2,9 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, output, signal } 
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { ESPACES_A_FAIRE } from '../../core/navigation/navigation';
 import { routePourNotification } from '../../core/notifications/notification-route';
 import { NotificationsStore } from '../../core/notifications/notifications.store';
-import { Dossier, Notification } from '../../models';
+import { Dossier, Notification, Role } from '../../models';
 import { DossierService, NotificationService } from '../../services';
 import { Icone } from '../../shared/ui/icone';
 
@@ -17,10 +18,14 @@ const MESSAGERIE_ROLES: Record<string, string> = {
 };
 
 /**
- * Centre de notifications commun à tous les profils : cloche + compteur de non-lues
- * et panneau listant « mes » notifications (scopées serveur via /mes). Au clic : marquage
- * lu + ouverture de l'élément (dossier → `voirDossier` émis, le LAYOUT rend la modale hors
- * topbar ; message → messagerie si le profil en dispose). Le backend reste l'autorité.
+ * Centre de notifications commun à tous les profils : cloche + compteur de non-lues et panneau
+ * listant « mes » notifications (scopées serveur via /mes). Au clic : marquage lu + ouverture de
+ * l'écran d'action (`routePourNotification`). Le backend reste l'autorité.
+ *
+ * ⚠️ Lot L5-F6 (2026-09-16) — une notification qui ne mène NULLE PART n'est plus un bouton : elle
+ * porte la mention et n'émet aucune requête (voir `lignes`). Le repli par la modale de consultation
+ * (`voirDossier`, rendu par le LAYOUT hors topbar) reste en place pour un profil qui aurait un
+ * dossier à consulter sans route dédiée — aucun aujourd'hui.
  */
 @Component({
   selector: 'app-notification-center',
@@ -53,12 +58,26 @@ const MESSAGERIE_ROLES: Record<string, string> = {
             @if (loading()) {
               <p class="notif__info" role="status">Chargement…</p>
             } @else {
-              @for (n of notifs(); track n.idNotification) {
-                <button type="button" class="notif__item" [class.notif__item--unread]="!n.lu" (click)="ouvrir(n)">
-                  <span class="notif__item-title">{{ n.titre || n.typeNotif }}</span>
-                  @if (n.corps) { <span class="notif__item-corps">{{ n.corps }}</span> }
-                  <span class="notif__item-date cnm-mono">{{ formatDate(n.dateEnvoi) }}</span>
-                </button>
+              @for (l of lignes(); track l.n.idNotification) {
+                @if (l.sansEcran) {
+                  <!-- ⚠️ Lot 5, F6 (2026-09-16) — notification SANS écran d'action pour ce profil :
+                       ni bouton, ni requête. Le clic allait chercher le dossier, le serveur refusait
+                       au Chargé de publication et à l'Administrateur, et la branche d'erreur était
+                       vide : il ne se passait rien, sans un mot. La ligne reste lisible et le dit.
+                       Ce n'est pas un bouton : une commande qui n'agit pas n'en est pas une. -->
+                  <div class="notif__item notif__item--inerte" [class.notif__item--unread]="!l.n.lu">
+                    <span class="notif__item-title">{{ l.n.titre || l.n.typeNotif }}</span>
+                    @if (l.n.corps) { <span class="notif__item-corps">{{ l.n.corps }}</span> }
+                    <span class="notif__item-note">{{ l.mention }}</span>
+                    <span class="notif__item-date cnm-mono">{{ formatDate(l.n.dateEnvoi) }}</span>
+                  </div>
+                } @else {
+                  <button type="button" class="notif__item" [class.notif__item--unread]="!l.n.lu" (click)="ouvrir(l.n)">
+                    <span class="notif__item-title">{{ l.n.titre || l.n.typeNotif }}</span>
+                    @if (l.n.corps) { <span class="notif__item-corps">{{ l.n.corps }}</span> }
+                    <span class="notif__item-date cnm-mono">{{ formatDate(l.n.dateEnvoi) }}</span>
+                  </button>
+                }
               } @empty {
                 <p class="notif__info">Aucune notification.</p>
               }
@@ -88,6 +107,10 @@ const MESSAGERIE_ROLES: Record<string, string> = {
     .notif__item:last-child { border-bottom: 0; }
     .notif__item:hover { background: var(--cnm-surface-2); }
     .notif__item--unread { background: var(--cnm-info-bg); box-shadow: inset 3px 0 0 var(--cnm-brand); }
+    /* Ligne inerte : même gabarit, mais ni curseur ni survol — rien n'y invite au clic. */
+    .notif__item--inerte { cursor: default; }
+    .notif__item--inerte:hover { background: inherit; }
+    .notif__item-note { color: var(--cnm-text-2); font-size: var(--cnm-fs-xs); font-style: italic; }
     .notif__item-title { font-weight: var(--cnm-fw-medium); color: var(--cnm-text); font-size: var(--cnm-fs-sm); }
     .notif__item-corps { color: var(--cnm-text-2); font-size: var(--cnm-fs-xs); }
     .notif__item-date { color: var(--cnm-text-3); font-size: var(--cnm-fs-micro); }
@@ -104,6 +127,32 @@ export class NotificationCenter {
 
   readonly open = signal(false);
   readonly notifs = signal<Notification[]>([]);
+  /**
+   * Les notifications, chacune sachant si elle mène quelque part (lot L5-F6, 2026-09-16).
+   *
+   * Une notification n'a AUCUN écran d'action quand `routePourNotification` ne rend rien ET qu'il
+   * n'y a pas de page du dossier où se replier — c'est le cas du Chargé de publication et de
+   * l'Administrateur, absents d'`ESPACES_A_FAIRE`, et celui d'une notification sans objet.
+   * Jusqu'ici le clic partait quand même chercher le dossier : le serveur refusait, la branche
+   * d'erreur était vide, il ne se passait rien et rien ne le disait (un « 403 silencieux »).
+   */
+  readonly lignes = computed(() =>
+    this.notifs().map((n) => {
+      const sansEcran =
+        routePourNotification(n, this.auth.role()) === null &&
+        (n.idDossier == null || this.sansPageDossier());
+      return {
+        n,
+        sansEcran,
+        mention:
+          n.idDossier != null
+            ? 'Aucun écran dédié à votre profil pour ce dossier.'
+            : 'Aucun écran dédié à votre profil.',
+      };
+    }),
+  );
+  /** Profils sans page du dossier en v1 : `ESPACES_A_FAIRE` fait foi (Admin, Chargé de publication). */
+  private readonly sansPageDossier = computed(() => !ESPACES_A_FAIRE[(this.auth.role() ?? '') as Role]);
   /** ⚠️ Temps réel (2026-08-02) — compteur SERVEUR partagé (SSE + repli polling + synchro onglets). */
   readonly count = computed(() => this.store.count());
   readonly loading = signal(false);

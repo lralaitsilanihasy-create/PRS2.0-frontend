@@ -4,9 +4,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { ESPACES_A_FAIRE } from '../../core/navigation/navigation';
 import { routePourNotification } from '../../core/notifications/notification-route';
 import { NotificationsStore } from '../../core/notifications/notifications.store';
-import { Dossier, Notification } from '../../models';
+import { Dossier, Notification, Role } from '../../models';
 import { DossierService, NotificationService } from '../../services';
 import { DossierConsultation } from '../circuit/dossier-consultation';
 
@@ -33,9 +34,14 @@ interface GroupeJour {
  * à chaque action.
  *
  * ⚠️ Lot L4-F6 (2026-09-16) : le repli « consultation » d'un type non mappé mène à la PAGE du dossier
- * pour les huit profils du circuit ; l'Administrateur et le Chargé de publication, qui n'ont pas la
- * page en v1, gardent la modale. Les deux filtres vivent dans l'URL (`?lu=`, `?type=`) : ils partent
- * dans `returnUrl` et la liste se retrouve telle qu'on l'a quittée.
+ * pour les huit profils du circuit. Les deux filtres vivent dans l'URL (`?lu=`, `?type=`) : ils
+ * partent dans `returnUrl` et la liste se retrouve telle qu'on l'a quittée.
+ *
+ * ⚠️ Lot L5-F6 (2026-09-16) : l'Administrateur et le Chargé de publication, qui n'ont pas la page du
+ * dossier en v1, ne gardent PLUS la modale de consultation — le serveur leur refusait le dossier et
+ * le refus était avalé. Leur notification reste lisible, cesse d'être un bouton et le dit
+ * (cf. `sansEcran`). La modale demeure pour un profil qui aurait un dossier consultable sans route
+ * dédiée : aucun aujourd'hui.
  */
 @Component({
   selector: 'app-notifications-page',
@@ -77,14 +83,30 @@ interface GroupeJour {
           <ul class="np__liste">
             @for (n of g.notifs; track n.idNotification) {
               <li class="np__item" [class.np__item--nonlu]="!n.lu">
-                <button type="button" class="np__corps" (click)="ouvrir(n)">
-                  <span class="np__titre">
-                    @if (!n.lu) { <span class="np__point" aria-hidden="true"></span> }
-                    {{ n.titre || n.typeNotif }}
-                  </span>
-                  @if (n.corps) { <span class="np__texte">{{ n.corps }}</span> }
-                  <span class="np__meta cnm-mono">{{ heure(n.dateEnvoi) }}</span>
-                </button>
+                @if (sansEcran(n)) {
+                  <!-- ⚠️ Lot 5, F6 (2026-09-16) — aucune destination pour ce profil : ni bouton, ni
+                       requête. Le clic partait chercher le dossier, le serveur refusait au Chargé de
+                       publication et à l'Administrateur, la branche d'erreur était vide : il ne se
+                       passait rien, sans un mot. La ligne le dit, et reste marquable lue à droite. -->
+                  <div class="np__corps np__corps--inerte">
+                    <span class="np__titre">
+                      @if (!n.lu) { <span class="np__point" aria-hidden="true"></span> }
+                      {{ n.titre || n.typeNotif }}
+                    </span>
+                    @if (n.corps) { <span class="np__texte">{{ n.corps }}</span> }
+                    <span class="np__note">{{ mentionSansEcran(n) }}</span>
+                    <span class="np__meta cnm-mono">{{ heure(n.dateEnvoi) }}</span>
+                  </div>
+                } @else {
+                  <button type="button" class="np__corps" (click)="ouvrir(n)">
+                    <span class="np__titre">
+                      @if (!n.lu) { <span class="np__point" aria-hidden="true"></span> }
+                      {{ n.titre || n.typeNotif }}
+                    </span>
+                    @if (n.corps) { <span class="np__texte">{{ n.corps }}</span> }
+                    <span class="np__meta cnm-mono">{{ heure(n.dateEnvoi) }}</span>
+                  </button>
+                }
                 <div class="np__actions">
                   @if (n.lu) {
                     <button type="button" class="btn btn-outline btn-sm" (click)="basculerLu(n, false)">Marquer non lue</button>
@@ -130,6 +152,9 @@ interface GroupeJour {
     .np__item:hover { border-color: var(--p-200); box-shadow: var(--shadow-sm); }
     .np__item--nonlu { background: var(--p-50, #eff6ff); border-left: 4px solid var(--p-500, #3b82f6); }
     .np__corps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; background: transparent; border: 0; cursor: pointer; padding: 0.6rem 0 0.6rem 0.9rem; font: inherit; color: inherit; }
+    /* Ligne sans destination : même gabarit, mais rien n'y invite au clic (lot L5-F6). */
+    .np__corps--inerte { cursor: default; }
+    .np__note { color: var(--n-500); font-size: var(--text-sm); font-style: italic; }
     .np__titre { font-weight: 700; color: var(--n-800); display: inline-flex; align-items: center; gap: 0.45rem; }
     .np__point { width: 0.55rem; height: 0.55rem; border-radius: 999px; background: var(--p-500, #3b82f6); flex: none; }
     .np__texte { color: var(--n-600); font-size: var(--text-sm); }
@@ -235,6 +260,32 @@ export class NotificationsPage {
   private retour(): string {
     const parametres = [this.filtreLu() === 'non-lues' ? 'lu=non-lues' : '', this.filtreType() ? `type=${encodeURIComponent(this.filtreType() as string)}` : ''].filter(Boolean);
     return `/notifications${parametres.length ? `?${parametres.join('&')}` : ''}`;
+  }
+
+  /**
+   * Notification SANS écran d'action pour le profil connecté (lot L5-F6, 2026-09-16) : aucune route
+   * dédiée, et aucune page du dossier où se replier. C'est le cas du Chargé de publication et de
+   * l'Administrateur — absents d'`ESPACES_A_FAIRE`, ils n'ont pas la page en v1 — et celui d'une
+   * notification sans objet, pour n'importe quel profil.
+   *
+   * Jusqu'ici la ligne était un bouton : le clic lançait `GET /api/dossiers/{id}`, le serveur
+   * refusait, `error: () => {}` avalait le refus. Rien ne s'ouvrait et rien ne le disait — le
+   * « 403 silencieux » du §6b du plan. Désormais la ligne n'est plus un bouton et n'appelle rien ;
+   * elle porte la mention. Pour les huit profils du circuit, rien ne change : le repli du lot L4-F6
+   * (la page du dossier) répond toujours, donc `routePourNotification` rend une cible.
+   */
+  sansEcran(n: Notification): boolean {
+    const sansPageDossier = !ESPACES_A_FAIRE[(this.auth.role() ?? '') as Role];
+    return (
+      routePourNotification(n, this.auth.role()) === null && (n.idDossier == null || sansPageDossier)
+    );
+  }
+
+  /** Mention affichée à la place de l'action ; elle nomme le dossier quand il y en a un. */
+  mentionSansEcran(n: Notification): string {
+    return n.idDossier != null
+      ? 'Aucun écran dédié à votre profil pour ce dossier.'
+      : 'Aucun écran dédié à votre profil.';
   }
 
   /**
