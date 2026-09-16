@@ -105,7 +105,9 @@ pousse('Recherche — saisie', 4.5, '#1a1d2e', N100, '#1a1d2e', N100);
 pousse('Nom de l’utilisateur', 4.5, '#1a1d2e', '#ffffff', '#1a1d2e', '#ffffff');
 pousse('Cloche de notifications', 3, '#34405a', '#ffffff', '#34405a', '#ffffff');
 pousse('Repère de focus sur la barre du haut', 3, '#38bdf8', '#ffffff', '#0369a1', '#ffffff');
-pousse('Repère de focus dans la pilule de recherche', 3, '#38bdf8', N100, '#0369a1', N100);
+pousse('Repère de focus sur la cloche', 3, '#38bdf8', '#ffffff', '#0369a1', '#ffffff');
+// Le champ de recherche pose `outline: none` : son seul repère de focus est la bordure de la pilule.
+pousse('Bordure de la recherche au focus', 3, '#38bdf8', '#ffffff', '#0369a1', '#ffffff');
 
 // ── Sortie ────────────────────────────────────────────────────────────────────
 const f = (v) => (Number.isNaN(v) ? '—' : `${v.toFixed(2).replace('.', ',')}:1`);

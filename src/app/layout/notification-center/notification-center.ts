@@ -96,6 +96,10 @@ const MESSAGERIE_ROLES: Record<string, string> = {
   styles: `
     .notif { position: relative; display: inline-flex; }
     .notif__bell { position: relative; display: inline-flex; background: transparent; border: 0; cursor: pointer; line-height: 1; padding: 4px; color: #34405a; }
+    /* ⚠️ 2026-09-16 (recette clavier du lot 5) — le repère de focus global (--p-400) ne tient que
+       2,14:1 sur le blanc de la barre du haut. La règle .topbar de la coquille ne traverse pas
+       l'encapsulation de ce composant : la cloche recolore son contour elle-même (5,93:1). */
+    .notif__bell:focus-visible { outline-color: var(--p-700); }
     .notif__badge { position: absolute; top: -2px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--cnm-danger-fg); color: #fff; font-size: 10px; font-weight: var(--cnm-fw-semibold); display: flex; align-items: center; justify-content: center; }
     .notif__backdrop { position: fixed; inset: 0; z-index: 1040; }
     .notif__panel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 1041; width: 22rem; max-width: 90vw; max-height: 70vh; overflow: auto; background: var(--cnm-surface); border: 1px solid var(--cnm-border); border-radius: var(--cnm-radius); box-shadow: var(--cnm-shadow); }

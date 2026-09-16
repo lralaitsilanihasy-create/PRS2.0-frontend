@@ -105,10 +105,13 @@
   border-radius: var(--radius-full);
   transition: var(--transition);
 
+  /* ⚠️ 2026-09-16 (recette clavier du lot 5) — le champ pose `outline: none` : son SEUL repère de
+     focus est cette bordure. À `--p-400` elle ne tenait que 2,14:1 sur le blanc de la barre du haut,
+     c'est-à-dire presque rien. `--p-700` la porte à 5,93:1, et le halo s'épaissit d'autant. */
   &:focus-within {
     background: #fff;
-    border-color: var(--p-400);
-    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+    border-color: var(--p-700);
+    box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.18);
   }
 }
 
