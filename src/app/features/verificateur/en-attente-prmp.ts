@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -12,7 +13,7 @@ import {
   VerificationService,
 } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
-import { DossierConsultation } from '../circuit/dossier-consultation';
+import { LienDossier } from '../circuit/page-dossier/lien-dossier';
 
 /** Une ligne d'historique : observation envoyée par le vérificateur ou rectification reçue de la PRMP. */
 interface Echange {
@@ -32,11 +33,15 @@ interface CarteAttente {
  * des échanges : observations envoyées (GET /api/verifications — `observation`/`dateVerif` ; la notif
  * `OBSERVATION_VERIFICATION` est adressée à la PRMP, pas au vérificateur) et rectifications reçues
  * (notifications `RECTIFICATION_PRMP`). Aucune action (le dossier est verrouillé côté vérificateur).
+ *
+ * Lot L4-F6 : la référence de chaque carte et « Voir détails » sont des liens vers la page du dossier
+ * (`/<espace>/dossier/:id?returnUrl=…`) — un Ctrl+clic ouvre un onglet, la modale de consultation
+ * quitte l'écran. Rien ici ne vit hors de l'URL : le retour rend la liste inchangée.
  */
 @Component({
   selector: 'app-en-attente-prmp',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation],
+  imports: [StatutBadge, RouterLink],
   template: `
     <section class="ep">
       <header class="ep__header">
@@ -56,7 +61,10 @@ interface CarteAttente {
           @for (c of cartes(); track c.dossier.idDossier) {
             <li class="cnm-card ep__item">
               <div class="ep__item-head">
-                <span class="ep__ref">{{ c.dossier.refeDossier || ('Dossier #' + c.dossier.idDossier) }} · {{ entiteLabel(c.dossier) }}</span>
+                <span class="ep__ref">
+                  <a [routerLink]="lien.commandes(c.dossier.idDossier)" [queryParams]="lien.params()">{{ c.dossier.refeDossier || ('Dossier #' + c.dossier.idDossier) }}</a>
+                  · {{ entiteLabel(c.dossier) }}
+                </span>
                 <!-- ⚠️ Rattachements (2026-09-01) — CIBLAGE seulement : null (chaîne incomplète) = rien. -->
                 @if (cible(c.dossier); as ci) {
                   <span class="ep__cible" [class.ep__cible--moi]="ci.moi">
@@ -64,9 +72,9 @@ interface CarteAttente {
                   </span>
                 }
                 <app-statut-badge [statut]="c.dossier.statut" [label]="'À rectifier'" />
-                <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm ep__details" (click)="consulte.set(c.dossier)">
+                <a class="cnm-btn cnm-btn--ghost cnm-btn--sm ep__details" [routerLink]="lien.commandes(c.dossier.idDossier)" [queryParams]="lien.params()">
                   Voir détails
-                </button>
+                </a>
               </div>
 
               <div class="ep__hist">
@@ -98,9 +106,6 @@ interface CarteAttente {
       }
     </section>
 
-    @if (consulte(); as d) {
-      <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
-    }
   `,
   styles: `
     .ep__header { margin-bottom: var(--cnm-space-3); }
@@ -110,6 +115,9 @@ interface CarteAttente {
     .ep__item { padding: var(--cnm-space-3) var(--cnm-space-4); }
     .ep__item-head { display: flex; align-items: center; gap: var(--cnm-space-2); }
     .ep__ref { font-weight: var(--cnm-fw-semibold); }
+    /* Lot L4-F6 : la référence mène à la page du dossier — souligné au survol seulement. */
+    .ep__ref a { color: inherit; text-decoration: none; }
+    .ep__ref a:hover, .ep__ref a:focus-visible { text-decoration: underline; }
     /* Badge de ciblage (rattachements) : discret pour un collègue, accentué pour « les miens ». */
     .ep__cible {
       font-size: var(--cnm-fs-micro);
@@ -144,10 +152,11 @@ export class EnAttentePrmp {
   private readonly notificationService = inject(NotificationService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly auth = inject(AuthService);
+  /** Lot L4-F6 : lien vers la page du dossier, retour vers cet écran. */
+  protected readonly lien = inject(LienDossier);
 
   readonly loading = signal(true);
   readonly cartes = signal<CarteAttente[]>([]);
-  readonly consulte = signal<Dossier | null>(null);
   private readonly entiteMap = signal<Map<string, string>>(new Map());
 
   constructor() {
