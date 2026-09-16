@@ -11,7 +11,7 @@ import { Dossier, Reception } from '../../models';
 import { DossierService, EntiteContractService, LocaliteService, ReceptionService, ReferenceLookupService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { StatutBadge } from '../../shared/circuit';
-import { DossierConsultation } from '../circuit/dossier-consultation';
+import { LienDossier } from '../circuit/page-dossier/lien-dossier';
 import { CompleterPiecesDepotModal } from './completer-pieces-depot-modal';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
@@ -23,11 +23,14 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
  * ⚠️ 2026-09-13 : colonne Statut RÉINTRODUITE (le pilote revient sur le choix du 2026-09-06 de n'y
  * mettre que des dates) ; colonne Actions RÉTABLIE avec des actions contextuelles (Rectifier / Soumettre) ;
  * le tableau porte désormais TOUS les dossiers de la PRMP, brouillons et à-rectifier compris.
+ *
+ * Lot L4-F6 : la ligne mène à la PAGE du dossier (`/prmp/dossier/:id`) ; la modale de consultation
+ * quitte l'écran. Aucun filtre ni pagination ici : le retour rend la liste inchangée.
  */
 @Component({
   selector: 'app-suivi-delais',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, RouterLink, EtatErreur, StatutBadge, DossierConsultation, CompleterPiecesDepotModal],
+  imports: [DatePipe, RouterLink, EtatErreur, StatutBadge, CompleterPiecesDepotModal],
   template: `
     <section>
       <header class="page-header">
@@ -64,9 +67,10 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
             <tbody>
               @for (d of dossiers(); track d.idDossier) {
                 <tr class="ligne-clic" [class.cnm-row-cloture]="d.datesEtapes?.['CLOTURE']">
-                  <!-- Ligne cliquable : la référence est un vrai bouton (nom accessible + clavier) dont
-                       la zone cliquable est étendue à la ligne (overlay ::after) — pas de (click) sur <tr>. -->
-                  <td><button type="button" class="lien-ligne" (click)="consulte.set(d)">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</button></td>
+                  <!-- Ligne cliquable : la référence est un vrai lien (nom accessible + clavier, Ctrl+clic
+                       = nouvel onglet) dont la zone cliquable est étendue à la ligne (overlay ::after) —
+                       pas de (click) sur <tr>. Lot L4-F6 : il mène à la PAGE du dossier. -->
+                  <td><a class="lien-ligne" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params()">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</a></td>
                   <!-- Type de dossier en CODE concis (sous-type de la référence, ex. PPM-AGPM ; repli famille). -->
                   <td>{{ typeDossierLabel(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
@@ -126,9 +130,6 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       }
     </section>
 
-    @if (consulte(); as d) {
-      <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
-    }
     @if (completer(); as d) {
       <app-completer-pieces-depot-modal [dossier]="d" (transmis)="onComplementsTransmis()" (fermer)="completer.set(null)" />
     }
@@ -139,7 +140,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
        cliquable est ÉTENDUE à toute la ligne via un overlay ::after ; pas de (click) sur <tr>. */
     .table-card table tr.ligne-clic { position: relative; cursor: pointer; }
     .table-card table tr.ligne-clic:hover td { background: var(--n-50); }
-    .lien-ligne { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+    .lien-ligne { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; text-decoration: none; }
     .lien-ligne::after { content: ''; position: absolute; inset: 0; }
     /* Les boutons d'action passent AU-DESSUS de l'overlay → cliquables indépendamment du clic-ligne. */
     .table-card table tr.ligne-clic .btn { position: relative; z-index: 1; }
@@ -153,6 +154,8 @@ export class SuiviDelais {
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly auth = inject(AuthService);
   private readonly lookups = inject(ReferenceLookupService);
+  /** Lot L4-F6 : lien vers la page du dossier, retour vers ce suivi. */
+  protected readonly lien = inject(LienDossier);
   /** Libellés d'entité contractante / localité (cache partagé) — colonnes du tableau, sans appel par ligne. */
   private readonly entiteMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
@@ -173,8 +176,6 @@ export class SuiviDelais {
   private readonly tous = signal<Dossier[]>([]);
   /** Réception INITIALE par dossier (premier passage du Secrétaire). */
   private readonly receptions = signal<Map<number, Reception>>(new Map());
-  /** Dossier ouvert en consultation lecture seule (null = fermé). */
-  readonly consulte = signal<Dossier | null>(null);
   /** Dossier ouvert dans le modal « Compléter les pièces » (EN_ATTENTE_COMPLEMENTS_DEPOT ; null = fermé). */
   readonly completer = signal<Dossier | null>(null);
 
