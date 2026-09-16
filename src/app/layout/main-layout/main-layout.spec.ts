@@ -13,6 +13,8 @@ import { ActualiteService } from '../../services/actualite.services';
 import { KpiService } from '../../services';
 import { BadgesMenu, Role } from '../../models';
 import { NAV_BY_ROLE } from '../../core/navigation/navigation';
+import { libelleCourt } from '../../core/navigation/groupes-menu';
+import { MenuCompactStore } from '../../core/preferences/menu-compact.store';
 import { MainLayout, routeEnConcentration } from './main-layout';
 
 @Component({ selector: 'app-ecran-factice', template: '<h1>Écran</h1>' })
@@ -526,5 +528,128 @@ describe('Menu par rubriques (refonte ergonomique, lot 5 — F2)', () => {
       '/admin/marches-previsions',
       '/notifications',
     ]);
+  });
+});
+
+/**
+ * Lot 5, F4 (2026-09-16) — LE RAIL COMPACT. Décision de Mathieu : « bascule utilisateur mémorisée,
+ * menu large par défaut ; rien d'automatique selon la largeur d'écran ».
+ *
+ * Ce que ces specs verrouillent, dans l'ordre de ce qui ferait le plus de mal en régressant :
+ *  1. le rail NE SE SUBSTITUE PAS au mode concentration — l'examen, la vérification et la page
+ *     dossier gardent leur tiroir à 0 px (décision 4 du plan L4). Un rail de 76 px y reprendrait
+ *     76 px à un écran de travail, et personne ne l'aurait demandé ;
+ *  2. le nom accessible d'une entrée est le MÊME en rail et en menu large — le libellé complet est
+ *     rangé hors écran, jamais retiré, et la légende du rail est `aria-hidden` ;
+ *  3. la bascule est nommée par son ACTION, et c'est le store qui porte la mémoire.
+ */
+describe('Rail compact (refonte ergonomique, lot 5 — F4)', () => {
+  const monter = async (reduit: boolean, url = '/membre/tableau-de-bord') => {
+    TestBed.resetTestingModule();
+    const compact = signal(reduit);
+    const basculer = () => compact.set(!compact());
+    TestBed.configureTestingModule({
+      imports: [MainLayout],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([
+          { path: 'membre/tableau-de-bord', component: EcranFactice, data: { title: 'Dossiers' } },
+          { path: 'membre/examiner/:idDossier', component: EcranFactice, data: { title: 'Examiner', concentration: true } },
+          { path: 'membre/dossier/:idDossier', component: EcranFactice, data: { title: 'Dossier', concentration: true } },
+          { path: 'verificateur/verifier/:idDossier', component: EcranFactice, data: { title: 'Vérifier', concentration: true } },
+        ]),
+        {
+          provide: AuthService,
+          useValue: { role: signal('MEMBRE'), login: signal('MEMANT1'), localite: signal('ANT'), ref: () => null, nomAffichage: () => null, typeActeur: () => 'CONTROLEUR', isAuthenticated: () => false, logout: () => undefined },
+        },
+        { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: PermissionsService, useValue: { peutExecuter: () => false } },
+        { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
+        { provide: MenuCompactStore, useValue: { reduit: compact, basculer } },
+        { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MainLayout);
+    await TestBed.inject(Router).navigateByUrl(url);
+    fixture.detectChanges();
+    return { fixture, hote: fixture.nativeElement as HTMLElement, compact };
+  };
+
+  it('pose « layout--rail » sur la coquille quand l’utilisateur a réduit le menu, et pas avant', async () => {
+    expect((await monter(false)).hote.classList.contains('layout--rail')).toBe(false);
+    expect((await monter(true)).hote.classList.contains('layout--rail')).toBe(true);
+  });
+
+  /**
+   * ⚠️ ANTI-RÉGRESSION — la spec que le lot devait poser. Le rail est l'état des écrans de LISTE ;
+   * sur les écrans de TRAVAIL la barre reste un tiroir, préférence ou pas. Si cette spec devient
+   * rouge, c'est que le rail a commencé à manger la largeur de l'examen.
+   */
+  it('ne se substitue JAMAIS au mode concentration : examen, vérification, page dossier', async () => {
+    for (const url of ['/membre/examiner/42', '/membre/dossier/42', '/verificateur/verifier/42']) {
+      const { hote } = await monter(true, url);
+      expect(hote.classList.contains('layout--concentration'), url).toBe(true);
+      expect(hote.classList.contains('layout--rail'), url).toBe(false);
+      // La bascule n'est pas proposée là où elle ne ferait rien ; le tiroir, lui, reste ouvrable.
+      expect(hote.querySelector('.sidebar-toggle'), url).not.toBeNull();
+    }
+  });
+
+  it('la préférence n’est pas effacée par le mode concentration : elle reprend à la sortie', async () => {
+    const { fixture, hote } = await monter(true, '/membre/examiner/42');
+    expect(hote.classList.contains('layout--rail')).toBe(false);
+    await TestBed.inject(Router).navigateByUrl('/membre/tableau-de-bord');
+    fixture.detectChanges();
+    expect(hote.classList.contains('layout--rail')).toBe(true);
+  });
+
+  it('le libellé complet reste dans le document : le nom accessible d’une entrée ne change pas', async () => {
+    const { hote } = await monter(true);
+    const entrees = Array.from(hote.querySelectorAll('.sidebar-nav a.nav-item'));
+    expect(entrees.length).toBeGreaterThan(0);
+    for (const a of entrees) {
+      // Le nom accessible vient du texte : la légende du rail en est exclue (`aria-hidden`).
+      expect(a.querySelector('.nav-label')?.textContent?.trim(), a.getAttribute('href') ?? '').toBeTruthy();
+      expect(a.getAttribute('aria-label')).toBeNull();
+      const legende = a.querySelector('.nav-court') as HTMLElement;
+      expect(legende, a.getAttribute('href') ?? '').not.toBeNull();
+      expect(legende.getAttribute('aria-hidden')).toBe('true');
+    }
+  });
+
+  it('la légende du rail est le libellé court dérivé, et l’infobulle porte le libellé complet', async () => {
+    const { hote } = await monter(true);
+    const dossiers = hote.querySelector('.sidebar-nav a.nav-item[href="/membre/tableau-de-bord"]') as HTMLElement;
+    expect(dossiers.querySelector('.nav-court')?.textContent?.trim()).toBe(libelleCourt({ label: 'Tous les dossiers', path: '/membre/tableau-de-bord' }, 'MEMBRE'));
+    expect(dossiers.getAttribute('title')).toBe('Tous les dossiers');
+    // En menu large, le libellé est déjà lisible : pas d'infobulle qui répète le texte affiché.
+    const { hote: large } = await monter(false);
+    expect((large.querySelector('.sidebar-nav a.nav-item[href="/membre/tableau-de-bord"]') as HTMLElement).getAttribute('title')).toBe('');
+  });
+
+  it('l’état courant survit au rail : aria-current sur la seule entrée active', async () => {
+    const { hote } = await monter(true);
+    const actives = Array.from(hote.querySelectorAll('.sidebar-nav a.nav-item[aria-current="page"]'));
+    expect(actives.length).toBe(1);
+    expect(actives[0].getAttribute('href')).toBe('/membre/tableau-de-bord');
+    expect(actives[0].classList.contains('active')).toBe(true);
+  });
+
+  /**
+   * Un bouton dont le NOM change ne porte pas `aria-pressed` : les deux se contrediraient (« Déplier
+   * le menu, enfoncé »). Le nom dit l'action, comme le bouton de tiroir voisin.
+   */
+  it('la bascule nomme son ACTION, et confie la mémoire au store', async () => {
+    const { fixture, hote, compact } = await monter(false);
+    const bouton = hote.querySelector('.topbar-compact') as HTMLButtonElement;
+    expect(bouton.getAttribute('aria-label')).toBe('Réduire le menu');
+    expect(bouton.getAttribute('aria-pressed')).toBeNull();
+    expect(bouton.getAttribute('title')).toBe('Réduire le menu');
+    bouton.click();
+    fixture.detectChanges();
+    expect(compact()).toBe(true);
+    expect(hote.classList.contains('layout--rail')).toBe(true);
+    expect(bouton.getAttribute('aria-label')).toBe('Déplier le menu');
   });
 });

@@ -4,6 +4,9 @@
 
 $bp-tablet : 768px;
 $bp-mobile : 480px;
+/* ⚠️ Lot 5 F4 (2026-09-16) — cette variable Sass n'est employée nulle part : la largeur de la barre
+   est portée par le jeton CSS `--sidebar-w` de `_design-system.scss`, seul à faire foi, parce que le
+   rail compact en change la valeur à l'exécution — ce qu'une variable Sass ne peut pas faire. */
 $sidebar-w : 215px;
 $topbar-h  : 48px;
 
@@ -50,6 +53,35 @@ $topbar-h  : 48px;
 
   @include tablet {
     display: flex;
+  }
+}
+
+/* Bascule du RAIL COMPACT (refonte ergonomique, lot 5 F4, 2026-09-16) — le pendant du bouton
+   ci-dessus, dans la même case de la barre du haut. Les deux ne coexistent jamais : sous 768 px la
+   barre est un tiroir et c'est le hamburger qui sert ; au-dessus, elle est là et c'est le rail.
+   Même gabarit, pour que la case garde la même silhouette d'un seuil à l'autre. */
+.topbar-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 0.5px solid var(--n-200);
+  color: var(--n-600);
+  cursor: pointer;
+  transition: var(--transition);
+
+  &:hover {
+    background: var(--p-50);
+    border-color: var(--p-200);
+    color: var(--n-800);
+  }
+
+  @include tablet {
+    display: none;
   }
 }
 

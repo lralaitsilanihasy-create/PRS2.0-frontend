@@ -18,10 +18,12 @@ describe('Icone', () => {
   });
 
   it('reprend le jeu complet des icônes des maquettes, plus celles du menu (2026-09-15)', () => {
-    expect(NOMS_ICONES.length).toBe(44);
+    expect(NOMS_ICONES.length).toBe(46);
     for (const nom of ['link', 'globe', 'key']) expect(NOMS_ICONES).toContain(nom);
     // Lot 5 (2026-09-16) : le bouton de tiroir de la coquille, qui portait encore un « ☰ ».
     expect(NOMS_ICONES).toContain('menu');
+    // Lot 5, F4 (2026-09-16) : la bascule du rail compact, dans ses deux sens.
+    for (const nom of ['replier', 'deplier']) expect(NOMS_ICONES).toContain(nom);
     for (const nom of ['clock', 'message', 'alert', 'chevl', 'chev', 'pen', 'edit', 'send', 'eye', 'x', 'plus']) {
       expect(NOMS_ICONES).toContain(nom);
     }

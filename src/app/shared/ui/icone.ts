@@ -52,6 +52,10 @@ const ICONES = {
   key: 'M8 11a4 4 0 1 0 0 8a4 4 0 1 0 0-8z M10.8 12.2 20 3 M17 6l3 3 M14.5 8.5l2 2',
   // Ajout du 2026-09-16 (lot 5, F5) — dernier glyphe de la coquille : le « ☰ » du bouton de tiroir.
   menu: 'M4 7h16 M4 12h16 M4 17h16',
+  // Ajouts du 2026-09-16 (lot 5, F4) — bascule du RAIL. Le glyphe montre ce qu'il fait : un écran,
+  // sa barre latérale, et le sens du mouvement. Un chevron seul ne disait pas de QUOI il parlait.
+  replier: 'M4 5h16v14H4z M9.5 5v14 M16 10l-2 2 2 2',
+  deplier: 'M4 5h16v14H4z M9.5 5v14 M14 10l2 2-2 2',
 } as const;
 
 export type NomIcone = keyof typeof ICONES;

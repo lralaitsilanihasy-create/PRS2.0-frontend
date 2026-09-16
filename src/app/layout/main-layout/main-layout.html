@@ -48,8 +48,12 @@
         </button>
       } @else if (section.titre) {
         <!-- Intitulé de rubrique : une étiquette, pas une commande — il ne replie rien, donc ce
-             n'est pas un <button> (un bouton sans action serait une tabulation pour rien). -->
-        <div class="sidebar-nav__titre sidebar-nav__titre--fixe">{{ section.titre }}</div>
+             n'est pas un <button> (un bouton sans action serait une tabulation pour rien).
+             ⚠️ Lot 5, F4 — le texte est dans un <span> pour que le RAIL le range hors écran sans
+             le retirer : l'intitulé devient un filet à l'œil, il reste lu par un lecteur d'écran. -->
+        <div class="sidebar-nav__titre sidebar-nav__titre--fixe">
+          <span class="sidebar-nav__titre-texte">{{ section.titre }}</span>
+        </div>
       }
       @if (!section.repliable || delegationsAffichees()) {
     @for (item of section.items; track item.path) {
@@ -59,12 +63,14 @@
           class="nav-item nav-group"
           [class.nav-group--open]="isOpen(item)"
           [attr.aria-expanded]="isOpen(item)"
+          [title]="infobulle(item)"
           (click)="toggle(item)"
         >
           @if (item.icon) {
             <app-icone class="nav-icon" [nom]="item.icon" [taille]="18" />
           }
           <span class="nav-label">{{ item.label }}</span>
+          <span class="nav-court" aria-hidden="true">{{ legende(item) }}</span>
           <app-icone class="nav-chevron" nom="chev" [taille]="14" />
         </button>
         @if (isOpen(item)) {
@@ -76,12 +82,14 @@
                 class="nav-item nav-item--sub nav-group"
                 [class.nav-group--open]="isOpen(child)"
                 [attr.aria-expanded]="isOpen(child)"
+                [title]="infobulle(child)"
                 (click)="toggle(child)"
               >
                 @if (child.icon) {
                   <app-icone class="nav-icon" [nom]="child.icon" [taille]="18" />
                 }
                 <span class="nav-label">{{ child.label }}</span>
+                <span class="nav-court" aria-hidden="true">{{ legende(child) }}</span>
                 <app-icone class="nav-chevron" nom="chev" [taille]="14" />
               </button>
               @if (isOpen(child)) {
@@ -91,8 +99,10 @@
                     [routerLink]="gc.path"
                     routerLinkActive="active"
                     ariaCurrentWhenActive="page"
+                    [title]="infobulle(gc)"
                   >
                     <span class="nav-label">{{ gc.label }}</span>
+                    <span class="nav-court" aria-hidden="true">{{ legende(gc) }}</span>
                     @if (countFor(gc.path) !== undefined) {
                       <span [class]="'nav-badge ' + badgeSeverity(gc.path)">{{ countFor(gc.path) }}</span>
                     }
@@ -105,11 +115,13 @@
                 [routerLink]="child.path"
                 routerLinkActive="active"
                 ariaCurrentWhenActive="page"
+                [title]="infobulle(child)"
               >
                 @if (child.icon) {
                   <app-icone class="nav-icon" [nom]="child.icon" [taille]="18" />
                 }
                 <span class="nav-label">{{ child.label }}</span>
+                <span class="nav-court" aria-hidden="true">{{ legende(child) }}</span>
                 @if (countFor(child.path) !== undefined) {
                   <span [class]="'nav-badge ' + badgeSeverity(child.path)">{{ countFor(child.path) }}</span>
                 }
@@ -124,12 +136,17 @@
           [queryParams]="item.queryParams ?? null"
           routerLinkActive="active"
           ariaCurrentWhenActive="page"
-          [title]="item.delegation ? 'Tâche du profil ' + delegationLabel(item.delegation) + ' — exercée par délégation active.' : ''"
+          [title]="infobulle(item)"
         >
           @if (item.icon) {
             <app-icone class="nav-icon" [nom]="item.icon" [taille]="18" />
           }
           <span class="nav-label">{{ item.label }}</span>
+          <!-- ⚠️ Lot 5, F4 — LÉGENDE du rail : le libellé court dérivé (`groupes-menu.ts`), sous
+               l'icône. `aria-hidden` : c'est un raccourci visuel, le nom accessible de l'entrée
+               reste `.nav-label` (rangé hors écran en rail) suivi de sa pastille — un lecteur
+               d'écran entend la même chose dans les deux états du menu. -->
+          <span class="nav-court" aria-hidden="true">{{ legende(item) }}</span>
           <!-- Flèche montante = tâche d'un profil subordonné, exercée par DÉLÉGATION (paire active de
                t_delegation_profil). Icône SVG depuis le 2026-09-15 (plus d'emoji dans la coquille). -->
           @if (item.delegation) {
@@ -161,11 +178,13 @@
             [queryParams]="item.queryParams ?? null"
             routerLinkActive="active"
             ariaCurrentWhenActive="page"
+            [title]="infobulle(item)"
           >
             @if (item.icon) {
               <app-icone class="nav-icon" [nom]="item.icon" [taille]="18" />
             }
             <span class="nav-label">{{ item.label }}</span>
+            <span class="nav-court" aria-hidden="true">{{ legende(item) }}</span>
             @if (countFor(item.path) !== undefined) {
               <span [class]="'nav-badge ' + badgeSeverity(item.path)">{{ countFor(item.path) }}</span>
             }
@@ -186,7 +205,15 @@
     @if (role() === 'PRMP') {
       <!-- ⚠️ Demande user (2026-08-02) : « Créer compte UGPM » remplace la carte profil en bas de la
            barre latérale (l'identité est déjà affichée dans la topbar). -->
-      <a class="sidebar-profile sidebar-profile--action" routerLink="/prmp/creer-ugpm" routerLinkActive="active" ariaCurrentWhenActive="page">
+      <!-- ⚠️ Lot 5, F4 — en rail, `.info` passe HORS ÉCRAN (pas `display: none`) : le lien garde son
+           nom accessible, seule la pastille reste visible. L'infobulle prend le relais pour l'œil. -->
+      <a
+        class="sidebar-profile sidebar-profile--action"
+        routerLink="/prmp/creer-ugpm"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        [title]="railActif() ? 'Créer compte UGPM — compte rattaché à votre PRMP' : ''"
+      >
         <div class="avatar"><app-icone nom="users" [taille]="16" /></div>
         <div class="info">
           <div class="name">Créer compte UGPM</div>
@@ -194,7 +221,7 @@
         </div>
       </a>
     } @else {
-      <div class="sidebar-profile">
+      <div class="sidebar-profile" [title]="railActif() ? (displayName() || login()) + ' — ' + roleLibelle() : ''">
         <div class="avatar">{{ initials() }}</div>
         <div class="info">
           <div class="name">{{ displayName() || login() }}</div>
@@ -214,6 +241,28 @@
       [attr.aria-expanded]="sidebarOpen()"
       aria-label="Ouvrir le menu"
     ><app-icone nom="menu" [taille]="18" /></button>
+    <!-- ⚠️ Lot 5, F4 (2026-09-16) — BASCULE DU RAIL, dans la même case que le bouton de tiroir, dont
+         elle prend le relais au-dessus de 768 px (l'un est le geste tablette, l'autre le geste
+         bureau — ils ne coexistent jamais). Elle est ICI et non au pied de la barre, comme le
+         proposait le plan, pour une raison mesurée : une ligne de commande au pied coûtait 28 px de
+         hauteur au menu, c'est-à-dire près de la moitié du budget de défilement que la seconde
+         moitié de ce lot sert justement à rendre à l'Administrateur. Le coin haut-gauche, lui, est
+         vide sur bureau, ne défile jamais, et c'est là que se trouve ce réglage dans la plupart des
+         applications.
+         Le nom accessible est l'ACTION (« Réduire » / « Déplier »), pas un état : un bouton dont le
+         nom change ne porte pas `aria-pressed`, les deux se contrediraient.
+         En mode CONCENTRATION la barre est un tiroir : réduire ou déplier n'y changerait rien, la
+         commande n'est donc pas rendue — un bouton sans effet est une tabulation pour rien. La
+         préférence, elle, n'est pas effacée : elle reprend à la sortie de ces écrans. -->
+    @if (!concentration()) {
+      <button
+        type="button"
+        class="topbar-compact"
+        [attr.aria-label]="menuReduit() ? 'Déplier le menu' : 'Réduire le menu'"
+        [title]="menuReduit() ? 'Déplier le menu' : 'Réduire le menu'"
+        (click)="basculerMenuCompact()"
+      ><app-icone [nom]="menuReduit() ? 'deplier' : 'replier'" [taille]="18" /></button>
+    }
     @if (peutRechercher()) {
       <form class="topbar-search" (submit)="allerAuDossier(); $event.preventDefault()">
         <app-icone class="topbar-search__ic" nom="search" [taille]="14" />

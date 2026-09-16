@@ -29,6 +29,12 @@
   min-width: 0;
 }
 
+/* Légende du RAIL (lot 5, F4) : le libellé court dérivé, sous l'icône. Elle n'existe qu'en rail —
+   en menu large, le libellé complet est déjà là et la répéter n'apporterait rien. */
+.nav-court {
+  display: none;
+}
+
 .nav-chevron {
   margin-left: auto;
   color: var(--n-400);
@@ -83,13 +89,18 @@
   color: var(--compteur-ink) !important;
 }
 
-/* Groupe gauche de la topbar : hamburger (mobile) + recherche de dossier. */
+/* Groupe gauche de la topbar : hamburger (mobile) + bascule du rail (bureau) + recherche. */
 .topbar-left {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
 }
+
+/* Le gabarit de la bascule du rail vit dans `styles/_responsive.scss`, à côté de celui du bouton de
+   tiroir : les deux se partagent la case gauche de la barre du haut, l'un sous 768 px, l'autre
+   au-dessus. En mode concentration elle n'est pas rendue du tout (cf. le gabarit) : réduire ou
+   déplier n'y changerait rien, et un bouton sans effet est une tabulation pour rien. */
 
 /* Recherche « aller à un dossier par référence » (pill claire, loupe à gauche). */
 .topbar-search {
@@ -368,6 +379,139 @@
    les écrans, c'est un lot à part entière. */
 .topbar :focus-visible {
   outline-color: var(--p-700);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   RAIL COMPACT (refonte ergonomique, lot 5 — F4, décision de Mathieu du 2026-09-16)
+
+   « Bascule utilisateur mémorisée, menu large par défaut. » Une seule barre, une seule liste, un
+   seul gabarit : le rail est un ÉTAT (`.layout--rail`, posé par `railActif()`), pas un second menu.
+   C'est ce qui garantit qu'aucune entrée ne peut manquer d'un côté — il n'y a rien à tenir à jour
+   en double. Le passage de l'un à l'autre est entièrement en CSS ; côté gabarit, seule la légende
+   (`.nav-court`, `aria-hidden`) s'ajoute, et le libellé complet ne quitte jamais le document.
+
+   Ce que l'utilisateur garde en rail, et comment :
+   · l'état courant — la pastille claire et la barre d'accent de 3 px du lot F3, inchangées (c'est la
+     BARRE qui porte l'état, pas la couleur du texte) ; `aria-current="page"` est posé par le routeur ;
+   · le nom de chaque entrée — `.nav-label` passe HORS ÉCRAN, il n'est pas retiré : le nom accessible
+     d'une entrée du rail est exactement celui du menu large, pastille de compteur comprise ;
+   · l'intitulé au survol — `title` porte le libellé complet (`infobulle()`) : une infobulle native
+     échappe au découpage de la barre, ce qu'une bulle en CSS ne peut pas faire dans un conteneur
+     qui défile ;
+   · les compteurs — la pastille ambre remonte en haut à droite de la case, même paire de couleurs
+     (8,67:1), jamais sous l'icône ;
+   · les rubriques — leur intitulé devient un FILET : l'œil garde la coupure, le lecteur d'écran
+     garde le mot (le texte est hors écran, pas supprimé).
+
+   Deux endroits où le rail ne s'applique PAS, et c'est voulu :
+   · le mode concentration (`railActif()` l'exclut) — la barre y reste un tiroir à 0 px, décision 4
+     du plan L4 : un rail de 76 px y reprendrait 76 px à un écran de travail ;
+   · sous 768 px — la barre est déjà un tiroir (`_responsive.scss`), d'où le `min-width` ci-dessous.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 48.0625rem) {
+  :host(.layout--rail) {
+    /* 76 px : la mesure du plan (§1.4) — contenu utile 1 151 → 1 290 px à 1366×768, 1 014 → 1 153 px
+       à 1229×691. UNE déclaration suffit : `--sidebar-w` (`_design-system.scss`) est la source
+       unique de la largeur de la barre, du décalage de la barre du haut et de la marge du contenu.
+       Elle est posée SOUS le seuil tablette, où la barre est déjà un tiroir de 215 px. */
+    --sidebar-w: 76px;
+
+    /* Marque : la pastille « MEF » seule, centrée (maquettes du 14/09). */
+    .sidebar-logo {
+      justify-content: center;
+    }
+
+    .sidebar-nav {
+      padding: 6px 3px;
+    }
+
+    /* Intitulé de rubrique → FILET. La boîte tombe à 1 px : c'est le TEXTE qui passe hors écran, pas
+       la rubrique qui disparaît. Le premier n'a pas de filet — il ne séparerait rien, et la bordure
+       du bloc de marque est juste au-dessus. */
+    .sidebar-nav__titre {
+      margin: 4px 12px 3px;
+      border-top: 1px solid rgba(255, 255, 255, 0.45);
+      justify-content: center;
+    }
+    .sidebar-nav__titre:first-child {
+      border-top: 0;
+    }
+
+    /* La rubrique déléguée, elle, COMMANDE : elle reste un bouton visible et cliquable, réduit à sa
+       marque ⤴ et à son chevron — sans quoi il n'y aurait plus aucun moyen de rouvrir les tâches
+       déléguées une fois repliées. Son nom accessible est inchangé (texte hors écran). */
+    .sidebar-nav__titre--bouton {
+      padding: 3px 0 2px;
+      gap: 3px;
+    }
+    .sidebar-nav__titre-chevron {
+      margin-left: 0;
+    }
+
+    /* Les quatre textes que le rail retire à l'ŒIL sans les retirer de l'arbre d'accessibilité
+       (recopie de `.cnm-sr-only` de `styles.scss` — une feuille de composant encapsulée ne peut pas
+       l'atteindre). Jamais `display: none` : le nom accessible d'une entrée de menu serait perdu, et
+       la carte de profil EST un lien chez la PRMP. */
+    .sidebar-logo-text,
+    .sidebar-nav__titre-texte,
+    .nav-label,
+    .sidebar-profile .info {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    /* L'entrée : l'icône, puis la légende. Le `padding` raccourci efface au passage le retrait des
+       sous-entrées (`--sub`, `--sub2`, jusqu'à 60 px) qui pousserait l'icône hors d'une case de 76 px. */
+    .nav-item {
+      position: relative;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      padding: 4px 2px;
+    }
+
+    .nav-court {
+      display: block;
+      max-width: 100%;
+      font-size: 9px;
+      line-height: 1.1;
+      /* Resserrement d'interlettrage, pas de réduction de corps : « Rattachements », le plus long
+         libellé court des dix menus, tient ainsi en entier. Une légende qui déborderait malgré tout
+         est coupée par une ellipse — jamais sans infobulle, `title` porte le libellé complet. */
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Marque ⤴ de délégation : elle porte une information, elle ne part pas — elle se range dans le
+       coin haut-gauche, hors de la trajectoire de la pastille de compteur. */
+    .nav-deleg {
+      position: absolute;
+      top: 1px;
+      left: 4px;
+    }
+
+    /* Pastille de compteur : coin haut-droit, même ambre (8,67:1), sans chevaucher l'icône. */
+    .nav-badge {
+      position: absolute;
+      top: 1px;
+      right: 2px;
+    }
+
+    /* Carte de profil : l'avatar seul, l'infobulle prenant le relais pour l'œil. */
+    .sidebar-profile {
+      margin: 6px 4px;
+      padding: 6px 0;
+      justify-content: center;
+    }
+  }
 }
 
 /* ⚠️ Mode « concentration » (refonte ergonomique, lot 2 — route `data.concentration`, l'examen) :

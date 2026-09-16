@@ -7,9 +7,10 @@ import { AuthService } from '../../core/auth/auth.service';
 import { libelleRole } from '../../core/auth/libelles-profils';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
+import { MenuCompactStore } from '../../core/preferences/menu-compact.store';
 import { ToastService } from '../../core/notifications/toast.service';
 import { NavItem, cheminAFaire, navFor } from '../../core/navigation/navigation';
-import { piedMenu, sectionsMenu } from '../../core/navigation/groupes-menu';
+import { libelleCourt, piedMenu, sectionsMenu } from '../../core/navigation/groupes-menu';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 import {
@@ -64,7 +65,11 @@ export function routeEnConcentration(racine: ActivatedRouteSnapshot | null): boo
   ],
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.scss',
-  host: { '[attr.data-role]': 'role()', '[class.layout--concentration]': 'concentration()' },
+  host: {
+    '[attr.data-role]': 'role()',
+    '[class.layout--concentration]': 'concentration()',
+    '[class.layout--rail]': 'railActif()',
+  },
 })
 export class MainLayout {
   private readonly auth = inject(AuthService);
@@ -151,6 +156,50 @@ export class MainLayout {
   readonly delegationsAffichees = this.delegationsAffichage.affichees;
   basculerDelegations(): void {
     this.delegationsAffichage.basculer();
+  }
+
+  /**
+   * ⚠️ RAIL COMPACT (refonte ergonomique, lot 5 F4 — décision de Mathieu du 2026-09-16). La barre
+   * se réduit à 76 px d'icônes légendées : +139 px rendus au contenu sur les trois écrans visés.
+   * C'est une BASCULE de l'utilisateur, mémorisée (`MenuCompactStore`) — rien ne se replie tout seul
+   * selon la largeur de l'écran : personne ne doit perdre son menu sans l'avoir demandé.
+   */
+  private readonly menuCompact = inject(MenuCompactStore);
+  /** Préférence brute : l'utilisateur a-t-il demandé le rail ? (état du bouton de bascule) */
+  readonly menuReduit = this.menuCompact.reduit;
+  /**
+   * Rail réellement appliqué. Le rail NE SE SUBSTITUE PAS au mode concentration : sur l'examen, la
+   * vérification et la page dossier, la barre reste un TIROIR à 0 px (décision 4 du plan L4), qui
+   * rend toute la largeur au document. Un rail de 76 px y serait une régression de 76 px. La
+   * préférence n'est pas effacée pour autant : elle reprend à la sortie de ces écrans.
+   */
+  readonly railActif = computed(() => this.menuReduit() && !this.concentration());
+
+  /** Réduit le menu au rail d'icônes, ou le redéploie (bouton du pied de la barre). */
+  basculerMenuCompact(): void {
+    this.menuCompact.basculer();
+  }
+
+  /**
+   * Légende d'une entrée sous son icône, en rail (`groupes-menu.ts`). Purement VISUELLE : elle est
+   * `aria-hidden`, le nom accessible de l'entrée reste son libellé complet (rendu hors écran) suivi
+   * de sa pastille — un lecteur d'écran entend exactement la même chose en rail et en menu large.
+   */
+  legende(item: NavItem): string {
+    return libelleCourt(item, this.role());
+  }
+
+  /**
+   * Infobulle d'une entrée : la mention de délégation (spec 2026-08-14) et, EN RAIL, le libellé
+   * complet — c'est lui que l'utilisateur vient chercher au survol quand seule la légende est
+   * visible. En menu large le libellé est déjà lisible : pas d'infobulle qui répète le texte.
+   */
+  infobulle(item: NavItem): string {
+    const deleg = item.delegation
+      ? `Tâche du profil ${this.delegationLabel(item.delegation)} — exercée par délégation active.`
+      : '';
+    if (!this.railActif()) return deleg;
+    return deleg ? `${item.label} — ${deleg}` : item.label;
   }
   /** Nom de l'utilisateur courant (résolu depuis sa fiche PRMP / contrôleur). */
   readonly displayName = signal('');

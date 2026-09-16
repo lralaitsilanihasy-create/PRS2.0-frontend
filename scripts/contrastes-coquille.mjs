@@ -98,7 +98,22 @@ pousse('Pastille de compteur — .w', 4.5, '#a16207', '#fef9c3', '#3b2500', '#fb
 pousse('Pastille de compteur — .d', 4.5, '#b91c1c', '#fee2e2', '#3b2500', '#fbbf24');
 pousse('Pastille d’ALERTE (inchangée)', 4.5, '#b91c1c', '#fee2e2', '#b91c1c', '#fee2e2');
 
+// ── RAIL COMPACT (lot 5, F4) ──────────────────────────────────────────────────
+// En rail, l'intitulé de rubrique passe hors écran et un FILET prend sa place : il n'est plus un
+// ornement, c'est le seul repère visuel de regroupement du menu. Il est donc traité comme un
+// élément non textuel porteur de sens (3:1), et non comme un séparateur décoratif — d'où 0,45,
+// bien au-dessus du 0,12 du filet de pied, qui, lui, double un libellé toujours lisible.
+nouveau('Filet de rubrique, en rail', 3, blanc(0.45), SIDEBAR_HAUT);
+nouveau('CONTRE-ÉPREUVE : le même filet aux 0,12 du pied de menu', 3, blanc(0.12), SIDEBAR_HAUT, true);
+// La légende sous l'icône (9 px) : même encre que l'entrée au repos, le corps ne change pas le ratio.
+nouveau('Légende du rail sous l’icône', 4.5, blanc(0.82), SIDEBAR_HAUT);
+// L'état courant en rail est celui du menu large : pastille claire + barre d'accent, déjà mesurés
+// profil par profil ci-dessus. Rien de nouveau n'est peint — c'est tout l'intérêt d'un seul gabarit.
+
 // ── Barre du haut ─────────────────────────────────────────────────────────────
+// Bascule du rail : même gabarit que le bouton de tiroir (`_responsive.scss`). C'est le GLYPHE qui
+// porte la commande ; la bordure `--n-200` reprise du bouton de tiroir n'est qu'un liseré de surface.
+nouveau('Bascule du rail — glyphe', 3, '#4a5578', '#ffffff');
 pousse('Recherche — loupe', 3, '#5b6784', N100, '#5b6784', N100);
 pousse('Recherche — texte de substitution', 4.5, '#667299', N100, '#586586', N100);
 pousse('Recherche — saisie', 4.5, '#1a1d2e', N100, '#1a1d2e', N100);
