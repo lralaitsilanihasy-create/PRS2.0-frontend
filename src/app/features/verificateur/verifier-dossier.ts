@@ -27,7 +27,8 @@ import {
   VerificationService,
 } from '../../services';
 import { ChronometrageDossier, ObservationPvCard, StatutBadge } from '../../shared/circuit';
-import { DossierConsultation } from '../circuit/dossier-consultation';
+import { DossierContenuStore } from '../circuit/dossier/dossier-contenu.store';
+import { DossierDocuments } from '../circuit/dossier/dossier-documents';
 import { DetailPvModal } from '../circuit/detail-pv-modal';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 
@@ -50,7 +51,11 @@ interface Echange {
 @Component({
   selector: 'app-verifier-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChronometrageDossier, SlicePipe, StatutBadge, DossierConsultation, DetailPvModal, ModaleDirective, ObservationPvCard],
+  imports: [ChronometrageDossier, SlicePipe, StatutBadge, DossierDocuments, DetailPvModal, ModaleDirective, ObservationPvCard],
+  // Lot L4-F7 : l'écran fournit lui-même le contenu du dossier (mêmes requêtes, mêmes règles par
+  // profil) et monte le bloc des documents. La coquille de consultation, et son mode « embarqué »,
+  // ne servaient plus qu'à redire ce que cet écran affiche déjà (référence, statut, localité).
+  providers: [DossierContenuStore],
   template: `
     <section class="vf">
       <header class="page-header">
@@ -78,8 +83,15 @@ interface Echange {
         <p class="text-muted">Dossier introuvable ou hors de votre périmètre.</p>
       } @else {
         <div class="vf__grid">
+          <!-- Documents officiels du dossier (fiche, plan, AGPM, pièces, historique des versions) :
+               le MÊME bloc que la page dossier et la modale de consultation. Le panneau est borné et
+               porte l'ascenseur : l'en-tête du plan y reste collant (entrée panneauBorne). -->
           <div class="card vf__details">
-            <app-dossier-consultation [dossier]="dossier()!" [embedded]="true" />
+            @if (contenu.loading()) {
+              <div class="spinner-wrap vf__docs-attente" role="status"><div class="spinner" aria-hidden="true"></div></div>
+            } @else {
+              <app-dossier-documents [panneauBorne]="true" />
+            }
           </div>
 
           <div class="vf__right">
@@ -302,6 +314,9 @@ interface Echange {
        1536 px ; la variante provisoire « ppm-table-large » (largeur minimale, plan qui défilait dans le
        panneau) est retirée. */
     .vf__grid { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 0.75rem; align-items: start; }
+    /* Attente des documents : même hauteur réservée que la coquille de consultation qu'ils remplacent
+       (lot L4-F7) — le contenu s'y substitue sans saut de mise en page. */
+    .vf__docs-attente { min-height: 18rem; }
     /* ⚠️ Demande pilote (2026-09-07) — l'hôte borné porte l'ascenseur VERTICAL et l'en-tête du plan y
        reste collant ; les cartes de droite sont FIGÉES (sticky) : Contexte + décision restent visibles
        pendant qu'on parcourt le tableau. */
@@ -379,6 +394,8 @@ export class VerifierDossier {
   private readonly observationPvService = inject(ObservationPvService);
   private readonly notificationService = inject(NotificationService);
   private readonly lookups = inject(ReferenceLookupService);
+  /** Contenu du dossier (vague unique, règles de visibilité par profil), lu par le bloc des documents. */
+  protected readonly contenu = inject(DossierContenuStore);
 
   readonly idDossier = Number(this.route.snapshot.paramMap.get('idDossier'));
   readonly loading = signal(true);
@@ -388,6 +405,11 @@ export class VerifierDossier {
   readonly confirmOpen = signal(false);
 
   readonly dossier = signal<Dossier | null>(null);
+  /**
+   * Le dossier pour le `DossierContenuStore`, qui l'attend non nul : `charger()` n'est appelé qu'une
+   * fois `dossier` servi, et le signal reste réactif ensuite (mises à jour de statut).
+   */
+  private readonly dossierCharge = computed<Dossier>(() => this.dossier()!);
   readonly idReception = signal<number | null>(null);
   readonly idPv = signal<number | null>(null);
   readonly synthese = signal('');
@@ -492,6 +514,9 @@ export class VerifierDossier {
     }).subscribe({
       next: (r) => {
         this.dossier.set(r.dossier);
+        // Le dossier est là : la vague du contenu (plan, fiche, AGPM, pièces, versions) peut partir —
+        // au même instant qu'auparavant, où la coquille embarquée la lançait dans son `ngOnInit`.
+        this.contenu.charger(this.dossierCharge);
         this.transmissions.set(r.sigmp);
         this.observations.set(r.observations);
 

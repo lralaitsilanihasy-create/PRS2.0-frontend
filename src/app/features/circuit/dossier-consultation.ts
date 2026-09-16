@@ -18,6 +18,12 @@ import { DossierJournal } from './dossier/dossier-journal';
  * Coquille depuis le lot L4-F1 : voile, en-tête, sous-dialogues et pied. Le contenu vient du
  * `DossierContenuStore` qu'elle fournit, et s'affiche par les blocs partagés de `./dossier/`
  * (identité, documents, pièces, versions, journal) — les mêmes que la page dossier.
+ *
+ * Depuis le lot L4-F7, elle est TOUJOURS une modale : le mode « embarqué » (rendu inline, sans voile
+ * ni pied) n'existe plus, l'écran de vérification montant directement le bloc `DossierDocuments`.
+ * Ne restent porteurs de cette modale que les écrans où l'on consulte SANS quitter sa tâche
+ * (mise à jour du PPM, détail d'une demande de retrait) et le repli des profils qui n'ont pas la
+ * page dossier (Administrateur, Chargé de publication).
  */
 @Component({
   selector: 'app-dossier-consultation',
@@ -25,23 +31,21 @@ import { DossierJournal } from './dossier/dossier-journal';
   imports: [StatutBadge, ModaleDirective, ChronometrageDossier, DossierIdentite, DossierDocuments, DossierJournal],
   providers: [DossierContenuStore],
   template: `
-    <div [class.modal-backdrop]="!embedded()" [class.modal-backdrop--sans-flou]="!embedded()" [class.closing]="closing()">
-      <!-- ⚠️ En modale, le corps n'est monté qu'une fois les données là : sinon le panneau
-           s'ouvrait à la taille de son seul en-tête puis grandissait par à-coups (552 → 724 →
-           964 px mesurés) PENDANT son animation d'entrée — d'où une ouverture « brusque ».
-           Le voile porte donc d'abord le seul indicateur d'attente. En mode embarqué (pas de
-           voile), le rendu progressif reste préférable : le bloc est déjà dans la page. -->
-      @if (contenu.loading() && !embedded()) {
+    <div class="modal-backdrop modal-backdrop--sans-flou" [class.closing]="closing()">
+      <!-- ⚠️ Le corps n'est monté qu'une fois les données là : sinon le panneau s'ouvrait à la
+           taille de son seul en-tête puis grandissait par à-coups (552 → 724 → 964 px mesurés)
+           PENDANT son animation d'entrée — d'où une ouverture « brusque ». Le voile porte donc
+           d'abord le seul indicateur d'attente. -->
+      @if (contenu.loading()) {
         <div class="dc-attente" role="status"><div class="spinner"></div></div>
       } @else {
       <div
         class="dc"
-        [class.dc--embedded]="embedded()"
         [class.dc--large]="contenu.estPpm()"
-        [attr.role]="embedded() ? null : 'dialog'"
-        [attr.aria-modal]="embedded() ? null : 'true'"
-        [attr.aria-label]="embedded() ? null : 'Consultation — ' + contenu.typeLabel()"
-        [appModale]="!embedded()"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="'Consultation — ' + contenu.typeLabel()"
+        appModale
         appModaleClicExterieur
         (appModaleFermer)="fermer()"
       >
@@ -52,9 +56,7 @@ import { DossierJournal } from './dossier/dossier-journal';
               <span class="dc-chip dc-chip-type">{{ contenu.typeLabel() }}</span>
               <app-statut-badge [statut]="dossier().statut" />
             </div>
-            @if (!embedded()) {
-              <button type="button" class="dc-close" aria-label="Fermer" (click)="fermer()">✕</button>
-            }
+            <button type="button" class="dc-close" aria-label="Fermer" (click)="fermer()">✕</button>
           </div>
 
           <div class="dc-title">{{ dossier().refeDossier || ('Dossier #' + dossier().idDossier) }}</div>
@@ -112,20 +114,18 @@ import { DossierJournal } from './dossier/dossier-journal';
           @if (contenu.loading()) {
             <div class="spinner-wrap dc-load"><div class="spinner"></div></div>
           } @else {
-            <app-dossier-documents [embedded]="embedded()" />
+            <app-dossier-documents />
           }
         </div>
 
         <!-- ── Pied ── -->
-        @if (!embedded()) {
-          <footer class="dc-foot">
-            <div class="dc-foot-info">
-              @if (contenu.estPpm()) { <strong>{{ contenu.marches().length }}</strong> marché(s) · }
-              <strong>{{ contenu.pieces().length }}</strong> pièce(s) jointe(s)
-            </div>
-            <button type="button" class="btn btn-ghost" (click)="fermer()">Fermer</button>
-          </footer>
-        }
+        <footer class="dc-foot">
+          <div class="dc-foot-info">
+            @if (contenu.estPpm()) { <strong>{{ contenu.marches().length }}</strong> marché(s) · }
+            <strong>{{ contenu.pieces().length }}</strong> pièce(s) jointe(s)
+          </div>
+          <button type="button" class="btn btn-ghost" (click)="fermer()">Fermer</button>
+        </footer>
       </div>
       }
 
@@ -170,8 +170,6 @@ import { DossierJournal } from './dossier/dossier-journal';
 })
 export class DossierConsultation implements OnInit {
   readonly dossier = input.required<Dossier>();
-  /** En mode embarqué : rendu inline (sans overlay, bouton fermer, ni pied) pour insertion dans une colonne. */
-  readonly embedded = input(false);
   readonly closed = output<void>();
 
   /** Animation de sortie en cours (pose `.closing` sur le voile) — voir `fermerAvecAnimation`. */
@@ -179,21 +177,16 @@ export class DossierConsultation implements OnInit {
 
   /**
    * Fermeture unique de tous les chemins (voile, ✕, bouton Fermer, Échap) : joue l'animation de
-   * sortie avant de retirer le modal. En mode embarqué il n'y a pas de voile — sortie immédiate.
+   * sortie avant de retirer le modal.
    */
   fermer(): void {
-    if (this.embedded()) {
-      return;
-    }
     fermerAvecAnimation(this.closing, () => this.closed.emit());
   }
 
   /*
-   * Échap et clic sur le voile sont portés par la directive `appModale`, liée à `!embedded()` :
-   * le même conteneur est aussi rendu **embarqué** (sans voile, dans une colonne), où un piège
-   * de focus serait nuisible — d'où l'entrée qui neutralise la directive dans ce mode. Elle
-   * remplace l'écouteur `document:keydown.escape` et le `(click)` de l'overlay qui vivaient ici :
-   * ce dernier annonçait un `<div>` non focalisable comme cliquable (ESLint a11y).
+   * Échap et clic sur le voile sont portés par la directive `appModale`. Elle remplace l'écouteur
+   * `document:keydown.escape` et le `(click)` de l'overlay qui vivaient ici : ce dernier annonçait
+   * un `<div>` non focalisable comme cliquable (ESLint a11y).
    */
 
   /** Contenu du dossier (vague unique, règles de visibilité par profil), partagé avec les blocs. */

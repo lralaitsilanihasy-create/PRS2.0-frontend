@@ -17,7 +17,7 @@ import { DossierVersions } from './dossier-versions';
   selector: 'app-dossier-documents',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PpmMarchesTable, FichePresentationDoc, AgpmDoc, DocumentVisionneuse, DossierPieces, DossierVersions],
-  host: { '[class.dc-documents--embedded]': 'embedded()' },
+  host: { '[class.dc-documents--borne]': 'panneauBorne()' },
   template: `
     @if (contenu.estPpm()) {
       <!-- ⚠️ Demande pilote (2026-09-03) — chaque élément du dossier EN ONGLET : fiche de
@@ -59,9 +59,9 @@ import { DossierVersions } from './dossier-versions';
       @if (ongletDossier() === 'ppm') {
         <!-- ⚠️ 2026-09-14 (décision des chefs) — documents officiels dans leur feuille ; statut et
              versionnement en annotations, masquables (interrupteur commun aux onglets).
-             Embarquée (vérification), l'en-tête du plan reste collant dans le panneau hôte qui défile. -->
+             Dans un panneau hôte borné (vérification), l'en-tête du plan y reste collant. -->
         <div class="dc-section">
-          <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc" [class.doc-entete-collante]="embedded() || enteteCollante()">
+          <app-document-visionneuse [interrupteur]="true" [(annotations)]="annotationsDoc" [class.doc-entete-collante]="panneauBorne() || enteteCollante()">
             <app-ppm-marches-table [marches]="contenu.marches()" [beneficiaires]="contenu.serviceBenefs()" [previsions]="contenu.previsions()" [changements]="contenu.changements()" [legendeTitre]="contenu.legendeChangements()" [detailsChangements]="contenu.detailsChangements()" />
           </app-document-visionneuse>
         </div>
@@ -114,29 +114,17 @@ import { DossierVersions } from './dossier-versions';
        l'hôte (défilement, en-tête collant du plan en mode embarqué). */
     :host { display: contents; }
     .dc-section { padding: 16px 24px; }
-    /* Marges resserrées en mode embarqué (2026-09-15), comme l'en-tête de la coquille : la largeur va au document. */
-    :host(.dc-documents--embedded) .dc-section { padding: 12px 16px; }
-    .dc-empty { margin: 0; }
-
-    /* Badges statut (alignés sur le modal PPM) */
-    .badge.badge-prevu { background: var(--info-bg); color: var(--info-text); }
-    .badge.badge-cours { background: var(--success-bg); color: var(--success-text); }
-    .badge.badge-cloture { background: var(--n-100); color: var(--n-500); }
-
-    .table-card td { white-space: normal; }
-
-    /* Services bénéficiaires (sous-ligne lecture seule d'un marché) */
-    .dc-benef-row td { background: var(--n-50); padding: 8px 14px 10px; }
-    .dc-benef-title { display: block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); margin-bottom: 4px; }
-    .dc-benef-line { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--n-600); padding: 2px 0; }
-    .dc-benef-soa { font-weight: 600; color: var(--n-800); }
-    .dc-benef-cell { color: var(--n-500); }
+    /* Marges resserrées dans un panneau borné (2026-09-15) : la largeur va au document. */
+    :host(.dc-documents--borne) .dc-section { padding: 12px 16px; }
   `,
 })
 export class DossierDocuments {
   protected readonly contenu = inject(DossierContenuStore);
-  /** Embarqué dans un panneau hôte qui défile (vérification) : en-tête du plan collant, marges resserrées. */
-  readonly embedded = input(false);
+  /**
+   * Monté dans un panneau hôte BORNÉ qui porte l'ascenseur (écran de vérification) : marges resserrées,
+   * et en-tête du plan collant — il s'accroche alors au panneau, pas à la fenêtre.
+   */
+  readonly panneauBorne = input(false);
   /**
    * En-tête du plan collant pendant le défilement de la FENÊTRE (page dossier, lot L4-F3) : il se loge sous
    * la barre du haut et sous la barre collante de la page (`--doc-entete-top`, posé par la page).

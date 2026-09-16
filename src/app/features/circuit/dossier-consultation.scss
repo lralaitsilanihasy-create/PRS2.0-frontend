@@ -23,21 +23,6 @@
 .dc--large {
   max-width: min(118rem, 100%);
 }
-.dc--embedded {
-  max-width: none;
-  max-height: none;
-  overflow: visible;
-  box-shadow: none;
-  border-radius: 0;
-}
-/* ⚠️ Embarquée (seul l'écran Vérificateur) : le corps NE crée PAS son propre contexte de
-   défilement — c'est le panneau HÔTE (borné, .vf__details) qui porte l'ascenseur, sinon l'en-tête
-   collant du plan (.doc-entete-collante) s'accrocherait à ce corps-ci et disparaîtrait au
-   défilement de l'hôte. Marges resserrées (2026-09-15) : la largeur va au document (celles des
-   sections : `DossierDocuments`). */
-.dc--embedded .dc-body { overflow: visible; }
-.dc--embedded .dc-header { padding: 14px 16px 12px; }
-
 /* En-tête */
 .dc-header { padding: 18px 24px 16px; border-bottom: 0.5px solid var(--n-200); flex-shrink: 0; }
 /* Corps de l'en-tête (2026-09-02, précisé 2×) : SOUS la ligne de titre, l'identité (repliable)
