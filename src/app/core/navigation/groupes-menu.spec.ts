@@ -3,8 +3,10 @@ import {
   COURTS_PAR_ROLE,
   GROUPES_PAR_CHEMIN,
   ORDRE_GROUPES,
+  courtContenuDansLibelle,
   groupeExplicite,
   libelleCourt,
+  nomAccessibleRail,
   piedMenu,
   sectionsMenu,
   suffixeChemin,
@@ -315,5 +317,78 @@ describe('libelleCourt — le mot du rail (lot F4)', () => {
         expect(libelleCourt(item, role).length, `${role} / ${item.label}`).toBeLessThanOrEqual(14);
       }
     }
+  });
+});
+
+/**
+ * WCAG 2.5.3 « Label in Name » (correctif du 2026-09-16).
+ *
+ * En rail, le seul texte VISIBLE d'une entrée est sa légende ; son nom accessible est le libellé
+ * complet, rangé hors écran. Le critère exige que le second contienne le premier — sans quoi une
+ * commande vocale prononçant ce qui est lu à l'écran ne désigne rien.
+ *
+ * Le garde-fou porte sur les DIX MENUS RÉELS : une légende ajoutée demain à `GROUPES_PAR_CHEMIN`
+ * sans être un fragment de son libellé fait rougir ce test, et non la recette.
+ */
+describe('nomAccessibleRail — le texte visible tient dans le nom accessible (WCAG 2.5.3)', () => {
+  it('laisse intactes les entrées dont la légende est déjà un fragment du libellé', () => {
+    const nom = (role: Role, label: string) =>
+      nomAccessibleRail(navFor(role).find((i) => i.label === label) as NavItem, role);
+    expect(nom('UGPM', 'Tous les dossiers')).toBe('Tous les dossiers');
+    expect(nom('PRMP', 'Suivi des dossiers CNM')).toBe('Suivi des dossiers CNM');
+    expect(nom('ADMINISTRATEUR', 'Tableau de bord global')).toBe('Tableau de bord global');
+    expect(nom('PRESIDENT', 'Examen de dossiers')).toBe('Examen de dossiers');
+    expect(nom('ASSISTANT_CONTROLEUR', 'PV reçus')).toBe('PV reçus');
+    expect(nom('VERIFICATEUR', 'Vérifiés / clôturés')).toBe('Vérifiés / clôturés');
+  });
+
+  it('préfixe la légende au libellé pour les CINQ entrées où elle en est un synonyme', () => {
+    const nom = (role: Role, label: string) =>
+      nomAccessibleRail(navFor(role).find((i) => i.label === label) as NavItem, role);
+    expect(nom('PRESIDENT', 'Répartition de dispatch')).toBe('Charge — Répartition de dispatch');
+    expect(nom('PRMP', 'Notifications')).toBe('Alertes — Notifications');
+    expect(nom('PRMP', 'Mettre à jour un PPM')).toBe('Mise à jour — Mettre à jour un PPM');
+    expect(nom('PRESIDENT', 'Archivage des PV')).toBe('Archives — Archivage des PV');
+    expect(nom('PRMP', 'Demandes de retrait')).toBe('Retraits — Demandes de retrait');
+  });
+
+  it('les DIX menus passent le critère, entrée par entrée', () => {
+    for (const role of ROLES) {
+      for (const item of NAV_BY_ROLE[role]) {
+        const court = libelleCourt(item, role);
+        const nom = nomAccessibleRail(item, role);
+        expect(
+          courtContenuDansLibelle(nom, court),
+          `${role} / « ${court} » n’est pas contenu dans « ${nom} » — WCAG 2.5.3, cf. nomAccessibleRail (groupes-menu.ts).`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('le nom accessible reste UNIQUE à l’intérieur d’un même menu', () => {
+    for (const role of ROLES) {
+      const noms = NAV_BY_ROLE[role].map((i) => nomAccessibleRail(i, role));
+      expect(new Set(noms).size, `${role} : ${noms.join(' / ')}`).toBe(noms.length);
+    }
+  });
+
+  it('le libellé complet est toujours présent : l’entrée reste identifiable à l’oreille', () => {
+    for (const role of ROLES) {
+      for (const item of NAV_BY_ROLE[role]) {
+        expect(nomAccessibleRail(item, role)).toContain(item.label);
+      }
+    }
+  });
+
+  it('la comparaison ignore la casse et les espaces, pas les accents', () => {
+    expect(courtContenuDansLibelle('Tableau de bord global', 'Global')).toBe(true);
+    expect(courtContenuDansLibelle('Tous  les dossiers', ' Dossiers ')).toBe(true);
+    expect(courtContenuDansLibelle('Delais standards', 'Délais')).toBe(false);
+    expect(courtContenuDansLibelle('Demandes de retrait', 'Retraits')).toBe(false);
+  });
+
+  it('une entrée ajoutée par le pilote hors table passe d’office (repli sur le premier mot)', () => {
+    const inedit: NavItem = { label: 'Rapports mensuels', path: '/admin/rapports' };
+    expect(nomAccessibleRail(inedit, 'ADMINISTRATEUR')).toBe('Rapports mensuels');
   });
 });

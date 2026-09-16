@@ -10,7 +10,7 @@ import { DelegationsAffichageStore } from '../../core/preferences/delegations-af
 import { MenuCompactStore } from '../../core/preferences/menu-compact.store';
 import { ToastService } from '../../core/notifications/toast.service';
 import { NavItem, cheminAFaire, navFor } from '../../core/navigation/navigation';
-import { libelleCourt, piedMenu, sectionsMenu } from '../../core/navigation/groupes-menu';
+import { libelleCourt, nomAccessibleRail, piedMenu, sectionsMenu } from '../../core/navigation/groupes-menu';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 import {
@@ -182,11 +182,25 @@ export class MainLayout {
 
   /**
    * Légende d'une entrée sous son icône, en rail (`groupes-menu.ts`). Purement VISUELLE : elle est
-   * `aria-hidden`, le nom accessible de l'entrée reste son libellé complet (rendu hors écran) suivi
-   * de sa pastille — un lecteur d'écran entend exactement la même chose en rail et en menu large.
+   * `aria-hidden`, le nom accessible de l'entrée est porté par `nomAccessible()` (rendu hors écran)
+   * suivi de sa pastille.
    */
   legende(item: NavItem): string {
     return libelleCourt(item, this.role());
+  }
+
+  /**
+   * Nom accessible d'une entrée de menu — le texte de `.nav-label`, visible en menu large et rangé
+   * hors écran en rail.
+   *
+   * ⚠️ WCAG 2.5.3 « Label in Name » (2026-09-16). En rail, le seul texte VISIBLE d'une entrée est sa
+   * légende ; le critère exige qu'il soit contenu dans le nom accessible. Cinq légendes sur trente
+   * sont des synonymes et non des fragments : pour celles-là, et pour elles seules, le nom devient
+   * « Alertes — Notifications » (cf. `nomAccessibleRail`). En menu large le texte visible EST le
+   * libellé complet : le nom accessible n'y bouge pas d'un caractère.
+   */
+  nomAccessible(item: NavItem): string {
+    return this.railActif() ? nomAccessibleRail(item, this.role()) : item.label;
   }
 
   /**

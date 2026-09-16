@@ -13,7 +13,7 @@ import { ActualiteService } from '../../services/actualite.services';
 import { KpiService } from '../../services';
 import { BadgesMenu, Role } from '../../models';
 import { NAV_BY_ROLE } from '../../core/navigation/navigation';
-import { libelleCourt } from '../../core/navigation/groupes-menu';
+import { courtContenuDansLibelle, libelleCourt } from '../../core/navigation/groupes-menu';
 import { MenuCompactStore } from '../../core/preferences/menu-compact.store';
 import { MainLayout, routeEnConcentration } from './main-layout';
 
@@ -539,9 +539,13 @@ describe('Menu par rubriques (refonte ergonomique, lot 5 — F2)', () => {
  *  1. le rail NE SE SUBSTITUE PAS au mode concentration — l'examen, la vérification et la page
  *     dossier gardent leur tiroir à 0 px (décision 4 du plan L4). Un rail de 76 px y reprendrait
  *     76 px à un écran de travail, et personne ne l'aurait demandé ;
- *  2. le nom accessible d'une entrée est le MÊME en rail et en menu large — le libellé complet est
- *     rangé hors écran, jamais retiré, et la légende du rail est `aria-hidden` ;
- *  3. la bascule est nommée par son ACTION, et c'est le store qui porte la mémoire.
+ *  2. le libellé complet est rangé hors écran, jamais retiré, et la légende du rail est
+ *     `aria-hidden` : le nom accessible d'une entrée vient toujours de son texte, jamais d'un
+ *     `aria-label` qui doublerait le libellé sans que personne ne voie les deux diverger ;
+ *  3. WCAG 2.5.3 « Label in Name » (2026-09-16) — en rail, la légende est le seul texte VISIBLE :
+ *     elle doit se retrouver dans le nom accessible. Les cinq légendes qui sont des synonymes et
+ *     non des fragments s'y préfixent (« Alertes — Notifications ») ; les autres, non ;
+ *  4. la bascule est nommée par son ACTION, et c'est le store qui porte la mémoire.
  */
 describe('Rail compact (refonte ergonomique, lot 5 — F4)', () => {
   const monter = async (reduit: boolean, url = '/membre/tableau-de-bord') => {
@@ -604,18 +608,59 @@ describe('Rail compact (refonte ergonomique, lot 5 — F4)', () => {
     expect(hote.classList.contains('layout--rail')).toBe(true);
   });
 
-  it('le libellé complet reste dans le document : le nom accessible d’une entrée ne change pas', async () => {
+  it('le libellé complet reste dans le document, et le nom accessible vient du texte', async () => {
     const { hote } = await monter(true);
     const entrees = Array.from(hote.querySelectorAll('.sidebar-nav a.nav-item'));
     expect(entrees.length).toBeGreaterThan(0);
     for (const a of entrees) {
       // Le nom accessible vient du texte : la légende du rail en est exclue (`aria-hidden`).
-      expect(a.querySelector('.nav-label')?.textContent?.trim(), a.getAttribute('href') ?? '').toBeTruthy();
+      const nom = a.querySelector('.nav-label')?.textContent?.trim() ?? '';
+      expect(nom, a.getAttribute('href') ?? '').toBeTruthy();
+      // Le libellé complet — celui de l'infobulle — est toujours là, entier.
+      expect(nom, a.getAttribute('href') ?? '').toContain(a.getAttribute('title'));
       expect(a.getAttribute('aria-label')).toBeNull();
       const legende = a.querySelector('.nav-court') as HTMLElement;
       expect(legende, a.getAttribute('href') ?? '').not.toBeNull();
       expect(legende.getAttribute('aria-hidden')).toBe('true');
     }
+  });
+
+  /**
+   * WCAG 2.5.3 « Label in Name ». Mesuré sur le texte RENDU, pas sur la table : c'est ce que voit et
+   * ce qu'entend l'utilisateur. Le menu du Membre porte les deux cas — « Dossiers », fragment de
+   * « Tous les dossiers », et « Alertes », synonyme de « Notifications ».
+   */
+  it('en rail, la légende visible se retrouve dans le nom accessible de chaque entrée', async () => {
+    const { hote } = await monter(true);
+    const entrees = Array.from(hote.querySelectorAll('.sidebar-nav a.nav-item'));
+    expect(entrees.length).toBeGreaterThan(0);
+    for (const a of entrees) {
+      const court = a.querySelector('.nav-court')?.textContent?.trim() ?? '';
+      const nom = a.querySelector('.nav-label')?.textContent?.trim() ?? '';
+      expect(
+        courtContenuDansLibelle(nom, court),
+        `${a.getAttribute('href')} : « ${court} » visible, nom accessible « ${nom} »`,
+      ).toBe(true);
+    }
+  });
+
+  it('seules les légendes SYNONYMES élargissent le nom accessible, et jamais en menu large', async () => {
+    const nomDe = (hote: HTMLElement, href: string) =>
+      (hote.querySelector(`.sidebar-nav a.nav-item[href="${href}"] .nav-label`) as HTMLElement).textContent?.trim();
+
+    const { hote: rail } = await monter(true);
+    // Synonyme : le mot lu à l'écran passe en tête, le libellé complet suit.
+    expect(nomDe(rail, '/notifications')).toBe('Alertes — Notifications');
+    // Fragment : rien à ajouter, l'entrée garde son libellé nu.
+    expect(nomDe(rail, '/membre/tableau-de-bord')).toBe('Tous les dossiers');
+    expect(nomDe(rail, '/membre/a-faire')).toBe('À faire');
+    // L'infobulle, elle, reste le libellé complet — seul.
+    expect((rail.querySelector('.sidebar-nav a.nav-item[href="/notifications"]') as HTMLElement).getAttribute('title')).toBe('Notifications');
+
+    // Menu large : le texte visible EST le libellé complet, le nom accessible ne bouge pas.
+    const { hote: large } = await monter(false);
+    expect(nomDe(large, '/notifications')).toBe('Notifications');
+    expect(nomDe(large, '/membre/tableau-de-bord')).toBe('Tous les dossiers');
   });
 
   it('la légende du rail est le libellé court dérivé, et l’infobulle porte le libellé complet', async () => {

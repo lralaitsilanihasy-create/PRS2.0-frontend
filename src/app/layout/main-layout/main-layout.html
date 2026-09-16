@@ -69,7 +69,7 @@
           @if (item.icon) {
             <app-icone class="nav-icon" [nom]="item.icon" [taille]="18" />
           }
-          <span class="nav-label">{{ item.label }}</span>
+          <span class="nav-label">{{ nomAccessible(item) }}</span>
           <span class="nav-court" aria-hidden="true">{{ legende(item) }}</span>
           <app-icone class="nav-chevron" nom="chev" [taille]="14" />
         </button>
@@ -88,7 +88,7 @@
                 @if (child.icon) {
                   <app-icone class="nav-icon" [nom]="child.icon" [taille]="18" />
                 }
-                <span class="nav-label">{{ child.label }}</span>
+                <span class="nav-label">{{ nomAccessible(child) }}</span>
                 <span class="nav-court" aria-hidden="true">{{ legende(child) }}</span>
                 <app-icone class="nav-chevron" nom="chev" [taille]="14" />
               </button>
@@ -101,7 +101,7 @@
                     ariaCurrentWhenActive="page"
                     [title]="infobulle(gc)"
                   >
-                    <span class="nav-label">{{ gc.label }}</span>
+                    <span class="nav-label">{{ nomAccessible(gc) }}</span>
                     <span class="nav-court" aria-hidden="true">{{ legende(gc) }}</span>
                     @if (countFor(gc.path) !== undefined) {
                       <span [class]="'nav-badge ' + badgeSeverity(gc.path)">{{ countFor(gc.path) }}</span>
@@ -120,7 +120,7 @@
                 @if (child.icon) {
                   <app-icone class="nav-icon" [nom]="child.icon" [taille]="18" />
                 }
-                <span class="nav-label">{{ child.label }}</span>
+                <span class="nav-label">{{ nomAccessible(child) }}</span>
                 <span class="nav-court" aria-hidden="true">{{ legende(child) }}</span>
                 @if (countFor(child.path) !== undefined) {
                   <span [class]="'nav-badge ' + badgeSeverity(child.path)">{{ countFor(child.path) }}</span>
@@ -141,11 +141,15 @@
           @if (item.icon) {
             <app-icone class="nav-icon" [nom]="item.icon" [taille]="18" />
           }
-          <span class="nav-label">{{ item.label }}</span>
+          <span class="nav-label">{{ nomAccessible(item) }}</span>
           <!-- ⚠️ Lot 5, F4 — LÉGENDE du rail : le libellé court dérivé (`groupes-menu.ts`), sous
                l'icône. `aria-hidden` : c'est un raccourci visuel, le nom accessible de l'entrée
-               reste `.nav-label` (rangé hors écran en rail) suivi de sa pastille — un lecteur
-               d'écran entend la même chose dans les deux états du menu. -->
+               reste `.nav-label` (rangé hors écran en rail) suivi de sa pastille.
+               ⚠️ WCAG 2.5.3 « Label in Name » (2026-09-16) — en rail, cette légende est le SEUL
+               texte visible de l'entrée : le critère exige qu'elle soit contenue dans le nom
+               accessible. Cinq légendes sur trente en sont un synonyme et non un fragment ;
+               `nomAccessible()` les préfixe alors au libellé complet (« Alertes — Notifications »).
+               Les vingt-cinq autres, et tout le menu large, sont inchangées. -->
           <span class="nav-court" aria-hidden="true">{{ legende(item) }}</span>
           <!-- Flèche montante = tâche d'un profil subordonné, exercée par DÉLÉGATION (paire active de
                t_delegation_profil). Icône SVG depuis le 2026-09-15 (plus d'emoji dans la coquille). -->
@@ -183,7 +187,7 @@
             @if (item.icon) {
               <app-icone class="nav-icon" [nom]="item.icon" [taille]="18" />
             }
-            <span class="nav-label">{{ item.label }}</span>
+            <span class="nav-label">{{ nomAccessible(item) }}</span>
             <span class="nav-court" aria-hidden="true">{{ legende(item) }}</span>
             @if (countFor(item.path) !== undefined) {
               <span [class]="'nav-badge ' + badgeSeverity(item.path)">{{ countFor(item.path) }}</span>

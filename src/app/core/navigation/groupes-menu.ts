@@ -188,6 +188,46 @@ export function libelleCourt(item: NavItem, role: Role | null = null): string {
   return surcharge ?? entreeTable(item)?.court ?? item.label.split(' ')[0];
 }
 
+/**
+ * Le libellé court est-il CONTENU dans le libellé complet ? C'est la question exacte que pose le
+ * critère WCAG 2.5.3 « Label in Name ». La comparaison ignore la casse et les espaces surnuméraires
+ * — « Global » vaut pour « Tableau de bord global » — mais PAS les accents : ce que l'utilisateur
+ * lit à l'écran est accentué, la correspondance doit l'être aussi.
+ */
+export function courtContenuDansLibelle(label: string, court: string): boolean {
+  const normaliser = (texte: string) => texte.replace(/\s+/g, ' ').trim().toLocaleLowerCase('fr');
+  return normaliser(label).includes(normaliser(court));
+}
+
+/**
+ * Nom accessible d'une entrée EN RAIL — le libellé complet, précédé du libellé court quand celui-ci
+ * en est un SYNONYME et non un fragment (« Alertes — Notifications »).
+ *
+ * ⚠️ WCAG 2.5.3 « Label in Name » (correctif du 2026-09-16). En rail, le seul texte visible d'une
+ * entrée est sa légende ; son nom accessible, lui, reste le libellé complet rangé hors écran. Pour
+ * vingt-cinq entrées sur trente la légende est un fragment du libellé (« Dossiers » dans « Tous les
+ * dossiers ») et le critère est satisfait d'office. Pour CINQ, la légende est un synonyme — Charge /
+ * Répartition de dispatch, Alertes / Notifications, Mise à jour / Mettre à jour un PPM, Archives /
+ * Archivage des PV, Retraits / Demandes de retrait. Qui pilote à la voix dit ce qu'il lit
+ * (« Alertes ») : la commande ne correspondait alors à rien.
+ *
+ * Les légendes ne bougent pas (maquettes validées le 2026-09-14) : c'est le nom accessible qui
+ * s'élargit, et seulement pour ces cinq entrées. Le mot visible vient EN TÊTE — l'avis du critère
+ * recommande de commencer le nom accessible par l'étiquette visible, et plusieurs moteurs de
+ * commande vocale ne reconnaissent que ce début. Le libellé complet suit, pour que l'entrée reste
+ * identifiable à l'oreille et unique dans son menu (deux entrées « PV » coexistent chez le
+ * Président). Le tiret cadratin entouré d'espaces est le séparateur déjà employé partout dans la
+ * coquille (`infobulle()`, carte de profil) : un lecteur d'écran n'en dit pas le nom, il marque une
+ * pause — « Alertes… Notifications ».
+ *
+ * En MENU LARGE, rien ne change : le texte visible EST le libellé complet, qui est son propre nom
+ * accessible. L'infobulle non plus ne change pas — elle reste le libellé complet, seul.
+ */
+export function nomAccessibleRail(item: NavItem, role: Role | null = null): string {
+  const court = libelleCourt(item, role);
+  return courtContenuDansLibelle(item.label, court) ? item.label : `${court} — ${item.label}`;
+}
+
 /** Entrées du PIED de la barre (aujourd'hui : « Notifications », commune aux dix menus). */
 export function piedMenu(items: NavItem[]): NavItem[] {
   return items.filter((i) => groupeExplicite(i) === 'pied');
