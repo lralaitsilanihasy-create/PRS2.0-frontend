@@ -5,7 +5,6 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ActionDossier, Capm, Chronometrage, DiffDossier, Dossier, Marche, MarchePrevision, ModePassation, PieceJointeDossier, Ppm, ServiceBeneficiaire, TypeChangementLigne, VersionArchivee } from '../../../models';
 import {
   CapmService,
-  CompteService,
   DossierService,
   EntiteContractService,
   LocaliteService,
@@ -18,7 +17,6 @@ import {
   PpmService,
   ReferenceLookupService,
   ServiceBeneficiaireService,
-  SoaBeneficiaireService,
   TypeDossierService,
 } from '../../../services';
 import { calculerFichePresentation } from '../../../shared/prmp/fiche-presentation';
@@ -53,7 +51,10 @@ const STATUTS_RECTIFIABLES: readonly string[] = ['EN_ATTENTE_DECISION_PRMP', 'EN
  *
  * `@Injectable()` sans `providedIn` : le composant HÔTE le fournit (`providers`), une instance par
  * dossier affiché ; les blocs l'injectent. L'hôte appelle `charger()` une fois, dans son `ngOnInit`.
- * Découpé de `DossierConsultation` (lot L4-F1) sans rien changer : mêmes requêtes, même vague.
+ * Découpé de `DossierConsultation` (lot L4-F1) sans rien changer à l'écran. Au nettoyage (L4-F7), les
+ * libellés unitaires sans appelant depuis le passage au tableau partagé (`PpmMarchesTable`) ont été
+ * retirés, et avec eux les deux référentiels qu'eux seuls lisaient : SOA bénéficiaires et comptes
+ * budgétaires ne sont plus demandés (le tableau affiche le code et le numéro, pas leur libellé).
  */
 @Injectable()
 export class DossierContenuStore {
@@ -280,41 +281,14 @@ export class DossierContenuStore {
   readonly pieces = signal<PieceJointeDossier[]>([]);
   /** Une seule vague de rendu : le corps s'affiche quand TOUT est chargé (données + référentiels). */
   readonly loading = signal(true);
-  private readonly modeMap = signal<Map<string, string>>(new Map());
   private readonly natureMap = signal<Map<string, string>>(new Map());
   private readonly typeMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   private readonly entiteMap = signal<Map<string, string>>(new Map());
   /** Services bénéficiaires des marchés du dossier (lecture seule), passés au tableau partagé. */
   readonly serviceBenefs = signal<ServiceBeneficiaire[]>([]);
-  private readonly soaMap = signal<Map<string, string>>(new Map());
-  private readonly compteMap = signal<Map<string, string>>(new Map());
-  /** idDetail → ses services bénéficiaires. */
-  private readonly benefParDetail = computed(() => {
-    const map = new Map<number, ServiceBeneficiaire[]>();
-    for (const b of this.serviceBenefs()) {
-      const list = map.get(b.idDetail) ?? [];
-      list.push(b);
-      map.set(b.idDetail, list);
-    }
-    return map;
-  });
   /** Dates prévisionnelles des marchés du dossier (lecture seule), passées au tableau partagé. */
   readonly previsions = signal<MarchePrevision[]>([]);
-  private readonly capmMap = signal<Map<string, string>>(new Map());
-  /** idDetail → ses dates prévisionnelles (triées par ordre CAPM). */
-  private readonly prevParDetail = computed(() => {
-    const map = new Map<number, MarchePrevision[]>();
-    for (const p of this.previsions()) {
-      const list = map.get(p.idDetail) ?? [];
-      list.push(p);
-      map.set(p.idDetail, list);
-    }
-    for (const list of map.values()) {
-      list.sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
-    }
-    return map;
-  });
 
   readonly estPpm = computed(() => this.dossier().idTypeDossier === 'DDP');
   readonly typeLabel = computed(() => {
@@ -412,11 +386,13 @@ export class DossierContenuStore {
     }
     forkJoin({
       ...commun,
+      // Modes, CAPM et natures : le TABLEAU PARTAGÉ les redemande au montage. Ils restent dans la
+      // vague pour amorcer le cache (`shareReplay`) avant lui — sans quoi son premier rendu porterait
+      // des `#12` le temps d'une réponse. Leur valeur ne sert donc pas ici : elle n'est pas reprise
+      // dans la déstructuration ci-dessous.
       modeMap: this.lookups.lookup(ModePassationService, 'idMode', ['libelle']).pipe(catchError(() => of(new Map<string, string>()))),
-      soaMap: this.lookups.lookup(SoaBeneficiaireService, 'soaCode', ['libelle']).pipe(catchError(() => of(new Map<string, string>()))),
-      compteMap: this.lookups.lookup(CompteService, 'numCompte', ['libelle']).pipe(catchError(() => of(new Map<string, string>()))),
       capmMap: this.lookups.lookup(CapmService, 'idCapm', ['libelleProcessus']).pipe(catchError(() => of(new Map<string, string>()))),
-      // Natures : utilisées par le tableau partagé — préchargées ici pour que son premier rendu soit complet.
+      // Natures : lues ici aussi, par le projet d'AGPM (`agpmDoc`).
       natureMap: this.lookups.lookup(NatureService, 'idNature', ['libelle']).pipe(catchError(() => of(new Map<string, string>()))),
       // Référentiels COMPLETS des documents dérivés (onglets fiche / AGPM, 2026-09-03).
       modesRef: this.modeService.list().pipe(catchError(() => of([] as ModePassation[]))),
@@ -448,7 +424,7 @@ export class DossierContenuStore {
             ),
           )
         : of<VersionsEtRectification>({ versionsArchivees: [], diffRectification: null }),
-    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, modeMap, natureMap, modesRef, capmsRef, soaMap, compteMap, capmMap, ppms, marches, benefs, previsions, versions }) => {
+    }).subscribe(({ typeMap, localiteMap, entiteMap, pieces, journal, chrono, natureMap, modesRef, capmsRef, ppms, marches, benefs, previsions, versions }) => {
       this.versionsArchivees.set(versions.versionsArchivees);
       const diffRectif = versions.diffRectification;
       if (diffRectif && diffRectif.lignes.some((l) => l.type !== 'INCHANGEE')) {
@@ -461,13 +437,9 @@ export class DossierContenuStore {
       this.pieces.set(pieces);
       this.journal.set(journal);
       this.chronoDossier.set(chrono);
-      this.modeMap.set(modeMap);
       this.natureMap.set(natureMap);
       this.modesRef.set(modesRef);
       this.capmsRef.set(capmsRef);
-      this.soaMap.set(soaMap);
-      this.compteMap.set(compteMap);
-      this.capmMap.set(capmMap);
       this.ppm.set(ppms.find((p) => p.idDossier === id) ?? null);
       const mine = marches.filter((m) => m.idDossier === id);
       this.marches.set(mine);
@@ -479,39 +451,4 @@ export class DossierContenuStore {
     });
   }
 
-  /*
-   * Libellés unitaires ci-dessous : plus appelés par aucun gabarit depuis que le plan passe par le
-   * tableau partagé (`PpmMarchesTable`). Déplacés tels quels au découpage (L4-F1), sans les retirer :
-   * les référentiels qu'ils lisent restent dans la vague, qui ne change pas.
-   */
-  modeLabel(id?: number): string {
-    return id === null || id === undefined ? '—' : this.modeMap().get(String(id)) ?? `#${id}`;
-  }
-  montant(v?: number): string {
-    return v === null || v === undefined ? '—' : new Intl.NumberFormat('fr-FR').format(v);
-  }
-  /** Services bénéficiaires d'un marché (lecture seule). */
-  benefsDe(idDetail: number): ServiceBeneficiaire[] {
-    return this.benefParDetail().get(idDetail) ?? [];
-  }
-  /** Libellé du service bénéficiaire (code SOA + libellé si connu). */
-  soaLabel(code?: string): string {
-    if (!code) return '—';
-    const lib = this.soaMap().get(code);
-    return lib ? `${code} · ${lib}` : code;
-  }
-  /** Libellé du compte budgétaire (numéro + libellé si connu). */
-  compteLabel(num?: string): string {
-    if (!num) return '—';
-    const lib = this.compteMap().get(num);
-    return lib ? `${num} · ${lib}` : num;
-  }
-  /** Dates prévisionnelles d'un marché (triées par ordre CAPM). */
-  datesDe(idDetail: number): MarchePrevision[] {
-    return this.prevParDetail().get(idDetail) ?? [];
-  }
-  /** Libellé du processus CAPM (LANCEMENT / OUVERTURE / ATTRIBUTION…). */
-  capmLabel(id?: number): string {
-    return id === null || id === undefined ? '—' : this.capmMap().get(String(id)) ?? `#${id}`;
-  }
 }

@@ -133,11 +133,6 @@ import { DossierContenuStore } from './dossier-contenu.store';
     .dc-hist__select { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 16px; flex-wrap: wrap; }
     .dc-hist__select label { font-weight: 600; color: var(--n-700); }
     .dc-hist__select select { max-width: 44rem; }
-    .dc-hist { margin-bottom: 14px; }
-    .dc-hist th.dc-hist__num, .dc-hist td.dc-hist__num { text-align: right; font-variant-numeric: tabular-nums; }
-    .dc-hist th.dc-hist__action, .dc-hist td.dc-hist__action { text-align: right; white-space: nowrap; }
-    .dc-hist tbody tr.dc-hist__on td { background: var(--info-bg); }
-    .dc-hist__affichee { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--info-text); }
     .dc-hist__courante { background: var(--success-bg); color: var(--success-text); }
     .dc-hist__archivee { background: var(--n-100); color: var(--n-500); }
     .dc-hist-bandeau { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; font-size: 12.5px; color: var(--n-500); }

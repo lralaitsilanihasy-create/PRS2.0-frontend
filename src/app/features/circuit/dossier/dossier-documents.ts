@@ -111,7 +111,7 @@ import { DossierVersions } from './dossier-versions';
   `,
   styles: `
     /* Sans boîte propre : la barre d'onglets et les sections restent les enfants directs du corps de
-       l'hôte (défilement, en-tête collant du plan en mode embarqué). */
+       l'hôte (défilement, en-tête collant du plan dans un panneau borné). */
     :host { display: contents; }
     .dc-section { padding: 16px 24px; }
     /* Marges resserrées dans un panneau borné (2026-09-15) : la largeur va au document. */

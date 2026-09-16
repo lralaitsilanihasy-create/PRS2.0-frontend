@@ -54,7 +54,6 @@ import { DossierContenuStore } from './dossier-contenu.store';
     .dc-meta-row:last-child { border-bottom: none; }
     .dc-meta-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--n-400); width: 110px; flex-shrink: 0; }
     .dc-meta-value { font-size: 12.5px; font-weight: 600; color: var(--n-800); }
-    .dc-meta-empty { color: var(--n-300); font-style: italic; font-weight: 400; }
   `,
 })
 export class DossierIdentite {
