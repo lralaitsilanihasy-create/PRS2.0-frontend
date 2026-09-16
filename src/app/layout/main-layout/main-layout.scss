@@ -254,37 +254,74 @@
 /* Le panneau d'interrupteurs « Délégations ⤴ » a été retiré le 2026-08-28 : la délégation
    ascendante est automatique, il n'y a plus de réglage à afficher dans la barre latérale. */
 
-/* Intitulé de section du menu (demande user 2026-08-28) : sépare les entrées du profil connecté de
-   celles exercées par délégation, et les replie au clic. Un vrai <button> — l'action doit être
-   atteignable au clavier (acquis de l'audit : jamais de div (click)). Il garde l'allure d'une
-   étiquette de rubrique, avec un chevron pour dire qu'il agit. */
+/* Intitulé de RUBRIQUE du menu (demande user 2026-08-28 pour la délégation, lot 5 F2 du 2026-09-16
+   pour les autres). Les deux formes partagent la même étiquette en capitales : l'utilisateur lit
+   « Mon travail », « Décisions » et « Exercé par délégation » comme une même famille — seule la
+   dernière agit, et son chevron le dit.
+
+   ⚠️ Hauteur : 25 px, marge comprise (mesurée). Le menu de l'Administrateur porte CINQ intitulés ;
+   à 1366×768 chaque pixel d'intitulé se paie en défilement (critère du lot : ≤ 80 px ; mesuré à
+   59 px). Le filet séparateur de l'ancien intitulé unique a été retiré pour la même raison — avec
+   cinq rubriques il faisait cinq lignes de plus, et l'étiquette en capitales suffit à ouvrir un bloc.
+   La taille passe à 0,69 rem (11 px), celle des maquettes du 14/09 ; le contraste, lui, tient à
+   l'opacité et non au corps — 0,72 sur le haut du dégradé reste à 5,73:1. */
 .sidebar-nav__titre {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   width: calc(100% - 1.5rem);
-  margin: 0.9rem 0.75rem 0.3rem;
-  padding: 0.7rem 0 0.15rem;
+  margin: 0.55rem 0.75rem 0;
+  padding: 0 0 0.2rem;
   border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
   background: transparent;
   font: inherit;
-  font-size: 0.66rem;
+  font-size: 0.69rem;
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: 0.11em;
   text-transform: uppercase;
   text-align: left;
-  cursor: pointer;
   /* Volontairement discret, mais AU-DESSUS du seuil AA : c'est du texte, pas un ornement
      (acquis A2 de l'audit — ne pas éclaircir davantage). 0,62 tenait 4,69:1, de justesse pour un
      texte de 0,66 rem en capitales ; 0,72 le porte à 5,73:1 (2026-09-16). */
   color: rgba(255, 255, 255, 0.72);
   transition: var(--transition);
 
+  /* Le menu ouvre sur une rubrique : pas de marge en tête, elle ne séparerait rien. */
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+/* La rubrique déléguée se replie au clic : un vrai <button>, l'action doit être atteignable au
+   clavier (acquis de l'audit : jamais de div (click)). */
+.sidebar-nav__titre--bouton {
+  cursor: pointer;
+
   &:hover {
     color: rgba(255, 255, 255, 0.88);
   }
 }
+
+/* Les autres intitulés ne commandent rien : ils ne réagissent pas au survol, et ne sont pas des
+   boutons — un bouton sans action ajouterait une tabulation pour rien dans la barre. */
+.sidebar-nav__titre--fixe {
+  cursor: default;
+}
+
+/* PIED du menu (lot 5 F2) : « Notifications », l'entrée transverse commune aux dix menus. Elle sort
+   des rubriques et se range en bas, au-dessus de la carte de profil. `margin-top: auto` l'y pousse
+   quand le menu est court, et retombe à zéro quand le menu défile (Administrateur) : l'entrée suit
+   alors la dernière rubrique, elle n'est jamais perdue. */
+.sidebar-nav__pied {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: auto;
+  padding-top: 0.35rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 /* L'opacité 0,8 ramenait le ⤴ de l'intitulé à 3,60:1 ; il prend la couleur pleine de l'intitulé. */
 .sidebar-nav__titre-marque {
   font-size: 0.78rem;

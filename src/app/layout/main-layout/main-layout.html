@@ -24,17 +24,20 @@
   </div>
 
   <nav class="sidebar-nav" aria-label="Navigation principale">
-    <!-- ⚠️ Demande user (2026-08-28) — deux sections : les entrées du profil connecté, puis celles
+    <!-- ⚠️ Demande user (2026-08-28) — sections du menu : les entrées du profil connecté, puis celles
          exercées PAR DÉLÉGATION sous leur propre intitulé. Elles étaient auparavant intercalées.
-         La boucle d'affichage d'une entrée reste unique : seul l'enrobage en sections est nouveau. -->
+         ⚠️ Lot 5, F2 (2026-09-16) — les entrées propres se rangent à leur tour en RUBRIQUES
+         (`sectionsMenu`, dérivées de `core/navigation/groupes-menu.ts`). La boucle d'affichage d'une
+         entrée reste unique : seul l'enrobage en sections change. Un menu d'une seule rubrique ne
+         porte pas d'intitulé — `section.titre` est alors nul, et rien n'est rendu. -->
     @for (section of navSections(); track section.cle) {
-      @if (section.titre) {
-        <!-- ⚠️ Demande user (2026-08-28) — la rubrique se replie. C'est un repli d'AFFICHAGE :
-             la délégation reste exercée, seules les entrées sont rangées. L'intitulé demeure
-             toujours visible, sans quoi il n'y aurait aucun moyen de les rouvrir. -->
+      @if (section.repliable) {
+        <!-- ⚠️ Demande user (2026-08-28) — SEULE la rubrique déléguée se replie (`repliable`). C'est
+             un repli d'AFFICHAGE : la délégation reste exercée, seules les entrées sont rangées.
+             L'intitulé demeure toujours visible, sans quoi il n'y aurait aucun moyen de les rouvrir. -->
         <button
           type="button"
-          class="sidebar-nav__titre"
+          class="sidebar-nav__titre sidebar-nav__titre--bouton"
           [attr.aria-expanded]="delegationsAffichees()"
           [title]="(delegationsAffichees() ? 'Replier' : 'Déplier') + ' les tâches exercées par délégation (sans effet sur vos droits).'"
           (click)="basculerDelegations()"
@@ -43,8 +46,12 @@
           <app-icone class="sidebar-nav__titre-marque" nom="deleg" [taille]="14" />
           <app-icone class="sidebar-nav__titre-chevron" [class.sidebar-nav__titre-chevron--ouvert]="delegationsAffichees()" nom="chev" [taille]="14" />
         </button>
+      } @else if (section.titre) {
+        <!-- Intitulé de rubrique : une étiquette, pas une commande — il ne replie rien, donc ce
+             n'est pas un <button> (un bouton sans action serait une tabulation pour rien). -->
+        <div class="sidebar-nav__titre sidebar-nav__titre--fixe">{{ section.titre }}</div>
       }
-      @if (!section.titre || delegationsAffichees()) {
+      @if (!section.repliable || delegationsAffichees()) {
     @for (item of section.items; track item.path) {
       @if (item.children) {
         <button
@@ -138,6 +145,36 @@
       }
     }
       }
+    }
+
+    <!-- ⚠️ Lot 5, F2 (2026-09-16) — PIED du menu. « Notifications » est répétée à l'identique dans
+         les dix menus : elle n'est la rubrique de personne, c'est l'entrée transverse. La ranger
+         dans « Mon travail » aurait fait passer le journal des alertes pour une tâche. Elle se pose
+         donc au bas du menu, séparée d'un filet, juste au-dessus de la carte de profil. Rendu à
+         part et volontairement court : l'entrée de pied n'a ni sous-entrées ni délégation. -->
+    @if (navPied().length) {
+      <div class="sidebar-nav__pied">
+        @for (item of navPied(); track item.path) {
+          <a
+            class="nav-item"
+            [routerLink]="item.path"
+            [queryParams]="item.queryParams ?? null"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page"
+          >
+            @if (item.icon) {
+              <app-icone class="nav-icon" [nom]="item.icon" [taille]="18" />
+            }
+            <span class="nav-label">{{ item.label }}</span>
+            @if (countFor(item.path) !== undefined) {
+              <span [class]="'nav-badge ' + badgeSeverity(item.path)">{{ countFor(item.path) }}</span>
+            }
+            @if (alertFor(item.path)) {
+              <span class="nav-badge nav-badge--alert">{{ alertFor(item.path) }}</span>
+            }
+          </a>
+        }
+      </div>
     }
   </nav>
 

@@ -8,7 +8,8 @@ import { libelleRole } from '../../core/auth/libelles-profils';
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { ToastService } from '../../core/notifications/toast.service';
-import { NavItem, cheminAFaire, navFor, separerParDelegation } from '../../core/navigation/navigation';
+import { NavItem, cheminAFaire, navFor } from '../../core/navigation/navigation';
+import { piedMenu, sectionsMenu } from '../../core/navigation/groupes-menu';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
 import {
@@ -111,22 +112,35 @@ export class MainLayout {
   );
 
   /**
-   * ⚠️ Demande user (2026-08-28) — le menu est scindé en DEUX SECTIONS : d'abord les entrées du
-   * profil connecté, puis, sous un intitulé propre, celles exercées par délégation ascendante.
+   * ⚠️ Demande user (2026-08-28) — le menu est scindé en SECTIONS : d'abord les entrées du profil
+   * connecté, puis, sous un intitulé propre, celles exercées par délégation ascendante.
    * Auparavant les deux étaient intercalées (« Vérifications » et « Archivage des PV » tombaient
    * entre « Examen de dossiers » et « Rapports ») : rien ne disait au Président ce qui relevait de
    * sa fonction et ce qu'il exerçait à la place d'un subordonné. Le badge ⤴ le signalait entrée par
    * entrée, pas d'un coup d'œil.
    *
+   * ⚠️ Refonte ergonomique, lot 5 F2 (2026-09-16) — les entrées propres se rangent à leur tour en
+   * RUBRIQUES (Mon travail, Décisions, Pilotage…) : `sectionsMenu` remplace `separerParDelegation`,
+   * qu'il appelle toujours pour la dernière section. Le classement est DÉRIVÉ dans
+   * `core/navigation/groupes-menu.ts` — `NAV_BY_ROLE` n'est pas touché, et une entrée que le pilote
+   * y ajoute reste affichée (première rubrique) en faisant rougir `groupes-menu.spec.ts`.
+   *
    * On enveloppe la liste plutôt que de dupliquer le rendu : le gabarit garde UNE seule boucle
    * d'affichage d'entrée, et une entrée déléguée qui gagnerait des sous-entrées continuerait de
    * s'afficher correctement.
    *
-   * Une section vide n'est pas rendue — un profil sans délégation active (Membre, Secrétaire…)
-   * retrouve exactement son menu d'avant. Le partage lui-même vit dans `separerParDelegation`
-   * (module `navigation`), où il est testé sur les menus réels.
+   * Une section vide n'est pas rendue, et un menu qui ne produit qu'une rubrique n'affiche AUCUN
+   * intitulé : le Secrétaire, le Vérificateur, l'UGPM et le Chargé de publication retrouvent
+   * exactement leur menu d'avant.
    */
-  readonly navSections = computed(() => separerParDelegation(this.navItems()));
+  readonly navSections = computed(() => sectionsMenu(this.navItems()));
+
+  /**
+   * Entrées du PIED de la barre : « Notifications », répétée à l'identique dans les dix menus. Elle
+   * n'est la rubrique de personne — c'est l'entrée transverse. Elle quitte donc les rubriques pour
+   * le bas du menu, juste au-dessus de la carte de profil (`sectionsMenu` l'en a déjà retirée).
+   */
+  readonly navPied = computed(() => piedMenu(this.navItems()));
 
   /**
    * Repli des rubriques déléguées (demande user 2026-08-28), partagé avec les cartes de

@@ -11,7 +11,8 @@ import { DelegationsAffichageStore } from '../../core/preferences/delegations-af
 import { VacanceStore } from '../../core/vacance/vacance.store';
 import { ActualiteService } from '../../services/actualite.services';
 import { KpiService } from '../../services';
-import { BadgesMenu } from '../../models';
+import { BadgesMenu, Role } from '../../models';
+import { NAV_BY_ROLE } from '../../core/navigation/navigation';
 import { MainLayout, routeEnConcentration } from './main-layout';
 
 @Component({ selector: 'app-ecran-factice', template: '<h1>Écran</h1>' })
@@ -367,5 +368,163 @@ describe('Coquille sans glyphe (refonte ergonomique, lot 5 — F5)', () => {
     expect(hote.querySelector('.sidebar-logo-text .name')?.textContent?.trim()).toBe('PRS 2.0');
     expect(hote.querySelector('.sidebar-logo-text .sub')?.textContent?.trim()).toBe('Commission nationale des marchés');
     expect(hote.querySelector('.sidebar-logo-mark')?.getAttribute('aria-hidden')).toBe('true');
+  });
+});
+
+/**
+ * ⚠️ Lot 5, F2 (2026-09-16) — le menu s'affiche par RUBRIQUES. Le classement lui-même est testé
+ * dans `core/navigation/groupes-menu.spec.ts` (sur les dix menus réels de `NAV_BY_ROLE`) ; ce bloc
+ * ne vérifie que le RENDU : les intitulés, le pied, et ce qui ne doit pas bouger.
+ *
+ * Le contrat tenu ici, entrée par entrée : le regroupement ne perd rien, n'ajoute rien, ne double
+ * rien. C'est la seule chose qu'un utilisateur remarquerait tout de suite.
+ */
+describe('Menu par rubriques (refonte ergonomique, lot 5 — F2)', () => {
+  const monter = async (role: Role, login: string, delegationsAffichees = true) => {
+    TestBed.configureTestingModule({
+      imports: [MainLayout],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        {
+          provide: AuthService,
+          useValue: { role: signal(role), login: signal(login), localite: signal('ANT'), ref: () => null, nomAffichage: () => null, typeActeur: () => 'CONTROLEUR', isAuthenticated: () => false, logout: () => undefined },
+        },
+        { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        // Délégation ascendante active : le Président voit ses deux entrées déléguées.
+        { provide: PermissionsService, useValue: { peutExecuter: () => true } },
+        { provide: DelegationsAffichageStore, useValue: { affichees: signal(delegationsAffichees), basculer: () => undefined } },
+        { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MainLayout);
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  };
+
+  /** Intitulés de rubrique rendus, dans l'ordre du menu. */
+  const rubriques = (hote: HTMLElement) =>
+    Array.from(hote.querySelectorAll('.sidebar-nav__titre')).map((t) => t.textContent?.trim().replace(/\s+/g, ' ') ?? '');
+
+  /** Chemins des entrées rendues, rubriques puis pied — l'ordre de lecture de l'utilisateur. */
+  const chemins = (hote: HTMLElement) =>
+    Array.from(hote.querySelectorAll('.sidebar-nav a.nav-item')).map((a) => a.getAttribute('href') ?? '');
+
+  it('range le menu du Président en Mon travail, Décisions, Pilotage, puis Exercé par délégation', async () => {
+    const hote = await monter('PRESIDENT', 'PRESID1');
+    expect(rubriques(hote)).toEqual(['Mon travail', 'Décisions', 'Pilotage', 'Exercé par délégation']);
+    expect(chemins(hote)).toEqual([
+      '/president/a-faire',
+      '/president/tableau-de-bord',
+      '/president/resultat-examen',
+      '/president/retraits',
+      '/president/repartition-dispatch',
+      '/president/chaines-controle',
+      '/president/verifications',
+      '/president/pv-examens',
+      '/notifications',
+    ]);
+  });
+
+  it('ne perd, n’ajoute et ne double aucune entrée, sur les dix menus', async () => {
+    for (const role of Object.keys(NAV_BY_ROLE) as Role[]) {
+      TestBed.resetTestingModule();
+      const hote = await monter(role, 'TEST001');
+      // `?maj=1` de « Mettre à jour un PPM » : c'est le même chemin de route, on compare les chemins.
+      const rendus = chemins(hote).map((h) => h.split('?')[0]);
+      expect(new Set(rendus).size, `${role} : doublon dans le menu rendu`).toBe(rendus.length);
+      expect([...rendus].sort(), `${role}`).toEqual([...NAV_BY_ROLE[role].map((i) => i.path)].sort());
+      expect(
+        rubriques(hote).filter((t) => t === ''),
+        `${role} : intitulé vide rendu`,
+      ).toEqual([]);
+    }
+  });
+
+  it('un menu d’une seule rubrique n’affiche aucun intitulé — il est déjà sa propre rubrique', async () => {
+    for (const [role, login] of [
+      ['SECRETAIRE', 'SECANT1'],
+      ['VERIFICATEUR', 'VERANT1'],
+      ['UGPM', 'UGPM001'],
+      ['CHARGE_PUBLICATION', 'CTRPUB1'],
+    ] as const) {
+      TestBed.resetTestingModule();
+      const hote = await monter(role, login);
+      expect(rubriques(hote), role).toEqual([]);
+    }
+  });
+
+  it('« Notifications » quitte les rubriques pour le pied, une seule fois, en dernier', async () => {
+    for (const [role, login] of [
+      ['PRESIDENT', 'PRESID1'],
+      ['ADMINISTRATEUR', 'ADMIN01'],
+      ['CHARGE_PUBLICATION', 'CTRPUB1'],
+    ] as const) {
+      TestBed.resetTestingModule();
+      const hote = await monter(role, login);
+      const nav = hote.querySelector('.sidebar-nav') as HTMLElement;
+      const pied = nav.querySelector('.sidebar-nav__pied') as HTMLElement;
+      expect(pied, role).not.toBeNull();
+      // Le pied ferme le menu, juste au-dessus de la carte de profil.
+      expect(pied, role).toBe(nav.lastElementChild);
+      expect(Array.from(pied.querySelectorAll('a.nav-item')).map((a) => a.getAttribute('href')), role).toEqual(['/notifications']);
+      expect(nav.querySelectorAll('a[href="/notifications"]').length, role).toBe(1);
+    }
+  });
+
+  it('seule la rubrique déléguée est un bouton ; un intitulé de rubrique ne commande rien', async () => {
+    const hote = await monter('PRESIDENT', 'PRESID1');
+    const boutons = Array.from(hote.querySelectorAll('button.sidebar-nav__titre'));
+    expect(boutons.length).toBe(1);
+    expect(boutons[0].textContent?.trim().replace(/\s+/g, ' ')).toBe('Exercé par délégation');
+    expect(boutons[0].getAttribute('aria-expanded')).toBe('true');
+    // Les autres intitulés ne sont ni des boutons ni des liens : pas de tabulation pour rien.
+    expect(hote.querySelectorAll('.sidebar-nav__titre--fixe').length).toBe(3);
+    expect(hote.querySelectorAll('button.sidebar-nav__titre--fixe, a.sidebar-nav__titre--fixe').length).toBe(0);
+  });
+
+  it('replier la délégation ne range QUE la rubrique déléguée — les autres restent ouvertes', async () => {
+    const hote = await monter('PRESIDENT', 'PRESID1', false);
+    // L'intitulé reste visible (sans quoi rien ne permettrait de rouvrir), ses entrées non.
+    expect(rubriques(hote)).toEqual(['Mon travail', 'Décisions', 'Pilotage', 'Exercé par délégation']);
+    expect(hote.querySelector('button.sidebar-nav__titre')?.getAttribute('aria-expanded')).toBe('false');
+    expect(chemins(hote)).toEqual([
+      '/president/a-faire',
+      '/president/tableau-de-bord',
+      '/president/resultat-examen',
+      '/president/retraits',
+      '/president/repartition-dispatch',
+      '/president/chaines-controle',
+      '/notifications',
+    ]);
+  });
+
+  /**
+   * ⚠️ Décision du 2026-09-16 (point laissé ouvert par F1) — DANS une rubrique, l'ordre reste celui
+   * de `NAV_BY_ROLE` : Délais standards · Seuil AGPM · Actualités · Référentiels, et non l'ordre
+   * écrit dans la table du plan (§3.2), qui plaçait Référentiels avant Actualités. Le forcer aurait
+   * demandé un rang par entrée dans `groupes-menu.ts` — c'est-à-dire un second ordre déclaré, que le
+   * pilote ne verrait pas en ajoutant une ligne à `navigation.ts`. Le lot dérive, il ne redéclare pas.
+   */
+  it('range le menu de l’Administrateur en cinq rubriques, ordre de déclaration conservé dedans', async () => {
+    const hote = await monter('ADMINISTRATEUR', 'ADMIN01');
+    expect(rubriques(hote)).toEqual(['Suivi', 'Demandes', 'Organisation', 'Paramétrage', 'Données']);
+    expect(chemins(hote)).toEqual([
+      '/admin/tableau-de-bord',
+      '/admin/audit',
+      '/admin/sessions',
+      '/admin/inscriptions',
+      '/admin/rattachements',
+      '/admin/chaines-controle',
+      '/admin/comptes',
+      '/admin/delais-standards',
+      '/admin/agpm-seuil',
+      '/admin/actualites',
+      '/admin/referentiels',
+      '/admin/ppm-marches',
+      '/admin/marches-previsions',
+      '/notifications',
+    ]);
   });
 });
