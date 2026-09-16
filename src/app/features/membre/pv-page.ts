@@ -39,7 +39,7 @@ import {
 import { ChronometrageDossier, PvWorkflow, PV_STATUT_LABELS, StatutBadge, examenRectifiable } from '../../shared/circuit';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
-import { DossierConsultation } from '../circuit/dossier-consultation';
+import { LienDossier } from '../circuit/page-dossier/lien-dossier';
 
 /**
  * Projets de PV du Membre : liste (lecture + contenu détaillé) et actions de workflow
@@ -49,7 +49,7 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
 @Component({
   selector: 'app-membre-pv',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, PvWorkflow, DossierConsultation, DatePipe, RouterLink, ChronometrageDossier, ModaleDirective],
+  imports: [StatutBadge, PvWorkflow, DatePipe, RouterLink, ChronometrageDossier, ModaleDirective],
   template: `
     <section class="pv">
       <header class="page-header">
@@ -82,10 +82,11 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
                   <td><app-statut-badge [statut]="pv.statutPv" [label]="label(pv)" /></td>
                   <td>
                     <div class="td-actions pv-row__actions">
+                      <!-- Lot L4-F6 : le dossier s'ouvre sur sa PAGE (Ctrl+clic = nouvel onglet). -->
                       @if (dossierDe(pv); as d) {
-                        <button type="button" class="btn btn-outline btn-sm" (click)="dossierConsulte.set(d)">
+                        <a class="btn btn-outline btn-sm" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params()">
                           📂 Voir le dossier
-                        </button>
+                        </a>
                       }
                       <button type="button" class="btn btn-secondary btn-sm" (click)="selectionner(pv)">Gérer</button>
                     </div>
@@ -367,10 +368,6 @@ import { DossierConsultation } from '../circuit/dossier-consultation';
       }
     </section>
 
-    <!-- Dossier d'origine du projet de PV (lecture seule : PPM, marchés, pièces jointes). -->
-    @if (dossierConsulte(); as d) {
-      <app-dossier-consultation [dossier]="d" (closed)="dossierConsulte.set(null)" />
-    }
   `,
   styles: `
     .pv__info { color: var(--n-500); padding: 0.5rem 0; }
@@ -534,8 +531,11 @@ export class MembrePv {
   fermerDetail(): void {
     fermerAvecAnimation(this.closingDetail, () => this.selected.set(null));
   }
-  /** ⚠️ 2026-08-03 — dossier ouvert en consultation depuis un projet de PV (null = fermé). */
-  readonly dossierConsulte = signal<Dossier | null>(null);
+  /**
+   * ⚠️ 2026-08-03 — le dossier d'origine se consultait en modale depuis un projet de PV.
+   * Lot L4-F6 : « Voir le dossier » est un LIEN vers `/<espace>/dossier/:id`, avec le retour ici.
+   */
+  protected readonly lien = inject(LienDossier);
 
   /** Détails d'examen (grille) du PV ouvert + caches de libellés. */
   private readonly pvContent = viewChild<ElementRef<HTMLElement>>('pvContent');
