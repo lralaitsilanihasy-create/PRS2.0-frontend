@@ -30,7 +30,7 @@ import {
   statutDossierLabel,
 } from '../../shared/circuit';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
-import { DossierConsultation } from './dossier-consultation';
+import { LienDossier } from './page-dossier/lien-dossier';
 import { DetailPvModal } from './detail-pv-modal';
 import { DispatchForm, DispatchItem } from './dispatch-form';
 import { ReceptionForm } from './reception-form';
@@ -39,11 +39,15 @@ import { ReceptionForm } from './reception-form';
  * Pipeline des dossiers (lecture seule) : liste filtrée par le backend selon le
  * profil/localité, avec statut et timeline du circuit. Réutilisé comme tableau de
  * bord par plusieurs profils ; le titre vient de `route.data.title`.
+ *
+ * Lot L4-F6 : la ligne (tableau) et la référence (frise) mènent à la PAGE du dossier ; la modale de
+ * consultation quitte l'écran. Le `returnUrl` porte la page et le mot-clé, désormais dans l'URL — le
+ * retour rend la liste telle qu'on l'a quittée.
  */
 @Component({
   selector: 'app-dossiers-pipeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, NgTemplateOutlet, StatutBadge, CircuitTimeline, DossierConsultation, DetailPvModal, EtatErreur, DispatchForm, ReceptionForm],
+  imports: [RouterLink, NgTemplateOutlet, StatutBadge, CircuitTimeline, DetailPvModal, EtatErreur, DispatchForm, ReceptionForm],
   template: `
     <section class="pipeline">
       <header class="page-header pipeline__header">
@@ -112,9 +116,10 @@ import { ReceptionForm } from './reception-form';
                       }
                     </td>
                   }
-                  <!-- Toute la ligne ouvre la consultation : bouton sur la référence (nom accessible +
-                       clavier) dont la zone cliquable est étendue à la ligne (overlay ::after). -->
-                  <td><button type="button" class="lien-ligne" (click)="consulte.set(d)">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</button></td>
+                  <!-- Toute la ligne ouvre le dossier : LIEN sur la référence (nom accessible + clavier,
+                       Ctrl+clic = nouvel onglet) dont la zone cliquable est étendue à la ligne (::after).
+                       Lot L4-F6 : il mène à la PAGE du dossier, avec le retour vers cette liste. -->
+                  <td><a class="lien-ligne" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params(retour())">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</a></td>
                   <td style="white-space:nowrap;">{{ dateReceptionFmt(d) || '—' }}</td>
                   <td>{{ typeDossierLabel(d) }}</td>
                   <td>{{ entiteLabel(d) }}</td>
@@ -138,7 +143,7 @@ import { ReceptionForm } from './reception-form';
             <li class="dossier-card">
               @let info = etapeInfo(d);
               <div class="dossier-card__head">
-                <button type="button" class="dossier-card__ref lien-ligne" (click)="consulte.set(d)">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (source) { · {{ entiteLabel(d) }}}</button>
+                <a class="dossier-card__ref lien-ligne" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params(retour())">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}@if (source) { · {{ entiteLabel(d) }}}</a>
                 <!-- ⚠️ Rattachements (2026-09-01) — badge de CIBLAGE seulement : null = chaîne
                      incomplète, rien à afficher ; et aucune action n'est retirée sur les dossiers
                      ciblés sur un collègue (pas de garde serveur). -->
@@ -225,9 +230,6 @@ import { ReceptionForm } from './reception-form';
       }
     </ng-template>
 
-    @if (consulte(); as d) {
-      <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
-    }
     @if (pvDetail(); as p) {
       <app-detail-pv-modal [pv]="p" (fermer)="pvDetail.set(null)" />
     }
@@ -255,7 +257,7 @@ import { ReceptionForm } from './reception-form';
        cliquable est ÉTENDUE à toute la ligne via un overlay ::after ; pas de (click) sur <tr>. */
     .table-card table tr.ligne-clic { position: relative; cursor: pointer; }
     .table-card table tr.ligne-clic:hover td { background: var(--n-50); }
-    .lien-ligne { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+    .lien-ligne { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; text-decoration: none; }
     .lien-ligne::after { content: ''; position: absolute; inset: 0; }
     /* Les boutons d'action passent AU-DESSUS de l'overlay → cliquables indépendamment du clic-ligne. */
     .table-card table tr.ligne-clic .btn { position: relative; z-index: 1; }
@@ -349,6 +351,8 @@ export class DossiersPipeline {
   private readonly auth = inject(AuthService);
   private readonly lookups = inject(ReferenceLookupService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
+  /** Lot L4-F6 : lien vers la page du dossier, retour vers cette liste (page et mot-clé compris). */
+  protected readonly lien = inject(LienDossier);
   private readonly entiteMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   /** Matricule → « nom prénoms » (référentiel des contrôleurs, en cache) : acteurs de la frise. */
@@ -401,8 +405,18 @@ export class DossiersPipeline {
   readonly pageIndex = signal(0);
   readonly totalPages = signal(0);
   private readonly pageSize = 10;
-  /** Dossier ouvert en consultation lecture seule (null = fermé). */
-  readonly consulte = signal<Dossier | null>(null);
+  /** Chemin de la liste, sans paramètres : stable tant que l'écran vit. */
+  private readonly cheminListe = this.router.url.split(/[?#]/)[0];
+  /**
+   * URL de la liste — page et mot-clé compris : `returnUrl` des liens vers la page d'un dossier
+   * (lot L4-F6). Calculée sur l'ÉTAT, pas sur `Router.url`, qui n'est à jour qu'après la navigation :
+   * un clic juste après un changement de page serait reparti sur l'ancienne.
+   */
+  retour(): string {
+    const q = this.recherche().trim();
+    const parametres = [this.pageIndex() > 0 ? `page=${this.pageIndex()}` : '', q ? `q=${encodeURIComponent(this.recherche())}` : ''].filter(Boolean);
+    return `${this.cheminListe}${parametres.length ? `?${parametres.join('&')}` : ''}`;
+  }
   /** PV définitif ouvert dans le modal de détail (file Vérificateur ; null = fermé). */
   readonly pvDetail = signal<PvExamen | null>(null);
 
