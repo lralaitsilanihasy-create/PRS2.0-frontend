@@ -217,3 +217,59 @@ describe('Barre latérale et en-tête sans emoji (refonte ergonomique, lot 5 —
     expect(hote.querySelector('.sidebar a.nav-item[title]:not([title=""])')?.getAttribute('title')).toMatch(/^Tâche du profil (Contrôleur vérificateur|Assistant contrôleur) — /);
   });
 });
+
+describe('État courant du menu (refonte ergonomique, lot 5 — F3)', () => {
+  /**
+   * ⚠️ `routerLinkActive` ne posait QU'UNE CLASSE : pour un lecteur d'écran, l'entrée courante
+   * n'existait pas. `ariaCurrentWhenActive="page"` l'annonce — et le repère visuel (pastille claire
+   * + barre d'accent de 3 px) ne suffit pas à lui seul, il n'est pas lisible à la voix.
+   */
+  const monter = async (url: string) => {
+    TestBed.configureTestingModule({
+      imports: [MainLayout],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([
+          { path: 'membre/a-faire', component: EcranFactice },
+          { path: 'membre/tableau-de-bord', component: EcranFactice },
+          { path: 'membre/resultat-examen', component: EcranFactice },
+          { path: 'notifications', component: EcranFactice },
+        ]),
+        {
+          provide: AuthService,
+          useValue: { role: signal('MEMBRE'), login: signal('MEMBANT1'), localite: signal('ANT'), ref: () => null, nomAffichage: () => null, typeActeur: () => 'CONTROLEUR', isAuthenticated: () => false, logout: () => undefined },
+        },
+        { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: PermissionsService, useValue: { peutExecuter: () => false } },
+        { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
+        { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MainLayout);
+    await TestBed.inject(Router).navigateByUrl(url);
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  };
+
+  it('pose aria-current="page" sur l’entrée courante, et sur elle seule', async () => {
+    const hote = await monter('/membre/tableau-de-bord');
+    const courantes = Array.from(hote.querySelectorAll('[aria-current="page"]'));
+    expect(courantes.length).toBe(1);
+    expect(courantes[0].getAttribute('href')).toBe('/membre/tableau-de-bord');
+    // Le repère visuel et le repère vocal désignent la MÊME entrée.
+    expect(courantes[0].classList).toContain('active');
+    const actives = Array.from(hote.querySelectorAll('.sidebar a.nav-item.active'));
+    expect(actives).toEqual(courantes);
+  });
+
+  it('l’entrée de tête et l’entrée transverse sont marquées comme les autres', async () => {
+    for (const url of ['/membre/a-faire', '/notifications']) {
+      TestBed.resetTestingModule();
+      const hote = await monter(url);
+      const courantes = Array.from(hote.querySelectorAll('[aria-current="page"]'));
+      expect(courantes.length, url).toBe(1);
+      expect(courantes[0].getAttribute('href'), url).toBe(url);
+    }
+  });
+});

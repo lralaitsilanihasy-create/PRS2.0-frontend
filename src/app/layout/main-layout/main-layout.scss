@@ -50,13 +50,17 @@
   font-size: var(--text-sm);
 }
 
+/* ⚠️ Pastille de compteur — AMBRE UNIQUE (décision Mathieu du 2026-09-16). Elle ne dépend plus ni du
+   profil (retiré du mixin `nav-accent`) ni de la sévérité : dans une barre sombre les quatre teintes
+   ne se distinguaient pas les unes des autres, et trois d'entre elles passaient sous 4,5:1
+   (info 3,84 · succès 3,58 · défaut teinté 2,97 chez le Membre). Le ROUGE est réservé à l'ALERTE. */
 .nav-badge {
   margin-left: auto;
   min-width: 1.25rem;
   padding: 0 0.4rem;
   border-radius: var(--radius-full);
-  background: var(--c-100);
-  color: var(--c-600);
+  background: var(--compteur-bg);
+  color: var(--compteur-ink);
   font-size: var(--text-xs);
   font-weight: 700;
   text-align: center;
@@ -68,11 +72,16 @@
   color: var(--danger-text);
 }
 
-/* Couleurs de badge par sévérité (priment sur l'accent de profil). */
-.nav-badge.i { background: var(--info-bg) !important; color: var(--info-text) !important; }
-.nav-badge.w { background: var(--warning-bg) !important; color: var(--warning-text) !important; }
-.nav-badge.s { background: var(--success-bg) !important; color: var(--success-text) !important; }
-.nav-badge.d { background: var(--danger-bg) !important; color: var(--danger-text) !important; }
+/* `badgeSeverity()` continue d'émettre i/w/s/d (la donnée reste juste, et les classes servent
+   ailleurs) : la coquille les ramène toutes à l'ambre. `!important` pour passer devant les règles
+   `.nav-badge.i` du design system, dont l'ordre d'insertion n'est pas garanti. */
+.nav-badge.i,
+.nav-badge.w,
+.nav-badge.s,
+.nav-badge.d {
+  background: var(--compteur-bg) !important;
+  color: var(--compteur-ink) !important;
+}
 
 /* Groupe gauche de la topbar : hamburger (mobile) + recherche de dossier. */
 .topbar-left {
@@ -115,7 +124,9 @@
   font-size: 12.5px;
   color: var(--n-800);
 
-  &::placeholder { color: var(--n-400); }
+  /* ⚠️ 2026-09-16 — n-400 est calibré sur le fond n-50 (4,51:1) ; sur le fond n-100 de cette pilule
+     il retombe à 4,23:1. Le texte de substitution prend n-500 (5,18:1). Aucun jeton n'est éclairci. */
+  &::placeholder { color: var(--n-500); }
   &:disabled { opacity: 0.6; }
   /* Croix native du type=search : discrète. */
   &::-webkit-search-cancel-button { cursor: pointer; }
@@ -170,42 +181,48 @@
   .topbar-user__name { display: none; }
 }
 
-/* ── Accent de navigation active par profil ──
-   Le thème global reste violet ; seul l'item de menu actif prend la couleur du
-   profil connecté (data-role sur l'hôte), pour un repère visuel par rôle. */
-@mixin nav-accent($color, $bg) {
+/* ── État COURANT du menu, par profil ──
+   L'entrée active est une pastille claire à la teinte du profil : sur une barre sombre, c'est un
+   changement de surface massif — l'état courant se VOIT avant d'être lu.
+   ⚠️ 2026-09-16 (décision Mathieu) — l'accent de profil quitte le TEXTE : il était peint à
+   `--*-color` sur ce fond pâle, soit 2,97 à 3,29:1 pour quatre profils. Une entrée active était donc
+   MOINS lisible qu'une entrée au repos (5,73:1). Le texte prend l'encre `--*-ink` (≥ 4,5:1 partout),
+   et l'accent passe dans une barre de 3 px posée À L'INTÉRIEUR de la pastille — sur le fond sombre
+   elle tomberait à 1,09:1 pour l'Administrateur. `box-shadow: inset` : aucun décalage de gabarit,
+   et la barre suit l'arrondi de la pastille.
+   Ni la pastille de compteur (ambre unique) ni rien d'autre ne dépend plus du profil. */
+@mixin nav-accent($encre, $bg) {
   .nav-item.active,
   .nav-sub-item.active {
-    color: $color;
+    color: $encre;
     background: $bg;
     border-color: rgba(0, 0, 0, 0.04);
-  }
-  .nav-badge {
-    background: $bg;
-    color: $color;
+    box-shadow: inset 3px 0 0 $encre;
   }
 }
 
-:host([data-role='PRMP'])                { @include nav-accent(var(--prmp-color),   var(--prmp-bg)); }
-:host([data-role='PRESIDENT'])           { @include nav-accent(var(--pres-color),   var(--pres-bg)); }
-:host([data-role='CHEF_COMMISSION'])     { @include nav-accent(var(--cc-color),     var(--cc-bg)); }
-:host([data-role='MEMBRE'])              { @include nav-accent(var(--membre-color), var(--membre-bg)); }
-:host([data-role='VERIFICATEUR'])        { @include nav-accent(var(--verif-color),  var(--verif-bg)); }
-:host([data-role='ASSISTANT_CONTROLEUR']){ @include nav-accent(var(--assist-color), var(--assist-bg)); }
-:host([data-role='CHARGE_PUBLICATION'])  { @include nav-accent(var(--assist-color), var(--assist-bg)); }
-:host([data-role='SECRETAIRE'])          { @include nav-accent(var(--sec-color),    var(--sec-bg)); }
-:host([data-role='ADMINISTRATEUR'])      { @include nav-accent(var(--admin-color),  var(--admin-bg)); }
+:host([data-role='PRMP'])                { @include nav-accent(var(--prmp-ink),   var(--prmp-bg)); }
+:host([data-role='PRESIDENT'])           { @include nav-accent(var(--pres-ink),   var(--pres-bg)); }
+:host([data-role='CHEF_COMMISSION'])     { @include nav-accent(var(--cc-ink),     var(--cc-bg)); }
+:host([data-role='MEMBRE'])              { @include nav-accent(var(--membre-ink), var(--membre-bg)); }
+:host([data-role='VERIFICATEUR'])        { @include nav-accent(var(--verif-ink),  var(--verif-bg)); }
+:host([data-role='ASSISTANT_CONTROLEUR']){ @include nav-accent(var(--assist-ink), var(--assist-bg)); }
+:host([data-role='CHARGE_PUBLICATION'])  { @include nav-accent(var(--assist-ink), var(--assist-bg)); }
+:host([data-role='SECRETAIRE'])          { @include nav-accent(var(--sec-ink),    var(--sec-bg)); }
+:host([data-role='ADMINISTRATEUR'])      { @include nav-accent(var(--admin-ink),  var(--admin-bg)); }
 
 /* Bannière de vacance du poste PRMP (spec « Mandats PRMP ») — au-dessus du contenu de chaque page. */
 .vacance-banniere {
   margin-bottom: 1rem;
 }
 
-/* Marqueur ⤴ « tâche exercée par délégation » sur une entrée de menu (spec 2026-08-14). */
+/* Marqueur ⤴ « tâche exercée par délégation » sur une entrée de menu (spec 2026-08-14).
+   ⚠️ 2026-09-16 — l'opacité 0,65 ramenait le tracé à 3,37:1 sur le haut du dégradé (blanc 72 % ×
+   0,65). Il porte une information, il n'est pas un ornement : il prend la couleur pleine de
+   l'entrée (6,91:1). Sa discrétion vient de sa taille, plus de son effacement. */
 .nav-deleg {
   margin-left: auto;
   font-size: 0.8rem;
-  opacity: 0.65;
 }
 
 /* Le panneau d'interrupteurs « Délégations ⤴ » a été retiré le 2026-08-28 : la délégation
@@ -233,17 +250,18 @@
   text-align: left;
   cursor: pointer;
   /* Volontairement discret, mais AU-DESSUS du seuil AA : c'est du texte, pas un ornement
-     (acquis A2 de l'audit — ne pas éclaircir davantage). */
-  color: rgba(255, 255, 255, 0.62);
+     (acquis A2 de l'audit — ne pas éclaircir davantage). 0,62 tenait 4,69:1, de justesse pour un
+     texte de 0,66 rem en capitales ; 0,72 le porte à 5,73:1 (2026-09-16). */
+  color: rgba(255, 255, 255, 0.72);
   transition: var(--transition);
 
   &:hover {
     color: rgba(255, 255, 255, 0.88);
   }
 }
+/* L'opacité 0,8 ramenait le ⤴ de l'intitulé à 3,60:1 ; il prend la couleur pleine de l'intitulé. */
 .sidebar-nav__titre-marque {
   font-size: 0.78rem;
-  opacity: 0.8;
 }
 /* Chevron : pointe à droite quand la rubrique est repliée, vers le bas quand elle est dépliée. */
 .sidebar-nav__titre-chevron {
@@ -278,6 +296,15 @@
 /* Le contenu principal reçoit le focus depuis le lien d'évitement : pas de contour permanent. */
 .page-content:focus {
   outline: none;
+}
+
+/* ⚠️ 2026-09-16 — le repère de focus global (`--p-400` #38bdf8, `_design-system.scss`) tient 4,42:1
+   sur la barre latérale sombre, mais seulement 2,14:1 sur le BLANC de la barre du haut : le contour
+   y disparaissait. Dans la coquille, il passe à `--p-700` (5,93:1 sur blanc, 5,30:1 sur la pilule de
+   recherche). Le jeton global n'est pas touché — le même défaut existe sur les fonds clairs de tous
+   les écrans, c'est un lot à part entière. */
+.topbar :focus-visible {
+  outline-color: var(--p-700);
 }
 
 /* ⚠️ Mode « concentration » (refonte ergonomique, lot 2 — route `data.concentration`, l'examen) :

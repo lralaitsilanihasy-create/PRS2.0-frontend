@@ -72,6 +72,7 @@
                     class="nav-item nav-item--sub2"
                     [routerLink]="gc.path"
                     routerLinkActive="active"
+                    ariaCurrentWhenActive="page"
                   >
                     <span class="nav-label">{{ gc.label }}</span>
                     @if (countFor(gc.path) !== undefined) {
@@ -85,6 +86,7 @@
                 class="nav-item nav-item--sub"
                 [routerLink]="child.path"
                 routerLinkActive="active"
+                ariaCurrentWhenActive="page"
               >
                 @if (child.icon) {
                   <app-icone class="nav-icon" [nom]="child.icon" [taille]="18" />
@@ -103,6 +105,7 @@
           [routerLink]="item.path"
           [queryParams]="item.queryParams ?? null"
           routerLinkActive="active"
+          ariaCurrentWhenActive="page"
           [title]="item.delegation ? 'Tâche du profil ' + delegationLabel(item.delegation) + ' — exercée par délégation active.' : ''"
         >
           @if (item.icon) {
@@ -135,7 +138,7 @@
     @if (role() === 'PRMP') {
       <!-- ⚠️ Demande user (2026-08-02) : « Créer compte UGPM » remplace la carte profil en bas de la
            barre latérale (l'identité est déjà affichée dans la topbar). -->
-      <a class="sidebar-profile sidebar-profile--action" routerLink="/prmp/creer-ugpm" routerLinkActive="active">
+      <a class="sidebar-profile sidebar-profile--action" routerLink="/prmp/creer-ugpm" routerLinkActive="active" ariaCurrentWhenActive="page">
         <div class="avatar"><app-icone nom="users" [taille]="16" /></div>
         <div class="info">
           <div class="name">Créer compte UGPM</div>

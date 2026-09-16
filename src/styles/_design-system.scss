@@ -105,6 +105,28 @@
   --sec-bg       : #cffafe;
   --admin-color  : #374151;
   --admin-bg     : #f3f4f6;
+
+  /* Encres de profil — refonte ergonomique, lot 5 (décision Mathieu du 2026-09-16).
+     ⚠️ L'accent de profil QUITTE le texte. `--*-color` reste l'accent de marque ; `--*-ink` porte
+     le TEXTE posé sur `--*-bg` (entrée de menu active, pastille de profil de la barre du haut) et la
+     barre d'accent de 3 px. Mesuré sur son propre fond, comme `--n-400` / `--n-500` (AUDIT.md A2) :
+     teinte et saturation conservées, luminosité baissée juste assez pour passer 4,5:1. Quatre
+     profils étaient sous le seuil — l'état courant était le moins lisible de tous les états.
+     Mesures reproductibles : scripts/contrastes-coquille.mjs. */
+  --prmp-ink     : #4462e5; /* 4,57:1 sur --prmp-bg   (avant #667eea : 3,29:1) */
+  --pres-ink     : #0369a1; /* 5,17:1 sur --pres-bg   — inchangé, déjà conforme */
+  --cc-ink       : #0e7c5a; /* 4,92:1 sur --cc-bg     — inchangé */
+  --membre-ink   : #aa5d05; /* 4,57:1 sur --membre-bg (avant #d97706 : 2,97:1) */
+  --verif-ink    : #7c3aed; /* 4,80:1 sur --verif-bg  — inchangé */
+  --assist-ink   : #c9226c; /* 4,55:1 sur --assist-bg (avant #db2777 : 3,91:1) */
+  --sec-ink      : #077792; /* 4,62:1 sur --sec-bg    (avant #0891b2 : 3,29:1) */
+  --admin-ink    : #374151; /* 9,37:1 sur --admin-bg  — inchangé */
+
+  /* Pastille de compteur du menu — AMBRE UNIQUE (décision Mathieu du 2026-09-16) : les quatre
+     teintes de sévérité ne se distinguaient pas dans une barre sombre et trois passaient sous le
+     seuil. Le rouge (`--danger-*`) est désormais réservé à l'ALERTE. */
+  --compteur-bg  : #fbbf24;
+  --compteur-ink : #3b2500; /* 8,67:1 */
 }
 
 /* ══════════════════════════════════════════
@@ -397,25 +419,36 @@ a  { color: var(--p-600); text-decoration: none; }
   font-size: 15px;
   letter-spacing: 0.08em;
 }
+/* ⚠️ Lot 5 (2026-09-16) — les blancs translucides de la barre sombre sont remontés au-dessus des
+   seuils AA. Mesures compositées sur le HAUT du dégradé (#0c4a6e, le pire cas), reproductibles par
+   `scripts/contrastes-coquille.mjs`. Ne pas les rebaisser : ce sont des valeurs calibrées, pas un
+   réglage d'ambiance — même règle que --n-400 / --n-500 (AUDIT.md A2). */
 .sidebar-logo-text .name { color: #fff; }
-.sidebar-logo-text .sub { color: rgba(255, 255, 255, 0.5); }
+.sidebar-logo-text .sub { color: rgba(255, 255, 255, 0.72); } /* 5,73:1 */
 .sidebar-profile {
   background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
+  /* Bordure : seul repère du contour de la carte (son fond est à 1,18:1 du dégradé) — et la carte
+     EST un lien chez la PRMP. Élément non textuel : 3:1. 0,10 donnait 1,31:1. */
+  border-color: rgba(255, 255, 255, 0.44); /* 3,16:1 */
 
-  &:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.2); }
+  &:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.6); }
   .info .name { color: #fff; }
-  .info .role { color: rgba(255, 255, 255, 0.55); }
+  .info .role { color: rgba(255, 255, 255, 0.72); } /* 5,73:1 — était 0,55 (4,06:1) */
+
+  .avatar {
+    /* Initiales sur le bas du dégradé de l'avatar (--p-200 #bae6fd) : p-600 n'y tenait que 3,09:1. */
+    color: var(--p-800);
+  }
 }
 /* Pied de barre latérale en ACTION (ex. « Créer compte UGPM » chez la PRMP) : lien, même gabarit que la carte. */
 a.sidebar-profile--action {
   text-decoration: none;
 
-  &.active { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.28); }
+  &.active { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.6); }
 }
-.sidebar .nav-section-label { color: rgba(255, 255, 255, 0.42); }
+.sidebar .nav-section-label { color: rgba(255, 255, 255, 0.72); }
 .sidebar .nav-item {
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.82); /* 6,91:1 — était 0,72 (5,73:1) */
 
   &:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
   &.active {
@@ -426,12 +459,12 @@ a.sidebar-profile--action {
 }
 .sidebar .nav-sub { border-left-color: rgba(255, 255, 255, 0.16); }
 .sidebar .nav-sub-item {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.72); /* 5,73:1 — était 0,60 (4,52:1, conforme de justesse) */
 
   &:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
   &.active { color: #fff; }
 }
-.sidebar .nav-chevron { color: rgba(255, 255, 255, 0.4); }
+.sidebar .nav-chevron { color: rgba(255, 255, 255, 0.55); } /* 4,06:1 — était 0,40 (2,85:1) */
 
 /* Topbar */
 .topbar {
@@ -583,15 +616,17 @@ a.sidebar-profile--action {
   border-radius: var(--radius-full);
   letter-spacing: .04em;
 
-  &.PRMP              { background: var(--prmp-bg);   color: var(--prmp-color); }
-  &.PRESIDENT         { background: var(--pres-bg);   color: var(--pres-color); }
-  &.CHEF_COMMISSION   { background: var(--cc-bg);     color: var(--cc-color); }
-  &.MEMBRE            { background: var(--membre-bg); color: var(--membre-color); }
-  &.VERIFICATEUR      { background: var(--verif-bg);  color: var(--verif-color); }
-  &.ASSISTANT_CONTROLEUR { background: var(--assist-bg); color: var(--assist-color); }
-  &.CHARGE_PUBLICATION   { background: var(--assist-bg); color: var(--assist-color); }
-  &.SECRETAIRE        { background: var(--sec-bg);    color: var(--sec-color); }
-  &.ADMINISTRATEUR    { background: var(--admin-bg);  color: var(--admin-color); }
+  /* ⚠️ Lot 5 (2026-09-16) — la pastille affiche depuis le 15/09 le LIBELLÉ FRANÇAIS du profil : c'est
+     du texte, il prend l'encre (`--*-ink`), pas l'accent de marque. Quatre profils étaient sous 4,5:1. */
+  &.PRMP              { background: var(--prmp-bg);   color: var(--prmp-ink); }
+  &.PRESIDENT         { background: var(--pres-bg);   color: var(--pres-ink); }
+  &.CHEF_COMMISSION   { background: var(--cc-bg);     color: var(--cc-ink); }
+  &.MEMBRE            { background: var(--membre-bg); color: var(--membre-ink); }
+  &.VERIFICATEUR      { background: var(--verif-bg);  color: var(--verif-ink); }
+  &.ASSISTANT_CONTROLEUR { background: var(--assist-bg); color: var(--assist-ink); }
+  &.CHARGE_PUBLICATION   { background: var(--assist-bg); color: var(--assist-ink); }
+  &.SECRETAIRE        { background: var(--sec-bg);    color: var(--sec-ink); }
+  &.ADMINISTRATEUR    { background: var(--admin-bg);  color: var(--admin-ink); }
 }
 
 /* ══════════════════════════════════════════
