@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { ApiError, getFieldError } from '../../core/errors/api-error';
@@ -10,6 +11,7 @@ import { DemandeRetrait, Dossier } from '../../models';
 import { DemandeRetraitService, DossierService, LocaliteService, ReferenceLookupService } from '../../services';
 import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
 import { DossierConsultation } from '../circuit/dossier-consultation';
+import { LienDossier } from '../circuit/page-dossier/lien-dossier';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
 
 /**
@@ -17,11 +19,16 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
  * lecture seule du dossier sélectionné (droite) ; suivi des demandes en dessous.
  * Reflet du back : identité/date/statut posés serveur (non envoyés) ; on n'envoie
  * que `{ idDossier, motifRetrait }`. 403/409 via l'intercepteur.
+ *
+ * Lot L4-F6 : dans « Mes demandes », la référence est un lien vers `/<espace>/dossier/:id`.
+ * ⚠️ Le bouton « Voir le détail complet » du FORMULAIRE garde sa modale : c'est une consultation
+ * PENDANT une saisie (motif rédigé, lettre PDF choisie), et rien de tout cela ne survivrait à une
+ * navigation — même règle que `mise-a-jour-ppm.ts` (plan L4 §4).
  */
 @Component({
   selector: 'app-prmp-retraits',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, StatutBadge, DossierConsultation],
+  imports: [DecimalPipe, StatutBadge, DossierConsultation, RouterLink],
   template: `
     <section>
       <header class="page-header">
@@ -143,8 +150,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
             <tbody>
               @for (r of demandes(); track r.idDemandeRetrait) {
                 <tr>
-                  <!-- Référence cliquable : le dossier s'ouvre sur place, sans quitter le suivi. -->
-                  <td><button type="button" class="rt-link" (click)="voirDossier(r.idDossier)">{{ dossierRef(r.idDossier) }}</button></td>
+                  <!-- Lot L4-F6 : la référence mène à la PAGE du dossier (Ctrl+clic = nouvel onglet). -->
+                  <td><a class="rt-link" [routerLink]="lien.commandes(r.idDossier)" [queryParams]="lien.params()">{{ dossierRef(r.idDossier) }}</a></td>
                   <td class="rt-motif">{{ r.motifRetrait }}</td>
                   <!-- Demandes antérieures à la règle du 2026-08-17 : aucune lettre (document → 404). -->
                   <td>
@@ -167,8 +174,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
       }
     </section>
 
-    <!-- Consultation du dossier en modale : depuis le formulaire (bouton) ou depuis une ligne
-         du suivi (référence cliquable) — même composant, pleine largeur. -->
+    <!-- Consultation du dossier en modale, depuis le FORMULAIRE seulement : on vérifie la cible sans
+         perdre le motif rédigé ni la lettre choisie (plan L4 §4, « consultation pendant une tâche »). -->
     @if (dossierConsulte(); as d) {
       <app-dossier-consultation [dossier]="d" (closed)="dossierConsulte.set(null)" />
     }
@@ -176,7 +183,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
   styles: `
     .rt-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: start; }
     .rt-foot { display: flex; justify-content: flex-end; gap: 0.5rem; }
-    .rt-link { background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--c-600); font: inherit; text-decoration: underline; }
+    /* Lot L4-F6 : la référence du suivi est un LIEN vers la page du dossier. */
+    .rt-link { color: var(--c-600); text-decoration: underline; }
     /* Le motif est du texte libre : sans cela, le « white-space: nowrap » global des cellules
        étire la ligne et pousse les dernières colonnes hors de l'écran. */
     .rt-motif { white-space: normal; max-width: 34rem; }
@@ -241,6 +249,8 @@ export class PrmpRetraits {
   /** Vacance du poste PRMP (spec « Mandats PRMP ») — demande de retrait suspendue. */
   readonly vacance = this.vacanceStore.vacance;
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
+  /** Lot L4-F6 : lien vers la page du dossier, depuis le suivi des demandes. */
+  protected readonly lien = inject(LienDossier);
 
   readonly retirables = signal<Dossier[]>([]);
   readonly demandes = signal<DemandeRetrait[]>([]);
@@ -304,27 +314,14 @@ export class PrmpRetraits {
     });
   }
 
-  /** Ouvre la consultation du dossier choisi dans le formulaire. */
+  /**
+   * Ouvre la consultation du dossier choisi dans le FORMULAIRE, en modale : la saisie en cours
+   * (motif, lettre PDF) ne survivrait pas à une navigation (plan L4 §4). Le suivi, lui, mène à la page.
+   */
   ouvrirDetail(d: Dossier | null): void {
     if (d) {
       this.dossierConsulte.set(d);
     }
-  }
-
-  /**
-   * Ouvre le dossier d'une demande du suivi. Une demande peut porter sur un dossier déjà retiré
-   * (donc absent de la liste des retirables) : on le charge alors à la demande.
-   */
-  voirDossier(idDossier: number): void {
-    const connu = this.retirables().find((d) => d.idDossier === idDossier);
-    if (connu) {
-      this.dossierConsulte.set(connu);
-      return;
-    }
-    this.dossierService.getById(idDossier).subscribe({
-      next: (d) => this.dossierConsulte.set(d),
-      error: () => {},
-    });
   }
 
   constructor() {
