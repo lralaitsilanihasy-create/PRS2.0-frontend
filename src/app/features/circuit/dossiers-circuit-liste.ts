@@ -25,20 +25,21 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { StatutBadge, examenRectifiable } from '../../shared/circuit';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { DispatchForm, DispatchItem } from './dispatch-form';
-import { DossierConsultation } from './dossier-consultation';
+import { LienDossier } from './page-dossier/lien-dossier';
 import { ReceptionForm } from './reception-form';
 import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGroupe, dossierHorsFileAttribuee, dossiersDuClassement } from './classement-config';
 
 /**
  * Liste des dossiers d'un **type** et d'un **groupe** de classement (statuts issus de `data.classement`),
- * en **lecture seule** (consultation via `DossierConsultation`). Drill-down de `DossiersClassement`
+ * en **lecture seule** (lot L4-F6 : la référence et « Voir détails » mènent à la PAGE du dossier,
+ * `/<espace>/dossier/:id`, avec `returnUrl` vers cette liste). Drill-down de `DossiersClassement`
  * (Président / CC). Colonnes enrichies selon le groupe (`colonnes` : réception / date dispatch / attributaire),
  * jointes depuis réceptions + dispatchs (idDossier → réception → dispatch). Route : `{base}/:type/:groupe`.
  */
 @Component({
   selector: 'app-dossiers-circuit-liste',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, DatePipe, DispatchForm, ModaleDirective, ReceptionForm, RouterLink],
+  imports: [StatutBadge, DatePipe, DispatchForm, ModaleDirective, ReceptionForm, RouterLink],
   template: `
     <section>
       @if (!embed()) {
@@ -120,7 +121,8 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
                       }
                     </td>
                   }
-                  <td>{{ d.refeDossier || '—' }}</td>
+                  <!-- Lot L4-F6 : la référence mène à la PAGE du dossier (Ctrl+clic = nouvel onglet). -->
+                  <td><a class="dcl__lien-ref" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params()">{{ d.refeDossier || '—' }}</a></td>
                   <td>{{ entiteLabel(d) }}</td>
                   @if (aColonne('reception')) {
                     <td style="white-space:nowrap;">{{ (dateReception(d) | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
@@ -143,7 +145,7 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
                   <td>{{ localiteLabel(d) }}</td>
                   <td>
                     <div class="td-actions actions-end">
-                      <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(d)">Voir détails</button>
+                      <a class="btn btn-secondary btn-sm" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params()">Voir détails</a>
                       @if (peutDispatcher(d); as rec) {
                         <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirDispatch(d, rec)">Dispatcher</button>
                       }
@@ -200,9 +202,6 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
       }
     </section>
 
-    @if (consulte(); as d) {
-      <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
-    }
     @if (dispatchItems(); as its) {
       <app-dispatch-form [items]="its" [reattribution]="reattribution()" (closed)="fermerDispatch()" (saved)="onDispatched()" />
     }
@@ -253,6 +252,8 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
     .actions-end { justify-content: flex-end; }
     .empty-cell { text-align: center; color: var(--n-400); padding: 1.5rem; }
     .dcl__embed-titre { padding: 0.85rem 1rem 0; font-weight: 700; color: var(--n-800); }
+    /* Lot L4-F6 : la référence est un LIEN vers la page du dossier. */
+    .dcl__lien-ref { color: var(--c-600); text-decoration: underline; }
     .dcl__ref { justify-content: space-between; align-items: center; }
     .dcl__ref-actions { display: flex; align-items: center; gap: 0.5rem; }
     .dcl__ref-close { background: transparent; border: 0; color: inherit; font-size: 1.25rem; line-height: 1; cursor: pointer; }
@@ -284,6 +285,8 @@ export class DossiersCircuitListe {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
+  /** Lot L4-F6 : lien vers la page du dossier, retour vers cette liste. */
+  protected readonly lien = inject(LienDossier);
 
   readonly cfg = this.route.snapshot.data['classement'] as ClassementConfig;
 
@@ -294,7 +297,6 @@ export class DossiersCircuitListe {
   readonly groupe = signal<string>('');
   readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);
-  readonly consulte = signal<Dossier | null>(null);
   /** Dossiers + réceptions dont le formulaire de dispatch est ouvert (1 = unitaire, plusieurs = lot ; null = fermé). */
   readonly dispatchItems = signal<DispatchItem[] | null>(null);
   /** Dispatch existant à RÉATTRIBUER (mode PUT du formulaire) ; null = dispatch classique (POST). */
