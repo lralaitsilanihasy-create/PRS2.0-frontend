@@ -10,7 +10,18 @@
 ></div>
 
 <aside class="sidebar" [class.open]="sidebarOpen()">
-  <div class="sidebar-logo">CNM</div>
+  <!-- ⚠️ Lot 5 (2026-09-16) — bloc de marque des maquettes du 14/09 : pastille + nom du produit +
+       institution, à la place du seul mot « CNM ». Les styles `.sidebar-logo-mark` et
+       `.sidebar-logo-text` existaient déjà dans le design system sans être employés nulle part : on
+       les BRANCHE, on n'en écrit pas de nouveaux. La pastille est un logotype (aria-hidden) : le nom
+       accessible de la barre est porté par `aria-label` sur <nav>. -->
+  <div class="sidebar-logo">
+    <span class="sidebar-logo-mark" aria-hidden="true">MEF</span>
+    <div class="sidebar-logo-text">
+      <div class="name">PRS 2.0</div>
+      <div class="sub">Commission nationale des marchés</div>
+    </div>
+  </div>
 
   <nav class="sidebar-nav" aria-label="Navigation principale">
     <!-- ⚠️ Demande user (2026-08-28) — deux sections : les entrées du profil connecté, puis celles
@@ -30,7 +41,7 @@
         >
           <span class="sidebar-nav__titre-texte">{{ section.titre }}</span>
           <app-icone class="sidebar-nav__titre-marque" nom="deleg" [taille]="14" />
-          <span class="sidebar-nav__titre-chevron" [class.sidebar-nav__titre-chevron--ouvert]="delegationsAffichees()" aria-hidden="true">›</span>
+          <app-icone class="sidebar-nav__titre-chevron" [class.sidebar-nav__titre-chevron--ouvert]="delegationsAffichees()" nom="chev" [taille]="14" />
         </button>
       }
       @if (!section.titre || delegationsAffichees()) {
@@ -47,7 +58,7 @@
             <app-icone class="nav-icon" [nom]="item.icon" [taille]="18" />
           }
           <span class="nav-label">{{ item.label }}</span>
-          <span class="nav-chevron" aria-hidden="true">›</span>
+          <app-icone class="nav-chevron" nom="chev" [taille]="14" />
         </button>
         @if (isOpen(item)) {
           @for (child of item.children; track child.path) {
@@ -64,7 +75,7 @@
                   <app-icone class="nav-icon" [nom]="child.icon" [taille]="18" />
                 }
                 <span class="nav-label">{{ child.label }}</span>
-                <span class="nav-chevron" aria-hidden="true">›</span>
+                <app-icone class="nav-chevron" nom="chev" [taille]="14" />
               </button>
               @if (isOpen(child)) {
                 @for (gc of child.children; track gc.path) {
@@ -165,7 +176,7 @@
       (click)="toggleSidebar()"
       [attr.aria-expanded]="sidebarOpen()"
       aria-label="Ouvrir le menu"
-    >☰</button>
+    ><app-icone nom="menu" [taille]="18" /></button>
     @if (peutRechercher()) {
       <form class="topbar-search" (submit)="allerAuDossier(); $event.preventDefault()">
         <app-icone class="topbar-search__ic" nom="search" [taille]="14" />
@@ -209,9 +220,13 @@
   <div class="page-inner">
     <!-- Vacance du poste PRMP (spec « Mandats PRMP », §5) : aucun mandat actif → standby explicite. -->
     @if (vacance()) {
-      <!-- « .alert » est un conteneur flex : le message tient dans UN seul <span> (recette du 2026-09-15). -->
+      <!-- « .alert » est un conteneur flex : le message tient dans UN seul <span> (recette du
+           2026-09-15) — du texte posé à côté d'un <strong> y devenait trois ou quatre colonnes.
+           ⚠️ Lot 5 (2026-09-16) — le « ⏸ » était le dernier emoji de la coquille : son rendu variait
+           d'un poste à l'autre. L'icône est un frère du span de texte, jamais dedans. -->
       <div class="alert alert-warning vacance-banniere" role="status">
-        <span>⏸ <strong>En attente de nomination de la nouvelle PRMP</strong> — le poste est vacant : le
+        <app-icone class="vacance-banniere__ic" nom="pause" [taille]="16" />
+        <span><strong>En attente de nomination de la nouvelle PRMP</strong> — le poste est vacant : le
         traitement des dossiers est suspendu (création, modification, soumission, retraits). Les actions
         redeviendront disponibles automatiquement dès la nomination effective du nouveau titulaire.</span>
       </div>

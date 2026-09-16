@@ -175,7 +175,13 @@ describe('Bannière de vacance du poste PRMP (recette du 2026-09-15)', () => {
     const banniere = (fixture.nativeElement as HTMLElement).querySelector('.alert.vacance-banniere') as HTMLElement;
     expect(banniere).not.toBeNull();
     expect(enfantsDirectsMixtes(banniere)).toBe(false);
-    expect(banniere.children.length).toBe(1);
+    // ⚠️ Lot 5 (2026-09-16) — l'icône (ex-« ⏸ ») est un FRÈRE du span, jamais dedans : le message
+    // reste d'un seul tenant, et l'icône garde sa colonne. Deux enfants, pas un de plus.
+    expect(banniere.children.length).toBe(2);
+    expect(Array.from(banniere.children).map((e) => e.tagName.toLowerCase())).toEqual(['app-icone', 'span']);
+    expect(banniere.querySelectorAll('span').length).toBe(1);
+    expect(banniere.querySelector('span app-icone')).toBeNull();
+    expect(banniere.querySelector('app-icone svg')).not.toBeNull();
     expect(banniere.querySelector('span > strong')?.textContent).toBe('En attente de nomination de la nouvelle PRMP');
   });
 });
@@ -271,5 +277,95 @@ describe('État courant du menu (refonte ergonomique, lot 5 — F3)', () => {
       expect(courantes.length, url).toBe(1);
       expect(courantes[0].getAttribute('href'), url).toBe(url);
     }
+  });
+});
+
+/**
+ * ⚠️ Lot 5, F5 (2026-09-16) — la coquille ne porte plus AUCUN caractère tenant lieu d'icône : ni
+ * emoji (rendu variable d'un poste à l'autre, hors du style de l'interface), ni glyphe technique
+ * détourné (« ☰ », « › », « ⤴ », « ✕ », « ⏸ »). Tout passe par `app-icone` — grille 24, trait 1,8,
+ * `currentColor`, `aria-hidden` — dont les tracés vivent dans `shared/ui/icone.ts`.
+ *
+ * Le balayage porte sur le DOM RENDU, pas sur le texte des fichiers : c'est ce que l'utilisateur
+ * voit, et les commentaires du code (qui contiennent des « ⚠️ » par dizaines) n'y sont pas. Pour
+ * ajouter un symbole : lui donner son tracé dans `ICONES`, puis `<app-icone nom="…" />`.
+ */
+/**
+ * Emoji, flèches, symboles techniques (⏸), formes géométriques, symboles divers et dingbats
+ * (☰, ✕), flèches supplémentaires (⤴) et chevrons simples (‹ ›).
+ *
+ * La ponctuation française — guillemets « », tiret cadratin, points de suspension — n'en fait
+ * volontairement PAS partie : ce sont des caractères de texte, pas des icônes détournées.
+ */
+const GLYPHES_INTERDITS = /[\p{Extended_Pictographic}←-⇿⌀-⏿■-◿☀-➿⤀-⥿⬀-⯿‹›]/u;
+
+describe('Coquille sans glyphe (refonte ergonomique, lot 5 — F5)', () => {
+  const monter = async (role: string, login: string, url: string, vacance: boolean) => {
+    TestBed.configureTestingModule({
+      imports: [MainLayout],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([
+          { path: 'president/a-faire', component: EcranFactice },
+          { path: 'prmp/tableau-de-bord', component: EcranFactice },
+        ]),
+        {
+          provide: AuthService,
+          useValue: { role: signal(role), login: signal(login), localite: signal('ANT'), ref: () => null, nomAffichage: () => null, typeActeur: () => 'CONTROLEUR', isAuthenticated: () => false, logout: () => undefined },
+        },
+        { provide: VacanceStore, useValue: { vacance: signal(vacance), verifier: () => undefined } },
+        { provide: PermissionsService, useValue: { peutExecuter: () => true } },
+        { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
+        { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MainLayout);
+    await TestBed.inject(Router).navigateByUrl(url);
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  };
+
+  const texteAffiche = (hote: HTMLElement) =>
+    Array.from(hote.querySelectorAll('.sidebar, .topbar, .vacance-banniere'))
+      .map((el) => el.textContent ?? '')
+      .join(' ');
+
+  it('barre latérale, barre du haut et bannière de vacance : aucun glyphe tenant lieu d’icône', async () => {
+    for (const [role, login, url, vacance] of [
+      ['PRESIDENT', 'PRESID1', '/president/a-faire', false],
+      ['PRMP', 'PRMP001', '/prmp/tableau-de-bord', true],
+    ] as const) {
+      TestBed.resetTestingModule();
+      const hote = await monter(role, login, url, vacance);
+      const fautifs = [...texteAffiche(hote)].filter((c) => GLYPHES_INTERDITS.test(c));
+      expect(fautifs, `${role} : ${fautifs.join(' ')}`).toEqual([]);
+    }
+  });
+
+  it('le bouton de tiroir porte l’icône « menu », son nom accessible et son état', async () => {
+    TestBed.resetTestingModule();
+    const hote = await monter('PRESIDENT', 'PRESID1', '/president/a-faire', false);
+    const bouton = hote.querySelector('.sidebar-toggle') as HTMLButtonElement;
+    expect(bouton.getAttribute('aria-label')).toBe('Ouvrir le menu');
+    expect(bouton.getAttribute('aria-expanded')).toBe('false');
+    expect(bouton.textContent?.trim()).toBe('');
+    expect(bouton.querySelector('app-icone svg')).not.toBeNull();
+  });
+
+  it('les chevrons de repli sont des tracés SVG, pas des « › »', async () => {
+    TestBed.resetTestingModule();
+    const hote = await monter('PRESIDENT', 'PRESID1', '/president/a-faire', false);
+    const chevron = hote.querySelector('.sidebar-nav__titre-chevron') as HTMLElement;
+    expect(chevron.tagName.toLowerCase()).toBe('app-icone');
+    expect(chevron.querySelector('svg')).not.toBeNull();
+  });
+
+  it('le bloc de marque affiche le produit et l’institution, pastille en logotype muet', async () => {
+    TestBed.resetTestingModule();
+    const hote = await monter('PRESIDENT', 'PRESID1', '/president/a-faire', false);
+    expect(hote.querySelector('.sidebar-logo-text .name')?.textContent?.trim()).toBe('PRS 2.0');
+    expect(hote.querySelector('.sidebar-logo-text .sub')?.textContent?.trim()).toBe('Commission nationale des marchés');
+    expect(hote.querySelector('.sidebar-logo-mark')?.getAttribute('aria-hidden')).toBe('true');
   });
 });

@@ -50,6 +50,8 @@ const ICONES = {
   link: 'M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2 M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2',
   globe: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18z M3 12h18 M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9 M12 3c-2.5 2.6-3.8 5.6-3.8 9s1.3 6.4 3.8 9',
   key: 'M8 11a4 4 0 1 0 0 8a4 4 0 1 0 0-8z M10.8 12.2 20 3 M17 6l3 3 M14.5 8.5l2 2',
+  // Ajout du 2026-09-16 (lot 5, F5) — dernier glyphe de la coquille : le « ☰ » du bouton de tiroir.
+  menu: 'M4 7h16 M4 12h16 M4 17h16',
 } as const;
 
 export type NomIcone = keyof typeof ICONES;

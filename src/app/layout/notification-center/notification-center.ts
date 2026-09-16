@@ -65,7 +65,10 @@ const MESSAGERIE_ROLES: Record<string, string> = {
             }
           </div>
           <!-- ⚠️ Spec notifications (2026-08-02) — accès à l'écran dédié depuis le panneau. -->
-          <a class="notif__tout" routerLink="/notifications" (click)="open.set(false)">Voir toutes les notifications ›</a>
+          <!-- ⚠️ Lot 5, F5 (2026-09-16) — le « › » final était le dernier glyphe détourné du panneau. -->
+          <a class="notif__tout" routerLink="/notifications" (click)="open.set(false)">
+            Voir toutes les notifications<app-icone nom="chev" [taille]="12" />
+          </a>
         </div>
       }
     </div>
@@ -88,7 +91,7 @@ const MESSAGERIE_ROLES: Record<string, string> = {
     .notif__item-title { font-weight: var(--cnm-fw-medium); color: var(--cnm-text); font-size: var(--cnm-fs-sm); }
     .notif__item-corps { color: var(--cnm-text-2); font-size: var(--cnm-fs-xs); }
     .notif__item-date { color: var(--cnm-text-3); font-size: var(--cnm-fs-micro); }
-    .notif__tout { display: block; text-align: center; padding: var(--cnm-space-3); border-top: 1px solid var(--cnm-border); font-weight: var(--cnm-fw-semibold); font-size: var(--cnm-fs-sm); color: var(--cnm-brand); text-decoration: none; }
+    .notif__tout { display: flex; align-items: center; justify-content: center; gap: 2px; padding: var(--cnm-space-3); border-top: 1px solid var(--cnm-border); font-weight: var(--cnm-fw-semibold); font-size: var(--cnm-fs-sm); color: var(--cnm-brand); text-decoration: none; }
     .notif__tout:hover { background: var(--cnm-surface-2); }
   `,
 })

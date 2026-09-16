@@ -216,6 +216,29 @@
   margin-bottom: 1rem;
 }
 
+/* L'icône est alignée sur la PREMIÈRE ligne du message (`.alert` aligne ses enfants en haut). */
+.vacance-banniere__ic {
+  margin-top: 0.15rem;
+}
+
+/* Bloc de marque (lot 5) : la pastille du logotype porte « MEF » en toutes lettres — les styles
+   `.sidebar-logo-mark` du design system prévoyaient un <i> à glyphe, qui n'a jamais existé. */
+.sidebar-logo-mark {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+/* `.sidebar-logo` est un conteneur flex : le bloc de texte empile son nom et son sous-titre. */
+.sidebar-logo-text {
+  min-width: 0;
+  line-height: 1.15;
+  /* `.sidebar-logo` porte un interlettrage de titre (0,08em) hérité du mot « CNM » seul : il
+     étirerait « Commission nationale des marchés » sur trois lignes. */
+  letter-spacing: normal;
+}
+
 /* Marqueur ⤴ « tâche exercée par délégation » sur une entrée de menu (spec 2026-08-14).
    ⚠️ 2026-09-16 — l'opacité 0,65 ramenait le tracé à 3,37:1 sur le haut du dégradé (blanc 72 % ×
    0,65). Il porte une information, il n'est pas un ornement : il prend la couleur pleine de
