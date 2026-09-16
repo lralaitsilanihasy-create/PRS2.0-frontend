@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/errors/api-error';
@@ -10,7 +10,7 @@ import { Dossier, LettreRenvoi, PieceJointeDossier, TypePieceJointe } from '../.
 import { DossierService, LettreRenvoiService, PieceJointeDossierService, TypePieceJointeService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
-import { DossierConsultation } from './dossier-consultation';
+import { LienDossier } from './page-dossier/lien-dossier';
 
 /**
  * Consultation des lettres de renvoi, partagée par profil via `route.data` :
@@ -20,11 +20,15 @@ import { DossierConsultation } from './dossier-consultation';
  *   bouton « Signer » (`POST …/{id}/signer`) tant que `statut = SOUMIS`.
  *
  * Lien de notification : `…/lettre-renvois/{idLettre}` déplie automatiquement le détail.
+ *
+ * Lot L4-F6 : la référence du dossier et « Voir le dossier » mènent à la PAGE du dossier ; la modale
+ * de consultation quitte l'écran. Le `returnUrl` reprend le lien profond de la lettre dépliée
+ * (`…/lettre-renvois/{idLettre}`) : au retour, le détail est rouvert au bon endroit.
  */
 @Component({
   selector: 'app-lettre-renvoi-consultation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation],
+  imports: [StatutBadge, RouterLink],
   template: `
     <section class="lrc">
       <header class="page-header">
@@ -49,7 +53,14 @@ import { DossierConsultation } from './dossier-consultation';
                     @if (afficherLue && l.lue === false) { <span class="badge badge-danger lrc__nouveau">Non lue</span> }
                   </span>
                 </td>
-                <td>{{ refDossier(l) }}</td>
+                <!-- Lot L4-F6 : la référence du dossier mène à sa PAGE (Ctrl+clic = nouvel onglet). -->
+                <td>
+                  @if (l.idDossier != null) {
+                    <a class="lrc__lien-dossier" [routerLink]="lien.commandes(l.idDossier)" [queryParams]="lien.params(retour())">{{ refDossier(l) }}</a>
+                  } @else {
+                    {{ refDossier(l) }}
+                  }
+                </td>
                 <td class="cnm-mono">{{ l.dateLettre || '—' }}</td>
                 <td><app-statut-badge [statut]="l.statut" /></td>
                 <td class="lrc__actions">
@@ -84,8 +95,8 @@ import { DossierConsultation } from './dossier-consultation';
                         <dt>Dossier</dt>
                         <dd class="lrc__dossier">
                           <span>{{ refDossier(l) }}</span>
-                          @if (dossierDe(l)) {
-                            <button type="button" class="btn btn-secondary btn-sm" (click)="voirDossier(l)">Voir le dossier</button>
+                          @if (l.idDossier != null) {
+                            <a class="btn btn-secondary btn-sm" [routerLink]="lien.commandes(l.idDossier)" [queryParams]="lien.params(retour())">Voir le dossier</a>
                           }
                         </dd>
                       </div>
@@ -185,9 +196,6 @@ import { DossierConsultation } from './dossier-consultation';
       }
     </section>
 
-    @if (dossierConsulte(); as d) {
-      <app-dossier-consultation [dossier]="d" (closed)="dossierConsulte.set(null)" />
-    }
   `,
   styles: `
     .lrc__actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
@@ -198,6 +206,8 @@ import { DossierConsultation } from './dossier-consultation';
     .lrc__dl dt { flex: 0 0 10rem; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
     .lrc__dl dd { margin: 0; }
     .lrc__dossier { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    /* Lot L4-F6 : la référence du dossier est un LIEN vers sa page. */
+    .lrc__lien-dossier { color: var(--c-600); text-decoration: underline; }
     .lrc__corps { white-space: pre-wrap; }
     .lrc__pieces { margin-top: 0.75rem; border-top: 1px solid var(--c-100); padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem; }
     .lrc__pieces-title { margin: 0.5rem 0 0; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--n-400); }
@@ -224,6 +234,11 @@ export class LettreRenvoiConsultation {
   private readonly typePieceService = inject(TypePieceJointeService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly auth = inject(AuthService);
+  /** Lot L4-F6 : lien vers la page du dossier, retour vers cette liste. */
+  protected readonly lien = inject(LienDossier);
+  private readonly router = inject(Router);
+  /** Chemin de la liste, sans paramètres : base du `returnUrl` (lot L4-F6). Stable tant que l'écran vit. */
+  private readonly cheminBase = this.router.url.split(/[?#]/)[0];
 
   private readonly source = (this.route.snapshot.data['source'] as 'mes' | 'localite') ?? 'localite';
   /**
@@ -247,10 +262,8 @@ export class LettreRenvoiConsultation {
   readonly signature = signal<number | null>(null);
   private readonly dossierRefs = signal<Map<number, string>>(new Map());
   private readonly dossierTypes = signal<Map<number, string>>(new Map());
-  /** Dossiers complets (par idDossier) pour la consultation lecture seule via DossierConsultation. */
+  /** Dossiers complets (par idDossier) : statut du dossier lié, pour la transmission des compléments. */
   private readonly dossiersById = signal<Map<number, Dossier>>(new Map());
-  /** Dossier ouvert en consultation lecture seule (null = fermé). */
-  readonly dossierConsulte = signal<Dossier | null>(null);
   /** Localité du dossier de chaque lettre (pour la règle de signature ANT/régional). */
   private readonly dossierLocalites = signal<Map<number, string>>(new Map());
   /** Pièces du dossier de la lettre ouverte (chargées au dépliage). */
@@ -263,7 +276,8 @@ export class LettreRenvoiConsultation {
   readonly uploading = signal(false);
 
   constructor() {
-    const param = this.route.snapshot.paramMap.get('idLettre');
+    // Lettre dépliée : segment `:idLettre` d'un lien de notification, ou `?lettre=` du retour (lot L4-F6).
+    const param = this.route.snapshot.paramMap.get('idLettre') ?? this.route.snapshot.queryParamMap.get('lettre');
     if (param) {
       this.ouvert.set(Number(param));
     }
@@ -292,6 +306,9 @@ export class LettreRenvoiConsultation {
   basculer(l: LettreRenvoi): void {
     const ouverture = this.ouvert() !== l.idLettre;
     this.ouvert.update((cur) => (cur === l.idLettre ? null : (l.idLettre ?? null)));
+    // Lot L4-F6 : la lettre dépliée passe dans l'URL, sans nouvelle entrée d'historique. Un paramètre
+    // de REQUÊTE, et non le segment `:idLettre` : celui-ci est une autre route, qui remonterait l'écran.
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { lettre: this.ouvert() }, queryParamsHandling: 'merge', replaceUrl: true });
     // À l'ouverture d'une lettre signée (PRMP) : charge les pièces du dossier pour les deux sections.
     if (ouverture && this.piecesUpload && l.statut === 'SIGNE' && l.idDossier != null) {
       this.uploadType.set(null);
@@ -504,11 +521,14 @@ export class LettreRenvoiConsultation {
   dossierDe(l: LettreRenvoi): Dossier | undefined {
     return l.idDossier != null ? this.dossiersById().get(l.idDossier) : undefined;
   }
-  /** Ouvre la consultation lecture seule du dossier lié à la lettre. */
-  voirDossier(l: LettreRenvoi): void {
-    const d = this.dossierDe(l);
-    if (d) {
-      this.dossierConsulte.set(d);
-    }
+
+  /**
+   * URL de la liste, lettre dépliée comprise : `returnUrl` des liens vers la page d'un dossier
+   * (lot L4-F6). Le lien profond `…/lettre-renvois/{idLettre}` existe déjà — au retour, le détail
+   * se rouvre de lui-même.
+   */
+  retour(): string {
+    const id = this.ouvert();
+    return id != null ? `${this.cheminBase}?lettre=${id}` : this.cheminBase;
   }
 }
