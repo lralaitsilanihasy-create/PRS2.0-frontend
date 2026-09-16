@@ -113,3 +113,37 @@ reste en lecture seule avec une mention discrète, sans toast.
 
 Contrat détaillé et discussion au §6 de `frontend/docs/plan-refonte-L4-page-dossier.md` ; consommateur :
 lot L4-F3 (« Étape en cours et gestes ») du même plan.
+
+---
+
+## Note de livraison backend — 2026-09-15 (`PRS20`, commits `5c3176a` et `642e7c7`)
+
+Le contrat du §6 (repris à l'identique du plan) est livré tel que demandé, sans écart sur la forme des
+réponses ni sur les codes 401/403/404. Suite verte, tests 1 à 6 tous couverts
+(`GestesDossierIntegrationTest`, complément de `ReglesAFaireTest`). Documentation à jour :
+`docs/api-endpoints.md` du backend (section dédiée, sous l'accueil « À faire ») et
+`docs/regles-gestion.md` (paragraphe « Page dossier »).
+
+### Trois écarts assumés par rapport à la lettre de la demande
+
+1. **La garde appelle `findAFaireParId` + `controlerVisibilite`, pas `DossierService.findById`.**
+   `findById` charge et mappe tout le `DossierDto` pour n'en garder que l'existence — une lecture inutile
+   ici, puisque la ligne d'« À faire » du dossier (de toute façon nécessaire au calcul) sert tout aussi
+   bien de test d'existence. `controlerVisibilite`, extrait de `findById`, porte ensuite la garde de
+   périmètre avec les **mêmes messages** (404 « Dossier introuvable : {id} », 403 « Dossier hors de votre
+   périmètre de visibilité (§1). ») : rien ne change côté appelant, seule une requête SQL est économisée.
+2. **Le filtre de statut actif se fait en Java, pas en SQL.** `findAFaireParId` ne filtre ni le périmètre
+   ni le statut, à la différence des trois requêtes de l'accueil (`findAFaireTous`,
+   `findAFaireParLocalite`, `findAFairePourPrmp`), qui reçoivent chacune l'ensemble de statuts actifs en
+   paramètre SQL. Ici, l'ensemble à appliquer (`STATUTS_ACTIFS_CNM` ou `STATUTS_ACTIFS_PARTIE_CONTROLEE`)
+   dépend du **profil de l'appelant**, connu seulement après la lecture de la ligne — le filtrer en SQL
+   aurait exigé une seconde requête conditionnelle. Un dossier existant mais à un statut inactif renvoie
+   donc bien **200** avec `taches: []` et `etapeCourante: null`, jamais 404 : l'existence et l'activité
+   sont deux questions distinctes, et seule la première conditionne le code HTTP.
+3. **`rang` numérote toute la liste, pas deux listes séparées.** L'accueil numérote `taches` et
+   `delegations.taches` chacune à partir de 1 (deux séries) ; la page n'a qu'une seule liste (titulaire
+   d'abord, puis les autres) et la numérote d'un seul tenant, du premier au dernier — plus simple à
+   consommer pour un panneau qui n'affiche qu'un dossier à la fois. L'invariant de parité testé ignore
+   volontairement `rang` pour cette raison.
+
+Aucun de ces trois écarts ne touche la forme JSON des réponses.

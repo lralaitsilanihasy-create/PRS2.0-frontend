@@ -510,3 +510,68 @@ Le L4 n'en dépend pas fonctionnellement, mais :
   profite à la page, dont le critère de défilement (F2) réemploie le banc `perf.mjs` du correctif ;
 - la page contourne structurellement le voile flouté (le document défile dans la page, pas dans une modale), mais la
   modale reste dans `mise-a-jour-ppm` : le correctif garde tout son intérêt.
+
+---
+
+## 11. Ce qui a été livré
+
+État relevé le 16/09/2026, à la lecture des sources (aucune commande git dans ce dépôt pendant ce lot de
+documentation, un agent front y travaillant en parallèle) ; commits frontend du lot : de `dc12e53` à `e1621d9`
+(`git log --oneline fd90d25..e1621d9`), backend `2237116`.
+
+- **L4-D1** (demande backend) — livré : `frontend/docs/demande-backend-2026-09-15-gestes-dossier.md`, clôturée.
+- **L4-B1** (`GET /api/dossiers/{id}/gestes`) — livré côté backend, commits `5c3176a` (implémentation) et
+  `642e7c7` (documentation). Trois écarts assumés par rapport à la lettre de la demande, consignés dans la note de
+  clôture de la demande : garde par `findAFaireParId` + `controlerVisibilite` plutôt que `DossierService.findById`,
+  filtre de statut actif fait en Java plutôt qu'en SQL (le jeu de statuts dépend du profil de l'appelant, connu
+  seulement après lecture de la ligne), `rang` numéroté sur toute la liste plutôt que sur deux séries séparées
+  comme dans l'accueil.
+- **L4-F1** (découpage de la consultation) — livré : `features/circuit/dossier/` porte les six fichiers prévus au
+  §5 (`dossier-contenu.store.ts`, `dossier-documents.ts`, `dossier-pieces.ts`, `dossier-versions.ts`,
+  `dossier-journal.ts` + `journal-libelles.ts`, `dossier-identite.ts`), chacun avec sa spec ; `dossier-consultation.ts`
+  est retombé à 207 lignes.
+- **L4-F2** (route et page en lecture seule) — livré : `features/circuit/page-dossier/` existe
+  (`page-dossier.ts`, `page-dossier-modele.ts`, `page-dossier-corps.ts`), avec spec de route et de modèle.
+- **L4-F3** (étape en cours et gestes) — livré : `etape-courante.ts`, `etape-courante-modele.ts`,
+  `barre-collante.ts`, `gestes/ouvrir-geste.ts`, chacun avec sa spec.
+- **L4-F4** (navette du PV dans la page) — livré : `page-dossier/etape-pv.ts` et sa spec.
+- **L4-F5** (décision de retrait dans la page) — livré : `features/circuit/decision-retrait.ts` et sa spec, au
+  niveau prévu par le plan (pas sous `page-dossier/`).
+- **L4-Q2** (recette de bout en bout) — vraisemblablement menée : les lots avals qui en dépendaient (le
+  branchement de `pv-page.ts` en F6, subordonné par ce plan à la validation de F4 par Q2) sont livrés. Ses captures
+  et sa mesure de temps de chargement pour le Président vivent hors des deux dépôts ; non consultées depuis ce lot
+  de documentation, donc non confirmées de première main.
+- **L4-F6** (brancher les points d'entrée) — livré pour l'essentiel : `home/a-faire.ts`, la barre de recherche
+  (`34cabb7`), « Tous les dossiers » — c'est-à-dire `dossiers-pipeline.ts`, pas `dossiers-circuit-liste.ts` (voir
+  plus bas) — avec sa pagination passée dans l'URL d'abord (`83aaee8`) puis ses liens vers la page (`2c26ccb`), le
+  suivi des dossiers CNM de la PRMP (`de87f98`, `prmp/suivi-delais.ts`), `retraits-validation.ts`,
+  `verificateur/en-attente-prmp.ts`, `dispatchs-controleurs.ts`, `dossiers-clotures.ts`,
+  `lettre-renvoi-consultation.ts` et la résolution de `notification-route.ts` : plus aucun de ces fichiers
+  n'importe `DossierConsultation`. `pv-page.ts` a été branché en avance de phase (`e1621d9`, « Voir le dossier »
+  ouvre la page, la gestion du PV reste en modale). **Deux points restent sur l'ancien modèle** :
+  `transverse/notifications-page.ts` et `layout/main-layout.ts` (la cloche) importent encore `DossierConsultation`
+  aux côtés de la résolution par `page-dossier` ; `prmp/retraits.ts` l'importe toujours aussi — à vérifier si c'est
+  un reste à nettoyer ou un usage voulu (aperçu pendant une tâche, comme `mise-a-jour-ppm.ts`).
+- **L4-F7** (nettoyage) — **non livré** : `dossier-consultation.ts` porte encore son entrée `embedded`, et
+  `verificateur/verifier-dossier.ts` monte toujours `<app-dossier-consultation [embedded]="true">` plutôt que
+  `DossierDocuments` directement.
+- **Corrections de recette** — côté backend, trois commits nés de la vérification du lot : `3e7419c` (l'étape
+  EXAMEN nomme l'attributaire courant dès la réattribution, pas seulement après soumission du PV), `6a2e57f`
+  (vues internes CNM : `demande-retraits` sans le matricule du décideur pour la PRMP et l'UGPM), `2237116` (acteur
+  de l'étape EXAMEN après réattribution, et règle C2 complétée sur `demande-retraits`).
+
+### Ce qui reste ouvert
+
+- Un brouillon issu d'un retrait **garde la référence CNM** (`refeDossier`) de son passage précédent en circuit :
+  elle n'est pas remise à blanc au retour à `BROUILLON`.
+- Le **motif du retour** (rejet de PV) est absent de l'écran d'examen : le contrôleur qui reprend la main ne le
+  voit nulle part.
+- `GET /api/examen-details` **n'est pas filtré** par périmètre comme le reste du circuit.
+- Deux écrans **orphelins**, sans route ni appelant dans tout le dépôt (confirmé : aucune référence hors d'eux-mêmes
+  et de `classement-config.ts`) : `dossiers-classement.ts` et `dossiers-circuit-liste.ts`. Ce ne sont pas des
+  livrables du L4 — « Tous les dossiers » est `dossiers-pipeline.ts`, déjà branché (ci-dessus) — mais du code mort
+  préexistant, à retirer ou à raccorder dans un lot séparé.
+- Décisions en attente de Mathieu : demander une **confirmation explicite** avant d'accepter un retrait (plutôt
+  qu'un accord silencieux) ; arbitrer si `refs.idPv` et `faits.idAvis`, servis tels quels par `/gestes` à la PRMP
+  et à l'UGPM (ils ne sont pas dans la liste des champs masqués par la règle C2), doivent l'être aussi — le front ne
+  les affiche ni ne les appelle pour ces profils, mais le corps brut les porte.
