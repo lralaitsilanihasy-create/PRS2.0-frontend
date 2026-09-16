@@ -1,26 +1,30 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur } from '../../core/securite/fichiers-surs';
-import { DemandeRetrait, Dossier } from '../../models';
+import { DemandeRetrait } from '../../models';
 import { DemandeRetraitService, DossierService, ReferenceLookupService } from '../../services';
 import { StatutBadge, statutDemandeRetraitLabel } from '../../shared/circuit';
-import { DossierConsultation } from './dossier-consultation';
+import { LienDossier } from './page-dossier/lien-dossier';
 
 /**
  * Validation des demandes de retrait (CC / Président) — worklist « À valider »
  * (/a-valider) + « Historique » (/historique), avec détail dossier en lecture seule.
  * Reflet du back : accepter → dossier renvoyé en brouillon (décidé serveur) ; on
  * affiche le résultat et on rafraîchit. 403/409 via l'intercepteur.
+ *
+ * Lot L4-F6 : la référence du dossier est un lien vers `/<espace>/dossier/:id` — la modale de détail
+ * quitte l'écran. L'onglet rejoint le filtre de type dans l'URL (`?onglet=`) : les deux partent dans
+ * `returnUrl` et le retour arrière rend la liste telle qu'on l'a quittée.
  */
 @Component({
   selector: 'app-retraits-validation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, RouterLink],
+  imports: [StatutBadge, RouterLink],
   template: `
     <section class="rv">
       <!-- ⚠️ 2026-08-07 — deux usages : écran à part entière (route « …/retraits ») ou panneau DÉPLIÉ sous
@@ -66,9 +70,6 @@ import { DossierConsultation } from './dossier-consultation';
 
       <div class="rv__grid">
         <div class="rv__main">
-          @if (loadingDetail()) {
-            <p class="text-muted" role="status">Ouverture du dossier…</p>
-          }
           @if (loading()) {
             <p class="text-muted" role="status">Chargement…</p>
           } @else if (onglet() === 'a-valider') {
@@ -78,7 +79,7 @@ import { DossierConsultation } from './dossier-consultation';
               <tbody>
                 @for (r of liste(); track r.idDemandeRetrait) {
                   <tr>
-                    <td><button type="button" class="rv__link" (click)="voirDetail(r.idDossier)">{{ dossierRef(r.idDossier) }}</button></td>
+                    <td><a class="rv__link" [routerLink]="lien.commandes(r.idDossier)" [queryParams]="lien.params()">{{ dossierRef(r.idDossier) }}</a></td>
                     <td>{{ r.idPrmp || '—' }}</td>
                     <td class="rv__motif">{{ r.motifRetrait }}</td>
                     <!-- Lettre signée : à consulter AVANT de trancher (règle 2026-08-17).
@@ -131,7 +132,7 @@ import { DossierConsultation } from './dossier-consultation';
               <tbody>
                 @for (r of liste(); track r.idDemandeRetrait) {
                   <tr>
-                    <td><button type="button" class="rv__link" (click)="voirDetail(r.idDossier)">{{ dossierRef(r.idDossier) }}</button></td>
+                    <td><a class="rv__link" [routerLink]="lien.commandes(r.idDossier)" [queryParams]="lien.params()">{{ dossierRef(r.idDossier) }}</a></td>
                     <td>{{ r.idPrmp || '—' }}</td>
                     <td class="rv__motif">{{ r.motifRetrait }}</td>
                     <td>
@@ -157,12 +158,6 @@ import { DossierConsultation } from './dossier-consultation';
       </div>
     </section>
 
-    <!-- ⚠️ 2026-08-17 (demande user) — le détail s'ouvre en MODALE, plus dans une colonne latérale :
-         le dossier porte le tableau des marchés (13 colonnes), illisible dans une colonne étroite
-         où les en-têtes se repliaient lettre par lettre. La liste reprend toute la largeur. -->
-    @if (selectedDossier(); as d) {
-      <app-dossier-consultation [dossier]="d" (closed)="fermerDetail()" />
-    }
   `,
   styles: `
     .rv__tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
@@ -174,7 +169,8 @@ import { DossierConsultation } from './dossier-consultation';
     .rv__info { margin-bottom: 0.75rem; }
     .rv__filtre { margin: -0.4rem 0 0; color: var(--n-500); font-size: var(--text-sm); }
     .rv__filtre a { margin-left: 0.4rem; color: var(--p-600); font-weight: 600; }
-    .rv__link { background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--c-600); font: inherit; text-decoration: underline; }
+    /* Lot L4-F6 : la référence est un LIEN vers la page du dossier (Ctrl+clic = nouvel onglet). */
+    .rv__link { color: var(--c-600); text-decoration: underline; }
     /* Le motif est du texte libre : sans cela, le « white-space: nowrap » global des cellules
        étire la ligne et pousse la colonne de décision hors de l'écran. */
     .rv__motif { white-space: normal; max-width: 42rem; }
@@ -188,6 +184,9 @@ export class RetraitsValidation {
   private readonly toast = inject(ToastService);
   private readonly permissions = inject(PermissionsService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  /** Lot L4-F6 : lien vers la page du dossier, retour vers cette liste (onglet et filtre compris). */
+  protected readonly lien = inject(LienDossier);
 
   readonly onglet = signal<'a-valider' | 'historique'>('a-valider');
   /** Toutes les demandes de l'onglet courant, avant filtrage par type. */
@@ -217,8 +216,6 @@ export class RetraitsValidation {
   readonly deciding = signal(false);
   readonly refusOpen = signal<number | null>(null);
   readonly refusMotif = signal('');
-  readonly selectedDossier = signal<Dossier | null>(null);
-  readonly loadingDetail = signal(false);
   private readonly dossierMap = signal<Map<string, string>>(new Map());
 
   readonly canDecide = computed(() => this.permissions.can('DEMANDE_RETRAIT_DECISION'));
@@ -244,6 +241,8 @@ export class RetraitsValidation {
       const t = p.get('type');
       this.typeUrl.set(t && t.trim() ? t.trim() : null);
     });
+    // Onglet repris de l'URL (lot L4-F6) : c'est lui que `returnUrl` ramène au retour de la page.
+    if (!this.embedded() && this.route.snapshot.queryParamMap.get('onglet') === 'historique') this.onglet.set('historique');
     this.charger();
   }
 
@@ -264,6 +263,14 @@ export class RetraitsValidation {
     this.onglet.set(o);
     this.annulerRefus();
     this.charger();
+    // Encastré sous « Mes dossiers », l'URL appartient à l'écran hôte : on n'y touche pas.
+    if (this.embedded()) return;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { onglet: o === 'historique' ? 'historique' : null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   private charger(): void {
@@ -278,18 +285,6 @@ export class RetraitsValidation {
     });
   }
 
-  voirDetail(idDossier: number): void {
-    this.loadingDetail.set(true);
-    this.selectedDossier.set(null);
-    this.dossierService.getById(idDossier).subscribe({
-      next: (d) => {
-        this.selectedDossier.set(d);
-        this.loadingDetail.set(false);
-      },
-      error: () => this.loadingDetail.set(false),
-    });
-  }
-
   /** Ouvre la lettre de demande de retrait (PDF signé). 404 = demande antérieure à la règle. */
   ouvrirLettre(r: DemandeRetrait): void {
     if (r.idDemandeRetrait == null) return;
@@ -297,11 +292,6 @@ export class RetraitsValidation {
       next: (blob) => ouvrirBlobSur(blob),
       error: () => this.toast.error("La lettre n'est pas disponible pour cette demande."),
     });
-  }
-
-  /** Referme la modale de détail. */
-  fermerDetail(): void {
-    this.selectedDossier.set(null);
   }
 
   accepter(r: DemandeRetrait): void {
