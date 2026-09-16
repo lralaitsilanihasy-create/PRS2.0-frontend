@@ -26,8 +26,10 @@ const FOCALISABLES =
  * dialogue) : la fermeture est réservée au bouton « Fermer » / « Annuler » (ou Échap au clavier).
  * Le flag `appModaleClicExterieur` reste accepté par les templates mais n'a plus aucun effet.
  *
- * L'entrée `appModale` accepte une valeur : `[appModale]="false"` rend la directive inerte,
- * pour les conteneurs rendus tantôt en modale, tantôt intégrés à la page (`dossier-consultation`).
+ * L'entrée `appModale` accepte une valeur : `[appModale]="false"` rend la directive inerte, pour un
+ * conteneur rendu tantôt en modale, tantôt intégré à la page. Plus aucun écran n'en a besoin depuis
+ * le lot L4-F7 (la consultation, son dernier usage, est redevenue une modale et rien qu'une modale) :
+ * l'échappatoire reste offerte, testée par la spec, mais toutes les modales posent la directive nue.
  *
  * ⚠️ Recette L4-Q2 (2026-09-16), défauts (e) et (k) — la restitution du focus ne peut pas se contenter
  * du déclencheur : il a souvent disparu quand la modale se ferme (bouton retiré du DOM par le geste
