@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { skip } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -31,6 +31,11 @@ interface GroupeJour {
  * clic → marquage lu + ouverture de l'élément concerné, marquage manuel lu / non-lu unitaire,
  * « Tout marquer lu ». Le compteur de la cloche (NotificationsStore, serveur + SSE) est resynchronisé
  * à chaque action.
+ *
+ * ⚠️ Lot L4-F6 (2026-09-16) : le repli « consultation » d'un type non mappé mène à la PAGE du dossier
+ * pour les huit profils du circuit ; l'Administrateur et le Chargé de publication, qui n'ont pas la
+ * page en v1, gardent la modale. Les deux filtres vivent dans l'URL (`?lu=`, `?type=`) : ils partent
+ * dans `returnUrl` et la liste se retrouve telle qu'on l'a quittée.
  */
 @Component({
   selector: 'app-notifications-page',
@@ -50,14 +55,15 @@ interface GroupeJour {
 
       <div class="np__filtres">
         <div class="np__seg" role="tablist">
-          <button type="button" class="np__seg-btn" [class.np__seg-btn--actif]="filtreLu() === 'toutes'" (click)="filtreLu.set('toutes')">
+          <button type="button" class="np__seg-btn" [class.np__seg-btn--actif]="filtreLu() === 'toutes'" (click)="changerFiltreLu('toutes')">
             Toutes ({{ notifs().length }})
           </button>
-          <button type="button" class="np__seg-btn" [class.np__seg-btn--actif]="filtreLu() === 'non-lues'" (click)="filtreLu.set('non-lues')">
+          <button type="button" class="np__seg-btn" [class.np__seg-btn--actif]="filtreLu() === 'non-lues'" (click)="changerFiltreLu('non-lues')">
             Non lues ({{ nbNonLues() }})
           </button>
         </div>
-        <select class="form-control np__type" [value]="filtreType() ?? ''" (change)="filtreType.set($any($event.target).value || null)">
+        <label class="cnm-sr-only" for="np-type">Filtrer par type d'événement</label>
+        <select id="np-type" class="form-control np__type" [value]="filtreType() ?? ''" (change)="changerFiltreType($any($event.target).value || null)">
           <option value="">Tous les types d'événements</option>
           @for (t of typesPresents(); track t) { <option [value]="t">{{ libelleType(t) }}</option> }
         </select>
@@ -137,6 +143,7 @@ export class NotificationsPage {
   private readonly dossierService = inject(DossierService);
   private readonly store = inject(NotificationsStore);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
 
   readonly loading = signal(true);
@@ -175,6 +182,11 @@ export class NotificationsPage {
   });
 
   constructor() {
+    // Filtres repris de l'URL (lot L4-F6) : c'est eux que `returnUrl` ramène au retour de la page.
+    const q = this.route.snapshot.queryParamMap;
+    if (q.get('lu') === 'non-lues') this.filtreLu.set('non-lues');
+    this.filtreType.set(q.get('type'));
+
     this.charger();
     // Temps réel : toute révision du store (SSE / autre onglet / action locale) recharge la liste.
     // skip(1) : le chargement initial est déjà déclenché ci-dessus — un effect s'exécutant aussi au
@@ -199,10 +211,36 @@ export class NotificationsPage {
     this.fenetre.update((f) => f + 20);
   }
 
+  changerFiltreLu(v: 'toutes' | 'non-lues'): void {
+    this.filtreLu.set(v);
+    this.ecrireFiltres();
+  }
+
+  changerFiltreType(t: string | null): void {
+    this.filtreType.set(t);
+    this.ecrireFiltres();
+  }
+
+  /** Les filtres dans l'URL, sans nouvelle entrée d'historique : filtrer n'est pas naviguer. */
+  private ecrireFiltres(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { lu: this.filtreLu() === 'non-lues' ? 'non-lues' : null, type: this.filtreType() },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  /** URL de la liste, filtres compris : `returnUrl` du lien vers la page d'un dossier. */
+  private retour(): string {
+    const parametres = [this.filtreLu() === 'non-lues' ? 'lu=non-lues' : '', this.filtreType() ? `type=${encodeURIComponent(this.filtreType() as string)}` : ''].filter(Boolean);
+    return `/notifications${parametres.length ? `?${parametres.join('&')}` : ''}`;
+  }
+
   /**
    * Clic sur la notification : marquage lu automatique + navigation vers l'ÉCRAN D'ACTION correspondant
-   * (mapping partagé `routePourNotification`, demande user 2026-08-11). Type non mappé → repli :
-   * consultation du dossier (modal) ou messagerie.
+   * (mapping partagé `routePourNotification`, demande user 2026-08-11). Type non mappé → repli : la
+   * PAGE du dossier (lot L4-F6), sa modale pour qui n'a pas la page, ou la messagerie.
    */
   ouvrir(n: Notification): void {
     if (!n.lu) {
@@ -217,6 +255,8 @@ export class NotificationsPage {
             void this.router.navigate(d.idTypeDossier ? cible.versCommands(d.idTypeDossier) : cible.repli),
           error: () => void this.router.navigate(cible.repli),
         });
+      } else if (cible.genre === 'page-dossier') {
+        void this.router.navigate(cible.commands, { queryParams: { returnUrl: this.retour() } });
       } else {
         void this.router.navigate(cible.genre === 'route' ? cible.commands : cible.repli);
       }

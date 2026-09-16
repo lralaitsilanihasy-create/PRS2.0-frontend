@@ -1,4 +1,5 @@
-import { Notification } from '../../models';
+import { Notification, Role } from '../../models';
+import { ESPACES_A_FAIRE } from '../navigation/navigation';
 
 /**
  * Routage d'une notification vers l'ÉCRAN D'ACTION correspondant (demande user 2026-08-11) :
@@ -7,6 +8,11 @@ import { Notification } from '../../models';
  * contrat ; un type non mappé retombe sur le comportement historique de l'appelant (consultation).
  *
  * Utilisé par la PAGE /notifications ET la cloche (notification-center) — source unique.
+ *
+ * ⚠️ Lot L4-F6 (2026-09-16) : le repli « consultation » d'un type non mappé mène désormais à la PAGE
+ * du dossier (`page-dossier`), pour les huit profils du circuit. Les types déjà routés vers un écran
+ * d'action ne changent pas. L'Administrateur et le Chargé de publication, qui n'ont pas la page en v1,
+ * gardent la modale de leur appelant : pour eux, rien ne revient ici.
  */
 
 /** Préfixe d'espace par rôle (l'UGPM agit dans l'espace PRMP de sa tutelle). */
@@ -33,9 +39,13 @@ const MESSAGERIE: ReadonlySet<string> = new Set([
   'ASSISTANT_CONTROLEUR',
 ]);
 
-/** Cible résolue : une route directe, ou une route paramétrée par le type du dossier (avec repli). */
+/**
+ * Cible résolue : une route directe, la page d'un dossier (l'appelant y ajoute son `returnUrl`), ou une
+ * route paramétrée par le type du dossier (avec repli).
+ */
 export type CibleNotification =
   | { genre: 'route'; commands: string[] }
+  | { genre: 'page-dossier'; commands: string[] }
   | { genre: 'route-type-dossier'; versCommands: (idTypeDossier: string) => string[]; repli: string[] };
 
 /**
@@ -132,6 +142,14 @@ export function routePourNotification(n: Notification, role: string | null): Cib
   }
   if ((n.typeObjet === 'MESSAGE' || type === 'NOUVEAU_MESSAGE') && MESSAGERIE.has(role ?? '')) {
     return { genre: 'route', commands: [`/${base}/messagerie`] };
+  }
+
+  // — Repli « consultation » (lot L4-F6, décision 5) : la PAGE du dossier, dans l'espace du connecté.
+  //   `ESPACES_A_FAIRE` fait foi — l'Administrateur et le Chargé de publication n'y sont pas, leur
+  //   appelant garde sa modale de consultation.
+  const espace = ESPACES_A_FAIRE[(role ?? '') as Role];
+  if (espace && n.idDossier != null) {
+    return { genre: 'page-dossier', commands: [`/${espace}`, 'dossier', String(n.idDossier)] };
   }
   return null;
 }

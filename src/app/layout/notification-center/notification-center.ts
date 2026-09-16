@@ -108,6 +108,9 @@ export class NotificationCenter {
    * Dossier à consulter, ÉMIS vers le layout : le modal doit être rendu HORS de la topbar — son
    * `position: fixed; z-index: 99` crée un contexte d'empilement qui passerait le modal SOUS la
    * sidebar (z-index 100) et le voile ne couvrirait pas tout l'écran.
+   *
+   * ⚠️ Lot L4-F6 : ne sert plus qu'à l'Administrateur et au Chargé de publication, qui n'ont pas la
+   * page du dossier en v1. Les huit profils du circuit partent sur la page (`page-dossier`).
    */
   readonly voirDossier = output<Dossier>();
 
@@ -149,6 +152,9 @@ export class NotificationCenter {
             void this.router.navigate(d.idTypeDossier ? cible.versCommands(d.idTypeDossier) : cible.repli),
           error: () => void this.router.navigate(cible.repli),
         });
+      } else if (cible.genre === 'page-dossier') {
+        // Lot L4-F6 : la page du dossier, avec retour sur l'écran d'où la cloche a été ouverte.
+        void this.router.navigate(cible.commands, { queryParams: { returnUrl: this.router.url } });
       } else {
         void this.router.navigate(cible.genre === 'route' ? cible.commands : cible.repli);
       }
