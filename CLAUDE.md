@@ -115,6 +115,26 @@ Organisation **par domaine métier**, pas par type technique : il n'y a **pas** 
   l'utilisateur resterait devant un écran vide).
 - **Route de feature** : toujours `loadComponent: () => import(...)`, jamais un import statique.
 
+## Menu latéral et rail (refonte ergonomique, lot 5 — 16/09/2026)
+- **Ajouter une entrée de menu** se fait toujours dans `core/navigation/navigation.ts`
+  (`NAV_BY_ROLE`), comme avant. Il faut en plus lui donner une rubrique dans
+  `GROUPES_PAR_CHEMIN` (`core/navigation/groupes-menu.ts`) — sinon `groupes-menu.spec.ts`
+  (« Garde-fou de dérive ») devient rouge, avec un message qui donne la ligne exacte à
+  ajouter. Rien ne casse à l'écran entre-temps : l'entrée non classée rejoint la première
+  rubrique du menu.
+- Le **libellé court** du rail vient de la même table (`court` dans `GROUPES_PAR_CHEMIN`,
+  surchargeable par profil dans `COURTS_PAR_ROLE`) et doit être contenu dans le libellé
+  complet de l'entrée (WCAG 2.5.3 « Label in Name ») — vérifié sur les dix menus par
+  `groupes-menu.spec.ts`.
+- Le **rail** (barre réduite à 76 px) se règle par un bouton de la barre du haut, mémorisé
+  par utilisateur du navigateur (`localStorage`, clé `cnm.menu-compact`,
+  `MenuCompactStore`) — jamais par matricule (constat S9 de l'audit) : sur un poste
+  partagé, le second compte hérite du réglage du premier. Il ne s'applique jamais aux
+  écrans en mode concentration (`data.concentration`) : la barre y reste un tiroir.
+- Les **contrastes de la coquille** (barre latérale, en-tête) se vérifient par
+  `node scripts/contrastes-coquille.mjs` — toute nouvelle paire de couleurs ajoutée dans
+  la barre ou l'en-tête doit être ajoutée au script, sinon elle n'est jamais mesurée.
+
 ## Chronogrammes de pilotage (`chronogrammes/`)
 
 Dossier **autonome**, sans lien avec l'application Angular : son propre `package.json`, son
