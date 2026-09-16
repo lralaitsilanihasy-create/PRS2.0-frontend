@@ -221,8 +221,24 @@ a  { color: var(--p-600); text-decoration: none; }
   a { text-decoration: none !important; }
 }
 
+/* ⚠️ Refonte ergonomique, lot 5 F4 (2026-09-16) — DENSITÉ DE LA COQUILLE. F2 avait porté le
+   défilement du menu de l'Administrateur (14 entrées, 5 rubriques) de 7 à 136 px à 1229×691, et à
+   59 px à 1366×768 ; le critère du lot est 80 px partout. Les rubriques ne se négocient pas : ce
+   sont elles qui rendent ce menu lisible. Les 68 px repris viennent donc de quatre RESPIRATIONS,
+   jamais du contenu :
+
+   | Poste | Avant | Après | Gain sur le menu Administrateur |
+   |---|---|---|---|
+   | Entrée de menu (padding vertical) | 7 px | 6 px | 14 × 2 = 28 px |
+   | Cinq intitulés de rubrique (main-layout.scss) | 25,2 px | 20,5 px | 20,5 px |
+   | Bloc de marque, ci-dessous (padding vertical) | 16 px | 11 px | 10 px |
+   | Carte de profil (marge + padding) | 10 + 9 px | 7 + 7 px | 10 px |
+
+   Rien n'est masqué, rien n'est conditionné à la taille de l'écran : le menu garde exactement la
+   même forme partout, il est seulement moins aéré. Mesuré après : 0 px à 1366×768 et à 1536×864,
+   67 px à 1229×691. */
 .sidebar-logo {
-  padding: 16px;
+  padding: 11px 16px;
   border-bottom: 0.5px solid var(--n-200);
   display: flex;
   align-items: center;
@@ -259,8 +275,8 @@ a  { color: var(--p-600); text-decoration: none; }
 }
 
 .sidebar-profile {
-  margin: 10px;
-  padding: 9px 10px;
+  margin: 7px;
+  padding: 7px 10px;
   border-radius: var(--radius-lg);
   background: var(--n-50);
   border: 0.5px solid var(--n-200);
@@ -331,11 +347,14 @@ a  { color: var(--p-600); text-decoration: none; }
   margin-top: 4px;
 }
 
+/* ⚠️ Lot 5 F4 — 6 px et non 7 (bloc DENSITÉ ci-dessus) : une entrée passe de 36 à 34 px de haut,
+   soit 28 px rendus au menu de l'Administrateur. On reste très au-dessus de la cible de 24 px de
+   WCAG 2.2 (2.5.8), et le corps du texte n'est pas touché. */
 .nav-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 9px;
+  padding: 6px 9px;
   border-radius: var(--radius-md);
   text-decoration: none;
   color: var(--n-500);

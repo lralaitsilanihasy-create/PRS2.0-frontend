@@ -265,24 +265,34 @@
 /* Le panneau d'interrupteurs « Délégations ⤴ » a été retiré le 2026-08-28 : la délégation
    ascendante est automatique, il n'y a plus de réglage à afficher dans la barre latérale. */
 
+/* La reprise de hauteur du menu (lot 5, F4) ne vit PAS ici : les trois respirations qu'elle rend
+   — bloc de marque, carte de profil, entrée de menu — sont corrigées à la source, dans le bloc
+   « DENSITÉ DE LA COQUILLE » de `styles/_design-system.scss` où ces règles sont déclarées. La
+   quatrième, l'intitulé de rubrique, est ci-dessous : elle, c'est bien ce fichier qui la porte. */
+
 /* Intitulé de RUBRIQUE du menu (demande user 2026-08-28 pour la délégation, lot 5 F2 du 2026-09-16
    pour les autres). Les deux formes partagent la même étiquette en capitales : l'utilisateur lit
    « Mon travail », « Décisions » et « Exercé par délégation » comme une même famille — seule la
    dernière agit, et son chevron le dit.
 
-   ⚠️ Hauteur : 25 px, marge comprise (mesurée). Le menu de l'Administrateur porte CINQ intitulés ;
-   à 1366×768 chaque pixel d'intitulé se paie en défilement (critère du lot : ≤ 80 px ; mesuré à
-   59 px). Le filet séparateur de l'ancien intitulé unique a été retiré pour la même raison — avec
-   cinq rubriques il faisait cinq lignes de plus, et l'étiquette en capitales suffit à ouvrir un bloc.
+   ⚠️ Hauteur : 20,5 px, marge comprise (mesurée). Le menu de l'Administrateur porte CINQ intitulés ;
+   à 1366×768 chaque pixel d'intitulé se paie en défilement (critère du lot : ≤ 80 px). Le filet
+   séparateur de l'ancien intitulé unique a été retiré pour la même raison — avec cinq rubriques il
+   faisait cinq lignes de plus, et l'étiquette en capitales suffit à ouvrir un bloc.
    La taille passe à 0,69 rem (11 px), celle des maquettes du 14/09 ; le contraste, lui, tient à
-   l'opacité et non au corps — 0,72 sur le haut du dégradé reste à 5,73:1. */
+   l'opacité et non au corps — 0,72 sur le haut du dégradé reste à 5,73:1.
+
+   ⚠️ 2026-09-16, lot F4 — la boîte se resserre : marge de tête 0,55 → 0,35 rem et talon 0,2 → 0,1 rem
+   (25,2 → 20,5 px marge comprise). F2 avait porté le défilement du menu Administrateur de 7 à 136 px
+   à 1229×691 ; les cinq intitulés en payaient 117. Le corps, l'interlettrage et l'opacité ne bougent
+   pas : c'est la RESPIRATION qui est rendue au menu, pas la lisibilité qui est reprise à l'intitulé. */
 .sidebar-nav__titre {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   width: calc(100% - 1.5rem);
-  margin: 0.55rem 0.75rem 0;
-  padding: 0 0 0.2rem;
+  margin: 0.35rem 0.75rem 0;
+  padding: 0 0 0.1rem;
   border: 0;
   background: transparent;
   font: inherit;
