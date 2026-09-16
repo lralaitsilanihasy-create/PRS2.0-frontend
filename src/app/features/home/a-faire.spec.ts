@@ -10,36 +10,15 @@ import { ApiError } from '../../core/errors/api-error';
 import { AFaire, Dispatch, Dossier, Reception, Role } from '../../models';
 import { DispatchService, DossierService, ReceptionService } from '../../services';
 import { DispatchForm, DispatchItem } from '../circuit/dispatch-form';
-import { DossierConsultation } from '../circuit/dossier-consultation';
-import { ReceptionForm } from '../circuit/reception-form';
-import { CompleterPiecesDepotModal } from '../prmp/completer-pieces-depot-modal';
 import { AFaireEcran } from './a-faire';
 import { exempleAFairePresident, exempleAFairePrmp, exempleDelegationsPresident } from './a-faire/a-faire-contrat.exemple';
 
-// Doublures des modales existantes : même sélecteur, mêmes entrées et sorties.
+// Doublure de la seule modale restée sur l'accueil (lot L4-F6) : le dispatch GROUPÉ.
 @Component({ selector: 'app-dispatch-form', template: '<p class="doublure-dispatch">{{ items().length }}</p>' })
 class DispatchFormDoublure {
   readonly items = input.required<DispatchItem[]>();
   readonly reattribution = input<Dispatch | null>(null);
   readonly saved = output<void>();
-  readonly closed = output<void>();
-}
-@Component({ selector: 'app-reception-form', template: '<p class="doublure-reception">{{ dossier().idDossier }}</p>' })
-class ReceptionFormDoublure {
-  readonly dossier = input.required<Dossier>();
-  readonly saved = output<Reception | null>();
-  readonly closed = output<void>();
-}
-@Component({ selector: 'app-completer-pieces-depot-modal', template: '' })
-class PiecesDepotDoublure {
-  readonly dossier = input.required<Dossier>();
-  readonly transmis = output<Dossier>();
-  readonly fermer = output<void>();
-}
-@Component({ selector: 'app-dossier-consultation', template: '<p class="doublure-consultation">{{ dossier().idDossier }}</p>' })
-class ConsultationDoublure {
-  readonly dossier = input.required<Dossier>();
-  readonly embedded = input(false);
   readonly closed = output<void>();
 }
 
@@ -68,8 +47,8 @@ describe('Accueil « À faire » (écran)', () => {
       ],
     });
     TestBed.overrideComponent(AFaireEcran, {
-      remove: { imports: [ReceptionForm, DispatchForm, CompleterPiecesDepotModal, DossierConsultation] },
-      add: { imports: [ReceptionFormDoublure, DispatchFormDoublure, PiecesDepotDoublure, ConsultationDoublure] },
+      remove: { imports: [DispatchForm] },
+      add: { imports: [DispatchFormDoublure] },
     });
     harness = await RouterTestingHarness.create();
     await harness.navigateByUrl(url);
@@ -130,7 +109,12 @@ describe('Accueil « À faire » (écran)', () => {
     expect(texte(apercu.querySelector('.suite__d'))).toMatch(/^Reste 5 h · avant mar\.? 15\/09, 12:00$/);
     expect(apercu.querySelectorAll('.frise__e').length).toBe(7);
     expect(texte(apercu.querySelector('.frise'))).toContain('Naina Razafindrakoto');
-    expect(Array.from(apercu.querySelectorAll('.ap__actions button')).map(texte)).toEqual(['Viser le projet de PV', 'Retourner le projet pour rectification', 'Consulter le dossier']);
+    expect(Array.from(apercu.querySelectorAll('.ap__actions button')).map(texte)).toEqual(['Viser le projet de PV', 'Retourner le projet pour rectification']);
+    // Lot L4-F6 : « Consulter le dossier » est un LIEN vers la page, avec le retour vers l'accueil.
+    const consulter = apercu.querySelector('.ap__actions a') as HTMLAnchorElement;
+    expect(texte(consulter)).toBe('Consulter le dossier');
+    expect(consulter.getAttribute('href')).toBe('/president/dossier/1002?returnUrl=%2Fpresident%2Fa-faire');
+    expect((apercu.querySelector('.ap__ref a') as HTMLAnchorElement).getAttribute('href')).toBe('/president/dossier/1002?returnUrl=%2Fpresident%2Fa-faire');
   });
 
   it("aperçu PRMP : ni acteurs ni faits internes, compteur en pause", async () => {
@@ -166,25 +150,30 @@ describe('Accueil « À faire » (écran)', () => {
     expect(tous('.af-compteurs__c').map(texte)[0]).toBe('1 en retard');
   });
 
-  it('gestes : URL ciblée dans l’espace, ou modale existante (unitaire et groupée)', async () => {
+  it('gestes : la page du dossier pour les gestes courts, l’écran de travail sinon', async () => {
     await president();
     const router = TestBed.inject(Router);
     const naviguer = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     const action = (ref: string): HTMLButtonElement =>
       tous('.af-l__act').find((b) => b.getAttribute('aria-label')?.endsWith(ref)) as HTMLButtonElement;
 
+    // Navette du PV et décision de retrait : la page, ouverte sur l'étape (décision 2 du plan L4).
     action('00002/MTP/PPM-AGPM/2026').click();
-    expect(naviguer).toHaveBeenLastCalledWith(['/president', 'resultat-examen', 'pv'], { queryParams: { gerer: 12 } });
+    expect(naviguer).toHaveBeenLastCalledWith(['/', 'president', 'dossier', 1002], { queryParams: { returnUrl: '/president/a-faire', geste: 'VISER' } });
     action('00009/DGB/PPM/2026').click();
-    expect(naviguer).toHaveBeenLastCalledWith(['/president', 'retraits'], {});
-
+    expect(naviguer).toHaveBeenLastCalledWith(['/', 'president', 'dossier', 1009], { queryParams: { returnUrl: '/president/a-faire', geste: 'DECIDER_RETRAIT' } });
     action('00015/DGSR/DAO/2026').click();
-    rendre();
-    expect(texte(racine().querySelector('.doublure-dispatch'))).toBe('1');
+    expect(naviguer).toHaveBeenLastCalledWith(['/', 'president', 'dossier', 1051], { queryParams: { returnUrl: '/president/a-faire', geste: 'DISPATCHER' } });
 
-    // Fermeture par la modale, puis dispatch groupé de deux lignes cochées.
-    harness.fixture.debugElement.query((d) => d.name === 'app-dispatch-form').componentInstance.closed.emit();
+    // Le regroupement choisi part dans le retour : la liste se retrouve telle qu'on l'a quittée.
+    (tous('.af-vues__b').find((b) => texte(b) === 'Par étape') as HTMLButtonElement).click();
     rendre();
+    action('00015/DGSR/DAO/2026').click();
+    expect(naviguer).toHaveBeenLastCalledWith(['/', 'president', 'dossier', 1051], { queryParams: { returnUrl: '/president/a-faire?vue=etape', geste: 'DISPATCHER' } });
+  });
+
+  it('dispatch groupé : la seule modale restée sur l’accueil', async () => {
+    await president();
     const coches = tous('.af-l__coche input') as HTMLInputElement[];
     expect(coches.length).toBe(3);
     coches[0].click();

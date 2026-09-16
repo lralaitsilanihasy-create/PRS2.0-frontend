@@ -1,17 +1,14 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { AFaire, AFaireTache, Dispatch, Dossier, GesteAFaire } from '../../models';
+import { AFaire, AFaireTache, GesteAFaire } from '../../models';
 import { DossierService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { Icone } from '../../shared/ui/icone';
 import { DispatchForm, DispatchItem } from '../circuit/dispatch-form';
-import { DossierConsultation } from '../circuit/dossier-consultation';
 import { ModaleGeste, OuvrirGeste } from '../circuit/gestes/ouvrir-geste';
-import { ReceptionForm } from '../circuit/reception-form';
-import { CompleterPiecesDepotModal } from '../prmp/completer-pieces-depot-modal';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
 import { AFaireApercu } from './a-faire/a-faire-apercu';
 import { LIBELLES_SECTIONS } from './a-faire/a-faire-libelles';
@@ -27,9 +24,9 @@ import {
   phraseAccueil,
   prenomDe,
 } from './a-faire/a-faire-modele';
-import { cibleGeste } from './a-faire/a-faire-navigation';
+import { cibleAccueil } from './a-faire/a-faire-navigation';
 
-/** Modale existante ouverte par-dessus l'accueil (gestes sans lien profond) : `features/circuit/gestes/ouvrir-geste.ts`. */
+/** Seul geste resté en modale sur l'accueil (plan L4 §4) : le dispatch GROUPÉ, qui porte sur plusieurs dossiers. */
 type ModaleOuverte = ModaleGeste;
 
 const VUES: readonly { cle: VueAFaire; libelle: string }[] = [
@@ -49,12 +46,17 @@ const VUES: readonly { cle: VueAFaire; libelle: string }[] = [
  * suppléance) est replié, hors compteurs, et ses lignes ne sont demandées qu'au dépli.
  *
  * Monté dans l'espace de chaque profil (`/<espace>/a-faire`) : les gestes restent dans cet espace.
- * Chaque geste ouvre l'écran existant qui le porte (`a-faire-navigation.ts`).
+ * Chaque geste ouvre l'écran qui le porte (`cibleAccueil`, `a-faire-navigation.ts`).
+ *
+ * Lot L4-F6 (décision 2) : « Consulter », VOIR et SUIVRE mènent à la PAGE du dossier
+ * (`/<espace>/dossier/:id`), et les gestes courts l'ouvrent sur son étape (`?geste=`) — la modale y
+ * monte par-dessus. Ne reste ici que le dispatch GROUPÉ, qui porte sur plusieurs dossiers. Le
+ * regroupement choisi vit dans l'URL (`?vue=`) : c'est lui que `returnUrl` ramène au retour.
  */
 @Component({
   selector: 'app-a-faire',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, RouterLink, Icone, EtatErreur, AFaireApercu, ReceptionForm, DispatchForm, CompleterPiecesDepotModal, DossierConsultation],
+  imports: [NgTemplateOutlet, RouterLink, Icone, EtatErreur, AFaireApercu, DispatchForm],
   template: `
     <section class="af">
       <header class="af__tete">
@@ -129,7 +131,7 @@ const VUES: readonly { cle: VueAFaire; libelle: string }[] = [
 
           @if (tacheSelectionnee(); as t) {
             <aside class="af__apercu" aria-label="Aperçu du dossier sélectionné">
-              <app-a-faire-apercu [tache]="t" [occupe]="ouverture() !== null" (agir)="agir(t, $event)" (consulter)="agir(t, 'VOIR')" />
+              <app-a-faire-apercu [tache]="t" [occupe]="ouverture() !== null" [espace]="espace" [retour]="retour()" (agir)="agir(t, $event)" />
             </aside>
           }
         </div>
@@ -191,27 +193,16 @@ const VUES: readonly { cle: VueAFaire; libelle: string }[] = [
       </section>
     </ng-template>
 
+    <!-- Dispatch GROUPÉ : le seul geste encore en modale sur l'accueil (plan L4 §4). -->
     @if (modale(); as m) {
-      @switch (m.type) {
-        @case ('reception') {
-          <app-reception-form [dossier]="dossierDe(m)" (closed)="fermerModale()" (saved)="apresGeste()" />
-        }
-        @case ('dispatch') {
-          <app-dispatch-form [items]="itemsDe(m)" [reattribution]="reattributionDe(m)" (closed)="fermerModale()" (saved)="apresGeste()" />
-        }
-        @case ('pieces-depot') {
-          <app-completer-pieces-depot-modal [dossier]="dossierDe(m)" (fermer)="fermerModale()" (transmis)="apresGeste()" />
-        }
-        @case ('consultation') {
-          <app-dossier-consultation [dossier]="dossierDe(m)" (closed)="fermerModale()" />
-        }
-      }
+      <app-dispatch-form [items]="itemsDe(m)" [reattribution]="null" (closed)="fermerModale()" (saved)="apresGeste()" />
     }
   `,
   styleUrl: './a-faire.scss',
 })
 export class AFaireEcran {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
   private readonly dossierService = inject(DossierService);
   private readonly ouvrirGeste = inject(OuvrirGeste);
@@ -237,9 +228,15 @@ export class AFaireEcran {
 
   /** Lignes « À dispatcher » cochées pour le dispatch groupé (lot mono-localité, comme « Tous les dossiers »). */
   readonly coches = signal<ReadonlySet<string>>(new Set());
-  /** Clé de la ligne dont la modale se prépare (dossier et réception en lecture) ; neutralise les actions. */
+  /** Le dispatch groupé prépare sa modale (dossiers et réceptions en lecture) ; neutralise les actions. */
   readonly ouverture = signal<string | null>(null);
   readonly modale = signal<ModaleOuverte | null>(null);
+
+  /**
+   * URL de l'accueil, regroupement compris : `returnUrl` des liens vers la page d'un dossier. Calculée
+   * à partir de l'état plutôt que lue sur `Router.url`, qui ne se met à jour qu'après la navigation.
+   */
+  readonly retour = computed(() => `/${this.espace}/a-faire${this.vue() === 'urgence' ? '' : `?vue=${this.vue()}`}`);
 
   readonly prenom = computed(() => prenomDe(this.auth.nomAffichage() || this.auth.login()));
   readonly phrase = computed(() => {
@@ -278,6 +275,10 @@ export class AFaireEcran {
   });
 
   constructor() {
+    // Regroupement repris de l'URL (lot L4-F6) : c'est lui que `returnUrl` ramène au retour de la page.
+    const vue = this.route.snapshot.queryParamMap.get('vue');
+    if (vue === 'etape' || vue === 'localite') this.vue.set(vue);
+
     // L'accueil vient de sonder l'endpoint pour décider de l'atterrissage : sa réponse est reprise
     // telle quelle (état de navigation) plutôt que redemandée à la milliseconde près.
     const transmis = this.router.currentNavigation()?.extras.state?.['aFaire'] as AFaire | undefined;
@@ -311,6 +312,8 @@ export class AFaireEcran {
 
   changerVue(v: VueAFaire): void {
     this.vue.set(v);
+    // Sans nouvelle entrée d'historique : le regroupement n'est pas une étape de navigation.
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { vue: v === 'urgence' ? null : v }, queryParamsHandling: 'merge', replaceUrl: true });
   }
 
   selectionner(l: LigneAFaire): void {
@@ -359,20 +362,16 @@ export class AFaireEcran {
   }
 
   // ── Gestes ──────────────────────────────────────────────────────────────────────────────────
-  /** Exécute un geste : l'écran existant par son URL, ou sa modale par-dessus l'accueil. */
+  /**
+   * Exécute un geste : la page du dossier (consultation et gestes courts, décision 2), ou l'écran de
+   * travail existant. Plus aucune modale par dossier ici — elles montent sur la page.
+   */
   agir(t: AFaireTache, geste: GesteAFaire): void {
     if (this.ouverture() !== null) return;
     this.selection.set(cleTache(t));
-    const cible = cibleGeste(geste, t, this.espace);
-    if (cible.type === 'route') {
-      void this.router.navigate(cible.commandes, cible.queryParams ? { queryParams: cible.queryParams } : {});
-      return;
-    }
-    this.ouverture.set(cleTache(t));
-    this.ouvrirGeste.preparer(cible.modale, t).subscribe({
-      next: (m) => this.ouvrirModale(m),
-      error: () => this.ouverture.set(null),
-    });
+    const cible = cibleAccueil(geste, t, this.espace, this.retour());
+    if (cible.type !== 'route') return;
+    void this.router.navigate(cible.commandes, cible.queryParams ? { queryParams: cible.queryParams } : {});
   }
 
   private ouvrirModale(m: ModaleOuverte): void {
@@ -390,14 +389,8 @@ export class AFaireEcran {
     this.charger();
   }
 
-  dossierDe(m: ModaleOuverte): Dossier {
-    return 'dossier' in m ? m.dossier : m.items[0].dossier;
-  }
   itemsDe(m: ModaleOuverte): DispatchItem[] {
     return m.type === 'dispatch' ? m.items : [];
-  }
-  reattributionDe(m: ModaleOuverte): Dispatch | null {
-    return m.type === 'dispatch' ? m.reattribution : null;
   }
 
   // ── Bloc délégation ─────────────────────────────────────────────────────────────────────────

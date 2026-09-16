@@ -33,6 +33,15 @@
 .ap__ref--sans {
   font: 800 1.0625rem/1.2 var(--font-base);
 }
+/* Lot L4-F6 : la référence mène à la page du dossier — souligné au survol seulement, le titre reste un titre. */
+.ap__lien {
+  color: inherit;
+  text-decoration: none;
+}
+.ap__lien:hover,
+.ap__lien:focus-visible {
+  text-decoration: underline;
+}
 .ap__ent {
   margin: -0.55rem 0 0;
   font-size: 0.8125rem;

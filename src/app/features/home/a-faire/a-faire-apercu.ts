@@ -1,24 +1,32 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { AFaireTache, GesteAFaire } from '../../../models';
 import { statutDossierLabel, statutSeverity } from '../../../shared/circuit/circuit-workflow';
 import { Icone } from '../../../shared/ui/icone';
 import { LIBELLES_GESTES } from './a-faire-libelles';
 import { delaiLigne, echeanceTexte, faitsApercu, friseDossier, referenceLigne } from './a-faire-modele';
+import { cibleDossier } from './a-faire-navigation';
 
 /**
  * Aperçu du dossier sélectionné (colonne droite de la maquette `Main`) : identité, frise des sept
  * étapes, prochaine action et délai, faits, action principale et « Consulter le dossier ». Tout vient
  * de la tâche servie : aucun appel. Composant de présentation — l'écran exécute les gestes.
+ *
+ * Lot L4-F6 : la RÉFÉRENCE et « Consulter le dossier » sont des liens vers la page du dossier
+ * (`/<espace>/dossier/:id?returnUrl=…`) — un Ctrl+clic ouvre un onglet, le retour rend la liste telle
+ * qu'on l'a quittée. Quand le geste servi est VOIR ou SUIVRE, l'action principale EST ce lien.
  */
 @Component({
   selector: 'app-a-faire-apercu',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icone],
+  imports: [Icone, RouterLink],
   template: `
     <section class="ap" aria-labelledby="ap-ref">
       <p class="ap__lbl">Dossier sélectionné</p>
-      <h2 class="ap__ref" id="ap-ref" [class.ap__ref--sans]="reference().sansReference">{{ reference().texte }}</h2>
+      <h2 class="ap__ref" id="ap-ref" [class.ap__ref--sans]="reference().sansReference">
+        <a class="ap__lien" [routerLink]="lien().commandes" [queryParams]="lien().queryParams">{{ reference().texte }}</a>
+      </h2>
       @if (tache().dossier.libelleEntite) {
         <p class="ap__ent">{{ tache().dossier.libelleEntite }}</p>
       }
@@ -55,16 +63,22 @@ import { delaiLigne, echeanceTexte, faitsApercu, friseDossier, referenceLigne } 
       }
 
       <div class="ap__actions">
-        <button type="button" class="btn btn-primary ap__principal" [disabled]="occupe()" (click)="agir.emit(tache().geste)">
-          <app-icone [nom]="geste().icone" [taille]="16" />{{ geste().long }}
-        </button>
+        @if (consultationSeule()) {
+          <a class="btn btn-primary ap__principal" [routerLink]="lien().commandes" [queryParams]="lien().queryParams">
+            <app-icone [nom]="geste().icone" [taille]="16" />{{ geste().long }}
+          </a>
+        } @else {
+          <button type="button" class="btn btn-primary ap__principal" [disabled]="occupe()" (click)="agir.emit(tache().geste)">
+            <app-icone [nom]="geste().icone" [taille]="16" />{{ geste().long }}
+          </button>
+        }
         @for (g of secondaires(); track g) {
           <button type="button" class="btn btn-outline" [disabled]="occupe()" (click)="agir.emit(g)">
             <app-icone [nom]="libelle(g).icone" [taille]="16" />{{ libelle(g).long }}
           </button>
         }
-        @if (tache().geste !== 'VOIR' && tache().geste !== 'SUIVRE') {
-          <button type="button" class="btn btn-outline" [disabled]="occupe()" (click)="consulter.emit()">Consulter le dossier</button>
+        @if (!consultationSeule()) {
+          <a class="btn btn-outline" [routerLink]="lien().commandes" [queryParams]="lien().queryParams">Consulter le dossier</a>
         }
       </div>
     </section>
@@ -75,10 +89,20 @@ export class AFaireApercu {
   readonly tache = input.required<AFaireTache>();
   /** Ouverture d'une modale en cours : les actions attendent. */
   readonly occupe = input(false);
+  /** Espace du profil (« president », « prmp »…) : la page du dossier y vit. */
+  readonly espace = input.required<string>();
+  /** URL de l'accueil, regroupement compris : `returnUrl` des liens vers la page. */
+  readonly retour = input.required<string>();
   readonly agir = output<GesteAFaire>();
-  readonly consulter = output<void>();
 
   readonly reference = computed(() => referenceLigne(this.tache()));
+  /** Lien vers la page du dossier : commandes et `returnUrl`. */
+  readonly lien = computed(() => {
+    const cible = cibleDossier(this.tache().dossier.idDossier, this.espace(), this.retour());
+    return { commandes: cible.type === 'route' ? cible.commandes : [], queryParams: cible.type === 'route' ? cible.queryParams : {} };
+  });
+  /** Rien à faire sur ce dossier (VOIR, SUIVRE) : l'action principale EST le lien de consultation. */
+  readonly consultationSeule = computed(() => this.tache().geste === 'VOIR' || this.tache().geste === 'SUIVRE');
   readonly type = computed(() => this.tache().dossier.idSousType ?? this.tache().dossier.idTypeDossier);
   readonly statut = computed(() => statutDossierLabel(this.tache().dossier.statut));
   readonly ton = computed(() => statutSeverity(this.tache().dossier.statut));
