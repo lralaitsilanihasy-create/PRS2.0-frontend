@@ -45,8 +45,9 @@ type LectureDemande = { etat: 'chargement' } | { etat: 'pret'; demande: DemandeR
 
 /**
  * Décision sur une demande de retrait, DANS le panneau de l'étape (page dossier, lot L4-F5) : le motif
- * de la PRMP et sa lettre signée, puis « Accepter le retrait » ou « Refuser » avec un motif obligatoire,
- * confirmé en modale (plan L4 §4). Monté par `EtapeCourante` seulement si le serveur sert
+ * de la PRMP et sa lettre signée, puis « Accepter le retrait… » ou « Refuser… » avec un motif obligatoire.
+ * Les DEUX décisions passent par une confirmation en modale (plan L4 §4 ; acceptation, demande du 16/09) :
+ * elles sont sans retour et aucune requête ne part avant. Monté par `EtapeCourante` seulement si le serveur sert
  * DECIDER_RETRAIT — au Président, ou au Chef de commission de la localité du dossier.
  *
  * Mêmes appels et mêmes messages que la liste des demandes (`retraits-validation`, non modifiée) :
@@ -81,8 +82,9 @@ type LectureDemande = { etat: 'chargement' } | { etat: 'pret'; demande: DemandeR
       } @else if (!refusOuvert()) {
         <div class="dr__actions" [attr.aria-busy]="enCours() !== null">
           <!-- En suite d'un autre geste, le bouton principal reste celui de ce geste : pas deux boutons pleins. -->
-          <button type="button" class="btn dr__accepter" [class.btn-primary]="!suite()" [class.btn-outline]="suite()" data-geste="DECIDER_RETRAIT" [disabled]="bloque()" (click)="accepter()">
-            <app-icone nom="check" [taille]="16" />{{ enCours() === 'accepter' ? 'Acceptation…' : 'Accepter le retrait' }}
+          <!-- « … » comme « Refuser… » : le clic ouvre la confirmation, il n'envoie rien. -->
+          <button type="button" class="btn dr__accepter" [class.btn-primary]="!suite()" [class.btn-outline]="suite()" data-geste="DECIDER_RETRAIT" [disabled]="bloque()" (click)="demanderAcceptation()">
+            <app-icone nom="check" [taille]="16" />Accepter le retrait…
           </button>
           <button type="button" class="btn btn-outline dr__refuser" #refuserBouton [disabled]="bloque()" (click)="ouvrirRefus()">
             <app-icone nom="x" [taille]="16" />Refuser…
@@ -151,7 +153,40 @@ type LectureDemande = { etat: 'chargement' } | { etat: 'pret'; demande: DemandeR
       </dl>
     </section>
 
-    @if (confirmation()) {
+    @if (confirmation() === 'accepter') {
+      <div class="modal-backdrop">
+        <div
+          class="modal dr-conf"
+          role="alertdialog"
+          aria-modal="true"
+          aria-label="Confirmer l'acceptation de la demande de retrait"
+          aria-describedby="dr-conf-acc-texte dr-conf-acc-suites"
+          appModale
+          (appModaleFermer)="fermerConfirmation()"
+        >
+          <div class="modal-header">
+            <h2 class="modal-title">Accepter la demande de retrait ?</h2>
+            <button type="button" class="btn-close" aria-label="Fermer" [disabled]="enCours() !== null" (click)="fermerConfirmation()">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="dr-conf__texte" id="dr-conf-acc-texte">Ce retrait ne se défait pas. En l'acceptant :</p>
+            <ul class="dr-conf__suites" id="dr-conf-acc-suites">
+              <li>le dossier <b>revient en brouillon chez la PRMP</b>, qui pourra le reprendre et le soumettre à nouveau ;</li>
+              <li>son <b>circuit à la CNM est effacé</b> — réception, dispatch, examens et PV ne figureront plus au dossier ;</li>
+              <li>la <b>référence CNM</b> qui lui a été attribuée ne sera plus utilisée : une nouvelle soumission en recevra une autre.</li>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" [disabled]="enCours() !== null" (click)="fermerConfirmation()">Annuler</button>
+            <button type="button" class="btn btn-danger dr-conf__confirmer" [disabled]="enCours() !== null" (click)="accepter()">
+              {{ enCours() === 'accepter' ? 'Acceptation…' : 'Accepter le retrait' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (confirmation() === 'refuser') {
       <div class="modal-backdrop">
         <div
           class="modal dr-conf"
@@ -203,7 +238,8 @@ export class DecisionRetrait {
   readonly refusOuvert = signal(false);
   readonly motif = signal('');
   readonly erreur = signal<string | null>(null);
-  readonly confirmation = signal(false);
+  /** La décision en attente de confirmation, `null` quand aucune modale n'est ouverte. Les deux gestes sont irréversibles. */
+  readonly confirmation = signal<'accepter' | 'refuser' | null>(null);
   readonly enCours = signal<'accepter' | 'refuser' | null>(null);
   /** Décision enregistrée, gestes pas encore relus par la page. */
   readonly transition = signal(false);
@@ -274,19 +310,35 @@ export class DecisionRetrait {
       });
   }
 
+  /**
+   * « Accepter le retrait… » : ouvre la confirmation, et rien d'autre. Le geste est sans retour — le dossier
+   * repart en brouillon, son circuit à la CNM est effacé et sa référence CNM abandonnée : il ne doit pas partir
+   * d'un seul clic (demande du 16/09). Aucune requête avant la confirmation.
+   */
+  demanderAcceptation(): void {
+    if (this.idDemande() == null || this.bloque()) return;
+    this.confirmation.set('accepter');
+  }
+
   accepter(): void {
     const id = this.idDemande();
-    if (id == null || this.bloque()) return;
+    // Seconde garde : l'acceptation ne part que de la confirmation ouverte, comme le refus de la sienne.
+    if (id == null || this.confirmation() !== 'accepter' || this.enCours() !== null) return;
     this.enCours.set('accepter');
     this.service
       .accepter(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
+          this.confirmation.set(null);
           this.toast.success('Demande acceptée — dossier renvoyé en brouillon.');
           this.apresDecision('acceptee');
         },
-        error: (err: unknown) => this.echec(err),
+        error: (err: unknown) => {
+          this.enCours.set(null);
+          this.confirmation.set(null);
+          this.echec(err);
+        },
       });
   }
 
@@ -320,32 +372,32 @@ export class DecisionRetrait {
       this.champMotif()?.nativeElement.focus();
       return;
     }
-    this.confirmation.set(true);
+    this.confirmation.set('refuser');
   }
 
   fermerConfirmation(): void {
     if (this.enCours() !== null) return;
-    this.confirmation.set(false);
+    this.confirmation.set(null);
   }
 
   refuser(): void {
     const id = this.idDemande();
     const motif = this.motif().trim();
     // Seconde garde : la confirmation n'existe qu'avec un motif valable, l'appel non plus.
-    if (id == null || this.enCours() !== null || erreurMotifRefus(motif)) return;
+    if (id == null || this.confirmation() !== 'refuser' || this.enCours() !== null || erreurMotifRefus(motif)) return;
     this.enCours.set('refuser');
     this.service
       .refuser(id, motif)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.confirmation.set(false);
+          this.confirmation.set(null);
           this.toast.success('Demande refusée.');
           this.apresDecision('refusee');
         },
         error: (err: unknown) => {
           this.enCours.set(null);
-          this.confirmation.set(false);
+          this.confirmation.set(null);
           this.echec(err);
         },
       });

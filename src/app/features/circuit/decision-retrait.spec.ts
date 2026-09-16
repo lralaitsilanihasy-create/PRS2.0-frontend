@@ -110,6 +110,17 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
     champ.dispatchEvent(new Event('input'));
     harness.detectChanges();
   };
+  /** La modale de confirmation ouverte (acceptation ou refus). */
+  const confirmationOuverte = (): HTMLElement => {
+    const m = q('[role="alertdialog"]');
+    if (!m) throw new Error('confirmation absente');
+    return m;
+  };
+  /** « Accepter le retrait… » puis la confirmation : l'acceptation ne part que de là. */
+  const accepterConfirme = (): void => {
+    cliquer('Accepter le retrait…');
+    cliquer('Accepter le retrait', confirmationOuverte());
+  };
   const mutations = (): TestRequest[] => http.match((r) => r.method !== 'GET');
   const tick = (): Promise<void> => new Promise((r) => setTimeout(r));
   const toutLeDom = (): string => {
@@ -183,8 +194,8 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
     expect(q('.dr__titre')).toBeNull();
     expect(q('.dr')?.getAttribute('aria-labelledby')).toBe('ec-titre');
     // Parité : le geste servi est marqué une fois, sur le bouton principal du formulaire.
-    expect(Array.from(racine().querySelectorAll('app-etape-courante [data-geste]')).map((b) => texte(b))).toEqual(['Accepter le retrait']);
-    expect(bouton('Accepter le retrait').classList.contains('btn-primary')).toBe(true);
+    expect(Array.from(racine().querySelectorAll('app-etape-courante [data-geste]')).map((b) => texte(b))).toEqual(['Accepter le retrait…']);
+    expect(bouton('Accepter le retrait…').classList.contains('btn-primary')).toBe(true);
     const volet = texte(q('.dr-volet'));
     expect(volet).toContain(`La demande de la PRMP`);
     expect(volet).toContain(`Motif« ${MOTIF_PRMP} »`);
@@ -205,7 +216,7 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
     expect(texte(q('.dr-volet'))).toContain('Indisponible');
     expect(toast.error).not.toHaveBeenCalled();
     // Les boutons de décision ne dépendent pas de cette lecture.
-    expect(bouton('Accepter le retrait').disabled).toBe(false);
+    expect(bouton('Accepter le retrait…').disabled).toBe(false);
   });
 
   it('refus sans motif : un message sous le champ, ni confirmation ni requête ; motif saisi, la confirmation en modale', async () => {
@@ -272,10 +283,71 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
     expect(q('app-decision-retrait')).toBeNull();
   });
 
-  it('acceptation : un appel sans corps, message de la liste ; la page relue affiche le brouillon', async () => {
+  it('accepter : la confirmation d’abord — le clic n’envoie rien, elle dit les suites ; annuler et Échap ne changent rien', async () => {
+    await ouvrir('PRESIDENT', '/president/dossier/42', { gestes: reponse('PRESIDENT', [retrait()]) });
+
+    // Le geste est irréversible : le bouton du panneau OUVRE la confirmation, il ne décide pas.
+    cliquer('Accepter le retrait…');
+    expect(mutations()).toEqual([]);
+    const conf = confirmationOuverte();
+    expect(conf.getAttribute('aria-label')).toBe("Confirmer l'acceptation de la demande de retrait");
+    expect(conf.hasAttribute('appmodale')).toBe(true);
+    expect(texte(conf.querySelector('.modal-title'))).toBe('Accepter la demande de retrait ?');
+    expect(bouton('✕', conf).getAttribute('aria-label')).toBe('Fermer');
+    // Les suites, dans les mots du métier.
+    const dit = texte(conf);
+    expect(dit).toContain('revient en brouillon chez la PRMP');
+    expect(dit).toContain('circuit à la CNM est effacé');
+    expect(dit).toContain('référence CNM');
+
+    // Annuler : la modale se ferme, rien n'est parti, le panneau est intact.
+    cliquer('Annuler', conf);
+    expect(q('[role="alertdialog"]')).toBeNull();
+    expect(mutations()).toEqual([]);
+    expect(q('.dr__attente')).toBeNull();
+    expect(bouton('Accepter le retrait…').disabled).toBe(false);
+    expect(toast.success).not.toHaveBeenCalled();
+
+    // Échap (directive `appModale`) : même issue, aucune requête.
+    cliquer('Accepter le retrait…');
+    confirmationOuverte().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    harness.detectChanges();
+    expect(q('[role="alertdialog"]')).toBeNull();
+    expect(mutations()).toEqual([]);
+
+    // « ✕ » : troisième sortie, toujours sans rien envoyer — le panneau reprend la main intact.
+    cliquer('Accepter le retrait…');
+    cliquer('✕', confirmationOuverte());
+    expect(q('[role="alertdialog"]')).toBeNull();
+    expect(mutations()).toEqual([]);
+    expect(bouton('Accepter le retrait…').disabled).toBe(false);
+  });
+
+  it('accepter : la confirmation validée envoie UNE seule requête', async () => {
+    await ouvrir('PRESIDENT', '/president/dossier/42', { gestes: reponse('PRESIDENT', [retrait()]) });
+    scenario = { gestes: reponse('PRESIDENT', []), dossier: { ...DOSSIER, statut: 'BROUILLON' } };
+    accepterConfirme();
+
+    const envois = mutations();
+    expect(envois.map((r) => `${r.request.method} ${r.request.url}`)).toEqual(['POST /api/demande-retraits/77/accepter']);
+    expect(envois[0].request.body).toEqual({});
+
+    // Pendant l'envoi, rien n'est réarmé : ni la confirmation, ni le bouton du panneau derrière elle.
+    expect(bouton('Acceptation…', confirmationOuverte()).disabled).toBe(true);
+    expect(racine().querySelectorAll('.dr button:not([disabled])').length).toBe(0);
+
+    envois[0].flush({ ...DEMANDE, statut: 'ACCEPTEE' });
+    harness.detectChanges();
+    expect(q('[role="alertdialog"]')).toBeNull();
+    repondre();
+    expect(mutations()).toEqual([]);
+    expect(toast.success).toHaveBeenCalledTimes(1);
+  });
+
+  it('acceptation confirmée : un appel sans corps, message de la liste ; la page relue affiche le brouillon', async () => {
     await ouvrir('PRESIDENT', '/president/dossier/42', { gestes: reponse('PRESIDENT', [retrait()]) });
     scenario = { gestes: reponse('PRESIDENT', []), dossier: { ...DOSSIER, statut: 'BROUILLON', refeDossier: '00003/DGB/PPM/2026' } };
-    cliquer('Accepter le retrait');
+    accepterConfirme();
     expect(bouton('Acceptation…').disabled).toBe(true);
     http.expectOne({ method: 'POST', url: '/api/demande-retraits/77/accepter' }).flush({ ...DEMANDE, statut: 'ACCEPTEE' });
     harness.detectChanges();
@@ -293,7 +365,7 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
     it('CC qui accepte : la page dit que le retrait est accepté et le dossier revenu chez la PRMP — pas « hors de votre périmètre »', async () => {
       await ouvrir('CHEF_COMMISSION', '/cc/dossier/42', { gestes: reponse('CHEF_COMMISSION', [retrait()]) }, 'CCANT01', 'ANT');
       scenario = { ...scenario, relectureRefusee: 403 };
-      cliquer('Accepter le retrait');
+      accepterConfirme();
       http.expectOne({ method: 'POST', url: '/api/demande-retraits/77/accepter' }).flush({ ...DEMANDE, statut: 'ACCEPTEE' });
       harness.detectChanges();
       repondre();
@@ -326,7 +398,7 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
   it('conflit (409) : présenté par l’intercepteur, la page relit ; la demande encore servie, le formulaire revient', async () => {
     await ouvrir('PRESIDENT', '/president/dossier/42', { gestes: reponse('PRESIDENT', [retrait()]) });
     demandees = [];
-    cliquer('Accepter le retrait');
+    accepterConfirme();
     const message = 'Le dossier a progressé depuis la demande : la demande de retrait est caduque — refusez la demande.';
     http.expectOne({ method: 'POST', url: '/api/demande-retraits/77/accepter' }).flush({ status: 409, message }, { status: 409, statusText: 'Conflict' });
     harness.detectChanges();
@@ -334,8 +406,10 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
     expect(toast.success).not.toHaveBeenCalled();
     repondre();
     expect(demandees).toEqual(expect.arrayContaining(['GET /api/dossiers/42/gestes']));
+    // La confirmation s'est refermée sur l'échec : le décideur revient au panneau, pas devant une modale morte.
+    expect(q('[role="alertdialog"]')).toBeNull();
     expect(q('.dr__attente')).toBeNull();
-    expect(bouton('Accepter le retrait').disabled).toBe(false);
+    expect(bouton('Accepter le retrait…').disabled).toBe(false);
   });
 
   describe('avec la navette du projet de PV : l’ordre du serveur', () => {
@@ -359,7 +433,7 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
       expect(q('app-decision-retrait')?.classList.contains('dr-hote--suite')).toBe(true);
       expect(texte(q('.dr__titre'))).toBe('Demande de retrait de la PRMP');
       expect(q('.dr')?.getAttribute('aria-labelledby')).toBe('dr-titre');
-      expect(bouton('Accepter le retrait').classList.contains('btn-outline')).toBe(true);
+      expect(bouton('Accepter le retrait…').classList.contains('btn-outline')).toBe(true);
       expect(Array.from(racine().querySelectorAll('app-etape-courante [data-geste]')).map((b) => b.getAttribute('data-geste')).sort()).toEqual(['DECIDER_RETRAIT', 'RETOURNER', 'VISER']);
     });
   });
@@ -372,7 +446,7 @@ describe('Page dossier — décision de retrait dans le panneau (lot L4-F5)', ()
 
     (document.activeElement as HTMLElement).blur();
     (q('app-barre-collante button') as HTMLButtonElement).click();
-    expect(document.activeElement).toBe(bouton('Accepter le retrait'));
+    expect(document.activeElement).toBe(bouton('Accepter le retrait…'));
     expect(mutations()).toEqual([]);
   });
 

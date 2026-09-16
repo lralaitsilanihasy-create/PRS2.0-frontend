@@ -191,13 +191,26 @@
   border-top: 1px solid #e5ebf3;
 }
 
-/* ── Confirmation du refus ── */
+/* ── Confirmations (acceptation, refus) ── */
 .dr-conf {
   max-width: 34rem;
 }
 .dr-conf__texte {
   margin: 0 0 0.6rem;
   color: #34405a;
+}
+/* Les suites de l'acceptation : une par ligne, ce qui compte en gras — le lecteur doit pouvoir les compter. */
+.dr-conf__suites {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #34405a;
+}
+.dr-conf__suites b {
+  color: #152033;
 }
 .dr-conf__motif {
   margin: 0;
