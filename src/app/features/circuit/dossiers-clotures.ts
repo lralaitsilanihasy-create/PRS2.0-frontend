@@ -11,18 +11,22 @@ import { DossierService, EntiteContractService, LocaliteService, ReferenceLookup
 import { MesDossiers } from '../prmp/mes-dossiers';
 import { StatutBadge } from '../../shared/circuit';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
-import { DossierConsultation } from './dossier-consultation';
+import { LienDossier } from './page-dossier/lien-dossier';
 
 /**
  * « Dossiers vérifiés / clôturés » (Vérificateur) et « Dossiers vérifiés » (PRMP) — LECTURE SEULE.
  * Liste condensée des dossiers CLOTURE (une ligne par dossier, source serveur selon le profil via
  * `route.data.source`). Le fil chronologique des échanges (`GET /api/dossiers/{id}/historique-echanges`,
  * trié ASC) est masqué par défaut et chargé/affiché uniquement au clic sur le dossier (toggle).
+ *
+ * Lot L4-F6 : la ligne mène à la PAGE du dossier (`<a routerLink>` dont le `::after` couvre la ligne —
+ * un Ctrl+clic ouvre un onglet) ; la modale de consultation quitte l'écran. La pagination passe dans
+ * l'URL (`?page=`) : sans cela, revenir de la page d'un dossier ramenait toujours à la première.
  */
 @Component({
   selector: 'app-dossiers-clotures',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, StatutBadge, DatePipe, ModaleDirective, DossierConsultation],
+  imports: [RouterLink, StatutBadge, DatePipe, ModaleDirective],
   template: `
     <section class="dc">
       <header class="page-header page-header--actions" [class.page-header--colle]="encastre">
@@ -53,10 +57,11 @@ import { DossierConsultation } from './dossier-consultation';
             <tbody>
               @for (d of dossiersAffiches(); track d.idDossier) {
                 <tr class="ligne-clic" [class.cnm-row-cloture]="d.datesEtapes?.['CLOTURE']">
-                  <!-- ⚠️ Demande pilote (2026-09-13) — ligne cliquable → consultation du dossier : bouton
-                       sur la référence dont le ::after recouvre toute la ligne (jamais un (click) sur
-                       le tr, inaccessible au clavier) ; les boutons d'action passent au-dessus (z-index). -->
-                  <td><button type="button" class="lien-ligne" (click)="consulte.set(d)">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</button></td>
+                  <!-- ⚠️ Demande pilote (2026-09-13) — ligne cliquable → le dossier : lien sur la référence
+                       dont le ::after recouvre toute la ligne (jamais un (click) sur le tr, inaccessible
+                       au clavier) ; les boutons d'action passent au-dessus (z-index).
+                       Lot L4-F6 : ce lien mène à la PAGE du dossier, avec le retour vers cette liste. -->
+                  <td><a class="lien-ligne" [routerLink]="lien.commandes(d.idDossier)" [queryParams]="lien.params(retour())">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</a></td>
                   <td>{{ entiteLabel(d) }}</td>
                   <!-- Statut réel : la liste PRMP couvre toute la phase de vérification (2026-08-03). -->
                   <td>@if (d.statut) { <app-statut-badge [statut]="d.statut" /> } @else { — }</td>
@@ -118,11 +123,6 @@ import { DossierConsultation } from './dossier-consultation';
             <button type="button" class="btn btn-secondary btn-sm" [disabled]="pageIndex() + 1 >= totalPages()" (click)="nextPage()">Suivant</button>
           </div>
         }
-      }
-
-      <!-- Consultation du dossier (clic sur la ligne, 2026-09-13) — même modale que les autres listes. -->
-      @if (consulte(); as d) {
-        <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
       }
 
       <!-- ⚠️ Demande pilote (2026-09-06, précisée) — l'historique s'ouvre en FENÊTRE MODALE. -->
@@ -218,7 +218,7 @@ import { DossierConsultation } from './dossier-consultation';
        overlay ::after ; pas de (click) sur <tr>. */
     .table-card table tr.ligne-clic { position: relative; cursor: pointer; }
     .table-card table tr.ligne-clic:hover td { background: var(--n-50); }
-    .lien-ligne { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+    .lien-ligne { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; text-decoration: none; }
     .lien-ligne::after { content: ''; position: absolute; inset: 0; }
     /* Les boutons d'action passent AU-DESSUS de l'overlay → cliquables indépendamment du clic-ligne. */
     .table-card table tr.ligne-clic .btn { position: relative; z-index: 1; }
@@ -255,6 +255,8 @@ export class DossiersClotures {
   private readonly lookups = inject(ReferenceLookupService);
   private readonly saisieService = inject(SaisieService);
   private readonly toast = inject(ToastService);
+  /** Lot L4-F6 : lien vers la page du dossier, retour vers cette liste (page et filtre compris). */
+  protected readonly lien = inject(LienDossier);
 
   /**
    * ⚠️ 2026-08-05 — statuts depuis lesquels une mise à jour de PPM est ouverte : la Commission a rendu
@@ -349,8 +351,6 @@ export class DossiersClotures {
   private readonly chargement = signal<Set<number>>(new Set());
   /** Dossier dont l'historique des échanges est ouvert en MODALE (2026-09-06 ; null = fermée). */
   readonly histoirePour = signal<Dossier | null>(null);
-  /** Dossier ouvert en consultation par clic sur sa ligne (2026-09-13 ; null = fermée). */
-  readonly consulte = signal<Dossier | null>(null);
   /** Dossier dont le motif de mise à jour est ouvert en modale (dérivé de `majPour`). */
   readonly majDossier = computed(() => {
     const id = this.majPour();
@@ -359,6 +359,18 @@ export class DossiersClotures {
   readonly pageIndex = signal(0);
   readonly totalPages = signal(0);
   private readonly pageSize = 10;
+  /** Chemin de la liste, sans paramètres : stable tant que l'écran vit. */
+  private readonly cheminListe = this.router.url.split(/[?#]/)[0];
+  /**
+   * URL de la liste — page, filtre de type et mode compris : `returnUrl` des liens vers la page d'un
+   * dossier (lot L4-F6). Calculée sur l'ÉTAT, pas sur `Router.url`, qui ne se met à jour qu'après la
+   * navigation : au clic juste après un changement de page, le retour serait resté sur l'ancienne.
+   */
+  readonly retour = computed(() => {
+    const type = this.typeFiltre();
+    const parametres = [type ? `type=${encodeURIComponent(type)}` : '', this.modeMaj() ? 'maj=1' : '', this.pageIndex() > 0 ? `page=${this.pageIndex()}` : ''].filter(Boolean);
+    return `${this.cheminListe}${parametres.length ? `?${parametres.join('&')}` : ''}`;
+  });
   private readonly entiteMap = signal<Map<string, string>>(new Map());
   private readonly localiteMap = signal<Map<string, string>>(new Map());
   private readonly sousTypeMap = signal<Map<string, string>>(new Map());
@@ -386,7 +398,9 @@ export class DossiersClotures {
         });
       }
     });
-    this.charger(0);
+    // Page reprise de l'URL (lot L4-F6) : c'est elle que `returnUrl` ramène au retour de la page dossier.
+    const page = Number(this.route.snapshot.queryParamMap.get('page'));
+    this.charger(Number.isInteger(page) && page > 0 ? page : 0);
   }
 
   private charger(page: number): void {
@@ -471,13 +485,19 @@ export class DossiersClotures {
 
   prevPage(): void {
     if (this.pageIndex() > 0) {
-      this.charger(this.pageIndex() - 1);
+      this.allerPage(this.pageIndex() - 1);
     }
   }
   nextPage(): void {
     if (this.pageIndex() + 1 < this.totalPages()) {
-      this.charger(this.pageIndex() + 1);
+      this.allerPage(this.pageIndex() + 1);
     }
+  }
+  /** Lot L4-F6 : la page dans l'URL (sans nouvelle entrée d'historique), puis le chargement. */
+  private allerPage(page: number): void {
+    this.pageIndex.set(page);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { page: page > 0 ? page : null }, queryParamsHandling: 'merge', replaceUrl: true });
+    this.charger(page);
   }
 
   entiteLabel(d: Dossier): string {
