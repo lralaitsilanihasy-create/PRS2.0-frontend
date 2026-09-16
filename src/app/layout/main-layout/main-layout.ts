@@ -19,6 +19,7 @@ import {
 } from '../../services';
 import { NotificationCenter } from '../notification-center/notification-center';
 import { DossierConsultation } from '../../features/circuit/dossier-consultation';
+import { LienDossier } from '../../features/circuit/page-dossier/lien-dossier';
 import { ChangerMotDePasseModal } from '../../features/auth/mon-compte/changer-mot-de-passe-modal';
 import { ActualitesModal } from '../../shared/actualites/actualites-modal';
 import { Icone } from '../../shared/ui/icone';
@@ -70,6 +71,8 @@ export class MainLayout {
   private readonly prmpService = inject(PrmpService);
   private readonly controleurService = inject(ControleurService);
   private readonly dossierService = inject(DossierService);
+  /** Lot L4-F6 : la recherche de la topbar mène à la page du dossier, dans l'espace du connecté. */
+  private readonly lienDossier = inject(LienDossier);
   private readonly kpiService = inject(KpiService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly vacanceStore = inject(VacanceStore);
@@ -164,24 +167,35 @@ export class MainLayout {
   /** Modale « Changer mon mot de passe » (tous profils), ouverte depuis la topbar. */
   readonly motDePasseOuvert = signal(false);
 
-  // ── Recherche « aller à un dossier par référence » (topbar, PRMP/UGPM) ──
+  // ── Recherche « aller à un dossier par référence » (topbar) ──
   /** Saisie de la recherche par référence de dossier. */
   readonly recherche = signal('');
   /** Résolution de la référence en cours (désactive le champ). */
   readonly rechercheEnCours = signal(false);
-  /** La recherche cible l'espace `/prmp` → réservée aux profils qui y accèdent. */
-  readonly peutRechercher = computed(() => this.role() === 'PRMP' || this.role() === 'UGPM');
+  /**
+   * ⚠️ Lot L4-F6 (décision 5 du plan L4, 2026-09-15) — la recherche, jusqu'ici réservée à la PRMP et
+   * à son UGPM parce qu'elle atterrissait dans l'espace `/prmp`, s'ouvre aux HUIT profils du circuit :
+   * elle mène désormais à la page du dossier, qui vit dans l'espace de chacun. L'endpoint était déjà
+   * ouvert à tout profil authentifié et scopé comme la liste des dossiers — aucune référence n'est
+   * résolue hors périmètre. L'Administrateur et le Chargé de publication, sans page en v1, n'ont pas
+   * le champ.
+   */
+  readonly peutRechercher = computed(() => this.lienDossier.espace() !== null);
   /** Longueur minimale acceptée par `GET /api/dossiers/recherche` — en deçà, le serveur répond 400. */
   private static readonly LONGUEUR_MIN_RECHERCHE = 2;
   /**
    * Résout la saisie sur la référence **affichée** d'un dossier du périmètre (`refeDossier` ou réf. du PPM)
-   * et navigue vers sa liste (type × groupe) en le mettant en évidence (`?focus=`). Aucun résultat → toast.
+   * et ouvre sa PAGE (lot L4-F6), avec le retour vers l'écran courant. Aucun résultat → toast.
    *
-   * ⚠️ Audit 2026-08-27 (C-1) — la résolution se fait désormais **côté serveur**
-   * (`GET /api/dossiers/recherche?q=`, 10 résultats allégés au plus, scopés comme la liste des
-   * dossiers). Auparavant, CHAQUE recherche téléchargeait la liste COMPLÈTE des dossiers *et* celle
-   * des PPM pour retrouver une ligne en JavaScript : deux tables entières transférées et parsées.
+   * ⚠️ Audit 2026-08-27 (C-1) — la résolution se fait **côté serveur** (`GET /api/dossiers/recherche?q=`,
+   * 10 résultats allégés au plus, scopés comme la liste des dossiers). Auparavant, CHAQUE recherche
+   * téléchargeait la liste COMPLÈTE des dossiers *et* celle des PPM pour retrouver une ligne en
+   * JavaScript : deux tables entières transférées et parsées.
    * La saisie de moins de deux caractères est écartée ici, sans appel — le serveur la refuserait (400).
+   *
+   * ⚠️ Lot L4-F6 — la destination n'est plus la liste `/prmp/dossiers/:type/:groupe?focus=`, mais la
+   * page du dossier : plus besoin d'une famille renseignée pour construire l'URL, et le même geste
+   * sert les huit profils du circuit.
    */
   allerAuDossier(): void {
     const saisie = this.recherche().trim();
@@ -190,6 +204,7 @@ export class MainLayout {
       this.toast.info(`Saisissez au moins ${MainLayout.LONGUEUR_MIN_RECHERCHE} caractères pour rechercher.`);
       return;
     }
+    const retour = this.router.url;
     this.rechercheEnCours.set(true);
     this.dossierService.rechercher(saisie).subscribe({
       next: (resultats) => {
@@ -201,16 +216,8 @@ export class MainLayout {
           this.toast.info(`Aucun dossier pour « ${saisie} ».`);
           return;
         }
-        // La liste de destination est indexée par famille : sans elle, pas d'URL à construire.
-        if (!trouve.idTypeDossier) {
-          this.toast.info(`Le dossier « ${trouve.reference ?? trouve.idDossier} » n'a pas de famille renseignée.`);
-          return;
-        }
-        const groupe = trouve.statut === 'BROUILLON' ? 'brouillon' : 'soumis';
         this.recherche.set('');
-        void this.router.navigate(['/prmp/dossiers', trouve.idTypeDossier, groupe], {
-          queryParams: { focus: trouve.idDossier },
-        });
+        void this.router.navigate(this.lienDossier.commandes(trouve.idDossier), { queryParams: this.lienDossier.params(retour) });
       },
       error: () => {
         this.rechercheEnCours.set(false);
