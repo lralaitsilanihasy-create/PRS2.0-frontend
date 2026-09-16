@@ -67,7 +67,7 @@ import { ReceptionForm } from './reception-form';
             type="search"
             class="form-control"
             [value]="recherche()"
-            (input)="recherche.set($any($event.target).value)"
+            (input)="chercher($any($event.target).value)"
             placeholder="Rechercher par mot-clé (référence, entité, localité, statut, type…)"
             aria-label="Rechercher un dossier"
           />
@@ -356,7 +356,16 @@ export class DossiersPipeline {
   /** Affichage : frise (cartes) ou tableau ; choix mémorisé par navigateur (localStorage). */
   readonly vue = signal<'frise' | 'tableau'>(this.lireVue());
   /** Recherche par mot-clé du tableau (filtre client sur les colonnes affichées). */
-  readonly recherche = signal('');
+  readonly recherche = signal(this.route.snapshot.queryParamMap.get('q') ?? '');
+  /**
+   * Page de départ, reprise de l'URL (lot L4-F6) : sans elle, le retour depuis la page d'un dossier
+   * ramenait toujours à la première. Consommée une fois — un rechargement après un geste (dispatch,
+   * réception) repart de la première page, comme avant.
+   */
+  private pageDepart = (() => {
+    const p = Number(this.route.snapshot.queryParamMap.get('page'));
+    return Number.isInteger(p) && p > 0 ? p : 0;
+  })();
 
   protected readonly title = (this.route.snapshot.data['title'] as string) ?? 'Dossiers';
   /** Frise du circuit par dossier ; désactivable via `route.data.timeline === false`. */
@@ -741,7 +750,8 @@ export class DossiersPipeline {
       });
     } else if (this.paginee) {
       // Dashboard (source undefined) ET « Dossiers examinés » (source 'examines') sont paginés.
-      this.chargerPage(0);
+      this.chargerPage(this.pageDepart);
+      this.pageDepart = 0;
       // ⚠️ Les collections du circuit datent la frise (dashboard) et masquent « Modifier l'examen »
       // (examinés). Chargées EN ENTIER une seule fois (aucune ne se filtre par dossier côté serveur ;
       // audit C-1). ⚠️ 2026-09-07 : sur le DASHBOARD, la frise préfère `Dossier.datesEtapes` du DTO
@@ -789,13 +799,33 @@ export class DossiersPipeline {
   }
   prevPage(): void {
     if (this.pageIndex() > 0) {
-      this.chargerPage(this.pageIndex() - 1);
+      this.allerPage(this.pageIndex() - 1);
     }
   }
   nextPage(): void {
     if (this.pageIndex() + 1 < this.totalPages()) {
-      this.chargerPage(this.pageIndex() + 1);
+      this.allerPage(this.pageIndex() + 1);
     }
+  }
+
+  /**
+   * Lot L4-F6 — l'état de la liste dans l'URL : page et mot-clé, sans nouvelle entrée d'historique
+   * (paginer et filtrer ne sont pas des étapes de navigation). C'est ce qui permet au retour depuis
+   * la page d'un dossier de rendre la liste telle qu'on l'a quittée.
+   */
+  private allerPage(page: number): void {
+    this.pageIndex.set(page);
+    this.ecrireEtat({ page: page > 0 ? String(page) : null });
+    this.chargerPage(page);
+  }
+
+  chercher(mot: string): void {
+    this.recherche.set(mot);
+    this.ecrireEtat({ q: mot.trim() ? mot : null });
+  }
+
+  private ecrireEtat(queryParams: Record<string, string | null>): void {
+    void this.router.navigate([], { relativeTo: this.route, queryParams, queryParamsHandling: 'merge', replaceUrl: true });
   }
 
   /** Message d'absence de données selon la source. */
