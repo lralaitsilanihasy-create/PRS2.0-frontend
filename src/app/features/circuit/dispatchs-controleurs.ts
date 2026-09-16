@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, skip } from 'rxjs';
 
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
@@ -26,7 +27,7 @@ import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { StatutBadge } from '../../shared/circuit';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { DossiersRefreshStore } from '../prmp/dossiers-refresh.store';
-import { DossierConsultation } from './dossier-consultation';
+import { LienDossier } from './page-dossier/lien-dossier';
 
 /** Un dossier attribué à un contrôleur par le dernier dispatch (rôle joué : Membre attributaire ou CC). */
 interface DossierAttribue {
@@ -63,7 +64,7 @@ interface LigneControleur {
 @Component({
   selector: 'app-dispatchs-controleurs',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DossierConsultation, DatePipe, ModaleDirective, EtatErreur],
+  imports: [StatutBadge, DatePipe, ModaleDirective, EtatErreur, RouterLink],
   template: `
     <section class="dpc">
       <h2 class="dpc__titre"><span aria-hidden="true">📊</span> Dispatchs par contrôleur</h2>
@@ -168,7 +169,8 @@ interface LigneControleur {
                 <tbody>
                   @for (a of l.dossiers; track a.dossier.idDossier) {
                     <tr>
-                      <td>{{ a.dossier.refeDossier || '#' + a.dossier.idDossier }}</td>
+                      <!-- Lot L4-F6 : la référence mène à la PAGE du dossier (Ctrl+clic = nouvel onglet). -->
+                      <td><a class="dpc__ref" [routerLink]="lien.commandes(a.dossier.idDossier)" [queryParams]="lien.params()">{{ a.dossier.refeDossier || '#' + a.dossier.idDossier }}</a></td>
                       <td>{{ entiteLabel(a.dossier) }}</td>
                       <td>{{ typeLabel(a.dossier) }}</td>
                       <td style="white-space:nowrap;">{{ (a.dateDispatch | date: 'dd/MM/yyyy HH:mm') || '—' }}</td>
@@ -183,7 +185,7 @@ interface LigneControleur {
                       <td>{{ localiteLabel(a.dossier) }}</td>
                       <td>
                         <div class="td-actions dpc__actions-end">
-                          <button type="button" class="btn btn-secondary btn-sm" (click)="consulte.set(a.dossier)">Voir détails</button>
+                          <a class="btn btn-secondary btn-sm" [routerLink]="lien.commandes(a.dossier.idDossier)" [queryParams]="lien.params()">Voir détails</a>
                           @if (peutRetirer(a)) {
                             <button type="button" class="btn btn-danger btn-sm" (click)="retrait.set({ a, nom: l.nom })">Retirer</button>
                           }
@@ -201,9 +203,6 @@ interface LigneControleur {
       </div>
     }
 
-    @if (consulte(); as d) {
-      <app-dossier-consultation [dossier]="d" (closed)="consulte.set(null)" />
-    }
     @if (retrait(); as r) {
       <div class="modal-backdrop" [class.closing]="closingRetrait()">
         <div class="modal dpc__confirm" role="alertdialog" aria-modal="true" aria-label="Retrait du dossier dispatché" appModale appModaleClicExterieur (appModaleFermer)="fermerRetrait()">
@@ -303,6 +302,8 @@ interface LigneControleur {
     .dpc__lien { background: none; border: 0; padding: 0; margin: 0; font: inherit; font-weight: 700; color: var(--n-800); text-align: left; cursor: pointer; }
     .dpc__lien::after { content: ''; position: absolute; inset: 0; }
     .dpc__role-cell { font-size: var(--text-sm); color: var(--n-500); }
+    /* Lot L4-F6 : la référence d'un dossier est un LIEN vers sa page. */
+    .dpc__ref { color: var(--c-600); text-decoration: underline; }
     .dpc__chips { display: inline-flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
     .dpc__chip { padding: 0.15rem 0.6rem; border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: 600; white-space: nowrap; }
     .dpc__chip--0 { background: #fce7ec; color: #b03a52; }
@@ -347,14 +348,20 @@ export class DispatchsControleurs implements OnDestroy {
   private readonly permissions = inject(PermissionsService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  /** Lot L4-F6 : lien vers la page du dossier, retour vers cet écran (contrôleur déplié compris). */
+  protected readonly lien = inject(LienDossier);
 
   readonly loading = signal(true);
   /** Échec du croisement : la section affiche l'erreur et propose de relancer (AUDIT.md P9). */
   readonly erreur = signal(false);
   readonly lignes = signal<LigneControleur[]>([]);
-  /** Contrôleur dont la liste des dossiers est dépliée (im), null = tout replié. */
+  /**
+   * Contrôleur dont la liste des dossiers est dépliée (im), null = tout replié. Lot L4-F6 : l'état
+   * vit dans l'URL (`?controleur=`) — sans cela, revenir de la page d'un dossier refermerait le modal.
+   */
   readonly ouvert = signal<string | null>(null);
-  readonly consulte = signal<Dossier | null>(null);
   /** Attribution dont la confirmation de retrait est ouverte (null = fermée). */
   readonly retrait = signal<{ a: DossierAttribue; nom: string } | null>(null);
   readonly retraitEnCours = signal(false);
@@ -377,6 +384,8 @@ export class DispatchsControleurs implements OnDestroy {
   });
 
   constructor() {
+    // Contrôleur déplié repris de l'URL (lot L4-F6) : c'est lui que `returnUrl` ramène au retour.
+    this.ouvert.set(this.route.snapshot.queryParamMap.get('controleur'));
     this.lookups.lookup(TypeDossierService, 'idTypeDossier', ['libelleType']).subscribe((m) => this.typeMap.set(m));
     this.lookups.lookup(LocaliteService, 'idLocalite', ['libelleLocalite']).subscribe((m) => this.localiteMap.set(m));
     this.lookups.lookup(EntiteContractService, 'idEntiteContract', ['libelleEntite']).subscribe((m) => this.entiteMap.set(m));
@@ -527,11 +536,16 @@ export class DispatchsControleurs implements OnDestroy {
   }
 
   basculer(im: string): void {
-    this.ouvert.set(this.ouvert() === im ? null : im);
+    this.ecrireOuvert(this.ouvert() === im ? null : im);
   }
   /** Ferme le modal « Dossiers d'un contrôleur » (✕, Échap, clic hors du dialogue). */
   fermerDetail(): void {
-    this.ouvert.set(null);
+    this.ecrireOuvert(null);
+  }
+  /** Le contrôleur déplié dans l'URL, sans nouvelle entrée d'historique (lot L4-F6). */
+  private ecrireOuvert(im: string | null): void {
+    this.ouvert.set(im);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: { controleur: im }, queryParamsHandling: 'merge', replaceUrl: true });
   }
   /**
    * « Retirer » offert ? (DISPATCH_WRITE ; les dossiers listés sont tous DISPATCHE/EXAMINE, donc
