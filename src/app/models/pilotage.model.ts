@@ -184,9 +184,9 @@ export interface BadgesMenu {
  * ⚠️ Il ne rentre **pas** dans `BadgesMenu.compteurs` (`Record<string, number>`) : deux de ses champs
  * sont des dates. D'où `BadgesAdmin`, vue typée de la **même** réponse — pas une seconde route.
  *
- * ⚠️ Ce que le serveur ne sert PAS, et qui n'est donc pas affiché (plan L6, §6) : `sessionsOuvertes`
- * et `echecsConnexion24h`. Leur source (`t_session_utilisateur` alimentée au login) relève du besoin
- * B4, non livré. Une mesure fausse sur un tableau de bord de sécurité est pire qu'une mesure absente.
+ * ⚠️ **2026-09-17 (B4)** — `sessionsOuvertes` et `echecsConnexion24h` sont **servis** : le journal des
+ * connexions existe (`t_session_utilisateur` alimentée au login et au logout, migration `V31`). Ce
+ * sont les deux tuiles que l'accueil refusait d'afficher faute de source.
  */
 export interface CompteursAdmin {
   /**
@@ -222,6 +222,21 @@ export interface CompteursAdmin {
   mandatsExpirantSous30j: number;
   /** Nombre total d'entrées du journal d'audit. */
   journalAudit: number;
+  /**
+   * Connexions **réussies** jamais fermées **et datant de moins de 12 heures**.
+   *
+   * ⚠️ La borne de 12 h n'est pas un détail d'implémentation, c'est la définition : une session
+   * n'est fermée que par une déconnexion explicite, or la plupart des utilisateurs ferment
+   * simplement leur onglet. Sans elle, le compteur ne redescendrait jamais. L'écran doit donc le
+   * DIRE, sous peine d'être lu comme « personnes actuellement connectées ».
+   */
+  sessionsOuvertes: number;
+  /**
+   * Tentatives de connexion **refusées** des 24 dernières heures, identifiants inconnus compris.
+   * Les refus du quota (429) n'y figurent pas : ils n'examinent aucun identifiant et ne sont pas
+   * journalisés.
+   */
+  echecsConnexion24h: number;
 }
 
 /** `GET /api/kpis/badges` vu par l'Administrateur — même réponse que `BadgesMenu`, `compteurs` typé. */

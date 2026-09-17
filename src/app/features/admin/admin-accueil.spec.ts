@@ -13,11 +13,16 @@ import { AdminAccueil } from './admin-accueil';
  * Deux choses sont éprouvées ici, et la seconde compte autant que la première :
  *
  * 1. ce que l'écran DIT des files d'attente (nombre, ancienneté, urgence) ;
- * 2. ce qu'il **n'affiche pas** — les mesures de la maquette A qui n'ont aucune source : échecs de
- *    connexion et sessions ouvertes (besoin B4), le bloc « Système » (aucune route), et la colonne
- *    « Valeur » avant → après du journal (trois champs que l'intercepteur n'écrit jamais). Le plan
- *    L6 §6 les interdit tant qu'elles ne sont pas mesurables : sans ces tests, rien n'empêcherait
- *    de les réintroduire à zéro.
+ * 2. ce qu'il **n'affiche pas** — les mesures de la maquette A qui n'ont aucune source : le bloc
+ *    « Système » (aucune route) et la colonne « Valeur » avant → après du journal (trois champs que
+ *    l'intercepteur n'écrit jamais). Le plan L6 §6 les interdit tant qu'elles ne sont pas
+ *    mesurables : sans ces tests, rien n'empêcherait de les réintroduire à zéro.
+ *
+ * ⚠️ **Lot F5 (2026-09-17) — deux tests ont été RETOURNÉS.** Ils gardaient l'absence des mesures de
+ * connexion, faute de source (besoin B4) ; ils gardent maintenant leur **présence**, et la mention
+ * sans laquelle « sessions ouvertes » se lirait « personnes connectées en ce moment ». Un test qui
+ * interdit d'afficher une mesure doit tomber le jour où la mesure existe — sinon c'est lui qui
+ * devient le défaut.
  */
 const COMPTEURS: CompteursAdmin = {
   inscriptionsEnAttente: 5,
@@ -29,6 +34,8 @@ const COMPTEURS: CompteursAdmin = {
   comptesSuspendus: 3,
   mandatsExpirantSous30j: 2,
   journalAudit: 12480,
+  sessionsOuvertes: 14,
+  echecsConnexion24h: 6,
 };
 
 const ACTUALITE: Actualite = {
@@ -163,8 +170,12 @@ describe("AdminAccueil — le poste d'administration", () => {
   });
 
   it("leur absence a son état vide : « rien à surveiller » se dit, il ne se devine pas", () => {
-    monter({ compteurs: { ...COMPTEURS, mandatsExpirantSous30j: 0 } });
-    expect(texte()).toContain("Aucun mandat PRMP n'arrive à terme dans les 30 jours.");
+    // ⚠️ Lot F5 — le bloc porte désormais DEUX veilles : son état vide n'est atteint que lorsque
+    // les deux sont nulles, et il les nomme toutes les deux. Zéro mandat à lui seul ne vide plus
+    // le bloc, puisque les tentatives refusées, elles, restent à signaler.
+    monter({ compteurs: { ...COMPTEURS, mandatsExpirantSous30j: 0, echecsConnexion24h: 0 } });
+    expect(texte()).toContain("aucun mandat PRMP n'arrive à terme dans les 30 jours");
+    expect(texte()).toContain("tentative de connexion n'a été refusée depuis 24 heures");
   });
 
   it('demande les cinq réglages EN UN APPEL — c’est la raison d’être de B5', () => {
@@ -313,14 +324,45 @@ describe("AdminAccueil — le poste d'administration", () => {
     expect(texte()).toContain("Les actualités n'ont pas pu être lues.");
   });
 
-  // ───────────────────────── Ce qui n'est PAS affiché (plan L6, §6) ─────────────────────────
+  // ────────────── Les mesures de connexion, rallumées par B4 (lot F5, 2026-09-17) ──────────────
 
-  it("n'affiche AUCUNE mesure de connexion : leur source (B4) n'existe pas encore", () => {
+  it('affiche les QUATRE tuiles d’accès : la source des deux dernières existe enfin', () => {
+    // ⚠️ Test RETOURNÉ : il gardait leur absence tant que `t_session_utilisateur` n'était écrite par
+    // aucun code. Il garde désormais leur présence — les réintroduire à zéro était le risque d'hier,
+    // les perdre en silence est celui d'aujourd'hui.
     monter();
-    expect(texte()).not.toContain('échecs de connexion');
-    expect(texte()).not.toContain('sessions ouvertes');
-    expect(texte()).not.toContain('Sessions');
+    expect(texte()).toContain('sessions ouvertes');
+    expect(texte()).toContain('connexions refusées');
+    expect(texte()).toContain('14');
+    expect(texte()).toContain('6');
   });
+
+  it('dit la BORNE de « sessions ouvertes » : sans elle, le chiffre serait lu de travers', () => {
+    // Une session n'est fermée que par une déconnexion explicite ; presque personne ne se
+    // déconnecte. Le serveur ne compte donc que les connexions de moins de 12 h — écrire
+    // « sessions ouvertes » tout court laisserait croire à « personnes connectées en ce moment ».
+    monter();
+    expect(texte()).toContain('depuis moins de 12 h');
+    expect(texte()).toContain('sur 24 h');
+  });
+
+  it('« À surveiller » signale les tentatives refusées et mène au journal des connexions', () => {
+    monter();
+    expect(texte()).toContain('6 tentatives de connexion refusées');
+    const liens = [...(fixture.nativeElement as HTMLElement).querySelectorAll('a')].map((a) =>
+      a.getAttribute('href'),
+    );
+    expect(liens).toContain('/admin/audit?journal=connexions&succes=false');
+  });
+
+  it('aucun échec et aucun mandat : « À surveiller » le dit, il ne reste pas vide', () => {
+    monter({ compteurs: { ...COMPTEURS, mandatsExpirantSous30j: 0, echecsConnexion24h: 0 } });
+    expect(texte()).toContain('Rien à signaler');
+    // Zéro échec reste une MESURE : la tuile s'affiche, elle ne disparaît pas.
+    expect(texte()).toContain('connexions refusées');
+  });
+
+  // ───────────────────────── Ce qui n'est PAS affiché (plan L6, §6) ─────────────────────────
 
   it("n'affiche pas le bloc « Système » : schéma, migration et moteur d'alertes n'ont pas de route", () => {
     monter();

@@ -66,13 +66,17 @@ const GESTES: Readonly<Record<string, string>> = {
  * Tout vient de `GET /api/kpis/badges` (un seul appel, `CompteursAdminDto` enrichi par B1), plus la
  * lecture des actualités pour le bloc de droite.
  *
+ * ⚠️ **2026-09-17, lot F5 — les quatre tuiles d'accès sont au complet.** « Sessions ouvertes » et
+ * « connexions refusées sur 24 h », retirées par le §6 du plan faute de source, sont rallumées avec
+ * la leur : le journal des connexions (`/api/sessions`, besoin backend B4). La ligne « tentatives de
+ * connexion refusées » du bloc « À surveiller » aussi. **« Sessions ouvertes » se dit avec sa borne
+ * de 12 heures** : le serveur ne compte que les connexions réussies non refermées et récentes, parce
+ * qu'une session n'est fermée que par une déconnexion explicite — sans cette borne le chiffre ne
+ * redescendrait jamais, et sans cette mention il se lirait « personnes connectées en ce moment ».
+ *
  * ⚠️ **Ce qui n'est PAS dessiné, et pourquoi** (plan L6, §6 — « un chiffre sans source n'est pas
  * affiché : ni à zéro, ni avec un tiret ; absent ») :
  *
- * - les tuiles **« échecs de connexion (24 h) »** et **« sessions ouvertes »**, et la ligne
- *   « N échecs de connexion en 24 h » du bloc « À surveiller » : aucune connexion n'est tracée
- *   durablement (`/api/auth/**` est exclu du journal d'audit, `t_session_utilisateur` n'est écrite
- *   par aucun code). Elles arriveront avec le besoin backend **B4** ;
  * - le bloc **« Système »** de la maquette (schéma de base, dernière migration, dernière exécution du
  *   moteur d'alertes, profils actifs) : **aucune** route ne sert ces quatre valeurs — ni version de
  *   schéma, ni journal de migration, ni trace d'exécution du moteur. Le bloc est **retiré**, pas
@@ -205,8 +209,46 @@ const GESTES: Readonly<Record<string, string>> = {
                     <a class="acc-veille__lien" routerLink="/admin/comptes/mandats">Ouvrir les mandats PRMP</a>
                   </div>
                 </div>
-              } @else {
-                <p class="acc-vide">Aucun mandat PRMP n'arrive à terme dans les 30 jours.</p>
+              }
+              <!-- ⚠️ Lot 6 F5 — la ligne « échecs de connexion » de la maquette A, rallumée avec sa
+                   source (B4). Le seuil est ZÉRO et non un « pic » : inventer un seuil au-delà
+                   duquel il faudrait s'inquiéter n'appartient pas à l'écran. L'aide dit en revanche
+                   ce que le nombre veut dire, pour qu'une faute de frappe ne passe pas pour une
+                   attaque. -->
+              @if (c.echecsConnexion24h > 0) {
+                <div class="acc-veille">
+                  <span class="acc-veille__ic acc-veille__ic--risque" aria-hidden="true">
+                    <app-icone nom="key" [taille]="15" />
+                  </span>
+                  <div class="acc-veille__corps">
+                    <b class="acc-veille__titre">
+                      {{
+                        accord(
+                          c.echecsConnexion24h,
+                          'tentative de connexion refusée',
+                          'tentatives de connexion refusées'
+                        )
+                      }}
+                      en 24 h
+                    </b>
+                    <span class="acc-veille__aide">
+                      Un mot de passe mal tapé en produit une ; c'est leur répétition sur un même
+                      login, ou depuis une même adresse, qui doit alerter.
+                    </span>
+                    <a
+                      class="acc-veille__lien"
+                      routerLink="/admin/audit"
+                      [queryParams]="{ journal: 'connexions', succes: 'false' }"
+                      >Voir les tentatives refusées</a
+                    >
+                  </div>
+                </div>
+              }
+              @if (c.mandatsExpirantSous30j === 0 && c.echecsConnexion24h === 0) {
+                <p class="acc-vide">
+                  Rien à signaler : aucun mandat PRMP n'arrive à terme dans les 30 jours, et aucune
+                  tentative de connexion n'a été refusée depuis 24 heures.
+                </p>
               }
             </div>
           </div>
@@ -223,10 +265,25 @@ const GESTES: Readonly<Record<string, string>> = {
                 <span class="acc-tuile__n">{{ nombre(c.comptesSuspendus) }}</span>
                 <span class="acc-tuile__l">comptes suspendus</span>
               </div>
+              <!-- ⚠️ Lot 6 F5 — les deux tuiles que le §6 du plan interdisait d'afficher : leur
+                   source (le journal des connexions, B4) existe depuis le 2026-09-17. -->
+              <div class="acc-tuile">
+                <span class="acc-tuile__n">{{ nombre(c.sessionsOuvertes) }}</span>
+                <!-- ⚠️ « depuis moins de 12 h » fait partie de la MESURE, pas de l'habillage : une
+                     session n'est fermée que par une déconnexion explicite, et presque personne ne
+                     se déconnecte. Sans cette borne le chiffre ne redescendrait jamais — et sans
+                     cette mention il se lirait « personnes connectées en ce moment ». -->
+                <span class="acc-tuile__l">sessions ouvertes <em>depuis moins de 12 h</em></span>
+              </div>
+              <div class="acc-tuile" [class.acc-tuile--alerte]="c.echecsConnexion24h > 0">
+                <span class="acc-tuile__n">{{ nombre(c.echecsConnexion24h) }}</span>
+                <span class="acc-tuile__l">connexions refusées <em>sur 24 h</em></span>
+              </div>
             </div>
             <p class="acc-pied">
               sur {{ accord(c.comptes, 'compte enregistré', 'comptes enregistrés') }} ·
-              <a routerLink="/admin/comptes">Comptes &amp; personnes</a>
+              <a routerLink="/admin/comptes">Comptes &amp; personnes</a> ·
+              <a routerLink="/admin/audit" [queryParams]="{ journal: 'connexions' }">Journal des connexions</a>
             </p>
 
             <h2 class="acc__h2">Actualité à l'ouverture</h2>
@@ -331,12 +388,17 @@ const GESTES: Readonly<Record<string, string>> = {
 
     /* ── À surveiller ────────────────────────────────────────────────────── */
     .acc-veille { padding: 11px 14px; display: flex; gap: 11px; align-items: flex-start; }
+    /* Deux veilles peuvent coexister : un filet les sépare, sans les enfermer chacune dans une carte. */
+    .acc-veille + .acc-veille { border-top: 1px solid var(--n-200); }
     .acc-veille__ic {
       width: 26px; height: 26px; flex: none;
       border-radius: 7px;
       display: grid; place-items: center;
       background: var(--warning-bg); color: var(--warning-text);
     }
+    /* --danger-text sur --danger-bg : 5,80:1. Les deux veilles ne se confondent pas d'un coup d'œil
+       — et la couleur ne porte rien seule, chaque ligne dit son sujet en toutes lettres. */
+    .acc-veille__ic--risque { background: var(--danger-bg); color: var(--danger-text); }
     .acc-veille__corps { display: flex; flex-direction: column; gap: 1px; }
     .acc-veille__titre { font-size: var(--text-base); font-weight: 700; color: var(--n-700); }
     .acc-veille__aide { font-size: var(--text-sm); color: var(--n-500); }
@@ -364,6 +426,12 @@ const GESTES: Readonly<Record<string, string>> = {
     .acc-tuile { background: #fff; padding: 11px 13px; }
     .acc-tuile__n { display: block; font-size: var(--text-xl); font-weight: 800; color: var(--n-800); line-height: 1.1; }
     .acc-tuile__l { display: block; font-size: var(--text-sm); color: var(--n-500); margin-top: 2px; line-height: 1.3; }
+    /* La précision de la mesure (« depuis moins de 12 h », « sur 24 h ») est écrite SOUS le libellé,
+       à la même encre AA : ce n'est pas une note de bas de page, c'est ce que le chiffre compte. */
+    .acc-tuile__l em { display: block; font-style: normal; font-size: var(--text-xs); }
+    /* Une tuile d'échecs non nulle porte l'encre du danger sur son CHIFFRE — le libellé, lui, dit
+       déjà « refusées » : la couleur ne fait que répéter, elle n'informe pas seule. */
+    .acc-tuile--alerte .acc-tuile__n { color: var(--danger-text); }
 
     .acc-pied { font-size: var(--text-sm); color: var(--n-500); margin: 7px 0 0; }
     .acc-pied a { color: var(--p-700); font-weight: 700; }
