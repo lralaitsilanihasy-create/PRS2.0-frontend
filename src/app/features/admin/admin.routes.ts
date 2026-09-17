@@ -52,7 +52,11 @@ const sessionConfig = SECURITE.find((r) => r.slug === 'session-utilisateurs')!.c
 export const ADMIN_ROUTES: Routes = [
   { path: '', redirectTo: 'tableau-de-bord', pathMatch: 'full' },
 
-  { path: 'tableau-de-bord', loadComponent: () => import('../pilotage/kpi-dashboard').then((m) => m.KpiDashboard) },
+  // ⚠️ Lot 6 F2 (2026-09-17) — l'accueil de l'Administrateur cesse d'emprunter le `KpiDashboard` du
+  // CONTRÔLE (dossiers déposés, taux de conformité, top des points non conformes) : aucune de ces
+  // mesures n'est de son ressort. `KpiDashboard` n'est pas modifié — il reste l'accueil du Président
+  // et du Chef de commission, seule cette route cesse de l'emprunter.
+  { path: 'tableau-de-bord', loadComponent: () => import('./admin-accueil').then((m) => m.AdminAccueil) },
 
   {
     path: 'referentiels',

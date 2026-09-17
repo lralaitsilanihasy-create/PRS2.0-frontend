@@ -177,6 +177,61 @@ export interface BadgesMenu {
   aFaire?: number | null;
 }
 
+/**
+ * `compteurs` de `GET /api/kpis/badges` **pour l'ADMINISTRATEUR** (`CompteursAdminDto`, livraison
+ * backend B1 du 2026-09-17). Il alimente l'accueil de l'Administrateur.
+ *
+ * ⚠️ Il ne rentre **pas** dans `BadgesMenu.compteurs` (`Record<string, number>`) : deux de ses champs
+ * sont des dates. D'où `BadgesAdmin`, vue typée de la **même** réponse — pas une seconde route.
+ *
+ * ⚠️ Ce que le serveur ne sert PAS, et qui n'est donc pas affiché (plan L6, §6) : `sessionsOuvertes`
+ * et `echecsConnexion24h`. Leur source (`t_session_utilisateur` alimentée au login) relève du besoin
+ * B4, non livré. Une mesure fausse sur un tableau de bord de sécurité est pire qu'une mesure absente.
+ */
+export interface CompteursAdmin {
+  /**
+   * Inscriptions en attente de validation. ⚠️ 2026-09-17 — périmètre **PRMP et UGPM** (et non plus
+   * PRMP seul) : le badge compte ce que l'écran des inscriptions liste. Ce nombre a donc pu augmenter
+   * sans qu'aucune inscription n'ait été déposée — ce sont les UGPM jusqu'ici invisibles.
+   */
+  inscriptionsEnAttente: number;
+  /** Déclarations de rattachement PRMP⇄entité non décidées. */
+  rattachementsEnAttente: number;
+  /**
+   * Dépôt de la plus ancienne inscription encore en attente ; `null` si la file est vide.
+   * ⚠️ **Dérivée** (première pièce jointe déposée) tant que `t_compte_auth` n'a pas de date de
+   * demande — migration V29 attendue, cf. demande backend §B4.
+   */
+  inscriptionDoyenneLe: string | null;
+  /**
+   * Première déclaration de rattachement encore en attente ; `null` si la file est vide.
+   * ⚠️ **À minuit** : `DATE_DECLARATION` est une date, pas un instant. L'ancienneté de cette file se
+   * lit donc en JOURS — l'exprimer en heures inventerait une précision que la donnée n'a pas.
+   */
+  rattachementDoyenLe: string | null;
+  /** Total des comptes d'authentification (tous statuts confondus). */
+  comptes: number;
+  /** Comptes connectables (`t_compte_auth.ACTIF = true`). */
+  comptesActifs: number;
+  /**
+   * Comptes validés puis **fermés** par l'Administrateur. ⚠️ Les inscriptions **refusées** n'y sont
+   * pas comptées : ce n'est pas le même état, et cette tuile est une mesure de sécurité.
+   */
+  comptesSuspendus: number;
+  /** Mandats PRMP non abrogés dont le terme tombe dans les 30 jours. */
+  mandatsExpirantSous30j: number;
+  /** Nombre total d'entrées du journal d'audit. */
+  journalAudit: number;
+}
+
+/** `GET /api/kpis/badges` vu par l'Administrateur — même réponse que `BadgesMenu`, `compteurs` typé. */
+export interface BadgesAdmin {
+  profil: string;
+  compteurs: CompteursAdmin;
+  /** `null` pour l'Administrateur (il n'a pas de file de dossiers). */
+  aFaire?: number | null;
+}
+
 /** Réponse de `GET /api/kpis/tableau-bord` (PRESIDENT / ADMINISTRATEUR). */
 export interface TableauBord {
   /** Nombre de dossiers par statut. */

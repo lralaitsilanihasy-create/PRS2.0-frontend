@@ -7,6 +7,7 @@ import { skipErrorToast } from '../core/errors/api-error';
 import { CrudService } from './api/crud.service';
 import {
   Anomalie,
+  BadgesAdmin,
   BadgesMenu,
   CompteursPrmp,
   CompteursVerificateur,
@@ -132,6 +133,16 @@ export class KpiService {
    */
   badges(): Observable<BadgesMenu> {
     return this.http.get<BadgesMenu>(`${this.baseUrl}/badges`);
+  }
+
+  /**
+   * Même appel, vu par l'ADMINISTRATEUR : `compteurs` est alors un `CompteursAdminDto` (livraison
+   * backend B1 du 2026-09-17) dont deux champs sont des dates — il ne rentre pas dans le
+   * `Record<string, number>` de `BadgesMenu`. **Aucune route supplémentaire** : c'est la même
+   * réponse, typée pour ce qu'elle contient chez ce profil.
+   */
+  badgesAdmin(): Observable<BadgesAdmin> {
+    return this.http.get<BadgesAdmin>(`${this.baseUrl}/badges`);
   }
 }
 
