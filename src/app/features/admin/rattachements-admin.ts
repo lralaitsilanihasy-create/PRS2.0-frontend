@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { ApiError } from '../../core/errors/api-error';
@@ -22,10 +23,14 @@ interface RattachementEnAttente {
   selector: 'app-rattachements-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterLink],
   template: `
     <section class="ra">
       <header class="page-header">
         <h1 class="page-title">Rattachements en attente ({{ rattachements().length }})</h1>
+        <!-- ⚠️ Lot 6 F1 — l'entrée de menu unique « Demandes d'accès » ouvre les inscriptions : ce
+             lien est le chemin de retour tant que l'écran à deux onglets (lot F3) n'existe pas. -->
+        <a class="btn btn-outline btn-sm" routerLink="/admin/inscriptions">Inscriptions en attente</a>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
 

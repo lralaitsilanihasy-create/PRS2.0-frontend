@@ -134,6 +134,12 @@ Organisation **par domaine métier**, pas par type technique : il n'y a **pas** 
 - Les **contrastes de la coquille** (barre latérale, en-tête) se vérifient par
   `node scripts/contrastes-coquille.mjs` — toute nouvelle paire de couleurs ajoutée dans
   la barre ou l'en-tête doit être ajoutée au script, sinon elle n'est jamais mesurée.
+- La **hauteur du menu** se vérifie par `node scripts/hauteur-menu.mjs` (lot 6 — les dix
+  profils, 1366×768 et 1229×691, menu large et rail). Il affiche l'écart en pixels :
+  `+n` = le menu défile, `−n` = la marge qui reste. À lancer après **toute** entrée ajoutée
+  à `NAV_BY_ROLE` : c'est le menu de l'Administrateur qui sature le premier (il n'a plus que
+  39 px de marge à 1229×691, soit à peine une entrée de plus). Il mesure dans un vrai
+  Chrome, sur les vraies feuilles de style et les vraies données — pas sur un modèle.
 
 ## Chronogrammes de pilotage (`chronogrammes/`)
 

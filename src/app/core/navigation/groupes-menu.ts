@@ -23,18 +23,25 @@ import { NavItem, separerParDelegation } from './navigation';
  * `groupes-menu.spec.ts`, qui nomme la ligne à écrire.
  */
 
-/** Rubriques du menu. `pied` n'est pas une rubrique : c'est le bas de la barre (Notifications). */
+/**
+ * Rubriques du menu. `pied` n'est pas une rubrique : c'est le bas de la barre (Notifications), et
+ * `accueil` en est une sans intitulé — l'entrée d'accueil ouvre le menu, au-dessus des rubriques.
+ *
+ * ⚠️ Lot 6 F1 (2026-09-17) — les cinq rubriques `suivi`, `demandes`, `organisation`, `parametrage`
+ * et `donnees` ont disparu : elles ne servaient QUE l'Administrateur, dont le classement est refait
+ * (§3 du plan L6). Les rubriques des neuf autres profils ne bougent pas d'une ligne.
+ */
 export type CleGroupe =
+  | 'accueil'
   | 'travail'
-  | 'suivi'
   | 'decisions'
-  | 'demandes'
+  | 'acces'
   | 'pilotage'
   | 'planification'
   | 'archivage'
-  | 'organisation'
-  | 'parametrage'
-  | 'donnees'
+  | 'regles'
+  | 'referentiels'
+  | 'traces'
   | 'delegation'
   | 'pied';
 
@@ -49,16 +56,21 @@ export interface SectionMenu {
 
 /** Intitulé affiché de chaque rubrique. */
 export const TITRES_GROUPES: Readonly<Record<CleGroupe, string | null>> = {
+  /**
+   * SANS intitulé, et c'est voulu : l'accueil d'un profil est une entrée unique, posée en tête du
+   * menu juste sous le bloc de marque. Un intitulé « Accueil » au-dessus d'une seule ligne ne
+   * classerait rien et coûterait 21 px de hauteur au menu le plus chargé (Administrateur).
+   */
+  accueil: null,
   travail: 'Mon travail',
-  suivi: 'Suivi',
   decisions: 'Décisions',
-  demandes: 'Demandes',
+  acces: 'Accès',
   pilotage: 'Pilotage',
   planification: 'Planification',
   archivage: 'Archivage',
-  organisation: 'Organisation',
-  parametrage: 'Paramétrage',
-  donnees: 'Données',
+  regles: 'Règles du contrôle',
+  referentiels: 'Référentiels',
+  traces: 'Traces',
   // Intitulé HISTORIQUE, repris tel quel de `separerParDelegation` (demande user 2026-08-28).
   delegation: 'Exercé par délégation',
   pied: null,
@@ -66,20 +78,21 @@ export const TITRES_GROUPES: Readonly<Record<CleGroupe, string | null>> = {
 
 /**
  * Ordre d'affichage des rubriques, commun aux dix menus. Un profil n'en voit que celles qu'il
- * remplit : l'Administrateur n'a ni « Mon travail » ni « Décisions », le Secrétaire n'a que la
- * première. « Exercé par délégation » reste la DERNIÈRE (demande user 2026-08-28).
+ * remplit : l'Administrateur n'a ni « Mon travail » ni « Décisions » — il a les quatre siennes,
+ * précédées de son accueil ; le Secrétaire n'a que « Mon travail ». « Exercé par délégation » reste
+ * la DERNIÈRE (demande user 2026-08-28).
  */
 export const ORDRE_GROUPES: readonly CleGroupe[] = [
+  'accueil',
   'travail',
-  'suivi',
   'decisions',
-  'demandes',
+  'acces',
   'pilotage',
   'planification',
   'archivage',
-  'organisation',
-  'parametrage',
-  'donnees',
+  'regles',
+  'referentiels',
+  'traces',
   'delegation',
 ];
 
@@ -117,21 +130,29 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe; co
   'lettre-renvois': { groupe: 'archivage', court: 'Lettres' },
   'pv-examens': { groupe: 'archivage', court: 'Archives' },
 
-  // ── Administrateur — chemins COMPLETS : trois de ses suffixes servent déjà un autre espace
-  //    (`tableau-de-bord` et `chaines-controle`), la clé précise lève l'ambiguïté sans table de rôles.
-  '/admin/tableau-de-bord': { groupe: 'suivi', court: 'Global' },
-  '/admin/chaines-controle': { groupe: 'organisation', court: 'Chaînes' },
-  audit: { groupe: 'suivi', court: 'Journal' },
-  sessions: { groupe: 'suivi', court: 'Sessions' },
-  inscriptions: { groupe: 'demandes', court: 'Inscriptions' },
-  rattachements: { groupe: 'demandes', court: 'Rattachements' },
-  comptes: { groupe: 'organisation', court: 'Comptes' },
-  'delais-standards': { groupe: 'parametrage', court: 'Délais' },
-  'agpm-seuil': { groupe: 'parametrage', court: 'Seuil' },
-  referentiels: { groupe: 'parametrage', court: 'Référentiels' },
-  actualites: { groupe: 'parametrage', court: 'Actualités' },
-  'ppm-marches': { groupe: 'donnees', court: 'PPM' },
-  'marches-previsions': { groupe: 'donnees', court: 'Marchés' },
+  // ── Administrateur (classement refait au lot 6 F1 — plan L6, §3). Deux de ses suffixes servent
+  //    déjà un autre espace (`tableau-de-bord`, `chaines-controle`) : la clé en chemin COMPLET lève
+  //    l'ambiguïté sans table de rôles.
+  //
+  //    Quatre rubriques, précédées de l'accueil : ce que l'Administrateur ouvre pour DONNER l'accès,
+  //    ce qu'il règle pour que le contrôle se comporte comme la loi le demande, le vocabulaire des
+  //    écrans, et ce que l'application garde ou dit d'elle-même. Les trois défauts corrigés : le
+  //    journal de connexions n'est plus un « suivi », la communication n'est plus un « paramétrage »,
+  //    et les réglages du moteur de contrôle ne sont plus noyés dans les nomenclatures.
+  '/admin/tableau-de-bord': { groupe: 'accueil', court: 'Global' },
+  inscriptions: { groupe: 'acces', court: 'Demandes' },
+  comptes: { groupe: 'acces', court: 'Comptes' },
+  '/admin/chaines-controle': { groupe: 'regles', court: 'Chaînes' },
+  'delais-standards': { groupe: 'regles', court: 'Délais' },
+  // Deux écrans de référentiel promus en entrées de menu : leur chemin garde le segment
+  // `referentiels/`, la clé est donc le suffixe complet — la clé `referentiels` (le sommaire) ne
+  // l'attrape pas, `entreeTable` compare le suffixe entier.
+  'referentiels/points-ctrls': { groupe: 'regles', court: 'Points' },
+  'agpm-seuil': { groupe: 'regles', court: 'Seuil' },
+  'referentiels/regle-alertes': { groupe: 'regles', court: 'Règles' },
+  referentiels: { groupe: 'referentiels', court: 'Nomenclatures' },
+  audit: { groupe: 'traces', court: 'Journal' },
+  actualites: { groupe: 'traces', court: 'Actualités' },
 
   // ── Pied de barre : transverse, chemin absolu, répété à l'identique dans les dix menus ──
   '/notifications': { groupe: 'pied', court: 'Alertes' },

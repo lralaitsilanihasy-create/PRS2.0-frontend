@@ -246,22 +246,41 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Documents publics', path: '/publication/documents', icon: 'clip' },
     { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
+  // ⚠️ Refonte ergonomique, lot 6 F1 (2026-09-17) — l'ordre de déclaration suit les rubriques cibles
+  // du plan (`docs/plan-refonte-L6-espace-admin.md`, §3) : accueil, Accès, Règles du contrôle,
+  // Référentiels, Traces. Le classement lui-même vit dans `groupes-menu.ts`, pas ici.
   ADMINISTRATEUR: [
     { label: 'Tableau de bord global', path: '/admin/tableau-de-bord', icon: 'board' },
-    { label: 'Inscriptions en attente', path: '/admin/inscriptions', icon: 'inbox' },
-    { label: 'Rattachements en attente', path: '/admin/rattachements', icon: 'link' },
+    // ⚠️ Lot 6 F1 — « Inscriptions en attente » et « Rattachements en attente » ne font plus qu'UNE
+    // entrée : ce sont deux files de la même demande, « accéder à l'application ». L'écran à deux
+    // onglets est le lot F3 ; d'ici là l'entrée ouvre les inscriptions, et les deux écrans se
+    // renvoient l'un à l'autre par un lien en tête de page — la route `/admin/rattachements` est
+    // inchangée et reste atteignable.
+    { label: 'Demandes d’accès', path: '/admin/inscriptions', icon: 'inbox' },
+    { label: 'Comptes & personnes', path: '/admin/comptes', icon: 'users' },
     { label: 'Chaînes de contrôle', path: '/admin/chaines-controle', icon: 'layers' },
     { label: 'Délais standards', path: '/admin/delais-standards', icon: 'clock' },
+    // ⚠️ Lot 6 F1 — « Points de contrôle » et « Règles d'alerte » sortent des 20 nomenclatures :
+    // ce sont les réglages qui changent le comportement du contrôle pour tout le monde, pas du
+    // vocabulaire. Les écrans (CRUD générique) et leurs routes sont inchangés.
+    { label: 'Points de contrôle', path: '/admin/referentiels/points-ctrls', icon: 'check' },
     { label: 'Seuil AGPM (AMI)', path: '/admin/agpm-seuil', icon: 'filter' },
-    { label: 'Actualités', path: '/admin/actualites', icon: 'message' },
-    { label: 'Référentiels', path: '/admin/referentiels', icon: 'table' },
-    { label: 'Comptes & hiérarchie', path: '/admin/comptes', icon: 'users' },
-    { label: 'PPM & marchés', path: '/admin/ppm-marches', icon: 'folder' },
-    { label: 'Marchés & dates prév.', path: '/admin/marches-previsions', icon: 'calendar' },
+    { label: 'Règles d’alerte', path: '/admin/referentiels/regle-alertes', icon: 'alert' },
+    { label: 'Nomenclatures', path: '/admin/referentiels', icon: 'table' },
     { label: 'Journal d’audit', path: '/admin/audit', icon: 'history' },
-    { label: 'Sessions', path: '/admin/sessions', icon: 'key' },
+    { label: 'Actualités', path: '/admin/actualites', icon: 'message' },
     // Rapports retirés du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Rapports', path: '/admin/rapports', icon: 'board' },
+    // « PPM & marchés » et « Marchés & dates prév. » retirés du menu (décision Mathieu 2026-09-17) :
+    // ce sont des écrans PRMP réutilisés (`features/prmp` dans admin.routes.ts), de la consultation
+    // de données métier, pas de l'administration. Routes conservées — ré-activer en décommentant.
+    // { label: 'PPM & marchés', path: '/admin/ppm-marches', icon: 'folder' },
+    // { label: 'Marchés & dates prév.', path: '/admin/marches-previsions', icon: 'calendar' },
+    // « Sessions » retirée du menu (lot 6 F1) : le journal des connexions devient un ONGLET du
+    // Journal au lot F5, et la table qu'exposait cet écran n'est alimentée par aucun code — un CRUD
+    // *modifiable* sur un journal de preuve vide. Route et configuration conservées jusqu'à F5, qui
+    // les retire ; ré-activer en décommentant.
+    // { label: 'Sessions', path: '/admin/sessions', icon: 'key' },
     { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
 };

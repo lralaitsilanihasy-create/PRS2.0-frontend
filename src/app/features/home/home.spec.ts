@@ -74,7 +74,9 @@ describe("Accueil — atterrissage sur « À faire », avec repli", () => {
     const { fixture } = monter('ADMINISTRATEUR', () => of(exempleAFairePresident()));
     const page = fixture.nativeElement as HTMLElement;
     const cartes = Array.from(page.querySelectorAll('.home-card'));
-    expect(cartes.length).toBe(14);
+    // ⚠️ Lot 6 F1 (2026-09-17) — le menu de l'Administrateur passe de 14 à 12 entrées, et les
+    // cartes « Vos modules » le suivent (elles sont dérivées de `navFlat`).
+    expect(cartes.length).toBe(12);
     expect(cartes.every((c) => c.querySelector('app-icone svg path'))).toBe(true);
     expect(page.querySelector('.portail-banner app-icone svg')).not.toBeNull();
     expect(/\p{Extended_Pictographic}/u.test(page.textContent ?? '')).toBe(false);

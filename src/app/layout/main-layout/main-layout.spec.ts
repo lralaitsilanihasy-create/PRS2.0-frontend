@@ -503,29 +503,31 @@ describe('Menu par rubriques (refonte ergonomique, lot 5 — F2)', () => {
   });
 
   /**
-   * ⚠️ Décision du 2026-09-16 (point laissé ouvert par F1) — DANS une rubrique, l'ordre reste celui
-   * de `NAV_BY_ROLE` : Délais standards · Seuil AGPM · Actualités · Référentiels, et non l'ordre
-   * écrit dans la table du plan (§3.2), qui plaçait Référentiels avant Actualités. Le forcer aurait
-   * demandé un rang par entrée dans `groupes-menu.ts` — c'est-à-dire un second ordre déclaré, que le
-   * pilote ne verrait pas en ajoutant une ligne à `navigation.ts`. Le lot dérive, il ne redéclare pas.
+   * ⚠️ Décision du 2026-09-16 (point laissé ouvert par F1 du lot 5) — DANS une rubrique, l'ordre
+   * reste celui de `NAV_BY_ROLE`. Le forcer depuis `groupes-menu.ts` aurait demandé un rang par
+   * entrée, c'est-à-dire un second ordre déclaré que le pilote ne verrait pas en ajoutant une ligne
+   * à `navigation.ts`. Le lot dérive, il ne redéclare pas — l'ordre du plan L6 (§3) est donc obtenu
+   * en déclarant les entrées dans cet ordre-là, ce que fait `navigation.ts` depuis le lot 6 F1.
+   *
+   * ⚠️ Lot 6 F1 (2026-09-17) — quatre rubriques, précédées de l'accueil : celui-ci forme une section
+   * SANS intitulé, c'est pourquoi `rubriques()` n'en compte que quatre alors que le menu en rend
+   * cinq. Un intitulé au-dessus d'une seule entrée ne classerait rien.
    */
-  it('range le menu de l’Administrateur en cinq rubriques, ordre de déclaration conservé dedans', async () => {
+  it('range le menu de l’Administrateur en quatre rubriques derrière son accueil, ordre de déclaration conservé dedans', async () => {
     const hote = await monter('ADMINISTRATEUR', 'ADMIN01');
-    expect(rubriques(hote)).toEqual(['Suivi', 'Demandes', 'Organisation', 'Paramétrage', 'Données']);
+    expect(rubriques(hote)).toEqual(['Accès', 'Règles du contrôle', 'Référentiels', 'Traces']);
     expect(chemins(hote)).toEqual([
       '/admin/tableau-de-bord',
-      '/admin/audit',
-      '/admin/sessions',
       '/admin/inscriptions',
-      '/admin/rattachements',
-      '/admin/chaines-controle',
       '/admin/comptes',
+      '/admin/chaines-controle',
       '/admin/delais-standards',
+      '/admin/referentiels/points-ctrls',
       '/admin/agpm-seuil',
-      '/admin/actualites',
+      '/admin/referentiels/regle-alertes',
       '/admin/referentiels',
-      '/admin/ppm-marches',
-      '/admin/marches-previsions',
+      '/admin/audit',
+      '/admin/actualites',
       '/notifications',
     ]);
   });

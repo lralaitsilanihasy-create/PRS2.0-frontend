@@ -193,22 +193,59 @@ describe('sectionsMenu — dérivation des rubriques', () => {
     expect(sections[1].items.map((i) => i.label)).toEqual(['Lettres de renvoi reçues', 'PV reçus']);
   });
 
-  it('Administrateur : Suivi · Demandes · Organisation · Paramétrage · Données (ni « Mon travail », ni « Décisions »)', () => {
+  /**
+   * ⚠️ Lot 6 F1 (2026-09-17) — classement REFAIT pour l'Administrateur (plan L6, §3). Ce test dit
+   * le menu cible en toutes lettres : c'est lui qui rattrapera une entrée rangée au hasard.
+   */
+  it('Administrateur : son accueil SANS intitulé, puis Accès · Règles du contrôle · Référentiels · Traces', () => {
     const sections = sectionsMenu(navFor('ADMINISTRATEUR'));
     expect(sections.map((s) => s.titre)).toEqual([
-      'Suivi',
-      'Demandes',
-      'Organisation',
-      'Paramétrage',
-      'Données',
+      null,
+      'Accès',
+      'Règles du contrôle',
+      'Référentiels',
+      'Traces',
     ]);
-    expect(sections[0].items.map((i) => i.label)).toEqual([
-      'Tableau de bord global',
-      'Journal d’audit',
-      'Sessions',
+    expect(sections.map((s) => s.items.map((i) => i.label))).toEqual([
+      ['Tableau de bord global'],
+      ['Demandes d’accès', 'Comptes & personnes'],
+      [
+        'Chaînes de contrôle',
+        'Délais standards',
+        'Points de contrôle',
+        'Seuil AGPM (AMI)',
+        'Règles d’alerte',
+      ],
+      ['Nomenclatures'],
+      ['Journal d’audit', 'Actualités'],
     ]);
-    expect(sections[2].items.map((i) => i.label)).toEqual(['Chaînes de contrôle', 'Comptes & hiérarchie']);
-    expect(sections[4].items.map((i) => i.label)).toEqual(['PPM & marchés', 'Marchés & dates prév.']);
+  });
+
+  it('Administrateur : DOUZE entrées, Notifications comprise — le critère de hauteur du lot 6', () => {
+    // 1366×768 et 1229×691 sans défilement : mesuré par `node scripts/hauteur-menu.mjs`. Douze est
+    // le nombre pour lequel cette mesure a été faite ; au-delà, la mesure est à refaire.
+    expect(navFor('ADMINISTRATEUR').length).toBe(12);
+  });
+
+  it('les écrans retirés du menu de l’Administrateur n’y reviennent pas par accident', () => {
+    const chemins = navFor('ADMINISTRATEUR').map((i) => i.path);
+    // Écrans PRMP réutilisés, de la consultation (décision Mathieu 2026-09-17) — routes conservées.
+    expect(chemins).not.toContain('/admin/ppm-marches');
+    expect(chemins).not.toContain('/admin/marches-previsions');
+    // Journal des connexions : devient un onglet du Journal au lot F5 — route conservée jusque-là.
+    expect(chemins).not.toContain('/admin/sessions');
+  });
+
+  it('« Points de contrôle » et « Règles d’alerte » pointent bien sur leurs écrans de référentiel', () => {
+    const chemin = (label: string) => navFor('ADMINISTRATEUR').find((i) => i.label === label)?.path;
+    expect(chemin('Points de contrôle')).toBe('/admin/referentiels/points-ctrls');
+    expect(chemin('Règles d’alerte')).toBe('/admin/referentiels/regle-alertes');
+    // Le SUFFIXE complet est la clé : le sommaire `referentiels` ne doit pas les happer.
+    const rubrique = (path: string) =>
+      sectionsMenu(navFor('ADMINISTRATEUR')).find((s) => s.items.some((i) => i.path === path))?.cle;
+    expect(rubrique('/admin/referentiels/points-ctrls')).toBe('regles');
+    expect(rubrique('/admin/referentiels/regle-alertes')).toBe('regles');
+    expect(rubrique('/admin/referentiels')).toBe('referentiels');
   });
 
   it('Président et CC : Mon travail · Décisions · Pilotage · Exercé par délégation', () => {
@@ -240,9 +277,9 @@ describe('sectionsMenu — dérivation des rubriques', () => {
     const rubrique = (role: Role, path: string) =>
       sectionsMenu(navFor(role)).find((s) => s.items.some((i) => i.path === path))?.cle;
     expect(rubrique('PRESIDENT', '/president/chaines-controle')).toBe('pilotage');
-    expect(rubrique('ADMINISTRATEUR', '/admin/chaines-controle')).toBe('organisation');
+    expect(rubrique('ADMINISTRATEUR', '/admin/chaines-controle')).toBe('regles');
     expect(rubrique('MEMBRE', '/membre/tableau-de-bord')).toBe('travail');
-    expect(rubrique('ADMINISTRATEUR', '/admin/tableau-de-bord')).toBe('suivi');
+    expect(rubrique('ADMINISTRATEUR', '/admin/tableau-de-bord')).toBe('accueil');
   });
 });
 

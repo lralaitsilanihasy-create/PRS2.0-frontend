@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { RouterLink } from '@angular/router';
 
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -21,12 +22,17 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
   selector: 'app-inscriptions-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule],
+  imports: [ModaleDirective, ReactiveFormsModule, RouterLink],
   template: `
     <div class="ia-wrap">
     <section class="ia">
       <header class="page-header">
         <h1 class="page-title">Inscriptions en attente ({{ inscriptions().length }})</h1>
+        <!-- ⚠️ Lot 6 F1 — « Demandes d'accès » est une entrée de menu UNIQUE depuis le 2026-09-17 :
+             inscriptions et rattachements sont deux files de la même demande. L'écran à deux
+             onglets est le lot F3 ; d'ici là les deux écrans se renvoient l'un à l'autre, pour que
+             rien ne devienne inatteignable. -->
+        <a class="btn btn-outline btn-sm" routerLink="/admin/rattachements">Rattachements en attente</a>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
 

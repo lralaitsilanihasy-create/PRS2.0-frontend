@@ -17,8 +17,16 @@ import { Routes } from '@angular/router';
 
 import { COMPTES, REFERENTIELS, SECURITE } from './admin-resources.config';
 
+/**
+ * ⚠️ Lot 6 F1 (2026-09-17) — « Points de contrôle » et « Règles d'alerte » quittent le sommaire des
+ * nomenclatures : ce sont des réglages du moteur de contrôle, et ils ont depuis leur propre entrée
+ * de menu (`navigation.ts`). Leurs ROUTES et leurs écrans (CRUD générique) sont inchangés — seul le
+ * chemin d'accès l'est, comme pour l'écran-hub « Examen de dossiers » du Président.
+ */
+const PROMUS_EN_MENU = ['points-ctrls', 'regle-alertes'];
+
 const refLinks = [
-  ...REFERENTIELS.map((r) => ({
+  ...REFERENTIELS.filter((r) => !PROMUS_EN_MENU.includes(r.slug)).map((r) => ({
     label: r.config.title,
     path: `/admin/referentiels/${r.slug}`,
   })),
@@ -49,7 +57,7 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'referentiels',
     loadComponent: () => import('../../shared/ui/section-home').then((m) => m.SectionHome),
-    data: { title: 'Référentiels', links: refLinks },
+    data: { title: 'Nomenclatures', links: refLinks },
   },
   { path: 'referentiels/entite-arbre', loadComponent: () => import('./entite-arbre').then((m) => m.EntiteArbre) },
   { path: 'referentiels/dmc-mapping', loadComponent: () => import('./dmc-mapping-admin').then((m) => m.DmcMappingAdmin) },
@@ -62,7 +70,7 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'comptes',
     loadComponent: () => import('../../shared/ui/section-home').then((m) => m.SectionHome),
-    data: { title: 'Comptes & hiérarchie', links: compteLinks },
+    data: { title: 'Comptes & personnes', links: compteLinks },
   },
   // PRMP et contrôleur ont un écran dédié (fiche + photo/pièces) ; les autres ressources « comptes » sont génériques.
   ...COMPTES.filter((r) => r.slug !== 'prmps' && r.slug !== 'controleurs').map((r) => ({
@@ -91,8 +99,12 @@ export const ADMIN_ROUTES: Routes = [
   // Écran dédié : journal d'audit paginé et filtré (table, acteur, période) — la table croît sans
   // fin, le CRUD générique en demandait la totalité (⚠️ audit 2026-08-27, C-1).
   { path: 'audit', loadComponent: () => import('./audit-logs-admin').then((m) => m.AuditLogsAdmin) },
+  // ⚠️ Lot 6 F1 — route CONSERVÉE, entrée de menu retirée : le journal des connexions devient un
+  // onglet du Journal au lot F5, qui retirera alors cette route et sa configuration `SECURITE`.
   { path: 'sessions', loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage), data: { crud: sessionConfig } },
   { path: 'rapports', loadComponent: () => import('../pilotage/rapports-page').then((m) => m.RapportsPage) },
+  // ⚠️ Lot 6 F1 — routes CONSERVÉES, entrées de menu retirées (décision Mathieu 2026-09-17) : écrans
+  // PRMP réutilisés, de la consultation de données métier et non de l'administration.
   { path: 'ppm-marches', loadComponent: () => import('../prmp/ppm-marches').then((m) => m.PpmMarches) },
   { path: 'marches-previsions', loadComponent: () => import('../prmp/prmp-marches-previsions').then((m) => m.PrmpMarchesPrevisions) },
 ];
