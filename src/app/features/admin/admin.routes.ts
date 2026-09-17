@@ -15,7 +15,7 @@ import { Routes } from '@angular/router';
 
 
 
-import { COMPTES, REFERENTIELS, SECURITE } from './admin-resources.config';
+import { COMPTES, REFERENTIELS } from './admin-resources.config';
 
 /**
  * ⚠️ Lot 6 F1 (2026-09-17) — « Points de contrôle » et « Règles d'alerte » quittent le sommaire des
@@ -33,7 +33,6 @@ const refLinks = [
   // Écran dédié : mapping mode de passation → type de DMC (PUT sur les modes ; pas un CRUD générique).
   { label: 'Mapping mode → document DMC', path: '/admin/referentiels/dmc-mapping' },
 ];
-const sessionConfig = SECURITE.find((r) => r.slug === 'session-utilisateurs')!.config;
 
 /**
  * Routes de l'espace administration (chargées en lazy, sous roleGuard ADMINISTRATEUR).
@@ -91,12 +90,14 @@ export const ADMIN_ROUTES: Routes = [
   // ⚠️ Chronométrage (2026-09-01) — délais standards par étape (PUT réservé à l'Administrateur).
   { path: 'delais-standards', loadComponent: () => import('./delais-standards').then((m) => m.DelaisStandards) },
   { path: 'agpm-seuil', loadComponent: () => import('./agpm-seuil-admin').then((m) => m.AgpmSeuilAdmin) },
-  // Écran dédié : journal d'audit paginé et filtré (table, acteur, période) — la table croît sans
-  // fin, le CRUD générique en demandait la totalité (⚠️ audit 2026-08-27, C-1).
+  // Écran dédié : les DEUX journaux, paginés et filtrés côté serveur — les écritures (`/api/audit-logs`,
+  // table sans fin dont le CRUD générique demandait la totalité, ⚠️ audit 2026-08-27 C-1) et, depuis
+  // le lot 6 F5, les CONNEXIONS (`/api/sessions`), en onglets.
   { path: 'audit', loadComponent: () => import('./audit-logs-admin').then((m) => m.AuditLogsAdmin) },
-  // ⚠️ Lot 6 F1 — route CONSERVÉE, entrée de menu retirée : le journal des connexions devient un
-  // onglet du Journal au lot F5, qui retirera alors cette route et sa configuration `SECURITE`.
-  { path: 'sessions', loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage), data: { crud: sessionConfig } },
+  // ⚠️ Lot 6 F5 (2026-09-17) — la route `sessions` est RETIRÉE. Elle montait le CRUD générique sur
+  // `/api/session-utilisateurs`, que le serveur a supprimé le même jour (404) : elle appelait dans le
+  // vide. Elle avait déjà quitté le menu au lot F1 ; les connexions se lisent dans l'onglet
+  // « Connexions » de `/admin/audit`, en lecture seule.
   { path: 'rapports', loadComponent: () => import('../pilotage/rapports-page').then((m) => m.RapportsPage) },
   // ⚠️ Lot 6 F1 — routes CONSERVÉES, entrées de menu retirées (décision Mathieu 2026-09-17) : écrans
   // PRMP réutilisés, de la consultation de données métier et non de l'administration.

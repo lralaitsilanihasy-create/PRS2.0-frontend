@@ -18,15 +18,58 @@ export interface AuditLog {
   sessionId?: string;
 }
 
-/** Session utilisateur (connexion). */
-export interface SessionUtilisateur {
-  idSession: string;
-  imControleur?: string;
-  dateConnexion?: string;
-  dateDeconnexion?: string;
-  ipAdresse?: string;
-  userAgent?: string;
+/**
+ * Une ligne du **journal des connexions** (`GET /api/sessions`, lot 6 — besoin backend B4 livré le
+ * 2026-09-17), **ADMINISTRATEUR seul** et en **lecture seule**.
+ *
+ * ⚠️ Elle remplace `SessionUtilisateur`, qui décrivait le CRUD `/api/session-utilisateurs`
+ * **retiré** (404 désormais) : un journal de preuve que l'Administrateur pouvait écrire, corriger et
+ * effacer est pire qu'absent. Ni POST, ni PUT, ni DELETE — la table n'est écrite que par
+ * `POST /api/auth/login` (une ligne par tentative examinée, réussie ou refusée) et
+ * `POST /api/auth/logout` (la date de fin). Voir `backend/docs/adr/ADR-0006-journal-des-connexions.md`.
+ *
+ * ⚠️ `idSession` n'est **pas** exposé : c'est l'empreinte SHA-256 du jeton émis, elle n'a aucun
+ * usage à l'écran.
+ */
+export interface SessionConnexion {
+  /**
+   * Référence de la personne connectée (`IM_CONTROLEUR`, `ID_PRMP` ou `ID_UGPM`).
+   * `null` quand la tentative a échoué sur un **login inconnu** : il n'y a alors personne à désigner
+   * — et c'est précisément la ligne qu'on vient regarder.
+   */
+  acteur: string | null;
+  /** Identifiant **tenté**, renseigné dans tous les cas (tronqué à 100 caractères par le serveur). */
+  login: string;
+  /** Horodatage de la tentative. */
+  dateConnexion: string;
+  /**
+   * Fermeture par `POST /api/auth/logout` ; `null` si la session est encore ouverte — **ou** si
+   * l'utilisateur a simplement fermé son onglet, ce que rien ne permet de distinguer.
+   */
+  dateDeconnexion: string | null;
+  /** Durée de la session ; `null` tant qu'elle n'est pas fermée, et pour un échec, qui n'en a pas. */
+  dureeSecondes: number | null;
+  /** Adresse de l'appelant. */
+  ipAdresse: string | null;
+  /** Le « poste » de la maquette : l'en-tête `User-Agent` du navigateur. */
+  userAgent: string | null;
+  /** `true` si les identifiants ont été acceptés. */
+  succes: boolean;
+}
+
+/** Filtres de `GET /api/sessions` — tous facultatifs, tous cumulables, tous appliqués au SERVEUR. */
+export interface FiltresSessions {
+  /**
+   * Référence d'acteur **ou** login tenté (sans la casse sur le login). Les deux, parce qu'un échec
+   * sur un login inconnu ne porte aucune référence : filtrer sur la seule référence masquerait ce
+   * qu'on vient chercher.
+   */
+  acteur?: string;
+  /** `true` = connexions acceptées, `false` = tentatives refusées ; absent = les deux. */
   succes?: boolean;
+  /** Bornes `AAAA-MM-JJ`, **journées entières incluses** (même calcul que `/api/audit-logs`). */
+  du?: string;
+  au?: string;
 }
 
 /** Résumé d'un compte d'authentification (réservé ADMINISTRATEUR ; mot de passe jamais exposé). */

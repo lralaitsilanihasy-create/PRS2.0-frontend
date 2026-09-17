@@ -19,7 +19,6 @@ import {
   PrmpService,
   RegleAlerteService,
   RegleAnomalieService,
-  SessionUtilisateurService,
   SoaBeneficiaireService,
   StatutMarcheService,
   SousTypeDossierService,
@@ -606,30 +605,14 @@ export const COMPTES: AdminResource[] = [
   },
 ];
 
-/**
- * Sécurité : sessions utilisateur (ADMINISTRATEUR).
+/*
+ * ⚠️ Lot 6 F5 (2026-09-17) — la rubrique **`SECURITE` a disparu de ce fichier**, avec son unique
+ * ressource « Sessions utilisateur ». Elle servait un CRUD **en écriture** sur `t_session_utilisateur`,
+ * c'est-à-dire sur un journal de preuve : l'Administrateur pouvait y forger une trace de connexion,
+ * corriger une date ou effacer la sienne. Le serveur a retiré `/api/session-utilisateurs` le même
+ * jour (404) — cette configuration appelait désormais dans le vide.
  *
- * ⚠️ Le journal d'audit est parti d'ici le 2026-08-27 : `t_audit_log` grossit sans fin et le CRUD
- * générique en demandait la totalité. Il a désormais son écran dédié, paginé et filtré
- * (`features/admin/audit-logs-admin.ts`).
+ * Les connexions se lisent maintenant dans l'onglet « Connexions » du Journal
+ * (`features/admin/audit-logs-admin.ts`, `GET /api/sessions`), **en lecture seule**. Même trajet, et
+ * même motif, que le journal d'audit parti d'ici le 2026-08-27.
  */
-export const SECURITE: AdminResource[] = [
-  {
-    slug: 'session-utilisateurs',
-    config: {
-      title: 'Sessions utilisateur',
-      service: SessionUtilisateurService,
-      idKey: 'idSession',
-      writeCapability: 'COMPTE_WRITE',
-      fields: [
-        { key: 'idSession', label: 'Session', pk: true, required: true },
-        { key: 'imControleur', label: 'Contrôleur' },
-        { key: 'dateConnexion', label: 'Connexion' },
-        { key: 'dateDeconnexion', label: 'Déconnexion' },
-        { key: 'ipAdresse', label: 'IP' },
-        { key: 'userAgent', label: 'User-Agent' },
-        { key: 'succes', label: 'Succès', type: 'boolean' },
-      ],
-    },
-  },
-];

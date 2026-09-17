@@ -1,9 +1,18 @@
-import { HttpParams } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { CrudService } from './api/crud.service';
-import { AnnuaireFiche, AnnuairePersonne, AuditLog, Page, SessionUtilisateur, TypeActeur } from '../models';
+import { environment } from '../../environments/environment';
+import {
+  AnnuaireFiche,
+  AnnuairePersonne,
+  AuditLog,
+  FiltresSessions,
+  Page,
+  SessionConnexion,
+  TypeActeur,
+} from '../models';
 
 /** Sécurité & administration (§3.8) : réservé à ADMINISTRATEUR (lecture comprise). */
 
@@ -32,9 +41,49 @@ export class AuditLogService extends CrudService<AuditLog> {
   }
 }
 
+/**
+ * **Journal des connexions** (`/api/sessions`, lot 6 — besoin B4), **ADMINISTRATEUR seul**.
+ *
+ * ⚠️ **Il ne dérive PAS de `CrudService`, et c'est le fond du besoin.** Il remplace
+ * `SessionUtilisateurService`, qui servait le CRUD générique `/api/session-utilisateurs` —
+ * **retiré du serveur le 2026-09-17, 404 désormais**. Cette route laissait l'Administrateur forger
+ * une trace de connexion, corriger une date ou supprimer la sienne : un journal de preuve
+ * modifiable est pire qu'absent (même conclusion que pour `/api/audit-logs` le 2026-08-27).
+ * Hériter de `CrudService` remettrait `create`, `update` et `delete` à portée de main pour des
+ * verbes que le serveur refuse (405).
+ */
 @Injectable({ providedIn: 'root' })
-export class SessionUtilisateurService extends CrudService<SessionUtilisateur, string> {
-  protected readonly resource = 'session-utilisateurs';
+export class JournalConnexionService {
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = `${environment.apiUrl}/sessions`;
+
+  /**
+   * `GET /api/sessions?page=&size=&acteur=&succes=&du=&au=` — une page de connexions.
+   *
+   * La pagination et les quatre filtres partent au **serveur** : filtrer la seule page affichée est
+   * le défaut M15 de l'audit — on croit chercher dans le journal et l'on ne cherche que dans vingt
+   * lignes. Le serveur impose le tri, du plus récent au plus ancien : un journal n'a qu'un ordre de
+   * lecture sensé.
+   *
+   * ⚠️ Un filtre vide est **omis**, jamais envoyé vide : le serveur attend `AAAA-MM-JJ` sur les
+   * dates et refuserait (400) une chaîne vide, là où l'absence du paramètre vaut « pas de borne ».
+   */
+  page(page: number, taille: number, filtres: FiltresSessions = {}): Observable<Page<SessionConnexion>> {
+    let params = new HttpParams().set('page', page).set('size', taille);
+    if (filtres.acteur) {
+      params = params.set('acteur', filtres.acteur);
+    }
+    if (filtres.succes !== undefined) {
+      params = params.set('succes', filtres.succes);
+    }
+    if (filtres.du) {
+      params = params.set('du', filtres.du);
+    }
+    if (filtres.au) {
+      params = params.set('au', filtres.au);
+    }
+    return this.http.get<Page<SessionConnexion>>(this.baseUrl, { params });
+  }
 }
 
 /**
