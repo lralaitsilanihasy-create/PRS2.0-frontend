@@ -225,6 +225,24 @@ contrôle) — soit six appels aujourd'hui, pour afficher quatre lignes.
 `List<String>`), ou une chaîne séparée par des virgules — au choix du backend. Le comportement à une
 seule valeur est inchangé.
 
+> ⚠️ **Livré le 17/09 (`b1bd854`), sous les deux formes. Une correction à cette demande, relevée en
+> l'intégrant :** les valeurs à passer ne sont **pas** des noms de table SQL.
+> `AuditInterceptor` écrit dans `t_audit_log.NOM_TABLE` le **premier segment du chemin d'API**
+> appelé — `PUT /api/delais-standards/3` donne `delais-standards`, jamais `tr_delai_standard`.
+> L'exemple `?table=t_delai_standard` de cette demande ne ramènerait donc aucune ligne. Les cinq
+> valeurs utilisées par l'accueil sont `delais-standards`, `points-ctrls`, `regle-alertes`,
+> `regle-anomalies` et `parametres` (qui porte le seuil AGPM et l'interrupteur des actualités).
+>
+> **Les chaînes de contrôle restent hors du bloc** : `PUT /api/controleurs/{im}/rattachement` est
+> audité sous `controleurs`, la ressource de **toute** écriture sur une fiche de contrôleur. Le
+> filtre ne porte que sur la ressource, pas sur `TYPE_ACTION` ; les suivre remplirait le bloc de
+> créations et corrections de fiches. À rouvrir seulement si un filtre par geste est un jour demandé.
+>
+> **Ce que le bloc ne peut pas montrer, et qui n'est pas un manque de B5** : la valeur *avant → après*
+> d'un réglage. `AuditLogService.enregistrer` ne renseigne ni `champModifie`, ni `ancienneValeur`, ni
+> `nouvelleValeur` — l'intercepteur journalise la requête, pas le diff. Les trois colonnes sont
+> toujours nulles en exploitation. L'accueil affiche donc **Quand · Qui · Réglage · Geste**.
+
 ---
 
 ## Récapitulatif

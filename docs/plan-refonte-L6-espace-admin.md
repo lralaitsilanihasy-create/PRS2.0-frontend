@@ -6,10 +6,11 @@
 Sessions et Comptes ? »), maquettes `maquettes-design/admin/` — **A retenue pour la coquille et
 l'accueil, C retenue pour l'écran des comptes**.
 
-> **Statut : ouvert — F1 et F4 livrés le 17/09** sur `chantier/espace-admin` (commits `a191247`
-> et `dacb351`). Restent F2, F3, F5, puis Q1 et D1 ; F2 et F3 attendent B1 et B2. Ce plan se lit
-> avec la demande backend `demande-backend-2026-09-17-espace-admin.md`, qui porte les cinq besoins
-> serveur (B1 à B5).
+> **Statut : ouvert — F1, F4 et F2 livrés le 17/09** sur `chantier/espace-admin` (F1 `a191247`,
+> F4 `dacb351`, F2 ci-dessous). Restent F3 et F5, puis Q1 et D1 ; F3 attend B2 (livré), F5 attend
+> B4 (non livré). Ce plan se lit avec la demande backend
+> `demande-backend-2026-09-17-espace-admin.md`, qui porte les cinq besoins serveur (B1 à B5) —
+> **B1, B2, B3 et B5 sont livrés ; B4 ne l'est pas**.
 
 ---
 
@@ -24,7 +25,7 @@ sommaire « Comptes & hiérarchie » en annuaire agissant.
 |---|---|---|---|---|---|
 | 1 | **L6-F1** Rubriques de l'Administrateur re-classées — **LIVRÉ** | frontend-angular | — | S | `navigation.ts` (33 commits) — **2 lignes retirées** |
 | 1 | **L6-F4** Actions de compte : suspendre, réactiver, réinitialiser — **LIVRÉ** | frontend-angular | — | S | non |
-| 2 | **L6-F2** Accueil de l'Administrateur (maquette A) | frontend-angular | B1 | M | non — écran neuf |
+| 2 | **L6-F2** Accueil de l'Administrateur (maquette A) — **LIVRÉ** | frontend-angular | B1, B5 | M | non — écran neuf |
 | 2 | **L6-F3** Annuaire (maquette C) | frontend-angular | B2, F4 | L | non — écran neuf |
 | 3 | **L6-F5** Journal : onglet « Connexions » | frontend-angular | B4 | S | `audit-logs-admin.ts` (calme) |
 | 4 | **L6-Q1** Recette : rubriques, accueil, annuaire, actions | qa-test | F1…F5 | M | — |
@@ -198,7 +199,41 @@ Trois actions branchées sur des endpoints **qui existent déjà** :
 Elles vivent d'abord dans les écrans existants (`prmp-admin`, `ugpm-admin`, `controleur-admin`), puis
 F3 les reprend dans la fiche d'annuaire. Aucune demande backend.
 
-### 4.3 L6-F2 — Accueil de l'Administrateur *(M, dépend de B1)*
+### 4.3 L6-F2 — Accueil de l'Administrateur *(M, dépend de B1)* — **LIVRÉ le 17/09**
+
+> **Quatre écarts à la maquette, tous par application du §6** (ce qui n'a pas de source n'est pas
+> dessiné) :
+>
+> 1. **Deux tuiles d'accès, pas quatre.** « Échecs de connexion (24 h) » et « sessions ouvertes »
+>    dépendent de **B4**, non livré : elles sont absentes, pas à zéro. La ligne « N échecs de
+>    connexion en 24 h » du bloc « À surveiller » l'est aussi. Le total des comptes (`comptes`,
+>    servi et jusqu'ici affiché nulle part, §1.3) passe en pied de bloc : « sur 134 comptes
+>    enregistrés ».
+> 2. **Le bloc « Système » est retiré.** Aucune route ne sert la version de schéma, la date de la
+>    dernière migration ni la dernière exécution du moteur d'alertes ; « profils actifs 10 sur 10 »
+>    n'est pas une mesure. `journalAudit` — l'autre compteur servi que rien n'affichait — rejoint le
+>    pied du bloc des changements : « Tout le journal d'audit · 12 480 écritures enregistrées ».
+> 3. **La colonne « Valeur » (avant → après) des changements de paramétrage n'existe pas.**
+>    `AuditLogService.enregistrer` ne renseigne ni `champModifie`, ni `ancienneValeur`, ni
+>    `nouvelleValeur` : l'intercepteur journalise la **requête**, pas le diff. Les quatre colonnes
+>    livrées sont Quand · Qui · Réglage · Geste.
+> 4. **Cinq réglages suivis, pas six : les chaînes de contrôle en sont exclues.** Elles se changent
+>    par `PUT /api/controleurs/{im}/rattachement`, audité sous la ressource `controleurs` — la même
+>    que toute correction de fiche d'un contrôleur. Les suivre noierait les quatre lignes de réglage.
+>
+> **Deux constats techniques qui valent pour la suite** :
+>
+> - `t_audit_log.NOM_TABLE` porte le **nom de ressource de l'API** (`delais-standards`,
+>   `points-ctrls`, `parametres`…), pas le nom de la table SQL : `AuditInterceptor` y écrit le
+>   premier segment du chemin appelé. `?table=t_delai_standard` ne ramène **jamais** rien.
+> - `rattachementDoyenLe` est une date **ramenée à minuit** (`DATE_DECLARATION` est une date) : son
+>   ancienneté s'affiche en jours. L'exprimer en heures inventerait une précision absente et
+>   surévaluerait l'attente.
+>
+> **Un écart hors §6** : l'entrée de menu « Tableau de bord global » devient
+> « **Poste d'administration** » (rail : « Poste »), pour dire ce que la page montre. Aucune entrée
+> ajoutée ni retirée — `node scripts/hauteur-menu.mjs` remesuré : −116 / −122 / **−39** / −45,
+> identique à F1.
 
 Écran neuf `features/admin/admin-accueil.ts`, monté sur `/admin/tableau-de-bord` à la place de
 `KpiDashboard`. Reprend la maquette A :
@@ -268,6 +303,15 @@ Trois mesures des maquettes **ne sont pas calculables aujourd'hui** :
 Tant que B4 n'est pas livré, **ces trois tuiles ne sont pas affichées** — pas affichées à zéro, pas
 affichées avec un tiret : absentes. Une mesure fausse sur un tableau de bord de sécurité est pire
 qu'une mesure absente.
+
+> ⚠️ **Trois mesures de plus, découvertes à la réalisation de F2 (17/09), et retirées pour le même
+> motif** — elles n'attendent aucun besoin backend en cours, il faudrait les concevoir :
+>
+> | Mesure | Maquette | Ce qui manque |
+> |---|---|---|
+> | Schéma de base, dernière migration, moteur d'alertes, profils actifs (bloc « Système ») | A | aucune route ne les sert ; rien à filtrer, rien à dériver |
+> | Valeur avant → après d'un changement de paramétrage | A | `AuditLogService.enregistrer` n'écrit ni `champModifie`, ni `ancienneValeur`, ni `nouvelleValeur` : ces colonnes sont **toujours nulles** |
+> | « 3 en retard » sur une carte de file | A | l'API sert l'ancienneté de **la plus vieille** demande, pas la distribution des âges. La carte dit donc « en retard » / « dans les délais » d'après cette doyenne, et l'en-tête dit laquelle |
 
 ---
 
