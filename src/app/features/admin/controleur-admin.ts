@@ -10,6 +10,7 @@ import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { Controleur } from '../../models';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { ControleurService } from '../../services';
+import { ActionsCompte } from './actions-compte';
 
 const IMG_OK = ['image/jpeg', 'image/png'];
 
@@ -23,7 +24,7 @@ const IMG_OK = ['image/jpeg', 'image/png'];
   selector: 'app-controleur-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule],
+  imports: [ModaleDirective, ReactiveFormsModule, ActionsCompte],
   template: `
     <div class="ca-wrap">
     <section class="ca cnm-card">
@@ -141,6 +142,9 @@ const IMG_OK = ['image/jpeg', 'image/png'];
                   <div class="ca__row-actions">
                     <button type="button" class="btn btn-secondary btn-sm" (click)="voirDetail(c)">Détail</button>
                     <button type="button" class="btn btn-outline btn-sm" (click)="modifier(c)">Modifier</button>
+                    <!-- ⚠️ Lot 6 F4 — suspendre / réactiver / réinitialiser le mot de passe. C'est le
+                         seul des trois écrans où le geste n'existait sous AUCUNE forme. -->
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="gererCompte(c)">Compte</button>
                     <button type="button" class="btn btn-danger btn-sm" (click)="demanderSuppression(c)">Supprimer</button>
                   </div>
                 </td>
@@ -195,6 +199,17 @@ const IMG_OK = ['image/jpeg', 'image/png'];
         </div>
       </div>
     }
+
+    @if (compteCible(); as c) {
+      <!-- ControleurDto ne porte pas le login : la modale le déduit si le compte est inactif, le
+           demande sinon (aucune route ne donne le compte d'un contrôleur actif — besoin B2). -->
+      <app-actions-compte
+        [type]="'CONTROLEUR'"
+        [ref]="c.imControleur"
+        [nom]="(c.nomCont ?? '') + ' ' + (c.prenomsCont ?? '')"
+        (fermer)="compteCible.set(null)"
+      />
+    }
   `,
   styles: `
     .ca-wrap { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
@@ -246,6 +261,8 @@ export class ControleurAdmin implements OnInit, OnDestroy {
   /** Contrôleur en cours d'édition (matricule) ; null = mode création. */
   readonly editId = signal<string | null>(null);
   readonly confirmDelete = signal<Controleur | null>(null);
+  /** Contrôleur dont le COMPTE de connexion est ouvert (lot 6 F4) ; null = modale fermée. */
+  readonly compteCible = signal<Controleur | null>(null);
   private readonly search$ = new Subject<string>();
 
   // Panneau de détail (à droite) : contrôleur affiché + sa photo (object URL) + état de chargement.
@@ -296,6 +313,11 @@ export class ControleurAdmin implements OnInit, OnDestroy {
     if (p) URL.revokeObjectURL(p);
     const d = this.detailPhoto();
     if (d) URL.revokeObjectURL(d);
+  }
+
+  /** Ouvre les actions de COMPTE d'un contrôleur : suspendre, réactiver, réinitialiser (lot 6 F4). */
+  gererCompte(c: Controleur): void {
+    this.compteCible.set(c);
   }
 
   /** Affiche le détail d'un contrôleur (panneau de droite) et charge sa photo. */

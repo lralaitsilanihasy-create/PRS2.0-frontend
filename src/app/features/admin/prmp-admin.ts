@@ -9,22 +9,25 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { CreerPrmpRequest, Prmp } from '../../models';
-import { CompteAuthService, PrmpService } from '../../services';
+import { PrmpService } from '../../services';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
+import { ActionsCompte } from './actions-compte';
 import { PrmpPiecesAdmin } from './prmp-pieces-admin';
 
 /**
  * Administration des PRMP (`/api/prmps`, ADMINISTRATEUR) : création (fiche **+ compte** login/mot de
- * passe, parité UGPM), modification (PUT — champs métier, ni matricule ni compte), réinitialisation
- * du mot de passe (via `/api/comptes-auth`), suppression (garde métier → 409), et accès aux entités
- * rattachées et aux pièces jointes. Recherche serveur par nom (`/par-nom/{nom}`).
- * Le matricule (`idPrmp`) est l'identifiant, non modifiable.
+ * passe, parité UGPM), modification (PUT — champs métier, ni matricule ni compte), suppression
+ * (garde métier → 409), et accès aux entités rattachées et aux pièces jointes. Recherche serveur par
+ * nom (`/par-nom/{nom}`). Le matricule (`idPrmp`) est l'identifiant, non modifiable.
+ *
+ * ⚠️ Lot 6 F4 (2026-09-17) — les gestes sur le COMPTE (suspendre, réactiver, réinitialiser le mot de
+ * passe) ont quitté le formulaire pour l'action « Compte » de chaque ligne (`ActionsCompte`).
  */
 @Component({
   selector: 'app-prmp-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule, RouterLink, PrmpPiecesAdmin],
+  imports: [ModaleDirective, ReactiveFormsModule, RouterLink, PrmpPiecesAdmin, ActionsCompte],
   template: `
     <div class="pa-wrap">
     <section class="pa cnm-card">
@@ -89,24 +92,33 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
             <input class="form-control" type="text" formControlName="telPrmp" />
             @if (invalide('telPrmp')) { <span class="form-error">Obligatoire.</span> }
           </label>
-          <!-- Compte : login + mot de passe obligatoires à la création (parité UGPM). En modification ils
-               deviennent optionnels et servent à réinitialiser le mot de passe (via /api/comptes-auth). -->
-          <label class="form-group">
-            <span class="form-label">Login{{ editId() ? '' : ' *' }}</span>
-            <input class="form-control" type="text" formControlName="login" autocomplete="off"
-              [placeholder]="editId() ? 'login du compte (pour réinitialiser)' : ''" />
-            @if (invalide('login')) { <span class="form-error">Obligatoire.</span> }
-          </label>
-          <label class="form-group">
-            <span class="form-label">Mot de passe{{ editId() ? '' : ' *' }}</span>
-            <input class="form-control" type="password" formControlName="motDePasse" autocomplete="new-password"
-              [placeholder]="editId() ? 'nouveau (laisser vide = inchangé)' : ''" />
-            @if (invalide('motDePasse')) { <span class="form-error">8 caractères minimum.</span> }
-            @if (editId()) {
-              <span class="form-hint">Optionnel — renseignez le login du compte + le nouveau mot de passe pour le réinitialiser.</span>
-            }
-          </label>
+          <!-- Compte : login + mot de passe, obligatoires à la CRÉATION (parité UGPM).
+               ⚠️ Lot 6 F4 (2026-09-17) — ils ne sont plus affichés en modification. Ils y servaient à
+               réinitialiser le mot de passe par EFFET DE BORD : deux champs « optionnels » dont le
+               seul effet, une fois remplis tous les deux, était un appel à /api/comptes-auth qui
+               n'avait rien à voir avec le PUT de la fiche — et qui ne faisait rien du tout si l'un
+               des deux manquait. Le geste a désormais son bouton : « Compte », sur la ligne de la
+               PRMP dans la liste ci-dessous. -->
+          @if (!editId()) {
+            <label class="form-group">
+              <span class="form-label">Login *</span>
+              <input class="form-control" type="text" formControlName="login" autocomplete="off" />
+              @if (invalide('login')) { <span class="form-error">Obligatoire.</span> }
+            </label>
+            <label class="form-group">
+              <span class="form-label">Mot de passe *</span>
+              <input class="form-control" type="password" formControlName="motDePasse" autocomplete="new-password" />
+              @if (invalide('motDePasse')) { <span class="form-error">8 caractères minimum.</span> }
+            </label>
+          }
         </div>
+
+        @if (editId()) {
+          <p class="cnm-muted pa__note-compte">
+            Le compte de connexion ne se modifie pas ici : suspendre, réactiver ou réinitialiser le
+            mot de passe se fait par le bouton « Compte » de la ligne, dans la liste ci-dessous.
+          </p>
+        }
 
         <!-- Pièces jointes : uniquement à la création (comme l'inscription) ; en modification, elles se
              gèrent via l'action « Pièces » de chaque ligne. Toutes optionnelles. -->
@@ -187,6 +199,8 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
                   <div class="pa__row-actions">
                     <button type="button" class="btn btn-secondary btn-sm" (click)="voirDetail(p)">Détail</button>
                     <button type="button" class="btn btn-outline btn-sm" (click)="modifier(p)">Modifier</button>
+                    <!-- ⚠️ Lot 6 F4 — suspendre / réactiver / réinitialiser le mot de passe. -->
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="gererCompte(p)">Compte</button>
                     <a class="btn btn-secondary btn-sm" routerLink="/admin/comptes/prmp-entites" [queryParams]="{ prmp: p.idPrmp }">Entités</a>
                     <button type="button" class="btn btn-secondary btn-sm" (click)="voirPieces(p)">Pièces</button>
                     <button type="button" class="btn btn-danger btn-sm" (click)="demanderSuppression(p)">Supprimer</button>
@@ -232,6 +246,17 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
     }
     </div>
 
+    @if (compteCible(); as p) {
+      <!-- Le login n’est pas transmis : PrmpDto ne le porte pas (aucune route ne donne le compte
+           d'une PRMP active). La modale le déduit si le compte est inactif, le demande sinon. -->
+      <app-actions-compte
+        [type]="'PRMP'"
+        [ref]="p.idPrmp"
+        [nom]="p.nomPrmp + ' ' + p.prenomsPrmp"
+        (fermer)="compteCible.set(null)"
+      />
+    }
+
     @if (confirmDelete(); as p) {
       <div class="modal-backdrop" [class.closing]="closingSuppression()">
         <div class="modal confirm-modal cnm-card" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale appModaleClicExterieur (appModaleFermer)="fermerSuppressionAnime()">
@@ -270,6 +295,7 @@ import { PrmpPiecesAdmin } from './prmp-pieces-admin';
     .pa__sub { margin: 0.5rem 0 0; font-size: var(--text-md); font-weight: 700; color: var(--c-800); }
     .pa__search { min-width: 16rem; max-width: 22rem; }
     .pa__row-actions { display: flex; gap: 0.4rem; flex-wrap: nowrap; white-space: nowrap; }
+    .pa__note-compte { margin: 0; }
     .pa__pieces { border: 1px solid var(--c-100); border-radius: var(--radius-md); padding: 0.75rem 1rem 1rem; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
     .pa__pieces-legend { font-size: var(--text-sm); font-weight: 600; color: var(--c-800); padding: 0 0.35rem; }
     .pa__hint { font-weight: 400; color: var(--n-400); }
@@ -289,7 +315,6 @@ export class PrmpAdmin implements OnInit, OnDestroy {
   }
   private readonly fb = inject(FormBuilder);
   private readonly prmpService = inject(PrmpService);
-  private readonly compteAuth = inject(CompteAuthService);
   private readonly toast = inject(ToastService);
 
   readonly prmps = signal<Prmp[]>([]);
@@ -298,6 +323,8 @@ export class PrmpAdmin implements OnInit, OnDestroy {
   readonly editId = signal<string | null>(null);
   /** PRMP dont la suppression est en attente de confirmation. */
   readonly confirmDelete = signal<Prmp | null>(null);
+  /** PRMP dont le COMPTE de connexion est ouvert (lot 6 F4) ; null = modale fermée. */
+  readonly compteCible = signal<Prmp | null>(null);
   private readonly search$ = new Subject<string>();
 
   // Panneaux de droite (mutuellement exclusifs) : détail (fiche + photo) ou pièces (matricule ciblé).
@@ -364,6 +391,11 @@ export class PrmpAdmin implements OnInit, OnDestroy {
   }
   private charger(): void {
     this.prmpService.list().subscribe((r) => this.prmps.set(r));
+  }
+
+  /** Ouvre les actions de COMPTE d'une PRMP : suspendre, réactiver, réinitialiser (lot 6 F4). */
+  gererCompte(p: Prmp): void {
+    this.compteCible.set(p);
   }
 
   /** Ouvre le panneau « Pièces » d'une PRMP (ferme le détail). */
@@ -551,9 +583,10 @@ export class PrmpAdmin implements OnInit, OnDestroy {
       emailPrmp: p.emailPrmp,
       telPrmp: p.telPrmp,
     });
-    // Compte hors du PUT : login sans contrainte, mot de passe ≥ 8 s'il est saisi.
+    // Le compte est hors du PUT et, depuis le lot 6 F4, hors du formulaire de modification : ses
+    // deux champs ne sont plus rendus, leurs contraintes n'ont donc plus rien à garder.
     this.form.controls.login.clearValidators();
-    this.form.controls.motDePasse.setValidators([Validators.minLength(8)]);
+    this.form.controls.motDePasse.clearValidators();
     this.form.controls.login.updateValueAndValidity();
     this.form.controls.motDePasse.updateValueAndValidity();
   }
@@ -566,13 +599,6 @@ export class PrmpAdmin implements OnInit, OnDestroy {
     const v = this.form.getRawValue();
     const id = this.editId();
     if (id) {
-      const nouveauMdp = (v.motDePasse ?? '').trim();
-      const loginCompte = (v.login ?? '').trim();
-      if (nouveauMdp && !loginCompte) {
-        this.form.controls.login.setErrors({ required: true });
-        this.form.controls.login.markAsTouched();
-        return;
-      }
       const body: Prmp = {
         idPrmp: id,
         nomPrmp: v.nomPrmp,
@@ -586,22 +612,12 @@ export class PrmpAdmin implements OnInit, OnDestroy {
         telPrmp: v.telPrmp,
       };
       this.submitting.set(true);
+      // Le PUT ne porte QUE la fiche. Le compte a ses propres gestes (« Compte » sur la ligne) :
+      // enregistrer une modification ne touche plus jamais au mot de passe.
       this.prmpService.update(id, body).subscribe({
         next: () => {
-          if (nouveauMdp && loginCompte) {
-            this.compteAuth
-              .reinitialiserMotDePasse(loginCompte, { nouveauMotDePasse: nouveauMdp })
-              .subscribe({
-                next: () => {
-                  this.toast.success(`PRMP « ${id} » modifiée, mot de passe réinitialisé.`);
-                  this.finaliser();
-                },
-                error: (_e: ApiError) => this.submitting.set(false),
-              });
-          } else {
-            this.toast.success(`PRMP « ${id} » modifiée.`);
-            this.finaliser();
-          }
+          this.toast.success(`PRMP « ${id} » modifiée.`);
+          this.finaliser();
         },
         error: (_e: ApiError) => this.submitting.set(false),
       });

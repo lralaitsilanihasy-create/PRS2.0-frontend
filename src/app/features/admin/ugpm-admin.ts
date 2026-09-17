@@ -7,7 +7,8 @@ import { urlBlobSure } from '../../core/securite/fichiers-surs';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
 import { fermerAvecAnimation } from '../../shared/a11y/fermeture-animee';
 import { CreerUgpmRequest, ModifierUgpmRequest, Prmp, Ugpm } from '../../models';
-import { CompteAuthService, PrmpService, UgpmService } from '../../services';
+import { PrmpService, UgpmService } from '../../services';
+import { ActionsCompte } from './actions-compte';
 import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
 
 /**
@@ -20,7 +21,7 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
   selector: 'app-ugpm-admin',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModaleDirective, ReactiveFormsModule, UgpmPiecesAdmin],
+  imports: [ModaleDirective, ReactiveFormsModule, UgpmPiecesAdmin, ActionsCompte],
   template: `
     <div class="ua-wrap">
     <section class="ua cnm-card">
@@ -90,24 +91,25 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
             <input class="form-control" type="text" formControlName="telUgpm" />
             @if (invalide('telUgpm')) { <span class="form-error">Obligatoire.</span> }
           </label>
-          <!-- Compte : login + mot de passe obligatoires à la création. En modification ils deviennent
-               optionnels et servent à réinitialiser le mot de passe (via /api/comptes-auth) — le PUT UGPM
-               ne touche pas au compte. Les deux formulaires portent ainsi les mêmes champs. -->
+          <!-- Compte : login + mot de passe obligatoires à la création. Le PUT UGPM ne touche pas au
+               compte : en modification le login reste affiché, en lecture seule, parce qu'il est une
+               INFORMATION utile (UgpmDto l’expose) — mais il n'est plus une commande.
+               ⚠️ Lot 6 F4 (2026-09-17) — le champ « Mot de passe » quitte la modification : il y
+               réinitialisait le compte par EFFET DE BORD, sous l'étiquette « laisser vide = inchangé ».
+               Le geste a désormais son bouton : « Compte », sur la ligne de l'UGPM. -->
           <label class="form-group">
             <span class="form-label">Login{{ editId() ? '' : ' *' }}</span>
             <input class="form-control" type="text" formControlName="login" autocomplete="off" [readonly]="editId() !== null" />
             @if (editId()) { <span class="form-hint">Login du compte (non modifiable).</span> }
             @if (invalide('login')) { <span class="form-error">Obligatoire.</span> }
           </label>
-          <label class="form-group">
-            <span class="form-label">Mot de passe{{ editId() ? '' : ' *' }}</span>
-            <input class="form-control" type="password" formControlName="motDePasse" autocomplete="new-password"
-              [placeholder]="editId() ? 'nouveau (laisser vide = inchangé)' : ''" />
-            @if (invalide('motDePasse')) { <span class="form-error">8 caractères minimum.</span> }
-            @if (editId()) {
-              <span class="form-hint">Optionnel — saisissez un nouveau mot de passe pour réinitialiser le compte.</span>
-            }
-          </label>
+          @if (!editId()) {
+            <label class="form-group">
+              <span class="form-label">Mot de passe *</span>
+              <input class="form-control" type="password" formControlName="motDePasse" autocomplete="new-password" />
+              @if (invalide('motDePasse')) { <span class="form-error">8 caractères minimum.</span> }
+            </label>
+          }
         </div>
 
         <!-- Pièces jointes (CIN + photo, pas d'arrêté) : uniquement à la création ; ensuite via l'action
@@ -181,6 +183,8 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
                   <div class="ua__row-actions">
                     <button type="button" class="btn btn-secondary btn-sm" (click)="voirDetail(u)">Détail</button>
                     <button type="button" class="btn btn-outline btn-sm" (click)="modifier(u)">Modifier</button>
+                    <!-- ⚠️ Lot 6 F4 — suspendre / réactiver / réinitialiser le mot de passe. -->
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="gererCompte(u)">Compte</button>
                     <button type="button" class="btn btn-secondary btn-sm" (click)="voirPieces(u)">Pièces</button>
                     <button type="button" class="btn btn-danger btn-sm" (click)="demanderSuppression(u)">Supprimer</button>
                   </div>
@@ -241,6 +245,17 @@ import { UgpmPiecesAdmin } from './ugpm-pieces-admin';
         </div>
       </div>
     }
+
+    @if (compteCible(); as u) {
+      <!-- UgpmDto expose le login (lecture seule) : la modale n'a pas à le demander. -->
+      <app-actions-compte
+        [type]="'UGPM'"
+        [ref]="u.idUgpm"
+        [nom]="u.nomUgpm + ' ' + u.prenomsUgpm"
+        [login]="u.login ?? null"
+        (fermer)="compteCible.set(null)"
+      />
+    }
   `,
   styles: `
     .ua-wrap { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
@@ -283,7 +298,6 @@ export class UgpmAdmin implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly ugpmService = inject(UgpmService);
   private readonly prmpService = inject(PrmpService);
-  private readonly compteAuth = inject(CompteAuthService);
   private readonly toast = inject(ToastService);
 
   readonly prmps = signal<Prmp[]>([]);
@@ -293,6 +307,8 @@ export class UgpmAdmin implements OnInit, OnDestroy {
   readonly editId = signal<string | null>(null);
   /** UGPM dont la suppression est en attente de confirmation. */
   readonly confirmDelete = signal<Ugpm | null>(null);
+  /** UGPM dont le COMPTE de connexion est ouvert (lot 6 F4) ; null = modale fermée. */
+  readonly compteCible = signal<Ugpm | null>(null);
   private readonly prmpMap = computed(() => new Map(this.prmps().map((p) => [p.idPrmp, this.prmpLabel(p)])));
 
   // Panneaux de droite (mutuellement exclusifs) : détail (fiche + photo) ou pièces (matricule ciblé).
@@ -332,6 +348,11 @@ export class UgpmAdmin implements OnInit, OnDestroy {
     if (p) URL.revokeObjectURL(p);
     const d = this.detailPhoto();
     if (d) URL.revokeObjectURL(d);
+  }
+
+  /** Ouvre les actions de COMPTE d'une UGPM : suspendre, réactiver, réinitialiser (lot 6 F4). */
+  gererCompte(u: Ugpm): void {
+    this.compteCible.set(u);
   }
 
   /** Ouvre le panneau « Pièces » d'une UGPM (ferme le détail). */
@@ -535,10 +556,10 @@ export class UgpmAdmin implements OnInit, OnDestroy {
       // Login exposé par UgpmDto : pré-rempli en lecture seule (cible de la réinitialisation).
       login: u.login ?? '',
     });
-    // Compte hors du PUT : login en lecture seule (pré-rempli), mot de passe ≥ 8 s'il est saisi
-    // (un nouveau mot de passe ⇒ réinitialisation via /api/comptes-auth).
+    // Compte hors du PUT : login en lecture seule (pré-rempli, informatif), et depuis le lot 6 F4
+    // plus de champ « mot de passe » en modification — sa contrainte n'a plus rien à garder.
     this.form.controls.login.clearValidators();
-    this.form.controls.motDePasse.setValidators([Validators.minLength(8)]);
+    this.form.controls.motDePasse.clearValidators();
     this.form.controls.login.updateValueAndValidity();
     this.form.controls.motDePasse.updateValueAndValidity();
   }
@@ -551,14 +572,6 @@ export class UgpmAdmin implements OnInit, OnDestroy {
     const v = this.form.getRawValue();
     const id = this.editId();
     if (id) {
-      const nouveauMdp = (v.motDePasse ?? '').trim();
-      const loginCompte = (v.login ?? '').trim();
-      // Réinitialisation demandée mais login absent : on ne sait pas quel compte cibler.
-      if (nouveauMdp && !loginCompte) {
-        this.form.controls.login.setErrors({ required: true });
-        this.form.controls.login.markAsTouched();
-        return;
-      }
       const req: ModifierUgpmRequest = {
         libelle: v.libelle || undefined,
         idPrmpTutelle: v.idPrmpTutelle,
@@ -571,24 +584,12 @@ export class UgpmAdmin implements OnInit, OnDestroy {
         telUgpm: v.telUgpm,
       };
       this.submitting.set(true);
+      // Le PUT ne porte QUE la fiche. Le compte a ses propres gestes (« Compte » sur la ligne) :
+      // enregistrer une modification ne touche plus jamais au mot de passe.
       this.ugpmService.modifier(id, req).subscribe({
         next: () => {
-          // Compte hors du PUT : si un nouveau mot de passe est fourni, on le réinitialise à part.
-          if (nouveauMdp && loginCompte) {
-            this.compteAuth
-              .reinitialiserMotDePasse(loginCompte, { nouveauMotDePasse: nouveauMdp })
-              .subscribe({
-                next: () => {
-                  this.toast.success(`UGPM « ${id} » modifiée, mot de passe réinitialisé.`);
-                  this.finaliserEnregistrement();
-                },
-                // PUT déjà appliqué ; seul le reset a échoué (ex. login inconnu → 404, toast par l'intercepteur).
-                error: (_e: ApiError) => this.submitting.set(false),
-              });
-          } else {
-            this.toast.success(`UGPM « ${id} » modifiée.`);
-            this.finaliserEnregistrement();
-          }
+          this.toast.success(`UGPM « ${id} » modifiée.`);
+          this.finaliserEnregistrement();
         },
         error: (_e: ApiError) => this.submitting.set(false),
       });
