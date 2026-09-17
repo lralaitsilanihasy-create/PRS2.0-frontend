@@ -71,6 +71,16 @@ Organisation **par domaine métier**, pas par type technique : il n'y a **pas** 
 - ⚠️ Tout script externe (seed, test) qui s'authentifiait en `Authorization: Bearer` **ne fonctionne
   plus** : passer par le cookie renvoyé au login.
 
+## Demander une évolution au backend
+Un besoin serveur né ici (route manquante, champ absent, filtre à élargir…) s'écrit dans un fichier
+`frontend/docs/demande-backend-AAAA-MM-JJ-<sujet>.md` — un sujet par fichier, plusieurs besoins liés
+numérotés B1, B2… à l'intérieur. C'est le canal de fait entre les deux dépôts, pas une formalité :
+c'est lui qui a porté tout le chantier de l'espace d'administration. Le backend y répond par un commit
+qui referme le besoin, et sa propre documentation (`docs/api-endpoints.md`, `docs/regles-gestion.md`,
+un ADR si la décision l'exige) suit. **Le document est corrigé en place** quand la livraison s'écarte
+de la demande — un encadré ⚠️ daté note l'écart et sa raison à l'endroit même qu'il corrige, jamais
+dans un fichier séparé (exemple : `demande-backend-2026-09-17-espace-admin.md`, §B1, §B2 et §B5).
+
 ## Commandes
 - Serveur de dev : `ng serve` → `http://localhost:4200` (proxy `/api` inclus — toujours attaquer
   l'application par ce port, pas par `:8080`)
@@ -99,11 +109,14 @@ Organisation **par domaine métier**, pas par type technique : il n'y a **pas** 
 - **Modale** : poser la directive `appModale` (`shared/a11y`) sur le conteneur du dialogue —
   elle apporte le focus initial, sa restitution, Échap et le piège de Tab. Y ajouter un
   `aria-label`, et un `aria-label` sur tout bouton réduit à un symbole (✕, ⤴…).
-  Pour fermer au clic sur le voile, ajouter le drapeau `appModaleClicExterieur` sur ce même
-  conteneur — **jamais** un `(click)` sur le voile (ni le `(click)="$event.stopPropagation()"`
-  sur le dialogue qu'il obligeait à écrire). Un voile n'est pas un élément interactif : lui poser
-  `tabindex`/`role`/`keydown` pour satisfaire ESLint ajouterait une tabulation sans nom
-  accessible dans un piège de focus. Échap est l'équivalent clavier du clic sur le voile.
+  ⚠️ **Depuis `896de8e` (13/09/2026, demande pilote), une modale ne se ferme QUE par son bouton de
+  fermeture ou par Échap — plus jamais au clic sur le voile.** Le drapeau `appModaleClicExterieur`
+  est devenu **inerte** : la directive ne pose plus aucun écouteur de clic sur le voile, qu'il soit
+  posé sur le gabarit ou non. **Ne plus le poser dans du code neuf** — il ne fait plus rien et
+  entretient la confusion sur le comportement réel. Il reste sur 34 gabarits existants : c'est de la
+  dette, à retirer un jour dans une passe dédiée, pas au fil d'une modale ponctuelle. Un voile n'est
+  pas un élément interactif : lui poser `tabindex`/`role`/`keydown` pour satisfaire ESLint ajouterait
+  une tabulation sans nom accessible dans un piège de focus.
 - **Élément cliquable** : utiliser `<button>`, jamais `<div (click)>` — sinon l'action est
   inaccessible au clavier.
 - **Champ de formulaire** : un nom accessible stable (`<label>` ou `aria-label`) ; le texte de
