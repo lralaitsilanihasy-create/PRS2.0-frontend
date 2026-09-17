@@ -207,7 +207,7 @@ describe('sectionsMenu — dérivation des rubriques', () => {
       'Traces',
     ]);
     expect(sections.map((s) => s.items.map((i) => i.label))).toEqual([
-      ['Tableau de bord global'],
+      ['Poste d’administration'],
       ['Demandes d’accès', 'Comptes & personnes'],
       [
         'Chaînes de contrôle',
@@ -333,7 +333,7 @@ describe('libelleCourt — le mot du rail (lot F4)', () => {
     expect(court('PRMP', 'PV et lettres de renvoi')).toBe('PV');
     expect(court('ASSISTANT_CONTROLEUR', 'PV reçus')).toBe('PV');
     expect(court('PRESIDENT', 'Archivage des PV')).toBe('Archives');
-    expect(court('ADMINISTRATEUR', 'Tableau de bord global')).toBe('Global');
+    expect(court('ADMINISTRATEUR', 'Poste d’administration')).toBe('Poste');
   });
 
   it('replie sur le premier mot du libellé pour une entrée que la table ne connaît pas', () => {
@@ -373,7 +373,7 @@ describe('nomAccessibleRail — le texte visible tient dans le nom accessible (W
       nomAccessibleRail(navFor(role).find((i) => i.label === label) as NavItem, role);
     expect(nom('UGPM', 'Tous les dossiers')).toBe('Tous les dossiers');
     expect(nom('PRMP', 'Suivi des dossiers CNM')).toBe('Suivi des dossiers CNM');
-    expect(nom('ADMINISTRATEUR', 'Tableau de bord global')).toBe('Tableau de bord global');
+    expect(nom('ADMINISTRATEUR', 'Poste d’administration')).toBe('Poste d’administration');
     expect(nom('PRESIDENT', 'Examen de dossiers')).toBe('Examen de dossiers');
     expect(nom('ASSISTANT_CONTROLEUR', 'PV reçus')).toBe('PV reçus');
     expect(nom('VERIFICATEUR', 'Vérifiés / clôturés')).toBe('Vérifiés / clôturés');
@@ -418,7 +418,7 @@ describe('nomAccessibleRail — le texte visible tient dans le nom accessible (W
   });
 
   it('la comparaison ignore la casse et les espaces, pas les accents', () => {
-    expect(courtContenuDansLibelle('Tableau de bord global', 'Global')).toBe(true);
+    expect(courtContenuDansLibelle('Poste d’administration', 'poste')).toBe(true);
     expect(courtContenuDansLibelle('Tous  les dossiers', ' Dossiers ')).toBe(true);
     expect(courtContenuDansLibelle('Delais standards', 'Délais')).toBe(false);
     expect(courtContenuDansLibelle('Demandes de retrait', 'Retraits')).toBe(false);

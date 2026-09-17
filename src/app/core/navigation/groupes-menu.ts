@@ -139,7 +139,7 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe; co
   //    écrans, et ce que l'application garde ou dit d'elle-même. Les trois défauts corrigés : le
   //    journal de connexions n'est plus un « suivi », la communication n'est plus un « paramétrage »,
   //    et les réglages du moteur de contrôle ne sont plus noyés dans les nomenclatures.
-  '/admin/tableau-de-bord': { groupe: 'accueil', court: 'Global' },
+  '/admin/tableau-de-bord': { groupe: 'accueil', court: 'Poste' },
   inscriptions: { groupe: 'acces', court: 'Demandes' },
   comptes: { groupe: 'acces', court: 'Comptes' },
   '/admin/chaines-controle': { groupe: 'regles', court: 'Chaînes' },
@@ -212,7 +212,7 @@ export function libelleCourt(item: NavItem, role: Role | null = null): string {
 /**
  * Le libellé court est-il CONTENU dans le libellé complet ? C'est la question exacte que pose le
  * critère WCAG 2.5.3 « Label in Name ». La comparaison ignore la casse et les espaces surnuméraires
- * — « Global » vaut pour « Tableau de bord global » — mais PAS les accents : ce que l'utilisateur
+ * — « Chaînes » vaut pour « Chaînes de contrôle » — mais PAS les accents : ce que l'utilisateur
  * lit à l'écran est accentué, la correspondance doit l'être aussi.
  */
 export function courtContenuDansLibelle(label: string, court: string): boolean {

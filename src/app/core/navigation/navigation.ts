@@ -250,7 +250,9 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   // du plan (`docs/plan-refonte-L6-espace-admin.md`, §3) : accueil, Accès, Règles du contrôle,
   // Référentiels, Traces. Le classement lui-même vit dans `groupes-menu.ts`, pas ici.
   ADMINISTRATEUR: [
-    { label: 'Tableau de bord global', path: '/admin/tableau-de-bord', icon: 'board' },
+    // ⚠️ Lot 6 F2 — l'accueil de l'Administrateur n'est plus le tableau de bord du CONTRÔLE : son
+    // libellé dit désormais ce que la page montre (« Poste d'administration », maquette A). Route inchangée.
+    { label: 'Poste d’administration', path: '/admin/tableau-de-bord', icon: 'board' },
     // ⚠️ Lot 6 F1 — « Inscriptions en attente » et « Rattachements en attente » ne font plus qu'UNE
     // entrée : ce sont deux files de la même demande, « accéder à l'application ». L'écran à deux
     // onglets est le lot F3 ; d'ici là l'entrée ouvre les inscriptions, et les deux écrans se
