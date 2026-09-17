@@ -6,8 +6,10 @@
 Sessions et Comptes ? »), maquettes `maquettes-design/admin/` — **A retenue pour la coquille et
 l'accueil, C retenue pour l'écran des comptes**.
 
-> **Statut : à ouvrir.** Rien n'est commencé. Ce plan se lit avec la demande backend
-> `demande-backend-2026-09-17-espace-admin.md`, qui porte les cinq besoins serveur (B1 à B5).
+> **Statut : ouvert — F1 et F4 livrés le 17/09** sur `chantier/espace-admin` (commits `a191247`
+> et `dacb351`). Restent F2, F3, F5, puis Q1 et D1 ; F2 et F3 attendent B1 et B2. Ce plan se lit
+> avec la demande backend `demande-backend-2026-09-17-espace-admin.md`, qui porte les cinq besoins
+> serveur (B1 à B5).
 
 ---
 
@@ -20,8 +22,8 @@ sommaire « Comptes & hiérarchie » en annuaire agissant.
 
 | Ordre | Lot | Agent | Dépend de | Taille | Touche un fichier chaud ? |
 |---|---|---|---|---|---|
-| 1 | **L6-F1** Rubriques de l'Administrateur re-classées | frontend-angular | — | S | `navigation.ts` (33 commits) — **2 lignes retirées** |
-| 1 | **L6-F4** Actions de compte : suspendre, réactiver, réinitialiser | frontend-angular | — | S | non |
+| 1 | **L6-F1** Rubriques de l'Administrateur re-classées — **LIVRÉ** | frontend-angular | — | S | `navigation.ts` (33 commits) — **2 lignes retirées** |
+| 1 | **L6-F4** Actions de compte : suspendre, réactiver, réinitialiser — **LIVRÉ** | frontend-angular | — | S | non |
 | 2 | **L6-F2** Accueil de l'Administrateur (maquette A) | frontend-angular | B1 | M | non — écran neuf |
 | 2 | **L6-F3** Annuaire (maquette C) | frontend-angular | B2, F4 | L | non — écran neuf |
 | 3 | **L6-F5** Journal : onglet « Connexions » | frontend-angular | B4 | S | `audit-logs-admin.ts` (calme) |
@@ -135,7 +137,31 @@ qui donne accès aux 8 écrans qu'il cachait.
 
 ## 4. Les lots
 
-### 4.1 L6-F1 — Rubriques re-classées *(S)*
+### 4.1 L6-F1 — Rubriques re-classées *(S)* — **LIVRÉ le 17/09 (`a191247`)**
+
+> **Trois écarts au plan, décidés en cours de route** :
+> 1. **« Organisation de l'État » n'est pas créé.** Le §3 le donne comme seconde entrée de
+>    « Référentiels », mais c'est un sommaire d'écran NEUF (ministères, organigrammes, entités,
+>    localités, arbre), que ni le §4.1 ni la stratégie du §2 (« deux écrans neufs ») ne prévoient —
+>    et il porterait le menu à 13 entrées au lieu des 12 annoncées. La rubrique « Référentiels »
+>    n'a donc qu'une entrée, « Nomenclatures » (l'ancien sommaire, moins ses deux promus).
+> 2. **« Sessions » quitte le menu dès F1**, pas F5. Le menu cible du §3 ne la porte pas, et le
+>    critère de hauteur ne tient pas sans ce retrait (mesuré). F5 garde ce qui lui revient : la
+>    route, sa configuration `SECURITE`, et l'onglet « Connexions » qui la remplace.
+> 3. **« Demandes d'accès » ouvre les inscriptions**, et les deux écrans se renvoient l'un à
+>    l'autre par un lien de tête de page jusqu'à F3 — garder les deux entrées coûtait +31 px de
+>    défilement à 1229×691.
+>
+> **Mesure du critère** (`node scripts/hauteur-menu.mjs`, livré avec le lot — Chrome sans interface,
+> CSS compilé du dépôt, données réelles de `NAV_BY_ROLE`) :
+>
+> | Administrateur | 1366×768 large | 1366×768 rail | 1229×691 large | 1229×691 rail |
+> |---|---|---|---|---|
+> | avant (main `2c76cde`) | −30 | −33 | **+47** | **+44** |
+> | après | −116 | −122 | **−39** | **−45** |
+>
+> (+ = pixels qui défilent, − = marge restante.) Les neuf autres menus sont mesurés aussi : aucun
+> ne défile, et aucun ne bouge. La marge de 39 px ne laisse la place qu'à **une** entrée de plus.
 
 - `groupes-menu.ts` : quatre rubriques neuves pour l'Administrateur (`acces`, `regles`,
   `referentiels`, `traces`) et leur ordre ; les rubriques existantes des neuf autres profils ne
@@ -149,7 +175,17 @@ qui donne accès aux 8 écrans qu'il cachait.
 - **Critère** : les 12 entrées tiennent sans défilement à 1366×768 **et** à 1229×691, les deux tailles
   de recette du lot 5.
 
-### 4.2 L6-F4 — Actions de compte *(S)*
+### 4.2 L6-F4 — Actions de compte *(S)* — **LIVRÉ le 17/09 (`dacb351`)**
+
+> Modale commune `features/admin/actions-compte.ts`, ouverte par un bouton « Compte » sur la ligne
+> de la personne dans les trois écrans. Le chemin par effet de bord est retiré au passage : les
+> champs de compte ne sont plus rendus en modification, un enregistrement de fiche ne touche donc
+> plus jamais à un mot de passe.
+>
+> **Limite à lever par B2** : aucune route ne donne le login d'un compte **actif** (`UgpmDto` le
+> porte, `PrmpDto` et `ControleurDto` non ; `/comptes-auth/en-attente` ne liste que les inactifs).
+> La modale déduit ce qu'elle peut et **demande** le login quand elle ne sait pas, en le disant.
+> L'annuaire rendra cette saisie inutile.
 
 Trois actions branchées sur des endpoints **qui existent déjà** :
 
