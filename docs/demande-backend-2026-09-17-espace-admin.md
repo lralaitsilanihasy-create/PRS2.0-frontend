@@ -172,20 +172,22 @@ Aucune connexion n'est tracée durablement, nulle part :
 | `POST /api/auth/login` échoué | ligne neuve avec `SUCCES = false` et l'identifiant **tenté** — c'est la ligne qui manque le plus |
 | `POST /api/auth/logout` | `DATE_DECONNEXION` sur la session du cookie |
 
-**2. Migration `V29` — la colonne ne peut pas recevoir tous les acteurs.**
+**2. Migration `V31` — la colonne ne peut pas recevoir tous les acteurs.**
+*(Ce document annonçait `V29` : erreur de rédaction. `V29__im_acteur_tache_longueur_prmp.sql` et
+`V30__observation_cellule_cible.sql` existent déjà sur `main` — le prochain numéro libre est `V31`.)*
 `t_session_utilisateur.IM_CONTROLEUR` est en `varchar(7)` alors qu'un `ID_PRMP` en fait **10** : c'est
 exactement le défaut **C3** de l'audit du 14/09, sur une autre colonne. Sans migration, aucune
 connexion de PRMP ni d'UGPM ne peut s'écrire. La colonne passe à `varchar(10)`, et la FK vers
 `t_controleur` doit être revue puisqu'elle ne vaudra plus pour tous les acteurs.
 
-> ⚠️ **À embarquer dans la même `V29` (relevé à la livraison de B1, 17/09) : une vraie date de demande
+> ⚠️ **À embarquer dans la même `V31` (relevé à la livraison de B1, 17/09) : une vraie date de demande
 > sur `t_compte_auth`.** La table ne porte **aucune** date de dépôt — seulement `DATE_DECISION`,
 > renseignée quand l'Administrateur tranche, donc jamais pour une inscription en attente. B1 ayant
 > interdit toute migration, `inscriptionDoyenneLe` est aujourd'hui **dérivée** de
 > `t_piece_jointe.DATE_DEPOT` (la première pièce, écrite dans la même transaction que l'inscription ;
 > à défaut, la première déclaration d'entité). C'est exact mais fragile : la dérivation tombe si une
 > inscription est un jour créée sans pièce, et elle repose sur une coïncidence de transaction, pas sur
-> une donnée. `V29` doit donc ajouter `DATE_DEMANDE` (ou équivalent) à `t_compte_auth` et la renseigner
+> une donnée. `V31` doit donc ajouter `DATE_DEMANDE` (ou équivalent) à `t_compte_auth` et la renseigner
 > à l'inscription ; `KpiService.inscriptionDoyenneLe` sera alors remplacé par une simple lecture.
 
 **3. Route de lecture seule.**
@@ -252,5 +254,5 @@ seule valeur est inchangé.
 | B1 | Compteurs de l'Administrateur enrichis | non | L6-F2 (accueil) |
 | B2 | `GET /api/annuaire` | non | L6-F3 (annuaire) |
 | B3 | `GET /api/annuaire/{type}/{ref}` | non | L6-F3 (fiche) |
-| B4 | Sessions alimentées, `varchar(10)`, lecture seule | **oui, V29** | L6-F5 et 3 tuiles de l'accueil |
+| B4 | Sessions alimentées, `varchar(10)`, lecture seule | **oui, V31** | L6-F5 et 3 tuiles de l'accueil |
 | B5 | `table` en liste sur le journal d'audit | non | un bloc de l'accueil |
