@@ -34,12 +34,27 @@ Champs ajoutés à `CompteursAdminDto` :
 | `rattachementsEnAttente` | `long` | demandes de rattachement PRMP⇄entité non décidées |
 | `inscriptionDoyenneLe` | `LocalDateTime` (nullable) | date de la plus ancienne inscription en attente |
 | `rattachementDoyenLe` | `LocalDateTime` (nullable) | idem pour les rattachements |
-| `comptesActifs` | `long` | `t_compte_auth.STATUT = ACTIF` |
-| `comptesSuspendus` | `long` | `t_compte_auth.STATUT = DESACTIVE` (ou l'énuméré en vigueur) |
+| `comptesActifs` | `long` | `t_compte_auth.ACTIF = true` — c'est ce booléen que le login consulte |
+| `comptesSuspendus` | `long` | comptes validés puis **fermés** : `STATUT = ACTIF` avec `ACTIF = false` |
 | `mandatsExpirantSous30j` | `long` | mandats PRMP dont la fin tombe dans les 30 jours |
 
-Les champs existants sont **conservés tels quels** : le front lit déjà `inscriptionsEnAttente` pour la
-pastille du menu, et `BadgesDto` est partagé avec les neuf autres profils.
+La **forme** des champs existants est **conservée telle quelle** : le front lit déjà
+`inscriptionsEnAttente` pour la pastille du menu, et `BadgesDto` est partagé avec les neuf autres
+profils.
+
+> ⚠️ **Deux précisions arrêtées à la livraison (17/09), qui corrigent ce qui était écrit ci-dessus.**
+>
+> 1. **`comptesSuspendus` ne compte pas les inscriptions refusées.** L'énuméré `StatutCompte` n'a pas
+>    de valeur `DESACTIVE` : `desactiver` ne touche que le booléen `ACTIF` en laissant `STATUT` à
+>    `ACTIF`, tandis qu'un refus écrit `STATUT = REFUSE`. Les deux cas sont donc distinguables, et ils
+>    le restent : un compte fermé après coup n'est pas une inscription jamais ouverte, et cette tuile
+>    est une mesure de sécurité — y verser les refus la gonflerait. Les inscriptions refusées se
+>    retrouvent dans l'annuaire, sous `statut=REFUSE`.
+> 2. **`inscriptionsEnAttente` change de périmètre : PRMP *et* UGPM**, là où il ne comptait que les
+>    PRMP. C'est ce que liste l'écran qu'il annonce (`GET /api/inscriptions/en-attente` rend l'union
+>    des deux types). Un badge affichant 5 au-dessus d'une liste de 7 est le défaut même que ce lot
+>    corrige. `inscriptionDoyenneLe` suit la même file. **Conséquence pour le front** : ce nombre peut
+>    augmenter sans qu'aucune inscription n'ait été déposée — ce sont les UGPM jusqu'ici invisibles.
 
 > `sessionsOuvertes` et `echecsConnexion24h` ne sont **pas** demandés ici : ils dépendent de B4. Tant
 > que B4 n'est pas livré, l'accueil n'affiche pas ces deux tuiles (plan §6).
@@ -80,9 +95,27 @@ dans `t_compte_auth`, pas dans les tables de personnes.
 | `localite` | `String` (nullable) | la PRMP n'en a pas (`PrmpDto` ne porte plus `idLocalite`) |
 | `entite` | `String` (nullable) | entité de rattachement, pour PRMP et UGPM |
 | `login` | `String` (nullable) | null si aucun compte |
-| `statutCompte` | `String` | `ACTIF` · `DESACTIVE` · `EN_ATTENTE` · `SANS_COMPTE` |
+| `statutCompte` | `String` | `ACTIF` · `SUSPENDU` · `REFUSE` · `EN_ATTENTE` · `SANS_COMPTE` |
 
-`q` cherche sur nom, prénoms, référence et login, **sans tenir compte de la casse ni des accents**.
+`q` cherche sur nom, prénoms, référence, login **et entité de rattachement**, **sans tenir compte de
+la casse ni des accents**.
+
+> ⚠️ **Deux précisions arrêtées à la livraison (17/09).**
+>
+> 1. **`q` couvre aussi l'entité**, alors que cette demande ne citait que nom, prénoms, référence et
+>    login. C'est un sur-ensemble — aucun résultat n'est perdu — et c'est ce que promet le champ de
+>    recherche de la maquette C (« Rechercher une personne, un matricule, un login, une entité… ») :
+>    sans lui, « qui est rattaché à la DGCF ? », la question posée en tête de ce besoin, resterait
+>    sans réponse. Pour une UGPM, l'entité est celle de sa **PRMP de tutelle** (elle n'en a pas en
+>    propre), si bien qu'une recherche sur une entité rend la PRMP **et** ses UGPM.
+> 2. **`statutCompte` distingue `SUSPENDU` de `REFUSE`** au lieu du `DESACTIVE` unique demandé :
+>    un compte fermé après validation et une inscription rejetée sont deux histoires sans rapport, et
+>    la base les distingue (cf. §B1). Le filtre `?statut=` accepte les cinq valeurs ; `DESACTIVE`
+>    n'existe pas et part en **400**.
+>
+> `localite` porte le **code** (`ID_LOCALITE`, ex. `ANT`), pas le libellé : c'est ce que le reste de
+> l'API expose et ce que le filtre attend ; l'écran compose « ANT — Centrale » avec le référentiel des
+> localités qu'il charge déjà.
 
 ### Options écartées
 
@@ -144,6 +177,16 @@ Aucune connexion n'est tracée durablement, nulle part :
 exactement le défaut **C3** de l'audit du 14/09, sur une autre colonne. Sans migration, aucune
 connexion de PRMP ni d'UGPM ne peut s'écrire. La colonne passe à `varchar(10)`, et la FK vers
 `t_controleur` doit être revue puisqu'elle ne vaudra plus pour tous les acteurs.
+
+> ⚠️ **À embarquer dans la même `V29` (relevé à la livraison de B1, 17/09) : une vraie date de demande
+> sur `t_compte_auth`.** La table ne porte **aucune** date de dépôt — seulement `DATE_DECISION`,
+> renseignée quand l'Administrateur tranche, donc jamais pour une inscription en attente. B1 ayant
+> interdit toute migration, `inscriptionDoyenneLe` est aujourd'hui **dérivée** de
+> `t_piece_jointe.DATE_DEPOT` (la première pièce, écrite dans la même transaction que l'inscription ;
+> à défaut, la première déclaration d'entité). C'est exact mais fragile : la dérivation tombe si une
+> inscription est un jour créée sans pièce, et elle repose sur une coïncidence de transaction, pas sur
+> une donnée. `V29` doit donc ajouter `DATE_DEMANDE` (ou équivalent) à `t_compte_auth` et la renseigner
+> à l'inscription ; `KpiService.inscriptionDoyenneLe` sera alors remplacé par une simple lecture.
 
 **3. Route de lecture seule.**
 
