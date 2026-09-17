@@ -1,3 +1,4 @@
+import { Mandat } from './comptes.model';
 import { TypeActeur } from './common.model';
 
 /** Sécurité & administration (réservé ADMINISTRATEUR pour toutes les opérations). */
@@ -82,4 +83,101 @@ export interface InscriptionEnAttente {
 /** Corps de POST /api/inscriptions/{login}/refuser. */
 export interface RefusInscriptionRequest {
   motif: string;
+}
+
+/* ────────────────────────── Annuaire des personnes (lot 6, B2/B3) ────────────────────────── */
+
+/**
+ * État d'accès d'une personne (`AnnuairePersonneDto.statutCompte`).
+ *
+ * ⚠️ `SUSPENDU` et `REFUSE` **ne se recouvrent jamais** : un compte fermé après validation
+ * (`ACTIF = false`, `STATUT` inchangé) et une inscription rejetée (`STATUT = REFUSE`) sont deux
+ * histoires sans rapport. Ensemble **fermé** côté serveur : une valeur inconnue part en 400.
+ */
+export type StatutCompteAnnuaire = 'ACTIF' | 'SUSPENDU' | 'REFUSE' | 'EN_ATTENTE' | 'SANS_COMPTE';
+
+/** Sens d'une délégation de profil : la personne exerce, ou son profil est exercé par un autre. */
+export type SensDelegation = 'EXERCE' | 'EXERCEE_PAR';
+
+/**
+ * Une ligne de l'annuaire (`GET /api/annuaire`) — une **personne**, quelle que soit sa population.
+ * Les champs sans objet pour une population sont `null`, jamais inventés.
+ */
+export interface AnnuairePersonne {
+  /** `IM_CONTROLEUR` (7), `ID_PRMP` ou `ID_UGPM` (10). */
+  ref: string;
+  type: TypeActeur;
+  nom: string;
+  prenoms: string;
+  /** Profil du contrôleur ; `null` pour une PRMP et une UGPM, dont le type tient lieu de rôle. */
+  profil: string | null;
+  /** **Code** de localité (`ANT`), pas le libellé — celui-ci vient de `/api/localites`. `null` hors contrôleurs. */
+  localite: string | null;
+  /** Entité(s) de rattachement séparées par « · » ; celles de la tutelle pour une UGPM. `null` pour un contrôleur. */
+  entite: string | null;
+  login: string | null;
+  statutCompte: StatutCompteAnnuaire;
+}
+
+/** Une personne citée par une fiche sans en être le sujet (le supérieur hiérarchique). */
+export interface AnnuairePersonneCitee {
+  ref: string;
+  nom: string;
+  prenoms: string;
+  profil: string | null;
+  localite: string | null;
+}
+
+/** Un maillon de la chaîne de contrôle ; `lui` marque la personne de la fiche (toujours le premier). */
+export interface AnnuaireMaillon {
+  ref: string;
+  nom: string;
+  prenoms: string;
+  profil: string | null;
+  lui: boolean;
+}
+
+/**
+ * Une délégation de profil **active**. Elle est portée par le PROFIL, pas par la personne : une
+ * paire active vaut pour tous les titulaires du profil. La fiche la montre parce que c'est ce qui
+ * explique qu'une personne agisse là où son profil seul ne le permettrait pas.
+ */
+export interface AnnuaireDelegation {
+  sens: SensDelegation;
+  /** L'autre profil de la paire. */
+  profil: string;
+}
+
+/**
+ * Fiche d'une personne (`GET /api/annuaire/{type}/{ref}`) — les neuf premiers champs sont ceux de
+ * `AnnuairePersonne`, calculés par le même code serveur : la ligne et la fiche ne peuvent pas se
+ * contredire.
+ *
+ * ⚠️ `derniereConnexion` et `echecs30j` sont servis **toujours nuls** : aucune connexion n'est
+ * tracée durablement tant que le besoin backend **B4** n'est pas livré. Ils existent au contrat pour
+ * que sa livraison change la *valeur* et non la *forme*. L'écran ne les affiche pas — ni à zéro, ni
+ * avec un tiret : absents (plan L6 §6).
+ */
+export interface AnnuaireFiche extends AnnuairePersonne {
+  /**
+   * Date de la **décision d'ouverture** du compte (`t_compte_auth.DATE_DECISION`).
+   * `null` tant que l'inscription n'est pas validée **et pour une inscription refusée** : la colonne
+   * porte alors la date du refus, qui n'est pas une date d'activation.
+   */
+  dateActivation: string | null;
+  /** Toujours `null` — dépend de B4 (non livré). */
+  derniereConnexion: string | null;
+  /** Toujours `null` — même raison. */
+  echecs30j: number | null;
+  superieur: AnnuairePersonneCitee | null;
+  /** `null` hors contrôleurs. */
+  transversal: boolean | null;
+  /** La personne en tête (`lui: true`), puis ses rattachés ; un seul maillon = chaîne incomplète. Vide hors contrôleurs. */
+  chaineControle: AnnuaireMaillon[];
+  /** Vide hors contrôleurs. */
+  delegations: AnnuaireDelegation[];
+  /** Mandat en fonction ce jour — **PRMP seulement** ; `null` pour un contrôleur, une UGPM et une PRMP en vacance. */
+  mandat: Mandat | null;
+  /** Écritures portées à son nom au journal d'audit sur 30 jours glissants. */
+  actionsJournal30j: number;
 }
