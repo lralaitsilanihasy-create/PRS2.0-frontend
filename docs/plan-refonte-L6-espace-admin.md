@@ -6,12 +6,12 @@
 Sessions et Comptes ? »), maquettes `maquettes-design/admin/` — **A retenue pour la coquille et
 l'accueil, C retenue pour l'écran des comptes**.
 
-> **Statut : ouvert — F1, F4, F2 et F3 livrés le 17/09** sur `chantier/espace-admin` (F1 `a191247`,
-> F4 `dacb351`, F2 et F3 ci-dessous). Reste F5, puis Q1 et D1 ; F5 attend B4 (non livré).
-> ⚠️ **F3 s'appuie sur B3, qui n'est PAS poussé** : `GET /api/annuaire/{type}/{ref}` vit sur la
-> branche `chantier/espace-admin` du backend (`aaa7321`). Ce plan se lit avec la demande backend
-> `demande-backend-2026-09-17-espace-admin.md`, qui porte les cinq besoins serveur (B1 à B5) —
-> **B1, B2, B3 et B5 sont livrés ; B4 ne l'est pas**.
+> **Statut : les cinq lots de développement sont livrés (17/09).** F1 `a191247`, F4 `dacb351`,
+> F2 et F3 (voir §4), F5 en fin de journée. **Les cinq besoins serveur B1 à B5 sont livrés**, B4
+> apportant la migration `V31` et l'`ADR-0006`. Restent **Q1** (recette de bout en bout, sur session
+> réelle — le seul angle que les agents ne peuvent pas couvrir) et **D1** (clôture : `regles-gestion.md`
+> ne consigne pas encore la règle « un compte suspendu n'est pas une inscription refusée »).
+> Ce plan se lit avec `demande-backend-2026-09-17-espace-admin.md`.
 
 ---
 
@@ -28,7 +28,7 @@ sommaire « Comptes & hiérarchie » en annuaire agissant.
 | 1 | **L6-F4** Actions de compte : suspendre, réactiver, réinitialiser — **LIVRÉ** | frontend-angular | — | S | non |
 | 2 | **L6-F2** Accueil de l'Administrateur (maquette A) — **LIVRÉ** | frontend-angular | B1, B5 | M | non — écran neuf |
 | 2 | **L6-F3** Annuaire (maquette C) — **LIVRÉ** | frontend-angular | B2, B3, F4 | L | non — écran neuf |
-| 3 | **L6-F5** Journal : onglet « Connexions » | frontend-angular | B4 | S | `audit-logs-admin.ts` (calme) |
+| 3 | **L6-F5** Journal : onglet « Connexions » — **LIVRÉ** | frontend-angular | B4 | S | `audit-logs-admin.ts` (calme) |
 | 4 | **L6-Q1** Recette : rubriques, accueil, annuaire, actions | qa-test | F1…F5 | M | — |
 | 5 | **L6-D1** Clôture du plan, `api-endpoints.md`, `regles-gestion.md` | docs | Q1 | S | — |
 
@@ -126,7 +126,7 @@ pour **retirer deux entrées** ; tout le reclassement vit dans `groupes-menu.ts`
 | **Accès** | Demandes d'accès · Comptes & personnes | « Inscriptions » et « Rattachements » fusionnent en une entrée à deux onglets ; « Comptes & hiérarchie » devient « Comptes & personnes » et ouvre sur l'annuaire |
 | **Règles du contrôle** | Chaînes de contrôle · Délais standards · Points de contrôle · Seuil AGPM (AMI) · Règles d'alerte | « Points de contrôle » et « Règles d'alerte » **sortent** des nomenclatures et deviennent des entrées de plein droit |
 | **Référentiels** | Nomenclatures · Organisation de l'État | les 20 tables restantes ; « Organisation de l'État » regroupe ministères, organigrammes, entités, localités, arbre |
-| **Traces** | Journal (onglets Actions / Connexions) · Actualités | « Sessions » disparaît du menu et devient un onglet ; « Actualités » quitte Paramétrage |
+| **Traces** | Journal (onglets Actions / Connexions) · Actualités | « Sessions » disparaît du menu **et de l'application** — sa route est retirée au lot F5 et les connexions se lisent dans un onglet ; « Actualités » quitte Paramétrage. L'entrée s'appelle « Journal », plus « Journal d'audit » : elle mène aux deux |
 
 **Retirés du menu, routes conservées** : `PPM & marchés`, `Marchés & dates prév.` — écrans PRMP
 réutilisés, de la consultation. Décision de Mathieu du 17/09, réversible en une ligne de
@@ -319,14 +319,71 @@ Les 8 écrans jusque-là cachés derrière le sommaire deviennent les destinatio
 fiche (« Modifier la fiche » → `prmp-admin`, « Changer de chaîne » → `chaines-controle`, « Pièces »
 → `prmp-pieces-admin`…). **Aucun n'est supprimé ni réécrit dans ce lot.**
 
-### 4.5 L6-F5 — Journal : onglet « Connexions » *(S, dépend de B4)*
+### 4.5 L6-F5 — Journal : onglet « Connexions » *(S, dépend de B4)* — **LIVRÉ le 17/09**
 
-`audit-logs-admin.ts` gagne deux onglets : **Actions** (l'existant, inchangé) et **Connexions**
-(neuf, en lecture seule — matricule, connexion, déconnexion, durée, IP, poste, succès ou échec).
+`audit-logs-admin.ts` a gagné deux onglets : **Actions** (l'existant, inchangé) et **Connexions**
+(neuf, en lecture seule — matricule ou login tenté, connexion, déconnexion, durée, IP, poste, succès
+ou échec), servi par `connexions-journal.ts` sur `GET /api/sessions`. Filtres acteur, résultat et
+période, **tous appliqués au serveur**, pagination comprise (défaut M15 de l'audit).
 
-La route `/admin/sessions` et sa configuration `SECURITE` de `admin-resources.config.ts` sont
-**retirées** : un CRUD éditable sur un journal de preuve n'a pas de raison d'exister, et celui-ci
-portait une table que rien n'alimentait.
+La route `/admin/sessions` et la rubrique `SECURITE` d'`admin-resources.config.ts` sont **retirées** :
+un CRUD éditable sur un journal de preuve n'a pas de raison d'exister, et le serveur a supprimé
+`/api/session-utilisateurs` le même jour (404) — cette route front appelait dans le vide. Elle avait
+déjà quitté le menu au lot F1.
+
+> **Ce que ce lot a rallumé**, et qui est le cœur du travail : les trois mesures que le §6 interdisait
+> d'afficher faute de source (§6.1). Deux tuiles et une ligne de veille sur l'accueil, deux lignes sur
+> la fiche d'annuaire. **Les tests que F2 et F3 avaient écrits pour garder ces absences ont été
+> retournés** : ils gardent maintenant la présence, et l'absence seulement dans le cas « donnée
+> nulle ». Un test qui interdit d'afficher une mesure doit tomber le jour où la mesure existe, sinon
+> c'est lui qui devient le défaut.
+
+> **Cinq écarts, aucun dû au §6** :
+>
+> 1. **L'entrée de menu « Journal d'audit » devient « Journal ».** L'écran porte désormais deux
+>    journaux ; la laisser dire « d'audit » enverrait chercher les connexions ailleurs, et il n'y a
+>    plus d'ailleurs. La légende du rail (« Journal ») ne change pas, aucune entrée n'est ajoutée ni
+>    retirée — `node scripts/hauteur-menu.mjs` remesuré : −116 / −122 / **−39** / −45, identique à F1
+>    et F2.
+> 2. **L'onglet vit dans l'URL** (`?journal=connexions`), et l'onglet des connexions accepte
+>    `?succes=false` et `?acteur=`. C'est ce qui permet à l'accueil d'ouvrir directement les
+>    tentatives refusées et à une fiche d'annuaire d'ouvrir « Ses connexions ». Le filtre de départ
+>    est **visible dans le formulaire** : on n'ouvre pas un journal amputé sans montrer ce qui
+>    l'ampute. Une valeur inattendue ne filtre rien et retombe sur « Actions ».
+> 3. **Un seul journal est lu à la fois.** Arriver par `?journal=connexions` ne demande pas au serveur
+>    une page d'audit que personne n'ouvrira — `t_audit_log` grossit sans fin, c'est le défaut C-1 de
+>    l'audit 2026-08-27 sous une autre forme.
+> 4. **Le « poste » est DÉDUIT du `User-Agent`** (« Chrome · Windows ») et le texte exact reste dans
+>    le `title` de la cellule. Un en-tête non reconnu est affiché **tel quel** : sur un journal de
+>    preuve, un texte technique exact vaut mieux qu'une catégorie inventée.
+> 5. **Deux états vides, pas un.** « Le journal est vide » (le cas courant au démarrage : il ne
+>    contient que les connexions postérieures à sa mise en service, et rien ne permet de reconstituer
+>    les précédentes) ne se dit pas comme « aucune ligne pour ces critères », qui se corrige en
+>    retirant un filtre.
+>
+> **Trois contrastes du design system contournés localement** (méthode des lots 5, F2 et F3 —
+> **32 paires mesurées dans le navigateur** sur les couleurs calculées, toutes AA après correction) :
+>
+> | Paire globale | Mesuré | Remplacé ici par | Mesuré |
+> |---|---|---|---|
+> | badge « Acceptée » en `--success-text` sur `--success-bg` | **3,58:1** à 10 px | `#047857`, comme F2 pour « Affichée » | 5,21:1 |
+> | en-tête de tableau `--grad-primary` sous du blanc | **2,77:1 → 4,10:1** à 10 px | dégradé `--p-700 → --p-800`, comme F3 | 5,93:1 → 7,56:1 |
+> | libellé de filtre `.form-label` en `--n-400` **sur le fond de page** | **4,22:1** à 10 px | `--n-500` | 5,17:1 |
+>
+> La paire `--danger-text` / `--danger-bg` du badge « Refusée », elle, mesure **5,80:1** et convient
+> telle quelle. **Un échec ne se distingue jamais par la couleur seule** : le mot (« Refusée »), la
+> teinte de ligne et le liseré rouge disent tous les trois la même chose.
+>
+> ⚠️ **Un cinquième défaut global, découvert ici : `.form-label`.** Le jeton `--n-400` est calibré
+> 4,51:1 **sur blanc** ; posé sur le fond de page (`#f2f5fa`), il tombe à **4,22:1**. `.form-label`
+> coiffe **tous** les libellés de champ de l'application, et le défaut n'apparaît que lorsque le
+> formulaire n'est pas dans une carte blanche — ce qui est le cas de tous les bandeaux de filtres.
+> Il rejoint les quatre paires déjà relevées : **signalé, pas corrigé depuis ce lot.**
+>
+> ⚠️ **Conséquence assumée : les deux onglets du Journal ne sont pas au même contraste.** L'onglet
+> « Actions » porte encore `--grad-primary` et `.form-label` en `--n-400`, parce qu'il devait rester
+> **strictement inchangé**. Les deux mêmes lignes de style lui donneraient AA ; c'est un geste d'une
+> minute, laissé à l'arbitrage avec le chantier de contrastes globaux (Q1).
 
 ### 4.6 L6-Q1 — Recette *(M)*
 
@@ -352,17 +409,35 @@ Preuves en **captures légendées à 1366×768**, conservées dans `recette-refo
 
 ## 6. Honnêteté des chiffres dessinés
 
-Trois mesures des maquettes **ne sont pas calculables aujourd'hui** :
+La règle : **un chiffre sans source n'est pas dessiné** — pas à zéro, pas avec un tiret ; absent. Une
+mesure fausse sur un tableau de bord de sécurité est pire qu'une mesure absente.
 
-| Mesure | Maquette | Source nécessaire |
+### 6.1 Rallumées le 17/09 — B4 livré ✅
+
+Trois mesures attendaient le journal des connexions. Il existe (`GET /api/sessions`, migration `V31`,
+`ADR-0006`), et **elles sont affichées depuis le lot F5** :
+
+| Mesure | Maquette | Où elle est, désormais |
 |---|---|---|
-| Échecs de connexion (24 h) | A, tuile et bloc « À surveiller » | B4 |
-| Dernière connexion, échecs sur 30 j | C, bloc « Accès » de la fiche | B4 |
-| Sessions ouvertes | A, tuile | B4 |
+| Sessions ouvertes | A, tuile | 3ᵉ tuile du bloc « Accès » de l'accueil |
+| Échecs de connexion (24 h) | A, tuile **et** bloc « À surveiller » | 4ᵉ tuile du bloc « Accès », **et** la ligne « N tentatives de connexion refusées en 24 h », qui mène au journal déjà filtré |
+| Dernière connexion, échecs sur 30 j | C, bloc « Accès » de la fiche | deux lignes du bloc « Accès » de la fiche d'annuaire |
 
-Tant que B4 n'est pas livré, **ces trois tuiles ne sont pas affichées** — pas affichées à zéro, pas
-affichées avec un tiret : absentes. Une mesure fausse sur un tableau de bord de sécurité est pire
-qu'une mesure absente.
+> ⚠️ **Deux précautions sont passées de « ne pas afficher » à « dire ce qu'on affiche ».** Elles
+> valent tant que ces trois mesures existent :
+>
+> - **« Sessions ouvertes » se dit AVEC sa borne de 12 heures.** Le serveur compte les connexions
+>   réussies non refermées **et de moins de 12 h** : une session n'est fermée que par une
+>   déconnexion explicite, or presque personne ne se déconnecte — sans cette borne le chiffre ne
+>   redescendrait jamais. Écrit sans la mention, il se lirait « personnes connectées en ce moment »,
+>   ce qu'il n'est pas. La tuile porte donc « depuis moins de 12 h » sous son libellé.
+> - **Une dernière connexion nulle reste NON AFFICHÉE, et ne devient jamais « jamais connecté ».**
+>   Elle est nulle pour qui ne s'est pas connecté **depuis que le journal existe** — au début,
+>   presque tout le monde. La règle d'origine s'applique donc encore, au cas par cas au lieu de
+>   s'appliquer à tout le monde. `echecs30j`, lui, vaut `0` et non `null` : zéro est une mesure, la
+>   ligne s'écrit.
+
+### 6.2 Toujours pas calculables
 
 > ⚠️ **Trois mesures de plus, découvertes à la réalisation de F2 (17/09), et retirées pour le même
 > motif** — elles n'attendent aucun besoin backend en cours, il faudrait les concevoir :
@@ -379,8 +454,13 @@ qu'une mesure absente.
 > |---|---|---|
 > | « Dossiers en cours — 4 dont 1 en retard » (bloc « Activité » de la fiche) | C | `AnnuaireFicheDto` ne la sert pas, et **aucune** route ne donne la charge d'une personne toutes populations confondues : un contrôleur, une PRMP et une UGPM ne comptent pas les mêmes dossiers, ni au même endroit. Le bloc garde la seule mesure servie, `actionsJournal30j` |
 >
-> La colonne **« Connexion »** de la liste et le filtre **« Connexion »** de la maquette C tombent,
-> eux, sous la première ligne du tableau ci-dessus (B4) : ils ne sont pas affichés non plus.
+> ⚠️ **La colonne et le filtre « Connexion » de la maquette C restent absents — pour une autre raison
+> qu'avant.** Ils tombaient sous B4 ; B4 est livré, et ils ne reviennent pas pour autant :
+> `GET /api/annuaire` (la **liste**) ne sert aucune date de connexion, seule la **fiche** en porte
+> une, et le serveur n'accepte pas de critère de connexion parmi ses filtres (`q`, `type`, `profil`,
+> `localite`, `statut`). La colonne demanderait une lecture de fiche par ligne affichée, le filtre un
+> paramètre qui n'existe pas. Le quatrième filtre reste **« Type »**. Les rétablir suppose d'élargir
+> `AnnuairePersonneDto` et ses filtres : **un besoin backend à part, non demandé à ce jour.**
 
 ---
 

@@ -16,9 +16,13 @@ import { AnnuaireAdmin } from './annuaire-admin';
  * 2. **où part la recherche** : `q`, les filtres et la page sont des paramètres de REQUÊTE. Filtrer
  *    la seule page affichée est le défaut M15 de l'audit — sans ce test, rien n'empêcherait d'y
  *    revenir sans que personne ne s'en aperçoive avant la production ;
- * 3. ce qu'il **n'affiche pas** — la dernière connexion et les échecs sur 30 jours, servis toujours
- *    nuls (besoin B4 non livré), et la date d'activation d'une inscription refusée. Plan L6 §6 :
- *    « une mesure fausse sur un écran de sécurité est pire qu'une mesure absente » ;
+ * 3. ce qu'il **n'affiche pas** — la date d'activation d'une inscription refusée, les dossiers en
+ *    cours de la maquette, et la dernière connexion **quand le serveur ne la sert pas**. Plan L6 §6 :
+ *    « une mesure fausse sur un écran de sécurité est pire qu'une mesure absente ». ⚠️ Lot F5 : le
+ *    test qui gardait l'absence des mesures de connexion a été RETOURNÉ — le besoin B4 est livré,
+ *    elles s'affichent ; ce qui reste gardé, c'est qu'une dernière connexion **nulle** ne devienne
+ *    jamais « jamais connecté », parce qu'elle veut seulement dire « pas depuis que le journal
+ *    existe », et qu'au début c'est le cas de presque tout le monde ;
  * 4. que les **huit écrans** dont `/admin/comptes` était le seul chemin restent joignables. C'est le
  *    défaut §1.2 du plan : ce lot doit le corriger, surtout pas le déplacer.
  */
@@ -55,8 +59,8 @@ const LOCALITES: Localite[] = [
 const FICHE: AnnuaireFiche = {
   ...PERSONNES[0],
   dateActivation: '2026-03-14T09:30:00',
-  derniereConnexion: null,
-  echecs30j: null,
+  derniereConnexion: '2026-09-16T08:12:00',
+  echecs30j: 3,
   superieur: { ref: 'CTRCC1', nom: 'RANDRIANARISOA', prenoms: 'Paul', profil: 'CHEF_COMMISSION', localite: 'ANT' },
   transversal: false,
   chaineControle: [
@@ -417,14 +421,39 @@ describe("AnnuaireAdmin — l'annuaire des personnes", () => {
 
   // ───────────────────────── Ce qui n'est PAS affiché (plan L6, §6) ─────────────────────────
 
-  it("n'affiche AUCUNE mesure de connexion : le serveur les sert toujours nulles (B4)", () => {
+  it('affiche la dernière connexion et les échecs sur 30 jours — leur source existe (B4)', () => {
+    // ⚠️ Test RETOURNÉ (lot F5) : il gardait leur absence tant que le serveur les servait nulles
+    // par construction. Il garde maintenant leur présence, à l'instant près pour la connexion —
+    // à la journée près, « le 16/09 » ne distinguerait plus ce matin de cette nuit.
     const ecran = monter();
     ouvrir(ecran, PERSONNES[0]);
-    // Ni à zéro, ni avec un tiret : absentes — de la fiche, de la liste et des filtres.
+    expect(texte()).toContain('Dernière connexion');
+    expect(texte()).toContain('16/09/2026 08:12');
+    expect(texte()).toContain('Échecs (30 j)');
+    expect(texte()).toContain('3 tentatives refusées');
+  });
+
+  it("ne dit PAS « jamais connecté » quand la dernière connexion est nulle : la ligne disparaît", () => {
+    // Nulle veut dire « pas de connexion DEPUIS QUE LE JOURNAL EXISTE » — au début, presque tout le
+    // monde. « Jamais connecté » affirmerait ce que personne ne sait.
+    const ecran = monter();
+    ouvrir(ecran, PERSONNES[0], { ...FICHE, derniereConnexion: null });
     expect(texte()).not.toContain('Dernière connexion');
-    expect(texte()).not.toContain('dernière connexion');
-    expect(texte()).not.toContain('Échecs');
-    expect(texte()).not.toContain('Connexion');
+    expect(texte()).not.toContain('jamais connecté');
+    // `echecs30j` vaut 0, plus null : cette ligne-là reste, parce que zéro est une mesure.
+    expect(texte()).toContain('Échecs (30 j)');
+  });
+
+  it('zéro échec s’écrit en toutes lettres — ce n’est pas un trou dans la fiche', () => {
+    const ecran = monter();
+    ouvrir(ecran, PERSONNES[0], { ...FICHE, echecs30j: 0 });
+    expect(texte()).toContain('aucune tentative refusée');
+  });
+
+  it('« Ses connexions » ouvre le journal des connexions filtré sur la personne', () => {
+    const ecran = monter();
+    ouvrir(ecran, PERSONNES[0]);
+    expect(liens()).toContain('/admin/audit?journal=connexions&acteur=CTR0142');
   });
 
   it("n'invente pas de date d'activation pour une inscription REFUSÉE", () => {

@@ -105,14 +105,24 @@ interface LienEcran {
  * de requête. Filtrer la seule page affichée est le défaut M15 de l'audit (`dossiers-pipeline`) :
  * l'utilisateur croit chercher dans l'annuaire et ne cherche que dans quinze lignes.
  *
+ * ⚠️ **2026-09-17, lot F5 — le bloc « Accès » est complet.** Les lignes **« Dernière connexion »** et
+ * **« Échecs (30 j) »** de la maquette C sont rallumées : le journal des connexions (besoin backend
+ * B4) existe, et le serveur ne sert plus ces deux champs nuls par construction. Mais la règle du §6
+ * tient toujours là où la donnée manque **encore** :
+ *
+ * - **`derniereConnexion` nulle ⇒ ligne absente**, jamais « jamais connecté ». Elle est nulle pour
+ *   qui ne s'est pas connecté **depuis que le journal existe** — au début, presque tout le monde.
+ *   Écrire « jamais connecté » affirmerait quelque chose que personne ne sait ;
+ * - `echecs30j` vaut `0`, plus `null` : la ligne s'écrit toujours, et « aucune tentative refusée »
+ *   est une mesure, pas un trou.
+ *
  * ⚠️ **Ce qui n'est PAS affiché, et pourquoi** (plan L6 §6 — « une mesure fausse sur un écran de
  * sécurité est pire qu'une mesure absente ») :
  *
- * - la colonne **« Connexion »** de la liste, le filtre **« Connexion »** et les deux lignes
- *   **« Dernière connexion »** / **« Échecs (30 j) »** du bloc « Accès » de la fiche : le serveur
- *   sert `derniereConnexion` et `echecs30j` **toujours nuls** — aucune connexion n'est tracée
- *   durablement tant que le besoin backend **B4** n'est pas livré. Ni à zéro, ni avec un tiret :
- *   absents. Le bloc « Accès » montre ce qui existe — login, statut, date d'activation ;
+ * - la colonne **« Connexion »** de la liste et le filtre **« Connexion »** de la maquette C :
+ *   `GET /api/annuaire` (la LISTE) ne sert aucune date de connexion — seule la fiche en porte une.
+ *   La colonne obligerait à une lecture par ligne, le filtre à un critère que le serveur n'accepte
+ *   pas ; le quatrième filtre reste **« Type »** (contrôleur · PRMP · UGPM) ;
  * - la ligne **« Dossiers en cours — 4 dont 1 en retard »** du bloc « Activité » de la maquette :
  *   `AnnuaireFicheDto` ne la sert pas, et aucune route ne donne la charge d'une personne toutes
  *   populations confondues. Le bloc garde ce que le serveur mesure vraiment : les écritures portées
@@ -330,8 +340,45 @@ interface LienEcran {
                     @if (f.dateActivation) { <span class="ann-kv__note">ouvert le {{ jour(f.dateActivation) }}</span> }
                   </dd>
                 </div>
+                <!-- ⚠️ Lot 6 F5 — les deux lignes que le §6 du plan retirait faute de source. Le
+                     journal des connexions (B4) existe depuis le 2026-09-17.
+                     « Dernière connexion » reste ABSENTE quand le serveur ne la sert pas : elle est
+                     nulle pour qui ne s'est pas connecté DEPUIS QUE LE JOURNAL EXISTE — au début,
+                     presque tout le monde. Écrire « jamais connecté » serait faux. -->
+                @if (f.derniereConnexion) {
+                  <div class="ann-kv__l">
+                    <dt>Dernière connexion</dt>
+                    <dd>
+                      {{ instant(f.derniereConnexion) }}
+                      <span class="ann-kv__note">connexion acceptée la plus récente</span>
+                    </dd>
+                  </div>
+                }
+                <div class="ann-kv__l">
+                  <dt>Échecs (30 j)</dt>
+                  <dd>
+                    @if ((f.echecs30j ?? 0) > 0) {
+                      <b class="ann-echecs">
+                        {{ accord(f.echecs30j ?? 0, 'tentative refusée', 'tentatives refusées') }}
+                      </b>
+                    } @else {
+                      <span class="ann-kv__rien">aucune tentative refusée</span>
+                    }
+                    <span class="ann-kv__note">sur 30 jours glissants</span>
+                  </dd>
+                </div>
               </dl>
-              <p class="ann-blk__aide">{{ aideStatut(f.statutCompte) }}</p>
+              <p class="ann-blk__aide">
+                {{ aideStatut(f.statutCompte) }}
+                <!-- ⚠️ Une tentative sur un login INCONNU n'est attribuable à personne : elle ne
+                     figure dans aucune fiche, et ne se lit que dans le journal. Le dire ici, à
+                     côté du chiffre, évite de lire « 0 échec » comme « personne n'a essayé ». -->
+                Une tentative sur un login inconnu n'est attribuable à personne : elle ne se lit que
+                dans le journal. ·
+                <a routerLink="/admin/audit" [queryParams]="{ journal: 'connexions', acteur: f.ref }">
+                  Ses connexions
+                </a>
+              </p>
             </div>
 
             @if (f.type === 'CONTROLEUR') {
@@ -678,6 +725,9 @@ interface LienEcran {
     .ann-kv__l dd { margin: 0; min-width: 0; color: var(--n-700); font-weight: 600; overflow-wrap: anywhere; }
     .ann-kv__note { font-weight: 400; color: var(--n-500); margin-left: 5px; }
     .ann-kv__rien { font-weight: 400; color: var(--n-500); font-style: italic; }
+    /* --danger-text sur le fond blanc de la fiche : 7,22:1. La couleur ne porte rien seule — le
+       texte dit « tentatives refusées », et zéro échec s'écrit en toutes lettres. */
+    .ann-echecs { color: var(--danger-text); }
     .ann-deleg { margin: 0; padding-left: 1.05rem; font-weight: 400; color: var(--n-700); }
 
     .ann-chaine { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: maillon; }
@@ -1047,6 +1097,25 @@ export class AnnuaireAdmin {
     }
     const d = new Date(iso);
     return isNaN(d.getTime()) ? iso : new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }).format(d);
+  }
+
+  /**
+   * « 17/09/2026 08:32 » — une connexion est un INSTANT, contrairement aux dates de la fiche : à la
+   * journée près, « dernière connexion le 17/09 » ne distingue plus ce matin de cette nuit, et c'est
+   * exactement la distinction qu'on vient chercher sur une fiche d'accès.
+   */
+  instant(iso: string): string {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) {
+      return iso;
+    }
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(d);
   }
 
   /** Accord français : 0 et 1 restent au singulier, le pluriel commence à 2. */

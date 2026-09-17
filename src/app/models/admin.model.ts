@@ -196,10 +196,11 @@ export interface AnnuaireDelegation {
  * `AnnuairePersonne`, calculés par le même code serveur : la ligne et la fiche ne peuvent pas se
  * contredire.
  *
- * ⚠️ `derniereConnexion` et `echecs30j` sont servis **toujours nuls** : aucune connexion n'est
- * tracée durablement tant que le besoin backend **B4** n'est pas livré. Ils existent au contrat pour
- * que sa livraison change la *valeur* et non la *forme*. L'écran ne les affiche pas — ni à zéro, ni
- * avec un tiret : absents (plan L6 §6).
+ * ⚠️ 2026-09-17, **B4 livré** — `derniereConnexion` et `echecs30j` ne sont plus toujours nuls : le
+ * journal des connexions (migration `V31`) les alimente. `derniereConnexion` reste `null` pour qui
+ * ne s'est pas connecté **depuis que le journal existe** — au début, presque tout le monde : la règle
+ * du plan L6 §6 tient toujours pour ce cas, elle n'est pas affichée plutôt que remplacée par
+ * « jamais connecté », qui serait faux.
  */
 export interface AnnuaireFiche extends AnnuairePersonne {
   /**
@@ -208,9 +209,16 @@ export interface AnnuaireFiche extends AnnuairePersonne {
    * porte alors la date du refus, qui n'est pas une date d'activation.
    */
   dateActivation: string | null;
-  /** Toujours `null` — dépend de B4 (non livré). */
+  /**
+   * Plus récente connexion **réussie**. `null` pour qui ne s'est pas connecté depuis la mise en
+   * service du journal (`V31`) — l'écran ne l'affiche pas dans ce cas.
+   */
   derniereConnexion: string | null;
-  /** Toujours `null` — même raison. */
+  /**
+   * Tentatives de connexion **refusées** attribuées à cette personne sur 30 jours glissants. Servi
+   * par le serveur, `0` quand il n'y en a aucune ; le type reste nullable parce que le DTO le porte
+   * en `Long` — l'écran se garde donc du `null` plutôt que de le supposer absent.
+   */
   echecs30j: number | null;
   superieur: AnnuairePersonneCitee | null;
   /** `null` hors contrôleurs. */
