@@ -269,7 +269,11 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { label: 'Seuil AGPM (AMI)', path: '/admin/agpm-seuil', icon: 'filter' },
     { label: 'Règles d’alerte', path: '/admin/referentiels/regle-alertes', icon: 'alert' },
     { label: 'Nomenclatures', path: '/admin/referentiels', icon: 'table' },
-    { label: 'Journal d’audit', path: '/admin/audit', icon: 'history' },
+    // ⚠️ Lot 6 F5 — « Journal d’audit » devient « Journal » : l’écran porte désormais DEUX journaux
+    // en onglets, les écritures et les connexions. Le laisser dire « d’audit » enverrait chercher
+    // les connexions ailleurs, et il n’y a plus d’ailleurs. Route inchangée, légende du rail
+    // inchangée (« Journal », `groupes-menu.ts`). Aucune entrée ajoutée ni retirée.
+    { label: 'Journal', path: '/admin/audit', icon: 'history' },
     { label: 'Actualités', path: '/admin/actualites', icon: 'message' },
     // Rapports retirés du menu pour le moment (demande pilote 2026-09-04) — route conservée.
     // { label: 'Rapports', path: '/admin/rapports', icon: 'board' },
@@ -278,11 +282,10 @@ export const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     // de données métier, pas de l'administration. Routes conservées — ré-activer en décommentant.
     // { label: 'PPM & marchés', path: '/admin/ppm-marches', icon: 'folder' },
     // { label: 'Marchés & dates prév.', path: '/admin/marches-previsions', icon: 'calendar' },
-    // « Sessions » retirée du menu (lot 6 F1) : le journal des connexions devient un ONGLET du
-    // Journal au lot F5, et la table qu'exposait cet écran n'est alimentée par aucun code — un CRUD
-    // *modifiable* sur un journal de preuve vide. Route et configuration conservées jusqu'à F5, qui
-    // les retire ; ré-activer en décommentant.
-    // { label: 'Sessions', path: '/admin/sessions', icon: 'key' },
+    // « Sessions » a quitté le menu au lot F1, puis l'application au lot F5 : le journal des
+    // connexions est un ONGLET du Journal (`/admin/audit?journal=connexions`), en lecture seule.
+    // L'écran d'origine était un CRUD *modifiable* sur un journal de preuve, et le serveur a retiré
+    // `/api/session-utilisateurs` le 2026-09-17 (404). Rien à décommenter : la route n'existe plus.
     { label: 'Notifications', path: '/notifications', icon: 'bell' },
   ],
 };

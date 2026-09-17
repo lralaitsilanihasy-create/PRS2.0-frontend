@@ -217,7 +217,8 @@ describe('sectionsMenu — dérivation des rubriques', () => {
         'Règles d’alerte',
       ],
       ['Nomenclatures'],
-      ['Journal d’audit', 'Actualités'],
+      // ⚠️ Lot 6 F5 — « Journal » tout court : l'écran porte les écritures ET les connexions.
+      ['Journal', 'Actualités'],
     ]);
   });
 
@@ -232,7 +233,8 @@ describe('sectionsMenu — dérivation des rubriques', () => {
     // Écrans PRMP réutilisés, de la consultation (décision Mathieu 2026-09-17) — routes conservées.
     expect(chemins).not.toContain('/admin/ppm-marches');
     expect(chemins).not.toContain('/admin/marches-previsions');
-    // Journal des connexions : devient un onglet du Journal au lot F5 — route conservée jusque-là.
+    // Journal des connexions : c'est un ONGLET du Journal depuis le lot F5, et la route
+    // `/admin/sessions` a été retirée avec lui — le serveur ne sert plus `/api/session-utilisateurs`.
     expect(chemins).not.toContain('/admin/sessions');
   });
 
