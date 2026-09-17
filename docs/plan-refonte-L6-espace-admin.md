@@ -6,11 +6,12 @@
 Sessions et Comptes ? »), maquettes `maquettes-design/admin/` — **A retenue pour la coquille et
 l'accueil, C retenue pour l'écran des comptes**.
 
-> **Statut : les cinq lots de développement sont livrés (17/09).** F1 `a191247`, F4 `dacb351`,
-> F2 et F3 (voir §4), F5 en fin de journée. **Les cinq besoins serveur B1 à B5 sont livrés**, B4
-> apportant la migration `V31` et l'`ADR-0006`. Restent **Q1** (recette de bout en bout, sur session
-> réelle — le seul angle que les agents ne peuvent pas couvrir) et **D1** (clôture : `regles-gestion.md`
-> ne consigne pas encore la règle « un compte suspendu n'est pas une inscription refusée »).
+> **Statut : LIVRÉ.** Les cinq lots de développement (F1 `a191247`, F4 `dacb351`, F2, F3, F5) et les
+> cinq besoins serveur (B1 à B5 — B4 apportant la migration `V31` et l'`ADR-0006`) sont tous livrés le
+> 17/09. **D1 (cette clôture) est fait** : `backend/docs/regles-gestion.md` consigne désormais le
+> cycle de vie d'un compte, le périmètre du badge d'inscriptions et le journal des connexions. Seul
+> **Q1** reste ouvert — la recette de bout en bout exige une session réelle dans l'application, le seul
+> angle que les agents ne peuvent pas couvrir — et ce qui dépasse ce lot est consigné au §8.
 > Ce plan se lit avec `demande-backend-2026-09-17-espace-admin.md`.
 
 ---
@@ -467,9 +468,48 @@ Trois mesures attendaient le journal des connexions. Il existe (`GET /api/sessio
 ## 7. Décisions attendues de Mathieu
 
 1. **« PPM & marchés » et « Marchés & dates prév. » hors du menu Administrateur** — proposé au §3,
-   réversible. *(à confirmer)*
+   réversible. *(seule décision encore ouverte à la clôture du 17/09)*
 2. **Alimenter `t_session_utilisateur`** plutôt que de retirer l'exclusion d'`/api/auth/**` du journal
-   d'audit — motivé dans la demande backend, §B4. *(à confirmer)*
+   d'audit — motivé dans la demande backend, §B4. *(tranchée : option retenue et implémentée — voir
+   `backend/docs/adr/ADR-0006-journal-des-connexions.md`, statut Adopté)*
 3. **L'annuaire couvre-t-il les UGPM ?** Elles ont un compte mais ne sont pas des contrôleurs ;
-   les inclure élargit B2. *(proposé : oui — l'administrateur cherche « une personne », pas « un
-   contrôleur »)*
+   les inclure élargit B2. *(tranchée dans B2, livré : oui — l'administrateur cherche « une personne »,
+   pas « un contrôleur »)*
+
+---
+
+## 8. Ouvert au-delà de ce lot (clôture du 17/09)
+
+Cinq points, aucun du ressort du L6, consignés ici pour qu'ils ne se reperdent pas entre deux
+chantiers :
+
+1. **Q1 — la recette de bout en bout n'est pas faite.** Elle exige une session réelle dans
+   l'application (clavier, lecteur d'écran, les quatre catégories de personnes de l'annuaire, le refus
+   de se suspendre soi-même) — c'est le seul angle que les agents ne peuvent pas couvrir, faute de
+   pouvoir ouvrir une session. `recette-refonte/captures-admin/` reste à constituer.
+2. **Le chantier « contrastes globaux ».** Cinq paires relevées pendant ce lot, toutes sous le seuil
+   AA, toutes contournées **localement** plutôt que corrigées à la source — un jeton qui sert des
+   dizaines d'écrans ne se retouche pas au fil d'un lot :
+
+   | Paire globale | Mesuré | Contournée par (mesuré) | Où |
+   |---|---|---|---|
+   | `.page-subtitle` en `--p-600` sur le fond de page | 3,65:1 | `--p-700` (5,28:1) | F3 |
+   | en-tête de tableau `--grad-primary` sous du blanc — fond d'en-tête de **tous** les tableaux | 2,77:1 | dégradé `--p-700 → --p-800` (5,93:1 → 7,56:1) | F3, repris F5 |
+   | `--success-text` sur `--success-bg` (badge « Acceptée ») | 3,58:1 | `#047857` (5,21:1) | F5, comme F2 pour « Affichée » |
+   | `--info-text` sur `--info-bg` (tuile de file d'attente de l'accueil) | 3,84:1 | `--p-700` (5,57:1) | F2, `admin-accueil.ts` |
+   | `.form-label` en `--n-400` sur le fond de page (hors carte blanche) | 4,22:1 | `--n-500` (5,17:1) | F5 |
+
+   S'y ajoute le repère de focus hors coquille, laissé ouvert par le lot 5 (§5, jamais traité ici).
+   Six défauts distincts, un seul chantier à instruire — avec Q1, pour mesurer d'un coup tout ce qu'un
+   lot après l'autre a dû contourner localement plutôt que corriger.
+3. **L'instabilité de la suite de tests front.** Cinq fichiers lourds (`page-dossier*`,
+   `decision-retrait`, `etape-pv`, `a-faire`) dépassent le délai de 5 s par test sous charge locale.
+   Vérifié : `main` échoue pareil alors que sa CI, elle, reste verte — ce n'est donc pas une régression
+   de ce lot, mais un état qui rend tout diagnostic local trompeur tant qu'il n'est pas traité.
+4. **`t_audit_log.SESSION_ID` reste vide.** La FK vers `t_session_utilisateur` redevient utilisable
+   depuis `V31` — une session existe enfin à pointer — mais rien ne la renseigne : `AuditInterceptor`
+   n'écrit pas la session de l'acteur. Relier les deux journaux est possible et n'a pas été fait,
+   faute d'être demandé (voir `ADR-0006`, « Ce qu'il faut surveiller »).
+5. **Le menu de l'Administrateur est à sa capacité.** 39 px de marge à 1229×691 (§4.1) : une entrée de
+   plus et il défile. Le garde-fou est `node scripts/hauteur-menu.mjs`, à lancer avant toute nouvelle
+   entrée ajoutée à `NAV_BY_ROLE` pour ce profil.
