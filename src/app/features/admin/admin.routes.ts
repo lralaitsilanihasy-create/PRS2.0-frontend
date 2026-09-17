@@ -33,16 +33,6 @@ const refLinks = [
   // Écran dédié : mapping mode de passation → type de DMC (PUT sur les modes ; pas un CRUD générique).
   { label: 'Mapping mode → document DMC', path: '/admin/referentiels/dmc-mapping' },
 ];
-const compteLinks = [
-  ...COMPTES.map((r) => ({
-    label: r.config.title,
-    path: `/admin/comptes/${r.slug}`,
-  })),
-  // Écran dédié (POST /api/ugpms : création UGPM + compte ; pas de CRUD générique).
-  { label: 'UGPM (unités de gestion)', path: '/admin/comptes/ugpms' },
-  // Écran dédié : mandats PRMP (nomination / reconduction / abrogation — pas un CRUD générique).
-  { label: 'Mandats PRMP', path: '/admin/comptes/mandats' },
-];
 const sessionConfig = SECURITE.find((r) => r.slug === 'session-utilisateurs')!.config;
 
 /**
@@ -71,11 +61,12 @@ export const ADMIN_ROUTES: Routes = [
     data: { crud: r.config },
   })),
 
-  {
-    path: 'comptes',
-    loadComponent: () => import('../../shared/ui/section-home').then((m) => m.SectionHome),
-    data: { title: 'Comptes & personnes', links: compteLinks },
-  },
+  // ⚠️ Lot 6 F3 (2026-09-17) — `/admin/comptes` cesse d'être un SOMMAIRE de huit écrans (défaut §1.2
+  // du plan : aucun de ces huit n'a d'entrée de menu, ce sommaire était leur seul chemin). Il ouvre
+  // désormais sur l'ANNUAIRE, qui cherche une personne et agit sur elle. Les huit restent joignables
+  // — depuis la fiche pour ceux qu'une personne désigne, et tous depuis le dépliant de pied de page
+  // de l'annuaire (`ECRANS_COMPTES`). Aucune route n'est retirée.
+  { path: 'comptes', loadComponent: () => import('./annuaire-admin').then((m) => m.AnnuaireAdmin) },
   // PRMP et contrôleur ont un écran dédié (fiche + photo/pièces) ; les autres ressources « comptes » sont génériques.
   ...COMPTES.filter((r) => r.slug !== 'prmps' && r.slug !== 'controleurs').map((r) => ({
     path: `comptes/${r.slug}`,
