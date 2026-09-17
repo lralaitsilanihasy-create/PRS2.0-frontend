@@ -6,9 +6,10 @@
 Sessions et Comptes ? »), maquettes `maquettes-design/admin/` — **A retenue pour la coquille et
 l'accueil, C retenue pour l'écran des comptes**.
 
-> **Statut : ouvert — F1, F4 et F2 livrés le 17/09** sur `chantier/espace-admin` (F1 `a191247`,
-> F4 `dacb351`, F2 ci-dessous). Restent F3 et F5, puis Q1 et D1 ; F3 attend B2 (livré), F5 attend
-> B4 (non livré). Ce plan se lit avec la demande backend
+> **Statut : ouvert — F1, F4, F2 et F3 livrés le 17/09** sur `chantier/espace-admin` (F1 `a191247`,
+> F4 `dacb351`, F2 et F3 ci-dessous). Reste F5, puis Q1 et D1 ; F5 attend B4 (non livré).
+> ⚠️ **F3 s'appuie sur B3, qui n'est PAS poussé** : `GET /api/annuaire/{type}/{ref}` vit sur la
+> branche `chantier/espace-admin` du backend (`aaa7321`). Ce plan se lit avec la demande backend
 > `demande-backend-2026-09-17-espace-admin.md`, qui porte les cinq besoins serveur (B1 à B5) —
 > **B1, B2, B3 et B5 sont livrés ; B4 ne l'est pas**.
 
@@ -26,7 +27,7 @@ sommaire « Comptes & hiérarchie » en annuaire agissant.
 | 1 | **L6-F1** Rubriques de l'Administrateur re-classées — **LIVRÉ** | frontend-angular | — | S | `navigation.ts` (33 commits) — **2 lignes retirées** |
 | 1 | **L6-F4** Actions de compte : suspendre, réactiver, réinitialiser — **LIVRÉ** | frontend-angular | — | S | non |
 | 2 | **L6-F2** Accueil de l'Administrateur (maquette A) — **LIVRÉ** | frontend-angular | B1, B5 | M | non — écran neuf |
-| 2 | **L6-F3** Annuaire (maquette C) | frontend-angular | B2, F4 | L | non — écran neuf |
+| 2 | **L6-F3** Annuaire (maquette C) — **LIVRÉ** | frontend-angular | B2, B3, F4 | L | non — écran neuf |
 | 3 | **L6-F5** Journal : onglet « Connexions » | frontend-angular | B4 | S | `audit-logs-admin.ts` (calme) |
 | 4 | **L6-Q1** Recette : rubriques, accueil, annuaire, actions | qa-test | F1…F5 | M | — |
 | 5 | **L6-D1** Clôture du plan, `api-endpoints.md`, `regles-gestion.md` | docs | Q1 | S | — |
@@ -248,12 +249,71 @@ F3 les reprend dans la fiche d'annuaire. Aucune demande backend.
 
 **Le KpiDashboard n'est pas modifié** : il reste l'accueil du Président et du Chef de commission.
 
-### 4.4 L6-F3 — Annuaire *(L, dépend de B2 et F4)*
+### 4.4 L6-F3 — Annuaire *(L, dépend de B2 et F4)* — **LIVRÉ le 17/09**
 
 Écran neuf `features/admin/annuaire-admin.ts`, cible de `/admin/comptes` à la place de `SectionHome`.
-Reprend la maquette C : recherche, filtres (profil, localité, statut, connexion), liste à gauche,
-fiche à droite. La fiche réunit **accès**, **place dans l'organisation** (supérieur, chaîne de
-contrôle, délégation, mandat) et **activité**, et porte les quatre actions.
+Reprend la maquette C : recherche, filtres, liste à gauche, fiche à droite. La fiche réunit
+**accès**, **place dans l'organisation** (supérieur, chaîne de contrôle, délégation, mandat) et
+**activité**, et porte les quatre actions.
+
+> **Les huit écrans, et par où on y arrive maintenant.** C'est le défaut §1.2 : aucun n'a d'entrée de
+> menu, le sommaire était leur **seul** chemin. Vérifié écran par écran dans un vrai navigateur après
+> le lot — les neuf chemins aboutissent sur le bon composant.
+>
+> | Écran | Chemin contextuel, depuis la fiche | Chemin de secours |
+> |---|---|---|
+> | Contrôleurs | fiche d'un contrôleur → « Modifier la fiche » | dépliant de pied de page |
+> | PRMP | fiche d'une PRMP → « Modifier la fiche » | dépliant |
+> | UGPM (création comprise) | fiche d'une UGPM → « Modifier la fiche » | dépliant — **seul** chemin quand aucune UGPM n'existe encore |
+> | Organigrammes | *aucun* — un organigramme n'est pas une personne | dépliant (et Référentiels → Ministères → « Voir organigrammes ») |
+> | Affectations PRMP ⇄ Entité | fiche d'une PRMP → « Ses entités » (`?prmp=`) | dépliant |
+> | Mandats PRMP | fiche d'une PRMP → « Ses mandats » | dépliant (et l'accueil, bloc « À surveiller ») |
+> | Pièces jointes des PRMP | fiche d'une PRMP → « Ses pièces » (`?prmp=`) | dépliant |
+> | Pièces jointes des UGPM | fiche d'une UGPM → « Ses pièces » (`?ugpm=`) | dépliant |
+>
+> Le dépliant (`<details>` en pied d'écran, `ECRANS_COMPTES`) est le **filet** : discret, mais il les
+> tient tous les huit, y compris ceux qu'aucune fiche ne désigne. `compteLinks` disparaît de
+> `admin.routes.ts` avec le sommaire ; **aucune route n'est retirée**, et aucun des huit écrans n'est
+> réécrit. « Changer de chaîne » (fiche d'un contrôleur → `chaines-controle`) est un neuvième chemin,
+> hors des huit : cet écran-là a déjà son entrée de menu.
+
+> **Six écarts à la maquette C**, dont trois par application du §6 :
+>
+> 1. **Le filtre « Connexion » n'existe pas**, ni la colonne « Connexion » de la liste, ni les lignes
+>    « Dernière connexion » et « Échecs (30 j) » du bloc « Accès » : le serveur sert
+>    `derniereConnexion` et `echecs30j` **toujours nuls** (B4 non livré). Le quatrième filtre est
+>    **« Type »** (contrôleur · PRMP · UGPM) — le seul critère qui isole les deux populations sans
+>    profil, et celui dont l'écran avait vraiment besoin.
+> 2. **« Dossiers en cours — 4 dont 1 en retard »** (bloc « Activité ») : `AnnuaireFicheDto` ne le
+>    sert pas et aucune route ne donne la charge d'une personne toutes populations confondues. Le
+>    bloc garde ce que le serveur mesure : `actionsJournal30j`.
+> 3. **« Actif depuis le … » n'est écrit que si la date est là.** `dateActivation` est **nulle pour
+>    une inscription refusée** (`DATE_DECISION` porte alors la date du refus) : rien n'est affiché
+>    plutôt qu'une date de refus présentée comme une ouverture.
+> 4. **La liste n'est pas un `<table>`** mais une liste de `<button>`, un par personne. Sélectionner
+>    quelqu'un est une **action** : un `<div (click)>` sur la ligne est interdit (AUDIT.md), et
+>    n'ouvrir qu'un lien dans la première cellule aurait rendu 80 % de la ligne inerte. Chaque bouton
+>    lit « nom · matricule · profil · rattachement · compte », et la ligne entière est atteignable au
+>    clavier.
+> 5. **Les gestes de compte sont refusés sur une inscription `EN_ATTENTE` ou `REFUSE`**, bien qu'un
+>    login existe : « réactiver » y poserait `ACTIF = true` et ouvrirait l'accès à une demande jamais
+>    acceptée. La fiche renvoie alors vers « Demandes d'accès », qui instruit avec son motif.
+> 6. **Aucune sélection automatique** de la première personne : la fiche a son propre état vide
+>    (« Choisissez une personne dans la liste »), et l'écran n'appelle pas une fiche que personne n'a
+>    demandée.
+>
+> **Deux contrastes du design system contournés localement** (méthode du lot 5, mesurés **dans le
+> navigateur** sur les couleurs calculées — 28 paires relevées, toutes AA après correction) :
+>
+> | Paire globale | Mesuré | Remplacé ici par | Mesuré |
+> |---|---|---|---|
+> | `.page-subtitle` en `--p-600` sur le fond de page | **3,65:1** à 10 px | `--p-700` | 5,28:1 |
+> | en-tête de tableau `--grad-primary` sous du blanc | **2,77:1 → 4,10:1** à 10 px | dégradé `--p-700 → --p-800` | 5,93:1 → 7,56:1 |
+>
+> ⚠️ **Ces deux défauts sont GLOBAUX** : `.page-subtitle` coiffe la plupart des écrans (l'accueil de
+> F2 compris) et `--grad-primary` est le fond d'en-tête de **tous** les tableaux de l'application. Ils
+> ne sont pas corrigés ici — un lot ne retouche pas un jeton qui sert des dizaines d'écrans — mais ils
+> sont **signalés** : c'est un chantier à part, à instruire avec Q1.
 
 Les 8 écrans jusque-là cachés derrière le sommaire deviennent les destinations des actions de la
 fiche (« Modifier la fiche » → `prmp-admin`, « Changer de chaîne » → `chaines-controle`, « Pièces »
@@ -312,6 +372,15 @@ qu'une mesure absente.
 > | Schéma de base, dernière migration, moteur d'alertes, profils actifs (bloc « Système ») | A | aucune route ne les sert ; rien à filtrer, rien à dériver |
 > | Valeur avant → après d'un changement de paramétrage | A | `AuditLogService.enregistrer` n'écrit ni `champModifie`, ni `ancienneValeur`, ni `nouvelleValeur` : ces colonnes sont **toujours nulles** |
 > | « 3 en retard » sur une carte de file | A | l'API sert l'ancienneté de **la plus vieille** demande, pas la distribution des âges. La carte dit donc « en retard » / « dans les délais » d'après cette doyenne, et l'en-tête dit laquelle |
+
+> ⚠️ **Une mesure de plus, découverte à la réalisation de F3 (17/09), retirée pour le même motif.**
+>
+> | Mesure | Maquette | Ce qui manque |
+> |---|---|---|
+> | « Dossiers en cours — 4 dont 1 en retard » (bloc « Activité » de la fiche) | C | `AnnuaireFicheDto` ne la sert pas, et **aucune** route ne donne la charge d'une personne toutes populations confondues : un contrôleur, une PRMP et une UGPM ne comptent pas les mêmes dossiers, ni au même endroit. Le bloc garde la seule mesure servie, `actionsJournal30j` |
+>
+> La colonne **« Connexion »** de la liste et le filtre **« Connexion »** de la maquette C tombent,
+> eux, sous la première ligne du tableau ci-dessus (B4) : ils ne sont pas affichés non plus.
 
 ---
 
