@@ -199,6 +199,19 @@ describe("AnnuaireAdmin — l'annuaire des personnes", () => {
     req.flush(page([]));
   });
 
+  it('« Tout afficher » efface les cinq critères en UNE seule lecture', () => {
+    const ecran = monter();
+    ecran.filtres.patchValue({ q: 'rakoto', type: 'CONTROLEUR', profil: 'MEMBRE', localite: 'ANT', statut: 'ACTIF' }, { emitEvent: false });
+
+    ecran.reinitialiser();
+    // Cinq critères effacés = cinq `valueChanges` si la remise à zéro était bruyante.
+    const req = http.expectOne((r) => r.url === '/api/annuaire');
+    expect(req.request.params.keys().sort()).toEqual(['page', 'size']);
+    req.flush(page(PERSONNES));
+    fixture.detectChanges();
+    expect(ecran.filtreActif()).toBe(false);
+  });
+
   it('la page suivante est demandée au serveur, filtres conservés', () => {
     const ecran = monter({ liste: page(PERSONNES, 42) });
     ecran.pageSuivante();

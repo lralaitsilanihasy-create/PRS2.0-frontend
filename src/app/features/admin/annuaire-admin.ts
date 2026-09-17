@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { debounceTime, distinctUntilChanged, merge } from 'rxjs';
+import { debounceTime, merge } from 'rxjs';
 
 import { libelleRole } from '../../core/auth/libelles-profils';
 import {
@@ -768,9 +768,11 @@ export class AnnuaireAdmin {
         this.filtres.patchValue({ profil: '', localite: '' }, { emitEvent: false });
       }
     });
-    // La frappe est temporisée (une requête par mot, pas par lettre) ; un choix de filtre part tout de suite.
+    // La frappe est temporisée (une requête par mot, pas par lettre) ; un choix de filtre part tout
+    // de suite. Pas de `distinctUntilChanged` : la seule remise à zéro programmée du champ se fait
+    // sans événement (cf. `reinitialiser`), et il ferait taire une recherche relancée à l'identique.
     this.filtres.controls.q.valueChanges
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .pipe(debounceTime(300), takeUntilDestroyed())
       .subscribe(() => this.chargerPage(0));
     merge(
       this.filtres.controls.type.valueChanges,
@@ -837,9 +839,9 @@ export class AnnuaireAdmin {
     }
   }
   reinitialiser(): void {
-    // Un seul `reset` : les quatre `valueChanges` des sélecteurs partiraient en quatre requêtes.
+    // Remise à zéro SANS événement, puis une seule lecture : laissée bruyante, elle partirait en
+    // cinq requêtes — une par critère effacé — pour afficher une seule liste.
     this.filtres.reset({ q: '', type: '', profil: '', localite: '', statut: '' }, { emitEvent: false });
-    this.filtres.controls.q.updateValueAndValidity({ onlySelf: true });
     this.chargerPage(0);
   }
 
