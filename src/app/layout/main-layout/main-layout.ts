@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, skip } from 'rxjs';
@@ -20,6 +20,9 @@ import {
   PrmpService,
 } from '../../services';
 import { NotificationCenter } from '../notification-center/notification-center';
+import { AssistantIaPanneau } from '../assistant-ia/assistant-ia-panneau';
+import { AssistantIaService } from '../../services/assistant-ia.services';
+import { EtatAssistantIa } from '../../models/assistant-ia.model';
 import { DossierConsultation } from '../../features/circuit/dossier-consultation';
 import { LienDossier } from '../../features/circuit/page-dossier/lien-dossier';
 import { ChangerMotDePasseModal } from '../../features/auth/mon-compte/changer-mot-de-passe-modal';
@@ -58,6 +61,7 @@ export function routeEnConcentration(racine: ActivatedRouteSnapshot | null): boo
     RouterLink,
     RouterLinkActive,
     NotificationCenter,
+    AssistantIaPanneau,
     DossierConsultation,
     ActualitesModal,
     ChangerMotDePasseModal,
@@ -244,6 +248,17 @@ export class MainLayout {
   /** Modale « Changer mon mot de passe » (tous profils), ouverte depuis la topbar. */
   readonly motDePasseOuvert = signal(false);
 
+  // ── Assistant IA (lot 1, backend/docs/plan-assistant-ia.md) ──
+  private readonly assistantIaService = inject(AssistantIaService);
+  /**
+   * État de l'assistant : le bouton n'est proposé que s'il est ACTIF côté serveur (`app.ia.actif`).
+   * Demandé à l'ouverture de session, puis à chaque ouverture du panneau — c'est là que
+   * « le service de calcul ne répond pas » doit être à jour. Un échec laisse l'assistant masqué.
+   */
+  readonly assistantIa = signal<EtatAssistantIa | null>(null);
+  readonly assistantIaOuvert = signal(false);
+  private readonly boutonAssistantIa = viewChild<ElementRef<HTMLButtonElement>>('boutonAssistantIa');
+
   // ── Recherche « aller à un dossier par référence » (topbar) ──
   /** Saisie de la recherche par référence de dossier. */
   readonly recherche = signal('');
@@ -355,6 +370,31 @@ export class MainLayout {
     document.getElementById('contenu-principal')?.focus();
   }
 
+  /** Ouvre ou ferme le panneau de l'assistant IA ; l'ouverture rafraîchit son état. */
+  basculerAssistantIa(): void {
+    if (this.assistantIaOuvert()) {
+      this.assistantIaOuvert.set(false);
+      return;
+    }
+    this.assistantIaOuvert.set(true);
+    this.chargerEtatAssistantIa();
+  }
+
+  /** Fermeture depuis le panneau (bouton ou Échap) : le focus revient au bouton qui l'a ouvert. */
+  fermerAssistantIa(): void {
+    this.assistantIaOuvert.set(false);
+    this.boutonAssistantIa()?.nativeElement.focus();
+  }
+
+  private chargerEtatAssistantIa(): void {
+    this.assistantIaService.etat().subscribe({
+      next: (etat) => this.assistantIa.set(etat),
+      error: () => {
+        // Silencieux, comme les actualités : l'assistant reste dans l'état connu (masqué au départ).
+      },
+    });
+  }
+
   constructor() {
     // Ferme le drawer mobile à chaque navigation (clic sur un lien de menu).
     this.router.events
@@ -386,6 +426,8 @@ export class MainLayout {
       next: (rows) => this.actualites.set(rows ?? []),
       error: () => this.actualites.set([]),
     });
+
+    this.chargerEtatAssistantIa();
 
     const ref = this.auth.ref();
     if (!ref) {

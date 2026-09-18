@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
@@ -15,6 +15,8 @@ import { BadgesMenu, Role } from '../../models';
 import { NAV_BY_ROLE } from '../../core/navigation/navigation';
 import { courtContenuDansLibelle, libelleCourt } from '../../core/navigation/groupes-menu';
 import { MenuCompactStore } from '../../core/preferences/menu-compact.store';
+import { AssistantIaService } from '../../services/assistant-ia.services';
+import { EtatAssistantIa } from '../../models/assistant-ia.model';
 import { MainLayout, routeEnConcentration } from './main-layout';
 
 @Component({ selector: 'app-ecran-factice', template: '<h1>Écran</h1>' })
@@ -698,5 +700,100 @@ describe('Rail compact (refonte ergonomique, lot 5 — F4)', () => {
     expect(compact()).toBe(true);
     expect(hote.classList.contains('layout--rail')).toBe(true);
     expect(bouton.getAttribute('aria-label')).toBe('Déplier le menu');
+  });
+});
+
+describe('Bouton « Assistant IA » de la barre du haut (lot 1, 2026-09-18)', () => {
+  const ETAT_ACTIF: EtatAssistantIa = {
+    actif: true,
+    disponible: true,
+    modele: 'qwen3.5:9b-q4_K_M',
+    documents: [{ libelle: 'Manuel de contrôle a priori (CNM, février 2026)', passages: 135 }],
+  };
+
+  const monter = (etat: EtatAssistantIa) => {
+    let appelsEtat = 0;
+    TestBed.configureTestingModule({
+      imports: [MainLayout],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([{ path: 'membre/tableau-de-bord', component: EcranFactice }]),
+        {
+          provide: AuthService,
+          useValue: {
+            role: signal('MEMBRE'),
+            login: signal('CTRMEM'),
+            localite: signal('ANT'),
+            // Pas de matricule : la coquille ne demande pas les pastilles, seul l'assistant parle.
+            ref: () => null,
+            nomAffichage: () => null,
+            typeActeur: () => null,
+            // Pas de session réelle : le flux de notifications reste éteint.
+            isAuthenticated: () => false,
+            logout: () => undefined,
+          },
+        },
+        { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: PermissionsService, useValue: { peutExecuter: () => false } },
+        { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
+        { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
+        {
+          provide: AssistantIaService,
+          useValue: {
+            etat: () => {
+              appelsEtat++;
+              return of(etat);
+            },
+            poser: () => EMPTY,
+          },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(MainLayout);
+    fixture.detectChanges();
+    return { fixture, hote: fixture.nativeElement as HTMLElement, appelsEtat: () => appelsEtat };
+  };
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  it("n'est pas proposé quand l'assistant est inactif côté serveur : ni bouton, ni panneau", () => {
+    const { hote } = monter({ actif: false, disponible: false, modele: null, documents: [] });
+
+    expect(hote.querySelector('.topbar-ia')).toBeNull();
+    expect(hote.querySelector('app-assistant-ia-panneau')).toBeNull();
+  });
+
+  it("actif : le bouton ouvre puis referme le panneau, et chaque ouverture rafraîchit l'état", () => {
+    const { fixture, hote, appelsEtat } = monter(ETAT_ACTIF);
+    const bouton = hote.querySelector<HTMLButtonElement>('.topbar-ia')!;
+    expect(bouton.getAttribute('aria-label')).toBe('Assistant IA');
+    expect(bouton.getAttribute('aria-controls')).toBe('assistant-ia');
+    expect(hote.querySelector<HTMLElement>('#assistant-ia')?.hidden).toBe(true);
+    expect(appelsEtat()).toBe(1);
+
+    bouton.click();
+    fixture.detectChanges();
+    expect(bouton.getAttribute('aria-expanded')).toBe('true');
+    expect(hote.querySelector<HTMLElement>('#assistant-ia')?.hidden).toBe(false);
+    expect(appelsEtat()).toBe(2);
+
+    bouton.click();
+    fixture.detectChanges();
+    expect(bouton.getAttribute('aria-expanded')).toBe('false');
+    expect(hote.querySelector<HTMLElement>('#assistant-ia')?.hidden).toBe(true);
+  });
+
+  it('fermé depuis le panneau, le focus revient au bouton qui l’avait ouvert', () => {
+    const { fixture, hote } = monter(ETAT_ACTIF);
+    const bouton = hote.querySelector<HTMLButtonElement>('.topbar-ia')!;
+    bouton.click();
+    fixture.detectChanges();
+
+    hote.querySelector<HTMLButtonElement>('.aia__fermer')!.click();
+    fixture.detectChanges();
+
+    expect(hote.querySelector<HTMLElement>('#assistant-ia')?.hidden).toBe(true);
+    expect(document.activeElement).toBe(bouton);
   });
 });

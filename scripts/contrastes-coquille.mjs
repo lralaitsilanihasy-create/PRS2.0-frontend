@@ -123,6 +123,11 @@ pousse('Repère de focus sur la barre du haut', 3, '#38bdf8', '#ffffff', '#0369a
 pousse('Repère de focus sur la cloche', 3, '#38bdf8', '#ffffff', '#0369a1', '#ffffff');
 // Le champ de recherche pose `outline: none` : son seul repère de focus est la bordure de la pilule.
 pousse('Bordure de la recherche au focus', 3, '#38bdf8', '#ffffff', '#0369a1', '#ffffff');
+// Assistant IA (2026-09-18) : bouton à teinte primaire claire, --p-800 sur --p-50 (repos) et sur
+// --p-100 (survol, panneau ouvert). Sa bordure --p-200 n'est qu'un liseré : le libellé porte la commande.
+nouveau('Bouton « Assistant IA » — libellé au repos', 4.5, '#075985', '#f0f9ff');
+nouveau('Bouton « Assistant IA » — libellé ouvert ou survolé', 4.5, '#075985', '#e0f2fe');
+nouveau('Repère de focus du bouton « Assistant IA »', 3, '#0369a1', '#ffffff');
 
 // ── Sortie ────────────────────────────────────────────────────────────────────
 const f = (v) => (Number.isNaN(v) ? '—' : `${v.toFixed(2).replace('.', ',')}:1`);

@@ -1,0 +1,182 @@
+<!-- Panneau latéral, pas une modale : pas de piège de focus, l'écran en cours reste utilisable.
+     Échap le ferme depuis n'importe quel élément du panneau (écouteur posé sur l'hôte du composant) ;
+     le focus revient alors au bouton de la barre du haut (géré par la coquille). `hidden` retire aussi
+     le panneau de l'arbre d'accessibilité. -->
+<aside id="assistant-ia" class="aia" [hidden]="!ouvert()" aria-labelledby="aia-titre">
+  <header class="aia__tete">
+    <div class="aia__marque">
+      <span class="aia__pastille" aria-hidden="true"><app-icone nom="message" [taille]="16" /></span>
+      <div>
+        <h2 id="aia-titre" class="aia__titre">Assistant IA</h2>
+        <p class="aia__sous-titre">Il explique les règles, il ne décide pas.</p>
+      </div>
+    </div>
+    <div class="aia__actions">
+      @if (echanges().length) {
+        <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" (click)="effacer()">Effacer</button>
+      }
+      <button type="button" class="aia__fermer" aria-label="Fermer l'assistant" title="Fermer (Échap)" (click)="fermer.emit()">
+        <app-icone nom="x" [taille]="18" />
+      </button>
+    </div>
+  </header>
+
+  <div class="aia__corps" #corps>
+    @if (etat(); as e) {
+      @if (!e.disponible) {
+        <div class="alert alert-warning aia__alerte" role="status">
+          <span>Le service de calcul de l'assistant ne répond pas pour l'instant : vos questions risquent
+          d'échouer. Réessayez dans quelques minutes.</span>
+        </div>
+      }
+    }
+
+    @if (!echanges().length) {
+      <div class="aia__accueil">
+        <p>Posez une question sur les règles du contrôle des marchés publics ou sur le fonctionnement de
+        PRS. L'assistant répond uniquement à partir de :</p>
+        <ul class="aia__documents">
+          @for (d of etat()?.documents ?? []; track d.libelle) {
+            <li>{{ d.libelle }}</li>
+          }
+        </ul>
+        <p class="aia__exemples-titre">Par exemple :</p>
+        <div class="aia__exemples">
+          @for (q of exemples; track q) {
+            <button type="button" class="aia__exemple" (click)="envoyer(q)">{{ q }}</button>
+          }
+        </div>
+      </div>
+    }
+
+    @for (e of echanges(); track e.id) {
+      <section class="aia__echange" [attr.aria-label]="'Question : ' + e.question">
+        <p class="aia__question"><span class="cnm-sr-only">Votre question : </span>{{ e.question }}</p>
+
+        <div class="aia__reponse" [attr.aria-busy]="e.statut === 'attente' || e.statut === 'en-cours'">
+          <span class="cnm-sr-only">Réponse de l'assistant : </span>
+          @if (e.statut === 'attente') {
+            <p class="aia__attente">L'assistant cherche dans les documents…</p>
+          }
+
+          @for (b of blocs(e); track $index) {
+            @if (b.type === 'paragraphe') {
+              <p class="aia__para">
+                <ng-container *ngTemplateOutlet="ligne; context: { $implicit: b.segments, echange: e }" />
+              </p>
+            } @else if (b.ordonnee) {
+              <ol class="aia__liste">
+                @for (el of b.elements; track $index) {
+                  <li><ng-container *ngTemplateOutlet="ligne; context: { $implicit: el, echange: e }" /></li>
+                }
+              </ol>
+            } @else {
+              <ul class="aia__liste">
+                @for (el of b.elements; track $index) {
+                  <li><ng-container *ngTemplateOutlet="ligne; context: { $implicit: el, echange: e }" /></li>
+                }
+              </ul>
+            }
+          }
+
+          @if (e.statut === 'erreur') {
+            <div class="alert alert-danger aia__alerte" role="alert"><span>{{ e.erreur }}</span></div>
+            <button type="button" class="cnm-btn cnm-btn--ghost cnm-btn--sm" [disabled]="enCours()" (click)="envoyer(e.question)">
+              Réessayer
+            </button>
+          }
+          @if (e.statut === 'arrete') {
+            <p class="aia__note">Réponse interrompue.</p>
+          }
+        </div>
+
+        @if (e.sources.length && e.statut !== 'attente') {
+          @if (aucuneCitation(e)) {
+            <!-- La réponse ne cite rien (question hors des documents) : les extraits restent consultables,
+                 repliés, pour ne pas faire passer cinq passages sans rapport pour une justification. -->
+            <details class="aia__sources">
+              <summary class="aia__sources-titre aia__sources-titre--repli">
+                Extraits consultés ({{ e.sources.length }}) — la réponse n'en cite aucun
+              </summary>
+              <ng-container *ngTemplateOutlet="listeSources; context: { $implicit: e }" />
+            </details>
+          } @else {
+            <div class="aia__sources">
+              <p class="aia__sources-titre">Sources consultées</p>
+              <ng-container *ngTemplateOutlet="listeSources; context: { $implicit: e }" />
+            </div>
+          }
+        }
+      </section>
+    }
+  </div>
+
+  <form class="aia__saisie" (submit)="$event.preventDefault(); envoyer()">
+    <label class="cnm-sr-only" for="aia-question">Votre question à l'assistant</label>
+    <textarea
+      #zoneSaisie
+      id="aia-question"
+      class="aia__zone"
+      rows="2"
+      [attr.maxlength]="longueurMax"
+      placeholder="Posez votre question…"
+      [value]="saisie()"
+      (input)="saisie.set($any($event.target).value)"
+      (keydown.enter)="entree($any($event))"
+    ></textarea>
+    @if (enCours()) {
+      <button type="button" class="cnm-btn cnm-btn--ghost aia__bouton" (click)="arreter()">Arrêter</button>
+    } @else {
+      <button type="submit" class="cnm-btn cnm-btn--primary aia__bouton" [disabled]="!peutEnvoyer()">Envoyer</button>
+    }
+  </form>
+  <p class="aia__mention">
+    L'assistant s'appuie uniquement sur les documents cités et peut se tromper : vérifiez toujours la source.
+    Il ne remplace ni le contrôleur ni l'avis de la Commission.
+  </p>
+  <p class="cnm-sr-only" role="status" aria-live="polite">{{ annonce() }}</p>
+
+  <!-- Une ligne de réponse : texte, gras, et citations [n] qui déplient l'extrait cité.
+       Rendu par interpolation uniquement — jamais d'innerHTML (voir rendu-reponse.ts). -->
+  <ng-template #ligne let-segments let-echange="echange">
+    @for (s of segments; track $index) {
+      @if (s.type === 'citation') {
+        <button
+          type="button"
+          class="aia__cite"
+          [class.aia__cite--active]="estOuverte(echange.id, s.numero)"
+          [attr.aria-expanded]="estOuverte(echange.id, s.numero)"
+          [attr.aria-label]="'Source ' + s.numero + ' : ' + libelleSource(echange, s.numero)"
+          [title]="libelleSource(echange, s.numero)"
+          (click)="basculerSource(echange.id, s.numero)"
+        >{{ s.numero }}</button>
+      } @else if (s.type === 'gras') {
+        <strong>{{ s.texte }}</strong>
+      } @else {
+        {{ s.texte }}
+      }
+    }
+  </ng-template>
+  <!-- Liste des extraits d'une réponse ; chacun se déplie pour montrer le texte fourni au modèle. -->
+  <ng-template #listeSources let-e>
+    <ol class="aia__sources-liste">
+      @for (src of e.sources; track src.numero) {
+        <li>
+          <button
+            type="button"
+            class="aia__source"
+            [attr.aria-expanded]="estOuverte(e.id, src.numero)"
+            (click)="basculerSource(e.id, src.numero)"
+          >
+            <span class="aia__source-num" aria-hidden="true">{{ src.numero }}</span>
+            <span class="aia__source-libelle"><span class="cnm-sr-only">Source {{ src.numero }} : </span>{{ src.document }} — {{ src.reference }}</span>
+            <app-icone class="aia__source-chevron" [class.aia__source-chevron--ouvert]="estOuverte(e.id, src.numero)" nom="chevd" [taille]="14" />
+          </button>
+          @if (estOuverte(e.id, src.numero)) {
+            <blockquote class="aia__extrait" tabindex="0" [attr.aria-label]="'Extrait de la source ' + src.numero">{{ src.extrait }}</blockquote>
+          }
+        </li>
+      }
+    </ol>
+  </ng-template>
+</aside>

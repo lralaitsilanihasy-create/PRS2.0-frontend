@@ -1,0 +1,349 @@
+// Panneau de l'assistant IA — posé sous la barre du haut (48 px, z-index 99), au-dessus du contenu,
+// sous les modales et le panneau des notifications (z-index ≥ 1000). Couleurs de texte : n-800 pour le
+// corps, n-500 pour le secondaire (5,52:1) — jamais n-300, réservé aux bordures (consignes de l'audit).
+
+:host {
+  display: contents;
+}
+
+.aia {
+  position: fixed;
+  top: 48px;
+  right: 0;
+  bottom: 0;
+  z-index: 98;
+  width: min(420px, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--cnm-surface);
+  border-left: 1px solid var(--cnm-border);
+  box-shadow: var(--shadow-xl);
+  color: var(--n-800);
+}
+
+// `display: flex` ci-dessus l'emporterait sur l'attribut `hidden` du navigateur.
+.aia[hidden] {
+  display: none;
+}
+
+.aia button:focus-visible,
+.aia textarea:focus-visible,
+.aia blockquote:focus-visible {
+  // Le repère de focus global (--p-400) ne tient que 2,14:1 sur le blanc : on fonce le contour (5,93:1).
+  outline: 2px solid var(--p-700);
+  outline-offset: 2px;
+}
+
+// ------------------------------------------------------------------ en-tête
+
+.aia__tete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cnm-space-2);
+  padding: var(--cnm-space-3) var(--cnm-space-4);
+  border-bottom: 1px solid var(--cnm-border);
+}
+
+.aia__marque {
+  display: flex;
+  align-items: center;
+  gap: var(--cnm-space-2);
+}
+
+.aia__pastille {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  background: var(--p-100);
+  color: var(--p-800);
+}
+
+.aia__titre {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--cnm-fw-semibold);
+  color: var(--n-800);
+}
+
+.aia__sous-titre {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--n-500);
+}
+
+.aia__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--cnm-space-1);
+}
+
+.aia__fermer {
+  display: inline-flex;
+  padding: 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--n-600);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--n-100);
+  }
+}
+
+// ------------------------------------------------------------------ corps
+
+.aia__corps {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--cnm-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cnm-space-4);
+  font-size: var(--text-md);
+  line-height: 1.55;
+}
+
+.aia__alerte {
+  margin-bottom: 0;
+}
+
+.aia__accueil p {
+  margin: 0 0 var(--cnm-space-2);
+}
+
+.aia__documents {
+  margin: 0 0 var(--cnm-space-3);
+  padding-left: 1.2em;
+  font-weight: var(--cnm-fw-medium);
+}
+
+.aia__exemples-titre {
+  color: var(--n-500);
+  font-size: var(--text-sm);
+}
+
+.aia__exemples {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cnm-space-2);
+}
+
+.aia__exemple {
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--p-200);
+  border-radius: var(--radius-lg);
+  background: var(--p-50);
+  color: var(--p-800);
+  font: inherit;
+  font-size: var(--text-base);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--p-100);
+  }
+}
+
+.aia__echange {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cnm-space-2);
+}
+
+.aia__question {
+  align-self: flex-end;
+  max-width: 88%;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+  background: var(--p-100);
+  color: var(--n-800);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.aia__reponse {
+  overflow-wrap: anywhere;
+}
+
+.aia__para {
+  margin: 0 0 var(--cnm-space-2);
+}
+
+.aia__liste {
+  margin: 0 0 var(--cnm-space-2);
+  padding-left: 1.3em;
+
+  li + li {
+    margin-top: 4px;
+  }
+}
+
+.aia__attente,
+.aia__note {
+  margin: 0;
+  color: var(--n-500);
+  font-style: italic;
+}
+
+// Citation [n] : un bouton pastille, qui déplie l'extrait cité dans « Sources consultées ».
+.aia__cite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin: 0 1px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--p-100);
+  color: var(--p-800);
+  font-size: var(--text-xs);
+  font-weight: var(--cnm-fw-semibold);
+  line-height: 1;
+  vertical-align: 2px;
+  cursor: pointer;
+
+  &:hover,
+  &.aia__cite--active {
+    background: var(--p-700);
+    color: #fff;
+  }
+}
+
+// ------------------------------------------------------------------ sources
+
+.aia__sources {
+  padding: var(--cnm-space-2) var(--cnm-space-3);
+  border: 1px solid var(--cnm-border);
+  border-radius: var(--radius-lg);
+  background: var(--n-50);
+}
+
+.aia__sources-titre {
+  margin: 0 0 4px;
+  font-size: var(--text-sm);
+  font-weight: var(--cnm-fw-semibold);
+  color: var(--n-600);
+}
+
+.aia__sources-titre--repli {
+  margin: 0;
+  cursor: pointer;
+
+  details[open] > & {
+    margin-bottom: 4px;
+  }
+}
+
+.aia__sources-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aia__source {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  color: var(--n-700);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover .aia__source-libelle {
+    text-decoration: underline;
+  }
+}
+
+.aia__source-num {
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: var(--p-100);
+  color: var(--p-800);
+  font-size: var(--text-xs);
+  font-weight: var(--cnm-fw-semibold);
+  line-height: 18px;
+  text-align: center;
+}
+
+.aia__source-libelle {
+  flex: 1;
+}
+
+.aia__source-chevron {
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: transform 150ms ease;
+
+  &.aia__source-chevron--ouvert {
+    transform: rotate(180deg);
+  }
+}
+
+.aia__extrait {
+  max-height: 16rem;
+  overflow-y: auto;
+  margin: 2px 0 8px 26px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--p-300);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--cnm-surface);
+  color: var(--n-700);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+// ------------------------------------------------------------------ saisie
+
+.aia__saisie {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--cnm-space-2);
+  padding: var(--cnm-space-3) var(--cnm-space-4) 0;
+  border-top: 1px solid var(--cnm-border);
+}
+
+.aia__zone {
+  flex: 1;
+  min-height: 44px;
+  max-height: 140px;
+  padding: 8px 10px;
+  border: 1px solid var(--n-300);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: var(--text-md);
+  resize: vertical;
+}
+
+.aia__bouton {
+  flex-shrink: 0;
+}
+
+.aia__mention {
+  margin: 0;
+  padding: var(--cnm-space-2) var(--cnm-space-4) var(--cnm-space-3);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: var(--n-500);
+}
+
+@media print {
+  .aia {
+    display: none;
+  }
+}

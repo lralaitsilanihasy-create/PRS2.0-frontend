@@ -284,6 +284,24 @@
   </div>
   <div class="topbar-right">
     @if (login()) {
+      <!-- Assistant IA (lot 1, 2026-09-18) — proposé seulement s'il est actif côté serveur. Un bouton
+           de la barre du haut plutôt qu'une entrée de menu : c'est un outil transverse, pas une page,
+           et le menu de l'Administrateur est à sa capacité. Le nom accessible reprend le libellé
+           visible (WCAG 2.5.3), qui disparaît sur écran étroit. -->
+      @if (assistantIa()?.actif) {
+        <button
+          #boutonAssistantIa
+          type="button"
+          class="topbar-ia"
+          aria-label="Assistant IA"
+          aria-controls="assistant-ia"
+          [attr.aria-expanded]="assistantIaOuvert()"
+          (click)="basculerAssistantIa()"
+        >
+          <app-icone nom="message" [taille]="16" />
+          <span class="topbar-ia__libelle" aria-hidden="true">Assistant IA</span>
+        </button>
+      }
       <app-notification-center (voirDossier)="dossierNotification.set($event)" />
       <div class="topbar-user">
         <span class="topbar-user__avatar">{{ initials() }}</span>
@@ -335,6 +353,16 @@
      consultation. La liste arrive déjà filtrée par le serveur : si elle est vide, rien ne s'affiche. -->
 @if (actualites().length) {
   <app-actualites-modal [actualites]="actualites()" (ferme)="actualites.set([])" />
+}
+
+<!-- Assistant IA : panneau latéral monté pour toute la session (la conversation survit à la
+     fermeture du panneau), démonté avec la coquille à la déconnexion. -->
+@if (assistantIa()?.actif) {
+  <app-assistant-ia-panneau
+    [ouvert]="assistantIaOuvert()"
+    [etat]="assistantIa()"
+    (fermer)="fermerAssistantIa()"
+  />
 }
 
 <!-- « Changer mon mot de passe » (tous profils) — rendu ici pour les mêmes raisons
