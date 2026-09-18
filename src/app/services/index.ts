@@ -14,3 +14,4 @@ export * from './admin.services';
 export * from './compte-auth.services';
 export * from './inscription.services';
 export * from './reference-lookup.service';
+export * from './assistant-ia.services';

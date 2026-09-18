@@ -9,3 +9,4 @@ export * from './pilotage.model';
 export * from './transparence.model';
 export * from './admin.model';
 export * from './a-faire.model';
+export * from './assistant-ia.model';
