@@ -85,6 +85,17 @@ export interface ResumePreControle {
 }
 
 /**
+ * `POST /api/pre-controle/ppm/{id}/analyse-ia` — ce que l'**assistant** ajoute par-dessus les règles.
+ *
+ * Les pistes trouvées ont rejoint les signalements du plan (`source: 'IA'`) ; `synthese` dit **où regarder
+ * d'abord** et n'est pas enregistrée — c'est une aide à la lecture, recalculée à chaque analyse.
+ */
+export interface AnalyseIa {
+  synthese: string | null;
+  resume: ResumePreControle;
+}
+
+/**
  * Corps d'un écartement. `avertissementLu` n'est pas une formalité : le serveur l'exige (400 sinon),
  * pour que la promesse « la PRMP le sait au moment d'écarter » ne dépende pas du seul écran.
  */

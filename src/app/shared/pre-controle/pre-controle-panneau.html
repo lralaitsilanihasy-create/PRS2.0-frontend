@@ -7,11 +7,30 @@
       }
     </div>
     @if (verificationPossible()) {
-      <button type="button" class="btn btn-primary btn-sm" [disabled]="enCours() || chargement()" (click)="verifier()">
-        {{ enCours() ? 'Vérification…' : 'Vérifier le plan' }}
-      </button>
+      <div class="pc__gestes">
+        <button type="button" class="btn btn-primary btn-sm" [disabled]="enCours() || chargement()" (click)="verifier()">
+          {{ enCours() ? 'Vérification…' : 'Vérifier le plan' }}
+        </button>
+        <!-- Geste séparé : il fait travailler un modèle partagé, prend quelques secondes, et ne rend que
+             des pistes. Retiré si le serveur dit l'assistant absent — les règles, elles, restent là. -->
+        @if (!assistantAbsent()) {
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            [disabled]="enCours() || chargement()"
+            title="L'assistant cherche ce qu'aucune règle ne voit : un même besoin sous deux libellés, un objet trop vague, une nature qui ne colle pas. Il rend des pistes, pas des constats."
+            (click)="analyser()"
+          >
+            Demander une piste à l’assistant
+          </button>
+        }
+      </div>
     }
   </header>
+
+  @if (syntheseIa(); as synthese) {
+    <p class="pc__synthese" role="status">{{ synthese }}</p>
+  }
 
   @if (chargement()) {
     <p class="text-muted" role="status">Chargement des points signalés…</p>

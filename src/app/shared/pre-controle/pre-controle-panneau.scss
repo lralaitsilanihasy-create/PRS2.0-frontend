@@ -200,3 +200,22 @@
 .pc-modal {
   max-width: 620px;
 }
+
+.pc__gestes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* La phrase « où regarder d'abord » que rend une analyse de l'assistant. Marquée comme une piste, pas
+   comme un fait : fond d'information, jamais la couleur d'une alerte. */
+.pc__synthese {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--radius-md, 6px);
+  background: var(--info-bg);
+  border: 1px solid var(--info-bdr);
+  color: var(--info-text);
+  font-size: var(--text-sm);
+}

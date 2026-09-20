@@ -3,7 +3,7 @@ import { Observable, Subject, of, throwError } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
-import { EcartementRequest, ResumePreControle, Signalement } from '../../models';
+import { AnalyseIa, EcartementRequest, ResumePreControle, Signalement } from '../../models';
 import { PreControleService } from '../../services';
 import { PreControlePanneau } from './pre-controle-panneau';
 
@@ -96,6 +96,19 @@ class FauxPreControle {
   reprendre(id: number): Observable<Signalement> {
     this.reprises.push(id);
     return of({ ...FRACTIONNEMENT, statut: 'OUVERT' as const });
+  }
+
+  /** L'analyse par l'assistant : `analyseAbsente` simule un serveur où l'assistant n'est pas activé (404). */
+  analyses = 0;
+  analyseAbsente = false;
+  synthese: string | null = 'À regarder d’abord : lignes 7601 et 7602 (même besoin possible).';
+
+  analyser(): Observable<AnalyseIa> {
+    this.analyses++;
+    if (this.analyseAbsente) {
+      return throwError(() => ({ status: 404 }));
+    }
+    return of({ synthese: this.synthese, resume: { ...this.resume, signalements: [PISTE_IA] } });
   }
 }
 
@@ -294,6 +307,30 @@ describe('Panneau du pré-contrôle du PPM', () => {
     rendre();
 
     expect(faux.verifications).toBe(1);
+  });
+
+  it('« Demander une piste à l’assistant » affiche où regarder d’abord, et la piste arrive marquée comme telle', () => {
+    const { hote, rendre } = monter();
+
+    boutons(hote, 'Demander une piste à l’assistant')[0].click();
+    rendre();
+
+    expect(faux.analyses).toBe(1);
+    expect(hote.querySelector('.pc__synthese')?.textContent).toContain('À regarder d’abord');
+    const badges = [...hote.querySelectorAll('.badge')].map((b) => b.textContent?.trim());
+    expect(badges).toContain('Piste de l’assistant');
+  });
+
+  it('un serveur sans assistant (404) cesse de le proposer, et les points des règles restent affichés', () => {
+    const { hote, rendre } = monter();
+    faux.analyseAbsente = true;
+
+    boutons(hote, 'Demander une piste à l’assistant')[0].click();
+    rendre();
+
+    expect(boutons(hote, 'Demander une piste à l’assistant').length).toBe(0);
+    expect(hote.querySelectorAll('.pc__item').length).toBe(2);
+    expect(boutons(hote, 'Vérifier le plan').length).toBe(1);
   });
 
   it('un échec de chargement affiche l’état d’erreur et sa reprise — jamais un écran vide', () => {

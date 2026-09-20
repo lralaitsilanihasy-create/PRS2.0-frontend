@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { EcartementRequest, ResumePreControle, Signalement } from '../models';
+import { AnalyseIa, EcartementRequest, ResumePreControle, Signalement } from '../models';
 
 /**
  * Pré-contrôle du PPM (assistant IA, lot 3) — `/api/pre-controle`.
@@ -32,6 +32,19 @@ export class PreControleService {
    */
   verifier(idPpm: number): Observable<ResumePreControle> {
     return this.http.post<ResumePreControle>(`${this.baseUrl}/ppm/${idPpm}/verifier`, {});
+  }
+
+  /**
+   * `POST /ppm/{idPpm}/analyse-ia` — demande à l'**assistant** ce que les règles ne peuvent pas voir :
+   * fractionnement déguisé, objet imprécis, nature incohérente. Ses constats arrivent en **pistes**
+   * (`source: 'IA'`), à côté des faits, jamais à leur place.
+   *
+   * Sur un geste explicite, comme la vérification. **404** si l'assistant n'est pas activé sur le serveur,
+   * **503** s'il ne répond pas — dans les deux cas, les points signalés par les règles restent servis, et
+   * rien n'empêche de poursuivre.
+   */
+  analyser(idPpm: number): Observable<AnalyseIa> {
+    return this.http.post<AnalyseIa>(`${this.baseUrl}/ppm/${idPpm}/analyse-ia`, {});
   }
 
   /**

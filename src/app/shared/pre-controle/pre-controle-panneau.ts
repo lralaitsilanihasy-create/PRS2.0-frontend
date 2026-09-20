@@ -78,6 +78,12 @@ export class PreControlePanneau {
   readonly aEcarter = signal<Signalement | null>(null);
   readonly motif = signal('');
 
+  /** La phrase « où regarder d'abord » rendue par la dernière analyse de l'assistant ; non enregistrée. */
+  readonly syntheseIa = signal<string | null>(null);
+
+  /** Vrai dès qu'un 404 a dit que l'assistant n'est pas activé : on cesse de le proposer. */
+  readonly assistantAbsent = signal(false);
+
   readonly avertissement = AVERTISSEMENT_ECARTEMENT;
   readonly motifMin = MOTIF_ECARTEMENT_MIN;
 
@@ -169,6 +175,37 @@ export class PreControlePanneau {
         this.toast.success(this.phraseResume() || 'Vérification faite.');
       },
       error: () => this.enCours.set(false),
+    });
+  }
+
+  /**
+   * « Demander une piste à l'assistant » — ce que les règles ne peuvent pas voir : un même besoin sous
+   * deux libellés, un objet trop vague, une nature qui ne colle pas.
+   *
+   * <p>Geste séparé de la vérification, et c'est volontaire : il fait travailler un modèle partagé par
+   * tous les utilisateurs, il prend quelques secondes, et il ne rend que des <strong>pistes</strong>. Le
+   * bouton disparaît si le serveur dit l'assistant absent (404) — les points signalés par les règles, eux,
+   * restent là.</p>
+   */
+  analyser(): void {
+    if (this.enCours()) {
+      return;
+    }
+    this.enCours.set(true);
+    this.service.analyser(this.idPpm()).subscribe({
+      next: (a) => {
+        this.resume.set(a.resume);
+        this.syntheseIa.set(a.synthese);
+        this.enCours.set(false);
+        this.toast.success(a.synthese ?? "L'assistant n'a rien trouvé à signaler sur ce plan.");
+      },
+      error: (e: ApiError) => {
+        this.enCours.set(false);
+        // 404 : l'assistant n'est pas activé sur ce serveur — on cesse de le proposer, sans rien casser.
+        if (e?.status === 404) {
+          this.assistantAbsent.set(true);
+        }
+      },
     });
   }
 
