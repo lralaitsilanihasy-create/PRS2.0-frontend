@@ -1,0 +1,171 @@
+<section class="pc" aria-labelledby="pc-titre">
+  <header class="pc__tete">
+    <div class="pc__intro">
+      <h2 class="pc__titre" id="pc-titre">{{ titre() }}</h2>
+      @if (phraseResume()) {
+        <p class="pc__resume" role="status">{{ phraseResume() }}</p>
+      }
+    </div>
+    @if (verificationPossible()) {
+      <button type="button" class="btn btn-primary btn-sm" [disabled]="enCours() || chargement()" (click)="verifier()">
+        {{ enCours() ? 'Vérification…' : 'Vérifier le plan' }}
+      </button>
+    }
+  </header>
+
+  @if (chargement()) {
+    <p class="text-muted" role="status">Chargement des points signalés…</p>
+  } @else if (erreur()) {
+    <app-etat-erreur
+      message="Les points signalés n'ont pas pu être chargés."
+      aide="Le pré-contrôle est une aide : son indisponibilité n'empêche ni la saisie ni la soumission."
+      (reessayer)="charger()"
+    />
+  } @else if (aucunSignalement()) {
+    <p class="pc__vide">
+      Aucun point signalé sur ce plan. Les règles du manuel de contrôle a priori n'y relèvent rien —
+      ce qui ne dispense pas l'examen de la Commission.
+    </p>
+  } @else {
+    <ul class="pc__liste">
+      @for (s of signalements(); track s.id) {
+        <li
+          class="pc__item"
+          [class.pc__item--prioritaire]="s.gravite === 'PRIORITAIRE' && s.statut === 'OUVERT'"
+          [class.pc__item--traite]="s.statut !== 'OUVERT'"
+        >
+          <div class="pc__badges">
+            <span
+              class="badge"
+              [class.badge-danger]="s.gravite === 'PRIORITAIRE'"
+              [class.badge-warning]="s.gravite === 'A_VERIFIER'"
+            >{{ libelleGravite(s) }}</span>
+            <!-- Un fait et une piste ne pèsent pas pareil : la pastille de source le dit, et son
+                 infobulle explique ce que cela change. -->
+            <span
+              class="badge"
+              [class.badge-neutral]="s.source === 'REGLE'"
+              [class.badge-info]="s.source === 'IA'"
+              [title]="titreSource(s)"
+            >{{ libelleSource(s) }}</span>
+            <span
+              class="badge"
+              [class.badge-soumis]="s.statut === 'OUVERT'"
+              [class.badge-cloture]="s.statut !== 'OUVERT'"
+            >{{ libelleStatut(s) }}</span>
+            @if (s.libellePointCtrl) {
+              <span class="pc__point">Point de contrôle : {{ s.libellePointCtrl }}</span>
+            }
+          </div>
+
+          @if (s.libelleRegle) {
+            <p class="pc__regle">{{ s.libelleRegle }}</p>
+          }
+          <p class="pc__constat">{{ s.description }}</p>
+
+          @if (s.lignes.length) {
+            <table class="pc__lignes">
+              <caption class="pc__lignes-titre">Lignes visées, au montant du moment de la détection</caption>
+              <thead>
+                <tr><th scope="col">Ligne</th><th scope="col" class="r">Montant</th></tr>
+              </thead>
+              <tbody>
+                @for (l of s.lignes; track l.idDetail) {
+                  <tr>
+                    <td>{{ l.designation || 'Ligne n° ' + l.idDetail }}</td>
+                    <td class="r">{{ montant(l.montant) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+
+          @if (s.suggestion) {
+            <div class="pc__suggestion">
+              <span class="pc__suggestion-titre">Correction proposée</span>
+              <p class="pc__suggestion-texte">{{ s.suggestion }}</p>
+            </div>
+          }
+
+          @if (s.ecartement) {
+            <div class="pc__ecartement">
+              <span class="pc__ecartement-titre">{{ libelleAuteur(s) }}</span>
+              <p class="pc__ecartement-motif">« {{ s.ecartement.motif }} »</p>
+            </div>
+          }
+
+          @if (s.statut === 'LEVE_MODIFICATION' && s.detailLevee) {
+            <p class="pc__levee">{{ s.detailLevee }}</p>
+          }
+
+          @if (peutEcarter()) {
+            <div class="pc__actions">
+              @if (s.statut === 'OUVERT' && !s.fige) {
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="enCours()" (click)="ouvrirEcartement(s)">
+                  Écarter ce signalement
+                </button>
+              }
+              @if (reprisePossible(s)) {
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="enCours()" (click)="reprendre(s)">
+                  Reprendre mon écartement
+                </button>
+              }
+              @if (s.fige && s.statut !== 'LEVE_MODIFICATION') {
+                <span class="pc__fige">Plan soumis : les écartements sont figés.</span>
+              }
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  <p class="pc__mention">
+    Le pré-contrôle <strong>signale</strong>, il ne décide pas : il ne refuse aucune soumission, ne
+    corrige aucune saisie, et ne remplace ni le contrôleur ni la Commission. Un signalement non
+    pertinent s'écarte, en le motivant.
+  </p>
+</section>
+
+@if (aEcarter(); as cible) {
+  <div class="modal-backdrop">
+    <div class="modal cnm-form pc-modal" role="dialog" aria-modal="true" aria-label="Écarter un signalement" appModale (appModaleFermer)="fermerEcartement()">
+      <header class="modal-header-plain">
+        <span class="modal-title">Écarter ce signalement</span>
+        <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerEcartement()">✕</button>
+      </header>
+
+      <div class="modal-body">
+        <p class="pc__constat pc__constat--modal">{{ cible.description }}</p>
+
+        <!-- La première des quatre conditions de la dissuasion : la PRMP le sait AU MOMENT d'écarter.
+             Sans cet avertissement, l'écartement serait un piège — et le serveur le refuse. -->
+        <div class="alert alert-warning" role="note">{{ avertissement }}</div>
+
+        <label class="form-label" for="pc-motif">Motif de l'écartement</label>
+        <!-- Champ non lié à ngModel : un signal suffit, et le rend testable sans passer par les formulaires. -->
+        <textarea
+          id="pc-motif"
+          class="form-control"
+          rows="4"
+          [attr.minlength]="motifMin"
+          maxlength="2000"
+          [value]="motif()"
+          (input)="motif.set(valeurSaisie($event))"
+          aria-describedby="pc-motif-aide"
+        ></textarea>
+        <p class="form-hint" id="pc-motif-aide">
+          {{ motifMin }} caractères au moins : ce motif sera lu de l'autre côté du circuit, « RAS » n'y
+          dit rien. {{ motif().trim().length }} / {{ motifMin }}.
+        </p>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="fermerEcartement()">Annuler</button>
+        <button type="button" class="btn btn-primary" [disabled]="!motifRecevable() || enCours()" (click)="confirmerEcartement()">
+          Écarter, avec ce motif
+        </button>
+      </footer>
+    </div>
+  </div>
+}

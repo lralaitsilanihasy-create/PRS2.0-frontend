@@ -1,0 +1,202 @@
+/*
+ * Pré-contrôle du PPM (assistant IA, lot 3) — panneau des points signalés.
+ *
+ * Deux partis pris d'affichage :
+ *   · un signalement PRIORITAIRE ouvert se voit d'un coup d'œil (liseré d'accent à gauche) ;
+ *   · un signalement traité — écarté ou levé — s'efface sans disparaître : il reste lisible, avec son
+ *     motif, parce que « rien ne s'efface » ; mais il ne doit pas concurrencer ce qui reste à regarder.
+ *
+ * Les couleurs viennent du design system : --n-500 et --n-400 sont calibrés AA (4,5:1) et ne doivent
+ * pas être éclaircis (acquis de l'audit du 16-17/08/2026).
+ */
+
+.pc {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pc__tete {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pc__titre {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--n-700);
+}
+
+.pc__resume {
+  margin: 2px 0 0;
+  font-size: var(--text-sm);
+  color: var(--n-500);
+}
+
+.pc__vide {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--n-500);
+}
+
+.pc__liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pc__item {
+  border: 1px solid var(--n-200);
+  border-left: 3px solid var(--n-300);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  background: #fff;
+
+  &--prioritaire {
+    border-left-color: var(--danger-text);
+    background: var(--danger-bg);
+  }
+
+  /* Traité : lisible, mais en retrait de ce qui reste ouvert. */
+  &--traite {
+    background: var(--n-50, #fafafa);
+    border-left-color: var(--n-200);
+  }
+}
+
+.pc__badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.pc__point {
+  font-size: var(--text-xs);
+  color: var(--n-500);
+}
+
+.pc__regle {
+  margin: 0 0 2px;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--n-700);
+}
+
+.pc__constat {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--n-600, var(--n-500));
+  line-height: 1.5;
+
+  &--modal {
+    margin-bottom: 10px;
+  }
+}
+
+.pc__lignes {
+  width: 100%;
+  margin: 8px 0 0;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+
+  th, td {
+    border-bottom: 1px solid var(--n-200);
+    padding: 4px 6px;
+    text-align: left;
+  }
+
+  .r { text-align: right; }
+}
+
+.pc__lignes-titre {
+  caption-side: top;
+  text-align: left;
+  font-size: var(--text-xs);
+  color: var(--n-500);
+  padding-bottom: 2px;
+}
+
+.pc__suggestion {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md, 6px);
+  background: var(--info-bg);
+  border: 1px solid var(--info-bdr);
+}
+
+.pc__suggestion-titre {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--info-text);
+  margin-bottom: 2px;
+}
+
+/* La suggestion est rédigée comme l'annexe d'un PV (« Au lieu de : … / Lire : … ») : ses retours à la
+   ligne portent le sens, ils doivent survivre à l'affichage. */
+.pc__suggestion-texte {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: var(--text-sm);
+  color: var(--n-700);
+}
+
+.pc__ecartement {
+  margin-top: 8px;
+  padding-left: 10px;
+  border-left: 2px solid var(--n-300);
+}
+
+.pc__ecartement-titre {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--n-500);
+}
+
+.pc__ecartement-motif {
+  margin: 2px 0 0;
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--n-600, var(--n-500));
+}
+
+.pc__levee {
+  margin: 8px 0 0;
+  font-size: var(--text-xs);
+  color: var(--n-500);
+}
+
+.pc__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.pc__fige {
+  font-size: var(--text-xs);
+  color: var(--n-500);
+}
+
+.pc__mention {
+  margin: 4px 0 0;
+  font-size: var(--text-xs);
+  color: var(--n-500);
+  line-height: 1.5;
+}
+
+.pc-modal {
+  max-width: 620px;
+}

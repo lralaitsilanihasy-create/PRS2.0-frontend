@@ -43,6 +43,13 @@ export const PRMP_ROUTES: Routes = [
   // Création d'une UGPM par la PRMP (sous sa tutelle) — réservé PRMP (l'UGPM ne crée pas d'UGPM).
   { path: 'creer-ugpm', loadComponent: () => import('./creer-ugpm').then((m) => m.CreerUgpm), canActivate: [roleGuard], data: { roles: ['PRMP'] } },
   { path: 'mes-brouillons', loadComponent: () => import('./mes-brouillons').then((m) => m.MesBrouillons) },
+  // Pré-contrôle du PPM (assistant IA, lot 3) — geste sur un plan, atteint depuis « Mes brouillons » :
+  // volontairement PAS une entrée de menu (ce n'est pas une page où l'on va).
+  {
+    path: 'verifier-ppm/:idPpm',
+    loadComponent: () => import('./verifier-ppm').then((m) => m.VerifierPpm),
+    data: { title: 'Vérifier mon PPM' },
+  },
   // ⚠️ 2026-08-05 — versionnement : édition de la version n+1 d'un PPM (dossier BROUILLON rattaché à
   // son prédécesseur). Créée depuis « Dossiers vérifiés » ; le PPM en vigueur reste intact jusqu'à la
   // soumission de cette version.

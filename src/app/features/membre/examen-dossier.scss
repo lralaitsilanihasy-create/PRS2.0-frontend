@@ -355,3 +355,14 @@
   .doc__corps { max-height: 70vh; }
   .pj { grid-template-columns: 1fr; }
 }
+
+/* ── Pré-contrôle du PPM (assistant IA, lot 3) ──────────────────────────────────────────────
+   Le panneau est posé AVANT la grille : il dit où regarder d'abord, il ne remplace aucun point de
+   l'examen. Encadré léger pour qu'on le distingue de la grille sans lui voler la vedette. */
+.pre-controle-examen {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--n-200);
+  border-radius: var(--radius-lg);
+  background: #fff;
+}

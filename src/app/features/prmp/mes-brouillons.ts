@@ -62,6 +62,19 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <td>
                     <div class="td-actions actions-end">
                       <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrir(d)">Ouvrir</button>
+                      <!-- Pré-contrôle du PPM (assistant IA, lot 3) : ce que le contrôleur regardera,
+                           AVANT le dépôt. N'apparaît que sur un dossier qui porte un PPM, et ne
+                           conditionne jamais la soumission. -->
+                      @if (!ppmManquant(d)) {
+                        <button
+                          type="button"
+                          class="btn btn-secondary btn-sm"
+                          title="Signale les points que le contrôleur de la CNM regardera — sans rien bloquer."
+                          (click)="verifierPpm(d)"
+                        >
+                          Vérifier
+                        </button>
+                      }
                       <!-- Soumission réservée à la PRMP ; l'UGPM ouvre/édite mais ne soumet pas (backend 403). -->
                       @if (estPrmp()) {
                         <button
@@ -244,6 +257,18 @@ export class MesBrouillons {
       this.router.navigate(['/prmp/soumettre-dossier'], { queryParams: { reprendre: d.idDossier } });
     }
   }
+  /**
+   * « Vérifier » : pré-contrôle du plan (assistant IA, lot 3). Ouvre l'écran des points signalés — ce
+   * que le contrôleur de la CNM regardera. Le bouton n'est proposé que sur un dossier qui porte un PPM,
+   * et il ne conditionne jamais la soumission : le pré-contrôle signale, il ne bloque rien.
+   */
+  verifierPpm(d: Dossier): void {
+    const idPpm = this.ppmParDossier().get(d.idDossier);
+    if (idPpm != null) {
+      void this.router.navigate(['/prmp/verifier-ppm', idPpm]);
+    }
+  }
+
   fermerDetail(): void {
     this.detail.set(null);
   }

@@ -117,6 +117,7 @@ import {
 } from './examen/examen-modele';
 import { ExamenParcours } from './examen/examen-parcours';
 import { ExamenSynthese } from './examen/examen-synthese';
+import { PreControlePanneau } from '../../shared/pre-controle';
 
 type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'pieces';
 
@@ -174,6 +175,7 @@ interface PropositionCellule {
     ExamenGrille,
     ExamenSynthese,
     ConfirmationSortie,
+    PreControlePanneau,
   ],
   template: `
     <section class="exam" [class.exam--synthese]="estEtapeAvis() && points().length > 0">
@@ -378,6 +380,16 @@ interface PropositionCellule {
                 }
               </div>
             </section>
+
+            <!-- Pré-contrôle du PPM (assistant IA, lot 3) — ce que les règles du manuel relèvent sur ce
+                 plan, et ce que la PRMP a écarté avec son motif. Placé AVANT la grille : il dit où
+                 regarder d'abord, il ne remplace aucun point de l'examen. Chaque signalement nomme le
+                 point de grille qu'il éclaire. -->
+            @if (ppm()?.idPpm; as idPpmExamine) {
+              <section class="pre-controle-examen" aria-label="Pré-contrôle du plan">
+                <app-pre-controle-panneau [idPpm]="idPpmExamine" titre="Points signalés par le pré-contrôle" />
+              </section>
+            }
 
             @if (points().length) {
               <app-examen-grille [vue]="vueGrille()" [ouverte]="grilleOuverte()" [enregistre]="derniereSauvegarde()" (action)="surActionGrille($event)" />
