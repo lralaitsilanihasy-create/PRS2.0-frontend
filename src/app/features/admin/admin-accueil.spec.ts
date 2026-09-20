@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { Actualite } from '../../models/actualite.model';
-import { AuditLog, CompteursAdmin } from '../../models';
+import { AuditLog, CompteursAdmin, LigneStatistiqueRegle } from '../../models';
 import { AdminAccueil } from './admin-accueil';
 
 /**
@@ -70,13 +70,15 @@ describe("AdminAccueil — le poste d'administration", () => {
   let fixture: ComponentFixture<AdminAccueil>;
   let http: HttpTestingController;
 
-  /** Monte l'écran et répond aux quatre lectures ; `null` sur `compteurs` simule l'échec du serveur. */
+  /** Monte l'écran et répond aux cinq lectures ; `null` sur `compteurs` simule l'échec du serveur. */
   function monter(
     options: {
       compteurs?: CompteursAdmin | null;
       changements?: AuditLog[];
       actualites?: Actualite[];
       actualitesActives?: boolean;
+      /** Règles du pré-contrôle servies par le tableau de bord des écartements (lot 3, étape 7). */
+      reglesARevoir?: LigneStatistiqueRegle[];
     } = {},
   ): AdminAccueil {
     TestBed.configureTestingModule({
@@ -98,8 +100,25 @@ describe("AdminAccueil — le poste d'administration", () => {
       .flush({ content: contenu, totalElements: contenu.length, totalPages: 1, number: 0, size: 5 });
     http.expectOne('/api/actualites').flush(options.actualites ?? [ACTUALITE]);
     http.expectOne('/api/parametres/actualites-actives').flush({ actif: options.actualitesActives ?? true });
+    // ⚠️ Pré-contrôle du PPM (lot 3, étape 7) — l'accueil lit en plus le taux d'écartement des règles,
+    // pour la ligne « À surveiller ». Un appel de plus à flusher dans chaque montage, sans quoi le
+    // `verify()` du `afterEach` échoue et fait tomber tous les tests suivants.
+    http.expectOne('/api/pre-controle/statistiques').flush({
+      exercice: null,
+      total: options.reglesARevoir ? 12 : 0,
+      ecartes: options.reglesARevoir ? 10 : 0,
+      tauxGlobal: options.reglesARevoir ? 0.83 : 0,
+      regles: options.reglesARevoir ?? [],
+    });
     fixture.detectChanges();
     return fixture.componentInstance;
+  }
+
+  /** Aucune règle observée : ce que rend le serveur avant la première vérification de plan. */
+  function statistiquesVides(): void {
+    http
+      .expectOne('/api/pre-controle/statistiques')
+      .flush({ exercice: null, total: 0, ecartes: 0, tauxGlobal: 0, regles: [] });
   }
 
   const texte = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -202,6 +221,7 @@ describe("AdminAccueil — le poste d'administration", () => {
     http.expectOne('/api/kpis/badges').flush({ profil: 'ADMINISTRATEUR', compteurs: COMPTEURS, aFaire: null });
     http.expectOne('/api/actualites').flush([ACTUALITE]);
     http.expectOne('/api/parametres/actualites-actives').flush({ actif: true });
+    statistiquesVides();
   });
 
   it("ne suit PAS les chaînes de contrôle : elles s'écrivent sur la ressource « controleurs », partagée", () => {
@@ -221,6 +241,7 @@ describe("AdminAccueil — le poste d'administration", () => {
     http.expectOne('/api/kpis/badges').flush({ profil: 'ADMINISTRATEUR', compteurs: COMPTEURS, aFaire: null });
     http.expectOne('/api/actualites').flush([ACTUALITE]);
     http.expectOne('/api/parametres/actualites-actives').flush({ actif: true });
+    statistiquesVides();
   });
 
   it('nomme le réglage touché et le geste, sans jargon de table', () => {
@@ -230,6 +251,38 @@ describe("AdminAccueil — le poste d'administration", () => {
     expect(texte()).toContain('Paramètres généraux');
     // Un sous-chemin distingue deux réglages d'une même ressource : il est gardé tel quel.
     expect(texte()).toContain('AGPM-SEUIL-MONTANT');
+  });
+
+  it("« À surveiller » annonce la règle du pré-contrôle qu'on écarte presque toujours, et mène à la mesure", () => {
+    // ⚠️ Lot 3, étape 7 — la fatigue d'alerte est le seul risque qui tue cette fonctionnalité : une règle
+    // écartée à chaque fois apprend à tout écarter sans lire. L'accueil doit le dire, sinon personne ne
+    // le verra jamais.
+    const ecran = monter({
+      reglesARevoir: [
+        {
+          code: 'MENTION_DELAI_REDUIT',
+          libelle: 'Délai aménagé sans la mention « délai réduit »',
+          source: 'REGLE',
+          actif: true,
+          total: 12,
+          ouverts: 2,
+          ecartes: 10,
+          leves: 0,
+          taux: 0.83,
+          suspecte: true,
+        },
+      ],
+    });
+
+    expect(ecran.reglesARevoir()).toBe(1);
+    expect(texte()).toContain('règle du pré-contrôle est écartée');
+    expect(texte()).toContain('presque à chaque fois');
+  });
+
+  it("aucune règle suspecte : la ligne « À surveiller » du pré-contrôle n'apparaît pas", () => {
+    const ecran = monter();
+    expect(ecran.reglesARevoir()).toBe(0);
+    expect(texte()).not.toContain('presque à chaque fois');
   });
 
   it("aucun changement enregistré a son état vide, pas un tableau muet", () => {
@@ -248,6 +301,7 @@ describe("AdminAccueil — le poste d'administration", () => {
     http.expectOne((r) => r.url === '/api/audit-logs').flush('nope', { status: 500, statusText: 'Server Error' });
     http.expectOne('/api/actualites').flush([ACTUALITE]);
     http.expectOne('/api/parametres/actualites-actives').flush({ actif: true });
+    statistiquesVides();
     fixture.detectChanges();
 
     expect(fixture.componentInstance.reglagesErreur()).toBe(true);
@@ -316,6 +370,7 @@ describe("AdminAccueil — le poste d'administration", () => {
       .flush({ content: CHANGEMENTS, totalElements: 2, totalPages: 1, number: 0, size: 5 });
     // L'interrupteur répond d'abord : `forkJoin` ANNULE la requête sœur dès qu'une des deux échoue.
     http.expectOne('/api/parametres/actualites-actives').flush({ actif: true });
+    statistiquesVides();
     http.expectOne('/api/actualites').flush('nope', { status: 500, statusText: 'Server Error' });
     fixture.detectChanges();
 

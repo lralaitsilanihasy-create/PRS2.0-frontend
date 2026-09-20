@@ -114,7 +114,36 @@
     text-align: left;
   }
 
-  .r { text-align: right; }
+  /* ⚠️ Le style global des tableaux (design system) peint l'en-tête en BANDEAU PLEIN et interdit le retour
+     à la ligne dans les cellules. Les deux se voient en recette : le bandeau crie plus fort que le constat
+     qu'il détaille, et une désignation de 200 caractères pousse la colonne des montants hors de l'écran.
+     Ce sous-tableau reprend donc la main sur les deux. */
+  thead tr {
+    background: transparent;
+  }
+
+  th {
+    padding: 2px 6px;
+    color: var(--n-500);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: none;
+    border-bottom: 1px solid var(--n-300);
+  }
+
+  td {
+    white-space: normal;
+    vertical-align: top;
+    color: var(--n-600, var(--n-500));
+  }
+
+  /* Le montant tient sur une ligne et occupe le strict nécessaire ; la désignation prend le reste. */
+  .r {
+    text-align: right;
+    white-space: nowrap;
+    width: 1%;
+  }
 }
 
 .pc__lignes-titre {
@@ -217,5 +246,17 @@
   background: var(--info-bg);
   border: 1px solid var(--info-bdr);
   color: var(--info-text);
+  font-size: var(--text-sm);
+}
+
+/* Ce que l'assistant a réellement lu, quand ce n'est pas tout le plan. En avertissement, pas en
+   information : c'est une limite, et elle doit se remarquer. */
+.pc__couverture {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--radius-md, 6px);
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-bdr);
+  color: var(--warning-text);
   font-size: var(--text-sm);
 }

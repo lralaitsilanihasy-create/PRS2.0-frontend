@@ -102,13 +102,20 @@ class FauxPreControle {
   analyses = 0;
   analyseAbsente = false;
   synthese: string | null = 'À regarder d’abord : lignes 7601 et 7602 (même besoin possible).';
+  lignesAnalysees = 60;
+  lignesDuPlan = 60;
 
   analyser(): Observable<AnalyseIa> {
     this.analyses++;
     if (this.analyseAbsente) {
       return throwError(() => ({ status: 404 }));
     }
-    return of({ synthese: this.synthese, resume: { ...this.resume, signalements: [PISTE_IA] } });
+    return of({
+      synthese: this.synthese,
+      lignesAnalysees: this.lignesAnalysees,
+      lignesDuPlan: this.lignesDuPlan,
+      resume: { ...this.resume, signalements: [PISTE_IA] },
+    });
   }
 }
 
@@ -319,6 +326,28 @@ describe('Panneau du pré-contrôle du PPM', () => {
     expect(hote.querySelector('.pc__synthese')?.textContent).toContain('À regarder d’abord');
     const badges = [...hote.querySelectorAll('.badge')].map((b) => b.textContent?.trim());
     expect(badges).toContain('Piste de l’assistant');
+  });
+
+  it("dit ce que l'assistant a RÉELLEMENT lu quand il n'a pas vu tout le plan — sinon « rien trouvé » se lirait « plan propre »", () => {
+    const { hote, rendre } = monter();
+    faux.lignesAnalysees = 60;
+    faux.lignesDuPlan = 130;
+    faux.synthese = null;
+
+    boutons(hote, 'Demander une piste à l’assistant')[0].click();
+    rendre();
+
+    expect(hote.querySelector('.pc__couverture')?.textContent).toContain('60 premières lignes sur 130');
+    expect(hote.querySelector('.pc__couverture')?.textContent).toContain('Les règles, elles, ont vu tout le plan');
+  });
+
+  it("n'affiche aucune réserve de couverture quand l'assistant a lu tout le plan", () => {
+    const { hote, rendre } = monter();
+
+    boutons(hote, 'Demander une piste à l’assistant')[0].click();
+    rendre();
+
+    expect(hote.querySelector('.pc__couverture')).toBeNull();
   });
 
   it('un serveur sans assistant (404) cesse de le proposer, et les points des règles restent affichés', () => {

@@ -90,6 +90,15 @@ export const ADMIN_ROUTES: Routes = [
   // ⚠️ Chronométrage (2026-09-01) — délais standards par étape (PUT réservé à l'Administrateur).
   { path: 'delais-standards', loadComponent: () => import('./delais-standards').then((m) => m.DelaisStandards) },
   { path: 'agpm-seuil', loadComponent: () => import('./agpm-seuil-admin').then((m) => m.AgpmSeuilAdmin) },
+  // ⚠️ Pré-contrôle du PPM (assistant IA, lot 3, étape 7) — taux d'écartement par règle, la mesure qui dit
+  // si l'outil reste utile. VOLONTAIREMENT sans entrée de menu : le menu de l'Administrateur est à sa
+  // capacité (garde-fou `hauteur-menu.mjs`, lot 6), et l'écran se rejoint depuis « À surveiller » de
+  // l'accueil, là où il sert — et depuis les règles d'anomalie, là où on éteint la règle fautive.
+  {
+    path: 'pre-controle-regles',
+    loadComponent: () => import('./pre-controle-regles').then((m) => m.PreControleRegles),
+    data: { title: 'Taux d’écartement des règles' },
+  },
   // Écran dédié : les DEUX journaux, paginés et filtrés côté serveur — les écritures (`/api/audit-logs`,
   // table sans fin dont le CRUD générique demandait la totalité, ⚠️ audit 2026-08-27 C-1) et, depuis
   // le lot 6 F5, les CONNEXIONS (`/api/sessions`), en onglets.

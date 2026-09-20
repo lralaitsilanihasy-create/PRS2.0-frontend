@@ -92,6 +92,13 @@ export interface ResumePreControle {
  */
 export interface AnalyseIa {
   synthese: string | null;
+  /**
+   * Combien de lignes l'assistant a réellement **lues**, et combien le plan en porte. ⚠️ L'écran **doit** le
+   * dire : un modèle local ne lit pas un plan de 130 lignes d'un coup, et une couverture partielle annoncée
+   * vaut mieux qu'une couverture totale supposée.
+   */
+  lignesAnalysees: number;
+  lignesDuPlan: number;
   resume: ResumePreControle;
 }
 
@@ -114,3 +121,36 @@ export const MOTIF_ECARTEMENT_MIN = 20;
 export const AVERTISSEMENT_ECARTEMENT =
   'Cet écartement et votre motif seront visibles de l’autre côté du circuit : du contrôleur de la CNM ' +
   'si vous êtes la PRMP, de votre hiérarchie si vous êtes contrôleur.';
+
+/**
+ * Une règle du pré-contrôle et ce qu'on en fait — `GET /api/pre-controle/statistiques`
+ * (Administrateur, Président).
+ *
+ * Le **taux d'écartement** est la mesure qui dit si l'outil reste utile : une règle écartée dans 80 % des
+ * cas est une mauvaise règle, et on l'éteint. ⚠️ Un signalement **levé** (la PRMP a corrigé son plan) est
+ * un **succès**, pas un écartement : les confondre ferait éteindre les règles qui marchent le mieux.
+ */
+export interface LigneStatistiqueRegle {
+  code: string;
+  libelle: string | null;
+  source: SourceSignalement;
+  actif: boolean;
+  total: number;
+  ouverts: number;
+  ecartes: number;
+  leves: number;
+  /** Part d'écartés, de 0 à 1. */
+  taux: number;
+  /** Le taux atteint le seuil d'alerte sur un nombre significatif de signalements : règle à revoir. */
+  suspecte: boolean;
+}
+
+/** Le tableau de bord des taux d'écartement : des compteurs, aucune donnée de plan. */
+export interface StatistiquesRegles {
+  exercice: number | null;
+  total: number;
+  ecartes: number;
+  tauxGlobal: number;
+  /** Une ligne par règle, la plus écartée d'abord. */
+  regles: LigneStatistiqueRegle[];
+}

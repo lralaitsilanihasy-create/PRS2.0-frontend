@@ -81,6 +81,19 @@ export class PreControlePanneau {
   /** La phrase « où regarder d'abord » rendue par la dernière analyse de l'assistant ; non enregistrée. */
   readonly syntheseIa = signal<string | null>(null);
 
+  /**
+   * Ce que la dernière analyse a réellement lu. ⚠️ Affiché dès que l'assistant n'a pas vu tout le plan :
+   * un modèle local ne lit pas 130 lignes d'un coup, et laisser croire le contraire serait le pire défaut
+   * de cette fonctionnalité — c'est ce que la recette du 2026-09-20 a montré.
+   */
+  readonly couvertureIa = signal<{ lues: number; total: number } | null>(null);
+
+  /** Vrai quand l'assistant n'a pas pu lire tout le plan : l'écran le dit, au lieu de laisser croire. */
+  readonly couverturePartielle = computed(() => {
+    const c = this.couvertureIa();
+    return c !== null && c.lues < c.total;
+  });
+
   /** Vrai dès qu'un 404 a dit que l'assistant n'est pas activé : on cesse de le proposer. */
   readonly assistantAbsent = signal(false);
 
@@ -196,8 +209,14 @@ export class PreControlePanneau {
       next: (a) => {
         this.resume.set(a.resume);
         this.syntheseIa.set(a.synthese);
+        this.couvertureIa.set({ lues: a.lignesAnalysees, total: a.lignesDuPlan });
         this.enCours.set(false);
-        this.toast.success(a.synthese ?? "L'assistant n'a rien trouvé à signaler sur ce plan.");
+        this.toast.success(
+          a.synthese ??
+            (a.lignesAnalysees < a.lignesDuPlan
+              ? `L'assistant n'a rien trouvé à signaler sur les ${a.lignesAnalysees} premières lignes.`
+              : "L'assistant n'a rien trouvé à signaler sur ce plan."),
+        );
       },
       error: (e: ApiError) => {
         this.enCours.set(false);

@@ -6,7 +6,7 @@ import { LIBELLES_ROLES } from '../../core/auth/libelles-profils';
 import { Actualite } from '../../models/actualite.model';
 import { AuditLog, CompteursAdmin } from '../../models';
 import { ActualiteService, ParametreActualitesService } from '../../services/actualite.services';
-import { AuditLogService, KpiService } from '../../services';
+import { AuditLogService, KpiService, PreControleService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
 import { Icone } from '../../shared/ui/icone';
 import { Anciennete, anciennete } from './anciennete';
@@ -197,6 +197,33 @@ const GESTES: Readonly<Record<string, string>> = {
 
             <h2 class="acc__h2">À surveiller</h2>
             <div class="card">
+              <!-- ⚠️ Pré-contrôle du PPM (lot 3, étape 7) — la fatigue d'alerte est le seul risque qui
+                   tue cette fonctionnalité : une règle écartée presque à chaque fois apprend à tout
+                   écarter sans lire. La ligne n'apparaît que s'il y en a, et mène à la mesure. -->
+              @if (reglesARevoir() > 0) {
+                <div class="acc-veille">
+                  <span class="acc-veille__ic" aria-hidden="true"><app-icone nom="filter" [taille]="15" /></span>
+                  <div class="acc-veille__corps">
+                    <b class="acc-veille__titre">
+                      {{
+                        accord(
+                          reglesARevoir(),
+                          'règle du pré-contrôle est écartée',
+                          'règles du pré-contrôle sont écartées'
+                        )
+                      }}
+                      presque à chaque fois
+                    </b>
+                    <span class="acc-veille__aide">
+                      Une règle qu'on écarte toujours fatigue la PRMP et le contrôleur, qui finissent par
+                      ne plus rien lire. À revoir, ou à éteindre.
+                    </span>
+                    <a class="acc-veille__lien" routerLink="/admin/pre-controle-regles">
+                      Ouvrir les taux d'écartement
+                    </a>
+                  </div>
+                </div>
+              }
               @if (c.mandatsExpirantSous30j > 0) {
                 <div class="acc-veille">
                   <span class="acc-veille__ic" aria-hidden="true"><app-icone nom="alert" [taille]="15" /></span>
@@ -457,6 +484,7 @@ export class AdminAccueil {
   private readonly journal = inject(AuditLogService);
   private readonly actualites = inject(ActualiteService);
   private readonly parametres = inject(ParametreActualitesService);
+  private readonly preControle = inject(PreControleService);
 
   readonly chargement = signal(true);
   readonly erreur = signal(false);
@@ -466,6 +494,17 @@ export class AdminAccueil {
   readonly reglagesErreur = signal(false);
   /** Dernières écritures sur les réglages, la plus récente d'abord (tri imposé par le serveur). */
   readonly reglages = signal<AuditLog[]>([]);
+
+  /**
+   * ⚠️ Pré-contrôle du PPM (2026-09-20, assistant IA lot 3, étape 7) — nombre de règles **actives**
+   * écartées au-delà du seuil d'alerte. C'est la seule chose que l'accueil a besoin de savoir : le détail
+   * se lit sur l'écran dédié, que la ligne « À surveiller » ouvre.
+   *
+   * <p>Un appel de plus, et non un champ ajouté aux badges : ce compteur ne concerne que le pré-contrôle,
+   * et son absence (assistant jamais utilisé, endpoint indisponible) ne doit rien casser — la ligne
+   * disparaît, l'accueil reste entier.</p>
+   */
+  readonly reglesARevoir = signal(0);
 
   readonly actuChargement = signal(true);
   readonly actuErreur = signal(false);
@@ -484,6 +523,18 @@ export class AdminAccueil {
     this.charger();
     this.chargerReglages();
     this.chargerActualite();
+    this.chargerReglesARevoir();
+  }
+
+  /**
+   * Règles du pré-contrôle à revoir. En cas d'échec, on n'affiche rien : un compteur indisponible ne doit
+   * pas faire clignoter une alerte, et l'accueil ne porte pas d'état d'erreur pour cette ligne.
+   */
+  chargerReglesARevoir(): void {
+    this.preControle.statistiques().subscribe({
+      next: (s) => this.reglesARevoir.set(s.regles.filter((r) => r.suspecte && r.actif).length),
+      error: () => this.reglesARevoir.set(0),
+    });
   }
 
   /** Compteurs de l'Administrateur — un seul appel (`GET /api/kpis/badges`). */

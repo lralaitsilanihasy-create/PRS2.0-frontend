@@ -31,6 +31,14 @@
   @if (syntheseIa(); as synthese) {
     <p class="pc__synthese" role="status">{{ synthese }}</p>
   }
+  <!-- ⚠️ Un modèle local ne lit pas un plan de 130 lignes d'un coup. Le dire est obligatoire : sans cette
+       phrase, « l'assistant n'a rien trouvé » se lirait comme « le plan est propre ». -->
+  @if (couverturePartielle() && couvertureIa(); as c) {
+    <p class="pc__couverture" role="status">
+      L'assistant a examiné les {{ c.lues }} premières lignes sur {{ c.total }} : ce qu'il n'a pas lu n'est
+      pas pour autant conforme. Les règles, elles, ont vu tout le plan.
+    </p>
+  }
 
   @if (chargement()) {
     <p class="text-muted" role="status">Chargement des points signalés…</p>
@@ -149,9 +157,9 @@
 @if (aEcarter(); as cible) {
   <div class="modal-backdrop">
     <div class="modal cnm-form pc-modal" role="dialog" aria-modal="true" aria-label="Écarter un signalement" appModale (appModaleFermer)="fermerEcartement()">
-      <header class="modal-header-plain">
+      <header class="modal-header">
         <span class="modal-title">Écarter ce signalement</span>
-        <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerEcartement()">✕</button>
+        <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerEcartement()">✕</button>
       </header>
 
       <div class="modal-body">

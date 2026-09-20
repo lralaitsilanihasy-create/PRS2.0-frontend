@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { AnalyseIa, EcartementRequest, ResumePreControle, Signalement } from '../models';
+import { AnalyseIa, EcartementRequest, ResumePreControle, Signalement, StatistiquesRegles } from '../models';
 
 /**
  * Pré-contrôle du PPM (assistant IA, lot 3) — `/api/pre-controle`.
@@ -64,5 +64,17 @@ export class PreControleService {
    */
   reprendre(idSignalement: number): Observable<Signalement> {
     return this.http.post<Signalement>(`${this.baseUrl}/signalements/${idSignalement}/reprendre`, {});
+  }
+
+  /**
+   * `GET /statistiques` — le **taux d'écartement par règle** (Administrateur, Président). Des compteurs
+   * seulement : aucune donnée de plan, aucun acteur.
+   *
+   * C'est la mesure qui dit si l'outil reste utile : une règle écartée dans 80 % des cas est une mauvaise
+   * règle, et on l'éteint depuis l'écran des règles d'anomalie, sans redéploiement.
+   */
+  statistiques(exercice?: number | null): Observable<StatistiquesRegles> {
+    const params = exercice == null ? undefined : { params: { exercice: String(exercice) } };
+    return this.http.get<StatistiquesRegles>(`${this.baseUrl}/statistiques`, params);
   }
 }
