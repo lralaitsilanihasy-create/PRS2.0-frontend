@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Observable, Subject, of } from 'rxjs';
 
-import { EtatAssistantIa, EvenementAssistantIa } from '../../models/assistant-ia.model';
+import { EtatAssistantIa, EvenementAssistantIa, FaitsDossier, TourAssistantIa } from '../../models/assistant-ia.model';
 import { AssistantIaService } from '../../services/assistant-ia.services';
 import { AssistantIaPanneau } from './assistant-ia-panneau';
 
@@ -15,18 +15,35 @@ const ETAT: EtatAssistantIa = {
   ],
 };
 
+/** Ce que le serveur a lu pour l'utilisateur, quand la question portait sur des donnees (lot 4). */
+const FAITS: FaitsDossier = {
+  idDossier: 0,
+  reference: 'Ce que vous avez a traiter',
+  sections: [
+    {
+      titre: 'Ce que vous avez a traiter',
+      lignes: ['12 dossiers a traiter, dont 3 en retard et 2 bientot a echeance', '5 a examiner'],
+    },
+  ],
+  outilsLus: ['Ce que vous avez a traiter'],
+  outilsRefuses: ['journal du circuit'],
+};
+
 /** Service factice : chaque question ouvre un flux que le test alimente, et compte les coupures. */
 class FauxAssistant {
   flux = new Subject<EvenementAssistantIa>();
   questions: string[] = [];
+  /** L'historique reçu au dernier appel — ce que l'écran a jugé digne d'être renvoyé. */
+  historiques: TourAssistantIa[][] = [];
   coupures = 0;
 
   etat(): Observable<EtatAssistantIa> {
     return of(ETAT);
   }
 
-  poser(question: string): Observable<EvenementAssistantIa> {
+  poser(question: string, historique: TourAssistantIa[] = []): Observable<EvenementAssistantIa> {
     this.questions.push(question);
+    this.historiques.push(historique);
     this.flux = new Subject<EvenementAssistantIa>();
     const flux = this.flux;
     return new Observable((abonne) => {
@@ -204,5 +221,54 @@ describe('Panneau de l’assistant IA', () => {
 
     expect(hote.querySelector('aside')?.hidden).toBe(true);
     expect(fixture.componentInstance.echanges()).toHaveLength(1);
+  });
+
+  // ---------------------------------------------------------------- lot 4 : données et conversation
+
+  it('⚠️ une réponse sur DONNÉES montre ce que le serveur a lu pour vous, et ce qu’il n’a pas pu lire', () => {
+    const { fixture, hote, rendre } = monter();
+    fixture.componentInstance.envoyer('Qu’est-ce que j’ai à faire ?');
+    rendre();
+
+    faux.flux.next({ type: 'faits', faits: FAITS });
+    faux.flux.next({ type: 'texte', texte: 'Douze dossiers vous attendent.' });
+    faux.flux.next({ type: 'fin', modele: 'modele-test', dureeMs: 900 });
+    faux.flux.complete();
+    rendre();
+
+    const texte = hote.textContent ?? '';
+    expect(texte).toContain('Ce que l’assistant a lu pour vous');
+    expect(texte).toContain('12 dossiers a traiter');
+    expect(texte).toContain('journal du circuit');
+    // Une réponse sur données n'a pas d'extraits documentaires : les deux ne coexistent jamais.
+    expect(hote.querySelector('p.aia__sources-titre')).toBeNull();
+  });
+
+  it('les tours ABOUTIS repartent avec la question suivante, pour que le serveur garde le fil', () => {
+    const { fixture, rendre } = monter();
+    fixture.componentInstance.envoyer('Quel délai ?');
+    faux.flux.next({ type: 'texte', texte: 'Cinq jours ouvrés.' });
+    faux.flux.next({ type: 'fin', modele: 'modele-test', dureeMs: 900 });
+    faux.flux.complete();
+    rendre();
+
+    fixture.componentInstance.envoyer('Et maintenant ?');
+    rendre();
+
+    expect(faux.historiques[0]).toEqual([]);
+    expect(faux.historiques[1]).toEqual([{ question: 'Quel délai ?', reponse: 'Cinq jours ouvrés.' }]);
+  });
+
+  it('⚠️ un tour en ERREUR ou interrompu ne repart pas : une réponse à moitié écrite induirait le modèle en erreur', () => {
+    const { fixture, rendre } = monter();
+    fixture.componentInstance.envoyer('Quel délai ?');
+    faux.flux.next({ type: 'erreur', message: 'Le service ne répond pas.' });
+    faux.flux.complete();
+    rendre();
+
+    fixture.componentInstance.envoyer('Et maintenant ?');
+    rendre();
+
+    expect(faux.historiques[1]).toEqual([]);
   });
 });

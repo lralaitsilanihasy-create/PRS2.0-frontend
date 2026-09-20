@@ -33,12 +33,25 @@ export interface SourceAssistantIa {
   extrait: string;
 }
 
-/** Événement du flux de réponse (`POST /api/assistant-ia/questions`, SSE). */
+/**
+ * Événement du flux de réponse (`POST /api/assistant-ia/questions`, SSE).
+ *
+ * ⚠️ `sources` et `faits` sont **exclusifs** (lot 4) : une question sur les règles rend des extraits
+ * du corpus, une question sur des données rend ce que le serveur a lu pour cet utilisateur. Jamais les
+ * deux — une seule matière par réponse.
+ */
 export type EvenementAssistantIa =
   | { type: 'sources'; sources: SourceAssistantIa[] }
+  | { type: 'faits'; faits: FaitsDossier }
   | { type: 'texte'; texte: string }
   | { type: 'fin'; modele: string; dureeMs: number }
   | { type: 'erreur'; message: string };
+
+/** Un tour déjà eu, renvoyé au serveur pour qu'il garde le fil (lot 4). */
+export interface TourAssistantIa {
+  question: string;
+  reponse: string;
+}
 
 /* -------------------------------------------------------------- lot 2 — synthèse d'un dossier */
 

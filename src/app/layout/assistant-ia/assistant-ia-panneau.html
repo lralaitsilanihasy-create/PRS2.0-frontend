@@ -90,6 +90,32 @@
           }
         </div>
 
+        <!-- ⚠️ Lot 4 — quand la réponse s'appuie sur des DONNÉES, on montre ce que le serveur a lu pour
+             cet utilisateur, comme on montre les extraits d'une réponse documentaire. Replié : c'est une
+             justification, pas la réponse. -->
+        @if (e.faits; as f) {
+          <details class="aia__sources">
+            <summary class="aia__sources-titre aia__sources-titre--repli">
+              Ce que l’assistant a lu pour vous ({{ f.sections.length }})
+            </summary>
+            @for (section of f.sections; track section.titre) {
+              <div class="aia__faits-section">
+                <b>{{ section.titre }}</b>
+                <ul>
+                  @for (ligne of section.lignes; track ligne) {
+                    <li>{{ ligne }}</li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (f.outilsRefuses.length) {
+              <p class="aia__note">
+                Non lu pour votre profil, ou sans objet : {{ f.outilsRefuses.join(', ') }}.
+              </p>
+            }
+          </details>
+        }
+
         @if (e.sources.length && e.statut !== 'attente') {
           @if (aucuneCitation(e)) {
             <!-- La réponse ne cite rien (question hors des documents) : les extraits restent consultables,
@@ -130,9 +156,11 @@
       <button type="submit" class="cnm-btn cnm-btn--primary aia__bouton" [disabled]="!peutEnvoyer()">Envoyer</button>
     }
   </form>
+  <!-- ⚠️ Lot 4 : la mention couvre les DEUX matières. Elle disait « uniquement sur les documents
+       cités », ce qui devient faux dès qu'une réponse s'appuie sur des données lues pour l'utilisateur. -->
   <p class="aia__mention">
-    L'assistant s'appuie uniquement sur les documents cités et peut se tromper : vérifiez toujours la source.
-    Il ne remplace ni le contrôleur ni l'avis de la Commission.
+    L'assistant s'appuie uniquement sur les documents cités, ou sur ce qu'il a lu pour vous, et peut se
+    tromper : vérifiez toujours. Il ne remplace ni le contrôleur ni l'avis de la Commission.
   </p>
   <p class="cnm-sr-only" role="status" aria-live="polite">{{ annonce() }}</p>
 

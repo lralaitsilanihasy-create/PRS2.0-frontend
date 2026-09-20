@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { ApiError, skipErrorToast } from '../core/errors/api-error';
-import { EtatAssistantIa, EvenementAssistantIa, EvenementSyntheseIa, FaitsDossier, SourceAssistantIa } from '../models/assistant-ia.model';
+import { EtatAssistantIa, EvenementAssistantIa, EvenementSyntheseIa, FaitsDossier, SourceAssistantIa, TourAssistantIa } from '../models/assistant-ia.model';
 
 /** Un événement SSE brut : son nom et ses données (lignes `data:` réunies). */
 export interface EvenementSse {
@@ -43,6 +43,9 @@ export function versEvenementAssistant(e: EvenementSse): EvenementAssistantIa | 
   switch (e.nom) {
     case 'sources':
       return { type: 'sources', sources: donnees as SourceAssistantIa[] };
+    // ⚠️ Lot 4 : à la place de `sources` quand la question porte sur des données. Jamais les deux.
+    case 'faits':
+      return { type: 'faits', faits: donnees as FaitsDossier };
     case 'texte':
       return { type: 'texte', texte: (donnees as { t: string }).t };
     case 'fin': {
@@ -98,8 +101,8 @@ export class AssistantIaService {
    * Pose une question. Émet `sources`, puis des `texte` au fil de la génération, puis `fin` — ou
    * `erreur`, y compris quand la requête elle-même échoue (le flux se termine alors normalement).
    */
-  poser(question: string): Observable<EvenementAssistantIa> {
-    return this.flux(`${this.url}/questions`, { question }, versEvenementAssistant, (err) => ({
+  poser(question: string, historique: TourAssistantIa[] = []): Observable<EvenementAssistantIa> {
+    return this.flux(`${this.url}/questions`, { question, historique }, versEvenementAssistant, (err) => ({
       type: 'erreur',
       message: messageErreur(err),
     }));

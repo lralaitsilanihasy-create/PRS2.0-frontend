@@ -14,7 +14,7 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import { Subscription } from 'rxjs';
 
-import { EtatAssistantIa, EvenementAssistantIa, SourceAssistantIa } from '../../models/assistant-ia.model';
+import { EtatAssistantIa, EvenementAssistantIa, FaitsDossier, SourceAssistantIa, TourAssistantIa } from '../../models/assistant-ia.model';
 import { AssistantIaService } from '../../services/assistant-ia.services';
 import { Icone } from '../../shared/ui/icone';
 import { Bloc, analyserReponse } from './rendu-reponse';
@@ -24,6 +24,11 @@ export interface Echange {
   id: number;
   question: string;
   sources: SourceAssistantIa[];
+  /**
+   * ⚠️ Lot 4 — ce que le SERVEUR a lu quand la question portait sur des données. Exclusif de
+   * `sources` : une réponse s'appuie sur des extraits du manuel OU sur des données, jamais les deux.
+   */
+  faits?: FaitsDossier;
   texte: string;
   /** `attente` : rien reçu ; `en-cours` : la réponse s'écrit ; `arrete` : interrompue par l'utilisateur. */
   statut: 'attente' | 'en-cours' | 'termine' | 'erreur' | 'arrete';
@@ -32,6 +37,9 @@ export interface Echange {
 
 /** Longueur maximale d'une question — la même borne que le serveur (`QuestionIaRequest`). */
 export const LONGUEUR_MAX_QUESTION = 1000;
+
+/** Tours renvoyés au serveur pour garder le fil — la même borne que lui (`AssistantIaService`). */
+const TOURS_ENVOYES = 3;
 
 /**
  * Panneau de l'assistant IA local — lot 1 (`backend/docs/plan-assistant-ia.md`).
@@ -110,14 +118,31 @@ export class AssistantIaPanneau {
       return;
     }
     const id = this.prochainId++;
+    // ⚠️ L'historique est relevé AVANT d'ajouter le tour courant : ce sont les échanges déjà aboutis.
+    const historique = this.historique();
     this.echanges.update((liste) => [...liste, { id, question, sources: [], texte: '', statut: 'attente' }]);
     this.saisie.set('');
     this.annonce.set('');
     this.defiler(true);
-    this.abonnement = this.service.poser(question).subscribe({
+    this.abonnement = this.service.poser(question, historique).subscribe({
       next: (evenement) => this.appliquer(id, evenement),
       complete: () => this.cloturer(id),
     });
+  }
+
+  /**
+   * Les derniers échanges **aboutis**, pour que le serveur garde le fil (lot 4). Une réponse en
+   * erreur, interrompue ou en cours n'en fait pas partie : elle n'apprendrait rien au modèle, et une
+   * réponse à moitié écrite l'induirait en erreur.
+   *
+   * <p>On en renvoie trois — la même borne que le serveur, qui la réapplique de toute façon : envoyer
+   * toute la conversation ferait grossir chaque requête sans rien changer à ce qui est lu.</p>
+   */
+  private historique(): TourAssistantIa[] {
+    return this.echanges()
+      .filter((e) => e.statut === 'termine' && e.texte.trim().length > 0)
+      .slice(-TOURS_ENVOYES)
+      .map((e) => ({ question: e.question, reponse: e.texte }));
   }
 
   /** Entrée envoie, Maj+Entrée va à la ligne. */
@@ -184,6 +209,9 @@ export class AssistantIaPanneau {
     switch (evenement.type) {
       case 'sources':
         this.maj(id, { sources: evenement.sources, statut: 'en-cours' });
+        break;
+      case 'faits':
+        this.maj(id, { faits: evenement.faits, statut: 'en-cours' });
         break;
       case 'texte':
         this.echanges.update((liste) =>

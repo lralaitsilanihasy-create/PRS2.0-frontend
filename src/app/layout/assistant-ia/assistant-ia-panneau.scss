@@ -347,3 +347,20 @@
     display: none;
   }
 }
+
+/* Lot 4 — ce que le serveur a lu pour l'utilisateur, sous une réponse sur données. Même traitement
+   que les extraits documentaires : replié, discret, consultable. */
+.aia__faits-section {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--n-600, var(--n-500));
+
+  ul {
+    margin: 0.125rem 0 0;
+    padding-left: 1.125rem;
+  }
+
+  li {
+    line-height: 1.5;
+  }
+}
