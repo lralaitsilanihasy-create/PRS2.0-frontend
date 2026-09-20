@@ -157,6 +157,13 @@
   max-width: 44rem;
 }
 
+/* Assistant IA (lot 2) — la synthèse, sous la frise. Même largeur de lecture que l'identité : au-delà,
+   une prose de quatre paragraphes devient pénible à suivre. */
+.pd-synthese {
+  display: block;
+  max-width: 52rem;
+}
+
 /* ── Frise des sept étapes ── */
 .pd-frise {
   display: grid;

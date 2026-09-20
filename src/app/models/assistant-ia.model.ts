@@ -39,3 +39,37 @@ export type EvenementAssistantIa =
   | { type: 'texte'; texte: string }
   | { type: 'fin'; modele: string; dureeMs: number }
   | { type: 'erreur'; message: string };
+
+/* -------------------------------------------------------------- lot 2 — synthèse d'un dossier */
+
+/** Une section des faits : un titre, et des lignes déjà rédigées par le serveur. */
+export interface SectionFaits {
+  titre: string;
+  lignes: string[];
+}
+
+/**
+ * ⚠️ Ce que le SERVEUR a lu du dossier, et exactement ce que le modèle a reçu — servi avant la
+ * moindre seconde de génération (`POST /api/assistant-ia/dossiers/{id}/synthese`).
+ *
+ * `outilsRefuses` nomme les lectures que le profil ne permet pas : elles retirent leur section, elles
+ * ne la remplacent pas par une approximation. Exemple normal : le journal du circuit est une vue
+ * interne à la CNM, donc absent de la synthèse d'une PRMP.
+ */
+export interface FaitsDossier {
+  idDossier: number;
+  reference: string;
+  sections: SectionFaits[];
+  outilsLus: string[];
+  outilsRefuses: string[];
+}
+
+/**
+ * Événement du flux de synthèse d'un dossier (SSE). `statut` n'accompagne que les erreurs de la
+ * requête elle-même : c'est lui qui distingue un assistant absent (404) d'une panne passagère.
+ */
+export type EvenementSyntheseIa =
+  | { type: 'faits'; faits: FaitsDossier }
+  | { type: 'texte'; texte: string }
+  | { type: 'fin'; modele: string; dureeMs: number; mention: string }
+  | { type: 'erreur'; message: string; statut?: number };

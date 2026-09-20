@@ -23,6 +23,7 @@ import { FocusNavette } from './etape-pv';
 import { EtapeCourante } from './etape-courante';
 import { EtatGestes, GesteBouton, VueEtape, ciblePage, famillePage, gesteDemande, montantGestes, vueEtape } from './etape-courante-modele';
 import { RetourPage, SuiteGeste, etapesPage, referenceDossier } from './page-dossier-modele';
+import { SyntheseDossier } from './synthese-dossier';
 
 /** Hauteur de la barre du haut de l'application (fixe, `.topbar`). */
 const HAUT_TOPBAR = 48;
@@ -61,6 +62,7 @@ const HAUT_TOPBAR = 48;
     ReceptionForm,
     DispatchForm,
     CompleterPiecesDepotModal,
+    SyntheseDossier,
   ],
   providers: [DossierContenuStore],
   host: { '[class.pd--barre]': 'barreVisible()' },
@@ -147,6 +149,12 @@ const HAUT_TOPBAR = 48;
           </li>
         }
       </ol>
+
+      <!-- Assistant IA, lot 2 : la synthèse du dossier, À LA DEMANDE. Sous la frise, avant l'étape en
+           cours : elle répond à « où en est ce dossier », c'est-à-dire à la question qu'on se pose en
+           arrivant. Ouverte à tous les profils qui peuvent ouvrir le dossier — chacun n'y lit que ce
+           que son profil permet, la liste blanche s'en charge côté serveur. -->
+      <app-synthese-dossier class="pd-synthese" [idDossier]="dossier().idDossier" />
 
       <!-- Lot F3 : l'étape en cours et les gestes servis par GET /api/dossiers/{id}/gestes. -->
       @switch (gestes().etat) {

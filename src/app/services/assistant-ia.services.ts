@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { ApiError, skipErrorToast } from '../core/errors/api-error';
-import { EtatAssistantIa, EvenementAssistantIa, SourceAssistantIa } from '../models/assistant-ia.model';
+import { EtatAssistantIa, EvenementAssistantIa, EvenementSyntheseIa, FaitsDossier, SourceAssistantIa } from '../models/assistant-ia.model';
 
 /** Un événement SSE brut : son nom et ses données (lignes `data:` réunies). */
 export interface EvenementSse {
@@ -56,6 +56,25 @@ export function versEvenementAssistant(e: EvenementSse): EvenementAssistantIa | 
   }
 }
 
+/** Idem pour le flux de synthèse d'un dossier (lot 2) : `faits` d'abord, puis la rédaction. */
+export function versEvenementSynthese(e: EvenementSse): EvenementSyntheseIa | null {
+  const donnees = JSON.parse(e.donnees) as unknown;
+  switch (e.nom) {
+    case 'faits':
+      return { type: 'faits', faits: donnees as FaitsDossier };
+    case 'texte':
+      return { type: 'texte', texte: (donnees as { t: string }).t };
+    case 'fin': {
+      const f = donnees as { modele: string; dureeMs: number; mention: string };
+      return { type: 'fin', modele: f.modele, dureeMs: f.dureeMs, mention: f.mention };
+    }
+    case 'erreur':
+      return { type: 'erreur', message: (donnees as { message: string }).message };
+    default:
+      return null;
+  }
+}
+
 /**
  * Assistant IA local — lot 1 (`backend/docs/plan-assistant-ia.md`).
  *
@@ -80,7 +99,42 @@ export class AssistantIaService {
    * `erreur`, y compris quand la requête elle-même échoue (le flux se termine alors normalement).
    */
   poser(question: string): Observable<EvenementAssistantIa> {
-    return new Observable<EvenementAssistantIa>((abonne) => {
+    return this.flux(`${this.url}/questions`, { question }, versEvenementAssistant, (err) => ({
+      type: 'erreur',
+      message: messageErreur(err),
+    }));
+  }
+
+  /**
+   * ⚠️ Demande la synthèse d'un dossier (lot 2). Émet `faits` — ce que le SERVEUR a lu, connu avant
+   * toute génération — puis des `texte` au fil de la rédaction, puis `fin`.
+   *
+   * L'identifiant vient de la page ouverte, jamais du modèle : c'est ce qui rend inoffensive une
+   * consigne glissée dans un texte de dossier. Un 403 se produit si le dossier sort du périmètre — mais
+   * l'écran n'est atteignable que sur un dossier déjà ouvert, donc il ne devrait pas se voir.
+   */
+  synthetiserDossier(idDossier: number): Observable<EvenementSyntheseIa> {
+    // Le STATUT accompagne le message : c'est lui qui distingue « l'assistant n'est pas là » (404, on
+    // retire le bouton) d'une panne passagère (on propose de réessayer).
+    return this.flux(`${this.url}/dossiers/${idDossier}/synthese`, null, versEvenementSynthese, (err) => ({
+      type: 'erreur',
+      message: messageErreur(err),
+      statut: err.status,
+    }));
+  }
+
+  /**
+   * Le flux SSE sur un POST : `EventSource` ne sait faire que du GET, on suit donc la progression du
+   * téléchargement (`partialText`), ce qui garde le jeton CSRF posé automatiquement. Se désabonner
+   * coupe la requête, et le serveur cesse alors de calculer.
+   */
+  private flux<T>(
+    url: string,
+    corps: unknown,
+    traduire: (e: EvenementSse) => T | null,
+    surEchec: (err: ApiError) => T,
+  ): Observable<T> {
+    return new Observable<T>((abonne) => {
       let lu = 0;
       let tampon = '';
       const traiter = (texteRecu: string, final: boolean) => {
@@ -89,24 +143,20 @@ export class AssistantIaService {
         const { evenements, reste } = lireEvenementsSse(final ? tampon + '\n\n' : tampon);
         tampon = final ? '' : reste;
         for (const brut of evenements) {
-          const e = versEvenementAssistant(brut);
+          const e = traduire(brut);
           if (e) {
             abonne.next(e);
           }
         }
       };
       const requete = this.http
-        .post(
-          `${this.url}/questions`,
-          { question },
-          {
-            observe: 'events',
-            reportProgress: true,
-            responseType: 'text',
-            headers: { Accept: 'text/event-stream, application/json' },
-            context: skipErrorToast(),
-          },
-        )
+        .post(url, corps, {
+          observe: 'events',
+          reportProgress: true,
+          responseType: 'text',
+          headers: { Accept: 'text/event-stream, application/json' },
+          context: skipErrorToast(),
+        })
         .subscribe({
           next: (ev) => {
             if (ev.type === HttpEventType.DownloadProgress) {
@@ -117,7 +167,7 @@ export class AssistantIaService {
             }
           },
           error: (err: ApiError) => {
-            abonne.next({ type: 'erreur', message: messageErreur(err) });
+            abonne.next(surEchec(err));
             abonne.complete();
           },
         });
