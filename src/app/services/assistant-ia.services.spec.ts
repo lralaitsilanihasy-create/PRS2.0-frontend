@@ -76,7 +76,9 @@ describe('AssistantIaService', () => {
 
     const req = http.expectOne('/api/assistant-ia/questions');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ question: 'Le fractionnement ?' });
+    // ⚠️ Lot 4 : le corps porte aussi l'historique — vide au premier tour, jamais absent, pour que le
+    // serveur n'ait pas à distinguer « pas d'historique » de « champ oublié ».
+    expect(req.request.body).toEqual({ question: 'Le fractionnement ?', historique: [] });
     expect(req.request.headers.get('Accept')).toContain('text/event-stream');
     expect(req.request.context.get(SKIP_ERROR_TOAST)).toBe(true);
 
