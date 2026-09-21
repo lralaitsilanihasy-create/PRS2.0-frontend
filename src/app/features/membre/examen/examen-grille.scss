@@ -135,6 +135,8 @@
 .pt__rang { font-family: var(--cnm-mono); font-weight: 500; color: #5b6784; }
 .pt__l em { font-style: normal; color: #b91c1c; }
 .pt__d { margin: 0.25rem 0 0; font-size: 0.75rem; color: #5b6784; }
+/* Annonce non bloquante « sera validé RAS » (pilote 21/09) — même corps que la description, teinte info AA. */
+.pt__hint { margin: 0.25rem 0 0; font-size: 0.75rem; color: var(--info-text, #2563eb); }
 .pt__todo {
   display: flex;
   align-items: center;

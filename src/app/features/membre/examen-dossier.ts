@@ -41,6 +41,7 @@ import {
   ServiceBeneficiaire,
   TypeChangementLigne,
   PerimetreExamen,
+  ResumePreControle,
 } from '../../models';
 import {
   AvisService,
@@ -61,6 +62,7 @@ import {
   PieceJointeDossierService,
   PointsCtrlService,
   PpmService,
+  PreControleService,
   PvExamenService,
   ReceptionService,
   ReferenceLookupService,
@@ -109,8 +111,11 @@ import {
   delaiExamen,
   empreintePiece,
   empreintePoint,
+  estObservationEffective,
   lignesViseesParConsigne,
   modificationsNonEnregistrees,
+  normaliserPieceSansTexte,
+  normaliserSansTexte,
   numerosEnTexte,
   pluriel,
   raisonValidationImpossible,
@@ -261,6 +266,24 @@ interface PropositionCellule {
                     <span><i class="lg lg--attente"></i>À examiner</span>
                   </span>
                 }
+                <!-- ⚠️ Demande pilote (2026-09-21) — le pré-contrôle en MODALE, à la demande : bouton à
+                     compteur (points ouverts ; teinte d'alerte s'il y a du prioritaire). -->
+                @if (ppm()?.idPpm) {
+                  <button
+                    type="button"
+                    class="doc-precontrole"
+                    aria-haspopup="dialog"
+                    title="Ce que les règles du manuel relèvent sur ce plan — une aide, qui n'engage pas l'examen"
+                    (click)="ouvrirPreControle()"
+                  >
+                    <app-icone nom="shield" [taille]="14" />Pré-contrôle
+                    @if (preControleResume(); as r) {
+                      <span class="doc-precontrole__n" [class.doc-precontrole__n--prio]="r.nbPrioritaires > 0">
+                        {{ r.nbOuverts }}<span class="cnm-sr-only"> point(s) à regarder</span>
+                      </span>
+                    }
+                  </button>
+                }
                 @if (ongletAffiche() !== 'pieces') {
                   <button
                     type="button"
@@ -381,19 +404,16 @@ interface PropositionCellule {
               </div>
             </section>
 
-            <!-- Pré-contrôle du PPM (assistant IA, lot 3) — ce que les règles du manuel relèvent sur ce
-                 plan, et ce que la PRMP a écarté avec son motif. Placé AVANT la grille : il dit où
-                 regarder d'abord, il ne remplace aucun point de l'examen. Chaque signalement nomme le
-                 point de grille qu'il éclaire. -->
-            @if (ppm()?.idPpm; as idPpmExamine) {
-              <section class="pre-controle-examen" aria-label="Pré-contrôle du plan">
-                <app-pre-controle-panneau [idPpm]="idPpmExamine" titre="Points signalés par le pré-contrôle" />
-              </section>
-            }
-
-            @if (points().length) {
-              <app-examen-grille [vue]="vueGrille()" [ouverte]="grilleOuverte()" [enregistre]="derniereSauvegarde()" (action)="surActionGrille($event)" />
-            }
+            <!-- Colonne de droite = la grille de contrôle, seule. ⚠️ Toute section ajoutée ici va DANS
+                 div.cote, jamais à côté : div.cols est une grille CSS à deux colonnes, un troisième enfant
+                 passerait sous le document à hauteur nulle (régression du 20/09, corrigée le 21/09). Le
+                 pré-contrôle (assistant IA, lot 3) vit désormais en MODALE, ouverte par le bouton de la
+                 barre du document (demande pilote 21/09) — il dit où regarder, il ne remplace aucun point. -->
+            <div class="cote">
+              @if (points().length) {
+                <app-examen-grille [vue]="vueGrille()" [ouverte]="grilleOuverte()" [enregistre]="derniereSauvegarde()" (action)="surActionGrille($event)" />
+              }
+            </div>
           </div>
         } @else {
           <app-examen-synthese
@@ -455,6 +475,27 @@ interface PropositionCellule {
         }
       }
     </section>
+
+    <!-- ⚠️ Demande pilote (2026-09-21) — le pré-contrôle en MODALE : fermeture par le bouton ou Échap, jamais
+         au clic sur le voile (règle du projet). Le panneau y relit ses signalements ; à la fermeture, le
+         compteur du bouton est relu. Le titre du panneau dit ce qu'on y fait — le pilote ne l'avait pas
+         compris à la première rencontre. -->
+    @if (preControleOuvert()) {
+      @if (ppm()?.idPpm; as idPpmExamine) {
+        <div class="modal-backdrop">
+          <div class="modal modal-lg pc-modal" role="dialog" aria-modal="true" aria-label="Points signalés par le pré-contrôle"
+               appModale (appModaleFermer)="fermerPreControle()">
+            <div class="modal-header">
+              <h2 class="modal-title">Points signalés par le pré-contrôle</h2>
+              <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerPreControle()">✕</button>
+            </div>
+            <div class="modal-body">
+              <app-pre-controle-panneau [idPpm]="idPpmExamine" titre="À regarder avant d'examiner : traitez dans la grille, ou écartez avec un motif" />
+            </div>
+          </div>
+        </div>
+      }
+    }
 
     @if (sortieDemandee()) {
       <app-confirmation-sortie
@@ -582,6 +623,30 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   private sortieLibre = false;
   /** Grille de contrôle dépliée (panneau droit) ou repliée en languette. */
   readonly grilleOuverte = signal(true);
+  /**
+   * ⚠️ Demande pilote (2026-09-21) — le pré-contrôle s'ouvre EN MODALE, à la demande, depuis un bouton de
+   * la barre du document : la colonne de droite reste tout entière à la grille de contrôle. Le résumé
+   * (compteur du bouton) est lu en silence à l'ouverture de l'examen et relu à la fermeture de la modale.
+   */
+  private readonly preControleService = inject(PreControleService);
+  readonly preControleOuvert = signal(false);
+  readonly preControleResume = signal<ResumePreControle | null>(null);
+  ouvrirPreControle(): void {
+    this.preControleOuvert.set(true);
+  }
+  /** Ferme la modale et relit le compteur : un écartement ou une reprise faits dedans se voient aussitôt. */
+  fermerPreControle(): void {
+    this.preControleOuvert.set(false);
+    this.chargerPreControle();
+  }
+  private chargerPreControle(): void {
+    const idPpm = this.ppm()?.idPpm;
+    if (idPpm == null) return;
+    this.preControleService
+      .lire(idPpm)
+      .pipe(catchError(() => of(null)))
+      .subscribe((r) => this.preControleResume.set(r));
+  }
   /** Proposition « Observer cette cellule » ouverte. */
   readonly proposition = signal<PropositionCellule | null>(null);
   /** Le clic de cellule qui vient d'ouvrir une proposition ne doit pas, en remontant, changer de ligne. */
@@ -589,8 +654,9 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
 
   /** Observations relevées (points OBS + pièces OBS) — source de la suggestion d'avis. */
   private readonly nbObservations = computed(() => {
-    const pts = [...this.resultats().values()].filter((st) => st.statut === 'OBS').length;
-    const pcs = [...this.resultatsPieces().values()].filter((p) => p.statut === 'OBS').length;
+    // Observations EFFECTIVES seulement (pilote 21/09) : un « Observation » sans texte ne pèse pas sur l'avis.
+    const pts = [...this.resultats().values()].filter((st) => estObservationEffective(st)).length;
+    const pcs = [...this.resultatsPieces().values()].filter((p) => p.statut === 'OBS' && !!p.observation.trim()).length;
     return pts + pcs;
   });
   /** ⚠️ Règle de cohérence — ≥ 1 observation → FAVR suggéré (FAV refusé serveur) ; 0 → FAV. */
@@ -728,7 +794,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   }
   /** Le marché porte-t-il ≥1 observation (→ « examinée avec observation ») ? */
   ligneAObs(idDetail: number): boolean {
-    return this.pointsPourLigne(idDetail).some((p) => this.resultat(idDetail, p.idPointCtrl).statut === 'OBS');
+    return this.pointsPourLigne(idDetail).some((p) => estObservationEffective(this.resultat(idDetail, p.idPointCtrl)));
   }
   /** Tous les points DOSSIER sont-ils statués ? */
   readonly dossierStatue = computed(() => this.pointsDossier().every((p) => this.resultat(null, p.idPointCtrl).statut !== null));
@@ -1059,12 +1125,15 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
           cleCible: o.champ ? `${o.champ}|${o.idBenefCible ?? ''}` : '',
         })),
         erreur: erreurs.get(p.idPointCtrl) ?? null,
+        // ⚠️ 21/09 — « pas de texte = pas d'observation » : dit AVANT le clic que ce point vaudra RAS.
+        seraRas: st.statut === 'OBS' && !estObservationEffective(st),
       };
     });
+    // Résumé sur l'EFFECTIF : un point « Observation » sans texte compte déjà pour RAS.
     const resume = {
-      ras: points.filter((p) => p.statut === 'RAS').length,
-      obs: points.filter((p) => p.statut === 'OBS').length,
-      aRenseigner: points.filter((p) => p.statut === null || (p.statut === 'OBS' && !p.observations.some((o) => o.auLieuDe.trim() || o.lire.trim()))).length,
+      ras: points.filter((p) => p.statut === 'RAS' || p.seraRas).length,
+      obs: points.filter((p) => p.statut === 'OBS' && !p.seraRas).length,
+      aRenseigner: points.filter((p) => p.statut === null).length,
     };
     const base = { points, resume, piece: null, options: [] as OptionCible[], verrouille, justifications: [] as VueGrille['justifications'], puces: [] as VueGrille['puces'] };
     const precedent = this.etape() > 0 ? 'Précédent' : null;
@@ -1128,8 +1197,13 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
           observation: r.observation,
           numero: numeros.find((n) => n.idPiece === pc.idPiece)?.numero ?? null,
           erreur: this.pieceErreur(),
+          seraRas: r.statut === 'OBS' && !r.observation.trim(),
         },
-        resume: { ras: r.statut === 'RAS' ? 1 : 0, obs: r.statut === 'OBS' ? 1 : 0, aRenseigner: r.statut === null || (r.statut === 'OBS' && !r.observation.trim()) ? 1 : 0 },
+        resume: {
+          ras: r.statut === 'RAS' || (r.statut === 'OBS' && !r.observation.trim()) ? 1 : 0,
+          obs: r.statut === 'OBS' && !!r.observation.trim() ? 1 : 0,
+          aRenseigner: r.statut === null ? 1 : 0,
+        },
         raison: raisonValidationImpossible({ verrouille, objet: `la pièce ${i + 1}`, points: [], piece: r }),
         libelleValider: i + 1 < this.nbPieces() ? `Valider la pièce ${i + 1} et passer à la ${i + 2}` : `Valider la pièce ${i + 1} et continuer`,
         libellePrecedent: i > 0 ? `Pièce ${i}` : precedent,
@@ -1369,6 +1443,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         this.loadingPieces.set(false);
         this.pvs.set(r.pvs);
         this.ppm.set(r.ppms.find((p) => p.idDossier === this.idDossier) ?? null);
+        this.chargerPreControle(); // compteur du bouton « Pré-contrôle » (silencieux)
         const mines = r.marches.filter((m) => m.idDossier === this.idDossier);
         this.marches.set(mines);
         // Bénéficiaires + prévisions des marchés du dossier (pour le tableau PPM partagé).
@@ -1511,8 +1586,10 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   ajouterLigne(idDetail: number | null, idPt: number): void {
     this.patchResultat(idDetail, idPt, { observations: [...this.resultat(idDetail, idPt).observations, { auLieuDe: '', lire: '' }] });
   }
+  /** Retire une correction ; sans plus aucune ligne, le point repasse en RAS (rien à dire = RAS, pilote 21/09). */
   retirerLigne(idDetail: number | null, idPt: number, i: number): void {
-    this.patchResultat(idDetail, idPt, { observations: this.resultat(idDetail, idPt).observations.filter((_, idx) => idx !== i) });
+    const observations = this.resultat(idDetail, idPt).observations.filter((_, idx) => idx !== i);
+    this.patchResultat(idDetail, idPt, observations.length ? { observations } : { statut: 'RAS', observations: [] });
   }
   setAuLieuDe(idDetail: number | null, idPt: number, i: number, v: string): void {
     this.patchObservation(idDetail, idPt, i, { auLieuDe: v });
@@ -1551,7 +1628,8 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     return this.resultatPiece(idPiece).statut !== null;
   }
   pieceAObs(idPiece: number | undefined): boolean {
-    return this.resultatPiece(idPiece).statut === 'OBS';
+    const r = this.resultatPiece(idPiece);
+    return r.statut === 'OBS' && !!r.observation.trim(); // observation EFFECTIVE (pilote 21/09)
   }
   /** État visuel d'une pièce (liste de la zone document) — mêmes états que la marge du plan. */
   etatPiece(p: PieceJointeDossier): 'current' | 'done-ras' | 'done-obs' | 'pending' {
@@ -1613,11 +1691,10 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   validerEtape(): void {
     // Étape pièce : statut requis (gate du bouton) + observation non vide si « Observation ».
     if (this.estEtapePiece()) {
-      const st = this.resultatPiece(this.pieceCourante()?.idPiece);
-      if (st.statut === 'OBS' && !st.observation.trim()) {
-        this.pieceErreur.set("Renseignez l'observation de la pièce (statut « Observation »).");
-        return;
-      }
+      const idPiece = this.pieceCourante()?.idPiece;
+      // ⚠️ 21/09 (pilote) — « pas de texte = pas d'observation » : une pièce « Observation » sans texte vaut RAS.
+      const st = this.resultatPiece(idPiece);
+      if (normaliserPieceSansTexte(st) !== st) this.setStatutPiece(idPiece, 'RAS');
       this.pieceErreur.set(null);
       this.marquerValidee(this.etape());
       this.etape.update((e) => Math.min(e + 1, this.etapeAvis()));
@@ -1625,15 +1702,15 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       return;
     }
     const idDetail = this.idDetailCourant();
-    const err = new Map<number, string>();
+    // ⚠️ 21/09 (pilote) — « pas de texte = pas d'observation » : un point « Observation » sans correction
+    // renseignée vaut RAS à la validation (le clic accidentel ne laisse rien : ni au PV, ni sur l'avis) —
+    // il ne bloque plus. La grille l'annonce avant le clic (`seraRas`).
     for (const p of this.pointsCourants()) {
       const st = this.resultat(idDetail, p.idPointCtrl);
-      if (st.statut === 'OBS' && !st.observations.some((o) => o.auLieuDe.trim() || o.lire.trim())) {
-        err.set(p.idPointCtrl, "Au moins une ligne d'observation est obligatoire pour un point avec observation.");
-      }
+      const n = normaliserSansTexte(st);
+      if (n !== st) this.patchResultat(idDetail, p.idPointCtrl, n);
     }
-    this.pointErreurs.set(err);
-    if (err.size) return;
+    this.pointErreurs.set(new Map());
     // Avance vers l'étape suivante (fiche → lignes → AGPM → pièces → dossier → synthèse). L'état « traité » est dérivé des statuts.
     this.marquerValidee(this.etape());
     this.etape.update((e) => Math.min(e + 1, this.etapeAvis()));
@@ -2016,20 +2093,18 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       this.toast.error('Un point de contrôle n\'a pas été statué (RAS ou Observation) — vérifiez chaque ligne.');
       return false;
     }
-    const manque = this.entreesResultats().some(
-      (e) => e.st.statut === 'OBS' && !e.st.observations.some((o) => o.auLieuDe.trim() || o.lire.trim()),
-    );
-    if (manque) {
-      this.toast.error('Un point avec observation n\'a pas d\'observation renseignée — vérifiez chaque ligne.');
-      return false;
+    // ⚠️ 21/09 (pilote) — « pas de texte = pas d'observation » : points et pièces « Observation » sans
+    // texte sont ramenés à RAS ici aussi (chemins enregistrer/soumettre, qui ne repassent pas par la
+    // validation d'étape) — jamais bloqués.
+    for (const e of this.entreesResultats()) {
+      const n = normaliserSansTexte(e.st);
+      if (n !== e.st) this.patchResultat(e.idDetail, e.idPt, n);
     }
-    // Pièces jointes : toute pièce « Observation » doit porter son texte (⚠️ règle ajoutée).
-    const pieceManque = this.piecesOrdonnees().some((p) => {
+    for (const p of this.piecesOrdonnees()) {
       const st = this.resultatPiece(p.idPiece);
-      return st.statut === 'OBS' && !st.observation.trim();
-    });
-    if (pieceManque) this.toast.error("Une pièce avec observation n'a pas d'observation renseignée — vérifiez les étapes Pièce.");
-    return !pieceManque;
+      if (normaliserPieceSansTexte(st) !== st) this.setStatutPiece(p.idPiece, 'RAS');
+    }
+    return true;
   }
   private nextId(ids: number[]): number {
     return (ids.length ? Math.max(...ids) : 0) + 1;
@@ -2204,7 +2279,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
             idExamen,
             idDetail: e.idDetail,
             idPtControle: e.idPt,
-            conforme: e.st.statut !== 'OBS',
+            conforme: !estObservationEffective(e.st), // « Observation » sans texte = conforme (pilote 21/09)
             observations: this.observationsBody(e.st),
           };
           if (!existing) nouveauxDetails.push(body);
@@ -2294,7 +2369,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
               idExamen,
               idDetail: e.idDetail,
               idPtControle: e.idPt,
-              conforme: e.st.statut !== 'OBS',
+              conforme: !estObservationEffective(e.st), // « Observation » sans texte = conforme (pilote 21/09)
               observations: this.observationsBody(e.st),
             };
             return existing

@@ -201,16 +201,17 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(ecran.etatLigneFn(3)).toBe('current');
   });
 
-  it('dit pourquoi la validation est impossible, et désactive le bouton', () => {
+  it("ne bloque plus une observation sans texte : la grille annonce le RAS, la validation l'applique (pilote 21/09)", () => {
     expect(texte('.grille__raison')).toBe('');
     choisirObservation(11);
-    expect(texte('.grille__raison')).toBe("Complétez l'observation du point 1 (« Au lieu de » ou « Lire ») pour valider la ligne 1.");
-    expect((racine().querySelector('.grille__valider') as HTMLButtonElement).disabled).toBe(true);
+    expect(texte('.grille__raison')).toBe('');
+    expect((racine().querySelector('.grille__valider') as HTMLButtonElement).disabled).toBe(false);
+    expect(racine().querySelector('.pt__hint')?.textContent?.trim()).toBe('Sans correction renseignée, ce point sera validé RAS.');
 
     saisir('obs-aulieude-11-0', 'Gré à gré');
-    expect(texte('.grille__raison')).toBe('');
+    expect(racine().querySelector('.pt__hint')).toBeNull();
 
-    // Point non statué (grille enrichie après coup) : on nomme le point à renseigner.
+    // Point non statué (grille enrichie après coup) : on nomme le point à renseigner — lui bloque toujours.
     ecran['resultats'].update((m) => {
       const n = new Map(m);
       n.delete('1:12');
@@ -219,6 +220,14 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     rendre();
     expect(texte('.grille__raison')).toBe('Renseignez le point 2 pour valider la ligne 1.');
     expect(texte('.grille__valider')).toBe('Valider la ligne 1 et passer à la 2');
+  });
+
+  it("valide un point « Observation » resté vide comme RAS : rien au PV, rien sur l'avis (pilote 21/09)", () => {
+    choisirObservation(11);
+    valider(); // ligne 1 : l'observation vide vaut RAS
+    expect(ecran.etatLigneFn(1)).toBe('done-ras');
+    expect(etapeParcours('Lignes du plan').textContent).toContain('1 sur 3');
+    expect(etapeParcours('Lignes du plan').textContent).not.toContain('observation');
   });
 
   it("« Observer cette cellule » pré-remplit « Au lieu de », encadre la cellule et envoie la cible", () => {

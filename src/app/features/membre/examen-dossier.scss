@@ -359,10 +359,47 @@
 /* ── Pré-contrôle du PPM (assistant IA, lot 3) ──────────────────────────────────────────────
    Le panneau est posé AVANT la grille : il dit où regarder d'abord, il ne remplace aucun point de
    l'examen. Encadré léger pour qu'on le distingue de la grille sans lui voler la vedette. */
-.pre-controle-examen {
-  margin: 0 0 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--n-200);
-  border-radius: var(--radius-lg);
-  background: #fff;
+/* ── Colonne de droite (21/09) : pré-contrôle borné et défilant AU-DESSUS, grille EN DESSOUS qui garde
+   sa hauteur. Repliée : seule la languette de la grille reste, le pré-contrôle s'efface pour rendre la
+   largeur au document (on le retrouve en dépliant). ── */
+.cote {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
+.cote > app-examen-grille {
+  flex: 1 1 0;
+  min-height: 0;
+}
+/* ── Pré-contrôle en MODALE (demande pilote 21/09) : plus de section en colonne. ── */
+/* Bouton de la barre du document — même gabarit que l'interrupteur « Annotations » (_document-officiel). */
+.doc-precontrole {
+  appearance: none;
+  height: 1.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.65rem;
+  border: 1px solid #cfd8e3;
+  border-radius: 7px;
+  background: #fff;
+  color: #34405a; /* 10,4:1 sur blanc */
+  font: 600 0.78125rem/1 var(--font-base);
+  cursor: pointer;
+}
+.doc-precontrole:hover { background: #f0f9ff; border-color: #7dd3fc; color: #075985; }
+.doc-precontrole__n {
+  min-width: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #667299; /* 4,7:1 avec le blanc */
+  color: #fff;
+  line-height: 1.25rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.doc-precontrole__n--prio { background: #b45309; } /* du prioritaire : ambre foncé, 4,5:1 avec le blanc */
+.pc-modal { width: min(900px, 95vw); max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; }
+.pc-modal .modal-body { min-height: 0; }

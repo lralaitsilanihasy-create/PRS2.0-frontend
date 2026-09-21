@@ -99,6 +99,7 @@ import { ActionGrille, VueGrille, pluriel } from './examen-modele';
                     <span>Observation</span>
                     <textarea id="obs-piece" rows="3" [value]="pc.observation" [disabled]="vue().verrouille" (input)="action.emit({ type: 'observationPiece', valeur: valeurDe($event) })"></textarea>
                   </label>
+                  @if (pc.seraRas) { <p class="pt__hint">Sans texte, la pièce sera validée RAS.</p> }
                   @if (pc.erreur) { <span class="form-error">{{ pc.erreur }}</span> }
                 </div>
               }
@@ -160,6 +161,8 @@ import { ActionGrille, VueGrille, pluriel } from './examen-modele';
                 <button type="button" class="obs__ajouter" [disabled]="vue().verrouille" (click)="action.emit({ type: 'ajouter', idPt: p.idPt })">
                   <app-icone nom="plus" [taille]="14" />Ajouter une correction
                 </button>
+                <!-- « Pas de texte = pas d'observation » (pilote 21/09) : dit d'avance, sans bloquer. -->
+                @if (p.seraRas) { <p class="pt__hint">Sans correction renseignée, ce point sera validé RAS.</p> }
                 @if (p.erreur) { <span class="form-error">{{ p.erreur }}</span> }
               }
             </div>

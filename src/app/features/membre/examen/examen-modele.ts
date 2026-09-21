@@ -38,6 +38,24 @@ export function aDuTexte(o: ObsLigne): boolean {
   return !!(o.auLieuDe.trim() || o.lire.trim());
 }
 
+// ── « Pas de texte = pas d'observation » (décision pilote 2026-09-21) ─────────────────────────
+// Le bouton « Observation » n'est qu'une intention ; l'observation, c'est la correction écrite. Un point
+// (ou une pièce) laissé « Observation » sans texte — clic accidentel — VAUT RAS : il ne bloque pas la
+// validation, ne part pas au PV, ne pèse pas sur l'avis. La grille l'annonce avant le clic.
+
+/** Un point est une observation EFFECTIVE : « Observation » ET au moins une correction renseignée. */
+export function estObservationEffective(st: { statut: StatutPoint; observations: readonly ObsLigne[] }): boolean {
+  return st.statut === 'OBS' && st.observations.some(aDuTexte);
+}
+/** Ramène un point « Observation » sans texte à RAS ; rend l'objet TEL QUEL sinon (identité = rien à réécrire). */
+export function normaliserSansTexte(st: RowState): RowState {
+  return st.statut === 'OBS' && !st.observations.some(aDuTexte) ? { statut: 'RAS', observations: [] } : st;
+}
+/** Même règle pour une pièce jointe : « Observation » sans texte = RAS. */
+export function normaliserPieceSansTexte(r: ResultatPiece): ResultatPiece {
+  return r.statut === 'OBS' && !r.observation.trim() ? { statut: 'RAS', observation: '' } : r;
+}
+
 // ── Modifications non enregistrées ────────────────────────────────────────────────────────────
 
 /**
@@ -195,15 +213,11 @@ export function raisonValidationImpossible(p: {
   piece?: ResultatPiece | null;
 }): string | null {
   if (p.verrouille) return 'Examen verrouillé : lecture seule.';
-  if (p.piece) {
-    if (p.piece.statut === null) return `Choisissez RAS ou Observation pour valider ${p.objet}.`;
-    if (p.piece.statut === 'OBS' && !p.piece.observation.trim()) return `Rédigez l'observation pour valider ${p.objet}.`;
-    return null;
-  }
+  // ⚠️ 21/09 (pilote) — une observation SANS texte ne bloque plus : elle vaudra RAS à la validation
+  // (`normaliserSansTexte`). Seul un point ou une pièce NON STATUÉ empêche encore de valider.
+  if (p.piece) return p.piece.statut === null ? `Choisissez RAS ou Observation pour valider ${p.objet}.` : null;
   const nonStatue = p.points.find((pt) => pt.statut === null);
   if (nonStatue) return `Renseignez le point ${nonStatue.rang} pour valider ${p.objet}.`;
-  const vide = p.points.find((pt) => pt.statut === 'OBS' && !pt.observations.some(aDuTexte));
-  if (vide) return `Complétez l'observation du point ${vide.rang} (« Au lieu de » ou « Lire ») pour valider ${p.objet}.`;
   return null;
 }
 
@@ -391,6 +405,8 @@ export interface PointVue {
   statut: StatutPoint;
   observations: ObsLigneVue[];
   erreur: string | null;
+  /** « Observation » sans correction renseignée : vaudra RAS à la validation — annoncé sous le point. */
+  seraRas: boolean;
 }
 
 export interface PieceVue {
@@ -400,6 +416,8 @@ export interface PieceVue {
   observation: string;
   numero: number | null;
   erreur: string | null;
+  /** « Observation » sans texte : vaudra RAS à la validation — annoncé sous la pièce. */
+  seraRas: boolean;
 }
 
 export interface VueGrille {

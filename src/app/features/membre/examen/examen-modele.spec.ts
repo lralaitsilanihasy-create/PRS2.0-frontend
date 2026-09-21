@@ -7,9 +7,12 @@ import {
   delaiExamen,
   empreintePiece,
   empreintePoint,
+  estObservationEffective,
   formatEcheance,
   lignesViseesParConsigne,
   modificationsNonEnregistrees,
+  normaliserPieceSansTexte,
+  normaliserSansTexte,
   numerosEnTexte,
   raisonValidationImpossible,
 } from './examen-modele';
@@ -74,15 +77,44 @@ describe('Examen refondu — règles pures (lot 2)', () => {
       ).toBe('Renseignez le point 2 pour valider la ligne 6.');
     });
 
-    it("exige une correction renseignée pour un point « Observation », une observation écrite pour une pièce", () => {
+    it("ne bloque plus une observation sans texte — elle vaudra RAS à la validation (pilote 21/09) ; seul un point non statué bloque", () => {
       expect(
         raisonValidationImpossible({ verrouille: false, objet: 'la ligne 3', points: [{ rang: 1, statut: 'OBS', observations: [{ auLieuDe: ' ', lire: '' }] }] }),
-      ).toBe("Complétez l'observation du point 1 (« Au lieu de » ou « Lire ») pour valider la ligne 3.");
-      expect(raisonValidationImpossible({ verrouille: false, objet: 'la pièce 2', points: [], piece: { statut: 'OBS', observation: '' } })).toBe(
-        "Rédigez l'observation pour valider la pièce 2.",
+      ).toBeNull();
+      expect(raisonValidationImpossible({ verrouille: false, objet: 'la fiche', points: [{ rang: 1, statut: 'OBS', observations: [] }] })).toBeNull();
+      expect(raisonValidationImpossible({ verrouille: false, objet: 'la pièce 2', points: [], piece: { statut: 'OBS', observation: '' } })).toBeNull();
+      expect(raisonValidationImpossible({ verrouille: false, objet: 'la pièce 2', points: [], piece: { statut: null, observation: '' } })).toBe(
+        'Choisissez RAS ou Observation pour valider la pièce 2.',
       );
       expect(raisonValidationImpossible({ verrouille: false, objet: 'la ligne 3', points: [{ rang: 1, statut: 'OBS', observations: [{ auLieuDe: 'Gré à gré', lire: '' }] }] })).toBeNull();
       expect(raisonValidationImpossible({ verrouille: true, objet: 'la ligne 3', points: [] })).toBe('Examen verrouillé : lecture seule.');
+    });
+
+  });
+
+  describe('« pas de texte = pas d\'observation » (pilote 21/09)', () => {
+    it("une observation n'est effective qu'avec une correction renseignée ; sans texte, elle est normalisée en RAS", () => {
+      const vide = { statut: 'OBS' as const, observations: [{ auLieuDe: '', lire: ' ' }] };
+      const pleine = { statut: 'OBS' as const, observations: [{ auLieuDe: '', lire: 'Consultation de prix ouverte' }] };
+      const ras = { statut: 'RAS' as const, observations: [] };
+      const nonStatue = { statut: null, observations: [] };
+      expect(estObservationEffective(vide)).toBe(false);
+      expect(estObservationEffective(pleine)).toBe(true);
+      expect(estObservationEffective(ras)).toBe(false);
+      expect(normaliserSansTexte(vide)).toEqual({ statut: 'RAS', observations: [] });
+      expect(normaliserSansTexte({ statut: 'OBS', observations: [] })).toEqual({ statut: 'RAS', observations: [] });
+      // Identité préservée quand il n'y a rien à réécrire — c'est ce que testent les appelants (`n !== st`).
+      expect(normaliserSansTexte(pleine)).toBe(pleine);
+      expect(normaliserSansTexte(ras)).toBe(ras);
+      expect(normaliserSansTexte(nonStatue)).toBe(nonStatue); // non statué reste non statué : lui, bloque
+    });
+
+    it('même règle pour une pièce jointe', () => {
+      expect(normaliserPieceSansTexte({ statut: 'OBS', observation: '   ' })).toEqual({ statut: 'RAS', observation: '' });
+      const piece = { statut: 'OBS' as const, observation: 'Illisible' };
+      expect(normaliserPieceSansTexte(piece)).toBe(piece);
+      const nonStatuee = { statut: null, observation: '' };
+      expect(normaliserPieceSansTexte(nonStatuee)).toBe(nonStatuee);
     });
   });
 
