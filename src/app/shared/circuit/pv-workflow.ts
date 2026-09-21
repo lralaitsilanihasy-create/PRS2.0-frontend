@@ -73,7 +73,10 @@ import {
             {{ saving() ? 'Transmission…' : 'Accepter et transmettre au Président' }}
           </button>
         }
-        @if (canViser()) {
+        <!-- ⚠️ Demande pilote (2026-09-21) — un panneau ouvert (Viser / Retourner / Lettre) est une DÉCISION
+             en cours, pas un menu : les boutons des deux autres choix disparaissent tant qu'il est ouvert ;
+             seul le bouton du panneau ouvert reste (il le referme, comme son « Annuler »). -->
+        @if (canViser() && !retourOuvert() && !lettreOuvert()) {
           @if (estViseurAttendu()) {
             <button *appCan="'PV_SIGNER'" type="button" class="btn btn-success" (click)="toggleViser()">
               {{ pv().statutPv === 'PROJET_ACCEPTE' ? 'Compléter le visa…' : 'Viser…' }}
@@ -105,12 +108,12 @@ import {
             </button>
           }
         }
-        @if (canRetourner()) {
+        @if (canRetourner() && !viserOuvert() && !lettreOuvert()) {
           <button *appCan="'PV_RETOURNER'" type="button" class="btn btn-warning" (click)="toggleRetour()">
             {{ retourLabel() }}
           </button>
         }
-        @if (canLettre()) {
+        @if (canLettre() && !retourOuvert() && !viserOuvert()) {
           <button *appCan="'PV_ACCEPTER'" type="button" class="btn btn-outline" (click)="toggleLettre()">
             Lettre de renvoi
           </button>
@@ -726,8 +729,14 @@ export class PvWorkflow {
     }
   });
 
+  /** Un seul panneau à la fois (pilote 21/09) : ouvrir le retour ferme le visa et la lettre. */
   toggleRetour(): void {
-    this.retourOuvert.update((v) => !v);
+    const opening = !this.retourOuvert();
+    this.retourOuvert.set(opening);
+    if (opening) {
+      this.viserOuvert.set(false);
+      this.lettreOuvert.set(false);
+    }
   }
   toggleSoumettre(): void {
     this.soumettreOuvert.update((v) => !v);
@@ -769,6 +778,8 @@ export class PvWorkflow {
     const opening = !this.viserOuvert();
     this.viserOuvert.set(opening);
     if (opening) {
+      this.retourOuvert.set(false); // un seul panneau à la fois (pilote 21/09)
+      this.lettreOuvert.set(false);
       this.interim.set(interimMode);
       this.noteChoisie.set(null);
       this.viserErreur.set(null);
@@ -824,6 +835,8 @@ export class PvWorkflow {
     const opening = !this.lettreOuvert();
     this.lettreOuvert.set(opening);
     if (opening) {
+      this.retourOuvert.set(false); // un seul panneau à la fois (pilote 21/09)
+      this.viserOuvert.set(false);
       this.corpsLettre.set('');
       this.chargerLettres();
     }
