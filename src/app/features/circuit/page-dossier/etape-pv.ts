@@ -25,6 +25,7 @@ const LIBELLES_WORKFLOW: readonly (readonly [GesteAFaire, RegExp])[] = [
   ['ACCEPTER', /^(Accepter et transmettre|Transmission…)/],
   ['VISER', /^(Viser|Compléter le visa)/],
   ['RETOURNER', /^Retourner/],
+  ['LETTRE_RENVOI', /^Lettre de renvoi/],
   ['SIGNER', /^(Signer|Signé|Signature…)/],
 ];
 
@@ -53,6 +54,9 @@ type LecturePv =
 export interface FocusNavette {
   geste: GesteAFaire;
 }
+
+/** Gestes de navette qui OUVRENT UN PANNEAU au clic (aucune requête) : à l'arrivée par `?geste=`, on les ouvre. */
+const GESTES_PANNEAU: readonly GesteAFaire[] = ['VISER', 'RETOURNER', 'LETTRE_RENVOI'];
 
 /**
  * Navette du projet de PV DANS le panneau de l'étape (page dossier, lot L4-F4) : `PvWorkflow` monté TEL
@@ -210,15 +214,26 @@ export class EtapePv {
         else if (l.etat === 'pret') {
           const zone = this.zone().nativeElement;
           const offerts = boutonsWorkflow(zone);
-          manquants = servis.filter((g) => !offerts[g]);
+          // Un panneau ouvert (Viser, Retourner, Lettre — un seul à la fois, pilote 21/09) masque les autres
+          // issues de la décision : elles ne sont pas « indisponibles », « Fermer » les rend.
+          const panneauOuvert = zone.querySelector('.pv-workflow__retour') !== null;
+          manquants = panneauOuvert ? [] : servis.filter((g) => !offerts[g]);
           // Même marque que les autres boutons du panneau (`data-geste`) : la barre collante, `?geste=` et la
           // recette retrouvent un geste de navette comme les autres. Posée sur le rendu, jamais dans `PvWorkflow`.
+          // Seuls les gestes SERVIS la portent (parité affiché = servi) : « Lettre de renvoi », geste front,
+          // reste un bouton de `PvWorkflow` sans marque — `?geste=LETTRE_RENVOI` le retrouve par `offerts`.
           for (const b of Array.from(zone.querySelectorAll('.pv-workflow__actions > button[data-geste]'))) b.removeAttribute('data-geste');
-          for (const [geste, b] of Object.entries(offerts)) b?.setAttribute('data-geste', geste);
+          for (const [geste, b] of Object.entries(offerts)) if (servis.includes(geste as GesteAFaire)) b?.setAttribute('data-geste', geste);
           const focus = this.gesteFocus();
           if (focus && focus !== this.focusServi && offerts[focus.geste]) {
             this.focusServi = focus;
-            offerts[focus.geste]?.focus();
+            const bouton = offerts[focus.geste];
+            bouton?.focus();
+            // ⚠️ Demande pilote (2026-09-21) — arrivée depuis « À faire » : un geste qui OUVRE UN PANNEAU
+            // (Viser, Retourner) s'ouvre directement, sans repasser par la barre à trois boutons —
+            // `PvWorkflow` n'affiche alors que ce panneau (un seul à la fois). Jamais pour un geste
+            // qui AGIT au clic (Signer, Soumettre, Accepter) : là, le focus seul.
+            if (GESTES_PANNEAU.includes(focus.geste)) bouton?.click();
           }
         }
         if (manquants.join() !== this.indisponibles().join()) this.indisponibles.set(manquants);

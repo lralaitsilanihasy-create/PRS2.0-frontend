@@ -266,17 +266,47 @@ describe('Page dossier — navette du projet de PV (lot L4-F4)', () => {
     expect(texte(modale)).not.toContain('Définitif');
   });
 
-  it('?geste=VISER : le bouton de PvWorkflow reçoit le focus, rien ne s’ouvre ni ne part ; la barre collante y ramène', async () => {
+  it('?geste=VISER : le panneau de visa s’ouvre directement, seul son bouton reste, rien ne part ; la barre collante y ramène', async () => {
     await ouvrir('PRESIDENT', 'PRESID1', null, '/president/dossier/42?geste=VISER', { gestes: reponse('PRESIDENT', [tache('PV_A_VISER', 'VISER', { gestesSecondaires: ['RETOURNER'] })]) });
     await harness.fixture.whenStable();
     repondre();
+    harness.detectChanges();
+    repondre(); // référentiels du panneau de visa, demandés à l'ouverture
+    harness.detectChanges();
     expect(texte(document.activeElement)).toBe('Viser…');
-    expect(racine().querySelector('.pv-workflow__retour')).toBeNull();
+    // ⚠️ Pilote 21/09 — depuis « À faire », un geste qui ouvre un panneau s'ouvre : plus de barre à trois boutons.
+    expect(texte(racine().querySelector('.pv-workflow__retour--accept'))).toContain('Visa — clôture de la navette');
+    expect(boutonsWorkflow()).toEqual(['Viser…']);
+    expect(racine().querySelector('.ep__indispo')).toBeNull(); // les issues masquées par le panneau ne sont pas « indisponibles »
     expect(demandees.filter((d) => d.startsWith('POST'))).toEqual([]);
 
     (document.activeElement as HTMLElement).blur();
     (racine().querySelector('app-barre-collante button') as HTMLButtonElement).click();
     expect(texte(document.activeElement)).toBe('Viser…');
+  });
+
+  it('?geste=RETOURNER : le commentaire de rectification s’ouvre directement, sans « Viser… » ni « Lettre de renvoi » ; rien ne part', async () => {
+    await ouvrir('PRESIDENT', 'PRESID1', null, '/president/dossier/42?geste=RETOURNER', { gestes: reponse('PRESIDENT', [tache('PV_A_VISER', 'VISER', { gestesSecondaires: ['RETOURNER'] })]) });
+    await harness.fixture.whenStable();
+    repondre();
+    harness.detectChanges();
+    expect(texte(document.activeElement)).toBe('Retourner pour rectification');
+    expect(racine().querySelector('.pv-workflow__retour textarea')).not.toBeNull();
+    expect(boutonsWorkflow()).toEqual(['Retourner pour rectification']);
+    expect(racine().querySelector('.ep__indispo')).toBeNull();
+    expect(demandees.filter((d) => d.startsWith('POST'))).toEqual([]);
+  });
+
+  it('?geste=LETTRE_RENVOI (geste FRONT, jamais servi) : le panneau « Lettre de renvoi » s’ouvre directement, sans « Viser… » ni « Retourner » ; rien ne part', async () => {
+    await ouvrir('PRESIDENT', 'PRESID1', null, '/president/dossier/42?geste=LETTRE_RENVOI', { gestes: reponse('PRESIDENT', [tache('PV_A_VISER', 'VISER', { gestesSecondaires: ['RETOURNER'] })]) });
+    await harness.fixture.whenStable();
+    repondre();
+    harness.detectChanges();
+    expect(texte(document.activeElement)).toBe('Lettre de renvoi');
+    expect(racine().querySelector('#pv-lettre-corps')).not.toBeNull();
+    expect(boutonsWorkflow()).toEqual(['Lettre de renvoi']);
+    expect(racine().querySelector('.ep__indispo')).toBeNull();
+    expect(demandees.filter((d) => d.startsWith('POST'))).toEqual([]);
   });
 
   describe('règle C2 — PRMP et UGPM, sur une doublure qui leur servirait la navette et des noms', () => {

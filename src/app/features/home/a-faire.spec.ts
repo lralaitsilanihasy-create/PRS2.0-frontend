@@ -70,9 +70,10 @@ describe('Accueil « À faire » (écran)', () => {
     const premiere = sections[0].querySelector('.af-l') as HTMLElement;
     expect(texte(premiere.querySelector('.af-l__meta'))).toBe('DAO Antananarivo · Numéroté le 11/09');
     expect(texte(premiere.querySelector('.af-l__delai'))).toBe('1 h de retard 9 h sur 8 h');
-    expect(premiere.querySelector('.af-l__act')?.getAttribute('aria-label')).toBe('Dispatcher — 00015/DGSR/DAO/2026');
+    // ⚠️ Pilote 21/09 — plus de bouton d'action sur la ligne (il doublait le panneau) : seul le corps cliquable.
+    expect(premiere.querySelector('.af-l__act')).toBeNull();
     expect(texte(sections[0].querySelector('.af-sec__lot'))).toBe('Dispatcher la sélection');
-    // Une action, un verbe : l'aperçu de la ligne sélectionnée reprend le verbe du bouton de ligne.
+    // Une action, un verbe : l'aperçu de la ligne sélectionnée porte le verbe, en clair.
     expect(texte(racine().querySelector('.suite__t'))).toBe('Dispatcher le dossier');
     expect(texte(racine().querySelector('.ap__principal'))).toBe('Dispatcher le dossier');
     expect(aFaire).toHaveBeenCalledTimes(1);
@@ -109,7 +110,7 @@ describe('Accueil « À faire » (écran)', () => {
     expect(texte(apercu.querySelector('.suite__d'))).toMatch(/^Reste 5 h · avant mar\.? 15\/09, 12:00$/);
     expect(apercu.querySelectorAll('.frise__e').length).toBe(7);
     expect(texte(apercu.querySelector('.frise'))).toContain('Naina Razafindrakoto');
-    expect(Array.from(apercu.querySelectorAll('.ap__actions button')).map(texte)).toEqual(['Viser le projet de PV', 'Retourner le projet pour rectification']);
+    expect(Array.from(apercu.querySelectorAll('.ap__actions button')).map(texte)).toEqual(['Viser le projet de PV', 'Retourner le projet pour rectification', 'Lettre de renvoi']); // « Lettre de renvoi » : troisième issue de la décision, dérivée côté écran (pilote 21/09)
     // Lot L4-F6 : « Consulter le dossier » est un LIEN vers la page, avec le retour vers l'accueil.
     const consulter = apercu.querySelector('.ap__actions a') as HTMLAnchorElement;
     expect(texte(consulter)).toBe('Consulter le dossier');
@@ -154,21 +155,25 @@ describe('Accueil « À faire » (écran)', () => {
     await president();
     const router = TestBed.inject(Router);
     const naviguer = vi.spyOn(router, 'navigate').mockResolvedValue(true);
-    const action = (ref: string): HTMLButtonElement =>
-      tous('.af-l__act').find((b) => b.getAttribute('aria-label')?.endsWith(ref)) as HTMLButtonElement;
+    // ⚠️ Pilote 21/09 — le geste se joue depuis le PANNEAU de la ligne sélectionnée (plus de bouton de ligne).
+    const agirSur = (ref: string): void => {
+      (tous('.af-l__corps').find((b) => texte(b).includes(ref)) as HTMLButtonElement).click();
+      rendre();
+      (racine().querySelector('.ap__principal') as HTMLButtonElement).click();
+    };
 
     // Navette du PV et décision de retrait : la page, ouverte sur l'étape (décision 2 du plan L4).
-    action('00002/MTP/PPM-AGPM/2026').click();
+    agirSur('00002/MTP/PPM-AGPM/2026');
     expect(naviguer).toHaveBeenLastCalledWith(['/', 'president', 'dossier', 1002], { queryParams: { returnUrl: '/president/a-faire', geste: 'VISER' } });
-    action('00009/DGB/PPM/2026').click();
+    agirSur('00009/DGB/PPM/2026');
     expect(naviguer).toHaveBeenLastCalledWith(['/', 'president', 'dossier', 1009], { queryParams: { returnUrl: '/president/a-faire', geste: 'DECIDER_RETRAIT' } });
-    action('00015/DGSR/DAO/2026').click();
+    agirSur('00015/DGSR/DAO/2026');
     expect(naviguer).toHaveBeenLastCalledWith(['/', 'president', 'dossier', 1051], { queryParams: { returnUrl: '/president/a-faire', geste: 'DISPATCHER' } });
 
     // Le regroupement choisi part dans le retour : la liste se retrouve telle qu'on l'a quittée.
     (tous('.af-vues__b').find((b) => texte(b) === 'Par étape') as HTMLButtonElement).click();
     rendre();
-    action('00015/DGSR/DAO/2026').click();
+    agirSur('00015/DGSR/DAO/2026');
     expect(naviguer).toHaveBeenLastCalledWith(['/', 'president', 'dossier', 1051], { queryParams: { returnUrl: '/president/a-faire?vue=etape', geste: 'DISPATCHER' } });
   });
 

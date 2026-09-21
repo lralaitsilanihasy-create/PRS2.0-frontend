@@ -66,7 +66,6 @@
 }
 .af-vues__b:focus-visible,
 .af-l__corps:focus-visible,
-.af-l__act:focus-visible,
 .af-sec__lot:focus-visible,
 .af-deleg__b:focus-visible {
   outline: 2px solid #0284c7;
@@ -342,29 +341,6 @@
 .af-barre__r--pause { background: #cbd5e1; }
 .af-barre__r--suivi { background: #bae6fd; }
 
-.af-l__act {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  height: 2.25rem;
-  padding: 0 0.8rem;
-  border: 1px solid #9fd3f1;
-  border-radius: 9px;
-  background: #fff;
-  font: 700 0.8125rem/1 var(--font-base);
-  color: #0369a1;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.af-l__act:hover:not(:disabled) { border-color: #0284c7; }
-.af-l__act--on {
-  background: #0369a1;
-  border-color: #0369a1;
-  color: #fff;
-}
-.af-l__act:disabled { opacity: 0.55; cursor: progress; }
 
 /* ── Vide, délégation ── */
 .af-vide {

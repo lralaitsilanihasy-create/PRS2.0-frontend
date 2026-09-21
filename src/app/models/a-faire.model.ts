@@ -44,6 +44,12 @@ export type GesteAFaire =
   | 'ACCEPTER'
   | 'RETOURNER'
   | 'VISER'
+  /**
+   * ⚠️ Geste FRONT (demande pilote 2026-09-21), jamais servi par le serveur : la lettre de renvoi est la
+   * troisième issue de la décision du P/CC sur un projet de PV soumis (avec Viser et Retourner). Dérivé
+   * côté écran quand VISER ou RETOURNER est servi ; sur la page, il ouvre le panneau « Lettre de renvoi ».
+   */
+  | 'LETTRE_RENVOI'
   | 'SIGNER'
   | 'SIGNER_LETTRE'
   | 'DECIDER_RETRAIT'

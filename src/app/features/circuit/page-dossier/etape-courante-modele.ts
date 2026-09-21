@@ -46,7 +46,7 @@ export function classerEchecGestes(err: unknown): EtatGestes {
 export type FamillePage = 'modale' | 'lien' | 'navette' | 'retrait';
 
 /** Lot F4 : la navette du projet de PV, dans le panneau (`EtapePv`, qui monte `PvWorkflow` tel quel). */
-export const GESTES_NAVETTE_PV: readonly GesteAFaire[] = ['SOUMETTRE_PV', 'ACCEPTER', 'VISER', 'RETOURNER', 'SIGNER'];
+export const GESTES_NAVETTE_PV: readonly GesteAFaire[] = ['SOUMETTRE_PV', 'ACCEPTER', 'VISER', 'RETOURNER', 'LETTRE_RENVOI', 'SIGNER'];
 /** Lot F5 : formulaire court dans le panneau (`DecisionRetrait`). */
 const GESTES_RETRAIT: readonly GesteAFaire[] = ['DECIDER_RETRAIT'];
 /** Aucun bouton : une phrase d'état (§3.3). */
@@ -133,6 +133,7 @@ export const TITRES_SITUATION: Readonly<Record<GesteAFaire, string>> = {
   ACCEPTER: 'Projet de PV soumis par le Membre',
   RETOURNER: 'Projet de PV soumis, décision attendue',
   VISER: 'Projet de PV en attente de visa',
+  LETTRE_RENVOI: 'Projet de PV soumis, décision attendue',
   SIGNER: 'PV visé, en attente des signatures',
   SIGNER_LETTRE: 'Lettre de renvoi en attente de signature',
   DECIDER_RETRAIT: 'Retrait demandé par la PRMP',
@@ -431,7 +432,20 @@ export function montantGestes(g: GestesDossier | null): string {
   return montant == null ? '' : `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(montant)} Ar`;
 }
 
-/** `?geste=` : pris en compte seulement s'il est servi — une valeur forgée est ignorée (`null`). */
+/**
+ * `?geste=` : pris en compte seulement s'il est servi — une valeur forgée est ignorée (`null`).
+ * ⚠️ Exception FRONT (pilote 21/09) : `LETTRE_RENVOI` n'est jamais servi, mais il est la troisième issue
+ * de la décision sur un projet de PV soumis — accepté dès que VISER ou RETOURNER est servi, porté par
+ * cette tâche (le panneau « Lettre de renvoi » de `PvWorkflow` s'ouvre alors ; s'il ne l'offre pas,
+ * « geste indisponible » l'écrit).
+ */
 export function gesteDemande(brut: string | null | undefined, boutons: readonly GesteBouton[]): GesteBouton | null {
-  return brut ? boutons.find((b) => b.geste === brut) ?? null : null;
+  if (!brut) return null;
+  const servi = boutons.find((b) => b.geste === brut);
+  if (servi) return servi;
+  if (brut !== 'LETTRE_RENVOI') return null;
+  const decision = boutons.find((b) => b.geste === 'VISER' || b.geste === 'RETOURNER');
+  if (!decision) return null;
+  const l = LIBELLES_GESTES.LETTRE_RENVOI;
+  return { ...decision, cle: `${decision.tache.section}|LETTRE_RENVOI`, geste: 'LETTRE_RENVOI', libelle: l.long, icone: l.icone };
 }

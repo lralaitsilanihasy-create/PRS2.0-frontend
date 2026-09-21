@@ -44,6 +44,7 @@ export const FAMILLES_GESTES: Readonly<Record<GesteAFaire, FamilleGeste>> = {
   ACCEPTER: 'pv',
   VISER: 'pv',
   RETOURNER: 'pv',
+  LETTRE_RENVOI: 'pv',
   SIGNER: 'pv',
   SIGNER_LETTRE: 'lettre',
   ARCHIVER_LETTRE: 'lettre',
@@ -89,6 +90,7 @@ export const GESTES_SUR_PAGE: readonly GesteAFaire[] = [
   'ACCEPTER',
   'VISER',
   'RETOURNER',
+  'LETTRE_RENVOI',
   'SIGNER',
   'DECIDER_RETRAIT',
 ];
@@ -138,6 +140,7 @@ export function cibleGeste(geste: GesteAFaire, t: AFaireTache, espace: string): 
     case 'ACCEPTER':
     case 'VISER':
     case 'RETOURNER':
+    case 'LETTRE_RENVOI': // geste FRONT (pilote 21/09) : même écran de repli que la décision qu'il accompagne
     case 'SIGNER':
       return idPv != null ? route([base, 'resultat-examen', 'pv'], true, { gerer: idPv }) : route([base, 'resultat-examen', 'pv'], false);
     case 'SIGNER_LETTRE':

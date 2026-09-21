@@ -177,16 +177,9 @@ const VUES: readonly { cle: VueAFaire; libelle: string }[] = [
                   <span class="af-l__ds">{{ l.delai.sousTexte }}</span>
                 </span>
               </button>
-              <button
-                type="button"
-                class="af-l__act"
-                [class.af-l__act--on]="l.cle === cleSelectionnee()"
-                [attr.aria-label]="l.action.libelle + ' — ' + l.reference"
-                [disabled]="ouverture() !== null"
-                (click)="agir(l.tache, l.tache.geste)"
-              >
-                <app-icone [nom]="l.action.icone" [taille]="16" /><span aria-hidden="true">{{ l.action.libelle }}</span>
-              </button>
+              <!-- ⚠️ Demande pilote (2026-09-21) — plus de bouton d'action sur la ligne : il doublait l'action
+                   principale du panneau de droite (« Viser » / « Viser le projet de PV »). La ligne se
+                   sélectionne, le panneau agit. -->
             </li>
           }
         </ul>

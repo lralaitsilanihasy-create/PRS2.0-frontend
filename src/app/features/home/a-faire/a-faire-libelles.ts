@@ -65,6 +65,7 @@ export const LIBELLES_GESTES: Readonly<Record<GesteAFaire, LibelleGeste>> = {
   ACCEPTER: { court: 'Accepter', long: 'Accepter le projet de PV', icone: 'check' },
   RETOURNER: { court: 'Retourner', long: 'Retourner le projet pour rectification', icone: 'return' },
   VISER: { court: 'Viser', long: 'Viser le projet de PV', icone: 'pen' },
+  LETTRE_RENVOI: { court: 'Lettre', long: 'Lettre de renvoi', icone: 'mail' },
   SIGNER: { court: 'Signer ma part', long: 'Signer ma part du PV', icone: 'pen' },
   SIGNER_LETTRE: { court: 'Signer la lettre', long: 'Signer la lettre de renvoi', icone: 'pen' },
   DECIDER_RETRAIT: { court: 'Examiner la demande', long: 'Examiner la demande de retrait', icone: 'undo' },

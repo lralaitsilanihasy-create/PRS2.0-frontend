@@ -2,11 +2,9 @@ import { isApiError } from '../../../core/errors/api-error';
 import { AFaire, AFaireCompteurs, AFaireTache, Role, SectionAFaire } from '../../../models';
 import { statutDossierLabel } from '../../../shared/circuit/circuit-workflow';
 import { DelaiLigne, GenreDelai, delaiLigne, heures, jourMois, lireDate } from '../../../shared/circuit/frise-delai';
-import { NomIcone } from '../../../shared/ui/icone';
 import {
   LIBELLES_AVIS,
   LIBELLES_ETAPES_CIRCUIT,
-  LIBELLES_GESTES,
   LIBELLES_MODES,
   LIBELLES_SECTIONS,
   TITRE_BROUILLONS_UGPM,
@@ -194,7 +192,6 @@ export interface LigneAFaire {
   localite: string;
   note: string;
   delai: DelaiLigne;
-  action: { libelle: string; icone: NomIcone };
   /** Ligne du bloc délégation : à quel titre. */
   mode: string | null;
 }
@@ -203,7 +200,7 @@ export const cleTache = (t: AFaireTache): string => `${t.dossier.idDossier}|${t.
 
 export function ligneAFaire(t: AFaireTache): LigneAFaire {
   const ref = referenceLigne(t);
-  const geste = LIBELLES_GESTES[t.geste];
+  // Plus d'action sur la ligne (pilote 21/09) : le panneau de droite porte le verbe, en clair.
   return {
     cle: cleTache(t),
     tache: t,
@@ -214,7 +211,6 @@ export function ligneAFaire(t: AFaireTache): LigneAFaire {
     localite: t.dossier.libelleLocalite ?? t.dossier.idLocalite ?? '',
     note: noteCourte(t),
     delai: delaiLigne(t),
-    action: { libelle: geste.court, icone: geste.icone },
     mode: t.mode === 'TITULAIRE' ? null : LIBELLES_MODES[t.mode],
   };
 }

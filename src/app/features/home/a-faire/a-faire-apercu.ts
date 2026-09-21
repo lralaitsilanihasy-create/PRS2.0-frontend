@@ -108,7 +108,18 @@ export class AFaireApercu {
   readonly ton = computed(() => statutSeverity(this.tache().dossier.statut));
   readonly frise = computed(() => friseDossier(this.tache()));
   readonly geste = computed(() => LIBELLES_GESTES[this.tache().geste]);
-  readonly secondaires = computed(() => this.tache().gestesSecondaires.filter((g) => g !== this.tache().geste));
+  /**
+   * Gestes secondaires servis — plus, ⚠️ demande pilote (2026-09-21), la **lettre de renvoi** quand la
+   * tâche est la décision du P/CC sur un projet de PV soumis (VISER ou RETOURNER servi) : troisième issue
+   * de cette décision, jamais servie par le serveur, offerte ici comme sur la page.
+   */
+  readonly secondaires = computed(() => {
+    const t = this.tache();
+    const gestes = [t.geste, ...t.gestesSecondaires];
+    const sec = t.gestesSecondaires.filter((g) => g !== t.geste);
+    if ((gestes.includes('VISER') || gestes.includes('RETOURNER')) && !gestes.includes('LETTRE_RENVOI')) sec.push('LETTRE_RENVOI');
+    return sec;
+  });
   readonly delai = computed(() => delaiLigne(this.tache()));
   readonly echeance = computed(() => (['EN_RETARD', 'BIENTOT', 'DANS_LES_DELAIS'].includes(this.tache().urgence) ? echeanceTexte(this.tache().delai.echeance) : ''));
   readonly faits = computed(() => faitsApercu(this.tache()));

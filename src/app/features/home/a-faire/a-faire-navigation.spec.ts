@@ -50,7 +50,7 @@ describe('Accueil « À faire » — geste → écran existant', () => {
 
   it('chaque geste du contrat a un libellé, une famille et une cible', () => {
     const gestes = Object.keys(LIBELLES_GESTES) as GesteAFaire[];
-    expect(gestes).toHaveLength(25);
+    expect(gestes).toHaveLength(26);
     for (const g of gestes) {
       expect(FAMILLES_GESTES[g]).toBeTruthy();
       expect(cibleGeste(g, t({ idLettre: 1 }), 'cc')).toBeTruthy();

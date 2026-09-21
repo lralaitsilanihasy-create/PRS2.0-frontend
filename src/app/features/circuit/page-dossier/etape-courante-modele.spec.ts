@@ -64,6 +64,16 @@ describe('Page dossier — étape en cours (règles)', () => {
       expect(gesteDemande('SUPPRIMER_TOUT', boutons)).toBeNull();
       expect(gesteDemande(null, boutons)).toBeNull();
     });
+
+    it('?geste=LETTRE_RENVOI (geste FRONT, pilote 21/09) : accepté dès que VISER ou RETOURNER est servi, porté par cette tâche ; ignoré sinon', () => {
+      const decision = gestesBoutons([tache({ section: 'PV_A_VISER', geste: 'VISER', gestesSecondaires: ['RETOURNER'] })]);
+      const lettre = gesteDemande('LETTRE_RENVOI', decision);
+      expect(lettre).toMatchObject({ geste: 'LETTRE_RENVOI', cle: 'PV_A_VISER|LETTRE_RENVOI', libelle: 'Lettre de renvoi', icone: 'mail' });
+      expect(lettre?.tache).toBe(decision[0].tache);
+      expect(gesteDemande('LETTRE_RENVOI', gestesBoutons([tache({ section: 'PV_A_VISER', geste: 'RETOURNER' })]))?.geste).toBe('LETTRE_RENVOI');
+      expect(gesteDemande('LETTRE_RENVOI', gestesBoutons([tache({ geste: 'DISPATCHER' })]))).toBeNull();
+      expect(gesteDemande('LETTRE_RENVOI', gestesBoutons([tache({ section: 'PV_A_SIGNER', geste: 'SIGNER' })]))).toBeNull();
+    });
   });
 
   describe('cible depuis la page', () => {
@@ -89,7 +99,7 @@ describe('Page dossier — étape en cours (règles)', () => {
     });
 
     it('lot F4 : la navette du PV se joue dans le panneau ; la gestion du PV, sans returnUrl, n’est plus qu’un repli', () => {
-      for (const g of ['SOUMETTRE_PV', 'ACCEPTER', 'VISER', 'RETOURNER', 'SIGNER'] as const) {
+      for (const g of ['SOUMETTRE_PV', 'ACCEPTER', 'VISER', 'RETOURNER', 'LETTRE_RENVOI', 'SIGNER'] as const) {
         expect(famillePage(g)).toBe('navette');
         expect(ciblePage(g, t, 'president', page)).toEqual({ type: 'route', commandes: ['/president', 'resultat-examen', 'pv'], ciblee: true, queryParams: { gerer: 12 } });
       }
