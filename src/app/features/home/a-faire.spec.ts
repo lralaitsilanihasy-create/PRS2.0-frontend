@@ -111,10 +111,11 @@ describe('Accueil « À faire » (écran)', () => {
     expect(apercu.querySelectorAll('.frise__e').length).toBe(7);
     expect(texte(apercu.querySelector('.frise'))).toContain('Naina Razafindrakoto');
     expect(Array.from(apercu.querySelectorAll('.ap__actions button')).map(texte)).toEqual(['Viser le projet de PV', 'Retourner le projet pour rectification', 'Lettre de renvoi']); // « Lettre de renvoi » : troisième issue de la décision, dérivée côté écran (pilote 21/09)
-    // Lot L4-F6 : « Consulter le dossier » est un LIEN vers la page, avec le retour vers l'accueil.
-    const consulter = apercu.querySelector('.ap__actions a') as HTMLAnchorElement;
-    expect(texte(consulter)).toBe('Consulter le dossier');
-    expect(consulter.getAttribute('href')).toBe('/president/dossier/1002?returnUrl=%2Fpresident%2Fa-faire');
+    // Pilote 21/09 : plus de bouton « Consulter le dossier » — l'EN-TÊTE de la carte est le lien vers la page,
+    // avec le retour vers l'accueil (lot L4-F6), et la mention dit l'affordance.
+    expect(apercu.querySelector('.ap__actions a')).toBeNull();
+    expect(texte(apercu.querySelector('.ap__entete .ap__ouvrir'))).toBe('Consulter le dossier ›');
+    expect((apercu.querySelector('.ap__entete a.ap__lien') as HTMLAnchorElement).getAttribute('title')).toBe('Consulter le dossier');
     expect((apercu.querySelector('.ap__ref a') as HTMLAnchorElement).getAttribute('href')).toBe('/president/dossier/1002?returnUrl=%2Fpresident%2Fa-faire');
   });
 

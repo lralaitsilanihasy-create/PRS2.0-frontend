@@ -13,9 +13,13 @@ import { cibleDossier } from './a-faire-navigation';
  * étapes, prochaine action et délai, faits, action principale et « Consulter le dossier ». Tout vient
  * de la tâche servie : aucun appel. Composant de présentation — l'écran exécute les gestes.
  *
- * Lot L4-F6 : la RÉFÉRENCE et « Consulter le dossier » sont des liens vers la page du dossier
- * (`/<espace>/dossier/:id?returnUrl=…`) — un Ctrl+clic ouvre un onglet, le retour rend la liste telle
- * qu'on l'a quittée. Quand le geste servi est VOIR ou SUIVRE, l'action principale EST ce lien.
+ * Lot L4-F6 : la RÉFÉRENCE est un lien vers la page du dossier (`/<espace>/dossier/:id?returnUrl=…`) —
+ * un Ctrl+clic ouvre un onglet, le retour rend la liste telle qu'on l'a quittée. Quand le geste servi est
+ * VOIR ou SUIVRE, l'action principale EST ce lien.
+ *
+ * ⚠️ Demande pilote (2026-09-21) : plus de bouton « Consulter le dossier » — l'EN-TÊTE de la carte
+ * (référence, entité, puces) est cliquable en entier : le lien de la référence le couvre (`::after`, même
+ * motif que `.lien-ligne` de « Tous les dossiers »), avec la mention « Consulter le dossier › » visible.
  */
 @Component({
   selector: 'app-a-faire-apercu',
@@ -23,18 +27,21 @@ import { cibleDossier } from './a-faire-navigation';
   imports: [Icone, RouterLink],
   template: `
     <section class="ap" aria-labelledby="ap-ref">
-      <p class="ap__lbl">Dossier sélectionné</p>
-      <h2 class="ap__ref" id="ap-ref" [class.ap__ref--sans]="reference().sansReference">
-        <a class="ap__lien" [routerLink]="lien().commandes" [queryParams]="lien().queryParams">{{ reference().texte }}</a>
-      </h2>
-      @if (tache().dossier.libelleEntite) {
-        <p class="ap__ent">{{ tache().dossier.libelleEntite }}</p>
-      }
-      <p class="ap__puces">
-        <span class="ap__statut ap__statut--{{ ton() }}">{{ statut() }}</span>
-        @if (type()) { <span class="ap__puce">{{ type() }}</span> }
-        @if (tache().dossier.libelleLocalite) { <span class="ap__puce">{{ tache().dossier.libelleLocalite }}</span> }
-      </p>
+      <div class="ap__entete">
+        <p class="ap__lbl">Dossier sélectionné</p>
+        <h2 class="ap__ref" id="ap-ref" [class.ap__ref--sans]="reference().sansReference">
+          <a class="ap__lien" [routerLink]="lien().commandes" [queryParams]="lien().queryParams" title="Consulter le dossier">{{ reference().texte }}</a>
+        </h2>
+        @if (tache().dossier.libelleEntite) {
+          <p class="ap__ent">{{ tache().dossier.libelleEntite }}</p>
+        }
+        <p class="ap__puces">
+          <span class="ap__statut ap__statut--{{ ton() }}">{{ statut() }}</span>
+          @if (type()) { <span class="ap__puce">{{ type() }}</span> }
+          @if (tache().dossier.libelleLocalite) { <span class="ap__puce">{{ tache().dossier.libelleLocalite }}</span> }
+        </p>
+        <span class="ap__ouvrir" aria-hidden="true">Consulter le dossier ›</span>
+      </div>
 
       <ol class="frise" aria-label="Étapes du circuit">
         @for (e of frise(); track e.cle) {
@@ -76,9 +83,6 @@ import { cibleDossier } from './a-faire-navigation';
           <button type="button" class="btn btn-outline" [disabled]="occupe()" (click)="agir.emit(g)">
             <app-icone [nom]="libelle(g).icone" [taille]="16" />{{ libelle(g).long }}
           </button>
-        }
-        @if (!consultationSeule()) {
-          <a class="btn btn-outline" [routerLink]="lien().commandes" [queryParams]="lien().queryParams">Consulter le dossier</a>
         }
       </div>
     </section>
