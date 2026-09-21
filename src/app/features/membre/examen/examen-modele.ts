@@ -56,6 +56,19 @@ export function normaliserPieceSansTexte(r: ResultatPiece): ResultatPiece {
   return r.statut === 'OBS' && !r.observation.trim() ? { statut: 'RAS', observation: '' } : r;
 }
 
+/**
+ * ⚠️ Demande pilote (2026-09-21) — ne PROPOSER que les avis cohérents avec l'examen, miroir de la règle
+ * serveur `validerCoherenceAvis` (400 à la soumission sinon) : « Favorable avec réserves » exige ≥ 1
+ * observation, « Favorable » en exige 0 ; « Défavorable » et « Ne se prononce pas » restent libres.
+ * Codes comparés par préfixe, comme partout (FAVR avant FAV).
+ */
+export function avisCoherent(idAvis: string, nbObservations: number): boolean {
+  const code = idAvis.toUpperCase();
+  if (code.startsWith('FAVR')) return nbObservations > 0;
+  if (code.startsWith('FAV')) return nbObservations === 0;
+  return true;
+}
+
 // ── Modifications non enregistrées ────────────────────────────────────────────────────────────
 
 /**

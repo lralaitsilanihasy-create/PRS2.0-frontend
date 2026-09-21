@@ -303,6 +303,8 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
     expect(texte('.next')).toContain('Le projet de PV est créé en brouillon avec 2 observations');
 
     expect(ecran.avis()).toBe('FAVR'); // avis suggéré pré-sélectionné (règle de cohérence)
+    // ⚠️ Pilote 21/09 — avec des observations, « Favorable » n'est pas proposé.
+    expect(Array.from(racine().querySelectorAll('input[name="avis-global"]')).map((i) => (i as HTMLInputElement).value)).toEqual(['FAVR']);
     // Synthèse facultative (2026-09-15) : ni astérisque ni champ requis ; l'avis reste obligatoire.
     const libelles = Array.from(racine().querySelectorAll('.fld__l')).map((l) => (l.textContent ?? '').replace(/\s+/g, ' ').trim());
     expect(libelles[0]).toBe('Synthèse des observations');
@@ -440,6 +442,11 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
       valider();
       expect(ecran.estEtapeAvis()).toBe(true);
       expect(ecran.avis()).toBe('FAV');
+      // ⚠️ Pilote 21/09 — sans observation, « Favorable avec réserves » n'est pas PROPOSÉ (le serveur le
+      // refuserait) ; l'aide dit pourquoi.
+      const proposes = Array.from(racine().querySelectorAll('input[name="avis-global"]')).map((i) => (i as HTMLInputElement).value);
+      expect(proposes).toEqual(['FAV']);
+      expect(texte('.fld__hint')).toContain("« Favorable avec réserves » n'est pas proposé");
       expect(ecran.aDesModificationsNonEnregistrees()).toBe(false);
       ecran.synthese.set('RAS sur l’ensemble du plan.');
       expect(ecran.aDesModificationsNonEnregistrees()).toBe(true);

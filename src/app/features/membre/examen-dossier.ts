@@ -107,6 +107,7 @@ import {
   RowState,
   VueGrille,
   aDuTexte,
+  avisCoherent,
   construireParcours,
   delaiExamen,
   empreintePiece,
@@ -269,9 +270,13 @@ interface PropositionCellule {
                 <!-- ⚠️ Demande pilote (2026-09-21) — le pré-contrôle en MODALE, à la demande : bouton à
                      compteur (points ouverts ; teinte d'alerte s'il y a du prioritaire). -->
                 @if (ppm()?.idPpm) {
+                  <!-- Rouge + battement (demande pilote 21/09) SEULEMENT s'il reste des points à regarder ;
+                       le battement cesse dès que la modale a été ouverte une fois (le bouton reste rouge). -->
                   <button
                     type="button"
                     class="doc-precontrole"
+                    [class.doc-precontrole--alerte]="(preControleResume()?.nbOuverts ?? 0) > 0"
+                    [class.doc-precontrole--pulse]="(preControleResume()?.nbOuverts ?? 0) > 0 && !preControleVu()"
                     aria-haspopup="dialog"
                     title="Ce que les règles du manuel relèvent sur ce plan — une aide, qui n'engage pas l'examen"
                     (click)="ouvrirPreControle()"
@@ -426,7 +431,7 @@ interface PropositionCellule {
             [synthese]="synthese()"
             [avis]="avis()"
             [avisLibelle]="avis() ? avisLabel(avis()) : null"
-            [aviss]="aviss()"
+            [aviss]="avissProposes()"
             [avisHint]="avisSuggereHint()"
             [apres]="apresSoumission()"
             [formError]="formError()"
@@ -631,7 +636,10 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   private readonly preControleService = inject(PreControleService);
   readonly preControleOuvert = signal(false);
   readonly preControleResume = signal<ResumePreControle | null>(null);
+  /** La modale a été ouverte au moins une fois : le bouton cesse de battre (il reste rouge s'il y a à regarder). */
+  readonly preControleVu = signal(false);
   ouvrirPreControle(): void {
+    this.preControleVu.set(true);
     this.preControleOuvert.set(true);
   }
   /** Ferme la modale et relit le compteur : un écartement ou une reprise faits dedans se voient aussitôt. */
@@ -664,8 +672,16 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   readonly avisSuggereHint = computed(() => {
     const n = this.nbObservations();
     return n > 0
-      ? `Avis suggéré : « Favorable avec réserves » — ${n} observation(s) relevée(s) (points de contrôle + pièces jointes).`
-      : 'Avis suggéré : « Favorable » — aucune observation relevée à l\'examen.';
+      ? `Avis suggéré : « Favorable avec réserves » — ${n} observation(s) relevée(s) (points de contrôle + pièces jointes). « Favorable » n'est pas proposé : il supposerait aucune observation.`
+      : 'Avis suggéré : « Favorable » — aucune observation relevée à l\'examen. « Favorable avec réserves » n\'est pas proposé : il supposerait au moins une observation.';
+  });
+  /**
+   * ⚠️ Demande pilote (2026-09-21) — les avis PROPOSÉS sont ceux que la règle de cohérence accepterait
+   * (`avisCoherent`) : l'écran ne montre plus un choix que le serveur refuserait à la soumission.
+   */
+  readonly avissProposes = computed(() => {
+    const n = this.nbObservations();
+    return this.aviss().filter((a) => avisCoherent(a.idAvis, n));
   });
 
   // — Workflow séquentiel : une ligne active à la fois, de haut en bas, puis étape dossier, puis avis. —
@@ -1323,6 +1339,16 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   });
 
   constructor() {
+    // ⚠️ Demande pilote (2026-09-21) — un avis choisi qui n'est plus proposé (les observations ont changé
+    // après un retour arrière) est ramené à l'avis suggéré, dès que le référentiel est chargé. Un effect
+    // qui écrit, jamais un computed.
+    effect(() => {
+      const choisi = this.avis();
+      const proposes = this.avissProposes();
+      if (choisi && this.aviss().length && !proposes.some((a) => a.idAvis === choisi)) {
+        this.avis.set(this.avisSuggere());
+      }
+    });
     // Brouillon serveur : les sauvegardes de progression s'exécutent une par une (concatMap) ;
     // une erreur n'interrompt pas la file (toast centralisé, la prochaine validation resauvegarde tout).
     this.saveTrigger

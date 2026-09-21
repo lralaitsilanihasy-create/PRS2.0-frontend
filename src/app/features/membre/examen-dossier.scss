@@ -401,5 +401,19 @@
   font-variant-numeric: tabular-nums;
 }
 .doc-precontrole__n--prio { background: #b45309; } /* du prioritaire : ambre foncé, 4,5:1 avec le blanc */
+/* ⚠️ Demande pilote (21/09) — ROUGE dès qu'il reste des points à regarder (blanc sur #b91c1c : 5,9:1),
+   et un BATTEMENT lent tant que la modale n'a pas été ouverte (1,2 s : très en deçà des 3 éclairs/s de
+   WCAG 2.3.1 ; le texte ne s'éteint jamais, seul le fond et un halo respirent). */
+.doc-precontrole--alerte { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+.doc-precontrole--alerte:hover { background: #991b1b; border-color: #991b1b; color: #fff; }
+.doc-precontrole--alerte .doc-precontrole__n { background: #fff; color: #b91c1c; }
+.doc-precontrole--pulse { animation: doc-precontrole-battement 1.2s ease-in-out infinite; }
+@keyframes doc-precontrole-battement {
+  0%, 100% { background: #b91c1c; box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.55); }
+  50% { background: #dc2626; box-shadow: 0 0 0 7px rgba(185, 28, 28, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .doc-precontrole--pulse { animation: none; }
+}
 .pc-modal { width: min(900px, 95vw); max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; }
 .pc-modal .modal-body { min-height: 0; }

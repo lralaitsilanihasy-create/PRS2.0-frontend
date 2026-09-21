@@ -7,6 +7,7 @@ import {
   delaiExamen,
   empreintePiece,
   empreintePoint,
+  avisCoherent,
   estObservationEffective,
   formatEcheance,
   lignesViseesParConsigne,
@@ -115,6 +116,25 @@ describe('Examen refondu — règles pures (lot 2)', () => {
       expect(normaliserPieceSansTexte(piece)).toBe(piece);
       const nonStatuee = { statut: null, observation: '' };
       expect(normaliserPieceSansTexte(nonStatuee)).toBe(nonStatuee);
+    });
+  });
+
+  describe('avisCoherent — seuls les avis cohérents avec l\'examen sont proposés (pilote 21/09)', () => {
+    it("sans observation : « Favorable » oui, « Favorable avec réserves » non", () => {
+      expect(avisCoherent('FAV', 0)).toBe(true);
+      expect(avisCoherent('FAVR', 0)).toBe(false);
+    });
+    it("avec observations : l'inverse", () => {
+      expect(avisCoherent('FAV', 2)).toBe(false);
+      expect(avisCoherent('FAVR', 2)).toBe(true);
+    });
+    it('« Défavorable » et « Ne se prononce pas » restent toujours proposés ; la casse est ignorée', () => {
+      for (const n of [0, 3]) {
+        expect(avisCoherent('DEF', n)).toBe(true);
+        expect(avisCoherent('NSP', n)).toBe(true);
+      }
+      expect(avisCoherent('favr', 1)).toBe(true);
+      expect(avisCoherent('fav', 1)).toBe(false);
     });
   });
 
