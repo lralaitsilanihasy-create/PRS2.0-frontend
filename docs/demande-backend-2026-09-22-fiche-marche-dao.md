@@ -78,6 +78,11 @@ de correspondance nettoyé (CSV/XLSX → référentiel), hors API.
 > ses tests ; à reproduire à l'identique côté serveur — cas de recette : `garantieSoumission = OUI` (vrai), `= NON`
 > (faux), `!= NON` (vrai), `provenance = IMPORTEES et typePrix = UNITAIRES` (vrai), `provenance = NATIONAL ou typePrix
 > = UNITAIRES` (vrai), `avance = OUI` sur clé absente (faux), `n'importe quoi` (faux, sans exception).
+>
+> ⚠️ **22/09, 3e passe backend — valeurs comparables limitées à `[A-Za-z0-9_]+`** : c'est voulu. Toutes les réponses de
+> cadrage sont des **codes** (`OUI`/`NON`, `UNITAIRES`, `CONJOINT_OU_SOLIDAIRE`, `SOLIDAIRE_OBLIGATOIRE`…) ; les deux
+> compléments numériques (`nbLots`, `tauxAvance`) se comparent comme **chaînes décimales** (`nbLots = 1`), sans
+> inégalité — aucune condition du lot 1 n'en a besoin ; les seuils numériques sont des **règles B4**, pas des conditions.
 
 **Blocs et rubriques à livrer par migration** (quantité fixe, comptes attendus de l'esquisse, entre parenthèses) :
 
@@ -136,6 +141,13 @@ rubrique avec « n informations attendues, référentiel à compléter » — l'
 > `POST par-marche` sur la ligne d'une version dépassée → 409 « préparer depuis la version courante ». Test 9 récrit
 > plus bas.
 >
+> ⚠️ **22/09, 3e passe backend — « dernière version signée » ≠ parcours `suivante` (l. 1243, qui n'écarte que
+> `BROUILLON`)** : ne pas réutiliser ce parcours. Écrire un parcours **dédié** : suivre la chaîne `REMPLACE` → version
+> suivante tant que la suivante est **signée** (même prédicat que la garde H4 : `PV_SIGNE` / `CLOTURE`, avis `FAV` ou
+> `FAVR` réserves levées) ; une version encore **en instruction** n'est pas courante et **arrête** la marche sans
+> devenir courante — la dernière signée le reste jusqu'à la signature de la suivante. Ainsi une mise à jour en cours
+> d'examen ne fait jamais changer les 22 informations sous les pieds de la fiche.
+>
 > **2. Ordre des gardes, sans fuite d'information.** `POST par-marche/{idDetail}` : (1) ligne inexistante → 404 ;
 > (2) **périmètre** (PRMP propriétaire ou son UGPM, ou Admin) → 403, **avant tout 409 métier** — une PRMP étrangère
 > n'apprend jamais si une ligne porte déjà un DAO ; (3) **vacance** : `MandatService.exigerMandatActif`, même garde que
@@ -144,8 +156,12 @@ rubrique avec « n informations attendues, référentiel à compléter » — l'
 > `SecuriteCrudIntegrationTest` (l. 651-665, « PRMP → 403 sur par-marche ») **change de sens** : PRMP propriétaire
 > → 201, autre PRMP → 403, Admin → 201 inchangé — c'est la demande, pas une régression.
 >
-> **3. Le type DMC `DAO` n'existe dans aucune migration.** La migration du lot **sème** `t_type_dmc` avec le code `DAO`
-> (« Dossier d'appel d'offres »), idempotente. Le rattachement mode de passation → type DMC reste **l'acte de
+> **3. Le type DMC `DAO` n'existe dans aucune migration.** ~~La migration du lot sème `t_type_dmc`~~ ⚠️ **corrigé le
+> 22/09 (3e passe backend : un semis Flyway survit aux rollbacks `@Transactional` et casse neuf fixtures qui créent
+> `DAO`, `CODE` étant unique)** → **pas de migration de données** : le code `DAO` est semé par un **seeder de démarrage
+> idempotent**, sur le modèle des seeders existants (`DelegationHierarchieSeeder` : `CommandLineRunner`, « insérer si
+> absent »), donc **hors du contexte de test** comme eux — les neuf fixtures ne changent pas. Test 11 récrit plus bas
+> (le seeder, pas la migration). Le libellé semé : « Dossier d'appel d'offres ». Le rattachement mode de passation → type DMC reste **l'acte de
 > l'Administrateur** (écran « Types de DMC », `dmc-mapping-admin`) ; seul le **jeu de recette** rattache le mode d'appel
 > d'offres ouvert. Ligne dont le mode n'est rattaché à aucun type → 409 nominatif : « Le mode « … » n'est rattaché à
 > aucun type de dossier de mise en concurrence — à faire par l'Administrateur (Types de DMC) ». Le code `DAO` du type
@@ -195,8 +211,8 @@ fermée). Les valeurs `CADRAGE` sont dérivées, jamais reçues.
 | `OBLIGATOIRE` | champ obligatoire vide (rubrique ouverte) | bloquant |
 | `DATES_ORDRE` | lancement < remise des offres < ouverture < attribution (PPM + B04) | bloquant |
 | `VALIDITE_GARANTIE_SUP_OFFRE` | validité de la garantie de soumission > validité des offres | bloquant |
-| `AVANCE_MAX_20` | avance ≤ 20 % du montant TTC | bloquant |
-| `AVANCE_SUP_5_GARANTIE` | avance > 5 % ⇒ garantie de restitution renseignée | bloquant |
+| `AVANCE_MAX_20` | ~~avance ≤ 20 % du montant TTC~~ ⚠️ 22/09 : **`tauxAvance` (cadrage, en %) ≤ 20** — il n'existe aucun montant TTC (arbitrage pilote du 18/09, `SeuilMarche` : tous les montants PRS sont **hors taxes**) ; la règle porte sur le **taux**, jamais sur un montant | bloquant |
+| `AVANCE_SUP_5_GARANTIE` | ⚠️ 22/09 : **`tauxAvance` > 5 ⇒** le champ « garantie de restitution d'avance » (B08, rubrique Avance) renseigné | bloquant |
 | `FORFAIT_60_40` | prix global forfaitaire : ≥ 60 % à réception, ≤ 40 % sur PV | bloquant |
 | `PENALITES_PLAFOND_15` | pénalités > 15 % du CCAG sans dérogation précisée | avertissement |
 | `INTERETS_MORATOIRES_TAUX` | taux ≥ taux Banque centrale + 1 point | avertissement |
@@ -243,11 +259,13 @@ d'un acte PRMP). Chronométrage : sans objet avant soumission.
 9. ⚠️ récrit le 22/09 — **filiation** : DMC créé sur la ligne L (version 1) ; mise à jour du PPM signée en version 2
    où L' (`ID_LIGNE_ORIGINE` = celui de L) change de montant → `GET` sert `versionPpm = 2`, `idDetailCourant = L'`,
    le nouveau montant ; L' est `dejaDao` dans `eligibles` ; `POST par-marche/{L}` (version dépassée) → 409 ; L
-   supprimée logiquement en version 2 → `ligneSupprimee = true`, `GET` 200.
+   supprimée logiquement en version 2 → `ligneSupprimee = true`, `GET` 200. **Version 3 soumise mais non signée**
+   (en instruction) → `GET` sert toujours `versionPpm = 2` (la marche s'arrête avant une version non signée).
 10. Ordre des gardes : PRMP étrangère sur une ligne qui porte déjà un DAO → **403** (jamais 409) ; PRMP propriétaire
     sans mandat actif → refus de vacance sur `POST par-marche` et sur `PUT …/blocs/B02`.
-11. Base vierge après migrations : `t_type_dmc` contient `DAO` ; ligne dont le mode n'est rattaché à aucun type →
-    409 nominatif qui nomme l'Administrateur.
+11. ⚠️ récrit le 22/09 — **seeder** : sur `t_type_dmc` vide, le seeder crée `DAO` ; lancé deux fois, une seule ligne
+    (idempotent) ; les fixtures existantes qui créent `DAO` passent inchangées. Ligne dont le mode n'est rattaché à
+    aucun type → 409 nominatif qui nomme l'Administrateur.
 12. `enLettres` : 8 400 000 → « huit millions quatre cent mille ariary » ; 1 200 000 000 → « un milliard deux cents
     millions ariary ».
 
