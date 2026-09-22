@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>PRS 2.0 — Maquette : fiche marché d'un appel d'offres (2026-09-22)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --p-50:#f0f9ff; --p-100:#e0f2fe; --p-600:#0284c7; --p-700:#0369a1; --p-800:#075985;
+    --n-50:#f8f9fe; --n-100:#f0f2f8; --n-200:#e8ecf4; --n-300:#d0d8e8; --n-400:#667299; --n-500:#586586; --n-700:#2e3a58; --n-800:#1a1d2e;
+    --or:#f5c542; --vert:#047857; --vert-bg:#ecfdf5; --ambre:#b45309; --ambre-bg:#fef3c7; --rouge:#b91c1c; --rouge-bg:#fee2e2;
+    --dpao:#1d4ed8; --dpao-bg:#dbeafe; --ae:#7e22ce; --ae-bg:#f3e8ff; --ccap:#047857; --ccap-bg:#d1fae5;
+    --font: 'Plus Jakarta Sans', system-ui, sans-serif; --mono: 'DM Mono', ui-monospace, monospace; --r: 12px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--font); color: var(--n-800); background: #eef2f8; font-size: 14px; line-height: 1.45; }
+  .note { max-width: 1320px; margin: 1rem auto; padding: .7rem 1rem; background: #fff7dc; border: 1px solid #f1d98a; border-radius: 10px; font-size: .88rem; color: #5a4300; }
+  .page { max-width: 1320px; margin: 0 auto 2rem; padding: 0 1rem; }
+  .fil { font-size: .8rem; color: var(--n-500); margin: .2rem 0 .6rem; } .fil b { color: var(--n-700); font-weight: 600; }
+  .entete { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
+  .entete .sur { font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--p-700); }
+  .entete h1 { margin: .1rem 0 0; font-size: 1.5rem; letter-spacing: -.01em; }
+  .entete .ref { font-family: var(--mono); color: var(--n-500); font-size: .85rem; }
+  .role { margin: 0 0 .9rem; color: var(--n-500); max-width: 62rem; }
+  .ppm { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; font-size: .82rem; color: var(--n-500); margin-bottom: .9rem; }
+  .ppm b { color: var(--n-700); }
+  .puce { display: inline-block; padding: .05rem .5rem; border-radius: 999px; border: 1px solid var(--n-200); background: #fff; font-family: var(--mono); font-size: .72rem; color: var(--n-700); }
+
+  .cadrage { background: #fff; border: 1px solid var(--n-200); border-radius: var(--r); padding: .7rem .9rem; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+  .cadrage .lbl { font-size: .7rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--n-400); margin-right: .3rem; }
+  .cadrage .rep { padding: .2rem .6rem; border-radius: 8px; background: var(--p-50); color: var(--p-800); font-weight: 600; font-size: .8rem; }
+  .cadrage .rep.non { background: var(--n-100); color: var(--n-500); font-weight: 500; }
+  .cadrage .mod { margin-left: auto; color: var(--p-700); font-weight: 600; font-size: .82rem; text-decoration: none; }
+
+  .cols { display: grid; grid-template-columns: 220px minmax(0, 1fr) 300px; gap: 1rem; align-items: start; }
+  .rail { background: #fff; border: 1px solid var(--n-200); border-radius: var(--r); padding: .6rem; }
+  .rail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .rail li { display: flex; gap: .55rem; align-items: flex-start; padding: .5rem .55rem; border-radius: 8px; }
+  .rail .n { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: .72rem; font-weight: 700; border: 2px solid var(--n-300); color: var(--n-500); flex: none; }
+  .rail .faite .n { background: var(--vert); border-color: var(--vert); color: #fff; }
+  .rail .courante { background: var(--p-50); }
+  .rail .courante .n { border-color: var(--p-600); color: var(--p-800); }
+  .rail .t { font-weight: 600; font-size: .84rem; } .rail .s { font-size: .74rem; color: var(--n-500); }
+
+  .bloc { background: #fff; border: 1px solid var(--n-200); border-radius: var(--r); }
+  .bloc__tete { padding: .9rem 1.1rem .7rem; border-bottom: 1px solid var(--n-200); display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; }
+  .bloc__tete .eyebrow { font-size: .7rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--n-400); }
+  .bloc__tete h2 { margin: 0; font-size: 1.1rem; }
+  .bloc__tete .comptes { margin-left: auto; font-size: .78rem; color: var(--n-500); }
+  .rub { padding: .9rem 1.1rem; border-bottom: 1px solid var(--n-100); }
+  .rub h3 { margin: 0 0 .5rem; font-size: .95rem; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+  .rub h3 .cond { font-size: .72rem; font-weight: 500; color: var(--ambre); background: var(--ambre-bg); padding: .05rem .45rem; border-radius: 999px; }
+  .champ { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: .6rem 1rem; align-items: start; padding: .45rem 0; border-top: 1px dashed var(--n-200); }
+  .champ:first-of-type { border-top: 0; }
+  .champ label { font-weight: 600; font-size: .86rem; display: block; }
+  .champ .aide { font-size: .76rem; color: var(--n-500); }
+  .champ input, .champ select, .champ textarea { width: 100%; font: inherit; padding: .4rem .55rem; border: 1px solid var(--n-300); border-radius: 8px; background: #fff; color: var(--n-800); }
+  .champ .lecture { padding: .4rem .55rem; border-radius: 8px; background: var(--n-100); color: var(--n-700); font-family: var(--mono); font-size: .82rem; }
+  .champ .meta { grid-column: 1 / -1; display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; font-size: .72rem; }
+  .doc { padding: .05rem .45rem; border-radius: 999px; font-weight: 700; }
+  .doc.dpao { background: var(--dpao-bg); color: var(--dpao); } .doc.ae { background: var(--ae-bg); color: var(--ae); } .doc.ccap { background: var(--ccap-bg); color: var(--ccap); }
+  .etat { padding: .05rem .45rem; border-radius: 999px; border: 1px solid var(--n-200); color: var(--n-500); }
+  .etat.ppm { background: var(--vert-bg); color: var(--vert); border-color: transparent; }
+  .etat.repris { background: var(--n-100); color: var(--n-500); }
+  .etat.saisir { background: var(--ambre-bg); color: var(--ambre); border-color: transparent; }
+  .modele { grid-column: 1 / -1; font-size: .78rem; color: var(--n-500); background: var(--n-50); border-left: 3px solid var(--or); padding: .35rem .6rem; border-radius: 0 6px 6px 0; }
+  .modele b { color: var(--n-700); }
+  .erreur { color: var(--rouge); font-size: .76rem; font-weight: 600; }
+  .bloc__pied { padding: .8rem 1.1rem; display: flex; gap: .6rem; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: .4rem; height: 36px; padding: 0 .95rem; border-radius: 9px; font: 600 .86rem var(--font); border: 1px solid transparent; text-decoration: none; cursor: pointer; }
+  .btn-p { background: var(--p-700); color: #fff; } .btn-o { background: #fff; color: var(--p-800); border-color: #bae6fd; } .btn-g { background: #fff; color: var(--n-500); border-color: var(--n-300); }
+  .bloc__pied .aut { margin-left: auto; font-size: .76rem; color: var(--n-500); }
+
+  .ctrl { background: #fff; border: 1px solid var(--n-200); border-radius: var(--r); }
+  .ctrl h2 { margin: 0; padding: .8rem 1rem .5rem; font-size: .95rem; }
+  .ctrl ul { list-style: none; margin: 0; padding: 0 1rem .8rem; display: flex; flex-direction: column; gap: .45rem; }
+  .ctrl li { display: flex; gap: .5rem; align-items: flex-start; font-size: .8rem; }
+  .ctrl .pt { width: 8px; height: 8px; border-radius: 50%; margin-top: .4rem; flex: none; }
+  .ctrl .pt.r { background: var(--rouge); } .ctrl .pt.a { background: var(--ambre); } .ctrl .pt.v { background: var(--vert); }
+  .ctrl .ou { color: var(--n-400); }
+  .ctrl .total { padding: .6rem 1rem .9rem; border-top: 1px solid var(--n-200); font-size: .8rem; color: var(--n-500); }
+  .ctrl .total b { color: var(--n-700); }
+  .prog { height: 6px; border-radius: 3px; background: var(--n-200); margin-top: .35rem; overflow: hidden; }
+  .prog i { display: block; height: 100%; width: 41%; background: var(--p-600); }
+  .legende { margin-top: 1rem; background: #fff; border: 1px solid var(--n-200); border-radius: var(--r); padding: .7rem .9rem; font-size: .78rem; color: var(--n-500); display: flex; gap: .8rem; flex-wrap: wrap; align-items: center; }
+  @media (max-width: 1000px) { .cols { grid-template-columns: 1fr; } .champ { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<p class="note"><b>Maquette, pas l'application.</b> Fiche marché d'un appel d'offres (proposition du 22/09), étape 3 du parcours, bloc B05 « Prix, montants &amp; garantie de soumission », type de marché « quantité fixe ». Les champs, leur destination (DPAO / AE / CCAP) et leur état (importé du PPM, à saisir, repris) viennent du fichier de correspondance ; les libellés sont ceux de l'esquisse. Le panneau de droite rend les contrôles du serveur.</p>
+
+<div class="page">
+  <p class="fil">À faire › Créer dossier › <b>Dossier de mise en concurrence — appel d'offres</b></p>
+  <div class="entete">
+    <div>
+      <div class="sur">Domaine PRMP · brouillon</div>
+      <h1>Fiche marché — Matériels informatiques</h1>
+    </div>
+    <div class="ref">ligne 3 du PPM 00014/MTP/PPM/2026 · DAO n° <span style="color:var(--n-400)">(attribué à la validation)</span></div>
+  </div>
+  <p class="role">Une information saisie une fois : le DPAO, l'acte d'engagement et le CCAP sont générés depuis cette fiche à la validation, puis joints au dossier avant sa soumission à la Commission.</p>
+  <div class="ppm">
+    <b>Repris de la ligne du PPM, verrouillé (aucun fichier importé) :</b>
+    <span class="puce">MEF · PRMP RANDRIANARIVO</span><span class="puce">Fournitures</span><span class="puce">AOO</span><span class="puce">420 000 000 Ar</span><span class="puce">RPI</span><span class="puce">SOA 00-21-0-J00</span><span class="puce">lancement 01/03/2026</span>
+  </div>
+
+  <div class="cadrage">
+    <span class="lbl">Cadrage</span>
+    <span class="rep">Quantité fixe</span><span class="rep">Alloti · 3 lots</span><span class="rep non">Variantes non</span><span class="rep">Groupement autorisé</span><span class="rep">Fournitures importées</span><span class="rep">Prix unitaires</span><span class="rep non">Prix ferme</span><span class="rep">Garantie de soumission exigée</span><span class="rep">Avance 10 %</span><span class="rep">Pénalités CCAG</span>
+    <a class="mod" href="#">Modifier le cadrage</a>
+  </div>
+
+  <div class="cols">
+    <nav class="rail" aria-label="Parcours">
+      <ol>
+        <li class="faite"><span class="n">1</span><div><div class="t">Ligne du PPM</div><div class="s">22 informations reprises</div></div></li>
+        <li class="faite"><span class="n">2</span><div><div class="t">Cadrage</div><div class="s">10 réponses</div></div></li>
+        <li class="courante"><span class="n">3</span><div><div class="t">Saisie par bloc</div><div class="s">B05 · 4 blocs sur 9</div></div></li>
+        <li><span class="n">4</span><div><div class="t">Reprises</div><div class="s">automatiques</div></div></li>
+        <li><span class="n">5</span><div><div class="t">Contrôles</div><div class="s">3 à lever</div></div></li>
+        <li><span class="n">6</span><div><div class="t">Validation PRMP</div><div class="s">fige et versionne</div></div></li>
+        <li><span class="n">7</span><div><div class="t">Documents</div><div class="s">DPAO · AE · CCAP</div></div></li>
+      </ol>
+    </nav>
+
+    <section class="bloc" aria-labelledby="b05">
+      <div class="bloc__tete">
+        <span class="eyebrow">Bloc B05</span>
+        <h2 id="b05">Prix, montants &amp; garantie de soumission</h2>
+        <span class="comptes">20 à saisir · <span class="doc dpao">DPAO 16</span> <span class="doc ae">AE 11</span> <span class="doc ccap">CCAP 12</span></span>
+      </div>
+
+      <div class="rub">
+        <h3>Contenu et décomposition des prix</h3>
+        <div class="champ">
+          <div><label for="c1">Prix hors TVA (fournitures importées)</label><div class="aide">B05-CP-01 · incoterm de l'offre</div></div>
+          <select id="c1"><option>CIP</option><option>CIF</option></select>
+          <div class="meta"><span class="etat saisir">à saisir</span><span class="doc dpao">DPAO</span> <span class="ou">repris dans</span> <span class="doc ae">AE</span> <span class="doc ccap">CCAP</span> <span class="etat">condition : fournitures importées</span></div>
+        </div>
+        <div class="champ">
+          <div><label for="c2">Part payable en devises</label><div class="aide">B05-CP-04 · pourcentage du prix</div></div>
+          <input id="c2" type="text" value="30 %">
+          <div class="meta"><span class="etat saisir">à saisir</span><span class="doc dpao">DPAO</span> <span class="ou">repris dans</span> <span class="doc ae">AE</span></div>
+        </div>
+      </div>
+
+      <div class="rub">
+        <h3>Variation des prix</h3>
+        <div class="champ">
+          <div><label>Prix ferme</label><div class="aide">B05-VP-01</div></div>
+          <div class="lecture">Ferme, non révisable</div>
+          <div class="meta"><span class="etat repris">repris du cadrage</span><span class="doc dpao">DPAO</span> <span class="doc ccap">CCAP</span></div>
+        </div>
+      </div>
+
+      <div class="rub">
+        <h3>Garantie de soumission <span class="cond">ouverte par le cadrage : garantie exigée</span></h3>
+        <div class="champ">
+          <div><label for="g1">Montant de la garantie de soumission</label><div class="aide">B05-GS-02 · Ariary, en chiffres et en lettres</div></div>
+          <input id="g1" type="text" value="8 400 000">
+          <div class="meta"><span class="etat saisir">à saisir</span><span class="doc dpao">DPAO</span> <span class="ou">repris dans</span> <span class="doc ae">AE</span> <span class="doc ccap">CCAP</span></div>
+          <div class="modele"><b>Texte type :</b> « Le montant de la garantie de soumission est fixé à huit millions quatre cent mille ariary (8 400 000 Ar). »</div>
+        </div>
+        <div class="champ">
+          <div><label for="g2">Forme de la garantie</label><div class="aide">B05-GS-03</div></div>
+          <select id="g2"><option>Garantie bancaire</option><option>Dépôt au Trésor</option><option>Caution agréée</option><option>Chèque de banque</option></select>
+          <div class="meta"><span class="etat saisir">à saisir</span><span class="doc dpao">DPAO</span></div>
+        </div>
+        <div class="champ">
+          <div><label for="g3">Validité de la garantie (jours)</label><div class="aide">B05-GS-05 · au-delà de la validité des offres</div><div class="erreur">Obligatoire : la validité de l'offre (B04) est de 90 jours, celle de la garantie doit la dépasser.</div></div>
+          <input id="g3" type="text" value="" placeholder="ex. 120" style="border-color: var(--rouge)">
+          <div class="meta"><span class="etat saisir">à saisir</span><span class="doc dpao">DPAO</span> <span class="ou">repris dans</span> <span class="doc ccap">CCAP</span></div>
+        </div>
+      </div>
+
+      <div class="rub">
+        <h3>Monnaie</h3>
+        <div class="champ">
+          <div><label>Monnaie de l'offre</label><div class="aide">B05-MO-01</div></div>
+          <div class="lecture">Ariary</div>
+          <div class="meta"><span class="etat ppm">repris du PPM</span><span class="doc dpao">DPAO</span> <span class="doc ccap">CCAP</span></div>
+        </div>
+      </div>
+
+      <div class="bloc__pied">
+        <a class="btn btn-g" href="#">‹ B04 Remise des offres</a>
+        <a class="btn btn-p" href="#">Enregistrer et continuer › B06</a>
+        <span class="aut">Enregistré à 14:32 · brouillon invisible de la Commission</span>
+      </div>
+    </section>
+
+    <aside class="ctrl" aria-labelledby="ctrl">
+      <h2 id="ctrl">Contrôles</h2>
+      <ul>
+        <li><span class="pt r"></span><span><b>B05</b> Validité de la garantie manquante <span class="ou">· obligatoire</span></span></li>
+        <li><span class="pt r"></span><span><b>B04</b> Date d'ouverture avant la remise des offres <span class="ou">· dates dans l'ordre</span></span></li>
+        <li><span class="pt a"></span><span><b>B08</b> Avance 10 % : garantie de restitution à renseigner <span class="ou">· au-delà de 5 %</span></span></li>
+        <li><span class="pt v"></span><span><b>B03</b> Groupement : conjoint ou solidaire précisé</span></li>
+        <li><span class="pt v"></span><span><b>B01</b> 22 informations du PPM à jour (version 2 du plan)</span></li>
+      </ul>
+      <div class="total">
+        <b>53 sur 130</b> informations saisies · 3 contrôles à lever avant la validation
+        <div class="prog"><i></i></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="legende">
+    <b>Légende :</b>
+    <span class="etat ppm">repris du PPM</span><span class="etat saisir">à saisir</span><span class="etat repris">repris</span>
+    <span class="doc dpao">DPAO</span><span class="doc ae">AE</span><span class="doc ccap">CCAP</span>
+    <span>· une rubrique fermée par le cadrage n'apparaît pas · un champ repris n'est jamais ressaisi.</span>
+  </div>
+</div>
+</body>
+</html>
