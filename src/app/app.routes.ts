@@ -1,11 +1,14 @@
 import { Routes } from '@angular/router';
 
 import { authGuard, roleGuard } from './core/auth/auth.guard';
+import { accueilPublicGuard } from './core/navigation/accueil-public.guard';
 import { dossierAliasGuard } from './core/navigation/dossier-alias.guard';
 
 /**
  * Routes de l'application.
  *
+ * - `/accueil/:audience` : ENTRÉE PUBLIQUE (proposition 2026-09-22, arbitrée) — la racine hors session y mène
+ *   (`authGuard`), un connecté en est renvoyé à son « À faire » (`accueilPublicGuard`).
  * - `/login` : route publique (page de connexion).
  * - Tout le reste passe par la coquille `MainLayout`, protégée par `authGuard`.
  *   Les espaces par profil (PRMP, Président, CC, …) seront ajoutés en routes
@@ -20,6 +23,15 @@ export const routes: Routes = [
     path: 'inscription',
     loadComponent: () =>
       import('./features/auth/register/register-prmp').then((m) => m.RegisterPrmp),
+  },
+  {
+    // Entrée publique (proposition 2026-09-22) : deux audiences, l'onglet retenu vit dans l'URL.
+    path: 'accueil',
+    canActivate: [accueilPublicGuard],
+    children: [
+      { path: '', redirectTo: 'prmp', pathMatch: 'full' },
+      { path: ':audience', loadComponent: () => import('./features/public/accueil-public').then((m) => m.AccueilPublic) },
+    ],
   },
   {
     path: '',

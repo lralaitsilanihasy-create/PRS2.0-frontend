@@ -1,8 +1,13 @@
 # Proposition — Entrée publique sur le modèle « portail » et trois repères dans les écrans internes
 
-**Date** : 2026-09-22 · **Auteur** : frontend (`frontendprs2`) · **Statut** : PROPOSITION, recommandation **accordée
-par le pilote le 22/09** (« recommandation accordée ») — à valider sur la maquette avant de coder. ⚠️ Rien de ce qui
-suit n'est codé ; **aucun besoin backend** n'est identifié (tout est présentation, sur des données déjà servies).
+**Date** : 2026-09-22 · **Auteur** : frontend (`frontendprs2`) · **Statut** : **ARBITRÉE le 22/09** — recommandation
+accordée sur le principe (« recommandation accordée »), puis maquette et quatre arbitrages validés tels que recommandés
+(« tout est OK ») : Q1 la page s'ajoute à `/login`, Q2 chiffres fixes, Q3 onglet Commission avec contenu court, Q4 fil
+d'Ariane partout sauf en concentration. ✅ **Lots A1 et B LIVRÉS le 22/09** : `/accueil/:audience`
+(`features/public/accueil-public`, garde `accueilPublicGuard`, racine hors session → `/accueil/prmp` par `authGuard`,
+lien « Découvrir PRS 2.0 » sur la connexion), phrase de rôle (`.page-role`, 13 écrans), fil d'Ariane de la coquille
+(`main-layout`, hors concentration), mots-clés en liens (hub « Examen de dossiers », état vide d'« À faire »). Lot A2
+(chiffres vivants) non engagé. **Aucun besoin backend** (tout est présentation, sur des données déjà servies).
 
 **Origine** : capture d'e-marchespublics.com (« Accédez à l'annuaire fournisseurs ») montrée par le pilote avec la
 question « est-ce qu'on peut penser à adapter cette ergonomie pour notre application ? ». **Maquette** :

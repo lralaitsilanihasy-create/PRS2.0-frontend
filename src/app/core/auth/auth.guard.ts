@@ -20,6 +20,11 @@ export const authGuard: CanActivateFn = (_route, state) => {
   if (auth.isAuthenticated()) {
     return true;
   }
+  // Entrée publique (proposition 2026-09-22, arbitrage Q1) : la RACINE hors session mène à l'accueil public ;
+  // un lien profond garde le chemin historique — connexion, puis retour à l'écran demandé.
+  if (state.url === '/' || state.url === '') {
+    return router.createUrlTree(['/accueil', 'prmp']);
+  }
   return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };
 

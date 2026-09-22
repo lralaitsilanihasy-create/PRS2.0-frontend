@@ -64,6 +64,15 @@ describe('authGuard', () => {
   });
 });
 
+describe('authGuard — entrée publique (2026-09-22)', () => {
+  it('la racine hors session mène à /accueil/prmp, sans returnUrl', () => {
+    const router = setup({ authenticated: false, currentRole: null });
+    const result = TestBed.runInInjectionContext(() => authGuard(route(), state('/')));
+    expect(result).toBeInstanceOf(UrlTree);
+    expect(router.serializeUrl(result as UrlTree)).toBe('/accueil/prmp');
+  });
+});
+
 describe('roleGuard', () => {
   it('autorise si le rôle courant est permis', () => {
     setup({ authenticated: true, currentRole: 'ADMINISTRATEUR' });

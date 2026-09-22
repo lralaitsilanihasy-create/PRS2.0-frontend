@@ -1,0 +1,353 @@
+/* Entrée publique (proposition 2026-09-22) — jetons du design system, or des rubriques (#f5c542) en accent.
+   Contrastes mesurés par scripts/contrastes-coquille.mjs, section « Entrée publique ». */
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--n-50);
+  color: var(--n-800);
+  font-family: var(--font-base);
+}
+
+.pub-evitement:focus {
+  position: fixed;
+  inset: auto auto 1rem 1rem;
+  width: auto;
+  height: auto;
+  clip: auto;
+  padding: 0.5rem 0.9rem;
+  background: #fff;
+  color: var(--p-800);
+  border-radius: var(--radius-md);
+  z-index: 10;
+}
+
+/* ── Barre du haut ── */
+.pub-top {
+  background: #fff;
+  border-bottom: 1px solid var(--n-200);
+}
+.pub-top__in,
+.pub-nav__in,
+.pub-hero__in,
+.pub-section,
+.pub-pied__in {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+.pub-top__in {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.pub-marque {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--n-800);
+}
+.pub-marque__mef {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--sidebar-bg);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+.pub-marque__texte {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.pub-marque__t {
+  font-weight: 800;
+}
+.pub-marque__s {
+  font-size: 0.68rem;
+  color: var(--n-400);
+}
+.pub-audience {
+  display: flex;
+  height: 100%;
+  margin-left: 1rem;
+}
+.pub-audience a {
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  text-decoration: none;
+  color: var(--n-500);
+  font-weight: 600;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+}
+.pub-audience a[aria-current='page'] {
+  color: var(--p-800);
+  background: var(--n-50);
+  border-bottom-color: var(--p-700);
+}
+.pub-top__actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.pub-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 40px;
+  padding: 0 1.05rem;
+  border-radius: var(--radius-md);
+  font: 600 0.92rem var(--font-base);
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+.pub-btn--primaire {
+  background: var(--p-700);
+  color: #fff;
+}
+.pub-btn--blanc {
+  background: #fff;
+  color: var(--p-800);
+}
+.pub-btn--contour {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Barre secondaire : ce que l'audience peut faire ici ── */
+.pub-nav {
+  background: var(--sidebar-bg);
+}
+.pub-nav__in {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 46px;
+  flex-wrap: wrap;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+.pub-nav a {
+  color: rgba(255, 255, 255, 0.9); /* 8,4:1 sur #0c4a6e */
+  text-decoration: none;
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.92rem;
+}
+.pub-nav a:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.pub-nav__cta {
+  margin-left: auto;
+  background: #fff;
+  color: var(--p-800) !important;
+  font-weight: 700;
+  border: 1px solid #f5c542;
+}
+
+/* ── Bannière : dégradé de la barre latérale, prolongé vers le clair ── */
+.pub-hero {
+  /* Bout clair borné à #0d5578 : l'or des repères (#f5c542) y tient 5,0:1 — #0f6a94 ne donnait que 3,69:1. */
+  background: linear-gradient(120deg, #082f49 0%, #0c4a6e 55%, #0d5578 100%);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.pub-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto -10% -60% auto;
+  width: 60%;
+  height: 140%;
+  background: radial-gradient(closest-side, rgba(245, 197, 66, 0.18), transparent 70%);
+  pointer-events: none;
+}
+.pub-hero__in {
+  padding-top: 2.2rem;
+  padding-bottom: 2.4rem;
+  position: relative;
+}
+.pub-ariane {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.86);
+  margin-bottom: 1.1rem;
+}
+.pub-ariane a {
+  color: inherit;
+}
+.pub-hero h1 {
+  color: #fff; /* la règle globale h1 (encre sombre) l'emportait sur l'héritage du blanc de la bannière */
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.15; /* sur deux lignes (mobile), les lignes se chevauchaient avec l'interligne hérité */
+  letter-spacing: -0.02em;
+  max-width: 30ch;
+}
+.pub-hero__promesse {
+  margin: 0 0 1.4rem;
+  font-size: 1.08rem;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 60ch;
+}
+.pub-hero__actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.pub-reperes {
+  display: flex;
+  gap: 2rem;
+  margin: 1.6rem 0 0;
+  flex-wrap: wrap;
+}
+.pub-repere {
+  display: flex;
+  flex-direction: column;
+}
+.pub-repere__v {
+  font: 500 1.35rem/1.2 var(--cnm-mono);
+  color: #f5c542; /* ≥ 5,0:1 sur #0d5578, bout clair du dégradé (mesuré) */
+}
+.pub-repere__l {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* ── Section : titre + trois cartes ── */
+.pub-section {
+  padding-top: 2.2rem;
+  padding-bottom: 3rem;
+}
+.pub-section h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.45rem;
+  color: var(--p-800);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.pub-section__texte {
+  margin: 0 0 1.4rem;
+  color: var(--n-500);
+  max-width: 70ch;
+}
+.pub-cartes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.1rem;
+}
+.pub-carte {
+  background: #fff;
+  border: 1px solid var(--n-200);
+  border-radius: 14px;
+  padding: 1.15rem 1.25rem 1.3rem;
+  box-shadow: 0 1px 2px rgba(12, 42, 63, 0.05), 0 12px 32px -18px rgba(12, 42, 63, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.pub-carte__n {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--p-50);
+  color: var(--p-800);
+  display: grid;
+  place-items: center;
+  font-family: var(--cnm-mono);
+  font-weight: 500;
+}
+.pub-carte h3 {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.pub-carte p {
+  margin: 0;
+  color: var(--n-500);
+  font-size: 0.93rem;
+}
+/* Mots-clés : des LIENS (bleu, gras) vers l'écran concerné ; en gras seul quand l'écran dépend du profil. */
+.pub-mot {
+  font-weight: 600;
+  color: var(--p-700);
+  text-decoration: none;
+}
+.pub-mot:hover {
+  text-decoration: underline;
+}
+.pub-mot--fixe {
+  color: var(--n-700);
+}
+
+/* ── Pied ── */
+.pub-pied {
+  border-top: 1px solid var(--n-200);
+  background: #fff;
+}
+.pub-pied__in {
+  padding-top: 1.2rem;
+  padding-bottom: 1.2rem;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--n-500);
+}
+.pub-pied a {
+  color: var(--n-500);
+}
+
+@media (max-width: 900px) {
+  .pub-cartes {
+    grid-template-columns: 1fr;
+  }
+  /* Barre du haut sur deux rangs : marque et Connexion, puis les onglets d'audience en pleine largeur —
+     à 360 px, sur un seul rang, le bouton Connexion débordait de 38 px (mesuré). */
+  .pub-top__in {
+    height: auto;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    padding-top: 0.5rem;
+  }
+  .pub-audience {
+    order: 3;
+    width: 100%;
+    height: auto;
+    margin-left: 0;
+  }
+  .pub-audience a {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 0.55rem 0.5rem;
+  }
+  .pub-marque__s {
+    display: none;
+  }
+  .pub-nav__cta {
+    margin-left: 0;
+  }
+  .pub-reperes {
+    gap: 1rem 1.5rem;
+  }
+}
+@media (max-width: 480px) {
+  .pub-btn--primaire {
+    padding: 0 0.7rem;
+  }
+}

@@ -142,6 +142,20 @@ nouveau('Bouton « Assistant IA » — libellé au repos', 4.5, '#075985', '#f0f
 nouveau('Bouton « Assistant IA » — libellé ouvert ou survolé', 4.5, '#075985', '#e0f2fe');
 nouveau('Repère de focus du bouton « Assistant IA »', 3, '#0369a1', '#ffffff');
 
+// ── ENTRÉE PUBLIQUE (proposition 2026-09-22) — hors coquille, mais mêmes jetons : mesurée ici, même garde-fou ──
+// Bannière : dégradé #082f49 → #0c4a6e → #0d5578 ; le pire cas pour un texte clair est le bout le plus CLAIR
+// (#0f6a94, premier jet, laissait l'or à 3,69:1 : le bout clair a été assombri, pas l'or éclairci).
+const HERO_CLAIR = '#0d5578';
+nouveau('Entrée publique — promesse (blanc 0,92) sur le bout clair du dégradé', 4.5, blanc(0.92), HERO_CLAIR);
+nouveau('Entrée publique — fil d’Ariane et repères (blanc 0,86) sur le bout clair', 4.5, blanc(0.86), HERO_CLAIR);
+nouveau('Entrée publique — valeur d’un repère (or) sur le bout clair', 4.5, DORE, HERO_CLAIR);
+nouveau('Entrée publique — bouton contour : bordure blanche 0,7 sur le bout clair', 3, blanc(0.7), HERO_CLAIR);
+nouveau('Entrée publique — barre « ce que vous pouvez faire » (blanc 0,9) sur #0c4a6e', 4.5, blanc(0.9), SIDEBAR_HAUT);
+nouveau('Entrée publique — onglet d’audience au repos (--n-500) sur blanc', 4.5, '#586586', '#ffffff');
+nouveau('Entrée publique — mot-clé lien (--p-700) sur blanc', 4.5, '#0369a1', '#ffffff');
+nouveau('Entrée publique — bouton Connexion : blanc sur --p-700', 4.5, '#ffffff', '#0369a1');
+nouveau('Entrée publique — bouton « Créer un compte PRMP » : --p-800 sur blanc', 4.5, '#075985', '#ffffff');
+
 // ── Sortie ────────────────────────────────────────────────────────────────────
 const f = (v) => (Number.isNaN(v) ? '—' : `${v.toFixed(2).replace('.', ',')}:1`);
 let echecs = 0;

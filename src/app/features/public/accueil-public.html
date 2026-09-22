@@ -1,0 +1,93 @@
+<!-- Entrée publique (proposition 2026-09-22, arbitrée) — hors coquille, aucune requête. -->
+<a class="cnm-sr-only pub-evitement" href="#pub-contenu">Aller au contenu</a>
+
+<header class="pub-top">
+  <div class="pub-top__in">
+    <a class="pub-marque" routerLink="/accueil/prmp" aria-label="PRS 2.0 — accueil">
+      <span class="pub-marque__mef" aria-hidden="true">MEF</span>
+      <span class="pub-marque__texte">
+        <span class="pub-marque__t">PRS 2.0</span>
+        <span class="pub-marque__s">Commission nationale des marchés</span>
+      </span>
+    </a>
+    <!-- Onglets d'audience (le modèle : Entreprise / Acheteur) : l'onglet retenu est dans l'URL, jamais en localStorage. -->
+    <nav class="pub-audience" aria-label="Audience">
+      @for (a of audiences; track a) {
+        <a [routerLink]="['/accueil', a]" [attr.aria-current]="audience() === a ? 'page' : null">{{ onglet(a) }}</a>
+      }
+    </nav>
+    <div class="pub-top__actions">
+      <a class="pub-btn pub-btn--primaire" routerLink="/login"><app-icone nom="key" [taille]="16" />Connexion</a>
+    </div>
+  </div>
+</header>
+
+<!-- Ce que l'audience peut faire ici ; côté PRMP, le bouton détaché mène à l'inscription. -->
+<nav class="pub-nav" aria-label="Ce que vous pouvez faire">
+  <div class="pub-nav__in">
+    @for (l of contenu().nav; track l.lien) {
+      @if (estAncre(l.lien)) {
+        <a [href]="l.lien" (click)="versAncre(l.lien, $event)">{{ l.libelle }}</a>
+      } @else {
+        <a [routerLink]="l.lien">{{ l.libelle }}</a>
+      }
+    }
+    @if (contenu().cta; as cta) {
+      <a class="pub-nav__cta" [routerLink]="cta.lien">{{ cta.libelle }}</a>
+    }
+  </div>
+</nav>
+
+<main id="pub-contenu" class="pub-main">
+  <!-- Bannière en dégradé : le texte reste lisible partout, rien à charger. -->
+  <section class="pub-hero" aria-labelledby="pub-titre">
+    <div class="pub-hero__in">
+      <nav class="pub-ariane" aria-label="Fil d'Ariane">
+        <a routerLink="/accueil/prmp">Accueil</a>
+        <app-icone nom="chev" [taille]="12" />
+        <span aria-current="page">{{ contenu().onglet }}</span>
+      </nav>
+      <h1 id="pub-titre">{{ contenu().titre }}</h1>
+      <p class="pub-hero__promesse">{{ contenu().promesse }}</p>
+      <div class="pub-hero__actions">
+        @for (a of contenu().actions; track a.lien) {
+          <a class="pub-btn" [class.pub-btn--blanc]="a.principal" [class.pub-btn--contour]="!a.principal" [routerLink]="a.lien">{{ a.libelle }}</a>
+        }
+      </div>
+      <dl class="pub-reperes" aria-label="Repères">
+        @for (r of contenu().reperes; track r.libelle) {
+          <div class="pub-repere">
+            <dt class="pub-repere__v">{{ r.valeur }}</dt>
+            <dd class="pub-repere__l">{{ r.libelle }}</dd>
+          </div>
+        }
+      </dl>
+    </div>
+  </section>
+
+  <section class="pub-section" id="circuit" aria-labelledby="pub-section-titre">
+    <h2 id="pub-section-titre">{{ contenu().sectionTitre }}</h2>
+    <p class="pub-section__texte">{{ contenu().sectionTexte }}</p>
+    <div class="pub-cartes">
+      @for (c of contenu().cartes; track c.titre; let i = $index) {
+        <article class="pub-carte">
+          <span class="pub-carte__n" aria-hidden="true">{{ i + 1 }}</span>
+          <h3>{{ c.titre }}</h3>
+          <!-- Sur une ligne, à dessein : un retour à la ligne entre un mot-clé et la ponctuation qui le suit devient
+               un espace visible (« PDF , »). Les fragments portent eux-mêmes leurs espaces. -->
+          <p>@for (f of c.texte; track $index) {@if (estMot(f)) {@if (f.lien) {<a class="pub-mot" [routerLink]="f.lien">{{ f.mot }}</a>} @else {<strong class="pub-mot pub-mot--fixe">{{ f.mot }}</strong>}} @else {{{ f }}}}</p>
+        </article>
+      }
+    </div>
+  </section>
+</main>
+
+<footer class="pub-pied">
+  <div class="pub-pied__in">
+    <span>Ministère de l'Économie et des Finances — Commission nationale des marchés</span>
+    <a routerLink="/login">Se connecter</a>
+    @if (contenu().cta; as cta) {
+      <a [routerLink]="cta.lien">{{ cta.libelle }}</a>
+    }
+  </div>
+</footer>
