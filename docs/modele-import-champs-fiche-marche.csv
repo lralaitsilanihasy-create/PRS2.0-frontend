@@ -1,0 +1,5 @@
+code;libelle;type;source;documentMaitre;reprises;typesMarche;condition;obligatoire;texteType;controle;options;cleCadrage;clePpm;actif
+B05-GS-03;Forme de la garantie de soumission;LISTE;SAISIE;DPAO;AE;QUANTITE_FIXE,A_COMMANDE;garantieSoumission = OUI;true;;;Dépôt au Trésor,Caution agréée,Garantie bancaire,Chèque de banque;;;true
+B05-GS-04;Montant de la garantie de soumission (Ariary);MONTANT;SAISIE;DPAO;AE,CCAP;QUANTITE_FIXE,A_COMMANDE;garantieSoumission = OUI;true;La garantie de soumission est fixée à {B05-GS-04} ariary.;MONTANT_POSITIF;;;;true
+B05-GS-05;Durée de validité de la garantie de soumission (jours);NOMBRE;SAISIE;DPAO;;QUANTITE_FIXE,A_COMMANDE;garantieSoumission = OUI;true;;VALIDITE_GARANTIE_SUP_OFFRE:GARANTIE;;;;true
+B04-VO-01;Délai de validité des offres (jours);NOMBRE;SAISIE;DPAO;CCAP;QUANTITE_FIXE,A_COMMANDE,CONTRAT_CADRE;;true;Les offres restent valables {B04-VO-01} jours à compter de la date limite de remise.;VALIDITE_GARANTIE_SUP_OFFRE:OFFRE;;;;true
