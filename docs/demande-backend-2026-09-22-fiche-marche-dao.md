@@ -22,7 +22,7 @@ service le fournit — un outil d'import, pas un endpoint.
 | H4 | **Lignes éligibles** : ligne d'un PPM dont le PV est **signé** (avis favorable, ou réserves levées), **mode de passation mappé au type DMC `DAO`**, ligne **sans DAO** existant et non retirée | ajuster B2 |
 | H5 | La fiche est un **brouillon serveur enregistré bloc par bloc** | ajuster B3 |
 | H6 | Génération (lot 2) avant « à commande » (lot 3) | ordre des lots |
-| H7 | Une information reprise du PPM se corrige **dans le PPM** (nouvelle version) ; la fiche relit la version courante | rien dans ce lot |
+| H7 | Une information reprise du PPM se corrige **dans le PPM** (nouvelle version) ; la fiche relit la version courante — ⚠️ 22/09 : « version courante » se lit par la **filiation de ligne** `ID_LIGNE_ORIGINE`, jamais par `ID_DETAIL` seul (précisé en B2, encadré « Identité de la ligne ») | rien dans ce lot |
 
 ## Constat (vrai au 22/09)
 
@@ -65,6 +65,19 @@ grille de contrôle depuis `points-ctrl`) : ajouter un champ ou changer une cond
 avec `BlocDto = { code, libelle, rang, rubriques: [{ code, libelle, rang, documentMaitre? }] }`. Écriture : **Admin**
 (`POST`/`PUT` d'un champ ; blocs et rubriques figés par migration). **Import** : outil de chargement depuis le fichier
 de correspondance nettoyé (CSV/XLSX → référentiel), hors API.
+
+> ⚠️ **22/09 — réponse au backend (« aucun évaluateur d'expressions dans le projet »)** : la grammaire de `condition`
+> est volontairement **minuscule**, sans parenthèses ni priorité — une quinzaine de lignes, pas un moteur :
+> 1. couper la chaîne sur ` ou ` (insensible à la casse, entouré d'espaces) → des groupes ; **un groupe vrai suffit** ;
+> 2. couper chaque groupe sur ` et ` → des termes ; **tous les termes doivent être vrais** ;
+> 3. un terme est `cle = VALEUR` ou `cle != VALEUR` (`^([A-Za-z_][A-Za-z0-9_]*)\s*(=|!=)\s*([A-Za-z0-9_]+)$`) ;
+>    la clé se lit dans `cadrage`, **absente ⇒ chaîne vide** (donc `= X` faux, `!= X` vrai) ;
+> 4. un terme illisible vaut **faux** (jamais une exception) ; `condition` `null` ou vide vaut **vrai**.
+>
+> Le front porte **le même évaluateur** (`features/prmp/fiche-marche/fiche-marche-modele.ts`, `evaluerCondition`) et
+> ses tests ; à reproduire à l'identique côté serveur — cas de recette : `garantieSoumission = OUI` (vrai), `= NON`
+> (faux), `!= NON` (vrai), `provenance = IMPORTEES et typePrix = UNITAIRES` (vrai), `provenance = NATIONAL ou typePrix
+> = UNITAIRES` (vrai), `avance = OUI` sur clé absente (faux), `n'importe quoi` (faux, sans exception).
 
 **Blocs et rubriques à livrer par migration** (quantité fixe, comptes attendus de l'esquisse, entre parenthèses) :
 
@@ -110,6 +123,38 @@ rubrique avec « n informations attendues, référentiel à compléter » — l'
   clé = `code` du champ `source = PPM` (B01 et B02), valeur telle qu'affichée, plus `versionPpm` (numéro de version du
   PPM lu) — H7 : relues à chaque `GET`, jamais stockées dans la fiche.
 
+> ⚠️ **22/09 — réponses au backend sur B2 (quatre points relevés par sa vérification)**
+>
+> **1. Identité de la ligne à travers les versions (H7 vs `t_dossier_mec.ID_DETAIL`).** Le DMC reste lié à
+> l'`ID_DETAIL` de la ligne **au moment de sa création** (rien à migrer). La « version courante » se retrouve par la
+> **filiation** livrée au versionnement du 05/08 : `t_marche.ID_LIGNE_ORIGINE`, appariement **jamais par position**.
+> Ligne courante = dans la **dernière version signée** de la même filiation de dossiers (chaîne `REMPLACE`), la ligne
+> dont l'`ID_LIGNE_ORIGINE` est celui de la ligne liée. Le `GET` sert alors `valeursPpm` et `versionPpm` **de la ligne
+> courante**, plus `idDetailCourant` et `ligneSupprimee: boolean` (la filiation est supprimée logiquement dans la
+> version courante : le front avertit, ne bloque pas au lot 1). `eligibles` ne liste que les lignes de la **dernière
+> version signée** de chaque dossier ; `dejaDao` se calcule **sur la filiation** (un DMC lié à un ancêtre compte) ;
+> `POST par-marche` sur la ligne d'une version dépassée → 409 « préparer depuis la version courante ». Test 9 récrit
+> plus bas.
+>
+> **2. Ordre des gardes, sans fuite d'information.** `POST par-marche/{idDetail}` : (1) ligne inexistante → 404 ;
+> (2) **périmètre** (PRMP propriétaire ou son UGPM, ou Admin) → 403, **avant tout 409 métier** — une PRMP étrangère
+> n'apprend jamais si une ligne porte déjà un DAO ; (3) **vacance** : `MandatService.exigerMandatActif`, même garde que
+> `POST /api/saisies/dossier`, posée aussi sur `PUT …/cadrage`, `PUT …/blocs/{bloc}`, `POST …/valider`, `POST …/reviser`
+> (un acte PRMP en vacance de mandat est refusé comme partout) ; (4) gardes H4 → 409 nominatifs. Le test existant
+> `SecuriteCrudIntegrationTest` (l. 651-665, « PRMP → 403 sur par-marche ») **change de sens** : PRMP propriétaire
+> → 201, autre PRMP → 403, Admin → 201 inchangé — c'est la demande, pas une régression.
+>
+> **3. Le type DMC `DAO` n'existe dans aucune migration.** La migration du lot **sème** `t_type_dmc` avec le code `DAO`
+> (« Dossier d'appel d'offres »), idempotente. Le rattachement mode de passation → type DMC reste **l'acte de
+> l'Administrateur** (écran « Types de DMC », `dmc-mapping-admin`) ; seul le **jeu de recette** rattache le mode d'appel
+> d'offres ouvert. Ligne dont le mode n'est rattaché à aucun type → 409 nominatif : « Le mode « … » n'est rattaché à
+> aucun type de dossier de mise en concurrence — à faire par l'Administrateur (Types de DMC) ». Le code `DAO` du type
+> DMC est **le même** que le sous-type `DAO` de la famille DMC (`sous-type-dossiers`) : le front entre par le sous-type,
+> la garde lit le type.
+>
+> **4. `eligibles` attrapé par `/{id}`** : déclarer la route littérale avant la variable (Spring préfère le littéral) —
+> déjà noté ci-dessus.
+
 ### B3 — La fiche (`/api/fiches-marche`, `t_fiche_marche` + `t_fiche_marche_valeur`)
 
 | | |
@@ -117,12 +162,12 @@ rubrique avec « n informations attendues, référentiel à compléter » — l'
 | Identité | une fiche **par DMC** (`idDmc`), créée au premier `PUT` ; `typeMarche` fixé par le cadrage |
 | Statut | `BROUILLON` · `VALIDEE` (figée, H5/H1) ; `version` (1, 2… — une modification après validation ouvre une **nouvelle version** brouillon, l'ancienne reste lisible) |
 | `cadrage` | réponses aux **dix questions** (clés : `typeMarche`, `alloti`, `nbLots`, `variantes`, `groupement`, `formeGroupement`, `provenance`, `typePrix`, `prixRevisable`, `garantieSoumission`, `avance`, `tauxAvance`, `penalites`, `attributaires` [contrat-cadre]) |
-| `valeurs` | `{ code: valeur }` pour les champs `SAISIE` ; les `MONTANT` reçoivent le nombre, le serveur sert aussi `enLettres` |
+| `valeurs` | `{ code: valeur }` pour les champs `SAISIE` ; les `MONTANT` reçoivent le nombre, le serveur sert aussi **`enLettres`** : `{ code: texte }` dans `FicheMarcheDto` (« huit millions quatre cent mille ariary »), jamais calculé côté client |
 | Accès | PRMP / UGPM propriétaire du dossier de planification ; lecture pour les contrôleurs du périmètre (403 sinon) |
 
 | Méthode | URL | Corps | Réponse | Accès |
 |---|---|---|---|---|
-| GET | /api/fiches-marche/{idDmc} | — | `FicheMarcheDto` (cadrage, valeurs, `valeursPpm`, `versionPpm`, `bilanControles`, statut, version) | propriétaire, contrôleurs du périmètre |
+| GET | /api/fiches-marche/{idDmc} | — | `FicheMarcheDto` (idDmc, idDetail, idDossier, refeDossier, designationMarche, typeMarche, statut, version, cadrage, valeurs, `valeursPpm`, `versionPpm`, `enLettres`, `bilanControles`, dateValidation, validePar) | propriétaire, contrôleurs du périmètre |
 | PUT | /api/fiches-marche/{idDmc}/cadrage | `{ cadrage }` | `FicheMarcheDto` | propriétaire (PRMP / UGPM) ; 409 si `VALIDEE` |
 | PUT | /api/fiches-marche/{idDmc}/blocs/{bloc} | `{ valeurs }` du bloc | `FicheMarcheDto` | idem ; **400 nominatifs par champ** (`{ champ: code, message }[]`, comme les justifications) pour type, liste, obligatoire |
 | POST | /api/fiches-marche/{idDmc}/controler | — | `BilanControlesDto` | idem |
@@ -132,6 +177,13 @@ rubrique avec « n informations attendues, référentiel à compléter » — l'
 
 Un champ dont la **condition de cadrage** est fausse est **ignoré** à l'enregistrement et absent du bilan (rubrique
 fermée). Les valeurs `CADRAGE` sont dérivées, jamais reçues.
+
+> ⚠️ **22/09 — `enLettres` (réponse au backend : `NombreEnLettres` plafonne à 999 999).** Les montants de marché en
+> Ariary dépassent couramment le milliard : étendre le convertisseur aux **millions et milliards** (« huit millions
+> quatre cent mille ariary », « un milliard deux cents millions ariary »), avec un test par palier (999 999 ·
+> 1 000 000 · 1 000 001 · 999 999 999 · 1 000 000 000 · 1 200 000 000) et l'invariant « et un » / « et onze » / pluriels
+> (« quatre-vingts », « deux cents ») déjà couverts par l'existant. Le texte sert aussi les PV et lettres : l'extension
+> vaut pour tous.
 
 ### B4 — Contrôles (catalogue nommé, `BilanControlesDto`)
 
@@ -188,7 +240,16 @@ d'un acte PRMP). Chronométrage : sans objet avant soumission.
    `VALIDEE` version 1, journal +1.
 7. `reviser` → version 2 `BROUILLON`, version 1 lisible dans `versions` ; `PUT` sur une version `VALIDEE` → 409.
 8. Contrôleur de la localité : `GET` 200 ; PRMP d'un autre périmètre : 403.
-9. `valeursPpm` suit une nouvelle version du PPM (`versionPpm` change, valeurs relues).
+9. ⚠️ récrit le 22/09 — **filiation** : DMC créé sur la ligne L (version 1) ; mise à jour du PPM signée en version 2
+   où L' (`ID_LIGNE_ORIGINE` = celui de L) change de montant → `GET` sert `versionPpm = 2`, `idDetailCourant = L'`,
+   le nouveau montant ; L' est `dejaDao` dans `eligibles` ; `POST par-marche/{L}` (version dépassée) → 409 ; L
+   supprimée logiquement en version 2 → `ligneSupprimee = true`, `GET` 200.
+10. Ordre des gardes : PRMP étrangère sur une ligne qui porte déjà un DAO → **403** (jamais 409) ; PRMP propriétaire
+    sans mandat actif → refus de vacance sur `POST par-marche` et sur `PUT …/blocs/B02`.
+11. Base vierge après migrations : `t_type_dmc` contient `DAO` ; ligne dont le mode n'est rattaché à aucun type →
+    409 nominatif qui nomme l'Administrateur.
+12. `enLettres` : 8 400 000 → « huit millions quatre cent mille ariary » ; 1 200 000 000 → « un milliard deux cents
+    millions ariary ».
 
 ## Côté front (pour information, développé contre ce contrat)
 
@@ -196,4 +257,6 @@ Dans « Créer dossier › Dossier de mise en concurrence », le sous-type `DAO`
 maquette `docs/maquette-2026-09-22-dmc-fiche-marche.html` : choix de la ligne éligible, cadrage, blocs dessinés depuis
 le référentiel (rubriques fermées masquées, champs `PPM` verrouillés avec leur provenance, `MONTANT` avec les lettres
 servies), panneau des contrôles, validation PRMP. Tant que le référentiel n'a pas ses champs, chaque rubrique affiche
-son compte attendu — l'écran se recette avant la matière.
+son compte attendu — l'écran se recette avant la matière. **H3, second point d'entrée** : dans « Mes PPM & marchés »,
+chaque PPM dont une ligne figure dans `eligibles` porte un bouton « Appel d'offres (n) » vers `/prmp/dao?dossier=` ;
+`?ligne=` ouvre une ligne d'emblée. Les deux se taisent tant que `eligibles` n'est pas servi.
