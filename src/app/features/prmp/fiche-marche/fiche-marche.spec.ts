@@ -30,7 +30,7 @@ const REFERENTIEL: ReferentielFiche = {
     { code: 'B01-AC-01', bloc: 'B01', rubrique: 'AC', rang: 1, libelle: 'Autorité contractante', type: 'TEXTE', source: 'PPM', documentMaitre: 'DPAO', reprises: ['AE', 'CCAP'], typesMarche: ['QUANTITE_FIXE'], obligatoire: true },
     { code: 'B02-OB-01', bloc: 'B02', rubrique: 'OB', rang: 1, libelle: 'Objet de l’appel d’offres', type: 'TEXTE_LONG', source: 'SAISIE', documentMaitre: 'DPAO', reprises: ['AE'], typesMarche: ['QUANTITE_FIXE'], obligatoire: true },
     { code: 'B05-MO-01', bloc: 'B05', rubrique: 'MO', rang: 1, libelle: 'Monnaie de l’offre', type: 'LISTE', options: ['Ariary', 'Euro'], source: 'SAISIE', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], obligatoire: true },
-    { code: 'B05-GS-01', bloc: 'B05', rubrique: 'GS', rang: 1, libelle: 'Forme de la garantie', type: 'LISTE', options: ['Caution', 'Chèque de banque'], source: 'SAISIE', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], obligatoire: true, condition: 'garantieSoumission = OUI' },
+    { code: 'B05-GS-01', bloc: 'B05', rubrique: 'GS', rang: 1, libelle: 'Garantie de soumission exigée', type: 'OUI_NON', source: 'CADRAGE', cleCadrage: 'garantieSoumission', documentMaitre: 'DPAO', reprises: ['AE'], typesMarche: ['QUANTITE_FIXE'], obligatoire: false, condition: 'garantieSoumission = OUI' },
     { code: 'B05-GS-02', bloc: 'B05', rubrique: 'GS', rang: 2, libelle: 'Montant de la garantie', type: 'MONTANT', source: 'SAISIE', documentMaitre: 'DPAO', reprises: ['AE', 'CCAP'], typesMarche: ['QUANTITE_FIXE'], obligatoire: true, condition: 'garantieSoumission = OUI', controle: 'entre 1 et 2 % du montant estimatif' },
   ],
 };
@@ -53,6 +53,7 @@ function fiche(partiel: Partial<FicheMarche> = {}): FicheMarche {
     cadrage: { ...CADRAGE_COMPLET },
     valeurs: { 'B02-OB-01': 'Mobilier de bureau' },
     valeursPpm: { 'B01-AC-01': 'Ministère de l’Économie et des Finances' },
+    valeursCadrage: { 'B05-GS-01': 'OUI' },
     enLettres: null,
     bilanControles: null,
     ...partiel,
@@ -253,6 +254,8 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
 
     // B05 : GS ouverte (garantieSoumission = OUI), le montant est un nombre, les reprises sont affichées.
     expect(texte(racine().querySelector('.fm__bloc-tete h2'))).toBe('Prix, montants & garantie de soumission');
+    // Le reflet du cadrage montre le libellé de la réponse, pas son code (valeursCadrage servi par le serveur).
+    expect(texte(racine().querySelector('#c-B05-GS-01'))).toBe('Oui');
     expect(Array.from(racine().querySelectorAll('.fm__rub h3')).map((h) => texte(h))).toEqual(['Monnaie DPAO', 'Garantie de soumission DPAO']);
     const montant = racine().querySelector('#c-B05-GS-02') as HTMLInputElement;
     montant.value = '8400000';
@@ -268,7 +271,7 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     expect(texte(racine().querySelector('.fm__lettres'))).toBe('huit millions quatre cent mille ariary');
     const meta = racine().querySelector('#c-B05-GS-02')?.closest('.fm__champ')?.querySelectorAll('.fm__meta > span');
     expect(Array.from(meta ?? []).map((s) => texte(s))).toEqual(['à saisir', 'DPAO', 'repris dans', 'AE', 'CCAP', 'condition : garantieSoumission = OUI']);
-    expect(texte(racine().querySelector('.fm__total'))).toContain('1 sur 4');
+    expect(texte(racine().querySelector('.fm__total'))).toContain('1 sur 3');
   });
 
   it('bloc refusé (400 nominatifs) : le message sous chaque champ, un toast de comptage, aucun changement d’étape', () => {
@@ -299,7 +302,9 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     fixture.componentInstance.etape.set(3);
     rendre();
     expect(texte(racine().querySelector('.fm__bloc-tete h2'))).toBe('Reprises');
-    expect(Array.from(racine().querySelectorAll('.fm__champ-t')).map((e) => texte(e))).toEqual(['Autorité contractante', 'Objet de l’appel d’offres', 'Montant de la garantie']);
+    expect(Array.from(racine().querySelectorAll('.fm__champ-t')).map((e) => texte(e))).toEqual(['Autorité contractante', 'Objet de l’appel d’offres', 'Garantie de soumission exigée', 'Montant de la garantie']);
+    // La reprise d'un reflet du cadrage montre le libellé de la réponse.
+    expect(Array.from(racine().querySelectorAll('.fm__lecture')).map((e) => texte(e))[2]).toBe('Oui');
     bouton('Contrôler').click();
     http.expectOne('/api/fiches-marche/42/controler').flush({
       bloquants: [{ regle: 'GS-01', champs: ['B05-GS-02'], bloc: 'B05', message: 'Montant de la garantie manquant.' }],

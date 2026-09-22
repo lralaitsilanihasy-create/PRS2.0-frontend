@@ -54,8 +54,9 @@ describe('Champs de la fiche marché — référentiel Administrateur (B1, 22/09
     expect(Array.from(racine().querySelectorAll('.cfm__bloc th')).map((th) => texte(th))).toEqual(['B02 — Objet, allotissement & forme du marché', 'B05 — Prix, montants & garantie de soumission']);
     const rubriques = Array.from(racine().querySelectorAll('.cfm__rub'));
     expect(rubriques.map((r) => texte(r.querySelector('.cfm__rub-l')))).toEqual(['Objet', 'Monnaie', 'Garantie de soumission']);
-    expect(rubriques.map((r) => texte(r.querySelector('.badge')))).toEqual(['0 / 1', '0 / 2', '2 / 6']);
-    expect(rubriques.every((r) => r.querySelector('.badge')?.classList.contains('badge-warning'))).toBe(true);
+    expect(rubriques.map((r) => texte(r.querySelector('.badge')))).toEqual(['0 champ(s) · 1 attendu(s)', '0 champ(s) · 2 attendu(s)', '2 champ(s) · 6 attendu(s)']);
+    // Le compte de l'esquisse est indicatif : seule une rubrique vide alerte.
+    expect(rubriques.map((r) => r.querySelector('.badge')?.classList.contains('badge-warning'))).toEqual([true, true, false]);
     expect(texte(racine().querySelector('.cfm__resume'))).toContain('2 champ(s) — 2 actif(s), 1 à saisir, 0 du PPM, 1 du cadrage');
     expect(texte(racine().querySelector('.cfm__resume'))).toContain('Attendus par l’esquisse : 9'.replace('’', "'"));
     expect(racine().querySelectorAll('tbody tr:not(.cfm__bloc):not(.cfm__rub)').length).toBe(2);
@@ -90,7 +91,7 @@ describe('Champs de la fiche marché — référentiel Administrateur (B1, 22/09
     rendre();
     expect(racine().querySelector('form')).toBeNull();
     expect(toast.success).toHaveBeenCalledWith('Champ B05-GS-03 créé.');
-    expect(texte(Array.from(racine().querySelectorAll('.cfm__rub')).find((r) => texte(r).includes('Garantie de soumission'))?.querySelector('.badge'))).toBe('3 / 6');
+    expect(texte(Array.from(racine().querySelectorAll('.cfm__rub')).find((r) => texte(r).includes('Garantie de soumission'))?.querySelector('.badge'))).toBe('3 champ(s) · 6 attendu(s)');
   });
 
   it('modification : le code est verrouillé, un 400 nominatif se pose sous le champ fautif, sans toast', () => {

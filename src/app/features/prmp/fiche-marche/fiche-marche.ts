@@ -247,7 +247,18 @@ export class FicheMarcheEcran {
   valeurAffichee(champ: ChampFiche): string {
     const f = this.fiche();
     const v = champ.source === 'PPM' ? (f?.valeursPpm?.[champ.code] ?? null) : champ.source === 'CADRAGE' ? (f?.valeursCadrage?.[champ.code] ?? null) : this.valeur(champ.code);
-    return v == null ? '' : String(v);
+    return v == null ? '' : champ.source === 'CADRAGE' ? this.libelleCadrage(champ, v) : String(v);
+  }
+
+  /** Un champ reflet du cadrage montre le libellé de la réponse (« Territoire national »), pas son code (`NATIONAL`). */
+  libelleCadrage(champ: ChampFiche, v: unknown): string {
+    const q = QUESTIONS_CADRAGE.find((x) => x.cle === champ.cleCadrage);
+    return q?.options.find((o) => o.code === String(v))?.libelle ?? String(v);
+  }
+
+  affichageReprise(r: { champ: ChampFiche; valeur: unknown }): string {
+    if (r.valeur == null || r.valeur === '') return '—';
+    return r.champ.source === 'CADRAGE' ? this.libelleCadrage(r.champ, r.valeur) : String(r.valeur);
   }
 
   /** `2026-09-22T10:05:00` → `22/09/2026 10:05` ; date seule → `22/09/2026` ; vide → `—`. */

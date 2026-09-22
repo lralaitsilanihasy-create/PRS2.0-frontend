@@ -168,7 +168,9 @@ function vide(): ChampFiche {
                       <div class="cfm__rub-in">
                         <span class="cfm__rub-l">{{ r.libelle }}</span>
                         <span class="cnm-mono cfm__rub-c">{{ r.code }}</span>
-                        <span class="badge" [class.badge-warning]="champsDe(b, r).length < (r.nbAttendu ?? 0)">{{ champsDe(b, r).length }} / {{ r.nbAttendu ?? '?' }}</span>
+                        <!-- Le compte de l'esquisse est indicatif (une ligne du fichier = une information) : plusieurs
+                             lignes deviennent UN champ (liste, oui/non, question de cadrage). Seule une rubrique VIDE alerte. -->
+                        <span class="badge" [class.badge-warning]="champsDe(b, r).length === 0" [attr.title]="(r.nbAttendu ?? 0) + ' information(s) annoncée(s) par l’esquisse'">{{ champsDe(b, r).length }} champ(s) · {{ r.nbAttendu ?? '?' }} attendu(s)</span>
                         @if (r.documentMaitre) { <span class="badge">{{ r.documentMaitre }}</span> }
                       </div>
                     </td>

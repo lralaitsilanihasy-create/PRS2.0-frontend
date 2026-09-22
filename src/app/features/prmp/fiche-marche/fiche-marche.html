@@ -229,7 +229,7 @@
                 @for (r of reprisesListe(); track r.champ.code) {
                   <div class="fm__champ">
                     <div class="fm__champ-l"><span class="fm__champ-t">{{ r.champ.libelle }}</span><span class="fm__champ-aide">{{ r.champ.code }}</span></div>
-                    <div class="fm__champ-v"><div class="fm__lecture">{{ r.valeur ?? '—' }}</div></div>
+                    <div class="fm__champ-v"><div class="fm__lecture">{{ affichageReprise(r) }}</div></div>
                     <div class="fm__meta">
                       <span class="fm__doc fm__doc--{{ r.champ.documentMaitre.toLowerCase() }}">{{ libellesDocuments[r.champ.documentMaitre] }}</span>
                       <span class="fm__ou">repris dans</span>
