@@ -290,11 +290,18 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  width: calc(100% - 1.5rem);
-  margin: 0.35rem 0.75rem 0;
-  padding: 0 0 0.1rem;
+  /* Même emprise que la pastille d'une entrée ACTIVE (demande pilote 2026-09-22) : pleine largeur de la
+     zone de menu (.sidebar-nav a 8 px de marge intérieure), mêmes 9 px de retrait latéral que .nav-item —
+     l'intitulé s'aligne sur les icônes, la bande sur la pastille. */
+  width: 100%;
+  margin: 0.35rem 0 0;
+  /* ⚠️ Demande pilote (2026-09-22) — une BANDE derrière l'intitulé : sombre et translucide (elle assombrit le
+     dégradé au lieu d'y poser une couleur étrangère), arrondie, 4 px de haut en plus par rubrique. L'or
+     y gagne en contraste (6,6:1 sur le haut du dégradé, mesuré par scripts/contrastes-coquille.mjs). */
+  padding: 0.2rem 9px;
   border: 0;
-  background: transparent;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.22);
   font: inherit;
   font-size: 0.69rem;
   font-weight: 700;
@@ -302,10 +309,12 @@
   letter-spacing: 0.11em;
   text-transform: uppercase;
   text-align: left;
-  /* Volontairement discret, mais AU-DESSUS du seuil AA : c'est du texte, pas un ornement
-     (acquis A2 de l'audit — ne pas éclaircir davantage). 0,62 tenait 4,69:1, de justesse pour un
-     texte de 0,66 rem en capitales ; 0,72 le porte à 5,73:1 (2026-09-16). */
-  color: rgba(255, 255, 255, 0.72);
+  /* ⚠️ Demande pilote (2026-09-22) — les intitulés de rubrique (Mon travail, Décisions, Pilotage, Exercé
+     par délégation, Exercé par intérim…) sont DORÉS, pour les dix menus : l'or les détache des entrées
+     blanches sans peser. #f5c542 sur le haut du dégradé (#0c4a6e) tient 5,83:1 — AA texte ; mesuré par
+     scripts/contrastes-coquille.mjs (paire « Intitulé de rubrique »), comme l'ancien blanc à 0,72.
+     Historique : blanc à 0,62 (4,69:1), puis 0,72 (5,73:1, 2026-09-16). */
+  color: #f5c542;
   transition: var(--transition);
 
   /* Le menu ouvre sur une rubrique : pas de marge en tête, elle ne séparerait rien. */
@@ -320,7 +329,8 @@
   cursor: pointer;
 
   &:hover {
-    color: rgba(255, 255, 255, 0.88);
+    color: #ffd966; /* or plus clair au survol (7,6:1 sur la bande survolée) */
+    background: rgba(0, 0, 0, 0.32);
   }
 }
 
@@ -441,7 +451,12 @@
        du bloc de marque est juste au-dessus. */
     .sidebar-nav__titre {
       margin: 4px 12px 3px;
-      border-top: 1px solid rgba(255, 255, 255, 0.45);
+      padding: 0;
+      border-radius: 0;
+      background: transparent; /* en rail, la bande n'aurait rien à entourer : seul le filet reste */
+      /* Doré comme l'intitulé qu'il remplace (2026-09-22) ; 0,7 d'or sur le fond tient 3,59:1 (seuil 3:1, mesuré —
+         0,6 ne donnait que 3,02:1, sans marge). */
+      border-top: 1px solid rgba(245, 197, 66, 0.7);
       justify-content: center;
     }
     .sidebar-nav__titre:first-child {
