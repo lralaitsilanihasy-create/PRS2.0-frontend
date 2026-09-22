@@ -37,6 +37,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
           <h1 class="page-title">Demande de retrait</h1>
         </div>
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Demandez le retrait d'un dossier soumis tant que son PV n'est pas signé : le Chef de commission ou le Président décide, et vous êtes notifié.</p>
 
       <div class="rt-grid">
         <div class="card">

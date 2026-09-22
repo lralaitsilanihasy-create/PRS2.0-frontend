@@ -35,6 +35,8 @@ type PieceType = 'ARRETE_NOMIN' | 'CIN' | 'PHOTO';
         <a class="btn btn-outline btn-sm" routerLink="/admin/rattachements">Rattachements en attente</a>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Les PRMP qui se sont inscrites et attendent votre validation : vérifiez l'identité et les pièces, puis activez ou refusez le compte.</p>
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>

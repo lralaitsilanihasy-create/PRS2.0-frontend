@@ -107,6 +107,8 @@ const GESTES: Readonly<Record<string, string>> = {
           }
         </p>
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Ce que l'Administrateur doit regarder aujourd'hui : les demandes d'accès, les mandats qui arrivent à terme, les connexions refusées ; puis les écrans de paramétrage.</p>
 
       @if (chargement()) {
         <p class="acc__attente" role="status">Chargement de votre poste d'administration…</p>

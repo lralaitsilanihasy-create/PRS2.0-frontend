@@ -330,6 +330,15 @@
 
 <main class="page-content" id="contenu-principal" tabindex="-1">
   <div class="page-inner">
+    <!-- Fil d'Ariane (proposition 2026-09-22, lot B) : où suis-je, depuis l'accueil du profil. Jamais en
+         concentration : la page du dossier porte le sien, avec le retour vers l'écran d'origine. -->
+    @if (!concentration() && filAriane(); as fil) {
+      <nav class="fil-ariane" aria-label="Fil d'Ariane">
+        <a class="fil-ariane__accueil" [routerLink]="fil.accueil.path">{{ fil.accueil.label }}</a>
+        <app-icone class="fil-ariane__sep" nom="chev" [taille]="12" />
+        <span class="fil-ariane__ici">{{ fil.ici }}</span>
+      </nav>
+    }
     <!-- Vacance du poste PRMP (spec « Mandats PRMP », §5) : aucun mandat actif → standby explicite. -->
     @if (vacance()) {
       <!-- « .alert » est un conteneur flex : le message tient dans UN seul <span> (recette du

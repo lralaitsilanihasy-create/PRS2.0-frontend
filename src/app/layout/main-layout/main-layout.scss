@@ -290,17 +290,13 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  /* Même emprise que la pastille d'une entrée ACTIVE (demande pilote 2026-09-22) : pleine largeur de la
-     zone de menu (.sidebar-nav a 8 px de marge intérieure), mêmes 9 px de retrait latéral que .nav-item —
-     l'intitulé s'aligne sur les icônes, la bande sur la pastille. */
+  /* Même emprise que la pastille d'une entrée active (pilote 22/09) : pleine largeur, retrait de 9 px comme .nav-item. */
   width: 100%;
   margin: 0.35rem 0 0;
-  /* ⚠️ Demande pilote (2026-09-22) — une BANDE derrière l'intitulé : sombre et translucide (elle assombrit le
-     dégradé au lieu d'y poser une couleur étrangère), arrondie, 4 px de haut en plus par rubrique. L'or
-     y gagne en contraste (6,6:1 sur le haut du dégradé, mesuré par scripts/contrastes-coquille.mjs). */
+  /* Bande sombre translucide derrière l'intitulé (pilote 22/09) : +4 px par rubrique ; or sur bande 7,39:1 (mesuré). */
   padding: 0.2rem 9px;
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: 0; /* angles droits (pilote 22/09) : la bande est un bandeau, pas une pastille */
   background: rgba(0, 0, 0, 0.22);
   font: inherit;
   font-size: 0.69rem;
@@ -309,11 +305,8 @@
   letter-spacing: 0.11em;
   text-transform: uppercase;
   text-align: left;
-  /* ⚠️ Demande pilote (2026-09-22) — les intitulés de rubrique (Mon travail, Décisions, Pilotage, Exercé
-     par délégation, Exercé par intérim…) sont DORÉS, pour les dix menus : l'or les détache des entrées
-     blanches sans peser. #f5c542 sur le haut du dégradé (#0c4a6e) tient 5,83:1 — AA texte ; mesuré par
-     scripts/contrastes-coquille.mjs (paire « Intitulé de rubrique »), comme l'ancien blanc à 0,72.
-     Historique : blanc à 0,62 (4,69:1), puis 0,72 (5,73:1, 2026-09-16). */
+  /* Intitulés DORÉS (pilote 22/09), dix menus : #f5c542 sur #0c4a6e = 5,83:1 (scripts/contrastes-coquille.mjs).
+     Avant : blanc 0,62 (4,69:1) puis 0,72 (5,73:1, 16/09). */
   color: #f5c542;
   transition: var(--transition);
 
@@ -454,8 +447,7 @@
       padding: 0;
       border-radius: 0;
       background: transparent; /* en rail, la bande n'aurait rien à entourer : seul le filet reste */
-      /* Doré comme l'intitulé qu'il remplace (2026-09-22) ; 0,7 d'or sur le fond tient 3,59:1 (seuil 3:1, mesuré —
-         0,6 ne donnait que 3,02:1, sans marge). */
+      /* Filet doré (22/09) : or 0,7 sur le fond = 3,59:1 (0,6 ne tenait que 3,02:1). */
       border-top: 1px solid rgba(245, 197, 66, 0.7);
       justify-content: center;
     }
@@ -593,4 +585,29 @@
   :host(.layout--concentration) .sidebar.open {
     transition: none;
   }
+}
+
+/* Fil d'Ariane (proposition 22/09, lot B) sous la barre du haut — jetons AA existants, aucune couleur nouvelle. */
+.fil-ariane {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: -6px 0 12px;
+  font-size: var(--text-sm, 0.85rem);
+  color: var(--n-500);
+}
+.fil-ariane__accueil {
+  color: var(--p-700);
+  text-decoration: none;
+}
+.fil-ariane__accueil:hover,
+.fil-ariane__accueil:focus-visible {
+  text-decoration: underline;
+}
+.fil-ariane__sep {
+  color: var(--n-400);
+}
+.fil-ariane__ici {
+  font-weight: 600;
+  color: var(--n-700);
 }

@@ -137,6 +137,8 @@ interface ApercuDossier {
           <a class="btn btn-retour-hub" routerLink="/prmp/mes-brouillons">← Mes brouillons</a>
         }
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Importez le plan de passation PDF ou saisissez-le, complétez la fiche, joignez les pièces ; le dossier part à la Commission quand vous le soumettez.</p>
 
       <!-- ⚠️ 2026-08-05 (demande user) — rattrapage : on arrive ici par réflexe pour faire évoluer un PPM
            déjà validé, alors que cet écran crée un dossier NEUF. Le renvoi n'est proposé qu'à la PRMP

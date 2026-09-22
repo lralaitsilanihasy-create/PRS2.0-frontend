@@ -58,6 +58,8 @@ interface GroupeJour {
           Tout marquer lu @if (nbNonLues()) { ({{ nbNonLues() }}) }
         </button>
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Tout ce que le circuit vous a signalé, par date ; une notification non lue reste en gras jusqu'à ce que vous l'ouvriez.</p>
 
       <div class="np__filtres">
         <div class="np__seg" role="tablist">

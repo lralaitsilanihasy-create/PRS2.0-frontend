@@ -809,3 +809,61 @@ describe('Bouton « Assistant IA » de la barre du haut (lot 1, 2026-09-18)', ()
     expect(document.activeElement).toBe(bouton);
   });
 });
+
+describe('Fil d’Ariane de la coquille (proposition 2026-09-22, lot B)', () => {
+  const monter = async (url: string) => {
+    TestBed.configureTestingModule({
+      imports: [MainLayout],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([
+          { path: 'membre/a-faire', component: EcranFactice },
+          { path: 'membre/tableau-de-bord', component: EcranFactice, data: { title: 'Tous les dossiers' } },
+          { path: 'membre/resultat-examen/pv', component: EcranFactice },
+          { path: 'membre/dossier/:id', component: EcranFactice, data: { title: 'Dossier', concentration: true } },
+        ]),
+        {
+          provide: AuthService,
+          useValue: {
+            role: signal('MEMBRE'),
+            login: signal('MEMBANT1'),
+            localite: signal('ANT'),
+            ref: () => 'MEMBANT1',
+            nomAffichage: () => 'RAKOTO Jean',
+            typeActeur: () => 'CONTROLEUR',
+            isAuthenticated: () => false,
+            logout: () => undefined,
+          },
+        },
+        { provide: KpiService, useValue: { badges: () => of({}) } },
+        { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: InterimStore, useValue: { exerces: signal([]), subi: signal(null), aVenir: signal([]), verifier: () => undefined } },
+        { provide: PermissionsService, useValue: { peutExecuter: () => false } },
+        { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
+        { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(MainLayout);
+    await TestBed.inject(Router).navigateByUrl(url);
+    fixture.detectChanges();
+    const hote = fixture.nativeElement as HTMLElement;
+    const nav = hote.querySelector('.fil-ariane');
+    if (!nav) return null;
+    // Les blancs entre éléments sont retirés à la compilation : on lit les deux parties, pas le textContent global.
+    const t = (sel: string): string => (nav.querySelector(sel)?.textContent ?? '').trim();
+    return t('.fil-ariane__accueil') + ' › ' + t('.fil-ariane__ici');
+  };
+
+  it('« À faire › Tous les dossiers » depuis data.title ; rien sur l’accueil du profil', async () => {
+    expect(await monter('/membre/tableau-de-bord')).toBe('À faire › Tous les dossiers');
+    TestBed.resetTestingModule();
+    expect(await monter('/membre/a-faire')).toBeNull();
+  });
+
+  it('sans data.title, le libellé de l’entrée de menu dont le chemin préfixe l’URL ; jamais en concentration', async () => {
+    expect(await monter('/membre/resultat-examen/pv')).toBe('À faire › PV et lettres de renvoi');
+    TestBed.resetTestingModule();
+    expect(await monter('/membre/dossier/42')).toBeNull();
+  });
+});

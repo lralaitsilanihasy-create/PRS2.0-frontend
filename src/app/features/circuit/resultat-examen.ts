@@ -136,13 +136,13 @@ const CARTES_MEMBRE: CarteResultat[] = [
       </header>
       @if (estPrmp()) {
         <p class="re__intro">
-          Ce que produit l'examen de vos dossiers : le <strong>PV définitif</strong> signé par la
+          Ce que produit l'examen de vos dossiers : le <a class="re__mot" routerLink="pv-definitifs">PV définitif</a> signé par la
           Commission, et la <strong>lettre de renvoi</strong> qui vous est adressée.
         </p>
       } @else {
         <p class="re__intro">
-          Tout ce que produit l'examen d'un dossier : le <strong>projet de PV</strong> tant qu'il circule,
-          le <strong>PV définitif</strong> une fois signé, et la <strong>lettre de renvoi</strong> adressée
+          Tout ce que produit l'examen d'un dossier : le <a class="re__mot" routerLink="pv">projet de PV</a> tant qu'il circule,
+          le <a class="re__mot" routerLink="pv-definitifs">PV définitif</a> une fois signé, et la <a class="re__mot" routerLink="lettre-renvois">lettre de renvoi</a> adressée
           à la PRMP.
         </p>
       }
@@ -185,6 +185,9 @@ const CARTES_MEMBRE: CarteResultat[] = [
   styles: `
     .re { display: flex; flex-direction: column; gap: 1.15rem; }
     .re__intro { margin: -0.4rem 0 0; color: var(--n-500); max-width: 60rem; }
+    /* Mots-clés = liens vers la liste concernée (proposition 2026-09-22, lot B). */
+    .re__mot { font-weight: 600; color: var(--p-700); text-decoration: none; }
+    .re__mot:hover, .re__mot:focus-visible { text-decoration: underline; }
     /* Cartes centrées, comme les cartes de types de « Mes dossiers » (même convention UX). */
     .re__grid {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(18.5rem, 22rem));

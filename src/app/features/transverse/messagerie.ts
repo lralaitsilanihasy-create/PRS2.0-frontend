@@ -22,6 +22,8 @@ import { MessageService } from '../../services';
           {{ composeOpen() ? 'Fermer' : '✉ Nouveau message' }}
         </button>
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Vos échanges avec les autres acteurs de l'application ; un nouveau message notifie son destinataire.</p>
 
       @if (composeOpen()) {
         <form class="card msg__compose" [formGroup]="form" (ngSubmit)="envoyer()" novalidate>

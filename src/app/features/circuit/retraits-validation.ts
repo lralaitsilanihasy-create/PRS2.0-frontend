@@ -36,6 +36,8 @@ import { LienDossier } from './page-dossier/lien-dossier';
         <header class="page-header">
           <h1 class="page-title">Demandes de retrait</h1>
         </header>
+        <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+        <p class="page-role">Les demandes de retrait des PRMP à décider : accepter renvoie le dossier en brouillon, refuser le laisse dans le circuit ; chaque décision est motivée.</p>
 
         <!-- Filtre venu d'un lien profond (« ?type= ») — toujours réversible d'un clic. -->
         @if (typeFiltre(); as t) {

@@ -41,6 +41,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
           <h1 class="page-title">Mes brouillons</h1>
         </div>
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Les dossiers commencés et pas encore soumis : reprenez-les, complétez-les ou supprimez-les ; rien ne part à la Commission avant la soumission.</p>
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>

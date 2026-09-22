@@ -33,6 +33,8 @@ interface RattachementEnAttente {
         <a class="btn btn-outline btn-sm" routerLink="/admin/inscriptions">Inscriptions en attente</a>
         <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Les entités créées à l'import d'un plan, en attente d'approbation : approuvez-les pour qu'elles deviennent sélectionnables.</p>
 
       <p class="text-muted ra__hint">
         Rattachements PRMP↔entité créés à l'import d'un PPM et en attente d'activation. Approuver rend

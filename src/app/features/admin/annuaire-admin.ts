@@ -159,6 +159,8 @@ interface LienEcran {
           />
         </div>
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Toutes les personnes de l'application, leur profil, leurs droits et l'état de leur compte, en une seule liste : cherchez, puis ouvrez la fiche.</p>
 
       <form class="ann__filtres" [formGroup]="filtres" (ngSubmit)="$event.preventDefault()" novalidate>
         <label class="ann-f">

@@ -100,7 +100,7 @@ const VUES: readonly { cle: VueAFaire; libelle: string }[] = [
             } @empty {
               <div class="af-vide">
                 <p class="af-vide__t">Rien ne vous attend pour le moment.</p>
-                <p class="af__info">Les nouveaux gestes apparaîtront ici dès que le circuit vous les attribuera.</p>
+                <p class="af__info">Les nouveaux gestes apparaîtront ici dès que le circuit vous les attribuera. En attendant, <a [routerLink]="['/', espace, 'tableau-de-bord']">tous les dossiers</a> de votre périmètre restent consultables.</p>
               </div>
             }
 

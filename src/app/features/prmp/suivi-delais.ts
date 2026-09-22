@@ -41,6 +41,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
           <h1 class="page-title">{{ estPrmp() ? 'Suivi des dossiers CNM' : 'Tous les dossiers' }}</h1>
         </div>
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Vos dossiers en cours à la Commission, avec leur statut, leur date d'enregistrement et la fin de traitement prévue ; les brouillons ne sont pas ici.</p>
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>

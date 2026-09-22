@@ -37,6 +37,8 @@ import {
           <h1 class="page-title">PV reçus</h1>
         </div>
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Les PV définitifs transmis à l'archivage : ouvrez-les, vérifiez la lettre de renvoi si elle existe, puis clôturez le dossier.</p>
 
       @if (loading()) {
         <p class="text-muted" role="status">Chargement…</p>

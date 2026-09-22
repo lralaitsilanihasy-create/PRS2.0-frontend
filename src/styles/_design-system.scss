@@ -602,6 +602,16 @@ a.sidebar-profile--action {
   max-width: 1920px;
 }
 
+/* Phrase de RÔLE sous le titre d'un écran (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui —
+   une phrase, en texte courant (--n-500, AA), largeur de lecture bornée ; elle remonte dans la marge de l'en-tête. */
+.page-role {
+  margin: -12px 0 20px;
+  max-width: 62rem;
+  color: var(--n-500);
+  font-size: var(--text-sm, 0.9rem);
+  line-height: 1.5;
+}
+
 .page-header {
   margin-bottom: 24px;
 

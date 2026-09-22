@@ -11,7 +11,7 @@ import { InterimStore } from '../../core/interim/interim.store';
 import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { MenuCompactStore } from '../../core/preferences/menu-compact.store';
 import { ToastService } from '../../core/notifications/toast.service';
-import { NavItem, cheminAFaire, entreesParInterim, navFor } from '../../core/navigation/navigation';
+import { NavItem, cheminAFaire, entreesParInterim, navFlat, navFor } from '../../core/navigation/navigation';
 import { libelleCourt, nomAccessibleRail, piedMenu, sectionsMenu } from '../../core/navigation/groupes-menu';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
@@ -253,6 +253,37 @@ export class MainLayout {
   readonly sidebarOpen = signal(false);
   /** Route courante en mode « concentration » : barre latérale repliée en tiroir (`routeEnConcentration`). */
   readonly concentration = signal(false);
+  /**
+   * Fil d'Ariane (proposition 2026-09-22, lot B, arbitrage Q4) : « accueil du profil › écran courant », sous la barre
+   * du haut, sur tous les écrans SAUF en concentration (la page du dossier a le sien, avec le retour à l'origine).
+   * Le titre vient de `data.title` de la route la plus profonde qui en porte, sinon du libellé de l'entrée de menu
+   * dont le chemin préfixe l'URL ; rien sur l'accueil lui-même.
+   */
+  readonly filAriane = signal<{ accueil: NavItem; ici: string } | null>(null);
+  private calculerFilAriane(): void {
+    const items = navFlat(this.auth.role());
+    const accueil = items[0];
+    const url = this.router.url.split('?')[0].split('#')[0];
+    if (!accueil || url === accueil.path || url === '/') {
+      this.filAriane.set(null);
+      return;
+    }
+    let route = this.router.routerState.root;
+    let titre: string | null = null;
+    while (route) {
+      const t = route.snapshot.data['title'] as string | undefined;
+      if (t) titre = t;
+      if (!route.firstChild) break;
+      route = route.firstChild;
+    }
+    if (!titre) {
+      const entree = items
+        .filter((i) => url === i.path || url.startsWith(i.path + '/'))
+        .sort((a, b) => b.path.length - a.path.length)[0];
+      titre = entree?.label ?? null;
+    }
+    this.filAriane.set(titre ? { accueil, ici: titre } : null);
+  }
   /** Dossier ouvert depuis une notification — la modale est rendue par le layout (hors topbar, cf. template). */
   readonly dossierNotification = signal<Dossier | null>(null);
   /**
@@ -421,6 +452,7 @@ export class MainLayout {
       .subscribe(() => {
         this.sidebarOpen.set(false);
         this.concentration.set(routeEnConcentration(this.router.routerState.snapshot.root));
+        this.calculerFilAriane();
         this.annoncerPage();
       });
 

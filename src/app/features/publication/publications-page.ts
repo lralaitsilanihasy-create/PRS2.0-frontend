@@ -26,6 +26,8 @@ import { StatutBadge } from '../../shared/circuit';
           </button>
         }
       </header>
+      <!-- Phrase de rôle (proposition 2026-09-22, lot B) : à quoi sert l'écran, pour qui. -->
+      <p class="page-role">Les publications mises en ligne pour les PRMP et la Commission : consultez-les ici ; le Chargé de publication les crée et les met à jour.</p>
 
       @if (formOpen()) {
         <form class="card pub__form" [formGroup]="form" (ngSubmit)="creer()" novalidate>
