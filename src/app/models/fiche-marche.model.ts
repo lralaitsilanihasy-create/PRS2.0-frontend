@@ -49,6 +49,10 @@ export interface ChampFiche {
   controle?: string | null;
   options?: string[] | null;
   aide?: string | null;
+  /** Source `CADRAGE` : clé de la réponse de cadrage reflétée (`garantieSoumission`…) — livraison du 22/09. */
+  cleCadrage?: string | null;
+  /** Source `PPM` : clé interne de la ligne du plan relue (`ENTITE`, `MONTANT`…) — livraison du 22/09. */
+  clePpm?: string | null;
   actif?: boolean;
 }
 

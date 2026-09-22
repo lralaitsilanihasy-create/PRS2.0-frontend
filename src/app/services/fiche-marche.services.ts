@@ -17,10 +17,20 @@ import { CrudService } from './api/crud.service';
 export class ChampFicheMarcheService extends CrudService<ChampFiche, string> {
   protected readonly resource = 'champs-fiche-marche';
 
-  /** `GET ?typeMarche=` → blocs (avec rubriques) + champs. Silencieux : le repli est décidé par l'écran. */
-  referentiel(typeMarche: TypeMarche): Observable<ReferentielFiche> {
-    const params = new HttpParams().set('typeMarche', typeMarche);
+  /** `GET ?typeMarche=` → blocs (avec rubriques) + champs actifs ; sans type : tout, inactifs compris (vue d'administration). Silencieux. */
+  referentiel(typeMarche?: TypeMarche): Observable<ReferentielFiche> {
+    const params = typeMarche ? new HttpParams().set('typeMarche', typeMarche) : new HttpParams();
     return this.http.get<ReferentielFiche>(this.baseUrl, { params, context: skipErrorToast() });
+  }
+
+  /** `POST` — Administrateur ; 400 nominatifs (`code`, `condition`, `options`…) posés par l'écran sous les champs. */
+  creer(champ: ChampFiche): Observable<ChampFiche> {
+    return this.http.post<ChampFiche>(this.baseUrl, champ, { context: skipErrorToast() });
+  }
+
+  /** `PUT /{code}` — Administrateur ; mêmes 400 nominatifs. */
+  modifier(code: string, champ: ChampFiche): Observable<ChampFiche> {
+    return this.http.put<ChampFiche>(`${this.baseUrl}/${encodeURIComponent(code)}`, champ, { context: skipErrorToast() });
   }
 }
 

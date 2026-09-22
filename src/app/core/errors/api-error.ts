@@ -123,6 +123,24 @@ export function toApiError(err: HttpErrorResponse): ApiError {
   return { status: err.status, message, fieldErrors, code, raw: err };
 }
 
+/**
+ * Erreurs nominatives d'un 400 (`erreurs: [{ champ, message }]`) sous forme de table, quelle que soit la forme
+ * reçue : l'`ApiError` normalisé par l'intercepteur dans l'application (`fieldErrors`), ou l'`HttpErrorResponse`
+ * brut hors intercepteur (tests unitaires sans intercepteur). Vide s'il n'y en a pas.
+ */
+export function erreursParChamp(e: ApiError | HttpErrorResponse): Map<string, string> {
+  const api = e as Partial<ApiError>;
+  if (api.fieldErrors) return new Map(Object.entries(api.fieldErrors));
+  const brut = (api.raw ?? e) as HttpErrorResponse;
+  const corps = brut.error as { erreurs?: unknown } | unknown[] | null | undefined;
+  const liste = Array.isArray(corps) ? corps : corps && Array.isArray(corps.erreurs) ? corps.erreurs : [];
+  return new Map(
+    (liste as { champ?: unknown; message?: unknown }[])
+      .filter((x) => typeof x?.champ === 'string')
+      .map((x) => [x.champ as string, typeof x.message === 'string' ? x.message : 'Valeur refusée.']),
+  );
+}
+
 /** Message par défaut quand le backend ne fournit pas de `ErrorResponse` exploitable. */
 function defaultMessage(status: number): string {
   switch (status) {

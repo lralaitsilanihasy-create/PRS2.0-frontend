@@ -6,8 +6,9 @@ import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { BilanControles, BlocFiche, Cadrage, ChampFiche, ErreurChamp, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, ChampFiche, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
@@ -36,7 +37,7 @@ type Valeur = string | number | null;
  * tombe sur `GET /api/dmcs/{id}` de l'existant, qui refuse « eligibles » comme identifiant (constaté le 22/09).
  * Un 401/403 ou un 5xx restent des erreurs : ils ne parlent pas du contrat.
  */
-function routeAbsente(e: HttpErrorResponse): boolean {
+function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
   return e.status === 404 || e.status === 400 || e.status === 405 || e.status === 501;
 }
 
@@ -306,15 +307,15 @@ export class FicheMarcheEcran {
         if (this.blocIdx() < this.blocs().length - 1) this.blocIdx.update((i) => i + 1);
         else this.etape.set(3);
       },
-      error: (e: HttpErrorResponse) => {
+      error: (e: ApiError | HttpErrorResponse) => {
         this.saving.set(false);
         // 400 nominatifs par champ : posés sous chaque champ, jamais en toast (règle des justifications).
-        const liste = Array.isArray(e.error) ? (e.error as ErreurChamp[]) : Array.isArray(e.error?.erreurs) ? (e.error.erreurs as ErreurChamp[]) : null;
-        if (e.status === 400 && liste?.length) {
-          this.erreursChamp.set(new Map(liste.map((x) => [x.champ, x.message])));
-          this.toast.error(`${liste.length} champ(s) refusé(s) par le serveur — voir le bloc ${bloc.code}.`);
+        const parChamp = erreursParChamp(e);
+        if (e.status === 400 && parChamp.size) {
+          this.erreursChamp.set(parChamp);
+          this.toast.error(`${parChamp.size} champ(s) refusé(s) par le serveur — voir le bloc ${bloc.code}.`);
         } else {
-          this.toast.error(e.error?.message ?? 'Enregistrement impossible.');
+          this.toast.error(e.message || 'Enregistrement impossible.');
         }
       },
     });
