@@ -73,8 +73,8 @@ même validation que la note d'intérim au visa (PDF, taille plafonnée) → **4
 | CC régional | **ce CC** | un **Membre de sa localité** (il n'y a pas d'autre CC) |
 
 - `imTitulaire` ≠ utilisateur de session → **403 nominatif** (« Seul Prénoms Nom désigne son intérimaire »).
-  ⚠️ **À confirmer par le pilote (non bloquant, le frontend le suppose vrai)** : l'**Administrateur** peut
-  désigner et révoquer **pour tout titulaire** (repli quand l'absent n'a rien déclaré), comme pour les mandats.
+  ✅ **Confirmé par le pilote le 22/09** (« tout est OK ») : l'**Administrateur** peut désigner et révoquer **pour tout
+  titulaire** (repli quand l'absent n'a rien déclaré), comme pour les mandats — implémenté des deux côtés.
 
   > ⚠️ **Livraison backend du 2026-09-21** — implémenté tel quel : l'Administrateur désigne et révoque en repli
   > (`designePar` = son matricule). Le 403 nomme le titulaire dans la convention de l'application, « NOM Prénoms »
