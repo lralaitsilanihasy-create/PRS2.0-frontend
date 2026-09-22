@@ -156,6 +156,10 @@
           @if (item.delegation) {
             <app-icone class="nav-deleg" nom="deleg" [taille]="14" />
           }
+          <!-- Intérim désigné (2026-09-21) : écran d'un titulaire suppléé — l'infobulle nomme le titulaire. -->
+          @if (item.interimDe) {
+            <app-icone class="nav-deleg" nom="users" [taille]="14" />
+          }
           @if (countFor(item.path) !== undefined) {
             <span [class]="'nav-badge ' + badgeSeverity(item.path)">{{ countFor(item.path) }}</span>
           }
@@ -337,6 +341,24 @@
         <span><strong>En attente de nomination de la nouvelle PRMP</strong> — le poste est vacant : le
         traitement des dossiers est suspendu (création, modification, soumission, retraits). Les actions
         redeviendront disponibles automatiquement dès la nomination effective du nouveau titulaire.</span>
+      </div>
+    }
+    <!-- ⚠️ Intérim désigné (2026-09-21, backend e867082) — qui me supplée / qui je supplée, dit en clair
+         à chaque écran : un intérim est un état passager, personne ne doit le découvrir dans un 403. -->
+    @if (interimSubi(); as s) {
+      <div class="alert alert-warning vacance-banniere" role="status">
+        <app-icone class="vacance-banniere__ic" nom="users" [taille]="16" />
+        <span><strong>Vous êtes suppléé par {{ s.nomInterimaire }}</strong> {{ jusquA(s) }} (réf. {{ s.reference }}) :
+        vos dossiers et vos actions lui sont ouverts, sous son nom, tracés « par intérim » ; vous gardez les vôtres
+        et vos notifications lui sont copiées.</span>
+      </div>
+    }
+    @for (i of interimsExerces(); track i.idInterim) {
+      <div class="alert alert-info vacance-banniere" role="status">
+        <app-icone class="vacance-banniere__ic" nom="users" [taille]="16" />
+        <span><strong>Vous suppléez {{ i.nomTitulaire }}</strong> ({{ delegationLabel(i.profilTitulaire) }}) {{ jusquA(i) }} :
+        ses dossiers et ses actions vous sont ouverts, sous votre nom, tracés « par intérim de {{ i.nomTitulaire }} ».
+        Ses tâches vous attendent dans « À faire », bloc « Exercé par délégation ».</span>
       </div>
     }
     <router-outlet />

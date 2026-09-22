@@ -262,6 +262,7 @@ describe('sectionsMenu — dérivation des rubriques', () => {
       expect(sections[2].items.map((i) => i.label), role).toEqual([
         'Répartition de dispatch',
         'Chaînes de contrôle',
+        'Intérim', // intérim désigné (2026-09-21) : qui agit à la place du P/CC absent
       ]);
     }
   });

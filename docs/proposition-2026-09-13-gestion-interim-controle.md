@@ -1,7 +1,9 @@
 # Proposition — Gestion de l'INTÉRIM dans le processus de contrôle
 
-**Date** : 2026-09-13 · **Auteur** : frontend (`frontendprs2`) · **Statut** : PROPOSITION à arbitrer par le
-pilote, puis à transformer en demande backend. ⚠️ Rien de ce qui suit n'existe : le contrat esquissé au
+**Date** : 2026-09-13 · **Auteur** : frontend (`frontendprs2`) · **Statut** : ~~PROPOSITION à arbitrer~~ →
+**ARBITRÉE le 2026-09-21** (réponses du pilote au §6 bis) et transformée en
+`docs/demande-backend-2026-09-21-gestion-interim.md`, qui fait foi pour le contrat. Le §5 ci-dessous n'est
+conservé que pour l'histoire. ⚠️ Rien de ce qui suit n'existe : le contrat esquissé au
 §5 est une **proposition**, pas une description du backend.
 
 ## 1. Ce qui existe déjà (à ne pas réinventer)
@@ -119,6 +121,20 @@ pour cet intérim) ; un intérimaire peut cumuler plusieurs intérims (signalé,
 | Q5 | **Mention sur les documents** : étendre « par intérim » à toutes les localités (il y a désormais une désignation formelle) ou conserver « régional seulement, Centrale sans mention » ? | **conserver** l'arbitrage du 01/09 (rien ne le remet en cause) |
 | Q6 | **Notifications** : copie (titulaire + intérimaire) ou redirection ? | **copie** |
 | Q7 | **Dispatch vers un titulaire absent** (Membre / CC) : refus 409 ou avertissement + intérimaire proposé ? | **avertissement + proposition** pour un Membre ; **refus** pour un acte d'identité |
+
+## 6 bis. Réponses du pilote (2026-09-21)
+
+| # | Réponse |
+|---|---|
+| Q1-Q2 | **Le titulaire désigne lui-même** : le Président désigne n'importe quel CC, de n'importe quelle localité ; un CC de la Centrale (trois CC) désigne un autre CC ou un Membre de sa localité ; un CC régional désigne un Membre de sa localité. Les autres profils ne déclarent pas d'absence (lot 1). |
+| Q3 | Le CC intérimaire du Président désigne à son tour un CC ou un Membre de sa localité pour son propre rôle de CC : deux personnes distinctes signent. |
+| Q4 | Pièce obligatoire, repli ponctuel conservé. |
+| Q5 | Conserver l'arbitrage du 01/09. |
+| Q6 | Copie. |
+| Q7 | Avertir + proposer, refuser l'identité (sans objet pour les Membres dans ce lot). |
+
+Écart avec le tableau §2.2 : **un Membre peut suppléer un CC** (intérim d'identité descendant), et l'Admin
+n'est plus le désignateur — la demande le propose en simple repli, à confirmer.
 
 ## 7. Lotissement proposé
 

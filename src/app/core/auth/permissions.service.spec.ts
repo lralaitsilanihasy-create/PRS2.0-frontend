@@ -2,8 +2,9 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { DelegationProfil, Profile, Role } from '../../models';
+import { DelegationProfil, Interim, Profile, Role } from '../../models';
 import { DelegationProfilService, ProfileService } from '../../services';
+import { InterimStore } from '../interim/interim.store';
 import { AuthService } from './auth.service';
 import { PermissionsService } from './permissions.service';
 
@@ -34,7 +35,11 @@ const PAIRES_OFFICIELLES: DelegationProfil[] = [
 ];
 
 /** Stub complet : AuthService (rôle + matricule) + référentiels délégations/profils (synchrones). */
-function configure(role: Role | null, delegations: DelegationProfil[] = PAIRES_OFFICIELLES): PermissionsService {
+/** Intérim ACTIF exercé par le connecté (intérim désigné, 21/09) — seuls les champs lus par le service. */
+const interimDe = (profilTitulaire: Role, imTitulaire = 'CCANT01'): Interim =>
+  ({ idInterim: 1, imTitulaire, nomTitulaire: 'RAKOTO Hery', profilTitulaire, statut: 'ACTIF' }) as Interim;
+
+function configure(role: Role | null, delegations: DelegationProfil[] = PAIRES_OFFICIELLES, exerces: Interim[] = []): PermissionsService {
   localStorage.clear(); // le service ne persiste plus rien, mais on part d'un stockage propre
   const roleSignal = signal<Role | null>(role);
   TestBed.configureTestingModule({
@@ -43,6 +48,7 @@ function configure(role: Role | null, delegations: DelegationProfil[] = PAIRES_O
       { provide: AuthService, useValue: { role: roleSignal, ref: () => 'TEST01' } },
       { provide: DelegationProfilService, useValue: { list: () => of(delegations) } },
       { provide: ProfileService, useValue: { list: () => of(PROFILS) } },
+      { provide: InterimStore, useValue: { exerces: signal(exerces) } },
     ],
   });
   return TestBed.inject(PermissionsService);
@@ -225,6 +231,41 @@ describe('PermissionsService', () => {
       const perms = configure('PRMP');
       expect(perms.can('DEMANDE_RETRAIT_CREATE')).toBe(true);
       expect(perms.can('DEMANDE_RETRAIT_DECISION')).toBe(false);
+    });
+  });
+
+  describe('⚠️ intérim désigné (2026-09-21) — l’intérimaire ACTIF reçoit les capacités de son titulaire', () => {
+    it('un Membre qui supplée un CC dispatche, retourne un PV, et exerce ce que le CC tient par délégation', () => {
+      const perms = configure('MEMBRE', PAIRES_OFFICIELLES, [interimDe('CHEF_COMMISSION')]);
+      expect(perms.can('DISPATCH_WRITE')).toBe(true);
+      expect(perms.can('PV_RETOURNER')).toBe(true);
+      expect(perms.can('DEMANDE_RETRAIT_DECISION')).toBe(true);
+      expect(perms.peutExecuter('CHEF_COMMISSION')).toBe(true);
+      expect(perms.peutExecuter('VERIFICATEUR')).toBe(true); // paire CC → Vérificateur, tenue par le titulaire
+      expect(perms.interimPour('CHEF_COMMISSION')?.imTitulaire).toBe('CCANT01');
+      expect(perms.interimPour('VERIFICATEUR')?.imTitulaire).toBe('CCANT01');
+      // Ce n'est ni un titre ni une délégation : c'est un intérim, et il se nomme.
+      expect(perms.estTitulaire('DISPATCH_WRITE')).toBe(false);
+      expect(perms.parDelegation('DISPATCH_WRITE')).toBe(false);
+      expect(perms.parInterim('DISPATCH_WRITE')).toBe(true);
+      expect(perms.parInterim('EXAMEN_WRITE')).toBe(false); // titulaire de celle-ci
+    });
+
+    it('un CC qui supplée le Président reçoit les capacités du Président ; non transitif, jamais l’Admin', () => {
+      const perms = configure('CHEF_COMMISSION', PAIRES_OFFICIELLES, [interimDe('PRESIDENT', 'PRES001')]);
+      expect(perms.peutExecuter('PRESIDENT')).toBe(true);
+      expect(perms.can('KPIS_VIEW')).toBe(true);
+      expect(perms.parInterim('KPIS_VIEW')).toBe(true);
+      expect(perms.peutExecuter('ADMINISTRATEUR')).toBe(false);
+      expect(perms.interimPour('ADMINISTRATEUR')).toBeNull();
+    });
+
+    it('sans intérim actif, rien ne change', () => {
+      const perms = configure('MEMBRE');
+      expect(perms.can('DISPATCH_WRITE')).toBe(false);
+      expect(perms.peutExecuter('CHEF_COMMISSION')).toBe(false);
+      expect(perms.interimPour('CHEF_COMMISSION')).toBeNull();
+      expect(perms.parInterim('EXAMEN_WRITE')).toBe(false);
     });
   });
 });

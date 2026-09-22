@@ -166,6 +166,12 @@ export interface AFaireTache {
   delai: AFaireDelai;
   faits: AFaireFaits;
   refs: AFaireRefs;
+  /**
+   * ⚠️ Intérim désigné (2026-09-21) — ligne servie à l'INTÉRIMAIRE dans `delegations.taches` (`mode = INTERIM`) :
+   * matricule du titulaire suppléé et intérim. `mode = INTERIM` avec `idInterim` NUL = visa par intérim ponctuel.
+   */
+  interimDe?: string | null;
+  idInterim?: number | null;
 }
 
 export interface AFaireDelegations {

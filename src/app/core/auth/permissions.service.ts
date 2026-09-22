@@ -1,24 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
-import { Role } from '../../models';
+import { Interim, Role } from '../../models';
 import { DelegationProfilService, ProfileService } from '../../services';
+import { InterimStore } from '../interim/interim.store';
 import { AuthService } from './auth.service';
+import { roleDuLibelleProfil } from './libelles-profils';
 import { Capability, CAPABILITY_ROLES, DELEGATIONS_OPTIMISTES } from './permissions';
-
-/** Reconnaissance des libellés du référentiel `profiles` → code de rôle (tolérante casse/accents). */
-const LIBELLE_ROLE: readonly (readonly [RegExp, Role])[] = [
-  [/chef.*commission/i, 'CHEF_COMMISSION'],
-  [/pr[ée]sident/i, 'PRESIDENT'],
-  [/secr[ée]taire/i, 'SECRETAIRE'],
-  [/v[ée]rificateur/i, 'VERIFICATEUR'],
-  [/assistant/i, 'ASSISTANT_CONTROLEUR'],
-  [/publication/i, 'CHARGE_PUBLICATION'],
-  [/admin/i, 'ADMINISTRATEUR'],
-  [/ugpm/i, 'UGPM'],
-  [/prmp/i, 'PRMP'],
-  [/membre/i, 'MEMBRE'],
-];
 
 /**
  * Évalue les capacités fonctionnelles pour le profil courant.
@@ -39,12 +27,20 @@ const LIBELLE_ROLE: readonly (readonly [RegExp, Role])[] = [
  * commission (les 9 paires partent d'eux), l'interrupteur n'avait plus de porteur une fois leur
  * cas rendu automatique. Conséquence utile : plus de préférence d'affichage en `localStorage`,
  * donc plus de rémanence d'identité sur poste partagé (constat S9 de l'audit, sans objet).
+ *
+ * ⚠️ 2026-09-21 — **intérim DÉSIGNÉ** (demande `docs/demande-backend-2026-09-21-gestion-interim.md`,
+ * backend `e867082`) : `can()` et `peutExecuter()` autorisent AUSSI l'intérimaire ACTIF d'un titulaire
+ * qui peut exercer la cible — un Membre intérimaire d'un CC reçoit les capacités du CC (et celles que le
+ * CC tient par délégation), un CC intérimaire du Président celles du Président. Même règle que la garde
+ * serveur (`@perm.peutExercer` = titulaire OU délégation OU intérimaire actif). L'état vient de
+ * `InterimStore` (`GET /api/interims/mes`) ; non transitif : les suppléances d'un titulaire n'entrent pas.
  */
 @Injectable({ providedIn: 'root' })
 export class PermissionsService {
   private readonly auth = inject(AuthService);
   private readonly delegationService = inject(DelegationProfilService);
   private readonly profileService = inject(ProfileService);
+  private readonly interims = inject(InterimStore);
 
   /** Paires actives « delegant→delegue » (source serveur) ; `null` = pas encore chargées (repli optimiste). */
   private readonly paires = signal<ReadonlySet<string> | null>(null);
@@ -61,7 +57,7 @@ export class PermissionsService {
     if (role === null) return false;
     this.assurerChargement();
     const titulaires = CAPABILITY_ROLES[capability];
-    return titulaires.includes(role) || titulaires.some((t) => this.paireActive(role, t));
+    return titulaires.includes(role) || titulaires.some((t) => this.paireActive(role, t)) || this.parInterimPour(titulaires);
   }
 
   /** Le profil courant est-il TITULAIRE de la capacité (hors délégation) ? Sert à signaler « par délégation ». */
@@ -72,7 +68,15 @@ export class PermissionsService {
 
   /** La capacité n'est acquise que PAR DÉLÉGATION (permise, mais profil courant non titulaire). */
   parDelegation(capability: Capability): boolean {
-    return this.can(capability) && !this.estTitulaire(capability);
+    const role = this.auth.role();
+    if (role === null || this.estTitulaire(capability)) return false;
+    this.assurerChargement();
+    return CAPABILITY_ROLES[capability].some((t) => this.paireActive(role, t));
+  }
+
+  /** La capacité n'est acquise que PAR INTÉRIM désigné (ni titulaire, ni délégation). Sert à signaler « par intérim ». */
+  parInterim(capability: Capability): boolean {
+    return this.can(capability) && !this.estTitulaire(capability) && !this.parDelegation(capability);
   }
 
   /**
@@ -85,7 +89,7 @@ export class PermissionsService {
     if (!role) return false;
     if (role === requis) return true;
     this.assurerChargement();
-    return this.paireActive(role, requis);
+    return this.paireActive(role, requis) || this.interimPour(requis) !== null;
   }
 
   // ⚠️ 2026-08-28 — `delegationsDisponibles()` a été retirée avec les interrupteurs : elle
@@ -105,6 +109,25 @@ export class PermissionsService {
     return this.paireActive(delegant, delegue);
   }
 
+  /**
+   * ⚠️ Intérim désigné (2026-09-21) — l'intérim ACTIF par lequel le connecté exerce les tâches du profil
+   * `requis` : son titulaire EST ce profil, ou peut l'exercer par délégation (un Membre intérimaire d'un CC
+   * exerce aussi les tâches Vérificateur que le CC tient par la paire CC → Vérificateur). `null` sinon.
+   * Sert au menu (« Exercé par intérim de X ») et aux écrans qui nomment le titulaire suppléé.
+   */
+  interimPour(requis: Role): Interim | null {
+    if (!this.auth.role()) return null;
+    this.assurerChargement();
+    return this.interims.exerces().find((i) => i.profilTitulaire === requis || this.paireActive(i.profilTitulaire, requis)) ?? null;
+  }
+
+  /** Un des titulaires de la capacité est-il suppléé par le connecté (intérim actif, délégation du titulaire comprise) ? */
+  private parInterimPour(titulaires: readonly Role[]): boolean {
+    return this.interims
+      .exerces()
+      .some((i) => titulaires.includes(i.profilTitulaire) || titulaires.some((t) => this.paireActive(i.profilTitulaire, t)));
+  }
+
   /** La paire (delegant → delegue) est-elle active ? (table serveur, repli optimiste avant chargement). */
   private paireActive(delegant: Role, delegue: Role): boolean {
     const paires = this.paires();
@@ -121,7 +144,7 @@ export class PermissionsService {
       next: ({ delegations, profiles }) => {
         const roleParId = new Map<number, Role>();
         for (const p of profiles) {
-          const r = LIBELLE_ROLE.find(([motif]) => motif.test(p.profile ?? ''))?.[1];
+          const r = roleDuLibelleProfil(p.profile);
           if (r) roleParId.set(p.idProfile, r);
         }
         const paires = new Set<string>();

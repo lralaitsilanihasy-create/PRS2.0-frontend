@@ -37,3 +37,27 @@ export function libelleTypeActeur(type: TypeActeur | string | null | undefined):
   if (!type) return '';
   return LIBELLES_TYPES_ACTEUR[type as TypeActeur] ?? type;
 }
+
+/**
+ * Reconnaissance des libellés du référentiel `profiles` (« Chef de commission », « Contrôleur vérificateur »…)
+ * → code de rôle, tolérante à la casse et aux accents. Déplacée ici depuis `PermissionsService` (2026-09-21) :
+ * l'écran d'intérim en a besoin pour classer l'annuaire (qui est CC, qui est Membre) sans rejouer la table.
+ */
+const MOTIFS_PROFILS: readonly (readonly [RegExp, Role])[] = [
+  [/chef.*commission/i, 'CHEF_COMMISSION'],
+  [/pr[ée]sident/i, 'PRESIDENT'],
+  [/secr[ée]taire/i, 'SECRETAIRE'],
+  [/v[ée]rificateur/i, 'VERIFICATEUR'],
+  [/assistant/i, 'ASSISTANT_CONTROLEUR'],
+  [/publication/i, 'CHARGE_PUBLICATION'],
+  [/admin/i, 'ADMINISTRATEUR'],
+  [/ugpm/i, 'UGPM'],
+  [/prmp/i, 'PRMP'],
+  [/membre/i, 'MEMBRE'],
+];
+
+/** Code de rôle d'un libellé de profil du référentiel ; `null` si aucun motif ne le reconnaît. */
+export function roleDuLibelleProfil(libelle: string | null | undefined): Role | null {
+  if (!libelle) return null;
+  return MOTIFS_PROFILS.find(([motif]) => motif.test(libelle))?.[1] ?? null;
+}

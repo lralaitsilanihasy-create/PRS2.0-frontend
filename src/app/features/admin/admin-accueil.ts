@@ -310,6 +310,7 @@ const GESTES: Readonly<Record<string, string>> = {
             <p class="acc-pied">
               sur {{ accord(c.comptes, 'compte enregistré', 'comptes enregistrés') }} ·
               <a routerLink="/admin/comptes">Comptes &amp; personnes</a> ·
+              <a routerLink="/admin/comptes/interims">Intérims</a> ·
               <a routerLink="/admin/audit" [queryParams]="{ journal: 'connexions' }">Journal des connexions</a>
             </p>
 

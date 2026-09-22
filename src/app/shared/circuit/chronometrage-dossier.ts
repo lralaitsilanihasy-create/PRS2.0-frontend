@@ -81,7 +81,7 @@ import { tacheChronoVisiblePour } from './circuit-workflow';
                     <tr [class.chrono__row--encours]="e.enCours">
                       <td>{{ etapeLabel(e.etape) }}</td>
                       <td class="cnm-mono">{{ e.occurrence }}</td>
-                      <td>{{ e.nomActeur || e.imActeur || '—' }}</td>
+                      <td>{{ e.nomActeur || e.imActeur || '—' }}@if (e.interimDe) { <span class="text-muted" [title]="'Par intérim de ' + e.interimDe"> (par intérim)</span> }</td>
                       <td class="cnm-mono">{{ e.entree ? (e.entree | date: 'dd/MM HH:mm') : '—' }}</td>
                       <td class="cnm-mono">{{ e.fin ? (e.fin | date: 'dd/MM HH:mm') : 'en cours' }}</td>
                       <td>{{ e.dureeHeuresOuvrees }} h</td>

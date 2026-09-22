@@ -3,6 +3,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { InterimStore } from '../../core/interim/interim.store';
 import { AFaire, AFaireTache, GesteAFaire } from '../../models';
 import { DossierService } from '../../services';
 import { EtatErreur } from '../../shared/ui/etat-erreur';
@@ -244,8 +245,10 @@ export class AFaireEcran {
     const a = this.donnees();
     return a ? grouperTaches(a.taches, this.vue(), a, this.auth.role()) : [];
   });
+  private readonly interims = inject(InterimStore);
+  // Intérim désigné (2026-09-21) : une ligne reçue d'un titulaire suppléé se lit « Par intérim de NOM ».
   readonly groupesDelegation = computed<GroupeAFaire[]>(() =>
-    grouperTaches(this.delegationsTaches() ?? [], this.vue() === 'localite' ? 'localite' : 'etape', this.donnees(), this.auth.role()),
+    grouperTaches(this.delegationsTaches() ?? [], this.vue() === 'localite' ? 'localite' : 'etape', this.donnees(), this.auth.role(), (im) => this.interims.nomTitulaire(im)),
   );
   readonly phraseDelegation = computed(() => {
     const d = this.donnees()?.delegations;

@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, concatMap, forkJoin, from, map, of, toArray } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { jusquA } from '../../core/interim/interim-libelles';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ModaleDirective } from '../../shared/a11y/modale.directive';
@@ -116,6 +117,13 @@ export interface DispatchItem {
               }
             </select>
             @if (req('imCtrlMembre')) { <span class="form-error">Obligatoire.</span> }
+            <!-- ⚠️ Intérim désigné (2026-09-21, Q7) — le dispatch vers un titulaire absent est ACCEPTÉ : l'attribution
+                 reste au titulaire, son intérimaire agit. On le dit avant l'envoi (annuaire : interimEnCours). -->
+            @if (absentChoisi(); as a) {
+              <span class="form-hint df__absent">
+                <strong>Absent</strong> {{ jusquA(a) }} — <strong>{{ a.nomInterimaire }}</strong> le supplée et agira sur ce dossier.
+              </span>
+            }
             @if (membreOptions().length) {
               <span class="form-hint">« n en cours » = dossiers dispatchés à ce membre, pas encore examinés — pour équilibrer la charge.</span>
             } @else {
@@ -314,6 +322,14 @@ export class DispatchForm {
     return !!attrib && ccs.some((o) => o.id === attrib) && !ccs.some((o) => o.id !== attrib);
   });
 
+  /** ⚠️ Intérim désigné (2026-09-21) — l'attributaire choisi est-il ABSENT (suppléé aujourd'hui) ? `null` sinon. */
+  readonly absentChoisi = computed(() => {
+    const im = this.attributaireChoisi();
+    return (im ? this.controleurs().find((c) => c.imControleur === im)?.interimEnCours : null) ?? null;
+  });
+  jusquA(a: { dateFin: string | null }): string {
+    return jusquA(a);
+  }
   /** Options de la copie CC : jamais l'attributaire lui-même (règle miroir du backend). */
   readonly ccOptionsAssociation = computed(() => this.ccOptions().filter((o) => o.id !== this.attributaireChoisi()));
 

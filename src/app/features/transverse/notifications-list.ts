@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 
+import { InterimStore } from '../../core/interim/interim.store';
 import { Notification } from '../../models';
 import { NotificationService } from '../../services';
 
@@ -19,6 +20,10 @@ import { NotificationService } from '../../services';
             <li class="notif" [class.notif--unread]="!n.lu">
               <div class="notif__head">
                 <span class="notif__type">{{ n.typeNotif }}</span>
+                <!-- Intérim désigné (2026-09-21) : copie adressée au titulaire que je supplée. -->
+                @if (n.interimDe) {
+                  <span class="notif__interim">par intérim de {{ nomTitulaire(n.interimDe) }}</span>
+                }
                 <span class="notif__date">{{ n.dateEnvoi || '' }}</span>
               </div>
               @if (n.titre) {
@@ -36,6 +41,7 @@ import { NotificationService } from '../../services';
     </section>
   `,
   styles: `
+    .notif__interim { font-size: var(--text-xs); color: var(--info-text, #075985); margin-left: 0.5rem; }
     .notifs__title {
       margin: 0 0 var(--cnm-space-4);
       font-size: var(--cnm-fs-lg);
@@ -82,6 +88,11 @@ import { NotificationService } from '../../services';
 })
 export class NotificationsList {
   private readonly service = inject(NotificationService);
+  private readonly interims = inject(InterimStore);
+  /** Nom du titulaire suppléé (l'intérimaire le connaît par `interims/mes`) ; sinon le matricule. */
+  nomTitulaire(im: string): string {
+    return this.interims.nomTitulaire(im);
+  }
 
   readonly notifications = signal<Notification[]>([]);
   readonly loading = signal(false);

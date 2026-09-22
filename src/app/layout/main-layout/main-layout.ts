@@ -6,10 +6,12 @@ import { filter, skip } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { libelleRole } from '../../core/auth/libelles-profils';
 import { VacanceStore } from '../../core/vacance/vacance.store';
+import { jusquA } from '../../core/interim/interim-libelles';
+import { InterimStore } from '../../core/interim/interim.store';
 import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { MenuCompactStore } from '../../core/preferences/menu-compact.store';
 import { ToastService } from '../../core/notifications/toast.service';
-import { NavItem, cheminAFaire, navFor } from '../../core/navigation/navigation';
+import { NavItem, cheminAFaire, entreesParInterim, navFor } from '../../core/navigation/navigation';
 import { libelleCourt, nomAccessibleRail, piedMenu, sectionsMenu } from '../../core/navigation/groupes-menu';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DossiersRefreshStore } from '../../features/prmp/dossiers-refresh.store';
@@ -86,6 +88,11 @@ export class MainLayout {
   private readonly kpiService = inject(KpiService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
   private readonly vacanceStore = inject(VacanceStore);
+  private readonly interimStore = inject(InterimStore);
+  /** ⚠️ Intérim désigné (2026-09-21) — je suis suppléé (bannière « Vous êtes suppléé par … »). */
+  readonly interimSubi = this.interimStore.subi;
+  /** Intérims que j'exerce (bannière « Vous suppléez … », rubrique de menu « Exercé par intérim »). */
+  readonly interimsExerces = this.interimStore.exerces;
   private readonly actualiteService = inject(ActualiteService);
   /** Vacance du poste PRMP (spec « Mandats PRMP ») — bannière + standby des actions de traitement. */
   readonly vacance = this.vacanceStore.vacance;
@@ -110,15 +117,18 @@ export class MainLayout {
    * `delegation` n'apparaît que si le profil courant peut exécuter les tâches de ce profil (paire
    * active de t_delegation_profil) — le menu suit la base, zéro code.
    */
-  private readonly navItems = computed(() =>
-    navFor(this.auth.role())
+  private readonly navItems = computed(() => {
+    const propres = navFor(this.auth.role());
+    // ⚠️ Intérim désigné (2026-09-21) — les entrées du titulaire suppléé s'ajoutent, marquées `interimDe` ;
+    // `peutExecuter` accorde par intérim les entrées que ce titulaire tient par délégation.
+    return [...propres, ...entreesParInterim(this.interimsExerces(), propres)]
       .filter((item) => !item.delegation || this.permissions.peutExecuter(item.delegation))
       .map((item) =>
         item.children
           ? { ...item, children: item.children.filter((c) => !c.delegation || this.permissions.peutExecuter(c.delegation)) }
           : item,
-      ),
-  );
+      );
+  });
 
   /**
    * ⚠️ Demande user (2026-08-28) — le menu est scindé en SECTIONS : d'abord les entrées du profil
@@ -213,11 +223,17 @@ export class MainLayout {
    * visible. En menu large le libellé est déjà lisible : pas d'infobulle qui répète le texte.
    */
   infobulle(item: NavItem): string {
-    const deleg = item.delegation
-      ? `Tâche du profil ${this.delegationLabel(item.delegation)} — exercée par délégation active.`
-      : '';
+    const deleg = item.interimDe
+      ? `Écran de ${item.interimDe}${item.interimProfil ? ` (${this.delegationLabel(item.interimProfil)})` : ''} — exercé par intérim.`
+      : item.delegation
+        ? `Tâche du profil ${this.delegationLabel(item.delegation)} — exercée par délégation active.`
+        : '';
     if (!this.railActif()) return deleg;
     return deleg ? `${item.label} — ${deleg}` : item.label;
+  }
+  /** « jusqu'au 30/09/2026 » / « sans terme » — bannières d'intérim. */
+  jusquA(i: { dateFin: string | null }): string {
+    return jusquA(i);
   }
   /** Nom de l'utilisateur courant (résolu depuis sa fiche PRMP / contrôleur). */
   readonly displayName = signal('');
@@ -411,12 +427,18 @@ export class MainLayout {
     // Vacance PRMP (spec « Mandats PRMP ») : vérifiée à l'ouverture puis à chaque navigation — le
     // déblocage est automatique côté serveur, re-vérifier suffit à lever la bannière et les blocages.
     this.vacanceStore.verifier();
+    // ⚠️ Intérim désigné (2026-09-21) — même cadence : qui je supplée / qui me supplée est relu à l'ouverture et
+    // à chaque navigation (une révocation ou une désignation prend effet sans se déconnecter).
+    this.interimStore.verifier();
     this.router.events
       .pipe(
         filter((e) => e instanceof NavigationEnd),
         takeUntilDestroyed(),
       )
-      .subscribe(() => this.vacanceStore.verifier());
+      .subscribe(() => {
+        this.vacanceStore.verifier();
+        this.interimStore.verifier();
+      });
 
     // Actualités de l'ouverture de session : le serveur renvoie déjà la liste filtrée (profil,
     // statut, fenêtre de dates, interrupteur global) — vide si la fonctionnalité est coupée.

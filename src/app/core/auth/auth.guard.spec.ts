@@ -6,7 +6,10 @@ import {
   UrlTree,
   provideRouter,
 } from '@angular/router';
+import { Observable, firstValueFrom, of } from 'rxjs';
 
+import { Interim } from '../../models';
+import { InterimStore } from '../interim/interim.store';
 import { authGuard, roleGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 
@@ -15,17 +18,27 @@ interface AuthStub {
   currentRole: string | null;
 }
 
-function setup(stub: AuthStub) {
+/** `exerces` : intérims ACTIFS que le connecté exerce (intérim désigné, 21/09) — vide par défaut. */
+function setup(stub: AuthStub, exerces: Partial<Interim>[] = []) {
   const auth = {
     isAuthenticated: () => stub.authenticated,
     hasRole: (...roles: string[]) =>
       stub.currentRole !== null && roles.includes(stub.currentRole),
+    role: () => stub.currentRole,
+    ref: () => 'TEST01',
   };
   TestBed.configureTestingModule({
-    providers: [provideRouter([]), { provide: AuthService, useValue: auth }],
+    providers: [
+      provideRouter([]),
+      { provide: AuthService, useValue: auth },
+      { provide: InterimStore, useValue: { assurer: () => of({ exerces, subi: null, aVenir: [] }) } },
+    ],
   });
   return TestBed.inject(Router);
 }
+
+const resoudre = (r: unknown): Promise<boolean | UrlTree> =>
+  r instanceof Observable ? firstValueFrom(r as Observable<boolean | UrlTree>) : Promise.resolve(r as boolean | UrlTree);
 
 const route = (roles?: string[]) =>
   ({ data: roles ? { roles } : {} }) as unknown as ActivatedRouteSnapshot;
@@ -68,12 +81,20 @@ describe('roleGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('redirige vers /acces-refuse si le rôle n’est pas permis', () => {
+  it('redirige vers /acces-refuse si le rôle n’est pas permis (et qu’aucun intérim ne l’ouvre)', async () => {
     const router = setup({ authenticated: true, currentRole: 'MEMBRE' });
-    const result = TestBed.runInInjectionContext(() =>
-      roleGuard(route(['ADMINISTRATEUR']), state('/admin')),
-    );
+    const result = await resoudre(TestBed.runInInjectionContext(() => roleGuard(route(['ADMINISTRATEUR']), state('/admin'))));
     expect(result).toBeInstanceOf(UrlTree);
     expect(router.serializeUrl(result as UrlTree)).toContain('/acces-refuse');
+  });
+
+  it('⚠️ intérim désigné (21/09) : l’espace du titulaire s’ouvre à son intérimaire ACTIF — et à lui seul', async () => {
+    const router = setup({ authenticated: true, currentRole: 'MEMBRE' }, [{ profilTitulaire: 'CHEF_COMMISSION' }]);
+    // Un Membre qui supplée un CC entre dans /cc…
+    expect(await resoudre(TestBed.runInInjectionContext(() => roleGuard(route(['CHEF_COMMISSION']), state('/cc/tableau-de-bord'))))).toBe(true);
+    // … mais pas dans /president : il ne supplée pas le Président (non transitif).
+    const refus = await resoudre(TestBed.runInInjectionContext(() => roleGuard(route(['PRESIDENT']), state('/president'))));
+    expect(refus).toBeInstanceOf(UrlTree);
+    expect(router.serializeUrl(refus as UrlTree)).toContain('/acces-refuse');
   });
 });

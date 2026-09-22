@@ -43,6 +43,7 @@ export type CleGroupe =
   | 'referentiels'
   | 'traces'
   | 'delegation'
+  | 'interim'
   | 'pied';
 
 /** Une section affichable du menu : un intitulé (ou rien) et ses entrées, dans l'ordre déclaré. */
@@ -73,6 +74,8 @@ export const TITRES_GROUPES: Readonly<Record<CleGroupe, string | null>> = {
   traces: 'Traces',
   // Intitulé HISTORIQUE, repris tel quel de `separerParDelegation` (demande user 2026-08-28).
   delegation: 'Exercé par délégation',
+  // ⚠️ Intérim désigné (2026-09-21) — entrées du titulaire suppléé, offertes à son intérimaire ; toujours la dernière.
+  interim: 'Exercé par intérim',
   pied: null,
 };
 
@@ -122,6 +125,8 @@ export const GROUPES_PAR_CHEMIN: Readonly<Record<string, { groupe: CleGroupe; co
   // ── Pilotage (Président / CC) ──
   'repartition-dispatch': { groupe: 'pilotage', court: 'Charge' },
   'chaines-controle': { groupe: 'pilotage', court: 'Chaînes' },
+  // ⚠️ Intérim désigné (2026-09-21) — « Intérim » du Président / CC : qui agit à sa place pendant son absence.
+  interim: { groupe: 'pilotage', court: 'Intérim' },
 
   // ── Planification (PRMP) ──
   calendrier: { groupe: 'planification', court: 'Calendrier' },
@@ -193,6 +198,10 @@ function entreeTable(item: NavItem): { groupe: CleGroupe; court: string } | unde
  * construction (`separerParDelegation` la range sur la donnée, pas sur l'ordre de déclaration).
  */
 export function groupeExplicite(item: NavItem): CleGroupe | null {
+  // Une entrée reçue d'un titulaire suppléé (2026-09-21) est « exercée par intérim », quoi qu'elle soit chez lui.
+  if (item.interimDe) {
+    return 'interim';
+  }
   if (item.delegation) {
     return 'delegation';
   }
@@ -266,6 +275,7 @@ export function piedMenu(items: NavItem[]): NavItem[] {
  */
 export function sectionsMenu(items: NavItem[]): SectionMenu[] {
   const affichables = items.filter((i) => groupeExplicite(i) !== 'pied');
+  const interims = affichables.filter((i) => !!i.interimDe);
   const parDelegation = separerParDelegation(affichables);
   const propres = parDelegation.find((s) => s.cle === 'propre')?.items ?? [];
   const delegues = parDelegation.find((s) => s.cle === 'delegation')?.items ?? [];
@@ -312,6 +322,17 @@ export function sectionsMenu(items: NavItem[]): SectionMenu[] {
       titre: TITRES_GROUPES.delegation,
       repliable: true,
       items: delegues,
+    });
+  }
+
+  // ⚠️ Intérim désigné (2026-09-21) — les entrées reçues d'un titulaire suppléé ferment le menu, sous leur
+  // propre intitulé : un intérim est un état passager, il ne se mêle ni aux rubriques ni à la délégation.
+  if (interims.length > 0) {
+    sections.push({
+      cle: 'interim',
+      titre: TITRES_GROUPES.interim,
+      repliable: false,
+      items: interims,
     });
   }
 

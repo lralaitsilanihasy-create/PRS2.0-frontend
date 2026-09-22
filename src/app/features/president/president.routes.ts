@@ -43,6 +43,9 @@ export const PRESIDENT_ROUTES: Routes = [
   },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le Président administre partout.
   { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
+  // ⚠️ Intérim désigné (2026-09-21) — « Mon intérim » : le titulaire désigne lui-même qui agit à sa place (pièce PDF),
+  // voit qui il supplée, révoque. Même écran chez l'Admin (`/admin/comptes/interims`, en repli pour tout titulaire).
+  { path: 'interim', loadComponent: () => import('../circuit/interims-ecran').then((m) => m.InterimsEcran), data: { title: 'Mon intérim' } },
   // ⚠️ Demande pilote (2026-09-12) — « Répartition de dispatch » quitte « Mes dossiers » pour son propre
   // écran + entrée de menu (le composant est autonome, scopé serveur — toutes localités pour le Président).
   { path: 'repartition-dispatch', loadComponent: () => import('../circuit/dispatchs-controleurs').then((m) => m.DispatchsControleurs), data: { title: 'Répartition de dispatch' } },

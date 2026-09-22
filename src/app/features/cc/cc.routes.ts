@@ -42,6 +42,9 @@ export const CC_ROUTES: Routes = [
   },
   // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant : le CC administre SA localité (scopé serveur).
   { path: 'chaines-controle', loadComponent: () => import('../admin/chaines-controle').then((m) => m.ChainesControle) },
+  // ⚠️ Intérim désigné (2026-09-21) — « Mon intérim » : le titulaire désigne lui-même qui agit à sa place (pièce PDF),
+  // voit qui il supplée, révoque. Même écran chez l'Admin (`/admin/comptes/interims`, en repli pour tout titulaire).
+  { path: 'interim', loadComponent: () => import('../circuit/interims-ecran').then((m) => m.InterimsEcran), data: { title: 'Mon intérim' } },
   // ⚠️ Demande pilote (2026-09-12) — « Répartition de dispatch » quitte « Mes dossiers » pour son propre
   // écran + entrée de menu (composant autonome, scopé serveur — les Membres de SA commission pour le CC).
   { path: 'repartition-dispatch', loadComponent: () => import('../circuit/dispatchs-controleurs').then((m) => m.DispatchsControleurs), data: { title: 'Répartition de dispatch' } },

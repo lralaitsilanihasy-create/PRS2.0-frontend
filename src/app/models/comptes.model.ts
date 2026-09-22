@@ -1,6 +1,8 @@
 /** Comptes et hiérarchie (gestion ADMINISTRATEUR, lecture ouverte). */
 
 /** Contrôleur (compte interne CNM). PK = imControleur (matricule). */
+import { Role } from './common.model';
+
 export interface Controleur {
   imControleur: string;
   nomCont?: string;
@@ -12,6 +14,13 @@ export interface Controleur {
   idLocalite?: string | null;
   idSuperieur?: string;
   transversal: boolean;
+  /**
+   * ⚠️ Intérim désigné (2026-09-21, backend `e867082`) — titulaire ABSENT : qui le supplée aujourd'hui (intérim ACTIF) ;
+   * `null` sinon, et TOUJOURS pour la PRMP et l'UGPM (règle C2 : qui supplée qui est interne à la Commission).
+   */
+  interimEnCours?: InterimEnCours | null;
+  /** Intérimaire : les titulaires qu'il supplée aujourd'hui ; `null` pour la PRMP et l'UGPM. */
+  interimPour?: InterimPour[] | null;
 }
 
 /**
@@ -166,4 +175,92 @@ export interface Organigramme {
   version?: string;
   dateValidation?: string;
   actif: boolean;
+}
+
+// ── Intérim désigné ───────────────────────────────────────────────────────────────────────────────
+
+/** Dérivé SERVEUR à la date du jour, jamais reçu ni stocké : `REVOQUE` prime, puis la période décide. */
+export type StatutInterim = 'A_VENIR' | 'ACTIF' | 'ACHEVE' | 'REVOQUE';
+export type MotifInterim = 'CONGE' | 'MISSION' | 'MALADIE' | 'VACANCE_POSTE' | 'AUTRE';
+
+/**
+ * Intérim désigné (`/api/interims`, `t_interim` + `t_interim_piece` — demande 2026-09-21, backend `e867082`,
+ * ADR-0008) : « X (titulaire) est absent du D1 au D2 ; Y (intérimaire) agit à sa place, dans SON périmètre, sous
+ * sa PROPRE identité ». Lot 1 : le titulaire est un Président (← tout CC) ou un CC (← autre CC de la Centrale,
+ * ou Membre de sa localité). Acte daté, jamais modifié ni effacé : ni PUT ni DELETE, une fin avant terme est une
+ * révocation. Le titulaire désigne lui-même, l'Administrateur en repli.
+ */
+export interface Interim {
+  idInterim: number;
+  imTitulaire: string;
+  /** Nom FIGÉ à la désignation (« NOM Prénoms »). */
+  nomTitulaire: string;
+  profilTitulaire: Role;
+  /** `null` pour le Président. */
+  idLocaliteTitulaire: string | null;
+  imInterimaire: string;
+  nomInterimaire: string;
+  profilInterimaire: Role;
+  idLocaliteInterimaire: string | null;
+  /** Période INCLUSIVE ; `dateFin` obligatoire sauf `VACANCE_POSTE`. */
+  dateDebut: string;
+  dateFin: string | null;
+  motif: MotifInterim;
+  /** Note de service / décision de désignation. */
+  reference: string;
+  pieceNom: string | null;
+  /** La pièce PDF (obligatoire) se lit par `GET /{id}/piece` — 403 PRMP/UGPM. */
+  pieceDisponible: boolean;
+  designePar: string;
+  nomDesignePar: string | null;
+  dateDesignation: string;
+  statut: StatutInterim;
+  dateRevocation: string | null;
+  motifRevocation: string | null;
+  revoquePar: string | null;
+  /** Réponse du POST seulement : cumuls signalés (déjà intérimaire ailleurs, déjà attributaire) — jamais un refus. */
+  avertissements?: string[] | null;
+}
+
+/** `GET /api/interims/mes` — le SIGNAL du front : qui je supplée, qui me supplée, ce qui vient. */
+export interface MesInterims {
+  /** ACTIFS où je suis l'intérimaire. */
+  exerces: Interim[];
+  /** ACTIF où je suis le titulaire ; `null` sinon. */
+  subi: Interim | null;
+  /** A_VENIR, titulaire ou intérimaire. */
+  aVenir: Interim[];
+}
+
+/** Corps (partie `data`) de `POST /api/interims` — la pièce PDF est la partie `piece` du multipart. */
+export interface CreerInterimRequest {
+  imTitulaire: string;
+  imInterimaire: string;
+  dateDebut: string;
+  /** Obligatoire sauf `VACANCE_POSTE` (400 sinon). */
+  dateFin?: string;
+  motif: MotifInterim;
+  reference: string;
+}
+
+/** Corps de `POST /api/interims/{id}/revoquer` — jamais antérieure à aujourd'hui, jamais après `dateFin`. */
+export interface RevoquerInterimRequest {
+  motif: string;
+  dateRevocation?: string;
+}
+
+/** `ControleurDto.interimEnCours` — le titulaire est absent : qui le supplée, jusqu'à quand. */
+export interface InterimEnCours {
+  idInterim: number;
+  imInterimaire: string;
+  nomInterimaire: string;
+  dateFin: string | null;
+}
+
+/** `ControleurDto.interimPour` — l'intérimaire : qui il supplée, jusqu'à quand. */
+export interface InterimPour {
+  idInterim: number;
+  imTitulaire: string;
+  nomTitulaire: string;
+  dateFin: string | null;
 }

@@ -9,6 +9,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { PermissionsService } from '../../core/auth/permissions.service';
 import { DelegationsAffichageStore } from '../../core/preferences/delegations-affichage.store';
 import { VacanceStore } from '../../core/vacance/vacance.store';
+import { InterimStore } from '../../core/interim/interim.store';
 import { ActualiteService } from '../../services/actualite.services';
 import { KpiService } from '../../services';
 import { BadgesMenu, Role } from '../../models';
@@ -68,6 +69,7 @@ describe('Mode « concentration » de la coquille (refonte ergonomique, lot 2)',
             },
           },
           { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+          { provide: InterimStore, useValue: { exerces: signal([]), subi: signal(null), aVenir: signal([]), verifier: () => undefined } },
           { provide: PermissionsService, useValue: { peutExecuter: () => false } },
           { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
           { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
@@ -122,6 +124,7 @@ describe('Pastille « À faire » du menu (refonte ergonomique, 2026-09-15)', ()
         },
         { provide: KpiService, useValue: { badges: () => of(badges) } },
         { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: InterimStore, useValue: { exerces: signal([]), subi: signal(null), aVenir: signal([]), verifier: () => undefined } },
         { provide: PermissionsService, useValue: { peutExecuter: () => false } },
         { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
         { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
@@ -169,6 +172,7 @@ describe('Bannière de vacance du poste PRMP (recette du 2026-09-15)', () => {
           useValue: { role: signal('PRMP'), login: signal('PRMP001'), localite: signal('ANT'), ref: () => null, nomAffichage: () => null, typeActeur: () => 'PRMP', isAuthenticated: () => false, logout: () => undefined },
         },
         { provide: VacanceStore, useValue: { vacance: signal(true), verifier: () => undefined } },
+        { provide: InterimStore, useValue: { exerces: signal([]), subi: signal(null), aVenir: signal([]), verifier: () => undefined } },
         { provide: PermissionsService, useValue: { peutExecuter: () => false } },
         { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
         { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
@@ -204,6 +208,7 @@ describe('Barre latérale et en-tête sans emoji (refonte ergonomique, lot 5 —
           useValue: { role: signal('PRESIDENT'), login: signal('PRESID1'), localite: signal(null), ref: () => null, nomAffichage: () => null, typeActeur: () => 'CONTROLEUR', isAuthenticated: () => false, logout: () => undefined },
         },
         { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: InterimStore, useValue: { exerces: signal([]), subi: signal(null), aVenir: signal([]), verifier: () => undefined } },
         { provide: PermissionsService, useValue: { peutExecuter: () => true } },
         { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
         { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
@@ -252,6 +257,7 @@ describe('État courant du menu (refonte ergonomique, lot 5 — F3)', () => {
           useValue: { role: signal('MEMBRE'), login: signal('MEMBANT1'), localite: signal('ANT'), ref: () => null, nomAffichage: () => null, typeActeur: () => 'CONTROLEUR', isAuthenticated: () => false, logout: () => undefined },
         },
         { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: InterimStore, useValue: { exerces: signal([]), subi: signal(null), aVenir: signal([]), verifier: () => undefined } },
         { provide: PermissionsService, useValue: { peutExecuter: () => false } },
         { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
         { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
@@ -320,6 +326,7 @@ describe('Coquille sans glyphe (refonte ergonomique, lot 5 — F5)', () => {
           useValue: { role: signal(role), login: signal(login), localite: signal('ANT'), ref: () => null, nomAffichage: () => null, typeActeur: () => 'CONTROLEUR', isAuthenticated: () => false, logout: () => undefined },
         },
         { provide: VacanceStore, useValue: { vacance: signal(vacance), verifier: () => undefined } },
+        { provide: InterimStore, useValue: { exerces: signal([]), subi: signal(null), aVenir: signal([]), verifier: () => undefined } },
         { provide: PermissionsService, useValue: { peutExecuter: () => true } },
         { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
         { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },
@@ -396,6 +403,7 @@ describe('Menu par rubriques (refonte ergonomique, lot 5 — F2)', () => {
           useValue: { role: signal(role), login: signal(login), localite: signal('ANT'), ref: () => null, nomAffichage: () => null, typeActeur: () => 'CONTROLEUR', isAuthenticated: () => false, logout: () => undefined },
         },
         { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: InterimStore, useValue: { exerces: signal([]), subi: signal(null), aVenir: signal([]), verifier: () => undefined } },
         // Délégation ascendante active : le Président voit ses deux entrées déléguées.
         { provide: PermissionsService, useValue: { peutExecuter: () => true } },
         { provide: DelegationsAffichageStore, useValue: { affichees: signal(delegationsAffichees), basculer: () => undefined } },
@@ -425,6 +433,7 @@ describe('Menu par rubriques (refonte ergonomique, lot 5 — F2)', () => {
       '/president/retraits',
       '/president/repartition-dispatch',
       '/president/chaines-controle',
+      '/president/interim',
       '/president/verifications',
       '/president/pv-examens',
       '/notifications',
@@ -500,6 +509,7 @@ describe('Menu par rubriques (refonte ergonomique, lot 5 — F2)', () => {
       '/president/retraits',
       '/president/repartition-dispatch',
       '/president/chaines-controle',
+      '/president/interim',
       '/notifications',
     ]);
   });
@@ -572,6 +582,7 @@ describe('Rail compact (refonte ergonomique, lot 5 — F4)', () => {
           useValue: { role: signal('MEMBRE'), login: signal('MEMANT1'), localite: signal('ANT'), ref: () => null, nomAffichage: () => null, typeActeur: () => 'CONTROLEUR', isAuthenticated: () => false, logout: () => undefined },
         },
         { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: InterimStore, useValue: { exerces: signal([]), subi: signal(null), aVenir: signal([]), verifier: () => undefined } },
         { provide: PermissionsService, useValue: { peutExecuter: () => false } },
         { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
         { provide: MenuCompactStore, useValue: { reduit: compact, basculer } },
@@ -735,6 +746,7 @@ describe('Bouton « Assistant IA » de la barre du haut (lot 1, 2026-09-18)', ()
           },
         },
         { provide: VacanceStore, useValue: { vacance: signal(false), verifier: () => undefined } },
+        { provide: InterimStore, useValue: { exerces: signal([]), subi: signal(null), aVenir: signal([]), verifier: () => undefined } },
         { provide: PermissionsService, useValue: { peutExecuter: () => false } },
         { provide: DelegationsAffichageStore, useValue: { affichees: signal(true), basculer: () => undefined } },
         { provide: ActualiteService, useValue: { mesActualites: () => of([]) } },

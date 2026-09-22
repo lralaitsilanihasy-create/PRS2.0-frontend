@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, ou
 import { forkJoin } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { InterimStore } from '../../core/interim/interim.store';
 import { ApiError } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, validerFichier } from '../../core/securite/fichiers-surs';
@@ -78,6 +79,10 @@ import {
              seul le bouton du panneau ouvert reste (il le referme, comme son « Annuler »). -->
         @if (canViser() && !retourOuvert() && !lettreOuvert()) {
           @if (estViseurAttendu()) {
+            @if (nomInterimDe(); as nom) {
+              <!-- Intérim désigné (2026-09-21) : le visa revient au titulaire que je supplée — il se pose sous mon nom, sans note. -->
+              <span class="pv-workflow__deja-signe">Vous suppléez <strong>{{ nom }}</strong> : le visa se posera sous votre nom, par intérim.</span>
+            }
             <button *appCan="'PV_SIGNER'" type="button" class="btn btn-success" (click)="toggleViser()">
               {{ pv().statutPv === 'PROJET_ACCEPTE' ? 'Compléter le visa…' : 'Viser…' }}
             </button>
@@ -207,7 +212,7 @@ import {
            Membre co-signataire obligatoire, et la part de signature du rôle posée dans le même POST. -->
       @if (viserOuvert()) {
         <div class="pv-workflow__retour pv-workflow__retour--accept cnm-form">
-          <span class="pv-workflow__retour-label">{{ interim() ? 'Visa par intérim — clôture de la navette' : 'Visa — clôture de la navette' }}</span>
+          <span class="pv-workflow__retour-label">{{ interim() ? 'Visa par intérim — clôture de la navette' : nomInterimDe() ? 'Visa par intérim de ' + nomInterimDe() + ' — clôture de la navette' : 'Visa — clôture de la navette' }}</span>
           @if (estDeuxNiveaux()) {
             <span class="form-hint">
               Le visa clôt la navette en un geste : il arrête l'avis, désigne les
@@ -473,6 +478,7 @@ export class PvWorkflow {
   private readonly lettreService = inject(LettreRenvoiService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
+  private readonly interims = inject(InterimStore);
 
   /** PV courant. */
   readonly pv = input.required<PvExamen>();
@@ -584,7 +590,22 @@ export class PvWorkflow {
    */
   readonly estDispatcheur = computed(() => {
     const d = this.pv().imDispatcheur;
-    return d == null || d === this.auth.ref();
+    // ⚠️ Intérim désigné (2026-09-21, backend `e867082`) — « le dispatcheur » = le dispatcheur OU son intérimaire
+    // actif : la garde serveur est étendue de même. La désignation vaut justification, sans note.
+    return d == null || d === this.auth.ref() || this.interimDesigne() !== null;
+  });
+  /**
+   * ⚠️ Intérim désigné (2026-09-21) — l'intérim ACTIF par lequel je supplée LE DISPATCHEUR de ce PV (`null` sinon).
+   * Le visa se pose alors sous mon nom, par intérim du titulaire, SANS note PDF (`viseParInterim`, `idInterim` et
+   * `interimDe` servis en retour) ; la note reste le repli ponctuel du P/CC non désigné (`peutSuppleer`).
+   */
+  readonly interimDesigne = computed(() => this.interims.titulaireSupplee(this.pv().imDispatcheur));
+  /** Deux niveaux, étage Président : l'intérim ACTIF par lequel je supplée le Président (VISA#2, part Président). */
+  readonly interimDuPresident = computed(() => this.interims.exerces().find((i) => i.profilTitulaire === 'PRESIDENT') ?? null);
+  /** Nom du titulaire que je supplée sur ce PV (libellés « par intérim de X »), vide sinon. */
+  readonly nomInterimDe = computed(() => {
+    const i = this.interimDesigne() ?? (this.estDeuxNiveaux() && this.niveau() === 'PRESIDENT' ? this.interimDuPresident() : null);
+    return i?.nomTitulaire ?? '';
   });
   /**
    * ⚠️ Séparation des rôles (règle pilote 2026-09-08) — le connecté est-il l'EXAMINATEUR du PV
@@ -622,7 +643,8 @@ export class PvWorkflow {
   });
   /** ⚠️ Deux niveaux — CC DÉSIGNÉ co-signataire au visa : sa part CC passe par `signer(CC)`. */
   readonly ccDesigne = computed(() => this.pv().imCcCoSignataire ?? null);
-  readonly estCcDesigne = computed(() => !!this.ccDesigne() && this.ccDesigne() === this.auth.ref());
+  // « Le CC désigné co-signataire » = lui ou son intérimaire actif (intérim désigné, 2026-09-21 — part CC signable par l'intérimaire).
+  readonly estCcDesigne = computed(() => !!this.ccDesigne() && (this.ccDesigne() === this.auth.ref() || this.interims.titulaireSupplee(this.ccDesigne()) !== null));
   readonly canSignerCc = computed(
     () =>
       peutSigner(this.pv().statutPv) &&
@@ -642,7 +664,14 @@ export class PvWorkflow {
    * DÉSIGNÉ par le Président ou le CC, et le désigné est nécessairement un Membre de la localité :
    * son profil suffit donc à déterminer sa part. Un P/CC ne signe plus que la sienne.
    */
-  readonly roleSignature = computed<PvSignataireRole | null>(() => pvSignataireRole(this.auth.role()));
+  readonly roleSignature = computed<PvSignataireRole | null>(() => {
+    // ⚠️ Intérim désigné (2026-09-21) — je vise, retourne ou signe sous le RÔLE du titulaire que je supplée sur ce
+    // PV : un Membre intérimaire d'un CC agit en CC sur les PV que ce CC a dispatchés ; un CC intérimaire du
+    // Président agit en Président à l'étage Président d'une navette à deux niveaux. Le serveur pose la part du
+    // profil du titulaire (`imCtrlCc` = moi). Ailleurs, mon profil.
+    const parInterim = this.interimDesigne() ?? (this.estDeuxNiveaux() && this.niveau() === 'PRESIDENT' ? this.interimDuPresident() : null);
+    return pvSignataireRole(parInterim ? parInterim.profilTitulaire : this.auth.role());
+  });
 
   /** Membre déjà désigné sur ce PV — `null` tant que le P/CC n'a pas visé (ou PV d'avant la règle). */
   readonly membreDesigne = computed(() => this.pv().imMembreCoSignataire ?? null);
@@ -975,7 +1004,7 @@ export class PvWorkflow {
         const attendus = (coSignataires ?? [imMembreCoSignataire!]).map((im) => this.nomControleur(im)).join(' et ');
         this.onSuccess(
           pv,
-          `PV visé${this.interim() ? ' par intérim' : ''} — votre part est signée ; en attente de la co-signature de ${attendus}.`,
+          `PV visé${this.interim() ? ' par intérim' : this.nomInterimDe() ? ` par intérim de ${this.nomInterimDe()}` : ''} — votre part est signée ; en attente de la co-signature de ${attendus}.`,
         );
       },
       error: () => this.saving.set(false), // 400/403/409 → toast centralisé (message backend)

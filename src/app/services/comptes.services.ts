@@ -7,14 +7,18 @@ import { skipErrorToast } from '../core/errors/api-error';
 import {
   AbrogerMandatRequest,
   Controleur,
+  CreerInterimRequest,
   CreerMandatRequest,
   CreerPrmpRequest,
   CreerUgpmRequest,
+  Interim,
   Mandat,
+  MesInterims,
   ModifierUgpmRequest,
   Organigramme,
   Prmp,
   RattachementDto,
+  RevoquerInterimRequest,
   Ugpm,
 } from '../models';
 
@@ -243,5 +247,48 @@ export class UgpmService extends CrudService<Ugpm, string> {
       responseType: 'blob',
       context: skipErrorToast(),
     });
+  }
+}
+
+/**
+ * Intérim désigné (`/api/interims` — demande 2026-09-21, backend `e867082`, ADR-0008) : « X est absent du D1 au D2 ;
+ * Y agit à sa place, dans SON périmètre, sous sa PROPRE identité ». Le titulaire (Président, CC) désigne lui-même,
+ * l'Administrateur en repli ; ni PUT ni DELETE (révocation à effet immédiat) ; statut dérivé serveur ; lecture
+ * fermée à la PRMP et à l'UGPM (403). Les 409 sont nominatifs (dialogue centralisé).
+ */
+@Injectable({ providedIn: 'root' })
+export class InterimService extends CrudService<Interim> {
+  protected readonly resource = 'interims';
+
+  /** `GET /api/interims` — historique CHRONOLOGIQUE ; `actifs` = ACTIF et A_VENIR. */
+  historique(filtres: { titulaire?: string; interimaire?: string; actifs?: boolean } = {}): Observable<Interim[]> {
+    let params = new HttpParams();
+    if (filtres.titulaire) params = params.set('titulaire', filtres.titulaire);
+    if (filtres.interimaire) params = params.set('interimaire', filtres.interimaire);
+    if (filtres.actifs) params = params.set('actifs', 'true');
+    return this.http.get<Interim[]>(this.baseUrl, { params });
+  }
+
+  /** `GET /mes` — le SIGNAL du front (bannière, menu, droits) : sondage silencieux, l'état connu prime en échec. */
+  mes(): Observable<MesInterims> {
+    return this.http.get<MesInterims>(`${this.baseUrl}/mes`, { context: skipErrorToast() });
+  }
+
+  /** `GET /{id}/piece` — la note de service (PDF) ; contrôleurs + Admin, 403 PRMP/UGPM. À afficher par `ouvrirBlobSur`. */
+  piece(id: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/piece`, { responseType: 'blob' });
+  }
+
+  /** `POST` multipart : partie `data` (JSON) + partie `piece` (PDF, type lu sur les octets côté serveur, 10 Mo). */
+  creer(body: CreerInterimRequest, piece: File): Observable<Interim> {
+    const form = new FormData();
+    form.append('data', new Blob([JSON.stringify(body)], { type: 'application/json' }));
+    form.append('piece', piece, piece.name);
+    return this.http.post<Interim>(this.baseUrl, form);
+  }
+
+  /** `POST /{id}/revoquer` — fin avant terme, motif obligatoire ; effet à la requête suivante. */
+  revoquer(id: number, body: RevoquerInterimRequest): Observable<Interim> {
+    return this.http.post<Interim>(`${this.baseUrl}/${id}/revoquer`, body);
   }
 }

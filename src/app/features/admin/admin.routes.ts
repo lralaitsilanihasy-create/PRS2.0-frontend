@@ -76,6 +76,9 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'comptes/controleurs', loadComponent: () => import('./controleur-admin').then((m) => m.ControleurAdmin) },
   { path: 'comptes/ugpms', loadComponent: () => import('./ugpm-admin').then((m) => m.UgpmAdmin) },
   { path: 'comptes/mandats', loadComponent: () => import('./mandats-admin').then((m) => m.MandatsAdmin) },
+  // ⚠️ Intérim désigné (2026-09-21) — historique de tous les intérims, désignation et révocation EN REPLI (§B3).
+  // Pas d'entrée de menu : le menu de l'Administrateur sature (lot 6) ; accès par le pied de l'accueil Admin.
+  { path: 'comptes/interims', loadComponent: () => import('../circuit/interims-ecran').then((m) => m.InterimsEcran), data: { admin: true, title: 'Intérims' } },
   { path: 'comptes/prmp-pieces', loadComponent: () => import('./prmp-pieces-admin').then((m) => m.PrmpPiecesAdmin) },
   { path: 'comptes/ugpm-pieces', loadComponent: () => import('./ugpm-pieces-admin').then((m) => m.UgpmPiecesAdmin) },
 

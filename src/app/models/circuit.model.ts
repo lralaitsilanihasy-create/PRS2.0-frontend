@@ -184,8 +184,11 @@ export interface PassageEtape {
   imActeur?: string | null;
   /** « prénoms nom » résolu serveur ; null si matricule inconnu, et toujours pour PRMP/UGPM (audit 2026-09-14, C2). */
   nomActeur?: string | null;
-  /** Profil sous lequel l'acteur a agi (délégation / intérim compris). */
+  /** Profil sous lequel l'acteur a agi (délégation / intérim compris) — par intérim DÉSIGNÉ, celui du titulaire. */
   profil?: string | null;
+  /** ⚠️ Intérim désigné (2026-09-21) — matricule du titulaire suppléé quand l'acteur a agi par intérim ; `null` sinon. */
+  interimDe?: string | null;
+  idInterim?: number | null;
   /**
    * ⚠️ Chronométrage AUTOMATIQUE (2026-09-12, backend `9648729`) — horodatage d'ENTRÉE dans l'étape,
    * **dérivé** (fin du passage précédent, dépôt du dossier, ou sortie d'attente PRMP) ; `null` quand
@@ -253,7 +256,11 @@ export interface ActionDossier {
   nomOperateur?: string;
   auteur?: string;
   idMandatOperateur?: number | null;
+  /** Détail suffixé « — par intérim de NOM » quand l'action a été posée par intérim désigné. */
   detail?: string;
+  /** ⚠️ Intérim désigné (2026-09-21) — matricule du titulaire suppléé ; `null` sinon. */
+  interimDe?: string | null;
+  idInterim?: number | null;
 }
 
 /** Réception d'un dossier (passage initial ou retour). */
@@ -297,8 +304,14 @@ export interface Dispatch {
   datePredispatch?: string;
   dateCtrlAssigne?: string;
   instructions?: string;
-  /** Président → false ; CC dans sa localité → false ; CC hors localité → true (sinon 409). */
+  /** Président → false ; CC dans sa localité → false ; CC hors localité → true (sinon 409). Forcé à `false` sous intérim désigné. */
   interimDispatch: boolean;
+  /**
+   * ⚠️ Intérim désigné (2026-09-21, ADR-0008) — quand un intérimaire dispatche, `imCtrlDispatch` porte le TITULAIRE
+   * (c'est le dispatcheur que l'aval reconnaît) ; `interimDe` le répète et `idInterim` dit qui a réellement cliqué.
+   */
+  interimDe?: string | null;
+  idInterim?: number | null;
 }
 
 /** Copie formelle d'un dossier transmise pour information. */
@@ -482,6 +495,9 @@ export interface PvExamen {
   noteInterimNom?: string | null;
   /** Le PDF de la note est téléchargeable (`GET /{id}/note-interim`) — contrôleurs du périmètre + Admin, 403 PRMP. `null` pour PRMP/UGPM. */
   noteInterimDisponible?: boolean | null;
+  /** ⚠️ Intérim DÉSIGNÉ (2026-09-21) — visa posé par l'intérimaire désigné du dispatcheur : `idInterim` + matricule du titulaire ; `noteInterim*` alors nuls. `null` pour PRMP/UGPM. */
+  idInterim?: number | null;
+  interimDe?: string | null;
   syntheseObservations?: string;
   statutPv: StatutPv;
   nbNavettes: number;

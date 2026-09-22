@@ -198,7 +198,11 @@ export interface LigneAFaire {
 
 export const cleTache = (t: AFaireTache): string => `${t.dossier.idDossier}|${t.section}`;
 
-export function ligneAFaire(t: AFaireTache): LigneAFaire {
+/**
+ * `nomInterimDe` : nom du titulaire suppléé pour une ligne reçue par INTÉRIM désigné (`mode = INTERIM`, `interimDe`
+ * = matricule — le serveur ne sert que des codes) ; par défaut le matricule tel quel.
+ */
+export function ligneAFaire(t: AFaireTache, nomInterimDe: (im: string) => string = (im) => im): LigneAFaire {
   const ref = referenceLigne(t);
   // Plus d'action sur la ligne (pilote 21/09) : le panneau de droite porte le verbe, en clair.
   return {
@@ -211,7 +215,7 @@ export function ligneAFaire(t: AFaireTache): LigneAFaire {
     localite: t.dossier.libelleLocalite ?? t.dossier.idLocalite ?? '',
     note: noteCourte(t),
     delai: delaiLigne(t),
-    mode: t.mode === 'TITULAIRE' ? null : LIBELLES_MODES[t.mode],
+    mode: t.mode === 'TITULAIRE' ? null : t.mode === 'INTERIM' && t.interimDe ? `${LIBELLES_MODES.INTERIM} de ${nomInterimDe(t.interimDe)}` : LIBELLES_MODES[t.mode],
   };
 }
 
@@ -239,7 +243,13 @@ export function titreSection(code: SectionAFaire, profil: Role | null): string {
  * - « Par étape » : sections dans l'ordre du circuit, celui de `sections` ;
  * - « Par localité » : localités, la plus urgente d'abord.
  */
-export function grouperTaches(taches: readonly AFaireTache[], vue: VueAFaire, a: Pick<AFaire, 'sections'> | null, profil: Role | null): GroupeAFaire[] {
+export function grouperTaches(
+  taches: readonly AFaireTache[],
+  vue: VueAFaire,
+  a: Pick<AFaire, 'sections'> | null,
+  profil: Role | null,
+  nomInterimDe: (im: string) => string = (im) => im,
+): GroupeAFaire[] {
   const groupes = new Map<string, GroupeAFaire>();
   for (const t of taches) {
     const parLocalite = vue === 'localite';
@@ -258,7 +268,7 @@ export function grouperTaches(taches: readonly AFaireTache[], vue: VueAFaire, a:
           };
       groupes.set(cle, g);
     }
-    g.lignes.push(ligneAFaire(t));
+    g.lignes.push(ligneAFaire(t, nomInterimDe));
   }
   const liste = [...groupes.values()];
   if (vue === 'etape') {

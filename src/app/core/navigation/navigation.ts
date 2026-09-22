@@ -1,4 +1,4 @@
-import { Role } from '../../models';
+import { Interim, Role } from '../../models';
 import { NomIcone } from '../../shared/ui/icone';
 
 /** Entrée de menu latéral. */
@@ -21,6 +21,12 @@ export interface NavItem {
    * la paire en base retire l'entrée du menu, zéro code. Absent = entrée toujours affichée.
    */
   delegation?: Role;
+  /**
+   * ⚠️ Intérim désigné (2026-09-21, backend `e867082`) — entrée du menu d'un TITULAIRE suppléé, offerte à son
+   * intérimaire ACTIF (`entreesParInterim`) : porte le nom du titulaire et son profil. Absent = entrée propre.
+   */
+  interimDe?: string;
+  interimProfil?: Role;
 }
 
 /**
@@ -66,9 +72,10 @@ function entreeAFaire(espace: string): NavItem {
  * Un bloc vide est omis — un profil sans délégation retrouve exactement son menu d'avant.
  */
 export function separerParDelegation(items: NavItem[]): { cle: string; titre: string | null; items: NavItem[] }[] {
+  // Les entrées exercées par INTÉRIM (2026-09-21) ne sont ni propres ni déléguées : `sectionsMenu` les range à part.
   return [
-    { cle: 'propre', titre: null, items: items.filter((i) => !i.delegation) },
-    { cle: 'delegation', titre: 'Exercé par délégation', items: items.filter((i) => !!i.delegation) },
+    { cle: 'propre', titre: null, items: items.filter((i) => !i.delegation && !i.interimDe) },
+    { cle: 'delegation', titre: 'Exercé par délégation', items: items.filter((i) => !!i.delegation && !i.interimDe) },
   ].filter((s) => s.items.length > 0);
 }
 
@@ -116,6 +123,10 @@ function menuCommission(base: '/president' | '/cc'): NavItem[] {
     // ⚠️ Rattachements (2026-09-01) — chaînes Membre→Vérificateur→Assistant, administrées par
     // Admin + Président (partout) + CC (sa localité) : droit PROPRE du P/CC, pas une délégation.
     { label: 'Chaînes de contrôle', path: `${base}/chaines-controle`, icon: 'layers' },
+    // ⚠️ Intérim désigné (2026-09-21, demande `docs/demande-backend-2026-09-21-gestion-interim.md`) — le titulaire
+    // désigne LUI-MÊME qui agit à sa place pendant son absence (Président ← tout CC ; CC ← CC ou Membre de sa
+    // localité), sur pièce ; historique, révocation. Droit PROPRE du P/CC (l'Admin a le sien en repli).
+    { label: 'Intérim', path: `${base}/interim`, icon: 'users' },
     // « PPM & marchés » et « Marchés & dates prév. » : retirés du menu des DEUX profils
     // (demande user 2026-08-04). Routes conservées de part et d'autre — cf. president.routes.ts / cc.routes.ts.
     // ⚠️ 2026-08-07 « Demandes de retrait » avait quitté le menu (accès en ligne dans les cartes de
@@ -298,4 +309,33 @@ export function navFor(role: Role | null): NavItem[] {
 /** Menu aplati (parents + enfants) du profil donné, pour les affichages sans hiérarchie (accueil). */
 export function navFlat(role: Role | null): NavItem[] {
   return navFor(role).flatMap((item) => (item.children ? [item, ...item.children] : [item]));
+}
+
+/**
+ * ⚠️ Intérim désigné (2026-09-21) — entrées de menu que l'intérimaire ACTIF reçoit de chaque titulaire qu'il
+ * supplée : le menu du profil du titulaire, MOINS ce que l'intérimaire a déjà en propre (même suffixe de chemin :
+ * « Tous les dossiers » du Membre vaut celui du CC, le serveur scope les données sur le périmètre du titulaire),
+ * moins « À faire » (les tâches du titulaire lui arrivent déjà dans son bloc « Exercé par délégation », mode
+ * INTERIM), moins « Notifications » (copiées) et « Intérim » (on ne désigne pas à la place du titulaire).
+ * Un CC qui supplée le Président ne reçoit donc rien de plus : les deux menus sont identiques, seul le périmètre
+ * change. Un Membre qui supplée un CC reçoit Répartition de dispatch, Examen de dossiers, Demandes de retrait,
+ * Chaînes de contrôle — et les entrées que le CC tient par délégation (`peutExecuter` les accorde par intérim).
+ * Chaque entrée porte `interimDe` (nom du titulaire) : `sectionsMenu` les range sous « Exercé par intérim ».
+ */
+export function entreesParInterim(exerces: readonly Interim[], propres: readonly NavItem[]): NavItem[] {
+  const suffixe = (path: string): string => {
+    const segments = path.split('/').filter(Boolean);
+    return segments.length > 1 ? segments.slice(1).join('/') : path;
+  };
+  const exclus = new Set(['a-faire', '/notifications', 'interim', ...propres.map((i) => suffixe(i.path))]);
+  const resultat: NavItem[] = [];
+  for (const i of exerces) {
+    for (const item of NAV_BY_ROLE[i.profilTitulaire] ?? []) {
+      const s = suffixe(item.path);
+      if (exclus.has(s)) continue;
+      exclus.add(s);
+      resultat.push({ ...item, interimDe: i.nomTitulaire, interimProfil: i.profilTitulaire });
+    }
+  }
+  return resultat;
 }

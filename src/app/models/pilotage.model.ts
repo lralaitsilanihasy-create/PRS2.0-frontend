@@ -44,6 +44,9 @@ export interface Notification {
   lu?: boolean;
   dateLecture?: string;
   canal?: string;
+  /** ⚠️ Intérim désigné (2026-09-21) — COPIE reçue en tant qu'intérimaire : matricule du titulaire ; `null` sinon. */
+  interimDe?: string | null;
+  idInterim?: number | null;
 }
 
 /** Échéance / jalon d'un marché. */
