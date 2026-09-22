@@ -1,4 +1,4 @@
-/* Fiche marché — couleurs de document (DPAO bleu, AE violet, CCAP vert) de l'esquisse, ≥ 4,5:1 sur fond pâle. */
+// Fiche marché — couleurs de document (DPAO bleu, AE violet, CCAP vert) de l'esquisse, ≥ 4,5:1 sur fond pâle.
 .fm { display: flex; flex-direction: column; gap: 0.9rem; }
 .fm__fil { display: flex; align-items: center; gap: 0.3rem; font-size: var(--text-sm, 0.85rem); color: var(--n-500); }
 .fm__fil a { display: inline-flex; align-items: center; gap: 0.15rem; color: var(--p-700); text-decoration: none; }
@@ -7,7 +7,9 @@
 .fm__ref { color: var(--n-500); font-size: 0.85rem; }
 .alert { display: flex; gap: 0.5rem; align-items: flex-start; }
 
-.fm__cadrage { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 0.6rem 0.9rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+// La même carte blanche pour les cinq conteneurs de l'écran.
+.fm__cadrage, .fm__rail, .fm__bloc, .fm__ppm, .fm__ctrls { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; }
+.fm__cadrage { padding: 0.6rem 0.9rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .fm__cadrage-lbl { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--n-400); margin-right: 0.3rem; }
 .fm__rep { padding: 0.2rem 0.6rem; border-radius: 8px; background: var(--p-50); color: var(--p-800); font-weight: 600; font-size: 0.8rem; }
 .fm__rep--non { background: var(--n-100); color: var(--n-500); font-weight: 500; }
@@ -16,7 +18,7 @@
 .fm__cadrage-mod:hover, .fm__lien { text-decoration: underline; }
 
 .fm__cols { display: grid; grid-template-columns: 220px minmax(0, 1fr) 290px; gap: 1rem; align-items: start; }
-.fm__rail { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 0.5rem; }
+.fm__rail { padding: 0.5rem; }
 .fm__rail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .fm__etape-b { width: 100%; display: flex; gap: 0.55rem; align-items: flex-start; padding: 0.5rem 0.55rem; border: 0; border-radius: 8px; background: transparent; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .fm__etape-b:hover { background: var(--n-50); }
@@ -27,7 +29,6 @@
 .fm__etape-t { font-weight: 600; font-size: 0.84rem; display: block; }
 .fm__etape-s { font-size: 0.74rem; color: var(--n-500); display: block; }
 
-.fm__bloc { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; }
 .fm__bloc-tete { padding: 0.9rem 1.1rem 0.7rem; border-bottom: 1px solid var(--n-200); display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
 .fm__bloc-tete h2 { margin: 0; font-size: 1.1rem; }
 .fm__eyebrow { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--n-400); }
@@ -53,10 +54,8 @@
 .fm__ou { color: var(--n-400); }
 .fm__modele { grid-column: 1 / -1; margin: 0; font-size: 0.78rem; color: var(--n-500); background: var(--n-50); border-left: 3px solid #f5c542; padding: 0.35rem 0.6rem; border-radius: 0 6px 6px 0; }
 .fm__attendus { margin: 0; font-size: 0.82rem; color: var(--n-500); font-style: italic; }
-.fm__ok { margin: 0; color: #047857; font-weight: 600; }
+.fm__ok { margin: 0; color: var(--success-text, #047857); font-weight: 600; }
 .fm__ctrl { margin: 0.35rem 0; font-size: 0.86rem; }
-.fm__ctrl--r { color: #b91c1c; }
-.fm__ctrl--a { color: #b45309; }
 .fm__pied { padding: 0.8rem 1.1rem; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
 .fm__aut { margin-left: auto; font-size: 0.76rem; color: var(--n-500); }
 
@@ -77,27 +76,40 @@
 .fm__q-comp { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.84rem; }
 .fm__q-comp .form-control { width: 8rem; }
 
-.fm__ppm { margin-top: 0.9rem; background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 0.6rem 1rem; }
+.fm__ppm { margin-top: 0.9rem; padding: 0.6rem 1rem; }
 .fm__ppm summary { cursor: pointer; font-weight: 600; font-size: 0.88rem; }
 .fm__ppm-l { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.4rem 1rem; margin: 0.7rem 0 0; }
 .fm__ppm-l div { display: flex; flex-direction: column; }
 .fm__ppm-l dt { font-size: 0.74rem; color: var(--n-500); }
 .fm__ppm-l dd { margin: 0; font-family: var(--cnm-mono); font-size: 0.82rem; }
 
-.fm__ctrls { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; }
 .fm__ctrls h2 { margin: 0; padding: 0.8rem 1rem 0.5rem; font-size: 0.95rem; }
+.fm__ctrls-vide, .fm__total, .fm__ctrls li { font-size: 0.8rem; }
+.fm__ctrls-vide, .fm__total { color: var(--n-500); }
 .fm__ctrls ul { list-style: none; margin: 0; padding: 0 1rem 0.8rem; display: flex; flex-direction: column; gap: 0.45rem; }
-.fm__ctrls li { display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.8rem; }
+.fm__ctrls li { display: flex; gap: 0.5rem; align-items: flex-start; }
 .fm__pt { width: 8px; height: 8px; border-radius: 50%; margin-top: 0.4rem; flex: none; }
+// Rouge bloquant, ambre avertissement : même paire pour le texte d'un contrôle et sa pastille.
+.fm__ctrl--r { color: #b91c1c; }
+.fm__ctrl--a { color: #b45309; }
 .fm__pt--r { background: #b91c1c; }
 .fm__pt--a { background: #b45309; }
-.fm__ctrls-vide { margin: 0; padding: 0 1rem 0.8rem; font-size: 0.8rem; color: var(--n-500); }
-.fm__total { padding: 0.6rem 1rem 0.9rem; border-top: 1px solid var(--n-200); font-size: 0.8rem; color: var(--n-500); }
+.fm__ctrls-vide { margin: 0; padding: 0 1rem 0.8rem; }
+.fm__total { padding: 0.6rem 1rem 0.9rem; border-top: 1px solid var(--n-200); }
 .fm__total b { color: var(--n-700); }
 .fm__prog { display: block; height: 6px; border-radius: 3px; background: var(--n-200); margin-top: 0.35rem; overflow: hidden; }
 .fm__prog i { display: block; height: 100%; background: var(--p-600); }
 .fm__vide { text-align: center; color: var(--n-500); padding: 1.5rem; }
-.fm__versions { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-bottom: 0.5rem; }
+
+// Choix de la ligne : largeurs fixes, la désignation seule se replie (les `td` du design system sont `nowrap`).
+.fm__lignes { table-layout: fixed; }
+.fm__c-ref, .fm__c-act { width: 13rem; }
+.fm__c-mode { width: 13%; }
+.fm__c-mt { width: 12%; }
+.fm__lignes td { overflow: hidden; text-overflow: ellipsis; }
+.fm__lignes td:nth-child(2) { white-space: normal; }
+.fm__obj { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; overflow-wrap: anywhere; }
+.fm__versions { font-size: 0.84rem; margin-bottom: 0.5rem; }
 .fm__versions th { text-align: left; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--n-500); padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--n-200); }
 .fm__versions td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--n-100); }
 .fm__versions .r { text-align: right; }

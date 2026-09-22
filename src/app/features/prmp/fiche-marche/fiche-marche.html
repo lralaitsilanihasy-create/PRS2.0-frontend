@@ -50,8 +50,11 @@
         <a routerLink="/prmp/dao">Voir toutes les lignes éligibles</a>
       </p>
     }
+    <!-- ⚠️ Colonnes bornées (23/09) : une désignation de plan peut tenir sur dix lignes (lots décrits en toutes
+         lettres) — sans largeur fixe, elle poussait le mode, le montant et le BOUTON D'ACTION hors de l'écran. -->
     <div class="table-card">
-      <table>
+      <table class="fm__lignes">
+        <colgroup><col class="fm__c-ref" /><col /><col class="fm__c-mode" /><col class="fm__c-mt" /><col class="fm__c-act" /></colgroup>
         <thead>
           <tr><th scope="col">Dossier de planification</th><th scope="col">Ligne de marché</th><th scope="col">Mode</th><th scope="col" class="r">Montant estimatif</th><th scope="col" class="r">Action</th></tr>
         </thead>
@@ -59,7 +62,7 @@
           @for (l of eligiblesAffichees(); track l.idDetail) {
             <tr>
               <td class="cnm-mono">{{ l.refeDossier || ('#' + l.idDossier) }}</td>
-              <td>{{ l.designationMarche }}</td>
+              <td><span class="fm__obj" [attr.title]="l.designationMarche">{{ l.designationMarche }}</span></td>
               <td>{{ l.libelleMode || l.idMode || '—' }}</td>
               <td class="r cnm-mono">{{ montant(l.montEstim) }}</td>
               <td class="r">
