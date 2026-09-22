@@ -212,16 +212,24 @@ export function evaluerCondition(condition: string | null | undefined, cadrage: 
   );
 }
 
+/** Code court d'une rubrique : le serveur sert `B05-GS` (livraison du 22/09), l'esquisse `GS` — les deux se valent. */
+function codeCourt(bloc: string, code: string): string {
+  return code.startsWith(`${bloc}-`) ? code.slice(bloc.length + 1) : code;
+}
+function memeRubrique(c: ChampFiche, bloc: string, rubrique: string): boolean {
+  return c.bloc === bloc && codeCourt(bloc, c.rubrique) === codeCourt(bloc, rubrique);
+}
+
 /** Champs d'une rubrique, dans l'ordre, ouverts par le cadrage. */
 export function champsDeRubrique(champs: readonly ChampFiche[], bloc: string, rubrique: string, cadrage: Cadrage): ChampFiche[] {
   return champs
-    .filter((c) => c.bloc === bloc && c.rubrique === rubrique && c.actif !== false && evaluerCondition(c.condition, cadrage))
+    .filter((c) => memeRubrique(c, bloc, rubrique) && c.actif !== false && evaluerCondition(c.condition, cadrage))
     .sort((a, b) => a.rang - b.rang);
 }
 
 /** Une rubrique est ouverte si au moins un de ses champs l'est — ou si elle n'a pas encore de champs (référentiel à compléter). */
 export function rubriqueOuverte(champs: readonly ChampFiche[], bloc: string, rubrique: RubriqueFiche, cadrage: Cadrage): boolean {
-  const tous = champs.filter((c) => c.bloc === bloc && c.rubrique === rubrique.code && c.actif !== false);
+  const tous = champs.filter((c) => memeRubrique(c, bloc, rubrique.code) && c.actif !== false);
   if (!tous.length) return true;
   return tous.some((c) => evaluerCondition(c.condition, cadrage));
 }
@@ -240,15 +248,21 @@ export function progression(referentiel: ReferentielFiche, cadrage: Cadrage, val
     const saisis = ouverts.filter((c) => valeurs[c.code] != null && valeurs[c.code] !== '').length;
     return { saisis, attendus: ouverts.length };
   }
-  const attendus = referentiel.blocs.flatMap((b) => b.rubriques).reduce((n, r) => n + (r.attendus ?? 0), 0);
+  const attendus = referentiel.blocs.flatMap((b) => b.rubriques).reduce((n, r) => n + (r.nbAttendu ?? 0), 0);
   return { saisis: 0, attendus };
 }
 
-/** Champs repris : chaque champ qui a des `reprises`, avec sa valeur (PPM ou saisie) — l'étape 4 de l'esquisse. */
-export function reprises(referentiel: ReferentielFiche, cadrage: Cadrage, valeurs: Record<string, unknown>, valeursPpm: Record<string, unknown>): { champ: ChampFiche; valeur: unknown }[] {
+/** Champs repris : chaque champ qui a des `reprises`, avec sa valeur (PPM, cadrage dérivé par le serveur, ou saisie) — l'étape 4 de l'esquisse. */
+export function reprises(
+  referentiel: ReferentielFiche,
+  cadrage: Cadrage,
+  valeurs: Record<string, unknown>,
+  valeursPpm: Record<string, unknown>,
+  valeursCadrage: Record<string, unknown> = {},
+): { champ: ChampFiche; valeur: unknown }[] {
   return referentiel.champs
     .filter((c) => c.reprises?.length && c.actif !== false && evaluerCondition(c.condition, cadrage))
-    .map((champ) => ({ champ, valeur: champ.source === 'PPM' ? valeursPpm[champ.code] : valeurs[champ.code] }));
+    .map((champ) => ({ champ, valeur: champ.source === 'PPM' ? valeursPpm[champ.code] : champ.source === 'CADRAGE' ? valeursCadrage[champ.code] : valeurs[champ.code] }));
 }
 
 /** Bilan vide (avant tout contrôle serveur). */
@@ -258,14 +272,14 @@ export const BILAN_VIDE: BilanControles = { bloquants: [], avertissements: [], o
 export const REFERENTIEL_ESQUISSE: ReferentielFiche = {
   blocs: [
     // 22 informations reprises du PPM ; avec les rubriques à saisir, 158 au total (esquisse, quantité fixe).
-    { code: 'B01', libelle: 'Identification & données du PPM', rang: 1, rubriques: [{ code: 'AC', libelle: 'Acheteur', rang: 1, attendus: 22 }] },
+    { code: 'B01', libelle: 'Identification & données du PPM', rang: 1, rubriques: [{ code: 'AC', libelle: 'Acheteur', rang: 1, nbAttendu: 22 }] },
     {
       code: 'B02',
       libelle: 'Objet, allotissement & forme du marché',
       rang: 2,
       rubriques: [
-        { code: 'OB', libelle: 'Objet de l’appel d’offres', rang: 1, documentMaitre: 'DPAO', attendus: 1 },
-        { code: 'LV', libelle: 'Lots et variantes', rang: 2, documentMaitre: 'DPAO', attendus: 6 },
+        { code: 'OB', libelle: 'Objet de l’appel d’offres', rang: 1, documentMaitre: 'DPAO', nbAttendu: 1 },
+        { code: 'LV', libelle: 'Lots et variantes', rang: 2, documentMaitre: 'DPAO', nbAttendu: 6 },
       ],
     },
     {
@@ -273,10 +287,10 @@ export const REFERENTIEL_ESQUISSE: ReferentielFiche = {
       libelle: 'Candidats : groupement, sous-traitance, qualifications',
       rang: 3,
       rubriques: [
-        { code: 'GR', libelle: 'Groupement', rang: 1, documentMaitre: 'DPAO', attendus: 3 },
-        { code: 'CQ', libelle: 'Capacité et qualifications des candidats', rang: 2, documentMaitre: 'DPAO', attendus: 8 },
-        { code: 'ST', libelle: 'Sous-traitance', rang: 3, documentMaitre: 'AE', attendus: 2 },
-        { code: 'NA', libelle: 'Nantissement', rang: 4, documentMaitre: 'AE', attendus: 2 },
+        { code: 'GR', libelle: 'Groupement', rang: 1, documentMaitre: 'DPAO', nbAttendu: 3 },
+        { code: 'CQ', libelle: 'Capacité et qualifications des candidats', rang: 2, documentMaitre: 'DPAO', nbAttendu: 8 },
+        { code: 'ST', libelle: 'Sous-traitance', rang: 3, documentMaitre: 'AE', nbAttendu: 2 },
+        { code: 'NA', libelle: 'Nantissement', rang: 4, documentMaitre: 'AE', nbAttendu: 2 },
       ],
     },
     {
@@ -284,13 +298,13 @@ export const REFERENTIEL_ESQUISSE: ReferentielFiche = {
       libelle: 'Dossier, remise & ouverture des offres',
       rang: 4,
       rubriques: [
-        { code: 'DE', libelle: 'Demande d’éclaircissement', rang: 1, documentMaitre: 'DPAO', attendus: 3 },
-        { code: 'CO', libelle: 'Contenu des offres', rang: 2, documentMaitre: 'DPAO', attendus: 1 },
-        { code: 'VO', libelle: 'Délai de validité des offres', rang: 3, documentMaitre: 'DPAO', attendus: 1 },
-        { code: 'LA', libelle: 'Langue', rang: 4, documentMaitre: 'DPAO', attendus: 2 },
-        { code: 'FP', libelle: 'Remise des offres – forme des plis', rang: 5, documentMaitre: 'DPAO', attendus: 2 },
-        { code: 'LR', libelle: 'Lieu, date et heure de remise des offres', rang: 6, documentMaitre: 'DPAO', attendus: 4 },
-        { code: 'OP', libelle: 'Ouverture des plis', rang: 7, documentMaitre: 'DPAO', attendus: 2 },
+        { code: 'DE', libelle: 'Demande d’éclaircissement', rang: 1, documentMaitre: 'DPAO', nbAttendu: 3 },
+        { code: 'CO', libelle: 'Contenu des offres', rang: 2, documentMaitre: 'DPAO', nbAttendu: 1 },
+        { code: 'VO', libelle: 'Délai de validité des offres', rang: 3, documentMaitre: 'DPAO', nbAttendu: 1 },
+        { code: 'LA', libelle: 'Langue', rang: 4, documentMaitre: 'DPAO', nbAttendu: 2 },
+        { code: 'FP', libelle: 'Remise des offres – forme des plis', rang: 5, documentMaitre: 'DPAO', nbAttendu: 2 },
+        { code: 'LR', libelle: 'Lieu, date et heure de remise des offres', rang: 6, documentMaitre: 'DPAO', nbAttendu: 4 },
+        { code: 'OP', libelle: 'Ouverture des plis', rang: 7, documentMaitre: 'DPAO', nbAttendu: 2 },
       ],
     },
     {
@@ -298,11 +312,11 @@ export const REFERENTIEL_ESQUISSE: ReferentielFiche = {
       libelle: 'Prix, montants & garantie de soumission',
       rang: 5,
       rubriques: [
-        { code: 'CP', libelle: 'Contenu et décomposition des prix', rang: 1, documentMaitre: 'DPAO', attendus: 6 },
-        { code: 'VP', libelle: 'Variation des prix', rang: 2, documentMaitre: 'DPAO', attendus: 2 },
-        { code: 'MO', libelle: 'Monnaie', rang: 3, documentMaitre: 'DPAO', attendus: 2 },
-        { code: 'GS', libelle: 'Garantie de soumission', rang: 4, documentMaitre: 'DPAO', attendus: 6 },
-        { code: 'TP', libelle: 'Type de prix', rang: 5, documentMaitre: 'AE', attendus: 4 },
+        { code: 'CP', libelle: 'Contenu et décomposition des prix', rang: 1, documentMaitre: 'DPAO', nbAttendu: 6 },
+        { code: 'VP', libelle: 'Variation des prix', rang: 2, documentMaitre: 'DPAO', nbAttendu: 2 },
+        { code: 'MO', libelle: 'Monnaie', rang: 3, documentMaitre: 'DPAO', nbAttendu: 2 },
+        { code: 'GS', libelle: 'Garantie de soumission', rang: 4, documentMaitre: 'DPAO', nbAttendu: 6 },
+        { code: 'TP', libelle: 'Type de prix', rang: 5, documentMaitre: 'AE', nbAttendu: 4 },
       ],
     },
     {
@@ -310,10 +324,10 @@ export const REFERENTIEL_ESQUISSE: ReferentielFiche = {
       libelle: 'Évaluation, attribution & notification',
       rang: 6,
       rubriques: [
-        { code: 'EP', libelle: 'Évaluation des plis – relations candidats / PRMP', rang: 1, documentMaitre: 'DPAO', attendus: 1 },
-        { code: 'EO', libelle: 'Évaluation des offres – montant évalué de l’offre', rang: 2, documentMaitre: 'DPAO', attendus: 13 },
-        { code: 'AN', libelle: 'Attribution et notification du marché', rang: 3, documentMaitre: 'CCAP', attendus: 2 },
-        { code: 'SD', libelle: 'Attribution, appel infructueux, notification (sans document)', rang: 4, documentMaitre: 'AUCUN', attendus: 3 },
+        { code: 'EP', libelle: 'Évaluation des plis – relations candidats / PRMP', rang: 1, documentMaitre: 'DPAO', nbAttendu: 1 },
+        { code: 'EO', libelle: 'Évaluation des offres – montant évalué de l’offre', rang: 2, documentMaitre: 'DPAO', nbAttendu: 13 },
+        { code: 'AN', libelle: 'Attribution et notification du marché', rang: 3, documentMaitre: 'CCAP', nbAttendu: 2 },
+        { code: 'SD', libelle: 'Attribution, appel infructueux, notification (sans document)', rang: 4, documentMaitre: 'AUCUN', nbAttendu: 3 },
       ],
     },
     {
@@ -321,12 +335,12 @@ export const REFERENTIEL_ESQUISSE: ReferentielFiche = {
       libelle: 'Paiements, avances & garanties financières',
       rang: 8,
       rubriques: [
-        { code: 'PA', libelle: 'Paiements', rang: 1, documentMaitre: 'CCAP', attendus: 13 },
-        { code: 'AV', libelle: 'Avance', rang: 2, documentMaitre: 'CCAP', attendus: 9 },
-        { code: 'AC', libelle: 'Acompte', rang: 3, documentMaitre: 'CCAP', attendus: 1 },
-        { code: 'IM', libelle: 'Intérêts moratoires dus au fournisseur', rang: 4, documentMaitre: 'CCAP', attendus: 1 },
-        { code: 'GB', libelle: 'Garantie de bonne exécution', rang: 5, documentMaitre: 'CCAP', attendus: 1 },
-        { code: 'RG', libelle: 'Retenue de garantie', rang: 6, documentMaitre: 'CCAP', attendus: 1 },
+        { code: 'PA', libelle: 'Paiements', rang: 1, documentMaitre: 'CCAP', nbAttendu: 13 },
+        { code: 'AV', libelle: 'Avance', rang: 2, documentMaitre: 'CCAP', nbAttendu: 9 },
+        { code: 'AC', libelle: 'Acompte', rang: 3, documentMaitre: 'CCAP', nbAttendu: 1 },
+        { code: 'IM', libelle: 'Intérêts moratoires dus au fournisseur', rang: 4, documentMaitre: 'CCAP', nbAttendu: 1 },
+        { code: 'GB', libelle: 'Garantie de bonne exécution', rang: 5, documentMaitre: 'CCAP', nbAttendu: 1 },
+        { code: 'RG', libelle: 'Retenue de garantie', rang: 6, documentMaitre: 'CCAP', nbAttendu: 1 },
       ],
     },
     {
@@ -334,22 +348,22 @@ export const REFERENTIEL_ESQUISSE: ReferentielFiche = {
       libelle: 'Exécution du marché & livraison',
       rang: 9,
       rubriques: [
-        { code: 'LL', libelle: 'Lieu de livraison', rang: 1, documentMaitre: 'DPAO', attendus: 1 },
-        { code: 'PC', libelle: 'Pièces contractuelles', rang: 2, documentMaitre: 'CCAP', attendus: 1 },
-        { code: 'OM', libelle: 'Ordres de modification et avenants', rang: 3, documentMaitre: 'CCAP', attendus: 3 },
-        { code: 'PS', libelle: 'Protection du secret – mesures de sécurité', rang: 4, documentMaitre: 'CCAP', attendus: 3 },
-        { code: 'DX', libelle: 'Délai d’exécution', rang: 5, documentMaitre: 'CCAP', attendus: 3 },
-        { code: 'PR', libelle: 'Pénalités de retard', rang: 6, documentMaitre: 'CCAP', attendus: 3 },
-        { code: 'MC', libelle: 'Matériels, objets et approvisionnements confiés', rang: 7, documentMaitre: 'CCAP', attendus: 1 },
-        { code: 'SF', libelle: 'Stockage des fournitures', rang: 8, documentMaitre: 'CCAP', attendus: 1 },
-        { code: 'EM', libelle: 'Emballage', rang: 9, documentMaitre: 'CCAP', attendus: 2 },
-        { code: 'RT', libelle: 'Responsabilité du transport', rang: 10, documentMaitre: 'CCAP', attendus: 3 },
-        { code: 'LF', libelle: 'Livraison des fournitures', rang: 11, documentMaitre: 'CCAP', attendus: 2 },
-        { code: 'AS', libelle: 'Assurance', rang: 12, documentMaitre: 'CCAP', attendus: 2 },
-        { code: 'CR', libelle: 'Contrôle des prix de revient', rang: 13, documentMaitre: 'CCAP', attendus: 1 },
-        { code: 'IV', libelle: 'Inspections, vérifications et essais', rang: 14, documentMaitre: 'CCAP', attendus: 1 },
-        { code: 'DI', libelle: 'Décision après inspection et essais', rang: 15, documentMaitre: 'CCAP', attendus: 1 },
-        { code: 'DG', libelle: 'Délai de garantie', rang: 16, documentMaitre: 'CCAP', attendus: 2 },
+        { code: 'LL', libelle: 'Lieu de livraison', rang: 1, documentMaitre: 'DPAO', nbAttendu: 1 },
+        { code: 'PC', libelle: 'Pièces contractuelles', rang: 2, documentMaitre: 'CCAP', nbAttendu: 1 },
+        { code: 'OM', libelle: 'Ordres de modification et avenants', rang: 3, documentMaitre: 'CCAP', nbAttendu: 3 },
+        { code: 'PS', libelle: 'Protection du secret – mesures de sécurité', rang: 4, documentMaitre: 'CCAP', nbAttendu: 3 },
+        { code: 'DX', libelle: 'Délai d’exécution', rang: 5, documentMaitre: 'CCAP', nbAttendu: 3 },
+        { code: 'PR', libelle: 'Pénalités de retard', rang: 6, documentMaitre: 'CCAP', nbAttendu: 3 },
+        { code: 'MC', libelle: 'Matériels, objets et approvisionnements confiés', rang: 7, documentMaitre: 'CCAP', nbAttendu: 1 },
+        { code: 'SF', libelle: 'Stockage des fournitures', rang: 8, documentMaitre: 'CCAP', nbAttendu: 1 },
+        { code: 'EM', libelle: 'Emballage', rang: 9, documentMaitre: 'CCAP', nbAttendu: 2 },
+        { code: 'RT', libelle: 'Responsabilité du transport', rang: 10, documentMaitre: 'CCAP', nbAttendu: 3 },
+        { code: 'LF', libelle: 'Livraison des fournitures', rang: 11, documentMaitre: 'CCAP', nbAttendu: 2 },
+        { code: 'AS', libelle: 'Assurance', rang: 12, documentMaitre: 'CCAP', nbAttendu: 2 },
+        { code: 'CR', libelle: 'Contrôle des prix de revient', rang: 13, documentMaitre: 'CCAP', nbAttendu: 1 },
+        { code: 'IV', libelle: 'Inspections, vérifications et essais', rang: 14, documentMaitre: 'CCAP', nbAttendu: 1 },
+        { code: 'DI', libelle: 'Décision après inspection et essais', rang: 15, documentMaitre: 'CCAP', nbAttendu: 1 },
+        { code: 'DG', libelle: 'Délai de garantie', rang: 16, documentMaitre: 'CCAP', nbAttendu: 2 },
       ],
     },
     {
@@ -357,9 +371,9 @@ export const REFERENTIEL_ESQUISSE: ReferentielFiche = {
       libelle: 'Modifications, résiliation & litiges',
       rang: 10,
       rubriques: [
-        { code: 'IR', libelle: 'Indemnité de résiliation', rang: 1, documentMaitre: 'CCAP', attendus: 2 },
-        { code: 'AR', libelle: 'Arbitrage', rang: 2, documentMaitre: 'CCAP', attendus: 1 },
-        { code: 'DD', libelle: 'Dérogation aux documents généraux', rang: 3, documentMaitre: 'CCAP', attendus: 1 },
+        { code: 'IR', libelle: 'Indemnité de résiliation', rang: 1, documentMaitre: 'CCAP', nbAttendu: 2 },
+        { code: 'AR', libelle: 'Arbitrage', rang: 2, documentMaitre: 'CCAP', nbAttendu: 1 },
+        { code: 'DD', libelle: 'Dérogation aux documents généraux', rang: 3, documentMaitre: 'CCAP', nbAttendu: 1 },
       ],
     },
   ],

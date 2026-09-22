@@ -8,7 +8,7 @@ import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { FicheMarche, LigneEligible, ReferentielFiche, Role } from '../../../models';
+import { FicheMarche, LigneEligible, ReferentielFiche, Role, VersionFiche } from '../../../models';
 import { FicheMarcheEcran } from './fiche-marche';
 
 /** Référentiel réduit servi par le serveur : B01 (PPM), B02 et B05 — une rubrique conditionnée (GS), un champ PPM. */
@@ -103,7 +103,7 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
   }
 
   /** Répond à la vague d'ouverture d'une fiche : référentiel + fiche (`null` = 404) + versions figées. */
-  function ouvrir(ref: ReferentielFiche | null, f: FicheMarche | null, versions: FicheMarche[] | null = []): void {
+  function ouvrir(ref: ReferentielFiche | null, f: FicheMarche | null, versions: VersionFiche[] | null = []): void {
     const r = http.expectOne((x) => x.url === '/api/champs-fiche-marche' && x.params.get('typeMarche') === 'QUANTITE_FIXE');
     if (ref) r.flush(ref);
     else r.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
@@ -323,26 +323,28 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     bouton('Valider la fiche').click();
     const post = http.expectOne('/api/fiches-marche/42/valider');
     expect(post.request.method).toBe('POST');
-    post.flush(fiche({ statut: 'VALIDEE', version: 1, dateValidation: '2026-09-22', validePar: 'PRMP001' }));
+    post.flush(fiche({ statut: 'VALIDEE', version: 1, dateValidation: '2026-09-22T10:05:00', validePar: 'PRMP001' }));
     rendre();
     expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('version 1 figée'));
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Documents');
     expect(texte(racine().querySelector('.page-subtitle'))).toContain('fiche validée, version 1');
-    // La version figée rejoint l'historique de l'étape 6 sans relecture serveur.
+    // La version figée rejoint l'historique de l'étape 6 sans relecture serveur (en-tête dérivé de la fiche).
     fixture.componentInstance.etape.set(5);
     rendre();
-    expect(Array.from(racine().querySelectorAll('.fm__versions tbody tr')).map((tr) => cellules(tr))).toEqual(['1 2026-09-22 PRMP001 —']);
+    expect(texte(racine().querySelector('.fm__ok'))).toContain('version 1 figée le 22/09/2026 10:05');
+    expect(Array.from(racine().querySelectorAll('.fm__versions tbody tr')).map((tr) => cellules(tr))).toEqual(['1 22/09/2026 10:05 PRMP001 1']);
   });
 
   it('UGPM : la validation est réservée à la PRMP ; une fiche validée s’ouvre en lecture seule avec « nouvelle version »', () => {
     monter('UGPM', 42);
-    const v1 = fiche({ statut: 'VALIDEE', version: 1, dateValidation: '2026-09-10', validePar: 'PRMP001', bilanControles: { bloquants: [], avertissements: [], ok: [], nbSaisis: 120, nbAttendus: 130 } });
-    const v2 = fiche({ statut: 'VALIDEE', version: 2, dateValidation: '2026-09-22', validePar: 'PRMP001', bilanControles: { bloquants: [], avertissements: [], ok: [], nbSaisis: 130, nbAttendus: 130 } });
+    // En-têtes de version tels que servis par `GET …/versions` (VersionFicheDto, livraison du 22/09), dans le désordre.
+    const v1: VersionFiche = { idFiche: 5, version: 1, statut: 'VALIDEE', typeMarche: 'QUANTITE_FIXE', dateValidation: '2026-09-10T09:00:00', validePar: 'PRMP001', nbValeurs: 120 };
+    const v2: VersionFiche = { idFiche: 9, version: 2, statut: 'VALIDEE', typeMarche: 'QUANTITE_FIXE', dateValidation: '2026-09-22T16:30:00', validePar: 'PRMP001', nbValeurs: 130 };
     ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2, versionPpm: 3, idDetailCourant: 71, ligneSupprimee: true }), [v1, v2]);
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Validation PRMP');
     // Historique des versions figées (B5), la plus récente en tête, la courante surlignée.
     const lignesV = Array.from(racine().querySelectorAll('.fm__versions tbody tr'));
-    expect(lignesV.map((tr) => cellules(tr))).toEqual(['2 2026-09-22 PRMP001 130', '1 2026-09-10 PRMP001 120']);
+    expect(lignesV.map((tr) => cellules(tr))).toEqual(['2 22/09/2026 16:30 PRMP001 130', '1 10/09/2026 09:00 PRMP001 120']);
     expect(lignesV[0].classList.contains('fm__versions--courante')).toBe(true);
     expect(lignesV[1].classList.contains('fm__versions--courante')).toBe(false);
     // Filiation (B2 §1) : la ligne est supprimée dans la version courante du PPM → avertissement, pas de blocage.

@@ -17,8 +17,8 @@ export interface RubriqueFiche {
   libelle: string;
   rang: number;
   documentMaitre?: DocumentDao | null;
-  /** Nombre d'informations attendues (esquisse) — sert tant que les champs ne sont pas chargés. */
-  attendus?: number | null;
+  /** Nombre d'informations attendues (esquisse) — sert tant que les champs ne sont pas chargés. Clé servie : `nbAttendu`. */
+  nbAttendu?: number | null;
 }
 
 export interface BlocFiche {
@@ -76,8 +76,9 @@ export interface BilanControles {
   nbAttendus: number;
 }
 
-/** `GET /api/fiches-marche/{idDmc}` */
+/** `GET /api/fiches-marche/{idDmc}` — livraison backend du 22/09 : `idFiche` nul = fiche virtuelle (version 1, brouillon) avant le premier enregistrement. */
 export interface FicheMarche {
+  idFiche?: number | null;
   idDmc: number;
   idDetail: number;
   idDossier: number;
@@ -99,9 +100,25 @@ export interface FicheMarche {
   ligneSupprimee?: boolean | null;
   /** Montants en toutes lettres, servis par le serveur (`{ code: texte }`) — clé `enLettres` de la demande, B3. */
   enLettres?: Record<string, string> | null;
+  /** Champs de source `CADRAGE`, dérivés des réponses par le serveur (`{ code: valeur }`), jamais reçus. */
+  valeursCadrage?: Record<string, string | null> | null;
   bilanControles?: BilanControles | null;
+  dateCreation?: string | null;
+  dateMaj?: string | null;
   dateValidation?: string | null;
   validePar?: string | null;
+}
+
+/** `GET /api/fiches-marche/{idDmc}/versions` — une version VALIDÉE, de quoi lister l'historique (le détail : `/versions/{n}`). */
+export interface VersionFiche {
+  idFiche: number | null;
+  version: number;
+  statut: StatutFiche;
+  typeMarche: TypeMarche | null;
+  dateCreation?: string | null;
+  dateValidation?: string | null;
+  validePar?: string | null;
+  nbValeurs: number;
 }
 
 /** `GET /api/dmcs/eligibles` — lignes de PPM qui peuvent porter un DAO (H4). */

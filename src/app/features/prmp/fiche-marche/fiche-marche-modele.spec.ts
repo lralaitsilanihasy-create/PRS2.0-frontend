@@ -77,6 +77,11 @@ describe('Fiche marché — règles pures (esquisse du 22/09)', () => {
     expect(rubriqueOuverte(champs, 'B05', { code: 'VP', libelle: 'Variation', rang: 2 }, {})).toBe(true); // sans champ
     expect(champsDeRubrique(champs, 'B05', 'GS', { garantieSoumission: 'OUI' }).map((c) => c.code)).toEqual(['B05-GS-01', 'B05-GS-02']);
     expect(champsDeRubrique(champs, 'B05', 'MO', {}).map((c) => c.code)).toEqual(['B05-MO-01']); // l'inactif est écarté
+    // Livraison backend du 22/09 : la rubrique d'un champ est servie en code COMPLET (« B05-GS ») — les deux formes se valent.
+    const complets = champs.map((c) => ({ ...c, rubrique: `B05-${c.rubrique}` }));
+    expect(champsDeRubrique(complets, 'B05', 'GS', { garantieSoumission: 'OUI' }).map((c) => c.code)).toEqual(['B05-GS-01', 'B05-GS-02']);
+    expect(champsDeRubrique(complets, 'B05', 'B05-GS', { garantieSoumission: 'OUI' }).length).toBe(2);
+    expect(rubriqueOuverte(complets, 'B05', { code: 'B05-GS', libelle: 'Garantie', rang: 4 }, { garantieSoumission: 'NON' })).toBe(false);
   });
 
   it('blocs à saisir : B01 (PPM) exclu, B07 seulement en contrat-cadre, ordre par rang', () => {
@@ -115,5 +120,9 @@ describe('Fiche marché — règles pures (esquisse du 22/09)', () => {
     const r = reprises(ref, { garantieSoumission: 'OUI' }, { 'B05-GS-02': 8400000 }, { 'B01-AC-01': 'MEF' });
     expect(r.map((x) => [x.champ.code, x.valeur])).toEqual([['B01-AC-01', 'MEF'], ['B05-GS-02', 8400000]]);
     expect(reprises(ref, { garantieSoumission: 'NON' }, {}, { 'B01-AC-01': 'MEF' }).length).toBe(1);
+    // Recette du 22/09 : un champ CADRAGE repris lit sa valeur dérivée par le serveur (`valeursCadrage`), pas la saisie.
+    const avecCadrage: ReferentielFiche = { blocs: [], champs: [champ({ code: 'B05-GS-01', bloc: 'B05', rubrique: 'GS', source: 'CADRAGE', reprises: ['AE'] })] };
+    expect(reprises(avecCadrage, {}, {}, {}, { 'B05-GS-01': 'OUI' })[0].valeur).toBe('OUI');
+    expect(reprises(avecCadrage, {}, { 'B05-GS-01': 'NON' }, {})[0].valeur).toBeUndefined();
   });
 });

@@ -7,7 +7,7 @@ import { catchError, map } from 'rxjs/operators';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { BilanControles, BlocFiche, Cadrage, ChampFiche, ErreurChamp, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, ChampFiche, ErreurChamp, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
@@ -102,7 +102,7 @@ export class FicheMarcheEcran {
   readonly referentiel = signal<ReferentielFiche>(REFERENTIEL_ESQUISSE);
   readonly fiche = signal<FicheMarche | null>(null);
   /** Versions figées (`GET …/versions`, B5) — la plus récente en tête. */
-  readonly versions = signal<FicheMarche[]>([]);
+  readonly versions = signal<VersionFiche[]>([]);
   readonly cadrage = signal<Cadrage>({ typeMarche: 'QUANTITE_FIXE' });
   readonly valeurs = signal<Record<string, Valeur>>({});
   readonly erreursChamp = signal<ReadonlyMap<string, string>>(new Map());
@@ -120,7 +120,7 @@ export class FicheMarcheEcran {
   readonly blocPpm = computed<BlocFiche | null>(() => this.referentiel().blocs.find((b) => b.code === 'B01') ?? null);
   readonly prog = computed(() => progression(this.referentiel(), this.cadrage(), this.valeurs()));
   readonly bilan = computed<BilanControles>(() => this.fiche()?.bilanControles ?? BILAN_VIDE);
-  readonly reprisesListe = computed(() => reprises(this.referentiel(), this.cadrage(), this.valeurs(), this.fiche()?.valeursPpm ?? {}));
+  readonly reprisesListe = computed(() => reprises(this.referentiel(), this.cadrage(), this.valeurs(), this.fiche()?.valeursPpm ?? {}, this.fiche()?.valeursCadrage ?? {}));
   readonly figee = computed(() => this.fiche()?.statut === 'VALIDEE');
   /** Les 22 informations de la ligne, pour B01 (clé → valeur) ; libellé via le référentiel quand il est chargé. */
   readonly valeursPpm = computed(() => {
@@ -157,7 +157,7 @@ export class FicheMarcheEcran {
     forkJoin({
       ref: this.champService.referentiel('QUANTITE_FIXE').pipe(catchError(() => of(null))),
       fiche: this.ficheService.lire(id).pipe(catchError((e: HttpErrorResponse) => (routeAbsente(e) ? of(null) : (this.erreur.set(true), of(null))))),
-      versions: this.ficheService.versions(id).pipe(catchError(() => of([] as FicheMarche[]))),
+      versions: this.ficheService.versions(id).pipe(catchError(() => of([] as VersionFiche[]))),
     }).subscribe(({ ref, fiche, versions }) => {
       if (ref && ref.blocs?.length) this.referentiel.set(ref);
       else this.contratAbsent.set(true);
@@ -244,8 +244,16 @@ export class FicheMarcheEcran {
   }
 
   valeurAffichee(champ: ChampFiche): string {
-    const v = champ.source === 'PPM' ? (this.fiche()?.valeursPpm?.[champ.code] ?? null) : this.valeur(champ.code);
+    const f = this.fiche();
+    const v = champ.source === 'PPM' ? (f?.valeursPpm?.[champ.code] ?? null) : champ.source === 'CADRAGE' ? (f?.valeursCadrage?.[champ.code] ?? null) : this.valeur(champ.code);
     return v == null ? '' : String(v);
+  }
+
+  /** `2026-09-22T10:05:00` → `22/09/2026 10:05` ; date seule → `22/09/2026` ; vide → `—`. */
+  dateFr(iso: string | null | undefined): string {
+    const m = (iso ?? '').match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+    if (!m) return '—';
+    return `${m[3]}/${m[2]}/${m[1]}${m[4] ? ` ${m[4]}:${m[5]}` : ''}`;
   }
 
   /** Montant en toutes lettres, servi par le serveur après enregistrement (`enLettres[code]`). */
@@ -342,7 +350,8 @@ export class FicheMarcheEcran {
         this.saving.set(false);
         this.appliquer(f);
         // La version qui vient d'être figée rejoint l'historique sans relecture serveur.
-        this.versions.update((v) => [f, ...v.filter((x) => x.version !== f.version)]);
+        const entete: VersionFiche = { idFiche: f.idFiche ?? null, version: f.version, statut: f.statut, typeMarche: f.typeMarche, dateCreation: f.dateCreation, dateValidation: f.dateValidation, validePar: f.validePar, nbValeurs: Object.keys(f.valeurs ?? {}).length };
+        this.versions.update((v) => [entete, ...v.filter((x) => x.version !== f.version)]);
         this.etape.set(6);
         this.toast.success(`Fiche marché validée — version ${f.version} figée. Les documents seront générés au lot 2.`);
       },

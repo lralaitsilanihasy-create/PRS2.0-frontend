@@ -208,7 +208,7 @@
                         @if (c.texteType) { <p class="fm__modele"><strong>Texte type :</strong> {{ c.texteType }}</p> }
                       </div>
                     } @empty {
-                      <p class="fm__attendus">{{ r.attendus ?? 0 }} information(s) attendue(s) — référentiel à compléter depuis le fichier de correspondance.</p>
+                      <p class="fm__attendus">{{ r.nbAttendu ?? 0 }} information(s) attendue(s) — référentiel à compléter depuis le fichier de correspondance.</p>
                     }
                   </div>
                 }
@@ -272,7 +272,7 @@
               <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 6</span><h2 id="fm-valider">Validation par la PRMP</h2></div>
               <div class="fm__rub">
                 @if (figee()) {
-                  <p class="fm__ok">Fiche validée — version {{ fiche()?.version }} figée{{ fiche()?.dateValidation ? ' le ' + fiche()?.dateValidation : '' }}. Une modification ouvre une nouvelle version.</p>
+                  <p class="fm__ok">Fiche validée — version {{ fiche()?.version }} figée{{ fiche()?.dateValidation ? ' le ' + dateFr(fiche()?.dateValidation) : '' }}. Une modification ouvre une nouvelle version.</p>
                 } @else if (estPrmp()) {
                   <p>La validation <strong>fige</strong> la fiche et lui donne un numéro de version. Les documents (DPAO, AE, CCAP) seront générés depuis cette version au lot 2, puis joints au dossier avant sa soumission.</p>
                   @if (bilan().bloquants.length) { <p class="fm__ctrl fm__ctrl--r">{{ bilan().bloquants.length }} contrôle(s) bloquant(s) à lever avant de valider.</p> }
@@ -289,9 +289,9 @@
                       @for (v of versions(); track v.version) {
                         <tr [class.fm__versions--courante]="v.version === fiche()?.version && figee()">
                           <td class="cnm-mono">{{ v.version }}</td>
-                          <td>{{ v.dateValidation || '—' }}</td>
+                          <td>{{ dateFr(v.dateValidation) }}</td>
                           <td>{{ v.validePar || '—' }}</td>
-                          <td class="r cnm-mono">{{ v.bilanControles?.nbSaisis ?? '—' }}</td>
+                          <td class="r cnm-mono">{{ v.nbValeurs }}</td>
                         </tr>
                       }
                     </tbody>

@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { BilanControles, Cadrage, ChampFiche, Dmc, FicheMarche, LigneEligible, ReferentielFiche, TypeMarche } from '../models';
+import { BilanControles, Cadrage, ChampFiche, Dmc, FicheMarche, LigneEligible, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -80,8 +80,13 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
     return this.http.post<FicheMarche>(`${this.baseUrl}/${idDmc}/reviser`, null);
   }
 
-  /** `GET /{idDmc}/versions` — versions figées. Silencieux : absente tant que le contrat n'est pas servi. */
-  versions(idDmc: number): Observable<FicheMarche[]> {
-    return this.http.get<FicheMarche[]>(`${this.baseUrl}/${idDmc}/versions`, { context: skipErrorToast() });
+  /** `GET /{idDmc}/versions` — versions figées (en-têtes). Silencieux : absente tant que le contrat n'est pas servi. */
+  versions(idDmc: number): Observable<VersionFiche[]> {
+    return this.http.get<VersionFiche[]>(`${this.baseUrl}/${idDmc}/versions`, { context: skipErrorToast() });
+  }
+
+  /** `GET /{idDmc}/versions/{numero}` — une version figée, en entier (livraison du 22/09). */
+  version(idDmc: number, numero: number): Observable<FicheMarche> {
+    return this.http.get<FicheMarche>(`${this.baseUrl}/${idDmc}/versions/${numero}`);
   }
 }
