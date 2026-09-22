@@ -390,6 +390,11 @@
   cursor: pointer;
 }
 .doc-precontrole:hover { background: #f0f9ff; border-color: #7dd3fc; color: #075985; }
+/* « Réinitialiser » (2026-09-21) : même gabarit que « Pré-contrôle », teinte d'alerte au survol — un geste qui efface. */
+.doc-reinit:hover { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
+.reinit-modal { width: min(560px, 95vw); }
+.reinit__liste { margin: 0.5rem 0 0.75rem; padding-left: 1.2rem; }
+.reinit__liste li { margin: 0.15rem 0; }
 .doc-precontrole__n {
   min-width: 1.25rem;
   padding: 0 0.35rem;

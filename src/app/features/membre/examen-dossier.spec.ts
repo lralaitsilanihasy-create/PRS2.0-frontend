@@ -86,6 +86,8 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
   let ecran: ExamenDossier;
   let creations: ExamenDetail[];
   let soumissions: { idExamen: number; corps: { idAvis: string } }[];
+  /** Identifiants passés à `POST /examens/{id}/reinitialiser` (le stub vide alors les détails du décor). */
+  let reinitialisations: number[];
   const racine = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const texte = (sel: string): string => (racine().querySelector(sel)?.textContent ?? '').replace(/\s+/g, ' ').trim();
   const rendre = (): void => fixture.detectChanges();
@@ -94,6 +96,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
   const monter = async (reprise: { examens: Examen[]; details: ExamenDetail[] } = { examens: [], details: [] }): Promise<void> => {
     creations = [];
     soumissions = [];
+    reinitialisations = [];
     const liste = <T>(rows: T[]) => ({ list: () => of(rows) });
     TestBed.configureTestingModule({
       imports: [ExamenDossier],
@@ -118,6 +121,12 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
             ...liste(reprise.examens),
             create: () => of({}),
             soumettre: (idExamen: number, corps: { idAvis: string }) => (soumissions.push({ idExamen, corps }), of({ idPv: 5, idExamen })),
+            // Réinitialisation (2026-09-21) : le serveur efface les détails, garde l'examen — le décor fait de même.
+            reinitialiser: (idExamen: number) => {
+              reinitialisations.push(idExamen);
+              reprise.details.length = 0;
+              return of({ idExamen, idDispatch: 9, avisSuggere: null });
+            },
           },
         },
         {
@@ -387,6 +396,53 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
       expect(ecran.etatLigneFn(1)).toBe('done-ras');
       expect(ecran.etatLigneFn(3)).toBe('pending');
       expect(ecran.aDesModificationsNonEnregistrees()).toBe(false);
+    });
+  });
+
+  describe("réinitialiser l'examen (demande 2026-09-21, backend 7c601f9)", () => {
+    const EXAMEN = { idExamen: 1, idDispatch: 9, imCtrlMembre: 'IM1', dateExamen: '2026-09-14' };
+
+    it('mode création, brouillon enregistré : la modale dit ce qui sera effacé ; le 200 recharge et repart de la première étape', async () => {
+      TestBed.resetTestingModule();
+      await monter({
+        examens: [EXAMEN],
+        details: [
+          { idDetailExamen: 1, idExamen: 1, idDetail: 1, idPtControle: 11, conforme: true, observations: [] },
+          { idDetailExamen: 2, idExamen: 1, idDetail: 1, idPtControle: 12, conforme: false, observations: [{ ordre: 1, auLieuDe: '01/03/2026', lire: '01/04/2026' }] },
+        ],
+      });
+      expect(etapeParcours('Lignes du plan').textContent).toContain('1 sur 3');
+      const bouton = racine().querySelector('.doc-reinit') as HTMLButtonElement;
+      expect(bouton).not.toBeNull();
+      bouton.click();
+      rendre();
+      const corps = texte('.reinit-modal .modal-body');
+      expect(corps).toContain('1 ligne(s) du plan validée(s)');
+      expect(corps).toContain('0 pièce(s) examinée(s)');
+      expect(corps).toContain('1 observation(s) relevée(s)');
+      expect(corps).toContain('pré-contrôle');
+      (racine().querySelector('.reinit-modal .btn-danger') as HTMLButtonElement).click();
+      rendre();
+      await fixture.whenStable();
+      rendre();
+      expect(reinitialisations).toEqual([1]);
+      expect(racine().querySelector('.reinit-modal')).toBeNull();
+      // Rechargé depuis le serveur : plus rien de validé, reprise à la première ligne, rien à enregistrer.
+      expect(etapeParcours('Lignes du plan').textContent).toContain('0 sur 3');
+      expect(texte('.grille__eyebrow')).toBe('Ligne 1 sur 3');
+      expect(ecran.etatLigneFn(1)).toBe('current'); // la première ligne redevient l'étape courante
+      expect(ecran.etatLigneFn(2)).toBe('pending');
+      expect(ecran.aDesModificationsNonEnregistrees()).toBe(false);
+    });
+
+    it("sans brouillon enregistré, ou dès que le dossier n'est plus DISPATCHE, le bouton n'existe pas", async () => {
+      expect(racine().querySelector('.doc-reinit')).toBeNull(); // montage par défaut : aucun examen enregistré
+      TestBed.resetTestingModule();
+      await monter({ examens: [EXAMEN], details: [] });
+      expect(racine().querySelector('.doc-reinit')).not.toBeNull();
+      ecran.dossier.set({ ...DOSSIER, statut: 'EXAMINE' });
+      rendre();
+      expect(racine().querySelector('.doc-reinit')).toBeNull();
     });
   });
 

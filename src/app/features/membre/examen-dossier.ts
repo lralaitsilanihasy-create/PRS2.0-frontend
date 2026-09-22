@@ -267,6 +267,19 @@ interface PropositionCellule {
                     <span><i class="lg lg--attente"></i>À examiner</span>
                   </span>
                 }
+                @if (peutReinitialiser()) {
+                  <!-- Réinitialiser l'examen (demande 2026-09-21, backend 7c601f9) : mode création seulement,
+                       confirmation en modale — le serveur efface, l'écran recharge. -->
+                  <button
+                    type="button"
+                    class="doc-precontrole doc-reinit"
+                    aria-haspopup="dialog"
+                    title="Effacer tout le brouillon de cet examen et repartir de la première étape (le pré-contrôle et le chronométrage sont conservés)"
+                    (click)="ouvrirReinitialisation()"
+                  >
+                    <app-icone nom="undo" [taille]="14" />Réinitialiser
+                  </button>
+                }
                 <!-- ⚠️ Demande pilote (2026-09-21) — le pré-contrôle en MODALE, à la demande : bouton à
                      compteur (points ouverts ; teinte d'alerte s'il y a du prioritaire). -->
                 @if (ppm()?.idPpm) {
@@ -485,6 +498,37 @@ interface PropositionCellule {
          au clic sur le voile (règle du projet). Le panneau y relit ses signalements ; à la fermeture, le
          compteur du bouton est relu. Le titre du panneau dit ce qu'on y fait — le pilote ne l'avait pas
          compris à la première rencontre. -->
+    <!-- Réinitialiser l'examen : confirmation — fermeture par bouton ou Échap, jamais au clic sur le voile (896de8e). -->
+    @if (reinitOuverte()) {
+      <div class="modal-backdrop">
+        <div class="modal confirm-modal reinit-modal" role="alertdialog" aria-modal="true" aria-label="Réinitialiser l'examen" appModale (appModaleFermer)="fermerReinitialisation()">
+          <div class="modal-header">
+            <h2 class="modal-title">Réinitialiser l'examen ?</h2>
+            <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerReinitialisation()">✕</button>
+          </div>
+          <div class="modal-body">
+            @if (bilanReinit(); as b) {
+              <p>Tout le brouillon de cet examen sera <strong>effacé</strong> et vous repartirez de la première étape :</p>
+              <ul class="reinit__liste">
+                <li><strong>{{ b.lignes }}</strong> ligne(s) du plan validée(s)</li>
+                <li><strong>{{ b.pieces }}</strong> pièce(s) examinée(s)</li>
+                <li><strong>{{ b.observations }}</strong> observation(s) relevée(s)</li>
+              </ul>
+              <p class="text-muted">
+                Restent intacts : les signalements du pré-contrôle et leurs écartements, le chronométrage (le temps déjà
+                écoulé compte) et le dispatch. Le journal du dossier garde la trace de cette réinitialisation.
+              </p>
+            }
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" (click)="fermerReinitialisation()">Annuler</button>
+            <button type="button" class="btn btn-danger" [disabled]="reinitEnCours()" (click)="reinitialiser()">
+              {{ reinitEnCours() ? 'Réinitialisation…' : 'Tout effacer et recommencer' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
     @if (preControleOuvert()) {
       @if (ppm()?.idPpm; as idPpmExamine) {
         <div class="modal-backdrop">
@@ -888,6 +932,49 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   });
   /** Réexamen après lettre de renvoi (statut A_REEXAMINER) — adapte libellés, reprise et sortie. */
   readonly estReexamen = computed(() => this.dossier()?.statut === 'A_REEXAMINER');
+
+  // ── Réinitialiser l'examen (demande 2026-09-21, backend 7c601f9) ──────────────────────────────
+  readonly reinitOuverte = signal(false);
+  readonly reinitEnCours = signal(false);
+  /** Le prochain rechargement suit une réinitialisation : le toast « repris » n'a pas lieu d'être. */
+  private apresReinitialisation = false;
+  /**
+   * Le geste n'existe qu'en MODE CRÉATION (dossier DISPATCHE), sur un brouillon déjà enregistré (`t_examen`
+   * connu) : dès que le dossier est EXAMINE, le serveur répond 409 — le bouton disparaît plutôt que d'y mener.
+   */
+  readonly peutReinitialiser = computed(() => this.mode() === 'create' && this.existingExamenId() !== null && !this.loading());
+  /** Ce que la confirmation annonce : lignes validées, pièces examinées, observations effectives (état courant). */
+  readonly bilanReinit = computed(() => {
+    const v = [...this.etapesValidees()];
+    return {
+      lignes: v.filter((k) => k.startsWith('L')).length,
+      pieces: v.filter((k) => k.startsWith('P')).length,
+      observations: this.nbObservations(),
+    };
+  });
+  ouvrirReinitialisation(): void {
+    this.reinitOuverte.set(true);
+  }
+  fermerReinitialisation(): void {
+    if (!this.reinitEnCours()) this.reinitOuverte.set(false);
+  }
+  /** `POST /examens/{id}/reinitialiser` puis rechargement complet : on repart de la première étape. */
+  reinitialiser(): void {
+    const id = this.existingExamenId();
+    if (id == null || this.reinitEnCours()) return;
+    this.reinitEnCours.set(true);
+    this.examenService.reinitialiser(id).subscribe({
+      next: () => {
+        this.reinitEnCours.set(false);
+        this.reinitOuverte.set(false);
+        this.apresReinitialisation = true;
+        this.toast.success('Examen réinitialisé — vous repartez de la première étape. Le pré-contrôle et le chronométrage sont conservés.');
+        this.charger();
+      },
+      // 403 (pas l'attributaire) / 409 (examen déjà soumis) : le message du serveur, tel quel (dialogue centralisé).
+      error: () => this.reinitEnCours.set(false),
+    });
+  }
   private readonly existingExamenId = signal<number | null>(null);
   /** Projet de PV rattaché à l'examen (mode edit) — porte l'avis + la synthèse à éditer. */
   private readonly existingPv = signal<PvExamen | null>(null);
@@ -1423,6 +1510,20 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       }
     });
 
+    this.charger();
+  }
+
+  /**
+   * Charge (ou RECHARGE) tout l'écran en une vague : dossier, pièces, plan, grille, brouillon d'examen. Appelé à
+   * la construction et après « Réinitialiser l'examen » (2026-09-21) : le serveur a vidé le brouillon, l'écran
+   * repart d'un état neuf — rien n'est recalculé à la main côté client.
+   */
+  private charger(): void {
+    this.loading.set(true);
+    this.existingExamenId.set(null);
+    this.existingPv.set(null);
+    this.etapesValidees.set(new Set());
+    this.resultatsPieces.set(new Map());
     this.loadingPieces.set(true);
     // Dossier partagé : consommé par le forkJoin ET par la grille (dérivée de son sous-type), un seul GET.
     const dossier$ = this.dossierService.getById(this.idDossier).pipe(shareReplay(1));
@@ -1573,7 +1674,9 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
           } else {
             // Brouillon en cours : REPRISE à la première étape non traitée (ligne → pièce → dossier → avis).
             this.etape.set(this.calculerReprise());
-            this.toast.info('Examen en cours repris — vous reprenez à la première étape non traitée.');
+            // Après « Réinitialiser » (2026-09-21) le brouillon est vide et le succès déjà annoncé : pas de « repris ».
+            if (!this.apresReinitialisation) this.toast.info('Examen en cours repris — vous reprenez à la première étape non traitée.');
+            this.apresReinitialisation = false;
           }
         }
         this.loading.set(false);

@@ -52,6 +52,7 @@ const RANG_ACTION_JOURNAL: Record<string, number> = {
   REATTRIBUTION: 5,
   REPRISE: 5,
   SOUMISSION_EXAMEN: 4,
+  REINITIALISATION_EXAMEN: 4, // acte de l’attributaire (2026-09-21), même rang que sa soumission
   RETOUR_RECTIFICATION: 5,
   TRANSMISSION_PRESIDENT: 5,
   VISA: 5,

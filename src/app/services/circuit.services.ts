@@ -262,6 +262,16 @@ export class ExamenService extends CrudService<Examen> {
   soumettre(id: number, body: ExamenSoumissionRequest): Observable<PvExamen> {
     return this.http.post<PvExamen>(`${this.baseUrl}/${id}/soumettre`, body, { context: skipErrorToast() });
   }
+
+  /**
+   * `POST /api/examens/{id}/reinitialiser` (demande 2026-09-21, backend `7c601f9`) — l'ATTRIBUTAIRE efface d'un
+   * geste tout son brouillon (points, observations, pièces) ; `t_examen` est conservé, le chronométrage ne bouge
+   * pas, le pré-contrôle non plus ; journal `REINITIALISATION_EXAMEN`. Dossier `DISPATCHE` sans projet de PV
+   * seulement : 403 nominatif (non-attributaire) et 409 (déjà soumis) sont affichés tels que servis.
+   */
+  reinitialiser(id: number): Observable<Examen> {
+    return this.http.post<Examen>(`${this.baseUrl}/${id}/reinitialiser`, null);
+  }
 }
 
 @Injectable({ providedIn: 'root' })

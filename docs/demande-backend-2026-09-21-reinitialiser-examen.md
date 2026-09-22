@@ -31,6 +31,13 @@ en arrière existe (réouverture d'une ligne validée, « Revenir à … », rep
 | Corps | aucun |
 | Réponse | `200 ExamenDto` (examen vidé) ; `401` anonyme ; `403` non-attributaire ; `404` examen inexistant ; `409` précondition |
 
+> ⚠️ **Livraison backend du 2026-09-22** — implémenté tel quel (`ExamenService.reinitialiser`, `ExamenController`).
+> Le 403 nomme l'attributaire dans la convention de l'application, « **NOM Prénoms** » (« Réinitialisation réservée à
+> l'attributaire (NOM Prénoms) : c'est son brouillon d'examen… »). Le 409 dit le statut du dossier et, s'il existe,
+> le projet de PV (« L'examen a été soumis (dossier « EXAMINE », projet de PV créé) : … »). Gardes dans l'ordre :
+> 404, localité (403), attributaire (403 nominatif), préconditions (409). Contrat : `docs/api-endpoints.md`,
+> section « Examens » ; règle : `docs/regles-gestion.md`, « Réinitialiser un examen en cours ».
+
 ### B2 — Effet, en UNE transaction
 
 1. Supprime **tous** les `t_examen_detail` de l'examen (cascade `t_observation_controle`, y compris les cibles de
@@ -42,6 +49,12 @@ en arrière existe (réouverture d'une ligne validée, « Revenir à … », rep
 4. **Journal** : une entrée `REINITIALISATION_EXAMEN` (auteur = attributaire, détail = « N point(s) et M pièce(s)
    effacés »), rang 4 dans le référentiel des rangs (comme `SOUMISSION_EXAMEN`). Aucune entrée si rien n'a été
    effacé (appel sur un examen déjà vide → 200, sans trace).
+
+   > ⚠️ **Livraison backend du 2026-09-22** — le détail porte aussi les observations : « N point(s) et M pièce(s)
+   > effacés (K observation(s)) », la parenthèse étant omise si K = 0. Le « rang 4 » est celui du **référentiel du
+   > front** (visibilité hiérarchique, rang du Membre) ; côté serveur, le rang de départage des événements du même
+   > instant est **49**, juste avant `SOUMISSION_EXAMEN` (50) — la réinitialisation précède la soumission qu'elle
+   > rend possible. La ligne est **consignée** dans `t_action_dossier` (pas dérivée) : elle survit à tout.
 5. **Pré-contrôle intact** : les signalements et leurs écartements portent sur le plan, pas sur l'examen, et
    se reprennent déjà un à un (`POST /signalements/{id}/reprendre`). La réinitialisation ne les touche pas (Q1).
 6. **Aucune notification** : geste propre à l'attributaire, sans effet sur les autres acteurs (Q3).
@@ -82,3 +95,11 @@ servi, sans reformulation.
 | Q1 | La réinitialisation doit-elle aussi **reprendre** les écartements de pré-contrôle posés par l'attributaire ? | **Non** — objets du plan, réversibles un à un, et l'écartement est un jugement, pas un résultat d'examen |
 | Q2 | Ouvrir le geste à un dossier `A_REEXAMINER` (réexamen après lettre de renvoi, PV `EN_RECTIFICATION`) ? | **Non dans ce lot** — le réexamen est scopé et lié à un PV existant ; à traiter à part si le besoin apparaît |
 | Q3 | Notifier le dispatcheur qu'un examen a été réinitialisé ? | **Non** — la trace au journal suffit, le dispatcheur la voit dans la consultation |
+
+> ✅ **Front livré le 2026-09-22** (sur backend `7c601f9`) : bouton « Réinitialiser » dans la barre du document de
+> l'écran d'examen, **mode création seulement** (dossier `DISPATCHE`, brouillon déjà enregistré — dès que le dossier
+> est `EXAMINE`, le bouton n'existe plus) ; confirmation en modale (fermeture par bouton ou Échap) qui compte ce qui
+> sera effacé (lignes validées, pièces examinées, observations relevées) et rappelle ce qui reste (pré-contrôle,
+> chronométrage, dispatch, trace au journal) ; au 200, rechargement complet de l'écran et reprise à la première
+> étape ; 403 / 409 affichés tels que servis. Journal : libellé « Réinitialisation de l'examen », rang de
+> l'attributaire. `ExamenService.reinitialiser`, 2 tests d'écran (792 au total).

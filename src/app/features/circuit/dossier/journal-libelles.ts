@@ -28,6 +28,8 @@ export function actionLabel(type: string): string {
     // ⚠️ Journal COMPLET (2026-09-04 soir, backend ed162e8, fusion à la lecture) : le traitement
     // raconté jusqu'au bout — examen, navette, visa, signatures, vérification, SIGMP, archivage.
     SOUMISSION_EXAMEN: "Soumission d'examen",
+    // ⚠️ 2026-09-21 (backend 7c601f9) — l'attributaire a effacé son brouillon d'examen d'un geste.
+    REINITIALISATION_EXAMEN: "Réinitialisation de l'examen",
     RETOUR_RECTIFICATION: 'Retour pour rectification',
     TRANSMISSION_PRESIDENT: 'Transmission au Président',
     VISA: 'Visa',
