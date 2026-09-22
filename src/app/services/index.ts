@@ -16,3 +16,4 @@ export * from './inscription.services';
 export * from './reference-lookup.service';
 export * from './assistant-ia.services';
 export * from './pre-controle.services';
+export * from './fiche-marche.services';

@@ -1,0 +1,321 @@
+<section class="fm">
+  <nav class="fm__fil" aria-label="Fil d'Ariane">
+    <a routerLink="/prmp/soumettre-dossier" [queryParams]="{ famille: 'DMC' }"><app-icone nom="chevl" [taille]="14" />Créer dossier</a>
+    <app-icone nom="chev" [taille]="12" />
+    <span>Dossier de mise en concurrence — appel d'offres</span>
+  </nav>
+
+  <header class="page-header fm__entete">
+    <div>
+      <div class="page-subtitle">Domaine PRMP · {{ figee() ? 'fiche validée, version ' + fiche()?.version : 'brouillon' }}</div>
+      <h1 class="page-title">
+        @if (idDmc() == null) { Fiche marché — choisir la ligne du plan de passation }
+        @else { Fiche marché{{ fiche()?.designationMarche ? ' — ' + fiche()?.designationMarche : '' }} }
+      </h1>
+    </div>
+    @if (fiche(); as f) {
+      <div class="fm__ref cnm-mono">ligne {{ f.idDetail }} du PPM {{ f.refeDossier || ('#' + f.idDossier) }}</div>
+    }
+  </header>
+  <p class="page-role">
+    Une information saisie une fois, dans un formulaire : le DPAO, l'acte d'engagement et le CCAP seront générés depuis cette fiche
+    à la validation, puis joints au dossier avant sa soumission à la Commission. Aucun fichier à importer.
+  </p>
+
+  @if (contratAbsent()) {
+    <div class="alert alert-info" role="status">
+      <app-icone nom="alert" [taille]="16" />
+      <span><strong>Contrat en attente du backend</strong> (demande du 22/09) : l'écran montre la structure de l'esquisse — blocs,
+      rubriques et comptes attendus — sans les champs ni l'enregistrement. Il se remplira dès que le serveur servira le référentiel.</span>
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="text-muted" role="status">Chargement…</p>
+  } @else if (erreur()) {
+    <app-etat-erreur (reessayer)="charger()" />
+  } @else if (idDmc() == null) {
+    <!-- Étape 1 : la ligne du PPM (les 22 informations viennent d'elle, rien n'est importé). -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr><th scope="col">Dossier de planification</th><th scope="col">Ligne de marché</th><th scope="col">Mode</th><th scope="col" class="r">Montant estimatif</th><th scope="col" class="r">Action</th></tr>
+        </thead>
+        <tbody>
+          @for (l of eligibles(); track l.idDetail) {
+            <tr>
+              <td class="cnm-mono">{{ l.refeDossier || ('#' + l.idDossier) }}</td>
+              <td>{{ l.designationMarche }}</td>
+              <td>{{ l.libelleMode || l.idMode || '—' }}</td>
+              <td class="r cnm-mono">{{ montant(l.montEstim) }}</td>
+              <td class="r">
+                <button type="button" class="btn btn-sm" [class.btn-primary]="!l.dejaDao" [class.btn-outline]="l.dejaDao" [disabled]="saving()" (click)="choisirLigne(l)">
+                  {{ l.dejaDao ? 'Reprendre la fiche' : 'Préparer l’appel d’offres' }}
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="fm__vide">Aucune ligne de plan de passation éligible : il faut un PPM au PV signé, dont le mode de passation est un appel d'offres, sans DAO déjà préparé.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    @if (etape() >= 2 && resume().length) {
+      <div class="fm__cadrage">
+        <span class="fm__cadrage-lbl">Cadrage</span>
+        @for (p of resume(); track p.texte) { <span class="fm__rep" [class.fm__rep--non]="p.non">{{ p.texte }}</span> }
+        @if (!figee()) { <button type="button" class="fm__cadrage-mod" (click)="allerA(1)">Modifier le cadrage</button> }
+      </div>
+    }
+
+    <div class="fm__cols">
+      <nav class="fm__rail" aria-label="Parcours">
+        <ol>
+          @for (e of etapes; track e.cle; let i = $index) {
+            <li class="fm__etape fm__etape--{{ etatEtape(i) }}">
+              <button type="button" class="fm__etape-b" [attr.aria-current]="i === etape() ? 'step' : null" (click)="allerA(i)">
+                <span class="fm__etape-n" aria-hidden="true">{{ i + 1 }}</span>
+                <span class="fm__etape-t">{{ e.titre }}</span>
+                <span class="fm__etape-s">
+                  @switch (e.cle) {
+                    @case ('ligne') { {{ valeursPpm().length }} informations reprises }
+                    @case ('cadrage') { {{ cadrageOk() ? 'complet' : questions().length + ' questions' }} }
+                    @case ('blocs') { {{ blocs().length }} blocs }
+                    @case ('reprises') { automatiques }
+                    @case ('controles') { {{ bilan().bloquants.length }} à lever }
+                    @case ('validation') { {{ figee() ? 'version ' + fiche()?.version : 'fige et versionne' }} }
+                    @case ('documents') { DPAO · AE · CCAP (lot 2) }
+                  }
+                </span>
+              </button>
+            </li>
+          }
+        </ol>
+      </nav>
+
+      <div class="fm__corps">
+        @switch (etape()) {
+          @case (1) {
+            <section class="fm__bloc" aria-labelledby="fm-cadrage">
+              <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 2</span><h2 id="fm-cadrage">Cadrage</h2><span class="fm__comptes">Chaque réponse ouvre ou ferme des rubriques</span></div>
+              @for (q of questions(); track q.cle) {
+                <div class="fm__q">
+                  <div class="fm__q-tete">
+                    <span class="fm__q-l">{{ q.libelle }}</span>
+                    <span class="fm__q-docs">{{ q.documents }}</span>
+                  </div>
+                  @if (q.aide) { <p class="fm__q-aide">{{ q.aide }}</p> }
+                  <div class="fm__q-opts" role="radiogroup" [attr.aria-label]="q.libelle">
+                    @for (o of q.options; track o.code) {
+                      <label class="fm__opt" [class.fm__opt--on]="reponse(q) === o.code" [class.fm__opt--off]="!!o.indisponible">
+                        <input type="radio" [name]="'q-' + q.cle" [value]="o.code" [checked]="reponse(q) === o.code" [disabled]="!!o.indisponible || figee()" (change)="repondre(q.cle, o.code)" />
+                        <span class="fm__opt-l">{{ o.libelle }}</span>
+                        @if (o.indisponible) { <span class="fm__opt-ind">{{ o.indisponible }}</span> }
+                        @if (o.aide) { <span class="fm__opt-aide">{{ o.aide }}</span> }
+                      </label>
+                    }
+                  </div>
+                  @if (q.complement && reponse(q) === q.complement.si) {
+                    <label class="fm__q-comp">
+                      <span>{{ q.complement.libelle }}</span>
+                      <input class="form-control" type="number" min="1" [value]="complement(q) ?? ''" [disabled]="figee()" (input)="repondre(q.complement.cle, $any($event.target).valueAsNumber || null)" />
+                      @if (q.complement.unite) { <span>{{ q.complement.unite }}</span> }
+                    </label>
+                  }
+                </div>
+              }
+              <div class="fm__pied">
+                <button type="button" class="btn btn-primary" [disabled]="!cadrageOk() || saving() || figee() || contratAbsent()" (click)="enregistrerCadrage()">
+                  {{ saving() ? 'Enregistrement…' : 'Enregistrer le cadrage et saisir ›' }}
+                </button>
+                @if (!cadrageOk()) { <span class="fm__aut">Répondez à toutes les questions pour continuer.</span> }
+              </div>
+            </section>
+          }
+          @case (2) {
+            @if (blocCourant(); as bloc) {
+              <section class="fm__bloc" [attr.aria-labelledby]="'fm-' + bloc.code">
+                <div class="fm__bloc-tete">
+                  <span class="fm__eyebrow">Bloc {{ bloc.code }}</span>
+                  <h2 [id]="'fm-' + bloc.code">{{ bloc.libelle }}</h2>
+                  <span class="fm__comptes">{{ blocIdx() + 1 }} sur {{ blocs().length }}</span>
+                </div>
+                @for (r of rubriquesOuvertes(bloc); track r.code) {
+                  <div class="fm__rub">
+                    <h3>
+                      {{ r.libelle }}
+                      @if (r.documentMaitre) { <span class="fm__doc fm__doc--{{ r.documentMaitre.toLowerCase() }}">{{ libellesDocuments[r.documentMaitre] }}</span> }
+                    </h3>
+                    @for (c of champs(bloc, r); track c.code) {
+                      <div class="fm__champ" [class.fm__champ--ko]="erreurDe(c.code)">
+                        <div class="fm__champ-l">
+                          <label [for]="'c-' + c.code">{{ c.libelle }}@if (c.obligatoire) { <span aria-hidden="true"> *</span> }</label>
+                          <span class="fm__champ-aide">{{ c.code }}@if (c.aide) { · {{ c.aide }} }</span>
+                          @if (erreurDe(c.code); as msg) { <span class="form-error">{{ msg }}</span> }
+                        </div>
+                        <div class="fm__champ-v">
+                          @if (c.source === 'PPM' || c.source === 'CADRAGE' || figee()) {
+                            <div class="fm__lecture" [id]="'c-' + c.code">{{ valeurAffichee(c) || '—' }}</div>
+                          } @else {
+                            @switch (c.type) {
+                              @case ('TEXTE_LONG') { <textarea class="form-control" rows="3" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)"></textarea> }
+                              @case ('NOMBRE') { <input class="form-control" type="number" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)" /> }
+                              @case ('POURCENTAGE') { <input class="form-control" type="number" min="0" max="100" step="0.1" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)" /> }
+                              @case ('MONTANT') {
+                                <input class="form-control" type="number" min="0" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)" />
+                                @if (lettres(c.code); as l) { <span class="fm__lettres">{{ l }}</span> }
+                              }
+                              @case ('DATE') { <input class="form-control" type="date" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)" /> }
+                              @case ('LISTE') {
+                                <select class="form-control" [id]="'c-' + c.code" (change)="saisir(c, $event)">
+                                  <option value="" [selected]="!valeurAffichee(c)">— Choisir —</option>
+                                  @for (o of c.options ?? []; track o) { <option [value]="o" [selected]="valeurAffichee(c) === o">{{ o }}</option> }
+                                </select>
+                              }
+                              @case ('OUI_NON') {
+                                <select class="form-control" [id]="'c-' + c.code" (change)="saisir(c, $event)">
+                                  <option value="" [selected]="!valeurAffichee(c)">— Choisir —</option>
+                                  <option value="OUI" [selected]="valeurAffichee(c) === 'OUI'">Oui</option>
+                                  <option value="NON" [selected]="valeurAffichee(c) === 'NON'">Non</option>
+                                </select>
+                              }
+                              @case ('PIECE') { <span class="fm__lecture" [id]="'c-' + c.code">Pièce jointe — au dossier, après validation (lot 2)</span> }
+                              @default { <input class="form-control" type="text" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)" /> }
+                            }
+                          }
+                        </div>
+                        <div class="fm__meta">
+                          <span class="fm__etat fm__etat--{{ c.source.toLowerCase() }}">{{ c.source === 'PPM' ? 'repris du PPM' : c.source === 'CADRAGE' ? 'repris du cadrage' : 'à saisir' }}</span>
+                          <span class="fm__doc fm__doc--{{ c.documentMaitre.toLowerCase() }}">{{ libellesDocuments[c.documentMaitre] }}</span>
+                          @if (c.reprises.length) { <span class="fm__ou">repris dans</span> @for (d of c.reprises; track d) { <span class="fm__doc fm__doc--{{ d.toLowerCase() }}">{{ libellesDocuments[d] }}</span> } }
+                          @if (c.condition) { <span class="fm__etat">condition : {{ c.condition }}</span> }
+                        </div>
+                        @if (c.texteType) { <p class="fm__modele"><strong>Texte type :</strong> {{ c.texteType }}</p> }
+                      </div>
+                    } @empty {
+                      <p class="fm__attendus">{{ r.attendus ?? 0 }} information(s) attendue(s) — référentiel à compléter depuis le fichier de correspondance.</p>
+                    }
+                  </div>
+                }
+                <div class="fm__pied">
+                  <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="blocPrecedent()">‹ Précédent</button>
+                  <button type="button" class="btn btn-primary" [disabled]="saving() || figee() || contratAbsent()" (click)="enregistrerBloc()">
+                    {{ saving() ? 'Enregistrement…' : blocIdx() < blocs().length - 1 ? 'Enregistrer et continuer ›' : 'Enregistrer et voir les reprises ›' }}
+                  </button>
+                  <span class="fm__aut">{{ figee() ? 'Fiche figée : lecture seule' : 'Brouillon invisible de la Commission' }}</span>
+                </div>
+              </section>
+            }
+          }
+          @case (3) {
+            <section class="fm__bloc" aria-labelledby="fm-reprises">
+              <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 4</span><h2 id="fm-reprises">Reprises</h2><span class="fm__comptes">Tout champ repris est rempli depuis son document maître, jamais ressaisi</span></div>
+              <div class="fm__rub">
+                @for (r of reprisesListe(); track r.champ.code) {
+                  <div class="fm__champ">
+                    <div class="fm__champ-l"><span class="fm__champ-t">{{ r.champ.libelle }}</span><span class="fm__champ-aide">{{ r.champ.code }}</span></div>
+                    <div class="fm__champ-v"><div class="fm__lecture">{{ r.valeur ?? '—' }}</div></div>
+                    <div class="fm__meta">
+                      <span class="fm__doc fm__doc--{{ r.champ.documentMaitre.toLowerCase() }}">{{ libellesDocuments[r.champ.documentMaitre] }}</span>
+                      <span class="fm__ou">repris dans</span>
+                      @for (d of r.champ.reprises; track d) { <span class="fm__doc fm__doc--{{ d.toLowerCase() }}">{{ libellesDocuments[d] }}</span> }
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="fm__attendus">Aucune reprise à montrer tant que le référentiel n'a pas ses champs.</p>
+                }
+              </div>
+              <div class="fm__pied">
+                <button type="button" class="btn btn-outline" (click)="etape.set(2)">‹ Retour aux blocs</button>
+                <button type="button" class="btn btn-primary" [disabled]="saving() || contratAbsent()" (click)="controler()">Contrôler ›</button>
+              </div>
+            </section>
+          }
+          @case (4) {
+            <section class="fm__bloc" aria-labelledby="fm-controles">
+              <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 5</span><h2 id="fm-controles">Contrôles</h2><span class="fm__comptes">{{ bilan().nbSaisis }} sur {{ bilan().nbAttendus }} informations</span></div>
+              <div class="fm__rub">
+                @if (!bilan().bloquants.length && !bilan().avertissements.length) {
+                  <p class="fm__ok">Aucun contrôle à lever : la fiche peut être validée.</p>
+                }
+                @for (c of bilan().bloquants; track c.regle + c.champs.join()) {
+                  <p class="fm__ctrl fm__ctrl--r"><b>{{ c.bloc || '—' }}</b> {{ c.message }} <span class="fm__ou">· {{ c.regle }}</span> @if (c.bloc) { <button type="button" class="fm__lien" (click)="allerAuBloc(c.bloc)">corriger</button> }</p>
+                }
+                @for (c of bilan().avertissements; track c.regle + c.champs.join()) {
+                  <p class="fm__ctrl fm__ctrl--a"><b>{{ c.bloc || '—' }}</b> {{ c.message }} <span class="fm__ou">· {{ c.regle }}</span></p>
+                }
+              </div>
+              <div class="fm__pied">
+                <button type="button" class="btn btn-outline" (click)="etape.set(3)">‹ Reprises</button>
+                <button type="button" class="btn btn-outline" [disabled]="saving() || contratAbsent()" (click)="controler()">Recontrôler</button>
+                <button type="button" class="btn btn-primary" [disabled]="!!bilan().bloquants.length || saving() || contratAbsent()" (click)="etape.set(5)">Passer à la validation ›</button>
+              </div>
+            </section>
+          }
+          @case (5) {
+            <section class="fm__bloc" aria-labelledby="fm-valider">
+              <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 6</span><h2 id="fm-valider">Validation par la PRMP</h2></div>
+              <div class="fm__rub">
+                @if (figee()) {
+                  <p class="fm__ok">Fiche validée — version {{ fiche()?.version }} figée{{ fiche()?.dateValidation ? ' le ' + fiche()?.dateValidation : '' }}. Une modification ouvre une nouvelle version.</p>
+                } @else if (estPrmp()) {
+                  <p>La validation <strong>fige</strong> la fiche et lui donne un numéro de version. Les documents (DPAO, AE, CCAP) seront générés depuis cette version au lot 2, puis joints au dossier avant sa soumission.</p>
+                  @if (bilan().bloquants.length) { <p class="fm__ctrl fm__ctrl--r">{{ bilan().bloquants.length }} contrôle(s) bloquant(s) à lever avant de valider.</p> }
+                } @else {
+                  <p>Vous préparez la fiche ; <strong>la PRMP</strong> la valide et soumet le dossier. Rien d'autre à faire ici.</p>
+                }
+              </div>
+              <div class="fm__pied">
+                <button type="button" class="btn btn-outline" (click)="etape.set(4)">‹ Contrôles</button>
+                @if (figee()) {
+                  <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="reviser()">Ouvrir une nouvelle version</button>
+                } @else if (estPrmp()) {
+                  <button type="button" class="btn btn-primary" [disabled]="!!bilan().bloquants.length || saving() || contratAbsent()" (click)="valider()">{{ saving() ? 'Validation…' : 'Valider la fiche' }}</button>
+                }
+              </div>
+            </section>
+          }
+          @case (6) {
+            <section class="fm__bloc" aria-labelledby="fm-docs">
+              <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 7</span><h2 id="fm-docs">Documents</h2></div>
+              <div class="fm__rub">
+                <p>DPAO, acte d'engagement et CCAP seront <strong>générés depuis les modèles officiels</strong> et joints au dossier (lot 2 de la proposition). Le dossier se soumet ensuite à la Commission depuis « Créer dossier ».</p>
+              </div>
+              <div class="fm__pied"><a class="btn btn-outline" routerLink="/prmp/soumettre-dossier" [queryParams]="{ famille: 'DMC' }">Retour à « Créer dossier »</a></div>
+            </section>
+          }
+        }
+
+        @if (etape() >= 1 && blocPpm(); as b01) {
+          <details class="fm__ppm" [open]="etape() === 1">
+            <summary>{{ b01.libelle }} — {{ valeursPpm().length }} informations reprises de la ligne du PPM, verrouillées</summary>
+            @if (valeursPpm().length) {
+              <dl class="fm__ppm-l">
+                @for (v of valeursPpm(); track v.code) { <div><dt>{{ v.libelle }}</dt><dd>{{ v.valeur ?? '—' }}</dd></div> }
+              </dl>
+            } @else {
+              <p class="fm__attendus">Servies par le serveur avec la fiche — rien à saisir ici.</p>
+            }
+          </details>
+        }
+      </div>
+
+      <aside class="fm__ctrls" aria-labelledby="fm-ctrls">
+        <h2 id="fm-ctrls">Contrôles</h2>
+        @if (bilan().bloquants.length || bilan().avertissements.length) {
+          <ul>
+            @for (c of bilan().bloquants; track c.regle + c.champs.join()) { <li><i class="fm__pt fm__pt--r"></i><span><b>{{ c.bloc || '—' }}</b> {{ c.message }}</span></li> }
+            @for (c of bilan().avertissements; track c.regle + c.champs.join()) { <li><i class="fm__pt fm__pt--a"></i><span><b>{{ c.bloc || '—' }}</b> {{ c.message }}</span></li> }
+          </ul>
+        } @else {
+          <p class="fm__ctrls-vide">Le bilan du serveur apparaît ici à chaque enregistrement.</p>
+        }
+        <div class="fm__total">
+          <b>{{ prog().saisis }} sur {{ prog().attendus }}</b> informations saisies
+          <span class="fm__prog" aria-hidden="true"><i [style.width.%]="prog().attendus ? (100 * prog().saisis) / prog().attendus : 0"></i></span>
+        </div>
+      </aside>
+    </div>
+  }
+</section>

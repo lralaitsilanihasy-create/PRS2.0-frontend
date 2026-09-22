@@ -481,6 +481,14 @@ interface ApercuDossier {
         @case ('saisieDossier') {
           <form class="card sd__form cnm-form" [formGroup]="dossierForm" (ngSubmit)="creerDossier()" novalidate>
             <div class="alert alert-info">Dossier de <strong>{{ familleLabel() }}</strong>. Choisissez le sous-type précis parmi ceux de cette famille.</div>
+            <!-- Appel d'offres (proposition DMC du 22/09) : le DAO se prépare par la FICHE MARCHÉ, un formulaire
+                 depuis la ligne du PPM — jamais un import de PDF ; ses documents seront joints ici, au lot 2. -->
+            @if (dossierForm.controls.idSousType.value === 'DAO') {
+              <div class="alert alert-info sd__dao" data-testid="sd-dao-fiche">
+                <span><strong>Appel d’offres :</strong> préparez d’abord la <a routerLink="/prmp/dao">fiche marché</a> — un formulaire alimenté par la ligne
+                du plan de passation, d’où le DPAO, l’acte d’engagement et le CCAP seront générés puis joints à ce dossier.</span>
+              </div>
+            }
             <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Sous-type de dossier *</span>

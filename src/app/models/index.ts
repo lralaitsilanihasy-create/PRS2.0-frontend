@@ -11,3 +11,4 @@ export * from './admin.model';
 export * from './a-faire.model';
 export * from './assistant-ia.model';
 export * from './pre-controle.model';
+export * from './fiche-marche.model';
