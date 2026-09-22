@@ -99,6 +99,8 @@
 .fm__prog { display: block; height: 6px; border-radius: 3px; background: var(--n-200); margin-top: 0.35rem; overflow: hidden; }
 .fm__prog i { display: block; height: 100%; background: var(--p-600); }
 .fm__vide { text-align: center; color: var(--n-500); padding: 1.5rem; }
+.fm__filtre { margin: 0; display: flex; gap: 0.6rem; align-items: baseline; flex-wrap: wrap; font-size: 0.88rem; color: var(--n-500); }
+.fm__filtre a { color: var(--p-700); font-weight: 600; }
 
 @media (max-width: 1100px) {
   .fm__cols { grid-template-columns: 1fr; }

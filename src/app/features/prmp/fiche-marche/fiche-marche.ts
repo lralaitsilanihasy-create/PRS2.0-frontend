@@ -75,6 +75,12 @@ export class FicheMarcheEcran {
 
   /** `null` = `/prmp/dao` : choix de la ligne du PPM. */
   readonly idDmc = toSignal(this.route.paramMap.pipe(map((p) => (p.get('idDmc') ? Number(p.get('idDmc')) : null))), { initialValue: null as number | null });
+  /** Raccourci H3 depuis « Mes PPM & marchés » : `?dossier=` restreint le choix à un PPM, `?ligne=` ouvre la ligne d'emblée. */
+  private readonly raccourci = toSignal(
+    this.route.queryParamMap.pipe(map((q) => ({ dossier: q.get('dossier') ? Number(q.get('dossier')) : null, ligne: q.get('ligne') ? Number(q.get('ligne')) : null }))),
+    { initialValue: { dossier: null as number | null, ligne: null as number | null } },
+  );
+  readonly filtreDossier = computed(() => this.raccourci().dossier);
 
   readonly loading = signal(true);
   readonly erreur = signal(false);
@@ -83,6 +89,16 @@ export class FicheMarcheEcran {
   readonly contratAbsent = signal(false);
 
   readonly eligibles = signal<LigneEligible[]>([]);
+  /** Lignes montrées : celles du PPM demandé par le raccourci, sinon toutes. */
+  readonly eligiblesAffichees = computed(() => {
+    const d = this.filtreDossier();
+    return d == null ? this.eligibles() : this.eligibles().filter((l) => l.idDossier === d);
+  });
+  readonly refDossierFiltre = computed(() => {
+    const d = this.filtreDossier();
+    const l = d == null ? null : this.eligibles().find((x) => x.idDossier === d);
+    return l ? l.refeDossier || `#${l.idDossier}` : d == null ? null : `#${d}`;
+  });
   readonly referentiel = signal<ReferentielFiche>(REFERENTIEL_ESQUISSE);
   readonly fiche = signal<FicheMarche | null>(null);
   readonly cadrage = signal<Cadrage>({ typeMarche: 'QUANTITE_FIXE' });
@@ -129,6 +145,10 @@ export class FicheMarcheEcran {
         .subscribe((l) => {
           this.eligibles.set(l);
           this.loading.set(false);
+          // `?ligne=` (raccourci H3) : la ligne demandée est éligible → on l'ouvre sans passer par la liste.
+          const demandee = this.raccourci().ligne;
+          const cible = demandee == null ? null : l.find((x) => x.idDetail === demandee);
+          if (cible) this.choisirLigne(cible);
         });
       return;
     }
@@ -224,9 +244,9 @@ export class FicheMarcheEcran {
     return v == null ? '' : String(v);
   }
 
-  /** Montant en toutes lettres, servi par le serveur après enregistrement (`lettres[code]`). */
+  /** Montant en toutes lettres, servi par le serveur après enregistrement (`enLettres[code]`). */
   lettres(code: string): string {
-    return this.fiche()?.lettres?.[code] ?? '';
+    return this.fiche()?.enLettres?.[code] ?? '';
   }
 
   saisir(champ: ChampFiche, ev: Event): void {

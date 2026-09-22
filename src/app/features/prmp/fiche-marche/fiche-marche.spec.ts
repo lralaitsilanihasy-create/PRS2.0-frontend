@@ -53,7 +53,7 @@ function fiche(partiel: Partial<FicheMarche> = {}): FicheMarche {
     cadrage: { ...CADRAGE_COMPLET },
     valeurs: { 'B02-OB-01': 'Mobilier de bureau' },
     valeursPpm: { 'B01-AC-01': 'Ministère de l’Économie et des Finances' },
-    lettres: null,
+    enLettres: null,
     bilanControles: null,
     ...partiel,
   };
@@ -80,7 +80,7 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     return b;
   };
 
-  function monter(role: Role, idDmc: number | null): void {
+  function monter(role: Role, idDmc: number | null, query: Record<string, string> = {}): void {
     toast = { success: vi.fn(), error: vi.fn() };
     params = new BehaviorSubject(convertToParamMap(idDmc == null ? {} : { idDmc: String(idDmc) }));
     TestBed.configureTestingModule({
@@ -88,7 +88,7 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { paramMap: params.asObservable(), snapshot: { data: {} } } },
+        { provide: ActivatedRoute, useValue: { paramMap: params.asObservable(), queryParamMap: new BehaviorSubject(convertToParamMap(query)).asObservable(), snapshot: { data: {} } } },
         { provide: AuthService, useValue: { role: signal(role) } },
         { provide: ToastService, useValue: toast },
       ],
@@ -131,6 +131,30 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     expect(post.request.method).toBe('POST');
     post.flush({ idDmc: 51, idDetail: 7, idTypeDmc: 1, statut: 'A_PREPARER' });
     expect(navigate).toHaveBeenLastCalledWith(['/prmp/dao', 51]);
+  });
+
+  it('raccourci H3 : ?dossier= restreint la liste à ce PPM ; ?ligne= ouvre la ligne d’emblée (création puis navigation)', () => {
+    monter('PRMP', null, { dossier: '3' });
+    http.expectOne('/api/dmcs/eligibles').flush([...LIGNES, { ...LIGNES[0], idDetail: 30, idDossier: 8, refeDossier: 'PPM-2026-008', designationMarche: 'Autre PPM' }]);
+    rendre();
+    expect(racine().querySelectorAll('tbody tr').length).toBe(2);
+    expect(texte(racine().querySelector('.fm__filtre'))).toContain('Lignes du plan de passation PPM-2026-003');
+    expect((racine().querySelector('.fm__filtre a') as HTMLAnchorElement).getAttribute('href')).toBe('/prmp/dao');
+    TestBed.resetTestingModule();
+
+    monter('UGPM', null, { ligne: '7' });
+    http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
+    const post = http.expectOne('/api/dmcs/par-marche/7');
+    post.flush({ idDmc: 51, idDetail: 7, idTypeDmc: 1, statut: 'A_PREPARER' });
+    expect(navigate).toHaveBeenCalledWith(['/prmp/dao', 51]);
+    TestBed.resetTestingModule();
+
+    // Ligne demandée absente des éligibles : la liste s'affiche, rien n'est créé.
+    monter('UGPM', null, { ligne: '999' });
+    http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
+    rendre();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(racine().querySelectorAll('tbody tr').length).toBe(2);
   });
 
   it('contrat absent : bandeau « en attente du backend », aucune ligne — 400 compris (« eligibles » pris pour un id par l’existant)', () => {
@@ -229,6 +253,14 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     montant.value = '8400000';
     montant.dispatchEvent(new Event('input'));
     expect(fixture.componentInstance.valeurs()['B05-GS-02']).toBe(8400000);
+    // Les lettres viennent du serveur (`enLettres`, B3), jamais calculées côté client.
+    expect(racine().querySelector('.fm__lettres')).toBeNull();
+    bouton('Enregistrer et voir les reprises').click();
+    http.expectOne('/api/fiches-marche/42/blocs/B05').flush(fiche({ valeurs: { 'B05-GS-02': 8400000 }, enLettres: { 'B05-GS-02': 'huit millions quatre cent mille ariary' } }));
+    rendre();
+    fixture.componentInstance.allerAuBloc('B05');
+    rendre();
+    expect(texte(racine().querySelector('.fm__lettres'))).toBe('huit millions quatre cent mille ariary');
     const meta = racine().querySelector('#c-B05-GS-02')?.closest('.fm__champ')?.querySelectorAll('.fm__meta > span');
     expect(Array.from(meta ?? []).map((s) => texte(s))).toEqual(['à saisir', 'DPAO', 'repris dans', 'AE', 'CCAP', 'condition : garantieSoumission = OUI']);
     expect(texte(racine().querySelector('.fm__total'))).toContain('1 sur 4');
@@ -295,8 +327,10 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
 
   it('UGPM : la validation est réservée à la PRMP ; une fiche validée s’ouvre en lecture seule avec « nouvelle version »', () => {
     monter('UGPM', 42);
-    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2 }));
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2, versionPpm: 3, idDetailCourant: 71, ligneSupprimee: true }));
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Validation PRMP');
+    // Filiation (B2 §1) : la ligne est supprimée dans la version courante du PPM → avertissement, pas de blocage.
+    expect(texte(racine().querySelector('.alert-warning'))).toContain('Ligne supprimée du plan de passation dans sa version courante (3)');
     expect(Array.from(racine().querySelectorAll('button')).some((b) => texte(b) === 'Valider la fiche')).toBe(false);
     bouton('Ouvrir une nouvelle version').click();
     http.expectOne('/api/fiches-marche/42/reviser').flush(fiche({ statut: 'BROUILLON', version: 3 }));

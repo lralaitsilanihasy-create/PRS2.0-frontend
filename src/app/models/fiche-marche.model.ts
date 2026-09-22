@@ -91,9 +91,14 @@ export interface FicheMarche {
   valeurs: Record<string, string | number | null>;
   /** Les 22 informations reprises de la ligne du PPM (clé = code du champ `PPM`), relues à chaque lecture. */
   valeursPpm: Record<string, string | number | null>;
+  /** Version du PPM dont la ligne COURANTE est lue (filiation `idLigneOrigine`, demande B2 §1 du 22/09). */
   versionPpm?: number | null;
-  /** Montants en toutes lettres, servis par le serveur (`{ code: lettres }`). */
-  lettres?: Record<string, string> | null;
+  /** `idDetail` de la ligne courante de la filiation (≠ `idDetail` lié quand le PPM a été versionné). */
+  idDetailCourant?: number | null;
+  /** La ligne est supprimée logiquement dans la version courante du PPM : avertir, ne pas bloquer (lot 1). */
+  ligneSupprimee?: boolean | null;
+  /** Montants en toutes lettres, servis par le serveur (`{ code: texte }`) — clé `enLettres` de la demande, B3. */
+  enLettres?: Record<string, string> | null;
   bilanControles?: BilanControles | null;
   dateValidation?: string | null;
   validePar?: string | null;

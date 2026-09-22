@@ -30,19 +30,33 @@
     </div>
   }
 
+  @if (fiche()?.ligneSupprimee) {
+    <div class="alert alert-warning" role="status">
+      <app-icone nom="alert" [taille]="16" />
+      <span><strong>Ligne supprimée du plan de passation</strong> dans sa version courante ({{ fiche()?.versionPpm }}) : la fiche lit la dernière
+      valeur connue de la ligne. Si le marché est abandonné, la fiche l'est aussi ; sinon, restaurez la ligne dans le PPM.</span>
+    </div>
+  }
+
   @if (loading()) {
     <p class="text-muted" role="status">Chargement…</p>
   } @else if (erreur()) {
     <app-etat-erreur (reessayer)="charger()" />
   } @else if (idDmc() == null) {
     <!-- Étape 1 : la ligne du PPM (les 22 informations viennent d'elle, rien n'est importé). -->
+    @if (filtreDossier() != null) {
+      <p class="fm__filtre">
+        Lignes du plan de passation <strong class="cnm-mono">{{ refDossierFiltre() }}</strong>
+        <a routerLink="/prmp/dao">Voir toutes les lignes éligibles</a>
+      </p>
+    }
     <div class="table-card">
       <table>
         <thead>
           <tr><th scope="col">Dossier de planification</th><th scope="col">Ligne de marché</th><th scope="col">Mode</th><th scope="col" class="r">Montant estimatif</th><th scope="col" class="r">Action</th></tr>
         </thead>
         <tbody>
-          @for (l of eligibles(); track l.idDetail) {
+          @for (l of eligiblesAffichees(); track l.idDetail) {
             <tr>
               <td class="cnm-mono">{{ l.refeDossier || ('#' + l.idDossier) }}</td>
               <td>{{ l.designationMarche }}</td>
@@ -55,7 +69,7 @@
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="5" class="fm__vide">Aucune ligne de plan de passation éligible : il faut un PPM au PV signé, dont le mode de passation est un appel d'offres, sans DAO déjà préparé.</td></tr>
+            <tr><td colspan="5" class="fm__vide">{{ filtreDossier() != null ? 'Aucune ligne éligible dans ce plan de passation' : 'Aucune ligne de plan de passation éligible' }} : il faut un PPM au PV signé, dont le mode de passation est un appel d'offres, sans DAO déjà préparé.</td></tr>
           }
         </tbody>
       </table>

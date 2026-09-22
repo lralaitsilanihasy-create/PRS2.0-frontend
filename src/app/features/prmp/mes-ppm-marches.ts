@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
+import { catchError, of } from 'rxjs';
 
-import { Dossier, Marche, Ppm } from '../../models';
-import { DossierService, MarcheService, PpmService } from '../../services';
+import { Dossier, LigneEligible, Marche, Ppm } from '../../models';
+import { DmcService, DossierService, MarcheService, PpmService } from '../../services';
 import { StatutBadge } from '../../shared/circuit';
 import { DetailPpmModal } from '../../shared/prmp';
 import { DossiersRefreshStore } from './dossiers-refresh.store';
@@ -15,7 +17,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
 @Component({
   selector: 'app-mes-ppm-marches',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatutBadge, DetailPpmModal],
+  imports: [StatutBadge, DetailPpmModal, RouterLink],
   template: `
     <section>
       <header class="page-header">
@@ -39,6 +41,13 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <app-statut-badge [statut]="statutPpm(ppm)" />
                 }
               </div>
+              <!-- Raccourci H3 (fiche marché, 22/09) : n'apparaît que si le serveur dit qu'une ligne de ce PPM peut
+                   porter un appel d'offres (PV signé, mode mappé DAO) — à préparer, ou à reprendre. -->
+              @if (lignesDao(ppm.idDossier); as lignes) {
+                <a class="btn btn-primary btn-sm" routerLink="/prmp/dao" [queryParams]="{ dossier: ppm.idDossier }" [attr.title]="titreDao(lignes)">
+                  Appel d’offres ({{ lignes.length }})
+                </a>
+              }
               <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirDetail(ppm)">Détails</button>
             </div>
           }
@@ -76,10 +85,18 @@ export class MesPpmMarches {
   private readonly ppmService = inject(PpmService);
   private readonly marcheService = inject(MarcheService);
   private readonly dossierService = inject(DossierService);
+  private readonly dmcService = inject(DmcService);
   private readonly dossiersRefresh = inject(DossiersRefreshStore);
 
   private readonly ppms = signal<Ppm[]>([]);
   private readonly marches = signal<Marche[]>([]);
+  /** Lignes pouvant porter un appel d'offres (`GET /api/dmcs/eligibles`, silencieux : vide tant que le contrat n'est pas servi). */
+  private readonly eligiblesDao = signal<LigneEligible[]>([]);
+  private readonly eligiblesParDossier = computed(() => {
+    const map = new Map<number, LigneEligible[]>();
+    for (const l of this.eligiblesDao()) map.set(l.idDossier, [...(map.get(l.idDossier) ?? []), l]);
+    return map;
+  });
   readonly loading = signal(false);
   /** Statut du dossier par idDossier — pour gater l'édition (BROUILLON seulement) et signaler l'état soumis. */
   private readonly dossierStatut = signal<Map<number, string>>(new Map());
@@ -131,6 +148,20 @@ export class MesPpmMarches {
     this.dossierService.list().subscribe((r) => {
       this.dossierStatut.set(new Map(r.map((d: Dossier) => [d.idDossier, d.statut ?? ''])));
     });
+    this.dmcService
+      .eligibles()
+      .pipe(catchError(() => of([] as LigneEligible[])))
+      .subscribe((l) => this.eligiblesDao.set(l));
+  }
+
+  /** Lignes de ce dossier qui peuvent porter un appel d'offres — `null` s'il n'y en a pas (pas de bouton). */
+  lignesDao(idDossier: number): LigneEligible[] | null {
+    return this.eligiblesParDossier().get(idDossier) ?? null;
+  }
+  titreDao(lignes: LigneEligible[]): string {
+    const aPreparer = lignes.filter((l) => !l.dejaDao).length;
+    const aReprendre = lignes.length - aPreparer;
+    return [aPreparer ? `${aPreparer} ligne(s) d’appel d’offres à préparer` : '', aReprendre ? `${aReprendre} fiche(s) marché à reprendre` : ''].filter(Boolean).join(' · ');
   }
 
   marchesOf(idPpm: number): Marche[] {
