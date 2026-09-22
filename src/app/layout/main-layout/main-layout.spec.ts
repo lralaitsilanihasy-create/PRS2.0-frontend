@@ -455,7 +455,7 @@ describe('Menu par rubriques (refonte ergonomique, lot 5 — F2)', () => {
     }
   });
 
-  it('un menu d’une seule rubrique n’affiche aucun intitulé — il est déjà sa propre rubrique', async () => {
+  it('un menu d’une seule rubrique affiche quand même son intitulé « Mon travail » (pilote 22/09, valable pour tout profil)', async () => {
     for (const [role, login] of [
       ['SECRETAIRE', 'SECANT1'],
       ['VERIFICATEUR', 'VERANT1'],
@@ -464,7 +464,7 @@ describe('Menu par rubriques (refonte ergonomique, lot 5 — F2)', () => {
     ] as const) {
       TestBed.resetTestingModule();
       const hote = await monter(role, login);
-      expect(rubriques(hote), role).toEqual([]);
+      expect(rubriques(hote), role).toEqual(['Mon travail']);
     }
   });
 

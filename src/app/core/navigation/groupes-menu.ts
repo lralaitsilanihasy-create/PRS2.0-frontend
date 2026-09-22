@@ -268,8 +268,8 @@ export function piedMenu(items: NavItem[]): NavItem[] {
  * puis « Exercé par délégation ». Les entrées de pied en sont retirées (`piedMenu` les rend).
  *
  * Deux garde-fous d'affichage :
- *  - un menu qui ne produit qu'UNE rubrique propre ne montre AUCUN intitulé — le Secrétaire, le
- *    Vérificateur, l'UGPM et le Chargé de publication retrouvent exactement le menu d'avant ;
+ *  - un menu qui ne produit qu'UNE rubrique porte son intitulé comme les autres (pilote 22/09 — la règle
+ *    « pas d'intitulé pour une rubrique unique » du lot 5 est levée) ;
  *  - une entrée non classée n'est jamais perdue : elle rejoint la première rubrique du menu, et
  *    c'est la spec qui le signale, pas l'utilisateur.
  */
@@ -311,10 +311,9 @@ export function sectionsMenu(items: NavItem[]): SectionMenu[] {
     }
   }
 
-  // Une seule rubrique propre : pas d'intitulé, le menu est déjà sa propre rubrique.
-  if (sections.length === 1) {
-    sections[0].titre = null;
-  }
+  // ⚠️ Demande pilote (2026-09-22, « valable pour tout profil ») — un menu d'UNE rubrique porte son intitulé
+  // comme les autres : depuis que l'intitulé est une bande dorée, son absence chez le Secrétaire, le Vérificateur,
+  // l'UGPM et le Chargé de publication se voyait. La règle du lot 5 (« pas d'intitulé pour une rubrique unique ») tombe.
 
   if (delegues.length > 0) {
     sections.push({

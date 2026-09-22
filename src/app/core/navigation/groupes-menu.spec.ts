@@ -155,11 +155,11 @@ describe('sectionsMenu — dérivation des rubriques', () => {
     }
   });
 
-  it('Secrétaire, Vérificateur, UGPM et Chargé de publication : UNE section SANS intitulé (menu inchangé à l’écran)', () => {
+  it('Secrétaire, Vérificateur, UGPM et Chargé de publication : UNE section, avec son intitulé « Mon travail » (pilote 22/09)', () => {
     for (const role of ['SECRETAIRE', 'VERIFICATEUR', 'UGPM', 'CHARGE_PUBLICATION'] as const) {
       const sections = sectionsMenu(NAV_BY_ROLE[role]);
       expect(sections.length, role).toBe(1);
-      expect(sections[0].titre, role).toBeNull();
+      expect(sections[0].titre, role).toBe('Mon travail');
       expect(sections[0].repliable, role).toBe(false);
       // Exactement le menu d'aujourd'hui, Notifications en moins (rendue dans le pied).
       expect(sections[0].items.map((i) => i.label), role).toEqual(
