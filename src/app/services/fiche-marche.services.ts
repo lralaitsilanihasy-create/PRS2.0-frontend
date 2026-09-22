@@ -80,8 +80,8 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
     return this.http.post<FicheMarche>(`${this.baseUrl}/${idDmc}/reviser`, null);
   }
 
-  /** `GET /{idDmc}/versions` — versions figées. */
+  /** `GET /{idDmc}/versions` — versions figées. Silencieux : absente tant que le contrat n'est pas servi. */
   versions(idDmc: number): Observable<FicheMarche[]> {
-    return this.http.get<FicheMarche[]>(`${this.baseUrl}/${idDmc}/versions`);
+    return this.http.get<FicheMarche[]>(`${this.baseUrl}/${idDmc}/versions`, { context: skipErrorToast() });
   }
 }

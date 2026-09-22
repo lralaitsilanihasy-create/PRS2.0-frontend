@@ -101,6 +101,8 @@ export class FicheMarcheEcran {
   });
   readonly referentiel = signal<ReferentielFiche>(REFERENTIEL_ESQUISSE);
   readonly fiche = signal<FicheMarche | null>(null);
+  /** Versions figées (`GET …/versions`, B5) — la plus récente en tête. */
+  readonly versions = signal<FicheMarche[]>([]);
   readonly cadrage = signal<Cadrage>({ typeMarche: 'QUANTITE_FIXE' });
   readonly valeurs = signal<Record<string, Valeur>>({});
   readonly erreursChamp = signal<ReadonlyMap<string, string>>(new Map());
@@ -155,10 +157,12 @@ export class FicheMarcheEcran {
     forkJoin({
       ref: this.champService.referentiel('QUANTITE_FIXE').pipe(catchError(() => of(null))),
       fiche: this.ficheService.lire(id).pipe(catchError((e: HttpErrorResponse) => (routeAbsente(e) ? of(null) : (this.erreur.set(true), of(null))))),
-    }).subscribe(({ ref, fiche }) => {
+      versions: this.ficheService.versions(id).pipe(catchError(() => of([] as FicheMarche[]))),
+    }).subscribe(({ ref, fiche, versions }) => {
       if (ref && ref.blocs?.length) this.referentiel.set(ref);
       else this.contratAbsent.set(true);
       this.fiche.set(fiche);
+      this.versions.set([...versions].sort((a, b) => b.version - a.version));
       if (fiche) {
         this.cadrage.set({ typeMarche: 'QUANTITE_FIXE', ...fiche.cadrage });
         this.valeurs.set({ ...fiche.valeurs });
@@ -337,6 +341,8 @@ export class FicheMarcheEcran {
       next: (f) => {
         this.saving.set(false);
         this.appliquer(f);
+        // La version qui vient d'être figée rejoint l'historique sans relecture serveur.
+        this.versions.update((v) => [f, ...v.filter((x) => x.version !== f.version)]);
         this.etape.set(6);
         this.toast.success(`Fiche marché validée — version ${f.version} figée. Les documents seront générés au lot 2.`);
       },

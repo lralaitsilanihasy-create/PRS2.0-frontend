@@ -73,6 +73,8 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
 
   const racine = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const texte = (el: Element | null | undefined): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
+  /** Cellules d'une ligne jointes par un espace (Angular retire les blancs entre `<td>`). */
+  const cellules = (tr: Element): string => Array.from(tr.querySelectorAll('td')).map((td) => texte(td)).join(' ');
   const rendre = (): void => fixture.detectChanges();
   const bouton = (libelle: string): HTMLButtonElement => {
     const b = Array.from(racine().querySelectorAll('button')).find((x) => texte(x).startsWith(libelle));
@@ -100,14 +102,17 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     rendre();
   }
 
-  /** Répond à la vague d'ouverture d'une fiche : référentiel + fiche (`null` = 404). */
-  function ouvrir(ref: ReferentielFiche | null, f: FicheMarche | null): void {
+  /** Répond à la vague d'ouverture d'une fiche : référentiel + fiche (`null` = 404) + versions figées. */
+  function ouvrir(ref: ReferentielFiche | null, f: FicheMarche | null, versions: FicheMarche[] | null = []): void {
     const r = http.expectOne((x) => x.url === '/api/champs-fiche-marche' && x.params.get('typeMarche') === 'QUANTITE_FIXE');
     if (ref) r.flush(ref);
     else r.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
     const q = http.expectOne('/api/fiches-marche/42');
     if (f) q.flush(f);
     else q.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+    const v = http.expectOne('/api/fiches-marche/42/versions');
+    if (versions) v.flush(versions);
+    else v.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
     rendre();
   }
 
@@ -180,7 +185,7 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
 
   it('fiche sans contrat : structure de l’esquisse (8 blocs à saisir, comptes attendus), cadrage ouvert mais non enregistrable', () => {
     monter('PRMP', 42);
-    ouvrir(null, null);
+    ouvrir(null, null, null);
     expect(texte(racine().querySelector('.alert'))).toContain('Contrat en attente du backend');
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Cadrage');
     expect(texte(racine().querySelector('.fm__etape:nth-child(3) .fm__etape-s'))).toBe('8 blocs');
@@ -318,17 +323,28 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     bouton('Valider la fiche').click();
     const post = http.expectOne('/api/fiches-marche/42/valider');
     expect(post.request.method).toBe('POST');
-    post.flush(fiche({ statut: 'VALIDEE', version: 1, dateValidation: '2026-09-22' }));
+    post.flush(fiche({ statut: 'VALIDEE', version: 1, dateValidation: '2026-09-22', validePar: 'PRMP001' }));
     rendre();
     expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('version 1 figée'));
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Documents');
     expect(texte(racine().querySelector('.page-subtitle'))).toContain('fiche validée, version 1');
+    // La version figée rejoint l'historique de l'étape 6 sans relecture serveur.
+    fixture.componentInstance.etape.set(5);
+    rendre();
+    expect(Array.from(racine().querySelectorAll('.fm__versions tbody tr')).map((tr) => cellules(tr))).toEqual(['1 2026-09-22 PRMP001 —']);
   });
 
   it('UGPM : la validation est réservée à la PRMP ; une fiche validée s’ouvre en lecture seule avec « nouvelle version »', () => {
     monter('UGPM', 42);
-    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2, versionPpm: 3, idDetailCourant: 71, ligneSupprimee: true }));
+    const v1 = fiche({ statut: 'VALIDEE', version: 1, dateValidation: '2026-09-10', validePar: 'PRMP001', bilanControles: { bloquants: [], avertissements: [], ok: [], nbSaisis: 120, nbAttendus: 130 } });
+    const v2 = fiche({ statut: 'VALIDEE', version: 2, dateValidation: '2026-09-22', validePar: 'PRMP001', bilanControles: { bloquants: [], avertissements: [], ok: [], nbSaisis: 130, nbAttendus: 130 } });
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2, versionPpm: 3, idDetailCourant: 71, ligneSupprimee: true }), [v1, v2]);
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Validation PRMP');
+    // Historique des versions figées (B5), la plus récente en tête, la courante surlignée.
+    const lignesV = Array.from(racine().querySelectorAll('.fm__versions tbody tr'));
+    expect(lignesV.map((tr) => cellules(tr))).toEqual(['2 2026-09-22 PRMP001 130', '1 2026-09-10 PRMP001 120']);
+    expect(lignesV[0].classList.contains('fm__versions--courante')).toBe(true);
+    expect(lignesV[1].classList.contains('fm__versions--courante')).toBe(false);
     // Filiation (B2 §1) : la ligne est supprimée dans la version courante du PPM → avertissement, pas de blocage.
     expect(texte(racine().querySelector('.alert-warning'))).toContain('Ligne supprimée du plan de passation dans sa version courante (3)');
     expect(Array.from(racine().querySelectorAll('button')).some((b) => texte(b) === 'Valider la fiche')).toBe(false);

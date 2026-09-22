@@ -280,6 +280,25 @@
                   <p>Vous préparez la fiche ; <strong>la PRMP</strong> la valide et soumet le dossier. Rien d'autre à faire ici.</p>
                 }
               </div>
+              @if (versions().length) {
+                <div class="fm__rub">
+                  <h3>Versions figées</h3>
+                  <table class="fm__versions">
+                    <thead><tr><th scope="col">Version</th><th scope="col">Validée le</th><th scope="col">Par</th><th scope="col" class="r">Informations</th></tr></thead>
+                    <tbody>
+                      @for (v of versions(); track v.version) {
+                        <tr [class.fm__versions--courante]="v.version === fiche()?.version && figee()">
+                          <td class="cnm-mono">{{ v.version }}</td>
+                          <td>{{ v.dateValidation || '—' }}</td>
+                          <td>{{ v.validePar || '—' }}</td>
+                          <td class="r cnm-mono">{{ v.bilanControles?.nbSaisis ?? '—' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                  <p class="fm__attendus">La consultation d'une version figée viendra avec ses documents (lot 2).</p>
+                </div>
+              }
               <div class="fm__pied">
                 <button type="button" class="btn btn-outline" (click)="etape.set(4)">‹ Contrôles</button>
                 @if (figee()) {

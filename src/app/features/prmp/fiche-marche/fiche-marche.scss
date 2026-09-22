@@ -1,5 +1,4 @@
-/* Fiche marché d'un appel d'offres — jetons du design system ; les couleurs de document (DPAO bleu, AE violet,
-   CCAP vert) reprennent celles de l'esquisse, toutes ≥ 4,5:1 sur leur fond pâle. */
+/* Fiche marché — couleurs de document (DPAO bleu, AE violet, CCAP vert) de l'esquisse, ≥ 4,5:1 sur fond pâle. */
 .fm { display: flex; flex-direction: column; gap: 0.9rem; }
 .fm__fil { display: flex; align-items: center; gap: 0.3rem; font-size: var(--text-sm, 0.85rem); color: var(--n-500); }
 .fm__fil a { display: inline-flex; align-items: center; gap: 0.15rem; color: var(--p-700); text-decoration: none; }
@@ -12,8 +11,9 @@
 .fm__cadrage-lbl { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--n-400); margin-right: 0.3rem; }
 .fm__rep { padding: 0.2rem 0.6rem; border-radius: 8px; background: var(--p-50); color: var(--p-800); font-weight: 600; font-size: 0.8rem; }
 .fm__rep--non { background: var(--n-100); color: var(--n-500); font-weight: 500; }
-.fm__cadrage-mod { margin-left: auto; background: none; border: 0; color: var(--p-700); font: 600 0.82rem var(--font-base); cursor: pointer; }
-.fm__cadrage-mod:hover { text-decoration: underline; }
+.fm__cadrage-mod, .fm__lien { background: none; border: 0; color: var(--p-700); font: 600 0.82rem var(--font-base); cursor: pointer; }
+.fm__cadrage-mod { margin-left: auto; }
+.fm__cadrage-mod:hover, .fm__lien { text-decoration: underline; }
 
 .fm__cols { display: grid; grid-template-columns: 220px minmax(0, 1fr) 290px; gap: 1rem; align-items: start; }
 .fm__rail { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 0.5rem; }
@@ -46,10 +46,9 @@
 .fm__doc--dpao, .fm__doc--dpac { background: #dbeafe; color: #1d4ed8; }
 .fm__doc--ae { background: #f3e8ff; color: #7e22ce; }
 .fm__doc--ccap { background: #d1fae5; color: #047857; }
-.fm__doc--aucun { background: var(--n-100); color: var(--n-500); }
+.fm__doc--aucun, .fm__etat--cadrage { background: var(--n-100); color: var(--n-500); }
 .fm__etat { padding: 0.05rem 0.45rem; border-radius: 999px; border: 1px solid var(--n-200); color: var(--n-500); }
 .fm__etat--ppm { background: #ecfdf5; color: #047857; border-color: transparent; }
-.fm__etat--cadrage { background: var(--n-100); color: var(--n-500); }
 .fm__etat--saisie { background: #fef3c7; color: #b45309; border-color: transparent; }
 .fm__ou { color: var(--n-400); }
 .fm__modele { grid-column: 1 / -1; margin: 0; font-size: 0.78rem; color: var(--n-500); background: var(--n-50); border-left: 3px solid #f5c542; padding: 0.35rem 0.6rem; border-radius: 0 6px 6px 0; }
@@ -58,7 +57,6 @@
 .fm__ctrl { margin: 0.35rem 0; font-size: 0.86rem; }
 .fm__ctrl--r { color: #b91c1c; }
 .fm__ctrl--a { color: #b45309; }
-.fm__lien { background: none; border: 0; color: var(--p-700); font: 600 0.82rem var(--font-base); cursor: pointer; text-decoration: underline; }
 .fm__pied { padding: 0.8rem 1.1rem; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
 .fm__aut { margin-left: auto; font-size: 0.76rem; color: var(--n-500); }
 
@@ -99,6 +97,11 @@
 .fm__prog { display: block; height: 6px; border-radius: 3px; background: var(--n-200); margin-top: 0.35rem; overflow: hidden; }
 .fm__prog i { display: block; height: 100%; background: var(--p-600); }
 .fm__vide { text-align: center; color: var(--n-500); padding: 1.5rem; }
+.fm__versions { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-bottom: 0.5rem; }
+.fm__versions th { text-align: left; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--n-500); padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--n-200); }
+.fm__versions td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--n-100); }
+.fm__versions .r { text-align: right; }
+.fm__versions--courante td { background: var(--p-50); font-weight: 600; }
 .fm__filtre { margin: 0; display: flex; gap: 0.6rem; align-items: baseline; flex-wrap: wrap; font-size: 0.88rem; color: var(--n-500); }
 .fm__filtre a { color: var(--p-700); font-weight: 600; }
 
