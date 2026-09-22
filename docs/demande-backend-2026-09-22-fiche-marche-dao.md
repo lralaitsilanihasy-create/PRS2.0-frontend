@@ -66,6 +66,25 @@ avec `BlocDto = { code, libelle, rang, rubriques: [{ code, libelle, rang, docume
 (`POST`/`PUT` d'un champ ; blocs et rubriques figés par migration). **Import** : outil de chargement depuis le fichier
 de correspondance nettoyé (CSV/XLSX → référentiel), hors API.
 
+> ⚠️ **22/09 — livraison backend (commit du lot), écarts sur B1 :**
+> - **`controle` porte le rôle** : `REGLE` quand la règle ne lit que ce champ, **`REGLE:ROLE`** quand elle en lit plusieurs
+>   (`VALIDITE_GARANTIE_SUP_OFFRE:GARANTIE` / `:OFFRE`, `DATES_ORDRE:REMISE` / `:OUVERTURE`, `AVANCE_SUP_5_GARANTIE:TAUX` /
+>   `:GARANTIE`, `FORFAIT_60_40:RECEPTION` / `:PV`, `PENALITES_PLAFOND_15:TAUX` / `:DEROGATION`,
+>   `INTERETS_MORATOIRES_TAUX:TAUX` / `:BANQUE`, `DELAI_PAIEMENT_75:DELAI`). Raison : la liste nominative des champs
+>   n'est pas connue du code, c'est donc le champ qui nomme la règle **et sa place dans la règle** ; une règle dont un
+>   rôle n'a pas encore de champ **attend** (ni bloquante, ni « ok ») — le référentiel se complète sans livraison.
+>   Rôles et règles : `docs/api-endpoints.md`, § *Fiche marché*.
+> - `condition` : évaluateur identique à celui du front (grammaire ci-dessous, clé absente ⇒ chaîne vide) ; une
+>   expression **illisible est refusée en 400 `condition`** à l'écriture (Admin, import) — jamais une exception à
+>   l'exécution pour la PRMP.
+> - `LISTE` : `options[]` obligatoires (400 sinon) ; `PPM` exige `clePpm`, `CADRAGE` exige `cleCadrage` ; `rang` absent =
+>   dérivé du code ; `documentMaitre` absent = `AUCUN`.
+> - **Import** : CSV seulement (UTF-8, séparateur `;`, en-têtes = noms JSON des champs, listes séparées par des virgules
+>   dans la cellule), lancé au démarrage par `app.fiche-marche.import-csv=<chemin>` ; création ou mise à jour par
+>   `code`, lignes fautives rejetées avec leur raison dans le journal applicatif. Pas de XLSX au lot 1.
+> - **`PIECE`** : le type existe au référentiel, mais une valeur `PIECE` est refusée en 400 sur `PUT …/blocs` (les pièces
+>   relèvent du lot 2, avec `t_piece_jointe_dossier`).
+
 > ⚠️ **22/09 — réponse au backend (« aucun évaluateur d'expressions dans le projet »)** : la grammaire de `condition`
 > est volontairement **minuscule**, sans parenthèses ni priorité — une quinzaine de lignes, pas un moteur :
 > 1. couper la chaîne sur ` ou ` (insensible à la casse, entouré d'espaces) → des groupes ; **un groupe vrai suffit** ;
@@ -171,6 +190,21 @@ rubrique avec « n informations attendues, référentiel à compléter » — l'
 > **4. `eligibles` attrapé par `/{id}`** : déclarer la route littérale avant la variable (Spring préfère le littéral) —
 > déjà noté ci-dessus.
 
+> ⚠️ **22/09 — livraison backend (commit du lot), précisions sur B2 telles que livrées :**
+> - **Ordre des 409 H4** (après 404, 403 et vacance) : `LIGNE_RETIREE` → **`VERSION_DEPASSEE`** (le dossier de la ligne
+>   est `REMPLACE` : « préparer l'appel d'offres depuis la version courante ») → `MODE_NON_DAO` (mode rattaché à aucun
+>   type, message qui nomme l'Administrateur, ou à un type autre que `DAO` / inactif) → `PV_NON_SIGNE` → `DAO_EXISTANT`
+>   (sur la **filiation**). Le code `VERSION_DEPASSEE` n'était pas nommé dans la demande.
+> - **Parcours de la filiation** : la chaîne `REMPLACE` est suivie tant que la version suivante est **signée** (même
+>   prédicat que H4) **ou elle-même déjà remplacée** (elle l'a donc été avant) ; une version en instruction arrête la
+>   marche. Enfants triés par identifiant. Une ligne retirée reste lue (`ligneSupprimee = true`).
+> - **`eligibles` par profil** : PRMP / UGPM = les lignes de ses plans ; **Président / Administrateur = toutes les
+>   lignes éligibles** (vue de contrôle) ; tout autre profil = `[]` (200, pas 403). Les lignes `DAO_EXISTANT` restent
+>   listées avec `dejaDao = true` et `idDmc` ; celles d'une version `REMPLACE` n'y sont jamais.
+> - **`valeursPpm` du `POST`** : clé = **code du champ** `PPM` (`B01-AC-14`…), comme sur la fiche — pas la clé interne.
+>   `versionPpm` = `NUM_MAJ`, **0** pour un plan initial (jamais `null`).
+> - **Admin** : geste d'origine inchangé (400 mode non mappé, 409 `DAO_EXISTANT`), **sans** H4 ni valeurs relues.
+
 ### B3 — La fiche (`/api/fiches-marche`, `t_fiche_marche` + `t_fiche_marche_valeur`)
 
 | | |
@@ -193,6 +227,23 @@ rubrique avec « n informations attendues, référentiel à compléter » — l'
 
 Un champ dont la **condition de cadrage** est fausse est **ignoré** à l'enregistrement et absent du bilan (rubrique
 fermée). Les valeurs `CADRAGE` sont dérivées, jamais reçues.
+
+> ⚠️ **22/09 — livraison backend (commit du lot), écarts sur B3 :**
+> - **`obligatoire` n'est pas un 400 au `PUT`** : le 400 nominatif couvre ce qui est *illisible* (type, option de liste,
+>   `MONTANT` négatif, `POURCENTAGE` hors 0–100, `DATE` mal formée, champ inconnu / inactif / d'un autre bloc / `PPM` /
+>   `CADRAGE`, `PIECE`) ; un **obligatoire manquant est bloquant au bilan** (`OBLIGATOIRE`). Raison : on enregistre
+>   un brouillon incomplet bloc par bloc, on ne le valide pas — un 400 empêcherait d'enregistrer une rubrique entamée.
+> - **Écriture** (`cadrage`, `blocs`, `reviser`) : PRMP / UGPM propriétaires **et Administrateur** ; **validation** :
+>   PRMP seule (403 UGPM et Admin). `POST …/controler` est ouvert à qui lit (contrôleurs du périmètre compris).
+> - **409 à code stable** de la fiche : `DMC_NON_DAO` (le DMC n'est pas un DAO — sur toute route), `FICHE_VALIDEE`
+>   (`PUT` ou `valider` sur une version validée), `FICHE_VIDE` (`valider` / `reviser` sans aucun enregistrement),
+>   `BROUILLON_EN_COURS` (`reviser` alors que la dernière version est un brouillon), `CONTROLES_BLOQUANTS`,
+>   `VACANCE_PRMP`.
+> - **Cadrage** : clés admises = clés `cleCadrage` des champs `CADRAGE` du référentiel + `typeMarche` + `attributaires` ;
+>   valeur typée par le champ reflet (`OUI`/`NON`, nombre, option) ; clé inconnue → 400 nominatif ; le `PUT` remplace
+>   l'ensemble (clé absente = question sans réponse). **Lot 1 : `typeMarche` autre que `QUANTITE_FIXE` → 400.**
+> - `enLettres` : livré par l'extension de `NombreEnLettres.cardinal` aux millions et milliards (PV et lettres en
+>   profitent) ; au passage, « quatre cent**s** mille » (faux, produit par l'existant) devient « quatre cent mille ».
 
 > ⚠️ **22/09 — `enLettres` (réponse au backend : `NombreEnLettres` plafonne à 999 999).** Les montants de marché en
 > Ariary dépassent couramment le milliard : étendre le convertisseur aux **millions et milliards** (« huit millions
@@ -222,6 +273,17 @@ fermée). Les valeurs `CADRAGE` sont dérivées, jamais reçues.
 (Les règles « à commande » et « contrat-cadre » — minimum < maximum, durée ≤ 2 ans — viennent avec leurs lots.)
 Le bilan est **recalculé à chaque `PUT`** et servi dans `FicheMarcheDto` ; `POST …/controler` le recalcule sans écrire.
 
+> ⚠️ **22/09 — livraison backend (commit du lot), B4 tel que livré :** les dix règles du tableau sont dans le catalogue
+> (`ControlesFicheMarche`). Chaque règle **trouve ses champs par leur `controle`** (`REGLE:ROLE`, cf. B1) :
+> `DATES_ORDRE` lit `LANCEMENT` / `REMISE` / `OUVERTURE` / `ATTRIBUTION` et **replie sur les dates prévisionnelles du
+> plan** (étapes CAPM « lancement » / « attribution ») pour les deux bornes que la fiche ne saisit pas ;
+> `AVANCE_MAX_20` / `AVANCE_SUP_5_GARANTIE` lisent le rôle `TAUX` et, à défaut, **`tauxAvance` du cadrage** (et ne
+> s'évaluent que si `avance = OUI`) ; `FORFAIT_60_40` ne s'évalue que si `typePrix = FORFAITAIRE` ; `MONTANT_POSITIF`
+> s'applique à tout `MONTANT` saisi sans champ à déclarer. Une règle dont un rôle n'a pas encore de champ **n'est pas
+> évaluée** (ni bloquante ni « ok ») : au jour de la livraison, seuls les champs `PPM` et `CADRAGE` sont semés — les
+> règles de saisie attendent le fichier de correspondance (la recette les exerce sur des champs de test). `nbAttendus`
+> compte les champs `SAISIE` des rubriques **ouvertes** (pas le `nbAttendu` des rubriques).
+
 ### B5 — Validation et versions
 
 `valider` : tous les bloquants levés → statut `VALIDEE`, `version` figée, horodatage et auteur ; **journal** du
@@ -241,6 +303,30 @@ d'un acte PRMP). Chronométrage : sans objet avant soumission.
 - *Un formulaire codé en dur* : 130 champs, trois types de marché et un fichier encore en évolution (125 points
   ouverts) — seul un référentiel serveur tient.
 - *Importer un DAO PDF* : écarté par le pilote (formulaire).
+
+## Écarts de livraison constatés le 22/09 (implémentation backend en cours, lue sur son arbre de travail) — acceptés, front aligné
+
+- **Rubrique** : `RubriqueDto` porte `nbAttendu` (pas « attendus ») et son `code` est **complet** (`B05-GS`) ; le champ porte
+  `rubrique = "B05-GS"` aussi. Le front lit `nbAttendu` et compare les codes de rubrique complets ou courts indifféremment.
+- **`FicheMarcheDto`** : `idFiche` (nul avant le premier enregistrement — fiche **virtuelle**, version 1, brouillon, servie en
+  200 et non 404), `valeursCadrage` (champs `CADRAGE` dérivés, `{ code: valeur }`), `dateCreation`, `dateMaj` ; `valeurs`
+  et `valeursPpm` en **chaînes** ; `dateValidation` en date-heure ISO. Le front affiche `valeursCadrage` en lecture.
+- **`GET …/versions`** sert des **en-têtes** `VersionFicheDto` `{ idFiche, version, statut, typeMarche, dateCreation,
+  dateValidation, validePar, nbValeurs }` ; le détail d'une version : **`GET …/versions/{numero}`** (route ajoutée).
+- **`ChampFicheMarcheDto`** ajoute `cleCadrage` / `clePpm` (clés de dérivation) et écrit `rang` depuis le code ; pas d'`aide`.
+- **409 de `POST par-marche`** à **codes stables** : `LIGNE_RETIREE`, `MODE_NON_DAO`, `PV_NON_SIGNE`, `DAO_EXISTANT`,
+  `VACANCE_PRMP` ; la route littérale `/eligibles` est déclarée avant `/{id}`.
+- **Type DMC `DAO`** : finalement semé par la **migration V35** (`INSERT … WHERE NOT EXISTS`, idempotent) et non par un
+  seeder — le backend a préféré récrire les trois fixtures en collision en `findByCode("DAO").orElseThrow()`. Accepté :
+  le résultat est le même (base neuve = `DAO` présent) et la suite de tests reste cohérente. Test 11 se lit « migration ».
+
+**Recette réelle du 22/09 (front, commit backend 43d3b4c, JAR redémarré, V35 appliquée)** : parcours complet vert en
+navigateur avec PRMP001 sur la ligne 00001/PPM-AGPM/CNM/2026 — 7 lignes éligibles après rattachement du mode « Appel
+d'offres ouvert » au type DAO par ADMIN01, 22 informations du PPM reprises, cadrage enregistré, huit blocs enregistrés,
+23 reprises, bilan 0/0 (le référentiel n'a encore aucun champ `SAISIE` : le fichier de correspondance n'est pas chargé),
+validation → version 1 puis 2 figées, `reviser` → version 3 brouillon. **Un petit reste (B5, non bloquant)** :
+`validePar` sert l'identifiant (`IMP001`) — servir aussi **`nomValidePar`** (nom affichable), le front l'affichera dès
+qu'il sera là.
 
 ## Tests attendus (recette backend)
 
