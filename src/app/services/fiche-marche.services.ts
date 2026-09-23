@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { BilanControles, Cadrage, ChampFiche, Dmc, Dossier, FicheMarche, FicheRattachable, LigneEligible, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
+import { BilanControles, Cadrage, ChampFiche, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, LigneEligible, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -108,6 +108,21 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
    */
   creerDossier(idDmc: number): Observable<Dossier> {
     return this.http.post<Dossier>(`${this.baseUrl}/${idDmc}/dossier`, null, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Lot 2 (demande du 23/09, non encore livrée) — `GET /{idDmc}/documents` : les documents de la version
+   * courante, ou d'une version figée avec `?version=`. Une version non validée répond **200 et une liste vide**.
+   * Silencieux : tant que la route n'existe pas (404), l'écran replie l'étape sans alarmer l'utilisateur.
+   */
+  documents(idDmc: number, version?: number): Observable<DocumentFiche[]> {
+    const params = version != null ? new HttpParams().set('version', version) : new HttpParams();
+    return this.http.get<DocumentFiche[]>(`${this.baseUrl}/${idDmc}/documents`, { params, context: skipErrorToast() });
+  }
+
+  /** `GET /documents/{idDocument}/contenu` — le binaire, à ouvrir ou enregistrer par `fichiers-surs`. */
+  contenuDocument(idDocument: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/documents/${idDocument}/contenu`, { responseType: 'blob', context: skipErrorToast() });
   }
 
   /** `GET /rattachables` — fiches validées et non liées du périmètre (PRMP et UGPM ; 403 aux autres). Silencieux. */

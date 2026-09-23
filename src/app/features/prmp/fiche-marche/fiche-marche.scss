@@ -132,3 +132,9 @@
 .fm__mode { white-space: normal; }
 .fm__forme { display: block; }
 .fm__rep--plan { background: #ecfdf5; color: #047857; }
+
+// Lot 2 : documents générés par la validation.
+.fm__docs { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: 0.5rem; }
+.fm__docs li { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.fm__docs-n { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
+.fm__docs-p { color: var(--n-500); font-size: 0.8rem; }

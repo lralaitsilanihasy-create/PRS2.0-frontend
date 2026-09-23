@@ -354,7 +354,27 @@
             <section class="fm__bloc" aria-labelledby="fm-docs">
               <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 7</span><h2 id="fm-docs">Documents et dossier à soumettre</h2></div>
               <div class="fm__rub">
-                <p>DPAO, acte d'engagement et CCAP seront <strong>générés depuis les modèles officiels</strong> et joints au dossier (lot 2 de la proposition).</p>
+                <!-- ⚠️ Lot 2 (demande du 23/09) — développé CONTRE le contrat proposé : tant que la route n'est pas
+                     servie, on annonce ce qui viendra au lieu de laisser une promesse creuse. -->
+                @if (documents().length) {
+                  <ul class="fm__docs">
+                    @for (d of documents(); track d.idDocument) {
+                      <li>
+                        <span class="fm__doc fm__doc--{{ d.type.toLowerCase() }}">{{ libellesDocuments[d.type] }}</span>
+                        <span class="fm__docs-n cnm-mono">{{ d.nomFichier }}</span>
+                        @if (poids(d.tailleOctets); as p) { <span class="fm__docs-p">{{ p }}</span> }
+                        <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, true)">Ouvrir</button>
+                        <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, false)">Enregistrer</button>
+                      </li>
+                    }
+                  </ul>
+                } @else if (documentsAbsents()) {
+                  <p>DPAO, acte d'engagement et CCAP seront <strong>générés à la validation</strong> et joints au dossier. La génération est demandée au serveur (lot 2) ; les informations, elles, sont déjà toutes saisies ici.</p>
+                } @else if (!figee()) {
+                  <p class="fm__attendus">Les documents sont produits par la <strong>validation</strong> de la fiche : terminez l'étape 6 d'abord.</p>
+                } @else {
+                  <p class="fm__attendus">Aucun document sur cette version.</p>
+                }
                 <!-- ⚠️ Lot 1b (23/09) : la fiche PRODUIT le dossier soumis à la Commission — entité, localité et PRMP
                      viennent de la ligne du plan, plus de double saisie. Réservé à la PRMP, sur une fiche validée. -->
                 @if (idDossierSoumis(); as idd) {

@@ -8,7 +8,7 @@ import { vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { FicheMarche, LigneEligible, ReferentielFiche, Role, VersionFiche } from '../../../models';
+import { DocumentFiche, FicheMarche, LigneEligible, ReferentielFiche, Role, VersionFiche } from '../../../models';
 import { FicheMarcheEcran } from './fiche-marche';
 
 /** Référentiel réduit servi par le serveur : B01 (PPM), B02 et B05 — une rubrique conditionnée (GS), un champ PPM. */
@@ -107,7 +107,7 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
   }
 
   /** Répond à la vague d'ouverture d'une fiche : référentiel + fiche (`null` = 404) + versions figées. */
-  function ouvrir(ref: ReferentielFiche | null, f: FicheMarche | null, versions: VersionFiche[] | null = []): void {
+  function ouvrir(ref: ReferentielFiche | null, f: FicheMarche | null, versions: VersionFiche[] | null = [], docs: DocumentFiche[] | null = null): void {
     const r = http.expectOne((x) => x.url === '/api/champs-fiche-marche' && x.params.get('typeMarche') === 'QUANTITE_FIXE');
     if (ref) r.flush(ref);
     else r.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
@@ -117,6 +117,10 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     const v = http.expectOne('/api/fiches-marche/42/versions');
     if (versions) v.flush(versions);
     else v.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+    // ⚠️ Lot 2 — l'écran demande les documents dès le chargement ; `null` = route pas encore servie (repli).
+    const d = http.expectOne('/api/fiches-marche/42/documents');
+    if (docs) d.flush(docs);
+    else d.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
     rendre();
   }
 
@@ -371,6 +375,11 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     const post = http.expectOne('/api/fiches-marche/42/valider');
     expect(post.request.method).toBe('POST');
     post.flush(fiche({ statut: 'VALIDEE', version: 1, dateValidation: '2026-09-22T10:05:00', validePar: 'PRMP001' }));
+    // ⚠️ Lot 2 — la validation produit les documents : l'écran les relit pour les offrir sans recharger la page.
+    http.expectOne('/api/fiches-marche/42/documents').flush([
+      { idDocument: 11, type: 'DPAO', nomFichier: 'DPAO_PPM-2026-003_7_v1.docx', tailleOctets: 240000, dateGeneration: '2026-09-22T10:05:00', version: 1 },
+      { idDocument: 12, type: 'AE', nomFichier: 'AE_PPM-2026-003_7_v1.docx', tailleOctets: 31000, dateGeneration: '2026-09-22T10:05:00', version: 1 },
+    ] as DocumentFiche[]);
     rendre();
     expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('version 1 figée'));
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Documents');
@@ -380,6 +389,36 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     rendre();
     expect(texte(racine().querySelector('.fm__ok'))).toContain('version 1 figée le 22/09/2026 10:05');
     expect(Array.from(racine().querySelectorAll('.fm__versions tbody tr')).map((tr) => cellules(tr))).toEqual(['1 22/09/2026 10:05 PRMP001 1']);
+  });
+
+  it('documents (lot 2) : listés sur une fiche validée, ouverts et enregistrés par le binaire du serveur', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2, dateValidation: '2026-09-22T10:05:00', validePar: 'PRMP001' }), [], [
+      { idDocument: 11, type: 'DPAO', nomFichier: 'DPAO_PPM-2026-003_7_v2.docx', tailleOctets: 240000, version: 2 },
+      { idDocument: 12, type: 'CCAP', nomFichier: 'CCAP_PPM-2026-003_7_v2.docx', tailleOctets: 900, version: 2 },
+    ] as DocumentFiche[]);
+    fixture.componentInstance.allerA(6);
+    rendre();
+    const lignes = Array.from(racine().querySelectorAll('.fm__docs li'));
+    expect(lignes.length).toBe(2);
+    expect(texte(lignes[0])).toContain('DPAO_PPM-2026-003_7_v2.docx');
+    expect(texte(lignes[0])).toContain('234 ko');
+    expect(texte(lignes[1])).toContain('1 ko');
+
+    (lignes[0].querySelectorAll('button')[1] as HTMLButtonElement).click(); // Enregistrer
+    const get = http.expectOne('/api/fiches-marche/documents/11/contenu');
+    expect(get.request.method).toBe('GET');
+    expect(get.request.responseType).toBe('blob');
+    get.flush(new Blob(['x'], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
+  });
+
+  it('documents : route pas encore servie (404) — l’étape annonce ce qui viendra, sans erreur ni liste vide trompeuse', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 1 }), [], null);
+    fixture.componentInstance.allerA(6);
+    rendre();
+    expect(racine().querySelector('.fm__docs')).toBeNull();
+    expect(texte(racine().querySelector('#fm-docs')?.parentElement?.parentElement)).toContain('générés à la validation');
   });
 
   it('UGPM : la validation est réservée à la PRMP ; une fiche validée s’ouvre en lecture seule avec « nouvelle version »', () => {

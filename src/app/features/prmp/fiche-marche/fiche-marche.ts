@@ -6,9 +6,10 @@ import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { BilanControles, BlocFiche, Cadrage, ChampFiche, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, ChampFiche, DocumentFiche, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
@@ -111,6 +112,12 @@ export class FicheMarcheEcran {
   readonly fiche = signal<FicheMarche | null>(null);
   /** Versions figées (`GET …/versions`, B5) — la plus récente en tête. */
   readonly versions = signal<VersionFiche[]>([]);
+  /**
+   * ⚠️ Lot 2 (demande du 23/09) — documents de la version courante. Tant que la route n'est pas servie, la liste
+   * reste vide et `documentsAttendus` est vrai : l'étape annonce ce qui viendra, sans faire croire à une panne.
+   */
+  readonly documents = signal<DocumentFiche[]>([]);
+  readonly documentsAbsents = signal(false);
   readonly cadrage = signal<Cadrage>({});
   readonly valeurs = signal<Record<string, Valeur>>({});
   readonly erreursChamp = signal<ReadonlyMap<string, string>>(new Map());
@@ -193,7 +200,10 @@ export class FicheMarcheEcran {
       ref: this.champService.referentiel('QUANTITE_FIXE').pipe(catchError(() => of(null))),
       fiche: this.ficheService.lire(id).pipe(catchError((e: HttpErrorResponse) => (routeAbsente(e) ? of(null) : (this.erreur.set(true), of(null))))),
       versions: this.ficheService.versions(id).pipe(catchError(() => of([] as VersionFiche[]))),
-    }).subscribe(({ ref, fiche, versions }) => {
+      docs: this.ficheService.documents(id).pipe(catchError(() => of(null))),
+    }).subscribe(({ ref, fiche, versions, docs }) => {
+      this.documents.set(docs ?? []);
+      this.documentsAbsents.set(docs === null);
       if (ref && ref.blocs?.length) this.referentiel.set(ref);
       else this.contratAbsent.set(true);
       this.fiche.set(fiche);
@@ -410,9 +420,40 @@ export class FicheMarcheEcran {
         const entete: VersionFiche = { idFiche: f.idFiche ?? null, version: f.version, statut: f.statut, typeMarche: f.typeMarche, dateCreation: f.dateCreation, dateValidation: f.dateValidation, validePar: f.validePar, nbValeurs: Object.keys(f.valeurs ?? {}).length };
         this.versions.update((v) => [entete, ...v.filter((x) => x.version !== f.version)]);
         this.etape.set(6);
-        this.toast.success(`Fiche marché validée — version ${f.version} figée. Les documents seront générés au lot 2.`);
+        this.toast.success(`Fiche marché validée — version ${f.version} figée.`);
+        // Lot 2 : la validation produit les documents ; on les relit pour les offrir tout de suite.
+        this.ficheService.documents(id).pipe(catchError(() => of(null))).subscribe((d) => {
+          this.documents.set(d ?? []);
+          this.documentsAbsents.set(d === null);
+        });
       },
       error: () => this.saving.set(false),
+    });
+  }
+
+  /** Taille lisible d'un document ; vide si le serveur ne la sert pas. */
+  poids(o: number | null | undefined): string {
+    if (o == null) return '';
+    return o < 1024 * 1024 ? `${Math.round(o / 1024)} ko` : `${(o / (1024 * 1024)).toFixed(1)} Mo`;
+  }
+
+  /**
+   * Enregistre ou ouvre un document généré. ⚠️ Toujours par `fichiers-surs` : un blob servi par le serveur ne
+   * s'ouvre jamais par un `URL.createObjectURL` brut (règle de l'audit, tenue par ESLint).
+   */
+  obtenirDocument(d: DocumentFiche, ouvrir: boolean): void {
+    if (this.saving()) return;
+    this.saving.set(true);
+    this.ficheService.contenuDocument(d.idDocument).subscribe({
+      next: (blob) => {
+        this.saving.set(false);
+        if (ouvrir) ouvrirBlobSur(blob);
+        else telechargerBlob(blob, d.nomFichier);
+      },
+      error: () => {
+        this.saving.set(false);
+        this.toast.error('Document indisponible — réessayez, ou régénérez-le en validant une nouvelle version.');
+      },
     });
   }
 

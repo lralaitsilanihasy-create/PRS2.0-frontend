@@ -194,6 +194,24 @@ export interface FicheRattachable {
   dateValidation?: string | null;
 }
 
+/**
+ * ⚠️ Lot 2 (demande du 23/09) — document produit par la **validation** d'une version de la fiche
+ * (`GET /api/fiches-marche/{idDmc}/documents`). Tant que le contrat n'est pas servi, l'écran replie l'étape 7.
+ * Le **nom de fichier vient du serveur** : le front n'a pas les règles de nommage de la CNM.
+ */
+export interface DocumentFiche {
+  idDocument: number;
+  /** Document maître, mêmes codes que `ChampFiche.documentMaitre` : `DPAO` · `DPAC` · `AE` · `CCAP`. */
+  type: DocumentDao;
+  libelle?: string | null;
+  extension?: string | null;
+  nomFichier: string;
+  tailleOctets?: number | null;
+  dateGeneration?: string | null;
+  /** Version de la fiche qui a produit ce document. */
+  version?: number | null;
+}
+
 /** Erreur nominative par champ d'un `PUT …/blocs/{bloc}` (400). */
 export interface ErreurChamp {
   champ: string;
