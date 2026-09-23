@@ -44,11 +44,14 @@
     </div>
   }
 
-  @if (typeChange()) {
+  <!-- ⚠️ 23/09 (demande du pilote) — le type vient du PLAN : un brouillon est donc toujours du type du plan, et
+       n'a rien à signaler. Seule une version FIGÉE peut porter un autre type que celui du plan d'aujourd'hui —
+       c'est un enregistrement, on le constate sans réclamer de geste. -->
+  @if (typeChange() && figee()) {
     <div class="alert alert-warning" role="status">
       <app-icone nom="alert" [taille]="16" />
-      <span><strong>Cette fiche a été saisie sous un autre type de marché</strong> que celui du plan aujourd'hui
-      ({{ libellesTypes[typeMarche() ?? 'QUANTITE_FIXE'].toLowerCase() }}). Ses réponses et ses saisies ne correspondent plus : reprenez-la depuis la ligne du plan.</span>
+      <span><strong>Cette version a été validée sous un autre type de marché</strong> que celui du plan aujourd'hui
+      ({{ libellesTypes[typeMarche() ?? 'QUANTITE_FIXE'].toLowerCase() }}). Elle reste lisible telle qu'elle a été figée ; une nouvelle version repartira du type du plan.</span>
     </div>
   }
 

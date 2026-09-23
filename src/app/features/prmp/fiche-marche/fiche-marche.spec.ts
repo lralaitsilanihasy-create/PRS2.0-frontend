@@ -197,11 +197,24 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     expect(racine().querySelector('input[name="q-attributaires"]')).not.toBeNull();
   });
 
-  it('fiche saisie sous un autre type que celui du plan aujourd’hui : le serveur le dit, l’écran le répète', () => {
+  it('version FIGÉE sous un autre type que celui du plan aujourd’hui : constat d’enregistrement, sans injonction', () => {
     monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 1, typeMarche: 'CONTRAT_CADRE', typeChange: true, cadrage: {}, valeurs: {} }));
+    const bandeaux = Array.from(racine().querySelectorAll('.alert-warning')).map((e) => texte(e)).join(' ');
+    expect(bandeaux).toContain('validée sous un autre type de marché');
+    expect(bandeaux).toContain('une nouvelle version repartira du type du plan');
+    expect(bandeaux).not.toContain('reprenez-la depuis la ligne du plan');
+  });
+
+  it('BROUILLON : le type vient du plan, il n’y a donc rien à signaler', () => {
+    monter('PRMP', 42);
+    // ⚠️ Demande du pilote (23/09) : « le type de marché doit être du plan de passation de marché ».
+    // Un brouillon est toujours du type du plan ; le type sous lequel il a commencé n'intéresse personne.
     ouvrir(REFERENTIEL, fiche({ typeMarche: 'CONTRAT_CADRE', typeChange: true, cadrage: {}, valeurs: {} }));
     const bandeaux = Array.from(racine().querySelectorAll('.alert-warning')).map((e) => texte(e)).join(' ');
-    expect(bandeaux).toContain('saisie sous un autre type de marché');
+    expect(bandeaux).not.toContain('autre type de marché');
+    // Le bandeau qui compte reste là : cette forme n'est pas encore prise en charge.
+    expect(bandeaux).toContain('Marché contrat-cadre');
   });
   it('contrat absent : bandeau « en attente du backend », aucune ligne — 400 compris (« eligibles » pris pour un id par l’existant)', () => {
     monter('PRMP', null);

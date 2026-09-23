@@ -136,3 +136,19 @@ leurs champs de saisie ne correspondent plus à leur type.
 > Reste à traiter, hors périmètre de ce lot : sur les lignes du plan dont le montant par lot n'est pas renseigné, le
 > champ `B02-LV-03` « Montant par lot » est servi sous la forme `Lot 1 : null ; Lot 2 : null`. Le mot `null` ne doit
 > pas atteindre l'écran — soit la part est omise, soit la mention est explicite (« non réparti »).
+
+> ⚠️ **23/09, second retour du pilote — « le type de marché doit être du plan de passation de marché ».**
+>
+> `typeChange` était montré sur **tout** état de la fiche, brouillon compris. C'était contredire la règle du lot :
+> si le type vient du plan, **un brouillon est toujours du type du plan**, et le type sous lequel il a commencé
+> n'intéresse personne. Le bandeau demandait en plus « reprenez-la depuis la ligne du plan » sur une fiche
+> contrat-cadre, où aucune écriture n'est acceptée : une injonction impossible à suivre.
+>
+> **Côté front, le bandeau ne paraît plus que sur une version FIGÉE**, et il constate au lieu de réclamer :
+> « Cette version a été validée sous un autre type de marché que celui du plan aujourd'hui. Elle reste lisible
+> telle qu'elle a été figée ; une nouvelle version repartira du type du plan. » C'est bien là le seul cas où
+> `t_fiche_marche.TYPE_MARCHE` porte une information : celle d'un enregistrement.
+>
+> **Demande au backend** : servir `typeChange = false` sur un **brouillon**, ou, mieux, réaligner le
+> `TYPE_MARCHE` d'un brouillon sur celui du plan à la lecture. Un brouillon n'est pas un enregistrement : rien
+> n'y est figé, donc rien n'y diverge. Le front n'affiche déjà plus rien dans ce cas, mais le DTO ment encore.
