@@ -8,8 +8,9 @@
   <header class="page-header fm__entete">
     <div>
       <div class="page-subtitle">Domaine PRMP · {{ figee() ? 'fiche validée, version ' + fiche()?.version : 'brouillon' }}</div>
-      <!-- La désignation d'une ligne peut décrire quatre lots en toutes lettres : bornée à deux lignes, entière en infobulle. -->
-      <h1 class="page-title fm__titre" [attr.title]="fiche()?.designationMarche">
+      <!-- La désignation d'une ligne peut décrire quatre lots en toutes lettres : bornée à deux lignes, entière
+           en infobulle — mais seulement si elle est vraiment coupée (cf. appTitreSiTronque). -->
+      <h1 class="page-title fm__titre" appTitreSiTronque>
         @if (idDmc() == null) { Fiche marché — choisir la ligne du plan de passation }
         @else { Fiche marché{{ fiche()?.designationMarche ? ' — ' + fiche()?.designationMarche : '' }} }
       </h1>
@@ -83,7 +84,7 @@
           @for (l of eligiblesAffichees(); track l.idDetail) {
             <tr>
               <td class="cnm-mono">{{ l.refeDossier || ('#' + l.idDossier) }}</td>
-              <td><span class="fm__obj" [attr.title]="l.designationMarche">{{ l.designationMarche }}</span></td>
+              <td><span class="fm__obj" appTitreSiTronque>{{ l.designationMarche }}</span></td>
               <td class="fm__mode">
                 <span>{{ l.libelleMode || l.idMode || '—' }}</span>
                 @if (formeDe(l); as forme) { <span class="fm__forme" [class.fm__forme--ko]="ligneBloquee(l)">{{ forme }}</span> }

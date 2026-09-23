@@ -12,6 +12,7 @@ import { BilanControles, BlocFiche, Cadrage, ChampFiche, FicheMarche, LigneEligi
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
+import { TitreSiTronqueDirective } from '../../../shared/ui/titre-si-tronque';
 import {
   BILAN_VIDE,
   ETAPES_FICHE,
@@ -63,7 +64,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
 @Component({
   selector: 'app-fiche-marche',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icone, EtatErreur],
+  imports: [RouterLink, Icone, EtatErreur, TitreSiTronqueDirective],
   templateUrl: './fiche-marche.html',
   styleUrl: './fiche-marche.scss',
 })
