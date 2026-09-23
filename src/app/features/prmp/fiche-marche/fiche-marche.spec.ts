@@ -35,6 +35,15 @@ const REFERENTIEL: ReferentielFiche = {
   ],
 };
 
+/** Référentiel augmenté du champ PPM qui porte le nombre de lots du plan (clé `NB_LOTS_PPM`). */
+const REF_AVEC_LOTS: ReferentielFiche = {
+  ...REFERENTIEL,
+  champs: [
+    ...REFERENTIEL.champs,
+    { code: 'B02-LV-01', bloc: 'B02', rubrique: 'LV', rang: 1, libelle: 'Nombre de lots du plan', type: 'TEXTE', source: 'PPM', clePpm: 'NB_LOTS_PPM', documentMaitre: 'DPAO', reprises: ['AE'], typesMarche: ['QUANTITE_FIXE'], obligatoire: false },
+  ],
+};
+
 // ⚠️ Lot 1c — le type de marché n'est plus une réponse de cadrage : il vient de la forme du marché de la ligne du plan.
 const CADRAGE_COMPLET = {
   alloti: 'NON', variantes: 'NON', groupement: 'NON', provenance: 'NATIONAL', typePrix: 'UNITAIRES',
@@ -229,6 +238,59 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     rendre();
     expect(fixture.componentInstance.cadrageOk()).toBe(true);
     expect(bouton('Enregistrer le cadrage').disabled).toBe(true);
+  });
+
+  it('allotissement : un lot au plan ⇒ « Non » imposé et verrouillé, la réponse part avec le cadrage', () => {
+    monter('PRMP', 42);
+    ouvrir(REF_AVEC_LOTS, fiche({ cadrage: {}, valeurs: {}, valeursPpm: { 'B02-LV-01': '1' } }));
+    const alloti = Array.from(racine().querySelectorAll('input[name="q-alloti"]')) as HTMLInputElement[];
+    expect(alloti.find((i) => i.value === 'NON')?.checked).toBe(true);
+    expect(alloti.every((i) => i.disabled)).toBe(true);
+    expect(texte(racine().querySelector('.fm__q-plan'))).toBe('repris du plan de passation');
+    expect(texte(racine().querySelector('.fm__q--plan .fm__q-aide'))).toContain('annonce 1 lot ');
+    // Un clic sur « Oui » ne change rien : la correction se fait dans le plan.
+    alloti.find((i) => i.value === 'OUI')?.click();
+    rendre();
+    expect(fixture.componentInstance.cadrage()['alloti']).toBe('NON');
+    // Pas de lot à saisir, donc pas de complément.
+    expect(racine().querySelector('.fm__q-comp')).toBeNull();
+  });
+
+  it('allotissement : quatre lots au plan ⇒ « Oui » imposé, le nombre vient du plan et ne se saisit pas', () => {
+    monter('PRMP', 42);
+    ouvrir(REF_AVEC_LOTS, fiche({ cadrage: {}, valeurs: {}, valeursPpm: { 'B02-LV-01': '4' } }));
+    const alloti = Array.from(racine().querySelectorAll('input[name="q-alloti"]')) as HTMLInputElement[];
+    expect(alloti.find((i) => i.value === 'OUI')?.checked).toBe(true);
+    expect(alloti.every((i) => i.disabled)).toBe(true);
+    const nb = racine().querySelector('.fm__q-comp input') as HTMLInputElement;
+    expect(nb.value).toBe('4');
+    expect(nb.disabled).toBe(true);
+    expect(fixture.componentInstance.cadrage()['nbLots']).toBe(4);
+  });
+
+  it('allotissement : le cadrage enregistré contredit le plan — la réponse du plan s’affiche, et on le dit', () => {
+    monter('PRMP', 42);
+    ouvrir(REF_AVEC_LOTS, fiche({ cadrage: { alloti: 'NON' }, valeurs: {}, valeursPpm: { 'B02-LV-01': '4' } }));
+    expect(texte(racine().querySelector('.alert-warning'))).toContain('ne correspond plus au plan de passation');
+    expect((racine().querySelector('input[name="q-alloti"][value="OUI"]') as HTMLInputElement).checked).toBe(true);
+  });
+
+  it('allotissement : une fiche VALIDÉE garde ce qui a été figé, le plan ne la réécrit pas', () => {
+    monter('PRMP', 42);
+    ouvrir(REF_AVEC_LOTS, fiche({ statut: 'VALIDEE', version: 1, cadrage: { ...CADRAGE_COMPLET, alloti: 'NON' }, valeurs: {}, valeursPpm: { 'B02-LV-01': '4' } }));
+    fixture.componentInstance.allerA(1);
+    rendre();
+    expect(fixture.componentInstance.cadrage()['alloti']).toBe('NON');
+    expect(racine().querySelector('.alert-warning')).toBeNull();
+    expect(racine().querySelector('.fm__q-plan')).toBeNull();
+  });
+
+  it('allotissement : plan muet sur le nombre de lots ⇒ la question reste posée et modifiable', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ cadrage: {}, valeurs: {} }));
+    const alloti = Array.from(racine().querySelectorAll('input[name="q-alloti"]')) as HTMLInputElement[];
+    expect(alloti.some((i) => i.disabled)).toBe(false);
+    expect(racine().querySelector('.fm__q-plan')).toBeNull();
   });
 
   it('cadrage : « forme du groupement » apparaît avec groupement = OUI et repart avec NON ; l’enregistrement envoie les réponses', () => {

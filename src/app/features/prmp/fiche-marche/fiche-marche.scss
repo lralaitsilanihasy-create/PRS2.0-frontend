@@ -138,3 +138,8 @@
 .fm__docs li { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .fm__docs-n { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
 .fm__docs-p { color: var(--n-500); font-size: 0.8rem; }
+
+// Demande du 23/09 : une réponse de cadrage reprise du plan de passation, verrouillée.
+.fm__q--plan .fm__q-opts { opacity: 0.75; }
+.fm__q-plan { padding: 0.1rem 0.5rem; border-radius: 8px; background: #ecfdf5; color: #047857; font-size: 0.72rem; font-weight: 600; }
+

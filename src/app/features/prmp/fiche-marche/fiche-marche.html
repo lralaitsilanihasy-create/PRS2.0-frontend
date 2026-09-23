@@ -146,17 +146,32 @@
           @case (1) {
             <section class="fm__bloc" aria-labelledby="fm-cadrage">
               <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 2</span><h2 id="fm-cadrage">Cadrage</h2><span class="fm__comptes">Chaque réponse ouvre ou ferme des rubriques</span></div>
+              @if (allotiCorrige()) {
+                <div class="alert alert-warning" role="status">
+                  <app-icone nom="alert" [taille]="16" />
+                  <span>L'allotissement enregistré ne correspond plus au <strong>plan de passation</strong>, qui annonce
+                  {{ nbLotsPlan() }} lot{{ nbLotsPlan()! > 1 ? 's' : '' }}. La réponse affichée est celle du plan :
+                  <strong>enregistrez le cadrage</strong> pour l'aligner.</span>
+                </div>
+              }
               @for (q of questions(); track q.cle) {
-                <div class="fm__q">
+                <div class="fm__q" [class.fm__q--plan]="imposee(q.cle)">
                   <div class="fm__q-tete">
                     <span class="fm__q-l">{{ q.libelle }}</span>
+                    <!-- ⚠️ Demande du pilote (23/09) — l'allotissement vient du nombre de lots du plan : la question
+                         reste lisible, la réponse est celle du plan, et elle ne se modifie pas ici. -->
+                    @if (imposee(q.cle)) { <span class="fm__q-plan">repris du plan de passation</span> }
                     <span class="fm__q-docs">{{ q.documents }}</span>
                   </div>
-                  @if (q.aide) { <p class="fm__q-aide">{{ q.aide }}</p> }
+                  @if (imposee(q.cle)) {
+                    <p class="fm__q-aide">Le plan de passation annonce <strong>{{ nbLotsPlan() }} lot{{ nbLotsPlan()! > 1 ? 's' : '' }}</strong> pour cette ligne : le marché est donc {{ nbLotsPlan()! > 1 ? 'alloti' : 'non alloti' }}. Corrigez le plan si c'est inexact.</p>
+                  } @else if (q.aide) {
+                    <p class="fm__q-aide">{{ q.aide }}</p>
+                  }
                   <div class="fm__q-opts" role="radiogroup" [attr.aria-label]="q.libelle">
                     @for (o of q.options; track o.code) {
                       <label class="fm__opt" [class.fm__opt--on]="reponse(q) === o.code" [class.fm__opt--off]="!!o.indisponible">
-                        <input type="radio" [name]="'q-' + q.cle" [value]="o.code" [checked]="reponse(q) === o.code" [disabled]="!!o.indisponible || figee()" (change)="repondre(q.cle, o.code)" />
+                        <input type="radio" [name]="'q-' + q.cle" [value]="o.code" [checked]="reponse(q) === o.code" [disabled]="!!o.indisponible || figee() || imposee(q.cle)" (change)="repondre(q.cle, o.code)" />
                         <span class="fm__opt-l">{{ o.libelle }}</span>
                         @if (o.indisponible) { <span class="fm__opt-ind">{{ o.indisponible }}</span> }
                         @if (o.aide) { <span class="fm__opt-aide">{{ o.aide }}</span> }
@@ -166,7 +181,7 @@
                   @if (q.complement && reponse(q) === q.complement.si) {
                     <label class="fm__q-comp">
                       <span>{{ q.complement.libelle }}</span>
-                      <input class="form-control" type="number" min="1" [value]="complement(q) ?? ''" [disabled]="figee()" (input)="repondre(q.complement.cle, $any($event.target).valueAsNumber || null)" />
+                      <input class="form-control" type="number" min="1" [value]="complement(q) ?? ''" [disabled]="figee() || imposee(q.complement.cle)" (input)="repondre(q.complement.cle, $any($event.target).valueAsNumber || null)" />
                       @if (q.complement.unite) { <span>{{ q.complement.unite }}</span> }
                     </label>
                   }

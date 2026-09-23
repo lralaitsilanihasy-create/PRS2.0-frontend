@@ -16,15 +16,18 @@ import { Icone } from '../../../shared/ui/icone';
 import { TitreSiTronqueDirective } from '../../../shared/ui/titre-si-tronque';
 import {
   BILAN_VIDE,
+  CLES_IMPOSEES_PAR_LE_PLAN,
   ETAPES_FICHE,
   LIBELLES_DOCUMENTS,
   LIBELLES_TYPES_MARCHE,
   QUESTIONS_CADRAGE,
   QuestionCadrage,
   REFERENTIEL_ESQUISSE,
+  allotissementDuPlan,
   blocsASaisir,
   cadrageComplet,
   champsDeRubrique,
+  nbLotsDuPlan,
   progression,
   questionsPosees,
   reprises,
@@ -162,6 +165,23 @@ export class FicheMarcheEcran {
   readonly blocsRestants = computed(() => this.obligatoiresParBloc().map((g) => g.bloc).join(', '));
   readonly reprisesListe = computed(() => reprises(this.referentiel(), this.cadrageEffectif(), this.valeurs(), this.fiche()?.valeursPpm ?? {}, this.fiche()?.valeursCadrage ?? {}));
   readonly figee = computed(() => this.fiche()?.statut === 'VALIDEE');
+
+  /**
+   * ⚠️ Demande du pilote (23/09) — l'allotissement vient du **nombre de lots du plan** : un lot = non alloti, deux
+   * et plus = alloti. La question reste affichée (la PRMP doit voir la réponse qui vaut pour son marché) mais elle
+   * est **verrouillée**, et le nombre de lots est celui du plan. Même principe que le type de marché (lot 1c).
+   */
+  readonly nbLotsPlan = computed(() => nbLotsDuPlan(this.referentiel(), this.fiche()?.valeursPpm));
+  readonly allotiImpose = computed(() => allotissementDuPlan(this.nbLotsPlan()));
+  /** Une fiche **validée** est un enregistrement : on n'y réécrit rien, on montre ce qui a été figé. */
+  readonly allotiVerrouille = computed(() => !this.figee() && this.allotiImpose() !== null);
+  /** Le cadrage enregistré contredit le plan : la PRMP doit réenregistrer pour l'aligner. */
+  readonly allotiCorrige = computed(() => {
+    const impose = this.allotiImpose();
+    const stocke = this.fiche()?.cadrage;
+    if (!impose || !stocke || this.figee()) return false;
+    return stocke['alloti'] != null && String(stocke['alloti']) !== impose.alloti;
+  });
   /** Lot 1b — dossier soumis produit par cette fiche (`null` tant qu'il n'existe pas). */
   readonly idDossierSoumis = computed(() => this.fiche()?.idDossierSoumis ?? null);
   /** Les 22 informations de la ligne, pour B01 (clé → valeur) ; libellé via le référentiel quand il est chargé. */
@@ -211,6 +231,7 @@ export class FicheMarcheEcran {
       if (fiche) {
         this.cadrage.set({ ...fiche.cadrage });
         this.valeurs.set({ ...fiche.valeurs });
+        this.imposerAllotissement();
         this.etape.set(fiche.statut === 'VALIDEE' ? 5 : cadrageComplet({ ...fiche.cadrage, typeMarche: fiche.typeMarche }) ? 2 : 1);
       } else {
         this.etape.set(1);
@@ -249,6 +270,8 @@ export class FicheMarcheEcran {
   // ── Étape 2 : le cadrage ─────────────────────────────────────────────────────────────────────
 
   repondre(cle: string, valeur: Valeur): void {
+    // Une réponse imposée par le plan ne se change pas d'un clic : elle se corrige dans le plan de passation.
+    if (this.imposee(cle)) return;
     this.cadrage.update((c) => {
       const suivant: Cadrage = { ...c, [cle]: valeur };
       // Une question qui disparaît emporte sa réponse (et son complément) : le cadrage ne garde rien d'invisible.
@@ -525,5 +548,26 @@ export class FicheMarcheEcran {
     this.fiche.set(f);
     this.cadrage.set({ ...f.cadrage });
     this.valeurs.set({ ...f.valeurs });
+    this.imposerAllotissement();
+  }
+
+  /**
+   * Aligne le cadrage local sur le plan. Rien n'est écrit au serveur ici : la PRMP voit la bonne réponse, et
+   * l'enregistrement du cadrage la porte. Une fiche figée est laissée telle quelle — c'est un enregistrement.
+   */
+  private imposerAllotissement(): void {
+    const impose = this.allotiImpose();
+    if (!impose || this.figee()) return;
+    this.cadrage.update((c) => {
+      const suivant: Cadrage = { ...c, alloti: impose.alloti };
+      if (impose.nbLots != null) suivant['nbLots'] = impose.nbLots;
+      else delete suivant['nbLots'];
+      return suivant;
+    });
+  }
+
+  /** Cette réponse vient-elle du plan ? Alors elle ne se modifie pas ici. */
+  imposee(cle: string): boolean {
+    return this.allotiVerrouille() && CLES_IMPOSEES_PAR_LE_PLAN.includes(cle);
   }
 }

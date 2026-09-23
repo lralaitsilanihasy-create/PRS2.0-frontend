@@ -1,6 +1,8 @@
 import { ChampFiche, ReferentielFiche } from '../../../models';
 import {
   BILAN_VIDE,
+  allotissementDuPlan,
+  nbLotsDuPlan,
   REFERENTIEL_ESQUISSE,
   blocsASaisir,
   cadrageComplet,
@@ -63,6 +65,29 @@ describe('Fiche marché — règles pures (esquisse du 22/09)', () => {
     expect(cadrageComplet({ ...complet, penalites: '' })).toBe(false);
     const puces = resumeCadrage(complet).map((p) => p.texte);
     expect(puces).toEqual(['Alloti · 3 lots', 'Variantes non', 'Groupement non', 'Fournitures importées', 'Prix unitaires', 'Prix ferme', 'Garantie de soumission exigée', 'Avance 10 %', 'Pénalités selon le ccag']);
+  });
+
+  it('allotissement déduit du plan : un lot = non alloti, deux et plus = alloti avec ce nombre', () => {
+    const ref: ReferentielFiche = {
+      blocs: [],
+      champs: [champ({ code: 'B02-LV-01', bloc: 'B02', rubrique: 'LV', source: 'PPM', clePpm: 'NB_LOTS_PPM' })],
+    };
+    // Le champ est retrouvé par sa clé PPM, pas par son code : c'est le référentiel qui fait foi.
+    expect(nbLotsDuPlan(ref, { 'B02-LV-01': '4' })).toBe(4);
+    expect(nbLotsDuPlan(ref, { 'B02-LV-01': 1 })).toBe(1);
+    // Un plan muet, vide ou illisible ne fait rien deviner.
+    expect(nbLotsDuPlan(ref, {})).toBeNull();
+    expect(nbLotsDuPlan(ref, { 'B02-LV-01': '' })).toBeNull();
+    expect(nbLotsDuPlan(ref, { 'B02-LV-01': 'quatre' })).toBeNull();
+    expect(nbLotsDuPlan(ref, { 'B02-LV-01': '2,5' })).toBeNull();
+    expect(nbLotsDuPlan(ref, { 'B02-LV-01': '0' })).toBeNull();
+    expect(nbLotsDuPlan(ref, null)).toBeNull();
+    expect(nbLotsDuPlan({ blocs: [], champs: [] }, { 'B02-LV-01': '4' })).toBeNull(); // référentiel sans le champ
+
+    expect(allotissementDuPlan(1)).toEqual({ alloti: 'NON', nbLots: null });
+    expect(allotissementDuPlan(2)).toEqual({ alloti: 'OUI', nbLots: 2 });
+    expect(allotissementDuPlan(4)).toEqual({ alloti: 'OUI', nbLots: 4 });
+    expect(allotissementDuPlan(null)).toBeNull();
   });
 
   it('rubriques et champs suivent le cadrage ; une rubrique sans champ (référentiel à compléter) reste ouverte', () => {

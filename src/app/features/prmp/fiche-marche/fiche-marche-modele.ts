@@ -154,6 +154,40 @@ export function typeOutille(t: TypeMarche | null | undefined): boolean {
 }
 
 /** Questions à poser pour un cadrage donné (celles dont la condition `si` est satisfaite). */
+/** Clé PPM du champ qui porte le nombre de lots de la ligne du plan de passation (aujourd'hui `B02-LV-01`). */
+export const CLE_PPM_NB_LOTS = 'NB_LOTS_PPM';
+
+/**
+ * ⚠️ Demande du pilote (23/09) — le nombre de lots **du plan de passation**, tel que le serveur le reprend dans
+ * `valeursPpm`. Le champ est retrouvé par sa `clePpm`, jamais par son code en dur : c'est le référentiel qui fait foi.
+ * `null` si le serveur ne le sert pas, ou s'il n'est pas un entier — on ne devine rien d'un plan incomplet.
+ */
+export function nbLotsDuPlan(
+  referentiel: ReferentielFiche,
+  valeursPpm: Record<string, string | number | null> | null | undefined,
+): number | null {
+  if (!valeursPpm) return null;
+  const champ = referentiel.champs.find((c) => c.clePpm === CLE_PPM_NB_LOTS);
+  const brut = champ ? valeursPpm[champ.code] : undefined;
+  if (brut == null || brut === '') return null;
+  const n = Number(brut);
+  return Number.isInteger(n) && n >= 1 ? n : null;
+}
+
+/**
+ * ⚠️ Demande du pilote (23/09) — l'allotissement **se déduit du plan**, il ne se redemande pas : un lot = marché
+ * non alloti, deux lots et plus = marché alloti, avec le nombre du plan. Même principe que le type de marché
+ * (lot 1c) : une donnée déjà décidée au plan de passation n'est pas resaisie, et ne peut pas le contredire.
+ * `null` = le plan ne dit rien, la question reste posée.
+ */
+export function allotissementDuPlan(nbLots: number | null): { alloti: 'OUI' | 'NON'; nbLots: number | null } | null {
+  if (nbLots == null) return null;
+  return nbLots >= 2 ? { alloti: 'OUI', nbLots } : { alloti: 'NON', nbLots: null };
+}
+
+/** Clés de cadrage imposées par le plan : ni saisies, ni modifiables. */
+export const CLES_IMPOSEES_PAR_LE_PLAN: readonly string[] = ['alloti', 'nbLots'];
+
 export function questionsPosees(cadrage: Cadrage): QuestionCadrage[] {
   return QUESTIONS_CADRAGE.filter((q) => !q.si || String(cadrage[q.si.cle] ?? '') === q.si.valeur);
 }
