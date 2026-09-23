@@ -35,8 +35,9 @@ const REFERENTIEL: ReferentielFiche = {
   ],
 };
 
+// ⚠️ Lot 1c — le type de marché n'est plus une réponse de cadrage : il vient de la forme du marché de la ligne du plan.
 const CADRAGE_COMPLET = {
-  typeMarche: 'QUANTITE_FIXE', alloti: 'NON', variantes: 'NON', groupement: 'NON', provenance: 'NATIONAL', typePrix: 'UNITAIRES',
+  alloti: 'NON', variantes: 'NON', groupement: 'NON', provenance: 'NATIONAL', typePrix: 'UNITAIRES',
   prixRevisable: 'NON', garantieSoumission: 'OUI', avance: 'NON', penalites: 'CCAG',
 };
 
@@ -61,8 +62,10 @@ function fiche(partiel: Partial<FicheMarche> = {}): FicheMarche {
 }
 
 const LIGNES: LigneEligible[] = [
-  { idDetail: 7, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Fourniture de mobilier', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 420000000, dejaDao: false },
-  { idDetail: 9, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Véhicules', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 90000000, dejaDao: true, idDmc: 42 },
+  { idDetail: 7, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Fourniture de mobilier', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 420000000, dejaDao: false, formeMarche: 'QUANTITE_FIXE', formeOutillee: true },
+  { idDetail: 9, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Véhicules', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 90000000, dejaDao: true, idDmc: 42, formeMarche: 'QUANTITE_FIXE', formeOutillee: true },
+  // Lot 1c : forme contrat-cadre — la ligne se voit, mais ne se prépare pas encore.
+  { idDetail: 11, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Pneus (CONTRAT CADRE)', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 50000000, dejaDao: false, formeMarche: 'CONTRAT_CADRE', formeOutillee: false },
 ];
 
 describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1)', () => {
@@ -124,7 +127,12 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
     rendre();
     const lignes = Array.from(racine().querySelectorAll('tbody tr'));
-    expect(lignes.length).toBe(2);
+    expect(lignes.length).toBe(3);
+    // La forme du marché est montrée avec le mode : c'est elle qui donne le type de la fiche.
+    expect(Array.from(racine().querySelectorAll('.fm__forme')).map((e) => texte(e))).toEqual(['Quantité fixe', 'Quantité fixe', 'Contrat-cadre']);
+    const bloquee = lignes[2].querySelector('button') as HTMLButtonElement;
+    expect(texte(bloquee)).toBe('Pas encore pris en charge');
+    expect(bloquee.disabled).toBe(true);
     expect(texte(lignes[0])).toContain('Fourniture de mobilier');
     expect(texte(lignes[0])).toContain('420 000 000 Ar');
     expect(racine().querySelector('.alert')).toBeNull();
@@ -143,7 +151,7 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     monter('PRMP', null, { dossier: '3' });
     http.expectOne('/api/dmcs/eligibles').flush([...LIGNES, { ...LIGNES[0], idDetail: 30, idDossier: 8, refeDossier: 'PPM-2026-008', designationMarche: 'Autre PPM' }]);
     rendre();
-    expect(racine().querySelectorAll('tbody tr').length).toBe(2);
+    expect(racine().querySelectorAll('tbody tr').length).toBe(3);
     expect(texte(racine().querySelector('.fm__filtre'))).toContain('Lignes du plan de passation PPM-2026-003');
     expect((racine().querySelector('.fm__filtre a') as HTMLAnchorElement).getAttribute('href')).toBe('/prmp/dao');
     TestBed.resetTestingModule();
@@ -160,9 +168,28 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
     rendre();
     expect(navigate).not.toHaveBeenCalled();
-    expect(racine().querySelectorAll('tbody tr').length).toBe(2);
+    expect(racine().querySelectorAll('tbody tr').length).toBe(3);
   });
 
+  it('forme non prise en charge : la fiche se lit, aucune écriture n’est offerte (lot 1c)', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ typeMarche: 'CONTRAT_CADRE', cadrage: {}, valeurs: {} }));
+    expect(texte(racine().querySelector('.alert-warning'))).toContain('Marché contrat-cadre');
+    // On lit la fiche ; son enregistrement est refusé d'avance, exactement comme au serveur (409 FORME_NON_OUTILLEE).
+    expect(bouton('Enregistrer le cadrage').disabled).toBe(true);
+    // Le type ne figure plus parmi les questions : il vient du plan.
+    expect(racine().querySelector('input[name="q-typeMarche"]')).toBeNull();
+    // Le type tiré du plan pilote bel et bien les questions : en contrat-cadre, « attributaires » s'ajoute aux neuf communes.
+    expect(racine().querySelectorAll('.fm__q').length).toBe(10);
+    expect(racine().querySelector('input[name="q-attributaires"]')).not.toBeNull();
+  });
+
+  it('fiche saisie sous un autre type que celui du plan aujourd’hui : le serveur le dit, l’écran le répète', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ typeMarche: 'CONTRAT_CADRE', typeChange: true, cadrage: {}, valeurs: {} }));
+    const bandeaux = Array.from(racine().querySelectorAll('.alert-warning')).map((e) => texte(e)).join(' ');
+    expect(bandeaux).toContain('saisie sous un autre type de marché');
+  });
   it('contrat absent : bandeau « en attente du backend », aucune ligne — 400 compris (« eligibles » pris pour un id par l’existant)', () => {
     monter('PRMP', null);
     http.expectOne('/api/dmcs/eligibles').flush({ message: 'Failed to convert "eligibles"' }, { status: 400, statusText: 'Bad Request' });
@@ -181,7 +208,7 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     fixture.componentInstance.charger();
     http.expectOne('/api/dmcs/eligibles').flush(LIGNES);
     rendre();
-    expect(racine().querySelectorAll('tbody tr').length).toBe(2);
+    expect(racine().querySelectorAll('tbody tr').length).toBe(3);
   });
 
   it('fiche sans contrat : structure de l’esquisse (8 blocs à saisir, comptes attendus), cadrage ouvert mais non enregistrable', () => {
@@ -202,7 +229,7 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
 
   it('cadrage : « forme du groupement » apparaît avec groupement = OUI et repart avec NON ; l’enregistrement envoie les réponses', () => {
     monter('UGPM', 42);
-    ouvrir(REFERENTIEL, fiche({ cadrage: { typeMarche: 'QUANTITE_FIXE' }, valeurs: {} }));
+    ouvrir(REFERENTIEL, fiche({ cadrage: {}, valeurs: {} }));
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Cadrage');
     const cocher = (cle: string, val: string): void => {
       (racine().querySelector(`input[name="q-${cle}"][value="${val}"]`) as HTMLInputElement).click();
@@ -215,8 +242,8 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     cocher('groupement', 'NON');
     expect(racine().querySelector('input[name="q-formeGroupement"]')).toBeNull();
     expect(fixture.componentInstance.cadrage()['formeGroupement']).toBeUndefined();
-    // « À commande » et « Contrat-cadre » sont annoncés mais indisponibles (lots 3 et 4).
-    expect((racine().querySelector('input[name="q-typeMarche"][value="A_COMMANDE"]') as HTMLInputElement).disabled).toBe(true);
+    // ⚠️ Lot 1c — plus aucune question de type : c'est la forme du marché de la ligne du plan qui décide.
+    expect(racine().querySelector('input[name="q-typeMarche"]')).toBeNull();
 
     for (const [cle, val] of Object.entries(CADRAGE_COMPLET)) if (cle !== 'groupement') cocher(cle, val);
     cocher('alloti', 'OUI');
@@ -231,6 +258,8 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     const put = http.expectOne('/api/fiches-marche/42/cadrage');
     expect(put.request.method).toBe('PUT');
     expect(put.request.body).toEqual({ cadrage: { ...CADRAGE_COMPLET, alloti: 'OUI', nbLots: 3 } });
+    // Le type n'est jamais renvoyé : le serveur le tient du plan, l'écran ne le lui apprend pas.
+    expect((put.request.body as { cadrage: Record<string, unknown> }).cadrage['typeMarche']).toBeUndefined();
     put.flush(fiche({ cadrage: { ...CADRAGE_COMPLET, alloti: 'OUI', nbLots: 3 }, valeurs: {} }));
     rendre();
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Saisie par bloc');
@@ -307,16 +336,29 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     expect(Array.from(racine().querySelectorAll('.fm__lecture')).map((e) => texte(e))[2]).toBe('Oui');
     bouton('Contrôler').click();
     http.expectOne('/api/fiches-marche/42/controler').flush({
-      bloquants: [{ regle: 'GS-01', champs: ['B05-GS-02'], bloc: 'B05', message: 'Montant de la garantie manquant.' }],
+      bloquants: [
+        { regle: 'GS-01', champs: ['B05-GS-02'], bloc: 'B05', message: 'Montant de la garantie manquant.' },
+        // Une information obligatoire vide n’est pas une anomalie : elle se compte par bloc, jamais ligne à ligne.
+        { regle: 'OBLIGATOIRE', champs: ['B02-OB-01'], bloc: 'B02', message: '« Objet » est obligatoire.' },
+        { regle: 'OBLIGATOIRE', champs: ['B05-MO-01'], bloc: 'B05', message: '« Monnaie » est obligatoire.' },
+        { regle: 'OBLIGATOIRE', champs: ['B05-GS-01'], bloc: 'B05', message: '« Forme » est obligatoire.' },
+      ],
       avertissements: [{ regle: 'OB-02', champs: ['B02-OB-01'], bloc: 'B02', message: 'Objet très court.' }],
       ok: [],
       nbSaisis: 1,
       nbAttendus: 4,
     });
     rendre();
-    expect(texte(racine().querySelector('.fm__ctrl--r'))).toContain('Montant de la garantie manquant');
+    expect(texte(racine().querySelector('.fm__ctrl--r'))).toContain('3 information(s) obligatoire(s) restent à saisir');
+    expect(Array.from(racine().querySelectorAll('.fm__ctrl--sous')).map((e) => texte(e))).toEqual([
+      'B02 1 information(s) saisir', 'B05 2 information(s) saisir',
+    ]);
+    // L'anomalie de cohérence, elle, se lit en toutes lettres avec sa règle.
+    expect(texte(Array.from(racine().querySelectorAll('.fm__ctrl--r')).at(-1))).toContain('Montant de la garantie manquant');
     expect(bouton('Passer à la validation').disabled).toBe(true);
+    // Panneau latéral : une seule anomalie et un seul avertissement listés, les obligatoires comptés à part.
     expect(racine().querySelectorAll('.fm__ctrls li').length).toBe(2);
+    expect(texte(racine().querySelector('.fm__ctrls .fm__ctrls-vide'))).toBe('3 information(s) obligatoire(s) restent à saisir — B02, B05.');
 
     // Le bloquant levé côté serveur : recontrôle, puis validation.
     bouton('Recontrôler').click();

@@ -28,6 +28,7 @@ import {
   reprises,
   resumeCadrage,
   rubriqueOuverte,
+  typeOutille,
 } from './fiche-marche-modele';
 
 type Valeur = string | number | null;
@@ -37,6 +38,11 @@ type Valeur = string | number | null;
  * tombe sur `GET /api/dmcs/{id}` de l'existant, qui refuse « eligibles » comme identifiant (constaté le 22/09).
  * Un 401/403 ou un 5xx restent des erreurs : ils ne parlent pas du contrat.
  */
+/** Règle « champ obligatoire vide » du catalogue B4, seule ou portant un rôle (`REGLE:ROLE`). */
+function estObligatoire(c: { regle?: string | null }): boolean {
+  return (c.regle ?? '').split(':')[0] === 'OBLIGATOIRE';
+}
+
 function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
   return e.status === 404 || e.status === 400 || e.status === 405 || e.status === 501;
 }
@@ -104,7 +110,7 @@ export class FicheMarcheEcran {
   readonly fiche = signal<FicheMarche | null>(null);
   /** Versions figées (`GET …/versions`, B5) — la plus récente en tête. */
   readonly versions = signal<VersionFiche[]>([]);
-  readonly cadrage = signal<Cadrage>({ typeMarche: 'QUANTITE_FIXE' });
+  readonly cadrage = signal<Cadrage>({});
   readonly valeurs = signal<Record<string, Valeur>>({});
   readonly erreursChamp = signal<ReadonlyMap<string, string>>(new Map());
   /** 0..6 — index dans `ETAPES_FICHE`. */
@@ -112,17 +118,44 @@ export class FicheMarcheEcran {
   readonly blocIdx = signal(0);
 
   readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
-  readonly typeMarche = computed<TypeMarche | null>(() => (this.cadrage()['typeMarche'] as TypeMarche | null) ?? null);
-  readonly questions = computed(() => questionsPosees(this.cadrage()));
-  readonly cadrageOk = computed(() => cadrageComplet(this.cadrage()));
-  readonly resume = computed(() => resumeCadrage(this.cadrage()));
+  /** ⚠️ Lot 1c — déduit de la forme du marché de la ligne du plan, servi par le serveur ; jamais saisi ici. */
+  readonly typeMarche = computed<TypeMarche | null>(() => this.fiche()?.typeMarche ?? null);
+  /** Ce type est-il pris en charge aujourd'hui ? Sinon la fiche se lit, mais toute écriture est refusée (409). */
+  readonly typePrisEnCharge = computed(() => typeOutille(this.typeMarche()));
+  /** La fiche a été saisie sous un type qui n'est plus celui du plan (drapeau serveur). */
+  readonly typeChange = computed(() => this.fiche()?.typeChange === true);
+  /** Toute écriture est vaine : contrat absent, ou forme de marché pas encore prise en charge (409 côté serveur). */
+  readonly ecritureBloquee = computed(() => this.contratAbsent() || !this.typePrisEnCharge());
+  /**
+   * Cadrage **augmenté du type** pour les règles pures : les conditions d'affichage et la question des
+   * attributaires s'y réfèrent. Le type n'est jamais renvoyé au serveur — voir `enregistrerCadrage`.
+   */
+  private readonly cadrageEffectif = computed<Cadrage>(() => ({ ...this.cadrage(), typeMarche: this.typeMarche() }));
+  readonly questions = computed(() => questionsPosees(this.cadrageEffectif()));
+  readonly cadrageOk = computed(() => cadrageComplet(this.cadrageEffectif()));
+  readonly resume = computed(() => resumeCadrage(this.cadrageEffectif()));
   readonly blocs = computed(() => blocsASaisir(this.referentiel(), this.typeMarche()));
   readonly blocCourant = computed<BlocFiche | null>(() => this.blocs()[this.blocIdx()] ?? null);
   readonly blocPpm = computed<BlocFiche | null>(() => this.referentiel().blocs.find((b) => b.code === 'B01') ?? null);
-  readonly prog = computed(() => progression(this.referentiel(), this.cadrage(), this.valeurs()));
+  readonly prog = computed(() => progression(this.referentiel(), this.cadrageEffectif(), this.valeurs()));
   readonly bilan = computed<BilanControles>(() => this.fiche()?.bilanControles ?? BILAN_VIDE);
-  readonly reprisesListe = computed(() => reprises(this.referentiel(), this.cadrage(), this.valeurs(), this.fiche()?.valeursPpm ?? {}, this.fiche()?.valeursCadrage ?? {}));
+  /**
+   * ⚠️ 23/09 — un « obligatoire » n'est pas une anomalie : c'est une saisie qui **reste à faire**. Sur une fiche
+   * neuve, le serveur en renvoie plus de cinquante, qui noyaient les vrais écarts de cohérence. On les sépare :
+   * les anomalies se lisent une par une, les obligatoires se comptent par bloc.
+   */
+  readonly anomalies = computed(() => this.bilan().bloquants.filter((c) => !estObligatoire(c)));
+  readonly obligatoiresParBloc = computed(() => {
+    const n = new Map<string, number>();
+    for (const c of this.bilan().bloquants.filter(estObligatoire)) n.set(c.bloc ?? '—', (n.get(c.bloc ?? '—') ?? 0) + 1);
+    return [...n].sort(([a], [b]) => a.localeCompare(b)).map(([bloc, nb]) => ({ bloc, nb }));
+  });
+  readonly nbObligatoires = computed(() => this.obligatoiresParBloc().reduce((s, g) => s + g.nb, 0));
+  readonly blocsRestants = computed(() => this.obligatoiresParBloc().map((g) => g.bloc).join(', '));
+  readonly reprisesListe = computed(() => reprises(this.referentiel(), this.cadrageEffectif(), this.valeurs(), this.fiche()?.valeursPpm ?? {}, this.fiche()?.valeursCadrage ?? {}));
   readonly figee = computed(() => this.fiche()?.statut === 'VALIDEE');
+  /** Lot 1b — dossier soumis produit par cette fiche (`null` tant qu'il n'existe pas). */
+  readonly idDossierSoumis = computed(() => this.fiche()?.idDossierSoumis ?? null);
   /** Les 22 informations de la ligne, pour B01 (clé → valeur) ; libellé via le référentiel quand il est chargé. */
   readonly valeursPpm = computed(() => {
     const v = this.fiche()?.valeursPpm ?? {};
@@ -165,9 +198,9 @@ export class FicheMarcheEcran {
       this.fiche.set(fiche);
       this.versions.set([...versions].sort((a, b) => b.version - a.version));
       if (fiche) {
-        this.cadrage.set({ typeMarche: 'QUANTITE_FIXE', ...fiche.cadrage });
+        this.cadrage.set({ ...fiche.cadrage });
         this.valeurs.set({ ...fiche.valeurs });
-        this.etape.set(fiche.statut === 'VALIDEE' ? 5 : cadrageComplet(fiche.cadrage) ? 2 : 1);
+        this.etape.set(fiche.statut === 'VALIDEE' ? 5 : cadrageComplet({ ...fiche.cadrage, typeMarche: fiche.typeMarche }) ? 2 : 1);
       } else {
         this.etape.set(1);
       }
@@ -177,7 +210,17 @@ export class FicheMarcheEcran {
 
   // ── Étape 1 : la ligne du PPM ────────────────────────────────────────────────────────────────
 
+  /** Libellé de la forme d'une ligne éligible (lot 1c) ; vide si le serveur ne la sert pas encore. */
+  formeDe(l: LigneEligible): string {
+    return l.formeMarche ? this.libellesTypes[l.formeMarche] : '';
+  }
+  /** Une ligne dont la forme n'est pas prise en charge se voit, mais ne se prépare pas. */
+  ligneBloquee(l: LigneEligible): boolean {
+    return l.formeOutillee === false;
+  }
+
   choisirLigne(l: LigneEligible): void {
+    if (this.ligneBloquee(l) && !l.dejaDao) return;
     if (l.dejaDao && l.idDmc) {
       void this.router.navigate(['/prmp/dao', l.idDmc]);
       return;
@@ -218,6 +261,7 @@ export class FicheMarcheEcran {
     const id = this.idDmc();
     if (id == null || !this.cadrageOk() || this.saving()) return;
     this.saving.set(true);
+    // ⚠️ Lot 1c — `this.cadrage()` ne porte QUE les réponses : le type vient du plan et n'est pas renvoyé.
     this.ficheService.cadrage(id, this.cadrage()).subscribe({
       next: (f) => {
         this.saving.set(false);
@@ -232,12 +276,12 @@ export class FicheMarcheEcran {
   // ── Étape 3 : les blocs ──────────────────────────────────────────────────────────────────────
 
   rubriquesOuvertes(bloc: BlocFiche): RubriqueFiche[] {
-    const cadrage = this.cadrage();
+    const cadrage = this.cadrageEffectif();
     return [...bloc.rubriques].sort((a, b) => a.rang - b.rang).filter((r) => rubriqueOuverte(this.referentiel().champs, bloc.code, r, cadrage));
   }
 
   champs(bloc: BlocFiche, rubrique: RubriqueFiche): ChampFiche[] {
-    return champsDeRubrique(this.referentiel().champs, bloc.code, rubrique.code, this.cadrage());
+    return champsDeRubrique(this.referentiel().champs, bloc.code, rubrique.code, this.cadrageEffectif());
   }
 
   valeur(code: string): Valeur {
@@ -371,6 +415,34 @@ export class FicheMarcheEcran {
     });
   }
 
+  /**
+   * ⚠️ Lot 1b (23/09) — la fiche **produit** le dossier soumis à la Commission, puis on y va. Un 409
+   * `DOSSIER_EXISTANT` n'est pas une erreur pour l'utilisateur : le dossier existe, on l'ouvre (son numéro est dans
+   * le corps du refus). Les autres refus gardent leur message serveur.
+   */
+  creerDossier(): void {
+    const id = this.idDmc();
+    if (id == null || this.saving()) return;
+    this.saving.set(true);
+    this.ficheService.creerDossier(id).subscribe({
+      next: (d) => {
+        this.saving.set(false);
+        this.fiche.update((f) => (f ? { ...f, idDossierSoumis: d.idDossier } : f));
+        void this.router.navigate(['/prmp/dossier', d.idDossier]);
+      },
+      error: (e: ApiError) => {
+        this.saving.set(false);
+        const deja = e.code === 'DOSSIER_EXISTANT' ? Number((e.raw?.error as { idDossier?: number } | null)?.idDossier) : NaN;
+        if (Number.isFinite(deja)) {
+          this.fiche.update((f) => (f ? { ...f, idDossierSoumis: deja } : f));
+          void this.router.navigate(['/prmp/dossier', deja]);
+        } else {
+          this.toast.error(e.message || 'Le dossier n’a pas pu être créé.');
+        }
+      },
+    });
+  }
+
   reviser(): void {
     const id = this.idDmc();
     if (id == null || this.saving()) return;
@@ -409,7 +481,7 @@ export class FicheMarcheEcran {
 
   private appliquer(f: FicheMarche): void {
     this.fiche.set(f);
-    this.cadrage.set({ typeMarche: 'QUANTITE_FIXE', ...f.cadrage });
+    this.cadrage.set({ ...f.cadrage });
     this.valeurs.set({ ...f.valeurs });
   }
 }

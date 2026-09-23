@@ -48,18 +48,13 @@ export interface QuestionCadrage {
   complement?: { cle: string; libelle: string; si: string; unite?: string };
 }
 
+/**
+ * ⚠️ Lot 1c (23/09, décision du pilote) — **le type de marché ne se demande plus** : il est déduit de la forme du
+ * marché portée par la ligne du plan (`t_marche.FORME_MARCHE`). Les règles le reçoivent quand même dans le cadrage,
+ * comme une donnée de contexte injectée par l'écran (les conditions d'affichage s'en servent), mais il n'est plus
+ * une réponse et n'est jamais renvoyé au serveur. Neuf questions.
+ */
 export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
-  {
-    cle: 'typeMarche',
-    libelle: 'Quel type de marché ?',
-    aide: 'Tronc commun des fournitures, ou ses variantes.',
-    documents: 'Tous les documents',
-    options: [
-      { code: 'QUANTITE_FIXE', libelle: 'Quantité fixe', aide: 'Tronc commun fournitures.' },
-      { code: 'A_COMMANDE', libelle: 'À commande', aide: 'Ajoute quantités minimum et maximum, durée de validité, date d’effet, montants annuels, délai maximum de livraison.', indisponible: 'lot 3' },
-      { code: 'CONTRAT_CADRE', libelle: 'Contrat-cadre', aide: 'DPAC au lieu du DPAO, titulaire, marchés subséquents, reconduction.', indisponible: 'lot 4' },
-    ],
-  },
   {
     cle: 'alloti',
     libelle: 'Le marché est-il alloti ?',
@@ -150,6 +145,14 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
   },
 ];
 
+/** Types de marché pris en charge aujourd'hui ; la liste s'allonge aux lots suivants (le serveur fait foi). */
+export const TYPES_OUTILLES: readonly TypeMarche[] = ['QUANTITE_FIXE'];
+
+/** Vrai si la fiche d'une ligne de cette forme peut être préparée aujourd'hui. */
+export function typeOutille(t: TypeMarche | null | undefined): boolean {
+  return !!t && TYPES_OUTILLES.includes(t);
+}
+
 /** Questions à poser pour un cadrage donné (celles dont la condition `si` est satisfaite). */
 export function questionsPosees(cadrage: Cadrage): QuestionCadrage[] {
   return QUESTIONS_CADRAGE.filter((q) => !q.si || String(cadrage[q.si.cle] ?? '') === q.si.valeur);
@@ -177,7 +180,7 @@ export function resumeCadrage(cadrage: Cadrage): { texte: string; non: boolean }
     const opt = q.options.find((o) => o.code === String(v));
     if (!opt) continue;
     const non = String(v) === 'NON';
-    const s = q.cle === 'typeMarche' ? '' : sujet(q.cle);
+    const s = sujet(q.cle);
     let texte = s ? `${s} ${opt.libelle.toLowerCase()}` : opt.libelle;
     if (q.cle === 'alloti') texte = non ? 'Non alloti' : `Alloti${cadrage['nbLots'] ? ` · ${cadrage['nbLots']} lots` : ''}`;
     if (q.cle === 'variantes') texte = non ? 'Variantes non' : 'Variantes autorisées';

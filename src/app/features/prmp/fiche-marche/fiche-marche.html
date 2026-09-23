@@ -8,13 +8,17 @@
   <header class="page-header fm__entete">
     <div>
       <div class="page-subtitle">Domaine PRMP · {{ figee() ? 'fiche validée, version ' + fiche()?.version : 'brouillon' }}</div>
-      <h1 class="page-title">
+      <!-- La désignation d'une ligne peut décrire quatre lots en toutes lettres : bornée à deux lignes, entière en infobulle. -->
+      <h1 class="page-title fm__titre" [attr.title]="fiche()?.designationMarche">
         @if (idDmc() == null) { Fiche marché — choisir la ligne du plan de passation }
         @else { Fiche marché{{ fiche()?.designationMarche ? ' — ' + fiche()?.designationMarche : '' }} }
       </h1>
     </div>
     @if (fiche(); as f) {
-      <div class="fm__ref cnm-mono">ligne {{ f.idDetail }} du PPM {{ f.refeDossier || ('#' + f.idDossier) }}</div>
+      <div class="fm__ref">
+        @if (typeMarche(); as t) { <span class="fm__rep fm__rep--plan" title="Forme du marché, reprise de la ligne du plan de passation">{{ libellesTypes[t] }}</span> }
+        <span class="cnm-mono">ligne {{ f.idDetail }} du PPM {{ f.refeDossier || ('#' + f.idDossier) }}</span>
+      </div>
     }
   </header>
   <p class="page-role">
@@ -27,6 +31,23 @@
       <app-icone nom="alert" [taille]="16" />
       <span><strong>Contrat en attente du backend</strong> (demande du 22/09) : l'écran montre la structure de l'esquisse — blocs,
       rubriques et comptes attendus — sans les champs ni l'enregistrement. Il se remplira dès que le serveur servira le référentiel.</span>
+    </div>
+  }
+
+  @if (fiche() && !typePrisEnCharge()) {
+    <div class="alert alert-warning" role="status">
+      <app-icone nom="alert" [taille]="16" />
+      <span><strong>Marché {{ libellesTypes[typeMarche() ?? 'QUANTITE_FIXE'].toLowerCase() }}</strong> : la fiche marché ne prend en charge que les marchés à
+      quantité fixe pour le moment. Cette fiche reste lisible, mais aucune saisie n'y est enregistrée. Le type vient de la
+      <strong>forme du marché</strong> de la ligne du plan de passation : corrigez-la dans le plan si elle est inexacte.</span>
+    </div>
+  }
+
+  @if (typeChange()) {
+    <div class="alert alert-warning" role="status">
+      <app-icone nom="alert" [taille]="16" />
+      <span><strong>Cette fiche a été saisie sous un autre type de marché</strong> que celui du plan aujourd'hui
+      ({{ libellesTypes[typeMarche() ?? 'QUANTITE_FIXE'].toLowerCase() }}). Ses réponses et ses saisies ne correspondent plus : reprenez-la depuis la ligne du plan.</span>
     </div>
   }
 
@@ -56,18 +77,26 @@
       <table class="fm__lignes">
         <colgroup><col class="fm__c-ref" /><col /><col class="fm__c-mode" /><col class="fm__c-mt" /><col class="fm__c-act" /></colgroup>
         <thead>
-          <tr><th scope="col">Dossier de planification</th><th scope="col">Ligne de marché</th><th scope="col">Mode</th><th scope="col" class="r">Montant estimatif</th><th scope="col" class="r">Action</th></tr>
+          <tr><th scope="col">Dossier de planification</th><th scope="col">Ligne de marché</th><th scope="col">Mode et forme</th><th scope="col" class="r">Montant estimatif</th><th scope="col" class="r">Action</th></tr>
         </thead>
         <tbody>
           @for (l of eligiblesAffichees(); track l.idDetail) {
             <tr>
               <td class="cnm-mono">{{ l.refeDossier || ('#' + l.idDossier) }}</td>
               <td><span class="fm__obj" [attr.title]="l.designationMarche">{{ l.designationMarche }}</span></td>
-              <td>{{ l.libelleMode || l.idMode || '—' }}</td>
+              <td class="fm__mode">
+                <span>{{ l.libelleMode || l.idMode || '—' }}</span>
+                @if (formeDe(l); as forme) { <span class="fm__forme" [class.fm__forme--ko]="ligneBloquee(l)">{{ forme }}</span> }
+              </td>
               <td class="r cnm-mono">{{ montant(l.montEstim) }}</td>
               <td class="r">
-                <button type="button" class="btn btn-sm" [class.btn-primary]="!l.dejaDao" [class.btn-outline]="l.dejaDao" [disabled]="saving()" (click)="choisirLigne(l)">
-                  {{ l.dejaDao ? 'Reprendre la fiche' : 'Préparer l’appel d’offres' }}
+                <!-- ⚠️ Lot 1c — une ligne dont la forme n'est pas prise en charge reste visible (la PRMP doit savoir
+                     qu'elle existe et pourquoi elle attend), mais sa préparation est refusée, ici comme au serveur. -->
+                <button type="button" class="btn btn-sm" [class.btn-primary]="!l.dejaDao && !ligneBloquee(l)" [class.btn-outline]="l.dejaDao || ligneBloquee(l)"
+                  [disabled]="saving() || (ligneBloquee(l) && !l.dejaDao)"
+                  [attr.title]="ligneBloquee(l) ? 'La fiche marché ne prend en charge que les marchés à quantité fixe pour le moment.' : null"
+                  (click)="choisirLigne(l)">
+                  {{ l.dejaDao ? 'Reprendre la fiche' : ligneBloquee(l) ? 'Pas encore pris en charge' : 'Préparer l’appel d’offres' }}
                 </button>
               </td>
             </tr>
@@ -143,7 +172,7 @@
                 </div>
               }
               <div class="fm__pied">
-                <button type="button" class="btn btn-primary" [disabled]="!cadrageOk() || saving() || figee() || contratAbsent()" (click)="enregistrerCadrage()">
+                <button type="button" class="btn btn-primary" [disabled]="!cadrageOk() || saving() || figee() || ecritureBloquee()" (click)="enregistrerCadrage()">
                   {{ saving() ? 'Enregistrement…' : 'Enregistrer le cadrage et saisir ›' }}
                 </button>
                 @if (!cadrageOk()) { <span class="fm__aut">Répondez à toutes les questions pour continuer.</span> }
@@ -217,7 +246,7 @@
                 }
                 <div class="fm__pied">
                   <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="blocPrecedent()">‹ Précédent</button>
-                  <button type="button" class="btn btn-primary" [disabled]="saving() || figee() || contratAbsent()" (click)="enregistrerBloc()">
+                  <button type="button" class="btn btn-primary" [disabled]="saving() || figee() || ecritureBloquee()" (click)="enregistrerBloc()">
                     {{ saving() ? 'Enregistrement…' : blocIdx() < blocs().length - 1 ? 'Enregistrer et continuer ›' : 'Enregistrer et voir les reprises ›' }}
                   </button>
                   <span class="fm__aut">{{ figee() ? 'Fiche figée : lecture seule' : 'Brouillon invisible de la Commission' }}</span>
@@ -245,7 +274,7 @@
               </div>
               <div class="fm__pied">
                 <button type="button" class="btn btn-outline" (click)="etape.set(2)">‹ Retour aux blocs</button>
-                <button type="button" class="btn btn-primary" [disabled]="saving() || contratAbsent()" (click)="controler()">Contrôler ›</button>
+                <button type="button" class="btn btn-primary" [disabled]="saving() || ecritureBloquee()" (click)="controler()">Contrôler ›</button>
               </div>
             </section>
           }
@@ -256,7 +285,15 @@
                 @if (!bilan().bloquants.length && !bilan().avertissements.length) {
                   <p class="fm__ok">Aucun contrôle à lever : la fiche peut être validée.</p>
                 }
-                @for (c of bilan().bloquants; track c.regle + c.champs.join()) {
+                <!-- Une information obligatoire manquante n'est pas une anomalie : une ligne par bloc suffit,
+                     avec son compte et le chemin pour y aller. Les écarts de cohérence, eux, se lisent un par un. -->
+                @if (nbObligatoires()) {
+                  <p class="fm__ctrl fm__ctrl--r"><b>{{ nbObligatoires() }} information(s) obligatoire(s)</b> restent à saisir avant de valider :</p>
+                  @for (g of obligatoiresParBloc(); track g.bloc) {
+                    <p class="fm__ctrl fm__ctrl--r fm__ctrl--sous"><b>{{ g.bloc }}</b> {{ g.nb }} information(s) <button type="button" class="fm__lien" (click)="allerAuBloc(g.bloc)">saisir</button></p>
+                  }
+                }
+                @for (c of anomalies(); track c.regle + c.champs.join()) {
                   <p class="fm__ctrl fm__ctrl--r"><b>{{ c.bloc || '—' }}</b> {{ c.message }} <span class="fm__ou">· {{ c.regle }}</span> @if (c.bloc) { <button type="button" class="fm__lien" (click)="allerAuBloc(c.bloc)">corriger</button> }</p>
                 }
                 @for (c of bilan().avertissements; track c.regle + c.champs.join()) {
@@ -265,8 +302,8 @@
               </div>
               <div class="fm__pied">
                 <button type="button" class="btn btn-outline" (click)="etape.set(3)">‹ Reprises</button>
-                <button type="button" class="btn btn-outline" [disabled]="saving() || contratAbsent()" (click)="controler()">Recontrôler</button>
-                <button type="button" class="btn btn-primary" [disabled]="!!bilan().bloquants.length || saving() || contratAbsent()" (click)="etape.set(5)">Passer à la validation ›</button>
+                <button type="button" class="btn btn-outline" [disabled]="saving() || ecritureBloquee()" (click)="controler()">Recontrôler</button>
+                <button type="button" class="btn btn-primary" [disabled]="!!bilan().bloquants.length || saving() || ecritureBloquee()" (click)="etape.set(5)">Passer à la validation ›</button>
               </div>
             </section>
           }
@@ -307,16 +344,30 @@
                 @if (figee()) {
                   <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="reviser()">Ouvrir une nouvelle version</button>
                 } @else if (estPrmp()) {
-                  <button type="button" class="btn btn-primary" [disabled]="!!bilan().bloquants.length || saving() || contratAbsent()" (click)="valider()">{{ saving() ? 'Validation…' : 'Valider la fiche' }}</button>
+                  <button type="button" class="btn btn-primary" [disabled]="!!bilan().bloquants.length || saving() || ecritureBloquee()" (click)="valider()">{{ saving() ? 'Validation…' : 'Valider la fiche' }}</button>
                 }
               </div>
             </section>
           }
           @case (6) {
             <section class="fm__bloc" aria-labelledby="fm-docs">
-              <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 7</span><h2 id="fm-docs">Documents</h2></div>
+              <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 7</span><h2 id="fm-docs">Documents et dossier à soumettre</h2></div>
               <div class="fm__rub">
-                <p>DPAO, acte d'engagement et CCAP seront <strong>générés depuis les modèles officiels</strong> et joints au dossier (lot 2 de la proposition). Le dossier se soumet ensuite à la Commission depuis « Créer dossier ».</p>
+                <p>DPAO, acte d'engagement et CCAP seront <strong>générés depuis les modèles officiels</strong> et joints au dossier (lot 2 de la proposition).</p>
+                <!-- ⚠️ Lot 1b (23/09) : la fiche PRODUIT le dossier soumis à la Commission — entité, localité et PRMP
+                     viennent de la ligne du plan, plus de double saisie. Réservé à la PRMP, sur une fiche validée. -->
+                @if (idDossierSoumis(); as idd) {
+                  <p class="fm__ok">Dossier à soumettre créé depuis cette fiche.</p>
+                  <p>Il reste à y joindre les pièces qui ne sortent pas de la fiche, puis à le soumettre à la Commission : cahier des clauses techniques particulières, avis d'appel d'offres, estimation du coût, garantie de soumission, cahier des clauses administratives générales.</p>
+                  <a class="btn btn-primary" [routerLink]="['/prmp/dossier', idd]">Ouvrir le dossier n° {{ idd }}</a>
+                } @else if (!figee()) {
+                  <p class="fm__attendus">Le dossier à soumettre se crée depuis une fiche <strong>validée</strong> : terminez l'étape 6 d'abord.</p>
+                } @else if (estPrmp()) {
+                  <p>Créer le dossier reprend l'entité contractante, la localité et la PRMP de la ligne du plan de passation : rien à ressaisir. Il naîtra en brouillon, dans « Mes brouillons ».</p>
+                  <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="creerDossier()">{{ saving() ? 'Création…' : 'Créer le dossier à soumettre' }}</button>
+                } @else {
+                  <p>La <strong>PRMP</strong> crée le dossier à soumettre depuis cette fiche, puis y joint les pièces restantes.</p>
+                }
               </div>
               <div class="fm__pied"><a class="btn btn-outline" routerLink="/prmp/soumettre-dossier" [queryParams]="{ famille: 'DMC' }">Retour à « Créer dossier »</a></div>
             </section>
@@ -339,13 +390,20 @@
 
       <aside class="fm__ctrls" aria-labelledby="fm-ctrls">
         <h2 id="fm-ctrls">Contrôles</h2>
-        @if (bilan().bloquants.length || bilan().avertissements.length) {
+        <!-- Les anomalies de cohérence se lisent une par une ; les informations obligatoires manquantes se COMPTENT
+             par bloc — sur une fiche neuve il y en a des dizaines, elles noyaient les vrais écarts. -->
+        @if (anomalies().length || bilan().avertissements.length) {
           <ul>
-            @for (c of bilan().bloquants; track c.regle + c.champs.join()) { <li><i class="fm__pt fm__pt--r"></i><span><b>{{ c.bloc || '—' }}</b> {{ c.message }}</span></li> }
+            @for (c of anomalies(); track c.regle + c.champs.join()) { <li><i class="fm__pt fm__pt--r"></i><span><b>{{ c.bloc || '—' }}</b> {{ c.message }}</span></li> }
             @for (c of bilan().avertissements; track c.regle + c.champs.join()) { <li><i class="fm__pt fm__pt--a"></i><span><b>{{ c.bloc || '—' }}</b> {{ c.message }}</span></li> }
           </ul>
-        } @else {
+        } @else if (!nbObligatoires()) {
           <p class="fm__ctrls-vide">Le bilan du serveur apparaît ici à chaque enregistrement.</p>
+        }
+        @if (nbObligatoires(); as n) {
+          <p class="fm__ctrls-vide">
+            <b>{{ n }} information(s) obligatoire(s)</b> restent à saisir — {{ blocsRestants() }}.
+          </p>
         }
         <div class="fm__total">
           <b>{{ prog().saisis }} sur {{ prog().attendus }}</b> informations saisies

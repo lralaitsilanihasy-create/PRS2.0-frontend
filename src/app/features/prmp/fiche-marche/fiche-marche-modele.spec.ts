@@ -40,8 +40,11 @@ describe('Fiche marché — règles pures (esquisse du 22/09)', () => {
     expect(evaluerCondition('n’importe quoi', c)).toBe(false); // terme illisible = faux, jamais une exception
   });
 
-  it('questions posées : « forme du groupement » seulement si groupement = OUI, « attributaires » seulement en contrat-cadre', () => {
+  it('questions posées : le TYPE n’en est plus une (lot 1c) ; « forme du groupement » si groupement = OUI, « attributaires » en contrat-cadre', () => {
     const base = questionsPosees({ typeMarche: 'QUANTITE_FIXE', groupement: 'NON' }).map((q) => q.cle);
+    // ⚠️ Lot 1c : le type vient de la forme du marché de la ligne du plan ; l'écran l'injecte en contexte, il ne se demande plus.
+    expect(base).not.toContain('typeMarche');
+    expect(base.length).toBe(9);
     expect(base).not.toContain('formeGroupement');
     expect(base).not.toContain('attributaires');
     expect(questionsPosees({ typeMarche: 'QUANTITE_FIXE', groupement: 'OUI' }).map((q) => q.cle)).toContain('formeGroupement');
@@ -59,7 +62,7 @@ describe('Fiche marché — règles pures (esquisse du 22/09)', () => {
     expect(cadrageComplet({ ...complet, avance: 'NON', tauxAvance: null })).toBe(true);
     expect(cadrageComplet({ ...complet, penalites: '' })).toBe(false);
     const puces = resumeCadrage(complet).map((p) => p.texte);
-    expect(puces).toEqual(['Quantité fixe', 'Alloti · 3 lots', 'Variantes non', 'Groupement non', 'Fournitures importées', 'Prix unitaires', 'Prix ferme', 'Garantie de soumission exigée', 'Avance 10 %', 'Pénalités selon le ccag']);
+    expect(puces).toEqual(['Alloti · 3 lots', 'Variantes non', 'Groupement non', 'Fournitures importées', 'Prix unitaires', 'Prix ferme', 'Garantie de soumission exigée', 'Avance 10 %', 'Pénalités selon le ccag']);
   });
 
   it('rubriques et champs suivent le cadrage ; une rubrique sans champ (référentiel à compléter) reste ouverte', () => {

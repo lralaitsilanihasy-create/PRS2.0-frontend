@@ -120,3 +120,19 @@ leurs champs de saisie ne correspondent plus à leur type.
 - La liste des lignes éligibles affiche la **forme** de chaque ligne et **désactive** celles qui ne sont pas outillées,
   avec la raison en clair.
 - L'avertissement provisoire tiré de la désignation est **retiré**.
+
+> ⚠️ **23/09 — livré et recetté, avec deux écarts de présentation assumés côté front.**
+>
+> Le backend a livré B1, B2 et B3 (V37, JAR reconstruit). Le front est branché dessus et la recette navigateur
+> passe sur la base locale : 7 lignes éligibles, 2 en quantité fixe, 5 en contrat-cadre.
+>
+> 1. **Le type se lit dans l'en-tête de la fiche, pas dans le résumé du cadrage.** Le bandeau de cadrage n'apparaît
+>    qu'à l'étape 2, une fois toutes les réponses données : une fiche contrat-cadre, qui ne peut pas être cadrée,
+>    n'aurait jamais montré son type. Il est donc affiché à côté de la référence de la ligne, visible dès l'ouverture.
+> 2. **Une ligne contrat-cadre qui porte DÉJÀ une fiche garde « Reprendre la fiche ».** Seules les lignes sans fiche
+>    affichent « Pas encore pris en charge ». La fiche existante doit rester consultable — c'est là que la PRMP lit
+>    les deux bandeaux qui lui expliquent pourquoi elle est gelée.
+>
+> Reste à traiter, hors périmètre de ce lot : sur les lignes du plan dont le montant par lot n'est pas renseigné, le
+> champ `B02-LV-03` « Montant par lot » est servi sous la forme `Lot 1 : null ; Lot 2 : null`. Le mot `null` ne doit
+> pas atteindre l'écran — soit la part est omise, soit la mention est explicite (« non réparti »).
