@@ -456,7 +456,8 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
   it('documents (lot 2) : listés sur une fiche validée, ouverts et enregistrés par le binaire du serveur', () => {
     monter('PRMP', 42);
     ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2, dateValidation: '2026-09-22T10:05:00', validePar: 'PRMP001' }), [], [
-      { idDocument: 11, type: 'DPAO', nomFichier: 'DPAO_PPM-2026-003_7_v2.docx', tailleOctets: 240000, version: 2 },
+      { idDocument: 11, type: 'DPAO', libelle: 'Données particulières de l’appel d’offres', nomFichier: 'DPAO_PPM-2026-003_7_v2.docx', tailleOctets: 240000, version: 2 },
+      // Sans libellé servi, le sigle sert de repli.
       { idDocument: 12, type: 'CCAP', nomFichier: 'CCAP_PPM-2026-003_7_v2.docx', tailleOctets: 900, version: 2 },
     ] as DocumentFiche[]);
     fixture.componentInstance.allerA(6);
@@ -464,6 +465,9 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     const lignes = Array.from(racine().querySelectorAll('.fm__docs li'));
     expect(lignes.length).toBe(2);
     expect(texte(lignes[0])).toContain('DPAO_PPM-2026-003_7_v2.docx');
+    // Le serveur nomme ses documents ; le sigle ne sert que de repli.
+    expect(texte(lignes[0])).toContain('Données particulières de l’appel d’offres');
+    expect(texte(lignes[1])).toContain('CCAP');
     expect(texte(lignes[0])).toContain('234 ko');
     expect(texte(lignes[1])).toContain('1 ko');
 

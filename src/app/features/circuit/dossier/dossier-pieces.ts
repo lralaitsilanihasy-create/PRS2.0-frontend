@@ -34,7 +34,13 @@ import { DossierContenuStore } from './dossier-contenu.store';
             <div class="piece-row">
               <div class="piece-left">
                 <span class="piece-index pi-blue">{{ i + 1 }}</span>
-                <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                <span class="piece-name">
+                  {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}
+                  <!-- ⚠️ Lot 2a (23/09) — un dossier porte désormais PLUSIEURS pièces du même type (le dossier
+                       d'appel d'offres complet en compte quatre) : seul le nom du fichier les distingue. -->
+                  @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
+                </span>
+                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche marché : elle se corrige dans la fiche, pas ici.">fiche marché</span> }
               </div>
               <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
             </div>
@@ -54,7 +60,13 @@ import { DossierContenuStore } from './dossier-contenu.store';
             <div class="piece-row">
               <div class="piece-left">
                 <span class="piece-index pi-green">{{ i + 1 }}</span>
-                <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                <span class="piece-name">
+                  {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}
+                  <!-- ⚠️ Lot 2a (23/09) — un dossier porte désormais PLUSIEURS pièces du même type (le dossier
+                       d'appel d'offres complet en compte quatre) : seul le nom du fichier les distingue. -->
+                  @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
+                </span>
+                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche marché : elle se corrige dans la fiche, pas ici.">fiche marché</span> }
                 <span class="vc-tag">Corrigée</span>
               </div>
               <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
@@ -73,7 +85,13 @@ import { DossierContenuStore } from './dossier-contenu.store';
             <div class="piece-row">
               <div class="piece-left">
                 <span class="piece-index pi-orange">{{ i + 1 }}</span>
-                <span class="piece-name">{{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}</span>
+                <span class="piece-name">
+                  {{ p.libellePiece || p.nomFichier || ('Pièce #' + p.idPiece) }}
+                  <!-- ⚠️ Lot 2a (23/09) — un dossier porte désormais PLUSIEURS pièces du même type (le dossier
+                       d'appel d'offres complet en compte quatre) : seul le nom du fichier les distingue. -->
+                  @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
+                </span>
+                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche marché : elle se corrige dans la fiche, pas ici.">fiche marché</span> }
                 <span class="lr-tag">LR</span>
               </div>
               <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
@@ -94,6 +112,8 @@ import { DossierContenuStore } from './dossier-contenu.store';
     /* Sans boîte propre : l'en-tête et la carte restent les enfants directs de la section de l'hôte. */
     :host { display: contents; }
     .dc-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 1rem; }
+    .piece-file { display: block; font-size: 0.78rem; color: var(--n-500); overflow-wrap: anywhere; }
+    .piece-fiche { flex: none; padding: 0.1rem 0.5rem; border-radius: 8px; background: #ecfdf5; color: #047857; font-size: 0.72rem; font-weight: 600; }
   `,
 })
 export class DossierPieces {

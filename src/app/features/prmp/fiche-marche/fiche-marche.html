@@ -375,8 +375,12 @@
                   <ul class="fm__docs">
                     @for (d of documents(); track d.idDocument) {
                       <li>
-                        <span class="fm__doc fm__doc--{{ d.type.toLowerCase() }}">{{ libellesDocuments[d.type] }}</span>
-                        <span class="fm__docs-n cnm-mono">{{ d.nomFichier }}</span>
+                        <!-- Le serveur NOMME ses documents (`libelle`) : le sigle ne sert que de repli. -->
+                        <span class="fm__doc fm__doc--{{ d.type.toLowerCase() }}">{{ d.type }}</span>
+                        <span class="fm__docs-n">
+                          {{ d.libelle || libellesDocuments[d.type] }}
+                          <span class="fm__docs-f cnm-mono">{{ d.nomFichier }}</span>
+                        </span>
                         @if (poids(d.tailleOctets); as p) { <span class="fm__docs-p">{{ p }}</span> }
                         <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, true)">Ouvrir</button>
                         <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, false)">Enregistrer</button>

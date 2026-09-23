@@ -292,6 +292,11 @@ export interface PieceJointeDossier {
   idLettre?: number;
   /** ⚠️ 2026-08-03 — version CORRIGÉE déposée pendant la rectification (observations du PV). */
   versionCorrigee?: boolean;
+  /**
+   * ⚠️ Lot 2a (23/09) — pièce **produite par la fiche marché**, non par un téléversement. Elle ne se supprime ni
+   * ne se remplace à la main (409 `PIECE_PRODUITE_PAR_FICHE`) : on corrige la fiche, pas son produit.
+   */
+  idDocumentFiche?: number | null;
 }
 
 /** Lot d'un marché. */

@@ -16,7 +16,7 @@ sur chacun de ses 151 champs. Pour un marché à quantité fixe (139 champs ouve
 
 | document | champs dont il est maître | dont repris du PPM | du cadrage | saisis | + informations reprises d'ailleurs |
 |---|---|---|---|---|---|
-| DPAO — dossier de pré-qualification et d'appel d'offres | 77 | 20 | 8 | 49 | — |
+| DPAO — **données particulières de l'appel d'offres** | 77 | 20 | 8 | 49 | — |
 | CCAP — cahier des clauses administratives particulières | 50 | 0 | 3 | 47 | 29 |
 | AE — acte d'engagement | 10 | 1 | 1 | 8 | 30 |
 | aucun document (donnée de pilotage) | 2 | 2 | 0 | 0 | — |
@@ -61,6 +61,17 @@ correspond toujours à un état figé et daté de la fiche, jamais à un brouill
 - **Échec de génération = échec de la validation** (rollback, 500 nommé). Mieux vaut une fiche restée en brouillon
   qu'une version figée dont les documents manquent, qu'aucun geste ne permettrait de rattraper.
 
+  > ⚠️ **Livraison backend du 2026-09-23 (2a) — B1 livré.** Table `t_document_fiche_marche` (V38), contenu en base
+  > (`bytea`, comme `t_piece_jointe_dossier`), `empreinte` = SHA-256. Le **PDF est produit par OpenPDF, sans Word** :
+  > la génération tourne dans la transaction de la validation, y compris sur la CI qui n'a pas Word. Les documents sont
+  > produits **avant** que la version ne soit figée ; échec → **500, `code: "GENERATION_DOCUMENTS"`**, message qui nomme
+  > le document, fiche restée `BROUILLON`. Le jeu suit `documentMaitre` **et** `reprises` : un document n'est produit
+  > que s'il a au moins une information renseignée (`DPAC` est géré, absent en quantité fixe). **Libellés servis** :
+  > DPAO = « Données particulières de l'appel d'offres » (et non « dossier de pré-qualification… » du tableau
+  > ci-dessus — à confirmer par le pilote), CCAP = « Cahier des clauses administratives particulières », AE = « Acte
+  > d'engagement ». **Pas de reprise** : les versions validées avant le lot 2 (sur DBPRS20, les versions 1 à 3 du
+  > DMC 1) n'ont pas de documents — la prochaine validation en produira.
+
 ### B2 — Lire et télécharger les documents
 
 - `GET /api/fiches-marche/{idDmc}/documents` → la liste des documents de la **version courante** :
@@ -76,6 +87,14 @@ correspond toujours à un état figé et daté de la fiche, jamais à un brouill
 **Nom de fichier proposé** : `DPAO_00001-PPM-AGPM-CNM-2026_302873_v2.docx` — type, référence du plan, ligne,
 version. À corriger si la CNM a une règle établie.
 
+> ⚠️ **Livraison backend du 2026-09-23 (2a) — B2 livré tel que demandé.** Nom exactement sur ce modèle (référence du
+> plan : tout caractère hors `[A-Za-z0-9-]` devient un tiret ; ligne = celle du DMC). Liste dans l'ordre DPAO, CCAP,
+> AE, chaque fois docx puis pdf. « Version courante » = la **dernière** : pendant une révision ouverte, la liste est
+> **vide** (les documents de la version précédente restent lisibles par `?version=`). `?version=` inconnue → 404.
+> Garde : périmètre de lecture de la fiche, qui comprend déjà les contrôleurs de la localité du plan — le Membre lit
+> les documents du dossier qu'il examine, un contrôleur d'une autre localité reçoit 403. `GET /api/dmcs/{id}/documents`
+> n'existe pas (la demande ne le décrit pas) : la route est celle de la fiche.
+
 ### B3 — Les documents rejoignent le dossier soumis
 
 Le lot 1b a fait de la fiche la **productrice du dossier** (`POST /api/fiches-marche/{idDmc}/dossier`). Les documents
@@ -89,6 +108,20 @@ générés doivent s'y retrouver **sans geste humain** : une pièce jointe manue
   pas son produit.
 - Les autres pièces obligatoires (CCAG, CCTP, avis d'appel d'offres, estimation, garantie de soumission) restent
   **téléversées à la main** dans ce lot. Elles ne sortent pas de la fiche aujourd'hui.
+
+  > ⚠️ **Livraison backend du 2026-09-23 (2a) — B3/B4 livrés, avec quatre précisions.** (1) **Seuls les trois PDF**
+  > sont joints au dossier, pas les docx : les pièces d'un dossier sont des PDF, JPEG ou PNG (règle du dépôt), et c'est
+  > le PDF que la Commission lit ; le docx reste téléchargeable depuis la fiche. (2) Le type 6 est retrouvé par un
+  > **code stable, `DAO_COMPLET`**, posé par V38 sur « Dossier d'appel d'offres complet » (et non par son identifiant) ;
+  > marquage : `idDocumentFiche` non nul, servi par `PieceJointeDossierDto`. Jointure à la création **et au
+  > rattachement** (B3 du lot 1b) ; détacher la fiche retire ses pièces. (3) Remplacement selon le statut du dossier :
+  > constitution ou attente de pièces (`BROUILLON`, `SOUMIS`, `EN_ATTENTE_COMPLEMENTS_DEPOT`, `EN_ATTENTE_PIECES`) → les
+  > pièces de la version précédente sont détachées, les nouvelles jointes ; rectification
+  > (`EN_ATTENTE_DECISION_PRMP`) → les nouvelles s'ajoutent en `versionCorrigee`, comme toute pièce déposée pendant la
+  > rectification ; dossier **en examen** ou au-delà → **rien ne change** sous les yeux de la Commission. (4) 409
+  > **`PIECE_PRODUITE_PAR_FICHE`** sur le `DELETE` (Administrateur compris) et sur un **dépôt manuel du même type** tant
+  > que le dossier porte des pièces produites. Un dossier dont la fiche n'a encore produit aucun document (version
+  > validée avant ce lot, cas du n° 100332) garde ses pièces manuelles et reste libre en dépôt.
 
 ### B4 — Une nouvelle version régénère, sans effacer l'ancienne
 
@@ -135,6 +168,11 @@ qui ne figure pas dans la liste. Trois lectures possibles :
 **Le front retient la lecture 1** faute d'arbitrage, et c'est ce que B3 décrit. À corriger en place ici si le pilote
 tranche autrement — c'est une question de référentiel métier, pas de code.
 
+> ⚠️ **Réponse backend du 2026-09-23 — lecture 1 retenue et livrée**, en attendant l'arbitrage du pilote : DPAO + CCAP +
+> AE sont joints ensemble sous le type de code `DAO_COMPLET` (6) ; le type 7 attend le CCAG réglementaire, téléversé.
+> Si le pilote retient la lecture 2 ou 3, il suffit de déplacer le code (ou d'en créer un pour le CCAP) : le serveur
+> suit le **code** du type de pièce, pas son identifiant ni son libellé.
+
 ## Hypothèses (numérotation poursuivie depuis le lot 1)
 
 | # | Hypothèse retenue | à corriger si |
@@ -175,3 +213,50 @@ tranche autrement — c'est une question de référentiel métier, pas de code.
 - Les versions antérieures exposent leurs documents depuis l'onglet des versions figées.
 - La carte « Fiche marché » de la page du dossier indique que les pièces du type 6 viennent de la fiche, et pourquoi
   elles ne se suppriment pas là.
+
+## Réponses du pilote et du front — 2026-09-23, après la livraison 2a
+
+> ⚠️ **Libellé du DPAO — le backend a raison, le tableau ci-dessus était fautif, il est corrigé en place.**
+> Dans un dossier d'appel d'offres, le sigle **DPAO** désigne les **« Données particulières de l'appel d'offres »**,
+> la partie qui particularise les Instructions aux candidats pour ce marché. « Dossier de pré-qualification et
+> d'appel d'offres » relevait d'un autre usage du sigle et n'avait pas cours ici. Les libellés servis par
+> `DocumentFicheDto.libelle` sont donc retenus tels quels, **DPAC compris** (« Données particulières du cahier des
+> clauses administratives »). Le front affiche désormais ce libellé au lieu du sigle : c'est le serveur qui nomme.
+
+> ⚠️ **§B6, type de pièce — la lecture 1 est confirmée.** DPAO, CCAP et AE forment ensemble le
+> « Dossier d'appel d'offres complet » (code `DAO_COMPLET`) ; le type 7 attend le **CCAG réglementaire**, texte
+> national téléversé tel quel. Rien à déplacer. Retrouver le type **par son code et non par son identifiant** est la
+> bonne décision : un référentiel se renumérote, un code non.
+
+> ⚠️ **« Montant par lot » — écart clos.** Un lot sans montant affiche « Lot A : montant non renseigné », et
+> l'information est omise si aucun lot n'a de montant. Le mot `null` n'atteint plus l'écran. C'était l'écart relevé
+> au lot 1c, §B5 de cette demande.
+
+> ⚠️ **Fiches contrat-cadre (DMC 3 et 4) — décision du pilote, pas encore rendue.** Rien n'est supprimé sur DBPRS20
+> en attendant. Ces fiches sont gelées par le lot 1c : elles restent lisibles, aucune écriture n'y est acceptée, et
+> les deux bandeaux en disent la raison. Elles ne gênent donc personne ; les supprimer est une commodité de jeu
+> d'essai, pas une correction.
+
+> ⚠️ **Pas de reprise des versions validées avant ce lot — acté.** Les versions 1 à 3 du DMC 1 n'ont pas de
+> documents, et l'écran le dit sans se tromper : l'étape 7 d'une version sans document affiche « Aucun document sur
+> cette version », jamais une erreur. Valider la version 4 les produira.
+
+### Recette réelle du lot 2a — 2026-09-23, JAR reconstruit, V38 appliquée
+
+Faite **par l'interface**, sur la version 4 du DMC 1 : dernier contrôle bloquant levé (« Lieu de livraison »), fiche
+validée, documents produits et joints au dossier 100332.
+
+- **Six documents** produits et listés à l'étape 7 : DPAO, CCAP et AE, chacun en `docx` et en `pdf`.
+- Le **libellé servi par le serveur** est affiché, pas le sigle seul ; le **nom de fichier n'est jamais recomposé**
+  par le front (`DPAO_00001-PPM-AGPM-CNM-2026_302873_v4.docx`).
+- « Enregistrer » et « Ouvrir » passent par `telechargerBlob` / `ouvrirBlobSur` : le PDF s'ouvre dans un onglet.
+- Brouillon : la route répond **200 `[]`** et l'étape annonce « produits par la validation », sans liste vide trompeuse.
+- Les **trois PDF** sont joints au dossier 100332 sous le type `DAO_COMPLET`, marqués `idDocumentFiche`.
+
+> ⚠️ **Écart relevé par cette recette, corrigé côté front.** Le dossier 100332 porte maintenant **quatre pièces du
+> même type** « Dossier d'appel d'offres complet » : celle qui a été téléversée à la main, et les trois produites par
+> la fiche. La liste des pièces jointes n'affichait que le **libellé du type** : quatre lignes identiques, impossible
+> de savoir laquelle ouvrir. Elle affiche désormais le **nom du fichier** sous le type, et une pastille
+> « fiche marché » sur les pièces produites — celles que le serveur refuse de supprimer à la main.
+>
+> C'est une conséquence normale du lot 2a, pas un défaut de la livraison : rien à changer côté serveur.
