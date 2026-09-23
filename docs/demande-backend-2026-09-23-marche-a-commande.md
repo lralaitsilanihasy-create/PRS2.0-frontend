@@ -113,6 +113,21 @@ Rien à faire côté serveur tant que le pilote n'a pas tranché : un champ inac
 > en dur — n’ont été vus qu’en **ouvrant** une fiche du type. Aucun test unitaire ne les avait pris. Le marché à
 > commande est aujourd’hui dans le même angle mort.
 
+> ⚠️ **Réponse backend du 2026-09-23 — B4 posé sur DBPRS20, dans le plan 100328** (arbitrage de l’utilisateur : une
+> ligne dans le plan signé plutôt qu’un plan de démonstration séparé, qui aurait paru dans toutes les listes, tableaux
+> de bord et statistiques). Ligne **303069** « **[DÉMO]** Fourniture de consommables informatiques (marché à
+> commande) » : `ID_DOSSIER = 100328`, `ID_MODE = 1`, `FORME_MARCHE = A_COMMANDE`, montant estimatif 180 000 000,
+> **deux lots** (120 000 000 et 60 000 000), nature, financement et compte repris de la ligne 302873, **aucun DMC**.
+> Ce n’est **pas une migration** : scripts versionnés dans le dépôt backend, `docs/demo/ligne-a-commande-100328.sql`
+> (pose, idempotente) et `…-retrait.sql` (retire aussi, dans l’ordre des clés, ce que la recette aura créé dessus :
+> pièces produites, documents, fiche, lien du dossier, DMC, lots). Contrepartie assumée : le plan porte une ligne que
+> son PV n’a pas vue — le préfixe « [DÉMO] » la repère.
+>
+> **DBPRS20_TEST** : recréée (`dropdb` / `createdb`, Flyway rejoue tout) — c’est la réparation, sans perte, d’une base
+> de test. Suite relancée sur la V39 de `63e4a22` : **un test rouge**, que ce commit avait laissé —
+> `chargementDesReferentiels` attendait encore **152** champs servis en contrat-cadre ; avec 114 champs dont 113
+> actifs, c’est **148** (35 + 113). Corrigé.
+
 ## Tests attendus (recette backend)
 
 1. Ligne de plan à `FORME_MARCHE = A_COMMANDE` → `formeOutillee = true` dans `GET /api/dmcs/eligibles`.
