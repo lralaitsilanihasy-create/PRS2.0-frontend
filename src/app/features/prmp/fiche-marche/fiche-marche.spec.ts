@@ -293,6 +293,19 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     expect(racine().querySelector('.fm__q-plan')).toBeNull();
   });
 
+  it('écriture refusée : l’écran ne réclame aucun geste impossible', () => {
+    monter('PRMP', 42);
+    // Forme non outillée ET allotissement en désaccord avec le plan : les deux messages doivent se taire sur l'action.
+    ouvrir(REF_AVEC_LOTS, fiche({ typeMarche: 'CONTRAT_CADRE', cadrage: { alloti: 'NON' }, valeurs: {}, valeursPpm: { 'B02-LV-01': '4' } }));
+    const bandeau = texte(Array.from(racine().querySelectorAll('.alert-warning')).find((e) => texte(e).includes('ne correspond plus au plan')));
+    expect(bandeau).toContain('La réponse affichée est celle du plan.');
+    expect(bandeau).not.toContain('enregistrez le cadrage');
+    // Le pied nomme la vraie raison du refus, pas les réponses manquantes.
+    const pied = texte(racine().querySelector('.fm__aut'));
+    expect(pied).toContain('pas encore prise en charge');
+    expect(pied).not.toContain('Répondez à toutes les questions');
+  });
+
   it('cadrage : « forme du groupement » apparaît avec groupement = OUI et repart avec NON ; l’enregistrement envoie les réponses', () => {
     monter('UGPM', 42);
     ouvrir(REFERENTIEL, fiche({ cadrage: {}, valeurs: {} }));

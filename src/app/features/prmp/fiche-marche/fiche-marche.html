@@ -149,9 +149,11 @@
               @if (allotiCorrige()) {
                 <div class="alert alert-warning" role="status">
                   <app-icone nom="alert" [taille]="16" />
+                  <!-- ⚠️ 23/09 — sur une fiche dont l'écriture est refusée (forme non outillée, contrat absent),
+                       on ne réclame pas un enregistrement impossible : on se contente de constater. -->
                   <span>L'allotissement enregistré ne correspond plus au <strong>plan de passation</strong>, qui annonce
-                  {{ nbLotsPlan() }} lot{{ nbLotsPlan()! > 1 ? 's' : '' }}. La réponse affichée est celle du plan :
-                  <strong>enregistrez le cadrage</strong> pour l'aligner.</span>
+                  {{ nbLotsPlan() }} lot{{ nbLotsPlan()! > 1 ? 's' : '' }}. La réponse affichée est celle du plan@if (!ecritureBloquee()) {<span> :
+                  <strong>enregistrez le cadrage</strong> pour l'aligner</span>}<span>.</span></span>
                 </div>
               }
               @for (q of questions(); track q.cle) {
@@ -191,7 +193,11 @@
                 <button type="button" class="btn btn-primary" [disabled]="!cadrageOk() || saving() || figee() || ecritureBloquee()" (click)="enregistrerCadrage()">
                   {{ saving() ? 'Enregistrement…' : 'Enregistrer le cadrage et saisir ›' }}
                 </button>
-                @if (!cadrageOk()) { <span class="fm__aut">Répondez à toutes les questions pour continuer.</span> }
+                @if (ecritureBloquee()) {
+                  <span class="fm__aut">{{ contratAbsent() ? 'Le serveur ne sert pas encore le contrat : rien ne peut être enregistré.' : 'Cette forme de marché n’est pas encore prise en charge : rien ne peut être enregistré ici.' }}</span>
+                } @else if (!cadrageOk()) {
+                  <span class="fm__aut">Répondez à toutes les questions pour continuer.</span>
+                }
               </div>
             </section>
           }
