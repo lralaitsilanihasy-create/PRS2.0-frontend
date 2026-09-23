@@ -164,6 +164,12 @@
   max-width: 52rem;
 }
 
+/* Fiche marché d'un dossier d'appel d'offres (lot 1b) : même largeur que la synthèse. */
+.pd-fiche {
+  display: block;
+  max-width: 52rem;
+}
+
 /* ── Frise des sept étapes ── */
 .pd-frise {
   display: grid;

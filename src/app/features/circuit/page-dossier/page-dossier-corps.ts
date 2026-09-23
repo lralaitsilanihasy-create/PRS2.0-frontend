@@ -23,6 +23,7 @@ import { FocusNavette } from './etape-pv';
 import { EtapeCourante } from './etape-courante';
 import { EtatGestes, GesteBouton, VueEtape, ciblePage, famillePage, gesteDemande, montantGestes, vueEtape } from './etape-courante-modele';
 import { RetourPage, SuiteGeste, etapesPage, referenceDossier } from './page-dossier-modele';
+import { FicheMarcheDossier } from './fiche-marche-dossier';
 import { SyntheseDossier } from './synthese-dossier';
 
 /** Hauteur de la barre du haut de l'application (fixe, `.topbar`). */
@@ -63,6 +64,7 @@ const HAUT_TOPBAR = 48;
     DispatchForm,
     CompleterPiecesDepotModal,
     SyntheseDossier,
+    FicheMarcheDossier,
   ],
   providers: [DossierContenuStore],
   host: { '[class.pd--barre]': 'barreVisible()' },
@@ -179,6 +181,13 @@ const HAUT_TOPBAR = 48;
               (retraitDecide)="apresGeste($event === 'acceptee' ? 'retrait-accepte' : null)" />
           }
         }
+      }
+
+      <!-- ⚠️ Lot 1b (23/09, backend 92c7534) — la fiche marché du dossier : son état et son lien, ou le
+           rattachement de secours pour les dossiers créés avant la liaison. Sur un dossier d'appel d'offres
+           seulement ; ceux d'avant la liaison n'ont pas de fiche et le disent. -->
+      @if (estAppelOffres()) {
+        <app-fiche-marche-dossier class="pd-fiche" [dossier]="dossier()" (liaisonChangee)="apresGeste()" />
       }
 
       <section class="pd-documents" aria-label="Documents du dossier">
@@ -310,6 +319,9 @@ export class PageDossierCorps implements OnInit {
   readonly focusNavette = signal<FocusNavette | null>(null);
   /** Lot F5 — la PRMP suit sa demande de retrait sur la page ; l'UGPM n'a pas l'écran des demandes. */
   readonly suiviRetrait = computed(() => (this.auth.role() === 'PRMP' ? this.dossier() : null));
+
+  /** Dossier d'appel d'offres : le seul sous-type qui porte une fiche marché (lot 1b). */
+  readonly estAppelOffres = computed(() => this.sousType() === 'DAO');
 
   private readonly panneau = viewChild('panneau', { read: EtapeCourante });
   private readonly panneauEl = viewChild('panneau', { read: ElementRef });

@@ -88,7 +88,13 @@ export interface FicheMarche {
   idDossier: number;
   refeDossier?: string | null;
   designationMarche?: string | null;
+  /**
+   * ⚠️ Lot 1c (23/09) — **déduit** de la forme du marché de la ligne du plan (`FORME_MARCHE`), relu à chaque lecture.
+   * Il n'est plus une réponse de cadrage : la clé `typeMarche` a quitté `cadrage`.
+   */
   typeMarche: TypeMarche | null;
+  /** Lot 1c — la fiche a été saisie sous un type qui n'est plus celui du plan : à reprendre, pas à poursuivre. */
+  typeChange?: boolean | null;
   statut: StatutFiche;
   version: number;
   cadrage: Cadrage;
@@ -107,6 +113,11 @@ export interface FicheMarche {
   /** Champs de source `CADRAGE`, dérivés des réponses par le serveur (`{ code: valeur }`), jamais reçus. */
   valeursCadrage?: Record<string, string | null> | null;
   bilanControles?: BilanControles | null;
+  /**
+   * ⚠️ Lot 1b (23/09) — le dossier **soumis à la CNM** produit par cette fiche, `null` tant qu'il n'existe pas.
+   * À ne pas confondre avec `idDossier`, qui reste le dossier de **planification** de la ligne (contrat du 22/09).
+   */
+  idDossierSoumis?: number | null;
   dateCreation?: string | null;
   dateMaj?: string | null;
   dateValidation?: string | null;
@@ -136,6 +147,10 @@ export interface LigneEligible {
   montEstim: number | null;
   dejaDao: boolean;
   idDmc?: number | null;
+  /** ⚠️ Lot 1c — forme du marché portée par la ligne (`FORME_MARCHE`) : c'est elle qui donne le type de la fiche. */
+  formeMarche?: TypeMarche | null;
+  /** Lot 1c — cette forme est-elle prise en charge aujourd'hui ? Sinon la ligne se voit mais ne se prépare pas. */
+  formeOutillee?: boolean | null;
 }
 
 /** `DmcDto` (existant, lot 3a) — un DMC par ligne de marché. */
@@ -149,6 +164,34 @@ export interface Dmc {
   statut: 'A_PREPARER' | 'ENGAGE';
   dateCreation?: string | null;
   valeursPpm?: Record<string, string | number | null> | null;
+  /** Lot 1b — dossier soumis produit par la fiche de ce DMC (`null` tant qu'il n'existe pas). */
+  idDossierSoumis?: number | null;
+}
+
+/**
+ * ⚠️ Lot 1b (23/09) — résumé de la fiche marché **porté par le dossier** (`DossierDto.ficheMarche`), pour que sa page
+ * l'affiche sans second appel. Servi sur la **lecture unitaire** seulement : les listes ne portent que `idDmc`.
+ */
+export interface FicheMarcheResume {
+  idDmc: number;
+  idDetail: number;
+  refeDossierPpm?: string | null;
+  designationMarche?: string | null;
+  typeMarche: TypeMarche | null;
+  statut: StatutFiche;
+  version: number;
+  nbSaisis?: number | null;
+  nbAttendus?: number | null;
+}
+
+/** `GET /api/fiches-marche/rattachables` — fiches validées et non encore liées du périmètre (PRMP et UGPM). */
+export interface FicheRattachable {
+  idDmc: number;
+  idDetail: number;
+  refeDossierPpm?: string | null;
+  designationMarche?: string | null;
+  version: number;
+  dateValidation?: string | null;
 }
 
 /** Erreur nominative par champ d'un `PUT …/blocs/{bloc}` (400). */

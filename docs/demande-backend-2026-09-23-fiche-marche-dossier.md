@@ -145,5 +145,19 @@ ouvre le chemin. L'examen **porte toujours sur les pièces** ; les points de con
   la liste des pièces restant à joindre y est rappelée.
 - **Page d'un dossier `DAO`** : encart « Fiche marché » (version, état, informations saisies, lien), ou, si rien n'est
   lié, « Rattacher une fiche marché » avec la liste servie par `rattachables`.
-- **En attendant la livraison**, la page d'un dossier `DAO` porte un simple **repère** vers `/prmp/dao` (livré le 23/09,
-  visible de la PRMP et de son UGPM) : il ne relie rien, il évite de chercher.
+- ~~**En attendant la livraison**, la page d'un dossier `DAO` porte un simple **repère** vers `/prmp/dao`~~ —
+  remplacé le 23/09 par l'encart réel, la liaison étant livrée.
+
+**✅ Recette réelle du front, 23/09 (backend `92c7534`, V36)** : la fiche 1 validée en version 3 produit le dossier
+**n° 100333** — entité « JIRO SY RANO MALAGASY » et localité « Centrale » reprises de la ligne du plan, sous-type
+`DAO`, brouillon, zéro pièce jointe pour l'instant. Sa page montre l'encart « Fiche marché » (validée, version 3,
+91 sur 91 informations, ligne du plan, objet) avec « Ouvrir la fiche » et « Détacher ». Détachement puis
+rattachement au dossier **n° 100332** du pilote par la liste des rattachables : vert, la page relit le dossier.
+Aucune erreur JS.
+
+> ⚠️ **Constat de recette, hors périmètre du lot 1b — les dates du plan de test sont passées.** `DATES_ORDRE`
+> compare les dates de la fiche à celles du plan (lancement 09/02/2026, ouverture 09/03, attribution 27/03) : une
+> remise d'offres saisie à une date d'aujourd'hui **ne peut plus** entrer dans cet ordre, et la fiche reste bloquée.
+> Ce n'est pas un défaut de la règle, c'est un plan dont le calendrier est dépassé. À trancher par le pilote : la
+> règle doit-elle comparer aux dates **prévisionnelles du plan** (et donc bloquer tout appel d'offres préparé en
+> retard), ou seulement **vérifier l'ordre interne** de la fiche (remise < ouverture < attribution) ?

@@ -217,6 +217,22 @@ export class DossierService extends CrudService<Dossier> {
   supprimer(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`, { context: skipErrorToast() });
   }
+
+  /**
+   * ⚠️ Fiche marché, lot 1b (23/09) — **secours** du chemin principal (la fiche produit le dossier) : rattache une
+   * fiche **validée** à un dossier `DAO` resté en BROUILLON, pour les dossiers créés avant la liaison.
+   * `PUT …/fiche-marche` renvoie le dossier (200) ; rattacher la fiche déjà liée ne change rien. 409 à code stable :
+   * `DOSSIER_NON_BROUILLON`, `DOSSIER_NON_DAO`, `DMC_NON_DAO`, `DOSSIER_DEJA_LIE`, `FICHE_DEJA_LIEE` (qui porte
+   * l'`idDossier` qui la tient), `FICHE_NON_VALIDEE`. Silencieux : l'écran nomme le refus.
+   */
+  rattacherFicheMarche(idDossier: number, idDmc: number): Observable<Dossier> {
+    return this.http.put<Dossier>(`${this.baseUrl}/${idDossier}/fiche-marche`, { idDmc }, { context: skipErrorToast() });
+  }
+
+  /** `DELETE …/fiche-marche` — défait le rattachement tant que le dossier est en brouillon ; sans fiche, ne fait rien (200). */
+  detacherFicheMarche(idDossier: number): Observable<Dossier> {
+    return this.http.delete<Dossier>(`${this.baseUrl}/${idDossier}/fiche-marche`, { context: skipErrorToast() });
+  }
 }
 
 @Injectable({ providedIn: 'root' })

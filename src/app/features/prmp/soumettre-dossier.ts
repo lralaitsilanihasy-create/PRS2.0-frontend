@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of } from 'rxjs';
@@ -175,7 +176,7 @@ interface ApercuDossier {
                 <span class="sd__choix-ic" aria-hidden="true">📢</span>
                 <span class="sd__choix-titre">Dossier de mise en concurrence</span>
               </span>
-              <span class="sd__choix-desc">Appel d'offres, consultation… — un type + une localité. Pièces jointes selon le type choisi.</span>
+              <span class="sd__choix-desc">Consultation, gré à gré… — un type + une localité, pièces jointes selon le type. L'appel d'offres, lui, se prépare dans sa fiche marché.</span>
               <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
             </button>
             <button type="button" class="sd__choix-card sd__choix-card--marche" (click)="choisirFamille('DDM')">
@@ -481,14 +482,6 @@ interface ApercuDossier {
         @case ('saisieDossier') {
           <form class="card sd__form cnm-form" [formGroup]="dossierForm" (ngSubmit)="creerDossier()" novalidate>
             <div class="alert alert-info">Dossier de <strong>{{ familleLabel() }}</strong>. Choisissez le sous-type précis parmi ceux de cette famille.</div>
-            <!-- Appel d'offres (proposition DMC du 22/09) : le DAO se prépare par la FICHE MARCHÉ, un formulaire
-                 depuis la ligne du PPM — jamais un import de PDF ; ses documents seront joints ici, au lot 2. -->
-            @if (dossierForm.controls.idSousType.value === 'DAO') {
-              <div class="alert alert-info sd__dao" data-testid="sd-dao-fiche">
-                <span><strong>Appel d’offres :</strong> préparez d’abord la <a routerLink="/prmp/dao">fiche marché</a> — un formulaire alimenté par la ligne
-                du plan de passation, d’où le DPAO, l’acte d’engagement et le CCAP seront générés puis joints à ce dossier.</span>
-              </div>
-            }
             <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Sous-type de dossier *</span>
@@ -502,6 +495,30 @@ interface ApercuDossier {
                 @if (err('idSousType')) { <span class="form-error">{{ err('idSousType') }}</span> }
                 @if (!sousTypesDeLaFamille().length) { <span class="form-hint">Aucun sous-type dans la famille « {{ familleLabel() }} » (référentiel « Sous-types de dossier »).</span> }
               </label>
+            </div>
+
+            <!-- ⚠️ Deux portes menaient au même dossier d'appel d'offres et ne se ressemblaient pas (constat pilote du
+                 23/09). Depuis le lot 1b, le chemin NORMAL est la fiche marché : elle produit le dossier, entité et
+                 localité comprises. Ce formulaire reste le SECOURS d'un DAO préparé hors de l'application — replié,
+                 nommé comme tel, jamais présenté à égalité. Les autres sous-types (consultation, gré à gré…) n'ont
+                 pas de fiche : pour eux, le formulaire est le seul chemin et reste déplié. -->
+            @if (appelOffres()) {
+              <section class="sd__fiche" data-testid="sd-dao-fiche" aria-labelledby="sd-fiche-t">
+                <h2 class="sd__sub" id="sd-fiche-t">Un appel d’offres se prépare dans sa fiche marché</h2>
+                <p class="sd__fiche-p">
+                  Le DPAO, l’acte d’engagement et le CCAP se remplissent une seule fois, dans un formulaire alimenté par la ligne
+                  du plan de passation. À la validation de la fiche, <strong>le dossier à soumettre est créé pour vous</strong> :
+                  entité contractante et localité comprises, sans les ressaisir ici.
+                </p>
+                <a class="btn btn-primary" routerLink="/prmp/dao">Choisir la ligne du plan de passation</a>
+              </section>
+            }
+
+            <details class="sd__reste" [open]="!appelOffres()">
+              @if (appelOffres()) {
+                <summary class="sd__reste-t">Le dossier est déjà préparé hors de l’application ? Créer un dossier vide et y joindre les documents.</summary>
+              }
+            <div class="cnm-form-grid">
               <label class="form-group">
                 <span class="form-label">Entité contractante *</span>
                 <select class="form-control" formControlName="idEntiteContract">
@@ -573,6 +590,7 @@ interface ApercuDossier {
                 {{ submitting() ? 'Création…' : 'Créer le dossier' }}
               </button>
             </footer>
+            </details>
           </form>
         }
 
@@ -894,6 +912,11 @@ interface ApercuDossier {
     .sd__soa-actions { margin-top: 0.5rem; display: flex; justify-content: flex-end; gap: 0.5rem; }
     .sd__nouv-entite { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(0, 0, 0, 0.08); }
     .sd__ou { text-align: center; color: var(--n-400); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    /* Appel d'offres (lot 1b) : le chemin de la fiche est mis en avant, le formulaire manuel se replie derrière. */
+    .sd__fiche { border: 1px solid var(--c-200); border-left: 4px solid var(--c-600); border-radius: var(--radius-lg, 10px); background: var(--c-50); padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; }
+    .sd__fiche-p { margin: 0; font-size: var(--text-sm); color: var(--n-600); max-width: 60ch; }
+    .sd__reste > summary { cursor: pointer; font-weight: 600; font-size: var(--text-sm); color: var(--c-800); padding: 0.5rem 0; }
+    .sd__reste[open] > summary { margin-bottom: 0.5rem; }
     .sd__foot { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--c-100); padding-top: 1rem; }
     .sd__foot--main { margin-top: 1rem; }
     .sd__soumettre-hint { margin-right: auto; align-self: center; }
@@ -1131,6 +1154,13 @@ export class SoumettreDossier {
     idSousType: [null as string | null, Validators.required],
     idEntiteContract: [null as number | null, Validators.required],
   });
+
+  /**
+   * ⚠️ Lot 1b (23/09) — sous-type `DAO` choisi : le dossier se produit depuis la **fiche marché**, et ce formulaire
+   * devient le secours. Suit le sous-type, pas la famille : consultation et gré à gré n'ont pas de fiche.
+   */
+  private readonly sousTypeChoisi = toSignal(this.dossierForm.controls.idSousType.valueChanges, { initialValue: null as string | null });
+  readonly appelOffres = computed(() => this.sousTypeChoisi() === 'DAO');
 
   /** Import PPM PDF (pré-remplissage read-only) : état d'analyse + avertissements du parsing. */
   readonly importing = signal(false);

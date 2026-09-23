@@ -359,4 +359,74 @@ describe('Page dossier — étape en cours et gestes (lot L4-F3)', () => {
       expect(document.activeElement).toBe(racine().querySelector('.ec__principal'));
     });
   });
+  // ⚠️ Lot 1b (23/09) — la fiche marché du dossier d’appel d’offres. Ce que ces tests protègent : l’encart
+  // n'existe QUE sur le sous-type DAO ; il montre ce qui est lié sans second appel (le serveur sert le résumé
+  // dans le dossier) ; le RATTACHEMENT n'est qu'un secours, réservé au domaine PRMP sur un dossier encore en
+  // brouillon — un dossier parti à la Commission se lit, ne se rattache plus.
+  describe('fiche marché du dossier (lot 1b)', () => {
+    const RESUME = {
+      idDmc: 7, idDetail: 302873, refeDossierPpm: '00001/PPM-AGPM/CNM/2026', designationMarche: 'Fourniture de mobilier',
+      typeMarche: 'QUANTITE_FIXE' as const, statut: 'VALIDEE' as const, version: 2, nbSaisis: 104, nbAttendus: 104,
+    };
+    const DAO = (p: Partial<Dossier> = {}): Dossier =>
+      ({ ...DOSSIER, idTypeDossier: 'DMC', idSousType: 'DAO', statut: 'BROUILLON', refeDossier: '100332', ...p });
+    const encart = (): HTMLElement | null => racine().querySelector('app-fiche-marche-dossier');
+    const bouton = (nom: string): HTMLButtonElement | undefined => Array.from(encart()?.querySelectorAll('button') ?? []).find((b) => texte(b) === nom);
+
+    it('fiche rattachée : son état, sa version, ses informations et le lien qui l’ouvre', async () => {
+      await ouvrir('PRMP', '/prmp/dossier/42');
+      repondre(reponse('PRMP', []), DAO({ idDmc: 7, ficheMarche: RESUME }));
+      expect(Array.from(encart()?.querySelectorAll('.fmd__ligne span') ?? []).map((s) => texte(s))).toEqual([
+        'Validée', 'version 2', '· 104 sur 104 informations', '· ligne du plan 00001/PPM-AGPM/CNM/2026',
+      ]);
+      expect(texte(encart()?.querySelector('.fmd__obj'))).toBe('Fourniture de mobilier');
+      expect(encart()?.querySelector('a[href="/prmp/dao/7"]')).not.toBeNull();
+      // Le dossier est encore en brouillon : on peut défaire une liaison posée par erreur.
+      expect(bouton('Détacher')).toBeDefined();
+    });
+
+    it('sans fiche, la PRMP rattache celle qu’elle a validée, et la page relit le dossier', async () => {
+      await ouvrir('PRMP', '/prmp/dossier/42');
+      repondre(reponse('PRMP', []), DAO());
+      expect(texte(encart())).toContain("Aucune fiche marché n'est rattachée");
+      bouton('Rattacher une fiche marché')?.click();
+      harness.detectChanges();
+      http.expectOne('/api/fiches-marche/rattachables').flush([
+        { idDmc: 7, idDetail: 302873, refeDossierPpm: '00001/PPM-AGPM/CNM/2026', designationMarche: 'Fourniture de mobilier', version: 2, dateValidation: '2026-09-23T10:00:00' },
+      ]);
+      harness.detectChanges();
+      expect(texte(encart()?.querySelector('.fmd__liste-obj'))).toBe('Fourniture de mobilier');
+
+      bouton('Rattacher')?.click();
+      const put = http.expectOne('/api/dossiers/42/fiche-marche');
+      expect(put.request.method).toBe('PUT');
+      expect(put.request.body).toEqual({ idDmc: 7 });
+      put.flush(DAO({ idDmc: 7, ficheMarche: RESUME }));
+      harness.detectChanges();
+      // Le dossier est relu : la page le redemande, avec ses gestes.
+      expect(http.match('/api/dossiers/42').length).toBe(1);
+      expect(toast.success).toHaveBeenCalledWith('Fiche marché rattachée à ce dossier.');
+    });
+
+    it('dossier parti à la Commission, ou profil de contrôle : on lit la fiche, on ne la rattache plus', async () => {
+      await ouvrir('PRMP', '/prmp/dossier/42');
+      repondre(reponse('PRMP', []), DAO({ statut: 'PRET_DISPATCH', idDmc: 7, ficheMarche: RESUME }));
+      expect(bouton('Détacher')).toBeUndefined();
+      expect(encart()?.querySelector('a[href="/prmp/dao/7"]')).not.toBeNull();
+      TestBed.resetTestingModule();
+
+      await ouvrir('MEMBRE', '/membre/dossier/42');
+      repondre(reponse('MEMBRE', []), DAO({ idDmc: 7, ficheMarche: RESUME }));
+      expect(texte(encart()?.querySelector('.fmd__etat'))).toBe('Validée');
+      expect(bouton('Rattacher une fiche marché')).toBeUndefined();
+      // La fiche s'ouvre dans l'espace PRMP : pas de lien pour qui ne peut pas y aller.
+      expect(encart()?.querySelector('a[href="/prmp/dao/7"]')).toBeNull();
+    });
+
+    it('aucun encart hors appel d’offres : un plan de passation n’a pas de fiche marché', async () => {
+      await ouvrir('PRMP', '/prmp/dossier/42');
+      repondre(reponse('PRMP', []));
+      expect(encart()).toBeNull();
+    });
+  });
 });

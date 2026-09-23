@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { BilanControles, Cadrage, ChampFiche, Dmc, FicheMarche, LigneEligible, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
+import { BilanControles, Cadrage, ChampFiche, Dmc, Dossier, FicheMarche, FicheRattachable, LigneEligible, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -98,5 +98,20 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
   /** `GET /{idDmc}/versions/{numero}` — une version figée, en entier (livraison du 22/09). */
   version(idDmc: number, numero: number): Observable<FicheMarche> {
     return this.http.get<FicheMarche>(`${this.baseUrl}/${idDmc}/versions/${numero}`);
+  }
+
+  /**
+   * ⚠️ Lot 1b (23/09) — `POST /{idDmc}/dossier` : la fiche **produit** le dossier à soumettre (entité, localité et
+   * PRMP dérivées de la ligne du plan). **PRMP seule** ; 409 à code stable `DMC_NON_DAO`, `DOSSIER_EXISTANT` (qui
+   * porte l'`idDossier` déjà lié), `FICHE_NON_VALIDEE` (la **dernière** version doit être validée : une révision
+   * ouverte bloque). Silencieux : l'écran traite le 409 lui-même.
+   */
+  creerDossier(idDmc: number): Observable<Dossier> {
+    return this.http.post<Dossier>(`${this.baseUrl}/${idDmc}/dossier`, null, { context: skipErrorToast() });
+  }
+
+  /** `GET /rattachables` — fiches validées et non liées du périmètre (PRMP et UGPM ; 403 aux autres). Silencieux. */
+  rattachables(): Observable<FicheRattachable[]> {
+    return this.http.get<FicheRattachable[]>(`${this.baseUrl}/rattachables`, { context: skipErrorToast() });
   }
 }
