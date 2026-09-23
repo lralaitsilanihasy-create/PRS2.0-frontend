@@ -95,6 +95,12 @@ export interface FicheMarche {
   typeMarche: TypeMarche | null;
   /** Lot 1c — la fiche a été saisie sous un type qui n'est plus celui du plan : à reprendre, pas à poursuivre. */
   typeChange?: boolean | null;
+  /**
+   * ⚠️ Lot 3 (demande du 23/09, §B2) — **le serveur dit** si ce type de marché est outillé, au lieu que le front
+   * tienne sa propre liste. Absent tant que le contrat n'est pas servi : l'écran retombe alors sur `TYPES_OUTILLES`.
+   * Même rôle que `LigneEligible.formeOutillee` sur la liste des lignes.
+   */
+  typeOutille?: boolean | null;
   statut: StatutFiche;
   version: number;
   cadrage: Cadrage;

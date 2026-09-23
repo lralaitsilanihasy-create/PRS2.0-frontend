@@ -147,3 +147,8 @@
 
 .fm__versions-docs td { background: var(--n-50); }
 .fm__versions-docs .fm__docs { margin: 0.4rem 0; }
+
+// Forme de marché pas encore outillée : page courte, sans formulaire inutile.
+.fm__attente { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.fm__attente p { margin: 0 0 0.5rem; }
+.fm__attente p:last-child { margin-bottom: 0; }

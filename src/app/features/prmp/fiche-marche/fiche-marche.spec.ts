@@ -184,17 +184,48 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     expect(racine().querySelectorAll('tbody tr').length).toBe(3);
   });
 
-  it('forme non prise en charge : la fiche se lit, aucune écriture n’est offerte (lot 1c)', () => {
+  it('forme non prise en charge : page courte — la ligne se lit, aucun formulaire inutile n’est déroulé', () => {
     monter('PRMP', 42);
     ouvrir(REFERENTIEL, fiche({ typeMarche: 'CONTRAT_CADRE', cadrage: {}, valeurs: {} }));
-    expect(texte(racine().querySelector('.alert-warning'))).toContain('Marché contrat-cadre');
-    // On lit la fiche ; son enregistrement est refusé d'avance, exactement comme au serveur (409 FORME_NON_OUTILLEE).
-    expect(bouton('Enregistrer le cadrage').disabled).toBe(true);
-    // Le type ne figure plus parmi les questions : il vient du plan.
-    expect(racine().querySelector('input[name="q-typeMarche"]')).toBeNull();
-    // Le type tiré du plan pilote bel et bien les questions : en contrat-cadre, « attributaires » s'ajoute aux neuf communes.
-    expect(racine().querySelectorAll('.fm__q').length).toBe(10);
-    expect(racine().querySelector('input[name="q-attributaires"]')).not.toBeNull();
+    // ⚠️ 23/09 — le bandeau ne réclame AUCUNE correction : la ligne est bien un contrat-cadre, c'est l'outil qui manque.
+    const bandeau = texte(racine().querySelector('.alert-warning'));
+    expect(bandeau).toContain('la ligne du plan de passation est bien de ce type');
+    expect(bandeau).not.toContain('corrigez');
+    // Ni cadrage, ni blocs, ni rail : rien ne sera enregistré, rien n'est demandé.
+    expect(racine().querySelectorAll('.fm__q').length).toBe(0);
+    expect(racine().querySelector('.fm__rail')).toBeNull();
+    expect(Array.from(racine().querySelectorAll('button')).some((b) => texte(b).startsWith('Enregistrer'))).toBe(false);
+    // Les informations de la ligne restent lisibles, dépliées.
+    expect(texte(racine().querySelector('.fm__ppm'))).toContain('Ministère de l’Économie et des Finances');
+    expect((racine().querySelector('.fm__ppm') as HTMLDetailsElement).open).toBe(true);
+    expect(texte(racine().querySelector('.fm__attente'))).toContain('hors de l’application');
+    // La phrase de rôle promet une saisie et des documents : elle se tait ici.
+    expect(racine().querySelector('.page-role')).toBeNull();
+  });
+
+  it('c’est le SERVEUR qui dit ce qu’il outille : typeOutille prime sur la liste du front (lot 3 §B2)', () => {
+    monter('PRMP', 42);
+    // Le jour où le backend ouvre le marché à commande, l'écran suit sans livraison de son côté.
+    ouvrir(REFERENTIEL, fiche({ typeMarche: 'A_COMMANDE', typeOutille: true, cadrage: {}, valeurs: {} }));
+    expect(racine().querySelector('.fm__attente')).toBeNull();
+    expect(racine().querySelector('.fm__rail')).not.toBeNull();
+    expect(racine().querySelectorAll('.fm__q').length).toBe(9);
+    TestBed.resetTestingModule();
+
+    // Et inversement : un type que le front croit outillé mais que le serveur refuse reste en page courte.
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ typeMarche: 'QUANTITE_FIXE', typeOutille: false, cadrage: {}, valeurs: {} }));
+    expect(racine().querySelector('.fm__attente')).not.toBeNull();
+    expect(racine().querySelector('.fm__rail')).toBeNull();
+  });
+
+  it('forme du marché ABSENTE de la ligne : là, il y a quelque chose à corriger, et on le dit', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ typeMarche: null, cadrage: {}, valeurs: {} }));
+    const bandeau = texte(racine().querySelector('.alert-warning'));
+    expect(bandeau).toContain('Forme du marché absente de cette ligne du plan');
+    expect(bandeau).toContain('Complétez');
+    expect(texte(racine().querySelector('.fm__attente'))).toContain('Complétez-la dans le plan de passation');
   });
 
   it('version FIGÉE sous un autre type que celui du plan aujourd’hui : constat d’enregistrement, sans injonction', () => {
@@ -308,14 +339,11 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
 
   it('écriture refusée : l’écran ne réclame aucun geste impossible', () => {
     monter('PRMP', 42);
-    // Forme non outillée ET allotissement en désaccord avec le plan : les deux messages doivent se taire sur l'action.
-    ouvrir(REF_AVEC_LOTS, fiche({ typeMarche: 'CONTRAT_CADRE', cadrage: { alloti: 'NON' }, valeurs: {}, valeursPpm: { 'B02-LV-01': '4' } }));
-    const bandeau = texte(Array.from(racine().querySelectorAll('.alert-warning')).find((e) => texte(e).includes('ne correspond plus au plan')));
-    expect(bandeau).toContain('La réponse affichée est celle du plan.');
-    expect(bandeau).not.toContain('enregistrez le cadrage');
-    // Le pied nomme la vraie raison du refus, pas les réponses manquantes.
+    // Contrat absent : le cadrage s'affiche (il n'est pas vain, le serveur servira le contrat), mais le pied dit
+    // pourquoi rien ne s'enregistre — et ne blâme pas les réponses manquantes.
+    ouvrir(null, null, null);
     const pied = texte(racine().querySelector('.fm__aut'));
-    expect(pied).toContain('pas encore prise en charge');
+    expect(pied).toContain('ne sert pas encore le contrat');
     expect(pied).not.toContain('Répondez à toutes les questions');
   });
 

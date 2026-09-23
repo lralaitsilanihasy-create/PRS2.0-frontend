@@ -135,7 +135,11 @@ export class FicheMarcheEcran {
   /** ⚠️ Lot 1c — déduit de la forme du marché de la ligne du plan, servi par le serveur ; jamais saisi ici. */
   readonly typeMarche = computed<TypeMarche | null>(() => this.fiche()?.typeMarche ?? null);
   /** Ce type est-il pris en charge aujourd'hui ? Sinon la fiche se lit, mais toute écriture est refusée (409). */
-  readonly typePrisEnCharge = computed(() => typeOutille(this.typeMarche()));
+  /**
+   * ⚠️ Lot 3 §B2 — c'est le SERVEUR qui sait quels types il outille. Tant qu'il ne le dit pas, on retombe sur la
+   * liste du front, qui disparaîtra à la livraison : ouvrir un type deviendra une livraison backend seule.
+   */
+  readonly typePrisEnCharge = computed(() => this.fiche()?.typeOutille ?? typeOutille(this.typeMarche()));
   /** La fiche a été saisie sous un type qui n'est plus celui du plan (drapeau serveur). */
   readonly typeChange = computed(() => this.fiche()?.typeChange === true);
   /** Toute écriture est vaine : contrat absent, ou forme de marché pas encore prise en charge (409 côté serveur). */

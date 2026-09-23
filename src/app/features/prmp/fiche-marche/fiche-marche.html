@@ -22,10 +22,14 @@
       </div>
     }
   </header>
-  <p class="page-role">
-    Une information saisie une fois, dans un formulaire : le DPAO, l'acte d'engagement et le CCAP seront générés depuis cette fiche
-    à la validation, puis joints au dossier avant sa soumission à la Commission. Aucun fichier à importer.
-  </p>
+  <!-- La phrase de rôle promet une saisie et des documents : elle n'a rien à faire sur une fiche dont la forme
+       de marché n'est pas outillée, où rien ne sera saisi ni produit. -->
+  @if (!fiche() || typePrisEnCharge()) {
+    <p class="page-role">
+      Une information saisie une fois, dans un formulaire : le DPAO, l'acte d'engagement et le CCAP seront générés depuis cette fiche
+      à la validation, puis joints au dossier avant sa soumission à la Commission. Aucun fichier à importer.
+    </p>
+  }
 
   @if (contratAbsent()) {
     <div class="alert alert-info" role="status">
@@ -35,12 +39,20 @@
     </div>
   }
 
+  <!-- ⚠️ 23/09 (constat du pilote) — n'inviter à corriger le plan QUE si la personne peut agir. Une ligne dont la
+       désignation dit elle-même « CONTRAT CADRE » et dont la forme le confirme n'a rien d'inexact : c'est l'application
+       qui n'est pas prête, et le dire autrement renvoyait une correction imaginaire à la PRMP. -->
   @if (fiche() && !typePrisEnCharge()) {
     <div class="alert alert-warning" role="status">
       <app-icone nom="alert" [taille]="16" />
-      <span><strong>Marché {{ libellesTypes[typeMarche() ?? 'QUANTITE_FIXE'].toLowerCase() }}</strong> : la fiche marché ne prend en charge que les marchés à
-      quantité fixe pour le moment. Cette fiche reste lisible, mais aucune saisie n'y est enregistrée. Le type vient de la
-      <strong>forme du marché</strong> de la ligne du plan de passation : corrigez-la dans le plan si elle est inexacte.</span>
+      @if (typeMarche(); as t) {
+        <span><strong>Marché {{ libellesTypes[t].toLowerCase() }}</strong> : la ligne du plan de passation est bien de ce type, et la fiche
+        marché ne prépare pour l'instant que les marchés à <strong>quantité fixe</strong>. Rien n'est à corriger dans le plan :
+        ce type sera outillé à un prochain lot.</span>
+      } @else {
+        <span><strong>Forme du marché absente de cette ligne du plan</strong> : la fiche marché ne peut pas savoir quel type de
+        marché préparer. Complétez la <strong>forme du marché</strong> de la ligne dans le plan de passation.</span>
+      }
     </div>
   }
 
@@ -109,6 +121,36 @@
           }
         </tbody>
       </table>
+    </div>
+  } @else if (fiche() && !typePrisEnCharge()) {
+    <!-- ⚠️ 23/09 (constat du pilote) — dix questions de cadrage et huit blocs de saisie sur une fiche où rien ne sera
+         jamais enregistré, c'est inviter à un travail refusé d'avance. On montre la ligne, et on dit ce qu'il en est. -->
+    <div class="fm__attente">
+      @if (typeMarche(); as t) {
+        <p>La préparation d'un <strong>marché {{ libellesTypes[t].toLowerCase() }}</strong> se fait hors de l’application en attendant
+        que ce type soit outillé. La fiche s’ouvrira ici le jour où il le sera, sans rien redemander : les informations de la
+        ligne du plan sont déjà là.</p>
+      } @else {
+        <p>Sans <strong>forme du marché</strong> sur la ligne du plan, la fiche ne sait pas quel type de marché préparer.
+        Complétez-la dans le plan de passation, puis revenez : la fiche s’ouvrira d’elle-même.</p>
+      }
+    </div>
+
+    @if (blocPpm(); as b01) {
+      <details class="fm__ppm" open>
+        <summary>{{ b01.libelle }} — {{ valeursPpm().length }} informations reprises de la ligne du PPM, verrouillées</summary>
+        @if (valeursPpm().length) {
+          <dl class="fm__ppm-l">
+            @for (v of valeursPpm(); track v.code) { <div><dt>{{ v.libelle }}</dt><dd>{{ v.valeur ?? '—' }}</dd></div> }
+          </dl>
+        } @else {
+          <p class="fm__attendus">Servies par le serveur avec la fiche — rien à saisir ici.</p>
+        }
+      </details>
+    }
+
+    <div class="fm__pied">
+      <a class="btn btn-outline" routerLink="/prmp/dao">‹ Choisir une autre ligne du plan</a>
     </div>
   } @else {
     @if (etape() >= 2 && resume().length) {
