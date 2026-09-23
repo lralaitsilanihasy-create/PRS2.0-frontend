@@ -121,6 +121,9 @@ export class FicheMarcheEcran {
    */
   readonly documents = signal<DocumentFiche[]>([]);
   readonly documentsAbsents = signal(false);
+  /** Version figée dont on consulte les documents à l'étape 6, et ses documents (`GET …/documents?version=`). */
+  readonly versionOuverte = signal<number | null>(null);
+  readonly documentsVersion = signal<DocumentFiche[]>([]);
   readonly cadrage = signal<Cadrage>({});
   readonly valeurs = signal<Record<string, Valeur>>({});
   readonly erreursChamp = signal<ReadonlyMap<string, string>>(new Map());
@@ -451,6 +454,25 @@ export class FicheMarcheEcran {
         });
       },
       error: () => this.saving.set(false),
+    });
+  }
+
+  /**
+   * Ouvre (ou referme) les documents d'une version figée. La version courante d'une fiche validée porte déjà
+   * ses documents à l'étape 7 : on lit ici ceux des versions PRÉCÉDENTES, que la Commission a pu examiner.
+   */
+  ouvrirVersion(v: VersionFiche): void {
+    const id = this.idDmc();
+    if (id == null) return;
+    if (this.versionOuverte() === v.version) {
+      this.versionOuverte.set(null);
+      this.documentsVersion.set([]);
+      return;
+    }
+    this.versionOuverte.set(v.version);
+    this.documentsVersion.set([]);
+    this.ficheService.documents(id, v.version).pipe(catchError(() => of([] as DocumentFiche[]))).subscribe((d) => {
+      if (this.versionOuverte() === v.version) this.documentsVersion.set(d);
     });
   }
 

@@ -339,7 +339,7 @@
                 @if (figee()) {
                   <p class="fm__ok">Fiche validée — version {{ fiche()?.version }} figée{{ fiche()?.dateValidation ? ' le ' + dateFr(fiche()?.dateValidation) : '' }}. Une modification ouvre une nouvelle version.</p>
                 } @else if (estPrmp()) {
-                  <p>La validation <strong>fige</strong> la fiche et lui donne un numéro de version. Les documents (DPAO, AE, CCAP) seront générés depuis cette version au lot 2, puis joints au dossier avant sa soumission.</p>
+                  <p>La validation <strong>fige</strong> la fiche et lui donne un numéro de version. Elle <strong>produit les documents</strong> — DPAO, acte d'engagement et CCAP — depuis cette version, et les joint au dossier à soumettre.</p>
                   @if (bilan().bloquants.length) { <p class="fm__ctrl fm__ctrl--r">{{ bilan().bloquants.length }} contrôle(s) bloquant(s) à lever avant de valider.</p> }
                 } @else {
                   <p>Vous préparez la fiche ; <strong>la PRMP</strong> la valide et soumet le dossier. Rien d'autre à faire ici.</p>
@@ -349,7 +349,7 @@
                 <div class="fm__rub">
                   <h3>Versions figées</h3>
                   <table class="fm__versions">
-                    <thead><tr><th scope="col">Version</th><th scope="col">Validée le</th><th scope="col">Par</th><th scope="col" class="r">Informations</th></tr></thead>
+                    <thead><tr><th scope="col">Version</th><th scope="col">Validée le</th><th scope="col">Par</th><th scope="col" class="r">Informations</th><th scope="col" class="r">Documents</th></tr></thead>
                     <tbody>
                       @for (v of versions(); track v.version) {
                         <tr [class.fm__versions--courante]="v.version === fiche()?.version && figee()">
@@ -357,11 +357,39 @@
                           <td>{{ dateFr(v.dateValidation) }}</td>
                           <td>{{ v.validePar || '—' }}</td>
                           <td class="r cnm-mono">{{ v.nbValeurs }}</td>
+                          <td class="r">
+                            <button type="button" class="btn btn-sm btn-outline" [attr.aria-expanded]="versionOuverte() === v.version" (click)="ouvrirVersion(v)">
+                              {{ versionOuverte() === v.version ? 'Masquer' : 'Documents' }}
+                            </button>
+                          </td>
                         </tr>
+                        @if (versionOuverte() === v.version) {
+                          <tr class="fm__versions-docs">
+                            <td colspan="5">
+                              @if (documentsVersion().length) {
+                                <ul class="fm__docs">
+                                  @for (d of documentsVersion(); track d.idDocument) {
+                                    <li>
+                                      <span class="fm__doc fm__doc--{{ d.type.toLowerCase() }}">{{ d.type }}</span>
+                                      <span class="fm__docs-n">
+                                        {{ d.libelle || libellesDocuments[d.type] }}
+                                        <span class="fm__docs-f cnm-mono">{{ d.nomFichier }}</span>
+                                      </span>
+                                      @if (poids(d.tailleOctets); as p) { <span class="fm__docs-p">{{ p }}</span> }
+                                      <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, true)">Ouvrir</button>
+                                      <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, false)">Enregistrer</button>
+                                    </li>
+                                  }
+                                </ul>
+                              } @else {
+                                <p class="fm__attendus">Aucun document sur cette version : elle a été validée avant que la génération n’existe.</p>
+                              }
+                            </td>
+                          </tr>
+                        }
                       }
                     </tbody>
                   </table>
-                  <p class="fm__attendus">La consultation d'une version figée viendra avec ses documents (lot 2).</p>
                 </div>
               }
               <div class="fm__pied">

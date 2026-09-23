@@ -476,7 +476,7 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     fixture.componentInstance.etape.set(5);
     rendre();
     expect(texte(racine().querySelector('.fm__ok'))).toContain('version 1 figée le 22/09/2026 10:05');
-    expect(Array.from(racine().querySelectorAll('.fm__versions tbody tr')).map((tr) => cellules(tr))).toEqual(['1 22/09/2026 10:05 PRMP001 1']);
+    expect(Array.from(racine().querySelectorAll('.fm__versions tbody tr')).map((tr) => cellules(tr))).toEqual(['1 22/09/2026 10:05 PRMP001 1 Documents']);
   });
 
   it('documents (lot 2) : listés sur une fiche validée, ouverts et enregistrés par le binaire du serveur', () => {
@@ -513,6 +513,37 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     expect(texte(racine().querySelector('#fm-docs')?.parentElement?.parentElement)).toContain('générés à la validation');
   });
 
+  it('documents d’une version figée : « Documents » lit ceux de CETTE version, et sait dire qu’il n’y en a pas', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2 }), [
+      { idFiche: 9, version: 2, statut: 'VALIDEE', typeMarche: 'QUANTITE_FIXE', dateValidation: '2026-09-22T16:30:00', validePar: 'PRMP001', nbValeurs: 130 },
+      { idFiche: 8, version: 1, statut: 'VALIDEE', typeMarche: 'QUANTITE_FIXE', dateValidation: '2026-09-10T09:00:00', validePar: 'PRMP001', nbValeurs: 120 },
+    ], []);
+    fixture.componentInstance.allerA(5);
+    rendre();
+    const boutons = Array.from(racine().querySelectorAll('.fm__versions tbody button')) as HTMLButtonElement[];
+    expect(boutons.length).toBe(2);
+
+    boutons[1].click(); // la version 1, précédente
+    const q = http.expectOne((r) => r.url === '/api/fiches-marche/42/documents' && r.params.get('version') === '1');
+    q.flush([{ idDocument: 21, type: 'AE', libelle: 'Acte d’engagement', nomFichier: 'AE_PPM-2026-003_7_v1.pdf', tailleOctets: 2864, version: 1 }] as DocumentFiche[]);
+    rendre();
+    const bloc = racine().querySelector('.fm__versions-docs');
+    expect(texte(bloc)).toContain('AE_PPM-2026-003_7_v1.pdf');
+    expect(texte(bloc)).toContain('Acte d’engagement');
+
+    // Un second clic referme, sans relire le serveur.
+    (racine().querySelectorAll('.fm__versions tbody button')[1] as HTMLButtonElement).click();
+    rendre();
+    expect(racine().querySelector('.fm__versions-docs')).toBeNull();
+
+    // Une version validée avant le lot 2 n'a pas de documents : on le dit, ce n'est pas une panne.
+    (racine().querySelectorAll('.fm__versions tbody button')[0] as HTMLButtonElement).click();
+    http.expectOne((r) => r.url === '/api/fiches-marche/42/documents' && r.params.get('version') === '2').flush([]);
+    rendre();
+    expect(texte(racine().querySelector('.fm__versions-docs'))).toContain('validée avant que la génération n’existe');
+  });
+
   it('UGPM : la validation est réservée à la PRMP ; une fiche validée s’ouvre en lecture seule avec « nouvelle version »', () => {
     monter('UGPM', 42);
     // En-têtes de version tels que servis par `GET …/versions` (VersionFicheDto, livraison du 22/09), dans le désordre.
@@ -522,7 +553,7 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Validation PRMP');
     // Historique des versions figées (B5), la plus récente en tête, la courante surlignée.
     const lignesV = Array.from(racine().querySelectorAll('.fm__versions tbody tr'));
-    expect(lignesV.map((tr) => cellules(tr))).toEqual(['2 22/09/2026 16:30 PRMP001 130', '1 10/09/2026 09:00 PRMP001 120']);
+    expect(lignesV.map((tr) => cellules(tr))).toEqual(['2 22/09/2026 16:30 PRMP001 130 Documents', '1 10/09/2026 09:00 PRMP001 120 Documents']);
     expect(lignesV[0].classList.contains('fm__versions--courante')).toBe(true);
     expect(lignesV[1].classList.contains('fm__versions--courante')).toBe(false);
     // Filiation (B2 §1) : la ligne est supprimée dans la version courante du PPM → avertissement, pas de blocage.
