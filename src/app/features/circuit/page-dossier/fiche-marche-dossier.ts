@@ -10,7 +10,7 @@ import { FicheMarcheService } from '../../../services/fiche-marche.services';
 import { Icone } from '../../../shared/ui/icone';
 
 /**
- * ⚠️ **Fiche marché d'un dossier d'appel d'offres** (lot 1b, demande `docs/demande-backend-2026-09-23-fiche-marche-dossier.md`).
+ * ⚠️ **Fiche DAO d'un dossier d'appel d'offres** (lot 1b, demande `docs/demande-backend-2026-09-23-fiche-marche-dossier.md`).
  *
  * Le chemin normal est l'inverse de cet encart : la fiche **produit** le dossier (étape 7 de `/prmp/dao/:idDmc`),
  * et l'encart n'a plus qu'à montrer ce qui est lié. Le **rattachement** offert ici est le **secours** des dossiers
@@ -24,7 +24,7 @@ import { Icone } from '../../../shared/ui/icone';
   imports: [RouterLink, Icone],
   template: `
     <section class="fmd" aria-labelledby="fmd-titre">
-      <h2 class="fmd__titre" id="fmd-titre"><app-icone nom="file" [taille]="16" />Fiche marché</h2>
+      <h2 class="fmd__titre" id="fmd-titre"><app-icone nom="file" [taille]="16" />Fiche DAO</h2>
 
       @if (dossier().ficheMarche; as f) {
         <p class="fmd__ligne">
@@ -39,10 +39,10 @@ import { Icone } from '../../../shared/ui/icone';
           @if (peutRattacher()) { <button type="button" class="btn btn-outline btn-sm" [disabled]="occupe()" (click)="detacher()">Détacher</button> }
         </div>
       } @else if (peutRattacher()) {
-        <p class="fmd__vide">Aucune fiche marché n'est rattachée à ce dossier. Rattachez celle que vous avez déjà validée, ou préparez-en une depuis la ligne du plan de passation.</p>
+        <p class="fmd__vide">Aucune fiche DAO n'est rattachée à ce dossier. Rattachez celle que vous avez déjà validée, ou préparez-en une depuis la ligne du plan de passation.</p>
         @if (!choix()) {
           <div class="fmd__actions">
-            <button type="button" class="btn btn-secondary btn-sm" [disabled]="occupe()" (click)="ouvrirChoix()">Rattacher une fiche marché</button>
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="occupe()" (click)="ouvrirChoix()">Rattacher une fiche DAO</button>
             <a class="btn btn-outline btn-sm" routerLink="/prmp/dao">Préparer une fiche</a>
           </div>
         } @else {
@@ -66,7 +66,7 @@ import { Icone } from '../../../shared/ui/icone';
           </div>
         }
       } @else {
-        <p class="fmd__vide">Aucune fiche marché n'est rattachée à ce dossier.</p>
+        <p class="fmd__vide">Aucune fiche DAO n'est rattachée à ce dossier.</p>
       }
     </section>
   `,
@@ -130,7 +130,7 @@ export class FicheMarcheDossier {
       next: () => {
         this.occupe.set(false);
         this.choix.set(false);
-        this.toast.success('Fiche marché rattachée à ce dossier.');
+        this.toast.success('Fiche DAO rattachée à ce dossier.');
         this.liaisonChangee.emit();
       },
       error: (e: ApiError) => {
@@ -146,7 +146,7 @@ export class FicheMarcheDossier {
     this.dossiers.detacherFicheMarche(this.dossier().idDossier).subscribe({
       next: () => {
         this.occupe.set(false);
-        this.toast.success('Fiche marché détachée. Le dossier reste en brouillon.');
+        this.toast.success('Fiche DAO détachée. Le dossier reste en brouillon.');
         this.liaisonChangee.emit();
       },
       error: (e: ApiError) => {

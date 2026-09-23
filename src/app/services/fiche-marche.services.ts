@@ -7,7 +7,7 @@ import { BilanControles, Cadrage, ChampFiche, Dmc, DocumentFiche, Dossier, Fiche
 import { CrudService } from './api/crud.service';
 
 /**
- * Fiche marché d'un appel d'offres — services du CONTRAT PROPOSÉ (`docs/demande-backend-2026-09-22-fiche-marche-dao.md`).
+ * Fiche DAO d'un appel d'offres — services du CONTRAT PROPOSÉ (`docs/demande-backend-2026-09-22-fiche-marche-dao.md`).
  * ⚠️ Développés contre le contrat, avant livraison backend : les écrans traitent le 404 des routes absentes comme
  * « contrat en attente » (repli sur la structure de l'esquisse), jamais comme une erreur de l'utilisateur.
  */

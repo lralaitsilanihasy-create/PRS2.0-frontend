@@ -77,7 +77,7 @@ const LIGNES: LigneEligible[] = [
   { idDetail: 11, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Pneus (CONTRAT CADRE)', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 50000000, dejaDao: false, formeMarche: 'CONTRAT_CADRE', formeOutillee: false },
 ];
 
-describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1)', () => {
+describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', () => {
   let fixture: ComponentFixture<FicheMarcheEcran>;
   let http: HttpTestingController;
   let params: BehaviorSubject<ReturnType<typeof convertToParamMap>>;

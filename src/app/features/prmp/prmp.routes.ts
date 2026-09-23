@@ -40,12 +40,12 @@ export const PRMP_ROUTES: Routes = [
   { path: 'dossiers-verifies', loadComponent: () => import('../circuit/dossiers-clotures').then((m) => m.DossiersClotures), data: { title: 'Dossiers vérifiés', source: 'prmp-clotures' } },
   { path: 'ppm', loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage), data: { crud: PPM_CONFIG } },
   { path: 'soumettre-dossier', loadComponent: () => import('./soumettre-dossier').then((m) => m.SoumettreDossier) },
-  // Fiche marché d'un appel d'offres (proposition DMC du 22/09, lot 1) — un FORMULAIRE depuis la ligne du PPM,
+  // Fiche DAO d'un appel d'offres (proposition DMC du 22/09, lot 1) — un FORMULAIRE depuis la ligne du PPM,
   // jamais un import de PDF. Atteinte depuis « Créer dossier » (sous-type DAO) : pas une entrée de menu.
   // `dao` = choix de la ligne éligible ; `dao/:idDmc` = le parcours en sept étapes. Écran développé CONTRE le
   // contrat proposé au backend (demande-backend-2026-09-22-fiche-marche-dao.md) : il se replie sur l'esquisse.
-  { path: 'dao', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche marché', concentration: true } },
-  { path: 'dao/:idDmc', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche marché', concentration: true } },
+  { path: 'dao', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true } },
+  { path: 'dao/:idDmc', loadComponent: () => import('./fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true } },
   // Création d'une UGPM par la PRMP (sous sa tutelle) — réservé PRMP (l'UGPM ne crée pas d'UGPM).
   { path: 'creer-ugpm', loadComponent: () => import('./creer-ugpm').then((m) => m.CreerUgpm), canActivate: [roleGuard], data: { roles: ['PRMP'] } },
   { path: 'mes-brouillons', loadComponent: () => import('./mes-brouillons').then((m) => m.MesBrouillons) },

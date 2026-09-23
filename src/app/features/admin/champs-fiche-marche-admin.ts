@@ -17,7 +17,7 @@ function vide(): ChampFiche {
 }
 
 /**
- * **Champs de la fiche marché** (ADMINISTRATEUR) — le référentiel `champs-fiche-marche` d'où l'écran de la fiche
+ * **Champs de la fiche DAO** (ADMINISTRATEUR) — le référentiel `champs-fiche-marche` d'où l'écran de la fiche
  * d'un appel d'offres est dessiné (demande du 22/09, B1 : « écriture Admin, POST/PUT d'un champ »). Blocs et
  * rubriques sont figés par migration ; ici on complète les **informations** de chaque rubrique, une à une, en
  * attendant ou en complément du fichier de correspondance (import CSV au démarrage du serveur). Pas de suppression :
@@ -30,8 +30,8 @@ function vide(): ChampFiche {
     <section class="cfm">
       <header class="page-header">
         <div>
-          <div class="page-subtitle">Nomenclatures · fiche marché d'un appel d'offres</div>
-          <h1 class="page-title">Champs de la fiche marché</h1>
+          <div class="page-subtitle">Nomenclatures · fiche DAO d'un appel d'offres</div>
+          <h1 class="page-title">Champs de la fiche DAO</h1>
         </div>
         <div class="cfm__actions">
           <button type="button" class="btn btn-secondary btn-sm" (click)="charger()" [disabled]="loading()">Rafraîchir</button>
@@ -39,7 +39,7 @@ function vide(): ChampFiche {
         </div>
       </header>
       <p class="page-role">
-        L'écran de la fiche marché est dessiné depuis ce référentiel : ajouter une information ou changer sa condition
+        L'écran de la fiche DAO est dessiné depuis ce référentiel : ajouter une information ou changer sa condition
         d'affichage ne recompile rien. Chaque rubrique annonce le nombre d'informations attendues par le fichier de
         correspondance ; le fichier complet se charge en une fois par l'import CSV du serveur.
       </p>

@@ -183,7 +183,7 @@ const HAUT_TOPBAR = 48;
         }
       }
 
-      <!-- ⚠️ Lot 1b (23/09, backend 92c7534) — la fiche marché du dossier : son état et son lien, ou le
+      <!-- ⚠️ Lot 1b (23/09, backend 92c7534) — la fiche DAO du dossier : son état et son lien, ou le
            rattachement de secours pour les dossiers créés avant la liaison. Sur un dossier d'appel d'offres
            seulement ; ceux d'avant la liaison n'ont pas de fiche et le disent. -->
       @if (estAppelOffres()) {
@@ -320,7 +320,7 @@ export class PageDossierCorps implements OnInit {
   /** Lot F5 — la PRMP suit sa demande de retrait sur la page ; l'UGPM n'a pas l'écran des demandes. */
   readonly suiviRetrait = computed(() => (this.auth.role() === 'PRMP' ? this.dossier() : null));
 
-  /** Dossier d'appel d'offres : le seul sous-type qui porte une fiche marché (lot 1b). */
+  /** Dossier d'appel d'offres : le seul sous-type qui porte une fiche DAO (lot 1b). */
   readonly estAppelOffres = computed(() => this.sousType() === 'DAO');
 
   private readonly panneau = viewChild('panneau', { read: EtapeCourante });

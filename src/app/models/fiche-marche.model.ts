@@ -1,5 +1,5 @@
 /**
- * Fiche marché d'un appel d'offres (DAO) — CONTRAT PROPOSÉ au backend le 2026-09-22
+ * Fiche DAO d'un appel d'offres (DAO) — CONTRAT PROPOSÉ au backend le 2026-09-22
  * (`docs/demande-backend-2026-09-22-fiche-marche-dao.md`, lot 1 : quantité fixe, sans génération). ⚠️ Développé
  * contre ce contrat : tant que le serveur ne le sert pas, l'écran se replie sur la structure de l'esquisse
  * (`REFERENTIEL_ESQUISSE`) et le dit. Rien ici n'est confirmé par le backend.
@@ -175,7 +175,7 @@ export interface Dmc {
 }
 
 /**
- * ⚠️ Lot 1b (23/09) — résumé de la fiche marché **porté par le dossier** (`DossierDto.ficheMarche`), pour que sa page
+ * ⚠️ Lot 1b (23/09) — résumé de la fiche DAO **porté par le dossier** (`DossierDto.ficheMarche`), pour que sa page
  * l'affiche sans second appel. Servi sur la **lecture unitaire** seulement : les listes ne portent que `idDmc`.
  */
 export interface FicheMarcheResume {

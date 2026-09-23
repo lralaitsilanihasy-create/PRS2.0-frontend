@@ -22,7 +22,7 @@ const REF: ReferentielFiche = {
   ],
 };
 
-describe('Champs de la fiche marché — référentiel Administrateur (B1, 22/09)', () => {
+describe('Champs de la fiche DAO — référentiel Administrateur (B1, 22/09)', () => {
   let fixture: ComponentFixture<ChampsFicheMarcheAdmin>;
   let http: HttpTestingController;
   let toast: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };

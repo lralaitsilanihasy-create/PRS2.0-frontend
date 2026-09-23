@@ -219,7 +219,7 @@ export class DossierService extends CrudService<Dossier> {
   }
 
   /**
-   * ⚠️ Fiche marché, lot 1b (23/09) — **secours** du chemin principal (la fiche produit le dossier) : rattache une
+   * ⚠️ Fiche DAO, lot 1b (23/09) — **secours** du chemin principal (la fiche produit le dossier) : rattache une
    * fiche **validée** à un dossier `DAO` resté en BROUILLON, pour les dossiers créés avant la liaison.
    * `PUT …/fiche-marche` renvoie le dossier (200) ; rattacher la fiche déjà liée ne change rien. 409 à code stable :
    * `DOSSIER_NON_BROUILLON`, `DOSSIER_NON_DAO`, `DMC_NON_DAO`, `DOSSIER_DEJA_LIE`, `FICHE_DEJA_LIEE` (qui porte

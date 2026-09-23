@@ -17,7 +17,7 @@ const ELIGIBLES: LigneEligible[] = [
   { idDetail: 9, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Véhicules', idMode: 1, libelleMode: 'AOO', montEstim: 1, dejaDao: true, idDmc: 42 },
 ];
 
-describe('« Mes PPM & marchés » — raccourci vers la fiche marché (H3, 22/09)', () => {
+describe('« Mes PPM & marchés » — raccourci vers la fiche DAO (H3, 22/09)', () => {
   let fixture: ComponentFixture<MesPpmMarches>;
   let http: HttpTestingController;
   const racine = (): HTMLElement => fixture.nativeElement as HTMLElement;

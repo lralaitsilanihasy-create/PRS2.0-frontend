@@ -41,7 +41,7 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <app-statut-badge [statut]="statutPpm(ppm)" />
                 }
               </div>
-              <!-- Raccourci H3 (fiche marché, 22/09) : n'apparaît que si le serveur dit qu'une ligne de ce PPM peut
+              <!-- Raccourci H3 (fiche DAO, 22/09) : n'apparaît que si le serveur dit qu'une ligne de ce PPM peut
                    porter un appel d'offres (PV signé, mode mappé DAO) — à préparer, ou à reprendre. -->
               @if (lignesDao(ppm.idDossier); as lignes) {
                 <a class="btn btn-primary btn-sm" routerLink="/prmp/dao" [queryParams]="{ dossier: ppm.idDossier }" [attr.title]="titreDao(lignes)">

@@ -32,9 +32,9 @@ const refLinks = [
   })),
   // Écran dédié : mapping mode de passation → type de DMC (PUT sur les modes ; pas un CRUD générique).
   { label: 'Mapping mode → document DMC', path: '/admin/referentiels/dmc-mapping' },
-  // Écran dédié (fiche marché d'un appel d'offres, 22/09) : listes et conditions dépassent le CRUD générique ;
+  // Écran dédié (fiche DAO d'un appel d'offres, 22/09) : listes et conditions dépassent le CRUD générique ;
   // pas de suppression (un champ écarté passe inactif).
-  { label: 'Champs de la fiche marché (appel d’offres)', path: '/admin/referentiels/champs-fiche-marche' },
+  { label: 'Champs de la fiche DAO (appel d’offres)', path: '/admin/referentiels/champs-fiche-marche' },
 ];
 
 /**
@@ -57,7 +57,7 @@ export const ADMIN_ROUTES: Routes = [
   },
   { path: 'referentiels/entite-arbre', loadComponent: () => import('./entite-arbre').then((m) => m.EntiteArbre) },
   { path: 'referentiels/dmc-mapping', loadComponent: () => import('./dmc-mapping-admin').then((m) => m.DmcMappingAdmin) },
-  { path: 'referentiels/champs-fiche-marche', loadComponent: () => import('./champs-fiche-marche-admin').then((m) => m.ChampsFicheMarcheAdmin), data: { title: 'Champs de la fiche marché' } },
+  { path: 'referentiels/champs-fiche-marche', loadComponent: () => import('./champs-fiche-marche-admin').then((m) => m.ChampsFicheMarcheAdmin), data: { title: 'Champs de la fiche DAO' } },
   ...REFERENTIELS.map((r) => ({
     path: `referentiels/${r.slug}`,
     loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage),

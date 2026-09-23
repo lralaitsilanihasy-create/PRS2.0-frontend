@@ -1,7 +1,7 @@
 import { BilanControles, BlocFiche, Cadrage, ChampFiche, DocumentDao, ReferentielFiche, RubriqueFiche, TypeMarche } from '../../../models';
 
 /**
- * Règles PURES de la fiche marché (esquisse « DAO par type de marché », 22/09) : questions de cadrage, conditions
+ * Règles PURES de la fiche DAO (esquisse « DAO par type de marché », 22/09) : questions de cadrage, conditions
  * d'affichage, regroupement des champs, progression, repli sur la structure de l'esquisse. Testées à part.
  */
 

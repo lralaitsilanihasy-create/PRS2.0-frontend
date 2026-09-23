@@ -11,8 +11,8 @@
       <!-- La désignation d'une ligne peut décrire quatre lots en toutes lettres : bornée à deux lignes, entière
            en infobulle — mais seulement si elle est vraiment coupée (cf. appTitreSiTronque). -->
       <h1 class="page-title fm__titre" appTitreSiTronque>
-        @if (idDmc() == null) { Fiche marché — choisir la ligne du plan de passation }
-        @else { Fiche marché{{ fiche()?.designationMarche ? ' — ' + fiche()?.designationMarche : '' }} }
+        @if (idDmc() == null) { Fiche DAO — choisir la ligne du plan de passation }
+        @else { Fiche DAO{{ fiche()?.designationMarche ? ' — ' + fiche()?.designationMarche : '' }} }
       </h1>
     </div>
     @if (fiche(); as f) {
@@ -50,7 +50,7 @@
         marché ne prépare pour l'instant que les marchés à <strong>quantité fixe</strong>. Rien n'est à corriger dans le plan :
         ce type sera outillé à un prochain lot.</span>
       } @else {
-        <span><strong>Forme du marché absente de cette ligne du plan</strong> : la fiche marché ne peut pas savoir quel type de
+        <span><strong>Forme du marché absente de cette ligne du plan</strong> : la fiche DAO ne peut pas savoir quel type de
         marché préparer. Complétez la <strong>forme du marché</strong> de la ligne dans le plan de passation.</span>
       }
     </div>
@@ -110,7 +110,7 @@
                      qu'elle existe et pourquoi elle attend), mais sa préparation est refusée, ici comme au serveur. -->
                 <button type="button" class="btn btn-sm" [class.btn-primary]="!l.dejaDao && !ligneBloquee(l)" [class.btn-outline]="l.dejaDao || ligneBloquee(l)"
                   [disabled]="saving() || (ligneBloquee(l) && !l.dejaDao)"
-                  [attr.title]="ligneBloquee(l) ? 'La fiche marché ne prend en charge que les marchés à quantité fixe pour le moment.' : null"
+                  [attr.title]="ligneBloquee(l) ? 'La fiche DAO ne prend en charge que les marchés à quantité fixe pour le moment.' : null"
                   (click)="choisirLigne(l)">
                   {{ l.dejaDao ? 'Reprendre la fiche' : ligneBloquee(l) ? 'Pas encore pris en charge' : 'Préparer l’appel d’offres' }}
                 </button>

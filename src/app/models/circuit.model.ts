@@ -119,12 +119,12 @@ export interface Dossier {
   /** Étape de circuit ouverte (`EtapeCircuit`) ; `null` si aucune tâche CNM ne court. */
   etapeCourante?: EtapeCircuit | null;
   /**
-   * ⚠️ Lot 1b fiche marché (23/09) — dossier de mise en concurrence dont ce dossier porte la fiche
+   * ⚠️ Lot 1b fiche DAO (23/09) — dossier de mise en concurrence dont ce dossier porte la fiche
    * (famille DMC, sous-type `DAO`) ; `null` partout ailleurs et sur les dossiers antérieurs.
    */
   idDmc?: number | null;
   /**
-   * Résumé de la fiche marché rattachée — servi sur la **lecture unitaire** (`GET /api/dossiers/{id}`) et
+   * Résumé de la fiche DAO rattachée — servi sur la **lecture unitaire** (`GET /api/dossiers/{id}`) et
    * les réponses des gestes ; **absent des listes**, qui ne portent que `idDmc` (le résumé relit le plan).
    */
   ficheMarche?: FicheMarcheResume | null;

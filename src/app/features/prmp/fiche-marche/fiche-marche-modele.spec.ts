@@ -28,7 +28,7 @@ const champ = (p: Partial<ChampFiche> & Pick<ChampFiche, 'code' | 'bloc' | 'rubr
   ...p,
 });
 
-describe('Fiche marché — règles pures (esquisse du 22/09)', () => {
+describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
   it('conditions d’affichage : =, !=, et, ou ; vide = toujours ; clé absente = faux', () => {
     const c = { garantieSoumission: 'OUI', provenance: 'IMPORTEES', typePrix: 'UNITAIRES' };
     expect(evaluerCondition(null, c)).toBe(true);

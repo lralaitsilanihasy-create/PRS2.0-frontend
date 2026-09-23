@@ -40,7 +40,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
                        d'appel d'offres complet en compte quatre) : seul le nom du fichier les distingue. -->
                   @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
                 </span>
-                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche marché : elle se corrige dans la fiche, pas ici.">fiche marché</span> }
+                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
               </div>
               <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
             </div>
@@ -66,7 +66,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
                        d'appel d'offres complet en compte quatre) : seul le nom du fichier les distingue. -->
                   @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
                 </span>
-                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche marché : elle se corrige dans la fiche, pas ici.">fiche marché</span> }
+                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
                 <span class="vc-tag">Corrigée</span>
               </div>
               <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>
@@ -91,7 +91,7 @@ import { DossierContenuStore } from './dossier-contenu.store';
                        d'appel d'offres complet en compte quatre) : seul le nom du fichier les distingue. -->
                   @if (p.libellePiece && p.nomFichier) { <span class="piece-file">{{ p.nomFichier }}</span> }
                 </span>
-                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche marché : elle se corrige dans la fiche, pas ici.">fiche marché</span> }
+                @if (p.idDocumentFiche) { <span class="piece-fiche" title="Produite par la fiche DAO : elle se corrige dans la fiche, pas ici.">fiche DAO</span> }
                 <span class="lr-tag">LR</span>
               </div>
               <button class="btn-ouvrir" type="button" (click)="ouvrirPiece(p)">Ouvrir <span class="arrow">↗</span></button>

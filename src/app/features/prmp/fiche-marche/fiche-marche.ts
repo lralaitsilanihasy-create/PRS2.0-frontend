@@ -55,7 +55,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
 }
 
 /**
- * **Fiche marché d'un appel d'offres** (`/prmp/dao` : choix de la ligne du PPM ; `/prmp/dao/:idDmc` : le parcours) —
+ * **Fiche DAO d'un appel d'offres** (`/prmp/dao` : choix de la ligne du PPM ; `/prmp/dao/:idDmc` : le parcours) —
  * proposition `docs/proposition-2026-09-22-dmc-appel-offres-fiche-marche.md`, développée CONTRE le contrat proposé
  * au backend (`docs/demande-backend-2026-09-22-fiche-marche-dao.md`, lot 1 : quantité fixe, sans génération).
  *
@@ -480,7 +480,7 @@ export class FicheMarcheEcran {
         const entete: VersionFiche = { idFiche: f.idFiche ?? null, version: f.version, statut: f.statut, typeMarche: f.typeMarche, dateCreation: f.dateCreation, dateValidation: f.dateValidation, validePar: f.validePar, nbValeurs: Object.keys(f.valeurs ?? {}).length };
         this.versions.update((v) => [entete, ...v.filter((x) => x.version !== f.version)]);
         this.etape.set(6);
-        this.toast.success(`Fiche marché validée — version ${f.version} figée.`);
+        this.toast.success(`Fiche DAO validée — version ${f.version} figée.`);
         // Lot 2 : la validation produit les documents ; on les relit pour les offrir tout de suite.
         this.ficheService.documents(id).pipe(catchError(() => of(null))).subscribe((d) => {
           this.documents.set(d ?? []);

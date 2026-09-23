@@ -176,7 +176,7 @@ interface ApercuDossier {
                 <span class="sd__choix-ic" aria-hidden="true">📢</span>
                 <span class="sd__choix-titre">Dossier de mise en concurrence</span>
               </span>
-              <span class="sd__choix-desc">Consultation, gré à gré… — un type + une localité, pièces jointes selon le type. L'appel d'offres, lui, se prépare dans sa fiche marché.</span>
+              <span class="sd__choix-desc">Consultation, gré à gré… — un type + une localité, pièces jointes selon le type. L'appel d'offres, lui, se prépare dans sa fiche DAO.</span>
               <span class="sd__choix-go">Commencer<span class="sd__choix-arrow" aria-hidden="true">›</span></span>
             </button>
             <button type="button" class="sd__choix-card sd__choix-card--marche" (click)="choisirFamille('DDM')">
@@ -498,13 +498,13 @@ interface ApercuDossier {
             </div>
 
             <!-- ⚠️ Deux portes menaient au même dossier d'appel d'offres et ne se ressemblaient pas (constat pilote du
-                 23/09). Depuis le lot 1b, le chemin NORMAL est la fiche marché : elle produit le dossier, entité et
+                 23/09). Depuis le lot 1b, le chemin NORMAL est la fiche DAO : elle produit le dossier, entité et
                  localité comprises. Ce formulaire reste le SECOURS d'un DAO préparé hors de l'application — replié,
                  nommé comme tel, jamais présenté à égalité. Les autres sous-types (consultation, gré à gré…) n'ont
                  pas de fiche : pour eux, le formulaire est le seul chemin et reste déplié. -->
             @if (appelOffres()) {
               <section class="sd__fiche" data-testid="sd-dao-fiche" aria-labelledby="sd-fiche-t">
-                <h2 class="sd__sub" id="sd-fiche-t">Un appel d’offres se prépare dans sa fiche marché</h2>
+                <h2 class="sd__sub" id="sd-fiche-t">Un appel d’offres se prépare dans sa fiche DAO</h2>
                 <p class="sd__fiche-p">
                   Le DPAO, l’acte d’engagement et le CCAP se remplissent une seule fois, dans un formulaire alimenté par la ligne
                   du plan de passation. À la validation de la fiche, <strong>le dossier à soumettre est créé pour vous</strong> :
@@ -1156,7 +1156,7 @@ export class SoumettreDossier {
   });
 
   /**
-   * ⚠️ Lot 1b (23/09) — sous-type `DAO` choisi : le dossier se produit depuis la **fiche marché**, et ce formulaire
+   * ⚠️ Lot 1b (23/09) — sous-type `DAO` choisi : le dossier se produit depuis la **fiche DAO**, et ce formulaire
    * devient le secours. Suit le sous-type, pas la famille : consultation et gré à gré n'ont pas de fiche.
    */
   private readonly sousTypeChoisi = toSignal(this.dossierForm.controls.idSousType.valueChanges, { initialValue: null as string | null });
