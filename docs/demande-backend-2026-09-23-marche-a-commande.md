@@ -66,6 +66,16 @@ Le front supprime alors sa liste : ouvrir un type devient une livraison **backen
 `LigneEligible.formeOutillee` existe déjà et joue ce rôle sur la liste des lignes : c'est exactement le même besoin
 sur la fiche.
 
+> ⚠️ **Livraison backend du 2026-09-23 — B1 et B2 livrés tels que demandés**, avec le lot 4 dans la même livraison :
+> `DmcService.FORMES_OUTILLEES` contient désormais les **trois** formes, et `FicheMarcheDto.typeOutille` en est la
+> réponse (`false` seulement pour une ligne sans forme au plan). Recette (`FicheMarcheCommandeEtContratCadreIntegrationTest`,
+> sur le CSV des fournitures chargé par l'import) : ligne à commande éligible et outillée, DMC 201, cadrage des neuf
+> questions 200, **146 champs actifs** servis pour `A_COMMANDE` (139 en quantité fixe), B07 absent de ses blocs,
+> validation → DPAO, CCAP, AE, le DPAO porte « Quantités minimum et maximum », l'AE les montants annuels. Précision
+> sur le test 4 : « 146 » est le compte des champs **servis** par le référentiel ; `bilanControles.nbAttendus` de la
+> fiche ne compte que les champs **de saisie** des rubriques ouvertes par le cadrage, il est donc plus petit.
+> **B3** (rythme de commande) : rien fait, le champ reste inactif comme recommandé.
+
 ### B3 — Le rythme de commande (`B02-AU-06`)
 
 Il est chargé **inactif**, sans document maître : c'est la décision 4 de l'esquisse, restée en suspens. Deux issues,

@@ -3,7 +3,7 @@
 **Date** : 2026-09-23 · **Source** : fichier de correspondance « DAO Fournitures et Services », carte des informations
 du 23/09 (37 pages), modèle **Contrat-cadre** — 182 informations, 22 du PPM, 82 à saisir, 78 points à clarifier.
 **Fichier chargeable** : `docs/referentiel-champs-fiche-marche-contrat-cadre.csv` (UTF-8, séparateur `;`, en-têtes =
-noms JSON, listes séparées par des virgules) — **118 champs**, à charger par l'API Administrateur comme les 116 des
+noms JSON, listes séparées par des virgules) — **114 champs**, à charger par l'API Administrateur comme les 116 des
 fournitures.
 
 Ce document dit **comment** chaque ligne du fichier est devenue un champ, pour que le pilote corrige ce qui doit
@@ -45,7 +45,7 @@ La règle appliquée, vérifiable rubrique par rubrique :
   paiements et avances (B08), l'exécution (B09), les modifications et litiges (B10). Ce sont les rubriques que les
   autres modèles rattachent au CCAP, lequel n'existe pas ici.
 
-Résultat : **36 champs au DPAC, 82 à l'AE**, contre 3 et 79 dans le fichier brut.
+Résultat : **34 champs au DPAC, 80 à l’AE**, contre 3 et 79 dans le fichier brut.
 
 ## Règles de conversion (les mêmes que pour les fournitures)
 
@@ -62,7 +62,7 @@ Résultat : **36 champs au DPAC, 82 à l'AE**, contre 3 et 79 dans le fichier br
    `attributaires`, `avance`…), jamais un autre champ : c'est la limite de la grammaire actuelle. Les champs qui
    dépendent d'un autre champ sont donc chargés **non obligatoires** plutôt que conditionnés.
 6. **Obligatoire** : oui pour ce qu'un contrat-cadre ne peut omettre (durées, montants, adresses, dates, critères) ;
-   non pour les clauses optionnelles. **74 champs sur 118** sont obligatoires.
+   non pour les clauses optionnelles. **74 champs sur 114** sont obligatoires.
 7. **Contrôles** : les règles du catalogue déjà outillé sont réemployées — `DATES_ORDRE` sur les cinq dates du
    calendrier, `MONTANT_POSITIF`, `AVANCE_SUP_5_GARANTIE`, `DELAI_PAIEMENT_75`, `INTERETS_MORATOIRES_TAUX`,
    `PENALITES_PLAFOND_15`.
@@ -72,22 +72,29 @@ Résultat : **36 champs au DPAC, 82 à l'AE**, contre 3 et 79 dans le fichier br
 
 | bloc | champs | rubriques |
 |---|---|---|
-| B02 Objet, allotissement & forme du contrat-cadre | 15 | objet et étendue, signataire, procédure, forme, durée, allotissement |
-| B03 Candidats | 13 | titulaire, groupement, sous-traitance |
+| B02 Objet, allotissement & forme du contrat-cadre | 13 | objet et étendue, signataire, procédure, durée, allotissement |
+| B03 Candidats | 12 | titulaire, groupement, sous-traitance |
 | B04 Dossier, remise & ouverture des offres | 20 | dossier de consultation, présentation, remise, renseignements, calendrier |
 | B05 Prix et montants | 6 | unité monétaire, montant, prix des marchés |
 | B06 Évaluation, attribution & notification | 10 | candidatures, sélection, critères, notification |
 | **B07 Marchés subséquents** | **26** | passation, forme, attribution, termes non couverts, pièces, durée, délais, pénalités |
-| B08 Paiements, avances & garanties | 14 | financement et sûretés, facturation et paiement |
+| B08 Paiements, avances & garanties | 13 | financement et sûretés, facturation et paiement |
 | B09 Exécution du marché | 10 | exécution administrative, vérification, garanties, assurance |
 | B10 Modifications, résiliation & litiges | 4 | recours, modifications, résiliations |
 
-**118 champs**, 38 rubriques, 117 actifs et 1 inactif. Par type : 46 textes longs, 22 textes, 16 listes, 12 nombres,
-10 oui/non, 7 dates, 3 montants, 2 pourcentages.
+**114 champs**, 37 rubriques, 113 actifs et 1 inactif. Par type : 46 textes longs, 21 textes, 14 listes, 12 nombres,
+9 oui/non, 7 dates, 3 montants, 2 pourcentages.
 
-**Cinq champs de source `CADRAGE`** — ils affichent une réponse déjà donnée, ils ne se saisissent pas : la forme de
-prix, l'allotissement (qui vient désormais du **plan**, lot 1d), le mono ou multi-attributaire, la forme du
-groupement, et l'existence d'une avance.
+**Un seul champ de source `CADRAGE`** : `B02-AL-03`, le mono ou multi-attributaire — le seul que la migration V35
+ne sème pas.
+
+> ⚠️ **23/09, après la livraison backend — quatre reflets de cadrage retirés du CSV.** La première conversion en
+> créait cinq. Or V35 sème **douze** reflets de cadrage pour les **trois** types : quatre faisaient donc double
+> emploi (allotissement, forme de prix, forme du groupement, avance), et la même réponse se serait affichée deux
+> fois dans la fiche et dans les documents. Ce sont les quatre du CSV qui partent, pas ceux de V35 : les douze de
+> V35 forment une famille cohérente, aux mêmes codes et dans les mêmes rubriques pour les trois types, et la scinder
+> donnerait deux règles de placement pour une seule famille. La rubrique `B02-FC` « Forme du contrat-cadre » se vide
+> et doit être retirée de V39, qui n’est encore appliquée nulle part.
 
 ## Lignes écartées, fusionnées ou chargées inactives
 
@@ -97,13 +104,13 @@ groupement, et l'existence d'une avance.
 | 4 « désigner la nature et le numéro de l'acte de nomination » | chargée **inactive** (`B02-SG-03`) : aucun document au fichier, à confirmer |
 | 6 et 7 (personne responsable, délégation) | déplacées en **B02** (`B02-SG-01/02`) : B01 est le bloc du PPM, il n'est **jamais saisi** |
 | 27, 28, 29 (rédactions du rythme) | fusionnées en une liste `B02-PC-02` |
-| 31 forme de prix | devient un champ **`CADRAGE`** (`typePrix`) |
+| 31 forme de prix | portée par le reflet **`B05-TP-01`** de V35 (`typePrix`), commun aux trois types |
 | 32 montant indicatif | fusionnée avec 82, en `B05-MT-01/02` (hors taxes et toutes taxes) |
 | 35, 36, 37 (reconductible) | fusionnées en `B02-DC-03` + `B02-DC-04` |
-| 38 « Unique ou Alloti ? » | devient un champ **`CADRAGE`** (`alloti`) — **déduit du plan** depuis le lot 1d |
+| 38 « Unique ou Alloti ? » | portée par **`B02-LV-04`** de V35 (`alloti`) — **déduit du plan** depuis le lot 1d |
 | 39 mono ou multi-attributaire | devient un champ **`CADRAGE`** (`attributaires`) |
 | 45, 46 · 53, 54 (qualité du représentant) | fusionnées en une liste, pour le titulaire et pour le membre du groupement |
-| 47 solidaire ou conjoint | devient un champ **`CADRAGE`** (`formeGroupement`) |
+| 47 solidaire ou conjoint | portée par **`B03-GR-02`** de V35 (`formeGroupement`) |
 | 51 NIF du membre | **écartée** : doublon de la ligne 50, signalé par le fichier |
 | 56 « <choisir et supprimer les mentions inutiles> » | **écartée** : mention de gabarit, pas une information |
 | 58 « indiquer la date des étapes » | **écartée** : en-tête des lignes 76 à 80, qui portent les dates |
@@ -117,7 +124,7 @@ groupement, et l'existence d'une avance.
 | 131 à 135 (reconductions) | fusionnées en `B07-DU-04/05/06` |
 | 137 à 145 (délais d'exécution) | fusionnées en `B07-DE-01..04` |
 | 146 à 152 (pénalités) | fusionnées en `B07-PE-01/02/03` |
-| 153, 154, 155 (avance) | fusionnées en `B08-FI-01`, de source **`CADRAGE`** |
+| 153, 154, 155 (avance) | portées par **`B08-AV-01`** de V35 (`avance`) ; `B08-FI-02/03/04` en détaillent les modalités |
 | 161 code « 89- » | **anomalie du fichier** corrigée : le champ existe (`B08-FP-02`), le code est ignoré |
 | 169, 170, 171 (modalités d'exécution) | fusionnées en `B09-EA-01/02/03` |
 | 172, 173 (vérification) | fusionnées en `B09-VA-01` + `B09-VA-02` |
