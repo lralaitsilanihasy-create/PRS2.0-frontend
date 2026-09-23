@@ -128,6 +128,29 @@ Rien à faire côté serveur tant que le pilote n'a pas tranché : un champ inac
 > `chargementDesReferentiels` attendait encore **152** champs servis en contrat-cadre ; avec 114 champs dont 113
 > actifs, c’est **148** (35 + 113). Corrigé.
 
+
+> ⚠️ **23/09 — B4 CLOS : le marché à commande est recetté par l’interface.** La ligne de démonstration 303069,
+> « [DÉMO] Fourniture de consommables informatiques (marché à commande) », posée par le backend sur le plan signé
+> 100328 en appel d’offres ouvert, deux lots, 180 000 000 Ar.
+>
+> Parcours complet depuis l’écran de choix de ligne : la ligne est listée avec sa forme « À commande », elle est
+> préparable, le DMC se crée, la fiche s’ouvre (fiche 5). Vérifié à l’écran :
+>
+> - le type repris du plan est « À commande », et l’écran n’affiche aucune page de repli ;
+> - le cadrage pose **neuf** questions — « mono ou multi-attributaire » reste réservée au contrat-cadre ;
+> - l’allotissement est imposé par le plan, verrouillé, avec ses **deux** lots (lot 1d) ;
+> - les documents annoncés sont **DPAO · AE · CCAP**, et **huit** blocs sont à saisir : B07 n’apparaît pas ;
+> - **96 informations** attendues, contre 91 en quantité fixe ;
+> - les **sept informations propres** au marché à commande sont toutes à leur place : quantités minimum et maximum,
+>   durée de validité et date d’effet en B02 ; montants minimum et maximum annuels en B05 ; délai maximum de
+>   livraison en B06 ; délai de validité du marché en B09.
+>
+> Aucune erreur JavaScript. Les 23 informations du plan sont reprises.
+>
+> **Le prix de la ligne de démonstration est accepté** : le plan 100328 porte une ligne que son procès-verbal n’a
+> pas vue. Le préfixe « [DÉMO] » la rend repérable, et le script de retrait la supprime avec tout ce que la recette
+> aura créé sur elle. C’est la bonne façon : une ligne semée et reprise, plutôt qu’une ligne métier falsifiée.
+
 ## Tests attendus (recette backend)
 
 1. Ligne de plan à `FORME_MARCHE = A_COMMANDE` → `formeOutillee = true` dans `GET /api/dmcs/eligibles`.
