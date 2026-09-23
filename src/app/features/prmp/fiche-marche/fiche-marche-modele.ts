@@ -154,6 +154,37 @@ export function typeOutille(t: TypeMarche | null | undefined): boolean {
 }
 
 /** Questions à poser pour un cadrage donné (celles dont la condition `si` est satisfaite). */
+/** Ordre de lecture des documents d'un dossier d'appel d'offres. */
+export const ORDRE_DOCUMENTS: readonly DocumentDao[] = ['DPAO', 'DPAC', 'AE', 'CCAP'];
+
+/** Les documents en toutes lettres, tels que le serveur les nomme (lot 2a). */
+export const NOMS_DOCUMENTS: Readonly<Record<DocumentDao, string>> = {
+  DPAO: "les données particulières de l'appel d'offres",
+  DPAC: 'les données particulières du cahier des clauses administratives',
+  AE: "l'acte d'engagement",
+  CCAP: 'le cahier des clauses administratives particulières',
+  AUCUN: '',
+};
+
+/**
+ * ⚠️ Lot 4 (23/09) — les documents que cette fiche produira, **déduits du référentiel de son type**, jamais d'une
+ * liste en dur : un contrat-cadre produit DPAC et AE, les deux autres types DPAO, CCAP et AE.
+ *
+ * Les 35 champs partagés (repris du plan, reflets du cadrage) portent `DPAO` et `CCAP` pour maître, parce qu'ils
+ * valent pour les trois types. Le serveur leur applique, en contrat-cadre, la répartition du fichier de
+ * correspondance : **DPAO → DPAC, CCAP → AE**. L'écran lit la même donnée et applique la même règle, sans quoi il
+ * annoncerait quatre documents là où deux seulement sont produits.
+ */
+export function documentsProduits(referentiel: ReferentielFiche, typeMarche: TypeMarche | null): DocumentDao[] {
+  const remap = (d: DocumentDao | null | undefined): DocumentDao | undefined => {
+    if (!d) return undefined;
+    if (typeMarche !== 'CONTRAT_CADRE') return d;
+    return d === 'DPAO' ? 'DPAC' : d === 'CCAP' ? 'AE' : d;
+  };
+  const vus = new Set(referentiel.champs.map((c) => remap(c.documentMaitre)));
+  return ORDRE_DOCUMENTS.filter((d) => vus.has(d));
+}
+
 /** Clé PPM du champ qui porte le nombre de lots de la ligne du plan de passation (aujourd'hui `B02-LV-01`). */
 export const CLE_PPM_NB_LOTS = 'NB_LOTS_PPM';
 

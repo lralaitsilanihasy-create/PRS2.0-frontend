@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, u
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
@@ -20,12 +20,14 @@ import {
   ETAPES_FICHE,
   LIBELLES_DOCUMENTS,
   LIBELLES_TYPES_MARCHE,
+  NOMS_DOCUMENTS,
   QUESTIONS_CADRAGE,
   QuestionCadrage,
   REFERENTIEL_ESQUISSE,
   allotissementDuPlan,
   blocsASaisir,
   cadrageComplet,
+  documentsProduits,
   champsDeRubrique,
   nbLotsDuPlan,
   progression,
@@ -179,6 +181,17 @@ export class FicheMarcheEcran {
    * est **verrouillée**, et le nombre de lots est celui du plan. Même principe que le type de marché (lot 1c).
    */
   readonly nbLotsPlan = computed(() => nbLotsDuPlan(this.referentiel(), this.fiche()?.valeursPpm));
+  /** Les documents que cette fiche produira, lus du référentiel de son type — jamais annoncés en dur. */
+  readonly documentsDeLaFiche = computed(() => documentsProduits(this.referentiel(), this.typeMarche()));
+  /** « DPAC · AE », « DPAO · AE · CCAP »… pour le rail ; vide si le référentiel n'est pas encore là. */
+  readonly documentsCourt = computed(() => this.documentsDeLaFiche().join(' · '));
+  /** « le DPAC et l'acte d'engagement », en toutes lettres. */
+  readonly documentsEnToutesLettres = computed(() => {
+    const noms = this.documentsDeLaFiche().map((d) => NOMS_DOCUMENTS[d]);
+    if (!noms.length) return 'les documents du dossier';
+    if (noms.length === 1) return noms[0];
+    return noms.slice(0, -1).join(', ') + ' et ' + noms[noms.length - 1];
+  });
   readonly allotiImpose = computed(() => allotissementDuPlan(this.nbLotsPlan()));
   /** Une fiche **validée** est un enregistrement : on n'y réécrit rien, on montre ce qui a été figé. */
   readonly allotiVerrouille = computed(() => !this.figee() && this.allotiImpose() !== null);
@@ -223,9 +236,21 @@ export class FicheMarcheEcran {
         });
       return;
     }
+    // ⚠️ 23/09 (lot 4) — le référentiel suit le TYPE DE LA FICHE, il ne peut plus être demandé en quantité fixe :
+    // le contrat-cadre a ses propres blocs, rubriques et champs. La fiche est donc lue une fois, partagée, et le
+    // référentiel la suit ; les versions et les documents partent en parallèle, une seule vague à l'arrivée.
+    const fiche$ = this.ficheService
+      .lire(id)
+      .pipe(
+        catchError((e: HttpErrorResponse) => (routeAbsente(e) ? of(null) : (this.erreur.set(true), of(null)))),
+        shareReplay(1),
+      );
     forkJoin({
-      ref: this.champService.referentiel('QUANTITE_FIXE').pipe(catchError(() => of(null))),
-      fiche: this.ficheService.lire(id).pipe(catchError((e: HttpErrorResponse) => (routeAbsente(e) ? of(null) : (this.erreur.set(true), of(null))))),
+      ref: fiche$.pipe(
+        switchMap((f) => this.champService.referentiel(f?.typeMarche ?? 'QUANTITE_FIXE')),
+        catchError(() => of(null)),
+      ),
+      fiche: fiche$,
       versions: this.ficheService.versions(id).pipe(catchError(() => of([] as VersionFiche[]))),
       docs: this.ficheService.documents(id).pipe(catchError(() => of(null))),
     }).subscribe(({ ref, fiche, versions, docs }) => {
@@ -279,11 +304,16 @@ export class FicheMarcheEcran {
   repondre(cle: string, valeur: Valeur): void {
     // Une réponse imposée par le plan ne se change pas d'un clic : elle se corrige dans le plan de passation.
     if (this.imposee(cle)) return;
+    const type = this.typeMarche();
     this.cadrage.update((c) => {
       const suivant: Cadrage = { ...c, [cle]: valeur };
+      // ⚠️ 23/09 (lot 4) — l'élagage se juge sur le cadrage EFFECTIF, type de marché compris. Le type a quitté le
+      // cadrage au lot 1c : le tester dans `suivant` effaçait aussitôt toute réponse à une question conditionnée au
+      // type — « mono ou multi-attributaire » ne pouvait littéralement pas être répondue.
+      const effectif: Cadrage = { ...suivant, typeMarche: type };
       // Une question qui disparaît emporte sa réponse (et son complément) : le cadrage ne garde rien d'invisible.
       for (const q of QUESTIONS_CADRAGE) {
-        if (q.si && String(suivant[q.si.cle] ?? '') !== q.si.valeur) delete suivant[q.cle];
+        if (q.si && String(effectif[q.si.cle] ?? '') !== q.si.valeur) delete suivant[q.cle];
         if (q.complement && String(suivant[q.cle] ?? '') !== q.complement.si) delete suivant[q.complement.cle];
       }
       return suivant;

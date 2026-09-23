@@ -115,14 +115,19 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     rendre();
   }
 
-  /** Répond à la vague d'ouverture d'une fiche : référentiel + fiche (`null` = 404) + versions figées. */
+  /**
+   * Répond à la vague d'ouverture d'une fiche : fiche (`null` = 404), puis référentiel, versions et documents.
+   * ⚠️ Lot 4 — le référentiel suit le TYPE DE LA FICHE, il n'est donc demandé qu'une fois la fiche lue ;
+   * `typeMarcheAttendu` vérifie que c'est bien celui-là qui est demandé.
+   */
   function ouvrir(ref: ReferentielFiche | null, f: FicheMarche | null, versions: VersionFiche[] | null = [], docs: DocumentFiche[] | null = null): void {
-    const r = http.expectOne((x) => x.url === '/api/champs-fiche-marche' && x.params.get('typeMarche') === 'QUANTITE_FIXE');
-    if (ref) r.flush(ref);
-    else r.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
     const q = http.expectOne('/api/fiches-marche/42');
     if (f) q.flush(f);
     else q.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+    const typeAttendu = f?.typeMarche ?? 'QUANTITE_FIXE';
+    const r = http.expectOne((x) => x.url === '/api/champs-fiche-marche' && x.params.get('typeMarche') === typeAttendu);
+    if (ref) r.flush(ref);
+    else r.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
     const v = http.expectOne('/api/fiches-marche/42/versions');
     if (versions) v.flush(versions);
     else v.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
@@ -345,6 +350,20 @@ describe('Fiche marché d’un appel d’offres (proposition DMC du 22/09, lot 1
     const pied = texte(racine().querySelector('.fm__aut'));
     expect(pied).toContain('ne sert pas encore le contrat');
     expect(pied).not.toContain('Répondez à toutes les questions');
+  });
+
+  it('cadrage d’un contrat-cadre : « mono ou multi-attributaire » se répond, et la réponse tient (lot 4)', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ typeMarche: 'CONTRAT_CADRE', typeOutille: true, cadrage: {}, valeurs: {} }));
+    // ⚠️ La question est conditionnée au TYPE, qui a quitté le cadrage au lot 1c : l'élagage des réponses devenues
+    // sans objet doit se juger sur le cadrage effectif, sinon la réponse est effacée à l'instant même où on la donne.
+    (racine().querySelector('input[name="q-attributaires"][value="MULTI"]') as HTMLInputElement).click();
+    rendre();
+    expect(fixture.componentInstance.cadrage()['attributaires']).toBe('MULTI');
+    // Une réponse suivante ne l'emporte pas non plus.
+    (racine().querySelector('input[name="q-variantes"][value="NON"]') as HTMLInputElement).click();
+    rendre();
+    expect(fixture.componentInstance.cadrage()['attributaires']).toBe('MULTI');
   });
 
   it('cadrage : « forme du groupement » apparaît avec groupement = OUI et repart avec NON ; l’enregistrement envoie les réponses', () => {

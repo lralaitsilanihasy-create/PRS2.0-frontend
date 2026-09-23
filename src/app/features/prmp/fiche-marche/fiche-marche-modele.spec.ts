@@ -6,6 +6,7 @@ import {
   REFERENTIEL_ESQUISSE,
   blocsASaisir,
   cadrageComplet,
+  documentsProduits,
   champsDeRubrique,
   evaluerCondition,
   progression,
@@ -88,6 +89,23 @@ describe('Fiche marché — règles pures (esquisse du 22/09)', () => {
     expect(allotissementDuPlan(2)).toEqual({ alloti: 'OUI', nbLots: 2 });
     expect(allotissementDuPlan(4)).toEqual({ alloti: 'OUI', nbLots: 4 });
     expect(allotissementDuPlan(null)).toBeNull();
+  });
+
+  it('documents produits : déduits du référentiel, avec la répartition du contrat-cadre (DPAO → DPAC, CCAP → AE)', () => {
+    const ref: ReferentielFiche = {
+      blocs: [],
+      champs: [
+        champ({ code: 'A', bloc: 'B02', rubrique: 'OB', documentMaitre: 'DPAO' }),
+        champ({ code: 'B', bloc: 'B05', rubrique: 'TP', documentMaitre: 'AE' }),
+        champ({ code: 'C', bloc: 'B09', rubrique: 'PR', documentMaitre: 'CCAP' }),
+        champ({ code: 'D', bloc: 'B06', rubrique: 'AN', documentMaitre: 'AUCUN' }),
+      ],
+    };
+    expect(documentsProduits(ref, 'QUANTITE_FIXE')).toEqual(['DPAO', 'AE', 'CCAP']);
+    expect(documentsProduits(ref, 'A_COMMANDE')).toEqual(['DPAO', 'AE', 'CCAP']);
+    // Un contrat-cadre ne produit ni DPAO ni CCAP : les champs partagés basculent sur ses deux documents.
+    expect(documentsProduits(ref, 'CONTRAT_CADRE')).toEqual(['DPAC', 'AE']);
+    expect(documentsProduits({ blocs: [], champs: [] }, 'QUANTITE_FIXE')).toEqual([]);
   });
 
   it('rubriques et champs suivent le cadrage ; une rubrique sans champ (référentiel à compléter) reste ouverte', () => {

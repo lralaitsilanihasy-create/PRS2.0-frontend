@@ -26,7 +26,7 @@
        de marché n'est pas outillée, où rien ne sera saisi ni produit. -->
   @if (!fiche() || typePrisEnCharge()) {
     <p class="page-role">
-      Une information saisie une fois, dans un formulaire : le DPAO, l'acte d'engagement et le CCAP seront générés depuis cette fiche
+      Une information saisie une fois, dans un formulaire : {{ documentsEnToutesLettres() }} seront générés depuis cette fiche
       à la validation, puis joints au dossier avant sa soumission à la Commission. Aucun fichier à importer.
     </p>
   }
@@ -177,7 +177,7 @@
                     @case ('reprises') { automatiques }
                     @case ('controles') { {{ bilan().bloquants.length }} à lever }
                     @case ('validation') { {{ figee() ? 'version ' + fiche()?.version : 'fige et versionne' }} }
-                    @case ('documents') { DPAO · AE · CCAP (lot 2) }
+                    @case ('documents') { {{ documentsCourt() || 'à la validation' }} }
                   }
                 </span>
               </button>
@@ -381,7 +381,7 @@
                 @if (figee()) {
                   <p class="fm__ok">Fiche validée — version {{ fiche()?.version }} figée{{ fiche()?.dateValidation ? ' le ' + dateFr(fiche()?.dateValidation) : '' }}. Une modification ouvre une nouvelle version.</p>
                 } @else if (estPrmp()) {
-                  <p>La validation <strong>fige</strong> la fiche et lui donne un numéro de version. Elle <strong>produit les documents</strong> — DPAO, acte d'engagement et CCAP — depuis cette version, et les joint au dossier à soumettre.</p>
+                  <p>La validation <strong>fige</strong> la fiche et lui donne un numéro de version. Elle <strong>produit les documents</strong> — {{ documentsEnToutesLettres() }} — depuis cette version, et les joint au dossier à soumettre.</p>
                   @if (bilan().bloquants.length) { <p class="fm__ctrl fm__ctrl--r">{{ bilan().bloquants.length }} contrôle(s) bloquant(s) à lever avant de valider.</p> }
                 } @else {
                   <p>Vous préparez la fiche ; <strong>la PRMP</strong> la valide et soumet le dossier. Rien d'autre à faire ici.</p>
@@ -467,7 +467,7 @@
                     }
                   </ul>
                 } @else if (documentsAbsents()) {
-                  <p>DPAO, acte d'engagement et CCAP seront <strong>générés à la validation</strong> et joints au dossier. La génération est demandée au serveur (lot 2) ; les informations, elles, sont déjà toutes saisies ici.</p>
+                  <p>{{ documentsEnToutesLettres() }} seront <strong>générés à la validation</strong> et joints au dossier. La génération est demandée au serveur ; les informations, elles, sont déjà toutes saisies ici.</p>
                 } @else if (!figee()) {
                   <p class="fm__attendus">Les documents sont produits par la <strong>validation</strong> de la fiche : terminez l'étape 6 d'abord.</p>
                 } @else {
