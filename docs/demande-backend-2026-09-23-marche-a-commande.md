@@ -87,6 +87,32 @@ au choix du pilote :
 
 Rien à faire côté serveur tant que le pilote n'a pas tranché : un champ inactif est simplement ignoré.
 
+
+### B4 — Une ligne à commande ouvrable dans le jeu de démonstration
+
+> ⚠️ **23/09, après la livraison — le lot est outillé, mais INVÉRIFIABLE par l’interface sur DBPRS20.**
+>
+> Mesuré après le chargement des référentiels : `t_marche` porte **82** lignes à quantité fixe, **17** en
+> contrat-cadre et **une seule** à commande. Cette ligne, 302920 « Fourniture des habillements du personnel
+> (à commande) », est disqualifiée deux fois : son plan (100329) est au statut `EXAMINE` et non au PV signé, et
+> son `ID_MODE` vaut 4, « Consultation des Prix Ouverte », dont l’`ID_TYPE_DMC` est nul — ce n’est pas un appel
+> d’offres, il ne produit donc pas de DAO, et cette famille est hors périmètre depuis la proposition du 22/09.
+>
+> Le seul plan signé, **100328** (`00001/PPM-AGPM/CNM/2026`, `CLOTURE`), ne porte que 32 lignes à quantité fixe et
+> 8 en contrat-cadre. D’où les sept lignes éligibles de l’écran, toutes dans ces deux formes.
+>
+> **Demande** : une ligne à commande **semée** dans le jeu de démonstration — et non obtenue en modifiant une
+> ligne métier existante, car le plan de passation est une donnée réelle et la falsifier pour une recette se
+> paierait plus tard. Il lui faut `ID_DOSSIER = 100328`, `ID_MODE = 1` (« Appel d’offres ouvert »,
+> `ID_TYPE_DMC = 1`), `FORME_MARCHE = 'A_COMMANDE'`, un nombre de lots, un montant estimatif, une désignation
+> explicite, et **aucun DMC déjà créé**. Un second plan signé semé pour la démonstration convient aussi bien :
+> l’écran de choix de ligne les liste tous.
+>
+> **Pourquoi ça compte.** Les trois défauts du front que le contrat-cadre a révélés le 23/09 — référentiel demandé
+> en quantité fixe en dur, « mono ou multi-attributaire » effacée à l’instant où on la répond, documents annoncés
+> en dur — n’ont été vus qu’en **ouvrant** une fiche du type. Aucun test unitaire ne les avait pris. Le marché à
+> commande est aujourd’hui dans le même angle mort.
+
 ## Tests attendus (recette backend)
 
 1. Ligne de plan à `FORME_MARCHE = A_COMMANDE` → `formeOutillee = true` dans `GET /api/dmcs/eligibles`.
@@ -97,6 +123,7 @@ Rien à faire côté serveur tant que le pilote n'a pas tranché : un champ inac
    les montants minimum et maximum annuels.
 6. `B07` n'apparaît **pas** dans les blocs à saisir d'un marché à commande.
 7. `FicheMarcheDto.typeOutille` vaut `true` pour `A_COMMANDE` et `QUANTITE_FIXE`, `false` pour `CONTRAT_CADRE`.
+8. Sur DBPRS20, l’écran de choix de ligne propose **au moins une ligne à commande** préparable (B4).
 
 ## Côté front (à la livraison)
 
