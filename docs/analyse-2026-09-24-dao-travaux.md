@@ -82,16 +82,32 @@ tranche ferme et les tranches conditionnelles.
 
 Rien à changer en base : `FORME_MARCHE` garde ses trois valeurs.
 
-### Décision B — `FAR`, le formulaire à remplir
+### Décision B — `FAR`, le formulaire à remplir : tranchée par le pilote
 
 Six informations du CCAP portent `FAR` : les modèles de formule de révision de prix, de garantie bancaire et de
 caution de bonne exécution, de garantie et de caution de restitution d'avance, et le cadre de bordereau de prix.
-Ce ne sont pas des valeurs à saisir mais des **formulaires annexés**, que le candidat remplira.
 
-**Proposition** : les charger avec le type de donnée **`PIECE`**, qui existe déjà dans le référentiel et que
-l'écran sait afficher — « Pièce jointe — au dossier, après validation ». Le champ marque alors ce qui doit être
-joint, sans demander de saisie. C'est la lecture la plus fidèle : le DAO des travaux porte des annexes que celui
-des fournitures n'a pas.
+> ⚠️ **24/09 — réponse du pilote.** « Les FAR sont des formulaires à remplir qu'on va créer ultérieurement dont on
+> attend leur modèle. » Ce ne sont donc **ni une saisie, ni une pièce que la PRMP téléverse** : ce sont des
+> **annexes du dossier, encore à produire**, dont les modèles n'existent pas.
+>
+> Ma première proposition — les charger en type `PIECE` — était fausse : `PIECE` désigne un fichier que
+> quelqu'un joint au dossier, alors qu'un FAR sera **engendré** comme le sont le DPAO, l'acte d'engagement et le
+> CCAP, puis rempli par le candidat.
+
+**Décision retenue** : les six sont **chargés inactifs**, avec leur rubrique et leur document maître (`CCAP`),
+et une mention en texte type qui dit ce qui est attendu. Ils tiennent ainsi la place et gardent la trace, sans
+rien demander à personne ni rien promettre à l'écran. Le jour où les modèles arrivent, il suffit de les activer
+depuis l'écran Administrateur et de leur donner leur type — c'est exactement le traitement déjà appliqué au rythme
+de commande des marchés à commande et à l'acte de nomination du contrat-cadre.
+
+**Conséquence sur le matériel attendu du pilote** : il y a désormais **deux jeux de modèles** distincts, et il ne
+faut pas les confondre.
+
+| jeu | ce que c'est | pour quel lot |
+|---|---|---|
+| Modèles Word du DPAO, de l'AE et du CCAP | les documents **engendrés depuis la fiche** ; la mise en page provisoire du lot 2a les attend | lot 2b |
+| Les six **modèles de FAR** | les **annexes** que le candidat remplira : formule de révision, garanties et cautions, cadre de bordereau | à créer, date inconnue |
 
 ### Décision C — la structure en blocs
 
@@ -127,6 +143,8 @@ fichier des fournitures.
 2. **Une fois l'axe livré**, la conversion est mécanique : deux CSV, leur document de conversion, et le chargement
    par l'import — comme les deux fois précédentes.
 3. **Les modèles Word des travaux** seront nécessaires au lot 2b, comme ceux des fournitures, et manquent également.
+4. **Les six modèles de FAR** sont à créer et n'ont pas de date. Ils ne bloquent rien : les champs sont chargés
+   inactifs et s'activeront le jour venu.
 
 ## Volume attendu
 
