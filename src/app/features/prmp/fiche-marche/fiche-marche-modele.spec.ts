@@ -8,6 +8,8 @@ import {
   cadrageComplet,
   documentEffectif,
   documentsProduits,
+  largeurChamp,
+  reprisesAffichees,
   champsDeRubrique,
   evaluerCondition,
   progression,
@@ -121,6 +123,21 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(documentEffectif('DPAO', 'CONTRAT_CADRE', 'FOURNITURES_SERVICES')).toBe('DPAC');
     expect(documentEffectif('CCAP', 'CONTRAT_CADRE', null)).toBe('AE');
     expect(documentEffectif('AE', null, null)).toBe('AE');
+  });
+
+  it('ergonomie : la largeur suit le type, et les reprises ne répètent ni elles-mêmes ni le document maître', () => {
+    expect(largeurChamp('DATE')).toBe('court');
+    expect(largeurChamp('MONTANT')).toBe('court');
+    expect(largeurChamp('LISTE')).toBe('moyen');
+    expect(largeurChamp('OUI_NON')).toBe('moyen');
+    expect(largeurChamp('TEXTE_LONG')).toBe('long');
+    expect(largeurChamp('TEXTE')).toBe('long');
+    // ⚠️ Relevé sur une fiche de contrat-cadre : le champ est repris dans l'AE, et son CCAP devient un AE — « AE AE ».
+    expect(reprisesAffichees({ documentMaitre: 'DPAO', reprises: ['AE', 'CCAP'] }, 'CONTRAT_CADRE', 'FOURNITURES_SERVICES')).toEqual(['AE']);
+    expect(reprisesAffichees({ documentMaitre: 'DPAO', reprises: ['AE', 'CCAP'] }, 'QUANTITE_FIXE', 'TRAVAUX')).toEqual(['AE', 'CCAP']);
+    // Un champ n'est jamais « repris » dans son propre document maître.
+    expect(reprisesAffichees({ documentMaitre: 'CCAP', reprises: ['CCAP', 'AE'] }, 'QUANTITE_FIXE', 'TRAVAUX')).toEqual(['AE']);
+    expect(reprisesAffichees({ documentMaitre: 'DPAO', reprises: [] }, 'QUANTITE_FIXE', null)).toEqual([]);
   });
 
   it('rubriques et champs suivent le cadrage ; une rubrique sans champ (référentiel à compléter) reste ouverte', () => {

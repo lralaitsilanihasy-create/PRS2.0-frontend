@@ -496,7 +496,9 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     rendre();
     expect(texte(racine().querySelector('.fm__lettres'))).toBe('huit millions quatre cent mille ariary');
     const meta = racine().querySelector('#c-B05-GS-02')?.closest('.fm__champ')?.querySelectorAll('.fm__meta > span');
-    expect(Array.from(meta ?? []).map((s) => texte(s))).toEqual(['à saisir', 'DPAO', 'repris dans', 'AE', 'CCAP', 'condition : garantieSoumission = OUI']);
+    // ⚠️ Ergonomie (24/09) : sous le champ ne restent que les EXCEPTIONS. Ni « à saisir » (c'est l'ordinaire d'un
+    // champ à saisir), ni « DPAO » (la rubrique le dit déjà) : seulement les reprises et la condition.
+    expect(Array.from(meta ?? []).map((s) => texte(s))).toEqual(['repris dans', 'AE', 'CCAP', 'condition : garantieSoumission = OUI']);
     expect(texte(racine().querySelector('.fm__total'))).toContain('1 sur 3');
   });
 

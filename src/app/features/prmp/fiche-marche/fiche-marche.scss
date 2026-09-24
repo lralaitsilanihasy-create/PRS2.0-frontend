@@ -37,14 +37,26 @@
 .fm__comptes { margin-left: auto; }
 .fm__rub { padding: 0.9rem 1.1rem; border-bottom: 1px solid var(--n-100); }
 .fm__rub h3 { margin: 0 0 0.5rem; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.fm__champ { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 0.4rem 1rem; align-items: start; padding: 0.45rem 0; border-top: 1px dashed var(--n-200); }
+// ⚠️ Ergonomie (24/09) — la valeur avait 220 px fixes : une désignation de quatre lots s'y repliait sur dix-sept
+// lignes pendant que la colonne du libellé restait vide aux trois quarts. L'intitulé est borné, la valeur prend le
+// reste, et chaque contrôle est large de ce qu'il reçoit.
+.fm__champ { display: grid; grid-template-columns: minmax(0, 26rem) minmax(0, 1fr); gap: 0.35rem 1.5rem; align-items: start; padding: 0.55rem 0; border-top: 1px dashed var(--n-200); }
+.fm__champ-v { min-width: 0; }
+.fm__champ-v--court { max-width: 12rem; }
+.fm__champ-v--moyen { max-width: 26rem; }
+.fm__champ-v--long { max-width: 46rem; }
+// Le libellé cède la place à mesure que l'écran rétrécit : à 1366 px, une colonne de 416 px pour l'intitulé
+// laissait 307 px à la valeur — le défaut qu'on vient de corriger, revenu par la fenêtre.
+@media (max-width: 1500px) { .fm__champ { grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); } }
+@media (max-width: 1250px) { .fm__champ { grid-template-columns: 1fr; } .fm__champ-v--long, .fm__champ-v--moyen { max-width: none; } }
 .fm__champ:first-of-type { border-top: 0; }
 .fm__champ--ko .form-control { border-color: var(--danger-text, #b91c1c); }
 .fm__opt-l { font-weight: 600; font-size: 0.86rem; }
 .fm__champ-l label, .fm__champ-t { font-weight: 600; font-size: 0.86rem; display: block; }
 .fm__champ-aide, .fm__lettres, .fm__aut { font-size: 0.76rem; color: var(--n-500); }
 .fm__champ-aide { display: block; }
-.fm__lecture { padding: 0.4rem 0.55rem; border-radius: 8px; background: var(--n-100); color: var(--n-700); font-family: var(--cnm-mono); font-size: 0.82rem; }
+// Une valeur reprise est une phrase, pas un identifiant : la chasse fixe la rendait illisible sur plusieurs lignes.
+.fm__lecture { padding: 0.45rem 0.6rem; border-radius: 8px; background: var(--n-100); color: var(--n-700); font-size: 0.86rem; line-height: 1.5; white-space: pre-wrap; }
 .fm__lettres { display: block; margin-top: 0.25rem; font-style: italic; }
 .fm__meta { grid-column: 1 / -1; display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; font-size: 0.72rem; }
 .fm__doc { padding: 0.05rem 0.45rem; border-radius: 999px; font-weight: 700; }

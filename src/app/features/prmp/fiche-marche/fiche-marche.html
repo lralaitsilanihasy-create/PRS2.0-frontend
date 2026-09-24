@@ -284,7 +284,7 @@
                           <span class="fm__champ-aide">{{ c.code }}@if (c.aide) { · {{ c.aide }} }</span>
                           @if (erreurDe(c.code); as msg) { <span class="form-error">{{ msg }}</span> }
                         </div>
-                        <div class="fm__champ-v">
+                        <div class="fm__champ-v fm__champ-v--{{ largeur(c.type) }}">
                           @if (c.source === 'PPM' || c.source === 'CADRAGE' || figee()) {
                             <div class="fm__lecture" [id]="'c-' + c.code">{{ valeurAffichee(c) || '—' }}</div>
                           } @else {
@@ -315,12 +315,17 @@
                             }
                           }
                         </div>
-                        <div class="fm__meta">
-                          <span class="fm__etat fm__etat--{{ c.source.toLowerCase() }}">{{ c.source === 'PPM' ? 'repris du PPM' : c.source === 'CADRAGE' ? 'repris du cadrage' : 'à saisir' }}</span>
-                          <span class="fm__doc fm__doc--{{ doc(c.documentMaitre).toLowerCase() }}">{{ libellesDocuments[doc(c.documentMaitre)] }}</span>
-                          @if (c.reprises.length) { <span class="fm__ou">repris dans</span> @for (d of c.reprises; track d) { <span class="fm__doc fm__doc--{{ doc(d).toLowerCase() }}">{{ libellesDocuments[doc(d)] }}</span> } }
-                          @if (c.condition) { <span class="fm__etat">condition : {{ c.condition }}</span> }
-                        </div>
+                        <!-- ⚠️ Ergonomie (24/09) : on ne répète pas ici ce que la rubrique vient de dire. -->
+                        @if (meta(c, r); as m) {
+                          @if (m.source || m.document || m.reprises.length || m.condition) {
+                            <div class="fm__meta">
+                              @if (m.source) { <span class="fm__etat fm__etat--{{ c.source.toLowerCase() }}">{{ m.source }}</span> }
+                              @if (m.document; as d) { <span class="fm__doc fm__doc--{{ d.toLowerCase() }}">{{ libellesDocuments[d] }}</span> }
+                              @if (m.reprises.length) { <span class="fm__ou">repris dans</span> @for (d of m.reprises; track d) { <span class="fm__doc fm__doc--{{ d.toLowerCase() }}">{{ libellesDocuments[d] }}</span> } }
+                              @if (m.condition; as cond) { <span class="fm__etat">condition : {{ cond }}</span> }
+                            </div>
+                          }
+                        }
                         @if (c.texteType) { <p class="fm__modele"><strong>Texte type :</strong> {{ c.texteType }}</p> }
                       </div>
                     } @empty {
@@ -345,11 +350,11 @@
                 @for (r of reprisesListe(); track r.champ.code) {
                   <div class="fm__champ">
                     <div class="fm__champ-l"><span class="fm__champ-t">{{ r.champ.libelle }}</span><span class="fm__champ-aide">{{ r.champ.code }}</span></div>
-                    <div class="fm__champ-v"><div class="fm__lecture">{{ affichageReprise(r) }}</div></div>
+                    <div class="fm__champ-v fm__champ-v--{{ largeur(r.champ.type) }}"><div class="fm__lecture">{{ affichageReprise(r) }}</div></div>
                     <div class="fm__meta">
                       <span class="fm__doc fm__doc--{{ doc(r.champ.documentMaitre).toLowerCase() }}">{{ libellesDocuments[doc(r.champ.documentMaitre)] }}</span>
                       <span class="fm__ou">repris dans</span>
-                      @for (d of r.champ.reprises; track d) { <span class="fm__doc fm__doc--{{ doc(d).toLowerCase() }}">{{ libellesDocuments[doc(d)] }}</span> }
+                      @for (d of reprises(r.champ); track d) { <span class="fm__doc fm__doc--{{ d.toLowerCase() }}">{{ libellesDocuments[d] }}</span> }
                     </div>
                   </div>
                 } @empty {

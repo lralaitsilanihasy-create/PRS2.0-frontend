@@ -9,7 +9,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, TypeChamp, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
@@ -30,6 +30,9 @@ import {
   cadrageComplet,
   documentEffectif,
   documentsProduits,
+  largeurChamp,
+  metaChamp,
+  reprisesAffichees,
   champsDeRubrique,
   nbLotsDuPlan,
   progression,
@@ -205,6 +208,21 @@ export class FicheMarcheEcran {
    */
   doc(document: DocumentDao): DocumentDao {
     return documentEffectif(document, this.typeMarche(), this.categorie());
+  }
+
+  /** La largeur du contrôle, par son type : le gabarit ne fixe aucune largeur en dur. */
+  largeur(type: TypeChamp): string {
+    return largeurChamp(type);
+  }
+
+  /** Les documents de reprise à afficher : dédoublonnés, et sans répéter le document maître. */
+  reprises(champ: ChampFiche): DocumentDao[] {
+    return reprisesAffichees(champ, this.typeMarche(), this.categorie());
+  }
+
+  /** Ce qui reste à dire sous un champ, une fois retiré ce que sa rubrique dit déjà. */
+  meta(champ: ChampFiche, rubrique: RubriqueFiche): ReturnType<typeof metaChamp> {
+    return metaChamp(champ, rubrique, this.typeMarche(), this.categorie());
   }
   /** « DPAC · AE », « DPAO · AE · CCAP »… pour le rail ; vide si le référentiel n'est pas encore là. */
   readonly documentsCourt = computed(() => this.documentsDeLaFiche().join(' · '));

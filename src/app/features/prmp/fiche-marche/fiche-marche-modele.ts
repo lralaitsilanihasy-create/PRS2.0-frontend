@@ -1,4 +1,4 @@
-import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, ReferentielFiche, RubriqueFiche, TypeMarche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, ReferentielFiche, RubriqueFiche, TypeChamp, TypeMarche } from '../../../models';
 
 /**
  * Règles PURES de la fiche DAO (esquisse « DAO par type de marché », 22/09) : questions de cadrage, conditions
@@ -222,6 +222,59 @@ export function documentsProduits(
     referentiel.champs.map((c) => (c.documentMaitre ? documentEffectif(c.documentMaitre, typeMarche, categorie) : undefined)),
   );
   return ORDRE_DOCUMENTS.filter((d) => vus.has(d));
+}
+
+/**
+ * La largeur utile d'un contrôle, d'après ce qu'il reçoit : une date ou un pourcentage n'a pas besoin de la largeur
+ * d'une phrase, et une phrase ne se saisit pas dans 220 pixels. Trois largeurs suffisent — au-delà, la ligne de texte
+ * devient trop longue pour se relire.
+ */
+export function largeurChamp(type: TypeChamp): 'court' | 'moyen' | 'long' {
+  if (type === 'NOMBRE' || type === 'POURCENTAGE' || type === 'DATE' || type === 'MONTANT') return 'court';
+  if (type === 'LISTE' || type === 'OUI_NON') return 'moyen';
+  return 'long';
+}
+
+/**
+ * Les documents où ce champ est **repris**, tels qu'on les affiche : chacun une fois, et jamais son propre document
+ * maître. ⚠️ Sans cela un contrat-cadre affiche « AE AE » — le champ est repris dans l'AE, et son CCAP devient un AE
+ * par la répartition de la forme.
+ */
+export function reprisesAffichees(
+  champ: Pick<ChampFiche, 'documentMaitre' | 'reprises'>,
+  typeMarche: TypeMarche | null,
+  categorie: CategorieDao | null,
+): DocumentDao[] {
+  const maitre = champ.documentMaitre ? documentEffectif(champ.documentMaitre, typeMarche, categorie) : null;
+  const vues: DocumentDao[] = [];
+  for (const d of champ.reprises ?? []) {
+    const effectif = documentEffectif(d, typeMarche, categorie);
+    if (effectif === maitre || vues.includes(effectif)) continue;
+    vues.push(effectif);
+  }
+  return vues;
+}
+
+/**
+ * ⚠️ Ergonomie (24/09) — la ligne d'étiquettes sous un champ répétait ce que la rubrique venait de dire (« AE » sous
+ * une rubrique « AE ») et l'évidence (« à saisir » sous un champ à saisir) : une ligne de bruit sous chacune des cent
+ * informations du formulaire. Ne restent que les **exceptions** — une valeur qui vient d'ailleurs, un document autre
+ * que celui de la rubrique, les reprises, une condition.
+ */
+export function metaChamp(
+  champ: ChampFiche,
+  rubrique: Pick<RubriqueFiche, 'documentMaitre'> | null,
+  typeMarche: TypeMarche | null,
+  categorie: CategorieDao | null,
+): { source: string | null; document: DocumentDao | null; reprises: DocumentDao[]; condition: string | null } {
+  const doc = champ.documentMaitre ? documentEffectif(champ.documentMaitre, typeMarche, categorie) : null;
+  const docRubrique = rubrique?.documentMaitre ? documentEffectif(rubrique.documentMaitre, typeMarche, categorie) : null;
+  return {
+    source: champ.source === 'PPM' ? 'repris du PPM' : champ.source === 'CADRAGE' ? 'repris du cadrage' : null,
+    document: doc && doc !== docRubrique ? doc : null,
+    reprises: reprisesAffichees(champ, typeMarche, categorie),
+    condition: champ.condition ?? null,
+  };
 }
 
 /** Clé PPM du champ qui porte le nombre de lots de la ligne du plan de passation (aujourd'hui `B02-LV-01`). */
