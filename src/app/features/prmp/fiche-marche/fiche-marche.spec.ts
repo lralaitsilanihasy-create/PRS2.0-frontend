@@ -272,6 +272,8 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     (racine().querySelector('input[name="q-variantes"][value="NON"]') as HTMLInputElement).click();
     rendre();
     expect(fixture.componentInstance.cadrage()['tranches']).toBe('OUI');
+    // Le résumé du cadrage doit dire DE QUOI il s'agit : « Oui » tout seul ne veut rien dire.
+    expect(fixture.componentInstance.resume().map((x) => x.texte)).toContain('Marché à tranches');
   });
 
   it('fournitures : la question des tranches n’est pas posée', () => {

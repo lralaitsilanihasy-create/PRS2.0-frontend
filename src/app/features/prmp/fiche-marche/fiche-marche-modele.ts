@@ -266,6 +266,8 @@ export function resumeCadrage(cadrage: Cadrage): { texte: string; non: boolean }
     let texte = s ? `${s} ${opt.libelle.toLowerCase()}` : opt.libelle;
     if (q.cle === 'alloti') texte = non ? 'Non alloti' : `Alloti${cadrage['nbLots'] ? ` · ${cadrage['nbLots']} lots` : ''}`;
     if (q.cle === 'variantes') texte = non ? 'Variantes non' : 'Variantes autorisées';
+    // ⚠️ Lot 5 — propre aux travaux : « Oui » tout seul ne dit pas de quoi il s'agit.
+    if (q.cle === 'tranches') texte = non ? 'Sans tranche' : 'Marché à tranches';
     if (q.cle === 'groupement') texte = non ? 'Groupement non' : 'Groupement autorisé';
     if (q.cle === 'garantieSoumission') texte = non ? 'Sans garantie de soumission' : 'Garantie de soumission exigée';
     if (q.cle === 'avance') texte = non ? 'Sans avance' : `Avance${cadrage['tauxAvance'] ? ` ${cadrage['tauxAvance']} %` : ''}`;
