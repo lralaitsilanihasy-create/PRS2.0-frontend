@@ -82,32 +82,29 @@ tranche ferme et les tranches conditionnelles.
 
 Rien à changer en base : `FORME_MARCHE` garde ses trois valeurs.
 
-### Décision B — `FAR`, le formulaire à remplir : tranchée par le pilote
+### Décision B — `FAR`, le formulaire à remplir : pièce jointe au dossier
 
 Six informations du CCAP portent `FAR` : les modèles de formule de révision de prix, de garantie bancaire et de
-caution de bonne exécution, de garantie et de caution de restitution d'avance, et le cadre de bordereau de prix.
+caution de bonne exécution, de garantie et de caution de restitution d’avance, et le cadre de bordereau de prix.
 
-> ⚠️ **24/09 — réponse du pilote.** « Les FAR sont des formulaires à remplir qu'on va créer ultérieurement dont on
-> attend leur modèle. » Ce ne sont donc **ni une saisie, ni une pièce que la PRMP téléverse** : ce sont des
-> **annexes du dossier, encore à produire**, dont les modèles n'existent pas.
+**Décision du pilote, 24/09** : ils restent des **pièces jointes**. Le champ est donc chargé avec le type de
+donnée **`PIECE`**, qui existe déjà dans le référentiel et que l’écran sait afficher — « Pièce jointe — au
+dossier, après validation ». Il marque ce qui doit être joint, sans rien demander à la saisie.
+
+> ⚠️ **Deux arbitrages successifs, le même jour, consignés ici pour que la raison du choix reste lisible.**
+> D’abord : « les FAR sont des formulaires à remplir qu’on va créer ultérieurement dont on attend leur modèle »
+> — ce qui menait à les charger **inactifs**, en attendant les modèles. Puis, révision : « laisse-les en pièces
+> jointes ». C’est cette seconde lecture qui est retenue, et elle a l’avantage d’être **utilisable tout de
+> suite** : le DAO annonce les six annexes attendues sans dépendre d’un modèle qui n’existe pas encore.
 >
-> Ma première proposition — les charger en type `PIECE` — était fausse : `PIECE` désigne un fichier que
-> quelqu'un joint au dossier, alors qu'un FAR sera **engendré** comme le sont le DPAO, l'acte d'engagement et le
-> CCAP, puis rempli par le candidat.
+> Les modèles, quand ils seront écrits, ne changeront rien au référentiel : ils rempliront la pièce, pas le champ.
 
-**Décision retenue** : les six sont **chargés inactifs**, avec leur rubrique et leur document maître (`CCAP`),
-et une mention en texte type qui dit ce qui est attendu. Ils tiennent ainsi la place et gardent la trace, sans
-rien demander à personne ni rien promettre à l'écran. Le jour où les modèles arrivent, il suffit de les activer
-depuis l'écran Administrateur et de leur donner leur type — c'est exactement le traitement déjà appliqué au rythme
-de commande des marchés à commande et à l'acte de nomination du contrat-cadre.
+**Conséquence sur le matériel attendu du pilote** : un seul jeu de modèles reste bloquant.
 
-**Conséquence sur le matériel attendu du pilote** : il y a désormais **deux jeux de modèles** distincts, et il ne
-faut pas les confondre.
-
-| jeu | ce que c'est | pour quel lot |
+| jeu | ce que c’est | effet sur le chantier |
 |---|---|---|
-| Modèles Word du DPAO, de l'AE et du CCAP | les documents **engendrés depuis la fiche** ; la mise en page provisoire du lot 2a les attend | lot 2b |
-| Les six **modèles de FAR** | les **annexes** que le candidat remplira : formule de révision, garanties et cautions, cadre de bordereau | à créer, date inconnue |
+| Modèles Word du DPAO, de l’AE et du CCAP | les documents **engendrés depuis la fiche** | **bloque le lot 2b** ; la mise en page provisoire du lot 2a les attend |
+| Les six modèles de FAR | les **annexes** que le candidat remplit : formule de révision, garanties et cautions, cadre de bordereau | ne bloque rien : la pièce est annoncée, le modèle la remplira |
 
 ### Décision C — la structure en blocs
 
@@ -143,8 +140,8 @@ fichier des fournitures.
 2. **Une fois l'axe livré**, la conversion est mécanique : deux CSV, leur document de conversion, et le chargement
    par l'import — comme les deux fois précédentes.
 3. **Les modèles Word des travaux** seront nécessaires au lot 2b, comme ceux des fournitures, et manquent également.
-4. **Les six modèles de FAR** sont à créer et n'ont pas de date. Ils ne bloquent rien : les champs sont chargés
-   inactifs et s'activeront le jour venu.
+4. **Les six modèles de FAR** ne bloquent rien : le champ est une **pièce jointe**, annoncée dès maintenant ;
+   le modèle la remplira quand il existera.
 
 ## Volume attendu
 
