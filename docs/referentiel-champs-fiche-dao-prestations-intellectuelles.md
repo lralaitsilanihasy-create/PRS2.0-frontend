@@ -30,6 +30,16 @@ colonne du classeur, et cinquante champs y vont.
 > `DPAO → DPAC` pour le contrat-cadre, il remapperait `DPAO → DPIC` pour cette catégorie. Le changement dans le
 > fichier est alors un simple remplacement.
 
+> ⚠️ **Réponse backend du 2026-09-24 — la première voie, le fichier reste tel quel.** `DPIC` est une **valeur admise**
+> du document maître (champs, rubriques) et un **type de document généré** (V42) : le document existe, il se nomme.
+> **Mais la répartition a dû être étendue aussi** : les 23 informations reprises du plan valent pour les trois
+> catégories et ont le **DPAO** pour maître — sans substitution, une fiche de prestations intellectuelles aurait produit
+> un DPAO en plus. La sélection remappe donc `DPAO → DPIC` **pour cette catégorie** (avant le remappage du
+> contrat-cadre). Vérifié : une fiche produit **DPIC, CCAP et AE**, jamais de DPAO. Libellé servi : « Données
+> particulières des instructions aux consultants ». Les 44 rubriques sont semées par V42 telles que le tableau les donne
+> (44 rubriques, 90 champs attendus, concordance vérifiée avec le CSV) ; import vérifié sur une copie du fichier :
+> **90 créés, 0 rejet** ; la catégorie est ouverte.
+
 ### Un quatrième code : `C`, le choix
 
 Le classeur des prestations intellectuelles distingue `S` (source), `AS` (à saisir), `x` (repris) et **`C`
