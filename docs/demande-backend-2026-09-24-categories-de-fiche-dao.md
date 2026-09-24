@@ -1,0 +1,121 @@
+# Demande backend — La fiche DAO a trois catégories, pas une (lot 5)
+
+**Date** : 2026-09-24 · **Demandeur** : frontend (`frontendprs2`) · **Origine** : le pilote ouvre le chantier des
+travaux — « Il y a 3 catégories de fiches DAO : Fournitures et Services, Travaux et Réhabilitation, Prestations
+Intellectuelles. On a fini la fiche DAO pour Fournitures et Services. »
+
+> **Ce que ce lot demande est un axe, pas un contenu.** Quelle que soit la matière des travaux, le référentiel a
+> besoin d'une **seconde dimension**. Il n'en a qu'une aujourd'hui, le type de marché, et tout ce qu'il porte est
+> implicitement de la catégorie *Fournitures et Services*. Le contenu des travaux fera l'objet d'un lot séparé, dès
+> que le fichier de correspondance correspondant sera remis.
+
+## Constat (mesuré sur DBPRS20 le 24/09)
+
+### La catégorie existe déjà dans la donnée, et elle vient du plan
+
+`t_marche.ID_NATURE` pointe sur `tr_nature`, qui porte **sept** entrées :
+
+| id | libellé | lignes de marché |
+|---|---|---|
+| 1 | Travaux | 8 |
+| 2 | Fournitures | 41 |
+| 3 | Services | 0 |
+| 4 | Prestations intellectuelles | 4 |
+| 5 | Fournitures et services | 0 |
+| 6 | PRESTATIONS DE SERVICE | 48 |
+| 7 | Prestations | 0 |
+
+Le référentiel sert déjà cette information : **`B01-AC-12` « Nature du marché »**, source `PPM`, `clePpm = NATURE`.
+Une fiche la reprend telle quelle — la fiche 5 porte « Fournitures ». **La catégorie est donc dérivable du plan,
+exactement comme la forme du marché l'est depuis le lot 1c.**
+
+### Le référentiel, lui, n'a qu'un axe
+
+`tr_champ_fiche_marche` porte `TYPES_MARCHE` (quantité fixe, à commande, contrat-cadre) et **rien sur la
+catégorie**. Les 265 champs chargés — 151 des fournitures et 114 du contrat-cadre — sont tous, sans le dire, de la
+catégorie *Fournitures et Services*. Charger les travaux dans le même référentiel les mélangerait : « Lieu de
+livraison » et « Lieu d'exécution des travaux » ne sont pas le même champ, et une fiche de travaux n'a que faire
+des incoterms.
+
+### Rien n'est cassé aujourd'hui, mais le défaut est latent
+
+Les huit lignes en appel d'offres du plan signé 100328 sont toutes de nature **Fournitures** ou **Prestations de
+service**, donc toutes de la catégorie *Fournitures et Services*. Aucune ligne de travaux ni de prestations
+intellectuelles n'est éligible aujourd'hui.
+
+Mais **la première qui le deviendra ouvrira une fiche de fournitures**, sans que rien ne le signale : l'écran
+demanderait les incoterms et le lieu de livraison pour un chantier. C'est exactement le défaut que le lot 1c a
+corrigé pour la forme du marché, sur l'autre axe.
+
+## Demande
+
+### B1 — La catégorie devient un attribut du référentiel
+
+- Un référentiel de catégories, à trois valeurs : `FOURNITURES_SERVICES`, `TRAVAUX`, `PRESTATIONS_INTELLECTUELLES`.
+- **`tr_champ_fiche_marche` porte `CATEGORIES`**, comme il porte `TYPES_MARCHE` : un champ vaut pour une ou
+  plusieurs catégories. Les 265 champs existants sont marqués `FOURNITURES_SERVICES` par migration.
+- Idem pour les **rubriques** (`tr_rubrique_fiche_marche`) et, si un bloc devait être propre à une catégorie, pour
+  les blocs. La règle du lot 4 §B4 s'étend : **une rubrique n'est servie que si au moins un de ses champs vaut pour
+  la catégorie ET le type demandés**.
+- `GET /api/champs-fiche-marche` prend un paramètre **`categorie`** en plus de `typeMarche`. Sans lui, le contrat
+  d'aujourd'hui est conservé — tout est servi, inactifs compris, pour l'écran d'administration.
+
+### B2 — La catégorie de la fiche se déduit du plan
+
+- **`FicheMarcheDto.categorie`** est dérivée de `ID_NATURE` de la ligne courante, relue à chaque lecture, comme
+  `typeMarche` l'est de `FORME_MARCHE`. Elle n'est **jamais** une réponse de cadrage.
+- **`LigneEligible.categorie`** et **`LigneEligible.categorieOutillee`**, jumeaux de `formeMarche` et
+  `formeOutillee` : l'écran de choix de ligne montre la catégorie et n'offre de préparer que ce qui est outillé.
+- **`FicheMarcheDto.typeOutille`** (lot 3 §B2) devient vrai seulement si **la catégorie et la forme** le sont
+  toutes deux. Le front n'a alors rien à changer : sa page courte couvre déjà ce cas.
+
+### B3 — La correspondance des sept natures vers les trois catégories
+
+Le référentiel des natures ne colle pas aux catégories : sept entrées pour trois catégories, dont trois inutilisées
+et deux qui disent la même chose de deux façons.
+
+| nature | catégorie proposée |
+|---|---|
+| 1 Travaux | `TRAVAUX` |
+| 2 Fournitures · 3 Services · 5 Fournitures et services · 6 PRESTATIONS DE SERVICE · 7 Prestations | `FOURNITURES_SERVICES` |
+| 4 Prestations intellectuelles | `PRESTATIONS_INTELLECTUELLES` |
+
+La correspondance est **administrable**, pas codée en dur : une colonne `CATEGORIE_DAO` sur `tr_nature`, que
+l'Administrateur peut corriger. Une nature sans catégorie rend la ligne non préparable, avec le message qui nomme
+ce qu'il faut compléter — même forme que le lot 1c pour une forme absente.
+
+> **À trancher par le pilote** : « PRESTATIONS DE SERVICE » (48 lignes) et « Prestations intellectuelles » (4)
+> désignent-elles bien deux catégories différentes ? La première va aux fournitures et services, la seconde à sa
+> propre catégorie. Si c'est inexact, seule la ligne du tableau change. Les trois natures à zéro ligne — Services,
+> Fournitures et services, Prestations — gagneraient à être retirées du référentiel : elles font double emploi.
+
+### B4 — Ce que ce lot ne fait pas
+
+Il ne charge **aucun champ de travaux** : le fichier de correspondance « DAO Travaux et Réhabilitation » n'a pas
+encore été remis. Le lot pose l'axe ; le contenu suivra, converti comme les 116 des fournitures et les 114 du
+contrat-cadre, avec son document de conversion.
+
+## Tests attendus (recette backend)
+
+1. `GET /api/champs-fiche-marche?typeMarche=QUANTITE_FIXE&categorie=FOURNITURES_SERVICES` sert les **139** champs
+   d'aujourd'hui : le contrat existant ne bouge pas.
+2. Le même appel en `categorie=TRAVAUX` sert **zéro** champ et **zéro** rubrique, tant que rien n'est chargé.
+3. Une ligne de nature Travaux → `categorie = TRAVAUX`, `categorieOutillee = false`, `typeOutille = false`.
+4. Une ligne de nature Fournitures → `categorie = FOURNITURES_SERVICES`, préparable comme aujourd'hui.
+5. Une nature sans catégorie → la ligne n'est pas préparable, et le message nomme le référentiel à compléter.
+6. La création du DMC et les quatre écritures de la fiche répondent **409** sur une catégorie non outillée, du même
+   code que pour une forme non outillée.
+
+## Côté front
+
+**Rien à écrire, ou presque.** La page courte des formes non outillées, livrée le 23/09, couvre déjà le cas : elle
+s'affiche dès que `typeOutille` est faux, montre la ligne du plan et explique. Il restera à nommer la catégorie
+dans son texte et dans la colonne « Mode et forme » du choix de ligne, ce qui est une phrase.
+
+C'est le bénéfice d'un écran piloté par la donnée : ajouter une catégorie ne demande pas d'écran neuf.
+
+## Pièce manquante
+
+Le **fichier de correspondance « DAO Travaux et Réhabilitation »** — l'équivalent des 37 pages remises le 23/09
+pour les fournitures et services. Sans lui, aucun champ de travaux ne peut être converti, et ce lot s'arrête à
+l'axe.
