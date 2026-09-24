@@ -58,6 +58,7 @@ function fiche(partiel: Partial<FicheMarche> = {}): FicheMarche {
     refeDossier: 'PPM-2026-003',
     designationMarche: 'Fourniture de mobilier',
     typeMarche: 'QUANTITE_FIXE',
+    categorie: 'FOURNITURES_SERVICES',
     statut: 'BROUILLON',
     version: 1,
     cadrage: { ...CADRAGE_COMPLET },
@@ -71,10 +72,10 @@ function fiche(partiel: Partial<FicheMarche> = {}): FicheMarche {
 }
 
 const LIGNES: LigneEligible[] = [
-  { idDetail: 7, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Fourniture de mobilier', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 420000000, dejaDao: false, formeMarche: 'QUANTITE_FIXE', formeOutillee: true },
-  { idDetail: 9, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Véhicules', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 90000000, dejaDao: true, idDmc: 42, formeMarche: 'QUANTITE_FIXE', formeOutillee: true },
+  { idDetail: 7, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Fourniture de mobilier', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 420000000, dejaDao: false, formeMarche: 'QUANTITE_FIXE', formeOutillee: true, categorie: 'FOURNITURES_SERVICES', categorieOutillee: true },
+  { idDetail: 9, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Véhicules', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 90000000, dejaDao: true, idDmc: 42, formeMarche: 'QUANTITE_FIXE', formeOutillee: true, categorie: 'FOURNITURES_SERVICES', categorieOutillee: true },
   // Lot 1c : forme contrat-cadre — la ligne se voit, mais ne se prépare pas encore.
-  { idDetail: 11, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Pneus (CONTRAT CADRE)', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 50000000, dejaDao: false, formeMarche: 'CONTRAT_CADRE', formeOutillee: false },
+  { idDetail: 11, idDossier: 3, refeDossier: 'PPM-2026-003', designationMarche: 'Pneus (CONTRAT CADRE)', idMode: 1, libelleMode: 'Appel d’offres ouvert', montEstim: 50000000, dejaDao: false, formeMarche: 'CONTRAT_CADRE', formeOutillee: false, categorie: 'FOURNITURES_SERVICES', categorieOutillee: true },
 ];
 
 describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', () => {
@@ -147,7 +148,9 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     const lignes = Array.from(racine().querySelectorAll('tbody tr'));
     expect(lignes.length).toBe(3);
     // La forme du marché est montrée avec le mode : c'est elle qui donne le type de la fiche.
-    expect(Array.from(racine().querySelectorAll('.fm__forme')).map((e) => texte(e))).toEqual(['Quantité fixe', 'Quantité fixe', 'Contrat-cadre']);
+    // ⚠️ Lot 5 — la colonne porte la catégorie PUIS la forme, les deux venant du plan.
+    expect(Array.from(racine().querySelectorAll('.fm__forme')).map((e) => texte(e)))
+      .toEqual(['Fournitures et services', 'Quantité fixe', 'Fournitures et services', 'Quantité fixe', 'Fournitures et services', 'Contrat-cadre']);
     const bloquee = lignes[2].querySelector('button') as HTMLButtonElement;
     expect(texte(bloquee)).toBe('Pas encore pris en charge');
     expect(bloquee.disabled).toBe(true);
@@ -222,6 +225,59 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     ouvrir(REFERENTIEL, fiche({ typeMarche: 'QUANTITE_FIXE', typeOutille: false, cadrage: {}, valeurs: {} }));
     expect(racine().querySelector('.fm__attente')).not.toBeNull();
     expect(racine().querySelector('.fm__rail')).toBeNull();
+  });
+
+  it('catégorie non outillée : c’est ELLE qui est nommée, pas la forme — elle emporte tout le référentiel (lot 5)', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ categorie: 'TRAVAUX', typeOutille: false, typeMarche: 'QUANTITE_FIXE', cadrage: {}, valeurs: {} }));
+    const bandeau = texte(racine().querySelector('.alert-warning'));
+    expect(bandeau).toContain('catégorie « Travaux et réhabilitation »');
+    expect(bandeau).toContain('fournitures et services');
+    expect(bandeau).not.toContain('corrigez');
+    expect(texte(racine().querySelector('.fm__attente'))).toContain('travaux et réhabilitation');
+    expect(racine().querySelector('.fm__rail')).toBeNull();
+  });
+
+  it('nature absente ou non classée : là, il y a quelque chose à corriger (lot 5)', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ categorie: null, typeOutille: false, typeMarche: 'QUANTITE_FIXE', cadrage: {}, valeurs: {} }));
+    const bandeau = texte(racine().querySelector('.alert-warning'));
+    expect(bandeau).toContain('Nature absente ou non classée');
+    expect(bandeau).toContain('Complétez');
+    expect(texte(racine().querySelector('.fm__attente'))).toContain('rattacher cette nature');
+  });
+
+  it('le référentiel se demande sur les DEUX axes : type ET catégorie (lot 5)', () => {
+    monter('PRMP', 42);
+    const q = http.expectOne('/api/fiches-marche/42');
+    q.flush(fiche({ typeMarche: 'A_COMMANDE', typeOutille: true, categorie: 'FOURNITURES_SERVICES' }));
+    const r = http.expectOne((x) => x.url === '/api/champs-fiche-marche'
+      && x.params.get('typeMarche') === 'A_COMMANDE' && x.params.get('categorie') === 'FOURNITURES_SERVICES');
+    r.flush(REFERENTIEL);
+    http.expectOne('/api/fiches-marche/42/versions').flush([]);
+    http.expectOne('/api/fiches-marche/42/documents').flush([]);
+    rendre();
+    expect(racine().querySelector('.fm__rail')).not.toBeNull();
+  });
+
+  it('travaux : « le marché comporte-t-il des tranches ? » s’ajoute au cadrage (lot 5)', () => {
+    monter('PRMP', 42);
+    // Catégorie outillée côté serveur (typeOutille vrai) pour voir le cadrage, mais de catégorie TRAVAUX.
+    ouvrir(REFERENTIEL, fiche({ categorie: 'TRAVAUX', typeOutille: true, typeMarche: 'QUANTITE_FIXE', cadrage: {}, valeurs: {} }));
+    expect(racine().querySelector('input[name="q-tranches"]')).not.toBeNull();
+    (racine().querySelector('input[name="q-tranches"][value="OUI"]') as HTMLInputElement).click();
+    rendre();
+    expect(fixture.componentInstance.cadrage()['tranches']).toBe('OUI');
+    // La réponse tient : l'élagage juge sur le cadrage effectif, catégorie comprise.
+    (racine().querySelector('input[name="q-variantes"][value="NON"]') as HTMLInputElement).click();
+    rendre();
+    expect(fixture.componentInstance.cadrage()['tranches']).toBe('OUI');
+  });
+
+  it('fournitures : la question des tranches n’est pas posée', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ cadrage: {}, valeurs: {} }));
+    expect(racine().querySelector('input[name="q-tranches"]')).toBeNull();
   });
 
   it('forme du marché ABSENTE de la ligne : là, il y a quelque chose à corriger, et on le dit', () => {

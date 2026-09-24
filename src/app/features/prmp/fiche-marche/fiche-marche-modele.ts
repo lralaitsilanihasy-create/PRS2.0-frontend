@@ -1,4 +1,4 @@
-import { BilanControles, BlocFiche, Cadrage, ChampFiche, DocumentDao, ReferentielFiche, RubriqueFiche, TypeMarche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, ReferentielFiche, RubriqueFiche, TypeMarche } from '../../../models';
 
 /**
  * Règles PURES de la fiche DAO (esquisse « DAO par type de marché », 22/09) : questions de cadrage, conditions
@@ -9,6 +9,13 @@ export const LIBELLES_TYPES_MARCHE: Readonly<Record<TypeMarche, string>> = {
   QUANTITE_FIXE: 'Quantité fixe',
   A_COMMANDE: 'À commande',
   CONTRAT_CADRE: 'Contrat-cadre',
+};
+
+/** ⚠️ Lot 5 — les trois catégories de dossier d'appel d'offres, telles qu'on les nomme à l'écran. */
+export const LIBELLES_CATEGORIES: Readonly<Record<CategorieDao, string>> = {
+  FOURNITURES_SERVICES: 'Fournitures et services',
+  TRAVAUX: 'Travaux et réhabilitation',
+  PRESTATIONS_INTELLECTUELLES: 'Prestations intellectuelles',
 };
 
 export const LIBELLES_DOCUMENTS: Readonly<Record<DocumentDao, string>> = {
@@ -62,6 +69,16 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
     documents: 'DPAO, AE',
     options: [{ code: 'OUI', libelle: 'Oui' }, { code: 'NON', libelle: 'Non' }],
     complement: { cle: 'nbLots', libelle: 'Nombre de lots', si: 'OUI' },
+  },
+  {
+    // ⚠️ Lot 5 (24/09) — propre aux TRAVAUX : le classeur range les tranches parmi les lignes ordinaires, à côté
+    // des lots et des variantes. C'est une réponse de cadrage, pas une forme de marché.
+    cle: 'tranches',
+    libelle: 'Le marché comporte-t-il des tranches ?',
+    aide: 'Oui : tranche ferme, puis tranches conditionnelles, chacune avec son objet et son montant. Non : le marché est exécuté d’un seul tenant.',
+    documents: 'DPAO, AE, CCAP',
+    options: [{ code: 'OUI', libelle: 'Oui' }, { code: 'NON', libelle: 'Non' }],
+    si: { cle: 'categorie', valeur: 'TRAVAUX' },
   },
   {
     cle: 'variantes',
@@ -311,7 +328,11 @@ export function blocsASaisir(referentiel: ReferentielFiche, typeMarche: TypeMarc
 
 /** Progression : champs `SAISIE` ouverts et renseignés / attendus (référentiel chargé) — ou compte de l'esquisse. */
 export function progression(referentiel: ReferentielFiche, cadrage: Cadrage, valeurs: Record<string, unknown>): { saisis: number; attendus: number } {
-  const ouverts = referentiel.champs.filter((c) => c.source === 'SAISIE' && c.actif !== false && evaluerCondition(c.condition, cadrage));
+  // ⚠️ Lot 5 — un champ de type PIECE se joint au dossier, il ne se saisit pas dans la fiche : le serveur l'exclut
+  // de son bilan, l'écran doit l'exclure de son compte, sinon les deux chiffres se contredisent.
+  const ouverts = referentiel.champs.filter(
+    (c) => c.source === 'SAISIE' && c.type !== 'PIECE' && c.actif !== false && evaluerCondition(c.condition, cadrage),
+  );
   if (ouverts.length) {
     const saisis = ouverts.filter((c) => valeurs[c.code] != null && valeurs[c.code] !== '').length;
     return { saisis, attendus: ouverts.length };

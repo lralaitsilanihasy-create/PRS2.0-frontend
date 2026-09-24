@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { BilanControles, Cadrage, ChampFiche, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, LigneEligible, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
+import { BilanControles, Cadrage, CategorieDao, ChampFiche, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, LigneEligible, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -17,9 +17,18 @@ import { CrudService } from './api/crud.service';
 export class ChampFicheMarcheService extends CrudService<ChampFiche, string> {
   protected readonly resource = 'champs-fiche-marche';
 
-  /** `GET ?typeMarche=` → blocs (avec rubriques) + champs actifs ; sans type : tout, inactifs compris (vue d'administration). Silencieux. */
-  referentiel(typeMarche?: TypeMarche): Observable<ReferentielFiche> {
-    const params = typeMarche ? new HttpParams().set('typeMarche', typeMarche) : new HttpParams();
+  /**
+   * `GET ?typeMarche=&categorie=` → blocs (avec rubriques) + champs actifs. Sans paramètre : tout, inactifs
+   * compris (vue d'administration).
+   *
+   * ⚠️ Lot 5 (24/09) — **les deux axes se demandent ensemble**. Le type seul ne suffit plus : le référentiel porte
+   * désormais des champs de plusieurs catégories, et une fiche de fournitures n'a que faire d'un lieu d'exécution
+   * de travaux. Silencieux.
+   */
+  referentiel(typeMarche?: TypeMarche, categorie?: CategorieDao | null): Observable<ReferentielFiche> {
+    let params = new HttpParams();
+    if (typeMarche) params = params.set('typeMarche', typeMarche);
+    if (categorie) params = params.set('categorie', categorie);
     return this.http.get<ReferentielFiche>(this.baseUrl, { params, context: skipErrorToast() });
   }
 

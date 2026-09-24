@@ -137,6 +137,19 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(blocsASaisir(avecB07, 'QUANTITE_FIXE').map((b) => b.code)).not.toContain('B07');
   });
 
+  it('un champ PIECE ne compte ni comme attendu ni comme saisi : il se joint au dossier (lot 5)', () => {
+    const ref: ReferentielFiche = {
+      blocs: [],
+      champs: [
+        champ({ code: 'A', bloc: 'B05', rubrique: 'GS' }),
+        champ({ code: 'B', bloc: 'B09', rubrique: 'AN', type: 'PIECE', obligatoire: true }),
+      ],
+    };
+    // Le serveur exclut les PIECE de son bilan ; l'écran doit compter pareil, sinon les deux chiffres se contredisent.
+    expect(progression(ref, {}, {})).toEqual({ saisis: 0, attendus: 1 });
+    expect(progression(ref, {}, { A: 'x', B: 'quoi que ce soit' })).toEqual({ saisis: 1, attendus: 1 });
+  });
+
   it('progression : sur les champs ouverts quand ils sont chargés, sur les comptes de l’esquisse sinon', () => {
     const ref: ReferentielFiche = {
       blocs: [],

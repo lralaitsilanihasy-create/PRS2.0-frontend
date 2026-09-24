@@ -17,6 +17,7 @@
     </div>
     @if (fiche(); as f) {
       <div class="fm__ref">
+        @if (categorie(); as c) { <span class="fm__rep fm__rep--plan" title="Catégorie de dossier, déduite de la nature de la ligne du plan de passation">{{ libellesCategories[c] }}</span> }
         @if (typeMarche(); as t) { <span class="fm__rep fm__rep--plan" title="Forme du marché, reprise de la ligne du plan de passation">{{ libellesTypes[t] }}</span> }
         <span class="cnm-mono">ligne {{ f.idDetail }} du PPM {{ f.refeDossier || ('#' + f.idDossier) }}</span>
       </div>
@@ -45,7 +46,15 @@
   @if (fiche() && !typePrisEnCharge()) {
     <div class="alert alert-warning" role="status">
       <app-icone nom="alert" [taille]="16" />
-      @if (typeMarche(); as t) {
+      @if (categorieBloque()) {
+        <span><strong>Dossier de catégorie « {{ libellesCategories[categorie()!] }} »</strong> : la fiche DAO ne prépare pour l'instant
+        que les marchés de <strong>fournitures et services</strong>. La catégorie vient de la <strong>nature</strong> de la ligne du
+        plan de passation. Rien n'est à corriger : cette catégorie sera outillée à un prochain lot.</span>
+      } @else if (!categorie()) {
+        <span><strong>Nature absente ou non classée sur cette ligne du plan</strong> : la fiche DAO ne peut pas savoir quelle
+        catégorie de dossier préparer. Complétez la <strong>nature du marché</strong> de la ligne dans le plan de passation, ou
+        demandez à l'Administrateur de rattacher cette nature à une catégorie.</span>
+      } @else if (typeMarche(); as t) {
         <span><strong>Marché {{ libellesTypes[t].toLowerCase() }}</strong> : la ligne du plan de passation est bien de ce type, et la fiche
         marché ne prépare pour l'instant que les marchés à <strong>quantité fixe</strong>. Rien n'est à corriger dans le plan :
         ce type sera outillé à un prochain lot.</span>
@@ -102,7 +111,8 @@
               <td><span class="fm__obj" appTitreSiTronque>{{ l.designationMarche }}</span></td>
               <td class="fm__mode">
                 <span>{{ l.libelleMode || l.idMode || '—' }}</span>
-                @if (formeDe(l); as forme) { <span class="fm__forme" [class.fm__forme--ko]="ligneBloquee(l)">{{ forme }}</span> }
+                @if (categorieDe(l); as cat) { <span class="fm__forme" [class.fm__forme--ko]="l.categorieOutillee === false">{{ cat }}</span> }
+                @if (formeDe(l); as forme) { <span class="fm__forme" [class.fm__forme--ko]="l.formeOutillee === false">{{ forme }}</span> }
               </td>
               <td class="r cnm-mono">{{ montant(l.montEstim) }}</td>
               <td class="r">
@@ -110,7 +120,7 @@
                      qu'elle existe et pourquoi elle attend), mais sa préparation est refusée, ici comme au serveur. -->
                 <button type="button" class="btn btn-sm" [class.btn-primary]="!l.dejaDao && !ligneBloquee(l)" [class.btn-outline]="l.dejaDao || ligneBloquee(l)"
                   [disabled]="saving() || (ligneBloquee(l) && !l.dejaDao)"
-                  [attr.title]="ligneBloquee(l) ? 'La fiche DAO ne prend en charge que les marchés à quantité fixe pour le moment.' : null"
+                  [attr.title]="ligneBloquee(l) ? raisonLigneBloquee(l) : null"
                   (click)="choisirLigne(l)">
                   {{ l.dejaDao ? 'Reprendre la fiche' : ligneBloquee(l) ? 'Pas encore pris en charge' : 'Préparer l’appel d’offres' }}
                 </button>
@@ -126,7 +136,14 @@
     <!-- ⚠️ 23/09 (constat du pilote) — dix questions de cadrage et huit blocs de saisie sur une fiche où rien ne sera
          jamais enregistré, c'est inviter à un travail refusé d'avance. On montre la ligne, et on dit ce qu'il en est. -->
     <div class="fm__attente">
-      @if (typeMarche(); as t) {
+      @if (categorieBloque()) {
+        <p>La préparation d'un dossier de catégorie <strong>{{ libellesCategories[categorie()!].toLowerCase() }}</strong> se fait hors de
+        l’application en attendant que cette catégorie soit outillée. La fiche s’ouvrira ici le jour où elle le sera, sans rien
+        redemander : les informations de la ligne du plan sont déjà là.</p>
+      } @else if (!categorie()) {
+        <p>Sans <strong>nature</strong> classée sur la ligne du plan, la fiche ne sait pas quelle catégorie de dossier préparer.
+        Complétez-la dans le plan de passation, ou faites rattacher cette nature à une catégorie, puis revenez.</p>
+      } @else if (typeMarche(); as t) {
         <p>La préparation d'un <strong>marché {{ libellesTypes[t].toLowerCase() }}</strong> se fait hors de l’application en attendant
         que ce type soit outillé. La fiche s’ouvrira ici le jour où il le sera, sans rien redemander : les informations de la
         ligne du plan sont déjà là.</p>

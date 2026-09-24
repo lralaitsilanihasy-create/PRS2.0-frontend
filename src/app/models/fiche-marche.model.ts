@@ -8,6 +8,12 @@
 export type TypeMarche = 'QUANTITE_FIXE' | 'A_COMMANDE' | 'CONTRAT_CADRE';
 export type DocumentDao = 'DPAO' | 'DPAC' | 'AE' | 'CCAP' | 'AUCUN';
 export type SourceChamp = 'PPM' | 'SAISIE' | 'CADRAGE';
+/**
+ * ⚠️ Lot 5 (24/09) — la **catégorie** de dossier d'appel d'offres, second axe du référentiel. Elle se déduit de la
+ * **nature** de la ligne du plan (`tr_nature.CATEGORIE_DAO`), jamais d'une réponse de cadrage.
+ */
+export type CategorieDao = 'FOURNITURES_SERVICES' | 'TRAVAUX' | 'PRESTATIONS_INTELLECTUELLES';
+
 export type TypeChamp = 'TEXTE' | 'TEXTE_LONG' | 'NOMBRE' | 'MONTANT' | 'POURCENTAGE' | 'DATE' | 'LISTE' | 'OUI_NON' | 'PIECE';
 export type StatutFiche = 'BROUILLON' | 'VALIDEE';
 
@@ -95,6 +101,8 @@ export interface FicheMarche {
   typeMarche: TypeMarche | null;
   /** Lot 1c — la fiche a été saisie sous un type qui n'est plus celui du plan : à reprendre, pas à poursuivre. */
   typeChange?: boolean | null;
+  /** ⚠️ Lot 5 — catégorie **déduite de la nature** de la ligne du plan ; `null` si la nature manque ou n'est pas classée. */
+  categorie?: CategorieDao | null;
   /**
    * ⚠️ Lot 3 (demande du 23/09, §B2) — **le serveur dit** si ce type de marché est outillé, au lieu que le front
    * tienne sa propre liste. Absent tant que le contrat n'est pas servi : l'écran retombe alors sur `TYPES_OUTILLES`.
@@ -157,6 +165,10 @@ export interface LigneEligible {
   formeMarche?: TypeMarche | null;
   /** Lot 1c — cette forme est-elle prise en charge aujourd'hui ? Sinon la ligne se voit mais ne se prépare pas. */
   formeOutillee?: boolean | null;
+  /** ⚠️ Lot 5 — catégorie de la ligne, déduite de sa nature ; `null` si la nature manque ou n'est pas classée. */
+  categorie?: CategorieDao | null;
+  /** Lot 5 — cette catégorie est-elle outillée ? Jumelle de `formeOutillee`, sur l'autre axe. */
+  categorieOutillee?: boolean | null;
 }
 
 /** `DmcDto` (existant, lot 3a) — un DMC par ligne de marché. */

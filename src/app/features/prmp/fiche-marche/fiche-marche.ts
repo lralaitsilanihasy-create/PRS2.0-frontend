@@ -9,7 +9,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { BilanControles, BlocFiche, Cadrage, ChampFiche, DocumentFiche, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentFiche, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
@@ -18,6 +18,7 @@ import {
   BILAN_VIDE,
   CLES_IMPOSEES_PAR_LE_PLAN,
   ETAPES_FICHE,
+  LIBELLES_CATEGORIES,
   LIBELLES_DOCUMENTS,
   LIBELLES_TYPES_MARCHE,
   NOMS_DOCUMENTS,
@@ -86,6 +87,7 @@ export class FicheMarcheEcran {
   readonly etapes = ETAPES_FICHE;
   readonly libellesDocuments = LIBELLES_DOCUMENTS;
   readonly libellesTypes = LIBELLES_TYPES_MARCHE;
+  readonly libellesCategories = LIBELLES_CATEGORIES;
 
   /** `null` = `/prmp/dao` : choix de la ligne du PPM. */
   readonly idDmc = toSignal(this.route.paramMap.pipe(map((p) => (p.get('idDmc') ? Number(p.get('idDmc')) : null))), { initialValue: null as number | null });
@@ -142,6 +144,10 @@ export class FicheMarcheEcran {
    * liste du front, qui disparaîtra à la livraison : ouvrir un type deviendra une livraison backend seule.
    */
   readonly typePrisEnCharge = computed(() => this.fiche()?.typeOutille ?? typeOutille(this.typeMarche()));
+  /** La CATÉGORIE est ce qui bloque : elle emporte tout le référentiel, la forme ne vient qu’après. */
+  readonly categorieBloque = computed(() => this.fiche()?.categorie != null && !this.typePrisEnCharge() && this.categorieNonOutillee());
+  /** Le serveur ne sert pas encore le détail : on déduit que la catégorie bloque si ce n’est pas la forme. */
+  private readonly categorieNonOutillee = computed(() => this.categorie() !== 'FOURNITURES_SERVICES');
   /** La fiche a été saisie sous un type qui n'est plus celui du plan (drapeau serveur). */
   readonly typeChange = computed(() => this.fiche()?.typeChange === true);
   /** Toute écriture est vaine : contrat absent, ou forme de marché pas encore prise en charge (409 côté serveur). */
@@ -150,7 +156,14 @@ export class FicheMarcheEcran {
    * Cadrage **augmenté du type** pour les règles pures : les conditions d'affichage et la question des
    * attributaires s'y réfèrent. Le type n'est jamais renvoyé au serveur — voir `enregistrerCadrage`.
    */
-  private readonly cadrageEffectif = computed<Cadrage>(() => ({ ...this.cadrage(), typeMarche: this.typeMarche() }));
+  /** ⚠️ Lot 5 — catégorie **déduite de la nature de la ligne du plan** ; elle pilote le référentiel et les questions. */
+  readonly categorie = computed<CategorieDao | null>(() => this.fiche()?.categorie ?? null);
+  /** Le cadrage tel que les règles le lisent : les réponses, plus les deux axes qui viennent du plan. */
+  private readonly cadrageEffectif = computed<Cadrage>(() => ({
+    ...this.cadrage(),
+    typeMarche: this.typeMarche(),
+    categorie: this.categorie(),
+  }));
   readonly questions = computed(() => questionsPosees(this.cadrageEffectif()));
   readonly cadrageOk = computed(() => cadrageComplet(this.cadrageEffectif()));
   readonly resume = computed(() => resumeCadrage(this.cadrageEffectif()));
@@ -247,7 +260,7 @@ export class FicheMarcheEcran {
       );
     forkJoin({
       ref: fiche$.pipe(
-        switchMap((f) => this.champService.referentiel(f?.typeMarche ?? 'QUANTITE_FIXE')),
+        switchMap((f) => this.champService.referentiel(f?.typeMarche ?? 'QUANTITE_FIXE', f?.categorie ?? null)),
         catchError(() => of(null)),
       ),
       fiche: fiche$,
@@ -278,9 +291,21 @@ export class FicheMarcheEcran {
   formeDe(l: LigneEligible): string {
     return l.formeMarche ? this.libellesTypes[l.formeMarche] : '';
   }
-  /** Une ligne dont la forme n'est pas prise en charge se voit, mais ne se prépare pas. */
+  /** Libellé de la catégorie d'une ligne éligible (lot 5) ; vide si le serveur ne la sert pas. */
+  categorieDe(l: LigneEligible): string {
+    return l.categorie ? this.libellesCategories[l.categorie] : '';
+  }
+  /** Une ligne que l'un ou l'autre axe ne prend pas en charge se voit, mais ne se prépare pas. */
   ligneBloquee(l: LigneEligible): boolean {
-    return l.formeOutillee === false;
+    return l.formeOutillee === false || l.categorieOutillee === false;
+  }
+  /** Ce qui bloque cette ligne, en clair : la catégorie d'abord, elle emporte tout le référentiel. */
+  raisonLigneBloquee(l: LigneEligible): string {
+    if (l.categorieOutillee === false) {
+      return `La fiche DAO ne prépare pour l'instant que les marchés de fournitures et services${this.categorieDe(l) ? ` ; celui-ci est de catégorie « ${this.categorieDe(l)} »` : ''}.`;
+    }
+    if (l.formeOutillee === false) return 'La fiche DAO ne prend en charge que les marchés à quantité fixe et à commande pour le moment.';
+    return '';
   }
 
   choisirLigne(l: LigneEligible): void {
@@ -305,12 +330,13 @@ export class FicheMarcheEcran {
     // Une réponse imposée par le plan ne se change pas d'un clic : elle se corrige dans le plan de passation.
     if (this.imposee(cle)) return;
     const type = this.typeMarche();
+    const cat = this.categorie();
     this.cadrage.update((c) => {
       const suivant: Cadrage = { ...c, [cle]: valeur };
       // ⚠️ 23/09 (lot 4) — l'élagage se juge sur le cadrage EFFECTIF, type de marché compris. Le type a quitté le
       // cadrage au lot 1c : le tester dans `suivant` effaçait aussitôt toute réponse à une question conditionnée au
       // type — « mono ou multi-attributaire » ne pouvait littéralement pas être répondue.
-      const effectif: Cadrage = { ...suivant, typeMarche: type };
+      const effectif: Cadrage = { ...suivant, typeMarche: type, categorie: cat };
       // Une question qui disparaît emporte sa réponse (et son complément) : le cadrage ne garde rien d'invisible.
       for (const q of QUESTIONS_CADRAGE) {
         if (q.si && String(effectif[q.si.cle] ?? '') !== q.si.valeur) delete suivant[q.cle];
