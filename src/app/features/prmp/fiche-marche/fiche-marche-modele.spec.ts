@@ -47,7 +47,7 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
   });
 
   it('questions posées : le TYPE n’en est plus une (lot 1c) ; « forme du groupement » si groupement = OUI, « attributaires » en contrat-cadre', () => {
-    const base = questionsPosees({ typeMarche: 'QUANTITE_FIXE', groupement: 'NON' }).map((q) => q.cle);
+    const base = questionsPosees({ typeMarche: 'QUANTITE_FIXE', categorie: 'FOURNITURES_SERVICES', groupement: 'NON' }).map((q) => q.cle);
     // ⚠️ Lot 1c : le type vient de la forme du marché de la ligne du plan ; l'écran l'injecte en contexte, il ne se demande plus.
     expect(base).not.toContain('typeMarche');
     expect(base.length).toBe(9);
@@ -55,11 +55,18 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(base).not.toContain('attributaires');
     expect(questionsPosees({ typeMarche: 'QUANTITE_FIXE', groupement: 'OUI' }).map((q) => q.cle)).toContain('formeGroupement');
     expect(questionsPosees({ typeMarche: 'CONTRAT_CADRE' }).map((q) => q.cle)).toContain('attributaires');
+    // ⚠️ Question du pilote (24/09) : la provenance ne commande AUCUN champ hors des fournitures — le mot n'existe
+    // même pas dans les fichiers de correspondance des travaux et des prestations intellectuelles. On ne la pose plus.
+    expect(base).toContain('provenance');
+    expect(questionsPosees({ typeMarche: 'QUANTITE_FIXE', categorie: 'TRAVAUX' }).map((q) => q.cle)).not.toContain('provenance');
+    expect(questionsPosees({ typeMarche: 'QUANTITE_FIXE', categorie: 'PRESTATIONS_INTELLECTUELLES' }).map((q) => q.cle)).not.toContain('provenance');
+    // Les travaux gardent la leur : les tranches.
+    expect(questionsPosees({ typeMarche: 'QUANTITE_FIXE', categorie: 'TRAVAUX' }).map((q) => q.cle)).toContain('tranches');
   });
 
   it('cadrage complet : toutes les questions posées répondues, compléments compris (nombre de lots, taux d’avance)', () => {
     const complet = {
-      typeMarche: 'QUANTITE_FIXE', alloti: 'OUI', nbLots: 3, variantes: 'NON', groupement: 'NON', provenance: 'IMPORTEES',
+      typeMarche: 'QUANTITE_FIXE', categorie: 'FOURNITURES_SERVICES', alloti: 'OUI', nbLots: 3, variantes: 'NON', groupement: 'NON', provenance: 'IMPORTEES',
       typePrix: 'UNITAIRES', prixRevisable: 'NON', garantieSoumission: 'OUI', avance: 'OUI', tauxAvance: 10, penalites: 'CCAG',
     };
     expect(cadrageComplet(complet)).toBe(true);

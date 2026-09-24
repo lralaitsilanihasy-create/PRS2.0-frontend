@@ -163,10 +163,19 @@ export class FicheMarcheEcran {
   /** ⚠️ Lot 5 — catégorie **déduite de la nature de la ligne du plan** ; elle pilote le référentiel et les questions. */
   readonly categorie = computed<CategorieDao | null>(() => this.fiche()?.categorie ?? null);
   /** Le cadrage tel que les règles le lisent : les réponses, plus les deux axes qui viennent du plan. */
+  /**
+   * ⚠️ Sans contrat servi, l’écran montre l’esquisse des FOURNITURES (158 informations) : son cadrage est donc celui
+   * des fournitures, sans quoi il perdrait la question de la provenance, qui n’appartient qu’à cette catégorie.
+   * **Une seule source** pour les règles ET pour l’élagage des réponses : les deux divergeaient, la réponse était
+   * effacée à l’instant même où elle était posée.
+   */
+  private readonly categorieEffective = computed<CategorieDao | null>(
+    () => this.categorie() ?? (this.contratAbsent() ? 'FOURNITURES_SERVICES' : null),
+  );
   private readonly cadrageEffectif = computed<Cadrage>(() => ({
     ...this.cadrage(),
     typeMarche: this.typeMarche(),
-    categorie: this.categorie(),
+    categorie: this.categorieEffective(),
   }));
   readonly questions = computed(() => questionsPosees(this.cadrageEffectif()));
   readonly cadrageOk = computed(() => cadrageComplet(this.cadrageEffectif()));
@@ -305,7 +314,7 @@ export class FicheMarcheEcran {
         this.cadrage.set({ ...fiche.cadrage });
         this.valeurs.set({ ...fiche.valeurs });
         this.imposerAllotissement();
-        this.etape.set(fiche.statut === 'VALIDEE' ? 5 : cadrageComplet({ ...fiche.cadrage, typeMarche: fiche.typeMarche }) ? 2 : 1);
+        this.etape.set(fiche.statut === 'VALIDEE' ? 5 : cadrageComplet({ ...fiche.cadrage, typeMarche: fiche.typeMarche, categorie: fiche.categorie ?? null }) ? 2 : 1);
       } else {
         this.etape.set(1);
       }
@@ -358,7 +367,7 @@ export class FicheMarcheEcran {
     // Une réponse imposée par le plan ne se change pas d'un clic : elle se corrige dans le plan de passation.
     if (this.imposee(cle)) return;
     const type = this.typeMarche();
-    const cat = this.categorie();
+    const cat = this.categorieEffective();
     this.cadrage.update((c) => {
       const suivant: Cadrage = { ...c, [cle]: valeur };
       // ⚠️ 23/09 (lot 4) — l'élagage se juge sur le cadrage EFFECTIF, type de marché compris. Le type a quitté le

@@ -111,6 +111,12 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
     libelle: 'D’où viennent les fournitures ?',
     aide: 'Territoire national : prix EXW hors TVA, transport intérieur, assurance. Importées : CIP ou CIF, part en devises.',
     documents: 'DPAO, repris dans AE et CCAP',
+    // ⚠️ Question du pilote (24/09) : le mot « fourniture » n'existe NI dans le fichier de correspondance des travaux,
+    // NI dans celui des prestations intellectuelles, et la réponse n'y commande AUCUN champ — six chez les seules
+    // fournitures (incoterm, décomposition des prix nationaux, part en devises, devise admise, conversion en Ariary).
+    // Elle était donc posée pour rien dans deux catégories sur trois. Si un fichier de travaux ajoute un jour des
+    // matériaux importés, la question revient par ce même interrupteur.
+    si: { cle: 'categorie', valeur: 'FOURNITURES_SERVICES' },
     options: [{ code: 'NATIONAL', libelle: 'Territoire national' }, { code: 'IMPORTEES', libelle: 'Importées' }],
   },
   {
