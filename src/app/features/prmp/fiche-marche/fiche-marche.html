@@ -275,7 +275,7 @@
                   <div class="fm__rub">
                     <h3>
                       {{ r.libelle }}
-                      @if (r.documentMaitre) { <span class="fm__doc fm__doc--{{ r.documentMaitre.toLowerCase() }}">{{ libellesDocuments[r.documentMaitre] }}</span> }
+                      @if (r.documentMaitre; as dm) { <span class="fm__doc fm__doc--{{ doc(dm).toLowerCase() }}">{{ libellesDocuments[doc(dm)] }}</span> }
                     </h3>
                     @for (c of champs(bloc, r); track c.code) {
                       <div class="fm__champ" [class.fm__champ--ko]="erreurDe(c.code)">
@@ -317,8 +317,8 @@
                         </div>
                         <div class="fm__meta">
                           <span class="fm__etat fm__etat--{{ c.source.toLowerCase() }}">{{ c.source === 'PPM' ? 'repris du PPM' : c.source === 'CADRAGE' ? 'repris du cadrage' : 'à saisir' }}</span>
-                          <span class="fm__doc fm__doc--{{ c.documentMaitre.toLowerCase() }}">{{ libellesDocuments[c.documentMaitre] }}</span>
-                          @if (c.reprises.length) { <span class="fm__ou">repris dans</span> @for (d of c.reprises; track d) { <span class="fm__doc fm__doc--{{ d.toLowerCase() }}">{{ libellesDocuments[d] }}</span> } }
+                          <span class="fm__doc fm__doc--{{ doc(c.documentMaitre).toLowerCase() }}">{{ libellesDocuments[doc(c.documentMaitre)] }}</span>
+                          @if (c.reprises.length) { <span class="fm__ou">repris dans</span> @for (d of c.reprises; track d) { <span class="fm__doc fm__doc--{{ doc(d).toLowerCase() }}">{{ libellesDocuments[doc(d)] }}</span> } }
                           @if (c.condition) { <span class="fm__etat">condition : {{ c.condition }}</span> }
                         </div>
                         @if (c.texteType) { <p class="fm__modele"><strong>Texte type :</strong> {{ c.texteType }}</p> }
@@ -347,9 +347,9 @@
                     <div class="fm__champ-l"><span class="fm__champ-t">{{ r.champ.libelle }}</span><span class="fm__champ-aide">{{ r.champ.code }}</span></div>
                     <div class="fm__champ-v"><div class="fm__lecture">{{ affichageReprise(r) }}</div></div>
                     <div class="fm__meta">
-                      <span class="fm__doc fm__doc--{{ r.champ.documentMaitre.toLowerCase() }}">{{ libellesDocuments[r.champ.documentMaitre] }}</span>
+                      <span class="fm__doc fm__doc--{{ doc(r.champ.documentMaitre).toLowerCase() }}">{{ libellesDocuments[doc(r.champ.documentMaitre)] }}</span>
                       <span class="fm__ou">repris dans</span>
-                      @for (d of r.champ.reprises; track d) { <span class="fm__doc fm__doc--{{ d.toLowerCase() }}">{{ libellesDocuments[d] }}</span> }
+                      @for (d of r.champ.reprises; track d) { <span class="fm__doc fm__doc--{{ doc(d).toLowerCase() }}">{{ libellesDocuments[doc(d)] }}</span> }
                     </div>
                   </div>
                 } @empty {

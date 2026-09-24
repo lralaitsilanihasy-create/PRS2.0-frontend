@@ -6,7 +6,12 @@
  */
 
 export type TypeMarche = 'QUANTITE_FIXE' | 'A_COMMANDE' | 'CONTRAT_CADRE';
-export type DocumentDao = 'DPAO' | 'DPAC' | 'AE' | 'CCAP' | 'AUCUN';
+/**
+ * Les documents d'un dossier d'appel d'offres. Le **document de consultation** change avec la catégorie et la
+ * forme : `DPAO` pour les fournitures et les travaux, `DPAC` pour un contrat-cadre, ⚠️ **`DPIC`** pour les
+ * prestations intellectuelles (lot 6, 24/09) — données particulières des instructions aux consultants.
+ */
+export type DocumentDao = 'DPAO' | 'DPAC' | 'DPIC' | 'AE' | 'CCAP' | 'AUCUN';
 export type SourceChamp = 'PPM' | 'SAISIE' | 'CADRAGE';
 /**
  * ⚠️ Lot 5 (24/09) — la **catégorie** de dossier d'appel d'offres, second axe du référentiel. Elle se déduit de la

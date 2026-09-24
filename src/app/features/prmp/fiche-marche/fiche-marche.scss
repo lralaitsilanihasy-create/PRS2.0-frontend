@@ -48,7 +48,7 @@
 .fm__lettres { display: block; margin-top: 0.25rem; font-style: italic; }
 .fm__meta { grid-column: 1 / -1; display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; font-size: 0.72rem; }
 .fm__doc { padding: 0.05rem 0.45rem; border-radius: 999px; font-weight: 700; }
-.fm__doc--dpao, .fm__doc--dpac { background: #dbeafe; color: #1d4ed8; }
+.fm__doc--dpao, .fm__doc--dpac, .fm__doc--dpic { background: #dbeafe; color: #1d4ed8; }
 .fm__doc--ae { background: #f3e8ff; color: #7e22ce; }
 .fm__doc--ccap { background: #d1fae5; color: #047857; }
 .fm__doc--aucun, .fm__etat--cadrage, .fm__rep--non { background: var(--n-100); color: var(--n-500); }

@@ -6,6 +6,7 @@ import {
   REFERENTIEL_ESQUISSE,
   blocsASaisir,
   cadrageComplet,
+  documentEffectif,
   documentsProduits,
   champsDeRubrique,
   evaluerCondition,
@@ -65,7 +66,9 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(cadrageComplet({ ...complet, avance: 'NON', tauxAvance: null })).toBe(true);
     expect(cadrageComplet({ ...complet, penalites: '' })).toBe(false);
     const puces = resumeCadrage(complet).map((p) => p.texte);
-    expect(puces).toEqual(['Alloti · 3 lots', 'Variantes non', 'Groupement non', 'Fournitures importées', 'Prix unitaires', 'Prix ferme', 'Garantie de soumission exigée', 'Avance 10 %', 'Pénalités selon le ccag']);
+    expect(puces).toEqual(['Alloti · 3 lots', 'Variantes non', 'Groupement non', 'Fournitures importées', 'Prix unitaires', 'Prix ferme', 'Garantie de soumission exigée', 'Avance 10 %', 'Pénalités selon le CCAG']);
+    // ⚠️ Relevé sur la démonstration du 24/09 : la mise en minuscule ne doit pas manger un sigle.
+    expect(resumeCadrage({ ...complet, penalites: 'PLAFOND_DIFFERENT' }).at(-1)?.texte).toBe('Pénalités plafond différent, à préciser');
   });
 
   it('allotissement déduit du plan : un lot = non alloti, deux et plus = alloti avec ce nombre', () => {
@@ -105,7 +108,19 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(documentsProduits(ref, 'A_COMMANDE')).toEqual(['DPAO', 'AE', 'CCAP']);
     // Un contrat-cadre ne produit ni DPAO ni CCAP : les champs partagés basculent sur ses deux documents.
     expect(documentsProduits(ref, 'CONTRAT_CADRE')).toEqual(['DPAC', 'AE']);
+    // Des prestations intellectuelles consultent des consultants : le DPAO devient DPIC, le CCAP et l'AE restent.
+    expect(documentsProduits(ref, 'QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES')).toEqual(['DPIC', 'AE', 'CCAP']);
+    expect(documentsProduits(ref, 'QUANTITE_FIXE', 'TRAVAUX')).toEqual(['DPAO', 'AE', 'CCAP']);
     expect(documentsProduits({ blocs: [], champs: [] }, 'QUANTITE_FIXE')).toEqual([]);
+  });
+
+  it('le document maître affiché suit la forme puis la catégorie, jamais le code brut', () => {
+    expect(documentEffectif('DPAO', 'QUANTITE_FIXE', 'TRAVAUX')).toBe('DPAO');
+    expect(documentEffectif('DPAO', 'QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES')).toBe('DPIC');
+    expect(documentEffectif('CCAP', 'QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES')).toBe('CCAP');
+    expect(documentEffectif('DPAO', 'CONTRAT_CADRE', 'FOURNITURES_SERVICES')).toBe('DPAC');
+    expect(documentEffectif('CCAP', 'CONTRAT_CADRE', null)).toBe('AE');
+    expect(documentEffectif('AE', null, null)).toBe('AE');
   });
 
   it('rubriques et champs suivent le cadrage ; une rubrique sans champ (référentiel à compléter) reste ouverte', () => {

@@ -9,7 +9,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentFiche, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
@@ -28,6 +28,7 @@ import {
   allotissementDuPlan,
   blocsASaisir,
   cadrageComplet,
+  documentEffectif,
   documentsProduits,
   champsDeRubrique,
   nbLotsDuPlan,
@@ -194,8 +195,17 @@ export class FicheMarcheEcran {
    * est **verrouillée**, et le nombre de lots est celui du plan. Même principe que le type de marché (lot 1c).
    */
   readonly nbLotsPlan = computed(() => nbLotsDuPlan(this.referentiel(), this.fiche()?.valeursPpm));
-  /** Les documents que cette fiche produira, lus du référentiel de son type — jamais annoncés en dur. */
-  readonly documentsDeLaFiche = computed(() => documentsProduits(this.referentiel(), this.typeMarche()));
+  /** Les documents que cette fiche produira, lus du référentiel de sa forme et de sa catégorie — jamais en dur. */
+  readonly documentsDeLaFiche = computed(() =>
+    documentsProduits(this.referentiel(), this.typeMarche(), this.categorie()),
+  );
+  /**
+   * Le document maître **tel qu'il s'appellera ici** : le gabarit ne montre jamais le code brut du référentiel, sinon
+   * une fiche de prestations intellectuelles afficherait `DPAO` sur vingt lignes et `DPIC` dans son rail.
+   */
+  doc(document: DocumentDao): DocumentDao {
+    return documentEffectif(document, this.typeMarche(), this.categorie());
+  }
   /** « DPAC · AE », « DPAO · AE · CCAP »… pour le rail ; vide si le référentiel n'est pas encore là. */
   readonly documentsCourt = computed(() => this.documentsDeLaFiche().join(' · '));
   /** « le DPAC et l'acte d'engagement », en toutes lettres. */

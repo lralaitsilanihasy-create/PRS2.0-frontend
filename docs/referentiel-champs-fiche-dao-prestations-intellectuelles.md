@@ -161,3 +161,58 @@ il n'y a pas d'annexes dans ce modèle.
 2. **Le titulaire** (lignes 10 à 15) est marqué `AS` sur l'acte d'engagement : chargé tel quel, contrairement aux
    travaux où il fallait le déduire.
 3. **Les modèles Word** du DPIC, de l'acte d'engagement et du CCAP, pour le lot 2b — troisième jeu attendu.
+
+## ⚠️ Livraison en place — 24/09/2026
+
+Le backend a chargé ce référentiel (`V42`) et admis `DPIC` parmi les documents maîtres, comme `DPAC` l'avait été pour
+le contrat-cadre. Relevé sur le serveur de développement,
+`GET /api/champs-fiche-marche?typeMarche=QUANTITE_FIXE&categorie=PRESTATIONS_INTELLECTUELLES` :
+
+| ce qui est servi | compte |
+|---|---|
+| champs propres aux prestations intellectuelles | **88** — `DPIC` × 50, `CCAP` × 20, `AE` × 18 |
+| champs partagés (repris du plan, reflets du cadrage) | 23 — `DPAO` × 20, `AE` × 1, `AUCUN` × 2 |
+| **total** | **111 champs · 9 blocs · 47 rubriques** |
+
+Les deux champs chargés **inactifs** (`B02-CL-04`, `B09-FC-01`) ne sont pas servis : c'est le comportement demandé,
+88 = 90 − 2. Les autres catégories n'ont pas bougé — fournitures 139 champs, travaux 162 — et aucun `DPIC` n'y
+apparaît. À commande sert le même référentiel que la quantité fixe (111 champs), le contrat-cadre n'en a pas (voir
+le point 1 de « ce qui reste à trancher »).
+
+### Le front sait nommer le DPIC
+
+- `DocumentDao` accueille `DPIC`, avec son libellé court (la pastille bleue du document de consultation), son nom en
+  toutes lettres (« les données particulières des instructions aux consultants ») et son rang dans `ORDRE_DOCUMENTS`.
+- ⚠️ **Le document de consultation suit la catégorie, et l'écran le montre partout de la même façon.** Les 20 champs
+  partagés arrivent avec `DPAO` pour maître, puisqu'ils valent pour les trois catégories. La fiche les rend par
+  `documentEffectif()`, qui applique la répartition de la catégorie (`DPAO → DPIC`) après celle de la forme
+  (`DPAO → DPAC`, `CCAP → AE` en contrat-cadre). Sans cela, une fiche de consultants annonçait **quatre** documents
+  — `DPAO · DPIC · AE · CCAP` — dont un qu'elle ne produira jamais, et posait une pastille `DPAO` sur vingt de ses
+  lignes pendant que son rail annonçait `DPIC`. La règle est désormais tenue en **un seul endroit**, lu par le rail,
+  par les rubriques, par les champs et par leurs reprises.
+
+### Recette réelle — ligne 303071, fiche `/prmp/dao/7`
+
+Par l'interface, sur le backend de développement (aucune erreur JavaScript) :
+
+- la colonne du choix de la ligne annonce « Prestations intellectuelles » et la ligne est préparable ;
+- l'écran demande `?typeMarche=QUANTITE_FIXE&categorie=PRESTATIONS_INTELLECTUELLES` — pas de page courte ;
+- le rail annonce **`DPIC · AE · CCAP`**, et l'en-tête « les données particulières des instructions aux consultants,
+  l'acte d'engagement et le cahier des clauses administratives particulières » ;
+- la question des tranches, propre aux travaux, n'est pas posée ; les dix questions du cadrage se répondent et
+  s'enregistrent ;
+- 8 blocs de saisie, 85 informations, 56 contrôles obligatoires à lever ;
+- pastilles vues sur les champs et les rubriques : `DPIC`, `AE`, `CCAP` — **aucun `DPAO`**.
+
+### La rubrique vide — corrigée le 24/09
+
+⚠️ **Corrigé le 24/09, même jour.** La rubrique `B09-FC` « Fourniture de matériel par le consultant » était servie
+**sans aucun champ**, son unique champ `B09-FC-01` étant inactif : l’écran affichait un titre de rubrique suivi de
+rien, exactement comme `B02-FC` au contrat-cadre. Le backend a corrigé la **règle** plutôt que retiré la rubrique
+(commit `7c8d82e`, sans migration) : une rubrique n’est servie que si l’un de ses champs **actifs** vaut pour le type
+et la catégorie demandés. `B09-FC` reviendra donc d’elle-même si `B09-FC-01` est réactivé.
+
+Vérifié sur le backend relancé : prestations intellectuelles 111 champs · 9 blocs · **46 rubriques**, et **aucune
+rubrique sans champ** dans aucune des cinq combinaisons outillées (fournitures 139 / contrat-cadre 148, travaux 162 /
+contrat-cadre 139, prestations intellectuelles 111 en quantité fixe comme à commande). Recette de la ligne 303071
+rejouée : verte, sans rubrique vide.

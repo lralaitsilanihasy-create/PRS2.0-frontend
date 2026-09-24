@@ -21,6 +21,7 @@ export const LIBELLES_CATEGORIES: Readonly<Record<CategorieDao, string>> = {
 export const LIBELLES_DOCUMENTS: Readonly<Record<DocumentDao, string>> = {
   DPAO: 'DPAO',
   DPAC: 'DPAC',
+  DPIC: 'DPIC',
   AE: 'AE',
   CCAP: 'CCAP',
   AUCUN: 'sans document',
@@ -172,33 +173,54 @@ export function typeOutille(t: TypeMarche | null | undefined): boolean {
 
 /** Questions à poser pour un cadrage donné (celles dont la condition `si` est satisfaite). */
 /** Ordre de lecture des documents d'un dossier d'appel d'offres. */
-export const ORDRE_DOCUMENTS: readonly DocumentDao[] = ['DPAO', 'DPAC', 'AE', 'CCAP'];
+export const ORDRE_DOCUMENTS: readonly DocumentDao[] = ['DPAO', 'DPAC', 'DPIC', 'AE', 'CCAP'];
 
 /** Les documents en toutes lettres, tels que le serveur les nomme (lot 2a). */
 export const NOMS_DOCUMENTS: Readonly<Record<DocumentDao, string>> = {
   DPAO: "les données particulières de l'appel d'offres",
   DPAC: 'les données particulières du cahier des clauses administratives',
+  DPIC: 'les données particulières des instructions aux consultants',
   AE: "l'acte d'engagement",
   CCAP: 'le cahier des clauses administratives particulières',
   AUCUN: '',
 };
 
 /**
- * ⚠️ Lot 4 (23/09) — les documents que cette fiche produira, **déduits du référentiel de son type**, jamais d'une
- * liste en dur : un contrat-cadre produit DPAC et AE, les deux autres types DPAO, CCAP et AE.
+ * Le document où ce champ atterrit **réellement**, une fois la forme et la catégorie connues.
  *
- * Les 35 champs partagés (repris du plan, reflets du cadrage) portent `DPAO` et `CCAP` pour maître, parce qu'ils
- * valent pour les trois types. Le serveur leur applique, en contrat-cadre, la répartition du fichier de
- * correspondance : **DPAO → DPAC, CCAP → AE**. L'écran lit la même donnée et applique la même règle, sans quoi il
- * annoncerait quatre documents là où deux seulement sont produits.
+ * Les champs partagés (repris du plan, reflets du cadrage) portent `DPAO` et `CCAP` pour maître, parce qu'ils
+ * valent pour tout le monde. Le document de consultation, lui, change de nom :
+ * - **contrat-cadre** — répartition du fichier de correspondance : `DPAO → DPAC`, `CCAP → AE` (un contrat-cadre
+ *   n'a pas de CCAP) ;
+ * - **prestations intellectuelles** (lot 6, 24/09) — `DPAO → DPIC` : on ne consulte pas des candidats, on consulte
+ *   des consultants. Le CCAP et l'acte d'engagement, eux, restent.
+ *
+ * Un même champ ne peut pas s'afficher `DPAO` sur sa ligne et `DPIC` dans le rail : l'écran passe **partout** par
+ * cette fonction, faute de quoi il annonce un document qui ne sera jamais produit.
  */
-export function documentsProduits(referentiel: ReferentielFiche, typeMarche: TypeMarche | null): DocumentDao[] {
-  const remap = (d: DocumentDao | null | undefined): DocumentDao | undefined => {
-    if (!d) return undefined;
-    if (typeMarche !== 'CONTRAT_CADRE') return d;
-    return d === 'DPAO' ? 'DPAC' : d === 'CCAP' ? 'AE' : d;
-  };
-  const vus = new Set(referentiel.champs.map((c) => remap(c.documentMaitre)));
+export function documentEffectif(
+  document: DocumentDao,
+  typeMarche: TypeMarche | null,
+  categorie: CategorieDao | null,
+): DocumentDao {
+  if (typeMarche === 'CONTRAT_CADRE') return document === 'DPAO' ? 'DPAC' : document === 'CCAP' ? 'AE' : document;
+  if (categorie === 'PRESTATIONS_INTELLECTUELLES') return document === 'DPAO' ? 'DPIC' : document;
+  return document;
+}
+
+/**
+ * ⚠️ Lot 4 (23/09), étendu aux catégories (lot 6, 24/09) — les documents que cette fiche produira, **déduits du
+ * référentiel de sa forme et de sa catégorie**, jamais d'une liste en dur : un contrat-cadre produit DPAC et AE, une
+ * fiche de prestations intellectuelles DPIC, AE et CCAP, les autres DPAO, AE et CCAP.
+ */
+export function documentsProduits(
+  referentiel: ReferentielFiche,
+  typeMarche: TypeMarche | null,
+  categorie: CategorieDao | null = null,
+): DocumentDao[] {
+  const vus = new Set(
+    referentiel.champs.map((c) => (c.documentMaitre ? documentEffectif(c.documentMaitre, typeMarche, categorie) : undefined)),
+  );
   return ORDRE_DOCUMENTS.filter((d) => vus.has(d));
 }
 
@@ -263,7 +285,9 @@ export function resumeCadrage(cadrage: Cadrage): { texte: string; non: boolean }
     if (!opt) continue;
     const non = String(v) === 'NON';
     const s = sujet(q.cle);
-    let texte = s ? `${s} ${opt.libelle.toLowerCase()}` : opt.libelle;
+    // ⚠️ La minuscule ne porte QUE sur la première lettre : « Selon le CCAG » ne devient pas « selon le ccag ».
+    const enSuite = (x: string) => x.charAt(0).toLowerCase() + x.slice(1);
+    let texte = s ? `${s} ${enSuite(opt.libelle)}` : opt.libelle;
     if (q.cle === 'alloti') texte = non ? 'Non alloti' : `Alloti${cadrage['nbLots'] ? ` · ${cadrage['nbLots']} lots` : ''}`;
     if (q.cle === 'variantes') texte = non ? 'Variantes non' : 'Variantes autorisées';
     // ⚠️ Lot 5 — propre aux travaux : « Oui » tout seul ne dit pas de quoi il s'agit.
@@ -272,7 +296,7 @@ export function resumeCadrage(cadrage: Cadrage): { texte: string; non: boolean }
     if (q.cle === 'garantieSoumission') texte = non ? 'Sans garantie de soumission' : 'Garantie de soumission exigée';
     if (q.cle === 'avance') texte = non ? 'Sans avance' : `Avance${cadrage['tauxAvance'] ? ` ${cadrage['tauxAvance']} %` : ''}`;
     if (q.cle === 'prixRevisable') texte = non ? 'Prix ferme' : 'Prix révisable';
-    if (q.cle === 'penalites') texte = non ? 'Sans pénalités' : `Pénalités ${opt.libelle.toLowerCase()}`;
+    if (q.cle === 'penalites') texte = non ? 'Sans pénalités' : `Pénalités ${enSuite(opt.libelle)}`;
     puces.push({ texte, non });
   }
   return puces;
