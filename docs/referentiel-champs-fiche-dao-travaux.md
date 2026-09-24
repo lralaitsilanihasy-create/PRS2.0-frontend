@@ -59,6 +59,20 @@ Voici les **96 rubriques** et le **bloc `B11`** à créer avant l'import des cha
 Les rangs partent de 61 pour se ranger après les rubriques des fournitures, qui occupent 1 à 60 ; `B11` numérote
 les siennes à partir de 61 également, il n'a pas d'autre occupant.
 
+> ⚠️ **Livraison backend du 2026-09-24 — V41 et catégorie ouverte.** Bloc `B11` et 96 rubriques semés **tels que ce
+> tableau les donne** (vérifié : 96 rubriques, 257 champs attendus, aucune rubrique des CSV absente du tableau ni
+> l'inverse). Import vérifié sur des copies des deux CSV : **140 et 117 champs créés, 0 rejet**. `TRAVAUX` ajoutée à
+> `DmcService.CATEGORIES_OUTILLEES` : une fiche de travaux se prépare, `tranches = OUI` ouvre ses quatre champs, la
+> validation produit DPAO, CCAP et AE (DPAC et AE en contrat-cadre). L'outil d'import de démarrage accepte désormais
+> **plusieurs fichiers séparés par `;`**.
+>
+> **Un correctif né de ce chargement** : plusieurs référentiels reflètent la même clé de cadrage (`alloti`, `typePrix`,
+> `formeGroupement`, `avance`). Le serveur prenait le premier par code, toutes catégories confondues : dès
+> l'import, `B02-DK-01` (travaux) aurait validé l'allotissement **des fiches de fournitures**. Désormais, le reflet qui
+> valide est celui de la catégorie et du type de la fiche. **Point pour le front** : `B02-DK-01` reflète `alloti`, qui
+> se répond `OUI` / `NON` partout, mais il est chargé en `LISTE` **sans options** — il n'impose donc rien en contrat-cadre
+> de travaux ; `OUI_NON`, comme `B02-LV-04`, serait plus juste (correction par l'écran Administrateur ou une ligne de CSV).
+
 | code | bloc | libellé | rang | document maître | nb attendu | types de marché |
 |---|---|---|---|---|---|---|
 | `B02-CT` | B02 | Contrôle technique | 61 | DPAC | 2 | CONTRAT_CADRE |
