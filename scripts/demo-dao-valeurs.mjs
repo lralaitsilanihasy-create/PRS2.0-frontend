@@ -3,7 +3,7 @@
 // Aucune valeur n'est mise au hasard : chacune se tient avec les autres et passe les contrôles du serveur.
 
 // ——————————————————————————————————————————————————————————————————————————————
-// A. TRAVAUX — [DÉMO] Travaux de réhabilitation du bâtiment administratif (450 000 000 Ar, 2 lots)
+// A. TRAVAUX — Réhabilitation du réseau d'adduction d'eau potable (950 000 000 Ar, 2 lots)
 // ——————————————————————————————————————————————————————————————————————————————
 
 export const CADRAGE_TRAVAUX = {
@@ -26,12 +26,12 @@ export const VALEURS_TRAVAUX = {
   // — B02 Objet, allotissement & forme du marché —
   'B02-LT-02': 'Divisible',
   'B02-LT-03':
-    "Tranche ferme — lot 1 : gros œuvre et étanchéité du bâtiment administratif (reprise des fondations et du dallage, "
-    + "réfection de la charpente et de la couverture, étanchéité des terrasses et des descentes d'eaux pluviales). "
-    + 'Montant : 300 000 000 Ariary.',
+    "Tranche ferme — lot 1 : captage et adduction (réhabilitation de l'ouvrage de captage, pose de 12 kilomètres de "
+    + "conduites en fonte ductile, regards de visite et ventouses, station de pompage intermédiaire). "
+    + 'Montant : 620 000 000 Ariary.',
   'B02-LT-04':
-    "Tranche conditionnelle 1 — lot 2 : second œuvre et réseaux (cloisons, menuiseries intérieures et extérieures, "
-    + "peinture, installation électrique, plomberie sanitaire et réseaux informatiques). Montant : 150 000 000 Ariary. "
+    "Tranche conditionnelle 1 — lot 2 : stockage et distribution (réservoir semi-enterré de 500 m³, conduites de "
+    + "distribution, douze bornes-fontaines et branchements particuliers). Montant : 330 000 000 Ariary. "
     + "L'affermissement est notifié par ordre de service au plus tard six mois après la notification de la tranche ferme ; "
     + "à défaut, l'entrepreneur est libéré de ses obligations sur cette tranche.",
   'B02-MW-01':
@@ -42,14 +42,13 @@ export const VALEURS_TRAVAUX = {
     + "Infrastructures et du Patrimoine, sous l'autorité du Directeur Général.",
   'B02-MW-03': "Compte 6021 — budget d'investissement 2026, ligne « Réhabilitation des bâtiments administratifs »",
   'B02-OT-01':
-    "Programme pluriannuel de remise à niveau du siège administratif de la JIRAMA (2026-2028), dont le présent marché "
-    + 'constitue la première phase.',
+    "Programme national d'amélioration de la desserte en eau potable (2026-2028), dont le présent marché constitue la "
+    + 'première tranche opérationnelle.',
   'B02-OT-02':
-    "Réhabilitation du bâtiment administratif R+2 d'une surface de 1 850 m² : reprise structurelle des poteaux et "
-    + "planchers dégradés, réfection complète de la charpente et de la couverture en bac acier, étanchéité des deux "
-    + 'terrasses, remplacement des cloisons et des menuiseries, reprise des installations électriques et sanitaires, '
-    + "création d'un réseau informatique structuré, peinture intérieure et extérieure, et remise en état des abords "
-    + 'immédiats (voirie piétonne et évacuation des eaux pluviales).',
+    "Réhabilitation du réseau d'adduction d'eau potable : reprise de l'ouvrage de captage et de la station de pompage, "
+    + 'pose de 12 kilomètres de conduites en fonte ductile, construction d’un réservoir semi-enterré de 500 m³, '
+    + 'renouvellement des conduites de distribution, création de douze bornes-fontaines et de branchements '
+    + "particuliers, et remise en état des tranchées et des voiries traversées.",
 
   // — B03 Candidats : groupement, sous-traitance, qualifications —
   'B03-GT-02':
@@ -75,22 +74,24 @@ export const VALEURS_TRAVAUX = {
     + "et une déclaration sur l'honneur de n'être sous le coup d'aucune interdiction de soumissionner.",
   'B03-QT-02':
     "Le candidat dispose d'une équipe permanente d'au moins vingt personnes, d'un directeur des travaux et d'un "
-    + 'conducteur de travaux à plein temps sur le chantier, et du matériel de gros œuvre nécessaire (bétonnière, '
-    + 'échafaudages, engins de levage).',
+    + 'conducteur de travaux à plein temps sur le chantier, et du matériel de travaux hydrauliques nécessaire '
+    + '(engins de terrassement, matériel de soudure et de pose de conduites, groupe électrogène, pompes '
+    + "d'épuisement).",
   'B03-QT-03':
     "Le candidat justifie d'une capacité financière permettant de préfinancer trois mois de travaux, attestée par une "
     + "ligne de crédit bancaire ou par les états financiers certifiés des trois derniers exercices.",
   'B03-QT-04':
-    "Au moins deux marchés de réhabilitation de bâtiment d'un montant unitaire supérieur à 200 000 000 Ariary, achevés "
-    + 'au cours des trois dernières années, justifiés par des attestations de bonne exécution.',
+    "Au moins deux marchés de réseaux d'eau potable ou d'assainissement d'un montant unitaire supérieur à "
+    + '400 000 000 Ariary, achevés au cours des trois dernières années, justifiés par des attestations de bonne '
+    + 'exécution.',
   'B03-QT-05': 'NON',
   'B03-QT-06':
-    "Pour le lot 1, une qualification en travaux de gros œuvre et étanchéité ; pour le lot 2, une qualification en "
-    + "installations électriques courants forts et courants faibles délivrée par l'organisme compétent.",
-  'B03-QT-07': '350000000',
+    "Pour le lot 1, une qualification en travaux de captage et de pose de conduites sous pression ; pour le lot 2, une "
+    + "qualification en ouvrages de stockage et réseaux de distribution d'eau potable.",
+  'B03-QT-07': '700000000',
   'B03-QT-08':
-    "Réhabilitation d'un bâtiment administratif ou assimilé, en site occupé, comprenant gros œuvre, couverture et "
-    + "étanchéité, exécutée en qualité d'entrepreneur principal au cours des cinq dernières années.",
+    "Réhabilitation ou extension d'un réseau d'adduction d'eau potable comprenant captage, conduites et ouvrage de "
+    + "stockage, exécutée en qualité d'entrepreneur principal au cours des cinq dernières années.",
   'B03-QT-09':
     "L'entrepreneur indique, pour chaque matériel essentiel, s'il en est propriétaire, s'il le prend en location ou s'il "
     + 'y accède par crédit-bail, et joint les justificatifs correspondants.',
@@ -108,14 +109,15 @@ export const VALEURS_TRAVAUX = {
     + 'humains), A4 (moyens matériels) et A5 (situation financière), jointes au dossier et à remplir intégralement.',
   'B04-CD-02': 'Modèle de garantie bancaire de soumission joint au dossier, à reprendre sans modification.',
   'B04-CD-03':
-    "Plans joints au dossier : plan de masse au 1/500, plans des trois niveaux au 1/100, coupes et façades au 1/100, "
-    + "plan de charpente et de couverture au 1/50, schéma de principe des réseaux électriques et sanitaires.",
+    "Plans joints au dossier : plan de situation au 1/5000, profil en long du tracé au 1/2000, plans des ouvrages de "
+    + "captage et de la station de pompage au 1/100, plan de coffrage du réservoir au 1/50, et carnet de détails des "
+    + 'regards et des bornes-fontaines.',
   'B04-DV-01': '90',
   'B04-EQ-01': '15',
   'B04-EQ-02': '7',
   'B04-FP-01': '3',
-  'B04-FP-02': "Appel d'offres ouvert n° 00001/PPM-AGPM/CNM/2026 — Réhabilitation du bâtiment administratif",
-  'B04-FP-03': 'Lot 1 — gros œuvre et étanchéité / Lot 2 — second œuvre et réseaux (un pli par lot)',
+  'B04-FP-02': "Appel d'offres ouvert n° 00003/PPM-AGPM/CNM/2026 — Réhabilitation du réseau d'adduction d'eau potable",
+  'B04-FP-03': 'Lot 1 — captage et adduction / Lot 2 — stockage et distribution (un pli par lot)',
   'B04-LG-02':
     "Toute pièce rédigée dans une autre langue que le français est accompagnée d'une traduction française certifiée, "
     + 'seule la version française faisant foi.',
@@ -129,13 +131,13 @@ export const VALEURS_TRAVAUX = {
     + "soumission, le planning prévisionnel d'exécution, la note méthodologique, et les pièces administratives exigées.",
   'B04-RP-01': 'OUI',
   'B04-RP-02':
-    "Réunion préparatoire et visite conjointe du site le 12 octobre 2026 à 9 heures, au bâtiment administratif de la "
-    + "JIRAMA, 149 rue Rainandriamampandry, Antananarivo. La présence n'est pas obligatoire mais vivement recommandée ; "
-    + "un procès-verbal est adressé à tous les candidats ayant retiré le dossier.",
+    "Réunion préparatoire et visite conjointe du tracé le 12 octobre 2026 à 9 heures, au départ de la station de "
+    + "pompage. La présence n'est pas obligatoire mais vivement recommandée ; un procès-verbal est adressé à tous les "
+    + 'candidats ayant retiré le dossier.',
   'B04-VL-01':
-    "Les candidats accèdent au site tous les jours ouvrables de 8 heures à 16 heures jusqu'à cinq jours avant la date "
-    + "limite de remise des offres, sur demande écrite adressée au maître d'œuvre. Le candidat supporte seul les frais et "
-    + 'les risques de sa visite.',
+    "Les candidats accèdent au tracé et aux ouvrages tous les jours ouvrables de 8 heures à 16 heures jusqu'à cinq "
+    + "jours avant la date limite de remise des offres, sur demande écrite adressée au maître d'œuvre. Le candidat "
+    + 'supporte seul les frais et les risques de sa visite.',
 
   // — B05 Prix, montants & garantie de soumission —
   'B05-AG-01':
@@ -149,7 +151,7 @@ export const VALEURS_TRAVAUX = {
   'B05-GE-03': 'Garantie bancaire',
   'B05-GE-04': 'Libérée à 50 % puis au terme du délai de garantie',
   'B05-GQ-02': 'Garantie bancaire',
-  'B05-GQ-03': '9000000',
+  'B05-GQ-03': '19000000',
   'B05-MN-01': 'Ariary',
   'B05-RG-01': 'OUI',
   'B05-RG-02': '5',
@@ -161,7 +163,7 @@ export const VALEURS_TRAVAUX = {
   'B06-RC-01': '7',
 
   // — B08 Paiements, avances & garanties financières —
-  'B08-AF-02': '90000000',
+  'B08-AF-02': '190000000',
   'B08-AF-03': '20',
   'B08-AF-04': '100',
   'B08-AF-05': '0',
@@ -196,9 +198,9 @@ export const VALEURS_TRAVAUX = {
     "Assurance de responsabilité civile décennale couvrant les dommages compromettant la solidité de l'ouvrage ou le "
     + "rendant impropre à sa destination, pour la durée légale de dix ans à compter de la réception définitive.",
   'B09-CH-01':
-    "Les travaux sont exécutés dans un bâtiment administratif demeurant en activité : l'entrepreneur organise son "
-    + 'chantier par zones successives, maintient les circulations et les issues de secours, et limite les nuisances '
-    + 'sonores aux plages horaires convenues.',
+    "Les travaux sont exécutés sur un réseau demeurant en service : l'entrepreneur organise son chantier par tronçons "
+    + 'successifs, maintient la desserte des abonnés par des dispositifs provisoires, et annonce toute coupure au moins '
+    + 'quarante-huit heures à l’avance.',
   'B09-CH-03':
     "Les travaux bruyants sont exécutés entre 12 heures et 14 heures ou en dehors des heures ouvrables, selon le "
     + "calendrier arrêté chaque semaine avec le maître d'œuvre.",
@@ -207,14 +209,14 @@ export const VALEURS_TRAVAUX = {
     + 'particulières, le cahier des clauses techniques particulières, le bordereau des prix unitaires et le détail '
     + "quantitatif et estimatif, les plans, le cahier des clauses administratives générales, et l'offre de l'entrepreneur.",
   'B09-DL-01':
-    "Le délai d'exécution est de huit mois, dont cinq mois pour la tranche ferme. Il court à compter de la date de "
+    "Le délai d'exécution est de douze mois, dont huit mois pour la tranche ferme. Il court à compter de la date de "
     + "notification de l'ordre de service prescrivant de commencer les travaux, et s'achève à la réception provisoire "
     + 'prononcée sans réserve.',
   'B09-DL-02': '21',
   'B09-DL-03':
-    "Mois 1 : installation de chantier et dépose. Mois 2 à 5 : reprises structurelles, charpente, couverture et "
-    + 'étanchéité (tranche ferme). Mois 6 à 8 : cloisons, menuiseries, électricité, plomberie, réseaux et peinture '
-    + '(tranche conditionnelle). Un planning détaillé est remis pendant la période de préparation.',
+    "Mois 1 : installation de chantier et piquetage. Mois 2 à 8 : captage, station de pompage et pose des conduites "
+    + "d'adduction (tranche ferme). Mois 9 à 12 : réservoir, conduites de distribution, bornes-fontaines et "
+    + 'branchements (tranche conditionnelle). Un planning détaillé est remis pendant la période de préparation.',
   'B09-DL-04': '2027-09-30',
   'B09-DL-05': 'OUI',
   'B09-DT-01': "À la notification de l'approbation à l'entrepreneur",
@@ -269,8 +271,8 @@ export const VALEURS_TRAVAUX = {
     + 'conditionnelle, chacune faisant courir son propre délai de garantie.',
   'B09-VQ-01':
     "Les matériaux et produits font l'objet d'une vérification qualitative avant mise en œuvre : agrément des "
-    + "échantillons par le maître d'œuvre, présentation des procès-verbaux d'essais des bétons et des aciers, et contrôle "
-    + "de conformité aux normes visées au cahier des clauses techniques particulières.",
+    + "échantillons par le maître d'œuvre, présentation des certificats des conduites et des pièces de raccordement, "
+    + "essais de pression sur chaque tronçon posé, et analyse bactériologique avant mise en service.",
   'B09-VX-01': '15',
 
   // — B10 Modifications, résiliation & litiges —
@@ -294,7 +296,7 @@ export const VALEURS_TRAVAUX = {
 };
 
 // ——————————————————————————————————————————————————————————————————————————————
-// B. PRESTATIONS INTELLECTUELLES — [DÉMO] Étude de faisabilité et AMO (120 000 000 Ar, 2 lots)
+// B. PRESTATIONS INTELLECTUELLES — Étude du schéma directeur d'assainissement (120 000 000 Ar, 2 lots)
 // ——————————————————————————————————————————————————————————————————————————————
 
 export const CADRAGE_PI = {
@@ -320,12 +322,12 @@ export const VALEURS_PI = {
   'B02-CL-03': 'Décision n° 012-DG/JIRAMA du 5 janvier 2026 portant délégation de signature en matière de marchés publics.',
   'B02-MS-01': 'Meilleure proposition financière parmi les candidats ayant obtenu la note technique minimale',
   'B02-OP-01':
-    "Programme pluriannuel de remise à niveau du siège administratif de la JIRAMA (2026-2028) : la présente mission en "
-    + 'prépare et en accompagne les travaux.',
+    "Programme national d'assainissement des centres urbains (2026-2030) : la présente mission en établit le schéma "
+    + 'directeur et en prépare la première phase.',
   'B02-OP-02':
-    "Étude de faisabilité de la réhabilitation du siège administratif (lot 1) et assistance à maîtrise d'ouvrage pour la "
-    + "préparation, la passation et le suivi des travaux (lot 2), comprenant le diagnostic technique du bâti, "
-    + "l'évaluation des coûts, l'étude des variantes d'aménagement et l'appui au suivi du chantier.",
+    "Étude du schéma directeur d'assainissement (lot 1) et assistance à maîtrise d'ouvrage pour la préparation de la "
+    + "première phase de travaux (lot 2), comprenant le diagnostic des réseaux existants, le relevé topographique, la "
+    + "modélisation hydraulique, l'évaluation des coûts et l'appui à la passation.",
   'B02-OP-03': '2026-12-01',
   'B02-SP-01': '15',
 
@@ -340,9 +342,9 @@ export const VALEURS_PI = {
 
   // — B04 Dossier, remise & ouverture des offres —
   'B04-AI-01':
-    "Le client met à disposition du consultant : les plans d'archives du bâtiment, les rapports de diagnostic antérieurs, "
-    + "l'accès au site pendant les heures ouvrables, un bureau équipé pour les réunions, et un interlocuteur unique à la "
-    + 'Direction des Infrastructures et du Patrimoine.',
+    "Le client met à disposition du consultant : les plans des réseaux existants, les données d'exploitation et de "
+    + "pluviométrie, l'accès aux ouvrages pendant les heures ouvrables, un bureau équipé pour les réunions, et un "
+    + 'interlocuteur unique à la Direction Technique.',
   'B04-DP-01': '90',
   'B04-EP-01':
     "Personne Responsable des Marchés Publics de la JIRAMA, 149 rue Rainandriamampandry, Ambohijatovo, "
@@ -362,17 +364,18 @@ export const VALEURS_PI = {
   'B04-LP-01': 'Français',
   'B04-NP-01': 'Une proposition technique et une proposition financière sous enveloppes distinctes',
   'B04-QT-01':
-    "Bureau d'études ou groupement justifiant de cinq années d'expérience en études de bâtiment et en assistance à "
-    + "maîtrise d'ouvrage, d'au moins trois missions comparables achevées en cinq ans, et d'une équipe comprenant un "
-    + 'architecte, un ingénieur structure, un économiste de la construction et un spécialiste des marchés publics.',
+    "Bureau d'études ou groupement justifiant de cinq années d'expérience en assainissement et en assistance à maîtrise "
+    + "d'ouvrage, d'au moins trois schémas directeurs achevés en cinq ans, et d'une équipe comprenant un ingénieur "
+    + 'hydraulicien, un spécialiste en assainissement, un topographe, un environnementaliste et un spécialiste des '
+    + 'marchés publics.',
   'B04-QT-02':
     "La proposition technique comprend : la compréhension des termes de référence, la méthodologie détaillée, le plan de "
     + "travail et le calendrier, la composition de l'équipe avec les curriculum vitæ du personnel clé, les références de "
     + 'missions comparables, et les moyens matériels affectés à la mission.',
   'B04-QT-03':
-    "Le client attend une attention particulière sur le diagnostic structurel du bâtiment en site occupé, sur le "
-    + "phasage des travaux permettant la continuité du service, et sur le transfert de compétences aux agents de la "
-    + 'Direction des Infrastructures.',
+    "Le client attend une attention particulière sur la modélisation des eaux pluviales en saison cyclonique, sur le "
+    + "phasage des travaux en milieu urbain dense, et sur le transfert de compétences aux agents de la Direction "
+    + 'Technique.',
   'B04-RU-01': 'OUI',
   'B04-RU-02':
     'Réunion préparatoire le 28 septembre 2026 à 9 heures, salle de réunion de la Direction Générale de la JIRAMA, '
@@ -423,8 +426,8 @@ export const VALEURS_PI = {
   // — B09 Exécution du marché & livraison —
   'B09-AI-01': 'OUI',
   'B09-AI-02':
-    "Le client fournit pendant l'exécution : les archives techniques du bâtiment, les relevés de consommation, l'accès "
-    + 'aux locaux et aux installations, et la désignation d’un correspondant technique permanent.',
+    "Le client fournit pendant l'exécution : les archives techniques des réseaux, les relevés d'exploitation, l'accès "
+    + 'aux ouvrages, et la désignation d’un correspondant technique permanent.',
   'B09-AP-01': '50000000',
   'B09-DK-01':
     "Sont contractuels, par ordre de priorité : l'acte d'engagement, les données particulières des instructions aux "
@@ -432,8 +435,8 @@ export const VALEURS_PI = {
     + 'technique et financière du consultant.',
   'B09-DP-01': "Le marché prend effet à la date de notification de son approbation au consultant.",
   'B09-DP-02':
-    "Le délai d'exécution est de six mois : deux mois pour le diagnostic et l'étude de faisabilité (lot 1), quatre mois "
-    + "pour l'assistance à maîtrise d'ouvrage jusqu'à l'attribution des travaux (lot 2).",
+    "Le délai d'exécution est de six mois : trois mois pour le diagnostic et le schéma directeur (lot 1), trois mois "
+    + "pour l'assistance à maîtrise d'ouvrage jusqu'à l'attribution des travaux de première phase (lot 2).",
   'B09-DP-03': 'Nombre de mois',
   'B09-DP-04': '6',
   'B09-MF-01': 'NON',
@@ -686,7 +689,7 @@ export const VALEURS_AC = {
 };
 
 // ——————————————————————————————————————————————————————————————————————————————
-// D. FOURNITURES À QUANTITÉ FIXE — Équipements de protection individuelle (EPI), 250 000 000 Ar, NON alloti
+// D. FOURNITURES À QUANTITÉ FIXE — Mobilier de bureau des directions régionales, 85 000 000 Ar, NON alloti
 //
 // ⚠️ Cette fiche portait, depuis le 22/09, le texte d'essai de la recette de la chaîne (« Recette fiche marché
 // 2026-09-22 — texte jetable »), et ses documents l'imprimaient. Elle devient la quatrième démonstration : la
@@ -710,14 +713,14 @@ export const CADRAGE_QF = {
 export const VALEURS_QF = {
   // — B02 Objet, allotissement & forme du marché —
   'B02-AU-01':
-    "Le marché n'est pas alloti : il porte sur un ensemble cohérent d'équipements de protection individuelle "
-    + "destinés aux agents d'exploitation du réseau, dont la conformité doit être appréciée d'un seul tenant.",
+    "Le marché n'est pas alloti : il porte sur un ensemble mobilier homogène destiné aux directions régionales, dont "
+    + "la cohérence de gamme et de finition doit être appréciée d'un seul tenant.",
   'B02-OB-02':
-    "Fourniture et livraison d'équipements de protection individuelle : casques isolants, gants diélectriques, "
-    + "chaussures de sécurité, harnais antichute, vêtements haute visibilité et lunettes de protection, conformes "
-    + 'aux normes en vigueur. Les services connexes comprennent le transport jusqu’aux magasins désignés, le '
-    + "contrôle de conformité à la réception et le remplacement des articles non conformes.",
-  'B02-OB-03': 'AOO n° 2458/MT/JSRM/PRMP/UGPM.2026',
+    "Fourniture et livraison de mobilier de bureau : bureaux et retours, fauteuils de travail et sièges visiteurs, "
+    + "armoires et caissons de rangement, tables de réunion et vestiaires, conformes aux spécifications techniques. "
+    + 'Les services connexes comprennent le transport jusqu’aux directions régionales, le déballage, le montage sur '
+    + "place et l'enlèvement des emballages.",
+  'B02-OB-03': 'AOO n° 2470/MT/JSRM/PRMP/UGPM.2026',
 
   // — B03 Candidats —
   'B03-CQ-01':
@@ -725,8 +728,8 @@ export const VALEURS_QF = {
     + 'registre du commerce et de la carte statistique, chacune de moins de trois mois, et certificat de non '
     + 'faillite de moins de trois mois.',
   'B03-CQ-02':
-    "Fiche de renseignements A2 : moyens humains et matériels, capacité de stockage et de transport, et références "
-    + "en fourniture d'équipements de protection individuelle.",
+    "Fiche de renseignements A2 : moyens humains et matériels, capacité de stockage et de transport vers les régions, "
+    + 'et références en fourniture de mobilier de bureau.',
   'B03-CQ-03':
     "Fiche de renseignements A3 : chiffre d'affaires des trois derniers exercices et attestation bancaire de "
     + 'capacité financière.',
@@ -735,9 +738,8 @@ export const VALEURS_QF = {
     + 'années, justifiés par des certificats de bonne fin ou des procès-verbaux de réception.',
   'B03-CQ-05': 'OUI',
   'B03-CQ-06':
-    "Les équipements proposés sont conformes aux normes EN 397 (casques), EN 60903 (gants diélectriques), "
-    + "EN ISO 20345 (chaussures de sécurité) et EN 361 (harnais) ; les certificats de conformité sont joints à "
-    + "l'offre.",
+    "Le mobilier proposé est conforme aux normes EN 527 (tables de travail), EN 1335 (sièges de bureau) et EN 14073 "
+    + "(mobilier de rangement) ; les fiches techniques et les certificats correspondants sont joints à l'offre.",
   'B03-CQ-07': "Sans objet pour ce marché.",
   'B03-CQ-08': 'OUI',
   'B03-NA-01': 'OUI',
@@ -775,7 +777,7 @@ export const VALEURS_QF = {
   'B04-OP-02': '2026-02-16',
   'B04-OP-03': '10 h 00',
   'B04-RO-01': '1',
-  'B04-RO-02': "AOO n° 2458/MT/JSRM/PRMP/UGPM.2026 — « Ne pas ouvrir avant la date et l'heure d'ouverture des plis »",
+  'B04-RO-02': "AOO n° 2470/MT/JSRM/PRMP/UGPM.2026 — « Ne pas ouvrir avant la date et l'heure d'ouverture des plis »",
   'B04-RO-03':
     "L'enveloppe extérieure porte la mention de l'appel d'offres et ne comporte aucune indication permettant "
     + "d'identifier le candidat. Elle contient deux enveloppes intérieures fermées et scellées, portant les mêmes "
@@ -789,7 +791,7 @@ export const VALEURS_QF = {
     + "intérieurs, l'assurance et les autres services locaux afférents à la livraison jusqu'à leur destination "
     + 'finale.',
   'B05-GS-02': 'Garantie bancaire',
-  'B05-GS-03': '5000000',
+  'B05-GS-03': '1700000',
   'B05-GS-04': '120',
   'B05-MO-01': 'Ariary',
 
@@ -851,29 +853,29 @@ export const VALEURS_QF = {
   'B09-CR-01': 'NON',
   'B09-DG-01': '12',
   'B09-DG-02':
-    "La garantie couvre le remplacement sans frais de tout équipement présentant un défaut de fabrication ou une "
-    + 'non-conformité aux normes déclarées.',
+    "La garantie couvre le remplacement ou la réparation sans frais de tout élément présentant un défaut de "
+    + 'fabrication, de finition ou de stabilité.',
   'B09-DI-01':
-    "Les équipements reconnus non conformes sont refusés et remplacés par le titulaire dans un délai de dix jours, "
-    + "à ses frais ; le procès-verbal d'inspection en fait mention.",
+    "Le mobilier reconnu non conforme est refusé et remplacé par le titulaire dans un délai de dix jours, à ses "
+    + "frais ; le procès-verbal d'inspection en fait mention.",
   'B09-DX-01': '45',
   'B09-EM-01':
-    "Chaque emballage porte la référence du marché, la désignation de l'équipement, la taille, la quantité et la "
-    + "mention de l'acheteur destinataire.",
+    "Chaque emballage porte la référence du marché, la désignation de l'article, ses dimensions, la quantité et la "
+    + "direction régionale destinataire.",
   'B09-EM-02':
-    'Chaque livraison est accompagnée du bon de livraison, de la facture, des certificats de conformité aux normes '
-    + "et des notices d'utilisation en français.",
+    'Chaque livraison est accompagnée du bon de livraison, de la facture, des fiches techniques et des notices de '
+    + 'montage en français.',
   'B09-IV-01':
-    "Les équipements sont vérifiés à la livraison en présence du titulaire : contrôle des certificats de "
-    + 'conformité, vérification des tailles et des quantités, et essais sur échantillon pour les gants '
-    + 'diélectriques.',
+    "Le mobilier est vérifié à la livraison en présence du titulaire : contrôle des références et des dimensions, "
+    + 'vérification des quantités, essai de stabilité et contrôle des finitions sur échantillon.',
   'B09-LF-01':
     'La livraison s’effectue en une seule fois, aux heures ouvrables, sur rendez-vous pris au moins deux jours '
     + 'ouvrables à l’avance.',
   'B09-LF-02':
     "Bon de livraison, facture, certificats de conformité aux normes et notices d'utilisation.",
   'B09-LL-01':
-    'Magasin central de la JIRAMA — 149, rue Rainandriamampandry, Ambohijatovo, Antananarivo 101.',
+    'Directions régionales désignées au bordereau de livraison, transport et montage sur place compris ; le magasin '
+    + "central d'Antananarivo sert de point de regroupement.",
   'B09-MC-01': 'NON',
   'B09-OM-01': '15',
   'B09-OM-02': '20',

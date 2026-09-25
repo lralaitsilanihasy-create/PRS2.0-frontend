@@ -315,3 +315,37 @@ les dates de la fiche au **calendrier prévisionnel du plan**, et cette ligne y 
 **27/03/2026**. La remise et l'ouverture des plis ont donc dû être datées de **février 2026** pour que la fiche soit
 validable. C'est le point ouvert du 23/09 : *un plan dont le calendrier est passé rend toute fiche invalidable*. Il
 ne gêne pas la démonstration, mais il gênera la première PRMP qui préparera un DAO sur une ligne de plan ancienne.
+
+---
+
+## 9. ⚠️ 25/09 au soir — la base a été remise à zéro, les démonstrations sont refaites
+
+Le pilote a demandé de vider entièrement le suivi des dossiers. Les anciens dossiers et les anciennes fiches ont
+été supprimés en base, et **un plan de démonstration neuf a été semé** : dossier 100338,
+`00003/PPM-AGPM/CNM/2026`, clôturé avec un PV favorable signé, huit lignes dont **six préparables en DAO**.
+
+Vérifié par l'API : les six lignes en appel d'offres ouvert sont servies avec leur catégorie et leur forme, et les
+deux autres — gré à gré, consultation de prix — sont bien écartées.
+
+**Les quatre démonstrations sont refaites sur ce plan, toutes en version 1** :
+
+| ligne | objet | forme | fiche | dossier | documents |
+|---|---|---|---|---|---|
+| **303080** | Acquisition de mobilier de bureau | fournitures, quantité fixe | 11 · 90 informations | 100342 | DPAO · CCAP · AE |
+| **303081** | Fourniture de consommables informatiques | fournitures, **à commande, 2 lots** | 10 · 99 informations | 100341 | DPAO · CCAP · **AE lot 1** · **AE lot 2** |
+| **303083** | Réhabilitation du réseau d'adduction d'eau potable | **travaux, 2 lots** | 8 · 115 informations | 100339 | DPAO · CCAP · **AE lot 1** · **AE lot 2** |
+| **303084** | Étude du schéma directeur d'assainissement | **prestations intellectuelles** | 9 · 68 informations | 100340 | **DPIC** · CCAP · AE |
+
+Deux lignes restent **libres** pour montrer le premier geste, « Préparer le dossier » : **303082** (pièces de
+rechange, contrat-cadre) et **303085** (gardiennage, services à commande).
+
+⚠️ **Le script ne travaille plus par numéro de fiche, mais par LIGNE DU PLAN.** Une remise à zéro supprime les
+fiches et les renumérote ; les lignes, elles, sont semées avec le plan. `node scripts/demo-dao.mjs 303083` ne
+joue qu'une démonstration, et si la ligne n'a pas encore de fiche, le script **la crée** — c'est le premier geste
+de la PRMP, celui que l'écran appelle « Préparer le dossier ».
+
+Le contenu des quatre jeux a été réécrit pour coller aux nouveaux objets : le réseau d'eau potable a remplacé le
+bâtiment administratif (captage, conduites, réservoir, bornes-fontaines ; garantie de 19 000 000 Ar, avance de
+190 000 000 Ar, douze mois de délai), le schéma directeur d'assainissement a remplacé l'étude de faisabilité, et
+le mobilier de bureau a remplacé les équipements de protection individuelle. Les consommables informatiques, eux,
+étaient déjà l'objet du dossier réel dont la démonstration à commande est tirée.

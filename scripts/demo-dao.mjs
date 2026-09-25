@@ -1,9 +1,13 @@
-// Garnit les quatre dossiers de démonstration — travaux (6), prestations intellectuelles (7), fournitures à
-// commande (5) et fournitures à quantité fixe (1) — PAR L'API, comme le ferait une PRMP. Aucun code touché.
+// Garnit les quatre dossiers de démonstration PAR L'API, comme le ferait une PRMP : aucun code touché, aucune
+// écriture directe en base.
 //
-//   node demo-dao.mjs            garnit, contrôle, valide et crée le dossier des quatre fiches
-//   node demo-dao.mjs --vider    rouvre une version brouillon et efface les valeurs (pour rejouer)
-//   node demo-dao.mjs 6            une seule fiche (6 travaux · 7 études · 5 à commande · 1 quantité fixe)
+// ⚠️ Le script est piloté par la LIGNE DU PLAN, pas par un numéro de fiche : une remise à zéro de la base
+// supprime les fiches et les renumérote, les lignes, elles, sont semées avec le plan. Si la ligne n'a pas encore
+// de fiche, le script la crée — c'est le premier geste de la PRMP (« Préparer le dossier »).
+//
+//   node demo-dao.mjs              garnit, contrôle, valide et crée le dossier des quatre démonstrations
+//   node demo-dao.mjs --vider      rouvre une version brouillon et efface les valeurs (pour rejouer)
+//   node demo-dao.mjs 303083       une seule ligne du plan
 //
 // ⚠️ Écrit en base de développement.
 import { CADRAGE_TRAVAUX, CADRAGE_PI, CADRAGE_AC, CADRAGE_QF, VALEURS_TRAVAUX, VALEURS_PI, VALEURS_AC, VALEURS_AC_PAR_LOT, VALEURS_QF } from './demo-dao-valeurs.mjs';
@@ -62,8 +66,20 @@ const conditionTenue = (condition, cadrage) => {
   return un(condition);
 };
 
-const garnir = async (idDmc, cadrage, valeurs, titre, parLot = {}) => {
-  console.log(`\n══ ${titre} — fiche ${idDmc} ══`);
+/** La fiche de cette ligne du plan : celle qui existe, ou celle que le geste « Préparer le dossier » crée. */
+const ficheDeLaLigne = async (idDetail) => {
+  const existante = await appel('GET', `/api/dmcs/par-marche/${idDetail}`);
+  if (existante.ok && (existante.corps?.idDmc ?? existante.corps?.id) != null) return existante.corps.idDmc ?? existante.corps.id;
+  const cree = await appel('POST', `/api/dmcs/par-marche/${idDetail}`);
+  if (!cree.ok) { console.error(`  ✗ ligne ${idDetail} : ${cree.statut} ` + JSON.stringify(cree.corps).slice(0, 200)); return null; }
+  return cree.corps?.idDmc ?? cree.corps?.id ?? null;
+};
+
+const garnir = async (idDetail, cadrage, valeurs, titre, parLot = {}) => {
+  console.log(`\n══ ${titre} — ligne ${idDetail} ══`);
+  const idDmc = await ficheDeLaLigne(idDetail);
+  if (idDmc == null) return false;
+  console.log(`  fiche ${idDmc}`);
   const fiche0 = (await appel('GET', `/api/fiches-marche/${idDmc}`)).corps;
   const cat = fiche0?.categorie;
   const type = fiche0?.typeMarche ?? 'QUANTITE_FIXE';
@@ -143,10 +159,10 @@ const garnir = async (idDmc, cadrage, valeurs, titre, parLot = {}) => {
 
 await connexion();
 const jeux = [
-  { id: 6, cadrage: CADRAGE_TRAVAUX, valeurs: VALEURS_TRAVAUX, titre: 'TRAVAUX — réhabilitation du bâtiment administratif' },
-  { id: 7, cadrage: CADRAGE_PI, valeurs: VALEURS_PI, titre: 'PRESTATIONS INTELLECTUELLES — étude de faisabilité et AMO' },
-  { id: 5, cadrage: CADRAGE_AC, valeurs: VALEURS_AC, parLot: VALEURS_AC_PAR_LOT, titre: 'FOURNITURES À COMMANDE — matériels informatiques, 2 lots' },
-  { id: 1, cadrage: CADRAGE_QF, valeurs: VALEURS_QF, titre: 'FOURNITURES À QUANTITÉ FIXE — équipements de protection individuelle' },
+  { id: 303083, cadrage: CADRAGE_TRAVAUX, valeurs: VALEURS_TRAVAUX, titre: 'TRAVAUX — réhabilitation du réseau d’adduction d’eau potable, 2 lots' },
+  { id: 303084, cadrage: CADRAGE_PI, valeurs: VALEURS_PI, titre: 'PRESTATIONS INTELLECTUELLES — schéma directeur d’assainissement' },
+  { id: 303081, cadrage: CADRAGE_AC, valeurs: VALEURS_AC, parLot: VALEURS_AC_PAR_LOT, titre: 'FOURNITURES À COMMANDE — consommables informatiques, 2 lots' },
+  { id: 303080, cadrage: CADRAGE_QF, valeurs: VALEURS_QF, titre: 'FOURNITURES À QUANTITÉ FIXE — mobilier de bureau' },
 ].filter((j) => !SEULE || String(j.id) === SEULE);
 let ko = 0;
 for (const j of jeux) if (!(await garnir(j.id, j.cadrage, j.valeurs, j.titre, j.parLot ?? {}))) ko++;
