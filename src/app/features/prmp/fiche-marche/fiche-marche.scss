@@ -45,6 +45,11 @@
 .fm__champ-v--court { max-width: 12rem; }
 .fm__champ-v--moyen { max-width: 26rem; }
 .fm__champ-v--long { max-width: 46rem; }
+// V43 : une information par lot, une cellule par lot, chacune précédée de son rang.
+.fm__lot { display: flex; align-items: baseline; gap: 0.55rem; }
+.fm__lot + .fm__lot { margin-top: 0.4rem; }
+.fm__lot-t { flex: 0 0 3rem; font-size: 0.74rem; font-weight: 700; color: var(--n-500); text-transform: uppercase; letter-spacing: 0.02em; }
+.fm__lot-v { flex: 1 1 auto; min-width: 0; }
 // Le libellé cède la place à mesure que l'écran rétrécit : à 1366 px, une colonne de 416 px pour l'intitulé
 // laissait 307 px à la valeur — le défaut qu'on vient de corriger, revenu par la fenêtre.
 @media (max-width: 1500px) { .fm__champ { grid-template-columns: minmax(0, 18rem) minmax(0, 1fr); } }

@@ -28,9 +28,11 @@ import {
   allotissementDuPlan,
   blocsASaisir,
   cadrageComplet,
+  cleValeur,
   documentEffectif,
   documentsProduits,
   largeurChamp,
+  lotsDuChamp,
   metaChamp,
   reprisesAffichees,
   champsDeRubrique,
@@ -183,7 +185,16 @@ export class FicheMarcheEcran {
   readonly blocs = computed(() => blocsASaisir(this.referentiel(), this.typeMarche()));
   readonly blocCourant = computed<BlocFiche | null>(() => this.blocs()[this.blocIdx()] ?? null);
   readonly blocPpm = computed<BlocFiche | null>(() => this.referentiel().blocs.find((b) => b.code === 'B01') ?? null);
-  readonly prog = computed(() => progression(this.referentiel(), this.cadrageEffectif(), this.valeurs()));
+  /**
+   * ⚠️ V43 (25/09) — **le serveur dit si la ligne est allotie** : `nbLots` et `saisieParLot`. L'écran ne le déduit
+   * ni du cadrage `alloti` (une réponse de la PRMP) ni du champ du plan : les clés de valeur en dépendent, et une
+   * divergence entre les deux côtés ferait refuser la saisie par le serveur.
+   */
+  readonly nbLots = computed(() => this.fiche()?.nbLots ?? 0);
+  readonly saisieParLot = computed(() => this.fiche()?.saisieParLot === true);
+  readonly prog = computed(() =>
+    progression(this.referentiel(), this.cadrageEffectif(), this.valeurs(), this.saisieParLot(), this.nbLots()),
+  );
   readonly bilan = computed<BilanControles>(() => this.fiche()?.bilanControles ?? BILAN_VIDE);
   /**
    * ⚠️ 23/09 — un « obligatoire » n'est pas une anomalie : c'est une saisie qui **reste à faire**. Sur une fiche
@@ -422,10 +433,26 @@ export class FicheMarcheEcran {
     return this.valeurs()[code] ?? null;
   }
 
-  valeurAffichee(champ: ChampFiche): string {
+  /** Les rangs de lot de ce champ : `[null]` pour une information commune, `[1, 2, …]` pour une information par lot. */
+  lotsDe(champ: ChampFiche): (number | null)[] {
+    return lotsDuChamp(champ, this.saisieParLot(), this.nbLots());
+  }
+
+  /** La clé d'une cellule : `CODE` ou `CODE#n`. C'est elle qui sert d'identifiant, de clé de valeur et de clé d'erreur. */
+  cle(champ: ChampFiche, lot: number | null = null): string {
+    return cleValeur(champ.code, lot);
+  }
+
+  valeurAffichee(champ: ChampFiche, lot: number | null = null): string {
     const f = this.fiche();
-    const v = champ.source === 'PPM' ? (f?.valeursPpm?.[champ.code] ?? null) : champ.source === 'CADRAGE' ? (f?.valeursCadrage?.[champ.code] ?? null) : this.valeur(champ.code);
+    const cle = this.cle(champ, lot);
+    const v = champ.source === 'PPM' ? (f?.valeursPpm?.[champ.code] ?? null) : champ.source === 'CADRAGE' ? (f?.valeursCadrage?.[champ.code] ?? null) : this.valeur(cle);
     return v == null ? '' : champ.source === 'CADRAGE' ? this.libelleCadrage(champ, v) : String(v);
+  }
+
+  /** Une erreur portée par l'une des cellules du champ : la ligne entière se signale, le détail reste sous sa cellule. */
+  champEnErreur(champ: ChampFiche): boolean {
+    return this.lotsDe(champ).some((lot) => this.erreurDe(this.cle(champ, lot)) != null);
   }
 
   /** Un champ reflet du cadrage montre le libellé de la réponse (« Territoire national »), pas son code (`NATIONAL`). */
@@ -451,8 +478,8 @@ export class FicheMarcheEcran {
     return this.fiche()?.enLettres?.[code] ?? '';
   }
 
-  saisir(champ: ChampFiche, ev: Event): void {
-    const code = champ.code;
+  saisir(champ: ChampFiche, ev: Event, lot: number | null = null): void {
+    const code = this.cle(champ, lot);
     const cible = ev.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
     const brut = cible.value;
     const numerique = champ.type === 'NOMBRE' || champ.type === 'MONTANT' || champ.type === 'POURCENTAGE';
@@ -486,7 +513,8 @@ export class FicheMarcheEcran {
     if (id == null || !bloc || this.saving()) return;
     const codes = new Set(this.referentiel().champs.filter((c) => c.bloc === bloc.code && c.source === 'SAISIE').map((c) => c.code));
     const valeurs: Record<string, Valeur> = {};
-    for (const [code, v] of Object.entries(this.valeurs())) if (codes.has(code)) valeurs[code] = v;
+    // ⚠️ V43 — une clé peut porter le rang du lot (`B05-TP-02#2`) : c'est le code NU qui dit à quel bloc elle appartient.
+    for (const [cle, v] of Object.entries(this.valeurs())) if (codes.has(cle.split('#')[0])) valeurs[cle] = v;
     this.saving.set(true);
     this.ficheService.bloc(id, bloc.code, valeurs).subscribe({
       next: (f) => {

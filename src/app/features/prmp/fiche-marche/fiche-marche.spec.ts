@@ -35,6 +35,15 @@ const REFERENTIEL: ReferentielFiche = {
   ],
 };
 
+/**
+ * ⚠️ V43 (25/09) — référentiel où le montant de la garantie **varie par lot** : il se saisit une fois par lot, sous
+ * la clé `CODE#rang`. Le reste du bloc reste commun.
+ */
+const REF_PAR_LOT: ReferentielFiche = {
+  ...REFERENTIEL,
+  champs: REFERENTIEL.champs.map((c) => (c.code === 'B05-GS-02' ? { ...c, parLot: true } : c)),
+};
+
 /** Référentiel augmenté du champ PPM qui porte le nombre de lots du plan (clé `NB_LOTS_PPM`). */
 const REF_AVEC_LOTS: ReferentielFiche = {
   ...REFERENTIEL,
@@ -345,6 +354,60 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     rendre();
     expect(fixture.componentInstance.cadrageOk()).toBe(true);
     expect(bouton('Enregistrer le cadrage').disabled).toBe(true);
+  });
+
+  it('par lot : autant de cellules que de lots, chacune sous sa clé CODE#n — et rien ne change sans allotissement', () => {
+    monter('PRMP', 42);
+    // Le serveur dit que la ligne est allotie : deux lots. L'écran ne le déduit ni du cadrage ni du plan.
+    ouvrir(REF_PAR_LOT, fiche({ nbLots: 2, saisieParLot: true, valeurs: {} }));
+    fixture.componentInstance.allerAuBloc('B05');
+    rendre();
+
+    const cellule = (cle: string): HTMLInputElement => {
+      const el = racine().querySelector('[id="c-' + cle + '"]');
+      if (!el) throw new Error('cellule « ' + cle + ' » introuvable');
+      return el as HTMLInputElement;
+    };
+    // Deux cellules pour le champ par lot, étiquetées ; une seule pour le champ commun.
+    expect(Array.from(racine().querySelectorAll('.fm__lot-t')).map((e) => texte(e))).toEqual(['Lot 1', 'Lot 2']);
+    expect(racine().querySelector('[id="c-B05-GS-02"]')).toBeNull();
+    expect(cellule('B05-MO-01')).toBeTruthy();
+
+    cellule('B05-GS-02#1').value = '1600000';
+    cellule('B05-GS-02#1').dispatchEvent(new Event('input'));
+    cellule('B05-GS-02#2').value = '2170000';
+    cellule('B05-GS-02#2').dispatchEvent(new Event('input'));
+    const liste = racine().querySelector('[id="c-B05-MO-01"]') as HTMLSelectElement;
+    liste.value = 'Ariary';
+    liste.dispatchEvent(new Event('change'));
+    rendre();
+
+    bouton('Enregistrer et voir les reprises').click();
+    const put = http.expectOne('/api/fiches-marche/42/blocs/B05');
+    // ⚠️ Le cœur de la livraison : les clés portent le rang du lot, et la clé nue n'est pas envoyée.
+    expect(put.request.body).toEqual({ valeurs: { 'B05-GS-02#1': 1600000, 'B05-GS-02#2': 2170000, 'B05-MO-01': 'Ariary' } });
+    put.flush(fiche({ nbLots: 2, saisieParLot: true, valeurs: { 'B05-GS-02#1': 1600000, 'B05-GS-02#2': 2170000, 'B05-MO-01': 'Ariary' },
+      enLettres: { 'B05-GS-02#2': 'deux millions cent soixante-dix mille ariary' } }));
+    rendre();
+    fixture.componentInstance.allerAuBloc('B05');
+    rendre();
+    // Chaque cellule retrouve sa valeur, et les lettres du serveur suivent la même clé.
+    expect(cellule('B05-GS-02#1').value).toBe('1600000');
+    expect(cellule('B05-GS-02#2').value).toBe('2170000');
+    expect(texte(racine().querySelector('.fm__lettres'))).toBe('deux millions cent soixante-dix mille ariary');
+  });
+
+  it('par lot : une ligne NON allotie garde une seule cellule, sous la clé nue', () => {
+    monter('PRMP', 42);
+    ouvrir(REF_PAR_LOT, fiche({ nbLots: 1, saisieParLot: false, valeurs: {} }));
+    fixture.componentInstance.allerAuBloc('B05');
+    rendre();
+    expect(racine().querySelectorAll('.fm__lot-t').length).toBe(0);
+    const montant = racine().querySelector('[id="c-B05-GS-02"]') as HTMLInputElement;
+    montant.value = '9000000';
+    montant.dispatchEvent(new Event('input'));
+    bouton('Enregistrer et voir les reprises').click();
+    expect(http.expectOne('/api/fiches-marche/42/blocs/B05').request.body).toEqual({ valeurs: { 'B05-GS-02': 9000000 } });
   });
 
   it('allotissement : un lot au plan ⇒ « Non » imposé et verrouillé, la réponse part avec le cadrage', () => {

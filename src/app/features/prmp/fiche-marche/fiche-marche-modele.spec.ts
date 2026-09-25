@@ -6,9 +6,11 @@ import {
   REFERENTIEL_ESQUISSE,
   blocsASaisir,
   cadrageComplet,
+  cleValeur,
   documentEffectif,
   documentsProduits,
   largeurChamp,
+  lotsDuChamp,
   reprisesAffichees,
   champsDeRubrique,
   evaluerCondition,
@@ -130,6 +132,31 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(documentEffectif('DPAO', 'CONTRAT_CADRE', 'FOURNITURES_SERVICES')).toBe('DPAC');
     expect(documentEffectif('CCAP', 'CONTRAT_CADRE', null)).toBe('AE');
     expect(documentEffectif('AE', null, null)).toBe('AE');
+  });
+
+  it('par lot : la clé porte le rang, et un champ par lot se compte autant de fois qu’il y a de lots', () => {
+    expect(cleValeur('B05-TP-02', null)).toBe('B05-TP-02');
+    expect(cleValeur('B05-TP-02', 2)).toBe('B05-TP-02#2');
+    // Un champ ordinaire n'a qu'une cellule, quoi qu'en dise le plan.
+    expect(lotsDuChamp({ parLot: false }, true, 3)).toEqual([null]);
+    // Un champ par lot n'en a qu'une tant que la ligne n'est pas allotie — c'est le SERVEUR qui le dit.
+    expect(lotsDuChamp({ parLot: true }, false, 3)).toEqual([null]);
+    expect(lotsDuChamp({ parLot: true }, true, 1)).toEqual([null]);
+    expect(lotsDuChamp({ parLot: true }, true, 3)).toEqual([1, 2, 3]);
+
+    const ref: ReferentielFiche = {
+      blocs: [],
+      champs: [
+        champ({ code: 'A', bloc: 'B02', rubrique: 'OB', source: 'SAISIE' }),
+        { ...champ({ code: 'B', bloc: 'B05', rubrique: 'TP', source: 'SAISIE', type: 'MONTANT' }), parLot: true },
+      ],
+    };
+    // Sans allotissement : deux informations attendues, une saisie.
+    expect(progression(ref, {}, { A: 'x' })).toEqual({ saisis: 1, attendus: 2 });
+    // Alloti en trois lots : le champ par lot en attend trois ; « A » plus « B#1 » saisis.
+    expect(progression(ref, {}, { A: 'x', 'B#1': 12 }, true, 3)).toEqual({ saisis: 2, attendus: 4 });
+    // La clé nue d'un champ par lot ne compte pas sur une ligne allotie : le serveur la refuse.
+    expect(progression(ref, {}, { A: 'x', B: 12 }, true, 3)).toEqual({ saisis: 1, attendus: 4 });
   });
 
   it('ergonomie : la largeur suit le type, et les reprises ne répètent ni elles-mêmes ni le document maître', () => {

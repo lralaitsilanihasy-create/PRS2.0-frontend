@@ -64,6 +64,12 @@ export interface ChampFiche {
   cleCadrage?: string | null;
   /** Source `PPM` : clé interne de la ligne du plan relue (`ENTITE`, `MONTANT`…) — livraison du 22/09. */
   clePpm?: string | null;
+  /**
+   * ⚠️ V43 (25/09) — cette information **varie d'un lot à l'autre** : elle se saisit une fois par lot, et sa valeur
+   * est enregistrée sous la clé `CODE#n` (n = rang du lot). Constaté sur un dossier réel : garantie de soumission,
+   * montants minimum et maximum, délai de livraison sont donnés lot par lot.
+   */
+  parLot?: boolean | null;
   actif?: boolean;
 }
 
@@ -121,6 +127,13 @@ export interface FicheMarche {
   valeurs: Record<string, string | number | null>;
   /** Les 22 informations reprises de la ligne du PPM (clé = code du champ `PPM`), relues à chaque lecture. */
   valeursPpm: Record<string, string | number | null>;
+  /**
+   * ⚠️ V43 (25/09) — **le serveur dit si la ligne est allotie**, l'écran ne le déduit plus. `nbLots` = nombre de lots
+   * de la ligne du plan (0 si aucun) ; `saisieParLot` vaut `nbLots > 1`. La réponse de cadrage `alloti` reste une
+   * réponse de la PRMP — elle ouvre ses rubriques, elle ne décide pas des clés de valeur.
+   */
+  nbLots?: number | null;
+  saisieParLot?: boolean | null;
   /** Version du PPM dont la ligne COURANTE est lue (filiation `idLigneOrigine`, demande B2 §1 du 22/09). */
   versionPpm?: number | null;
   /** `idDetail` de la ligne courante de la filiation (≠ `idDetail` lié quand le PPM a été versionné). */
@@ -224,6 +237,11 @@ export interface FicheRattachable {
  */
 export interface DocumentFiche {
   idDocument: number;
+  /**
+   * ⚠️ V43 (25/09) — le lot auquel ce document se rapporte, `null` pour un document commun. Sur une ligne allotie
+   * l'acte d'engagement est produit **une fois par lot**, comme dans un dossier réel.
+   */
+  lot?: number | null;
   /** Document maître, mêmes codes que `ChampFiche.documentMaitre` : `DPAO` · `DPAC` · `AE` · `CCAP`. */
   type: DocumentDao;
   libelle?: string | null;

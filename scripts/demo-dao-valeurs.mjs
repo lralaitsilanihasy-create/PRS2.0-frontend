@@ -455,3 +455,232 @@ export const VALEURS_PI = {
     "Les différends sont d'abord soumis au règlement amiable prévu par le code des marchés publics. À défaut d'accord "
     + 'dans les trente jours, le litige est porté devant le Tribunal administratif d’Antananarivo.',
 };
+
+// ——————————————————————————————————————————————————————————————————————————————
+// C. FOURNITURES À COMMANDE — [DÉMO] Fourniture de consommables informatiques, 2 lots
+//
+// ⚠️ Transcrit d'un dossier RÉEL : `NatureMarches/DAO_Fournitures/Fourniture_a_commande.pdf` (MESupReS, AOO
+// n° 2461/MT/…/2026, matériels informatiques en cinq lots, à commande). Les clauses, délais, méthodes et formes
+// sont ceux du dossier ; l'acheteur et l'objet, eux, viennent de la ligne du plan de démonstration (JIRAMA) et le
+// marché est ramené à ses **deux** lots. Les quatre informations qui varient par lot portent des valeurs
+// distinctes, dont les deux montants de garantie du dossier d'origine (1 600 000 et 2 170 000 Ariary).
+// ——————————————————————————————————————————————————————————————————————————————
+
+export const CADRAGE_AC = {
+  alloti: 'OUI',
+  nbLots: '2',
+  variantes: 'NON',
+  groupement: 'NON',
+  provenance: 'NATIONAL',
+  typePrix: 'UNITAIRES',
+  prixRevisable: 'NON',
+  garantieSoumission: 'OUI',
+  avance: 'OUI',
+  tauxAvance: '20',
+  penalites: 'CCAG',
+};
+
+/** Les quatre informations qui varient d'un lot à l'autre — clés `CODE#1`, `CODE#2` posées par le script. */
+export const VALEURS_AC_PAR_LOT = {
+  'B05-GS-03': { 1: '1600000', 2: '2170000' },
+  'B05-TP-02': { 1: '40000000', 2: '54000000' },
+  'B05-TP-03': { 1: '80000000', 2: '108500000' },
+  'B06-EO-12': { 1: '30', 2: '30' },
+};
+
+export const VALEURS_AC = {
+  // — B02 Objet, allotissement & forme du marché —
+  'B02-AU-02': 'Lot par lot (attribution divisible)',
+  'B02-AU-03':
+    "Les quantités minimales et maximales de chaque lot sont spécifiées au Cahier des Prescriptions Spéciales. "
+    + 'Lot 1 — ordinateurs et matériels divers pour le siège : minimum 40 unités, maximum 80 unités. '
+    + 'Lot 2 — ordinateurs et matériels pour les directions régionales : minimum 54 unités, maximum 110 unités.',
+  'B02-AU-04': '12',
+  'B02-AU-05': '2026-12-15',
+  'B02-AU-07': '1',
+  'B02-OB-02':
+    "Fourniture et livraison de consommables et matériels informatiques : ordinateurs de bureau et portables, "
+    + "imprimantes, onduleurs, consommables d'impression et accessoires réseau, avec installation, mise en service et "
+    + "garantie constructeur. Les services connexes comprennent le transport jusqu'à la destination finale, le "
+    + "déballage, le montage et la formation des utilisateurs à la prise en main des équipements.",
+  'B02-OB-03': "AOO n° 2461/MT/JSRM/PRMP/UGPM.2026",
+
+  // — B03 Candidats : groupement, sous-traitance, qualifications —
+  'B03-CQ-01':
+    "Photocopie certifiée conforme de la carte d'immatriculation fiscale de l'exercice en cours, de l'extrait du "
+    + "registre du commerce et de la carte statistique, chacune datée de moins de trois mois, et certificat de non "
+    + 'faillite de moins de trois mois.',
+  'B03-CQ-02':
+    "Fiche de renseignements A2 : moyens humains et matériels, références en fourniture de matériels informatiques, "
+    + "capacité à assurer le service après-vente et la maintenance sur le territoire national.",
+  'B03-CQ-03':
+    "Fiche de renseignements A3 : chiffre d'affaires des trois derniers exercices et attestation bancaire de capacité "
+    + 'financière permettant de préfinancer une commande.',
+  'B03-CQ-04':
+    "Fiche de renseignements A4 : antécédents du candidat pour des marchés de même nature au cours des trois dernières "
+    + 'années, justifiés par des certificats de bonne fin ou des procès-verbaux de réception.',
+  'B03-CQ-05': 'NON',
+  'B03-CQ-06':
+    "Agrément du fabricant ou du distributeur agréé pour les matériels proposés, et engagement de disponibilité des "
+    + 'pièces détachées pendant la durée de la garantie.',
+  'B03-CQ-07': "Sans objet pour ce marché.",
+  'B03-CQ-08': 'NON',
+  'B03-NA-01': 'OUI',
+  'B03-NA-02':
+    "Le nantissement de la créance est admis dans les conditions du Code des marchés publics ; le titulaire en informe "
+    + "l'autorité contractante et le comptable assignataire.",
+  'B03-NA-03': 'Trésorier ministériel chargé de l’Énergie et des Hydrocarbures',
+  'B03-ST-01': 'NON',
+
+  // — B04 Dossier, remise & ouverture des offres —
+  'B04-CD-01':
+    "Modèles de fiches de renseignements A1 (identification du candidat), A2 (capacités techniques), A3 (capacités "
+    + 'financières) et A4 (antécédents pour des marchés de même nature).',
+  'B04-CD-02':
+    "Modèles de garantie de soumission joints au dossier : B1 — garantie bancaire, B2 — caution personnelle et "
+    + 'solidaire.',
+  'B04-CO-01':
+    "Outre les pièces mentionnées aux instructions aux candidats : photocopie certifiée conforme de la carte "
+    + "d'immatriculation fiscale de l'exercice en cours, extrait du registre du commerce et carte statistique de moins "
+    + "de trois mois, certificat de non faillite de moins de trois mois, et garantie de soumission.",
+  'B04-DE-01':
+    "Personne Responsable des Marchés Publics de la JIRAMA — 149, rue Rainandriamampandry, Ambohijatovo, "
+    + 'Antananarivo 101 — marches.publics@jirama.mg',
+  'B04-DE-02': '10',
+  'B04-DE-03': '5',
+  'B04-LA-01': 'NON',
+  'B04-LR-01': 'RANDRIANARIVO La Personne Responsable des Marchés Publics',
+  'B04-LR-02':
+    "Bureau de la Personne Responsable des Marchés Publics, 2ᵉ étage, porte 204 — Direction Générale de la JIRAMA, "
+    + '149 rue Rainandriamampandry, Ambohijatovo, Antananarivo 101.',
+  'B04-LR-03': '2026-11-16',
+  'B04-LR-04': '10 h 00',
+  'B04-OP-01': "Salle de réunion, 2ᵉ étage, porte 204 — Direction Générale de la JIRAMA, en séance publique.",
+  'B04-OP-02': '2026-11-16',
+  'B04-OP-03': '10 h 00',
+  'B04-RO-01': '1',
+  'B04-RO-02': "AOO n° 2461/MT/JSRM/PRMP/UGPM.2026 — « Ne pas ouvrir avant la date et l'heure d'ouverture des plis »",
+  'B04-RO-03':
+    "Les offres sont présentées en plis séparés pour chacun des lots. L'enveloppe extérieure porte la mention de "
+    + "l'appel d'offres, le numéro et l'intitulé du lot, et ne comporte aucune indication permettant d'identifier le "
+    + 'candidat. Elle contient deux enveloppes intérieures fermées et scellées à la cire, portant les mêmes mentions '
+    + "ainsi que le nom et l'adresse du candidat : l'une marquée ORIGINAL, l'autre COPIE.",
+  'B04-VE-01': 'NON',
+  'B04-VO-01': '75',
+
+  // — B05 Prix, montants & garantie de soumission —
+  'B05-CP-02':
+    "Pour les fournitures acquises sur le territoire national, le prix comprend : le prix des fournitures EXW (magasin "
+    + "de vente) hors TVA ; le prix des transports intérieurs, l'assurance et les autres services locaux afférents à la "
+    + 'livraison des fournitures jusqu’à leur destination finale.',
+  'B05-GS-02': 'Garantie bancaire',
+  'B05-GS-04': '105',
+  'B05-MO-01': 'Ariary',
+  'B06-AN-01': 'Garantie bancaire',
+  'B06-AN-02':
+    "Tout candidat écarté peut demander par écrit les motifs du rejet de sa candidature ou de son offre ; la Personne "
+    + 'Responsable des Marchés Publics répond dans les vingt jours. Le recours gracieux puis le recours devant '
+    + "l'organe de régulation s'exercent dans les conditions du Code des marchés publics.",
+  'B06-EO-01': 'Par lot',
+  'B06-EO-02': "Aucun critère additionnel n'est retenu.",
+  'B06-EO-04':
+    "Ne sont pas pris en compte dans l'évaluation : la taxe sur la valeur ajoutée applicable à Madagascar sur la vente "
+    + "des fournitures et des services connexes, ni les droits et taxes dus en douane sur les fournitures importées.",
+  'B06-EO-05':
+    "Le montant évalué de l'offre est le prix de l'offre, corrigé des erreurs arithmétiques et des rabais offerts. "
+    + "Les offres sont évaluées par lot ; le marché porte sur le lot ou les lots attribués au candidat qualifié ayant "
+    + "présenté l'offre conforme pour l'essentiel et évaluée économiquement la plus avantageuse.",
+  'B06-EO-06':
+    "Après évaluation, la Personne Responsable des Marchés Publics compare toutes les offres substantiellement "
+    + "conformes pour déterminer l'offre évaluée la moins-disante, lot par lot.",
+  'B06-EO-07':
+    "La Commission calcule une première moyenne des offres évaluées, puis écarte comme anormalement hautes celles qui "
+    + "la dépassent de plus de 20 %. Elle calcule ensuite une seconde moyenne après neutralisation de ces offres, et "
+    + "déclare anormalement basses celles qui lui sont inférieures de plus de 10 %. Le rejet est prononcé après avis "
+    + 'motivé de la Commission et explications demandées au candidat.',
+  'B06-EO-08':
+    "La Personne Responsable des Marchés Publics vérifie, avant attribution, que le candidat ayant présenté l'offre "
+    + "évaluée la moins-disante possède bien les qualifications requises et n'est frappé d'aucune exclusion.",
+  'B06-EP-01': '3',
+
+  // — B08 Paiements, avances & garanties financières —
+  'B08-AC-01': 'NON',
+  'B08-AV-04': 'Garantie bancaire',
+  'B08-AV-05':
+    "L'avance forfaitaire est remboursée par précompte sur les sommes dues au titulaire, au fur et à mesure des "
+    + "livraisons, de sorte qu'elle soit entièrement remboursée lorsque le montant des paiements atteint 80 % du "
+    + 'montant du marché.',
+  'B08-AV-06': '20',
+  'B08-GB-01': 'OUI',
+  'B08-GB-02': '5',
+  'B08-IM-01': '9.5',
+  'B08-PA-01':
+    "L'acheteur se libère des sommes dues en en faisant porter le montant au crédit du compte bancaire indiqué par le "
+    + "titulaire dans l'acte d'engagement (titulaire du compte, établissement, agence, numéro et code).",
+  'B08-PA-03':
+    "Les factures sont établies en trois exemplaires, après chaque livraison, et accompagnées du bon de commande, du "
+    + 'bon de livraison et du procès-verbal de réception signé.',
+  'B08-PA-04':
+    "Le paiement intervient sur présentation de la facture et du procès-verbal de réception, après service fait, par "
+    + 'virement au compte du titulaire.',
+  'B08-PA-05': 'À la livraison',
+  'B08-PA-08': '30',
+  'B08-RG-01': 'NON',
+
+  // — B09 Exécution du marché & livraison —
+  'B09-AS-01': "À la charge du fournisseur jusqu'à la livraison",
+  'B09-CR-01': 'NON',
+  'B09-DG-01': '12',
+  'B09-DG-02':
+    "La garantie couvre le remplacement ou la réparation, sans frais pour l'acheteur, de tout matériel présentant un "
+    + 'défaut de fabrication ou de fonctionnement, pièces et main-d’œuvre comprises.',
+  'B09-DI-01':
+    "Les matériels reconnus non conformes aux spécifications techniques sont refusés et remplacés par le titulaire "
+    + "dans un délai de dix jours, à ses frais ; le procès-verbal d'inspection en fait mention.",
+  'B09-DX-01': '30',
+  'B09-DX-02':
+    "Le délai court à compter du lendemain de la date de notification de chaque bon de commande, et non de la "
+    + 'notification du marché.',
+  'B09-DX-03':
+    "Les commandes sont passées par bons de commande successifs pendant la durée de validité du marché, selon les "
+    + "besoins de l'acheteur et dans la limite des quantités maximales de chaque lot.",
+  'B09-EM-01':
+    "Chaque emballage porte la référence du marché, le numéro du lot, la désignation du matériel, la quantité et la "
+    + "mention de l'acheteur destinataire.",
+  'B09-EM-02':
+    "Chaque livraison est accompagnée du bon de livraison, de la facture, des certificats de garantie et des notices "
+    + "d'utilisation en français.",
+  'B09-IV-01':
+    "Les matériels sont vérifiés à la livraison en présence du titulaire : contrôle de conformité aux spécifications "
+    + 'techniques, essais de mise en service et vérification des accessoires.',
+  'B09-LF-01':
+    "Les livraisons s'effectuent en une ou plusieurs fois, sur bon de commande, aux heures ouvrables et sur rendez-vous "
+    + 'pris au moins deux jours ouvrables à l’avance.',
+  'B09-LF-02':
+    "Bon de livraison, facture, certificats de garantie, notices d'utilisation et procès-verbal de mise en service.",
+  'B09-LL-01':
+    "Direction des Infrastructures et du Patrimoine de la JIRAMA — 149, rue Rainandriamampandry, Ambohijatovo, "
+    + 'Antananarivo 101 (lot 1) ; directions régionales désignées au bon de commande (lot 2).',
+  'B09-MC-01': 'NON',
+  'B09-OM-01': '15',
+  'B09-OM-02': '20',
+  'B09-OM-03': '12',
+  'B09-PC-01':
+    "Le bon de commande, le bordereau des prix unitaires et les spécifications techniques complètent les pièces "
+    + 'contractuelles du marché.',
+  'B09-PC-02':
+    "Annexe 1 : cadre du bordereau des prix. Annexe 2 : état des sommes versées à des tiers. Annexe 3 : formulaire de "
+    + 'déclaration des bénéficiaires effectifs.',
+  'B09-PS-01': 'NON',
+  'B09-RT-01': "Transport par le fournisseur jusqu'à la destination finale",
+  'B09-SK-01': 'NON',
+
+  // — B10 Modifications, résiliation & litiges —
+  'B10-AR-01':
+    "Les différends sont d'abord soumis au règlement amiable prévu par le Code des marchés publics ; à défaut d'accord "
+    + "dans les trente jours, le litige est porté devant le Tribunal administratif d'Antananarivo.",
+  'B10-IR-01': 'OUI',
+  'B10-IR-02':
+    "En cas de résiliation du fait de l'acheteur, le titulaire est indemnisé des fournitures livrées et acceptées, et "
+    + 'des approvisionnements constitués pour les commandes déjà notifiées.',
+};

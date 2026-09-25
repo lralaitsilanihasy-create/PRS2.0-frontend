@@ -3,10 +3,10 @@
 //
 //   node demo-dao.mjs            garnit, contrôle, valide et crée le dossier des deux fiches
 //   node demo-dao.mjs --vider    rouvre une version brouillon et efface les valeurs (pour rejouer)
-//   node demo-dao.mjs 6          une seule fiche
+//   node demo-dao.mjs 6            une seule fiche (6 travaux · 7 prestations intellectuelles · 5 à commande)
 //
 // ⚠️ Écrit en base de développement.
-import { CADRAGE_TRAVAUX, CADRAGE_PI, VALEURS_TRAVAUX, VALEURS_PI } from './demo-dao-valeurs.mjs';
+import { CADRAGE_TRAVAUX, CADRAGE_PI, CADRAGE_AC, VALEURS_TRAVAUX, VALEURS_PI, VALEURS_AC, VALEURS_AC_PAR_LOT } from './demo-dao-valeurs.mjs';
 
 const API = 'http://localhost:8080';
 const args = process.argv.slice(2);
@@ -62,7 +62,7 @@ const conditionTenue = (condition, cadrage) => {
   return un(condition);
 };
 
-const garnir = async (idDmc, cadrage, valeurs, titre) => {
+const garnir = async (idDmc, cadrage, valeurs, titre, parLot = {}) => {
   console.log(`\n══ ${titre} — fiche ${idDmc} ══`);
   const fiche0 = (await appel('GET', `/api/fiches-marche/${idDmc}`)).corps;
   const cat = fiche0?.categorie;
@@ -80,8 +80,16 @@ const garnir = async (idDmc, cadrage, valeurs, titre) => {
   if (!rc.ok) { console.error('  ✗ cadrage refusé : ' + JSON.stringify(rc.corps).slice(0, 400)); return false; }
   console.log('  ✓ ' + Object.entries(cadrage).map(([k, v]) => `${k}=${v}`).join(' · '));
 
+  // ⚠️ V43 (25/09) — une information « par lot » se saisit une fois par lot, sous la clé CODE#rang. C'est le serveur
+  // qui dit si la ligne est allotie (`saisieParLot`), et combien elle porte de lots (`nbLots`).
+  const fiche = (await appel('GET', `/api/fiches-marche/${idDmc}`)).corps;
+  const lots = fiche?.saisieParLot === true ? Array.from({ length: fiche.nbLots }, (_, i) => i + 1) : [null];
+  const cles = (c) => (c.parLot ? lots : [null]).map((lot) => ({ lot, cle: lot == null ? c.code : `${c.code}#${lot}` }));
+  const valeurDe = (c, lot) => (c.parLot && lot != null ? parLot[c.code]?.[lot] : valeurs[c.code]);
+  if (lots[0] != null) console.log(`  ${lots.length} lots au plan : les champs « par lot » se saisissent ${lots.length} fois`);
+
   const aSaisir = ref.champs.filter((c) => c.source === 'SAISIE' && c.type !== 'PIECE' && conditionTenue(c.condition, cadrage));
-  const manquants = aSaisir.filter((c) => c.obligatoire && valeurs[c.code] === undefined);
+  const manquants = aSaisir.filter((c) => c.obligatoire && cles(c).some(({ lot }) => valeurDe(c, lot) === undefined));
   if (manquants.length) {
     console.error(`  ✗ ${manquants.length} information(s) obligatoire(s) sans valeur de démonstration :`);
     manquants.forEach((c) => console.error(`      ${c.code} [${c.type}] ${c.libelle.slice(0, 70)}`));
@@ -93,17 +101,21 @@ const garnir = async (idDmc, cadrage, valeurs, titre) => {
   console.log('— Saisie bloc par bloc —');
   let posees = 0;
   for (const bloc of ref.blocs) {
-    const champs = aSaisir.filter((c) => c.bloc === bloc.code && valeurs[c.code] !== undefined);
+    const champs = aSaisir.filter((c) => c.bloc === bloc.code && cles(c).some(({ lot }) => valeurDe(c, lot) !== undefined));
     if (!champs.length) continue;
     const corps = {};
-    for (const c of champs) corps[c.code] = VIDER ? '' : String(valeurs[c.code]);
+    for (const c of champs) for (const { lot, cle } of cles(c)) {
+      const v = valeurDe(c, lot);
+      if (v === undefined) continue;
+      corps[cle] = VIDER ? '' : String(v);
+    }
     const r = await appel('PUT', `/api/fiches-marche/${idDmc}/blocs/${bloc.code}`, { valeurs: corps });
     if (!r.ok) {
       console.error(`  ✗ ${bloc.code} refusé (${r.statut}) : ` + JSON.stringify(r.corps).slice(0, 500));
       return false;
     }
-    posees += champs.length;
-    console.log(`  ✓ ${bloc.code} — ${champs.length} information(s)`);
+    posees += Object.keys(corps).length;
+    console.log(`  ✓ ${bloc.code} — ${Object.keys(corps).length} information(s)`);
   }
   console.log(`  ${posees} informations ${VIDER ? 'effacées' : 'posées'}`);
   if (VIDER) return true;
@@ -133,8 +145,9 @@ await connexion();
 const jeux = [
   { id: 6, cadrage: CADRAGE_TRAVAUX, valeurs: VALEURS_TRAVAUX, titre: 'TRAVAUX — réhabilitation du bâtiment administratif' },
   { id: 7, cadrage: CADRAGE_PI, valeurs: VALEURS_PI, titre: 'PRESTATIONS INTELLECTUELLES — étude de faisabilité et AMO' },
+  { id: 5, cadrage: CADRAGE_AC, valeurs: VALEURS_AC, parLot: VALEURS_AC_PAR_LOT, titre: 'FOURNITURES À COMMANDE — matériels informatiques, 2 lots' },
 ].filter((j) => !SEULE || String(j.id) === SEULE);
 let ko = 0;
-for (const j of jeux) if (!(await garnir(j.id, j.cadrage, j.valeurs, j.titre))) ko++;
+for (const j of jeux) if (!(await garnir(j.id, j.cadrage, j.valeurs, j.titre, j.parLot ?? {}))) ko++;
 console.log(ko === 0 ? `\n${VIDER ? 'REMISE À ZÉRO' : 'DÉMONSTRATION'} PRÊTE` : `\n${ko} fiche(s) en échec`);
 process.exit(ko ? 1 : 0);

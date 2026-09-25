@@ -278,9 +278,9 @@
                       @if (r.documentMaitre; as dm) { <span class="fm__doc fm__doc--{{ doc(dm).toLowerCase() }}">{{ libellesDocuments[doc(dm)] }}</span> }
                     </h3>
                     @for (c of champs(bloc, r); track c.code) {
-                      <div class="fm__champ" [class.fm__champ--ko]="erreurDe(c.code)">
+                      <div class="fm__champ" [class.fm__champ--ko]="champEnErreur(c)">
                         <div class="fm__champ-l">
-                          <label [for]="'c-' + c.code">{{ c.libelle }}@if (c.obligatoire) { <span aria-hidden="true"> *</span> }</label>
+                          <label [for]="'c-' + cle(c, lotsDe(c)[0])">{{ c.libelle }}@if (c.obligatoire) { <span aria-hidden="true"> *</span> }</label>
                           <span class="fm__champ-aide">{{ c.code }}@if (c.aide) { · {{ c.aide }} }</span>
                           @if (erreurDe(c.code); as msg) { <span class="form-error">{{ msg }}</span> }
                         </div>
@@ -288,30 +288,40 @@
                           @if (c.source === 'PPM' || c.source === 'CADRAGE' || figee()) {
                             <div class="fm__lecture" [id]="'c-' + c.code">{{ valeurAffichee(c) || '—' }}</div>
                           } @else {
-                            @switch (c.type) {
-                              @case ('TEXTE_LONG') { <textarea class="form-control" rows="3" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)"></textarea> }
-                              @case ('NOMBRE') { <input class="form-control" type="number" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)" /> }
-                              @case ('POURCENTAGE') { <input class="form-control" type="number" min="0" max="100" step="0.1" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)" /> }
-                              @case ('MONTANT') {
-                                <input class="form-control" type="number" min="0" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)" />
-                                @if (lettres(c.code); as l) { <span class="fm__lettres">{{ l }}</span> }
-                              }
-                              @case ('DATE') { <input class="form-control" type="date" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)" /> }
-                              @case ('LISTE') {
-                                <select class="form-control" [id]="'c-' + c.code" (change)="saisir(c, $event)">
-                                  <option value="" [selected]="!valeurAffichee(c)">— Choisir —</option>
-                                  @for (o of c.options ?? []; track o) { <option [value]="o" [selected]="valeurAffichee(c) === o">{{ o }}</option> }
-                                </select>
-                              }
-                              @case ('OUI_NON') {
-                                <select class="form-control" [id]="'c-' + c.code" (change)="saisir(c, $event)">
-                                  <option value="" [selected]="!valeurAffichee(c)">— Choisir —</option>
-                                  <option value="OUI" [selected]="valeurAffichee(c) === 'OUI'">Oui</option>
-                                  <option value="NON" [selected]="valeurAffichee(c) === 'NON'">Non</option>
-                                </select>
-                              }
-                              @case ('PIECE') { <span class="fm__lecture" [id]="'c-' + c.code">Pièce jointe — au dossier, après validation (lot 2)</span> }
-                              @default { <input class="form-control" type="text" [id]="'c-' + c.code" [value]="valeurAffichee(c)" (input)="saisir(c, $event)" /> }
+                            <!-- ⚠️ V43 (25/09) — une information qui varie d'un lot à l'autre se saisit une fois PAR LOT,
+                                 sous la clé « CODE#rang ». Un marché non alloti n'a qu'une cellule, sans étiquette. -->
+                            @for (lot of lotsDe(c); track lot) {
+                              <div class="fm__lot">
+                                @if (lot !== null) { <span class="fm__lot-t" aria-hidden="true">Lot {{ lot }}</span> }
+                                <div class="fm__lot-v">
+                                  @switch (c.type) {
+                                    @case ('TEXTE_LONG') { <textarea class="form-control" rows="3" [id]="'c-' + cle(c, lot)" [attr.aria-label]="lot === null ? null : c.libelle + ' — lot ' + lot" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)"></textarea> }
+                                    @case ('NOMBRE') { <input class="form-control" type="number" [id]="'c-' + cle(c, lot)" [attr.aria-label]="lot === null ? null : c.libelle + ' — lot ' + lot" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)" /> }
+                                    @case ('POURCENTAGE') { <input class="form-control" type="number" min="0" max="100" step="0.1" [id]="'c-' + cle(c, lot)" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)" /> }
+                                    @case ('MONTANT') {
+                                      <input class="form-control" type="number" min="0" [id]="'c-' + cle(c, lot)" [attr.aria-label]="lot === null ? null : c.libelle + ' — lot ' + lot" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)" />
+                                      @if (lettres(cle(c, lot)); as l) { <span class="fm__lettres">{{ l }}</span> }
+                                    }
+                                    @case ('DATE') { <input class="form-control" type="date" [id]="'c-' + cle(c, lot)" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)" /> }
+                                    @case ('LISTE') {
+                                      <select class="form-control" [id]="'c-' + cle(c, lot)" (change)="saisir(c, $event, lot)">
+                                        <option value="" [selected]="!valeurAffichee(c, lot)">— Choisir —</option>
+                                        @for (o of c.options ?? []; track o) { <option [value]="o" [selected]="valeurAffichee(c, lot) === o">{{ o }}</option> }
+                                      </select>
+                                    }
+                                    @case ('OUI_NON') {
+                                      <select class="form-control" [id]="'c-' + cle(c, lot)" (change)="saisir(c, $event, lot)">
+                                        <option value="" [selected]="!valeurAffichee(c, lot)">— Choisir —</option>
+                                        <option value="OUI" [selected]="valeurAffichee(c, lot) === 'OUI'">Oui</option>
+                                        <option value="NON" [selected]="valeurAffichee(c, lot) === 'NON'">Non</option>
+                                      </select>
+                                    }
+                                    @case ('PIECE') { <span class="fm__lecture" [id]="'c-' + cle(c, lot)">Pièce jointe — au dossier, après validation (lot 2)</span> }
+                                    @default { <input class="form-control" type="text" [id]="'c-' + cle(c, lot)" [attr.aria-label]="lot === null ? null : c.libelle + ' — lot ' + lot" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)" /> }
+                                  }
+                                  @if (lot !== null) { @if (erreurDe(cle(c, lot)); as msg) { <span class="form-error">{{ msg }}</span> } }
+                                </div>
+                              </div>
                             }
                           }
                         </div>

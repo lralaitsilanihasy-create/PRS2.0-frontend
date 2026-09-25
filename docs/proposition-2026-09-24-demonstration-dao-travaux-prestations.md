@@ -240,3 +240,48 @@ forme réglementaire** — l'ordre et l'habillage des articles — pas la foncti
   lieu d'être. Proposition : faire suivre l'intitulé à la catégorie (« les fournitures » / « les matériaux »), et
   dire si la question doit disparaître pour les prestations intellectuelles. Rien n'est changé sans votre mot :
   c'est une question de fond, pas de forme.
+
+---
+
+## 7. ⚠️ 25/09 — un troisième dossier : le marché à commande, lot par lot
+
+Le pilote a fourni un **dossier d'appel d'offres réellement publié** (MESupReS, matériels informatiques en cinq
+lots, à commande — `NatureMarches/DAO_Fournitures/Fourniture_a_commande.pdf`). La démonstration en tire un
+troisième dossier, et c'est le seul des trois qui montre ce qu'un **allotissement** fait à la fiche.
+
+| | Fournitures à commande — fiche [`/prmp/dao/5`](http://localhost:4200/prmp/dao/5) |
+|---|---|
+| ligne | 303069, « [DÉMO] Fourniture de consommables informatiques (marché à commande) », **2 lots** |
+| informations posées | **99**, dont **8 cellules par lot** |
+| contrôles restants | 0 |
+| version | 2, validée le 25/09 *(la version 1 avait servi à recetter le mécanisme par lot)* |
+| dossier produit | **100336** |
+| documents | DPAO · CCAP · **Acte d'engagement — lot 1** · **Acte d'engagement — lot 2** |
+
+**Ce que ce dossier montre, et qu'aucun des deux autres ne peut montrer :**
+
+- les quatre informations qui varient d'un lot à l'autre se saisissent **une fois par lot**, dans une cellule
+  étiquetée « Lot 1 », « Lot 2 » — garantie de soumission, montant minimum annuel, montant maximum annuel, délai
+  maximum de livraison ;
+- la validation produit **deux actes d'engagement**, et chacun porte **les chiffres de son lot** :
+
+  | | lot 1 | lot 2 |
+  |---|---|---|
+  | garantie de soumission | 1 600 000 Ar | 2 170 000 Ar |
+  | montant minimum annuel | 40 000 000 Ar | 54 000 000 Ar |
+  | montant maximum annuel | 80 000 000 Ar | 108 500 000 Ar |
+
+  *(les deux montants de garantie sont ceux du dossier réel)* ;
+- le DPAO et le CCAP, eux, restent **communs** et portent une ligne par lot là où c'est utile.
+
+**Le contenu vient du dossier réel** : délai d'envoi des demandes d'éclaircissement (10 jours) et délai de réponse
+de la PRMP (5 jours), validité des offres de **75 jours**, prix fermes et non révisables, décomposition EXW +
+transports intérieurs + assurance, remise en **plis séparés par lot** avec double enveloppe scellée, voie
+électronique **non admise**, ouverture le jour même à 10 h, délai de réponse des candidats de 3 jours, méthode des
+**deux moyennes** pour les offres anormalement hautes ou basses (20 % puis 10 %), pas de préférence nationale, et
+délai de livraison **fixé au bon de commande sans dépasser 30 jours**. L'acheteur et l'objet, eux, restent ceux de
+la ligne du plan de démonstration : on ne réécrit pas le plan pour une démonstration.
+
+**Pour le jouer** : `node scripts/demo-dao.mjs 5` garnit ce seul dossier ; sans argument, les trois. Le déroulé est
+celui du §3, avec un arrêt de plus à l'étape 3 sur un champ par lot, et un autre à l'étape 7 devant les deux actes
+d'engagement.

@@ -283,6 +283,24 @@ export function metaChamp(
   };
 }
 
+/**
+ * ⚠️ V43 (25/09) — la clé sous laquelle une valeur est enregistrée : `CODE` pour une information commune à la fiche,
+ * **`CODE#n`** pour celle d'un lot (n = rang du lot dans le plan). Le serveur refuse la clé nue d'un champ `parLot`
+ * sur une ligne allotie — elle ne dirait pas de quel lot il s'agit.
+ */
+export function cleValeur(code: string, lot: number | null): string {
+  return lot == null ? code : `${code}#${lot}`;
+}
+
+/**
+ * Les rangs de lot sous lesquels ce champ se saisit : `[null]` — une seule valeur — ou `[1, 2, …]` quand le champ
+ * varie par lot ET que la ligne du plan est allotie. C'est **le serveur** qui dit si elle l'est (`saisieParLot`).
+ */
+export function lotsDuChamp(champ: Pick<ChampFiche, 'parLot'>, saisieParLot: boolean, nbLots: number): (number | null)[] {
+  if (!champ.parLot || !saisieParLot || nbLots < 2) return [null];
+  return Array.from({ length: nbLots }, (_, i) => i + 1);
+}
+
 /** Clé PPM du champ qui porte le nombre de lots de la ligne du plan de passation (aujourd'hui `B02-LV-01`). */
 export const CLE_PPM_NB_LOTS = 'NB_LOTS_PPM';
 
@@ -412,15 +430,31 @@ export function blocsASaisir(referentiel: ReferentielFiche, typeMarche: TypeMarc
 }
 
 /** Progression : champs `SAISIE` ouverts et renseignés / attendus (référentiel chargé) — ou compte de l'esquisse. */
-export function progression(referentiel: ReferentielFiche, cadrage: Cadrage, valeurs: Record<string, unknown>): { saisis: number; attendus: number } {
+export function progression(
+  referentiel: ReferentielFiche,
+  cadrage: Cadrage,
+  valeurs: Record<string, unknown>,
+  saisieParLot = false,
+  nbLots = 0,
+): { saisis: number; attendus: number } {
   // ⚠️ Lot 5 — un champ de type PIECE se joint au dossier, il ne se saisit pas dans la fiche : le serveur l'exclut
   // de son bilan, l'écran doit l'exclure de son compte, sinon les deux chiffres se contredisent.
   const ouverts = referentiel.champs.filter(
     (c) => c.source === 'SAISIE' && c.type !== 'PIECE' && c.actif !== false && evaluerCondition(c.condition, cadrage),
   );
   if (ouverts.length) {
-    const saisis = ouverts.filter((c) => valeurs[c.code] != null && valeurs[c.code] !== '').length;
-    return { saisis, attendus: ouverts.length };
+    // ⚠️ V43 — une information par lot compte autant de fois qu'il y a de lots, sans quoi l'écran annoncerait
+    // « 100 sur 100 » alors que le serveur attend encore la valeur du deuxième lot.
+    let saisis = 0;
+    let attendus = 0;
+    for (const c of ouverts) {
+      for (const lot of lotsDuChamp(c, saisieParLot, nbLots)) {
+        attendus++;
+        const v = valeurs[cleValeur(c.code, lot)];
+        if (v != null && v !== '') saisis++;
+      }
+    }
+    return { saisis, attendus };
   }
   const attendus = referentiel.blocs.flatMap((b) => b.rubriques).reduce((n, r) => n + (r.nbAttendu ?? 0), 0);
   return { saisis: 0, attendus };
