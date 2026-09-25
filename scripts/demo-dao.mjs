@@ -1,12 +1,12 @@
-// Garnit les deux dossiers de démonstration — travaux (fiche 6) et prestations intellectuelles (fiche 7) —
-// PAR L'API, comme le ferait une PRMP. Aucun code applicatif touché, aucune écriture directe en base.
+// Garnit les quatre dossiers de démonstration — travaux (6), prestations intellectuelles (7), fournitures à
+// commande (5) et fournitures à quantité fixe (1) — PAR L'API, comme le ferait une PRMP. Aucun code touché.
 //
-//   node demo-dao.mjs            garnit, contrôle, valide et crée le dossier des deux fiches
+//   node demo-dao.mjs            garnit, contrôle, valide et crée le dossier des quatre fiches
 //   node demo-dao.mjs --vider    rouvre une version brouillon et efface les valeurs (pour rejouer)
-//   node demo-dao.mjs 6            une seule fiche (6 travaux · 7 prestations intellectuelles · 5 à commande)
+//   node demo-dao.mjs 6            une seule fiche (6 travaux · 7 études · 5 à commande · 1 quantité fixe)
 //
 // ⚠️ Écrit en base de développement.
-import { CADRAGE_TRAVAUX, CADRAGE_PI, CADRAGE_AC, VALEURS_TRAVAUX, VALEURS_PI, VALEURS_AC, VALEURS_AC_PAR_LOT } from './demo-dao-valeurs.mjs';
+import { CADRAGE_TRAVAUX, CADRAGE_PI, CADRAGE_AC, CADRAGE_QF, VALEURS_TRAVAUX, VALEURS_PI, VALEURS_AC, VALEURS_AC_PAR_LOT, VALEURS_QF } from './demo-dao-valeurs.mjs';
 
 const API = 'http://localhost:8080';
 const args = process.argv.slice(2);
@@ -146,6 +146,7 @@ const jeux = [
   { id: 6, cadrage: CADRAGE_TRAVAUX, valeurs: VALEURS_TRAVAUX, titre: 'TRAVAUX — réhabilitation du bâtiment administratif' },
   { id: 7, cadrage: CADRAGE_PI, valeurs: VALEURS_PI, titre: 'PRESTATIONS INTELLECTUELLES — étude de faisabilité et AMO' },
   { id: 5, cadrage: CADRAGE_AC, valeurs: VALEURS_AC, parLot: VALEURS_AC_PAR_LOT, titre: 'FOURNITURES À COMMANDE — matériels informatiques, 2 lots' },
+  { id: 1, cadrage: CADRAGE_QF, valeurs: VALEURS_QF, titre: 'FOURNITURES À QUANTITÉ FIXE — équipements de protection individuelle' },
 ].filter((j) => !SEULE || String(j.id) === SEULE);
 let ko = 0;
 for (const j of jeux) if (!(await garnir(j.id, j.cadrage, j.valeurs, j.titre, j.parLot ?? {}))) ko++;

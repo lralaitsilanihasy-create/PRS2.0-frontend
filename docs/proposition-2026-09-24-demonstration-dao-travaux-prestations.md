@@ -254,7 +254,7 @@ troisième dossier, et c'est le seul des trois qui montre ce qu'un **allotisseme
 | ligne | 303069, « [DÉMO] Fourniture de consommables informatiques (marché à commande) », **2 lots** |
 | informations posées | **99**, dont **8 cellules par lot** |
 | contrôles restants | 0 |
-| version | 2, validée le 25/09 *(la version 1 avait servi à recetter le mécanisme par lot)* |
+| version | validée ; le numéro monte à chaque révision (v1 avait servi à recetter le mécanisme par lot) |
 | dossier produit | **100336** |
 | documents | DPAO · CCAP · **Acte d'engagement — lot 1** · **Acte d'engagement — lot 2** |
 
@@ -285,3 +285,33 @@ la ligne du plan de démonstration : on ne réécrit pas le plan pour une démon
 **Pour le jouer** : `node scripts/demo-dao.mjs 5` garnit ce seul dossier ; sans argument, les trois. Le déroulé est
 celui du §3, avec un arrêt de plus à l'étape 3 sur un champ par lot, et un autre à l'étape 7 devant les deux actes
 d'engagement.
+
+---
+
+## 8. ⚠️ 25/09 — un quatrième dossier, et une fiche nettoyée
+
+Le pilote a ouvert les documents de **son** dossier, le 100332, et y a trouvé « Recette fiche marché 2026-09-22 —
+texte jetable » à chaque ligne. L'explication tient en une phrase : ces textes n'étaient pas dans le générateur,
+ils étaient **dans la fiche**. Le 22/09 au soir, pour prouver que la chaîne tenait de bout en bout, le script de
+recette avait rempli chaque champ de texte avec la même phrase, puis validé — 49 des 91 valeurs. Le document les
+imprimait fidèlement. Ce qui a manqué, c'est de revenir la nettoyer une fois la preuve faite.
+
+Elle devient donc la **quatrième démonstration**, et comble le trou du jeu : fournitures et services à **quantité
+fixe**, **non alloti** — la forme la plus courante des marchés, que les trois autres ne montraient pas.
+
+| | Fournitures à quantité fixe — fiche [`/prmp/dao/1`](http://localhost:4200/prmp/dao/1) |
+|---|---|
+| ligne | 302873, « Fourniture et livraison de matériels pour Équipements Protection Individuelle (EPI) », 250 000 000 Ar, **un seul lot** |
+| informations posées | **90**, dont **0 texte d'essai** |
+| contrôles restants | 0 |
+| dossier | **100332** — celui du pilote, dont les documents sont régénérés |
+
+Le contenu suit le dossier réel : équipements conformes aux normes EN 397, EN 60903, EN ISO 20345 et EN 361,
+garantie de soumission de 5 000 000 Ar (2 %), validité des offres de 90 jours, avance de 10 % contre garantie
+bancaire, retenue de garantie de 5 %, préférence nationale accordée, délai de livraison de 45 jours.
+
+⚠️ **Une contrainte que cette fiche rend visible, et qu'il faudra trancher** : le contrôle `DATES_ORDRE` compare
+les dates de la fiche au **calendrier prévisionnel du plan**, et cette ligne y porte une attribution au
+**27/03/2026**. La remise et l'ouverture des plis ont donc dû être datées de **février 2026** pour que la fiche soit
+validable. C'est le point ouvert du 23/09 : *un plan dont le calendrier est passé rend toute fiche invalidable*. Il
+ne gêne pas la démonstration, mais il gênera la première PRMP qui préparera un DAO sur une ligne de plan ancienne.

@@ -8,6 +8,7 @@ import { Dossier, FicheRattachable } from '../../../models';
 import { DossierService } from '../../../services';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
 import { Icone } from '../../../shared/ui/icone';
+import { LienDossier } from './lien-dossier';
 
 /**
  * ⚠️ **Fiche DAO d'un dossier d'appel d'offres** (lot 1b, demande `docs/demande-backend-2026-09-23-fiche-marche-dossier.md`).
@@ -35,7 +36,7 @@ import { Icone } from '../../../shared/ui/icone';
         </p>
         @if (f.designationMarche) { <p class="fmd__obj">{{ f.designationMarche }}</p> }
         <div class="fmd__actions">
-          @if (peutOuvrir()) { <a class="btn btn-secondary btn-sm" [routerLink]="['/prmp/dao', f.idDmc]">Ouvrir la fiche</a> }
+          @if (lienFiche(f.idDmc); as lien) { <a class="btn btn-secondary btn-sm" [routerLink]="lien">Ouvrir la fiche</a> }
           @if (peutRattacher()) { <button type="button" class="btn btn-outline btn-sm" [disabled]="occupe()" (click)="detacher()">Détacher</button> }
         </div>
       } @else if (peutRattacher()) {
@@ -96,6 +97,7 @@ export class FicheMarcheDossier {
   private readonly toast = inject(ToastService);
   private readonly dossiers = inject(DossierService);
   private readonly fiches = inject(FicheMarcheService);
+  private readonly liens = inject(LienDossier);
 
   readonly choix = signal(false);
   readonly chargement = signal(false);
@@ -103,8 +105,15 @@ export class FicheMarcheDossier {
   readonly rattachables = signal<FicheRattachable[]>([]);
 
   private readonly domaine = computed(() => this.auth.role() === 'PRMP' || this.auth.role() === 'UGPM');
-  /** La fiche s'ouvre depuis l'espace PRMP : le lien n'est proposé qu'à qui peut l'atteindre. */
-  readonly peutOuvrir = computed(() => this.domaine());
+  /**
+   * ⚠️ Examen (25/09) — la fiche s'ouvre désormais **dans l'espace du connecté** : le serveur la sert à tous les
+   * rôles de contrôle, et chacun a sa route `dao/:idDmc`. Le lien n'est pas rendu pour qui n'a pas d'espace
+   * (Administrateur, Chargé de publication) — c'est ce que dit `LienDossier.espace()`.
+   */
+  lienFiche(idDmc: number | null | undefined): (string | number)[] | null {
+    const espace = this.liens.espace();
+    return espace && idDmc != null ? ['/', espace, 'dao', idDmc] : null;
+  }
   /** Rattacher ou détacher : secours réservé au domaine PRMP, sur un dossier encore en brouillon. */
   readonly peutRattacher = computed(() => this.domaine() && this.dossier().statut === 'BROUILLON');
 

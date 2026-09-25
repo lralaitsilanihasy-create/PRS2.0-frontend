@@ -13,6 +13,9 @@ export const SECRETAIRE_ROUTES: Routes = [
   { path: 'a-faire', loadComponent: () => import('../home/a-faire').then((m) => m.AFaireEcran), data: { title: 'À faire' } },
   // Refonte ergonomique (lot L4-F2) — page d'un dossier, en lecture seule ; alias partageable `/dossier/:idDossier`.
   { path: 'dossier/:idDossier', loadComponent: () => import('../circuit/page-dossier/page-dossier').then((m) => m.PageDossier), data: { title: 'Dossier', concentration: true } },
+  // ⚠️ Examen (25/09) — la fiche DAO du dossier examiné, EN LECTURE : le serveur la sert déjà à tous les rôles de
+  // contrôle, seul le front la gardait dans l'espace PRMP. Même composant, mode lecture déduit du rôle.
+  { path: 'dao/:idDmc', loadComponent: () => import('../prmp/fiche-marche/fiche-marche').then((m) => m.FicheMarcheEcran), data: { title: 'Fiche DAO', concentration: true } },
   { path: 'tableau-de-bord', loadComponent: () => import('../circuit/dossiers-pipeline').then((m) => m.DossiersPipeline), data: { title: 'Tous les dossiers' } },
   { path: 'messagerie', loadComponent: () => import('../transverse/messagerie').then((m) => m.Messagerie) },
 ];

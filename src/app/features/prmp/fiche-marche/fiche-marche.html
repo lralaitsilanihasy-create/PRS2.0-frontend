@@ -1,13 +1,22 @@
 <section class="fm">
   <nav class="fm__fil" aria-label="Fil d'Ariane">
-    <a routerLink="/prmp/soumettre-dossier" [queryParams]="{ famille: 'DMC' }"><app-icone nom="chevl" [taille]="14" />Créer dossier</a>
-    <app-icone nom="chev" [taille]="12" />
-    <span>Dossier de mise en concurrence — appel d'offres</span>
+    @if (enLecture()) {
+      <!-- ⚠️ Examen (25/09) — un contrôleur revient au DOSSIER qu'il examine, pas à « Créer dossier », écran de la PRMP. -->
+      @if (retourDossier(); as retour) {
+        <a [routerLink]="retour"><app-icone nom="chevl" [taille]="14" />Dossier examiné</a>
+        <app-icone nom="chev" [taille]="12" />
+      }
+      <span>Fiche marché du dossier</span>
+    } @else {
+      <a routerLink="/prmp/soumettre-dossier" [queryParams]="{ famille: 'DMC' }"><app-icone nom="chevl" [taille]="14" />Créer dossier</a>
+      <app-icone nom="chev" [taille]="12" />
+      <span>Dossier de mise en concurrence — appel d'offres</span>
+    }
   </nav>
 
   <header class="page-header fm__entete">
     <div>
-      <div class="page-subtitle">Domaine PRMP · {{ figee() ? 'fiche validée, version ' + fiche()?.version : 'brouillon' }}</div>
+      <div class="page-subtitle">{{ enLecture() ? 'Examen' : 'Domaine PRMP' }} · {{ figee() ? 'fiche validée, version ' + fiche()?.version : 'brouillon' }}</div>
       <!-- La désignation d'une ligne peut décrire quatre lots en toutes lettres : bornée à deux lignes, entière
            en infobulle — mais seulement si elle est vraiment coupée (cf. appTitreSiTronque). -->
       <h1 class="page-title fm__titre" appTitreSiTronque>
@@ -26,10 +35,17 @@
   <!-- La phrase de rôle promet une saisie et des documents : elle n'a rien à faire sur une fiche dont la forme
        de marché n'est pas outillée, où rien ne sera saisi ni produit. -->
   @if (!fiche() || typePrisEnCharge()) {
-    <p class="page-role">
-      Une information saisie une fois, dans un formulaire : {{ documentsEnToutesLettres() }} seront générés depuis cette fiche
-      à la validation, puis joints au dossier avant sa soumission à la Commission. Aucun fichier à importer.
-    </p>
+    @if (enLecture()) {
+      <p class="page-role">
+        La fiche marché du dossier examiné, en <strong>lecture</strong> : le cadrage, les informations saisies par la PRMP,
+        les reprises d'un document à l'autre, le bilan des contrôles et les documents produits.
+      </p>
+    } @else {
+      <p class="page-role">
+        Une information saisie une fois, dans un formulaire : {{ documentsEnToutesLettres() }} seront générés depuis cette fiche
+        à la validation, puis joints au dossier avant sa soumission à la Commission. Aucun fichier à importer.
+      </p>
+    }
   }
 
   @if (contratAbsent()) {
@@ -174,7 +190,7 @@
       <div class="fm__cadrage">
         <span class="fm__cadrage-lbl">Cadrage</span>
         @for (p of resume(); track p.texte) { <span class="fm__rep" [class.fm__rep--non]="p.non">{{ p.texte }}</span> }
-        @if (!figee()) { <button type="button" class="fm__cadrage-mod" (click)="allerA(1)">Modifier le cadrage</button> }
+        @if (!figee() && !enLecture()) { <button type="button" class="fm__cadrage-mod" (click)="allerA(1)">Modifier le cadrage</button> }
       </div>
     }
 
@@ -252,9 +268,13 @@
                 </div>
               }
               <div class="fm__pied">
-                <button type="button" class="btn btn-primary" [disabled]="!cadrageOk() || saving() || figee() || ecritureBloquee()" (click)="enregistrerCadrage()">
-                  {{ saving() ? 'Enregistrement…' : 'Enregistrer le cadrage et saisir ›' }}
-                </button>
+                @if (enLecture()) {
+                  <button type="button" class="btn btn-primary" (click)="allerA(2)">Voir les blocs ›</button>
+                } @else {
+                  <button type="button" class="btn btn-primary" [disabled]="!cadrageOk() || saving() || figee() || ecritureBloquee()" (click)="enregistrerCadrage()">
+                    {{ saving() ? 'Enregistrement…' : 'Enregistrer le cadrage et saisir ›' }}
+                  </button>
+                }
                 @if (ecritureBloquee()) {
                   <span class="fm__aut">{{ contratAbsent() ? 'Le serveur ne sert pas encore le contrat : rien ne peut être enregistré.' : 'Cette forme de marché n’est pas encore prise en charge : rien ne peut être enregistré ici.' }}</span>
                 } @else if (!cadrageOk()) {
@@ -285,7 +305,7 @@
                           @if (erreurDe(c.code); as msg) { <span class="form-error">{{ msg }}</span> }
                         </div>
                         <div class="fm__champ-v fm__champ-v--{{ largeur(c.type) }}">
-                          @if (c.source === 'PPM' || c.source === 'CADRAGE' || figee()) {
+                          @if (c.source === 'PPM' || c.source === 'CADRAGE' || figee() || enLecture()) {
                             <div class="fm__lecture" [id]="'c-' + c.code">{{ valeurAffichee(c) || '—' }}</div>
                           } @else {
                             <!-- ⚠️ V43 (25/09) — une information qui varie d'un lot à l'autre se saisit une fois PAR LOT,
@@ -345,10 +365,15 @@
                 }
                 <div class="fm__pied">
                   <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="blocPrecedent()">‹ Précédent</button>
-                  <button type="button" class="btn btn-primary" [disabled]="saving() || figee() || ecritureBloquee()" (click)="enregistrerBloc()">
-                    {{ saving() ? 'Enregistrement…' : blocIdx() < blocs().length - 1 ? 'Enregistrer et continuer ›' : 'Enregistrer et voir les reprises ›' }}
-                  </button>
-                  <span class="fm__aut">{{ figee() ? 'Fiche figée : lecture seule' : 'Brouillon invisible de la Commission' }}</span>
+                  @if (enLecture()) {
+                    <button type="button" class="btn btn-primary" (click)="blocSuivant()">{{ blocIdx() < blocs().length - 1 ? 'Bloc suivant ›' : 'Voir les reprises ›' }}</button>
+                    <span class="fm__aut">Lecture seule : la fiche appartient à la PRMP qui l'a établie.</span>
+                  } @else {
+                    <button type="button" class="btn btn-primary" [disabled]="saving() || figee() || ecritureBloquee()" (click)="enregistrerBloc()">
+                      {{ saving() ? 'Enregistrement…' : blocIdx() < blocs().length - 1 ? 'Enregistrer et continuer ›' : 'Enregistrer et voir les reprises ›' }}
+                    </button>
+                    <span class="fm__aut">{{ figee() ? 'Fiche figée : lecture seule' : 'Brouillon invisible de la Commission' }}</span>
+                  }
                 </div>
               </section>
             }
@@ -373,7 +398,11 @@
               </div>
               <div class="fm__pied">
                 <button type="button" class="btn btn-outline" (click)="etape.set(2)">‹ Retour aux blocs</button>
-                <button type="button" class="btn btn-primary" [disabled]="saving() || ecritureBloquee()" (click)="controler()">Contrôler ›</button>
+                @if (enLecture()) {
+                  <button type="button" class="btn btn-primary" (click)="etape.set(4)">Voir les contrôles ›</button>
+                } @else {
+                  <button type="button" class="btn btn-primary" [disabled]="saving() || ecritureBloquee()" (click)="controler()">Contrôler ›</button>
+                }
               </div>
             </section>
           }
@@ -401,7 +430,7 @@
               </div>
               <div class="fm__pied">
                 <button type="button" class="btn btn-outline" (click)="etape.set(3)">‹ Reprises</button>
-                <button type="button" class="btn btn-outline" [disabled]="saving() || ecritureBloquee()" (click)="controler()">Recontrôler</button>
+                @if (!enLecture()) { <button type="button" class="btn btn-outline" [disabled]="saving() || ecritureBloquee()" (click)="controler()">Recontrôler</button> }
                 <button type="button" class="btn btn-primary" [disabled]="!!bilan().bloquants.length || saving() || ecritureBloquee()" (click)="etape.set(5)">Passer à la validation ›</button>
               </div>
             </section>
@@ -468,7 +497,9 @@
               }
               <div class="fm__pied">
                 <button type="button" class="btn btn-outline" (click)="etape.set(4)">‹ Contrôles</button>
-                @if (figee()) {
+                @if (enLecture()) {
+                  <button type="button" class="btn btn-primary" (click)="etape.set(6)">Voir les documents ›</button>
+                } @else if (figee()) {
                   <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="reviser()">Ouvrir une nouvelle version</button>
                 } @else if (estPrmp()) {
                   <button type="button" class="btn btn-primary" [disabled]="!!bilan().bloquants.length || saving() || ecritureBloquee()" (click)="valider()">{{ saving() ? 'Validation…' : 'Valider la fiche' }}</button>
@@ -515,7 +546,7 @@
                   <p class="fm__attendus">Le dossier à soumettre se crée depuis une fiche <strong>validée</strong> : terminez l'étape 6 d'abord.</p>
                 } @else if (estPrmp()) {
                   <p>Créer le dossier reprend l'entité contractante, la localité et la PRMP de la ligne du plan de passation : rien à ressaisir. Il naîtra en brouillon, dans « Mes brouillons ».</p>
-                  <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="creerDossier()">{{ saving() ? 'Création…' : 'Créer le dossier à soumettre' }}</button>
+                  @if (!enLecture()) { <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="creerDossier()">{{ saving() ? 'Création…' : 'Créer le dossier à soumettre' }}</button> }
                 } @else {
                   <p>La <strong>PRMP</strong> crée le dossier à soumettre depuis cette fiche, puis y joint les pièces restantes.</p>
                 }

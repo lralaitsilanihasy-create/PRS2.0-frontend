@@ -397,6 +397,40 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(texte(racine().querySelector('.fm__lettres'))).toBe('deux millions cent soixante-dix mille ariary');
   });
 
+  it('examen : un Membre lit la fiche — valeurs en lecture, aucun geste d’écriture, navigation intacte', () => {
+    monter('MEMBRE', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'BROUILLON', valeurs: { 'B02-OB-01': 'Mobilier de bureau' } }));
+    // La phrase de rôle annonce une lecture, pas une génération à venir.
+    expect(texte(racine().querySelector('.page-role'))).toContain('en lecture');
+    // Le cadrage se voit, il ne se modifie pas.
+    expect(Array.from(racine().querySelectorAll('button')).some((b) => texte(b) === 'Modifier le cadrage')).toBe(false);
+
+    fixture.componentInstance.allerAuBloc('B02');
+    rendre();
+    // L'information est rendue en lecture : pas de champ de saisie, la valeur est là.
+    expect(racine().querySelector('textarea#c-B02-OB-01')).toBeNull();
+    expect(texte(racine().querySelector('#c-B02-OB-01'))).toBe('Mobilier de bureau');
+    // Aucun bouton d'écriture ; on avance sans rien enregistrer.
+    const libelles = Array.from(racine().querySelectorAll('.fm__pied button')).map((b) => texte(b));
+    expect(libelles.some((l) => l.startsWith('Enregistrer'))).toBe(false);
+    expect(libelles).toContain('Bloc suivant ›');
+    bouton('Bloc suivant').click();
+    rendre();
+    http.expectNone('/api/fiches-marche/42/blocs/B02');
+    expect(texte(racine().querySelector('.fm__bloc-tete h2'))).toBe('Prix, montants & garantie de soumission');
+  });
+
+  it('examen : une fiche VALIDÉE lue par un Membre n’offre ni révision ni création de dossier', () => {
+    monter('MEMBRE', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2 }), [{ idFiche: 9, version: 1, statut: 'VALIDEE', typeMarche: 'QUANTITE_FIXE', dateValidation: '2026-09-24T10:42:00', validePar: 'IMP001', nbValeurs: 3 }]);
+    fixture.componentInstance.allerA(5);
+    rendre();
+    const libelles = Array.from(racine().querySelectorAll('.fm__pied button')).map((b) => texte(b));
+    expect(libelles).not.toContain('Ouvrir une nouvelle version');
+    expect(libelles.some((l) => l.startsWith('Valider'))).toBe(false);
+    expect(libelles).toContain('Voir les documents ›');
+  });
+
   it('par lot : une ligne NON allotie garde une seule cellule, sous la clé nue', () => {
     monter('PRMP', 42);
     ouvrir(REF_PAR_LOT, fiche({ nbLots: 1, saisieParLot: false, valeurs: {} }));

@@ -11,6 +11,7 @@ import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, TypeChamp, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
+import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { Icone } from '../../../shared/ui/icone';
 import { TitreSiTronqueDirective } from '../../../shared/ui/titre-si-tronque';
@@ -85,6 +86,7 @@ export class FicheMarcheEcran {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  private readonly liens = inject(LienDossier);
   private readonly toast = inject(ToastService);
   private readonly champService = inject(ChampFicheMarcheService);
   private readonly dmcService = inject(DmcService);
@@ -142,6 +144,25 @@ export class FicheMarcheEcran {
   readonly blocIdx = signal(0);
 
   readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
+  /**
+   * ⚠️ Examen (25/09) — **la Commission lit la fiche, elle ne la saisit pas.** Le mode se déduit du RÔLE, pas du
+   * statut : une fiche en brouillon comme une fiche figée s'ouvrent en lecture pour un contrôleur, et restent
+   * modifiables pour la PRMP et son UGPM. Le serveur sert déjà la fiche à tous les rôles de contrôle ; c'est
+   * l'écran qui refusait de la montrer.
+   */
+  readonly enLecture = computed(() => {
+    const role = this.auth.role();
+    return role !== 'PRMP' && role !== 'UGPM';
+  });
+  /**
+   * Le retour d'un lecteur : **le dossier examiné**, dans son propre espace. Le fil d'Ariane de la PRMP renvoie à
+   * « Créer dossier », écran qu'un contrôleur ne peut pas ouvrir — il ne lui est donc pas montré.
+   */
+  readonly retourDossier = computed<(string | number)[] | null>(() => {
+    const id = this.fiche()?.idDossierSoumis;
+    const espace = this.liens.espace();
+    return id != null && espace ? ['/', espace, 'dossier', id] : null;
+  });
   /** ⚠️ Lot 1c — déduit de la forme du marché de la ligne du plan, servi par le serveur ; jamais saisi ici. */
   readonly typeMarche = computed<TypeMarche | null>(() => this.fiche()?.typeMarche ?? null);
   /** Ce type est-il pris en charge aujourd'hui ? Sinon la fiche se lit, mais toute écriture est refusée (409). */
@@ -541,6 +562,12 @@ export class FicheMarcheEcran {
   blocPrecedent(): void {
     if (this.blocIdx() > 0) this.blocIdx.update((i) => i - 1);
     else this.etape.set(1);
+  }
+
+  /** Avancer sans rien écrire : le geste de qui vient LIRE la fiche (Commission). */
+  blocSuivant(): void {
+    if (this.blocIdx() < this.blocs().length - 1) this.blocIdx.update((i) => i + 1);
+    else this.etape.set(3);
   }
 
   // ── Étapes 5 et 6 : contrôles, validation ─────────────────────────────────────────────────────
