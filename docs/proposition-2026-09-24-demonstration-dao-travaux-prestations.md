@@ -171,6 +171,31 @@ la transmission électronique (elle n'est pas ouverte), et les sept champs des r
 résultat et au barème (la mission est au forfait). **C'est le meilleur moment de la démonstration** : ouvrir la
 tranche, puis montrer que le reste du formulaire s'est tu.
 
+### ⚠️ 25/09 — les documents sont RÉELLEMENT produits, et la démonstration peut les ouvrir
+
+En vérifiant la dernière étape, constat que je n’attendais pas : **la validation produit les documents et les joint
+au dossier**, sans rien demander. Les deux dossiers de démonstration les portent déjà :
+
+L'étape 7 de la fiche liste **six fichiers** — chacun des trois documents en **`.docx` et en `.pdf`** — avec
+« Ouvrir » et « Enregistrer » ; les PDF sont en plus **joints au dossier** comme pièces, avec la pastille « fiche DAO » :
+
+| dossier | pièces jointes au dossier (produites à la validation) |
+|---|---|
+| 100335 (travaux) | `DPAO_00001-PPM-AGPM-CNM-2026_303070_v1.pdf` (8 ko) · `CCAP_…_v1.pdf` (9 ko) · `AE_…_v1.pdf` (5 ko) |
+| 100334 (études) | **`DPIC`**`_00001-PPM-AGPM-CNM-2026_303071_v1.pdf` (7 ko) · `CCAP_…_v1.pdf` (4 ko) · `AE_…_v1.pdf` (3 ko) |
+
+Leur contenu est celui de la fiche, section par section : les 23 informations du plan, puis les 115 saisies, montants
+en toutes lettres compris (« 450 000 000 Ariary (quatre cent cinquante millions ariary) »). Chaque pièce porte la
+pastille « fiche DAO » sur la page du dossier, et s’ouvre d’un clic.
+
+**Ce que cela change pour la démonstration** : l'étape 7 n'est plus une promesse. On valide, on ouvre le document
+produit devant le public — c'est là que « une information saisie une fois » devient visible — et on retrouve les
+mêmes fichiers joints au dossier, prêts pour la Commission.
+
+⚠️ **Et cela corrige ce que j'annonçais le 24/09** : les modèles Word officiels ne sont pas le blocage du lot 2, la
+génération fonctionne et sort déjà du `.docx` comme du `.pdf`. Ce que les modèles apporteront, c'est la **mise en
+forme réglementaire** — l'ordre et l'habillage des articles — pas la fonction.
+
 ### Comment jouer la démonstration
 
 - **Travaux** : `/prmp/dao/6` · **Prestations intellectuelles** : `/prmp/dao/7` (profil PRMP001).
