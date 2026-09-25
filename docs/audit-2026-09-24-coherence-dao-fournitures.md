@@ -6,6 +6,10 @@ Le référentiel des fournitures avait été converti le 23/09 depuis le **PDF**
 Le classeur Excel officiel est arrivé depuis. Cette note le compare, feuille par feuille, à ce que le serveur sert
 aujourd'hui — chaque ligne du classeur cherchée parmi les champs servis, chaque champ servi cherché dans le classeur.
 
+> ⚠️ **25/09 — la vérification à la main est faite : les deux listes fermes sont au §5.** Une reprise décide du
+> contenu des documents produits, ce que l’audit de la veille ignorait ; dix champs sont à corriger, trois écarts
+> signalés étaient faux.
+>
 > ⚠️ **Arbitrage du pilote, 24/09 : « ne change rien ».** Les écarts décrits ci-dessous sont **constatés et
 > laissés en l’état** — ni les quatre reprises de trop, ni la lettre d’invitation ne donnent lieu à une livraison
 > aujourd’hui. Ce document reste le relevé qui permettra d’y revenir quand le pilote le décidera.
@@ -110,3 +114,53 @@ recouvrement de mots entre chaque ligne du classeur et chaque champ servi par
 `GET /api/champs-fiche-marche?typeMarche=…&categorie=FOURNITURES_SERVICES`, puis comparaison des ensembles de
 documents (maître + reprises contre `AS` + `x`), avec la répartition du contrat-cadre appliquée comme l'écran
 l'applique. Rejouable sur les trois formes.
+
+---
+
+## 5. Les deux listes fermes — vérification à la main, 25/09/2026
+
+Le rapprochement automatique signalait huit écarts en contrat-cadre et quatre chez les fournitures. Chacun a été
+rouvert ligne à ligne dans le classeur. Trois s'effondrent, dix tiennent.
+
+⚠️ **Ce qui a changé l'enjeu** : en vérifiant la génération, on constate qu'une reprise n'est pas une étiquette
+d'écran — **elle décide du contenu des documents produits**. Sur l'acte d'engagement des travaux généré le 24/09,
+« Attribution des lots », « Consistance des travaux » et « Montant de la garantie de soumission » sont **absents**,
+parce que leurs reprises ne mentionnent pas l'AE ; ils sont dans le DPAO. Une reprise de trop écrit donc une
+information dans un document réglementaire qui ne doit pas la porter.
+
+### À corriger — 10 champs, uniquement des reprises, aucune structure
+
+| champ | aujourd'hui | le classeur | correction |
+|---|---|---|---|
+| `B05-GS-03` Montant de la garantie de soumission *(QF et AC)* | DPAO + AE + CCAP | L71 : DPAO seul | **retirer AE et CCAP** |
+| `B02-AU-02` Attribution des lots *(QF)* | DPAO + AE | L27 : DPAO seul | **retirer AE** |
+| `B02-AU-03` Quantités minimum et maximum *(AC)* | DPAO + AE | L31 : DPAO seul | **retirer AE** ⚠️ |
+| `B02-AU-04` Durée de validité du marché à commande *(AC)* | DPAO + AE | L32 : DPAO seul | **retirer AE** ⚠️ |
+| `B02-DC-02` Durée de validité du contrat-cadre *(CC)* | maître AE + DPAC | L44 : DPAC seul | **maître DPAC**, sans reprise |
+| `B02-DC-04` Conditions de reconduction *(CC)* | maître AE, sans reprise | L45-47 : DPAC · L127-129 : AE | **maître DPAC + reprise AE** |
+| `B05-UM-01` Monnaie en devise *(CC)* | DPAC + AE | L86-87 : DPAC seul | **retirer AE** |
+| `B05-PM-02` Le prix est un critère d'attribution *(CC)* | maître AE + DPAC | L156 : AE (et CCAP, qui devient AE) | **retirer DPAC** |
+| `B06-NO-01` Date de réception sur l'accusé *(CC)* | maître AE, sans reprise | L103 : DPAC + AE + CCAP | **maître DPAC + reprise AE** |
+| `B06-NO-02` Date de remise en main propre *(CC)* | maître AE, sans reprise | L104 : DPAC + AE + CCAP | **maître DPAC + reprise AE** |
+
+⚠️ **Les deux réserves sont levées — le classeur est délibéré** (vérifié le 25/09). L’acte d’engagement d’un
+marché à commande reçoit bien la mesure de l’engagement, mais sous une autre forme : le **montant** minimum et
+maximum annuel (L68-L69, servis par `B05-TP-02` et `B05-TP-03`, déjà maître AE) et la **date d’effet** (L33, servie
+par `B02-AU-05`, déjà maître AE). Les *quantités* et la *durée* restent au DPAO. Rien ne manque à l’acte
+d’engagement : les deux reprises y feraient double emploi. **Recommandation : appliquer le classeur.**
+
+Aucune de ces corrections ne touche le front : ce sont dix lignes du référentiel servi, côté backend. Les fiches
+déjà validées gardent leurs documents figés — seules les versions suivantes en tiendraient compte.
+
+### À laisser — ce que le rapprochement voyait à tort
+
+| champ | pourquoi c'était un faux écart |
+|---|---|
+| `B03-GR-01` Groupement autorisé · `B03-GR-02` Forme du groupement · `B05-GS-01` Garantie de soumission exigée | Ce sont des **reflets de cadrage**, pas des champs de saisie : les douze reflets portent un jeu de documents générique, commun aux trois catégories, que l'écran remappe selon la forme. En contrat-cadre, leur `CCAP` devient un `AE` : le rapprochement lisait « AE » deux fois et croyait à une reprise en trop. Le référentiel dit exactement ce que le classeur dit (L51 : saisi au DPAC, figure dans l'AE et le CCAP). |
+
+S'y ajoutent, inchangés : la **lettre d'invitation** (§1, écartée jusqu'à l'exécution des contrats-cadres), les
+**consolidations en listes** (arbitrage du 23/09) et les **douze questions ouvertes du classeur** (§4), qui
+appartiennent à son auteur.
+
+➡️ Les dix corrections sont écrites, prêtes à partir, dans
+`docs/demande-backend-2026-09-25-reprises-documentaires-dao.md`.
