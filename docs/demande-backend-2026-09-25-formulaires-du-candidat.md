@@ -3,7 +3,9 @@
 *Front → backend, 25/09/2026. Suite de l'esquisse de conception « Les formulaires du candidat » (pilote),*
 *et de la traçabilité `docs/correspondance-2026-09-25-fiche-dao-vs-dossier-2463.md`, qui liste comme*
 *« hors fiche » les trente pages que cette demande vise à faire entrer dans la chaîne.*
-*⚠️ Les sept arbitrages du pilote du 25/09 sont intégrés ; deux points restent marqués* **à confirmer**.
+*⚠️ Les arbitrages du pilote du 25/09 sont intégrés, y compris ceux du second tour : **la PRMP rédige le besoin**,*
+*le **rendu d'un bloc se déclare**, le **taux de TVA doit être exposé**, et les modèles officiels A1-A4 / C1-C2*
+*seront fournis par le pilote — d'ici là, un gabarit provisoire filigrané sert à éprouver le pré-remplissage.*
 
 ## Ce que le pilote veut obtenir
 
@@ -93,15 +95,14 @@ saisie du PPM), on y ajoute, déplace et supprime des lignes avant d'enregistrer
 au-delà du nombre de lots du plan → **400** ; `lot` renseigné sur une ligne non allotie, ou absent sur une
 ligne allotie → **400** ; catégorie hors fournitures → **409** `BESOIN_HORS_PERIMETRE`.
 
-### Qui écrit le besoin
+### Qui écrit le besoin — tranché le 25/09
 
-⚠️ **À confirmer par le pilote.** La cible est : **le service bénéficiaire rédige le besoin, la PRMP le
-valide** — c'est lui qui écrit les spécifications techniques dans la vraie vie.
+**La PRMP.** Pas de rôle « service bénéficiaire » : le bloc `B12` suit **les mêmes droits et le même circuit
+de validation que le reste de la fiche DAO** — écriture ouverte à `PRMP` et `UGPM`, figé à la validation,
+corrigé par révision.
 
-**En V1, la PRMP (et son UGPM) saisit seule** : les endpoints ci-dessus s'ouvrent à `PRMP`/`UGPM`, comme le
-reste de la fiche. Prévoir dès maintenant la **place du rôle** dans le modèle — un `redigePar` sur l'article,
-ou un statut du besoin (`BROUILLON` / `SOUMIS_A_LA_PRMP` / `VALIDE`) — pour ne pas avoir à migrer plus tard,
-mais **ne pas conditionner l'écriture à ce rôle** tant qu'il n'existe pas.
+Les champs `redigePar` et `profilRedacteur` que le backend a posés restent utiles comme **trace** de l'acteur
+qui a enregistré ; ils ne commandent aucun droit. Aucun statut de besoin n'est attendu.
 
 > ⚠️ **Livré le 2026-09-25 (backend, V45) — §B1 tel que demandé, avec ces précisions :**
 >
@@ -121,7 +122,7 @@ mais **ne pas conditionner l'écriture à ce rôle** tant qu'il n'existe pas.
 >   enregistre), servis en lecture, jamais exigés. Pas de statut du besoin tant que le circuit n'est pas confirmé.
 > - **« Dupliquer depuis le lot n »** n'a pas d'endpoint : l'écran relit le lot n et l'envoie par `PUT ?lot=m`.
 
-## B2 — Les trois champs existants que le besoin rend faux *(fournitures)*
+## B2 — Les quatre valeurs que le besoin et le nouveau référentiel rendent fausses *(fournitures)*
 
 - **`B02-AU-03` « Quantités minimum et maximum »** (`TEXTE_LONG`) ne renvoie plus au bordereau : le besoin le
   porte. À **retirer du référentiel fournitures**, ou à servir en lecture seule, dérivé du besoin.
@@ -132,6 +133,29 @@ mais **ne pas conditionner l'écriture à ce rôle** tant qu'il n'existe pas.
   libres, alors qu'ils **commandent** ce qui est généré. Il faut qu'ils deviennent exploitables : une liste à
   choix multiples pour les fiches (A1, A2, A3, A4), une liste simple pour la garantie (C1, C2, les deux).
   ⚠️ Ces deux champs valent pour **toutes les catégories**, puisque A1-A4 et C1/C2 sont générés partout.
+
+### ⚠️ Les versions déjà validées ne sont jamais migrées — arbitrage du 25/09
+
+Une version validée est un acte : elle **n'est ni modifiée ni convertie**. Quatre situations en découlent, et
+le front doit les tenir **sans erreur** :
+
+| valeur d'une version validée | ce qu'elle devient | ce que l'écran fait |
+|---|---|---|
+| `B04-CD-01` — texte libre | le champ est désormais `LISTE_MULTIPLE` | affichée **telle quelle**, avec la mention « ancienne valeur » |
+| `B04-CD-02` — texte libre | le champ est désormais `LISTE` | idem |
+| `B09-LL-01` — un seul texte pour tous les lots | le champ est désormais **par lot** | idem, sur une seule ligne |
+| `B02-AU-03` — texte | **le code n'existe plus au référentiel** | valeur **orpheline** : affichée en lecture, sans champ ni saisie possible |
+
+À la **révision suivante**, ces valeurs ne sont pas reprises : l'ancienne valeur est **montrée en aide à côté
+du champ**, et la **ressaisie est obligatoire**. Aucune conversion automatique — un texte libre dans une liste
+serait un contresens, et une répartition par lot ne se devine pas à partir d'une phrase.
+
+> ⚠️ **Livré le 2026-09-25 (backend, second tour)** — `POST …/reviser` **ne reprend pas** une valeur que le
+> référentiel d'aujourd'hui n'admet plus : champ désactivé ou inconnu (`B02-AU-03`), texte hors des options d'une liste
+> (`B04-CD-01`, `B04-CD-02`), clé nue d'un champ devenu par lot sur une ligne allotie (`B09-LL-01`), clé `#n` d'un champ
+> qui ne l'est pas. Les autres valeurs et le besoin sont repris comme avant. **L'« ancienne valeur » se lit sur la
+> version précédente** (`GET /api/fiches-marche/{idDmc}/versions/{n}`, `valeurs`), qui n'est jamais modifiée : c'est là
+> que l'écran la prend pour l'aide à côté du champ. La ressaisie est exigée par le bilan pour les champs obligatoires.
 
 > ⚠️ **Livré le 2026-09-25 (backend)** — `B02-AU-03` est **désactivé** (retiré du référentiel servi, jamais supprimé) ;
 > `B09-LL-01` est **par lot** ; `B04-CD-01` est du nouveau type **`LISTE_MULTIPLE`** (options A1, A2, A3, A4 — reçu en
@@ -235,6 +259,128 @@ compare à la garantie, pas le bordereau. L'avertissement dit l'écart constaté
 
 Rien ne sera codé tant que le contrat n'est pas servi : l'écran se replie, comme au lot 1.
 
+## B6 — Un bloc doit pouvoir déclarer son rendu
+
+Le bloc `B12` est servi **sans aucun champ** : son contenu est la ressource `/articles`. Or l'écran rend un
+bloc en bouclant sur ses champs — `B12` s'afficherait donc **vide**.
+
+Le front peut évidemment brancher la grille du besoin sur le code `B12`, mais ce serait un **cas particulier
+écrit en dur** : le prochain bloc à rendu propre demanderait la même rustine. Le pilote a tranché pour un
+**mécanisme générique** — c'est au **bloc de déclarer son rendu**.
+
+**Demande** : un attribut **`rendu`** sur le bloc servi par `GET /api/champs-fiche-marche` :
+
+| valeur | sens |
+|---|---|
+| absent ou `null` | rendu normal : la liste des champs du bloc *(tous les blocs actuels)* |
+| `"BESOIN"` | le bloc est rendu par la grille du besoin (lots → articles → caractéristiques) |
+
+Le libellé de la rubrique (`B12-BE — Articles et caractéristiques exigées, par lot`) reste l'intitulé affiché.
+
+⚠️ **D'ici là**, le front se replie sur une table de correspondance code → rendu, à un seul endroit, qu'il
+supprimera dès que l'attribut sera servi. Comme au lot 1, l'écran ne devine rien : un bloc sans champ et sans
+rendu connu affiche « aucune information à saisir dans ce bloc », il ne reste pas blanc.
+
+> ⚠️ **Livré le 2026-09-25 (backend, V46)** — attribut **`rendu`** sur chaque bloc de `GET /api/champs-fiche-marche`
+> (`blocs[*].rendu`) : `null` pour tous les blocs existants, **`"BESOIN"`** pour `B12`. Porté par la base
+> (`tr_bloc_fiche_marche.RENDU`, CHECK `NULL` ou `BESOIN`) : un nouveau rendu est une migration, jamais un code en dur.
+> La table de correspondance de repli peut être retirée.
+
+## B7 — ⚠️ Bloquant : le taux de TVA n'est pas joignable
+
+La livraison annonce un paramètre administrable `FICHE_TAUX_TVA` à 20 %, « sans lui, pas de ligne TVA ». Il
+n'est exposé par aucune URL :
+
+```
+GET /api/parametres/fiche-taux-tva   → 404
+GET /api/parametres/FICHE_TAUX_TVA   → 404
+GET /api/parametres                  → 404
+```
+
+Seul `GET /api/parametres/fiche-garantie-taux` répond (`{reference: 2, borneBasse: null, borneHaute: null}`).
+
+**Demande, bloquante pour l'aperçu du bordereau** : exposer `FICHE_TAUX_TVA` **en lecture et en
+administration**, au **même format que `fiche-garantie-taux`**, et **donner l'URL exacte**.
+
+⚠️ **Le front ne mettra pas 20 % en dur.** Tant que le paramètre est inaccessible, l'aperçu du bordereau
+affiche **« Taux de TVA non disponible »** à la place des lignes TVA et TTC — pour qu'on sache *pourquoi*
+elles manquent, au lieu de croire à un oubli de la fiche.
+
+> ⚠️ **Livré le 2026-09-25 (backend)** — URL exacte : **`GET /api/parametres/fiche-taux-tva`** (tout authentifié) →
+> `{"taux": 20}` (`null` si non fixé) ; **`PUT /api/parametres/fiche-taux-tva`** (Administrateur, 403 sinon), même corps,
+> `null` efface, 400 hors 0–100. Même forme d'enveloppe que `fiche-garantie-taux`. Le bordereau généré lit ce même
+> paramètre : l'aperçu et le fichier disent toujours la même chose.
+
+## B8 — Les blancs attendus dans les modèles officiels
+
+Le pilote fournira les modèles A1-A4 et C1/C2. **D'ici là, ces deux pièces sont générées avec un gabarit
+provisoire portant en filigrane « MODÈLE PROVISOIRE – NON OFFICIEL »**, pour éprouver le pré-remplissage sans
+faire passer un brouillon pour un acte réglementaire.
+
+Voici, pièce par pièce, **les blancs que la fiche remplit** — nom du blanc tel qu'il figure au dossier 2463,
+et code de la fiche qui l'alimente. Tout le reste est laissé au candidat.
+
+### A1 à A4 — l'en-tête commun *(p. 22-31 du 2463)*
+
+| blanc du modèle | source |
+|---|---|
+| `N° d'appel d'offres et titre` | `B02-OB-03` (référence) + `B02-OB-01` (objet) |
+| `Date` | laissée au candidat *(date de son offre)* |
+| `Page … de … pages` | numérotation du document généré |
+| lot visé | rang et désignation du lot du plan — **un exemplaire par lot** si le dossier est alloti |
+| autorité contractante | `B01` (reprise du PPM) |
+
+⚠️ **A1-b « Renseignements additionnels lorsque le candidat est un groupement »** n'est joint que si le
+cadrage autorise le groupement — au 2463, il porte la mention « non applicable ».
+
+### C1 — Garantie bancaire de soumission *(p. 33)*
+
+| blanc du modèle | source |
+|---|---|
+| `A : (Nom et adresse de l'Acheteur)` | autorité contractante et son adresse (`B01`) |
+| `pour l'exécution, ou la fourniture de [titre du Marché]` | `B02-OB-01` + désignation du lot |
+| `au profit de [Nom de l'Organisme ayant lancé l'Appel d'offres]` | autorité contractante (`B01`) |
+| `à concurrence d'un montant de [montant … en chiffres et en lettres]` **(deux occurrences)** | **`B05-GS-03#n`**, en chiffres **et en toutes lettres** |
+| `jusqu'au cent cinquième (105ème) jour` | **`B05-GS-04`** — le nombre et son ordinal en lettres |
+| `[nom du candidat]`, `en date du [date]`, signature, banque, adresse, cachet | **candidat** |
+
+### C2 — Caution personnelle et solidaire *(p. 34)*
+
+| blanc du modèle | source |
+|---|---|
+| `pour [dénomination et adresse complète de l'Autorité contractante]` | autorité contractante (`B01`) |
+| `sur [intitulé ou objet résumé du marché et références de l'appel d'offres]` | `B02-OB-01` + `B02-OB-03` + désignation du lot |
+| `au plus tard le [date fixée pour la remise des offres]` | **`B04-LR-03`** |
+| `dont la validité expire le [date d'expiration de la validité de l'offre]` | **`B04-LR-03` + `B04-VO-01`** *(75 jours au 2463)* — date calculée |
+| `ladite caution s'élève à [montant en chiffres et en lettres]` | **`B05-GS-03#n`** |
+| `le cent cinquième (105ème) jour` | **`B05-GS-04`** |
+| organisme de caution, siège social, nom et adresse du candidat, lieu, date, signature, cachet | **candidat** |
+
+⚠️ **Deux points à vérifier sur les modèles officiels quand ils arriveront** : le **nombre d'occurrences** du
+montant (le C1 du 2463 le porte deux fois, dans la même phrase) et la **forme de l'ordinal** — « cent
+cinquième (105ème) jour » est écrit en toutes lettres dans le modèle, alors que la fiche ne connaît que le
+nombre `105`.
+
+> ⚠️ **Livré le 2026-09-25 (backend, V46) — gabarit provisoire, avec ces précisions :**
+>
+> - **Types de documents** `A1`, `A2`, `A3`, `A4`, `C1`, `C2`, docx et pdf, toutes catégories ; **filigrane
+>   « MODÈLE PROVISOIRE – NON OFFICIEL »** en diagonale sur chaque page (docx : filigrane Word ; pdf : texte grisé) et
+>   « Page n de N pages ».
+> - **Le gabarit liste les blancs**, il n'imite pas le modèle : une rubrique « pré-remplis par la fiche » (libellé du
+>   blanc : valeur) et une rubrique « laissés au candidat » (pointillés). Aucune phrase réglementaire n'est écrite : le
+>   jour où les modèles officiels arrivent, seul le générateur change.
+> - **A1 à A4 : une pièce par fiche cochée et par lot** (ligne allotie) — comme au §B8, et non « une fois pour le
+>   dossier » comme le disait le tableau du §B3. En-tête : `B02-OB-03` + `B02-OB-01`, autorité contractante
+>   (`B01-AC-01`), lot visé (rang et désignation du lot au plan). A1 porte A1-b, « non applicable » si le cadrage
+>   `groupement` n'est pas `OUI`. La date reste au candidat ; la numérotation est celle du fichier.
+> - **C1 / C2 : une pièce par forme retenue et par lot** — « C1 et C2 » produit les deux. Montant `B05-GS-03#n` en
+>   chiffres **et** en lettres ; **validité en ordinal** calculée depuis `B05-GS-04` (« jusqu'au cent cinquième (105ème)
+>   jour ») — la fiche garde le nombre, le serveur écrit l'ordinal. C2 : `B04-LR-03`, et fin de validité des offres
+>   **calculée** `B04-LR-03` + `B04-VO-01` jours. Une valeur absente est écrite « — (non renseigné dans la fiche) ».
+> - Produits pour **toute** fiche qui coche `B04-CD-01` / retient `B04-CD-02`, y compris travaux et prestations
+>   intellectuelles ; les PDF sont joints au dossier soumis comme les autres. Les deux points à vérifier sur les
+>   modèles officiels (occurrences du montant, forme de l'ordinal) sont notés pour leur arrivée.
+
 ---
 
 ## Hors V1 — la copie numérique du bordereau dans l'offre
@@ -285,9 +431,12 @@ maximum sont réellement égaux, soit la garantie n'est pas strictement proporti
 | | décision |
 |---|---|
 | code du bloc | **neuf : `B12`** ; `B11`, `B11-FR-06` et `B11-AN-02` restent intacts — un code utilisé ne se réaffecte jamais |
-| qui rédige | service bénéficiaire, validation PRMP — **à confirmer** ; **V1 : la PRMP saisit seule**, le rôle est prévu au modèle |
-| formats | Word pour A1-A4 et C1/C2, Excel protégé pour bordereau et conformité ; modèles officiels stockés tels quels, seuls les blancs sont des champs ; **conformité aux dossiers types à confirmer** |
+| qui rédige | **la PRMP** — pas de rôle « service bénéficiaire » ; `B12` suit les droits et le circuit de la fiche |
+| formats | Word pour A1-A4 et C1/C2, Excel protégé pour bordereau et conformité ; modèles officiels stockés tels quels, seuls les blancs sont des champs ; **le pilote fournit les modèles**, gabarit provisoire filigrané en attendant (§B8) |
 | copie numérique du bordereau | relève du DPAO ; question de cadrage + mention à `B04-CO-01`, le papier faisant foi — **documentée, hors V1** |
 | taux de garantie | **avertissement non bloquant** ; taux et bornes administrables, départ à 2 % ; **rien en dur** |
 | périmètre | A1-A4 et C1/C2 : **toutes catégories** · besoin, bordereau, conformité, liste : **fournitures en V1** ; travaux gardent leur DQE ; pas de bloc Besoin en prestations intellectuelles |
 | lots répétés | **« Dupliquer depuis le lot n »** en V1, chaque lot modifiable ensuite ; catalogue réutilisable plus tard |
+| rendu du bloc | **générique** : le bloc déclare son rendu (§B6), jamais un cas `B12` écrit en dur |
+| versions validées | **jamais migrées** : affichées telles quelles avec la mention « ancienne valeur » ; ressaisie obligatoire à la révision, aucune conversion |
+| TVA | le front **ne met pas 20 % en dur** : sans le paramètre, l'aperçu dit « Taux de TVA non disponible » (§B7, bloquant) |
