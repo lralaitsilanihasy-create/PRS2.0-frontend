@@ -258,8 +258,35 @@ Quatre constats, à soumettre ensemble et non au fil de l'eau :
 | E2 | Le titre de A4 porte un **appel de note « ¹ » sans note**. | 31 |
 | E3 | La consigne de A1-c est **tronquée** : « [Le formulaire ci-dessous doit être rempli par le] ». | 25 |
 | E4 | A1-c **se contredit** : ses tableaux sont titrés « au cours des **cinq** dernières années », son corps écrit deux fois « pendant la période de **[nombre d'années]** ans ». | 25 |
+| E5 | C2 **répète un membre de phrase** : « [indiquer la dénomination sociale **dénomination sociale** de la banque ou de l'organisme de caution, et le siège social] ». | 34 |
 
 Aucun n'est corrigé dans les décalques : ils sont reproduits tels quels, et c'est l'errata qui porte la demande.
+
+## ✅ Fait le 26/09 — les deux garanties
+
+`docs/modeles-candidat/` : **C1.docx**, **C2.docx** et leur `README.md` (tableaux de correspondance).
+**Rien en production** — le gabarit provisoire filigrané tient sa place.
+
+| | C1 | C2 |
+|---|---|---|
+| page de la source | 33 | 34 |
+| paragraphes | 13 | 14 |
+| trous alimentés par la fiche ou dérivés | 6 | 7 |
+| blancs laissés au candidat | 2 | 5 |
+| **fidélité** | **identique**, 2 119 car. | **identique**, 2 790 car. |
+
+**La chaîne est montée et éprouvée**, ce qui vaut pour les quatre fiches qui restent :
+
+1. `source-modeles.mjs` — extraction **sans perte** des pages 22-34 (filigrane retiré, rien d'autre).
+2. `modeles-desc.mjs` — structure et **jetons**. Le texte n'est jamais retapé : il est lu dans l'extraction.
+   Ce qui est écrit à la main, ce sont les bornes de paragraphes et la table des substitutions.
+3. `Decalque.java` — écriture du `.docx` **par POI** (piège n° 2 du dépôt : jamais un zip maison).
+4. `LireDocx.java` + `fidelite.mjs` — relecture du `.docx` produit et **comparaison caractère par caractère**
+   à la page du dossier, jetons rejoués sur la source. Un écart inexpliqué sort en code 1.
+
+⚠️ **Ce qui manque encore aux quatre fiches A1-A4 : les tableaux.** L'extraction les aplatit en lignes ; leur
+structure (lignes, colonnes, en-têtes) doit être décrite à la main. C'est de la **structure**, pas du texte —
+la règle de non-retranscription tient toujours.
 
 ## L'ordre des gestes, et le verrou
 
