@@ -26,14 +26,14 @@ Deux conséquences qui commandent tout le reste :
 | **produits** | un `.docx` par sigle (6 fichiers), un tableau de correspondance par modèle, un rapport de fidélité |
 | **hors périmètre** | le remplissage lui-même (backend), la mise en production (après votre relecture) |
 
-## Trois écarts trouvés **dans la source** — à trancher avant de décalquer
+## Quatre écarts trouvés **dans la source** — à trancher avant de décalquer
 
 | # | constat | page | ce que je propose |
 |---|---|---|---|
 | S1 | Le sommaire de la partie (p. 21) nomme les garanties **`B1` / `B2`** ; le sommaire du dossier (p. 2) et les modèles eux-mêmes (p. 33, 34) les nomment **`C1` / `C2`**. Le dossier se contredit. | 21 vs 2, 33, 34 | garder **`C1` / `C2`** — deux occurrences sur trois, et ce sont les titres portés par les modèles. L'écart est noté au rapport de fidélité, il n'est pas corrigé dans le décalque de la page 21. |
 | S2 | La page 22 porte une **« Note aux Utilisateurs »** entre chevrons `<…>` : elle s'adresse à l'acheteur (« l'obligation… peut être réduite en fonction du montant »), pas au candidat. | 22 | **ne pas** la mettre dans le modèle A1 : elle appartient à la page de section du DAO, pas à la fiche que le candidat remplit. À confirmer par vous. |
-| S4 | Le titre de A4 porte un **appel de note « ¹ »** — mais la page ne porte **aucune note** : après « Date de fin : `_____` » il n'y a plus que le filigrane. Vérifié sur le texte brut de la page, filigrane retiré. | 31 | garder l'appel **tel quel** (on ne complète rien) et le signaler au rapport de fidélité. Le supprimer serait une correction — c'est à vous de la demander. |
 | S3 | A1-b porte la mention **« (non applicable) »** : c'est la réponse du **2463**, pas le modèle. Le cadrage de la fiche porte déjà `groupement = NON`. | 24 | faire de A1-b une section **conditionnée par le cadrage** : « (non applicable) » quand `groupement = NON`, le formulaire complet sinon. La mention devient donc un champ, pas un texte figé. |
+| S4 | Le titre de A4 porte un **appel de note « ¹ »** — mais la page ne porte **aucune note** : après « Date de fin : `_____` » il n'y a plus que le filigrane. Vérifié sur le texte brut de la page, filigrane retiré. | 31 | garder l'appel **tel quel** (on ne complète rien) et le signaler au rapport de fidélité. Le supprimer serait une correction — c'est à vous de la demander. |
 
 ## Les six modèles, trou par trou
 
@@ -54,7 +54,7 @@ Légende de la colonne **rempli par** : **fiche** = la valeur vient de la fiche 
 | A1.8 | **« (non applicable) »** (p. 24) | section A1-b | cadrage `groupement` | **fiche** (cf. S3) |
 | A1.9 | membres du groupement, nature, date de constitution, adresse, chef de file (nom, adresse, télécopie, adresse électronique), statuts `_______` ×2 (p. 24) | 9 champs | — | candidat |
 | A1.10 | nom légal du candidat, date, `N° d'appel d'offres et titre` (p. 25) | 3 champs | `B02-OB-03` + `B02-OB-01` pour le 3ᵉ | mixte |
-| A1.11 | **« pendant la période de [nombre d'années] ans »** ×2 (p. 25) | durée des antécédents | **aucun champ n'existe** | à créer — cf. B-nouveau 1 |
+| A1.11 | **« pendant la période de [nombre d'années] ans »** ×2 (p. 25) | durée des antécédents | **aucun champ n'existe** | à créer — cf. **N3** |
 | A1.12 | tableaux « marchés non exécutés » et « litiges en instance » : année, fraction, identification, montant, autorité contractante, motif (p. 25) | 2 tableaux, 4 lignes vides | — | candidat |
 
 ### A2 — Capacités techniques (p. 26-27)
@@ -73,7 +73,7 @@ Légende de la colonne **rempli par** : **fiche** = la valeur vient de la fiche 
 |---|---|---|---|---|
 | A3.1 | nom, date, `No. d'appel d'offres et titre`, pagination (p. 28 et p. 30) | 4 champs ×2 fiches | `B02-OB-03` + `B02-OB-01` | mixte |
 | A3.2 | tableau « Renseignements financiers », **trois** années : total actif, total passif, patrimoine net, disponibilités, engagements, recettes totales, bénéfices avant impôts (p. 28) | 7 lignes × 3 colonnes | — | candidat |
-| A3.3 | « Antécédents pour les **trois** dernières années » (p. 28) | nombre d'exercices | **aucun champ** | à créer — cf. B-nouveau 1 |
+| A3.3 | « Antécédents pour les **trois** dernières années » (p. 28) | nombre d'exercices | **aucun champ** | à créer — cf. **N3** |
 | A3.4 | page 29 « Documents financiers » a) à d) | texte figé, aucun blanc | — | — |
 | A3.5 | `Exercice du......... au.........` ×3, deux tableaux (p. 30) | 6 couples de dates | — | candidat |
 | A3.6 | lignes **« Fournitures »** / **« Prestations intellectuelles »** des tableaux de chiffre d'affaires (p. 30) | intitulés de ligne | **catégorie de la fiche** | **fiche** — un DAO de travaux ne demande pas un chiffre d'affaires de fournitures |
