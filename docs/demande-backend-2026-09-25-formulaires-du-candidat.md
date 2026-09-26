@@ -481,6 +481,38 @@ devient-il dérivé de la validité + 30 ? Le contrat ci-dessus vaut pour les de
 >
 > S6 (« ☐ » ou rien) et 105 (saisi ou dérivé) restent au pilote ; le contrat tient dans tous les cas.
 
+> ⚠️ **Réponse du backend sur R12 (2026-09-26) — le moteur sait-il rendre le fichier de commande ?**
+> **Pas tel quel ; (c) tient pourtant sans nouvelle brique**, par une extension du moteur que nous maîtrisons.
+> Relu : le format en tête de `Decalque.java` et les six `scripts/modeles-candidat/modeles/*.txt`.
+>
+> - **Aujourd'hui**, `DocumentFicheModele` ne sait poser que des blocs → rubriques → lignes « libellé : valeur »
+>   (mise en page fixe, alignée à gauche) et, **après** les blocs, des tableaux à **une chaîne par cellule** dont la
+>   première ligne est un en-tête gras.
+> - **Ce qui manque**, face au format de commande :
+>
+>   | format de commande | manque au moteur |
+>   |---|---|
+>   | `TITRE`, `SOUS_TITRE`, `PARA` justifié, `CENTRE`, `DROITE`, `VIDE` | des paragraphes libres avec leur alignement |
+>   | l'ordre des enregistrements, tableaux intercalés entre les paragraphes | les tableaux sont aujourd'hui rejetés après les blocs |
+>   | `LIGNE` avec `RS` : plusieurs paragraphes dans une cellule | une cellule ne porte qu'une chaîne |
+>   | une première `LIGNE` qui n'est pas forcément un en-tête | l'en-tête gras est imposé |
+>
+> - **L'extension** : une liste **ordonnée** d'éléments (un paragraphe avec son style ; ou un tableau de lignes dont
+>   chaque cellule est une liste de paragraphes), rendue par **POI** (docx) et **OpenPDF** (pdf). Justification,
+>   centrage, alignement à droite et cellules à plusieurs paragraphes existent dans les deux bibliothèques : **aucune
+>   dépendance nouvelle**, le rendu des documents existants inchangé. Les jetons et les marqueurs se traitent
+>   **avant** le rendu, sur la liste d'éléments (section A1-b retirée, plage A3-b régénérée, pointillés pour un jeton
+>   vide) — plus simple et plus sûr que de retoucher un `.docx` après coup. Le `.txt` serait **copié dans les
+>   ressources du backend** et deviendrait la source du rendu ; le `.docx` du décalque resterait l'objet de relecture,
+>   et le comparateur pourrait vérifier aussi le texte du docx produit par le serveur.
+> - **Deux limites, pour peser (c)** :
+>   - **fidélité** : le **texte** au caractère près, la **mise en forme** celle du moteur (police, tailles, largeurs de
+>     colonnes) — c'est déjà le cas des `.docx` du décalque, écrits par POI et non repris de la mise en page du PDF ;
+>   - **S6** : la police de base de nos PDF n'a pas le glyphe « ☐ ». Si le pilote le retient, il faut embarquer une
+>     police (DejaVu, par exemple) dans le JAR ; tant que S6 reste « absent », rien de plus.
+>
+> Rien n'est construit avant les décisions du pilote (R1, R4, R11, R12, S6).
+
 ### N1 — ce que le formateur doit rendre
 
 Le comportement attendu, éprouvable ligne à ligne :
