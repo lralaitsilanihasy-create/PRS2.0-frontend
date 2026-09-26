@@ -33,12 +33,36 @@ ce qui est faux par omission.
 - Le front n'a rien à construire : la saisie (`LISTE_MULTIPLE`, cases à cocher), la lecture (`optionsChoisies`) et
   le document de l'examen (lot B) traitent déjà ce type de façon générique.
 
+> ⚠️ **Livré le 2026-09-26 (backend) — §B1 tel que demandé.** Seul le type change : dans le fichier de correspondance des
+> fournitures (`docs/referentiel-champs-fiche-marche-fournitures.csv`, à réimporter) et, pour une base déjà chargée, par
+> `PRS20/docs/referentiel/2026-09-26-forme-garantie-soumission-choix-multiple.sql` (pas de migration Flyway : aucun schéma
+> ne bouge, `LISTE_MULTIPLE` est admis depuis V45). Options, condition, obligatoire, documents (DPAO, repris AE et CCAP)
+> inchangés. Contrat de `B04-CD-01` : reçu en tableau ou en chaîne, enregistré dans l'ordre des options, option inconnue →
+> 400 `B05-GS-02` nominatif, liste vide = valeur absente → bloquant `OBLIGATOIRE` quand la garantie est exigée. Aucune
+> reprise de données ; les documents des versions déjà validées ne sont pas régénérés (la tournure du §B2 s'imprime à la
+> prochaine validation).
+
 ## B2 — Le rendu dans les documents produits
 
 Le DPAO (et le DPAC pour un contrat-cadre) imprime aujourd'hui la forme retenue ; avec plusieurs formes, il doit
 reprendre la tournure du dossier réel : « Une garantie de soumission doit être fournie dans l'une des formes
 suivantes : – soit … – soit … ». Une seule forme retenue → phrase au singulier, comme aujourd'hui. Les modèles
 C1 (garantie bancaire) et C2 (caution) restent régis par `B04-CD-02` : rien ne change pour eux.
+
+> ⚠️ **Livré le 2026-09-26 (backend) — §B2, avec deux précisions.**
+>
+> - **Où** : la tournure s'imprime partout où le champ s'imprime — **DPAO, CCAP et acte d'engagement** (chaque AE d'une
+>   ligne allotie), en docx comme en pdf. **Pas de DPAC** : `B05-GS-02` n'est pas ouvert au contrat-cadre (`typesMarche` =
+>   quantité fixe, à commande) ; le jour où le contrat-cadre exigera une garantie de soumission, ce sera un champ à
+>   ouvrir, pas un rendu à ajouter.
+> - **Comment** : la ligne garde son libellé — « **Forme de la garantie de soumission :** Une garantie de soumission doit
+>   être fournie dans l'une des formes suivantes : », puis une ligne « **– soit …** » par forme, dans l'ordre du référentiel,
+>   avec l'article des quatre formes du CMP (« – soit une caution personnelle et solidaire d'un organisme agréé par le
+>   MEF », « – soit une garantie bancaire », « – soit un chèque de banque », « – soit un dépôt en numéraire au Trésor ») ;
+>   une option qui ne serait pas l'une des quatre s'imprimerait telle quelle. Une seule forme → « Forme de la garantie de
+>   soumission : Garantie bancaire », inchangé. `B04-CD-01` (fiches exigées) garde sa liste jointe par virgules : des
+>   fiches cumulées, pas des alternatives. La valeur observée d'une observation d'examen (`valeurChampFiche`) reste la
+>   liste jointe (« Garantie bancaire, Chèque de banque »).
 
 ## B3 — Le jeu 2463 après livraison
 
