@@ -42,7 +42,7 @@
   },
   {
    "type": "ligne",
-   "texte": "Renseignements financiers équivalent en Ariary\u001fAntécédents pour les {{B03-AF-01.lettres}} dernières années (équivalent en Ariary)\u001f\u001f"
+   "texte": "Renseignements financiers équivalent en Ariary\u001fAntécédents pour les {{B03-CQ-10.lettres}} dernières années (équivalent en Ariary)\u001f\u001f"
   },
   {
    "type": "ligne",
@@ -98,7 +98,7 @@
   },
   {
    "type": "para",
-   "texte": "Le Candidat doit présenter des copies des états financiers et /ou des bilans des {{B03-AF-01.lettres}} années. Les états financiers doivent :"
+   "texte": "Le Candidat doit présenter des copies des états financiers et /ou des bilans des {{B03-CQ-10.lettres}} années. Les états financiers doivent :"
   },
   {
    "type": "para",
@@ -228,11 +228,11 @@
   },
   {
    "source": "pour les trois dernières années",
-   "jeton": "pour les {{B03-AF-01.lettres}} dernières années"
+   "jeton": "pour les {{B03-CQ-10.lettres}} dernières années"
   },
   {
    "source": "des bilans des trois années",
-   "jeton": "des bilans des {{B03-AF-01.lettres}} années"
+   "jeton": "des bilans des {{B03-CQ-10.lettres}} années"
   }
  ],
  "ajouts": [

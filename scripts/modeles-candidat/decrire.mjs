@@ -67,8 +67,8 @@ const VIDE = { type: 'vide', texte: '' };
  * (105ème) » · `{{DERIVE.x}}` = calculé · `{{SI:…}}` / `{{FINSI:…}}` = section conditionnelle (N4), AJOUTÉE
  * sans remplacer de texte. Les blancs du CANDIDAT ne sont pas jetonnés : ils restent tels que la source les imprime.
  *
- * ⚠️ Codes PROPOSÉS pour les deux durées d'antécédents (N3, à créer au bloc Candidats) : `B03-AJ-01` (juridiques,
- * défaut 5 ans) et `B03-AF-01` (financiers, défaut 3 ans). Le backend les fixe ; le modèle suivra.
+ * ⚠️ Codes ARRÊTÉS le 26/09 pour les deux durées d'antécédents (N3, rubrique « Capacité et qualifications des candidats »,
+ * ouverte aux trois catégories) : `B03-CQ-09` (juridiques, défaut 5 ans) et `B03-CQ-10` (financiers, défaut 3 ans).
  */
 const AO = '{{B02-OB-03}} — {{B02-OB-01}}';
 const JETONS_CARTOUCHE = [
@@ -80,14 +80,14 @@ const JETONS_CARTOUCHE = [
 const JETONS_A1 = [
   ...JETONS_CARTOUCHE,
   ["Certificat d'immatriculation (NIF), Certificat d'existence (Numéro Statistique), Certificat de non faillite.", '{{B03-CQ-01}}'],
-  ['au cours des cinq dernières années', 'au cours des {{B03-AJ-01.lettres}} dernières années'],
-  ["[nombre d'années]", '{{B03-AJ-01}}'],
+  ['au cours des cinq dernières années', 'au cours des {{B03-CQ-09.lettres}} dernières années'],
+  ["[nombre d'années]", '{{B03-CQ-09}}'],
   ['(non applicable)', '{{A1B.mention}}'],
 ];
 const JETONS_A3 = [
   ...JETONS_CARTOUCHE,
-  ['pour les trois dernières années', 'pour les {{B03-AF-01.lettres}} dernières années'],
-  ['des bilans des trois années', 'des bilans des {{B03-AF-01.lettres}} années'],
+  ['pour les trois dernières années', 'pour les {{B03-CQ-10.lettres}} dernières années'],
+  ['des bilans des trois années', 'des bilans des {{B03-CQ-10.lettres}} années'],
 ];
 const JETONS_C1 = [
   ["(Nom et adresse de l'Acheteur)", '{{B01-AC-01}}, {{B01-AC-02}}'],

@@ -462,6 +462,16 @@ crochets, à sa main.
 **Un point qui reste au pilote** : `B05-GS-04` (105) reste-t-il **saisi**, le 30 étant dérivé (recommandation), ou
 devient-il dérivé de la validité + 30 ? Le contrat ci-dessus vaut pour les deux réponses.
 
+> ⚠️ **ARBITRÉ PAR LE PILOTE le 2026-09-26 — « oui à tout ».** R1 : `B02-OB-03` **obligatoire**. R4 : `B03-CQ-01`
+> **ouvert aux trois catégories**. R5/R6 : **`B03-CQ-09`** (antécédents juridiques, défaut 5) et **`B03-CQ-10`**
+> (financiers, défaut 3), attribut **`valeurDefaut`** recopié à la création. R11 : **A1-A4 une fois par dossier**,
+> C1/C2 par lot. R12 : **issue (c)** — le moteur du backend rend les six modèles lui-même (docx et PDF) depuis les
+> fichiers de commande versionnés `scripts/modeles-candidat/modeles/<sigle>.txt` ; les PDF restent joints au dossier.
+> **S6 : absent** (aucune police à embarquer). **105 : saisi**, le « trentième (30ème) » **dérivé**. Les jetons des
+> modèles portent désormais `{{B03-CQ-09}}` / `{{B03-CQ-10}}` ; les six `.docx` regénérés restent fidèles au
+> caractère près. **Le chantier backend est ouvert** : extension du moteur, N1 (le 30ème et les vecteurs de test),
+> N2, N3, N4, les deux changements de référentiel (R1, R4), puis le remplacement du gabarit provisoire filigrané.
+
 > ⚠️ **Relecture du contrat par le backend (2026-09-26), et réponses du front — six points, deux trous reconnus.**
 >
 > | # | ce que le backend relève ou propose | réponse du front | qui tranche |

@@ -26,7 +26,7 @@ Deux conséquences qui commandent tout le reste :
 | **produits** | un `.docx` par sigle (6 fichiers), un tableau de correspondance par modèle, un rapport de fidélité |
 | **hors périmètre** | le remplissage lui-même (backend), la mise en production (après votre relecture) |
 
-## Six écarts trouvés **dans la source** — cinq tranchés le 26/09, un à arbitrer
+## Six écarts trouvés **dans la source** — tous tranchés le 26/09
 
 | # | constat | page | décision |
 |---|---|---|---|
@@ -34,7 +34,7 @@ Deux conséquences qui commandent tout le reste :
 | S2 | La page 22 porte une **« Note aux Utilisateurs »** entre chevrons `<…>` : elle s'adresse à l'acheteur, pas au candidat. | 22 | **Hors du modèle A1 — mais son contenu n'est pas perdu.** C'est une **règle de cadrage** : l'obligation de remplir les fiches de capacités techniques ou financières peut être réduite selon le montant du marché, ou lorsque des communautés et des ONG sont susceptibles de candidater. Elle devient une **nouvelle question de cadrage — « quelles fiches de renseignements sont exigées ? »** — qui commande la **présence même de A2 et A3** dans le dossier généré. Le texte de la note devient l'**aide contextuelle** de cette question. |
 | S3 | A1-b porte la mention **« (non applicable) »** : c'est la réponse du **2463**, pas le modèle. | 24 | **Conditionnée au cadrage `groupement`**, sur la **valeur existante** (non autorisé · conjoint ou solidaire · obligatoirement solidaire) — **pas** sur un booléen créé pour l'occasion. Comportement exact, tel que le 2463 le montre : **le titre est conservé**, la mention « (non applicable) » vient **sous le titre**, et les champs sont **omis**. À l'écran, la section est **masquée**. |
 | S4 | Le titre de A4 porte un **appel de note « ¹ »** — mais la page ne porte **aucune note**. Vérifié sur le texte brut, filigrane retiré. | 31 | **Gardé tel quel.** On ne complète pas la source. → **errata**. |
-| S6 | Sept lignes des pages 23-25 sont précédées d'un **glyphe d'une police de symboles** (`U+F0F0`) : la case à cocher, ou la puce, du formulaire — les deux lignes de choix de A1-c (×2), la liste des certificats de A1-a, les deux pointillés de A1-b. Trouvé en relisant les octets : le glyphe est invisible dans toute extraction texte. | 23, 24, 25 | **À arbitrer.** La police n'est pas identifiable : le décalque n'en reproduit pas le glyphe, la ligne commence au texte. Soit le remplacer par « ☐ » (une interprétation), soit le laisser absent (une perte). |
+| S6 | Sept lignes des pages 23-25 sont précédées d'un **glyphe d'une police de symboles** (`U+F0F0`) : la case à cocher, ou la puce, du formulaire — les deux lignes de choix de A1-c (×2), la liste des certificats de A1-a, les deux pointillés de A1-b. Trouvé en relisant les octets : le glyphe est invisible dans toute extraction texte. | 23, 24, 25 | **Absent** (tranché « oui à tout »). La police n'est pas identifiable : le décalque n'en reproduit pas le glyphe, la ligne commence au texte. « ☐ » aurait été une interprétation, et aurait exigé une police embarquée dans le serveur. |
 | S5 | La consigne de A1-c est **tronquée** : « [Le formulaire ci-dessous doit être rempli par le] » — la phrase s'interrompt. Vérifié par le pilote en mode brut **et** en mise en page. | 25 | **Reproduite telle quelle**, et — le point important — **ce n'est pas un trou à remplir** : c'est un crochet de consigne inachevé, pas un champ. Le décalqueur ne doit pas le confondre avec les `[…]` qui, eux, sont des blancs. → **errata**. |
 
 ## ⚠️ La source de travail n'est pas la copie de lecture
@@ -285,8 +285,9 @@ dans ce cas, rien sinon. `{{SI:A3B-NATURES}}` … `{{FINSI:A3B-NATURES}}` encadr
 A3-b, à régénérer avec les natures du marché. Ces jetons sont **ajoutés** — ils ne remplacent aucun texte — et le
 comparateur les retire avant de juger.
 
-**Deux codes proposés, à fixer par le backend (N3)** : `B03-AJ-01` durée des antécédents juridiques (défaut 5),
-`B03-AF-01` durée des antécédents financiers (défaut 3), au bloc Candidats.
+**Les codes de N3 sont arrêtés** : `B03-CQ-09` durée des antécédents juridiques (défaut 5), `B03-CQ-10` durée des
+antécédents financiers (défaut 3), rubrique « Capacité et qualifications des candidats », ouverte aux trois
+catégories ; défaut porté par l'attribut `valeurDefaut` du champ, recopié dans la fiche à sa création.
 
 **La chaîne est montée et éprouvée**, ce qui vaut pour les quatre fiches qui restent :
 
@@ -313,6 +314,20 @@ témoigne.
 ⚠️ Aujourd'hui le serveur produit déjà A1-A4 et C1/C2 **sur un gabarit provisoire filigrané « MODÈLE PROVISOIRE –
 NON OFFICIEL »**. Ce gabarit reste en place tant que l'étape 4 n'est pas franchie : il vaut mieux un document qui
 annonce qu'il n'est pas officiel qu'un document officiel approximatif.
+
+## ✅ Décidé le 26/09 — « oui à tout »
+
+| # | décision |
+|---|---|
+| D1 | `B02-OB-03` obligatoire |
+| D2 | `B03-CQ-01` ouvert aux trois catégories |
+| D3 | A1-A4 une fois par dossier, C1/C2 par lot |
+| **D4** | **(c)** — rendu par le moteur du backend depuis les fichiers de commande versionnés ; PDF joints au dossier |
+| S6 | absent |
+| 105 | saisi ; « trentième (30ème) » dérivé |
+
+Le chantier backend est ouvert : extension du moteur, N1-N4, les deux changements de référentiel, puis le
+remplacement du gabarit provisoire. Reste la relecture des six Word par le pilote, et l'errata.
 
 ## Ce qui reste à faire, dans l'ordre demandé
 

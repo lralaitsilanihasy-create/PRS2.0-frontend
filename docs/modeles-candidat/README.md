@@ -3,6 +3,19 @@
 *26/09/2026. Décalques de **A1, A2, A3, A4, C1 et C2**, pages 23 à 34 du dossier `AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026`.*
 *⚠️ **Rien n'est en production** : le gabarit provisoire filigrané reste en place jusqu'à votre relecture.*
 
+## Décidé le 26/09 — « oui à tout »
+
+| # | décision |
+|---|---|
+| D1 | `B02-OB-03` (numéro de l'AOO) devient **obligatoire** — jamais « — Objet… » |
+| D2 | `B03-CQ-01` (pièces d'identification) est **ouvert aux trois catégories** |
+| D3 | **A1 à A4 une fois par dossier**, C1 et C2 **par lot** |
+| D4 | le rendu : **(c)** — le moteur du backend rend les six modèles lui-même, docx et PDF, depuis les fichiers de commande ; les PDF restent joints au dossier |
+| S6 | cases à cocher : **absentes** |
+| 105 | `B05-GS-04` reste **saisi**, le « trentième (30ème) » est **dérivé** ; le contrôle bloquant les tient cohérents |
+
+Il reste la **relecture des six Word** ci-dessous, et l'errata à envoyer à la PRMP.
+
 ## Ce que vous avez sous la main
 
 | fichier | quoi | pages | fidélité |
@@ -34,9 +47,9 @@ abrégé (« cent cinquième (105ème) ») · `{{DERIVE.x}}` = calculé par le s
 section conditionnelle, **ajoutée** sans remplacer de texte (N4). **Les blancs du candidat ne sont pas jetonnés** :
 ils restent exactement comme la source les imprime.
 
-⚠️ **Deux codes sont proposés, pas encore attribués** : `B03-AJ-01` (durée des antécédents juridiques, défaut 5 ans)
-et `B03-AF-01` (durée des antécédents financiers, défaut 3 ans) — les deux champs du besoin N3, au bloc Candidats.
-Le backend les fixe ; les modèles suivront.
+**Les deux durées d'antécédents (N3) ont leurs codes, arrêtés le 26/09** : `B03-CQ-09` (juridiques, défaut 5 ans) et
+`B03-CQ-10` (financiers, défaut 3 ans), dans la rubrique existante « Capacité et qualifications des candidats »,
+ouverte aux trois catégories. Le défaut est un attribut `valeurDefaut` du champ, recopié dans la fiche à sa création.
 
 ## Tableaux de correspondance
 
@@ -48,10 +61,10 @@ Le backend les fixe ; les modèles suivront.
 |---|---|---|---|---|
 | A1.1 | `N° D’appel d'offre et titre: _________________` | `{{B02-OB-03}}` `{{B02-OB-01}}` | Numéro du dossier d'appel d'offres + Objet de l'appel d'offres | fiche |
 | A1.2 | `Certificat d’immatriculation (NIF), Certificat d’existence (Numéro Statistique), Certificat de non faillite.` | `{{B03-CQ-01}}` | Pièces d'identification et situation juridique exigées | fiche |
-| A1.3 | `au cours des cinq dernières années` **(×3)** | `{{B03-AJ-01.lettres}}` | la même durée en toutes lettres | serveur |
+| A1.3 | `au cours des cinq dernières années` **(×3)** | `{{B03-CQ-09.lettres}}` | la même durée en toutes lettres | serveur |
 | A1.4 | `(non applicable)` | `{{A1B.mention}}` | « (non applicable) » quand le cadrage n’autorise pas le groupement, rien sinon | serveur — **N4**, cadrage `groupement` |
 | A1.5 | `No d'appel d'offres et titre : ____________________` | `{{B02-OB-03}}` `{{B02-OB-01}}` | Numéro du dossier d'appel d'offres + Objet de l'appel d'offres | fiche |
-| A1.6 | `[nombre d’années]` **(×2)** | `{{B03-AJ-01}}` | Durée des antécédents juridiques (années) — **code proposé**, N3 | fiche (défaut administrable : 5) |
+| A1.6 | `[nombre d’années]` **(×2)** | `{{B03-CQ-09}}` | Durée des antécédents juridiques (années) — N3 | fiche (défaut administrable : 5) |
 | A1.7 | *(rien)* | `{{SI:A1B}}` | marqueur ajouté : ouvre la section des champs de A1-b : **omise** quand le cadrage n’autorise pas le groupement (N4) | serveur |
 | A1.8 | *(rien)* | `{{FINSI:A1B}}` | marqueur ajouté : referme cette section | serveur |
 | A1.9 | `[numéro de la page]` | *inchangé* | blanc de l’offre | candidat |
@@ -85,8 +98,8 @@ Le backend les fixe ; les modèles suivront.
 | # | ce que la source imprime | devient | ce que c’est | rempli par |
 |---|---|---|---|---|
 | A3.1 | `No. d'appel d'offres et titre : _____________________` **(×2)** | `{{B02-OB-03}}` `{{B02-OB-01}}` | Numéro du dossier d'appel d'offres + Objet de l'appel d'offres | fiche |
-| A3.2 | `pour les trois dernières années` | `{{B03-AF-01.lettres}}` | Durée des antécédents financiers, en toutes lettres — **code proposé**, N3 | fiche (défaut administrable : 3) |
-| A3.3 | `des bilans des trois années` | `{{B03-AF-01.lettres}}` | Durée des antécédents financiers, en toutes lettres — **code proposé**, N3 | fiche (défaut administrable : 3) |
+| A3.2 | `pour les trois dernières années` | `{{B03-CQ-10.lettres}}` | Durée des antécédents financiers, en toutes lettres — N3 | fiche (défaut administrable : 3) |
+| A3.3 | `des bilans des trois années` | `{{B03-CQ-10.lettres}}` | Durée des antécédents financiers, en toutes lettres — N3 | fiche (défaut administrable : 3) |
 | A3.4 | *(rien)* | `{{SI:A3B-NATURES}}` | marqueur ajouté : ouvre les lignes du second tableau de A3-b : **régénérées** avec les natures du marché (N4) | serveur |
 | A3.5 | *(rien)* | `{{FINSI:A3B-NATURES}}` | marqueur ajouté : referme ces lignes | serveur |
 | A3.6 | `[Chaque Candidat doit compléter le formulaire ci-dessous]` | *inchangé* | consigne au candidat | candidat |
@@ -143,13 +156,14 @@ Le backend les fixe ; les modèles suivront.
 | C2.11 | `[date d’établissement de l’engagement]` | *inchangé* | blanc de l’offre | candidat |
 | C2.12 | 1 pointillé(s) `______` | *inchangés* | blancs de l’offre | candidat |
 | C2.13 | 2 intitulé(s) suivi(s) de « : » | *inchangés* | lignes à renseigner | candidat |
+
 ## Ce que ces six modèles demandent au serveur
 
 | besoin | où |
 |---|---|
 | **N1** — l'ordinal et son abrégé | C1, C2 : `{{B05-GS-04.doublet}}` et `{{DERIVE.delai-garantie.doublet}}`, deux fois chacun |
 | **N2** — les dérivés | C1, C2 : délai de garantie (`B05-GS-04 − B04-VO-01`), fin de validité de l'offre (`B04-LR-03 + B04-VO-01`) |
-| **N3** — deux durées d'antécédents | A1 (×5 occurrences), A3 (×2) — codes proposés `B03-AJ-01`, `B03-AF-01` |
+| **N3** — deux durées d'antécédents | A1 (×5 occurrences), A3 (×2) — `B03-CQ-09`, `B03-CQ-10` |
 | **N4** — deux sections conditionnelles | A1-b (`{{SI:A1B}}`, `{{A1B.mention}}`), A3-b (`{{SI:A3B-NATURES}}`) |
 | **N5** — *rien* | l'adresse existe déjà : `B01-AC-02` |
 
@@ -168,8 +182,9 @@ Trois constats de plus, en relisant lettre à lettre — **reproduits tels quels
 | **E6** | la note de A2-b s'ouvre par « [Note : » et **ne se referme jamais** | 27 |
 | **E7** | la même note écrit « cette preuve **peut-être** apportée » pour « peut être » | 27 |
 
-**S6 — à arbitrer.** Sept lignes des pages 23-25 sont précédées, dans la source, d'un glyphe d'une police de
-symboles (`U+F0F0`) : la case à cocher, ou la puce, du formulaire — « Il n'y a pas eu de non-exécution… »,
+**S6 — tranché le 26/09 : absent.** Sept lignes des pages 23-25 sont précédées, dans la source, d'un glyphe d'une
+police de symboles (`U+F0F0`) : la case à cocher, ou la puce, du formulaire — « Il n'y a pas eu de non-exécution… »,
 « Marché(s) non exécuté(s)… », « Pas de litige en instance », « Litige(s) en instance: », la liste des certificats
 de A1-a, les deux pointillés de A1-b. La police n'étant pas identifiable, le glyphe n'est pas reproduit : la ligne
-commence au texte. Deux issues : le remplacer par « ☐ » (une interprétation), ou le laisser absent (une perte).
+commence au texte. Le remplacer par « ☐ » aurait été une interprétation, et aurait exigé d'embarquer une police
+dans le serveur.

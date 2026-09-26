@@ -66,7 +66,7 @@
   },
   {
    "type": "para",
-   "texte": "Description de procédure de redressement judiciaire ou équivalent au cours des {{B03-AJ-01.lettres}} dernières années et situation actuelle, incluant situation active et passive :"
+   "texte": "Description de procédure de redressement judiciaire ou équivalent au cours des {{B03-CQ-09.lettres}} dernières années et situation actuelle, incluant situation active et passive :"
   },
   {
    "type": "vide",
@@ -174,15 +174,15 @@
   },
   {
    "type": "centre",
-   "texte": "Marchés non exécutés au cours des {{B03-AJ-01.lettres}} dernières années"
+   "texte": "Marchés non exécutés au cours des {{B03-CQ-09.lettres}} dernières années"
   },
   {
    "type": "para",
-   "texte": "Il n’y a pas eu de non-exécution de marché pendant la période de {{B03-AJ-01}} ans"
+   "texte": "Il n’y a pas eu de non-exécution de marché pendant la période de {{B03-CQ-09}} ans"
   },
   {
    "type": "para",
-   "texte": "Marché(s) non exécuté(s) pendant la période de {{B03-AJ-01}} années."
+   "texte": "Marché(s) non exécuté(s) pendant la période de {{B03-CQ-09}} années."
   },
   {
    "type": "table",
@@ -202,7 +202,7 @@
   },
   {
    "type": "centre",
-   "texte": "Litiges au cours des {{B03-AJ-01.lettres}} dernières années"
+   "texte": "Litiges au cours des {{B03-CQ-09.lettres}} dernières années"
   },
   {
    "type": "para",
@@ -244,7 +244,7 @@
   },
   {
    "source": "au cours des cinq dernières années",
-   "jeton": "au cours des {{B03-AJ-01.lettres}} dernières années"
+   "jeton": "au cours des {{B03-CQ-09.lettres}} dernières années"
   },
   {
    "source": "(non applicable)",
@@ -256,7 +256,7 @@
   },
   {
    "source": "[nombre d’années]",
-   "jeton": "{{B03-AJ-01}}"
+   "jeton": "{{B03-CQ-09}}"
   }
  ],
  "ajouts": [
