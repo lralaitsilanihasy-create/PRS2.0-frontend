@@ -26,7 +26,7 @@ Deux conséquences qui commandent tout le reste :
 | **produits** | un `.docx` par sigle (6 fichiers), un tableau de correspondance par modèle, un rapport de fidélité |
 | **hors périmètre** | le remplissage lui-même (backend), la mise en production (après votre relecture) |
 
-## Cinq écarts trouvés **dans la source** — **tranchés le 26/09**
+## Six écarts trouvés **dans la source** — cinq tranchés le 26/09, un à arbitrer
 
 | # | constat | page | décision |
 |---|---|---|---|
@@ -34,6 +34,7 @@ Deux conséquences qui commandent tout le reste :
 | S2 | La page 22 porte une **« Note aux Utilisateurs »** entre chevrons `<…>` : elle s'adresse à l'acheteur, pas au candidat. | 22 | **Hors du modèle A1 — mais son contenu n'est pas perdu.** C'est une **règle de cadrage** : l'obligation de remplir les fiches de capacités techniques ou financières peut être réduite selon le montant du marché, ou lorsque des communautés et des ONG sont susceptibles de candidater. Elle devient une **nouvelle question de cadrage — « quelles fiches de renseignements sont exigées ? »** — qui commande la **présence même de A2 et A3** dans le dossier généré. Le texte de la note devient l'**aide contextuelle** de cette question. |
 | S3 | A1-b porte la mention **« (non applicable) »** : c'est la réponse du **2463**, pas le modèle. | 24 | **Conditionnée au cadrage `groupement`**, sur la **valeur existante** (non autorisé · conjoint ou solidaire · obligatoirement solidaire) — **pas** sur un booléen créé pour l'occasion. Comportement exact, tel que le 2463 le montre : **le titre est conservé**, la mention « (non applicable) » vient **sous le titre**, et les champs sont **omis**. À l'écran, la section est **masquée**. |
 | S4 | Le titre de A4 porte un **appel de note « ¹ »** — mais la page ne porte **aucune note**. Vérifié sur le texte brut, filigrane retiré. | 31 | **Gardé tel quel.** On ne complète pas la source. → **errata**. |
+| S6 | Sept lignes des pages 23-25 sont précédées d'un **glyphe d'une police de symboles** (`U+F0F0`) : la case à cocher, ou la puce, du formulaire — les deux lignes de choix de A1-c (×2), la liste des certificats de A1-a, les deux pointillés de A1-b. Trouvé en relisant les octets : le glyphe est invisible dans toute extraction texte. | 23, 24, 25 | **À arbitrer.** La police n'est pas identifiable : le décalque n'en reproduit pas le glyphe, la ligne commence au texte. Soit le remplacer par « ☐ » (une interprétation), soit le laisser absent (une perte). |
 | S5 | La consigne de A1-c est **tronquée** : « [Le formulaire ci-dessous doit être rempli par le] » — la phrase s'interrompt. Vérifié par le pilote en mode brut **et** en mise en page. | 25 | **Reproduite telle quelle**, et — le point important — **ce n'est pas un trou à remplir** : c'est un crochet de consigne inachevé, pas un champ. Le décalqueur ne doit pas le confondre avec les `[…]` qui, eux, sont des blancs. → **errata**. |
 
 ## ⚠️ La source de travail n'est pas la copie de lecture
@@ -259,21 +260,33 @@ Quatre constats, à soumettre ensemble et non au fil de l'eau :
 | E3 | La consigne de A1-c est **tronquée** : « [Le formulaire ci-dessous doit être rempli par le] ». | 25 |
 | E4 | A1-c **se contredit** : ses tableaux sont titrés « au cours des **cinq** dernières années », son corps écrit deux fois « pendant la période de **[nombre d'années]** ans ». | 25 |
 | E5 | C2 **répète un membre de phrase** : « [indiquer la dénomination sociale **dénomination sociale** de la banque ou de l'organisme de caution, et le siège social] ». | 34 |
+| E6 | La note de A2-b s'ouvre par « [Note : » et **ne se referme jamais**. | 27 |
+| E7 | La même note écrit « cette preuve **peut-être** apportée » (trait d'union) pour « peut être ». | 27 |
 
 Aucun n'est corrigé dans les décalques : ils sont reproduits tels quels, et c'est l'errata qui porte la demande.
 
-## ✅ Fait le 26/09 — les deux garanties
+## ✅ Fait le 26/09 — les six modèles
 
-`docs/modeles-candidat/` : **C1.docx**, **C2.docx** et leur `README.md` (tableaux de correspondance).
+`docs/modeles-candidat/` : **A1, A2, A3, A4, C1, C2** en `.docx`, et un `README.md` de relecture qui porte les six
+tableaux de correspondance, les besoins serveur, les constats d'errata et l'arbitrage S6.
 **Rien en production** — le gabarit provisoire filigrané tient sa place.
 
-| | C1 | C2 |
-|---|---|---|
-| page de la source | 33 | 34 |
-| paragraphes | 13 | 14 |
-| trous alimentés par la fiche ou dérivés | 6 | 7 |
-| blancs laissés au candidat | 2 | 5 |
-| **fidélité** | **identique**, 2 119 car. | **identique**, 2 790 car. |
+| | A1 | A2 | A3 | A4 | C1 | C2 |
+|---|---|---|---|---|---|---|
+| pages | 23-25 | 26-27 | 28-30 | 31 | 33 | 34 |
+| tableaux | 2 | 1 | 3 | 1 | — | — |
+| substitutions (fiche, dérivé, serveur) | 6 | — | 3 | — | 6 | 7 |
+| marqueurs de section (N4) | 2 | — | 2 | — | — | — |
+| **fidélité** | **identique**, 2 651 car. | **identique**, 515 | **identique**, 2 190 | **identique**, 443 | **identique**, 2 119 | **identique**, 2 790 |
+
+**Le contrat des marqueurs, pour le backend** : `{{SI:A1B}}` … `{{FINSI:A1B}}` encadrent les champs de A1-b, à
+omettre quand le cadrage `groupement` n'autorise pas le groupement ; `{{A1B.mention}}` vaut « (non applicable) »
+dans ce cas, rien sinon. `{{SI:A3B-NATURES}}` … `{{FINSI:A3B-NATURES}}` encadrent les lignes du second tableau de
+A3-b, à régénérer avec les natures du marché. Ces jetons sont **ajoutés** — ils ne remplacent aucun texte — et le
+comparateur les retire avant de juger.
+
+**Deux codes proposés, à fixer par le backend (N3)** : `B03-AJ-01` durée des antécédents juridiques (défaut 5),
+`B03-AF-01` durée des antécédents financiers (défaut 3), au bloc Candidats.
 
 **La chaîne est montée et éprouvée**, ce qui vaut pour les quatre fiches qui restent :
 
@@ -284,9 +297,10 @@ Aucun n'est corrigé dans les décalques : ils sont reproduits tels quels, et c'
 4. `LireDocx.java` + `fidelite.mjs` — relecture du `.docx` produit et **comparaison caractère par caractère**
    à la page du dossier, jetons rejoués sur la source. Un écart inexpliqué sort en code 1.
 
-⚠️ **Ce qui manque encore aux quatre fiches A1-A4 : les tableaux.** L'extraction les aplatit en lignes ; leur
-structure (lignes, colonnes, en-têtes) doit être décrite à la main. C'est de la **structure**, pas du texte —
-la règle de non-retranscription tient toujours.
+Les tableaux des quatre fiches ont été décrits à la main — lignes, colonnes, en-têtes, cellules qui partagent une
+ligne du PDF — à partir de la géométrie relevée en `-layout -nodiag`. C'est de la **structure**, pas du texte :
+la règle de non-retranscription a tenu, et le comparateur, qui lit les tableaux dans l'ordre du document, en
+témoigne.
 
 ## L'ordre des gestes, et le verrou
 
