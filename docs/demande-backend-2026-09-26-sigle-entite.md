@@ -24,6 +24,14 @@ de présentation, l'AGPM et repris dans les références des dossiers.
   (Administrateur → Entités). La seule exception utile est l'entité 11 du jeu 2463, à poser à « MESupReS » par le script
   de rejeu (étape 0), pas par migration.
 
+> ⚠️ **Livré le 2026-09-26 (backend, V48) — §B1 tel que demandé.** `tr_entite_contract.SIGLE` varchar(20) nullable
+> (migration V48, aucune reprise), `EntiteContractDto.sigle` servi par `GET /api/entite-contracts`, `/{id}` et la vue
+> publique `GET /api/auth/entites` (il n'y a pas d'endpoint « arbre » côté serveur : l'arbre du front se construit sur
+> la liste), accepté au `POST` (PRMP, UGPM, Administrateur) et au `PUT`. Validation `@Pattern [A-Za-z0-9.-]*` et
+> `@Size(20)` → 400 `erreurs[{champ:"sigle"}]` ; casse conservée ; **vide = absent** (le `PUT` avec `""` efface).
+> Entité 11 : posée par `rejouer-2463.mjs --etape 0` (`PUT /api/entite-contracts/11`) ; équivalent SQL pour une base
+> déjà chargée : `PRS20/docs/referentiel/2026-09-26-sigle-entite-11.sql`.
+
 ## B2 — La référence emploie le sigle quand il existe
 
 `ReferenceService` prend `SIGLE` **s'il est renseigné**, et garde l'acronyme dérivé sinon — même règle pour la
@@ -32,6 +40,15 @@ référence déjà attribuée ne change jamais (elle est indélébile) : seules 
 `t_sequence_reference` étant clé par `CODE_LOCALITE` (aujourd'hui l'acronyme dérivé), dire dans la réponse comment le
 compteur suit le passage de « MLSRS » à « MESupReS » (nouvelle ligne à 0, ou renommage de la clé — la première est la
 plus simple, la base de démonstration est à zéro).
+
+> ⚠️ **Livré le 2026-09-26 (backend, V48) — §B2, compteur : nouvelle ligne à 0.** `ReferenceService.genererPpm(sigle,
+> libellé, année)` prend le sigle s'il est renseigné, l'acronyme dérivé sinon ; les deux appelants (saisie du plan,
+> mise à jour rendue effective) passent le sigle de l'entité. Le compteur reste clé par le segment : une entité qui
+> reçoit un sigle ouvre `(PPM_REF, MESupReS, 2026)` à 0 — son premier plan sous ce sigle est `00001/MESupReS/…`, la
+> série `MLSRS` s'arrête où elle est (pas de renommage : une clé renommée ferait croire à une continuité que les
+> documents déjà imprimés démentent). Les références attribuées ne changent pas ; la bascule de sous-type et le retrait
+> accepté ne touchent pas ce segment. **Sur DBPRS20**, le plan du jeu 2463 garde donc `00001/MLSRS/PPM-AGPM/2026` : pour
+> qu'il porte le sigle, il faut rejouer le jeu après remise à zéro (l'étape 0 pose désormais le sigle avant le plan).
 
 ## B3 — Les documents
 
