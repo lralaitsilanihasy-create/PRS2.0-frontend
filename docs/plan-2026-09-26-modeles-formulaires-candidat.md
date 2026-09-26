@@ -261,9 +261,14 @@ Le pilote a fixé le point de départ : **la vérification de `B01-AC-02`** (fai
 d'ordinaux** — « les deux garanties en dépendent, et ce sont elles qui portent l'essentiel du travail ».
 
 1. ✅ **`B01-AC-02`** — le champ existe, l'entité porte l'adresse. Reste le maillon `valeursPpm`, au prochain rejeu.
-2. **Le formateur d'ordinaux** : spécifié ci-dessus, vecteurs de test compris. À écrire côté **backend** — c'est
-   lui qui produit les documents. Le front peut le livrer dans PRS20 comme il l'a fait le 22/09 pour le lot 1,
-   si le pilote le demande.
+2. ✅ **Le formateur d'ordinaux** — **il existe déjà.** Vérifié dans le code du backend :
+   `NombreEnLettres.ordinal(long)` (livré le 25/09 au titre de ce même §B8), et le **doublet** « cent cinquième
+   (105ème) » est assemblé par `FormulairesCandidat.validiteGarantie()`. Un test unitaire existe.
+   Restent quatre points étroits, écrits dans la demande : le **« trentième (30ème) »** de la même phrase,
+   qui n'est pas produit ; le **féminin** « première » (aucune occurrence dans la source) ; l'**élargissement
+   des vecteurs de test** ; et un **arbitrage** — 105 est aujourd'hui **saisi** (`B05-GS-04`), pas calculé.
+   **Recommandation : garder 105 saisi et dériver le 30**, le contrôle `VALIDITE_GARANTIE_SUP_OFFRE` tenant déjà
+   la cohérence. La PRMP doit pouvoir écrire ce que son dossier dit.
 3. Les six `.docx` et leurs tableaux de correspondance.
 4. Le comparateur de fidélité, puis les corrections jusqu'à zéro écart inexpliqué.
 5. **Relecture du pilote**, puis seulement la mise en production.

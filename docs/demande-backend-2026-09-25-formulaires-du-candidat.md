@@ -412,6 +412,26 @@ Ils naissent du décalque : les modèles écrivent des choses que le serveur ne 
 | **N4** | **Deux sections conditionnées** : A1-b par le cadrage `groupement`, sur la **valeur existante** (non autorisé · conjoint ou solidaire · obligatoirement solidaire), **pas** un booléen neuf ; A3-b par le **type de marché** — ventilation travaux / fournitures / services / prestations intellectuelles, le second tableau visant les **prestations similaires à l'objet**. | A1-b p. 24, A3-b p. 30 | au 2463 A1-b porte « (non applicable) » : c'est une **réponse**, pas le modèle |
 | ~~N5~~ | ~~L'adresse de l'autorité contractante~~ — **TOMBE.** `B01-AC-02 « Adresse de l'autorité contractante »` existe déjà (source **PPM**, `clePpm = ADRESSE`), et l'entité contractante porte bien une adresse en base. | — | il reste à éprouver que `valeursPpm` la serve **non vide** : première vérification du prochain rejeu |
 
+> ⚠️ **VÉRIFIÉ DANS LE CODE DU BACKEND le 2026-09-26 — le formateur d'ordinaux EXISTE DÉJÀ.** Livré le 25/09 au
+> titre de ce même §B8 : `NombreEnLettres.ordinal(long)` (`src/main/java/cnm/prs/service/NombreEnLettres.java`,
+> ligne 96) — « premier », « cinquième », « neuvième », « vingt et unième », « quatre-vingtième », « cent
+> cinquième » — et le **doublet** est déjà assemblé par `FormulairesCandidat.validiteGarantie()` :
+> `ordinal(j) + " (" + j + "ème) jour"`. Un test unitaire existe (`ValeurRepriseRevisionTest.ordinal()`).
+> **Il ne faut donc pas le redemander.** Ce qui reste, beaucoup plus étroit :
+>
+> 1. **Le « trentième (30ème) » de la même phrase n'est pas produit.** La source écrit « jusqu'au **trentième
+>    (30ème)** jour suivant l'expiration de la période de validité des offres, **soit** jusqu'au **cent cinquième
+>    (105ème)** jour » : deux ordinaux, dont un seul est généré.
+> 2. **Le féminin « première »** : `ordinal(1)` ne rend que « premier ». Aucune occurrence féminine dans la
+>    source — c'est une précaution, pas un besoin.
+> 3. **Élargir les vecteurs de test** à la table ci-dessous (14 cas), dont 75, 80, 105 et 1000.
+> 4. ⚠️ **Un arbitrage du pilote** : aujourd'hui **105 est une saisie** (`B05-GS-04`), pas un calcul. La règle de
+>    la source est « validité des offres + 30 ». Deux façons de la tenir :
+>    **(a)** garder 105 saisi et **dériver le 30** (= `B05-GS-04 − B04-VO-01`) — le contrôle existant
+>    `VALIDITE_GARANTIE_SUP_OFFRE` garantit déjà la cohérence ; **(b)** dériver 105 de la validité + 30, et
+>    retirer la saisie. **Recommandation : (a)** — la PRMP doit pouvoir écrire ce que son dossier dit, et un
+>    contrôle vaut mieux qu'un calcul qui contredirait le document publié.
+
 ### N1 — ce que le formateur doit rendre
 
 Le comportement attendu, éprouvable ligne à ligne :
