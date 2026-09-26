@@ -202,8 +202,11 @@ dépasser 30 jours à compter du lendemain de la notification du bon
   du marché (CCAP 9.1.a en blanc)                                    [H]
 - Forme de la garantie de soumission dans la fiche, B05-GS-02 : « Garantie
   bancaire » — le référentiel n'admet qu'UNE forme (liste à choix unique)
-  alors que le DPAO 6.6 en admet trois. Écart de modèle à arbitrer : faire
-  de B05-GS-02 une liste à choix multiples ?                         [H]
+  alors que le DPAO 6.6 en admet trois. Tranché le 26/09 : liste à choix
+  multiples demandée au backend
+  (demande-backend-2026-09-26-forme-garantie-soumission-choix-multiple.md) ;
+  en attendant, « Garantie bancaire ». Dès livraison : les trois formes du
+  6.6, en [R].                                                       [H]
 - Textes repris par PARAPHRASE des IC, le DPAO étant muet : B06-EO-06
   (comparaison des offres), B06-EO-08 (vérification a posteriori du
   moins-disant), B06-AN-02 (recours). Le texte vit dans
@@ -216,8 +219,10 @@ dépasser 30 jours à compter du lendemain de la notification du bon
   B10-AR-01 (CCAG)                                                   [D]
 - Imputation administrative « 00 84 0 100 00000 » : le plan de passation
   n'a pas de champ pour la porter — non saisie.
-- Calendrier : le plan semé (jeu-donnees-dao-2463.mjs, PROCESSUS) place le
-  lancement (étape 111) les 07-08/09/2026 et la décision d'attribution
-  (étape 123) les 24-28/12/2026 ; le §8 dit 09/10/2026 et 10/12/2026.
-  Remise/ouverture 09/11/2026 et notification 28/01/2027 concordent.
-  À trancher : aligner le plan sur le §8, ou le §8 sur le plan.     [?]
+- Calendrier : tranché le 26/09 — le §8 FAIT FOI, le plan semé
+  (jeu-donnees-dao-2463.mjs, PROCESSUS) s'y aligne : lancement de l'avis
+  (étape 111) le 09/10/2026, décision d'attribution (étape 123) le
+  10/12/2026, remise/ouverture 09/11/2026, notification 28/01/2027 ; les
+  étapes intermédiaires du référentiel restent dans l'ordre, en jours
+  ouvrés (examen CNM du DAO 03-17/09, remise en forme 28/09-08/10,
+  évaluation 10-18/11, examen CNM du projet 30/11-04/12).             [H]
