@@ -313,9 +313,20 @@ elles manquent, au lieu de croire à un oubli de la fiche.
 
 ## B8 — Les blancs attendus dans les modèles officiels
 
-Le pilote fournira les modèles A1-A4 et C1/C2. **D'ici là, ces deux pièces sont générées avec un gabarit
-provisoire portant en filigrane « MODÈLE PROVISOIRE – NON OFFICIEL »**, pour éprouver le pré-remplissage sans
-faire passer un brouillon pour un acte réglementaire.
+> ⚠️ **ARBITRÉ PAR LE PILOTE le 2026-09-26 — les modèles officiels SONT ceux du dossier 2463, pages 20 à 34.**
+> Il n'y a plus rien à attendre : la source est le PDF déjà utilisé pour la traçabilité
+> (`NatureMarches/DAO_Fournitures/Fourniture_a_commande.pdf`). Le front les reconstitue en Word **à l'identique**
+> — mêmes libellés, même ordre, même numérotation, même ponctuation, aucune reformulation, aucun ajout — et seuls
+> deux types de trous deviennent des champs : les **blancs** (pointillés, crochets, cases vides) et les **valeurs
+> propres au 2463 déjà écrites dans le modèle** (« 105ème jour », référence de l'AOO, bénéficiaire), sans quoi le
+> modèle ne servirait qu'à ce dossier-là.
+>
+> **Le gabarit provisoire filigrané reste en place** tant que le pilote n'a pas relu les six Word reconstitués.
+> Le plan du travail, les trous relevés page par page, les écarts constatés **dans la source** et la procédure de
+> vérification de fidélité sont dans **`docs/plan-2026-09-26-modeles-formulaires-candidat.md`**.
+
+Voici, pièce par pièce, **les blancs que la fiche remplit** — nom du blanc tel qu'il figure au dossier 2463,
+et code de la fiche qui l'alimente. Tout le reste est laissé au candidat.
 
 Voici, pièce par pièce, **les blancs que la fiche remplit** — nom du blanc tel qu'il figure au dossier 2463,
 et code de la fiche qui l'alimente. Tout le reste est laissé au candidat.
@@ -382,6 +393,22 @@ nombre `105`.
 >   modèles officiels (occurrences du montant, forme de l'ordinal) sont notés pour leur arrivée.
 
 ---
+
+
+### ⚠️ Cinq besoins NOUVEAUX, révélés par la lecture des modèles (26/09)
+
+Ils naissent du décalque : les modèles écrivent des choses que le serveur ne sait pas encore produire.
+
+| # | besoin | où il apparaît | pourquoi il bloque |
+|---|---|---|---|
+| **N1** | **Les ordinaux en toutes lettres** — « trentième (30ème) », « cent cinquième (105ème) ». `NombreEnLettres` produit des **cardinaux** (« cent cinq »). | C1 p. 33 (×2), C2 p. 34 (×2) | sans ordinal, ou bien le modèle ment, ou bien le nombre reste figé au 2463 |
+| **N2** | **Deux dates dérivées** : fin de validité de l'offre = `B04-LR-03 + B04-VO-01` jours ; délai de la garantie = `B05-GS-04 − B04-VO-01`. | C2 p. 34, C1 p. 33 | elles ne sont saisies nulle part, et ce n'est pas au candidat de les calculer |
+| **N3** | **Un champ « durée des antécédents »** : « pendant la période de [nombre d'années] ans » (A1-c, ×2) et « les trois dernières années » (A3-a). | A1-c p. 25, A3-a p. 28 | aucun champ ne les porte ; les figer au 2463 ferait mentir le modèle ailleurs |
+| **N4** | **Deux sections conditionnées** : A1-b par le cadrage `groupement`, les lignes « Fournitures / Prestations intellectuelles » de A3-b par la **catégorie**. | A1-b p. 24, A3-b p. 30 | au 2463 A1-b porte « (non applicable) » : c'est une RÉPONSE, pas le modèle |
+| **N5** | **L'adresse de l'autorité contractante** dans le jeu servi à la génération. | C1 « A : (Nom et adresse de l'Acheteur) », C2 « dénomination et adresse complète » | `B01-AC-01` ne porte que le nom |
+
+**Compte des trous** : 19 alimentés par la fiche ou dérivés, une cinquantaine laissés au candidat — dont 15 des 19
+dans les deux seules garanties.
 
 ## Hors V1 — la copie numérique du bordereau dans l'offre
 
