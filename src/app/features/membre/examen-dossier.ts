@@ -75,6 +75,7 @@ import { PpmMarchesTable, RowExamState } from '../../shared/prmp/ppm-marches-tab
 import { calculerFichePresentation } from '../../shared/prmp/fiche-presentation';
 import { calculerAgpm } from '../../shared/prmp/agpm';
 import { FichePresentationDoc } from '../../shared/prmp/fiche-presentation-doc';
+import { CelluleFicheCliquee, FicheDaoDoc, ObservationCelluleFiche } from '../../shared/prmp/fiche-dao-doc';
 import { AgpmDoc } from '../../shared/prmp/agpm-doc';
 import {
   COLONNES_PPM_OFFICIEL,
@@ -125,15 +126,26 @@ import { ExamenParcours } from './examen/examen-parcours';
 import { ExamenSynthese } from './examen/examen-synthese';
 import { PreControlePanneau } from '../../shared/pre-controle';
 
-type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'pieces';
+type OngletDocument = 'ppm' | 'fiche' | 'agpm' | 'dao' | 'pieces';
 
 /** Proposition « Observer cette cellule » ouverte sur le document. */
+/** Le libellé d'une information de la fiche DAO observée : celui que le serveur relit, la clé à défaut, le lot s'il y en a un. */
+function libelleInformationFiche(o: ObsLigne): string {
+  const base = o.libelleChampFiche || (o.champFiche ?? '').split('#')[0];
+  const lot = o.lot ?? (o.champFiche?.includes('#') ? Number(o.champFiche.split('#')[1]) : null);
+  return lot ? `${base} — lot ${lot}` : base;
+}
+
 interface PropositionCellule {
-  cellule: CelluleCliquee;
+  /** Cellule d'un document dérivé du plan (V30) — ou, à défaut, une information de la fiche DAO (lot B). */
+  cellule: CelluleCliquee | null;
+  celluleFiche: CelluleFicheCliquee | null;
   /** Clé du résultat visé : la ligne pour un point LIGNE, `null` pour un point évalué une fois. */
   idDetail: number | null;
   points: PointsCtrl[];
   libelle: string;
+  /** La valeur lue dans la cellule, pré-remplie en « Au lieu de ». */
+  valeur: string;
   left: number;
   top: number | null;
   bottom: number | null;
@@ -173,6 +185,7 @@ interface PropositionCellule {
   imports: [
     PpmMarchesTable,
     FichePresentationDoc,
+    FicheDaoDoc,
     AgpmDoc,
     DocumentVisionneuse,
     Icone,
@@ -364,6 +377,18 @@ interface PropositionCellule {
                       />
                     </app-document-visionneuse>
                   }
+                  @case ('dao') {
+                    <!-- ⚠️ Lot B (26/09) — la fiche DAO du dossier examiné, lue ici comme un document ; un clic sur
+                         une information ouvre la proposition « Observer » avec l'ancrage (idDmc, champFiche). -->
+                    <app-document-visionneuse [annotations]="annotationsDoc()">
+                      <app-fiche-dao-doc
+                        [idDmc]="dossier()!.idDmc!"
+                        [observations]="observationsDao()"
+                        [observable]="mode() !== 'locked' && pointsCourants().length > 0"
+                        (celluleClick)="proposerObservationFiche($event)"
+                      />
+                    </app-document-visionneuse>
+                  }
                   @case ('agpm') {
                     <app-document-visionneuse [annotations]="annotationsDoc()">
                       <app-agpm-doc
@@ -476,8 +501,8 @@ interface PropositionCellule {
               <span>Observer « {{ prop.libelle }} »</span>
               <button type="button" class="prop__fermer" aria-label="Fermer" (click)="fermerProposition()"><app-icone nom="x" [taille]="14" /></button>
             </div>
-            @if (prop.cellule.valeur) {
-              <p class="prop__valeur">Au lieu de : « {{ prop.cellule.valeur }} »</p>
+            @if (prop.valeur) {
+              <p class="prop__valeur">Au lieu de : « {{ prop.valeur }} »</p>
             }
             <p class="prop__question">Au titre du point :</p>
             <ul class="prop__points">
@@ -1030,6 +1055,8 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       { cle: 'ppm' as const, libelle: 'Plan de passation', nombre: this.lignesDuPlan().length },
       { cle: 'fiche' as const, libelle: 'Fiche de présentation', nombre: this.ficheDoc().nbMarchesConcernes },
       ...(this.agpmDoc().length || this.hasEtapeAgpm() ? [{ cle: 'agpm' as const, libelle: "Projet d'AGPM", nombre: this.agpmDoc().length }] : []),
+      // ⚠️ Lot B — le dossier soumis PRODUIT par une fiche DAO la porte (`idDmc`) : elle se lit et s'observe ici.
+      ...(this.dossier()?.idDmc != null ? [{ cle: 'dao' as const, libelle: 'Fiche DAO', nombre: null }] : []),
       { cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() },
     ];
   });
@@ -1055,7 +1082,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   // ── Observations numérotées (numérotation globale = pastilles du document) ─────────────────
   readonly observationsNumerotees = computed<ObservationNumerotee[]>(() => {
     const out: Omit<ObservationNumerotee, 'numero'>[] = [];
-    const vide = { cellule: null, champ: null, idMarcheCible: null, idBenefCible: null, auLieuDe: '', lire: '', texte: null };
+    const vide = { cellule: null, champ: null, idMarcheCible: null, idBenefCible: null, champFiche: null, idDmc: null, lot: null, auLieuDe: '', lire: '', texte: null };
     const pousser = (groupe: ObservationNumerotee['groupe'], etape: number, titre: string, idDetail: number | null, pts: PointsCtrl[]): void => {
       for (const p of pts) {
         const st = this.resultat(idDetail, p.idPointCtrl);
@@ -1068,7 +1095,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
             etape,
             titre,
             sousTitre: p.libelPointCtrl || `Point #${p.idPointCtrl}`,
-            cellule: o.champ ? libelleChampCible(o.champ) : null,
+            cellule: o.champ ? libelleChampCible(o.champ) : o.champFiche ? libelleInformationFiche(o) : null,
             auLieuDe: o.auLieuDe.trim(),
             lire: o.lire.trim(),
             idDetail,
@@ -1078,6 +1105,9 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
             champ: o.champ ?? null,
             idMarcheCible: o.champ ? o.idMarcheCible ?? idDetail : null,
             idBenefCible: o.champ ? o.idBenefCible ?? null : null,
+            champFiche: o.champFiche ?? null,
+            idDmc: o.champFiche ? o.idDmc ?? null : null,
+            lot: o.champFiche ? o.lot ?? null : null,
           });
         });
       }
@@ -1100,6 +1130,12 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     this.observationsNumerotees()
       .filter((o) => o.champ && documentDuChamp(o.champ) === 'PPM' && o.idMarcheCible != null)
       .map((o) => ({ idDetail: o.idMarcheCible as number, champ: o.champ as ChampPpmOfficiel, numero: o.numero, idBenef: o.idBenefCible })),
+  );
+  /** ⚠️ Lot B — les pastilles de la fiche DAO : une par information observée. */
+  readonly observationsDao = computed<ObservationCelluleFiche[]>(() =>
+    this.observationsNumerotees()
+      .filter((o) => o.champFiche)
+      .map((o) => ({ champFiche: o.champFiche as string, numero: o.numero })),
   );
   readonly observationsFiche = computed<ObservationLigneFiche[]>(() =>
     this.observationsNumerotees()
@@ -1639,6 +1675,11 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
                 champ: o.champ ?? null,
                 idMarcheCible: o.idMarcheCible ?? null,
                 idBenefCible: o.idBenefCible ?? null,
+                idDmc: o.idDmc ?? null,
+                champFiche: o.champFiche ?? null,
+                lot: o.lot ?? null,
+                libelleChampFiche: o.libelleChampFiche ?? null,
+                valeurChampFiche: o.valeurChampFiche ?? null,
               })),
             });
             // Un résultat déjà enregistré vaut étape validée (affichage de la progression).
@@ -2048,9 +2089,36 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     const enBas = r.bottom < window.innerHeight * 0.6;
     this.proposition.set({
       cellule: c,
+      celluleFiche: null,
       idDetail,
       points,
       libelle: libelleChampCible(c.champ),
+      valeur: c.valeur,
+      left: Math.max(8, Math.min(r.left, window.innerWidth - largeur - 8)),
+      top: enBas ? r.bottom + 6 : null,
+      bottom: enBas ? null : window.innerHeight - r.top + 6,
+    });
+  }
+  /**
+   * ⚠️ Lot B — une information de la fiche DAO cliquée : même proposition, sous les points de l'étape en cours
+   * (le contrat laisse le point libre — LIGNE, DOSSIER, FICHE ou AGPM), ancrage `idDmc` + `champFiche`.
+   */
+  proposerObservationFiche(c: CelluleFicheCliquee): void {
+    if (this.mode() === 'locked') return;
+    const points = this.pointsCourants();
+    if (!points.length) return;
+    const idDetail = this.estEtapeMarche() ? this.idDetailCourant() : null;
+    this.clicCelluleTraite = false;
+    const r = c.element.getBoundingClientRect();
+    const largeur = 300;
+    const enBas = r.bottom < window.innerHeight * 0.6;
+    this.proposition.set({
+      cellule: null,
+      celluleFiche: c,
+      idDetail,
+      points,
+      libelle: c.lot == null ? c.libelle : `${c.libelle} — lot ${c.lot}`,
+      valeur: c.valeur,
       left: Math.max(8, Math.min(r.left, window.innerWidth - largeur - 8)),
       top: enBas ? r.bottom + 6 : null,
       bottom: enBas ? null : window.innerHeight - r.top + 6,
@@ -2060,12 +2128,17 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   observerCellule(idPt: number): void {
     const prop = this.proposition();
     if (!prop) return;
-    const { cellule: c, idDetail } = prop;
+    const { cellule: c, celluleFiche: cf, idDetail } = prop;
     const st = this.resultat(idDetail, idPt);
-    const cible: ObsLigne = { auLieuDe: c.valeur, lire: '', champ: c.champ, idMarcheCible: c.idDetail, idBenefCible: c.idBenef };
+    // Une ligne vise UN seul endroit : une cellule du plan (V30) OU une information de la fiche (lot B).
+    const cible: ObsLigne = cf
+      ? { auLieuDe: cf.valeur, lire: '', idDmc: cf.idDmc, champFiche: cf.champFiche, lot: cf.lot }
+      : c
+        ? { auLieuDe: c.valeur, lire: '', champ: c.champ, idMarcheCible: c.idDetail, idBenefCible: c.idBenef }
+        : { auLieuDe: '', lire: '' };
     const existantes = st.statut === 'OBS' ? st.observations : [];
     // La ligne vide amorcée par « Observation » est réutilisée plutôt que doublée.
-    const libre = existantes.findIndex((o) => !aDuTexte(o) && !o.champ);
+    const libre = existantes.findIndex((o) => !aDuTexte(o) && !o.champ && !o.champFiche);
     const index = libre >= 0 ? libre : existantes.length;
     const observations = libre >= 0 ? existantes.map((o, i) => (i === libre ? cible : o)) : [...existantes, cible];
     this.patchResultat(idDetail, idPt, { statut: 'OBS', observations });
@@ -2169,6 +2242,8 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         lire: o.lire.trim() || undefined,
         ordre: i + 1,
         ...(o.champ ? { champ: o.champ, idMarcheCible: o.idMarcheCible ?? null, idBenefCible: o.idBenefCible ?? null } : {}),
+        // ⚠️ Lot B — l'ancrage sur la fiche part tel quel ; le serveur vérifie la fiche du dossier et la clé.
+        ...(o.champFiche ? { idDmc: o.idDmc ?? null, champFiche: o.champFiche } : {}),
       }));
   }
 

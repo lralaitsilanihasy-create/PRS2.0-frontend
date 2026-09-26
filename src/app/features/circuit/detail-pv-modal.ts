@@ -145,6 +145,9 @@ import { PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
                             <div class="dpv-obs-box">
                               @for (o of observationsTriees(d); track o.idObservation ?? $index) {
                                 <div><strong>Au lieu de :</strong> {{ o.auLieuDe || '—' }}<br /><strong>Lire :</strong> {{ o.lire || '—' }}</div>
+                                @if (o.champFiche) {
+                                  <div class="dpv-obs-fiche">Information de la fiche DAO : <b>{{ o.libelleChampFiche || o.champFiche }}</b>@if (o.lot) { — lot {{ o.lot }} }@if (o.valeurChampFiche) { · valeur observée « {{ o.valeurChampFiche }} » }</div>
+                                }
                               }
                             </div>
                           } @else {

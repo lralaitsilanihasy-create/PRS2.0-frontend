@@ -19,6 +19,12 @@ export interface ObsLigne {
   champ?: string | null;
   idMarcheCible?: number | null;
   idBenefCible?: number | null;
+  /** ⚠️ Lot B (V44) — information de la fiche DAO visée ; exclusive de `champ`. Les trois derniers ne sont que relus. */
+  idDmc?: number | null;
+  champFiche?: string | null;
+  lot?: number | null;
+  libelleChampFiche?: string | null;
+  valeurChampFiche?: string | null;
 }
 /** Statut explicite d'un point de contrôle : `null` = non statué, `RAS` = conforme, `OBS` = avec observation. */
 export type StatutPoint = 'RAS' | 'OBS' | null;
@@ -389,6 +395,10 @@ export interface ObservationNumerotee {
   champ: string | null;
   idMarcheCible: number | null;
   idBenefCible: number | null;
+  /** ⚠️ Lot B — information de la fiche DAO visée (`cellule` en porte le libellé, avec le lot). */
+  champFiche: string | null;
+  idDmc: number | null;
+  lot: number | null;
 }
 
 /** Option de « Cellule visée » (équivalent clavier du clic sur le document). */

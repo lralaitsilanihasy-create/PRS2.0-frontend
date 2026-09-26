@@ -296,6 +296,9 @@ import { LienDossier } from '../circuit/page-dossier/lien-dossier';
                                     <tbody>
                                       @for (o of observationsTriees(d); track o.idObservation ?? $index) {
                                         <tr><td>{{ o.auLieuDe || '—' }}</td><td>{{ o.lire || '—' }}</td></tr>
+                                        @if (o.champFiche) {
+                                          <tr class="obs-pv-fiche"><td colspan="2">Information de la fiche DAO : <b>{{ o.libelleChampFiche || o.champFiche }}</b>@if (o.lot) { — lot {{ o.lot }} }@if (o.valeurChampFiche) { · valeur observée « {{ o.valeurChampFiche }} » }</td></tr>
+                                        }
                                       }
                                     </tbody>
                                   </table>

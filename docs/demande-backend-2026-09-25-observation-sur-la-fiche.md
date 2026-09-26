@@ -92,6 +92,18 @@ du champ, sa valeur observée et son lot, et un lien vers la fiche à l'endroit 
 Rien ne sera codé tant que le contrat n'est pas servi : comme au lot 1, l'écran se replie — le geste n'apparaît
 pas si `champFiche` n'existe pas.
 
+> ⚠️ **Livré côté front le 2026-09-26 (lot B), avec un écart sur le lieu du geste.** Le geste « Observer » ne vit
+> **pas** sur l'écran de la fiche en lecture (`/<espace>/dao/:idDmc`), mais **dans l'écran d'examen lui-même** : la
+> fiche DAO y est un **quatrième document** (onglet « Fiche DAO », à côté du plan, de la fiche de présentation et de
+> l'AGPM), rendu par `shared/prmp/fiche-dao-doc.ts`, dès que le dossier examiné porte un `idDmc`. Raison : c'est
+> l'examen qui connaît le point de contrôle, la ligne et la ligne d'observation en cours — un geste posé sur l'écran de
+> la fiche aurait dû les deviner, ou faire naviguer l'examinateur hors de son examen. Le patron est celui de V30
+> (cellules observables, pastilles numérotées, « Au lieu de » pré-rempli de la valeur affichée) ; la ligne posée
+> porte `idDmc` + `champFiche` (`CODE#n` pour un lot) et jamais `champ`. Dans le PV (page du Membre, modale du
+> circuit, carte partagée Vérificateur/PRMP), l'observation dit « Information de la fiche DAO : *libellé* — lot *n* ·
+> valeur observée « … » », avec le lien « Ouvrir la fiche » vers `/<espace>/dao/:idDmc` sur la carte partagée.
+> Pas d'écran de lettre de renvoi touché : elle reprend le libellé figé du PV, qui porte déjà le contexte.
+
 ## Une question, avant de coder
 
 **Qui peut observer une information ?** Nous supposons : les mêmes que ceux qui portent une observation d'examen

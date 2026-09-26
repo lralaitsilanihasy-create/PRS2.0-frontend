@@ -371,6 +371,21 @@ export interface ObservationControle {
   idMarcheCible?: number | null;
   /** Bénéficiaire visé (`t_service_beneficiaire.ID_BENEF`) — colonnes par bénéficiaire seulement. */
   idBenefCible?: number | null;
+  /**
+   * ⚠️ Lot B (V44, 2026-09-25, demande-backend-2026-09-25-observation-sur-la-fiche) — INFORMATION DE LA FICHE DAO
+   * visée, champs facultatifs : `idDmc` la fiche du dossier examiné, `champFiche` la clé de l'information
+   * (`B04-VO-01`, ou `B05-GS-03#2` pour celle d'un lot). Une ligne vise UN seul endroit : jamais `champ` et
+   * `champFiche` à la fois (400). Refus : `champFiche` sans `idDmc` (400 `idDmc`), fiche d'un autre dossier
+   * (409 `FICHE_HORS_DOSSIER`), clé inconnue du référentiel de la fiche ou rang de lot faux (400 `champFiche`).
+   */
+  idDmc?: number | null;
+  champFiche?: string | null;
+  /** En lecture (V44) : le libellé du champ tel que le référentiel le donne. */
+  libelleChampFiche?: string | null;
+  /** En lecture (V44) : la valeur observée, FIGÉE à la pose de la ligne, telle que les documents l'impriment. */
+  valeurChampFiche?: string | null;
+  /** En lecture (V44) : le rang de lot porté par la clé, `null` sinon. */
+  lot?: number | null;
 }
 
 /**
@@ -586,6 +601,12 @@ export interface ObservationPv {
   idBenefCible?: number | null;
   /** Document de la cellule, déduit du code par le serveur ; `null` sans cible. */
   documentCible?: 'PPM' | 'FICHE' | 'AGPM' | null;
+  /** ⚠️ Lot B (V44) — information de la fiche DAO visée, recopiée de l'observation d'examen (cf. `ObservationControle`). */
+  idDmc?: number | null;
+  champFiche?: string | null;
+  libelleChampFiche?: string | null;
+  valeurChampFiche?: string | null;
+  lot?: number | null;
 }
 
 /** Une décision d'itération sur une observation (historique, traçabilité). */

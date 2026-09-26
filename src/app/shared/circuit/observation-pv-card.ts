@@ -1,4 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
+
+import { LienDossier } from '../../features/circuit/page-dossier/lien-dossier';
 
 import { ObservationPv } from '../../models';
 
@@ -32,6 +35,7 @@ export function decomposerObservation(lib: string): {
  */
 @Component({
   selector: 'app-observation-pv-card',
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="opv" [class.opv--levee]="obs().statut === 'LEVEE'" [class.opv--maintenue]="obs().statut === 'MAINTENUE'">
@@ -58,6 +62,15 @@ export function decomposerObservation(lib: string): {
         </div>
       } @else if (demande()) {
         <div class="opv__demande">{{ demande() }}</div>
+      }
+      <!-- ⚠️ Lot B (V44) — l'observation vise une information de la fiche DAO : on la nomme, avec la valeur
+           observée telle qu'elle a été figée à la pose, et l'on mène à la fiche dans l'espace du lecteur. -->
+      @if (obs().champFiche) {
+        <div class="opv__fiche">
+          Information de la fiche DAO : <b>{{ obs().libelleChampFiche || obs().champFiche }}</b>@if (obs().lot) { — lot {{ obs().lot }} }
+          @if (obs().valeurChampFiche) { · valeur observée « {{ obs().valeurChampFiche }} » }
+          @if (lienFiche(); as lien) { <a class="opv__lien" [routerLink]="lien">Ouvrir la fiche</a> }
+        </div>
       }
       @if (obs().statut === 'MAINTENUE' && obs().precision) {
         <div class="opv__precision">Précision du vérificateur : « {{ obs().precision }} »</div>
@@ -86,11 +99,20 @@ export function decomposerObservation(lib: string): {
     .opv__corr-v { font-size: var(--text-sm); overflow-wrap: anywhere; }
     .opv__corr-fleche { align-self: center; color: var(--n-400); font-weight: 700; }
     .opv__demande { font-size: var(--text-sm); color: var(--n-700); background: var(--c-50); padding: 0.35rem 0.6rem; border-radius: var(--radius-md); }
+    .opv__fiche { font-size: var(--text-xs); color: var(--n-600); margin-top: 0.3rem; }
+    .opv__lien { margin-left: 0.4rem; }
     .opv__precision { font-size: var(--text-xs); color: var(--warning-text); background: var(--warning-bg); padding: 0.3rem 0.6rem; border-radius: var(--radius-md); }
   `,
 })
 export class ObservationPvCard {
   readonly obs = input.required<ObservationPv>();
+  private readonly liens = inject(LienDossier);
+  /** La fiche DAO visée, dans l'espace du lecteur — `null` hors d'un espace connu ou sans fiche. */
+  readonly lienFiche = computed<(string | number)[] | null>(() => {
+    const espace = this.liens.espace();
+    const idDmc = this.obs().idDmc;
+    return espace && idDmc != null ? ['/', espace, 'dao', idDmc] : null;
+  });
   /** Numéro d'ordre affiché (1, 2, …) — optionnel. */
   readonly numero = input<number | null>(null);
 
