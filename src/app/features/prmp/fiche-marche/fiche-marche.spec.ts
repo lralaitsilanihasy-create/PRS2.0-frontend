@@ -789,6 +789,114 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(Array.from(racine().querySelectorAll('.fm__versions tbody tr')).map((tr) => cellules(tr))).toEqual(['1 22/09/2026 10:05 PRMP001 1 Documents']);
   });
 
+
+  it('supprimer une fiche SANS HISTOIRE : geste offert, confirmation nommée, la ligne redevient préparable', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'BROUILLON', version: 1 }), [], []);
+    fixture.componentInstance.allerA(5);
+    rendre();
+    // Le geste n'usurpe pas la place du bouton principal : c'est un lien de refus, au bout du pied.
+    const geste = bouton('Supprimer cette fiche');
+    expect(geste.classList.contains('fm__lien--ko')).toBe(true);
+
+    geste.click();
+    rendre();
+    // ⚠️ La confirmation NOMME ce qu'on perd — un « êtes-vous sûr ? » ne le dit pas.
+    const modale = racine().querySelector('.confirm-modal');
+    expect(texte(modale?.querySelector('.modal-title'))).toBe('Supprimer cette fiche ?');
+    expect(texte(modale?.querySelector('.modal-body'))).toContain('Fourniture de mobilier');
+    expect(texte(modale?.querySelector('.modal-body'))).toContain('La ligne du plan redeviendra préparable');
+    // Une modale ne se ferme que par son bouton ou Échap (règle du 13/09) : pas d'écouteur sur le voile.
+    expect(modale?.getAttribute('role')).toBe('alertdialog');
+
+    bouton('Supprimer la fiche').click();
+    const del = http.expectOne('/api/fiches-marche/42');
+    expect(del.request.method).toBe('DELETE');
+    del.flush(null, { status: 204, statusText: 'No Content' });
+    rendre();
+    expect(navigate).toHaveBeenCalledWith(['/prmp/dao']);
+    expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('redevient préparable'));
+  });
+
+  it('le geste disparaît dès que la fiche a une histoire — version figée, document, ou dossier produit', () => {
+    // Une fiche validée : on la corrige par une révision, on ne l'efface pas (§B2, piste 2).
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 1 }), [], []);
+    fixture.componentInstance.allerA(5);
+    rendre();
+    expect(fixture.componentInstance.peutSupprimer()).toBe(false);
+    expect(Array.from(racine().querySelectorAll('button')).some((b) => texte(b) === 'Supprimer cette fiche')).toBe(false);
+    TestBed.resetTestingModule();
+
+    // Un brouillon RÉVISÉ garde son histoire : la version 1 est figée.
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'BROUILLON', version: 2 }), [
+      { idFiche: 9, version: 1, statut: 'VALIDEE', typeMarche: 'QUANTITE_FIXE', dateValidation: '2026-09-24T10:42:00', validePar: 'IMP001', nbValeurs: 3 },
+    ], []);
+    http.expectOne('/api/fiches-marche/42/versions/1').flush(fiche({ statut: 'VALIDEE', version: 1 }));
+    fixture.componentInstance.allerA(5);
+    rendre();
+    expect(fixture.componentInstance.peutSupprimer()).toBe(false);
+    TestBed.resetTestingModule();
+
+    // Un brouillon qui a déjà produit son dossier : le dossier le retient.
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'BROUILLON', version: 1, idDossierSoumis: 100333 }), [], []);
+    fixture.componentInstance.allerA(5);
+    rendre();
+    expect(fixture.componentInstance.peutSupprimer()).toBe(false);
+    TestBed.resetTestingModule();
+
+    // Un contrôleur ne supprime rien, même un brouillon.
+    monter('MEMBRE', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'BROUILLON', version: 1 }), [], []);
+    fixture.componentInstance.allerA(5);
+    rendre();
+    expect(fixture.componentInstance.peutSupprimer()).toBe(false);
+  });
+
+  it('refus du serveur : le code 409 est NOMMÉ, et FICHE_AVEC_DOSSIER mène au dossier qui retient la fiche', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'BROUILLON', version: 1 }), [], []);
+    fixture.componentInstance.allerA(5);
+    rendre();
+    bouton('Supprimer cette fiche').click();
+    rendre();
+    bouton('Supprimer la fiche').click();
+    // Le serveur oppose sa règle : l'écran la dit avec le mot juste, sans la réimplémenter.
+    http.expectOne('/api/fiches-marche/42').flush(
+      { code: 'FICHE_AVEC_DOSSIER', message: 'Fiche rattachée à un dossier.', idDossier: 100333 },
+      { status: 409, statusText: 'Conflict' },
+    );
+    rendre();
+    expect(texte(racine().querySelector('.confirm-modal .modal-body'))).toContain('a produit un dossier à soumettre');
+    expect((racine().querySelector('.confirm-modal a') as HTMLAnchorElement).getAttribute('href')).toBe('/prmp/dossier/100333');
+    // La confirmation s'est refermée : on ne réessaie pas à l'aveugle.
+    expect(Array.from(racine().querySelectorAll('button')).some((b) => texte(b) === 'Supprimer la fiche')).toBe(false);
+    expect(toast.error).not.toHaveBeenCalled();
+
+    bouton('J’ai compris').click();
+    rendre();
+    expect(racine().querySelector('.confirm-modal')).toBeNull();
+    expect(navigate).not.toHaveBeenCalledWith(['/prmp/dao']);
+  });
+
+  it('refus « fiche validée » : l’écran renvoie à la révision, le geste prévu pour corriger', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'BROUILLON', version: 1 }), [], []);
+    fixture.componentInstance.allerA(5);
+    rendre();
+    bouton('Supprimer cette fiche').click();
+    rendre();
+    bouton('Supprimer la fiche').click();
+    http.expectOne('/api/fiches-marche/42').flush(
+      { code: 'FICHE_VALIDEE', message: 'Fiche validée.' },
+      { status: 409, statusText: 'Conflict' },
+    );
+    rendre();
+    expect(texte(racine().querySelector('.confirm-modal .modal-body'))).toContain('Ouvrez une nouvelle version pour la corriger');
+  });
+
   it('documents (lot 2) : listés sur une fiche validée, ouverts et enregistrés par le binaire du serveur', () => {
     monter('PRMP', 42);
     ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2, dateValidation: '2026-09-22T10:05:00', validePar: 'PRMP001' }), [], [

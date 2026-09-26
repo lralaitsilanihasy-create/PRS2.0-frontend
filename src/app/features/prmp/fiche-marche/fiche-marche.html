@@ -574,6 +574,12 @@
                 } @else if (estPrmp()) {
                   <button type="button" class="btn btn-primary" [disabled]="!!bilan().bloquants.length || saving() || ecritureBloquee()" (click)="valider()">{{ saving() ? 'Validation…' : 'Valider la fiche' }}</button>
                 }
+                <!-- ⚠️ Livré le 26/09 — une fiche OUVERTE PAR ERREUR se défait, tant qu'elle n'a pas d'histoire :
+                     jamais validée, aucune version figée, aucun document, aucun dossier. Passé là, c'est un
+                     enregistrement : il se corrige par une révision, il ne s'efface pas. -->
+                @if (peutSupprimer()) {
+                  <button type="button" class="fm__lien fm__lien--ko" [disabled]="saving()" (click)="confirmSuppression.set(true)">Supprimer cette fiche</button>
+                }
               </div>
             </section>
           }
@@ -683,3 +689,49 @@
     </div>
   }
 </section>
+
+<!-- ⚠️ Suppression d'une fiche sans histoire : la confirmation NOMME ce qu'on s'apprête à perdre — un
+     « êtes-vous sûr ? » ne le dit pas. Fermeture par le bouton ou Échap seulement (règle du 13/09). -->
+@if (confirmSuppression()) {
+  <div class="modal-backdrop">
+    <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-label="Confirmer la suppression de la fiche" appModale (appModaleFermer)="confirmSuppression.set(false)">
+      <div class="modal-header-plain">
+        <span class="modal-title">Supprimer cette fiche ?</span>
+        <button type="button" class="btn-close-plain" aria-label="Fermer" [disabled]="saving()" (click)="confirmSuppression.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>
+          La fiche de la ligne <b>{{ fiche()?.designationMarche || 'du plan de passation' }}</b> sera supprimée, avec
+          ses réponses de cadrage, ses informations saisies et son besoin.
+          <b>La ligne du plan redeviendra préparable.</b>
+        </p>
+        <p class="fm__attendus">Aucune version n’a été validée : rien n’est enregistré au dossier.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="confirmSuppression.set(false)">Annuler</button>
+        <button type="button" class="btn btn-danger" [disabled]="saving()" (click)="supprimerFiche()">{{ saving() ? 'Suppression…' : 'Supprimer la fiche' }}</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Le serveur a refusé : on NOMME sa raison (code stable), au lieu de répéter la règle à notre façon. -->
+@if (refusSuppression(); as refus) {
+  <div class="modal-backdrop">
+    <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-label="La fiche n’a pas été supprimée" appModale (appModaleFermer)="refusSuppression.set(null)">
+      <div class="modal-header-plain">
+        <span class="modal-title">La fiche n’a pas été supprimée</span>
+        <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="refusSuppression.set(null)">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>{{ refus.message }}</p>
+        @if (refus.idDossier; as idDossier) {
+          <p><a class="btn btn-outline" [routerLink]="['/prmp/dossier', idDossier]" (click)="refusSuppression.set(null)">Ouvrir le dossier n° {{ idDossier }}</a></p>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="refusSuppression.set(null)">J’ai compris</button>
+      </div>
+    </div>
+  </div>
+}

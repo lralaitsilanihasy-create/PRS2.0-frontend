@@ -124,6 +124,26 @@ export function toApiError(err: HttpErrorResponse): ApiError {
 }
 
 /**
+ * Le **code métier** d'un refus (`ErrorResponse.code` : `DOSSIER_EXISTANT`, `FICHE_VALIDEE`…), quelle que soit la
+ * forme reçue — l'`ApiError` normalisé par l'intercepteur, ou l'`HttpErrorResponse` brut hors intercepteur. Même
+ * lecture double qu'`erreursParChamp` : un écran qui décide d'après le code ne doit pas dépendre de la chaîne
+ * d'intercepteurs pour le trouver.
+ */
+export function codeErreur(e: ApiError | HttpErrorResponse): string | null {
+  const api = e as Partial<ApiError>;
+  if (typeof api.code === 'string') return api.code;
+  const corps = ((api.raw ?? e) as HttpErrorResponse).error as { code?: unknown } | null | undefined;
+  return corps && typeof corps.code === 'string' ? corps.code : null;
+}
+
+/** Le corps d'un refus, tel que le serveur l'a servi — pour les rares cas où il porte une donnée (`idDossier`). */
+export function corpsErreur<T = Record<string, unknown>>(e: ApiError | HttpErrorResponse): T | null {
+  const api = e as Partial<ApiError>;
+  const corps = ((api.raw ?? e) as HttpErrorResponse).error;
+  return corps && typeof corps === 'object' ? (corps as T) : null;
+}
+
+/**
  * Erreurs nominatives d'un 400 (`erreurs: [{ champ, message }]`) sous forme de table, quelle que soit la forme
  * reçue : l'`ApiError` normalisé par l'intercepteur dans l'application (`fieldErrors`), ou l'`HttpErrorResponse`
  * brut hors intercepteur (tests unitaires sans intercepteur). Vide s'il n'y en a pas.

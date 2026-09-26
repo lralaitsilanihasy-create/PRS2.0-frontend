@@ -17,6 +17,9 @@
 .fm__cadrage-mod, .fm__lien { background: none; border: 0; color: var(--p-700); font: 600 0.82rem var(--font-base); cursor: pointer; }
 .fm__cadrage-mod { margin-left: auto; }
 .fm__cadrage-mod:hover, .fm__lien { text-decoration: underline; }
+/* Le geste qui défait : la couleur du refus, jamais la place du bouton principal. */
+.fm__lien--ko { color: #b42318; margin-left: auto; }
+.fm__lien--ko:disabled { opacity: 0.5; cursor: default; }
 
 .fm__cols { display: grid; grid-template-columns: 220px minmax(0, 1fr) 290px; gap: 1rem; align-items: start; }
 .fm__rail { padding: 0.5rem; }

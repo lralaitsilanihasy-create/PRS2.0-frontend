@@ -117,6 +117,16 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
     return this.http.put<ArticleFiche[]>(`${this.baseUrl}/${idDmc}/articles`, { articles }, { params, context: skipErrorToast() });
   }
 
+  /**
+   * ⚠️ Livré le 26/09 — `DELETE /{idDmc}` : supprime une fiche **sans histoire** (jamais validée), avec son besoin
+   * et ses valeurs ; la ligne du plan redevient préparable. PRMP propriétaire et son UGPM. Refus à **code stable**
+   * (`FICHE_VALIDEE`, `FICHE_AVEC_HISTORIQUE`, `FICHE_AVEC_DOCUMENTS`, `FICHE_AVEC_DOSSIER` qui porte l'`idDossier`) :
+   * l'écran les NOMME au lieu de réimplémenter la règle. `DELETE /api/dmcs/{id}` reste 405.
+   */
+  supprimerFiche(idDmc: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${idDmc}`, { context: skipErrorToast() });
+  }
+
   /** `GET /{idDmc}/versions` — versions figées (en-têtes). Silencieux : absente tant que le contrat n'est pas servi. */
   versions(idDmc: number): Observable<VersionFiche[]> {
     return this.http.get<VersionFiche[]>(`${this.baseUrl}/${idDmc}/versions`, { context: skipErrorToast() });

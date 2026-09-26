@@ -7,13 +7,14 @@ import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
-import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
+import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, TypeChamp, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { FicheBesoin } from './fiche-besoin';
+import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone } from '../../../shared/ui/icone';
 import { TitreSiTronqueDirective } from '../../../shared/ui/titre-si-tronque';
 import {
@@ -89,7 +90,8 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
   selector: 'app-fiche-marche',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    FicheBesoin,RouterLink, Icone, EtatErreur, TitreSiTronqueDirective],
+    FicheBesoin,
+    ModaleDirective,RouterLink, Icone, EtatErreur, TitreSiTronqueDirective],
   templateUrl: './fiche-marche.html',
   styleUrl: './fiche-marche.scss',
 })
@@ -269,6 +271,25 @@ export class FicheMarcheEcran {
   readonly blocsRestants = computed(() => this.obligatoiresParBloc().map((g) => g.bloc).join(', '));
   readonly reprisesListe = computed(() => reprises(this.referentiel(), this.cadrageEffectif(), this.valeurs(), this.fiche()?.valeursPpm ?? {}, this.fiche()?.valeursCadrage ?? {}));
   readonly figee = computed(() => this.fiche()?.statut === 'VALIDEE');
+  /**
+   * ⚠️ Livré le 26/09 — une fiche **sans histoire** se supprime : jamais validée, aucune version figée, aucun
+   * document, aucun dossier produit. Les quatre conditions sont celles du serveur ; l'écran ne montre le geste que
+   * lorsqu'elles tiennent, et **nomme** le refus si le serveur l'oppose quand même. Une fiche validée ne se
+   * supprime pas : elle se corrige par une **révision** (§B2, piste 2).
+   */
+  readonly peutSupprimer = computed(
+    () =>
+      !this.enLecture() &&
+      !this.figee() &&
+      !this.versions().length &&
+      !this.documents().length &&
+      this.fiche()?.idDossierSoumis == null &&
+      this.idDmc() != null,
+  );
+  /** La confirmation nommée est ouverte. */
+  readonly confirmSuppression = signal(false);
+  /** Le refus du serveur, nommé — et le dossier à ouvrir quand c'est lui qui retient la fiche. */
+  readonly refusSuppression = signal<{ message: string; idDossier?: number } | null>(null);
   /** Les anciennes valeurs à ressaisir, par clé de cellule (vide hors révision). */
   readonly aides = computed(() =>
     aidesRevision(this.referentiel(), this.cadrageEffectif(), this.valeurs(), this.valeursPrecedentes(), this.saisieParLot(), this.nbLots()),
@@ -789,6 +810,50 @@ export class FicheMarcheEcran {
   aide(champ: ChampFiche, lot: number | null = null): string | null {
     const v = this.aides().get(this.cle(champ, lot));
     return v == null ? null : String(v);
+  }
+
+  /**
+   * Supprime la fiche, puis renvoie à la liste des lignes : la ligne du plan y est redevenue préparable. Les refus
+   * du serveur portent un **code stable** — on les traduit en une phrase, et `FICHE_AVEC_DOSSIER` donne le dossier
+   * qui retient la fiche.
+   */
+  supprimerFiche(): void {
+    const id = this.idDmc();
+    if (id == null || this.saving()) return;
+    this.saving.set(true);
+    this.ficheService.supprimerFiche(id).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.confirmSuppression.set(false);
+        this.toast.success('Fiche supprimée : la ligne du plan redevient préparable.');
+        void this.router.navigate(['/prmp/dao']);
+      },
+      error: (e: ApiError) => {
+        this.saving.set(false);
+        this.confirmSuppression.set(false);
+        const idDossier = Number(corpsErreur<{ idDossier?: number }>(e)?.idDossier);
+        this.refusSuppression.set({
+          message: this.motifRefus(e),
+          idDossier: Number.isFinite(idDossier) ? idDossier : undefined,
+        });
+      },
+    });
+  }
+
+  /** La phrase du refus : notre mot pour un code connu, le message du serveur sinon. */
+  private motifRefus(e: ApiError): string {
+    switch (codeErreur(e)) {
+      case 'FICHE_VALIDEE':
+        return 'Cette fiche est validée : elle ne se supprime pas. Ouvrez une nouvelle version pour la corriger.';
+      case 'FICHE_AVEC_HISTORIQUE':
+        return 'Cette fiche a déjà une version validée dans son histoire : elle ne se supprime pas. La révision en cours peut être corrigée, puis validée.';
+      case 'FICHE_AVEC_DOCUMENTS':
+        return 'Cette fiche a produit des documents du dossier : elle ne se supprime plus.';
+      case 'FICHE_AVEC_DOSSIER':
+        return 'Cette fiche a produit un dossier à soumettre : détachez-le ou supprimez-le d’abord.';
+      default:
+        return e.message || 'La fiche n’a pas pu être supprimée.';
+    }
   }
 
   reviser(): void {
