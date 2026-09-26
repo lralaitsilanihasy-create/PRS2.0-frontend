@@ -2,7 +2,7 @@
 
 *26/09/2026, **décisions du pilote intégrées le soir même**. Source officielle : le dossier d'appel d'offres*
 *`AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026`, **pages 20 à 34** (`NatureMarches/DAO_Fournitures/Fourniture_a_commande.pdf`).*
-*À relire avant toute mise en production.*
+*✅ Relus par le pilote le 26/09 sans correction : modèles officiels, en production depuis V47.*
 
 ## La règle, telle qu'elle a été posée
 
@@ -328,8 +328,8 @@ annonce qu'il n'est pas officiel qu'un document officiel approximatif.
 
 **✅ Livré et prouvé le 26/09 (V47)** : le moteur rend les six modèles ; six rendus à jetons non substitués passés au
 comparateur — **six fois « identique »**, par le backend puis par le front. Référentiel modifié (D1, D2, N3 avec
-`valeurDefaut`), formulaires officiels produits en docx et pdf à la validation, PDF joints au dossier. Restent la
-relecture des six Word par le pilote, l'errata, et la recette réelle sur le 2463 rejoué.
+`valeurDefaut`), formulaires officiels produits en docx et pdf à la validation, PDF joints au dossier. **Relecture des
+six Word faite le 26/09, sans correction.** Restent l'errata, et la recette réelle sur le 2463 rejoué.
 
 ## Ce qui reste à faire, dans l'ordre demandé
 

@@ -16,6 +16,12 @@ const API = 'http://localhost:8080';
 const args = process.argv.slice(2);
 const VIDER = args.includes('--vider');
 const SEULE = args.find((a) => /^\d+$/.test(a));
+/**
+ * ⚠️ 26/09 — `--jeu=<clé>` : applique un jeu NOMMÉ à la ligne passée en argument. Une base vidée puis rejouée
+ * renumérote les lignes (303089 → 303090 pour le dossier réel) : la clé, elle, ne bouge pas.
+ *   node scripts/demo-dao.mjs 303090 --jeu=2463
+ */
+const CLE_JEU = (args.find((a) => a.startsWith('--jeu=')) ?? '').slice('--jeu='.length) || null;
 
 let cookie = '';
 let xsrf = '';
@@ -101,7 +107,14 @@ const garnir = async (idDetail, cadrage, valeurs, titre, parLot = {}, articles =
   const fiche = (await appel('GET', `/api/fiches-marche/${idDmc}`)).corps;
   const lots = fiche?.saisieParLot === true ? Array.from({ length: fiche.nbLots }, (_, i) => i + 1) : [null];
   const cles = (c) => (c.parLot ? lots : [null]).map((lot) => ({ lot, cle: lot == null ? c.code : `${c.code}#${lot}` }));
-  const valeurDe = (c, lot) => (c.parLot && lot != null ? parLot[c.code]?.[lot] : valeurs[c.code]);
+  // ⚠️ V47 (26/09) — un champ à `valeurDefaut` (B03-CQ-09, B03-CQ-10) naît DÉJÀ posé dans la fiche : le jeu n'a
+  // pas à le fournir, et le payload d'un bloc doit le renvoyer tel quel pour ne pas l'effacer.
+  const valeurDe = (c, lot) => {
+    const duJeu = c.parLot && lot != null ? parLot[c.code]?.[lot] : valeurs[c.code];
+    if (duJeu !== undefined) return duJeu;
+    const deLaFiche = fiche?.valeurs?.[lot == null ? c.code : `${c.code}#${lot}`];
+    return deLaFiche == null || deLaFiche === '' ? undefined : deLaFiche;
+  };
   if (lots[0] != null) console.log(`  ${lots.length} lots au plan : les champs « par lot » se saisissent ${lots.length} fois`);
 
   const aSaisir = ref.champs.filter((c) => c.source === 'SAISIE' && c.type !== 'PIECE' && conditionTenue(c.condition, cadrage));
@@ -180,8 +193,14 @@ const jeux = [
   { id: 303081, cadrage: CADRAGE_AC, valeurs: VALEURS_AC, parLot: VALEURS_AC_PAR_LOT, titre: 'FOURNITURES À COMMANDE — consommables informatiques, 2 lots' },
   { id: 303080, cadrage: CADRAGE_QF, valeurs: VALEURS_QF, titre: 'FOURNITURES À QUANTITÉ FIXE — mobilier de bureau' },
   // ⚠️ Le DOSSIER RÉEL, semé par `scripts/jeu-donnees-dao-2463.mjs` : MESupReS, cinq lots, à commande.
-  { id: 303089, cadrage: CADRAGE_2463, valeurs: VALEURS_2463, parLot: VALEURS_2463_PAR_LOT, titre: 'DOSSIER RÉEL — matériels informatiques MESupReS, 5 lots à commande', articles: ARTICLES_2463 },
-].filter((j) => !SEULE || String(j.id) === SEULE);
+  { id: 303089, cle: '2463', cadrage: CADRAGE_2463, valeurs: VALEURS_2463, parLot: VALEURS_2463_PAR_LOT, titre: 'DOSSIER RÉEL — matériels informatiques MESupReS, 5 lots à commande', articles: ARTICLES_2463 },
+]
+  .filter((j) => (CLE_JEU ? j.cle === CLE_JEU : !SEULE || String(j.id) === SEULE))
+  .map((j) => (CLE_JEU && SEULE ? { ...j, id: Number(SEULE) } : j));
+if (CLE_JEU && !jeux.length) {
+  console.error(`aucun jeu ne porte la clé « ${CLE_JEU} »`);
+  process.exit(2);
+}
 let ko = 0;
 for (const j of jeux) if (!(await garnir(j.id, j.cadrage, j.valeurs, j.titre, j.parLot ?? {}, j.articles ?? []))) ko++;
 console.log(ko === 0 ? `\n${VIDER ? 'REMISE À ZÉRO' : 'DÉMONSTRATION'} PRÊTE` : `\n${ko} fiche(s) en échec`);

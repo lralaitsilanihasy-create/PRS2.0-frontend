@@ -1,7 +1,7 @@
 # Modèles du candidat — les six, à relire
 
 *26/09/2026. Décalques de **A1, A2, A3, A4, C1 et C2**, pages 23 à 34 du dossier `AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026`.*
-*⚠️ **Rien n'est en production** : le gabarit provisoire filigrané reste en place jusqu'à votre relecture.*
+*✅ **Relus par le pilote le 26/09, sans correction : les six modèles sont OFFICIELS.** Le gabarit provisoire filigrané a disparu avec V47 ; c'est sur ces modèles que le serveur produit les formulaires du candidat.*
 
 ## Décidé le 26/09 — « oui à tout »
 
@@ -15,7 +15,7 @@
 | 105 | `B05-GS-04` reste **saisi**, le « trentième (30ème) » est **dérivé** ; le contrôle bloquant les tient cohérents |
 
 **Le moteur du backend les rend désormais lui-même** (V47) : six rendus à jetons non substitués passés au comparateur,
-**six fois « identique »**, par le backend puis par le front. Il reste la **relecture des six Word** ci-dessous, et
+**six fois « identique »**, par le backend puis par le front. **Relecture faite le 26/09, sans correction.** Reste
 l'errata à envoyer à la PRMP.
 
 ## Ce que vous avez sous la main
