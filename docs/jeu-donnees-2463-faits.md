@@ -200,13 +200,13 @@ dépasser 30 jours à compter du lendemain de la notification du bon
 - Précompte de remboursement de l'avance, B08-AV-06 : 20 % ; modalité
   B08-AV-05 : remboursement intégral quand les paiements atteignent 80 %
   du marché (CCAP 9.1.a en blanc)                                    [H]
-- Forme de la garantie de soumission dans la fiche, B05-GS-02 : « Garantie
-  bancaire » — le référentiel n'admet qu'UNE forme (liste à choix unique)
-  alors que le DPAO 6.6 en admet trois. Tranché le 26/09 : liste à choix
-  multiples demandée au backend
-  (demande-backend-2026-09-26-forme-garantie-soumission-choix-multiple.md) ;
-  en attendant, « Garantie bancaire ». Dès livraison : les trois formes du
-  6.6, en [R].                                                       [H]
+- Forme de la garantie de soumission dans la fiche, B05-GS-02 : les trois
+  formes du DPAO 6.6 — caution personnelle et solidaire, garantie bancaire,
+  chèque de banque (liste à choix multiples livrée par le backend le 26/09,
+  demande-backend-2026-09-26-forme-garantie-soumission-choix-multiple.md ;
+  le « dépôt en numéraire au Trésor » du référentiel n'est pas admis par le
+  dossier). Le DPAO produit imprime « dans l'une des formes suivantes :
+  – soit … ».                                                        [R] p.18
 - Textes repris par PARAPHRASE des IC, le DPAO étant muet : B06-EO-06
   (comparaison des offres), B06-EO-08 (vérification a posteriori du
   moins-disant), B06-AN-02 (recours). Le texte vit dans

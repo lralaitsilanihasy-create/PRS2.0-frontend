@@ -1033,9 +1033,11 @@ export const VALEURS_2463 = {
     'Pour les Fournitures acquises sur le territoire national, le prix comprend : i) le prix des fournitures EXW, '
     + '(magasin de ventes) ; ii) le prix des transports intérieurs, assurance et autres services locaux afférents à la '
     + 'livraison des fournitures jusqu’à leur destination finale.', // [R] DPAO 6.5.1
-  // [H] §10 : le dossier admet TROIS formes (garantie bancaire, caution personnelle et solidaire, chèque de banque au
-  // nom du Receveur Général d'Antananarivo — DPAO 6.6) ; le référentiel n'en retient qu'une → « Garantie bancaire ».
-  'B05-GS-02': 'Garantie bancaire',
+  // [R] DPAO 6.6 p.18 : « dans l'une des formes suivantes : soit une garantie bancaire, soit une caution personnelle et
+  // solidaire, soit un chèque de banque libellé au nom du Receveur Général d'Antananarivo ». Liste à choix multiples
+  // depuis le 26/09 (demande-backend-2026-09-26-forme-garantie-soumission-choix-multiple.md) : options dans l'ordre du
+  // référentiel, séparées par des virgules — le serveur les range de toute façon.
+  'B05-GS-02': "Caution personnelle et solidaire d'un organisme agréé par le MEF,Garantie bancaire,Chèque de banque",
   'B05-GS-04': '105', // [R] modèles C1/C2 p.33-34 : « jusqu'au 105ème jour »
   'B05-MO-01': 'Ariary', // [R] CCAP 9.3, AE art. 2
 
