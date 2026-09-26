@@ -79,6 +79,12 @@ Deux pistes, à trancher par vous — c'est une règle de gestion, pas une préf
 Si c'est la 2, dites-le : nous l'écrirons à l'écran au lieu de le laisser deviner. Si c'est la 1, elle appelle son
 propre lot.
 
+> ⚠️ **ARBITRÉ PAR LE PILOTE le 2026-09-26 : la PISTE 2.** Une fiche validée ne se supprime pas et ne s'abandonne
+> pas ; la **révision** est le geste qui la corrige. L'écran l'écrit désormais à l'étape 6 d'une fiche figée
+> (« Une fiche validée ne se supprime pas : c'est la révision qui la corrige. »), à côté d'« Ouvrir une nouvelle
+> version » — la règle ne se déduit pas de l'absence d'un bouton. La piste 1 (abandon) n'est pas retenue : elle
+> n'appelle donc aucun lot.
+>
 > ⚠️ **Réponse du backend (2026-09-26) : la piste 2, à confirmer par le pilote.** Une version validée est un acte — la
 > même règle a été tenue pour les formulaires du candidat (« une version validée n'est jamais convertie ») — et la
 > **révision** est le geste prévu pour la corriger. Une ligne dont la fiche est validée n'a pas à être re-préparée :

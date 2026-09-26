@@ -826,6 +826,9 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     rendre();
     expect(fixture.componentInstance.peutSupprimer()).toBe(false);
     expect(Array.from(racine().querySelectorAll('button')).some((b) => texte(b) === 'Supprimer cette fiche')).toBe(false);
+    // ⚠️ La règle s'ÉCRIT : l'absence du geste ne doit pas être la seule façon de l'apprendre.
+    expect(Array.from(racine().querySelectorAll('.fm__aut')).map((s) => texte(s)))
+      .toContain('Une fiche validée ne se supprime pas : c’est la révision qui la corrige.');
     TestBed.resetTestingModule();
 
     // Un brouillon RÉVISÉ garde son histoire : la version 1 est figée.

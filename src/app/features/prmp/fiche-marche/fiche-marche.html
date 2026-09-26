@@ -571,6 +571,10 @@
                   <button type="button" class="btn btn-primary" (click)="etape.set(6)">Voir les documents ›</button>
                 } @else if (figee()) {
                   <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="reviser()">Ouvrir une nouvelle version</button>
+                  <!-- ⚠️ Arbitrage du pilote (26/09, §B2 piste 2) : une version validée est un ACTE — elle ne
+                       s'efface ni ne s'abandonne, c'est la révision qui la corrige. On l'écrit ici plutôt que de
+                       laisser l'absence du geste de suppression le faire deviner. -->
+                  <span class="fm__aut">Une fiche validée ne se supprime pas : c’est la révision qui la corrige.</span>
                 } @else if (estPrmp()) {
                   <button type="button" class="btn btn-primary" [disabled]="!!bilan().bloquants.length || saving() || ecritureBloquee()" (click)="valider()">{{ saving() ? 'Validation…' : 'Valider la fiche' }}</button>
                 }
