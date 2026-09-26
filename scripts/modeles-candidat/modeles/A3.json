@@ -1,0 +1,242 @@
+{
+ "fichier": "A3.docx",
+ "sigle": "A3",
+ "pages": [
+  28,
+  29,
+  30
+ ],
+ "titre": "A3 : CAPACITES FINANCIERES",
+ "blocs": [
+  {
+   "type": "sous_titre",
+   "texte": "A3 - a) SITUATION FINANCIERE ET PATRIMONIALE"
+  },
+  {
+   "type": "para",
+   "texte": "[Chaque Candidat doit compléter le formulaire ci-dessous]"
+  },
+  {
+   "type": "droite",
+   "texte": "Nom ou raison sociale du candidat : _____________________"
+  },
+  {
+   "type": "droite",
+   "texte": "Date : ______________________"
+  },
+  {
+   "type": "droite",
+   "texte": "No. d'appel d'offres et titre : {{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "type": "droite",
+   "texte": "Page [numéro de la page] de [nombre total de pages] pages"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "1. Renseignements financiers"
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "Renseignements financiers équivalent en Ariary\u001fAntécédents pour les {{B03-AF-01.lettres}} dernières années (équivalent en Ariary)\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fAnnée 1\u001fAnnée 2\u001fAnnée 3"
+  },
+  {
+   "type": "ligne",
+   "texte": "Information du bilan\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Total actif\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Total passif\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Patrimoine net\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Disponibilités actuelles\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Engagements actuels\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Information des comptes de résultats\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Recettes totales\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Bénéfices avant impôts\u001f\u001f\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "vide",
+   "texte": ""
+  },
+  {
+   "type": "sous_titre",
+   "texte": "2. Documents financiers"
+  },
+  {
+   "type": "para",
+   "texte": "Le Candidat doit présenter des copies des états financiers et /ou des bilans des {{B03-AF-01.lettres}} années. Les états financiers doivent :"
+  },
+  {
+   "type": "para",
+   "texte": "a) Refléter la situation financière du Candidat"
+  },
+  {
+   "type": "para",
+   "texte": "b) Avoir été vérifiés par un expert-comptable agréé"
+  },
+  {
+   "type": "para",
+   "texte": "c) Etre complets et inclure toutes les notes qui leur ont été ajoutées"
+  },
+  {
+   "type": "para",
+   "texte": "d) Correspondre aux périodes comptables déjà terminées et vérifiées (les états financiers de périodes partielles ne sont ni demandés ni acceptés)"
+  },
+  {
+   "type": "vide",
+   "texte": ""
+  },
+  {
+   "type": "sous_titre",
+   "texte": "A3 - b) CHIFFRE D'AFFAIRES"
+  },
+  {
+   "type": "para",
+   "texte": "[Chaque Candidat doit compléter le formulaire ci-dessous]"
+  },
+  {
+   "type": "droite",
+   "texte": "Nom ou raison social du candidat : _____________________"
+  },
+  {
+   "type": "droite",
+   "texte": "Date : _____________________"
+  },
+  {
+   "type": "droite",
+   "texte": "No. d'appel d'offres et titre : {{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "type": "droite",
+   "texte": "Page [numéro de la page] de [nombre total de pages] pages"
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "Chiffre d'affaires hors taxes (général)\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fExercice du………\u001eau……...\u001fExercice du………\u001eau……...\u001fExercice du………\u001eau……..."
+  },
+  {
+   "type": "ligne",
+   "texte": "Travaux\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Fournitures\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Services\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Prestations intellectuelles\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "TOTAL (en Ariary)\u001f\u001f\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "Chiffre d'affaires hors taxes (prestations similaires à celles objet du marché)\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fExercice du………\u001eau……...\u001fExercice du………\u001eau……...\u001fExercice du………\u001eau……..."
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:A3B-NATURES}}Fournitures\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Services{{FINSI:A3B-NATURES}}\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "TOTAL (en Ariary)\u001f\u001f\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "vide",
+   "texte": ""
+  },
+  {
+   "type": "sous_titre",
+   "texte": "A3 – c) JUSTIFICATION DE LA CAPACITE DU CANDIDAT A DISPOSER DES RESSOURCES FINANCIERES PERMETTANT DE REALISER LE MARCHE"
+  },
+  {
+   "type": "para",
+   "texte": "[Fournir une note explicative ou tout autre document validé par le commissaire aux comptes ou à défaut par un expert comptable ou tout autre personne qualifiée]"
+  }
+ ],
+ "trace": [
+  {
+   "source": "No. d'appel d'offres et titre : _____________________",
+   "jeton": "No. d'appel d'offres et titre : {{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "source": "pour les trois dernières années",
+   "jeton": "pour les {{B03-AF-01.lettres}} dernières années"
+  },
+  {
+   "source": "des bilans des trois années",
+   "jeton": "des bilans des {{B03-AF-01.lettres}} années"
+  }
+ ],
+ "ajouts": [
+  "{{SI:A3B-NATURES}}",
+  "{{FINSI:A3B-NATURES}}"
+ ]
+}

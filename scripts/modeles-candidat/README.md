@@ -20,6 +20,26 @@ node correspondance.mjs                  #    (et les tableaux de correspondance
 Sous Linux ou macOS, le séparateur du classpath est `:` (`classpath.mjs` le sait ; remplacer `;out` par `:out`).
 Puis copier `modeles-docx/*.docx` dans `docs/modeles-candidat/`.
 
+## Les fichiers de commande sont la source du rendu
+
+`modeles/<sigle>.txt` (et son descripteur `.json`, qui porte la trace des jetons) sont **versionnés** : sous l'issue
+(c) du rendu — le moteur du backend rend les modèles lui-même, docx et PDF —, c'est ce fichier que le backend copie
+dans ses ressources, et non le `.docx`, qui reste l'objet de relecture du pilote. Format : un enregistrement par ligne,
+type puis tabulation puis texte ; `US` (0x1F) sépare les cellules d'une `LIGNE`, `RS` (0x1E) sépare les paragraphes
+d'une cellule ; décrit en tête de `Decalque.java`.
+
+## Vérifier un `.docx` produit par le serveur
+
+Le comparateur sait juger **n'importe quel** `.docx`, pas seulement le décalque : rendu par le moteur du backend en
+mode « modèle » (jetons non substitués), il doit dire exactement le même texte que le dossier.
+
+```
+node verifier.mjs C1 --docx=C:/chemin/vers/C1-produit-par-le-serveur.docx
+```
+
+Un sigle à la fois ; la sortie nomme le fichier vérifié ; code 1 au premier écart. C'est ce qui prouve que le moteur
+et le décalque disent la même chose — sans quoi (c) ne serait qu'une promesse.
+
 ## Les règles que la chaîne fait tenir
 
 | règle | par quoi |

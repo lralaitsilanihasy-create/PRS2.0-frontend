@@ -43,10 +43,24 @@ function rejouer(texte, source, jeton) {
   return out;
 }
 
+/**
+ * ⚠️ `--docx=<chemin>` : vérifie CE fichier au lieu du décalque — c'est ainsi qu'un `.docx` produit par le moteur
+ * du backend, rendu en mode « modèle » (jetons non substitués), se compare au dossier. Un seul sigle à la fois.
+ *   node verifier.mjs C1 --docx=C:/…/C1-serveur.docx
+ */
+const args = process.argv.slice(2);
+const autreDocx = (args.find((a) => a.startsWith('--docx=')) ?? '').slice('--docx='.length) || null;
+const sigles = args.filter((a) => !a.startsWith('--'));
+if (autreDocx && sigles.length !== 1) {
+  console.error('--docx= vaut pour un seul sigle');
+  process.exit(2);
+}
+
 let ecarts = 0;
-for (const sigle of process.argv.slice(2)) {
+for (const sigle of sigles) {
   const desc = JSON.parse(fs.readFileSync(`modeles/${sigle}.json`, 'utf8'));
-  let produit = execFileSync('java', ['-cp', CP, 'LireDocx', `modeles-docx/${desc.fichier}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  const fichier = autreDocx ?? `modeles-docx/${desc.fichier}`;
+  let produit = execFileSync('java', ['-cp', CP, 'LireDocx', fichier], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   for (const a of desc.ajouts ?? []) produit = produit.split(a).join('');
 
   let attendu = desc.pages.map(pageSource).join(' ');
@@ -54,14 +68,15 @@ for (const sigle of process.argv.slice(2)) {
 
   const a = normaliser(attendu);
   const b = normaliser(produit);
+  const quoi = autreDocx ? ` [${autreDocx}]` : '';
   if (a === b) {
-    console.log(`${sigle} (p. ${desc.pages.join('-')}) — identique · ${a.length} car.`);
+    console.log(`${sigle} (p. ${desc.pages.join('-')})${quoi} — identique · ${a.length} car.`);
     continue;
   }
   let i = 0;
   while (i < a.length && i < b.length && a[i] === b[i]) i++;
   ecarts++;
-  console.log(`${sigle} (p. ${desc.pages.join('-')}) — ÉCART · source ${a.length} car., produit ${b.length} car., divergence à ${i}`);
+  console.log(`${sigle} (p. ${desc.pages.join('-')})${quoi} — ÉCART · source ${a.length} car., produit ${b.length} car., divergence à ${i}`);
   console.log(`   attendu : …${a.slice(Math.max(0, i - 50), i + 70)}…`);
   console.log(`   produit : …${b.slice(Math.max(0, i - 50), i + 70)}…`);
 }

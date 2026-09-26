@@ -1,0 +1,69 @@
+{
+ "fichier": "A2.docx",
+ "sigle": "A2",
+ "pages": [
+  26,
+  27
+ ],
+ "titre": "A2 : CAPACITES TECHNIQUES",
+ "blocs": [
+  {
+   "type": "sous_titre",
+   "texte": "A2 - a) MATERIEL, EQUIPEMENT ET OUTILLAGE APPARTENANT AU CANDIDAT OU A SA DISPOSITION PERMANENTE"
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "NATURE\u001fDESCRIPTION\u001fDATE D’ACQUISITION\u001fSTATUT"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f\u001f\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "vide",
+   "texte": ""
+  },
+  {
+   "type": "sous_titre",
+   "texte": "A2 - b) CAPACITE TECHNIQUE A EXECUTER LE MARCHE"
+  },
+  {
+   "type": "para",
+   "texte": "Décrire ci-après les éléments principaux justifiant de la capacité technique à exécuter le marché"
+  },
+  {
+   "type": "para",
+   "texte": "[Note : cette preuve peut-être apportée par tout moyen et notamment par des références à toutes fournitures ou services attestant de la compétence du candidat à réaliser les prestations objet du marché"
+  }
+ ],
+ "trace": [],
+ "ajouts": []
+}
