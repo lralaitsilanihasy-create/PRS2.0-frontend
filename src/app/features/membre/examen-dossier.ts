@@ -149,6 +149,13 @@ interface PropositionCellule {
   left: number;
   top: number | null;
   bottom: number | null;
+  /**
+   * ⚠️ Recette du 26/09 (grille DAO de douze points) — la boîte se déroule DANS la fenêtre : posée sous la cellule,
+   * elle ne peut pas descendre plus bas que le bord ; posée au-dessus, pas plus haut. Sans cette borne, les derniers
+   * points d'une longue grille sortaient de l'écran et restaient incliquables (la feuille de style plafonne à 60 vh,
+   * ce qui ne dit rien de la place restante sous la cellule).
+   */
+  hauteurMax: number;
 }
 
 /**
@@ -496,6 +503,7 @@ interface PropositionCellule {
             [style.left.px]="prop.left"
             [style.top.px]="prop.top"
             [style.bottom.px]="prop.bottom"
+            [style.max-height.px]="prop.hauteurMax"
           >
             <div class="prop__tete">
               <span>Observer « {{ prop.libelle }} »</span>
@@ -2117,6 +2125,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       left: Math.max(8, Math.min(r.left, window.innerWidth - largeur - 8)),
       top: enBas ? r.bottom + 6 : null,
       bottom: enBas ? null : window.innerHeight - r.top + 6,
+      hauteurMax: Math.min(window.innerHeight * 0.6, (enBas ? window.innerHeight - (r.bottom + 6) : r.top - 6) - 8),
     });
   }
   /**
@@ -2142,6 +2151,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       left: Math.max(8, Math.min(r.left, window.innerWidth - largeur - 8)),
       top: enBas ? r.bottom + 6 : null,
       bottom: enBas ? null : window.innerHeight - r.top + 6,
+      hauteurMax: Math.min(window.innerHeight * 0.6, (enBas ? window.innerHeight - (r.bottom + 6) : r.top - 6) - 8),
     });
   }
   /** Ouvre l'observation au titre du point choisi : « Au lieu de » pré-rempli, cible mémorisée. */
