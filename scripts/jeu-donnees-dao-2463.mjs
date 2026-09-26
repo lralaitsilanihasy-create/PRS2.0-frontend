@@ -21,6 +21,10 @@
 // ⚠️ Écrit en base de développement.
 const API = 'http://localhost:8080';
 const MDP = 'Test@1234';
+// ⚠️ La PRMP du jeu est le compte créé pour le dossier (rejeu backend du 26/09, H0-8 et H0-9) : login LERAVO,
+// matricule LERAVO01. Le rattachement IMP001 (PRMP001) ↔ entité 11 est DÉSACTIVÉ — une seule PRMP active par entité.
+const PRMP = 'LERAVO';
+const ID_PRMP = 'LERAVO01';
 const args = process.argv.slice(2);
 const spec = args.includes('--etapes') ? args[args.indexOf('--etapes') + 1] : '1-8';
 const bornes = String(spec).split('-');
@@ -90,13 +94,17 @@ const ENTITE = {
   idLocalite: 'ANT',
 };
 
-/** Les cinq lots du DAO. Les montants se déduisent des garanties de soumission réelles (2 % du maximum). */
+/**
+ * Les cinq lots du DAO — intitulés [R] DPAO 1.1 p.17, montant = maximum déduit [D] §5 (garantie ÷ 2 %).
+ * Quantité et unité du lot laissées VIDES : la fiche des faits ne donne de quantité qu'article par article (§3),
+ * et c'est le besoin (B12) qui les porte — même choix que le rejeu backend (H1-4).
+ */
 const LOTS = [
-  { designationLot: 'Lot n°1 : ordinateurs et divers pour le Ministère', montLot: 80000000, qteLot: 50, uniteLot: 'unité' },
-  { designationLot: 'Lot n°2 : ordinateurs pour Ambatondrazaka', montLot: 108500000, qteLot: 42, uniteLot: 'unité' },
-  { designationLot: 'Lot n°3 : divers matériels pour Ambatondrazaka', montLot: 80000000, qteLot: 10, uniteLot: 'unité' },
-  { designationLot: 'Lot n°4 : ordinateurs pour Fort-Dauphin', montLot: 108500000, qteLot: 42, uniteLot: 'unité' },
-  { designationLot: 'Lot n°5 : divers matériels pour Fort-Dauphin', montLot: 80000000, qteLot: 10, uniteLot: 'unité' },
+  { designationLot: 'ORDINATEURS ET DIVERS POUR LE MINISTERE', montLot: 80000000 },
+  { designationLot: 'ORDINATEUR POUR AMBATONDRAZAKA', montLot: 108500000 },
+  { designationLot: 'DIVERS MATERIELS POUR AMBATONDRAZAKA', montLot: 80000000 },
+  { designationLot: 'ORDINATEUR POUR FORT DAUPHIN', montLot: 108500000 },
+  { designationLot: 'DIVERS MATERIELS POUR FORT DAUPHIN', montLot: 80000000 },
 ];
 
 /**
@@ -111,10 +119,12 @@ const PROCESSUS = [
   [101, '2026-06-01', '2026-06-15'], [102, '2026-06-16', '2026-06-30'], [103, '2026-07-01', '2026-07-07'],
   [104, '2026-07-08', '2026-08-28'], [106, '2026-08-31', '2026-09-02'], [107, '2026-09-03', '2026-09-17'],
   [108, '2026-09-18', '2026-09-22'], [109, '2026-09-23', '2026-09-25'], [110, '2026-09-28', '2026-10-08'],
-  [111, '2026-10-09', '2026-10-09'], [112, '2026-10-09', '2026-11-09'], [113, '2026-11-09', '2026-11-10'],
+  // ⚠️ Le serveur refuse une étape d'un seul jour (constat backend, 26/09) : chaque étape finit au plus tôt le jour
+  // ouvré suivant — les ancres du §8 (09/10, 09/11, 10/12, 28/01) restent.
+  [111, '2026-10-09', '2026-10-12'], [112, '2026-10-12', '2026-11-09'], [113, '2026-11-09', '2026-11-10'],
   [114, '2026-11-10', '2026-11-18'], [115, '2026-11-19', '2026-11-20'], [116, '2026-11-23', '2026-11-25'],
-  [117, '2026-11-26', '2026-11-27'], [118, '2026-11-30', '2026-12-04'], [119, '2026-12-07', '2026-12-07'],
-  [120, '2026-12-08', '2026-12-08'], [121, '2026-12-09', '2026-12-09'], [123, '2026-12-10', '2026-12-11'],
+  [117, '2026-11-26', '2026-11-27'], [118, '2026-11-30', '2026-12-04'], [119, '2026-12-07', '2026-12-08'],
+  [120, '2026-12-08', '2026-12-09'], [121, '2026-12-09', '2026-12-10'], [123, '2026-12-10', '2026-12-11'],
   [124, '2026-12-14', '2026-12-15'], [125, '2026-12-16', '2027-01-08'], [126, '2027-01-11', '2027-01-15'],
   [127, '2027-01-18', '2027-01-22'], [128, '2027-01-25', '2027-01-27'], [129, '2027-01-28', '2027-01-29'],
   [130, '2027-02-01', '2028-01-31'],
@@ -136,7 +146,7 @@ const etat = {};
 
 // ── 1. L'entité contractante ──────────────────────────────────────────────────────────────────
 if (etape(1, "L'entité contractante — la PRMP la crée, l'Administrateur approuve le rattachement")) {
-  const l = await appel('PRMP001', 'GET', '/api/entite-contracts');
+  const l = await appel(PRMP, 'GET', '/api/entite-contracts');
   const deja = liste(l.corps).find((e) => e.libelleEntite?.trim() === ENTITE.libelleEntite);
   if (deja) {
     etat.idEntite = deja.idEntiteContract;
@@ -145,7 +155,7 @@ if (etape(1, "L'entité contractante — la PRMP la crée, l'Administrateur appr
     // ⚠️ C'est la PRMP qui crée l'entité absente du référentiel (ouvert depuis le 26/07) : le serveur
     // pose alors un rattachement PRMP↔entité EN ATTENTE (`actif = false`) que l'Administrateur approuve.
     const idLibre = Math.max(0, ...liste(l.corps).map((e) => e.idEntiteContract)) + 1;
-    const r = await appel('PRMP001', 'POST', '/api/entite-contracts', { idEntiteContract: idLibre, ...ENTITE });
+    const r = await appel(PRMP, 'POST', '/api/entite-contracts', { idEntiteContract: idLibre, ...ENTITE });
     if (!r.ok) echec("création de l'entité", r);
     etat.idEntite = r.corps.idEntiteContract;
     console.log('  ✓ créée par la PRMP : ' + etat.idEntite + ' · ' + ENTITE.libelleEntite);
@@ -159,7 +169,7 @@ if (etape(1, "L'entité contractante — la PRMP la crée, l'Administrateur appr
     if (!r.ok) echec('approbation du rattachement', r);
     console.log('  ✓ rattachement approuvé par l’Administrateur (lien ' + lien.idPrmpEntite + ')');
   } else {
-    const r = await appel('ADMIN01', 'POST', '/api/prmp-entites', { idPrmp: 'IMP001', idEntiteContract: etat.idEntite, actif: true });
+    const r = await appel('ADMIN01', 'POST', '/api/prmp-entites', { idPrmp: ID_PRMP, idEntiteContract: etat.idEntite, actif: true });
     if (!r.ok) echec('rattachement de l’entité à la PRMP', r);
     console.log('  ✓ rattachement créé et activé par l’Administrateur');
   }
@@ -171,7 +181,7 @@ if (etape(2, 'Le plan de passation — dossier, PPM et ligne de marché (PRMP)')
     const l = await appel('ADMIN01', 'GET', '/api/entite-contracts');
     etat.idEntite = liste(l.corps).find((e) => e.libelleEntite?.trim() === ENTITE.libelleEntite)?.idEntiteContract;
   }
-  const r = await appel('PRMP001', 'POST', '/api/saisies/ppm', {
+  const r = await appel(PRMP, 'POST', '/api/saisies/ppm', {
     idEntiteContract: etat.idEntite,
     exercice: 2026, // [D] de la référence du dossier
     dateSignature: '2026-06-30', // [H] docs/jeu-donnees-2463-faits.md §10
@@ -180,7 +190,7 @@ if (etape(2, 'Le plan de passation — dossier, PPM et ligne de marché (PRMP)')
   if (!r.ok) { console.error(JSON.stringify(r.corps,null,1).slice(0,900)); echec('saisie du PPM', r); }
   etat.idDossier = r.corps.idDossier;
   console.log('  ✓ dossier ' + etat.idDossier + ' · ' + r.corps.statut);
-  const m = await appel('PRMP001', 'GET', '/api/marches?dossier=' + etat.idDossier);
+  const m = await appel(PRMP, 'GET', '/api/marches?dossier=' + etat.idDossier);
   const lignes = liste(m.corps);
   etat.idDetail = lignes[0]?.idDetail;
   console.log('  ✓ ligne ' + etat.idDetail + ' · ' + String(lignes[0]?.designationMarche).slice(0, 62) + '…');
@@ -190,7 +200,7 @@ if (etape(2, 'Le plan de passation — dossier, PPM et ligne de marché (PRMP)')
 /** Retrouve le dossier du plan (relance partielle du script). */
 const dossierDuPlan = async () => {
   if (etat.idDossier != null) return etat.idDossier;
-  const d = await appel('PRMP001', 'GET', '/api/dossiers?page=0&size=50');
+  const d = await appel(PRMP, 'GET', '/api/dossiers?page=0&size=50');
   const trouve = liste(d.corps).find((x) => x.idEntiteContract === 11 || x.idTypeDossier === 1);
   etat.idDossier = trouve?.idDossier;
   return etat.idDossier;
@@ -199,9 +209,9 @@ const dossierDuPlan = async () => {
 // ── 3. La soumission à la Commission ──────────────────────────────────────────────────────────
 if (etape(3, 'La soumission du plan à la Commission (PRMP)')) {
   const id = await dossierDuPlan();
-  const r = await appel('PRMP001', 'POST', '/api/dossiers/' + id + '/soumettre', {});
+  const r = await appel(PRMP, 'POST', '/api/dossiers/' + id + '/soumettre', {});
   if (!r.ok && r.corps?.code !== 'DEJA_SOUMIS') echec('soumission', r);
-  const d = await appel('PRMP001', 'GET', '/api/dossiers/' + id);
+  const d = await appel(PRMP, 'GET', '/api/dossiers/' + id);
   etat.reference = d.corps?.refeDossier;
   console.log('  ✓ dossier ' + id + ' · ' + d.corps?.statut + ' · référence ' + (etat.reference ?? '—'));
 }
@@ -271,7 +281,7 @@ if (etape(5, 'Le dispatch au Membre examinateur (Président)')) {
 if (etape(6, "L'examen du plan et sa soumission — avis favorable (Membre)")) {
   await reprendreCircuit();
   if (etat.idDetail == null) {
-    const m = await appel('PRMP001', 'GET', '/api/marches?dossier=' + (await dossierDuPlan()));
+    const m = await appel(PRMP, 'GET', '/api/marches?dossier=' + (await dossierDuPlan()));
     etat.idDetail = liste(m.corps)[0]?.idDetail;
   }
   let idExamen = etat.idExamen;
@@ -351,10 +361,10 @@ if (etape(7, 'Le visa du Président puis les signatures — PV signé')) {
 // ── 8. La ligne devient préparable en DAO ─────────────────────────────────────────────────────
 if (etape(8, 'La ligne du plan est-elle préparable en DAO ?')) {
   if (etat.idDetail == null) {
-    const m = await appel('PRMP001', 'GET', '/api/marches?dossier=' + (await dossierDuPlan()));
+    const m = await appel(PRMP, 'GET', '/api/marches?dossier=' + (await dossierDuPlan()));
     etat.idDetail = liste(m.corps)[0]?.idDetail;
   }
-  const el = await appel('PRMP001', 'GET', '/api/dmcs/eligibles');
+  const el = await appel(PRMP, 'GET', '/api/dmcs/eligibles');
   const ligne = liste(el.corps).find((x) => x.idDetail === etat.idDetail);
   if (ligne) {
     console.log('  ✓ ligne ' + ligne.idDetail + ' éligible · ' + ligne.categorie + '/' + ligne.formeMarche + ' · ' + ligne.libelleMode);

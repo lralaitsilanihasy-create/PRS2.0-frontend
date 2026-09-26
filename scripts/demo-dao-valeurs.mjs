@@ -1083,7 +1083,10 @@ export const VALEURS_2463 = {
   'B08-PA-08': '30', // [H] §10
 
   // — Exécution, livraison, garantie — (CCAP 10 à 23 p.50-52)
-  'B09-AS-01': "Selon l'incoterm", // [R] CCAP art. 18 : « conformément aux dispositions de l'Incoterms »
+  // [R] CCAP art. 16 p.51 : « Le Fournisseur assure toute dommage pendant le transport jusqu'à la destination finale »
+  // (fiche des faits §7) — retenu sur l'art. 18 (« conformément aux dispositions de l'Incoterms ») : arbitrage du 26/09,
+  // les deux chaînes de rejeu disent la même chose.
+  'B09-AS-01': "À la charge du fournisseur jusqu'à la livraison",
   'B09-CR-01': 'NON', // [R] CCAP art. 19
   'B09-DG-01': '2', // [R] CCAP art. 22 : DEUX (02) MOIS — dérogation à l'article 23 du CCAG (CCAP art. 24)
   'B09-DG-02':

@@ -219,6 +219,45 @@ dépasser 30 jours à compter du lendemain de la notification du bon
   B10-AR-01 (CCAG)                                                   [D]
 - Imputation administrative « 00 84 0 100 00000 » : le plan de passation
   n'a pas de champ pour la porter — non saisie.
+- Durée des antécédents, B03-CQ-09 = 5 ans et B03-CQ-10 = 3 ans : ce sont
+  les périodes des formulaires A1 et A3 du dossier (défauts du référentiel
+  V47, posés à la création de la fiche)                        [R] p.23-30
+- Repris tels quels, ajoutés après le rejeu backend (H3-2) : B06-EO-04
+  (CCAP 8.1 p.50 : le prix comprend l'ensemble des impôts, droits et
+  taxes), B08-PA-01 (AE 6.1 p.38 : domiciliation bancaire), B09-PC-02
+  (AE p.38 : annexes 1 à 3 de l'acte d'engagement)                   [R]
+- Assurance des fournitures, B09-AS-01 : « À la charge du fournisseur
+  jusqu'à la livraison » — CCAP art. 16 p.51 (§7) retenu sur l'art. 18
+  (« conformément aux dispositions de l'Incoterms »). Tranché le 26/09. [R]
+- Taux de TVA des bordereaux : 20 % — paramètre administré FICHE_TAUX_TVA
+  (défaut V46), pas une donnée du dossier. Gardé le 26/09.            [H]
+- Quantité et unité de chaque lot au plan (t_lot) : VIDES — le dossier ne
+  donne de quantité qu'article par article (§3), le besoin les porte. [D]
+- Étape de calendrier d'un jour : refusée par le serveur (dateFin >
+  dateDebut) ; les étapes 111, 119, 120, 121 finissent le jour ouvré
+  suivant et 112 débute le 12/10 — ancres du §8 intactes.            [H]
+
+## 11. Hypothèses du circuit et du modèle (rejeu backend du 26/09)
+Le détail vit dans PRS20/docs/jeu-2463-hypotheses-backend.md et dans
+docs/export/2463/verification.md (généré depuis l'API) ; ne sont repris ici
+que ceux qui touchent aux faits du dossier.
+- La PRMP du jeu est un compte créé pour le dossier : matricule LERAVO01,
+  login LERAVO, nom et e-mail [R] p.17 ; arrêté, dates, CIN, téléphone
+  « non fournis » [H]. Le rattachement IMP001 ↔ entité 11 (persona de
+  démonstration du 25/09) est DÉSACTIVÉ : une seule PRMP active par
+  entité. Les scripts du front se connectent donc en LERAVO pour ce jeu.
+- Sigle « MESupReS » : aucune colonne au référentiel des entités ; la
+  référence du PPM porte l'acronyme dérivé du libellé, « MLSRS »
+  (00001/MLSRS/PPM-AGPM/2026). Écart de modèle, candidat à une demande
+  backend (sigle de l'entité).
+- Comptable assignataire, UGPM, articles du CMP : aucun modèle ; ils ne
+  vivent que dans la fiche (B03-NA-02/03) ou nulle part.
+- Aucun champ en base pour marquer une valeur [H] : les hypothèses d'un
+  dossier ne sont listables que dans ces documents.
+- La référence 00001/DAO/CNM/2026 naît avec le dossier à soumettre
+  (POST /api/fiches-marche/{idDmc}/dossier), pas avec la fiche validée ;
+  la grille de contrôle du sous-type DAO est VIDE au référentiel — à
+  définir avant tout examen d'un dossier DAO.
 - Calendrier : tranché le 26/09 — le §8 FAIT FOI, le plan semé
   (jeu-donnees-dao-2463.mjs, PROCESSUS) s'y aligne : lancement de l'avis
   (étape 111) le 09/10/2026, décision d'attribution (étape 123) le

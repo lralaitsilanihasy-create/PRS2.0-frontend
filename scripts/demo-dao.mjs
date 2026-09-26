@@ -51,13 +51,20 @@ const appel = async (methode, url, corps) => {
   return { ok: r.ok, statut: r.status, corps: json };
 };
 
-const connexion = async () => {
+/**
+ * Ouvre la session de la PRMP du jeu. ⚠️ Chaque jeu a SA PRMP : le dossier réel 2463 est rattaché au compte LERAVO
+ * (rejeu backend du 26/09, une seule PRMP active par entité — IMP001 en est détaché) ; les démonstrations JIRAMA
+ * restent à PRMP001. La liste des lignes éligibles (/api/dmcs/eligibles) est scopée sur les entités de la PRMP connectée.
+ */
+const connexion = async (login = 'PRMP001') => {
+  cookie = '';
+  xsrf = '';
   const r = await fetch(API + '/api/auth/login', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ login: 'PRMP001', motDePasse: 'Test@1234' }),
+    body: JSON.stringify({ login, motDePasse: 'Test@1234' }),
   });
   majCookies(r);
-  if (!r.ok) { console.error('connexion refusée'); process.exit(1); }
+  if (!r.ok) { console.error(`connexion refusée (${login})`); process.exit(1); }
 };
 
 /** La grammaire des conditions du référentiel : « cle = VAL », « a = X et b = Y », « a = X ou b = Y ». */
@@ -186,14 +193,13 @@ const garnir = async (idDetail, cadrage, valeurs, titre, parLot = {}, articles =
   return true;
 };
 
-await connexion();
 const jeux = [
   { id: 303083, cadrage: CADRAGE_TRAVAUX, valeurs: VALEURS_TRAVAUX, titre: 'TRAVAUX — réhabilitation du réseau d’adduction d’eau potable, 2 lots' },
   { id: 303084, cadrage: CADRAGE_PI, valeurs: VALEURS_PI, titre: 'PRESTATIONS INTELLECTUELLES — schéma directeur d’assainissement' },
   { id: 303081, cadrage: CADRAGE_AC, valeurs: VALEURS_AC, parLot: VALEURS_AC_PAR_LOT, titre: 'FOURNITURES À COMMANDE — consommables informatiques, 2 lots' },
   { id: 303080, cadrage: CADRAGE_QF, valeurs: VALEURS_QF, titre: 'FOURNITURES À QUANTITÉ FIXE — mobilier de bureau' },
   // ⚠️ Le DOSSIER RÉEL, semé par `scripts/jeu-donnees-dao-2463.mjs` : MESupReS, cinq lots, à commande.
-  { id: 303089, cle: '2463', cadrage: CADRAGE_2463, valeurs: VALEURS_2463, parLot: VALEURS_2463_PAR_LOT, titre: 'DOSSIER RÉEL — matériels informatiques MESupReS, 5 lots à commande', articles: ARTICLES_2463 },
+  { id: 303089, cle: '2463', prmp: 'LERAVO', cadrage: CADRAGE_2463, valeurs: VALEURS_2463, parLot: VALEURS_2463_PAR_LOT, titre: 'DOSSIER RÉEL — matériels informatiques MESupReS, 5 lots à commande', articles: ARTICLES_2463 },
 ]
   .filter((j) => (CLE_JEU ? j.cle === CLE_JEU : !SEULE || String(j.id) === SEULE))
   .map((j) => (CLE_JEU && SEULE ? { ...j, id: Number(SEULE) } : j));
@@ -202,6 +208,9 @@ if (CLE_JEU && !jeux.length) {
   process.exit(2);
 }
 let ko = 0;
-for (const j of jeux) if (!(await garnir(j.id, j.cadrage, j.valeurs, j.titre, j.parLot ?? {}, j.articles ?? []))) ko++;
+for (const j of jeux) {
+  await connexion(j.prmp);
+  if (!(await garnir(j.id, j.cadrage, j.valeurs, j.titre, j.parLot ?? {}, j.articles ?? []))) ko++;
+}
 console.log(ko === 0 ? `\n${VIDER ? 'REMISE À ZÉRO' : 'DÉMONSTRATION'} PRÊTE` : `\n${ko} fiche(s) en échec`);
 process.exit(ko ? 1 : 0);
