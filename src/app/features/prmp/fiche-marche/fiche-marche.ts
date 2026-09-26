@@ -13,6 +13,7 @@ import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentD
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
+import { FicheBesoin } from './fiche-besoin';
 import { Icone } from '../../../shared/ui/icone';
 import { TitreSiTronqueDirective } from '../../../shared/ui/titre-si-tronque';
 import {
@@ -21,12 +22,14 @@ import {
   ETAPES_FICHE,
   LIBELLES_CATEGORIES,
   LIBELLES_DOCUMENTS,
+  LIBELLES_PIECES,
   LIBELLES_TYPES_MARCHE,
   NOMS_DOCUMENTS,
   QUESTIONS_CADRAGE,
   QuestionCadrage,
   REFERENTIEL_ESQUISSE,
   allotissementDuPlan,
+  basculerOption,
   blocsASaisir,
   cadrageComplet,
   cleValeur,
@@ -35,9 +38,16 @@ import {
   largeurChamp,
   lotsDuChamp,
   metaChamp,
+  formatPiece,
+  PieceGroupee,
+  pieceOuvrable,
+  piecesParLot,
+  aidesRevision,
   reprisesAffichees,
+  valeursSansCellule,
   champsDeRubrique,
   nbLotsDuPlan,
+  optionsChoisies,
   progression,
   questionsPosees,
   reprises,
@@ -78,7 +88,8 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
 @Component({
   selector: 'app-fiche-marche',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icone, EtatErreur, TitreSiTronqueDirective],
+  imports: [
+    FicheBesoin,RouterLink, Icone, EtatErreur, TitreSiTronqueDirective],
   templateUrl: './fiche-marche.html',
   styleUrl: './fiche-marche.scss',
 })
@@ -94,6 +105,25 @@ export class FicheMarcheEcran {
 
   readonly etapes = ETAPES_FICHE;
   readonly libellesDocuments = LIBELLES_DOCUMENTS;
+
+  /**
+   * Le nom d'une pièce : celui que le **serveur** lui donne d'abord, le libellé de son sigle ensuite, et le nom du
+   * fichier en dernier recours — un sigle que l'écran ne connaît pas ne doit pas laisser une ligne muette.
+   */
+  libellePiece(piece: DocumentFiche | PieceGroupee): string {
+    const repli = 'nomFichier' in piece ? piece.nomFichier : (piece.fichiers[0]?.nomFichier ?? piece.type);
+    return piece.libelle || LIBELLES_PIECES[piece.type] || repli;
+  }
+
+  /** Le format d'un fichier, tel qu'il s'écrit sur le bouton : « PDF », « Word », « Excel ». */
+  format(fichier: DocumentFiche): string {
+    return formatPiece(fichier);
+  }
+
+  /** Une pièce s'ouvre dans un onglet si c'est un PDF ; sinon elle s'enregistre (cf. `pieceOuvrable`). */
+  ouvrable(piece: DocumentFiche): boolean {
+    return pieceOuvrable(piece);
+  }
   readonly libellesTypes = LIBELLES_TYPES_MARCHE;
   readonly libellesCategories = LIBELLES_CATEGORIES;
 
@@ -136,6 +166,13 @@ export class FicheMarcheEcran {
   /** Version figée dont on consulte les documents à l'étape 6, et ses documents (`GET …/documents?version=`). */
   readonly versionOuverte = signal<number | null>(null);
   readonly documentsVersion = signal<DocumentFiche[]>([]);
+  /**
+   * ⚠️ V46 — les valeurs de la version **précédente** d'un brouillon révisé : elles ne servent qu'à poser
+   * l'aide « ancienne valeur » à côté d'une cellule vidée par un changement de référentiel. Jamais préremplies.
+   */
+  readonly valeursPrecedentes = signal<Record<string, Valeur> | null>(null);
+  /** Les pièces de l'étape 7, groupées par lot : sur cinq lots, une liste plate répéterait cinq fois chaque sigle. */
+  readonly groupesPieces = computed(() => piecesParLot(this.documents()));
   readonly cadrage = signal<Cadrage>({});
   readonly valeurs = signal<Record<string, Valeur>>({});
   readonly erreursChamp = signal<ReadonlyMap<string, string>>(new Map());
@@ -232,6 +269,14 @@ export class FicheMarcheEcran {
   readonly blocsRestants = computed(() => this.obligatoiresParBloc().map((g) => g.bloc).join(', '));
   readonly reprisesListe = computed(() => reprises(this.referentiel(), this.cadrageEffectif(), this.valeurs(), this.fiche()?.valeursPpm ?? {}, this.fiche()?.valeursCadrage ?? {}));
   readonly figee = computed(() => this.fiche()?.statut === 'VALIDEE');
+  /** Les anciennes valeurs à ressaisir, par clé de cellule (vide hors révision). */
+  readonly aides = computed(() =>
+    aidesRevision(this.referentiel(), this.cadrageEffectif(), this.valeurs(), this.valeursPrecedentes(), this.saisieParLot(), this.nbLots()),
+  );
+  /** Les valeurs qu'aucune cellule ne porte plus : montrées en lecture à l'étape des contrôles. */
+  readonly sansCellule = computed(() =>
+    valeursSansCellule(this.referentiel(), this.cadrageEffectif(), this.valeurs(), this.saisieParLot(), this.nbLots()),
+  );
 
   /**
    * ⚠️ Demande du pilote (23/09) — l'allotissement vient du **nombre de lots du plan** : un lot = non alloti, deux
@@ -346,6 +391,7 @@ export class FicheMarcheEcran {
         this.cadrage.set({ ...fiche.cadrage });
         this.valeurs.set({ ...fiche.valeurs });
         this.imposerAllotissement();
+        this.chargerVersionPrecedente(fiche);
         this.etape.set(fiche.statut === 'VALIDEE' ? 5 : cadrageComplet({ ...fiche.cadrage, typeMarche: fiche.typeMarche, categorie: fiche.categorie ?? null }) ? 2 : 1);
       } else {
         this.etape.set(1);
@@ -460,6 +506,47 @@ export class FicheMarcheEcran {
   }
 
   /** La clé d'une cellule : `CODE` ou `CODE#n`. C'est elle qui sert d'identifiant, de clé de valeur et de clé d'erreur. */
+  /** Les options retenues d un champ LISTE_MULTIPLE, pour cocher les cases et rendre la lecture. */
+  choisies(champ: ChampFiche, lot: number | null = null): string[] {
+    return optionsChoisies(this.valeurAffichee(champ, lot));
+  }
+
+  /** Une case cochée ou décochée : la valeur repart dans l ordre du référentiel, jamais dans celui des clics. */
+  basculer(champ: ChampFiche, option: string, ev: Event, lot: number | null = null): void {
+    const coche = (ev.target as HTMLInputElement).checked;
+    const code = this.cle(champ, lot);
+    const valeur = basculerOption(this.valeurAffichee(champ, lot), option, champ.options ?? [], coche);
+    this.valeurs.update((v) => ({ ...v, [code]: valeur }));
+    if (this.erreursChamp().has(code)) {
+      this.erreursChamp.update((m) => {
+        const n = new Map(m);
+        n.delete(code);
+        return n;
+      });
+    }
+  }
+
+  /**
+   * ⚠️ 25/09 — le **rendu du bloc**, tel que le serveur le déclare (`BlocFiche.rendu`). L'écran ne le déduit
+   * jamais d'un code de bloc : un rendu neuf est une migration côté référentiel, pas une rustine ici.
+   */
+  rendu(bloc: BlocFiche): string | null {
+    return bloc.rendu ?? null;
+  }
+
+  /**
+   * Le besoin vient d'être enregistré : le bilan ne dit plus la vérité (« besoin incomplet » a pu tomber, ou
+   * apparaître). On le relit sans bouger d'étape — la PRMP reste dans sa grille.
+   */
+  besoinEnregistre(): void {
+    const id = this.idDmc();
+    if (id == null) return;
+    this.ficheService.controler(id).subscribe({
+      next: (bilan) => this.fiche.update((f) => (f ? { ...f, bilanControles: bilan } : f)),
+      error: () => undefined,
+    });
+  }
+
   cle(champ: ChampFiche, lot: number | null = null): string {
     return cleValeur(champ.code, lot);
   }
@@ -682,6 +769,28 @@ export class FicheMarcheEcran {
     });
   }
 
+  /**
+   * Un brouillon de version > 1 sort d'une révision : la version précédente porte les valeurs que le référentiel
+   * d'aujourd'hui n'admet plus. On les lit une fois, en silence — leur absence n'est pas une panne d'écran.
+   */
+  private chargerVersionPrecedente(f: FicheMarche | null): void {
+    const id = this.idDmc();
+    const v = f?.version ?? 1;
+    if (id == null || f == null || f.statut !== 'BROUILLON' || v < 2) {
+      this.valeursPrecedentes.set(null);
+      return;
+    }
+    this.ficheService.version(id, v - 1).subscribe({
+      next: (avant) => this.valeursPrecedentes.set({ ...avant.valeurs }),
+      error: () => this.valeursPrecedentes.set(null),
+    });
+  }
+
+  aide(champ: ChampFiche, lot: number | null = null): string | null {
+    const v = this.aides().get(this.cle(champ, lot));
+    return v == null ? null : String(v);
+  }
+
   reviser(): void {
     const id = this.idDmc();
     if (id == null || this.saving()) return;
@@ -690,6 +799,7 @@ export class FicheMarcheEcran {
       next: (f) => {
         this.saving.set(false);
         this.appliquer(f);
+        this.chargerVersionPrecedente(f);
         this.etape.set(2);
         this.blocIdx.set(0);
       },

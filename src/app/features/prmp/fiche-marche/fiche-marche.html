@@ -291,7 +291,24 @@
                   <h2 [id]="'fm-' + bloc.code">{{ bloc.libelle }}</h2>
                   <span class="fm__comptes">{{ blocIdx() + 1 }} sur {{ blocs().length }}</span>
                 </div>
-                @for (r of rubriquesOuvertes(bloc); track r.code) {
+                <!-- ⚠️ 25/09 — un bloc peut DÉCLARER son rendu : le besoin est une grille, pas une liste de
+                     champs. Un bloc sans champ et sans rendu connu le dit, au lieu de rester blanc. -->
+                @if (rendu(bloc) === 'BESOIN') {
+                  <app-fiche-besoin
+                    [idDmc]="idDmc()!"
+                    [nbLots]="nbLots()"
+                    [saisieParLot]="saisieParLot()"
+                    [typeMarche]="fiche()?.typeMarche ?? null"
+                    [lecture]="figee() || enLecture()"
+                    (enregistre)="besoinEnregistre()"
+                  />
+                } @else if (!rubriquesOuvertes(bloc).length) {
+                  <p class="fm__vide" role="status">Aucune information à saisir dans ce bloc.</p>
+                }
+                <!-- ⚠️ Recette du 26/09 — un bloc à rendu déclaré ne déroule PAS ses rubriques : la rubrique
+                     du besoin n'a aucun champ, et son état vide (« référentiel à compléter ») contredisait
+                     la grille juste au-dessus. C'est le rendu qui tient le bloc, pas les deux à la fois. -->
+                @for (r of rendu(bloc) ? [] : rubriquesOuvertes(bloc); track r.code) {
                   <div class="fm__rub">
                     <h3>
                       {{ r.libelle }}
@@ -306,7 +323,14 @@
                         </div>
                         <div class="fm__champ-v fm__champ-v--{{ largeur(c.type) }}">
                           @if (c.source === 'PPM' || c.source === 'CADRAGE' || figee() || enLecture()) {
-                            <div class="fm__lecture" [id]="'c-' + c.code">{{ valeurAffichee(c) || '—' }}</div>
+                            @if (c.type === 'LISTE_MULTIPLE' && choisies(c).length) {
+                              <!-- Plusieurs options retenues se lisent en liste, jamais en « A1,A2,A3 ». -->
+                              <ul class="fm__lecture fm__options" [id]="'c-' + c.code">
+                                @for (o of choisies(c); track o) { <li>{{ o }}</li> }
+                              </ul>
+                            } @else {
+                              <div class="fm__lecture" [id]="'c-' + c.code">{{ valeurAffichee(c) || '—' }}</div>
+                            }
                           } @else {
                             <!-- ⚠️ V43 (25/09) — une information qui varie d'un lot à l'autre se saisit une fois PAR LOT,
                                  sous la clé « CODE#rang ». Un marché non alloti n'a qu'une cellule, sans étiquette. -->
@@ -329,6 +353,20 @@
                                         @for (o of c.options ?? []; track o) { <option [value]="o" [selected]="valeurAffichee(c, lot) === o">{{ o }}</option> }
                                       </select>
                                     }
+                                    @case ('LISTE_MULTIPLE') {
+                                      <!-- ⚠️ 25/09 — plusieurs options d'un coup : la valeur enregistrée est « A1,A3 ».
+                                           Des cases plutôt qu'un select multiple : elles s'atteignent au clavier et
+                                           se lisent sans manœuvre, et les options sont peu nombreuses. -->
+                                      <fieldset class="fm__cases" [id]="'c-' + cle(c, lot)">
+                                        <legend class="fm__sr">{{ c.libelle }}@if (lot !== null) { — lot {{ lot }} }</legend>
+                                        @for (o of c.options ?? []; track o) {
+                                          <label class="fm__case">
+                                            <input type="checkbox" [value]="o" [checked]="choisies(c, lot).includes(o)" (change)="basculer(c, o, $event, lot)" />
+                                            <span>{{ o }}</span>
+                                          </label>
+                                        }
+                                      </fieldset>
+                                    }
                                     @case ('OUI_NON') {
                                       <select class="form-control" [id]="'c-' + cle(c, lot)" (change)="saisir(c, $event, lot)">
                                         <option value="" [selected]="!valeurAffichee(c, lot)">— Choisir —</option>
@@ -340,6 +378,11 @@
                                     @default { <input class="form-control" type="text" [id]="'c-' + cle(c, lot)" [attr.aria-label]="lot === null ? null : c.libelle + ' — lot ' + lot" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)" /> }
                                   }
                                   @if (lot !== null) { @if (erreurDe(cle(c, lot)); as msg) { <span class="form-error">{{ msg }}</span> } }
+                                  <!-- ⚠️ V46 — la révision n'a pas repris cette valeur (champ désactivé, option
+                                       disparue, passage par lot) : l'ancienne se LIT ici, elle ne se recopie pas. -->
+                                  @if (aide(c, lot); as ancienne) {
+                                    <span class="fm__aide">Ancienne valeur, non reprise : <b>{{ ancienne }}</b> — à ressaisir.</span>
+                                  }
                                 </div>
                               </div>
                             }
@@ -365,14 +408,18 @@
                 }
                 <div class="fm__pied">
                   <button type="button" class="btn btn-outline" [disabled]="saving()" (click)="blocPrecedent()">‹ Précédent</button>
-                  @if (enLecture()) {
+                  <!-- ⚠️ Correctif du 26/09 — quand il n'y a RIEN à enregistrer (lecture, fiche figée, forme non
+                       outillée), le bouton d'avance fait AVANCER. Sans cela la PRMP qui relit sa propre fiche
+                       validée n'avait qu'un bouton désactivé : aucun bloc au-delà du premier n'était atteignable
+                       autrement que par le rail des étapes — le besoin, dernier bloc, restait invisible. -->
+                  @if (enLecture() || figee() || ecritureBloquee()) {
                     <button type="button" class="btn btn-primary" (click)="blocSuivant()">{{ blocIdx() < blocs().length - 1 ? 'Bloc suivant ›' : 'Voir les reprises ›' }}</button>
-                    <span class="fm__aut">Lecture seule : la fiche appartient à la PRMP qui l'a établie.</span>
+                    <span class="fm__aut">{{ enLecture() ? 'Lecture seule : la fiche appartient à la PRMP qui l’a établie.' : figee() ? 'Fiche figée : lecture seule' : ecritureBloquee() ? 'Rien ne peut être enregistré ici.' : '' }}</span>
                   } @else {
-                    <button type="button" class="btn btn-primary" [disabled]="saving() || figee() || ecritureBloquee()" (click)="enregistrerBloc()">
+                    <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="enregistrerBloc()">
                       {{ saving() ? 'Enregistrement…' : blocIdx() < blocs().length - 1 ? 'Enregistrer et continuer ›' : 'Enregistrer et voir les reprises ›' }}
                     </button>
-                    <span class="fm__aut">{{ figee() ? 'Fiche figée : lecture seule' : 'Brouillon invisible de la Commission' }}</span>
+                    <span class="fm__aut">Brouillon invisible de la Commission</span>
                   }
                 </div>
               </section>
@@ -427,6 +474,27 @@
                 @for (c of bilan().avertissements; track c.regle + c.champs.join()) {
                   <p class="fm__ctrl fm__ctrl--a"><b>{{ c.bloc || '—' }}</b> {{ c.message }} <span class="fm__ou">· {{ c.regle }}</span></p>
                 }
+                <!-- ⚠️ V46 — le référentiel a changé sous cette fiche : une valeur enregistrée peut n'avoir plus
+                     aucune cellule (champ désactivé, ou devenu par lot). Elle n'est jamais supprimée côté serveur :
+                     on la montre ici, sinon elle disparaîtrait de l'écran sans disparaître du dossier. -->
+                @if (sansCellule().length) {
+                  <details class="fm__hors">
+                    <summary>{{ sansCellule().length }} valeur(s) enregistrée(s) sans champ à l'écran</summary>
+                    <p class="fm__hors-p">
+                      Le référentiel a changé depuis leur saisie. Elles restent dans la fiche et ne se modifient plus ici ;
+                      les pièces produites n'en tiennent pas compte.
+                    </p>
+                    <ul class="fm__hors-l">
+                      @for (v of sansCellule(); track v.cle) {
+                        <li>
+                          <span class="cnm-mono">{{ v.cle }}</span>
+                          <b>{{ v.valeur }}</b>
+                          <span class="fm__ou">· {{ v.motif === 'code-retire' ? 'code retiré du référentiel' : 'saisie désormais par lot' }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </details>
+                }
               </div>
               <div class="fm__pied">
                 <button type="button" class="btn btn-outline" (click)="etape.set(3)">‹ Reprises</button>
@@ -475,11 +543,13 @@
                                     <li>
                                       <span class="fm__doc fm__doc--{{ d.type.toLowerCase() }}">{{ d.type }}</span>
                                       <span class="fm__docs-n">
-                                        {{ d.libelle || libellesDocuments[d.type] }}
+                                        {{ libellePiece(d) }}@if (d.lot) { <span class="fm__docs-l">lot {{ d.lot }}</span> }
                                         <span class="fm__docs-f cnm-mono">{{ d.nomFichier }}</span>
                                       </span>
                                       @if (poids(d.tailleOctets); as p) { <span class="fm__docs-p">{{ p }}</span> }
+                                      @if (ouvrable(d)) {
                                       <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, true)">Ouvrir</button>
+                                      }
                                       <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, false)">Enregistrer</button>
                                     </li>
                                   }
@@ -514,21 +584,39 @@
                 <!-- ⚠️ Lot 2 (demande du 23/09) — développé CONTRE le contrat proposé : tant que la route n'est pas
                      servie, on annonce ce qui viendra au lieu de laisser une promesse creuse. -->
                 @if (documents().length) {
-                  <ul class="fm__docs">
-                    @for (d of documents(); track d.idDocument) {
-                      <li>
-                        <!-- Le serveur NOMME ses documents (`libelle`) : le sigle ne sert que de repli. -->
-                        <span class="fm__doc fm__doc--{{ d.type.toLowerCase() }}">{{ d.type }}</span>
-                        <span class="fm__docs-n">
-                          {{ d.libelle || libellesDocuments[d.type] }}
-                          <span class="fm__docs-f cnm-mono">{{ d.nomFichier }}</span>
-                        </span>
-                        @if (poids(d.tailleOctets); as p) { <span class="fm__docs-p">{{ p }}</span> }
-                        <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, true)">Ouvrir</button>
-                        <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(d, false)">Enregistrer</button>
-                      </li>
+                  <!-- ⚠️ V43/V46 — l'acte d'engagement, la liste des fournitures, le bordereau et le tableau de
+                       conformité sont produits UNE FOIS PAR LOT : on les groupe, sinon cinq lots donnent cinq
+                       lignes du même sigle que seul le nom de fichier distingue. -->
+                  @for (g of groupesPieces(); track g.titre) {
+                    @if (g.lot !== null || groupesPieces().length > 1) {
+                      <h3 class="fm__docs-t">{{ g.titre }}</h3>
                     }
-                  </ul>
+                    <ul class="fm__docs">
+                      @for (p of g.pieces; track p.cle) {
+                        <li>
+                          <!-- Le serveur NOMME ses documents (`libelle`) : le sigle ne sert que de repli. -->
+                          <span class="fm__doc fm__doc--{{ p.type.toLowerCase() }}">{{ p.type }}</span>
+                          <span class="fm__docs-n">
+                            {{ libellePiece(p) }}
+                            <span class="fm__docs-f cnm-mono">{{ p.fichiers[0].nomFichier }}</span>
+                          </span>
+                          <!-- ⚠️ Une pièce, DEUX fichiers : le .docx se retouche, le PDF est celui qui est joint au
+                               dossier. Les apparier tient l'étape lisible — 86 fichiers pour 43 pièces au dossier
+                               réel. Un .docx ou un classeur ne s'affiche pas dans un onglet : seul le PDF s'ouvre. -->
+                          @for (f of p.fichiers; track f.idDocument) {
+                            <span class="fm__docs-fmt">
+                              @if (ouvrable(f)) {
+                                <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(f, true)">Ouvrir le {{ format(f) }}</button>
+                              }
+                              <button type="button" class="btn btn-sm btn-outline" [disabled]="saving()" (click)="obtenirDocument(f, false)">
+                                Enregistrer <span class="fm__docs-x">{{ format(f) }}</span>@if (poids(f.tailleOctets); as t) { <span class="fm__docs-p">&nbsp;· {{ t }}</span> }
+                              </button>
+                            </span>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  }
                 } @else if (documentsAbsents()) {
                   <p>{{ documentsEnToutesLettres() }} seront <strong>générés à la validation</strong> et joints au dossier. La génération est demandée au serveur ; les informations, elles, sont déjà toutes saisies ici.</p>
                 } @else if (!figee()) {

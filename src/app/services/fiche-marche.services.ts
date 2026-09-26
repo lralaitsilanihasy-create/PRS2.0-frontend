@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { BilanControles, Cadrage, CategorieDao, ChampFiche, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, LigneEligible, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
+import { ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, LigneEligible, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -97,6 +97,24 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
   /** `POST /{idDmc}/reviser` — nouvelle version brouillon copiée de la dernière validée. */
   reviser(idDmc: number): Observable<FicheMarche> {
     return this.http.post<FicheMarche>(`${this.baseUrl}/${idDmc}/reviser`, null);
+  }
+
+  /**
+   * `GET /{idDmc}/articles` — le besoin de la fiche (bloc `B12`), tous lots confondus, trié par lot puis
+   * ordre. Silencieux : le bloc s'affiche vide plutôt que de lever une boîte d'erreur.
+   */
+  articles(idDmc: number): Observable<ArticleFiche[]> {
+    return this.http.get<ArticleFiche[]>(`${this.baseUrl}/${idDmc}/articles`, { context: skipErrorToast() });
+  }
+
+  /**
+   * `PUT /{idDmc}/articles?lot=n` — **remplacement en bloc** du besoin d'un lot : la grille envoie ses lignes
+   * dans l'ordre affiché, le serveur recrée les articles et pose leur `ordre`. Sans `lot`, c'est tout le
+   * besoin d'une ligne non allotie. 400 nominatifs par article (affichés dans la grille, pas en toast).
+   */
+  enregistrerBesoin(idDmc: number, lot: number | null, articles: ArticleFiche[]): Observable<ArticleFiche[]> {
+    const params = lot == null ? undefined : new HttpParams().set('lot', lot);
+    return this.http.put<ArticleFiche[]>(`${this.baseUrl}/${idDmc}/articles`, { articles }, { params, context: skipErrorToast() });
   }
 
   /** `GET /{idDmc}/versions` — versions figées (en-têtes). Silencieux : absente tant que le contrat n'est pas servi. */

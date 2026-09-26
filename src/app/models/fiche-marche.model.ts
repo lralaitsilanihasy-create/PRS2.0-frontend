@@ -12,6 +12,16 @@ export type TypeMarche = 'QUANTITE_FIXE' | 'A_COMMANDE' | 'CONTRAT_CADRE';
  * prestations intellectuelles (lot 6, 24/09) — données particulières des instructions aux consultants.
  */
 export type DocumentDao = 'DPAO' | 'DPAC' | 'DPIC' | 'AE' | 'CCAP' | 'AUCUN';
+/**
+ * ⚠️ V46 (25/09) — les **pièces produites** par la fiche. Les documents maîtres (`DocumentDao`) en sont, mais
+ * s'y ajoutent les pièces dérivées du **besoin** et les **formulaires du candidat**, qui ne sont le document
+ * maître d'aucun champ : `LF` liste des fournitures et calendrier, `BP` bordereau des prix (classeur),
+ * `TC` tableau de conformité (classeur), `A1`–`A4` fiches exigées du candidat, `C1`/`C2` modèles de garantie.
+ *
+ * ⚠️ `A1`–`A4` et `C1`/`C2` **ne sont pas encore produits** : le backend attend les modèles officiels. Les
+ * nommer ici ne les promet pas — c'est l'écran qui saura les lire le jour où le serveur les servira.
+ */
+export type PieceProduite = DocumentDao | 'LF' | 'BP' | 'TC' | 'A1' | 'A2' | 'A3' | 'A4' | 'C1' | 'C2';
 export type SourceChamp = 'PPM' | 'SAISIE' | 'CADRAGE';
 /**
  * ⚠️ Lot 5 (24/09) — la **catégorie** de dossier d'appel d'offres, second axe du référentiel. Elle se déduit de la
@@ -19,7 +29,21 @@ export type SourceChamp = 'PPM' | 'SAISIE' | 'CADRAGE';
  */
 export type CategorieDao = 'FOURNITURES_SERVICES' | 'TRAVAUX' | 'PRESTATIONS_INTELLECTUELLES';
 
-export type TypeChamp = 'TEXTE' | 'TEXTE_LONG' | 'NOMBRE' | 'MONTANT' | 'POURCENTAGE' | 'DATE' | 'LISTE' | 'OUI_NON' | 'PIECE';
+export type TypeChamp =
+  | 'TEXTE'
+  | 'TEXTE_LONG'
+  | 'NOMBRE'
+  | 'MONTANT'
+  | 'POURCENTAGE'
+  | 'DATE'
+  | 'LISTE'
+  /**
+   * ⚠️ 25/09 — plusieurs options d'un coup (`B04-CD-01` : les fiches A1 à A4 jointes au dossier). La valeur est
+   * la liste des options retenues **séparées par des virgules**, dans l'ordre du référentiel : `'A1,A3'`.
+   */
+  | 'LISTE_MULTIPLE'
+  | 'OUI_NON'
+  | 'PIECE';
 export type StatutFiche = 'BROUILLON' | 'VALIDEE';
 
 /** Rubrique d'un bloc (« Garantie de soumission » dans B05). `attendus` : compte d'informations de l'esquisse. */
@@ -32,12 +56,20 @@ export interface RubriqueFiche {
   nbAttendu?: number | null;
 }
 
+/**
+ * ⚠️ 25/09 — un bloc peut DÉCLARER son rendu au lieu de laisser l'écran deviner : `null` (ou absent) = la liste
+ * de ses champs, `'BESOIN'` = la grille du besoin (lots → articles → caractéristiques). Un rendu inconnu du front
+ * n'est pas une erreur : le bloc annonce qu'il n'a rien à saisir plutôt que de rester blanc.
+ */
+export type RenduBloc = 'BESOIN' | (string & {});
+
 export interface BlocFiche {
   /** `B01` … `B10`. */
   code: string;
   libelle: string;
   rang: number;
   rubriques: RubriqueFiche[];
+  rendu?: RenduBloc | null;
 }
 
 /** Une information du fichier de correspondance (esquisse, § « Structure d'une information »). */
@@ -156,6 +188,45 @@ export interface FicheMarche {
   validePar?: string | null;
 }
 
+
+/**
+ * ⚠️ Le besoin (bloc `B12`, 25/09) — une **exigence technique** d'un article : « Mémoire vive » / « 8 Go au
+ * minimum ». Elle alimente le tableau de conformité que le candidat remplit, ligne par ligne.
+ */
+export interface CaracteristiqueFiche {
+  idCaracteristique?: number | null;
+  /** Rang d'affichage ; **posé par le serveur** à partir de la position envoyée. */
+  ordre?: number | null;
+  libelle: string;
+  exigence: string;
+}
+
+/**
+ * ⚠️ Le besoin (bloc `B12`, 25/09) — un **article** d'un lot : ce que l'acheteur veut acheter, en quelles
+ * quantités, et à quelles conditions techniques. N'est **pas** un champ de la fiche : une ressource à part
+ * (`GET|PUT /api/fiches-marche/{idDmc}/articles`), parce qu'une clé ne peut pas porter un tableau.
+ *
+ * - **à commande** : `quantiteMin` et `quantiteMax` ; `quantite` est ignorée ;
+ * - **quantité fixe** et **contrat-cadre** : `quantite` seule.
+ *
+ * `redigePar` / `profilRedacteur` sont une **trace** de qui a enregistré, posée par le serveur : ils ne
+ * commandent aucun droit (arbitrage du 25/09 — le besoin suit les droits de la fiche).
+ */
+export interface ArticleFiche {
+  idArticle?: number | null;
+  /** Rang du lot au plan ; `null` sur une ligne non allotie. */
+  lot?: number | null;
+  ordre?: number | null;
+  designation: string;
+  unite: string;
+  quantiteMin?: number | null;
+  quantiteMax?: number | null;
+  quantite?: number | null;
+  caracteristiques: CaracteristiqueFiche[];
+  redigePar?: string | null;
+  profilRedacteur?: string | null;
+}
+
 /** `GET /api/fiches-marche/{idDmc}/versions` — une version VALIDÉE, de quoi lister l'historique (le détail : `/versions/{n}`). */
 export interface VersionFiche {
   idFiche: number | null;
@@ -242,8 +313,8 @@ export interface DocumentFiche {
    * l'acte d'engagement est produit **une fois par lot**, comme dans un dossier réel.
    */
   lot?: number | null;
-  /** Document maître, mêmes codes que `ChampFiche.documentMaitre` : `DPAO` · `DPAC` · `AE` · `CCAP`. */
-  type: DocumentDao;
+  /** La pièce : un document maître (`DPAO`, `AE`, `CCAP`…) ou une pièce dérivée du besoin (`LF`, `BP`, `TC`…). */
+  type: PieceProduite;
   libelle?: string | null;
   extension?: string | null;
   nomFichier: string;

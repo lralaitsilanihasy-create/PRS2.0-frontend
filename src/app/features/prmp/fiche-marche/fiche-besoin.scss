@@ -1,0 +1,150 @@
+/* Le besoin par lot (bloc B12) — grille de saisie : lots → articles → caractéristiques exigées. */
+.bs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+/* ── Onglets de lot ───────────────────────────────────────────────────────────────────────── */
+.bs__lots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  border-bottom: 1px solid var(--n-300);
+  padding-bottom: 0.4rem;
+}
+.bs__lot {
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--n-300);
+  border-radius: 999px;
+  padding: 0.25rem 0.8rem;
+  color: var(--n-600);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.bs__lot--actif {
+  /* ⚠️ Recette du 26/09 — c'était `--cnm-primary`, qui N'EXISTE PAS : la déclaration tombait, et
+     l'onglet actif s'affichait en blanc sur blanc — le lot 1 était invisible. Les jetons de la
+     palette sont `--p-*` (cf. _design-system.scss). */
+  background: var(--p-600);
+  border-color: var(--p-600);
+  color: #fff;
+}
+.bs__lot-n {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+/* ── Tableau ──────────────────────────────────────────────────────────────────────────────── */
+.bs__table {
+  overflow-x: auto;
+  border: 1px solid var(--n-200);
+  border-radius: 6px;
+}
+.bs table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 760px;
+}
+.bs__cap {
+  caption-side: top;
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.84rem;
+  color: var(--n-500);
+}
+/* ⚠️ Recette du 26/09 — l'en-tête bleu vient du style GLOBAL (`thead tr` + `th`, dégradé `--grad-primary`,
+   texte blanc). Y reposer une couleur de texte grise donnait du gris sur bleu : sous le seuil AA. On ne
+   surcharge donc que la densité, jamais les couleurs — même règle que `.ppm-table`. */
+.bs th {
+  padding: 0.5rem 0.7rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+.bs td {
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--n-200);
+  vertical-align: top;
+}
+.bs tbody tr:last-child td { border-bottom: 0; }
+.bs__ko td { background: #fef3f2; }
+.bs__c-n { width: 3rem; font-variant-numeric: tabular-nums; color: var(--n-500); }
+.bs__c-u { width: 7rem; }
+.bs__c-q { width: 9rem; }
+.bs__c-a { width: 7rem; white-space: nowrap; text-align: right; }
+.bs__lu { font-size: 0.9rem; }
+
+/* ── Caractéristiques exigées ─────────────────────────────────────────────────────────────── */
+.bs__plier {
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0.2rem 0;
+  color: var(--p-700);
+}
+.bs__carac td { background: var(--p-50); }
+.bs__cl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) 2rem;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+@media (max-width: 900px) {
+  .bs__cl { grid-template-columns: 1fr; }
+}
+
+/* ── Actions ──────────────────────────────────────────────────────────────────────────────── */
+.bs__ic {
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--n-300);
+  border-radius: 4px;
+  width: 1.75rem;
+  height: 1.75rem;
+  line-height: 1;
+  color: var(--n-600);
+}
+.bs__ic:disabled { opacity: 0.35; cursor: default; }
+.bs__ic--ko { color: #b42318; border-color: #f0c2bd; }
+
+.bs__pied {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.bs__copie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--n-500);
+}
+.bs__etat {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--n-500);
+}
+
+/* Étiquette réservée aux lecteurs d'écran. */
+.bs__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

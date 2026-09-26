@@ -1,4 +1,4 @@
-import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, ReferentielFiche, RubriqueFiche, TypeChamp, TypeMarche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, PieceProduite, ReferentielFiche, RubriqueFiche, TypeChamp, TypeMarche } from '../../../models';
 
 /**
  * Règles PURES de la fiche DAO (esquisse « DAO par type de marché », 22/09) : questions de cadrage, conditions
@@ -26,6 +26,121 @@ export const LIBELLES_DOCUMENTS: Readonly<Record<DocumentDao, string>> = {
   CCAP: 'CCAP',
   AUCUN: 'sans document',
 };
+
+/**
+ * Les pièces produites, en toutes lettres — ⚠️ le serveur **nomme** ses documents (`DocumentFiche.libelle`) :
+ * cette table n'est qu'un repli, et le nom du fichier reste le dernier recours.
+ */
+export const LIBELLES_PIECES: Readonly<Record<PieceProduite, string>> = {
+  DPAO: "Données particulières de l'appel d'offres",
+  DPAC: 'Données particulières du cahier des clauses administratives',
+  DPIC: 'Données particulières des instructions aux consultants',
+  AE: "Acte d'engagement",
+  CCAP: 'Cahier des clauses administratives particulières',
+  AUCUN: 'Pièce sans document maître',
+  LF: 'Liste des fournitures et calendrier de livraison',
+  BP: 'Bordereau des prix (classeur)',
+  TC: 'Tableau de conformité technique (classeur)',
+  A1: 'A1 — fiche exigée du candidat',
+  A2: 'A2 — fiche exigée du candidat',
+  A3: 'A3 — fiche exigée du candidat',
+  A4: 'A4 — fiche exigée du candidat',
+  C1: 'C1 — modèle de garantie',
+  C2: 'C2 — modèle de garantie',
+};
+
+/** L'ordre de lecture d'une liste de pièces : le dossier d'abord, ses annexes ensuite. */
+export const ORDRE_PIECES: readonly PieceProduite[] = [
+  'DPAO', 'DPAC', 'DPIC', 'CCAP', 'AE', 'LF', 'BP', 'TC', 'A1', 'A2', 'A3', 'A4', 'C1', 'C2', 'AUCUN',
+];
+
+/**
+ * Une **pièce** du dossier et ses fichiers. Le serveur produit chaque pièce en deux formats — le `.docx`,
+ * modifiable, et le `.pdf` joint au dossier soumis — et les sert comme deux documents. Les apparier est ce qui
+ * rend l'étape lisible : le dossier réel 2463 compte **86 documents** pour 43 pièces.
+ */
+export interface PieceGroupee {
+  /** Clé d'affichage : le sigle et le lot (`AE#3`) — deux pièces de même sigle et même lot n'existent pas. */
+  cle: string;
+  type: PieceProduite;
+  /** Le nom que le serveur donne à la pièce, `null` s'il n'en donne pas. */
+  libelle: string | null;
+  lot: number | null;
+  /** Ses fichiers, le PDF d'abord : c'est celui qui se lit sans rien installer. */
+  fichiers: DocumentFiche[];
+}
+
+/** Un groupe de pièces de l'étape 7 : le lot auquel elles se rapportent, `null` = communes au dossier. */
+export interface GroupePieces {
+  lot: number | null;
+  titre: string;
+  pieces: PieceGroupee[];
+}
+
+/** L'ordre des formats d'une pièce : le PDF d'abord, le document modifiable ensuite, le classeur enfin. */
+const ORDRE_FORMATS = ['pdf', 'docx', 'xlsx'];
+
+/** L'extension d'un document, en minuscules, qu'elle soit servie ou seulement dans le nom du fichier. */
+export function extensionPiece(piece: Pick<DocumentFiche, 'extension' | 'nomFichier'>): string {
+  return (piece.extension ?? piece.nomFichier.split('.').pop() ?? '').toLowerCase();
+}
+
+/** Le format en clair, tel qu'on l'écrit sur le bouton : « PDF », « Word », « Excel ». */
+export function formatPiece(piece: Pick<DocumentFiche, 'extension' | 'nomFichier'>): string {
+  const ext = extensionPiece(piece);
+  if (ext === 'pdf') return 'PDF';
+  if (ext === 'docx' || ext === 'doc') return 'Word';
+  if (ext === 'xlsx' || ext === 'xls') return 'Excel';
+  return ext.toUpperCase() || 'fichier';
+}
+
+/**
+ * ⚠️ V43 puis V46 (25/09) — sur une ligne allotie, l'acte d'engagement, la liste des fournitures, le bordereau et
+ * le tableau de conformité sont produits **une fois par lot** : cinq lots font vingt-et-une pièces. Une liste plate
+ * les afficherait cinq fois sous le même sigle, le nom du fichier seul les distinguant. On les groupe donc par lot,
+ * les pièces communes d'abord.
+ */
+export function piecesParLot(fichiers: readonly DocumentFiche[]): GroupePieces[] {
+  const rang = (type: PieceProduite): number => {
+    const i = ORDRE_PIECES.indexOf(type);
+    return i < 0 ? ORDRE_PIECES.length : i;
+  };
+  const rangFormat = (f: DocumentFiche): number => {
+    const i = ORDRE_FORMATS.indexOf(extensionPiece(f));
+    return i < 0 ? ORDRE_FORMATS.length : i;
+  };
+  // Une pièce = un sigle et un lot ; ses fichiers en sont les formats.
+  const parCle = new Map<string, PieceGroupee>();
+  for (const f of fichiers) {
+    const lot = f.lot ?? null;
+    const cle = `${f.type}#${lot ?? ''}`;
+    const deja = parCle.get(cle);
+    if (deja) {
+      deja.fichiers.push(f);
+      deja.libelle = deja.libelle ?? f.libelle ?? null;
+    } else {
+      parCle.set(cle, { cle, type: f.type, libelle: f.libelle ?? null, lot, fichiers: [f] });
+    }
+  }
+  for (const p of parCle.values()) p.fichiers.sort((a, b) => rangFormat(a) - rangFormat(b) || a.nomFichier.localeCompare(b.nomFichier));
+  const lots = [...new Set([...parCle.values()].map((p) => p.lot))].sort((a, b) => (a ?? 0) - (b ?? 0));
+  return lots.map((lot) => ({
+    lot,
+    titre: lot == null ? 'Communes au dossier' : `Lot ${lot}`,
+    pieces: [...parCle.values()]
+      .filter((p) => p.lot === lot)
+      .sort((a, b) => rang(a.type) - rang(b.type) || a.cle.localeCompare(b.cle)),
+  }));
+}
+
+/**
+ * Une pièce s'**ouvre** dans un onglet quand c'est un PDF ; un `.docx` ou un `.xlsx` ne s'y affiche pas — le
+ * navigateur le téléchargerait sous un nom inventé. Pour ceux-là, « Enregistrer » est le seul geste honnête.
+ */
+export function pieceOuvrable(piece: Pick<DocumentFiche, 'extension' | 'nomFichier'>): boolean {
+  const ext = (piece.extension ?? piece.nomFichier.split('.').pop() ?? '').toLowerCase();
+  return ext === 'pdf';
+}
 
 /** Les sept étapes du parcours (esquisse, « Le parcours de constitution »). */
 export interface EtapeFiche {
@@ -230,6 +345,89 @@ export function documentsProduits(
   return ORDRE_DOCUMENTS.filter((d) => vus.has(d));
 }
 
+/** Une valeur vide : ni `null`, ni chaîne blanche — c'est « à ressaisir », pas « zéro ». */
+function videur(v: unknown): boolean {
+  return v == null || (typeof v === 'string' && v.trim() === '');
+}
+
+/** Les clés de cellule qu'un référentiel affiche aujourd'hui, pour une ligne allotie ou non. */
+function clesAffichees(referentiel: ReferentielFiche, cadrage: Cadrage, saisieParLot: boolean, nbLots: number): Set<string> {
+  const cles = new Set<string>();
+  for (const c of referentiel.champs) {
+    if (c.actif === false || !evaluerCondition(c.condition, cadrage)) continue;
+    for (const lot of lotsDuChamp(c, saisieParLot, nbLots)) cles.add(cleValeur(c.code, lot));
+  }
+  return cles;
+}
+
+/** Une valeur qu'aucune cellule ne montre. `motif` dit pourquoi — le code a disparu, ou sa forme a changé. */
+export interface ValeurSansCellule {
+  cle: string;
+  valeur: unknown;
+  motif: 'code-retire' | 'hors-forme';
+}
+
+/**
+ * ⚠️ V46 (25/09) — le référentiel **change sous les fiches déjà saisies** : un champ est désactivé (`B02-AU-03`),
+ * un autre devient par lot (`B09-LL-01`). La valeur, elle, n'est jamais supprimée côté serveur. Sans ce relevé
+ * elle deviendrait invisible : aucune cellule ne la porte plus, et l'écran laisserait croire qu'elle n'a jamais
+ * existé. On la montre donc en lecture, avec la raison — c'est au rédacteur de décider de la ressaisir.
+ *
+ * `motif` : `code-retire` = le code n'est plus au référentiel ; `hors-forme` = le code y est, mais pas sous cette
+ * clé (valeur commune d'un champ devenu par lot, ou clé `#n` d'un champ qui ne l'est plus).
+ */
+export function valeursSansCellule(
+  referentiel: ReferentielFiche,
+  cadrage: Cadrage,
+  valeurs: Record<string, unknown>,
+  saisieParLot = false,
+  nbLots = 0,
+): ValeurSansCellule[] {
+  if (!referentiel.champs.length) return [];
+  const affichees = clesAffichees(referentiel, cadrage, saisieParLot, nbLots);
+  const codes = new Set(referentiel.champs.filter((c) => c.actif !== false).map((c) => c.code));
+  const dehors: ValeurSansCellule[] = [];
+  for (const [cle, valeur] of Object.entries(valeurs)) {
+    if (videur(valeur) || affichees.has(cle)) continue;
+    // Une condition de cadrage fermée n'est pas une perte : la réponse peut rouvrir la rubrique.
+    const code = cle.split('#')[0];
+    const champ = referentiel.champs.find((c) => c.code === code);
+    if (champ && champ.actif !== false && !evaluerCondition(champ.condition, cadrage)) continue;
+    dehors.push({ cle, valeur, motif: codes.has(code) ? 'hors-forme' : 'code-retire' });
+  }
+  return dehors.sort((a, b) => a.cle.localeCompare(b.cle));
+}
+
+/**
+ * ⚠️ V46 (25/09) — l'aide « ancienne valeur » d'une **révision**. `POST …/reviser` ne reprend pas une valeur que le
+ * référentiel d'aujourd'hui n'admet plus ; l'ancienne se lit sur la version précédente (`GET …/versions/{n}`), qui
+ * n'est jamais modifiée. On la pose **à côté de la cellule vide**, jamais dans la cellule : aucune conversion
+ * automatique — un texte libre versé dans une liste, ou une valeur commune répartie sur cinq lots, serait un
+ * contresens. La clé nue d'un champ devenu par lot sert d'aide à **chaque** lot : c'est le cas de `B09-LL-01`.
+ */
+export function aidesRevision(
+  referentiel: ReferentielFiche,
+  cadrage: Cadrage,
+  valeurs: Record<string, unknown>,
+  precedentes: Record<string, unknown> | null | undefined,
+  saisieParLot = false,
+  nbLots = 0,
+): Map<string, unknown> {
+  const aides = new Map<string, unknown>();
+  if (!precedentes) return aides;
+  for (const c of referentiel.champs) {
+    if (c.source !== 'SAISIE' || c.actif === false || !evaluerCondition(c.condition, cadrage)) continue;
+    for (const lot of lotsDuChamp(c, saisieParLot, nbLots)) {
+      const cle = cleValeur(c.code, lot);
+      if (!videur(valeurs[cle])) continue;
+      const candidates = lot == null ? [cle, `${c.code}#1`] : [cle, c.code];
+      const ancienne = candidates.map((k) => precedentes[k]).find((v) => !videur(v));
+      if (ancienne !== undefined) aides.set(cle, ancienne);
+    }
+  }
+  return aides;
+}
+
 /**
  * La largeur utile d'un contrôle, d'après ce qu'il reçoit : une date ou un pourcentage n'a pas besoin de la largeur
  * d'une phrase, et une phrase ne se saisit pas dans 220 pixels. Trois largeurs suffisent — au-delà, la ligne de texte
@@ -237,8 +435,41 @@ export function documentsProduits(
  */
 export function largeurChamp(type: TypeChamp): 'court' | 'moyen' | 'long' {
   if (type === 'NOMBRE' || type === 'POURCENTAGE' || type === 'DATE' || type === 'MONTANT') return 'court';
-  if (type === 'LISTE' || type === 'OUI_NON') return 'moyen';
+  if (type === 'LISTE' || type === 'OUI_NON' || type === 'LISTE_MULTIPLE') return 'moyen';
   return 'long';
+}
+
+/**
+ * ⚠️ `LISTE_MULTIPLE` (25/09) — la valeur est une **suite d'options séparées par des virgules** (`'A1,A3'`).
+ * Les deux fonctions qui suivent sont tout ce que l'écran a besoin de savoir : lire la sélection, et la changer.
+ */
+export function optionsChoisies(valeur: unknown): string[] {
+  // ⚠️ Le serveur ENREGISTRE « A1,A3 » mais ACCEPTE aussi un tableau JSON : une valeur relue d'une version
+  // figée peut donc arriver sous l'une ou l'autre forme. Les deux se lisent ici, sans convertir la fiche.
+  const brut = Array.isArray(valeur) ? valeur.map((o) => String(o)).join(',') : String(valeur ?? '');
+  return brut
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => o.length > 0);
+}
+
+/**
+ * Coche ou décoche une option et rend la **nouvelle valeur**, dans l'ordre du référentiel — jamais dans l'ordre
+ * des clics : le serveur enregistre « A1,A3 » quel que soit l'ordre reçu, l'écran doit dire la même chose.
+ * Une option hors du référentiel est conservée telle quelle, en queue : c'est peut-être une ancienne valeur.
+ */
+export function basculerOption(
+  valeur: unknown,
+  option: string,
+  options: readonly string[],
+  coche: boolean,
+): string {
+  const retenues = new Set(optionsChoisies(valeur));
+  if (coche) retenues.add(option);
+  else retenues.delete(option);
+  const connues = options.filter((o) => retenues.has(o));
+  const inconnues = [...retenues].filter((o) => !options.includes(o));
+  return [...connues, ...inconnues].join(',');
 }
 
 /**

@@ -1,0 +1,166 @@
+<!-- ⚠️ Le besoin (bloc B12) — lots → articles → caractéristiques exigées. Ce n'est pas une liste de champs :
+     le bloc déclare ce rendu, et la grille alimente le bordereau, la conformité et la liste des fournitures. -->
+<div class="bs">
+  @if (lots().length) {
+    <div class="bs__lots" role="tablist" aria-label="Lots du marché">
+      @for (n of lots(); track n) {
+        <button
+          type="button"
+          role="tab"
+          class="bs__lot"
+          [attr.aria-selected]="lotAffiche() === n"
+          [class.bs__lot--actif]="lotAffiche() === n"
+          (click)="allerAuLot(n)"
+        >
+          Lot {{ n }}
+          <span class="bs__lot-n">{{ comptes().get(n) ?? 0 }}</span>
+        </button>
+      }
+    </div>
+  }
+
+  @if (chargement()) {
+    <p class="bs__etat" role="status">Chargement du besoin…</p>
+  } @else {
+    @if (!lecture() && lotsCopiables().length && !duLot().length) {
+      <div class="bs__copie">
+        <span>Ce lot est vide.</span>
+        @for (n of lotsCopiables(); track n) {
+          <button type="button" class="btn btn-outline btn-sm" (click)="dupliquerDepuis(n)">Dupliquer depuis le lot {{ n }}</button>
+        }
+      </div>
+    }
+
+    @if (duLot().length) {
+      <div class="bs__table">
+        <table>
+          <caption class="bs__cap">
+            {{ duLot().length }} article(s)@if (lotAffiche(); as n) { au lot {{ n }} } — les quantités alimentent le bordereau des prix,
+            les caractéristiques le tableau de conformité.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="bs__c-n">N°</th>
+              <th scope="col">Désignation</th>
+              <th scope="col" class="bs__c-u">Unité</th>
+              @if (aCommande()) {
+                <th scope="col" class="bs__c-q">Quantité min.</th>
+                <th scope="col" class="bs__c-q">Quantité max.</th>
+              } @else {
+                <th scope="col" class="bs__c-q">Quantité</th>
+              }
+              <th scope="col" class="bs__c-a"><span class="bs__sr">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of duLot(); track l.cle) {
+              <tr [class.bs__ko]="erreurDe($index, 'designation') || erreurDe($index, 'unite')">
+                <td class="bs__c-n">{{ $index + 1 }}</td>
+                <td>
+                  @if (lecture()) {
+                    <span class="bs__lu">{{ l.designation }}</span>
+                  } @else {
+                    <input
+                      class="form-control"
+                      type="text"
+                      [value]="l.designation"
+                      [attr.aria-label]="'Désignation de l’article ' + ($index + 1)"
+                      (input)="saisir(l, 'designation', $event)"
+                    />
+                    @if (erreurDe($index, 'designation'); as msg) { <span class="form-error">{{ msg }}</span> }
+                  }
+                  <button type="button" class="bs__plier" (click)="basculerOuverture(l)">
+                    {{ l.ouverte ? '▾' : '▸' }} {{ l.caracteristiques.length }} caractéristique(s) exigée(s)
+                  </button>
+                </td>
+                <td class="bs__c-u">
+                  @if (lecture()) {
+                    <span class="bs__lu">{{ l.unite }}</span>
+                  } @else {
+                    <input class="form-control" type="text" [value]="l.unite" [attr.aria-label]="'Unité de l’article ' + ($index + 1)" (input)="saisir(l, 'unite', $event)" />
+                  }
+                </td>
+                @if (aCommande()) {
+                  <td class="bs__c-q">
+                    @if (lecture()) {
+                      <span class="bs__lu">{{ l.quantiteMin }}</span>
+                    } @else {
+                      <input class="form-control" type="number" min="0" [value]="l.quantiteMin ?? ''" [attr.aria-label]="'Quantité minimum de l’article ' + ($index + 1)" (input)="saisirNombre(l, 'quantiteMin', $event)" />
+                      @if (erreurDe($index, 'quantiteMin'); as msg) { <span class="form-error">{{ msg }}</span> }
+                    }
+                  </td>
+                  <td class="bs__c-q">
+                    @if (lecture()) {
+                      <span class="bs__lu">{{ l.quantiteMax }}</span>
+                    } @else {
+                      <input class="form-control" type="number" min="0" [value]="l.quantiteMax ?? ''" [attr.aria-label]="'Quantité maximum de l’article ' + ($index + 1)" (input)="saisirNombre(l, 'quantiteMax', $event)" />
+                      @if (erreurDe($index, 'quantiteMax'); as msg) { <span class="form-error">{{ msg }}</span> }
+                    }
+                  </td>
+                } @else {
+                  <td class="bs__c-q">
+                    @if (lecture()) {
+                      <span class="bs__lu">{{ l.quantite }}</span>
+                    } @else {
+                      <input class="form-control" type="number" min="0" [value]="l.quantite ?? ''" [attr.aria-label]="'Quantité de l’article ' + ($index + 1)" (input)="saisirNombre(l, 'quantite', $event)" />
+                      @if (erreurDe($index, 'quantite'); as msg) { <span class="form-error">{{ msg }}</span> }
+                    }
+                  </td>
+                }
+                <td class="bs__c-a">
+                  @if (!lecture()) {
+                    <button type="button" class="bs__ic" aria-label="Monter cet article" [disabled]="$first" (click)="deplacer(l, -1)">↑</button>
+                    <button type="button" class="bs__ic" aria-label="Descendre cet article" [disabled]="$last" (click)="deplacer(l, 1)">↓</button>
+                    <button type="button" class="bs__ic bs__ic--ko" aria-label="Supprimer cet article" (click)="supprimerArticle(l)">✕</button>
+                  }
+                </td>
+              </tr>
+              @if (l.ouverte) {
+                <tr class="bs__carac">
+                  <td></td>
+                  <td [attr.colspan]="aCommande() ? 4 : 3">
+                    @if (!l.caracteristiques.length) {
+                      <p class="bs__etat">Aucune caractéristique exigée — le contrôle « besoin incomplet » la réclamera.</p>
+                    }
+                    @for (c of l.caracteristiques; track $index) {
+                      <div class="bs__cl">
+                        @if (lecture()) {
+                          <span class="bs__lu"><b>{{ c.libelle }}</b> — {{ c.exigence }}</span>
+                        } @else {
+                          <input class="form-control" type="text" placeholder="Mémoire vive" [value]="c.libelle" [attr.aria-label]="'Caractéristique ' + ($index + 1)" (input)="saisirCaracteristique(l, $index, 'libelle', $event)" />
+                          <input class="form-control" type="text" placeholder="8 Go au minimum" [value]="c.exigence" [attr.aria-label]="'Exigence ' + ($index + 1)" (input)="saisirCaracteristique(l, $index, 'exigence', $event)" />
+                          <button type="button" class="bs__ic bs__ic--ko" aria-label="Retirer cette caractéristique" (click)="supprimerCaracteristique(l, $index)">✕</button>
+                        }
+                      </div>
+                    }
+                    @if (!lecture()) {
+                      <button type="button" class="btn btn-outline btn-sm" (click)="ajouterCaracteristique(l)">+ Caractéristique exigée</button>
+                    }
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (!lotsCopiables().length || lecture()) {
+      <p class="bs__etat" role="status">
+        Aucun article @if (lotAffiche(); as n) { au lot {{ n }} }. @if (!lecture()) { Ajoutez-en un : c'est lui qui portera les quantités du bordereau. }
+      </p>
+    }
+
+    @if (!lecture()) {
+      <div class="bs__pied">
+        <button type="button" class="btn btn-outline" (click)="ajouterArticle()">+ Article</button>
+        @if (duLot().length && lotsCopiables().length) {
+          @for (n of lotsCopiables(); track n) {
+            <button type="button" class="btn btn-outline btn-sm" (click)="dupliquerDepuis(n)">Dupliquer depuis le lot {{ n }}</button>
+          }
+        }
+        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="enregistrer()">
+          {{ saving() ? 'Enregistrement…' : lotAffiche() ? 'Enregistrer le lot ' + lotAffiche() : 'Enregistrer le besoin' }}
+        </button>
+      </div>
+    }
+  }
+</div>

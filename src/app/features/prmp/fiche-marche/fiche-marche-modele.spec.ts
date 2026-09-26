@@ -1,6 +1,11 @@
-import { ChampFiche, ReferentielFiche } from '../../../models';
+import { ChampFiche, DocumentFiche, ReferentielFiche } from '../../../models';
 import {
   BILAN_VIDE,
+  aidesRevision,
+  formatPiece,
+  pieceOuvrable,
+  piecesParLot,
+  valeursSansCellule,
   allotissementDuPlan,
   nbLotsDuPlan,
   REFERENTIEL_ESQUISSE,
@@ -11,6 +16,8 @@ import {
   documentsProduits,
   largeurChamp,
   lotsDuChamp,
+  optionsChoisies,
+  basculerOption,
   reprisesAffichees,
   champsDeRubrique,
   evaluerCondition,
@@ -164,6 +171,7 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(largeurChamp('MONTANT')).toBe('court');
     expect(largeurChamp('LISTE')).toBe('moyen');
     expect(largeurChamp('OUI_NON')).toBe('moyen');
+    expect(largeurChamp('LISTE_MULTIPLE')).toBe('moyen');
     expect(largeurChamp('TEXTE_LONG')).toBe('long');
     expect(largeurChamp('TEXTE')).toBe('long');
     // ⚠️ Relevé sur une fiche de contrat-cadre : le champ est repris dans l'AE, et son CCAP devient un AE — « AE AE ».
@@ -250,4 +258,151 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(reprises(avecCadrage, {}, {}, {}, { 'B05-GS-01': 'OUI' })[0].valeur).toBe('OUI');
     expect(reprises(avecCadrage, {}, { 'B05-GS-01': 'NON' }, {})[0].valeur).toBeUndefined();
   });
+
+  it('LISTE_MULTIPLE : la valeur est « A1,A3 » — lecture tolérante, écriture dans l’ordre du référentiel', () => {
+    const options = ['A1', 'A2', 'A3', 'A4'];
+    // Lecture : ni vide, ni espaces, ni virgule orpheline ne doivent produire une option fantôme.
+    expect(optionsChoisies(null)).toEqual([]);
+    expect(optionsChoisies('')).toEqual([]);
+    expect(optionsChoisies(',')).toEqual([]);
+    expect(optionsChoisies('A1, A3')).toEqual(['A1', 'A3']);
+    expect(optionsChoisies('A1,,A3,')).toEqual(['A1', 'A3']);
+    // Un nombre servi par le serveur se lit quand même (une seule option).
+    expect(optionsChoisies(2)).toEqual(['2']);
+    // ⚠️ Le serveur accepte aussi le tableau JSON : une valeur relue sous cette forme ne doit pas se perdre.
+    expect(optionsChoisies(['A1', 'A3'])).toEqual(['A1', 'A3']);
+    expect(optionsChoisies([])).toEqual([]);
+    expect(basculerOption(['A3'], 'A1', options, true)).toBe('A1,A3');
+
+    // Écriture : l’ordre est celui du référentiel, pas celui des clics — deux postes cochant A3 puis A1
+    // enregistrent la même valeur, sinon le diff de version signale un changement qui n’en est pas un.
+    expect(basculerOption('', 'A3', options, true)).toBe('A3');
+    expect(basculerOption('A3', 'A1', options, true)).toBe('A1,A3');
+    expect(basculerOption('A1,A3', 'A2', options, true)).toBe('A1,A2,A3');
+    // Décocher, et décocher ce qui n’était pas coché (rien ne bouge).
+    expect(basculerOption('A1,A2,A3', 'A2', options, false)).toBe('A1,A3');
+    expect(basculerOption('A1', 'A4', options, false)).toBe('A1');
+    // Cocher deux fois : la valeur ne double pas.
+    expect(basculerOption('A1', 'A1', options, true)).toBe('A1');
+    // Tout décocher rend la chaîne vide — l’information devient « non renseignée ».
+    expect(basculerOption('A1', 'A1', options, false)).toBe('');
+  });
+
+  it('LISTE_MULTIPLE : une option que le référentiel n’admet plus est CONSERVÉE, en queue', () => {
+    // ⚠️ Révision : le référentiel a changé sous une fiche déjà saisie. L’écran n’efface pas en silence une
+    // ancienne valeur au premier clic — c’est au rédacteur de la retirer s’il le décide.
+    const options = ['A1', 'A2'];
+    expect(basculerOption('A1,A9', 'A2', options, true)).toBe('A1,A2,A9');
+    expect(basculerOption('A9', 'A1', options, true)).toBe('A1,A9');
+    // Et elle se retire comme les autres.
+    expect(basculerOption('A1,A9', 'A9', options, false)).toBe('A1');
+  });
+
+
+  it('pièces produites : groupées par lot, les DEUX formats d’une même pièce sur une seule ligne', () => {
+    const f = (id: number, type: string, lot: number | null, nom: string, libelle?: string): DocumentFiche =>
+      ({ idDocument: id, type, lot, nomFichier: nom, libelle: libelle ?? null } as DocumentFiche);
+    // Le dossier réel 2463 sert 86 fichiers pour 43 pièces : chaque pièce existe en .docx ET en .pdf.
+    const groupes = piecesParLot([
+      f(1, 'BP', 2, 'BP_lot2.xlsx', 'Bordereau des prix — lot 2'),
+      f(2, 'AE', 2, 'AE_lot2.pdf'),
+      f(3, 'DPAO', null, 'DPAO.docx'),
+      f(4, 'AE', 1, 'AE_lot1.pdf'),
+      f(5, 'CCAP', null, 'CCAP.pdf'),
+      f(6, 'DPAO', null, 'DPAO.pdf', 'Données particulières de l’appel d’offres'),
+      f(7, 'AE', 2, 'AE_lot2.docx'),
+    ]);
+    expect(groupes.map((g) => g.titre)).toEqual(['Communes au dossier', 'Lot 1', 'Lot 2']);
+    // Dans un groupe, l'ordre est celui de la lecture d'un dossier : le document de consultation, le CCAP, puis l'AE.
+    expect(groupes[0].pieces.map((p) => p.type)).toEqual(['DPAO', 'CCAP']);
+    expect(groupes[2].pieces.map((p) => p.type)).toEqual(['AE', 'BP']);
+    // Une pièce, deux fichiers — le PDF d'abord : c'est celui qui se lit sans rien installer.
+    expect(groupes[0].pieces[0].fichiers.map((x) => x.nomFichier)).toEqual(['DPAO.pdf', 'DPAO.docx']);
+    expect(groupes[2].pieces[0].fichiers.map((x) => x.idDocument)).toEqual([2, 7]);
+    // Le libellé du serveur suit la pièce, même s'il n'est porté que par l'un de ses fichiers.
+    expect(groupes[0].pieces[0].libelle).toBe('Données particulières de l’appel d’offres');
+    expect(groupes[0].pieces[1].libelle).toBeNull();
+    expect(groupes[0].pieces.map((p) => p.cle)).toEqual(['DPAO#', 'CCAP#']);
+    expect(groupes[2].pieces[0].cle).toBe('AE#2');
+    // Sans allotissement, un seul groupe — le gabarit n'affiche alors aucun titre.
+    expect(piecesParLot([f(8, 'DPAO', null, 'DPAO.pdf')]).map((g) => g.lot)).toEqual([null]);
+    expect(piecesParLot([])).toEqual([]);
+
+    // ⚠️ Le socle force un type inerte : un .docx ou un .xlsx « ouvert » s'afficherait en PDF illisible.
+    expect(pieceOuvrable({ extension: 'pdf', nomFichier: 'AE.pdf' })).toBe(true);
+    expect(pieceOuvrable({ extension: null, nomFichier: 'AE.PDF' })).toBe(true);
+    expect(pieceOuvrable({ extension: 'docx', nomFichier: 'AE.docx' })).toBe(false);
+    expect(pieceOuvrable({ extension: null, nomFichier: 'BP_lot1.xlsx' })).toBe(false);
+    // Le format s'écrit en clair sur le bouton.
+    expect(formatPiece({ extension: 'pdf', nomFichier: 'x.pdf' })).toBe('PDF');
+    expect(formatPiece({ extension: 'docx', nomFichier: 'x.docx' })).toBe('Word');
+    expect(formatPiece({ extension: null, nomFichier: 'x.xlsx' })).toBe('Excel');
+    expect(formatPiece({ extension: 'odt', nomFichier: 'x.odt' })).toBe('ODT');
+  });
+
+  it('valeurs sans cellule : ce que le référentiel d’aujourd’hui n’affiche plus, et POURQUOI', () => {
+    const ref: ReferentielFiche = {
+      blocs: [],
+      champs: [
+        champ({ code: 'B09-LL-01', bloc: 'B09', rubrique: 'LL', parLot: true }),
+        champ({ code: 'B05-GS-02', bloc: 'B05', rubrique: 'GS', condition: 'garantieSoumission = OUI' }),
+        champ({ code: 'B02-OB-01', bloc: 'B02', rubrique: 'OB' }),
+      ],
+    };
+    const valeurs = {
+      'B09-LL-01': 'Antananarivo', // clé nue d'un champ devenu PAR LOT
+      'B09-LL-01#1': 'Antananarivo',
+      'B02-AU-03': 'texte libre', // code retiré du référentiel
+      'B05-GS-02': 8400000, // rubrique fermée par le cadrage : ce n'est PAS une perte
+      'B02-OB-01': 'Mobilier',
+      'B02-OB-02': '', // vide : rien à montrer
+    };
+    const dehors = valeursSansCellule(ref, { garantieSoumission: 'NON' }, valeurs, true, 3);
+    expect(dehors.map((v) => [v.cle, v.motif])).toEqual([
+      ['B02-AU-03', 'code-retire'],
+      ['B09-LL-01', 'hors-forme'],
+    ]);
+    // Sans allotissement, la clé nue redevient la bonne, et c'est la clé #1 qui sort.
+    expect(valeursSansCellule(ref, {}, valeurs, false, 0).map((v) => v.cle)).toEqual(['B02-AU-03', 'B09-LL-01#1']);
+    // Un champ désactivé est un code retiré : le serveur ne le sert plus, la valeur reste.
+    const desactive: ReferentielFiche = { blocs: [], champs: [champ({ code: 'B02-AU-03', bloc: 'B02', rubrique: 'AU', actif: false })] };
+    expect(valeursSansCellule(desactive, {}, { 'B02-AU-03': 'texte' })).toEqual([{ cle: 'B02-AU-03', valeur: 'texte', motif: 'code-retire' }]);
+    // Référentiel pas encore chargé : on ne déclare rien orphelin sur une structure vide.
+    expect(valeursSansCellule({ blocs: [], champs: [] }, {}, valeurs)).toEqual([]);
+  });
+
+  it('aide à la révision : l’ancienne valeur se LIT à côté de la cellule vide, jamais recopiée', () => {
+    const ref: ReferentielFiche = {
+      blocs: [],
+      champs: [
+        champ({ code: 'B09-LL-01', bloc: 'B09', rubrique: 'LL', parLot: true }),
+        champ({ code: 'B04-CD-01', bloc: 'B04', rubrique: 'CD', type: 'LISTE_MULTIPLE', options: ['A1', 'A2'] }),
+        champ({ code: 'B02-OB-01', bloc: 'B02', rubrique: 'OB' }),
+        champ({ code: 'B01-AC-01', bloc: 'B01', rubrique: 'AC', source: 'PPM' }),
+      ],
+    };
+    const precedentes = {
+      'B09-LL-01': 'Antananarivo', // valeur COMMUNE d'un champ devenu par lot
+      'B04-CD-01': 'Fiche A1 et A3', // texte hors des options : le serveur ne l'a pas repris
+      'B02-OB-01': 'Mobilier de bureau',
+      'B01-AC-01': 'MESupReS',
+    };
+    // La valeur commune sert d'aide à CHAQUE lot : c'est le cas réel du dossier 2463 (lieu de livraison).
+    const aides = aidesRevision(ref, {}, { 'B02-OB-01': 'Mobilier de bureau — 5 lots' }, precedentes, true, 2);
+    expect([...aides.entries()]).toEqual([
+      ['B09-LL-01#1', 'Antananarivo'],
+      ['B09-LL-01#2', 'Antananarivo'],
+      ['B04-CD-01', 'Fiche A1 et A3'],
+    ]);
+    // Une cellule déjà ressaisie n'a plus d'aide ; un champ du PPM n'en a jamais (il n'est pas ressaisi).
+    expect(aides.has('B02-OB-01')).toBe(false);
+    expect(aides.has('B01-AC-01')).toBe(false);
+    // Hors révision (aucune version précédente lue), aucune aide.
+    expect(aidesRevision(ref, {}, {}, null, true, 2).size).toBe(0);
+    // Un champ qui n'est PLUS par lot retrouve l'ancienne valeur du premier lot.
+    expect(aidesRevision(ref, {}, {}, { 'B09-LL-01#1': 'Toamasina' }, false, 0).get('B09-LL-01')).toBe('Toamasina');
+    // Une ancienne valeur blanche n'est pas une aide.
+    expect(aidesRevision(ref, {}, {}, { 'B02-OB-01': '   ' }, false, 0).has('B02-OB-01')).toBe(false);
+  });
+
 });

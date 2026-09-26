@@ -899,3 +899,298 @@ export const VALEURS_QF = {
     "En cas de résiliation du fait de l'acheteur, le titulaire est indemnisé des fournitures livrées et acceptées "
     + 'et des approvisionnements constitués.',
 };
+
+// ——————————————————————————————————————————————————————————————————————————————
+// E. LE DOSSIER RÉEL — MESupReS, AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026
+//    « Fourniture et livraison des matériels informatiques répartis en CINQ (5) lots (à commande) »
+//
+// Transcription FIDÈLE du dossier publié (DPAO, CCAP et acte d'engagement), pour la ligne semée par
+// `scripts/jeu-donnees-dao-2463.mjs`. Ce qui le distingue du jeu « à commande » précédent :
+//   · CINQ lots, donc cinq cellules pour chacune des quatre informations « par lot » ;
+//   · un plafond de pénalités à 10 % — DÉROGATION au CCAG (15 %), assumée et justifiée au CCAP ;
+//   · aucune garantie de bonne exécution, aucune retenue de garantie (CCAP art. 12) ;
+//   · un délai de garantie de DEUX mois — seconde dérogation, la seule que le CCAP récapitule ;
+//   · deux lots au maximum par candidat, chaque lot indivisible.
+// ——————————————————————————————————————————————————————————————————————————————
+
+export const CADRAGE_2463 = {
+  alloti: 'OUI',
+  nbLots: '5',
+  variantes: 'NON',
+  groupement: 'NON', // « Groupements : non applicable » (DPAO, clause 2)
+  provenance: 'NATIONAL',
+  typePrix: 'UNITAIRES',
+  prixRevisable: 'NON',
+  garantieSoumission: 'OUI',
+  avance: 'OUI',
+  tauxAvance: '20',
+  penalites: 'PLAFOND_DIFFERENT', // 10 % au lieu des 15 % du CCAG
+};
+
+/** Les quatre informations qui varient d'un lot à l'autre, pour les cinq lots du dossier réel. */
+export const VALEURS_2463_PAR_LOT = {
+  // Garantie de soumission : les montants EXACTS du DPAO (clause 6.6).
+  'B05-GS-03': { 1: '1600000', 2: '2170000', 3: '1600000', 4: '2170000', 5: '1600000' },
+  // Montant minimum annuel : la moitié du maximum (quantités MIN du bordereau).
+  'B05-TP-02': { 1: '40000000', 2: '54000000', 3: '40000000', 4: '54000000', 5: '40000000' },
+  // Montant maximum annuel : la garantie de soumission vaut 2 % de ce montant.
+  'B05-TP-03': { 1: '80000000', 2: '108500000', 3: '80000000', 4: '108500000', 5: '80000000' },
+  // Délai maximum de livraison : « fixé dans le bon de commande sans dépasser TRENTE (30) JOURS ».
+  'B06-EO-12': { 1: '30', 2: '30', 3: '30', 4: '30', 5: '30' },
+  // ⚠️ Le lieu de livraison est PAR LOT depuis le 25/09 : le dossier le donne lot par lot (CCAP art. 1 et 17).
+  'B09-LL-01': {
+    1: 'Ministère de l’Enseignement Supérieur et de la Recherche Scientifique — Fiadanana, Antananarivo.',
+    2: 'Ambatondrazaka.',
+    3: 'Ambatondrazaka.',
+    4: 'Fort-Dauphin.',
+    5: 'Fort-Dauphin.',
+  },
+};
+
+/**
+ * Les informations communes aux cinq lots. Le jeu « à commande » du 25/09 était déjà tiré de ce
+ * dossier : on en repart, et on rétablit ici ce que la démonstration avait généralisé.
+ */
+export const VALEURS_2463 = {
+  ...VALEURS_AC,
+  // ⚠️ B02-AU-03 (« Quantités minimum et maximum ») est DÉSACTIVÉ depuis le 25/09 : le besoin (B12) le porte.
+  'B02-AU-03': undefined,
+
+  // — Acheteur, objet et références du dossier réel —
+  'B02-OB-01': 'Fourniture et livraison des matériels informatiques répartis en cinq (5) lots (à commande)',
+  'B02-OB-02':
+    "Fourniture et livraison de matériels informatiques : ordinateurs de bureau complets Core i3 et Core i5, "
+    + "onduleurs, imprimantes jet d'encre et laser multifonction A4, photocopieuses A4/A3 et duplicopieurs. "
+    + "Les kits associent l'unité centrale, l'écran, le clavier, la souris et l'onduleur. Les services connexes "
+    + "comprennent le transport jusqu'aux destinations finales, l'assurance et la mise en service.",
+  'B02-OB-03': 'AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026',
+  'B02-AU-02': 'Lot par lot (attribution divisible)',
+  // « Le candidat peut soumissionner pour un ou plusieurs lots mais ne peut prétendre qu'à DEUX lots au maximum. »
+  'B02-AU-07': '2',
+
+  // — Candidats : pièces exigées, nantissement —
+  'B03-CQ-01':
+    "Photocopie certifiée conforme de la carte d'immatriculation fiscale 2026 ou 2025 validée, de l'extrait du "
+    + "registre du commerce et de la carte statistique, chacune de moins de trois mois, et certificat de non "
+    + 'faillite de moins de trois mois.',
+  'B03-CQ-02': 'Fiche de renseignements A2 : capacité technique à exécuter le marché (moyens, matériel, références).',
+  'B03-CQ-03': 'Fiche de renseignements A3 : situation financière, chiffre d’affaires des trois derniers exercices.',
+  'B03-CQ-04': 'Fiche de renseignements A4 : antécédents du candidat pour des marchés de même nature.',
+  'B03-CQ-05': 'NON', // « Modèle d'attestation du fabriquant – Non utilisé » (sommaire du DAO)
+  'B03-CQ-08': 'NON', // « Il n'est pas accordé de préférence aux candidats nationaux » (DPAO 9.5)
+  'B03-NA-03': 'Trésorier ministériel chargé de l’Enseignement',
+  'B03-ST-01': 'NON', // « Il n'est pas envisagé de sous-traiter » (acte d'engagement, art. 3)
+
+  // — Dossier, remise et ouverture —
+  'B04-CD-01': 'A1,A2,A3,A4',
+  'B04-CD-02': 'C1 et C2',
+  'B04-DE-01':
+    "Personne Responsable des Marchés Publics du MESupReS — Monsieur LERAVO Norbert Fidelys, porte 204, "
+    + '2ème étage, Fiadanana, Antananarivo 101 — prmp.mesupres@gmail.com',
+  'B04-DE-02': '10',
+  'B04-DE-03': '5',
+  'B04-LR-01': 'Monsieur LERAVO Norbert Fidelys, Personne Responsable des Marchés Publics',
+  'B04-LR-02': 'Porte 204, 2ème étage, MESupReS, Fiadanana — Antananarivo 101.',
+  'B04-LR-03': '2026-11-09',
+  'B04-LR-04': '10 h 00',
+  'B04-OP-01': 'Bureau porte 204, 2ème étage, MESupReS — Fiadanana, Antananarivo.',
+  'B04-OP-02': '2026-11-09',
+  'B04-OP-03': '10 h 00',
+  'B04-RO-01': '1',
+  'B04-RO-02': 'AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026 — « Ne pas ouvrir avant la date et l’heure d’ouverture des plis »',
+  'B04-RO-03':
+    "Les offres sont remises dans des PLIS SÉPARÉS par lot. L'enveloppe extérieure porte la référence de l'appel "
+    + "d'offres, l'intitulé du lot et la mention « Ne pas ouvrir avant… », à l'exclusion de toute indication "
+    + "permettant d'identifier le candidat. Elle contient deux enveloppes intérieures fermées et SCELLÉES À LA "
+    + 'CIRE, portant les mêmes mentions ainsi que le nom et l’adresse du candidat : l’une ORIGINAL, l’autre COPIE.',
+  'B04-VE-01': 'NON',
+  'B04-VO-01': '75',
+
+  // — Prix, monnaie, garantie de soumission —
+  'B05-CP-02':
+    "Pour les fournitures acquises sur le territoire national, le prix comprend : i) le prix des fournitures EXW "
+    + '(magasin de ventes) ; ii) le prix des transports intérieurs, l’assurance et les autres services locaux '
+    + 'afférents à la livraison jusqu’à leur destination finale.',
+  'B05-GS-02': 'Garantie bancaire',
+  'B05-GS-04': '105', // 30 jours après les 75 jours de validité des offres
+  'B05-MO-01': 'Ariary',
+
+  // — Évaluation, attribution —
+  'B06-EO-01': 'Par lot',
+  'B06-EO-02': 'Aucun critère additionnel n’est retenu.',
+  'B06-EO-07':
+    "La Commission calcule une première moyenne des offres évaluées et déclare anormalement HAUTES celles qui la "
+    + "dépassent de plus de 20 %. Après neutralisation de ces offres, elle calcule une seconde moyenne et déclare "
+    + 'anormalement BASSES celles qui lui sont inférieures de plus de 10 %.',
+  'B06-EP-01': '3',
+
+  // — Paiements, avances et garanties financières —
+  'B08-AC-01': 'NON',
+  'B06-AN-01': undefined, // aucune garantie de bonne exécution exigée : pas de forme à déclarer
+  'B08-GB-02': undefined, // idem — le taux de 5 % n'a pas d'objet
+  'B02-AU-05': '2027-01-28', // date d'effet = notification du marché au calendrier prévisionnel du plan // « Acompte : non applicable » (CCAP 9.1.b)
+  'B08-GB-01': 'NON', // « Cautionnement et garantie bancaire : non applicable » (CCAP art. 12.1)
+  'B08-RG-01': 'NON', // « Aucune retenue de garantie ne sera pratiquée » (CCAP art. 12.2)
+  'B08-IM-01': '9', // taux directeur de la BCM augmenté d’UN point (CCAP 9.4)
+  'B08-PA-01': "L'acheteur se libère des sommes dues en en portant le montant au crédit du compte bancaire indiqué à l'acte d'engagement.",
+  'B08-PA-03':
+    'Les factures sont établies en QUATRE exemplaires — un original et trois copies — portant le nom et l’adresse '
+    + 'du fournisseur, le numéro de compte bancaire, les références du marché, le montant hors taxe des fournitures '
+    + 'livrées, le montant dû en Ariary et la date de facturation.',
+  'B08-PA-04': 'Les factures sont établies à la livraison.',
+  'B08-PA-05': 'À la livraison',
+
+  // — Exécution, livraison, garantie —
+  'B09-AS-01': "Selon l'incoterm",
+  'B09-DG-01': '2', // ⚠️ DEUX mois : dérogation à l'article 23 du CCAG, récapitulée au CCAP art. 24
+  'B09-DG-02':
+    'Les fournitures sont garanties contre tout risque de fabrication ou de matière pendant deux mois à compter de '
+    + 'la réception provisoire ; le fournisseur remédie à ses frais aux défauts constatés.',
+  'B09-DI-01':
+    'À l’issue des inspections, la commission de réception prend sa décision de réception, d’ajournement, de '
+    + 'réfaction ou de rejet dans un délai de DEUX jours. La réception prononcée à la livraison vaut réception '
+    + 'provisoire de la commande ; la réception définitive intervient à l’issue du délai de garantie.',
+  'B09-DX-03':
+    'Les commandes sont passées par bons de commande successifs pendant les douze mois de validité du marché. '
+    + 'Chaque bon précise la nature et la description des prestations, les délais et lieux d’exécution, le montant '
+    + 'et, le cas échéant, le délai laissé au fournisseur pour ses observations. Seuls les bons signés par '
+    + 'l’Ordonnateur Secondaire sont honorés.',
+  'B09-EM-01': 'Emballage d’origine.',
+  'B09-IV-01': 'Les vérifications et inspections sont effectuées au lieu de destination finale, au moment de la livraison ; tous les frais afférents sont à la charge du fournisseur.',
+  'B09-LF-01': 'Livraison aux destinations finales : Ministère (Fiadanana) pour le lot 1, Ambatondrazaka pour les lots 2 et 3, Fort-Dauphin pour les lots 4 et 5.',
+  'B09-LF-02':
+    'CINQ exemplaires de la facture indiquant la description des fournitures, leurs quantités, leurs prix '
+    + 'unitaires, le montant total, la date d’expédition, la référence à la commande ou au marché, l’identification '
+    + 'du fournisseur et la répartition par colis, ainsi que le bon de livraison ou le récépissé du transporteur.',
+  'B09-LL-01': 'Lot 1 : Ministère, Fiadanana — lots 2 et 3 : Ambatondrazaka — lots 4 et 5 : Fort-Dauphin.',
+  'B09-OM-01': '10',
+  'B09-OM-02': '20',
+  'B09-PS-01': 'NON', // « Protection du secret – Mesure de sécurité : non applicable » (CCAP art. 7)
+  'B09-RT-01': "Transport par le fournisseur jusqu'à la destination finale",
+  'B09-SK-01': 'OUI', // « Stockage des fournitures : quantité minimale prévue dans le bordereau de prix »
+  'B09-PC-02':
+    'Annexe 1 : cadre de bordereaux des prix. Annexe 2 : état des sommes versées à des tiers. '
+    + 'Annexe 3 : formulaire de déclaration des bénéficiaires effectifs.',
+
+  // — Pénalités : la dérogation du dossier —
+  'B09-PR-02': '10',
+  'B09-PR-03':
+    'Le CCAP plafonne les pénalités de retard à DIX pour cent (10 %) du montant du marché, avenants compris, là où '
+    + 'l’article 12 du CCAG retient quinze pour cent : le marché étant à commandes, le retard s’apprécie commande '
+    + 'par commande et le plafond est ramené en proportion.',
+
+  // — Litiges et dérogations —
+  'B10-DD-01': 'Dérogation à l’article 23 du CCAG (délai de garantie), portée par l’article 22 du CCAP : le délai est ramené à deux mois.',
+};
+
+// ——————————————————————————————————————————————————————————————————————————————
+// LE BESOIN DU DOSSIER 2463 — bloc B12, douze articles répartis en cinq lots.
+//
+// Quantités : cadres de bordereaux des prix, pages 40 à 44 du dossier publié.
+// Caractéristiques exigées : spécifications techniques, pages 57 à 61.
+// Les lots 4 et 5 reprennent à l'identique les lots 2 et 3 — c'est le cas réel qui valide
+// le geste « Dupliquer depuis le lot n ».
+// ——————————————————————————————————————————————————————————————————————————————
+
+const ORDI_I5_MINISTERE = {
+  designation: 'Ordinateur de bureau complet Core i5',
+  unite: 'U',
+  caracteristiques: [
+    ['Processeur', 'Core i5'],
+    ['Mémoire vive', '8 Go'],
+    ['Stockage', 'SSD 500 Go'],
+    ['Moniteur', 'LCD 22 pouces au minimum'],
+    ['Clavier', 'AZERTY'],
+    ['Souris', 'Souris optique USB'],
+    ['Lecteur optique', 'Lecteur / graveur DVD'],
+    ["Système d'exploitation", 'Windows 10 ou supérieur, édition Professional 64 bits, français installé'],
+  ],
+};
+
+const ONDULEUR = {
+  designation: 'Onduleur',
+  unite: 'U',
+  caracteristiques: [
+    ['État', 'Matériel neuf sous emballage'],
+    ["Capacité d'alimentation en sortie", '390 Watts / 1200 VA au minimum'],
+  ],
+};
+
+const KIT_I3 = {
+  designation: "Kit de matériels informatiques : ordinateur de bureau complet Core i3 + onduleur + imprimante jet d'encre",
+  unite: 'U',
+  caracteristiques: [
+    ['Processeur', 'Core i3'],
+    ['Mémoire vive', '8 Go'],
+    ['Stockage', 'SSD 500 Go'],
+    ['Moniteur', 'LCD 19 pouces au minimum'],
+    ["Système d'exploitation", 'Windows 10 ou supérieur, édition Professional 64 bits, français installé'],
+    ['Onduleur', 'Matériel neuf sous emballage, 390 Watts / 700 VA au minimum'],
+    ['Imprimante', 'Couleur 4-en-1 : impression, numérisation, copie, télécopie — depuis PC, MAC et USB'],
+  ],
+};
+
+const KIT_I5 = {
+  designation: 'Kit de matériels informatiques : ordinateur de bureau complet Core i5 + onduleur',
+  unite: 'U',
+  caracteristiques: [
+    ['Processeur', 'Core i5'],
+    ['Mémoire vive', '16 Go'],
+    ['Stockage', 'SSD 1 000 Go'],
+    ['Moniteur', 'LCD 22 pouces au minimum'],
+    ["Système d'exploitation", 'Windows 10 ou supérieur, édition Professional 64 bits, français installé'],
+    ['Onduleur', 'Matériel neuf sous emballage, 390 Watts / 700 VA au minimum'],
+  ],
+};
+
+const IMPRIMANTE_LASER = {
+  designation: 'Imprimante laser noir multifonction A4',
+  unite: 'U',
+  caracteristiques: [
+    ['Couleur', 'Noir et blanc'],
+    ['Fonctions', 'Impression, copie, scan'],
+    ['Format', 'A4'],
+    ['État', 'Matériel neuf sous emballage'],
+  ],
+};
+
+const PHOTOCOPIEUSE = {
+  designation: 'Photocopieuse noir A4 et A3',
+  unite: 'U',
+  caracteristiques: [
+    ['Fonctions', 'Impression, copie, scan'],
+    ['Format', 'A4 et A3'],
+    ['Accessoire', 'Stand avec roulettes'],
+    ['État', 'Matériel neuf sous emballage'],
+  ],
+};
+
+const DUPLICOPIEUR = {
+  designation: 'Duplicopieur noir et blanc A4',
+  unite: 'U',
+  caracteristiques: [
+    ['Dimension', 'A4'],
+    ['Accessoires', 'Interface USB 2.0'],
+    ['État', 'Matériel neuf sous emballage'],
+  ],
+};
+
+/** `[article, quantité minimum, quantité maximum]`, lot par lot. */
+const BESOIN_PAR_LOT = {
+  1: [[ORDI_I5_MINISTERE, 15, 30], [ONDULEUR, 10, 20]],
+  2: [[KIT_I3, 8, 16], [KIT_I5, 13, 26]],
+  3: [[IMPRIMANTE_LASER, 3, 6], [PHOTOCOPIEUSE, 1, 2], [DUPLICOPIEUR, 1, 2]],
+  4: [[KIT_I3, 8, 16], [KIT_I5, 13, 26]],
+  5: [[IMPRIMANTE_LASER, 3, 6], [PHOTOCOPIEUSE, 1, 2], [DUPLICOPIEUR, 1, 2]],
+};
+
+export const ARTICLES_2463 = Object.entries(BESOIN_PAR_LOT).flatMap(([lot, lignes]) =>
+  lignes.map(([article, quantiteMin, quantiteMax]) => ({
+    lot: Number(lot),
+    designation: article.designation,
+    unite: article.unite,
+    quantiteMin,
+    quantiteMax,
+    caracteristiques: article.caracteristiques.map(([libelle, exigence]) => ({ libelle, exigence })),
+  })),
+);

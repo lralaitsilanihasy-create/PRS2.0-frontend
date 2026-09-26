@@ -68,6 +68,62 @@
 .fm__doc--dpao, .fm__doc--dpac, .fm__doc--dpic { background: #dbeafe; color: #1d4ed8; }
 .fm__doc--ae { background: #f3e8ff; color: #7e22ce; }
 .fm__doc--ccap { background: #d1fae5; color: #047857; }
+/* Aide « ancienne valeur » d'une révision : une lecture à côté de la cellule, jamais un préremplissage. */
+.fm__aide {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.82rem;
+  color: var(--n-500);
+}
+.fm__aide b { color: var(--n-700); font-weight: 600; }
+
+/* Valeurs enregistrées qu'aucune cellule ne porte plus (référentiel modifié). */
+.fm__hors {
+  margin-top: 0.8rem;
+  border: 1px solid var(--n-200);
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+}
+.fm__hors summary { cursor: pointer; color: var(--n-600); }
+.fm__hors-p { margin: 0.4rem 0 0.5rem; color: var(--n-500); font-size: 0.86rem; }
+.fm__hors-l { margin: 0; padding-left: 1.1rem; }
+.fm__hors-l li { margin-bottom: 0.25rem; }
+
+/* Pièces dérivées du besoin (V46) : la liste des fournitures, et les deux classeurs. */
+.fm__doc--lf { background: #fef3c7; color: #92400e; }
+.fm__doc--bp, .fm__doc--tc { background: #e0f2fe; color: #075985; }
+/* Formulaires du candidat, en attente des modèles officiels. */
+.fm__doc--a1, .fm__doc--a2, .fm__doc--a3, .fm__doc--a4, .fm__doc--c1, .fm__doc--c2 { background: #ede9fe; color: #5b21b6; }
+
+/* Titre d'un groupe de pièces (« Communes au dossier », « Lot 2 »). */
+.fm__docs-t {
+  margin: 0.9rem 0 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--n-500);
+}
+.fm__docs-t:first-of-type { margin-top: 0; }
+/* Les formats d'une même pièce, à la suite sur sa ligne. */
+.fm__docs-fmt {
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.fm__docs-x { font-weight: 600; }
+
+/* Pastille de lot, là où la liste n'est pas groupée (pièces d'une version figée). */
+.fm__docs-l {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--n-100);
+  color: var(--n-600);
+  font-size: 0.74rem;
+}
 .fm__doc--aucun, .fm__etat--cadrage, .fm__rep--non { background: var(--n-100); color: var(--n-500); }
 .fm__etat { padding: 0.05rem 0.45rem; border-radius: 999px; border: 1px solid var(--n-200); color: var(--n-500); }
 .fm__etat--ppm, .fm__etat--ppm { border-color: transparent; }
@@ -169,3 +225,42 @@
 .fm__attente { background: #fff; border: 1px solid var(--n-200); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
 .fm__attente p { margin: 0 0 0.5rem; }
 .fm__attente p:last-child { margin-bottom: 0; }
+
+/* ── Champ à choix multiples (LISTE_MULTIPLE, 25/09) ─────────────────────────────────────────
+   Des cases plutôt qu'un select multiple : atteignables au clavier, lisibles sans manœuvre. */
+.fm__cases {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.1rem;
+}
+.fm__case {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.fm__case input { cursor: pointer; }
+
+/* Les options retenues, en lecture : une liste, jamais « A1,A2,A3 ». */
+.fm__options {
+  margin: 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+
+/* Étiquette réservée aux lecteurs d'écran (le groupe de cases porte déjà son libellé à l'écran). */
+.fm__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

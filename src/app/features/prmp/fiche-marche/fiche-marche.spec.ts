@@ -53,6 +53,25 @@ const REF_AVEC_LOTS: ReferentielFiche = {
   ],
 };
 
+
+/**
+ * ⚠️ V45/V46 (25/09) — référentiel qui porte les deux nouveautés : un champ `LISTE_MULTIPLE` (B04-CD-01, les
+ * formulaires exigés du candidat) et le bloc du **besoin**, qui DÉCLARE son rendu au lieu de porter des champs.
+ * `B10` n'a ni champ ni rendu : l'écran doit le dire, au lieu de montrer un bloc blanc.
+ */
+const REF_BESOIN: ReferentielFiche = {
+  blocs: [
+    ...REFERENTIEL.blocs,
+    { code: 'B04', libelle: 'Candidature & conformité', rang: 4, rubriques: [{ code: 'CD', libelle: 'Formulaires du candidat', rang: 1, documentMaitre: 'DPAO' }] },
+    { code: 'B10', libelle: 'Bloc encore vide', rang: 10, rubriques: [] },
+    { code: 'B12', libelle: 'Besoin', rang: 12, rubriques: [], rendu: 'BESOIN' },
+  ],
+  champs: [
+    ...REFERENTIEL.champs,
+    { code: 'B04-CD-01', bloc: 'B04', rubrique: 'CD', rang: 1, libelle: 'Formulaires exigés du candidat', type: 'LISTE_MULTIPLE', options: ['A1', 'A2', 'A3', 'A4'], source: 'SAISIE', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], obligatoire: true },
+  ],
+};
+
 // ⚠️ Lot 1c — le type de marché n'est plus une réponse de cadrage : il vient de la forme du marché de la ligne du plan.
 const CADRAGE_COMPLET = {
   alloti: 'NON', variantes: 'NON', groupement: 'NON', provenance: 'NATIONAL', typePrix: 'UNITAIRES',
@@ -91,7 +110,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
   let fixture: ComponentFixture<FicheMarcheEcran>;
   let http: HttpTestingController;
   let params: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
-  let toast: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
+  let toast: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn>; info: ReturnType<typeof vi.fn> };
   let navigate: ReturnType<typeof vi.fn>;
 
   const racine = (): HTMLElement => fixture.nativeElement as HTMLElement;
@@ -106,7 +125,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
   };
 
   function monter(role: Role, idDmc: number | null, query: Record<string, string> = {}): void {
-    toast = { success: vi.fn(), error: vi.fn() };
+    toast = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
     params = new BehaviorSubject(convertToParamMap(idDmc == null ? {} : { idDmc: String(idDmc) }));
     TestBed.configureTestingModule({
       providers: [
@@ -444,6 +463,93 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(http.expectOne('/api/fiches-marche/42/blocs/B05').request.body).toEqual({ valeurs: { 'B05-GS-02': 9000000 } });
   });
 
+
+  it('LISTE_MULTIPLE : des cases à cocher, et une valeur « A1,A3 » quel que soit l’ordre des clics', () => {
+    monter('PRMP', 42);
+    ouvrir(REF_BESOIN, fiche({ valeurs: {} }));
+    fixture.componentInstance.allerAuBloc('B04');
+    rendre();
+
+    const cases = (): HTMLInputElement[] => Array.from(racine().querySelectorAll('[id="c-B04-CD-01"] input[type="checkbox"]'));
+    // Des cases, pas un select multiple : elles s'atteignent au clavier et se lisent sans manœuvre.
+    expect(cases().length).toBe(4);
+    expect(cases().map((c) => c.checked)).toEqual([false, false, false, false]);
+    expect(texte(racine().querySelector('[id="c-B04-CD-01"] legend'))).toBe('Formulaires exigés du candidat');
+
+    // On coche A3 PUIS A1 : la valeur suit l'ordre du référentiel, pas celui des clics.
+    cases()[2].checked = true;
+    cases()[2].dispatchEvent(new Event('change'));
+    cases()[0].checked = true;
+    cases()[0].dispatchEvent(new Event('change'));
+    rendre();
+    expect(fixture.componentInstance.valeurs()['B04-CD-01']).toBe('A1,A3');
+
+    bouton('Enregistrer et continuer').click();
+    const put = http.expectOne('/api/fiches-marche/42/blocs/B04');
+    expect(put.request.body).toEqual({ valeurs: { 'B04-CD-01': 'A1,A3' } });
+    put.flush(fiche({ valeurs: { 'B04-CD-01': 'A1,A3' } }));
+    rendre();
+
+    // Les cases retrouvent la sélection enregistrée, et on décoche.
+    fixture.componentInstance.allerAuBloc('B04');
+    rendre();
+    expect(cases().map((c) => c.checked)).toEqual([true, false, true, false]);
+    cases()[0].checked = false;
+    cases()[0].dispatchEvent(new Event('change'));
+    rendre();
+    expect(fixture.componentInstance.valeurs()['B04-CD-01']).toBe('A3');
+  });
+
+  it('LISTE_MULTIPLE en lecture : les options retenues se lisent en liste, jamais en « A1,A3 »', () => {
+    monter('MEMBRE', 42);
+    ouvrir(REF_BESOIN, fiche({ valeurs: { 'B04-CD-01': 'A1,A3' } }));
+    fixture.componentInstance.allerAuBloc('B04');
+    rendre();
+    expect(racine().querySelector('[id="c-B04-CD-01"] input[type="checkbox"]')).toBeNull();
+    expect(Array.from(racine().querySelectorAll('[id="c-B04-CD-01"] li')).map((li) => texte(li))).toEqual(['A1', 'A3']);
+    // Rien de renseigné : le tiret ordinaire de l'écran, pas une liste vide.
+    TestBed.resetTestingModule();
+    monter('MEMBRE', 42);
+    ouvrir(REF_BESOIN, fiche({ valeurs: {} }));
+    fixture.componentInstance.allerAuBloc('B04');
+    rendre();
+    expect(texte(racine().querySelector('[id="c-B04-CD-01"]'))).toBe('—');
+  });
+
+  it('rendu déclaré : le bloc du BESOIN rend la grille des articles, un bloc sans rendu ni champ le dit', () => {
+    monter('PRMP', 42);
+    ouvrir(REF_BESOIN, fiche({ nbLots: 2, saisieParLot: true, valeurs: {} }));
+
+    // ⚠️ Un bloc sans champ n'est pas une page blanche : l'écran nomme ce qui n'est pas encore là.
+    fixture.componentInstance.allerAuBloc('B10');
+    rendre();
+    expect(texte(racine().querySelector('.fm__vide'))).toBe('Aucune information à saisir dans ce bloc.');
+    expect(racine().querySelector('app-fiche-besoin')).toBeNull();
+
+    // Le bloc DÉCLARE son rendu (`rendu: 'BESOIN'`) : l'écran ne le déduit pas du code « B12 ».
+    fixture.componentInstance.allerAuBloc('B12');
+    rendre();
+    expect(racine().querySelector('app-fiche-besoin')).toBeTruthy();
+    expect(racine().querySelector('.fm__vide')).toBeNull();
+    // La grille lit le besoin du serveur, et les lots de la fiche lui sont passés.
+    http.expectOne('/api/fiches-marche/42/articles').flush([
+      { idArticle: 1, lot: 1, ordre: 1, designation: 'Ordinateur portable', unite: 'U', quantite: 12, caracteristiques: [{ libelle: 'Mémoire vive', exigence: '8 Go au minimum' }] },
+    ]);
+    rendre();
+    expect(Array.from(racine().querySelectorAll('.bs__lot')).map((b) => texte(b))).toEqual(['Lot 1 1', 'Lot 2 0']);
+    // La PRMP écrit : la désignation est un champ de saisie, pas un libellé.
+    expect((racine().querySelector('.bs tbody tr input[type="text"]') as HTMLInputElement).value).toBe('Ordinateur portable');
+
+    // Le besoin enregistré, la page mère relit son bilan : les contrôles du serveur portent sur lui aussi.
+    fixture.componentInstance.besoinEnregistre();
+    http.expectOne('/api/fiches-marche/42/controler').flush({
+      bloquants: [{ regle: 'BESOIN_INCOMPLET', champs: [], bloc: 'B12', message: 'Lot 2 : aucun article au besoin.' }],
+      avertissements: [], ok: [], nbSaisis: 3, nbAttendus: 4,
+    });
+    rendre();
+    expect(fixture.componentInstance.bilan().bloquants.map((x) => x.message)).toEqual(['Lot 2 : aucun article au besoin.']);
+  });
+
   it('allotissement : un lot au plan ⇒ « Non » imposé et verrouillé, la réponse part avec le cadrage', () => {
     monter('PRMP', 42);
     ouvrir(REF_AVEC_LOTS, fiche({ cadrage: {}, valeurs: {}, valeursPpm: { 'B02-LV-01': '1' } }));
@@ -689,23 +795,51 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
       { idDocument: 11, type: 'DPAO', libelle: 'Données particulières de l’appel d’offres', nomFichier: 'DPAO_PPM-2026-003_7_v2.docx', tailleOctets: 240000, version: 2 },
       // Sans libellé servi, le sigle sert de repli.
       { idDocument: 12, type: 'CCAP', nomFichier: 'CCAP_PPM-2026-003_7_v2.docx', tailleOctets: 900, version: 2 },
+      { idDocument: 13, type: 'DPAO', libelle: 'Données particulières de l’appel d’offres', nomFichier: 'DPAO_PPM-2026-003_7_v2.pdf', extension: 'pdf', tailleOctets: 310000, version: 2 },
     ] as DocumentFiche[]);
     fixture.componentInstance.allerA(6);
     rendre();
     const lignes = Array.from(racine().querySelectorAll('.fm__docs li'));
+    // ⚠️ 26/09 — DEUX pièces, pas trois fichiers : le .docx et le .pdf du DPAO tiennent la même ligne.
     expect(lignes.length).toBe(2);
-    expect(texte(lignes[0])).toContain('DPAO_PPM-2026-003_7_v2.docx');
     // Le serveur nomme ses documents ; le sigle ne sert que de repli.
     expect(texte(lignes[0])).toContain('Données particulières de l’appel d’offres');
     expect(texte(lignes[1])).toContain('CCAP');
-    expect(texte(lignes[0])).toContain('234 ko');
-    expect(texte(lignes[1])).toContain('1 ko');
+    expect(texte(lignes[0])).toContain('303 ko'); // le PDF
+    expect(texte(lignes[0])).toContain('234 ko'); // le .docx
+    // ⚠️ Correctif du 26/09 — un .docx ne s'AFFICHE pas : le socle force un type inerte (`blobSur`), l'onglet
+    // ouvert montrerait un PDF illisible. Seul le PDF s'ouvre ; le document modifiable s'enregistre.
+    expect(Array.from(lignes[0].querySelectorAll('button')).map((b) => texte(b)))
+      .toEqual(['Ouvrir le PDF', 'Enregistrer PDF · 303 ko', 'Enregistrer Word · 234 ko']);
+    expect(Array.from(lignes[1].querySelectorAll('button')).map((b) => texte(b))).toEqual(['Enregistrer Word · 1 ko']);
 
-    (lignes[0].querySelectorAll('button')[1] as HTMLButtonElement).click(); // Enregistrer
+    bouton('Enregistrer Word · 234 ko').click();
     const get = http.expectOne('/api/fiches-marche/documents/11/contenu');
     expect(get.request.method).toBe('GET');
     expect(get.request.responseType).toBe('blob');
     get.flush(new Blob(['x'], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
+  });
+
+  it('pièces par lot (V43/V46) : groupées, les communes d’abord — cinq lots ne font pas cinq « AE » de suite', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ statut: 'VALIDEE', version: 2, nbLots: 2, saisieParLot: true }), [], [
+      { idDocument: 21, type: 'AE', lot: 2, nomFichier: 'AE_lot2.pdf', extension: 'pdf', version: 2 },
+      { idDocument: 22, type: 'BP', lot: 1, nomFichier: 'BP_lot1.xlsx', extension: 'xlsx', version: 2 },
+      { idDocument: 23, type: 'AE', lot: 1, nomFichier: 'AE_lot1.pdf', extension: 'pdf', version: 2 },
+      { idDocument: 24, type: 'DPAO', lot: null, nomFichier: 'DPAO.pdf', extension: 'pdf', version: 2 },
+      { idDocument: 25, type: 'LF', lot: 1, nomFichier: 'LF_lot1.pdf', extension: 'pdf', version: 2 },
+    ] as DocumentFiche[]);
+    fixture.componentInstance.allerA(6);
+    rendre();
+    expect(Array.from(racine().querySelectorAll('.fm__docs-t')).map((h) => texte(h))).toEqual(['Communes au dossier', 'Lot 1', 'Lot 2']);
+    // Dans un lot, l'ordre de lecture est celui du dossier : l'acte d'engagement, puis ses annexes.
+    const lot1 = Array.from(racine().querySelectorAll('.fm__docs')[1].querySelectorAll('li'));
+    expect(lot1.map((li) => texte(li.querySelector('.fm__doc')))).toEqual(['AE', 'LF', 'BP']);
+    // Les pièces que le référentiel ne connaît pas comme documents maîtres sont nommées quand même (V46).
+    expect(texte(lot1[1])).toContain('Liste des fournitures et calendrier de livraison');
+    expect(texte(lot1[2])).toContain('Bordereau des prix (classeur)');
+    // Un classeur ne s'ouvre pas dans un onglet.
+    expect(Array.from(lot1[2].querySelectorAll('button')).map((b) => texte(b))).toEqual(['Enregistrer Excel']);
   });
 
   it('documents : route pas encore servie (404) — l’étape annonce ce qui viendra, sans erreur ni liste vide trompeuse', () => {
@@ -764,9 +898,15 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(texte(racine().querySelector('.alert-warning'))).toContain('Ligne supprimée du plan de passation dans sa version courante (3)');
     expect(Array.from(racine().querySelectorAll('button')).some((b) => texte(b) === 'Valider la fiche')).toBe(false);
     bouton('Ouvrir une nouvelle version').click();
-    http.expectOne('/api/fiches-marche/42/reviser').flush(fiche({ statut: 'BROUILLON', version: 3 }));
+    http.expectOne('/api/fiches-marche/42/reviser').flush(fiche({ statut: 'BROUILLON', version: 3, valeurs: {} }));
+    // ⚠️ V46 — la révision ne reprend pas ce que le référentiel n'admet plus : l'écran relit la version
+    // PRÉCÉDENTE (jamais modifiée) pour poser l'ancienne valeur à côté du champ, sans la recopier.
+    http.expectOne('/api/fiches-marche/42/versions/2').flush(fiche({ statut: 'VALIDEE', version: 2, valeurs: { 'B02-OB-01': 'Mobilier de bureau' } }));
     rendre();
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Saisie par bloc');
-    expect(racine().querySelector('#c-B02-OB-01')).not.toBeNull(); // redevenu saisissable
+    const zone = racine().querySelector('#c-B02-OB-01') as HTMLTextAreaElement;
+    expect(zone).not.toBeNull(); // redevenu saisissable
+    expect(zone.value).toBe(''); // et VIDE : aucune conversion automatique
+    expect(texte(racine().querySelector('.fm__aide'))).toBe('Ancienne valeur, non reprise : Mobilier de bureau — à ressaisir.');
   });
 });

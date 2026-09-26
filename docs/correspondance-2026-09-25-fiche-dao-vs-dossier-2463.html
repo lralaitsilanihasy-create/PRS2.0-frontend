@@ -1,0 +1,555 @@
+<title>Traçabilité de la fiche DAO 2463</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f2f4f3;
+    --paper: #ffffff;
+    --ink: #13181a;
+    --muted: #5d6a6d;
+    --rule: #dde3e1;
+    --rule-fort: #c3ccc9;
+    --seal: #0f5c4e;
+    --seal-doux: #e3efeb;
+    --repris: #0f5c4e;
+    --repris-fond: #e3efeb;
+    --reformule: #2f5573;
+    --reformule-fond: #e4ecf3;
+    --deduit: #8a5a10;
+    --deduit-fond: #f7eeda;
+    --hypothese: #99312a;
+    --hypothese-fond: #f8e5e3;
+    --ombre: 0 1px 2px rgba(19, 24, 26, .06);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #101413;
+      --paper: #171d1b;
+      --ink: #e6ecea;
+      --muted: #9aa8a5;
+      --rule: #29312f;
+      --rule-fort: #3a4442;
+      --seal: #5cc0a6;
+      --seal-doux: #1b2b27;
+      --repris: #6fc9b1;
+      --repris-fond: #16302a;
+      --reformule: #8fb6d8;
+      --reformule-fond: #182833;
+      --deduit: #dfae62;
+      --deduit-fond: #2f2618;
+      --hypothese: #e0918a;
+      --hypothese-fond: #331d1b;
+      --ombre: 0 1px 2px rgba(0, 0, 0, .4);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #101413;
+    --paper: #171d1b;
+    --ink: #e6ecea;
+    --muted: #9aa8a5;
+    --rule: #29312f;
+    --rule-fort: #3a4442;
+    --seal: #5cc0a6;
+    --seal-doux: #1b2b27;
+    --repris: #6fc9b1;
+    --repris-fond: #16302a;
+    --reformule: #8fb6d8;
+    --reformule-fond: #182833;
+    --deduit: #dfae62;
+    --deduit-fond: #2f2618;
+    --hypothese: #e0918a;
+    --hypothese-fond: #331d1b;
+    --ombre: 0 1px 2px rgba(0, 0, 0, .4);
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 1100px; margin: 0 auto; padding-inline: 20px; padding-block: 0 72px; }
+
+  /* ── En-tête ────────────────────────────────────────────────────────── */
+  header.doc { padding-block: 48px 28px; border-bottom: 2px solid var(--rule-fort); }
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--seal); margin: 0 0 14px;
+  }
+  h1 {
+    font-family: Spectral, Georgia, serif; font-weight: 600;
+    font-size: clamp(28px, 5vw, 44px); line-height: 1.12; margin: 0 0 16px;
+    text-wrap: balance; letter-spacing: -.01em;
+  }
+  .chapeau { font-size: 17px; color: var(--muted); max-width: 62ch; margin: 0; }
+  .chapeau strong { color: var(--ink); font-weight: 500; }
+
+  .compteurs { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 28px; }
+  .compteur .n {
+    font-family: Spectral, Georgia, serif; font-size: 30px; font-weight: 600;
+    line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .compteur .l { display: block; font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+
+  /* ── Sections ───────────────────────────────────────────────────────── */
+  section { padding-block: 40px 8px; }
+  h2 {
+    font-family: Spectral, Georgia, serif; font-weight: 600; font-size: 25px;
+    margin: 0 0 6px; letter-spacing: -.005em; text-wrap: balance;
+  }
+  h2 .code-bloc {
+    font-family: "IBM Plex Mono", monospace; font-size: 14px; font-weight: 500;
+    color: var(--seal); margin-right: 10px; vertical-align: 2px;
+  }
+  .intro { color: var(--muted); max-width: 70ch; margin: 0 0 22px; }
+  p { max-width: 72ch; }
+
+  /* ── Légende & filtres ──────────────────────────────────────────────── */
+  .legende { display: grid; gap: 10px; margin: 0 0 26px; }
+  .legende div { display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: baseline; }
+  @media (max-width: 560px) { .legende div { grid-template-columns: 1fr; gap: 2px; } }
+  .legende p { margin: 0; color: var(--muted); }
+
+  .filtres {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    background: var(--ground); padding-block: 12px; border-bottom: 1px solid var(--rule);
+  }
+  .filtres .titre { font-size: 12.5px; color: var(--muted); margin-right: 4px; }
+  .chip {
+    font: inherit; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--rule-fort); background: var(--paper); color: var(--ink);
+    border-radius: 999px; padding: 4px 13px; display: inline-flex; gap: 7px; align-items: center;
+  }
+  .chip[aria-pressed="true"] { border-color: currentColor; }
+  .chip .pastille { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .chip .n { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
+  .chip:focus-visible { outline: 2px solid var(--seal); outline-offset: 2px; }
+  .chip[data-nature="repris"] { color: var(--repris); }
+  .chip[data-nature="reformulé"] { color: var(--reformule); }
+  .chip[data-nature="déduit"] { color: var(--deduit); }
+  .chip[data-nature="hypothèse"] { color: var(--hypothese); }
+  .chip[data-nature="tout"] { color: var(--ink); }
+  .chip[aria-pressed="false"] { opacity: .5; }
+
+  /* ── Tableaux de correspondance ─────────────────────────────────────── */
+  .tableau { overflow-x: auto; background: var(--paper); border: 1px solid var(--rule); border-radius: 3px; box-shadow: var(--ombre); }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; }
+  thead th {
+    text-align: left; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; padding: 12px 16px;
+    border-bottom: 1px solid var(--rule-fort); white-space: nowrap;
+  }
+  tbody td { padding: 13px 16px; border-bottom: 1px solid var(--rule); vertical-align: top; font-size: 14px; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: var(--seal-doux); }
+  .c-code { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--seal); white-space: nowrap; display: block; margin-bottom: 3px; }
+  .c-lib { display: block; }
+  .c-val { font-weight: 500; }
+  .c-val em { font-weight: 400; color: var(--muted); font-style: italic; }
+  .c-src { color: var(--muted); font-size: 13.5px; }
+  .c-src b { color: var(--ink); font-weight: 500; }
+  td.n-cell { white-space: nowrap; }
+  .nature {
+    font-size: 11.5px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 3px; display: inline-block;
+  }
+  .nature[data-n="repris"] { color: var(--repris); background: var(--repris-fond); }
+  .nature[data-n="reformulé"] { color: var(--reformule); background: var(--reformule-fond); }
+  .nature[data-n="déduit"] { color: var(--deduit); background: var(--deduit-fond); }
+  .nature[data-n="hypothèse"] { color: var(--hypothese); background: var(--hypothese-fond); }
+  col.col-code { width: 27%; } col.col-val { width: 27%; } col.col-src { width: 32%; } col.col-nat { width: 14%; }
+
+  /* ── Encadrés ───────────────────────────────────────────────────────── */
+  .alerte {
+    border-left: 3px solid var(--deduit); background: var(--paper);
+    padding: 18px 22px; margin: 0 0 16px; border-radius: 0 3px 3px 0; box-shadow: var(--ombre);
+  }
+  .alerte h3 { margin: 0 0 6px; font-size: 16px; font-family: "IBM Plex Sans", sans-serif; font-weight: 600; }
+  .alerte p { margin: 0; color: var(--muted); }
+  .alerte p + p { margin-top: 8px; }
+  .alerte.douce { border-left-color: var(--rule-fort); }
+
+  .hors { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
+  .hors .l { display: grid; grid-template-columns: 1fr 92px 1.4fr; gap: 16px; background: var(--paper); padding: 12px 16px; align-items: baseline; }
+  .hors .l.tete { background: var(--ground); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .hors .p { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--seal); font-variant-numeric: tabular-nums; }
+  .hors .d { color: var(--muted); font-size: 13.5px; }
+  @media (max-width: 640px) {
+    .hors .l { grid-template-columns: 1fr; gap: 2px; }
+    .hors .l.tete { display: none; }
+  }
+
+  footer.doc { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 13.5px; }
+
+  @media print {
+    body { background: #fff; font-size: 11pt; }
+    .filtres { display: none; }
+    .tableau { box-shadow: none; break-inside: auto; }
+    tbody tr { break-inside: avoid; }
+    section { break-before: auto; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="page">
+  <header class="doc">
+    <p class="eyebrow">Traçabilité · 25 septembre 2026, mis à jour le 26</p>
+    <h1>D’où vient chaque information de la fiche DAO</h1>
+    <p class="chapeau">
+      Fiche marché <strong>13</strong> (ligne 303089, jeu rejoué sur base vide) rapportée au dossier d’appel d’offres
+      <strong>AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026</strong> — « Fourniture et livraison des matériels
+      informatiques répartis en cinq (5) lots (à commande) ». Chaque information saisie est rattachée à sa
+      <strong>page</strong> et à sa <strong>clause</strong> dans le dossier publié.
+    </p>
+    <div class="compteurs">
+      <div class="compteur"><span class="n">115</span><span class="l">valeurs à la fiche</span></div>
+      <div class="compteur"><span class="n">12</span><span class="l">articles au besoin</span></div>
+      <div class="compteur"><span class="n">48</span><span class="l">pièces produites</span></div>
+      <div class="compteur"><span class="n">86</span><span class="l">pages au dossier source</span></div>
+      <div class="compteur"><span class="n">5</span><span class="l">lots</span></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>Comment lire ce document</h2>
+    <p class="intro">
+      La colonne <b>source</b> donne la page du PDF et la clause : <span class="c-src"><b>DPAO §6.6, p. 18</b></span>
+      renvoie aux Données Particulières de l’Appel d’Offres ; <span class="c-src"><b>CCAP art. 11, p. 50</b></span> au
+      Cahier des Clauses Administratives Particulières ; <span class="c-src"><b>AE art. 5.2, p. 38</b></span> à l’acte
+      d’engagement ; <span class="c-src"><b>IC §9.4.5, p. 13</b></span> aux Instructions aux Candidats ;
+      <span class="c-src"><b>BP lot n, p. 40-44</b></span> aux cadres de bordereaux des prix.
+    </p>
+    <div class="legende">
+      <div><span class="nature" data-n="repris">repris</span><p>la valeur est celle du dossier, mot pour mot ou au chiffre près.</p></div>
+      <div><span class="nature" data-n="reformulé">reformulé</span><p>même règle, rédigée pour tenir dans le champ — le dossier est souvent un paragraphe entier.</p></div>
+      <div><span class="nature" data-n="déduit">déduit</span><p>le dossier ne donne pas la valeur : elle se calcule à partir de ce qu’il donne, et le calcul est écrit.</p></div>
+      <div><span class="nature" data-n="hypothèse">hypothèse</span><p>le dossier est muet ou en blanc : la valeur est un choix du jeu de données, signalé comme tel.</p></div>
+    </div>
+  </section>
+
+  <div class="filtres" role="group" aria-label="Filtrer par nature de la correspondance">
+    <span class="titre">Afficher</span>
+    <button type="button" class="chip" data-nature="tout" aria-pressed="true">Tout <span class="n" data-compte="tout"></span></button>
+    <button type="button" class="chip" data-nature="repris" aria-pressed="true"><span class="pastille"></span>repris <span class="n" data-compte="repris"></span></button>
+    <button type="button" class="chip" data-nature="reformulé" aria-pressed="true"><span class="pastille"></span>reformulé <span class="n" data-compte="reformulé"></span></button>
+    <button type="button" class="chip" data-nature="déduit" aria-pressed="true"><span class="pastille"></span>déduit <span class="n" data-compte="déduit"></span></button>
+    <button type="button" class="chip" data-nature="hypothèse" aria-pressed="true"><span class="pastille"></span>hypothèse <span class="n" data-compte="hypothèse"></span></button>
+  </div>
+
+  <div id="rubriques"></div>
+
+  <section>
+    <h2>Ce que la fiche ne couvre pas, et d’où ça vient</h2>
+    <p class="intro">
+      ⚠️ <b>Cette liste s’est réduite le 25/09 au soir.</b> Cinq pièces qui y figuraient sont désormais
+      <b>générées par la fiche</b>, avec la part du candidat laissée en blanc. Ce qui reste hors de la chaîne
+      est en noir ; ce qui en est sorti est barré.
+    </p>
+    <div class="hors">
+      <div class="l tete"><span>partie du dossier</span><span>pages</span><span>d’où elle vient</span></div>
+      <div class="l"><span>Instructions aux candidats</span><span class="p">3-15</span><span class="d">texte invariable, le même pour tous les appels d’offres — il n’a pas à être saisi</span></div>
+      <div class="l"><span><s>Formulaires A1 à A4, garanties C1/C2</s></span><span class="p">20-34</span><span class="d">✅ générés, un exemplaire par lot, en-tête et montant pré-remplis — sur gabarit provisoire filigrané en attendant les modèles officiels</span></div>
+      <div class="l"><span><s>Cadres de bordereaux des prix, lot par lot</s></span><span class="p">40-44</span><span class="d">✅ générés : un classeur par lot, quantités du bloc B12, colonne « prix unitaire HT » seule déverrouillée, totaux, TVA et TTC en formules</span></div>
+      <div class="l"><span>Annexes 2 et 3 de l’acte d’engagement</span><span class="p">45-46</span><span class="d">sommes versées à des tiers, bénéficiaires effectifs — la fiche les annonce sans les produire</span></div>
+      <div class="l"><span>Annexes 1 à 4 du CCAP</span><span class="p">53-56</span><span class="d">modèles de garanties officiels</span></div>
+      <div class="l"><span><s>Spécifications techniques, lot par lot</s></span><span class="p">57-61</span><span class="d">✅ générées en tableau de conformité : une ligne par caractéristique exigée, colonnes « proposé », « marque », « modèle » et « conforme » laissées au candidat</span></div>
+      <div class="l"><span><s>Liste des fournitures et calendrier</s></span><span class="p">62-66</span><span class="d">✅ générée : articles et quantités du besoin, lieu (B09-LL-01#n) et délai (B06-EO-12#n) de chaque lot</span></div>
+      <div class="l"><span>CCAG fournitures</span><span class="p">67-86</span><span class="d">texte réglementaire annexé</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Les trois points où le dossier ne dit pas tout</h2>
+    <div class="alerte">
+      <h3>1. L’avance forfaitaire</h3>
+      <p>Le CCAP, §9.1.a page 50, porte le titre « Avance » suivi d’un <b>blanc</b>, alors que l’acte
+        d’engagement (art. 6.2, p. 38) demande au candidat s’il l’accepte ou la refuse. Le jeu retient 20 %, le
+        plafond du CCAG (art. 9.1, p. 74). <b>C’est la seule valeur de la fiche qui ne s’appuie sur rien dans le
+        dossier</b> — à confirmer.</p>
+    </div>
+    <div class="alerte">
+      <h3>2. Les montants du marché</h3>
+      <p>L’acte d’engagement laisse le minimum et le maximum en blanc : ils viennent de l’offre. Ils sont déduits
+        des garanties de soumission, qui valent 2 % du maximum — et le calcul retombe exactement sur les
+        quantités des bordereaux.</p>
+    </div>
+    <div class="alerte">
+      <h3>3. Les dates</h3>
+      <p>Le dossier publié laisse la date limite de remise en pointillés (§7.2, p. 18) ; seules les <b>heures</b>
+        sont fixées. Les dates de la fiche viennent du calendrier prévisionnel du plan de passation, comme
+        l’exige le contrôle <code>DATES_ORDRE</code>.</p>
+    </div>
+    <div class="alerte douce">
+      <h3>Où en est la fiche 13</h3>
+      <p><b>26/09</b> — la base ayant été vidée puis rejouée, c’est la <b>fiche 13</b> (ligne 303089, plan
+        <code>00005/PPM-AGPM/CNM/2026</code>) qui porte ce dossier. Les correspondances de ce document sont
+        inchangées : elles portent sur des <b>codes de champ</b>, pas sur des identifiants.</p>
+      <p>Validée : <b>115 informations</b>, <b>12 articles</b> et 58 caractéristiques exigées, zéro contrôle au
+        bilan, <b>48 pièces produites en 86 fichiers</b> — chacune en <code>.docx</code> et en <code>.pdf</code>,
+        sauf les deux classeurs : DPAO, CCAP, la liste des fournitures, 5 actes d’engagement, 5 bordereaux,
+        5 tableaux de conformité, 20 fiches A1-A4 et 10 garanties C1/C2.</p>
+      <p>Vérifié sur trois pièces ouvertes : le <b>bordereau du lot 2</b> porte les deux kits avec leurs
+        quantités, la colonne « prix unitaire HT » laissée au candidat, et les lignes Total HT, <b>TVA (20 %)</b>
+        et Total TTC en formules ; la <b>garantie C1 du lot 2</b> annonce « 2 170 000 Ariary (deux millions cent
+        soixante-dix mille ariary) » et une validité « jusqu’au cent cinquième (105ème) jour » ; le <b>tableau de
+        conformité du lot 3</b> aligne une ligne par caractéristique exigée.</p>
+    </div>
+    <div class="alerte douce">
+      <h3>Deux valeurs corrigées après relecture</h3>
+      <p>La version 1 de la fiche portait une forme de garantie de bonne exécution et un taux de 5 % hérités du
+        jeu de démonstration précédent, alors que le CCAP écrit « non applicable » (art. 12.1, p. 51). Ils ont été
+        retirés : la fiche est en <b>version 2</b>, 112 informations, zéro contrôle au bilan. La date d’effet du
+        marché a été alignée sur la notification du calendrier prévisionnel.</p>
+    </div>
+  </section>
+
+  <footer class="doc">
+    Commission Nationale des Marchés — PRS 2.0. Document de traçabilité établi le 25/09/2026 à partir du dossier
+    remis par le pilote, mis à jour le 26/09/2026 (jeu de données rejoué : fiche 13, ligne 303089). Source de vérité : <code>docs/correspondance-2026-09-25-fiche-dao-vs-dossier-2463.md</code>.
+  </footer>
+</div>
+
+<script>
+  const RUBRIQUES = [
+    {
+      code: "Cadrage", titre: "Les onze questions posées avant la saisie",
+      intro: "Le cadrage ferme ou ouvre des rubriques entières de la fiche : c’est lui qui décide, par exemple, qu’il y aura cinq cellules par information variable.",
+      enTetes: ["question", "réponse", "source", "nature"],
+      lignes: [
+        ["", "Marché alloti", "Oui, 5 lots", "page de garde, <b>p. 1</b> ; DPAO §1.1, <b>p. 17</b>", "repris"],
+        ["", "Variantes autorisées", "Non", "DPAO §1.1, <b>p. 17</b> — « Les variantes ne sont pas prises en considération »", "repris"],
+        ["", "Groupement", "Non", "DPAO §2, <b>p. 17</b> — « Non applicable »", "repris"],
+        ["", "Provenance des fournitures", "Territoire national", "DPAO §6.5.1, <b>p. 18</b> — prix EXW magasin de ventes + transports intérieurs", "repris"],
+        ["", "Type de prix", "Prix unitaires", "AE art. 2, <b>p. 38</b> — « par application des prix unitaires du Bordereau des Prix »", "repris"],
+        ["", "Prix révisable", "Non", "DPAO §6.5.2, <b>p. 18</b> — « Les prix sont fermes et non révisables »", "repris"],
+        ["", "Garantie de soumission", "Oui", "DPAO §6.6, <b>p. 18</b>", "repris"],
+        ["", "Avance forfaitaire", "Oui, 20 %", "AE art. 6.2, <b>p. 38</b> ; le CCAP §9.1.a, <b>p. 50</b>, est laissé <b>en blanc</b>", "hypothèse"],
+        ["", "Pénalités de retard", "Plafond différent du CCAG", "CCAP art. 11, <b>p. 50</b> — 1/1000 par jour, plafond 10 % (CCAG : 15 %)", "repris"],
+        ["", "Forme du marché", "À commande", "page de garde, <b>p. 1</b> ; DPAO §1.2, <b>p. 17</b>", "repris"],
+        ["", "Catégorie", "Fournitures et services", "page de garde, <b>p. 1</b> ; CCAG fournitures, <b>p. 67</b>", "repris"]
+      ]
+    },
+    {
+      code: "B02", titre: "Objet, allotissement & forme du marché",
+      lignes: [
+        ["B02-OB-02", "Type de fournitures et services connexes", "ordinateurs Core i3/i5, onduleurs, imprimantes, photocopieuses, duplicopieurs ; transport, assurance, mise en service", "Spécifications techniques, <b>p. 57-61</b> ; objet, <b>p. 1</b>", "reformulé"],
+        ["B02-OB-03", "Numéro du dossier d’appel d’offres", "AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026", "page de garde, <b>p. 1</b> ; AE, <b>p. 36</b>", "repris"],
+        ["B02-AU-02", "Attribution des lots", "Lot par lot (attribution divisible)", "DPAO §1.1, <b>p. 17</b> — « Chaque lot est indivisible » ; §9.4.3, <b>p. 19</b>", "repris"],
+        ["B02-AU-07", "Nombre maximum de lots par candidat", "2", "DPAO §1.1, <b>p. 17</b> — « ne peut prétendre qu’à deux lots au maximum »", "repris"],
+        ["B02-AU-03", "Quantités minimum et maximum — <b>champ désactivé le 25/09</b>", "les quantités sont désormais portées <b>article par article</b> par le bloc B12, plus par une phrase de renvoi", "DPAO §1.2, <b>p. 17</b> ; BP lots 1 à 5, <b>p. 40-44</b>", "déduit"],
+        ["B02-AU-04", "Durée de validité du marché (mois)", "12", "DPAO §1.2, <b>p. 17</b> ; CCAP art. 10.b, <b>p. 50</b> ; AE art. 5.3, <b>p. 38</b>", "repris"],
+        ["B02-AU-05", "Date d’effet du marché", "28/01/2027", "AE art. 5.1, <b>p. 38</b> — « à compter de la notification » ; la date vient du calendrier prévisionnel du plan", "déduit"]
+      ]
+    },
+    {
+      code: "B03", titre: "Candidats : groupement, sous-traitance, qualifications",
+      lignes: [
+        ["B03-CQ-01", "Pièces d’identification et situation juridique", "immatriculation fiscale 2026 ou 2025, registre du commerce, carte statistique, non-faillite — chacun de moins de 3 mois", "DPAO §6.1, <b>p. 17</b>", "repris"],
+        ["B03-CQ-02", "Capacité technique exigée", "fiche de renseignements A2", "DPAO §6.3, <b>p. 17-18</b> ; formulaire A2, <b>p. 26-27</b>", "repris"],
+        ["B03-CQ-03", "Capacité financière exigée", "fiche de renseignements A3", "DPAO §6.3, <b>p. 18</b> ; formulaire A3, <b>p. 28-30</b>", "repris"],
+        ["B03-CQ-04", "Marchés similaires", "fiche de renseignements A4", "formulaire A4, <b>p. 31</b> ; sommaire, <b>p. 2</b>", "repris"],
+        ["B03-CQ-05", "Autorisation du fabricant exigée", "Non", "sommaire, <b>p. 2</b> — « Modèle d’attestation du fabriquant – Non utilisé »", "repris"],
+        ["B03-CQ-06", "Qualifications particulières exigées", "agrément du fabricant ou du distributeur agréé", "IC §6.3, <b>p. 8</b> (faculté ouverte) ; le dossier ne l’exige pas", "hypothèse"],
+        ["B03-CQ-07", "Communautés locales et ONG admises", "sans objet", "IC §6.3, <b>p. 8</b> ; non repris au DPAO", "hypothèse"],
+        ["B03-CQ-08", "Préférence nationale accordée", "Non", "DPAO §9.5, <b>p. 19</b> — « Il n’est pas accordé de préférence aux candidats Nationaux »", "repris"],
+        ["B03-NA-01", "Nantissement autorisé", "Oui", "AE art. 4, <b>p. 38</b> — montant maximal de la créance nantissable", "repris"],
+        ["B03-NA-02", "Conditions du nantissement", "conditions du Code des marchés publics, information du comptable assignataire", "AE art. 4, <b>p. 38</b> ; IC §6.6.1.d, <b>p. 9</b>", "reformulé"],
+        ["B03-NA-03", "Comptable assignataire des paiements", "Trésorier ministériel chargé de l’Enseignement", "AE art. 4, <b>p. 38</b>", "repris"],
+        ["B03-ST-01", "Sous-traitance autorisée", "Non", "AE art. 3, <b>p. 38</b> — « Il n’est pas envisagé de sous-traiter »", "repris"]
+      ]
+    },
+    {
+      code: "B04", titre: "Dossier, remise & ouverture des offres",
+      lignes: [
+        ["B04-CD-01", "Fiches de renseignements jointes", "<b>A1, A2, A3, A4</b> — liste à choix multiples : elle commande la génération des quatre fiches", "DPAO §5.1, <b>p. 17</b> ; sommaire, <b>p. 2</b> ; formulaires, <b>p. 22-31</b>", "repris"],
+        ["B04-CD-02", "Modèle de garantie de soumission", "<b>C1 et C2</b> — liste : elle commande la génération des garanties, un exemplaire par lot", "sommaire, <b>p. 2</b> ; modèles, <b>p. 33-34</b>", "repris"],
+        ["B04-CO-01", "Documents constituant l’offre", "pièces du DPAO §6.1 en sus de celles des instructions", "DPAO §6.1, <b>p. 17</b> ; IC §6.2, <b>p. 7-8</b>", "reformulé"],
+        ["B04-DE-01", "Adresse des demandes d’éclaircissement", "PRMP LERAVO Norbert Fidelys, porte 204, 2<sup>e</sup> étage, Fiadanana — prmp.mesupres@gmail.com", "DPAO §5.2, <b>p. 17</b>", "repris"],
+        ["B04-DE-02", "Délai d’envoi des demandes (jours)", "10", "DPAO §5.2, <b>p. 17</b>", "repris"],
+        ["B04-DE-03", "Délai de réponse de la PRMP (jours)", "5", "DPAO §5.2, <b>p. 17</b>", "repris"],
+        ["B04-LA-01", "Autre langue que le français admise", "Non", "IC §6.9, <b>p. 10</b> (français par défaut) ; le DPAO ne prévoit rien", "déduit"],
+        ["B04-LR-01", "Destinataire des offres", "Monsieur LERAVO Norbert Fidelys", "DPAO §7.2, <b>p. 18</b>", "repris"],
+        ["B04-LR-02", "Adresse de remise des offres", "porte 204, 2<sup>e</sup> étage, MESupReS, Fiadanana — Antananarivo 101", "DPAO §7.2, <b>p. 18</b>", "repris"],
+        ["B04-LR-03", "Date limite de remise", "09/11/2026", "DPAO §7.2, <b>p. 18</b> — <b>date laissée en pointillés</b> ; la date vient du calendrier du plan", "déduit"],
+        ["B04-LR-04", "Heure limite de remise", "10 h 00", "DPAO §7.2, <b>p. 18</b> — « Heure : Dix (10) heures »", "repris"],
+        ["B04-OP-01", "Lieu de l’ouverture des plis", "bureau porte 204, 2<sup>e</sup> étage, MESupReS", "DPAO §8, <b>p. 18-19</b>", "repris"],
+        ["B04-OP-02", "Date d’ouverture des plis", "09/11/2026", "DPAO §8, <b>p. 19</b> — « le même jour que la date limite fixée pour la remise des offres »", "déduit"],
+        ["B04-OP-03", "Heure d’ouverture", "10 h 00", "DPAO §8, <b>p. 19</b> — « DIX HEURES (10H) »", "repris"],
+        ["B04-RO-01", "Nombre de copies de l’offre", "1", "DPAO §7.1, <b>p. 18</b> — « UNE (01) copie »", "repris"],
+        ["B04-RO-02", "Mention à porter sur les plis", "référence de l’AOO + « Ne pas ouvrir avant… »", "DPAO §7.1, <b>p. 18</b>", "repris"],
+        ["B04-RO-03", "Présentation des plis", "plis séparés par lot ; enveloppe extérieure anonyme ; deux enveloppes intérieures scellées à la cire, ORIGINAL et COPIE", "DPAO §7.1, <b>p. 18</b>", "repris"],
+        ["B04-VE-01", "Voie électronique admise", "Non", "DPAO §7.3, <b>p. 18</b> — « n’est pas autorisée dans le cadre de cet appel d’offres »", "repris"],
+        ["B04-VO-01", "Délai de validité des offres (jours)", "75", "DPAO §6.4, <b>p. 18</b> — « soixante-quinze (75j) jours »", "repris"]
+      ]
+    },
+    {
+      code: "B05", titre: "Prix, montants & garantie de soumission",
+      intro: "Les trois informations qui varient d’un lot à l’autre portent ici cinq cellules chacune : c’est la saisie par lot livrée le 25/09.",
+      lignes: [
+        ["B05-CP-02", "Décomposition des prix nationaux", "prix EXW (magasin de ventes) + transports intérieurs, assurance et services locaux jusqu’à la destination finale", "DPAO §6.5.1, <b>p. 18</b>", "repris"],
+        ["B05-MO-01", "Monnaie de l’offre", "Ariary", "CCAP art. 9.3, <b>p. 50</b> ; AE art. 2, <b>p. 38</b>", "repris"],
+        ["B05-GS-02", "Forme de la garantie de soumission", "garantie bancaire <em>(le dossier admet aussi la caution solidaire et le chèque de banque)</em>", "DPAO §6.6, <b>p. 18</b>", "repris"],
+        ["B05-GS-04", "Validité de la garantie (jours)", "105", "modèles C1 et C2, <b>p. 33-34</b> — « jusqu’au cent cinquième (105<sup>e</sup>) jour »", "repris"],
+        ["B05-GS-03#1", "Garantie de soumission — lot 1", "1 600 000 Ar", "DPAO §6.6, <b>p. 18</b>", "repris"],
+        ["B05-GS-03#2", "Garantie de soumission — lot 2", "2 170 000 Ar", "DPAO §6.6, <b>p. 18</b>", "repris"],
+        ["B05-GS-03#3", "Garantie de soumission — lot 3", "1 600 000 Ar", "DPAO §6.6, <b>p. 18</b>", "repris"],
+        ["B05-GS-03#4", "Garantie de soumission — lot 4", "2 170 000 Ar", "DPAO §6.6, <b>p. 18</b>", "repris"],
+        ["B05-GS-03#5", "Garantie de soumission — lot 5", "1 600 000 Ar", "DPAO §6.6, <b>p. 18</b>", "repris"],
+        ["B05-TP-03#1…5", "Montant maximum annuel, par lot", "80 M / 108,5 M / 80 M / 108,5 M / 80 M Ar", "AE art. 2, <b>p. 38</b> : le montant est <b>laissé en blanc</b>. Calcul : garantie ÷ 2 % — 1 600 000 ÷ 0,02 = 80 000 000 ; 2 170 000 ÷ 0,02 = 108 500 000", "déduit"],
+        ["B05-TP-02#1…5", "Montant minimum annuel, par lot", "40 M / 54 M / 40 M / 54 M / 40 M Ar", "BP lots 1 à 5, <b>p. 40-44</b> : les quantités MIN valent la moitié des MAX (15/30, 8/16, 13/26, 3/6, 1/2)", "déduit"]
+      ]
+    },
+    {
+      code: "B06", titre: "Évaluation, attribution & notification",
+      lignes: [
+        ["B06-EO-01", "Évaluation des offres sur plusieurs lots", "Par lot", "DPAO §9.4.3, <b>p. 19</b>", "repris"],
+        ["B06-EO-02", "Critères additionnels d’évaluation", "aucun", "DPAO §9.4, <b>p. 19</b> — « non applicable »", "repris"],
+        ["B06-EO-04", "Impôts et taxes écartés de l’évaluation", "TVA et droits de douane", "IC §9.4.2, <b>p. 13</b>", "reformulé"],
+        ["B06-EO-05", "Détermination du montant évalué", "prix corrigé des erreurs, des rabais et de la préférence", "IC §9.4.3, <b>p. 13</b>", "reformulé"],
+        ["B06-EO-06", "Comparaison des offres", "l’offre évaluée la moins-disante", "IC §9.4.4, <b>p. 13</b> ; DPAO §9.4.3, <b>p. 19</b>", "reformulé"],
+        ["B06-EO-07", "Offres anormalement hautes ou basses", "1<sup>re</sup> moyenne, écart &gt; 20 % = haute ; 2<sup>de</sup> moyenne après neutralisation, écart &lt; 10 % = basse", "DPAO §9.4.5, <b>p. 19</b>", "repris"],
+        ["B06-EO-08", "Vérification a posteriori du moins-disant", "examen des pièces de qualification avant attribution", "IC §9.4.6, <b>p. 13</b>", "reformulé"],
+        ["B06-AN-02", "Recours gracieux et recours en attribution", "motifs du rejet sous 20 jours ; recours gracieux puis organe de régulation", "IC §10.1, <b>p. 14</b> et §10.5, <b>p. 15</b>", "reformulé"],
+        ["B06-EP-01", "Délai de réponse des candidats (jours)", "3", "DPAO §9.1, <b>p. 19</b> — « TROIS (03) jours au maximum »", "repris"],
+        ["B06-EO-12#1…5", "Délai maximum de livraison (jours), par lot", "30 pour chacun des cinq lots", "DPAO §12, <b>p. 19</b> ; CCAP art. 10.a, <b>p. 50</b> ; AE art. 5.2, <b>p. 38</b> ; annexe 1, <b>p. 62-66</b>", "repris"]
+      ]
+    },
+    {
+      code: "B08", titre: "Paiements, avances & garanties financières",
+      lignes: [
+        ["B08-AC-01", "Acomptes prévus", "Non", "CCAP §9.1.b, <b>p. 50</b> — « Acompte : Non applicable »", "repris"],
+        ["B08-AV-04", "Forme de la garantie de restitution d’avance", "garantie bancaire", "annexes 3 et 4 au CCAP, <b>p. 55-56</b>", "repris"],
+        ["B08-AV-05", "Modalités de remboursement de l’avance", "précompte sur les sommes dues", "CCAG art. 9.1, <b>p. 74</b> ; le CCAP §9.1.a, <b>p. 50</b>, est en blanc", "hypothèse"],
+        ["B08-AV-06", "Précompte sur les sommes dues (%)", "20", "découle du taux d’avance retenu — même blanc au CCAP", "hypothèse"],
+        ["B08-GB-01", "Garantie de bonne exécution exigée", "Non", "CCAP art. 12.1, <b>p. 51</b> — « Non applicable »", "repris"],
+        ["B08-RG-01", "Retenue de garantie pratiquée", "Non", "CCAP art. 12.2, <b>p. 51</b> — « Aucune retenue de garantie ne sera pratiquée »", "repris"],
+        ["B08-IM-01", "Taux des intérêts moratoires (%)", "9", "CCAP §9.4, <b>p. 50</b> — « taux directeur de la Banque Centrale augmenté d’un (01) point ». Le champ attend un pourcentage : 9 % vaut pour un taux directeur de 8 %", "déduit"],
+        ["B08-PA-01", "Domiciliation bancaire du fournisseur", "crédit du compte indiqué à l’acte d’engagement", "AE art. 6.1, <b>p. 38</b> ; CCAG art. 9, <b>p. 74</b>", "reformulé"],
+        ["B08-PA-03", "Établissement des factures", "quatre exemplaires — un original, trois copies — avec nom et adresse, compte bancaire, références du marché, montant hors taxe, montant dû en Ariary, date", "CCAP §9.2, <b>p. 50</b>", "repris"],
+        ["B08-PA-04", "Termes de paiement", "factures établies à la livraison", "CCAP §9.2, <b>p. 50</b>", "repris"],
+        ["B08-PA-05", "Périodicité des paiements", "à la livraison", "CCAP §9.2, <b>p. 50</b>", "repris"],
+        ["B08-PA-08", "Délai de paiement (jours)", "30", "CCAG art. 9.4, <b>p. 74</b> — délai global de 75 jours", "hypothèse"]
+      ]
+    },
+    {
+      code: "B09", titre: "Exécution du marché & livraison",
+      lignes: [
+        ["B09-DX-03", "Modalités de passation des commandes", "bons de commande successifs pendant douze mois ; seuls les bons signés par l’Ordonnateur Secondaire sont honorés", "CCAP art. 10.a, <b>p. 50</b>", "repris"],
+        ["B09-DX-01", "Délai d’exécution (jours)", "30", "CCAP art. 10.a, <b>p. 50</b>", "repris"],
+        ["B09-DX-02", "Point de départ du délai", "lendemain de la notification du bon de commande", "CCAP art. 10.a, <b>p. 50</b> ; DPAO §12, <b>p. 19</b>", "repris"],
+        ["B09-OM-03", "Délai de validité du marché (mois)", "12", "CCAP art. 6 et 10.b, <b>p. 49-50</b>", "repris"],
+        ["B09-OM-01", "Délai de communication d’un ajustement (jours)", "10", "CCAP art. 6, <b>p. 49</b>", "repris"],
+        ["B09-OM-02", "Variation maximale des quantités (%)", "20", "CCAP art. 6, <b>p. 49-50</b> — « dans la limite de vingt pour cent (20 %) »", "repris"],
+        ["B09-LL-01#1…5", "Lieu de livraison, <b>par lot</b>", "lot 1 Ministère (Fiadanana) · lots 2 et 3 Ambatondrazaka · lots 4 et 5 Fort-Dauphin — une cellule par lot depuis le 25/09", "CCAP art. 1 et 17, <b>p. 49</b> et <b>p. 51</b> ; annexe 1, <b>p. 62-66</b>", "repris"],
+        ["B09-LF-01", "Modalités de livraison", "livraison aux destinations finales ci-dessus", "CCAP art. 17, <b>p. 51</b>", "reformulé"],
+        ["B09-LF-02", "Documents à fournir à la livraison", "cinq exemplaires de la facture (description, quantités, prix unitaires, montant, date, référence, répartition par colis) + bon de livraison", "CCAP art. 17, <b>p. 51</b>", "repris"],
+        ["B09-EM-01", "Marquage requis sur les emballages", "emballage d’origine", "CCAP art. 15, <b>p. 51</b>", "repris"],
+        ["B09-EM-02", "Documents requis dans les emballages", "bon de livraison, facture, certificats et notices", "CCAG art. 16.2, <b>p. 79</b>", "reformulé"],
+        ["B09-RT-01", "Responsabilité du transport", "transport par le fournisseur jusqu’à la destination finale", "CCAP art. 16, <b>p. 51</b>", "repris"],
+        ["B09-AS-01", "Assurance des fournitures", "selon l’incoterm", "CCAP art. 18, <b>p. 51</b>", "repris"],
+        ["B09-SK-01", "Stockage à la charge du fournisseur", "Oui", "CCAP art. 14, <b>p. 51</b> — « Quantité minimale prévue dans le bordereau de prix »", "repris"],
+        ["B09-MC-01", "Matériels confiés au fournisseur", "Non", "CCAP art. 13, <b>p. 51</b> — « Sans objet »", "repris"],
+        ["B09-PS-01", "Mesures de sécurité applicables", "Non", "CCAP art. 7, <b>p. 50</b> — « Non applicable »", "repris"],
+        ["B09-CR-01", "Contrôle des prix de revient applicable", "Non", "CCAP art. 19, <b>p. 51</b> — « Non applicable »", "repris"],
+        ["B09-IV-01", "Inspections, vérifications et essais", "au lieu de destination finale, au moment de la livraison, frais à la charge du fournisseur", "CCAP art. 20, <b>p. 52</b>", "repris"],
+        ["B09-DI-01", "Décision après inspection et essais", "réception provisoire à la livraison, définitive à l’issue du délai de garantie ; décision sous deux jours", "CCAP art. 21, <b>p. 52</b>", "repris"],
+        ["B09-DG-01", "Délai de garantie (mois)", "2", "CCAP art. 22, <b>p. 52</b> — dérogation à l’article 23 du CCAG", "repris"],
+        ["B09-DG-02", "Étendue de la garantie", "remède aux défauts de fabrication ou de matière pendant le délai", "CCAP art. 22, <b>p. 52</b>", "reformulé"],
+        ["B09-PR-02", "Plafond des pénalités de retard (%)", "10", "CCAP art. 11, <b>p. 50</b>", "repris"],
+        ["B09-PR-03", "Justification de la dérogation", "plafond ramené à 10 % là où le CCAG retient 15 % — marché à commandes, retard apprécié commande par commande", "CCAP art. 11, <b>p. 50</b> ; CCAG art. 12.1, <b>p. 77</b> — la justification est notre rédaction", "reformulé"],
+        ["B09-PC-01", "Pièces contractuelles supplémentaires", "bon de commande, bordereau des prix unitaires, spécifications techniques", "CCAP art. 5, <b>p. 49</b> ; CCAG art. 6.1, <b>p. 71</b>", "reformulé"],
+        ["B09-PC-02", "Annexes de l’acte d’engagement", "annexe 1 bordereau de prix ; annexe 2 sommes versées à des tiers ; annexe 3 déclaration des bénéficiaires effectifs", "AE, <b>p. 38</b> ; annexes, <b>p. 40-46</b> ; sommaire, <b>p. 2</b>", "repris"]
+      ]
+    },
+    {
+      code: "B12", titre: "Besoin par lot — nouveau le 25/09",
+      intro: "Le besoin n’est pas fait de champs : c’est une ressource à part — 12 articles et 58 caractéristiques exigées, saisis lot par lot. Il alimente trois pièces : le bordereau des prix, le tableau de conformité technique et la liste des fournitures.",
+      enTetes: ["lot", "articles et quantités min/max", "source dans le dossier", "nature"],
+      lignes: [
+        ["", "Lot 1 — Ministère", "ordinateur de bureau complet Core i5 (15/30) · onduleur (10/20) — <em>8 et 2 caractéristiques exigées</em>", "BP lot 1, <b>p. 40</b> ; spécifications lot 1, <b>p. 57</b>", "repris"],
+        ["", "Lot 2 — Ambatondrazaka", "kit Core i3 + onduleur + imprimante (8/16) · kit Core i5 + onduleur (13/26) — <em>7 et 6</em>", "BP lot 2, <b>p. 41</b> ; spécifications lot 2, <b>p. 58</b>", "repris"],
+        ["", "Lot 3 — Ambatondrazaka", "imprimante laser A4 (3/6) · photocopieuse A4/A3 (1/2) · duplicopieur A4 (1/2) — <em>4, 4 et 3</em>", "BP lot 3, <b>p. 42</b> ; spécifications lot 3, <b>p. 59</b>", "repris"],
+        ["", "Lot 4 — Fort-Dauphin", "<em>identique au lot 2</em>", "BP lot 4, <b>p. 43</b> ; spécifications lot 4, <b>p. 60</b>", "repris"],
+        ["", "Lot 5 — Fort-Dauphin", "<em>identique au lot 3</em>", "BP lot 5, <b>p. 44</b> ; spécifications lot 5, <b>p. 61</b>", "repris"]
+      ]
+    },
+    {
+      code: "B10", titre: "Modifications, résiliation & litiges",
+      lignes: [
+        ["B10-IR-01", "Indemnité de résiliation prévue", "Oui", "CCAP art. 23, <b>p. 52</b> — « Les dispositions de l’article 32 du CCAG s’appliquent »", "repris"],
+        ["B10-IR-02", "Modalités de l’indemnité", "indemnisation des fournitures livrées et acceptées et des approvisionnements", "CCAG art. 32.2, <b>p. 84</b>", "reformulé"],
+        ["B10-AR-01", "Arbitrage et règlement des litiges", "règlement amiable puis tribunal administratif", "CCAG art. 34 à 36, <b>p. 85-86</b>", "reformulé"],
+        ["B10-DD-01", "Dérogations aux documents généraux", "dérogation à l’article 23 du CCAG (délai de garantie), portée par l’article 22 du CCAP", "CCAP art. 24, <b>p. 52</b> — le tableau des dérogations", "repris"]
+      ]
+    }
+  ];
+
+  const hote = document.getElementById("rubriques");
+  const comptes = { repris: 0, "reformulé": 0, "déduit": 0, "hypothèse": 0 };
+
+  for (const r of RUBRIQUES) {
+    const section = document.createElement("section");
+    const titre = r.code === "Cadrage"
+      ? '<h2><span class="code-bloc">Cadrage</span>' + r.titre + "</h2>"
+      : '<h2><span class="code-bloc">' + r.code + "</span>" + r.titre + "</h2>";
+    const intro = r.intro ? '<p class="intro">' + r.intro + "</p>" : "";
+    const enTetes = r.enTetes ?? ["information", "valeur portée à la fiche", "source dans le dossier", "nature"];
+    const corps = r.lignes.map(function (l) {
+      comptes[l[4]]++;
+      const premiere = l[0]
+        ? '<span class="c-code">' + l[0] + '</span><span class="c-lib">' + l[1] + "</span>"
+        : '<span class="c-lib">' + l[1] + "</span>";
+      return '<tr data-nature="' + l[4] + '">'
+        + "<td>" + premiere + "</td>"
+        + '<td class="c-val">' + l[2] + "</td>"
+        + '<td class="c-src">' + l[3] + "</td>"
+        + '<td class="n-cell"><span class="nature" data-n="' + l[4] + '">' + l[4] + "</span></td>"
+        + "</tr>";
+    }).join("");
+    section.innerHTML = titre + intro
+      + '<div class="tableau"><table><colgroup><col class="col-code"><col class="col-val"><col class="col-src"><col class="col-nat"></colgroup>'
+      + "<thead><tr>" + enTetes.map(function (t) { return "<th>" + t + "</th>"; }).join("") + "</tr></thead>"
+      + "<tbody>" + corps + "</tbody></table></div>";
+    hote.appendChild(section);
+  }
+
+  const total = Object.values(comptes).reduce(function (a, b) { return a + b; }, 0);
+  document.querySelector('[data-compte="tout"]').textContent = total;
+  for (const n of Object.keys(comptes)) {
+    document.querySelector('[data-compte="' + n + '"]').textContent = comptes[n];
+  }
+
+  const actives = new Set(Object.keys(comptes));
+  function appliquer() {
+    for (const tr of document.querySelectorAll("tbody tr")) {
+      tr.hidden = !actives.has(tr.dataset.nature);
+    }
+    for (const s of document.querySelectorAll("#rubriques section")) {
+      s.hidden = s.querySelectorAll("tbody tr:not([hidden])").length === 0;
+    }
+    document.querySelector('[data-nature="tout"]').setAttribute("aria-pressed", String(actives.size === 4));
+  }
+  for (const chip of document.querySelectorAll(".chip")) {
+    chip.addEventListener("click", function () {
+      const n = chip.dataset.nature;
+      if (n === "tout") {
+        const toutes = actives.size === 4;
+        actives.clear();
+        if (!toutes) { for (const k of Object.keys(comptes)) actives.add(k); }
+        for (const c of document.querySelectorAll(".chip[data-nature]:not([data-nature='tout'])")) {
+          c.setAttribute("aria-pressed", String(!toutes));
+        }
+      } else {
+        if (actives.has(n)) { actives.delete(n); } else { actives.add(n); }
+        chip.setAttribute("aria-pressed", String(actives.has(n)));
+      }
+      appliquer();
+    });
+  }
+</script>

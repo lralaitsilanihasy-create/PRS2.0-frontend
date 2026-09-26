@@ -10,7 +10,7 @@
 //   node demo-dao.mjs 303083       une seule ligne du plan
 //
 // ⚠️ Écrit en base de développement.
-import { CADRAGE_TRAVAUX, CADRAGE_PI, CADRAGE_AC, CADRAGE_QF, VALEURS_TRAVAUX, VALEURS_PI, VALEURS_AC, VALEURS_AC_PAR_LOT, VALEURS_QF } from './demo-dao-valeurs.mjs';
+import { CADRAGE_TRAVAUX, CADRAGE_PI, CADRAGE_AC, CADRAGE_QF, VALEURS_TRAVAUX, VALEURS_PI, VALEURS_AC, VALEURS_AC_PAR_LOT, VALEURS_QF, CADRAGE_2463, VALEURS_2463, VALEURS_2463_PAR_LOT, ARTICLES_2463 } from './demo-dao-valeurs.mjs';
 
 const API = 'http://localhost:8080';
 const args = process.argv.slice(2);
@@ -75,7 +75,7 @@ const ficheDeLaLigne = async (idDetail) => {
   return cree.corps?.idDmc ?? cree.corps?.id ?? null;
 };
 
-const garnir = async (idDetail, cadrage, valeurs, titre, parLot = {}) => {
+const garnir = async (idDetail, cadrage, valeurs, titre, parLot = {}, articles = []) => {
   console.log(`\n══ ${titre} — ligne ${idDetail} ══`);
   const idDmc = await ficheDeLaLigne(idDetail);
   if (idDmc == null) return false;
@@ -136,6 +136,22 @@ const garnir = async (idDetail, cadrage, valeurs, titre, parLot = {}) => {
   console.log(`  ${posees} informations ${VIDER ? 'effacées' : 'posées'}`);
   if (VIDER) return true;
 
+  // ⚠️ Le BESOIN (bloc B12, livré le 25/09) n'est pas fait de champs : c'est une ressource à part,
+  // enregistrée lot par lot par remplacement en bloc. Les lots 4 et 5 du 2463 reprennent les lots 2 et 3 —
+  // c'est le cas réel du geste « Dupliquer depuis le lot n ».
+  if (articles.length) {
+    const lots = [...new Set(articles.map((a) => a.lot))].sort((x, y) => x - y);
+    let poses = 0;
+    for (const lot of lots) {
+      const duLot = articles.filter((a) => a.lot === lot);
+      const r = await appel('PUT', `/api/fiches-marche/${idDmc}/articles?lot=${lot}`, { articles: VIDER ? [] : duLot });
+      if (!r.ok) { console.error(`  ✗ besoin du lot ${lot} : ${r.statut} ` + JSON.stringify(r.corps).slice(0, 220)); return false; }
+      poses += VIDER ? 0 : duLot.length;
+    }
+    const carac = VIDER ? 0 : articles.reduce((n, a) => n + (a.caracteristiques?.length ?? 0), 0);
+    console.log(`— Besoin —\n  ✓ ${poses} article(s) sur ${lots.length} lot(s), ${carac} caractéristique(s) exigée(s)`);
+  }
+
   console.log('— Contrôles —');
   const bilan = (await appel('POST', `/api/fiches-marche/${idDmc}/controler`)).corps;
   const lignes = bilan?.controles ?? bilan?.anomalies ?? [];
@@ -163,8 +179,10 @@ const jeux = [
   { id: 303084, cadrage: CADRAGE_PI, valeurs: VALEURS_PI, titre: 'PRESTATIONS INTELLECTUELLES — schéma directeur d’assainissement' },
   { id: 303081, cadrage: CADRAGE_AC, valeurs: VALEURS_AC, parLot: VALEURS_AC_PAR_LOT, titre: 'FOURNITURES À COMMANDE — consommables informatiques, 2 lots' },
   { id: 303080, cadrage: CADRAGE_QF, valeurs: VALEURS_QF, titre: 'FOURNITURES À QUANTITÉ FIXE — mobilier de bureau' },
+  // ⚠️ Le DOSSIER RÉEL, semé par `scripts/jeu-donnees-dao-2463.mjs` : MESupReS, cinq lots, à commande.
+  { id: 303089, cadrage: CADRAGE_2463, valeurs: VALEURS_2463, parLot: VALEURS_2463_PAR_LOT, titre: 'DOSSIER RÉEL — matériels informatiques MESupReS, 5 lots à commande', articles: ARTICLES_2463 },
 ].filter((j) => !SEULE || String(j.id) === SEULE);
 let ko = 0;
-for (const j of jeux) if (!(await garnir(j.id, j.cadrage, j.valeurs, j.titre, j.parLot ?? {}))) ko++;
+for (const j of jeux) if (!(await garnir(j.id, j.cadrage, j.valeurs, j.titre, j.parLot ?? {}, j.articles ?? []))) ko++;
 console.log(ko === 0 ? `\n${VIDER ? 'REMISE À ZÉRO' : 'DÉMONSTRATION'} PRÊTE` : `\n${ko} fiche(s) en échec`);
 process.exit(ko ? 1 : 0);
