@@ -36,6 +36,22 @@ Deux conséquences qui commandent tout le reste :
 | S4 | Le titre de A4 porte un **appel de note « ¹ »** — mais la page ne porte **aucune note**. Vérifié sur le texte brut, filigrane retiré. | 31 | **Gardé tel quel.** On ne complète pas la source. → **errata**. |
 | S5 | La consigne de A1-c est **tronquée** : « [Le formulaire ci-dessous doit être rempli par le] » — la phrase s'interrompt. Vérifié par le pilote en mode brut **et** en mise en page. | 25 | **Reproduite telle quelle**, et — le point important — **ce n'est pas un trou à remplir** : c'est un crochet de consigne inachevé, pas un champ. Le décalqueur ne doit pas le confondre avec les `[…]` qui, eux, sont des blancs. → **errata**. |
 
+## ⚠️ La source de travail n'est pas la copie de lecture
+
+Le texte du dossier avait été extrait en août pour être **lu** : son nettoyage jette les lignes de huit lettres
+ou moins, pour écarter les débris du filigrane. Pour un **décalque**, ce filtre est dangereux — il emporte du
+contenu réel. Vérifié en reprenant les pages 22 à 34 **sans perte** (filigrane retiré, et rien d'autre) :
+
+| page | ce que la copie de lecture avait perdu | conséquence |
+|---|---|---|
+| 30 | **« Travaux »**, **« Services »** | le tableau du chiffre d'affaires a **quatre** natures, pas deux — l'inventaire était faux |
+| 33 | **« Adresse »**, **« Date »** | le bloc de signature de C1 a **cinq** lignes, pas trois |
+| 34 | **« Date »** | idem pour C2 |
+| 28 | « Ariary » | un en-tête de tableau |
+
+Le décalque part donc de `source-modeles.txt` (pages 22-34, extraction sans perte), jamais de la copie de
+lecture. La règle vaut pour la suite : **on ne décalque pas depuis un texte filtré.**
+
 ## Les six modèles, trou par trou
 
 Légende de la colonne **rempli par** : **fiche** = la valeur vient de la fiche DAO à la génération ·
@@ -77,7 +93,8 @@ Légende de la colonne **rempli par** : **fiche** = la valeur vient de la fiche 
 | A3.3 | « Antécédents pour les **trois** dernières années » (p. 28) | **durée des antécédents financiers**, défaut **3 ans** | à créer (bloc Candidats) — cf. **N3** | **fiche** |
 | A3.4 | page 29 « Documents financiers » a) à d) | texte figé, aucun blanc | — | — |
 | A3.5 | `Exercice du......... au.........` ×3, deux tableaux (p. 30) | 6 couples de dates | — | candidat |
-| A3.6 | lignes **« Fournitures »** / **« Prestations intellectuelles »** des tableaux de chiffre d'affaires (p. 30) | ventilation du chiffre d'affaires — **travaux, fournitures, services, prestations intellectuelles**, le second tableau visant les **prestations similaires à l'objet du marché** | **type de marché** de la fiche | **fiche** |
+| A3.6 | **premier** tableau, « chiffre d'affaires hors taxes (général) » (p. 30) : lignes **Travaux · Fournitures · Services · Prestations intellectuelles · TOTAL (en Ariary)** | les **quatre** natures, toujours | — | texte figé |
+| A3.6b | **second** tableau, « prestations **similaires à celles objet du marché** » (p. 30) : au 2463, lignes **Fournitures · Services · TOTAL** | seules les natures **du marché** | **type de marché** de la fiche | **fiche** — c'est ici, et ici seulement, que N4 s'applique |
 | A3.7 | A3-c : note explicative (p. 30) | zone libre | — | candidat |
 
 ### A4 — Antécédents pour des marchés de même nature (p. 31)
@@ -99,7 +116,7 @@ Légende de la colonne **rempli par** : **fiche** = la valeur vient de la fiche 
 | C1.6 | `[montant de la garantie en chiffres et en lettres]` — **deux occurrences** | montant de la garantie **du lot** | `B05-GS-03#n` + `enLettres` | **fiche** |
 | C1.7 | **« trentième (30ème) jour »** | délai après la validité des offres | `B05-GS-04 − B04-VO-01` | **dérivé** |
 | C1.8 | **« cent cinquième (105ème) jour »** | validité de la garantie | `B05-GS-04` | **fiche** |
-| C1.9 | signature, nom de la banque, cachet | 3 champs | — | candidat |
+| C1.9 | bloc de signature — **« SIGNATURE et authentification du signataire » · « Nom de la Banque » · « Adresse » · « Date » · « Cachet de la Banque »** | 5 lignes | — | candidat |
 
 ### C2 — Caution personnelle et solidaire (p. 34)
 
@@ -114,10 +131,11 @@ Légende de la colonne **rempli par** : **fiche** = la valeur vient de la fiche 
 | C2.7 | `[insérer le montant en chiffres et en lettres de la garantie de soumission]` | montant **du lot** | `B05-GS-03#n` + `enLettres` | **fiche** |
 | C2.8 | **« trentième (30ème) »** et **« cent cinquième (105ème) »** | idem C1.7 et C1.8 | `B05-GS-04`, `B04-VO-01` | **dérivé / fiche** |
 | C2.9 | a) b) c) — les trois cas de mise en jeu | texte figé | — | — |
-| C2.10 | `Fait à [Lieu], le [date]`, signature, nom de la banque, `Adresse____`, cachet | 5 champs | — | candidat |
+| C2.10 | `Fait à [Lieu d'établissement de l'engagement], le [date d'établissement]`, puis le bloc de signature : **« SIGNATURE et authentification du signataire » · « Nom de la Banque » · `Adresse______…` · « Date » · « Cachet de la Banque »** | 7 champs | — | candidat |
 
-**Compte** : 19 trous alimentés par la fiche ou dérivés, une cinquantaine laissés au candidat.
-Les deux garanties portent à elles seules 15 des 19 — ce sont elles qui font le travail.
+**Compte** : 19 trous alimentés par la fiche ou dérivés, une soixantaine laissés au candidat (trois de plus
+depuis la relecture sans perte). Les deux garanties portent à elles seules 15 des 19 — ce sont elles qui font
+le travail.
 
 ## Six `.docx`, un par sigle — et le cartouche commun
 
