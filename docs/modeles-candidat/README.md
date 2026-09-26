@@ -95,7 +95,7 @@ Le backend les fixe ; les modèles suivront.
 | A3.9 | `[Fournir une note explicative ou tout autre document validé par le commissaire aux comptes ou à défaut par un expert comptable ou tout autre personne qualifiée]` | *inchangé* | consigne au candidat | candidat |
 | A3.10 | 4 pointillé(s) `______` | *inchangés* | blancs de l’offre | candidat |
 
-- A3-a : tableau à quatre colonnes ; « Information du bilan » et « Information des comptes de résultats » sont des lignes de sous-titre, comme la source les lit ; **trois** colonnes d’années — leur nombre suivra la durée financière (N3).
+- A3-a : tableau à quatre colonnes ; « Information du bilan » et « Information des comptes de résultats » sont des lignes de sous-titre, comme la source les lit ; **trois** colonnes d’années, **fixes en V1** — aucun jeton ne porte leur nombre (R10).
 - A3-b : deux tableaux. Le premier porte les **quatre** natures (Travaux, Fournitures, Services, Prestations intellectuelles), toujours. Le second porte les natures **du marché** — au 2463, Fournitures et Services — entre `{{SI:A3B-NATURES}}` et `{{FINSI:A3B-NATURES}}` (N4).
 - A3-c : son titre tient sur deux lignes dans la source, recollées en un paragraphe.
 
@@ -152,6 +152,11 @@ Le backend les fixe ; les modèles suivront.
 | **N3** — deux durées d'antécédents | A1 (×5 occurrences), A3 (×2) — codes proposés `B03-AJ-01`, `B03-AF-01` |
 | **N4** — deux sections conditionnelles | A1-b (`{{SI:A1B}}`, `{{A1B.mention}}`), A3-b (`{{SI:A3B-NATURES}}`) |
 | **N5** — *rien* | l'adresse existe déjà : `B01-AC-02` |
+
+## Deux précisions venues de la relecture du backend (26/09)
+
+- **A1 à A4 se produisent une fois par dossier**, pas par lot : la source ne mentionne aucun lot dans ces fiches, et un candidat qui vise deux lots ne remplit qu'une fiche d'identification. **C1 et C2 restent par lot.** À confirmer par le pilote (R11).
+- **Un jeton vide s'imprime en pointillés « ……… »**, pour que le papier reste remplissable ; `B02-OB-03` (numéro de l'AOO) devient obligatoire, pour ne jamais imprimer « — Objet… » (R1, R2).
 
 ## Constats pour l'errata, et un arbitrage
 

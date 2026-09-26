@@ -50,7 +50,7 @@ const STRUCTURE = {
     '**E7** — la même note écrit « cette preuve **peut-être** apportée » (trait d’union) pour « peut être ». Reproduite telle quelle.',
   ],
   A3: [
-    'A3-a : tableau à quatre colonnes ; « Information du bilan » et « Information des comptes de résultats » sont des lignes de sous-titre, comme la source les lit ; **trois** colonnes d’années — leur nombre suivra la durée financière (N3).',
+    'A3-a : tableau à quatre colonnes ; « Information du bilan » et « Information des comptes de résultats » sont des lignes de sous-titre, comme la source les lit ; **trois** colonnes d’années, **fixes en V1** — aucun jeton ne porte leur nombre (R10).',
     'A3-b : deux tableaux. Le premier porte les **quatre** natures (Travaux, Fournitures, Services, Prestations intellectuelles), toujours. Le second porte les natures **du marché** — au 2463, Fournitures et Services — entre `{{SI:A3B-NATURES}}` et `{{FINSI:A3B-NATURES}}` (N4).',
     'A3-c : son titre tient sur deux lignes dans la source, recollées en un paragraphe.',
   ],
