@@ -523,6 +523,45 @@ devient-il dérivé de la validité + 30 ? Le contrat ci-dessus vaut pour les de
 >
 > Rien n'est construit avant les décisions du pilote (R1, R4, R11, R12, S6).
 
+> ⚠️ **Livré le 2026-09-26 (backend, V47) — le chantier ouvert par le « oui à tout », avec ces précisions :**
+>
+> - **Fidélité vérifiée** : les six modèles rendus **bruts** par le moteur (jetons non substitués, test
+>   `ModelesCandidatRenduTest`, docx dans `PRS20/target/modeles-candidat/`) passés à
+>   `node scripts/modeles-candidat/verifier.mjs <sigle> --docx=…` : **six fois « identique »** (A1 2651 car., A2 515,
+>   A3 2190, A4 443, C1 2119, C2 2790). Le gabarit provisoire filigrané est **retiré**.
+> - **Source du rendu** : `scripts/modeles-candidat/modeles/<sigle>.txt` (commit front `59eb30c`), copiés tels quels dans
+>   `src/main/resources/modeles/candidat/`. Une évolution des modèles = recopier les six `.txt` et rejouer le test ;
+>   les `.json` (trace des jetons) ne servent qu'au comparateur.
+> - **Moteur** : liste ordonnée d'éléments (`DocumentLibre`), paragraphes `TITRE`/`SOUS_TITRE`/`PARA`/`CENTRE`/`DROITE`/`VIDE`
+>   et tableaux à cellules multi-paragraphes, POI (docx) + OpenPDF (pdf), sans dépendance nouvelle. **Le docx et le pdf
+>   portent le pied de page de la version** (plan, ligne, version, date) — hors du corps, donc hors du comparateur.
+>   Ni filigrane ni numérotation automatique : « Page [numéro de la page] de [nombre total de pages] pages » reste le
+>   blanc de la source, au candidat.
+> - **Formats des jetons** : `{{CODE}}` montant « 1 600 000 Ariary », date « JJ/MM/AAAA », Oui/Non, liste à choix
+>   multiples jointe par des virgules ; `{{CODE.lettres}}` « un million six cent mille ariary » pour un montant,
+>   « cinq » pour un nombre ; `{{CODE.doublet}}` « cent cinquième (105ème) », « premier (1er) » — le féminin
+>   « première (1re) » existe (N1, précaution). Les 14 vecteurs de la demande sont testés.
+> - **N2** : `{{DERIVE.delai-garantie.doublet}}` = `B05-GS-04 − B04-VO-01` (pointillés si l'un manque ou si la
+>   différence n'est pas positive) ; `{{DERIVE.fin-validite-offre}}` = `B04-LR-03 + B04-VO-01` jours. Calculés à chaque
+>   génération, jamais stockés.
+> - **N3** : `B03-CQ-09` / `B03-CQ-10` créés (NOMBRE, obligatoires, trois catégories, trois formes, `valeurDefaut` 5 et 3).
+>   **`valeurDefaut`** : attribut du champ, servi au référentiel (`ChampFicheMarcheDto.valeurDefaut`), colonne à l'import
+>   (absent = inchangé, vide = effacé), API d'administration (400 hors source `SAISIE`) ; **recopié à la création de la
+>   fiche** (premier enregistrement — la fiche « virtuelle » servie avant tout enregistrement ne le montre pas encore).
+>   Les fiches déjà créées ne le reçoivent pas : le bilan exige la saisie.
+> - **N4** : `{{A1B.mention}}` et `{{SI:A1B}}`…`{{FINSI:A1B}}` sur le cadrage `groupement` ; `{{SI:A3B-NATURES}}` régénéré
+>   par catégorie (fournitures et services → Fournitures, Services ; travaux → Travaux ; PI → Prestations
+>   intellectuelles). Marqueurs jamais imprimés ; mention vide → paragraphe retiré.
+> - **R1 / R4 élargis d'un champ** : `B02-OB-03` (numéro de l'AOO) n'existait qu'en fournitures — il est **ouvert aux
+>   trois catégories** comme `B03-CQ-01`, puisque A1 à A4 et C1/C2 le portent pour tout appel d'offres. Le fichier des
+>   fournitures gagne deux colonnes (`categories`, `valeurDefaut`) ; base déjà chargée :
+>   `PRS20/docs/referentiel/2026-09-26-modeles-officiels-candidat.sql`, après V47.
+> - ⚠️ **Limite à décider** : les jetons portent les **codes du référentiel des fournitures**. En travaux et en
+>   prestations intellectuelles, la garantie de soumission a d'autres codes (`B05-GQ-03` montant, `B04-DV-01` validité
+>   des offres, `B04-OV-02` remise des offres) : C1 / C2 y impriment des **pointillés** à ces blancs, tant qu'un alias
+>   de jeton par catégorie n'est pas contractualisé. A1 à A4 y sont complets (`B02-OB-03`, `B03-CQ-01`, `-09`, `-10`
+>   des trois catégories).
+
 ### N1 — ce que le formateur doit rendre
 
 Le comportement attendu, éprouvable ligne à ligne :
