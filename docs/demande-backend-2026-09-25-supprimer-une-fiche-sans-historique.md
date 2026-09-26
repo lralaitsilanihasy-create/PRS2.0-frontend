@@ -47,6 +47,22 @@ servirez).
 Les codes 409 nous importent plus que le message : l'écran dira « cette fiche a déjà produit des documents, elle ne
 se supprime plus » avec le mot juste, sans réimplémenter la règle.
 
+> ⚠️ **Livré le 2026-09-26 (backend)** — **`DELETE /api/fiches-marche/{idDmc}`** → **204** (`DELETE /api/dmcs/{id}`
+> reste 405). Les cinq conditions et leurs codes tels que demandés, avec ces précisions :
+>
+> - **Profils** : PRMP propriétaire **et son UGPM** (le périmètre du plan en décide, comme pour l'écriture de la fiche) ;
+>   Administrateur et contrôleurs → 403. Mandat actif exigé (409 `VACANCE_PRMP`), comme toute écriture de la fiche.
+> - **Ordre des refus** : 403 profil, 404 DMC inconnu, 403 hors périmètre, 409 `DMC_NON_DAO`, 409 `VACANCE_PRMP`, puis
+>   `FICHE_VALIDEE` (dernière version validée) → `FICHE_AVEC_HISTORIQUE` (révision ouverte sur une version validée) →
+>   `FICHE_AVEC_DOCUMENTS` → `FICHE_AVEC_DOSSIER` (avec `idDossier`). Comme un dossier ne reçoit qu'une fiche validée
+>   et que seule une validation produit des documents, les deux derniers codes sont des défenses : en pratique, l'écran
+>   rencontrera `FICHE_VALIDEE` et `FICHE_AVEC_HISTORIQUE`.
+> - **Effets** : DMC, versions, valeurs **et besoin** (articles, caractéristiques) effacés ; la ligne redevient
+>   préparable ; `GET /api/fiches-marche/{idDmc}` → 404. Une fiche **jamais enregistrée** (DMC seul, fiche virtuelle)
+>   se supprime de même. La forme et la catégorie de la ligne n'y font rien : une fiche devenue non outillée se supprime
+>   aussi.
+> - **Journal du plan** : `FICHE_MARCHE_SUPPRIMEE`, « DAO de la ligne 303069 (DMC 5) supprimé, sans historique ».
+
 ## B2 — Et une fiche qui a de l'histoire ?
 
 Nous ne demandons **pas** de la supprimer : une version figée et ses documents sont des enregistrements. Mais la
@@ -62,6 +78,13 @@ Deux pistes, à trancher par vous — c'est une règle de gestion, pas une préf
 
 Si c'est la 2, dites-le : nous l'écrirons à l'écran au lieu de le laisser deviner. Si c'est la 1, elle appelle son
 propre lot.
+
+> ⚠️ **Réponse du backend (2026-09-26) : la piste 2, à confirmer par le pilote.** Une version validée est un acte — la
+> même règle a été tenue pour les formulaires du candidat (« une version validée n'est jamais convertie ») — et la
+> **révision** est le geste prévu pour la corriger. Une ligne dont la fiche est validée n'a pas à être re-préparée :
+> l'écran peut l'écrire tel quel (« cette fiche est validée : ouvrez une révision pour la corriger »). Si le pilote
+> préfère l'abandon (piste 1), c'est un lot à part : un statut `ABANDONNEE`, la fiche conservée et lisible, la ligne
+> rouverte — et la question de ce que devient un dossier déjà rattaché.
 
 ## Ce que le front fera
 
