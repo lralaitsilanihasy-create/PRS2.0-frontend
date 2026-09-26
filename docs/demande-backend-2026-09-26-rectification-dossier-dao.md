@@ -88,9 +88,20 @@ nouveau dossier, jamais un ré-import. Le dossier garde sa référence, son circ
 - C5 la consultation de la lettre de renvoi (B6).
 - Rien n'est codé contre un contrat non servi : C2 et l'aiguillage de C1 partent sans attendre, le reste suit.
 
-## Questions posées au pilote (plan, §5) — à reprendre ici si la réponse change le contrat
-Q2 remplacement automatique des pièces produites (B2) ; Q3 fiche verrouillée pendant l'examen (B1) ; Q4 tous
-les points réévalués (B5).
+> ✅ **Fait côté front le 2026-09-26 (C1 et C2 complets, sur les endpoints existants).** `prmp/rectifier-dossier-dao`
+> (trois étapes, « Décrire et resoumettre » sur `POST /resoumettre`), aiguillage depuis « Dossiers à rectifier » et
+> « Suivi des délais » sur `idDmc` ; la fiche s'ouvre sur l'information visée (`?champ=`, `?reviser`) avec les
+> observations du PV en marge. Recette réelle sur le dossier 100353 : révision v2, resoumission acceptée, dossier
+> `EN_VERIFICATION`. **Deux repli en attendant B1 et B3** : la version examinée est reconnue par les documents que le
+> dossier porte (`idDocumentFiche` ∈ documents de la version n — le résumé `ficheMarche.version` suit déjà la dernière
+> version validée, il ne peut pas servir) ; la resoumission n'est fermée que par l'écran. **C3 attend B4**
+> (`valeurChampFicheActuelle` : non servi à ce jour), **C4 attend B5**, **C5 attend B6**.
+
+## Questions posées au pilote (plan, §5)
+> ✅ **Tranchées le 26/09** : Q2 remplacement automatique des pièces produites (B2 telle quelle) ; Q3 fiche
+> verrouillée pendant l'examen (B1 telle quelle) ; Q4 tous les points réévalués, changements mis en évidence (B5
+> telle quelle). Le contrat ci-dessus est donc **ferme** ; l'ordre de livraison souhaité : B1, B2, B3 et B4 d'abord
+> (chemin FAVR), B5 et B6 ensuite.
 
 ## Ce que le backend rend
 
