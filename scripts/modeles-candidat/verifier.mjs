@@ -50,16 +50,23 @@ function rejouer(texte, source, jeton) {
  */
 const args = process.argv.slice(2);
 const autreDocx = (args.find((a) => a.startsWith('--docx=')) ?? '').slice('--docx='.length) || null;
+/** `--dossier=<répertoire>` : les six rendus du serveur d'un coup, nommés `<sigle>.docx` — la recette de (c). */
+const dossier = (args.find((a) => a.startsWith('--dossier=')) ?? '').slice('--dossier='.length) || null;
 const sigles = args.filter((a) => !a.startsWith('--'));
 if (autreDocx && sigles.length !== 1) {
-  console.error('--docx= vaut pour un seul sigle');
+  console.error('--docx= vaut pour un seul sigle ; pour plusieurs, --dossier=');
   process.exit(2);
 }
 
 let ecarts = 0;
 for (const sigle of sigles) {
   const desc = JSON.parse(fs.readFileSync(`modeles/${sigle}.json`, 'utf8'));
-  const fichier = autreDocx ?? `modeles-docx/${desc.fichier}`;
+  const fichier = autreDocx ?? (dossier ? `${dossier.replace(/[\\/]+$/, '')}/${sigle}.docx` : `modeles-docx/${desc.fichier}`);
+  if (!fs.existsSync(fichier)) {
+    ecarts++;
+    console.log(`${sigle} — ABSENT : ${fichier}`);
+    continue;
+  }
   let produit = execFileSync('java', ['-cp', CP, 'LireDocx', fichier], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   for (const a of desc.ajouts ?? []) produit = produit.split(a).join('');
 
@@ -68,7 +75,7 @@ for (const sigle of sigles) {
 
   const a = normaliser(attendu);
   const b = normaliser(produit);
-  const quoi = autreDocx ? ` [${autreDocx}]` : '';
+  const quoi = autreDocx || dossier ? ` [${fichier}]` : '';
   if (a === b) {
     console.log(`${sigle} (p. ${desc.pages.join('-')})${quoi} — identique · ${a.length} car.`);
     continue;

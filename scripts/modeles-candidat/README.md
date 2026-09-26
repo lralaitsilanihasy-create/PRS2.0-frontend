@@ -34,11 +34,13 @@ Le comparateur sait juger **n'importe quel** `.docx`, pas seulement le décalque
 mode « modèle » (jetons non substitués), il doit dire exactement le même texte que le dossier.
 
 ```
-node verifier.mjs C1 --docx=C:/chemin/vers/C1-produit-par-le-serveur.docx
+node verifier.mjs C1 --docx=C:/chemin/vers/C1-produit-par-le-serveur.docx        # un fichier
+node verifier.mjs A1 A2 A3 A4 C1 C2 --dossier=C:/chemin/vers/les-rendus           # les six, nommés <sigle>.docx
 ```
 
-Un sigle à la fois ; la sortie nomme le fichier vérifié ; code 1 au premier écart. C'est ce qui prouve que le moteur
-et le décalque disent la même chose — sans quoi (c) ne serait qu'une promesse.
+La sortie nomme chaque fichier vérifié ; un fichier absent compte comme un écart ; code 1 au premier écart. C'est ce
+qui prouve que le moteur et le décalque disent la même chose — sans quoi (c) ne serait qu'une promesse. **C'est la
+recette de (c)** : six rendus du serveur à jetons non substitués, six fois « identique ».
 
 ## Les règles que la chaîne fait tenir
 
