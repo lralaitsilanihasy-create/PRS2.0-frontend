@@ -315,11 +315,23 @@
                       @if (r.documentMaitre; as dm) { <span class="fm__doc fm__doc--{{ doc(dm).toLowerCase() }}">{{ libellesDocuments[doc(dm)] }}</span> }
                     </h3>
                     @for (c of champs(bloc, r); track c.code) {
-                      <div class="fm__champ" [class.fm__champ--ko]="champEnErreur(c)">
+                      <div class="fm__champ" [class.fm__champ--ko]="champEnErreur(c)" [class.fm__champ--observe]="obsDe(c).length > 0" [class.fm__champ--visee]="estVisee(c)">
                         <div class="fm__champ-l">
                           <label [for]="'c-' + cle(c, lotsDe(c)[0])">{{ c.libelle }}@if (c.obligatoire) { <span aria-hidden="true"> *</span> }</label>
                           <span class="fm__champ-aide">{{ c.code }}@if (c.aide) { · {{ c.aide }} }</span>
                           @if (erreurDe(c.code); as msg) { <span class="form-error">{{ msg }}</span> }
+                          <!-- ⚠️ Lot C2 — l'observation du PV qui vise cette information, en marge : la PRMP corrige à l'endroit exact. -->
+                          @for (o of obsDe(c); track o.idObservationPv) {
+                            <div class="fm__obs" [class.fm__obs--levee]="o.statut === 'LEVEE'" [class.fm__obs--maintenue]="o.statut === 'MAINTENUE'">
+                              <span class="fm__obs-t">Observation du PV{{ o.lot ? ' — lot ' + o.lot : '' }} · {{ statutObs(o) }}</span>
+                              @if (correction(o); as corr) {
+                                <span class="fm__obs-c">Au lieu de « {{ corr.auLieuDe }} », lire « {{ corr.lire }} »</span>
+                              } @else {
+                                <span class="fm__obs-c">{{ o.libelle }}</span>
+                              }
+                              @if (o.precision) { <span class="fm__obs-p">Vérificateur : « {{ o.precision }} »</span> }
+                            </div>
+                          }
                         </div>
                         <div class="fm__champ-v fm__champ-v--{{ largeur(c.type) }}">
                           @if (c.source === 'PPM' || c.source === 'CADRAGE' || figee() || enLecture()) {

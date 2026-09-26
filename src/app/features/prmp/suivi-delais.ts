@@ -106,7 +106,8 @@ import { DossiersRefreshStore } from './dossiers-refresh.store';
                   <td>
                     <div class="td-actions actions-end">
                       @if (estPrmp() && d.statut === 'EN_ATTENTE_DECISION_PRMP') {
-                        <a class="btn btn-primary btn-sm" [routerLink]="['/prmp/rectifier', d.idDossier]" [queryParams]="{ returnUrl: '/prmp/tableau-de-bord' }">Rectifier</a>
+                        <!-- Lot C1 (26/09) — un dossier DAO (idDmc) se rectifie par la révision de sa fiche : écran propre. -->
+                        <a class="btn btn-primary btn-sm" [routerLink]="[d.idDmc != null ? '/prmp/rectifier-dao' : '/prmp/rectifier', d.idDossier]" [queryParams]="{ returnUrl: '/prmp/tableau-de-bord' }">Rectifier</a>
                       }
                       @if (estPrmp() && d.statut === 'BROUILLON') {
                         <button

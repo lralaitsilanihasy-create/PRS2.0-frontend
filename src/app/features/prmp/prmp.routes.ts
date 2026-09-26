@@ -37,6 +37,8 @@ export const PRMP_ROUTES: Routes = [
   { path: 'a-rectifier', loadComponent: () => import('./dossiers-a-rectifier').then((m) => m.DossiersARectifier) },
   // Formulaire restreint de rectification en place (en-tête PPM + lignes marché) ; returnUrl en query param.
   { path: 'rectifier/:idDossier', loadComponent: () => import('./rectifier-dossier').then((m) => m.RectifierDossier) },
+  // ⚠️ Lot C1 (26/09) — un dossier DAO se rectifie par la révision de sa fiche, pas par le ré-import d'un plan.
+  { path: 'rectifier-dao/:idDossier', loadComponent: () => import('./rectifier-dossier-dao').then((m) => m.RectifierDossierDao), data: { title: 'Rectifier un dossier DAO' } },
   { path: 'dossiers-verifies', loadComponent: () => import('../circuit/dossiers-clotures').then((m) => m.DossiersClotures), data: { title: 'Dossiers vérifiés', source: 'prmp-clotures' } },
   { path: 'ppm', loadComponent: () => import('../../shared/crud/crud-page').then((m) => m.CrudPage), data: { crud: PPM_CONFIG } },
   { path: 'soumettre-dossier', loadComponent: () => import('./soumettre-dossier').then((m) => m.SoumettreDossier) },

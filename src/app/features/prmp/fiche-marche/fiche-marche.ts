@@ -9,8 +9,10 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, TypeChamp, FicheMarche, LigneEligible, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, TypeChamp, FicheMarche, LigneEligible, ObservationPv, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
+import { ObservationPvService } from '../../../services/circuit.services';
+import { decomposerObservation } from '../../../shared/circuit/observation-pv-card';
 import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { FicheBesoin } from './fiche-besoin';
@@ -104,6 +106,7 @@ export class FicheMarcheEcran {
   private readonly champService = inject(ChampFicheMarcheService);
   private readonly dmcService = inject(DmcService);
   private readonly ficheService = inject(FicheMarcheService);
+  private readonly obsService = inject(ObservationPvService);
 
   readonly etapes = ETAPES_FICHE;
   readonly libellesDocuments = LIBELLES_DOCUMENTS;
@@ -131,11 +134,36 @@ export class FicheMarcheEcran {
 
   /** `null` = `/prmp/dao` : choix de la ligne du PPM. */
   readonly idDmc = toSignal(this.route.paramMap.pipe(map((p) => (p.get('idDmc') ? Number(p.get('idDmc')) : null))), { initialValue: null as number | null });
-  /** Raccourci H3 depuis « Mes PPM & marchés » : `?dossier=` restreint le choix à un PPM, `?ligne=` ouvre la ligne d'emblée. */
+  /**
+   * Raccourci H3 depuis « Mes PPM & marchés » : `?dossier=` restreint le choix à un PPM, `?ligne=` ouvre la ligne d'emblée.
+   * ⚠️ Lot C2 (26/09) — depuis « Rectifier un dossier DAO » : `?champ=B05-GS-03%232` ouvre la fiche SUR l'information
+   * visée par une observation du PV (bloc, cellule, défilement), `?reviser` ouvre d'abord la révision si la fiche est figée.
+   */
   private readonly raccourci = toSignal(
-    this.route.queryParamMap.pipe(map((q) => ({ dossier: q.get('dossier') ? Number(q.get('dossier')) : null, ligne: q.get('ligne') ? Number(q.get('ligne')) : null }))),
-    { initialValue: { dossier: null as number | null, ligne: null as number | null } },
+    this.route.queryParamMap.pipe(map((q) => ({
+      dossier: q.get('dossier') ? Number(q.get('dossier')) : null,
+      ligne: q.get('ligne') ? Number(q.get('ligne')) : null,
+      champ: q.get('champ')?.toUpperCase() || null,
+      reviser: q.has('reviser'),
+    }))),
+    { initialValue: { dossier: null as number | null, ligne: null as number | null, champ: null as string | null, reviser: false } },
   );
+  /** L'information que l'écran a été ouvert pour montrer (`?champ=`) : sa cellule est mise en évidence. */
+  readonly visee = signal<string | null>(null);
+  /**
+   * ⚠️ Lot C2 — les observations du PV du dossier soumis, LUES en marge des cellules qu'elles visent (`champFiche`),
+   * pour que la PRMP corrige à l'endroit exact. Le périmètre est figé : rien ne s'écrit ici.
+   */
+  readonly observationsPv = signal<ObservationPv[]>([]);
+  private readonly obsParCode = computed(() => {
+    const m = new Map<string, ObservationPv[]>();
+    for (const o of this.observationsPv()) {
+      if (!o.champFiche) continue;
+      const code = o.champFiche.split('#')[0].toUpperCase();
+      m.set(code, [...(m.get(code) ?? []), o]);
+    }
+    return m;
+  });
   readonly filtreDossier = computed(() => this.raccourci().dossier);
 
   readonly loading = signal(true);
@@ -414,6 +442,8 @@ export class FicheMarcheEcran {
         this.imposerAllotissement();
         this.chargerVersionPrecedente(fiche);
         this.etape.set(fiche.statut === 'VALIDEE' ? 5 : cadrageComplet({ ...fiche.cadrage, typeMarche: fiche.typeMarche, categorie: fiche.categorie ?? null }) ? 2 : 1);
+        this.chargerObservationsPv(fiche);
+        this.ouvrirCible(fiche);
       } else {
         this.etape.set(1);
       }
@@ -807,6 +837,49 @@ export class FicheMarcheEcran {
     });
   }
 
+  /** Les observations du PV visant cette information (tous lots) — vide sans dossier soumis. */
+  obsDe(champ: ChampFiche): ObservationPv[] {
+    return this.obsParCode().get(champ.code) ?? [];
+  }
+  estVisee(champ: ChampFiche): boolean {
+    return (this.visee()?.split('#')[0] ?? null) === champ.code;
+  }
+  statutObs(o: ObservationPv): string {
+    return o.statut === 'LEVEE' ? 'levée' : o.statut === 'MAINTENUE' ? 'maintenue' : 'émise';
+  }
+  correction(o: ObservationPv): { auLieuDe: string; lire: string } | null {
+    const p = decomposerObservation(o.libelle ?? '');
+    return p.auLieuDe !== null ? { auLieuDe: p.auLieuDe, lire: p.lire ?? '' } : null;
+  }
+  private chargerObservationsPv(fiche: FicheMarche): void {
+    const id = fiche.idDossierSoumis;
+    if (id == null) { this.observationsPv.set([]); return; }
+    this.obsService.parDossier(id).pipe(catchError(() => of([] as ObservationPv[]))).subscribe((o) => this.observationsPv.set(o));
+  }
+  /**
+   * `?champ=` : va au bloc de l'information, la met en évidence et y défile ; avec `?reviser`, ouvre d'abord la
+   * révision d'une fiche figée (la PRMP arrive de « Rectifier » : elle vient corriger, pas relire).
+   */
+  private ouvrirCible(fiche: FicheMarche): void {
+    const cle = this.raccourci().champ;
+    if (!cle) return;
+    if (this.raccourci().reviser && fiche.statut === 'VALIDEE' && this.estPrmp()) this.reviser(() => this.allerCellule(cle));
+    else this.allerCellule(cle);
+  }
+  private allerCellule(cle: string): void {
+    const code = cle.split('#')[0];
+    const idx = this.blocs().findIndex((b) => b.code === code.slice(0, 3));
+    if (idx < 0) return;
+    this.visee.set(cle);
+    this.etape.set(2);
+    this.blocIdx.set(idx);
+    setTimeout(() => {
+      const el = document.getElementById('c-' + cle) ?? document.getElementById('c-' + code);
+      el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      if (el instanceof HTMLElement) el.focus({ preventScroll: true });
+    }, 250);
+  }
+
   aide(champ: ChampFiche, lot: number | null = null): string | null {
     const v = this.aides().get(this.cle(champ, lot));
     return v == null ? null : String(v);
@@ -856,7 +929,7 @@ export class FicheMarcheEcran {
     }
   }
 
-  reviser(): void {
+  reviser(apres?: () => void): void {
     const id = this.idDmc();
     if (id == null || this.saving()) return;
     this.saving.set(true);
@@ -867,6 +940,7 @@ export class FicheMarcheEcran {
         this.chargerVersionPrecedente(f);
         this.etape.set(2);
         this.blocIdx.set(0);
+        apres?.();
       },
       error: () => this.saving.set(false),
     });

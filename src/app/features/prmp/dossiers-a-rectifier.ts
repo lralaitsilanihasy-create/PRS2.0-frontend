@@ -162,7 +162,9 @@ export class DossiersARectifier {
    * de l'import là-bas qui posera le drapeau « rectifié » — pas le simple aller-retour.
    */
   modifierDossier(c: CarteRectif): void {
-    this.router.navigate(['/prmp/rectifier', c.dossier.idDossier], {
+    // ⚠️ Lot C1 (26/09) — un dossier DAO (il porte sa fiche, `idDmc`) se rectifie par une RÉVISION de la fiche,
+    // jamais par le ré-import d'un plan : il a son propre écran.
+    this.router.navigate([c.dossier.idDmc != null ? '/prmp/rectifier-dao' : '/prmp/rectifier', c.dossier.idDossier], {
       queryParams: { returnUrl: '/prmp/a-rectifier' },
     });
   }

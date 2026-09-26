@@ -59,6 +59,14 @@
 @media (max-width: 1250px) { .fm__champ { grid-template-columns: 1fr; } .fm__champ-v--long, .fm__champ-v--moyen { max-width: none; } }
 .fm__champ:first-of-type { border-top: 0; }
 .fm__champ--ko .form-control { border-color: var(--danger-text, #b91c1c); }
+/* Lot C2 — l'information visée par une observation du PV, et celle que l'écran a été ouvert pour montrer. */
+.fm__champ--observe { background: #fffbeb; }
+.fm__champ--visee { outline: 2px solid var(--p-600); outline-offset: 3px; border-radius: 6px; }
+.fm__obs { margin-top: 0.35rem; padding: 0.3rem 0.5rem; border-left: 3px solid var(--warning-text); background: var(--warning-bg); font-size: 0.78rem; color: var(--n-700); }
+.fm__obs--levee { border-left-color: #16a34a; background: #f0fdf4; }
+.fm__obs-t { display: block; font-weight: 700; }
+.fm__obs-c, .fm__obs-p { display: block; overflow-wrap: anywhere; }
+.fm__obs-p { color: var(--warning-text); }
 .fm__opt-l { font-weight: 600; font-size: 0.86rem; }
 .fm__champ-l label, .fm__champ-t { font-weight: 600; font-size: 0.86rem; display: block; }
 .fm__champ-aide, .fm__lettres, .fm__aut { font-size: 0.76rem; color: var(--n-500); }
