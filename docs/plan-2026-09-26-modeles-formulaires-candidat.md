@@ -1,6 +1,6 @@
 # Plan — reconstituer les modèles A1 à A4 et C1/C2 du candidat
 
-*26/09/2026. Source officielle arrêtée par le pilote : le dossier d'appel d'offres*
+*26/09/2026, **décisions du pilote intégrées le soir même**. Source officielle : le dossier d'appel d'offres*
 *`AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026`, **pages 20 à 34** (`NatureMarches/DAO_Fournitures/Fourniture_a_commande.pdf`).*
 *À relire avant toute mise en production.*
 
@@ -26,14 +26,15 @@ Deux conséquences qui commandent tout le reste :
 | **produits** | un `.docx` par sigle (6 fichiers), un tableau de correspondance par modèle, un rapport de fidélité |
 | **hors périmètre** | le remplissage lui-même (backend), la mise en production (après votre relecture) |
 
-## Quatre écarts trouvés **dans la source** — à trancher avant de décalquer
+## Cinq écarts trouvés **dans la source** — **tranchés le 26/09**
 
-| # | constat | page | ce que je propose |
+| # | constat | page | décision |
 |---|---|---|---|
-| S1 | Le sommaire de la partie (p. 21) nomme les garanties **`B1` / `B2`** ; le sommaire du dossier (p. 2) et les modèles eux-mêmes (p. 33, 34) les nomment **`C1` / `C2`**. Le dossier se contredit. | 21 vs 2, 33, 34 | garder **`C1` / `C2`** — deux occurrences sur trois, et ce sont les titres portés par les modèles. L'écart est noté au rapport de fidélité, il n'est pas corrigé dans le décalque de la page 21. |
-| S2 | La page 22 porte une **« Note aux Utilisateurs »** entre chevrons `<…>` : elle s'adresse à l'acheteur (« l'obligation… peut être réduite en fonction du montant »), pas au candidat. | 22 | **ne pas** la mettre dans le modèle A1 : elle appartient à la page de section du DAO, pas à la fiche que le candidat remplit. À confirmer par vous. |
-| S3 | A1-b porte la mention **« (non applicable) »** : c'est la réponse du **2463**, pas le modèle. Le cadrage de la fiche porte déjà `groupement = NON`. | 24 | faire de A1-b une section **conditionnée par le cadrage** : « (non applicable) » quand `groupement = NON`, le formulaire complet sinon. La mention devient donc un champ, pas un texte figé. |
-| S4 | Le titre de A4 porte un **appel de note « ¹ »** — mais la page ne porte **aucune note** : après « Date de fin : `_____` » il n'y a plus que le filigrane. Vérifié sur le texte brut de la page, filigrane retiré. | 31 | garder l'appel **tel quel** (on ne complète rien) et le signaler au rapport de fidélité. Le supprimer serait une correction — c'est à vous de la demander. |
+| S1 | Le sommaire de la partie (p. 21) nomme les garanties **`B1` / `B2`** ; le sommaire du dossier (p. 2) et les modèles eux-mêmes (p. 33, 34) les nomment **`C1` / `C2`**. Le dossier se contredit. | 21 vs 2-4, 32, 33, 34 | **`C1` / `C2`.** Raison décisive relevée par le pilote : le sommaire général numérote **trois** familles — **A** fiches de renseignements, **B** attestation du fabriquant (« Non utilisé »), **C** garanties. **La lettre B est prise** ; le « B– MODELE DE GARANTIE » de la p. 21 est un vestige. Titres repris **des modèles eux-mêmes**, pas de la forme abrégée du sommaire : « C 1. Modèle de garantie bancaire de soumission » et « C 2. Modèle de caution personnelle et solidaire de soumission ». L'écart de la p. 21 est inscrit au tableau de correspondance comme **écart assumé, avec son motif** — le comparateur ne bloque pas, la trace reste. |
+| S2 | La page 22 porte une **« Note aux Utilisateurs »** entre chevrons `<…>` : elle s'adresse à l'acheteur, pas au candidat. | 22 | **Hors du modèle A1 — mais son contenu n'est pas perdu.** C'est une **règle de cadrage** : l'obligation de remplir les fiches de capacités techniques ou financières peut être réduite selon le montant du marché, ou lorsque des communautés et des ONG sont susceptibles de candidater. Elle devient une **nouvelle question de cadrage — « quelles fiches de renseignements sont exigées ? »** — qui commande la **présence même de A2 et A3** dans le dossier généré. Le texte de la note devient l'**aide contextuelle** de cette question. |
+| S3 | A1-b porte la mention **« (non applicable) »** : c'est la réponse du **2463**, pas le modèle. | 24 | **Conditionnée au cadrage `groupement`**, sur la **valeur existante** (non autorisé · conjoint ou solidaire · obligatoirement solidaire) — **pas** sur un booléen créé pour l'occasion. Comportement exact, tel que le 2463 le montre : **le titre est conservé**, la mention « (non applicable) » vient **sous le titre**, et les champs sont **omis**. À l'écran, la section est **masquée**. |
+| S4 | Le titre de A4 porte un **appel de note « ¹ »** — mais la page ne porte **aucune note**. Vérifié sur le texte brut, filigrane retiré. | 31 | **Gardé tel quel.** On ne complète pas la source. → **errata**. |
+| S5 | La consigne de A1-c est **tronquée** : « [Le formulaire ci-dessous doit être rempli par le] » — la phrase s'interrompt. Vérifié par le pilote en mode brut **et** en mise en page. | 25 | **Reproduite telle quelle**, et — le point important — **ce n'est pas un trou à remplir** : c'est un crochet de consigne inachevé, pas un champ. Le décalqueur ne doit pas le confondre avec les `[…]` qui, eux, sont des blancs. → **errata**. |
 
 ## Les six modèles, trou par trou
 
@@ -54,7 +55,7 @@ Légende de la colonne **rempli par** : **fiche** = la valeur vient de la fiche 
 | A1.8 | **« (non applicable) »** (p. 24) | section A1-b | cadrage `groupement` | **fiche** (cf. S3) |
 | A1.9 | membres du groupement, nature, date de constitution, adresse, chef de file (nom, adresse, télécopie, adresse électronique), statuts `_______` ×2 (p. 24) | 9 champs | — | candidat |
 | A1.10 | nom légal du candidat, date, `N° d'appel d'offres et titre` (p. 25) | 3 champs | `B02-OB-03` + `B02-OB-01` pour le 3ᵉ | mixte |
-| A1.11 | **« pendant la période de [nombre d'années] ans »** ×2 (p. 25) | durée des antécédents | **aucun champ n'existe** | à créer — cf. **N3** |
+| A1.11 | **« pendant la période de [nombre d'années] ans »** ×2 (p. 25) | **durée des antécédents juridiques**, défaut **5 ans** | à créer (bloc Candidats) — cf. **N3** | **fiche** |
 | A1.12 | tableaux « marchés non exécutés » et « litiges en instance » : année, fraction, identification, montant, autorité contractante, motif (p. 25) | 2 tableaux, 4 lignes vides | — | candidat |
 
 ### A2 — Capacités techniques (p. 26-27)
@@ -73,10 +74,10 @@ Légende de la colonne **rempli par** : **fiche** = la valeur vient de la fiche 
 |---|---|---|---|---|
 | A3.1 | nom, date, `No. d'appel d'offres et titre`, pagination (p. 28 et p. 30) | 4 champs ×2 fiches | `B02-OB-03` + `B02-OB-01` | mixte |
 | A3.2 | tableau « Renseignements financiers », **trois** années : total actif, total passif, patrimoine net, disponibilités, engagements, recettes totales, bénéfices avant impôts (p. 28) | 7 lignes × 3 colonnes | — | candidat |
-| A3.3 | « Antécédents pour les **trois** dernières années » (p. 28) | nombre d'exercices | **aucun champ** | à créer — cf. **N3** |
+| A3.3 | « Antécédents pour les **trois** dernières années » (p. 28) | **durée des antécédents financiers**, défaut **3 ans** | à créer (bloc Candidats) — cf. **N3** | **fiche** |
 | A3.4 | page 29 « Documents financiers » a) à d) | texte figé, aucun blanc | — | — |
 | A3.5 | `Exercice du......... au.........` ×3, deux tableaux (p. 30) | 6 couples de dates | — | candidat |
-| A3.6 | lignes **« Fournitures »** / **« Prestations intellectuelles »** des tableaux de chiffre d'affaires (p. 30) | intitulés de ligne | **catégorie de la fiche** | **fiche** — un DAO de travaux ne demande pas un chiffre d'affaires de fournitures |
+| A3.6 | lignes **« Fournitures »** / **« Prestations intellectuelles »** des tableaux de chiffre d'affaires (p. 30) | ventilation du chiffre d'affaires — **travaux, fournitures, services, prestations intellectuelles**, le second tableau visant les **prestations similaires à l'objet du marché** | **type de marché** de la fiche | **fiche** |
 | A3.7 | A3-c : note explicative (p. 30) | zone libre | — | candidat |
 
 ### A4 — Antécédents pour des marchés de même nature (p. 31)
@@ -118,15 +119,102 @@ Légende de la colonne **rempli par** : **fiche** = la valeur vient de la fiche 
 **Compte** : 19 trous alimentés par la fiche ou dérivés, une cinquantaine laissés au candidat.
 Les deux garanties portent à elles seules 15 des 19 — ce sont elles qui font le travail.
 
+## Six `.docx`, un par sigle — et le cartouche commun
+
+**Tranché le 26/09 : un fichier par sigle** (A1, A2, A3, A4, C1, C2). La source traite A1 comme **une** fiche à
+trois volets a/b/c, et A3 de même : la découper en neuf serait un remodelage, pas un décalque.
+
+Chaque volet reste néanmoins **identifiable** — section propre, **ancre stable**, entrée distincte au tableau de
+correspondance. Le rendu en neuf fichiers devient alors une **option de sortie**, pas une refonte.
+
+> **Le critère qui ferait basculer vers un fichier séparé** : une fiche qui **part seule**, signée par un tiers.
+> C'est le cas des deux garanties, émises par la banque — et elles sont déjà séparées.
+
+**Le cartouche est commun.** Cinq volets répètent le même en-tête (p. 23, 25, 28, 30, 31) :
+
+| ligne du cartouche | rempli par |
+|---|---|
+| nom ou raison sociale du candidat | candidat |
+| date | candidat |
+| **n° d'appel d'offres et titre** | **fiche** — `B02-OB-03` + `B02-OB-01` |
+| `Page x de y` | pagination du document généré |
+
+Il est traité comme un **en-tête réutilisable** : écrit une fois, référencé cinq fois. Une correction s'y fait
+en un endroit, et les cinq volets suivent.
+
 ## Ce que le backend doit livrer en plus (§B8 de la demande, mis à jour)
 
 | # | besoin | pourquoi |
 |---|---|---|
-| **N1** | **Les ordinaux en toutes lettres** : « trentième (30ème) », « cent cinquième (105ème) ». `NombreEnLettres` produit aujourd'hui des **cardinaux** (« cent cinq »). | Les deux garanties les écrivent deux fois chacune. Sans ordinal, le modèle ment ou reste figé au 2463. |
-| **N2** | **Deux dates dérivées** : fin de validité de l'offre (`B04-LR-03 + B04-VO-01` jours) et délai de garantie (`B05-GS-04 − B04-VO-01`). | Elles ne sont saisies nulle part, et le candidat ne doit pas les calculer. |
-| **N3** | **Un champ « durée des antécédents »** (A1-c et A3 : « cinq dernières années », « trois dernières années »). | Aucun champ ne les porte ; les figer au 2463 ferait mentir le modèle pour un autre dossier. |
-| **N4** | **A1-b conditionnée** par le cadrage `groupement` (cf. S3), et **A3-b** par la catégorie (cf. A3.6). | Le modèle doit valoir pour les trois catégories et pour un groupement admis. |
-| **N5** | **L'adresse de l'autorité contractante** dans le jeu servi à la génération (C1.1, C2.6). | `B01-AC-01` ne porte que le nom. |
+| **N1** | **Un formateur d'ordinaux**, forme longue **et** forme abrégée (« cent cinquième (105ème) »), gérant **premier/première**, **testé unitairement**. `NombreEnLettres` ne produit que des **cardinaux**. | **Neuf occurrences** dans la source (relevé ci-dessous), dont **une calculée**. |
+| **N2** | **Dates et jours dérivés** : fin de validité de l'offre = `B04-LR-03 + B04-VO-01` ; délai de garantie = `B05-GS-04 − B04-VO-01`. **Calculés, jamais stockés comme des saisies**, affichés **avec leur règle**, **recalculés** si la date de référence change. | Elles ne sont saisies nulle part, et ce n'est pas au candidat de les calculer. |
+| **N3** | **Deux champs de durée** au bloc Candidats : **antécédents juridiques** (litiges, marchés non exécutés, redressement) défaut **5 ans**, et **antécédents financiers** défaut **3 ans**. Défauts **administrables**, valeur retenue **portée par la fiche**. | La source les paramètre déjà — et **se contredit** : A1-c titre « au cours des cinq dernières années » puis écrit deux fois « pendant la période de [nombre d'années] ans ». |
+| **N4** | **Deux sections conditionnées** : A1-b par le cadrage `groupement` (cf. S3) ; **A3-b par le type de marché** — la ventilation du chiffre d'affaires (travaux, fournitures, services, prestations intellectuelles) et le second tableau visant les **prestations similaires à l'objet du marché**. | Le modèle doit valoir pour les trois catégories et pour un groupement admis. |
+| ~~N5~~ | ~~L'adresse de l'autorité contractante~~ — **tombe : le champ existe déjà.** | Voir la vérification ci-dessous. |
+
+### N1 — le relevé exhaustif des ordinaux de la source
+
+Neuf occasions où la source écrit un ordinal **porteur d'une règle** (les « 2ème étage » des adresses n'en sont
+pas : ils viennent d'une chaîne d'adresse, rien ne les calcule).
+
+| page | texte de la source | forme | valeur |
+|---|---|---|---|
+| 33 (C1) | « jusqu'au **trentième (30ème)** jour suivant l'expiration de la période de validité des offres » | longue + abrégée | 30 |
+| 33 (C1) | « soit jusqu'au **cent cinquième (105ème)** jour à compter de la date limite » | longue + abrégée | **105 = calculé** |
+| 34 (C2) | « expire le **trentième (30ème)** jour suivant l'expiration de la période de validité » | longue + abrégée | 30 |
+| 34 (C2) | « soit le **cent cinquième (105ème)** jour à compter de la date limite » | longue + abrégée | **105 = calculé** |
+| 38 (AE) | « les conditions d'établissement des prix sont celles existant le **quinzième (15ème)** jour précédant la date limite » | longue + abrégée | 15 |
+| 53 (CCAP, annexe) | « demeurera valable jusqu'au **trentième (30ème)** jour suivant la date de délivrance du certificat de réception définitive » | longue + abrégée | 30 |
+| 54 (CCAP, annexe) | idem | longue + abrégée | 30 |
+| 9 (IC) | « évalués au **quinzième** jour précédant la date limite » | **longue seule** | 15 |
+| 13 (IC) | « le **quinzième** jour précédant la date limite » | **longue seule** | 15 |
+
+⚠️ **Le 105 n'est pas littéral.** Le DPAO fixe la validité des offres à **soixante-quinze (75) jours**
+(`B04-VO-01`) ; la garantie court **trente jours de plus**. Si la validité change, **le nombre et son ordinal
+changent**. C'est le cas d'école qui interdit d'écrire « cent cinquième » dans le gabarit.
+
+⚠️ **Deux formes, pas une** : avec doublet (« quinzième (15ème) ») et **en lettres seules** (« au quinzième
+jour »). Le formateur doit servir les deux séparément.
+
+**Vecteurs de test proposés** (le genre compte : « la première », « le premier »).
+
+| n | forme longue | abrégée | ce qu'il éprouve |
+|---|---|---|---|
+| 1 | premier · **première** | 1er · 1re | le seul irrégulier, et son féminin |
+| 2 | deuxième | 2ème | le cas ordinaire |
+| 4 | quatrième | 4ème | chute du « e » final |
+| 5 | cinquième | 5ème | **cinq → cinqu** |
+| 9 | neuvième | 9ème | **neuf → neuv** |
+| 15 | quinzième | 15ème | occurrence réelle (AE, IC) |
+| 21 | vingt et unième | 21ème | « un » → « unième », **jamais** « vingt et premier » |
+| 30 | trentième | 30ème | occurrence réelle (C1, C2, CCAP) |
+| 71 | soixante et onzième | 71ème | la dizaine composée |
+| 75 | soixante-quinzième | 75ème | la validité des offres du 2463 |
+| 80 | quatre-vingtième | 80ème | chute du « s » de « quatre-vingts » |
+| 100 | centième | 100ème | la centaine ronde |
+| **105** | **cent cinquième** | **105ème** | **l'occurrence du dossier** |
+| 1000 | millième | 1000ème | le millier |
+
+⚠️ **L'abrégé s'écrit « ème » dans la source**, là où la typographie soignée écrirait « 105ᵉ ». On **décalque la
+source** : `N + "ème"`. Le cas de 1 (« 1er » / « 1re ») ne se présente nulle part — il est spécifié par
+prudence, pas par besoin.
+
+### N5 — **vérifié le 26/09 : le champ existe, il n'y a rien à créer**
+
+Le pilote demandait de vérifier avant de créer un champ, pour ne pas se retrouver avec deux adresses. Vérifié
+sur le référentiel servi (`GET /api/champs-fiche-marche?typeMarche=A_COMMANDE&categorie=FOURNITURES_SERVICES`) :
+
+```
+B01-AC-01 | B01-AC | TEXTE | PPM | clePpm ENTITE   | Autorité contractante
+B01-AC-02 | B01-AC | TEXTE | PPM | clePpm ADRESSE  | Adresse de l'autorité contractante   ← il est là
+```
+
+Et l'entité contractante **porte bien une adresse** en base : les huit entités en ont une, et celle du MESupReS
+a été créée avec « Fiadanana, 2ème étage porte 204 — Antananarivo 101 ».
+
+⚠️ **Un maillon reste à éprouver** : que `valeursPpm` serve effectivement `B01-AC-02` **non vide** à la
+génération. Il ne peut pas l'être aujourd'hui — la base a été vidée, il n'existe plus une seule fiche. C'est la
+**première vérification du prochain rejeu** du jeu 2463, et elle tient en une ligne.
 
 ## La vérification de fidélité
 
@@ -142,6 +230,19 @@ Elle n'est pas déclarative : c'est une comparaison de textes, automatisée, et 
 5. **Un écart non expliqué bloque la livraison.** Un champ substitué n'est pas un écart : il est attendu, et le
    comparateur le sait par le tableau de correspondance.
 
+## L'errata à la PRMP — **un seul envoi**
+
+Quatre constats, à soumettre ensemble et non au fil de l'eau :
+
+| # | constat | page |
+|---|---|---|
+| E1 | Les garanties sont nommées **`B1` / `B2`** au sommaire de la partie, **`C1` / `C2`** partout ailleurs — et la lettre **B** est déjà prise par l'attestation du fabriquant. | 21 |
+| E2 | Le titre de A4 porte un **appel de note « ¹ » sans note**. | 31 |
+| E3 | La consigne de A1-c est **tronquée** : « [Le formulaire ci-dessous doit être rempli par le] ». | 25 |
+| E4 | A1-c **se contredit** : ses tableaux sont titrés « au cours des **cinq** dernières années », son corps écrit deux fois « pendant la période de **[nombre d'années]** ans ». | 25 |
+
+Aucun n'est corrigé dans les décalques : ils sont reproduits tels quels, et c'est l'errata qui porte la demande.
+
 ## L'ordre des gestes, et le verrou
 
 1. Relever la **note de bas de page de A4** (p. 31) et les trois points S1-S3 → **vos réponses**.
@@ -154,13 +255,20 @@ Elle n'est pas déclarative : c'est une comparaison de textes, automatisée, et 
 NON OFFICIEL »**. Ce gabarit reste en place tant que l'étape 4 n'est pas franchie : il vaut mieux un document qui
 annonce qu'il n'est pas officiel qu'un document officiel approximatif.
 
-## Ce qui reste à trancher par vous
+## Ce qui reste à faire, dans l'ordre demandé
 
-| # | question |
-|---|---|
-| Q1 | **S1** — garder `C1`/`C2` et signaler la contradiction de la page 21, ou suivre `B1`/`B2` ? |
-| Q2 | **S2** — la « Note aux Utilisateurs » de la page 22 entre-t-elle dans le modèle A1 ? |
-| Q3 | **S3** — A1-b conditionnée par le cadrage, ou décalquée avec son « (non applicable) » ? |
-| Q4 | **N3** — « cinq dernières années » et « trois dernières années » : champs de la fiche, ou paramètres administrables comme le taux de TVA ? |
-| Q5 | A1, A2, A3 portent plusieurs fiches (a, b, c). Un `.docx` par **sigle** (6 fichiers, ce que le serveur produit aujourd'hui), ou un par **fiche** (9 fichiers) ? |
-| Q6 | **S4** — l'appel de note « ¹ » de A4, sans note : on le garde tel quel, ou on le retire ? |
+Le pilote a fixé le point de départ : **la vérification de `B01-AC-02`** (faite, ci-dessus) **et le formateur
+d'ordinaux** — « les deux garanties en dépendent, et ce sont elles qui portent l'essentiel du travail ».
+
+1. ✅ **`B01-AC-02`** — le champ existe, l'entité porte l'adresse. Reste le maillon `valeursPpm`, au prochain rejeu.
+2. **Le formateur d'ordinaux** : spécifié ci-dessus, vecteurs de test compris. À écrire côté **backend** — c'est
+   lui qui produit les documents. Le front peut le livrer dans PRS20 comme il l'a fait le 22/09 pour le lot 1,
+   si le pilote le demande.
+3. Les six `.docx` et leurs tableaux de correspondance.
+4. Le comparateur de fidélité, puis les corrections jusqu'à zéro écart inexpliqué.
+5. **Relecture du pilote**, puis seulement la mise en production.
+
+⚠️ **Deux chantiers naissent des décisions du 26/09, hors du décalque lui-même** : la **question de cadrage
+« quelles fiches de renseignements sont exigées ? »** (S2), qui commande la présence de A2 et A3, et les **deux
+champs de durée** (N3). Ils touchent le référentiel et le cadrage : ce sont des lots à part, à ouvrir après la
+relecture des Word.

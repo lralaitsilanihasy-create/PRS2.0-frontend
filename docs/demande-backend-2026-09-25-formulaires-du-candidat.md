@@ -399,13 +399,41 @@ nombre `105`.
 
 Ils naissent du décalque : les modèles écrivent des choses que le serveur ne sait pas encore produire.
 
+> ⚠️ **Corrigé le 2026-09-26 après relecture du dossier par le pilote.** Les cinq besoins sont revus : N1 passe de
+> quatre à **neuf** occurrences dont une **calculée**, N3 se dédouble, N4 précise son axe, et **N5 tombe** — le champ
+> existait déjà. Le relevé page par page et les vecteurs de test sont dans
+> `docs/plan-2026-09-26-modeles-formulaires-candidat.md`.
+
 | # | besoin | où il apparaît | pourquoi il bloque |
 |---|---|---|---|
-| **N1** | **Les ordinaux en toutes lettres** — « trentième (30ème) », « cent cinquième (105ème) ». `NombreEnLettres` produit des **cardinaux** (« cent cinq »). | C1 p. 33 (×2), C2 p. 34 (×2) | sans ordinal, ou bien le modèle ment, ou bien le nombre reste figé au 2463 |
-| **N2** | **Deux dates dérivées** : fin de validité de l'offre = `B04-LR-03 + B04-VO-01` jours ; délai de la garantie = `B05-GS-04 − B04-VO-01`. | C2 p. 34, C1 p. 33 | elles ne sont saisies nulle part, et ce n'est pas au candidat de les calculer |
-| **N3** | **Un champ « durée des antécédents »** : « pendant la période de [nombre d'années] ans » (A1-c, ×2) et « les trois dernières années » (A3-a). | A1-c p. 25, A3-a p. 28 | aucun champ ne les porte ; les figer au 2463 ferait mentir le modèle ailleurs |
-| **N4** | **Deux sections conditionnées** : A1-b par le cadrage `groupement`, les lignes « Fournitures / Prestations intellectuelles » de A3-b par la **catégorie**. | A1-b p. 24, A3-b p. 30 | au 2463 A1-b porte « (non applicable) » : c'est une RÉPONSE, pas le modèle |
-| **N5** | **L'adresse de l'autorité contractante** dans le jeu servi à la génération. | C1 « A : (Nom et adresse de l'Acheteur) », C2 « dénomination et adresse complète » | `B01-AC-01` ne porte que le nom |
+| **N1** | **Un formateur d'ordinaux** : forme **longue** (« cent cinquième »), forme **abrégée** (« 105ème »), **premier/première**, **testé unitairement**. `NombreEnLettres` ne produit que des cardinaux. | **Neuf occurrences** : C1 p. 33 (×2), C2 p. 34 (×2), AE p. 38, CCAP p. 53 et 54, IC p. 9 et 13 (ces deux dernières **en lettres seules**, sans doublet) | **le 105 n'est pas littéral** : c'est `B04-VO-01` (75) + 30. Si la validité des offres change, le nombre **et son ordinal** changent |
+| **N2** | **Dates et jours dérivés** : fin de validité de l'offre = `B04-LR-03 + B04-VO-01` ; délai de la garantie = `B05-GS-04 − B04-VO-01`. **Calculés, jamais stockés comme des saisies** ; **affichés avec leur règle** ; **recalculés** si la date de référence bouge. | C1 p. 33, C2 p. 34, AE p. 38 | elles ne sont saisies nulle part, et ce n'est pas au candidat de les calculer |
+| **N3** | **DEUX champs de durée** au bloc Candidats : **antécédents juridiques** (litiges, marchés non exécutés, redressement judiciaire) défaut **5 ans** ; **antécédents financiers** défaut **3 ans**. Défauts **administrables**, valeur retenue **portée par la fiche**. | A1-a p. 23, A1-c p. 25 (×2), A3-a p. 28 | la source les paramètre déjà **et se contredit** : « cinq dernières années » au titre, « [nombre d'années] » au corps |
+| **N4** | **Deux sections conditionnées** : A1-b par le cadrage `groupement`, sur la **valeur existante** (non autorisé · conjoint ou solidaire · obligatoirement solidaire), **pas** un booléen neuf ; A3-b par le **type de marché** — ventilation travaux / fournitures / services / prestations intellectuelles, le second tableau visant les **prestations similaires à l'objet**. | A1-b p. 24, A3-b p. 30 | au 2463 A1-b porte « (non applicable) » : c'est une **réponse**, pas le modèle |
+| ~~N5~~ | ~~L'adresse de l'autorité contractante~~ — **TOMBE.** `B01-AC-02 « Adresse de l'autorité contractante »` existe déjà (source **PPM**, `clePpm = ADRESSE`), et l'entité contractante porte bien une adresse en base. | — | il reste à éprouver que `valeursPpm` la serve **non vide** : première vérification du prochain rejeu |
+
+### N1 — ce que le formateur doit rendre
+
+Le comportement attendu, éprouvable ligne à ligne :
+
+| n | forme longue | abrégée |
+|---|---|---|
+| 1 | premier · **première** | 1er · 1re |
+| 2 | deuxième | 2ème |
+| 4 | quatrième | 4ème |
+| 5 | **cinquième** (cinq → cinqu) | 5ème |
+| 9 | **neuvième** (neuf → neuv) | 9ème |
+| 15 | quinzième | 15ème |
+| 21 | **vingt et unième** (jamais « vingt et premier ») | 21ème |
+| 30 | trentième | 30ème |
+| 71 | soixante et onzième | 71ème |
+| 75 | soixante-quinzième | 75ème |
+| 80 | **quatre-vingtième** (chute du « s ») | 80ème |
+| 100 | centième | 100ème |
+| **105** | **cent cinquième** | **105ème** |
+| 1000 | millième | 1000ème |
+
+⚠️ **L'abrégé s'écrit « ème »**, comme la source — pas « 105ᵉ ». On décalque le dossier, pas la typographie idéale.
 
 **Compte des trous** : 19 alimentés par la fiche ou dérivés, une cinquantaine laissés au candidat — dont 15 des 19
 dans les deux seules garanties.
