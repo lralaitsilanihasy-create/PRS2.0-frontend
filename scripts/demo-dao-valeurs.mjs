@@ -927,29 +927,28 @@ export const CADRAGE_2463 = {
   penalites: 'PLAFOND_DIFFERENT', // 10 % au lieu des 15 % du CCAG
 };
 
-/** Les quatre informations qui varient d'un lot à l'autre, pour les cinq lots du dossier réel. */
+/**
+ * Les cinq informations qui varient d'un lot à l'autre, pour les cinq lots du dossier réel.
+ * ⚠️ Source unique des faits : docs/jeu-donnees-2463-faits.md — [R] repris tel quel (page citée), [D] déduit, [H] hypothèse.
+ */
 export const VALEURS_2463_PAR_LOT = {
-  // Garantie de soumission : les montants EXACTS du DPAO (clause 6.6).
+  // [R] DPAO 6.6 p.18 : les montants EXACTS de la garantie de soumission.
   'B05-GS-03': { 1: '1600000', 2: '2170000', 3: '1600000', 4: '2170000', 5: '1600000' },
-  // Montant minimum annuel : la moitié du maximum (quantités MIN du bordereau).
-  'B05-TP-02': { 1: '40000000', 2: '54000000', 3: '40000000', 4: '54000000', 5: '40000000' },
-  // Montant maximum annuel : la garantie de soumission vaut 2 % de ce montant.
+  // [D] §5 : montant minimum = maximum ÷ 2 (les quantités min valent la moitié des max sur tous les bordereaux).
+  'B05-TP-02': { 1: '40000000', 2: '54250000', 3: '40000000', 4: '54250000', 5: '40000000' },
+  // [D] §5 : montant maximum = garantie ÷ 2 % (le dossier laisse les montants en blanc, AE p.38).
   'B05-TP-03': { 1: '80000000', 2: '108500000', 3: '80000000', 4: '108500000', 5: '80000000' },
-  // Délai maximum de livraison : « fixé dans le bon de commande sans dépasser TRENTE (30) JOURS ».
+  // [R] DPAO 12 p.19, CCAP 10.a p.50 : « fixé dans le bon de commande, sans toutefois dépasser TRENTE (30) JOURS ».
   'B06-EO-12': { 1: '30', 2: '30', 3: '30', 4: '30', 5: '30' },
-  // ⚠️ Le lieu de livraison est PAR LOT depuis le 25/09 : le dossier le donne lot par lot (CCAP art. 1 et 17).
-  'B09-LL-01': {
-    1: 'Ministère de l’Enseignement Supérieur et de la Recherche Scientifique — Fiadanana, Antananarivo.',
-    2: 'Ambatondrazaka.',
-    3: 'Ambatondrazaka.',
-    4: 'Fort-Dauphin.',
-    5: 'Fort-Dauphin.',
-  },
+  // [R] CCAP art. 1 et 17 p.49, 51 — les destinations finales, dans les mots du dossier.
+  'B09-LL-01': { 1: 'MINISTERE FIADANANA', 2: 'AMBATONDRAZAKA', 3: 'AMBATONDRAZAKA', 4: 'FORT DAUPHIN', 5: 'FORT DAUPHIN' },
 };
 
 /**
- * Les informations communes aux cinq lots. Le jeu « à commande » du 25/09 était déjà tiré de ce
- * dossier : on en repart, et on rétablit ici ce que la démonstration avait généralisé.
+ * Les informations communes aux cinq lots. Le jeu « à commande » du 25/09 (VALEURS_AC) était déjà tiré de ce
+ * dossier ; tout ce qui s'en écarte est repris ici, dans les mots du dossier quand il parle.
+ * ⚠️ Rien n'est inventé dans le code : une valeur que le dossier ne donne pas a sa ligne [H] ou [D] dans
+ * docs/jeu-donnees-2463-faits.md (§10). Les anomalies du dossier (§9) sont CONSERVÉES : ce sont des cas de test.
  */
 export const VALEURS_2463 = {
   ...VALEURS_AC,
@@ -957,130 +956,196 @@ export const VALEURS_2463 = {
   'B02-AU-03': undefined,
 
   // — Acheteur, objet et références du dossier réel —
-  'B02-OB-01': 'Fourniture et livraison des matériels informatiques répartis en cinq (5) lots (à commande)',
+  // B02-OB-01 (objet) est un champ PPM : c'est la ligne du plan qui le porte (jeu-donnees-dao-2463.mjs, [R] p.1).
+  // [R] DPAO 1.2 p.17, tel quel — ⚠️ anomalie §9 conservée : « matériels et mobiliers de logements » (reste d'un
+  // autre dossier) pour un marché de matériels informatiques. C'est un cas de test, pas une coquille à corriger.
   'B02-OB-02':
-    "Fourniture et livraison de matériels informatiques : ordinateurs de bureau complets Core i3 et Core i5, "
-    + "onduleurs, imprimantes jet d'encre et laser multifonction A4, photocopieuses A4/A3 et duplicopieurs. "
-    + "Les kits associent l'unité centrale, l'écran, le clavier, la souris et l'onduleur. Les services connexes "
-    + "comprennent le transport jusqu'aux destinations finales, l'assurance et la mise en service.",
-  'B02-OB-03': 'AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026',
-  'B02-AU-02': 'Lot par lot (attribution divisible)',
-  // « Le candidat peut soumissionner pour un ou plusieurs lots mais ne peut prétendre qu'à DEUX lots au maximum. »
-  'B02-AU-07': '2',
+    "L'appel d'offres porte sur un marché à commandes des matériels et mobiliers de logements dont les quantités "
+    + 'minimales et maximales sont spécifiées au Cahier des Prescriptions Spéciales, et pour une durée de validité '
+    + 'de douze (12) mois.',
+  'B02-OB-03': 'AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026', // [R] p.1, AE p.36
+  'B02-AU-02': 'Lot par lot (attribution divisible)', // [R] DPAO 1.1 p.17 : « Chaque lot est indivisible. Toute offre partielle est irrecevable. »
+  'B02-AU-04': '12', // [R] DPAO 1.2 p.17, CCAP 10.b p.50
+  'B02-AU-05': '2027-01-28', // [H] §8 : notification / date d'effet
+  'B02-AU-07': '2', // [R] DPAO 1.1 p.17 : « ne peut prétendre qu'à deux lots au maximum »
 
-  // — Candidats : pièces exigées, nantissement —
+  // — Candidats : pièces exigées, capacités, nantissement — (DPAO 6.1 et 6.3 p.17-18, AE art. 3-4 p.38)
   'B03-CQ-01':
-    "Photocopie certifiée conforme de la carte d'immatriculation fiscale 2026 ou 2025 validée, de l'extrait du "
-    + "registre du commerce et de la carte statistique, chacune de moins de trois mois, et certificat de non "
-    + 'faillite de moins de trois mois.',
-  'B03-CQ-02': 'Fiche de renseignements A2 : capacité technique à exécuter le marché (moyens, matériel, références).',
-  'B03-CQ-03': 'Fiche de renseignements A3 : situation financière, chiffre d’affaires des trois derniers exercices.',
-  'B03-CQ-04': 'Fiche de renseignements A4 : antécédents du candidat pour des marchés de même nature.',
-  'B03-CQ-05': 'NON', // « Modèle d'attestation du fabriquant – Non utilisé » (sommaire du DAO)
-  'B03-CQ-08': 'NON', // « Il n'est pas accordé de préférence aux candidats nationaux » (DPAO 9.5)
-  'B03-NA-03': 'Trésorier ministériel chargé de l’Enseignement',
-  'B03-ST-01': 'NON', // « Il n'est pas envisagé de sous-traiter » (acte d'engagement, art. 3)
+    "Photocopie certifiée conforme à l'original de la Carte d'Immatriculation Fiscale 2026 ou 2025 validée, datée de "
+    + "moins de 3 mois ; photocopie certifiée conforme à l'original de l'Extrait du Registre de Commerce daté de moins "
+    + "de 3 mois ; carte statistique, photocopie certifiée conforme à l'original, datée de moins de 3 mois ; certificat "
+    + 'de non faillite daté de moins de 3 mois.', // [R] DPAO 6.1
+  'B03-CQ-02': 'Une fiche de renseignements relative à sa capacité technique (modèle A2), signée avec la mention « certifiée exacte et sincère ».', // [R] DPAO 6.3
+  'B03-CQ-03': 'Une fiche de renseignements relative à sa capacité financière (modèle A3), signée avec la mention « certifiée exacte et sincère ».', // [R] DPAO 6.3
+  'B03-CQ-04': "Non exigé : la clause 6.3 du DPAO ne demande que les fiches d'identification, de capacité technique et de capacité financière.", // [D] §10
+  'B03-CQ-05': 'NON', // [R] sommaire p.2 : « Modèle d'attestation du fabricant – Non utilisé »
+  'B03-CQ-06': 'Aucune qualification particulière au-delà des pièces de la clause 6.1 et des fiches de la clause 6.3 du DPAO.', // [D] §10
+  'B03-CQ-07': 'Non prévu par le DPAO.', // [D] §10
+  'B03-CQ-08': 'NON', // [R] DPAO 9.5 p.19
+  'B03-NA-01': 'OUI', // [R] AE art. 4 p.38
+  'B03-NA-02':
+    "Est désigné comme comptable assignataire des paiements le Trésorier ministériel chargé de l'Enseignement ; le "
+    + 'montant maximal de la créance qui pourra être nantie par le fournisseur est à compléter par le candidat, en '
+    + "lettres et en chiffres, à l'acte d'engagement.", // [R] AE art. 4 p.38
+  'B03-NA-03': 'Trésorier ministériel chargé de l’Enseignement', // [R] AE art. 4 p.38
+  'B03-ST-01': 'NON', // [R] AE art. 3 p.38
 
-  // — Dossier, remise et ouverture —
-  'B04-CD-01': 'A1,A2,A3,A4',
-  'B04-CD-02': 'C1 et C2',
+  // — Dossier, remise et ouverture — (DPAO 5 à 8 p.17-19)
+  'B04-CD-01': 'A1,A2,A3,A4', // [R] sommaire p.2, DPAO 5.1 : modèles de fiches de renseignements joints
+  'B04-CD-02': 'C1 et C2', // [R] DPAO 5.1 : modèles de garantie de soumission joints (p.33-34)
+  'B04-CO-01':
+    "Documents ou pièces à remettre en sus de ceux mentionnés à la clause 6.2 des IC : photocopie certifiée conforme à "
+    + "l'original de la Carte d'Immatriculation Fiscale 2026 ou 2025 validée, datée de moins de 3 mois ; photocopie "
+    + "certifiée conforme à l'original de l'Extrait du Registre de Commerce daté de moins de 3 mois ; carte statistique "
+    + "(photocopie certifiée conforme à l'original) datée de moins de 3 mois ; certificat de non faillite daté de moins "
+    + 'de 3 mois ; garantie de soumission.', // [R] DPAO 6.1
   'B04-DE-01':
-    "Personne Responsable des Marchés Publics du MESupReS — Monsieur LERAVO Norbert Fidelys, porte 204, "
-    + '2ème étage, Fiadanana, Antananarivo 101 — prmp.mesupres@gmail.com',
-  'B04-DE-02': '10',
-  'B04-DE-03': '5',
-  'B04-LR-01': 'Monsieur LERAVO Norbert Fidelys, Personne Responsable des Marchés Publics',
-  'B04-LR-02': 'Porte 204, 2ème étage, MESupReS, Fiadanana — Antananarivo 101.',
-  'B04-LR-03': '2026-11-09',
-  'B04-LR-04': '10 h 00',
-  'B04-OP-01': 'Bureau porte 204, 2ème étage, MESupReS — Fiadanana, Antananarivo.',
-  'B04-OP-02': '2026-11-09',
-  'B04-OP-03': '10 h 00',
-  'B04-RO-01': '1',
-  'B04-RO-02': 'AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026 — « Ne pas ouvrir avant la date et l’heure d’ouverture des plis »',
+    'Personne Responsable des Marchés Publics — Attention de : Monsieur LERAVO Norbert Fidelys — Porte 204, 2ème Etage - '
+    + 'MESupReS — Fiadanana - Antananarivo, code postal 101 — E-mail : prmp.mesupres@gmail.com', // [R] DPAO 5.2
+  'B04-DE-02': '10', // [R] DPAO 5.2
+  'B04-DE-03': '5', // [R] DPAO 5.2
+  'B04-LA-01': 'NON', // [D] §10 : le DPAO ne prévoit aucune langue en plus du français
+  'B04-LR-01': 'Monsieur LERAVO Norbert Fidelys, Personne Responsable des Marchés Publics', // [R] DPAO 7.2
+  'B04-LR-02': 'Porte 204, 2ème Etage - MESupReS, Fiadanana - Antananarivo, code postal 101.', // [R] DPAO 7.2
+  'B04-LR-03': '2026-11-09', // [H] §8 (le dossier laisse la date en pointillés — anomalie §9)
+  'B04-LR-04': 'Dix (10) heures', // [R] DPAO 7.2
+  'B04-OP-01': 'Bureau : Porte 204, 2ème Etage - MESupReS', // [R] DPAO 8
+  'B04-OP-02': '2026-11-09', // [R] DPAO 8 : « le même jour que la date limite fixée pour la remise des offres »
+  'B04-OP-03': 'DIX HEURES (10H)', // [R] DPAO 8
+  'B04-RO-01': '1', // [R] DPAO 7.1 : « UNE (01) copie »
+  // [R] DPAO 7.1 p.18, tel quel — ⚠️ anomalie §9 conservée : la mention cite « AOO N° 2461/MT » pour le dossier 2463-MI.
+  'B04-RO-02':
+    'AOO N° 2461/MT /MESupReS/PRMP/UGPM.2026 — Offre relative à « FOURNITURE ET LIVRAISON DES MATERIELS INFORMATIQUES '
+    + 'REPARTIS EN CINQ (5) LOTS (A COMMANDE) » — « Ne pas ouvrir avant la date et l’heure d’ouverture des plis »',
   'B04-RO-03':
-    "Les offres sont remises dans des PLIS SÉPARÉS par lot. L'enveloppe extérieure porte la référence de l'appel "
-    + "d'offres, l'intitulé du lot et la mention « Ne pas ouvrir avant… », à l'exclusion de toute indication "
-    + "permettant d'identifier le candidat. Elle contient deux enveloppes intérieures fermées et SCELLÉES À LA "
-    + 'CIRE, portant les mêmes mentions ainsi que le nom et l’adresse du candidat : l’une ORIGINAL, l’autre COPIE.',
-  'B04-VE-01': 'NON',
-  'B04-VO-01': '75',
+    "Les offres devront être dans des plis séparés présentées pour chacun des lots. Outre l'original de l'offre, le pli "
+    + "doit comprendre UNE (01) copie. Les enveloppes comportent la mention de l'appel d'offres, l'objet de l'offre, le "
+    + "numéro et l'intitulé du lot auquel se rapporte l'offre, « Attention de : Monsieur LERAVO Norbert Fidelys, Porte "
+    + "204, 2ème Etage - MESupReS » et « Ne pas ouvrir avant la date et l'heure d'ouverture des plis », à l'exclusion de "
+    + "l'indication permettant d'identifier le candidat. Cette enveloppe extérieure contient deux enveloppes intérieures "
+    + 'fermées, scellées à la cire, comportant les mêmes mentions ainsi que le nom et l’adresse du candidat : l’une '
+    + 'portant la mention ORIGINALE, l’autre la mention COPIE.', // [R] DPAO 7.1
+  'B04-VE-01': 'NON', // [R] DPAO 7.3
+  'B04-VO-01': '75', // [R] DPAO 6.4
 
-  // — Prix, monnaie, garantie de soumission —
+  // — Prix, monnaie, garantie de soumission — (DPAO 6.5-6.6 p.18, CCAP 8-9 p.50)
   'B05-CP-02':
-    "Pour les fournitures acquises sur le territoire national, le prix comprend : i) le prix des fournitures EXW "
-    + '(magasin de ventes) ; ii) le prix des transports intérieurs, l’assurance et les autres services locaux '
-    + 'afférents à la livraison jusqu’à leur destination finale.',
+    'Pour les Fournitures acquises sur le territoire national, le prix comprend : i) le prix des fournitures EXW, '
+    + '(magasin de ventes) ; ii) le prix des transports intérieurs, assurance et autres services locaux afférents à la '
+    + 'livraison des fournitures jusqu’à leur destination finale.', // [R] DPAO 6.5.1
+  // [H] §10 : le dossier admet TROIS formes (garantie bancaire, caution personnelle et solidaire, chèque de banque au
+  // nom du Receveur Général d'Antananarivo — DPAO 6.6) ; le référentiel n'en retient qu'une → « Garantie bancaire ».
   'B05-GS-02': 'Garantie bancaire',
-  'B05-GS-04': '105', // 30 jours après les 75 jours de validité des offres
-  'B05-MO-01': 'Ariary',
+  'B05-GS-04': '105', // [R] modèles C1/C2 p.33-34 : « jusqu'au 105ème jour »
+  'B05-MO-01': 'Ariary', // [R] CCAP 9.3, AE art. 2
 
-  // — Évaluation, attribution —
-  'B06-EO-01': 'Par lot',
-  'B06-EO-02': 'Aucun critère additionnel n’est retenu.',
+  // — Évaluation, attribution — (DPAO 9 p.19)
+  'B06-EO-01': 'Par lot', // [R] DPAO 9.4
+  'B06-EO-02': 'Non applicable.', // [R] DPAO 9.4 : « Critère additionnel : non applicable »
+  'B06-EO-04':
+    "Le prix du Marché est supposé comprendre l'ensemble des impôts, droits et taxes de toute nature dus par le "
+    + "Fournisseur au titre de la signature et de l'exécution du Marché.", // [R] CCAP 8.1 p.50
+  'B06-EO-05':
+    'Les offres seront évaluées par lot et le marché portera sur le lot ou les lots attribués au candidat qualifié '
+    + 'ayant proposé l’offre conforme pour l’essentiel et évaluée économiquement avantageuse pour le lot ou les lots '
+    + 'considérés.', // [R] DPAO 9.4
   'B06-EO-07':
-    "La Commission calcule une première moyenne des offres évaluées et déclare anormalement HAUTES celles qui la "
-    + "dépassent de plus de 20 %. Après neutralisation de ces offres, elle calcule une seconde moyenne et déclare "
-    + 'anormalement BASSES celles qui lui sont inférieures de plus de 10 %.',
-  'B06-EP-01': '3',
+    "Afin d'identifier le caractère anormalement bas ou haut d'une offre, la CAO effectuera les calculs suivants : "
+    + "calcul d'une 1ère moyenne des offres soumises sur la base de l'évaluation réalisée en termes monétaires ; "
+    + 'identification des offres se situant à un pourcentage supérieur à 20 % — toutes les offres dont l’évaluation '
+    + 'excède la moyenne augmentée de ce pourcentage seront déclarées offres anormalement hautes ; calcul d’une 2nde '
+    + 'moyenne après neutralisation des offres anormalement hautes ; identification des offres se situant à un '
+    + 'pourcentage inférieur à 10 % — toutes les offres dont l’évaluation est inférieure à cette 2nde moyenne diminuée '
+    + 'de ce pourcentage seront déclarées offres anormalement basses.', // [R] DPAO 9.4.5
+  'B06-EP-01': '3', // [R] DPAO 9.1
 
-  // — Paiements, avances et garanties financières —
-  'B08-AC-01': 'NON',
-  'B06-AN-01': undefined, // aucune garantie de bonne exécution exigée : pas de forme à déclarer
-  'B08-GB-02': undefined, // idem — le taux de 5 % n'a pas d'objet
-  'B02-AU-05': '2027-01-28', // date d'effet = notification du marché au calendrier prévisionnel du plan // « Acompte : non applicable » (CCAP 9.1.b)
-  'B08-GB-01': 'NON', // « Cautionnement et garantie bancaire : non applicable » (CCAP art. 12.1)
-  'B08-RG-01': 'NON', // « Aucune retenue de garantie ne sera pratiquée » (CCAP art. 12.2)
-  'B08-IM-01': '9', // taux directeur de la BCM augmenté d’UN point (CCAP 9.4)
-  'B08-PA-01': "L'acheteur se libère des sommes dues en en portant le montant au crédit du compte bancaire indiqué à l'acte d'engagement.",
+  // — Paiements, avances et garanties financières — (AE art. 6 p.38, CCAP 9 et 12 p.50-51)
+  'B08-AC-01': 'NON', // [R] CCAP 9.1.b
+  'B06-AN-01': undefined, // aucune garantie de bonne exécution exigée : pas de forme à déclarer (CCAP 12.1)
+  'B08-GB-02': undefined, // idem
+  'B08-GB-01': 'NON', // [R] CCAP 12.1 : « Non applicable »
+  'B08-RG-01': 'NON', // [R] CCAP 12.2 : « Aucune retenue de garantie ne sera pratiquée »
+  // [H] §10 : le CCAP 9.4 dit « taux directeur de la BCM … augmenté d'un (01) point » ; le référentiel veut un nombre.
+  'B08-IM-01': '9',
+  'B08-PA-01':
+    "L'Acheteur se libérera des sommes dues au titre du présent marché en en faisant porter le montant au crédit du "
+    + "compte bancaire indiqué par le fournisseur à l'acte d'engagement : titulaire du compte, établissement bancaire, "
+    + 'agence, numéro de compte, code.', // [R] AE art. 6.1
   'B08-PA-03':
-    'Les factures sont établies en QUATRE exemplaires — un original et trois copies — portant le nom et l’adresse '
-    + 'du fournisseur, le numéro de compte bancaire, les références du marché, le montant hors taxe des fournitures '
-    + 'livrées, le montant dû en Ariary et la date de facturation.',
-  'B08-PA-04': 'Les factures sont établies à la livraison.',
-  'B08-PA-05': 'À la livraison',
+    'Les factures seront établies en quatre (04) exemplaires : un original et 3 copies portant, outre les mentions '
+    + 'légales, les indications suivantes : le nom et adresse du Fournisseur ; le numéro du compte bancaire tel qu’il '
+    + 'est précisé sur l’Acte d’Engagement ; les références du Marché ; le montant hors taxe des fournitures livrées ; '
+    + 'le montant dû en Ariary ; la date de facturation.', // [R] CCAP 9.2
+  'B08-PA-04': 'Les factures seront établies à la livraison.', // [R] CCAP 9.2
+  'B08-PA-05': 'À la livraison', // [R] CCAP 9.2
+  'B08-PA-08': '30', // [H] §10
 
-  // — Exécution, livraison, garantie —
-  'B09-AS-01': "Selon l'incoterm",
-  'B09-DG-01': '2', // ⚠️ DEUX mois : dérogation à l'article 23 du CCAG, récapitulée au CCAP art. 24
+  // — Exécution, livraison, garantie — (CCAP 10 à 23 p.50-52)
+  'B09-AS-01': "Selon l'incoterm", // [R] CCAP art. 18 : « conformément aux dispositions de l'Incoterms »
+  'B09-CR-01': 'NON', // [R] CCAP art. 19
+  'B09-DG-01': '2', // [R] CCAP art. 22 : DEUX (02) MOIS — dérogation à l'article 23 du CCAG (CCAP art. 24)
   'B09-DG-02':
-    'Les fournitures sont garanties contre tout risque de fabrication ou de matière pendant deux mois à compter de '
-    + 'la réception provisoire ; le fournisseur remédie à ses frais aux défauts constatés.',
+    'Les fournitures doivent être garanties contre tout risque de fabrication ou de matière pendant DEUX (02) MOIS à '
+    + 'compter de la date de réception provisoire. Durant ce délai de garantie, le Fournisseur se conforme aux garanties '
+    + 'de performance spécifiées en vertu du Marché ; si, pour des raisons imputables au Fournisseur, ces garanties ne '
+    + 'sont pas atteintes, il apporte aux fournitures, à ses frais, les changements, modifications et/ou adjonctions '
+    + 'nécessaires pour atteindre les garanties contractuelles.', // [R] CCAP art. 22
   'B09-DI-01':
-    'À l’issue des inspections, la commission de réception prend sa décision de réception, d’ajournement, de '
-    + 'réfaction ou de rejet dans un délai de DEUX jours. La réception prononcée à la livraison vaut réception '
-    + 'provisoire de la commande ; la réception définitive intervient à l’issue du délai de garantie.',
+    'Sur demande du fournisseur, pour chaque commande, la réception prononcée à la livraison par une commission de '
+    + "réception désignée par une décision de l'Acheteur vaudra réception provisoire de la commande. La réception "
+    + "définitive de la commande sera prononcée dans les mêmes formes à l'issue du délai de garantie ; la réception "
+    + "définitive de la dernière commande vaudra réception définitive du marché. À l'issue des opérations d'inspection, "
+    + "la commission de réception prend sa décision de réception, d'ajournement, de réfaction ou de rejet dans un délai "
+    + 'de deux (2) jours.', // [R] CCAP art. 21
+  'B09-DX-01': '30', // [R] CCAP 10.a
+  'B09-DX-02': 'À compter du lendemain de la date de notification de chaque bon de commande.', // [R] CCAP 10.a
   'B09-DX-03':
-    'Les commandes sont passées par bons de commande successifs pendant les douze mois de validité du marché. '
-    + 'Chaque bon précise la nature et la description des prestations, les délais et lieux d’exécution, le montant '
-    + 'et, le cas échéant, le délai laissé au fournisseur pour ses observations. Seuls les bons signés par '
-    + 'l’Ordonnateur Secondaire sont honorés.',
-  'B09-EM-01': 'Emballage d’origine.',
-  'B09-IV-01': 'Les vérifications et inspections sont effectuées au lieu de destination finale, au moment de la livraison ; tous les frais afférents sont à la charge du fournisseur.',
-  'B09-LF-01': 'Livraison aux destinations finales : Ministère (Fiadanana) pour le lot 1, Ambatondrazaka pour les lots 2 et 3, Fort-Dauphin pour les lots 4 et 5.',
+    'Le délai de livraison est fixé dans le bon de commande sans toutefois dépasser TRENTE (30) JOURS à compter du '
+    + 'lendemain de la date de notification dudit bon de commande. Chaque bon de commande précisera : la nature et la '
+    + "description des prestations à réaliser ; les délais d'exécution ; les lieux d'exécution ; le montant du bon de "
+    + 'commande ; les délais laissés le cas échéant aux Fournisseurs pour formuler leurs observations. Seuls les bons de '
+    + "commande signés par l'Ordonnateur Secondaire pourront être honorés. La durée de validité est de 12 mois à compter "
+    + "de la date d'effet.", // [R] CCAP 10.a et 10.b
+  'B09-EM-01': 'Emballage d’origine.', // [R] CCAP art. 15
+  'B09-EM-02': "Aucun document particulier n'est exigé dans les emballages (CCAP art. 15 : emballage d'origine).", // [D] §10
+  'B09-IV-01':
+    'Les vérifications et inspections des fournitures sont effectuées au lieu de destination finale, au moment de la '
+    + 'livraison. Tous les frais y afférents sont à la charge totale du fournisseur.', // [R] CCAP art. 20
+  'B09-LF-01':
+    'Les fournitures seront livrées au : lot n° 1 : MINISTERE FIADANANA ; lot n° 2 : AMBATONDRAZAKA ; lot n° 3 : '
+    + 'AMBATONDRAZAKA ; lot n° 4 : FORT DAUPHIN ; lot n° 5 : FORT DAUPHIN. Les documents de livraison doivent être reçus '
+    + "par la Personne Responsable des Marchés Publics avant l'arrivée des fournitures, faute de quoi le Fournisseur est "
+    + "responsable de toute dépense subséquente. La livraison est constatée par la délivrance d'un récépissé au "
+    + "Fournisseur ou par la signature d'un double du bulletin de livraison ou de l'état.", // [R] CCAP art. 17
   'B09-LF-02':
-    'CINQ exemplaires de la facture indiquant la description des fournitures, leurs quantités, leurs prix '
-    + 'unitaires, le montant total, la date d’expédition, la référence à la commande ou au marché, l’identification '
-    + 'du fournisseur et la répartition par colis, ainsi que le bon de livraison ou le récépissé du transporteur.',
-  'B09-LL-01': 'Lot 1 : Ministère, Fiadanana — lots 2 et 3 : Ambatondrazaka — lots 4 et 5 : Fort-Dauphin.',
-  'B09-OM-01': '10',
-  'B09-OM-02': '20',
-  'B09-PS-01': 'NON', // « Protection du secret – Mesure de sécurité : non applicable » (CCAP art. 7)
-  'B09-RT-01': "Transport par le fournisseur jusqu'à la destination finale",
-  'B09-SK-01': 'OUI', // « Stockage des fournitures : quantité minimale prévue dans le bordereau de prix »
-  'B09-PC-02':
-    'Annexe 1 : cadre de bordereaux des prix. Annexe 2 : état des sommes versées à des tiers. '
-    + 'Annexe 3 : formulaire de déclaration des bénéficiaires effectifs.',
+    'Cinq (05) exemplaires de la facture du Fournisseur indiquant la description des Fournitures, leurs quantités, '
+    + "leurs prix unitaires, le montant total, la date de l'expédition, la référence à la commande ou au Marché, "
+    + "l'identification du Fournisseur, l'identification des fournitures livrées et, quand il y a lieu, leur répartition "
+    + 'par colis ; le bon de livraison, ou le récépissé du transporteur.', // [R] CCAP art. 17
+  'B09-LL-01': undefined, // par lot (VALEURS_2463_PAR_LOT)
+  'B09-MC-01': 'NON', // [R] CCAP art. 13 : « Sans objet »
+  'B09-OM-01': '10', // [R] CCAP art. 6
+  'B09-OM-02': '20', // [R] CCAP art. 6
+  'B09-OM-03': '12', // [R] CCAP art. 6 et 10.b
+  'B09-PC-01': "Aucune pièce supplémentaire : l'ordre de priorité des pièces contractuelles est celui fixé par l'article 6 du CCAG (CCAP art. 5).", // [D] §10
+  'B09-PC-02': 'Annexe n° 1 : cadre du bordereau de prix. Annexe n° 2 : état des sommes versées à des tiers. Annexe n° 3 : formulaire de déclaration des bénéficiaires effectifs.', // [R] AE p.38
+  'B09-PS-01': 'NON', // [R] CCAP art. 7
+  'B09-RT-01': "Transport par le fournisseur jusqu'à la destination finale", // [R] CCAP art. 16
+  'B09-SK-01': 'OUI', // [R] CCAP art. 14 : « Quantité minimale prévue dans le bordereau de prix »
 
-  // — Pénalités : la dérogation du dossier —
+  // — Pénalités : la dérogation du dossier — (CCAP art. 11 p.50-51)
   'B09-PR-02': '10',
   'B09-PR-03':
-    'Le CCAP plafonne les pénalités de retard à DIX pour cent (10 %) du montant du marché, avenants compris, là où '
-    + 'l’article 12 du CCAG retient quinze pour cent : le marché étant à commandes, le retard s’apprécie commande '
-    + 'par commande et le plafond est ramené en proportion.',
+    "CCAP art. 11 : « En cas de retard dans l'exécution de chaque commande, il est appliqué une pénalité journalière "
+    + 'de 1/1000 du montant de la commande. Le montant des pénalités est plafonné à dix pour cent (10 %) du montant du '
+    + 'Marché, y compris le montant de ses avenants. » — dérogation au plafond de 15 % du CCAG (art. 12), que le '
+    + "tableau des dérogations de l'article 24 du CCAP ne récapitule pas.", // [R] + constat §9
 
-  // — Litiges et dérogations —
-  'B10-DD-01': 'Dérogation à l’article 23 du CCAG (délai de garantie), portée par l’article 22 du CCAP : le délai est ramené à deux mois.',
+  // — Litiges et dérogations — (CCAP art. 23-24 p.52)
+  'B10-AR-01': 'Aucune clause particulière au CCAP : le règlement des différends suit le CCAG.', // [D] §10
+  'B10-IR-01': 'OUI',
+  'B10-IR-02': "Les dispositions de l'article 32 du CCAG s'appliquent.", // [R] CCAP art. 23
+  'B10-DD-01': "Article 22 du CCAP (délai de garantie de deux mois) dérogeant à l'article 23 du CCAG — seule dérogation récapitulée à l'article 24 du CCAP.", // [R] CCAP art. 24
 };
 
 // ——————————————————————————————————————————————————————————————————————————————

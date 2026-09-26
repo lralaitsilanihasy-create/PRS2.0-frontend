@@ -103,6 +103,9 @@ const LOTS = [
  * Le calendrier prévisionnel : les étapes du mode « appel d'offres ouvert » (référentiel `tr_capm`).
  * ⚠️ Il fait foi pour le contrôle `DATES_ORDRE` de la fiche DAO — les dates de la fiche doivent s'y
  * ranger. Remise et ouverture des plis au 09/11/2026, attribution au 24/12/2026.
+ * ⚠️ Toutes ces dates sont des hypothèses [H] (le dossier les laisse en blanc) — docs/jeu-donnees-2463-faits.md §8.
+ * Le §8 place le lancement (étape 111) au 09/10/2026 et l'attribution (étape 123) au 10/12/2026 : écart à
+ * trancher par le pilote (§10), rien n'est changé ici en attendant.
  */
 const PROCESSUS = [
   [101, '2026-06-01', '2026-06-15'], [102, '2026-06-16', '2026-06-30'], [103, '2026-07-01', '2026-07-07'],
@@ -170,8 +173,8 @@ if (etape(2, 'Le plan de passation — dossier, PPM et ligne de marché (PRMP)')
   }
   const r = await appel('PRMP001', 'POST', '/api/saisies/ppm', {
     idEntiteContract: etat.idEntite,
-    exercice: 2026,
-    dateSignature: '2026-06-30',
+    exercice: 2026, // [D] de la référence du dossier
+    dateSignature: '2026-06-30', // [H] docs/jeu-donnees-2463-faits.md §10
     marches: [LIGNE],
   });
   if (!r.ok) { console.error(JSON.stringify(r.corps,null,1).slice(0,900)); echec('saisie du PPM', r); }
