@@ -189,7 +189,7 @@ const TYPES_OK = ['application/pdf', 'image/jpeg', 'image/png'];
                             <option value="">— Choisir une entité —</option>
                             @for (e of entites(); track e.idEntiteContract) {
                               <option [value]="e.idEntiteContract">
-                                {{ e.libelleEntite }}{{ e.idLocalite ? ' · ' + e.idLocalite : '' }}
+                                {{ e.sigle ? e.sigle + ' — ' : '' }}{{ e.libelleEntite }}{{ e.idLocalite ? ' · ' + e.idLocalite : '' }}
                               </option>
                             }
                           </select>

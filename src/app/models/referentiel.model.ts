@@ -41,6 +41,12 @@ export interface DelegationProfil {
 export interface EntiteContract {
   idEntiteContract: number;
   libelleEntite: string;
+  /**
+   * ⚠️ V48 (26/09, demande-backend-2026-09-26-sigle-entite) — le sigle tel qu'il figure dans les références
+   * (« MESupReS », « JIRAMA ») : facultatif, 20 caractères, lettres / chiffres / points / tirets, casse conservée.
+   * Quand il existe, la référence des prochains plans le porte à la place de l'acronyme dérivé du libellé.
+   */
+  sigle?: string | null;
   adresse: string;
   categorieEntite?: string;
   idOrganigramme: number;

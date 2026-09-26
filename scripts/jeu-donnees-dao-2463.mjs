@@ -87,6 +87,7 @@ const liste = (c) => (Array.isArray(c) ? c : (c?.content ?? []));
 // ── Le dossier réel, transcrit ────────────────────────────────────────────────────────────────
 const ENTITE = {
   libelleEntite: "MINISTERE DE L'ENSEIGNEMENT SUPERIEUR ET DE LA RECHERCHE SCIENTIFIQUE",
+  sigle: 'MESupReS', // [R] p.1 — V48 : la référence des prochains plans le porte (sinon l'acronyme dérivé « MLSRS »)
   adresse: 'Fiadanana, 2ème étage porte 204 — Antananarivo 101',
   categorieEntite: 'MINISTERE',
   idOrganigramme: 1,
@@ -150,7 +151,12 @@ if (etape(1, "L'entité contractante — la PRMP la crée, l'Administrateur appr
   const deja = liste(l.corps).find((e) => e.libelleEntite?.trim() === ENTITE.libelleEntite);
   if (deja) {
     etat.idEntite = deja.idEntiteContract;
-    console.log('  = entité déjà au référentiel : ' + deja.idEntiteContract);
+    console.log('  = entité déjà au référentiel : ' + deja.idEntiteContract + (deja.sigle ? ' · sigle ' + deja.sigle : ''));
+    if (!deja.sigle) {
+      // V48 : une entité d'avant le sigle le reçoit ici (PUT), avant le plan — sinon la référence dérive « MLSRS ».
+      const r = await appel('ADMIN01', 'PUT', '/api/entite-contracts/' + deja.idEntiteContract, { ...deja, sigle: ENTITE.sigle });
+      console.log(r.ok ? '  ✓ sigle posé : ' + ENTITE.sigle : '  ⚠️ sigle non posé : ' + r.statut + ' ' + String(r.corps?.message ?? r.texte).slice(0, 100));
+    }
   } else {
     // ⚠️ C'est la PRMP qui crée l'entité absente du référentiel (ouvert depuis le 26/07) : le serveur
     // pose alors un rattachement PRMP↔entité EN ATTENTE (`actif = false`) que l'Administrateur approuve.

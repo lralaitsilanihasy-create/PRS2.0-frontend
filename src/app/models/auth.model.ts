@@ -54,6 +54,8 @@ export interface RegisterPrmpRequest {
 export interface EntitePubliqueDto {
   idEntiteContract: number;
   libelleEntite: string;
+  /** V48 — sigle des références (« MESupReS »), servi aussi par la vue publique `GET /api/auth/entites`. */
+  sigle?: string | null;
   adresse?: string;
   categorieEntite?: string;
   idLocalite?: string;

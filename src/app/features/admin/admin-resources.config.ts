@@ -150,6 +150,8 @@ export const REFERENTIELS: AdminResource[] = [
         // PK technique : auto (max+1) à la création et masquée de la liste.
         { key: 'idEntiteContract', label: 'Identifiant', type: 'number', pk: true, required: true, autoId: true, hideInList: true },
         { key: 'libelleEntite', label: 'Libellé', required: true },
+        // V48 — le sigle des références (« MESupReS ») ; facultatif, ≤ 20 caractères, validé par le serveur (400 `sigle`).
+        { key: 'sigle', label: 'Sigle' },
         { key: 'adresse', label: 'Adresse', required: true },
         {
           key: 'categorieEntite',

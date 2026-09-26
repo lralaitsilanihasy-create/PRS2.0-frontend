@@ -48,6 +48,9 @@ interface TreeNode {
             <div class="node" [style.padding-left.rem]="0.75 + node.depth * 1.5">
               <span class="node__branch" aria-hidden="true">{{ node.depth > 0 ? '└─' : '' }}</span>
               <span class="node__label">{{ label(node.entite) }}</span>
+              @if (node.entite.sigle) {
+                <span class="badge badge-neutral node__sigle" [attr.title]="'Sigle des références'">{{ node.entite.sigle }}</span>
+              }
               @if (node.entite.categorieEntite) {
                 <span class="badge badge-neutral">{{ node.entite.categorieEntite }}</span>
               }

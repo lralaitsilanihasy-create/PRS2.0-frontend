@@ -295,6 +295,11 @@ interface ApercuDossier {
                             <input class="form-control" type="text" formControlName="libelleEntite" />
                           </label>
                           <label class="form-group">
+                            <span class="form-label">Sigle</span>
+                            <input class="form-control" type="text" formControlName="sigle" maxlength="20" placeholder="MESupReS" />
+                            <span class="form-hint">Tel qu'il figure dans les références du plan ; lettres, chiffres, points et tirets, sans espace.</span>
+                          </label>
+                          <label class="form-group">
                             <span class="form-label">Adresse *</span>
                             <input class="form-control" type="text" formControlName="adresse" />
                           </label>
@@ -1074,6 +1079,8 @@ export class SoumettreDossier {
   readonly nouvEntiteForm = this.fb.group({
     idEntiteParent: [null as number | null], // = ministère d'appartenance
     libelleEntite: ['', Validators.required],
+    // V48 — le sigle des références (« MESupReS ») : facultatif, 20 caractères, lettres / chiffres / points / tirets.
+    sigle: ['', [Validators.maxLength(20), Validators.pattern(/^[A-Za-z0-9.-]*$/)]],
     adresse: ['', Validators.required],
     categorieEntite: [''],
     idOrganigramme: [null as number | null, Validators.required],
@@ -1571,6 +1578,7 @@ export class SoumettreDossier {
       .create({
         idEntiteContract: this.nextEntiteId,
         libelleEntite: (v.libelleEntite ?? '').trim(),
+        sigle: (v.sigle ?? '').trim() || undefined, // vide = absent (V48)
         adresse: (v.adresse ?? '').trim(),
         categorieEntite: v.categorieEntite || undefined,
         idOrganigramme: v.idOrganigramme as number,

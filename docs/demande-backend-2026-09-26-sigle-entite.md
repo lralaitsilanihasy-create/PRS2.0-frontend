@@ -65,6 +65,14 @@ alimentée.
   fiche de l'arbre des entités ; affiché à côté du libellé dans les listes qui nomment l'entité.
 - Rien n'est codé tant que le contrat n'est pas servi ; un sigle absent n'affiche rien (le libellé suffit).
 
+> ✅ **Fait côté front le 2026-09-26, après la livraison V48.** `EntiteContract.sigle` et `EntitePubliqueDto.sigle` au
+> modèle ; champ « Sigle » (facultatif, 20 caractères, motif `[A-Za-z0-9.-]`, vide = absent) dans Administrateur →
+> Entités (`admin-resources.config.ts`) et dans le panneau « Enregistrer une nouvelle entité » de l'import d'un PPM
+> (`soumettre-dossier.ts`) ; badge du sigle dans l'arbre des entités ; sigle devant le libellé dans le choix d'entité de
+> l'inscription PRMP. Le semoir du jeu 2463 (`jeu-donnees-dao-2463.mjs`) pose « MESupReS » à la création de l'entité, ou
+> par `PUT` si elle existe sans sigle — avant le plan, pour que la référence le porte. Écart accepté : pas d'« arbre »
+> serveur, le badge se lit sur la liste servie.
+
 ## Ce que le backend rend
 
 La colonne et le DTO (B1), la règle de référence et la réponse sur le compteur (B2), les documents (B3), la ligne du
