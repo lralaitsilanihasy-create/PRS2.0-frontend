@@ -432,6 +432,36 @@ Ils naissent du décalque : les modèles écrivent des choses que le serveur ne 
 >    retirer la saisie. **Recommandation : (a)** — la PRMP doit pouvoir écrire ce que son dossier dit, et un
 >    contrôle vaut mieux qu'un calcul qui contredirait le document publié.
 
+### ⚠️ Les six modèles sont reconstitués (26/09) — le contrat des jetons
+
+Les six `.docx` sont dans `docs/modeles-candidat/` du dépôt front, **fidèles au caractère près** au dossier 2463
+(comparateur automatisé, texte jamais retapé), avec leur tableau de correspondance dans le `README.md` du même
+dossier. **Ils ne sont pas à mettre en production** avant la relecture du pilote ; ils sont là pour que le contrat
+soit lisible dès maintenant.
+
+**Les jetons**, tous de la forme `{{…}}`, compatibles avec `remplacerDansParagraphe` (remplacement sur le texte
+concaténé des runs) :
+
+| jeton | valeur attendue |
+|---|---|
+| `{{B01-AC-01}}`, `{{B01-AC-02}}`, `{{B02-OB-01}}`, `{{B02-OB-03}}`, `{{B04-LR-03}}`, `{{B03-CQ-01}}` | la valeur de la fiche (PPM ou saisie), telle que servie |
+| `{{B05-GS-03}}` · `{{B05-GS-03.lettres}}` | la garantie **du lot** en chiffres · la même en toutes lettres (`MontantEnLettres.ariary`) |
+| `{{B05-GS-04.doublet}}` | `ordinal(B05-GS-04) + " (" + B05-GS-04 + "ème)"` — ce que `validiteGarantie()` assemble déjà |
+| `{{DERIVE.delai-garantie.doublet}}` | idem, sur `B05-GS-04 − B04-VO-01` — **N1 + N2**, le seul calcul nouveau des garanties |
+| `{{DERIVE.fin-validite-offre}}` | `B04-LR-03 + B04-VO-01` jours, en date — **N2** |
+| `{{B03-AJ-01}}` · `{{B03-AJ-01.lettres}}` | durée des antécédents juridiques (défaut 5) · en lettres — **N3, code proposé** |
+| `{{B03-AF-01.lettres}}` | durée des antécédents financiers (défaut 3), en lettres — **N3, code proposé** |
+| `{{A1B.mention}}` | « (non applicable) » quand le cadrage `groupement` n'autorise pas le groupement, chaîne vide sinon — **N4** |
+| `{{SI:A1B}}` … `{{FINSI:A1B}}` | **marqueurs** : les paragraphes entre les deux sont **omis** quand le groupement n'est pas autorisé ; les marqueurs eux-mêmes sont toujours retirés — **N4** |
+| `{{SI:A3B-NATURES}}` … `{{FINSI:A3B-NATURES}}` | **marqueurs** : les lignes de tableau entre les deux (une par nature, au 2463 « Fournitures », « Services ») sont **régénérées** avec les natures du marché ; marqueurs retirés — **N4** |
+
+**Ce que les modèles ne demandent pas** : aucune adresse nouvelle (`B01-AC-02` existe), aucun ordinal nouveau
+hors le « trentième (30ème) » dérivé, aucun champ pour les blancs du candidat — ils restent des pointillés et des
+crochets, à sa main.
+
+**Un point qui reste au pilote** : `B05-GS-04` (105) reste-t-il **saisi**, le 30 étant dérivé (recommandation), ou
+devient-il dérivé de la validité + 30 ? Le contrat ci-dessus vaut pour les deux réponses.
+
 ### N1 — ce que le formateur doit rendre
 
 Le comportement attendu, éprouvable ligne à ligne :
