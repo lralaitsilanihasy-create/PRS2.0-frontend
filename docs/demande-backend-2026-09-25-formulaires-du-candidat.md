@@ -462,6 +462,14 @@ crochets, à sa main.
 **Un point qui reste au pilote** : `B05-GS-04` (105) reste-t-il **saisi**, le 30 étant dérivé (recommandation), ou
 devient-il dérivé de la validité + 30 ? Le contrat ci-dessus vaut pour les deux réponses.
 
+> ✅ **(c) VÉRIFIÉE le 2026-09-26 à 12:13.** Le backend a rendu les six modèles par son moteur (`ModelesCandidatRenduTest`,
+> jetons non substitués) dans `C:\Users\LANTO\rendus-modeles\`, et le comparateur les a jugés — **six fois « identique »**,
+> 2 651 · 515 · 2 190 · 443 · 2 119 · 2 790 caractères — d'abord par le backend, puis **refait par le front** sur les
+> mêmes fichiers. Le moteur dit exactement le texte du dossier. La première tentative (08:02) avait échoué pour une
+> raison d'outillage, pas de rendu : `java` introuvable depuis bash MSYS ; le comparateur cherche désormais le JDK
+> lui-même. Livraison backend V47 : six modèles embarqués, B02-OB-03 obligatoire, B03-CQ-01 aux trois catégories,
+> B03-CQ-09/10 créés avec `valeurDefaut`, formulaires officiels produits en docx et pdf à la validation, PDF joints.
+
 > ⚠️ **ARBITRÉ PAR LE PILOTE le 2026-09-26 — « oui à tout ».** R1 : `B02-OB-03` **obligatoire**. R4 : `B03-CQ-01`
 > **ouvert aux trois catégories**. R5/R6 : **`B03-CQ-09`** (antécédents juridiques, défaut 5) et **`B03-CQ-10`**
 > (financiers, défaut 3), attribut **`valeurDefaut`** recopié à la création. R11 : **A1-A4 une fois par dossier**,

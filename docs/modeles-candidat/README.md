@@ -14,7 +14,9 @@
 | S6 | cases à cocher : **absentes** |
 | 105 | `B05-GS-04` reste **saisi**, le « trentième (30ème) » est **dérivé** ; le contrôle bloquant les tient cohérents |
 
-Il reste la **relecture des six Word** ci-dessous, et l'errata à envoyer à la PRMP.
+**Le moteur du backend les rend désormais lui-même** (V47) : six rendus à jetons non substitués passés au comparateur,
+**six fois « identique »**, par le backend puis par le front. Il reste la **relecture des six Word** ci-dessous, et
+l'errata à envoyer à la PRMP.
 
 ## Ce que vous avez sous la main
 

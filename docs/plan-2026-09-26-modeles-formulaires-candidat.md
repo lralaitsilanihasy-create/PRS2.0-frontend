@@ -326,8 +326,10 @@ annonce qu'il n'est pas officiel qu'un document officiel approximatif.
 | S6 | absent |
 | 105 | saisi ; « trentième (30ème) » dérivé |
 
-Le chantier backend est ouvert : extension du moteur, N1-N4, les deux changements de référentiel, puis le
-remplacement du gabarit provisoire. Reste la relecture des six Word par le pilote, et l'errata.
+**✅ Livré et prouvé le 26/09 (V47)** : le moteur rend les six modèles ; six rendus à jetons non substitués passés au
+comparateur — **six fois « identique »**, par le backend puis par le front. Référentiel modifié (D1, D2, N3 avec
+`valeurDefaut`), formulaires officiels produits en docx et pdf à la validation, PDF joints au dossier. Restent la
+relecture des six Word par le pilote, l'errata, et la recette réelle sur le 2463 rejoué.
 
 ## Ce qui reste à faire, dans l'ordre demandé
 

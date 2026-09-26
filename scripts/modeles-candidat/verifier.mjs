@@ -12,6 +12,19 @@ import fs from 'node:fs';
 const CP = fs.readFileSync('cp.txt', 'utf8').trim() + ';out';
 const SRC = fs.readFileSync('source-modeles.txt', 'utf8');
 
+/**
+ * ⚠️ Constat du backend (26/09) : lancé depuis bash MSYS sans JDK dans le PATH, `execFileSync('java')` échouait
+ * en silence — sa première vérification a planté pour ça. On cherche donc `java` là où il est : `JAVA_HOME`,
+ * puis le JDK connu du poste, puis le PATH.
+ */
+const JAVA = (() => {
+  const candidats = [
+    process.env.JAVA_HOME && `${process.env.JAVA_HOME}/bin/java${process.platform === 'win32' ? '.exe' : ''}`,
+    'C:/Program Files/Java/jdk-21.0.11/bin/java.exe',
+  ].filter(Boolean);
+  return candidats.find((c) => fs.existsSync(c)) ?? 'java';
+})();
+
 const normaliser = (t) =>
   t
     .replace(/[’ʼ]/g, "'")
@@ -67,7 +80,7 @@ for (const sigle of sigles) {
     console.log(`${sigle} — ABSENT : ${fichier}`);
     continue;
   }
-  let produit = execFileSync('java', ['-cp', CP, 'LireDocx', fichier], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  let produit = execFileSync(JAVA, ['-cp', CP, 'LireDocx', fichier], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   for (const a of desc.ajouts ?? []) produit = produit.split(a).join('');
 
   let attendu = desc.pages.map(pageSource).join(' ');
