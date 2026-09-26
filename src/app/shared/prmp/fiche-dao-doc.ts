@@ -8,6 +8,13 @@ import { BlocFiche, Cadrage, ChampFiche, FicheMarche, ReferentielFiche, Rubrique
 import { ChampFicheMarcheService, FicheMarcheService } from '../../services/fiche-marche.services';
 import { AUCUN_NUMERO, grouperNumeros, libelleObservations } from './document-officiel';
 
+/** « 2170000 » → « 2 170 000 » (espaces simples, comme les documents produits — pas l'espace fine de `Intl`). */
+function grouperMilliers(n: number): string {
+  const [entier, decimales] = String(n).split('.');
+  const groupe = entier.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return decimales ? `${groupe},${decimales}` : groupe;
+}
+
 /** Une information de la fiche DAO cliquée par l'examinateur : de quoi ancrer une observation (contrat V44). */
 export interface CelluleFicheCliquee {
   idDmc: number;
@@ -202,9 +209,17 @@ export class FicheDaoDoc {
       const q = QUESTIONS_CADRAGE.find((x) => x.cle === c.cleCadrage);
       return q?.options.find((o) => o.code === String(v))?.libelle ?? String(v);
     }
-    const v = f.valeurs?.[this.cle(c, lot)];
+    const cle = this.cle(c, lot);
+    const v = f.valeurs?.[cle];
     if (v == null) return '';
-    return c.type === 'LISTE_MULTIPLE' ? optionsChoisies(v).join(', ') : String(v);
+    if (c.type === 'LISTE_MULTIPLE') return optionsChoisies(v).join(', ');
+    // Un montant se lit comme les documents l'impriment — et comme le serveur fige la valeur observée (V44) :
+    // « 2 170 000 Ariary (deux millions cent soixante-dix mille ariary) », les lettres venant de `enLettres`.
+    if (c.type === 'MONTANT' && v !== '' && Number.isFinite(Number(v))) {
+      const lettres = f.enLettres?.[cle];
+      return `${grouperMilliers(Number(v))} Ariary${lettres ? ` (${lettres})` : ''}`;
+    }
+    return String(v);
   }
   observationsDe(cle: string): readonly number[] {
     if (!this.annotations()) return AUCUN_NUMERO;

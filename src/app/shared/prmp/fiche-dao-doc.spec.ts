@@ -53,6 +53,7 @@ const FICHE: FicheMarche = {
   valeurs: { 'B04-VO-01': 105, 'B04-CD-01': 'A1,A3', 'B05-GS-03#1': 1600000, 'B05-GS-03#2': 2170000 },
   valeursPpm: { 'B01-AC-01': 'MINISTERE DE LA SANTE PUBLIQUE' },
   valeursCadrage: { 'B05-GS-01': 'OUI' },
+  enLettres: { 'B05-GS-03#2': 'deux millions cent soixante-dix mille ariary' },
   nbLots: 2,
   saisieParLot: true,
 };
@@ -100,8 +101,9 @@ describe('FicheDaoDoc — la fiche DAO comme document de l’examen (lot B)', ()
     expect(ligne('Durée de validité des offres').querySelector('.doc-val')?.textContent).toBe('105');
     expect(ligne('Fiches de renseignements exigées').querySelector('.doc-val')?.textContent).toBe('A1, A3');
     expect(ligne('Garantie de soumission exigée').querySelector('.doc-val')?.textContent).toBe('Oui');
-    expect(ligne('Montant de la garantie lot 1').querySelector('.doc-val')?.textContent).toBe('1600000');
-    expect(ligne('Montant de la garantie lot 2').querySelector('.doc-val')?.textContent).toBe('2170000');
+    // Un montant se lit comme le document l'imprime : groupé par milliers, avec ses lettres quand le serveur les sert.
+    expect(ligne('Montant de la garantie lot 1').querySelector('.doc-val')?.textContent).toBe('1 600 000 Ariary');
+    expect(ligne('Montant de la garantie lot 2').querySelector('.doc-val')?.textContent).toBe('2 170 000 Ariary (deux millions cent soixante-dix mille ariary)');
     expect(lignes().some((tr) => tr.textContent?.includes('Pièce de garantie'))).toBe(false);
   });
 
@@ -121,7 +123,7 @@ describe('FicheDaoDoc — la fiche DAO comme document de l’examen (lot B)', ()
     cellule('Montant de la garantie lot 2').click();
     expect(emis).toEqual([
       { idDmc: 14, champFiche: 'B04-VO-01', lot: null, libelle: 'Durée de validité des offres', valeur: '105' },
-      { idDmc: 14, champFiche: 'B05-GS-03#2', lot: 2, libelle: 'Montant de la garantie', valeur: '2170000' },
+      { idDmc: 14, champFiche: 'B05-GS-03#2', lot: 2, libelle: 'Montant de la garantie', valeur: '2 170 000 Ariary (deux millions cent soixante-dix mille ariary)' },
     ]);
   });
 

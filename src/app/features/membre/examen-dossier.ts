@@ -917,9 +917,14 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
   /** Référentiels COMPLETS (les lookups ne portent que les libellés — les calculs veulent les objets). */
   private readonly modesRef = signal<ModePassation[]>([]);
   private readonly capmsRef = signal<Capm[]>([]);
-  /** Onglet actif de la zone document (dossiers DDP ; les autres n'ont que les pièces). */
+  /** Onglet actif de la zone document (dossiers DDP ; les autres n'ont que les pièces — et la fiche DAO, lot B). */
   readonly ongletContenu = signal<OngletDocument>('ppm');
-  readonly ongletAffiche = computed<OngletDocument>(() => (this.estPpm() ? this.ongletContenu() : 'pieces'));
+  readonly ongletAffiche = computed<OngletDocument>(() => {
+    if (this.estPpm()) return this.ongletContenu();
+    // ⚠️ Lot B (26/09, recette) — un dossier DAO est un dossier DMC, pas DDP : sans cette branche, la zone
+    // document retombait toujours sur les pièces et l'onglet « Fiche DAO » n'était jamais atteignable.
+    return this.ongletContenu() === 'dao' && this.dossier()?.idDmc != null ? 'dao' : 'pieces';
+  });
   /**
    * ⚠️ 2026-09-14 (décision des chefs) — annotations des documents officiels visibles (état d'examen,
    * statut du marché, versionnement…) : un seul interrupteur pour tous les onglets de l'écran.
@@ -1050,7 +1055,13 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
 
   // ── Zone document ───────────────────────────────────────────────────────────────────────────
   readonly onglets = computed<{ cle: OngletDocument; libelle: string; nombre: number | null }[]>(() => {
-    if (!this.estPpm()) return [{ cle: 'pieces', libelle: 'Pièces jointes', nombre: this.nbPieces() }];
+    if (!this.estPpm()) {
+      return [
+        // ⚠️ Lot B — le dossier DAO (famille DMC) porte sa fiche : elle est SON document, avant les pièces.
+        ...(this.dossier()?.idDmc != null ? [{ cle: 'dao' as const, libelle: 'Fiche DAO', nombre: null }] : []),
+        { cle: 'pieces' as const, libelle: 'Pièces jointes', nombre: this.nbPieces() },
+      ];
+    }
     return [
       { cle: 'ppm' as const, libelle: 'Plan de passation', nombre: this.lignesDuPlan().length },
       { cle: 'fiche' as const, libelle: 'Fiche de présentation', nombre: this.ficheDoc().nbMarchesConcernes },
@@ -1507,7 +1518,8 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       else if (this.estEtapePiece()) this.ongletContenu.set('pieces');
       else if (this.estEtapeFiche()) this.ongletContenu.set('fiche');
       else if (this.estEtapeAgpm()) this.ongletContenu.set('agpm');
-      else if (this.estEtapeDossier()) this.ongletContenu.set('ppm');
+      // ⚠️ Lot B — aux contrôles du dossier, le document sous les yeux est la fiche DAO quand le dossier en porte une.
+      else if (this.estEtapeDossier()) this.ongletContenu.set(this.dossier()?.idDmc != null ? 'dao' : 'ppm');
     });
     // Étape « Pièce N » : la pièce s'affiche d'elle-même dans la zone document.
     effect(() => {
@@ -1977,6 +1989,14 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
           "La grille de l'AGPM s'ouvrira après la fiche de présentation et les lignes du plan — l'examen est séquentiel. Le document reste consultable ici.",
         );
       }
+    } else if (o === 'dao' && this.hasEtapeDossier() && !this.estEtapeDossier()) {
+      // ⚠️ Lot B — la fiche DAO s'observe sous les points du DOSSIER : l'onglet mène à cette étape.
+      this.allerEtape(this.etapeDossierIdx());
+      if (this.etape() === avant && avant < this.etapeDossierIdx()) {
+        this.toast.info(
+          "La grille du dossier s'ouvrira après les pièces — l'examen est séquentiel. La fiche DAO reste consultable ici.",
+        );
+      }
     } else if (o === 'pieces' && this.nbPieces() > 0 && !this.estEtapePiece() && !this.toutesPiecesStatuees()) {
       this.allerEtape(this.offsetPieces() + this.frontierePiece());
       if (this.etape() === avant && avant < this.offsetPieces()) {
@@ -2132,7 +2152,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
     const st = this.resultat(idDetail, idPt);
     // Une ligne vise UN seul endroit : une cellule du plan (V30) OU une information de la fiche (lot B).
     const cible: ObsLigne = cf
-      ? { auLieuDe: cf.valeur, lire: '', idDmc: cf.idDmc, champFiche: cf.champFiche, lot: cf.lot }
+      ? { auLieuDe: cf.valeur, lire: '', idDmc: cf.idDmc, champFiche: cf.champFiche, lot: cf.lot, libelleChampFiche: cf.libelle }
       : c
         ? { auLieuDe: c.valeur, lire: '', champ: c.champ, idMarcheCible: c.idDetail, idBenefCible: c.idBenef }
         : { auLieuDe: '', lire: '' };
