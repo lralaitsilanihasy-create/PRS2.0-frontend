@@ -130,18 +130,21 @@
 - `B06-AN-02` Recours gracieux et recours en attribution (SAISIE) — rubrique « Attribution et notification du marché »
 - `B08-AC-01` Acomptes prévus (SAISIE) — rubrique « Acompte »
 
-## Formulaires de soumission (doc 3) contre nos modèles reconstitués du 2463
+## Formulaires de soumission (doc 3) contre nos modèles
 
-| modèle | lignes du modèle | retrouvées dans le document type | part |
-|---|---|---|---|
-| A1 | 38 | 30 | 79 % |
-| A2 | 6 | 4 | 67 % |
-| A3 | 36 | 27 | 75 % |
-| A4 | 5 | 3 | 60 % |
-| C1 | 11 | 4 | 36 % |
-| C2 | 13 | 8 | 62 % |
+| modèle | décalque du 2463 (26/09) : lignes retrouvées | part | modèle ARMP (27/09) : lignes retrouvées | part |
+|---|---|---|---|---|
+| A1 | 50 / 52 | 96 % | 56 / 56 | 100 % |
+| A2 | 5 / 6 | 83 % | 6 / 6 | 100 % |
+| A3 | 33 / 36 | 92 % | 38 / 38 | 100 % |
+| A4 | 6 / 7 | 86 % | 9 / 10 | 90 % |
+| C1 | 9 / 17 | 53 % | 16 / 17 | 94 % |
+| C2 | 17 / 19 | 89 % | 19 / 19 | 100 % |
 
-*Une part inférieure à 100 % dit que le dossier 2463 s'écarte du document type sur ces lignes (ou l'inverse) : à relire ligne à ligne avant de choisir lequel des deux textes fait modèle.*
+*Les décalques du 2463 s'écartaient du document type ; depuis l'arbitrage du 27/09 (« Ajuster par rapport aux officiels »), les six modèles servis sont décrits depuis le document type lui-même — la preuve fine, dans les deux sens, est `scripts/modeles-candidat/verifier-armp.mjs`. La mesure ci-dessus est grossière (un fragment de texte entre deux jetons, retrouvé ou non dans le texte extrait du .doc) ; ses fragments non retrouvés pour le jeu ARMP :*
+
+- A4 — « Etablir une fiche par marché. Indiquer les marchés publics ainsi que les principaux marchés exécutés »
+- C1 — « Ariary), que nous nous engageons à régler intégralement à l’Autorité Contractante dans les condition »
 
 ## Lecture
 
