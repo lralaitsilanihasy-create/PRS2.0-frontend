@@ -1,0 +1,54 @@
+{
+ "fichier": "A4.docx",
+ "sigle": "A4",
+ "section": [
+  "A4",
+  "B. – Modèle"
+ ],
+ "titre": "A4 – ANTECEDENTS DU CANDIDAT POUR DES MARCHES DE MEME NATURE (1)",
+ "blocs": [
+  {
+   "type": "table",
+   "texte": "2"
+  },
+  {
+   "type": "ligne",
+   "texte": "Identification du marché :\u001e(indiquer les références et l'objet principal du marché, le cas échéant le projet dans le cadre duquel il a été passé, l'objet du ou des lots exécutés)\u001e\u001e\u001e\u001e\u001e\u001e\u001e\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Valeur approximative du marché réalisé (en Ariary):\u001e\u001e\u001e\u001eDans le cas d’un groupement d’entreprises, préciser la participation au montant total du marché\u001e\u001e(indiquer le montant total du marché en Ariary)\u001e\u001e(indiquer le pourcentage de ce montant réalisé par le Candidat)\u001e_______ %\u001e\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Nom et coordonnées de l'Acheteur:\u001e\u001e\u001e\u001e\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Lieu d'exécution\u001e\u001e\u001e\u001fDate de début:\u001e\u001eDate de fin:\u001e\u001e"
+  },
+  {
+   "type": "ligne",
+   "texte": "_____________\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "(1) Etablir une fiche par marché. Indiquer les marchés publics ainsi que les principaux marchés exécutés pour des entreprises du secteur privé. Joindre une copie des certificat de réception."
+  }
+ ],
+ "trace": [
+  {
+   "source": "[note:1]",
+   "jeton": " (1)"
+  },
+  {
+   "source": "[note 1] ",
+   "jeton": "(1) "
+  }
+ ],
+ "ajouts": []
+}

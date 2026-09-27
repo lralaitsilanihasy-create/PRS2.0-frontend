@@ -56,6 +56,38 @@ recette de (c)** : six rendus du serveur à jetons non substitués, six fois « 
 Ce que le comparateur neutralise, et rien d'autre : espaces multiples, césures du PDF, apostrophes droites ou
 courbes, tirets, points de suspension, et les glyphes d'une police de symboles (`U+E000`–`U+F8FF`, constat S6).
 
+## Chaîne ARMP — les modèles sur les documents types officiels (27/09)
+
+Arbitrage du pilote du 27/09 (« Ajuster par rapport aux officiels ») : les formulaires du candidat sont ceux du
+**document type de l'ARMP** (`Documents Types/Fournitures et services/3-Document type d'appel d'offres_Fournitures_
+Formulaires de soumission.doc`, déposé par le pilote, non suivi), dont le dossier 2463 n'était qu'une adaptation.
+Même principe, autre source, autre comparateur ; les fichiers de commande vont dans `modeles-armp/`.
+
+```
+node classpath.mjs                       # cp.txt — commons-lang3 compris (les .docx écrits par Word l'exigent)
+javac -encoding UTF-8 -cp "$(cat cp.txt)" -d out Decalque.java LireDocx.java
+node extraire-armp.mjs                   # 1. Word (COM) convertit le .doc → armp/formulaires-fournitures.docx (une fois),
+                                         #    LireDocx le relit dans l'ordre du document → source-armp.txt
+node decrire-armp.mjs                    # 2. structure + jetons → modeles-armp/<sigle>.txt et .json (texte jamais retapé)
+for m in A2 A4 C1 C2; do java -cp "$(cat cp.txt);out" Decalque modeles-armp/$m.txt modeles-docx-armp; done
+node verifier-armp.mjs A2 A4 C1 C2       # 3. conformité dans les DEUX sens — code 1 au premier fragment manquant ou inventé
+node verifier-armp.mjs C1 --docx=C:/…/C1.docx            # un rendu du serveur ; --dossier=<répertoire> pour plusieurs
+```
+
+Puis copier `modeles-docx-armp/*.docx` dans `docs/modeles-candidat/armp/` (relecture du pilote).
+
+| ce qui change | par quoi |
+|---|---|
+| **La source est le texte du `.docx` converti par Word**, pas un PDF | `extraire-armp.mjs` ; `LireDocx` lit run par run : trait d'union insécable (`w:noBreakHyphen` → U+2011, rendu « - » par `propre`), note de bas de page (`[note:n]` dans le paragraphe, `[note n] texte` sur la ligne suivante), petites majuscules lues en capitales (comme Word les affiche), une tabulation entre deux cellules même vides |
+| **Une section par formulaire**, bornée par son titre et le suivant, cherchée après la « Note aux Utilisateurs » (le sommaire ressemble aux titres) | `armp-commun.mjs` : `section`, clés de recherche à blancs réduits (Word sème des espaces insécables : « A3 : ») |
+| **Les crochets du candidat restent des crochets**, ceux du dossier deviennent des jetons | `JETONS_C1`, `JETONS_C2` dans `decrire-armp.mjs` ; A2 et A4 n'ont aucun jeton |
+| **Ce que Decalque n'a pas** — listes numérotées, notes, cellules fusionnées — est rendu dans le texte et déclaré | labels « (a) », « a) » écrits et listés dans `ajouts` ; note d'A4 → « (1) » (dans `trace`) ; lignes fusionnées dans la première colonne, la seconde vide |
+| **Conformité dans les deux sens** | `verifier-armp.mjs` : chaque fragment du gabarit (cellule ou paragraphe, ≥ 8 lettres ou chiffres, jetons rejoués) se retrouve dans le rendu, **et** chaque fragment du rendu se retrouve dans le gabarit — c'est ce second sens qui a refusé, le 27/09, trois paragraphes complétés de mémoire |
+
+`reduire` ne garde que lettres et chiffres (NFKC, minuscules) : casse, blancs, ponctuation, apostrophes, tirets et
+pointillés ne comptent pas ; les accents et l'ordre des mots, si. Un titre du gabarit sur deux lignes, une cellule
+coupée en paragraphes se retrouvent quand même : les deux textes sont aussi comparés d'un bloc.
+
 ## Où sont les décisions
 
 `docs/plan-2026-09-26-modeles-formulaires-candidat.md` (écarts de la source S1-S6, errata E1-E7, besoins N1-N4),

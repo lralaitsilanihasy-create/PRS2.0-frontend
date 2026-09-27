@@ -20,10 +20,31 @@ soumission.doc`), montrent que le 2463 en est une **adaptation locale** : nos mo
   le nombre nu, pas le doublet. Le « trentième (30ème) jour » y est **fixe** (le gabarit le fixe) : le jeton
   `{{DERIVE.delai-garantie.doublet}}` du modèle 2463 n'y a plus d'objet. Les crochets restants sont ceux du candidat
   (nom, date de l'offre, banque, siège).
-- **A1, A2, A3, A4, C2 suivent** sur le même patron, chacun vérifié paragraphe par paragraphe contre le `.doc` (la
-  chaîne `scripts/modeles-candidat` gagne une source `source-armp.txt` et un comparateur sur le texte du document type).
-  Les questions structurantes du 26/09 restent : A1-b conditionné au cadrage `groupement` (`{{SI:A1B}}`), A3-b
-  natures (`{{SI:A3B-NATURES}}`), durées des antécédents `B03-CQ-09` / `B03-CQ-10` — à re-vérifier sur le texte ARMP.
+- **Chaîne ARMP (27/09, second temps)** — les modèles ne sont plus écrits à la main mais **décrits** depuis le texte du
+  document type, comme les décalques du 2463 : `extraire-armp.mjs` (Word convertit le `.doc` en `.docx`, `LireDocx` le
+  relit dans l'ordre du document → `source-armp.txt`), `decrire-armp.mjs` (structure et jetons, texte jamais retapé →
+  `modeles-armp/<sigle>.txt` + `.json`), `verifier-armp.mjs` (**deux sens** : rien ne manque du gabarit, rien n'est
+  inventé dans le rendu — accepte `--docx=` et `--dossier=` comme `verifier.mjs`). `LireDocx` lit désormais les runs
+  (trait d'union insécable, notes de bas de page, petites majuscules) ; `classpath.mjs` ajoute `commons-lang3`, que les
+  `.docx` écrits par Word exigent. Détail dans `scripts/modeles-candidat/README.md`, § « Chaîne ARMP ».
+- **C1 corrigé, C2, A2, A4 livrés** (27/09, `modeles-armp/`, rendus `docs/modeles-candidat/armp/`), les quatre
+  « conformes au document type » dans les deux sens :
+  - **C1** : les trois conditions sont, dans le gabarit, une liste Word numérotée **« (a) (b) (c) »** (le dernier
+    paragraphe les cite « aux paragraphes a), b) et c) ci-dessus ») — le label est maintenant écrit dans le texte ;
+    apostrophes et guillemets typographiques du gabarit. **À recopier** (le texte des paragraphes est inchangé).
+  - **C2** : trois paragraphes distincts (« Nous soussignés… », « déclarons… », « ladite caution… »), cas
+    **« a) b) c) »**, deux tirets. Cinq jetons : `{{B04-LR-03}}`, `{{DERIVE.fin-validite-offre}}`, `{{B02-OB-03}} —
+    {{B02-OB-01}}`, `{{B01-AC-01}}, {{B01-AC-02}}`, `{{B05-GS-03}} ({{B05-GS-03.lettres}})` (le gabarit dit « en chiffres
+    et en lettres » : `{{CODE}}` porte l'unité, c'est voulu ici). Le « trentième (30ème) jour » est fixe : plus de
+    `{{DERIVE.delai-garantie.doublet}}` ni de `{{B05-GS-04.doublet}}` — le gabarit ne donne pas la date en clair.
+  - **A2** : aucun jeton (rien du dossier n'y figure) ; le tableau a **cinq** lignes vides, comme le document type.
+  - **A4** : aucun jeton. Le titre porte un **appel de note** (« Etablir une fiche par marché… Joindre une copie des
+    certificat de réception. ») : Decalque n'a pas de notes, il est rendu **« (1) »** dans le titre et un paragraphe
+    « (1) … » sous le tableau. Le tableau du gabarit a deux colonnes dont quatre lignes fusionnées : elles vont dans la
+    première colonne, la seconde vide (comme le 2463) ; les paragraphes vides des cellules sont ceux du gabarit.
+- **A1, A3 suivent** (tableaux à cellules fusionnées d'A1-c, A3-a, A3-b) sur la même chaîne. Les questions
+  structurantes du 26/09 restent : A1-b conditionné au cadrage `groupement` (`{{SI:A1B}}`), A3-b natures
+  (`{{SI:A3B-NATURES}}`), durées des antécédents `B03-CQ-09` / `B03-CQ-10` — à re-vérifier sur le texte ARMP.
 
 ## B1 — Le moteur rend les modèles ARMP
 
@@ -42,6 +63,10 @@ soumission.doc`), montrent que le 2463 en est une **adaptation locale** : nos mo
 > ✅ **Correctif reçu le 27/09 (`f05b0c5`, `{{B05-GS-03.chiffres}}`) et recopié tel quel** : le rendu du serveur imprime
 > « pour la somme de … ariary (1 600 000 Ariary) ». Plus d'écart sur C1.
 
+- **27/09, second temps — quatre fichiers à recopier** depuis `modeles-armp/` : `C1.txt` (corrigé : labels « (a) (b)
+  (c) »), `C2.txt`, `A2.txt`, `A4.txt`. Mêmes commandes qu'avant (`TITRE`, `SOUS_TITRE`, `PARA`, `VIDE`, `TABLE`,
+  `LIGNE`, `FIN_TABLE`), aucune nouvelle ; les jetons de C2 sont tous du contrat V47.
+
 ## B2 — La preuve
 
 - Comme au 26/09 : les rendus du serveur (docx) passent le comparateur du front (`verifier.mjs --dossier=`), source =
@@ -53,6 +78,12 @@ soumission.doc`), montrent que le 2463 en est une **adaptation locale** : nos mo
 > `C:\Users\LANTO\rendus-modeles\C1.docx`, jetons non substitués) avec votre rendu de relecture
 > `docs/modeles-candidat/armp/C1.docx` **et** avec `modeles-armp/C1.txt` : **15 paragraphes, identiques** des deux côtés.
 > Dès que le comparateur ARMP existe, je rejoue `verifier.mjs C1 --docx=…` comme au 26/09.
+
+- **27/09, second temps — le comparateur ARMP existe** : depuis `scripts/modeles-candidat/`, une fois
+  `node classpath.mjs`, `javac …`, `node extraire-armp.mjs` faits (README, § « Chaîne ARMP ») :
+  `node verifier-armp.mjs C1 --docx=C:\Users\LANTO\rendus-modeles\C1.docx`, ou les quatre d'un coup avec
+  `node verifier-armp.mjs A2 A4 C1 C2 --dossier=C:\Users\LANTO\rendus-modeles`. Il sort en code 1 au premier fragment
+  manquant ou inventé, et les nomme.
 
 ## B3 — Ce qui change pour la PRMP du 2463
 
