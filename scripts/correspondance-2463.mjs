@@ -209,28 +209,39 @@ for (let i = 0; i < L.length; i++) {
   } else if (l.startsWith('*') && l.endsWith('*')) H.push(`<p class="note">${inline(l.slice(1, -1))}</p>`);
   else if (l.trim()) H.push(`<p>${inline(l)}</p>`);
 }
-const HTML = `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><title>Fiche DAO ↔ dossier 2463 — correspondance</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+// Une seule feuille de style pour deux sorties : le fichier du dépôt (page complète) et la variante « artefact »
+// (`--artefact=<fichier>` : titre + style + contenu, sans squelette — l'outil de publication ajoute le sien).
+// Jetons de couleur définis en clair sur :root, redéfinis pour le mode sombre ; tableaux dans un conteneur qui défile.
+const TETE = `<title>Correspondance DAO 2463</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono&display=swap">
 <style>
-  :root { --enc: #152033; --gris: #5b6784; --bord: #d5dbe5; --r: #15803d; --d: #1d4ed8; --h: #b45309; --q: #b91c1c; }
-  body { margin: 0; padding: 24px 16px 48px; font: 14px/1.45 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--enc); background: #fff; max-width: 1400px; margin-inline: auto; }
-  h1 { font-size: 1.5rem; margin: 0 0 .5rem; } h2 { font-size: 1.1rem; margin: 1.8rem 0 .5rem; border-bottom: 2px solid var(--bord); padding-bottom: .25rem; }
-  p.note { color: var(--gris); font-style: italic; margin: .15rem 0; font-size: .9rem; }
-  table { border-collapse: collapse; width: 100%; margin: .4rem 0 1rem; font-size: .85rem; }
-  th, td { border: 1px solid var(--bord); padding: .3rem .5rem; vertical-align: top; text-align: left; overflow-wrap: anywhere; }
-  th { background: #f1f5f9; font-weight: 700; white-space: nowrap; }
+  :root { --fond: #fbfaf7; --papier: #ffffff; --encre: #1f2430; --sourd: #5c6470; --trait: #d9d6cf; --tete: #f1efe9;
+          --r: #1a7f4b; --d: #2a5db0; --h: #b26b00; --q: #b3261e; --code: #f3f1ec; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --fond: #16181d; --papier: #1d2026; --encre: #e7e6e1; --sourd: #a1a6ad; --trait: #33373f; --tete: #24272e; --r: #5ec98d; --d: #8ab4f8; --h: #f0b35b; --q: #ff8a80; --code: #262931; } }
+  :root[data-theme="dark"] { --fond: #16181d; --papier: #1d2026; --encre: #e7e6e1; --sourd: #a1a6ad; --trait: #33373f; --tete: #24272e; --r: #5ec98d; --d: #8ab4f8; --h: #f0b35b; --q: #ff8a80; --code: #262931; }
+  body { margin: 0; background: var(--fond); color: var(--encre); font: 15px/1.5 "IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif; }
+  .corr { max-width: 1280px; margin-inline: auto; padding-inline: 16px; padding-block: 28px 56px; }
+  h1, h2 { font-family: "Source Serif 4", Georgia, "Times New Roman", serif; text-wrap: balance; }
+  h1 { font-size: 1.7rem; line-height: 1.2; margin: 0 0 .6rem; }
+  h2 { font-size: 1.15rem; margin: 2rem 0 .6rem; padding-bottom: .3rem; border-bottom: 2px solid var(--trait); }
+  p { margin: .3rem 0; max-width: 70ch; } p.note { color: var(--sourd); font-style: italic; font-size: .9rem; max-width: none; }
+  .tableau { overflow-x: auto; margin: .5rem 0 1.2rem; border: 1px solid var(--trait); border-radius: 6px; background: var(--papier); }
+  table { border-collapse: collapse; width: 100%; font-size: .86rem; font-variant-numeric: tabular-nums; }
+  th, td { border-bottom: 1px solid var(--trait); padding: .4rem .6rem; vertical-align: top; text-align: left; overflow-wrap: anywhere; }
+  td + td, th + th { border-left: 1px solid var(--trait); }
+  th { background: var(--tete); font-weight: 600; white-space: nowrap; font-size: .8rem; letter-spacing: .02em; text-transform: uppercase; color: var(--sourd); }
+  tr:last-child td { border-bottom: 0; }
   td:first-child code { white-space: nowrap; }
   td.n { white-space: nowrap; font-weight: 700; } td.n-r { color: var(--r); } td.n-d { color: var(--d); } td.n-h { color: var(--h); } td.n-q { color: var(--q); }
   td.imp-oui { color: var(--r); font-weight: 700; } td.imp-non { color: var(--q); font-weight: 700; }
-  code { font-family: Consolas, "Courier New", monospace; font-size: .85em; background: #f8fafc; padding: 0 .2em; border-radius: 3px; }
-  ul { padding-left: 1.2rem; }
-  @media print { body { padding: 0; font-size: 11px; } h2 { break-after: avoid; } tr { break-inside: avoid; } }
-</style></head><body>
-${H.join('\n')}
-</body></html>
-`;
+  code { font-family: "IBM Plex Mono", Consolas, "Courier New", monospace; font-size: .86em; background: var(--code); padding: 0 .25em; border-radius: 3px; }
+  ul { padding-left: 1.2rem; max-width: 80ch; } li { margin: .2rem 0; }
+  @media print { body { background: #fff; } .corr { padding: 0; font-size: 11px; } h2 { break-after: avoid; } tr { break-inside: avoid; } .tableau { border: 0; overflow: visible; } }
+</style>`;
+const CONTENU = `<main class="corr">\n${H.join('\n').replace(/<table>/g, '<div class="tableau"><table>').replace(/<\/table>/g, '</table></div>')}\n</main>`;
 const SORTIE_HTML = SORTIE.replace(/\.md$/, '.html');
-fs.writeFileSync(SORTIE_HTML, HTML);
+fs.writeFileSync(SORTIE_HTML, `<!doctype html>\n<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">\n${TETE}\n</head><body>\n${CONTENU}\n</body></html>\n`);
 console.log('écrit ' + path.relative(RACINE, SORTIE_HTML));
+const ARTEFACT = arg('artefact', '');
+if (ARTEFACT) { fs.writeFileSync(ARTEFACT, `${TETE}\n${CONTENU}\n`); console.log('écrit ' + ARTEFACT + ' (variante artefact)'); }
 console.log('écrit ' + path.relative(RACINE, SORTIE) + ' — [R] ' + stats.R + ' · [D] ' + stats.D + ' · [H] ' + stats.H + (stats['?'] ? ' · ? ' + stats['?'] : '') + ' · imprimés ' + stats.imprimeOui + '/' + (stats.imprimeOui + stats.imprimeNon) + ' · documents lus : ' + [...texteDoc.keys()].join(', '));
