@@ -137,6 +137,17 @@ nouveau dossier, jamais un ré-import. Le dossier garde sa référence, son circ
 > version validée, il ne peut pas servir) ; la resoumission n'est fermée que par l'écran. **C3 attend B4**
 > (`valeurChampFicheActuelle` : non servi à ce jour), **C4 attend B5**, **C5 attend B6**.
 
+> ✅ **Fait côté front le 2026-09-27, sur V49.** Modèles B1/B4/B5 ; **C3** : la carte partagée dit « → actuelle « … »
+> (version n) » quand la valeur d'aujourd'hui diffère de la valeur observée (vérifié sur le dossier 100353 : « 2 000 000
+> Ariary (deux millions ariary) », version 2) ; **C4** : le document de l'examen marque les informations de
+> `perimetre.ficheDao.informations` (« modifiée — avant : … ») ; la consultation de la lettre, pour un dossier DAO en
+> attente de pièces, dit que le complément est la fiche révisée (« Réviser la fiche → ») et traduit le 409
+> `FICHE_NON_REVISEE`. **Repli B1 levé** : `versionSoumise` servie est prise d'abord (0 = inconnue → reconnaissance par
+> les documents, conservée pour les dossiers d'avant V49). **C5** : rien de plus à l'écran — la PRMP ne lit pas les
+> lignes d'examen (`examen-details` lui répond vide) et les observations du PV n'existent que pour un avis FAVR ; le PDF
+> de B6 porte l'information. Non joué en réel : le chemin lettre de renvoi → réexamen (C4) — il attend un second dossier
+> avec avis défavorable.
+
 ## Questions posées au pilote (plan, §5)
 > ✅ **Tranchées le 26/09** : Q2 remplacement automatique des pièces produites (B2 telle quelle) ; Q3 fiche
 > verrouillée pendant l'examen (B1 telle quelle) ; Q4 tous les points réévalués, changements mis en évidence (B5
