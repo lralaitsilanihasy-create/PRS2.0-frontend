@@ -181,4 +181,54 @@ L.push('- Ce que la fiche ne porte pas, et pourquoi : fiche des faits §10 (vale
 L.push('');
 L.push(`*Remplace \`correspondance-2026-09-25-fiche-dao-vs-dossier-2463.md\` (fiche 13, avant la fiche des faits et les modèles officiels).*`);
 fs.writeFileSync(SORTIE, L.join('\n') + '\n');
+
+// ── 5. Le même document en HTML (autonome, imprimable) ───────────────────────────────────────
+const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const inline = (t) => esc(t).replace(/\\\|/g, '|').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+const classeCellule = (t) => (/^\*\*\[R\]\*\*$/.test(t) ? ' class="n n-r"' : /^\*\*\[D\]\*\*$/.test(t) ? ' class="n n-d"' : /^\*\*\[H\]\*\*$/.test(t) ? ' class="n n-h"' : /^\*\*\[\?\]\*\*$/.test(t) ? ' class="n n-q"' : t === 'oui' ? ' class="imp-oui"' : t === 'non' ? ' class="imp-non"' : '');
+const cellules = (ligne) => ligne.slice(1, -1).split(/(?<!\\)\|/).map((c) => c.trim());
+const H = [];
+for (let i = 0; i < L.length; i++) {
+  const l = L[i];
+  if (l.startsWith('# ')) H.push(`<h1>${inline(l.slice(2))}</h1>`);
+  else if (l.startsWith('## ')) H.push(`<h2>${inline(l.slice(3))}</h2>`);
+  else if (l.startsWith('|')) {
+    const tete = cellules(l);
+    const lignes = [];
+    i += 2; // la ligne de séparation
+    while (i < L.length && L[i].startsWith('|')) lignes.push(cellules(L[i++]));
+    i--;
+    H.push('<table><thead><tr>' + tete.map((c) => `<th>${inline(c)}</th>`).join('') + '</tr></thead><tbody>'
+      + lignes.map((r) => '<tr>' + r.map((c) => `<td${classeCellule(c)}>${inline(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table>');
+  } else if (l.startsWith('- ')) {
+    const items = [];
+    while (i < L.length && L[i].startsWith('- ')) items.push(L[i++].slice(2));
+    i--;
+    H.push('<ul>' + items.map((x) => `<li>${inline(x)}</li>`).join('') + '</ul>');
+  } else if (l.startsWith('*') && l.endsWith('*')) H.push(`<p class="note">${inline(l.slice(1, -1))}</p>`);
+  else if (l.trim()) H.push(`<p>${inline(l)}</p>`);
+}
+const HTML = `<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Fiche DAO ↔ dossier 2463 — correspondance</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --enc: #152033; --gris: #5b6784; --bord: #d5dbe5; --r: #15803d; --d: #1d4ed8; --h: #b45309; --q: #b91c1c; }
+  body { margin: 0; padding: 24px 16px 48px; font: 14px/1.45 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--enc); background: #fff; max-width: 1400px; margin-inline: auto; }
+  h1 { font-size: 1.5rem; margin: 0 0 .5rem; } h2 { font-size: 1.1rem; margin: 1.8rem 0 .5rem; border-bottom: 2px solid var(--bord); padding-bottom: .25rem; }
+  p.note { color: var(--gris); font-style: italic; margin: .15rem 0; font-size: .9rem; }
+  table { border-collapse: collapse; width: 100%; margin: .4rem 0 1rem; font-size: .85rem; }
+  th, td { border: 1px solid var(--bord); padding: .3rem .5rem; vertical-align: top; text-align: left; overflow-wrap: anywhere; }
+  th { background: #f1f5f9; font-weight: 700; }
+  td.n { white-space: nowrap; font-weight: 700; } td.n-r { color: var(--r); } td.n-d { color: var(--d); } td.n-h { color: var(--h); } td.n-q { color: var(--q); }
+  td.imp-oui { color: var(--r); font-weight: 700; } td.imp-non { color: var(--q); font-weight: 700; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: .85em; background: #f8fafc; padding: 0 .2em; border-radius: 3px; }
+  ul { padding-left: 1.2rem; }
+  @media print { body { padding: 0; font-size: 11px; } h2 { break-after: avoid; } tr { break-inside: avoid; } }
+</style></head><body>
+${H.join('\n')}
+</body></html>
+`;
+const SORTIE_HTML = SORTIE.replace(/\.md$/, '.html');
+fs.writeFileSync(SORTIE_HTML, HTML);
+console.log('écrit ' + path.relative(RACINE, SORTIE_HTML));
 console.log('écrit ' + path.relative(RACINE, SORTIE) + ' — [R] ' + stats.R + ' · [D] ' + stats.D + ' · [H] ' + stats.H + (stats['?'] ? ' · ? ' + stats['?'] : '') + ' · imprimés ' + stats.imprimeOui + '/' + (stats.imprimeOui + stats.imprimeNon) + ' · documents lus : ' + [...texteDoc.keys()].join(', '));
