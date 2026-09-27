@@ -46,7 +46,8 @@
     <section class="card fm__resp" aria-label="Responsable de la procédure">
       <h2 class="fm__resp-t">Responsable de la procédure</h2>
       @if (f.responsableProcedure; as r) {
-        <p class="fm__resp-l">Titulaire : <strong>{{ r.nom }}</strong> <span class="cnm-mono">{{ r.im }}</span></p>
+        <!-- Angular retire les blancs entre deux éléments : l'espace entre le nom et le matricule se pose explicitement. -->
+        <p class="fm__resp-l">Titulaire : <strong>{{ r.nom }}</strong>&nbsp;<span class="cnm-mono">{{ r.im }}</span></p>
         <button type="button" class="btn btn-outline btn-sm" [disabled]="saving()" (click)="retirerResponsable()">Retirer</button>
       } @else {
         <p class="fm__resp-l fm__resp-aucun">Aucun responsable désigné. En remise électronique, la fiche ne se valide pas sans lui.</p>

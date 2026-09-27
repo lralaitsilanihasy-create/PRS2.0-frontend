@@ -384,6 +384,21 @@ serveur doit savoir de ce que l'écran attend :
 - Errata E9 du 2463 (front) : « Mode de remise des offres : Papier » remplace la ligne `B04-VE-01` des Données
   particulières ; la valeur `B04-VE-01` d'une fiche validée n'est pas recopiée à la révision.
 
+> ✅ **Recette réelle du 27/09 (front, après la livraison backend `6368f54`, V50 appliquée)** — sur un **second plan**
+> semé pour l'occasion (dossier 100357, `00003/PPM-AGPM/CNM/2026`, ligne 303101, fiche 19 garnie du jeu 2463) :
+> **mode électronique** (version 2) — révision, cadrage `modeRemise = ELECTRONIQUE`, bloc B04 (38 valeurs), `B04-OP-02`
+> / `B04-OP-03` / `B04-SE-03` / `B04-SE-15` posés par le serveur, bloc B05 (voie B, sans original) avec `B05-GS-12` /
+> `B05-GS-14` calculés, responsable désigné par l'Administrateur (VERANT1, après retrait d'ADMIN01), 403 à
+> l'Administrateur sur les paramètres internes, paramètres saisis par le titulaire (3 membres, quorum 2, cérémonie)
+> → `COMPLETS`, journal avec ancienne → nouvelle valeur, 409 `MEMBRE_COMMISSION` dans les deux sens, huit règles
+> `SE_*` en `ok`, validation ; Données particulières : « Mode de remise des offres : Électronique », plateforme,
+> seuil, publication en `JJ/MM/AAAA HH:MM`, plus d'ancienne ligne `B04-VE-01` ; C1 : clause balisée présente, aucun
+> marqueur imprimé. **Mode papier** (version 3) : « Papier », aucune ligne `B04-SE`, pas de clause. Scripts du
+> scratchpad `lse-recette.mjs` et `lse-versions.mjs`. Deux points d'attention rencontrés, sans écart du contrat :
+> `?dossier=` de `/api/marches` ne filtre pas (le semis reprenait la ligne du premier plan — corrigé au front,
+> `scripts/jeu-donnees-dao-2463.mjs`) ; la grille `GET /api/points-ctrls?sousType=PPM-AGPM` ne sert pas les cinq
+> points de niveau dossier et de projet d'AGPM que la soumission de l'examen exige (« 5 évaluations manquantes »).
+
 ## Ce que le backend rend
 
 Migration V50, moteur, référentiel (CSV + script), règles, endpoints, ADR-0010, `docs/api-endpoints.md` et

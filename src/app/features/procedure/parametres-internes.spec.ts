@@ -73,7 +73,7 @@ describe('Paramètres internes de la procédure (remise électronique, 27/09)', 
     expect(cases.map((c) => c.checked)).toEqual([true, true, false]);
     expect(texte(racine().querySelector('#pi-nombre-parts'))).toBe('2 calculé');
     expect(texte(racine().querySelector('#pi-responsable'))).toContain('Randria (RESP01)');
-    expect(Array.from(racine().querySelectorAll('.pi__journal tbody tr td')).map((td) => texte(td))).toEqual(['2026-09-27T10:00', 'Randria', 'quorum', '—', '2']);
+    expect(Array.from(racine().querySelectorAll('.pi__journal tbody tr td')).map((td) => texte(td))).toEqual(['27/09/2026 10:00', 'Randria', 'quorum', '—', '2']);
     // on ajoute la Chef de commission, on passe le quorum à 3, on date la cérémonie
     cases[2].click();
     rendre();

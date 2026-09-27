@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Location } from '@angular/common';
+import { DatePipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -24,7 +24,7 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
 @Component({
   selector: 'app-parametres-internes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EtatErreur],
+  imports: [DatePipe, EtatErreur],
   template: `
     <section class="pi">
       <header class="page-header">
@@ -58,7 +58,7 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
       } @else if (donnees(); as d) {
         <div class="pi__etat">
           <span class="badge" [class.badge-success]="d.etat === 'COMPLETS'" [class.badge-warning]="d.etat !== 'COMPLETS'">Paramètres {{ libelleEtat(d.etat) }}</span>
-          @if (d.responsable; as r) { <span>Responsable : <strong>{{ r.nom }}</strong> <span class="cnm-mono">{{ r.im }}</span></span> }
+          @if (d.responsable; as r) { <span>Responsable : <strong>{{ r.nom }}</strong>&nbsp;<span class="cnm-mono">{{ r.im }}</span></span> }
           @else { <span class="pi__manque">Aucun responsable désigné</span> }
         </div>
         @if (d.anomalies.length) {
@@ -123,7 +123,7 @@ import { EtatErreur } from '../../shared/ui/etat-erreur';
               <thead><tr><th scope="col">Date</th><th scope="col">Par</th><th scope="col">Champ</th><th scope="col">Ancienne valeur</th><th scope="col">Nouvelle valeur</th></tr></thead>
               <tbody>
                 @for (e of d.journal; track $index) {
-                  <tr><td class="cnm-mono">{{ e.date }}</td><td>{{ e.nomActeur || e.acteur }}</td><td class="cnm-mono">{{ e.champ }}</td><td>{{ e.ancienneValeur ?? '—' }}</td><td>{{ e.nouvelleValeur ?? '—' }}</td></tr>
+                  <tr><td class="cnm-mono">{{ e.date | date: 'dd/MM/yyyy HH:mm' }}</td><td>{{ e.nomActeur || e.acteur }}</td><td class="cnm-mono">{{ e.champ }}</td><td>{{ e.ancienneValeur ?? '—' }}</td><td>{{ e.nouvelleValeur ?? '—' }}</td></tr>
                 }
               </tbody>
             </table>

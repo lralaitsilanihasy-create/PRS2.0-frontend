@@ -79,7 +79,7 @@
 .fm__calc { margin-left: 0.4rem; font-size: 0.72rem; font-style: italic; color: var(--n-500); }
 .fm__fuseau { display: block; margin-top: 0.25rem; font-size: 0.76rem; color: var(--n-500); }
 // ⚠️ Remise électronique (27/09, Q8) — l'encart de désignation du responsable, pour l'Administrateur seul.
-.fm__resp { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.9rem 1.1rem; }
+.fm__resp { display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem; padding: 0.9rem 1.1rem; }
 .fm__resp-t { margin: 0; font-size: 0.98rem; }
 .fm__resp-l { margin: 0; font-size: 0.9rem; }
 .fm__resp-aucun { color: var(--warning-text, #8a5a00); }
