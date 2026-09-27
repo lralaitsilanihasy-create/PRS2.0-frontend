@@ -55,6 +55,37 @@ const REF_AVEC_LOTS: ReferentielFiche = {
 
 
 /**
+ * ⚠️ Remise électronique (27/09, V50) — bloc B04 réduit : la remise (date + heure en texte), l'ouverture des plis,
+ * et la rubrique `B04-SE` dont seul le mode (champ de cadrage) est toujours visible ; le reste s'ouvre par
+ * `modeRemise = ELECTRONIQUE`. Deux types nouveaux : `URL` et `DATE_HEURE`.
+ */
+const REF_SE: ReferentielFiche = {
+  blocs: [
+    ...REFERENTIEL.blocs,
+    {
+      code: 'B04',
+      libelle: 'Dossier, remise & ouverture des offres',
+      rang: 4,
+      rubriques: [
+        { code: 'LR', libelle: 'Lieu, date et heure de remise', rang: 6, documentMaitre: 'DPAO' },
+        { code: 'OP', libelle: 'Ouverture des plis', rang: 7, documentMaitre: 'DPAO' },
+        { code: 'SE', libelle: 'Remise électronique', rang: 8, documentMaitre: 'DPAO' },
+      ],
+    },
+  ],
+  champs: [
+    ...REFERENTIEL.champs,
+    { code: 'B04-LR-03', bloc: 'B04', rubrique: 'LR', rang: 3, libelle: 'Date limite de remise des offres', type: 'DATE', source: 'SAISIE', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], obligatoire: true },
+    { code: 'B04-LR-04', bloc: 'B04', rubrique: 'LR', rang: 4, libelle: 'Heure limite de remise des offres', type: 'TEXTE', source: 'SAISIE', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], obligatoire: false },
+    { code: 'B04-OP-02', bloc: 'B04', rubrique: 'OP', rang: 2, libelle: 'Date de l’ouverture des plis', type: 'DATE', source: 'SAISIE', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], obligatoire: true },
+    { code: 'B04-SE-01', bloc: 'B04', rubrique: 'SE', rang: 1, libelle: 'Mode de remise des offres', type: 'LISTE', options: ['PAPIER', 'ELECTRONIQUE'], source: 'CADRAGE', cleCadrage: 'modeRemise', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], obligatoire: true },
+    { code: 'B04-SE-02', bloc: 'B04', rubrique: 'SE', rang: 2, libelle: 'Adresse de la plateforme de dépôt', type: 'URL', source: 'SAISIE', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], obligatoire: true, condition: 'modeRemise = ELECTRONIQUE' },
+    { code: 'B04-SE-03', bloc: 'B04', rubrique: 'SE', rang: 3, libelle: 'Date d’ouverture des dépôts', type: 'DATE_HEURE', source: 'SAISIE', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], obligatoire: false, condition: 'modeRemise = ELECTRONIQUE' },
+    { code: 'B04-SE-04', bloc: 'B04', rubrique: 'SE', rang: 4, libelle: 'Heure de référence', type: 'LISTE', options: ['Heure du serveur (UTC+03:00, Indian/Antananarivo)'], source: 'SAISIE', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], obligatoire: true, condition: 'modeRemise = ELECTRONIQUE' },
+  ],
+};
+
+/**
  * ⚠️ V45/V46 (25/09) — référentiel qui porte les deux nouveautés : un champ `LISTE_MULTIPLE` (B04-CD-01, les
  * formulaires exigés du candidat) et le bloc du **besoin**, qui DÉCLARE son rendu au lieu de porter des champs.
  * `B10` n'a ni champ ni rendu : l'écran doit le dire, au lieu de montrer un bloc blanc.
@@ -703,6 +734,70 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     // champ à saisir), ni « DPAO » (la rubrique le dit déjà) : seulement les reprises et la condition.
     expect(Array.from(meta ?? []).map((s) => texte(s))).toEqual(['repris dans', 'AE', 'CCAP', 'condition : garantieSoumission = OUI']);
     expect(texte(racine().querySelector('.fm__total'))).toContain('1 sur 3');
+  });
+
+  it('remise électronique (27/09) — mode papier : la rubrique ne montre que le mode, lu « Papier » ; rien d’autre ne s’ouvre', () => {
+    monter('PRMP', 42);
+    ouvrir(REF_SE, fiche({ cadrage: CADRAGE_COMPLET, valeurs: {}, valeursCadrage: { 'B04-SE-01': 'PAPIER' } }));
+    fixture.componentInstance.allerAuBloc('B04');
+    rendre();
+    expect(Array.from(racine().querySelectorAll('.fm__rub h3')).map((h) => texte(h))).toEqual(['Lieu, date et heure de remise DPAO', 'Ouverture des plis DPAO', 'Remise électronique DPAO']);
+    expect(texte(racine().querySelector('#c-B04-SE-01'))).toBe('Papier');
+    expect(racine().querySelector('#c-B04-SE-02')).toBeNull();
+    expect(racine().querySelector('#c-B04-SE-03')).toBeNull();
+    expect(racine().querySelector('.fm__fuseau')).toBeNull();
+    // l'heure limite n'est pas obligatoire en mode papier
+    expect(texte(racine().querySelector('label[for="c-B04-LR-04"]'))).toBe('Heure limite de remise des offres');
+  });
+
+  it('remise électronique (27/09) — mode électronique : URL et date-heure saisissables, fuseau à côté de l’heure limite devenue obligatoire, ouverture des plis calculée par le serveur', () => {
+    monter('PRMP', 42);
+    ouvrir(REF_SE, fiche({
+      cadrage: { ...CADRAGE_COMPLET, modeRemise: 'ELECTRONIQUE' },
+      valeurs: { 'B04-LR-04': '10:00', 'B04-OP-02': '2026-11-09', 'B04-SE-04': 'Heure du serveur (UTC+03:00, Indian/Antananarivo)' },
+      valeursCadrage: { 'B04-SE-01': 'ELECTRONIQUE' },
+      champsCalcules: ['B04-OP-02'],
+    }));
+    fixture.componentInstance.allerAuBloc('B04');
+    rendre();
+    expect(texte(racine().querySelector('#c-B04-SE-01'))).toBe('Électronique');
+    expect((racine().querySelector('#c-B04-SE-02') as HTMLInputElement).type).toBe('url');
+    expect((racine().querySelector('#c-B04-SE-03') as HTMLInputElement).type).toBe('datetime-local');
+    expect(texte(racine().querySelector('label[for="c-B04-LR-04"]'))).toBe('Heure limite de remise des offres *');
+    expect(texte(racine().querySelector('#c-B04-LR-04')?.parentElement?.querySelector('.fm__fuseau'))).toBe('Heure du serveur (UTC+03:00, Indian/Antananarivo)');
+    // Q11 : la date d'ouverture est posée par le serveur — lue, marquée, jamais saisie ici
+    const ouverture = racine().querySelector('#c-B04-OP-02') as HTMLElement;
+    expect(ouverture.classList.contains('fm__lecture--calc')).toBe(true);
+    expect(texte(ouverture)).toBe('2026-11-09 calculée');
+    expect(racine().querySelector('input#c-B04-OP-02')).toBeNull();
+    // une date-heure saisie part telle quelle (ISO local), une URL aussi
+    const dh = racine().querySelector('#c-B04-SE-03') as HTMLInputElement;
+    dh.value = '2026-10-12T08:00';
+    dh.dispatchEvent(new Event('input'));
+    rendre();
+    expect(fixture.componentInstance.valeurs()['B04-SE-03']).toBe('2026-10-12T08:00');
+  });
+
+  it('remise électronique (27/09) — la question de cadrage se présente cochée « Papier » par défaut et n’est pas envoyée tant qu’elle n’est pas choisie', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ cadrage: { ...CADRAGE_COMPLET } }));
+    fixture.componentInstance.etape.set(1);
+    rendre();
+    const papier = racine().querySelector('input[name="q-modeRemise"][value="PAPIER"]') as HTMLInputElement;
+    expect(papier.checked).toBe(true);
+    expect(fixture.componentInstance.cadrageOk()).toBe(true);
+    fixture.componentInstance.enregistrerCadrage();
+    const req = http.expectOne((r) => r.url.endsWith('/api/fiches-marche/42/cadrage'));
+    expect(req.request.body).not.toHaveProperty('modeRemise');
+    req.flush(fiche({ cadrage: { ...CADRAGE_COMPLET } }));
+    rendre();
+    // le choix explicite de l'électronique, lui, part au serveur
+    fixture.componentInstance.etape.set(1);
+    rendre();
+    (racine().querySelector('input[name="q-modeRemise"][value="ELECTRONIQUE"]') as HTMLInputElement).click();
+    rendre();
+    expect(fixture.componentInstance.cadrage()['modeRemise']).toBe('ELECTRONIQUE');
+    expect(fixture.componentInstance.resume().map((p) => p.texte)).toContain('Remise électronique');
   });
 
   it('bloc refusé (400 nominatifs) : le message sous chaque champ, un toast de comptage, aucun changement d’étape', () => {

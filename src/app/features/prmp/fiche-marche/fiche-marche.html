@@ -317,7 +317,7 @@
                     @for (c of champs(bloc, r); track c.code) {
                       <div class="fm__champ" [class.fm__champ--ko]="champEnErreur(c)" [class.fm__champ--observe]="obsDe(c).length > 0" [class.fm__champ--visee]="estVisee(c)">
                         <div class="fm__champ-l">
-                          <label [for]="'c-' + cle(c, lotsDe(c)[0])">{{ c.libelle }}@if (c.obligatoire) { <span aria-hidden="true"> *</span> }</label>
+                          <label [for]="'c-' + cle(c, lotsDe(c)[0])">{{ c.libelle }}@if (c.obligatoire || exigeEnElectronique(c)) { <span aria-hidden="true"> *</span> }</label>
                           <span class="fm__champ-aide">{{ c.code }}@if (c.aide) { · {{ c.aide }} }</span>
                           @if (erreurDe(c.code); as msg) { <span class="form-error">{{ msg }}</span> }
                           <!-- ⚠️ Lot C2 — l'observation du PV qui vise cette information, en marge : la PRMP corrige à l'endroit exact. -->
@@ -341,7 +341,7 @@
                                 @for (o of choisies(c); track o) { <li>{{ o }}</li> }
                               </ul>
                             } @else {
-                              <div class="fm__lecture" [id]="'c-' + c.code">{{ valeurAffichee(c) || '—' }}</div>
+                              <div class="fm__lecture" [id]="'c-' + c.code">{{ affichageLecture(c) || '—' }}</div>
                             }
                           } @else {
                             <!-- ⚠️ V43 (25/09) — une information qui varie d'un lot à l'autre se saisit une fois PAR LOT,
@@ -350,6 +350,12 @@
                               <div class="fm__lot">
                                 @if (lot !== null) { <span class="fm__lot-t" aria-hidden="true">Lot {{ lot }}</span> }
                                 <div class="fm__lot-v">
+                                  @if (calculee(c, lot)) {
+                                    <!-- ⚠️ Remise électronique (27/09, Q11) — valeur POSÉE PAR LE SERVEUR à l'enregistrement
+                                         (ouverture des plis = date limite + délai, dates déduites) : elle se lit, l'écran ne
+                                         la calcule pas et ne la laisse pas modifier. -->
+                                    <div class="fm__lecture fm__lecture--calc" [id]="'c-' + cle(c, lot)">{{ valeurAffichee(c, lot) || '—' }} <span class="fm__calc">calculée</span></div>
+                                  } @else {
                                   @switch (c.type) {
                                     @case ('TEXTE_LONG') { <textarea class="form-control" rows="3" [id]="'c-' + cle(c, lot)" [attr.aria-label]="lot === null ? null : c.libelle + ' — lot ' + lot" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)"></textarea> }
                                     @case ('NOMBRE') { <input class="form-control" type="number" [id]="'c-' + cle(c, lot)" [attr.aria-label]="lot === null ? null : c.libelle + ' — lot ' + lot" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)" /> }
@@ -359,6 +365,9 @@
                                       @if (lettres(cle(c, lot)); as l) { <span class="fm__lettres">{{ l }}</span> }
                                     }
                                     @case ('DATE') { <input class="form-control" type="date" [id]="'c-' + cle(c, lot)" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)" /> }
+                                    <!-- ⚠️ Remise électronique (27/09, V50) — date ET heure (« 2026-11-09T10:00 »), et adresse absolue. -->
+                                    @case ('DATE_HEURE') { <input class="form-control" type="datetime-local" [id]="'c-' + cle(c, lot)" [attr.aria-label]="lot === null ? null : c.libelle + ' — lot ' + lot" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)" /> }
+                                    @case ('URL') { <input class="form-control" type="url" inputmode="url" placeholder="https://…" [id]="'c-' + cle(c, lot)" [attr.aria-label]="lot === null ? null : c.libelle + ' — lot ' + lot" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)" /> }
                                     @case ('LISTE') {
                                       <select class="form-control" [id]="'c-' + cle(c, lot)" (change)="saisir(c, $event, lot)">
                                         <option value="" [selected]="!valeurAffichee(c, lot)">— Choisir —</option>
@@ -389,6 +398,9 @@
                                     @case ('PIECE') { <span class="fm__lecture" [id]="'c-' + cle(c, lot)">Pièce jointe — au dossier, après validation (lot 2)</span> }
                                     @default { <input class="form-control" type="text" [id]="'c-' + cle(c, lot)" [attr.aria-label]="lot === null ? null : c.libelle + ' — lot ' + lot" [value]="valeurAffichee(c, lot)" (input)="saisir(c, $event, lot)" /> }
                                   }
+                                  }
+                                  <!-- l'heure limite se lit dans le fuseau de référence de la plateforme (B04-SE-04), jamais dans celui du poste -->
+                                  @if (fuseauPour(c); as f) { <span class="fm__fuseau">{{ f }}</span> }
                                   @if (lot !== null) { @if (erreurDe(cle(c, lot)); as msg) { <span class="form-error">{{ msg }}</span> } }
                                   <!-- ⚠️ V46 — la révision n'a pas repris cette valeur (champ désactivé, option
                                        disparue, passage par lot) : l'ancienne se LIT ici, elle ne se recopie pas. -->

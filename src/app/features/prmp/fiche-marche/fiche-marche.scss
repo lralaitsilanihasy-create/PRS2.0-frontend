@@ -74,6 +74,10 @@
 // Une valeur reprise est une phrase, pas un identifiant : la chasse fixe la rendait illisible sur plusieurs lignes.
 .fm__lecture { padding: 0.45rem 0.6rem; border-radius: 8px; background: var(--n-100); color: var(--n-700); font-size: 0.86rem; line-height: 1.5; white-space: pre-wrap; }
 .fm__lettres { display: block; margin-top: 0.25rem; font-style: italic; }
+// ⚠️ Remise électronique (27/09) — une valeur posée par le serveur se distingue d'une valeur reprise : liseré et mention.
+.fm__lecture--calc { border-left: 3px solid var(--p-300, #9cc3ff); }
+.fm__calc { margin-left: 0.4rem; font-size: 0.72rem; font-style: italic; color: var(--n-500); }
+.fm__fuseau { display: block; margin-top: 0.25rem; font-size: 0.76rem; color: var(--n-500); }
 .fm__meta { grid-column: 1 / -1; display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; font-size: 0.72rem; }
 .fm__doc { padding: 0.05rem 0.45rem; border-radius: 999px; font-weight: 700; }
 .fm__doc--dpao, .fm__doc--dpac, .fm__doc--dpic { background: #dbeafe; color: #1d4ed8; }

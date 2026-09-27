@@ -57,7 +57,11 @@ import {
   resumeCadrage,
   rubriqueOuverte,
   typeOutille,
+  avecDefauts,
 } from './fiche-marche-modele';
+
+/** Les heures saisies en texte (« 10:00 ») à côté desquelles le fuseau de référence s'affiche en mode électronique. */
+const HEURES_SAISIES: readonly string[] = ['B04-LR-04', 'B04-OP-03'];
 
 type Valeur = string | number | null;
 
@@ -262,7 +266,9 @@ export class FicheMarcheEcran {
   private readonly categorieEffective = computed<CategorieDao | null>(
     () => this.categorie() ?? (this.contratAbsent() ? 'FOURNITURES_SERVICES' : null),
   );
-  private readonly cadrageEffectif = computed<Cadrage>(() => ({
+  // ⚠️ Remise électronique (27/09) — complété des réponses par défaut (`modeRemise` = papier tant que rien n'est
+  // choisi) : c'est ce cadrage que lisent les conditions, le résumé et la complétude ; le serveur reçoit le nu.
+  private readonly cadrageEffectif = computed<Cadrage>(() => avecDefauts({
     ...this.cadrage(),
     typeMarche: this.typeMarche(),
     categorie: this.categorieEffective(),
@@ -270,6 +276,10 @@ export class FicheMarcheEcran {
   readonly questions = computed(() => questionsPosees(this.cadrageEffectif()));
   readonly cadrageOk = computed(() => cadrageComplet(this.cadrageEffectif()));
   readonly resume = computed(() => resumeCadrage(this.cadrageEffectif()));
+  /** Le mode de remise des offres, lu sur le cadrage effectif (réponse par défaut comprise). */
+  readonly modeElectronique = computed(() => String(this.cadrageEffectif()['modeRemise'] ?? '') === 'ELECTRONIQUE');
+  /** Le fuseau de l'heure de référence (`B04-SE-04`), affiché à côté des heures saisies en mode électronique. */
+  readonly fuseau = computed(() => (this.modeElectronique() ? String(this.valeurs()['B04-SE-04'] ?? '') : ''));
   readonly blocs = computed(() => blocsASaisir(this.referentiel(), this.typeMarche()));
   readonly blocCourant = computed<BlocFiche | null>(() => this.blocs()[this.blocIdx()] ?? null);
   readonly blocPpm = computed<BlocFiche | null>(() => this.referentiel().blocs.find((b) => b.code === 'B01') ?? null);
@@ -513,7 +523,8 @@ export class FicheMarcheEcran {
   }
 
   reponse(q: QuestionCadrage): string {
-    return String(this.cadrage()[q.cle] ?? '');
+    // la réponse par défaut d'une question se montre cochée, sans être une réponse envoyée
+    return String(this.cadrage()[q.cle] ?? q.defaut ?? '');
   }
 
   complement(q: QuestionCadrage): Valeur {
@@ -635,6 +646,32 @@ export class FicheMarcheEcran {
   /** Montant en toutes lettres, servi par le serveur après enregistrement (`enLettres[code]`). */
   lettres(code: string): string {
     return this.fiche()?.enLettres?.[code] ?? '';
+  }
+
+  // ── Remise électronique (27/09) ──────────────────────────────────────────────────────────────
+
+  /** Le fuseau à montrer à côté d'une heure saisie (`B04-LR-04`, `B04-OP-03`), en mode électronique seulement. */
+  fuseauPour(champ: ChampFiche): string {
+    return HEURES_SAISIES.includes(champ.code) ? this.fuseau() : '';
+  }
+  /** L'heure limite devient obligatoire en mode électronique (règle 1 du bilan) : l'astérisque le dit d'avance. */
+  exigeEnElectronique(champ: ChampFiche): boolean {
+    return this.modeElectronique() && champ.code === 'B04-LR-04';
+  }
+  /**
+   * ⚠️ Q11 — une valeur **posée par le serveur** à l'enregistrement du bloc (ouverture des plis = date limite +
+   * délai, dates déduites) : elle se lit, elle ne se saisit pas, et l'écran ne la calcule jamais lui-même.
+   */
+  calculee(champ: ChampFiche, lot: number | null = null): boolean {
+    return !!this.fiche()?.champsCalcules?.includes(this.cle(champ, lot));
+  }
+  /** Un champ de cadrage à options codées (`B04-SE-01` : PAPIER / ELECTRONIQUE) se lit par le libellé de sa question. */
+  affichageLecture(champ: ChampFiche): string {
+    const brut = this.valeurAffichee(champ);
+    if (champ.source !== 'CADRAGE' || champ.type !== 'LISTE' || !champ.cleCadrage) return brut;
+    const q = QUESTIONS_CADRAGE.find((x) => x.cle === champ.cleCadrage);
+    const valeur = brut || String(this.cadrageEffectif()[champ.cleCadrage] ?? '');
+    return q?.options.find((o) => o.code === valeur)?.libelle ?? brut;
   }
 
   saisir(champ: ChampFiche, ev: Event, lot: number | null = null): void {
