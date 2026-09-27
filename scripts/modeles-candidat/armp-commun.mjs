@@ -45,7 +45,9 @@ export function section(src, debut, fin) {
  * Le texte tel qu'on le reproduit : blancs multiples réduits à un (frappes de Word), trait d'union insécable
  * (U+2011, « ci‑après ») rendu par un tiret simple — les polices du PDF du serveur ne l'ont pas toutes.
  */
-export const propre = (t) => t.replace(/\u2011/g, '-').replace(/\s+/g, ' ').trim();
+// \u2026 et les glyphes d'une police de symboles (zone priv\u00e9e U+E000\u2013U+F8FF : cases \u00e0 cocher et leurs espaces, devant
+// trois lignes d'A1) sont \u00e9cart\u00e9s, comme au 2463 (S6, arbitrage du 26/09 : absents).
+export const propre = (t) => t.replace(/[\ue000-\uf8ff]/g, '').replace(/\u2011/g, '-').replace(/\s+/g, ' ').trim();
 
 /**
  * Ce que compare `verifier-armp.mjs` : lettres et chiffres seulement (NFKC — ligatures dépliées —, minuscules).

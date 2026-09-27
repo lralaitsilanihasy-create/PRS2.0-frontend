@@ -1,0 +1,230 @@
+{
+ "fichier": "A1.docx",
+ "sigle": "A1",
+ "section": [
+  "A1 : IDENTIFICATION DU CANDIDAT",
+  "A2 : CAPACITES TECHNIQUES"
+ ],
+ "titre": "A1 : IDENTIFICATION DU CANDIDAT",
+ "blocs": [
+  {
+   "type": "sous_titre",
+   "texte": "A1 - a) FICHE DE RENSEIGNEMENTS RELATIFS AU CANDIDAT"
+  },
+  {
+   "type": "droite",
+   "texte": "Date: ________________"
+  },
+  {
+   "type": "droite",
+   "texte": "N°. d'appel d'offre et titre: {{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "type": "droite",
+   "texte": "Page [numéro de la page] de [nombre total de pages] pages"
+  },
+  {
+   "type": "table",
+   "texte": "1"
+  },
+  {
+   "type": "ligne",
+   "texte": "Nom ou raison sociale du candidat :\u001e"
+  },
+  {
+   "type": "ligne",
+   "texte": "Forme juridique :\u001e"
+  },
+  {
+   "type": "ligne",
+   "texte": "Numéro d’immatriculation :\u001e"
+  },
+  {
+   "type": "ligne",
+   "texte": "Numéro de compte bancaire, nom et adresse de la banque:\u001e"
+  },
+  {
+   "type": "ligne",
+   "texte": "Personne habilitée à représenter le candidat :\u001eNom :\u001eAdresse :\u001eNuméro de télécopie :\u001eAdresse électronique :"
+  },
+  {
+   "type": "ligne",
+   "texte": "Copies des documents originaux annexés :\u001e\u001eStatuts, numéro d’enregistrement (registre du commerce, identifiant fiscal)\u001e"
+  },
+  {
+   "type": "ligne",
+   "texte": "Description de procédure de redressement judiciaire ou équivalent au cours des {{B03-CQ-09.lettres}} dernières années et situation actuelle, incluant situation active et passive :\u001e\u001e\u001e"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "vide",
+   "texte": ""
+  },
+  {
+   "type": "sous_titre",
+   "texte": "A1 - b) RENSEIGNEMENTS ADDITIONNELS LORSQUE LE CANDIDAT EST UN GROUPEMENT"
+  },
+  {
+   "type": "centre",
+   "texte": "{{A1B.mention}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:A1B}}"
+  },
+  {
+   "type": "table",
+   "texte": "1"
+  },
+  {
+   "type": "ligne",
+   "texte": "Nom ou raison sociale de chaque membre du groupement d'entreprises :\u001e[rappel : chaque membre du groupement doit remplir à titre individuel la fiche de renseignement a) ci-dessus]\u001e\u001e\u001e\u001eNature du groupement :\u001e\u001e\u001e\u001eDate de constitution du groupement :\u001e\u001e\u001e\u001eAdresse du groupement :\u001e\u001e\u001e\u001e"
+  },
+  {
+   "type": "ligne",
+   "texte": "Désignation et coordonnées du chef de file :\u001eNom :\u001eAdresse :\u001eNuméro de télécopie :\u001eAdresse électronique :"
+  },
+  {
+   "type": "ligne",
+   "texte": "Les copies des documents originaux annexés :\u001e\u001eStatuts ou Documents constitutifs et documents d’enregistrement du groupement :\u001e_________________\u001e_________________\u001e"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:A1B}}"
+  },
+  {
+   "type": "vide",
+   "texte": ""
+  },
+  {
+   "type": "sous_titre",
+   "texte": "A1 – c) LITIGES INTERVENUS EN MATIERE DE MARCHES PUBLIC OU EN RAPPORT AVEC L’OBJET DU MARCHE"
+  },
+  {
+   "type": "para",
+   "texte": "[Le formulaire ci-dessous doit être rempli par le Candidat et en cas de groupement par chaque membre du Groupement]"
+  },
+  {
+   "type": "droite",
+   "texte": "Nom ou raison sociale légal du candidat : ____________________"
+  },
+  {
+   "type": "droite",
+   "texte": "Date : ____________________"
+  },
+  {
+   "type": "droite",
+   "texte": "ou"
+  },
+  {
+   "type": "droite",
+   "texte": "Nom ou raison sociale du membre du Groupement : ____________________"
+  },
+  {
+   "type": "droite",
+   "texte": "____________________"
+  },
+  {
+   "type": "droite",
+   "texte": "____________________"
+  },
+  {
+   "type": "droite",
+   "texte": "No. d'appel d'offres et titre : {{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "type": "droite",
+   "texte": "Page [numéro de la page] de [nombre total de pages] pages"
+  },
+  {
+   "type": "centre",
+   "texte": "Marchés non exécutés au cours des {{B03-CQ-09.lettres}} dernières années"
+  },
+  {
+   "type": "para",
+   "texte": "Il n’y a pas eu de non-exécution de marché pendant la période de {{B03-CQ-09}} ans"
+  },
+  {
+   "type": "para",
+   "texte": "Marché(s) non exécuté(s) pendant la période de {{B03-CQ-09}} années."
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "Année\u001fFraction non exécutée du marché\u001fIdentification du marché\u001fMontant total du marché (valeur actuelle équivalent en Ariary)"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001e______\u001f[indiquer le montant et pourcentage]\u001fIdentification du marché :\u001e\u001eNom et adresse de l’Autorité contractante :\u001e\u001eRaisons de non exécution :\u001e\u001e\u001f\u001e__________"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "centre",
+   "texte": "Litiges au cours des {{B03-CQ-09.lettres}} dernières années"
+  },
+  {
+   "type": "para",
+   "texte": "Pas de litige en instance"
+  },
+  {
+   "type": "para",
+   "texte": "Litige(s) en instance:"
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "Année\u001fRèglement en pourcentage du patrimoine total\u001fIdentification du marché\u001fMontant total du marché (valeur actuelle, équivalent en Ariary)"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001e______\u001f\u001e_______\u001fIdentification du marché :\u001eNom et adresse de l’Autorité contractante :\u001eObjet du litige :\u001e\u001e\u001f\u001e_________"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001e______\u001f\u001e______\u001fIdentification du marché :\u001eNom et adresse de l’Autorité contractante :\u001eObjet du litige :\u001e\u001e\u001f\u001e_________"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  }
+ ],
+ "trace": [
+  {
+   "source": "N°. d'appel d'offre et titre: _________________",
+   "jeton": "N°. d'appel d'offre et titre: {{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "source": "au cours des cinq dernières années",
+   "jeton": "au cours des {{B03-CQ-09.lettres}} dernières années"
+  },
+  {
+   "source": "No. d'appel d'offres et titre : ____________________",
+   "jeton": "No. d'appel d'offres et titre : {{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "source": "[nombre d’années]",
+   "jeton": "{{B03-CQ-09}}"
+  }
+ ],
+ "ajouts": [
+  "{{A1B.mention}}",
+  "{{SI:A1B}}",
+  "{{FINSI:A1B}}"
+ ]
+}

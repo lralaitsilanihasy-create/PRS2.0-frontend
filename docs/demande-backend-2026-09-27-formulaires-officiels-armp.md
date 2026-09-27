@@ -42,9 +42,27 @@ soumission.doc`), montrent que le 2463 en est une **adaptation locale** : nos mo
     certificat de réception. ») : Decalque n'a pas de notes, il est rendu **« (1) »** dans le titre et un paragraphe
     « (1) … » sous le tableau. Le tableau du gabarit a deux colonnes dont quatre lignes fusionnées : elles vont dans la
     première colonne, la seconde vide (comme le 2463) ; les paragraphes vides des cellules sont ceux du gabarit.
-- **A1, A3 suivent** (tableaux à cellules fusionnées d'A1-c, A3-a, A3-b) sur la même chaîne. Les questions
-  structurantes du 26/09 restent : A1-b conditionné au cadrage `groupement` (`{{SI:A1B}}`), A3-b natures
-  (`{{SI:A3B-NATURES}}`), durées des antécédents `B03-CQ-09` / `B03-CQ-10` — à re-vérifier sur le texte ARMP.
+- **A1 et A3 livrés** (27/09, troisième temps) — les **six** modèles sont « conformes au document type » dans les deux
+  sens (`node verifier-armp.mjs A1 A2 A3 A4 C1 C2`). Les questions du 26/09, resituées sur le texte ARMP :
+  - **A1** : cartouches « N°. d'appel d'offre et titre: ___ » (A1-a) et « No. d'appel d'offres et titre : ___ » (A1-c)
+    → `{{B02-OB-03}} — {{B02-OB-01}}` ; « au cours des cinq dernières années » (×3 : redressement judiciaire, titres des
+    deux tableaux de litiges) → `{{B03-CQ-09.lettres}}` ; « [nombre d'années] » (×2) → `{{B03-CQ-09}}` — le gabarit
+    fixe cinq ans, la fiche porte 5 par défaut (N3), donc le rendu par défaut est celui du gabarit. **`B03-CQ-01` n'est
+    plus jetonné** : le gabarit annexe « Statuts, numéro d'enregistrement (registre du commerce, identifiant fiscal) »,
+    texte générique gardé tel quel (la liste des pièces exigées reste au DPAO). A1-a et A1-b sont des **tableaux à une
+    colonne** (ceux du gabarit) ; A1-b garde `{{A1B.mention}}` sous son titre et ses champs entre `{{SI:A1B}}` /
+    `{{FINSI:A1B}}` — ⚠️ **la section conditionnelle contient maintenant un TABLEAU** (`TABLE 1`, trois `LIGNE`,
+    `FIN_TABLE`) entre les deux marqueurs, qui restent des paragraphes seuls : à confirmer que l'omission R9 retire le
+    tableau aussi (au 2463 la section n'avait que des paragraphes). A1-c : le tableau à six colonnes fusionnées du
+    gabarit est rendu comme au 2463 — titres et cases en paragraphes, deux tableaux à quatre colonnes. Les trois glyphes
+    de police Symbol (cases à cocher devant « Statuts… », « Il n'y a pas eu… », « Marché(s) non exécuté(s)… ») sont
+    absents, comme tranché le 26/09 (S6).
+  - **A3** : deux cartouches → `{{B02-OB-03}} — {{B02-OB-01}}` ; « pour les trois dernières années » et « des bilans
+    des trois années » → `{{B03-CQ-10.lettres}}` (défaut 3 = le gabarit) ; trois colonnes d'années fixes (R10) ;
+    « 2. Documents financiers » : liste Word « a) b) c) d) », labels écrits ; A3-b : le second tableau porte
+    `{{SI:A3B-NATURES}}` / `{{FINSI:A3B-NATURES}}` dans la première cellule de ses lignes Fournitures / Services,
+    exactement comme au 2463 (R7/R8). Les lignes fusionnées (en-tête des années, sous-titres, titres des tableaux de
+    chiffre d'affaires) vont dans la première colonne.
 
 ## B1 — Le moteur rend les modèles ARMP
 
@@ -66,6 +84,10 @@ soumission.doc`), montrent que le 2463 en est une **adaptation locale** : nos mo
 - **27/09, second temps — quatre fichiers à recopier** depuis `modeles-armp/` : `C1.txt` (corrigé : labels « (a) (b)
   (c) »), `C2.txt`, `A2.txt`, `A4.txt`. Mêmes commandes qu'avant (`TITRE`, `SOUS_TITRE`, `PARA`, `VIDE`, `TABLE`,
   `LIGNE`, `FIN_TABLE`), aucune nouvelle ; les jetons de C2 sont tous du contrat V47.
+- **27/09, troisième temps — les six** : `A1.txt` et `A3.txt` s'ajoutent (commandes `DROITE` et `CENTRE` en plus,
+  déjà connues du moteur). Un point à confirmer côté moteur : **`{{SI:A1B}}` … `{{FINSI:A1B}}` encadrent désormais un
+  tableau** (§ « Ce que le front fait », A1) — si l'omission R9 ne sait retirer que des paragraphes, le dire ici, et
+  le front repassera A1-b en paragraphes.
 
 ## B2 — La preuve
 

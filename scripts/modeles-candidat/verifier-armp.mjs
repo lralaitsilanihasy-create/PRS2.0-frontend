@@ -14,7 +14,7 @@
 //   node verifier-armp.mjs A2 A4 C1 C2 --dossier=C:/…/rendus   # les rendus du serveur, nommés <sigle>.docx
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
-import { CP, JAVA, droite, lireSource, reduire, section } from './armp-commun.mjs';
+import { CP, JAVA, droite, lireSource, propre, reduire, section } from './armp-commun.mjs';
 
 const SRC = lireSource();
 const args = process.argv.slice(2);
@@ -51,12 +51,20 @@ for (const sigle of sigles) {
     console.log(`${sigle}${quoi} — ABSENT`);
     continue;
   }
+  // Les AJOUTS déclarés par le descripteur sont retirés du rendu : un marqueur `{{…}}` partout où il est, un label de
+  // liste (« a) », « (a) ») seulement en TÊTE d'une cellule — « A3 - a) SITUATION… » garde son « a) ».
+  const sansAjouts = (ligne) => ligne.split('\t').map((c) => desc.ajouts.reduce((t, a) => {
+    if (a.startsWith('{{')) return t.split(a).join('');
+    return t.trimStart().startsWith(a) ? t.trimStart().slice(a.length) : t;
+  }, c)).join('\t');
   const rendu = execFileSync(JAVA, ['-cp', CP(), 'LireDocx', fichier], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
     .replace(/\r\n?/g, '\n').split('\n')
-    .map((l) => desc.ajouts.reduce((t, a) => t.split(a).join(''), l))
+    .map(sansAjouts)
     .filter((l) => l.trim());
+  // Cellule par cellule : le texte rendu propre (blancs de Word réduits, glyphes de symboles écartés — comme le
+  // descripteur l'a lu), puis les substitutions du descripteur rejouées.
   const gabarit = section(SRC, desc.section[0], desc.section[1] ?? undefined)
-    .map((l) => desc.trace.reduce((t, s) => rejouer(t, s.source, s.jeton), l))
+    .map((l) => l.split('\t').map((c) => desc.trace.reduce((t, s) => rejouer(t, s.source, s.jeton), propre(c))).join('\t'))
     .filter((l) => l.trim());
 
   const renduEntier = reduire(rendu.join(' '));

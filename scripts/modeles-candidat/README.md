@@ -69,8 +69,8 @@ javac -encoding UTF-8 -cp "$(cat cp.txt)" -d out Decalque.java LireDocx.java
 node extraire-armp.mjs                   # 1. Word (COM) convertit le .doc → armp/formulaires-fournitures.docx (une fois),
                                          #    LireDocx le relit dans l'ordre du document → source-armp.txt
 node decrire-armp.mjs                    # 2. structure + jetons → modeles-armp/<sigle>.txt et .json (texte jamais retapé)
-for m in A2 A4 C1 C2; do java -cp "$(cat cp.txt);out" Decalque modeles-armp/$m.txt modeles-docx-armp; done
-node verifier-armp.mjs A2 A4 C1 C2       # 3. conformité dans les DEUX sens — code 1 au premier fragment manquant ou inventé
+for m in A1 A2 A3 A4 C1 C2; do java -cp "$(cat cp.txt);out" Decalque modeles-armp/$m.txt modeles-docx-armp; done
+node verifier-armp.mjs A1 A2 A3 A4 C1 C2 # 3. conformité dans les DEUX sens — code 1 au premier fragment manquant ou inventé
 node verifier-armp.mjs C1 --docx=C:/…/C1.docx            # un rendu du serveur ; --dossier=<répertoire> pour plusieurs
 ```
 
@@ -80,8 +80,8 @@ Puis copier `modeles-docx-armp/*.docx` dans `docs/modeles-candidat/armp/` (relec
 |---|---|
 | **La source est le texte du `.docx` converti par Word**, pas un PDF | `extraire-armp.mjs` ; `LireDocx` lit run par run : trait d'union insécable (`w:noBreakHyphen` → U+2011, rendu « - » par `propre`), note de bas de page (`[note:n]` dans le paragraphe, `[note n] texte` sur la ligne suivante), petites majuscules lues en capitales (comme Word les affiche), une tabulation entre deux cellules même vides |
 | **Une section par formulaire**, bornée par son titre et le suivant, cherchée après la « Note aux Utilisateurs » (le sommaire ressemble aux titres) | `armp-commun.mjs` : `section`, clés de recherche à blancs réduits (Word sème des espaces insécables : « A3 : ») |
-| **Les crochets du candidat restent des crochets**, ceux du dossier deviennent des jetons | `JETONS_C1`, `JETONS_C2` dans `decrire-armp.mjs` ; A2 et A4 n'ont aucun jeton |
-| **Ce que Decalque n'a pas** — listes numérotées, notes, cellules fusionnées — est rendu dans le texte et déclaré | labels « (a) », « a) » écrits et listés dans `ajouts` ; note d'A4 → « (1) » (dans `trace`) ; lignes fusionnées dans la première colonne, la seconde vide |
+| **Les crochets du candidat restent des crochets**, ceux du dossier deviennent des jetons | `JETONS_C1`, `JETONS_C2`, `jetonAO` (cartouches « N° d'appel d'offres et titre : ___ », le blanc lu dans la source), durées des antécédents `B03-CQ-09` / `B03-CQ-10` (A1, A3 : « cinq », « trois » et « [nombre d'années] ») ; A2 et A4 n'ont aucun jeton ; les glyphes de police Symbol (cases à cocher, U+E000–U+F8FF) sont écartés comme au 2463 (S6) |
+| **Ce que Decalque n'a pas** — listes numérotées, notes, cellules fusionnées — est rendu dans le texte et déclaré | labels « (a) », « a) » écrits et listés dans `ajouts` (retirés seulement en tête de cellule par le comparateur) ; note d'A4 → « (1) » (dans `trace`) ; lignes fusionnées pleine largeur en paragraphes avant le tableau (A1-c) ou dans la première colonne (A3, A4) ; marqueurs `{{SI:…}}` comme au 2463 |
 | **Conformité dans les deux sens** | `verifier-armp.mjs` : chaque fragment du gabarit (cellule ou paragraphe, ≥ 8 lettres ou chiffres, jetons rejoués) se retrouve dans le rendu, **et** chaque fragment du rendu se retrouve dans le gabarit — c'est ce second sens qui a refusé, le 27/09, trois paragraphes complétés de mémoire |
 
 `reduire` ne garde que lettres et chiffres (NFKC, minuscules) : casse, blancs, ponctuation, apostrophes, tirets et
