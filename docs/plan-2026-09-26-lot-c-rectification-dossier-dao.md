@@ -81,6 +81,11 @@ PV 41 `00001/DAO/CNM/PV/2026` (FAVR, trois observations ancrées) → visa du Pr
 lettre de renvoi sur un second dossier (avis DEF) pour C4.
 
 ## 5. Ce que vous avez à trancher
+
+> ✅ **Tranché le 26/09 (pilote : « je suis vos recommandations ») — Q1 C1 + C2 + C3 d'abord, C4 + C5 ensuite ;
+> Q2 remplacement automatique des pièces produites ; Q3 fiche verrouillée pendant l'examen ; Q4 tous les points
+> réévalués, changements mis en évidence.**
+
 - **Q1 — L'ordre.** C1 + C2 + C3 d'abord (le chemin FAVR ferme la boucle avec le Vérificateur existant), C4 + C5
   ensuite. D'accord ?
 - **Q2 — Les pièces produites.** À la validation de la révision, les 22 documents régénérés **remplacent**
