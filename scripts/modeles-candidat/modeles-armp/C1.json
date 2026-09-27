@@ -45,6 +45,18 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:B04-SE}}"
+  },
+  {
+   "type": "para",
+   "texte": "[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie ({{B05-GS-10}}) et code de vérification]]"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:B04-SE}}"
+  },
+  {
+   "type": "para",
    "texte": "SIGNATURE et authentification du signataire"
   },
   {
@@ -85,6 +97,9 @@
  "ajouts": [
   "(a) ",
   "(b) ",
-  "(c) "
+  "(c) ",
+  "{{SI:B04-SE}}",
+  "{{FINSI:B04-SE}}",
+  "[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie ({{B05-GS-10}}) et code de vérification]]"
  ]
 }

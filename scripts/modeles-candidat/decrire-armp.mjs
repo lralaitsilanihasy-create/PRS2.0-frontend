@@ -107,6 +107,16 @@ const JETONS_A3_DUREES = [
   ['pour les trois dernières années', 'pour les {{B03-CQ-10.lettres}} dernières années'],
   ['des bilans des trois années', 'des bilans des {{B03-CQ-10.lettres}} années'],
 ];
+/**
+ * ⚠️ Remise électronique (27/09, demande §B2.1) — dans C1 et C2, la mention de la voie de remise de la garantie et du
+ * code de vérification (voie B, `B05-GS-10`) n'existe pas dans le document type ARMP : le texte ne s'invente pas, il
+ * est **à fournir par le juriste**, balisé et visible. La section est encadrée par `{{SI:B04-SE}}` / `{{FINSI:B04-SE}}`
+ * (mode de remise électronique) : en mode papier, rien ne s'imprime et le rendu reste celui du gabarit. Le comparateur
+ * la connaît comme un AJOUT (marqueurs et clause déclarés), jamais comme du texte du gabarit.
+ */
+const CLAUSE_SE = '[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie ({{B05-GS-10}}) et code de vérification]]';
+const sectionSe = (...paras) => [P('{{SI:B04-SE}}'), ...paras, P('{{FINSI:B04-SE}}')];
+const AJOUTS_SE = ['{{SI:B04-SE}}', '{{FINSI:B04-SE}}', CLAUSE_SE];
 /** L'appel de note du titre de A4 et sa note de bas de page : Decalque n'a pas de notes, on les rend par « (1) ». */
 const NOTE_A4 = [
   ['[note:1]', ' (1)'],
@@ -329,6 +339,7 @@ const blocsC1 = jetonnerBlocs([
   P(celui(c1, '(c2)')),
   P(celui(c1, 'Nous, Garant')),
   P(celui(c1, 'La présente garantie')),
+  ...sectionSe(P(CLAUSE_SE)),
   P(celui(c1, 'SIGNATURE')),
   P(celui(c1, 'Nom de la Banque')),
   P(celui(c1, 'Adresse')),
@@ -351,6 +362,7 @@ const blocsC2 = jetonnerBlocs([
   P(celui(c2, '- il', 0)),
   P(celui(c2, '- il', 1)),
   P(celui(c2, 'Le présent engagement')),
+  ...sectionSe(P(CLAUSE_SE)),
   P(celui(c2, 'Fait à')),
   P(celui(c2, 'SIGNATURE')),
   P(celui(c2, 'Nom de la Banque')),
@@ -365,8 +377,8 @@ const modeles = [
   { fichier: 'A2.docx', sigle: 'A2', section: ['A2 : CAPACITES TECHNIQUES', 'A3 : CAPACITES FINANCIERES'], titre: celui(a2, 'A2 :'), blocs: blocsA2, trace: [], ajouts: [] },
   { fichier: 'A3.docx', sigle: 'A3', section: ['A3 : CAPACITES FINANCIERES', 'A4'], titre: celui(a3, 'A3 :'), blocs: blocsA3, trace: traceA3, ajouts: ['a) ', 'b) ', 'c) ', 'd) ', '{{SI:A3B-NATURES}}', '{{FINSI:A3B-NATURES}}'] },
   { fichier: 'A4.docx', sigle: 'A4', section: ['A4', 'B. – Modèle'], titre: titreA4, blocs: blocsA4, trace: traceA4, ajouts: [] },
-  { fichier: 'C1.docx', sigle: 'C1', section: ['C 1 –', 'C 2 –'], titre: celui(c1, 'C 1'), blocs: blocsC1, trace: traceC1, ajouts: ['(a) ', '(b) ', '(c) '] },
-  { fichier: 'C2.docx', sigle: 'C2', section: ['C 2 –', null], titre: `${celui(c2, 'C 2')} ${celui(c2, 'de soumission')}`, blocs: blocsC2, trace: traceC2, ajouts: ['a) ', 'b) ', 'c) '] },
+  { fichier: 'C1.docx', sigle: 'C1', section: ['C 1 –', 'C 2 –'], titre: celui(c1, 'C 1'), blocs: blocsC1, trace: traceC1, ajouts: ['(a) ', '(b) ', '(c) ', ...AJOUTS_SE] },
+  { fichier: 'C2.docx', sigle: 'C2', section: ['C 2 –', null], titre: `${celui(c2, 'C 2')} ${celui(c2, 'de soumission')}`, blocs: blocsC2, trace: traceC2, ajouts: ['a) ', 'b) ', 'c) ', ...AJOUTS_SE] },
 ];
 
 fs.mkdirSync('modeles-armp', { recursive: true });
