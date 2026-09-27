@@ -64,6 +64,13 @@ soumission.doc`), montrent que le 2463 en est une **adaptation locale** : nos mo
     exactement comme au 2463 (R7/R8). Les lignes fusionnées (en-tête des années, sous-titres, titres des tableaux de
     chiffre d'affaires) vont dans la première colonne.
 
+> ✅ **Réponse du backend (27/09) sur le point A1 — l'omission R9 retire le tableau aussi.** Dans le moteur
+> (`FormulairesCandidat.rendre`), une section `{{SI:…}}` … `{{FINSI:…}}` dont la condition est fausse fait sauter **tout
+> élément** rencontré entre ses deux marqueurs, paragraphes **et tableaux** ; les marqueurs eux-mêmes ne sont jamais
+> imprimés. A1-b reste donc tel que vous l'avez décrit (marqueurs en paragraphes seuls, `TABLE 1` entre eux) : sans
+> groupement, le titre A1-b et « (non applicable) » restent, le tableau disparaît ; avec groupement, le tableau est là et
+> la mention (vide) est retirée. Vérifié par `ModelesCandidatRenduTest.jetonsEtMarqueurs` dans les deux cas.
+
 ## B1 — Le moteur rend les modèles ARMP
 
 - Remplacer, dans `modeles/candidat/*.txt` du backend, les six fichiers 2463 par ceux de `modeles-armp/` **au fur et à
@@ -89,6 +96,13 @@ soumission.doc`), montrent que le 2463 en est une **adaptation locale** : nos mo
   tableau** (§ « Ce que le front fait », A1) — si l'omission R9 ne sait retirer que des paragraphes, le dire ici, et
   le front repassera A1-b en paragraphes.
 
+> ⚠️ **Livré le 2026-09-27 (backend) — §B1, les six recopiés tels quels** (`modeles-armp/` des commits `622608b` et
+> `86b787e` → `src/main/resources/modeles/candidat/`, octet pour octet, `cmp` identique ×6). Aucun changement du moteur :
+> toutes les commandes et tous les jetons cités sont connus — `{{B01-AC-02}}` et `{{B04-LR-03}}` se résolvent comme tout
+> `{{CODE}}` (valeurs du plan comprises), `{{B03-CQ-09}}` / `.lettres` et `{{B03-CQ-10.lettres}}` par le contrat V47,
+> `.chiffres` livré le matin. Aucun jeton refusé. Les tests qui citaient le texte des décalques 2463 (A1, A3, C1, C2)
+> suivent le texte ARMP (apostrophes typographiques du gabarit comprises) ; suite complète verte.
+
 ## B2 — La preuve
 
 - Comme au 26/09 : les rendus du serveur (docx) passent le comparateur du front (`verifier.mjs --dossier=`), source =
@@ -106,6 +120,24 @@ soumission.doc`), montrent que le 2463 en est une **adaptation locale** : nos mo
   `node verifier-armp.mjs C1 --docx=C:\Users\LANTO\rendus-modeles\C1.docx`, ou les quatre d'un coup avec
   `node verifier-armp.mjs A2 A4 C1 C2 --dossier=C:\Users\LANTO\rendus-modeles`. Il sort en code 1 au premier fragment
   manquant ou inventé, et les nomme.
+
+> ⚠️ **Livré le 2026-09-27 (backend) — §B2, les six rendus du serveur passent la chaîne ARMP.** Rendus bruts (jetons non
+> substitués) écrits par `ModelesCandidatRenduTest` dans `C:\Users\LANTO\rendus-modeles\<sigle>.docx` ; depuis
+> `scripts/modeles-candidat/` (PowerShell, JDK 21 en tête du PATH) : `node classpath.mjs` → « cp.txt : 18 jars » ;
+> `javac -encoding UTF-8 -cp "$(Get-Content cp.txt -Raw)" -d out Decalque.java LireDocx.java` → exit 0 ;
+> `node extraire-armp.mjs` → « source-armp.txt : 348 lignes » ; puis :
+>
+> ```
+> A1 [C:\Users\LANTO\rendus-modeles/A1.docx] — conforme au document type · 35 fragment(s) du gabarit retrouvés, 37 du rendu tous fondés
+> A2 [C:\Users\LANTO\rendus-modeles/A2.docx] — conforme au document type · 7 fragment(s) du gabarit retrouvés, 7 du rendu tous fondés
+> A3 [C:\Users\LANTO\rendus-modeles/A3.docx] — conforme au document type · 48 fragment(s) du gabarit retrouvés, 48 du rendu tous fondés
+> A4 [C:\Users\LANTO\rendus-modeles/A4.docx] — conforme au document type · 7 fragment(s) du gabarit retrouvés, 7 du rendu tous fondés
+> C1 [C:\Users\LANTO\rendus-modeles/C1.docx] — conforme au document type · 13 fragment(s) du gabarit retrouvés, 13 du rendu tous fondés
+> C2 [C:\Users\LANTO\rendus-modeles/C2.docx] — conforme au document type · 16 fragment(s) du gabarit retrouvés, 15 du rendu tous fondés
+>
+> Aucun écart : les modèles sont ceux du document type.
+> exit=0
+> ```
 
 ## B3 — Ce qui change pour la PRMP du 2463
 
