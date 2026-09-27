@@ -6,3 +6,4 @@ modeles-docx/
 correspondance-six.md
 # ⚠️ Les fichiers de commande (modeles/*.txt) et leurs descripteurs (*.json) SONT versionnés : sous l'issue (c) du
 # rendu, ce sont eux que le backend copie dans ses ressources — la source du rendu, vérifiée par le comparateur.
+modeles-docx-armp/
