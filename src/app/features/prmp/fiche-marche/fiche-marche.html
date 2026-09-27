@@ -526,7 +526,16 @@
                   }
                 }
                 @for (c of anomalies(); track c.regle + c.champs.join()) {
-                  <p class="fm__ctrl fm__ctrl--r"><b>{{ c.bloc || '—' }}</b> {{ c.message }} <span class="fm__ou">· {{ c.regle }}</span> @if (c.bloc) { <button type="button" class="fm__lien" (click)="allerAuBloc(c.bloc)">corriger</button> }</p>
+                  <p class="fm__ctrl fm__ctrl--r"><b>{{ c.bloc || '—' }}</b> {{ c.message }} <span class="fm__ou">· {{ c.regle }}</span>
+                    <!-- ⚠️ Remise électronique (27/09, règles 10 et 11) — deux bloquants ne se corrigent PAS dans un bloc :
+                         les paramètres internes (écran du responsable) et la désignation du responsable (Administrateur). -->
+                    @if (c.regle === 'PARAMETRES_INTERNES_INCOMPLETS') {
+                      @if (lienParametresInternes(); as lien) { <a class="fm__lien" [routerLink]="lien">compléter les paramètres internes</a> }
+                      @else { <span class="fm__ou">à compléter par le responsable de la procédure</span> }
+                    } @else if (c.regle === 'RESPONSABLE_NON_DESIGNE') {
+                      <span class="fm__ou">désignation par l'Administrateur, depuis la fiche</span>
+                    } @else if (c.bloc) { <button type="button" class="fm__lien" (click)="allerAuBloc(c.bloc)">corriger</button> }
+                  </p>
                 }
                 @for (c of bilan().avertissements; track c.regle + c.champs.join()) {
                   <p class="fm__ctrl fm__ctrl--a"><b>{{ c.bloc || '—' }}</b> {{ c.message }} <span class="fm__ou">· {{ c.regle }}</span></p>

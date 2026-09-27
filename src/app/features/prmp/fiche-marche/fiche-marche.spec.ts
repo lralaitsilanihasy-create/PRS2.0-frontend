@@ -856,6 +856,38 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(racine().querySelector('.fm__rep--ko')).toBeNull();
   });
 
+  it('remise électronique (27/09, règles 10 et 11) — les deux bloquants hors bloc renvoient au bon endroit, et le bouton de validation reste fermé', () => {
+    const bilan = {
+      bloquants: [
+        { regle: 'PARAMETRES_INTERNES_INCOMPLETS', champs: [], bloc: 'B04', message: 'Les paramètres internes de la procédure sont incomplets : à compléter par le responsable de la procédure.' },
+        { regle: 'RESPONSABLE_NON_DESIGNE', champs: [], bloc: 'B04', message: 'Aucun responsable de la procédure n’est désigné : la fiche ne peut pas être validée en remise électronique.' },
+        { regle: 'SE_HEURE_LIMITE', champs: ['B04-LR-04'], bloc: 'B04', message: 'En remise électronique, la date limite doit porter une heure (HH:MM) et tomber un jour ouvrable.' },
+      ],
+      avertissements: [],
+      ok: [],
+      nbSaisis: 3,
+      nbAttendus: 20,
+    };
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ cadrage: { ...CADRAGE_COMPLET, modeRemise: 'ELECTRONIQUE' }, bilanControles: bilan, peutModifierParametresInternes: false }));
+    fixture.componentInstance.etape.set(4);
+    rendre();
+    const lignes = Array.from(racine().querySelectorAll('.fm__ctrl--r')).map((p) => texte(p));
+    expect(lignes[0]).toContain('à compléter par le responsable de la procédure');
+    expect(lignes[1]).toContain('désignation par l’Administrateur'.replace('’', "'"));
+    expect(lignes[2]).toContain('corriger');
+    expect(bouton('Passer à la validation').disabled).toBe(true);
+    TestBed.resetTestingModule();
+    // le titulaire, lui, a le lien vers son écran
+    monter('UGPM', 42);
+    ouvrir(REFERENTIEL, fiche({ cadrage: { ...CADRAGE_COMPLET, modeRemise: 'ELECTRONIQUE' }, bilanControles: bilan, peutModifierParametresInternes: true }));
+    fixture.componentInstance.etape.set(4);
+    rendre();
+    const lien = racine().querySelector('.fm__ctrl--r a.fm__lien') as HTMLAnchorElement;
+    expect(texte(lien)).toBe('compléter les paramètres internes');
+    expect(lien.getAttribute('href')).toBe('/procedure/42/parametres-internes');
+  });
+
   it('bloc refusé (400 nominatifs) : le message sous chaque champ, un toast de comptage, aucun changement d’étape', () => {
     monter('PRMP', 42);
     ouvrir(REFERENTIEL, fiche({ cadrage: { ...CADRAGE_COMPLET, garantieSoumission: 'NON' } }));
