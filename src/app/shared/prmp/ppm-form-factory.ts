@@ -61,6 +61,8 @@ export class PpmFormFactory {
       numCompte: [null as string | null],
       financement: [''],
       statut: ['PREVU'],
+      // ⚠️ 27/09 — le DMC vivant de la ligne, posé par le serveur, jamais saisi : « Prévu » ne se choisit plus dessus.
+      idDmc: [null as number | null],
       natureLibelle: [''],
       modeLibelle: [''],
       formeMarche: ['QUANTITE_FIXE' as FormeMarche],

@@ -65,6 +65,12 @@ export interface Marche {
   /** Forme du marché (relevée dans l'objet à l'import, sinon défaut serveur `QUANTITE_FIXE`). */
   formeMarche?: FormeMarche;
   /**
+   * ⚠️ Statut « Lancé » (27/09, demande `demande-backend-2026-09-27-statut-lance-dmc.md` §B4) — le dossier de mise
+   * en concurrence **vivant** de la ligne, `null` sans DAO. Servi par le serveur : la grille s'en sert pour ne plus
+   * proposer « Prévu » à une ligne lancée, et le dire. Absent tant que le contrat n'est pas servi.
+   */
+  idDmc?: number | null;
+  /**
    * ⚠️ Fiche de présentation (2026-09-01, migration V13) — justifications SAISIES À LA CRÉATION,
    * exigées par le serveur (400 par champ) quand SA classification l'impose : mode dérogatoire
    * (catégorie du mode) et délai aménagé (ouverture − lancement < delaiMinJours, strict). Un marché

@@ -8,6 +8,7 @@ import { MontantFrDirective } from '../montant-fr.directive';
 import { AnomalieTranscription, Capm, Compte, FORME_MARCHE_LIBELLES, FormeMarche, Marche, MarchePrevision, ModePassation, Nature, SoaBeneficiaire, StatutMarche } from '../../models';
 import { PpmFormFactory } from './ppm-form-factory';
 import { calculerFichePresentation } from './fiche-presentation';
+import { statutsAdmissibles } from './statut-marche';
 
 /**
  * Un champ d'une ligne importée qui diffère du dossier examiné (rectification, 2026-08-15).
@@ -163,6 +164,8 @@ export const OBJET_MARCHE_MAX = 4000;
                       <select class="form-control" [formControl]="ctrl(g, 'statut')" [attr.aria-label]="'Statut du marché — ligne ' + (idx + 1)">
                         @for (s of statutsPour(g); track s.code) { <option [value]="s.code">{{ s.libelle }}</option> }
                       </select>
+                      <!-- ⚠️ 27/09 — lancée par son dossier de mise en concurrence : le statut suit le fait, « Prévu » n'est plus proposé. -->
+                      @if (enMiseEnConcurrence(g)) { <span class="form-hint psg-lancee">Lancée par le dossier de mise en concurrence n° {{ idDmcDe(g) }}</span> }
                     </td>
                   }
                   <td [class.sd__cell-modif]="estChampModifie(g, 'benef:' + i + ':soaCode')">
@@ -632,15 +635,18 @@ export class PpmSaisieGrid {
    * ou hérité) — sinon on ne pourrait ni l'afficher ni le ré-enregistrer (le serveur l'accepte, cf. règle backend).
    */
   statutsPour(g: FormGroup): StatutMarche[] {
-    const actifs = this.statuts()
-      .filter((s) => s.actif !== false)
-      .sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
-    const courant = ((this.ctrl(g, 'statut').value as string) ?? '').trim();
-    if (courant && !actifs.some((s) => s.code === courant)) {
-      const connu = this.statuts().find((s) => s.code === courant);
-      return [...actifs, connu ?? { code: courant, libelle: courant, actif: false }];
-    }
-    return actifs;
+    return statutsAdmissibles(this.statuts(), this.ctrl(g, 'statut').value as string, this.enMiseEnConcurrence(g));
+  }
+  /**
+   * ⚠️ Statut « Lancé » (27/09) — la ligne porte un dossier de mise en concurrence vivant (`idDmc`, posé par le
+   * serveur) : le statut a été lancé par ce dossier, « Prévu » ne se choisit plus ici. Absent tant que le contrat
+   * n'est pas servi : la liste reste celle d'avant.
+   */
+  enMiseEnConcurrence(g: FormGroup): boolean {
+    return g.get('idDmc')?.value != null;
+  }
+  idDmcDe(g: FormGroup): number | null {
+    return (g.get('idDmc')?.value as number | null) ?? null;
   }
   bctrl(b: FormGroup, nom: string): FormControl {
     return this.resoudre(b, nom);

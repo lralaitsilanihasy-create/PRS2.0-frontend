@@ -36,6 +36,7 @@ import { DatePipe } from '@angular/common';
 import { PpmMarchesTable } from './ppm-marches-table';
 import { PpmSaisieGrid } from './ppm-saisie-grid';
 import { PpmFormFactory } from './ppm-form-factory';
+import { statutsAdmissibles } from './statut-marche';
 import { FichePresentationDoc } from './fiche-presentation-doc';
 import { AgpmDoc } from './agpm-doc';
 import { DocumentVisionneuse } from '../ui/document-visionneuse';
@@ -747,7 +748,11 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
             </label>
             <label class="form-group">
               <span class="form-label">Statut</span>
-              <input class="form-control" type="text" formControlName="statut" />
+              <!-- ⚠️ 27/09 — le référentiel, plus une saisie libre ; « Prévu » n'est plus proposé à une ligne lancée par son DMC. -->
+              <select class="form-control" formControlName="statut">
+                @for (s of statutsEdition(); track s.code) { <option [value]="s.code">{{ s.libelle }}</option> }
+              </select>
+              @if (editingMarche()?.idDmc; as idDmc) { <span class="form-hint">Lancée par le dossier de mise en concurrence n° {{ idDmc }} : le statut suit le fait.</span> }
             </label>
             <label class="form-group">
               <span class="form-label">Nature</span>
@@ -1063,6 +1068,8 @@ export class DetailPpmModal implements OnInit {
   readonly natures = signal<Nature[]>([]);
   readonly modes = signal<ModePassation[]>([]);
   readonly statuts = signal<StatutMarche[]>([]);
+  /** Les statuts proposés à la ligne en édition : le référentiel, sans « Prévu » si elle porte un DMC vivant (27/09). */
+  readonly statutsEdition = computed(() => statutsAdmissibles(this.statuts(), this.editingMarche()?.statut, this.editingMarche()?.idDmc != null));
   readonly comptes = signal<Compte[]>([]);
   /** Options du select « Forme du marché » (liste fermée, libellés d'affichage). */
   readonly formes = (Object.entries(FORME_MARCHE_LIBELLES) as [FormeMarche, string][]).map(([code, libelle]) => ({ code, libelle }));
@@ -2090,7 +2097,7 @@ export class DetailPpmModal implements OnInit {
       numCompte: [m?.numCompte ?? (null as string | null)],
       montEstim: [m?.montEstim ?? (null as number | null)],
       financement: [m?.financement ?? ''],
-      statut: [m?.statut ?? ''],
+      statut: [m?.statut || 'PREVU'],
       idNature: [m?.idNature ?? (null as number | null)],
       idMode: [m?.idMode ?? (null as number | null)],
       // Forme courante pré-remplie : elle DOIT repartir au PUT (défaut serveur sinon → écrasement silencieux).
