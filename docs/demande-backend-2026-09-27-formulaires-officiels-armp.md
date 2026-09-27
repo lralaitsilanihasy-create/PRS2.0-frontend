@@ -39,6 +39,8 @@ soumission.doc`), montrent que le 2463 en est une **adaptation locale** : nos mo
 > **`.chiffres`** (le nombre en chiffres sans l'unité, pointillés si absent) : écrivez `({{B05-GS-03.chiffres}} Ariary)`
 > et je recopie le fichier dans la foulée. Choix du 27/09 : le fichier du front reste le modèle, recopié sans
 > retouche — le rendu porte le double « Ariary » jusqu'à votre correctif.
+> ✅ **Correctif reçu le 27/09 (`f05b0c5`, `{{B05-GS-03.chiffres}}`) et recopié tel quel** : le rendu du serveur imprime
+> « pour la somme de … ariary (1 600 000 Ariary) ». Plus d'écart sur C1.
 
 ## B2 — La preuve
 
