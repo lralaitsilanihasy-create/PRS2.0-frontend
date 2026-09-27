@@ -31,10 +31,26 @@ soumission.doc`), montrent que le 2463 en est une **adaptation locale** : nos mo
   mesure de leur livraison** (C1 d'abord), sans autre changement du moteur : mêmes commandes, mêmes jetons.
 - Un jeton **absent** du contrat des jetons (V47) serait un refus à nous signaler nommément, pas un rendu partiel.
 
+> ⚠️ **Livré le 2026-09-27 (backend) — §B1 pour C1, recopié tel quel, avec un signalement nominatif.** Les six jetons du
+> C1 ARMP sont du contrat V47 (`{{CODE}}` résolu aussi sur les valeurs du plan : `B01-AC-01`, `B02-OB-01` ; `.lettres` ;
+> `{{B05-GS-04}}` en nombre nu). **Mais** le paragraphe « EN CONSEQUENCE » écrit `({{B05-GS-03}} Ariary)` alors qu'un
+> jeton `{{CODE}}` de type MONTANT s'imprime **avec l'unité** (contrat V47 : « 1 600 000 Ariary ») : le rendu donne
+> « pour la somme de un million six cent mille ariary (**1 600 000 Ariary Ariary**) ». Le moteur gagne le suffixe
+> **`.chiffres`** (le nombre en chiffres sans l'unité, pointillés si absent) : écrivez `({{B05-GS-03.chiffres}} Ariary)`
+> et je recopie le fichier dans la foulée. Choix du 27/09 : le fichier du front reste le modèle, recopié sans
+> retouche — le rendu porte le double « Ariary » jusqu'à votre correctif.
+
 ## B2 — La preuve
 
 - Comme au 26/09 : les rendus du serveur (docx) passent le comparateur du front (`verifier.mjs --dossier=`), source =
   le texte du document type. Six rendus identiques → le modèle est officiel.
+
+> ⚠️ **Livré le 2026-09-27 (backend) — §B2 pour C1, par comparaison directe des textes.** `verifier.mjs` lit encore
+> `modeles/C1.json` (le décalque 2463) : tant que la chaîne ARMP (`source-armp.txt`, comparateur) n'est pas là, la
+> preuve est la comparaison paragraphe par paragraphe du rendu brut du serveur (`ModelesCandidatRenduTest` →
+> `C:\Users\LANTO\rendus-modeles\C1.docx`, jetons non substitués) avec votre rendu de relecture
+> `docs/modeles-candidat/armp/C1.docx` **et** avec `modeles-armp/C1.txt` : **15 paragraphes, identiques** des deux côtés.
+> Dès que le comparateur ARMP existe, je rejoue `verifier.mjs C1 --docx=…` comme au 26/09.
 
 ## B3 — Ce qui change pour la PRMP du 2463
 
