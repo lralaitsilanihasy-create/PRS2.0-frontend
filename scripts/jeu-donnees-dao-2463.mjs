@@ -196,8 +196,10 @@ if (etape(2, 'Le plan de passation — dossier, PPM et ligne de marché (PRMP)')
   if (!r.ok) { console.error(JSON.stringify(r.corps,null,1).slice(0,900)); echec('saisie du PPM', r); }
   etat.idDossier = r.corps.idDossier;
   console.log('  ✓ dossier ' + etat.idDossier + ' · ' + r.corps.statut);
-  const m = await appel(PRMP, 'GET', '/api/marches?dossier=' + etat.idDossier);
-  const lignes = liste(m.corps);
+  const m = await appel(PRMP, 'GET', '/api/marches?dossier=' + etat.idDossier + '&taille=200');
+  // ⚠️ `?dossier=` de /api/marches ne filtre pas (piège connu) : on filtre ici, sinon un second plan reprend la ligne
+  // du premier (constaté le 27/09 : examen évalué sur la mauvaise ligne, soumission refusée « 9 évaluations manquantes »).
+  const lignes = liste(m.corps).filter((x) => x.idDossier === etat.idDossier);
   etat.idDetail = lignes[0]?.idDetail;
   console.log('  ✓ ligne ' + etat.idDetail + ' · ' + String(lignes[0]?.designationMarche).slice(0, 62) + '…');
   console.log('    ' + LOTS.length + ' lots · ' + PROCESSUS.length + ' étapes prévisionnelles · ' + LIGNE.montEstim.toLocaleString('fr-FR') + ' Ar');
