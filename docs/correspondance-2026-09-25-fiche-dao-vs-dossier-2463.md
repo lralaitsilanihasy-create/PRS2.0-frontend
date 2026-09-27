@@ -1,5 +1,10 @@
 # D'où vient chaque information de la fiche DAO — correspondance avec le dossier réel
 
+> ⚠️ **Remplacé le 2026-09-27 par `correspondance-2026-09-27-fiche-dao-vs-dossier-2463.md`, GÉNÉRÉ** par
+> `node scripts/correspondance-2463.mjs` depuis la fiche des faits (`jeu-donnees-2463-faits.md`, natures [R]/[D]/[H]),
+> le référentiel servi et les PDF produits. Ce document du 25/09 décrit la fiche 13, d'avant la fiche des faits et les
+> modèles officiels ; il n'est plus tenu à jour.
+
 *25/09/2026, mis à jour le 26/09. Fiche marché **13** (ligne 303089, jeu rejoué sur base vide) ↔ dossier d'appel d'offres*
 *`AOO n° 2463-MI/MESupReS/PRMP/UGPM.2026`, 86 pages, déposé par le pilote.*
 *Chaque information portée à la fiche est ici rattachée à sa **page** et à sa **clause** dans le dossier.*
