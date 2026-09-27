@@ -391,6 +391,7 @@ interface PropositionCellule {
                       <app-fiche-dao-doc
                         [idDmc]="dossier()!.idDmc!"
                         [observations]="observationsDao()"
+                        [modifiees]="perimetre()?.ficheDao?.informations ?? []"
                         [observable]="mode() !== 'locked' && pointsCourants().length > 0"
                         (celluleClick)="proposerObservationFiche($event)"
                       />

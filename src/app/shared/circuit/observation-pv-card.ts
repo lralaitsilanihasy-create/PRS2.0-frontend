@@ -69,6 +69,10 @@ export function decomposerObservation(lib: string): {
         <div class="opv__fiche">
           Information de la fiche DAO : <b>{{ obs().libelleChampFiche || obs().champFiche }}</b>@if (obs().lot) { — lot {{ obs().lot }} }
           @if (obs().valeurChampFiche) { · valeur observée « {{ obs().valeurChampFiche }} » }
+          <!-- Lot C3 (V49) — la valeur d'aujourd'hui, quand la fiche a été revalidée depuis : le Vérificateur statue sans ouvrir la fiche. -->
+          @if (actuelle(); as a) {
+            <span class="opv__actuelle">→ actuelle « {{ a }} »@if (obs().versionFicheActuelle) { (version {{ obs().versionFicheActuelle }}) }</span>
+          }
           @if (lienFiche(); as lien) { <a class="opv__lien" [routerLink]="lien">Ouvrir la fiche</a> }
         </div>
       }
@@ -101,12 +105,19 @@ export function decomposerObservation(lib: string): {
     .opv__demande { font-size: var(--text-sm); color: var(--n-700); background: var(--c-50); padding: 0.35rem 0.6rem; border-radius: var(--radius-md); }
     .opv__fiche { font-size: var(--text-xs); color: var(--n-600); margin-top: 0.3rem; }
     .opv__lien { margin-left: 0.4rem; }
+    .opv__actuelle { display: block; margin-top: 0.15rem; color: #15803d; font-weight: 600; }
     .opv__precision { font-size: var(--text-xs); color: var(--warning-text); background: var(--warning-bg); padding: 0.3rem 0.6rem; border-radius: var(--radius-md); }
   `,
 })
 export class ObservationPvCard {
   readonly obs = input.required<ObservationPv>();
   private readonly liens = inject(LienDossier);
+  /** La valeur actuelle de l'information, seulement si elle diffère de la valeur observée (sinon elle n'apprend rien). */
+  readonly actuelle = computed(() => {
+    const o = this.obs();
+    const a = o.valeurChampFicheActuelle;
+    return a && a !== o.valeurChampFiche ? a : null;
+  });
   /** La fiche DAO visée, dans l'espace du lecteur — `null` hors d'un espace connu ou sans fiche. */
   readonly lienFiche = computed<(string | number)[] | null>(() => {
     const espace = this.liens.espace();

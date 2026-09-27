@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { ApiError } from '../../core/errors/api-error';
+import { ApiError, codeErreur } from '../../core/errors/api-error';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob, validerFichier } from '../../core/securite/fichiers-surs';
 import { Dossier, LettreRenvoi, PieceJointeDossier, TypePieceJointe } from '../../models';
@@ -171,12 +171,24 @@ import { LienDossier } from './page-dossier/lien-dossier';
                              quand toutes les pièces demandées ont été déposées. -->
                         @if (dossierDe(l)?.statut === 'EN_ATTENTE_PIECES') {
                           <div class="lrc__complements">
-                            <p class="text-muted text-sm">
-                              L'examen du dossier est <strong>suspendu</strong> (en attente de pièces). Une fois toutes les
-                              pièces demandées déposées ci-dessus, transmettez-les : le dossier repartira en
-                              <strong>réexamen</strong> chez le Membre attributaire, qui le réexaminera à la lumière des
-                              pièces reçues (la transmission est refusée tant qu'aucune pièce n'a été déposée).
-                            </p>
+                            @if (dossierDe(l)?.idDmc; as idDmc) {
+                              <!-- ⚠️ Lot C4 (V49, §B3) — pour un dossier d'appel d'offres, le complément est la FICHE RÉVISÉE
+                                   et validée (ses documents rejoignent le dossier) ; le serveur refuse la transmission sans elle. -->
+                              <p class="text-muted text-sm">
+                                L'examen du dossier est <strong>suspendu</strong>. Pour un dossier d'appel d'offres, le complément est
+                                la <strong>fiche DAO révisée et validée</strong> : ouvrez-la, corrigez ce que la lettre relève, validez
+                                la nouvelle version — ses documents rejoignent le dossier — puis transmettez : le dossier repartira en
+                                <strong>réexamen</strong> chez le Membre attributaire, qui verra ce qui a changé.
+                              </p>
+                              <a class="btn btn-secondary btn-sm lrc__reviser" [routerLink]="['/prmp/dao', idDmc]" [queryParams]="{ reviser: 1 }">Réviser la fiche →</a>
+                            } @else {
+                              <p class="text-muted text-sm">
+                                L'examen du dossier est <strong>suspendu</strong> (en attente de pièces). Une fois toutes les
+                                pièces demandées déposées ci-dessus, transmettez-les : le dossier repartira en
+                                <strong>réexamen</strong> chez le Membre attributaire, qui le réexaminera à la lumière des
+                                pièces reçues (la transmission est refusée tant qu'aucune pièce n'a été déposée).
+                              </p>
+                            }
                             <button type="button" class="btn btn-primary" [disabled]="transmissionComplements()" (click)="transmettreComplements(l)">
                               {{ transmissionComplements() ? 'Transmission…' : 'Transmettre les compléments' }}
                             </button>
@@ -466,7 +478,12 @@ export class LettreRenvoiConsultation {
       },
       error: (e: ApiError) => {
         this.transmissionComplements.set(false);
-        this.toast.error(e.message || 'Transmission des compléments impossible.');
+        const code = codeErreur(e);
+        this.toast.error(
+          code === 'FICHE_NON_REVISEE'
+            ? "La fiche DAO n'a pas de version validée postérieure à celle que la Commission a examinée : révisez-la et validez-la avant de transmettre."
+            : e.message || 'Transmission des compléments impossible.',
+        );
       },
     });
   }

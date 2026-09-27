@@ -286,7 +286,15 @@ export interface FicheMarcheResume {
   designationMarche?: string | null;
   typeMarche: TypeMarche | null;
   statut: StatutFiche;
+  /** La DERNIÈRE version validée — elle avance à chaque revalidation, elle ne dit pas ce que la Commission a examiné. */
   version: number;
+  /**
+   * ⚠️ Lot C (V49, 27/09, §B1) — la version que le dossier a SOUMISE (posée à la soumission, avancée par la resoumission
+   * et la transmission des compléments) et, séparément, la version EXAMINÉE (celle du PV — dans la boucle FAVR la
+   * version soumise avance sans réexamen). `0` ou nul : dossier d'avant V49 sans version connue.
+   */
+  versionSoumise?: number | null;
+  versionExaminee?: number | null;
   nbSaisis?: number | null;
   nbAttendus?: number | null;
 }

@@ -52,21 +52,27 @@ describe('ObservationPvCard', () => {
       libelleChampFiche: 'Montant de la garantie de soumission (Ariary)',
       valeurChampFiche: '2 170 000 Ariary (deux millions cent soixante-dix mille ariary)',
       lot: 2,
+      // Lot C3 (V49) — la fiche a été revalidée depuis : la valeur d'aujourd'hui se lit sur la carte.
+      valeurChampFicheActuelle: '2 000 000 Ariary (deux millions ariary)',
+      versionFicheObservee: 1,
+      versionFicheActuelle: 2,
     });
     fixture.detectChanges();
 
     expect(texte('.opv__fiche')).toBe(
-      'Information de la fiche DAO : Montant de la garantie de soumission (Ariary) — lot 2 · valeur observée « 2 170 000 Ariary (deux millions cent soixante-dix mille ariary) » Ouvrir la fiche',
+      'Information de la fiche DAO : Montant de la garantie de soumission (Ariary) — lot 2 · valeur observée « 2 170 000 Ariary (deux millions cent soixante-dix mille ariary) » → actuelle « 2 000 000 Ariary (deux millions ariary) » (version 2) Ouvrir la fiche',
     );
     expect(racine().querySelector<HTMLAnchorElement>('.opv__lien')?.getAttribute('href')).toBe('/verificateur/dao/14');
   });
 
   it("se passe du lien quand le lecteur n'a pas d'espace (Administrateur), et de tout libellé manquant", () => {
     role = null;
-    fixture.componentRef.setInput('obs', { ...OBS, idDmc: 14, champFiche: 'B04-VO-01' });
+    // Valeur actuelle égale à la valeur observée : rien à apprendre, rien d'affiché.
+    fixture.componentRef.setInput('obs', { ...OBS, idDmc: 14, champFiche: 'B04-VO-01', valeurChampFiche: '75', valeurChampFicheActuelle: '75' });
     fixture.detectChanges();
 
-    expect(texte('.opv__fiche')).toBe('Information de la fiche DAO : B04-VO-01');
+    expect(texte('.opv__fiche')).toBe('Information de la fiche DAO : B04-VO-01 · valeur observée « 75 »');
     expect(racine().querySelector('.opv__lien')).toBeNull();
+    expect(racine().querySelector('.opv__actuelle')).toBeNull();
   });
 });

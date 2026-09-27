@@ -4,7 +4,7 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { QUESTIONS_CADRAGE, blocsASaisir, champsDeRubrique, cleValeur, lotsDuChamp, optionsChoisies, rubriqueOuverte } from '../../features/prmp/fiche-marche/fiche-marche-modele';
 import { FicheBesoin } from '../../features/prmp/fiche-marche/fiche-besoin';
-import { BlocFiche, Cadrage, ChampFiche, FicheMarche, ReferentielFiche, RubriqueFiche } from '../../models';
+import { BlocFiche, Cadrage, ChampFiche, FicheMarche, InformationFicheModifiee, ReferentielFiche, RubriqueFiche } from '../../models';
 import { ChampFicheMarcheService, FicheMarcheService } from '../../services/fiche-marche.services';
 import { AUCUN_NUMERO, grouperNumeros, libelleObservations } from './document-officiel';
 
@@ -82,6 +82,7 @@ export interface ObservationCelluleFiche {
                       @for (c of champs(bloc, r); track c.code) {
                         @for (lot of lotsDe(c); track lot) {
                           @let numeros = observationsDe(cle(c, lot));
+                          @let modif = modifieeDe(cle(c, lot));
                           <tr>
                             <!-- L'espace avant le bloc est voulu : sans lui, le nom lu (« Montant de la garantielot 2 ») colle le lot au libellé. -->
                             <th scope="row" class="doc-lib">{{ c.libelle }} @if (lot !== null) {<span class="doc-lot">lot {{ lot }}</span>}</th>
@@ -89,10 +90,14 @@ export interface ObservationCelluleFiche {
                               class="doc-cellule"
                               [class.doc-cellule--observable]="observable()"
                               [class.doc-cellule--observee]="numeros.length > 0"
+                              [class.doc-cellule--modifiee]="!!modif"
                               [attr.title]="observable() ? 'Observer cette information' : null"
                               (click)="cliquer($event, c, lot)"
                             >
                               <span class="doc-val">{{ valeur(c, lot) || '—' }}</span>
+                              @if (modif && annotations()) {
+                                <span class="doc-modif">modifiée — avant : « {{ modif.avant || '—' }} »</span>
+                              }
                               @if (numeros.length) {
                                 <span class="doc-pastilles" aria-hidden="true">
                                   @for (n of numeros; track n) { <span class="doc-pastille">{{ n }}</span> }
@@ -125,6 +130,8 @@ export interface ObservationCelluleFiche {
     .doc-table--fiche th.doc-lib { width: 38%; font-weight: 500; text-align: left; vertical-align: top; color: var(--n-600); }
     .doc-lot { margin-left: 0.4rem; font-size: 0.74rem; color: var(--n-500); border: 1px solid var(--n-300); border-radius: 999px; padding: 0 0.4rem; }
     .doc-val { white-space: pre-wrap; }
+    .doc-cellule--modifiee { background: #eff6ff; box-shadow: inset 3px 0 0 var(--p-600); }
+    .doc-modif { display: block; margin-top: 0.15rem; font-size: 0.74rem; color: var(--p-700); }
     .doc-etat { color: var(--n-500); font-size: 0.9rem; }
     .doc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   `],
@@ -137,7 +144,13 @@ export class FicheDaoDoc {
   /** Les cellules proposent « Observer » : l'examen le dit quand l'examinateur peut encore écrire une ligne. */
   readonly observable = input(false);
   readonly observations = input<readonly ObservationCelluleFiche[]>([]);
+  /**
+   * ⚠️ Lot C4 (V49, §B5) — en réexamen, les informations qui ont CHANGÉ entre la version examinée et la version
+   * courante (`perimetre.ficheDao.informations`) : la cellule est marquée « modifiée », l'ancienne valeur en note.
+   */
+  readonly modifiees = input<readonly InformationFicheModifiee[]>([]);
   readonly annotations = input(true);
+  private readonly parCleModifiee = computed(() => new Map(this.modifiees().map((m) => [m.champFiche.toUpperCase(), m])));
   readonly celluleClick = output<CelluleFicheCliquee>();
 
   readonly fiche = signal<FicheMarche | null>(null);
@@ -220,6 +233,9 @@ export class FicheDaoDoc {
       return `${grouperMilliers(Number(v))} Ariary${lettres ? ` (${lettres})` : ''}`;
     }
     return String(v);
+  }
+  modifieeDe(cle: string): InformationFicheModifiee | null {
+    return this.parCleModifiee().get(cle.toUpperCase()) ?? null;
   }
   observationsDe(cle: string): readonly number[] {
     if (!this.annotations()) return AUCUN_NUMERO;

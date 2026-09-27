@@ -213,8 +213,9 @@ export class RectifierDossierDao {
    * tant que B2 ne remplace pas les pièces à la revalidation. Sans pièce produite, la version que le dossier résume.
    */
   readonly versionSoumise = computed(() => {
-    const r = this.dossier()?.ficheMarche as (Dossier['ficheMarche'] & { versionSoumise?: number | null }) | null | undefined;
-    return r?.versionSoumise ?? this.versionParPieces() ?? r?.version ?? 0;
+    const r = this.dossier()?.ficheMarche;
+    // V49 : `versionSoumise` servie ; `0` = dossier d'avant V49 sans version connue → le repli par les documents.
+    return r?.versionSoumise || this.versionParPieces() || r?.version || 0;
   });
   readonly etatRevision = computed<EtatRevision>(() => {
     const f = this.fiche();

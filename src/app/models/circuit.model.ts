@@ -607,6 +607,14 @@ export interface ObservationPv {
   libelleChampFiche?: string | null;
   valeurChampFiche?: string | null;
   lot?: number | null;
+  /**
+   * ⚠️ Lot C (V49, 27/09, demande-backend-2026-09-26-rectification-dossier-dao §B4) — la valeur de l'information dans
+   * la version validée COURANTE de la fiche, formatée comme `valeurChampFiche` ; nulle si l'information n'existe plus.
+   * `versionFicheObservee` : la version figée à la pose (nulle pour une observation d'avant V49) ; `versionFicheActuelle`.
+   */
+  valeurChampFicheActuelle?: string | null;
+  versionFicheObservee?: number | null;
+  versionFicheActuelle?: number | null;
 }
 
 /** Une décision d'itération sur une observation (historique, traçabilité). */

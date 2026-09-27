@@ -157,6 +157,25 @@ export interface PerimetreExamen {
   agpmAExaminer: boolean;
   dossierAExaminer: boolean;
   lignes: PerimetreExamenLigne[];
+  /**
+   * ⚠️ Lot C (V49, 27/09, §B5) — dossier DAO en réexamen : ce qui a changé dans la fiche entre la version examinée
+   * (celle du PV) et la version courante, valeurs imprimées. `avant` nul : information ouverte par la révision ;
+   * `apres` nul : fermée par le cadrage. Nul hors `A_REEXAMINER` ou pour un plan.
+   */
+  ficheDao?: PerimetreFicheDao | null;
+  ficheDaoAExaminer?: boolean;
+}
+export interface InformationFicheModifiee {
+  champFiche: string;
+  lot: number | null;
+  libelle: string;
+  avant: string | null;
+  apres: string | null;
+}
+export interface PerimetreFicheDao {
+  versionExaminee: number;
+  versionCourante: number;
+  informations: InformationFicheModifiee[];
 }
 
 /** ⚠️ 2026-09-06 — ce qui a produit une version archivée (`MISE_A_JOUR` réservé, jamais servi à ce jour). */
