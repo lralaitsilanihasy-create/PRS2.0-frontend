@@ -800,6 +800,62 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(fixture.componentInstance.resume().map((p) => p.texte)).toContain('Remise électronique');
   });
 
+  it('remise électronique (27/09, Q8) — l’Administrateur désigne puis retire le responsable depuis la fiche, lue sans la modifier', () => {
+    monter('ADMINISTRATEUR', 42);
+    ouvrir(REFERENTIEL, fiche({ responsableProcedure: null }));
+    expect(fixture.componentInstance.enLecture()).toBe(true);
+    const encart = racine().querySelector('.fm__resp') as HTMLElement;
+    expect(texte(encart.querySelector('.fm__resp-aucun'))).toContain('Aucun responsable désigné');
+    bouton('Désigner un responsable…').click();
+    http.expectOne('/api/fiches-marche/42/responsable/candidats').flush([{ im: 'RESP01', nom: 'Randria', profil: 'UGPM' }]);
+    rendre();
+    const select = encart.querySelector('select') as HTMLSelectElement;
+    select.value = 'RESP01';
+    select.dispatchEvent(new Event('change'));
+    rendre();
+    bouton('Désigner').click();
+    const post = http.expectOne('/api/fiches-marche/42/responsable');
+    expect(post.request.method).toBe('POST');
+    expect(post.request.body).toEqual({ im: 'RESP01' });
+    post.flush(null, { status: 201, statusText: 'Created' });
+    rendre();
+    expect(texte(racine().querySelector('.fm__resp-l'))).toContain('Titulaire : Randria');
+    expect(texte(racine().querySelector('.fm__resp-l .cnm-mono'))).toBe('RESP01');
+    expect(toast.success).toHaveBeenCalledWith('Randria désigné responsable de la procédure.');
+    bouton('Retirer').click();
+    const del = http.expectOne('/api/fiches-marche/42/responsable');
+    expect(del.request.method).toBe('DELETE');
+    del.flush(null, { status: 204, statusText: 'No Content' });
+    rendre();
+    expect(texte(racine().querySelector('.fm__resp-aucun'))).toContain('Aucun responsable désigné');
+    // 409 nommé : un membre de la commission ne peut pas être responsable
+    bouton('Désigner un responsable…').click();
+    http.expectOne('/api/fiches-marche/42/responsable/candidats').flush([{ im: 'MEM001', nom: 'Rakoto' }]);
+    rendre();
+    const sel2 = racine().querySelector('.fm__resp select') as HTMLSelectElement;
+    sel2.value = 'MEM001';
+    sel2.dispatchEvent(new Event('change'));
+    rendre();
+    bouton('Désigner').click();
+    http.expectOne('/api/fiches-marche/42/responsable').flush({ message: 'Conflit', code: 'MEMBRE_COMMISSION' }, { status: 409, statusText: 'Conflict' });
+    rendre();
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('part de clé'));
+  });
+
+  it('remise électronique (27/09) — la PRMP lit l’état des paramètres internes ; seul le titulaire a le lien vers l’écran séparé', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ cadrage: { ...CADRAGE_COMPLET, modeRemise: 'ELECTRONIQUE' }, parametresInternes: 'INCOMPLETS', peutModifierParametresInternes: false }));
+    expect(texte(racine().querySelector('.fm__rep--ko'))).toBe('Paramètres internes : incomplets');
+    expect(racine().querySelector('.fm__resp')).toBeNull();
+    expect(Array.from(racine().querySelectorAll('a')).some((a) => texte(a) === 'Paramètres internes')).toBe(false);
+    TestBed.resetTestingModule();
+    monter('UGPM', 42);
+    ouvrir(REFERENTIEL, fiche({ cadrage: { ...CADRAGE_COMPLET, modeRemise: 'ELECTRONIQUE' }, parametresInternes: 'COMPLETS', peutModifierParametresInternes: true }));
+    const lien = Array.from(racine().querySelectorAll('a')).find((a) => texte(a) === 'Paramètres internes') as HTMLAnchorElement;
+    expect(lien.getAttribute('href')).toBe('/procedure/42/parametres-internes');
+    expect(racine().querySelector('.fm__rep--ko')).toBeNull();
+  });
+
   it('bloc refusé (400 nominatifs) : le message sous chaque champ, un toast de comptage, aucun changement d’étape', () => {
     monter('PRMP', 42);
     ouvrir(REFERENTIEL, fiche({ cadrage: { ...CADRAGE_COMPLET, garantieSoumission: 'NON' } }));

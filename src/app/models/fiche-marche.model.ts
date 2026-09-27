@@ -68,6 +68,48 @@ export interface ResponsableProcedure {
   nom: string;
 }
 
+/** Un compte désignable : membre détenteur d'une part de clé, ou responsable de la procédure. */
+export interface CompteDesignable {
+  im: string;
+  nom: string;
+  profil?: string | null;
+}
+
+/** Une écriture du journal dédié des paramètres internes (servi au seul titulaire ; ancienne → nouvelle valeur). */
+export interface EntreeJournalParametres {
+  date: string;
+  acteur: string;
+  nomActeur?: string | null;
+  champ: string;
+  ancienneValeur?: string | null;
+  nouvelleValeur?: string | null;
+}
+
+/**
+ * ⚠️ Remise électronique (27/09, demande §B4) — `GET /api/fiches-marche/{idDmc}/parametres-internes`, réservé au
+ * responsable de la procédure (403 aux autres, Administrateur compris). Ces valeurs vivent hors de la fiche et hors
+ * du moteur de rendu : aucun jeton ne les atteint. `nombreParts` (INT-SE-02) est calculé du nombre de membres ;
+ * `responsable` (INT-SE-05) est le titulaire du rôle, posé par le serveur.
+ */
+export interface ParametresInternes {
+  idDmc: number;
+  membresCommission: CompteDesignable[];
+  nombreParts: number;
+  quorum: number | null;
+  dateCeremonie: string | null;
+  responsable: ResponsableProcedure | null;
+  etat: EtatParametresInternes;
+  anomalies: { regle: string; message: string }[];
+  journal: EntreeJournalParametres[];
+}
+
+/** Corps du `PUT …/parametres-internes` : les trois valeurs saisies ; le reste est calculé ou posé par le serveur. */
+export interface ParametresInternesCorps {
+  membresCommission: string[];
+  quorum: number | null;
+  dateCeremonie: string | null;
+}
+
 /** Rubrique d'un bloc (« Garantie de soumission » dans B05). `attendus` : compte d'informations de l'esquisse. */
 export interface RubriqueFiche {
   code: string;

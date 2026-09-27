@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, LigneEligible, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
+import { ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, LigneEligible, ParametresInternes, ParametresInternesCorps, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -165,5 +165,40 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
   /** `GET /rattachables` — fiches validées et non liées du périmètre (PRMP et UGPM ; 403 aux autres). Silencieux. */
   rattachables(): Observable<FicheRattachable[]> {
     return this.http.get<FicheRattachable[]>(`${this.baseUrl}/rattachables`, { context: skipErrorToast() });
+  }
+
+  // ── Remise électronique (27/09, demande §B4 et §B5) — développé CONTRE le contrat, avant livraison ──────────
+
+  /**
+   * `GET /{idDmc}/parametres-internes` — réservé au **responsable de la procédure** : 403 à tout autre lecteur,
+   * Administrateur compris ; 404 tant que la route n'est pas servie. Silencieux : l'écran nomme le refus lui-même.
+   */
+  parametresInternes(idDmc: number): Observable<ParametresInternes> {
+    return this.http.get<ParametresInternes>(`${this.baseUrl}/${idDmc}/parametres-internes`, { context: skipErrorToast() });
+  }
+
+  /** `PUT /{idDmc}/parametres-internes` — 400 nominatifs (`membresCommission`, `quorum`, `dateCeremonie`), 409 `MEMBRE_COMMISSION` / `FICHE_VALIDEE`. */
+  enregistrerParametresInternes(idDmc: number, corps: ParametresInternesCorps): Observable<ParametresInternes> {
+    return this.http.put<ParametresInternes>(`${this.baseUrl}/${idDmc}/parametres-internes`, corps, { context: skipErrorToast() });
+  }
+
+  /** `GET /{idDmc}/parametres-internes/candidats` — comptes désignables comme détenteurs d'une part de clé (titulaire seul). */
+  candidatsParametresInternes(idDmc: number): Observable<CompteDesignable[]> {
+    return this.http.get<CompteDesignable[]>(`${this.baseUrl}/${idDmc}/parametres-internes/candidats`, { context: skipErrorToast() });
+  }
+
+  /** `GET /{idDmc}/responsable/candidats` — comptes désignables comme responsable, hors commission (Administrateur). */
+  candidatsResponsable(idDmc: number): Observable<CompteDesignable[]> {
+    return this.http.get<CompteDesignable[]>(`${this.baseUrl}/${idDmc}/responsable/candidats`, { context: skipErrorToast() });
+  }
+
+  /** `POST /{idDmc}/responsable` `{ im }` (Administrateur) — 409 `RESPONSABLE_EXISTANT` / `MEMBRE_COMMISSION`, 404 compte inconnu. */
+  designerResponsable(idDmc: number, im: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${idDmc}/responsable`, { im }, { context: skipErrorToast() });
+  }
+
+  /** `DELETE /{idDmc}/responsable` (Administrateur) — 404 s'il n'y a pas de titulaire. */
+  retirerResponsable(idDmc: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${idDmc}/responsable`, { context: skipErrorToast() });
   }
 }

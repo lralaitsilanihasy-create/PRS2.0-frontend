@@ -64,6 +64,14 @@ export const routes: Routes = [
           import('./features/transverse/notifications-page').then((m) => m.NotificationsPage),
       },
       {
+        // ⚠️ Remise électronique (27/09, Q6) — les paramètres internes d'une procédure : droit PAR PROCÉDURE, pas par
+        // rôle de session. Route transverse, sans garde de rôle : le serveur répond 403 à qui n'est pas le responsable.
+        path: 'procedure/:idDmc/parametres-internes',
+        loadComponent: () =>
+          import('./features/procedure/parametres-internes').then((m) => m.ParametresInternesEcran),
+        data: { title: 'Paramètres internes de la procédure', concentration: true },
+      },
+      {
         path: 'admin',
         canActivate: [roleGuard],
         data: { roles: ['ADMINISTRATEUR'] },

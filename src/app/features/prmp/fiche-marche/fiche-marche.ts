@@ -9,7 +9,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../../core/securite/fichiers-surs';
 import { ApiError, codeErreur, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, TypeChamp, FicheMarche, LigneEligible, ObservationPv, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DocumentDao, DocumentFiche, EtatParametresInternes, TypeChamp, FicheMarche, LigneEligible, ObservationPv, ReferentielFiche, RubriqueFiche, TypeMarche, VersionFiche } from '../../../models';
 import { ChampFicheMarcheService, DmcService, FicheMarcheService } from '../../../services/fiche-marche.services';
 import { ObservationPvService } from '../../../services/circuit.services';
 import { decomposerObservation } from '../../../shared/circuit/observation-pv-card';
@@ -215,6 +215,16 @@ export class FicheMarcheEcran {
   readonly blocIdx = signal(0);
 
   readonly estPrmp = computed(() => this.auth.role() === 'PRMP');
+  /** ⚠️ Remise électronique (27/09, Q8) — l'Administrateur désigne le responsable de la procédure depuis la fiche. */
+  readonly estAdmin = computed(() => this.auth.role() === 'ADMINISTRATEUR');
+  /** Comptes désignables comme responsable, chargés quand l'Administrateur ouvre la désignation ; `null` = pas encore. */
+  readonly candidatsResponsable = signal<CompteDesignable[] | null>(null);
+  readonly responsableChoisi = signal('');
+  /** L'écran séparé des paramètres internes — pour le seul titulaire, à qui la fiche le dit (`peutModifierParametresInternes`). */
+  readonly lienParametresInternes = computed<(string | number)[] | null>(() => {
+    const id = this.idDmc();
+    return id != null && this.fiche()?.peutModifierParametresInternes ? ['/procedure', id, 'parametres-internes'] : null;
+  });
   /**
    * ⚠️ Examen (25/09) — **la Commission lit la fiche, elle ne la saisit pas.** Le mode se déduit du RÔLE, pas du
    * statut : une fiche en brouillon comme une fiche figée s'ouvrent en lecture pour un contrôleur, et restent
@@ -665,6 +675,66 @@ export class FicheMarcheEcran {
   calculee(champ: ChampFiche, lot: number | null = null): boolean {
     return !!this.fiche()?.champsCalcules?.includes(this.cle(champ, lot));
   }
+  libelleEtatInternes(etat: EtatParametresInternes): string {
+    return etat === 'COMPLETS' ? 'complets' : etat === 'INCOMPLETS' ? 'incomplets' : 'à saisir';
+  }
+
+  chargerCandidatsResponsable(): void {
+    const id = this.idDmc();
+    if (id == null) return;
+    this.ficheService.candidatsResponsable(id).subscribe({ next: (c) => this.candidatsResponsable.set(c ?? []), error: () => this.candidatsResponsable.set([]) });
+  }
+
+  /** `POST …/responsable` — la fiche reflète le titulaire sans être relue : le serveur n'a rien changé d'autre. */
+  designerResponsable(): void {
+    const id = this.idDmc();
+    const im = this.responsableChoisi();
+    if (id == null || !im || this.saving()) return;
+    const compte = this.candidatsResponsable()?.find((c) => c.im === im);
+    this.saving.set(true);
+    this.ficheService.designerResponsable(id, im).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.fiche.update((f) => (f ? { ...f, responsableProcedure: { im, nom: compte?.nom ?? im } } : f));
+        this.responsableChoisi.set('');
+        this.candidatsResponsable.set(null);
+        this.toast.success(`${compte?.nom ?? im} désigné responsable de la procédure.`);
+      },
+      error: (e: ApiError) => {
+        this.saving.set(false);
+        this.toast.error(this.motifResponsable(e));
+      },
+    });
+  }
+
+  retirerResponsable(): void {
+    const id = this.idDmc();
+    if (id == null || this.saving()) return;
+    this.saving.set(true);
+    this.ficheService.retirerResponsable(id).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.fiche.update((f) => (f ? { ...f, responsableProcedure: null } : f));
+        this.toast.success('Responsable de la procédure retiré.');
+      },
+      error: (e: ApiError) => {
+        this.saving.set(false);
+        this.toast.error(this.motifResponsable(e));
+      },
+    });
+  }
+
+  private motifResponsable(e: ApiError): string {
+    switch (codeErreur(e)) {
+      case 'MEMBRE_COMMISSION':
+        return 'Ce compte détient une part de clé de cette procédure : il ne peut pas en être le responsable.';
+      case 'RESPONSABLE_EXISTANT':
+        return 'Un responsable est déjà désigné pour cette procédure : retirez-le d’abord.';
+      default:
+        return e.status === 404 ? 'Compte inconnu, ou aucun responsable à retirer.' : e.message || 'La désignation n’a pas abouti.';
+    }
+  }
+
   /** Un champ de cadrage à options codées (`B04-SE-01` : PAPIER / ELECTRONIQUE) se lit par le libellé de sa question. */
   affichageLecture(champ: ChampFiche): string {
     const brut = this.valeurAffichee(champ);

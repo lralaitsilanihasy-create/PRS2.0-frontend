@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { ParametreAgpmSeuil } from '../models';
+import { ParametreAgpmSeuil, ParametreRemiseElectronique } from '../models';
 
 /**
  * Seuil AGPM (montant) au-delà duquel un marché en appel à manifestation d'intérêt (AMI) déclenche
@@ -27,5 +27,24 @@ export class ParametreAgpmSeuilService {
   /** `PUT /api/parametres/agpm-seuil-montant` (ADMINISTRATEUR). */
   definir(seuil: number): Observable<ParametreAgpmSeuil> {
     return this.http.put<ParametreAgpmSeuil>(this.url, { seuil });
+  }
+}
+
+/**
+ * ⚠️ Remise électronique (27/09, demande §B1.4) — défauts et bornes du bloc « Remise électronique » :
+ * `GET` ouvert à tout authentifié, `PUT` Administrateur (état complet, `null` efface). Bespoke, comme les autres
+ * paramètres : un seul chemin réel, pas de ressource CRUD.
+ */
+@Injectable({ providedIn: 'root' })
+export class ParametreRemiseElectroniqueService {
+  private readonly http = inject(HttpClient);
+  private readonly url = `${environment.apiUrl}/parametres/fiche-remise-electronique`;
+
+  lire(): Observable<ParametreRemiseElectronique> {
+    return this.http.get<ParametreRemiseElectronique>(this.url);
+  }
+
+  definir(p: ParametreRemiseElectronique): Observable<ParametreRemiseElectronique> {
+    return this.http.put<ParametreRemiseElectronique>(this.url, p);
   }
 }

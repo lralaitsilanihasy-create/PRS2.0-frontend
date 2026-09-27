@@ -29,9 +29,42 @@
         @if (categorie(); as c) { <span class="fm__rep fm__rep--plan" title="Catégorie de dossier, déduite de la nature de la ligne du plan de passation">{{ libellesCategories[c] }}</span> }
         @if (typeMarche(); as t) { <span class="fm__rep fm__rep--plan" title="Forme du marché, reprise de la ligne du plan de passation">{{ libellesTypes[t] }}</span> }
         <span class="cnm-mono">ligne {{ f.idDetail }} du PPM {{ f.refeDossier || ('#' + f.idDossier) }}</span>
+        <!-- ⚠️ Remise électronique (27/09) — l'ÉTAT des paramètres internes se lit par tous ; leurs valeurs, par le seul titulaire. -->
+        @if (modeElectronique() && f.parametresInternes; as etat) {
+          <span class="fm__rep" [class.fm__rep--ko]="etat !== 'COMPLETS'" title="Paramètres internes de la procédure (écran séparé du responsable)">Paramètres internes : {{ libelleEtatInternes(etat) }}</span>
+        }
+        @if (lienParametresInternes(); as lien) {
+          <a class="btn btn-outline btn-sm" [routerLink]="lien">Paramètres internes</a>
+        }
       </div>
     }
   </header>
+
+  <!-- ⚠️ Remise électronique (27/09, Q8) — l'Administrateur désigne ou retire le responsable de la procédure DEPUIS la
+       fiche, qu'il lit sans la modifier. Il ne voit jamais les paramètres internes eux-mêmes (403 serveur). -->
+  @if (estAdmin() && fiche(); as f) {
+    <section class="card fm__resp" aria-label="Responsable de la procédure">
+      <h2 class="fm__resp-t">Responsable de la procédure</h2>
+      @if (f.responsableProcedure; as r) {
+        <p class="fm__resp-l">Titulaire : <strong>{{ r.nom }}</strong> <span class="cnm-mono">{{ r.im }}</span></p>
+        <button type="button" class="btn btn-outline btn-sm" [disabled]="saving()" (click)="retirerResponsable()">Retirer</button>
+      } @else {
+        <p class="fm__resp-l fm__resp-aucun">Aucun responsable désigné. En remise électronique, la fiche ne se valide pas sans lui.</p>
+        @if (candidatsResponsable(); as cands) {
+          <label class="form-group fm__resp-choix">
+            <span class="form-label">Compte à désigner (hors commission)</span>
+            <select class="form-control" [value]="responsableChoisi()" (change)="responsableChoisi.set($any($event.target).value)">
+              <option value="">— Choisir —</option>
+              @for (c of cands; track c.im) { <option [value]="c.im">{{ c.nom }} ({{ c.im }}){{ c.profil ? ' · ' + c.profil : '' }}</option> }
+            </select>
+          </label>
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="!responsableChoisi() || saving()" (click)="designerResponsable()">Désigner</button>
+        } @else {
+          <button type="button" class="btn btn-secondary btn-sm" (click)="chargerCandidatsResponsable()">Désigner un responsable…</button>
+        }
+      }
+    </section>
+  }
   <!-- La phrase de rôle promet une saisie et des documents : elle n'a rien à faire sur une fiche dont la forme
        de marché n'est pas outillée, où rien ne sera saisi ni produit. -->
   @if (!fiche() || typePrisEnCharge()) {

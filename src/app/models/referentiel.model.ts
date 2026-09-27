@@ -261,3 +261,25 @@ export interface SousTypeDossier {
 export interface ParametreAgpmSeuil {
   seuil: number;
 }
+
+/**
+ * ⚠️ Remise électronique (27/09, demande §B1.4) — les valeurs par défaut et bornes ADMINISTRABLES du bloc
+ * « Remise électronique », `GET`/`PUT /api/parametres/fiche-remise-electronique` (PUT réservé à l'Administrateur,
+ * état complet, `null` efface). Recopiées dans une fiche à sa création ; bornes lues par les règles du bilan.
+ */
+export interface ParametreRemiseElectronique {
+  /** Défaut de `B04-SE-02` (adresse de la plateforme de dépôt). */
+  plateformeUrl: string | null;
+  /** Fuseau de l'heure de référence (`Indian/Antananarivo`). */
+  fuseau: string | null;
+  /** Niveau minimal de signature (règle 4) et défaut de `B04-SE-05` : « Qualifiée », « Avancée », « Simple ». */
+  signatureMin: string | null;
+  /** Limite technique de la plateforme (règle 3), en Mo. */
+  tailleMaxPlateformeMo: number | null;
+  /** Délai minimal entre publication et date limite (règle 2), en jours. */
+  delaiMinRemiseJours: number | null;
+  /** Défaut de `B04-SE-14` (assistance aux candidats). */
+  assistance: string | null;
+  /** Quorum de déchiffrement proposé (« 3/5 »). */
+  quorumDefaut: string | null;
+}
