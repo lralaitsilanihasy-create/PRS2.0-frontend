@@ -46,7 +46,8 @@ const lireNatures = (texte) => {
       const code = entree[1];
       // Le commentaire de fin peut être sur la dernière ligne d'une valeur écrite sur plusieurs lignes (`+ '…', // [R] …`).
       const apres = [(l.match(/\/\/\s*(.*)$/) ?? [])[1] ?? ''];
-      for (let j = i + 1; j < lignes.length && /^\s*(\+ |'|")/.test(lignes[j]); j++) apres.push((lignes[j].match(/\/\/\s*(.*)$/) ?? [])[1] ?? '');
+      // Une continuation commence par `+`, `'` ou `"` — mais jamais par une NOUVELLE entrée `'CODE':`.
+      for (let j = i + 1; j < lignes.length && /^\s*(\+ |'|")/.test(lignes[j]) && !/^\s*'[A-Z0-9-]+'\s*:/.test(lignes[j]); j++) apres.push((lignes[j].match(/\/\/\s*(.*)$/) ?? [])[1] ?? '');
       const tout = [...enAttente, ...apres].join(' ');
       const m = tout.match(/\[(R|D|H)\]\s*([^;—]*)/);
       if (m) NATURES.set(code, { nature: m[1], source: m[2].replace(/\s+\+?\s*constat.*$/, '').trim() });
@@ -218,7 +219,8 @@ const HTML = `<!doctype html>
   p.note { color: var(--gris); font-style: italic; margin: .15rem 0; font-size: .9rem; }
   table { border-collapse: collapse; width: 100%; margin: .4rem 0 1rem; font-size: .85rem; }
   th, td { border: 1px solid var(--bord); padding: .3rem .5rem; vertical-align: top; text-align: left; overflow-wrap: anywhere; }
-  th { background: #f1f5f9; font-weight: 700; }
+  th { background: #f1f5f9; font-weight: 700; white-space: nowrap; }
+  td:first-child code { white-space: nowrap; }
   td.n { white-space: nowrap; font-weight: 700; } td.n-r { color: var(--r); } td.n-d { color: var(--d); } td.n-h { color: var(--h); } td.n-q { color: var(--q); }
   td.imp-oui { color: var(--r); font-weight: 700; } td.imp-non { color: var(--q); font-weight: 700; }
   code { font-family: Consolas, "Courier New", monospace; font-size: .85em; background: #f8fafc; padding: 0 .2em; border-radius: 3px; }

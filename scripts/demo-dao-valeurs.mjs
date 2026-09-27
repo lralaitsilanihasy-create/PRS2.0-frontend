@@ -1157,7 +1157,7 @@ export const VALEURS_2463 = {
   'B09-SK-01': 'OUI', // [R] CCAP art. 14 : « Quantité minimale prévue dans le bordereau de prix »
 
   // — Pénalités : la dérogation du dossier — (CCAP art. 11 p.50-51)
-  'B09-PR-02': '10',
+  'B09-PR-02': '10', // [R] CCAP art. 11 p.50-51 : « plafonné à dix pour cent (10%) du montant du Marché »
   'B09-PR-03':
     "CCAP art. 11 : « En cas de retard dans l'exécution de chaque commande, il est appliqué une pénalité journalière "
     + 'de 1/1000 du montant de la commande. Le montant des pénalités est plafonné à dix pour cent (10 %) du montant du '
