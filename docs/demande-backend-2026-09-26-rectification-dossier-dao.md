@@ -28,6 +28,14 @@ nouveau dossier, jamais un ré-import. Le dossier garde sa référence, son circ
   à la soumission et à chaque resoumission / transmission de compléments. C'est la version que la Commission a
   examinée, la référence du diff de B5.
 
+> ⚠️ **Livré le 2026-09-27 (backend, V49) — §B1, deux précisions.** Le statut « `RECEPTIONNE` » n'existe pas au modèle :
+> c'est `PRET_DISPATCH` qui est verrouillé ; et `EN_ATTENTE_COMPLEMENTS_DEPOT` (compléments demandés au dépôt, dossier
+> rendu à la PRMP) **ouvre** la révision comme les deux autres attentes. Le 409 porte `idDossier` et **`details.statut`**
+> (nouveau champ `details` du corps d'erreur, à clés nommées). `versionSoumise` est posée par `soumettre` et avancée par
+> `resoumettre` / `transmettre-complements` ; le dossier retient aussi, séparément, la **version examinée** (celle du
+> PV — dans la boucle FAVR la version soumise avance sans que la Commission réexamine) : c'est elle qui borne le diff
+> de B5. Migration : reprise des dossiers DAO déjà soumis (dernière version validée avant leur soumission).
+
 ## B2 — La validation de la révision remplace les pièces produites du dossier
 
 - `POST /api/fiches-marche/{idDmc}/valider` sur la version n+1, quand un dossier soumis existe : les documents
@@ -41,6 +49,15 @@ nouveau dossier, jamais un ré-import. Le dossier garde sa référence, son circ
 - Journal du dossier soumis : action `FICHE_REVISEE` (« Fiche marché version n+1 validée, N information(s)
   modifiée(s), P pièce(s) remplacée(s) »), après `DOSSIER_CREE_DEPUIS_FICHE`.
 
+> ⚠️ **Livré le 2026-09-27 (backend, V49) — §B2, un écart de compte.** Les pièces produites sont les **PDF** joints par
+> `POST …/dossier` : DPAO, CCAP, AE par lot, LF, A1-A4, C1/C2 par lot — les classeurs `xlsx` (BP, TC) sont des
+> documents de la fiche, jamais des pièces du dossier ; les « 22 » de la demande sont donc les PDF d'une ligne à cinq
+> lots. À la validation d'une révision, dossier `EN_ATTENTE_DECISION_PRMP` ou `EN_ATTENTE_PIECES`, ils sont joints en
+> version corrigée (`versionCorrigee = true`), les précédents conservés ; en attente de pièces, ils portent en plus
+> `apresLettreRenvoi = true` et `idLettre`. Dossier encore brouillon : remplacement, comme avant ; dossier en examen :
+> impossible (B1). `FICHE_REVISEE` compte N sur les valeurs **imprimées** qui diffèrent de la version validée précédente
+> et P sur les PDF joints ; il suit `FICHE_MARCHE_VALIDEE` dans le journal.
+
 ## B3 — Resoumettre et transmettre les compléments exigent la révision validée
 
 - `POST /api/dossiers/{id}/resoumettre` (chemin FAVR) et `POST /api/dossiers/{id}/transmettre-complements`
@@ -51,6 +68,12 @@ nouveau dossier, jamais un ré-import. Le dossier garde sa référence, son circ
   `A_REEXAMINER`). La garde des compléments « au moins une pièce rattachée à la dernière lettre » est remplacée,
   pour un DMC, par la révision validée (les pièces remplacées de B2 y sont rattachées).
 
+> ⚠️ **Livré le 2026-09-27 (backend, V49) — §B3 tel que demandé.** 409 `FICHE_NON_REVISEE` avec `idDossier` et
+> `details { versionSoumise, versionCourante, statutFiche }` (valeurs nulles possibles : fiche jamais enregistrée). À
+> l'acceptation, `versionSoumise` prend la version validée ; `transmettre-complements` retient en outre l'ancienne
+> version soumise comme version examinée (B5). Un dossier DAO soumis avant V49 sans version connue (reprise
+> impossible) est traité comme « version soumise = 0 » : toute version validée passe.
+
 ## B4 — L'observation du PV dit la valeur actuelle
 
 - `ObservationPvDto` (lecture, `GET /api/observations-pv?dossier=`) gagne, pour une observation ancrée
@@ -59,6 +82,11 @@ nouveau dossier, jamais un ré-import. Le dossier garde sa référence, son circ
   et `versionFicheActuelle`. Identiques tant que la fiche n'a pas été revalidée ; `valeurChampFicheActuelle` nulle
   si l'information n'existe plus dans la version courante (champ fermé par le cadrage).
 - Rien ne change à l'écriture ni au périmètre figé : c'est une lecture.
+
+> ⚠️ **Livré le 2026-09-27 (backend, V49) — §B4 tel que demandé, une limite.** La version dont la valeur a été figée est
+> désormais **stockée** avec l'observation (ligne d'examen, puis copie au PV) ; les observations posées **avant V49**
+> n'en ont pas : `versionFicheObservee` y est nulle (`versionFicheActuelle` et `valeurChampFicheActuelle` sont servis
+> quand même). `ObservationControleDto.versionFiche` (lecture seule) porte la même version sur les lignes d'examen.
 
 ## B5 — Le périmètre de réexamen d'un dossier DAO
 
@@ -71,10 +99,22 @@ nouveau dossier, jamais un ré-import. Le dossier garde sa référence, son circ
 - Les points de contrôle du sous-type restent tous à réévaluer (Q4 du plan) ; le front met en évidence les
   informations de `ficheDao.informations`.
 
+> ⚠️ **Livré le 2026-09-27 (backend, V49) — §B5 tel que demandé.** `versionExaminee` est la version examinée retenue par
+> le dossier (celle du PV, pas la dernière soumise) ; `informations` compare les valeurs **imprimées** (`avant` nul :
+> information ouverte par la révision, `apres` nul : fermée par le cadrage), clés triées ; libellé du référentiel, lot
+> lu sur la clé. Hors `A_REEXAMINER` ou pour un plan : `ficheDao` nul, `ficheDaoAExaminer` faux.
+
 ## B6 — La lettre de renvoi nomme l'information
 
 - Le PDF de la lettre de renvoi imprime, pour chaque observation ancrée, « Information de la fiche DAO : *libellé*
   — lot *n* » sous la ligne « au lieu de / lire », comme le PV.
+
+> ⚠️ **Livré le 2026-09-27 (backend) — §B6, avec un écart de forme.** Le corps de la lettre est un **texte libre**
+> (`corpsLettre`, saisi dans `pv-workflow.ts`) : le serveur n'y trouve pas de ligne « au lieu de / lire » sous laquelle
+> s'insérer. Le PDF imprime donc, **après le corps**, un bloc « Informations de la fiche du dossier d'appel d'offres
+> visées par les observations » qui donne, pour chaque ligne d'observation ancrée de l'examen, « Au lieu de « … »,
+> lire « … » » puis « Information de la fiche DAO : *libellé* — lot *n* ». Sans observation ancrée, rien ne change. Au
+> passage, les sauts de ligne du corps sont désormais rendus dans le Word (ils étaient perdus).
 
 ## Ce que le front fera
 
