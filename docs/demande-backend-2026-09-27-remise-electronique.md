@@ -24,6 +24,12 @@ Le front code contre ce contrat dès maintenant (repli « contrat en attente » 
 
 - Migration `V50` : rubrique **`B04-SE`** « Remise électronique » dans le bloc `B04`, code court `SE`, maître `DPAO`,
   rang après `B04-CD`, ouverte aux **trois formes** et aux **trois catégories** (Q12).
+
+> ⚠️ **Livraison backend du 2026-09-27 (V50).** La rubrique porte le **rang 61, celui de `B04-CD`** : les rangs du bloc
+> B04 sont pris jusqu'à 76 par les rubriques des travaux et le serveur ne décale pas des rangs existants. L'ordre de
+> lecture des rubriques devient (bloc, rang, **code**) : `B04-CD` puis `B04-SE`, ce que la demande voulait. Le reflet
+> `B04-SE-01` est **toujours servi** dans `valeursCadrage` : `PAPIER` quand la clé `modeRemise` est absente (fiche d'avant
+> V50), pour que les Données particulières impriment bien « Mode de remise des offres : Papier ».
 - **`B04-VE-01` et `B04-VE-02` désactivés** (`ACTIF = false`, jamais de DELETE) : `B04-SE-01` les remplace (Q1). Les
   fiches validées qui portent une valeur `B04-VE-01` la gardent (valeur orpheline non recopiée à la révision) — noté à
   l'errata E9 du 2463 côté front. Conséquence assumée sur le DAO papier : la ligne « Remise des offres ou propositions par
@@ -49,6 +55,33 @@ l'import CSV. `B04-LR-03` reste `DATE` et `B04-LR-04` reste `TEXTE` (l'heure) : 
 Attributs communs sauf mention : `source = SAISIE`, `documentMaitre = DPAO`, `reprises` vide, `typesMarche` = les trois,
 `categories` = les trois, `parLot = non`, `actif = oui`, `condition = modeRemise = ELECTRONIQUE`. « Défaut » = `valeurDefaut`
 quand c'est une constante, sinon la source de calcul (§B1.4). Le motif de code est respecté partout.
+
+> ⚠️ **Livraison backend du 2026-09-27 — sept écarts sur les champs, tous dans les cinq CSV et dans
+> `docs/referentiel/2026-09-27-remise-electronique.sql`.**
+> 1. **Plusieurs contrôles par champ.** Le tableau lui-même l'exige (`B04-SE-17` porte deux contrôles, `B04-SE-05` sert
+>    les règles 4 et 9, `B04-LR-03` garde `DATES_ORDRE:REMISE`) : l'attribut `controle` accepte désormais une liste
+>    séparée par des **virgules** (`DATES_ORDRE:REMISE,SE_HEURE_LIMITE:DATE`), motif `REGLE[:ROLE](,REGLE[:ROLE])*`.
+> 2. **`B05-GS-10` à `-14` et `B04-OP-10` à `-13` : catégorie `FOURNITURES_SERVICES`**, pas les trois. Leurs rubriques
+>    `B05-GS` et `B04-OP` sont des rubriques des fournitures ; un champ « trois catégories » sous une rubrique d'une seule
+>    serait servi orphelin de sa rubrique aux travaux et aux prestations intellectuelles, qui ont les leurs (`B05-GQ`,
+>    `B04-OV`, `B04-LH`…). À étendre par le référentiel le jour où le pilote y ouvre la remise électronique. `B04-SE-*`
+>    restent aux trois catégories.
+> 3. **Rôles posés sur des champs existants des fournitures**, en plus des deux demandés (règle 1) : `B04-OP-02`
+>    `SE_OUVERTURE_PLIS:DATE` et `B04-OP-03` `SE_OUVERTURE_PLIS:HEURE` (la règle 7 et le calcul Q11 ne nomment pas de code),
+>    `B04-LR-02` `SE_ORIGINAL_GARANTIE:LIEU_REMISE` (entrée du calcul de `B05-GS-12`). Conséquence : là où aucun champ ne
+>    porte l'heure de remise (travaux et prestations intellectuelles n'ont qu'une `DATE` « date et heure limites »), les
+>    règles 1, 2, 7 et les calculs dérivés de l'échéance **attendent leurs champs** (convention du catalogue) — ils
+>    valent aujourd'hui pour les fournitures.
+> 4. **`B04-SE-04`** : option « Heure du serveur (UTC+03:00 Indian/Antananarivo) », **sans la virgule** — la virgule est
+>    le séparateur des options du référentiel.
+> 5. **`B04-SE-06` et `B05-GS-13`** : la liste officielle n'est pas fournie ; une **option provisoire nominative**
+>    « À définir par l'Administrateur (liste officielle des …) » tient la place, **sans défaut « toutes »** (un défaut
+>    imprimerait la mention provisoire dans le DAO). La règle 9 bloque donc un niveau Avancée / Qualifiée tant que la
+>    PRMP n'a pas choisi — c'est voulu. L'Administrateur remplace les options par `PUT /api/champs-fiche-marche/{code}`.
+> 6. **« Défaut = paramètre »** s'écrit `valeurDefaut = PARAM:<CLE>` (`PARAM:FICHE_SE_PLATEFORME_URL`,
+>    `PARAM:FICHE_SE_SIGNATURE_MIN`, `PARAM:FICHE_SE_ASSISTANCE`) et se recopie à la création depuis le paramètre du
+>    moment ; paramètre vide : rien.
+> 7. **`B04-SE-17` calculé** = date prévisionnelle « Lancement » du plan **à 00:00** (le plan n'a pas d'heure).
 
 **Rubrique `B04-SE` — Remise électronique**
 
@@ -115,11 +148,31 @@ l'enregistrement du bloc B04 (`B04-LR-03` + `B04-LR-04` + `B04-OP-12` minutes), 
   serveur à l'enregistrement du bloc quand la cellule est vide et que le mode est électronique, renvoyés au front avec
   la liste `champsCalcules` (§B5.1). Le front ne pré-remplit jamais.
 
+> ⚠️ **Livraison backend du 2026-09-27 (§B1.4).**
+> - **`FICHE_SE_DELAI_MIN_REMISE_JOURS` = 30**, posé par V50 et par le script — **proposé, à faire fixer par le pilote** ;
+>   il se change sans redéploiement par `PUT /api/parametres/fiche-remise-electronique`.
+> - **Jours fériés : week-end seul.** Aucun paramètre `FICHE_JOURS_FERIES` n'existe ; la règle 1 juge « jour ouvrable » =
+>   lundi à vendredi (`JoursOuvres`, même convention que le chronométrage). Le jour où le pilote fournit la liste, elle
+>   s'administrera dans un paramètre dédié ; rien n'a été inventé.
+> - `t_parametre.VALEUR` passe à **1000 caractères** (adresse de plateforme, texte d'assistance). `quorumDefaut` (« 3/5 »)
+>   sert de **quorum proposé** dans le `GET …/parametres-internes` tant que rien n'est enregistré.
+> - La mention « calculée » est **persistée** (`t_fiche_marche_valeur.CALCULEE`) : `champsCalcules` est servi en `GET` aussi,
+>   et suit la valeur à la révision. Une valeur renvoyée **identique** à la valeur calculée reste « calculée » ; une valeur
+>   **différente** est une saisie ; `B04-OP-02` / `B04-OP-03` sont recalculés à chaque enregistrement du bloc B04 (Q11).
+
 ### B1.5 — Vecteur de livraison
 
 CSV des cinq fichiers de référence (colonnes reconnues par nom), script `docs/referentiel/2026-09-2x-remise-electronique.sql`
 idempotent pour les bases chargées (rubrique, champs, désactivation de `B04-VE-01/02`, paramètres), migration V50 pour
 les types, la contrainte, les tables de §B4 et §B5.
+
+> ⚠️ **Livraison backend du 2026-09-27 (§B1.5).** Les 17 champs `B04-SE-*` sont dans les **cinq** CSV, projetés sur
+> l'en-tête de chacun : les fichiers des contrats-cadres n'ont pas de colonne `categories`, `parLot` ni `valeurDefaut`, et
+> ceux des travaux et des prestations intellectuelles n'ont pas `parLot` ni `valeurDefaut` — importés **après** le fichier
+> des fournitures (qui porte tout), ces attributs restent « inchangés ». `B05-GS-1x` et `B04-OP-1x` ne sont que dans le
+> fichier des fournitures (écart 2 de §B1.3) ; `B04-VE-01/02` passent `actif = non` dans le fichier des prestations
+> intellectuelles, seul à les porter. Script : `docs/referentiel/2026-09-27-remise-electronique.sql`, **après V50** (la
+> contrainte des types refuse `DATE_HEURE` avant). Les copies de test (`src/test/resources/fiche-marche/`) sont identiques.
 
 ## B2 — Moteur de rendu
 
@@ -150,6 +203,28 @@ En mode papier, `ModelesCandidatRenduTest` et `node scripts/modeles-candidat/ver
 restent verts sans écart. Un test d'intégration rend les Données particulières d'une fiche papier avant / après V50 :
 même texte, à la ligne `B04-SE-01` près.
 
+> ⚠️ **Livraison backend du 2026-09-27 (§B2.4).** `modeles-armp/C1.txt` et `C2.txt` (commit front `c80cee2`) sont
+> **recopiés tels quels** après §B2.1, les six fichiers identiques octet pour octet. Preuve, chaîne ARMP du front (PowerShell,
+> JDK 21 en tête du PATH, rendus bruts de `ModelesCandidatRenduTest` copiés dans `C:\Users\LANTO\rendus-modeles`) :
+>
+> ```
+> A1 [C:\Users\LANTO\rendus-modeles/A1.docx] — conforme au document type · 35 fragment(s) du gabarit retrouvés, 37 du rendu tous fondés
+> A2 [C:\Users\LANTO\rendus-modeles/A2.docx] — conforme au document type · 7 fragment(s) du gabarit retrouvés, 7 du rendu tous fondés
+> A3 [C:\Users\LANTO\rendus-modeles/A3.docx] — conforme au document type · 48 fragment(s) du gabarit retrouvés, 48 du rendu tous fondés
+> A4 [C:\Users\LANTO\rendus-modeles/A4.docx] — conforme au document type · 7 fragment(s) du gabarit retrouvés, 7 du rendu tous fondés
+> C1 [C:\Users\LANTO\rendus-modeles/C1.docx] — conforme au document type · 13 fragment(s) du gabarit retrouvés, 13 du rendu tous fondés
+> C2 [C:\Users\LANTO\rendus-modeles/C2.docx] — conforme au document type · 16 fragment(s) du gabarit retrouvés, 15 du rendu tous fondés
+>
+> Aucun écart : les modèles sont ceux du document type.
+> exit=0
+> ```
+>
+> « Avant / après V50 » ne se rend pas dans un même code : le test d'intégration (`RemiseElectroniqueIntegrationTest`, cas 2)
+> valide une fiche **papier** sans rien de plus qu'avant et vérifie que ses Données particulières impriment « Mode de remise
+> des offres : Papier », aucune autre ligne de `B04-SE`, ni la plateforme, ni l'ancienne ligne `B04-VE-01` ; et que son C1 ne
+> porte pas la clause. La même fiche en **électronique** imprime « Électronique », la plateforme, la publication en
+> `JJ/MM/AAAA HH:MM`, et son C1 la clause balisée.
+
 ## B3 — Règles de bilan (`ControlesFicheMarche`), toutes **bloquantes**, mode électronique seulement
 
 Une constante, une méthode, une ligne d'appel, le `controle = REGLE:ROLE` posé sur les champs (§B1.3). Message en
@@ -171,6 +246,21 @@ français, un test valide et un invalide par règle.
 
 `bilan()` reçoit en plus l'état des paramètres internes et le responsable (signature étendue) ; `POST …/valider` refuse
 par `409 CONTROLES_BLOQUANTS` comme aujourd'hui. Les règles 6, 8, 10, 11 se lisent sur `bloc = B04`.
+
+> ⚠️ **Livraison backend du 2026-09-27 (§B3).** Les onze règles, constantes et messages sont ceux du tableau ; `bilan()`
+> reçoit un `RemiseElectroniqueBilan { electronique, parametres, internes, responsableDesigne }` (nul ou papier : aucune
+> des onze n'est évaluée, ni en `ok` ni en `bloquants`). Précisions :
+> - **Règle 1** : jours fériés hors périmètre (voir §B1.4) — lundi à vendredi.
+> - **Règle 2** : *n* est `FICHE_SE_DELAI_MIN_REMISE_JOURS` (« d'au moins 30 jours ») ; si `B04-SE-03` est vide, seule la
+>   seconde moitié est jugée ; l'écart publication → date limite se compte en **jours calendaires** sur les dates.
+> - **Règle 6** : évaluée dès que le quorum **ou** le responsable est connu ; le message est le même pour les trois
+>   violations. Règles 6, 8, 10, 11 : `bloc = B04`, `champs = []`.
+> - **Règle 7** : lit `B04-OP-02` / `B04-OP-03` par les rôles `SE_OUVERTURE_PLIS:DATE` / `:HEURE` (écart 3 de §B1.3) ;
+>   comme ils sont recalculés à chaque enregistrement de B04, elle ne bloque qu'une fiche dont la date limite ou le délai
+>   a changé sans réenregistrement du bloc.
+> - **Règle 9** : « Simple » rend un `ok` explicite.
+> - Une règle dont un rôle manque n'est pas évaluée (convention du catalogue) : c'est le cas des règles 1, 2, 7 hors
+>   fournitures aujourd'hui.
 
 ## B4 — Paramètres internes de la procédure
 
@@ -195,6 +285,15 @@ par `409 CONTROLES_BLOQUANTS` comme aujourd'hui. Les règles 6, 8, 10, 11 se lis
   Administrateur compris, PRMP comprise) ; ordre : profil authentifié → identité (prédicat pur) → corps. L'**état** seul
   (`COMPLETS` / `INCOMPLETS` / `ABSENTS`) est exposé sur la fiche à tous ceux qui la lisent (§B5.1).
 
+> ⚠️ **Livraison backend du 2026-09-27 (§B4).** Conforme, avec ces précisions : `membresCommission` du DTO est une liste
+> d'objets `{ im, nom, profil }` (le corps du `PUT` reste une liste de matricules) ; `quorum` du `GET` vaut le quorum
+> **proposé** (`FICHE_SE_QUORUM_DEFAUT`) tant que rien n'est enregistré ; les 400 : `membresCommission` « Compte inconnu : … »,
+> `quorum` < 1, `dateCeremonie` illisible (`AAAA-MM-JJTHH:MM`) — un quorum de 1 ou supérieur au nombre de membres n'est pas
+> un 400 mais l'anomalie de la règle 6 (`etat = INCOMPLETS`). **`FICHE_VALIDEE`** joue quand la **dernière version** de la
+> fiche est validée **et** en mode électronique ; une révision ouverte rouvre les paramètres. Le journal dédié trace aussi le
+> champ `responsable` (désignation `null → im`, retrait `im → null`) ; le journal global reçoit `PARAMETRES-INTERNES` et
+> `RESPONSABLE` par l'intercepteur, `ANCIENNE_VALEUR` et `NOUVELLE_VALEUR` nulles (vérifié par le test).
+
 ## B5 — Rôle « Responsable de la procédure »
 
 - Table **`t_responsable_procedure`** (V50) : `ID`, `ID_DMC`, `IM_RESPONSABLE`, `NOM_RESPONSABLE`, `DESIGNE_PAR`,
@@ -211,6 +310,13 @@ par `409 CONTROLES_BLOQUANTS` comme aujourd'hui. Les règles 6, 8, 10, 11 se lis
   commission de cette fiche. Journal `t_audit_log` : route + acteur ; `t_parametre_interne_journal` : champ
   `responsable`, ancienne → nouvelle valeur.
 - L'Administrateur **ne lit ni ne modifie** les paramètres internes (403), sauf s'il est lui-même titulaire.
+
+> ⚠️ **Livraison backend du 2026-09-27 (§B5).** **Désignables comme responsable** : les **contrôleurs** de la localité de
+> la fiche et ceux sans localité (Président, Chargé de publication — compétents partout), hors membres détenteurs d'une part
+> de clé de cette fiche ; PRMP et UGPM ne sont pas désignables (parties à la procédure), un Administrateur l'est (il lit
+> alors les paramètres à ce titre). `POST` répond **201 `{ im, nom }`** (« NOM Prénoms », sans relecture de la fiche) ;
+> `404` vaut pour un DMC comme pour un compte inconnu. Le compte se juge sur `tr_controleur` (matricule), pas sur
+> l'existence d'un compte de connexion. ADR-0010 : `docs/adr/ADR-0010-responsable-de-procedure-et-parametres-internes.md`.
 
 ### B5.1 — Ce que la fiche dit au front (contrat lu par l'écran)
 
@@ -231,6 +337,19 @@ La réponse de `PUT …/blocs/B04` renvoie la fiche entière comme aujourd'hui, 
 - Rôle : attribution et retrait par un Administrateur ; refus d'attribuer à un membre de la commission ; refus d'ajouter le
   titulaire à la commission ; `RESPONSABLE_EXISTANT` ; entrées de journal (globale sans valeurs, dédiée avec valeurs).
 - Validation refusée sans responsable en mode électronique (`RESPONSABLE_NON_DESIGNE`), acceptée en mode papier sans rien.
+
+> ⚠️ **Livraison backend du 2026-09-27 (§B6) — où sont les tests.** `RemiseElectroniqueTest` (pur, 14 tests) : les onze
+> règles, un cas valide et un invalide chacune, message exact ; aucune évaluée en papier ni sans contexte ; valeurs
+> calculées ; état et anomalies ; contrôles multiples ; formats. `ModelesCandidatRenduTest` (+3) : `{{INT-SE-03}}` jamais
+> substitué, refus au chargement (fichier, ligne, jeton nommés), section `SI:B04-SE` présente en électronique, absente en
+> papier et sur une fiche sans cadrage. `RemiseElectroniqueIntegrationTest` (5 cas) : 1 référentiel, défauts constants et
+> « = paramètre », 400 nominatifs des deux types, reflet `PAPIER`, champs fermés en papier, `champsCalcules` posés (Q11
+> compris), saisie ≠ calcul ; 2 validation refusée (deux messages exacts, `bloc = B04`), désignation, paramètres internes
+> complets, validation acceptée, Données particulières et C1 en électronique puis en papier, `FICHE_VALIDEE` ; 3 droits
+> (PRMP, UGPM, Membre, Président, Chef de commission, Administrateur, responsable d'une autre procédure → 403 ; titulaire
+> → 200 ; candidats ; 404 ; 400 nominatifs) ; 4 rôle (403 PRMP, 404 compte inconnu, 201, `RESPONSABLE_EXISTANT`,
+> `MEMBRE_COMMISSION` dans les deux sens, retrait 204 puis 404, candidats hors membres, journal dédié avec valeurs, journal
+> global sans valeurs) ; 5 paramètres administrables (défauts de V50, 403, 400 nominatif, état complet, `null` efface).
 
 ## B7 — Classeurs Excel
 
@@ -269,3 +388,12 @@ serveur doit savoir de ce que l'écran attend :
 
 Migration V50, moteur, référentiel (CSV + script), règles, endpoints, ADR-0010, `docs/api-endpoints.md` et
 `docs/regles-gestion.md` mis à jour, tests ; et, ici même, un encadré ⚠️ daté à l'endroit concerné pour chaque écart.
+
+> ⚠️ **Rendu le 2026-09-27**, dans l'ordre convenu : V50 (`V50__remise_electronique.sql`) ; moteur (`SI:B04-SE`, refus des
+> `INT-*`, `DATE_HEURE` / `URL`, « Papier » / « Électronique ») ; référentiel (cinq CSV, copies de test,
+> `docs/referentiel/2026-09-27-remise-electronique.sql`) ; règles 1 à 11 ; endpoints (`/parametres-internes`,
+> `/responsable`, `/api/parametres/fiche-remise-electronique`) et champs de `FicheMarcheDto` / `FicheMarcheResumeDto` ;
+> recopie de `C1.txt` / `C2.txt` en dernier. Contrat : `docs/api-endpoints.md`, § *La remise électronique des offres — V50*
+> et § *Paramètres système* ; règles : `docs/regles-gestion.md`, § *La remise électronique des offres* ; décision :
+> `docs/adr/ADR-0010-responsable-de-procedure-et-parametres-internes.md`. Les deux points à trancher sont notés en §B1.4
+> (délai 30 proposé, jours fériés = week-end seul).
