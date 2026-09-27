@@ -43,8 +43,30 @@ export type TypeChamp =
    */
   | 'LISTE_MULTIPLE'
   | 'OUI_NON'
-  | 'PIECE';
+  | 'PIECE'
+  /**
+   * ⚠️ Remise électronique (27/09, demande du 27/09 §B1.2) — deux types nouveaux, servis par V50. `DATE_HEURE` :
+   * valeur ISO locale `AAAA-MM-JJTHH:MM` (celle d'un `input type="datetime-local"`), imprimée « JJ/MM/AAAA HH:MM ».
+   * `URL` : adresse absolue http ou https, imprimée telle quelle. Les heures existantes (`B04-LR-04`, `B04-OP-03`)
+   * restent du texte : c'est une règle du bilan qui les exige au format HH:MM en mode électronique, pas un type.
+   */
+  | 'DATE_HEURE'
+  | 'URL';
 export type StatutFiche = 'BROUILLON' | 'VALIDEE';
+
+/**
+ * ⚠️ Remise électronique (27/09) — l'état de l'écran séparé des **paramètres internes** de la procédure (membres
+ * détenteurs d'une part de clé, quorum, cérémonie), tel que la fiche le dit à tous ceux qui la lisent. Les valeurs,
+ * elles, ne sont servies qu'au responsable de la procédure (`GET …/parametres-internes`, 403 pour les autres).
+ * `ABSENTS` : rien n'a encore été saisi.
+ */
+export type EtatParametresInternes = 'COMPLETS' | 'INCOMPLETS' | 'ABSENTS';
+
+/** Le titulaire du rôle « Responsable de la procédure » d'une fiche (désignation nominative, un seul actif). */
+export interface ResponsableProcedure {
+  im: string;
+  nom: string;
+}
 
 /** Rubrique d'un bloc (« Garantie de soumission » dans B05). `attendus` : compte d'informations de l'esquisse. */
 export interface RubriqueFiche {
@@ -103,6 +125,13 @@ export interface ChampFiche {
    */
   parLot?: boolean | null;
   actif?: boolean;
+  /**
+   * ⚠️ V47 (R6), porté par l'écran admin depuis le 27/09 — valeur **recopiée dans la fiche à sa création** par le
+   * serveur (jamais pré-remplie par l'écran) ; refusée hors source `SAISIE`. Une constante : « 50 », « PDF,PDF/A »,
+   * « OUI ». Les défauts calculés (une date déduite d'une autre) ne passent pas par ici : le serveur les pose à
+   * l'enregistrement du bloc (`champsCalcules`).
+   */
+  valeurDefaut?: string | null;
 }
 
 /** `GET /api/champs-fiche-marche?typeMarche=` */
@@ -186,6 +215,21 @@ export interface FicheMarche {
   dateMaj?: string | null;
   dateValidation?: string | null;
   validePar?: string | null;
+  /**
+   * ⚠️ Remise électronique (27/09, demande §B5.1) — **le serveur dit** qui est responsable de la procédure et ce que
+   * le lecteur connecté peut faire, au lieu que l'écran le déduise d'un rôle : le rôle est nominatif, par fiche, et
+   * n'est pas un rôle de session. Absents tant que le contrat n'est pas servi.
+   */
+  responsableProcedure?: ResponsableProcedure | null;
+  /** Vrai pour le seul titulaire connecté : l'écran des paramètres internes lui est ouvert, 403 aux autres. */
+  peutModifierParametresInternes?: boolean | null;
+  parametresInternes?: EtatParametresInternes | null;
+  /**
+   * Clés (`CODE` ou `CODE#n`) dont la valeur a été **posée par le serveur** à l'enregistrement du bloc — en mode
+   * électronique : ouverture des plis (date limite + délai), dates déduites (publication, assistance, dépôt de
+   * l'original). L'écran les montre en lecture seule, avec la mention « calculée » ; il ne calcule rien lui-même.
+   */
+  champsCalcules?: string[] | null;
 }
 
 

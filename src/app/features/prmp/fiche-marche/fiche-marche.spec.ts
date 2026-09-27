@@ -245,7 +245,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     ouvrir(REFERENTIEL, fiche({ typeMarche: 'A_COMMANDE', typeOutille: true, cadrage: {}, valeurs: {} }));
     expect(racine().querySelector('.fm__attente')).toBeNull();
     expect(racine().querySelector('.fm__rail')).not.toBeNull();
-    expect(racine().querySelectorAll('.fm__q').length).toBe(9);
+    expect(racine().querySelectorAll('.fm__q').length).toBe(10); // ⚠️ 27/09 : + « Comment les offres sont-elles remises ? »
     TestBed.resetTestingModule();
 
     // Et inversement : un type que le front croit outillé mais que le serveur refuse reste en page courte.
@@ -365,7 +365,7 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(texte(racine().querySelector('.alert'))).toContain('Contrat en attente du backend');
     expect(racine().querySelector('.fm__etape--courante .fm__etape-t')?.textContent).toBe('Cadrage');
     expect(texte(racine().querySelector('.fm__etape:nth-child(3) .fm__etape-s'))).toBe('8 blocs');
-    expect(texte(racine().querySelector('.fm__total'))).toContain('0 sur 158');
+    expect(texte(racine().querySelector('.fm__total'))).toContain('0 sur 175'); // ⚠️ 27/09 : + 17 de la rubrique « Remise électronique »
     // Le cadrage se remplit ; le bouton reste désactivé tant que le serveur ne sert pas le contrat.
     for (const [cle, val] of Object.entries(CADRAGE_COMPLET)) {
       (racine().querySelector(`input[name="q-${cle}"][value="${val}"]`) as HTMLInputElement).click();

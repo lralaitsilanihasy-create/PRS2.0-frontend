@@ -6,14 +6,17 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { BlocFiche, ChampFiche, DocumentDao, ReferentielFiche, RubriqueFiche, SourceChamp, TypeChamp, TypeMarche } from '../../models';
 import { ChampFicheMarcheService } from '../../services/fiche-marche.services';
 
-const TYPES: TypeChamp[] = ['TEXTE', 'TEXTE_LONG', 'NOMBRE', 'MONTANT', 'POURCENTAGE', 'DATE', 'LISTE', 'OUI_NON', 'PIECE'];
+// ⚠️ 27/09 — `LISTE_MULTIPLE` (V45), `DATE_HEURE` et `URL` (V50, remise électronique) manquaient à cette liste :
+// un champ de ces types ne pouvait être créé qu'au CSV. `DPIC` (données particulières des instructions aux
+// consultants, V46) manquait de même aux documents.
+const TYPES: TypeChamp[] = ['TEXTE', 'TEXTE_LONG', 'NOMBRE', 'MONTANT', 'POURCENTAGE', 'DATE', 'DATE_HEURE', 'URL', 'LISTE', 'LISTE_MULTIPLE', 'OUI_NON', 'PIECE'];
 const SOURCES: SourceChamp[] = ['SAISIE', 'PPM', 'CADRAGE'];
-const DOCUMENTS: DocumentDao[] = ['DPAO', 'DPAC', 'AE', 'CCAP', 'AUCUN'];
+const DOCUMENTS: DocumentDao[] = ['DPAO', 'DPAC', 'DPIC', 'AE', 'CCAP', 'AUCUN'];
 const TYPES_MARCHE: TypeMarche[] = ['QUANTITE_FIXE', 'A_COMMANDE', 'CONTRAT_CADRE'];
 
 /** Un champ vide, prêt pour la création. */
 function vide(): ChampFiche {
-  return { code: '', bloc: '', rubrique: '', rang: 0, libelle: '', type: 'TEXTE', source: 'SAISIE', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], condition: null, obligatoire: false, texteType: null, controle: null, options: null, cleCadrage: null, clePpm: null, actif: true };
+  return { code: '', bloc: '', rubrique: '', rang: 0, libelle: '', type: 'TEXTE', source: 'SAISIE', documentMaitre: 'DPAO', reprises: [], typesMarche: ['QUANTITE_FIXE'], condition: null, obligatoire: false, texteType: null, controle: null, options: null, cleCadrage: null, clePpm: null, actif: true, valeurDefaut: null };
 }
 
 /**
@@ -90,7 +93,7 @@ function vide(): ChampFiche {
               <fieldset class="form-group">
                 <legend class="form-label">Repris dans</legend>
                 <div class="cfm__cases">
-                  @for (d of documents.slice(0, 4); track d) {
+                  @for (d of documentsReprise; track d) {
                     <label class="cfm__case"><input type="checkbox" [checked]="c.reprises.includes(d)" (change)="basculer('reprises', d)" /> {{ d }}</label>
                   }
                 </div>
@@ -110,11 +113,20 @@ function vide(): ChampFiche {
                 <span class="form-hint">Sur les réponses du cadrage : <code>cle = VALEUR</code>, <code>!=</code>, <code>et</code>, <code>ou</code> ; vide = toujours affiché.</span>
                 @if (erreur('condition'); as m) { <span class="form-error">{{ m }}</span> }
               </label>
-              @if (c.type === 'LISTE') {
+              @if (c.type === 'LISTE' || c.type === 'LISTE_MULTIPLE') {
                 <label class="form-group cfm__large">
                   <span class="form-label">Options de la liste *</span>
                   <input class="form-control" type="text" [value]="(c.options ?? []).join(', ')" placeholder="Caution, Chèque de banque, Garantie bancaire" (input)="poserListe('options', $any($event.target).value)" />
+                  @if (c.type === 'LISTE_MULTIPLE') { <span class="form-hint">Plusieurs options à la fois ; la valeur enregistrée les joint par des virgules, dans cet ordre.</span> }
                   @if (erreur('options'); as m) { <span class="form-error">{{ m }}</span> }
+                </label>
+              }
+              @if (c.source === 'SAISIE') {
+                <label class="form-group">
+                  <span class="form-label">Valeur par défaut</span>
+                  <input class="form-control" type="text" [value]="c.valeurDefaut ?? ''" placeholder="50 · PDF,PDF/A · OUI" (input)="poser('valeurDefaut', $any($event.target).value || null)" />
+                  <span class="form-hint">Recopiée dans la fiche à sa création par le serveur ; vide = rien. Une liste multiple : les options jointes par des virgules.</span>
+                  @if (erreur('valeurDefaut'); as m) { <span class="form-error">{{ m }}</span> }
                 </label>
               }
               @if (c.source === 'CADRAGE') {
@@ -230,6 +242,8 @@ export class ChampsFicheMarcheAdmin implements OnInit {
   readonly types = TYPES;
   readonly sources = SOURCES;
   readonly documents = DOCUMENTS;
+  /** Les documents dans lesquels un champ peut être repris : tous, sauf « sans document ». */
+  readonly documentsReprise = DOCUMENTS.filter((d) => d !== 'AUCUN');
   readonly typesMarche = TYPES_MARCHE;
 
   readonly loading = signal(false);

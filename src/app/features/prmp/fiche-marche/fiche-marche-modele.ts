@@ -169,6 +169,13 @@ export interface QuestionCadrage {
   si?: { cle: string; valeur: string };
   /** Champ numérique complémentaire (nombre de lots, taux d'avance) affiché quand la réponse est `valeur`. */
   complement?: { cle: string; libelle: string; si: string; unite?: string };
+  /**
+   * ⚠️ Remise électronique (27/09) — réponse **tenue pour donnée** quand la PRMP ne l'a pas encore choisie : la
+   * question compte comme répondue, la carte s'affiche cochée, les conditions la lisent, et rien n'est envoyé au
+   * serveur tant qu'elle n'est pas touchée (le serveur lit la même valeur en l'absence de clé). Sert aux fiches
+   * créées avant que la question existe.
+   */
+  defaut?: string;
 }
 
 /**
@@ -254,6 +261,20 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
     aide: 'Oui : forme (dépôt au Trésor, caution agréée, garantie bancaire, chèque de banque) et montant en chiffres et en lettres.',
     documents: 'DPAO, repris dans AE et CCAP',
     options: [{ code: 'OUI', libelle: 'Oui' }, { code: 'NON', libelle: 'Non' }],
+  },
+  {
+    // ⚠️ Remise électronique (27/09, plan et demande du 27/09) — l'interrupteur du bloc B04-SE, porté côté serveur
+    // par le champ de cadrage `B04-SE-01` (« Mode de remise des offres »). Papier ou électronique, jamais les deux :
+    // une procédure mixte n'existe pas (décision du pilote). Il remplace `B04-VE-01` (« voie électronique admise »).
+    cle: 'modeRemise',
+    libelle: 'Comment les offres sont-elles remises ?',
+    aide: 'Papier : plis déposés au lieu, à la date et à l’heure limites. Électronique : dépôt sur la plateforme — adresse, formats et tailles admis, signature exigée, assistance, prorogation en cas d’indisponibilité ; l’heure limite devient obligatoire.',
+    documents: 'DPAO ; C1 et C2 pour la voie de remise de la garantie',
+    options: [
+      { code: 'PAPIER', libelle: 'Papier' },
+      { code: 'ELECTRONIQUE', libelle: 'Électronique' },
+    ],
+    defaut: 'PAPIER',
   },
   {
     cle: 'avance',
@@ -435,7 +456,8 @@ export function aidesRevision(
  */
 export function largeurChamp(type: TypeChamp): 'court' | 'moyen' | 'long' {
   if (type === 'NOMBRE' || type === 'POURCENTAGE' || type === 'DATE' || type === 'MONTANT') return 'court';
-  if (type === 'LISTE' || type === 'OUI_NON' || type === 'LISTE_MULTIPLE') return 'moyen';
+  // une date ET une heure (« 27/09/2026 10:00 ») tiennent dans la largeur d'une liste, pas dans celle d'une date seule
+  if (type === 'LISTE' || type === 'OUI_NON' || type === 'LISTE_MULTIPLE' || type === 'DATE_HEURE') return 'moyen';
   return 'long';
 }
 
@@ -570,8 +592,25 @@ export function questionsPosees(cadrage: Cadrage): QuestionCadrage[] {
   return QUESTIONS_CADRAGE.filter((q) => !q.si || String(cadrage[q.si.cle] ?? '') === q.si.valeur);
 }
 
+/**
+ * ⚠️ Remise électronique (27/09) — le cadrage **complété de ses réponses par défaut** (`QuestionCadrage.defaut`) pour
+ * les questions posées qui n'ont pas encore de réponse : `modeRemise` vaut `PAPIER` tant que la PRMP n'a rien
+ * choisi, comme le serveur le lit. C'est ce cadrage-là que lisent les conditions d'affichage, le résumé et la
+ * complétude ; ce qui est ENVOYÉ au serveur reste le cadrage nu (une réponse par défaut ne se transmet pas).
+ */
+export function avecDefauts(cadrage: Cadrage): Cadrage {
+  const complete: Cadrage = { ...cadrage };
+  for (const q of QUESTIONS_CADRAGE) {
+    if (q.defaut === undefined) continue;
+    if (q.si && String(complete[q.si.cle] ?? '') !== q.si.valeur) continue;
+    if (complete[q.cle] == null || complete[q.cle] === '') complete[q.cle] = q.defaut;
+  }
+  return complete;
+}
+
 /** Le cadrage est-il complet (toutes les questions posées ont une réponse, compléments compris) ? */
-export function cadrageComplet(cadrage: Cadrage): boolean {
+export function cadrageComplet(cadrageNu: Cadrage): boolean {
+  const cadrage = avecDefauts(cadrageNu);
   return questionsPosees(cadrage).every((q) => {
     const v = cadrage[q.cle];
     if (v == null || v === '') return false;
@@ -584,7 +623,8 @@ export function cadrageComplet(cadrage: Cadrage): boolean {
 }
 
 /** Résumé du cadrage en puces (« Quantité fixe · Alloti (3 lots) · Groupement autorisé · … »). */
-export function resumeCadrage(cadrage: Cadrage): { texte: string; non: boolean }[] {
+export function resumeCadrage(cadrageNu: Cadrage): { texte: string; non: boolean }[] {
+  const cadrage = avecDefauts(cadrageNu);
   const puces: { texte: string; non: boolean }[] = [];
   for (const q of questionsPosees(cadrage)) {
     const v = cadrage[q.cle];
@@ -605,6 +645,7 @@ export function resumeCadrage(cadrage: Cadrage): { texte: string; non: boolean }
     if (q.cle === 'avance') texte = non ? 'Sans avance' : `Avance${cadrage['tauxAvance'] ? ` ${cadrage['tauxAvance']} %` : ''}`;
     if (q.cle === 'prixRevisable') texte = non ? 'Prix ferme' : 'Prix révisable';
     if (q.cle === 'penalites') texte = non ? 'Sans pénalités' : `Pénalités ${enSuite(opt.libelle)}`;
+    if (q.cle === 'modeRemise') texte = String(v) === 'ELECTRONIQUE' ? 'Remise électronique' : 'Remise papier';
     puces.push({ texte, non });
   }
   return puces;
@@ -744,6 +785,8 @@ export const REFERENTIEL_ESQUISSE: ReferentielFiche = {
         { code: 'FP', libelle: 'Remise des offres – forme des plis', rang: 5, documentMaitre: 'DPAO', nbAttendu: 2 },
         { code: 'LR', libelle: 'Lieu, date et heure de remise des offres', rang: 6, documentMaitre: 'DPAO', nbAttendu: 4 },
         { code: 'OP', libelle: 'Ouverture des plis', rang: 7, documentMaitre: 'DPAO', nbAttendu: 2 },
+        // ⚠️ Remise électronique (27/09) — dix-sept informations, ouvertes par la réponse de cadrage `modeRemise`.
+        { code: 'SE', libelle: 'Remise électronique', rang: 8, documentMaitre: 'DPAO', nbAttendu: 17 },
       ],
     },
     {

@@ -121,6 +121,40 @@ describe('Champs de la fiche DAO — référentiel Administrateur (B1, 22/09)', 
     expect(racine().querySelector('form')).toBeNull();
   });
 
+  it('27/09 : une liste MULTIPLE a ses options, une date-heure et une URL se créent ici, et la valeur par défaut part au serveur', () => {
+    monter(REF);
+    bouton('+ Ajouter un champ').click();
+    rendre();
+    const form = racine().querySelector('form') as HTMLFormElement;
+    const typeSelect = form.querySelector('select.form-control') as HTMLSelectElement;
+    const types = Array.from(typeSelect.options).map((o) => o.value);
+    expect(types).toEqual(expect.arrayContaining(['LISTE_MULTIPLE', 'DATE_HEURE', 'URL', 'PIECE']));
+    const saisir = (sel: string, v: string, ev = 'input'): void => {
+      const el = form.querySelector(sel) as HTMLInputElement;
+      el.value = v;
+      el.dispatchEvent(new Event(ev));
+      rendre();
+    };
+    saisir('input[placeholder="B05-GS-02"]', 'B04-SE-07');
+    saisir('input.form-control:not([placeholder])', 'Formats de fichiers acceptés');
+    saisir('select.form-control', 'LISTE_MULTIPLE', 'change');
+    // l'éditeur d'options s'ouvre aussi pour une liste multiple (il ne s'ouvrait que pour LISTE)
+    saisir('input[placeholder^="Caution"]', 'PDF, PDF/A, XLSX');
+    saisir('input[placeholder^="50 ·"]', 'PDF,PDF/A');
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+    const post = http.expectOne('/api/champs-fiche-marche');
+    expect(post.request.body).toMatchObject({ code: 'B04-SE-07', type: 'LISTE_MULTIPLE', options: ['PDF', 'PDF/A', 'XLSX'], valeurDefaut: 'PDF,PDF/A' });
+    post.flush({ ...post.request.body, bloc: 'B04', rubrique: 'B04-SE', rang: 7 });
+    rendre();
+    // DPIC est proposé parmi les documents (maître et reprises)
+    bouton('+ Ajouter un champ').click();
+    rendre();
+    const docs = Array.from((racine().querySelectorAll('form select.form-control')[2] as HTMLSelectElement).options).map((o) => o.value);
+    expect(docs).toContain('DPIC');
+    expect(Array.from(racine().querySelectorAll('form .cfm__case')).map((l) => texte(l))).toEqual(expect.arrayContaining(['DPIC']));
+    expect(Array.from(racine().querySelectorAll('form .cfm__case')).map((l) => texte(l))).not.toContain('AUCUN');
+  });
+
   it('serveur sans le lot 1 : tableau vide explicite, aucune erreur bloquante', () => {
     monter(null);
     expect(texte(racine().querySelector('tbody td'))).toContain('n’est pas servi'.replace('’', "'"));
