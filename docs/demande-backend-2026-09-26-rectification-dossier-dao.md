@@ -148,6 +148,15 @@ nouveau dossier, jamais un ré-import. Le dossier garde sa référence, son circ
 > de B6 porte l'information. Non joué en réel : le chemin lettre de renvoi → réexamen (C4) — il attend un second dossier
 > avec avis défavorable.
 
+> ⚠️ **Écart constaté le 2026-09-27 en jouant le chemin DEF (dossier DAO 100356 `00003/DAO/CNM/2026`, lettre 2 signée,
+> dossier `EN_ATTENTE_PIECES`) — B7 à livrer.** `GET /api/lettre-renvois/mes-lettres` répond **vide** à la PRMP du dossier
+> (PRMP001, entité 10) alors que la lettre porte bien `idDossier = 100356` : « Mes lettres de renvoi » résout la PRMP par
+> le **PPM**, qu'un dossier de mise en concurrence n'a pas. La PRMP ne voit donc pas sa lettre dans l'écran qui lui est
+> destiné (elle la trouve par « À faire » et par la page du dossier, qui offrent « Transmettre les pièces
+> complémentaires »). À corriger côté serveur : la propriété d'une lettre d'un dossier DMC se lit sur le dossier
+> (`t_dossier` → PRMP de l'entité), comme `GET /api/dossiers/{id}` le fait déjà. Même vérification à faire pour
+> `GET /api/pv-examens/definitifs` côté PRMP.
+
 ## Questions posées au pilote (plan, §5)
 > ✅ **Tranchées le 26/09** : Q2 remplacement automatique des pièces produites (B2 telle quelle) ; Q3 fiche
 > verrouillée pendant l'examen (B1 telle quelle) ; Q4 tous les points réévalués, changements mis en évidence (B5

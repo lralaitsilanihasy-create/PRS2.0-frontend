@@ -160,11 +160,14 @@ const garnir = async (idDetail, cadrage, valeurs, titre, parLot = {}, articles =
   // enregistrée lot par lot par remplacement en bloc. Les lots 4 et 5 du 2463 reprennent les lots 2 et 3 —
   // c'est le cas réel du geste « Dupliquer depuis le lot n ».
   if (articles.length) {
-    const lots = [...new Set(articles.map((a) => a.lot))].sort((x, y) => x - y);
+    // 27/09 — une ligne NON allotie n'a qu'un besoin, sans lot : les articles d'un jeu écrit par lot y sont versés
+    // ensemble (le serveur refuse `lot` sur une ligne non allotie).
+    const allotie = fiche?.saisieParLot === true;
+    const lots = allotie ? [...new Set(articles.map((a) => a.lot))].sort((x, y) => x - y) : [null];
     let poses = 0;
     for (const lot of lots) {
-      const duLot = articles.filter((a) => a.lot === lot);
-      const r = await appel('PUT', `/api/fiches-marche/${idDmc}/articles?lot=${lot}`, { articles: VIDER ? [] : duLot });
+      const duLot = allotie ? articles.filter((a) => a.lot === lot) : articles.map((a) => ({ ...a, lot: null }));
+      const r = await appel('PUT', `/api/fiches-marche/${idDmc}/articles${lot == null ? '' : `?lot=${lot}`}`, { articles: VIDER ? [] : duLot });
       if (!r.ok) { console.error(`  ✗ besoin du lot ${lot} : ${r.statut} ` + JSON.stringify(r.corps).slice(0, 220)); return false; }
       poses += VIDER ? 0 : duLot.length;
     }

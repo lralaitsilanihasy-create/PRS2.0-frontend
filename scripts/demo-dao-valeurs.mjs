@@ -505,6 +505,13 @@ export const ARTICLES_AC = [
 ];
 
 export const VALEURS_AC = {
+  // 27/09 — valeurs COMMUNES des cinq champs « par lot » : elles servent quand la ligne du plan n'est pas allotie
+  // (une seule cellule) ; sur une ligne allotie, VALEURS_AC_PAR_LOT l'emporte.
+  'B05-GS-03': '1600000',
+  'B05-TP-02': '40000000',
+  'B05-TP-03': '80000000',
+  'B06-EO-12': '30',
+  'B09-LL-01': 'Direction des Infrastructures et du Patrimoine de la JIRAMA — 149, rue Rainandriamampandry, Ambohijatovo, Antananarivo 101.',
   // — B02 Objet, allotissement & forme du marché —
   'B02-AU-02': 'Lot par lot (attribution divisible)',
   'B02-AU-03':
