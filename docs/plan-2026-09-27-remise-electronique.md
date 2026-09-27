@@ -1,6 +1,9 @@
 # Plan — 2026-09-27 — Préparer la fiche DAO à la remise électronique des offres
 
-**Statut : proposition, en attente de l'arbitrage du pilote. Rien n'est codé.**
+**Statut : arbitré par le pilote le 27/09 (« selon les recommandations », Q14 « formulaires en ligne ») ; front livré le
+27/09 en cinq commits (`38ab6bb` modèle et admin, `1b33b96` écran de saisie, `2d29c65` paramètres internes et
+responsable, `bc9257a` bloquants hors bloc, `c80cee2` C1 / C2), contre le contrat de
+`docs/demande-backend-2026-09-27-remise-electronique.md` ; backend en cours (V50 → recopie de C1 / C2).**
 Périmètre : la fiche seulement (champs, règles, impression dans les documents produits), un écran séparé de
 paramètres internes, un rôle « Responsable de la procédure » par procédure. La plateforme de dépôt viendra plus tard.
 

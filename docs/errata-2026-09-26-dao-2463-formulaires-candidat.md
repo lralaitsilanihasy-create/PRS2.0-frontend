@@ -40,4 +40,11 @@ par transparence :
   police de symboles. Ce symbole ne se transmet pas fidèlement d'un logiciel à l'autre ; le modèle type le
   remplacera par un signe équivalent standard, sur décision du pilote.
 
+## Compléments du 27 septembre 2026
+
+| # | Constat | Conséquence pour le dossier |
+|---|---|---|
+| E8 | Les formulaires A1 à A4, C1 et C2 du dossier s'écartent des **documents types officiels de l'ARMP** (« Formulaires de soumission », fournitures) : de 36 % (C1) à 79 % (A1) de texte commun seulement. | Depuis le 27 septembre, la fiche produit les formulaires **officiels**, décrits depuis le document type et vérifiés dans les deux sens. Les formulaires déjà produits pour ce dossier restent ceux de leur version. |
+| E9 | Les Données particulières du dossier portent la ligne « Remise des offres ou propositions par voie électronique admise : Non » (DPAO 7.3). | La fiche remplace cette information par « **Mode de remise des offres** : Papier / Électronique » (une procédure est l'un ou l'autre, jamais les deux). Sur une fiche déjà validée, l'ancienne valeur reste lisible dans sa version, elle n'est pas recopiée à la révision : le mode se choisit au cadrage. |
+
 *Contact : le pilote de PRS 2.0, Commission Nationale des Marchés.*

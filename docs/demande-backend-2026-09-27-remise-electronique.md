@@ -239,6 +239,32 @@ seront des **formulaires en ligne de la plateforme**. Rien à produire maintenan
 provisoire ; leur retrait viendra avec la plateforme. Le besoin par lot (`GET …/articles`) reste la source structurée que la
 plateforme lira.
 
+## État du front (27/09) — codé contre ce contrat, avant livraison
+
+Cinq commits (`38ab6bb`, `1b33b96`, `2d29c65`, `bc9257a`, `c80cee2`), 909 tests verts, lint et build propres. Ce que le
+serveur doit savoir de ce que l'écran attend :
+
+- Types `DATE_HEURE` (valeur `AAAA-MM-JJTHH:MM`, celle d'un `datetime-local`) et `URL` rendus ; `valeurDefaut` porté par
+  l'écran admin des champs ; question de cadrage `modeRemise` posée par l'écran, **jamais envoyée tant que la PRMP ne la
+  choisit pas** (la clé absente vaut PAPIER, §B1.1).
+- `champsCalcules` (§B5.1) lu sur la fiche renvoyée par `PUT …/blocs/B04` : les clés qu'il porte s'affichent en lecture
+  seule « calculée ». `B04-SE-01` en lecture s'affiche « Papier » / « Électronique » depuis le code du cadrage.
+- `responsableProcedure`, `peutModifierParametresInternes`, `parametresInternes` lus sur la fiche ; l'écran
+  `/procedure/{idDmc}/parametres-internes` appelle `GET` / `PUT …/parametres-internes` et `GET …/parametres-internes/candidats`,
+  nomme le 403 sans rediriger, pose les 400 nominatifs sous `membresCommission`, `quorum`, `dateCeremonie`, nomme
+  `MEMBRE_COMMISSION` et `FICHE_VALIDEE`.
+- Encart Administrateur sur la fiche (route `/admin/dao/{idDmc}`) : `GET …/responsable/candidats`, `POST …/responsable`
+  `{ im }` (201 attendu, la fiche n'est pas relue), `DELETE …/responsable` (204) ; `RESPONSABLE_EXISTANT` et
+  `MEMBRE_COMMISSION` nommés.
+- Bilan : les règles `PARAMETRES_INTERNES_INCOMPLETS` et `RESPONSABLE_NON_DESIGNE` renvoient à l'écran du responsable
+  et à l'Administrateur, les autres au bloc `B04` ; aucun message n'est réécrit par l'écran.
+- Paramètres : écran `/admin/referentiels/remise-electronique` sur `GET` / `PUT /api/parametres/fiche-remise-electronique`
+  (§B1.4, sept clés).
+- C1 / C2 : `modeles-armp/C1.txt` et `C2.txt` portent la section `{{SI:B04-SE}}` … `{{FINSI:B04-SE}}` avec la clause
+  balisée (§B2.1) ; `verifier-armp.mjs A1 A2 A3 A4 C1 C2` reste vert. **À recopier après §B2.1**, jamais avant.
+- Errata E9 du 2463 (front) : « Mode de remise des offres : Papier » remplace la ligne `B04-VE-01` des Données
+  particulières ; la valeur `B04-VE-01` d'une fiche validée n'est pas recopiée à la révision.
+
 ## Ce que le backend rend
 
 Migration V50, moteur, référentiel (CSV + script), règles, endpoints, ADR-0010, `docs/api-endpoints.md` et
