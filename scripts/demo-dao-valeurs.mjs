@@ -489,7 +489,20 @@ export const VALEURS_AC_PAR_LOT = {
   'B05-TP-02': { 1: '40000000', 2: '54000000' },
   'B05-TP-03': { 1: '80000000', 2: '108500000' },
   'B06-EO-12': { 1: '30', 2: '30' },
+  // Le lieu de livraison est PAR LOT depuis le 25/09 (27/09 : la valeur commune ne suffisait plus au jeu).
+  'B09-LL-01': {
+    1: 'Direction des Infrastructures et du Patrimoine de la JIRAMA — 149, rue Rainandriamampandry, Ambohijatovo, Antananarivo 101.',
+    2: 'Directions régionales désignées au bon de commande.',
+  },
 };
+
+/** 27/09 — la validation exige un besoin (B12) : au moins un article par lot. Deux articles de démonstration par lot. */
+export const ARTICLES_AC = [
+  { lot: 1, designation: 'Ordinateur de bureau complet Core i5', unite: 'U', quantiteMin: 20, quantiteMax: 40, caracteristiques: [{ libelle: 'Processeur', exigence: 'Core i5' }, { libelle: 'Mémoire vive', exigence: '8 Go' }] },
+  { lot: 1, designation: 'Onduleur', unite: 'U', quantiteMin: 20, quantiteMax: 40, caracteristiques: [{ libelle: "Capacité d'alimentation en sortie", exigence: '390 Watts / 700 VA au minimum' }] },
+  { lot: 2, designation: 'Imprimante laser multifonction A4', unite: 'U', quantiteMin: 27, quantiteMax: 55, caracteristiques: [{ libelle: 'Fonctions', exigence: 'Impression, copie, scan' }] },
+  { lot: 2, designation: "Cartouche d'encre noire", unite: 'U', quantiteMin: 27, quantiteMax: 55, caracteristiques: [{ libelle: 'Compatibilité', exigence: 'Imprimantes du lot' }] },
+];
 
 export const VALEURS_AC = {
   // — B02 Objet, allotissement & forme du marché —
@@ -536,12 +549,10 @@ export const VALEURS_AC = {
   'B03-ST-01': 'NON',
 
   // — B04 Dossier, remise & ouverture des offres —
-  'B04-CD-01':
-    "Modèles de fiches de renseignements A1 (identification du candidat), A2 (capacités techniques), A3 (capacités "
-    + 'financières) et A4 (antécédents pour des marchés de même nature).',
-  'B04-CD-02':
-    "Modèles de garantie de soumission joints au dossier : B1 — garantie bancaire, B2 — caution personnelle et "
-    + 'solidaire.',
+  // 27/09 — B04-CD-01 est une liste à choix multiples (options A1…A4) et B04-CD-02 une liste (C1 / C2 / C1 et C2)
+  // depuis le 25/09 : les textes libres d'origine étaient refusés (400 « option inconnue »).
+  'B04-CD-01': 'A1,A2,A3,A4',
+  'B04-CD-02': 'C1 et C2',
   'B04-CO-01':
     "Outre les pièces mentionnées aux instructions aux candidats : photocopie certifiée conforme de la carte "
     + "d'immatriculation fiscale de l'exercice en cours, extrait du registre du commerce et carte statistique de moins "

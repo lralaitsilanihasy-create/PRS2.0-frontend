@@ -10,7 +10,7 @@
 //   node demo-dao.mjs 303083       une seule ligne du plan
 //
 // ⚠️ Écrit en base de développement.
-import { CADRAGE_TRAVAUX, CADRAGE_PI, CADRAGE_AC, CADRAGE_QF, VALEURS_TRAVAUX, VALEURS_PI, VALEURS_AC, VALEURS_AC_PAR_LOT, VALEURS_QF, CADRAGE_2463, VALEURS_2463, VALEURS_2463_PAR_LOT, ARTICLES_2463 } from './demo-dao-valeurs.mjs';
+import { CADRAGE_TRAVAUX, CADRAGE_PI, CADRAGE_AC, CADRAGE_QF, VALEURS_TRAVAUX, VALEURS_PI, VALEURS_AC, VALEURS_AC_PAR_LOT, ARTICLES_AC, VALEURS_QF, CADRAGE_2463, VALEURS_2463, VALEURS_2463_PAR_LOT, ARTICLES_2463 } from './demo-dao-valeurs.mjs';
 
 const API = 'http://localhost:8080';
 const args = process.argv.slice(2);
@@ -194,10 +194,10 @@ const garnir = async (idDetail, cadrage, valeurs, titre, parLot = {}, articles =
 };
 
 const jeux = [
-  { id: 303083, cadrage: CADRAGE_TRAVAUX, valeurs: VALEURS_TRAVAUX, titre: 'TRAVAUX — réhabilitation du réseau d’adduction d’eau potable, 2 lots' },
-  { id: 303084, cadrage: CADRAGE_PI, valeurs: VALEURS_PI, titre: 'PRESTATIONS INTELLECTUELLES — schéma directeur d’assainissement' },
-  { id: 303081, cadrage: CADRAGE_AC, valeurs: VALEURS_AC, parLot: VALEURS_AC_PAR_LOT, titre: 'FOURNITURES À COMMANDE — consommables informatiques, 2 lots' },
-  { id: 303080, cadrage: CADRAGE_QF, valeurs: VALEURS_QF, titre: 'FOURNITURES À QUANTITÉ FIXE — mobilier de bureau' },
+  { id: 303083, cle: 'travaux', cadrage: CADRAGE_TRAVAUX, valeurs: VALEURS_TRAVAUX, titre: 'TRAVAUX — réhabilitation du réseau d’adduction d’eau potable, 2 lots' },
+  { id: 303084, cle: 'pi', cadrage: CADRAGE_PI, valeurs: VALEURS_PI, titre: 'PRESTATIONS INTELLECTUELLES — schéma directeur d’assainissement' },
+  { id: 303081, cle: 'ac', cadrage: CADRAGE_AC, valeurs: VALEURS_AC, parLot: VALEURS_AC_PAR_LOT, titre: 'FOURNITURES À COMMANDE — consommables informatiques, 2 lots', articles: ARTICLES_AC },
+  { id: 303080, cle: 'qf', cadrage: CADRAGE_QF, valeurs: VALEURS_QF, titre: 'FOURNITURES À QUANTITÉ FIXE — mobilier de bureau' },
   // ⚠️ Le DOSSIER RÉEL, semé par `scripts/jeu-donnees-dao-2463.mjs` : MESupReS, cinq lots, à commande.
   { id: 303089, cle: '2463', prmp: 'LERAVO', cadrage: CADRAGE_2463, valeurs: VALEURS_2463, parLot: VALEURS_2463_PAR_LOT, titre: 'DOSSIER RÉEL — matériels informatiques MESupReS, 5 lots à commande', articles: ARTICLES_2463 },
 ]
