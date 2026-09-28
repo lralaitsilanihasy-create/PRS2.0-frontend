@@ -46,7 +46,8 @@ encore s'en servir.
 - Référentiel du contrat-cadre : les neuf champs servis avec `obligatoire = false` ; `B07-DU-06` absent ; nombre de
   champs servis 176 → 175.
 - Une fiche de contrat-cadre se valide sans aucune des dix informations.
-- `DELAI_PAIEMENT_75` refuse toujours un délai de paiement saisi au-delà de 75 jours.
+- `DELAI_PAIEMENT_75` signale toujours, en **avertissement**, un délai de paiement saisi au-delà de 75 jours (la
+  première rédaction disait « refuse » : c'est un avertissement au catalogue, la fiche se valide — voir l'encadré §B1).
 - Quantité fixe et à commande : inchangés.
 
 > ⚠️ **Livraison backend du 2026-09-28 (§B3).** `FicheMarcheCommandeEtContratCadreIntegrationTest`, cas 8 : les neuf servis
