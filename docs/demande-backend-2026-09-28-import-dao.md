@@ -21,6 +21,15 @@ d'une autre autorité disponible (pilote, 28/09).
   piégées (ratio de décompression de POI).
 - **Qui** : la PRMP propriétaire et son UGPM, comme la saisie. **Quand** : la version courante est un **brouillon**
   (sinon 409 `FICHE_VALIDEE`, code stable).
+
+> ⚠️ **Livraison backend du 2026-09-28 (§B1, entrée et gardes).** Deux précisions sur ce qui est livré :
+> - **Refus du fichier.** Le 415 porte le code stable `FORMAT_NON_SUPPORTE`. Le message demandé est gardé mot pour mot.
+>   Une phrase lui est ajoutée quand le nom est bon mais le contenu non : fichier vide, fichier illisible comme document
+>   Word, paquet à macros (`vbaProject.bin`, ou type de contenu autre que celui d'un document), archive piégée.
+> - **L'Administrateur n'importe pas (403).** La saisie d'un bloc l'admet, mais la demande ne nomme que la PRMP
+>   propriétaire et son UGPM. Le reste suit la saisie : périmètre, mandat actif, forme outillée (409
+>   `FORME_NON_OUTILLEE`). Les gardes de la fiche passent avant celles du fichier : un `.pdf` sur une fiche validée rend
+>   409. Une fiche jamais enregistrée est lue comme un brouillon vide.
 - **Avec quoi** : les **modèles du lot D** que la fiche produit, d'après sa forme et sa catégorie (contrat-cadre /
   fournitures et services : `DPAC-CC`, `AE-CC`) — les fichiers `modeles/dao/*.txt` déjà chargés. Aucun modèle pour cette
   forme → **422** `MODELE_ABSENT` « L'import n'est pas encore possible pour ce type de marché : saisissez la fiche. »
@@ -57,6 +66,29 @@ d'une autre autorité disponible (pilote, 28/09).
   saisie, Q8). `extrait` : le paragraphe du document où la valeur a été lue. Avertissement « hors gabarit » quand moins
   de 30 % des paragraphes d'un modèle sont reconnus.
 
+> ⚠️ **Livraison backend du 2026-09-28 (§B1, algorithme et sortie).** `lire.mjs` est porté tel quel (`LectureDao`). La
+> parité est vérifiée sur les DPAC et AE `.docx` de la fiche 27 : même découpage en 351 paragraphes, et mêmes
+> propositions, confiances, réponses, ambigus et non-trouvés que `lire.mjs`. Six écarts de sortie, tous au service de B2 :
+> - **Une réponse déduite dont la clé est un code de champ n'est pas du cadrage.** `B07-FS-01`, `B02-DC-03`, `B07-PE-01`
+>   en sont des exemples. `lire.mjs` les range dans `cadrage`, mais `PUT …/cadrage` les refuserait comme clés inconnues.
+>   Elles sont rendues dans `propositions`, en confiance `moyenne`, avec `brut` = la valeur et `extrait` = « rédaction
+>   retenue (section NOM de SIGLE) ». `cadrage` ne porte que de vraies clés de cadrage, chacune validée comme par
+>   `PUT …/cadrage`. Une réponse refusée passe aux `avertissements`. Les termes se découpent comme au rendu (ADR-0011) :
+>   un « et » dans une valeur ne coupe pas.
+> - **Un conflit n'est jamais un choix, cadrage compris.** `lire.mjs` garde la première réponse d'une clé en conflit.
+>   Ici, elle sort de `cadrage` et va seulement dans `conflits`. Pour une clé de cadrage, `conflits[].code` porte la clé.
+>   Les conflits d'un modèle à l'autre du même fichier (DPAC et AE) y vont aussi.
+> - **`anomalies`** porte, en plus des refus de `normaliser`, deux autres motifs. Le premier est la condition
+>   d'affichage fausse sur le cadrage de la fiche complété des réponses déduites (« ne s'applique pas avec ce cadrage »).
+>   Le second est un champ par lot d'une ligne allotie. `valeur` est la forme normalisée quand `normaliser` l'accepte :
+>   `OUI` pour « Oui », l'option telle que le référentiel la sert, un nombre sans zéros de queue.
+> - **`nonTrouves` ne liste que les champs saisissables.** Les reprises du plan, les reflets, les calculés et les pièces
+>   n'y sont pas, puisque la PRMP n'a rien à y saisir. `lire.mjs` y mettait par exemple `B01-AC-01`.
+> - **Un avertissement « hors gabarit » par modèle**, préfixé du sigle : « AE-CC : peu de texte du modèle reconnu (12 %) :
+>   ce document ne suit pas le document type ». Le pourcentage est arrondi.
+> - **`cadrage[].valeur` est typée** comme après `PUT …/cadrage` : `nbLots` ou `tauxAvance` sont des nombres.
+>   `modeRemise = PAPIER` est déduit de la rédaction « papier », même quand la fiche source ne le porte pas (défaut V50).
+
 ## B2 — `PUT /api/fiches-marche/{idDmc}/import/appliquer` : écrire ce que la PRMP a retenu, d'un seul coup
 
 - **Corps** : `{ "cadrage": { "attributaires": "MULTI", … }, "valeurs": { "B04-CP-02": "2026-11-20T10:00", … },
@@ -69,12 +101,30 @@ d'une autre autorité disponible (pilote, 28/09).
   n valeurs, m réponses de cadrage ».
 - Réponse : la fiche, comme après une saisie. Mêmes droits et mêmes conditions (brouillon) que B1.
 
+> ⚠️ **Livraison backend du 2026-09-28 (§B2).** Conforme : fusion, atomicité, journal au détail demandé mot pour mot, la
+> fiche en réponse. Quatre précisions :
+> - **Un champ fermé par sa condition est un 400, pas un silence.** La condition est évaluée sur le cadrage fusionné.
+>   `PUT …/blocs` ignore un tel champ, parce que l'écran y renvoie tout le bloc. Ici, la PRMP l'a coché : le refus le lui
+>   dit (« ne s'applique pas à cette fiche (condition : …) »). Même chose, en 400, pour une valeur ou une réponse vide
+>   (« l'import n'efface rien ») et pour un corps sans rien à appliquer.
+> - **`fichier` et `empreinte` sont exigés**, en 400 nominatif. L'empreinte fait 64 caractères hexadécimaux. Les 12
+>   premiers vont au journal.
+> - **`FICHE_IMPORTEE` a le rang 26**, juste avant `FICHE_MARCHE_VALIDEE` (27) d'un même instant. Une fiche jamais
+>   enregistrée est créée, avec ses défauts recopiés, puis reçoit l'import. En remise électronique, les cibles calculées se
+>   reposent comme à l'enregistrement d'un bloc.
+> - **Une valeur importée est une saisie ordinaire.** Si elle remplace une valeur calculée, elle perd la marque
+>   « calculée ».
+
 ## B3 — Ce que l'import ne fait pas
 
 - Le fichier **n'est pas conservé** (Q7) : lu en mémoire, oublié ; seuls le nom et l'empreinte vont au journal.
 - Pas d'OCR : un `.docx` fait d'images ne donne rien (avertissement « hors gabarit »).
 - Les champs par lot (`CODE#n`) : aucun dans les deux modèles du contrat-cadre ; la règle viendra avec les fournitures
   (lot D2), où le lot sera lu dans l'intitulé (« Lot n° 1 : … »).
+
+> ⚠️ **Livraison backend du 2026-09-28 (§B3).** Conforme. Le fichier est lu en mémoire puis oublié, et rien n'est
+> journalisé à la lecture. `lot` vaut toujours `null`. Un champ par lot d'une ligne allotie, s'il apparaissait, serait
+> proposé avec une anomalie, jamais sous une clé `CODE#n`.
 
 ## B4 — Tests
 
@@ -88,6 +138,25 @@ d'une autre autorité disponible (pilote, 28/09).
   gabarit → 200 avec avertissement et presque rien de proposé.
 - **Appliquer** : fusion (un champ non envoyé garde sa valeur) ; un refus sur une valeur → 400 nominatif et rien
   d'écrit ; journal `FICHE_IMPORTEE`.
+
+> ⚠️ **Livraison backend du 2026-09-28 (§B4).** Tests dans `ImportDaoIntegrationTest` (5) et `LectureDaoTest` (4, pur).
+> Un écart de forme :
+> - **Le fichier unique de l'aller-retour** est fait des paragraphes et cellules du DPAC puis de l'AE produits, un
+>   paragraphe Word par unité. Ce sont exactement les unités que lit l'algorithme. Le DPAC tel que produit, avec son
+>   tableau de calendrier, est aussi importé seul pour couvrir la lecture des tableaux.
+>
+> Ce que les tests vérifient :
+> - Aucune valeur fausse en haute ni en moyenne, au moins 40 justes.
+> - Les valeurs typées reviennent en forme de saisie, par exemple `B04-CP-02` = `2026-04-10T10:00` en haute.
+> - Chaque réponse déduite égale le cadrage de la source. `B07-DE-02` / `B07-DE-03` sont ambigus.
+> - L'objet du plan est en divergence, et aucune reprise du plan n'est proposée.
+> - Fusion : `B04-DS-07` en moyenne, `B04-DS-08` relu. Ajout : `B04-PO-01` en basse.
+> - Refus : `.pdf`, `.docm` et un faux `.docx` → 415 ; Administrateur → 403 ; quantité fixe → 422 ; fiche validée →
+>   409, pour la lecture comme pour l'application.
+> - Hors gabarit : 200, deux avertissements, au plus deux propositions.
+> - Appliquer : un refus nominatif pour une valeur mal typée, une reprise du plan et un champ fermé par le cadrage, sans
+>   rien d'écrit. Puis la fusion : une valeur et une clé de cadrage non envoyées gardent les leurs. Puis le détail exact
+>   du journal. Une fiche virtuelle est créée à l'application.
 
 ## Ce que le backend rend
 
