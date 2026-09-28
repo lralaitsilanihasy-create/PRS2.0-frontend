@@ -829,7 +829,7 @@
   },
   {
    "type": "para",
-   "texte": "A chaque complétude de l’offre, l’augmentation des prix détaillés dans le bordereau de prix unitaires joint au présent accord sera limitée à {{B05-PM-04}} %."
+   "texte": "A chaque complétude de l’offre, l’augmentation des prix détaillés dans le bordereau de prix unitaires joint au présent accord sera limitée à {{B05-PM-04.chiffres}} %."
   },
   {
    "type": "para",
@@ -845,7 +845,7 @@
   },
   {
    "type": "para",
-   "texte": "A chaque complétude de l’offre, l’augmentation des prix détaillés dans le catalogue joint au présent accord sera limitée à {{B05-PM-04}} %."
+   "texte": "A chaque complétude de l’offre, l’augmentation des prix détaillés dans le catalogue joint au présent accord sera limitée à {{B05-PM-04.chiffres}} %."
   },
   {
    "type": "para",
@@ -869,7 +869,7 @@
   },
   {
    "type": "para",
-   "texte": "A chaque complétude de l’offre, l’augmentation de ce montant sera limitée à {{B05-PM-04}} %."
+   "texte": "A chaque complétude de l’offre, l’augmentation de ce montant sera limitée à {{B05-PM-04.chiffres}} %."
   },
   {
    "type": "para",
@@ -913,7 +913,7 @@
   },
   {
    "type": "para",
-   "texte": "A chaque remise en concurrence l’augmentation des prix détaillés dans le bordereau de prix joint au présent accord sera limitée à {{B05-PM-04}} %."
+   "texte": "A chaque remise en concurrence l’augmentation des prix détaillés dans le bordereau de prix joint au présent accord sera limitée à {{B05-PM-04.chiffres}} %."
   },
   {
    "type": "para",
@@ -1013,7 +1013,7 @@
   },
   {
    "type": "para",
-   "texte": "Le montant de l’avance des marchés conclus sur la base du contrat-cadre est fixé à {{B08-AV-02}} % du montant TTC du marché subséquent."
+   "texte": "Le montant de l’avance des marchés conclus sur la base du contrat-cadre est fixé à {{B08-AV-02.chiffres}} % du montant TTC du marché subséquent."
   },
   {
    "type": "sous_titre",
@@ -1253,7 +1253,7 @@
   },
   {
    "type": "para",
-   "texte": "Le délai de paiement est de 75 jours à compter de la réception de la demande de paiement. Aucune demande de paiement ne peut être transmise avant réalisation des prestations. Le taux applicable en cas de retard de paiement est le taux d’intérêt de la Banque Centrale de Madagascar en vigueur, à la date à laquelle les intérêts moratoires ont commencé à courir, augmenté de {{B08-FP-04}} point(s)."
+   "texte": "Le délai de paiement est de 75 jours à compter de la réception de la demande de paiement. Aucune demande de paiement ne peut être transmise avant réalisation des prestations. Le taux applicable en cas de retard de paiement est le taux d’intérêt de la Banque Centrale de Madagascar en vigueur, à la date à laquelle les intérêts moratoires ont commencé à courir, augmenté de {{B08-FP-04.chiffres}} point(s)."
   },
   {
    "type": "sous_titre",
@@ -1843,7 +1843,7 @@
    "ligne": 550,
    "genre": "jeton",
    "source": "X %",
-   "par": "{{B05-PM-04}} %"
+   "par": "{{B05-PM-04.chiffres}} %"
   },
   {
    "ligne": 550,
@@ -1867,7 +1867,7 @@
    "ligne": 550,
    "genre": "jeton",
    "source": "X %",
-   "par": "{{B05-PM-04}} %"
+   "par": "{{B05-PM-04.chiffres}} %"
   },
   {
    "ligne": 550,
@@ -1885,7 +1885,7 @@
    "ligne": 555,
    "genre": "jeton",
    "source": "X %",
-   "par": "{{B05-PM-04}} %"
+   "par": "{{B05-PM-04.chiffres}} %"
   },
   {
    "ligne": 555,
@@ -1951,7 +1951,7 @@
    "ligne": 561,
    "genre": "jeton",
    "source": "X %",
-   "par": "{{B05-PM-04}} %"
+   "par": "{{B05-PM-04.chiffres}} %"
   },
   {
    "ligne": 561,
@@ -2011,7 +2011,7 @@
    "ligne": 585,
    "genre": "jeton",
    "source": "<fixer un montant ne dépassant pas 20% du montant TTC du marché subséquent>",
-   "par": "{{B08-AV-02}} % du montant TTC du marché subséquent"
+   "par": "{{B08-AV-02.chiffres}} % du montant TTC du marché subséquent"
   },
   {
    "ligne": 595,
@@ -2131,7 +2131,7 @@
    "ligne": 639,
    "genre": "jeton",
    "source": "<à préciser, mais ne doit pas être inférieur à UN point>",
-   "par": "{{B08-FP-04}}"
+   "par": "{{B08-FP-04.chiffres}}"
   },
   {
    "ligne": 650,

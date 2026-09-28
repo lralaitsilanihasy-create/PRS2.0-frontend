@@ -443,7 +443,7 @@ function aeContratCadre() {
   const ajouts = ['{{B07-DE-02}}', '{{B07-DE-03}}', '{{B07-PE-03}}'];
 
   const cataloguePU = (catalogue) => ['bordereau de prix unitaires/ catalogue (choisir)', catalogue ? 'catalogue' : 'bordereau de prix unitaires', 'choix'];
-  const X = ['X %', '{{B05-PM-04}} %', 'jeton'];
+  const X = ['X %', '{{B05-PM-04.chiffres}} %', 'jeton'];
   const aRemplir = ['(à remplir par le candidat si ce pourcentage est un critère et rédiger le règlement de la consultation en conséquence)', '', 'retire'];
   const prix21 = (catalogue) => x('Choix 2.1 : le prix', ["Choix 2.1 : le prix n'est pas un critère d'attribution de le contrat-cadre (le contrat-cadre est alors un référencement de candidats – les critères d'attribution du contrat-cadre sont des critères de capacité et des critères qualitatifs)", '', 'retire'],
     ['au bordereau de prix unitaires/dans le catalogue (choisir)', catalogue ? 'dans le catalogue' : 'au bordereau de prix unitaires', 'choix']);
@@ -634,7 +634,7 @@ function aeContratCadre() {
       ST(x('10.2')),
       P(x("Le règlement de l'avance", ['<fixer, en jours calendaires, le délai de paiement des avances>', '{{B08-FI-02}} jours calendaires', 'jeton'])),
       ST(x('10.3')),
-      P(x("Le montant de l'avance", ['<fixer un montant ne dépassant pas 20% du montant TTC du marché subséquent>', '{{B08-AV-02}} % du montant TTC du marché subséquent', 'jeton'])),
+      P(x("Le montant de l'avance", ['<fixer un montant ne dépassant pas 20% du montant TTC du marché subséquent>', '{{B08-AV-02.chiffres}} % du montant TTC du marché subséquent', 'jeton'])),
       ST(x('10.4')),
       P(x('Les modalités de remboursement'))),
     ...SI('AVANCE-SOUS-TRAITANT', ST(x('10.5')), P(x('Une avance sera accordée au sous-traitant'))),
@@ -683,7 +683,7 @@ function aeContratCadre() {
     P(x('• le montant H.T.')),
     P(x('• le taux et le montant')),
     ST(x('15.3')),
-    P(x('Le délai de paiement est de 75', ['<à préciser, mais ne doit pas être inférieur à UN point>', '{{B08-FP-04}}', 'jeton'])),
+    P(x('Le délai de paiement est de 75', ['<à préciser, mais ne doit pas être inférieur à UN point>', '{{B08-FP-04.chiffres}}', 'jeton'])),
     ST(x('15.4')),
     P(x('Les sommes dues')),
     P(x('Nom et adresse de la Banque')),
@@ -787,6 +787,10 @@ for (const sigle of voulus) {
   const vient = (t) => PRODUITS.has(t) || m.ajouts.includes(t) || m.ajouts.some((a) => t.startsWith(a) && PRODUITS.has(t.slice(a.length)));
   const orphelins = m.blocs.filter((b) => !['table', 'fin_table', 'vide'].includes(b.type) && !/^\{\{(SI|FINSI):/.test(b.texte))
     .flatMap((b) => b.texte.split(/[\u001E\u001F]/)).filter((t) => t && !vient(t));
+  // Un jeton nu imprime déjà l'unité de son champ (MONTANT : « Ariary », POURCENTAGE : « % ») : suivi de l'unité en dur,
+  // le document dirait « 15 % % » (constat du backend, 28/09 ; « Ariary Ariary » du C1 le 27/09) — il faut `.chiffres`.
+  const doublons = m.blocs.flatMap((b) => [...b.texte.matchAll(/\{\{([A-Z0-9-]+)\}\}\s*(%|Ariary)/g)].map((x) => x[0]));
+  if (doublons.length) throw new Error(`${sigle} : unité écrite après un jeton nu (${doublons.join(', ')}) — utiliser .chiffres`);
   if (orphelins.length) throw new Error(`${sigle} : ${orphelins.length} texte(s) ni lu(s) dans la source ni déclaré(s) en ajout :\n` + orphelins.map((t) => `   « ${t.slice(0, 110)} »`).join('\n'));
   fs.writeFileSync(`modeles/${sigle}.json`, JSON.stringify(m, null, 1), 'utf8');
   const commande = [['FICHIER', m.fichier], ['TITRE', m.titre],

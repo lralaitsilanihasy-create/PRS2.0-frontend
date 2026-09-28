@@ -91,6 +91,11 @@ fichier.
 > TTC ». Même cas que le « Ariary Ariary » du C1 le 27/09 ; correctif : `{{B08-AV-02.chiffres}} %` et
 > `{{B05-PM-04.chiffres}} %`. Le vérificateur ne le voit pas (il juge le rendu **brut**). Je recopierai le fichier corrigé.
 
+> ✅ **Corrigé par le front le 2026-09-28** — `AE-CC.txt` : les cinq jetons passent en `.chiffres`, **et un sixième** du
+> même genre, non relevé : `{{B08-FP-04}} point(s)` (art. 15.3, intérêts moratoires) aurait imprimé « 1 % point(s) » →
+> `{{B08-FP-04.chiffres}} point(s)`. `decrire.mjs` refuse désormais un jeton nu suivi de « % » ou « Ariary » (éprouvé en
+> réintroduisant le défaut). `DPAC-CC.txt` inchangé. Fidélité : 174 / 174 et 378 / 378. À recopier tel quel.
+
 ## B4 — Neuf champs que le modèle demande et que la fiche n'a pas
 
 Contrat-cadre, fournitures et services, saisie, facultatifs (aucune condition possible : `B09-GP-01` et `B02-DC-03`
