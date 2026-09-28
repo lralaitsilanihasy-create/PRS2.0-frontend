@@ -46,6 +46,15 @@ fichier.
   démarrage** (ou le test de chargement des modèles), jamais « vrai » en silence. Les trois noms historiques restent
   reconnus pour les formulaires du candidat.
 
+> ⚠️ **Livraison backend du 2026-09-28 (§B1).** Conforme. Moteur pur `ConditionsModele`, lecteur `FichierCommande.lireModele` (éléments + conditions
+> déclarées), rendu `FormulairesCandidat.rendreModele`, chargement `ModelesDao`. Trois précisions :
+> - **« et » dans une valeur** : un `et` / `ou` ne sépare deux termes que s'il est suivi d'un **terme complet** (clé puis
+>   opérateur). Sans cela, `B02-PC-02 = Au fur et à mesure des besoins` (DPAC et AE) se serait coupé en deux.
+> - **Garde étendue aux formulaires du candidat** : `ModelesCandidat` applique le même contrôle (sections déclarées,
+>   emboîtées, refermées), les trois noms historiques restant admis sans déclaration.
+> - `=` est **faux** sur une valeur absente et `!=` **vrai** (ce qui donne le sens voulu à `B05-PM-05 != OUI` quand le
+>   catalogue n'est pas renseigné). La pile ne fait pas même évaluer une section interne à une section fausse.
+
 ## B2 — Deux jetons de plus
 
 - **`{{LOT}}`** : le numéro du lot du document (AE d'un contrat-cadre alloti : « chaque lot faisant l'objet d'un
@@ -55,6 +64,9 @@ fichier.
 - Rappel du contrat existant, utilisé tel quel : `{{CODE}}` (un `MONTANT` avec son unité), `.lettres`, `.chiffres`, et
   les reflets de cadrage (`{{B08-AV-02}}` = `tauxAvance`, `{{B02-LV-05}}` = `nbLots`). Un jeton sans valeur s'imprime
   en pointillés (R2).
+
+> ⚠️ **Livraison backend du 2026-09-28 (§B2).** Conforme : `{{LOT}}` (vide hors lot) ; `DERIVE.fin-validite-offre` lit `B04-CP-02` (sa date) à défaut de
+> `B04-LR-03`.
 
 ## B3 — Produire le DPAC et l'AE du contrat-cadre depuis ces fichiers
 
@@ -68,6 +80,16 @@ fichier.
 - Les autres formes et catégories gardent le lot 2a tant que leurs fichiers n'existent pas (repli par type, pas de
   bascule générale).
 - `[[CLAUSE À FOURNIR PAR LE JURISTE : …]]` (DPAC, art. 5.2, en mode électronique) s'imprime tel quel, comme dans C1 / C2.
+
+> ⚠️ **Livraison backend du 2026-09-28 (§B3).** Conforme : `DPAC` une fois, `AE` par lot sur une ligne allotie (`saisieParLot`), à la place du lot 2a pour
+> le contrat-cadre en fournitures et services ; les autres formes restent au lot 2a. Titres : « Données particulières
+> d'appel à concurrence » pour **tout** DPAC (B12 de la demande du contrat-cadre, livré ici) et « Contrat-cadre valant
+> acte d'engagement et CCAP » pour l'AE **du contrat-cadre** (le libellé de l'AE des autres formes ne change pas).
+> **Écart du modèle à corriger côté front, non retouché ici** (le fichier est copié tel quel) : dans `AE-CC.txt`, cinq
+> jetons de **pourcentage** sont suivis d'un « % » écrit en dur — `{{B08-AV-02}} %` (art. 10.3) et `{{B05-PM-04}} %`
+> (quatre fois, art. 9.1). `{{CODE}}` imprime déjà l'unité d'un `POURCENTAGE` : le document dit « fixé à 15 % % du montant
+> TTC ». Même cas que le « Ariary Ariary » du C1 le 27/09 ; correctif : `{{B08-AV-02.chiffres}} %` et
+> `{{B05-PM-04.chiffres}} %`. Le vérificateur ne le voit pas (il juge le rendu **brut**). Je recopierai le fichier corrigé.
 
 ## B4 — Neuf champs que le modèle demande et que la fiche n'a pas
 
@@ -88,6 +110,10 @@ sont des saisies, pas des clés de cadrage).
 
 Les options de `B09-GP-04` s'écrivent **exactement** ainsi : les conditions de l'AE les citent.
 
+> ⚠️ **Livraison backend du 2026-09-28 (§B4).** Conforme : les neuf champs dans le fichier de correspondance du contrat-cadre (front et copie de test) et
+> `docs/referentiel/2026-09-28-lot-d-champs-contrat-cadre.sql` (répété à blanc sur DBPRS20 : 9 créations). Contrat-cadre
+> servi : 176 champs dans les tests (167 + 9), 176 attendus sur DBPRS20 une fois le script joué.
+
 ## B5 — Tests
 
 - Chargement : les deux fichiers se lisent, 14 et 53 conditions, aucune condition non déclarée.
@@ -102,8 +128,28 @@ Les options de `B09-GP-04` s'écrivent **exactement** ainsi : les conditions de 
   comme les six formulaires du candidat le 27/09.
 - Les autres formes : documents du lot 2a inchangés.
 
+> ⚠️ **Livraison backend du 2026-09-28 (§B5).** `ModelesDaoTest` (6, pur) : grammaire, chargement (14 et 53 conditions ; refus nommés
+> d'une condition non déclarée, illisible, en double, d'une section non refermée), imbrication, les deux fiches types de la
+> demande (mono / non alloti / papier / non reconductible ; multi / 2 lots / électronique / reconductible, « LOT n°1 » et
+> « LOT n°2 »), rendu brut écrit dans `target/modeles-dao/`. `FicheMarcheCommandeEtContratCadreIntegrationTest` : cas 4 et 6
+> lus sur le document type, cas 7 — production d'une fiche allotie (DPAC, AE lot 1, AE lot 2) et d'une fiche à commande
+> (lot 2a inchangé). Suite complète : 1411 tests, 0 échec. **Recette** (PowerShell, JDK 21 en tête du PATH, rendus bruts
+> copiés dans `C:\Users\LANTO\rendus-dao`) :
+> 
+> ```
+> ✓ DPAC-CC (C:/Users/LANTO/rendus-dao/DPAC-CC.docx) : 174 unités attendues, 174 rendues — 0 manquante(s) ou hors d'ordre, 0 inventée(s)
+> ✓ AE-CC (C:/Users/LANTO/rendus-dao/AE-CC.docx) : 378 unités attendues, 378 rendues — 0 manquante(s) ou hors d'ordre, 0 inventée(s)
+> exit=0
+> ```
+
 ## Ce que le backend rend
 
 B1 à B5, `docs/api-endpoints.md` (contrat des modèles : enregistrement `CONDITION`, grammaire, `{{LOT}}`),
 `docs/regles-gestion.md` (§ fiche marché, documents produits), un ADR si le moteur de conditions le justifie
 (prochain : ADR-0011), et un encadré ⚠️ daté ici pour tout écart.
+
+> ⚠️ **Livraison backend du 2026-09-28 (rendu).** Moteur, deux modèles copiés tels quels (`src/main/resources/modeles/dao/`), neuf champs, ADR-0011,
+> `docs/api-endpoints.md` (§ *Le DAO complet sur les documents types officiels — lot D*) et `docs/regles-gestion.md`
+> (§ du même nom). Pas de migration. Les questions Q1 à Q5 du plan restent au pilote : Q1 est appliquée comme recommandée
+> (la demande B3 l'exige) ; Q2 (dix obligatoires rendus facultatifs, `B07-DU-06` désactivée) n'est **pas** faite, faute
+> de décision.
