@@ -167,6 +167,8 @@ export interface QuestionCadrage {
   /** Documents que la réponse ouvre ou ferme (esquisse). */
   documents: string;
   si?: { cle: string; valeur: string };
+  /** L'inverse de `si` : la question n'apparaît PAS quand cette réponse vaut telle valeur. */
+  sauf?: { cle: string; valeur: string };
   /** Champ numérique complémentaire (nombre de lots, taux d'avance) affiché quand la réponse est `valeur`. */
   complement?: { cle: string; libelle: string; si: string; unite?: string };
   /**
@@ -289,6 +291,10 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
     libelle: 'Des pénalités de retard s’appliquent-elles ?',
     aide: 'Selon le CCAG (article 12.1), ou un plafond différent des 15 % prévus, à préciser.',
     documents: 'CCAP',
+    // ⚠️ 28/09 (modèle officiel du contrat-cadre, E13) — pas pour un contrat-cadre : le CCAP y devient l'AE, où la
+    // rubrique `B07-PE` pose déjà la question, avec le cas que celle-ci ne sait pas dire (« fixées dans les marchés
+    // subséquents »). Posée deux fois, elle s'imprimait deux fois dans le même document.
+    sauf: { cle: 'typeMarche', valeur: 'CONTRAT_CADRE' },
     options: [
       { code: 'CCAG', libelle: 'Selon le CCAG' },
       { code: 'PLAFOND_DIFFERENT', libelle: 'Plafond différent, à préciser' },
@@ -588,8 +594,15 @@ export function allotissementDuPlan(nbLots: number | null): { alloti: 'OUI' | 'N
 /** Clés de cadrage imposées par le plan : ni saisies, ni modifiables. */
 export const CLES_IMPOSEES_PAR_LE_PLAN: readonly string[] = ['alloti', 'nbLots'];
 
+/** La question est-elle posée pour ce cadrage (son `si` satisfait, son `sauf` non) ? */
+export function questionPosee(q: QuestionCadrage, cadrage: Cadrage): boolean {
+  if (q.si && String(cadrage[q.si.cle] ?? '') !== q.si.valeur) return false;
+  if (q.sauf && String(cadrage[q.sauf.cle] ?? '') === q.sauf.valeur) return false;
+  return true;
+}
+
 export function questionsPosees(cadrage: Cadrage): QuestionCadrage[] {
-  return QUESTIONS_CADRAGE.filter((q) => !q.si || String(cadrage[q.si.cle] ?? '') === q.si.valeur);
+  return QUESTIONS_CADRAGE.filter((q) => questionPosee(q, cadrage));
 }
 
 /**
@@ -602,7 +615,7 @@ export function avecDefauts(cadrage: Cadrage): Cadrage {
   const complete: Cadrage = { ...cadrage };
   for (const q of QUESTIONS_CADRAGE) {
     if (q.defaut === undefined) continue;
-    if (q.si && String(complete[q.si.cle] ?? '') !== q.si.valeur) continue;
+    if (!questionPosee(q, complete)) continue;
     if (complete[q.cle] == null || complete[q.cle] === '') complete[q.cle] = q.defaut;
   }
   return complete;

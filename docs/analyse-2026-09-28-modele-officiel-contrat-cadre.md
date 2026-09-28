@@ -121,3 +121,22 @@ et des doublons (E4, E5, E13).
 | **Q3** | Durée du contrat-cadre : plafond de 2 ans (AE art. 7.1) ou 36 mois (exemple du DPAC art. 2) ? | **Question au juriste**, avec l'article du code (loi 2016-055) ; le contrôle attend sa réponse. |
 | **Q4** | Voie électronique (E4) : même règle que les fournitures ? | **Oui** : `modeRemise` est la seule réponse, `B04-RQ-04` en découle. |
 | **Q5** | Produire le DPAC et l'AE au format du modèle ? | **Plus tard**, avec le lot D des fournitures ; ce n'est pas bloquant pour la saisie. |
+
+> ⚠️ **Arbitrage du pilote, 28/09 : « suivre vos recommandations ».** Q1, Q2, Q4 → demande
+> `docs/demande-backend-2026-09-28-contrat-cadre-modele-officiel.md` (B1-B10) ; le front ne pose plus la question
+> `penalites` à un contrat-cadre (E13). Q3 → question au juriste ci-dessous. Q5 → avec le lot D.
+
+## 6. Question au juriste (à transmettre par le pilote)
+
+> **Durée maximale d'un contrat-cadre de fournitures et services.** Le document type ARMP 2019 « Contrat-cadre —
+> Fournitures & Prestations de services » dit deux choses :
+> - Contrat-cadre valant AE et CCAP, **art. 7.1** : « La durée du contrat-cadre est de <préciser la durée — **cette
+>   durée ne peut excéder 2 ans**> à compter de sa notification. »
+> - Données particulières, **art. 2 « Durée du contrat »**, exemple : « …2 fois pour une durée complémentaire de 12 mois
+>   dans la limite d'une durée maximale de **36 mois** à compter de la date de notification ».
+>
+> 1. Quel plafond fait foi — 24 mois, 36 mois, ou autre — et selon quel article de la loi n° 2016-055 (Code des marchés
+>    publics) ou de ses textes d'application ?
+> 2. Le plafond s'entend-il **reconductions comprises** ?
+>
+> La réponse devient un contrôle bloquant de la fiche DAO sur la « Durée maximale du contrat-cadre » (`B02-DC-01`).

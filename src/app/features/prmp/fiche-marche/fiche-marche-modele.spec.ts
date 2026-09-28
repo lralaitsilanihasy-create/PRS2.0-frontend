@@ -76,6 +76,16 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(questionsPosees({ typeMarche: 'QUANTITE_FIXE', categorie: 'TRAVAUX' }).map((q) => q.cle)).toContain('tranches');
   });
 
+  it('pénalités (28/09, modèle officiel du contrat-cadre) : posée partout, sauf au contrat-cadre, où la rubrique B07-PE en tient lieu', () => {
+    expect(questionsPosees({ typeMarche: 'QUANTITE_FIXE' }).map((q) => q.cle)).toContain('penalites');
+    expect(questionsPosees({ typeMarche: 'A_COMMANDE' }).map((q) => q.cle)).toContain('penalites');
+    const cc = questionsPosees({ typeMarche: 'CONTRAT_CADRE', categorie: 'FOURNITURES_SERVICES' }).map((q) => q.cle);
+    expect(cc).not.toContain('penalites');
+    expect(cc).toContain('avance'); // l'avance reste : elle conditionne B08-FI-02…04
+    // Un cadrage de contrat-cadre complet sans réponse aux pénalités.
+    expect(cadrageComplet({ typeMarche: 'CONTRAT_CADRE', categorie: 'FOURNITURES_SERVICES', alloti: 'NON', variantes: 'NON', groupement: 'NON', provenance: 'NATIONAL', typePrix: 'UNITAIRES', prixRevisable: 'NON', garantieSoumission: 'NON', avance: 'NON', attributaires: 'MONO' })).toBe(true);
+  });
+
   it('mode de remise (27/09) : « papier » par défaut tant que la PRMP n’a rien choisi — complet, résumé, conditions ; rien n’est inventé dans le cadrage nu', () => {
     const nu = { typeMarche: 'QUANTITE_FIXE', categorie: 'FOURNITURES_SERVICES' };
     expect(avecDefauts(nu)['modeRemise']).toBe('PAPIER');

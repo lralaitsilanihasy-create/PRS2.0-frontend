@@ -52,6 +52,7 @@ import {
   nbLotsDuPlan,
   optionsChoisies,
   progression,
+  questionPosee,
   questionsPosees,
   reprises,
   resumeCadrage,
@@ -525,7 +526,7 @@ export class FicheMarcheEcran {
       const effectif: Cadrage = { ...suivant, typeMarche: type, categorie: cat };
       // Une question qui disparaît emporte sa réponse (et son complément) : le cadrage ne garde rien d'invisible.
       for (const q of QUESTIONS_CADRAGE) {
-        if (q.si && String(effectif[q.si.cle] ?? '') !== q.si.valeur) delete suivant[q.cle];
+        if (!questionPosee(q, effectif)) delete suivant[q.cle];
         if (q.complement && String(suivant[q.cle] ?? '') !== q.complement.si) delete suivant[q.complement.cle];
       }
       return suivant;
