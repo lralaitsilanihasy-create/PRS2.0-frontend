@@ -32,6 +32,8 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.STTblWidth;
  *   DROITE       aligné à droite         VIDE         paragraphe vide
  *   TABLE n      ouvre un tableau à n colonnes ; LIGNE c1 US c2 … (US = 0x1F) ; RS (0x1E) = saut de
  *                paragraphe dans une cellule ; FIN_TABLE le referme
+ *   CONDITION    nom US expression — déclaration d'une section {{SI:nom}} pour le moteur du serveur (lot D,
+ *                28/09) ; rien à imprimer : le décalque montre toutes les rédactions, marqueurs compris
  * </pre>
  */
 public final class Decalque {
@@ -60,6 +62,7 @@ public final class Decalque {
 
                 switch (type) {
                     case "FICHIER" -> fichier = texte;
+                    case "CONDITION" -> { }
                     case "TITRE" -> paragraphe(doc, texte, ParagraphAlignment.CENTER, true, 13, 240);
                     case "SOUS_TITRE" -> paragraphe(doc, texte, ParagraphAlignment.LEFT, true, 11, 160);
                     case "PARA" -> paragraphe(doc, texte, ParagraphAlignment.BOTH, false, 11, 120);

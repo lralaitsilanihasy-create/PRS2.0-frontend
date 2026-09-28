@@ -1,0 +1,2549 @@
+{
+ "fichier": "AE-CC.docx",
+ "sigle": "AE-CC",
+ "source": "contrat-cadre",
+ "titre": "ACTE D’ENGAGEMENT ET CAHIER DES CLAUSES ADMINISTRATIVES PARTICULIERES",
+ "conditions": {
+  "AOO": "B01-AC-13 contient ouvert",
+  "AOR": "B01-AC-13 contient restreint",
+  "CONSULTATION": "B01-AC-13 contient consultation",
+  "GROUPEMENT": "groupement = OUI",
+  "ALLOTI": "alloti = OUI",
+  "NON-ALLOTI": "alloti = NON",
+  "NA-MONO": "alloti = NON et attributaires = MONO",
+  "NA-MULTI": "alloti = NON et attributaires = MULTI",
+  "A-MONO": "alloti = OUI et attributaires = MONO",
+  "A-MULTI": "alloti = OUI et attributaires = MULTI",
+  "FS-UNIQUE": "B07-FS-01 = Marchés uniques non fractionnés",
+  "FS-FRACTIONNE": "B07-FS-01 = Marchés fractionnés par bons de commande successifs",
+  "MONO": "attributaires = MONO",
+  "MULTI": "attributaires = MULTI",
+  "COMPLETUDE-DELAI": "attributaires = MONO et B07-MA-02 = À compter de la notification de la demande de complétude",
+  "COMPLETUDE-DEMANDE": "attributaires = MONO et B07-MA-02 = Lors de la demande de complétude",
+  "MULTI-NON-ALLOTI": "attributaires = MULTI et alloti = NON",
+  "LOTS-CORRESPONDANTS": "attributaires = MULTI et alloti = OUI et B07-MA-04 = Titulaires des lots correspondant à l'objet du marché",
+  "LOTS-TOUS": "attributaires = MULTI et alloti = OUI et B07-MA-04 = Titulaires de tous les lots",
+  "RC-BESOIN": "attributaires = MULTI et B02-PC-02 = Au fur et à mesure des besoins",
+  "RC-CALENDRIER": "attributaires = MULTI et B02-PC-02 = Selon le calendrier fixé ci-après",
+  "DUREE-FIXEE": "B07-DU-02 = OUI",
+  "DUREE-LIBRE": "B07-DU-02 = NON",
+  "RECONDUCTIBLE": "B02-DC-03 = OUI",
+  "NON-RECONDUCTIBLE": "B02-DC-03 = NON",
+  "DELAI-AC": "B07-FS-01 = Marchés uniques non fractionnés et B07-DE-01 = Fixés par l'autorité contractante",
+  "DELAI-CANDIDATS": "B07-FS-01 = Marchés uniques non fractionnés et B07-DE-01 = À l'initiative des candidats",
+  "DELAI-SUBSEQUENTS": "B07-FS-01 = Marchés uniques non fractionnés et B07-DE-01 = Fixés dans les marchés subséquents",
+  "PENALITES-NON": "B07-PE-01 = Non applicables",
+  "PENALITES-CCAG": "B07-PE-01 = Fixées dans le contrat-cadre et B07-PE-02 = Conformément à l'article 12 du CCAG",
+  "PENALITES-DEROGATION": "B07-PE-01 = Fixées dans le contrat-cadre et B07-PE-02 = Dérogation au CCAG",
+  "PENALITES-SUBSEQUENTS": "B07-PE-01 = Fixées dans les marchés subséquents",
+  "MONO-PU-BORDEREAU": "attributaires = MONO et B05-PM-01 = Prix unitaires et B05-PM-05 != OUI ou attributaires = MONO et B05-PM-01 = Prix mixtes et B05-PM-05 != OUI",
+  "MONO-PU-CATALOGUE": "attributaires = MONO et B05-PM-01 = Prix unitaires et B05-PM-05 = OUI ou attributaires = MONO et B05-PM-01 = Prix mixtes et B05-PM-05 = OUI",
+  "MONO-PF": "attributaires = MONO et B05-PM-01 = Prix forfaitaires ou attributaires = MONO et B05-PM-01 = Prix mixtes",
+  "MULTI-REFERENCEMENT-BORDEREAU": "attributaires = MULTI et B05-PM-02 = NON et B05-PM-05 != OUI",
+  "MULTI-REFERENCEMENT-CATALOGUE": "attributaires = MULTI et B05-PM-02 = NON et B05-PM-05 = OUI",
+  "MULTI-PRIX-BORDEREAU": "attributaires = MULTI et B05-PM-02 = OUI et B05-PM-05 != OUI",
+  "MULTI-PRIX-CATALOGUE": "attributaires = MULTI et B05-PM-02 = OUI et B05-PM-05 = OUI",
+  "AVANCE": "avance = OUI",
+  "AVANCE-SOUS-TRAITANT": "B08-FI-05 = OUI",
+  "EXECUTION-COMMUNE": "B09-EA-01 = OUI",
+  "EXECUTION-SANS": "B09-EA-01 = NON",
+  "VERIFICATION-CCAG": "B09-VA-01 = Dispositions du CCAG applicables",
+  "VERIFICATION-LIBRE": "B09-VA-01 = Clause libre",
+  "GARANTIE-NON": "B09-GP-01 = NON",
+  "GARANTIE-OUI": "B09-GP-01 = OUI",
+  "GARANTIE-ADMISSION": "B09-GP-01 = OUI et B09-GP-04 = À partir de l'admission",
+  "GARANTIE-MISE-EN-SERVICE": "B09-GP-01 = OUI et B09-GP-04 = À partir de la date de mise en service",
+  "GARANTIE-CCAG": "B09-GP-01 = OUI et B09-GP-05 = OUI",
+  "ASSURANCE-NON": "B09-AU-01 = NON",
+  "ASSURANCE-OUI": "B09-AU-01 = OUI",
+  "PRIX-CRITERE": "attributaires = MONO ou B05-PM-02 = OUI"
+ },
+ "blocs": [
+  {
+   "type": "centre",
+   "texte": "{{B01-AC-01}}"
+  },
+  {
+   "type": "centre",
+   "texte": "{{B02-OB-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:NON-ALLOTI}}"
+  },
+  {
+   "type": "centre",
+   "texte": "CONTRAT-CADRE Valant acte d’engagement et CCAP UNIQUE"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:NON-ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ALLOTI}}"
+  },
+  {
+   "type": "centre",
+   "texte": "CONTRAT-CADRE Valant acte d’engagement et CCAP LOT n°{{LOT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ALLOTI}}"
+  },
+  {
+   "type": "centre",
+   "texte": "Code des marchés publics (Article 67)"
+  },
+  {
+   "type": "para",
+   "texte": "Cadre réservé à l’autorité contractante Numéro du contrat-cadre <indiquer le numéro du contrat-cadre>"
+  },
+  {
+   "type": "para",
+   "texte": "Cadre réservé à l’autorité contractante Date de notification <à compléter obligatoirement sur l’original par le signataire après la notification du contrat-cadre>: ❏ Date de réception indiquée sur l’accusé de réception : <indiquer la date> ❏ Date de remise en main propre au titulaire : <indiquer la date> Reçu, à titre de notification, une copie du contrat-cadre. Signature du titulaire :"
+  },
+  {
+   "type": "para",
+   "texte": "Ce document comporte <préciser le nombre de pages> pages y compris la page de garde."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "PREAMBULE – DISPOSITIONS GENERALES"
+  },
+  {
+   "type": "para",
+   "texte": "Personne Publique contractante : {{B01-AC-01}}, {{B01-AC-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "Personne habilitée à signer le contrat-cadre : {{B02-SG-04}}."
+  },
+  {
+   "type": "para",
+   "texte": "Personne responsable des marchés passés sur la base du présent contrat-cadre : {{B02-SG-01}} ({{B02-SG-02}})."
+  },
+  {
+   "type": "para",
+   "texte": "Procédure de passation du contrat-cadre :"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AOO}}"
+  },
+  {
+   "type": "para",
+   "texte": "Appel d’offres ouvert, en application des articles 35 à 37 du Code des Marchés Publics."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AOO}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AOR}}"
+  },
+  {
+   "type": "para",
+   "texte": "Appel d’offres restreint, en application de l’article 38 du Code des Marchés Publics."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AOR}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CONSULTATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "Consultation d’entreprises ou de fournisseurs ou de prestataires de service, en application de l’article 41 du Code des Marchés Publics."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CONSULTATION}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 1er – Contractants (1)"
+  },
+  {
+   "type": "para",
+   "texte": "Le contrat-cadre est conclu entre :"
+  },
+  {
+   "type": "para",
+   "texte": "- D’une part, {{B01-AC-01}}, ci-après dénommée « l’autorité contractante »,"
+  },
+  {
+   "type": "para",
+   "texte": "Représentée par : {{B01-AC-05}}, nommée par {{B02-SG-03}}."
+  },
+  {
+   "type": "para",
+   "texte": "– Et d’autre part,(2)"
+  },
+  {
+   "type": "para",
+   "texte": "❏ Le co-contractant, ci-après dénommé « le titulaire » :"
+  },
+  {
+   "type": "para",
+   "texte": "Dénomination sociale : <préciser la dénomination sociale de l’entreprise>"
+  },
+  {
+   "type": "para",
+   "texte": "Ayant son siège social à <indiquer l’adresse du siège social de l’entreprise>"
+  },
+  {
+   "type": "para",
+   "texte": "Ayant pour numéro d’identification fiscale NIF (3) <indiquer le numéro d’identification>"
+  },
+  {
+   "type": "para",
+   "texte": "Représentée par :"
+  },
+  {
+   "type": "para",
+   "texte": "Nom : <indiquer le nom du représentant>"
+  },
+  {
+   "type": "para",
+   "texte": "Qualité (4) : <cocher la case correspondante>"
+  },
+  {
+   "type": "para",
+   "texte": "❏ Représentant légal de l’entreprise."
+  },
+  {
+   "type": "para",
+   "texte": "❏ Ayant reçu pouvoir du représentant légal de l’entreprise"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GROUPEMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "OU"
+  },
+  {
+   "type": "para",
+   "texte": "Le groupement d’entrepreneurs solidaire/ conjoint (4), ci-après dénommé « le titulaire » :"
+  },
+  {
+   "type": "para",
+   "texte": "❏ 1er co-traitant mandataire du Groupement :"
+  },
+  {
+   "type": "para",
+   "texte": "Dénomination sociale : <préciser la dénomination sociale de l’entreprise>"
+  },
+  {
+   "type": "para",
+   "texte": "Ayant son siège social à <indiquer l’adresse du siège social de l’entreprise>"
+  },
+  {
+   "type": "para",
+   "texte": "Ayant pour numéro d’identification fiscale NIF (3) : <indiquer le numéro d’identification>"
+  },
+  {
+   "type": "para",
+   "texte": "Représentée par :"
+  },
+  {
+   "type": "para",
+   "texte": "Nom : <indiquer le nom du représentant>"
+  },
+  {
+   "type": "para",
+   "texte": "Qualité(5) : <cocher la case correspondante>"
+  },
+  {
+   "type": "para",
+   "texte": "❏ Représentant légal de l’entreprise."
+  },
+  {
+   "type": "para",
+   "texte": "❏ Ayant reçu pouvoir du représentant légal de l’entreprise."
+  },
+  {
+   "type": "para",
+   "texte": "En cas de groupement conjoint, le mandataire déclare être solidaire de tous les membres du groupement."
+  },
+  {
+   "type": "para",
+   "texte": "❏2e co-traitant (6) :"
+  },
+  {
+   "type": "para",
+   "texte": "Dénomination sociale : <préciser la dénomination sociale de l’entreprise>"
+  },
+  {
+   "type": "para",
+   "texte": "Ayant son siège social à <indiquer l’adresse du siège social de l’entreprise>"
+  },
+  {
+   "type": "para",
+   "texte": "Ayant pour numéro d’identification fiscale NIF (3) : <indiquer le numéro>"
+  },
+  {
+   "type": "para",
+   "texte": "Représenté par :"
+  },
+  {
+   "type": "para",
+   "texte": "Nom : <indiquer le nom du représentant>"
+  },
+  {
+   "type": "para",
+   "texte": "Qualité (7) : <cocher la case correspondante>"
+  },
+  {
+   "type": "para",
+   "texte": "❏ Représentant légal de l’entreprise."
+  },
+  {
+   "type": "para",
+   "texte": "❏ Ayant reçu pouvoir du représentant légal de l’entreprise."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GROUPEMENT}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 2 – Objet du contrat-cadre et des marchés subséquents conclus sur sa base"
+  },
+  {
+   "type": "para",
+   "texte": "Le présent contrat-cadre a pour objet de définir les termes régissant les marchés à passer au cours de la période fixée à l’article 7."
+  },
+  {
+   "type": "para",
+   "texte": "L’objet de cet accord et des marchés subséquents qui seront conclus sur son fondement est {{B02-OB-01}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:NA-MONO}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le contrat-cadre n’est pas alloti. Il est mono-attributaire."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:NA-MONO}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:NA-MULTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le contrat-cadre n’est pas alloti. Il est multi-attributaire."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:NA-MULTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:A-MONO}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le contrat-cadre est alloti et mono-attributaire."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:A-MONO}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:A-MULTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le contrat-cadre est alloti et multi-attributaire."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:A-MULTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prestations sont réparties en {{B02-LV-05}} lots faisant chacun l’objet d’un contrat-cadre distinct, comme suit :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-AL-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le présent contrat-cadre est passé pour le lot n° {{LOT}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ALLOTI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 3 – Forme des marchés subséquents conclus sur la base du présent contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FS-UNIQUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Marchés uniques non fractionnés."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FS-UNIQUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FS-FRACTIONNE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Marchés fractionnés par émission de bons de commande successifs en application de l’article 77 du Code des Marchés Publics."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FS-FRACTIONNE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B07-FS-02}} de l’autorité contractante est l’interlocuteur du titulaire pour la réalisation des prestations faisant l’objet du présent contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "Il communiquera au titulaire le nom de la personne chargée du suivi de l’exécution des prestations lors de la notification du contrat-cadre."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 4 – Modalités d’attribution des marchés subséquents conclus sur la base du présent contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:COMPLETUDE-DELAI}}"
+  },
+  {
+   "type": "para",
+   "texte": "A la survenance du besoin, le titulaire pourra être invité à compléter son offre initiale par écrit dans un délai de {{B07-MA-01}} jours à compter de la notification de la demande de complétude"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:COMPLETUDE-DELAI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:COMPLETUDE-DEMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "A la survenance du besoin, le titulaire pourra être invité à compléter son offre initiale par écrit dans un délai précisé lors de la demande de complétude."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:COMPLETUDE-DEMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MULTI-NON-ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Pendant la durée de validité du contrat-cadre, les marchés publics conclus sur la base de cet accord seront attribués après remise en concurrence de tous les titulaires du contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MULTI-NON-ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:LOTS-CORRESPONDANTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "Pendant la durée de validité du contrat-cadre, les marchés publics conclus sur la base de cet accord seront attribués après remise en concurrence des titulaires des lots correspondant à l’objet du marché fondé sur le contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:LOTS-CORRESPONDANTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:LOTS-TOUS}}"
+  },
+  {
+   "type": "para",
+   "texte": "Pendant la durée de validité du contrat-cadre, les marchés publics conclus sur la base de cet accord seront attribués après remise en concurrence des titulaires de tous les lots"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:LOTS-TOUS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RC-BESOIN}}"
+  },
+  {
+   "type": "para",
+   "texte": "Cette remise en concurrence interviendra lors de la survenance du besoin."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RC-BESOIN}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RC-CALENDRIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "Cette remise en concurrence interviendra selon la périodicité suivante : {{B02-PC-03}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RC-CALENDRIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MULTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Elle se fera dans les conditions précisées dans le règlement de la consultation propre à chaque marché à lancer, et sur la base des critères et sous-critères pondérés suivants: {{B07-MA-06}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les titulaires du contrat-cadre devront déposer une offre à chaque remise en concurrence des marchés subséquents fondés sur le contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MULTI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 5 – Les termes non couverts par le contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MONO}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les termes non couverts par le contrat-cadre qui pourront faire l’objet d’une complétude de l’offre sont: {{B07-TN-01}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MONO}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MULTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les termes non couverts par le contrat-cadre qui feront l’objet d’une mise en concurrence sont : {{B07-TN-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MULTI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 6 – Pièces contractuelles du contrat-cadre et des marchés subséquents conclus sur sa base"
+  },
+  {
+   "type": "para",
+   "texte": "Les pièces contractuelles du contrat-cadre et des marchés conclus sur la base du contrat-cadre sont les suivantes par ordre de priorité :"
+  },
+  {
+   "type": "para",
+   "texte": "➢ Pièces particulières (jointes) :"
+  },
+  {
+   "type": "para",
+   "texte": "• Le présent contrat-cadre valant acte d’engagement et CCAP,"
+  },
+  {
+   "type": "para",
+   "texte": "• Les marchés conclus sur la base du contrat-cadre,"
+  },
+  {
+   "type": "para",
+   "texte": "• Les clauses techniques ou les spécifications techniques détaillées,"
+  },
+  {
+   "type": "para",
+   "texte": "• Le bordereau de prix unitaires portant sur les termes définis dans le présent contrat-cadre,"
+  },
+  {
+   "type": "para",
+   "texte": "• Le bordereau de prix unitaires complémentaires joint aux marchés passés sur la base du contrat-cadre,"
+  },
+  {
+   "type": "para",
+   "texte": "• Le catalogue joint aux marchés passés sur la base du contrat-cadre. Tout nouveau catalogue remplace et annule le précédent."
+  },
+  {
+   "type": "para",
+   "texte": "• Toutes autres pièces contractuelles réclamées au stade des marchés subséquents."
+  },
+  {
+   "type": "para",
+   "texte": "➢ Pièces générales (non jointes) auxquelles feront référence les marchés passés sur la base du présent contrat-cadre :"
+  },
+  {
+   "type": "para",
+   "texte": "• Le cahier des clauses administratives générales applicables aux marchés publics de Fournitures courantes et services."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 7 – Durée – Délais d’exécution - Pénalités"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "7.1– Durée du contrat-cadre - entrée en vigueur"
+  },
+  {
+   "type": "para",
+   "texte": "La durée du contrat-cadre est de {{B02-DC-02}} mois à compter de sa notification."
+  },
+  {
+   "type": "para",
+   "texte": "La conclusion des marchés subséquents passés sur la base du présent contrat-cadre ne peut se faire que pendant la durée de validité du contrat-cadre."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "7.2 –Durée des marchés subséquents conclus sur la base du présent accord"
+  },
+  {
+   "type": "para",
+   "texte": "Il est précisé que la durée d’exécution des marchés subséquents conclus sur la base du présent contrat-cadre ne peut se prolonger au-delà de la date limite de validité de cet contrat-cadre qu’à condition de ne pas méconnaître l’obligation d’une remise en concurrence périodique des opérateurs économiques."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DUREE-FIXEE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La durée des marchés subséquents passés sur la base du contrat-cadre est de {{B07-DU-03}} jours à compter de leur notification."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DUREE-FIXEE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DUREE-LIBRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La durée sera fixée dans les marchés subséquents conclus sur la base du contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DUREE-LIBRE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "7.3 – Reconductions du contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:NON-RECONDUCTIBLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le contrat-cadre n’est pas reconductible."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:NON-RECONDUCTIBLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RECONDUCTIBLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le contrat-cadre est reconductible {{B07-DU-04}} fois par décision expresse prise par l’autorité contractante sans que sa durée totale ne puisse excéder {{B07-DU-05}} ans."
+  },
+  {
+   "type": "para",
+   "texte": "L’autorité contractante prend par écrit la décision de reconduire ou non le contrat-cadre {{B07-DU-07}} mois au moins avant la fin de la durée du contrat-cadre définie à l’article 7.1 ci-dessus."
+  },
+  {
+   "type": "para",
+   "texte": "Le titulaire du contrat-cadre ne peut refuser la reconduction."
+  },
+  {
+   "type": "para",
+   "texte": "La période de reconduction commence à la date anniversaire de la notification du contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RECONDUCTIBLE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "7.4 –Délais d’exécution des marchés subséquents conclus sur la base du présent accord"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DELAI-AC}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B07-DE-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DELAI-AC}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DELAI-CANDIDATS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B07-DE-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DELAI-CANDIDATS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DELAI-SUBSEQUENTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les délais d’exécution seront fixés dans les marchés subséquents conclus sur la base du présent contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DELAI-SUBSEQUENTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FS-FRACTIONNE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La durée maximale d’exécution des bons de commande sera précisée dans les marchés conclus sur la base du présent contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "Les bons de commande successifs définiront précisément les délais de réalisation des différentes prestations."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FS-FRACTIONNE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "7.5 – Pénalités pour retard dans l’exécution des marchés conclus sur la base du contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les pénalités de retard ne s’appliquent pas."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-CCAG}}"
+  },
+  {
+   "type": "para",
+   "texte": "Conformément à l’article 12 du CCAG Fournitures et Services il sera appliqué sans mise en demeure préalable, des pénalités en cas de retard dans l’exécution des marchés passés sur la base du présent contrat."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-CCAG}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-DEROGATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B07-PE-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-DEROGATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-SUBSEQUENTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les pénalités de retard seront fixées dans les marchés conclus sur la base du contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-SUBSEQUENTS}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 8 – Montant du contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant du contrat-cadre, conclu sans minimum ni maximum, est estimé à : {{B05-MT-01}} H.T. et {{B05-MT-02}} T.T.C.."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 9 – Prix - Contenu – Variation des marchés conclus sur la base du présent contrat-cadre"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "9.1 – Prix des marchés"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MONO-PU-BORDEREAU}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les marchés subséquents conclus sur la base du présent accord seront traités à prix unitaires appliqués aux prestations réellement exécutées et dont le libellé est détaillé dans le bordereau de prix unitaires joint au présent contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "A chaque complétude de l’offre, l’augmentation des prix détaillés dans le bordereau de prix unitaires joint au présent accord sera limitée à {{B05-PM-04}} %."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MONO-PU-BORDEREAU}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MONO-PU-CATALOGUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les marchés subséquents conclus sur la base du présent accord seront traités à prix unitaires appliqués aux prestations réellement exécutées et dont le libellé est détaillé dans le catalogue joint au présent contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "A chaque complétude de l’offre, l’augmentation des prix détaillés dans le catalogue joint au présent accord sera limitée à {{B05-PM-04}} %."
+  },
+  {
+   "type": "para",
+   "texte": "Le titulaire s’engage à remettre à la personne publique tout nouveau catalogue édité et distribué auprès du public dès sa sortie officielle au plus tard dans un délai de 15 jours à compter de sa date de diffusion. Le nouveau catalogue annule et remplace le précédent."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MONO-PU-CATALOGUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MONO-PF}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prestations faisant l’objet des marchés subséquents conclus sur la base du contrat-cadre seront rémunérées par application du montant global et forfaitaire précisé ci-dessous :"
+  },
+  {
+   "type": "para",
+   "texte": "– Prix hors T.V.A. : …………………………………ariary (en chiffres) – T.V.A. au taux de………….. % soit : ………… ariary (en chiffres) – Montant T.V.A. incluse : ………………………… ariary (en chiffres) – Montant T.T.C. (en lettres) : ……………………………………………"
+  },
+  {
+   "type": "para",
+   "texte": "A chaque complétude de l’offre, l’augmentation de ce montant sera limitée à {{B05-PM-04}} %."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MONO-PF}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MULTI-REFERENCEMENT-BORDEREAU}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les marchés conclus sur la base du présent contrat-cadre seront traités à prix unitaires appliqués aux prestations réellement exécutées et dont le libellé est détaillé au bordereau de prix unitaires joint aux marchés passés sur la base du contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MULTI-REFERENCEMENT-BORDEREAU}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MULTI-REFERENCEMENT-CATALOGUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les marchés conclus sur la base du présent contrat-cadre seront traités à prix unitaires appliqués aux prestations réellement exécutées et dont le libellé est détaillé dans le catalogue joint aux marchés passés sur la base du contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "A chaque remise en concurrence, il sera proposé une remise sur les prix « catalogue », ou des prix catalogue déjà remisés."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MULTI-REFERENCEMENT-CATALOGUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MULTI-PRIX-BORDEREAU}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les marchés conclus sur la base du présent accord seront traités à prix unitaires appliqués aux prestations réellement exécutées et dont le libellé est détaillé dans le bordereau de prix unitaires joint au présent accord et dans le bordereau de prix unitaires complémentaires joint aux marchés passés sur la base du contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "A chaque remise en concurrence l’augmentation des prix détaillés dans le bordereau de prix joint au présent accord sera limitée à {{B05-PM-04}} %."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MULTI-PRIX-BORDEREAU}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MULTI-PRIX-CATALOGUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les marchés conclus sur la base du présent accord seront traités à prix unitaires appliqués aux prestations réellement exécutées et dont le libellé est détaillé dans le catalogue joint au présent accord et dans le nouveau catalogue fournisseur joint aux marchés passés sur la base du contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "A chaque remise en concurrence, il sera proposé une remise sur les prix « catalogue » ou des prix catalogue déjà remisés."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MULTI-PRIX-CATALOGUE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "9.2 – Contenu des prix"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix sont réputés comprendre toutes les dépenses résultant de l’exécution des prestations, incluant tous les frais, charges, fournitures, matériels et sujétions du titulaire ({{B05-PM-03}})."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "9.3 – Variation des prix des marchés conclus sur la base du présent accord"
+  },
+  {
+   "type": "para",
+   "texte": "Les offres seront établies sur la base des conditions économiques en vigueur au mois correspondant au mois de remise des offres des marchés subséquents."
+  },
+  {
+   "type": "para",
+   "texte": "Les prix des marchés sont fermes."
+  },
+  {
+   "type": "para",
+   "texte": "Si le bon de commande ou l’ordre de commencer les prestations intervient après l’expiration du délai de validité de l’offre du titulaire, les prix peuvent être actualisés au moyen de la formule suivante :"
+  },
+  {
+   "type": "para",
+   "texte": "Indice n P n = Po () Indice o"
+  },
+  {
+   "type": "para",
+   "texte": "Où Pn est le prix actualisé,"
+  },
+  {
+   "type": "para",
+   "texte": "Po est le prix des prestations au moment de la remise de l’offre, Indice n est le dernier indice connu au moment de l’actualisation, Indice o est le dernier indice connu au moment de la remise de l’offre."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 10 – Clauses de financement et de sureté des marchés subséquents conclus sur la base du présent contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "10.1 – Versement d’une avance au(x) titulaire(s) des marchés conclus sur la base du présent accord"
+  },
+  {
+   "type": "para",
+   "texte": "Une avance sera accordée au(x) titulaire(s) des marchés conclus sur la base du contrat-cadre dans les conditions prévues à l’article 72 du code des marchés publics, sauf renonciation expresse de sa part figurant ci-dessous :"
+  },
+  {
+   "type": "para",
+   "texte": "L’ (es) entreprise(s) déclare (nt) (8) :"
+  },
+  {
+   "type": "para",
+   "texte": "❏ Souhaite percevoir une avance pour chacun des marchés subséquents"
+  },
+  {
+   "type": "para",
+   "texte": "❏ Renoncer à percevoir une avance pour chacun des marchés subséquents."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "10.2 – Modalités de versement de l’avance"
+  },
+  {
+   "type": "para",
+   "texte": "Le règlement de l’avance pour chacun des marchés subséquents interviendra dans les {{B08-FI-02}} jours calendaires."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "10.3 – Montant de l’avance"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant de l’avance des marchés conclus sur la base du contrat-cadre est fixé à {{B08-AV-02}} % du montant TTC du marché subséquent."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "10.4 – Remboursement de l’avance"
+  },
+  {
+   "type": "para",
+   "texte": "Les modalités de remboursement de l’avance s’effectueront conformément aux dispositions de l’article 72.III du Code des Marchés Publics."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE-SOUS-TRAITANT}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "10.5 – Versement d’une avance au sous-traitant du titulaire du présent accord"
+  },
+  {
+   "type": "para",
+   "texte": "Une avance sera accordée au sous-traitant dans les conditions fixées par le code des marchés publics, sauf renonciation expresse par ce dernier dans l’acte spécial de sous-traitance. Dans le cas où le titulaire sous-traite une part du marché postérieurement à la notification de celui-ci, il doit rembourser la partie de l’avance correspondant au montant des prestations sous-traitées, même si le sous-traitant ne souhaite pas bénéficier de l’avance."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE-SOUS-TRAITANT}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 11 – Sous-traitance des marchés conclus sur la base du présent contrat-cadre"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "11.1 – Désignation des sous-traitants"
+  },
+  {
+   "type": "para",
+   "texte": "Le titulaire pourra sous-traiter une partie de l’exécution des prestations faisant l’objet des marchés subséquents dans les conditions prévues par l’article 5.2 du CCAG Fournitures"
+  },
+  {
+   "type": "para",
+   "texte": "Les sous-traitants peuvent être présentés à l’autorité contractante pour acceptation lors de la soumission au contrat-cadre, ou lors de la remise des offres dans le cadre des marchés subséquents conclus sur la base du présent contrat-cadre."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "11.2 – Modalités de paiement direct des sous-traitants"
+  },
+  {
+   "type": "para",
+   "texte": "Le sous-traitant adresse à l’autorité contractante sa facture ainsi que l’accusé de réception ou le récépissé attestant que le titulaire a par ailleurs reçu sa demande de paiement ou l’avis postal attestant que le pli a été refusé ou n’a pas été réclamé. La somme à régler tient compte d’une éventuelle actualisation des prix et inclut les taxes applicables."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 12 – Modalités d’exécution administrative des prestations des marchés conclus sur la base du présent contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:EXECUTION-COMMUNE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-EA-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:EXECUTION-COMMUNE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:EXECUTION-SANS}}"
+  },
+  {
+   "type": "para",
+   "texte": "Sans objet."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:EXECUTION-SANS}}"
+  },
+  {
+   "type": "para",
+   "texte": "Dans les deux cas, les modalités particulières devront être fixées dans les marchés conclus sur la base du contrat-cadre."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 13 – Opération de vérification – Admission des prestations des marchés conclus sur la base du présent contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "La réception est l’acte par lequel l’autorité contractante accepte avec ou sans réserve, les prestations exécutées."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:VERIFICATION-CCAG}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les opérations de vérification s’effectueront conformément aux articles 21 et 22 du CCAG Fournitures"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:VERIFICATION-CCAG}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:VERIFICATION-LIBRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-VA-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:VERIFICATION-LIBRE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 14 – Garanties contractuelles particulières prévues dans les marchés conclus sur la base du présent contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GARANTIE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Aucune garantie contractuelle particulière ne sera demandée."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GARANTIE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GARANTIE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-GP-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GARANTIE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GARANTIE-ADMISSION}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai de garantie est fixé à {{B09-GP-03}} mois à partir de l’admission de la prestation objet du marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GARANTIE-ADMISSION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GARANTIE-MISE-EN-SERVICE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai de garantie est fixé à {{B09-GP-03}} mois à partir de la date de mise en service de la prestation objet du marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GARANTIE-MISE-EN-SERVICE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GARANTIE-CCAG}}"
+  },
+  {
+   "type": "para",
+   "texte": "La garantie sera exécutée conformément aux articles 13 et 23 du CCAG Fournitures"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GARANTIE-CCAG}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 15 – Modalités de facturation et de paiement des prestations objet des marchés subséquents conclus sur la base du présent contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "Si la durée ou les délais d’exécution des marchés subséquents conclus sur la base du présent contrat-cadre sont inférieurs à trois mois, les prestations seront réglées en une seule fois."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "15.1– Présentation des demandes de paiement"
+  },
+  {
+   "type": "para",
+   "texte": "Les prestations qui ont données lieu à un commencement d’exécution du marché ouvrent droit à des acomptes."
+  },
+  {
+   "type": "para",
+   "texte": "Le règlement des prestations se fera {{B08-FP-01}}."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "15.2 – Adresse de facturation"
+  },
+  {
+   "type": "para",
+   "texte": "Les demandes de paiement seront adressées par lettre recommandée avec accusé de réception à l’adresse suivante : {{B08-FP-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "Outre les mentions légales, le décompte ou la facture est établi en un original et deux copies et devra comporter les mentions suivantes :"
+  },
+  {
+   "type": "para",
+   "texte": "• Le numéro du marché subséquent indiqué sur la page de garde de l’acte d’engagement;"
+  },
+  {
+   "type": "para",
+   "texte": "• la date du ou des bons de commande correspondants,"
+  },
+  {
+   "type": "para",
+   "texte": "• les prestations exécutées et livrées;"
+  },
+  {
+   "type": "para",
+   "texte": "• le montant H.T. et T.T.C. des prestations exécutées, éventuellement actualisé;"
+  },
+  {
+   "type": "para",
+   "texte": "• le taux et le montant de la T.V.A."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "15.3 – Délai de paiement"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai de paiement est de 75 jours à compter de la réception de la demande de paiement. Aucune demande de paiement ne peut être transmise avant réalisation des prestations. Le taux applicable en cas de retard de paiement est le taux d’intérêt de la Banque Centrale de Madagascar en vigueur, à la date à laquelle les intérêts moratoires ont commencé à courir, augmenté de {{B08-FP-04}} point(s)."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "15.4 – Règlement des prestations"
+  },
+  {
+   "type": "para",
+   "texte": "Les sommes dues en exécution des marchés conclus sur la base du présent contrat-cadre seront réglées par virement bancaire établi à l’ordre du titulaire en faisant porter au crédit du compte ouvert au nom de (9)"
+  },
+  {
+   "type": "para",
+   "texte": "Nom et adresse de la Banque :………………………………………………"
+  },
+  {
+   "type": "para",
+   "texte": "Titulaire du compte :………………………………………………………….."
+  },
+  {
+   "type": "para",
+   "texte": "Code banque ……… Code guichet ……… N° compte ………................."
+  },
+  {
+   "type": "para",
+   "texte": "Clé Relevé d’identité bancaire (RIB) ……………… < Joindre un RIB>"
+  },
+  {
+   "type": "para",
+   "texte": "Les avis de virement sont adressés à l’établissement réalisant les prestations mentionnées à l’article 1."
+  },
+  {
+   "type": "para",
+   "texte": "L’autorité contractante se libérera des sommes dues aux sous-traitants payés directement en faisant porter les montants aux crédits des comptes désignés dans les actes spéciaux."
+  },
+  {
+   "type": "para",
+   "texte": "En cas de modification des coordonnées bancaires du titulaire en cours d’exécution des marchés subséquents, celui-ci doit impérativement, dans les plus brefs délais, notifier ce changement à {{B10-MT-01}} et fournir le relevé d’identité bancaire correspondant."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 16 – Assurance"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ASSURANCE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Sans objet"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ASSURANCE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ASSURANCE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le(s) titulaire(s) des marchés conclus sur la base du contrat-cadre et leurs sous-traitants agréés par l’autorité contractante devra(ont) justifier au moyen d’une attestation portant mention de l’étendue de la garantie, au moment de la constitution, puis en cours d’exécution d’une assurance couvrant les conséquences pécuniaires de responsabilité civile (RC) qu’il(s) encoure(ent) vis-à-vis des tiers et de l’autorité contractante en cas d’accident ou de tous dommages causés à l’occasion de l’exécution des marchés conclus sur la base du présent contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "L’attestation devra être remise dans le délai de {{B09-AU-03}} jours francs à compter de la notification du contrat-cadre au(x) titulaire(s)/ des marchés subséquents."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ASSURANCE-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 17 – Modifications relatives au titulaire du présent contrat-cadre"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "17.1– Changement de dénomination sociale du titulaire"
+  },
+  {
+   "type": "para",
+   "texte": "En cas de modification de sa dénomination sociale, le titulaire doit impérativement en informer {{B10-MT-01}} par écrit et communiquer un document attestant ce changement, dans les plus brefs délais."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "17.2– Changement de contractant en cours d’exécution du présent contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "Le titulaire doit informer {{B10-MT-02}} de tout projet de fusion ou d’absorption de l’entreprise titulaire et de tout projet de cession du contrat-cadre dans les plus brefs délais et produire les documents et renseignements utiles qui lui seront notifiés concernant le nouvel opérateur économique à qui le contrat-cadre est transféré ou cédé."
+  },
+  {
+   "type": "para",
+   "texte": "En cas d’acceptation de la cession du contrat-cadre par l’autorité contractante, elle fera l’objet d’un avenant constatant le transfert du contrat-cadre au nouveau titulaire."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 18 – Résiliations du contrat-cadre et des marchés subséquents conclus sur sa base"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "18.1 - Résiliation sans faute (contrat-cadre)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:NON-RECONDUCTIBLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La résiliation du contrat-cadre pourra être prononcée sans faute du titulaire :"
+  },
+  {
+   "type": "para",
+   "texte": "– {{B10-RS-02}} mois avant la date anniversaire de la notification du contrat-cadre – pour un motif d’intérêt général."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:NON-RECONDUCTIBLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La résiliation n’ouvrira droit au profit du titulaire à aucune indemnité."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "18.2 - Résiliation du contrat-cadre et des marchés subséquents conclus sur la base du présent contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "La résiliation pourra être prononcée dans l’exécution des prestations des marchés subséquents conformément aux articles 24 à 33 du CCAG Fournitures"
+  },
+  {
+   "type": "para",
+   "texte": "L’autorité contractante se réserve le droit de résilier le contrat-cadre dans les hypothèses où une (des) faute(s) du titulaire rendrait (rendraient) impossible la poursuite des relations contractuelles. {{B10-RS-03}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 19 – Litiges"
+  },
+  {
+   "type": "para",
+   "texte": "En cas de litiges entre les parties au contrat, la juridiction compétente est {{B10-VR-01}}."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 20 – Signature et engagement des parties au contrat"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "20.1 – Signature du titulaire"
+  },
+  {
+   "type": "para",
+   "texte": "Je, soussigné <indiquer le nom du signataire>, sous peine de résiliation du contrat-cadre, après avoir pris connaissance de toutes les pièces du présent contrat-cadre et apprécié sous ma seule responsabilité la nature et la difficulté des prestations à effectuer,"
+  },
+  {
+   "type": "para",
+   "texte": "ATTESTE SUR L'HONNEUR, sous peine de résiliation de plein droit du marché ou de sa mise en régie, à mes torts exclusifs ou, selon le cas, aux torts exclusifs de la personne morale que je représente, que je ne tombe pas ou, selon le cas, que ladite personne morale ne tombe pas sous le coup d'un cas d'exclusion visé par l'article 21 du Code des Marchés Publics."
+  },
+  {
+   "type": "para",
+   "texte": "ATTESTE SUR L’HONNEUR QUE le travail sera réalisé avec des salariés employés régulièrement au regard du code du travail applicable à Madagascar et M’ENGAGE sans réserve, à exécuter les prestations dans les conditions déterminées ci-dessus;"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PRIX-CRITERE}}"
+  },
+  {
+   "type": "para",
+   "texte": "L’offre ainsi présentée ne me lie toutefois que si son acceptation m’est notifiée dans un délai de {{B04-VO-01}} jours calendaires à compter de la date limite de remise des offres."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PRIX-CRITERE}}"
+  },
+  {
+   "type": "para",
+   "texte": "ATTESTE SUR L’HONNEUR QUE j’ai pris connaissance du contenu du code d’éthique des marchés publics et M’ENGAGE SANS RESERVE EN MON NOM [ou en mon nom et au nom du Candidat que je représente, selon le cas] à respecter et à faire respecter l’intégralité de ses dispositions, et en particulier à m'abstenir de toute pratique consistant dans l'octroi ou la promesse d'octroyer un avantage indu, pécuniaire ou autre, directement ou par des intermédiaires, en vue d'obtenir le marché objet du présent Acte d'Engagement,"
+  },
+  {
+   "type": "para",
+   "texte": "M'ENGAGE SANS RESERVE et conformément aux clauses et conditions du présent document, à présenter une offre à chaque consultation en vue des marchés subséquents,"
+  },
+  {
+   "type": "para",
+   "texte": "M'ENGAGE SANS RESERVE, conformément aux stipulations des documents visés ci-dessus, à exécuter le marché dans les conditions précisées par le CPS y compris notamment les spécifications techniques, par le CCAG applicable et par le présent Acte d'Engagement."
+  },
+  {
+   "type": "para",
+   "texte": "L'offre ainsi présentée me lie conformément à la durée de validité des offres fixée dans les Données Particulières de l'Appel d'Offres, jusqu'au {{DERIVE.fin-validite-offre}}."
+  },
+  {
+   "type": "para",
+   "texte": "Le présent contrat-cadre comporte <indiquer le nombre des annexes> annexe(s) énumérée(s) (10) ci-après :<énumérer les annexes dans l’ordre>"
+  },
+  {
+   "type": "para",
+   "texte": "Fait en un seul original,"
+  },
+  {
+   "type": "para",
+   "texte": "Fait à <indiquer le lieu de la signature>, le <indiquer la date de signature>"
+  },
+  {
+   "type": "para",
+   "texte": "Signature du titulaire (11)"
+  },
+  {
+   "type": "para",
+   "texte": "Nom et qualité du signataire :"
+  },
+  {
+   "type": "para",
+   "texte": "<insérer le nom, prénom(s) et la qualité du signataire>"
+  },
+  {
+   "type": "para",
+   "texte": "Cachet"
+  },
+  {
+   "type": "para",
+   "texte": "ATTENTION : Si le présent contrat-cadre n’est pas signé par le représentant légal du candidat, le signataire doit obligatoirement produire avec le contrat-cadre, un pouvoir daté et signé en original par le représentant légal l’autorisant à signer tous les documents relatifs à l’offre."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "20.2 – Mise au point du contrat-cadre (en cas d’appel d’offres)"
+  },
+  {
+   "type": "para",
+   "texte": "Le présent contrat-cadre (12)"
+  },
+  {
+   "type": "para",
+   "texte": "<Cocher l’option choisie>"
+  },
+  {
+   "type": "para",
+   "texte": "❏ A fait l’objet d’une mise au point jointe en annexe"
+  },
+  {
+   "type": "para",
+   "texte": "❏ N’a pas fait l’objet d’une mise au point"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "20.3 – Signature de l’autorité contractante"
+  },
+  {
+   "type": "para",
+   "texte": "Est acceptée le présent contrat-cadre valant acte d’engagement et CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Fait à <indiquer le lieu de la signature>, le <indiquer la date de signature>"
+  },
+  {
+   "type": "para",
+   "texte": "Pour l’autorité contractante,"
+  },
+  {
+   "type": "para",
+   "texte": "Représenté par : {{B02-SG-04}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Liste des renvois :"
+  },
+  {
+   "type": "para",
+   "texte": "(1) Les intéressés disposent d’un droit d’accès aux informations les concernant, ainsi qu’un droit de modification, de rectification et de suppression."
+  },
+  {
+   "type": "para",
+   "texte": "(2) Le candidat doit cocher la situation concernée"
+  },
+  {
+   "type": "para",
+   "texte": "(3) Les entreprises étrangères indiquent, s’il en existe un, leur numéro d’inscription dans le registre public concerné."
+  },
+  {
+   "type": "para",
+   "texte": "(4) Le candidat indique la forme du groupement en barrant la mention inutile."
+  },
+  {
+   "type": "para",
+   "texte": "(5) La personne physique représentant le candidat doit cocher la situation concernée."
+  },
+  {
+   "type": "para",
+   "texte": "(6) En cas de groupement composé de plus de deux co-traitants, l’identification exacte des autres co-traitants doit être annexée au présent contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "(7) Cocher la situation concernée."
+  },
+  {
+   "type": "para",
+   "texte": "(8) Cocher la situation concernée."
+  },
+  {
+   "type": "para",
+   "texte": "(9) En cas de groupement solidaire, indiquer les références du compte bancaire du mandataire et le cas échéant, indiquer en annexe au présent acte d’engagement les références du compte bancaire des autres membres du groupement en cas de demande de paiement sur des comptes séparés."
+  },
+  {
+   "type": "para",
+   "texte": "(10) Le candidat doit indiquer ici le nombre d’annexes en précisant chaque numéro et chaque intitulé d’annexe."
+  },
+  {
+   "type": "para",
+   "texte": "(11) En cas de groupement, tous les membres du groupement doivent signer le contrat-cadre, sauf si le mandataire a été habilité par les autres membres du groupement à signer seul le contrat-cadre. Dans ce dernier cas, la signature doit être celle du mandataire habilité (le mandataire doit l’indiquer et fournir le document l’habilitant à signer au nom et pour le compte des autres entreprises membres du groupement)."
+  },
+  {
+   "type": "para",
+   "texte": "(12) Le choix des coches dépend de la procédure choisie pour la passation du présent contrat-cadre."
+  }
+ ],
+ "trace": [
+  {
+   "ligne": 352,
+   "genre": "jeton",
+   "source": "<insérer l’en-tête de l’Acheteur>",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": 355,
+   "genre": "jeton",
+   "source": "INTITULE DU CONTRAT-CADRE",
+   "par": "{{B02-OB-01}}"
+  },
+  {
+   "ligne": 356,
+   "genre": "choix",
+   "source": "UNIQUE/ LOT n°____ (choisir entre contrat-cadre unique ou alloti, dans ce dernier cas préciser le numéro du lot)",
+   "par": "UNIQUE"
+  },
+  {
+   "ligne": 356,
+   "genre": "retire",
+   "source": "UNIQUE/",
+   "par": ""
+  },
+  {
+   "ligne": 356,
+   "genre": "jeton",
+   "source": "____",
+   "par": "{{LOT}}"
+  },
+  {
+   "ligne": 356,
+   "genre": "retire",
+   "source": "(choisir entre contrat-cadre unique ou alloti, dans ce dernier cas préciser le numéro du lot)",
+   "par": ""
+  },
+  {
+   "ligne": 367,
+   "genre": "jeton",
+   "source": "<indiquer le nom et l’adresse exacte et complète>",
+   "par": "{{B01-AC-01}}, {{B01-AC-02}}"
+  },
+  {
+   "ligne": 368,
+   "genre": "jeton",
+   "source": "<indiquer le nom>, par délégation du <à compléter> (décision de la délégation en date du <préciser la date>)",
+   "par": "{{B02-SG-04}}"
+  },
+  {
+   "ligne": 370,
+   "genre": "jeton",
+   "source": "Nom, par délégation du <à compléter> (décision de la délégation en date du <préciser la date>)",
+   "par": "{{B02-SG-01}} ({{B02-SG-02}})"
+  },
+  {
+   "ligne": 373,
+   "genre": "retire",
+   "source": "Soit,",
+   "par": ""
+  },
+  {
+   "ligne": 374,
+   "genre": "retire",
+   "source": "Soit,",
+   "par": ""
+  },
+  {
+   "ligne": 375,
+   "genre": "retire",
+   "source": "Soit,",
+   "par": ""
+  },
+  {
+   "ligne": 380,
+   "genre": "jeton",
+   "source": "<préciser le nom de l’autorité contractante>",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": 381,
+   "genre": "jeton",
+   "source": "<insérer le nom de la PRMP, personne habilité à signer le contrat-cadre>",
+   "par": "{{B01-AC-05}}"
+  },
+  {
+   "ligne": 381,
+   "genre": "jeton",
+   "source": "<désigner la nature et le numéro de l’acte de nomination> du < préciser la date>",
+   "par": "{{B02-SG-03}}"
+  },
+  {
+   "ligne": 420,
+   "genre": "jeton",
+   "source": "<préciser l’objet des marchés qui seront passés et renvoyer les détails de la prestation aux clauses techniques ou spécifications techniques qui définissent le besoin minimal par référence à des performances ou à des exigences fonctionnelles à atteindre>",
+   "par": "{{B02-OB-01}}"
+  },
+  {
+   "ligne": 424,
+   "genre": "choix",
+   "source": "<choisir entre multi-attributaire ou mono-attributaire >",
+   "par": "mono-attributaire"
+  },
+  {
+   "ligne": 424,
+   "genre": "choix",
+   "source": "<choisir entre multi-attributaire ou mono-attributaire >",
+   "par": "multi-attributaire"
+  },
+  {
+   "ligne": 426,
+   "genre": "choix",
+   "source": "<choisir entre multi-attributaire ou mono-attributaire >",
+   "par": "mono-attributaire"
+  },
+  {
+   "ligne": 426,
+   "genre": "choix",
+   "source": "<choisir entre multi-attributaire ou mono-attributaire >",
+   "par": "multi-attributaire"
+  },
+  {
+   "ligne": 427,
+   "genre": "jeton",
+   "source": "<nombre de lots>",
+   "par": "{{B02-LV-05}}"
+  },
+  {
+   "ligne": 428,
+   "genre": "jeton",
+   "source": "- lot n° 1 : <préciser le numéro, l’intitulé et l’objet du lot>.",
+   "par": "{{B02-AL-02}}"
+  },
+  {
+   "ligne": 431,
+   "genre": "jeton",
+   "source": "<préciser le numéro, l’intitulé et l’objet du lot>",
+   "par": "{{LOT}}"
+  },
+  {
+   "ligne": 440,
+   "genre": "jeton",
+   "source": "Le Service de/ la Direction de <indiquer la désignation exacte du Service ou de la Direction ou autres>",
+   "par": "{{B07-FS-02}}"
+  },
+  {
+   "ligne": 447,
+   "genre": "retire",
+   "source": "Choix 1.1 :",
+   "par": ""
+  },
+  {
+   "ligne": 447,
+   "genre": "jeton",
+   "source": "<indiquer, en jours, le délai accordé pour compléter éventuellement l’offre initiale>",
+   "par": "{{B07-MA-01}}"
+  },
+  {
+   "ligne": 448,
+   "genre": "retire",
+   "source": "Choix 1.2 :",
+   "par": ""
+  },
+  {
+   "ligne": 453,
+   "genre": "retire",
+   "source": "Option 1 : <si remise en concurrence lors de la survenance des besoins, adopter la rédaction suivante :>",
+   "par": ""
+  },
+  {
+   "ligne": 457,
+   "genre": "retire",
+   "source": "Option 1 :",
+   "par": ""
+  },
+  {
+   "ligne": 458,
+   "genre": "retire",
+   "source": "Option 2 :",
+   "par": ""
+  },
+  {
+   "ligne": 458,
+   "genre": "jeton",
+   "source": "<choisir et compléter - exemple à l’issue d’une période déterminée>",
+   "par": "{{B02-PC-03}}"
+  },
+  {
+   "ligne": 459,
+   "genre": "jeton",
+   "source": "<lister les critères, les sous-critères et leurs pondérations respectives>",
+   "par": "{{B07-MA-06}}"
+  },
+  {
+   "ligne": 464,
+   "genre": "jeton",
+   "source": "<lister les différents termes>",
+   "par": "{{B07-TN-01}}"
+  },
+  {
+   "ligne": 467,
+   "genre": "jeton",
+   "source": "<lister les différents termes>",
+   "par": "{{B07-TN-02}}"
+  },
+  {
+   "ligne": 481,
+   "genre": "retire",
+   "source": "/marchés de travaux",
+   "par": ""
+  },
+  {
+   "ligne": 481,
+   "genre": "retire",
+   "source": "<choisir selon le CCAG applicable>",
+   "par": ""
+  },
+  {
+   "ligne": 485,
+   "genre": "jeton",
+   "source": "<préciser la durée - cette durée ne peut excéder 2 ans>",
+   "par": "{{B02-DC-02}} mois"
+  },
+  {
+   "ligne": 493,
+   "genre": "jeton",
+   "source": "<préciser le nombre de jours>",
+   "par": "{{B07-DU-03}}"
+  },
+  {
+   "ligne": 501,
+   "genre": "jeton",
+   "source": "<préciser le nombre de fois>",
+   "par": "{{B07-DU-04}}"
+  },
+  {
+   "ligne": 501,
+   "genre": "jeton",
+   "source": "<préciser le nombre d’années maximum sans pour autant peut excéder X ans>",
+   "par": "{{B07-DU-05}}"
+  },
+  {
+   "ligne": 502,
+   "genre": "jeton",
+   "source": "<préciser le nombre de mois>",
+   "par": "{{B07-DU-07}}"
+  },
+  {
+   "ligne": 531,
+   "genre": "retire",
+   "source": "/ article 20 du CCAG Travaux <choisir et rayer la mention inutile>",
+   "par": ""
+  },
+  {
+   "ligne": 541,
+   "genre": "jeton",
+   "source": "<indiquer le montant indicatif en Ariary H.T, et indiquer montant indicatif en Ariary T.T.C>",
+   "par": "{{B05-MT-01}} H.T. et {{B05-MT-02}} T.T.C."
+  },
+  {
+   "ligne": 549,
+   "genre": "choix",
+   "source": "bordereau de prix unitaires/ catalogue (choisir)",
+   "par": "bordereau de prix unitaires"
+  },
+  {
+   "ligne": 550,
+   "genre": "choix",
+   "source": "bordereau de prix unitaires/ catalogue (choisir)",
+   "par": "bordereau de prix unitaires"
+  },
+  {
+   "ligne": 550,
+   "genre": "jeton",
+   "source": "X %",
+   "par": "{{B05-PM-04}} %"
+  },
+  {
+   "ligne": 550,
+   "genre": "retire",
+   "source": "(à remplir par le candidat si ce pourcentage est un critère et rédiger le règlement de la consultation en conséquence)",
+   "par": ""
+  },
+  {
+   "ligne": 549,
+   "genre": "choix",
+   "source": "bordereau de prix unitaires/ catalogue (choisir)",
+   "par": "catalogue"
+  },
+  {
+   "ligne": 550,
+   "genre": "choix",
+   "source": "bordereau de prix unitaires/ catalogue (choisir)",
+   "par": "catalogue"
+  },
+  {
+   "ligne": 550,
+   "genre": "jeton",
+   "source": "X %",
+   "par": "{{B05-PM-04}} %"
+  },
+  {
+   "ligne": 550,
+   "genre": "retire",
+   "source": "(à remplir par le candidat si ce pourcentage est un critère et rédiger le règlement de la consultation en conséquence)",
+   "par": ""
+  },
+  {
+   "ligne": 551,
+   "genre": "retire",
+   "source": "Ajouter si catalogue joint au contrat-cadre :",
+   "par": ""
+  },
+  {
+   "ligne": 555,
+   "genre": "jeton",
+   "source": "X %",
+   "par": "{{B05-PM-04}} %"
+  },
+  {
+   "ligne": 555,
+   "genre": "retire",
+   "source": "<à remplir par le candidat si ce pourcentage est un critère et rédiger le règlement de la consultation en conséquence>",
+   "par": ""
+  },
+  {
+   "ligne": 558,
+   "genre": "retire",
+   "source": "Choix 2.1 : le prix n’est pas un critère d’attribution de le contrat-cadre (le contrat-cadre est alors un référencement de candidats – les critères d’attribution du contrat-cadre sont des critères de capacité et des critères qualitatifs)",
+   "par": ""
+  },
+  {
+   "ligne": 558,
+   "genre": "choix",
+   "source": "au bordereau de prix unitaires/dans le catalogue (choisir)",
+   "par": "au bordereau de prix unitaires"
+  },
+  {
+   "ligne": 558,
+   "genre": "retire",
+   "source": "Choix 2.1 : le prix n’est pas un critère d’attribution de le contrat-cadre (le contrat-cadre est alors un référencement de candidats – les critères d’attribution du contrat-cadre sont des critères de capacité et des critères qualitatifs)",
+   "par": ""
+  },
+  {
+   "ligne": 558,
+   "genre": "choix",
+   "source": "au bordereau de prix unitaires/dans le catalogue (choisir)",
+   "par": "dans le catalogue"
+  },
+  {
+   "ligne": 559,
+   "genre": "retire",
+   "source": "Ajouter si catalogue joint aux marchés subséquents :",
+   "par": ""
+  },
+  {
+   "ligne": 560,
+   "genre": "retire",
+   "source": "Choix 2.2 : le prix est un critère pour l’attribution du contrat-cadre",
+   "par": ""
+  },
+  {
+   "ligne": 560,
+   "genre": "choix",
+   "source": "dans le bordereau de prix unitaires/ dans le catalogue (choisir)",
+   "par": "dans le bordereau de prix unitaires"
+  },
+  {
+   "ligne": 560,
+   "genre": "choix",
+   "source": "dans le bordereau de prix unitaires complémentaires/ dans le nouveau catalogue fournisseur (choisir)",
+   "par": "dans le bordereau de prix unitaires complémentaires"
+  },
+  {
+   "ligne": 561,
+   "genre": "retire",
+   "source": "Ajouter si bordereau de prix unitaires joint à le contrat-cadre :",
+   "par": ""
+  },
+  {
+   "ligne": 561,
+   "genre": "jeton",
+   "source": "X %",
+   "par": "{{B05-PM-04}} %"
+  },
+  {
+   "ligne": 561,
+   "genre": "retire",
+   "source": "(à remplir par le candidat si ce pourcentage est un critère d’attribution du contrat-cadre et rédiger le règlement de la consultation en conséquence)",
+   "par": ""
+  },
+  {
+   "ligne": 560,
+   "genre": "retire",
+   "source": "Choix 2.2 : le prix est un critère pour l’attribution du contrat-cadre",
+   "par": ""
+  },
+  {
+   "ligne": 560,
+   "genre": "choix",
+   "source": "dans le bordereau de prix unitaires/ dans le catalogue (choisir)",
+   "par": "dans le catalogue"
+  },
+  {
+   "ligne": 560,
+   "genre": "choix",
+   "source": "dans le bordereau de prix unitaires complémentaires/ dans le nouveau catalogue fournisseur (choisir)",
+   "par": "dans le nouveau catalogue fournisseur"
+  },
+  {
+   "ligne": 562,
+   "genre": "retire",
+   "source": "Ajouter si catalogue joint au présent contrat-cadre :",
+   "par": ""
+  },
+  {
+   "ligne": 564,
+   "genre": "jeton",
+   "source": "(point à préciser le cas échéant)",
+   "par": "({{B05-PM-03}})"
+  },
+  {
+   "ligne": 568,
+   "genre": "retire",
+   "source": "(a priori la durée des marchés subséquents ne sera pas supérieure à un an).",
+   "par": ""
+  },
+  {
+   "ligne": 569,
+   "genre": "retire",
+   "source": "(l’actualisation est facultative pour les fournitures et services courants)",
+   "par": ""
+  },
+  {
+   "ligne": 582,
+   "genre": "jeton",
+   "source": "<fixer, en jours calendaires, le délai de paiement des avances>",
+   "par": "{{B08-FI-02}} jours calendaires"
+  },
+  {
+   "ligne": 585,
+   "genre": "jeton",
+   "source": "<fixer un montant ne dépassant pas 20% du montant TTC du marché subséquent>",
+   "par": "{{B08-AV-02}} % du montant TTC du marché subséquent"
+  },
+  {
+   "ligne": 595,
+   "genre": "retire",
+   "source": "l’article 2.4 du CCAG Travaux/",
+   "par": ""
+  },
+  {
+   "ligne": 595,
+   "genre": "retire",
+   "source": "<choisir et supprimer les mentions inutiles>",
+   "par": ""
+  },
+  {
+   "ligne": 596,
+   "genre": "typo",
+   "source": ". Les",
+   "par": "Les"
+  },
+  {
+   "ligne": 602,
+   "genre": "jeton",
+   "source": "Ces modalités générales d’exécution commune pourront être définies à cet article",
+   "par": "{{B09-EA-02}}"
+  },
+  {
+   "ligne": 607,
+   "genre": "typo",
+   "source": "ARTICLE 1 3",
+   "par": "ARTICLE 13"
+  },
+  {
+   "ligne": 610,
+   "genre": "retire",
+   "source": "/ ou aux articles 41, 42 et 43 du CCAG Travaux",
+   "par": ""
+  },
+  {
+   "ligne": 610,
+   "genre": "retire",
+   "source": "<choisir et supprimer les mentions inutiles>",
+   "par": ""
+  },
+  {
+   "ligne": 613,
+   "genre": "jeton",
+   "source": "- les dispositions du CCAG ne sont pas applicables ou nécessitent une précision",
+   "par": "{{B09-VA-02}}"
+  },
+  {
+   "ligne": 619,
+   "genre": "jeton",
+   "source": "Il est possible de donner ici l’objet de la garantie et de renvoyer à un autre document pour la description de sa mise en œuvre (exemple documents à remettre dans les offres se rapportant aux marchés subséquents)",
+   "par": "{{B09-GP-02}}"
+  },
+  {
+   "ligne": 621,
+   "genre": "jeton",
+   "source": "X mois/ année",
+   "par": "{{B09-GP-03}} mois"
+  },
+  {
+   "ligne": 621,
+   "genre": "retire",
+   "source": "/ de la date de mise en service <choisir>",
+   "par": ""
+  },
+  {
+   "ligne": 621,
+   "genre": "jeton",
+   "source": "X mois/ année",
+   "par": "{{B09-GP-03}} mois"
+  },
+  {
+   "ligne": 621,
+   "genre": "retire",
+   "source": "l’admission/ de",
+   "par": ""
+  },
+  {
+   "ligne": 621,
+   "genre": "retire",
+   "source": "<choisir>",
+   "par": ""
+  },
+  {
+   "ligne": 622,
+   "genre": "retire",
+   "source": "Si la garantie est exécutée conformément au C.C.A.G.-FCS, ajouter :",
+   "par": ""
+  },
+  {
+   "ligne": 622,
+   "genre": "retire",
+   "source": "à l’article 44 du CCAG Travaux/",
+   "par": ""
+  },
+  {
+   "ligne": 622,
+   "genre": "retire",
+   "source": "<choisir et supprimer les mentions inutiles>",
+   "par": ""
+  },
+  {
+   "ligne": 629,
+   "genre": "jeton",
+   "source": "après livraison chaque commande/ à l’issue de chaque phase de réalisation du marché/ autres <choisir ou supprimer>",
+   "par": "{{B08-FP-01}}"
+  },
+  {
+   "ligne": 631,
+   "genre": "jeton",
+   "source": "<indiquer le nom et adresse du service responsable de la vérification des demandes de paiement>",
+   "par": "{{B08-FP-02}}"
+  },
+  {
+   "ligne": 639,
+   "genre": "jeton",
+   "source": "<à préciser, mais ne doit pas être inférieur à UN point>",
+   "par": "{{B08-FP-04}}"
+  },
+  {
+   "ligne": 650,
+   "genre": "jeton",
+   "source": "<indiquer le nom du service acheteur>",
+   "par": "{{B10-MT-01}}"
+  },
+  {
+   "ligne": 654,
+   "genre": "choix",
+   "source": "Sans objet (ou inapplicable)",
+   "par": "Sans objet"
+  },
+  {
+   "ligne": 657,
+   "genre": "jeton",
+   "source": "<indiquer le délai en jours>",
+   "par": "{{B09-AU-03}}"
+  },
+  {
+   "ligne": 661,
+   "genre": "jeton",
+   "source": "<indiquer le nom du service acheteur>",
+   "par": "{{B10-MT-01}}"
+  },
+  {
+   "ligne": 664,
+   "genre": "jeton",
+   "source": "<indiquer le nom du service acheteur>",
+   "par": "{{B10-MT-02}}"
+  },
+  {
+   "ligne": 670,
+   "genre": "jeton",
+   "source": "<indiquer le nombre de mois>",
+   "par": "{{B10-RS-02}}"
+  },
+  {
+   "ligne": 670,
+   "genre": "retire",
+   "source": "<supprimer cette disposition si le contrat-cadre est reconductible>",
+   "par": ""
+  },
+  {
+   "ligne": 671,
+   "genre": "retire",
+   "source": "<disposition à supprimer si le contrat-cadre prévoit un minimum en quantité ou en valeur>",
+   "par": ""
+  },
+  {
+   "ligne": 674,
+   "genre": "retire",
+   "source": "/ articles 46 du CCAG Travaux",
+   "par": ""
+  },
+  {
+   "ligne": 674,
+   "genre": "retire",
+   "source": "<choisir et supprimer les mentions inutiles>",
+   "par": ""
+  },
+  {
+   "ligne": 675,
+   "genre": "jeton",
+   "source": "<Lister les différentes hypothèses>",
+   "par": "{{B10-RS-03}}"
+  },
+  {
+   "ligne": 678,
+   "genre": "jeton",
+   "source": "<préciser la juridiction à saisir>",
+   "par": "{{B10-VR-01}}"
+  },
+  {
+   "ligne": 688,
+   "genre": "jeton",
+   "source": "<préciser le délai de validité des offres>",
+   "par": "{{B04-VO-01}}"
+  },
+  {
+   "ligne": 694,
+   "genre": "jeton",
+   "source": "<date qui doit correspondre au lendemain de la fin délai de validité de l’offre>",
+   "par": "{{DERIVE.fin-validite-offre}}"
+  },
+  {
+   "ligne": 716,
+   "genre": "jeton",
+   "source": "<insérer les nom et prénom(s) du signataire>",
+   "par": "{{B02-SG-04}}"
+  }
+ ],
+ "retraits": [
+  {
+   "ligne": 734,
+   "texte": "Contrat-cadre",
+   "raison": "bandeau de couverture du document type"
+  },
+  {
+   "ligne": 353,
+   "texte": "Instructions de remplissage : Les dispositions indiquées en couleur signifient qu’un choix doit être opéré par l’acheteur. Les dispositions en couleur et en italique sont des commentaires ou des instructions de remplissage qui doivent être supprimés du contrat finalisé. Les clauses libres sont des dispositions que l’acheteur rédige librement par rapport à la philosophie conductrice de son processus d’achat Attention: un document portant clauses techniques particulières(ou spécifications techniques) et un règlement de la consultation doivent être prévus.",
+   "raison": "instructions de remplissage du modèle, « à supprimer du contrat finalisé »"
+  },
+  {
+   "ligne": 372,
+   "texte": "<Choisir une procédure parmi les suivantes> :",
+   "raison": "instructions de remplissage du modèle, « à supprimer du contrat finalisé »"
+  },
+  {
+   "ligne": 439,
+   "texte": "<Ajouter le paragraphe ci-dessous commun aux choix 1 et 2> :",
+   "raison": "instructions de remplissage du modèle, « à supprimer du contrat finalisé »"
+  },
+  {
+   "ligne": 545,
+   "texte": "Les dispositions sont à adapter selon que le prix fait ou non l’objet d’une remise en concurrence (multi-attribution) ou d’un complément de l’offre initiale (mono-attribution).",
+   "raison": "instructions de remplissage du modèle, « à supprimer du contrat finalisé »"
+  },
+  {
+   "ligne": 524,
+   "texte": "(d’autres cas de pénalités peuvent être prévus : exemple pénalités pour mauvaise exécution)",
+   "raison": "instructions de remplissage du modèle, « à supprimer du contrat finalisé »"
+  },
+  {
+   "ligne": 513,
+   "texte": "< choisir entre les deux options ci-après >:",
+   "raison": "instructions de remplissage du modèle, « à supprimer du contrat finalisé »"
+  },
+  {
+   "ligne": 687,
+   "texte": "<Ajouter la phrase suivante si le prix est un critère d’attribution du contrat-cadre> :",
+   "raison": "instructions de remplissage du modèle, « à supprimer du contrat finalisé »"
+  },
+  {
+   "ligne": 446,
+   "texte": "<Choisir entre les deux options rédactionnelles suivantes> :",
+   "raison": "instructions de remplissage du modèle, « à supprimer du contrat finalisé »"
+  },
+  {
+   "ligne": 423,
+   "texte": "Choix 1 : Contrat-cadre non alloti",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 425,
+   "texte": "Choix 2 : Contrat-cadre alloti",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 435,
+   "texte": "Choix 1 : les marchés subséquents conclus sur la base du contrat-cadre ne sont pas fractionnés",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 437,
+   "texte": "Choix 2 : les marchés subséquents conclus sur la base du contrat-cadre sont fractionnés par émission de bons de commande successifs",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 445,
+   "texte": "Choix 1 : si contrat-cadre mono-attributaire (le contrat-cadre est lancé sur la base d’une offre de prix indicative)",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 449,
+   "texte": "Choix 2 : si contrat-cadre multi-attributaire",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 450,
+   "texte": "Choix 2.1 : si contrat-cadre non alloti",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 452,
+   "texte": "Choix 2.2 : si contrat-cadre alloti",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 454,
+   "texte": "Option 2 : <si remise en concurrence selon une périodicité prévue, adopter la rédaction suivante :>",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 456,
+   "texte": "Choix 2.3 : <Ajouter le paragraphe ci-dessous commun au contrat-cadre multi-attributaire alloti ou non alloti>:",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 463,
+   "texte": "Choix 1 : en cas de contrat-cadre mono-attributaire",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 466,
+   "texte": "Choix 2 : en cas d’contrat-cadre multi-attributaire",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 492,
+   "texte": "Choix 1 : la durée des marchés subséquents est fixée dans le contrat-cadre",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 494,
+   "texte": "Choix 2 : la durée des marchés subséquents n’est pas fixée dans le contrat-cadre",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 498,
+   "texte": "Choix 1 : si le contrat-cadre n’est pas reconductible",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 500,
+   "texte": "Choix 2 : si le contrat-cadre est reconductible",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 507,
+   "texte": "Choix 1 : si l’exécution des marchés passés sur la base du contrat-cadre ne sont pas fractionnés",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 508,
+   "texte": "Choix 1.1 si le délai d’éxécution est fixé dans le contrat-cadre par l’autorité contractante, < choisir entre les deux options ci-après >:",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 509,
+   "texte": "Option 1 : Le délai de livraison/ d’exécution de <indiquer les prestations concernées> est fixé à <préciser le délai en mois> à compter de la date de notification du marché.",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 510,
+   "texte": "Option 2 : Le délai de livraison/ d’exécution de <indiquer les prestations concernées> est fixé à <préciser le délai en mois> à compter la date fixée par ordre de service.",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 512,
+   "texte": "Choix 1.2 si le délai d’exécution est laissé dans le contrat-cadre à l’initiative des candidats, <Ce délai doit être un critère de sélection des candidats et le règlement de la consultation doit être rédigé en conséquence>.",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 514,
+   "texte": "Option 1 : Le délai de livraison/ d’exécution de <indiquer les prestations concernées> est fixé à <préciser le délai d’exécution ou de livraison> à compter de la date de notification du marché.",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 515,
+   "texte": "Option 2 : Le délai de livraison/ d’exécution de <indiquer les prestations concernées> est fixé à <préciser le délai d’exécution ou de livraison> à compter de la date fixée par ordre de service.",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 516,
+   "texte": "Choix 1.3 : si les délais d’éxécution sont fixés dans les marchés subséquents conclus sur la base du contrat-cadre.",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 519,
+   "texte": "Choix 2 : si l’exécution des marchés subséquents passés sur la base du contrat-cadre sont fractionnés par émission de bons de commande successifs",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 525,
+   "texte": "Choix 1 : les pénalités de retard ne sont pas applicables",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 528,
+   "texte": "Choix 2 : les pénalités de retard sont applicables",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 529,
+   "texte": "Choix 2.1 : les pénalités de retard sont fixées dans le contrat-cadre",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 530,
+   "texte": "Option 2.1.1 : si les pénalités de retard sont celles du C.C.A.G.",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 532,
+   "texte": "Option 2.1.2 : si les pénalités de retard dérogent à celles du C.C.A.G. : rédiger librement la rubrique.",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 537,
+   "texte": "Choix 2.2 : les pénalités de retard sont fixées dans les marchés conclus sur la base du contrat-cadre",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 547,
+   "texte": "Choix 1 : si contrat-cadre mono-attributaire le prix est un (des) critères d’attribution :",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 548,
+   "texte": "Choix 1.1 : les marchés subséquents seront traités à prix unitaires",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 552,
+   "texte": "Choix 1.2 : les marchés subséquents seront traités à prix forfaitaires",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 556,
+   "texte": "Choix 1.3 : les marchés subséquents seront traités à prix mixtes (reprendre les choix 1.1 et 1.2)",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 557,
+   "texte": "Choix 2 : si contrat-cadre multi-attributaire",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 601,
+   "texte": "Choix 1 : si les marchés subséquents ont des modalités générales d’exécution communes :",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 603,
+   "texte": "Choix 2 : si les marchés subséquents n’ont pas de modalités générales d’exécution communes",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 609,
+   "texte": "Choix 1 : les dispositions du CCAG sont applicables",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 612,
+   "texte": "Choix 2 : clause libre",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 616,
+   "texte": "Choix 1 : aucune garantie particulière",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 618,
+   "texte": "Choix 2 : des garanties particulières seront fournies par le titulaire – dans ce cas, elles doivent être décrites.",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 653,
+   "texte": "Choix n°1 :",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 655,
+   "texte": "Choix n°2 :",
+   "raison": "intitulé de choix ou d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 441,
+   "texte": "Coordonnées du service concerné",
+   "raison": "coordonnées du service : comprises dans la saisie B07-FS-02"
+  },
+  {
+   "ligne": 429,
+   "texte": "- lot n° 2 : <préciser le numéro, l’intitulé et l’objet du lot>.",
+   "raison": "liste des lots : remplacée par la saisie B02-AL-02"
+  },
+  {
+   "ligne": 430,
+   "texte": "- …",
+   "raison": "liste des lots : remplacée par la saisie B02-AL-02"
+  },
+  {
+   "ligne": 465,
+   "texte": "Par exemple : pour la réalisation de plusieurs campagnes successives de communication, les différents outils ou prestations de communication, et les prix par campagne.",
+   "raison": "exemples du modèle"
+  },
+  {
+   "ligne": 468,
+   "texte": "Par exemple : les prix, les délais, les quantités, la configuration de matériels, l’évolution technologique, etc.",
+   "raison": "exemples du modèle"
+  },
+  {
+   "ligne": 533,
+   "texte": "Exemple :",
+   "raison": "exemples du modèle"
+  },
+  {
+   "ligne": 534,
+   "texte": "En remplacement des dispositions de l’article 12 du CCAG Fournitures,/ de l’article 20 du CCAG Travaux (choisir) le prestataire se verra appliquer en cas de non-respect de la date limite d’achèvement des prestations, les pénalités journalières suivantes :",
+   "raison": "exemples du modèle"
+  },
+  {
+   "ligne": 535,
+   "texte": "- pour chacun des……premiers jours de retard : …Ariary (Hors TVA)",
+   "raison": "exemples du modèle"
+  },
+  {
+   "ligne": 536,
+   "texte": "- pour chaque jour de retard supplémentaire : … Ariary (Hors TVA)",
+   "raison": "exemples du modèle"
+  },
+  {
+   "ligne": 620,
+   "texte": "Exemple en fournitures : Sous réserve de dispositions légales ou réglementaires spécifiques, les fournitures bénéficient d’une garantie pour une durée d’un an et de la garantie des produits défectueux, ainsi que de la garantie contractuelle prévue par le fournisseur le cas échéant. La durée d’un an susmentionnée est remplacée par la durée prévue aux conditions générales de vente du fournisseur si celle-ci s’avère plus favorable pour l’autorité contractante. La durée d’un an ne s’applique pas aux pièces d’usure dont la durée de vie normale est inférieure à un an, notamment les ampoules, piles ou encres.",
+   "raison": "exemples du modèle"
+  }
+ ],
+ "ajouts": [
+  "{{B07-DE-02}}",
+  "{{B07-DE-03}}",
+  "{{B07-PE-03}}"
+ ]
+}

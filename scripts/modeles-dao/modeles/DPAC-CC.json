@@ -1,0 +1,1325 @@
+{
+ "fichier": "DPAC-CC.docx",
+ "sigle": "DPAC-CC",
+ "source": "contrat-cadre",
+ "titre": "DONNEES PARTICULIERES D’APPEL A CONCURRENCE",
+ "conditions": {
+  "MONO": "attributaires = MONO",
+  "MULTI": "attributaires = MULTI",
+  "RC-BESOIN": "B02-PC-02 = Au fur et à mesure des besoins",
+  "RC-CALENDRIER": "B02-PC-02 = Selon le calendrier fixé ci-après",
+  "PRIX-UNITAIRES": "typePrix = UNITAIRES",
+  "PRIX-FORFAITAIRE": "typePrix = FORFAITAIRE",
+  "RECONDUCTIBLE": "B02-DC-03 = OUI",
+  "NON-RECONDUCTIBLE": "B02-DC-03 = NON",
+  "ALLOTI": "alloti = OUI",
+  "NON-ALLOTI": "alloti = NON",
+  "PAPIER": "modeRemise = PAPIER",
+  "B04-SE": "modeRemise = ELECTRONIQUE",
+  "DEVISE": "B05-UM-01 renseigne",
+  "SANS-DEVISE": "B05-UM-01 vide"
+ },
+ "blocs": [
+  {
+   "type": "centre",
+   "texte": "{{B01-AC-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "MARCHE DE : {{B01-AC-12}}"
+  },
+  {
+   "type": "para",
+   "texte": "NUMÉRO : {{B02-OE-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "OBJET DU CONTRAT-CADRE: {{B02-OB-01}}"
+  },
+  {
+   "type": "centre",
+   "texte": "REGLEMENT DE LA CONSULTATION(1) (contrat-cadre marché de fournitures et services)"
+  },
+  {
+   "type": "para",
+   "texte": "PROCEDURE DE CONSULTATION (1) : {{B01-AC-13}}"
+  },
+  {
+   "type": "para",
+   "texte": "REPRESENTANT DE L’AUTORITÉ CONTRACTANTE : {{B01-AC-05}}"
+  },
+  {
+   "type": "para",
+   "texte": "DATE ET HEURE LIMITES DE REMISE DES OFFRES : {{B04-CP-02}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 1 : OBJET ET ETENDUE DU CONTRAT-CADRE"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Objet du contrat-cadre"
+  },
+  {
+   "type": "para",
+   "texte": "Le présent contrat-cadre a pour objet de définir les termes régissant les marchés à passer pendant la période précisée à l’article suivant."
+  },
+  {
+   "type": "para",
+   "texte": "Il porte sur: {{B02-OB-01}}. Les détails des besoins à couvrir sont présentés dans le cahier des charges (annexe 1 au contrat-cadre)."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Procédure de mise en concurrence"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MONO}}"
+  },
+  {
+   "type": "para",
+   "texte": "La présente consultation en vue de l’attribution du contrat-cadre à un seul titulaire (mono-attributaire) est passée selon la procédure {{B01-AC-13}} en application de l’article {{B02-PC-01}} du code des marchés publics."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MONO}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MULTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "La présente consultation en vue de l’attribution du contrat-cadre à plusieurs titulaires (multi attributaire) est passée selon la procédure {{B01-AC-13}} en application de l’article {{B02-PC-01}} du code des marchés publics."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MULTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RC-BESOIN}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les attributaires issus de la présente procédure deviennent titulaires du contrat-cadre et seront remis en compétition au fur et à mesure des besoins, pour l’attribution des marchés subséquents au contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RC-BESOIN}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RC-CALENDRIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les attributaires issus de la présente procédure deviennent titulaires du contrat-cadre et seront remis en compétition selon le calendrier fixé ci-après, pour l’attribution des marchés subséquents au contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-PC-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RC-CALENDRIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les marchés subséquents issus du présent contrat-cadre seront attribués dans les conditions du présent document."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 2 : DISPOSITIONS GENERALES"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Forme du contrat"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PRIX-UNITAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le contrat-cadre est conclu à prix unitaires."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PRIX-UNITAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PRIX-FORFAITAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le contrat-cadre est conclu à prix forfaitaires."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PRIX-FORFAITAIRE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Montant du contrat"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant du Contrat est estimé à {{B05-MT-01.chiffres}} Ariary HT (hors taxes) sur la durée totale du contrat (reconductions comprises)."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Durée du contrat"
+  },
+  {
+   "type": "para",
+   "texte": "La durée de validité du Contrat est de {{B02-DC-01}} mois (maximum reconductions comprises) à compter de sa date de notification. Le contrat est conclu pour une première période de validité de {{B02-DC-02}} mois à compter de sa date de notification."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RECONDUCTIBLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Cette période de validité peut être reconduite {{B02-DC-04}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RECONDUCTIBLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:NON-RECONDUCTIBLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La période de validité du contrat n’est pas reconductible."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:NON-RECONDUCTIBLE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Allotissement"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-AL-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:NON-ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Sans objet."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:NON-ALLOTI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Calendrier prévisionnel de la consultation (1) (à titre indicatif)"
+  },
+  {
+   "type": "table",
+   "texte": "2"
+  },
+  {
+   "type": "ligne",
+   "texte": "Date estimative\u001fEtape"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{B04-CP-02}}\u001fDate limite de réception des offres"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{B04-CP-06}}\u001fEnvoi des demandes d’offres optimisées"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{B04-CP-07}}\u001fDate limite de réception des offres optimisées"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{B04-CP-08}}\u001fEnvoi des courriers de rejet aux candidats non retenus"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "La date prévisionnelle de notification du contrat-cadre est fixée à {{B04-CP-05}}."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 3 : DOSSIER DE CONSULTATION (1)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "3.1.Contenu du dossier de consultation (1)"
+  },
+  {
+   "type": "para",
+   "texte": "Le dossier de consultation(1) contient les pièces suivantes :"
+  },
+  {
+   "type": "para",
+   "texte": "-L'avis d'appel public à la concurrence"
+  },
+  {
+   "type": "para",
+   "texte": "-Le présent Règlement de la consultation (1) et (éventuellement) son annexe;"
+  },
+  {
+   "type": "para",
+   "texte": "- La lettre de soumission du candidat"
+  },
+  {
+   "type": "para",
+   "texte": "-Le projet de contrat-cadre et ses annexes, notamment :"
+  },
+  {
+   "type": "para",
+   "texte": "les actes d'engagement (AE) et leurs annexes"
+  },
+  {
+   "type": "para",
+   "texte": "le cahier des clauses administratives particulières (CCAP)"
+  },
+  {
+   "type": "para",
+   "texte": "le document portant clauses techniques particulières ou son équivalent, et ses annexes"
+  },
+  {
+   "type": "para",
+   "texte": "{{B04-DS-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "3.2.Langue de rédaction du dossier de consultation (1)"
+  },
+  {
+   "type": "para",
+   "texte": "Le Dossier complet, rédigé en langue française, peut être consulté par tout candidat désirant prendre connaissance ou obtenir des informations à l’adresse ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "Nom du Responsable : {{B04-DS-07}}"
+  },
+  {
+   "type": "para",
+   "texte": "Fonction : {{B04-DS-08}}"
+  },
+  {
+   "type": "para",
+   "texte": "Bureau, N° porte, étage : {{B04-DS-09}}"
+  },
+  {
+   "type": "para",
+   "texte": "Localité : {{B04-DS-10}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "3. 3.Modalités d’acquisition du dossier de consultation (1)"
+  },
+  {
+   "type": "para",
+   "texte": "Pour tout candidat désirant soumissionner, le règlement de la consultation (1) est retiré auprès de {{B04-DS-04}} moyennant le paiement d’un montant non remboursable de {{B04-DS-05.lettres}} ({{B04-DS-05}}) libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "3.4.Modification du dossier de consultation (1)"
+  },
+  {
+   "type": "para",
+   "texte": "L’Autorité contractante se réserve le droit d'apporter des modifications de détail au dossier de consultation(1) au plus tard 6 jours avant la date limite de réception des offres. Ce délai est décompté à partir de la date d'envoi par l’Autorité contractante des modifications aux candidats ayant retiré le dossier initial. Les candidats devront alors répondre sur la base du dossier modifié sans pouvoir élever de réclamation à ce sujet."
+  },
+  {
+   "type": "para",
+   "texte": "Si la date limite de réception des offres est reportée, la disposition précédente est applicable en fonction de cette nouvelle date."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 4 : PRESENTATION DES OFFRES"
+  },
+  {
+   "type": "para",
+   "texte": "Les soumissionnaires remettent un dossier complet comprenant les pièces mentionnées ci-après. Les documents demandés doivent être signés par le soumissionnaire, le mandataire du groupement momentané d'entreprise ou chacun des membres de ce même groupement."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "4.1.Pièces constitutives de la candidature (capacités technique et professionnelle) :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B04-PO-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "4.2.Pièces constitutives de l’offre :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B04-PO-02}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 5 : MODALITES DE REMISE DES OFFRES"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "5.1 - Transmission sous support papier"
+  },
+  {
+   "type": "para",
+   "texte": "{{B04-RQ-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les candidats transmettent leur offre sous pli cacheté portant les mentions :"
+  },
+  {
+   "type": "para",
+   "texte": "Offre pour : {{B04-RQ-02}}"
+  },
+  {
+   "type": "centre",
+   "texte": "NE PAS OUVRIR QU’EN SEANCE D’OUVERTURE DES PLIS"
+  },
+  {
+   "type": "para",
+   "texte": "Ce pli doit contenir les pièces de la candidature et les pièces de l'offre définies au présent règlement de la consultation. Il devra être remis contre récépissé ou envoyé par pli recommandé avec avis de réception, à l'adresse suivante : {{B04-RQ-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les plis qui seraient remis ou dont l'avis de réception serait délivré après la date et l'heure limites précitées ainsi que remis sous enveloppe non cachetée, ne seront pas retenus."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "5.2 - Transmission électronique"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PAPIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "La transmission de dossiers par voie électronique n’est pas admise"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PAPIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:B04-SE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La transmission par voie électronique est admise dans les conditions suivantes"
+  },
+  {
+   "type": "para",
+   "texte": "[[CLAUSE À FOURNIR PAR LE JURISTE : conditions de la transmission électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]"
+  },
+  {
+   "type": "para",
+   "texte": "Même si l’offre du candidat à la présente procédure a fait l'objet d'une transmission électronique, le candidat s'engage, notamment dans le cas où son offre est retenue, à accepter la re-matérialisation conforme, sous forme papier, de tous les documents constitutifs à valeur contractuelle. A ce titre, il s'engage également à ce que la personne physique auteur de leur signature électronique procède à leur signature manuscrite sans procéder à la moindre modification de ceux-ci et les renvoie à l’Autorité contractante sous cette forme. Il s'engage enfin à en accepter la notification, selon les procédés habituellement en cours, sous forme papier."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:B04-SE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 6 : EXAMEN DES CANDIDATURES ET DES OFFRES"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "6.1 - Sélection des candidatures"
+  },
+  {
+   "type": "para",
+   "texte": "6.1.1. Les plis seront ouverts par le Représentant de l’Autorité contractante."
+  },
+  {
+   "type": "para",
+   "texte": "La séance d'ouverture des plis est publique, les candidats ou leurs représentants sont admis à y assister. Seuls peuvent être ouverts les plis qui ont été reçus dans les conditions prévues ci-dessus au plus tard à la date et à l’heure qui a été fixées pour la réception des offres."
+  },
+  {
+   "type": "para",
+   "texte": "Avant de procéder à l'examen des candidatures, si l'on constate que des pièces du dossier de candidature sont manquantes ou incomplètes, l’Autorité contractante peut décider de demander à tous les candidats concernés de produire ou compléter ces pièces dans un délai maximum de 10 jours. Les autres candidats, qui ont la possibilité de compléter leur candidature, en seront informés dans le même délai."
+  },
+  {
+   "type": "para",
+   "texte": "Les candidatures conformes et recevables seront examinées, à partir des seuls renseignements et documents exigés dans le cadre de cette consultation(1), pour évaluer leur situation juridique ainsi que leurs capacités professionnelles, techniques et financières."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "6.1.2. Critères d’élimination des candidatures :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B06-SC-02}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "6.2. La procédure de sélection des offres"
+  },
+  {
+   "type": "para",
+   "texte": "La procédure de sélection des offres se déroule selon les modalités suivantes:"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "1. Rejet des offres hors-délais - Ouverture des offres"
+  },
+  {
+   "type": "para",
+   "texte": "Le représentant de l’autorité contractante écarte les offres reçues hors délai."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "2. Analyse des offres"
+  },
+  {
+   "type": "para",
+   "texte": "Le comité d’évaluation procède à l'analyse des offres des soumissionnaires retenus."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "3. Rejet des offres non recevables."
+  },
+  {
+   "type": "para",
+   "texte": "Le comité d’évaluation rejette les offres inappropriées, inacceptables ou irrégulières."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "4. Comparaison des offres pour la sélection de l’offre économiquement la plus avantageuse"
+  },
+  {
+   "type": "para",
+   "texte": "{{B06-SO-05}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 7 : CRITÈRES D’ATTRIBUTION DU CONTRAT-CADRE"
+  },
+  {
+   "type": "para",
+   "texte": "{{B06-CA-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "L’Autorité contractante peut ne pas donner suite à la consultation(1) pour tout motif d'intérêt général."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 8 : LANGUE DE LA CONSULTATION (1) – UNITE MONETAIRE"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-DEVISE}}"
+  },
+  {
+   "type": "para",
+   "texte": "L’offre des candidats ainsi que l’ensemble des documents de la présente consultation(1) doivent être rédigés en langue française et exprimées en Ariary. Si les offres des candidats sont rédigées dans une autre langue, elles doivent être accompagnées d'une traduction en français. Cette traduction doit concerner l'ensemble des documents remis dans l'offre. L’Autorité contractante conclura les marchés en Ariary."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-DEVISE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DEVISE}}"
+  },
+  {
+   "type": "para",
+   "texte": "L’offre des candidats ainsi que l’ensemble des documents de la présente consultation(1) doivent être rédigés en langue française et exprimées en Ariary (ou en {{B05-UM-01}}). Si les offres des candidats sont rédigées dans une autre langue, elles doivent être accompagnées d'une traduction en français. Cette traduction doit concerner l'ensemble des documents remis dans l'offre. L’Autorité contractante conclura les marchés en Ariary (ou en {{B05-UM-01}})."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DEVISE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 9 : PASSATION DES MARCHÉS SUBSÉQUENTS"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RC-BESOIN}}"
+  },
+  {
+   "type": "para",
+   "texte": "Pendant la durée du contrat-cadre, les marchés subséquents sont attribués après mise en concurrence de tous les titulaires du contrat-cadre lors de la survenance du besoin."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RC-BESOIN}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RC-CALENDRIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "Pendant la durée du contrat-cadre, les marchés subséquents sont attribués après mise en concurrence de tous les titulaires du contrat-cadre selon le calendrier fixé à l'article premier du présent contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RC-CALENDRIER}}"
+  },
+  {
+   "type": "para",
+   "texte": "La mise en compétition des titulaires du contrat-cadre se feront par le biais d’une lettre d’invitation, sous forme de demande de devis ou de facture pro-forma, adressée par l’Autorité contractante. Le devis ou la facture pro-forma devra parvenir à {{B07-PS-02}} dans un délai de {{B07-PS-03}} heures ouvrées, par courrier postal ou remis en main propre contre récépissé."
+  },
+  {
+   "type": "para",
+   "texte": "A défaut, le titulaire du contrat-cadre sera réputé ne pas avoir répondu. En l’absence de trois réponses consécutives et sauf cas de force majeure dûment justifiée, le titulaire sera exclu du contrat-cadre."
+  },
+  {
+   "type": "para",
+   "texte": "La demande de devis ou de facture pro-forma précisera :"
+  },
+  {
+   "type": "para",
+   "texte": "La nature et la quantité du besoin"
+  },
+  {
+   "type": "para",
+   "texte": "L’adresse du site de livraison"
+  },
+  {
+   "type": "para",
+   "texte": "Le(s) critère(s) pondéré(s) de jugement choisis dans la liste suivante : prix, qualité de la fourniture, réduction du délai de livraison, caractère innovant)"
+  },
+  {
+   "type": "para",
+   "texte": "Le cas échéant d’autres documents techniques"
+  },
+  {
+   "type": "para",
+   "texte": "Critère(s) pondéré(s) de jugement: ceux indiqués sur la demande devis ou de facture pro-forma"
+  },
+  {
+   "type": "para",
+   "texte": "Le devis ou la facture pro-forma précisera :"
+  },
+  {
+   "type": "para",
+   "texte": "La référence du chaque produit"
+  },
+  {
+   "type": "para",
+   "texte": "Le type de matériel"
+  },
+  {
+   "type": "para",
+   "texte": "Les quantités"
+  },
+  {
+   "type": "para",
+   "texte": "Le prix unitaire et le prix total pour chaque produit HT"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant total remisé HT de la commande"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant TTC de la commande"
+  },
+  {
+   "type": "para",
+   "texte": "Le devis ou la facture pro-forma devra répondre strictement aux renseignements sollicités dans la demande de devis. Pour les devis ou factures pro-forma incomplets, le candidat devra les compléter dans les 24 heures ouvrées. A défaut son offre sera rejetée."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 10 : AUTRES RENSEIGNEMENTS ET INFORMATIONS COMPLEMENTAIRES"
+  },
+  {
+   "type": "para",
+   "texte": "Toute demande d’informations complémentaires sur des points techniques ou administratifs du dossier devra être adressée à {{B04-RC-01}} au plus tard {{B04-RC-02}} jours avant la date limite de remise des offres."
+  },
+  {
+   "type": "para",
+   "texte": "Si une question est posée par un candidat, les autres candidats sont destinataires des éléments en réponse à la question posée par un candidat."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 11 : VOIES ET DÉLAIS DE RECOURS"
+  },
+  {
+   "type": "para",
+   "texte": "L'instance chargée des procédures de recours est {{B06-AN-03}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 12 : CALENDRIER PRÉVISIONNEL"
+  },
+  {
+   "type": "para",
+   "texte": "Avis Spécifique d’Appel Public à Concurrence : {{B04-CP-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "Date et heure limites de réception des offres : {{B04-CP-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "Séance de la Commission d’Appel d’Offres : {{B04-CP-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "Attribution du contrat-cadre : {{B04-CP-04}}"
+  },
+  {
+   "type": "para",
+   "texte": "Notification du contrat-cadre : {{B04-CP-05}}"
+  },
+  {
+   "type": "para",
+   "texte": "(1) Le terme «consultation» utilisé dans le présent document doit être compris dans le sens de «mise en concurrence» (à ne pas confondre avec la procédure de consultation restreinte d’entrepreneurs, de fournisseurs ou de prestataires de service)."
+  },
+  {
+   "type": "para",
+   "texte": "Ainsi, le présent document est valable aussi bien pour la procédure d’appel d’offres que pour celle de consultation restreinte."
+  }
+ ],
+ "trace": [
+  {
+   "ligne": 62,
+   "genre": "jeton",
+   "source": "<Préciser la nature du marché>",
+   "par": "{{B01-AC-12}}"
+  },
+  {
+   "ligne": 62,
+   "genre": "jeton",
+   "source": "<indiquer le numéro de l’appel d’offres ou de la consultation(1)>",
+   "par": "{{B02-OE-01}}"
+  },
+  {
+   "ligne": 59,
+   "genre": "jeton",
+   "source": "<Insérer l’En-tête de l’Acheteur>",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": 64,
+   "genre": "jeton",
+   "source": "<Préciser l’objet du Contrat-cadre>",
+   "par": "{{B02-OB-01}}"
+  },
+  {
+   "ligne": 66,
+   "genre": "jeton",
+   "source": "<Préciser la procédure de mise en concurrence adoptée>",
+   "par": "{{B01-AC-13}}"
+  },
+  {
+   "ligne": 68,
+   "genre": "jeton",
+   "source": "<indiquer le nom et le(s) prénom(s) de la PRMP>",
+   "par": "{{B01-AC-05}}"
+  },
+  {
+   "ligne": 73,
+   "genre": "jeton",
+   "source": "<préciser la date et l’heure limite de remise des offres>",
+   "par": "{{B04-CP-02}}"
+  },
+  {
+   "ligne": 113,
+   "genre": "jeton",
+   "source": "<détailler l’objet de la prestation>",
+   "par": "{{B02-OB-01}}"
+  },
+  {
+   "ligne": 113,
+   "genre": "typo",
+   "source": ".Les détails",
+   "par": ". Les détails"
+  },
+  {
+   "ligne": 116,
+   "genre": "choix",
+   "source": "<préciser si le contrat-cadre est attribué à un seul titulaire (mono-attributaire) ou à plusieurs titulaires (multi attributaire)>",
+   "par": "un seul titulaire (mono-attributaire)"
+  },
+  {
+   "ligne": 116,
+   "genre": "jeton",
+   "source": "<préciser la procédure de passation choisie>",
+   "par": "{{B01-AC-13}}"
+  },
+  {
+   "ligne": 116,
+   "genre": "jeton",
+   "source": "<préciser la référence de l’article du code se rapportant à la procédure choisie>",
+   "par": "{{B02-PC-01}}"
+  },
+  {
+   "ligne": 116,
+   "genre": "choix",
+   "source": "<préciser si le contrat-cadre est attribué à un seul titulaire (mono-attributaire) ou à plusieurs titulaires (multi attributaire)>",
+   "par": "plusieurs titulaires (multi attributaire)"
+  },
+  {
+   "ligne": 116,
+   "genre": "jeton",
+   "source": "<préciser la procédure de passation choisie>",
+   "par": "{{B01-AC-13}}"
+  },
+  {
+   "ligne": 116,
+   "genre": "jeton",
+   "source": "<préciser la référence de l’article du code se rapportant à la procédure choisie>",
+   "par": "{{B02-PC-01}}"
+  },
+  {
+   "ligne": 119,
+   "genre": "choix",
+   "source": "<choisir entre les deux rédactions suivantes : « au fur et à mesure des besoins » / « selon le calendrier fixé ci-après »",
+   "par": "au fur et à mesure des besoins"
+  },
+  {
+   "ligne": 119,
+   "genre": "choix",
+   "source": "<choisir entre les deux rédactions suivantes : « au fur et à mesure des besoins » / « selon le calendrier fixé ci-après »",
+   "par": "selon le calendrier fixé ci-après"
+  },
+  {
+   "ligne": 120,
+   "genre": "jeton",
+   "source": "<établir à cet emplacement le calendrier escompté pour la remise en concurrence des titulaires du contrat-cadre>",
+   "par": "{{B02-PC-03}}"
+  },
+  {
+   "ligne": 125,
+   "genre": "choix",
+   "source": "<préciser la forme de prix : prix unitaires ou prix forfaitaires>",
+   "par": "prix unitaires"
+  },
+  {
+   "ligne": 125,
+   "genre": "choix",
+   "source": "<préciser la forme de prix : prix unitaires ou prix forfaitaires>",
+   "par": "prix forfaitaires"
+  },
+  {
+   "ligne": 128,
+   "genre": "jeton",
+   "source": "<indiquer le montant indicatif du contrat-cadre>",
+   "par": "{{B05-MT-01.chiffres}}"
+  },
+  {
+   "ligne": 130,
+   "genre": "jeton",
+   "source": "<préciser la durée maximale du contrat>",
+   "par": "{{B02-DC-01}}"
+  },
+  {
+   "ligne": 130,
+   "genre": "jeton",
+   "source": "<préciser la durée de validité du contrat>",
+   "par": "{{B02-DC-02}}"
+  },
+  {
+   "ligne": 131,
+   "genre": "jeton",
+   "source": "<préciser les conditions de reconduction de la période de validité>",
+   "par": "{{B02-DC-04}}"
+  },
+  {
+   "ligne": 131,
+   "genre": "retire",
+   "source": "(par exemple : annuellement, 2 fois pour une durée complémentaire de 12 mois dans la limite d’une durée maximale de 36 mois à compter de la date de notification)",
+   "par": ""
+  },
+  {
+   "ligne": 135,
+   "genre": "jeton",
+   "source": "Préciser les modalités d’allotissement",
+   "par": "{{B02-AL-02}}"
+  },
+  {
+   "ligne": 139,
+   "genre": "retire",
+   "source": "(si le contrat ne prévoit pas de lot)",
+   "par": ""
+  },
+  {
+   "ligne": 142,
+   "genre": "jeton",
+   "source": "<préciser la date>",
+   "par": "{{B04-CP-02}}"
+  },
+  {
+   "ligne": 143,
+   "genre": "jeton",
+   "source": "<préciser la date>",
+   "par": "{{B04-CP-06}}"
+  },
+  {
+   "ligne": 144,
+   "genre": "jeton",
+   "source": "<préciser la date>",
+   "par": "{{B04-CP-07}}"
+  },
+  {
+   "ligne": 145,
+   "genre": "jeton",
+   "source": "<préciser la date>",
+   "par": "{{B04-CP-08}}"
+  },
+  {
+   "ligne": 147,
+   "genre": "jeton",
+   "source": "<indiquer la date>",
+   "par": "{{B04-CP-05}}"
+  },
+  {
+   "ligne": 160,
+   "genre": "jeton",
+   "source": "<autres à ajouter éventuellement>",
+   "par": "{{B04-DS-01}}"
+  },
+  {
+   "ligne": 169,
+   "genre": "jeton",
+   "source": ":",
+   "par": ": {{B04-DS-07}}"
+  },
+  {
+   "ligne": 170,
+   "genre": "jeton",
+   "source": ":",
+   "par": ": {{B04-DS-08}}"
+  },
+  {
+   "ligne": 171,
+   "genre": "jeton",
+   "source": ":",
+   "par": ": {{B04-DS-09}}"
+  },
+  {
+   "ligne": 172,
+   "genre": "jeton",
+   "source": "<préciser autant que possible avec des détails fins, tels que lot ou numéro de l’immeuble, nom de rue, quartier, ville>",
+   "par": "{{B04-DS-10}}"
+  },
+  {
+   "ligne": 175,
+   "genre": "jeton",
+   "source": "<indiquer l’adresse>",
+   "par": "{{B04-DS-04}}"
+  },
+  {
+   "ligne": 175,
+   "genre": "jeton",
+   "source": "<indiquer en lettres et en chiffres le montant à payer en Ariary ou son équivalent en monnaie librement convertible>",
+   "par": "{{B04-DS-05.lettres}} ({{B04-DS-05}})"
+  },
+  {
+   "ligne": 186,
+   "genre": "jeton",
+   "source": "<énumérer les pièces de candidatures requises par le contrat>",
+   "par": "{{B04-PO-01}}"
+  },
+  {
+   "ligne": 188,
+   "genre": "jeton",
+   "source": "<énumérer les pièces devant constituer l’offre du candidat>",
+   "par": "{{B04-PO-02}}"
+  },
+  {
+   "ligne": 194,
+   "genre": "jeton",
+   "source": "<Préciser les modalités de remise des offres>",
+   "par": "{{B04-RQ-01}}"
+  },
+  {
+   "ligne": 197,
+   "genre": "jeton",
+   "source": "< indiquer l’objet du contrat-cadre>",
+   "par": "{{B04-RQ-02}}"
+  },
+  {
+   "ligne": 202,
+   "genre": "jeton",
+   "source": "<indiquer l’adresse exacte et précise>",
+   "par": "{{B04-RQ-03}}"
+  },
+  {
+   "ligne": 217,
+   "genre": "retire",
+   "source": "<préciser les modalités d’envoi des dossiers par voie électronique>",
+   "par": ""
+  },
+  {
+   "ligne": 219,
+   "genre": "choix",
+   "source": "<Même si",
+   "par": "Même si"
+  },
+  {
+   "ligne": 219,
+   "genre": "choix",
+   "source": "sous forme papier.>",
+   "par": "sous forme papier."
+  },
+  {
+   "ligne": 228,
+   "genre": "jeton",
+   "source": "<énumérer ici les critères d’élimination des candidats (ils doivent être objectifs, réalistes et en rapport avec l’objet du marché), par exemple :",
+   "par": "{{B06-SC-02}}"
+  },
+  {
+   "ligne": 247,
+   "genre": "jeton",
+   "source": "<préciser les critères et le mécanisme de jugement des offres>",
+   "par": "{{B06-SO-05}}"
+  },
+  {
+   "ligne": 254,
+   "genre": "jeton",
+   "source": "<énumérer les critères que l’Autorité contractante a retenu pour l’attribution du contrat-cadre ainsi que les modalités d’appréciation>",
+   "par": "{{B06-CA-01}}"
+  },
+  {
+   "ligne": 275,
+   "genre": "retire",
+   "source": "(ou en <en cas d’appel d’offres international, préciser la monnaie en devise>)",
+   "par": ""
+  },
+  {
+   "ligne": 275,
+   "genre": "retire",
+   "source": "(ou en <en cas d’appel d’offres international, préciser la monnaie en devise>)",
+   "par": ""
+  },
+  {
+   "ligne": 275,
+   "genre": "jeton",
+   "source": "<en cas d’appel d’offres international, préciser la monnaie en devise>",
+   "par": "{{B05-UM-01}}"
+  },
+  {
+   "ligne": 275,
+   "genre": "jeton",
+   "source": "<en cas d’appel d’offres international, préciser la monnaie en devise>",
+   "par": "{{B05-UM-01}}"
+  },
+  {
+   "ligne": 279,
+   "genre": "choix",
+   "source": "<choisir entre les deux rédactions suivantes : « lors de la survenance du besoin » / « selon le calendrier fixé à l’article premier du présent contrat-cadre>",
+   "par": "lors de la survenance du besoin"
+  },
+  {
+   "ligne": 279,
+   "genre": "choix",
+   "source": "<choisir entre les deux rédactions suivantes : « lors de la survenance du besoin » / « selon le calendrier fixé à l’article premier du présent contrat-cadre>",
+   "par": "selon le calendrier fixé à l'article premier du présent contrat-cadre"
+  },
+  {
+   "ligne": 280,
+   "genre": "jeton",
+   "source": "<indiquer l’adresse précise et exacte>",
+   "par": "{{B07-PS-02}}"
+  },
+  {
+   "ligne": 280,
+   "genre": "jeton",
+   "source": "<préciser le délai en heure>",
+   "par": "{{B07-PS-03}}"
+  },
+  {
+   "ligne": 309,
+   "genre": "jeton",
+   "source": "<indiquer l’adresse exacte et précise de la personne à qui on devra adresser les demandes d’informations>",
+   "par": "{{B04-RC-01}}"
+  },
+  {
+   "ligne": 309,
+   "genre": "jeton",
+   "source": "<préciser le nombre de jours>",
+   "par": "{{B04-RC-02}}"
+  },
+  {
+   "ligne": 314,
+   "genre": "jeton",
+   "source": "<indiquer la juridiction compétente pour trancher les litiges nés du présent contrat-cadre>",
+   "par": "{{B06-AN-03}}"
+  },
+  {
+   "ligne": 319,
+   "genre": "jeton",
+   "source": "<indiquer la date de lancement de la mise en concurrence>",
+   "par": "{{B04-CP-01}}"
+  },
+  {
+   "ligne": 321,
+   "genre": "jeton",
+   "source": "<indiquer la date et l’heure limites de remise des offres>",
+   "par": "{{B04-CP-02}}"
+  },
+  {
+   "ligne": 323,
+   "genre": "jeton",
+   "source": "<indiquer la date de début de la séance d’évaluation des offres et candidatures>",
+   "par": "{{B04-CP-03}}"
+  },
+  {
+   "ligne": 325,
+   "genre": "jeton",
+   "source": "<indiquer la date d’attribution du contrat-cadre>",
+   "par": "{{B04-CP-04}}"
+  },
+  {
+   "ligne": 326,
+   "genre": "jeton",
+   "source": "<indiquer la date de notification du contrat-cadre au(x) titulaire(s)>",
+   "par": "{{B04-CP-05}}"
+  }
+ ],
+ "retraits": [
+  {
+   "ligne": 86,
+   "texte": "Table des matières",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 87,
+   "texte": "ARTICLE 1 : OBJET ET ETENDUE DU CONTRAT-CADRE 3",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 88,
+   "texte": "Objet du contrat-cadre 3",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 89,
+   "texte": "Procédure de mise en concurrence 3",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 90,
+   "texte": "ARTICLE 2 : DISPOSITIONS GENERALES 3",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 91,
+   "texte": "Forme du contrat 3",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 92,
+   "texte": "Montant du contrat 3",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 93,
+   "texte": "Durée du contrat 3",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 94,
+   "texte": "ARTICLE 3 : DOSSIER DE CONSULTATION (1) 4",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 95,
+   "texte": "ARTICLE 4 : PRESENTATION DES OFFRES 5",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 96,
+   "texte": "Pièces constitutives de la candidature (capacités technique et professionnelle) : 5",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 97,
+   "texte": "Pièces constitutives de l’offre 5",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 98,
+   "texte": "ARTICLE 5 : MODALITES DE REMISE DES OFFRES 5",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 99,
+   "texte": "ARTICLE 6 : EXAMEN DES CANDIDATURES ET DES OFFRES 5",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 100,
+   "texte": "ARTICLE 7 : CRITÈRES D’ATTRIBUTION DU CONTRAT-CADRE 6",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 101,
+   "texte": "ARTICLE 8 : LANGUE DE LA CONSULTATION (1) – UNITE MONETAIRE 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 102,
+   "texte": "ARTICLE 9 : PASSATION DES MARCHÉS SUBSÉQUENTS 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 103,
+   "texte": "ARTICLE 10 : AUTRES RENSEIGNEMENTS ET INFORMATIONS COMPLEMENTAIRES 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 104,
+   "texte": "ARTICLE 11 : VOIES ET DÉLAIS DE RECOURS 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 105,
+   "texte": "ARTICLE 12 : CALENDRIER PRÉVISIONNEL 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": 339,
+   "texte": "Contrat-cadre",
+   "raison": "bandeau de couverture du document type"
+  },
+  {
+   "ligne": 132,
+   "texte": "OU",
+   "raison": "alternative : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 137,
+   "texte": "OU",
+   "raison": "alternative : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 163,
+   "texte": "(Par exemple :",
+   "raison": "exemples du modèle, à supprimer du document finalisé"
+  },
+  {
+   "ligne": 164,
+   "texte": "- Le cadre type pour la présentation du mémoire détaillé",
+   "raison": "exemples du modèle, à supprimer du document finalisé"
+  },
+  {
+   "ligne": 165,
+   "texte": "- Le détail estimatif à compléter par le candidat [document non contractuel servant au jugement des offres])",
+   "raison": "exemples du modèle, à supprimer du document finalisé"
+  },
+  {
+   "ligne": 209,
+   "texte": "<Choisir entre les deux options suivantes> :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": 211,
+   "texte": "Option 1 :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": 215,
+   "texte": "Option 2 :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": 218,
+   "texte": "Dans ce cas, ajouter les phrases suivantes:",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": 229,
+   "texte": "- Candidats n'ayant pas fourni la déclaration ou certificats et attestations demandés, dûment remplis et signés dans les temps après mise en demeure.",
+   "raison": "exemple de critères d’élimination du modèle (remplacé par la saisie B06-SC-02)"
+  },
+  {
+   "ligne": 230,
+   "texte": "- Candidats dont les garanties professionnelles et financières par rapport à la prestation, objet de la consultation(1), sont insuffisantes,",
+   "raison": "exemple de critères d’élimination du modèle (remplacé par la saisie B06-SC-02)"
+  },
+  {
+   "ligne": 231,
+   "texte": "- etc,>.",
+   "raison": "exemple de critères d’élimination du modèle (remplacé par la saisie B06-SC-02)"
+  },
+  {
+   "ligne": 248,
+   "texte": "Ici, la rédaction est laissée librement à l’appréciation de l’acheteur public par rapport à ses besoins et ses attentes. Néanmoins, elle doit être la plus précise possible de manière à susciter des offres qui correspondent au mieux à ces besoins et attentes.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": 256,
+   "texte": "<La rédaction est libre et l’’exemple présenté ci-après est donné à titre purement indicatif> :",
+   "raison": "exemple de critères d’attribution du modèle, « donné à titre purement indicatif » (remplacé par la saisie B06-CA-01)"
+  },
+  {
+   "ligne": 258,
+   "texte": "Critère 1 – (Dans le cas où le délai de livraison constitue un critère d’attribution, préciser impérativement ici que la fixation du délai est laissée ou non à l’initiative du candidat) Délai de livraison après émission du bon de commande ou de l’ordre de commencer la prestation- N1: Pondération 10%",
+   "raison": "exemple de critères d’attribution du modèle, « donné à titre purement indicatif » (remplacé par la saisie B06-CA-01)"
+  },
+  {
+   "ligne": 261,
+   "texte": "Critère 2 - Organisation et méthodologie pour remplir la mission- N2: Pondération 40%",
+   "raison": "exemple de critères d’attribution du modèle, « donné à titre purement indicatif » (remplacé par la saisie B06-CA-01)"
+  },
+  {
+   "ligne": 265,
+   "texte": "Critère 2 - Prix de la prestation N2: Pondération 50%>",
+   "raison": "exemple de critères d’attribution du modèle, « donné à titre purement indicatif » (remplacé par la saisie B06-CA-01)"
+  },
+  {
+   "ligne": 263,
+   "texte": "La façon de travailler, en particulier le mode opératoire en phase chantier, la répartition des tâches de l’équipe pour exécuter l’ensemble de la mission, la méthode pour tenir compte dès la conception des coûts exploitation/maintenance et pour traiter des impacts environnementaux seront des éléments importants dans l’appréciation de l’Autorité contractante.",
+   "raison": "exemple de critères d’attribution du modèle, « donné à titre purement indicatif » (remplacé par la saisie B06-CA-01)"
+  },
+  {
+   "ligne": 267,
+   "texte": "La proposition de prix de référence dans le contrat-cadre qui, actualisé, servira de base pour les marchés subséquents.",
+   "raison": "exemple de critères d’attribution du modèle, « donné à titre purement indicatif » (remplacé par la saisie B06-CA-01)"
+  },
+  {
+   "ligne": 270,
+   "texte": "L'offre ayant obtenu la note N (N = N1 + N2 + N3) la plus élevée sera considérée comme l'offre économiquement la plus avantageuse. (référence à l’exemple ci-dessus)",
+   "raison": "exemple de critères d’attribution du modèle, « donné à titre purement indicatif » (remplacé par la saisie B06-CA-01)"
+  }
+ ],
+ "ajouts": [
+  "ARTICLE 1 : ",
+  "ARTICLE 2 : ",
+  "ARTICLE 3 : ",
+  "ARTICLE 4 : ",
+  "ARTICLE 5 : ",
+  "ARTICLE 6 : ",
+  "ARTICLE 7 : ",
+  "ARTICLE 8 : ",
+  "ARTICLE 9 : ",
+  "ARTICLE 10 : ",
+  "ARTICLE 11 : ",
+  "ARTICLE 12 : ",
+  "(1) ",
+  "[[CLAUSE À FOURNIR PAR LE JURISTE : conditions de la transmission électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]"
+ ]
+}

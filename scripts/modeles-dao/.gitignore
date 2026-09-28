@@ -1,0 +1,6 @@
+# Produits de la chaîne du lot D — tout se regénère depuis le document type et le descripteur.
+armp/
+sources/
+modeles-docx/
+# ⚠️ Les fichiers de commande (modeles/*.txt) et leurs descripteurs (*.json) SONT versionnés : c'est eux que le
+# backend copie dans ses ressources — la source du rendu, vérifiée par le comparateur (`verifier.mjs`).
