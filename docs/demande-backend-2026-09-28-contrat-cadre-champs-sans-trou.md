@@ -27,11 +27,19 @@ commande. Référentiel seulement — ni route, ni moteur, ni modèle de documen
 Les champs restent au référentiel, actifs, saisissables : une valeur déjà saisie est gardée, et un contrôle peut
 encore s'en servir.
 
+> ⚠️ **Livraison backend du 2026-09-28 (§B1).** Conforme : les neuf passent `obligatoire = non` dans le fichier de correspondance
+> du contrat-cadre (et sa copie de test) et par `docs/referentiel/2026-09-28-contrat-cadre-champs-sans-trou.sql`. Une
+> précision sur `B08-FP-03` : `DELAI_PAIEMENT_75` est au catalogue un **avertissement**, pas un blocage — il ne « refuse »
+> pas un délai au-delà de 75 jours, il le **signale** (bilan `avertissements`), comme avant ; la fiche se valide. Rien
+> n’a changé à ce contrôle, il reste évalué dès que la valeur est saisie.
+
 ## B2 — Un doublon désactivé (`actif = false`, jamais de DELETE)
 
 - `B07-DU-06` « Durée totale du contrat-cadre, reconduit ou non (mois) » : même information que `B02-DC-01` « Durée
   maximale du contrat-cadre (mois) » (« maximum reconductions comprises », DPAC art. 2), qui, elle, est imprimée.
   Deux saisies de la même durée peuvent se contredire.
+
+> ⚠️ **Livraison backend du 2026-09-28 (§B2).** Conforme : `B07-DU-06` `actif = non`, pas de DELETE ; `B02-DC-01` reste servie.
 
 ## B3 — Tests
 
@@ -40,6 +48,12 @@ encore s'en servir.
 - Une fiche de contrat-cadre se valide sans aucune des dix informations.
 - `DELAI_PAIEMENT_75` refuse toujours un délai de paiement saisi au-delà de 75 jours.
 - Quantité fixe et à commande : inchangés.
+
+> ⚠️ **Livraison backend du 2026-09-28 (§B3).** `FicheMarcheCommandeEtContratCadreIntegrationTest`, cas 8 : les neuf servis
+> facultatifs, `B07-DU-06` absent, un délai de paiement de 90 jours signalé en avertissement `DELAI_PAIEMENT_75`, et une
+> fiche de contrat-cadre validée sans aucune des dix informations ; cas 1 : contrat-cadre **175** champs servis, quantité
+> fixe 172 et à commande 177 inchangés. `docs/regles-gestion.md` ne citait aucun de ces champs comme obligatoire ; un
+> alinéa y dit désormais la règle (« rien n’est exigé que le document n’imprime »).
 
 ## Ce que le backend rend
 

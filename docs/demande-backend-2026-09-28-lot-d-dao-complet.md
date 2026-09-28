@@ -176,3 +176,13 @@ B1 à B5, `docs/api-endpoints.md` (contrat des modèles : enregistrement `CONDIT
 > (15) et absentes du PDF (0)** : la police du PDF n'a pas ce glyphe. Le candidat ne peut plus cocher sur l'imprimé.
 > Correctif souhaité côté générateur PDF : une police embarquée qui porte le glyphe, ou, à défaut, un « ☐ » / « [ ] »
 > de substitution **au rendu PDF seulement** (le fichier de commande reste celui du document type).
+
+> ⚠️ **Livraison backend du 2026-09-28 (cases à cocher au PDF).** Corrigé dans le générateur PDF, sans toucher au fichier
+> de commande ni au docx : les caractères du bloc Dingbats s'impriment dans la police standard **ZapfDingbats** (l'une des
+> 14 polices de base PDF : rien à embarquer, rien à installer sur le serveur ni en CI), `GenerateurDocumentsFiche.paragraphePdf`.
+> **Un second caractère était touché**, que la recette n'a pas relevé : « ➢ » (U+27A2), deux fois dans l'AE (art. 6,
+> « Pièces particulières » / « Pièces générales »). Recensement complet des modèles (six du candidat, deux du DAO) : ce
+> sont les deux seuls caractères hors WinAnsi. Codes vérifiés sur la métrique AFM de ZapfDingbats fournie par OpenPDF
+> (`C 111 … N a74`, `C 226 … N a173`) : « ❏ » = 0x6F, « ➢ » = 0xE2. Test : `ModelesDaoTest.dingbatsAuPdf` (15 + 2 dans
+> l'AE, PDF en ZapfDingbats, docx inchangé). **Je n'ai pas pu voir le PDF** (pas de moteur de rendu sur ce poste) :
+> l'aspect des cases est à confirmer à la prochaine recette, sur une fiche validée après la relance du serveur.
