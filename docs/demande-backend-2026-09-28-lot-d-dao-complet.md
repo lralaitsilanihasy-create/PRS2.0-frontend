@@ -186,3 +186,18 @@ B1 à B5, `docs/api-endpoints.md` (contrat des modèles : enregistrement `CONDIT
 > (`C 111 … N a74`, `C 226 … N a173`) : « ❏ » = 0x6F, « ➢ » = 0xE2. Test : `ModelesDaoTest.dingbatsAuPdf` (15 + 2 dans
 > l'AE, PDF en ZapfDingbats, docx inchangé). **Je n'ai pas pu voir le PDF** (pas de moteur de rendu sur ce poste) :
 > l'aspect des cases est à confirmer à la prochaine recette, sur une fiche validée après la relance du serveur.
+
+> ✗ **Contre-recette front du 2026-09-28 — cases et flèches au PDF : mauvais codes ZapfDingbats.** Fiche 27 révisée et
+> validée en **version 2** après la relance (PID 39328) : l'AE v2 porte bien la police `ZapfDingbats` (et Helvetica),
+> mais aux places des « ❏ » et des « ➢ », le PDF contient les codes **116** (« t ») et **173** (0xAD). D'après la
+> métrique `com/lowagie/text/pdf/fonts/ZapfDingbats.afm` d'OpenPDF 1.3.43 et la table
+> `org/apache/pdfbox/resources/glyphlist/zapfdingbats.txt` de PDFBox 3.0.3, qui concordent :
+>
+> | voulu | code juste | code écrit | glyphe dessiné |
+> |---|---|---|---|
+> | ❏ U+274F | **111** (`o`, a74) | 116 (`t`, a77) | ▼ U+25BC |
+> | ➢ U+27A2 | **226** (0xE2, a173) | 173 (0xAD, a121) | ② U+2461 |
+>
+> Le PDF imprime donc un **triangle noir** au lieu de chaque case et un **« ② »** au lieu de chaque flèche. Correctif :
+> 111 et 226, et que le test vérifie le **code** écrit dans le flux du PDF (ou le nom de glyphe via l'AFM), pas seulement
+> la police. La fiche 27 devra être révisée une fois de plus (version 3) pour la contre-recette.
