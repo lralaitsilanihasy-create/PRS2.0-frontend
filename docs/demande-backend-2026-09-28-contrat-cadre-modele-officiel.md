@@ -214,3 +214,15 @@ B1 à B10, `docs/api-endpoints.md` si le contrat change (il ne devrait pas : ré
 > PRMP001 est implicite (`idMandat` nul, pas d'arrêté). Fiche supprimée ensuite (204), ligne de nouveau préparable.
 > Remarque sans suite demandée : dans le message de `DATES_ORDRE`, l'étape `B04-CP-03` s'appelle « ouverture des plis »
 > alors que le contrat-cadre la libelle « séance d'évaluation des offres et candidatures ».
+
+## B12 — Ajout du 28/09, vu à l'écran après la contre-recette : le nom du DPAC
+
+Le sigle **DPAC** est développé des deux côtés en « Données particulières **du cahier des clauses administratives** »
+(`SelectionDocumentsFiche.java:34` ; front `LIBELLES_PIECES` et `NOMS_DOCUMENTS`). Le modèle officiel titre ce document
+« **DONNÉES PARTICULIÈRES D'APPEL À CONCURRENCE** » (c'est le *règlement de la consultation* du contrat-cadre ; son pied
+de page dit « Règlement de la consultation (DPAO Fournitures et services) »). Un contrat-cadre n'a pas de cahier des
+clauses administratives : le nom actuel annonce un document qui n'existe pas.
+
+- Backend : libellé du DPAC → « Données particulières d'appel à concurrence » (titre du document produit et
+  `DocumentFiche.libelle`).
+- Front : corrigé dans ce commit (repli d'affichage et phrase d'en-tête de la fiche).

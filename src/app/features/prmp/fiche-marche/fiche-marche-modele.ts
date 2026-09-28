@@ -33,7 +33,9 @@ export const LIBELLES_DOCUMENTS: Readonly<Record<DocumentDao, string>> = {
  */
 export const LIBELLES_PIECES: Readonly<Record<PieceProduite, string>> = {
   DPAO: "Données particulières de l'appel d'offres",
-  DPAC: 'Données particulières du cahier des clauses administratives',
+  // ⚠️ 28/09 — titre du modèle officiel ARMP du contrat-cadre : « Données particulières d'appel à concurrence »
+  // (le règlement de la consultation). Le sigle avait été développé à tort en « … du cahier des clauses administratives ».
+  DPAC: "Données particulières d'appel à concurrence",
   DPIC: 'Données particulières des instructions aux consultants',
   AE: "Acte d'engagement",
   CCAP: 'Cahier des clauses administratives particulières',
@@ -326,7 +328,7 @@ export const ORDRE_DOCUMENTS: readonly DocumentDao[] = ['DPAO', 'DPAC', 'DPIC', 
 /** Les documents en toutes lettres, tels que le serveur les nomme (lot 2a). */
 export const NOMS_DOCUMENTS: Readonly<Record<DocumentDao, string>> = {
   DPAO: "les données particulières de l'appel d'offres",
-  DPAC: 'les données particulières du cahier des clauses administratives',
+  DPAC: "les données particulières d'appel à concurrence",
   DPIC: 'les données particulières des instructions aux consultants',
   AE: "l'acte d'engagement",
   CCAP: 'le cahier des clauses administratives particulières',
