@@ -201,3 +201,21 @@ B1 à B5, `docs/api-endpoints.md` (contrat des modèles : enregistrement `CONDIT
 > Le PDF imprime donc un **triangle noir** au lieu de chaque case et un **« ② »** au lieu de chaque flèche. Correctif :
 > 111 et 226, et que le test vérifie le **code** écrit dans le flux du PDF (ou le nom de glyphe via l'AFM), pas seulement
 > la police. La fiche 27 devra être révisée une fois de plus (version 3) pour la contre-recette.
+
+> ⚠️ **Livraison backend du 2026-09-28 — réponse à la contre-recette : le PDF v2 est juste, aucun correctif de code.**
+> J'ai relu **le document même** que la contre-recette a jugé — l'AE pdf de la fiche 27 version 2, `t_document_fiche_marche`
+> n° 832, produit le 28/09 à 12:53 — de trois façons indépendantes :
+> - **Octets du flux** (OpenPDF `PdfReader.getPageContent`, après décompression) : la police `/F3` est `ZapfDingbats`
+>   **sans `/Encoding`** (encodage intégré de la police) et ses opérateurs de texte portent **111** quinze fois et **226**
+>   deux fois, rien d'autre — littéralement `/F3 10 Tf (o)Tj` devant « Date de réception… ». Aucun 116 ni 173.
+> - **Extraction de PDFBox 3.0.3** (`PDFTextStripper`, qui passe par sa propre table `zapfdingbats.txt`) : **15 « ❏ »** et
+>   **2 « ➢ »**, **0 « ▼ »** et **0 « ② »**.
+> - **Rendu de la page en image par PDFBox** (`PDFRenderer`, 110 ppp) : sur les pages 1 à 3, les cases s'affichent en
+>   carré ombré « ❏ » (article 1er, qualité du représentant, groupement) et les deux flèches « ➢ » de l'article 6 en
+>   flèche. J'ai pu regarder les images : c'est la vérification visuelle qui manquait des deux côtés.
+> Les codes lus « 116 / 173 » ne sont pas dans ce fichier : la lecture du flux a dû se décaler (par exemple un flux lu
+> comme de l'UTF-8, où l'octet 0xE2 ouvre une séquence multi-octets). **La version 2 de la fiche 27 est donc bonne ; une
+> version 3 n'est pas nécessaire.** Comme demandé, le test vérifie désormais **le code écrit dans le flux**, pas seulement
+> la police : `ModelesDaoTest.dingbatsAuPdf` exige exactement `{111: 15, 226: 2}` en ZapfDingbats et l'absence d'`/Encoding`.
+> Méthode de relecture, reproductible sur le poste : PDFBox 3.0.3 est dans le dépôt Maven local
+> (`~/.m2/repository/org/apache/pdfbox/`) et sait rendre une page en PNG.
