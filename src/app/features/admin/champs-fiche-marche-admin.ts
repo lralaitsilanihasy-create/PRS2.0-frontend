@@ -125,7 +125,7 @@ function vide(): ChampFiche {
                 <label class="form-group">
                   <span class="form-label">Valeur par défaut</span>
                   <input class="form-control" type="text" [value]="c.valeurDefaut ?? ''" placeholder="50 · PDF,PDF/A · OUI" (input)="poser('valeurDefaut', $any($event.target).value || null)" />
-                  <span class="form-hint">Recopiée dans la fiche à sa création par le serveur ; vide = rien. Une liste multiple : les options jointes par des virgules.</span>
+                  <span class="form-hint">Recopiée dans la fiche à sa création par le serveur ; vide = rien. Une liste multiple : les options jointes par des virgules. <code>PARAM:&lt;CLÉ&gt;</code> : la valeur du paramètre du moment ; <code>MANDAT:ACTE_NOMINATION</code> : l'acte de nomination du mandat PRMP en vigueur.</span>
                   @if (erreur('valeurDefaut'); as m) { <span class="form-error">{{ m }}</span> }
                 </label>
               }
