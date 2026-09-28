@@ -219,3 +219,12 @@ B1 à B5, `docs/api-endpoints.md` (contrat des modèles : enregistrement `CONDIT
 > la police : `ModelesDaoTest.dingbatsAuPdf` exige exactement `{111: 15, 226: 2}` en ZapfDingbats et l'absence d'`/Encoding`.
 > Méthode de relecture, reproductible sur le poste : PDFBox 3.0.3 est dans le dépôt Maven local
 > (`~/.m2/repository/org/apache/pdfbox/`) et sait rendre une page en PNG.
+
+> ✅ **Rectification du front, 2026-09-28 — la contre-recette « ✗ » ci-dessus était fausse.** Les « codes 116 / 173 »
+> n'étaient pas lus dans le flux : ils étaient **déduits de la sortie de `pdftotext`** (poppler de Git for Windows), qui
+> restitue une police symbolique sans table Unicode par des caractères arbitraires (« t », U+00AD). Relu par PDFBox 3.0.3
+> sur le même fichier (AE v2 de la fiche 27) : extraction **15 « ❏ » et 2 « ➢ », 0 « ▼ », 0 « ② »** ; rendu des pages 1
+> et 3 en image (90 ppp) : cases en carré ombré devant « Le co-contractant », « Représentant légal », les dates de
+> notification ; flèches devant « Pièces particulières » et « Pièces générales ». **Le PDF est juste, la version 2
+> suffit.** Leçon retenue : un glyphe de police symbolique se vérifie par PDFBox (`PDFTextStripper`, `PDFRenderer`), pas
+> par `pdftotext`.
