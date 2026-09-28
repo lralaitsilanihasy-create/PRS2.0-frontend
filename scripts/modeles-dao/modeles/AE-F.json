@@ -1,0 +1,1702 @@
+{
+ "fichier": "AE-F.docx",
+ "sigle": "AE-F",
+ "source": "fournitures-ae",
+ "titre": "MARCHÉ PUBLIC DE FOURNITURES",
+ "conditions": {
+  "ALLOTI": "alloti = OUI",
+  "NON-ALLOTI": "alloti = NON",
+  "AOO": "B01-AC-13 = Appel d'offres ouvert",
+  "PREQUALIFICATION": "B01-AC-13 contient qualification",
+  "DEUX-ETAPES": "B01-AC-13 contient deux étapes",
+  "RESTREINT": "B01-AC-13 contient restreint",
+  "GROUPEMENT": "groupement = OUI",
+  "GROUPEMENT-CONJOINT": "groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE",
+  "PRIX-UNITAIRES": "typeMarche = QUANTITE_FIXE et typePrix = UNITAIRES",
+  "PRIX-FORFAITAIRE": "typeMarche = QUANTITE_FIXE et typePrix = FORFAITAIRE",
+  "COMMANDE": "typeMarche = A_COMMANDE",
+  "QUANTITE-FIXE": "typeMarche = QUANTITE_FIXE",
+  "SANS-SOUS-TRAITANCE": "B03-ST-01 = NON",
+  "SOUS-TRAITANCE": "B03-ST-01 = OUI",
+  "DEPART-DIFFERE": "typeMarche = QUANTITE_FIXE et B09-DX-02 renseigne",
+  "SANS-AVANCE": "avance = NON",
+  "AVANCE": "avance = OUI",
+  "ANNEXE-FORFAIT": "typePrix = FORFAITAIRE",
+  "ANNEXE-UNITAIRES": "typePrix = UNITAIRES",
+  "IMPORTEES": "provenance = IMPORTEES",
+  "NATIONAL-QUANTITE-FIXE": "provenance = NATIONAL et typeMarche = QUANTITE_FIXE",
+  "NATIONAL-COMMANDE": "provenance = NATIONAL et typeMarche = A_COMMANDE"
+ },
+ "blocs": [
+  {
+   "type": "centre",
+   "texte": "ACTE D'ENGAGEMENT (A.E)"
+  },
+  {
+   "type": "para",
+   "texte": "AUTORITE CONTRACTANTE :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B01-AC-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "MARCHÉ :"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:NON-ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-OB-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:NON-ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-OB-01}} — lot n° {{LOT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Marché passé selon la procédure"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AOO}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres ouvert régie par l'article 18 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AOO}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PREQUALIFICATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres ouvert avec pré - qualification régie par l'article 19 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PREQUALIFICATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DEUX-ETAPES}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres en deux étapes régie par l'article 20 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DEUX-ETAPES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RESTREINT}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres restreint régie par l'article 21 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RESTREINT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Imputation budgétaire : {{B01-AC-17}}"
+  },
+  {
+   "type": "para",
+   "texte": "PERSONNE RESPONSABLE DES MARCHES PUBLICS (PRMP) ou son Délégué :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B01-AC-05}}"
+  },
+  {
+   "type": "table",
+   "texte": "2"
+  },
+  {
+   "type": "ligne",
+   "texte": "Date de notification du Marché:\u001e<date de notification à compléter\u001elors de la notification>\u001f<cadre réservé à la mention \"exemplaire unique\" lors de la notification>"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "sous_titre",
+   "texte": "A. - ENGAGEMENT DU CANDIDAT"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 1 - CONTRACTANT(S)"
+  },
+  {
+   "type": "para",
+   "texte": "Engagement à remplir par le CANDIDAT INDIVIDUEL"
+  },
+  {
+   "type": "para",
+   "texte": "Je soussigné :"
+  },
+  {
+   "type": "para",
+   "texte": "- Nom :"
+  },
+  {
+   "type": "para",
+   "texte": "- Prénom :"
+  },
+  {
+   "type": "para",
+   "texte": "Agissant pour mon propre compte :"
+  },
+  {
+   "type": "para",
+   "texte": "domicilié à"
+  },
+  {
+   "type": "para",
+   "texte": "N° de Registre de Commerce"
+  },
+  {
+   "type": "para",
+   "texte": "N° statistique:"
+  },
+  {
+   "type": "para",
+   "texte": "Identification fiscale"
+  },
+  {
+   "type": "para",
+   "texte": "Télécopieur :"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse e-Mail :"
+  },
+  {
+   "type": "para",
+   "texte": "OU :"
+  },
+  {
+   "type": "para",
+   "texte": "Agissant pour le compte de la personne morale dont les coordonnées sont données ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "Dénomination :"
+  },
+  {
+   "type": "para",
+   "texte": "forme juridique :"
+  },
+  {
+   "type": "para",
+   "texte": "adresse du siège :"
+  },
+  {
+   "type": "para",
+   "texte": "N° de Registre de Commerce :"
+  },
+  {
+   "type": "para",
+   "texte": "N° statistique :"
+  },
+  {
+   "type": "para",
+   "texte": "Identification fiscale :"
+  },
+  {
+   "type": "para",
+   "texte": "N° Télécopieur :"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse e-Mail :"
+  },
+  {
+   "type": "para",
+   "texte": "Après avoir pris connaissance du Dossier d'Appel d'Offres N° {{B02-OB-03}} du <date> et, en particulier, des documents composant le Cahier des Prescriptions Spéciales :"
+  },
+  {
+   "type": "para",
+   "texte": "Atteste sur l'honneur, sous peine de résiliation de plein droit du marché ou de sa mise en régie, à mes torts exclusifs ou, selon le cas, aux torts exclusifs de la personne morale que je représente, que je ne tombe pas ou, selon le cas, que ladite personne morale ne tombe pas sous le coup d'un cas d'exclusion visé par l'article 9 du Code des Marchés Publics reproduit ci-après."
+  },
+  {
+   "type": "para",
+   "texte": "\"Art. 9 - Exclusion des marchés publics:"
+  },
+  {
+   "type": "para",
+   "texte": "Ne sont pas admis à concourir aux marchés publics :"
+  },
+  {
+   "type": "para",
+   "texte": "Les personnes physiques ou morales en état de liquidation judiciaire et les personnes physiques dont la faillite personnelle a été prononcée ;"
+  },
+  {
+   "type": "para",
+   "texte": "Les personnes physiques ou morales admises en règlement judiciaire qui ne peuvent justifier qu'elles ont été habilitées à poursuivre leur activité."
+  },
+  {
+   "type": "para",
+   "texte": "Les personnes physiques ou morales qui n’ont pas souscrit à leurs obligations fiscales ou para fiscales à la date limite fixée pour le dépôt des offres."
+  },
+  {
+   "type": "para",
+   "texte": "Les entreprises dans lesquelles la Personne Responsable des Marchés Publics ou les membres de la Commission d’Appel Offres possèdent des intérêts financiers ou personnels directs de quelque nature que ce soit."
+  },
+  {
+   "type": "para",
+   "texte": "Les entreprises affiliées aux prestataires de service ayant contribué à préparer tout ou partie des Dossiers d’Appel d’Offres ou de consultation."
+  },
+  {
+   "type": "para",
+   "texte": "les personnes physiques ou morales qui ont fait l’objet d’exclusion temporaire ou définitive résultant d’une infraction au Code Pénal ou prononcée par l’Autorité de Régulation des Marchés Publics pour atteinte à la réglementation des marchés publics.\""
+  },
+  {
+   "type": "para",
+   "texte": "M'engage en mon nom ou en mon nom et au nom du Candidat que je représente, selon le cas, à m'abstenir de toute pratique consistant dans l'octroi ou la promesse d'octroyer un avantage indu, pécuniaire ou autre, directement ou par des intermédiaires, en vue d'obtenir le marché objet du présent Acte d'Engagement, et en général à respecter les dispositions du Code d'Ethique des Marchés Publics adopté par décret n° 2006-343 du 30 mai 2006."
+  },
+  {
+   "type": "para",
+   "texte": "M'engage sans réserve, conformément aux stipulations des documents visés ci-dessus, à exécuter le marché portant sur les fournitures définies par les Spécifications Techniques du CPS, dans les conditions précisées par le CPS, le CCAG applicable et par le présent Acte d'Engagement."
+  },
+  {
+   "type": "para",
+   "texte": "L'offre ainsi présentée me lie conformément à la durée de validité des offres fixée dans les Données Particulières de l'Appel d'Offres, jusqu'au {{DERIVE.fin-validite-offre}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GROUPEMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Engagement à remplir par les MEMBRES D'UN :"
+  },
+  {
+   "type": "para",
+   "texte": "GROUPEMENT D'ENTREPRISES CONJOINTES"
+  },
+  {
+   "type": "para",
+   "texte": "OU :"
+  },
+  {
+   "type": "para",
+   "texte": "GROUPEMENTS D'ENTREPRISES SOLIDAIRES"
+  },
+  {
+   "type": "para",
+   "texte": "(cocher la case correspondante)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 1. - CONTRACTANTS :"
+  },
+  {
+   "type": "para",
+   "texte": "Nous :"
+  },
+  {
+   "type": "para",
+   "texte": "1."
+  },
+  {
+   "type": "para",
+   "texte": "Nom :"
+  },
+  {
+   "type": "para",
+   "texte": "Prénoms :"
+  },
+  {
+   "type": "para",
+   "texte": "Agissant pour mon compte / pour le compte de la personne morale ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "Dénomination :"
+  },
+  {
+   "type": "para",
+   "texte": "Forme juridique :"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse du siège :"
+  },
+  {
+   "type": "para",
+   "texte": "N° de Registre de Commerce :"
+  },
+  {
+   "type": "para",
+   "texte": "N° statistique :"
+  },
+  {
+   "type": "para",
+   "texte": "Identification fiscale :"
+  },
+  {
+   "type": "para",
+   "texte": "N° Télécopieur :"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse e-Mail :"
+  },
+  {
+   "type": "para",
+   "texte": "2."
+  },
+  {
+   "type": "para",
+   "texte": "Nom :"
+  },
+  {
+   "type": "para",
+   "texte": "Prénoms :"
+  },
+  {
+   "type": "para",
+   "texte": "Agissant pour mon compte / pour le compte de la personne morale ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "Dénomination :"
+  },
+  {
+   "type": "para",
+   "texte": "Forme juridique :"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse du siège :"
+  },
+  {
+   "type": "para",
+   "texte": "N° de Registre de Commerce :"
+  },
+  {
+   "type": "para",
+   "texte": "N° statistique :"
+  },
+  {
+   "type": "para",
+   "texte": "Identification fiscale :"
+  },
+  {
+   "type": "para",
+   "texte": "N° Télécopieur :"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse e-Mail :"
+  },
+  {
+   "type": "para",
+   "texte": "(Compléter pour chacun des membres du groupement en ajoutant autant de pages que nécessaire)"
+  },
+  {
+   "type": "para",
+   "texte": "Représentés par (en cas de pouvoir donné à un mandataire)"
+  },
+  {
+   "type": "para",
+   "texte": "Nom :"
+  },
+  {
+   "type": "para",
+   "texte": "Prénoms :"
+  },
+  {
+   "type": "para",
+   "texte": "Agissant pour le compte de :"
+  },
+  {
+   "type": "para",
+   "texte": "Dénomination :"
+  },
+  {
+   "type": "para",
+   "texte": "Forme juridique :"
+  },
+  {
+   "type": "para",
+   "texte": "adresse du siège :"
+  },
+  {
+   "type": "para",
+   "texte": "N° de Registre de Commerce :"
+  },
+  {
+   "type": "para",
+   "texte": "N° statistique :"
+  },
+  {
+   "type": "para",
+   "texte": "Identification fiscale :"
+  },
+  {
+   "type": "para",
+   "texte": "N° Télécopieur :"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse e-Mail :"
+  },
+  {
+   "type": "para",
+   "texte": "Après avoir pris connaissance du Dossier d'Appel d'Offres N° {{B02-OB-03}} du <date> et, en particulier, des documents composant le Cahier des Prescriptions Spéciales :"
+  },
+  {
+   "type": "para",
+   "texte": "Attestons sur l'honneur, sous peine de résiliation de plein droit du marché ou de sa mise en régie, à nos torts exclusifs ou, selon le cas, aux torts exclusifs des personnes morales que nous représentons, que nous ne tombons pas ou, selon le cas, que lesdites personnes morales ne tombent pas sous le coup d'un cas d'exclusion visé par l'article 9 du Code des Marchés Publics reproduit ci-après."
+  },
+  {
+   "type": "para",
+   "texte": "\"Art. 9 - Exclusion des marchés publics:"
+  },
+  {
+   "type": "para",
+   "texte": "Ne sont pas admis à concourir aux marchés publics :"
+  },
+  {
+   "type": "para",
+   "texte": "Les personnes physiques ou morales en état de liquidation judiciaire et les personnes physiques dont la faillite personnelle a été prononcée ;"
+  },
+  {
+   "type": "para",
+   "texte": "Les personnes physiques ou morales admises en règlement judiciaire qui ne peuvent justifier qu'elles ont été habilitées à poursuivre leur activité."
+  },
+  {
+   "type": "para",
+   "texte": "Les personnes physiques ou morales qui n’ont pas souscrit à leurs obligations fiscales ou para fiscales à la date limite fixée pour le dépôt des offres."
+  },
+  {
+   "type": "para",
+   "texte": "Les entreprises dans lesquelles la Personne Responsable des Marchés Publics ou les membres de la Commission d’Appel Offres possèdent des intérêts financiers ou personnels directs de quelque nature que ce soit."
+  },
+  {
+   "type": "para",
+   "texte": "Les entreprises affiliées aux prestataires de service ayant contribué à préparer tout ou partie des Dossiers d’Appel d’Offres ou de consultation."
+  },
+  {
+   "type": "para",
+   "texte": "les personnes physiques ou morales qui ont fait l’objet d’exclusion temporaire ou définitive résultant d’une infraction au Code Pénal ou prononcée par l’Autorité de Régulation des Marchés Publics pour atteinte à la réglementation des marchés publics.\""
+  },
+  {
+   "type": "para",
+   "texte": "Nous engageons en notre nom, au nom du Candidat que nous représentons, à nous abstenir de toute pratique consistant dans l'octroi ou la promesse d'octroyer un avantage indu, pécuniaire ou autre, directement ou par des intermédiaires, en vue d'obtenir le marché objet du présent Acte d'Engagement, et en général à respecter les dispositions du Code d'Ethique des Marchés Publics adopté par 2006-343 du 30 mai 2006."
+  },
+  {
+   "type": "para",
+   "texte": "Nous engageons sans réserve, conformément aux stipulations des documents visés ci-dessus, à exécuter le marché portant sur les fournitures définies par les Spécifications Techniques du CPS, dans les conditions précisées par le CPS, le CCAG applicable et par le présent Acte d'Engagement."
+  },
+  {
+   "type": "para",
+   "texte": "L'offre ainsi présentée nous lie pour la durée de validité des offres fixée dans les Données Particulières de l'Appel d'Offres, jusqu'au {{DERIVE.fin-validite-offre}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GROUPEMENT}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 2 - PRIX"
+  },
+  {
+   "type": "para",
+   "texte": "Les conditions d'établissement des prix sont celles existant le quinzième jour précédant la date limite fixée pour la remise des offres, soit le…."
+  },
+  {
+   "type": "para",
+   "texte": "Tous les paiements à réaliser en monnaie différente de l'Ariary seront effectués sur la base du cours publié par la Banque Centrale de Madagascar en vigueur le quinzième jour précédant la date limite fixée pour le remise des offres."
+  },
+  {
+   "type": "para",
+   "texte": "Les modalités éventuelles de variation des prix sont fixées en Annexe au Cahier des Clauses Administratives Particulières du CPS."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PRIX-UNITAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les fournitures, objet du présent marché, sont rémunérées, par application du ou des prix unitaire(s) qui figurent dans le Bordereau de Prix en Annexe au présent Acte d'Engagement, à la ou aux quantité(s) réellement livrée(s) et admise(s) en recettes."
+  },
+  {
+   "type": "para",
+   "texte": "Le montant du marché est estimé à :"
+  },
+  {
+   "type": "para",
+   "texte": "montant hors taxes :(en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "TVA : (en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "Soit un montant total TTC de (en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PRIX-UNITAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PRIX-FORFAITAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les fournitures, objet du présent marché, sont rémunérées, par application du prix global forfaitaire résultant du bordereau des prix et du détail quantitatif et estimatif, récapitulé en Annexe au présent Acte d'Engagement, fixé à :"
+  },
+  {
+   "type": "para",
+   "texte": "montant hors taxes :(en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "TVA :(en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "Soit un montant total TTC de (en lettres et en chiffres):"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PRIX-FORFAITAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant du marché est fixé à :"
+  },
+  {
+   "type": "para",
+   "texte": "Montant minimum (annuel, le cas échéant) du marché hors TVA : (montant) (en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "Montant de la TVA au taux de %: (montant) (en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "Montant minimum (annuel, le cas échéant) du marché, TVA comprise : (montant en chiffres) soit, en toutes lettres et toutes taxes comprises : (montant)"
+  },
+  {
+   "type": "para",
+   "texte": "Montant maximum (annuel, le cas échéant) du marché hors TVA : (montant) (en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "Montant de la TVA au taux de %: (montant) (en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "Montant maximum (annuel, le cas échéant) du marché, TVA comprise : (montant en chiffres), soit, en toutes lettres et toutes taxes comprises : (montant)"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:COMMANDE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 3 - SOUS-TRAITANCE"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-SOUS-TRAITANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Il n'est pas envisagé de sous-traiter l'exécution de prestations objet du marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-SOUS-TRAITANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SOUS-TRAITANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "l’Annexe n° <préciser n°> au présent acte d'engagement indique la nature et le montant des prestations qu'il est envisagé de faire exécuter par des sous-traitants payés directement, les noms de ces sous-traitants et les conditions de paiement des contrats de sous-traitance."
+  },
+  {
+   "type": "para",
+   "texte": "Le montant des prestations sous-traitées indiqué dans l’annexe constitue le montant maximal de la créance que le(s) sous-traitant(s) concerné(s) pourra(ont) céder ou présenter en nantissement. Le montant total des prestations qu'il est envisagé de sous-traiter conformément à cette annexe est de (montant en chiffres et en lettres) TVA incluse."
+  },
+  {
+   "type": "para",
+   "texte": "L’Annexe n° <préciser n°> constitue une demande d'acceptation des sous-traitants concernés et d'agrément des conditions de paiement du contrat de sous-traitance qui est réputée prendre effet à la date de notification du marché. Cette notification sera réputée emporter acceptation du sous-traitant et agrément des conditions de paiement du contrat de sous-traitance."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SOUS-TRAITANCE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 4 - NANTISSEMENT"
+  },
+  {
+   "type": "para",
+   "texte": "Est désigné comme Comptable Assignataire de paiement, le {{B03-NA-03}}."
+  },
+  {
+   "type": "para",
+   "texte": "Le montant maximal de la créance qui pourra être nantie par notre entreprise en tant que titulaire du marché est de :"
+  },
+  {
+   "type": "para",
+   "texte": "(en lettres et en chiffres, montant maximum du marché diminué du montant de la sous-traitance envisagée) :"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 5 - DURÉE - DELAI"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "5.1 Date d'effet"
+  },
+  {
+   "type": "para",
+   "texte": "Le marché prend effet à compter de la notification au Fournisseur de son approbation."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DEPART-DIFFERE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai de réalisation des prestations suivantes du marché prend effet à compter du lendemain de la date de notification de l'ordre de service de réalisation de celle(s)-ci :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-DX-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DEPART-DIFFERE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai de réalisation des prestations prend effet à compter du lendemain de la date de notification du bon de commande (cas d’un marché à commande)"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:COMMANDE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "5.2. Délai d'exécution"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:QUANTITE-FIXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai d'exécution est fixé à {{B09-DX-01}} jours, à compter du lendemain de la date de notification de l’Ordre de Service de commencer les prestations."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:QUANTITE-FIXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai d'exécution est fixé dans le bon de commande sans toutefois dépasser{{B06-EO-12}} jours, à compter du lendemain de la date de notification dudit bon de commande"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les calendriers proposés pour la livraison des fournitures et la réalisation des prestations connexes sont donnés dans les bordereau de prix figurant en Annexe au présent Acte d'Engagement."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "ARTICLE 6 - PAIEMENTS"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "6.1. Domiciliation bancaire"
+  },
+  {
+   "type": "para",
+   "texte": "Dans le cas d'un Fournisseur unique"
+  },
+  {
+   "type": "para",
+   "texte": "L'Acheteur se libérera des sommes dues au titre du présent marché en en faisant porter le montant au crédit du compte bancaire suivant:"
+  },
+  {
+   "type": "para",
+   "texte": "- titulaire du compte:"
+  },
+  {
+   "type": "para",
+   "texte": "- établissement bancaire:"
+  },
+  {
+   "type": "para",
+   "texte": "- agence :"
+  },
+  {
+   "type": "para",
+   "texte": "- numéro de compte :"
+  },
+  {
+   "type": "para",
+   "texte": "- code :"
+  },
+  {
+   "type": "para",
+   "texte": "Toutefois, l'Acheteur se libérera des sommes dues aux sous-traitants payés directement en en faisant porter les montants au crédit des comptes desdits sous-traitants."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GROUPEMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Dans le cas d'un groupement de Fournisseurs solidaires"
+  },
+  {
+   "type": "para",
+   "texte": "L'Acheteur se libérera des sommes dues au titre du présent marché en en faisant porter le montant au crédit du compte bancaire suivant, ouvert au nom des membres du groupement à l'effet de percevoir pour le compte des membres du groupement les sommes qui leurs sont dues en exécution du marché."
+  },
+  {
+   "type": "para",
+   "texte": "- titulaire du compte:"
+  },
+  {
+   "type": "para",
+   "texte": "- établissement bancaire:"
+  },
+  {
+   "type": "para",
+   "texte": "- agence :"
+  },
+  {
+   "type": "para",
+   "texte": "- numéro de compte :"
+  },
+  {
+   "type": "para",
+   "texte": "- code :"
+  },
+  {
+   "type": "para",
+   "texte": "Ces paiements seront libératoires vis-à-vis des fournisseurs groupés solidaires. Toutefois, l'Acheteur se libérera des sommes dues aux sous-traitants payés directement en en faisant porter les montants au crédit des comptes désignés dans les avenants concernant les sous-traitants."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GROUPEMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GROUPEMENT-CONJOINT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Dans le cas d'un groupement de Fournisseurs conjoints"
+  },
+  {
+   "type": "para",
+   "texte": "L'Acheteur se libérera des sommes dues au titre du présent marché en en faisant porter le montant au crédit des comptes bancaires suivants, ouvert aux de chacun des membres du groupement:"
+  },
+  {
+   "type": "para",
+   "texte": "- titulaire du compte:"
+  },
+  {
+   "type": "para",
+   "texte": "- établissement bancaire:"
+  },
+  {
+   "type": "para",
+   "texte": "- agence :"
+  },
+  {
+   "type": "para",
+   "texte": "- numéro de compte :"
+  },
+  {
+   "type": "para",
+   "texte": "(indiquer les comptes de chacun des membres)"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GROUPEMENT-CONJOINT}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "6.2 Avance forfaitaire"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le CCAP ne prévoit pas d'avance forfaitaire."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le Fournisseur désigné ci-avant :"
+  },
+  {
+   "type": "para",
+   "texte": "refuse de percevoir l'avance forfaitaire prévue par le Cahier des Clauses Administratives"
+  },
+  {
+   "type": "para",
+   "texte": "Particulières du CPS."
+  },
+  {
+   "type": "para",
+   "texte": "Ou"
+  },
+  {
+   "type": "para",
+   "texte": "ne refuse pas de percevoir l'avance forfaitaire prévue par le CCAP."
+  },
+  {
+   "type": "para",
+   "texte": "En cas de groupement :"
+  },
+  {
+   "type": "para",
+   "texte": "Les fournisseurs groupés désignés ci- avant :"
+  },
+  {
+   "type": "para",
+   "texte": "refusent de percevoir l'avance forfaitaire prévue par le Cahier des Clauses Administratives"
+  },
+  {
+   "type": "para",
+   "texte": "Particulières du CPS."
+  },
+  {
+   "type": "para",
+   "texte": "Ou"
+  },
+  {
+   "type": "para",
+   "texte": "ne refusent pas de percevoir l'avance forfaitaire prévue par le CCAP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Fait en un seul original"
+  },
+  {
+   "type": "para",
+   "texte": "à : le :"
+  },
+  {
+   "type": "para",
+   "texte": "Signature(s) du/des Candidats ou du mandataire du groupement précédée(s) de la mention(s) manuscrite(s) \"lu et accepté\""
+  },
+  {
+   "type": "para",
+   "texte": "Le présent acte d'engagement comporte les annexes énumérées ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ANNEXE-FORFAIT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe n° 1 : bordereau de prix unitaires et décomposition du prix forfaitaire"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ANNEXE-FORFAIT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ANNEXE-UNITAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe n° 2 : bordereau de prix"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ANNEXE-UNITAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe n° < > : demande d'acceptation des sous-traitants;"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe n° < > : état des sommes versées à des tiers"
+  },
+  {
+   "type": "para",
+   "texte": "Autres pièces contractuelles : {{B09-PC-02}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "B. - ACCEPTATION ET NOTIFICATION PAR L'AUTORITE CONTRACTANTE"
+  },
+  {
+   "type": "para",
+   "texte": "Acceptation de l'offre"
+  },
+  {
+   "type": "para",
+   "texte": "Est acceptée la présente offre pour valoir acte d'engagement."
+  },
+  {
+   "type": "para",
+   "texte": "Pour l'autorité contractante, la Personne Responsable des marchés publics ou son délégué :"
+  },
+  {
+   "type": "para",
+   "texte": "à : le :"
+  },
+  {
+   "type": "table",
+   "texte": "2"
+  },
+  {
+   "type": "ligne",
+   "texte": "Approbation par l'autorité compétente\u001fVisa de l'autorité de contrôle financier"
+  },
+  {
+   "type": "ligne",
+   "texte": "à :\u001ele :\u001fà :\u001ele :"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "Notification"
+  },
+  {
+   "type": "para",
+   "texte": "Reçu notification du marché le :"
+  },
+  {
+   "type": "para",
+   "texte": "Le Fournisseur / Mandataire du groupement :"
+  },
+  {
+   "type": "para",
+   "texte": "Reçu l'avis de réception de la notification du marché le :"
+  },
+  {
+   "type": "para",
+   "texte": "par le Fournisseur / mandataire du groupement."
+  },
+  {
+   "type": "para",
+   "texte": "La Personne Responsable des Marchés Publics."
+  },
+  {
+   "type": "para",
+   "texte": "à : le :"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe"
+  },
+  {
+   "type": "para",
+   "texte": "Bordereaux des prix"
+  },
+  {
+   "type": "para",
+   "texte": "(Le Candidat doit remplir les formulaires de Bordereau des prix selon les instructions figurant ci-après. La liste des articles dans la colonne 1 du Bordereau des prix doit être identique à la liste des Fournitures et Services connexes annexée au Spécifications Techniques du CPS)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:IMPORTEES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Bordereau des prix des Fournitures à importer"
+  },
+  {
+   "type": "table",
+   "texte": "2"
+  },
+  {
+   "type": "ligne",
+   "texte": "Monnaie de l’offre en conformité avec l'Article 6.7. des IC et des DPAO\u001fDate (insérer la date (jour, mois, année) de remise de l’offre)\u001eMarché : (insérer la référence du Marché)\u001eLot : (insérer le numéro du lot)\u001eVariante No. : (insérer le numéro d’identification si cette offre est proposée pour une variante)"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "9"
+  },
+  {
+   "type": "ligne",
+   "texte": "1\u001f2\u001f3\u001f4\u001f5\u001f6\u001f7\u001f8\u001f9"
+  },
+  {
+   "type": "ligne",
+   "texte": "Article No.\u001fDescription des Fournitures\u001fPays d’origine\u001fDate de livraison CIP\u001e<lieu>\u001e<ou>\u001eCIF\u001e<port>\u001fQuantité (Nb. d’unités)\u001fPrix unitaire CIP___\u001e<ou>\u001eCIF\u001e<port>\u001fPrix CIP <ou>\u001eCIF\u001e<port>\u001epar article (col 5x6)\u001fPrix par article du transport terrestre et autres services requis pour acheminer les fournitures jusqu’à destination finale\u001fPrix total par article (col 7+8)"
+  },
+  {
+   "type": "ligne",
+   "texte": "(insérer le No de l’article)\u001f(Insérer l’identification de la fourniture)\u001f(insérer le pays d’origine)\u001f(insérer la date de livraison offerte)\u001f(insérer la quantité et l’identification de l’unité de mesure)\u001f(insérer le prix unitaire CIP pour l’article)\u001f(insérer le prix total CIP pour l’article)\u001f(insérer le prix correspondant pour l’article)\u001f(insérer le prix total pour l’article)"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "3"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fPrix total (insérer le prix total)\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "Arrêté le montant estimé du marché à la somme de……………..(en lettres et en chiffres) y compris la Taxe sur la valeur ajoutée (TVA) au taux de ……………..(en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "A (insérer le lieu d’établissement de l’acte)"
+  },
+  {
+   "type": "para",
+   "texte": "Date (insérer la date)"
+  },
+  {
+   "type": "para",
+   "texte": "[Nom du Candidat (insérer le nom du Candidat)"
+  },
+  {
+   "type": "para",
+   "texte": "Signature (insérer signature)"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:IMPORTEES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:NATIONAL-QUANTITE-FIXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Bordereau des prix pour les fournitures locales"
+  },
+  {
+   "type": "table",
+   "texte": "3"
+  },
+  {
+   "type": "ligne",
+   "texte": "Monnaie : Ariary\u001f\u001fDate (insérer la date (jour, mois, année) de remise de l’offre)\u001eMarché : ( insérer la référence du Marché)\u001eLot No : ( insérer le numéro du lot)\u001eVariante No. : ( insérer le numéro d’identification si cette offre est proposée pour une variante)"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "6"
+  },
+  {
+   "type": "ligne",
+   "texte": "1\u001f2\u001f3\u001f4\u001f5\u001f6"
+  },
+  {
+   "type": "ligne",
+   "texte": "Article\u001fDescription\u001fDate de livraison\u001eselon EXW\u001fQuantité (Nb. d’unités)\u001fPrix unitaire\u001eEXW + Frais de transport jusqu’au lieu de destination finale\u001fPrix total EXW\u001epar article\u001e(cols.4 x 5)"
+  },
+  {
+   "type": "ligne",
+   "texte": "( insérer le No de l’article)\u001f( Insérer l’identification de la fourniture)\u001f( insérer la date\u001ede livraison offerte)\u001f( insérer la quantité et l’identification de l’unité de mesure)\u001f( insérer le prix unitaire EXW pour l’article)\u001ese référer au\u001eDPAO\u001f( insérer le prix total EXW pour l’article)\u001ese référer au DPAO"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "3"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fMontant HTVA\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fTVA\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fMontant TTC\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "Arrêté le montant estimé du marché à la somme de……………..(en lettres et en chiffres) y compris la Taxe sur la valeur ajoutée (TVA) au taux de ……………..(en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "A (insérer le lieu d’établissement de l’acte)"
+  },
+  {
+   "type": "para",
+   "texte": "Date (insérer la date)"
+  },
+  {
+   "type": "para",
+   "texte": "[Nom du Candidat (insérer le nom du Candidat)"
+  },
+  {
+   "type": "para",
+   "texte": "Signature (insérer signature)"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:NATIONAL-QUANTITE-FIXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:NATIONAL-COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Bordereau des prix pour les fournitures locales"
+  },
+  {
+   "type": "table",
+   "texte": "3"
+  },
+  {
+   "type": "ligne",
+   "texte": "Monnaie : Ariary\u001f\u001fDate (insérer la date (jour, mois, année) de remise de l’offre)\u001eMarché : ( insérer la référence du Marché)\u001eLot No : ( insérer le numéro du lot)\u001eVariante No. : ( insérer le numéro d’identification si cette offre est proposée pour une variante)"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "8"
+  },
+  {
+   "type": "ligne",
+   "texte": "1\u001f2\u001f3\u001f4\u001f5\u001f6\u001f7\u001f8"
+  },
+  {
+   "type": "ligne",
+   "texte": "Article\u001fDescription\u001fDate de livraison\u001eselon EXW\u001fPrix unitaire\u001eEXW + Frais de transport jusqu’au lieu de destination finale\u001fQuantité (Nb. d’unités) minimale\u001fQuantité (Nb. d’unités) maximale\u001fMontant minimal\u001fMontant maximale"
+  },
+  {
+   "type": "ligne",
+   "texte": "( insérer le No de l’article)\u001f( Insérer l’identification de la fourniture)\u001f( insérer la date\u001ede livraison offerte)\u001f( insérer le prix unitaire EXW pour l’article)\u001ese référer au\u001eDPAO\u001f( insérer la quantité et l’identification de l’unité de mesure)\u001f\u001f\u001f( insérer le prix total EXW pour l’article)\u001ese référer au DPAO"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fMontant HTVA\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fTVA\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fMontant TTC\u001f\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "Arrêté le montant minimal du marché à la somme de……………..(en lettres et en chiffres) y compris la Taxe sur la valeur ajoutée (TVA) au taux de ……………..(en lettres et en chiffres) pour un montant de……………..(en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "Et le montant maximal du marché à la somme de……………..(en lettres et en chiffres) y compris la Taxe sur la valeur ajoutée (TVA) au taux de ……………..(en lettres et en chiffres) pour un montant de……………..(en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:NATIONAL-COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Bordereau des prix et calendrier d’exécution des Services connexes"
+  },
+  {
+   "type": "table",
+   "texte": "3"
+  },
+  {
+   "type": "ligne",
+   "texte": "Monnaie de l’offre en conformité avec la clause 6.7. des IC et des DPAO\u001f\u001fDate( insérer la date (jour, mois, année) de remise de l’offre)\u001eAOI No.: ( insérer le numéro de l’Appel d’Offres)\u001eAvis d’appel d’offres No.: ( insérer le numéro de l’avis d’Appel d’Offres)\u001eVariante No. : ( insérer le numéro d’identification si cette offre est proposée pour une variante)"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "6"
+  },
+  {
+   "type": "ligne",
+   "texte": "1\u001f2\u001f3\u001f4\u001f5\u001f6"
+  },
+  {
+   "type": "ligne",
+   "texte": "Article\u001fDescription des Services (à l’exclusion du transport terrestre et autres services requis dans le pays de l’Acheteur pour acheminer les fournitures jusqu’à destination finale)\u001fDate de réalisation au lieu de destination finale\u001fQuantité (Nb. d’unités)\u001fPrix unitaire\u001fPrix total par article\u001e(Col.4X5)"
+  },
+  {
+   "type": "ligne",
+   "texte": "( insérer le No de l’article)\u001f( Insérer l’identification du service)\u001f( insérer la date de réalisation offerte)\u001f( insérer la quantité et l’identification de l’unité de mesure)\u001f( insérer le prix unitaire pour l’article)\u001f( insérer le prix total pour l’article)"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "3"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fMontant HTVA\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fTVA\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fMontant TTC\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "Arrêté le montant estimé du marché à la somme de……………..(en lettres et en chiffres) y compris la Taxe sur la valeur ajoutée (TVA) au taux de ……………..(en lettres et en chiffres)"
+  },
+  {
+   "type": "para",
+   "texte": "A (insérer le lieu d’établissement de l’acte)"
+  },
+  {
+   "type": "para",
+   "texte": "Date (insérer la date)"
+  },
+  {
+   "type": "para",
+   "texte": "[Nom du Candidat (insérer le nom du Candidat)"
+  },
+  {
+   "type": "para",
+   "texte": "Signature (insérer signature)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ANNEXE-FORFAIT}}"
+  },
+  {
+   "type": "para",
+   "texte": "ANNEXE"
+  },
+  {
+   "type": "para",
+   "texte": "DECOMPOSITION DU PRIX FORFAITAIRE"
+  },
+  {
+   "type": "para",
+   "texte": "(A compléter par le Candidat)"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ANNEXE-FORFAIT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SOUS-TRAITANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "ANNEXE"
+  },
+  {
+   "type": "para",
+   "texte": "DEMANDE D'ACCEPTATION DU OU DES SOUS-TRAITANTS ET"
+  },
+  {
+   "type": "para",
+   "texte": "D'AGRÉMENT DES CONDITIONS DE PAIEMENT DU OU"
+  },
+  {
+   "type": "para",
+   "texte": "DES CONTRAT(S) DE SOUS-TRAITANCE"
+  },
+  {
+   "type": "para",
+   "texte": "(A compléter par le Candidat)"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SOUS-TRAITANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "ANNEXE"
+  },
+  {
+   "type": "para",
+   "texte": "ETAT DES SOMMES VERSEES AUX TIERS"
+  },
+  {
+   "type": "para",
+   "texte": "(article 19 du Code d'éthique des marchés publics)"
+  },
+  {
+   "type": "para",
+   "texte": "Les rémunérations commissions que nous avons versées ou que nous comptons verser, le cas échéant, en relation avec la préparation ou la présentation de cette offre ou avec l’exécution du Marché, si nous en sommes attributaires, figurent ci-après :"
+  },
+  {
+   "type": "table",
+   "texte": "3"
+  },
+  {
+   "type": "ligne",
+   "texte": "Nom et\u001eadresse du bénéficiaire\u001fMontant et\u001emonnaie\u001fObjet de la\u001erémunération"
+  },
+  {
+   "type": "ligne",
+   "texte": "----------------------\u001f--------------------------\u001f----------------------------"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "(si aucune rémunération n’a été ou ne doit être versée, indiquer “aucune”.)"
+  },
+  {
+   "type": "para",
+   "texte": "Fait à ……………………, le……………."
+  },
+  {
+   "type": "para",
+   "texte": "Le fournisseur"
+  }
+ ],
+ "trace": [
+  {
+   "ligne": "39.0.0",
+   "genre": "jeton",
+   "source": "<indiquer le nom >",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": "45.0.0",
+   "genre": "jeton",
+   "source": "<Indiquer: l'intitulé principal du Marché, le cas échéant le projet dans le cadre duquel le marché est passé, ou le numéro et l'objet du lot compris dans le projet >",
+   "par": "{{B02-OB-01}}"
+  },
+  {
+   "ligne": "45.0.0",
+   "genre": "jeton",
+   "source": "<Indiquer: l'intitulé principal du Marché, le cas échéant le projet dans le cadre duquel le marché est passé, ou le numéro et l'objet du lot compris dans le projet >",
+   "par": "{{B02-OB-01}} — lot n° {{LOT}}"
+  },
+  {
+   "ligne": "55.0.0",
+   "genre": "choix",
+   "source": "Publics>",
+   "par": "Publics"
+  },
+  {
+   "ligne": "58.0.0",
+   "genre": "jeton",
+   "source": "<à préciser>",
+   "par": "{{B01-AC-17}}"
+  },
+  {
+   "ligne": "63.0.0",
+   "genre": "jeton",
+   "source": "<insérer le nom>",
+   "par": "{{B01-AC-05}}"
+  },
+  {
+   "ligne": "89.0.0",
+   "genre": "jeton",
+   "source": "N° du <date>",
+   "par": "N° {{B02-OB-03}} du <date>"
+  },
+  {
+   "ligne": "89.0.17",
+   "genre": "jeton",
+   "source": "<date>",
+   "par": "{{DERIVE.fin-validite-offre}}"
+  },
+  {
+   "ligne": "141.0.0",
+   "genre": "jeton",
+   "source": "N° du <date>",
+   "par": "N° {{B02-OB-03}} du <date>"
+  },
+  {
+   "ligne": "141.0.18",
+   "genre": "jeton",
+   "source": "<date>",
+   "par": "{{DERIVE.fin-validite-offre}}"
+  },
+  {
+   "ligne": "154.0.2",
+   "genre": "retire",
+   "source": "<N° de l'Annexe>",
+   "par": ""
+  },
+  {
+   "ligne": "178.0.0",
+   "genre": "jeton",
+   "source": "le….",
+   "par": "le {{B03-NA-03}}."
+  },
+  {
+   "ligne": "193.0.0",
+   "genre": "jeton",
+   "source": "<Préciser les Fournitures ou Services Connexes dont le délai de réalisation commence postérieurement à la date de notification:>",
+   "par": "{{B09-DX-02}}"
+  },
+  {
+   "ligne": "204.0.0",
+   "genre": "jeton",
+   "source": "…",
+   "par": "{{B09-DX-01}} jours"
+  },
+  {
+   "ligne": "204.0.0",
+   "genre": "retire",
+   "source": ", sans toutefois dépasser …",
+   "par": ""
+  },
+  {
+   "ligne": "209.0.0",
+   "genre": "jeton",
+   "source": "…………jours",
+   "par": "{{B06-EO-12}} jours"
+  },
+  {
+   "ligne": "287.0.0",
+   "genre": "retire",
+   "source": "<Dans le cas d'un prix forfaitaire > :",
+   "par": ""
+  },
+  {
+   "ligne": "288.0.0",
+   "genre": "retire",
+   "source": "<dans le cas d'un marché à prix unitaires>:",
+   "par": ""
+  },
+  {
+   "ligne": "291.0.0",
+   "genre": "jeton",
+   "source": "<à préciser selon les cas>",
+   "par": "{{B09-PC-02}}"
+  }
+ ],
+ "retraits": [
+  {
+   "ligne": "19.0.0",
+   "texte": "2.1. CADRE D'ACTE D'ENGAGEMENT",
+   "raison": "titre de partie du dossier type"
+  },
+  {
+   "ligne": "23.0.0",
+   "texte": "Note aux utilisateurs à supprimer dans le DAO définitif:",
+   "raison": "note aux utilisateurs, « à supprimer dans le DAO définitif »"
+  },
+  {
+   "ligne": "25.0.0",
+   "texte": "L'Acte d’Engagement signé en un seul exemplaire par le Candidat comporte les éléments de son offre et son adhésion aux dispositions du Marché. Il constitue la pièce principale du marché.",
+   "raison": "note aux utilisateurs, « à supprimer dans le DAO définitif »"
+  },
+  {
+   "ligne": "26.0.0",
+   "texte": "L'Acte d’Engagement est, après l'attribution du marché, signé par la Personne Responsable des Marchés Publics, soumis au visa du contrôleur financier et à l'approbation de l'autorité compétente, puis une copie certifiée conforme est notifiée par la Personne Responsable des Marchés Publics à l'attributaire du Marché. Le modèle ci-après est destiné à servir de guide pour l'établissement du cadre d'Acte d'Engagement, qui devra être adapté à chaque opération, à joindre au DAO. Le cadre d'Acte d'Engagement devra être complété par le Fournisseur.",
+   "raison": "note aux utilisateurs, « à supprimer dans le DAO définitif »"
+  },
+  {
+   "ligne": "27.0.0",
+   "texte": "Les commentaires entre < crochets> concerne la personne chargée d'élaborer le document pour le compte de l'Acheteur et doivent être supprimés dans le document définitif; les commentaires entre (parenthèses) concernent le Candidat au marché. Ils sont destinés à le guider pour remplir l'Acte d'Engagement et ne doivent pas être supprimés.",
+   "raison": "note aux utilisateurs, « à supprimer dans le DAO définitif »"
+  },
+  {
+   "ligne": "51.0.0",
+   "texte": "<préciser selon le cas :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "165.0.0",
+   "texte": "Rayer les dispositions inapplicables parmi les clauses suivantes :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "189.0.0",
+   "texte": "<Insérer si le point de départ des délais de réalisation de tout ou partie des prestations est postérieur à la date de notification > :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "206.0.0",
+   "texte": "<mentionner le délai global>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "419.0.0",
+   "texte": "<dans le cas d'un marché à prix forfaitaire>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "154.0.0",
+   "texte": "Dans le cas d'un marché à prix unitaire :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "157.0.0",
+   "texte": "Dans le cas d'un marché à prix forfaitaire :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "160.0.0",
+   "texte": "Dans le cas d'un marché à commande :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "167.0.0",
+   "texte": "Soit :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "171.0.0",
+   "texte": "Soit :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "191.0.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "195.0.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "198.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "203.0.0",
+   "texte": "<soit :> (cas d’un marché à quantités fixes)",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "207.0.0",
+   "texte": "<soit :> (cas d’un marché à commande)",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "258.0.0",
+   "texte": "<Soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "261.0.0",
+   "texte": "<Soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "196.0.0",
+   "texte": "Le délai de réalisation des du marché prend effet à compter du lendemain de la date de notification de l'ordre de service de réalisation de celui ci :",
+   "raison": "variante « délai global à compter d'un ordre de service » : la fiche ne distingue que le cas où le point de départ diffère (B09-DX-02)"
+  }
+ ],
+ "ajouts": []
+}

@@ -57,8 +57,9 @@ function sectionCellules(src, debut, fin) {
   const deplier = (s) => s.replace(/[ﬀ-ﬆ]/g, (c) => c.normalize('NFKC'));
   const lignes = [];
   for (let k = i; k < j; k++) {
-    src[k].split('\t').forEach((cel, c) => cel.split('\u001E').forEach((par, p) => {
-      if (par.trim()) lignes.push({ n: `${k + 1}.${c}.${p}`, ligne: k + 1, cellule: c, p, brut: deplier(par), texte: deplier(propre(par)) });
+    const cellules = src[k].split('\t');
+    cellules.forEach((cel, c) => cel.split('\u001E').forEach((par, p) => {
+      if (par.trim()) lignes.push({ n: `${k + 1}.${c}.${p}`, ligne: k + 1, cellule: c, p, nbCellules: cellules.length, brut: deplier(par), texte: deplier(propre(par)) });
     }));
   }
   return { lignes, prises: new Set(), retirees: new Set(), retraits: [] };
@@ -69,6 +70,54 @@ function rangee(sec, motif, cellule = 0) {
   const u = sec.lignes.find((x) => !sec.retirees.has(x.n) && x.cellule === cellule && x.p === 0 && correspond(x, motif));
   if (!u) throw new Error(`rangée « ${motif} » (cellule ${cellule}) absente`);
   return { ...sec, lignes: sec.lignes.filter((x) => x.ligne === u.ligne) };
+}
+
+/**
+ * ⚠️ Lot D2 — l'émetteur générique, pour un document surtout FIXE (l'acte d'engagement du candidat) : il reprend une
+ * plage de la source telle quelle — paragraphes, et lignes de tableau avec leurs cellules vides —, n'y remplace que
+ * les trous déclarés (`trous` : `[motif, ...remplacements]`), et ce qui a été retiré avant (`retirer`) n'y paraît pas.
+ * La plage va de la ligne dont le premier paragraphe répond à `de` (incluse) à celle qui répond à `a` (exclue, ou la
+ * fin). Un paragraphe hors tableau dont le texte répond à `titres` devient un sous-titre.
+ */
+function emetteur(sec, tr, titres = /^(ARTICLE\b|[A-Z]\.\s*-|\d+\.\d*\.?\s)/) {
+  const numeros = [...new Set(sec.lignes.map((u) => u.ligne))].sort((x, y) => x - y);
+  /** La ligne dont le premier paragraphe non retiré répond au motif — `[motif, rang]` quand le titre revient. */
+  const ligneDe = (repere) => {
+    const [motif, rang] = Array.isArray(repere) ? repere : [repere, 0];
+    const trouvees = numeros.filter((k) => {
+      const u = sec.lignes.find((x) => x.ligne === k && !sec.retirees.has(x.n));
+      return u && correspond(u, motif);
+    });
+    if (trouvees.length <= rang) throw new Error(`plage : « ${motif} » (rang ${rang}) absent`);
+    return trouvees[rang];
+  };
+  return (de, a = null, trous = []) => {
+    const l0 = ligneDe(de);
+    const l1 = a ? ligneDe(a) : Infinity;
+    const out = [];
+    let colonnes = 0;
+    const texte = (u) => {
+      sec.prises.add(u.n);
+      const t = trous.find(([m]) => correspond(u, m));
+      if (t) return traiter(tr, u.n, u.texte, ...t.slice(1));
+      PRODUITS.add(u.texte);
+      return u.texte;
+    };
+    for (const n of numeros.filter((k) => k >= l0 && k < l1)) {
+      const us = sec.lignes.filter((u) => u.ligne === n && !sec.retirees.has(u.n));
+      if (!us.length) continue;
+      const nb = us[0].nbCellules;
+      if (nb === 1) {
+        if (colonnes) { out.push(FIN); colonnes = 0; }
+        for (const u of us) { const t = texte(u); out.push(titres.test(t) ? ST(t) : P(t)); }
+        continue;
+      }
+      if (colonnes !== nb) { if (colonnes) out.push(FIN); out.push(T(nb)); colonnes = nb; }
+      out.push(L(...Array.from({ length: nb }, (_, c) => us.filter((u) => u.cellule === c).map(texte).join('\u001E'))));
+    }
+    if (colonnes) out.push(FIN);
+    return out;
+  };
 }
 
 /** Tout texte lu dans la source ou tiré d'elle par `traiter` : un paragraphe du modèle qui n'en vient pas est un AJOUT déclaré. */
@@ -1085,8 +1134,117 @@ function dpaoFournitures() {
   return { fichier: 'DPAO-F.docx', sigle: 'DPAO-F', source: 'fournitures-dpao', titre, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
 }
 
+// ══ AE des fournitures (quantité fixe et à commande) ══════════════════════════════════════════════
+// Source : « 4-Document type d'appel d'offres_Fournitures_Cadre d'acte d'engagement » (ARMP). L'acte d'engagement
+// est d'abord le document du CANDIDAT (identification, prix, domiciliation, bordereaux, signatures) : ses chevrons
+// restent. La fiche remplit une douzaine de trous (autorité, marché, procédure, imputation, PRMP, n° du DAO, fin de
+// validité des offres, délais, comptable assignataire, pièces contractuelles) et choisit les blocs selon la forme, le
+// type de prix, la provenance, le groupement, l'avance et la sous-traitance. Un AE par lot quand la ligne est allotie.
+function aeFournitures() {
+  const SRC = lireSource('fournitures-ae');
+  const d = sectionCellules(SRC, "2.1. CADRE D'ACTE D'ENGAGEMENT", null);
+  const tr = [];
+  const x = (motif, ...r) => { const u = ligne(d, motif); return traiter(tr, u.n, u.texte, ...r); };
+  const E = emetteur(d, tr);
+
+  const conditions = {
+    ALLOTI: 'alloti = OUI',
+    'NON-ALLOTI': 'alloti = NON',
+    AOO: "B01-AC-13 = Appel d'offres ouvert",
+    PREQUALIFICATION: 'B01-AC-13 contient qualification',
+    'DEUX-ETAPES': 'B01-AC-13 contient deux étapes',
+    RESTREINT: 'B01-AC-13 contient restreint',
+    GROUPEMENT: 'groupement = OUI',
+    'GROUPEMENT-CONJOINT': 'groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE',
+    'PRIX-UNITAIRES': 'typeMarche = QUANTITE_FIXE et typePrix = UNITAIRES',
+    'PRIX-FORFAITAIRE': 'typeMarche = QUANTITE_FIXE et typePrix = FORFAITAIRE',
+    COMMANDE: 'typeMarche = A_COMMANDE',
+    'QUANTITE-FIXE': 'typeMarche = QUANTITE_FIXE',
+    'SANS-SOUS-TRAITANCE': 'B03-ST-01 = NON',
+    'SOUS-TRAITANCE': 'B03-ST-01 = OUI',
+    'DEPART-DIFFERE': 'typeMarche = QUANTITE_FIXE et B09-DX-02 renseigne',
+    'SANS-AVANCE': 'avance = NON',
+    AVANCE: 'avance = OUI',
+    'ANNEXE-FORFAIT': 'typePrix = FORFAITAIRE',
+    'ANNEXE-UNITAIRES': 'typePrix = UNITAIRES',
+    IMPORTEES: 'provenance = IMPORTEES',
+    'NATIONAL-QUANTITE-FIXE': 'provenance = NATIONAL et typeMarche = QUANTITE_FIXE',
+    'NATIONAL-COMMANDE': 'provenance = NATIONAL et typeMarche = A_COMMANDE',
+  };
+  const ajouts = [];
+
+  // Ce qui ne s'imprime pas : le titre de partie du dossier type, la note aux utilisateurs (« à supprimer dans le DAO
+  // définitif »), les instructions et les intitulés d'option.
+  retirer(d, 'titre de partie du dossier type', "2.1. CADRE D'ACTE D'ENGAGEMENT");
+  retirer(d, 'note aux utilisateurs, « à supprimer dans le DAO définitif »', 'Note aux utilisateurs', "L'Acte d'Engagement signé en un seul", "L'Acte d'Engagement est, après", 'Les commentaires entre');
+  retirer(d, 'instruction à l’acheteur', '<préciser selon le cas', 'Rayer les dispositions', '<Insérer si le point de départ', '<mentionner le délai global>',
+    "<dans le cas d'un marché à prix forfaitaire>", "Dans le cas d'un marché à prix unitaire :", "Dans le cas d'un marché à prix forfaitaire :", "Dans le cas d'un marché à commande :");
+  retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', '=Soit :', (l) => /^<\s*soit\s*:?\s*>/i.test(l.texte));
+  retirer(d, "variante « délai global à compter d'un ordre de service » : la fiche ne distingue que le cas où le point de départ diffère (B09-DX-02)", 'Le délai de réalisation des du marché');
+
+  const MARCHE = "<Indiquer: l'intitulé principal du Marché, le cas échéant le projet dans le cadre duquel le marché est passé, ou le numéro et l'objet du lot compris dans le projet >";
+  const DAO = ["N° du <date>", 'N° {{B02-OB-03}} du <date>', 'jeton'];
+  const blocs = [
+    C(x("ACTE D'ENGAGEMENT (A.E)")),
+    ...E('AUTORITE CONTRACTANTE', "<Indiquer: l'intitulé", [['<indiquer le nom >', ['<indiquer le nom >', '{{B01-AC-01}}', 'jeton']]]),
+    ...SI('NON-ALLOTI', P(x("<Indiquer: l'intitulé", [MARCHE, '{{B02-OB-01}}', 'jeton']))),
+    ...SI('ALLOTI', P(x("<Indiquer: l'intitulé", [MARCHE, '{{B02-OB-01}} — lot n° {{LOT}}', 'jeton']))),
+    ...E('Marché passé selon', "d'appel d'offres ouvert régie"),
+    ...SI('AOO', P(x("d'appel d'offres ouvert régie"))),
+    ...SI('PREQUALIFICATION', P(x("d'appel d'offres ouvert avec"))),
+    ...SI('DEUX-ETAPES', P(x("d'appel d'offres en deux"))),
+    ...SI('RESTREINT', P(x("d'appel d'offres restreint", ['Publics>', 'Publics', 'choix']))),
+    ...E('Imputation budgétaire', "Engagement à remplir par les MEMBRES", [
+      ['Imputation budgétaire', ['<à préciser>', '{{B01-AC-17}}', 'jeton']],
+      ['<insérer le nom>', ['<insérer le nom>', '{{B01-AC-05}}', 'jeton']],
+      ["Après avoir pris connaissance", DAO],
+      ["L'offre ainsi présentée me lie", ['<date>', '{{DERIVE.fin-validite-offre}}', 'jeton']]]),
+    ...SI('GROUPEMENT', E("Engagement à remplir par les MEMBRES", 'ARTICLE 2 - PRIX', [
+      ["Après avoir pris connaissance", DAO],
+      ["L'offre ainsi présentée nous lie", ['<date>', '{{DERIVE.fin-validite-offre}}', 'jeton']]])),
+    ...E('ARTICLE 2 - PRIX', 'Les fournitures, objet du présent marché, sont rémunérées, par application du ou des prix'),
+    ...SI('PRIX-UNITAIRES', E('Les fournitures, objet du présent marché, sont rémunérées, par application du ou des prix', 'Les fournitures, objet du présent marché, sont rémunérées, par application du prix global',
+      [['Les fournitures, objet du présent marché', ["<N° de l'Annexe>", '', 'retire']]])),
+    ...SI('PRIX-FORFAITAIRE', E('Les fournitures, objet du présent marché, sont rémunérées, par application du prix global', 'Le montant du marché est fixé à')),
+    ...SI('COMMANDE', E('Le montant du marché est fixé à', 'ARTICLE 3')),
+    ...E('ARTICLE 3', "Il n'est pas envisagé"),
+    ...SI('SANS-SOUS-TRAITANCE', E("Il n'est pas envisagé", "l'Annexe n° <préciser")),
+    ...SI('SOUS-TRAITANCE', E("l'Annexe n° <préciser", 'ARTICLE 4')),
+    ...E('ARTICLE 4', 'ARTICLE 5', [['Est désigné comme Comptable', ['le….', 'le {{B03-NA-03}}.', 'jeton']]]),
+    ...E('ARTICLE 5', 'Le délai de réalisation des prestations suivantes'),
+    ...SI('DEPART-DIFFERE', P(x('Le délai de réalisation des prestations suivantes')),
+      P(x('<Préciser les Fournitures ou Services', ['<Préciser les Fournitures ou Services Connexes dont le délai de réalisation commence postérieurement à la date de notification:>', '{{B09-DX-02}}', 'jeton']))),
+    ...SI('COMMANDE', P(x('Le délai de réalisation des prestations prend effet'))),
+    ...E('5.2. Délai', "Le délai d'exécution est fixé à"),
+    ...SI('QUANTITE-FIXE', P(x("Le délai d'exécution est fixé à", ['…', '{{B09-DX-01}} jours', 'jeton'], [', sans toutefois dépasser …', '', 'retire']))),
+    ...SI('COMMANDE', P(x("Le délai d'exécution est fixé dans le bon", ['…………jours', '{{B06-EO-12}} jours', 'jeton']))),
+    ...E('Les calendriers proposés', "Dans le cas d'un groupement de Fournisseurs solidaires"),
+    ...SI('GROUPEMENT', E("Dans le cas d'un groupement de Fournisseurs solidaires", "Dans le cas d'un groupement de Fournisseurs conjoints")),
+    ...SI('GROUPEMENT-CONJOINT', E("Dans le cas d'un groupement de Fournisseurs conjoints", '6.2 Avance')),
+    ...E('6.2 Avance', 'Le CCAP ne prévoit pas'),
+    ...SI('SANS-AVANCE', P(x('Le CCAP ne prévoit pas'))),
+    ...SI('AVANCE', E('Le Fournisseur désigné ci-avant', 'Fait en un seul original')),
+    ...E('Fait en un seul original', 'Annexe n° 1 :'),
+    ...SI('ANNEXE-FORFAIT', P(x('Annexe n° 1 :', ["<Dans le cas d'un prix forfaitaire > :", '', 'retire']))),
+    ...SI('ANNEXE-UNITAIRES', P(x('Annexe n° 2 :', ["<dans le cas d'un marché à prix unitaires>:", '', 'retire']))),
+    ...E('Annexe n° <', 'Autres pièces contractuelles'),
+    P(x('Autres pièces contractuelles', ['<à préciser selon les cas>', '{{B09-PC-02}}', 'jeton'])),
+    ...E('B. - ACCEPTATION', 'Bordereau des prix des Fournitures à importer'),
+    ...SI('IMPORTEES', E('Bordereau des prix des Fournitures à importer', ['Bordereau des prix pour les fournitures locales', 0])),
+    ...SI('NATIONAL-QUANTITE-FIXE', E(['Bordereau des prix pour les fournitures locales', 0], ['Bordereau des prix pour les fournitures locales', 1])),
+    ...SI('NATIONAL-COMMANDE', E(['Bordereau des prix pour les fournitures locales', 1], 'Bordereau des prix et calendrier')),
+    ...E('Bordereau des prix et calendrier', ['=ANNEXE', 0]),
+    ...SI('ANNEXE-FORFAIT', E(['=ANNEXE', 0], ['=ANNEXE', 1])),
+    ...SI('SOUS-TRAITANCE', E(['=ANNEXE', 1], ['=ANNEXE', 2])),
+    ...E(['=ANNEXE', 2]),
+  ];
+  const titre = ligne(d, 'MARCHÉ PUBLIC DE FOURNITURES').texte;
+  toutEstRendu(d, 'AE-F');
+  return { fichier: 'AE-F.docx', sigle: 'AE-F', source: 'fournitures-ae', titre, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
+}
+
 // ══ Sortie ═══════════════════════════════════════════════════════════════════════════════════
-const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre, 'DPAO-F': dpaoFournitures };
+const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre, 'DPAO-F': dpaoFournitures, 'AE-F': aeFournitures };
 fs.mkdirSync('modeles', { recursive: true });
 const voulus = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(DOCUMENTS);
 for (const sigle of voulus) {
