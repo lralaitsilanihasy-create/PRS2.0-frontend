@@ -77,8 +77,8 @@ Légende : ✅ couvert · ⚠️ couvert avec un écart (§3) · ❌ absent · �
 | Art. 20 Signature | **délai de validité des offres** (si le prix est un critère) ; annexes ; mise au point ; lieu, date | validité ❌ E6 ; le reste : candidat ou signature — |
 
 **Bilan** : sur ≈ 95 trous distincts du DPAC et du contrat-cadre, **≈ 80 sont couverts**, dont une dizaine avec un
-écart ; **une dizaine manquent** (E2, E6, E7, E10, E12 — dont deux, E6, existent déjà pour la quantité fixe). Le référentiel ne porte **aucun** champ superflu au regard du modèle,
-hormis les doublons signalés (E4, E5, E13).
+écart ; **une dizaine manquent** (E2, E6, E7, E10, E12 — dont deux, E6, existent déjà pour la quantité fixe). Au regard du modèle, le référentiel porte en trop les informations du candidat (E8)
+et des doublons (E4, E5, E13).
 
 ## 3. Les écarts
 
