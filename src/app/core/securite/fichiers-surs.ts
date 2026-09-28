@@ -20,6 +20,9 @@ export const TYPES_PIECE: readonly string[] = ['application/pdf', 'image/jpeg', 
 /** Type unique accepté pour l'import d'un document PPM. */
 export const TYPES_PDF: readonly string[] = ['application/pdf'];
 
+/** ⚠️ Import du DAO (28/09) — un document Word (.docx) ; le serveur refuse le reste (415), `.docm` compris. */
+export const TYPES_DOCX: readonly string[] = ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
 /** Taille maximale d'un fichier téléversé (Mo). */
 export const TAILLE_MAX_MO = 20;
 
@@ -83,7 +86,7 @@ export function validerFichier(
   maxMo = TAILLE_MAX_MO,
 ): string | null {
   if (!typesAcceptes.includes(file.type)) {
-    const attendu = typesAcceptes.length === 1 ? 'PDF' : 'PDF ou image JPEG/PNG';
+    const attendu = typesAcceptes === TYPES_DOCX ? 'document Word (.docx)' : typesAcceptes.length === 1 ? 'PDF' : 'PDF ou image JPEG/PNG';
     return `Format de fichier non accepté : ${attendu} attendu.`;
   }
   if (file.size > maxMo * 1024 * 1024) {

@@ -2,7 +2,8 @@
 
 **Statut : arbitré par le pilote le 28/09 (« suivre les recommandations », ancrages tirés des modèles du lot D) ; lot 0
 (mesure) fait côté front — `scripts/import-dao/`, critère Q10 tenu ; lot 1 demandé au backend
-(`docs/demande-backend-2026-09-28-import-dao.md`) ; lot 2 (écran) après sa livraison.**
+(`docs/demande-backend-2026-09-28-import-dao.md`), livré (89f8bb3) et contre-recetté ; lot 2 (écran) livré le 28/09 :
+`features/prmp/fiche-marche/import-dao.*`, recetté dans le navigateur sur la fiche 27.**
 
 > ⚠️ **Arbitrage et mesure du 2026-09-28.** Deux réponses changent depuis la première rédaction :
 > - **Q5 — les ancrages** ne sont plus une colonne à renseigner champ par champ : ce sont les **modèles du lot D**
@@ -110,3 +111,14 @@ Le front peut écrire le lot 2 contre le contrat dès que le lot 1 est décrit d
   exécution de macro — un `.docm` est refusé) ; côté front, `validerFichier()`.
 - **Dette de décision** : la mémoire et l'en-tête du composant disent « jamais un import ». Ils seront corrigés au lot 2,
   pas avant l'arbitrage.
+
+> ✅ **Lot 2 — l'écran, 2026-09-28.** Composant `ImportDao` (`features/prmp/fiche-marche/import-dao.*`), à l'étape
+> Cadrage d'une fiche en brouillon d'une forme dont le document type est décrit (`FORMES_IMPORTABLES`, miroir des
+> modèles du serveur ; un 422 `MODELE_ABSENT` est dit en clair) : invitation en tête tant que la fiche est vierge,
+> bouton « Réimporter un DAO (.docx) » ensuite. Revue en modale (`appModale`) : réponses de cadrage (en mots, défaut
+> compris : « Papier »), valeurs par bloc avec extrait, valeur actuelle et confiance (« sûre », « à vérifier »,
+> « incertaine ») ; **cochées d'office : les seules valeurs sûres, sans anomalie, sur case vide** ; lignes identiques ou
+> bloquées grisées ; ambigus, divergences avec le plan, conflits et non-trouvés dits sans être proposés. « Appliquer n
+> lignes » envoie les seules lignes retenues ; un 400 nominatif laisse la revue ouverte, ligne refusée en rouge, rien
+> d'écrit. Recette navigateur (fiche 27 révisée, une valeur vidée puis rendue par l'import depuis l'écran) : verte.
+> Sept tests (`import-dao.spec.ts`). Le fichier Word vide de type sur certains postes est accepté par son extension.

@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, LigneEligible, ParametresInternes, ParametresInternesCorps, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, ParametresInternes, ParametresInternesCorps, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -180,6 +180,21 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
   /** `PUT /{idDmc}/parametres-internes` — 400 nominatifs (`membresCommission`, `quorum`, `dateCeremonie`), 409 `MEMBRE_COMMISSION` / `FICHE_VALIDEE`. */
   enregistrerParametresInternes(idDmc: number, corps: ParametresInternesCorps): Observable<ParametresInternes> {
     return this.http.put<ParametresInternes>(`${this.baseUrl}/${idDmc}/parametres-internes`, corps, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Import du DAO (28/09) — `POST /{idDmc}/import`, multipart `fichier` (.docx) : LECTURE SEULE, le serveur rend des
+   * propositions ; rien n'est écrit. 415 `FORMAT_NON_SUPPORTE`, 409 `FICHE_VALIDEE`, 422 `MODELE_ABSENT`, 403. Silencieux.
+   */
+  importerDao(idDmc: number, fichier: File): Observable<ImportDaoResult> {
+    const corps = new FormData();
+    corps.append('fichier', fichier, fichier.name);
+    return this.http.post<ImportDaoResult>(`${this.baseUrl}/${idDmc}/import`, corps, { context: skipErrorToast() });
+  }
+
+  /** `PUT /{idDmc}/import/appliquer` — écrit d'un seul coup les lignes retenues (fusion ; 400 nominatif, rien d'écrit). */
+  appliquerImport(idDmc: number, corps: AppliquerImportCorps): Observable<FicheMarche> {
+    return this.http.put<FicheMarche>(`${this.baseUrl}/${idDmc}/import/appliquer`, corps, { context: skipErrorToast() });
   }
 
   /** `GET /{idDmc}/parametres-internes/candidats` — comptes désignables comme détenteurs d'une part de clé (titulaire seul). */

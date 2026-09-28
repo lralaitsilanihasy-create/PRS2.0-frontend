@@ -258,6 +258,11 @@
           @case (1) {
             <section class="fm__bloc" aria-labelledby="fm-cadrage">
               <div class="fm__bloc-tete"><span class="fm__eyebrow">Étape 2</span><h2 id="fm-cadrage">Cadrage</h2><span class="fm__comptes">Chaque réponse ouvre ou ferme des rubriques</span></div>
+              <!-- ⚠️ 28/09 — un DAO déjà rédigé pré-remplit la fiche : proposé en tête tant qu'elle est vierge,
+                   un simple bouton ensuite. Rien n'est écrit sans la PRMP. -->
+              @if (!figee() && !enLecture() && !ecritureBloquee() && idDmc(); as id) {
+                <app-import-dao [idDmc]="id" [champs]="referentiel().champs" [typeMarche]="fiche()?.typeMarche ?? null" [vierge]="ficheVierge()" (applique)="importApplique($event)" />
+              }
               @if (allotiCorrige()) {
                 <div class="alert alert-warning" role="status">
                   <app-icone nom="alert" [taille]="16" />

@@ -1,0 +1,121 @@
+@if (importable()) {
+  <input #fichier class="idao__fichier" type="file" tabindex="-1" aria-label="Choisir le dossier d’appel d’offres (document Word .docx)"
+         accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" (change)="choisir($event)" />
+  @if (vierge()) {
+    <div class="idao__invite">
+      <app-icone nom="file" [taille]="18" />
+      <div class="idao__invite-texte">
+        <strong>Vous avez déjà le dossier d’appel d’offres ?</strong>
+        <span>Importez-le (document Word .docx) : ce qu’il dit est proposé pour pré-remplir la fiche, et vous retenez ligne par
+          ligne. Sinon, répondez simplement aux questions ci-dessous.</span>
+      </div>
+      <button type="button" class="btn btn-outline" [disabled]="lecture()" (click)="fichier.click()">
+        {{ lecture() ? 'Lecture…' : 'Importer le DAO' }}
+      </button>
+    </div>
+  } @else {
+    <div class="idao__reimport">
+      <button type="button" class="btn btn-outline btn-sm" [disabled]="lecture()" (click)="fichier.click()">
+        <app-icone nom="file" [taille]="14" /> {{ lecture() ? 'Lecture…' : 'Réimporter un DAO (.docx)' }}
+      </button>
+      <span class="idao__aide">Ne remplace d’office que les cases vides ; le reste, vous le décidez.</span>
+    </div>
+  }
+  @if (lecture()) { <p class="idao__statut" role="status">Lecture du document…</p> }
+  @if (erreur(); as e) { <div class="alert alert-danger" role="alert"><app-icone nom="alert" [taille]="16" /><span>{{ e }}</span></div> }
+}
+
+<!-- ⚠️ Revue de l'import : fermeture par le bouton ou Échap seulement (règle du 13/09). Rien n'est écrit avant
+     « Appliquer » ; ce qui n'est pas coché reste tel quel dans la fiche. -->
+@if (resultat(); as r) {
+  <div class="modal-backdrop">
+    <div class="modal modal-xl idao__modale" role="dialog" aria-modal="true" aria-label="Revue de l’import du dossier d’appel d’offres" appModale (appModaleFermer)="fermer()">
+      <div class="modal-header">
+        <span class="modal-title">Ce que dit le DAO — {{ r.fichier }}</span>
+        <button type="button" class="btn-close" aria-label="Fermer sans rien appliquer" [disabled]="envoi()" (click)="fermer()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="idao__resume">
+          @for (m of r.modeles; track m.sigle) { <span class="badge badge-neutral">{{ m.sigle }} : {{ m.reconnues }}/{{ m.unites }} paragraphes reconnus</span> }
+          <span><strong>{{ nbRetenues() }}</strong> retenue{{ nbRetenues() > 1 ? 's' : '' }} · <strong>{{ nbAVerifier() }}</strong> à vérifier · <strong>{{ r.nonTrouves.length }}</strong> non trouvée{{ r.nonTrouves.length > 1 ? 's' : '' }}</span>
+        </p>
+        <p class="idao__aide">Cochées d’office : les valeurs <span class="badge badge-success">sûres</span> qui remplissent une case vide. Les autres sont à vérifier sur l’extrait, et à cocher vous-même.</p>
+        @for (a of r.avertissements; track a) { <div class="alert alert-warning" role="status"><app-icone nom="alert" [taille]="16" /><span>{{ a }}</span></div> }
+        @if (refusGeneral(); as g) { <div class="alert alert-danger" role="alert"><app-icone nom="alert" [taille]="16" /><span>{{ g }}</span></div> }
+
+        @if (r.cadrage.length) {
+          <h3 class="idao__titre">Réponses de cadrage</h3>
+          <table class="idao__table">
+            <thead><tr><th scope="col"><span class="idao__cache">Retenir</span></th><th scope="col">Question</th><th scope="col">Le DAO dit</th><th scope="col">La fiche porte</th></tr></thead>
+            <tbody>
+              @for (c of r.cadrage; track c.cle) {
+                <tr [class.idao__refus]="refus().has(c.cle)" [class.idao__terne]="cadrageIdentique(c)">
+                  <td><input type="checkbox" [checked]="cadrageCoche().has(c.cle)" [disabled]="cadrageIdentique(c)" (change)="basculerCadrage(c.cle)" [attr.aria-label]="'Retenir la réponse : ' + libelleQuestion(c.cle)" /></td>
+                  <td>{{ libelleQuestion(c.cle) }}@if (cadrageIdentique(c)) { <span class="idao__note">déjà à l’identique</span> }@if (refus().get(c.cle); as m) { <span class="idao__motif">{{ m }}</span> }</td>
+                  <td><strong>{{ valeurCadrage(c) }}</strong></td>
+                  <td>{{ libelleReponse(c.cle, actuelleCadrage(c)) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @for (b of blocs(); track b) {
+          <h3 class="idao__titre">Bloc {{ b }}</h3>
+          <table class="idao__table">
+            <thead><tr><th scope="col"><span class="idao__cache">Retenir</span></th><th scope="col">Information</th><th scope="col">Le DAO dit</th><th scope="col">La fiche porte</th><th scope="col">Confiance</th></tr></thead>
+            <tbody>
+              @for (l of lignesDuBloc(b); track l.code) {
+                <tr [class.idao__refus]="refus().has(l.code)" [class.idao__terne]="l.identique || l.bloquee">
+                  <td>
+                    <input type="checkbox" [checked]="cochees().has(l.code)" [disabled]="l.bloquee || l.identique" (change)="basculer(l.code)" [attr.aria-label]="'Retenir : ' + l.libelle" />
+                  </td>
+                  <td>
+                    <span class="idao__libelle">{{ l.libelle }}</span><span class="idao__code">{{ l.code }}</span>
+                    @if (l.identique) { <span class="idao__note">déjà saisie à l’identique</span> }
+                    @for (a of l.anomalies; track a) { <span class="idao__motif">{{ a }}</span> }
+                    @if (refus().get(l.code); as m) { <span class="idao__motif">{{ m }}</span> }
+                    <details class="idao__extrait"><summary>Extrait du document</summary><q>{{ l.extrait }}</q></details>
+                  </td>
+                  <td><strong>{{ affiche(l.valeur) }}</strong></td>
+                  <td>{{ affiche(l.actuelle) }}</td>
+                  <td><span class="badge" [class.badge-success]="l.confiance === 'haute'" [class.badge-warning]="l.confiance === 'moyenne'" [class.badge-danger]="l.confiance === 'basse'">{{ libelleConfiance(l.confiance) }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (r.ambigus.length) {
+          <h3 class="idao__titre">Lu, mais à placer vous-même</h3>
+          @for (a of r.ambigus; track $index) {
+            <p class="idao__ambigu">Ce passage peut aller dans <strong>{{ libelleChamp(a.candidats[0]) }}</strong>@for (c of a.candidats.slice(1); track c) { ou dans <strong>{{ libelleChamp(c) }}</strong>} : la lecture ne choisit pas. <q>{{ a.texte }}</q></p>
+          }
+        }
+        @if (r.divergences.length) {
+          <h3 class="idao__titre">Le DAO contredit le plan de passation — le plan fait foi</h3>
+          <ul class="idao__liste">
+            @for (d of r.divergences; track d.code) { <li><strong>{{ libelleChamp(d.code) }}</strong> : le DAO dit « {{ d.document }} », le plan dit « {{ d.plan }} ».</li> }
+          </ul>
+        }
+        @if (r.conflits.length) {
+          <h3 class="idao__titre">Le document se contredit — rien n’est proposé</h3>
+          <ul class="idao__liste">
+            @for (c of r.conflits; track c.code) { <li><strong>{{ libelleChamp(c.code) }}</strong> : {{ c.valeurs.join(' / ') }}</li> }
+          </ul>
+        }
+        @if (r.nonTrouves.length) {
+          <details class="idao__nontrouves"><summary>{{ r.nonTrouves.length }} information{{ r.nonTrouves.length > 1 ? 's' : '' }} non trouvée{{ r.nonTrouves.length > 1 ? 's' : '' }} dans le document — à saisir</summary>
+            <ul class="idao__liste">@for (c of r.nonTrouves; track c) { <li>{{ libelleChamp(c) }} <span class="idao__code">{{ c }}</span></li> }</ul>
+          </details>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" [disabled]="envoi()" (click)="fermer()">Fermer sans rien appliquer</button>
+        <button type="button" class="btn btn-primary" [disabled]="envoi() || !nbRetenues()" (click)="appliquer()">
+          {{ envoi() ? 'Application…' : nbRetenues() ? 'Appliquer ' + nbRetenues() + ' ligne' + (nbRetenues() > 1 ? 's' : '') : 'Rien à appliquer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

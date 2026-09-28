@@ -16,6 +16,7 @@ import { decomposerObservation } from '../../../shared/circuit/observation-pv-ca
 import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { FicheBesoin } from './fiche-besoin';
+import { ImportDao } from './import-dao';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone } from '../../../shared/ui/icone';
 import { TitreSiTronqueDirective } from '../../../shared/ui/titre-si-tronque';
@@ -85,7 +86,8 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
  * proposition `docs/proposition-2026-09-22-dmc-appel-offres-fiche-marche.md`, développée CONTRE le contrat proposé
  * au backend (`docs/demande-backend-2026-09-22-fiche-marche-dao.md`, lot 1 : quantité fixe, sans génération).
  *
- * Décision pilote : un FORMULAIRE, aucun import de PDF. Sept étapes de l'esquisse : ligne du PPM (22 informations
+ * Décision pilote : un FORMULAIRE. ⚠️ Depuis le 28/09, un DAO déjà rédigé peut PRÉ-REMPLIR la fiche (`ImportDao`, à
+ * l'étape Cadrage) : le serveur le lit, la PRMP retient ligne par ligne, la fiche reste la seule source. Sept étapes de l'esquisse : ligne du PPM (22 informations
  * reprises, verrouillées) → cadrage (dix questions qui ouvrent ou ferment des rubriques) → saisie bloc par bloc,
  * l'écran étant DESSINÉ depuis le référentiel serveur (`champs-fiche-marche`) → reprises → contrôles (bilan serveur)
  * → validation PRMP (fige, versionne) → documents (lot 2).
@@ -98,6 +100,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FicheBesoin,
+    ImportDao,
     ModaleDirective,RouterLink, Icone, EtatErreur, TitreSiTronqueDirective],
   templateUrl: './fiche-marche.html',
   styleUrl: './fiche-marche.scss',
@@ -1073,6 +1076,15 @@ export class FicheMarcheEcran {
 
   montant(v: number | null | undefined): string {
     return v == null ? '—' : `${new Intl.NumberFormat('fr-FR').format(v)} Ar`;
+  }
+
+  /** Aucune valeur saisie : l'import du DAO est proposé en tête du cadrage (sinon, un bouton « Réimporter »). */
+  readonly ficheVierge = computed(() => !Object.values(this.valeurs()).some((v) => v != null && v !== ''));
+
+  /** L'import appliqué : la fiche du serveur fait foi, bilan compris. */
+  importApplique(f: FicheMarche): void {
+    this.appliquer(f);
+    this.controler();
   }
 
   private appliquer(f: FicheMarche): void {

@@ -1,0 +1,152 @@
+// Import du DAO (28/09) — invitation au cadrage, et revue de ce que le document dit.
+
+// Le champ fichier est déclenché par un bouton : invisible, mais lisible des technologies d'assistance.
+.idao__fichier {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.idao__cache {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.idao__invite {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px dashed var(--p-300);
+  border-radius: var(--radius-md);
+  background: var(--p-50);
+  color: var(--n-700);
+}
+.idao__invite-texte {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  font-size: 13px;
+}
+.idao__reimport {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.idao__aide,
+.idao__statut {
+  font-size: 12px;
+  color: var(--n-500);
+}
+
+.idao__modale .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.idao__resume {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.idao__titre {
+  margin: 18px 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--n-700);
+}
+// Largeurs fixes : une valeur longue (un texte de clause) passe à la ligne au lieu de pousser les colonnes hors de la
+// modale — la confiance et la valeur actuelle doivent rester lisibles sur chaque ligne.
+.idao__table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--n-500);
+    border-bottom: 1px solid var(--n-200);
+    padding: 6px 8px;
+  }
+  // La feuille globale met toute cellule en « white-space: nowrap » : ici, une valeur longue doit passer à la ligne.
+  th,
+  td {
+    white-space: normal;
+  }
+  td {
+    vertical-align: top;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--n-100);
+  }
+  td:first-child,
+  th:first-child {
+    width: 32px;
+  }
+  th:nth-child(2) { width: 38%; }
+  th:nth-child(5) { width: 96px; }
+}
+.idao__terne td {
+  color: var(--n-500);
+}
+.idao__refus td {
+  background: var(--danger-bg);
+}
+.idao__libelle {
+  font-weight: 600;
+  color: var(--n-800);
+}
+.idao__code {
+  margin-left: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--n-500);
+}
+.idao__note,
+.idao__motif {
+  display: block;
+  font-size: 12px;
+}
+.idao__note {
+  color: var(--n-500);
+}
+.idao__motif {
+  color: var(--danger-text);
+}
+.idao__extrait {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--n-600);
+
+  summary {
+    cursor: pointer;
+    color: var(--p-600);
+  }
+}
+.idao__ambigu,
+.idao__liste {
+  font-size: 13px;
+  color: var(--n-700);
+}
+.idao__nontrouves {
+  margin-top: 14px;
+  font-size: 13px;
+
+  summary {
+    cursor: pointer;
+    color: var(--n-600);
+  }
+}

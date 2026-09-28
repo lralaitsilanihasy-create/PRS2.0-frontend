@@ -423,3 +423,52 @@ export interface ErreurChamp {
   champ: string;
   message: string;
 }
+
+// ── Import du DAO (demande du 28/09, livrée : `POST …/import`, `PUT …/import/appliquer`) ──────────────────────────
+
+/** Niveau de confiance d'une valeur lue : haute = bornée par le texte fixe du modèle ; basse = à vérifier de près. */
+export type ConfianceImport = 'haute' | 'moyenne' | 'basse';
+
+/** Une valeur lue dans le DAO pour un champ de la fiche. `actuelle` : ce que la fiche porte déjà (jamais écrasé d'office). */
+export interface PropositionImport {
+  code: string;
+  lot: number | null;
+  valeur: string | number | null;
+  brut: string;
+  confiance: ConfianceImport;
+  extrait: string;
+  actuelle: string | number | null;
+  /** Refus de la validation, condition d'affichage fausse, champ par lot : la ligne ne peut pas être retenue. */
+  anomalies: string[];
+}
+
+/** Une réponse de cadrage déduite de la rédaction retenue par le document. */
+export interface ReponseCadrageImport {
+  cle: string;
+  valeur: string | number;
+  section: string;
+  actuelle: string | number | null;
+}
+
+export interface ImportDaoResult {
+  fichier: string;
+  empreinte: string;
+  modeles: { sigle: string; unites: number; reconnues: number }[];
+  cadrage: ReponseCadrageImport[];
+  propositions: PropositionImport[];
+  /** Un endroit du document que le modèle attribue à plusieurs champs possibles : signalé, jamais choisi. */
+  ambigus: { candidats: string[]; texte: string }[];
+  /** Le DAO dit autre chose que le plan de passation : le plan fait foi, rien n'est proposé. */
+  divergences: { code: string; document: string; plan: string }[];
+  conflits: { code: string; valeurs: (string | number)[] }[];
+  nonTrouves: string[];
+  avertissements: string[];
+}
+
+/** Corps de `PUT …/import/appliquer` : les seules lignes retenues par la PRMP, avec la trace du fichier lu. */
+export interface AppliquerImportCorps {
+  cadrage: Record<string, string | number>;
+  valeurs: Record<string, string | number>;
+  fichier: string;
+  empreinte: string;
+}
