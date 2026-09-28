@@ -1,0 +1,861 @@
+{
+ "fichier": "DPAO-F.docx",
+ "sigle": "DPAO-F",
+ "source": "fournitures-dpao",
+ "titre": "1.2. - DONNEES PARTICULIERES DE L’APPEL D’OFFRES",
+ "conditions": {
+  "PROJET": "B02-AU-01 renseigne",
+  "ALLOTI": "alloti = OUI",
+  "LOTS-DIVISIBLES": "alloti = OUI et B02-AU-02 = Lot par lot (attribution divisible)",
+  "LOTS-TOTALITE": "alloti = OUI et B02-AU-02 = Totalité des lots à un seul attributaire",
+  "VARIANTES-NON": "variantes = NON",
+  "VARIANTES-OUI": "variantes = OUI",
+  "VARIANTES-MOINS-DISANTE": "variantes = OUI et B02-VA-01 = Offre de base évaluée la moins-disante",
+  "VARIANTES-TOUTES": "variantes = OUI et B02-VA-01 = Toutes les offres conformes aux spécifications",
+  "COMMANDE": "typeMarche = A_COMMANDE",
+  "QUANTITE-FIXE": "typeMarche = QUANTITE_FIXE",
+  "QUANTITE-FIXE-ALLOTI": "typeMarche = QUANTITE_FIXE et alloti = OUI",
+  "GROUPEMENT": "groupement = OUI",
+  "GROUPEMENT-LIBRE": "groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE",
+  "GROUPEMENT-SOLIDAIRE": "groupement = OUI et formeGroupement = SOLIDAIRE_OBLIGATOIRE",
+  "FABRICANT": "B03-CQ-05 = OUI",
+  "QUALIFICATIONS": "B03-CQ-06 renseigne",
+  "ONG": "B03-CQ-07 renseigne",
+  "PREFERENCE": "B03-CQ-08 = OUI",
+  "SANS-PREFERENCE": "B03-CQ-08 = NON",
+  "NATIONAL": "provenance = NATIONAL",
+  "NATIONAL-SAISI": "provenance = NATIONAL et B05-CP-02 renseigne",
+  "NATIONAL-TYPE": "provenance = NATIONAL et B05-CP-02 vide",
+  "IMPORTEES": "provenance = IMPORTEES",
+  "CIP": "provenance = IMPORTEES et B05-CP-01 = CIP",
+  "CIF": "provenance = IMPORTEES et B05-CP-01 = CIF",
+  "TRANSPORT-INTERIEUR": "provenance = IMPORTEES et B05-CP-04 = OUI",
+  "FERME": "prixRevisable = NON",
+  "REVISABLE": "prixRevisable = OUI",
+  "ARIARY": "B05-MO-01 = Ariary",
+  "DEVISE": "B05-MO-01 contient devise",
+  "SANS-GARANTIE": "garantieSoumission = NON",
+  "GARANTIE": "garantieSoumission = OUI",
+  "CHEQUE": "garantieSoumission = OUI et B05-GS-02 contient Chèque",
+  "GARANTIE-LOTS": "garantieSoumission = OUI et alloti = OUI",
+  "GARANTIE-UNIQUE": "garantieSoumission = OUI et alloti = NON",
+  "LANGUE": "B04-LA-01 = OUI",
+  "PAPIER": "modeRemise = PAPIER",
+  "B04-SE": "modeRemise = ELECTRONIQUE",
+  "EVALUATION-PAR-LOT": "alloti = OUI et B06-EO-01 = Par lot",
+  "EVALUATION-ENSEMBLE": "alloti = OUI et B06-EO-01 = Sur l'ensemble des lots",
+  "CRITERES": "B06-EO-02 renseigne",
+  "QUANTITES": "B06-EO-10 renseigne"
+ },
+ "blocs": [
+  {
+   "type": "para",
+   "texte": "Les données particulières ci - après complètent, précisent ou modifient les clauses des Instructions aux Candidats (IC). En cas de conflit, les clauses ci-dessous prévalent sur celles des IC."
+  },
+  {
+   "type": "table",
+   "texte": "2"
+  },
+  {
+   "type": "ligne",
+   "texte": "Clause des Instructions aux Candidats (IC)\u001fDonnées particulières"
+  },
+  {
+   "type": "ligne",
+   "texte": "1. Acheteur et objet de l’appel d’offres\u001fAcheteur\u001e{{B01-AC-01}}\u001eObjet de l'appel d'offres\u001e{{SI:PROJET}}\u001eLe présent appel d'offres, s'inscrit dans:\u001e{{B02-AU-01}}.\u001e{{FINSI:PROJET}}\u001eL’appel d’offres a pour objet :\u001e{{B02-OB-02}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:ALLOTI}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "1.1 Lots et variantes\u001f{{SI:ALLOTI}}\u001eLots\u001eL’appel d’offres porte sur les lots suivants faisant partie de {{B02-OB-01}} :\u001e{{B02-LV-02}}\u001e{{SI:LOTS-DIVISIBLES}}\u001eChaque lot est indivisible. Toute offre partielle est irrecevable\u001eLes candidats peuvent soumissionner pour un ou plusieurs lots\u001e{{FINSI:LOTS-DIVISIBLES}}\u001e{{SI:LOTS-TOTALITE}}\u001eLes candidats ne peuvent soumissionner que pour la totalité des lots\u001e{{FINSI:LOTS-TOTALITE}}\u001e{{FINSI:ALLOTI}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:ALLOTI}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fVariantes\u001e{{SI:VARIANTES-NON}}\u001eLes variantes ne sont pas prises en considération\u001e{{FINSI:VARIANTES-NON}}\u001e{{SI:VARIANTES-OUI}}\u001eLes variantes sont autorisées\u001e{{FINSI:VARIANTES-OUI}}\u001e{{SI:VARIANTES-MOINS-DISANTE}}\u001eL’Acheteur ne considèrera que les variantes offertes par le Candidat ayant soumis l’offre de base évaluée la moins disante.\u001e{{FINSI:VARIANTES-MOINS-DISANTE}}\u001e{{SI:VARIANTES-TOUTES}}\u001eL’Acheteur considérera les offres variantes satisfaisant aux Spécifications Techniques. Toutes les offres reçues pour la solution de base ou comme variantes satisfaisant aux conditions requises, seront évaluées selon leurs valeurs intrinsèques, en conformité avec les mêmes procédures, comme indiquées à la clause 9.4 des Instructions.\u001e{{FINSI:VARIANTES-TOUTES}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:COMMANDE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "1.2 Marché à commandes\u001fL’appel d’offre porte sur un marché à commande de :\u001e{{B02-OB-02}}\u001epour les quantités minimales et maximales spécifiées au Cahier des Prescriptions Spéciales, et\u001epour une durée de:\u001e{{B02-AU-04}} mois."
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:COMMANDE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:GROUPEMENT}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "2. Groupements\u001f{{SI:GROUPEMENT-LIBRE}}\u001eLes groupements entre Candidats soumissionnant pour des lots distincts peuvent être conjoint ou solidaire\u001e{{FINSI:GROUPEMENT-LIBRE}}\u001e{{SI:GROUPEMENT-SOLIDAIRE}}\u001eLes groupements entre Candidats soumissionnant pour des lots distincts doivent être obligatoirement solidaire.\u001e{{FINSI:GROUPEMENT-SOLIDAIRE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:GROUPEMENT}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "5. – Composition du DAO – Demandes d'éclaircissements – Modifications\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "5.1Composiition du DAO\u001f1.3 : - Modèles de fiches de renseignements\u001e- Modèles de garantie de soumission\u001e2.5 : - Plans, schémas, photos, échantillons …"
+  },
+  {
+   "type": "ligne",
+   "texte": "5.2. Demandes d’éclaircissements\u001fAdresse\u001eAfin d’obtenir des éclaircissements, l’adresse de la Personne Responsable des Marchés Publics est la suivante :\u001e{{B04-DE-01}}\u001eDélai pour l'envoi des demandes par les Candidats\u001e{{B04-DE-02}} jours avant la date limite fixée pour la remise des offres figurant à la clause 7.2 ci-dessous.\u001eDélai pour la réponse du représentant de la PRMP\u001e{{B04-DE-03}} jours avant la date limite fixée pour la remise des offres figurant à la clause 7.2 ci-dessous."
+  },
+  {
+   "type": "ligne",
+   "texte": "6. – Préparation des offres\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.2. Contenu des offres\u001fDocuments ou pièces à remettre en sus de ceux mentionnés à la clause 6.2. des IC :\u001e{{B04-CO-01}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.3. Capacités et qualifications des candidats\u001fChaque Candidat complète les fiches de renseignements suivantes, selon les modèles figurant à la section 1.3 Formulaire de Soumission et les signe en portant la mention \"certifiées exactes et sincères\" :\u001e1°Une fiche de renseignements relative à son identification et à sa situation juridique;\u001e2°Une fiche de renseignements relative à ses capacités techniques à réaliser le Marché,\u001e3° Une fiche de renseignements relative à sa capacité financière;\u001e4° la liste des principaux marchés portant sur des fournitures de même type ou d'un type similaire réalisés au cours des trois dernières années, appuyée des certificats de bonne fin ou PV de réception\u001e{{SI:FABRICANT}}\u001e5° Le Candidat qui ne fabrique ou ne produit pas les fournitures qu’il offre, soumettra une Autorisation du Fabriquant\u001e{{FINSI:FABRICANT}}\u001e{{SI:QUALIFICATIONS}}\u001eLes qualifications particulières suivantes sont requises des Candidats : {{B03-CQ-06}}\u001e{{FINSI:QUALIFICATIONS}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f{{SI:ONG}}\u001eLes communautés locales et/ou les ONG sont admises à participer à l'appel d'offres. Par dérogation aux obligations de fournir les renseignements sus -mentionnés ces communautés n'ont pas à produire:\u001e{{B03-CQ-07}}\u001e{{FINSI:ONG}}\u001e{{SI:PREFERENCE}}\u001eLes Candidats susceptibles de bénéficier de la préférence nationale prévue à l'article 9.5 des IC et des Présentes DPAO doivent produire les pièces justifiant leur éligibilité à cette préférence, prévues à l'article précité.\u001e{{FINSI:PREFERENCE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.5. Délai de validité des offres\u001fLe délai de validité de l’offre sera de {{B04-VO-01}} jours."
+  },
+  {
+   "type": "ligne",
+   "texte": "6.6. Contenu et décomposition des prix\u001fLa destination finale des Fournitures est :\u001e{{B09-LL-01.parLot}}.\u001eTerme commercial de livraison (selon les Incoterms 2000)\u001e{{SI:NATIONAL}}\u001ea) Pour les Fournitures acquises sur le territoire nationale, le prix comprend:\u001e{{FINSI:NATIONAL}}\u001e{{SI:NATIONAL-TYPE}}\u001ei) le prix des fournitures EXW, hors TVA, (sortie usine, fabrique, magasin d’exposition, entrepôt ou magasin de ventes, suivant le cas);\u001eii) le prix des transports intérieurs, assurance et autres services locaux afférents à la livraison des fournitures jusqu’à leur destination finale.\u001e{{FINSI:NATIONAL-TYPE}}\u001e{{SI:NATIONAL-SAISI}}\u001e{{B05-CP-02}}\u001e{{FINSI:NATIONAL-SAISI}}\u001e{{SI:IMPORTEES}}\u001eb) Pour les Fournitures à importer, le prix comprend :\u001ele prix des fournitures correspond à une livraison\u001e{{FINSI:IMPORTEES}}\u001e{{SI:CIP}}\u001eCIP {{B05-CP-05}},\u001e{{FINSI:CIP}}\u001e{{SI:CIF}}\u001eCIF {{B05-CP-05}}\u001e{{FINSI:CIF}}\u001e{{SI:TRANSPORT-INTERIEUR}}\u001ele prix des transports intérieurs, assurance et autres services locaux afférents à la livraison des fournitures du lieu de destination indiqué (CIP) à leur destination finale.\u001e{{FINSI:TRANSPORT-INTERIEUR}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.6.3. Caractère ferme ou révisable des prix\u001f{{SI:FERME}}\u001eLes prix sont fermes et non révisables\u001e{{FINSI:FERME}}\u001e{{SI:REVISABLE}}\u001eLes prix sont révisables\u001e{{FINSI:REVISABLE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.7. Monnaie\u001f{{SI:ARIARY}}\u001etous les prix sont exprimés en Ariary\u001e{{FINSI:ARIARY}}\u001e{{SI:DEVISE}}\u001eLes prix des fournitures importées et dépenses encourues hors de la République de Madagascar sont exprimés en:\u001e{{B05-MO-02}}.\u001e{{FINSI:DEVISE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.8. Garantie de soumission\u001f{{SI:SANS-GARANTIE}}\u001eIl n’est pas demandé de garantie de soumission\u001e{{FINSI:SANS-GARANTIE}}\u001e{{SI:GARANTIE}}\u001eUne garantie de soumission doit être fournie dans l’une des formes prévues à la clause 6.8. des IC et conformément aux modèles figurant dans les Formulaires de soumission\u001e{{FINSI:GARANTIE}}\u001e{{SI:CHEQUE}}\u001eUn chèque de banque libellé au nom de …\u001e{{FINSI:CHEQUE}}\u001e{{SI:GARANTIE}}\u001eLe montant de la garantie de soumission est de:\u001e{{FINSI:GARANTIE}}\u001e{{SI:GARANTIE-LOTS}}\u001e{{B05-GS-03.parLot}}.\u001e{{FINSI:GARANTIE-LOTS}}\u001e{{SI:GARANTIE-UNIQUE}}\u001e{{B05-GS-03.lettres}} ({{B05-GS-03}}).\u001e{{FINSI:GARANTIE-UNIQUE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:LANGUE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.9. Langue\u001fLa langue de l'offre est le français ou {{B04-LA-02}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:LANGUE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "7. – Remise des offres\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.1. Forme des plis\u001f{{SI:ALLOTI}}\u001eles offres devront être présentées séparément pour chacun des lots\u001e{{FINSI:ALLOTI}}\u001eOutre l’original de l’offre, les plis doivent comprendre:\u001e{{B04-RO-01}} copies\u001eLes enveloppes devront comporter les autres identifications suivantes :\u001e{{B04-RO-02}}\u001e{{SI:ALLOTI}}\u001enuméro du lot auquel se rapporte l'offre\u001e{{FINSI:ALLOTI}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.2. Lieu, date et heure de la remise des offres\u001fAux fins de remise des offres l’adresse de l’Autorité Contractante est la suivante :\u001eAttention : {{B04-LR-01}}\u001eAdresse: {{B04-LR-02}}\u001eLes date et heure limites fixées pour la remise des offres sont les suivantes :\u001eDate : {{B04-LR-03}}\u001eHeure : {{B04-LR-04}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.3. Remise des offres par voie électronique\u001f{{SI:PAPIER}}\u001eLe mode de remise des offres par voie électronique n'est pas possible dans le cadre du présent Appel d'Offres.\u001e{{FINSI:PAPIER}}\u001e{{SI:B04-SE}}\u001e[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]\u001e{{FINSI:B04-SE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "8. Ouverture des plis\u001fLieu : {{B04-OP-01}}\u001eDate et heure : les mêmes que la date et l’heure limites fixées pour la remise des offres"
+  },
+  {
+   "type": "ligne",
+   "texte": "9. Evaluation et comparaison des offres\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "9.1. - Relations entre les Candidats et l'Acheteur ou la PRMP\u001fLes Candidats devront répondre aux demandes d'éclaircissements de la PRMP dans un délai de:\u001e{{B06-EP-01}} jours"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:ALLOTI}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "9.4. Evaluation des offres\u001e9.4.3. Détermination du montant évalué de l'offre\u001fEvaluation des offres portant sur plusieurs lots\u001e{{SI:EVALUATION-PAR-LOT}}\u001eLes offres seront évaluées par lot et le Marché portera sur le lot ou les lots attribués au Candidat proposant la meilleure offre pour le lot ou les lots considérés.\u001e{{FINSI:EVALUATION-PAR-LOT}}\u001e{{SI:EVALUATION-ENSEMBLE}}\u001eLe Marché portera sur l'ensemble des lots. Les offres seront évaluées par lot. Le prix offert pour l’ensemble des lots par les candidats dont les offres sont conformes sera utilisé aux fins de comparaison des offres.\u001e{{FINSI:EVALUATION-ENSEMBLE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:ALLOTI}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:CRITERES}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fCritères additionnels d’évaluation :\u001eL’évaluation d’une offre par l’Acheteur pourra prendre en compte, en plus du prix de l’offre remise, les facteurs décrits ci-après en application des dispositions de l'Article 9.4 des IC,:\u001e{{B06-EO-02}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:CRITERES}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "9.5. Préférence nationale\u001f{{SI:SANS-PREFERENCE}}\u001eIl n’est pas accordé de préférence aux candidats\u001enationaux.\u001e{{FINSI:SANS-PREFERENCE}}\u001e{{SI:PREFERENCE}}\u001eIl est accordé une préférence aux candidats nationaux conformément à la clause 9.5. des IC dans les conditions suivantes.\u001e{{B06-EO-09.chiffres}} %\u001e{{FINSI:PREFERENCE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:QUANTITES}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "11. Modification des quantités\u001fL’autorité contractante, au moment de l’attribution du marché, se réserve le droit de modifier les quantités prévues au bordereau des prix, sans modification du prix unitaire, de plus ou moins de {{B06-EO-10.chiffres}}% en fonction des crédits disponibles"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:QUANTITES}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "12. Délai de livraison\u001f{{SI:QUANTITE-FIXE}}\u001eLe délai de livraison est fixé à {{B06-EO-11}} jours, à compter du lendemain de la date de notification de l’Ordre de Service de commencer les prestations\u001e{{FINSI:QUANTITE-FIXE}}\u001e{{SI:QUANTITE-FIXE-ALLOTI}}\u001eEn cas d’attribution de deux ou plusieurs lots à un candidat, les délais ne sont pas cumulables\u001e{{FINSI:QUANTITE-FIXE-ALLOTI}}\u001e{{SI:COMMANDE}}\u001eLe délai de livraison est fixé dans le bon de commande sans toutefois dépasser {{B06-EO-12.parLot}} jours à compter du lendemain de la notification dudit bon de commande\u001e{{FINSI:COMMANDE}}"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  }
+ ],
+ "trace": [
+  {
+   "ligne": "24.0.0",
+   "genre": "retire",
+   "source": "[note:1]",
+   "par": ""
+  },
+  {
+   "ligne": "30.1.2",
+   "genre": "jeton",
+   "source": "<insérer la dénomination de l’Autorité Contractante>",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": "30.1.6",
+   "genre": "jeton",
+   "source": "<préciser, le cas échéant, si le marché fait partie d'un projet ou d'une opération plus vaste>",
+   "par": "{{B02-AU-01}}"
+  },
+  {
+   "ligne": "30.1.9",
+   "genre": "jeton",
+   "source": "<décrire le type de fournitures à livrer et de services connexes à réaliser>",
+   "par": "{{B02-OB-02}}"
+  },
+  {
+   "ligne": "31.1.7",
+   "genre": "jeton",
+   "source": "<insérer la description du projet global>",
+   "par": "{{B02-OB-01}}"
+  },
+  {
+   "ligne": "35.1.3",
+   "genre": "jeton",
+   "source": "<insérer la description des fournitures>",
+   "par": "{{B02-OB-02}}"
+  },
+  {
+   "ligne": "35.1.6",
+   "genre": "jeton",
+   "source": "<insérer la durée, sans dépasser trois ans>",
+   "par": "{{B02-AU-04}} mois"
+  },
+  {
+   "ligne": "41.1.14",
+   "genre": "jeton",
+   "source": "<nombre de jours supérieur ou égal à six>",
+   "par": "{{B04-DE-02}}"
+  },
+  {
+   "ligne": "41.1.19",
+   "genre": "jeton",
+   "source": "<nombre de jours sus mentionné diminué du délai de réponse estimé par la PRMP>",
+   "par": "{{B04-DE-03}}"
+  },
+  {
+   "ligne": "45.1.1",
+   "genre": "jeton",
+   "source": "<énumérer ces documents ou pièces>",
+   "par": "{{B04-CO-01}}"
+  },
+  {
+   "ligne": "46.1.11",
+   "genre": "jeton",
+   "source": "<indiquer ici, ces qualifications>",
+   "par": "{{B03-CQ-06}}"
+  },
+  {
+   "ligne": "48.1.4",
+   "genre": "jeton",
+   "source": "<indiquer les formulaires ou informations que ces communautés et ONG sont dispensés de produire>",
+   "par": "{{B03-CQ-07}}"
+  },
+  {
+   "ligne": "51.1.0",
+   "genre": "jeton",
+   "source": "<nombre>",
+   "par": "{{B04-VO-01}}"
+  },
+  {
+   "ligne": "52.1.1",
+   "genre": "jeton",
+   "source": "<indiquer le lieu d'utilisation des Fournitures>",
+   "par": "{{B09-LL-01.parLot}}"
+  },
+  {
+   "ligne": "52.1.12",
+   "genre": "jeton",
+   "source": "<indiquer le lieu de destination qui peut être différent du lieu de destination finale si un changement de mode de transport est nécessaire>",
+   "par": "{{B05-CP-05}}"
+  },
+  {
+   "ligne": "52.1.14",
+   "genre": "jeton",
+   "source": "<indiquer le port de destination>",
+   "par": "{{B05-CP-05}}"
+  },
+  {
+   "ligne": "54.1.5",
+   "genre": "jeton",
+   "source": "<insérer le nom de la devise>",
+   "par": "{{B05-MO-02}}"
+  },
+  {
+   "ligne": "57.1.10",
+   "genre": "jeton",
+   "source": "<insérer le montant en chiffres et en lettres>",
+   "par": "{{B05-GS-03.parLot}}"
+  },
+  {
+   "ligne": "57.1.10",
+   "genre": "jeton",
+   "source": "<insérer le montant en chiffres et en lettres>",
+   "par": "{{B05-GS-03.lettres}} ({{B05-GS-03}})"
+  },
+  {
+   "ligne": "58.1.7",
+   "genre": "jeton",
+   "source": "<préciser la deuxième langue de l'offre>",
+   "par": "{{B04-LA-02}}"
+  },
+  {
+   "ligne": "62.1.0",
+   "genre": "choix",
+   "source": "<En cas d’allotissement, les offres devront être présentées séparément pour chacun des lots>",
+   "par": "les offres devront être présentées séparément pour chacun des lots"
+  },
+  {
+   "ligne": "62.1.2",
+   "genre": "jeton",
+   "source": "<insérer le nombre de copies>",
+   "par": "{{B04-RO-01}}"
+  },
+  {
+   "ligne": "62.1.5",
+   "genre": "jeton",
+   "source": "<insérer les mentions et/ou le numéro du DAO qui doit apparaître sur l’enveloppe de l’offre pour identifier ce processus de passation des marchés>",
+   "par": "{{B04-RO-02}}"
+  },
+  {
+   "ligne": "62.1.6",
+   "genre": "choix",
+   "source": "<insérer le numéro du lot auquel se rapporte l’offre>",
+   "par": "numéro du lot auquel se rapporte l'offre"
+  },
+  {
+   "ligne": "63.1.1",
+   "genre": "jeton",
+   "source": "<insérer le nom complet de la PRMP ou de son représentant>",
+   "par": "{{B04-LR-01}}"
+  },
+  {
+   "ligne": "63.1.2",
+   "genre": "jeton",
+   "source": "<insérer le nom de la rue et le numéro de l’immeuble>",
+   "par": "{{B04-LR-02}}"
+  },
+  {
+   "ligne": "63.1.8",
+   "genre": "jeton",
+   "source": "<insérer le jour, mois, année>",
+   "par": "{{B04-LR-03}}"
+  },
+  {
+   "ligne": "63.1.9",
+   "genre": "jeton",
+   "source": "<insérer l’heure en utilisant les 24 heures>",
+   "par": "{{B04-LR-04}}"
+  },
+  {
+   "ligne": "65.1.0",
+   "genre": "jeton",
+   "source": "<indiquer avec précision le lieu où se déroule l’ouverture des plis>",
+   "par": "{{B04-OP-01}}"
+  },
+  {
+   "ligne": "69.1.1",
+   "genre": "jeton",
+   "source": "<insérer le nombre de jours>",
+   "par": "{{B06-EP-01}}"
+  },
+  {
+   "ligne": "79.1.11",
+   "genre": "jeton",
+   "source": "<préciser le pourcentage de préférence inférieur ou égal à 10% >",
+   "par": "{{B06-EO-09.chiffres}} %"
+  },
+  {
+   "ligne": "80.1.0",
+   "genre": "jeton",
+   "source": "<préciser en chiffres et en lettres le pourcentage>",
+   "par": "{{B06-EO-10.chiffres}}"
+  },
+  {
+   "ligne": "81.1.1",
+   "genre": "jeton",
+   "source": "<préciser le délai de livraison>",
+   "par": "{{B06-EO-11}} jours"
+  },
+  {
+   "ligne": "81.1.1",
+   "genre": "retire",
+   "source": ", sans toutefois dépasser <insérer le nombre de jours> jours <préciser par lot en cas d’allotissement>",
+   "par": ""
+  },
+  {
+   "ligne": "81.1.5",
+   "genre": "jeton",
+   "source": "<préciser le délai de livraison maximum>",
+   "par": "{{B06-EO-12.parLot}}"
+  },
+  {
+   "ligne": "81.1.5",
+   "genre": "retire",
+   "source": "(en chiffres et en lettres)",
+   "par": ""
+  }
+ ],
+ "retraits": [
+  {
+   "ligne": "25.0.0",
+   "texte": "[note 1] Le document ci après a pour but de servir de base à l'établissement des DPAO. Des indications pour leur rédaction sont fournies dans les notes en italique et entre crochets. La PRMP complète le cadre des DPAO à l'aide de ces indications, en insérant le texte approprié et en utilisant les exemples fournis ou un texte similaire, adapté aux besoins du Marché. Les textes en italique et entre crochets doivent ensuite être supprimés.",
+   "raison": "note de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "30.1.11",
+   "texte": "<en cas de décomposition en lots, indiquer si le marché concerne un ou plusieurs lots :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "31.1.4",
+   "texte": "Le marché porte sur le lot <insérer la description du lot> faisant partie de < nombre de lots > lots composant <insérer la description du projet global>.",
+   "raison": "formulation pour un DAO portant sur UN lot : le DAO de la fiche porte sur tous les lots de la ligne"
+  },
+  {
+   "ligne": "31.1.8",
+   "texte": "<insérer la description du lot>",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "31.1.9",
+   "texte": "<insérer la description du lot>",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "31.1.10",
+   "texte": "<insérer la description du lot>",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "31.1.11",
+   "texte": "….",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "31.1.2",
+   "texte": "<en cas de décomposition en lots, indiquer si le marché concerne un ou plusieurs lots préciser:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "31.1.13",
+   "texte": "<en cas de décomposition en lots indiquer si les candidats peuvent répondre à un ou plusieurs lots en insérant l'un des deux textes suivants :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "34.1.2",
+   "texte": "<Insérer l’une des deux options suivantes : >",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "34.1.10",
+   "texte": "<Lorsque les variantes sont autorisées, insérer l'un des deux paragraphes suivants:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "35.1.0",
+   "texte": "<s'il s'agit d'un marché à commandes, préciser :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "36.1.0",
+   "texte": "< en cas de décomposition en lots préciser la forme du groupement, en insérant l'un des textes suivants:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "41.1.4",
+   "texte": "Attention de : <insérer le nom du responsable>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-DE-01 (nom, rue, bureau, ville, code postal, télécopie, courriel)"
+  },
+  {
+   "ligne": "41.1.5",
+   "texte": "Rue : <insérer le nom de la rue>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-DE-01 (nom, rue, bureau, ville, code postal, télécopie, courriel)"
+  },
+  {
+   "ligne": "41.1.6",
+   "texte": "Etage/numéro de Bureau : <insérer l’étage et le numéro du bureau>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-DE-01 (nom, rue, bureau, ville, code postal, télécopie, courriel)"
+  },
+  {
+   "ligne": "41.1.7",
+   "texte": "Ville : <insérer le nom de la ville>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-DE-01 (nom, rue, bureau, ville, code postal, télécopie, courriel)"
+  },
+  {
+   "ligne": "41.1.8",
+   "texte": "Code postal : <insérer le numéro du code postal>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-DE-01 (nom, rue, bureau, ville, code postal, télécopie, courriel)"
+  },
+  {
+   "ligne": "41.1.9",
+   "texte": "Numéro de télécopie : <insérer le numéro de télécopie>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-DE-01 (nom, rue, bureau, ville, code postal, télécopie, courriel)"
+  },
+  {
+   "ligne": "41.1.10",
+   "texte": "Adresse électronique : <insérer l’adresse électronique>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-DE-01 (nom, rue, bureau, ville, code postal, télécopie, courriel)"
+  },
+  {
+   "ligne": "46.1.0",
+   "texte": "<indiquer ici les renseignements que les Candidats auront à soumettre en faisant référence aux fiches figurant à la section 1.3 Formulaires de soumission>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "46.1.10",
+   "texte": "<Si des qualifications particulières sont requises des Candidats par l'Acheteur, indiquer ici: >,",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "48.1.0",
+   "texte": "<Si les communautés locales et/ou les ONG sont admises à participer à l'appel d'offres, indiquer ici:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "48.1.7",
+   "texte": "<Si une préférence nationale est accordée, indiquer ici:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "52.1.4",
+   "texte": "<Les exemples suivants sont à adapter, le cas échéant, en fonction de l'objet du Marché> :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "52.1.16",
+   "texte": "<indiquer ici au cas où l'Acheteur souhaite que le Fournisseur assure le transport intérieur jusqu'à la destination finale des Fournitures:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "58.1.0",
+   "texte": "<Dans le cas où une langue autre que le français peut être utilisée pour rédiger l'offre et/ou les correspondances relatives à la procédure de passation du Marché, insérer l'une des formules suivantes:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "58.1.3",
+   "texte": "La langue de l'offre est:",
+   "raison": "formulation d'une langue AUTRE que le français : la fiche ne connaît qu'une langue admise en plus du français (B04-LA-02)"
+  },
+  {
+   "ligne": "58.1.4",
+   "texte": "<indiquer la langue de l'offre différente du français>",
+   "raison": "formulation d'une langue AUTRE que le français : la fiche ne connaît qu'une langue admise en plus du français (B04-LA-02)"
+  },
+  {
+   "ligne": "63.1.3",
+   "texte": "Étage/Numéro de bureau : <insérer le numéro de l’étage et du bureau>",
+   "raison": "adresse de remise : saisie d'un bloc dans B04-LR-02 (rue, bureau, ville, code postal)"
+  },
+  {
+   "ligne": "63.1.4",
+   "texte": "Ville : <insérer le nom de la ville>",
+   "raison": "adresse de remise : saisie d'un bloc dans B04-LR-02 (rue, bureau, ville, code postal)"
+  },
+  {
+   "ligne": "63.1.5",
+   "texte": "Code postal : <insérer le numéro du code postal>",
+   "raison": "adresse de remise : saisie d'un bloc dans B04-LR-02 (rue, bureau, ville, code postal)"
+  },
+  {
+   "ligne": "64.1.0",
+   "texte": "<s'il n'est pas possible d'envoyer l'offre par voie électronique, indiquer :>",
+   "raison": "instruction à l’acheteur (les conditions de la remise électronique sont demandées au juriste)"
+  },
+  {
+   "ligne": "64.1.5",
+   "texte": "<Dans le cas où il est possible de remettre les offres par voie électronique, indiquer ici les conditions et modalités de transmission des offres, y compris les modalités d'obtention d'un certificat électronique ou d'identification, le format d'enregistrement électronique de l'offre, le processus permettant de garantir que les offres ne seront ouvertes électroniquement qu'en séance d'ouverture des plis. Une telle procédure ne peut être adoptée que si les conditions et modalités de transmission électronique sécurisée des offres et d'identification incontestable des candidats existent>.",
+   "raison": "instruction à l’acheteur (les conditions de la remise électronique sont demandées au juriste)"
+  },
+  {
+   "ligne": "71.1.2",
+   "texte": "<indiquer ici les critères additionnels d’évaluation à prendre en considération en sus du prix et leur mode d’évaluation, tels que la variation de l'offre par rapport au calendrier de livraison, la variation de l'offre par rapport au calendrier de paiement, le coût de la maintenance, la performance des Fournitures et Services connexes. Les facteurs retenus, le cas échéant, seront dans toute la mesure du possible exprimés en termes monétaires de manière à faciliter la comparaison des offres. Les exemples ci-dessous décrivent les facteurs les plus couramment utilisés. Ils doivent être adaptés et complétés en fonction de l'objet du Marché.>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "71.1.6",
+   "texte": "<choisir un ou plusieurs des critères additionnels suivants:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "72.1.0",
+   "texte": "Variation par rapport au calendrier de livraison :",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "72.1.2",
+   "texte": "Les Fournitures faisant l’objet du présent Appel d’Offres doivent être livrées au cours d’une période de temps acceptable (c’est à dire entre et y compris une date initiale, la plus proche dans le temps, et une date, la plus éloignée dans le temps) spécifiée au Calendrier des livraisons annexé aux Spécifications Techniques.",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "72.1.3",
+   "texte": "Aucun bonus ne sera alloué pour livraison anticipée; et les offres proposant une livraison au-delà de cette période seront considérées non conformes.",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "72.1.4",
+   "texte": "A l’intérieur de cette période de temps acceptable, un ajustement égal à <spécifier un pourcentage du montant des fournitures concernées> sera déduit du prix des Fournitures concernées par jour compris entre la date de livraison proposée par le Candidat et la date finale de la période spécifiée au Calendrier des Livraisons. Cet ajustement sera effectué seulement à des fins d’évaluation.",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "73.1.0",
+   "texte": "Variantes au Calendrier de règlement :",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "73.1.2",
+   "texte": "Les Candidats indiqueront les prix de leurs offres sur la base du Calendrier de règlement figurant en Annexe aux Clauses Techniques Particulières. Les offres seront évaluées sur cette base. Les Candidats sont toutefois autorisés à présenter une variante au Calendrier de règlement et à indiquer la réduction de prix qu’ils accepteraient pour cette variante. L’Acheteur peut considérer la variante au Calendrier de règlement et la réduction de prix proposées par le Candidat retenu sur la base du Calendrier de règlement figurant au CPS",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "74.1.0",
+   "texte": "Coût de remplacement des composants clés, des pièces détachées obligatoires, et du service après vente :",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "74.1.2",
+   "texte": "<Insérer l'un des textes ci-dessous>",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "74.1.4",
+   "texte": "<soit :>",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "74.1.5",
+   "texte": "a) La liste et les quantités des principaux ensembles et pièces de rechange, qui seront jugés pendant la période initiale de fonctionnement des fournitures. Leur coût total résultant de l’application des prix unitaires indiqués dans l’offre, sera ajouté au prix de l’offre aux fins d’évaluation.",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "74.1.7",
+   "texte": "<soit :>",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "74.1.8",
+   "texte": "b) L’Acheteur dressera une liste des composants et pièces de rechange d’emploi fréquent les plus coûteuses, en même temps qu’une estimation des quantités nécessaires pour la période initiale de fonctionnement spécifiée en application de la clause 6.4. des IC. Le coût correspondant sera déterminé à partir des prix unitaires indiqués par le Candidat, et sera ajouté au prix de l’offre aux fins d’évaluation",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "75.1.0",
+   "texte": "Frais de fonctionnement et d’entretien :",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "75.1.2",
+   "texte": "Les frais de fonctionnement et d’entretien des Fournitures faisant l’objet de l’Appel d’Offres seront indiqués dans l'offre et ajoutés au prix de l’offre, aux fins d’évaluation uniquement.",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "78.1.0",
+   "texte": "Performance et rendement des fournitures :",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "78.1.2",
+   "texte": "Les équipements offerts devront avoir le rendement minimum spécifié dans les spécifications techniques figurant dans les Spécifications Techniques pour être considérés conformes aux dispositions du Dossier d’Appel d’Offres. L’évaluation tiendra compte du coût supplémentaire dû à l’écart de rendement de l’équipement proposé dans l’offre par rapport au rendement requis; le prix offert sera ajusté.",
+   "raison": "critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02"
+  },
+  {
+   "ligne": "79.1.0",
+   "texte": "<insérer l’une des options suivantes >",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "31.1.6",
+   "texte": "<ou>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "31.1.17",
+   "texte": "<ou>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "34.1.4",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "34.1.7",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "34.1.12",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "34.1.15",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "36.1.2",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "36.1.5",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "52.1.11",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "52.1.13",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "53.1.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "53.1.3",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "54.1.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "54.1.3",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "57.1.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "57.1.3",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "57.1.6",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "58.1.2",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "58.1.6",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "70.1.2",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "70.1.5",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "79.1.2",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "79.1.7",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "81.1.0",
+   "texte": "<Pour le cas d’un marché à quantités fixes> :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "81.1.4",
+   "texte": "<Pour le cas d’un Marché à commandes> :",
+   "raison": "instruction à l’acheteur"
+  }
+ ],
+ "ajouts": [
+  "[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]",
+  "{{B04-DE-01}}",
+  "{{B06-EO-02}}",
+  "{{B02-LV-02}}",
+  "{{B05-CP-02}}"
+ ]
+}

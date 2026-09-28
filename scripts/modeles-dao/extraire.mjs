@@ -15,6 +15,10 @@ import { CP, JAVA } from './commun.mjs';
 
 const DOCUMENTS = {
   'contrat-cadre': 'Documents Types/Fournitures et services/Document type Contrat-cadre-Fournitures & Prestations de services.doc',
+  // Lot D2 (28/09) — fournitures, quantité fixe et à commande : DPAO, AE, CCAP (les IC et le CCAG sont joints tels quels).
+  'fournitures-dpao': "Documents Types/Fournitures et services/2-Document type d'appel d'offres_Fournitures_Données Particulières d'Appel d'Offres.doc",
+  'fournitures-ae': "Documents Types/Fournitures et services/4-Document type d'appel d'offres_Fournitures_Cadre d'acte d'engagement.doc",
+  'fournitures-ccap': "Documents Types/Fournitures et services/5-Document type d'appel d'offres_Fournitures_Cahier Prescriprtions Spéciales.doc",
 };
 
 const cles = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(DOCUMENTS);
@@ -41,7 +45,10 @@ for (const cle of cles) {
     fs.rmSync(copie);
     console.log(`converti par Word : ${docx}`);
   }
-  const texte = execFileSync(JAVA, ['-cp', CP(), 'LireDocx', docx], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  // Fournitures (lot D2) : paragraphes de cellule séparés (RS) — les données particulières sont un tableau de rédactions
+  // au choix. Le contrat-cadre garde la lecture d'origine, sur laquelle ses modèles ont été décrits et vérifiés.
+  const options = cle.startsWith('fournitures-') ? ['--paragraphes'] : [];
+  const texte = execFileSync(JAVA, ['-cp', CP(), 'LireDocx', docx, ...options], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   fs.writeFileSync(`sources/${cle}.txt`, texte, 'utf8');
   console.log(`sources/${cle}.txt : ${texte.split('\n').length} lignes`);
 }

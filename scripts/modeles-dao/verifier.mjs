@@ -27,12 +27,13 @@ for (const sigle of sigles) {
   const m = JSON.parse(fs.readFileSync(`modeles/${sigle}.json`, 'utf8'));
   const docx = option('docx') ?? (option('dossier') ? `${option('dossier')}/${sigle}.docx` : `modeles-docx/${sigle}.docx`);
   if (!fs.existsSync(docx)) { console.log(`✗ ${sigle} : ${docx} absent`); ecarts++; continue; }
-  const lu = execFileSync(JAVA, ['-cp', CP(), 'LireDocx', docx], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  // Paragraphes de cellule séparés (RS) : le DPAO est un tableau de rédactions, chaque paragraphe se compare seul.
+  const lu = execFileSync(JAVA, ['-cp', CP(), 'LireDocx', docx, '--paragraphes'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
   // Les unités comparées : un paragraphe, ou une cellule de tableau (LireDocx sépare les cellules par une tabulation).
-  const rendu = lu.replace(/\r\n?/g, '\n').split('\n').flatMap((l) => l.split('\t')).map(reduire).filter(Boolean);
+  const rendu = lu.replace(/\r\n?/g, '\n').split('\n').flatMap((l) => l.split(/[\t\u001E]/)).map(reduire).filter(Boolean);
   const attendu = [m.titre, ...m.blocs.filter((b) => !['table', 'fin_table', 'vide'].includes(b.type))
-    .flatMap((b) => (b.type === 'ligne' ? b.texte.split('\u001F') : b.texte.split('\u001E')))].map(reduire).filter(Boolean);
+    .flatMap((b) => b.texte.split(/[\u001E\u001F]/))].map(reduire).filter(Boolean);
 
   // Sens 1 : le modèle, dans l'ordre, se retrouve dans le rendu.
   let k = 0;

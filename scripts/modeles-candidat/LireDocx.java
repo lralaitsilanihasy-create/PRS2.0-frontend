@@ -30,14 +30,23 @@ import org.w3c.dom.NodeList;
  * ARMP devenait « ciaprès ») et colle le texte d'une note de bas de page dans le paragraphe. Ici le
  * trait d'union est rendu par U+2011, l'appel de note par {@code [note:n]} et la note elle-même sur
  * la ligne suivante, {@code [note n] texte} — la structure reste lisible ligne à ligne.
+ *
+ * <p>⚠️ Option {@code --paragraphes} (lot D2, 28/09) : les paragraphes d'une CELLULE sont séparés par RS (0x1E, le
+ * séparateur des fichiers de commande) au lieu d'une espace, et une tabulation DANS un paragraphe est rendue par une
+ * espace — les données particulières du DAO sont un tableau dont chaque cellule enchaîne des rédactions au choix, qu'il
+ * faut distinguer. Sans l'option, la sortie est inchangée (comparateurs des formulaires du candidat).
  */
 public final class LireDocx {
 
     /** Les notes de bas de page rencontrées dans la ligne en cours, imprimées à sa suite. */
     private static final List<String> NOTES = new ArrayList<>();
 
+    /** `--paragraphes` : paragraphes de cellule séparés par RS, tabulations internes rendues par une espace. */
+    private static boolean paragraphes;
+
     public static void main(String[] args) throws Exception {
         PrintStream out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
+        paragraphes = args.length > 1 && "--paragraphes".equals(args[1]);
         try (XWPFDocument doc = new XWPFDocument(Files.newInputStream(Path.of(args[0])))) {
             for (IBodyElement e : doc.getBodyElements()) {
                 if (e instanceof XWPFParagraph p) {
@@ -56,7 +65,7 @@ public final class LireDocx {
                             StringBuilder cellule = new StringBuilder();
                             for (XWPFParagraph p : c.getParagraphs()) {
                                 if (cellule.length() > 0) {
-                                    cellule.append(' ');
+                                    cellule.append(paragraphes ? "\u001E" : " ");
                                 }
                                 cellule.append(texte(doc, p));
                             }
@@ -94,7 +103,7 @@ public final class LireDocx {
                 String nom = n.getLocalName() == null ? "" : n.getLocalName();
                 switch (nom) {
                     case "t" -> sb.append(capitales ? texteDe(n).toUpperCase(Locale.FRENCH) : texteDe(n));
-                    case "tab" -> sb.append('\t');
+                    case "tab" -> sb.append(paragraphes ? ' ' : '\t');
                     case "br", "cr" -> sb.append('\n');
                     case "noBreakHyphen" -> sb.append('‑');
                     case "footnoteReference" -> {

@@ -44,6 +44,33 @@ function sectionDe(src, debut, fin) {
   return { lignes, prises: new Set(), retirees: new Set(), retraits: [] };
 }
 
+/**
+ * ⚠️ Lot D2 (28/09) — une section lue PARAGRAPHE DE CELLULE par paragraphe de cellule (source extraite avec
+ * `--paragraphes` : cellules séparées par une tabulation, paragraphes d'une cellule par RS). Chaque paragraphe est une
+ * unité (`n` = « ligne.cellule.paragraphe ») : un choix se fait à l'intérieur d'une cellule, et le garde-fou « aucune
+ * ligne perdue » vaut paragraphe par paragraphe. Mêmes outils ensuite (`ligne`, `retirer`, `toutEstRendu`).
+ */
+function sectionCellules(src, debut, fin) {
+  const i = src.findIndex((l) => cle(l).startsWith(cle(debut)));
+  if (i < 0) throw new Error(`section « ${debut} » absente`);
+  const j = fin ? src.findIndex((l, k) => k > i && cle(l).startsWith(cle(fin))) : src.length;
+  const deplier = (s) => s.replace(/[ﬀ-ﬆ]/g, (c) => c.normalize('NFKC'));
+  const lignes = [];
+  for (let k = i; k < j; k++) {
+    src[k].split('\t').forEach((cel, c) => cel.split('\u001E').forEach((par, p) => {
+      if (par.trim()) lignes.push({ n: `${k + 1}.${c}.${p}`, ligne: k + 1, cellule: c, p, brut: deplier(par), texte: deplier(propre(par)) });
+    }));
+  }
+  return { lignes, prises: new Set(), retirees: new Set(), retraits: [] };
+}
+
+/** La ligne de tableau dont une cellule commence par ce motif : une vue de la section réduite à ses paragraphes. */
+function rangee(sec, motif, cellule = 0) {
+  const u = sec.lignes.find((x) => !sec.retirees.has(x.n) && x.cellule === cellule && x.p === 0 && correspond(x, motif));
+  if (!u) throw new Error(`rangée « ${motif} » (cellule ${cellule}) absente`);
+  return { ...sec, lignes: sec.lignes.filter((x) => x.ligne === u.ligne) };
+}
+
 /** Tout texte lu dans la source ou tiré d'elle par `traiter` : un paragraphe du modèle qui n'en vient pas est un AJOUT déclaré. */
 const PRODUITS = new Set();
 
@@ -773,20 +800,308 @@ function aeContratCadre() {
   return { fichier: 'AE-CC.docx', sigle: 'AE-CC', source: 'contrat-cadre', titre, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
 }
 
+// ══ DPAO des fournitures (quantité fixe et à commande) ═══════════════════════════════════════════
+// Source : « 2-Document type d'appel d'offres_Fournitures_Données Particulières d'Appel d'Offres » (ARMP). Un tableau
+// « Clause des IC | Données particulières » : les rédactions au choix sont DANS les cellules. Un seul modèle pour les
+// deux formes : ce qui n'appartient qu'à l'une (« 1.2 Marché à commandes », délai de livraison) est conditionné par
+// `typeMarche`. Marqueurs à deux niveaux : un paragraphe `{{SI:X}}` dans une cellule, et une LIGNE de tableau
+// `{{SI:X}}` qui ouvre ou ferme des rangées entières (demande backend du lot D2).
+function dpaoFournitures() {
+  const SRC = lireSource('fournitures-dpao');
+  const d = sectionCellules(SRC, '1.2. - DONNEES PARTICULIERES', null);
+  const tr = [];
+  const x = (vue, motif, ...r) => { const u = ligne(vue, motif); return traiter(tr, u.n, u.texte, ...r); };
+  const cel = (...ps) => ps.flat().filter((p) => p !== null && p !== undefined).join('\u001E');
+  const SIc = (nom, ...ps) => [`{{SI:${nom}}}`, ...ps.flat(), `{{FINSI:${nom}}}`];
+  const SIr = (nom, ...lignes) => [L(`{{SI:${nom}}}`, ''), ...lignes.flat(), L(`{{FINSI:${nom}}}`, '')];
+  const clause = (vue) => vue.lignes.filter((u) => u.cellule === 0).map((u) => { d.prises.add(u.n); PRODUITS.add(u.texte); return u.texte; }).join('\u001E');
+
+  const conditions = {
+    PROJET: 'B02-AU-01 renseigne',
+    ALLOTI: 'alloti = OUI',
+    'LOTS-DIVISIBLES': 'alloti = OUI et B02-AU-02 = Lot par lot (attribution divisible)',
+    'LOTS-TOTALITE': 'alloti = OUI et B02-AU-02 = Totalité des lots à un seul attributaire',
+    'VARIANTES-NON': 'variantes = NON',
+    'VARIANTES-OUI': 'variantes = OUI',
+    'VARIANTES-MOINS-DISANTE': "variantes = OUI et B02-VA-01 = Offre de base évaluée la moins-disante",
+    'VARIANTES-TOUTES': 'variantes = OUI et B02-VA-01 = Toutes les offres conformes aux spécifications',
+    COMMANDE: 'typeMarche = A_COMMANDE',
+    'QUANTITE-FIXE': 'typeMarche = QUANTITE_FIXE',
+    'QUANTITE-FIXE-ALLOTI': 'typeMarche = QUANTITE_FIXE et alloti = OUI',
+    GROUPEMENT: 'groupement = OUI',
+    'GROUPEMENT-LIBRE': 'groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE',
+    'GROUPEMENT-SOLIDAIRE': 'groupement = OUI et formeGroupement = SOLIDAIRE_OBLIGATOIRE',
+    FABRICANT: 'B03-CQ-05 = OUI',
+    QUALIFICATIONS: 'B03-CQ-06 renseigne',
+    ONG: 'B03-CQ-07 renseigne',
+    PREFERENCE: 'B03-CQ-08 = OUI',
+    'SANS-PREFERENCE': 'B03-CQ-08 = NON',
+    NATIONAL: 'provenance = NATIONAL',
+    'NATIONAL-SAISI': 'provenance = NATIONAL et B05-CP-02 renseigne',
+    'NATIONAL-TYPE': 'provenance = NATIONAL et B05-CP-02 vide',
+    IMPORTEES: 'provenance = IMPORTEES',
+    CIP: 'provenance = IMPORTEES et B05-CP-01 = CIP',
+    CIF: 'provenance = IMPORTEES et B05-CP-01 = CIF',
+    'TRANSPORT-INTERIEUR': 'provenance = IMPORTEES et B05-CP-04 = OUI',
+    FERME: 'prixRevisable = NON',
+    REVISABLE: 'prixRevisable = OUI',
+    ARIARY: 'B05-MO-01 = Ariary',
+    DEVISE: 'B05-MO-01 contient devise',
+    'SANS-GARANTIE': 'garantieSoumission = NON',
+    GARANTIE: 'garantieSoumission = OUI',
+    CHEQUE: 'garantieSoumission = OUI et B05-GS-02 contient Chèque',
+    'GARANTIE-LOTS': 'garantieSoumission = OUI et alloti = OUI',
+    'GARANTIE-UNIQUE': 'garantieSoumission = OUI et alloti = NON',
+    LANGUE: 'B04-LA-01 = OUI',
+    PAPIER: 'modeRemise = PAPIER',
+    'B04-SE': 'modeRemise = ELECTRONIQUE',
+    'EVALUATION-PAR-LOT': 'alloti = OUI et B06-EO-01 = Par lot',
+    'EVALUATION-ENSEMBLE': "alloti = OUI et B06-EO-01 = Sur l'ensemble des lots",
+    CRITERES: 'B06-EO-02 renseigne',
+    QUANTITES: 'B06-EO-10 renseigne',
+  };
+  const CLAUSE_SE = '[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]';
+  // Paragraphes faits d'un seul jeton, là où le modèle laisse l'acheteur rédiger un bloc (adresse, critères).
+  const ajouts = [CLAUSE_SE, '{{B04-DE-01}}', '{{B06-EO-02}}', '{{B02-LV-02}}'];
+
+  // En tête du document : bandeaux du dossier type, note de rédaction.
+  retirer(d, 'note de rédaction du modèle, « à supprimer »', '[note 1]');
+  const intro = x(d, 'Les données particulières ci', ['[note:1]', '', 'retire']);
+  const entete = rangee(d, 'Clause des Instructions');
+
+  // ── 1. Acheteur et objet
+  const r1 = rangee(d, '1. Acheteur');
+  const r1s = rangee(d, 'Acheteur', 1);
+  const acheteur = cel(
+    x(r1s, '=Acheteur'),
+    x(r1s, "<insérer la dénomination de l'Autorité Contractante>", ["<insérer la dénomination de l'Autorité Contractante>", '{{B01-AC-01}}', 'jeton']),
+    x(r1s, "Objet de l'appel d'offres"),
+    SIc('PROJET',
+      x(r1s, "Le présent appel d'offres"),
+      x(r1s, '<préciser, le cas échéant', ["<préciser, le cas échéant, si le marché fait partie d'un projet ou d'une opération plus vaste>", '{{B02-AU-01}}', 'jeton'])),
+    x(r1s, "L'appel d'offres a pour objet"),
+    x(r1s, '<décrire le type de fournitures', ['<décrire le type de fournitures à livrer et de services connexes à réaliser>', '{{B02-OB-02}}', 'jeton']),
+  );
+  retirer(r1s, 'instruction à l’acheteur', '<en cas de décomposition en lots, indiquer si le marché concerne un ou plusieurs lots :>');
+
+  // ── 1.1 Lots et variantes
+  const r11 = rangee(d, '1.1 Lots et variantes');
+  const lots = cel(SIc('ALLOTI',
+    x(r11, '=Lots'),
+    x(r11, "L'appel d'offres porte sur les lots suivants", ['<insérer la description du projet global>', '{{B02-OB-01}}', 'jeton']),
+    '{{B02-LV-02}}',
+    SIc('LOTS-DIVISIBLES', x(r11, 'Chaque lot est indivisible'), x(r11, 'Les candidats peuvent soumissionner')),
+    SIc('LOTS-TOTALITE', x(r11, 'Les candidats ne peuvent soumissionner'))));
+  retirer(r11, 'formulation pour un DAO portant sur UN lot : le DAO de la fiche porte sur tous les lots de la ligne', 'Le marché porte sur le lot');
+  retirer(r11, 'liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)', '<insérer la description du lot>', '=….');
+  retirer(r11, 'instruction à l’acheteur', '<en cas de décomposition en lots');
+  const r11v = rangee(d, 'Variantes', 1);
+  const variantes = cel(
+    x(r11v, '=Variantes'),
+    SIc('VARIANTES-NON', x(r11v, 'Les variantes ne sont pas')),
+    SIc('VARIANTES-OUI', x(r11v, 'Les variantes sont autorisées')),
+    SIc('VARIANTES-MOINS-DISANTE', x(r11v, "L'Acheteur ne considèrera")),
+    SIc('VARIANTES-TOUTES', x(r11v, "L'Acheteur considérera")));
+  retirer(r11v, 'instruction à l’acheteur', '<Insérer l', '<Lorsque les variantes');
+
+  // ── 1.2 Marché à commandes (à commande seulement)
+  const r12 = rangee(d, '1.2 Marché à commandes');
+  const commande = cel(
+    x(r12, "L'appel d'offre porte sur un marché à commande"),
+    x(r12, '<insérer la description des fournitures>', ['<insérer la description des fournitures>', '{{B02-OB-02}}', 'jeton']),
+    x(r12, 'pour les quantités minimales'),
+    x(r12, 'pour une durée de'),
+    x(r12, '<insérer la durée', ['<insérer la durée, sans dépasser trois ans>', '{{B02-AU-04}} mois', 'jeton']));
+  retirer(r12, 'instruction à l’acheteur', "<s'il s'agit d'un marché à commandes");
+
+  // ── 2. Groupements
+  const r2 = rangee(d, '2. Groupements');
+  const groupements = cel(
+    SIc('GROUPEMENT-LIBRE', x(r2, 'Les groupements entre Candidats soumissionnant pour des lots distincts peuvent')),
+    SIc('GROUPEMENT-SOLIDAIRE', x(r2, 'Les groupements entre Candidats soumissionnant pour des lots distincts doivent')));
+  retirer(r2, 'instruction à l’acheteur', '< en cas de décomposition');
+
+  // ── 5. Composition, éclaircissements
+  const r5 = rangee(d, '5. – Composition');
+  const r51 = rangee(d, '5.1Composiition');
+  const composition = cel(x(r51, '1.3 :'), x(r51, '- Modèles de garantie'), x(r51, '2.5 :'));
+  const r52 = rangee(d, '5.2. Demandes');
+  const eclaircissements = cel(
+    x(r52, '=Adresse'),
+    x(r52, "Afin d'obtenir des éclaircissements"),
+    '{{B04-DE-01}}',
+    x(r52, "Délai pour l'envoi des demandes"),
+    x(r52, '<nombre de jours supérieur', ['<nombre de jours supérieur ou égal à six>', '{{B04-DE-02}}', 'jeton']),
+    x(r52, 'Délai pour la réponse'),
+    x(r52, '<nombre de jours sus mentionné', ['<nombre de jours sus mentionné diminué du délai de réponse estimé par la PRMP>', '{{B04-DE-03}}', 'jeton']));
+  retirer(r52, "adresse de la PRMP : saisie d'un bloc dans B04-DE-01 (nom, rue, bureau, ville, code postal, télécopie, courriel)",
+    'Attention de', 'Rue :', 'Etage/numéro', 'Ville :', 'Code postal', 'Numéro de télécopie', 'Adresse électronique');
+
+  // ── 6. Préparation des offres
+  const r6 = rangee(d, '6. – Préparation');
+  const r62 = rangee(d, '6.2. Contenu des offres');
+  const contenu = cel(x(r62, 'Documents ou pièces à remettre'), x(r62, '<énumérer ces documents', ['<énumérer ces documents ou pièces>', '{{B04-CO-01}}', 'jeton']));
+  const r63 = rangee(d, '6.3. Capacités');
+  const capacites = cel(
+    x(r63, 'Chaque Candidat complète'), x(r63, '1°'), x(r63, '2°'), x(r63, '3°'), x(r63, '4°'),
+    SIc('FABRICANT', x(r63, '5°')),
+    SIc('QUALIFICATIONS', x(r63, 'Les qualifications particulières suivantes', ['<indiquer ici, ces qualifications>', '{{B03-CQ-06}}', 'jeton'])));
+  retirer(r63, 'instruction à l’acheteur', '<indiquer ici les renseignements', '<Si des qualifications');
+  const r63b = rangee(d, '<Si les communautés', 1);
+  const ongPreference = cel(
+    SIc('ONG', x(r63b, 'Les communautés locales'), x(r63b, '<indiquer les formulaires', ['<indiquer les formulaires ou informations que ces communautés et ONG sont dispensés de produire>', '{{B03-CQ-07}}', 'jeton'])),
+    SIc('PREFERENCE', x(r63b, 'Les Candidats susceptibles de bénéficier')));
+  retirer(r63b, 'instruction à l’acheteur', '<Si les communautés', '<Si une préférence');
+  const r65 = rangee(d, '6.5. Délai de validité');
+  const validite = cel(x(r65, 'Le délai de validité', ['<nombre>', '{{B04-VO-01}}', 'jeton']));
+  const r66 = rangee(d, '6.6. Contenu et décomposition');
+  const prix = cel(
+    x(r66, 'La destination finale'),
+    x(r66, "<indiquer le lieu d'utilisation", ["<indiquer le lieu d'utilisation des Fournitures>", '{{B09-LL-01.parLot}}', 'jeton']),
+    x(r66, 'Terme commercial de livraison'),
+    SIc('NATIONAL', x(r66, 'a) Pour les Fournitures acquises')),
+    SIc('NATIONAL-TYPE', x(r66, 'i) le prix des fournitures EXW'), x(r66, 'ii) le prix des transports')),
+    SIc('NATIONAL-SAISI', '{{B05-CP-02}}'),
+    SIc('IMPORTEES', x(r66, 'b) Pour les Fournitures à importer'), x(r66, 'le prix des fournitures correspond')),
+    SIc('CIP', x(r66, 'CIP <indiquer', ['<indiquer le lieu de destination qui peut être différent du lieu de destination finale si un changement de mode de transport est nécessaire>', '{{B05-CP-05}}', 'jeton'])),
+    SIc('CIF', x(r66, 'CIF <indiquer', ['<indiquer le port de destination>', '{{B05-CP-05}}', 'jeton'])),
+    SIc('TRANSPORT-INTERIEUR', x(r66, 'le prix des transports intérieurs, assurance et autres services locaux afférents à la livraison des fournitures du lieu')));
+  ajouts.push('{{B05-CP-02}}');
+  retirer(r66, 'instruction à l’acheteur', '<Les exemples suivants', "<indiquer ici au cas où l'Acheteur");
+  const r663 = rangee(d, '6.6.3. Caractère ferme');
+  const revision = cel(SIc('FERME', x(r663, 'Les prix sont fermes')), SIc('REVISABLE', x(r663, 'Les prix sont révisables')));
+  const r67 = rangee(d, '6.7. Monnaie');
+  const monnaie = cel(
+    SIc('ARIARY', x(r67, 'tous les prix sont exprimés en Ariary')),
+    SIc('DEVISE', x(r67, 'Les prix des fournitures importées'), x(r67, '<insérer le nom de la devise>', ['<insérer le nom de la devise>', '{{B05-MO-02}}', 'jeton'])));
+  const r68 = rangee(d, '6.8. Garantie de soumission');
+  const garantie = cel(
+    SIc('SANS-GARANTIE', x(r68, "Il n'est pas demandé")),
+    SIc('GARANTIE', x(r68, 'Une garantie de soumission doit être fournie')),
+    SIc('CHEQUE', x(r68, 'Un chèque de banque')),
+    SIc('GARANTIE', x(r68, 'Le montant de la garantie de soumission')),
+    SIc('GARANTIE-LOTS', x(r68, '<insérer le montant en chiffres', ['<insérer le montant en chiffres et en lettres>', '{{B05-GS-03.parLot}}', 'jeton'])),
+    SIc('GARANTIE-UNIQUE', x(r68, '<insérer le montant en chiffres', ['<insérer le montant en chiffres et en lettres>', '{{B05-GS-03.lettres}} ({{B05-GS-03}})', 'jeton'])));
+  const r69 = rangee(d, '6.9. Langue');
+  const langue = cel(x(r69, "La langue de l'offre est le français", ["<préciser la deuxième langue de l'offre>", '{{B04-LA-02}}', 'jeton']));
+  retirer(r69, 'instruction à l’acheteur', '<Dans le cas où une langue');
+  retirer(r69, "formulation d'une langue AUTRE que le français : la fiche ne connaît qu'une langue admise en plus du français (B04-LA-02)", "La langue de l'offre est:", "<indiquer la langue de l'offre différente");
+
+  // ── 7. Remise des offres
+  const r7 = rangee(d, '7. – Remise');
+  const r71 = rangee(d, '7.1. Forme des plis');
+  const plis = cel(
+    SIc('ALLOTI', x(r71, "<En cas d'allotissement", ["<En cas d'allotissement, les offres devront être présentées séparément pour chacun des lots>", 'les offres devront être présentées séparément pour chacun des lots', 'choix'])),
+    x(r71, "Outre l'original"),
+    x(r71, '<insérer le nombre de copies>', ['<insérer le nombre de copies>', '{{B04-RO-01}}', 'jeton']),
+    x(r71, 'Les enveloppes devront comporter'),
+    x(r71, '<insérer les mentions', ["<insérer les mentions et/ou le numéro du DAO qui doit apparaître sur l'enveloppe de l'offre pour identifier ce processus de passation des marchés>", '{{B04-RO-02}}', 'jeton']),
+    SIc('ALLOTI', x(r71, '<insérer le numéro du lot', ["<insérer le numéro du lot auquel se rapporte l'offre>", "numéro du lot auquel se rapporte l'offre", 'choix'])));
+  const r72 = rangee(d, '7.2. Lieu, date');
+  const remise = cel(
+    x(r72, 'Aux fins de remise des offres'),
+    x(r72, 'Attention :', ['<insérer le nom complet de la PRMP ou de son représentant>', '{{B04-LR-01}}', 'jeton']),
+    x(r72, 'Adresse:', ["<insérer le nom de la rue et le numéro de l'immeuble>", '{{B04-LR-02}}', 'jeton']),
+    x(r72, 'Les date et heure limites'),
+    x(r72, 'Date :', ['<insérer le jour, mois, année>', '{{B04-LR-03}}', 'jeton']),
+    x(r72, 'Heure :', ["<insérer l'heure en utilisant les 24 heures>", '{{B04-LR-04}}', 'jeton']));
+  retirer(r72, "adresse de remise : saisie d'un bloc dans B04-LR-02 (rue, bureau, ville, code postal)", 'Étage/Numéro', 'Ville :', 'Code postal');
+  const r73 = rangee(d, '7.3. Remise des offres par voie');
+  const electronique = cel(SIc('PAPIER', x(r73, 'Le mode de remise des offres par voie électronique')), SIc('B04-SE', CLAUSE_SE));
+  retirer(r73, 'instruction à l’acheteur (les conditions de la remise électronique sont demandées au juriste)', "<s'il n'est pas possible", '<Dans le cas où il est possible');
+  const r8 = rangee(d, '8. Ouverture des plis');
+  const ouverture = cel(x(r8, 'Lieu :', ["<indiquer avec précision le lieu où se déroule l'ouverture des plis>", '{{B04-OP-01}}', 'jeton']), x(r8, 'Date et heure'));
+
+  // ── 9. Évaluation
+  const r9 = rangee(d, '9. Evaluation');
+  const r91 = rangee(d, '9.1. - Relations');
+  const relations = cel(x(r91, 'Les Candidats devront répondre'), x(r91, '<insérer le nombre de jours>', ['<insérer le nombre de jours>', '{{B06-EP-01}}', 'jeton']));
+  const r94 = rangee(d, '9.4. Evaluation des offres');
+  const evaluation = cel(
+    x(r94, 'Evaluation des offres portant sur plusieurs lots'),
+    SIc('EVALUATION-PAR-LOT', x(r94, 'Les offres seront évaluées par lot')),
+    SIc('EVALUATION-ENSEMBLE', x(r94, "Le Marché portera sur l'ensemble des lots")));
+  const r94b = rangee(d, 'Critères additionnels', 1);
+  const criteres = cel(x(r94b, 'Critères additionnels'), x(r94b, "L'évaluation d'une offre par l'Acheteur"), '{{B06-EO-02}}');
+  retirer(r94b, 'instruction à l’acheteur', '<indiquer ici les critères additionnels', '<choisir un ou plusieurs');
+  for (const m of ['Variation par rapport au calendrier', 'Variantes au Calendrier', 'Coût de remplacement', 'Frais de fonctionnement', 'Performance et rendement']) {
+    const v = rangee(d, m, 1);
+    retirer(v, 'critères additionnels d’exemple du modèle, « à adapter » : remplacés par la saisie B06-EO-02', () => true);
+  }
+  const r95 = rangee(d, '9.5. Préférence');
+  const preference = cel(
+    SIc('SANS-PREFERENCE', x(r95, "Il n'est pas accordé"), x(r95, '=nationaux.')),
+    SIc('PREFERENCE', x(r95, 'Il est accordé une préférence'), x(r95, '<préciser', ['<préciser le pourcentage de préférence inférieur ou égal à 10% >', '{{B06-EO-09.chiffres}} %', 'jeton'])));
+  retirer(r95, 'instruction à l’acheteur', "<insérer l'une des options");
+  const r11q = rangee(d, '11. Modification');
+  const quantites = cel(x(r11q, "L'autorité contractante, au moment", ['<préciser en chiffres et en lettres le pourcentage>', '{{B06-EO-10.chiffres}}', 'jeton']));
+  const r12d = rangee(d, '12. Délai de livraison');
+  const delai = cel(
+    SIc('QUANTITE-FIXE', x(r12d, 'Le délai de livraison est fixé à', ['<préciser le délai de livraison>', '{{B06-EO-11}} jours', 'jeton'],
+      [', sans toutefois dépasser <insérer le nombre de jours> jours <préciser par lot en cas d\'allotissement>', '', 'retire'])),
+    SIc('QUANTITE-FIXE-ALLOTI', x(r12d, "En cas d'attribution de deux")),
+    SIc('COMMANDE', x(r12d, 'Le délai de livraison est fixé dans le bon', ['<préciser le délai de livraison maximum>', '{{B06-EO-12.parLot}}', 'jeton'], [' (en chiffres et en lettres)', '', 'retire'])));
+  retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', (l) => /^<\s*(soit|ou)\s*:?\s*>$/i.test(l.texte));
+  retirer(r12d, 'instruction à l’acheteur', '<Pour le cas');
+
+  const blocs = [
+    P(intro),
+    T(2),
+    L(...entete.lignes.map((u) => { d.prises.add(u.n); PRODUITS.add(u.texte); return u.texte; })),
+    L(clause(r1), acheteur),
+    ...SIr('ALLOTI', L(clause(r11), lots)),
+    L(clause(r11v).length ? clause(r11v) : '', variantes),
+    ...SIr('COMMANDE', L(clause(r12), commande)),
+    ...SIr('GROUPEMENT', L(clause(r2), groupements)),
+    L(clause(r5), ''),
+    L(clause(r51), composition),
+    L(clause(r52), eclaircissements),
+    L(clause(r6), ''),
+    L(clause(r62), contenu),
+    L(clause(r63), capacites),
+    L('', ongPreference),
+    L(clause(r65), validite),
+    L(clause(r66), prix),
+    L(clause(r663), revision),
+    L(clause(r67), monnaie),
+    L(clause(r68), garantie),
+    ...SIr('LANGUE', L(clause(r69), langue)),
+    L(clause(r7), ''),
+    L(clause(r71), plis),
+    L(clause(r72), remise),
+    L(clause(r73), electronique),
+    L(clause(r8), ouverture),
+    L(clause(r9), ''),
+    L(clause(r91), relations),
+    ...SIr('ALLOTI', L(clause(r94), evaluation)),
+    ...SIr('CRITERES', L('', criteres)),
+    L(clause(r95), preference),
+    ...SIr('QUANTITES', L(clause(r11q), quantites)),
+    L(clause(r12d), delai),
+    FIN,
+  ];
+  const titre = ligne(d, '1.2. - DONNEES PARTICULIERES').texte;
+  toutEstRendu(d, 'DPAO-F');
+  return { fichier: 'DPAO-F.docx', sigle: 'DPAO-F', source: 'fournitures-dpao', titre, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
+}
+
 // ══ Sortie ═══════════════════════════════════════════════════════════════════════════════════
-const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre };
+const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre, 'DPAO-F': dpaoFournitures };
 fs.mkdirSync('modeles', { recursive: true });
 const voulus = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(DOCUMENTS);
 for (const sigle of voulus) {
   const m = DOCUMENTS[sigle]();
   // Une condition utilisée et non déclarée, ou déclarée et jamais utilisée, est une erreur de description.
-  const utilisees = new Set(m.blocs.map((b) => /^\{\{SI:([A-Z0-9-]+)}}$/.exec(b.texte)?.[1]).filter(Boolean));
+  // Les marqueurs peuvent être un paragraphe, un paragraphe de cellule ou une ligne de tableau (lot D2) : on les
+  // cherche partout, morceau par morceau.
+  const morceaux = (b) => b.texte.split(/[\u001E\u001F]/);
+  const utilisees = new Set(m.blocs.flatMap(morceaux).map((t) => /^\{\{SI:([A-Z0-9-]+)}}$/.exec(t)?.[1]).filter(Boolean));
   for (const n of utilisees) if (!m.conditions[n]) throw new Error(`${sigle} : condition ${n} utilisée, non déclarée`);
   for (const n of Object.keys(m.conditions)) if (!utilisees.has(n)) throw new Error(`${sigle} : condition ${n} déclarée, jamais utilisée`);
   // Tout paragraphe (ou cellule) vient de la source, ou est un ajout déclaré (seul, ou en tête d'un texte de la source).
   const vient = (t) => PRODUITS.has(t) || m.ajouts.includes(t) || m.ajouts.some((a) => t.startsWith(a) && PRODUITS.has(t.slice(a.length)));
-  const orphelins = m.blocs.filter((b) => !['table', 'fin_table', 'vide'].includes(b.type) && !/^\{\{(SI|FINSI):/.test(b.texte))
-    .flatMap((b) => b.texte.split(/[\u001E\u001F]/)).filter((t) => t && !vient(t));
+  const orphelins = m.blocs.filter((b) => !['table', 'fin_table', 'vide'].includes(b.type))
+    .flatMap(morceaux).filter((t) => t && !/^\{\{(SI|FINSI):[A-Z0-9-]+}}$/.test(t) && !vient(t));
   // Un jeton nu imprime déjà l'unité de son champ (MONTANT : « Ariary », POURCENTAGE : « % ») : suivi de l'unité en dur,
   // le document dirait « 15 % % » (constat du backend, 28/09 ; « Ariary Ariary » du C1 le 27/09) — il faut `.chiffres`.
   const doublons = m.blocs.flatMap((b) => [...b.texte.matchAll(/\{\{([A-Z0-9-]+)\}\}\s*(%|Ariary)/g)].map((x) => x[0]));
