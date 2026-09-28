@@ -56,3 +56,17 @@ toutes les rédactions, marqueurs compris.
    ligne perdue sans raison ; aucun texte venu d'ailleurs sans déclaration.
 2. **rendu ≡ modèle** — `verifier.mjs`, dans les deux sens, sur le décalque ou sur le rendu **brut** du serveur
    (jetons et marqueurs non substitués).
+
+## Lot D2 — les fournitures (29/09)
+
+`DPAO-F`, `AE-F`, `CCAP-F` : un modèle par document pour la quantité fixe et le marché à commande (sections
+`typeMarche`). Deux outils de plus :
+
+- **lecture par cellule** — les sources des fournitures sont extraites avec `LireDocx --paragraphes` (paragraphes d'une
+  cellule séparés par RS) et décrites **paragraphe de cellule par paragraphe de cellule** (`sectionCellules`, `rangee`) :
+  les rédactions au choix du DPAO sont dans les cellules ; marqueurs `{{SI:…}}` **dans une cellule** et **en rangée**
+  (ligne de tableau dont la première cellule est le marqueur) ;
+- **émetteur générique** (`emetteur`) — pour un document surtout fixe (l'AE du candidat, le CCAP) : une plage de la
+  source reprise telle quelle, trous déclarés remplacés ; le rang d'un repère de fin se compte après le début de la plage.
+
+Le contrat-cadre garde sa lecture d'origine (sans `--paragraphes`) : ses modèles sont inchangés, octet pour octet.

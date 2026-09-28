@@ -23,7 +23,7 @@ La chaîne est celle des formulaires du candidat (27/09), qui a fait ses preuves
 | tranche | documents | source | état |
 |---|---|---|---|
 | **D1 — contrat-cadre** | DPAC, AE (valant CCAP) | « Document type Contrat-cadre — Fournitures & Prestations de services » | ✅ front : `DPAC-CC` (133 paragraphes, 14 conditions), `AE-CC` (263 paragraphes, 53 conditions), vérifiés ; ⏳ backend : moteur (B1), jetons (B2), production (B3), 9 champs (B4) |
-| D2 — fournitures, quantité fixe et à commande | DPAO (doc 2), AE (doc 4), CCAP (doc 5) | les six documents types « Fournitures » déjà remis | à décrire après D1 : même moteur, sections imbriquées (DPAO) |
+| D2 — fournitures, quantité fixe et à commande | DPAO (doc 2), AE (doc 4), CCAP (doc 5) | les six documents types « Fournitures » déjà remis | ✅ front 29/09 : `DPAO-F` (42 conditions, 234/234), `AE-F` (22, 455/455), `CCAP-F` (65, 456/456) ; ⏳ backend : `docs/demande-backend-2026-09-29-lot-d2-fournitures.md` (marqueurs de cellule et de rangée, `.parLot`, 7 champs) |
 | D3 — pièces fixes | Instructions aux candidats (doc 1), CCAG (doc 6) | idem | **jointes telles quelles** (l'audit du 27/09 : 0 et 2 trous) — un document produit sans jeton, ou le `.doc` officiel en pièce |
 | D4 — avis spécifique | avis d'appel d'offres | partie « Avis spécifiques » des documents types | après D2 ; les jetons de la remise électronique y sont prêts (plan du 27/09, Q5) |
 | D5 — travaux, prestations intellectuelles | selon leurs documents types | **à remettre par le pilote** | — |

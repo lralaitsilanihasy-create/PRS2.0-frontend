@@ -77,14 +77,15 @@ function rangee(sec, motif, cellule = 0) {
  * plage de la source telle quelle — paragraphes, et lignes de tableau avec leurs cellules vides —, n'y remplace que
  * les trous déclarés (`trous` : `[motif, ...remplacements]`), et ce qui a été retiré avant (`retirer`) n'y paraît pas.
  * La plage va de la ligne dont le premier paragraphe répond à `de` (incluse) à celle qui répond à `a` (exclue, ou la
- * fin). Un paragraphe hors tableau dont le texte répond à `titres` devient un sous-titre.
+ * fin). Un paragraphe hors tableau dont le texte répond à `titres` devient un sous-titre. ⚠️ Le rang d'un repère de
+ * DÉBUT se compte dans tout le document ; celui d'un repère de FIN, à partir du début de la plage.
  */
 function emetteur(sec, tr, titres = /^(ARTICLE\b|[A-Z]\.\s*-|\d+\.\d*\.?\s)/) {
   const numeros = [...new Set(sec.lignes.map((u) => u.ligne))].sort((x, y) => x - y);
   /** La ligne dont le premier paragraphe non retiré répond au motif — `[motif, rang]` quand le titre revient. */
-  const ligneDe = (repere) => {
+  const ligneDe = (repere, apres = -Infinity) => {
     const [motif, rang] = Array.isArray(repere) ? repere : [repere, 0];
-    const trouvees = numeros.filter((k) => {
+    const trouvees = numeros.filter((k) => k > apres).filter((k) => {
       const u = sec.lignes.find((x) => x.ligne === k && !sec.retirees.has(x.n));
       return u && correspond(u, motif);
     });
@@ -93,7 +94,8 @@ function emetteur(sec, tr, titres = /^(ARTICLE\b|[A-Z]\.\s*-|\d+\.\d*\.?\s)/) {
   };
   return (de, a = null, trous = []) => {
     const l0 = ligneDe(de);
-    const l1 = a ? ligneDe(a) : Infinity;
+    // La borne de fin est cherchée après le début : un titre répété (« Non applicable ») ne referme pas la plage trop tôt.
+    const l1 = a ? ligneDe(a, l0) : Infinity;
     const out = [];
     let colonnes = 0;
     const texte = (u) => {
@@ -1231,11 +1233,11 @@ function aeFournitures() {
     P(x('Autres pièces contractuelles', ['<à préciser selon les cas>', '{{B09-PC-02}}', 'jeton'])),
     ...E('B. - ACCEPTATION', 'Bordereau des prix des Fournitures à importer'),
     ...SI('IMPORTEES', E('Bordereau des prix des Fournitures à importer', ['Bordereau des prix pour les fournitures locales', 0])),
-    ...SI('NATIONAL-QUANTITE-FIXE', E(['Bordereau des prix pour les fournitures locales', 0], ['Bordereau des prix pour les fournitures locales', 1])),
+    ...SI('NATIONAL-QUANTITE-FIXE', E(['Bordereau des prix pour les fournitures locales', 0], 'Bordereau des prix pour les fournitures locales')),
     ...SI('NATIONAL-COMMANDE', E(['Bordereau des prix pour les fournitures locales', 1], 'Bordereau des prix et calendrier')),
     ...E('Bordereau des prix et calendrier', ['=ANNEXE', 0]),
-    ...SI('ANNEXE-FORFAIT', E(['=ANNEXE', 0], ['=ANNEXE', 1])),
-    ...SI('SOUS-TRAITANCE', E(['=ANNEXE', 1], ['=ANNEXE', 2])),
+    ...SI('ANNEXE-FORFAIT', E(['=ANNEXE', 0], '=ANNEXE')),
+    ...SI('SOUS-TRAITANCE', E(['=ANNEXE', 1], '=ANNEXE')),
     ...E(['=ANNEXE', 2]),
   ];
   const titre = ligne(d, 'MARCHÉ PUBLIC DE FOURNITURES').texte;
@@ -1243,8 +1245,281 @@ function aeFournitures() {
   return { fichier: 'AE-F.docx', sigle: 'AE-F', source: 'fournitures-ae', titre, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
 }
 
+// ══ CCAP des fournitures (quantité fixe et à commande) ════════════════════════════════════════════
+// Source : « 5-Document type d'appel d'offres_Fournitures_Cahier Prescriptions Spéciales » (ARMP) : page de garde, CCAP
+// (25 articles), annexes (formule de révision, garanties de bonne exécution et de restitution d'avance). Les
+// SPÉCIFICATIONS TECHNIQUES du même document ne sont pas reprises ici : le serveur les produit depuis le besoin (bloc
+// B12 : liste des fournitures, tableau de conformité).
+function ccapFournitures() {
+  const SRC = lireSource('fournitures-ccap');
+  const d = sectionCellules(SRC, '2.2 CAHIER DES PRESCRIPTIONS', null);
+  const tr = [];
+  const x = (motif, ...r) => { const u = ligne(d, motif); return traiter(tr, u.n, u.texte, ...r); };
+  const xr = (motif, rang, ...r) => { const u = ligne(d, motif, rang); return traiter(tr, u.n, u.texte, ...r); };
+  const E = emetteur(d, tr, /^(Article \d|ARTICLE|\d+\.\d+[a-z]?\.\s*-|Annexe au CCAP|CAHIER DES CLAUSES)/);
+
+  const conditions = {
+    AOO: "B01-AC-13 = Appel d'offres ouvert",
+    PREQUALIFICATION: 'B01-AC-13 contient qualification',
+    'DEUX-ETAPES': 'B01-AC-13 contient deux étapes',
+    RESTREINT: 'B01-AC-13 contient restreint',
+    PROJET: 'B02-AU-01 renseigne',
+    ALLOTI: 'alloti = OUI',
+    'GROUPEMENT-SOLIDAIRE': 'groupement = OUI et formeGroupement = SOLIDAIRE_OBLIGATOIRE',
+    'GROUPEMENT-LIBRE': 'groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE',
+    'PIECES-SUPPLEMENTAIRES': 'B09-PC-01 renseigne',
+    'DELAI-AJUSTEMENT': 'B09-OM-01 renseigne',
+    'VARIATION-QUANTITES': 'typeMarche = QUANTITE_FIXE et B09-OM-02 renseigne',
+    COMMANDE: 'typeMarche = A_COMMANDE',
+    'QUANTITE-FIXE': 'typeMarche = QUANTITE_FIXE',
+    'SECURITE-NON': 'B09-PS-01 = NON',
+    'SECURITE-OUI': 'B09-PS-01 = OUI',
+    'SECURITE-NOTIFICATION': 'B09-PS-01 = OUI et B09-PS-02 renseigne',
+    'SECURITE-ANNEXE': 'B09-PS-01 = OUI et B09-PS-03 renseigne',
+    FERME: 'prixRevisable = NON',
+    REVISABLE: 'prixRevisable = OUI',
+    'SANS-AVANCE': 'avance = NON',
+    AVANCE: 'avance = OUI',
+    'GARANTIE-AVANCE': 'avance = OUI et B08-AV-04 renseigne',
+    'AVANCE-GARANTIE-BANCAIRE': 'avance = OUI et B08-AV-04 = Garantie bancaire',
+    'AVANCE-CAUTION': 'avance = OUI et B08-AV-04 = Caution personnelle et solidaire',
+    'PAIEMENT-LIVRAISON': 'typePrix = UNITAIRES et B08-PA-05 = À la livraison',
+    'PAIEMENT-MENSUEL': 'typePrix = UNITAIRES et B08-PA-05 = Mensuelle',
+    'PAIEMENT-TRIMESTRIEL': 'typePrix = UNITAIRES et B08-PA-05 = Trimestrielle',
+    FORFAIT: 'typePrix = FORFAITAIRE',
+    DEVISE: 'B05-MO-01 contient devise',
+    'DEPART-DIFFERE': 'B09-DX-02 renseigne',
+    'PENALITES-NON': 'penalites = NON',
+    'PENALITES-CCAG': 'penalites = CCAG',
+    'PENALITES-PLAFOND': 'penalites = PLAFOND_DIFFERENT',
+    'BONNE-EXECUTION-NON': 'B08-GB-01 = NON',
+    'BONNE-EXECUTION': 'B08-GB-01 = OUI',
+    'BONNE-EXECUTION-BANCAIRE': 'B08-GB-01 = OUI et B06-AN-01 = Garantie bancaire',
+    'BONNE-EXECUTION-CAUTION': 'B08-GB-01 = OUI et B06-AN-01 = Cautionnement',
+    'BONNE-EXECUTION-MOITIE': 'B08-GB-01 = OUI et B08-RG-01 = OUI',
+    'BANCAIRE-MOITIE': 'B08-GB-01 = OUI et B06-AN-01 = Garantie bancaire et B08-RG-01 = OUI',
+    'BANCAIRE-ENTIERE': 'B08-GB-01 = OUI et B06-AN-01 = Garantie bancaire et B08-RG-01 = NON',
+    'CAUTION-MOITIE': 'B08-GB-01 = OUI et B06-AN-01 = Cautionnement et B08-RG-01 = OUI',
+    'CAUTION-ENTIERE': 'B08-GB-01 = OUI et B06-AN-01 = Cautionnement et B08-RG-01 = NON',
+    'RETENUE-NON': 'B08-RG-01 = NON',
+    'RETENUE-OUI': 'B08-RG-01 = OUI',
+    'MATERIELS-NON': 'B09-MC-01 = NON',
+    'MATERIELS-OUI': 'B09-MC-01 = OUI',
+    'STOCKAGE-NON': 'B09-SK-01 = NON',
+    'STOCKAGE-QUANTITE-FIXE': 'B09-SK-01 = OUI et typeMarche = QUANTITE_FIXE',
+    'STOCKAGE-COMMANDE': 'B09-SK-01 = OUI et typeMarche = A_COMMANDE',
+    MARQUAGE: 'B09-EM-01 renseigne',
+    'DOCUMENTS-EMBALLAGE': 'B09-EM-02 renseigne',
+    'TRANSPORT-INCOTERM': "B09-RT-01 = Selon l'incoterm",
+    'TRANSPORT-FOURNISSEUR': "B09-RT-01 = Transport par le fournisseur jusqu'à la destination finale",
+    'TRANSPORT-PARTAGE': 'B09-RT-01 = Responsabilités partagées',
+    NATIONAL: 'provenance = NATIONAL',
+    IMPORTEES: 'provenance = IMPORTEES',
+    CIP: 'provenance = IMPORTEES et B05-CP-01 = CIP',
+    CIF: 'provenance = IMPORTEES et B05-CP-01 = CIF',
+    'ASSURANCE-INCOTERM': "B09-AS-01 = Selon l'incoterm",
+    'ASSURANCE-AUTRE': "B09-AS-01 != Selon l'incoterm",
+    'CONTROLE-PRIX-NON': 'B09-CR-01 = NON',
+    'CONTROLE-PRIX-OUI': 'B09-CR-01 = OUI',
+    GARANTIE: 'B09-DG-01 renseigne',
+    'SANS-GARANTIE': 'B09-DG-01 vide',
+    INDEMNITE: 'B10-IR-01 = OUI',
+  };
+  const ajouts = ['{{B09-PC-01}}', '{{B05-VP-02}}', '{{B09-PR-03}}', '{{B09-LF-01}}', '{{B09-LF-02}}', '{{B09-IV-01}}', '{{B09-DI-01}}', '{{B10-AR-01}}', '{{B10-DD-01}}', '{{B08-PA-03}}', '{{B09-DX-03}}'];
+
+  // ── Ce qui ne s'imprime pas
+  // Des REPÈRES, pas des paragraphes repris : les chercher par `ligne()` les marquerait « repris » sans les imprimer, et
+  // le garde-fou « aucune ligne perdue » ne les verrait plus.
+  const repere = (texte) => d.lignes.find((u) => u.texte === texte).ligne;
+  const table = repere('TABLE DES MATIERES');
+  retirer(d, 'titre de partie du dossier type', '2.2 CAHIER DES PRESCRIPTIONS');
+  retirer(d, 'sommaire : ses numéros de page ne valent que pour le document type', (l) => l.ligne === table || (l.ligne > table && l.ligne < table + 60 && /\s\d{1,2}$/.test(l.texte)));
+  retirer(d, 'titre du CCAP répété avant le sommaire du document type', (l) => l.ligne === table - 2 && /^CAHIER DES CLAUSES/.test(l.texte));
+  retirer(d, 'notes de rédaction du modèle, « à supprimer »', '[note 1]', '[note 2]', '[note 3]', '[note 4]', 'NOTE AUX UTILISATEURS', '<Le document ci-après (CCAP type)');
+  retirer(d, 'instruction à l’acheteur', '<préciser selon le cas', '<si le Marché comprend plusieurs lots', '<Préciser si les fournisseurs groupés', '<indiquer les pièces supplémentaires',
+    '<Si la Personne Responsable des Marchés Publics souhaite prévoir', '<Cas de Marchés à commandes', "<préciser en cas de fournitures importées", '<Dans le cas où le Marché comporte plusieurs lots',
+    "<si l'avance dépasse 5%", "<Indiquer les modalités d'établissement", '<dans le cas de prix unitaires', '<dans le cas de prix forfaitaire', '<Prévoir, le cas échéant',
+    '<Si le point de départ des délais', '<Pour les marchés à commandes', 'préciser les modalités et la période de passation', '<Préciser, en fonction de', '<si un plafond différent',
+    "<Si une garantie d'exécution est requise", '<Si un délai de garantie contractuelle', '<Si une retenue de garantie est demandée', "<Préciser le cas échéant les spécifications particulières",
+    '<Préciser les modalités de livraison', '<Préciser les documents à fournir', "<Si délai donné à la commission", '<Soit, préciser les garanties', '<Si la Personne Responsable des Marchés Publics souhaite fixer',
+    '<Exemple : clause', '[Deux pour cent', '[Dix pour cent');
+  retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', (l) => /^<\s*(soit|ou)\s*:?\s*>\s*:?\s*\.?$/i.test(l.texte));
+  retirer(d, "variante « ordre de priorité propre » : l'ordre du CCAG est retenu (la fiche ne porte pas d'ordre propre)", "L'ordre de priorité des pièces contractuelles est le suivant");
+  retirer(d, 'exemple de lots accessoires du modèle', "Le mode d'établissement des prix est commun");
+  retirer(d, "garantie par chèque de banque : forme non proposée par la fiche (B06-AN-01 : cautionnement ou garantie bancaire)", "- d'un chèque de banque");
+  retirer(d, 'exemple de documents du modèle, remplacé par la saisie B09-LF-02', '<nombre> exemplaires de la facture', 'le bon de livraison', 'le certificat de garantie du fabricant', "le certificat d'inspection délivré", "le certificat d'origine", 'pour les fournitures importées : un connaissement');
+  retirer(d, 'modalités d’inspection : saisies d’un bloc dans B09-IV-01', '<décrire les fréquences', '< préciser, le cas échéant');
+  retirer(d, 'exemple de garantie en heures de fonctionnement du modèle', 'b) La période de garantie est de');
+  retirer(d, "clause d'arbitrage d'exemple (CNUDCI), remplacée par la saisie B10-AR-01", 'Tout litige, différend ou plainte', "L'autorité de nomination sera");
+  retirer(d, 'mentions à porter d’exemple, remplacées par la saisie B08-PA-03', 'Les décomptes, factures ou mémoires seront établis en', 'le nom et adresse du Fournisseur', 'le numéro du compte bancaire',
+    'les références du Marché', 'le montant hors taxe des fournitures', 'le taux et le montant de la TVA', 'le montant TTC dû', 'la date de facturation');
+  retirer(d, 'spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)', (l) => l.ligne >= repere('SPECIFICATIONS TECHNIQUES'));
+
+  const AC = ["<dénomination de l'autorité contractante>", '{{B01-AC-01}}', 'jeton'];
+  const blocs = [
+    C(x('MARCHÉ PUBLIC DE FOURNITURES')),
+    ...E('AUTORITE CONTRACTANTE', '<indiquer les références', [['<indiquer la dénomination complète >', ['<indiquer la dénomination complète >', '{{B01-AC-01}}', 'jeton']]]),
+    P(x('<indiquer les références', ["<indiquer les références et l'intitulé principal du Marché,", '{{B02-OB-03}} — {{B02-OB-01}}', 'jeton'])),
+  ];
+  retirer(d, 'fin de la même instruction (références du marché)', 'le cas échéant, le projet dans le cadre', "ou le numéro et l'objet du lot compris");
+  blocs.push(
+    ...E('Marché passé selon', "d'appel d'offres ouvert régie"),
+    ...SI('AOO', P(x("d'appel d'offres ouvert régie"))),
+    ...SI('PREQUALIFICATION', P(x("d'appel d'offres ouvert avec"))),
+    ...SI('DEUX-ETAPES', P(x("d'appel d'offres en deux"))),
+    ...SI('RESTREINT', P(x("d'appel d'offres restreint"))),
+    ...E('PERSONNE RESPONSABLE', 'Les stipulations du présent CCAP', [['<Insérer le nom>', ['<Insérer le nom>', '{{B01-AC-05}}', 'jeton']]]),
+    // Article 1
+    ...SI('PROJET', P(x('Les stipulations du présent CCAP')), P(x("<préciser le nom de l'opération", ["<préciser le nom de l'opération, le cas échéant>", '{{B02-AU-01}}', 'jeton']))),
+    ...E('Le Marché a pour objet', '<indiquer le lieu où', [["<indiquer l'intitulé", ["<indiquer l'intitulé ou l'objet principal du Marché>", '{{B02-OB-01}}', 'jeton']]]),
+    P(x('<indiquer le lieu où', ["<indiquer le lieu où l'Autorité Contractante prend livraison des Fourniture>", '{{B09-LL-01.parLot}}', 'jeton'])),
+    ...SI('ALLOTI', P(x('Les fournitures comprennent', ['<nombre >', '{{B02-LV-05}}', 'jeton'])), P(x('- Lot n°1', ["- Lot n°1 : <préciser l'intitulé et/ou l'objet du lot>.", '{{B02-LV-02}}', 'jeton']))),
+  );
+  retirer(d, 'liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)', '- Lot n°2', '- etc.');
+  blocs.push(
+    ...E('La description des fournitures', '<Indiquer la dénomination complète', []),
+    P(x("<Indiquer la dénomination complète de l'Autorité", ["<Indiquer la dénomination complète de l'Autorité Contractante>", '{{B01-AC-01}}', 'jeton'])),
+    ...E('Article 3.', 'Article 4.', [
+      ["A l'attention de <insérer le nom>", ['<insérer le nom>', '{{B01-AC-05}}', 'jeton']],
+      ['n° et rue :', [':', ': {{B01-AC-02}}', 'jeton']],
+      ['Adresse électronique : <insérer', ["<insérer l'adresse complète>", '{{B01-AC-06}}', 'jeton']],
+    ]),
+  );
+  // Le premier « A l'attention de » est celui de la PRMP ; les coordonnées du Fournisseur restent au candidat.
+  blocs.push(
+    ...E('Article 4.', 'Les Fournisseurs groupés seront considérés comme solidaires'),
+    ...SI('GROUPEMENT-SOLIDAIRE', P(x('Les Fournisseurs groupés seront considérés comme solidaires'))),
+    ...SI('GROUPEMENT-LIBRE', P(xr('Les Fournisseurs groupés seront considérés comme solidaires', 0)), P(x('Les Fournisseurs groupés seront considérés comme conjoints'))),
+    ...E('Article 5.', 'Constituent des documents contractuels'),
+    ...SI('PIECES-SUPPLEMENTAIRES', P(x('Constituent des documents contractuels')), P('{{B09-PC-01}}')),
+    ...E("L'ordre de priorité des pièces contractuelles est celui", 'Le délai de communication par le Fournisseur'),
+    ...SI('DELAI-AJUSTEMENT', P(x('Le délai de communication par le Fournisseur', ['<nombre>', '{{B09-OM-01}}', 'jeton']))),
+    ...E('Variations maximales', '<Préciser, le cas échéant, pour les Marchés à quantité'),
+    ...SI('VARIATION-QUANTITES', P(x('<Préciser, le cas échéant, pour les Marchés à quantité', ['<Préciser, le cas échéant, pour les Marchés à quantité fixes, les variations maximales, augmentation ou réduction, du volume ou des quantités des Fournitures,qui peuvent être exécutées sans avenant:>', 'Variations maximales, augmentation ou réduction, du volume ou des quantités des Fournitures, qui peuvent être exécutées sans avenant : {{B09-OM-02.chiffres}} %', 'jeton']))),
+    ...SI('COMMANDE', P(x('Les dispositions du présent Marché sont applicables', ['…….<validité du marché>', '{{B09-OM-03}} mois', 'jeton'])), P(x('Le Minimum et le Maximum'))),
+    ...E('Article 7.', 'Non applicable'),
+    ...SI('SECURITE-NON', P(xr('=Non applicable', 0))),
+    ...SI('SECURITE-OUI', P(x('Les fournitures, objet du présent Marché, sont à exécuter dans un lieu'))),
+    ...SI('SECURITE-NOTIFICATION', P(x('<soit :>: que', ['<soit :>: ', '', 'retire']))),
+    ...SI('SECURITE-ANNEXE', P(x('<soit :>: mentionnées', ['<soit :>: ', '', 'retire']))),
+    ...E('Article 8.', 'Les prix sont fermes et non révisables'),
+    ...SI('FERME', E('Les prix sont fermes et non révisables', 'Les prix seront révisables', [['<indiquer la nature des indices', ['<indiquer la nature des indices et les sources où ils peuvent être trouvés>', '{{B05-VP-03}}', 'jeton']]])),
+    ...SI('REVISABLE', P(x('Les prix seront révisables')), P('{{B05-VP-02}}')),
+    ...E('Article 9.', 'Non applicable', []),
+  );
+  const avance = [
+    ...SI('SANS-AVANCE', P(xr('=Non applicable', 1))),
+    ...SI('AVANCE', P(x('Une avance de <pourcentage>', ['<pourcentage>', '{{B08-AV-02.chiffres}} %', 'jeton']))),
+    ...SI('GARANTIE-AVANCE', P(x("La demande d'avance doit être accompagnée"))),
+    ...SI('AVANCE-GARANTIE-BANCAIRE', P(x('garantie bancaire à première demande'))),
+    ...SI('AVANCE-CAUTION', P(x('De caution personnelle et solidaire remplaçant'))),
+    ...SI('AVANCE', E("Le remboursement de l'avance sera effectué", '9.1b.')),
+  ];
+  blocs.push(...avance,
+    ...E('9.1b.', 'Termes de paiement'),
+    P('{{B08-PA-03}}'),
+    ST(x('Termes de paiement')),
+    ...SI('PAIEMENT-LIVRAISON', P(x('Les décomptes, factures ou mémoires seront établis à la livraison', [' <ou> mensuellement <ou> trimestriellement', '', 'retire']))),
+    ...SI('PAIEMENT-MENSUEL', P(x('Les décomptes, factures ou mémoires seront établis à la livraison', ['à la livraison <ou> ', '', 'retire'], [' <ou> trimestriellement', '', 'retire']))),
+    ...SI('PAIEMENT-TRIMESTRIEL', P(x('Les décomptes, factures ou mémoires seront établis à la livraison', ['à la livraison <ou> mensuellement <ou> ', '', 'retire']))),
+    ...SI('FORFAIT',
+      P(x('Le solde, après règlement')),
+      P(x('à concurrence de <pourcentage, par exemple 60%', ['<pourcentage, par exemple 60% ou 70% ou 80%>', '{{B08-PA-06.chiffres}} %', 'jeton'])),
+      P(x('à concurrence de <pourcentage, par exemple 40%', ['<pourcentage, par exemple 40%, ou 30% ou 20%>', '{{B08-PA-07.chiffres}} %', 'jeton']))),
+    ...E('9.3.', 'Les prix correspondants à des Fournitures étrangères'),
+    ...SI('DEVISE', E('Les prix correspondants à des Fournitures étrangères', '9.4.', [['Les prix correspondants', ['<devises>', '{{B05-MO-02}}', 'jeton']]])),
+    ...E('9.4.', '<soit :> (Pour le marché à quantités fixes)', [['Le taux des intérêts moratoires', ['<au moins un point>', '{{B08-IM-01.chiffres}} point(s)', 'jeton']]]),
+  );
+  blocs.push(
+    ...SI('QUANTITE-FIXE', P(x('<soit :> (Pour le marché à quantités fixes)', ['<soit :> (Pour le marché à quantités fixes) :', '', 'retire'], ['…………….', '{{B09-DX-01}} jours', 'jeton']))),
+    ...SI('COMMANDE', P(x('<soit :> (Pour le marché à commande)', ['<soit :> (Pour le marché à commande) :', '', 'retire'], ['……………..jours', '{{B06-EO-12.parLot}} jours', 'jeton']))),
+    ...E('Les Fournitures et services connexes, objet du Marché', 'Le point de départ des délais est'),
+    ...SI('DEPART-DIFFERE', P(x('Le point de départ des délais est', ['<par exemple : le premier ordre de services de début d’exécution>', '{{B09-DX-02}}', 'jeton']))),
+    ...SI('COMMANDE', P(x('Les prestations feront l’objet de bons de commande', ['<préciser la durée>', '{{B09-OM-03}} mois', 'jeton'], [" s'achevant le <date>", '', 'retire'])), P('{{B09-DX-03}}'),
+      E('Chaque bon de commande précisera', 'Article 11.')),
+    ...E('Article 11.', 'Les pénalités journalières'),
+    ...SI('PENALITES-NON', P(x('Les pénalités journalières'))),
+    ...SI('PENALITES-CCAG', P(xr('Les stipulations de l’article 12.1', 0))),
+    ...SI('PENALITES-PLAFOND', P(xr('Les stipulations de l’article 12.1', 0)), P(x('Le montant des pénalités est limité', ['<pourcentage>', '{{B09-PR-02.chiffres}} %', 'jeton'])), P('{{B09-PR-03}}')),
+    ...E('Article 12.', 'Aucune garantie d', [['Article 12.', ['[note:2]', '', 'retire']]]),
+    ...SI('BONNE-EXECUTION-NON', P(x("Aucune garantie d'exécution"))),
+    ...SI('BONNE-EXECUTION', P(x('Le montant de la garantie de bonne exécution', ['<insérer le pourcentage>', '{{B08-GB-02.chiffres}} %', 'jeton'], [' ne peut dépasser cinq pour cent (5%) du Montant du Marché>', '', 'retire'])), P(x('La garantie de bonne exécution sera fournie sous forme'))),
+    ...SI('BONNE-EXECUTION-BANCAIRE', P(x("- d'une garantie bancaire"))),
+    ...SI('BONNE-EXECUTION-CAUTION', P(x("- d'une caution personnelle"))),
+    ...SI('BONNE-EXECUTION', P(x('La garantie de bonne exécution sera libellée'))),
+    ...SI('BONNE-EXECUTION-MOITIE', P(x('La garantie de bonne exécution est libérée de 50%'))),
+    ...E('12.2.', 'Aucune retenue de garantie', [['12.2.', ['[note:3]', '', 'retire']]]),
+    ...SI('RETENUE-NON', P(x('Aucune retenue de garantie'))),
+    ...SI('RETENUE-OUI', P(x('Une retenue de garantie égale à', ['<insérer le pourcentage sans dépasser 5%>', '{{B08-RG-02.chiffres}} %', 'jeton']))),
+    ...E('Article 13.', 'Sans objet'),
+    ...SI('MATERIELS-NON', P(x('=Sans objet'))),
+    ...SI('MATERIELS-OUI', P(x('La liste des matériels'))),
+    ...E('Article 14.', 'Non applicable'),
+    ...SI('STOCKAGE-NON', P(xr('=Non applicable', 2))),
+    ...SI('STOCKAGE-QUANTITE-FIXE', P(x("Les dispositions de l'article 15.1 du CCAG", ['<compléter par des indications pratiques sur la nature et les quantités de fournitures à stocker, la durée du stockage>', '', 'retire']))),
+    ...SI('STOCKAGE-COMMANDE', P(x('<soit > (dans le cas', ["<soit > (dans le cas d'un marché à commande):", '', 'retire']))),
+    ...E('Article 15.', 'Le marquage des emballages'),
+    ...SI('MARQUAGE', P(x('Le marquage des emballages')), P(x('<Insérer le marquage', ['<Insérer le marquage éventuellement requis>', '{{B09-EM-01}}', 'jeton']))),
+    ...SI('DOCUMENTS-EMBALLAGE', P(x('Les documents placés à l')), P(x('<Insérer la liste des documents requis>', ['<Insérer la liste des documents requis>', '{{B09-EM-02}}', 'jeton']))),
+    ...E('Article 16.', 'La responsabilité du transport des Fournitures'),
+    ...SI('TRANSPORT-INCOTERM', P(x('La responsabilité du transport des Fournitures'))),
+    ...SI('TRANSPORT-FOURNISSEUR', P(x('Le Fournisseur est tenu contractuellement'))),
+    ...SI('TRANSPORT-PARTAGE', P(x('Les responsabilités respectives', ["<indiquer les responsabilités respectives de l'Autorité contractante et du Fournisseur >", '{{B09-RT-02}}', 'jeton']))),
+    ...E('Article 17.', 'Les Fournitures fabriquées ou achetées'),
+    ...SI('NATIONAL', P(x('Les Fournitures fabriquées ou achetées', ['<préciser suivant le cas soit:> ', '', 'retire']))),
+    ...SI('IMPORTEES', P(x('Les Fournitures importées seront livrées'))),
+    ...SI('CIP', P(x('<soit> CIP', ['<soit> ', '', 'retire'], ['<insérer le lieu de destination finale>', '{{B05-CP-05}}', 'jeton']))),
+    ...SI('CIF', P(x('<soit> CIF', ['<soit> ', '', 'retire'], ['<insérer le nom du port>', '{{B05-CP-05}}', 'jeton']))),
+    P('{{B09-LF-01}}'),
+    P(x('Le Fournisseur doit fournir les documents suivants')),
+    P('{{B09-LF-02}}'),
+    ...E('Les documents ci', 'Les obligations en matière d\'assurance des Fournitures'),
+    ...SI('ASSURANCE-INCOTERM', P(x("Les obligations en matière d'assurance des Fournitures"))),
+    ...SI('ASSURANCE-AUTRE', P(x("Les obligations en matière d'assurance sont les suivantes")), P(x("<préciser qui est responsable de l'assurance", ["<préciser qui est responsable de l'assurance des Fournitures et jusqu'à quel moment>", '{{B09-AS-02}}', 'jeton']))),
+    ...E('Article 19.', 'Non applicable.', [['Article 19.', ['[note:4]', '', 'retire']]]),
+    ...SI('CONTROLE-PRIX-NON', P(x('=Non applicable.'))),
+    ...SI('CONTROLE-PRIX-OUI', P(x("Les dispositions de l'Article 20 du CCAG", ['<Préciser, le cas échéant, les éléments spécifiques du prix de revient soumis à contrôle et les modalités de ce contrôle>', '', 'retire']))),
+    ...E('Article 20.', '<préciser le lieu, par exemple'),
+    P(x('<préciser le lieu, par exemple', ['<préciser le lieu, par exemple dans les usines du Fournisseur et/ou au lieu de livraison>', '{{B09-IV-01}}', 'jeton'])),
+    ...E('Article 21.', '<soit :> (Pour le cas d’un marché à quantités'),
+    ...SI('QUANTITE-FIXE', P(x('<soit :> (Pour le cas d’un marché à quantités', ['<soit :> (Pour le cas d’un marché à quantités fixes) :', '', 'retire'])), P(x('La réception définitive sera prononcée dans les mêmes formes à l’issue'))),
+    ...SI('COMMANDE', P(x('<soit :> (Pour le cas d’un marché à commande)', ['<soit :> (Pour le cas d’un marché à commande) :', '', 'retire'])), P(x('La réception définitive sera prononcée dans les mêmes formes à la dernière'))),
+    P(x("A l'issue des opérations d'essais", ["A l'issue des opérations d'essais et/ou inspections, la commission de réception prend sa décision de réception, d'ajournement, de réfaction ou de rejet dans un délai de <nombre> jours.", '{{B09-DI-01}}', 'jeton'])),
+    ...E('Article 22.', 'Non applicable'),
+    ...SI('SANS-GARANTIE', P(xr('=Non applicable', 3))),
+    ...SI('GARANTIE',
+      P(x('a) Les fournitures doivent être garanties', ['<nombre de mois> ans', '{{B09-DG-01}} mois', 'jeton'], [' <ou> à compter de la date de leur mise en service', '', 'retire'])),
+      E('Le Fournisseur se conforme aux garanties', 'Le délai accordé au Fournisseur', [['paye à l', ['<taux de la pénalité>', '{{B09-DG-03.chiffres}} %', 'jeton']]]),
+      P(x('Le délai accordé au Fournisseur', ['<durée>', '{{B09-DG-04}}', 'jeton']))),
+    ...E('Article 23.', 'Le montant de l\'indemnisation éventuelle'),
+    ...SI('INDEMNITE', P(x("Le montant de l'indemnisation éventuelle", ['<pourcentage>', '{{B10-IR-03.chiffres}}', 'jeton']))),
+    ...E('Article 24.', 'Article 25'),
+    P('{{B10-AR-01}}'),
+    ...E('Article 25', ['Annexe au CCAP', 0]),
+    P('{{B10-DD-01}}'),
+    ...SI('REVISABLE', E(['Annexe au CCAP', 0], 'Annexe au CCAP')),
+  );
+  // Garanties de bonne exécution (modèles annexés), selon la forme ; réduction de moitié selon la retenue de garantie.
+  const moitie = (motif) => P(x(motif));
+  blocs.push(
+    ...SI('BONNE-EXECUTION-BANCAIRE', E(['Annexe au CCAP', 1], 'La présente garantie sera réduite de moitié', [['(ci-après dénommé « le Fournisseur ») a conclu', AC]])),
+    ...SI('BANCAIRE-MOITIE', moitie('La présente garantie sera réduite de moitié')),
+    ...SI('BANCAIRE-ENTIERE', P(xr('La présente garantie demeurera valable jusqu’au trentième', 0))),
+    ...SI('BONNE-EXECUTION-BANCAIRE', E('La présente garantie est régie par la loi malgache', 'Annexe au CCAP')),
+    ...SI('BONNE-EXECUTION-CAUTION', E(['Annexe au CCAP', 2], 'Le présent engagement sera réduit de moitié')),
+    ...SI('CAUTION-MOITIE', moitie('Le présent engagement sera réduit de moitié')),
+    ...SI('CAUTION-ENTIERE', P(x('Le présent engagement demeurera valable'))),
+    ...SI('BONNE-EXECUTION-CAUTION', E(['Le présent engagement est régi par la loi', 0], 'Annexe au CCAP')),
+    ...SI('AVANCE-GARANTIE-BANCAIRE', E(['Annexe au CCAP', 3], 'Annexe au CCAP', [['( ci-après dénommé', AC], ['(ci-après dénommé', AC]])),
+    ...SI('AVANCE-CAUTION', E(['Annexe au CCAP', 4])),
+  );
+  const titre = ligne(d, 'CAHIER DES PRESCRIPTIONS SPECIALES').texte;
+  toutEstRendu(d, 'CCAP-F');
+  return { fichier: 'CCAP-F.docx', sigle: 'CCAP-F', source: 'fournitures-ccap', titre, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
+}
+
 // ══ Sortie ═══════════════════════════════════════════════════════════════════════════════════
-const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre, 'DPAO-F': dpaoFournitures, 'AE-F': aeFournitures };
+const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre, 'DPAO-F': dpaoFournitures, 'AE-F': aeFournitures, 'CCAP-F': ccapFournitures };
 fs.mkdirSync('modeles', { recursive: true });
 const voulus = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(DOCUMENTS);
 for (const sigle of voulus) {

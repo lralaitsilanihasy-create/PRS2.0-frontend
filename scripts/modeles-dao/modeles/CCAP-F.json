@@ -1,0 +1,3369 @@
+{
+ "fichier": "CCAP-F.docx",
+ "sigle": "CCAP-F",
+ "source": "fournitures-ccap",
+ "titre": "CAHIER DES PRESCRIPTIONS SPECIALES",
+ "conditions": {
+  "AOO": "B01-AC-13 = Appel d'offres ouvert",
+  "PREQUALIFICATION": "B01-AC-13 contient qualification",
+  "DEUX-ETAPES": "B01-AC-13 contient deux étapes",
+  "RESTREINT": "B01-AC-13 contient restreint",
+  "PROJET": "B02-AU-01 renseigne",
+  "ALLOTI": "alloti = OUI",
+  "GROUPEMENT-SOLIDAIRE": "groupement = OUI et formeGroupement = SOLIDAIRE_OBLIGATOIRE",
+  "GROUPEMENT-LIBRE": "groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE",
+  "PIECES-SUPPLEMENTAIRES": "B09-PC-01 renseigne",
+  "DELAI-AJUSTEMENT": "B09-OM-01 renseigne",
+  "VARIATION-QUANTITES": "typeMarche = QUANTITE_FIXE et B09-OM-02 renseigne",
+  "COMMANDE": "typeMarche = A_COMMANDE",
+  "QUANTITE-FIXE": "typeMarche = QUANTITE_FIXE",
+  "SECURITE-NON": "B09-PS-01 = NON",
+  "SECURITE-OUI": "B09-PS-01 = OUI",
+  "SECURITE-NOTIFICATION": "B09-PS-01 = OUI et B09-PS-02 renseigne",
+  "SECURITE-ANNEXE": "B09-PS-01 = OUI et B09-PS-03 renseigne",
+  "FERME": "prixRevisable = NON",
+  "REVISABLE": "prixRevisable = OUI",
+  "SANS-AVANCE": "avance = NON",
+  "AVANCE": "avance = OUI",
+  "GARANTIE-AVANCE": "avance = OUI et B08-AV-04 renseigne",
+  "AVANCE-GARANTIE-BANCAIRE": "avance = OUI et B08-AV-04 = Garantie bancaire",
+  "AVANCE-CAUTION": "avance = OUI et B08-AV-04 = Caution personnelle et solidaire",
+  "PAIEMENT-LIVRAISON": "typePrix = UNITAIRES et B08-PA-05 = À la livraison",
+  "PAIEMENT-MENSUEL": "typePrix = UNITAIRES et B08-PA-05 = Mensuelle",
+  "PAIEMENT-TRIMESTRIEL": "typePrix = UNITAIRES et B08-PA-05 = Trimestrielle",
+  "FORFAIT": "typePrix = FORFAITAIRE",
+  "DEVISE": "B05-MO-01 contient devise",
+  "DEPART-DIFFERE": "B09-DX-02 renseigne",
+  "PENALITES-NON": "penalites = NON",
+  "PENALITES-CCAG": "penalites = CCAG",
+  "PENALITES-PLAFOND": "penalites = PLAFOND_DIFFERENT",
+  "BONNE-EXECUTION-NON": "B08-GB-01 = NON",
+  "BONNE-EXECUTION": "B08-GB-01 = OUI",
+  "BONNE-EXECUTION-BANCAIRE": "B08-GB-01 = OUI et B06-AN-01 = Garantie bancaire",
+  "BONNE-EXECUTION-CAUTION": "B08-GB-01 = OUI et B06-AN-01 = Cautionnement",
+  "BONNE-EXECUTION-MOITIE": "B08-GB-01 = OUI et B08-RG-01 = OUI",
+  "BANCAIRE-MOITIE": "B08-GB-01 = OUI et B06-AN-01 = Garantie bancaire et B08-RG-01 = OUI",
+  "BANCAIRE-ENTIERE": "B08-GB-01 = OUI et B06-AN-01 = Garantie bancaire et B08-RG-01 = NON",
+  "CAUTION-MOITIE": "B08-GB-01 = OUI et B06-AN-01 = Cautionnement et B08-RG-01 = OUI",
+  "CAUTION-ENTIERE": "B08-GB-01 = OUI et B06-AN-01 = Cautionnement et B08-RG-01 = NON",
+  "RETENUE-NON": "B08-RG-01 = NON",
+  "RETENUE-OUI": "B08-RG-01 = OUI",
+  "MATERIELS-NON": "B09-MC-01 = NON",
+  "MATERIELS-OUI": "B09-MC-01 = OUI",
+  "STOCKAGE-NON": "B09-SK-01 = NON",
+  "STOCKAGE-QUANTITE-FIXE": "B09-SK-01 = OUI et typeMarche = QUANTITE_FIXE",
+  "STOCKAGE-COMMANDE": "B09-SK-01 = OUI et typeMarche = A_COMMANDE",
+  "MARQUAGE": "B09-EM-01 renseigne",
+  "DOCUMENTS-EMBALLAGE": "B09-EM-02 renseigne",
+  "TRANSPORT-INCOTERM": "B09-RT-01 = Selon l'incoterm",
+  "TRANSPORT-FOURNISSEUR": "B09-RT-01 = Transport par le fournisseur jusqu'à la destination finale",
+  "TRANSPORT-PARTAGE": "B09-RT-01 = Responsabilités partagées",
+  "NATIONAL": "provenance = NATIONAL",
+  "IMPORTEES": "provenance = IMPORTEES",
+  "CIP": "provenance = IMPORTEES et B05-CP-01 = CIP",
+  "CIF": "provenance = IMPORTEES et B05-CP-01 = CIF",
+  "ASSURANCE-INCOTERM": "B09-AS-01 = Selon l'incoterm",
+  "ASSURANCE-AUTRE": "B09-AS-01 != Selon l'incoterm",
+  "CONTROLE-PRIX-NON": "B09-CR-01 = NON",
+  "CONTROLE-PRIX-OUI": "B09-CR-01 = OUI",
+  "GARANTIE": "B09-DG-01 renseigne",
+  "SANS-GARANTIE": "B09-DG-01 vide",
+  "INDEMNITE": "B10-IR-01 = OUI"
+ },
+ "blocs": [
+  {
+   "type": "centre",
+   "texte": "MARCHÉ PUBLIC DE FOURNITURES"
+  },
+  {
+   "type": "para",
+   "texte": "AUTORITE CONTRACTANTE :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B01-AC-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "MARCHÉ :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "Marché passé selon la procédure"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AOO}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres ouvert régie par l'article 18 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AOO}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PREQUALIFICATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres ouvert avec pré - qualification régie par l'article 19 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PREQUALIFICATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DEUX-ETAPES}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres en deux étapes régie par l'article 20 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DEUX-ETAPES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RESTREINT}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres restreint régie par l'article 21 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RESTREINT}}"
+  },
+  {
+   "type": "para",
+   "texte": "PERSONNE RESPONSABLE DES MARCHES PUBLICS (PRMP) OU SON DELEGUE:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B01-AC-05}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le présent Cahier des Prescriptions Spéciales comprend :"
+  },
+  {
+   "type": "para",
+   "texte": "Le Cahier des Clauses Administratives Particulières (CCAP),"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Exemple de formule de révision de prix"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Modèle de garantie bancaire de bonne exécution"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Modèle de caution de bonne exécution"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Modèle de garantie bancaire de restitution d'avance"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Modèle de caution de restitution d'avance"
+  },
+  {
+   "type": "para",
+   "texte": "Les Spécifications Techniques."
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Liste des services connexes et calendrier de réalisation"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Liste des Fournitures et calendrier de réalisation"
+  },
+  {
+   "type": "para",
+   "texte": "Le Cahier des Prescriptions Spéciales ne peut être ni modifié ni complété par les Candidats qui doivent souscrire à ses dispositions."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "CAHIER DES CLAUSES ADMINISTRATIVES PARTICULIERES (CCAP):"
+  },
+  {
+   "type": "para",
+   "texte": "Le CCAP est destiné à compléter les dispositions du Cahier des Clauses Administratives Générales (CCAG) afin de préciser les obligations contractuelles reflétant les circonstances auxquelles sont assujettis l'Acheteur et les Fournitures concernés. Les candidats au Marché doivent souscrire à ses dispositions sans le modifier ni le compléter[note:1]."
+  },
+  {
+   "type": "para",
+   "texte": "Les dispositions du présent Cahier des Clauses Administratives Particulières (CCAP) précisent le CCAG en le complétant ou en dérogeant à ses dispositions. Les candidats au Marché doivent souscrire à ses dispositions sans le modifier ni le compléter. Les clauses du CCAP suivent l'ordre et la numérotation des articles du CCAG. En cas de contradiction entre les deux documents, les clauses ci-après prévalent sur celles du CCAG."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 1. - Objet du Marché"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PROJET}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les stipulations du présent CCAP concernent les fournitures à effectuer dans le cadre de"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-AU-01}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PROJET}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le Marché a pour objet la fourniture de…..:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-OB-01}}."
+  },
+  {
+   "type": "para",
+   "texte": "Le(s) lieu(x) de destination finale des marchandises est (sont) :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-LL-01.parLot}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les fournitures comprennent {{B02-LV-05}} lots :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-LV-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "La description des fournitures et leurs spécifications sont indiquées dans les Spécifications Techniques du présent Cahier des Prescriptions Spéciales (CPS)."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 2. - Acheteur (CCAG Article 2.1)"
+  },
+  {
+   "type": "para",
+   "texte": "{{B01-AC-01}}."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 3. -Communication à la Personne Responsable des Marchés Publics, et notification au fournisseur (CCAG Article 4.1.)"
+  },
+  {
+   "type": "para",
+   "texte": "Aux fins de (notifications et) de communications, les coordonnées de la Personne Responsable des Marchés Publics sont les suivantes :"
+  },
+  {
+   "type": "para",
+   "texte": "A l’attention de {{B01-AC-05}}"
+  },
+  {
+   "type": "para",
+   "texte": "n° et rue : {{B01-AC-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "Etage et bureau :"
+  },
+  {
+   "type": "para",
+   "texte": "Code Postal :"
+  },
+  {
+   "type": "para",
+   "texte": "Télécopie : <insérer le n° >1"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse électronique : {{B01-AC-06}}"
+  },
+  {
+   "type": "para",
+   "texte": "Aux fins de notification, les coordonnées du Fournisseur sont les suivantes :"
+  },
+  {
+   "type": "para",
+   "texte": "A l’attention de {{B01-AC-05}}"
+  },
+  {
+   "type": "para",
+   "texte": "n° et rue : {{B01-AC-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "Etage et bureau :"
+  },
+  {
+   "type": "para",
+   "texte": "Code Postal :"
+  },
+  {
+   "type": "para",
+   "texte": "Télécopie : <insérer le n° >"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse électronique : {{B01-AC-06}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 4. - Groupements (CCAG Article 5)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GROUPEMENT-SOLIDAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les Fournisseurs groupés seront considérés comme solidaires, chacun des membres du groupement étant engagé pour la totalité du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GROUPEMENT-SOLIDAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GROUPEMENT-LIBRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les Fournisseurs groupés seront considérés comme solidaires, chacun des membres du groupement étant engagé pour la totalité du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "Les Fournisseurs groupés seront considérés comme conjoints chacun des Fournisseurs étant responsable de la réalisation du ou des lots qui lui sont assignés. Le mandataire des membres du groupement désigné dans l'Acte d'Engagement est solidaire de chacun des Fournisseurs groupés dans les obligations contractuelles de ceux-ci à l'égard de l’Autorité Contractante."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GROUPEMENT-LIBRE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 5. - Pièces contractuelles (CCAG Article 6)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PIECES-SUPPLEMENTAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Constituent des documents contractuels en sus des documents prévus par les CCAG les pièces suivantes:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-PC-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PIECES-SUPPLEMENTAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "L’ordre de priorité des pièces contractuelles est celui fixé par l’article 6 des CCAG"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 6. - Ordres de modification et avenants (CCAG Article 6.2)"
+  },
+  {
+   "type": "para",
+   "texte": "Ordres de modifications"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DELAI-AJUSTEMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai de communication par le Fournisseur des demandes d'ajustement de prix ou de délai est fixé à {{B09-OM-01}} jours suivant la date de réception des modifications."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DELAI-AJUSTEMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Variations maximales des volumes ou quantités"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:VARIATION-QUANTITES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Variations maximales, augmentation ou réduction, du volume ou des quantités des Fournitures, qui peuvent être exécutées sans avenant : {{B09-OM-02.chiffres}} %"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:VARIATION-QUANTITES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les dispositions du présent Marché sont applicables à toutes les commandes passées pour le compte de l’Autorité Contractante dans un délai de{{B09-OM-03}} mois à compter de la notification de son approbation au Fournisseur"
+  },
+  {
+   "type": "para",
+   "texte": "Le Minimum et le Maximum des quantités susceptibles d’être commandées pour chacun des articles entrant dans la composition de la fourniture sont précisés dans le Bordereau de Prix donné en Annexe à l’Acte d’Engagement, étant entendu que ces quantités sont susceptibles de varier pour chaque article dans la limite de ………..% en sus de maximum ou en dessous du minimum, sans que la valeur totale des commandes puisse être inférieure à la valeur minimale ni supérieure à la valeur maximale prévue dans le présent CPS."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:COMMANDE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 7. - Protection du secret – Mesure de sécurité (CCAG Article 7)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SECURITE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SECURITE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SECURITE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les fournitures, objet du présent Marché, sont à exécuter dans un lieu où des mesures de sécurité ou de protection du secret s'appliquent. Le Fournisseur doit en conséquence observer les dispositions :"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SECURITE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SECURITE-NOTIFICATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "que l’Autorité Contractante communiquera lors de la notification de l'attribution du Marché,"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SECURITE-NOTIFICATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SECURITE-ANNEXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "mentionnées en Annexes au présent CCAP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SECURITE-ANNEXE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 8. - Contenu et caractère des prix (CCAG article 8)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "8.1. - Contenu des prix (CCAG article 8.1.)"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix du Marché sont supposés comprendre l'ensemble des impôts, droits et taxes de toute nature dus par le Fournisseur au titre de la signature et de l'exécution du Marché (à l'exception de la TVA.)"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix proposés sont supposés établis conformément aux dispositions applicables à l'Incoterm (visé à l’article 17 du présent CCAP.)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "8.2. - Variations dans les prix (CCAG article 8.2.)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FERME}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix sont fermes et non révisables."
+  },
+  {
+   "type": "para",
+   "texte": "Ils sont actualisés pour tenir compte du délai entre la date limite de remise des offres et la date de notification du Marché, selon la formule suivante :"
+  },
+  {
+   "type": "para",
+   "texte": "PI = Po (In / Io)"
+  },
+  {
+   "type": "para",
+   "texte": "Formule selon laquelle :"
+  },
+  {
+   "type": "para",
+   "texte": "PI est le nouveau prix actualisé ;"
+  },
+  {
+   "type": "para",
+   "texte": "Po est le prix de base du règlement des prestations figurant à l'acte d'engagement."
+  },
+  {
+   "type": "para",
+   "texte": "In est la valeur de l'indice, défini pour chaque lot, de la date de la notification du Marché ou de l'acte portant début d'exécution des prestations."
+  },
+  {
+   "type": "para",
+   "texte": "Io est la valeur de ce même indice correspondant à la date d'établissement des prix fixés dans l'acte d'engagement."
+  },
+  {
+   "type": "para",
+   "texte": "Le (les) indice(s) applicables sont:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B05-VP-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les coefficients d’actualisation seront arrondis au millième supérieur."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FERME}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REVISABLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix seront révisables conformément aux dispositions de l’Annexe au présent CCAP \"Formule de révision de prix\"."
+  },
+  {
+   "type": "para",
+   "texte": "{{B05-VP-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REVISABLE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 9. - Modalités de règlement du Marché (CCAG ARTICLE 9)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "9.1a. - Avance (CCAG Article 9.1.)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Une avance de {{B08-AV-02.chiffres}} % du montant total des prestations à exécuter est accordée au Fournisseur sur présentation d'une demande de paiement."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GARANTIE-AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La demande d’avance doit être accompagnée d'une garantie de restitution de l'avance sous forme de :"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GARANTIE-AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE-GARANTIE-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "garantie bancaire à première demande conforme au modèle annexé au présent CCAP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE-GARANTIE-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "De caution personnelle et solidaire remplaçant le cautionnement conforme au modèle annexé au présent CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le remboursement de l’avance sera effectué par précompte sur les sommes dues ultérieurement dans le cadre de l’exécution de la prestation, dès que les montants déjà mandatés au titre du Marché atteignent ou dépassent soixante pour cent (60 %) du montant total du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "Le remboursement doit être terminé lorsque le pourcentage atteint quatre vingt pour cent (80 %) du montant du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "Le montant de l’avance ne sera pas affecté par la mise en œuvre de modifications du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "Le Fournisseur peut refuser le bénéfice de cette avance et doit préciser son choix sur l’Acte d'Engagement."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "9.1b. - Acompte"
+  },
+  {
+   "type": "para",
+   "texte": "Le règlement des sommes dues au Fournisseur sera effectué par application des prix unitaires du Bordereau des prix aux quantités réellement livrées et admises en recettes."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "9.2. - Présentation des décomptes, factures ou mémoires (CCAG Article 9.2.)"
+  },
+  {
+   "type": "para",
+   "texte": "Mentions à porter"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-PA-03}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Termes de paiement"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PAIEMENT-LIVRAISON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les décomptes, factures ou mémoires seront établis à la livraison."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PAIEMENT-LIVRAISON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PAIEMENT-MENSUEL}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les décomptes, factures ou mémoires seront établis mensuellement."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PAIEMENT-MENSUEL}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PAIEMENT-TRIMESTRIEL}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les décomptes, factures ou mémoires seront établis trimestriellement."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PAIEMENT-TRIMESTRIEL}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FORFAIT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le solde, après règlement de l'avance, des Fournitures et Services connexes fournis en République de Madagascar sera réglé :"
+  },
+  {
+   "type": "para",
+   "texte": "à concurrence de {{B08-PA-06.chiffres}} % à la réception des Fournitures contre remise des documents mentionnés par le présente CCAP;"
+  },
+  {
+   "type": "para",
+   "texte": "à concurrence de {{B08-PA-07.chiffres}} % sur présentation du procès verbal de réception."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FORFAIT}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "9.3. - Monnaie de compte et de paiement (CCAG Article 9.4.)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DEVISE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix correspondants à des Fournitures étrangères ou à des Services connexes réalisés en tout ou en partie hors de Madagascar peuvent être exprimés en {{B05-MO-02}}."
+  },
+  {
+   "type": "para",
+   "texte": "Les prix exprimés en devises dus à des Fournisseurs étrangers sont réglés dans la devise prévue sur présentation des documents requis conformément à la réglementation des changes, y compris la convention de paiement entre le Fournisseur et Monsieur le Ministre chargé des Finances."
+  },
+  {
+   "type": "para",
+   "texte": "Le taux de change applicable est le taux publié par la Banque Centrale de Madagascar, applicable le quinzième jour précédant la date limite fixée pour la remise des offres."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DEVISE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "9.4. - Intérêts moratoires dus au Fournisseur (CCAG Article 9.7.)"
+  },
+  {
+   "type": "para",
+   "texte": "Le taux des intérêts moratoires sera le taux directeur de la Banque Centrale de Madagascar en vigueur à la date à laquelle les intérêts moratoires auront commencé à courir, augmenté de {{B08-IM-01.chiffres}} point(s)."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 10. - Délai d'exécution (CCAG Article 11.1.)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:QUANTITE-FIXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai de livraison est fixé à {{B09-DX-01}} jours, à compter du lendemain de la date de notification de l’Ordre de Service de commencer les prestations qui interviendra après la notification du marché approuvé."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:QUANTITE-FIXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai d'exécution est fixé dans le bon de commande sans toutefois dépasser{{B06-EO-12.parLot}} jours, à compter du lendemain de la date de notification au fournisseur dudit bon de commande."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les Fournitures et services connexes, objet du Marché seront livrés conformément au calendrier de livraison et d’achèvement annexé aux Spécifications Techniques du CPS."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DEPART-DIFFERE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le point de départ des délais est : {{B09-DX-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DEPART-DIFFERE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prestations feront l’objet de bons de commande notifiés par la Personne Responsable des Marchés Publics au fur et à mesure des besoins, pendant une durée de {{B09-OM-03}} mois."
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-DX-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "Chaque bon de commande précisera :"
+  },
+  {
+   "type": "para",
+   "texte": "la nature et la description des prestations à réaliser ;"
+  },
+  {
+   "type": "para",
+   "texte": "les délais d’exécution (date de début et de fin) ;"
+  },
+  {
+   "type": "para",
+   "texte": "les lieux d’exécution des prestations ;"
+  },
+  {
+   "type": "para",
+   "texte": "le montant du bon de commande ;"
+  },
+  {
+   "type": "para",
+   "texte": "les délais laissés le cas échéant aux Fournisseurs pour formuler leurs observations."
+  },
+  {
+   "type": "para",
+   "texte": "Seuls les bons de commande signés par l’ l’Ordonnateur Secondaire pourront être honorés par le ou les Fournisseurs."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:COMMANDE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 11. - Pénalités de retard (CCAG Article 12)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les pénalités journalières prévues par l'article 12.1 du CCAG ne s'appliquent pas."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-CCAG}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les stipulations de l’article 12.1 du CCAG s'appliquent"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-CCAG}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-PLAFOND}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les stipulations de l’article 12.1 du CCAG s'appliquent"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant des pénalités est limité à {{B09-PR-02.chiffres}} % du montant global du Marché, y compris le montant de ses avenants."
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-PR-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-PLAFOND}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 12. - Garantie de bonne exécution (CCAG Article 13)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "12.1. - Cautionnement et Garantie Bancaire (CCAG Article 13.1.)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BONNE-EXECUTION-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Aucune garantie d'exécution n'est requise."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BONNE-EXECUTION-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BONNE-EXECUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant de la garantie de bonne exécution, est fixé à {{B08-GB-02.chiffres}} % du Montant du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "La garantie de bonne exécution sera fournie sous forme :"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BONNE-EXECUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BONNE-EXECUTION-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "- d'une garantie bancaire conformément au modèle figurant en Annexe au présent CCAP;"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BONNE-EXECUTION-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BONNE-EXECUTION-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "- d’une caution personnelle et solidaire conforme au modèle figurant en Annexe au présent CCAP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BONNE-EXECUTION-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BONNE-EXECUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "La garantie de bonne exécution sera libellée dans la ou les monnaie(s) de règlement du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BONNE-EXECUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BONNE-EXECUTION-MOITIE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La garantie de bonne exécution est libérée de 50% dans les trente (30) jours de la délivrance du certificat de réception provisoire, le solde étant libéré dans les trente (30) jours de la délivrance du certificat de réception définitive."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BONNE-EXECUTION-MOITIE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "12.2. - Retenue de garantie (CCAG article 13.3)."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RETENUE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Aucune retenue de garantie ne sera pratiquée."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RETENUE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RETENUE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Une retenue de garantie égale à {{B08-RG-02.chiffres}} % de chaque acompte sera prélevée au moment de leur règlement."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RETENUE-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 13. - Matériels, objets et approvisionnements confiés au Fournisseur (CCAG Article 14)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MATERIELS-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Sans objet"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MATERIELS-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MATERIELS-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "La liste des matériels, objets et approvisionnements mis par l'Autorité Contractante à la disposition du Fournisseur est donnée en Annexe aux Spécifications Techniques du CPS."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MATERIELS-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 14. - Stockage des fournitures (CCAG Article 15.1.)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:STOCKAGE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:STOCKAGE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:STOCKAGE-QUANTITE-FIXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les dispositions de l'article 15.1 du CCAG s'appliquent."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:STOCKAGE-QUANTITE-FIXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:STOCKAGE-COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le fournisseur est tenu de constituer un stock correspondant aux quantités minimales prévues dans le Bordereau de prix."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:STOCKAGE-COMMANDE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 15. - Emballage (CCAG Article 15.2.)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MARQUAGE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le marquage des emballages sera le suivant :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-EM-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MARQUAGE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DOCUMENTS-EMBALLAGE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les documents placés à l'intérieur des caisses comprendront :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-EM-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DOCUMENTS-EMBALLAGE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 16. - Responsabilité du transport (CCAG Article 16)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:TRANSPORT-INCOTERM}}"
+  },
+  {
+   "type": "para",
+   "texte": "La responsabilité du transport des Fournitures sera celle indiquée dans l'Incoterm applicable à leur livraison."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:TRANSPORT-INCOTERM}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:TRANSPORT-FOURNISSEUR}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le Fournisseur est tenu contractuellement de transporter les Fournitures jusqu'à leur destination finale mentionnée à l’Article 1 du présent CCAP. Les coûts correspondants à ce transport seront inclus dans le Prix du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:TRANSPORT-FOURNISSEUR}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:TRANSPORT-PARTAGE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les responsabilités respectives de l’Autorité contractante et du Fournisseur en matière de transport sont les suivantes : {{B09-RT-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:TRANSPORT-PARTAGE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 17. - Livraison des fournitures (CCAG Article 16)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:NATIONAL}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les Fournitures fabriquées ou achetées en République de Madagascar seront livrées EXW sortie usine, fabrique, magasin d’exposition, entrepôt ou magasin de ventes."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:NATIONAL}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:IMPORTEES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les Fournitures importées seront livrées :"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:IMPORTEES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CIP}}"
+  },
+  {
+   "type": "para",
+   "texte": "CIP {{B05-CP-05}},"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CIP}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CIF}}"
+  },
+  {
+   "type": "para",
+   "texte": "CIF port de {{B05-CP-05}};"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CIF}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-LF-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le Fournisseur doit fournir les documents suivants :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-LF-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les documents ci-dessus doivent être reçus par la Personne Responsable des Marchés Publics avant l’arrivée des fournitures, faute de quoi le Fournisseur est responsable de toute dépense subséquente."
+  },
+  {
+   "type": "para",
+   "texte": "La livraison des fournitures est constatée par la délivrance d'un récépissé au Fournisseur ou par la signature d'un double du bulletin de livraison ou de l'état."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 18. - Assurance (CCAG Article 17)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ASSURANCE-INCOTERM}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les obligations en matière d'assurance des Fournitures sont assumées conformément aux dispositions de l'Incoterms stipulé à l'Article 17 du présent CCAP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ASSURANCE-INCOTERM}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ASSURANCE-AUTRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les obligations en matière d'assurance sont les suivantes :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-AS-02}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ASSURANCE-AUTRE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 19. - Contrôle des prix de revient (CCAG Article 19)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CONTROLE-PRIX-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CONTROLE-PRIX-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CONTROLE-PRIX-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les dispositions de l'Article 20 du CCAG relatives au contrôle des prix de revient s'appliquent.."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CONTROLE-PRIX-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 20. - Inspections, vérifcations et essais (CCAG Article 21)"
+  },
+  {
+   "type": "para",
+   "texte": "Les modalités de réalisation des vérifications, inspections et essais des fournitures sont les suivantes :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-IV-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 21. - Décisions après inspection et essais (CCAG Article 22)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:QUANTITE-FIXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Sur demande du fournisseur, la réception prononcée par une commission désignée par une décision de l’Acheteur vaudra réception provisoire."
+  },
+  {
+   "type": "para",
+   "texte": "La réception définitive sera prononcée dans les mêmes formes à l’issue du délai de garantie."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:QUANTITE-FIXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Pour chaque commande, la réception prononcée par une commission de réception désignée par une décision de l’Acheteur vaudra réception provisoire."
+  },
+  {
+   "type": "para",
+   "texte": "La réception définitive sera prononcée dans les mêmes formes à la dernière livraison."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-DI-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 22. - Délai de garantie (CCAG Article 23)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-GARANTIE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-GARANTIE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GARANTIE}}"
+  },
+  {
+   "type": "para",
+   "texte": "a) Les fournitures doivent être garanties contre tout risque de fabrication ou de matière pendant {{B09-DG-01}} mois à compter du jour de la date de réception."
+  },
+  {
+   "type": "para",
+   "texte": "Le Fournisseur se conforme aux garanties de performance et/ou de consommation spécifiées en vertu du Marché. Si, pour des raisons imputables au Fournisseur ces garanties ne sont pas atteintes, en totalité ou en partie, le Fournisseur à sa discrétion :"
+  },
+  {
+   "type": "para",
+   "texte": "apporte aux fournitures ou à toute partie desdites fournitures, à ses frais, les changements, modifications et/ou adjonctions qui pourront être nécessaires pour atteindre les garanties contractuelles spécifiées dans le Marché."
+  },
+  {
+   "type": "para",
+   "texte": "paye à l’Autorité Contractante une pénalité pour non-respect des garanties contractuelles. Le taux de cette pénalité est de {{B09-DG-03.chiffres}} % du prix initial des Fournitures non conformes."
+  },
+  {
+   "type": "para",
+   "texte": "Le délai accordé au Fournisseur pour remédier aux défauts durant la période de garantie est de {{B09-DG-04}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GARANTIE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 23. - Indemnité de résiliation (CCAG Article 32)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:INDEMNITE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant de l'indemnisation éventuelle prévue à l'article 32 du CCAG est obtenu en appliquant un pourcentage de {{B10-IR-03.chiffres}} % au montant indiqué à l'article 32."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:INDEMNITE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 24. -Arbitrage (CCAG Article 36.3)"
+  },
+  {
+   "type": "para",
+   "texte": "{{B10-AR-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 25 - Dérogations aux documents généraux"
+  },
+  {
+   "type": "para",
+   "texte": "Les articles désignées ci-après du CCAP qui dérogent aux dispositions des CCAG et les articles du CCAG auxquels il est dérogé sont indiqués dans le tableau ci-après. Lorsque le CCAG permet explicitement les précisions et dérogations par le CCAP, les articles correspondants ne sont pas mentionnés ici."
+  },
+  {
+   "type": "table",
+   "texte": "2"
+  },
+  {
+   "type": "ligne",
+   "texte": "Article des CCAG auquel\u001eil est dérogé\u001fArticle des CCAP"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "{{B10-DD-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REVISABLE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de formule de révision des prix"
+  },
+  {
+   "type": "para",
+   "texte": "Les montants payables au Fournisseur, conformément aux dispositions du Marché, seront sujets à révision pendant l’exécution du Marché pour prendre en compte les changements intervenus dans le coût de la main-d’œuvre et des composants matériels, en faisant application de la formule suivante :"
+  },
+  {
+   "type": "para",
+   "texte": "où :"
+  },
+  {
+   "type": "para",
+   "texte": "ΔP = montant de l’ajustement payable au Fournisseur.."
+  },
+  {
+   "type": "para",
+   "texte": "P0 = Prix du Marché (prix de base)."
+  },
+  {
+   "type": "para",
+   "texte": "a = élément fixe représentant le bénéfice et les frais généraux inclus dans le Prix du Marché, généralement au moins quinze pour cent (15 %)."
+  },
+  {
+   "type": "para",
+   "texte": "b = pourcentage estimé de l’élément main-d’œuvre dans le Prix du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "c = pourcentage estimé de l’élément matériels et équipements dans le Prix du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "L0, L1 = indices du coût de la main-d’œuvre applicables à l’industrie concernée dans le pays d’origine, respectivement à la date de référence et à la date de révision des prix."
+  },
+  {
+   "type": "para",
+   "texte": "M0, M1 = indices du coût des matières premières applicables dans le pays d’origine, respectivement à la date de référence et à la date de révision des prix."
+  },
+  {
+   "type": "para",
+   "texte": "Les coefficients a, b, et c doivent être spécifiés par l’Acheteur dans le Dossier d’appel d’offres. La somme de ces trois coefficients doit être égale à un (1) dans toute application de la formule."
+  },
+  {
+   "type": "para",
+   "texte": "Le Soumissionnaire indiquera dans son offre les origines des indices et la valeur des indices à la date de référence."
+  },
+  {
+   "type": "para",
+   "texte": "Date de référence : Quinzième jour précédant la date limite de remise des offres."
+  },
+  {
+   "type": "para",
+   "texte": "Date de révision : _____ semaines avant la date d’expédition (représentant le milieu de la période de fabrication)."
+  },
+  {
+   "type": "para",
+   "texte": "La formule de révision des prix ci-dessus sera invoquée par l’une ou l’autre des parties, sous réserve des conditions supplémentaires ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "a) La formule de révision des prix sera appliquée seulement dans les cas pour lesquels elle entraîne une augmentation ou une diminution de plus de _____ % du Prix du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "b) Aucune révision de prix ne sera admise au-delà des dates originales de livraison, sauf si cela est spécifié dans l’avenant prolongeant les délais. En principe, aucune révision de prix ne sera autorisée pour les retards entièrement imputables au Fournisseur. L’Acheteur aura cependant droit à bénéficier de toute diminution des prix des Fournitures et des Services soumis à révision."
+  },
+  {
+   "type": "para",
+   "texte": "c) Les révisions de prix effectuées au titre de la clause de révision seront sujettes à un plafond égal à plus ou moins _____ % du Prix du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "d) Si la monnaie dans laquelle le Prix du Marché, P0, est exprimé est différente de la monnaie du pays d’origine des indices de la main-d’œuvre et des matériaux, un facteur de correction sera appliqué pour éviter des révisions incorrectes du Prix du Marché. Le facteur de correction correspondra au rapport de parités entre les deux monnaies à la date de référence et à la date de révision des prix définies ci-dessus."
+  },
+  {
+   "type": "para",
+   "texte": "e) Aucune révision de prix ne sera applicable sur la part du Prix du Marché ayant fait l’objet du paiement d’une avance au Fournisseur."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REVISABLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BONNE-EXECUTION-BANCAIRE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de garantie bancaire de bonne exécution"
+  },
+  {
+   "type": "para",
+   "texte": "ATTENDU QUE <nom du Fournisseur >"
+  },
+  {
+   "type": "para",
+   "texte": "ayant son siège <adresse complète du Fournisseur >"
+  },
+  {
+   "type": "para",
+   "texte": "(ci-après dénommé « le Fournisseur ») a conclu un marché n° <intitulé ou objet résumé du marché> (ci-après dénommé « le Marché ») avec {{B01-AC-01}} (ci-après dénommée « le Bénéficiaire »)."
+  },
+  {
+   "type": "para",
+   "texte": "ATTENDU QUE En vertu des dispositions du Marché, le Fournisseur doit remettre au Bénéficiaire une garantie bancaire de bonne exécution."
+  },
+  {
+   "type": "para",
+   "texte": "ATTENDU QUE nous avons convenu de fournir au Fournisseur cette garantie bancaire;"
+  },
+  {
+   "type": "para",
+   "texte": "EN CONSEQUENCE, Nous <nom de la Banque>, ayant notre siège social à <adresse du siège social> (ci-après dénommée « le Garant »),"
+  },
+  {
+   "type": "para",
+   "texte": "Nous engageons par la présente, sans réserve et irrévocablement, à payer au Bénéficiaire, à la première demande écrite du Bénéficiaire adressée par courrier avec accusé de réception, reçue au plus tard à la date d’expiration mentionnée ci-après, toutes sommes d’argent dans la limite de <insérer le montant en chiffres et en lettres de la garantie>."
+  },
+  {
+   "type": "para",
+   "texte": "<Le Garant doit insérer un montant représentant le montant de la garantie prévue par le Marché le cas échéant dans la devise de règlement mentionnée au marché>"
+  },
+  {
+   "type": "para",
+   "texte": "Toute demande en paiement du Bénéficiaire doit être accompagnée d’une déclaration attestant que le Fournisseur ne se conforme pas aux conditions du Marché, sans que le Bénéficiaire ait à prouver ou à donner les raisons ou le motif de la demande du Bénéficiaire ou du montant indiqué dans la demande du Bénéficiaire."
+  },
+  {
+   "type": "para",
+   "texte": "Nous convenons également qu’aucun changement ou additif ou aucune autre modification du Marché ou Travaux devant être effectués au titre de l’un des documents du Marché qui a été établi entre vous et le Fournisseur ne nous libérera d’une obligation nous incombant au titre de la présente garantie, et nous ne sommes pas tenus par la présente à donner notification dudit changement, additif ou modification."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BONNE-EXECUTION-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BANCAIRE-MOITIE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La présente garantie sera réduite de moitié sur présentation du certificat de réception provisoire et demeurera valable jusqu’au trentième (30éme) jour suivant la date de délivrance du certificat de réception définitive."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BANCAIRE-MOITIE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BANCAIRE-ENTIERE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La présente garantie demeurera valable jusqu’au trentième (30éme) jour suivant la date de délivrance du certificat de réception définitive."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BANCAIRE-ENTIERE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BONNE-EXECUTION-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La présente garantie est régie par la loi malgache. Tout différend relatif à son interprétation ou à son exécution sera soumis aux tribunaux compétents de la République de Madagascar."
+  },
+  {
+   "type": "para",
+   "texte": "SIGNATURE et authentification du signataire __________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Nom de la Banque _________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse _________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Date _____________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Cachet"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BONNE-EXECUTION-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BONNE-EXECUTION-CAUTION}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de Caution Personnelle et solidaire de bonne exécution"
+  },
+  {
+   "type": "para",
+   "texte": "Nous soussignés < indiquer la dénomination sociale de l’organisme de caution, le siège social >"
+  },
+  {
+   "type": "para",
+   "texte": "déclarons nous porter caution personnelle et solidaire de <indiquer le nom et l’adresse complète du Fournisseur du Marché> (ci-après dénommé « le Fournisseur ») pour le montant du cautionnement auquel le Fournisseur est assujetti, en qualité de Fournisseur du Marché n° <indiquer le numéro du Marché> (ci-après dénommé « le Marché ») conclu avec <dénomination de l’autorité contractante> ( ci-après dénommée « le Bénéficiaire ») en date du <indiquer la date de conclusion du Marché> et portant sur l’exécution de <intitulé ou objet résumé du marché>,"
+  },
+  {
+   "type": "para",
+   "texte": "ledit cautionnement s’élève à <indiquer le montant en chiffre et en lettres de la garantie de bonne exécution prévue par le Marché>,"
+  },
+  {
+   "type": "para",
+   "texte": "nous engageons à effectuer, sur demande de paiement du Bénéficiaire adressée par courrier avec accusé de réception, reçue au plus tard à la date d’expiration mentionnée ci-après, sans pouvoir différer le paiement ou soulever de contestation pour quelque motif que ce soit, jusqu’à concurrence de la somme garantie ci-dessus, le versement des sommes dont le Fournisseur serait reconnu débiteur au titre du marché du fait de la non exécution de ses obligations contractuelles."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BONNE-EXECUTION-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CAUTION-MOITIE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le présent engagement sera réduit de moitié sur présentation du certificat de réception provisoire et demeurera valable jusqu’au trentième (30éme) jour suivant la date de délivrance du certificat de réception définitive."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CAUTION-MOITIE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CAUTION-ENTIERE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le présent engagement demeurera valable jusqu’au trentième (30éme) jour suivant la date de délivrance du certificat de réception définitive."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CAUTION-ENTIERE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BONNE-EXECUTION-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le présent engagement est régi par la loi malgache. Tout différend relatif à son interprétation ou à son exécution sera soumis aux tribunaux compétents de la République de Madagascar."
+  },
+  {
+   "type": "para",
+   "texte": "Fait à _________ le __________"
+  },
+  {
+   "type": "para",
+   "texte": "SIGNATURE et authentification du signataire __________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Nom de l’organisme _______________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse _________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Date _____________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Cachet"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BONNE-EXECUTION-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE-GARANTIE-BANCAIRE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de garantie bancaire de restitution d'avance"
+  },
+  {
+   "type": "para",
+   "texte": "ATTENDU QUE"
+  },
+  {
+   "type": "para",
+   "texte": "<nom du Fournisseur >"
+  },
+  {
+   "type": "para",
+   "texte": "ayant son siège <adresse complète du Fournisseur >"
+  },
+  {
+   "type": "para",
+   "texte": "(ci-après dénommé « le Fournisseur ») a conclu un marché n° <intitulé ou objet résumé du marché> (ci-après dénommé « le Marché ») avec {{B01-AC-01}} (ci-après dénommée « le Bénéficiaire »)."
+  },
+  {
+   "type": "para",
+   "texte": "En vertu des dispositions du Marché, le Fournisseur doit remettre au Bénéficiaire une garantie de restitution d’avance."
+  },
+  {
+   "type": "para",
+   "texte": "EN CONSEQUENCE, Nous <nom de la Banque>, ayant notre siège social à <adresse du siège social> (ci-après dénommée « le Garant »),"
+  },
+  {
+   "type": "para",
+   "texte": "Nous nous engageons par la présente, sans réserve et irrévocablement, à payer au Bénéficiaire, à la première demande écrite du Bénéficiaire adressée par courrier avec accusé de réception, reçue au plus tard à la date d’expiration mentionnée ci-après, toutes sommes d’argent dans la limite de <insérer le montant en chiffres et en lettres de la garantie> correspondant au montant de l’avance devant être réglé au Fournisseur diminué du montant remboursé par le Fournisseur <Le Garant doit insérer un montant représentant le montant de l’avance prévue par le Marché, le cas échéant dans la devise de règlement mentionnée au marché>."
+  },
+  {
+   "type": "para",
+   "texte": "Toute demande en paiement du Bénéficiaire doit être accompagnée d’une déclaration attestant que le Fournisseur ne se conforme pas aux conditions du Marché concernant l’utilisation de l’avance."
+  },
+  {
+   "type": "para",
+   "texte": "Toute demande et paiement au titre de la présente garantie est conditionnelle à la réception par le Fournisseur de l’avance mentionnée plus haut à son compte portant le numéro <insérer le numéro du compte bancaire> ouvert auprès de <insérer les noms et adresse de la banque>."
+  },
+  {
+   "type": "para",
+   "texte": "La présente garantie sera automatiquement réduite à due concurrence au fur et à mesure de l’imputation de l’avance sur les acomptes et restera valable à partir de la date de réception de l’avance jusqu’à ce que le Bénéficiaire reçoive du Fournisseur la totalité du remboursement du même montant."
+  },
+  {
+   "type": "para",
+   "texte": "La présente garantie est régie par la loi malgache. Tout différend relatif à son interprétation ou à son exécution sera soumis aux tribunaux compétents de la République de Madagascar."
+  },
+  {
+   "type": "para",
+   "texte": "SIGNATURE et authentification du signataire __________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Nom de la Banque _________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse _________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Date _____________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Cachet"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE-GARANTIE-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE-CAUTION}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de Caution Personnelle et solidaire de restitution d’avance"
+  },
+  {
+   "type": "para",
+   "texte": "Nous soussignés < indiquer la dénomination sociale de l’organisme de caution, le siège social >"
+  },
+  {
+   "type": "para",
+   "texte": "déclarons nous porter caution personnelle et solidaire de <indiquer le nom et l’adresse complète du Fournisseur du Marché> (ci-après dénommé « le Fournisseur ») pour le montant du cautionnement auquel le Fournisseur est assujetti, en qualité de Fournisseur du Marché n° <indiquer le numéro du Marché> (ci-après dénommé « le Marché ») conclu avec <dénomination de l’autorité contractante> ( ci-après dénommée « le Bénéficiaire ») en date du <indiquer la date de conclusion du Marché> et portant sur l’exécution de <intitulé ou objet résumé du marché>,"
+  },
+  {
+   "type": "para",
+   "texte": "ledit cautionnement s’élève à <indiquer le montant en chiffres et en lettres de l’avance prévue par le marché>,"
+  },
+  {
+   "type": "para",
+   "texte": "nous engageons à effectuer, sur demande de paiement du Bénéficiaire adressée par courrier avec accusé de réception, reçue au plus tard à la date d’expiration mentionnée ci-après, sans pouvoir différer le paiement ou soulever de contestation pour quelque motif que ce soit, jusqu’à concurrence de la somme garantie ci-dessus, le versement des sommes dont le Fournisseur serait reconnu débiteur au du fait d'une utilisation de l'avance non conforme aux dispositions du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "Le présent engagement sera automatiquement réduit à due concurrence au fur et à mesure de l’imputation de l’avance sur les acomptes et restera valable à partir de la date de réception de l’avance jusqu’à ce que le Bénéficiaire reçoive du Fournisseur la totalité du remboursement du même montant."
+  },
+  {
+   "type": "para",
+   "texte": "Le présent engagement est régie par la loi malgache. Tout différend relatif à son interprétation ou à son exécution sera soumis aux tribunaux compétents de la République de Madagascar."
+  },
+  {
+   "type": "para",
+   "texte": "Fait à _________ le __________"
+  },
+  {
+   "type": "para",
+   "texte": "SIGNATURE et authentification du signataire __________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Nom de l’organisme _______________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse _________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Date _____________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Cachet"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE-CAUTION}}"
+  }
+ ],
+ "trace": [
+  {
+   "ligne": "36.0.0",
+   "genre": "jeton",
+   "source": "<indiquer la dénomination complète >",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": "46.0.0",
+   "genre": "jeton",
+   "source": "<indiquer les références et l'intitulé principal du Marché,",
+   "par": "{{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "ligne": "63.0.0",
+   "genre": "jeton",
+   "source": "<Insérer le nom>",
+   "par": "{{B01-AC-05}}"
+  },
+  {
+   "ligne": "177.0.0",
+   "genre": "jeton",
+   "source": "<préciser le nom de l’opération, le cas échéant>",
+   "par": "{{B02-AU-01}}"
+  },
+  {
+   "ligne": "180.0.0",
+   "genre": "jeton",
+   "source": "<indiquer l’intitulé ou l'objet principal du Marché>",
+   "par": "{{B02-OB-01}}"
+  },
+  {
+   "ligne": "183.0.0",
+   "genre": "jeton",
+   "source": "<indiquer le lieu où l’Autorité Contractante prend livraison des Fourniture>",
+   "par": "{{B09-LL-01.parLot}}"
+  },
+  {
+   "ligne": "187.0.0",
+   "genre": "jeton",
+   "source": "<nombre >",
+   "par": "{{B02-LV-05}}"
+  },
+  {
+   "ligne": "189.0.0",
+   "genre": "jeton",
+   "source": "- Lot n°1 : <préciser l’intitulé et/ou l'objet du lot>.",
+   "par": "{{B02-LV-02}}"
+  },
+  {
+   "ligne": "198.0.0",
+   "genre": "jeton",
+   "source": "<Indiquer la dénomination complète de l'Autorité Contractante>",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": "202.0.0",
+   "genre": "jeton",
+   "source": "<insérer le nom>",
+   "par": "{{B01-AC-05}}"
+  },
+  {
+   "ligne": "203.0.0",
+   "genre": "jeton",
+   "source": ":",
+   "par": ": {{B01-AC-02}}"
+  },
+  {
+   "ligne": "207.0.0",
+   "genre": "jeton",
+   "source": "<insérer l’adresse complète>",
+   "par": "{{B01-AC-06}}"
+  },
+  {
+   "ligne": "209.0.0",
+   "genre": "jeton",
+   "source": "<insérer le nom>",
+   "par": "{{B01-AC-05}}"
+  },
+  {
+   "ligne": "210.0.0",
+   "genre": "jeton",
+   "source": ":",
+   "par": ": {{B01-AC-02}}"
+  },
+  {
+   "ligne": "214.0.0",
+   "genre": "jeton",
+   "source": "<insérer l’adresse complète>",
+   "par": "{{B01-AC-06}}"
+  },
+  {
+   "ligne": "241.0.0",
+   "genre": "jeton",
+   "source": "<nombre>",
+   "par": "{{B09-OM-01}}"
+  },
+  {
+   "ligne": "247.0.0",
+   "genre": "jeton",
+   "source": "<Préciser, le cas échéant, pour les Marchés à quantité fixes, les variations maximales, augmentation ou réduction, du volume ou des quantités des Fournitures,qui peuvent être exécutées sans avenant:>",
+   "par": "Variations maximales, augmentation ou réduction, du volume ou des quantités des Fournitures, qui peuvent être exécutées sans avenant : {{B09-OM-02.chiffres}} %"
+  },
+  {
+   "ligne": "252.0.0",
+   "genre": "jeton",
+   "source": "…….<validité du marché>",
+   "par": "{{B09-OM-03}} mois"
+  },
+  {
+   "ligne": "262.0.0",
+   "genre": "retire",
+   "source": "<soit :>:",
+   "par": ""
+  },
+  {
+   "ligne": "263.0.0",
+   "genre": "retire",
+   "source": "<soit :>:",
+   "par": ""
+  },
+  {
+   "ligne": "288.0.0",
+   "genre": "jeton",
+   "source": "<indiquer la nature des indices et les sources où ils peuvent être trouvés>",
+   "par": "{{B05-VP-03}}"
+  },
+  {
+   "ligne": "306.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage>",
+   "par": "{{B08-AV-02.chiffres}} %"
+  },
+  {
+   "ligne": "344.0.0",
+   "genre": "retire",
+   "source": "<ou> mensuellement <ou> trimestriellement",
+   "par": ""
+  },
+  {
+   "ligne": "344.0.0",
+   "genre": "retire",
+   "source": "à la livraison <ou>",
+   "par": ""
+  },
+  {
+   "ligne": "344.0.0",
+   "genre": "retire",
+   "source": "<ou> trimestriellement",
+   "par": ""
+  },
+  {
+   "ligne": "344.0.0",
+   "genre": "retire",
+   "source": "à la livraison <ou> mensuellement <ou>",
+   "par": ""
+  },
+  {
+   "ligne": "349.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage, par exemple 60% ou 70% ou 80%>",
+   "par": "{{B08-PA-06.chiffres}} %"
+  },
+  {
+   "ligne": "350.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage, par exemple 40%, ou 30% ou 20%>",
+   "par": "{{B08-PA-07.chiffres}} %"
+  },
+  {
+   "ligne": "356.0.0",
+   "genre": "jeton",
+   "source": "<devises>",
+   "par": "{{B05-MO-02}}"
+  },
+  {
+   "ligne": "364.0.0",
+   "genre": "jeton",
+   "source": "<au moins un point>",
+   "par": "{{B08-IM-01.chiffres}} point(s)"
+  },
+  {
+   "ligne": "368.0.0",
+   "genre": "retire",
+   "source": "<soit :> (Pour le marché à quantités fixes) :",
+   "par": ""
+  },
+  {
+   "ligne": "368.0.0",
+   "genre": "jeton",
+   "source": "…………….",
+   "par": "{{B09-DX-01}} jours"
+  },
+  {
+   "ligne": "370.0.0",
+   "genre": "retire",
+   "source": "<soit :> (Pour le marché à commande) :",
+   "par": ""
+  },
+  {
+   "ligne": "370.0.0",
+   "genre": "jeton",
+   "source": "……………..jours",
+   "par": "{{B06-EO-12.parLot}} jours"
+  },
+  {
+   "ligne": "376.0.0",
+   "genre": "jeton",
+   "source": "<par exemple : le premier ordre de services de début d’exécution>",
+   "par": "{{B09-DX-02}}"
+  },
+  {
+   "ligne": "380.0.0",
+   "genre": "jeton",
+   "source": "<préciser la durée>",
+   "par": "{{B09-OM-03}} mois"
+  },
+  {
+   "ligne": "380.0.0",
+   "genre": "retire",
+   "source": "s'achevant le <date>",
+   "par": ""
+  },
+  {
+   "ligne": "402.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage>",
+   "par": "{{B09-PR-02.chiffres}} %"
+  },
+  {
+   "ligne": "404.0.0",
+   "genre": "retire",
+   "source": "[note:2]",
+   "par": ""
+  },
+  {
+   "ligne": "413.0.0",
+   "genre": "jeton",
+   "source": "<insérer le pourcentage>",
+   "par": "{{B08-GB-02.chiffres}} %"
+  },
+  {
+   "ligne": "413.0.0",
+   "genre": "retire",
+   "source": "ne peut dépasser cinq pour cent (5%) du Montant du Marché>",
+   "par": ""
+  },
+  {
+   "ligne": "432.0.0",
+   "genre": "retire",
+   "source": "[note:3]",
+   "par": ""
+  },
+  {
+   "ligne": "440.0.0",
+   "genre": "jeton",
+   "source": "<insérer le pourcentage sans dépasser 5%>",
+   "par": "{{B08-RG-02.chiffres}} %"
+  },
+  {
+   "ligne": "456.0.0",
+   "genre": "retire",
+   "source": "<compléter par des indications pratiques sur la nature et les quantités de fournitures à stocker, la durée du stockage>",
+   "par": ""
+  },
+  {
+   "ligne": "458.0.0",
+   "genre": "retire",
+   "source": "<soit > (dans le cas d’un marché à commande):",
+   "par": ""
+  },
+  {
+   "ligne": "464.0.0",
+   "genre": "jeton",
+   "source": "<Insérer le marquage éventuellement requis>",
+   "par": "{{B09-EM-01}}"
+  },
+  {
+   "ligne": "467.0.0",
+   "genre": "jeton",
+   "source": "<Insérer la liste des documents requis>",
+   "par": "{{B09-EM-02}}"
+  },
+  {
+   "ligne": "478.0.0",
+   "genre": "jeton",
+   "source": "<indiquer les responsabilités respectives de l’Autorité contractante et du Fournisseur >",
+   "par": "{{B09-RT-02}}"
+  },
+  {
+   "ligne": "484.0.0",
+   "genre": "retire",
+   "source": "<préciser suivant le cas soit:>",
+   "par": ""
+  },
+  {
+   "ligne": "486.0.0",
+   "genre": "retire",
+   "source": "<soit>",
+   "par": ""
+  },
+  {
+   "ligne": "486.0.0",
+   "genre": "jeton",
+   "source": "<insérer le lieu de destination finale>",
+   "par": "{{B05-CP-05}}"
+  },
+  {
+   "ligne": "487.0.0",
+   "genre": "retire",
+   "source": "<soit>",
+   "par": ""
+  },
+  {
+   "ligne": "487.0.0",
+   "genre": "jeton",
+   "source": "<insérer le nom du port>",
+   "par": "{{B05-CP-05}}"
+  },
+  {
+   "ligne": "511.0.0",
+   "genre": "jeton",
+   "source": "<préciser qui est responsable de l'assurance des Fournitures et jusqu'à quel moment>",
+   "par": "{{B09-AS-02}}"
+  },
+  {
+   "ligne": "513.0.0",
+   "genre": "retire",
+   "source": "[note:4]",
+   "par": ""
+  },
+  {
+   "ligne": "520.0.0",
+   "genre": "retire",
+   "source": "<Préciser, le cas échéant, les éléments spécifiques du prix de revient soumis à contrôle et les modalités de ce contrôle>",
+   "par": ""
+  },
+  {
+   "ligne": "527.0.0",
+   "genre": "jeton",
+   "source": "<préciser le lieu, par exemple dans les usines du Fournisseur et/ou au lieu de livraison>",
+   "par": "{{B09-IV-01}}"
+  },
+  {
+   "ligne": "536.0.0",
+   "genre": "retire",
+   "source": "<soit :> (Pour le cas d’un marché à quantités fixes) :",
+   "par": ""
+  },
+  {
+   "ligne": "540.0.0",
+   "genre": "retire",
+   "source": "<soit :> (Pour le cas d’un marché à commande) :",
+   "par": ""
+  },
+  {
+   "ligne": "544.0.0",
+   "genre": "jeton",
+   "source": "A l'issue des opérations d'essais et/ou inspections, la commission de réception prend sa décision de réception, d'ajournement, de réfaction ou de rejet dans un délai de <nombre> jours.",
+   "par": "{{B09-DI-01}}"
+  },
+  {
+   "ligne": "552.0.0",
+   "genre": "jeton",
+   "source": "<nombre de mois> ans",
+   "par": "{{B09-DG-01}} mois"
+  },
+  {
+   "ligne": "552.0.0",
+   "genre": "retire",
+   "source": "<ou> à compter de la date de leur mise en service",
+   "par": ""
+  },
+  {
+   "ligne": "565.0.0",
+   "genre": "jeton",
+   "source": "<taux de la pénalité>",
+   "par": "{{B09-DG-03.chiffres}} %"
+  },
+  {
+   "ligne": "566.0.0",
+   "genre": "jeton",
+   "source": "<durée>",
+   "par": "{{B09-DG-04}}"
+  },
+  {
+   "ligne": "571.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage>",
+   "par": "{{B10-IR-03.chiffres}}"
+  },
+  {
+   "ligne": "636.0.0",
+   "genre": "jeton",
+   "source": "<dénomination de l’autorité contractante>",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": "705.0.0",
+   "genre": "jeton",
+   "source": "<dénomination de l’autorité contractante>",
+   "par": "{{B01-AC-01}}"
+  }
+ ],
+ "retraits": [
+  {
+   "ligne": "19.0.0",
+   "texte": "2.2 CAHIER DES PRESCRIPTIONS SPECIALES",
+   "raison": "titre de partie du dossier type"
+  },
+  {
+   "ligne": "119.0.0",
+   "texte": "TABLE DES MATIERES",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "120.0.0",
+   "texte": "DEUXIEME PARTIE : MARCHE 1",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "121.0.0",
+   "texte": "CAHIER DES CLAUSES ADMINISTRATIVES PARTICULIERES (CCAP): 5",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "122.0.0",
+   "texte": "Article 1. - Objet du Marché 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "123.0.0",
+   "texte": "Article 2. - Acheteur (CCAG Article 2.1) 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "124.0.0",
+   "texte": "Article 3. - Notifications à la Personne Responsable des Marchés Publics (CCAG Article 4.1.) 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "125.0.0",
+   "texte": "Article 4. - Groupements (CCAG Article 5) 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "126.0.0",
+   "texte": "Article 5. - Pièces contractuelles (CCAG Article 6) 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "127.0.0",
+   "texte": "Article 6. - Ordres de modification et avenants (CCAG Article 6.2) 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "128.0.0",
+   "texte": "Article 7. - Protection du secret – Mesure de sécurité (CCAG Article 7) 9",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "129.0.0",
+   "texte": "Article 8. - Contenu et caractère des prix (CCAG article 8) 9",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "130.0.0",
+   "texte": "8.1. - Contenu des prix (CCAG article 8.1.) 9",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "131.0.0",
+   "texte": "8.2. - Variations dans les prix (CCAG article 8.2.) 9",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "132.0.0",
+   "texte": "Article 9. - Modalités de règlement du Marché (CCAG Article 9) 10",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "133.0.0",
+   "texte": "9.1. - Avance (CCAG Article 9.1.) 10",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "134.0.0",
+   "texte": "9.2. - Présentation des décomptes, factures ou mémoires (CCAG Article 9.2.) 11",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "135.0.0",
+   "texte": "9.3. - Monnaie de compte et de paiement (CCAG Article 9.4.) 11",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "136.0.0",
+   "texte": "9.4. - Intérêts moratoires dus au Fournisseur (CCAG Article 9.7.) 11",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "137.0.0",
+   "texte": "Article 10. - Délais d'exécution (CCAG Article 11.1.) 11",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "138.0.0",
+   "texte": "Article 11. - Pénalités de retard (CCAG Article 12) 12",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "139.0.0",
+   "texte": "Article 12. - Garantie de bonne exécution (CCAG Article 13) 13",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "140.0.0",
+   "texte": "12.1. - Cautionnement et Garantie Bancaire (CCAG Article 13.1.) 13",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "141.0.0",
+   "texte": "12.2. - Retenue de garantie (CCAG article 13.3). 13",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "142.0.0",
+   "texte": "Article 13. - Matériels, objets et approvisionnements confiés au Fournisseur (CCAG Article 14) 13",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "143.0.0",
+   "texte": "Article 14. - Stockage des fournitures (CCAG Article 15.1.) 14",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "144.0.0",
+   "texte": "Article 15. - Emballage (CCAG Article 15.2.) 14",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "145.0.0",
+   "texte": "Article 16. - Responsabilité du transport (CCAG Article 16) 14",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "146.0.0",
+   "texte": "Article 17. - Livraison des fournitures (CCAG Article 16) 14",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "147.0.0",
+   "texte": "Article 18. - Assurance (CCAG Article 17) 15",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "148.0.0",
+   "texte": "Article 19. - Contrôle des prix de revient (CCAG Article 19) 15",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "149.0.0",
+   "texte": "Article 20. - Inspections, vérifcations et essais (CCAG Article 21) 15",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "150.0.0",
+   "texte": "Article 21. - Décisions après inspection et essais (CCAG Article 22) 16",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "151.0.0",
+   "texte": "Article 22. - Délai de garantie (CCAG Article 23) 16",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "152.0.0",
+   "texte": "Article 23. - Indemnité de résiliation (CCAG Article 32) 16",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "153.0.0",
+   "texte": "Article 24. - Arbitrage (CCAG Article 37.3) 17",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "154.0.0",
+   "texte": "Article 25 - Dérogations aux documents généraux 17",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "155.0.0",
+   "texte": "Annexe au CCAP 18",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "156.0.0",
+   "texte": "Exemple de formule de révision des prix 18",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "157.0.0",
+   "texte": "Annexe au CCAP 19",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "158.0.0",
+   "texte": "Modèle de garantie bancaire de bonne exécution 19",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "159.0.0",
+   "texte": "Annexe au CCAP 20",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "160.0.0",
+   "texte": "Modèle de Caution Personnelle et solidaire de bonne exécution 20",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "161.0.0",
+   "texte": "Annexe au CCAP 21",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "162.0.0",
+   "texte": "Modèle de garantie bancaire de restitution d'avance 21",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "163.0.0",
+   "texte": "Annexe au CCAP 22",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "164.0.0",
+   "texte": "Modèle de Caution Personnelle et solidaire de restitution d’avance 22",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "165.0.0",
+   "texte": "SPECIFICATIONS TECHNIQUES 23",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "166.0.0",
+   "texte": "Résumé des spécifications techniques requises : 24",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "167.0.0",
+   "texte": "ANNEXE < > AUX SPECIFICATIONS TECHNIQUES 25",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "168.0.0",
+   "texte": "Liste des Services connexes et Calendrier de réalisation 25",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "169.0.0",
+   "texte": "ANNEXE < > AUX SPECIFICATIONS TECHNIQUES 26",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "170.0.0",
+   "texte": "Liste des Fournitures et Calendrier de livraison 26",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "117.0.0",
+   "texte": "CAHIER DES CLAUSES ADMINISTRATIVES PARTICULIERES (CCAP):",
+   "raison": "titre du CCAP répété avant le sommaire du document type"
+  },
+  {
+   "ligne": "103.0.0",
+   "texte": "[note 1] Le document ci-après (CCAP type) a pour but de servir de cadre à l'établissement du CCAP à inclure dans le DAO. Des instructions pour leur rédaction sont fournies dans les notes en italique et entre crochets. Le Maître de l'Ouvrage complète le CCAP à l'aide de ces instructions, en insérant le texte approprié et en utilisant les exemples fournis ou un texte similaire, adapté aux besoins du Marché. Les textes en italiques doivent ensuite être supprimés.",
+   "raison": "notes de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "405.0.0",
+   "texte": "[note 2] Lorsque la durée d'exécution du marché n'excède pas six mois, la garantie de Bonne Exécution n'est requise que si l'Autorité Contractante souhaite obtenir une telle garantie.",
+   "raison": "notes de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "433.0.0",
+   "texte": "[note 3] Dans les cas de la stipulation d'une période de garantie contractuelle, une retenue de garantie peut être prévue en sus de la garantie de bonne exécution.",
+   "raison": "notes de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "514.0.0",
+   "texte": "[note 4] Le contrôle des prix de revient par l'Autorité Contractante est prévu essentiellement dans le cas de marchés passés à prix provisoire conformément à l'Article 39 du CMP",
+   "raison": "notes de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "112.0.0",
+   "texte": "NOTE AUX UTILISATEURS A SUPPRIMER DANS LE DAO DEFINITIF",
+   "raison": "notes de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "112.0.2",
+   "texte": "<Le document ci-après (CCAP type) a pour but de servir de cadre à l'établissement du CCAP à inclure dans le DAO. Des instructions pour leur rédaction sont fournies dans les notes en italique et entre crochets. La PRMP complète le CCAP à l'aide de ces instructions, en insérant le texte approprié et en utilisant les exemples fournis ou un texte similaire, adapté aux besoins du Marché. Les textes en italiques doivent ensuite être supprimés.>",
+   "raison": "notes de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "55.0.0",
+   "texte": "<préciser selon le cas :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "185.0.0",
+   "texte": "<si le Marché comprend plusieurs lots préciser le nombre de lots et leur objet>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "220.0.0",
+   "texte": "<Préciser si les fournisseurs groupés seront considérés comme solidaires ou seulement conjoints. L’option pour ce dernier cas n’est possible que si le Marché est divisé en plusieurs lots distincts.>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "230.0.0",
+   "texte": "<indiquer les pièces supplémentaires telles que plans, dessins, photographies et autres documents spécifiques au Marché qu'il est souhaitable de rendre contractuelles en raison notamment de leur caractère essentiel à la définition de l'objet du Marché:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "239.0.0",
+   "texte": "<Si la Personne Responsable des Marchés Publics souhaite prévoir un délai de notification par le Fournisseur des demandes d'ajustement de prix ou de délai, différent du délai de 28 jours prévu par le CCAG, préciser le ici :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "250.0.0",
+   "texte": "<Cas de Marchés à commandes :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "272.0.0",
+   "texte": "<préciser en cas de fournitures importées les dérogations éventuelles par rapport à l’Incoterm, concernant en particulier si les droits de douane doivent ou non être compris dans les prix selon l'Incoterm applicable>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "296.0.0",
+   "texte": "<Dans le cas où le Marché comporte plusieurs lots, indiquer les modalités de variation de prix applicables aux lots, par exemple :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "307.0.0",
+   "texte": "<si l'avance dépasse 5% du montant du Marché, ajouter:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "329.0.0",
+   "texte": "<Indiquer les modalités d'établissement des décomptes, factures ou mémoires, par exemple :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "343.0.0",
+   "texte": "<dans le cas de prix unitaires, préciser la périodicité:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "346.0.0",
+   "texte": "<dans le cas de prix forfaitaire, préciser les termes de paiement, par exemple:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "354.0.0",
+   "texte": "<Prévoir, le cas échéant, les dispositions relatives à la monnaie d'expression des prix et de paiement, par exemple>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "374.0.0",
+   "texte": "<Si le point de départ des délais est différent de la date de notification du Marché, préciser le ici :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "377.0.0",
+   "texte": "<Pour les marchés à commandes",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "378.0.0",
+   "texte": "préciser les modalités et la période de passation des commandes, par exemple comme suit> :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "393.0.0",
+   "texte": "<Préciser, en fonction de l'importance du Marché et des délais d'exécution, si les pénalités prévues par l'Article 12 du CCAG s'appliquent ou non et le cas échéant indiquer les pénalités spécifiques au Marché> ;",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "401.0.0",
+   "texte": "<si un plafond différent de celui de 15% prévu par le CCAG, indiquer le ici:>>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "412.0.0",
+   "texte": "<Si une garantie d'exécution est requise, insérer ici :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "428.0.0",
+   "texte": "<Si un délai de garantie contractuelle est prévu et qu'une retenue de garantie peut être pratiquée ou remplacée par une garantie bancaire ou un cautionnement, insérer la mention suivante :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "438.0.0",
+   "texte": "<Si une retenue de garantie est demandée, insérer la mention suivante :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "461.0.0",
+   "texte": "<Préciser le cas échéant les spécifications particulières auxquelles l'emballage des fournitures doit se conformer>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "482.0.0",
+   "texte": "<Préciser les modalités de livraison des fournitures, si possible en se référant aux Incoterms, par exemple> ;",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "490.0.0",
+   "texte": "<Préciser les documents à fournir par le Fournisseur, par exemple>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "534.0.0",
+   "texte": "<Si délai donné à la commission de réception pour prendre sa décision après inspection et essais, est différent du délai de quinze jours prévu par le CCAG, préciser ici :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "550.0.0",
+   "texte": "<Soit, préciser les garanties demandées, par exemple:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "569.0.0",
+   "texte": "<Si la Personne Responsable des Marchés Publics souhaite fixer un taux d'indemnisation différent du taux de 4% prévu par le CCAG, préciser ici :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "574.0.0",
+   "texte": "<Exemple : clause d'arbitrage CNUDCI : application des règles établies par la Commission des Nations Unies sur le Droit du Commerce International. Il est essentiel de préciser qui sera l'autorité chargée de la nomination des arbitres en cas de carence des parties>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "619.0.0",
+   "texte": "[Deux pour cent (2 %) serait un pourcentage raisonnable.]",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "625.0.0",
+   "texte": "[Dix pour cent (10 %) serait un pourcentage raisonnable.]",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "221.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "225.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "233.0.0",
+   "texte": "<ou>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "245.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "249.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "257.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "260.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "276.0.0",
+   "texte": "<Soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "293.0.0",
+   "texte": "<Soit>:",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "302.0.0",
+   "texte": "<Soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "305.0.0",
+   "texte": "<Soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "309.0.0",
+   "texte": "< Soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "312.0.0",
+   "texte": "< Soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "395.0.0",
+   "texte": "<soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "398.0.0",
+   "texte": "<soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "409.0.0",
+   "texte": "<Soit :>.",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "417.0.0",
+   "texte": "<Soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "420.0.0",
+   "texte": "<Soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "423.0.0",
+   "texte": "<Soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "435.0.0",
+   "texte": "<Soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "444.0.0",
+   "texte": "<soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "447.0.0",
+   "texte": "<soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "452.0.0",
+   "texte": "<soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "455.0.0",
+   "texte": "<soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "471.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "474.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "477.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "504.0.0",
+   "texte": "<Soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "508.0.0",
+   "texte": "<Soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "516.0.0",
+   "texte": "<Soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "519.0.0",
+   "texte": "<Soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "547.0.0",
+   "texte": "<Soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "554.0.0",
+   "texte": "<Soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "561.0.0",
+   "texte": "<Soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "564.0.0",
+   "texte": "<Soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "653.0.0",
+   "texte": "<ou>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "680.0.0",
+   "texte": "<ou>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "234.0.0",
+   "texte": "L’ordre de priorité des pièces contractuelles est le suivant :",
+   "raison": "variante « ordre de priorité propre » : l'ordre du CCAG est retenu (la fiche ne porte pas d'ordre propre)"
+  },
+  {
+   "ligne": "297.0.0",
+   "texte": "Le mode d'établissement des prix est commun à tous les lots et les modalités à retenir pour la révision ou l'actualisation des lots accessoires seront celles adoptées pour le lot principal sous réserve de l'utilisation d'un l'indice de référence de la formule de révision des prix particulier à chaque lot, que celui-ci soit exécuté par un co - traitant ou par un sous-traitant payé directement\".",
+   "raison": "exemple de lots accessoires du modèle"
+  },
+  {
+   "ligne": "424.0.0",
+   "texte": "- d'un chèque de banque libellé au nom de… <à préciser>.",
+   "raison": "garantie par chèque de banque : forme non proposée par la fiche (B06-AN-01 : cautionnement ou garantie bancaire)"
+  },
+  {
+   "ligne": "492.0.0",
+   "texte": "<nombre> exemplaires de la facture du Fournisseur indiquant la description des Fournitures, leurs quantités, leurs prix unitaires, le montant total , la date de l'expédition, la référence à la commande ou au Marché, l'identification du Fournisseur, l'identification des fournitures livrées et, quand il y a lieu, leur répartition par colis.",
+   "raison": "exemple de documents du modèle, remplacé par la saisie B09-LF-02"
+  },
+  {
+   "ligne": "493.0.0",
+   "texte": "le bon de livraison, ou le récépissé du transporteur;",
+   "raison": "exemple de documents du modèle, remplacé par la saisie B09-LF-02"
+  },
+  {
+   "ligne": "494.0.0",
+   "texte": "le certificat de garantie du fabricant ou du Fournisseur ;",
+   "raison": "exemple de documents du modèle, remplacé par la saisie B09-LF-02"
+  },
+  {
+   "ligne": "495.0.0",
+   "texte": "le certificat d’inspection délivré par l’organisme d’inspection désigné, par l'Autorité Contractante et le rapport d’inspection en usine du Fournisseur ; et",
+   "raison": "exemple de documents du modèle, remplacé par la saisie B09-LF-02"
+  },
+  {
+   "ligne": "496.0.0",
+   "texte": "le certificat d’origine ;",
+   "raison": "exemple de documents du modèle, remplacé par la saisie B09-LF-02"
+  },
+  {
+   "ligne": "497.0.0",
+   "texte": "pour les fournitures importées : un connaissement négociable ou un connaissement maritime non négociable ou un connaissement aérien, un bordereau d’expédition de chemin de fer ou un bordereau d’expédition routier.",
+   "raison": "exemple de documents du modèle, remplacé par la saisie B09-LF-02"
+  },
+  {
+   "ligne": "529.0.0",
+   "texte": "<décrire les fréquences et types de contrôle ou procédures utilisés pour réaliser les inspections et les essais ou renvoyer à une annexe des Spécifications Techniques>",
+   "raison": "modalités d’inspection : saisies d’un bloc dans B09-IV-01"
+  },
+  {
+   "ligne": "531.0.0",
+   "texte": "< préciser, le cas échéant si l'Acheteur prend en charge certains coût des matières et objets nécessaires à leur réalisation ou autres frais qu'entraînent ces opérations>",
+   "raison": "modalités d’inspection : saisies d’un bloc dans B09-IV-01"
+  },
+  {
+   "ligne": "556.0.0",
+   "texte": "b) La période de garantie est de <nombre d'heures> heures de fonctionnement et de <nombre de mois> mois à compter de la date de réception des fournitures (ou de <nombre de mois> mois à compter de la date d’expédition), la plus courte des périodes en question étant retenue.",
+   "raison": "exemple de garantie en heures de fonctionnement du modèle"
+  },
+  {
+   "ligne": "576.0.0",
+   "texte": "Tout litige, différend ou plainte entre l’Autorité Contractante et un fournisseur de nationalité étrangère lié à la validité, à l'exécution ou à la résiliation du Marché, sera résolue par arbitrage selon les le Règlement d’Arbitrage de la Commission des Nations Unies pour le Droit du Commerce International (CNUDCI) tel qu’en vigueur à ce jour. Le tribunal arbitral sera composé <soit : de trois membres, soit : d'un arbitre unique> <ajouter le cas échéant dans le cas où le tribunal arbitral comprend trois arbitres: le président du tribunal arbitral ne sera pas de la même nationalité que les parties et aura des qualification dans le domaine <à préciser>.",
+   "raison": "clause d'arbitrage d'exemple (CNUDCI), remplacée par la saisie B10-AR-01"
+  },
+  {
+   "ligne": "578.0.0",
+   "texte": "L'autorité de nomination sera le Président de la Cour d'Arbitrage de la Chambre de Commerce International. A défaut d'accord des Parties sur un autre lieu, le siège de l'arbitrage sera <Antananarivo ou un autre lieu à préciser>.",
+   "raison": "clause d'arbitrage d'exemple (CNUDCI), remplacée par la saisie B10-AR-01"
+  },
+  {
+   "ligne": "331.0.0",
+   "texte": "Les décomptes, factures ou mémoires seront établis en <par exemple :> un original et 2 copies portant, outre les mentions légales, les indications suivantes <par exemple> :",
+   "raison": "mentions à porter d’exemple, remplacées par la saisie B08-PA-03"
+  },
+  {
+   "ligne": "333.0.0",
+   "texte": "le nom et adresse du Fournisseur ;",
+   "raison": "mentions à porter d’exemple, remplacées par la saisie B08-PA-03"
+  },
+  {
+   "ligne": "334.0.0",
+   "texte": "le numéro du compte bancaire tel qu’il est précisé sur l'Acte d'Engagement;",
+   "raison": "mentions à porter d’exemple, remplacées par la saisie B08-PA-03"
+  },
+  {
+   "ligne": "335.0.0",
+   "texte": "les références du Marché ;",
+   "raison": "mentions à porter d’exemple, remplacées par la saisie B08-PA-03"
+  },
+  {
+   "ligne": "336.0.0",
+   "texte": "le montant hors taxe des fournitures livrées ou services connexes réalisés;",
+   "raison": "mentions à porter d’exemple, remplacées par la saisie B08-PA-03"
+  },
+  {
+   "ligne": "337.0.0",
+   "texte": "le taux et le montant de la TVA ;",
+   "raison": "mentions à porter d’exemple, remplacées par la saisie B08-PA-03"
+  },
+  {
+   "ligne": "338.0.0",
+   "texte": "le montant TTC dû en Ariary ;",
+   "raison": "mentions à porter d’exemple, remplacées par la saisie B08-PA-03"
+  },
+  {
+   "ligne": "339.0.0",
+   "texte": "la date de facturation.",
+   "raison": "mentions à porter d’exemple, remplacées par la saisie B08-PA-03"
+  },
+  {
+   "ligne": "767.0.0",
+   "texte": "SPECIFICATIONS TECHNIQUES",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "769.0.0",
+   "texte": "Note aux utilisateurs",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "769.0.1",
+   "texte": "L’objet des Spécifications Techniques ou Clauses Techniques Particulières (CTP) consiste à définir les caractéristiques techniques des fournitures et services demandés par l’Acheteur. Les CTP sont préparées par la PRMP en tenant compte des commentaires suivants :",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "769.0.2",
+   "texte": "Les normes en matière d’équipements, de matériaux, et de main d’œuvre spécifiés dans les documents d’appel d’offres ne doivent pas présenter un caractère limitatif. Les références à des noms de marque, numéros de catalogues, ou autres détails qui limitent matériaux ou articles à un Fabriquant particulier doivent être évitées dans toute la mesure du possible. Lorsqu'une telle référence est inévitable, elle doit toujours être assortie de la mention « ou équivalent ».",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "769.0.3",
+   "texte": "Les CTP doivent décrire en détail les exigences concernant, entre autres, les aspects suivants :",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "769.0.4",
+   "texte": "a) Normes exigées en matière de matériaux et de fabrication pour la production et la fabrication des Fournitures.",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "769.0.5",
+   "texte": "b) Détails concernant les tests avant acceptation (nature et nombre);",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "769.0.6",
+   "texte": "c) Prestations/services connexes complémentaires, nécessaires pour assurer une livraison/réalisation en bonne et due forme;",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "769.0.7",
+   "texte": "d) Prestations détaillées à la charge du Fournisseur, participation éventuelle de l’Acheteur à ces prestations ;",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "769.0.8",
+   "texte": "e) Garanties de fonctionnement couvertes par la garantie requise et indication éventuelle des pénalités applicables en cas de non respect de ces garanties de fonctionnement. A ce titre, les CTP précisent les principales caractéristiques techniques et de fonctionnement requise, objet de la garantie, ainsi que les éventuelles autres exigences, telles que les valeurs maximum ou minimum garanties, selon le cas. Si nécessaire, un formulaire est joint par la PRMP au modèle d'Acte d'Engagement afin que le Fournisseur donne des informations détaillées sur les valeurs acceptables ou garanties des caractéristiques de fonctionnement.",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "769.0.9",
+   "texte": "Sauf raison particulière, les CTP doivent spécifier que toutes les fournitures, ainsi que les matériaux qui les constituent, soient neufs, non usagés, du modèle le plus récent ou courant, et qu’ils incorporent toutes les améliorations en matière de conception et matériaux, à moins que le Marché ne le stipule différemment.",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "769.0.10",
+   "texte": "<Le cas échéant, la PRMP résume les spécifications et normes requises des fournitures dans un tableau qui doit être repris par le Fournisseur dans une offre pour démontrer qu'il a répondu à ces conditions> :",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "772.0.0",
+   "texte": "Résumé des spécifications techniques requises :",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "774.0.0",
+   "texte": "Spécifications techniques détaillées et normes, si nécessaire.",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "776.0.0",
+   "texte": "<Insérer une description détaillée de la nature des spécifications et informations techniques demandées à présenter dans l'offre>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "777.0.0",
+   "texte": "____________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "780.0.0",
+   "texte": "Articles (Nos)",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "780.1.0",
+   "texte": "Noms des Fournitures ou des Services connexes",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "780.2.0",
+   "texte": "Spécifications techniques et normes applicables",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "782.0.0",
+   "texte": "<insérer le numéro de l’article>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "782.1.0",
+   "texte": "<insérer le nom>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "782.2.0",
+   "texte": "<insérer les ST et les normes>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "791.0.0",
+   "texte": "ANNEXE < > AUX SPECIFICATIONS TECHNIQUES",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "791.0.1",
+   "texte": "Liste des Services connexes et Calendrier de réalisation",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "791.0.3",
+   "texte": "<Ce tableau est rempli par la PRMP lorsque des Services Connexes tels que transport non compris dans le prix des fournitures selon l'Incoterm applicable, montage, maintenance, formation sont demandés au Fournisseur. Les dates de réalisation des services doivent être cohérentes avec les dates de livraison des fournitures (selon les Incoterms)>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "792.0.0",
+   "texte": "Article No. Service.",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "792.1.0",
+   "texte": "Description du Service",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "792.2.0",
+   "texte": "Quantité[note:5]",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "792.3.0",
+   "texte": "Unité physique",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "792.4.0",
+   "texte": "Site ou lieu où les Services doivent être exécutés",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "792.5.0",
+   "texte": "Date finale de réalisation des Services",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "793.0.0",
+   "texte": "[note 5] Si applicable",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "795.0.0",
+   "texte": "<insérer le numéro du Service",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "795.1.0",
+   "texte": "<insérer la description du service>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "795.2.0",
+   "texte": "<insérer le nombre d’articles a fournir>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "795.3.0",
+   "texte": "<unité de mesure>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "795.4.0",
+   "texte": "<lieu de réalisation du service>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "795.5.0",
+   "texte": "<insérer la date>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "807.0.0",
+   "texte": "ANNEXE < > AUX SPECIFICATIONS TECHNIQUES",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "807.0.1",
+   "texte": "Liste des Fournitures et Calendrier de livraison",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "808.0.0",
+   "texte": "<La PRMP remplit ce tableau, à l’exception de la colonne « Date de livraison offerte par le Candidat » qui est remplie par le Candidat.",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "809.0.0",
+   "texte": "La liste des articles doit être identique à celle qui apparaît au bordereau des prix à remplir par le Candidat>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "811.0.0",
+   "texte": "Article No.",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "811.1.0",
+   "texte": "Description des Fournitures",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "811.2.0",
+   "texte": "Quantité (Nb. d’unités)",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "811.3.0",
+   "texte": "Unité",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "811.4.0",
+   "texte": "Site (projet) ou Destination finale indiqués aux DPAO",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "811.5.0",
+   "texte": "Date de livraison (selon les Incoterms)",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "812.5.0",
+   "texte": "Date de livraison au plus tôt",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "812.6.0",
+   "texte": "Date de livraison au plus tard",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "812.7.0",
+   "texte": "Date de livraison offerte par le Candidat <à indiquer par le Candidat>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "813.1.0",
+   "texte": "<Insérer la description des Fournitures>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "813.2.0",
+   "texte": "<insérer la quantité des articles à fournir>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "813.3.0",
+   "texte": "<insérer l’unité de mesure >",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "813.4.0",
+   "texte": "<insérer le lieu de livraison finale, selon les DPAO>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "813.5.0",
+   "texte": "<insérer la date>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "813.6.0",
+   "texte": "<insérer la date>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "813.7.0",
+   "texte": "<insérer la date offerte par le Candidat>",
+   "raison": "spécifications techniques : produites depuis le besoin (bloc B12 — liste des fournitures, tableau de conformité)"
+  },
+  {
+   "ligne": "47.0.0",
+   "texte": "le cas échéant, le projet dans le cadre duquel le Marché est passé",
+   "raison": "fin de la même instruction (références du marché)"
+  },
+  {
+   "ligne": "48.0.0",
+   "texte": "ou le numéro et l'objet du lot compris dans le projet >",
+   "raison": "fin de la même instruction (références du marché)"
+  },
+  {
+   "ligne": "190.0.0",
+   "texte": "- Lot n°2 : < préciser l’intitulé et/ou l'objet du lot).",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "191.0.0",
+   "texte": "- etc. <compléter en fonction du projet>.",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  }
+ ],
+ "ajouts": [
+  "{{B09-PC-01}}",
+  "{{B05-VP-02}}",
+  "{{B09-PR-03}}",
+  "{{B09-LF-01}}",
+  "{{B09-LF-02}}",
+  "{{B09-IV-01}}",
+  "{{B09-DI-01}}",
+  "{{B10-AR-01}}",
+  "{{B10-DD-01}}",
+  "{{B08-PA-03}}",
+  "{{B09-DX-03}}"
+ ]
+}
