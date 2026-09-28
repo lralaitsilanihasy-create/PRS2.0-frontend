@@ -202,3 +202,15 @@ B1 à B10, `docs/api-endpoints.md` si le contrat change (il ne devrait pas : ré
 > 6 modifications), le défaut `MANDAT:ACTE_NOMINATION`, `DATES_ORDRE` étendu, la lecture des dates-heures.
 > `docs/api-endpoints.md` : catalogue `DATES_ORDRE` et défaut depuis le mandat (aucune route nouvelle) ;
 > `docs/regles-gestion.md` : § *Marché à commande et contrat-cadre*.
+
+> ✅ **Contre-recette front du 2026-09-28 — verte**, sur le serveur relancé (V51) et DBPRS20 après le script joué pour de bon.
+> **Référentiel servi** : contrat-cadre 167 champs, quantité fixe 174, à commande 179 ; aucun des 20 champs retirés
+> servi, les 11 ajouts présents, `B04-CP-02` en `DATE_HEURE`, `B07-MA-04` aux options nommées, `B02-SG-03` au défaut
+> `MANDAT:ACTE_NOMINATION`. **Fiche réelle** (ligne 303095 de PRMP001, DMC 22, `statutLigne = LANCE`) : cadrage sans
+> `penalites` accepté ; date seule sur `B04-CP-02` → 400 nominatif, date-heure → 200 relue telle quelle ; réception des
+> offres optimisées avant leur demande → bloquant `DATES_ORDRE` qui nomme les deux étapes, levé une fois remises dans
+> l'ordre ; aucun contrôle ne vise un champ retiré ni ne réclame les informations du candidat ; `B02-SG-04` et
+> `B07-MA-06` (multi-attributaire) réclamés. Acte de nomination **non pré-rempli**, comme attendu : le mandat de
+> PRMP001 est implicite (`idMandat` nul, pas d'arrêté). Fiche supprimée ensuite (204), ligne de nouveau préparable.
+> Remarque sans suite demandée : dans le message de `DATES_ORDRE`, l'étape `B04-CP-03` s'appelle « ouverture des plis »
+> alors que le contrat-cadre la libelle « séance d'évaluation des offres et candidatures ».
