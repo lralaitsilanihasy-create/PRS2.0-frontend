@@ -158,3 +158,21 @@ B1 à B5, `docs/api-endpoints.md` (contrat des modèles : enregistrement `CONDIT
 > (§ du même nom). Pas de migration. Les questions Q1 à Q5 du plan restent au pilote : Q1 est appliquée comme recommandée
 > (la demande B3 l'exige) ; Q2 (dix obligatoires rendus facultatifs, `B07-DU-06` désactivée) n'est **pas** faite, faute
 > de décision.
+
+> ✅ **Recette réelle du front, 2026-09-28 — verte, un écart de rendu PDF.** Accord du pilote pour une validation
+> **définitive** : fiche 27 (DMC 27, ligne 303095 de PRMP001, « Fourniture de pièces de rechange pour les stations de
+> pompage »), contrat-cadre **multi-attributaire, non alloti** (la ligne n'a aucun lot au plan : un seul AE, le cas
+> « AE par lot » n'a pas pu être éprouvé sur la base), papier, reconductible, avance 15 %, groupement autorisé,
+> validée en version 1 (0 bloquant). Produits : DPAC et AE (docx + pdf), liste des fournitures, bordereau, tableau de
+> conformité. Relu dans les PDF, **34 contrôles sur 34** : les rédactions retenues et elles seules (« plusieurs
+> titulaires (multi attributaire) », « selon le calendrier fixé ci-après », « Sans objet » pour l'allotissement,
+> « n'est pas admise » pour la voie électronique sans la clause du juriste, AOO seul au préambule, « Le contrat-cadre
+> n'est pas alloti. Il est multi-attributaire. », pénalités du CCAG, garantie « 12 mois à partir de l'admission ») ;
+> **« fixé à 15 % du montant TTC »** et « augmenté de 2 point(s) », aucun « % % » ; aucun jeton ni trou `<…>` resté
+> dans le DPAC. Les pointillés « ……… » de l'AE sont les facultatifs laissés vides (R2), les chevrons restants sont ceux
+> du candidat et de la notification.
+> **Écart** : les **cases à cocher « ❏ »** (U+274F) du modèle — quinze dans l'AE : co-contractant / groupement,
+> qualité du représentant, avance souhaitée ou refusée, mise au point, dates de notification — sont **dans le `.docx`
+> (15) et absentes du PDF (0)** : la police du PDF n'a pas ce glyphe. Le candidat ne peut plus cocher sur l'imprimé.
+> Correctif souhaité côté générateur PDF : une police embarquée qui porte le glyphe, ou, à défaut, un « ☐ » / « [ ] »
+> de substitution **au rendu PDF seulement** (le fichier de commande reste celui du document type).
