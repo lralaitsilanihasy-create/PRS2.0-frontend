@@ -164,3 +164,12 @@ B1 à B4, `docs/api-endpoints.md` (deux routes, `ImportDaoResult`), `docs/regles
 propose, la PRMP décide ; le plan fait foi), **ADR-0012** (renversement partiel du 22/09 : l'import propose, la fiche
 décide ; la lecture par modèle inversé), et un encadré ⚠️ daté ici pour tout écart. Le front écrira l'écran (lot 2 du
 plan : invitation à l'étape Cadrage, bouton « Réimporter », modale de revue) contre ce contrat.
+
+> ✅ **Contre-recette front du 2026-09-28 — verte, sur le serveur réel.** Fiche 27 (contrat-cadre) : import refusé sur la
+> version validée (409 `FICHE_VALIDEE`), révision en version 3, `.pdf` → 415 `FORMAT_NON_SUPPORTE` (message tel que
+> demandé). **DAO en un seul fichier fusionné par Word** (DPAC puis AE, saut de page) : DPAC 118/141, AE 214/263
+> paragraphes reconnus — les mêmes chiffres que `lire.mjs` ; **70 propositions, toutes égales à la valeur déjà saisie**
+> (`actuelle`) — haute 34, moyenne 35, basse 1 ; 7 réponses de cadrage, toutes justes ; `B07-DE-02` / `B07-DE-03`
+> ambigus ; empreinte sha256 exacte ; aucune divergence, aucun conflit, aucun avertissement. Application des 34 lignes
+> hautes → 200, 86 valeurs avant et après (fusion, rien d'effacé) ; valeur vide → 400 « Valeur vide : l'import n'efface
+> rien. » ; fiche revalidée (version 3).
