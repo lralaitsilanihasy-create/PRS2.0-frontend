@@ -87,3 +87,16 @@ Les options de `B02-VA-01` s'écrivent **exactement** ainsi : les conditions du 
 
 B1 à B4, `docs/api-endpoints.md` (marqueurs de cellule et de rangée, `.parLot`), `docs/regles-gestion.md`, ADR-0011
 complété, script du référentiel pour DBPRS20, et un encadré ⚠️ daté ici pour tout écart.
+
+## B5 — Import : quatre règles de lecture ajoutées le 29/09 (à reporter dans `LectureDao`)
+
+Mesurées sur le dossier réel 2463 (voir le plan d'import, encadré du 29/09) ; `scripts/import-dao/lire.mjs` les porte :
+1. un paragraphe du modèle dont le texte fixe n'a **aucune lettre** (« {{CODE}}. ») est un **jeton seul** (lu entre
+   ses voisins), jamais un motif ;
+2. une ancre de **moins de 8 lettres** de texte fixe ne donne jamais la confiance **haute** (moyenne au plus) ;
+3. un paragraphe n'**atteste** ses sections que s'il a au moins **20 lettres** de texte fixe et qu'**aucun paragraphe de
+   même texte** n'existe hors de ces sections ;
+4. **PDF** (`.pdf` accepté, 415 levé pour ce type) : `scripts/import-dao/PdfLignes.java` — texte horizontal dans le
+   cadre de la page, matrice non inclinée (filigrane écarté) ; morceaux d'une ligne recollés, colonnes séparées sur un
+   saut d'abscisse ; paragraphes par interligne ; en-têtes, pieds (même texte au même endroit sur ≥ 3 pages) et numéros
+   de page écartés. Un PDF sans texte (scanné) : 422 « document sans texte : saisissez la fiche ».

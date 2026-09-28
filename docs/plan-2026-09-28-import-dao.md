@@ -122,3 +122,26 @@ Le front peut écrire le lot 2 contre le contrat dès que le lot 1 est décrit d
 > lignes » envoie les seules lignes retenues ; un 400 nominatif laisse la revue ouverte, ligne refusée en rouge, rien
 > d'écrit. Recette navigateur (fiche 27 révisée, une valeur vidée puis rendue par l'import depuis l'écran) : verte.
 > Sept tests (`import-dao.spec.ts`). Le fichier Word vide de type sur certains postes est accepté par son extension.
+
+> ⚠️ **Lecture du PDF et première mesure sur un DAO RÉEL, 2026-09-29.** Le prototype lit maintenant le PDF « texte »
+> (`scripts/import-dao/PdfLignes.java`, PDFBox du dépôt Maven) : lignes avec leur position, filigrane écarté (lettres
+> hors page ou à matrice inclinée : 5 567 lignes au lieu de 1,6 million), morceaux recollés, deux colonnes séparées,
+> paragraphes refaits d'après l'interligne, numéros et en-têtes / pieds de page répétés écartés. Mesuré sur le
+> **dossier 2463** (PDF, à commande, 5 lots) contre sa fiche 16, avec les trois modèles des fournitures (lot D2) :
+> - **premier jet : 2 fausses valeurs en confiance haute** — trois failles que l'aller-retour ne pouvait pas montrer :
+>   un paragraphe fait d'un jeton et d'un point (« {{B05-MO-02}}. ») reconnaissait tout paragraphe finissant par un point
+>   (« 6.6 » lu comme devise) ; un libellé présent dans plusieurs sections (« montant hors taxes : ») attestait chacune
+>   (réponses fausses « forfaitaire », « importées », « groupement ») ; numéros de page mêlés aux paragraphes.
+>   Corrigé : jeton + ponctuation = jeton seul ; ancre de moins de 8 lettres jamais « haute » ; seul un texte propre à
+>   sa section (≥ 20 lettres, pas de double ailleurs) l'atteste ; en-têtes, pieds et numéros de page écartés.
+> - **résultat : critère Q10 tenu (0 fausse valeur haute), 6 réponses de cadrage déduites, toutes justes — mais rappel
+>   de 3 %** (2 valeurs sur 62). Non-régression : contrat-cadre inchangé (98 %, 0 fausse haute, bruit compris).
+> - **Pourquoi si peu** : le 2463 est une ADAPTATION du document type — ses données particulières sont réécrites
+>   (« Les destinations finales des Fournitures sont : » pour « La destination finale des Fournitures est : »,
+>   numérotation propre, rubriques fusionnées) ; la lecture par modèle inversé, exacte à la ponctuation près, ne retrouve
+>   que ce qui suit le modèle mot pour mot. Elle ne fausse rien, elle trouve peu.
+> - **Ce qui manque pour un DAO adapté** : une lecture **par clause** du tableau des données particulières — la colonne
+>   de gauche porte le numéro et l'intitulé de la clause des IC (« 6.4 Délai de validité des offres »), la colonne de
+>   droite la valeur ; un ancrage par clause (numéro + mots-clés de l'intitulé, puis motif du type : nombre de jours,
+>   montant par lot…) retrouverait l'essentiel des Données particulières du 2463. C'est l'« ancrage par champ » de la
+>   première rédaction de Q5, limité au DPAO. **À décider par le pilote** (§ questions de la réponse du 29/09).

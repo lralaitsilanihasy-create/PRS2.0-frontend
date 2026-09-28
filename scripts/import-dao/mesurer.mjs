@@ -3,6 +3,7 @@
 // en confiance haute ; le taux de valeurs retrouvées est dit, pas imposé.
 //
 //   node mesurer.mjs --dmc=27 --login=PRMP001 --dpac=<DPAC.docx> --ae=<AE.docx>
+//   node mesurer.mjs --dmc=16 --login=LERAVO --fichier=<DAO.pdf|.docx> --modeles=DPAO-F,AE-F,CCAP-F   (un DAO réel, un seul fichier)
 //
 // ⚠️ L'aller-retour prouve la LOGIQUE (le modèle inversé retrouve ce qu'il a imprimé) ; il ne prouve pas la tenue sur
 // un DAO écrit par une autre autorité, avec son traitement de texte et ses retouches du modèle. Aucun autre DAO réel
@@ -25,7 +26,7 @@ const ref = await get(`/api/champs-fiche-marche?typeMarche=${fiche.typeMarche}&c
 const champs = Object.fromEntries(ref.champs.map((c) => [c.code, { type: c.type, source: c.source, cleCadrage: c.cleCadrage }]));
 
 // Ce que la fiche vaut : ses valeurs, les reprises du plan, et le cadrage avec ses défauts (modeRemise absent = PAPIER).
-const cadrageFiche = { modeRemise: 'PAPIER', ...(fiche.cadrage ?? {}) };
+const cadrageFiche = { modeRemise: 'PAPIER', typeMarche: fiche.typeMarche, categorie: fiche.categorie, ...(fiche.cadrage ?? {}) };
 const valeursFiche = { ...(fiche.valeursPpm ?? {}), ...(fiche.valeurs ?? {}) };
 const vautFiche = (cle) => (cle in cadrageFiche ? cadrageFiche[cle] : valeursFiche[cle]);
 
@@ -56,10 +57,13 @@ function imprimes(sigle) {
   return out;
 }
 
-const docs = [['DPAC-CC', arg('dpac')], ['AE-CC', arg('ae')]].filter(([, f]) => f);
+// Un DAO réel arrive en UN fichier (Word ou PDF) : chaque modèle y cherche sa partie.
+const docs = arg('fichier')
+  ? (arg('modeles') ?? 'DPAO-F,AE-F,CCAP-F').split(',').map((s) => [s, arg('fichier')])
+  : [['DPAC-CC', arg('dpac')], ['AE-CC', arg('ae')]].filter(([, f]) => f);
 // --un-fichier : le DAO arrive en un seul document (DPAC puis AE à la suite, comme le document type) ; chaque modèle y
 // cherche sa partie.
-const unFichier = process.argv.includes('--un-fichier');
+const unFichier = process.argv.includes('--un-fichier') || !!arg('fichier');
 // --bruit=<graine> : ce qu'un DAO écrit ailleurs fait subir au texte, de façon reproductible — typographie (apostrophes
 // droites, espaces insécables avant la ponctuation, espaces doublées), un paragraphe sur dix FUSIONNÉ avec le suivant,
 // un sur vingt suivi d'un paragraphe AJOUTÉ par l'autorité. La lecture peut y perdre du rappel ; elle ne doit JAMAIS y
@@ -78,7 +82,7 @@ function bruiter(ps) {
   return out;
 }
 const lu = (f) => (graine ? bruiter(paragraphes(f)) : paragraphes(f));
-const tout = unFichier ? docs.flatMap(([, f]) => lu(f)) : null;
+const tout = unFichier ? (arg('fichier') ? lu(arg('fichier')) : docs.flatMap(([, f]) => lu(f))) : null;
 const lectures = docs.map(([s, f]) => lire(unFichier ? tout : graine ? lu(f) : f, s, champs));
 if (graine) console.log(`document bruité (graine ${graine})`);
 if (unFichier) console.log(`un seul fichier de ${tout.length} paragraphes`);
@@ -114,8 +118,9 @@ for (const [cle, v] of Object.entries(cadrage)) {
   if (egal(v, vautFiche(cle))) cadJustes++; else { cadFaux++; lignes.push(`   ✗ réponse ${cle} lue « ${v} » — fiche « ${vautFiche(cle) ?? '∅'} »`); }
 }
 // Le rappel : les valeurs (non vides) que les documents IMPRIMENT pour cette fiche, hors reflets du cadrage.
-const aRetrouver = [...new Set(docs.flatMap(([s]) => [...imprimes(s)]))]
-  .filter((c) => champs[c]?.source !== 'CADRAGE' && valeursFiche[c] != null && valeursFiche[c] !== '');
+const codesImprimes = new Set(docs.flatMap(([s]) => [...imprimes(s)]));
+const aRetrouver = Object.keys(valeursFiche).filter((k) => codesImprimes.has(k.split('#')[0]))
+  .filter((c) => champs[c.split('#')[0]]?.source !== 'CADRAGE' && valeursFiche[c] != null && valeursFiche[c] !== '');
 const retrouves = aRetrouver.filter((c) => propositions.has(c) && !propositions.get(c).conflit && egal(propositions.get(c).valeur, valeursFiche[c]));
 const manques = aRetrouver.filter((c) => !retrouves.includes(c));
 

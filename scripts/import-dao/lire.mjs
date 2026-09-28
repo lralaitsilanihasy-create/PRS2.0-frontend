@@ -36,24 +36,94 @@ export const RANG = { basse: 1, moyenne: 2, haute: 3 };
 
 // ── Le document ───────────────────────────────────────────────────────────────────────────────
 function paragraphes(fichier) {
-  if (!fichier.toLowerCase().endsWith('.docx')) throw new Error('lot 0 : .docx seulement (le PDF viendra ensuite)');
-  const lu = execFileSync(JAVA, ['-cp', CP(), 'LireDocx', fichier], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  // Une cellule de tableau compte comme un paragraphe (LireDocx sépare les cellules par une tabulation).
-  return lu.replace(/\r\n?/g, '\n').split('\n').flatMap((l) => l.split('\t')).map(norm).filter(Boolean);
+  if (/\.pdf$/i.test(fichier)) return paragraphesPdf(fichier);
+  if (!/\.docx$/i.test(fichier)) throw new Error('un .docx ou un .pdf');
+  // Paragraphes de cellule séparés (lot D2) : une cellule du DPAO enchaîne des rédactions, chacune se reconnaît seule.
+  const lu = execFileSync(JAVA, ['-cp', CP(), 'LireDocx', fichier, '--paragraphes'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  return lu.replace(/\r\n?/g, '\n').split('\n').flatMap((l) => l.split(/[\t\u001E]/)).map(norm).filter(Boolean);
+}
+
+/** PDFBox du dépôt Maven local (Q1 du plan : le PDF « texte » après le Word ; pas d'OCR). */
+const M2 = path.join(process.env.USERPROFILE ?? process.env.HOME ?? '', '.m2/repository').replace(/\\/g, '/');
+const CP_PDF = ['org/apache/pdfbox/pdfbox/3.0.3/pdfbox-3.0.3.jar', 'org/apache/pdfbox/fontbox/3.0.3/fontbox-3.0.3.jar',
+  'org/apache/pdfbox/pdfbox-io/3.0.3/pdfbox-io-3.0.3.jar', 'commons-logging/commons-logging/1.3.5/commons-logging-1.3.5.jar']
+  .map((j) => `${M2}/${j}`).join(process.platform === 'win32' ? ';' : ':');
+
+/**
+ * Les paragraphes d'un PDF « texte », refaits depuis la POSITION des lignes (`PdfLignes.java`) : l'extraction à plat
+ * rend d'abord toutes les clauses d'une page puis toutes les valeurs (constat du 28/09 sur le 2463).
+ *   1. les morceaux d'une même ligne de base, contigus, sont recollés (le PDF coupe « renseign » + « ements ») ;
+ *   2. un saut d'abscisse sur la même ligne sépare deux COLONNES (le tableau « clause | données particulières ») ;
+ *   3. dans une colonne, deux lignes successives font un paragraphe si l'interligne est normal ; un blanc plus grand
+ *      ouvre un paragraphe ;
+ *   4. l'ordre de lecture d'une page : par hauteur de début de paragraphe, puis de gauche à droite — la clause d'une
+ *      rangée avant ses données, comme dans le Word.
+ */
+function paragraphesPdf(fichier) {
+  const tsv = execFileSync(JAVA, ['-cp', CP_PDF, path.join(ICI, 'PdfLignes.java'), fichier], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 28 });
+  const morceaux = tsv.split(/\r?\n/).filter(Boolean).map((l) => {
+    const [page, x, y, xFin, h, ...t] = l.split('\t');
+    return { page: +page, x: +x, y: +y, xFin: +xFin, h: +h, texte: t.join(' ') };
+  });
+  // Les en-têtes et pieds de page (même texte au même endroit sur trois pages au moins) et les numéros de page seuls
+  // ne sont pas du texte du DAO : ils se mêleraient aux paragraphes (« 37 ARTICLE 2 - PRIX », constat du 29/09).
+  const hautBas = new Map();
+  for (const m of morceaux) { const k = `${Math.round(m.y / 4)}|${norm(m.texte)}`; hautBas.set(k, (hautBas.get(k) ?? new Set()).add(m.page)); }
+  const repete = (m) => (hautBas.get(`${Math.round(m.y / 4)}|${norm(m.texte)}`)?.size ?? 0) >= 3;
+  const numeroDePage = (m) => /^\d{1,3}$/.test(norm(m.texte)) || /^page\s+\d+(\s+(sur|\/)\s+\d+)?$/i.test(norm(m.texte));
+  const sortie = [];
+  for (const page of [...new Set(morceaux.map((m) => m.page))]) {
+    // 1-2. Lignes de la page (même ligne de base à 1,5 pt près), morceaux recollés ou séparés en colonnes.
+    const ms = morceaux.filter((m) => m.page === page && !repete(m) && !numeroDePage(m)).sort((a, b) => a.y - b.y || a.x - b.x);
+    const lignes = [];
+    for (const m of ms) {
+      const l = lignes.find((q) => Math.abs(q.y - m.y) <= 1.5 && m.x >= q.xFin - 1 && m.x - q.xFin <= 3);
+      if (l) { l.texte += (m.x - l.xFin > 0.8 ? ' ' : '') + m.texte; l.xFin = m.xFin; } else lignes.push({ ...m });
+    }
+    lignes.sort((a, b) => a.y - b.y || a.x - b.x);
+    // 3. Paragraphes par colonne : une ligne rejoint le paragraphe ouvert de sa colonne si elle le suit à interligne normal.
+    const colonneDe = (x) => (x >= 240 ? 1 : 0);
+    const ouverts = new Map();
+    const pars = [];
+    for (const l of lignes) {
+      const c = colonneDe(l.x);
+      const o = ouverts.get(c);
+      const pas = Math.max(l.h, 4.7) * 2.3;   // interligne normal d'un corps de 10-11 pt (≈ 9,7 pt pour h = 4,7)
+      if (o && l.y - o.yDernier > 0 && l.y - o.yDernier <= pas) { o.texte += ' ' + l.texte; o.yDernier = l.y; continue; }
+      const p = { colonne: c, y: l.y, yDernier: l.y, texte: l.texte };
+      pars.push(p);
+      ouverts.set(c, p);
+    }
+    // 4. Ordre de lecture.
+    pars.sort((a, b) => a.y - b.y || a.colonne - b.colonne);
+    for (const p of pars) { const t = norm(p.texte.replace(/(\w)- (\w)/g, '$1$2')); if (t) sortie.push(t); }
+  }
+  return sortie;
 }
 
 // ── Le modèle ─────────────────────────────────────────────────────────────────────────────────
-/** Les paragraphes du modèle, chacun avec la pile des sections conditionnelles qui l'entourent. */
+/**
+ * Les paragraphes du modèle, chacun avec la pile des sections conditionnelles qui l'entourent. Lot D2 : un marqueur
+ * peut être un paragraphe, une LIGNE de tableau (première cellule `{{SI:X}}`, les autres vides : section de rangées)
+ * ou un paragraphe DE CELLULE (section interne à la cellule) — lus comme le moteur du serveur les lit.
+ */
 function unites(m) {
   const pile = [];
   const out = [];
+  const marqueur = (t) => /^\{\{(SI|FINSI):([A-Z0-9-]+)}}$/.exec(t.trim());
   for (const b of m.blocs) {
-    const si = /^\{\{SI:([A-Z0-9-]+)}}$/.exec(b.texte);
-    const fin = /^\{\{FINSI:([A-Z0-9-]+)}}$/.exec(b.texte);
-    if (si) { pile.push(si[1]); continue; }
-    if (fin) { pile.pop(); continue; }
     if (['table', 'fin_table', 'vide'].includes(b.type)) continue;
-    for (const t of b.type === 'ligne' ? b.texte.split('\u001F') : [b.texte]) if (t.trim()) out.push({ texte: t, sections: [...pile] });
+    const cellules = b.type === 'ligne' ? b.texte.split('\u001F') : [b.texte];
+    const mr = marqueur(cellules[0]);
+    if (mr && cellules.slice(1).every((c) => !c.trim())) { if (mr[1] === 'SI') pile.push(mr[2]); else pile.pop(); continue; }
+    for (const cel of cellules) {
+      const local = [];
+      for (const t of cel.split('\u001E')) {
+        const mc = marqueur(t);
+        if (mc) { if (mc[1] === 'SI') local.push(mc[2]); else local.pop(); continue; }
+        if (t.trim()) out.push({ texte: t, sections: [...pile, ...local] });
+      }
+    }
   }
   return out;
 }
@@ -102,11 +172,20 @@ export { paragraphes };
 export function lireParagraphes(docLu, sigle, champs = {}) {
   const m = JSON.parse(fs.readFileSync(path.join(MODELES, `${sigle}.json`), 'utf8'));
   const us = unites(m);
+  // Un paragraphe atteste ses sections s'il a assez de texte fixe (20 lettres) et qu'aucun paragraphe de même texte
+  // n'existe hors de ces sections.
+  const cleTexte = (u) => norm(u.texte.replace(JETON, '{}')).toLowerCase();
+  const distinctif = (u) => u.sections.length > 0 && u.texte.replace(JETON, ' ').normalize('NFKC').toLowerCase().replace(/[^\p{L}]/gu, '').length >= 20
+    && !us.some((v) => v !== u && cleTexte(v) === cleTexte(u) && v.sections.join('|') !== u.sections.join('|'));
   const doc = [...docLu];      // copie : un paragraphe fusionné par l'autorité y est redécoupé
   const trouves = new Map();   // indice de l'unité → indice du paragraphe du document
   const propositions = [];
   const sectionsVues = new Set();   // attestées par du TEXTE FIXE reconnu, jamais par un jeton seul
-  const seulJeton = (u) => /^\{\{[^{}]+}}$/.test(u.texte.trim());
+  // Un paragraphe dont le texte fixe n'a pas de lettre (« {{B05-MO-02}}. ») reconnaîtrait presque tout paragraphe
+  // finissant par un point (constat du 29/09 sur le 2463 : « 6.6 » lu comme une devise, en confiance haute) : c'est un
+  // jeton seul, lu entre ses voisins (étape 2).
+  const lettresFixes = (t) => t.replace(JETON, ' ').normalize('NFKC').toLowerCase().replace(/[^\p{L}]/gu, '');
+  const seulJeton = (u) => /\{\{/.test(u.texte) && lettresFixes(u.texte).length === 0;
 
   // Les débuts de paragraphe du modèle (texte fixe avant le premier jeton, au moins 6 caractères) : retrouvés DANS une
   // valeur capturée, ils disent qu'un paragraphe suivant a été collé derrière (fusion), et où couper.
@@ -135,7 +214,7 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
     const borne = trouves.size ? Math.min(doc.length, curseur + 60) : doc.length;
     for (let j = curseur; j < borne; j++) {
       let x = re.exec(doc[j]);
-      let confiance = 'haute';
+      let confiance = lettresFixes(u.texte).length >= 8 ? 'haute' : 'moyenne';
       // Un paragraphe qui finit par du texte fixe se reconnaît aussi EN TÊTE d'un paragraphe fusionné : le reste est relu.
       if (!x && reTete) {
         x = reTete.exec(doc[j]);
@@ -144,7 +223,7 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
       if (!x) continue;
       trouves.set(k, j);
       curseur = j + 1;
-      u.sections.forEach((s) => sectionsVues.add(s));
+      if (distinctif(u)) u.sections.forEach((x) => sectionsVues.add(x));
       jetons.forEach((jt, n) => {
         let brut = x[n + 1];
         let c = confiance;
@@ -170,7 +249,7 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
   const ambigus = [];
   const intervalles = new Map();
   us.forEach((u, k) => {
-    const seul = /^\{\{([^{}]+)}}$/.exec(u.texte.trim());
+    const seul = seulJeton(u) ? /\{\{([^{}]+)}}/.exec(u.texte) : null;
     if (!seul) return;
     let a = k - 1; while (a >= 0 && !trouves.has(a)) a--;
     let b = k + 1; while (b < us.length && !trouves.has(b)) b++;
@@ -206,8 +285,20 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
 
   // 4. Valeurs dans la forme de saisie ; un même champ lu deux fois différemment est un conflit, pas un choix.
   const parCode = new Map();
-  for (const p of propositions) {
+  // Une valeur « par lot » d'un document commun (`{{CODE.parLot}}`, lot D2) : « Lot n° 1 : v1 ; Lot n° 2 : v2 » devient
+  // CODE#1, CODE#2 ; sans mention de lot, la valeur seule (ligne non allotie).
+  const etendues = propositions.flatMap((p) => {
     const [code, suffixe] = p.jeton.split('.');
+    if (suffixe !== 'parLot') return [p];
+    const parts = norm(p.brut).split(/lot\s*n\s*°?\s*(\d+)\s*:\s*/i);
+    if (parts.length < 3) return [{ ...p, jeton: code }];
+    const lots = [];
+    for (let i = 1; i + 1 < parts.length; i += 2) lots.push({ ...p, jeton: `${code}#${parts[i]}`, brut: parts[i + 1].replace(/\s*;\s*$/, '') });
+    return lots;
+  });
+  for (const p of etendues) {
+    const [jeton, suffixe] = p.jeton.split('.');
+    const code = jeton.split('#')[0];
     if (!/^B\d\d-/.test(code) || suffixe === 'lettres') continue;   // LOT, DERIVE, montant en lettres : contrôles, pas des valeurs
     const valeur = valeurSaisie(p.brut, champs[code]?.type, suffixe);
     if (valeur == null) continue;
@@ -217,14 +308,14 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
     if (p.finOuverte && p.confiance === 'haute' && !contrainte) p.confiance = 'moyenne';
     // Un reflet du cadrage (`B08-AV-02` = `tauxAvance`) se propose comme RÉPONSE de cadrage, pas comme valeur de champ.
     if (champs[code]?.source === 'CADRAGE' && champs[code]?.cleCadrage) { cadrage[champs[code].cleCadrage] ??= valeur; continue; }
-    const deja = parCode.get(code);
-    if (deja && deja.valeur !== valeur) { conflits.push({ code, valeurs: [deja.valeur, valeur] }); deja.conflit = true; continue; }
-    if (!deja || RANG[p.confiance] > RANG[deja.confiance]) parCode.set(code, { code, valeur, brut: norm(p.brut), confiance: p.confiance, source: p.source, paragraphe: p.paragraphe });
+    const deja = parCode.get(jeton);
+    if (deja && deja.valeur !== valeur) { conflits.push({ code: jeton, valeurs: [deja.valeur, valeur] }); deja.conflit = true; continue; }
+    if (!deja || RANG[p.confiance] > RANG[deja.confiance]) parCode.set(jeton, { code: jeton, valeur, brut: norm(p.brut), confiance: p.confiance, source: p.source, paragraphe: p.paragraphe });
   }
   const final = [...parCode.values()].filter((p) => !p.conflit);
   const attendus = [...new Set(us.flatMap((u) => [...u.texte.matchAll(JETON)].map((x) => x[1].split('.')[0])).filter((c) => /^B\d\d-/.test(c)))];
   return { sigle, paragraphesDocument: doc.length, unitesModele: us.length, reconnues: trouves.size, propositions: final, cadrage, conflits, ambigus,
-    nonTrouves: attendus.filter((c) => !parCode.has(c)) };
+    nonTrouves: attendus.filter((c) => ![...parCode.keys()].some((k) => k.split('#')[0] === c)) };
 }
 
 // ── En ligne de commande ─────────────────────────────────────────────────────────────────────
