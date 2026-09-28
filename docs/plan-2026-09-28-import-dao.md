@@ -1,6 +1,24 @@
 # Plan — 2026-09-28 — Pré-remplir la fiche DAO par l'import du dossier d'appel d'offres
 
-**Statut : proposé, en attente d'arbitrage du pilote (questions §4). Rien n'est codé.**
+**Statut : arbitré par le pilote le 28/09 (« suivre les recommandations », ancrages tirés des modèles du lot D) ; lot 0
+(mesure) fait côté front — `scripts/import-dao/`, critère Q10 tenu ; lot 1 demandé au backend
+(`docs/demande-backend-2026-09-28-import-dao.md`) ; lot 2 (écran) après sa livraison.**
+
+> ⚠️ **Arbitrage et mesure du 2026-09-28.** Deux réponses changent depuis la première rédaction :
+> - **Q5 — les ancrages** ne sont plus une colonne à renseigner champ par champ : ce sont les **modèles du lot D**
+>   (`scripts/modeles-dao/modeles/*.json`). Un DAO rédigé sur le document type se lit à l'envers — le texte fixe se
+>   retrouve, la valeur est ce qui occupe la place du jeton, la rédaction retenue d'une section dit la réponse. Pas de
+>   migration V51 pour l'import.
+> - **Q2 — le périmètre** suit le lot D : on n'importe que les documents décrits. Au 28/09 : le contrat-cadre (DPAC,
+>   AE) ; les fournitures après le lot D2.
+> - **Q10 — sans autre DAO réel** (pilote : « pas pour l'instant »), la mesure s'est faite en aller-retour sur les
+>   documents de la fiche 27 validée, puis avec un bruit simulé (typographie, paragraphes fusionnés et ajoutés), 9
+>   passes : **0 valeur fausse en confiance haute** (315 justes), 0 en moyenne (213), 7 en basse (sur 19), réponses de
+>   cadrage toutes justes, rappel 87 à 98 %. Le premier jet ne tenait pas le critère (jusqu'à 3 fausses valeurs
+>   hautes par passe, dues aux fusions et aux paragraphes ajoutés) : la coupe au début d'un paragraphe suivant, la
+>   reconnaissance en tête, et la règle « un jeton seul n'atteste jamais sa section » l'ont rétabli.
+>   Limite dite : le bruit simulé ne remplace pas un DAO réel d'une autre autorité.
+> Les autres réponses (Q1, Q3, Q4, Q6 à Q9) sont celles du tableau §4.
 Demande du pilote (28/09) : « à la création de la fiche DAO, est-il possible d'importer le document DAO pour alimenter
 les données de la fiche à la place de la saisie si on a ce document. Si on ne l'a pas, on procède à la saisie. »
 
