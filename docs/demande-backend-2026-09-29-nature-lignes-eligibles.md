@@ -26,3 +26,13 @@ que le champ n'est pas servi.
 
 Le commit, le test (une ligne de nature « Services » rend `libelleNature = "Services"`, une ligne sans nature rend
 `null`), `docs/api-endpoints.md` à jour, et un encadré ⚠️ daté ici pour tout écart.
+
+> ⚠️ **Livraison backend du 2026-09-29.** Conforme, sans écart. `LigneEligibleDto` porte `idNature` et `libelleNature`,
+> ajoutés en fin de record, tous deux `null` pour une ligne sans nature. Le libellé est lu dans le cache des natures que
+> remplit déjà le calcul de `categorie`, un par nature pour toute la liste : aucune requête de plus par ligne. La clé
+> étrangère `t_marche → t_nature` exclut une nature inconnue du référentiel, donc `libelleNature` n'est `null` que sans
+> nature.
+>
+> Test (`FicheDaoCategoriesIntegrationTest`) : une ligne de nature « Services » rend `idNature = 94`, `libelleNature =
+> "Services"` et `categorie = FOURNITURES_SERVICES`. La ligne « Fournitures » rend « Fournitures », et la ligne sans
+> nature rend `null` pour les deux champs. `docs/api-endpoints.md` (PRS20) est à jour.
