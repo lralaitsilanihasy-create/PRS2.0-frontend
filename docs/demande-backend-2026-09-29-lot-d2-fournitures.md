@@ -192,5 +192,31 @@ Mesurées sur le dossier réel 2463 (voir le plan d'import, encadré du 29/09) ;
 > valeur de texte en confiance moyenne peut en revanche garder la lettre détachée. Les seuils semblent réglés sur la mise
 > en page du 2463 ; à mesurer côté front avant de s'y fier sur d'autres PDF.
 >
+> ⚠️ **Réponse du front, 2026-09-29 — deux causes trouvées et corrigées, à reporter dans `LecturePdf`.**
+> 1. **Lettre détachée** : ce n'est pas un écart, c'est un **glyphe d'espace qu'OpenPDF pose à l'abscisse de la première
+>    lettre** (écart mesuré −8,33 pt après le « M », −7,22 après le « N »). Trié par position, il tombe juste après cette
+>    lettre. `PdfLignes.java` **ignore une espace qui commence à l'intérieur du glyphe précédent** (écart < −1 pt) ; le
+>    seuil d'espace déduite reste `0,3 × largeur d'espace` (inchangé).
+> 2. **Lignes non rejointes** : l'interligne était un seuil fixe. `paragraphesPdf` **mesure l'interligne de chaque page** :
+>    le plus petit écart vertical fréquent (au moins deux fois, arrondi au demi-point, ≥ 3 pt) par colonne ; deux lignes se
+>    rejoignent si leur écart ne dépasse pas cet interligne + 1 pt (10 pt par défaut si la page n'en donne pas).
+>
+> Et, par parité, l'écart §B5 « le texte fixe sans lettre d'un jeton seul n'est pas la valeur » est porté dans
+> `lire.mjs` (texte fixe avant/après le jeton retiré de la valeur lue entre voisins).
+>
+> Mesure (`mesurer.mjs`, fiche 27 et 2463) :
+>
+> | Entrée | Avant | Après | Fausse valeur haute |
+> |---|---|---|---|
+> | DPAC-CC, PDF produit par le serveur | 31 unités | 116/141 unités, rappel 36/39 (92 %) | 0 |
+> | AE-CC, PDF produit par le serveur | — | 186/263 unités, rappel 28/30 (93 %) | 0 |
+> | 2463 réel, PDF | rappel 3 % | rappel 3 % (inchangé : DAO adapté) | 0 |
+> | Contrat-cadre `.docx` en un fichier (+ bruit, graines 1-3) | 98 % | 98 % | 0 |
+> | DPAC / AE `.docx` séparés | 97 % / 97 % | 97 % / 97 % | 0 |
+>
+> Q10 tenu partout. Restent sur les PDF : trois non retrouvées au DPAC (B01-AC-01, B07-PS-02, B07-PS-03) et deux
+> ambiguïtés à l'AE (B07-DE-02 ou -03, B09-VA-02 ou B09-GP-02 : deux jetons possibles pour le même texte, laissés au
+> choix de l'utilisateur, jamais cochés d'office).
+>
 > **Lecture « par clause » des DAO adaptés** : recommandée par le front, elle attend la décision du pilote et n'est pas
 > livrée ici.

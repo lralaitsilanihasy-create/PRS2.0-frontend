@@ -83,12 +83,22 @@ function paragraphesPdf(fichier) {
     lignes.sort((a, b) => a.y - b.y || a.x - b.x);
     // 3. Paragraphes par colonne : une ligne rejoint le paragraphe ouvert de sa colonne si elle le suit à interligne normal.
     const colonneDe = (x) => (x >= 240 ? 1 : 0);
+    // L'interligne d'un paragraphe se MESURE sur la page : le plus petit écart vertical fréquent entre deux lignes
+    // successives d'une même colonne (9,7 pt dans le 2463 ; 15 pt dans nos PDF, où 18 pt sépare deux paragraphes).
+    // Un réglage fixe, fait sur le 2463, ne rejoignait pas les lignes de nos propres PDF (constat backend du 29/09).
+    const ecarts = new Map();
+    for (const c of [0, 1]) {
+      const ys = lignes.filter((l) => colonneDe(l.x) === c).map((l) => l.y);
+      for (let i = 1; i < ys.length; i++) { const e = Math.round((ys[i] - ys[i - 1]) * 2) / 2; if (e >= 3) ecarts.set(e, (ecarts.get(e) ?? 0) + 1); }
+    }
+    const frequents = [...ecarts.entries()].filter(([, n]) => n >= 2).map(([e]) => e).sort((a, b) => a - b);
+    const interligne = frequents[0] ?? 10;
     const ouverts = new Map();
     const pars = [];
     for (const l of lignes) {
       const c = colonneDe(l.x);
       const o = ouverts.get(c);
-      const pas = Math.max(l.h, 4.7) * 2.3;   // interligne normal d'un corps de 10-11 pt (≈ 9,7 pt pour h = 4,7)
+      const pas = interligne + 1;
       if (o && l.y - o.yDernier > 0 && l.y - o.yDernier <= pas) { o.texte += ' ' + l.texte; o.yDernier = l.y; continue; }
       const p = { colonne: c, y: l.y, yDernier: l.y, texte: l.texte };
       pars.push(p);
@@ -269,6 +279,11 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
     let brut = entre.join('\n');
     const cp = couper(brut, j.k);
     if (cp) brut = cp[0];
+    // Le texte fixe sans lettre qui entoure le jeton (« {{B05-GS-03.parLot}}. ») n'est pas la valeur : sinon « Lot n° 2 :
+    // 500 000 Ariary. » ne se lit plus comme un montant (écart relevé par le backend le 29/09, porté ici par parité).
+    const [avant, apres] = us[j.k].texte.split(/\{\{[^{}]+}}/).map((t) => t.trim());
+    if (apres && brut.trimEnd().endsWith(apres)) brut = brut.trimEnd().slice(0, -apres.length).trimEnd();
+    if (avant && brut.trimStart().startsWith(avant)) brut = brut.trimStart().slice(avant.length).trimStart();
     const confiance = atteste && entre.length === 1 && !cp ? 'moyenne' : 'basse';
     propositions.push({ jeton: j.jeton, brut, confiance, source: 'entre-voisins', paragraphe: trouves.get(a) + 1 });
   }

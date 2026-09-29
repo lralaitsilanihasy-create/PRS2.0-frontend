@@ -63,6 +63,12 @@ public final class PdfLignes {
             if (prec != null) {
                 float espace = p.getXDirAdj() - (prec.getXDirAdj() + prec.getWidthDirAdj());
                 float largeurEspace = Math.max(prec.getWidthOfSpace(), 1f);
+                // OpenPDF (nos propres PDF) pose une espace AU MÊME ENDROIT que la première lettre de la ligne : triée
+                // par position, elle tombe juste après cette lettre (« M ARCHE DE », constat backend du 29/09). Une espace
+                // qui commence à l'intérieur de la lettre précédente ne sépare rien : elle est ignorée.
+                if (p.getUnicode().isBlank() && espace < -1f) {
+                    continue;
+                }
                 if (espace > 3 * largeurEspace && espace > 12f) {
                     sortir(sb, debut, prec, page, out);
                     sb.setLength(0);
