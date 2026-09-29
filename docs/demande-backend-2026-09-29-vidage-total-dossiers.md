@@ -98,3 +98,10 @@ périmètre, ou laissée volontairement hors du périmètre, y est nommée avec 
 >   a ni deviné ni fabriqué.
 > - **Contre-recette front attendue** : ces deux listes vides sous un compte PRMP, et 0 erreur 5xx sur les écrans PRMP.
 >   Les tables qu'elles lisent sont à 0.
+
+> ⚠️ **Contre-recette front du 2026-09-29 : conforme.**
+> - **API**, sous deux comptes PRMP réels (PRMP001, LERAVO ; connexion 200) : `GET /api/dossiers`,
+>   `/api/dmcs/eligibles`, `/api/ppms` et `/api/marches` répondent 200 avec 0 élément.
+> - **Écrans PRMP** (Chrome réel, `ng serve`, compte PRMP001) : À faire, Suivi des dossiers CNM, Préparer un DAO, Créer
+>   dossier, Mes PPM & marchés. Aucune erreur JavaScript, aucune réponse 5xx, aucun état d'erreur. Chaque liste affiche
+>   un état vide explicite. « Créer dossier » est un écran de saisie, sans liste : il n'a pas d'état vide à montrer.
