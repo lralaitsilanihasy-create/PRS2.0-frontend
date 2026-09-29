@@ -26,6 +26,13 @@ lit. **Aucune extension du moteur** : marqueurs de paragraphe, de cellule et de 
 - **La formule du CPS qui finit par `}}`** (« {ou Rl= Rlo X [ 0,15+0,85 Il/Ilo] }} », annexe de révision) : vérifié, le
   motif des jetons exige `{{` — elle n'est pas prise pour un jeton. Un test s'en assure (le rendu la contient telle quelle).
 
+> ⚠️ **Livraison backend du 2026-09-29 (§B1).** Conforme. Les trois fichiers sont recopiés tels quels (`modeles/dao/`),
+> avec 33, 17 et 30 conditions. `ModelesDao.COUVERTURES` les associe à la quantité fixe et au marché à commande des
+> prestations intellectuelles, types `DPIC`, `CCAP` et `AE`. Le comparateur donne 230/230, 300/300 et 238/238 sur le
+> rendu brut du serveur ; les cinq autres modèles restent identiques. La formule en `}}` est rendue telle quelle
+> (`ModelesDaoPrestationsIntellectuellesTest`, cas des prix révisables). Le libellé du DPIC reste « Données particulières
+> des instructions aux consultants », celui du lot 2a ; le titre imprimé est celui du modèle (« … aux candidats »).
+
 ## B2 — Le référentiel des champs PI
 
 ### B2.1 — Sept champs à créer
@@ -42,6 +49,19 @@ lit. **Aucune extension du moteur** : marqueurs de paragraphe, de cellule et de 
 
 Les codes sont une proposition : le backend les ajuste s'ils heurtent un code existant, et le dit dans l'encadré.
 Nombres décimaux : « 0,8 » doit se saisir et s'imprimer avec la virgule.
+
+> ⚠️ **Livraison backend du 2026-09-29 (§B2.1).** Les sept codes proposés sont gardés : aucun ne heurte un code existant,
+> et leurs rubriques existent (V42). Deux écarts :
+> - **Pas de condition au référentiel pour `B05-PF-13`, `B06-CS-02` et `B06-CS-03`.** Une condition de champ ne lit que
+>   le cadrage, pas un autre champ comme `B02-MS-01`. Ces trois champs sont donc servis sans condition et **facultatifs** :
+>   obligatoires, ils bloqueraient une fiche d'un autre mode de sélection. Les conditions du DPIC choisissent, elles, ce
+>   qui s'imprime. `B06-TP-07` est aussi facultatif. `B04-EP-04` est obligatoire, comme `B04-EP-03`.
+> - **Les bornes des poids (T entre 0,6 et 0,8, F entre 0,2 et 0,4, T + F = 1) et du délai (≥ 6 jours) ne sont pas
+>   contrôlées par le serveur.** Aucune règle du catalogue ne les porte, et la demande n'en crée pas. Ce serait une
+>   règle nouvelle à demander, facile à ajouter.
+>
+> `B08-AI-03` porte la condition `avance = OUI` et le rôle `AVANCE_MAX_20:TAUX`. Nombres décimaux : « 0,8 » se saisit
+> avec la virgule ou le point, se range « 0.8 » et s'imprime « 0,8 » (`NOMBRE` décimal).
 
 ### B2.2 — Corrections
 
@@ -61,6 +81,27 @@ Nombres décimaux : « 0,8 » doit se saisir et s'imprimer avec la virgule.
 7. **`B09-DP-01`** (point de départ) : le modèle l'emploie comme interrupteur (« le délai court de l'ordre de service de
    commencer », AE 5.1 et CPS art. 15). Proposé : `OUI_NON` « Le délai court de l'ordre de service de commencer ».
 
+> ⚠️ **Livraison backend du 2026-09-29 (§B2.2).** Les sept corrections sont faites (fichier de correspondance et
+> `docs/referentiel/2026-09-29-lot-d3-prestations-intellectuelles.sql`). Quatre précisions :
+> - **1. `B02-MS-01` : le format des options change, pas seulement la donnée.** Les options étaient séparées par des
+>   virgules, en base comme au fichier de correspondance, et une option à virgule ne pouvait pas s'écrire. Désormais,
+>   quand une option contient une virgule, le séparateur est `|` : `Qualité technique, expérience et proposition
+>   financière|Budget prédéterminé…|…`. Sans `|`, rien ne change pour les autres listes. Le serveur sert quatre options.
+>   Aucune fiche ne portait une moitié d'option : DBPRS20 est vide depuis le vidage du 29/09, comptage à 0 dans le script.
+> - **4. Intérêts moratoires** : `INTERETS_MORATOIRES_TAUX` lit un `TAUX` de type `NOMBRE` comme une majoration en
+>   points, exigée d'au moins un point, sans taux de la Banque centrale à comparer. Les autres catégories gardent leur
+>   pourcentage.
+> - **5. Pénalités** : `B09-PP-01` est retiré. Le reflet `B09-PR-01` de la question `penalites` n'était servi qu'aux
+>   fournitures : la migration **V53** l'ouvre aux prestations intellectuelles, pour que la fiche pose la question dont
+>   le CPS dépend. `PENALITES_PLAFOND_15` compare désormais au plafond de la catégorie (10 % pour les PI, 15 % ailleurs).
+>   Le code de la règle est stable, le message dit le plafond. Aucun champ PI ne porte plus le rôle `TAUX` de cette
+>   règle, puisque le CPS laisse le plafond en blanc : elle vaudra dès qu'un champ le portera. L'« aide du cadrage » (le
+>   texte de la question) est côté front : il faut y dire 10 % pour les PI.
+> - **7. `B09-DP-01` en `OUI_NON` : la condition du modèle ne convient plus.** `DEPART-OS` (AE et CPS) vaut
+>   `B09-DP-01 renseigne` ; avec un oui/non, la réponse « NON » est aussi renseignée et imprimerait « le délai court de
+>   l'ordre de service ». **À corriger dans les modèles : `B09-DP-01 = OUI`.** En attendant, le champ est facultatif :
+>   le laisser vide vaut « non ».
+
 ### B2.3 — À confirmer par le pilote avant exécution (même règle que les fournitures le 29/09)
 
 Aucun document PI ne les imprime ; la règle arbitrée pour les fournitures (retirer pour la catégorie, **après**
@@ -72,10 +113,17 @@ vérification qu'aucune règle serveur ne les lit) leur conviendrait :
 
 Le front les soumet au pilote ; le backend ne les touche pas avant sa réponse.
 
+> ⚠️ **Livraison backend du 2026-09-29 (§B2.3).** Non touché, comme demandé. Le contrôle des règles serveur qui les
+> liraient sera fait à la réponse du pilote, comme pour les fournitures.
+
 ## B3 — Production
 
 Une fiche PI validée produit **DPIC, AE et CPS** au format du document type (au lieu des listes « libellé : valeur »), avec
 les règles de D2 : jetons vides en pointillés, marqueurs de cellule et de rangée, `.chiffres` sans unité en double.
+
+> ⚠️ **Livraison backend du 2026-09-29 (§B3).** Conforme. Une fiche PI validée produit DPIC, CPS (type `CCAP`, libellé
+> « Cahier des prescriptions spéciales ») et AE depuis les modèles. Vérifié par `FicheDaoPrestationsIntellectuellesIntegrationTest`
+> et, cas par cas, par `ModelesDaoPrestationsIntellectuellesTest`, qui couvre les quatre grands cas du B5.
 
 ## B4 — Import : trois règles de lecture ajoutées le 29/09 (à reporter dans `LectureDao`)
 
@@ -97,6 +145,10 @@ Mesure de l'import sur les modèles PI (banc) : DPIC-PI 96 %, AE-PI 100 %, CPS-P
 au CPS est l'objet et la référence repris du plan (jamais proposés) et les termes de paiement (trois rédactions sans
 texte fixe, signalées ambiguës). Critère Q10 tenu partout.
 
+> ⚠️ **Livraison backend du 2026-09-29 (§B4).** Conforme. Les trois règles sont portées dans `LectureDao`. La parité avec
+> `lire.mjs` (522ed99) est vérifiée sur cinq entrées : `.docx` et PDF du contrat-cadre de la fiche 27, PDF réel du 2463,
+> rendus bruts D2 et PI. L'extraction est identique, et la lecture aussi aux conflits de cadrage près (écart du 28/09).
+
 ## B5 — Tests attendus
 
 - les trois modèles recopiés : rendu ≡ modèle (230, 300, 238 unités) ;
@@ -105,6 +157,15 @@ texte fixe, signalées ambiguës). Critère Q10 tenu partout.
 - la formule en `}}` rendue telle quelle ;
 - `B02-MS-01` servi avec quatre options ;
 - les trois règles de lecture (B4), chacune par un cas qui échouait avant.
+
+> ⚠️ **Livraison backend du 2026-09-29 (§B5).** Conforme.
+> - Rendu ≡ modèle : 230, 300 et 238 unités au comparateur ; `ModelesDaoTest` charge les huit modèles.
+> - Quatre cas de fiche : qualité-coût, forfait, révisable et avance ; qualité seule et temps passé ; moindre coût et
+>   barème ; budget prédéterminé et budget disponible. Tous dans `ModelesDaoPrestationsIntellectuellesTest`, avec la
+>   formule en `}}`, les poids « 0,8 » / « 0,2 », le plafond de 10 % et les intérêts en points.
+> - `B02-MS-01` à quatre options : `FicheDaoPrestationsIntellectuellesIntegrationTest`, sur le référentiel servi.
+> - Les trois règles de lecture : `LectureDaoTest#reglesDuLotD3`. Rejoué sur la version précédente du lecteur, il échoue
+>   sur les trois cas : `B04-EP-03` en haute, `B02-OB-02` qui avale la phrase suivante, `B02-OB-03` proposé.
 
 ## Pour le juriste (pas pour le backend)
 
