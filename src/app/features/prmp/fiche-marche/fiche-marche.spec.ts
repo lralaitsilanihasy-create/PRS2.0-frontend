@@ -206,10 +206,13 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     rendre();
     const lignes = Array.from(racine().querySelectorAll('tbody tr'));
     expect(lignes.length).toBe(3);
-    // La forme du marché est montrée avec le mode : c'est elle qui donne le type de la fiche.
-    // ⚠️ Lot 5 — la colonne porte la catégorie PUIS la forme, les deux venant du plan.
+    // ⚠️ 29/09 (pilote) — la forme du marché a sa propre colonne (3e) ; la catégorie reste sous le mode.
+    expect(Array.from(racine().querySelectorAll('thead th')).map((e) => texte(e))).toEqual([
+      'Dossier de planification', 'Nature', 'Forme', 'Objet du marché', 'Mode de passation', 'Montant estimatif', 'Action',
+    ]);
+    expect(lignes.map((l) => texte(l.querySelectorAll('td')[2]))).toEqual(['Quantité fixe', 'Quantité fixe', 'Contrat-cadre']);
     expect(Array.from(racine().querySelectorAll('.fm__forme')).map((e) => texte(e)))
-      .toEqual(['Fournitures et services', 'Quantité fixe', 'Fournitures et services', 'Quantité fixe', 'Fournitures et services', 'Contrat-cadre']);
+      .toEqual(['Fournitures et services', 'Fournitures et services', 'Fournitures et services']);
     const bloquee = lignes[2].querySelector('button') as HTMLButtonElement;
     expect(texte(bloquee)).toBe('Pas encore pris en charge');
     expect(bloquee.disabled).toBe(true);
