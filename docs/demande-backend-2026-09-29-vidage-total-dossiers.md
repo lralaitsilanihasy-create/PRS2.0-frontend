@@ -58,3 +58,43 @@ qui compte. Le script mis à jour est un **nouveau fichier daté** ; celui du 25
 
 Le script daté, les comptes avant/après et le redémarrage, dans un encadré ⚠️ daté ici. Toute table ajoutée au
 périmètre, ou laissée volontairement hors du périmètre, y est nommée avec sa raison.
+
+> ⚠️ **Exécution backend du 2026-09-29.** DBPRS20 est vidée, au périmètre du 25/09 et sans resemis. Script daté :
+> `docs/demo/vidage-total-dossiers-2026-09-29.sql` (dépôt PRS20). Celui du 25/09 reste tel quel.
+>
+> **Inventaire par les clés étrangères (§B2).** La fermeture des clés étrangères vers `t_dossier`, `t_ppm`, `t_marche`,
+> `t_dossier_mec` et `t_fiche_marche` compte 42 tables. Cinq manquaient au script du 25/09 et sont **ajoutées** :
+> - `t_fiche_article` et `t_fiche_caracteristique` (V45, le besoin de la fiche) : données de dossier, 95 et 374 lignes ;
+> - `t_parametre_interne_procedure`, `t_parametre_interne_journal` et `t_responsable_procedure` (V50, par DMC) :
+>   données de dossier, 1, 6 et 2 lignes.
+>
+> Les autres points de la liste du front :
+> - **V44** (observations sur un champ de la fiche) et **V49** (rectification du dossier DAO) n'ont ajouté que des
+>   colonnes à des tables déjà vidées.
+> - **Le journal `FICHE_IMPORTEE`** est dans `t_action_dossier`, déjà vidée.
+> - **Tables sans clé étrangère** : parmi celles qui portent une colonne de dossier (`ID_DOSSIER`, `ID_DMC`, `ID_FICHE`,
+>   `ID_DETAIL`…), aucune n'échappait au script. La seule relevée, `t_snapshot_stats`, porte des indicateurs agrégés.
+>   Elle est **laissée hors du périmètre** volontairement : elle est gardée, et vide.
+> - **Sept tables** du script du 25/09 ne sont pas dans la fermeture des clés étrangères : `t_action_dossier`,
+>   `t_changement_ligne`, `t_observation_pv`, `t_piece_demande_retrait`, `t_suivi_observation`, `t_transmission_sigmp`
+>   et `t_verification_piece_depot`. Elles restent vidées, comme le 25/09.
+>
+> Le périmètre compte donc 49 tables. Un bloc final les compte toutes et **annule la transaction** s'il en reste une
+> ligne. Cela couvre le cas des restes sans clé étrangère.
+>
+> **Comptes (§B3)**, relevés par le passage à blanc (`ROLLBACK`), puis identiques à l'exécution réelle (`COMMIT`) :
+>
+> | | dossiers | PPM | lignes | DMC | versions de fiche | valeurs | documents | examens | PV | pièces |
+> |---|---|---|---|---|---|---|---|---|---|---|
+> | avant | 7 | 3 | 10 | 6 | 20 | 1975 | 432 | 6 | 6 | 92 |
+> | après | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+>
+> - « Périmètre vide : 49 tables à 0 ». Le script est rejoué ensuite sur la base vide : il ne supprime rien et passe.
+> - **Gardé**, vérifié après coup : 670 champs du référentiel de la fiche, 36 533 lignes de `t_audit_log`, 7 compteurs
+>   `t_sequence_reference`, 1 intérim.
+> - **Mandats : 0**, et déjà 0 avant le vidage. Le script ne touche pas `t_mandat`.
+> - **Serveur de recette redémarré** après le vidage (PID 24856), sans erreur au démarrage. `GET /api/dossiers` et
+>   `GET /api/dmcs/eligibles` répondent 401 sans jeton : le backend n'a pas de mot de passe de compte de recette, et n'en
+>   a ni deviné ni fabriqué.
+> - **Contre-recette front attendue** : ces deux listes vides sous un compte PRMP, et 0 erreur 5xx sur les écrans PRMP.
+>   Les tables qu'elles lisent sont à 0.
