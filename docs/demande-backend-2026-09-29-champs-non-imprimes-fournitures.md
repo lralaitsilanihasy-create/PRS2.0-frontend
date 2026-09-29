@@ -36,6 +36,39 @@ Attendus :
    Un code que ce contrôle révèle utile **reste**, avec la raison dans l'encadré.
 4. Script du référentiel pour DBPRS20, comme pour V52.
 
+> ⚠️ **Livraison backend du 2026-09-29 (§B1) — 25 champs retirés sur 29 ; quatre restent, parce qu'une règle du serveur
+> les lit.** Le contrôle demandé au point 3 a été fait sur le code, les migrations et les modèles du serveur :
+> - **`B04-OP-02` et `B04-OP-03` restent actifs, calculés.** Ce ne sont pas de simples champs affichés. En remise
+>   électronique, le serveur les recalcule toujours comme l'échéance plus le délai `B04-OP-12` (V50, Q11). Ils sont lus
+>   par `SE_OUVERTURE_PLIS`, bloquant si l'ouverture ne suit pas l'échéance, et par `DATES_ORDRE`, étape OUVERTURE. Les
+>   retirer éteindrait ces deux règles. Or c'est précisément la question posée au juriste sur la clause 7.3 (décision 2 :
+>   le DPAO 8 dit « les mêmes que la date et l'heure limites », la remise électronique dit « échéance + délai »). Ils se
+>   décident avec les 16 champs du G4. Le « calculé mais masqué » n'existe pas au référentiel : un champ est servi ou non.
+>   Le front peut les afficher en lecture seule, puisque `champsCalcules` les nomme en mode électronique.
+> - **`B05-TP-03` reste actif.** Il porte le rôle `MAXIMUM` de l'avertissement `GARANTIE_TAUX` : la garantie de
+>   soumission de chaque lot rapportée au montant maximum annuel, comparée aux bornes administrables. C'est le seul contrôle
+>   du taux de garantie d'un marché à commande. Il ne compare pas au montant du plan, mais c'est bien une règle serveur.
+>   `B05-TP-02` (minimum), que seul `MONTANT_POSITIF` lit sur lui-même, est retiré. Si le pilote accepte de perdre cet
+>   avertissement, ou préfère le fonder sur le montant estimé du plan, `B05-TP-03` se retire en une ligne.
+> - **`B08-PA-08` reste actif.** Il porte le rôle `DELAI` de l'avertissement `DELAI_PAIEMENT_75`, qui signale un délai de
+>   paiement au-delà de 75 jours. Même alternative : retrait en une ligne si le pilote renonce à l'avertissement pour les
+>   fournitures.
+> - **Aucune autre lecture.** Aucun point de la grille de la Commission ne vise ces codes. Sur DBPRS20, aucune observation
+>   (`t_observation_controle`, `t_observation_pv`) ne les porte. 214 valeurs saisies sur 9 fiches les portent et sont
+>   conservées.
+>
+> **Moyen retenu (point 1)** : `actif = non` sur les 25. Aucun n'existe hors des fournitures : leur catégorie vide vaut
+> `FOURNITURES_SERVICES`, et aucun fichier des travaux ni des prestations intellectuelles ne les définit. Rien ne change
+> « ailleurs ». Le test demandé (« présent ailleurs ») vérifie donc que chacun est propre aux fournitures.
+>
+> **Valeurs conservées (point 2)** — un correctif était nécessaire. `PUT …/blocs/{bloc}` effaçait toutes les valeurs du
+> bloc avant d'écrire celles reçues. L'écran ne renvoyant plus un champ retiré, sa valeur aurait été perdue au premier
+> enregistrement du bloc. Désormais, les valeurs des champs inactifs sont gardées. Une **révision** ne reprend pas une
+> valeur d'un champ inactif, selon la règle existante des valeurs orphelines, mais la version qui la porte la garde.
+>
+> Script : `docs/referentiel/2026-09-29-fournitures-champs-non-imprimes.sql`. Le référentiel sert 156 champs en
+> quantité fixe et 159 à commande (179 et 184 avant).
+
 ## B2 — Modèle CCAP-F : trois corrections
 
 Recopier `scripts/modeles-dao/modeles/CCAP-F.txt` et `.json` (décalque de relecture :
@@ -58,6 +91,15 @@ Recopier `scripts/modeles-dao/modeles/CCAP-F.txt` et `.json` (décalque de relec
 
 Conditions du CCAP-F : 65 → 67.
 
+> ⚠️ **Livraison backend du 2026-09-29 (§B2).** Conforme. `CCAP-F.txt` est recopié tel quel ; le serveur ne lit pas le
+> `.json`, qui reste au front. Le comparateur donne 460/460 sur le rendu brut du serveur. Tests (`ModelesDaoFournituresTest`) :
+> - article 3 : le bloc de la PRMP porte ses coordonnées, le bloc du Fournisseur n'en porte aucune, et il n'y a plus de
+>   télécopie de la PRMP ;
+> - article 6 : à commande avec `B09-OM-02 = 15`, « dans la limite de 15 % » ; sans, la phrase s'arrête au Bordereau ;
+>   la quantité fixe n'a ni l'une ni l'autre.
+>
+> Les CCAP déjà produits se corrigent en reproduisant les documents, par une révision validée.
+
 ## B3 — Modèle DPAO-F : les niveaux de qualification (décision 3, Q-a)
 
 Recopier `scripts/modeles-dao/modeles/DPAO-F.txt` et `.json` (décalque : `docs/modeles-dao/DPAO-F.docx`). Fidélité
@@ -71,10 +113,25 @@ Trois **ajouts déclarés** dans la cellule du DPAO 6.3, chacun sous la fiche qu
 Les trois champs sont déjà obligatoires : rien à changer côté référentiel. Ce sont les seuls ajouts de ce lot qui
 s'écartent du texte ARMP. Ils sont listés dans les `ajouts` du modèle, comme les autres.
 
+> ⚠️ **Livraison backend du 2026-09-29 (§B3).** Conforme. `DPAO-F.txt` est recopié tel quel, 237/237 au comparateur. Un
+> test vérifie les trois lignes et leur place sous les fiches 2°, 3° et 4°.
+
 ## B4 — Import (`LectureDao`)
 
 Rien de neuf : les nouvelles unités (paragraphes à jeton, rédactions de l'article 6) se lisent avec les règles
 existantes. La recopie des deux modèles suffit.
+
+> ⚠️ **Livraison backend du 2026-09-29 (§B4).** Conforme pour les modèles. En plus, et hors de cette demande, les deux
+> corrections PDF de `a3217b3` sont reportées dans `LecturePdf` : l'espace posée sous la première lettre est ignorée, et
+> l'interligne se mesure par page. Le front avait de son côté repris l'écart du backend sur la ponctuation d'un jeton
+> seul. La parité avec `lire.mjs` (5366264) est vérifiée sur quatre entrées :
+> - les `.docx` de la fiche 27 ;
+> - le PDF réel du 2463 ;
+> - le rendu brut des modèles D2 corrigés ;
+> - le PDF du DPAC de la fiche 27 produit par le serveur.
+>
+> L'extraction est identique, et la lecture aussi, aux conflits de cadrage près (écart du 28/09). Le PDF du serveur donne
+> 117 unités sur 141, et le test d'import PDF exige désormais 100 et aucune valeur fausse en haute ni en moyenne.
 
 ## B5 — Hors backend (pour mémoire)
 
