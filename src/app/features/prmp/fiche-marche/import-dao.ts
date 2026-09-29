@@ -3,18 +3,32 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 
 import { ApiError, corpsErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { TYPES_DOCX, validerFichier } from '../../../core/securite/fichiers-surs';
-import { ChampFiche, ConfianceImport, FicheMarche, ImportDaoResult, PropositionImport, ReponseCadrageImport, TypeMarche } from '../../../models';
+import { TYPES_DOCX, TYPES_PDF, validerFichier } from '../../../core/securite/fichiers-surs';
+import { CategorieDao, ChampFiche, ConfianceImport, FicheMarche, ImportDaoResult, PropositionImport, ReponseCadrageImport, TypeMarche } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone } from '../../../shared/ui/icone';
 import { QUESTIONS_CADRAGE } from './fiche-marche-modele';
 
 /**
- * Les formes dont le serveur sait lire le DAO : celles dont le document type est décrit (lot D). Miroir des modèles du
- * serveur (`modeles/dao/`) ; une forme absente d'ici qui deviendrait lisible le dirait par le 422 `MODELE_ABSENT`.
+ * Les formes dont le serveur sait lire le DAO : celles dont le document type est décrit (lot D). Miroir de
+ * `ModelesDao.COUVERTURES` du serveur ; une forme absente d'ici qui deviendrait lisible le dirait par le 422
+ * `MODELE_ABSENT`. ⚠️ 29/09 — lot D2 : quantité fixe et à commande, en plus du contrat-cadre.
  */
-export const FORMES_IMPORTABLES: readonly TypeMarche[] = ['CONTRAT_CADRE'];
+export const FORMES_IMPORTABLES: readonly TypeMarche[] = ['CONTRAT_CADRE', 'QUANTITE_FIXE', 'A_COMMANDE'];
+/**
+ * … et seulement pour les fournitures et services : les documents types des travaux et des prestations
+ * intellectuelles ne sont pas encore décrits. Sans catégorie, le serveur lit comme des fournitures ; l'écran aussi.
+ */
+export const CATEGORIES_IMPORTABLES: readonly CategorieDao[] = ['FOURNITURES_SERVICES'];
+
+/** Le DAO de cette fiche peut-il être importé (un modèle existe pour sa forme ET sa catégorie) ? */
+export function importPossible(typeMarche: TypeMarche | null, categorie: CategorieDao | null): boolean {
+  return !!typeMarche && FORMES_IMPORTABLES.includes(typeMarche) && CATEGORIES_IMPORTABLES.includes(categorie ?? 'FOURNITURES_SERVICES');
+}
+
+/** Types acceptés : le Word (.docx) et, depuis le 29/09 (serveur `LecturePdf`), le PDF « texte ». */
+const TYPES_IMPORT: readonly string[] = [...TYPES_DOCX, ...TYPES_PDF];
 
 /** Même valeur ? (le serveur rend les nombres typés, la fiche les garde parfois en texte). */
 export function memeValeur(a: unknown, b: unknown): boolean {
@@ -54,11 +68,12 @@ export class ImportDao {
   readonly idDmc = input.required<number>();
   readonly champs = input<ChampFiche[]>([]);
   readonly typeMarche = input<TypeMarche | null>(null);
+  readonly categorie = input<CategorieDao | null>(null);
   /** Fiche encore vierge : l'import est proposé en tête du cadrage ; sinon, un simple bouton « Réimporter ». */
   readonly vierge = input(false);
   readonly applique = output<FicheMarche>();
 
-  readonly importable = computed(() => !!this.typeMarche() && FORMES_IMPORTABLES.includes(this.typeMarche()!));
+  readonly importable = computed(() => importPossible(this.typeMarche(), this.categorie()));
   readonly lecture = signal(false);
   readonly erreur = signal<string | null>(null);
   readonly resultat = signal<ImportDaoResult | null>(null);
@@ -96,7 +111,9 @@ export class ImportDao {
     if (!brut) return;
     // Certains postes ne donnent pas de type à un .docx : le nom suffit alors, le serveur vérifie le contenu.
     const fichier = !brut.type && /\.docx$/i.test(brut.name) ? new File([brut], brut.name, { type: TYPES_DOCX[0] }) : brut;
-    const refus = validerFichier(fichier, TYPES_DOCX);
+    // Le message de format de `validerFichier` ne connaît pas ce couple : on le dit ici ; la taille, elle, reste la sienne.
+    if (!TYPES_IMPORT.includes(fichier.type)) { this.erreur.set('Format de fichier non accepté : document Word (.docx) ou PDF attendu.'); return; }
+    const refus = validerFichier(fichier, TYPES_IMPORT);
     if (refus) { this.erreur.set(refus); return; }
     this.erreur.set(null);
     this.lecture.set(true);

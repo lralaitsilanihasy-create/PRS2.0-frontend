@@ -264,7 +264,7 @@
               <!-- ⚠️ 28/09 — un DAO déjà rédigé pré-remplit la fiche : proposé en tête tant qu'elle est vierge,
                    un simple bouton ensuite. Rien n'est écrit sans la PRMP. -->
               @if (!figee() && !enLecture() && !ecritureBloquee() && idDmc(); as id) {
-                <app-import-dao [idDmc]="id" [champs]="referentiel().champs" [typeMarche]="fiche()?.typeMarche ?? null" [vierge]="ficheVierge()" (applique)="importApplique($event)" />
+                <app-import-dao [idDmc]="id" [champs]="referentiel().champs" [typeMarche]="fiche()?.typeMarche ?? null" [categorie]="fiche()?.categorie ?? null" [vierge]="ficheVierge()" (applique)="importApplique($event)" />
               }
               @if (allotiCorrige()) {
                 <div class="alert alert-warning" role="status">

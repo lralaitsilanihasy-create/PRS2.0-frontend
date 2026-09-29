@@ -4,8 +4,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 
 import { ToastService } from '../../../core/notifications/toast.service';
-import { ChampFiche, ImportDaoResult, PropositionImport, TypeMarche } from '../../../models';
-import { ImportDao, cocheeDOffice, memeValeur } from './import-dao';
+import { CategorieDao, ChampFiche, ImportDaoResult, PropositionImport, TypeMarche } from '../../../models';
+import { ImportDao, cocheeDOffice, importPossible, memeValeur } from './import-dao';
 
 const champ = (code: string, libelle: string): ChampFiche =>
   ({ code, bloc: code.slice(0, 3), rubrique: code.slice(0, 6), rang: 1, libelle, type: 'TEXTE', source: 'SAISIE', documentMaitre: 'DPAC', reprises: [], typesMarche: ['CONTRAT_CADRE'], condition: null, obligatoire: false }) as unknown as ChampFiche;
@@ -52,7 +52,7 @@ describe('Import du DAO — la revue avant d’écrire (demande du pilote du 28/
   };
   const caseDe = (libelle: string): HTMLInputElement => racine().querySelector(`input[type="checkbox"][aria-label="Retenir : ${libelle}"]`) as HTMLInputElement;
 
-  function monter(typeMarche: TypeMarche | null = 'CONTRAT_CADRE', vierge = true): void {
+  function monter(typeMarche: TypeMarche | null = 'CONTRAT_CADRE', vierge = true, categorie: CategorieDao | null = null): void {
     toast = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
     TestBed.configureTestingModule({ imports: [ImportDao], providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ToastService, useValue: toast }] });
     http = TestBed.inject(HttpTestingController);
@@ -60,6 +60,7 @@ describe('Import du DAO — la revue avant d’écrire (demande du pilote du 28/
     fixture.componentRef.setInput('idDmc', 27);
     fixture.componentRef.setInput('champs', CHAMPS);
     fixture.componentRef.setInput('typeMarche', typeMarche);
+    fixture.componentRef.setInput('categorie', categorie);
     fixture.componentRef.setInput('vierge', vierge);
     fixture.detectChanges();
   }
@@ -98,15 +99,37 @@ describe('Import du DAO — la revue avant d’écrire (demande du pilote du 28/
     TestBed.resetTestingModule();
     monter('CONTRAT_CADRE', false);
     expect(bouton('Réimporter un DAO')).toBeTruthy();
+    // ⚠️ 29/09 — lot D2 : les fournitures à quantité fixe s'importent aussi ; les travaux, non (pas de modèle).
     TestBed.resetTestingModule();
-    monter('QUANTITE_FIXE', true);
+    monter('QUANTITE_FIXE', true, 'FOURNITURES_SERVICES');
+    expect(racine().querySelector('input[type="file"]')).not.toBeNull();
+    TestBed.resetTestingModule();
+    monter('QUANTITE_FIXE', true, 'TRAVAUX');
     expect(racine().querySelector('input[type="file"]')).toBeNull();
   });
 
-  it('un fichier qui n’est pas un Word est refusé à l’écran, sans appel au serveur', () => {
+  it('règle d’ouverture : les trois formes décrites, en fournitures et services seulement (miroir de ModelesDao)', () => {
+    expect(importPossible('CONTRAT_CADRE', 'FOURNITURES_SERVICES')).toBe(true);
+    expect(importPossible('QUANTITE_FIXE', 'FOURNITURES_SERVICES')).toBe(true);
+    expect(importPossible('A_COMMANDE', null)).toBe(true);                        // sans catégorie : lu comme fournitures
+    expect(importPossible('CONTRAT_CADRE', 'TRAVAUX')).toBe(false);               // contrat-cadre de travaux : pas de modèle
+    expect(importPossible('QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES')).toBe(false);
+    expect(importPossible(null, 'FOURNITURES_SERVICES')).toBe(false);
+  });
+
+  it('le PDF est accepté depuis le 29/09 : il part au serveur comme un Word', () => {
     monter();
     choisir(new File(['%PDF-1.4'], 'DAO.pdf', { type: 'application/pdf' }));
-    expect(texte(racine().querySelector('.alert-danger'))).toContain('document Word (.docx) attendu');
+    expect(racine().querySelector('.alert-danger')).toBeNull();
+    const req = http.expectOne('/api/fiches-marche/27/import');
+    expect(((req.request.body as FormData).get('fichier') as File).name).toBe('DAO.pdf');
+    req.flush(RESULTAT);
+  });
+
+  it('un fichier ni Word ni PDF est refusé à l’écran, sans appel au serveur', () => {
+    monter();
+    choisir(new File(['x'], 'DAO.png', { type: 'image/png' }));
+    expect(texte(racine().querySelector('.alert-danger'))).toContain('document Word (.docx) ou PDF attendu');
     http.expectNone('/api/fiches-marche/27/import');
   });
 
