@@ -205,10 +205,11 @@
 // Choix de la ligne : largeurs fixes, la désignation seule se replie (les `td` du design system sont `nowrap`).
 .fm__lignes { table-layout: fixed; }
 .fm__c-ref, .fm__c-act { width: 13rem; }
+.fm__c-nat { width: 10rem; }
 .fm__c-mode { width: 13%; }
 .fm__c-mt { width: 12%; }
 .fm__lignes td { overflow: hidden; text-overflow: ellipsis; }
-.fm__lignes td:nth-child(2) { white-space: normal; }
+.fm__lignes td:nth-child(3) { white-space: normal; }
 .fm__obj { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; overflow-wrap: anywhere; }
 .fm__versions { font-size: 0.84rem; margin-bottom: 0.5rem; }
 .fm__versions th { text-align: left; letter-spacing: 0.06em; color: var(--n-500); padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--n-200); }

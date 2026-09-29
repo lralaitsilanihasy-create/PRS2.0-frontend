@@ -150,14 +150,16 @@
          lettres) — sans largeur fixe, elle poussait le mode, le montant et le BOUTON D'ACTION hors de l'écran. -->
     <div class="table-card">
       <table class="fm__lignes">
-        <colgroup><col class="fm__c-ref" /><col /><col class="fm__c-mode" /><col class="fm__c-mt" /><col class="fm__c-act" /></colgroup>
+        <colgroup><col class="fm__c-ref" /><col class="fm__c-nat" /><col /><col class="fm__c-mode" /><col class="fm__c-mt" /><col class="fm__c-act" /></colgroup>
         <thead>
-          <tr><th scope="col">Dossier de planification</th><th scope="col">Ligne de marché</th><th scope="col">Mode et forme</th><th scope="col" class="r">Montant estimatif</th><th scope="col" class="r">Action</th></tr>
+          <tr><th scope="col">Dossier de planification</th><th scope="col">Nature</th><th scope="col">Objet du marché</th><th scope="col">Mode et forme</th><th scope="col" class="r">Montant estimatif</th><th scope="col" class="r">Action</th></tr>
         </thead>
         <tbody>
           @for (l of eligiblesAffichees(); track l.idDetail) {
             <tr>
               <td class="cnm-mono">{{ l.refeDossier || ('#' + l.idDossier) }}</td>
+              <!-- Nature de la ligne telle que le plan la porte (pilote 29/09) — servie par /api/dmcs/eligibles. -->
+              <td>{{ l.libelleNature || '—' }}</td>
               <td><span class="fm__obj" appTitreSiTronque>{{ l.designationMarche }}</span></td>
               <td class="fm__mode">
                 <span>{{ l.libelleMode || l.idMode || '—' }}</span>
@@ -177,7 +179,7 @@
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="5" class="fm__vide">{{ filtreDossier() != null ? 'Aucune ligne éligible dans ce plan de passation' : 'Aucune ligne de plan de passation éligible' }} : il faut un PPM au PV signé, dont le mode de passation est un appel d'offres, sans DAO déjà préparé.</td></tr>
+            <tr><td colspan="6" class="fm__vide">{{ filtreDossier() != null ? 'Aucune ligne éligible dans ce plan de passation' : 'Aucune ligne de plan de passation éligible' }} : il faut un PPM au PV signé, dont le mode de passation est un appel d'offres, sans DAO déjà préparé.</td></tr>
           }
         </tbody>
       </table>

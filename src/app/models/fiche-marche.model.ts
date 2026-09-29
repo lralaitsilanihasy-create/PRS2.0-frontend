@@ -344,6 +344,12 @@ export interface LigneEligible {
   categorie?: CategorieDao | null;
   /** Lot 5 — cette catégorie est-elle outillée ? Jumelle de `formeOutillee`, sur l'autre axe. */
   categorieOutillee?: boolean | null;
+  /**
+   * ⚠️ Demande du 29/09 (colonne « Nature » de la liste) — la nature de la ligne (`t_nature`), dont la catégorie est
+   * déduite : « Services » et « Fournitures » sont deux natures d'une même catégorie. Absente tant que non servie.
+   */
+  idNature?: number | null;
+  libelleNature?: string | null;
 }
 
 /** `DmcDto` (existant, lot 3a) — un DMC par ligne de marché. */
