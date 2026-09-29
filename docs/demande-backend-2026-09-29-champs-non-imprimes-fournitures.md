@@ -138,6 +138,29 @@ existantes. La recopie des deux modèles suffit.
 Décision 2 : les 16 champs de la remise électronique (G4 de l'analyse) rejoignent la question déjà posée au juriste sur
 la clause 7.3. Rien à faire côté backend tant qu'il n'a pas répondu.
 
+## B6 — Complément du 29/09 : les deux avertissements (arbitrage du pilote)
+
+Suite de l'encadré §B1 : sur les quatre champs gardés, le pilote a tranché les deux qui ne dépendent pas du juriste
+(« recommandations validées », 29/09).
+
+1. **B05-TP-03 reste, mais devient facultatif** (`obligatoire = non`). C'est la seule base de `GARANTIE_TAUX` (le
+   contrôle n'existe pas en quantité fixe, faute de rôle `MAXIMUM`). Il n'est imprimé nulle part : comme pour les champs
+   non imprimés du contrat-cadre (Q2), il ne doit pas bloquer la validation. Sans valeur, l'avertissement n'est
+   simplement pas évalué (comportement actuel de `garantieTaux`).
+   Libellé : « Montant maximum annuel **estimé** du marché (Ariary) ». C'est l'estimation de l'acheteur, par lot, qui
+   sert à apprécier la garantie ; elle ne se confond pas avec le montant maximum que le candidat porte à l'acte
+   d'engagement.
+   *Correction de l'analyse front* : B05-TP-03 était classé en G1 (« donnée du candidat ») à tort.
+2. **B08-PA-08 est retiré** (`actif = non`), et l'avertissement `DELAI_PAIEMENT_75` avec lui pour les fournitures.
+   Aucun document des fournitures n'imprime ce délai, que le CCAG fixe : un avertissement sur une valeur qu'aucun
+   document ne porte ne protège rien. Le contrat-cadre n'est pas touché : il garde **B08-FP-03**, imprimé dans l'AE-CC,
+   avec le même avertissement.
+
+Attendus : script du référentiel pour DBPRS20 et test (B05-TP-03 facultatif ; fiche à commande sans B05-TP-03 validable ;
+B08-PA-08 non servi aux fournitures, B08-FP-03 toujours servi au contrat-cadre).
+
+Restent en attente du juriste : B04-OP-02 et B04-OP-03, avec les 16 champs de la remise électronique.
+
 ## Ce que le backend rend
 
 Commit(s) qui referment B1 à B3, script du référentiel pour DBPRS20, tests (le CCAP à commande avec et sans B09-OM-02,

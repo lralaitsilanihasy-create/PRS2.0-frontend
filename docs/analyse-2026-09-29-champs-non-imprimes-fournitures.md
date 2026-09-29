@@ -117,6 +117,13 @@ recopie par le backend à faire **avec** les décisions ci-dessus, en une seule 
 > - Les 29 codes retirés n'ont pas de `categories` : le retrait est demandé **pour les fournitures seulement**, et après
 >   vérification qu'aucune règle serveur ne les lit (B04-OP-02 est calculé en remise électronique).
 
+> ⚠️ **Livraison et second arbitrage, 2026-09-29.** Le backend a retiré 25 champs sur 29 (f7d27df). Quatre restent,
+> parce qu'une règle serveur les lit : B04-OP-02 et B04-OP-03 (calculés en remise électronique, à trancher avec le
+> juriste), B05-TP-03 (base de `GARANTIE_TAUX`) et B08-PA-08 (`DELAI_PAIEMENT_75`). Le pilote a validé :
+> **B05-TP-03 gardé, facultatif, libellé « estimé »**, et **B08-PA-08 retiré** (demande, §B6). **Correction** :
+> B05-TP-03 n'est pas une donnée du candidat (G1) mais l'estimation de l'acheteur, par lot, qui sert à apprécier la
+> garantie de soumission.
+
 ## Décisions attendues du pilote
 
 1. G1 et G2 (21 champs) : retrait de la fiche — **oui / non**.
