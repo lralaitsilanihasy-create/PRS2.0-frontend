@@ -1,0 +1,1631 @@
+{
+ "fichier": "CPS-PI.docx",
+ "sigle": "CPS-PI",
+ "source": "pi-cps",
+ "titre": "MARCHÉ PUBLIC DE PRESTATIONS INTELLECTUELLES",
+ "conditions": {
+  "PROJET": "B02-OP-01 renseigne",
+  "SANS-PROJET": "B02-OP-01 vide",
+  "GROUPEMENT-SOLIDAIRE": "groupement = OUI et formeGroupement = SOLIDAIRE_OBLIGATOIRE",
+  "GROUPEMENT-LIBRE": "groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE",
+  "SECURITE-NON": "B09-MS-01 != OUI",
+  "SECURITE-OUI": "B09-MS-01 = OUI",
+  "ASSISTANCE-NON": "B09-AI-01 != OUI",
+  "ASSISTANCE-OUI": "B09-AI-01 = OUI",
+  "DEVISE": "B05-MP-01 renseigne",
+  "FERME": "prixRevisable = NON",
+  "REVISABLE": "prixRevisable = OUI",
+  "SANS-AVANCE": "avance = NON",
+  "AVANCE": "avance = OUI",
+  "AVANCE-ARIARY": "avance = OUI et B05-MP-01 vide",
+  "AVANCE-DEVISES": "avance = OUI et B05-MP-01 renseigne",
+  "REGLEMENT-COURT": "B08-RP-01 renseigne",
+  "REGLEMENT-TEMPS": "B08-RP-02 renseigne",
+  "REGLEMENT-ETAPES": "B08-RP-03 renseigne",
+  "MATERIEL-NON": "B09-MF-01 != OUI",
+  "MATERIEL-OUI": "B09-MF-01 = OUI",
+  "RESTITUTION-BANCAIRE": "B09-MF-01 = OUI et B09-MF-02 = Garantie bancaire",
+  "RESTITUTION-CAUTION": "B09-MF-01 = OUI et B09-MF-02 contient caution",
+  "RESTITUTION-CHEQUE": "B09-MF-01 = OUI et B09-MF-02 contient chèque",
+  "FOURNITURE-MATERIEL": "B09-FC-01 renseigne",
+  "DEPART-OS": "B09-DP-01 renseigne",
+  "PENALITES-NON": "penalites = NON",
+  "PENALITES-OUI": "penalites != NON",
+  "PENALITES-PLAFOND": "penalites = PLAFOND_DIFFERENT",
+  "VERIFICATION-DELAI": "B09-OP-02 renseigne",
+  "INDEMNITE": "B10-IN-01 renseigne"
+ },
+ "blocs": [
+  {
+   "type": "centre",
+   "texte": "MARCHÉ PUBLIC"
+  },
+  {
+   "type": "centre",
+   "texte": "DE PRESTATIONS INTELLECTUELLES"
+  },
+  {
+   "type": "centre",
+   "texte": "CAHIER DES PRESCRIPTIONS SPECIALES"
+  },
+  {
+   "type": "para",
+   "texte": "AUTORITE CONTRACTANTE :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-CL-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "MARCHÉ :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "Marché passé selon la procédure"
+  },
+  {
+   "type": "para",
+   "texte": "spéciale régie par l'article 26 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "PERSONNE RESPONSABLE DES MARCHES PUBLICS (PRMP) ou son DELEGUE:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-CL-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le présent Cahier des Prescriptions Spéciales comprend :"
+  },
+  {
+   "type": "para",
+   "texte": "Le Cahier des Clauses Administratives Particulières (CCAP),"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Exemple de formule de révision de prix"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Modèle de garantie bancaire de restitution d'avance"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Modèle de caution de restitution d'avance"
+  },
+  {
+   "type": "para",
+   "texte": "Les Termes de Références."
+  },
+  {
+   "type": "para",
+   "texte": "Le Cahier des Prescriptions Spéciales ne peut être ni modifié ni complété par les candidats qui doivent souscrire à ses dispositions."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "CAHIER DES CLAUSES ADMINISTRATIVES PARTICULIERES (CCAP):"
+  },
+  {
+   "type": "para",
+   "texte": "Le CCAP est destiné à compléter les dispositions du Cahier des Clauses Administratives Générales (CCAG) afin de préciser les obligations contractuelles reflétant les circonstances auxquelles sont assujettis le Client et les prestations concernés. Les candidats aux marchés doivent souscrire à ses dispositions sans le modifier ni le compléter."
+  },
+  {
+   "type": "para",
+   "texte": "Les dispositions du présent Cahier des Clauses Administratives Particulières (CCAP) précisent le CCAG en le complétant ou en dérogeant à ses dispositions. Elles suivent l'ordre et la numérotation des articles du CCAG. En cas de contradiction entre les deux documents, les clauses ci-après prévalent sur celles du CCAG."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 1 - Objet du marché - Intervenants - langue (CCAG Article 2)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "1.1 Objet du marché -"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PROJET}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les stipulations du présent Cahier des Clauses Administratives Particulières (CCAP) concernent les prestations à effectuer dans le cadre de {{B02-OP-01}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PROJET}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-PROJET}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les stipulations du présent Cahier des Clauses Administratives Particulières (CCAP) concernent les prestations à effectuer."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-PROJET}}"
+  },
+  {
+   "type": "para",
+   "texte": "L'objet du présent marché de prestations intellectuelles porte sur:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-OP-02}}."
+  },
+  {
+   "type": "para",
+   "texte": "La description détaillée des prestations attendues du Consultant est donnée dans les Termes de Référence inclus dans le Cahier des Prescriptions Spéciales (CPS)."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "1.2.- Client"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-CL-01}}."
+  },
+  {
+   "type": "para",
+   "texte": "Représentant de la PRMP:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-CL-02}}."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 2 - Notifications au Consultant (CCAG Article 4.3)"
+  },
+  {
+   "type": "para",
+   "texte": "Aux fins d'envoi ou de remise des notifications du client, le Consultant, s'il n'est pas déjà domicilié, devra élire domicile à :"
+  },
+  {
+   "type": "para",
+   "texte": "<mentionner la ville ou le lieu choisi par le Client, tel que la ville où les prestations sont principalement exécutées. Si le Consultant ne dispose pas d'une adresse dans la ville ou le lieu précités les notifications seront valablement effectuées à la mairie du lieu principal d'exécute° des prestations >"
+  },
+  {
+   "type": "para",
+   "texte": "A défaut pour le Consultant d'élire domicile à proximité du lieu d’exécution des prestations et de faire connaître l'adresse de ce domicile à la Personne Responsable des Marchés Publics et/ou au maître d'œuvre, toutes les notifications qui se rapportent au marché seront valablement effectuées à l'adresse mentionnée ci-après:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-NC-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 3 - Groupements (CCAG Article 5.1)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GROUPEMENT-SOLIDAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les Consultants groupés seront considérés comme solidaires, chacun des membres du groupement étant engagé pour la totalité du marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GROUPEMENT-SOLIDAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GROUPEMENT-LIBRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les Consultants groupés seront considérés comme solidaires, chacun des membres du groupement étant engagé pour la totalité du marché."
+  },
+  {
+   "type": "para",
+   "texte": "Les Consultants groupés seront considérés comme conjoints chacun des Consultants étant responsable de la réalisation du ou des lots qui lui sont assignés. Le mandataire des membres du groupement désigné dans l'Acte d'Engagement est solidaire de chacun des Consultants groupés dans les obligations contractuelles de ceux-ci à l'égard du Client."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GROUPEMENT-LIBRE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 4 - Documents contractuels (CCAG Article 6.1)"
+  },
+  {
+   "type": "para",
+   "texte": "Constituent des documents contractuels en sus des documents prévus par les CCAG :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-DK-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 5 - Modifications et avenants (CCAG Article6.2.2)"
+  },
+  {
+   "type": "para",
+   "texte": "Les éventuelles demandes d'ajustement du prix ou des délais d'achèvement du Consultant à la suite d'un ordre de modification du Client doivent être notifiés au client dans un délai de {{B09-MV-01}} jours suivants la date de réception de l'ordre de notification."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 6 - Mesures de sécurité ou de protection du secret (CCAG Article 7.2)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SECURITE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SECURITE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SECURITE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les travaux, objet du présent Marché, sont à exécuter dans un lieu où des mesures de sécurité ou de protection du secret s'appliquent. Le Consultant doit en conséquence observer les dispositions :"
+  },
+  {
+   "type": "para",
+   "texte": "Soit : que le Maître d'œuvre communiquera lors de la notification de l'attribution du Marché,"
+  },
+  {
+   "type": "para",
+   "texte": "Soit : mentionnées en Annexe <n°> au présent CCAP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SECURITE-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 7 : Assistance du client ( CCAG article 8)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ASSISTANCE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ASSISTANCE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ASSISTANCE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le Client fournit les intrants suivants : {{B09-AI-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ASSISTANCE-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 8 - Prix du Marché (CCAG article 9)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "8.1. Monnaie (CCAG article 10.1)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DEVISE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix du Marché peuvent comporter un part exprimé et payable en devises convertibles, correspondant à des dépenses que le Consultant justifie engager hors de la République de Madagascar. Les prix en devises seront exprimés en {{B05-MP-01}}. Ils seront réglés en utilisant le taux de change utilisé sera le taux publié par la Banque Centrale de Madagascar le quinzième jour précédant la date limite de remise des offres."
+  },
+  {
+   "type": "para",
+   "texte": "Les montants payés en devises devront être justifiés sur les formulaires de présentations des honoraires, frais remboursables et frais divers selon le cas. Ces montants devront faire l'objet d'une convention de paiement signé entre le Ministre chargé des finances et le Consultant à laquelle les tableaux justificatifs des sommes dues en devises seront joints."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DEVISE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "8.2. Variations dans les prix (CCAG article 10.4)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FERME}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix sont fermes et non révisables."
+  },
+  {
+   "type": "para",
+   "texte": "Ils sont actualisés pour tenir compte du délai entre la date limite de remise des propositions et la date de notification du marché, selon la formule suivante :"
+  },
+  {
+   "type": "para",
+   "texte": "PI = Po (In / Io)"
+  },
+  {
+   "type": "para",
+   "texte": "Formule selon laquelle :"
+  },
+  {
+   "type": "para",
+   "texte": "PI est le nouveau prix actualisé ;"
+  },
+  {
+   "type": "para",
+   "texte": "Po est le prix de base du règlement des prestations figurant à l'acte d'engagement."
+  },
+  {
+   "type": "para",
+   "texte": "In est la valeur de l'indice, défini pour chaque lot, du mois de la date de la notification du marché l'acte portant début d'exécution des prestations."
+  },
+  {
+   "type": "para",
+   "texte": "Io est la valeur de ce même indice correspondant au quinzième (15ème) jour précédent la date limite de la remise des propositions"
+  },
+  {
+   "type": "para",
+   "texte": "."
+  },
+  {
+   "type": "para",
+   "texte": "Le (les) indice(s) applicables sont:"
+  },
+  {
+   "type": "para",
+   "texte": "<indiquer la nature des indices et les sources où ils peuvent être trouvés>"
+  },
+  {
+   "type": "para",
+   "texte": "Les coefficients d’actualisation seront arrondis au millième supérieur."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FERME}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REVISABLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix seront révisés conformément aux dispositions de l’Annexe du présent CCAP \"Formule de révision de prix\"."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REVISABLE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 9. - Avance forfaitaire (CCAG Article 10.1)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant de l'avance forfaitaire est de:"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE-ARIARY}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-AI-03.chiffres}} % du montant total des travaux à exécuter"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE-ARIARY}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE-DEVISES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-AI-03.chiffres}} % du montant en monnaie nationale des prestations à exécuter, et"
+  },
+  {
+   "type": "para",
+   "texte": "<pourcentage> du montant en devises des prestations à exécuter."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE-DEVISES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Si le Consultant choisit de recevoir l'avance forfaitaire il doit joindre à la demande de paiement de cette avance une garantie bancaire à première demande ou une caution conforme au modèle annexé au présent CCAP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 10 - Modalités de règlement des comptes (CCAG Article 10.2)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REGLEMENT-COURT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-RP-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REGLEMENT-COURT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REGLEMENT-TEMPS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-RP-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REGLEMENT-TEMPS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REGLEMENT-ETAPES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-RP-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REGLEMENT-ETAPES}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 11 - Intérêts moratoires dus au Consultant (CCAG Article 10.7)"
+  },
+  {
+   "type": "para",
+   "texte": "Taux des intérêts moratoires: taux directeur de la Banque Centrale de Madagascar en vigueur à la date à laquelle les intérêts moratoires auront commencé à courir, augmenté de {{B08-IP-01.chiffres}} point(s)."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 12 – Assurance (CCAG Article 12)"
+  },
+  {
+   "type": "para",
+   "texte": "Les polices d'assurance suivantes sont requises au titre du présent Marché pour les montants minimum indiqués ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "Assurance automobile au tiers pour les véhicules utilisés par le Consultant ou son personnel ou par les sous-traitants et leur personnel, pour une couverture minimum de {{B09-AP-01}};"
+  },
+  {
+   "type": "para",
+   "texte": "Assurance des risques causés au tiers pour une couverture minimum de <insérer le montant> ;"
+  },
+  {
+   "type": "para",
+   "texte": "Assurance professionnelle, pour une couverture minimum de <insérer le montant> par sinistre et une couverture annuelle de <insérer le montant> ;"
+  },
+  {
+   "type": "para",
+   "texte": "Assurance patronale et contre les accidents du travail couvrant le personnel du Consultant et de tous les sous-traitants, conformément aux dispositions légales en vigueur ainsi que, pour le personnel, toute autre assurance, notamment assurance vie, maladie, accident, voyage; et"
+  },
+  {
+   "type": "para",
+   "texte": "Assurance contre les pertes ou dommages subis par (i) les équipements financés en totalité ou en partie au titre du présent Contrat, (ii) les biens utilisés par le Consultant pour la fourniture des prestations, et (iii) les documents préparés par le Consultant pour l'exécution des prestations."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 13 –Matériel confié par le Client au Consultant (CCAG Article 13)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MATERIEL-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MATERIEL-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MATERIEL-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Au titre de garantie de restitution du matériel confié par le Client au Consultant, conformément aux Termes de Référence, le Consultant devra produire::"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MATERIEL-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RESTITUTION-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "- une garantie bancaire à première demande émanant d'une banque établie en République de Madagascar conformément au modèle figurant en Annexe au présent CCAP;"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RESTITUTION-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RESTITUTION-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "-un engagement de caution personnelle et solidaire conforme au modèle figurant en Annexe au présent CCAP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RESTITUTION-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RESTITUTION-CHEQUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "- un cautionnement en numéraire sous forme d'un chèque de banque établi à l'ordre de <à préciser>."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RESTITUTION-CHEQUE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 14 – Fourniture de matériel par le Consultant (CCAG Article 14)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FOURNITURE-MATERIEL}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les frais de stockage chez le Consultant et de livraison des matériels cédés par le Consultant au client sont compris dans les prix."
+  },
+  {
+   "type": "para",
+   "texte": "<soit> :"
+  },
+  {
+   "type": "para",
+   "texte": "Les éventuels frais de stockage chez le Consultant des matériels cédés par le Consultant sont à la charge du client."
+  },
+  {
+   "type": "para",
+   "texte": "Les matériels fabriquées ou achetées en République de Madagascar seront livrées EXW, CIF … <préciser suivant le cas soit:> sortie usine, fabrique, magasin d’exposition, entrepôt ou magasin de ventes."
+  },
+  {
+   "type": "para",
+   "texte": "Les matériels importés seront livrés :"
+  },
+  {
+   "type": "para",
+   "texte": "<soit> CIP <insérer le lieu de destination finale>,"
+  },
+  {
+   "type": "para",
+   "texte": "<soit> CIF port de <insérer le nom du port>;"
+  },
+  {
+   "type": "para",
+   "texte": "Le Consultant doit fournir les documents suivants :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-FC-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FOURNITURE-MATERIEL}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 15 – Délai d'exécution (CCAG Article 15)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DEPART-OS}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai d'exécution du Marché fixé par les Termes de Références part de l'ordre de service de commencement des prestations>."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DEPART-OS}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 16 – Pénalités et retenues (CCAG Article 16)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les pénalités journalières prévues par l'article 16 du CCAG ne s'appliquent pas."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les pénalités journalières applicables sont fixées à :"
+  },
+  {
+   "type": "para",
+   "texte": "<millièmes> du montant du Marché ou de la tranche considérée dans la limite de <pourcentage> du montant global du Marché ou de la tranche considérée."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-PLAFOND}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant des pénalités est limité à <pourcentage> du prix global du marché, y compris ses avenants éventuels."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-PLAFOND}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 17 – Utilisation des résultats (CCAG Article 19 à 26)"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-UR-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 18– Opération de vérification (CCAG Article 27)"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-OP-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:VERIFICATION-DELAI}}"
+  },
+  {
+   "type": "para",
+   "texte": "La commission de réception effectuera les opérations de vérification mentionnées ci-dessus dans un délai de {{B09-OP-02}} jours."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:VERIFICATION-DELAI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 19– Indemnisation en cas de résiliation du fait du client (CCAG Article 30.2)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:INDEMNITE}}"
+  },
+  {
+   "type": "para",
+   "texte": "L'indemnité forfaitaire éventuellement applicable en cas de résiliation du marché du fait du client s'élèvera à {{B10-IN-01.chiffres}} % du montant hors TVA et non révisé de la partie non exécutée du marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:INDEMNITE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 20 - Procédure contentieuse (CCAG Article 34.4)"
+  },
+  {
+   "type": "para",
+   "texte": "{{B10-PP-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 21 - Dérogations aux documents généraux"
+  },
+  {
+   "type": "para",
+   "texte": "Les dérogations explicitées dans les articles désignées ci-après du CCAP et de ses annexes sont apportées aux articles suivants du Cahier des Clauses Administratives Générales (CCAG)."
+  },
+  {
+   "type": "table",
+   "texte": "2"
+  },
+  {
+   "type": "ligne",
+   "texte": "Article des CCAG auquel\u001eil est dérogé\u001fArticle du CCAP"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "{{B10-DP-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REVISABLE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Exemple de formule de révision des prix"
+  },
+  {
+   "type": "para",
+   "texte": "[Les paiements des rémunérations effectuées en [devises et/ou] en [monnaie locale] seront révisé de la manière indiquée ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "La rémunération payée en devises aux taux indiqués à l’Annexe < > à l'Acte d'Engagement sera ajustée tous les douze mois (le premier ajustement s’appliquant à la rémunération du treizième mois de l’année suivant la date du Contrat) par la formule ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "{ou Rf= Rfo X [ 0,15+0,85 If/Ifo] }"
+  },
+  {
+   "type": "para",
+   "texte": "Dans laquelle Rf est la rémunération ajustée, Rfo est la rémunération payable sur la base des taux indiqués à l’Annexe susvisée pour la rémunération payable en devises, If est la valeur de l’indice officiel des salaires dans le pays dont la devise est la monnaie pour le mois considéré, et Ifo la valeur du même indice pour le mois de la date du Contrat."
+  },
+  {
+   "type": "para",
+   "texte": "La rémunération payée en Ariary aux taux indiqués à l’Annexe < > à l'Acte d'Engagement sera ajustée tous les (nombre) mois (le premier ajustement s’appliquant à la rémunération du trezième (13ème) mois de l’année civile suivant la date du Marché) par la formule ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "{ou Rl= Rlo X [ 0,15+0,85 Il/Ilo] }}"
+  },
+  {
+   "type": "para",
+   "texte": "Dans laquelle Rl est la rémunération ajustée, Rlo la rémunération payable sur la base des taux indiqués à l’Annexe susvisée pour la rémunération payable en monnaie locale, Il est l’indice de variation des salaires à Madagascar pour le premier mois de la période pour laquelle l’ajustement est censé être effectué, et Ilo ce même indice officiel de variation des salaires à Madagascar pour le mois de la date d'établissement des prix, soit le quinzième jour précédant la date fixée pour la remise des propositions."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REVISABLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de garantie bancaire de restitution d'avance"
+  },
+  {
+   "type": "para",
+   "texte": "ATTENDU QUE"
+  },
+  {
+   "type": "para",
+   "texte": "<nom du Titulaire>"
+  },
+  {
+   "type": "para",
+   "texte": "ayant son siège <adresse complète du Titulaire>"
+  },
+  {
+   "type": "para",
+   "texte": "(ci-après dénommé « le Titulaire ») a conclu un marché n° <intitulé ou objet résumé du marché> (ci-après dénommé « le Marché ») avec <dénomination de l’autorité contractante> ( ci-après dénommée « le Bénéficiaire »)."
+  },
+  {
+   "type": "para",
+   "texte": "En vertu des dispositions du Marché, le Titulaire doit remettre au Bénéficiaire une garantie de restitution d’avance."
+  },
+  {
+   "type": "para",
+   "texte": "EN CONSEQUENCE, Nous <nom de la Banque>, ayant notre siège social à <adresse du siège social> (ci-après dénommée « le Garant »),"
+  },
+  {
+   "type": "para",
+   "texte": "Nous nous engageons par la présente, sans réserve et irrévocablement, à payer au Bénéficiaire, à la première demande écrite du Bénéficiaire adressée par courrier avec accusé de réception, reçue au plus tard à la date d’expiration mentionnée ci-après, toutes sommes d’argent dans la limite de <insérer le montant en chiffres et en lettres de la garantie> correspondant au montant de l’avance devant être réglé au Titulaire diminué du montant remboursé par le Titulaire <Le Garant doit insérer un montant représentant le montant de l’avance prévue par le Marché, le cas échéant dans la devise de règlement mentionnée au marché>."
+  },
+  {
+   "type": "para",
+   "texte": "Toute demande en paiement du Bénéficiaire doit être accompagnée d’une déclaration attestant que le Titulaire ne se conforme pas aux conditions du Marché concernant l’utilisation de l’avance."
+  },
+  {
+   "type": "para",
+   "texte": "Toute demande et paiement au titre de la présente garantie est conditionnelle à la réception par le Titulaire de l’avance mentionnée plus haut à son compte portant le numéro <insérer le numéro du compte bancaire> ouvert auprès de <insérer les noms et adresse de la banque>."
+  },
+  {
+   "type": "para",
+   "texte": "La présente garantie sera automatiquement réduite à due concurrence au fur et à mesure de l’imputation de l’avance sur les acomptes et restera valable à partir de la date de réception de l’avance jusqu’à ce que le Bénéficiaire reçoive du Titulaire la totalité du remboursement du même montant."
+  },
+  {
+   "type": "para",
+   "texte": "La présente garantie est régie par la loi malgache. Tout différend relatif à son interprétation ou à son exécution sera soumis aux tribunaux compétents de la République de Madagascar."
+  },
+  {
+   "type": "para",
+   "texte": "SIGNATURE et authentification du signataire __________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Nom de la Banque _________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse _________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Date _____________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Cachet"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de Caution Personnelle et solidaire de restitution d’avance"
+  },
+  {
+   "type": "para",
+   "texte": "Nous soussignés < indiquer la dénomination sociale de l’organisme de caution, le siège social >"
+  },
+  {
+   "type": "para",
+   "texte": "déclarons nous porter caution personnelle et solidaire de <indiquer le nom et l’adresse complète du Titulaire du Marché> (ci-après dénommé « le Titulaire ») pour le montant du cautionnement auquel le Titulaire est assujetti, en qualité de Titulaire du Marché n° <indiquer le numéro du Marché> (ci-après dénommé « le Marché ») conclu avec <dénomination de l’autorité contractante> ( ci-après dénommée « le Bénéficiaire ») en date du <indiquer la date de conclusion du Marché> et portant sur l’exécution de <intitulé ou objet résumé du marché>,"
+  },
+  {
+   "type": "para",
+   "texte": "ledit cautionnement s’élève à <indiquer le montant en chiffres et en lettres de l’avance prévue par le marché>,"
+  },
+  {
+   "type": "para",
+   "texte": "nous engageons à effectuer, sur demande de paiement du Bénéficiaire adressée par courrier avec accusé de réception, reçue au plus tard à la date d’expiration mentionnée ci-après, sans pouvoir différer le paiement ou soulever de contestation pour quelque motif que ce soit, jusqu’à concurrence de la somme garantie ci-dessus, le versement des sommes dont le Titulaire serait reconnu débiteur au du fait d'une utilisation de l'avance non conforme aux dispositions du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "Le présent engagement sera automatiquement réduit à due concurrence au fur et à mesure de l’imputation de l’avance sur les acomptes et restera valable à partir de la date de réception de l’avance jusqu’à ce que le Bénéficiaire reçoive du Titulaire la totalité du remboursement du même montant."
+  },
+  {
+   "type": "para",
+   "texte": "Le présent engagement est régie par la loi malgache. Tout différend relatif à son interprétation ou à son exécution sera soumis aux tribunaux compétents de la République de Madagascar."
+  },
+  {
+   "type": "para",
+   "texte": "Fait à _________ le __________"
+  },
+  {
+   "type": "para",
+   "texte": "SIGNATURE et authentification du signataire __________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Nom de l’organisme _______________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse _________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Date _____________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Cachet"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Termes de référence"
+  }
+ ],
+ "trace": [
+  {
+   "ligne": "37.0.0",
+   "genre": "jeton",
+   "source": "<indiquer le nom et l'adresse>",
+   "par": "{{B02-CL-01}}"
+  },
+  {
+   "ligne": "46.0.0",
+   "genre": "jeton",
+   "source": "<indiquer les références et l'intitulé principal du Marché,",
+   "par": "{{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "ligne": "62.0.0",
+   "genre": "jeton",
+   "source": "<Insérer le nom>",
+   "par": "{{B02-CL-02}}"
+  },
+  {
+   "ligne": "96.0.0",
+   "genre": "retire",
+   "source": "[note:1]",
+   "par": ""
+  },
+  {
+   "ligne": "152.0.0",
+   "genre": "jeton",
+   "source": "<préciser le nom de l’opération, le cas échéant>",
+   "par": "{{B02-OP-01}}"
+  },
+  {
+   "ligne": "152.0.0",
+   "genre": "retire",
+   "source": "dans le cadre de <préciser le nom de l’opération, le cas échéant>",
+   "par": ""
+  },
+  {
+   "ligne": "155.0.0",
+   "genre": "jeton",
+   "source": "<indiquer l'objet et le lieu d'exécution des travaux >",
+   "par": "{{B02-OP-02}}"
+  },
+  {
+   "ligne": "163.0.0",
+   "genre": "jeton",
+   "source": "<Préciser les nom et coordonnées de l'Autorité Contractante>",
+   "par": "{{B02-CL-01}}"
+  },
+  {
+   "ligne": "166.0.0",
+   "genre": "jeton",
+   "source": "<Préciser les nom et coordonnées>",
+   "par": "{{B02-CL-02}}"
+  },
+  {
+   "ligne": "191.0.0",
+   "genre": "jeton",
+   "source": "<Enumérer, d'une partie, les documents tels qu'études et autres documents spécifiques au Marché qu'il est souhaitable de rendre contractuel en raison notamment de leur caractère essentiel à la définition de l'objet, par exemple :",
+   "par": "{{B09-DK-01}}"
+  },
+  {
+   "ligne": "197.0.0",
+   "genre": "jeton",
+   "source": "<nombre de jours>",
+   "par": "{{B09-MV-01}}"
+  },
+  {
+   "ligne": "215.0.0",
+   "genre": "jeton",
+   "source": "<énumérer les intrants à fournir par le client>",
+   "par": "{{B09-AI-02}}"
+  },
+  {
+   "ligne": "228.0.0",
+   "genre": "jeton",
+   "source": "<nom de la devise convertible>",
+   "par": "{{B05-MP-01}}"
+  },
+  {
+   "ligne": "264.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage>",
+   "par": "{{B08-AI-03.chiffres}} %"
+  },
+  {
+   "ligne": "267.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage>",
+   "par": "{{B08-AI-03.chiffres}} %"
+  },
+  {
+   "ligne": "298.0.0",
+   "genre": "jeton",
+   "source": "< au moins un>",
+   "par": "{{B08-IP-01.chiffres}}"
+  },
+  {
+   "ligne": "306.0.0",
+   "genre": "jeton",
+   "source": "<insérer le montant >",
+   "par": "{{B09-AP-01}}"
+  },
+  {
+   "ligne": "349.0.0",
+   "genre": "jeton",
+   "source": "<Préciser les documents à fournir par le Fournisseur, par exemple>",
+   "par": "{{B09-FC-01}}"
+  },
+  {
+   "ligne": "378.0.0",
+   "genre": "jeton",
+   "source": "<Introduire ici les dispositions spécifiques au marché considéré concernant la cession ou les droits d'utilisation des droits de propriété industrielle - brevet, dessins et modèles - et de propriété intellectuelle sur les écrits et logiciels>.",
+   "par": "{{B09-UR-01}}"
+  },
+  {
+   "ligne": "382.0.0",
+   "genre": "jeton",
+   "source": "<indiquer les modalités de vérification ou d'agrément des résultats des prestations ou renvoyer aux Termes de Référence, par exemple :>",
+   "par": "{{B09-OP-01}}"
+  },
+  {
+   "ligne": "388.0.0",
+   "genre": "jeton",
+   "source": "<indiquer le nombre de jours:>",
+   "par": "{{B09-OP-02}}"
+  },
+  {
+   "ligne": "394.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage>",
+   "par": "{{B10-IN-01.chiffres}} %"
+  }
+ ],
+ "retraits": [
+  {
+   "ligne": "19.0.0",
+   "texte": "2.2. CAHIER DES PRESCRIPTIONS SPECIALES",
+   "raison": "titre de partie du dossier type"
+  },
+  {
+   "ligne": "97.0.0",
+   "texte": "[note 1] Le document ci-après (CCAP type) a pour but de servir de cadre à l'établissement du CCAP à inclure dans le Dossier de consultation. Des instructions pour leur rédaction sont fournies dans les notes en italique et entre crochets. La PRMP complète le CCAP à l'aide de ces instructions, en insérant le texte approprié et en utilisant les exemples fournis ou un texte similaire, adapté aux besoins du Marché. Les textes en italiques doivent ensuite être supprimés.",
+   "raison": "note de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "106.0.0",
+   "texte": "TABLE DES MATIERES",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "108.0.0",
+   "texte": "Article 1 - Objet du marché - Intervenants - langue (CCAG Article 2) 6",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "109.0.0",
+   "texte": "1.1 Objet du marché - 6",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "110.0.0",
+   "texte": "1.2.- Client 6",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "111.0.0",
+   "texte": "Article 2 - Notifications au Consultant (CCAG Article 4.3) 6",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "112.0.0",
+   "texte": "Article 3 - Groupements (CCAG Article 5.1) 6",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "113.0.0",
+   "texte": "Article 4 - Documents contractuels (CCAG Article 6.1) 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "114.0.0",
+   "texte": "Article 5 - Modifications et avenants (CCAG Article6.2.2) 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "115.0.0",
+   "texte": "Article 6 - Mesures de sécurité ou de protection du secret (CCAG Article 7.2) 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "116.0.0",
+   "texte": "Article 7 - Assistance du client (CCAG article 8) 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "117.0.0",
+   "texte": "Article 8 - Prix du Marché (CCAG article 9) 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "118.0.0",
+   "texte": "8.1. Monnaie (CCAG article 10.1) 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "119.0.0",
+   "texte": "8.2. Variations dans les prix (CCAG article 10.4) 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "120.0.0",
+   "texte": "Article 9 - Avance forfaitaire (CCAG Article 10.1) 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "121.0.0",
+   "texte": "Article 10 - Modalités de règlement des comptes (CCAG Article 10.2) 9",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "122.0.0",
+   "texte": "Article 11 - Intérêts moratoires dus à l'Entrepreneur (CCAG Article 10.7) 10",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "123.0.0",
+   "texte": "Article 12 – Assurance (CCAG Article 12) 10",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "124.0.0",
+   "texte": "Article 13 –Matériel confié par le Client au Consultant (CCAG Article 13) 10",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "125.0.0",
+   "texte": "Article 14 – Fourniture de matériel par le Consultant (CCAG Article 14) 11",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "126.0.0",
+   "texte": "Article 15 – Délai d'exécution (CCAG Article 15) 11",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "127.0.0",
+   "texte": "Article 16 – Pénalités et retenues (CCAG Article 16) 11",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "128.0.0",
+   "texte": "Article 17 – Utilisation des résultats (CCAG Article 19 à 26) 12",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "129.0.0",
+   "texte": "Article 18– Opération de vérification (CCAG Article 27) 12",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "130.0.0",
+   "texte": "Article 19– Indemnisation en cas de résiliation du fait du client (CCAG Article 30.2) 12",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "131.0.0",
+   "texte": "Article 20 - Procédure contentieuse (CCAG Article 34.4) 12",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "132.0.0",
+   "texte": "Article 21 - Dérogations aux documents généraux 13",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "133.0.0",
+   "texte": "Annexe au CCAP 14",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "134.0.0",
+   "texte": "Exemple de formule de révision des prix 14",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "135.0.0",
+   "texte": "Annexe au CCAP 15",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "136.0.0",
+   "texte": "Modèle de garantie bancaire de restitution d'avance 15",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "137.0.0",
+   "texte": "Annexe au CCAP 16",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "138.0.0",
+   "texte": "Modèle de Caution Personnelle et solidaire de restitution d’avance 16",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "139.0.0",
+   "texte": "Termes de référence 17",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "47.0.0",
+   "texte": "le cas échéant, le projet dans le cadre duquel le Marché est passé",
+   "raison": "fin de la même instruction (références du marché)"
+  },
+  {
+   "ligne": "48.0.0",
+   "texte": "ou le numéro et l'objet du lot compris dans le projet >",
+   "raison": "fin de la même instruction (références du marché)"
+  },
+  {
+   "ligne": "180.0.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "184.0.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "201.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "204.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "211.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "214.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "235.0.0",
+   "texte": "<Soit>:",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "252.0.0",
+   "texte": "<Soit>:",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "257.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "260.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "263.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "266.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "317.0.0",
+   "texte": "<soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "320.0.0",
+   "texte": "<soit, le cas échéant> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "323.0.0",
+   "texte": "<Soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "326.0.0",
+   "texte": "<Soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "329.0.0",
+   "texte": "<Soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "365.0.0",
+   "texte": "<soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "368.0.0",
+   "texte": "<soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "178.0.0",
+   "texte": "<préciser, lorsque le marché est divisé en plusieurs lots:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "226.0.0",
+   "texte": "<Dans le cas où le paiement de tout ou partie des Prestations en devises convertible est possible, préciser ici:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "274.0.0",
+   "texte": "<préciser les termes de paiement en fonction de la nature des prestations, par exemple, comme suit :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "304.0.0",
+   "texte": "<insérer les couvertures d'assurance souhaitées, par exemple :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "312.0.0",
+   "texte": "<dans certains cas seules les assurances de base des paragraphes seront requises lorsque l'enjeu de la prestation ou de la faute du Consultant n'est pas quantifiable>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "358.0.0",
+   "texte": "< si le Point de départ du délai d'exécution est différent de la date de notification Indiquer:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "363.0.0",
+   "texte": "<Préciser, en fonction de l'importance du Marché et des délais d'exécution, si les pénalités prévues par l'article 160 du CCAG s'appliquent ou non et, le cas échéant, indiquer les pénalités spécifiques au Marché>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "373.0.0",
+   "texte": "<Si un plafond aux pénalités différent de la limite de dix (10) % prévue par le CCAG est prévu, indiquer le ici :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "386.0.0",
+   "texte": "<Lorsqu’il est nécessaire de modifier le délai de trente jours fixé par le CCAG pour procéder aux opérations de vérifications indiquer ici>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "392.0.0",
+   "texte": "<dans le cas où le client souhaite fixer un taux d'indemnisation forfaitaire du Consultant différent du taux de 4% prévu par l'article 30.2.4. du CCAG, indiquer ici :>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "397.0.0",
+   "texte": "<dans le cas d'un marché passé avec un bureau de Consultants étranger, la nature internationale du marché peut permettre (à valider) d'avoir recours à un arbitrage international plutôt qu'aux tribunaux malgaches pour le règlement des litiges. L'un des avantages de l'arbitrage réside dans la plus grande facilité d'exécution de la sentence à l'encontre du Consultant étranger. L'inconvénient essentiel de l'arbitrage réside dans son coût important>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "421.0.0",
+   "texte": "<L'exemple de clause présenté ci-après à titre indicatif prévoit que les rémunérations en devises seront ajustées au moyen de l’indice pertinent de variation des salaires dans le pays dont la devise utilisée est la monnaie (normalement, le pays du Consultant) et que les rémunérations en Ariary seront ajustées au moyen de l’indice de variation des salaires pertinent applicables à Madagascar>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "192.0.0",
+   "texte": "-M.O. du consultant dans sa proposition, modifié éventuellement après négociation",
+   "raison": "documents d'exemple du modèle, remplacés par la saisie B09-DK-01"
+  },
+  {
+   "ligne": "193.0.0",
+   "texte": "-Liste de personnel cadres à affecter…",
+   "raison": "documents d'exemple du modèle, remplacés par la saisie B09-DK-01"
+  },
+  {
+   "ligne": "276.0.0",
+   "texte": "<Pour les prestations d'une durée inférieure à trois mois :>",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "278.0.0",
+   "texte": "Les prestations seront réglées en une seule fois, sur la base d'une facture établie après leur exécution et l'approbation du Client.",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "280.0.0",
+   "texte": "<Pour les prestations à rémunération à temps passé :>",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "282.0.0",
+   "texte": "Les prestations seront réglées sur la base d'un décompte mensuel remis au plus tard <nombre de jours> avant la fin du mois suivant le mois de réalisation des prestations considérées accompagné des attachements et justificatifs requis.",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "284.0.0",
+   "texte": "<Pour les prestations donnant lieu à des étapes et/ou à la remise de documents ou autres produits, prévoir le règlement d'un pourcentage du prix selon un calendrier établi en fonction de la réalisation de chaque étape. Le calendrier ci-après n’est fourni qu’à titre indicatif; si les paiements en devises et en monnaie nationale ne sont pas effectués aux mêmes dates, il conviendra de présenter un calendrier distinct pour les paiements en monnaie nationale; le cas échéant, il conviendra de préciser le contenu du rapport à fournir, tel qu’étude ou phase d’une étude particulière, enquêtes, plans, projets de Dossiers de Consultation, etc. Dans l’exemple ci-après, la garantie bancaire est libérée lorsque les paiements représentent cinquante (50) pour cent du montant forfaitaire, car l’on suppose qu’à ce stade l’avance aura été intégralement récupérée>",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "286.0.0",
+   "texte": "a) Vingt (20) pour cent du Montant du Marché seront versés à la date du commencement des Prestations",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "287.0.0",
+   "texte": "<ou> à la date de prise d'effet du marché, sur présentation d’une garantie bancaire d’un même montant.",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "288.0.0",
+   "texte": "b) Dix (10) pour cent du Montant du Marché seront versés au moment de la soumission d’un rapport initial.",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "289.0.0",
+   "texte": "c) Vingt-cinq (25) pour cent du Montant du Marché seront versés au moment de la soumission du projet de rapport intérimaire.",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "290.0.0",
+   "texte": "d) Vingt-cinq (25) pour cent du Montant du Marché seront versés au moment de la soumission du projet de rapport final.",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "291.0.0",
+   "texte": "e) Vingt (20) pour cent du Montant du Marché seront versés lors de l’approbation du rapport final.",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "292.0.0",
+   "texte": "f) La garantie bancaire sera libérée lorsque le montant total des paiements aura atteint cinquante (50) pour cent du Montant du Marché.",
+   "raison": "termes de paiement d'exemple (« par exemple, comme suit »), remplacés par les saisies B08-RP-01 à B08-RP-03"
+  },
+  {
+   "ligne": "351.0.0",
+   "texte": "<nombre> exemplaires de la facture indiquant la description des matériels, leurs quantités, leurs prix unitaires, le montant total , la date de l'expédition, la référence à la commande ou au Marché, l'identification du fabriquant ou distributeur, et, quand il y a lieu, leur répartition par colis.",
+   "raison": "documents d'exemple du modèle, remplacés par la saisie B09-FC-01"
+  },
+  {
+   "ligne": "352.0.0",
+   "texte": "le bon de livraison, ou le récépissé du transporteur;",
+   "raison": "documents d'exemple du modèle, remplacés par la saisie B09-FC-01"
+  },
+  {
+   "ligne": "353.0.0",
+   "texte": "le certificat de garantie du fabricant ou du distributeur ;",
+   "raison": "documents d'exemple du modèle, remplacés par la saisie B09-FC-01"
+  },
+  {
+   "ligne": "354.0.0",
+   "texte": "pour les fournitures importées : le certificat d’origine un connaissement négociable ou un connaissement maritime non négociable ou un connaissement aérien, un bordereau d’expédition de chemin de fer ou un bordereau d’expédition routier.",
+   "raison": "documents d'exemple du modèle, remplacés par la saisie B09-FC-01"
+  },
+  {
+   "ligne": "384.0.0",
+   "texte": "Les rapports à remettre par le Consultant conformément aux Termes de Référence devront recevoir l'agrément du client dans les conditions et les délais prévus par lesdits Termes de Référence.",
+   "raison": "modalités de vérification d’exemple, remplacées par la saisie B09-OP-01"
+  },
+  {
+   "ligne": "399.0.0",
+   "texte": "<Exemple : clause d'arbitrage CNUDCI : application des règles établies par la Commission des Nations Unies sur le Droit du Commerce International. Il est essentiel de préciser qui sera l'autorité chargée de la nomination des arbitres en cas de carence des parties>.",
+   "raison": "clause d'arbitrage d'exemple (CNUDCI, « à valider »), remplacée par la saisie B10-PP-01"
+  },
+  {
+   "ligne": "401.0.0",
+   "texte": "Tous litige, différend ou plainte entre les parties liés à la validité, à l'exécution ou à la résiliation du Marché, sera résolue par arbitrage selon les le Règlement d’Arbitrage de la Commission des Nations Unies pour le Droit du Commerce International (CNUDCI) tel qu’en vigueur à ce jour.",
+   "raison": "clause d'arbitrage d'exemple (CNUDCI, « à valider »), remplacée par la saisie B10-PP-01"
+  },
+  {
+   "ligne": "403.0.0",
+   "texte": "Le tribunal arbitral sera composé <soit :> de trois membres, <soit :> d'un arbitre unique <ajouter le cas échéant dans le cas où le tribunal arbitral comprend trois arbitres> : le président du tribunal arbitral ne sera pas de la même nationalité que les parties et aura des qualifications dans le domaine <à préciser>.",
+   "raison": "clause d'arbitrage d'exemple (CNUDCI, « à valider »), remplacée par la saisie B10-PP-01"
+  },
+  {
+   "ligne": "405.0.0",
+   "texte": "L'autorité de nomination sera : <par exemple> le Président de la Cour d'Arbitrage de la Chambre de Commerce International;",
+   "raison": "clause d'arbitrage d'exemple (CNUDCI, « à valider »), remplacée par la saisie B10-PP-01"
+  },
+  {
+   "ligne": "407.0.0",
+   "texte": "A défaut d'accord des Parties sur un autre lieu, le siège de l'arbitrage sera : <Antananarivo ou une autre ville à préciser>.",
+   "raison": "clause d'arbitrage d'exemple (CNUDCI, « à valider »), remplacée par la saisie B10-PP-01"
+  },
+  {
+   "ligne": "499.0.0",
+   "texte": "<Les Termes de référence comprennent généralement les rubriques suivantes :",
+   "raison": "Termes de référence : pièce téléversée par l'acheteur, jointe au dossier (arbitrage du pilote du 29/09, Q11)"
+  },
+  {
+   "ligne": "500.0.0",
+   "texte": "a) contexte général,",
+   "raison": "Termes de référence : pièce téléversée par l'acheteur, jointe au dossier (arbitrage du pilote du 29/09, Q11)"
+  },
+  {
+   "ligne": "501.0.0",
+   "texte": "b) objectifs,",
+   "raison": "Termes de référence : pièce téléversée par l'acheteur, jointe au dossier (arbitrage du pilote du 29/09, Q11)"
+  },
+  {
+   "ligne": "502.0.0",
+   "texte": "c) champ d’application des services,",
+   "raison": "Termes de référence : pièce téléversée par l'acheteur, jointe au dossier (arbitrage du pilote du 29/09, Q11)"
+  },
+  {
+   "ligne": "503.0.0",
+   "texte": "d) formation (le cas échéant),",
+   "raison": "Termes de référence : pièce téléversée par l'acheteur, jointe au dossier (arbitrage du pilote du 29/09, Q11)"
+  },
+  {
+   "ligne": "504.0.0",
+   "texte": "e) rapports et calendrier, et",
+   "raison": "Termes de référence : pièce téléversée par l'acheteur, jointe au dossier (arbitrage du pilote du 29/09, Q11)"
+  },
+  {
+   "ligne": "505.0.0",
+   "texte": "f) données, services locaux, personnel et installations devant être fournis par le Client.>",
+   "raison": "Termes de référence : pièce téléversée par l'acheteur, jointe au dossier (arbitrage du pilote du 29/09, Q11)"
+  }
+ ],
+ "ajouts": [
+  "{{B09-NC-01}}",
+  "{{B08-RP-01}}",
+  "{{B08-RP-02}}",
+  "{{B08-RP-03}}",
+  "{{B10-PP-01}}",
+  "{{B10-DP-01}}"
+ ]
+}

@@ -70,3 +70,17 @@ toutes les rédactions, marqueurs compris.
   source reprise telle quelle, trous déclarés remplacés ; le rang d'un repère de fin se compte après le début de la plage.
 
 Le contrat-cadre garde sa lecture d'origine (sans `--paragraphes`) : ses modèles sont inchangés, octet pour octet.
+
+## Lot D3 — les prestations intellectuelles (29/09)
+
+`DPIC-PI` (le tableau des données particulières seulement — arbitrage Q1 du pilote), `AE-PI`, `CPS-PI` (le CCAP et ses
+annexes ; les Termes de référence restent une pièce de l'acheteur, Q11). Fidélité 230/230, 300/300, 238/238. Plan :
+`docs/plan-2026-09-29-lot-d3-prestations-intellectuelles.md` ; analyse ligne par ligne :
+`docs/analyse-2026-09-29-documents-types-pi.md`.
+
+- La grille de notation garde ses **cinq totaux** ; sous-critères, postes et pondérations restent des blancs visibles (Q3).
+- Texte officiel reproduit tel quel, coquilles comprises (Q14) — dont une formule du CPS qui finit par `}}`.
+- Ce que le modèle donne « par exemple » (termes de paiement, documents contractuels, vérification, clause d'arbitrage)
+  est remplacé par la saisie, comme aux fournitures.
+- **Leçon de la mesure** : un paragraphe réduit à sa lettre d'option (« d) ») une fois l'instruction retirée se retrouve
+  ailleurs dans le document (la grille : « d) <Indiquer le poste> ») et fait sauter la lecture — il est retiré entier.

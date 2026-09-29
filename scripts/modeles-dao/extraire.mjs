@@ -19,6 +19,11 @@ const DOCUMENTS = {
   'fournitures-dpao': "Documents Types/Fournitures et services/2-Document type d'appel d'offres_Fournitures_Données Particulières d'Appel d'Offres.doc",
   'fournitures-ae': "Documents Types/Fournitures et services/4-Document type d'appel d'offres_Fournitures_Cadre d'acte d'engagement.doc",
   'fournitures-ccap': "Documents Types/Fournitures et services/5-Document type d'appel d'offres_Fournitures_Cahier Prescriprtions Spéciales.doc",
+  // Lot D3 (29/09) — prestations intellectuelles : DPIC (doc 2, dont seul le tableau des données particulières est
+  // décrit — arbitrage Q1), AE (doc 4), CPS (doc 5, rôle du CCAP). IC et CCAG joints tels quels.
+  'pi-dpic': 'Documents Types/Prestations_Intellectuelles/2-Dossier type de consultation_PI_Données Particulières des Instructions aux candidats.doc',
+  'pi-ae': "Documents Types/Prestations_Intellectuelles/4-Dossier type de consultation_PI_Acte d'engagement.doc",
+  'pi-cps': 'Documents Types/Prestations_Intellectuelles/5-Dossier type de consultation_PI_Cahier Prescriptions Spéciales.doc',
 };
 
 const cles = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(DOCUMENTS);
@@ -47,7 +52,7 @@ for (const cle of cles) {
   }
   // Fournitures (lot D2) : paragraphes de cellule séparés (RS) — les données particulières sont un tableau de rédactions
   // au choix. Le contrat-cadre garde la lecture d'origine, sur laquelle ses modèles ont été décrits et vérifiés.
-  const options = cle.startsWith('fournitures-') ? ['--paragraphes'] : [];
+  const options = cle.startsWith('fournitures-') || cle.startsWith('pi-') ? ['--paragraphes'] : [];
   const texte = execFileSync(JAVA, ['-cp', CP(), 'LireDocx', docx, ...options], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   fs.writeFileSync(`sources/${cle}.txt`, texte, 'utf8');
   console.log(`sources/${cle}.txt : ${texte.split('\n').length} lignes`);

@@ -196,6 +196,7 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
   // jeton seul, lu entre ses voisins (étape 2).
   const lettresFixes = (t) => t.replace(JETON, ' ').normalize('NFKC').toLowerCase().replace(/[^\p{L}]/gu, '');
   const seulJeton = (u) => /\{\{/.test(u.texte) && lettresFixes(u.texte).length === 0;
+  const jumeau = (u) => /\{\{/.test(u.texte) && us.some((v) => v !== u && cleTexte(v) === cleTexte(u));
 
   // Les débuts de paragraphe du modèle (texte fixe avant le premier jeton, au moins 6 caractères) : retrouvés DANS une
   // valeur capturée, ils disent qu'un paragraphe suivant a été collé derrière (fusion), et où couper.
@@ -224,7 +225,10 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
     const borne = trouves.size ? Math.min(doc.length, curseur + 60) : doc.length;
     for (let j = curseur; j < borne; j++) {
       let x = re.exec(doc[j]);
-      let confiance = lettresFixes(u.texte).length >= 8 ? 'haute' : 'moyenne';
+      // Un paragraphe dont un autre paragraphe du modèle a le même texte fixe (« {{B04-EP-03}} jours avant la date
+      // limite… » / « {{B04-EP-04}} jours avant la date limite… ») peut prendre la place de son jumeau quand celui-ci
+      // n'est pas reconnu : c'est l'ordre, pas le texte, qui les distingue — jamais la confiance haute (29/09).
+      let confiance = lettresFixes(u.texte).length >= 8 && !jumeau(u) ? 'haute' : 'moyenne';
       // Un paragraphe qui finit par du texte fixe se reconnaît aussi EN TÊTE d'un paragraphe fusionné : le reste est relu.
       if (!x && reTete) {
         x = reTete.exec(doc[j]);
@@ -239,9 +243,17 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
         let c = confiance;
         // Le dernier jeton d'un paragraphe qui finit par lui n'a pas de borne à droite : s'il contient le début d'un
         // paragraphe suivant du modèle, c'est une fusion — la valeur est coupée là, le reste relu, la confiance baisse.
-        if (n === jetons.length - 1 && !finitParFixe) {
+        // ⚠️ 29/09 — y compris quand le paragraphe finit par du texte fixe (« … est {{B02-OB-01}}. ») : fusionné avec les
+        // suivants, il se termine encore par un point, et la valeur les avalait en confiance haute (banc synthétique, AE du
+        // contrat-cadre). Le texte fixe final revient alors au reste relu, pas à la valeur.
+        if (n === jetons.length - 1) {
           const cp = couper(brut, k);
-          if (cp) { brut = cp[0]; c = 'moyenne'; doc.splice(j + 1, 0, cp[1]); }
+          if (cp) {
+            brut = cp[0]; c = 'moyenne';
+            const fin = finitParFixe ? norm(u.texte.slice(u.texte.lastIndexOf('}}') + 2)) : '';
+            if (fin && brut.endsWith(fin)) brut = brut.slice(0, -fin.length).trimEnd();
+            doc.splice(j + 1, 0, `${cp[1]}${fin}`);
+          }
         }
         propositions.push({ jeton: jt, brut, confiance: c, source: 'paragraphe', paragraphe: j, finOuverte: n === jetons.length - 1 && !finitParFixe });
       });
@@ -285,6 +297,10 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
     if (apres && brut.trimEnd().endsWith(apres)) brut = brut.trimEnd().slice(0, -apres.length).trimEnd();
     if (avant && brut.trimStart().startsWith(avant)) brut = brut.trimStart().slice(avant.length).trimStart();
     const confiance = atteste && entre.length === 1 && !cp ? 'moyenne' : 'basse';
+    // Plusieurs jetons séparés de ponctuation seule (« {{B02-OB-03}} — {{B02-OB-01}} ») : rien n'est proposé. Tout donner
+    // au premier jeton est une fausse valeur, et le séparateur ne découpe pas sûrement (le tiret du modèle devient « - »
+    // à la normalisation, comme les traits d'union des valeurs) — mesure du 29/09.
+    if ([...us[j.k].texte.matchAll(JETON)].length > 1) continue;
     propositions.push({ jeton: j.jeton, brut, confiance, source: 'entre-voisins', paragraphe: trouves.get(a) + 1 });
   }
 

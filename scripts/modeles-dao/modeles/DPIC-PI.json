@@ -1,0 +1,834 @@
+{
+ "fichier": "DPIC-PI.docx",
+ "sigle": "DPIC-PI",
+ "source": "pi-dpic",
+ "titre": "1.3. DONNEES PARTICULIERES DES INSTRUCTIONS AUX CANDIDATS",
+ "conditions": {
+  "PROJET": "B02-OP-01 renseigne",
+  "SANS-PROJET": "B02-OP-01 vide",
+  "SFQC": "B02-MS-01 contient expérience",
+  "BUDGET": "B02-MS-01 contient budget prédéterminé",
+  "MOINDRE-COUT": "B02-MS-01 contient note technique minimale",
+  "QUALITE-SEULE": "B02-MS-01 contient exclusivement",
+  "ASSOCIATIONS-NON": "groupement != OUI et B03-SP-01 != OUI",
+  "ASSOCIATIONS-OUI": "groupement = OUI ou B03-SP-01 = OUI",
+  "DEUX-ENVELOPPES": "B04-NP-01 contient financière",
+  "TECHNIQUE-SEULE": "B04-NP-01 contient uniquement",
+  "POINTS-PARTICULIERS": "B04-QT-03 renseigne",
+  "FORFAIT": "B05-PF-01 = Prix forfaitaire",
+  "BUDGET-DISPONIBLE": "B05-PF-01 = Prix forfaitaire et B02-MS-01 contient budget prédéterminé",
+  "TEMPS-PASSE": "B05-PF-01 = Temps passé",
+  "TEMPS-MAXIMUM": "B05-PF-01 = Temps passé et B05-PF-04 renseigne",
+  "ALEA": "B05-PF-01 = Temps passé et B05-PF-05 renseigne",
+  "RESULTAT": "B05-PF-01 = Résultat",
+  "POURCENTAGE": "B05-PF-01 contient coût estimatif",
+  "POURCENTAGE-DEGRESSIF": "B05-PF-01 contient coût estimatif et B05-PF-09 renseigne",
+  "POURCENTAGE-BAREME": "B05-PF-01 contient coût estimatif et B05-PF-10 renseigne",
+  "LANGUE": "B04-LP-01 contient langue",
+  "LANGUE-AUTRE": "B04-LP-01 contient autre langue",
+  "LANGUE-DEUX": "B04-LP-01 contient seconde langue",
+  "FERME": "prixRevisable = NON",
+  "REVISABLE": "prixRevisable = OUI",
+  "DEVISE": "B05-MP-01 renseigne",
+  "REUNION-NON": "B04-RU-01 != OUI",
+  "REUNION-OUI": "B04-RU-01 = OUI",
+  "PAPIER": "modeRemise != ELECTRONIQUE",
+  "B04-SE": "modeRemise = ELECTRONIQUE",
+  "TRANSFERT": "B06-TP-05 renseigne",
+  "FINANCIERE": "B04-NP-01 contient financière",
+  "DELAI-AE": "B02-SP-01 renseigne"
+ },
+ "blocs": [
+  {
+   "type": "para",
+   "texte": "Les Données Particulières qui suivent complètent, précisent ou modifient les clauses des Instructions aux Candidats (IC). En cas de conflit, les clauses ci-dessous prévalent sur celles des IC."
+  },
+  {
+   "type": "table",
+   "texte": "2"
+  },
+  {
+   "type": "ligne",
+   "texte": "Clause des Instructions aux Candidats (IC)\u001fDonnées particulières"
+  },
+  {
+   "type": "ligne",
+   "texte": "1. Client et objet de la Consultation.\u001fClient:\u001e{{B02-CL-01}}\u001eMarché\u001e{{SI:PROJET}}\u001eLe marché, objet de la présente Demande de Consultation s'inscrit dans {{B02-OP-01}}. Il a pour objet :\u001e{{FINSI:PROJET}}\u001e{{SI:SANS-PROJET}}\u001eLe marché, objet de la présente Demande de Consultation a pour objet :\u001e{{FINSI:SANS-PROJET}}\u001e{{B02-OP-02}}\u001eLa date prévue pour le début des prestations est le {{B02-OP-03}}\u001eMode de sélection:\u001eLe Consultant sera sélectionné sur la base\u001e{{SI:SFQC}}\u001ede la qualité technique de la proposition, de l’expérience du candidat, de la qualification des experts et de la méthode de travail proposée ainsi que du montant de la proposition,\u001e{{FINSI:SFQC}}\u001e{{SI:BUDGET}}\u001ed’un budget prédéterminé dont le candidat doit proposer la meilleure utilisation possible,\u001e{{FINSI:BUDGET}}\u001e{{SI:MOINDRE-COUT}}\u001ede la meilleure proposition financière soumise par les candidats ayant obtenu une note technique minimum.\u001e{{FINSI:MOINDRE-COUT}}\u001e{{SI:QUALITE-SEULE}}\u001eexclusivement de la qualité technique\u001e{{FINSI:QUALITE-SEULE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "2. Groupements et sous - traitance\u001f{{SI:ASSOCIATIONS-NON}}\u001eLes groupements et accords de sous - traitance entre Candidats figurant sur la liste restreinte ne sont pas autorisés.\u001e{{FINSI:ASSOCIATIONS-NON}}\u001e{{SI:ASSOCIATIONS-OUI}}\u001eLes groupements et accords de sous-traitance entre Candidats figurant sur la liste restreinte sont autorisés.\u001e{{FINSI:ASSOCIATIONS-OUI}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "5. – Dossier de Consultation – Demandes d'éclaircissement – Modifications\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "5.2. Demande d’éclaircissements\u001fAdresse de la PRMP\u001eAfin d’obtenir des éclaircissements uniquement, l’adresse de la Personne Responsable des Marchés Publics est la suivante :\u001e{{B04-EP-01}}\u001eAdresse électronique : {{B04-EP-02}}\u001eDélai pour l'envoi des demandes par les Candidats\u001e{{B04-EP-03}} jours avant la date limite fixée pour la remise des Propositions figurant à la clause 8.2 ci-dessous.\u001eDélai pour la réponse du représentant de la PRMP\u001e{{B04-EP-04}} jours avant la date limite fixée pour la remise des Propositions figurant à la clause 8.2 ci-dessous."
+  },
+  {
+   "type": "ligne",
+   "texte": "6. Assistance du client\u001fLe client fournit les intrants suivants : {{B04-AI-01}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "7 - Préparation des Propositions\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.2. Contenu des Propositions\u001fLes Candidats remettent:\u001e{{SI:DEUX-ENVELOPPES}}\u001eune Proposition technique et une Proposition financière sous enveloppes distinctes, comme indiqué à la clause 8.1 des IC.\u001e{{FINSI:DEUX-ENVELOPPES}}\u001e{{SI:TECHNIQUE-SEULE}}\u001euniquement une proposition technique.\u001e{{FINSI:TECHNIQUE-SEULE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.2.1. Proposition Technique\u001fQualifications\u001eLes Candidats joignent à leur Proposition technique les fiches de renseignements suivantes, selon les formulaires figurant à la section 1.4 \"Formulaires –types de Soumission\":\u001e1° Une fiche de renseignements relative à son identification et à sa situation juridique (formulaire PT2);\u001e2° Une fiche de renseignements relative à ses capacités professionnelles (formulaire PT3);;\u001eDescription de la Proposition technique\u001eLa description de la Proposition technique doit comporter:\u001eLa composition de l'équipe proposée, par spécialité ainsi que la poste et les tâches qui seront confiées à chacun de ses membres conformément au formulaire PT4.\u001eLes curriculum vitae des membres du Personnel Clé établis sur la base des Formulaire PT5\u001eLa Description de la méthodologie, de la conception et du plan de travail proposés pour réaliser les Prestations.\u001e{{SI:POINTS-PARTICULIERS}}\u001e{{B04-QT-03}}\u001e{{FINSI:POINTS-PARTICULIERS}}\u001eLe calendrier d'intervention du Personnel Clé selon le cadre donné par le Formulaire PT6 et le calendrier des activités établi à l'aide du Formulaire PT7."
+  },
+  {
+   "type": "ligne",
+   "texte": "7.2.2. Proposition Financière\u001fMode de rémunération\u001e{{SI:FORFAIT}}\u001ea) Le Marché est rémunéré sur la base d'un prix forfaitaire.\u001eLes Candidats indiquent un montant global correspondant à leur rémunération pour les Prestations ainsi que le montant des frais remboursables et des frais divers énumérés ci-après.\u001eLa rémunération forfaitaire ainsi que les frais remboursables et les frais divers sont, le cas échéant:\u001edécomposés en coûts en devises éventuels et coûts en monnaie locale, à l'aide du Formulaire PF2.\u001eventilés par activité ou phase de réalisation des Prestations, telles que spécifiés dans le calendrier d'activités de la Proposition Technique dans le Formulaire PT7. Cette ventilation est effectuée à l'aide du Formulaire PF3,\u001e{{SI:BUDGET-DISPONIBLE}}\u001ele budget disponible est de: {{B05-PF-13}}\u001eLes propositions financières d’un montant supérieur au budget disponible seront rejetées\u001e{{FINSI:BUDGET-DISPONIBLE}}\u001eLes paiements sont liés aux prestations fournies, matérialisées par la remise de supports écrits ou électroniques tels que rapports, études, plans, devis quantitatifs, documents d’appel d’offres, programmes logiciels, dûment approuvés.\u001e{{FINSI:FORFAIT}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fMode de rémunération\u001e{{SI:TEMPS-PASSE}}\u001eb) Le Marché est rémunéré au temps passé.\u001eLes Candidats indiquent:\u001eles taux unitaires (taux horaires, journaliers, hebdomadaires ou mensuels, selon la durée et le type des Prestations) applicables à chaque catégorie de Personnel désignée dans le Formulaire PT4 de la Proposition technique. Ces taux comprennent les salaires, les charges sociales, les frais généraux, la marge bénéficiaire. Les taux unitaires et l'estimation du temps passé pour réaliser chaque étape ou activité comprise dans les Prestations sont indiqués à l'aide du Formulaire PF4;\u001eles frais remboursables mentionnés ci-après établis à partir des dépenses effectives et/ou de prix unitaires convenus, qui sont remboursés sur la base de justificatifs de leur engagement.\u001eLes frais divers mentionnés ci-après faisant l'objet d'un budget forfaitaire à régler au prorata de l'exécution du Marché, ou au fur et à mesure de leur engagement.\u001eLa durée prévisionnelle des Prestations est de:\u001e{{B05-PF-03}}.\u001e{{SI:TEMPS-MAXIMUM}}\u001ele montant global maximum de Prestations est de: {{B05-PF-04}}\u001e{{FINSI:TEMPS-MAXIMUM}}\u001e{{SI:ALEA}}\u001eun montant supplémentaire pour aléa d'exécution de {{B05-PF-05}} pourra, le cas échéant, être engagé sur accord écrit du Client.\u001e{{FINSI:ALEA}}\u001e{{FINSI:TEMPS-PASSE}}\u001e{{SI:RESULTAT}}\u001ec) Le Marché comporte:\u001eune rémunération de base forfaitaire à proposer par le Candidat\u001eune rémunération finale ou un honoraire de succès de {{B05-PF-06}} qui sera dû lors de {{B05-PF-07}}.\u001eles frais remboursables mentionnés ci-après établis à partir des dépenses effectives et/ou de prix unitaires convenus, qui sont remboursés sur la base de justificatifs de leur engagement.\u001eLes frais divers mentionnés ci-après faisant l'objet d'un budget forfaitaire à régler au prorata de l'exécution du Marché, ou au fur et à mesure de leur engagement.\u001e{{FINSI:RESULTAT}}\u001e{{SI:POURCENTAGE}}\u001eLe Consultant sera rémunéré par un pourcentage, calculé sur\u001e{{B05-PF-08}}\u001e{{SI:POURCENTAGE-DEGRESSIF}}\u001ecalculé comme suit: {{B05-PF-09}}\u001e{{FINSI:POURCENTAGE-DEGRESSIF}}\u001e{{SI:POURCENTAGE-BAREME}}\u001ecalculé par application du barème en usage {{B05-PF-10}}\u001e{{FINSI:POURCENTAGE-BAREME}}\u001e{{FINSI:POURCENTAGE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fFrais remboursables\u001eLes Candidats devront fournir les coûts des dépenses remboursables suivantes, dans un tableau établi suivant le Formulaire PF5:\u001e{{B05-PF-11}}\u001eFrais divers\u001e{{B05-PF-12}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:LANGUE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.3. Langue\u001f{{SI:LANGUE-AUTRE}}\u001eLa langue de l'offre est:\u001e{{B04-LP-02}}\u001e{{FINSI:LANGUE-AUTRE}}\u001e{{SI:LANGUE-DEUX}}\u001eLa langue de l'offre est le français ou {{B04-LP-02}}\u001e{{FINSI:LANGUE-DEUX}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:LANGUE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.4. Délai de validité des Propositions\u001fLe délai de validité des Propositions sera de {{B04-DP-01}} jours."
+  },
+  {
+   "type": "ligne",
+   "texte": "7.5. Caractère ferme ou révisable des prix\u001f{{SI:FERME}}\u001eLes prix sont fermes et non révisables\u001e{{FINSI:FERME}}\u001e{{SI:REVISABLE}}\u001eLes prix sont révisables\u001e{{FINSI:REVISABLE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:DEVISE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.6. Monnaie\u001fLes prix des Prestations et dépenses sont exprimés {{B05-MP-01}}."
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:DEVISE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.7. Réunion préparatoire\u001f{{SI:REUNION-NON}}\u001eIl n'est pas prévue de réunion préparatoire\u001e{{FINSI:REUNION-NON}}\u001e{{SI:REUNION-OUI}}\u001eLes représentants des Candidats sont invités à assister à une réunion préparatoire qui se tiendra aux lieu, date et heures indiqués ci-dessous:\u001e{{B04-RU-02}}\u001e{{FINSI:REUNION-OUI}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "8. – Remise des Propositions\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "8.1. Forme des plis\u001fOutre l’original des Propositions, le nombre de copies demandé est de : {{B04-FL-01}}\u001eLes enveloppes intérieure et extérieure devront comporter les autres identifications suivantes : {{B04-FL-02}}\u001eAux fins de remise des Propositions, uniquement, l’adresse du Client est la suivante :\u001e{{B04-FL-03}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "8.2. Lieu, date et heure de la remise des Propositions\u001fAux fins de remise des Propositions, uniquement, l’adresse de l’Autorité Contractante est la suivante :\u001e{{B04-LH-01}}\u001eLa date et heure limites de remise des Propositions sont les suivantes : {{B04-LH-02}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "8.3. Remise des Propositions par voie électronique\u001f{{SI:PAPIER}}\u001eLe mode de remise des Propositions par voie électronique n'est pas possible dans le cadre de la présente consultation.\u001e{{FINSI:PAPIER}}\u001e{{SI:B04-SE}}\u001e[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique des Propositions — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par proposition), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]\u001e{{FINSI:B04-SE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "9. Ouverture des plis et évaluation des propositions\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "9.3. Évaluation des Propositions techniques\u001fLa CAO évalue chaque proposition technique sur la base des critères mentionnés ci-dessous.\u001eUne note comprise entre 1 et 100 sera attribué à chaque Candidat pour chaque critère. Ces notes seront ensuite pondérées en application des coefficients indiqués ci-dessous pour chaque critère puis additionnées pour aboutir à un score.\u001eLes critères, sous-critères d’évaluation, et leurs poids respectifs sont les suivants:\u001ePoints\u001e(i) Expérience des Candidats pertinente pour la mission: {{B06-TP-02}}\u001e(ii) Conformité du plan de travail et de la méthode proposés aux Termes de référence:\u001ea) Approche technique et méthodologie: <Indiquer nombre de points>\u001eb)Plan de travail: <Indiquer nombre de points>\u001ec) Organisation et personnel: <Indiquer nombre de points>\u001eTotal des points pour le critère (ii): {{B06-TP-03}}\u001e(iii) Qualifications et compétence du Personnel Clé pour la mission:\u001ea) Chef de mission <Indiquer nombre de points>\u001eb) <Indiquer le poste ou la discipline> <Indiquer nombre de points>\u001ec) <Indiquer le poste ou la discipline> <Indiquer nombre de points>\u001ed) <Indiquer le poste ou la discipline> <Indiquer nombre de points>\u001eTotal des points pour le critère (iii) : {{B06-TP-04}}\u001eLe nombre de points attribués à chaque poste ou discipline ci-dessus est déterminé en tenant compte des trois sous-critères suivants, pondérés comme indiqué au regard de chaque sous - critère:\u001e1)Qualifications générales < pondération entre 20 et 30%>\u001e2)Pertinence avec la mission < pondération entre 50 et 60%>\u001e3)Expérience de la région et de la langue <pondération entre 10 et 20%>\u001ePondération totale:100%"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f{{SI:TRANSFERT}}\u001e(iv) Adéquation du programme de transfert de connaissances (formation) :\u001ea)Pertinence du programme de formation <indiquer les points>\u001eb)Modalité de formation et méthodologie <indiquer les points>\u001ec)Qualifications des experts et des formateurs <indiquer les points>\u001eTotal des points pour le critère (iv): {{B06-TP-05}}\u001e{{FINSI:TRANSFERT}}\u001e(v)Participation de ressortissants nationaux au personnel clé"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f{{B06-TP-06}}\u001eTotal des points pour les cinq critères:100\u001eLe score technique minimum T(s) requis pour être admis est :\u001e{{B06-TP-07}} Points"
+  },
+  {
+   "type": "ligne",
+   "texte": "9.4. Ouverture des Propositions financières\u001f{{SI:DEVISE}}\u001eLes prix exprimés en devises convertibles sont convertis en Ariary sur la base du cours vendeur publié par la Banque Centrale de Madagascar le:\u001e<date correspondant au quinzième jour précédant la date limite fixée pour la remise des Propositions>\u001e{{FINSI:DEVISE}}\u001e{{SI:FINANCIERE}}\u001eAux fins de calcul du score final la proposition la moins élevée peut se voir attribuer un score financier de 100 et les autres propositions des scores financiers inversement proportionnels à leur coût, établis comme suit:\u001eSf = 100 x Fm / F, où Sf est le score financier, Fm la proposition la moins disante et F le montant de la proposition considérée, hors dépenses remboursables.\u001e{{FINSI:FINANCIERE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:SFQC}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "9.5. Classement des Propositions\u001fPour l'établissement du classement final les poids respectifs attribués aux Propositions technique et financière sont :\u001eT = {{B06-CS-02}}, et\u001eF = {{B06-CS-03}}\u001eTotal égal à 1"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:SFQC}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "10. Adresse des négociations\u001fLes négociations auront lieu à l’adresse suivante :\u001e{{B06-NG-01}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:DELAI-AE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "11. Signature de l'Acte d'Engagement par le Candidat\u001fLe Candidat devra renvoyer l'Acte d'Engagement signé dans un délai de {{B02-SP-01}} jours à compter de sa réception."
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:DELAI-AE}}\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  }
+ ],
+ "trace": [
+  {
+   "ligne": "725.0.0",
+   "genre": "retire",
+   "source": "[note:1]",
+   "par": ""
+  },
+  {
+   "ligne": "732.1.2",
+   "genre": "jeton",
+   "source": "<insérer la dénomination et l’adresse du client>",
+   "par": "{{B02-CL-01}}"
+  },
+  {
+   "ligne": "732.1.6",
+   "genre": "jeton",
+   "source": "<préciser, le cas échéant, si le marché fait partie d'un projet ou d'une opération plus vaste>",
+   "par": "{{B02-OP-01}}"
+  },
+  {
+   "ligne": "732.1.6",
+   "genre": "retire",
+   "source": "s'inscrit dans <préciser, le cas échéant, si le marché fait partie d'un projet ou d'une opération plus vaste>. Il",
+   "par": ""
+  },
+  {
+   "ligne": "732.1.8",
+   "genre": "jeton",
+   "source": "<décrire l'objet principal du Marché>",
+   "par": "{{B02-OP-02}}"
+  },
+  {
+   "ligne": "732.1.10",
+   "genre": "jeton",
+   "source": "<insérer la date>",
+   "par": "{{B02-OP-03}}"
+  },
+  {
+   "ligne": "737.1.10",
+   "genre": "jeton",
+   "source": "<insérer l’adresse électronique>",
+   "par": "{{B04-EP-02}}"
+  },
+  {
+   "ligne": "737.1.14",
+   "genre": "jeton",
+   "source": "<nombre de jours supérieur ou égal à dix>",
+   "par": "{{B04-EP-03}}"
+  },
+  {
+   "ligne": "737.1.18",
+   "genre": "jeton",
+   "source": "<nombre de jours sus mentionné diminué du délai de réponse estimé par la PRMP mais pas inférieur à six (6) jours>",
+   "par": "{{B04-EP-04}}"
+  },
+  {
+   "ligne": "738.1.0",
+   "genre": "jeton",
+   "source": "<énumérer les intrants à fournir par le client>",
+   "par": "{{B04-AI-01}}"
+  },
+  {
+   "ligne": "743.1.4",
+   "genre": "retire",
+   "source": "<le cas échéant:>",
+   "par": ""
+  },
+  {
+   "ligne": "743.1.12",
+   "genre": "jeton",
+   "source": "<indiquer ici, le cas échéant, les points que le Client souhaite plus particulièrement voir développer et le volume indicatif en nombre de pages format A4 de ce chapitre>",
+   "par": "{{B04-QT-03}}"
+  },
+  {
+   "ligne": "743.1.13",
+   "genre": "retire",
+   "source": "<indiquer ici, le cas échéant:>",
+   "par": ""
+  },
+  {
+   "ligne": "744.1.11",
+   "genre": "jeton",
+   "source": "<montant>",
+   "par": "{{B05-PF-13}}"
+  },
+  {
+   "ligne": "748.1.10",
+   "genre": "jeton",
+   "source": "<soit:> <nombre> jours,",
+   "par": "{{B05-PF-03}}."
+  },
+  {
+   "ligne": "748.1.14",
+   "genre": "retire",
+   "source": "<Ajouter, le cas échéant:>",
+   "par": ""
+  },
+  {
+   "ligne": "748.1.14",
+   "genre": "jeton",
+   "source": "<montant>",
+   "par": "{{B05-PF-04}}"
+  },
+  {
+   "ligne": "748.1.15",
+   "genre": "retire",
+   "source": "<compléter le cas échéant par la mention suivante:>",
+   "par": ""
+  },
+  {
+   "ligne": "748.1.15",
+   "genre": "jeton",
+   "source": "<montant>",
+   "par": "{{B05-PF-05}}"
+  },
+  {
+   "ligne": "748.1.18",
+   "genre": "retire",
+   "source": "<dans le cas de prestations destinées à conduire à un résultat, tel que la privatisation d'une entreprise ou la cession d'un bien:>",
+   "par": ""
+  },
+  {
+   "ligne": "748.1.20",
+   "genre": "choix",
+   "source": "<ou>",
+   "par": "ou"
+  },
+  {
+   "ligne": "748.1.20",
+   "genre": "jeton",
+   "source": "<indiquer un montant ou le mode de calcul, par exemple un pourcentage de la cession à effectuer, avec ou sans plafond>",
+   "par": "{{B05-PF-06}}"
+  },
+  {
+   "ligne": "748.1.20",
+   "genre": "jeton",
+   "source": "<indiquer l'événement déclenchant la rémunération finale>",
+   "par": "{{B05-PF-07}}"
+  },
+  {
+   "ligne": "748.1.31",
+   "genre": "jeton",
+   "source": "<indiquer la nature des montants servant de base à la rémunération>",
+   "par": "{{B05-PF-08}}"
+  },
+  {
+   "ligne": "748.1.34",
+   "genre": "jeton",
+   "source": "<prévoir un barème dégressif en fonction du volume des montants servant de base à la rémunération>",
+   "par": "{{B05-PF-09}}"
+  },
+  {
+   "ligne": "748.1.37",
+   "genre": "jeton",
+   "source": "<indiquer la profession et les références du barème>",
+   "par": "{{B05-PF-10}}"
+  },
+  {
+   "ligne": "752.1.4",
+   "genre": "jeton",
+   "source": "<indiquer la langue de l'offre différente du français>",
+   "par": "{{B04-LP-02}}"
+  },
+  {
+   "ligne": "752.1.7",
+   "genre": "jeton",
+   "source": "<préciser la deuxième langue de l'offre>",
+   "par": "{{B04-LP-02}}"
+  },
+  {
+   "ligne": "753.1.0",
+   "genre": "jeton",
+   "source": "<nombre>",
+   "par": "{{B04-DP-01}}"
+  },
+  {
+   "ligne": "755.1.1",
+   "genre": "jeton",
+   "source": "<nom de la devise convertible>",
+   "par": "{{B05-MP-01}}"
+  },
+  {
+   "ligne": "756.1.5",
+   "genre": "jeton",
+   "source": "<insérer l’adresse complète>",
+   "par": "{{B04-RU-02}}"
+  },
+  {
+   "ligne": "760.1.0",
+   "genre": "jeton",
+   "source": "<insérer le nombre de copies>",
+   "par": "{{B04-FL-01}}"
+  },
+  {
+   "ligne": "760.1.2",
+   "genre": "jeton",
+   "source": "<insérer le nom et/ou le numéro qui doit apparaître sur l’enveloppe de la Proposition pour identifier ce processus de passation des marchés>",
+   "par": "{{B04-FL-02}}"
+  },
+  {
+   "ligne": "761.1.6",
+   "genre": "jeton",
+   "source": "<insérer la date et heure>",
+   "par": "{{B04-LH-02}}"
+  },
+  {
+   "ligne": "769.1.12",
+   "genre": "jeton",
+   "source": "<de 0 à 10>",
+   "par": "{{B06-TP-02}}"
+  },
+  {
+   "ligne": "769.1.20",
+   "genre": "jeton",
+   "source": "<de 20 à 50>",
+   "par": "{{B06-TP-03}}"
+  },
+  {
+   "ligne": "769.1.28",
+   "genre": "jeton",
+   "source": "<de 30 à 60>",
+   "par": "{{B06-TP-04}}"
+  },
+  {
+   "ligne": "770.1.10",
+   "genre": "jeton",
+   "source": "<de 0 à 10>",
+   "par": "{{B06-TP-05}}"
+  },
+  {
+   "ligne": "771.0.0",
+   "genre": "jeton",
+   "source": "<de 0 à 10>",
+   "par": "{{B06-TP-06}}"
+  },
+  {
+   "ligne": "771.0.5",
+   "genre": "jeton",
+   "source": "<nombre >",
+   "par": "{{B06-TP-07}}"
+  },
+  {
+   "ligne": "775.1.1",
+   "genre": "jeton",
+   "source": "<entre 0,6 et 0,8>",
+   "par": "{{B06-CS-02}}"
+  },
+  {
+   "ligne": "775.1.2",
+   "genre": "jeton",
+   "source": "<entre 0,4 et 0,2>",
+   "par": "{{B06-CS-03}}"
+  },
+  {
+   "ligne": "777.1.1",
+   "genre": "jeton",
+   "source": "<nombre de jours>",
+   "par": "{{B02-SP-01}}"
+  }
+ ],
+ "retraits": [
+  {
+   "ligne": "726.0.0",
+   "texte": "[note 1] Le document ci après a pour but de servir de base à l'établissement des DP. Des indications pour leur rédaction sont fournies dans les notes en italique et entre crochets. La PRMP complète le cadre des DP à l'aide de ces indications, en insérant le texte approprié et en utilisant les exemples fournis ou un texte similaire, adapté aux besoins du Marché. Les textes en italique et entre crochets doivent ensuite être supprimés.",
+   "raison": "note de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "732.1.18",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "732.1.21",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "732.1.24",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "735.1.0",
+   "texte": "<soit>:",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "735.1.3",
+   "texte": "<soit>:",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "740.1.1",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "740.1.3",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "744.1.3",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "748.1.2",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "748.1.17",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "748.1.26",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "748.1.33",
+   "texte": "<ou>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "748.1.36",
+   "texte": "<ou>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "752.1.2",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "752.1.6",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "754.1.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "754.1.3",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "755.1.2",
+   "texte": "<ou>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "756.1.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "756.1.3",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "732.1.15",
+   "texte": "<indiquer le mode de sélection, soit:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "737.1.4",
+   "texte": "Attention de : <insérer le nom du responsable>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-EP-01 (nom, rue, bureau, ville, code postal, télécopie)"
+  },
+  {
+   "ligne": "737.1.5",
+   "texte": "Rue : <insérer le nom de la rue>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-EP-01 (nom, rue, bureau, ville, code postal, télécopie)"
+  },
+  {
+   "ligne": "737.1.6",
+   "texte": "Étage/numéro de Bureau : <insérer l’étage et le numéro du bureau>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-EP-01 (nom, rue, bureau, ville, code postal, télécopie)"
+  },
+  {
+   "ligne": "737.1.7",
+   "texte": "Ville : <insérer le nom de la ville>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-EP-01 (nom, rue, bureau, ville, code postal, télécopie)"
+  },
+  {
+   "ligne": "737.1.8",
+   "texte": "Code postal : <insérer le numéro du code postal>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-EP-01 (nom, rue, bureau, ville, code postal, télécopie)"
+  },
+  {
+   "ligne": "737.1.9",
+   "texte": "Numéro de télécopie : <insérer le numéro>",
+   "raison": "adresse de la PRMP : saisie d'un bloc dans B04-EP-01 (nom, rue, bureau, ville, code postal, télécopie)"
+  },
+  {
+   "ligne": "744.1.2",
+   "texte": "<indiquer ici le mode de rémunération parmi les choix suivants:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "744.1.10",
+   "texte": "<ajouter le cas échéant>:",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "748.1.11",
+   "texte": "<soit:> <nombre> semaines,",
+   "raison": "unité de la durée choisie dans la saisie libre B05-PF-03 (« 3 mois », « 12 semaines »)"
+  },
+  {
+   "ligne": "748.1.12",
+   "texte": "<soit:> <nombre> mois.",
+   "raison": "unité de la durée choisie dans la saisie libre B05-PF-03 (« 3 mois », « 12 semaines »)"
+  },
+  {
+   "ligne": "748.1.23",
+   "texte": "<le cas échéant une rémunération au temps passé peut également être prévue pour la réalisation de prestations supplémentaires>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "748.1.27",
+   "texte": "d) <dans le cas de prestations liées au coût estimatif ou effectif de travaux (par exemple dans le cas d'architectes ou maître d'œuvre), ou au coût de fournitures achetées ou inspectées>",
+   "raison": "intitulé d'option réduit à sa lettre une fois l'instruction retirée"
+  },
+  {
+   "ligne": "748.1.32",
+   "texte": "égale à <pourcentage>",
+   "raison": "pourcentage saisi avec la nature des montants dans B05-PF-08"
+  },
+  {
+   "ligne": "749.1.2",
+   "texte": "<Donner ici la liste des dépenses remboursables admises, en devise étrangère et en Ariary, pour lesquelles les Candidats devront fournir des coûts unitaires. Une liste d’exemples est présentée ci-dessous. Le Client supprime de cette liste les rubriques qui ne sont pas applicable au marché considéré ou en ajoute d'autres. Pour certaines dépenses remboursables un plafond de prix unitaire peut être spécifié.>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "749.1.11",
+   "texte": "Donner ici la liste des frais qui constituent normalement des frais de fonctionnement, pour lesquels un budget distinct peut être alloué compte tenu de leur importance eu égard à l'objet et aux conditions de réalisation de la mission. Le Client supprime de cette liste les rubriques qui ne sont pas applicable au marché considéré ou en ajoute d'autres. >",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "749.1.5",
+   "texte": "le coût des voyages nécessaires, y inclus le transport du personnel par le moyen le plus approprié et par la route la plus directe <spécifier le mode de transport et le tarif/classe> ;",
+   "raison": "listes d'exemples du modèle, « à adapter » : remplacées par les saisies B05-PF-11 et B05-PF-12"
+  },
+  {
+   "ligne": "749.1.6",
+   "texte": "le coût, la location et le fret de tout instrument ou équipement devant être fourni par le Consultant aux fins de la mission",
+   "raison": "listes d'exemples du modèle, « à adapter » : remplacées par les saisies B05-PF-11 et B05-PF-12"
+  },
+  {
+   "ligne": "749.1.7",
+   "texte": "le coût d’autres postes de débours nécessaires à la mission et non mentionnés ci-dessus",
+   "raison": "listes d'exemples du modèle, « à adapter » : remplacées par les saisies B05-PF-11 et B05-PF-12"
+  },
+  {
+   "ligne": "749.1.13",
+   "texte": "indemnité journalière de subsistance allouée au personnel du Consultant pour chaque jour de déplacement aux fins d'exécution des Prestations;",
+   "raison": "listes d'exemples du modèle, « à adapter » : remplacées par les saisies B05-PF-11 et B05-PF-12"
+  },
+  {
+   "ligne": "749.1.14",
+   "texte": "un budget forfaitaire pour le coût des communications locales ou internationales, le cas échéant ainsi que l’utilisation de téléphone et télécopie nécessaires aux fins de la mission ;",
+   "raison": "listes d'exemples du modèle, « à adapter » : remplacées par les saisies B05-PF-11 et B05-PF-12"
+  },
+  {
+   "ligne": "749.1.15",
+   "texte": "un budget forfaitaire pour le coût d’impression et d’envoi des rapports, plans, documents écrits ou graphiques constituant les résultats de la mission;",
+   "raison": "listes d'exemples du modèle, « à adapter » : remplacées par les saisies B05-PF-11 et B05-PF-12"
+  },
+  {
+   "ligne": "749.1.16",
+   "texte": "un budget forfaitaire pour le coût des espaces de bureaux nécessaires à l'exécution de la mission sur le lieu de réalisation des Prestations.",
+   "raison": "listes d'exemples du modèle, « à adapter » : remplacées par les saisies B05-PF-11 et B05-PF-12"
+  },
+  {
+   "ligne": "752.1.0",
+   "texte": "<Dans le cas où une langue autre que le français peut être utilisé pour rédiger l'offre et/ou les correspondances relatives à la procédure de passation du Marché, insérer l'une des formules suivantes:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "755.1.0",
+   "texte": "<dans le cas où les prix peuvent être exprimés dans une autre monnaie que l'Ariary, indiquer:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "755.1.3",
+   "texte": "Les prix des Prestations réalisées par du Personnel étranger et les dépenses réalisées hors de Madagascar sont exprimés en <nom de la devise convertible>.",
+   "raison": "variante couverte par la saisie libre B05-MP-01 (devise et prestations concernées)"
+  },
+  {
+   "ligne": "756.1.6",
+   "texte": "le <insérer la date à fixer au moins 21 jours avant la date limite de dépôt des offres>",
+   "raison": "lieu, date et heure saisis ensemble dans B04-RU-02"
+  },
+  {
+   "ligne": "756.1.7",
+   "texte": "à < insérer l’heure> l",
+   "raison": "lieu, date et heure saisis ensemble dans B04-RU-02"
+  },
+  {
+   "ligne": "760.1.5",
+   "texte": "Attention : <insérer le nom complet de la personne>",
+   "raison": "adresse du Client : saisie d'un bloc dans B04-FL-03"
+  },
+  {
+   "ligne": "760.1.6",
+   "texte": "Adresse: <insérer le nom de la rue et le numéro de l’immeuble>",
+   "raison": "adresse du Client : saisie d'un bloc dans B04-FL-03"
+  },
+  {
+   "ligne": "760.1.7",
+   "texte": "Étage/Numéro de bureau : <insérer l’étage et le numéro de bureau>",
+   "raison": "adresse du Client : saisie d'un bloc dans B04-FL-03"
+  },
+  {
+   "ligne": "760.1.8",
+   "texte": "Ville : <insérer la Ville>",
+   "raison": "adresse du Client : saisie d'un bloc dans B04-FL-03"
+  },
+  {
+   "ligne": "760.1.9",
+   "texte": "Code postal :<insérer le Code postal>",
+   "raison": "adresse du Client : saisie d'un bloc dans B04-FL-03"
+  },
+  {
+   "ligne": "761.1.1",
+   "texte": "Attention : <insérer le nom complet de la personne>",
+   "raison": "adresse de remise : saisie d'un bloc dans B04-LH-01"
+  },
+  {
+   "ligne": "761.1.2",
+   "texte": "Adresse: <insérer le nom de la rue et le numéro de l’immeuble>",
+   "raison": "adresse de remise : saisie d'un bloc dans B04-LH-01"
+  },
+  {
+   "ligne": "761.1.3",
+   "texte": "Étage/Numéro de bureau : <insérer l’étage et le numéro de bureau>",
+   "raison": "adresse de remise : saisie d'un bloc dans B04-LH-01"
+  },
+  {
+   "ligne": "761.1.4",
+   "texte": "Ville : <insérer la Ville>",
+   "raison": "adresse de remise : saisie d'un bloc dans B04-LH-01"
+  },
+  {
+   "ligne": "761.1.5",
+   "texte": "Code postal : <insérer le Code postal>",
+   "raison": "adresse de remise : saisie d'un bloc dans B04-LH-01"
+  },
+  {
+   "ligne": "761.1.7",
+   "texte": "Date : <insérer le jour, mois, année>",
+   "raison": "date et heure saisies ensemble dans B04-LH-02"
+  },
+  {
+   "ligne": "761.1.8",
+   "texte": "Heure : <insérer l’heure en utilisant les 24 heures>",
+   "raison": "date et heure saisies ensemble dans B04-LH-02"
+  },
+  {
+   "ligne": "763.1.0",
+   "texte": "<s'il n'est pas possible d'envoyer la Proposition par voie électronique, indiquer :>",
+   "raison": "instruction à l’acheteur (les conditions de la remise électronique sont demandées au juriste)"
+  },
+  {
+   "ligne": "763.1.4",
+   "texte": "<Dans le cas où il est possible de remettre les Propositions par voie électronique, indiquer ici les conditions et modalités de transmission des Propositions, y compris les modalités d'obtention d'un certificat électronique ou d'identification, le format d'enregistrement électronique de la Proposition, le processus permettant de garantir que les Propositions ne seront ouvertes électroniquement qu'en séance d'ouverture des plis. Une telle procédure ne peut être adoptée que si les conditions et modalités de transmission électronique sécurisée des Propositions et d'identification incontestable des candidats existent>.",
+   "raison": "instruction à l’acheteur (les conditions de la remise électronique sont demandées au juriste)"
+  },
+  {
+   "ligne": "769.1.0",
+   "texte": "<Il est possible d'affiner les critères d’évaluation mentionnés ci-dessous en les subdivisant en sous-critères. Par exemple le critère relatif à la méthodologie peut être subdivisé en sous - critères notant l'innovation et le degré de détail. Cependant l’utilisation de trop longues listes de sous-critères risque de conduire à l'attribution mécanique de notes artificielles.",
+   "raison": "instruction à l’acheteur sur l'emploi des sous-critères"
+  },
+  {
+   "ligne": "769.1.1",
+   "texte": "Le critère relatif à l'expérience du Candidat peut ne pas être utilisé ou son poids peut être faible, puisqu'il a en principe déjà été pris en compte lors de l’établissement de la liste restreinte des Candidats",
+   "raison": "instruction à l’acheteur sur l'emploi des sous-critères"
+  },
+  {
+   "ligne": "769.1.2",
+   "texte": "Le poids accordé à la méthodologie et au Personnel Clé sera d'autant plus grand que la mission sera complexe.>",
+   "raison": "instruction à l’acheteur sur l'emploi des sous-critères"
+  },
+  {
+   "ligne": "770.1.1",
+   "texte": "<A utiliser lorsque les Termes de référence exigent un tel programme. Lorsque le transfert de connaissance est un élément particulièrement important de la mission les sous-critères suivants peuvent être inclus>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "772.1.0",
+   "texte": "<Dans le cas où les Propositions sont, en tout ou partie, exprimées en devises, indiquer:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "776.1.2",
+   "texte": "Adresse: <insérer le nom de la rue et le numéro de l’immeuble>",
+   "raison": "adresse des négociations : saisie d'un bloc dans B06-NG-01"
+  },
+  {
+   "ligne": "776.1.3",
+   "texte": "Étage/Numéro de bureau : <insérer l’étage et le numéro de bureau>",
+   "raison": "adresse des négociations : saisie d'un bloc dans B06-NG-01"
+  },
+  {
+   "ligne": "776.1.4",
+   "texte": "Ville : <insérer la Ville>",
+   "raison": "adresse des négociations : saisie d'un bloc dans B06-NG-01"
+  },
+  {
+   "ligne": "777.1.0",
+   "texte": "<dans le cas où le Client souhaite fixer au Candidat un délai pour renvoyer l'Acte d'Engagement signé différent du délai de 10 jours prévu par les IC, préciser ici, en tenant compte du délai de validité des propositions:>",
+   "raison": "instruction à l’acheteur"
+  }
+ ],
+ "ajouts": [
+  "[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique des Propositions — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par proposition), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]",
+  "{{B04-EP-01}}",
+  "{{B05-PF-11}}",
+  "{{B05-PF-12}}",
+  "{{B04-FL-03}}",
+  "{{B04-LH-01}}",
+  "{{B06-NG-01}}"
+ ]
+}

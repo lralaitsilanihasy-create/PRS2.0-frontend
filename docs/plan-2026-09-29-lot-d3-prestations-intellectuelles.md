@@ -3,6 +3,21 @@
 **Statut : proposition du front, rien de codé. À arbitrer par le pilote (§6).** Analyse détaillée, ligne par ligne :
 `docs/analyse-2026-09-29-documents-types-pi.md`.
 
+> ⚠️ **Arbitrage du pilote, 2026-09-29 — les trois recommandations retenues ; PI-0 lancé.** Q1 : le DPIC produit est
+> **le tableau seul**. Q3 : **les cinq totaux + trois champs** (score technique minimum, poids T, poids F), le détail
+> de la grille en blanc visible. Q14 : **décalque fidèle**, coquilles listées pour le juriste. Les douze autres
+> questions suivent la recommandation par défaut, à revoir à la relecture des décalques.
+>
+> ⚠️ **PI-0 livré côté front le 2026-09-29.** `DPIC-PI` (33 conditions, 230/230), `AE-PI` (17, 300/300), `CPS-PI` (30,
+> 238/238) dans `scripts/modeles-dao/` ; décalques dans `docs/modeles-dao/`. Import mesuré sur un banc synthétique
+> (`scripts/import-dao/banc.mjs`, les fiches de recette ayant disparu avec le vidage) : DPIC 96 %, AE 100 %, CPS 65-77 %,
+> critère Q10 tenu sans bruit et sur douze graines. La mesure a fait ajouter **trois règles de lecture** (valables pour
+> tous les modèles) et retirer un paragraphe réduit à « d) ». **Correction du §2, point 4** : la formule en `}}` ne gêne
+> pas le moteur (le motif des jetons exige `{{`) — aucune extension n'est nécessaire. Le lieu d'exécution s'écrit dans
+> l'objet (un champ de moins). Demande PI-1 : `docs/demande-backend-2026-09-29-lot-d3-prestations-intellectuelles.md`
+> (sept champs à créer, sept corrections, dont l'option du mode de sélection coupée par sa virgule ; seize champs dont
+> le retrait attend le pilote).
+
 ## 1. Ce que demande l'import d'un DAO de PI
 
 L'import ne lit pas un DAO « au hasard » : il le compare **au document type officiel décrit en modèle à trous** (lot D)
