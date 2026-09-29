@@ -85,6 +85,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
   let fixture: ComponentFixture<ExamenDossier>;
   let ecran: ExamenDossier;
   let creations: ExamenDetail[];
+  let misesAJour: ExamenDetail[];
   let soumissions: { idExamen: number; corps: { idAvis: string } }[];
   /** Identifiants passés à `POST /examens/{id}/reinitialiser` (le stub vide alors les détails du décor). */
   let reinitialisations: number[];
@@ -95,6 +96,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
   /** Monte l'écran ; `reprise` simule un brouillon déjà enregistré (examen + détails). */
   const monter = async (reprise: { examens: Examen[]; details: ExamenDetail[] } = { examens: [], details: [] }): Promise<void> => {
     creations = [];
+    misesAJour = [];
     soumissions = [];
     reinitialisations = [];
     const liste = <T>(rows: T[]) => ({ list: () => of(rows) });
@@ -131,7 +133,11 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
         },
         {
           provide: ExamenDetailService,
-          useValue: { ...liste(reprise.details), create: (d: ExamenDetail) => (creations.push(d), of(d)), update: (_: number, d: ExamenDetail) => of(d) },
+          useValue: {
+            ...liste(reprise.details),
+            create: (d: ExamenDetail) => (creations.push(d), of(d)),
+            update: (_: number, d: ExamenDetail) => (misesAJour.push(d), of(d)),
+          },
         },
         { provide: PvExamenService, useValue: { ...liste([] as PvExamen[]), update: () => of({}) } },
         { provide: MiseAJourPpmService, useValue: { perimetreExamen: () => of(null), diff: () => NEVER } },
@@ -363,6 +369,23 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
       valider(); // ligne 2 : elle part à son tour, la ligne 3 et le contrôle du dossier attendent
       expect(creations.filter((d) => d.idDetail === 2)).toHaveLength(2);
       expect(creations.filter((d) => d.idDetail === 3 || d.idDetail == null)).toEqual([]);
+    });
+
+    it("une sauvegarde ne renvoie pas ce qui est déjà enregistré et inchangé (29/09 : 233 lignes → milliers de PUT, « Service indisponible »)", () => {
+      valider(); // ligne 1 : ses deux points partent
+      valider(); // ligne 2 : SEULS ses deux points partent, la ligne 1 n'est ni recréée ni remise à jour
+      expect(creations.map((d) => d.idDetail)).toEqual([1, 1, 2, 2]);
+      expect(misesAJour).toEqual([]);
+      // À la soumission, ne part que ce qui n'est pas encore sur le serveur : ligne 3 et contrôle du dossier.
+      ecran.setStatutPiece(100, 'RAS');
+      ecran.setStatutPiece(101, 'RAS');
+      ecran.allerGroupe('synthese');
+      rendre();
+      (racine().querySelector('.avis__principal') as HTMLButtonElement).click();
+      rendre();
+      expect(creations).toHaveLength(7);
+      expect(misesAJour).toEqual([]);
+      expect(soumissions).toHaveLength(1);
     });
 
     it('à la soumission, tous les résultats partent (la garde de complétude du serveur les exige)', () => {

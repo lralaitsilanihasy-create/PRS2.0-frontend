@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Observable, Subject, catchError, concatMap, forkJoin, map, of, shareReplay, switchMap } from 'rxjs';
+import { Observable, Subject, catchError, concatMap, forkJoin, from, map, mergeMap, of, shareReplay, switchMap, toArray } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -156,6 +156,15 @@ interface PropositionCellule {
    * ce qui ne dit rien de la place restante sous la cellule).
    */
   hauteurMax: number;
+}
+
+/**
+ * Exécute des enregistrements unitaires par paquets de six au plus (29/09) : lancés tous ensemble, ils ouvraient
+ * autant de connexions au même instant. Même contrat que `forkJoin` : un tableau à la fin, la première erreur
+ * interrompt.
+ */
+function parPaquets(calls: Observable<unknown>[], simultanes = 6): Observable<unknown[]> {
+  return calls.length ? from(calls).pipe(mergeMap((c) => c, simultanes), toArray()) : of([]);
 }
 
 /**
@@ -2503,12 +2512,20 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         // Empreintes de ce qui part : elles deviennent l'état enregistré quand le serveur a répondu.
         const pointsEnvoyes = new Map<string, string>();
         const piecesEnvoyees = new Map<number, string>();
+        const enregistree = this.empreinteEnregistree();
         const retenus = this.entreesResultats().filter(
           (x) => x.st.statut !== null && (complet || validees.has(this.cleEtapeDuResultat(x.idDetail, x.idPt))),
         );
         for (const e of retenus) {
-          pointsEnvoyes.set(this.cle(e.idDetail, e.idPt), empreintePoint(e.st));
-          const existing = detailParCle.get(this.cle(e.idDetail, e.idPt));
+          const cle = this.cle(e.idDetail, e.idPt);
+          const empreinte = empreintePoint(e.st);
+          const existing = detailParCle.get(cle);
+          // ⚠️ 29/09 — seul ce qui a CHANGÉ part. Renvoyer à chaque validation tout ce qui était déjà enregistré
+          // faisait, sur un plan de 233 lignes, des milliers de PUT par sauvegarde : le relais de développement
+          // manquait de ports (EADDRINUSE) et l'écran affichait « Service indisponible ». Un point sans détail
+          // serveur (RAS par défaut jamais envoyé) part toujours.
+          if (existing && enregistree?.points.get(cle) === empreinte) continue;
+          pointsEnvoyes.set(cle, empreinte);
           const body: ExamenDetail = {
             idDetailExamen: existing?.idDetailExamen ?? idd++,
             idExamen,
@@ -2524,8 +2541,10 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
         let idp = this.nextId(this.examenPieces().map((x) => x.idExamenPiece));
         const nouvellesPieces: ExamenPiece[] = [];
         for (const e of this.entreesPieces().filter((x) => complet || validees.has('P' + x.idPiece))) {
-          piecesEnvoyees.set(e.idPiece, empreintePiece(this.resultatPiece(e.idPiece)));
+          const empreinte = empreintePiece(this.resultatPiece(e.idPiece));
           const existing = pieceParId.get(e.idPiece);
+          if (existing && enregistree?.pieces.get(e.idPiece) === empreinte) continue;
+          piecesEnvoyees.set(e.idPiece, empreinte);
           const body: ExamenPiece = {
             idExamenPiece: existing?.idExamenPiece ?? idp++,
             idExamen,
@@ -2536,7 +2555,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
           if (!existing) nouvellesPieces.push(body);
           calls.push(existing ? this.examenPieceService.update(existing.idExamenPiece, body) : this.examenPieceService.create(body));
         }
-        return (calls.length ? forkJoin(calls) : of([])).pipe(
+        return parPaquets(calls).pipe(
           map(() => {
             // Caches locaux → la prochaine réconciliation mettra à jour au lieu de recréer.
             if (nouveauxDetails.length) this.details.update((arr) => [...arr, ...nouveauxDetails]);
@@ -2597,7 +2616,13 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
       .update(idExamen, examen)
       .pipe(
         switchMap(() => {
-          const calls: Observable<unknown>[] = this.entreesResultats().map((e) => {
+          // Comme le brouillon : seul ce qui a changé depuis le dernier enregistrement part (29/09).
+          const enregistree = this.empreinteEnregistree();
+          const aEnvoyer = this.entreesResultats().filter((e) => {
+            const cle = this.cle(e.idDetail, e.idPt);
+            return !(detailParCle.has(cle) && enregistree?.points.get(cle) === empreintePoint(e.st));
+          });
+          const calls: Observable<unknown>[] = aEnvoyer.map((e) => {
             const existing = detailParCle.get(this.cle(e.idDetail, e.idPt));
             const body: ExamenDetail = {
               idDetailExamen: existing?.idDetailExamen ?? baseNew++,
@@ -2618,6 +2643,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
           let idpNew = this.nextId(this.examenPieces().map((x) => x.idExamenPiece));
           for (const e of this.entreesPieces()) {
             const existing = pieceParId.get(e.idPiece);
+            if (existing && enregistree?.pieces.get(e.idPiece) === empreintePiece(this.resultatPiece(e.idPiece))) continue;
             const body: ExamenPiece = {
               idExamenPiece: existing?.idExamenPiece ?? idpNew++,
               idExamen,
@@ -2627,7 +2653,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
             };
             calls.push(existing ? this.examenPieceService.update(existing.idExamenPiece, body) : this.examenPieceService.create(body));
           }
-          return calls.length ? forkJoin(calls) : of([]);
+          return parPaquets(calls);
         }),
         // Projet de PV éditable : on met à jour (PV BROUILLON existant) ou on le CRÉE (aucun PV encore),
         // pour persister la synthèse ET l'avis. ⚠️ Visa unique (2026-08-31) — l'avis est celui du
