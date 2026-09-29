@@ -9,13 +9,13 @@
         <span>Importez-le (Word .docx, ou PDF produit par un traitement de texte — pas un scan) : ce qu’il dit est proposé
           pour pré-remplir la fiche, et vous retenez ligne par ligne. Sinon, répondez simplement aux questions ci-dessous.</span>
       </div>
-      <button type="button" class="btn btn-outline" [disabled]="lecture()" (click)="fichier.click()">
+      <button type="button" class="btn idao__btn" [disabled]="lecture()" (click)="fichier.click()">
         {{ lecture() ? 'Lecture…' : 'Importer le DAO' }}
       </button>
     </div>
   } @else {
     <div class="idao__reimport">
-      <button type="button" class="btn btn-outline btn-sm" [disabled]="lecture()" (click)="fichier.click()">
+      <button type="button" class="btn btn-sm idao__btn" [disabled]="lecture()" (click)="fichier.click()">
         <app-icone nom="file" [taille]="14" /> {{ lecture() ? 'Lecture…' : 'Réimporter un DAO (.docx ou PDF)' }}
       </button>
       <span class="idao__aide">Ne remplace d’office que les cases vides ; le reste, vous le décidez.</span>
