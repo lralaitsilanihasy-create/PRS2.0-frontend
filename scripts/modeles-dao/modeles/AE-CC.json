@@ -4,6 +4,8 @@
  "source": "contrat-cadre",
  "titre": "ACTE D’ENGAGEMENT ET CAHIER DES CLAUSES ADMINISTRATIVES PARTICULIERES",
  "conditions": {
+  "CCAG-FOURNITURES": "categorie != TRAVAUX",
+  "CCAG-TRAVAUX": "categorie = TRAVAUX",
   "AOO": "B01-AC-13 contient ouvert",
   "AOR": "B01-AC-13 contient restreint",
   "CONSULTATION": "B01-AC-13 contient consultation",
@@ -605,7 +607,27 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
    "texte": "• Le cahier des clauses administratives générales applicables aux marchés publics de Fournitures courantes et services."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CCAG-TRAVAUX}}"
+  },
+  {
+   "type": "para",
+   "texte": "• Le cahier des clauses administratives générales applicables aux marchés de travaux."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-TRAVAUX}}"
   },
   {
    "type": "sous_titre",
@@ -773,7 +795,27 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
    "texte": "Conformément à l’article 12 du CCAG Fournitures et Services il sera appliqué sans mise en demeure préalable, des pénalités en cas de retard dans l’exécution des marchés passés sur la base du présent contrat."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CCAG-TRAVAUX}}"
+  },
+  {
+   "type": "para",
+   "texte": "Conformément à l’article 20 du CCAG Travaux il sera appliqué sans mise en demeure préalable, des pénalités en cas de retard dans l’exécution des marchés passés sur la base du présent contrat."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-TRAVAUX}}"
   },
   {
    "type": "para",
@@ -1053,7 +1095,27 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
    "texte": "Le titulaire pourra sous-traiter une partie de l’exécution des prestations faisant l’objet des marchés subséquents dans les conditions prévues par l’article 5.2 du CCAG Fournitures"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CCAG-TRAVAUX}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le titulaire pourra sous-traiter une partie de l’exécution des prestations faisant l’objet des marchés subséquents dans les conditions prévues par l’article 2.4 du CCAG Travaux"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-TRAVAUX}}"
   },
   {
    "type": "para",
@@ -1113,7 +1175,27 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
    "texte": "Les opérations de vérification s’effectueront conformément aux articles 21 et 22 du CCAG Fournitures"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CCAG-TRAVAUX}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les opérations de vérification s’effectueront conformément aux articles 41, 42 et 43 du CCAG Travaux"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-TRAVAUX}}"
   },
   {
    "type": "para",
@@ -1189,7 +1271,27 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
    "texte": "La garantie sera exécutée conformément aux articles 13 et 23 du CCAG Fournitures"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CCAG-TRAVAUX}}"
+  },
+  {
+   "type": "para",
+   "texte": "La garantie sera exécutée conformément à l’article 44 du CCAG Travaux"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-TRAVAUX}}"
   },
   {
    "type": "para",
@@ -1381,7 +1483,27 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
    "texte": "La résiliation pourra être prononcée dans l’exécution des prestations des marchés subséquents conformément aux articles 24 à 33 du CCAG Fournitures"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CCAG-TRAVAUX}}"
+  },
+  {
+   "type": "para",
+   "texte": "La résiliation pourra être prononcée dans l’exécution des prestations des marchés subséquents conformément aux articles 46 du CCAG Travaux"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-TRAVAUX}}"
   },
   {
    "type": "para",
@@ -1786,6 +1908,18 @@
    "par": ""
   },
   {
+   "ligne": 481,
+   "genre": "retire",
+   "source": "marchés publics de Fournitures courantes et services/",
+   "par": ""
+  },
+  {
+   "ligne": 481,
+   "genre": "retire",
+   "source": "<choisir selon le CCAG applicable>",
+   "par": ""
+  },
+  {
    "ligne": 485,
    "genre": "jeton",
    "source": "<préciser la durée - cette durée ne peut excéder 2 ans>",
@@ -1819,6 +1953,18 @@
    "ligne": 531,
    "genre": "retire",
    "source": "/ article 20 du CCAG Travaux <choisir et rayer la mention inutile>",
+   "par": ""
+  },
+  {
+   "ligne": 531,
+   "genre": "retire",
+   "source": "12 du CCAG Fournitures et Services / article",
+   "par": ""
+  },
+  {
+   "ligne": 531,
+   "genre": "retire",
+   "source": "<choisir et rayer la mention inutile>",
    "par": ""
   },
   {
@@ -2026,6 +2172,18 @@
    "par": ""
   },
   {
+   "ligne": 595,
+   "genre": "retire",
+   "source": "/ l’article 5.2 du CCAG Fournitures",
+   "par": ""
+  },
+  {
+   "ligne": 595,
+   "genre": "retire",
+   "source": "<choisir et supprimer les mentions inutiles>",
+   "par": ""
+  },
+  {
    "ligne": 596,
    "genre": "typo",
    "source": ". Les",
@@ -2047,6 +2205,18 @@
    "ligne": 610,
    "genre": "retire",
    "source": "/ ou aux articles 41, 42 et 43 du CCAG Travaux",
+   "par": ""
+  },
+  {
+   "ligne": 610,
+   "genre": "retire",
+   "source": "<choisir et supprimer les mentions inutiles>",
+   "par": ""
+  },
+  {
+   "ligne": 610,
+   "genre": "retire",
+   "source": "21 et 22 du CCAG Fournitures/ ou aux articles",
    "par": ""
   },
   {
@@ -2107,6 +2277,24 @@
    "ligne": 622,
    "genre": "retire",
    "source": "à l’article 44 du CCAG Travaux/",
+   "par": ""
+  },
+  {
+   "ligne": 622,
+   "genre": "retire",
+   "source": "<choisir et supprimer les mentions inutiles>",
+   "par": ""
+  },
+  {
+   "ligne": 622,
+   "genre": "retire",
+   "source": "Si la garantie est exécutée conformément au C.C.A.G.-FCS, ajouter :",
+   "par": ""
+  },
+  {
+   "ligne": 622,
+   "genre": "retire",
+   "source": "/ aux articles 13 et 23 du CCAG Fournitures",
    "par": ""
   },
   {
@@ -2185,6 +2373,18 @@
    "ligne": 674,
    "genre": "retire",
    "source": "/ articles 46 du CCAG Travaux",
+   "par": ""
+  },
+  {
+   "ligne": 674,
+   "genre": "retire",
+   "source": "<choisir et supprimer les mentions inutiles>",
+   "par": ""
+  },
+  {
+   "ligne": 674,
+   "genre": "retire",
+   "source": "articles 24 à 33 du CCAG Fournitures/",
    "par": ""
   },
   {

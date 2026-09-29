@@ -215,6 +215,9 @@ function dpacContratCadre() {
     '<La rédaction est libre', 'Critère 1', 'Critère 2', 'La façon de travailler', 'La proposition de prix de référence', "L'offre ayant obtenu la note N");
 
   const conditions = {
+    // ⚠️ 29/09 (lot D4, T-2) — le document type du contrat-cadre sert aussi les travaux (codes harmonisés, Q1).
+    'CCAG-FOURNITURES': 'categorie != TRAVAUX',
+    'CCAG-TRAVAUX': 'categorie = TRAVAUX',
     MONO: 'attributaires = MONO',
     MULTI: 'attributaires = MULTI',
     'RC-BESOIN': 'B02-PC-02 = Au fur et à mesure des besoins',
@@ -268,7 +271,9 @@ function dpacContratCadre() {
     P(propre(garde.slice(0, coupe))),
     P(propre(garde.slice(coupe))),
     P(x('OBJET DU CONTRAT-CADRE', ["<Préciser l'objet du Contrat-cadre>", '{{B02-OB-01}}', 'jeton'])),
-    C(x('REGLEMENT DE LA CONSULTATION')),
+    ...SI('CCAG-FOURNITURES', C(x('REGLEMENT DE LA CONSULTATION'))),
+    // Contrat-cadre de travaux : le titre du document type dit « fournitures et services » — mention retirée (T-2).
+    ...SI('CCAG-TRAVAUX', C(x('REGLEMENT DE LA CONSULTATION', [' marché de fournitures et services', '', 'retire']))),
     P(x('PROCEDURE DE CONSULTATION', ['<Préciser la procédure de mise en concurrence adoptée>', '{{B01-AC-13}}', 'jeton'])),
     P(x('REPRESENTANT', ['<indiquer le nom et le(s) prénom(s) de la PRMP>', '{{B01-AC-05}}', 'jeton'])),
     P(x('DATE ET HEURE LIMITES DE REMISE', ["<préciser la date et l'heure limite de remise des offres>", '{{B04-CP-02}}', 'jeton'])),
@@ -458,6 +463,10 @@ function aeContratCadre() {
   const MULTI = 'attributaires = MULTI';
   const UNIQUE = 'B07-FS-01 = Marchés uniques non fractionnés';
   const conditions = {
+    // ⚠️ 29/09 (lot D4, T-2) — le document type propose lui-même « CCAG Fournitures / CCAG Travaux <choisir> » : la
+    // catégorie de la fiche choisit (contrat-cadre de travaux, codes harmonisés sur ceux des fournitures, Q1).
+    'CCAG-FOURNITURES': 'categorie != TRAVAUX',
+    'CCAG-TRAVAUX': 'categorie = TRAVAUX',
     AOO: 'B01-AC-13 contient ouvert',
     AOR: 'B01-AC-13 contient restreint',
     CONSULTATION: 'B01-AC-13 contient consultation',
@@ -639,7 +648,8 @@ function aeContratCadre() {
     P(x('• Le catalogue joint')),
     P(x('• Toutes autres')),
     P(x('➢ Pièces générales')),
-    P(x('• Le cahier des clauses administratives générales', ['/marchés de travaux', '', 'retire'], ['<choisir selon le CCAG applicable>', '', 'retire'])),
+    ...SI('CCAG-FOURNITURES', P(x('• Le cahier des clauses administratives générales', ['/marchés de travaux', '', 'retire'], ['<choisir selon le CCAG applicable>', '', 'retire']))),
+    ...SI('CCAG-TRAVAUX', P(x('• Le cahier des clauses administratives générales', ['marchés publics de Fournitures courantes et services/', '', 'retire'], ['<choisir selon le CCAG applicable>', '', 'retire']))),
 
     // ── Article 7
     ST(x('ARTICLE 7 –')),
@@ -664,7 +674,9 @@ function aeContratCadre() {
     ...SI('FS-FRACTIONNE', P(x("La durée maximale d'exécution")), P(x('Les bons de commande successifs'))),
     ST(x('7.5')),
     ...SI('PENALITES-NON', P(x('Les pénalités de retard ne'))),
-    ...SI('PENALITES-CCAG', P(x("Conformément à l'article 12", ['/ article 20 du CCAG Travaux <choisir et rayer la mention inutile>', '', 'retire']))),
+    ...SI('PENALITES-CCAG',
+      SI('CCAG-FOURNITURES', P(x("Conformément à l'article 12", ['/ article 20 du CCAG Travaux <choisir et rayer la mention inutile>', '', 'retire']))),
+      SI('CCAG-TRAVAUX', P(x("Conformément à l'article 12", ['12 du CCAG Fournitures et Services / article ', '', 'retire'], [' <choisir et rayer la mention inutile>', '', 'retire'])))),
     ...SI('PENALITES-DEROGATION', P('{{B07-PE-03}}')),
     ...SI('PENALITES-SUBSEQUENTS', P(x('Les pénalités de retard seront'))),
 
@@ -720,7 +732,8 @@ function aeContratCadre() {
     // ── Article 11
     ST(x('ARTICLE 11 –')),
     ST(x('11.1')),
-    P(x('Le titulaire pourra sous-traiter', ["l'article 2.4 du CCAG Travaux/ ", '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire'])),
+    ...SI('CCAG-FOURNITURES', P(x('Le titulaire pourra sous-traiter', ["l'article 2.4 du CCAG Travaux/ ", '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire']))),
+    ...SI('CCAG-TRAVAUX', P(x('Le titulaire pourra sous-traiter', ["/ l'article 5.2 du CCAG Fournitures", '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire']))),
     P(x('. Les sous-traitants', ['. Les', 'Les', 'typo'])),
     ST(x('11.2')),
     P(x('Le sous-traitant adresse')),
@@ -734,7 +747,9 @@ function aeContratCadre() {
     // ── Article 13 (le modèle écrit « ARTICLE 1 3 »)
     ST(x('ARTICLE 1 3', ['ARTICLE 1 3', 'ARTICLE 13', 'typo'])),
     P(x("La réception est l'acte")),
-    ...SI('VERIFICATION-CCAG', P(x('Les opérations de vérification', ['/ ou aux articles 41, 42 et 43 du CCAG Travaux', '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire']))),
+    ...SI('VERIFICATION-CCAG',
+      SI('CCAG-FOURNITURES', P(x('Les opérations de vérification', ['/ ou aux articles 41, 42 et 43 du CCAG Travaux', '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire']))),
+      SI('CCAG-TRAVAUX', P(x('Les opérations de vérification', ['21 et 22 du CCAG Fournitures/ ou aux articles ', '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire'])))),
     ...SI('VERIFICATION-LIBRE', P(x('- les dispositions du CCAG', ['- les dispositions du CCAG ne sont pas applicables ou nécessitent une précision', '{{B09-VA-02}}', 'jeton']))),
 
     // ── Article 14
@@ -743,8 +758,11 @@ function aeContratCadre() {
     ...SI('GARANTIE-OUI', P(x('Il est possible de donner', ["Il est possible de donner ici l'objet de la garantie et de renvoyer à un autre document pour la description de sa mise en œuvre (exemple documents à remettre dans les offres se rapportant aux marchés subséquents)", '{{B09-GP-02}}', 'jeton']))),
     ...SI('GARANTIE-ADMISSION', P(garantie(true))),
     ...SI('GARANTIE-MISE-EN-SERVICE', P(garantie(false))),
-    ...SI('GARANTIE-CCAG', P(x('Si la garantie est exécutée', ['Si la garantie est exécutée conformément au C.C.A.G.-FCS, ajouter : ', '', 'retire'],
-      ["à l'article 44 du CCAG Travaux/ ", '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire']))),
+    ...SI('GARANTIE-CCAG',
+      SI('CCAG-FOURNITURES', P(x('Si la garantie est exécutée', ['Si la garantie est exécutée conformément au C.C.A.G.-FCS, ajouter : ', '', 'retire'],
+        ["à l'article 44 du CCAG Travaux/ ", '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire']))),
+      SI('CCAG-TRAVAUX', P(x('Si la garantie est exécutée', ['Si la garantie est exécutée conformément au C.C.A.G.-FCS, ajouter : ', '', 'retire'],
+        ['/ aux articles 13 et 23 du CCAG Fournitures', '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire'])))),
 
     // ── Article 15
     ST(x('ARTICLE 15 –')),
@@ -793,7 +811,8 @@ function aeContratCadre() {
       P(x('– <indiquer', ['<indiquer le nombre de mois>', '{{B10-RS-02}}', 'jeton'], ['<supprimer cette disposition si le contrat-cadre est reconductible>', '', 'retire']))),
     P(x("La résiliation n'ouvrira", ['<disposition à supprimer si le contrat-cadre prévoit un minimum en quantité ou en valeur>', '', 'retire'])),
     ST(x('18.2')),
-    P(x('La résiliation pourra être prononcée', ['/ articles 46 du CCAG Travaux', '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire'])),
+    ...SI('CCAG-FOURNITURES', P(x('La résiliation pourra être prononcée', ['/ articles 46 du CCAG Travaux', '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire']))),
+    ...SI('CCAG-TRAVAUX', P(x('La résiliation pourra être prononcée', ['articles 24 à 33 du CCAG Fournitures/ ', '', 'retire'], ['<choisir et supprimer les mentions inutiles>', '', 'retire']))),
     P(x("L'autorité contractante se réserve le droit de résilier", ['<Lister les différentes hypothèses>', '{{B10-RS-03}}', 'jeton'])),
 
     // ── Article 19
@@ -2132,8 +2151,773 @@ function cpsPi() {
   return { fichier: 'CPS-PI.docx', sigle: 'CPS-PI', source: 'pi-cps', titre, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
 }
 
+// ══ DPAO des travaux (marché ordinaire, à tranches ou alloti) ════════════════════════════════════
+// Source : « 2-Dossier type d'appel d'offres_Travaux_Données Particulières d'Appel d'Offres » (ARMP). Même facture que
+// le DPAO des fournitures : un tableau « Clause des IC | Données particulières », les rédactions au choix dans les
+// cellules. Référentiel : feuille « A tranche_Alloti » du classeur DAO_Travaux.xlsx (fiche des travaux, quantité fixe
+// et à commande — le document type n'a pas de variante « à commande »). Arbitrages du 29/09 (plan du lot D4) : tranches
+// communes à tous les lots (Q3), texte officiel fidèle (Q5) ; monnaie Ariary → a), devises → c) (Q9) ; adresse de la
+// PRMP d'un seul bloc (rue : B01-AC-02). Champ à créer (T-1) : B04-VL-02 « visite des lieux obligatoire ».
+function dpaoTravaux() {
+  const SRC = lireSource('travaux-dpao');
+  const d = sectionCellules(SRC, '1.2. - DONNEES PARTICULIERES', null);
+  const tr = [];
+  const x = (vue, motif, ...r) => { const u = ligne(vue, motif); return traiter(tr, u.n, u.texte, ...r); };
+  const xr = (vue, motif, rang, ...r) => { const u = ligne(vue, motif, rang); return traiter(tr, u.n, u.texte, ...r); };
+  /** Un paragraphe-instruction remplacé entier par un jeton. */
+  const xj = (vue, motif, rang, jeton) => { const u = ligne(vue, motif, rang); return traiter(tr, u.n, u.texte, [u.texte, jeton, 'jeton']); };
+  const cel = (...ps) => ps.flat().filter((p) => p !== null && p !== undefined).join('\u001E');
+  const SIc = (nom, ...ps) => [`{{SI:${nom}}}`, ...ps.flat(), `{{FINSI:${nom}}}`];
+  const SIr = (nom, ...lignes) => [L(`{{SI:${nom}}}`, ''), ...lignes.flat(), L(`{{FINSI:${nom}}}`, '')];
+  const clause = (vue) => vue.lignes.filter((u) => u.cellule === 0).map((u) => { d.prises.add(u.n); PRODUITS.add(u.texte); return u.texte; }).join('\u001E');
+  /** La rangée dont une cellule commence (premier paragraphe NON VIDE) par ce motif. */
+  const rg = (motif, cellule = 0, rang = 0) => {
+    const premier = (u) => !d.lignes.some((v) => v.ligne === u.ligne && v.cellule === u.cellule && v.p < u.p);
+    const us = d.lignes.filter((u) => u.cellule === cellule && premier(u) && correspond(u, motif));
+    if (us.length <= rang) throw new Error(`rangée « ${motif} » (cellule ${cellule}, rang ${rang}) absente`);
+    return { ...d, lignes: d.lignes.filter((u) => u.ligne === us[rang].ligne) };
+  };
+
+  const conditions = {
+    PROJET: 'B02-OT-01 renseigne',
+    ALLOTI: 'alloti = OUI',
+    'LOTS-DIVISIBLES': 'alloti = OUI et B02-LT-02 = Divisible',
+    'LOTS-TOTALITE': 'alloti = OUI et B02-LT-02 = Totalité des lots',
+    'VARIANTES-NON': 'variantes = NON',
+    'VARIANTES-OUI': 'variantes = OUI',
+    TRANCHES: 'tranches = OUI',
+    'TRANCHE-C1': 'tranches = OUI et B02-LT-04 renseigne',
+    'TRANCHE-C2': 'tranches = OUI et B02-LT-05 renseigne',
+    GROUPEMENT: 'groupement = OUI',
+    'GROUPEMENT-LIBRE': 'groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE',
+    'GROUPEMENT-SOLIDAIRE': 'groupement = OUI et formeGroupement = SOLIDAIRE_OBLIGATOIRE',
+    'SANS-GARANTIE': 'garantieSoumission = NON',
+    GARANTIE: 'garantieSoumission = OUI',
+    'GARANTIE-BANCAIRE': 'garantieSoumission = OUI et B05-GQ-02 = Garantie bancaire',
+    'GARANTIE-CAUTION': 'garantieSoumission = OUI et B05-GQ-02 = Caution personnelle et solidaire',
+    'GARANTIE-CHEQUE': 'garantieSoumission = OUI et B05-GQ-02 = Chèque de banque',
+    'VISITE-OBLIGATOIRE': 'B04-VL-02 = OUI',
+    ONG: 'B03-QT-05 = OUI',
+    QUALIFICATIONS: 'B03-QT-06 renseigne',
+    PREFERENCE: 'B06-PN-01 = OUI',
+    'SANS-PREFERENCE': 'B06-PN-01 != OUI',
+    FERME: 'prixRevisable = NON',
+    REVISABLE: 'prixRevisable = OUI',
+    ARIARY: 'B05-MN-01 = Ariary',
+    DEVISES: 'B05-MN-01 = Devises',
+    LANGUE: 'B04-LG-01 renseigne',
+    'REUNION-NON': 'B04-RP-01 != OUI',
+    'REUNION-OUI': 'B04-RP-01 = OUI',
+    PAPIER: 'modeRemise != ELECTRONIQUE',
+    'B04-SE': 'modeRemise = ELECTRONIQUE',
+    'EVALUATION-PAR-LOT': 'alloti = OUI et B06-EV-01 = Par lot',
+    'EVALUATION-ENSEMBLE': "alloti = OUI et B06-EV-01 = Sur l'ensemble des lots",
+    'NON-CUMUL': 'alloti = OUI et B09-DL-05 = OUI',
+  };
+  const CLAUSE_SE = '[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]';
+  const ajouts = [CLAUSE_SE, '{{B02-LV-02}}', '{{B03-QT-06}}'];
+
+  retirer(d, 'note de rédaction du modèle, « à supprimer »', '[note 1]');
+  retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', (l) => /^<\s*(soit|ou)\s*:?\s*>\s*:?$/i.test(l.texte));
+  const intro = x(d, 'Les données particulières ci', ['[note:1]', '', 'retire']);
+  const entete = rangee(d, 'Clause des Instructions');
+
+  // ── 1. Maître de l'ouvrage et objet
+  const r1 = rg("1. Maître de l'Ouvrage");
+  const r1s = rg("Maître de l'Ouvrage", 1);
+  const objet = cel(
+    x(r1s, "=Maître de l'Ouvrage"),
+    x(r1s, "<insérer la dénomination de l'Autorité", ["<insérer la dénomination de l'Autorité Contractante >", '{{B01-AC-01}}', 'jeton']),
+    x(r1s, "Objet de l'appel d'offres"),
+    SIc('PROJET',
+      x(r1s, "Le présent appel d'offres, s'inscrit dans"),
+      x(r1s, '<préciser, le cas échéant', ["<préciser, le cas échéant, si le marché fait partie d'un projet ou d'une opération plus vaste>", '{{B02-OT-01}}', 'jeton'])),
+    x(r1s, 'L’Appel d’offres a pour objet'),
+    x(r1s, '<décrire la consistance', ['<décrire la consistance des travaux à exécuter >', '{{B02-OT-02}}', 'jeton']));
+
+  // ── 1.1 Lots, variantes, tranches (Q3 : tranches communes à tous les lots)
+  const r11 = rg('1.1 Lots, variantes et tranches');
+  const lots = cel(SIc('ALLOTI',
+    x(r11, '=Lots'),
+    // ⚠️ B02-LT-01 est conditionné « alloti = NON » au référentiel : condition inversée, à corriger (demande T-1).
+    x(r11, 'Les lots suivants faisant partie de', ['<insérer la description du projet global>', '{{B02-LT-01}}', 'jeton']),
+    '{{B02-LV-02}}',
+    SIc('LOTS-DIVISIBLES', x(r11, 'Le candidat peut soumissionner')),
+    SIc('LOTS-TOTALITE', x(r11, 'Le candidat ne peut soumissionner'))));
+  retirer(r11, 'formulation pour un DAO portant sur UN lot : le DAO de la fiche porte sur tous les lots de la ligne', 'Le lot <insérer la description du lot>');
+  retirer(r11, 'liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)', '<insérer la description du lot>', '=….');
+  retirer(r11, 'instruction à l’acheteur', '<en cas de décomposition en lots');
+  retirer(r11, "limitation du nombre de lots par candidat : aucun champ de la fiche (plan du lot D4, §6)", '<en cas de limitation de lots');
+  const r11b = rg('Variantes', 1);
+  const variantesTranches = cel(
+    x(r11b, 'Variantes'),
+    SIc('VARIANTES-NON', x(r11b, 'Les variantes ne sont pas')),
+    SIc('VARIANTES-OUI', x(r11b, 'Les variantes sont autorisées')),
+    SIc('TRANCHES',
+      x(r11b, '=Tranches'),
+      x(r11b, 'Les travaux sont décomposés en tranches'),
+      x(r11b, '- tranche ferme:', ["<compléter selon le projet, l'objet de la tranche et son étendue>", '{{B02-LT-03}}', 'jeton']),
+      SIc('TRANCHE-C1', x(r11b, '- tranche conditionnelle 1:', ["<compléter selon le projet, l'objet de la tranche et son étendue>", '{{B02-LT-04}}', 'jeton'])),
+      SIc('TRANCHE-C2', x(r11b, '- tranche conditionnelle 2:', ["<compléter selon le projet, l'objet de la tranche et son étendue>", '{{B02-LT-05}}', 'jeton'])),
+      x(r11b, 'Les candidats doivent soumissionner pour la totalité'),
+      x(r11b, "Les délais d'affermissement")));
+  retirer(r11b, 'instruction à l’acheteur', '<Insérer l’une des deux options', '<si les travaux comprennent');
+
+  // ── 2. Groupements
+  const r2 = rg('2. Groupements');
+  const groupements = cel(
+    SIc('GROUPEMENT-LIBRE', x(r2, 'Les groupements entre Candidats soumissionnant pour des lots distincts peuvent')),
+    SIc('GROUPEMENT-SOLIDAIRE', x(r2, 'Les groupements entre Candidats soumissionnant pour des lots distincts doivent')));
+  retirer(r2, 'instruction à l’acheteur', '< en cas de décomposition');
+
+  // ── 5. Composition, éclaircissements
+  const r5 = rg('5. – Composition');
+  const r51 = rg('5.1 Composition');
+  const composition = cel(
+    x(r51, '1.3 - modèles de fiches', ['A1, A2,….', '{{B04-CD-01}}', 'jeton']),
+    SIc('GARANTIE', x(r51, '- modèle de garantie de soumission')),
+    x(r51, '2.5 - Plan'));
+  const r52 = rg('5.2. Demandes');
+  const eclaircissements = cel(
+    x(r52, '=Adresse'),
+    x(r52, 'Afin d’obtenir des éclaircissements'),
+    x(r52, 'Attention de :', ['<insérer le nom du responsable>', '{{B01-AC-05}}', 'jeton']),
+    x(r52, 'Rue :', ['<insérer le nom de la rue>', '{{B01-AC-02}}', 'jeton']),
+    x(r52, 'Adresse électronique :', ["<insérer l'adresse>", '{{B01-AC-06}}', 'jeton']),
+    x(r52, "Délai pour l'envoi des demandes"),
+    x(r52, '<nombre de jours supérieur', ['<nombre de jours supérieur ou égal à six>', '{{B04-EQ-01}}', 'jeton']),
+    x(r52, 'Délai pour la réponse'),
+    x(r52, '<nombre de jours sus mentionné', ['<nombre de jours sus mentionné diminué du délai de réponse estimé par la PRMP>', '{{B04-EQ-02}}', 'jeton']));
+  retirer(r52, "adresse de la PRMP : un seul bloc (B01-AC-02) — étage, ville, code postal et télécopie n'ont pas de champ", 'Etage/numéro de Bureau', 'Ville :', 'Code postal', 'Numéro de télécopie');
+
+  // ── 6. Préparation des offres
+  const r6 = rg('6. – Préparation');
+  const r62 = rg('6.2. Contenu des offres');
+  const contenu = cel(
+    x(r62, '1°- Documents ou pièces'),
+    x(r62, '<énumérer ces documents', ['<énumérer ces documents ou pièces>', '{{B04-PI-01}}', 'jeton']),
+    x(r62, '2° -'),
+    x(r62, 'une photocopie certifiée de la Carte'),
+    x(r62, 'une photocopie certifiée de l’Etat 211'),
+    x(r62, 'une photocopie certifiée de l’Extrait'),
+    x(r62, 'un certificat de non faillite'),
+    x(r62, 'une photocopie certifiée du Numéro'),
+    x(r62, 'une photocopie certifiée de la carte statistique'),
+    SIc('GARANTIE', x(r62, '4°- Garantie de soumission')),
+    SIc('VISITE-OBLIGATOIRE', x(r62, '5°- <le cas échéant>', ['<le cas échéant> ', '', 'retire'])));
+  const r63 = rg('6.3. Capacités');
+  const capacites = cel(
+    x(r63, "Fiches d'information"),
+    x(r63, 'Chaque Candidat complète'),
+    x(r63, '1°Une fiche'), x(r63, '2°Une fiche'), x(r63, '3°Une fiche'), x(r63, '4°la liste'),
+    SIc('ONG', x(r63, 'Les communautés locales'), x(r63, '<indiquer les formulaires')));
+  retirer(r63, 'instruction à l’acheteur', '<indiquer ici les renseignements', '<Si les communautés locales');
+  const r63q = rg('Qualifications particulières requises', 1);
+  const qualifications = cel(
+    x(r63q, 'Qualifications particulières requises'),
+    x(r63q, 'Aux fins du présent Marché', [' <choisir parmi les exemples suivants en les adaptant si besoin est>', '', 'retire']),
+    x(r63q, 'a) avoir réalisé un chiffre'),
+    xj(r63q, '<insérer un montant', 0, '{{B03-QT-07}}'),
+    x(r63q, 'b) avoir réalisé avec succès'),
+    xj(r63q, '<Indiquer le type de travaux', 0, '{{B03-QT-08}}'),
+    x(r63q, '(c) indiquer sous quelle forme'),
+    x(r63q, '<indiquer une liste de ces gros', ['<indiquer une liste de ces gros matériels et équipements essentiels>', '{{B03-QT-09}}', 'jeton']),
+    x(r63q, '(d) proposer un directeur', ['<par exemple cinq à dix>', '{{B03-QT-10}}', 'jeton']),
+    SIc('QUALIFICATIONS', '{{B03-QT-06}}'));
+  retirer(r63q, 'instruction à l’acheteur', '<Indiquer ici les qualifications particulières');
+  retirer(r63q, 'autres conditions du personnel clé : saisies dans B03-QT-06', '<Ajouter, si nécessaire');
+  const r63p = rg('<Si une préférence nationale', 1);
+  const preferencePieces = cel(x(r63p, 'Les Candidats susceptibles de bénéficier'));
+  retirer(r63p, 'instruction à l’acheteur', '<Si une préférence nationale');
+  const r63g = rg("Qualification des membres d'un groupement", 1);
+  const groupementQualif = cel(
+    x(r63g, "Qualification des membres d'un groupement"),
+    SIc('GROUPEMENT-LIBRE',
+      x(r63g, "Chacun des membres d'un groupement d'entreprises conjointes"),
+      xr(r63g, 'Le mandataire doit satisfaire', 0),
+      xj(r63g, '<préciser les conditions de qualification minimales que le mandataire', 0, '{{B03-GT-04}}')),
+    x(r63g, "Dans le cas de groupements d'entreprises solidaires"),
+    x(r63g, 'Les qualifications de chacun des membres'),
+    x(r63g, 'de plus, chacun des membres'),
+    xj(r63g, '<préciser les conditions de qualification minimales que chacun', 0, '{{B03-GT-03}}'),
+    xr(r63g, 'Le mandataire doit satisfaire', 1),
+    xj(r63g, '<préciser les conditions de qualification minimales que le mandataire', 1, '{{B03-GT-05}}'));
+  retirer(r63g, 'instruction à l’acheteur', "<dans le cas où les groupements d'entreprises conjointes", '<la solidarité des membres', '<Pour les marchés qui font intervenir');
+  const r64 = rg('6.4. Délai de validité');
+  const validite = cel(x(r64, 'Le délai de validité', ['<nombre>', '{{B04-DV-01}}', 'jeton']));
+  const r65 = rg('6.5.3. Caractère ferme');
+  const prix = cel(SIc('FERME', x(r65, 'Les prix sont fermes')), SIc('REVISABLE', x(r65, 'Les prix sont révisables')));
+  const r66 = rg('6.6. Monnaie');
+  const monnaie = cel(
+    SIc('ARIARY', x(r66, 'a) Les prix seront entièrement libellés dans la monnaie')),
+    SIc('DEVISES', x(r66, 'c) Les prix pourront comporter'), x(r66, 'La part libellé en monnaies étrangères'), x(r66, 'Tous les autres éléments'), x(r66, 'Le Maître de l’Ouvrage peut demander')));
+  retirer(r66, 'instruction à l’acheteur', "<Indiquer l'une des trois options");
+  retirer(r66, "rédaction b) : la monnaie de la fiche n'a que deux réponses (Ariary, Devises) — plan du lot D4, Q9",
+    'b) Les prix seront entièrement libellés en Ariary', 'Toutefois le Candidat qui compte engager', 'Les taux de change utilisés par le Candidat');
+  const r67 = rg('6.7. Garantie de soumission');
+  const garantie = cel(
+    SIc('SANS-GARANTIE', x(r67, 'Il n’est pas demandé')),
+    SIc('GARANTIE',
+      x(r67, 'Une garantie de soumission doit être fournie'),
+      SIc('GARANTIE-BANCAIRE', x(r67, '- Soit une garantie bancaire')),
+      SIc('GARANTIE-CAUTION', x(r67, '- Soit une caution')),
+      SIc('GARANTIE-CHEQUE', x(r67, '- Soit un chèque de banque')),
+      x(r67, 'Le montant de la garantie de soumission'),
+      x(r67, '<insérer montant en chiffres', ['<insérer montant en chiffres et en lettres>', '{{B05-GQ-03.lettres}} ({{B05-GQ-03}})', 'jeton'])));
+  const r68 = rg('6.8. Langue');
+  const langue = cel(x(r68, "La langue de l'offre est le français ou", ["<préciser la deuxième langue de l'offre>", '{{B04-LG-01}}', 'jeton']));
+  retirer(r68, 'instruction à l’acheteur', '<Dans le cas où une langue');
+  retirer(r68, "rédaction « une autre langue seule » : la fiche n'a qu'un champ de langue, la seconde langue (B04-LG-01)", "=La langue de l'offre est:", "<indiquer la langue de l'offre différente");
+  const r69 = rg('6.9. - Réunion préparatoire');
+  const reunion = cel(
+    SIc('REUNION-NON', x(r69, "Il n'est pas prévue")),
+    SIc('REUNION-OUI', x(r69, 'Les représentants des Candidats sont invités'), x(r69, '<adresse complète>', ['<adresse complète>', '{{B04-RP-02}}', 'jeton'])),
+    xj(r69, "< préciser les modalités d'accès", 0, '{{B04-VL-01}}'),
+    SIc('VISITE-OBLIGATOIRE', x(r69, 'une visite des lieux obligatoire'), x(r69, 'Les Candidats ou leurs représentants sont tenus'), x(r69, 'A l’issue de cette visite')));
+  retirer(r69, 'lieu, date et heure saisis ensemble dans B04-RP-02', 'le <date à fixer', 'à < heures>');
+  retirer(r69, 'instruction à l’acheteur', '<en cas de visite des lieux obligatoire>');
+
+  // ── 7. Remise des offres (Q5 : la phrase « Une (01) copie » contredit la clause 7.1 — retirée, avec sa raison)
+  const r7 = rg('7. – Remise des offres');
+  retirer(r7, "contredit la clause 7.1, où le nombre de copies se saisit (B04-FP-01) — plan du lot D4, Q5", 'Toute offre doit être remise');
+  const r71 = rg('7.1. Forme des plis');
+  const plis = cel(
+    SIc('ALLOTI', x(r71, '<en cas d’allotissement> : les offres', ['<en cas d’allotissement> : ', '', 'retire'])),
+    x(r71, 'Outre l’original de l’offre'),
+    x(r71, '<insérer le nombre de copies>', ['<insérer le nombre de copies>', '{{B04-FP-01}}', 'jeton']),
+    x(r71, 'Les enveloppes extérieure et intérieure'),
+    xj(r71, '<insérer les mentions', 0, '{{B04-FP-02}}'),
+    x(r71, 'Le nom et l’adresse du Maître', [':…….', ': {{B01-AC-01}}, {{B01-AC-02}}', 'jeton']),
+    x(r71, '- La référence du présent'),
+    x(r71, '- La mention'),
+    SIc('ALLOTI', x(r71, '- <en cas d’allotissement> la référence', ['<en cas d’allotissement> ', '', 'retire'])),
+    x(r71, 'à l’exclusion de toute mention'));
+  const r72 = rg('7.2. Lieu, date');
+  const remise = cel(
+    x(r72, 'Aux fins de remise des offres'),
+    x(r72, 'Attention :', ['<insérer le nom complet de la PRMP ou de son représentant>', '{{B01-AC-05}}', 'jeton']),
+    x(r72, 'Lieu :Adresse:', ['<insérer le nom de la rue et le numéro de l’immeuble>', '{{B01-AC-02}}', 'jeton']),
+    x(r72, 'Les date et heure limites'),
+    x(r72, 'Date :', ['<insérer le jour, mois, année>', '{{B04-OV-02}}', 'jeton']));
+  retirer(r72, "adresse de remise : un seul bloc (B01-AC-02) — étage, ville et code postal n'ont pas de champ", 'Étage/Numéro de bureau', 'Ville :', 'Code postal');
+  retirer(r72, 'date et heure saisies ensemble dans B04-OV-02 (qui doit porter l’heure : demande T-1)', 'Heure :');
+  const r73 = rg('7.3. Remise des offres par voie');
+  const electronique = cel(SIc('PAPIER', x(r73, 'Le mode de remise des offres par voie électronique')), SIc('B04-SE', CLAUSE_SE));
+  retirer(r73, 'instruction à l’acheteur (les conditions de la remise électronique sont demandées au juriste)', "<s'il n'est pas possible", '<Dans le cas où il est possible');
+  const r8 = rg('8. Ouverture des plis');
+  const ouverture = cel(x(r8, 'Lieu : (insérer le lieu)', ['(insérer le lieu)', '{{B04-OV-01}}', 'jeton']), x(r8, 'Date : Le même jour'), x(r8, 'Heure : (insérer'));
+
+  // ── 9. Évaluation
+  const r9 = rg('9. Evaluation et comparaison');
+  const r91 = rg('9.1. - Relations');
+  const relations = cel(x(r91, 'Les Candidats devront répondre'), x(r91, '<insérer nombre de jours>', ['<insérer nombre de jours>', '{{B06-RC-01}}', 'jeton']));
+  const r94 = rg('9.4. Evaluation des offres');
+  const evaluation = cel(
+    x(r94, 'Evaluation des offres portant sur plusieurs lots'),
+    SIc('EVALUATION-PAR-LOT', x(r94, 'Les offres seront évaluées par lot')),
+    SIc('EVALUATION-ENSEMBLE', x(r94, "Le Marché portera sur l'ensemble des lots")));
+  const r95 = rg('9.5. Marge de préférence');
+  const preference = cel(
+    SIc('SANS-PREFERENCE', x(r95, 'Il n’est pas accordé de préférence'), x(r95, '=nationaux')),
+    SIc('PREFERENCE', x(r95, 'Il est accordé aux candidats nationaux', ['<pourcentage inférieur ou égal à 10% >', '{{B06-PN-02.chiffres}} %', 'jeton'])));
+  retirer(r95, 'instruction à l’acheteur', '<insérer l’une des options');
+  const r11d = rg('11. Délai d’exécution');
+  const delai = cel(
+    x(r11d, 'Le délai d’exécution proposé', ['….. <délai>', '{{B09-DL-01}}', 'jeton']),
+    SIc('NON-CUMUL', x(r11d, 'En cas d’attribution de deux')));
+  retirer(r11d, 'instruction à l’acheteur', '=<en cas d’allotissement>');
+
+  const blocs = [
+    P(intro),
+    T(2),
+    L(...entete.lignes.map((u) => { d.prises.add(u.n); PRODUITS.add(u.texte); return u.texte; })),
+    L(clause(r1), ''),
+    L(clause(r1s), objet),
+    L(clause(r11), lots),
+    L(clause(r11b), variantesTranches),
+    ...SIr('GROUPEMENT', L(clause(r2), groupements)),
+    L(clause(r5), ''),
+    L(clause(r51), composition),
+    L(clause(r52), eclaircissements),
+    L(clause(r6), ''),
+    L(clause(r62), contenu),
+    L(clause(r63), capacites),
+    L(clause(r63q), qualifications),
+    ...SIr('PREFERENCE', L(clause(r63p), preferencePieces)),
+    ...SIr('GROUPEMENT', L(clause(r63g), groupementQualif)),
+    L(clause(r64), validite),
+    L(clause(r65), prix),
+    L(clause(r66), monnaie),
+    L(clause(r67), garantie),
+    ...SIr('LANGUE', L(clause(r68), langue)),
+    L(clause(r69), reunion),
+    L(clause(r7), ''),
+    L(clause(r71), plis),
+    L(clause(r72), remise),
+    L(clause(r73), electronique),
+    L(clause(r8), ouverture),
+    L(clause(r9), ''),
+    L(clause(r91), relations),
+    ...SIr('ALLOTI', L(clause(r94), evaluation)),
+    L(clause(r95), preference),
+    L(clause(r11d), delai),
+    FIN,
+  ];
+  const titre = ligne(d, '1.2. - DONNEES PARTICULIERES').texte;
+  toutEstRendu(d, 'DPAO-T');
+  return { fichier: 'DPAO-T.docx', sigle: 'DPAO-T', source: 'travaux-dpao', titre, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
+}
+
+// ══ AE des travaux (marché ordinaire) ═══════════════════════════════════════════════════════════════
+// Source : « 4-Dossier type d'appel d'offres-Travaux_Acte d'engagement » (ARMP). Document du CANDIDAT (identification,
+// montants, domiciliation, choix de l'avance, signatures, annexes) : ses chevrons restent. La fiche remplit les trous de
+// l'acheteur et choisit les blocs : procédure, type de prix × tranches, révision, monnaie, groupement, avance, point de
+// départ, délai. La sous-traitance reste au candidat (« Rayer les dispositions inapplicables », plan du lot D4, Q9).
+// Champs et options à créer (T-1) : B02-MW-04 (maître d'ouvrage délégué, Q6), B02-LT-06 / B02-LT-07 (délais
+// d'affermissement, Q2), option « ordre de service de commencer les travaux » de B09-DT-01, option MIXTE de typePrix (Q4).
+function aeTravaux() {
+  const SRC = lireSource('travaux-ae');
+  const d = sectionCellules(SRC, "2.1. CADRE D'ACTE D'ENGAGEMENT", null);
+  const tr = [];
+  const x = (motif, ...r) => { const u = ligne(d, motif); return traiter(tr, u.n, u.texte, ...r); };
+  const xr = (motif, rang, ...r) => { const u = ligne(d, motif, rang); return traiter(tr, u.n, u.texte, ...r); };
+  const E = emetteur(d, tr);
+
+  const conditions = {
+    ALLOTI: 'alloti = OUI',
+    'NON-ALLOTI': 'alloti != OUI',
+    AOO: "B01-AC-13 = Appel d'offres ouvert",
+    PREQUALIFICATION: 'B01-AC-13 contient qualification',
+    'DEUX-ETAPES': 'B01-AC-13 contient deux étapes',
+    RESTREINT: 'B01-AC-13 contient restreint',
+    MOD: 'B02-MW-04 renseigne',
+    MOE: 'B02-MW-01 renseigne',
+    GROUPEMENT: 'groupement = OUI',
+    'GROUPEMENT-CONJOINT': 'groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE',
+    ARIARY: 'B05-MN-01 != Devises',
+    DEVISES: 'B05-MN-01 = Devises',
+    REVISABLE: 'prixRevisable = OUI',
+    UNITAIRES: 'typePrix = UNITAIRES et tranches != OUI',
+    FORFAIT: 'typePrix = FORFAITAIRE et tranches != OUI',
+    'UNITAIRES-TRANCHES': 'typePrix = UNITAIRES et tranches = OUI',
+    'FORFAIT-TRANCHES': 'typePrix = FORFAITAIRE et tranches = OUI',
+    'TRANCHE-C2': 'tranches = OUI et B02-LT-05 renseigne',
+    'DEPART-OS': 'tranches != OUI et B09-DT-01 contient ordre de service',
+    TRANCHES: 'tranches = OUI',
+    'AFFERMISSEMENT-1': 'tranches = OUI et B02-LT-05 vide',
+    'AFFERMISSEMENT-2': 'tranches = OUI et B02-LT-05 renseigne',
+    PREPARATION: 'B09-PT-01 = OUI',
+    RECEPTION: 'B09-DL-04 renseigne',
+    'SANS-AVANCE': 'avance = NON',
+    AVANCE: 'avance = OUI',
+    'AVANCE-GROUPEMENT': 'avance = OUI et groupement = OUI',
+    'ANNEXE-FORFAIT': 'typePrix = FORFAITAIRE',
+    'ANNEXE-UNITAIRES': 'typePrix = UNITAIRES',
+    'ANNEXE-MIXTE': 'typePrix = MIXTE',
+  };
+  const ajouts = [];
+
+  retirer(d, 'titre de partie du dossier type', "2.1. CADRE D'ACTE D'ENGAGEMENT");
+  retirer(d, 'note aux utilisateurs, « à supprimer dans le DAO définitif »', 'Note aux utilisateurs', "L'Acte d’Engagement signé en un seul", "L'Acte d’Engagement est, après", 'Les commentaires entre');
+  retirer(d, 'instruction à l’acheteur', '<préciser selon le cas', '<Dans le cas de paiement avec', '<Dans le cas où les prix sont révisables',
+    "Dans le cas d'un marché à prix unitaire :", "Dans le cas d'un marché à prix forfaitaire :", "Dans le cas d'un marché à prix unitaires avec tranches :",
+    "Dans le cas d'un marché à prix forfaitaires avec tranches :", "<compléter avec les montants des autres tranches", '<Insérer si le point de départ',
+    '<ou, en cas de marché à tranches', '<préciser le cas échéant:>', '<Préciser, le cas échéant>');
+  retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', (l) => /^<\s*(soit|ou)\s*:?\s*>\s*:?$/i.test(l.texte));
+  retirer(d, 'rédaction « date de fin du marché » : le délai d’exécution est retenu (plan du lot D4, Q9)', 'Le marché prendra fin');
+
+  const MARCHE = "<Indiquer: l'intitulé principal du Marché, le cas échéant le projet dans le cadre duquel le marché est passé, ou le numéro et l'objet du lot compris dans le projet >";
+  const DAO = ['N° du <date>', 'N° {{B02-OB-03}} du <date>', 'jeton'];
+  const blocs = [
+    C(x("ACTE D'ENGAGEMENT (A.E)")),
+    ...E('AUTORITE CONTRACTANTE', "<Indiquer: l'intitulé", [['<indiquer le nom >', ['<indiquer le nom >', '{{B01-AC-01}}', 'jeton']]]),
+    ...SI('NON-ALLOTI', P(x("<Indiquer: l'intitulé", [MARCHE, '{{B02-OB-01}}', 'jeton']))),
+    ...SI('ALLOTI', P(x("<Indiquer: l'intitulé", [MARCHE, '{{B02-OB-01}} — lot n° {{LOT}}', 'jeton']))),
+    ...E('Marché passé selon', "d'appel d'offres ouvert régie"),
+    ...SI('AOO', P(x("d'appel d'offres ouvert régie"))),
+    ...SI('PREQUALIFICATION', P(x("d'appel d'offres ouvert avec"))),
+    ...SI('DEUX-ETAPES', P(x("d'appel d'offres en deux"))),
+    ...SI('RESTREINT', P(x("d'appel d'offres restreint", ['Publics>', 'Publics', 'choix']))),
+    ...E('Imputation budgétaire', "Maître d'Ouvrage Délégué", [
+      ['Imputation budgétaire', ['<à préciser>', '{{B01-AC-17}}', 'jeton']],
+      ['<insérer le nom>', ['<insérer le nom>', '{{B01-AC-05}}', 'jeton']]]),
+    ...SI('MOD', P(x("Maître d'Ouvrage Délégué", ['<préciser le nom du mandataire, le cas échéant>', '{{B02-MW-04}}', 'jeton']))),
+    ...SI('MOE', P(x("Maître d'œuvre", ["<préciser le nom du Maître d'œuvre , le cas échéant>", '{{B02-MW-01}}', 'jeton']))),
+    ...E('Date de notification du Marché', "Engagement à remplir par les MEMBRES", [
+      ["Après avoir pris connaissance", DAO],
+      ["L'offre ainsi présentée me lie", ['<date>', '{{DERIVE.fin-validite-offre}}', 'jeton']]]),
+    ...SI('GROUPEMENT', E("Engagement à remplir par les MEMBRES", 'ARTICLE 2 - PRIX', [
+      ["Après avoir pris connaissance", DAO],
+      ["L'offre ainsi présentée nous lie", ['<date>', '{{DERIVE.fin-validite-offre}}', 'jeton']]])),
+    ...E('ARTICLE 2 - PRIX', 'La monnaie de compte'),
+    ...SI('ARIARY', P(x('La monnaie de compte'))),
+    ...SI('DEVISES', P(x('Tous les paiements à réaliser en monnaie différente'))),
+    ...SI('REVISABLE', P(x('Les modalités de variation des prix'))),
+    ...SI('UNITAIRES', E('Les Travaux, objet du présent marché, seront rémunérés, par application des prix unitaires qui', 'Les Travaux, objet du présent marché, seront rémunérées par application du prix')),
+    ...SI('FORFAIT', E('Les Travaux, objet du présent marché, seront rémunérées par application du prix', 'Les Travaux, objet du présent marché, seront rémunérés, par application des prix unitaires résultant')),
+    // La tranche conditionnelle 2 (« Tranche conditionnelle … ») est imbriquée dans SA forme de prix.
+    ...SI('UNITAIRES-TRANCHES',
+      E('Les Travaux, objet du présent marché, seront rémunérés, par application des prix unitaires résultant', ['Tranche conditionnelle … :', 0]),
+      SI('TRANCHE-C2', E(['Tranche conditionnelle … :', 0], 'Les Travaux, objet du présent marché, seront rémunérés, par application du prix'))),
+    ...SI('FORFAIT-TRANCHES',
+      E('Les Travaux, objet du présent marché, seront rémunérés, par application du prix', ['Tranche conditionnelle … :', 0]),
+      SI('TRANCHE-C2', E(['Tranche conditionnelle … :', 1], 'ARTICLE 3'))),
+    ...E('ARTICLE 3', 'ARTICLE 5', [['Est désigné comme Comptable', ['le……………….', 'le {{B03-NT-01}}', 'jeton']]]),
+    ...E('ARTICLE 5', 'Le délai de réalisation des Travaux prend effet'),
+    ...SI('DEPART-OS', P(x('Le délai de réalisation des Travaux prend effet'))),
+    ...SI('TRANCHES', P(x('La tranche ferme prend effet')), P(x('La (les) tranche(s) conditionnelle(s) prend')), P(x('La (les) date(s) limite'))),
+    ...SI('AFFERMISSEMENT-1', P(x('<préciser pour chaque tranche', ['<préciser pour chaque tranche les dates ou le délai à compter de la notification du marché >', '{{B02-LT-06}}', 'jeton']))),
+    ...SI('AFFERMISSEMENT-2', P(x('<préciser pour chaque tranche', ['<préciser pour chaque tranche les dates ou le délai à compter de la notification du marché >', '{{B02-LT-06}} ; {{B02-LT-07}}', 'jeton']))),
+    ...E('5.2. Délais', 'La période de préparation est comprise', [['Le délai d’exécution est fixé à', ['<insérer délai>', '{{B09-DL-01}}', 'jeton']]]),
+    ...SI('PREPARATION', P(x('La période de préparation est comprise'))),
+    ...E('Le calendrier prévisionnel', 'La réception de l'),
+    ...SI('RECEPTION', P(x("La réception de l'ouvrage", ['<date de fin de marché prévue>', '{{B09-DL-04}}', 'jeton']))),
+    ...E('ARTICLE 6', "Dans le cas d'un groupement d'Entrepreneurs solidaires"),
+    ...SI('GROUPEMENT', E("Dans le cas d'un groupement d'Entrepreneurs solidaires", "Dans le cas d'un groupement d'Entrepreneurs conjoints")),
+    ...SI('GROUPEMENT-CONJOINT', E("Dans le cas d'un groupement d'Entrepreneurs conjoints", '6.2 Avance')),
+    ...E('6.2 Avance', 'Le CCAP ne prévoit pas'),
+    ...SI('SANS-AVANCE', P(x('Le CCAP ne prévoit pas'))),
+    ...SI('AVANCE', E("L'Entrepreneur désigné ci-avant", 'En cas de groupement')),
+    ...SI('AVANCE-GROUPEMENT', E('En cas de groupement', 'Fait en un seul original')),
+    ...E('Fait en un seul original', 'Annexe n° 1 :'),
+    ...SI('ANNEXE-FORFAIT', P(x("Annexe n° 1 : <Dans le cas d'un prix forfaitaire>", ["<Dans le cas d'un prix forfaitaire>: ", '', 'retire']))),
+    ...SI('ANNEXE-UNITAIRES', P(x("Annexe n° 1 : <dans le cas d'un marché à prix unitaires>", ["<dans le cas d'un marché à prix unitaires>: ", '', 'retire'])), P(x('détail quantitatif et estimatif.'))),
+    ...SI('REVISABLE', P(x('Annexe n° < > : <en cas de prix', ['<en cas de prix révisables:> ', '', 'retire']))),
+    ...E("Annexe n° < > : demande d'acceptation", ['=ANNEXE 1', 0]),
+    ...SI('ANNEXE-FORFAIT', E(['=ANNEXE 1', 0], ['=ANNEXE 1', 0])),
+    ...SI('ANNEXE-UNITAIRES', E(['=ANNEXE 1', 1], ['=ANNEXE 1', 0])),
+    ...SI('ANNEXE-MIXTE', E(['=ANNEXE 1', 2], '=ANNEXE')),
+    ...SI('REVISABLE', E(['=ANNEXE', 0], '=ANNEXE')),
+    ...E(['=ANNEXE', 1]),
+  ];
+  const titre = ligne(d, 'MARCHÉ PUBLIC DE TRAVAUX').texte;
+  toutEstRendu(d, 'AE-T');
+  return { fichier: 'AE-T.docx', sigle: 'AE-T', source: 'travaux-ae', titre, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
+}
+
+// ══ CCAP des travaux (marché ordinaire) et ses six annexes ════════════════════════════════════════
+// Source : « 5-Dossier type d'appel d'offres_Travaux_Cahier Prescriptions Spéciales » (ARMP) : le CCAP en 32 articles,
+// puis les six annexes que la fiche annonçait comme « formulaires à remplir » (B11-FR-01 à -06) — formule de révision,
+// garantie bancaire et caution de bonne exécution, garantie bancaire et caution de restitution d'avance, cadre du
+// bordereau des prix et du détail quantitatif — chacune sous sa condition ; enfin les Spécifications techniques, pièce
+// de l'acheteur (titres gardés, notes de rédaction retirées). Ce que le modèle donne « par exemple » (assurances,
+// sujétions, approvisionnements, clause d'arbitrage) est remplacé par la saisie, comme aux fournitures ; les blancs sans
+// champ restent visibles. Texte officiel fidèle (Q5 : renvoi « article 16 » pour l'article 5 compris).
+// Champs à créer (T-1) : B02-MW-04 (maître d'ouvrage délégué), B02-LT-06 / -07 (affermissement), B05-GE-05 (taux de la
+// garantie de bonne exécution, ≤ 5 %), B09-BT-01 (travaux de bâtiment : CPC/TBM et décennale). Pénalités : la question
+// `penalites` du cadrage (comme ailleurs), B09-PE-01 à retirer.
+function ccapTravaux() {
+  const SRC = lireSource('travaux-ccap');
+  const d = sectionCellules(SRC, 'MARCHÉ PUBLIC DE TRAVAUX', null);
+  const tr = [];
+  const x = (motif, ...r) => { const u = ligne(d, motif); return traiter(tr, u.n, u.texte, ...r); };
+  const xr = (motif, rang, ...r) => { const u = ligne(d, motif, rang); return traiter(tr, u.n, u.texte, ...r); };
+  const xj = (motif, jeton) => { const u = ligne(d, motif); return traiter(tr, u.n, u.texte, [u.texte, jeton, 'jeton']); };
+  const E = emetteur(d, tr, /^(Article \d|\d+\.\d+\.?\s*-?\s|\d+\.\d+\.\d+\.?\s|Annexe au CCAP$|CAHIER DES CLAUSES|SPECIFICATIONS TECHNIQUES$)/);
+  const NA = (k) => P(xr('=Non applicable', k));
+
+  const conditions = {
+    AOO: "B01-AC-13 = Appel d'offres ouvert",
+    PREQUALIFICATION: 'B01-AC-13 contient qualification',
+    'DEUX-ETAPES': 'B01-AC-13 contient deux étapes',
+    RESTREINT: 'B01-AC-13 contient restreint',
+    MOD: 'B02-MW-04 renseigne',
+    MOE: 'B02-MW-01 renseigne',
+    'SANS-MOE': 'B02-MW-01 vide',
+    PROJET: 'B02-OT-01 renseigne',
+    'SANS-PROJET': 'B02-OT-01 vide',
+    ALLOTI: 'alloti = OUI',
+    TRANCHES: 'tranches = OUI',
+    'TRANCHE-C1': 'tranches = OUI et B02-LT-04 renseigne',
+    'TRANCHE-C2': 'tranches = OUI et B02-LT-05 renseigne',
+    ESTIMATIONS: 'B08-EF-01 renseigne',
+    'GROUPEMENT-SOLIDAIRE': 'groupement = OUI et formeGroupement = SOLIDAIRE_OBLIGATOIRE',
+    'GROUPEMENT-LIBRE': 'groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE',
+    BATIMENT: 'B09-BT-01 = OUI',
+    'SANS-GBE': 'B05-GE-01 != OUI',
+    GBE: 'B05-GE-01 = OUI',
+    'GBE-DEVISES': 'B05-GE-01 = OUI et B05-MN-01 = Devises',
+    'GBE-BANCAIRE': 'B05-GE-01 = OUI et B05-GE-03 contient bancaire',
+    'GBE-CAUTION': 'B05-GE-01 = OUI et B05-GE-03 contient caution',
+    'GBE-CHEQUE': 'B05-GE-01 = OUI et B05-GE-03 contient chèque',
+    'LIBERATION-MOITIE': 'B05-GE-01 = OUI et B05-GE-04 contient 50',
+    'LIBERATION-TOTALE': 'B05-GE-01 = OUI et B05-GE-04 contient 100',
+    'RETENUE-NON': 'B05-RG-01 != OUI',
+    'RETENUE-OUI': 'B05-RG-01 = OUI',
+    'RESTITUTION-NON': 'B05-GA-01 != OUI',
+    'RESTITUTION-OUI': 'B05-GA-01 = OUI',
+    'AUTRES-GARANTIES-NON': 'B05-AG-01 vide',
+    'AUTRES-GARANTIES-OUI': 'B05-AG-01 renseigne',
+    'DISCRETION-NON': 'B09-OD-01 != OUI',
+    'DISCRETION-OUI': 'B09-OD-01 = OUI',
+    'DISCRETION-NOTIFICATION': 'B09-OD-01 = OUI et B09-OD-02 renseigne',
+    'DISCRETION-ANNEXE': 'B09-OD-01 = OUI et B09-OD-03 renseigne',
+    'PRIX-REVIENT-NON': 'B09-PV-01 != OUI',
+    'PRIX-REVIENT-OUI': 'B09-PV-01 = OUI',
+    'PRIX-REVIENT-ELEMENTS': 'B09-PV-01 = OUI et B09-PV-02 renseigne',
+    'SUJETION-OCCUPE': 'B09-CH-01 renseigne',
+    'SUJETION-DELAI': 'B09-CH-02 renseigne',
+    'SUJETION-HORAIRE': 'B09-CH-03 renseigne',
+    'SUJETION-CLES': 'B09-CH-04 renseigne',
+    'SUJETION-PRESTATIONS': 'B09-CH-05 renseigne',
+    DEVISES: 'B05-MN-01 = Devises',
+    FORFAIT: 'typePrix = FORFAITAIRE',
+    UNITAIRES: 'typePrix = UNITAIRES',
+    FERME: 'prixRevisable = NON',
+    REVISABLE: 'prixRevisable = OUI',
+    'REGIE-NON': 'B08-RE-02 != OUI',
+    'REGIE-OUI': 'B08-RE-02 = OUI',
+    'APPROVISIONNEMENTS-NON': 'B08-AP-01 != OUI',
+    'APPROVISIONNEMENTS-OUI': 'B08-AP-01 = OUI',
+    'SANS-AVANCE': 'avance = NON',
+    AVANCE: 'avance = OUI',
+    'AVANCE-ARIARY': 'avance = OUI et B05-MN-01 != Devises',
+    'AVANCE-DEVISES': 'avance = OUI et B05-MN-01 = Devises',
+    'REGLEMENT-UNIQUE': 'B08-MR-01 = OUI',
+    'DECOMPTES-MENSUELS': 'B08-MR-01 != OUI',
+    'FORCE-MAJEURE-OUI': 'B09-FM-01 = OUI',
+    'FORCE-MAJEURE-NON': 'B09-FM-01 != OUI',
+    'PENALITES-NON': 'penalites = NON',
+    'PENALITES-OUI': 'penalites != NON',
+    'PREPARATION-NON': 'B09-PT-01 != OUI',
+    'PREPARATION-OUI': 'B09-PT-01 = OUI',
+    HYGIENE: 'B09-PT-01 = OUI et B09-PT-04 renseigne',
+    'RECEPTION-TRANCHES': 'tranches = OUI et B09-RP-01 = OUI',
+    DEROGATIONS: 'B10-DR-01 renseigne',
+    'ANNEXE-GBE-BANCAIRE': 'B05-GE-01 = OUI et B05-GE-03 contient bancaire',
+    'ANNEXE-GBE-CAUTION': 'B05-GE-01 = OUI et B05-GE-03 contient caution',
+    'ANNEXE-AVANCE': 'avance = OUI et B05-GA-01 = OUI',
+  };
+  const ajouts = ['{{B02-LV-02}}', '{{B09-AC-01}}', '{{B09-AC-02}}', '{{B09-AC-03}}', '{{B09-CH-01}}', '{{B09-CH-02}}', '{{B09-CH-03}}', '{{B09-CH-04}}',
+    '{{B09-CH-05}}', '{{B08-AP-02}}', '{{B09-RP-04}}', '{{B10-PC-01}}', '{{B10-DR-01}}'];
+
+  // ── Ce qui ne s'imprime pas
+  const repere = (debut) => { const u = d.lignes.find((v) => !d.retirees.has(v.n) && v.texte.startsWith(debut)); if (!u) throw new Error(`repère « ${debut} » absent`); return u.ligne; };
+  const table = repere('TABLE DES MATIERES');
+  const ligneDe = (debut) => d.lignes.find((u) => u.texte.startsWith(debut)).ligne;
+  const preambule = ligneDe('Les dispositions du présent Cahier des Clauses Administratives Particulières (CCAP) précisent');
+  retirer(d, 'note de rédaction du modèle, « à supprimer »', '[note 1]', 'NOTE AUX UTILISATEURS', '<Le document ci-après (CCAP type)');
+  retirer(d, 'sommaire : ses numéros de page ne valent que pour le document type', (l) => l.ligne >= table && l.ligne < preambule);
+  retirer(d, 'fin de la même instruction (références du marché)', 'le cas échéant, le projet dans le cadre', "ou le numéro et l'objet du lot compris");
+  retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', (l) => /^<\s*(soit|ou)\s*:?\s*>\s*:?$/i.test(l.texte));
+  retirer(d, 'instruction à l’acheteur', '<préciser selon le cas', '<si les travaux comprennent plusieurs lots', '<si les travaux comprennent plusieurs tranches',
+    '<Etc. selon le nombre', '<à compléter, le cas échéant>', "<S'il n'est pas désigné", '<préciser le délai de remise', '<Préciser si les Entrepreneurs groupés',
+    '<en cas de construction ou réhabilitation', "<Lorsque la durée d'exécution", "<Si une garantie d'exécution est requise", '<Si le Marché comporte un part',
+    '<choisir un ou plusieurs des formes', '<Si un délai de garantie contractuelle', '<indiquer les polices', '<les exemples suivants sont à adapter',
+    '<Dans le cas où le paiement en devises', "<dans le cas d'un Marché à prix forfaitaire", "<dans le cas d'un Marché à prix unitaire",
+    '<soit préciser les modalités', '<si le délai d\'exécution du marché ne dépasse', "<En cas d'établissement de décomptes", '<cas marché à prix',
+    '<Définir la limite', '<Fixer ici la limite', '< Fixer ici la limite', '< si le', '<si le Marché fixe une date limite', '<Préciser, en fonction de',
+    "<S'il est prévu un plan d'hygiène", '<La fixation par le Marché', '<en cas de dérogation au délai de 20', '<Indiquer, le cas échéant :>',
+    "Lorsqu’il est nécessaire de modifier le délai d’un", '<dans le cas d\'un marché passé avec une entreprise', '<Exemple : clause', '<Lorsque l\'on souhaite fixer');
+  retirer(d, 'suite de la même instruction (documents contractuels), remplacée par la saisie B09-DC-01', "d'une part les documents tels que", "d'autre part les décompositions du prix");
+  retirer(d, 'liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)', '- Lot n°1', '- Lot n°2', '- etc.');
+  const assurances = ligneDe('A- Installations et engins de chantier');
+  const sujetions = ligneDe('<cas où les travaux sont réalisés');
+  retirer(d, "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03", (l) => l.ligne === assurances);
+  retirer(d, "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05", (l) => l.ligne === sujetions);
+  retirer(d, "modalités d'exemple des acomptes sur approvisionnements : remplacées par la saisie B08-AP-02", 'A l’appui de tout projet de décompte', 'Les matériaux ne peuvent être pris en compte', 'Le montant pris en compte dans le projet de décompte');
+  retirer(d, "rédaction « dates limites » : le délai d'exécution est retenu (plan du lot D4, Q9)", 'Date limite de commencement', "Date limite d'achèvement");
+  retirer(d, "clause d'arbitrage d'exemple (CNUDCI, « à valider ») : remplacée par la saisie B10-PC-01", 'Tous litige', 'Le tribunal arbitral sera composé', "L'autorité de nomination sera", "A défaut d'accord des Parties");
+  retirer(d, 'notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)', (l) => l.ligne >= repere('Notes aux utilisateurs relatives à la préparation du Bordereau des prix et du Détail quantitatif et estimatif') && l.ligne < repere('BORDEREAU DES PRIX'));
+  retirer(d, 'notes de rédaction des spécifications techniques (pièce de l’acheteur)', (l) => l.ligne > repere('SPECIFICATIONS TECHNIQUES') && l.ligne < repere('Annexe aux Spécifications Techniques'));
+
+  const MARCHE = "<indiquer les références et l'intitulé principal du Marché,";
+  const blocs = [
+    C(x('MARCHÉ PUBLIC DE TRAVAUX')),
+    C(x('CAHIER DES PRESCRIPTIONS SPECIALES')),
+    ...E('AUTORITE CONTRACTANTE', '<indiquer les références', [["<indiquer le nom et l'adresse>", ["<indiquer le nom et l'adresse>", '{{B01-AC-01}} — {{B01-AC-02}}', 'jeton']]]),
+    P(x('<indiquer les références', [MARCHE, '{{B02-OB-03}} — {{B02-OB-01}}', 'jeton'])),
+    ...E('Marché passé selon', "d'appel d'offres ouvert régie"),
+    ...SI('AOO', P(x("d'appel d'offres ouvert régie"))),
+    ...SI('PREQUALIFICATION', P(x("d'appel d'offres ouvert avec"))),
+    ...SI('DEUX-ETAPES', P(x("d'appel d'offres en deux"))),
+    ...SI('RESTREINT', P(x("d'appel d'offres restreint", ['Publics>', 'Publics', 'choix']))),
+    ...E('PERSONNE RESPONSABLE', "MAITRE D'OUVRAGE DELEGUE", [['<Insérer le nom>', ['<Insérer le nom>', '{{B01-AC-05}}', 'jeton']]]),
+    ...SI('MOD', P(x("MAITRE D'OUVRAGE DELEGUE", ['<préciser le nom du mandataire, le cas échéant>', '{{B02-MW-04}}', 'jeton']))),
+    ...SI('MOE', P(x("MAITRE D'ŒUVRE", ["<préciser le nom du Maître d' oeuvre, le cas échéant>", '{{B02-MW-01}}', 'jeton']))),
+    ...E('Le présent Cahier des Prescriptions Spéciales comprend', 'Article 1 - Objet', [['Le CCAP est destiné', ['[note:1]', '', 'retire']]]),
+    // Article 1
+    ...E('Article 1 - Objet', 'Les stipulations du présent'),
+    ...SI('PROJET', P(x('Les stipulations du présent', ['<préciser le nom de l’opération, le cas échéant>', '{{B02-OT-01}}', 'jeton']))),
+    ...SI('SANS-PROJET', P(x('Les stipulations du présent', [' dans le cadre de <préciser le nom de l’opération, le cas échéant>', '', 'retire']))),
+    ...E('Le marché a pour objet', 'Ces travaux comprennent', [["<indiquer l'objet", ["<indiquer l'objet et le lieu d'exécution des travaux >", '{{B02-OT-02}}', 'jeton']]]),
+    ...SI('ALLOTI', P(x('Ces travaux comprennent', ['<nombre >', '{{B02-LV-01}}', 'jeton'])), P('{{B02-LV-02}}')),
+    ...E('Les caractéristiques techniques des ouvrages', 'Les travaux sont décomposés en tranches'),
+    ...SI('TRANCHES',
+      P(x('Les travaux sont décomposés en tranches')),
+      P(x('- tranche ferme', ["<compléter selon le projet, l'objet de la tranche et son étendue>", '{{B02-LT-03}}', 'jeton'])),
+      SI('TRANCHE-C1', P(x('- tranche conditionnelle 1', ["<compléter selon le projet, l'objet de la tranche et son étendue>", '{{B02-LT-04}}', 'jeton']))),
+      SI('TRANCHE-C2', P(x('- tranche conditionnelle 2', ["<compléter selon le projet, l'objet de la tranche et son étendue>", '{{B02-LT-05}}', 'jeton']))),
+      P(x("Les délais d'affermissement"))),
+    ...E('1.2.- Intervenants', '1.2.2.', [
+      ["<Préciser les nom et coordonnées du Maître de l'ouvrage>", ["<Préciser les nom et coordonnées du Maître de l'ouvrage>", '{{B01-AC-01}}', 'jeton']],
+      ['<Préciser les nom et coordonnées>', ['<Préciser les nom et coordonnées>', '{{B01-AC-05}}', 'jeton']]]),
+    ...SI('MOD', E('1.2.2.', '1.2.3.', [['<Préciser les nom et coordonnées>', ['<Préciser les nom et coordonnées>', '{{B02-MW-04}}', 'jeton']]])),
+    ...E('1.2.3.', "La maîtrise d'œuvre est assurée"),
+    ...SI('MOE',
+      P(x("La maîtrise d'œuvre est assurée", ["<indiquer les référence du lien contractuel entre le Maître de l'ouvrage et le Maître d'œuvre >", '{{B02-MW-02}}', 'jeton'])),
+      P(x("<Préciser le nom et les coordonnées du Maître d'œuvre", ["<Préciser le nom et les coordonnées du Maître d'œuvre >", '{{B02-MW-01}}', 'jeton']))),
+    ...SI('SANS-MOE', P(x("Les tâches du maître d'œuvre sont assurées")), P(x('Dans ce cas, le maître d’œuvre sera désigné'))),
+    // Articles 2 à 5
+    ...E('Article 2 -', '<mentionner l'),
+    P(xj("<mentionner l'adresse de notification", '{{B09-NE-01}}')),
+    ...E('Article 3 -', 'La communication par l'),
+    ...SI('ESTIMATIONS', P(x("La communication par l'Entrepreneur", ['<nombre>', '{{B08-EF-01}}', 'jeton']))),
+    ...E('Article 4 -', 'Les Entrepreneurs groupés seront considérés comme solidaires'),
+    ...SI('GROUPEMENT-SOLIDAIRE', P(x('Les Entrepreneurs groupés seront considérés comme solidaires'))),
+    ...SI('GROUPEMENT-LIBRE', P(x('Les Entrepreneurs groupés seront considérés comme solidaires')), P(x('Les Entrepreneurs groupés seront considérés comme conjoints'))),
+    ...E('Article 5 -', 'Délai de notification'),
+    ...SI('TRANCHES',
+      P(x('Délai de notification de l’ordre de service prescrivant de commencer les travaux de la tranche conditionnelle n°1', ['<nombre de jours ou de mois>', '{{B02-LT-06}}', 'jeton'])),
+      SI('TRANCHE-C2', P(x('Délai de notification de l’ordre de service prescrivant de commencer les travaux de la tranche conditionnelle n°2', ['<nombre de jours ou de mois>', '{{B02-LT-07}}', 'jeton'])))),
+    // Article 6
+    ...E('Article 6 -', '<Enumérer'),
+    P(xj('<Enumérer', '{{B09-DC-01}}')),
+    ...SI('BATIMENT', E('i) - Arrêté n° 738', 'Article 7 -')),
+    // Article 7 — garanties
+    ...E('Article 7 -', 'Aucune garantie d'),
+    ...SI('SANS-GBE', P(x("Aucune garantie d'exécution"))),
+    ...SI('GBE',
+      P(x('Le montant de la garantie de bonne exécution est fixé')),
+      P(x('<insérer le pourcentage du prix', ['<insérer le pourcentage du prix du Marché qui ne peut dépasser cinq pour cent (5%)>', '{{B05-GE-05.chiffres}} %', 'jeton'])),
+      SI('GBE-DEVISES',
+        P(x('Montant de la garantie de bonne exécution :')),
+        P(xr('<insérer le pourcentage>', 0, ['<insérer le pourcentage>', '{{B05-GE-02}}', 'jeton'])),
+        P(x('=et')),
+        P(xr('<insérer le pourcentage>', 1, ['<insérer le pourcentage>', '{{B05-GE-05.chiffres}} %', 'jeton']))),
+      P(x('La garantie de bonne exécution devra être fournie')),
+      SI('GBE-BANCAIRE', P(x('- soit de garantie bancaire'))),
+      SI('GBE-CAUTION', P(x('- soit une caution personnelle'))),
+      SI('GBE-CHEQUE', P(x('- soit un chèque de banque'))),
+      SI('LIBERATION-MOITIE', P(x('La garantie de bonne exécution est libérée de 50%'))),
+      SI('LIBERATION-TOTALE', P(x('La garantie de bonne exécution est libérée à 100%')))),
+    ...E('7.2.', '=Non applicable'),
+    ...SI('RETENUE-NON', NA(0)),
+    ...SI('RETENUE-OUI', P(x('Une retenue de garantie de', ['<maximum 5 %>', '{{B05-RG-02.chiffres}} %', 'jeton'], ['<ajouter le cas échéant:> ', '', 'retire']))),
+    ...E('7.3.', '=Non applicable'),
+    ...SI('RESTITUTION-NON', NA(1)),
+    ...SI('RESTITUTION-OUI', P(x("Si l'Entrepreneur choisit de recevoir", ['<ajouter le cas échéant:> ', '', 'retire']))),
+    ...E('7.4.', '=Non applicable'),
+    ...SI('AUTRES-GARANTIES-NON', NA(2)),
+    ...SI('AUTRES-GARANTIES-OUI', P(xj('<soit mentionner les garanties spécifiques', '{{B05-AG-01}}'))),
+    // Article 8 — assurances (l'exemple du modèle remplacé par la saisie)
+    ...E('Article 8 -', 'Article 9.'),
+    P('{{B09-AC-01}}'),
+    P('{{B09-AC-02}}'),
+    ...SI('BATIMENT', P('{{B09-AC-03}}')),
+    // Article 9 — discrétion
+    ...E('Article 9.', '=Non applicable'),
+    ...SI('DISCRETION-NON', NA(3)),
+    ...SI('DISCRETION-OUI', P(x('Les travaux, objet du présent Marché, sont à exécuter'))),
+    ...SI('DISCRETION-NOTIFICATION', P(x("Soit : que le Maître d'œuvre", ['Soit : ', '', 'retire']))),
+    ...SI('DISCRETION-ANNEXE', P(x('Soit : mentionnées en Annexe', ['Soit : ', '', 'retire']))),
+    // Article 10 — prix de revient
+    ...E('Article 10 -', '=Non applicable.'),
+    ...SI('PRIX-REVIENT-NON', P(x('=Non applicable.'))),
+    ...SI('PRIX-REVIENT-OUI', P(x("Les dispositions de l'Article 8 du CCAG"))),
+    ...SI('PRIX-REVIENT-ELEMENTS', P(xj('<préciser, le cas échéant, les éléments spécifiques', '{{B09-PV-02}}'))),
+    // Article 11 — prix
+    ...E('Article 11 -', '11.2.'),
+    ...SI('SUJETION-OCCUPE', P('{{B09-CH-01}}')),
+    ...SI('SUJETION-DELAI', P('{{B09-CH-02}}')),
+    ...SI('SUJETION-HORAIRE', P('{{B09-CH-03}}')),
+    ...SI('SUJETION-CLES', P('{{B09-CH-04}}')),
+    ...SI('SUJETION-PRESTATIONS', P('{{B09-CH-05}}')),
+    ...E('11.2.', 'Les prix du Marché peuvent comporter'),
+    ...SI('DEVISES', E('Les prix du Marché peuvent comporter', '11.3.')),
+    ...E('11.3.', 'Le Marché est traité sur la base d’un prix forfaitaire'),
+    ...SI('FORFAIT', P(x('Le Marché est traité sur la base d’un prix forfaitaire'))),
+    ...SI('UNITAIRES', P(x('Le Marché est traité sur la base de prix unitaires', ['<ajouter le cas échéant :> ', '', 'retire']))),
+    ...E('11.4.', 'Les prix sont fermes'),
+    ...SI('FERME', E('Les prix sont fermes', 'Les prix seront révisés')),
+    ...SI('REVISABLE', P(x('Les prix seront révisés'))),
+    // Article 12 — règlement, régie
+    ...E('Article 12 -', '<préciser ici les modalités'),
+    P(xj('<préciser ici les modalités de règlement', '{{B08-RE-01}}')),
+    ...E('12.2.', '=Non applicable'),
+    ...SI('REGIE-NON', NA(4)),
+    ...SI('REGIE-OUI', E('Coefficient de majoration des salaires', 'Article 13 -', [['<Indiquer le taux de charges applicables', ['<Indiquer le taux de charges applicables aux salaires, le taux de frais généraux admis et le taux de marge admis>', '{{B08-RE-03}}', 'jeton']]])),
+    // Article 13 — approvisionnements
+    ...E('Article 13 -', '=Non applicable'),
+    ...SI('APPROVISIONNEMENTS-NON', NA(5)),
+    ...SI('APPROVISIONNEMENTS-OUI', P('{{B08-AP-02}}')),
+    // Article 14 — avance
+    ...E('Article 14.', '=Non applicable'),
+    ...SI('SANS-AVANCE', NA(6)),
+    ...SI('AVANCE', P(x("Le montant de l'avance forfaitaire est de"))),
+    ...SI('AVANCE-ARIARY', P(x('<pourcentage> du montant total des travaux', ['<pourcentage>', '{{B08-AF-03.chiffres}} %', 'jeton']))),
+    ...SI('AVANCE-DEVISES',
+      P(x('<pourcentage> du montant en monnaie nationale', ['<pourcentage>', '{{B08-AF-04.chiffres}} %', 'jeton'])),
+      P(x('<pourcentage> du montant en devises', ['<pourcentage>', '{{B08-AF-05.chiffres}} %', 'jeton']))),
+    // Articles 15 et 16
+    ...E('Article 15 -', 'Les comptes seront réglés en une seule fois'),
+    ...SI('REGLEMENT-UNIQUE', P(x('Les comptes seront réglés en une seule fois'))),
+    ...SI('DECOMPTES-MENSUELS', P(x('Délai de remise du projet de décompte'))),
+    ...SI('UNITAIRES', P(x('Le règlement des sommes dues à l’Entrepreneur s’effectuera par application des prix unitaires'))),
+    ...SI('FORFAIT', E('Le règlement des sommes dues à l’Entrepreneur s’effectuera par application du prix forfaitaire', 'Article 17 -')),
+    // Articles 17 à 19 — masse des travaux
+    ...E('Article 17 -', 'Article 20 -', [
+      ['Le changement dans la masse des travaux peut être demandé par ordre de service sans nécessité de conclure un avenant lorsque ces changements n\'entraîne pas de variations', ['<pourcentage inférieur à 20%>', '{{B09-MA-01}}', 'jeton']],
+      ['Le changement dans la masse des travaux peut être demandé par ordre de service sans nécessité de conclure un avenant lorsque ces changements n\'entraîne pas de diminution', ['<pourcentage inférieur à 20%>', '{{B09-MA-02}}', 'jeton']],
+      ['La diminution dans la masse des travaux au delà de', ['<pourcentage>', '{{B09-MA-03}}', 'jeton']],
+      ['Le changement des quantités de certaines natures', ['<pourcentage inférieur à 30%>', '{{B09-MA-04}}', 'jeton']]]),
+    // Article 20 — force majeure
+    ...E('Article 20 -', 'Constitueront des cas de force majeure'),
+    ...SI('FORCE-MAJEURE-OUI', P(x('Constitueront des cas de force majeure')), P(xj('<à préciser, par exemple', '{{B09-FM-02}}')), ...E('En vue de l’application éventuelle', '=Non applicable')),
+    ...SI('FORCE-MAJEURE-NON', NA(7)),
+    // Articles 21 et 22 — délais
+    ...E('Article 21 -', 'Article 23 -', [
+      ["Le délai d'exécution est fixé à", ['<insérer délai>', '{{B09-DL-01}}', 'jeton']],
+      ['La PRMP peut notifier une prolongation', ['<indiquer le nombre de jours>', '{{B09-MD-01}}', 'jeton']],
+      ["Une prolongation des délais n'est justifiée", ['<nombre>', '{{B09-MD-02}}', 'jeton']]]),
+    // Article 23 — pénalités (question `penalites` du cadrage)
+    ...E('Article 23 -', 'Les pénalités journalières prévues'),
+    ...SI('PENALITES-NON', P(x('Les pénalités journalières prévues'))),
+    ...SI('PENALITES-OUI', P(x('Les pénalités journalières applicables')), P(x('<millièmes>', ['<millièmes>', '{{B09-PE-02}}', 'jeton']))),
+    // Articles 24 à 27
+    ...E('Article 24 -', 'Article 26 -', [
+      ['<Indiquer, le cas échéant, les modalités de vérification', [texteDe(d, '<Indiquer, le cas échéant, les modalités de vérification'), '{{B09-VQ-01}}', 'jeton']],
+      ['<Indiquer, le cas échéant, quels sont les matériaux', [texteDe(d, '<Indiquer, le cas échéant, quels sont les matériaux'), '{{B09-PM-01}}', 'jeton']]]),
+    ...E('Article 26 -', 'Il n\'est pas prévu de période'),
+    ...SI('PREPARATION-NON', P(x("Il n'est pas prévu de période"))),
+    ...SI('PREPARATION-OUI',
+      P(x('26.1.')),
+      P(x("<préciser le nombre de jours qui peut déroger", ["<préciser le nombre de jours qui peut déroger au délai de deux mois prévu à l'article 28.1 CCAG >", '{{B09-PT-02}}', 'jeton'])),
+      P(x('26.2.')),
+      P(xr('<préciser le nombre de jours qui doit être au minimum de 10>', 0, ['<préciser le nombre de jours qui doit être au minimum de 10>', '{{B09-PT-03}}', 'jeton']))),
+    ...SI('HYGIENE',
+      P(x('26.3.')),
+      P(xr('<préciser le nombre de jours qui doit être au minimum de 10>', 1, ['<préciser le nombre de jours qui doit être au minimum de 10>', '{{B09-PT-04}}', 'jeton']))),
+    ...E('Article 27 -', '28.1.', [['Le visa du Maître', ['< nombre de jours>', '{{B09-VX-01}}', 'jeton']]]),
+    // Article 28 — réception
+    ...E('28.1.', 'Les tranches de travaux comportant'),
+    ...SI('RECEPTION-TRANCHES', P(x('Les tranches de travaux comportant'))),
+    ...E('28.2.', 'La constatation du repliement', [
+      ['Par dérogation au CCAG, le délai du début', ['<jours>', '{{B09-RP-03}}', 'jeton']]]),
+    P('{{B09-RP-04}}'),
+    ...E('La constatation du repliement', 'Article 29 -'),
+    // Article 29 — délai de garantie ; 30 (fixe) ; 31 contentieux ; 32 dérogations
+    ...E('Article 29 -', 'Article 31 -', [["<Insérer le nombre de mois ou d'années>", ["<Insérer le nombre de mois ou d'années>", '{{B09-GT-01}} mois', 'jeton']]]),
+    ...E('Article 31 -', 'Article 32 -'),
+    P('{{B10-PC-01}}'),
+    ...E('Article 32 -', '=Annexe au CCAP'),
+    ...SI('DEROGATIONS', P('{{B10-DR-01}}')),
+    // Les six annexes (B11-FR-01 à -06), chacune sous sa condition
+    ...SI('REVISABLE', E(['=Annexe au CCAP', 0], '=Annexe au CCAP')),
+    ...SI('ANNEXE-GBE-BANCAIRE', E(['=Annexe au CCAP', 1], '=Annexe au CCAP')),
+    ...SI('ANNEXE-GBE-CAUTION', E(['=Annexe au CCAP', 2], '=Annexe au CCAP')),
+    ...SI('ANNEXE-AVANCE', E(['=Annexe au CCAP', 3], ['=Annexe au CCAP', 1])),
+    ...E(['=Annexe au CCAP', 5]),
+  ];
+  const titre = ligne(d, 'MARCHÉ PUBLIC DE TRAVAUX').texte;
+  toutEstRendu(d, 'CCAP-T');
+  return { fichier: 'CCAP-T.docx', sigle: 'CCAP-T', source: 'travaux-ccap', titre, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
+}
+/** Le texte entier d'un paragraphe (un trou qui est le paragraphe entier). */
+function texteDe(sec, motif) { return sec.lignes.find((l) => correspond(l, motif)).texte; }
+
 // ══ Sortie ═══════════════════════════════════════════════════════════════════════════════════
-const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre, 'DPAO-F': dpaoFournitures, 'AE-F': aeFournitures, 'CCAP-F': ccapFournitures, 'DPIC-PI': dpicPi, 'AE-PI': aePi, 'CPS-PI': cpsPi };
+const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre, 'DPAO-F': dpaoFournitures, 'AE-F': aeFournitures, 'CCAP-F': ccapFournitures, 'DPIC-PI': dpicPi, 'AE-PI': aePi, 'CPS-PI': cpsPi, 'DPAO-T': dpaoTravaux, 'AE-T': aeTravaux, 'CCAP-T': ccapTravaux };
 fs.mkdirSync('modeles', { recursive: true });
 const voulus = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(DOCUMENTS);
 for (const sigle of voulus) {

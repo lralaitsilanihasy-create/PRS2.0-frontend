@@ -84,3 +84,18 @@ annexes ; les Termes de référence restent une pièce de l'acheteur, Q11). Fid�
   est remplacé par la saisie, comme aux fournitures.
 - **Leçon de la mesure** : un paragraphe réduit à sa lettre d'option (« d) ») une fois l'instruction retirée se retrouve
   ailleurs dans le document (la grille : « d) <Indiquer le poste> ») et fait sauter la lecture — il est retiré entier.
+
+## Lot D4 — les travaux (29/09)
+
+`DPAO-T`, `AE-T`, `CCAP-T` : le marché ordinaire de travaux (feuille « A tranche_Alloti » du classeur
+`DAO_Travaux.xlsx`), quantité fixe et à commande. Tranches communes à tous les lots (Q3) ; texte officiel fidèle (Q5).
+Le CCAP produit **ses six annexes** (formule de révision, garanties et cautions de bonne exécution et de restitution
+d'avance, cadre du bordereau) : ce sont les modèles des six « formulaires à remplir » que la fiche attendait.
+Fidélité 247/247, 363/363, 570/570. Plan : `docs/plan-2026-09-29-lot-d4-travaux.md`.
+
+Le **contrat-cadre de travaux** n'a pas de document type propre : `DPAC-CC` et `AE-CC` le servent, leurs sept choix
+« CCAG Fournitures / CCAG Travaux » étant commandés par la catégorie (`CCAG-FOURNITURES` / `CCAG-TRAVAUX`), avec les
+codes du contrat-cadre de fournitures (harmonisation demandée au backend, Q1).
+
+Piège rencontré : une section conditionnelle qui dépend d'une autre (la tranche conditionnelle 2 d'un prix unitaire ou
+forfaitaire) doit être **imbriquée** dans celle-ci, sinon elle s'imprime aussi sous l'autre forme de prix.

@@ -1,0 +1,3928 @@
+{
+ "fichier": "CCAP-T.docx",
+ "sigle": "CCAP-T",
+ "source": "travaux-ccap",
+ "titre": "MARCHÉ PUBLIC DE TRAVAUX",
+ "conditions": {
+  "AOO": "B01-AC-13 = Appel d'offres ouvert",
+  "PREQUALIFICATION": "B01-AC-13 contient qualification",
+  "DEUX-ETAPES": "B01-AC-13 contient deux étapes",
+  "RESTREINT": "B01-AC-13 contient restreint",
+  "MOD": "B02-MW-04 renseigne",
+  "MOE": "B02-MW-01 renseigne",
+  "SANS-MOE": "B02-MW-01 vide",
+  "PROJET": "B02-OT-01 renseigne",
+  "SANS-PROJET": "B02-OT-01 vide",
+  "ALLOTI": "alloti = OUI",
+  "TRANCHES": "tranches = OUI",
+  "TRANCHE-C1": "tranches = OUI et B02-LT-04 renseigne",
+  "TRANCHE-C2": "tranches = OUI et B02-LT-05 renseigne",
+  "ESTIMATIONS": "B08-EF-01 renseigne",
+  "GROUPEMENT-SOLIDAIRE": "groupement = OUI et formeGroupement = SOLIDAIRE_OBLIGATOIRE",
+  "GROUPEMENT-LIBRE": "groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE",
+  "BATIMENT": "B09-BT-01 = OUI",
+  "SANS-GBE": "B05-GE-01 != OUI",
+  "GBE": "B05-GE-01 = OUI",
+  "GBE-DEVISES": "B05-GE-01 = OUI et B05-MN-01 = Devises",
+  "GBE-BANCAIRE": "B05-GE-01 = OUI et B05-GE-03 contient bancaire",
+  "GBE-CAUTION": "B05-GE-01 = OUI et B05-GE-03 contient caution",
+  "GBE-CHEQUE": "B05-GE-01 = OUI et B05-GE-03 contient chèque",
+  "LIBERATION-MOITIE": "B05-GE-01 = OUI et B05-GE-04 contient 50",
+  "LIBERATION-TOTALE": "B05-GE-01 = OUI et B05-GE-04 contient 100",
+  "RETENUE-NON": "B05-RG-01 != OUI",
+  "RETENUE-OUI": "B05-RG-01 = OUI",
+  "RESTITUTION-NON": "B05-GA-01 != OUI",
+  "RESTITUTION-OUI": "B05-GA-01 = OUI",
+  "AUTRES-GARANTIES-NON": "B05-AG-01 vide",
+  "AUTRES-GARANTIES-OUI": "B05-AG-01 renseigne",
+  "DISCRETION-NON": "B09-OD-01 != OUI",
+  "DISCRETION-OUI": "B09-OD-01 = OUI",
+  "DISCRETION-NOTIFICATION": "B09-OD-01 = OUI et B09-OD-02 renseigne",
+  "DISCRETION-ANNEXE": "B09-OD-01 = OUI et B09-OD-03 renseigne",
+  "PRIX-REVIENT-NON": "B09-PV-01 != OUI",
+  "PRIX-REVIENT-OUI": "B09-PV-01 = OUI",
+  "PRIX-REVIENT-ELEMENTS": "B09-PV-01 = OUI et B09-PV-02 renseigne",
+  "SUJETION-OCCUPE": "B09-CH-01 renseigne",
+  "SUJETION-DELAI": "B09-CH-02 renseigne",
+  "SUJETION-HORAIRE": "B09-CH-03 renseigne",
+  "SUJETION-CLES": "B09-CH-04 renseigne",
+  "SUJETION-PRESTATIONS": "B09-CH-05 renseigne",
+  "DEVISES": "B05-MN-01 = Devises",
+  "FORFAIT": "typePrix = FORFAITAIRE",
+  "UNITAIRES": "typePrix = UNITAIRES",
+  "FERME": "prixRevisable = NON",
+  "REVISABLE": "prixRevisable = OUI",
+  "REGIE-NON": "B08-RE-02 != OUI",
+  "REGIE-OUI": "B08-RE-02 = OUI",
+  "APPROVISIONNEMENTS-NON": "B08-AP-01 != OUI",
+  "APPROVISIONNEMENTS-OUI": "B08-AP-01 = OUI",
+  "SANS-AVANCE": "avance = NON",
+  "AVANCE": "avance = OUI",
+  "AVANCE-ARIARY": "avance = OUI et B05-MN-01 != Devises",
+  "AVANCE-DEVISES": "avance = OUI et B05-MN-01 = Devises",
+  "REGLEMENT-UNIQUE": "B08-MR-01 = OUI",
+  "DECOMPTES-MENSUELS": "B08-MR-01 != OUI",
+  "FORCE-MAJEURE-OUI": "B09-FM-01 = OUI",
+  "FORCE-MAJEURE-NON": "B09-FM-01 != OUI",
+  "PENALITES-NON": "penalites = NON",
+  "PENALITES-OUI": "penalites != NON",
+  "PREPARATION-NON": "B09-PT-01 != OUI",
+  "PREPARATION-OUI": "B09-PT-01 = OUI",
+  "HYGIENE": "B09-PT-01 = OUI et B09-PT-04 renseigne",
+  "RECEPTION-TRANCHES": "tranches = OUI et B09-RP-01 = OUI",
+  "DEROGATIONS": "B10-DR-01 renseigne",
+  "ANNEXE-GBE-BANCAIRE": "B05-GE-01 = OUI et B05-GE-03 contient bancaire",
+  "ANNEXE-GBE-CAUTION": "B05-GE-01 = OUI et B05-GE-03 contient caution",
+  "ANNEXE-AVANCE": "avance = OUI et B05-GA-01 = OUI"
+ },
+ "blocs": [
+  {
+   "type": "centre",
+   "texte": "MARCHÉ PUBLIC DE TRAVAUX"
+  },
+  {
+   "type": "centre",
+   "texte": "CAHIER DES PRESCRIPTIONS SPECIALES"
+  },
+  {
+   "type": "para",
+   "texte": "AUTORITE CONTRACTANTE :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B01-AC-01}} — {{B01-AC-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "MARCHÉ :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "Marché passé selon la procédure"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AOO}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres ouvert régie par l'article 18 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AOO}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PREQUALIFICATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres ouvert avec pré - qualification régie par l'article 19 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PREQUALIFICATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DEUX-ETAPES}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres en deux étapes régie par l'article 20 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DEUX-ETAPES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RESTREINT}}"
+  },
+  {
+   "type": "para",
+   "texte": "d'appel d'offres restreint régie par l'article 21 du Code des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RESTREINT}}"
+  },
+  {
+   "type": "para",
+   "texte": "PERSONNE RESPONSABLE DES MARCHES PUBLICS (PRMP) ou son DELEGUE:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B01-AC-05}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MOD}}"
+  },
+  {
+   "type": "para",
+   "texte": "MAITRE D'OUVRAGE DELEGUE : {{B02-MW-04}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MOD}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MOE}}"
+  },
+  {
+   "type": "para",
+   "texte": "MAITRE D'ŒUVRE : {{B02-MW-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MOE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le présent Cahier des Prescriptions Spéciales comprend :"
+  },
+  {
+   "type": "para",
+   "texte": "Le Cahier des Clauses Administratives Particulières (CCAP),"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Exemple de formule de révision de prix"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Modèle de garantie bancaire de bonne exécution"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Modèle de caution personnelle et solidaire de bonne exécution"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Modèle de garantie bancaire de restitution d'avance"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe : Modèle de caution personnelle et solidaire de restitution d'avance"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe: Cadre de Bordereau de prix et de Détail quantitatif"
+  },
+  {
+   "type": "para",
+   "texte": "et estimatif"
+  },
+  {
+   "type": "para",
+   "texte": "Les Spécifications Techniques qui fixent les caractéristiques techniques de l'ouvrage objet du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "Annexe (à numéroter) :"
+  },
+  {
+   "type": "para",
+   "texte": "Liste de plans"
+  },
+  {
+   "type": "para",
+   "texte": "Planning d’exécution des travaux"
+  },
+  {
+   "type": "para",
+   "texte": "Liste du personnel cadre à affecter au chantier"
+  },
+  {
+   "type": "para",
+   "texte": "Liste des matériels à affecter au chantier"
+  },
+  {
+   "type": "para",
+   "texte": "Le Cahier des Prescriptions Spéciales ne peut être ni modifié ni complété par les candidats qui doivent souscrire à ses dispositions."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "CAHIER DES CLAUSES ADMINISTRATIVES PARTICULIERES (CCAP):"
+  },
+  {
+   "type": "para",
+   "texte": "Le CCAP est destiné à compléter les dispositions du Cahier des Clauses Administratives Générales (CCAG) afin de préciser les obligations contractuelles reflétant les circonstances auxquelles sont assujettis le Maître de l'Ouvrage et les travaux concernés. Les candidats au marché doivent souscrire à ses dispositions sans le modifier ni le compléter."
+  },
+  {
+   "type": "para",
+   "texte": "Les dispositions du présent Cahier des Clauses Administratives Particulières (CCAP) précisent le CCAG en le complétant ou en dérogeant à ses dispositions. Elles suivent l'ordre et la numérotation des articles du CCAG. En cas de contradiction entre les deux documents, les clauses ci-après prévalent sur celles du CCAG."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 1 - Objet du marché - Intervenants"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "1.1 Objet du marché"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PROJET}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les stipulations du présent Cahier des Clauses Administratives Particulières (CCAP) concernent les travaux à effectuer dans le cadre de {{B02-OT-01}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PROJET}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-PROJET}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les stipulations du présent Cahier des Clauses Administratives Particulières (CCAP) concernent les travaux à effectuer."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-PROJET}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le marché a pour objet :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-OT-02}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Ces travaux comprennent {{B02-LV-01}} lots :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-LV-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ALLOTI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les caractéristiques techniques des ouvrages sont indiquées dans les Spécifications Techniques du présent Cahier des Prescriptions Spéciales (CPS)."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:TRANCHES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les travaux sont décomposés en tranches définies comme suit :"
+  },
+  {
+   "type": "para",
+   "texte": "- tranche ferme {{B02-LT-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:TRANCHE-C1}}"
+  },
+  {
+   "type": "para",
+   "texte": "- tranche conditionnelle 1 {{B02-LT-04}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:TRANCHE-C1}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:TRANCHE-C2}}"
+  },
+  {
+   "type": "para",
+   "texte": "- tranche conditionnelle 2 {{B02-LT-05}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:TRANCHE-C2}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les délais d'affermissement de chaque tranche conditionnelle sont fixés à l'article 16 du CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:TRANCHES}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "1.2.- Intervenants"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "1.2.1. Maître de l'ouvrage"
+  },
+  {
+   "type": "para",
+   "texte": "{{B01-AC-01}}."
+  },
+  {
+   "type": "para",
+   "texte": "PRMP ou son délégué:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B01-AC-05}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MOD}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "1.2.2. Maître d'Ouvrage Délégué"
+  },
+  {
+   "type": "para",
+   "texte": "Le Maître d'Ouvrage Délégué désigné par le Maître de l'ouvrage conformément aux dispositions de la Loi 99-03 réglementant la Maîtrise d'Ouvrage Publique et la Maîtrise d'Oeuvre Privée pour les travaux d'intérêt général et au mandat du <date à compléter selon le projet> est:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-MW-04}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les références au Maître de l'ouvrage dans la suite du présent CCAP concernent le Maître d'Ouvrage Délégué."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MOD}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "1.2.3. Maître d'œuvre"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MOE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La maîtrise d'œuvre est assurée conformément au marché {{B02-MW-02}} en date <à préciser> par :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B02-MW-01}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MOE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-MOE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les tâches du maître d'œuvre sont assurées par <préciser l'autorité désignée par la PRMP>"
+  },
+  {
+   "type": "para",
+   "texte": "Dans ce cas, le maître d’œuvre sera désigné par une décision du Maître de l’ouvrage ou de la PRMP"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-MOE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 2 - Notifications à l'Entrepreneur (CCAG Article 2.2.2)"
+  },
+  {
+   "type": "para",
+   "texte": "A défaut pour l'Entrepreneur d'élire domicile à proximité des travaux et de faire connaître l'adresse de ce domicile à la Personne Responsable des Marchés Publics et/ou au maître d'œuvre, toutes les notifications qui se rapportent au marché seront valablement effectuées à l'adresse mentionnée ci-après:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-NE-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 3 - Estimations des engagements financiers du Maître de l'Ouvrage (CCAG Article 2.2.4)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ESTIMATIONS}}"
+  },
+  {
+   "type": "para",
+   "texte": "La communication par l'Entrepreneur des estimations de tous les paiements auquel il a droit sera effectuée: {{B08-EF-01}} jours avant la fin de chaque trimestre et/ou à la demande de ce dernier"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ESTIMATIONS}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 4 - Groupements (CCAG Article 2.3)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GROUPEMENT-SOLIDAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les Entrepreneurs groupés seront considérés comme solidaires, chacun des membres du groupement étant engagé pour la totalité du marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GROUPEMENT-SOLIDAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GROUPEMENT-LIBRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les Entrepreneurs groupés seront considérés comme solidaires, chacun des membres du groupement étant engagé pour la totalité du marché."
+  },
+  {
+   "type": "para",
+   "texte": "Les Entrepreneurs groupés seront considérés comme conjoints chacun des Entrepreneurs étant responsable de la réalisation du ou des lots qui lui sont assignés. Le mandataire des membres du groupement désigné dans l'Acte d'Engagement est solidaire de chacun des Entrepreneurs groupés dans les obligations contractuelles de ceux-ci à l'égard du Maître de l'Ouvrage."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GROUPEMENT-LIBRE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 5 - Marchés à tranches conditionnelles (CCAG Article 2.6)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:TRANCHES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Délai de notification de l’ordre de service prescrivant de commencer les travaux de la tranche conditionnelle n°1: {{B02-LT-06}} à compter du début du délai d’exécution de la tranche ferme."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:TRANCHE-C2}}"
+  },
+  {
+   "type": "para",
+   "texte": "Délai de notification de l’ordre de service prescrivant de commencer les travaux de la tranche conditionnelle n°2: {{B02-LT-07}} à compter du début du délai d’exécution de la tranche n°1."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:TRANCHE-C2}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:TRANCHES}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 6 - Documents contractuels (CCAG Article 3)"
+  },
+  {
+   "type": "para",
+   "texte": "L’ordre de priorité des pièces contractuelles est celui fixé par l’article 3 du CCAG"
+  },
+  {
+   "type": "para",
+   "texte": "Constituent des documents contractuels en sus des documents prévus par les CCAG :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-DC-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BATIMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "i) - Arrêté n° 738 du 8 avril 1961 du Ministère des Travaux Publics portant approbation du Cahier des prescriptions communes (CPC) applicable à tous les travaux et ses modificatifs publiées QUINZE (15) jours précédant la date limite fixée pour la remise des offres soit le"
+  },
+  {
+   "type": "para",
+   "texte": "- Arrêté n° 3635 du31.12.64 portant approbation et la mise en application du Cahier des Prescriptions Techniques pour les Travaux de Bâtiments à Madagascar dit TBM et ses modificatifs publiés QUINZE (15) jours précèdant la date limite fixée pour la remise des offres"
+  },
+  {
+   "type": "para",
+   "texte": "- Arrêté n° 3634 du 31.12.64 portant approbation des conditions particulières de normalisation des éléments des bâtiments construits à Madagascar, et ses modificatifs publiées QUINZE (15) jours précédant la date limite fixée pour la remise des offres soit le"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BATIMENT}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 7 - Forme et montant de la garantie de bonne exécution (CCAG Article 4)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "7.1. Cautionnement, Garantie Bancaire (CCAG Article 4.1)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-GBE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Aucune garantie d'exécution n'est requise."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-GBE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GBE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant de la garantie de bonne exécution est fixé à :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B05-GE-05.chiffres}} % du Prix du Marché toutes taxes comprises."
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GBE-DEVISES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Montant de la garantie de bonne exécution :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B05-GE-02}} de la partie exprimée en devises du Prix du Marché toutes taxes comprises,"
+  },
+  {
+   "type": "para",
+   "texte": "et"
+  },
+  {
+   "type": "para",
+   "texte": "{{B05-GE-05.chiffres}} % de la partie exprimée en Ariary du Prix du Marché toutes taxes comprises."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GBE-DEVISES}}"
+  },
+  {
+   "type": "para",
+   "texte": "La garantie de bonne exécution devra être fournie sous forme:"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GBE-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "- soit de garantie bancaire conformément au modèle figurant en Annexe <numéro> au présent CCAP;"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GBE-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GBE-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "- soit une caution personnelle et solidaire conformément au modèle figurant en Annexe <numéro> au présent CCAP;"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GBE-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:GBE-CHEQUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "- soit un chèque de banque établi à l'ordre de <à préciser>."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GBE-CHEQUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:LIBERATION-MOITIE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La garantie de bonne exécution est libérée de 50% dans les trente (30) jours de la délivrance du certificat de réception provisoire, le solde étant libéré dans les trente (30) jours de la délivrance du certificat de réception définitive."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:LIBERATION-MOITIE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:LIBERATION-TOTALE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La garantie de bonne exécution est libérée à 100% dans les 30 jours suivant la date de la réception définitive"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:LIBERATION-TOTALE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:GBE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "7.2. Retenue de garantie (CCAG Article 4.2)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RETENUE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RETENUE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RETENUE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Une retenue de garantie de {{B05-RG-02.chiffres}} % est exercée sur le montant de chaque acompte et du solde par le comptable assignataire des paiements. La retenue de garantie peut être remplacée par une garantie bancaire, ou une caution, comme indiqué au paragraphe 7.1 ci - dessus."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RETENUE-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "7.3. Garantie de restitution d'avance (CCAG Article 4.3)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RESTITUTION-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RESTITUTION-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RESTITUTION-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Si l'Entrepreneur choisit de recevoir l'avance forfaitaire il doit joindre à la demande de paiement de cette avance une garantie bancaire à première demande ou une caution de restitution d’avance, conforme au modèle annexé au présent CCAP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RESTITUTION-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "7.4. Autres garanties (CCAG Article 4.3)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AUTRES-GARANTIES-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AUTRES-GARANTIES-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AUTRES-GARANTIES-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B05-AG-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AUTRES-GARANTIES-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 8 - Assurances (CCAG Article 4.4)"
+  },
+  {
+   "type": "para",
+   "texte": "Les polices d’assurances suivantes sont requises au titre du présent Marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-AC-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-AC-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BATIMENT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-AC-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BATIMENT}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 9. - Obligation de discrétion – Mesure de sécurité (CCAG Article 7)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DISCRETION-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DISCRETION-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DISCRETION-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les travaux, objet du présent Marché, sont à exécuter dans un lieu où des mesures de sécurité ou de protection du secret s'appliquent. L'Entrepreneur doit en conséquence observer les dispositions :"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DISCRETION-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DISCRETION-NOTIFICATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "que le Maître d'œuvre communiquera lors de la notification de l'attribution du Marché,"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DISCRETION-NOTIFICATION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DISCRETION-ANNEXE}}"
+  },
+  {
+   "type": "para",
+   "texte": "mentionnées en Annexe <n°> au présent CCAP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DISCRETION-ANNEXE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 10 - Contrôle des prix de revient (CCAG Article 8)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PRIX-REVIENT-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PRIX-REVIENT-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PRIX-REVIENT-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les dispositions de l'Article 8 du CCAG relatives au contrôle des prix de revient s'appliquent."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PRIX-REVIENT-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PRIX-REVIENT-ELEMENTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-PV-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PRIX-REVIENT-ELEMENTS}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 11 - Prix du Marché (CCAG article 10)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "11.1 Contenu des prix du Marché (CCAG article 10.1)"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix indiqués dans le marché incluent toutes les sujétions indiquées à l’article 10.1 du CCAG, y compris les sujétions particulières ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SUJETION-OCCUPE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-CH-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SUJETION-OCCUPE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SUJETION-DELAI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-CH-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SUJETION-DELAI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SUJETION-HORAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-CH-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SUJETION-HORAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SUJETION-CLES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-CH-04}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SUJETION-CLES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SUJETION-PRESTATIONS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-CH-05}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SUJETION-PRESTATIONS}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "11.2. Monnaie (CCAG article 10.1)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DEVISES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix du Marché peuvent comporter un part exprimé et payable en devises convertibles, correspondant à des dépenses que l'Entrepreneur justifie engager hors de la République de Madagascar. Les prix en devises seront exprimés et payés en <nom de la devise>."
+  },
+  {
+   "type": "para",
+   "texte": "Pour l'évaluation du montant du marché et la réalisation des règlements le taux de change utilisé sera le taux publié par la Banque Centrale de Madagascar le quinzième jour précédant la date limite de remise des offres."
+  },
+  {
+   "type": "para",
+   "texte": "Le règlement en devises est subordonné à la signature d'une convention entre Monsieur le Ministre chargé des finances et l'Entrepreneur, accompagné d'un tableau détaillé justifiant les dépenses en devises, qui doit être annexé au Marché approuvé"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DEVISES}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "11.3. Type de prix (CCAG article 10.2 et 10.3)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FORFAIT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le Marché est traité sur la base d’un prix forfaitaire résultant du Détail Quantitatif et Estimatif qui est joint à l'Acte d'Engagement"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FORFAIT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:UNITAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le Marché est traité sur la base de prix unitaires figurant au Bordereau des Prix et du Détail Quantitatif et Estimatif annexé à L'Acte d'Engagement décomposé dans le Sous Détail des Prix Unitaires"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:UNITAIRES}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "11.4. Variations dans les prix (CCAG article 10.4)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FERME}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix sont fermes et non révisables."
+  },
+  {
+   "type": "para",
+   "texte": "Ils sont actualisés pour tenir compte du délai entre la date limite de remise des offres et la date de notification du marché, selon la formule suivante :"
+  },
+  {
+   "type": "para",
+   "texte": "PI = Po (In / Io)"
+  },
+  {
+   "type": "para",
+   "texte": "Formule selon laquelle :"
+  },
+  {
+   "type": "para",
+   "texte": "PI est le nouveau prix actualisé ;"
+  },
+  {
+   "type": "para",
+   "texte": "Po est le prix de base du règlement des prestations figurant à l'acte d'engagement."
+  },
+  {
+   "type": "para",
+   "texte": "In est la valeur de l'indice, défini pour chaque lot, du mois de la date de la notification du marché l'acte portant début d'exécution des prestations."
+  },
+  {
+   "type": "para",
+   "texte": "Io est la valeur de ce même indice correspondant au mois d'établissement des prix fixés dans l'acte d'engagement."
+  },
+  {
+   "type": "para",
+   "texte": "Le (les) indice(s) applicables sont:"
+  },
+  {
+   "type": "para",
+   "texte": "<indiquer la nature des indices et les sources où ils peuvent être trouvés>"
+  },
+  {
+   "type": "para",
+   "texte": "Les coefficients d’actualisation seront arrondis au millième supérieur."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FERME}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REVISABLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les prix seront révisés conformément aux dispositions de l’Annexe du présent CCAP \"Formule de révision de prix\"."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REVISABLE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 12 - Règlement des comptes (CCAG Article 11)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "12.1. Modalités de règlement des comptes (CCAG Article 11.1)"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-RE-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "12.2. Travaux en régie"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REGIE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REGIE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REGIE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Coefficient de majoration des salaires et des indemnités passibles des charges salariales:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-RE-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "Coefficient de majoration des autres frais:"
+  },
+  {
+   "type": "para",
+   "texte": "<Indiquer le taux de frais généraux admis et le taux de marge admis>"
+  },
+  {
+   "type": "para",
+   "texte": "L'obligation pour l'Entrepreneur d'exécuter des travaux en régie cesse lorsque le montant total des droits à remboursement atteint <pourcentage> du montant du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REGIE-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 13 - Acomptes sur approvisionnements (CCAG Article 11.4)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:APPROVISIONNEMENTS-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:APPROVISIONNEMENTS-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:APPROVISIONNEMENTS-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-AP-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:APPROVISIONNEMENTS-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 14. - Avances (CCAG Article 11.5)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "14.1. Avance forfaitaire"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le montant de l'avance forfaitaire est de:"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE-ARIARY}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-AF-03.chiffres}} % du montant total des travaux à exécuter"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE-ARIARY}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:AVANCE-DEVISES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-AF-04.chiffres}} % du montant en monnaie nationale des travaux à exécuter, et"
+  },
+  {
+   "type": "para",
+   "texte": "{{B08-AF-05.chiffres}} % du montant en devises des travaux à exécuter."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:AVANCE-DEVISES}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 15 - Intérêts moratoires dus à l'Entrepreneur (CCAG Article 11.6)"
+  },
+  {
+   "type": "para",
+   "texte": "Taux des intérêts moratoires: taux directeur de la Banque Centrale de Madagascar en vigueur à la date à laquelle les intérêts moratoires auront commencé à courir, augmenté de un point."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 16 - Modalités de règlement des comptes (CCAG Article 13)"
+  },
+  {
+   "type": "para",
+   "texte": "Décomptes mensuels (CCAG Article 13.1)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REGLEMENT-UNIQUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les comptes seront réglés en une seule fois."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REGLEMENT-UNIQUE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DECOMPTES-MENSUELS}}"
+  },
+  {
+   "type": "para",
+   "texte": "Délai de remise du projet de décompte: au plus tard < nombre de jours> jours ouvrables avant la fin du mois suivant le mois de réalisation des prestations considérées, ou à la date qui y sera substituée par l'avis de réunion adressé par le maître d’œuvre."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DECOMPTES-MENSUELS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:UNITAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le règlement des sommes dues à l’Entrepreneur s’effectuera par application des prix unitaires qui résultent du bordereau des prix et du détail quantitatif et estimatif aux quantités réellement exécutées prises en attachement contradictoire."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:UNITAIRES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FORFAIT}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le règlement des sommes dues à l’Entrepreneur s’effectuera par application du prix forfaitaire résultant du détail quantitatif et estimatif selon le découpage en centième par corps d’état des travaux terminés comme suit"
+  },
+  {
+   "type": "para",
+   "texte": "-…………………………………………………%"
+  },
+  {
+   "type": "para",
+   "texte": "-…………………………………………………%"
+  },
+  {
+   "type": "para",
+   "texte": "-…………………………………………………%"
+  },
+  {
+   "type": "para",
+   "texte": "-…………………………………………………%"
+  },
+  {
+   "type": "para",
+   "texte": "- Réception provisoire…………………… 5%"
+  },
+  {
+   "type": "para",
+   "texte": "- Total………………………………………100% du détail quantitatif et estimatif"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FORFAIT}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 17 - Augmentation dans la masse des travaux (CCAG Article 15)"
+  },
+  {
+   "type": "para",
+   "texte": "Le changement dans la masse des travaux peut être demandé par ordre de service sans nécessité de conclure un avenant lorsque ces changements n'entraîne pas de variations supérieures à {{B09-MA-01}} de la masse initiale des travaux."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 18 - Diminution dans la masse des travaux (CCAG Article 16)"
+  },
+  {
+   "type": "para",
+   "texte": "Le changement dans la masse des travaux peut être demandé par ordre de service sans nécessité de conclure un avenant lorsque ces changements n'entraîne pas de diminution supérieure à {{B09-MA-02}} de la masse initiale des travaux."
+  },
+  {
+   "type": "para",
+   "texte": "La diminution dans la masse des travaux au delà de {{B09-MA-03}} de la masse initiale des travaux ouvre droit à indemnisation pour l'Entrepreneur."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 19 - Changement dans l'importance des diverses natures d'ouvrage (CCAG Article 17)"
+  },
+  {
+   "type": "para",
+   "texte": "Le changement des quantités de certaines natures d'ouvrages peut être demandé par ordre de service sans nécessité de conclure un avenant lorsque ces changements n'entraîne pas de diminution ou d'augmentation de ces quantités supérieure à {{B09-MA-04}} des quantités portées au détail quantitatif et estimatif."
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 20 - Cas de force majeure (CCAG Article 18.3)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FORCE-MAJEURE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Constitueront des cas de force majeure, les intempéries excédant les seuils suivants :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-FM-02}}"
+  },
+  {
+   "type": "para",
+   "texte": "En vue de l’application éventuelle du deuxième des articles 18.1 et 19.2 du CCAG, le délai d’exécution des travaux sera prolongé d’un nombre de jours égal à celui pendant lequel un au moins des phénomènes naturels ci-après dépassera les intensités et durées limitées ci-après:"
+  },
+  {
+   "type": "para",
+   "texte": "précipitations journalières supérieures ou égales à <préciser le niveau>"
+  },
+  {
+   "type": "para",
+   "texte": "force du vent supérieure à <préciser le niveau>"
+  },
+  {
+   "type": "para",
+   "texte": "Phénomènes constatés à <préciser le lieu d’observation de ces phénomènes>"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FORCE-MAJEURE-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:FORCE-MAJEURE-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Non applicable"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:FORCE-MAJEURE-NON}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 21 - Délai d'exécution (CCAG Article 19.1)"
+  },
+  {
+   "type": "para",
+   "texte": "Le délai d'exécution est fixé à {{B09-DL-01}} à compter du lendemain de la date de notification de l’ordre de service de commencer les travaux qui interviendra après la notification à l’Entrepreneur du marché approuvé"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 22 - Modification des délais d'exécution (CCAG Article 19.2)"
+  },
+  {
+   "type": "para",
+   "texte": "- Prolongation ou report du délai d'exécution par la PRMP (CCAG article 19.2.1)"
+  },
+  {
+   "type": "para",
+   "texte": "La PRMP peut notifier une prolongation ou un report du délai d'exécution du Marché sans qu'un avenant au Marché soit nécessaire pour une période cumulé de {{B09-MD-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "- Nombre de journées d'intempéries prévisibles (CCAG article19.2.2)"
+  },
+  {
+   "type": "para",
+   "texte": "Une prolongation des délais n'est justifiée qu'au delà de {{B09-MD-02}} jours d'intempéries empêchant la poursuite des travaux"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 23 - Pénalités et retenues (CCAG Article 20.6)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les pénalités journalières prévues par l'article 20 du CCAG ne s'appliquent pas."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PENALITES-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les pénalités journalières applicables sont fixées à :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-PE-02}} du montant du Marché ou de la tranche considérée dans la limite de <pourcentage> du montant global du Marché ou de la tranche considérée."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PENALITES-OUI}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 24 - Vérification qualitative des matériaux et produits (CCAG Article 24.3)"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-VQ-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 25- Prise en charge par l'Entrepreneur des matériaux et produits fournis par le Maître de l'Ouvrage (CCAG Article 26)"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-PM-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 26 - Préparation des travaux (CCAG Article 28)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PREPARATION-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "Il n'est pas prévu de période de préparation"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PREPARATION-NON}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PREPARATION-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "26.1. Durée maximum de la période de préparation comprise dans le délai d'exécution du marché:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-PT-02}} à compter du démarrage du délai d’exécution du marché."
+  },
+  {
+   "type": "para",
+   "texte": "26.2. Délai de soumission du programme d'exécution:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-PT-03}} jours avant l'expiration de la période de préparation."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PREPARATION-OUI}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:HYGIENE}}"
+  },
+  {
+   "type": "para",
+   "texte": "26.3. Un plan d'hygiène et de sécurité sur le chantier doit être remis :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-PT-04}} jours avant l'expiration de la période de préparation."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:HYGIENE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 27 - Visa des documents d'exécution par le Maître d' oeuvre (CCAG Article 29.1.4)"
+  },
+  {
+   "type": "para",
+   "texte": "Le visa du Maître d'Oeuvre sur les documents nécessaires à cette exécution est donné dans un délai de {{B09-VX-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 28 - Réception provisoire (CCAG Article 41)"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "28.1. Réception par tranches (CCAG Article 41.1.)"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:RECEPTION-TRANCHES}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les tranches de travaux comportant des délai d'exécution distincts identifiées <soit> à l'article 1 du présent CCAP <soit> par les Spécifications Techniques, donneront lieu à des réceptions partielles. La réception de la dernière tranche tiendra lieu de réception provisoire de travaux au sens du présent Marché."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:RECEPTION-TRANCHES}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "28.2. Opérations préalables (CCAG Article 41.2.)"
+  },
+  {
+   "type": "para",
+   "texte": "a) Début des opérations préalables"
+  },
+  {
+   "type": "para",
+   "texte": "Par dérogation au CCAG, le délai du début des opérations préalables à la réception des ouvrages à compter de la réception de l'avis de l'Entrepreneur est de {{B09-RP-03}}."
+  },
+  {
+   "type": "para",
+   "texte": "b) Modalités de réception des travaux"
+  },
+  {
+   "type": "para",
+   "texte": "Les modalités de réception des travaux sont décrites en annexe <n°> aux Spécifications Techniques :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-RP-04}}"
+  },
+  {
+   "type": "para",
+   "texte": "La constatation du repliement des installations de chantier et de la remise en état des lieux n'est pas comprise dans les opérations de réception."
+  },
+  {
+   "type": "para",
+   "texte": "Sur demande de l’Entrepreneur, la réception prononcée par une Commission de réception désignée par une Décision du Maître de l’ouvrage vaudra Réception provisoire. La réception définitive sera prononcée dans les mêmes formes à l’issue du délai de garantie"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 29 - Délai de garantie (CCAG Article 44.1)"
+  },
+  {
+   "type": "para",
+   "texte": "Par dérogation aux dispositions de l’Article 44.1 du CCAG, le délai de garantie est fixé à :"
+  },
+  {
+   "type": "para",
+   "texte": "{{B09-GT-01}} mois"
+  },
+  {
+   "type": "para",
+   "texte": "Sur demande de l’Entrepreneur, la réception prononcée par une Commission de réception désignée par une Décision du Maître de l’ouvrage vaudra Réception provisoire. La réception définitive sera prononcée dans les mêmes formes à l’issue du délai de garantie"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 30 – Résiliation du marché aux torts de l’Entrepreneurs"
+  },
+  {
+   "type": "para",
+   "texte": "1.- Le marché peut-être résilié unilatéralement par le maître de l’ouvrage aux torts de l’entrepreneur, sans mise en demeure préalable, dans les cas suivants :"
+  },
+  {
+   "type": "para",
+   "texte": "a. Lorsque l’entrepreneur déclare ne pas pouvoir tenir ses engagements ou lorsqu’il ne s’en est pas acquitté dans les délais contractuels, à moins qu’il ne puisse invoquer le cas de force majeur, le fait du maître de l’ouvrage ou des sujétions imprévus ;"
+  },
+  {
+   "type": "para",
+   "texte": "b .Lorsqu’il est établi que l’entrepreneur a fourni de faux renseignements sur ses qualités et aptitude dans la mesures ou celles-ci ont constitués des éléments essentiels pour la passation du marché ;"
+  },
+  {
+   "type": "para",
+   "texte": "c. Lorsque, sans autorisation expresse du maître de l’ouvrage, l’entrepreneur a confié à des sous-traitant l’exécution de tout ou partie des prestations faisant l’objet du marché, en a fait apport à une société, ou à constitué un groupement pour en assurer l’exécution."
+  },
+  {
+   "type": "para",
+   "texte": "d. Lorsqu’ les opérations de vérification ont permis de constater des malfaçons dans une proportion supérieure au quart des prestations exécutées ;"
+  },
+  {
+   "type": "para",
+   "texte": "e. Lorsque l’entrepreneur s’est livré, à l’occasion de son marché, a des actes frauduleux portant sur la nature, la qualité ou la quantité des prestations."
+  },
+  {
+   "type": "para",
+   "texte": "2.- Le marché peut être résilié unilatéralement par le maître de l’ouvrage après mise en demeure restée sans effets dans le délai imparti, dans les cas suivants :"
+  },
+  {
+   "type": "para",
+   "texte": "a. Lorsque l’entrepreneur contrevient de manière flagrante à la législation ou la réglementation du travail et, notamment, aux prescriptions des articles 130, 136,137 et 138 de l’Ordonnance"
+  },
+  {
+   "type": "para",
+   "texte": "n° 60-119 du 1er Octobre 1960 portant Code de Travail"
+  },
+  {
+   "type": "para",
+   "texte": "b. Lorsqu’il fait un mauvais emploi ou une utilisation abusive du matériel ou des approvisionnement mis à sa disposition par le maître de l’ouvrage ;"
+  },
+  {
+   "type": "para",
+   "texte": "c. Lorsqu’il ne prend pas les mesures qui lui incombent pour faire cesser le trouble éventuellement subi par le maître de l’ouvrage du fait de cesser la trouble éventuellement subi par le maître de l’ouvrage du fait de revendications formulées par des tiers au sujet de l’exécution du contrat ;"
+  },
+  {
+   "type": "para",
+   "texte": "d. Lorsqu’il entrave le libre exercice de la surveillance ou du contrôle par les agents du maître de l’ouvrage ;"
+  },
+  {
+   "type": "para",
+   "texte": "e. Lorsqu’il a pris un tel retard dans l’exécution du marché que le respect des délais contractuels devient manifestement impossible sans un effort particulier."
+  },
+  {
+   "type": "para",
+   "texte": "f. D’une façon générale, toutes les fois que le titulaire ne se conforme soit aux dispositions du marché, soit aux ordre de service écrits qui lui sont donnés par le maître de l’ouvrage ;"
+  },
+  {
+   "type": "para",
+   "texte": "3.- La résiliation aux torts de l’entrepreneur ne fait pas l’obstacle à la mise en œuvre des actions civiles ou pénales qui pourraient lui être intentées en raison de ses fautes, non plus qu’à son exclusion temporaire des marchés publics par application des dispositions de l’Article 54 alinéa 6 de la Loi n° 2004-009 du 26 juillet 2004 portant Code des Marchés Publics"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 31 - Procédure contentieuse (CCAG Article 50.3)"
+  },
+  {
+   "type": "para",
+   "texte": "{{B10-PC-01}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Article 32 - Dérogations aux documents généraux"
+  },
+  {
+   "type": "para",
+   "texte": "Les dérogations explicitées dans les articles désignées ci-après du CCAP et de ses annexes sont apportées aux articles suivants du Cahier des Clauses Administratives Générales (CCAG)."
+  },
+  {
+   "type": "table",
+   "texte": "2"
+  },
+  {
+   "type": "ligne",
+   "texte": "Article des CCAG auquel\u001eil est dérogé\u001fArticle du CCAP"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DEROGATIONS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B10-DR-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DEROGATIONS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:REVISABLE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de formule de révision des prix"
+  },
+  {
+   "type": "para",
+   "texte": "Les montants payables à l'Entrepreneur, conformément aux dispositions du Marché, seront sujets à révision pendant l’exécution du Marché pour prendre en compte les changements intervenus dans le coût de la main-d’œuvre et des composants matériels, en faisant application de la formule suivante :"
+  },
+  {
+   "type": "para",
+   "texte": "REV = X + (a) T/To + (b) S/So + (c) F/Fo + ..."
+  },
+  {
+   "type": "para",
+   "texte": "dans laquelle :"
+  },
+  {
+   "type": "para",
+   "texte": "REV est le coefficient de révision qui s’appliquera à chaque paiement conformément aux modalités d’application et de révision détaillées respectivement aux alinéas (b) et (c) du présent paragraphe. Lors de chaque paiement, le montant à payer dans une monnaie donnée fera l’objet d’une révision par la multiplication du coefficient REV correspondant."
+  },
+  {
+   "type": "para",
+   "texte": "X constitue la partie fixe non révisable des paiements et (a), (b), (c), etc. représentent les paramètres de pondération des facteurs sujets à révision sur la base des valeurs des indices, T, S, F, etc."
+  },
+  {
+   "type": "para",
+   "texte": "Les valeurs respectives des paramètres X, a, b, c, etc. sont fixées par le Candidat dans l’annexe à l'Acte d'Engagement dans les limites spécifiées par le Maître de l'ouvrage dans le tableau ci-après, étant précisé que X + a + b + c + etc = 1."
+  },
+  {
+   "type": "para",
+   "texte": "T, S, F, etc., et To, So, Fo, etc. représentent la valeur des indices correspondants aux facteurs inclus dans la formule. La définition et l’origine de ces indices sont spécifiés dans le tableau ci-après. Les valeurs de T, S, F, etc. seront celles en vigueur au cours du mois où interviendra le fait générateur de paiement, et les valeurs To, So, Fo, etc. sont celles en vigueur au cours du mois de la date d'établissement des prix, à savoir quinze jours avant la date limite fixée pour la remise des offres."
+  },
+  {
+   "type": "para",
+   "texte": "(b) en cas de pluralité de monnaie de paiement, il y aura une formule pour chaque monnaie, étant précisé que les indices T, S, F, etc., et To, So, Fo, etc., doivent correspondre aux indices du pays d’origine des dépenses correspondantes à chacune des monnaies, donnés en Annexe à l'Acte d'Engagement."
+  },
+  {
+   "type": "para",
+   "texte": "Dans le cas où les indices et les monnaies spécifiées pour le paiement de la part en monnaie étrangère ont des pays d’origine différent, un coefficient correcteur sera spécifié au CCAP pour corriger les distorsions introduites de ce fait."
+  },
+  {
+   "type": "para",
+   "texte": "Dans le cas où les indices officiels devant servir à la révision de prix ne seraient connus qu’avec retard, des révisions provisoires seront calculées sur la base des dernières valeurs connues desdits indices ou à défaut sur des valeurs arrêtées d’un commun accord. Les révisions seront réajustées dès la parution des valeurs relatives aux mois considérés."
+  },
+  {
+   "type": "para",
+   "texte": "En cas d’un retard dans l’exécution des travaux imputable à l’Entrepreneur, les prestations réalisées après le délai contractuel d’exécution seront payées sur la base des prix révisés au jour de l’expiration du délai contractuel d’exécution (lui - même, éventuellement prorogé de la durée des retards non imputables à l’Entrepreneur)."
+  },
+  {
+   "type": "para",
+   "texte": "Facteurs utilisés pour les formules de révision des prix"
+  },
+  {
+   "type": "para",
+   "texte": "Section(s) des Travaux : <L’indication de sections différentes et l'utilisation de tableaux distincts peut être nécessaire si des sections des Travaux (ou du Détail quantitatif et estimatif) ont un contenu en monnaies étrangères et nationale notablement différent.>"
+  },
+  {
+   "type": "para",
+   "texte": "Tableau des paramètres de pondération"
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "Facteur et description\u001fValeur des fourchettes autorisées pour les paramètres\u001fValeur des paramètres de pondération par type de monnaie\u001e(3)\u001fTotaux\u001e(4)"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "6"
+  },
+  {
+   "type": "ligne",
+   "texte": "(1)\u001f(2)\u001f(Ariary)\u001f(monnaie étrangère)\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "X Fixe\u001f\u001f\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "(a) Main-d’oeuvre\u001f\u001f\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "(b)\u001f\u001f\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "(c)\u001f\u001f\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "etc.\u001f\u001f\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "Total\u001f\u001f\u001f\u001f\u001f1"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "<Le Maître de l’Ouvrage indiquera:"
+  },
+  {
+   "type": "para",
+   "texte": "dans la colonne (1) les paramètres de pondération des facteurs sujets à révision;"
+  },
+  {
+   "type": "para",
+   "texte": "dans la colonne (2) à la première ligne un seul chiffre correspondant à la partie fixe X de la formule de révision qui doit être au moins égale à 0,15 et, sur les lignes suivantes, des chiffres reflétant la fourchette acceptable pour chacun des paramètres (a), (b), (c), etc. des facteurs révisables de la formule.>"
+  },
+  {
+   "type": "para",
+   "texte": "Le Candidat indiquera dans les colonnes (3) les valeurs des paramètres de chaque facteur au titre de la monnaie ou des monnaies de son offre, et dans la colonne (4) les sous-totaux correspondants pour chaque facteur et qui doivent s’inscrire dans la fourchette spécifiée par le Maître de l’Ouvrage dans la colonne (2); le total des sous-totaux inscrits dans la colonne (4) doit être égal à 1. Le tableau compété sera joint à l'Acte d'Engagement."
+  },
+  {
+   "type": "para",
+   "texte": "Une formule sera appliquée pour chaque monnaie de paiement et sera déduite du tableau ci-dessus comme suit : les paramètres à inclure dans chacune des formules seront déduits des valeurs relatives à chaque monnaie, chacune d’elle étant d’abord toutefois divisée par le total des valeurs correspondantes à la monnaie considérée, comme indiqué dans la colonne correspondante."
+  },
+  {
+   "type": "para",
+   "texte": "Origine des indices"
+  },
+  {
+   "type": "para",
+   "texte": "Prix en Ariary"
+  },
+  {
+   "type": "para",
+   "texte": "<Le Maître de l’Ouvrage complétera le tableau qui suit au moment de la préparation du Dossier d’Appel d’offres.>"
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "Code de l’indice\u001fDescription/\u001eidentification\u001fPublication d’origine de l’indice\u001fValeur de base au mois de\u001e<mois>([note:2])"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "[note 2] Inscrire le mois applicable, c’est-à-dire le mois de la date d'établissement des prix, soit le quinzième jour précédant la date fixée pour le dépôt des offres."
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "(T)\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "(S)\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "( )\u001f\u001f\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "Monnaie(s) étrangère(s)"
+  },
+  {
+   "type": "para",
+   "texte": "Le Candidat complétera, le cas échéant, le tableau suivant pour chaque monnaie étrangère de paiement."
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "Code de l’indice\u001fDescription/\u001eidentification\u001fPublication d’origine de l’indice\u001fValeur de base au\u001e[mois](1)"
+  },
+  {
+   "type": "ligne",
+   "texte": "(T)\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "(S)\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "( )\u001f\u001f\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:REVISABLE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ANNEXE-GBE-BANCAIRE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de garantie bancaire de bonne exécution"
+  },
+  {
+   "type": "para",
+   "texte": "ATTENDU QUE <nom du Titulaire>"
+  },
+  {
+   "type": "para",
+   "texte": "ayant son siège <adresse complète du Titulaire>"
+  },
+  {
+   "type": "para",
+   "texte": "(ci-après dénommé « le Titulaire ») a conclu un marché n° <intitulé ou objet résumé du marché> (ci-après dénommé « le Marché ») avec <dénomination de l’Autorité Contractante> ( ci-après dénommée « le Bénéficiaire »)."
+  },
+  {
+   "type": "para",
+   "texte": "ATTENDU QUE En vertu des dispositions du Marché, le Titulaire doit remettre au Bénéficiaire une garantie bancaire de bonne exécution."
+  },
+  {
+   "type": "para",
+   "texte": "ATTENDU QUE nous avons convenu de fournir au Titulaire cette garantie bancaire;"
+  },
+  {
+   "type": "para",
+   "texte": "EN CONSEQUENCE, Nous <nom de la Banque>, ayant notre siège social à <adresse du siège social> (ci-après dénommée « le Garant »),"
+  },
+  {
+   "type": "para",
+   "texte": "Nous engageons par la présente, sans réserve et irrévocablement, à payer au Bénéficiaire, à la première demande écrite du Bénéficiaire adressée par courrier avec accusé de réception, reçue au plus tard à la date d’expiration mentionnée ci-après, toutes sommes d’argent dans la limite de <insérer le montant en chiffres et en lettres de la garantie>."
+  },
+  {
+   "type": "para",
+   "texte": "<Le Garant doit insérer un montant représentant le montant de la garantie prévue par le Marché le cas échéant dans la devise de règlement mentionnée au marché>"
+  },
+  {
+   "type": "para",
+   "texte": "Toute demande en paiement du Bénéficiaire doit être accompagnée d’une déclaration attestant que le Titulaire ne se conforme pas aux conditions du Marché, sans que le Bénéficiaire ait à prouver ou à donner les raisons ou le motif de la demande du Bénéficiaire ou du montant indiqué dans la demande du Bénéficiaire."
+  },
+  {
+   "type": "para",
+   "texte": "Nous convenons également qu’aucun changement ou additif ou aucune autre modification du Marché ou Travaux devant être effectués au titre de l’un des documents du Marché qui a été établi entre vous et le Titulaire ne nous libérera d’une obligation nous incombant au titre de la présente garantie, et nous ne sommes pas tenus par la présente à donner notification dudit changement, additif ou modification."
+  },
+  {
+   "type": "para",
+   "texte": "La présente garantie sera réduite de moitié sur présentation du certificat de réception provisoire et demeurera valable jusqu’au trentième (30éme) jour suivant la date de délivrance du certificat de réception définitive."
+  },
+  {
+   "type": "para",
+   "texte": "La présente garantie est régie par la loi malgache. Tout différend relatif à son interprétation ou à son exécution sera soumis aux tribunaux compétents de la République de Madagascar."
+  },
+  {
+   "type": "para",
+   "texte": "SIGNATURE et authentification du signataire __________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Nom de la Banque _________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse _________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Date _____________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Cachet"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ANNEXE-GBE-BANCAIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ANNEXE-GBE-CAUTION}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de Caution Personnelle et solidaire de bonne exécution"
+  },
+  {
+   "type": "para",
+   "texte": "Nous soussignés < indiquer la dénomination sociale de l’organisme de caution, le siège social >"
+  },
+  {
+   "type": "para",
+   "texte": "déclarons nous porter caution personnelle et solidaire de <indiquer le nom et l’adresse complète du Titulaire du Marché> (ci-après dénommé « le Titulaire ») pour le montant du cautionnement auquel le Titulaire est assujetti, en qualité de titulaire du Marché n° <indiquer le numéro du Marché> (ci-après dénommé « le Marché ») conclu avec <dénomination de l’Autorité Contractante> ( ci-après dénommée « le Bénéficiaire ») en date du <indiquer la date de conclusion du Marché> et portant sur l’exécution de <intitulé ou objet résumé du marché>,"
+  },
+  {
+   "type": "para",
+   "texte": "ledit cautionnement s’élève à <indiquer le montant en chiffre et en lettres de la garantie de bonne exécution prévue par le Marché>,"
+  },
+  {
+   "type": "para",
+   "texte": "nous engageons à effectuer, sur demande de paiement du Bénéficiaire adressée par courrier avec accusé de réception, reçue au plus tard à la date d’expiration mentionnée ci-après, sans pouvoir différer le paiement ou soulever de contestation pour quelque motif que ce soit, jusqu’à concurrence de la somme garantie ci-dessus, le versement des sommes dont le Titulaire serait reconnu débiteur au titre du marché du fait de la non exécution de ses obligations contractuelles."
+  },
+  {
+   "type": "para",
+   "texte": "Le présent engagement sera réduit de moitié sur présentation du certificat de réception provisoire et demeurera valable jusqu’au trentième (30éme) jour suivant la date de délivrance du certificat de réception définitive."
+  },
+  {
+   "type": "para",
+   "texte": "Le présent engagement est régie par la loi malgache. Tout différend relatif à son interprétation ou à son exécution sera soumis aux tribunaux compétents de la République de Madagascar."
+  },
+  {
+   "type": "para",
+   "texte": "Fait à _________ le __________"
+  },
+  {
+   "type": "para",
+   "texte": "SIGNATURE et authentification du signataire __________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Nom de l’organisme _______________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse _________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Date _____________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Cachet"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ANNEXE-GBE-CAUTION}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:ANNEXE-AVANCE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de garantie bancaire de restitution d'avance"
+  },
+  {
+   "type": "para",
+   "texte": "ATTENDU QUE"
+  },
+  {
+   "type": "para",
+   "texte": "<nom du Titulaire>"
+  },
+  {
+   "type": "para",
+   "texte": "ayant son siège <adresse complète du Titulaire>"
+  },
+  {
+   "type": "para",
+   "texte": "(ci-après dénommé « le Titulaire ») a conclu un marché n° <intitulé ou objet résumé du marché> (ci-après dénommé « le Marché ») avec <dénomination de l’Autorité Contractante> ( ci-après dénommée « le Bénéficiaire »)."
+  },
+  {
+   "type": "para",
+   "texte": "En vertu des dispositions du Marché, le Titulaire doit remettre au Bénéficiaire une garantie de restitution d’avance."
+  },
+  {
+   "type": "para",
+   "texte": "EN CONSEQUENCE, Nous <nom de la Banque>, ayant notre siège social à <adresse du siège social> (ci-après dénommée « le Garant »),"
+  },
+  {
+   "type": "para",
+   "texte": "Nous nous engageons par la présente, sans réserve et irrévocablement, à payer au Bénéficiaire, à la première demande écrite du Bénéficiaire adressée par courrier avec accusé de réception, reçue au plus tard à la date d’expiration mentionnée ci-après, toutes sommes d’argent dans la limite de <insérer le montant en chiffres et en lettres de la garantie> correspondant au montant de l’avance devant être réglé au Titulaire diminué du montant remboursé par le Titulaire <Le Garant doit insérer un montant représentant le montant de l’avance prévue par le Marché, le cas échéant dans la devise de règlement mentionnée au marché>."
+  },
+  {
+   "type": "para",
+   "texte": "Toute demande en paiement du Bénéficiaire doit être accompagnée d’une déclaration attestant que le Titulaire ne se conforme pas aux conditions du Marché concernant l’utilisation de l’avance."
+  },
+  {
+   "type": "para",
+   "texte": "Toute demande et paiement au titre de la présente garantie est conditionnelle à la réception par le Titulaire de l’avance mentionnée plus haut à son compte portant le numéro <insérer le numéro du compte bancaire> ouvert auprès de <insérer les noms et adresse de la banque>."
+  },
+  {
+   "type": "para",
+   "texte": "La présente garantie sera automatiquement réduite à due concurrence au fur et à mesure de l’imputation de l’avance sur les acomptes et restera valable à partir de la date de réception de l’avance jusqu’à ce que le Bénéficiaire reçoive du Titulaire la totalité du remboursement du même montant."
+  },
+  {
+   "type": "para",
+   "texte": "La présente garantie est régie par la loi malgache. Tout différend relatif à son interprétation ou à son exécution sera soumis aux tribunaux compétents de la République de Madagascar."
+  },
+  {
+   "type": "para",
+   "texte": "SIGNATURE et authentification du signataire __________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Nom de la Banque _________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse _________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Date _____________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Cachet"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Modèle de Caution Personnelle et solidaire de restitution d’avance"
+  },
+  {
+   "type": "para",
+   "texte": "Nous soussignés < indiquer la dénomination sociale de l’organisme de caution, le siège social >"
+  },
+  {
+   "type": "para",
+   "texte": "déclarons nous porter caution personnelle et solidaire de <indiquer le nom et l’adresse complète du Titulaire du Marché> (ci-après dénommé « le Titulaire ») pour le montant du cautionnement auquel le Titulaire est assujetti, en qualité de Titulaire du Marché n° <indiquer le numéro du Marché> (ci-après dénommé « le Marché ») conclu avec <dénomination de l’Autorité Contractante> ( ci-après dénommée « le Bénéficiaire ») en date du <indiquer la date de conclusion du Marché> et portant sur l’exécution de <intitulé ou objet résumé du marché>,"
+  },
+  {
+   "type": "para",
+   "texte": "ledit cautionnement s’élève à <indiquer le montant en chiffres et en lettres de l’avance prévue par le marché>,"
+  },
+  {
+   "type": "para",
+   "texte": "nous engageons à effectuer, sur demande de paiement du Bénéficiaire adressée par courrier avec accusé de réception, reçue au plus tard à la date d’expiration mentionnée ci-après, sans pouvoir différer le paiement ou soulever de contestation pour quelque motif que ce soit, jusqu’à concurrence de la somme garantie ci-dessus, le versement des sommes dont le Titulaire serait reconnu débiteur au du fait d'une utilisation de l'avance non conforme aux dispositions du Marché."
+  },
+  {
+   "type": "para",
+   "texte": "Le présent engagement sera automatiquement réduit à due concurrence au fur et à mesure de l’imputation de l’avance sur les acomptes et restera valable à partir de la date de réception de l’avance jusqu’à ce que le Bénéficiaire reçoive du Titulaire la totalité du remboursement du même montant."
+  },
+  {
+   "type": "para",
+   "texte": "Le présent engagement est régie par la loi malgache. Tout différend relatif à son interprétation ou à son exécution sera soumis aux tribunaux compétents de la République de Madagascar."
+  },
+  {
+   "type": "para",
+   "texte": "Fait à _________ le __________"
+  },
+  {
+   "type": "para",
+   "texte": "SIGNATURE et authentification du signataire __________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Nom de l’organisme _______________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Adresse _________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Date _____________________________________________________________________________"
+  },
+  {
+   "type": "para",
+   "texte": "Cachet"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:ANNEXE-AVANCE}}"
+  },
+  {
+   "type": "sous_titre",
+   "texte": "Annexe au CCAP"
+  },
+  {
+   "type": "para",
+   "texte": "Cadre de bordereau des prix et"
+  },
+  {
+   "type": "para",
+   "texte": "Détail quantitatif et estimatif*"
+  },
+  {
+   "type": "para",
+   "texte": "BORDEREAU DES PRIX"
+  },
+  {
+   "type": "table",
+   "texte": "3"
+  },
+  {
+   "type": "ligne",
+   "texte": "No\u001fDésignation des tâches\u001eet prix unitaires en toutes lettres\u001fPrix unitaires"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "4"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f\u001fAriary\u001fAutre(s) monnaie(s)\u001e(1)"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fPoste <numéro>- <intitulé>\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f\u001f...................\u001f.................."
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "para",
+   "texte": "DETAIL QUANTITATIF ET ESTIMATIF"
+  },
+  {
+   "type": "table",
+   "texte": "6"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001f\u001f\u001f\u001fPrix unitaires\u001fPrix total"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "table",
+   "texte": "8"
+  },
+  {
+   "type": "ligne",
+   "texte": "No\u001ePrix\u001fDésignation des ouvrages\u001fUnité\u001fQuantité\u001fPart en Ariary\u001fPart en devises\u001fPart en Ariary\u001fPart en devises (1)"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fPoste <numéro>- <intitulé>\u001f\u001f\u001f\u001f\u001f\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fTOTAL POSTE\u001fForfait\u001e<soit\u001eunité de mesure>\u001f\u001f\u001f\u001f\u001f"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  },
+  {
+   "type": "sous_titre",
+   "texte": "SPECIFICATIONS TECHNIQUES"
+  },
+  {
+   "type": "para",
+   "texte": "Annexe aux Spécifications Techniques"
+  },
+  {
+   "type": "para",
+   "texte": "Liste des Plans"
+  }
+ ],
+ "trace": [
+  {
+   "ligne": "34.0.0",
+   "genre": "jeton",
+   "source": "<indiquer le nom et l'adresse>",
+   "par": "{{B01-AC-01}} — {{B01-AC-02}}"
+  },
+  {
+   "ligne": "43.0.0",
+   "genre": "jeton",
+   "source": "<indiquer les références et l'intitulé principal du Marché,",
+   "par": "{{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "ligne": "55.0.0",
+   "genre": "choix",
+   "source": "Publics>",
+   "par": "Publics"
+  },
+  {
+   "ligne": "59.0.0",
+   "genre": "jeton",
+   "source": "<Insérer le nom>",
+   "par": "{{B01-AC-05}}"
+  },
+  {
+   "ligne": "62.0.0",
+   "genre": "jeton",
+   "source": "<préciser le nom du mandataire, le cas échéant>",
+   "par": "{{B02-MW-04}}"
+  },
+  {
+   "ligne": "66.0.0",
+   "genre": "jeton",
+   "source": "<préciser le nom du Maître d' oeuvre, le cas échéant>",
+   "par": "{{B02-MW-01}}"
+  },
+  {
+   "ligne": "108.0.0",
+   "genre": "retire",
+   "source": "[note:1]",
+   "par": ""
+  },
+  {
+   "ligne": "201.0.0",
+   "genre": "jeton",
+   "source": "<préciser le nom de l’opération, le cas échéant>",
+   "par": "{{B02-OT-01}}"
+  },
+  {
+   "ligne": "201.0.0",
+   "genre": "retire",
+   "source": "dans le cadre de <préciser le nom de l’opération, le cas échéant>",
+   "par": ""
+  },
+  {
+   "ligne": "204.0.0",
+   "genre": "jeton",
+   "source": "<indiquer l'objet et le lieu d'exécution des travaux >",
+   "par": "{{B02-OT-02}}"
+  },
+  {
+   "ligne": "209.0.0",
+   "genre": "jeton",
+   "source": "<nombre >",
+   "par": "{{B02-LV-01}}"
+  },
+  {
+   "ligne": "221.0.0",
+   "genre": "jeton",
+   "source": "<compléter selon le projet, l'objet de la tranche et son étendue>",
+   "par": "{{B02-LT-03}}"
+  },
+  {
+   "ligne": "222.0.0",
+   "genre": "jeton",
+   "source": "<compléter selon le projet, l'objet de la tranche et son étendue>",
+   "par": "{{B02-LT-04}}"
+  },
+  {
+   "ligne": "223.0.0",
+   "genre": "jeton",
+   "source": "<compléter selon le projet, l'objet de la tranche et son étendue>",
+   "par": "{{B02-LT-05}}"
+  },
+  {
+   "ligne": "231.0.0",
+   "genre": "jeton",
+   "source": "<Préciser les nom et coordonnées du Maître de l'ouvrage>",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": "234.0.0",
+   "genre": "jeton",
+   "source": "<Préciser les nom et coordonnées>",
+   "par": "{{B01-AC-05}}"
+  },
+  {
+   "ligne": "242.0.0",
+   "genre": "jeton",
+   "source": "<Préciser les nom et coordonnées>",
+   "par": "{{B02-MW-04}}"
+  },
+  {
+   "ligne": "249.0.0",
+   "genre": "jeton",
+   "source": "<indiquer les référence du lien contractuel entre le Maître de l'ouvrage et le Maître d'œuvre >",
+   "par": "{{B02-MW-02}}"
+  },
+  {
+   "ligne": "250.0.0",
+   "genre": "jeton",
+   "source": "<Préciser le nom et les coordonnées du Maître d'œuvre >",
+   "par": "{{B02-MW-01}}"
+  },
+  {
+   "ligne": "263.0.0",
+   "genre": "jeton",
+   "source": "<mentionner l'adresse de notification choisi par le Maître de l'Ouvrage à défaut d'élection de domicile par l'Entrepreneur. Si aucune adresse n'est mentionnée ici les notifications seront, selon les dispositions du CCAG, valablement effectuées à la mairie du lieu principal des travaux >",
+   "par": "{{B09-NE-01}}"
+  },
+  {
+   "ligne": "269.0.0",
+   "genre": "jeton",
+   "source": "<nombre>",
+   "par": "{{B08-EF-01}}"
+  },
+  {
+   "ligne": "283.0.0",
+   "genre": "jeton",
+   "source": "<nombre de jours ou de mois>",
+   "par": "{{B02-LT-06}}"
+  },
+  {
+   "ligne": "285.0.0",
+   "genre": "jeton",
+   "source": "<nombre de jours ou de mois>",
+   "par": "{{B02-LT-07}}"
+  },
+  {
+   "ligne": "294.0.0",
+   "genre": "jeton",
+   "source": "<Enumérer:",
+   "par": "{{B09-DC-01}}"
+  },
+  {
+   "ligne": "316.0.0",
+   "genre": "jeton",
+   "source": "<insérer le pourcentage du prix du Marché qui ne peut dépasser cinq pour cent (5%)>",
+   "par": "{{B05-GE-05.chiffres}} %"
+  },
+  {
+   "ligne": "321.0.0",
+   "genre": "jeton",
+   "source": "<insérer le pourcentage>",
+   "par": "{{B05-GE-02}}"
+  },
+  {
+   "ligne": "323.0.0",
+   "genre": "jeton",
+   "source": "<insérer le pourcentage>",
+   "par": "{{B05-GE-05.chiffres}} %"
+  },
+  {
+   "ligne": "347.0.0",
+   "genre": "jeton",
+   "source": "<maximum 5 %>",
+   "par": "{{B05-RG-02.chiffres}} %"
+  },
+  {
+   "ligne": "347.0.0",
+   "genre": "retire",
+   "source": "<ajouter le cas échéant:>",
+   "par": ""
+  },
+  {
+   "ligne": "355.0.0",
+   "genre": "retire",
+   "source": "<ajouter le cas échéant:>",
+   "par": ""
+  },
+  {
+   "ligne": "362.0.0",
+   "genre": "jeton",
+   "source": "<soit mentionner les garanties spécifiques demandées à l'Entrepreneur, par exemple pour couvrir sa responsabilité en matière de dommages causés à des ouvrages publiques :>",
+   "par": "{{B05-AG-01}}"
+  },
+  {
+   "ligne": "379.0.0",
+   "genre": "retire",
+   "source": "Soit :",
+   "par": ""
+  },
+  {
+   "ligne": "380.0.0",
+   "genre": "retire",
+   "source": "Soit :",
+   "par": ""
+  },
+  {
+   "ligne": "388.0.0",
+   "genre": "jeton",
+   "source": "<préciser, le cas échéant, les éléments spécifiques du prix de revient soumis à contrôle et les modalités de ce contrôle>",
+   "par": "{{B09-PV-02}}"
+  },
+  {
+   "ligne": "418.0.0",
+   "genre": "retire",
+   "source": "<ajouter le cas échéant :>",
+   "par": ""
+  },
+  {
+   "ligne": "445.0.0",
+   "genre": "jeton",
+   "source": "<préciser ici les modalités de règlement du prix du marché, en particulier si le marché a une durée inférieur à trois mois et si le marché est réglé en une seul fois à son achèvement ou si la périodicité des acomptes n'est pas mensuelle>",
+   "par": "{{B08-RE-01}}"
+  },
+  {
+   "ligne": "454.0.1",
+   "genre": "jeton",
+   "source": "<Indiquer le taux de charges applicables aux salaires, le taux de frais généraux admis et le taux de marge admis>",
+   "par": "{{B08-RE-03}}"
+  },
+  {
+   "ligne": "477.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage>",
+   "par": "{{B08-AF-03.chiffres}} %"
+  },
+  {
+   "ligne": "480.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage>",
+   "par": "{{B08-AF-04.chiffres}} %"
+  },
+  {
+   "ligne": "481.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage>",
+   "par": "{{B08-AF-05.chiffres}} %"
+  },
+  {
+   "ligne": "516.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage inférieur à 20%>",
+   "par": "{{B09-MA-01}}"
+  },
+  {
+   "ligne": "520.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage inférieur à 20%>",
+   "par": "{{B09-MA-02}}"
+  },
+  {
+   "ligne": "523.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage>",
+   "par": "{{B09-MA-03}}"
+  },
+  {
+   "ligne": "528.0.0",
+   "genre": "jeton",
+   "source": "<pourcentage inférieur à 30%>",
+   "par": "{{B09-MA-04}}"
+  },
+  {
+   "ligne": "534.0.0",
+   "genre": "jeton",
+   "source": "<à préciser, par exemple, niveau de précipitations, force du vent…>.",
+   "par": "{{B09-FM-02}}"
+  },
+  {
+   "ligne": "544.0.0",
+   "genre": "jeton",
+   "source": "<insérer délai>",
+   "par": "{{B09-DL-01}}"
+  },
+  {
+   "ligne": "555.0.0",
+   "genre": "jeton",
+   "source": "<indiquer le nombre de jours>",
+   "par": "{{B09-MD-01}}"
+  },
+  {
+   "ligne": "559.0.0",
+   "genre": "jeton",
+   "source": "<nombre>",
+   "par": "{{B09-MD-02}}"
+  },
+  {
+   "ligne": "571.0.0",
+   "genre": "jeton",
+   "source": "<millièmes>",
+   "par": "{{B09-PE-02}}"
+  },
+  {
+   "ligne": "575.0.0",
+   "genre": "jeton",
+   "source": "<Indiquer, le cas échéant, les modalités de vérification, y compris le nom des organismes spécialisés chargés du contrôle>",
+   "par": "{{B09-VQ-01}}"
+  },
+  {
+   "ligne": "579.0.0",
+   "genre": "jeton",
+   "source": "<Indiquer, le cas échéant, quels sont les matériaux et produits et les conditions de leur stockage par l'Entrepreneur>",
+   "par": "{{B09-PM-01}}"
+  },
+  {
+   "ligne": "588.0.0",
+   "genre": "jeton",
+   "source": "<préciser le nombre de jours qui peut déroger au délai de deux mois prévu à l'article 28.1 CCAG >",
+   "par": "{{B09-PT-02}}"
+  },
+  {
+   "ligne": "591.0.0",
+   "genre": "jeton",
+   "source": "<préciser le nombre de jours qui doit être au minimum de 10>",
+   "par": "{{B09-PT-03}}"
+  },
+  {
+   "ligne": "596.0.0",
+   "genre": "jeton",
+   "source": "<préciser le nombre de jours qui doit être au minimum de 10>",
+   "par": "{{B09-PT-04}}"
+  },
+  {
+   "ligne": "601.0.0",
+   "genre": "jeton",
+   "source": "< nombre de jours>",
+   "par": "{{B09-VX-01}}"
+  },
+  {
+   "ligne": "617.0.0",
+   "genre": "jeton",
+   "source": "<jours>",
+   "par": "{{B09-RP-03}}"
+  },
+  {
+   "ligne": "632.0.0",
+   "genre": "jeton",
+   "source": "<Insérer le nombre de mois ou d'années>",
+   "par": "{{B09-GT-01}} mois"
+  }
+ ],
+ "retraits": [
+  {
+   "ligne": "109.0.0",
+   "texte": "[note 1] Le document ci-après (CCAP type) a pour but de servir de cadre à l'établissement du CCAP à inclure dans le DAO. Des instructions pour leur rédaction sont fournies dans les notes en italique et entre crochets. Le Maître de l'Ouvrage complète le CCAP à l'aide de ces instructions, en insérant le texte approprié et en utilisant les exemples fournis ou un texte similaire, adapté aux besoins du Marché. Les textes en italiques doivent ensuite être supprimés.",
+   "raison": "note de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "118.0.0",
+   "texte": "NOTE AUX UTILISATEURS A SUPPRIMER DANS LE DAO DEFINITIF",
+   "raison": "note de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "118.0.2",
+   "texte": "<Le document ci-après (CCAP type) a pour but de servir de cadre à l'établissement du CCAP à inclure dans le DAO. Des instructions pour leur rédaction sont fournies dans les notes en italique et entre crochets. La PRMP complète le CCAP à l'aide de ces instructions, en insérant le texte approprié et en utilisant les exemples fournis ou un texte similaire, adapté aux besoins du Marché. Les textes en italiques doivent ensuite être supprimés.>",
+   "raison": "note de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "125.0.0",
+   "texte": "TABLE DES MATIERES",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "127.0.0",
+   "texte": "Article 1 - Objet du marché - Intervenants 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "128.0.0",
+   "texte": "1.1 Objet du marché 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "129.0.0",
+   "texte": "1.2.- Intervenants 7",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "130.0.0",
+   "texte": "Article 2 - Notifications à l'Entrepreneur (CCAG Article 2.2.2) 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "131.0.0",
+   "texte": "Article 3 - Estimations des engagements financiers du Maître de l'Ouvrage (CCAG Article 2.2.4) 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "132.0.0",
+   "texte": "Article 4 - Groupements (CCAG Article 2.3) 8",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "133.0.0",
+   "texte": "Article 5 - Marchés à tranches conditionnelles (CCAG Article 2.6) 9",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "134.0.0",
+   "texte": "Article 6 - Documents contractuels (CCAG Article 3) 9",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "135.0.0",
+   "texte": "Article 7 - Forme et montant de la garantie de bonne exécution (CCAG Article 4) 9",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "136.0.0",
+   "texte": "7.1. Cautionnement, Garantie Bancaire (CCAG Article 4.1) 9",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "137.0.0",
+   "texte": "7.2. Retenue de garantie (CCAG Article 4.2) 10",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "138.0.0",
+   "texte": "7.3. Garantie de restitution d'avance (CCAG Article 4.3) 10",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "139.0.0",
+   "texte": "7.4. Autres garanties (CCAG Article 4.3) 10",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "140.0.0",
+   "texte": "Article 8 - Assurances (CCAG Article 4.4) 11",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "141.0.0",
+   "texte": "Article 9. - Obligation de discrétion – Mesure de sécurité (CCAG Article 7) 12",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "142.0.0",
+   "texte": "Article 10 - Contrôle des prix de revient (CCAG Article 8) 12",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "143.0.0",
+   "texte": "Article 11 - Prix du Marché (CCAG article 10) 12",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "144.0.0",
+   "texte": "11.1 Contenu des prix du Marché (CCAG article 10.1) 12",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "145.0.0",
+   "texte": "11.2. Monnaie (CCAG article 10.1) 13",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "146.0.0",
+   "texte": "11.3. Type de prix (CCAG article 10.2 et 10.3) 13",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "147.0.0",
+   "texte": "11.4. Variations dans les prix (CCAG article 10.4) 13",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "148.0.0",
+   "texte": "Article 12 - Règlement des comptes (CCAG Article 11) 14",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "149.0.0",
+   "texte": "12.1. Modalités de règlement des comptes (CCAG Article 11.1) 14",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "150.0.0",
+   "texte": "12.2. Travaux en régie 14",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "151.0.0",
+   "texte": "Article 13 - Acomptes sur approvisionnements (CCAG Article 11.4) 14",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "152.0.0",
+   "texte": "Article 14. - Avances (CCAG Article 11.5) 15",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "153.0.0",
+   "texte": "14.1. Avance forfaitaire 15",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "154.0.0",
+   "texte": "Article 15 - Intérêts moratoires dus à l'Entrepreneur (CCAG Article 11.6) 15",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "155.0.0",
+   "texte": "Article 16 - Modalités de règlement des comptes (CCAG Article 13) 15",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "156.0.0",
+   "texte": "Article 17 - Augmentation dans la masse des travaux (CCAG Article 15) 16",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "157.0.0",
+   "texte": "Article 18 - Diminution dans la masse des travaux (CCAG Article 16) 16",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "158.0.0",
+   "texte": "Article 19 - Changement dans l'importance des diverses natures d'ouvrage (CCAG Article 17) 16",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "159.0.0",
+   "texte": "Article 20 - Cas de force majeure (CCAG Article 18.3) 16",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "160.0.0",
+   "texte": "Article 21 - Délai d'exécution (CCAG Article 19.1) 17",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "161.0.0",
+   "texte": "Article 22 - Modification des délais d'exécution (CCAG Article 19) 17",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "162.0.0",
+   "texte": "Article 23 - Pénalités et retenues (CCAG Article 20.6) 17",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "163.0.0",
+   "texte": "Article 24 - Vérification qualitative des matériaux et produits (CCAG Article 24.3) 18",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "164.0.0",
+   "texte": "Article 25 - Prise en charge par l'Entrepreneur des matériaux et produits fournis par le Maître de l'Ouvrage (CCAG Article 26) 18",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "165.0.0",
+   "texte": "Article 26 - Préparation des travaux (CCAG Article 28) 18",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "166.0.0",
+   "texte": "Article 27 - Visa des documents d'exécution par le Maître d'oeuvre (CCAG Article 29.1.4) 18",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "167.0.0",
+   "texte": "Article 28 - Réception provisoire (CCAG Article 41) 18",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "168.0.0",
+   "texte": "28.1. Réception par tranches (CCAG Article 41.1.) 18",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "169.0.0",
+   "texte": "28.2. Opérations préalables (CCAG Article 41.2.) 19",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "170.0.0",
+   "texte": "Article 29 - Délai de garantie (CCAG Article 44.1) 19",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "171.0.0",
+   "texte": "Article 30 - Résiliation du marché aux torts de l’Entrepreneurs……………………………………………...….19",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "172.0.0",
+   "texte": "Article 31 - Procédure contentieuse (CCAG Article 50.3) 20",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "173.0.0",
+   "texte": "Article 32 - Dérogations aux documents généraux 20",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "174.0.0",
+   "texte": "Annexe au CCAP 222",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "175.0.0",
+   "texte": "Modèle de formule de révision des prix 22",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "176.0.0",
+   "texte": "Annexe au CCAP 25",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "177.0.0",
+   "texte": "Modèle de garantie bancaire de bonne exécution 25",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "178.0.0",
+   "texte": "Annexe au CCAP 26",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "179.0.0",
+   "texte": "Modèle de Caution Personnelle et solidaire de bonne exécution 26",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "180.0.0",
+   "texte": "Annexe au CCAP 27",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "181.0.0",
+   "texte": "Modèle de garantie bancaire de restitution d'avance 27",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "182.0.0",
+   "texte": "Annexe au CCAP 28",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "183.0.0",
+   "texte": "Modèle de Caution Personnelle et solidaire de restitution d’avance 28",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "184.0.0",
+   "texte": "Annexe 29",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "185.0.0",
+   "texte": "Cadre de bordereau des prix et 29",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "186.0.0",
+   "texte": "Détail quantitatif et estimatif 29",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "187.0.0",
+   "texte": "Annexe aux Spécifications Techniques 36",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "188.0.0",
+   "texte": "Liste des Plans 36",
+   "raison": "sommaire : ses numéros de page ne valent que pour le document type"
+  },
+  {
+   "ligne": "44.0.0",
+   "texte": "le cas échéant, le projet dans le cadre duquel le Marché est passé",
+   "raison": "fin de la même instruction (références du marché)"
+  },
+  {
+   "ligne": "45.0.0",
+   "texte": "ou le numéro et l'objet du lot compris dans le projet >",
+   "raison": "fin de la même instruction (références du marché)"
+  },
+  {
+   "ligne": "252.0.0",
+   "texte": "<ou>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "275.0.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "278.0.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "337.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "343.0.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "346.0.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "351.0.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "354.0.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "359.0.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "374.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "377.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "383.0.0",
+   "texte": "<Soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "386.0.0",
+   "texte": "<Soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "422.0.0",
+   "texte": "<Soit>:",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "438.0.0",
+   "texte": "<Soit>:",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "449.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "453.0.0",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "458.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "470.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "473.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "476.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "479.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "531.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "539.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "565.0.0",
+   "texte": "<soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "568.0.0",
+   "texte": "<soit> :",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "583.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "586.0.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "981.2.0",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "51.0.0",
+   "texte": "<préciser selon le cas :",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "207.0.0",
+   "texte": "<si les travaux comprennent plusieurs lots préciser le nombre de lots et leur consistance >.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "218.0.0",
+   "texte": "<si les travaux comprennent plusieurs tranches préciser la définition des tranches comme suit:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "287.0.0",
+   "texte": "<Etc. selon le nombre de tranches conditionnelles>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "239.0.0",
+   "texte": "<à compléter, le cas échéant>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "254.0.0",
+   "texte": "<S'il n'est pas désigné de Maître d'œuvre indiquer:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "267.0.0",
+   "texte": "<préciser le délai de remise, par exemple:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "273.0.0",
+   "texte": "<Préciser si les Entrepreneurs groupés seront considérés comme solidaires ou seulement conjoints. L’option pour ce dernier cas n’est possible que si le Marché est divisé en plusieurs lots distincts.>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "299.0.0",
+   "texte": "<en cas de construction ou réhabilitation de bâtiment, insérer>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "310.0.0",
+   "texte": "<Lorsque la durée d'exécution du marché n'excède pas six mois, la garantie de bonne exécution n'est pas requise sauf si le Maître de l'Ouvrage souhaite obtenir une telle garantie. Si la garantie n'est pas requise, insérer ici :>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "314.0.0",
+   "texte": "<Si une garantie d'exécution est requise, insérer ici :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "318.0.0",
+   "texte": "<Si le Marché comporte un part en devises étrangères et que le pourcentage de la garantie d'exécution applicable au prix en devises est différent du pourcentage applicable au prix en Ariary indiquer :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "327.0.0",
+   "texte": "<choisir un ou plusieurs des formes suivantes:>:",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "333.0.0",
+   "texte": "<Si un délai de garantie contractuelle est prévu et qu'une retenue de garantie peut être pratiquée ou remplacée par une garantie bancaire ou un cautionnement, insérer la mention suivante :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "368.0.0",
+   "texte": "<indiquer les polices d'assurance requises et les montants couverts souhaités, le texte suivant constitue un exemple à adapter:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "395.0.0",
+   "texte": "<les exemples suivants sont à adapter en fonction du projet de Marché concerné>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "405.0.0",
+   "texte": "<Dans le cas où le paiement en devises est possible, indiquer:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "414.0.0",
+   "texte": "<dans le cas d'un Marché à prix forfaitaire :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "417.0.0",
+   "texte": "<dans le cas d'un Marché à prix unitaire :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "461.0.0",
+   "texte": "<soit préciser les modalités d'établissement des décomptes comportant un montant correspondant à des approvisionnements, par exemple:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "492.0.0",
+   "texte": "<si le délai d'exécution du marché ne dépasse pas trois mois, préciser, le cas échéant : >",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "495.0.0",
+   "texte": "<En cas d'établissement de décomptes mensuels préciser, le cas échéant, le délai de remise des décomptes:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "498.0.0",
+   "texte": "<cas marché à prix unitaires>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "502.0.0",
+   "texte": "<cas marché à prix forfaitaires>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "514.0.0",
+   "texte": "<Définir la limite à l'augmentation dans la masse des travaux en deçà de laquelle la passation d’un avenant n'est pas nécessaire. Cette limite doit être inférieure à 20%>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "519.0.0",
+   "texte": "<Définir la limite à la diminution dans la masse des travaux en deçà de laquelle la passation d’un avenant n'est pas nécessaire. Cette limite doit être inférieure à 20%>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "522.0.0",
+   "texte": "<Fixer ici la limite à la diminution dans la masse des travaux au delà de laquelle l'Entrepreneur peut être indemnisé, si on souhaite un limite différente de la limite de 25% prévu au CCAG:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "526.0.0",
+   "texte": "< Fixer ici la limite à la diminution ou à l'augmentation dans l'importance de certaines natures d'ouvrages au delà de laquelle un avenant est nécessaire, si on souhaite un limite différente de la limite de 30% par rapport aux quantités prévues, fixée par le CCAGi:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "543.0.0",
+   "texte": "< si le Point de départ du délai d'exécution est postérieur la date de notification Indiquer:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "546.0.0",
+   "texte": "<si le Marché fixe une date limite pour l'achèvement des travaux au lieu d'un délai, indiquer la date limite de commencement et la date limite d'achèvement>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "563.0.0",
+   "texte": "<Préciser, en fonction de l'importance du Marché et des délais d'exécution, si les pénalités prévues par l'article 20 du CCAG s'appliquent ou non et, le cas échéant, indiquer les pénalités spécifiques au Marché>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "594.0.0",
+   "texte": "<S'il est prévu un plan d'hygiène et de sécurité, indiquer:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "607.0.0",
+   "texte": "<La fixation par le Marché pour une tranche de travaux, un ouvrage ou une partie d'ouvrage, d'un délai d'exécution distinct du délai global d'exécution de l'ensemble des travaux implique, en principe, une réception partielle de la tranche de travaux concernée. Dans ce cas, préciser le ici:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "615.0.0",
+   "texte": "<en cas de dérogation au délai de 20 jours à compter de la réception de l'avis de l'Entrepreneur fixé par le CCAG pour le début des opérations de réception, indiquer:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "623.0.0",
+   "texte": "<Indiquer, le cas échéant :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "629.0.0",
+   "texte": "Lorsqu’il est nécessaire de modifier le délai d’un (1) an <indiquer :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "656.0.0",
+   "texte": "<dans le cas d'un marché passé avec une entreprise étrangère, la nature internationale du marché peut permettre (à valider) d'avoir recours à un arbitrage international plutôt qu'aux tribunaux malgaches pour le règlement des litiges. L'un des avantages de l'arbitrage réside dans la plus grande facilité d'exécution de la sentence à l'encontre de l'Entrepreneur étranger. L'inconvénient essentiel de l'arbitrage réside dans son coût important>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "658.0.0",
+   "texte": "<Exemple : clause d'arbitrage CNUDCI : application des règles établies par la Commission des Nations Unies sur le Droit du Commerce International. Il est essentiel de préciser qui sera l'autorité chargée de la nomination des arbitres en cas de carence des parties>.",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "454.0.6",
+   "texte": "<Lorsque l'on souhaite fixer un pourcentage du montant du Marché, inférieur au taux de 3% fixé par les CCAG, au delà duquel l'obligation pour l'Entrepreneur d'exécuter des travaux en régie cesse, indiquer :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "295.0.0",
+   "texte": "d'une part les documents tels que plans, études et autres documents spécifiques au Marché qu'il est souhaitable de rendre contractuel en raison notamment de leur caractère essentiel à la définition de l'objet,",
+   "raison": "suite de la même instruction (documents contractuels), remplacée par la saisie B09-DC-01"
+  },
+  {
+   "ligne": "296.0.0",
+   "texte": "d'autre part les décompositions du prix du Marché requises pour exprimer clairement et complètement son montant, en renvoyant si nécessaire à des annexes>",
+   "raison": "suite de la même instruction (documents contractuels), remplacée par la saisie B09-DC-01"
+  },
+  {
+   "ligne": "211.0.0",
+   "texte": "- Lot n°1 : <préciser l’intitulé et/ou l'objet du lot>.",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "212.0.0",
+   "texte": "- Lot n°2 : < préciser l’intitulé et/ou l'objet du lot).",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "213.0.0",
+   "texte": "- etc. <compléter en fonction du projet>.",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "370.0.0",
+   "texte": "A- Installations et engins de chantier",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.2",
+   "texte": "L’entrepreneur fera son affaire personnelle de la souscription des assurances relatives aux biens et équipements lui appartenant ou placés sous sa garde, utilisés pour la réalisation de son marché et non destinés à être incorporés dans les ouvrages réalisés.",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.4",
+   "texte": "Il veillera notamment à ce que les véhicules terrestres à moteur et les remorques (attelées ou non) soient assurés conformément à la législation en vigueur et que ceux-ci soient aussi garantis lorsqu'ils fonctionnent comme outils en dehors de toute circulation.",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.6",
+   "texte": "B- Responsabilité Civile en cours de chantier et après travaux",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.8",
+   "texte": "L’Entrepreneur devra justifier, dans un délai de <préciser le nombre de jours> jours à compter de la date de la notification du marché, et ensuite chaque année à l'échéance, qu'il est titulaire d'un contrat d'assurance garantissant sa responsabilité civile (y compris celle du fait des sous-traitants de niveau 1) et couvrant les conséquences pécuniaires des dommages (y compris du fait de la pollution accidentelle) corporels, matériels et immatériels causés au tiers y compris le maître d’ouvrage du fait notamment de l'exécution des travaux objet du marché .",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.10",
+   "texte": "La liste exacte des activités pour lesquelles l'entrepreneur est garanti sera détaillée dans l'attestation.",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.12",
+   "texte": "L’Entrepreneur obtiendra de son assureur l'engagement d'aviser le maître d’ouvrage de toute éventualité de résiliation de la police dont l'Entrepreneur est titulaire quel qu'en soit le motif.",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.14",
+   "texte": "- Montant minimum des garanties par sinistre",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.16",
+   "texte": "Dommages corporels <préciser le montant> Ariary sans franchise",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.18",
+   "texte": "Tous dommages matériels et immatériels confondus <préciser le montant>",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.20",
+   "texte": "La franchise en dommages matériels et immatériels consécutifs sera au maximum de <préciser le montant> Ariary",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.23",
+   "texte": "<ajouter si l'objet du marché concerne des travaux de bâtiment donnant lieu à la grantie décennale:>",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.24",
+   "texte": "C - Responsabilité Civile décennale",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.26",
+   "texte": "Le présent marché concerne des travaux de bâtiment donnant lieu à la garantie décennale.",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.28",
+   "texte": "L‘Entrepreneur devra préciser lors de la remise de son offre le nom et les coordonnées exactes de son assureur couvrant habituellement sa responsabilité civile décennale. De plus il devra justifier, dans un délai de <préciser le nombre de jours> jours à compter de la date de la notification du marché, et ensuite chaque année à l'échéance, qu'il est bien titulaire d'un contrat d'assurance garantissant sa responsabilité civile décennale.",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.30",
+   "texte": "La liste exacte des activités pour lesquelles l'entrepreneur est garanti sera détaillée dans l'attestation. Ce contrat comportera une clause assurant le maintien de la garantie pour toute la durée de la responsabilité pesant sur l’assuré pour tous les chantiers ouverts pendant la durée de validité de celui-ci. Il devra garantira également les sous-traitants",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.32",
+   "texte": "L’Entrepreneur obtiendra de son assureur l'engagement d'aviser le maître d’ouvrage de toute éventualité de résiliation de la police dont l'Entrepreneur est titulaire quel qu'en soit le motif.",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.34",
+   "texte": "L'Entrepreneur s'interdit formellement de mettre en œuvre des techniques non traditionnelles ou non agréées par les assureurs sans avoir obtenu préalablement l'avis favorable du contrôleur technique. A défaut, les surprimes qui en résulteraient seraient à la charge de l'Entrepreneur.",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.36",
+   "texte": "- Montant des garanties par sinistre couvert par la responsabilité décennale",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "370.0.37",
+   "texte": "Tous dommages de nature décennale à concurrence de <préciser le montant> Ariary pour les garanties légales obligatoires et <préciser le montant> Ariary pour les garanties complémentaires “bon fonctionnement des éléments d’équipement” et “dommages immatériels” et “dommages aux existants”. La franchise sera au maximum de <préciser le montant> Ariary par sinistre toutes garanties confondues.",
+   "raison": "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03"
+  },
+  {
+   "ligne": "397.0.0",
+   "texte": "<cas où les travaux sont réalisés dans un établissement existant et en activité>",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "397.0.1",
+   "texte": "- des sujétions liées à l'exécution des travaux en milieu occupé et découlant du maintien de l'activité des services dans les locaux où sont effectués les travaux, en particulier des sujétions découlant de la nécessité de protéger les personnes et les ouvrages existants y compris les sols, le mobilier et les installations environnantes et leurs équipements,",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "397.0.2",
+   "texte": "- des dépenses de réparation et de remise en état des installations et équipements existants éventuellement détériorés ;",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "397.0.3",
+   "texte": "- des dépenses d'entretien permettant le nettoyage quotidien ainsi que le nettoyage final de la zone d'exécution ;",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "397.0.5",
+   "texte": "<si le délai d'exécution est impératif>",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "397.0.6",
+   "texte": "- de la nécessité éventuelle d’exécuter les prestations en dehors des heures normales pour respecter les délais contractuels (travail en plusieurs postes ou en dehors des jours normalement ouvrés).",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "397.0.8",
+   "texte": "<si une contrainte d'horaire est imposée :>",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "397.0.9",
+   "texte": "- que les travaux doivent être exécutés pendant la période de <préciser l’heure de début> heures à <préciser l’heure de fin> heures les jours ouvrés;",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "397.0.11",
+   "texte": "<pour la fourniture d'un ouvrage clés en mains>",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "397.0.12",
+   "texte": "- de la fourniture de tous les éléments annexes, provisoires ou complémentaires, qui bien que ne figurant pas dans les pièces contractuelles, s’avéreraient nécessaires à l’exécution des ouvrages dans les règles de l’art ;",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "397.0.14",
+   "texte": "<préciser si le Maître de l'Ouvrage fournit des prestations à l'Entrepreneur, par exemple comme suit:>",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "397.0.15",
+   "texte": "Le maître de l’ouvrage fournira les facilités et prestations limitativement énumérées à l'Annexe <numéro> du CCAP.",
+   "raison": "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05"
+  },
+  {
+   "ligne": "463.0.0",
+   "texte": "A l’appui de tout projet de décompte comportant des approvisionnements, l’entrepreneur ou le sous-traitant doit justifier qu’il a acquis et effectivement payé les matériaux concernés en toute propriété (copie des factures avec nom des fournisseurs, nature des approvisionnements, montants, date, mode de règlement).",
+   "raison": "modalités d'exemple des acomptes sur approvisionnements : remplacées par la saisie B08-AP-02"
+  },
+  {
+   "ligne": "463.0.2",
+   "texte": "Les matériaux ne peuvent être pris en compte que s’ils sont lotis de telle manière que leur destination ne fasse aucun doute et qu’ils puissent être facilement contrôlés.",
+   "raison": "modalités d'exemple des acomptes sur approvisionnements : remplacées par la saisie B08-AP-02"
+  },
+  {
+   "ligne": "463.0.4",
+   "texte": "Le montant pris en compte dans le projet de décompte sera établi sur la base du montant des factures correspondantes.",
+   "raison": "modalités d'exemple des acomptes sur approvisionnements : remplacées par la saisie B08-AP-02"
+  },
+  {
+   "ligne": "548.0.0",
+   "texte": "Date limite de commencement des travaux <date>.",
+   "raison": "rédaction « dates limites » : le délai d'exécution est retenu (plan du lot D4, Q9)"
+  },
+  {
+   "ligne": "549.0.0",
+   "texte": "Date limite d'achèvement des travaux <date>.",
+   "raison": "rédaction « dates limites » : le délai d'exécution est retenu (plan du lot D4, Q9)"
+  },
+  {
+   "ligne": "660.0.0",
+   "texte": "Tous litige, différend ou plainte entre les parties liés à la validité, à l'exécution ou à la résiliation du Marché, sera résolue par arbitrage selon les le Règlement d’Arbitrage de la Commission des Nations Unies pour le Droit du Commerce International (CNUDCI) tel qu’en vigueur à ce jour.",
+   "raison": "clause d'arbitrage d'exemple (CNUDCI, « à valider ») : remplacée par la saisie B10-PC-01"
+  },
+  {
+   "ligne": "662.0.0",
+   "texte": "Le tribunal arbitral sera composé <soit :> de trois membres, <soit :> d'un arbitre unique <ajouter le cas échéant dans le cas où le tribunal arbitral comprend trois arbitres> : le président du tribunal arbitral ne sera pas de la même nationalité que les parties et aura des qualifications dans le domaine <à préciser>.",
+   "raison": "clause d'arbitrage d'exemple (CNUDCI, « à valider ») : remplacée par la saisie B10-PC-01"
+  },
+  {
+   "ligne": "664.0.0",
+   "texte": "L'autorité de nomination sera : <par exemple> le Président de la Cour d'Arbitrage de la Chambre de Commerce International;",
+   "raison": "clause d'arbitrage d'exemple (CNUDCI, « à valider ») : remplacée par la saisie B10-PC-01"
+  },
+  {
+   "ligne": "666.0.0",
+   "texte": "A défaut d'accord des Parties sur un autre lieu, le siège de l'arbitrage sera : <Antananarivo ou une autre ville à préciser>.",
+   "raison": "clause d'arbitrage d'exemple (CNUDCI, « à valider ») : remplacée par la saisie B10-PC-01"
+  },
+  {
+   "ligne": "900.0.0",
+   "texte": "Notes aux utilisateurs relatives à la préparation du Bordereau des prix et du Détail quantitatif et estimatif à ne pas reproduire dans les documents définitifs.",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "902.0.0",
+   "texte": "Objectifs",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "904.0.0",
+   "texte": "(a) fournir des renseignements suffisants quant à la nature et au volume de travaux à réaliser, pour permettre une préparation des offres correcte et précise;",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "905.0.0",
+   "texte": "(b) permettre une comparaison juste des prix des offres à évaluer; et",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "906.0.0",
+   "texte": "(c) permettre, une fois le marché conclu, l’évaluation et le paiement des travaux exécutés.",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "908.0.0",
+   "texte": "Pour atteindre ces objectifs, le Bordereau des prix et le Détail quantitatif et estimatif doivent répertorier les travaux de façon suffisamment détaillée pour distinguer entre différentes natures de travaux, ou entre travaux de même nature exécutés dans des endroits différents, ou entre toutes autres conditions susceptibles de donner lieu à des variations de coûts. Une fois ces exigences satisfaites, le cadre et le contenu du Bordereau des prix et du Détail quantitatif et estimatif doivent être aussi simples et concis que possible.",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "910.0.0",
+   "texte": "Bordereau des prix",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "912.0.0",
+   "texte": "Le Bordereau des prix doit donner la description détaillé et la du contenu des prix unitaires pour chaque poste de travaux à exécuter.",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "914.0.0",
+   "texte": "Détail quantitatif et estimatif",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "916.0.0",
+   "texte": "Le Détail quantitatif et estimatif comprendra généralement les rubriques suivantes :",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "917.0.0",
+   "texte": "(a) travaux à exécuter,",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "918.0.0",
+   "texte": "(b) travaux en régie,",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "919.0.0",
+   "texte": "(c) autres sommes provisionnelles, et",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "920.0.0",
+   "texte": "(d) récapitulatif.",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "922.0.0",
+   "texte": "Préambule",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "924.0.0",
+   "texte": "Le préambule précisera les méthodes de métré qui ont été adoptées dans la préparation du Détail quantitatif et estimatif et qui seront utilisées pour le métré des travaux. Quand un ensemble de formules de révision de prix sont utilisées, elles se rapporteront aux sections appropriées du Détail quantitatif et estimatif.",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "926.0.0",
+   "texte": "Liste des postes de travaux à exécuter",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "928.0.0",
+   "texte": "Les postes du Bordereau des prix et du Détail quantitatif et estimatif seront groupés en rubriques de façon à distinguer entre les parties de travaux qui par nature, accès, calendrier ou toute autre caractéristique peuvent donner lieu à des variations sur les méthodes de construction, ou séquence des travaux, ou considérations de coût. Les postes généraux communs à toutes les parties des travaux peuvent être groupés en une rubrique séparée du Bordereau des prix et du Détail quantitatif et estimatif.",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "931.0.0",
+   "texte": "Quantités",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "933.0.0",
+   "texte": "Les quantités apparaissent dans la section “travaux à exécuter” du Détail quantitatif et estimatif. Elles sont calculées sur plans, à moins que le Marché n’en dispose autrement, et aucune provision ne sera faite pour des estimations globales. Ces quantités sont des estimations provisionnelles qui serviront à l’établissement et au jugement des offres",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "935.0.0",
+   "texte": "Travaux en régie",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "937.0.0",
+   "texte": "Un programme de travaux en régie doit être inclus s’il est probable que des travaux non prévus devront être exécutés selon ce mode, en plus de ceux figurant dans le Détail quantitatif et estimatif. Ces travaux ne font pas initialement partie des travaux à exécuter et donc ne sont pas comptés dans le calcul du montant du marché.",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "939.0.0",
+   "texte": "Sous-détails des prix",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "941.0.0",
+   "texte": "Dans certains cas, il pourra être demandé au Soumissionnaire retenu de fournir les sous-détails de certains prix unitaires du Bordereau des prix. La décomposition des prix pourra indiquer, entre autres, les coûts de main-d’oeuvre, de matériels, de matériaux, de transport, des impôts et taxes, ainsi que les parts en monnaies nationale et étrangères",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "943.0.0",
+   "texte": "Les sous-détails des prix unitaires de l’Entrepreneur retenu seront utilisés, en particulier pour la fixation des prix des travaux supplémentaires",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "945.0.0",
+   "texte": "Récapitulatif",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "947.0.0",
+   "texte": "Le récapitulatif doit détailler le montant de l’offre et ultérieurement du Marché et doit comprendre un tableau des différents chapitres du Détail quantitatif et estimatif. Le montant total du récapitulatif, y compris le cas échéant en accord avec les Instructions aux Candidats les provisions et travaux en régie, doit se retrouver dans l’Annexe à l'Acte d'Engagement qui indique le libellé des prix.",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "949.0.0",
+   "texte": "Présentation",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "951.0.0",
+   "texte": "Le Bordereau des prix et le Détail quantitatif et estimatif seront normalement composés d’une série de tableaux dont le contenu correspond à la nature ou à la séquence des tâches, par exemple:",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "953.0.0",
+   "texte": "Tableau 1 - Postes généraux (exemple: installation de chantier",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "954.0.0",
+   "texte": "Tableau 2 - Terrassements",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "955.0.0",
+   "texte": "Tableau 3 - Drains et fossés",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "956.0.0",
+   "texte": "Tableau 4 - etc., comme requis suivant le type de travaux",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "957.0.0",
+   "texte": "Tableau pour les travaux en régie - le cas échéant",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "958.0.0",
+   "texte": "Tableau des sommes provisionnelles - le cas échéant",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "959.0.0",
+   "texte": "Tableau récapitulatif du Détail quantitatif et estimatif",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "961.0.0",
+   "texte": "Un cadre de tableaux du Bordereau des prix et du Détail quantitatif et estimatif est donné ci après à titre d’exemple",
+   "raison": "notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)"
+  },
+  {
+   "ligne": "988.0.0",
+   "texte": "Notes relatives à la préparation des spécifications techniques et plans",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "988.0.1",
+   "texte": "<Ces Notes relatives à la préparation des spécifications techniques et plans sont fournies uniquement à titre d'information pour le Maître de l’Ouvrage ou la personne qui préparera le Dossier d'Appel d'offres, et ne doivent pas figurer dans les documents définitifs.>",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "988.0.3",
+   "texte": "Principes à suivre",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "988.0.5",
+   "texte": "Pour que les Candidats puissent répondre d'une façon réaliste et compétitive aux conditions posées par le Maître de l’Ouvrage, et sans avoir à assortir leurs soumissions de réserves ou de conditions particulières, il est nécessaire d'établir un ensemble de spécifications techniques et de plans à la fois clairs et précis. Dans le cas d'un Appel d'offres international, ces spécifications et plans doivent être établis de façon à permettre une concurrence aussi large que possible, tout en énonçant clairement les critères auxquels devront répondre les travaux, ouvrages, matériaux et services faisant l'objet du Marché.",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "988.0.7",
+   "texte": "Les spécifications devront généralement exiger que l'ensemble des fournitures et matériaux nécessaires à l'exécution des Travaux soient neufs, non usagés et du modèle le plus récent ou courant et, à moins que le Marché n'en dispose autrement, qu'ils englobent toutes les dernières améliorations apportées à la conception ou aux matériaux. Des exemples de spécifications tirées de projets similaires entrepris par le passé dans le même pays sont utiles à cet égard.",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "988.0.9",
+   "texte": "En spécifiant les critères auxquels devront répondre les travaux, ouvrages, matériaux et services faisant l'objet du Marché, il convient d'utiliser, dans toute la mesure du possible, des critères reconnus au plan international ou préciser que des types de fournitures, matériaux et travaux répondant à d'autres critères généralement admis et permettant d'assurer un niveau de qualité égal ou supérieur à celui visé par les critères mentionnés seront également acceptables.",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "990.0.1",
+   "texte": "A cet égard les dispositions ci-après peuvent être incluses dans les spécifications techniques.",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "990.0.3",
+   "texte": "Clause modèle : Equivalence des normes et codes",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "990.0.5",
+   "texte": "“Chaque fois qu'il est fait référence, dans le Marché, à des normes et codes particuliers auxquels doivent se conformer les fournitures et matériaux devant être fournis et les travaux devant être réalisés et contrôlés, les dispositions de la dernière édition ou révision en vigueur des normes et codes correspondants s'appliqueront, à moins que le Marché n'en dispose autrement. Si ces normes et codes sont d'ordre national ou ont trait à un pays ou une région donnés, d'autres normes généralement admises, permettant d'assurer un niveau de qualité égal ou supérieur à celui visé par les normes et codes spécifiés, pourront être acceptées sous réserve d'un examen préalable et d'une approbation écrite du Maître d’Oeuvre. Les différences entre les normes spécifiées et celles qui sont proposées devront faire l'objet d'une description écrite détaillée de la part de l'Entrepreneur, et être soumises au Maître d’Oeuvre au moins trente (30) jours avant la date à laquelle l'Entrepreneur désire obtenir l'approbation de celui-ci. Si le Maître d’Oeuvre estime que les normes proposées n’assurent pas un niveau de qualité égal ou supérieur, l’Entrepreneur devra respecter les normes spécifiées dans les documents.”",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.0",
+   "texte": "Contenu",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.2",
+   "texte": "Les Spécifications techniques comprendront en particulier les informations détaillées concernant les rubriques suivantes :",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.3",
+   "texte": "description et consistance des travaux et des ouvrages;",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.4",
+   "texte": "organisation du chantier et travaux préparatoires;",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.5",
+   "texte": "provenance, qualité et préparation des matériaux;",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.6",
+   "texte": "mode de préparation des travaux.",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.8",
+   "texte": "Variantes techniques",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.10",
+   "texte": "Conformément aux Instructions aux Candidats, le Maître de l’Ouvrage décidera, le cas échéant, s’il permet aux Candidats d’inclure dans leur offre des variantes techniques. Celles-ci sont justifiées dans les cas où il est concevable d’envisager des options qui pourraient s’avérer moins coûteuses que les solutions techniques indiquées dans le Dossier d’Appel d’offres. Le Maître de l’Ouvrage indiquera normalement les types et/ou sections de travaux pour lesquels des variantes pourraient présenter un avantage comparatif du fait des compétences particulières des Candidats. Il peut s’agir, par exemple, des types de travaux suivants :",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.12",
+   "texte": "fondations",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.13",
+   "texte": "(utilisation de procédés brevetés et matériaux spéciaux; type, diamètre, longueur et densité des pieux; détails constructifs; etc.);",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.14",
+   "texte": "piliers, poutres, planchers",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.15",
+   "texte": "(béton armé, précontraints, etc.);",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.16",
+   "texte": "procédés brevetés de mise sous tension des structures bétonnées;",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.17",
+   "texte": "couverture de surface des ouvrages;",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.18",
+   "texte": "matériaux hydrauliques, couvertures et joints des tuyauteries et conduites;",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.19",
+   "texte": "structures et matériaux des chaussées (gravier- bitume, gravier-ciment; etc.)",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.20",
+   "texte": "(asphalte, béton, etc.);",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.21",
+   "texte": "configuration et montage des pylônes des lignes de transmission électrique;",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.22",
+   "texte": "éclairage des chaussées.",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.24",
+   "texte": "Les Spécifications Techniques contiendront une description des travaux pour lesquels des variantes sont permises avec les références nécessaires à des plans, spécifications, bordereaux de prix et coûts unitaires, et critères de conception, d’essais et contrôle. Il sera également précisé que les variantes seront au moins équivalentes, dans leur structure et fonctionnement, aux paramètres de conception et aux spécifications indiqués dans le Dossier. Enfin, il sera requis que les variantes soient accompagnées de toutes les informations nécessaires pour permettre au Maître de l’Ouvrage d’en faire l’évaluation.",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.26",
+   "texte": "Plans et dossiers",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.28",
+   "texte": "Le Dossier d’Appel d’offres inclura normalement une série de plans et dossiers comprenant, entre autres, un plan de situation indiquant l’emplacement du site en relation avec la géographie locale. Une indication des principales routes, aéroports, chemins de fer et réseaux électriques est également utile. Les plans de construction, même s’ils ne sont pas détaillés, doivent fournir suffisamment d’information pour permettre aux soumissionnaires de comprendre le type et la complexité des travaux envisagés, et de pouvoir chiffrer les prix demandés au Bordereau des prix et Détail quantitatif et estimatif.",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  },
+  {
+   "ligne": "993.0.30",
+   "texte": "Les plans et dossiers seront rassemblés dans une annexe spécifique des Spécifications Techniques dans un volume séparé, d’un format pouvant être différent des autres documents du DAO, dicté par l’échelle des cartes et plans, qui ne doivent pas être réduits au point de rendre les détails illisibles.",
+   "raison": "notes de rédaction des spécifications techniques (pièce de l’acheteur)"
+  }
+ ],
+ "ajouts": [
+  "{{B02-LV-02}}",
+  "{{B09-AC-01}}",
+  "{{B09-AC-02}}",
+  "{{B09-AC-03}}",
+  "{{B09-CH-01}}",
+  "{{B09-CH-02}}",
+  "{{B09-CH-03}}",
+  "{{B09-CH-04}}",
+  "{{B09-CH-05}}",
+  "{{B08-AP-02}}",
+  "{{B09-RP-04}}",
+  "{{B10-PC-01}}",
+  "{{B10-DR-01}}"
+ ]
+}

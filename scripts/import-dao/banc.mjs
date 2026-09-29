@@ -18,7 +18,8 @@ const API = 'http://localhost:8080';
 let refs = null;
 const FORMES = { 'DPAC-CC': ['CONTRAT_CADRE', 'FOURNITURES_SERVICES'], 'AE-CC': ['CONTRAT_CADRE', 'FOURNITURES_SERVICES'], 'DPAO-F': ['A_COMMANDE', 'FOURNITURES_SERVICES'],
   'AE-F': ['A_COMMANDE', 'FOURNITURES_SERVICES'], 'CCAP-F': ['A_COMMANDE', 'FOURNITURES_SERVICES'], 'DPIC-PI': ['QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES'],
-  'AE-PI': ['QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES'], 'CPS-PI': ['QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES'] };
+  'AE-PI': ['QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES'], 'CPS-PI': ['QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES'],
+  'DPAO-T': ['QUANTITE_FIXE', 'TRAVAUX'], 'AE-T': ['QUANTITE_FIXE', 'TRAVAUX'], 'CCAP-T': ['QUANTITE_FIXE', 'TRAVAUX'] };
 if (!refs) {
   const r = await fetch(`${API}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ login: 'PRMP001', motDePasse: 'Test@1234' }) });
   const jar = (r.headers.getSetCookie?.() ?? []).map((c) => c.split(';')[0]).join('; ');
@@ -28,7 +29,9 @@ if (!refs) {
     refs[`${t}|${c}`] = Object.fromEntries(ref.champs.map((x) => [x.code, { type: x.type, source: x.source, cleCadrage: x.cleCadrage, options: x.options }]));
   }
 }
-const NOUVEAUX = { 'B04-EP-04': 'NOMBRE', 'B05-PF-13': 'MONTANT', 'B06-TP-07': 'NOMBRE', 'B06-CS-02': 'NOMBRE', 'B06-CS-03': 'NOMBRE', 'B02-OP-04': 'TEXTE', 'B08-AI-03': 'POURCENTAGE', 'B09-OP-02': 'NOMBRE' };
+const NOUVEAUX = { 'B04-EP-04': 'NOMBRE', 'B05-PF-13': 'MONTANT', 'B06-TP-07': 'NOMBRE', 'B06-CS-02': 'NOMBRE', 'B06-CS-03': 'NOMBRE', 'B02-OP-04': 'TEXTE', 'B08-AI-03': 'POURCENTAGE', 'B09-OP-02': 'NOMBRE',
+  // Lot D4 (travaux) : champs demandés en T-1.
+  'B02-MW-04': 'TEXTE_LONG', 'B02-LT-06': 'TEXTE', 'B02-LT-07': 'TEXTE', 'B04-VL-02': 'OUI_NON', 'B05-GE-05': 'POURCENTAGE', 'B09-BT-01': 'OUI_NON' };
 
 const n = (s) => String(s ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
 function vraie(expr, vaut) {

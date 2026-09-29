@@ -1,0 +1,795 @@
+{
+ "fichier": "DPAO-T.docx",
+ "sigle": "DPAO-T",
+ "source": "travaux-dpao",
+ "titre": "1.2. - DONNEES PARTICULIERES DE L’APPEL D‘OFFRES",
+ "conditions": {
+  "PROJET": "B02-OT-01 renseigne",
+  "ALLOTI": "alloti = OUI",
+  "LOTS-DIVISIBLES": "alloti = OUI et B02-LT-02 = Divisible",
+  "LOTS-TOTALITE": "alloti = OUI et B02-LT-02 = Totalité des lots",
+  "VARIANTES-NON": "variantes = NON",
+  "VARIANTES-OUI": "variantes = OUI",
+  "TRANCHES": "tranches = OUI",
+  "TRANCHE-C1": "tranches = OUI et B02-LT-04 renseigne",
+  "TRANCHE-C2": "tranches = OUI et B02-LT-05 renseigne",
+  "GROUPEMENT": "groupement = OUI",
+  "GROUPEMENT-LIBRE": "groupement = OUI et formeGroupement = CONJOINT_OU_SOLIDAIRE",
+  "GROUPEMENT-SOLIDAIRE": "groupement = OUI et formeGroupement = SOLIDAIRE_OBLIGATOIRE",
+  "SANS-GARANTIE": "garantieSoumission = NON",
+  "GARANTIE": "garantieSoumission = OUI",
+  "GARANTIE-BANCAIRE": "garantieSoumission = OUI et B05-GQ-02 = Garantie bancaire",
+  "GARANTIE-CAUTION": "garantieSoumission = OUI et B05-GQ-02 = Caution personnelle et solidaire",
+  "GARANTIE-CHEQUE": "garantieSoumission = OUI et B05-GQ-02 = Chèque de banque",
+  "VISITE-OBLIGATOIRE": "B04-VL-02 = OUI",
+  "ONG": "B03-QT-05 = OUI",
+  "QUALIFICATIONS": "B03-QT-06 renseigne",
+  "PREFERENCE": "B06-PN-01 = OUI",
+  "SANS-PREFERENCE": "B06-PN-01 != OUI",
+  "FERME": "prixRevisable = NON",
+  "REVISABLE": "prixRevisable = OUI",
+  "ARIARY": "B05-MN-01 = Ariary",
+  "DEVISES": "B05-MN-01 = Devises",
+  "LANGUE": "B04-LG-01 renseigne",
+  "REUNION-NON": "B04-RP-01 != OUI",
+  "REUNION-OUI": "B04-RP-01 = OUI",
+  "PAPIER": "modeRemise != ELECTRONIQUE",
+  "B04-SE": "modeRemise = ELECTRONIQUE",
+  "EVALUATION-PAR-LOT": "alloti = OUI et B06-EV-01 = Par lot",
+  "EVALUATION-ENSEMBLE": "alloti = OUI et B06-EV-01 = Sur l'ensemble des lots",
+  "NON-CUMUL": "alloti = OUI et B09-DL-05 = OUI"
+ },
+ "blocs": [
+  {
+   "type": "para",
+   "texte": "Les données particulières ci - après complètent, précisent ou modifient les clauses des Instructions aux Candidats (IC). En cas de conflit, les clauses ci-dessous prévalent sur celles des IC."
+  },
+  {
+   "type": "table",
+   "texte": "2"
+  },
+  {
+   "type": "ligne",
+   "texte": "Clause des Instructions aux Candidats (IC)\u001fDonnées particulières"
+  },
+  {
+   "type": "ligne",
+   "texte": "1. Maître de l'Ouvrage et objet de l’appel d’offres\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fMaître de l'Ouvrage\u001e{{B01-AC-01}}\u001eObjet de l'appel d'offres\u001e{{SI:PROJET}}\u001eLe présent appel d'offres, s'inscrit dans:\u001e{{B02-OT-01}}.\u001e{{FINSI:PROJET}}\u001eL’Appel d’offres a pour objet :\u001e{{B02-OT-02}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "1.1 Lots, variantes et tranches\u001f{{SI:ALLOTI}}\u001eLots\u001eLes lots suivants faisant partie de {{B02-LT-01}} :\u001e{{B02-LV-02}}\u001e{{SI:LOTS-DIVISIBLES}}\u001eLe candidat peut soumissionner pour un ou plusieurs lots\u001e{{FINSI:LOTS-DIVISIBLES}}\u001e{{SI:LOTS-TOTALITE}}\u001eLe candidat ne peut soumissionner que pour la totalité des lots\u001e{{FINSI:LOTS-TOTALITE}}\u001e{{FINSI:ALLOTI}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fVariantes\u001e{{SI:VARIANTES-NON}}\u001eLes variantes ne sont pas prises en considération\u001e{{FINSI:VARIANTES-NON}}\u001e{{SI:VARIANTES-OUI}}\u001eLes variantes sont autorisées.\u001e{{FINSI:VARIANTES-OUI}}\u001e{{SI:TRANCHES}}\u001eTranches\u001eLes travaux sont décomposés en tranches définies comme suit :\u001e- tranche ferme: {{B02-LT-03}}\u001e{{SI:TRANCHE-C1}}\u001e- tranche conditionnelle 1: {{B02-LT-04}}\u001e{{FINSI:TRANCHE-C1}}\u001e{{SI:TRANCHE-C2}}\u001e- tranche conditionnelle 2: {{B02-LT-05}}\u001e{{FINSI:TRANCHE-C2}}\u001eLes candidats doivent soumissionner pour la totalité des tranches.\u001eLes délais d'affermissement de chaque tranche conditionnelle sont fixés par le CCAP\u001e{{FINSI:TRANCHES}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:GROUPEMENT}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "2. Groupements\u001f{{SI:GROUPEMENT-LIBRE}}\u001eLes groupements entre Candidats soumissionnant pour des lots distincts peuvent être conjoint ou solidaire\u001e{{FINSI:GROUPEMENT-LIBRE}}\u001e{{SI:GROUPEMENT-SOLIDAIRE}}\u001eLes groupements entre Candidats soumissionnant pour des lots distincts doivent être obligatoirement solidaire.\u001e{{FINSI:GROUPEMENT-SOLIDAIRE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:GROUPEMENT}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "5. – Composition du DAO – Demandes d'éclaircissement – Modifications\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "5.1 Composition du DAO\u001f1.3 - modèles de fiches de renseignements : {{B04-CD-01}}\u001e{{SI:GARANTIE}}\u001e- modèle de garantie de soumission\u001e{{FINSI:GARANTIE}}\u001e2.5 - Plan"
+  },
+  {
+   "type": "ligne",
+   "texte": "5.2. Demandes d’éclaircissement\u001fAdresse\u001eAfin d’obtenir des éclaircissements, l’adresse de la Personne Responsable des Marchés Publics est la suivante :\u001eAttention de : {{B01-AC-05}}\u001eRue : {{B01-AC-02}}\u001eAdresse électronique : {{B01-AC-06}}\u001eDélai pour l'envoi des demandes par les Candidats\u001e{{B04-EQ-01}} jours avant la date limite fixée pour la remise des offres figurant à la clause 7.2 ci-dessous.\u001eDélai pour la réponse du représentant de la PRMP\u001e{{B04-EQ-02}} jours avant la date limite fixée pour la remise des offres figurant à la clause 7.2 ci-dessous."
+  },
+  {
+   "type": "ligne",
+   "texte": "6. – Préparation des offres\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.2. Contenu des offres\u001f1°- Documents ou pièces à remettre en sus de ceux mentionnés à la clause 6.2. des IC :\u001e{{B04-PI-01}}\u001e2° -\u001eune photocopie certifiée de la Carte Professionnelle de l’année en cours\u001eune photocopie certifiée de l’Etat 211 bis datée de moins de TROIS (03) mois\u001eune photocopie certifiée de l’Extrait du Registre de Commerce\u001eun certificat de non faillite datée de moins de 2 mois\u001eune photocopie certifiée du Numéro d’Identification Fiscale (NIF) »\u001eune photocopie certifiée de la carte statistique\u001e{{SI:GARANTIE}}\u001e4°- Garantie de soumission\u001e{{FINSI:GARANTIE}}\u001e{{SI:VISITE-OBLIGATOIRE}}\u001e5°- Certificat de visite des lieux\u001e{{FINSI:VISITE-OBLIGATOIRE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.3. Capacités et qualifications des candidats\u001fFiches d'information\u001eChaque Candidat complète les fiches de renseignements suivantes, selon les modèles figurant à la section 1.3 Formulaire de Soumission et les signe en portant la mention \"certifiées exactes et sincères\" :\u001e1°Une fiche de renseignements relative à son identification et à sa situation juridique;\u001e2°Une fiche de renseignements relative à ses capacités techniques à réaliser le Marché,\u001e3°Une fiche de renseignements relative à sa capacité financière;\u001e4°la liste des principaux marchés portant sur des travaux de même type ou d'un type similaire réalisés au cours des trois dernières années\u001e{{SI:ONG}}\u001eLes communautés locales et/ou les ONG sont admises à participer à l'appel d'offres. Par dérogation aux obligations de fournir les renseignements sus - mentionnés ces communautés n'ont pas à produire:\u001e<indiquer les formulaires ou informations que ces communautés et ONG sont dispensés de produire>\u001e{{FINSI:ONG}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fQualifications particulières requises\u001eAux fins du présent Marché, les Candidats doivent répondre aux critères de sélection minima suivants\u001ea) avoir réalisé un chiffre d’affaires annuel, pour des travaux de construction, d’un montant équivalant à\u001e{{B03-QT-07}}\u001eb) avoir réalisé avec succès en tant qu’entrepreneur principal au moins un projet de nature et de complexité comparables à celles des Travaux au cours des trois (5) dernières années et comprenant:\u001e{{B03-QT-08}}\u001e(c) indiquer sous quelle forme (propriété, location, etc.) l'Entrepreneur pourra disposer en temps voulu des gros matériels et équipements essentiels ci-après :\u001e{{B03-QT-09}}\u001e(d) proposer un directeur de travaux ayant {{B03-QT-10}} ans d’expérience dans la réalisation de travaux de nature et de complexité comparables, y compris au moins < par exemple >ans d’expérience en tant que directeur;\u001e{{SI:QUALIFICATIONS}}\u001e{{B03-QT-06}}\u001e{{FINSI:QUALIFICATIONS}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:PREFERENCE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fLes Candidats susceptibles de bénéficier de la préférence nationale prévue à l'article 9.5 des IC et des Présentes DPAO doivent produire les pièces justifiant leur éligibilité à cette préférence, prévues à l'article précité."
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:PREFERENCE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:GROUPEMENT}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "\u001fQualification des membres d'un groupement d'entreprises\u001e{{SI:GROUPEMENT-LIBRE}}\u001eChacun des membres d'un groupement d'entreprises conjointes doit répondre aux conditions de qualification énoncées à la présente clause concernant le lot pour lequel il soumissionne.\u001eLe mandataire doit satisfaire au moins aux conditions de qualifications suivants:\u001e{{B03-GT-04}}\u001e{{FINSI:GROUPEMENT-LIBRE}}\u001eDans le cas de groupements d'entreprises solidaires:\u001eLes qualifications de chacun des membres du groupement sont ajoutées pour déterminer si le groupement de Candidats répond aux critères de qualification énoncés à la présente Clause.\u001ede plus, chacun des membres du groupement doit satisfaire au moins aux conditions de qualifications suivants:\u001e{{B03-GT-03}}\u001eLe mandataire doit satisfaire au moins aux conditions de qualifications suivants:\u001e{{B03-GT-05}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:GROUPEMENT}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.4. Délai de validité des offres\u001fLe délai de validité des offres sera de {{B04-DV-01}} jours."
+  },
+  {
+   "type": "ligne",
+   "texte": "6.5.3. Caractère ferme ou révisable des prix\u001f{{SI:FERME}}\u001eLes prix sont fermes et non révisables\u001e{{FINSI:FERME}}\u001e{{SI:REVISABLE}}\u001eLes prix sont révisables\u001e{{FINSI:REVISABLE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.6. Monnaie\u001f{{SI:ARIARY}}\u001ea) Les prix seront entièrement libellés dans la monnaie nationale l'Ariary et réglés dans cette monnaie.\u001e{{FINSI:ARIARY}}\u001e{{SI:DEVISES}}\u001ec) Les prix pourront comporter une part libellé en monnaie nationale et une part libellé en monnaies étrangères.\u001eLa part libellé en monnaies étrangères sera destinée à couvrir les prix des intrants nécessaires aux Travaux que le Candidat compte se procurer en dehors de la République de Madagascar. Ils seront libellés en <préciser la devise convertible>\u001eTous les autres éléments du prix seront libellés et payables en monnaies nationale.\u001eLe Maître de l’Ouvrage peut demander aux Candidats d’expliquer leurs besoins en monnaies nationale et étrangères et de justifier les montants en monnaies étrangères. A cette fin, un état détaillé de ses besoins en monnaies étrangères sera fourni par le Candidat.\u001e{{FINSI:DEVISES}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.7. Garantie de soumission\u001f{{SI:SANS-GARANTIE}}\u001eIl n’est pas demandé de garantie de soumission\u001e{{FINSI:SANS-GARANTIE}}\u001e{{SI:GARANTIE}}\u001eUne garantie de soumission doit être fournie dans l’une des formes suivantes :\u001e{{SI:GARANTIE-BANCAIRE}}\u001e- Soit une garantie bancaire\u001e{{FINSI:GARANTIE-BANCAIRE}}\u001e{{SI:GARANTIE-CAUTION}}\u001e- Soit une caution personnelle et solidaire\u001e{{FINSI:GARANTIE-CAUTION}}\u001e{{SI:GARANTIE-CHEQUE}}\u001e- Soit un chèque de banque libéllé au nom de …..\u001e{{FINSI:GARANTIE-CHEQUE}}\u001eLe montant de la garantie de soumission est de :\u001e{{B05-GQ-03.lettres}} ({{B05-GQ-03}}).\u001e{{FINSI:GARANTIE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:LANGUE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.8. Langue\u001fLa langue de l'offre est le français ou {{B04-LG-01}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:LANGUE}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "6.9. - Réunion préparatoire et visite des lieux\u001e6.9.1 Réunion préparatoire\u001e6.9.2 Visite des lieux\u001f{{SI:REUNION-NON}}\u001eIl n'est pas prévue de réunion préparatoire\u001e{{FINSI:REUNION-NON}}\u001e{{SI:REUNION-OUI}}\u001eLes représentants des Candidats sont invités à assister à une réunion préparatoire qui se tiendra aux lieu, date et heures indiqués ci-dessous:\u001e{{B04-RP-02}}\u001e{{FINSI:REUNION-OUI}}\u001e{{B04-VL-01}}\u001e{{SI:VISITE-OBLIGATOIRE}}\u001eune visite des lieux obligatoire sera organisée sous la conduite de l’Autorité Contractante aux lieux, date et heures indiquées ci-dessus:\u001eLes Candidats ou leurs représentants sont tenus d’y participer à leurs propres frais pour leur permettre de se rendre compte sur place de l’importance, ainsi que des conditions d’exécution des travaux.\u001eA l’issue de cette visite, un certificat de visite de lieux sera délivré à chaque Candidat présent. Ce certificat sera à joindre dans l’offre\u001e{{FINSI:VISITE-OBLIGATOIRE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "7. – Remise des offres\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.1. Forme des plis\u001f{{SI:ALLOTI}}\u001eles offres devront être présentées séparément pour chacun des lots\u001e{{FINSI:ALLOTI}}\u001eOutre l’original de l’offre, les plis doivent comprendre:\u001e{{B04-FP-01}} copies\u001eLes enveloppes extérieure et intérieure devront comporter les autres identifications suivantes :\u001e{{B04-FP-02}}\u001eLe nom et l’adresse du Maître de l’ouvrage : {{B01-AC-01}}, {{B01-AC-02}}\u001e- La référence du présent Appel d’Offres\u001e- La mention « NE PAS OUVRIR AVANT LA DATE ET L’HEURE D’OUVERTURE DES PLIS »,\u001e{{SI:ALLOTI}}\u001e- la référence et le numéro du lot auquel se rapporte l’offre\u001e{{FINSI:ALLOTI}}\u001eà l’exclusion de toute mention permettant d’identifier le candidat pour l’enveloppe extérieure"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.2. Lieu, date et heure, de la remise des offres\u001fAux fins de remise des offres l’adresse du Maître de l'Ouvrage est la suivante :\u001eAttention : {{B01-AC-05}}\u001eLieu :Adresse: {{B01-AC-02}}\u001eLes date et heure limites de remise des offres sont les suivantes :\u001eDate : {{B04-OV-02}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "7.3. Remise des offres par voie électronique\u001f{{SI:PAPIER}}\u001eLe mode de remise des offres par voie électronique n'est pas possible dans le cadre du présent Appel d'Offres.\u001e{{FINSI:PAPIER}}\u001e{{SI:B04-SE}}\u001e[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]\u001e{{FINSI:B04-SE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "8. Ouverture des plis\u001fLieu : {{B04-OV-01}}\u001eDate : Le même jour que la date limite fixée pour la remise des offres.\u001eHeure : (insérer l’heure)"
+  },
+  {
+   "type": "ligne",
+   "texte": "9. Evaluation et comparaison des offres\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "9.1. - Relations entre les Candidats et le Maître de l'Ouvrage ou La PRMP\u001fLes Candidats devront répondre aux demandes d'éclaircissements de la PRMP dans un délai de:\u001e{{B06-RC-01}} jours"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{SI:ALLOTI}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "9.4. Evaluation des offres\u001e9.4.3. Détermination du montant évalué de l'offre\u001fEvaluation des offres portant sur plusieurs lots\u001e{{SI:EVALUATION-PAR-LOT}}\u001eLes offres seront évaluées par lot et le Marché portera sur le lot ou les lots attribués au Candidat proposant la meilleure offre pour le lot ou les lots considérés.\u001e{{FINSI:EVALUATION-PAR-LOT}}\u001e{{SI:EVALUATION-ENSEMBLE}}\u001eLe Marché portera sur l'ensemble des lots. Les offres seront évaluées par lot. Le prix offert pour l’ensemble des lots par les candidats dont les offres sont conformes sera utilisé aux fins de comparaison des offres.\u001e{{FINSI:EVALUATION-ENSEMBLE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:ALLOTI}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "9.5. Marge de préférence nationale\u001f{{SI:SANS-PREFERENCE}}\u001eIl n’est pas accordé de préférence aux candidats\u001enationaux\u001e{{FINSI:SANS-PREFERENCE}}\u001e{{SI:PREFERENCE}}\u001eIl est accordé aux candidats nationaux une préférence conformément à la clause 9.5. des IC de {{B06-PN-02.chiffres}} %\u001e{{FINSI:PREFERENCE}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "11. Délai d’exécution\u001fLe délai d’exécution proposé ne doit pas dépasser {{B09-DL-01}} à compter du lendemain de la date de notification de l’OS de commencer les travaux\u001e{{SI:NON-CUMUL}}\u001eEn cas d’attribution de deux ou plusieurs lots à un Candidat, les délais ne sont pas cumulables\u001e{{FINSI:NON-CUMUL}}"
+  },
+  {
+   "type": "fin_table",
+   "texte": ""
+  }
+ ],
+ "trace": [
+  {
+   "ligne": "26.0.0",
+   "genre": "retire",
+   "source": "[note:1]",
+   "par": ""
+  },
+  {
+   "ligne": "32.1.1",
+   "genre": "jeton",
+   "source": "<insérer la dénomination de l'Autorité Contractante >",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": "32.1.5",
+   "genre": "jeton",
+   "source": "<préciser, le cas échéant, si le marché fait partie d'un projet ou d'une opération plus vaste>",
+   "par": "{{B02-OT-01}}"
+  },
+  {
+   "ligne": "32.1.7",
+   "genre": "jeton",
+   "source": "<décrire la consistance des travaux à exécuter >",
+   "par": "{{B02-OT-02}}"
+  },
+  {
+   "ligne": "33.1.7",
+   "genre": "jeton",
+   "source": "<insérer la description du projet global>",
+   "par": "{{B02-LT-01}}"
+  },
+  {
+   "ligne": "36.1.15",
+   "genre": "jeton",
+   "source": "<compléter selon le projet, l'objet de la tranche et son étendue>",
+   "par": "{{B02-LT-03}}"
+  },
+  {
+   "ligne": "36.1.16",
+   "genre": "jeton",
+   "source": "<compléter selon le projet, l'objet de la tranche et son étendue>",
+   "par": "{{B02-LT-04}}"
+  },
+  {
+   "ligne": "36.1.17",
+   "genre": "jeton",
+   "source": "<compléter selon le projet, l'objet de la tranche et son étendue>",
+   "par": "{{B02-LT-05}}"
+  },
+  {
+   "ligne": "41.1.0",
+   "genre": "jeton",
+   "source": "A1, A2,….",
+   "par": "{{B04-CD-01}}"
+  },
+  {
+   "ligne": "42.1.4",
+   "genre": "jeton",
+   "source": "<insérer le nom du responsable>",
+   "par": "{{B01-AC-05}}"
+  },
+  {
+   "ligne": "42.1.5",
+   "genre": "jeton",
+   "source": "<insérer le nom de la rue>",
+   "par": "{{B01-AC-02}}"
+  },
+  {
+   "ligne": "42.1.10",
+   "genre": "jeton",
+   "source": "<insérer l'adresse>",
+   "par": "{{B01-AC-06}}"
+  },
+  {
+   "ligne": "42.1.14",
+   "genre": "jeton",
+   "source": "<nombre de jours supérieur ou égal à six>",
+   "par": "{{B04-EQ-01}}"
+  },
+  {
+   "ligne": "42.1.18",
+   "genre": "jeton",
+   "source": "<nombre de jours sus mentionné diminué du délai de réponse estimé par la PRMP>",
+   "par": "{{B04-EQ-02}}"
+  },
+  {
+   "ligne": "44.1.1",
+   "genre": "jeton",
+   "source": "<énumérer ces documents ou pièces>",
+   "par": "{{B04-PI-01}}"
+  },
+  {
+   "ligne": "44.1.11",
+   "genre": "retire",
+   "source": "<le cas échéant>",
+   "par": ""
+  },
+  {
+   "ligne": "47.1.3",
+   "genre": "retire",
+   "source": "<choisir parmi les exemples suivants en les adaptant si besoin est>",
+   "par": ""
+  },
+  {
+   "ligne": "47.1.7",
+   "genre": "jeton",
+   "source": "<insérer un montant, Généralement de 2,5 à 5 fois l’estimation du montant annuel estimé du Marché>",
+   "par": "{{B03-QT-07}}"
+  },
+  {
+   "ligne": "47.1.11",
+   "genre": "jeton",
+   "source": "<Indiquer le type de travaux correspondant à la principale ou aux principales activité(s) de construction prévues dans le cadre du projet et un rythme de réalisation correspondant à plus de 50% du rythme de construction maximum anticipé pour la ou les principales activités relatives aux Travaux, >",
+   "par": "{{B03-QT-08}}"
+  },
+  {
+   "ligne": "47.1.14",
+   "genre": "jeton",
+   "source": "<indiquer une liste de ces gros matériels et équipements essentiels>",
+   "par": "{{B03-QT-09}}"
+  },
+  {
+   "ligne": "47.1.16",
+   "genre": "jeton",
+   "source": "<par exemple cinq à dix>",
+   "par": "{{B03-QT-10}}"
+  },
+  {
+   "ligne": "50.1.7",
+   "genre": "jeton",
+   "source": "<préciser les conditions de qualification minimales que le mandataire doit éventuellement satisfaire au titre de sa mission de coordination ou de la solidarité avec chacun des membres qu'il doit assumer le cas échéant>",
+   "par": "{{B03-GT-04}}"
+  },
+  {
+   "ligne": "50.1.16",
+   "genre": "jeton",
+   "source": "<préciser les conditions de qualification minimales que chacun des membres doit satisfaire>",
+   "par": "{{B03-GT-03}}"
+  },
+  {
+   "ligne": "50.1.21",
+   "genre": "jeton",
+   "source": "<préciser les conditions de qualification minimales que le mandataire doit éventuellement satisfaire au titre de sa mission de coordination>",
+   "par": "{{B03-GT-05}}"
+  },
+  {
+   "ligne": "51.1.0",
+   "genre": "jeton",
+   "source": "<nombre>",
+   "par": "{{B04-DV-01}}"
+  },
+  {
+   "ligne": "54.1.11",
+   "genre": "jeton",
+   "source": "<insérer montant en chiffres et en lettres>",
+   "par": "{{B05-GQ-03.lettres}} ({{B05-GQ-03}})"
+  },
+  {
+   "ligne": "55.1.7",
+   "genre": "jeton",
+   "source": "<préciser la deuxième langue de l'offre>",
+   "par": "{{B04-LG-01}}"
+  },
+  {
+   "ligne": "56.1.5",
+   "genre": "jeton",
+   "source": "<adresse complète>",
+   "par": "{{B04-RP-02}}"
+  },
+  {
+   "ligne": "56.1.9",
+   "genre": "jeton",
+   "source": "< préciser les modalités d'accès des Candidats aux lieux d'exécution des travaux: personne à contacter, heures de a journée pendant lesquelles la visite est possible pendant période de temps jusqu'à un délai avant la date limite de remise des offres, par exemple 15 jours, ou organisation d'un visite à date et heure fixe, par exemple après la réunion préparatoire>",
+   "par": "{{B04-VL-01}}"
+  },
+  {
+   "ligne": "60.1.0",
+   "genre": "retire",
+   "source": "<en cas d’allotissement> :",
+   "par": ""
+  },
+  {
+   "ligne": "60.1.2",
+   "genre": "jeton",
+   "source": "<insérer le nombre de copies>",
+   "par": "{{B04-FP-01}}"
+  },
+  {
+   "ligne": "60.1.5",
+   "genre": "jeton",
+   "source": "<insérer les mentions et/ou le numéro qui doit apparaître sur l’enveloppe de l’offre pour identifier ce processus de passation des marchés>",
+   "par": "{{B04-FP-02}}"
+  },
+  {
+   "ligne": "60.1.6",
+   "genre": "jeton",
+   "source": ":…….",
+   "par": ": {{B01-AC-01}}, {{B01-AC-02}}"
+  },
+  {
+   "ligne": "60.1.10",
+   "genre": "retire",
+   "source": "<en cas d’allotissement>",
+   "par": ""
+  },
+  {
+   "ligne": "61.1.1",
+   "genre": "jeton",
+   "source": "<insérer le nom complet de la PRMP ou de son représentant>",
+   "par": "{{B01-AC-05}}"
+  },
+  {
+   "ligne": "61.1.2",
+   "genre": "jeton",
+   "source": "<insérer le nom de la rue et le numéro de l’immeuble>",
+   "par": "{{B01-AC-02}}"
+  },
+  {
+   "ligne": "61.1.9",
+   "genre": "jeton",
+   "source": "<insérer le jour, mois, année>",
+   "par": "{{B04-OV-02}}"
+  },
+  {
+   "ligne": "63.1.0",
+   "genre": "jeton",
+   "source": "(insérer le lieu)",
+   "par": "{{B04-OV-01}}"
+  },
+  {
+   "ligne": "65.1.1",
+   "genre": "jeton",
+   "source": "<insérer nombre de jours>",
+   "par": "{{B06-RC-01}}"
+  },
+  {
+   "ligne": "67.1.7",
+   "genre": "jeton",
+   "source": "<pourcentage inférieur ou égal à 10% >",
+   "par": "{{B06-PN-02.chiffres}} %"
+  },
+  {
+   "ligne": "68.1.0",
+   "genre": "jeton",
+   "source": "….. <délai>",
+   "par": "{{B09-DL-01}}"
+  }
+ ],
+ "retraits": [
+  {
+   "ligne": "27.0.0",
+   "texte": "[note 1] Le document ci après a pour but de servir de base à l'établissement des DPAO. Des indications pour leur rédaction sont fournies dans les notes en italique et entre crochets. La PRMP complète le cadre des DPAO à l'aide de ces indications, en insérant le texte approprié et en utilisant les exemples fournis ou un texte similaire, adapté aux besoins du Marché. Les textes en italique et entre crochets doivent ensuite être supprimés.",
+   "raison": "note de rédaction du modèle, « à supprimer »"
+  },
+  {
+   "ligne": "33.1.6",
+   "texte": "<ou>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "33.1.17",
+   "texte": "<ou>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "36.1.4",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "36.1.7",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "37.1.2",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "37.1.5",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "52.1.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "52.1.3",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "53.1.2",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "53.1.5",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "53.1.12",
+   "texte": "<soit>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "54.1.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "54.1.3",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "55.1.2",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "55.1.6",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "56.1.0",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "56.1.3",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "66.1.2",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "66.1.5",
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "67.1.2",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "67.1.6",
+   "texte": "<soit :>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": "33.1.4",
+   "texte": "Le lot <insérer la description du lot> faisant partie de <nombre de lots > lots composant <insérer la description du projet global>.",
+   "raison": "formulation pour un DAO portant sur UN lot : le DAO de la fiche porte sur tous les lots de la ligne"
+  },
+  {
+   "ligne": "33.1.8",
+   "texte": "<insérer la description du lot>",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "33.1.9",
+   "texte": "<insérer la description du lot>",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "33.1.10",
+   "texte": "<insérer la description du lot>",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "33.1.11",
+   "texte": "….",
+   "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "33.1.2",
+   "texte": "<en cas de décomposition en lots, indiquer si le marché concerne un ou plusieurs lots préciser :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "33.1.13",
+   "texte": "<en cas de décomposition en lots indiquer si les candidats peuvent répondre à un ou plusieurs lots en insérant l'un des deux textes suivants :>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "33.1.20",
+   "texte": "<en cas de limitation de lots à attribuer à un soumissionnaires, insérer> mais ne peut prétendre qu’à ….lots",
+   "raison": "limitation du nombre de lots par candidat : aucun champ de la fiche (plan du lot D4, §6)"
+  },
+  {
+   "ligne": "36.1.2",
+   "texte": "<Insérer l’une des deux options suivantes : >",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "36.1.12",
+   "texte": "<si les travaux comprennent plusieurs tranches préciser la définition des tranches comme suit:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "37.1.0",
+   "texte": "< en cas de décomposition en lots préciser la forme du groupement, en insérant l'un des textes suivants:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "42.1.6",
+   "texte": "Etage/numéro de Bureau : <insérer l'étage et le numéro du bureau>",
+   "raison": "adresse de la PRMP : un seul bloc (B01-AC-02) — étage, ville, code postal et télécopie n'ont pas de champ"
+  },
+  {
+   "ligne": "42.1.7",
+   "texte": "Ville : <insérer le nom de la ville>",
+   "raison": "adresse de la PRMP : un seul bloc (B01-AC-02) — étage, ville, code postal et télécopie n'ont pas de champ"
+  },
+  {
+   "ligne": "42.1.8",
+   "texte": "Code postal : <insérer le numéro du code postal>",
+   "raison": "adresse de la PRMP : un seul bloc (B01-AC-02) — étage, ville, code postal et télécopie n'ont pas de champ"
+  },
+  {
+   "ligne": "42.1.9",
+   "texte": "Numéro de télécopie : <insérer le numéro>",
+   "raison": "adresse de la PRMP : un seul bloc (B01-AC-02) — étage, ville, code postal et télécopie n'ont pas de champ"
+  },
+  {
+   "ligne": "46.1.1",
+   "texte": "<indiquer ici les renseignements que les Candidats auront à soumettre en faisant référence aux fiches figurant à la section 1.3 Formulaires de soumission>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "46.1.10",
+   "texte": "<Si les communautés locales et/ou les ONG sont admises à participer à l'appel d'offres, indiquer ici:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "47.1.1",
+   "texte": "<Indiquer ici les qualifications particulières requises des Candidats par le Maître de l'Ouvrage en fonction de la nature de Travaux: >",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "47.1.17",
+   "texte": "<Ajouter, si nécessaire, les conditions à remplir par d’autres membres du personnel clé>",
+   "raison": "autres conditions du personnel clé : saisies dans B03-QT-06"
+  },
+  {
+   "ligne": "48.1.0",
+   "texte": "<Si une préférence nationale est accordée, indiquer ici:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "50.1.2",
+   "texte": "<dans le cas où les groupements d'entreprises conjointes sont autorisées, préciser:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "50.1.11",
+   "texte": "<la solidarité des membres du groupement permet en principe d'additionner leurs qualifications; cependant il est conseillé d'imposer un minimum de qualification à de chaque membre, qui pourra être inférieur au qualifications requises d'un candidat individuel. >",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "50.1.17",
+   "texte": "<Pour les marchés qui font intervenir des disciplines différentes ou hautement spécialisées et pour les très gros marchés, les conditions peuvent être fixées par discipline>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "53.1.0",
+   "texte": "<Indiquer l'une des trois options suivantes>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "53.1.6",
+   "texte": "b) Les prix seront entièrement libellés en Ariary.",
+   "raison": "rédaction b) : la monnaie de la fiche n'a que deux réponses (Ariary, Devises) — plan du lot D4, Q9"
+  },
+  {
+   "ligne": "53.1.7",
+   "texte": "Toutefois le Candidat qui compte engager des dépenses en devises convertibles pour la réalisation des Travaux, indiquera en annexe à l'Acte d'Engagement le ou les pourcentages du montant de l’offre nécessaires pour couvrir les besoins en devises convertibles. Les devises à utiliser à ce titre seront <nom de la ou des devises>",
+   "raison": "rédaction b) : la monnaie de la fiche n'a que deux réponses (Ariary, Devises) — plan du lot D4, Q9"
+  },
+  {
+   "ligne": "53.1.9",
+   "texte": "Les taux de change utilisés par le Candidat pour convertir son offre en Ariary est le taux vendeur publié par la Banque Centrale de Madagascar le quinzième jour précédant la date limite fixée pour la remise des offres.",
+   "raison": "rédaction b) : la monnaie de la fiche n'a que deux réponses (Ariary, Devises) — plan du lot D4, Q9"
+  },
+  {
+   "ligne": "55.1.0",
+   "texte": "<Dans le cas où une langue autre que le français peut être utilisée pour rédiger l'offre et/ou les correspondances relatives à la procédure de passation du Marché, insérer l'une des formules suivantes:>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "55.1.3",
+   "texte": "La langue de l'offre est:",
+   "raison": "rédaction « une autre langue seule » : la fiche n'a qu'un champ de langue, la seconde langue (B04-LG-01)"
+  },
+  {
+   "ligne": "55.1.4",
+   "texte": "<indiquer la langue de l'offre différente du français>",
+   "raison": "rédaction « une autre langue seule » : la fiche n'a qu'un champ de langue, la seconde langue (B04-LG-01)"
+  },
+  {
+   "ligne": "56.1.6",
+   "texte": "le <date à fixer au moins 21 jours avant la date limite de dépôt des offres>",
+   "raison": "lieu, date et heure saisis ensemble dans B04-RP-02"
+  },
+  {
+   "ligne": "56.1.7",
+   "texte": "à < heures>",
+   "raison": "lieu, date et heure saisis ensemble dans B04-RP-02"
+  },
+  {
+   "ligne": "56.1.10",
+   "texte": "<en cas de visite des lieux obligatoire>",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "59.1.0",
+   "texte": "Toute offre doit être remise en un original, marqué “ORIGINAL”, et Une (01) copie signée de la même manière que l’original et marquée “COPIE”.",
+   "raison": "contredit la clause 7.1, où le nombre de copies se saisit (B04-FP-01) — plan du lot D4, Q5"
+  },
+  {
+   "ligne": "61.1.3",
+   "texte": "Étage/Numéro de bureau : <insérer le numéro de l’étage et du bureau>",
+   "raison": "adresse de remise : un seul bloc (B01-AC-02) — étage, ville et code postal n'ont pas de champ"
+  },
+  {
+   "ligne": "61.1.4",
+   "texte": "Ville : <insérer le nom de la ville>",
+   "raison": "adresse de remise : un seul bloc (B01-AC-02) — étage, ville et code postal n'ont pas de champ"
+  },
+  {
+   "ligne": "61.1.5",
+   "texte": "Code postal : <insérer le numéro du code postal>",
+   "raison": "adresse de remise : un seul bloc (B01-AC-02) — étage, ville et code postal n'ont pas de champ"
+  },
+  {
+   "ligne": "61.1.10",
+   "texte": "Heure : <insérer l’heure en utilisant les 24 heures>",
+   "raison": "date et heure saisies ensemble dans B04-OV-02 (qui doit porter l’heure : demande T-1)"
+  },
+  {
+   "ligne": "62.1.0",
+   "texte": "<s'il n'est pas possible d'envoyer l'offre par voie électronique, indiquer :>",
+   "raison": "instruction à l’acheteur (les conditions de la remise électronique sont demandées au juriste)"
+  },
+  {
+   "ligne": "62.1.5",
+   "texte": "<Dans le cas où il est possible de remettre les offres par voie électronique, indiquer ici les conditions et modalités de transmission des offres, y compris les modalités d'obtention d'un certificat électronique ou d'identification, le format d'enregistrement électronique de l'offre, le processus permettant de garantir que les offres ne seront ouvertes électroniquement qu'en séance d'ouverture des plis. Une telle procédure ne peut être adoptée que si les conditions et modalités de transmission électronique sécurisée des offres et d'identification incontestable des candidats existent>.",
+   "raison": "instruction à l’acheteur (les conditions de la remise électronique sont demandées au juriste)"
+  },
+  {
+   "ligne": "67.1.0",
+   "texte": "<insérer l’une des options suivantes >",
+   "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "68.1.2",
+   "texte": "<en cas d’allotissement>",
+   "raison": "instruction à l’acheteur"
+  }
+ ],
+ "ajouts": [
+  "[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]",
+  "{{B02-LV-02}}",
+  "{{B03-QT-06}}"
+ ]
+}

@@ -3,6 +3,17 @@
 **Statut : proposition du front, rien de codé. À arbitrer par le pilote (§6).** Analyse ligne par ligne :
 `docs/analyse-2026-09-29-documents-types-travaux.md` (parties A : DPAO et AE, B : CCAP, C : contrat-cadre).
 
+> ⚠️ **Arbitrage du pilote, 2026-09-29 — les quatre recommandations retenues ; T-0 et T-2 lancés.** Q1 : les codes du
+> contrat-cadre de travaux sont **harmonisés** sur ceux du contrat-cadre de fournitures (une seule description). Q2 : les
+> deux délais d'affermissement sont créés. Q3 : les tranches sont communes à tous les lots. Q5 : décalque fidèle,
+> coquilles listées pour le juriste. Les autres questions suivent la recommandation par défaut.
+>
+> ⚠️ **T-0 et la part front de T-2 livrés le 2026-09-29.** `DPAO-T` (34 conditions, 247/247), `AE-T` (30, 363/363),
+> `CCAP-T` avec ses six annexes (70, 570/570) ; `DPAC-CC` et `AE-CC` choisissent désormais « CCAG Travaux » par la
+> catégorie (179/179, 408/408). Import mesuré au banc : DPAO-T 92-93 %, AE-T 100 %, CCAP-T 56-68 %, **aucune fausse valeur
+> haute** (sans bruit, huit graines). Demande backend T-1/T-2 : `docs/demande-backend-2026-09-29-lot-d4-travaux.md`
+> (six champs et deux options à créer, corrections du référentiel, harmonisation des codes du contrat-cadre).
+
 ## 1. Ce qui existe, ce qui manque
 
 La fiche DAO des travaux existe depuis le 24/09, tirée du classeur `NatureMarches/DAO_Travaux.xlsx`, et **distingue déjà

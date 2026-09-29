@@ -4,6 +4,8 @@
  "source": "contrat-cadre",
  "titre": "DONNEES PARTICULIERES D’APPEL A CONCURRENCE",
  "conditions": {
+  "CCAG-FOURNITURES": "categorie != TRAVAUX",
+  "CCAG-TRAVAUX": "categorie = TRAVAUX",
   "MONO": "attributaires = MONO",
   "MULTI": "attributaires = MULTI",
   "RC-BESOIN": "B02-PC-02 = Au fur et à mesure des besoins",
@@ -37,8 +39,28 @@
    "texte": "OBJET DU CONTRAT-CADRE: {{B02-OB-01}}"
   },
   {
+   "type": "para",
+   "texte": "{{SI:CCAG-FOURNITURES}}"
+  },
+  {
    "type": "centre",
    "texte": "REGLEMENT DE LA CONSULTATION(1) (contrat-cadre marché de fournitures et services)"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-FOURNITURES}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:CCAG-TRAVAUX}}"
+  },
+  {
+   "type": "centre",
+   "texte": "REGLEMENT DE LA CONSULTATION(1) (contrat-cadre)"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:CCAG-TRAVAUX}}"
   },
   {
    "type": "para",
@@ -725,6 +747,12 @@
    "genre": "jeton",
    "source": "<Préciser l’objet du Contrat-cadre>",
    "par": "{{B02-OB-01}}"
+  },
+  {
+   "ligne": 65,
+   "genre": "retire",
+   "source": "marché de fournitures et services",
+   "par": ""
   },
   {
    "ligne": 66,
