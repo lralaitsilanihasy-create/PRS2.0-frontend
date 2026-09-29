@@ -126,7 +126,7 @@
   },
   {
    "type": "ligne",
-   "texte": "6.3. Capacités et qualifications des candidats\u001fChaque Candidat complète les fiches de renseignements suivantes, selon les modèles figurant à la section 1.3 Formulaire de Soumission et les signe en portant la mention \"certifiées exactes et sincères\" :\u001e1°Une fiche de renseignements relative à son identification et à sa situation juridique;\u001e2°Une fiche de renseignements relative à ses capacités techniques à réaliser le Marché,\u001e3° Une fiche de renseignements relative à sa capacité financière;\u001e4° la liste des principaux marchés portant sur des fournitures de même type ou d'un type similaire réalisés au cours des trois dernières années, appuyée des certificats de bonne fin ou PV de réception\u001e{{SI:FABRICANT}}\u001e5° Le Candidat qui ne fabrique ou ne produit pas les fournitures qu’il offre, soumettra une Autorisation du Fabriquant\u001e{{FINSI:FABRICANT}}\u001e{{SI:QUALIFICATIONS}}\u001eLes qualifications particulières suivantes sont requises des Candidats : {{B03-CQ-06}}\u001e{{FINSI:QUALIFICATIONS}}"
+   "texte": "6.3. Capacités et qualifications des candidats\u001fChaque Candidat complète les fiches de renseignements suivantes, selon les modèles figurant à la section 1.3 Formulaire de Soumission et les signe en portant la mention \"certifiées exactes et sincères\" :\u001e1°Une fiche de renseignements relative à son identification et à sa situation juridique;\u001e2°Une fiche de renseignements relative à ses capacités techniques à réaliser le Marché,\u001eNiveau exigé : {{B03-CQ-02}}\u001e3° Une fiche de renseignements relative à sa capacité financière;\u001eNiveau exigé : {{B03-CQ-03}}\u001e4° la liste des principaux marchés portant sur des fournitures de même type ou d'un type similaire réalisés au cours des trois dernières années, appuyée des certificats de bonne fin ou PV de réception\u001ePièces exigées : {{B03-CQ-04}}\u001e{{SI:FABRICANT}}\u001e5° Le Candidat qui ne fabrique ou ne produit pas les fournitures qu’il offre, soumettra une Autorisation du Fabriquant\u001e{{FINSI:FABRICANT}}\u001e{{SI:QUALIFICATIONS}}\u001eLes qualifications particulières suivantes sont requises des Candidats : {{B03-CQ-06}}\u001e{{FINSI:QUALIFICATIONS}}"
   },
   {
    "type": "ligne",
@@ -856,6 +856,9 @@
   "{{B04-DE-01}}",
   "{{B06-EO-02}}",
   "{{B02-LV-02}}",
+  "Niveau exigé : {{B03-CQ-02}}",
+  "Niveau exigé : {{B03-CQ-03}}",
+  "Pièces exigées : {{B03-CQ-04}}",
   "{{B05-CP-02}}"
  ]
 }

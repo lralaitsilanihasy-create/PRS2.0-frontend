@@ -109,6 +109,14 @@ pour la quantité fixe. Il suffit que le modèle le pose aussi dans la phrase à
 `VARIATION-QUANTITES` (aujourd'hui `typeMarche = QUANTITE_FIXE et B09-OM-02 renseigne`). Correction du modèle et
 recopie par le backend à faire **avec** les décisions ci-dessus, en une seule livraison.
 
+> ⚠️ **Arbitrage du pilote, 2026-09-29 : « oui » aux cinq décisions.** Modèles corrigés le même jour
+> (`decrire.mjs` : DPAO-F 237/237, CCAP-F 460/460, conditions du CCAP-F 65 → 67) et demande au backend :
+> `docs/demande-backend-2026-09-29-champs-non-imprimes-fournitures.md`. Deux faits relevés en corrigeant :
+> - **Erreur du modèle D2, article 3 du CCAP** : le bloc des coordonnées du **Fournisseur** recevait celles de la PRMP
+>   (la plage de l'article couvrait les deux blocs). Corrigée : le bloc du Fournisseur reste en blanc.
+> - Les 29 codes retirés n'ont pas de `categories` : le retrait est demandé **pour les fournitures seulement**, et après
+>   vérification qu'aucune règle serveur ne les lit (B04-OP-02 est calculé en remise électronique).
+
 ## Décisions attendues du pilote
 
 1. G1 et G2 (21 champs) : retrait de la fiche — **oui / non**.

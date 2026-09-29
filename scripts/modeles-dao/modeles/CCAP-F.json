@@ -16,6 +16,8 @@
   "DELAI-AJUSTEMENT": "B09-OM-01 renseigne",
   "VARIATION-QUANTITES": "typeMarche = QUANTITE_FIXE et B09-OM-02 renseigne",
   "COMMANDE": "typeMarche = A_COMMANDE",
+  "VARIATION-COMMANDE": "typeMarche = A_COMMANDE et B09-OM-02 renseigne",
+  "SANS-VARIATION-COMMANDE": "typeMarche = A_COMMANDE et B09-OM-02 vide",
   "QUANTITE-FIXE": "typeMarche = QUANTITE_FIXE",
   "SECURITE-NON": "B09-PS-01 = NON",
   "SECURITE-OUI": "B09-PS-01 = OUI",
@@ -297,10 +299,6 @@
   },
   {
    "type": "para",
-   "texte": "Télécopie : <insérer le n° >1"
-  },
-  {
-   "type": "para",
    "texte": "Adresse électronique : {{B01-AC-06}}"
   },
   {
@@ -309,11 +307,11 @@
   },
   {
    "type": "para",
-   "texte": "A l’attention de {{B01-AC-05}}"
+   "texte": "A l’attention de <insérer le nom>"
   },
   {
    "type": "para",
-   "texte": "n° et rue : {{B01-AC-02}}"
+   "texte": "n° et rue :"
   },
   {
    "type": "para",
@@ -329,7 +327,7 @@
   },
   {
    "type": "para",
-   "texte": "Adresse électronique : {{B01-AC-06}}"
+   "texte": "Adresse électronique : <insérer l’adresse complète>"
   },
   {
    "type": "sous_titre",
@@ -433,11 +431,31 @@
   },
   {
    "type": "para",
-   "texte": "Le Minimum et le Maximum des quantités susceptibles d’être commandées pour chacun des articles entrant dans la composition de la fourniture sont précisés dans le Bordereau de Prix donné en Annexe à l’Acte d’Engagement, étant entendu que ces quantités sont susceptibles de varier pour chaque article dans la limite de ………..% en sus de maximum ou en dessous du minimum, sans que la valeur totale des commandes puisse être inférieure à la valeur minimale ni supérieure à la valeur maximale prévue dans le présent CPS."
+   "texte": "{{FINSI:COMMANDE}}"
   },
   {
    "type": "para",
-   "texte": "{{FINSI:COMMANDE}}"
+   "texte": "{{SI:VARIATION-COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le Minimum et le Maximum des quantités susceptibles d’être commandées pour chacun des articles entrant dans la composition de la fourniture sont précisés dans le Bordereau de Prix donné en Annexe à l’Acte d’Engagement, étant entendu que ces quantités sont susceptibles de varier pour chaque article dans la limite de {{B09-OM-02.chiffres}} % en sus de maximum ou en dessous du minimum, sans que la valeur totale des commandes puisse être inférieure à la valeur minimale ni supérieure à la valeur maximale prévue dans le présent CPS."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:VARIATION-COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-VARIATION-COMMANDE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Le Minimum et le Maximum des quantités susceptibles d’être commandées pour chacun des articles entrant dans la composition de la fourniture sont précisés dans le Bordereau de Prix donné en Annexe à l’Acte d’Engagement."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-VARIATION-COMMANDE}}"
   },
   {
    "type": "sous_titre",
@@ -1966,24 +1984,6 @@
    "par": "{{B01-AC-06}}"
   },
   {
-   "ligne": "209.0.0",
-   "genre": "jeton",
-   "source": "<insérer le nom>",
-   "par": "{{B01-AC-05}}"
-  },
-  {
-   "ligne": "210.0.0",
-   "genre": "jeton",
-   "source": ":",
-   "par": ": {{B01-AC-02}}"
-  },
-  {
-   "ligne": "214.0.0",
-   "genre": "jeton",
-   "source": "<insérer l’adresse complète>",
-   "par": "{{B01-AC-06}}"
-  },
-  {
    "ligne": "241.0.0",
    "genre": "jeton",
    "source": "<nombre>",
@@ -2000,6 +2000,18 @@
    "genre": "jeton",
    "source": "…….<validité du marché>",
    "par": "{{B09-OM-03}} mois"
+  },
+  {
+   "ligne": "253.0.0",
+   "genre": "jeton",
+   "source": "………..",
+   "par": "{{B09-OM-02.chiffres}} "
+  },
+  {
+   "ligne": "253.0.0",
+   "genre": "retire",
+   "source": ", étant entendu que ces quantités sont susceptibles de varier pour chaque article dans la limite de ………..% en sus de maximum ou en dessous du minimum, sans que la valeur totale des commandes puisse être inférieure à la valeur minimale ni supérieure à la valeur maximale prévue dans le présent CPS",
+   "par": ""
   },
   {
    "ligne": "262.0.0",
@@ -3351,6 +3363,11 @@
    "ligne": "191.0.0",
    "texte": "- etc. <compléter en fonction du projet>.",
    "raison": "liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)"
+  },
+  {
+   "ligne": "206.0.0",
+   "texte": "Télécopie : <insérer le n° >1",
+   "raison": "télécopie de la PRMP : aucun champ de la fiche, moyen désuet (décision du pilote du 29/09, Q-c)"
   }
  ],
  "ajouts": [

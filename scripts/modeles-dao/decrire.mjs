@@ -913,7 +913,10 @@ function dpaoFournitures() {
   };
   const CLAUSE_SE = '[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]';
   // Paragraphes faits d'un seul jeton, là où le modèle laisse l'acheteur rédiger un bloc (adresse, critères).
-  const ajouts = [CLAUSE_SE, '{{B04-DE-01}}', '{{B06-EO-02}}', '{{B02-LV-02}}'];
+  const NIVEAU_TECHNIQUE = 'Niveau exigé : {{B03-CQ-02}}';
+  const NIVEAU_FINANCIER = 'Niveau exigé : {{B03-CQ-03}}';
+  const NIVEAU_REFERENCES = 'Pièces exigées : {{B03-CQ-04}}';
+  const ajouts = [CLAUSE_SE, '{{B04-DE-01}}', '{{B06-EO-02}}', '{{B02-LV-02}}', NIVEAU_TECHNIQUE, NIVEAU_FINANCIER, NIVEAU_REFERENCES];
 
   // En tête du document : bandeaux du dossier type, note de rédaction.
   retirer(d, 'note de rédaction du modèle, « à supprimer »', '[note 1]');
@@ -994,7 +997,10 @@ function dpaoFournitures() {
   const contenu = cel(x(r62, 'Documents ou pièces à remettre'), x(r62, '<énumérer ces documents', ['<énumérer ces documents ou pièces>', '{{B04-CO-01}}', 'jeton']));
   const r63 = rangee(d, '6.3. Capacités');
   const capacites = cel(
-    x(r63, 'Chaque Candidat complète'), x(r63, '1°'), x(r63, '2°'), x(r63, '3°'), x(r63, '4°'),
+    // Le document type énumère les fiches à remplir sans dire le niveau exigé, que la Commission contrôle : trois ajouts
+    // déclarés (décision du pilote du 29/09, analyse des champs non imprimés, Q-a).
+    x(r63, 'Chaque Candidat complète'), x(r63, '1°'),
+    x(r63, '2°'), NIVEAU_TECHNIQUE, x(r63, '3°'), NIVEAU_FINANCIER, x(r63, '4°'), NIVEAU_REFERENCES,
     SIc('FABRICANT', x(r63, '5°')),
     SIc('QUALIFICATIONS', x(r63, 'Les qualifications particulières suivantes', ['<indiquer ici, ces qualifications>', '{{B03-CQ-06}}', 'jeton'])));
   retirer(r63, 'instruction à l’acheteur', '<indiquer ici les renseignements', '<Si des qualifications');
@@ -1271,6 +1277,8 @@ function ccapFournitures() {
     'DELAI-AJUSTEMENT': 'B09-OM-01 renseigne',
     'VARIATION-QUANTITES': 'typeMarche = QUANTITE_FIXE et B09-OM-02 renseigne',
     COMMANDE: 'typeMarche = A_COMMANDE',
+    'VARIATION-COMMANDE': 'typeMarche = A_COMMANDE et B09-OM-02 renseigne',
+    'SANS-VARIATION-COMMANDE': 'typeMarche = A_COMMANDE et B09-OM-02 vide',
     'QUANTITE-FIXE': 'typeMarche = QUANTITE_FIXE',
     'SECURITE-NON': 'B09-PS-01 = NON',
     'SECURITE-OUI': 'B09-PS-01 = OUI',
@@ -1376,16 +1384,22 @@ function ccapFournitures() {
     ...SI('ALLOTI', P(x('Les fournitures comprennent', ['<nombre >', '{{B02-LV-05}}', 'jeton'])), P(x('- Lot n°1', ["- Lot n°1 : <préciser l'intitulé et/ou l'objet du lot>.", '{{B02-LV-02}}', 'jeton']))),
   );
   retirer(d, 'liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)', '- Lot n°2', '- etc.');
+  // Décision du pilote du 29/09 (analyse des champs non imprimés, Q-c) : pas de champ pour le fax de l'acheteur.
+  const fax = d.lignes.filter((l) => /^Télécopie/.test(l.texte)).map((l) => l.ligne).sort((a, b) => a - b)[0];
+  retirer(d, "télécopie de la PRMP : aucun champ de la fiche, moyen désuet (décision du pilote du 29/09, Q-c)", (l) => l.ligne === fax);
+  const fournisseur = 'Aux fins de notification, les coordonnées du Fournisseur';
   blocs.push(
     ...E('La description des fournitures', '<Indiquer la dénomination complète', []),
     P(x("<Indiquer la dénomination complète de l'Autorité", ["<Indiquer la dénomination complète de l'Autorité Contractante>", '{{B01-AC-01}}', 'jeton'])),
-    ...E('Article 3.', 'Article 4.', [
+    ...E('Article 3.', fournisseur, [
       ["A l'attention de <insérer le nom>", ['<insérer le nom>', '{{B01-AC-05}}', 'jeton']],
       ['n° et rue :', [':', ': {{B01-AC-02}}', 'jeton']],
       ['Adresse électronique : <insérer', ["<insérer l'adresse complète>", '{{B01-AC-06}}', 'jeton']],
     ]),
+    // Les coordonnées du Fournisseur restent en blanc : il les porte à la signature. Elles recevaient jusqu'au 29/09 celles
+    // de la PRMP, la même plage couvrant les deux blocs.
+    ...E(fournisseur, 'Article 4.', []),
   );
-  // Le premier « A l'attention de » est celui de la PRMP ; les coordonnées du Fournisseur restent au candidat.
   blocs.push(
     ...E('Article 4.', 'Les Fournisseurs groupés seront considérés comme solidaires'),
     ...SI('GROUPEMENT-SOLIDAIRE', P(x('Les Fournisseurs groupés seront considérés comme solidaires'))),
@@ -1396,7 +1410,12 @@ function ccapFournitures() {
     ...SI('DELAI-AJUSTEMENT', P(x('Le délai de communication par le Fournisseur', ['<nombre>', '{{B09-OM-01}}', 'jeton']))),
     ...E('Variations maximales', '<Préciser, le cas échéant, pour les Marchés à quantité'),
     ...SI('VARIATION-QUANTITES', P(x('<Préciser, le cas échéant, pour les Marchés à quantité', ['<Préciser, le cas échéant, pour les Marchés à quantité fixes, les variations maximales, augmentation ou réduction, du volume ou des quantités des Fournitures,qui peuvent être exécutées sans avenant:>', 'Variations maximales, augmentation ou réduction, du volume ou des quantités des Fournitures, qui peuvent être exécutées sans avenant : {{B09-OM-02.chiffres}} %', 'jeton']))),
-    ...SI('COMMANDE', P(x('Les dispositions du présent Marché sont applicables', ['…….<validité du marché>', '{{B09-OM-03}} mois', 'jeton'])), P(x('Le Minimum et le Maximum'))),
+    ...SI('COMMANDE', P(x('Les dispositions du présent Marché sont applicables', ['…….<validité du marché>', '{{B09-OM-03}} mois', 'jeton']))),
+    // À commande, la variation au-delà du maximum ou en deçà du minimum est la même donnée que la variation sans avenant
+    // de la quantité fixe (B09-OM-02) : restée en pointillés jusqu'au 29/09 (analyse des champs non imprimés).
+    // Sans pourcentage saisi, la phrase s'arrête au Bordereau : aucune variation au-delà des bornes n'est admise.
+    ...SI('VARIATION-COMMANDE', P(x('Le Minimum et le Maximum', ['………..', '{{B09-OM-02.chiffres}} ', 'jeton']))),
+    ...SI('SANS-VARIATION-COMMANDE', P(x('Le Minimum et le Maximum', [", étant entendu que ces quantités sont susceptibles de varier pour chaque article dans la limite de ………..% en sus de maximum ou en dessous du minimum, sans que la valeur totale des commandes puisse être inférieure à la valeur minimale ni supérieure à la valeur maximale prévue dans le présent CPS", '', 'retire']))),
     ...E('Article 7.', 'Non applicable'),
     ...SI('SECURITE-NON', P(xr('=Non applicable', 0))),
     ...SI('SECURITE-OUI', P(x('Les fournitures, objet du présent Marché, sont à exécuter dans un lieu'))),
