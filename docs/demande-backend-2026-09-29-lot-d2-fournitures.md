@@ -42,6 +42,20 @@ Et une précision d'évaluation : les clés **`typeMarche`** et **`categorie`** 
 conditions (comme le front les injecte dans le cadrage effectif). Le découpage des termes ne coupe pas une valeur qui
 contient « et » (« Caution personnelle et solidaire », « Ariary et devise pour la part importée ») — acquis de D1.
 
+> ⚠️ **Livraison backend du 2026-09-29 (§B1).** Conforme : `FormulairesCandidat` (rendu), `LectureDao` (import),
+> ADR-0011 complété. Cinq précisions :
+> - **Rangée-marqueur** : la première cellule doit être un seul paragraphe, exactement le marqueur, et les autres cellules
+>   vides, comme dans `unites()` du front. La plage historique `A3B-NATURES`, dont le marqueur est collé au texte d'une
+>   cellule, garde sa lecture. Un paragraphe de cellule qui n'est que le marqueur n'ouvre jamais une plage de rangées.
+> - **Une cellule dont tout est omis garde sa place**, vide : la rangée ne perd pas de colonne.
+> - **`categorie` absente** vaut `FOURNITURES_SERVICES`, comme partout ailleurs.
+> - **`{{CODE.parLot}}`** : un lot sans valeur s'imprime en pointillés dans l'énumération. Dans un document de lot, ou pour
+>   un champ que la ligne ne saisit pas par lot, c'est la valeur seule.
+> - **Import, sortie** : une valeur lue sous « Lot n° k » est servie avec `code` = le code nu et **`lot` = k**. Le front
+>   l'applique sous `CODE#k`. Une valeur par lot sur une ligne non allotie, un lot hors du plan, ou une valeur sans lot
+>   pour un champ par lot portent une anomalie. Une réponse déduite `typeMarche` ou `categorie` n'est jamais une réponse
+>   de cadrage, puisque la forme se lit au plan. Si elle contredit le plan, elle est rendue en `divergences`.
+
 ## B2 — Sept champs que les modèles demandent et que la fiche n'a pas
 
 Fournitures et services, quantité fixe et à commande, saisie, facultatifs.
@@ -58,6 +72,16 @@ Fournitures et services, quantité fixe et à commande, saisie, facultatifs.
 
 Les options de `B02-VA-01` s'écrivent **exactement** ainsi : les conditions du DPAO les citent.
 
+> ⚠️ **Livraison backend du 2026-09-29 (§B2).** Les sept champs sont dans le fichier de correspondance des fournitures
+> (`docs/referentiel-champs-fiche-marche-fournitures.csv`, copie de test identique) et dans
+> `docs/referentiel/2026-09-29-lot-d2-champs-fournitures.sql` pour DBPRS20. Deux écarts :
+> - **La rubrique `B02-VA` n'existait pas.** Les rubriques sont figées par migration, d'où **V52** (« Offres variantes »,
+>   bloc B02, rangée juste après `B02-LV`). Le script de DBPRS20 se lance donc après le redémarrage qui l'applique.
+> - **`B10-IR-03` n'a pas de condition au référentiel.** Une condition de champ ne lit que le cadrage, pas un autre champ :
+>   « `B10-IR-01 = OUI` » reste côté modèle, comme demandé.
+>
+> Le référentiel sert désormais 179 champs en quantité fixe et 184 à commande (172 et 177 avant).
+
 ## B3 — Production
 
 - À la validation d'une fiche **`QUANTITE_FIXE` ou `A_COMMANDE` / `FOURNITURES_SERVICES`** : **DPAO** (un),
@@ -68,6 +92,32 @@ Les options de `B02-VA-01` s'écrivent **exactement** ainsi : les conditions du 
 - Ce qui reste entre chevrons se remplit après le DAO (le candidat : identification, prix, bordereaux, domiciliation,
   signatures ; la banque : modèles de garanties ; la notification) : ces chevrons s'impriment tels quels.
 - Cases, flèches et autres glyphes de police symbolique : même traitement qu'en D1 (ZapfDingbats au PDF).
+
+> ⚠️ **Livraison backend du 2026-09-29 (§B3).** Conforme : `ModelesDao.COUVERTURES` associe `DPAO-F`, `CCAP-F` et `AE-F`
+> à la quantité fixe et au marché à commande, en fournitures et services. Chaque fichier n'est chargé qu'une fois. Le
+> libellé du CCAP est « Cahier des prescriptions spéciales » pour ces formes, et reste « Cahier des clauses
+> administratives particulières » pour les autres catégories. Les travaux et les prestations intellectuelles restent au
+> lot 2a.
+>
+> **Point à arbitrer, signalé et non tranché ici.** Le lot 2a imprimait chaque champ saisi de la fiche dans une liste
+> « libellé : valeur ». Les trois modèles, eux, n'impriment et ne testent que leurs trous. Depuis D2, **52 champs saisis des
+> fournitures n'apparaissent plus dans aucun document produit** : ni jeton, ni condition dans DPAO-F, CCAP-F ou AE-F.
+> Certains sont sans doute voulus : domiciliation bancaire, remise électronique portée par la clause du juriste, ouverture
+> des plis. D'autres portent un engagement :
+> - `B05-TP-02` et `B05-TP-03`, montants minimum et maximum annuels du marché à commande, qu'imprimait l'AE du lot 2a ;
+> - `B08-PA-04` (termes de paiement) et `B08-PA-08` (délai de paiement) ;
+> - `B08-AC-01` et `-02` (acomptes), `B08-AV-03`, `-05` et `-06` (avance) ;
+> - `B06-EO-03` à `-08`, la méthode d'évaluation ;
+> - `B03-CQ-01` à `-04`, `-09` et `-10`, les qualifications ;
+> - `B03-NA-01` et `-02` (nantissement) et `B03-ST-02` (sous-traitance).
+>
+> La liste complète : `B02-AU-05`, `-07` ; `B03-CQ-01` à `-04`, `-09`, `-10` ; `B03-NA-01`, `-02` ; `B03-ST-02` ;
+> `B04-OP-02`, `-03`, `-10` à `-13` ; `B04-RO-03` ; `B04-SE-03`, `-06`, `-10`, `-11`, `-15`, `-16`, `-17` ; `B05-CP-03` ;
+> `B05-GS-04`, `-10` à `-14` ; `B05-TP-02`, `-03` ; `B06-AN-02` ; `B06-EO-03` à `-08` ; `B08-AC-01`, `-02` ; `B08-AV-03`,
+> `-05`, `-06` ; `B08-PA-01`, `-02`, `-04`, `-08` ; `B09-DG-02` ; `B10-IR-02`.
+>
+> Le document type décide de ce qui s'imprime (ADR-0011), donc c'est aux modèles d'ajouter un trou s'il le faut. Le
+> backend n'a rien retiré ni ajouté.
 
 ## B4 — Tests
 
@@ -82,6 +132,19 @@ Les options de `B02-VA-01` s'écrivent **exactement** ainsi : les conditions du 
   n° 1 » / « lot n° 2 ».
 - **Rendu brut** des trois fichiers dans un dossier de test : `node verifier.mjs DPAO-F AE-F CCAP-F --dossier=…`.
 - Contrat-cadre inchangé (D1).
+
+> ⚠️ **Livraison backend du 2026-09-29 (§B4).** Conforme.
+> - `ModelesDaoTest` charge les trois fichiers : 42, 22 et 65 conditions, aucune section non déclarée, cinq modèles.
+> - `ModelesDaoFournituresTest` (3, pur) couvre les deux scénarios demandés, rédaction par rédaction, ainsi que les
+>   marqueurs de cellule et de rangée et les clés `typeMarche` et `categorie`.
+> - **Rendu brut** : `node verifier.mjs DPAO-F AE-F CCAP-F DPAC-CC AE-CC --dossier=C:/Users/LANTO/rendus-dao` donne
+>   234/234, 455/455 et 456/456, et le contrat-cadre reste à 174/174 et 378/378. Tout est identique, sans manquant ni
+>   inventé.
+>
+> Les tests qui vérifiaient le rendu « libellé : valeur » du lot 2a (`FicheMarcheDocumentsIntegrationTest`) portent
+> désormais sur une ligne de **travaux**, qui garde ce rendu. Ceux qui lisaient les fournitures en lot 2a lisent
+> maintenant les documents types. Suite complète : 1428 tests, dont une assertion de la remise électronique mise à jour
+> dans la foulée.
 
 ## Ce que le backend rend
 
@@ -100,3 +163,34 @@ Mesurées sur le dossier réel 2463 (voir le plan d'import, encadré du 29/09) ;
    cadre de la page, matrice non inclinée (filigrane écarté) ; morceaux d'une ligne recollés, colonnes séparées sur un
    saut d'abscisse ; paragraphes par interligne ; en-têtes, pieds (même texte au même endroit sur ≥ 3 pages) et numéros
    de page écartés. Un PDF sans texte (scanné) : 422 « document sans texte : saisissez la fiche ».
+
+> ⚠️ **Livraison backend du 2026-09-29 (§B5).** Les quatre règles sont portées : `LectureDao` pour les règles 1 à 3,
+> `LecturePdf` pour la règle 4. `PdfLignes.java` et `paragraphesPdf` sont portés tels quels, positions arrondies au
+> dixième comme la sortie TSV. PDFBox 3.0.3 était déjà une dépendance, donc `pom.xml` ne change pas.
+>
+> **Parité mesurée le 29/09** contre `lire.mjs` (commit d56ebd1) sur trois entrées : les DPAC et AE `.docx` de la
+> fiche 27, le PDF réel du 2463 et le rendu brut des trois modèles D2. L'extraction est identique : 350, 1544 et 1147
+> unités. La lecture est identique sur la fiche 27 et sur le 2463. Sur le rendu brut, qui contient toutes les rédactions
+> à la fois, les seules différences sont les écarts déjà documentés le 28/09 : une clé en conflit n'est pas gardée en
+> cadrage.
+>
+> Quatre écarts :
+> - **Le texte fixe sans lettre d'un jeton seul n'est pas la valeur.** Dans « {{B05-GS-03.parLot}}. », le point du modèle
+>   restait collé à la dernière valeur. « Lot n° 2 : 500 000 Ariary. » ne se lisait plus comme un montant, et le lot 2 était
+>   perdu. Le point est retiré de la valeur lue. Cela ne change rien sur la fiche 27 ni sur le 2463 ; sur le rendu brut, une
+>   seule valeur perd son point. **À reporter dans `lire.mjs`.**
+> - **Message du 415** : « Seul un fichier Word (.docx) ou PDF (.pdf) peut être importé. » Un faux PDF, chiffré ou
+>   endommagé, rend 415 avec « Ce fichier ne se lit pas comme un document PDF. »
+> - **PDF scanné** : 422 avec le code stable `DOCUMENT_SANS_TEXTE` et le message « Document sans texte : saisissez la
+>   fiche. », avec une majuscule initiale comme les autres messages.
+> - **Travaux et prestations intellectuelles** : sans modèle, ils rendent toujours 422 `MODELE_ABSENT`.
+>
+> **Constat à reporter au front : la lecture PDF sur nos propres PDF.** Sur le DPAC en PDF que le serveur produit
+> (OpenPDF), la lecture ne reconnaît que 31 unités, contre 118 sur le `.docx`. La première lettre de chaque ligne est
+> détachée (« M ARCHE DE », « A ttestations… ») et les lignes d'un paragraphe ne sont pas rejointes. `lire.mjs` donne
+> exactement la même chose, ce n'est donc pas un effet du portage. Aucune valeur n'est fausse en confiance haute. Une
+> valeur de texte en confiance moyenne peut en revanche garder la lettre détachée. Les seuils semblent réglés sur la mise
+> en page du 2463 ; à mesurer côté front avant de s'y fier sur d'autres PDF.
+>
+> **Lecture « par clause » des DAO adaptés** : recommandée par le front, elle attend la décision du pilote et n'est pas
+> livrée ici.
