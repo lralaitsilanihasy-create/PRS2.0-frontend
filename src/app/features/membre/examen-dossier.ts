@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Observable, Subject, catchError, concatMap, forkJoin, from, map, mergeMap, of, shareReplay, switchMap, toArray } from 'rxjs';
+import { Observable, Subject, catchError, concatMap, forkJoin, from, map, mergeMap, of, shareReplay, switchMap, throwError, toArray } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -2500,7 +2500,24 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
    * tous les résultats statués, comme la garde de complétude du serveur les exige.
    */
   private sauvegarderProgression(complet = false): Observable<number> {
-    return this.ensureExamen().pipe(
+    // ⚠️ 29/09 — après un enregistrement qui a échoué, une partie de ses créations a pu aboutir côté serveur
+    // sans que l'écran le sache : on relit les résultats avant d'envoyer, sinon la création suivante heurte
+    // l'unicité (idExamen, idDetail, idPtControle) et la soumission est refusée.
+    // Après une relecture, l'empreinte ne dit plus ce que le serveur détient pour les points créés « en silence » :
+    // cette sauvegarde-là renvoie tout ce qui existe (une fois, par paquets), les suivantes seulement ce qui change.
+    const toutRenvoyer = this.resynchroniser;
+    const resynchro: Observable<unknown> = this.resynchroniser
+      ? forkJoin({ details: this.examenDetailService.list(), pieces: this.examenPieceService.list() }).pipe(
+          map((r) => {
+            this.details.set(r.details);
+            this.examenPieces.set(r.pieces);
+            this.resynchroniser = false;
+            return null;
+          }),
+        )
+      : of(null);
+    return resynchro.pipe(
+      switchMap(() => this.ensureExamen()),
       switchMap((idExamen) => {
         const calls: Observable<unknown>[] = [];
         const validees = this.etapesValidees();
@@ -2508,11 +2525,13 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
           this.details().filter((d) => d.idExamen === idExamen).map((d) => [this.cle(d.idDetail ?? null, d.idPtControle), d]),
         );
         let idd = this.nextId(this.details().map((d) => d.idDetailExamen));
-        const nouveauxDetails: ExamenDetail[] = [];
-        // Empreintes de ce qui part : elles deviennent l'état enregistré quand le serveur a répondu.
-        const pointsEnvoyes = new Map<string, string>();
-        const piecesEnvoyees = new Map<number, string>();
         const enregistree = this.empreinteEnregistree();
+        // Chaque envoi réussi est noté AUSSITÔT (cache local, empreinte enregistrée) : si un autre envoi du même lot
+        // échoue, ceux qui ont abouti ne seront ni recréés ni renvoyés.
+        const noterPoint = (cle: string, empreinte: string): void =>
+          this.empreinteEnregistree.update((ref) => (ref ? { ...ref, points: new Map(ref.points).set(cle, empreinte) } : ref));
+        const noterPiece = (id: number, empreinte: string): void =>
+          this.empreinteEnregistree.update((ref) => (ref ? { ...ref, pieces: new Map(ref.pieces).set(id, empreinte) } : ref));
         const retenus = this.entreesResultats().filter(
           (x) => x.st.statut !== null && (complet || validees.has(this.cleEtapeDuResultat(x.idDetail, x.idPt))),
         );
@@ -2524,8 +2543,7 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
           // faisait, sur un plan de 233 lignes, des milliers de PUT par sauvegarde : le relais de développement
           // manquait de ports (EADDRINUSE) et l'écran affichait « Service indisponible ». Un point sans détail
           // serveur (RAS par défaut jamais envoyé) part toujours.
-          if (existing && enregistree?.points.get(cle) === empreinte) continue;
-          pointsEnvoyes.set(cle, empreinte);
+          if (!toutRenvoyer && existing && enregistree?.points.get(cle) === empreinte) continue;
           const body: ExamenDetail = {
             idDetailExamen: existing?.idDetailExamen ?? idd++,
             idExamen,
@@ -2534,17 +2552,24 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
             conforme: !estObservationEffective(e.st), // « Observation » sans texte = conforme (pilote 21/09)
             observations: this.observationsBody(e.st),
           };
-          if (!existing) nouveauxDetails.push(body);
-          calls.push(existing ? this.examenDetailService.update(existing.idDetailExamen, body) : this.examenDetailService.create(body));
+          calls.push(
+            existing
+              ? this.examenDetailService.update(existing.idDetailExamen, body).pipe(map(() => noterPoint(cle, empreinte)))
+              : this.examenDetailService.create(body).pipe(
+                  map((cree) => {
+                    // L'identifiant du SERVEUR fait foi pour les mises à jour suivantes.
+                    this.details.update((arr) => [...arr, { ...body, ...(cree ?? {}) }]);
+                    noterPoint(cle, empreinte);
+                  }),
+                ),
+          );
         }
         const pieceParId = new Map(this.examenPieces().filter((x) => x.idExamen === idExamen).map((x) => [x.idPiece, x]));
         let idp = this.nextId(this.examenPieces().map((x) => x.idExamenPiece));
-        const nouvellesPieces: ExamenPiece[] = [];
         for (const e of this.entreesPieces().filter((x) => complet || validees.has('P' + x.idPiece))) {
           const empreinte = empreintePiece(this.resultatPiece(e.idPiece));
           const existing = pieceParId.get(e.idPiece);
-          if (existing && enregistree?.pieces.get(e.idPiece) === empreinte) continue;
-          piecesEnvoyees.set(e.idPiece, empreinte);
+          if (!toutRenvoyer && existing && enregistree?.pieces.get(e.idPiece) === empreinte) continue;
           const body: ExamenPiece = {
             idExamenPiece: existing?.idExamenPiece ?? idp++,
             idExamen,
@@ -2552,23 +2577,27 @@ export class ExamenDossier implements OnDestroy, SortieProtegee {
             conforme: e.conforme,
             observation: e.observation,
           };
-          if (!existing) nouvellesPieces.push(body);
-          calls.push(existing ? this.examenPieceService.update(existing.idExamenPiece, body) : this.examenPieceService.create(body));
+          calls.push(
+            existing
+              ? this.examenPieceService.update(existing.idExamenPiece, body).pipe(map(() => noterPiece(e.idPiece, empreinte)))
+              : this.examenPieceService.create(body).pipe(
+                  map((cree) => {
+                    this.examenPieces.update((arr) => [...arr, { ...body, ...(cree ?? {}) }]);
+                    noterPiece(e.idPiece, empreinte);
+                  }),
+                ),
+          );
         }
-        return parPaquets(calls).pipe(
-          map(() => {
-            // Caches locaux → la prochaine réconciliation mettra à jour au lieu de recréer.
-            if (nouveauxDetails.length) this.details.update((arr) => [...arr, ...nouveauxDetails]);
-            if (nouvellesPieces.length) this.examenPieces.update((arr) => [...arr, ...nouvellesPieces]);
-            this.empreinteEnregistree.update((ref) =>
-              ref ? { ...ref, points: new Map([...ref.points, ...pointsEnvoyes]), pieces: new Map([...ref.pieces, ...piecesEnvoyees]) } : ref,
-            );
-            return idExamen;
-          }),
-        );
+        return parPaquets(calls).pipe(map(() => idExamen));
+      }),
+      catchError((err: unknown) => {
+        this.resynchroniser = true;
+        return throwError(() => err);
       }),
     );
   }
+  /** Un enregistrement a échoué : relire les résultats du serveur avant le prochain (voir `sauvegarderProgression`). */
+  private resynchroniser = false;
 
   /** File de sauvegardes SÉRIALISÉE (concatMap) : jamais deux réconciliations en parallèle. */
   private readonly saveTrigger = new Subject<void>();

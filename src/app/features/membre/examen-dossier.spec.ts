@@ -1,7 +1,7 @@
 import { Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
-import { NEVER, of } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -86,6 +86,7 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
   let ecran: ExamenDossier;
   let creations: ExamenDetail[];
   let misesAJour: ExamenDetail[];
+  let echecApresCreation: ((d: ExamenDetail) => boolean) | null = null;
   let soumissions: { idExamen: number; corps: { idAvis: string } }[];
   /** Identifiants passés à `POST /examens/{id}/reinitialiser` (le stub vide alors les détails du décor). */
   let reinitialisations: number[];
@@ -135,7 +136,16 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
           provide: ExamenDetailService,
           useValue: {
             ...liste(reprise.details),
-            create: (d: ExamenDetail) => (creations.push(d), of(d)),
+            create: (d: ExamenDetail) => {
+              creations.push(d);
+              reprise.details.push({ ...d }); // le serveur la garde : une relecture la rend
+              // Le serveur crée, mais la réponse n'arrive pas (relais saturé, 29/09).
+              if (echecApresCreation?.(d)) {
+                echecApresCreation = null;
+                return throwError(() => ({ status: 0 }));
+              }
+              return of(d);
+            },
             update: (_: number, d: ExamenDetail) => (misesAJour.push(d), of(d)),
           },
         },
@@ -386,6 +396,20 @@ describe('ExamenDossier — écran refondu (lot 2)', () => {
       expect(creations).toHaveLength(7);
       expect(misesAJour).toEqual([]);
       expect(soumissions).toHaveLength(1);
+    });
+
+    it("après un envoi en échec, les résultats sont relus : ce que le serveur a créé n'est pas recréé (unicité, 29/09)", () => {
+      echecApresCreation = (d) => d.idDetail === 1 && d.idPtControle === 12;
+      valider(); // ligne 1 : (1, 11) aboutit ; (1, 12) est créé sur le serveur mais l'écran reçoit une erreur
+      valider(); // ligne 2 : relecture d'abord, puis la ligne 1 part en MISE À JOUR (une fois), jamais en seconde création
+      expect(creations.filter((d) => d.idDetail === 1 && d.idPtControle === 12)).toHaveLength(1);
+      expect(misesAJour.map((d) => [d.idDetail, d.idPtControle])).toEqual([
+        [1, 11],
+        [1, 12],
+      ]);
+      expect(creations.filter((d) => d.idDetail === 2)).toHaveLength(2);
+      valider(); // ligne 3 : revenu à la normale, la ligne 1 ne repart plus
+      expect(misesAJour).toHaveLength(2);
     });
 
     it('à la soumission, tous les résultats partent (la garde de complétude du serveur les exige)', () => {
