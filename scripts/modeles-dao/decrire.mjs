@@ -1903,8 +1903,9 @@ function aePi() {
     'POURCENTAGE-DPIC': 'B05-PF-01 contient coût estimatif et B05-PF-10 vide',
     'SANS-SOUS-TRAITANCE': 'B03-SP-01 != OUI',
     'SOUS-TRAITANCE': 'B03-SP-01 = OUI',
-    // « <Insérer le cas échéant> » : le délai court de l'ordre de service de commencer ; B09-DP-01 renseigné le demande.
-    'DEPART-OS': 'B09-DP-01 renseigne',
+    // « <Insérer le cas échéant> » : le délai court de l'ordre de service de commencer. ⚠️ 29/09 : B09-DP-01 est un OUI_NON
+    // (livraison PI-1) — « renseigne » imprimerait la phrase pour un « Non ».
+    'DEPART-OS': 'B09-DP-01 = OUI',
     'DUREE-MOIS': 'B09-DP-03 = Nombre de mois',
     'DUREE-DATE': 'B09-DP-03 = Date de fin de marché',
     'SANS-AVANCE': 'avance = NON',
@@ -2019,7 +2020,7 @@ function cpsPi() {
     'RESTITUTION-CHEQUE': 'B09-MF-01 = OUI et B09-MF-02 contient chèque',
     // Q9 : l'art. 14 (un texte de fournitures) ne s'imprime que si le consultant fournit du matériel (B09-FC-01 réactivé).
     'FOURNITURE-MATERIEL': 'B09-FC-01 renseigne',
-    'DEPART-OS': 'B09-DP-01 renseigne',
+    'DEPART-OS': 'B09-DP-01 = OUI',
     // Q7 : le cadrage `penalites` (comme ailleurs) ; B09-PP-01 est à retirer (demande PI-1).
     'PENALITES-NON': 'penalites = NON',
     'PENALITES-OUI': 'penalites != NON',

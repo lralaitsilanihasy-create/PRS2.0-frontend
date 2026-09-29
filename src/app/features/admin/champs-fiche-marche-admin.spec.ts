@@ -94,6 +94,20 @@ describe('Champs de la fiche DAO — référentiel Administrateur (B1, 22/09)', 
     expect(texte(Array.from(racine().querySelectorAll('.cfm__rub')).find((r) => texte(r).includes('Garantie de soumission'))?.querySelector('.badge'))).toBe('3 champ(s) · 6 attendu(s)');
   });
 
+  it('29/09 : une option à virgule se relit et se renvoie entière — séparateur « | » (format du serveur, lot D3)', () => {
+    monter(REF);
+    const ecran = fixture.componentInstance;
+    const MS = ['Qualité technique, expérience et proposition financière', 'Qualité technique exclusivement'];
+    expect(ecran.optionsEnTexte(MS)).toBe('Qualité technique, expérience et proposition financière | Qualité technique exclusivement');
+    expect(ecran.optionsEnTexte(['Caution', 'Chèque de banque'])).toBe('Caution, Chèque de banque');   // inchangé sans virgule
+    bouton('+ Ajouter un champ').click();
+    rendre();
+    ecran.poserListe('options', ecran.optionsEnTexte(MS));
+    expect(ecran.edition()?.options).toEqual(MS);
+    ecran.poserListe('options', 'Caution, Chèque de banque');
+    expect(ecran.edition()?.options).toEqual(['Caution', 'Chèque de banque']);
+  });
+
   it('modification : le code est verrouillé, un 400 nominatif se pose sous le champ fautif, sans toast', () => {
     monter(REF);
     Array.from(racine().querySelectorAll('button')).filter((b) => texte(b) === 'Modifier')[1].click();

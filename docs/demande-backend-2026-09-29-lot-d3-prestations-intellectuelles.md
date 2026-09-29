@@ -175,6 +175,24 @@ d'exécution des travaux » (CPS), « Maître d'œuvre » (CPS art. 6), sommaire
 la forme du groupement imposée par le CPS art. 3 (solidaires ou conjoints) contre le cadrage (« au choix » / « solidaire
 obligatoire »), et l'arbitrage CNUDCI seul proposé au CPS art. 20 (Q5, Q10).
 
+## B6 — Complément du 29/09 (suite de la livraison) : recopier AE-PI et CPS-PI
+
+Suite de l'encadré §B2.2, point 7 : `B09-DP-01` étant un `OUI_NON`, la condition `DEPART-OS` des deux modèles devient
+**`B09-DP-01 = OUI`** (un « Non » imprimait la phrase). Recopier `scripts/modeles-dao/modeles/AE-PI.txt` et
+`CPS-PI.txt` (fidélité inchangée, 300/300 et 238/238 ; décalques dans `docs/modeles-dao/`). Rien d'autre ne change.
+Le champ peut redevenir obligatoire si le pilote le souhaite : « Non » ne s'imprime plus.
+
+Fait côté front le même jour :
+- l'aide de la question des pénalités dit le plafond par catégorie (« 15 % ; 10 % pour les prestations
+  intellectuelles ») ;
+- **PI-2** : l'import du DAO est ouvert aux prestations intellectuelles (quantité fixe et à commande), miroir de
+  `ModelesDao.COUVERTURES` ; un contrat-cadre de PI reste fermé ;
+- l'écran d'administration des champs relit et renvoie les options au nouveau format (« | » dès qu'une option contient
+  une virgule) : avant, modifier `B02-MS-01` l'aurait recoupée en deux.
+
+Reste ouvert, **à décider par le pilote** : une règle serveur sur les bornes des poids (T entre 0,6 et 0,8, F entre 0,2
+et 0,4, T + F = 1) et du délai de réponse (≥ 6 jours) — l'encadré §B2.1 la dit facile à ajouter ; et le §B2.3.
+
 ## Ce que le backend rend
 
 Commit(s) qui referment B1 à B5, script du référentiel pour DBPRS20 (B2.1, B2.2 ; B2.3 après le pilote), tests, et un

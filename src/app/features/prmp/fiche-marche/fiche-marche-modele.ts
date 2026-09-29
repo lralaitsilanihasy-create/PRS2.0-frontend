@@ -291,7 +291,8 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
   {
     cle: 'penalites',
     libelle: 'Des pénalités de retard s’appliquent-elles ?',
-    aide: 'Selon le CCAG (article 12.1), ou un plafond différent des 15 % prévus, à préciser.',
+    // ⚠️ 29/09 (lot D3) — le plafond du CCAG dépend de la catégorie : 10 % pour les prestations intellectuelles.
+    aide: 'Selon le CCAG, ou un plafond différent de celui qu’il prévoit (15 % ; 10 % pour les prestations intellectuelles), à préciser.',
     documents: 'CCAP',
     // ⚠️ 28/09 (modèle officiel du contrat-cadre, E13) — pas pour un contrat-cadre : le CCAP y devient l'AE, où la
     // rubrique `B07-PE` pose déjà la question, avec le cas que celle-ci ne sait pas dire (« fixées dans les marchés

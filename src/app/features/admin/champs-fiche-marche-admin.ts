@@ -116,7 +116,8 @@ function vide(): ChampFiche {
               @if (c.type === 'LISTE' || c.type === 'LISTE_MULTIPLE') {
                 <label class="form-group cfm__large">
                   <span class="form-label">Options de la liste *</span>
-                  <input class="form-control" type="text" [value]="(c.options ?? []).join(', ')" placeholder="Caution, Chèque de banque, Garantie bancaire" (input)="poserListe('options', $any($event.target).value)" />
+                  <input class="form-control" type="text" [value]="optionsEnTexte(c.options)" placeholder="Caution, Chèque de banque, Garantie bancaire" (input)="poserListe('options', $any($event.target).value)" />
+                  <span class="form-hint">Options séparées par des virgules ; si une option contient elle-même une virgule, séparez-les toutes par « | ».</span>
                   @if (c.type === 'LISTE_MULTIPLE') { <span class="form-hint">Plusieurs options à la fois ; la valeur enregistrée les joint par des virgules, dans cet ordre.</span> }
                   @if (erreur('options'); as m) { <span class="form-error">{{ m }}</span> }
                 </label>
@@ -324,9 +325,18 @@ export class ChampsFicheMarcheAdmin implements OnInit {
     this.edition.update((c) => (c ? { ...c, [cle]: valeur } : c));
     if (this.erreurs().has(cle)) this.erreurs.update((m) => { const n = new Map(m); n.delete(cle); return n; });
   }
+  /**
+   * ⚠️ 29/09 (lot D3, format du serveur) — une option peut contenir une virgule (« Qualité technique, expérience et
+   * proposition financière ») : les options sont alors séparées par « | ». Sans « | », la virgule sépare, comme avant.
+   */
   poserListe(cle: 'options', brut: string): void {
-    const liste = brut.split(',').map((s) => s.trim()).filter(Boolean);
+    const liste = brut.split(brut.includes('|') ? '|' : ',').map((s) => s.trim()).filter(Boolean);
     this.poser(cle, liste.length ? liste : null);
+  }
+  /** Les options telles qu'elles se relisent : « | » dès qu'une option contient une virgule. */
+  optionsEnTexte(options: readonly string[] | null | undefined): string {
+    const o = options ?? [];
+    return o.join(o.some((x) => x.includes(',')) ? ' | ' : ', ');
   }
   basculer(cle: 'reprises' | 'typesMarche', valeur: string): void {
     this.edition.update((c) => {

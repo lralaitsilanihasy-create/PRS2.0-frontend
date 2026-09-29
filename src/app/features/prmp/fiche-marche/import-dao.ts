@@ -11,20 +11,20 @@ import { Icone } from '../../../shared/ui/icone';
 import { QUESTIONS_CADRAGE } from './fiche-marche-modele';
 
 /**
- * Les formes dont le serveur sait lire le DAO : celles dont le document type est décrit (lot D). Miroir de
- * `ModelesDao.COUVERTURES` du serveur ; une forme absente d'ici qui deviendrait lisible le dirait par le 422
- * `MODELE_ABSENT`. ⚠️ 29/09 — lot D2 : quantité fixe et à commande, en plus du contrat-cadre.
+ * Les couples (catégorie, forme) dont le serveur sait lire le DAO : ceux dont le document type est décrit (lot D).
+ * Miroir de `ModelesDao.COUVERTURES` ; un couple absent d'ici qui deviendrait lisible le dirait par le 422
+ * `MODELE_ABSENT`. Fournitures : contrat-cadre (D1), quantité fixe et à commande (D2, 29/09). Prestations
+ * intellectuelles : quantité fixe et à commande (D3, 29/09 — il n'existe pas de contrat-cadre de PI). Les travaux
+ * attendent leurs documents types.
  */
-export const FORMES_IMPORTABLES: readonly TypeMarche[] = ['CONTRAT_CADRE', 'QUANTITE_FIXE', 'A_COMMANDE'];
-/**
- * … et seulement pour les fournitures et services : les documents types des travaux et des prestations
- * intellectuelles ne sont pas encore décrits. Sans catégorie, le serveur lit comme des fournitures ; l'écran aussi.
- */
-export const CATEGORIES_IMPORTABLES: readonly CategorieDao[] = ['FOURNITURES_SERVICES'];
+export const IMPORTABLES: Readonly<Partial<Record<CategorieDao, readonly TypeMarche[]>>> = {
+  FOURNITURES_SERVICES: ['CONTRAT_CADRE', 'QUANTITE_FIXE', 'A_COMMANDE'],
+  PRESTATIONS_INTELLECTUELLES: ['QUANTITE_FIXE', 'A_COMMANDE'],
+};
 
-/** Le DAO de cette fiche peut-il être importé (un modèle existe pour sa forme ET sa catégorie) ? */
+/** Le DAO de cette fiche peut-il être importé ? Sans catégorie, le serveur lit comme des fournitures ; l'écran aussi. */
 export function importPossible(typeMarche: TypeMarche | null, categorie: CategorieDao | null): boolean {
-  return !!typeMarche && FORMES_IMPORTABLES.includes(typeMarche) && CATEGORIES_IMPORTABLES.includes(categorie ?? 'FOURNITURES_SERVICES');
+  return !!typeMarche && (IMPORTABLES[categorie ?? 'FOURNITURES_SERVICES'] ?? []).includes(typeMarche);
 }
 
 /** Types acceptés : le Word (.docx) et, depuis le 29/09 (serveur `LecturePdf`), le PDF « texte ». */

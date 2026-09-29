@@ -108,12 +108,15 @@ describe('Import du DAO — la revue avant d’écrire (demande du pilote du 28/
     expect(racine().querySelector('input[type="file"]')).toBeNull();
   });
 
-  it('règle d’ouverture : les trois formes décrites, en fournitures et services seulement (miroir de ModelesDao)', () => {
+  it('règle d’ouverture : les couples décrits (miroir de ModelesDao) — fournitures D1/D2, prestations intellectuelles D3', () => {
     expect(importPossible('CONTRAT_CADRE', 'FOURNITURES_SERVICES')).toBe(true);
     expect(importPossible('QUANTITE_FIXE', 'FOURNITURES_SERVICES')).toBe(true);
     expect(importPossible('A_COMMANDE', null)).toBe(true);                        // sans catégorie : lu comme fournitures
-    expect(importPossible('CONTRAT_CADRE', 'TRAVAUX')).toBe(false);               // contrat-cadre de travaux : pas de modèle
-    expect(importPossible('QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES')).toBe(false);
+    expect(importPossible('QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES')).toBe(true);   // lot D3, 29/09
+    expect(importPossible('A_COMMANDE', 'PRESTATIONS_INTELLECTUELLES')).toBe(true);
+    expect(importPossible('CONTRAT_CADRE', 'PRESTATIONS_INTELLECTUELLES')).toBe(false);  // pas de contrat-cadre de PI
+    expect(importPossible('CONTRAT_CADRE', 'TRAVAUX')).toBe(false);               // travaux : pas de modèle
+    expect(importPossible('QUANTITE_FIXE', 'TRAVAUX')).toBe(false);
     expect(importPossible(null, 'FOURNITURES_SERVICES')).toBe(false);
   });
 

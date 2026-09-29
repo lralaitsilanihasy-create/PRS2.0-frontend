@@ -14,7 +14,7 @@
   "POURCENTAGE-DPIC": "B05-PF-01 contient coût estimatif et B05-PF-10 vide",
   "SANS-SOUS-TRAITANCE": "B03-SP-01 != OUI",
   "SOUS-TRAITANCE": "B03-SP-01 = OUI",
-  "DEPART-OS": "B09-DP-01 renseigne",
+  "DEPART-OS": "B09-DP-01 = OUI",
   "DUREE-MOIS": "B09-DP-03 = Nombre de mois",
   "DUREE-DATE": "B09-DP-03 = Date de fin de marché",
   "SANS-AVANCE": "avance = NON",
