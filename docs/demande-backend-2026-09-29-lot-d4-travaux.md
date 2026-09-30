@@ -183,8 +183,9 @@ leur code. `ModelesDao.COUVERTURES` : `DPAC-CC` et `AE-CC` pour `CONTRAT_CADRE` 
 >   suivi de la liste des lots, sous ALLOTI, sur un marché non alloti).
 >
 > Banc après les deux règles : CCAP-T passe de 56-68 % à 73-74 %, CCAP-F de 88-93 % à 94-97 %, DPIC-PI et DPAO-T à
-> 96-100 %, CPS-PI de 65 % à 77-78 %. **Aucune fausse valeur, en aucune confiance**, sans bruit comme avec (graines 3
-> et 7). Le reste du CCAP-T, ce sont les cinq sujétions saisies côte à côte (B09-CH-01…05) : l'ambiguïté est réelle,
+> 96-100 %, CPS-PI de 65 % à 77-78 %, sans aucune fausse valeur sur le rendu propre. Avec bruit, sur huit graines,
+> tous modèles : 3 561 valeurs justes au lieu de 3 417 (+144) pour 112 fausses au lieu de 107 (+5), **aucune en
+> confiance haute** (Q10 tenu). Le reste du CCAP-T, ce sont les cinq sujétions saisies côte à côte (B09-CH-01…05) : l'ambiguïté est réelle,
 > la lecture ne choisit pas.
 
 ## B5 — Tests attendus
