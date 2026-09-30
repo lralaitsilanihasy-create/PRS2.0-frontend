@@ -178,12 +178,11 @@ corrigé par la levée des réserves. Réponse 201 avec les `DocumentFiche` prod
 Le pilote a transmis un avis réel (Région Analamanga, contrat-cadre de travaux alloti) et validé les propositions de
 l'analyse. Les modèles `AVIS-F` et `AVIS-T` sont refaits côté front :
 - `scripts/modeles-dao/modeles/AVIS-F.{txt,json}` et `AVIS-T.{txt,json}` ;
-- décalques vérifiés dans les deux sens : `docs/modeles-dao/AVIS-F.docx` (**91/91**) et `AVIS-T.docx` (**97/97**).
+- décalques vérifiés dans les deux sens : `docs/modeles-dao/AVIS-F.docx` (**91/91**) et `AVIS-T.docx` (**97/97**) — 90/90 et 96/96 depuis l'emblème (B7.8).
 
 **B7.1 — Recopier les deux modèles.** Ce qui change :
 - **En-tête** : « REPOBLIKAN’I MADAGASIKARA », la devise, l'autorité, « LA PERSONNE RESPONSABLE DES MARCHES PUBLICS »
-  et « UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS ». L'emblème viendra plus tard, quand le pilote aura fourni
-  l'image.
+  et « UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS ». L'emblème : voir B7.8.
 - **Numéro seul**, « N° … ».
 - **Lieu et date en bas** : « à {{B04-DS-10}}, le {{AVIS.date-publication}} ».
 - **Guillemets** autour de l'objet et de la forme.
@@ -215,13 +214,22 @@ revoir de votre côté : dites dans votre encadré si le jeton unique y devient 
   `supportsPublication vide`.
 - La modale du front ne les exige plus.
 
+**B7.8 — L'emblème (`{{IMAGE:embleme}}`, ajouté le 30/09 après l'accord du pilote).** Le premier paragraphe des deux
+modèles, centré, est le repère `{{IMAGE:embleme}}`. Le moteur y insère **l'image de tête des PV** : `word/media/image1.png`
+des `templates/PV_*.docx`, 750 × 492 px, avec le sceau, le drapeau, « REPOBLIKAN'I MADAGASIKARA » et la devise. Proposition :
+l'extraire une fois en ressource (`modeles/images/embleme.png`), pour que PV et avis partagent la même image. Largeur
+conseillée : environ 5 cm, comme en tête de l'avis réel. Les deux lignes de texte « REPOBLIKAN’I MADAGASIKARA » et devise
+ont quitté le modèle, puisque l'image les contient. Décalques revérifiés : **AVIS-F 90/90, AVIS-T 96/96** (au lieu de 91
+et 97). Un repère `{{IMAGE:…}}` que le moteur ne connaît pas ne doit pas s'imprimer tel quel : paragraphe omis.
+
 **B7.6 — En attente (rien à faire pour l'instant).**
 - Articles du Code : « 30, 35 et 67 » (document type) ou « 35, 63 et 67 » (avis réel), question au juriste.
 - Régisseur de recettes : celui de l'ARMP ou celui de la Commission compétente, question au pilote.
 - QR code de vérification : sujet à part, plus tard.
 
 **B7.7 — Tests.**
-- Rendu ≡ modèle (91 et 97).
+- Rendu ≡ modèle (90 et 96).
+- L'emblème inséré en tête, centré.
 - Numérotation continue avec et sans garantie, et hors contrat-cadre.
 - `.heureLocale` et `.lignesParLot`.
 - Impression sans `jmpNumero` ni `supports` : pas de « et dans ».

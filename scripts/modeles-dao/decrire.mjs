@@ -3027,9 +3027,10 @@ function avisSpecifique(categorie) {
   const retrait = () => x('Pour le (ou les) candidat(s) désirant soumissionner', ['l’Autorité contractante', '{{B01-AC-01}}', 'jeton']);
 
   const blocs = [
-    // L'en-tête de l'avis réel (E1) : la République et sa devise, l'autorité, la PRMP et l'UGPM. (L'emblème : image à fournir.)
-    C(ajout('REPOBLIKAN’I MADAGASIKARA')),
-    C(ajout('Fitiavana - Tanindrazana - Fandrosoana')),
+    // L'en-tête de l'avis réel (E1) : l'emblème, puis l'autorité, la PRMP et l'UGPM. ⚠️ 30/09 — `{{IMAGE:embleme}}` : le
+    // serveur y insère l'image de tête de ses PV (sceau, drapeau, « REPOBLIKAN'I MADAGASIKARA » et devise, dans l'image :
+    // les deux lignes de texte ne sont donc pas répétées).
+    C(ajout('{{IMAGE:embleme}}')),
     C(x('[insérer : entête', ['[insérer : entête de l’Acheteur]', '{{B01-AC-01}}', 'jeton'])),
     C(ajout('LA PERSONNE RESPONSABLE DES MARCHES PUBLICS')),
     C(ajout('UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS')),

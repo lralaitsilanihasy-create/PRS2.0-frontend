@@ -32,11 +32,7 @@
  "blocs": [
   {
    "type": "centre",
-   "texte": "REPOBLIKAN’I MADAGASIKARA"
-  },
-  {
-   "type": "centre",
-   "texte": "Fitiavana - Tanindrazana - Fandrosoana"
+   "texte": "{{IMAGE:embleme}}"
   },
   {
    "type": "centre",
@@ -795,8 +791,7 @@
  ],
  "ajouts": [
   "{{NUM}} ",
-  "REPOBLIKAN’I MADAGASIKARA",
-  "Fitiavana - Tanindrazana - Fandrosoana",
+  "{{IMAGE:embleme}}",
   "LA PERSONNE RESPONSABLE DES MARCHES PUBLICS",
   "UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS",
   "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux sont répartis en {{B02-LV-01}} lots. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots.",

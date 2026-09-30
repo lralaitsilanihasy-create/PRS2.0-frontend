@@ -30,11 +30,7 @@
  "blocs": [
   {
    "type": "centre",
-   "texte": "REPOBLIKAN’I MADAGASIKARA"
-  },
-  {
-   "type": "centre",
-   "texte": "Fitiavana - Tanindrazana - Fandrosoana"
+   "texte": "{{IMAGE:embleme}}"
   },
   {
    "type": "centre",
@@ -739,8 +735,7 @@
  ],
  "ajouts": [
   "{{NUM}} ",
-  "REPOBLIKAN’I MADAGASIKARA",
-  "Fitiavana - Tanindrazana - Fandrosoana",
+  "{{IMAGE:embleme}}",
   "LA PERSONNE RESPONSABLE DES MARCHES PUBLICS",
   "UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS",
   "- Adresse : {{B04-DS-09}}, {{B04-DS-10}}",
