@@ -86,3 +86,12 @@ Notre modèle a donc la bonne trame. Les écarts portent sur la **présentation*
 >
 > Modèles refaits côté front (`AVIS-F` 91/91, `AVIS-T` 97/97). Demande backend : §B7 de
 > `demande-backend-2026-09-30-avis-specifique.md`. Modale : le numéro du JMP et les supports sont facultatifs.
+
+> ⚠️ **Suite du 30/09.**
+> - **Emblème (Q1)** : le serveur l'a déjà. C'est l'image de tête des 14 modèles de PV et des 2 lettres de renvoi
+>   (`templates/PV_*.docx`, `word/media/image1.png`, 750 × 492 px). Elle réunit le sceau, le drapeau,
+>   « REPOBLIKAN'I MADAGASIKARA » et la devise, comme en tête de l'avis réel. **Proposition** : la placer en tête de
+>   l'avis, centrée, au-dessus de l'autorité, et **retirer** alors nos deux lignes « REPOBLIKAN’I MADAGASIKARA » et
+>   devise, qu'elle contient déjà. À confirmer par le pilote.
+> - **Bénéficiaire du paiement (Q7)** et **QR code (Q8)** : plus tard, sujets à part (décision du pilote).
+> - **Articles du Code (Q5)** : rappel donné au pilote ; en attente.
