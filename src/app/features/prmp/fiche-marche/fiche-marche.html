@@ -291,7 +291,7 @@
                     <p class="fm__q-aide">{{ q.aide }}</p>
                   }
                   <div class="fm__q-opts" role="radiogroup" [attr.aria-label]="q.libelle">
-                    @for (o of q.options; track o.code) {
+                    @for (o of optionsDe(q); track o.code) {
                       <label class="fm__opt" [class.fm__opt--on]="reponse(q) === o.code" [class.fm__opt--off]="!!o.indisponible">
                         <input type="radio" [name]="'q-' + q.cle" [value]="o.code" [checked]="reponse(q) === o.code" [disabled]="!!o.indisponible || figee() || imposee(q.cle)" (change)="repondre(q.cle, o.code)" />
                         <span class="fm__opt-l">{{ o.libelle }}</span>

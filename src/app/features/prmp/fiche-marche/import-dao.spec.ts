@@ -99,24 +99,28 @@ describe('Import du DAO — la revue avant d’écrire (demande du pilote du 28/
     TestBed.resetTestingModule();
     monter('CONTRAT_CADRE', false);
     expect(bouton('Réimporter un DAO')).toBeTruthy();
-    // ⚠️ 29/09 — lot D2 : les fournitures à quantité fixe s'importent aussi ; les travaux, non (pas de modèle).
+    // ⚠️ 29/09 — lot D2 : les fournitures à quantité fixe s'importent aussi ; 30/09 — lot D4 : les travaux aussi.
     TestBed.resetTestingModule();
     monter('QUANTITE_FIXE', true, 'FOURNITURES_SERVICES');
     expect(racine().querySelector('input[type="file"]')).not.toBeNull();
     TestBed.resetTestingModule();
     monter('QUANTITE_FIXE', true, 'TRAVAUX');
+    expect(racine().querySelector('input[type="file"]')).not.toBeNull();
+    TestBed.resetTestingModule();
+    monter('CONTRAT_CADRE', true, 'PRESTATIONS_INTELLECTUELLES');   // la seule forme sans modèle
     expect(racine().querySelector('input[type="file"]')).toBeNull();
   });
 
-  it('règle d’ouverture : les couples décrits (miroir de ModelesDao) — fournitures D1/D2, prestations intellectuelles D3', () => {
+  it('règle d’ouverture : les couples décrits (miroir de ModelesDao) — fournitures D1/D2, PI D3, travaux D4', () => {
     expect(importPossible('CONTRAT_CADRE', 'FOURNITURES_SERVICES')).toBe(true);
     expect(importPossible('QUANTITE_FIXE', 'FOURNITURES_SERVICES')).toBe(true);
     expect(importPossible('A_COMMANDE', null)).toBe(true);                        // sans catégorie : lu comme fournitures
     expect(importPossible('QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES')).toBe(true);   // lot D3, 29/09
     expect(importPossible('A_COMMANDE', 'PRESTATIONS_INTELLECTUELLES')).toBe(true);
     expect(importPossible('CONTRAT_CADRE', 'PRESTATIONS_INTELLECTUELLES')).toBe(false);  // pas de contrat-cadre de PI
-    expect(importPossible('CONTRAT_CADRE', 'TRAVAUX')).toBe(false);               // travaux : pas de modèle
-    expect(importPossible('QUANTITE_FIXE', 'TRAVAUX')).toBe(false);
+    expect(importPossible('CONTRAT_CADRE', 'TRAVAUX')).toBe(true);                // lot D4, 30/09 : DPAC-CC et AE-CC
+    expect(importPossible('QUANTITE_FIXE', 'TRAVAUX')).toBe(true);                // DPAO-T, AE-T, CCAP-T
+    expect(importPossible('A_COMMANDE', 'TRAVAUX')).toBe(true);
     expect(importPossible(null, 'FOURNITURES_SERVICES')).toBe(false);
   });
 

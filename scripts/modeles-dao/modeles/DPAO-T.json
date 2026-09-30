@@ -134,7 +134,7 @@
   },
   {
    "type": "ligne",
-   "texte": "6.4. Délai de validité des offres\u001fLe délai de validité des offres sera de {{B04-DV-01}} jours."
+   "texte": "6.4. Délai de validité des offres\u001fLe délai de validité des offres sera de {{B04-VO-01}} jours."
   },
   {
    "type": "ligne",
@@ -366,7 +366,7 @@
    "ligne": "51.1.0",
    "genre": "jeton",
    "source": "<nombre>",
-   "par": "{{B04-DV-01}}"
+   "par": "{{B04-VO-01}}"
   },
   {
    "ligne": "54.1.11",

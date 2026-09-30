@@ -165,7 +165,8 @@ export interface QuestionCadrage {
   cle: string;
   libelle: string;
   aide: string;
-  options: readonly { code: string; libelle: string; aide?: string; indisponible?: string }[];
+  /** ⚠️ 30/09 (lot D4) — une option peut n'être proposée que pour un cadrage (`si`), comme une question. */
+  options: readonly { code: string; libelle: string; aide?: string; indisponible?: string; si?: { cle: string; valeur: string } }[];
   /** Documents que la réponse ouvre ou ferme (esquisse). */
   documents: string;
   si?: { cle: string; valeur: string };
@@ -250,7 +251,12 @@ export const QUESTIONS_CADRAGE: readonly QuestionCadrage[] = [
     libelle: 'Quel type de prix ?',
     aide: 'Unitaires : bordereau des prix, quantités réellement livrées, paiement à la livraison. Global forfaitaire : au moins 60 % à la réception, au plus 40 % sur PV.',
     documents: 'AE, CCAP',
-    options: [{ code: 'UNITAIRES', libelle: 'Prix unitaires' }, { code: 'FORFAITAIRE', libelle: 'Prix global forfaitaire' }],
+    options: [
+      { code: 'UNITAIRES', libelle: 'Prix unitaires' },
+      { code: 'FORFAITAIRE', libelle: 'Prix global forfaitaire' },
+      // ⚠️ 30/09 (lot D4, Q4) — la 3ᵉ variante de l'annexe 1 de l'AE des travaux (prix partiels et forfaitaires).
+      { code: 'MIXTE', libelle: 'Prix unitaires et forfaitaires (mixte)', aide: 'Bordereau des prix, avec des prix partiels et forfaitaires.', si: { cle: 'categorie', valeur: 'TRAVAUX' } },
+    ],
   },
   {
     cle: 'prixRevisable',
@@ -604,6 +610,11 @@ export function questionPosee(q: QuestionCadrage, cadrage: Cadrage): boolean {
   return true;
 }
 
+/** Les options proposées pour ce cadrage (une option à `si` non satisfait n'est pas proposée). */
+export function optionsPosees(q: QuestionCadrage, cadrage: Cadrage): QuestionCadrage['options'] {
+  return q.options.filter((o) => !o.si || String(cadrage[o.si.cle] ?? '') === o.si.valeur);
+}
+
 export function questionsPosees(cadrage: Cadrage): QuestionCadrage[] {
   return QUESTIONS_CADRAGE.filter((q) => questionPosee(q, cadrage));
 }
@@ -630,6 +641,9 @@ export function cadrageComplet(cadrageNu: Cadrage): boolean {
   return questionsPosees(cadrage).every((q) => {
     const v = cadrage[q.cle];
     if (v == null || v === '') return false;
+    // Une option qui n'est plus proposée (« mixte » restée après un passage des travaux aux fournitures) n'est pas une réponse.
+    const option = q.options.find((o) => o.code === String(v));
+    if (option?.si && String(cadrage[option.si.cle] ?? '') !== option.si.valeur) return false;
     if (q.complement && String(v) === q.complement.si) {
       const c = cadrage[q.complement.cle];
       return c != null && c !== '' && Number(c) > 0;

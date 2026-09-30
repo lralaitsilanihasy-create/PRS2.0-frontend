@@ -14,12 +14,14 @@ import { QUESTIONS_CADRAGE } from './fiche-marche-modele';
  * Les couples (catégorie, forme) dont le serveur sait lire le DAO : ceux dont le document type est décrit (lot D).
  * Miroir de `ModelesDao.COUVERTURES` ; un couple absent d'ici qui deviendrait lisible le dirait par le 422
  * `MODELE_ABSENT`. Fournitures : contrat-cadre (D1), quantité fixe et à commande (D2, 29/09). Prestations
- * intellectuelles : quantité fixe et à commande (D3, 29/09 — il n'existe pas de contrat-cadre de PI). Les travaux
- * attendent leurs documents types.
+ * intellectuelles : quantité fixe et à commande (D3, 29/09 — il n'existe pas de contrat-cadre de PI). Travaux : les trois
+ * formes (D4, 30/09 — le contrat-cadre de travaux sur le document type du contrat-cadre).
  */
 export const IMPORTABLES: Readonly<Partial<Record<CategorieDao, readonly TypeMarche[]>>> = {
   FOURNITURES_SERVICES: ['CONTRAT_CADRE', 'QUANTITE_FIXE', 'A_COMMANDE'],
   PRESTATIONS_INTELLECTUELLES: ['QUANTITE_FIXE', 'A_COMMANDE'],
+  // ⚠️ 30/09 (lot D4, T-3) — travaux : marché ordinaire (DPAO-T, AE-T, CCAP-T) et contrat-cadre (DPAC-CC, AE-CC).
+  TRAVAUX: ['QUANTITE_FIXE', 'A_COMMANDE', 'CONTRAT_CADRE'],
 };
 
 /** Le DAO de cette fiche peut-il être importé ? Sans catégorie, le serveur lit comme des fournitures ; l'écran aussi. */

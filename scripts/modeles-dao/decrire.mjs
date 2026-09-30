@@ -2344,7 +2344,7 @@ function dpaoTravaux() {
     xj(r63g, '<préciser les conditions de qualification minimales que le mandataire', 1, '{{B03-GT-05}}'));
   retirer(r63g, 'instruction à l’acheteur', "<dans le cas où les groupements d'entreprises conjointes", '<la solidarité des membres', '<Pour les marchés qui font intervenir');
   const r64 = rg('6.4. Délai de validité');
-  const validite = cel(x(r64, 'Le délai de validité', ['<nombre>', '{{B04-DV-01}}', 'jeton']));
+  const validite = cel(x(r64, 'Le délai de validité', ['<nombre>', '{{B04-VO-01}}', 'jeton']));
   const r65 = rg('6.5.3. Caractère ferme');
   const prix = cel(SIc('FERME', x(r65, 'Les prix sont fermes')), SIc('REVISABLE', x(r65, 'Les prix sont révisables')));
   const r66 = rg('6.6. Monnaie');

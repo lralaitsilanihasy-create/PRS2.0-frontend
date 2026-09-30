@@ -144,6 +144,13 @@ leur code. `ModelesDao.COUVERTURES` : `DPAC-CC` et `AE-CC` pour `CONTRAT_CADRE` 
 > la place du délai de validité.** Proposition : DPAO-T cite `{{B04-VO-01}}` à la place de `{{B04-DV-01}}` (le front
 > recopie). Le backend élargit alors `B04-VO-01` aux travaux et retire `B04-DV-01` et `B04-VT-01`, soit une ligne de
 > script. À défaut, AE-CC peut citer `{{B04-VT-01}}` sous condition `CCAG-TRAVAUX`.
+>
+> ⚠️ **30/09 — proposition retenue, côté front fait.** DPAO-T cite désormais `{{B04-VO-01}}` (décalque
+> `docs/modeles-dao/DPAO-T.docx` régénéré, vérifié 247/247 ; `scripts/modeles-dao/modeles/DPAO-T.{txt,json}`).
+> **Reste au backend :** recopier le modèle DPAO-T, élargir `B04-VO-01` aux travaux (les trois formes) et retirer
+> `B04-DV-01` et `B04-VT-01`. Au passage, le front a aligné sa lecture sur `DEBUT_TERME` : « et » / « ou » ne
+> séparent deux termes d'une condition que suivis d'une clé et d'un opérateur (« Au fur et à mesure des besoins »
+> reste une valeur).
 
 ## B4 — Production et import
 

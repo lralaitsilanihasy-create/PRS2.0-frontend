@@ -53,6 +53,7 @@ import {
   nbLotsDuPlan,
   optionsChoisies,
   progression,
+  optionsPosees,
   questionPosee,
   questionsPosees,
   reprises,
@@ -288,6 +289,8 @@ export class FicheMarcheEcran {
     categorie: this.categorieEffective(),
   }));
   readonly questions = computed(() => questionsPosees(this.cadrageEffectif()));
+  /** Les options d'une question pour ce cadrage (« mixte » : travaux seulement). */
+  optionsDe(q: QuestionCadrage): QuestionCadrage['options'] { return optionsPosees(q, this.cadrageEffectif()); }
   readonly cadrageOk = computed(() => cadrageComplet(this.cadrageEffectif()));
   readonly resume = computed(() => resumeCadrage(this.cadrageEffectif()));
   /** Le mode de remise des offres, lu sur le cadrage effectif (réponse par défaut comprise). */

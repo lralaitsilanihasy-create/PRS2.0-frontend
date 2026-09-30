@@ -17,6 +17,8 @@ import {
   largeurChamp,
   lotsDuChamp,
   optionsChoisies,
+  optionsPosees,
+  QUESTIONS_CADRAGE,
   basculerOption,
   reprisesAffichees,
   champsDeRubrique,
@@ -54,6 +56,20 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(evaluerCondition('provenance = NATIONAL ou typePrix = UNITAIRES', c)).toBe(true);
     expect(evaluerCondition('avance = OUI', c)).toBe(false); // clé absente
     expect(evaluerCondition('n’importe quoi', c)).toBe(false); // terme illisible = faux, jamais une exception
+  });
+
+  it('lot D4 (30/09) : le prix « mixte » n’est proposé qu’aux travaux, et une réponse « mixte » restée hors travaux ne complète pas le cadrage', () => {
+    const typePrix = QUESTIONS_CADRAGE.find((q) => q.cle === 'typePrix')!;
+    expect(optionsPosees(typePrix, { categorie: 'TRAVAUX' }).map((o) => o.code)).toContain('MIXTE');
+    expect(optionsPosees(typePrix, { categorie: 'FOURNITURES_SERVICES' }).map((o) => o.code)).not.toContain('MIXTE');
+    expect(optionsPosees(typePrix, {}).map((o) => o.code)).not.toContain('MIXTE');
+    const complet = QUESTIONS_CADRAGE.reduce<Record<string, string>>(
+      (c, q) => ({ ...c, [q.cle]: q.options[0]?.code ?? '1', ...(q.complement ? { [q.complement.cle]: '2' } : {}) }), {});
+    const travaux = { ...complet, categorie: 'TRAVAUX', typePrix: 'MIXTE' };
+    const fournitures = { ...travaux, categorie: 'FOURNITURES_SERVICES' };
+    expect(cadrageComplet(fournitures)).toBe(false);
+    expect(cadrageComplet(travaux)).toBe(true);
+    expect(cadrageComplet({ ...fournitures, typePrix: 'UNITAIRES' })).toBe(true);
   });
 
   it('questions posées : le TYPE n’en est plus une (lot 1c) ; « forme du groupement » si groupement = OUI, « attributaires » en contrat-cadre', () => {

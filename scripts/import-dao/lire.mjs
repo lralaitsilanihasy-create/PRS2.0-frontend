@@ -166,9 +166,13 @@ function valeurSaisie(brut, type, suffixe) {
 }
 
 /** Les réponses qu'implique une section retenue : chaque terme `cle = valeur` d'une conjonction (pas de `ou`, pas de `!=`). */
+// ⚠️ 30/09 — comme le DEBUT_TERME du serveur : « et » / « ou » ne séparent deux termes que s'ils sont suivis d'une clé et
+// d'un opérateur ; sinon ils appartiennent à la valeur (« Au fur et à mesure des besoins »).
+const ET = /\s+et\s+(?=[\w-]+\s*(?:!?=|contient\b|renseigne\b|vide\b))/;
+const OU = /\s+ou\s+(?=[\w-]+\s*(?:!?=|contient\b|renseigne\b|vide\b))/;
 function implications(expression) {
-  if (!expression || / ou /.test(expression)) return [];
-  return expression.split(/\s+et\s+/).map((t) => /^([\w-]+)\s*=\s*(.+)$/.exec(t.trim())).filter(Boolean).map((x) => [x[1], x[2].trim()]);
+  if (!expression || OU.test(expression)) return [];
+  return expression.split(ET).map((t) => /^([\w-]+)\s*=\s*(.+)$/.exec(t.trim())).filter(Boolean).map((x) => [x[1], x[2].trim()]);
 }
 
 // ── La lecture ────────────────────────────────────────────────────────────────────────────────
