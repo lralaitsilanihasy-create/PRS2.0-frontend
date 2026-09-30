@@ -255,6 +255,22 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(blocsASaisir(avecB07, 'QUANTITE_FIXE').map((b) => b.code)).not.toContain('B07');
   });
 
+  it('30/09 — un bloc servi sans aucun champ actif n’est pas une étape, sauf s’il déclare son rendu (le besoin)', () => {
+    const vide = { code: 'B11', libelle: 'Formulaires', rang: 11, rubriques: [] };
+    const besoin = { code: 'B12', libelle: 'Besoin', rang: 12, rubriques: [], rendu: 'BESOIN' as const };
+    // Un référentiel SERVI (au moins un champ) : l'esquisse, elle, garde tous ses blocs (test précédent).
+    const ref: ReferentielFiche = { ...REFERENTIEL_ESQUISSE, blocs: [...REFERENTIEL_ESQUISSE.blocs, vide, besoin], champs: [champ({ code: 'B02-OB-01', bloc: 'B02', rubrique: 'OB' })] };
+    const codes = blocsASaisir(ref, 'QUANTITE_FIXE').map((b) => b.code);
+    expect(codes).not.toContain('B11');
+    expect(codes).toContain('B12');
+    expect(codes).toContain('B02');
+    expect(codes).not.toContain('B03');   // servi sans champ : pas d'étape
+    // Un champ retiré (inactif) ne suffit pas à garder l'étape ; un champ actif, si.
+    const retire = champ({ code: 'B11-FR-01', bloc: 'B11', rubrique: 'FR', actif: false });
+    expect(blocsASaisir({ ...ref, champs: [...ref.champs, retire] }, 'QUANTITE_FIXE').map((b) => b.code)).not.toContain('B11');
+    expect(blocsASaisir({ ...ref, champs: [...ref.champs, { ...retire, actif: true }] }, 'QUANTITE_FIXE').map((b) => b.code)).toContain('B11');
+  });
+
   it('un champ PIECE ne compte ni comme attendu ni comme saisi : il se joint au dossier (lot 5)', () => {
     const ref: ReferentielFiche = {
       blocs: [],

@@ -550,15 +550,14 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(texte(racine().querySelector('[id="c-B04-CD-01"]'))).toBe('—');
   });
 
-  it('rendu déclaré : le bloc du BESOIN rend la grille des articles, un bloc sans rendu ni champ le dit', () => {
+  it('rendu déclaré : le bloc du BESOIN rend la grille des articles ; un bloc sans rendu ni champ n’est pas une étape', () => {
     monter('PRMP', 42);
     ouvrir(REF_BESOIN, fiche({ nbLots: 2, saisieParLot: true, valeurs: {} }));
 
-    // ⚠️ Un bloc sans champ n'est pas une page blanche : l'écran nomme ce qui n'est pas encore là.
-    fixture.componentInstance.allerAuBloc('B10');
-    rendre();
-    expect(texte(racine().querySelector('.fm__vide'))).toBe('Aucune information à saisir dans ce bloc.');
-    expect(racine().querySelector('app-fiche-besoin')).toBeNull();
+    // ⚠️ 30/09 (pilote, D4) — un bloc servi sans aucun champ et sans rendu n'est plus une étape (il n'est plus une page
+    // blanche : il n'est pas proposé du tout). Le bloc du besoin, sans champ lui aussi, reste : il déclare son rendu.
+    expect(fixture.componentInstance.blocs().map((b) => b.code)).not.toContain('B10');
+    expect(fixture.componentInstance.blocs().map((b) => b.code)).toContain('B12');
 
     // Le bloc DÉCLARE son rendu (`rendu: 'BESOIN'`) : l'écran ne le déduit pas du code « B12 ».
     fixture.componentInstance.allerAuBloc('B12');

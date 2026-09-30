@@ -423,6 +423,12 @@ d'origine. Cela touche la parité : rien n'est changé d'un côté seul.
 > vérifié passe à **573/573** (570 + SI, jeton, FINSI). À recopier : `modeles/CCAP-T.txt` et `.json`, et
 > `docs/modeles-dao/CCAP-T.docx`. `B04-CD-03` devient ainsi imprimé : son document maître reste le DPAO, avec une
 > reprise dans le CCAP.
+>
+> **Bloc B11 servi vide — décision du pilote du 30/09 : l'écran le masque, rien à faire côté serveur.** Un bloc servi
+> sans aucun champ actif et sans `rendu` déclaré n'est plus une étape de la saisie, pour toutes les catégories. Le
+> besoin (B12, `rendu: 'BESOIN'`) reste. La règle ne dépend pas du cadrage. Constaté à l'écran : B11 disparaît des
+> fiches 38 et 39 (travaux), et aussi des fiches 29 et 35 (fournitures), où ses champs B11-FR avaient été retirés.
+> Vous pouvez donc continuer à servir le bloc tel quel ; s'il reçoit un jour un champ, il réapparaît de lui-même.
 
 ## Pour le juriste (pas pour le backend)
 

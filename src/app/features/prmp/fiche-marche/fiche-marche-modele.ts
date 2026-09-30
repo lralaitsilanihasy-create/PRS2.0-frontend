@@ -724,10 +724,18 @@ export function rubriqueOuverte(champs: readonly ChampFiche[], bloc: string, rub
   return tous.some((c) => evaluerCondition(c.condition, cadrage));
 }
 
-/** Blocs à saisir (tout sauf B01, repris du PPM, et B07 hors contrat-cadre), triés. */
+/**
+ * Blocs à saisir (tout sauf B01, repris du PPM, et B07 hors contrat-cadre), triés.
+ * ⚠️ 30/09 (pilote, D4) — un bloc servi SANS aucun champ actif et sans rendu déclaré (le besoin est une grille) n'est pas
+ * une étape : B11 des travaux, vidé par les retraits du 30/09, apparaissait comme une étape blanche. Règle générale,
+ * pour toutes les catégories ; elle ne dépend pas du cadrage, pour que les étapes ne bougent pas en cours de saisie.
+ */
 export function blocsASaisir(referentiel: ReferentielFiche, typeMarche: TypeMarche | null): BlocFiche[] {
+  // L'esquisse (aucun champ servi) garde tous ses blocs : c'est sa structure qu'elle montre.
+  const servi = referentiel.champs.length > 0;
+  const garni = (b: BlocFiche) => !servi || !!b.rendu || referentiel.champs.some((c) => c.bloc === b.code && c.actif !== false);
   return referentiel.blocs
-    .filter((b) => b.code !== 'B01' && (b.code !== 'B07' || typeMarche === 'CONTRAT_CADRE'))
+    .filter((b) => b.code !== 'B01' && (b.code !== 'B07' || typeMarche === 'CONTRAT_CADRE') && garni(b))
     .sort((a, b) => a.rang - b.rang);
 }
 
