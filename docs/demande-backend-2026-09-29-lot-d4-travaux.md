@@ -94,7 +94,8 @@ feuille « Contrat-cadre ». Aucune extension du moteur n'est nécessaire.
 >    arbitré. Il faudrait passer les deux champs en `parLot = oui` et remplacer les jetons par `{{CODE.parLot}}` dans
 >    DPAO-T (mécanique du lot D2). Le front doit recopier le modèle, puisque la fidélité se mesure de son côté.
 > 6. **Non touché**, en attente du pilote.
- — Contrat-cadre de travaux : harmoniser les codes (T-2, décision Q1)
+
+## B3 — Contrat-cadre de travaux : harmoniser les codes (T-2, décision Q1)
 
 Le document type du contrat-cadre (« Fournitures & Prestations de services ») sert aussi les travaux : ses sept choix
 « CCAG Fournitures / CCAG Travaux <choisir> » sont désormais choisis par la **catégorie** dans `DPAC-CC` et `AE-CC`
@@ -151,6 +152,21 @@ leur code. `ModelesDao.COUVERTURES` : `DPAC-CC` et `AE-CC` pour `CONTRAT_CADRE` 
 > `B04-DV-01` et `B04-VT-01`. Au passage, le front a aligné sa lecture sur `DEBUT_TERME` : « et » / « ou » ne
 > séparent deux termes d'une condition que suivis d'une clé et d'un opérateur (« Au fur et à mesure des besoins »
 > reste une valeur).
+>
+> ⚠️ **Livraison backend du 2026-09-30 (suite §B3).** Fait.
+> - DPAO-T est recopié tel quel (247/247 sur le rendu brut du serveur ; les onze modèles restent fidèles).
+> - `B04-VO-01` est servi aux fournitures et aux travaux, dans les trois formes. `B04-DV-01` et `B04-VT-01` sont
+>   retirés, et leurs valeurs conservées (aucune sur DBPRS20).
+> - La **rubrique** `B04-VO` est élargie aux travaux par la migration **V55**. C'est la leçon de V54 : le référentiel
+>   filtre les rubriques par catégorie. Les rubriques `B04-DV` et `B04-VT`, désormais sans champ actif, ne sont plus
+>   servies.
+> - Script DBPRS20 : `docs/referentiel/2026-09-30-validite-offres-unique.sql`, à passer après le redémarrage (il
+>   s'arrête si V55 manque).
+>
+> Conséquences :
+> - l'AE d'un contrat-cadre de travaux imprime le délai saisi, et non plus « … » ;
+> - `B04-VO-01` porte le rôle `OFFRE` de `VALIDITE_GARANTIE_SUP_OFFRE`. Son partenaire `GARANTIE` (`B05-GS-04`) n'est
+>   servi qu'aux fournitures : pour les travaux, la règle reste donc sans objet, comme avant.
 
 ## B4 — Production et import
 
@@ -187,6 +203,22 @@ leur code. `ModelesDao.COUVERTURES` : `DPAC-CC` et `AE-CC` pour `CONTRAT_CADRE` 
 > tous modèles : 3 561 valeurs justes au lieu de 3 417 (+144) pour 112 fausses au lieu de 107 (+5), **aucune en
 > confiance haute** (Q10 tenu). Le reste du CCAP-T, ce sont les cinq sujétions saisies côte à côte (B09-CH-01…05) : l'ambiguïté est réelle,
 > la lecture ne choisit pas.
+>
+> ⚠️ **Livraison backend du 2026-09-30 (suite §B4).** Les deux règles sont portées dans `LectureDao` telles quelles :
+> - **R-a** : `FENETRE_REPETE = 3` pour un paragraphe dont le texte fixe se répète dans le modèle, avec ou sans jeton ;
+> - **R-b** : une section absente est écartée d'un intervalle à plusieurs jetons seuls, et le jeton restant est lu en
+>   confiance basse.
+>
+> Tests `LectureDaoTest.regleTexteRepete` et `regleSectionAbsente`. Tous deux échouent quand la règle est neutralisée.
+> `DEBUT_TERME` était déjà la règle du serveur : rien à porter.
+>
+> **Parité refaite sur les sept entrées** (dossier 27 en Word et en PDF, dossier 2463 en PDF, et les rendus bruts des
+> fournitures, des PI, des travaux et du contrat-cadre) :
+> - extraction identique ;
+> - propositions, ambiguïtés, conflits et non-trouvés **identiques**. L'écart « Au fur et à mesure » est résorbé.
+>
+> Il ne reste que l'écart de sortie connu (ADR-0012) : une clé de cadrage lue avec deux valeurs est rendue en conflit
+> seul par le serveur, alors que le front garde aussi la première valeur dans `cadrage`.
 
 ## B5 — Tests attendus
 
