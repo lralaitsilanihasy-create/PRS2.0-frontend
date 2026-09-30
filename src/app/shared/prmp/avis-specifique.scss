@@ -33,3 +33,4 @@
 .avs__champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.6rem 0.9rem; }
 .avs__large { grid-column: 1 / -1; }
 .avs__vides { margin: 0.3rem 0 0; padding-left: 1.1rem; }
+.avs__facultatif { font-weight: 400; color: var(--n-500); }

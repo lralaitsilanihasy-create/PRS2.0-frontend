@@ -22,12 +22,33 @@
   "ELECTRONIQUE": "modeRemise = ELECTRONIQUE",
   "PAPIER": "modeRemise != ELECTRONIQUE",
   "GARANTIE": "garantieSoumission = OUI",
-  "CONSULTATION-EMAIL": "B04-DS-11 renseigne"
+  "CONSULTATION-EMAIL": "B04-DS-11 renseigne",
+  "SUPPORTS": "supportsPublication renseigne",
+  "SANS-SUPPORTS": "supportsPublication vide",
+  "DAO-LOTS": "alloti = OUI",
+  "DAO-UNIQUE": "alloti = NON",
+  "SANS-GARANTIE": "garantieSoumission != OUI"
  },
  "blocs": [
   {
    "type": "centre",
+   "texte": "REPOBLIKAN’I MADAGASIKARA"
+  },
+  {
+   "type": "centre",
+   "texte": "Fitiavana - Tanindrazana - Fandrosoana"
+  },
+  {
+   "type": "centre",
    "texte": "{{B01-AC-01}}"
+  },
+  {
+   "type": "centre",
+   "texte": "LA PERSONNE RESPONSABLE DES MARCHES PUBLICS"
+  },
+  {
+   "type": "centre",
+   "texte": "UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS"
   },
   {
    "type": "centre",
@@ -39,7 +60,7 @@
   },
   {
    "type": "centre",
-   "texte": "{{B02-OB-03}} — {{B02-OB-01}}"
+   "texte": "N° {{B02-OB-03}}"
   },
   {
    "type": "para",
@@ -51,19 +72,35 @@
   },
   {
    "type": "centre",
-   "texte": "{{B02-OE-01}} — {{B02-OB-01}}"
+   "texte": "N° {{B02-OE-01}}"
   },
   {
    "type": "para",
    "texte": "{{FINSI:CC}}"
   },
   {
-   "type": "centre",
-   "texte": "{{AVIS.date-publication}}"
+   "type": "para",
+   "texte": "{{SI:SUPPORTS}}"
   },
   {
    "type": "para",
-   "texte": "Cet Avis spécifique d’Appel d’Offres Ouvert fait suite à l’Avis Général de Passation des Marchés publié dans le Journal des Marchés Publics n°{{AVIS.jmp-numero}} en date du {{AVIS.jmp-date}} et dans {{AVIS.supports}}."
+   "texte": "{{NUM}} Cet Avis spécifique d’Appel d’Offres Ouvert fait suite à l’Avis Général de Passation des Marchés publié dans le Journal des Marchés Publics n°{{AVIS.jmp-numero}} en date du {{AVIS.jmp-date}} et dans {{AVIS.supports}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SUPPORTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SANS-SUPPORTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{NUM}} Cet Avis spécifique d’Appel d’Offres Ouvert fait suite à l’Avis Général de Passation des Marchés publié dans le Journal des Marchés Publics n°{{AVIS.jmp-numero}} en date du {{AVIS.jmp-date}}."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-SUPPORTS}}"
   },
   {
    "type": "para",
@@ -71,7 +108,7 @@
   },
   {
    "type": "para",
-   "texte": "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres sous plis fermés pour exécuter les travaux suivants : {{B02-OB-01}}. Les travaux sont répartis en {{B02-LV-01}} lots. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots."
+   "texte": "{{NUM}} Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux sont répartis en {{B02-LV-01}} lots. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots."
   },
   {
    "type": "para",
@@ -83,7 +120,7 @@
   },
   {
    "type": "para",
-   "texte": "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres sous plis fermés pour exécuter les travaux suivants : {{B02-OB-01}}. Les travaux constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable."
+   "texte": "{{NUM}} Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable."
   },
   {
    "type": "para",
@@ -95,7 +132,7 @@
   },
   {
    "type": "para",
-   "texte": "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres et des candidatures sous plis fermés pour exécuter les travaux suivants : {{B02-OB-01}}. Les travaux sont répartis en {{B02-LV-01}} lots. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots."
+   "texte": "{{NUM}} Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres et des candidatures sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux sont répartis en {{B02-LV-01}} lots. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots."
   },
   {
    "type": "para",
@@ -107,7 +144,7 @@
   },
   {
    "type": "para",
-   "texte": "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres et des candidatures sous plis fermés pour exécuter les travaux suivants : {{B02-OB-01}}. Les travaux constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable."
+   "texte": "{{NUM}} Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres et des candidatures sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable."
   },
   {
    "type": "para",
@@ -119,7 +156,7 @@
   },
   {
    "type": "para",
-   "texte": "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché à quantités fixes conclu à prix unitaire."
+   "texte": "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « à quantités fixes » conclu à prix unitaire."
   },
   {
    "type": "para",
@@ -131,7 +168,7 @@
   },
   {
    "type": "para",
-   "texte": "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché à quantités fixes conclu à prix forfaitaire."
+   "texte": "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « à quantités fixes » conclu à prix forfaitaire."
   },
   {
    "type": "para",
@@ -143,7 +180,7 @@
   },
   {
    "type": "para",
-   "texte": "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché à quantités fixes conclu à prix unitaire et à prix forfaitaire."
+   "texte": "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « à quantités fixes » conclu à prix unitaire et à prix forfaitaire."
   },
   {
    "type": "para",
@@ -155,7 +192,7 @@
   },
   {
    "type": "para",
-   "texte": "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché à commandes conclu à prix unitaire."
+   "texte": "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « à commandes » conclu à prix unitaire."
   },
   {
    "type": "para",
@@ -167,7 +204,7 @@
   },
   {
    "type": "para",
-   "texte": "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché à commandes conclu à prix forfaitaire."
+   "texte": "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « à commandes » conclu à prix forfaitaire."
   },
   {
    "type": "para",
@@ -179,7 +216,7 @@
   },
   {
    "type": "para",
-   "texte": "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché à commandes conclu à prix unitaire et à prix forfaitaire."
+   "texte": "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « à commandes » conclu à prix unitaire et à prix forfaitaire."
   },
   {
    "type": "para",
@@ -191,7 +228,7 @@
   },
   {
    "type": "para",
-   "texte": "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché contrat-cadre conclu à prix unitaire."
+   "texte": "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « contrat-cadre » conclu à prix unitaire."
   },
   {
    "type": "para",
@@ -203,7 +240,7 @@
   },
   {
    "type": "para",
-   "texte": "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché contrat-cadre conclu à prix forfaitaire."
+   "texte": "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « contrat-cadre » conclu à prix forfaitaire."
   },
   {
    "type": "para",
@@ -215,7 +252,7 @@
   },
   {
    "type": "para",
-   "texte": "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché contrat-cadre conclu à prix unitaire et à prix forfaitaire."
+   "texte": "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « contrat-cadre » conclu à prix unitaire et à prix forfaitaire."
   },
   {
    "type": "para",
@@ -223,19 +260,19 @@
   },
   {
    "type": "para",
-   "texte": "Le Dossier d’Appel d’Offres complet, rédigé en langue française, peut être consulté par tout candidat désirant prendre connaissance ou obtenir des informations à l’adresse ci-après :"
+   "texte": "{{NUM}} Le Dossier d’Appel d’Offres complet, rédigé en langue française, peut être consulté par tout candidat désirant prendre connaissance ou obtenir des informations à l’adresse ci-après :"
   },
   {
    "type": "para",
-   "texte": "{{B04-DS-07}}"
+   "texte": "- Nom du Responsable : {{B04-DS-07}}"
   },
   {
    "type": "para",
-   "texte": "{{B04-DS-08}}"
+   "texte": "- Fonction : {{B04-DS-08}}"
   },
   {
    "type": "para",
-   "texte": "{{B04-DS-09}}, {{B04-DS-10}}"
+   "texte": "- Adresse : {{B04-DS-09}}, {{B04-DS-10}}"
   },
   {
    "type": "para",
@@ -243,7 +280,7 @@
   },
   {
    "type": "para",
-   "texte": "{{B04-DS-11}}"
+   "texte": "- E-mail : {{B04-DS-11}}"
   },
   {
    "type": "para",
@@ -251,7 +288,27 @@
   },
   {
    "type": "para",
-   "texte": "Pour le (ou les) candidat(s) désirant soumissionner, le Dossier d’Appel d’Offres doit être retiré auprès de l’Autorité contractante moyennant le paiement d’un montant non remboursable de :"
+   "texte": "{{NUM}} Pour le (ou les) candidat(s) désirant soumissionner, le Dossier d’Appel d’Offres doit être retiré auprès de {{B01-AC-01}} moyennant le paiement d’un montant non remboursable de :"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DAO-LOTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B04-DS-05.lignesParLot}}"
+  },
+  {
+   "type": "para",
+   "texte": "ou son équivalent en monnaie librement convertible libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:DAO-LOTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:DAO-UNIQUE}}"
   },
   {
    "type": "para",
@@ -259,11 +316,15 @@
   },
   {
    "type": "para",
+   "texte": "{{FINSI:DAO-UNIQUE}}"
+  },
+  {
+   "type": "para",
    "texte": "{{SI:ORDINAIRE}}"
   },
   {
    "type": "para",
-   "texte": "Les plis devront parvenir à {{B01-AC-02}} au plus tard le {{B04-OV-02}} et seront ouverts immédiatement après l’heure limite de remise des offres en présence des candidats ou leurs représentants qui souhaitent y assister. Les offres hors délai ne seront pas recevables."
+   "texte": "{{NUM}} Les plis devront parvenir à {{B01-AC-02}} au plus tard le {{B04-OV-02.heureLocale}} et seront ouverts immédiatement après l’heure limite de remise des offres en présence des candidats ou leurs représentants qui souhaitent y assister. Les offres hors délai ne seront pas recevables."
   },
   {
    "type": "para",
@@ -275,7 +336,7 @@
   },
   {
    "type": "para",
-   "texte": "Les plis devront parvenir à {{B04-RQ-03}} au plus tard le {{B04-CP-02}} et seront ouverts immédiatement après l’heure limite de remise des offres en présence des candidats ou leurs représentants qui souhaitent y assister. Les offres hors délai ne seront pas recevables."
+   "texte": "{{NUM}} Les plis devront parvenir à {{B04-RQ-03}} au plus tard le {{B04-CP-02.heureLocale}} et seront ouverts immédiatement après l’heure limite de remise des offres en présence des candidats ou leurs représentants qui souhaitent y assister. Les offres hors délai ne seront pas recevables."
   },
   {
    "type": "para",
@@ -287,7 +348,7 @@
   },
   {
    "type": "para",
-   "texte": "La soumission des offres par voie électronique sera autorisée."
+   "texte": "{{NUM}} La soumission des offres par voie électronique sera autorisée."
   },
   {
    "type": "para",
@@ -299,7 +360,7 @@
   },
   {
    "type": "para",
-   "texte": "La soumission des offres par voie électronique ne sera pas autorisée."
+   "texte": "{{NUM}} La soumission des offres par voie électronique ne sera pas autorisée."
   },
   {
    "type": "para",
@@ -311,7 +372,7 @@
   },
   {
    "type": "para",
-   "texte": "Chaque offre doit être accompagnée d’une garantie de soumission d’un montant de {{B05-GQ-03.lettres}} ({{B05-GQ-03}}), ou son équivalent en monnaie librement convertible, elle doit être présentée sous l’une des formes suivantes : soit par caution personnelle et solidaire d’un organisme agréé par le Ministère chargée des Finances, soit par garantie bancaire, soit par chèque de banque."
+   "texte": "{{NUM}} Chaque offre doit être accompagnée d’une garantie de soumission d’un montant de {{B05-GQ-03.lettres}} ({{B05-GQ-03}}), ou son équivalent en monnaie librement convertible, elle doit être présentée sous l’une des formes suivantes : soit par caution personnelle et solidaire d’un organisme agréé par le Ministère chargée des Finances, soit par garantie bancaire, soit par chèque de banque."
   },
   {
    "type": "para",
@@ -319,15 +380,31 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:SANS-GARANTIE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{NUM}} La garantie de soumission n’est pas requise."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SANS-GARANTIE}}"
+  },
+  {
+   "type": "para",
    "texte": "{{SI:CC}}"
   },
   {
    "type": "para",
-   "texte": "Les titulaires du contrat-cadre issu du présent appel d’offres seront ultérieurement invités à participer à la passation des marchés subséquents."
+   "texte": "{{NUM}} Les titulaires du contrat-cadre issu du présent appel d’offres seront ultérieurement invités à participer à la passation des marchés subséquents."
   },
   {
    "type": "para",
    "texte": "{{FINSI:CC}}"
+  },
+  {
+   "type": "para",
+   "texte": "à {{B04-DS-10}}, le {{AVIS.date-publication}}"
   },
   {
    "type": "para",
@@ -349,19 +426,13 @@
    "ligne": 27,
    "genre": "jeton",
    "source": "[insérer Numéro et Titre de l’AAO]",
-   "par": "{{B02-OB-03}} — {{B02-OB-01}}"
+   "par": "N° {{B02-OB-03}}"
   },
   {
    "ligne": 27,
    "genre": "jeton",
    "source": "[insérer Numéro et Titre de l’AAO]",
-   "par": "{{B02-OE-01}} — {{B02-OB-01}}"
-  },
-  {
-   "ligne": 28,
-   "genre": "jeton",
-   "source": "[insérer Date de publication]",
-   "par": "{{AVIS.date-publication}}"
+   "par": "N° {{B02-OE-01}}"
   },
   {
    "ligne": 30,
@@ -382,6 +453,24 @@
    "par": "{{AVIS.supports}}"
   },
   {
+   "ligne": 30,
+   "genre": "jeton",
+   "source": "[insérer le numéro du JMP]",
+   "par": "{{AVIS.jmp-numero}}"
+  },
+  {
+   "ligne": 30,
+   "genre": "jeton",
+   "source": "[insérer la date publication du JMP]",
+   "par": "{{AVIS.jmp-date}}"
+  },
+  {
+   "ligne": 30,
+   "genre": "retire",
+   "source": "et dans [préciser les supports utilisés et la date de leur publication]",
+   "par": ""
+  },
+  {
    "ligne": 31,
    "genre": "jeton",
    "source": "[insérer le nom de l’Acheteur]",
@@ -397,7 +486,7 @@
    "ligne": 31,
    "genre": "jeton",
    "source": "[insérer une brève description des Fournitures et des services]",
-   "par": "{{B02-OB-01}}"
+   "par": "« {{B02-OB-01}} »"
   },
   {
    "ligne": 31,
@@ -427,7 +516,7 @@
    "ligne": 31,
    "genre": "jeton",
    "source": "[insérer une brève description des Fournitures et des services]",
-   "par": "{{B02-OB-01}}"
+   "par": "« {{B02-OB-01}} »"
   },
   {
    "ligne": 31,
@@ -451,7 +540,7 @@
    "ligne": 31,
    "genre": "jeton",
    "source": "[insérer une brève description des Fournitures et des services]",
-   "par": "{{B02-OB-01}}"
+   "par": "« {{B02-OB-01}} »"
   },
   {
    "ligne": 31,
@@ -481,7 +570,7 @@
    "ligne": 31,
    "genre": "jeton",
    "source": "[insérer une brève description des Fournitures et des services]",
-   "par": "{{B02-OB-01}}"
+   "par": "« {{B02-OB-01}} »"
   },
   {
    "ligne": 31,
@@ -493,7 +582,7 @@
    "ligne": 32,
    "genre": "choix",
    "source": "[préciser « à quantités fixes », « à commandes » ou « contrat-cadre »]",
-   "par": "à quantités fixes"
+   "par": "« à quantités fixes »"
   },
   {
    "ligne": 32,
@@ -505,7 +594,7 @@
    "ligne": 32,
    "genre": "choix",
    "source": "[préciser « à quantités fixes », « à commandes » ou « contrat-cadre »]",
-   "par": "à quantités fixes"
+   "par": "« à quantités fixes »"
   },
   {
    "ligne": 32,
@@ -517,7 +606,7 @@
    "ligne": 32,
    "genre": "choix",
    "source": "[préciser « à quantités fixes », « à commandes » ou « contrat-cadre »]",
-   "par": "à quantités fixes"
+   "par": "« à quantités fixes »"
   },
   {
    "ligne": 32,
@@ -529,7 +618,7 @@
    "ligne": 32,
    "genre": "choix",
    "source": "[préciser « à quantités fixes », « à commandes » ou « contrat-cadre »]",
-   "par": "à commandes"
+   "par": "« à commandes »"
   },
   {
    "ligne": 32,
@@ -541,7 +630,7 @@
    "ligne": 32,
    "genre": "choix",
    "source": "[préciser « à quantités fixes », « à commandes » ou « contrat-cadre »]",
-   "par": "à commandes"
+   "par": "« à commandes »"
   },
   {
    "ligne": 32,
@@ -553,7 +642,7 @@
    "ligne": 32,
    "genre": "choix",
    "source": "[préciser « à quantités fixes », « à commandes » ou « contrat-cadre »]",
-   "par": "à commandes"
+   "par": "« à commandes »"
   },
   {
    "ligne": 32,
@@ -565,7 +654,7 @@
    "ligne": 32,
    "genre": "choix",
    "source": "[préciser « à quantités fixes », « à commandes » ou « contrat-cadre »]",
-   "par": "contrat-cadre"
+   "par": "« contrat-cadre »"
   },
   {
    "ligne": 32,
@@ -577,7 +666,7 @@
    "ligne": 32,
    "genre": "choix",
    "source": "[préciser « à quantités fixes », « à commandes » ou « contrat-cadre »]",
-   "par": "contrat-cadre"
+   "par": "« contrat-cadre »"
   },
   {
    "ligne": 32,
@@ -589,7 +678,7 @@
    "ligne": 32,
    "genre": "choix",
    "source": "[préciser « à quantités fixes », « à commandes » ou « contrat-cadre »]",
-   "par": "contrat-cadre"
+   "par": "« contrat-cadre »"
   },
   {
    "ligne": 32,
@@ -601,25 +690,31 @@
    "ligne": 35,
    "genre": "jeton",
    "source": "Nom du Responsable",
-   "par": "{{B04-DS-07}}"
+   "par": "- Nom du Responsable : {{B04-DS-07}}"
   },
   {
    "ligne": 36,
    "genre": "jeton",
    "source": "Fonction",
-   "par": "{{B04-DS-08}}"
-  },
-  {
-   "ligne": 37,
-   "genre": "jeton",
-   "source": "Bureau, N° porte, étage",
-   "par": "{{B04-DS-09}}, {{B04-DS-10}}"
+   "par": "- Fonction : {{B04-DS-08}}"
   },
   {
    "ligne": 38,
    "genre": "jeton",
    "source": "E-mail ]",
-   "par": "{{B04-DS-11}}"
+   "par": "- E-mail : {{B04-DS-11}}"
+  },
+  {
+   "ligne": 39,
+   "genre": "jeton",
+   "source": "l’Autorité contractante",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": 40,
+   "genre": "retire",
+   "source": "- [insérer montant en lettres] Ariary (Ar [insérer montant en chiffres])",
+   "par": ""
   },
   {
    "ligne": 40,
@@ -643,7 +738,7 @@
    "ligne": 41,
    "genre": "jeton",
    "source": "[insérer date et heure]",
-   "par": "{{B04-OV-02}}"
+   "par": "{{B04-OV-02.heureLocale}}"
   },
   {
    "ligne": 41,
@@ -655,7 +750,7 @@
    "ligne": 41,
    "genre": "jeton",
    "source": "[insérer date et heure]",
-   "par": "{{B04-CP-02}}"
+   "par": "{{B04-CP-02.heureLocale}}"
   },
   {
    "ligne": 42,
@@ -691,16 +786,38 @@
    "ligne": 34,
    "texte": "[insérer Adresse exacte :",
    "raison": "instruction à l’acheteur : l’adresse est détaillée ligne par ligne ci-dessous"
+  },
+  {
+   "ligne": 28,
+   "texte": "[insérer Date de publication]",
+   "raison": "la date de publication s’imprime au bas de l’avis, avec le lieu (« à …, le … »), comme sur l’avis réel"
   }
  ],
  "ajouts": [
-  "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres sous plis fermés pour exécuter les travaux suivants : {{B02-OB-01}}. Les travaux sont répartis en {{B02-LV-01}} lots. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots.",
-  "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres sous plis fermés pour exécuter les travaux suivants : {{B02-OB-01}}. Les travaux constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable.",
-  "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres et des candidatures sous plis fermés pour exécuter les travaux suivants : {{B02-OB-01}}. Les travaux sont répartis en {{B02-LV-01}} lots. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots.",
-  "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres et des candidatures sous plis fermés pour exécuter les travaux suivants : {{B02-OB-01}}. Les travaux constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable.",
-  "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché à quantités fixes conclu à prix unitaire et à prix forfaitaire.",
-  "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché à commandes conclu à prix unitaire et à prix forfaitaire.",
-  "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché contrat-cadre conclu à prix unitaire et à prix forfaitaire.",
+  "{{NUM}} ",
+  "REPOBLIKAN’I MADAGASIKARA",
+  "Fitiavana - Tanindrazana - Fandrosoana",
+  "LA PERSONNE RESPONSABLE DES MARCHES PUBLICS",
+  "UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS",
+  "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux sont répartis en {{B02-LV-01}} lots. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots.",
+  "{{NUM}} Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux sont répartis en {{B02-LV-01}} lots. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots.",
+  "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable.",
+  "{{NUM}} Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable.",
+  "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres et des candidatures sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux sont répartis en {{B02-LV-01}} lots. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots.",
+  "{{NUM}} Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres et des candidatures sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux sont répartis en {{B02-LV-01}} lots. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots.",
+  "Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres et des candidatures sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable.",
+  "{{NUM}} Le {{B01-AC-01}} sollicite de la part des candidats intéressés des offres et des candidatures sous plis fermés pour exécuter les travaux suivants : « {{B02-OB-01}} ». Les travaux constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable.",
+  "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « à quantités fixes » conclu à prix unitaire et à prix forfaitaire.",
+  "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « à quantités fixes » conclu à prix unitaire et à prix forfaitaire.",
+  "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « à commandes » conclu à prix unitaire et à prix forfaitaire.",
+  "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « à commandes » conclu à prix unitaire et à prix forfaitaire.",
+  "La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « contrat-cadre » conclu à prix unitaire et à prix forfaitaire.",
+  "{{NUM}} La procédure de passation de marché applicable est l’Appel d’Offres Ouvert tel qu’il est défini dans la loi N°2016-055 du 25 Janvier 2017 portant Code des Marchés Publics en ses articles 30, 35 et 67 en vue de la passation de marché « contrat-cadre » conclu à prix unitaire et à prix forfaitaire.",
+  "- Adresse : {{B04-DS-09}}, {{B04-DS-10}}",
+  "{{B04-DS-05.lignesParLot}}",
+  "La garantie de soumission n’est pas requise.",
+  "{{NUM}} La garantie de soumission n’est pas requise.",
+  "à {{B04-DS-10}}, le {{AVIS.date-publication}}",
   "{{B01-AC-05}}"
  ]
 }

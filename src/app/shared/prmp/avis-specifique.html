@@ -54,7 +54,7 @@
             @if (erreurs().datePublication; as m) { <span class="form-error">{{ m }}</span> }
           </label>
           <label class="form-group">
-            <span class="form-label">N° du Journal des Marchés Publics de l’avis général</span>
+            <span class="form-label">N° du Journal des Marchés Publics de l’avis général <span class="avs__facultatif">(facultatif)</span></span>
             <input class="form-control" type="text" [value]="saisie().jmpNumero" (input)="poser('jmpNumero', $any($event.target).value)" />
             @if (erreurs().jmpNumero; as m) { <span class="form-error">{{ m }}</span> }
           </label>
@@ -64,9 +64,9 @@
             @if (erreurs().jmpDate; as m) { <span class="form-error">{{ m }}</span> }
           </label>
           <label class="form-group avs__large">
-            <span class="form-label">Autres supports de publication et leurs dates</span>
+            <span class="form-label">Autres supports de publication et leurs dates <span class="avs__facultatif">(facultatif)</span></span>
             <textarea class="form-control" rows="2" [value]="saisie().supports" (input)="poser('supports', $any($event.target).value)"></textarea>
-            <span class="form-hint">Par exemple : « le quotidien … du 06/10/2026 et le site de l’ARMP ».</span>
+            <span class="form-hint">Par exemple : « le quotidien … du 06/10/2026 et le site de l’ARMP ». Vide, l’avis ne cite que le Journal des Marchés Publics.</span>
             @if (erreurs().supports; as m) { <span class="form-error">{{ m }}</span> }
           </label>
         </div>

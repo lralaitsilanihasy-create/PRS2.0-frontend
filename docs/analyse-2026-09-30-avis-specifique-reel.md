@@ -74,3 +74,15 @@ Notre modèle a donc la bonne trame. Les écarts portent sur la **présentation*
   contractante » du document type ?
 - **Q7 — Régisseur** : celui de l'ARMP (document type), ou celui de la **Commission compétente** de la ligne (avis réel) ?
 - **Q8 — QR code de vérification** : **plus tard, sujet à part** (recommandé), ou maintenant ?
+
+> ⚠️ **Arbitrage du pilote du 30/09 : « oui » aux recommandations.**
+> - Q1 : en-tête sans l'emblème pour l'instant ; il sera ajouté quand le pilote fournira l'image.
+> - Q2 : oui.
+> - Q3 : lieu = `B04-DS-10`.
+> - Q4 : numérotation demandée au moteur (`{{NUM}}`) ; le gras n'est pas demandé.
+> - Q5 et Q7 : en attente (juriste, pilote) ; le texte du document type est gardé.
+> - Q6 : l'autorité est nommée.
+> - Q8 : plus tard.
+>
+> Modèles refaits côté front (`AVIS-F` 91/91, `AVIS-T` 97/97). Demande backend : §B7 de
+> `demande-backend-2026-09-30-avis-specifique.md`. Modale : le numéro du JMP et les supports sont facultatifs.

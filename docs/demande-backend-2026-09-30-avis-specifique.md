@@ -173,6 +173,59 @@ corrigé par la levée des réserves. Réponse 201 avec les `DocumentFiche` prod
 >     = quatre documents, du plus récent au plus ancien ; jamais joint ;
 >   - `ficheRevisee` : avis sur la v2 ; révision refusée après la levée.
 
+## B7 — Suite du 30/09 : le modèle aligné sur un avis réel (analyse `analyse-2026-09-30-avis-specifique-reel.md`)
+
+Le pilote a transmis un avis réel (Région Analamanga, contrat-cadre de travaux alloti) et validé les propositions de
+l'analyse. Les modèles `AVIS-F` et `AVIS-T` sont refaits côté front :
+- `scripts/modeles-dao/modeles/AVIS-F.{txt,json}` et `AVIS-T.{txt,json}` ;
+- décalques vérifiés dans les deux sens : `docs/modeles-dao/AVIS-F.docx` (**91/91**) et `AVIS-T.docx` (**97/97**).
+
+**B7.1 — Recopier les deux modèles.** Ce qui change :
+- **En-tête** : « REPOBLIKAN’I MADAGASIKARA », la devise, l'autorité, « LA PERSONNE RESPONSABLE DES MARCHES PUBLICS »
+  et « UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS ». L'emblème viendra plus tard, quand le pilote aura fourni
+  l'image.
+- **Numéro seul**, « N° … ».
+- **Lieu et date en bas** : « à {{B04-DS-10}}, le {{AVIS.date-publication}} ».
+- **Guillemets** autour de l'objet et de la forme.
+- **Adresse de consultation** en liste, avec ses libellés.
+- « retiré auprès de {{B01-AC-01}} ».
+- La phrase « La garantie de soumission n’est pas requise. » quand aucune garantie n'est exigée.
+
+**B7.2 — Numérotation des paragraphes (`{{NUM}}`).** Les neuf paragraphes principaux commencent par `{{NUM}} `. Le
+moteur les remplace par « 1. », « 2. »… **dans l'ordre des paragraphes imprimés** : une section retirée ne laisse pas
+de trou dans la numérotation. Le gras de l'avis réel (autorité, objet) n'est pas demandé.
+
+**B7.3 — Deux suffixes de jeton nouveaux.**
+
+| Suffixe | Où | Rendu |
+|---|---|---|
+| `.heureLocale` (DATE_HEURE) | `{{B04-CP-02.heureLocale}}`, `{{B04-OV-02.heureLocale}}` | « 12/10/2026 à 09 h 00 (heure locale) » |
+| `.lignesParLot` (MONTANT par lot) | `{{B04-DS-05.lignesParLot}}` | une ligne par lot, « - Lot 1 : cent mille ariary (Ar 100 000) », comme l'avis réel |
+
+**B7.4 — `B04-DS-05` saisi par lot.** Sur une ligne allotie, le montant du DAO se saisit **par lot** (`parLot`, clé
+`B04-DS-05#n`), comme le montant de la garantie. Le modèle imprime `.lignesParLot` sous `alloti = OUI`, et le montant
+unique (`.lettres` et `.chiffres`) sous `alloti = NON`. Le DPAC du contrat-cadre, qui cite aussi `B04-DS-05`, est à
+revoir de votre côté : dites dans votre encadré si le jeton unique y devient `.parLot`.
+
+**B7.5 — Numéro du JMP et supports facultatifs.**
+- Dans `POST …/avis-specifique`, seules `datePublication` et `jmpDate` restent exigées. `jmpNumero` vide s'imprime en
+  pointillés (R2).
+- Des `supports` vides retirent « et dans … ». Pour cela, le moteur pose la clé de condition **`supportsPublication`**
+  (la valeur saisie) dans le contexte des conditions de l'avis ; le modèle teste `supportsPublication renseigne` et
+  `supportsPublication vide`.
+- La modale du front ne les exige plus.
+
+**B7.6 — En attente (rien à faire pour l'instant).**
+- Articles du Code : « 30, 35 et 67 » (document type) ou « 35, 63 et 67 » (avis réel), question au juriste.
+- Régisseur de recettes : celui de l'ARMP ou celui de la Commission compétente, question au pilote.
+- QR code de vérification : sujet à part, plus tard.
+
+**B7.7 — Tests.**
+- Rendu ≡ modèle (91 et 97).
+- Numérotation continue avec et sans garantie, et hors contrat-cadre.
+- `.heureLocale` et `.lignesParLot`.
+- Impression sans `jmpNumero` ni `supports` : pas de « et dans ».
+
 ## Ce que le backend rend
 
 Commit(s) qui referment B1 à B6, le script du référentiel pour DBPRS20 (B5), les tests, et un encadré ⚠️ daté ici pour

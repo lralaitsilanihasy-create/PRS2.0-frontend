@@ -162,6 +162,25 @@ describe('Avis spécifique — l’encart et la modale d’impression', () => {
     http.expectOne('/api/fiches-marche/38/documents').flush([...AVIS_1]);
   });
 
+  it('§B7.5 — le numéro du JMP et les supports sont facultatifs : les deux dates suffisent pour imprimer', () => {
+    monter(dispo({ disponible: true, idAvis: 'FAV', statutPv: 'SIGNE' }));
+    bouton('Imprimer l’avis spécifique')!.click();
+    rendre();
+    http.expectOne('/api/fiches-marche/38').flush({ idDmc: 38, typeMarche: 'CONTRAT_CADRE', categorie: 'TRAVAUX', cadrage: {}, valeurs: {}, valeursPpm: {}, nbLots: 3 });
+    http.expectOne((r) => r.url === '/api/champs-fiche-marche').flush({ blocs: [], champs: [] });
+    rendre();
+    const c = fixture.componentInstance;
+    c.poser('datePublication', '2026-09-09');
+    expect(c.complete()).toBe(false);
+    c.poser('jmpDate', '2026-07-31');
+    expect(c.complete()).toBe(true);
+    rendre();
+    boutonModale('Imprimer l’avis').click();
+    const req = http.expectOne('/api/fiches-marche/38/avis-specifique');
+    expect(req.request.body).toEqual({ datePublication: '2026-09-09', jmpNumero: '', jmpDate: '2026-07-31', supports: '' });
+    req.flush([]);
+  });
+
   it('en lecture seule : la liste, sans bouton d’impression', () => {
     monter(dispo({ disponible: true, idAvis: 'FAV', statutPv: 'SIGNE' }), AVIS_1, true);
     expect(bouton('Imprimer l’avis spécifique')).toBeUndefined();

@@ -2947,6 +2947,15 @@ function avisSpecifique(categorie) {
 
   retirer(d, 'bandeau du document type (titre de partie et en-tête de page)', '=AVIS SPECIFIQUES', '=Contrat-cadre');
   retirer(d, 'instruction à l’acheteur : l’adresse est détaillée ligne par ligne ci-dessous', '[insérer Adresse exacte');
+  // ⚠️ 30/09 (avis réel de la Région Analamanga, analyse E3) — la date de publication va au bas, avec le lieu.
+  retirer(d, 'la date de publication s’imprime au bas de l’avis, avec le lieu (« à …, le … »), comme sur l’avis réel', '[insérer Date de publication]');
+
+  // ⚠️ 30/09 (analyse E4) — paragraphes numérotés 1, 2, 3… : `{{NUM}}` est remplacé par le moteur du serveur, dans
+  // l'ordre des paragraphes IMPRIMÉS (le § de la garantie ou celui des marchés subséquents peuvent manquer).
+  ajouts.push('{{NUM}} ');
+  const num = (t) => { const n = `{{NUM}} ${t}`; if (!PRODUITS.has(t)) ajouts.push(n); return n; };
+  /** Un texte hors source (en-tête, adresse, date) : déclaré en ajout. */
+  const ajout = (t) => { ajouts.push(t); return t; };
 
   const conditions = {
     CC: 'typeMarche = CONTRAT_CADRE',
@@ -2973,13 +2982,20 @@ function avisSpecifique(categorie) {
       'GARANTIE-UNIQUE': 'garantieSoumission = OUI et alloti = NON',
     }),
     'CONSULTATION-EMAIL': 'B04-DS-11 renseigne',
+    // ⚠️ 30/09 (analyse E5, E13, E16) — supports de publication facultatifs (clé posée par le serveur à l'impression),
+    // montant du DAO par lot, phrase « sans garantie ».
+    SUPPORTS: 'supportsPublication renseigne',
+    'SANS-SUPPORTS': 'supportsPublication vide',
+    'DAO-LOTS': 'alloti = OUI',
+    'DAO-UNIQUE': 'alloti = NON',
+    'SANS-GARANTIE': 'garantieSoumission != OUI',
   };
 
-  // Le numéro de l'appel d'offres : B02-OB-03 (marché ordinaire), B02-OE-01 (contrat-cadre, codes harmonisés du lot D4).
-  const numero = (code) => x('[insérer Numéro et Titre', ['[insérer Numéro et Titre de l’AAO]', `{{${code}}} — {{B02-OB-01}}`, 'jeton']);
-  // La phrase d'ouverture : offres (ou offres et candidatures en contrat-cadre) × lots.
+  // Le numéro de l'appel d'offres, seul (analyse E2) : B02-OB-03 (marché ordinaire), B02-OE-01 (contrat-cadre).
+  const numero = (code) => x('[insérer Numéro et Titre', ['[insérer Numéro et Titre de l’AAO]', `N° {{${code}}}`, 'jeton']);
+  // La phrase d'ouverture : offres (ou offres et candidatures en contrat-cadre) × lots. L'objet entre guillemets (E6).
   const sollicite = (cc, alloti) => {
-    const objet = ['[insérer une brève description des Fournitures et des services]', '{{B02-OB-01}}', 'jeton'];
+    const objet = ['[insérer une brève description des Fournitures et des services]', '« {{B02-OB-01}} »', 'jeton'];
     const offres = ['des offres [pour le cas d’un contrat-cadre, remplacer par <des offres et des candidatures>]', cc ? 'des offres et des candidatures' : 'des offres', 'choix'];
     const acheteur = ['[insérer le nom de l’Acheteur]', '{{B01-AC-01}}', 'jeton'];
     const lots = alloti
@@ -2990,7 +3006,7 @@ function avisSpecifique(categorie) {
     return adapte(x('Le [insérer le nom de l', acheteur, offres, objet, ...lots), ...TRAVAUX_OBJET, ...(alloti ? TRAVAUX_LOTS : TRAVAUX_LOT_UNIQUE));
   };
   // La procédure : forme × prix.
-  const FORME = { QF: 'à quantités fixes', AC: 'à commandes', CC: 'contrat-cadre' };
+  const FORME = { QF: '« à quantités fixes »', AC: '« à commandes »', CC: '« contrat-cadre »' };   // entre guillemets (E10)
   const PRIX = { UNITAIRES: 'à prix unitaire', FORFAITAIRE: 'à prix forfaitaire' };
   const procedure = (f, p) => {
     const t = x('La procédure de passation', ['[préciser « à quantités fixes », « à commandes » ou « contrat-cadre »]', FORME[f], 'choix'],
@@ -3003,35 +3019,53 @@ function avisSpecifique(categorie) {
     ['[insérer date et heure]', date, 'jeton']);
   const garantie = (montant) => x('Chaque offre doit être accompagnée', ['[insérer montant en monnaie nationale]', montant, 'jeton']);
 
+  // Le rappel de l'avis général : « et dans {supports} » seulement si des supports sont saisis (E5).
+  const rappel = (supports) => x('Cet Avis spécifique', ['[insérer le numéro du JMP]', '{{AVIS.jmp-numero}}', 'jeton'], ['[insérer la date publication du JMP]', '{{AVIS.jmp-date}}', 'jeton'],
+    supports ? ['[préciser les supports utilisés et la date de leur publication]', '{{AVIS.supports}}', 'jeton']
+      : [' et dans [préciser les supports utilisés et la date de leur publication]', '', 'retire']);
+  // Le retrait du DAO « auprès de » l'autorité nommée (E12, Q6).
+  const retrait = () => x('Pour le (ou les) candidat(s) désirant soumissionner', ['l’Autorité contractante', '{{B01-AC-01}}', 'jeton']);
+
   const blocs = [
+    // L'en-tête de l'avis réel (E1) : la République et sa devise, l'autorité, la PRMP et l'UGPM. (L'emblème : image à fournir.)
+    C(ajout('REPOBLIKAN’I MADAGASIKARA')),
+    C(ajout('Fitiavana - Tanindrazana - Fandrosoana')),
     C(x('[insérer : entête', ['[insérer : entête de l’Acheteur]', '{{B01-AC-01}}', 'jeton'])),
+    C(ajout('LA PERSONNE RESPONSABLE DES MARCHES PUBLICS')),
+    C(ajout('UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS')),
     C(x('Avis d’Appel d’Offres Ouvert')),
     ...SI('ORDINAIRE', C(numero('B02-OB-03'))),
     ...SI('CC', C(numero('B02-OE-01'))),
-    C(x('[insérer Date de publication]', ['[insérer Date de publication]', '{{AVIS.date-publication}}', 'jeton'])),
-    P(x('Cet Avis spécifique', ['[insérer le numéro du JMP]', '{{AVIS.jmp-numero}}', 'jeton'], ['[insérer la date publication du JMP]', '{{AVIS.jmp-date}}', 'jeton'],
-      ['[préciser les supports utilisés et la date de leur publication]', '{{AVIS.supports}}', 'jeton'])),
-    ...SI('ORDINAIRE-ALLOTI', P(sollicite(false, true))),
-    ...SI('ORDINAIRE-LOT-UNIQUE', P(sollicite(false, false))),
-    ...SI('CC-ALLOTI', P(sollicite(true, true))),
-    ...SI('CC-LOT-UNIQUE', P(sollicite(true, false))),
-    ...['QF', 'AC', 'CC'].flatMap((f) => prix.flatMap((p) => SI(`${f}-${p}`, P(procedure(f, p))))),
-    P(x('Le Dossier d’Appel d’Offres complet')),
-    // L'adresse de consultation, ligne par ligne comme le modèle (B04-DS-07 à -10, B04-DS-11 : demande du 30/09).
-    P(x('=Nom du Responsable', ['Nom du Responsable', '{{B04-DS-07}}', 'jeton'])),
-    P(x('=Fonction', ['Fonction', '{{B04-DS-08}}', 'jeton'])),
-    P(x('Bureau, N° porte', ['Bureau, N° porte, étage', '{{B04-DS-09}}, {{B04-DS-10}}', 'jeton'])),
-    ...SI('CONSULTATION-EMAIL', P(x('E-mail', ['E-mail ]', '{{B04-DS-11}}', 'jeton']))),
-    P(x('Pour le (ou les) candidat(s) désirant soumissionner')),
-    P(x('- [insérer montant en lettres]', ['[insérer montant en lettres] Ariary', '{{B04-DS-05.lettres}}', 'jeton'], ['[insérer montant en chiffres]', '{{B04-DS-05.chiffres}}', 'jeton'])),
-    ...SI('ORDINAIRE', P(T ? plis('B01-AC-02', '{{B04-OV-02}}') : plis('B04-LR-02', '{{B04-LR-03}}, {{B04-LR-04}}'))),
-    ...SI('CC', P(plis('B04-RQ-03', '{{B04-CP-02}}'))),
-    ...SI('ELECTRONIQUE', P(x('La soumission des offres par voie électronique', ['[insérer « sera » ou « ne sera pas »]', 'sera', 'choix']))),
-    ...SI('PAPIER', P(x('La soumission des offres par voie électronique', ['[insérer « sera » ou « ne sera pas »]', 'ne sera pas', 'choix']))),
+    ...SI('SUPPORTS', P(num(rappel(true)))),
+    ...SI('SANS-SUPPORTS', P(num(rappel(false)))),
+    ...SI('ORDINAIRE-ALLOTI', P(num(sollicite(false, true)))),
+    ...SI('ORDINAIRE-LOT-UNIQUE', P(num(sollicite(false, false)))),
+    ...SI('CC-ALLOTI', P(num(sollicite(true, true)))),
+    ...SI('CC-LOT-UNIQUE', P(num(sollicite(true, false)))),
+    ...['QF', 'AC', 'CC'].flatMap((f) => prix.flatMap((p) => SI(`${f}-${p}`, P(num(procedure(f, p)))))),
+    P(num(x('Le Dossier d’Appel d’Offres complet'))),
+    // L'adresse de consultation en liste, avec ses libellés (E11) ; « Adresse » réunit le bureau et la localité.
+    P(x('=Nom du Responsable', ['Nom du Responsable', '- Nom du Responsable : {{B04-DS-07}}', 'jeton'])),
+    P(x('=Fonction', ['Fonction', '- Fonction : {{B04-DS-08}}', 'jeton'])),
+    P((ligne(d, 'Bureau, N° porte'), ajout('- Adresse : {{B04-DS-09}}, {{B04-DS-10}}'))),
+    ...SI('CONSULTATION-EMAIL', P(x('E-mail', ['E-mail ]', '- E-mail : {{B04-DS-11}}', 'jeton']))),
+    P(num(retrait())),
+    // Le montant du DAO : une ligne par lot sur une ligne allotie (E13, `.lignesParLot` : « - Lot n : … (Ar …) »).
+    ...SI('DAO-LOTS', P(ajout('{{B04-DS-05.lignesParLot}}')),
+      P(x('- [insérer montant en lettres]', ['- [insérer montant en lettres] Ariary (Ar [insérer montant en chiffres]) ', '', 'retire']))),
+    ...SI('DAO-UNIQUE', P(x('- [insérer montant en lettres]', ['[insérer montant en lettres] Ariary', '{{B04-DS-05.lettres}}', 'jeton'], ['[insérer montant en chiffres]', '{{B04-DS-05.chiffres}}', 'jeton']))),
+    // La date limite « le JJ/MM/AAAA à HH h MM (heure locale) » (E15, `.heureLocale`).
+    ...SI('ORDINAIRE', P(num(T ? plis('B01-AC-02', '{{B04-OV-02.heureLocale}}') : plis('B04-LR-02', '{{B04-LR-03}}, {{B04-LR-04}}')))),
+    ...SI('CC', P(num(plis('B04-RQ-03', '{{B04-CP-02.heureLocale}}')))),
+    ...SI('ELECTRONIQUE', P(num(x('La soumission des offres par voie électronique', ['[insérer « sera » ou « ne sera pas »]', 'sera', 'choix'])))),
+    ...SI('PAPIER', P(num(x('La soumission des offres par voie électronique', ['[insérer « sera » ou « ne sera pas »]', 'ne sera pas', 'choix'])))),
     ...(T
-      ? SI('GARANTIE', P(garantie('{{B05-GQ-03.lettres}} ({{B05-GQ-03}})')))
-      : [...SI('GARANTIE-LOTS', P(garantie('{{B05-GS-03.parLot}}'))), ...SI('GARANTIE-UNIQUE', P(garantie('{{B05-GS-03.lettres}} ({{B05-GS-03}})')))]),
-    ...SI('CC', P(x('Les titulaires du contrat-cadre'))),
+      ? SI('GARANTIE', P(num(garantie('{{B05-GQ-03.lettres}} ({{B05-GQ-03}})'))))
+      : [...SI('GARANTIE-LOTS', P(num(garantie('{{B05-GS-03.parLot}}')))), ...SI('GARANTIE-UNIQUE', P(num(garantie('{{B05-GS-03.lettres}} ({{B05-GS-03}})'))))]),
+    ...SI('SANS-GARANTIE', P(num(ajout('La garantie de soumission n’est pas requise.')))),
+    ...SI('CC', P(num(x('Les titulaires du contrat-cadre')))),
+    // Le lieu et la date au bas (E3, Q3 : la localité de l'autorité), au-dessus de la signature.
+    P(ajout('à {{B04-DS-10}}, le {{AVIS.date-publication}}')),
     P(x('La Personne Responsable des Marchés Publics')),
     P('{{B01-AC-05}}'),
   ];

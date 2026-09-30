@@ -58,7 +58,8 @@ export class AvisSpecifique implements OnInit {
   readonly erreurs = signal<Partial<Record<CleSaisie, string>>>({});
   readonly refus = signal<string | null>(null);
   readonly vides = signal<ChampFiche[]>([]);
-  readonly complete = computed(() => Object.values(this.saisie()).every((v) => v.trim() !== ''));
+  /** ⚠️ 30/09 (§B7.5) — seules les deux dates sont exigées : le numéro du JMP et les supports peuvent rester vides, comme sur l'avis réel. */
+  readonly complete = computed(() => this.saisie().datePublication.trim() !== '' && this.saisie().jmpDate.trim() !== '');
   readonly occupe = signal(false);
 
   readonly jj = jjmmaaaa;
