@@ -62,6 +62,28 @@
 | AV-2 | Route et production côté serveur, avec tests | backend |
 | AV-3 | Bouton, modale, liste des avis produits (étape 7 et page du dossier) ; tests ; contre-recette à l'écran sur un dossier dont le PV est signé | front |
 
+> ⚠️ **Arbitrage du pilote du 30/09.**
+> - **Q1** : « imprimer si la levée corrige le DAO ». Lecture retenue, **à confirmer** : avec un avis **FAV**,
+>   l'impression est possible dès le PV signé ; avec un avis **FAVR**, seulement **après la levée des réserves**
+>   (dossier `OBSERVATIONS_LEVEES` ou au-delà), sur la version du DAO corrigée par la levée.
+> - **Q2** : oui, le modèle des fournitures est adapté aux travaux.
+> - **Q3** : question en retour (« pourquoi les exclure ? »). Voir la réponse sous Q3 ; décision en attente.
+> - **Q4** : oui, les informations de publication sont saisies dans la modale d'impression.
+> - **Q5** : oui, étape 7 de la fiche DAO et page du dossier.
+>
+> **Réponse à Q3.** Les prestations intellectuelles n'ont pas d'avis public : les candidats ont déjà été présélectionnés
+> par un avis à manifestation d'intérêt. Le dossier de consultation leur est adressé avec une **lettre d'invitation**,
+> dont le modèle officiel ouvre le volume 1 du dossier type PI (« 1.1. Lettre d'invitation »). Ses trous :
+> - la référence du marché, le lieu et la date ;
+> - **le nom et l'adresse du consultant** ;
+> - **la liste des candidats invités** (la liste restreinte, cinq en principe) ;
+> - le mode de sélection, parmi quatre rédactions au choix.
+>
+> L'application ne connaît pas la liste restreinte : il faudrait la saisir dans la modale, comme les informations de
+> publication. Rien n'empêche donc de traiter les PI, mais avec ce document-là, pas un avis. **Proposition** : les
+> inclure, dans un lot AV-4 qui suit l'avis. La lettre sera produite une fois par candidat invité, sur le même
+> déclencheur (PV signé favorable).
+
 ## 5. Questions au pilote (recommandation en premier)
 
 - **Q1 — Avis FAVR** : impression **dès le PV signé** (recommandé, conforme à la demande), ou seulement après la levée
