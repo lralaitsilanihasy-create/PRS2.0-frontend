@@ -17,6 +17,8 @@ import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { FicheBesoin } from './fiche-besoin';
 import { ImportDao } from './import-dao';
+import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
+import { sansAvis } from '../../../shared/prmp/avis-specifique-modele';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone } from '../../../shared/ui/icone';
 import { TitreSiTronqueDirective } from '../../../shared/ui/titre-si-tronque';
@@ -102,6 +104,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
   imports: [
     FicheBesoin,
     ImportDao,
+    AvisSpecifique,
     ModaleDirective,RouterLink, Icone, EtatErreur, TitreSiTronqueDirective],
   templateUrl: './fiche-marche.html',
   styleUrl: './fiche-marche.scss',
@@ -457,7 +460,7 @@ export class FicheMarcheEcran {
       versions: this.ficheService.versions(id).pipe(catchError(() => of([] as VersionFiche[]))),
       docs: this.ficheService.documents(id).pipe(catchError(() => of(null))),
     }).subscribe(({ ref, fiche, versions, docs }) => {
-      this.documents.set(docs ?? []);
+      this.documents.set(sansAvis(docs ?? []));   // les avis ont leur propre encart (AV-3)
       this.documentsAbsents.set(docs === null);
       if (ref && ref.blocs?.length) this.referentiel.set(ref);
       else this.contratAbsent.set(true);
@@ -853,7 +856,7 @@ export class FicheMarcheEcran {
         this.toast.success(`Fiche DAO validée — version ${f.version} figée.`);
         // Lot 2 : la validation produit les documents ; on les relit pour les offrir tout de suite.
         this.ficheService.documents(id).pipe(catchError(() => of(null))).subscribe((d) => {
-          this.documents.set(d ?? []);
+          this.documents.set(sansAvis(d ?? []));
           this.documentsAbsents.set(d === null);
         });
       },
@@ -876,7 +879,7 @@ export class FicheMarcheEcran {
     this.versionOuverte.set(v.version);
     this.documentsVersion.set([]);
     this.ficheService.documents(id, v.version).pipe(catchError(() => of([] as DocumentFiche[]))).subscribe((d) => {
-      if (this.versionOuverte() === v.version) this.documentsVersion.set(d);
+      if (this.versionOuverte() === v.version) this.documentsVersion.set(sansAvis(d));
     });
   }
 

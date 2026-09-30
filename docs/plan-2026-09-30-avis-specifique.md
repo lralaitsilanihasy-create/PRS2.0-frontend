@@ -98,3 +98,19 @@
   publier), ou ajoutées comme champs de la fiche ?
 - **Q5 — Emplacement** : **étape 7 de la fiche DAO et page du dossier** (recommandé), ou aussi la carte « PV
   définitifs » du hub « Résultat examen » ?
+
+> ⚠️ **Avancement du 30/09.**
+> - **AV-1** fait côté front (`e9bb8fd`) : `AVIS-F` 73/73, `AVIS-T` 79/79.
+> - **AV-2** livré par le backend (`10b7fc2`, V56), avec toutes les raisons de refus et chaque impression conservée.
+> - **AV-3** fait côté front :
+>   - composant `shared/prmp/avis-specifique`, posé à l'étape 7 de la fiche DAO et dans l'encart « Fiche DAO » de la
+>     page du dossier (PRMP et UGPM) ;
+>   - modale des informations de publication, qui reprend celles de la dernière impression et prévient des champs
+>     vides que l'avis imprimerait en pointillés ;
+>   - liste des avis imprimés ;
+>   - les avis sont écartés de la liste des pièces de l'étape 7, et l'« avis d'appel d'offres » a quitté les pièces à
+>     joindre à la main.
+>
+>   Tests verts (937), lint et build.
+> - **Contre-recette à l'écran à faire** : aucune fiche de DBPRS20 n'a encore de dossier soumis, donc aucun PV signé.
+> - **AV-4** (lettre d'invitation des prestations intellectuelles) : à venir.

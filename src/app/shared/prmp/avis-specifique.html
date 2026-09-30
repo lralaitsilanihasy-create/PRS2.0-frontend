@@ -1,0 +1,97 @@
+@if (visible()) {
+  <section class="avs" [attr.aria-labelledby]="'avs-titre-' + idDmc()">
+    <h3 class="avs__titre" [id]="'avs-titre-' + idDmc()">Avis spécifique d’appel d’offres</h3>
+    @if (etat()?.disponible) {
+      <p class="avs__txt">
+        Le PV est signé avec un avis <strong>{{ etat()?.idAvis === 'FAVR' ? 'favorable avec réserves, réserves levées' : 'favorable' }}</strong> :
+        l’avis à publier peut être imprimé. Il reprend la dernière version validée de la fiche.
+      </p>
+      @if (!lecture()) {
+        <button type="button" class="btn btn-primary btn-sm" (click)="ouvrir()">Imprimer l’avis spécifique</button>
+      }
+    } @else if (attente(); as m) {
+      <p class="avs__attente">{{ m }}</p>
+    }
+
+    @if (imprimes().length) {
+      <ul class="avs__liste">
+        @for (a of imprimes(); track a.cle; let premier = $first) {
+          <li class="avs__avis" [class.avs__avis--dernier]="premier">
+            <span class="avs__quand">
+              Imprimé le {{ horodatage(a.dateGeneration) }}
+              @if (a.version) { <span class="avs__meta">· fiche version {{ a.version }}</span> }
+              @if (a.publication) { <span class="avs__meta">· publication du {{ jj(a.publication.datePublication) }}</span> }
+            </span>
+            <span class="avs__fichiers">
+              @for (f of a.fichiers; track f.idDocument) {
+                @if (format(f) === 'PDF') {
+                  <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="obtenir(f, true)">Ouvrir le PDF</button>
+                }
+                <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" (click)="obtenir(f, false)">Enregistrer {{ format(f) }}</button>
+              }
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}
+
+<!-- Fermeture par le bouton ou Échap seulement (règle du 13/09). -->
+@if (ouverte()) {
+  <div class="modal-backdrop">
+    <div class="modal avs__modale" role="dialog" aria-modal="true" aria-label="Imprimer l’avis spécifique d’appel d’offres" appModale (appModaleFermer)="fermer()">
+      <div class="modal-header">
+        <span class="modal-title">Imprimer l’avis spécifique</span>
+        <button type="button" class="btn-close" aria-label="Fermer sans imprimer" [disabled]="envoi()" (click)="fermer()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="avs__aide">Ces informations de <strong>publication</strong> ne figurent pas dans le DAO : elles sont imprimées dans l’avis, et gardées avec lui.</p>
+        <div class="avs__champs">
+          <label class="form-group">
+            <span class="form-label">Date de publication de l’avis</span>
+            <input class="form-control" type="date" [value]="saisie().datePublication" (input)="poser('datePublication', $any($event.target).value)" />
+            @if (erreurs().datePublication; as m) { <span class="form-error">{{ m }}</span> }
+          </label>
+          <label class="form-group">
+            <span class="form-label">N° du Journal des Marchés Publics de l’avis général</span>
+            <input class="form-control" type="text" [value]="saisie().jmpNumero" (input)="poser('jmpNumero', $any($event.target).value)" />
+            @if (erreurs().jmpNumero; as m) { <span class="form-error">{{ m }}</span> }
+          </label>
+          <label class="form-group">
+            <span class="form-label">Date de ce Journal des Marchés Publics</span>
+            <input class="form-control" type="date" [value]="saisie().jmpDate" (input)="poser('jmpDate', $any($event.target).value)" />
+            @if (erreurs().jmpDate; as m) { <span class="form-error">{{ m }}</span> }
+          </label>
+          <label class="form-group avs__large">
+            <span class="form-label">Autres supports de publication et leurs dates</span>
+            <textarea class="form-control" rows="2" [value]="saisie().supports" (input)="poser('supports', $any($event.target).value)"></textarea>
+            <span class="form-hint">Par exemple : « le quotidien … du 06/10/2026 et le site de l’ARMP ».</span>
+            @if (erreurs().supports; as m) { <span class="form-error">{{ m }}</span> }
+          </label>
+        </div>
+
+        @if (preparation()) {
+          <p class="avs__aide" role="status">Relecture de la fiche…</p>
+        } @else if (vides().length) {
+          <div class="alert alert-warning" role="status">
+            <span>
+              Ces informations de la fiche sont <strong>vides</strong> : l’avis imprimera des pointillés à leur place.
+              Complétez la fiche (nouvelle version) si elles doivent paraître.
+              <ul class="avs__vides">
+                @for (c of vides(); track c.code) { <li>{{ c.libelle }}</li> }
+              </ul>
+            </span>
+          </div>
+        }
+        @if (refus(); as r) { <div class="alert alert-danger" role="alert"><span>{{ r }}</span></div> }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" [disabled]="envoi()" (click)="fermer()">Annuler</button>
+        <button type="button" class="btn btn-primary" [disabled]="envoi() || !complete()" (click)="imprimer()">
+          {{ envoi() ? 'Impression…' : 'Imprimer l’avis' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

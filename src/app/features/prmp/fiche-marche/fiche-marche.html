@@ -713,8 +713,11 @@
                      viennent de la ligne du plan, plus de double saisie. Réservé à la PRMP, sur une fiche validée. -->
                 @if (idDossierSoumis(); as idd) {
                   <p class="fm__ok">Dossier à soumettre créé depuis cette fiche.</p>
-                  <p>Il reste à y joindre les pièces qui ne sortent pas de la fiche, puis à le soumettre à la Commission : cahier des clauses techniques particulières, avis d'appel d'offres, estimation du coût, garantie de soumission, cahier des clauses administratives générales.</p>
+                  <p>Il reste à y joindre les pièces qui ne sortent pas de la fiche, puis à le soumettre à la Commission : cahier des clauses techniques particulières, estimation du coût, garantie de soumission, cahier des clauses administratives générales.</p>
                   <a class="btn btn-primary" [routerLink]="['/prmp/dossier', idd]">Ouvrir le dossier n° {{ idd }}</a>
+                  <!-- ⚠️ 30/09 (AV-3) — l'avis spécifique, après le PV signé favorable (FAVR : réserves levées). L'application
+                       le produit : il a quitté la liste des pièces à joindre à la main. -->
+                  @if (idDmc(); as id) { <app-avis-specifique [idDmc]="id" [lecture]="enLecture()" /> }
                 } @else if (!figee()) {
                   <p class="fm__attendus">Le dossier à soumettre se crée depuis une fiche <strong>validée</strong> : terminez l'étape 6 d'abord.</p>
                 } @else if (estPrmp()) {

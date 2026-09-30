@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, ParametresInternes, ParametresInternesCorps, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, ParametresInternes, ParametresInternesCorps, PublicationAvis, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -155,6 +155,22 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
   documents(idDmc: number, version?: number): Observable<DocumentFiche[]> {
     const params = version != null ? new HttpParams().set('version', version) : new HttpParams();
     return this.http.get<DocumentFiche[]>(`${this.baseUrl}/${idDmc}/documents`, { params, context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Avis spécifique (30/09, V56) — `GET /{idDmc}/avis-specifique/disponibilite` : toujours 200 (PRMP et UGPM du
+   * périmètre ; 403 aux autres). Silencieux : l'écran se tait s'il ne peut pas le lire.
+   */
+  disponibiliteAvis(idDmc: number): Observable<DisponibiliteAvis> {
+    return this.http.get<DisponibiliteAvis>(`${this.baseUrl}/${idDmc}/avis-specifique/disponibilite`, { context: skipErrorToast() });
+  }
+
+  /**
+   * `POST /{idDmc}/avis-specifique` — produit l'avis (docx et pdf) sur la dernière version validée. 400 nominatif
+   * (`datePublication`, `jmpNumero`, `jmpDate`, `supports`), 409 `AVIS_INDISPONIBLE` (`details.raison`). Silencieux.
+   */
+  imprimerAvis(idDmc: number, corps: PublicationAvis): Observable<DocumentFiche[]> {
+    return this.http.post<DocumentFiche[]>(`${this.baseUrl}/${idDmc}/avis-specifique`, corps, { context: skipErrorToast() });
   }
 
   /** `GET /documents/{idDocument}/contenu` — le binaire, à ouvrir ou enregistrer par `fichiers-surs`. */

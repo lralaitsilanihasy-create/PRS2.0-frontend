@@ -21,7 +21,8 @@ export type DocumentDao = 'DPAO' | 'DPAC' | 'DPIC' | 'AE' | 'CCAP' | 'AUCUN';
  * ⚠️ `A1`–`A4` et `C1`/`C2` **ne sont pas encore produits** : le backend attend les modèles officiels. Les
  * nommer ici ne les promet pas — c'est l'écran qui saura les lire le jour où le serveur les servira.
  */
-export type PieceProduite = DocumentDao | 'LF' | 'BP' | 'TC' | 'A1' | 'A2' | 'A3' | 'A4' | 'C1' | 'C2';
+/** ⚠️ 30/09 — `AVIS` : l'avis spécifique d'appel d'offres, produit À LA DEMANDE après le PV (jamais à la validation). */
+export type PieceProduite = DocumentDao | 'LF' | 'BP' | 'TC' | 'A1' | 'A2' | 'A3' | 'A4' | 'C1' | 'C2' | 'AVIS';
 export type SourceChamp = 'PPM' | 'SAISIE' | 'CADRAGE';
 /**
  * ⚠️ Lot 5 (24/09) — la **catégorie** de dossier d'appel d'offres, second axe du référentiel. Elle se déduit de la
@@ -422,6 +423,41 @@ export interface DocumentFiche {
   dateGeneration?: string | null;
   /** Version de la fiche qui a produit ce document. */
   version?: number | null;
+  /** ⚠️ 30/09 (V56) — avis spécifique seulement : les informations de publication saisies à l'impression. */
+  publication?: PublicationAvis | null;
+}
+
+// ── Avis spécifique d'appel d'offres (demande du 30/09, livrée : V56) ─────────────────────────────────────────────
+
+/** Corps de `POST …/avis-specifique` et trace gardée avec chaque avis produit. Dates `AAAA-MM-JJ` ; les quatre sont exigées. */
+export interface PublicationAvis {
+  datePublication: string;
+  jmpNumero: string;
+  jmpDate: string;
+  supports: string;
+}
+
+/** Pourquoi l'avis ne s'imprime pas encore (`details.raison` du 409 `AVIS_INDISPONIBLE`, `raison` de la disponibilité). */
+export type RaisonAvisIndisponible =
+  | 'CATEGORIE_SANS_AVIS'
+  | 'SANS_DOSSIER'
+  | 'PV_NON_SIGNE'
+  | 'AVIS_NON_FAVORABLE'
+  | 'RESERVES_NON_LEVEES'
+  | 'FICHE_NON_VALIDEE'
+  | (string & {});
+
+/**
+ * `GET …/avis-specifique/disponibilite` — la règle du serveur (PV signé FAV, ou FAVR après la levée des réserves),
+ * lue telle quelle : l'écran ne la réécrit pas.
+ */
+export interface DisponibiliteAvis {
+  disponible: boolean;
+  raison: RaisonAvisIndisponible | null;
+  idAvis: string | null;
+  statutPv: string | null;
+  statutDossier: string | null;
+  idDossierSoumis: number | null;
 }
 
 /** Erreur nominative par champ d'un `PUT …/blocs/{bloc}` (400). */

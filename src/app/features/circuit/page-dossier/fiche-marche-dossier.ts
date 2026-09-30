@@ -9,6 +9,7 @@ import { DossierService } from '../../../services';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
 import { Icone } from '../../../shared/ui/icone';
 import { LienDossier } from './lien-dossier';
+import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
 
 /**
  * ⚠️ **Fiche DAO d'un dossier d'appel d'offres** (lot 1b, demande `docs/demande-backend-2026-09-23-fiche-marche-dossier.md`).
@@ -22,7 +23,7 @@ import { LienDossier } from './lien-dossier';
 @Component({
   selector: 'app-fiche-marche-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icone],
+  imports: [RouterLink, Icone, AvisSpecifique],
   template: `
     <section class="fmd" aria-labelledby="fmd-titre">
       <h2 class="fmd__titre" id="fmd-titre"><app-icone nom="file" [taille]="16" />Fiche DAO</h2>
@@ -39,6 +40,9 @@ import { LienDossier } from './lien-dossier';
           @if (lienFiche(f.idDmc); as lien) { <a class="btn btn-secondary btn-sm" [routerLink]="lien">Ouvrir la fiche</a> }
           @if (peutRattacher()) { <button type="button" class="btn btn-outline btn-sm" [disabled]="occupe()" (click)="detacher()">Détacher</button> }
         </div>
+        <!-- ⚠️ 30/09 (AV-3, Q5) — l'avis spécifique se lit aussi d'ici, au plus près du PV. PRMP et UGPM seulement :
+             le serveur refuse les autres profils (403), inutile de leur faire faire l'appel. -->
+        @if (domaine()) { <app-avis-specifique [idDmc]="f.idDmc" /> }
       } @else if (peutRattacher()) {
         <p class="fmd__vide">Aucune fiche DAO n'est rattachée à ce dossier. Rattachez celle que vous avez déjà validée, ou préparez-en une depuis la ligne du plan de passation.</p>
         @if (!choix()) {
@@ -104,7 +108,7 @@ export class FicheMarcheDossier {
   readonly occupe = signal(false);
   readonly rattachables = signal<FicheRattachable[]>([]);
 
-  private readonly domaine = computed(() => this.auth.role() === 'PRMP' || this.auth.role() === 'UGPM');
+  protected readonly domaine = computed(() => this.auth.role() === 'PRMP' || this.auth.role() === 'UGPM');
   /**
    * ⚠️ Examen (25/09) — la fiche s'ouvre désormais **dans l'espace du connecté** : le serveur la sert à tous les
    * rôles de contrôle, et chacun a sa route `dao/:idDmc`. Le lien n'est pas rendu pour qui n'a pas d'espace
