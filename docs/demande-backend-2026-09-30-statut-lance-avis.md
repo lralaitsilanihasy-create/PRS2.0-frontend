@@ -98,6 +98,11 @@ imprimé et que le serveur a lancée **à la création de son DMC** (événement
 > 303182, 303328, 303329. Toutes sont du plan 100359 (00004), et toutes ont leur événement du 29 ou du 30/09. **Aucune
 > ligne n'a été mise à « Lancé » à la main**, et aucun avis n'est encore imprimé. La répétition à blanc les ramène
 > toutes les 12 à « Prévu ». **Il n'est pas passé : j'attends l'accord du pilote.**
+>
+> ⚠️ **Passé le 2026-09-30, sur accord explicite du pilote (« oui au rattrapage »).** Le script a modifié **12 lignes**
+> (`UPDATE 12`) : 303105, 303106, 303107, 303111, 303119, 303120, 303121, 303127, 303145, 303182, 303328 et 303329
+> sont à `PREVU`. La requête de contrôle ne liste aucune ligne restée « Lancé ». DBPRS20 n'a plus aucune ligne `LANCE` :
+> une ligne ne le redeviendra qu'à la première impression de son avis spécifique.
 
 ## B6 — Tests
 
