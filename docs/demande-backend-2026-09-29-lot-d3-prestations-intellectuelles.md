@@ -182,6 +182,12 @@ Suite de l'encadré §B2.2, point 7 : `B09-DP-01` étant un `OUI_NON`, la condit
 `CPS-PI.txt` (fidélité inchangée, 300/300 et 238/238 ; décalques dans `docs/modeles-dao/`). Rien d'autre ne change.
 Le champ peut redevenir obligatoire si le pilote le souhaite : « Non » ne s'imprime plus.
 
+> ⚠️ **Livraison backend du 2026-09-30 (§B6).** Conforme. Les deux fichiers sont recopiés tels quels, livrés avec le
+> lot D4. Le comparateur donne 300/300 et 238/238 sur le rendu brut du serveur. `B09-DP-01` reste facultatif.
+> **Correctif lié** : la rubrique `B09-PR` n'était servie qu'aux fournitures. Le reflet `B09-PR-01` (V53) était donc
+> servi aux prestations intellectuelles **sans sa rubrique**. La migration V54 l'ouvre aux trois catégories (voir
+> l'encadré §B2.2 de la demande D4).
+
 Fait côté front le même jour :
 - l'aide de la question des pénalités dit le plafond par catégorie (« 15 % ; 10 % pour les prestations
   intellectuelles ») ;

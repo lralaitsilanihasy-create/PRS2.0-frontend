@@ -159,6 +159,16 @@ Suite de l'encadré §B1 : sur les quatre champs gardés, le pilote a tranché l
 Attendus : script du référentiel pour DBPRS20 et test (B05-TP-03 facultatif ; fiche à commande sans B05-TP-03 validable ;
 B08-PA-08 non servi aux fournitures, B08-FP-03 toujours servi au contrat-cadre).
 
+> ⚠️ **Livraison backend du 2026-09-30 (§B6).** Conforme, livré avec le lot D4 : fichier de correspondance, script
+> `docs/referentiel/2026-09-29-lot-d4-travaux.sql` (section §B6 fournitures) et tests.
+> - `B05-TP-03` est facultatif, avec le libellé « Montant maximum annuel estimé du marché (Ariary) ». Il reste servi
+>   au marché à commande, lot par lot. Un lot sans valeur ne bloque plus (`FicheDaoParLotIntegrationTest`), et
+>   `GARANTIE_TAUX` n'est simplement pas évalué.
+> - `B08-PA-08` est retiré. Une valeur saisie avant le retrait est conservée hors avancement et hors bilan
+>   (`FicheDaoCategoriesIntegrationTest`), et `B08-FP-03` reste servi au contrat-cadre.
+> - Le référentiel sert **155** champs aux fournitures à quantité fixe et **158** au marché à commande (156 et 159
+>   avant).
+
 Restent en attente du juriste : B04-OP-02 et B04-OP-03, avec les 16 champs de la remise électronique.
 
 ## Ce que le backend rend
