@@ -287,6 +287,64 @@ reprise par l'import s'écrirait « 500 m3 » dans la fiche. Ce n'est pas une fa
 perdue. **À décider ensemble** : garder NFKC pour *reconnaître* le texte, mais prendre la *valeur* dans le texte
 d'origine. Cela touche la parité : rien n'est changé d'un côté seul.
 
+> ⚠️ **Livraison backend du 2026-09-30 (§B6).**
+>
+> **B6.1 — fait.** `B04-OV-02` est la troisième source de la date de remise, après `B04-LR-03` et `B04-CP-02` ; seule
+> sa date compte. Test `ModelesDaoTravauxTest.finDeValiditeDesTravaux` : l'AE-T imprime « jusqu'au 16/03/2027 » pour
+> une remise au 16/11/2026 et 120 jours, et les pointillés quand la date de remise manque.
+>
+> **B6.2 — fait. La cause n'est ni une expression rationnelle ni R-a seule : c'est un coût cubique hérité du lot D3.**
+> Le test « jumeau » (un autre paragraphe du modèle a-t-il le même texte fixe ?) était réévalué **pour chaque paragraphe
+> du document essayé**, et comparait à chaque fois le paragraphe à tous ceux du modèle en renormalisant les deux
+> textes. Pour le CCAP-T lu dans un DPAO, presque rien n'est reconnu, donc chaque paragraphe du modèle est cherché dans
+> tout le document : environ 122 × 600 × 600 normalisations. R-a (`repete`) et `distinctif` refaisaient le même
+> balayage, mais une fois par paragraphe du modèle seulement.
+>
+> Correctif : un **profil du modèle** (répété, jumeau, distinctif, lettres de texte fixe) est calculé une seule fois
+> par lecture, comme le front l'a fait pour R-a. Mesure sur **le même fichier** (le DPAO v1 de la fiche 38, relu dans
+> DBPRS20), lecture seule, dans le même processus :
+>
+> | modèle | avant | après | propositions |
+> |---|---|---|---|
+> | DPAO-T | 0,63 s | 0,06 s | 27 (identiques) |
+> | CCAP-T | 13,8 s | 0,07 s | 4 (identiques) |
+> | AE-T | 2,95 s | 0,03 s | 0 |
+>
+> L'extraction du `.docx` ajoute 0,46 s, surtout le premier chargement de POI. Je n'ai pas remesuré la route
+> `POST /import` à l'écran, faute de jeton PRMP. **À refaire côté front sur la fiche 38**, une fois le serveur de
+> recette relancé avec le correctif (au commit de cette livraison).
+>
+> Garde-fou : `LectureDaoTest.lectureRapideDUnModeleAbsent` lit les trois modèles dans un DPAO-T rendu en `.docx` et
+> exige moins de 3 s. Avec l'ancien lecteur, il dépasse les 3 s ; avec le nouveau, il passe en une fraction de
+> seconde.
+>
+> Parité refaite sur **huit** entrées, dont ce DPAO : extraction et lecture identiques à `lire.mjs` (86ff53b).
+>
+> Au passage, un constat de lecture, identique des deux côtés et donc à traiter ensemble s'il gêne. Sur ce DPAO,
+> `B02-LT-04` est lu deux fois :
+> - par DPAO-T : « Tranche conditionnelle 1 - lot 2 : … » ;
+> - par CCAP-T, dont le paragraphe « - tranche conditionnelle 1 {{B02-LT-04}} » ressemble à celui du DPAO : « : Tranche
+>   conditionnelle 1 - lot 2 : … ».
+>
+> Les deux valeurs diffèrent par le « : » de tête. L'import les rend donc en conflit, et le champ n'est pas proposé.
+> Retirer la ponctuation de tête d'une valeur suffirait.
+>
+> **B6.3 — d'accord, avec une précision.** La perte ne se limite pas à NFKC : `norm` remplace aussi les apostrophes
+> courbes (’ → '), les tirets (– — → -), les guillemets (« » → ") et les espaces insécables. Une valeur reprise par
+> l'import perd donc aussi « », ’ et —, pas seulement ³. Proposition, identique des deux côtés et sans toucher à la
+> reconnaissance :
+> 1. l'extraction garde, pour chaque paragraphe normalisé, son **texte d'origine** et une **table de correspondance**
+>    caractère normalisé → position d'origine (NFKC peut changer la longueur : « ﬁ » → « fi », « … » → « ... ») ;
+> 2. une valeur trouvée dans le texte normalisé est **reprojetée** sur le texte d'origine, par ligne pour une valeur de
+>    plusieurs paragraphes. Seuls les blancs y sont ramenés à une espace simple ;
+> 3. les valeurs typées (nombre, montant, pourcentage, date) se convertissent toujours depuis le texte normalisé ;
+> 4. les comparaisons (divergence avec le plan, conflits entre modèles) restent sur le texte normalisé des deux côtés,
+>    pour ne pas créer de faux conflits.
+>
+> Tests communs proposés : « 500 m³ », « l’entreprise », « « Lot 1 » », « 2026–2027 », une ligature « ﬁ », une espace
+> insécable avant « : ». Dites-moi si ce découpage vous convient ; je l'implémente en même temps que vous, et la parité
+> se vérifie sur les mêmes huit entrées.
+
 ## Pour le juriste (pas pour le backend)
 
 Texte officiel reproduit tel quel (Q5) : le CCAP renvoie à « l'article 16 » pour les délais d'affermissement (c'est
