@@ -107,9 +107,18 @@ feuille « Contrat-cadre ». Aucune extension du moteur n'est nécessaire.
 >
 > Script : `docs/referentiel/2026-09-30-champs-non-utilises.sql` (PRS20).
 >
-> **Restent obligatoires et non imprimés en travaux**, parce que hors des listes arbitrées : `B03-QT-01` à `-04`,
-> `B09-DL-02`, `B09-DL-03` et `B04-CD-03`. S'y ajoutent, pour les trois catégories, `B03-CQ-01` et la remise
-> électronique (juriste). Ils sont à confirmer avant tout retrait.
+> **Complément du même jour, même règle** (`docs/referentiel/2026-09-30-champs-non-utilises-complement.sql`) :
+> - **retirés** :
+>   - `B03-QT-01` à `-04` : la clause 6.3 du DPAO-T écrit ces quatre rubriques en texte fixe, et le candidat les remplit
+>     dans A1 à A4 ;
+>   - `B09-DL-02` : doublon de `B09-PT-02`, imprimé à l'article 26.1 du CCAP-T ;
+>   - `B09-DL-03` : l'AE-T écrit « donné en annexe au CCAP » ;
+> - **facultatifs** :
+>   - `B04-CD-03` (plans joints) : l'annexe « Liste de plans » du CCAP-T n'a pas de jeton. Si vous lui en donnez un
+>     (`{{B04-CD-03}}`), le champ trouve sa place ;
+>   - `B03-CQ-01` (pièces exigées, trois catégories), cité nulle part.
+>
+> Plus aucun champ obligatoire des travaux n'est inutilisé, hors remise électronique (juriste).
 
 ## B3 — Contrat-cadre de travaux : harmoniser les codes (T-2, décision Q1)
 
