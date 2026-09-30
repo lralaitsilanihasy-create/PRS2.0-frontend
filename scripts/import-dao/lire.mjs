@@ -226,7 +226,11 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
     const reTete = finitParFixe ? new RegExp(re.source.replace(/\$$/, ''), 'i') : null;
     // Tant que rien n'est reconnu, tout le document est cherché (le modèle peut commencer loin dans un DAO en un seul
     // fichier) ; ensuite, une fenêtre de 60 paragraphes après le dernier reconnu.
-    const borne = trouves.size ? Math.min(doc.length, curseur + 60) : doc.length;
+    // ⚠️ 30/09 — un texte que le modèle répète ailleurs (« Non applicable ») ne se cherche que tout près du curseur :
+    // absent du document, il se raccrochait au « Non applicable » d'un article plus loin et la lecture sautait tout ce
+    // qui les séparait (CCAP-T, banc synthétique : les assurances de l'article 8 perdues).
+    const repete = us.some((v) => v !== u && cleTexte(v) === cleTexte(u));
+    const borne = trouves.size ? Math.min(doc.length, curseur + (repete ? 3 : 60)) : doc.length;
     for (let j = curseur; j < borne; j++) {
       let x = re.exec(doc[j]);
       // Un paragraphe dont un autre paragraphe du modèle a le même texte fixe (« {{B04-EP-03}} jours avant la date
@@ -285,7 +289,19 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
     intervalles.get(cle).jetons.push({ jeton: seul[1], sections: u.sections, k });
   });
   const ressembleAuModele = (t) => debuts.some((d) => d && d.length >= 12 && norm(t).toLowerCase().startsWith(d));
-  for (const { a, b, jetons } of intervalles.values()) {
+  // ⚠️ 30/09 — une section dont aucun paragraphe de texte fixe n'est reconnu, alors qu'elle en a, est ABSENTE du
+  // document : ses jetons seuls ne rendent plus l'intervalle ambigu (CCAP-T : « {{B02-OT-02}}. » suivi de la liste
+  // des lots, sous ALLOTI, sur un marché non alloti). Le jeton qui reste est lu en confiance basse.
+  const absente = (s) => !sectionsVues.has(s)
+    && us.some((u) => u.sections.includes(s) && distinctif(u))
+    && !us.some((u, k) => u.sections.includes(s) && trouves.has(k));
+  for (const iv of intervalles.values()) {
+    const tous = iv.jetons;
+    const presents = tous.filter((j) => !j.sections.some(absente));
+    iv.filtre = presents.length === 1 && tous.length > 1;
+    if (iv.filtre) iv.jetons = presents;
+  }
+  for (const { a, b, jetons, filtre } of intervalles.values()) {
     const entre = doc.slice(trouves.get(a) + 1, trouves.get(b));
     if (!entre.length || entre.length > 6) continue;
     if (jetons.length > 1) { ambigus.push({ candidats: jetons.map((j) => j.jeton), texte: entre.join('\n'), paragraphe: trouves.get(a) + 1 }); continue; }
@@ -300,7 +316,7 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
     const [avant, apres] = us[j.k].texte.split(/\{\{[^{}]+}}/).map((t) => t.trim());
     if (apres && brut.trimEnd().endsWith(apres)) brut = brut.trimEnd().slice(0, -apres.length).trimEnd();
     if (avant && brut.trimStart().startsWith(avant)) brut = brut.trimStart().slice(avant.length).trimStart();
-    const confiance = atteste && entre.length === 1 && !cp ? 'moyenne' : 'basse';
+    const confiance = atteste && entre.length === 1 && !cp && !filtre ? 'moyenne' : 'basse';
     // Plusieurs jetons séparés de ponctuation seule (« {{B02-OB-03}} — {{B02-OB-01}} ») : rien n'est proposé. Tout donner
     // au premier jeton est une fausse valeur, et le séparateur ne découpe pas sûrement (le tiret du modèle devient « - »
     // à la normalisation, comme les traits d'union des valeurs) — mesure du 29/09.

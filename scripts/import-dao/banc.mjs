@@ -5,6 +5,7 @@
 //   node banc.mjs                    # rendu propre
 //   node banc.mjs --bruit=<graine>   # le bruit de mesurer.mjs (fusions, paragraphes ajoutés, typographie)
 //   node banc.mjs --lire=<module>    # une autre version de la lecture (comparaison)
+//   node banc.mjs --manques=CCAP-T   # le détail des champs non relus d'un modèle
 // Prérequis : le serveur de recette (le référentiel des champs est lu par l'API, sous PRMP001).
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +14,7 @@ const lirePath = process.argv.find((a) => a.startsWith('--lire='))?.slice(7) ?? 
 const { lireParagraphes, norm } = await import(lirePath);
 const MOD = fileURLToPath(new URL('../modeles-dao/modeles', import.meta.url));
 const bruit = process.argv.some((a) => a.startsWith('--bruit'));
+const manques = process.argv.find((a) => a.startsWith('--manques='))?.slice(10);   // les champs non relus d'un modèle
 const API = 'http://localhost:8080';
 
 let refs = null;
@@ -137,6 +139,13 @@ for (const sigle of Object.keys(FORMES)) {
     const fh = fausses.filter((p) => p.confiance === 'haute');
     totalFH += fh.length;
     const ret = attendus.filter((c) => justes.some((p) => p.code === c)).length;
+    if (manques === sigle) {
+      for (const a of r.ambigus) lignes.push(`   ${nomCad} ambigu ${a.candidats.join(', ')} : ${a.texte.split('\n').length} paragraphe(s)`);
+      for (const c of attendus.filter((c) => !justes.some((p) => p.code === c))) {
+        const lu = props.find((p) => p.code === c);
+        lignes.push(`   ${nomCad} manque ${c} (${champs[c]?.type}) attendu « ${String(r0.valeurs[c]).slice(0, 30)} »${lu ? ` lu « ${String(lu.valeur).slice(0, 30)} »` : ''}`);
+      }
+    }
     lignes.push(`${sigle.padEnd(8)} ${nomCad.padEnd(4)} rappel ${String(ret).padStart(3)}/${String(attendus.length).padEnd(3)} (${String(Math.round(100 * ret / Math.max(1, attendus.length))).padStart(3)} %)  fausses ${fausses.length} dont haute ${fh.length}${fh.length ? '  ← ' + fh.map((p) => `${p.code} « ${String(p.valeur).slice(0, 30)} »`).join(' ; ') : ''}`);
   }
 }

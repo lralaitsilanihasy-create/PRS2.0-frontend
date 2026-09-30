@@ -170,6 +170,22 @@ leur code. `ModelesDao.COUVERTURES` : `DPAC-CC` et `AE-CC` pour `CONTRAT_CADRE` 
 > coupe « Au fur et à mesure des besoins » en « Au fur », le serveur garde la valeur entière. C'est l'écart connu
 > depuis le lot D1. `MODELE_ABSENT` ne répond plus pour les travaux : toutes les formes outillées sont désormais
 > couvertes, sauf le contrat-cadre de prestations intellectuelles.
+>
+> ⚠️ **30/09 — écart résorbé côté front, et deux règles de lecture NOUVELLES à reporter dans `LectureDao`.**
+> - « et » / « ou » : `lire.mjs` suit désormais `DEBUT_TERME` (séparateur seulement devant une clé et un opérateur).
+> - **R-a, texte répété** : un paragraphe du modèle dont le texte fixe se répète ailleurs dans le modèle (« Non
+>   applicable ») ne se cherche que dans les **3 paragraphes** qui suivent le curseur (au lieu de 60). Absent du
+>   document, il se raccrochait au « Non applicable » d'un article plus loin, et la lecture sautait tout l'intervalle
+>   (CCAP-T : l'article 8, assurances, perdu).
+> - **R-b, section absente** : dans un intervalle à plusieurs jetons seuls, on écarte les jetons dont une section est
+>   **absente**. Une section est absente quand elle a au moins un paragraphe distinctif et qu'aucun de ses paragraphes
+>   n'est reconnu. S'il ne reste qu'un jeton, il est proposé en confiance **basse** (CCAP-T : « {{B02-OT-02}}. »
+>   suivi de la liste des lots, sous ALLOTI, sur un marché non alloti).
+>
+> Banc après les deux règles : CCAP-T passe de 56-68 % à 73-74 %, CCAP-F de 88-93 % à 94-97 %, DPIC-PI et DPAO-T à
+> 96-100 %, CPS-PI de 65 % à 77-78 %. **Aucune fausse valeur, en aucune confiance**, sans bruit comme avec (graines 3
+> et 7). Le reste du CCAP-T, ce sont les cinq sujétions saisies côte à côte (B09-CH-01…05) : l'ambiguïté est réelle,
+> la lecture ne choisit pas.
 
 ## B5 — Tests attendus
 
