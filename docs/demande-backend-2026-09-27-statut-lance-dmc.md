@@ -31,6 +31,10 @@ comme en mise à jour, dans les deux états.
 > indestructible), le serveur le **remet** (« Lancé », ordre 11, actif) avant de l'écrire, sinon la ligne ne pourrait plus se
 > ré-enregistrer (`normaliser` refuse un code inconnu).
 
+> ⚠️ **Décision du pilote du 2026-09-30 — §B1 remplacé.** La ligne ne passe plus « Lancé » à la création du DMC, mais à la
+> **première impression de l'avis spécifique** : « Le statut du marché ne doit être changé en Lancé que lorsque l'avis
+> spécifique est imprimé. » Voir `demande-backend-2026-09-30-statut-lance-avis.md`.
+
 ## B2 — À la suppression de la fiche et du DMC : `LANCE` → `PREVU`
 
 - `FicheMarcheService.supprimer` (`DELETE /api/fiches-marche/{idDmc}`, « la ligne du plan redevient préparable ») :
@@ -57,12 +61,20 @@ comme en mise à jour, dans les deux états.
 > explicitement est accepté (code du référentiel). La recopie de `LANCE` par la mise à jour du plan était déjà le
 > comportement (`copierLignes` recopie le statut) : vérifié par le test, rien de changé.
 
+> ⚠️ **Décision du pilote du 2026-09-30 — §B3 remplacé.** La garde porte sur l'avis imprimé, plus sur le DMC vivant ; la ligne ne passe plus « Lancé » à la création du DMC, mais à la
+> **première impression de l'avis spécifique** : « Le statut du marché ne doit être changé en Lancé que lorsque l'avis
+> spécifique est imprimé. » Voir `demande-backend-2026-09-30-statut-lance-avis.md`.
+
 ## B4 — Ce que la ligne dit au front
 
 - `MarcheDto` (les marchés d'un dossier, la grille de saisie, la consultation) gagne **`idDmc: Long | null`** : le DMC
   vivant de la ligne, ou `null`. La grille s'en sert pour retirer « Prévu » de la liste déroulante d'une ligne lancée
   et le dire à côté (« lancée par le dossier de mise en concurrence n° … ») ; la consultation n'a rien à faire, le
   badge suit le code. `LigneEligible.dejaDao` / `idDmc` existent déjà de leur côté, inchangés.
+
+> ⚠️ **Décision du pilote du 2026-09-30 — §B4 complété (`avisImprimeLe`).** La ligne ne passe plus « Lancé » à la création du DMC, mais à la
+> **première impression de l'avis spécifique** : « Le statut du marché ne doit être changé en Lancé que lorsque l'avis
+> spécifique est imprimé. » Voir `demande-backend-2026-09-30-statut-lance-avis.md`.
 
 ## B5 — Rattrapage
 
