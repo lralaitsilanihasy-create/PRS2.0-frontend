@@ -63,6 +63,8 @@ export class PpmFormFactory {
       statut: ['PREVU'],
       // ⚠️ 27/09 — le DMC vivant de la ligne, posé par le serveur, jamais saisi : « Prévu » ne se choisit plus dessus.
       idDmc: [null as number | null],
+      // ⚠️ 30/09 — première impression de l'avis spécifique, posée par le serveur : « Lancé » ne vient qu'avec elle.
+      avisImprimeLe: [null as string | null],
       natureLibelle: [''],
       modeLibelle: [''],
       formeMarche: ['QUANTITE_FIXE' as FormeMarche],

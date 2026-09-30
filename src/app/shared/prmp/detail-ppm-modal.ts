@@ -36,7 +36,7 @@ import { DatePipe } from '@angular/common';
 import { PpmMarchesTable } from './ppm-marches-table';
 import { PpmSaisieGrid } from './ppm-saisie-grid';
 import { PpmFormFactory } from './ppm-form-factory';
-import { statutsAdmissibles } from './statut-marche';
+import { dateAvis, statutsAdmissibles } from './statut-marche';
 import { FichePresentationDoc } from './fiche-presentation-doc';
 import { AgpmDoc } from './agpm-doc';
 import { DocumentVisionneuse } from '../ui/document-visionneuse';
@@ -748,11 +748,15 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
             </label>
             <label class="form-group">
               <span class="form-label">Statut</span>
-              <!-- ⚠️ 27/09 — le référentiel, plus une saisie libre ; « Prévu » n'est plus proposé à une ligne lancée par son DMC. -->
+              <!-- ⚠️ 30/09 (pilote) — le référentiel ; « Lancé » seulement après l'impression de l'avis spécifique, « Prévu » plus après. -->
               <select class="form-control" formControlName="statut">
                 @for (s of statutsEdition(); track s.code) { <option [value]="s.code">{{ s.libelle }}</option> }
               </select>
-              @if (editingMarche()?.idDmc; as idDmc) { <span class="form-hint">Lancée par le dossier de mise en concurrence n° {{ idDmc }} : le statut suit le fait.</span> }
+              @if (dateAvis(editingMarche()?.avisImprimeLe); as le) {
+                <span class="form-hint">Lancée par l’avis spécifique imprimé le {{ le }} : le statut suit la publication.</span>
+              } @else if (editingMarche()?.idDmc; as idDmc) {
+                <span class="form-hint">DAO en préparation (dossier n° {{ idDmc }}) : le marché passera « Lancé » à l’impression de son avis spécifique.</span>
+              }
             </label>
             <label class="form-group">
               <span class="form-label">Nature</span>
@@ -1069,7 +1073,8 @@ export class DetailPpmModal implements OnInit {
   readonly modes = signal<ModePassation[]>([]);
   readonly statuts = signal<StatutMarche[]>([]);
   /** Les statuts proposés à la ligne en édition : le référentiel, sans « Prévu » si elle porte un DMC vivant (27/09). */
-  readonly statutsEdition = computed(() => statutsAdmissibles(this.statuts(), this.editingMarche()?.statut, this.editingMarche()?.idDmc != null));
+  readonly statutsEdition = computed(() => statutsAdmissibles(this.statuts(), this.editingMarche()?.statut, !!this.editingMarche()?.avisImprimeLe));
+  readonly dateAvis = dateAvis;
   readonly comptes = signal<Compte[]>([]);
   /** Options du select « Forme du marché » (liste fermée, libellés d'affichage). */
   readonly formes = (Object.entries(FORME_MARCHE_LIBELLES) as [FormeMarche, string][]).map(([code, libelle]) => ({ code, libelle }));

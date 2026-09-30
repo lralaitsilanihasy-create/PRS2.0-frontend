@@ -71,6 +71,12 @@ export interface Marche {
    */
   idDmc?: number | null;
   /**
+   * ⚠️ 30/09 (règle du pilote, `demande-backend-2026-09-30-statut-lance-avis.md` §B4) — date (`AAAA-MM-JJ`) de la
+   * PREMIÈRE impression de l'avis spécifique de la ligne (de sa filiation), `null` sans avis. C'est elle qui fait
+   * passer la ligne « Lancé » : la liste des statuts en dépend.
+   */
+  avisImprimeLe?: string | null;
+  /**
    * ⚠️ Fiche de présentation (2026-09-01, migration V13) — justifications SAISIES À LA CRÉATION,
    * exigées par le serveur (400 par champ) quand SA classification l'impose : mode dérogatoire
    * (catégorie du mode) et délai aménagé (ouverture − lancement < delaiMinJours, strict). Un marché
