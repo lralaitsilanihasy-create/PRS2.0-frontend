@@ -35,12 +35,57 @@ const POINTILLES = /^[.…_\s]*$/;
 export const RANG = { basse: 1, moyenne: 2, haute: 3 };
 
 // ── Le document ───────────────────────────────────────────────────────────────────────────────
-function paragraphes(fichier) {
+/**
+ * ⚠️ 30/09 (demande D4 §B6.3) — les paragraphes TELS QU'ÉCRITS (non normalisés, non vides une fois normalisés) : la
+ * reconnaissance travaille sur `norm`, mais une valeur de texte est reprise dans le texte d'origine (« m³ », « ’ »,
+ * « — », « « » » ne sont pas perdus).
+ */
+function paragraphesDOrigine(fichier) {
   if (/\.pdf$/i.test(fichier)) return paragraphesPdf(fichier);
   if (!/\.docx$/i.test(fichier)) throw new Error('un .docx ou un .pdf');
   // Paragraphes de cellule séparés (lot D2) : une cellule du DPAO enchaîne des rédactions, chacune se reconnaît seule.
   const lu = execFileSync(JAVA, ['-cp', CP(), 'LireDocx', fichier, '--paragraphes'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  return lu.replace(/\r\n?/g, '\n').split('\n').flatMap((l) => l.split(/[\t\u001E]/)).map(norm).filter(Boolean);
+  return lu.replace(/\r\n?/g, '\n').split('\n').flatMap((l) => l.split(/[\t\u001E]/)).filter((l) => norm(l));
+}
+function paragraphes(fichier) {
+  return paragraphesDOrigine(fichier).map(norm);
+}
+
+// ── La valeur reprise dans le texte d'origine (§B6.3) ─────────────────────────────────────────
+const GRAPHEMES = new Intl.Segmenter('fr', { granularity: 'grapheme' });
+/** `norm` sans le resserrement des blancs, appliqué à un seul graphème. */
+const normGrapheme = (g) => g.normalize('NFKC').replace(/[’ʼ‘`]/g, "'").replace(/[‐‑‒–—]/g, '-').replace(/[«»]/g, '"').replace(/ | /g, ' ');
+/**
+ * Le texte normalisé d'un paragraphe et, pour chacune de ses positions, l'étendue du texte d'origine qui l'a produite
+ * (NFKC change des longueurs : « ﬁ » → « fi », « … » → « ... »). `null` si la reconstruction ne redonne pas `norm`.
+ */
+function carteNormalisee(origine) {
+  let texte = '';
+  const debut = [], fin = [];
+  let blanc = false;
+  for (const { segment, index } of GRAPHEMES.segment(origine)) {
+    for (const ch of normGrapheme(segment)) {
+      if (/\s/.test(ch)) { blanc = true; continue; }
+      if (blanc && texte) { texte += ' '; debut.push(-1); fin.push(-1); }
+      blanc = false;
+      texte += ch;
+      for (let k = 0; k < ch.length; k++) { debut.push(index); fin.push(index + segment.length); }
+    }
+  }
+  return texte === norm(origine) ? { texte, debut, fin, origine } : null;
+}
+/**
+ * Une ligne de valeur (normalisée) retrouvée dans un paragraphe : son texte d'origine. Les blancs multiples, tabulations
+ * et sauts de ligne deviennent une espace ; une espace insécable seule est gardée. `null` si la ligne n'est pas trouvée.
+ */
+function reprojeterLigne(ligne, cartes) {
+  for (const c of cartes) {
+    if (!c) continue;
+    const i = c.texte.indexOf(ligne);
+    if (i < 0) continue;
+    return c.origine.slice(c.debut[i], c.fin[i + ligne.length - 1]).replace(/\s{2,}|[\t\r\n]/g, ' ');
+  }
+  return null;
 }
 
 /** PDFBox du dépôt Maven local (Q1 du plan : le PDF « texte » après le Word ; pas d'OCR). */
@@ -106,7 +151,7 @@ function paragraphesPdf(fichier) {
     }
     // 4. Ordre de lecture.
     pars.sort((a, b) => a.y - b.y || a.colonne - b.colonne);
-    for (const p of pars) { const t = norm(p.texte.replace(/(\w)- (\w)/g, '$1$2')); if (t) sortie.push(t); }
+    for (const p of pars) { const t = p.texte.replace(/(\w)- (\w)/g, '$1$2'); if (norm(t)) sortie.push(t); }   // non normalisé (§B6.3)
   }
   return sortie;
 }
@@ -162,8 +207,12 @@ function valeurSaisie(brut, type, suffixe) {
   if (suffixe === 'chiffres' || ['NOMBRE', 'MONTANT', 'POURCENTAGE'].includes(type)) return nombre(v);
   if (type === 'DATE') { const d = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v); return d ? `${d[3]}-${d[2]}-${d[1]}` : null; }
   if (type === 'DATE_HEURE') { const d = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/.exec(v); return d ? `${d[3]}-${d[2]}-${d[1]}T${d[4]}:${d[5]}` : null; }
-  return v;
+  // ⚠️ 30/09 (§B6) — la ponctuation de tête n'est pas la valeur : « - tranche conditionnelle 1 {{B02-LT-04}} » lu dans
+  // « Tranche conditionnelle 1 : … » rendait « : … », en conflit avec la même valeur lue ailleurs.
+  return v.replace(/^(?:[:;,.]\s*)+/, '') || null;
 }
+/** Les types dont la valeur se convertit depuis le texte normalisé : jamais reprojetés sur le texte d'origine. */
+const TYPES_CONVERTIS = ['NOMBRE', 'MONTANT', 'POURCENTAGE', 'DATE', 'DATE_HEURE', 'LISTE', 'LISTE_MULTIPLE', 'OUI_NON'];
 
 /** Les réponses qu'implique une section retenue : chaque terme `cle = valeur` d'une conjonction (pas de `ou`, pas de `!=`). */
 // ⚠️ 30/09 — comme le DEBUT_TERME du serveur : « et » / « ou » ne séparent deux termes que s'ils sont suivis d'une clé et
@@ -177,13 +226,16 @@ function implications(expression) {
 
 // ── La lecture ────────────────────────────────────────────────────────────────────────────────
 export function lire(fichier, sigle, champs = {}) {
-  return lireParagraphes(Array.isArray(fichier) ? fichier : paragraphes(fichier), sigle, champs);
+  if (Array.isArray(fichier)) return lireParagraphes(fichier, sigle, champs);
+  const origines = paragraphesDOrigine(fichier);
+  return lireParagraphes(origines.map(norm), sigle, champs, origines);
 }
 
 /** Les paragraphes du document, déjà extraits : un DAO en un seul fichier (avis, DPAC, AE à la suite) se lit modèle par modèle. */
-export { paragraphes };
+export { paragraphes, paragraphesDOrigine, carteNormalisee, reprojeterLigne };   // les deux dernières : pour test_reprojection.mjs
 
-export function lireParagraphes(docLu, sigle, champs = {}) {
+// `origines` : les mêmes paragraphes tels qu'écrits (§B6.3) ; sans eux, les valeurs restent normalisées (banc, texte déjà extrait).
+export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
   const m = JSON.parse(fs.readFileSync(path.join(MODELES, `${sigle}.json`), 'utf8'));
   const us = unites(m);
   // Un paragraphe atteste ses sections s'il a assez de texte fixe (20 lettres) et qu'aucun paragraphe de même texte
@@ -365,9 +417,27 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
     if (champs[code]?.source === 'CADRAGE' && champs[code]?.cleCadrage) { cadrage[champs[code].cleCadrage] ??= valeur; continue; }
     const deja = parCode.get(jeton);
     if (deja && deja.valeur !== valeur) { conflits.push({ code: jeton, valeurs: [deja.valeur, valeur] }); deja.conflit = true; continue; }
-    if (!deja || RANG[p.confiance] > RANG[deja.confiance]) parCode.set(jeton, { code: jeton, valeur, brut: norm(p.brut), confiance: p.confiance, source: p.source, paragraphe: p.paragraphe });
+    if (!deja || RANG[p.confiance] > RANG[deja.confiance]) {
+      const texte = suffixe !== 'chiffres' && !TYPES_CONVERTIS.includes(champs[code]?.type);
+      parCode.set(jeton, { code: jeton, valeur, brut: norm(p.brut), confiance: p.confiance, source: p.source, paragraphe: p.paragraphe, lignes: texte ? p.brut.split('\n') : null });
+    }
   }
-  const final = [...parCode.values()].filter((p) => !p.conflit);
+  // ⚠️ 30/09 (§B6.3) — une valeur de texte est reprise dans le texte d'origine, ligne par ligne, APRÈS la détection des
+  // conflits (qui reste sur le texte normalisé : pas de faux conflit). Une ligne introuvable garde la valeur normalisée.
+  const cartes = origines ? new Array(origines.length) : null;
+  const carte = (i) => (cartes[i] === undefined ? (cartes[i] = carteNormalisee(origines[i])) : cartes[i]);
+  const reprojeter = (p) => {
+    if (!origines || !p.lignes) return p.valeur;
+    const lignes = p.lignes.map(norm).filter(Boolean);
+    if (lignes.length) lignes[0] = lignes[0].replace(/^(?:[:;,.]\s*)+/, '');
+    if (lignes.join(' ') !== p.valeur) return p.valeur;
+    // D'abord à partir du paragraphe lu (quelques rangs plus tôt : un redécoupage de fusion décale les indices), puis le reste.
+    const lo = Math.max(0, Math.min(origines.length, (p.paragraphe ?? 0) - 5));
+    const toutes = { [Symbol.iterator]: function* () { for (let i = lo; i < origines.length; i++) yield carte(i); for (let i = 0; i < lo; i++) yield carte(i); } };
+    const reprises = lignes.map((l) => reprojeterLigne(l, toutes));
+    return reprises.every((r) => r != null) ? reprises.join(' ') : p.valeur;
+  };
+  const final = [...parCode.values()].filter((p) => !p.conflit).map(({ lignes, ...p }) => ({ ...p, valeur: reprojeter({ ...p, lignes }) }));
   const attendus = [...new Set(us.flatMap((u) => [...u.texte.matchAll(JETON)].map((x) => x[1].split('.')[0])).filter((c) => /^B\d\d-/.test(c)))];
   return { sigle, paragraphesDocument: doc.length, unitesModele: us.length, reconnues: trouves.size, propositions: final, cadrage, conflits, ambigus,
     nonTrouves: attendus.filter((c) => ![...parCode.keys()].some((k) => k.split('#')[0] === c)) };

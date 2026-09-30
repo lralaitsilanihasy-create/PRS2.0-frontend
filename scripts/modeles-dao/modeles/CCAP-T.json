@@ -73,7 +73,8 @@
   "DEROGATIONS": "B10-DR-01 renseigne",
   "ANNEXE-GBE-BANCAIRE": "B05-GE-01 = OUI et B05-GE-03 contient bancaire",
   "ANNEXE-GBE-CAUTION": "B05-GE-01 = OUI et B05-GE-03 contient caution",
-  "ANNEXE-AVANCE": "avance = OUI et B05-GA-01 = OUI"
+  "ANNEXE-AVANCE": "avance = OUI et B05-GA-01 = OUI",
+  "PLANS": "B04-CD-03 renseigne"
  },
  "blocs": [
   {
@@ -2307,6 +2308,18 @@
   {
    "type": "para",
    "texte": "Liste des Plans"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:PLANS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{B04-CD-03}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:PLANS}}"
   }
  ],
  "trace": [
@@ -3911,6 +3924,7 @@
   }
  ],
  "ajouts": [
+  "{{B04-CD-03}}",
   "{{B02-LV-02}}",
   "{{B09-AC-01}}",
   "{{B09-AC-02}}",

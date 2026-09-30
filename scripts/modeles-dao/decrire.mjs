@@ -2687,8 +2687,11 @@ function ccapTravaux() {
     'ANNEXE-GBE-BANCAIRE': 'B05-GE-01 = OUI et B05-GE-03 contient bancaire',
     'ANNEXE-GBE-CAUTION': 'B05-GE-01 = OUI et B05-GE-03 contient caution',
     'ANNEXE-AVANCE': 'avance = OUI et B05-GA-01 = OUI',
+    // ⚠️ 30/09 — l'annexe aux spécifications techniques « Liste des Plans » n'est qu'un titre dans le document type : elle
+    // reçoit les plans joints au dossier (B04-CD-03, facultatif depuis le 30/09), s'ils sont renseignés.
+    PLANS: 'B04-CD-03 renseigne',
   };
-  const ajouts = ['{{B02-LV-02}}', '{{B09-AC-01}}', '{{B09-AC-02}}', '{{B09-AC-03}}', '{{B09-CH-01}}', '{{B09-CH-02}}', '{{B09-CH-03}}', '{{B09-CH-04}}',
+  const ajouts = ['{{B04-CD-03}}', '{{B02-LV-02}}', '{{B09-AC-01}}', '{{B09-AC-02}}', '{{B09-AC-03}}', '{{B09-CH-01}}', '{{B09-CH-02}}', '{{B09-CH-03}}', '{{B09-CH-04}}',
     '{{B09-CH-05}}', '{{B08-AP-02}}', '{{B09-RP-04}}', '{{B10-PC-01}}', '{{B10-DR-01}}'];
 
   // ── Ce qui ne s'imprime pas
@@ -2908,6 +2911,7 @@ function ccapTravaux() {
     ...SI('ANNEXE-GBE-CAUTION', E(['=Annexe au CCAP', 2], '=Annexe au CCAP')),
     ...SI('ANNEXE-AVANCE', E(['=Annexe au CCAP', 3], ['=Annexe au CCAP', 1])),
     ...E(['=Annexe au CCAP', 5]),
+    ...SI('PLANS', P('{{B04-CD-03}}')),
   ];
   const titre = ligne(d, 'MARCHÉ PUBLIC DE TRAVAUX').texte;
   toutEstRendu(d, 'CCAP-T');

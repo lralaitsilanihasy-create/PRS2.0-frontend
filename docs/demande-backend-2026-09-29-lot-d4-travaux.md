@@ -382,6 +382,48 @@ d'origine. Cela touche la parité : rien n'est changé d'un côté seul.
 > insécable avant « : ». Dites-moi si ce découpage vous convient ; je l'implémente en même temps que vous, et la parité
 > se vérifie sur les mêmes huit entrées.
 
+> ⚠️ **Réponse du front du 2026-09-30 (§B6).**
+>
+> **B6.1 — contre-recetté.** Après révision puis revalidation de la fiche 38 (v5), l'AE-T imprime « jusqu'au
+> 17/09/2026 » (remise au 20/05/2026 et 120 jours).
+>
+> **B6.2 — contre-recetté à l'écran.** Fiche 38, même DPAO v1 : `POST /import` répond en **2,3 s** (contre 53 s) et la
+> revue s'ouvre en 2,4 s. Résultat inchangé : 109/160, 7/421, 2/293 ; 3 valeurs à vérifier, 65 non trouvées.
+>
+> **B6.3 — découpage accepté tel quel, et implémenté côté front** (`scripts/import-dao/lire.mjs`, tests
+> `test_reprojection.mjs`). Détail, pour que vous fassiez à l'identique :
+> 1. l'extraction rend les paragraphes **tels qu'écrits** (`paragraphesDOrigine`). Les paragraphes normalisés en sont
+>    dérivés, un paragraphe vide une fois normalisé est écarté des deux côtés, et le PDF garde son recollage des
+>    césures avant normalisation ;
+> 2. la **carte** se construit par graphème (`Intl.Segmenter`, pour ne pas couper une lettre de son accent
+>    combinant). On applique à chaque graphème `norm` sans le resserrement des blancs, et chaque caractère produit
+>    pointe vers l'étendue d'origine du graphème. Une suite de blancs donne une espace unique, qui ne pointe sur rien.
+>    Si le texte reconstruit ≠ `norm(origine)`, la carte est abandonnée et la valeur reste normalisée ;
+> 3. reprojection **après** la détection des conflits, ligne par ligne (les paragraphes d'une valeur), recherche d'abord
+>    à partir du paragraphe lu moins 5 rangs, puis dans tout le document. Il suffit d'une ligne introuvable pour que la
+>    valeur reste normalisée ;
+> 4. blancs : une suite de plusieurs blancs, une tabulation ou un saut de ligne donnent une espace, mais **une espace
+>    insécable seule est gardée** (« Montant : » garde son insécable). Merci de retenir la même règle ;
+> 5. **pas de reprojection** pour les types convertis : NOMBRE, MONTANT, POURCENTAGE, DATE, DATE_HEURE, LISTE,
+>    LISTE_MULTIPLE, OUI_NON et le suffixe `.chiffres`.
+>
+> Tests communs, tous verts : « 500 m³ », « l’entreprise », « « Lot 1 » », « 2026–2027 », « ﬁche », l'insécable avant
+> « : », une valeur prise dans une partie de paragraphe, « … » et une ligature avant la valeur (les longueurs changent).
+>
+> Mesure sur les cinq documents produits des fiches 38 et 39, en comparaison **exacte** avec la fiche (sans
+> normalisation) : 0 valeur différente, typographie comprise. Avant, « — » était rendu « - » et « m³ » « m3 ». Le banc
+> reste identique : 3 561 valeurs justes sur huit graines, Q10 tenu.
+>
+> **« : » de tête de `B02-LT-04` — fait côté front.** Côté front, une valeur ne commence plus par « : »,
+> « ; », « , » ou « . » (retrait fait avant la détection des conflits). Les tirets ne sont pas retirés : ils peuvent
+> ouvrir une liste. À reporter dans `LectureDao`.
+>
+> **« Liste des Plans » du CCAP-T — jeton ajouté.** L'annexe aux spécifications techniques, qui n'était qu'un titre,
+> reçoit `{{B04-CD-03}}` sous la condition `PLANS` = `B04-CD-03 renseigne` (dernier paragraphe du modèle). Le décalque
+> vérifié passe à **573/573** (570 + SI, jeton, FINSI). À recopier : `modeles/CCAP-T.txt` et `.json`, et
+> `docs/modeles-dao/CCAP-T.docx`. `B04-CD-03` devient ainsi imprimé : son document maître reste le DPAO, avec une
+> reprise dans le CCAP.
+
 ## Pour le juriste (pas pour le backend)
 
 Texte officiel reproduit tel quel (Q5) : le CCAP renvoie à « l'article 16 » pour les délais d'affermissement (c'est

@@ -44,6 +44,11 @@ attestée, intervalle de plusieurs paragraphes, valeur coupée. ⚠️ 29/09 : u
 modèle a le même texte fixe** (« {{B04-EP-03}} jours avant la date limite… » / « {{B04-EP-04}} jours avant… ») n'est
 jamais *haute* — quand l'un n'est pas reconnu, l'autre prend sa place.
 
+**Valeur reprise dans le texte d'origine** (30/09, demande D4 §B6.3) — la reconnaissance travaille sur le texte
+normalisé (`norm`), mais une valeur de texte est reprojetée sur le paragraphe tel qu'écrit : « m³ », « ’ », « — »,
+« « » » ne sont plus perdus. Les types convertis (nombre, montant, pourcentage, dates, listes, oui/non) restent lus sur
+le texte normalisé. Une ligne introuvable laisse la valeur normalisée. `node --test test_reprojection.mjs`.
+
 ## Le banc synthétique (29/09) — `banc.mjs`
 
 Les fiches 27 et 16, qui servaient de banc à `mesurer.mjs`, ont disparu avec le vidage de DBPRS20. `banc.mjs` les
