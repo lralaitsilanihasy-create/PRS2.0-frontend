@@ -2920,8 +2920,129 @@ function ccapTravaux() {
 /** Le texte entier d'un paragraphe (un trou qui est le paragraphe entier). */
 function texteDe(sec, motif) { return sec.lignes.find((l) => correspond(l, motif)).texte; }
 
+// ══ Avis spécifique d'appel d'offres (plan du 30/09, lot AV-1) ═══════════════════════════════════════════════
+// Source : « AVIS SPECIFIQUES » en tête du document type du contrat-cadre (fournitures et services) — le seul modèle
+// d'avis des documents types ; sa rédaction couvre les trois formes (« à quantités fixes », « à commandes »,
+// « contrat-cadre »). AVIS-F : fournitures, tel quel. AVIS-T : travaux, le même modèle ADAPTÉ (arbitrage Q2 du pilote) —
+// « pour fournir » → « pour exécuter les travaux suivants : », « Les fournitures » → « Les travaux », prix mixte ; chaque
+// texte adapté est un AJOUT déclaré. Les informations de PUBLICATION (date de l'avis, JMP de l'avis général, supports)
+// ne sont pas des données du DAO : saisies à l'impression (Q4), elles arrivent en jetons `{{AVIS.*}}`.
+function avisSpecifique(categorie) {
+  const T = categorie === 'TRAVAUX';
+  const SRC = lireSource('contrat-cadre');
+  const d = sectionDe(SRC, 'AVIS SPECIFIQUES', 'DONNEES PARTICULIERES D');
+  const tr = [];
+  const x = (motif, ...r) => { const l = ligne(d, motif); return traiter(tr, l.n, l.texte, ...r); };
+  const ajouts = [];
+  /** L'adaptation aux travaux d'un texte déjà traité : déclarée en ajout quand elle change quelque chose. */
+  const adapte = (t, ...paires) => {
+    if (!T) return t;
+    const a = paires.reduce((s, [de, par]) => { if (!s.includes(de)) throw new Error(`AVIS-T : « ${de} » absent`); return s.replace(de, par); }, t);
+    ajouts.push(a);
+    return a;
+  };
+  const TRAVAUX_OBJET = [['pour fournir ', 'pour exécuter les travaux suivants : ']];
+  const TRAVAUX_LOTS = [['Les fournitures sont réparties en', 'Les travaux sont répartis en']];
+  const TRAVAUX_LOT_UNIQUE = [['Les fournitures constituent un lot unique indivisible', 'Les travaux constituent un lot unique indivisible']];
+
+  retirer(d, 'bandeau du document type (titre de partie et en-tête de page)', '=AVIS SPECIFIQUES', '=Contrat-cadre');
+  retirer(d, 'instruction à l’acheteur : l’adresse est détaillée ligne par ligne ci-dessous', '[insérer Adresse exacte');
+
+  const conditions = {
+    CC: 'typeMarche = CONTRAT_CADRE',
+    ORDINAIRE: 'typeMarche != CONTRAT_CADRE',
+    'CC-ALLOTI': 'typeMarche = CONTRAT_CADRE et alloti = OUI',
+    'CC-LOT-UNIQUE': 'typeMarche = CONTRAT_CADRE et alloti = NON',
+    'ORDINAIRE-ALLOTI': 'typeMarche != CONTRAT_CADRE et alloti = OUI',
+    'ORDINAIRE-LOT-UNIQUE': 'typeMarche != CONTRAT_CADRE et alloti = NON',
+    'QF-UNITAIRES': 'typeMarche = QUANTITE_FIXE et typePrix = UNITAIRES',
+    'QF-FORFAITAIRE': 'typeMarche = QUANTITE_FIXE et typePrix = FORFAITAIRE',
+    'AC-UNITAIRES': 'typeMarche = A_COMMANDE et typePrix = UNITAIRES',
+    'AC-FORFAITAIRE': 'typeMarche = A_COMMANDE et typePrix = FORFAITAIRE',
+    'CC-UNITAIRES': 'typeMarche = CONTRAT_CADRE et typePrix = UNITAIRES',
+    'CC-FORFAITAIRE': 'typeMarche = CONTRAT_CADRE et typePrix = FORFAITAIRE',
+    ...(T ? {
+      'QF-MIXTE': 'typeMarche = QUANTITE_FIXE et typePrix = MIXTE',
+      'AC-MIXTE': 'typeMarche = A_COMMANDE et typePrix = MIXTE',
+      'CC-MIXTE': 'typeMarche = CONTRAT_CADRE et typePrix = MIXTE',
+    } : {}),
+    ELECTRONIQUE: 'modeRemise = ELECTRONIQUE',
+    PAPIER: 'modeRemise != ELECTRONIQUE',
+    ...(T ? { GARANTIE: 'garantieSoumission = OUI' } : {
+      'GARANTIE-LOTS': 'garantieSoumission = OUI et alloti = OUI',
+      'GARANTIE-UNIQUE': 'garantieSoumission = OUI et alloti = NON',
+    }),
+    'CONSULTATION-EMAIL': 'B04-DS-11 renseigne',
+  };
+
+  // Le numéro de l'appel d'offres : B02-OB-03 (marché ordinaire), B02-OE-01 (contrat-cadre, codes harmonisés du lot D4).
+  const numero = (code) => x('[insérer Numéro et Titre', ['[insérer Numéro et Titre de l’AAO]', `{{${code}}} — {{B02-OB-01}}`, 'jeton']);
+  // La phrase d'ouverture : offres (ou offres et candidatures en contrat-cadre) × lots.
+  const sollicite = (cc, alloti) => {
+    const objet = ['[insérer une brève description des Fournitures et des services]', '{{B02-OB-01}}', 'jeton'];
+    const offres = ['des offres [pour le cas d’un contrat-cadre, remplacer par <des offres et des candidatures>]', cc ? 'des offres et des candidatures' : 'des offres', 'choix'];
+    const acheteur = ['[insérer le nom de l’Acheteur]', '{{B01-AC-01}}', 'jeton'];
+    const lots = alloti
+      ? [['[insérer le nombre de lots]', '{{B02-LV-01}} lots', 'jeton'],
+        [' ou < [Les fournitures constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable] >', '', 'retire']]
+      : [['Les fournitures sont réparties en [insérer le nombre de lots]. Le (ou les) candidat(s) peut (ou peuvent) soumissionner pour un ou plusieurs lots ou < [Les fournitures constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable] >',
+        'Les fournitures constituent un lot unique indivisible. Ainsi, toute offre partielle n’est pas recevable', 'choix']];
+    return adapte(x('Le [insérer le nom de l', acheteur, offres, objet, ...lots), ...TRAVAUX_OBJET, ...(alloti ? TRAVAUX_LOTS : TRAVAUX_LOT_UNIQUE));
+  };
+  // La procédure : forme × prix.
+  const FORME = { QF: 'à quantités fixes', AC: 'à commandes', CC: 'contrat-cadre' };
+  const PRIX = { UNITAIRES: 'à prix unitaire', FORFAITAIRE: 'à prix forfaitaire' };
+  const procedure = (f, p) => {
+    const t = x('La procédure de passation', ['[préciser « à quantités fixes », « à commandes » ou « contrat-cadre »]', FORME[f], 'choix'],
+      ['[insérer « à prix unitaire » ou « à prix forfaitaire »]', PRIX[p === 'MIXTE' ? 'UNITAIRES' : p], 'choix']);
+    return p === 'MIXTE' ? adapte(t, ['conclu à prix unitaire', 'conclu à prix unitaire et à prix forfaitaire']) : t;
+  };
+  const prix = T ? ['UNITAIRES', 'FORFAITAIRE', 'MIXTE'] : ['UNITAIRES', 'FORFAITAIRE'];
+  // Les plis : adresse et date limite de remise, selon la forme et la catégorie.
+  const plis = (adresse, date) => x('Les plis devront parvenir', ['[insérer adresse physique complète y compris N° porte et étage]', `{{${adresse}}}`, 'jeton'],
+    ['[insérer date et heure]', date, 'jeton']);
+  const garantie = (montant) => x('Chaque offre doit être accompagnée', ['[insérer montant en monnaie nationale]', montant, 'jeton']);
+
+  const blocs = [
+    C(x('[insérer : entête', ['[insérer : entête de l’Acheteur]', '{{B01-AC-01}}', 'jeton'])),
+    C(x('Avis d’Appel d’Offres Ouvert')),
+    ...SI('ORDINAIRE', C(numero('B02-OB-03'))),
+    ...SI('CC', C(numero('B02-OE-01'))),
+    C(x('[insérer Date de publication]', ['[insérer Date de publication]', '{{AVIS.date-publication}}', 'jeton'])),
+    P(x('Cet Avis spécifique', ['[insérer le numéro du JMP]', '{{AVIS.jmp-numero}}', 'jeton'], ['[insérer la date publication du JMP]', '{{AVIS.jmp-date}}', 'jeton'],
+      ['[préciser les supports utilisés et la date de leur publication]', '{{AVIS.supports}}', 'jeton'])),
+    ...SI('ORDINAIRE-ALLOTI', P(sollicite(false, true))),
+    ...SI('ORDINAIRE-LOT-UNIQUE', P(sollicite(false, false))),
+    ...SI('CC-ALLOTI', P(sollicite(true, true))),
+    ...SI('CC-LOT-UNIQUE', P(sollicite(true, false))),
+    ...['QF', 'AC', 'CC'].flatMap((f) => prix.flatMap((p) => SI(`${f}-${p}`, P(procedure(f, p))))),
+    P(x('Le Dossier d’Appel d’Offres complet')),
+    // L'adresse de consultation, ligne par ligne comme le modèle (B04-DS-07 à -10, B04-DS-11 : demande du 30/09).
+    P(x('=Nom du Responsable', ['Nom du Responsable', '{{B04-DS-07}}', 'jeton'])),
+    P(x('=Fonction', ['Fonction', '{{B04-DS-08}}', 'jeton'])),
+    P(x('Bureau, N° porte', ['Bureau, N° porte, étage', '{{B04-DS-09}}, {{B04-DS-10}}', 'jeton'])),
+    ...SI('CONSULTATION-EMAIL', P(x('E-mail', ['E-mail ]', '{{B04-DS-11}}', 'jeton']))),
+    P(x('Pour le (ou les) candidat(s) désirant soumissionner')),
+    P(x('- [insérer montant en lettres]', ['[insérer montant en lettres] Ariary', '{{B04-DS-05.lettres}}', 'jeton'], ['[insérer montant en chiffres]', '{{B04-DS-05.chiffres}}', 'jeton'])),
+    ...SI('ORDINAIRE', P(T ? plis('B01-AC-02', '{{B04-OV-02}}') : plis('B04-LR-02', '{{B04-LR-03}}, {{B04-LR-04}}'))),
+    ...SI('CC', P(plis('B04-RQ-03', '{{B04-CP-02}}'))),
+    ...SI('ELECTRONIQUE', P(x('La soumission des offres par voie électronique', ['[insérer « sera » ou « ne sera pas »]', 'sera', 'choix']))),
+    ...SI('PAPIER', P(x('La soumission des offres par voie électronique', ['[insérer « sera » ou « ne sera pas »]', 'ne sera pas', 'choix']))),
+    ...(T
+      ? SI('GARANTIE', P(garantie('{{B05-GQ-03.lettres}} ({{B05-GQ-03}})')))
+      : [...SI('GARANTIE-LOTS', P(garantie('{{B05-GS-03.parLot}}'))), ...SI('GARANTIE-UNIQUE', P(garantie('{{B05-GS-03.lettres}} ({{B05-GS-03}})')))]),
+    ...SI('CC', P(x('Les titulaires du contrat-cadre'))),
+    P(x('La Personne Responsable des Marchés Publics')),
+    P('{{B01-AC-05}}'),
+  ];
+  ajouts.push('{{B01-AC-05}}');   // le nom de la PRMP sous sa qualité, comme au bas des autres documents produits
+  toutEstRendu(d, T ? 'AVIS-T' : 'AVIS-F');
+  const sigle = T ? 'AVIS-T' : 'AVIS-F';
+  return { fichier: `${sigle}.docx`, sigle, source: 'contrat-cadre', titre: 'Avis d’Appel d’Offres Ouvert', conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
+}
+
 // ══ Sortie ═══════════════════════════════════════════════════════════════════════════════════
-const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre, 'DPAO-F': dpaoFournitures, 'AE-F': aeFournitures, 'CCAP-F': ccapFournitures, 'DPIC-PI': dpicPi, 'AE-PI': aePi, 'CPS-PI': cpsPi, 'DPAO-T': dpaoTravaux, 'AE-T': aeTravaux, 'CCAP-T': ccapTravaux };
+const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre, 'DPAO-F': dpaoFournitures, 'AE-F': aeFournitures, 'CCAP-F': ccapFournitures, 'DPIC-PI': dpicPi, 'AE-PI': aePi, 'CPS-PI': cpsPi, 'DPAO-T': dpaoTravaux, 'AE-T': aeTravaux, 'CCAP-T': ccapTravaux, 'AVIS-F': () => avisSpecifique('FOURNITURES_SERVICES'), 'AVIS-T': () => avisSpecifique('TRAVAUX') };
 fs.mkdirSync('modeles', { recursive: true });
 const voulus = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(DOCUMENTS);
 for (const sigle of voulus) {

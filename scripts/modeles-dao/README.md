@@ -99,3 +99,11 @@ codes du contrat-cadre de fournitures (harmonisation demandée au backend, Q1).
 
 Piège rencontré : une section conditionnelle qui dépend d'une autre (la tranche conditionnelle 2 d'un prix unitaire ou
 forfaitaire) doit être **imbriquée** dans celle-ci, sinon elle s'imprime aussi sous l'autre forme de prix.
+
+## Avis spécifique d'appel d'offres (30/09, plan `docs/plan-2026-09-30-avis-specifique.md`)
+
+`AVIS-F` (fournitures, les trois formes) et `AVIS-T` (travaux) : le modèle « AVIS SPECIFIQUES » en tête du document
+type du contrat-cadre, le seul modèle d'avis des documents types. `AVIS-T` l'adapte aux travaux (« pour exécuter les
+travaux suivants : », « Les travaux… », prix mixte), chaque texte adapté étant un **ajout** déclaré. Les informations de
+publication (date de l'avis, JMP de l'avis général, supports) sont des jetons `{{AVIS.*}}` que le serveur remplit
+avec la saisie faite à l'impression : ce ne sont pas des champs de la fiche. Décalques : 73/73 et 79/79.
