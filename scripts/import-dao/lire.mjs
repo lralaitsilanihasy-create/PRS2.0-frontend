@@ -200,7 +200,11 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
   // jeton seul, lu entre ses voisins (étape 2).
   const lettresFixes = (t) => t.replace(JETON, ' ').normalize('NFKC').toLowerCase().replace(/[^\p{L}]/gu, '');
   const seulJeton = (u) => /\{\{/.test(u.texte) && lettresFixes(u.texte).length === 0;
-  const jumeau = (u) => /\{\{/.test(u.texte) && us.some((v) => v !== u && cleTexte(v) === cleTexte(u));
+  // Le nombre d'unités du modèle par texte fixe, compté une fois : « jumeau » et « répété » le relisent sans tout reparcourir.
+  const occurrences = new Map();
+  for (const v of us) occurrences.set(cleTexte(v), (occurrences.get(cleTexte(v)) ?? 0) + 1);
+  const repeteAilleurs = (u) => occurrences.get(cleTexte(u)) > 1;
+  const jumeau = (u) => /\{\{/.test(u.texte) && repeteAilleurs(u);
 
   // Les débuts de paragraphe du modèle (texte fixe avant le premier jeton, au moins 6 caractères) : retrouvés DANS une
   // valeur capturée, ils disent qu'un paragraphe suivant a été collé derrière (fusion), et où couper.
@@ -229,7 +233,7 @@ export function lireParagraphes(docLu, sigle, champs = {}) {
     // ⚠️ 30/09 — un texte que le modèle répète ailleurs (« Non applicable ») ne se cherche que tout près du curseur :
     // absent du document, il se raccrochait au « Non applicable » d'un article plus loin et la lecture sautait tout ce
     // qui les séparait (CCAP-T, banc synthétique : les assurances de l'article 8 perdues).
-    const repete = us.some((v) => v !== u && cleTexte(v) === cleTexte(u));
+    const repete = repeteAilleurs(u);
     const borne = trouves.size ? Math.min(doc.length, curseur + (repete ? 3 : 60)) : doc.length;
     for (let j = curseur; j < borne; j++) {
       let x = re.exec(doc[j]);

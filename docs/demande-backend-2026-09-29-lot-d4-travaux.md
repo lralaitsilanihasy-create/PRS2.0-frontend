@@ -245,6 +245,48 @@ leur code. `ModelesDao.COUVERTURES` : `DPAC-CC` et `AE-CC` pour `CONTRAT_CADRE` 
 > travaux. Il porte désormais sur un **contrat-cadre de prestations intellectuelles**, la seule forme restée au lot 2a
 > (DPIC et contrat-cadre valant AE).
 
+## B6 — Constats du test de l'écran du 30/09 (accord du pilote)
+
+Test fait avec PRMP001 sur deux lignes de travaux du plan 00004 :
+- fiche **38**, ligne 303121, quantité fixe, prix **mixte**, tranches, avance ;
+- fiche **39**, ligne 303120, contrat-cadre.
+
+Chaque fiche a été créée à l'écran, saisie en entier, validée et produite. **Aucun dossier n'a été créé.**
+
+**Ce qui est conforme.**
+- Écran : bouton d'import orange, option « mixte » proposée aux seuls travaux.
+- Production :
+  - fiche 38 : DPAO, CCAP, AE, A1, C1 ;
+  - fiche 39 : DPAC, AE.
+  
+  Aucun jeton n'y reste.
+- Le DPAO-T imprime « Le délai de validité des offres sera de 120 jours. ».
+- L'AE-CC imprime la fin de validité calculée : 16/11/2026 + 120 j = 16/03/2027.
+- Relecture des cinq documents produits par `lire.mjs` : 0 valeur fausse (les deux seuls écarts sont décrits en B6.3).
+
+**B6.1 — `{{DERIVE.fin-validite-offre}}` vide dans l'AE des travaux.** L'AE-T de la fiche 38 imprime « … jusqu'au
+………. ». `FormulairesCandidat` lit la date limite de remise dans `B04-LR-03`, puis dans `B04-CP-02`. Or le référentiel
+des travaux (quantité fixe et à commande) porte cette date dans **`B04-OV-02`** (DATE_HEURE, « Date et heure limites
+de remise des offres »), et ne sert pas `B04-LR-03`. Les contrôles de dates, eux, lisent déjà `B04-OV-02` : le 409
+« attribution précède remise des offres » l'a cité. **Demande :** ajouter `B04-OV-02` (sa date) comme troisième
+source de la date de remise dans le calcul, et un test sur une fiche de travaux.
+
+**B6.2 — L'import met 53 s à lire un DPAO de 10 Ko.** Mesure à l'écran, fiche 38 : `POST /import` du DPAO produit
+répond 200 **au bout de 53 s** (lecture contre DPAO-T, CCAP-T et AE-T). Sur le même fichier, `lire.mjs` met 0,75 s
+(DPAO-T), 0,76 s (CCAP-T) et 1,2 s (AE-T), démarrage de Node et extraction du docx compris. Une PRMP croirait l'écran
+figé. **Demande :** profiler `LectureDao` sur ce fichier. Il est conservé côté front sous
+`38-DPAO_00004-PPM-AGPM-CNM-2026_303121_v1.docx` et peut être retransmis, ou reproduit en revalidant la fiche 38.
+Deux pistes :
+- une expression rationnelle qui retombe en retour arrière ;
+- la recherche d'un texte répété recalculée paragraphe par paragraphe. Le front avait ce second coût : sa règle R-a
+  comparait chaque paragraphe du modèle à tous les autres. Il compte désormais les textes répétés **une seule fois**
+  par modèle, et le CCAP-T est passé de 3,3 s à 0,76 s, pour un résultat identique au banc.
+
+**B6.3 — « m³ » relu « m3 ».** La normalisation de la lecture (NFKC) ramène les exposants à des chiffres. Une valeur
+reprise par l'import s'écrirait « 500 m3 » dans la fiche. Ce n'est pas une fausse valeur, mais la typographie est
+perdue. **À décider ensemble** : garder NFKC pour *reconnaître* le texte, mais prendre la *valeur* dans le texte
+d'origine. Cela touche la parité : rien n'est changé d'un côté seul.
+
 ## Pour le juriste (pas pour le backend)
 
 Texte officiel reproduit tel quel (Q5) : le CCAP renvoie à « l'article 16 » pour les délais d'affermissement (c'est

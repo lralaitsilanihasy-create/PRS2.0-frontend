@@ -104,9 +104,8 @@ export const VALEURS_TRAVAUX = {
     + "l'acceptation écrite de la personne responsable des marchés publics.",
 
   // — B04 Dossier, remise & ouverture des offres —
-  'B04-CD-01':
-    "Fiche de renseignements A1 (identification du candidat), A2 (références de marchés similaires), A3 (moyens "
-    + 'humains), A4 (moyens matériels) et A5 (situation financière), jointes au dossier et à remplir intégralement.',
+  // ⚠️ 30/09 — liste à choix multiples (options A1 à A4) depuis le 25/09 : le texte d’autrefois est refusé (400).
+  'B04-CD-01': 'A1,A2,A3,A4',
   'B04-CD-02': 'Modèle de garantie bancaire de soumission joint au dossier, à reprendre sans modification.',
   'B04-CD-03':
     "Plans joints au dossier : plan de situation au 1/5000, profil en long du tracé au 1/2000, plans des ouvrages de "
@@ -768,9 +767,8 @@ export const VALEURS_QF = {
   'B03-ST-01': 'NON',
 
   // — B04 Dossier, remise & ouverture des offres —
-  'B04-CD-01':
-    "Modèles de fiches de renseignements A1 (identification du candidat), A2 (capacités techniques), A3 (capacités "
-    + 'financières) et A4 (antécédents pour des marchés de même nature).',
+  // ⚠️ 30/09 — liste à choix multiples (options A1 à A4) depuis le 25/09 : le texte d’autrefois est refusé (400).
+  'B04-CD-01': 'A1,A2,A3,A4',
   'B04-CD-02':
     "Modèles de garantie de soumission : B1 — garantie bancaire, B2 — caution personnelle et solidaire.",
   'B04-CO-01':
