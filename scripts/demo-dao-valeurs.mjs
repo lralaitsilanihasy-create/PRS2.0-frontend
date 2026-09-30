@@ -112,7 +112,7 @@ export const VALEURS_TRAVAUX = {
     "Plans joints au dossier : plan de situation au 1/5000, profil en long du tracé au 1/2000, plans des ouvrages de "
     + "captage et de la station de pompage au 1/100, plan de coffrage du réservoir au 1/50, et carnet de détails des "
     + 'regards et des bornes-fontaines.',
-  'B04-DV-01': '90',
+  'B04-VO-01': '90', // ⚠️ 30/09 — ex-B04-DV-01, retiré par V55 (délai de validité unique)
   'B04-EQ-01': '15',
   'B04-EQ-02': '7',
   'B04-FP-01': '3',
