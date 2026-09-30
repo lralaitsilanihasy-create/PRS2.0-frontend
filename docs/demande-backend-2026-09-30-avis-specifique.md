@@ -20,6 +20,12 @@
   et `B04-DS-11 renseigne`. Aucune syntaxe nouvelle.
 - Le document se range parmi les documents de la fiche sous le **type `AVIS`**, en .docx et en PDF comme les autres.
 
+> ⚠️ **Livraison backend du 2026-09-30 (§B1).** Conforme. `AVIS-F` et `AVIS-T` sont recopiés tels quels, avec 17 et 19
+> conditions. Le comparateur donne 73/73 et 79/79 sur le rendu brut du serveur. Un modèle par catégorie couvre les trois
+> formes (`ModelesDao.AVIS`). Ils sont volontairement **hors de `ModelesDao.COUVERTURES`**, que lisent la production à la
+> validation et l'import : l'avis ne se produit qu'à la demande, et un DAO importé ne se lit pas contre l'avis. Type de
+> document `AVIS`, libellé « Avis spécifique d'appel d'offres », en .docx et en .pdf.
+
 ## B2 — Jetons nouveaux `{{AVIS.*}}` : les informations de publication
 
 Ce ne sont pas des données du DAO. Elles sont saisies par la PRMP au moment d'imprimer (décision Q4), transmises dans le
@@ -31,6 +37,12 @@ corps de la requête (B3), **non écrites dans la fiche**, et conservées avec l
 | `{{AVIS.jmp-numero}}` | numéro du Journal des Marchés Publics de l'avis général | tel quel |
 | `{{AVIS.jmp-date}}` | date de ce JMP | JJ/MM/AAAA |
 | `{{AVIS.supports}}` | autres supports de publication et leurs dates | tel quel |
+
+> ⚠️ **Livraison backend du 2026-09-30 (§B2).** Conforme. Les quatre jetons sont rendus depuis le corps de la requête,
+> les dates au format JJ/MM/AAAA, les deux autres tels quels. Absents, ils s'impriment en pointillés (R2), ce qui ne se
+> produit pas par la route, qui les exige. Rien n'est écrit dans la fiche : le test `impression` le vérifie sur les
+> valeurs stockées. La trace est gardée avec chaque document produit, dans la colonne `PUBLICATION` (JSON, **V56**),
+> et rendue dans `publication` sur la liste des documents.
 
 ## B3 — Produire l'avis à la demande
 
@@ -62,6 +74,32 @@ corrigé par la levée des réserves. Réponse 201 avec les `DocumentFiche` prod
   réelle, et de la citer dans votre encadré.
 - Cas d'un dossier remplacé par une version postérieure : l'avis se lit sur le dossier soumis **courant** de la fiche.
 
+> ⚠️ **Livraison backend du 2026-09-30 (§B3).** Conforme, avec quatre précisions :
+> - **La raison du 409 est dans `details.raison`**, la forme commune des erreurs métier qui portent un complément,
+>   comme `details.statut` de `DOSSIER_EN_EXAMEN`. Le corps porte aussi `code: AVIS_INDISPONIBLE` et `idDossier`.
+> - **Statuts « réserves levées »** : `OBSERVATIONS_LEVEES`, `DECISION_TRANSMISE_SIGMP`, `CLOTURE`. Ils sont lus sur la
+>   navette réelle :
+>   - le vérificateur pose `OBSERVATIONS_LEVEES` à la levée ;
+>   - pour un FAVR, la transmission à SIGMP n'est acceptée qu'à partir de `OBSERVATIONS_LEVEES`
+>     (`TransmissionSigmpService`, cas 2) ;
+>   - l'archivage, qui pose `CLOTURE`, n'est accepté qu'après la transmission.
+>
+>   Aucun autre chemin ne mène un FAVR à ces statuts. En particulier, `EN_ATTENTE_DECISION_PRMP` (observations
+>   maintenues) donne `RESERVES_NON_LEVEES`.
+> - **Ordre des gardes** : la catégorie d'abord (`CATEGORIE_SANS_AVIS` même sans dossier), puis dossier, PV, avis et
+>   réserves. Une sixième raison, `FICHE_NON_VALIDEE`, sert de garde-fou (dossier sans version validée) ; elle ne doit
+>   pas se produire.
+> - **« Même si une révision est ouverte »** : le code lit bien la dernière version **validée**. Mais une révision n'est
+>   possible que quand le dossier est rendu à la PRMP (`DOSSIER_EN_EXAMEN` sinon, lot C). Or `OBSERVATIONS_LEVEES`,
+>   `DECISION_TRANSMISE_SIGMP` et `CLOTURE` sont tenus par la Commission. Un avis disponible et une révision ouverte
+>   ne coexistent donc pas en pratique. Le cas réel est celui d'une fiche révisée et revalidée pendant la rectification,
+>   puis de la levée : l'avis se lit alors sur la v2 (test `ficheRevisee`).
+>
+> Chaque impression produit une nouvelle paire, dont le nom porte l'horodatage (`AVIS_<plan>_<ligne>_v2_20261005-143000.pdf`).
+> Pour le permettre, V56 lève pour ce type l'unicité « type, extension, lot par version » de V43 et ajoute `AVIS` à la
+> liste fermée des types. L'impression est inscrite au journal du dossier (`AVIS_SPECIFIQUE_IMPRIME`). Accès : PRMP et
+> UGPM au périmètre de la fiche, mandat actif exigé pour imprimer ; l'Administrateur et la Commission reçoivent 403.
+
 ## B4 — Dire si l'avis est disponible (pour afficher le bouton sans réécrire la règle)
 
 `GET /api/fiches-marche/{idDmc}/avis-specifique/disponibilite` renvoie :
@@ -73,6 +111,15 @@ corrigé par la levée des réserves. Réponse 201 avec les `DocumentFiche` prod
 - Mêmes raisons que B3. Même accès.
 - Les avis déjà produits apparaissent dans `GET /{idDmc}/documents` (type `AVIS`), du plus récent au plus ancien.
 - La page du dossier connaît `idDmc` (`Dossier.idDmc`) : elle utilise les mêmes routes.
+
+> ⚠️ **Livraison backend du 2026-09-30 (§B4).** Conforme. Même accès, mêmes raisons, 200 dans tous les cas. `raison`
+> vaut `null` quand l'avis est disponible, et `statutPv` vaut `SIGNE` dès qu'un PV signé existe.
+> `GET /{idDmc}/documents` ajoute les avis, du plus récent au plus ancien :
+> - sans `?version`, ceux de **toutes** les versions, y compris pendant une révision ouverte ;
+> - avec `?version`, ceux de la version demandée.
+>
+> L'avis n'est **jamais joint au dossier** comme pièce `DAO_COMPLET`. Le test le vérifie par un détachement suivi d'un
+> rattachement.
 
 ## B5 — Référentiel : ce que l'avis imprime et que les marchés ordinaires n'ont pas
 
@@ -95,6 +142,19 @@ corrigé par la levée des réserves. Réponse 201 avec les `DocumentFiche` prod
   
   Tous sont déjà servis.
 
+> ⚠️ **Livraison backend du 2026-09-30 (§B5).** Conforme. Fichiers de correspondance (contrat-cadre, fournitures,
+> travaux) et script `docs/referentiel/2026-09-30-avis-specifique.sql`, à passer **après** le redémarrage (V56).
+> - `B04-DS-05` et `-07` à `-10` sont servis aux trois formes. `B04-DS-11` est créé (TEXTE, facultatif, document maître
+>   `DPAC` comme ses voisins, les six formes).
+> - `B05-GS-03` et `B05-GQ-03` sont servis au contrat-cadre, sous `garantieSoumission = OUI`. Ils restent
+>   **obligatoires sous cette condition**, comme en quantité fixe : c'est « la même règle » demandée. Un contrat-cadre qui
+>   répond Oui à la garantie devra donc saisir le montant avant de valider.
+> - **Rubriques** : le référentiel ne sert une rubrique qu'aux formes et catégories qu'elle déclare. V56 élargit donc
+>   `B04-DS` (aux trois formes) et `B05-GQ` (au contrat-cadre). `B05-GS` couvrait déjà les trois.
+> - La question `garantieSoumission` n'est pas posée par le serveur, qui accepte toute clé de cadrage : c'est l'écran
+>   qui choisit les questions par forme. Si le contrat-cadre ne la pose pas, le montant n'est jamais demandé et l'avis
+>   omet le paragraphe de la garantie.
+
 ## B6 — Tests attendus
 
 - Rendu ≡ modèle pour `AVIS-F` et `AVIS-T` (73 et 79 unités).
@@ -102,6 +162,16 @@ corrigé par la levée des réserves. Réponse 201 avec les `DocumentFiche` prod
 - Une fiche révisée après la levée des réserves : l'avis se lit sur la dernière version **validée**.
 - Deux impressions successives : deux paires de documents, la première toujours consultable.
 - Jetons `AVIS.*` : dates au format JJ/MM/AAAA, absents du stockage de la fiche.
+
+> ⚠️ **Livraison backend du 2026-09-30 (§B6).** Tests :
+> - `ModelesDaoTest` (chargement : 13 modèles, les deux avis hors des couvertures ; rendu brut → 73/73 et 79/79) ;
+> - `ModelesAvisTest` (pur : travaux à prix mixte, garantie et e-mail ; contrat-cadre de fournitures ; pointillés) ;
+> - `AvisSpecifiqueIntegrationTest` :
+>   - `garde` : les raisons, dont FAVR avant puis après la levée, sur les trois statuts et `EN_ATTENTE_DECISION_PRMP`,
+>     et 403 hors PRMP/UGPM ;
+>   - `impression` : 400 nominatif ; 201 ; dates JJ/MM/AAAA dans le .docx ; rien dans la fiche ; deux impressions
+>     = quatre documents, du plus récent au plus ancien ; jamais joint ;
+>   - `ficheRevisee` : avis sur la v2 ; révision refusée après la levée.
 
 ## Ce que le backend rend
 
