@@ -429,6 +429,32 @@ d'origine. Cela touche la parité : rien n'est changé d'un côté seul.
 > besoin (B12, `rendu: 'BESOIN'`) reste. La règle ne dépend pas du cadrage. Constaté à l'écran : B11 disparaît des
 > fiches 38 et 39 (travaux), et aussi des fiches 29 et 35 (fournitures), où ses champs B11-FR avaient été retirés.
 > Vous pouvez donc continuer à servir le bloc tel quel ; s'il reçoit un jour un champ, il réapparaît de lui-même.
+>
+> ⚠️ **Livraison backend du 2026-09-30 (suite §B6).** Tout est porté à l'identique :
+> - **B6.3 — valeur reprise dans le texte d'origine.**
+>   - L'extraction produit aussi les paragraphes **tels qu'écrits** : `ImportDaoService.paragraphesDOrigine`, pour le Word
+>     comme pour le PDF (césures recollées, non normalisés).
+>   - La carte se construit par graphème (`java.text.BreakIterator`, l'équivalent de `Intl.Segmenter`) avec `norm`
+>     sans resserrement des blancs. Elle est abandonnée si le texte reconstruit ≠ `norm`.
+>   - La reprise se fait ligne par ligne, **après** la détection des conflits, à partir du paragraphe lu moins cinq
+>     rangs, puis sur tout le document. Une ligne introuvable laisse la valeur normalisée.
+>   - Une espace insécable seule est gardée. Les types convertis ne sont pas repris.
+>   - **Écart découvert au portage** : `sansTexteFixe`, propre au serveur, normalisait le brut d'une valeur entre
+>     deux voisins. Cela fondait ses sauts de ligne, et une valeur de plusieurs paragraphes n'était jamais reprise
+>     (PDF du 2463). Il n'applique plus qu'un `trim` ; les valeurs saisies sont inchangées.
+> - **Ponctuation de tête retirée** d'une valeur de texte (`:`, `;`, `,`, `.` ; pas les tirets), avant les conflits.
+>   Sur la fiche 38, `B02-LT-03/04/05` ne commencent plus par « : ».
+> - **CCAP-T recopié** (71 conditions, 573/573). `B04-CD-03` est repris dans le CCAP (fichier de correspondance et
+>   script `docs/referentiel/2026-09-30-plans-ccap-travaux.sql`) et reste facultatif.
+>
+> **Tests** :
+> - `LectureDaoTest.reprojectionCasCommuns` : vos cas de `test_reprojection.mjs`, tous verts ;
+> - `reprojectionALaLecture` : m³ et — repris, montant non repris, « : » de tête retiré, sans origines la valeur
+>   reste normalisée.
+>
+> **Parité** avec `lire.mjs` (304a55d), lecture **avec paragraphes d'origine** : identique sur les **huit** entrées
+> (dossier 27 en Word et PDF, PDF du 2463, rendus bruts des quatre familles, DPAO de la fiche 38), valeurs reprises
+> comprises. Le bloc B11 est pris en compte : rien à faire côté serveur.
 
 ## Pour le juriste (pas pour le backend)
 
