@@ -94,6 +94,22 @@ feuille « Contrat-cadre ». Aucune extension du moteur n'est nécessaire.
 >    arbitré. Il faudrait passer les deux champs en `parLot = oui` et remplacer les jetons par `{{CODE.parLot}}` dans
 >    DPAO-T (mécanique du lot D2). Le front doit recopier le modèle, puisque la fidélité se mesure de son côté.
 > 6. **Non touché**, en attente du pilote.
+>
+> ⚠️ **Mise à jour du 2026-09-30 — point 6 tranché par le pilote**, sur la règle des fournitures. Un champ qu'aucun
+> document n'utilise est retiré, ses valeurs conservées. Aucun document n'utilise un champ quand aucun modèle ne le cite
+> (jeton ou condition), qu'aucun formulaire du candidat ne le cite et qu'aucune règle serveur ne le lit.
+> - **17 champs retirés** : `B03-GT-02`, `B03-SU-01/02`, `B08-DB-01`, `B11-AN-01..05`, `B10-RE-01`, `B05-GA-02`,
+>   `B03-QT-11`, `B02-MW-03`, `B08-MR-02..04`, `B09-RP-02`.
+> - **Deux champs lus par une règle restent, mais facultatifs** : `B08-MO-01` (intérêts moratoires) et `B08-AF-02`
+>   (montant de l'avance).
+> - Le bloc B11 n'a plus de rubrique pour les travaux. Le serveur le sert encore, vide, car il ne filtre pas les blocs
+>   sans rubrique. L'écran peut le masquer, ou le serveur le retirer si vous le souhaitez.
+>
+> Script : `docs/referentiel/2026-09-30-champs-non-utilises.sql` (PRS20).
+>
+> **Restent obligatoires et non imprimés en travaux**, parce que hors des listes arbitrées : `B03-QT-01` à `-04`,
+> `B09-DL-02`, `B09-DL-03` et `B04-CD-03`. S'y ajoutent, pour les trois catégories, `B03-CQ-01` et la remise
+> électronique (juriste). Ils sont à confirmer avant tout retrait.
 
 ## B3 — Contrat-cadre de travaux : harmoniser les codes (T-2, décision Q1)
 
@@ -129,6 +145,18 @@ leur code. `ModelesDao.COUVERTURES` : `DPAC-CC` et `AE-CC` pour `CONTRAT_CADRE` 
 >   complète est dans le script `docs/referentiel/2026-09-29-lot-d4-travaux.sql`.
 > - **Les 15 « douteux » ne sont pas tranchés** : ils restent actifs avec leur code travaux, en attendant la liste de
 >   la partie C arbitrée champ par champ. Un doublon qui resterait apparaîtrait deux fois à la saisie, sans rien casser.
+>
+>   ⚠️ **Mise à jour du 2026-09-30 — tranché autrement.** Les rapprochements « ? » de la partie C sont presque tous
+>   faux : « Délai de réponse aux demandes d'informations » y est par exemple rapproché de « Délai de paiement ». Trois
+>   des candidats étaient d'ailleurs déjà retirés. Le vrai sujet était ailleurs. **Le reliquat du contrat-cadre de
+>   travaux, qu'aucun document n'utilise, est retiré en bloc, sur arbitrage du pilote :**
+>   - 61 champs, dont 42 étaient obligatoires et bloquaient la validation sans rien imprimer (`B02-OC-*`, `B02-DK-*`,
+>     `B03-TT-*`, `B03-GM-*`, `B07-AT-*`, `B07-DT-*`, `B08-FT-*`, `B10-RT-*`…) ;
+>   - `B08-AT-03` (taux de l'avance) et `B08-FT-03` (délai de paiement), lus par une règle, restent, mais facultatifs ;
+>   - les champs `B04-SE-*` ne sont pas touchés.
+>
+>   Leurs rubriques propres ne sont plus servies. Script : `docs/referentiel/2026-09-30-champs-non-utilises.sql`
+>   (PRS20).
 > - **Rubriques** : le référentiel ne sert une rubrique qu'à ses catégories. Les **33 rubriques** du contrat-cadre des
 >   fournitures qui portent ces champs sont donc élargies aux travaux par **V54** ; sinon les champs auraient été servis
 >   hors rubrique. Une rubrique dont tous les champs sont retirés disparaît d'elle-même, par exemple `B02-SW` et

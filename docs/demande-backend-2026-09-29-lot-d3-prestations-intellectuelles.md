@@ -115,6 +115,16 @@ Le front les soumet au pilote ; le backend ne les touche pas avant sa réponse.
 
 > ⚠️ **Livraison backend du 2026-09-29 (§B2.3).** Non touché, comme demandé. Le contrôle des règles serveur qui les
 > liraient sera fait à la réponse du pilote, comme pour les fournitures.
+>
+> ⚠️ **Mise à jour du 2026-09-30 — tranché par le pilote.** Aucun des 16 champs n'est imprimé, et aucun ne porte de
+> valeur sur DBPRS20.
+> - **13 sont retirés** : `B03-TP-01..05`, `B08-AI-02`, `B02-CL-03`, `B09-DP-02`, `B04-QT-01/02`, `B06-TP-01`,
+>   `B06-OF-01`, `B06-CS-01`. Dix d'entre eux étaient obligatoires, dont les coordonnées du titulaire, qu'on ne connaît
+>   pas au stade du DAO : une fiche de PI ne pouvait pas être validée honnêtement.
+> - **`B03-SP-03`, `B03-NP-01` et `B05-PF-02` restent**, déjà facultatifs, parce que `MONTANT_POSITIF` les lit.
+>
+> La fiche PI à quantité fixe reçoit 121 champs (134 avant). Script : `docs/referentiel/2026-09-30-champs-non-utilises.sql`
+> (PRS20).
 
 ## B3 — Production
 
