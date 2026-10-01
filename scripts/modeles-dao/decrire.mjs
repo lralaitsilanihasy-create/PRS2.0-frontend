@@ -2225,6 +2225,8 @@ function dpaoTravaux() {
     'VISITE-OBLIGATOIRE': 'B04-VL-02 = OUI',
     ONG: 'B03-QT-05 = OUI',
     QUALIFICATIONS: 'B03-QT-06 renseigne',
+    'PERSONNEL-CLE': 'B03-QT-13 renseigne',
+    LIQUIDITE: 'B03-QT-14 renseigne',
     PREFERENCE: 'B06-PN-01 = OUI',
     'SANS-PREFERENCE': 'B06-PN-01 != OUI',
     FERME: 'prixRevisable = NON',
@@ -2241,7 +2243,11 @@ function dpaoTravaux() {
     'NON-CUMUL': 'alloti = OUI et B09-DL-05 = OUI',
   };
   const CLAUSE_SE = '[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]';
-  const ajouts = [CLAUSE_SE, '{{B02-LV-02}}', '{{B03-QT-06}}'];
+  // 01/10 (DAO du MEN, demande 2026-10-01-dao-travaux-men §B2.1) — personnel clé et liquidité n'ont pas de clause au
+  // document type : deux paragraphes déclarés, imprimés seulement si renseignés (champs créés par le backend).
+  const PERSONNEL_CLE = '(e) proposer le personnel clé suivant : {{B03-QT-13}}';
+  const LIQUIDITE = '(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum de : {{B03-QT-14.parLot}}';
+  const ajouts = [CLAUSE_SE, '{{B02-LV-02}}', '{{B03-QT-06}}', PERSONNEL_CLE, LIQUIDITE];
 
   retirer(d, 'note de rédaction du modèle, « à supprimer »', '[note 1]');
   retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', (l) => /^<\s*(soit|ou)\s*:?\s*>\s*:?$/i.test(l.texte));
@@ -2353,6 +2359,8 @@ function dpaoTravaux() {
     // 01/10 — « y compris au moins < par exemple >ans d'expérience en tant que directeur » s'imprimait tel quel : le trou
     // n'a pas de champ (le MEN ne l'exige pas) ; l'exemple est retiré avec son trou, ce qui en tient lieu va dans B03-QT-06.
     x(r63q, '(d) proposer un directeur', ['<par exemple cinq à dix>', '{{B03-QT-10}}', 'jeton'], [', y compris au moins < par exemple >ans d’expérience en tant que directeur', '', 'retire']),
+    SIc('PERSONNEL-CLE', PERSONNEL_CLE),
+    SIc('LIQUIDITE', LIQUIDITE),
     SIc('QUALIFICATIONS', '{{B03-QT-06}}'));
   retirer(r63q, 'instruction à l’acheteur', '<Indiquer ici les qualifications particulières');
   retirer(r63q, 'autres conditions du personnel clé : saisies dans B03-QT-06', '<Ajouter, si nécessaire');

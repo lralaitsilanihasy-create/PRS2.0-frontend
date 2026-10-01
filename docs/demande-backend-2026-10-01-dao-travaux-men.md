@@ -10,8 +10,8 @@ Trois sujets : le DPAO-T corrigé à recopier (B1), le référentiel des travaux
 
 ## B1 — Recopier le DPAO-T
 
-`scripts/modeles-dao/modeles/DPAO-T.txt` (décalque `docs/modeles-dao/DPAO-T.docx`), fidélité **247 / 247**, 36
-conditions. Ce qui change par rapport au fichier du 30/09 :
+`scripts/modeles-dao/modeles/DPAO-T.txt` (décalque `docs/modeles-dao/DPAO-T.docx`), fidélité **253 / 253**, 38
+conditions (mise à jour du 01/10 après-midi : personnel clé et liquidité, ci-dessous). Ce qui change par rapport au fichier du 30/09 :
 
 | clause | avant | après | pourquoi |
 |---|---|---|---|
@@ -22,9 +22,11 @@ conditions. Ce qui change par rapport au fichier du 30/09 :
 | 6.3 d | « …y compris au moins < par exemple >ans d'expérience en tant que directeur » imprimé tel quel | retiré | trou sans champ, oublié le 29/09 |
 | 6.7 | `{{B05-GQ-03.lettres}} ({{B05-GQ-03}})` | section `GARANTIE-LOTS` : `{{B05-GQ-03.parLot}}` ; section `GARANTIE-UNIQUE` : la rédaction d'avant | montant par lot (MEN : 9,9 M / 7,2 M) — comme `B05-GS-03` en fournitures |
 | 11 | `{{B09-DL-01}}` | `{{B09-DL-01.parLot}}` | délai par lot |
+| 6.3, après (d) | — | section `PERSONNEL-CLE` : « (e) proposer le personnel clé suivant : `{{B03-QT-13}}` » ; section `LIQUIDITE` : « (f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum de : `{{B03-QT-14.parLot}}` » | champs neufs de B2.1 ; paragraphes déclarés en `ajouts` (le document type n'a pas de clause) |
 
 Conditions ajoutées : `GARANTIE-LOTS` = `garantieSoumission = OUI et alloti = OUI`, `GARANTIE-UNIQUE` =
-`garantieSoumission = OUI et alloti != OUI`.
+`garantieSoumission = OUI et alloti != OUI`, `PERSONNEL-CLE` = `B03-QT-13 renseigne`, `LIQUIDITE` =
+`B03-QT-14 renseigne`. Les deux dernières sont fausses tant que les champs ne sont pas servis : rien ne s'imprime.
 
 Le modèle est sans risque **avant même B2** : `{{CODE.parLot}}` imprime la valeur seule pour un champ que la ligne ne
 saisit pas par lot (contrat du lot D2, §B1.3) ; un jeton sans valeur s'imprime en pointillés (R2).
@@ -43,9 +45,8 @@ saisit pas par lot (contrat du lot D2, §B1.3) ; un jeton sans valeur s'imprime 
 | `B03-QT-13` | Personnel clé exigé (fonctions, diplômes, années d'expérience, justificatifs) | `TEXTE_LONG` | DPAO | MEN : conducteur de travaux ingénieur BTP 3 ans, chef de chantier technicien supérieur 3 ans, CV avec photo, diplôme certifié |
 | `B03-QT-14` | Liquidité ou ligne de crédit bancaire minimale (Ariary) | `MONTANT` | DPAO | **`parLot`** ; MEN : 99 M / 72 M |
 
-`B03-QT-13` et `B03-QT-14` ne sont **pas encore imprimés** : le document type n'a pas de clause pour eux. Le front les
-ajoutera au DPAO-T (déclarés en `ajouts`, sous la rubrique « Qualifications particulières requises », chacun sous sa
-condition `renseigne`) une fois servis.
+`B03-QT-13` et `B03-QT-14` sont **déjà imprimés** par le DPAO-T de B1 (paragraphes (e) et (f), sous condition
+`renseigne`). Banc : DPAO-T 31/32 en cadrage « tout oui », les deux champs relus, Q10 tenu.
 
 ### B2.2 — Champs existants à modifier
 
