@@ -3023,6 +3023,13 @@ function avisSpecifique(categorie) {
   const rappel = (supports) => x('Cet Avis spécifique', ['[insérer le numéro du JMP]', '{{AVIS.jmp-numero}}', 'jeton'], ['[insérer la date publication du JMP]', '{{AVIS.jmp-date}}', 'jeton'],
     supports ? ['[préciser les supports utilisés et la date de leur publication]', '{{AVIS.supports}}', 'jeton']
       : [' et dans [préciser les supports utilisés et la date de leur publication]', '', 'retire']);
+  // ⚠️ 01/10 (décision du pilote, Q7) — le prix du DAO se paie sur le COMPTE BANCAIRE UNIQUE de l'ARMP, réglé une fois par
+  // l'Administrateur (`{{PARAM.compte-dao}}`), au lieu de « libellé au nom de l'Agent comptable ou du régisseur ».
+  const PAYEUR = 'libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP';
+  const compteArmp = (t) => {
+    if (!t.includes(PAYEUR)) throw new Error(`AVIS : « ${PAYEUR} » absent`);
+    return ajout(t.replace(PAYEUR, 'à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}'));
+  };
   // Le retrait du DAO « auprès de » l'autorité nommée (E12, Q6).
   const retrait = () => x('Pour le (ou les) candidat(s) désirant soumissionner', ['l’Autorité contractante', '{{B01-AC-01}}', 'jeton']);
 
@@ -3053,8 +3060,8 @@ function avisSpecifique(categorie) {
     P(num(retrait())),
     // Le montant du DAO : une ligne par lot sur une ligne allotie (E13, `.lignesParLot` : « - Lot n : … (Ar …) »).
     ...SI('DAO-LOTS', P(ajout('{{B04-DS-05.lignesParLot}}')),
-      P(x('- [insérer montant en lettres]', ['- [insérer montant en lettres] Ariary (Ar [insérer montant en chiffres]) ', '', 'retire']))),
-    ...SI('DAO-UNIQUE', P(x('- [insérer montant en lettres]', ['[insérer montant en lettres] Ariary', '{{B04-DS-05.lettres}}', 'jeton'], ['[insérer montant en chiffres]', '{{B04-DS-05.chiffres}}', 'jeton']))),
+      P(compteArmp(x('- [insérer montant en lettres]', ['- [insérer montant en lettres] Ariary (Ar [insérer montant en chiffres]) ', '', 'retire'])))),
+    ...SI('DAO-UNIQUE', P(compteArmp(x('- [insérer montant en lettres]', ['[insérer montant en lettres] Ariary', '{{B04-DS-05.lettres}}', 'jeton'], ['[insérer montant en chiffres]', '{{B04-DS-05.chiffres}}', 'jeton'])))),
     // La date limite « le JJ/MM/AAAA à HH h MM (heure locale) » (E15, `.heureLocale`).
     ...SI('ORDINAIRE', P(num(T ? plis('B01-AC-02', '{{B04-OV-02.heureLocale}}') : plis('B04-LR-02', '{{B04-LR-03}}, {{B04-LR-04}}')))),
     ...SI('CC', P(num(plis('B04-RQ-03', '{{B04-CP-02.heureLocale}}')))),

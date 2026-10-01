@@ -79,10 +79,10 @@ PARA	{{FINSI:CONSULTATION-EMAIL}}
 PARA	{{NUM}} Pour le (ou les) candidat(s) désirant soumissionner, le Dossier d’Appel d’Offres doit être retiré auprès de {{B01-AC-01}} moyennant le paiement d’un montant non remboursable de :
 PARA	{{SI:DAO-LOTS}}
 PARA	{{B04-DS-05.lignesParLot}}
-PARA	ou son équivalent en monnaie librement convertible libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP.
+PARA	ou son équivalent en monnaie librement convertible à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}.
 PARA	{{FINSI:DAO-LOTS}}
 PARA	{{SI:DAO-UNIQUE}}
-PARA	- {{B04-DS-05.lettres}} (Ar {{B04-DS-05.chiffres}}) ou son équivalent en monnaie librement convertible libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP.
+PARA	- {{B04-DS-05.lettres}} (Ar {{B04-DS-05.chiffres}}) ou son équivalent en monnaie librement convertible à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}.
 PARA	{{FINSI:DAO-UNIQUE}}
 PARA	{{SI:ORDINAIRE}}
 PARA	{{NUM}} Les plis devront parvenir à {{B04-LR-02}} au plus tard le {{B04-LR-03}}, {{B04-LR-04}} et seront ouverts immédiatement après l’heure limite de remise des offres en présence des candidats ou leurs représentants qui souhaitent y assister. Les offres hors délai ne seront pas recevables.

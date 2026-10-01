@@ -258,7 +258,7 @@
   },
   {
    "type": "para",
-   "texte": "ou son équivalent en monnaie librement convertible libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP."
+   "texte": "ou son équivalent en monnaie librement convertible à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}."
   },
   {
    "type": "para",
@@ -270,7 +270,7 @@
   },
   {
    "type": "para",
-   "texte": "- {{B04-DS-05.lettres}} (Ar {{B04-DS-05.chiffres}}) ou son équivalent en monnaie librement convertible libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP."
+   "texte": "- {{B04-DS-05.lettres}} (Ar {{B04-DS-05.chiffres}}) ou son équivalent en monnaie librement convertible à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}."
   },
   {
    "type": "para",
@@ -740,6 +740,8 @@
   "UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS",
   "- Adresse : {{B04-DS-09}}, {{B04-DS-10}}",
   "{{B04-DS-05.lignesParLot}}",
+  "ou son équivalent en monnaie librement convertible à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}.",
+  "- {{B04-DS-05.lettres}} (Ar {{B04-DS-05.chiffres}}) ou son équivalent en monnaie librement convertible à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}.",
   "La garantie de soumission n’est pas requise.",
   "{{NUM}} La garantie de soumission n’est pas requise.",
   "à {{B04-DS-10}}, le {{AVIS.date-publication}}",

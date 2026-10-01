@@ -234,6 +234,53 @@ et 97). Un repère `{{IMAGE:…}}` que le moteur ne connaît pas ne doit pas s'i
 - `.heureLocale` et `.lignesParLot`.
 - Impression sans `jmpNumero` ni `supports` : pas de « et dans ».
 
+## B8 — Le prix du DAO se paie sur le compte bancaire unique de l'ARMP (décision du pilote du 01/10)
+
+Le pilote a tranché la question Q7 : le bénéficiaire du paiement est **un compte bancaire unique de l'ARMP**, le même
+pour tous les avis, réglé une fois par l'Administrateur.
+
+**B8.1 — Les modèles (faits côté front).** La fin de phrase « libellé au nom de l’Agent comptable de l’ARMP ou au nom
+du régisseur de recettes de l’ARMP » devient « à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}} », pour le
+montant unique comme pour le montant par lot. Décalques inchangés en nombre : **90/90 et 96/96**.
+
+**B8.2 — Le paramètre.** Un réglage unique, à l'Administrateur seul :
+- `GET /api/parametres/compte-dao` → `{ banque, titulaire, numeroCompte, misAJourLe, misAJourPar }`, lisible aussi par
+  la PRMP et l'UGPM (la modale d'impression prévient s'il n'est pas réglé) ;
+- `PUT /api/parametres/compte-dao` (ADMINISTRATEUR, sinon 403), corps `{ banque, titulaire, numeroCompte }`, les trois
+  exigés (400 nominatif), tracé à l'audit.
+
+**B8.3 — Le jeton `{{PARAM.compte-dao}}`.** Rendu « {banque}, compte n° {numeroCompte} au nom de {titulaire} ».
+Pointillés s'il n'est pas réglé (R2).
+
+**B8.4 — Tests.** Lecture et écriture, 403 hors Administrateur, rendu du jeton réglé et non réglé.
+
+Côté front, ensuite : un écran « Compte bancaire de l'ARMP (prix des DAO) » dans les référentiels de l'Administrateur,
+sur le modèle de l'écran du seuil AGPM, et une alerte dans la modale d'impression si le compte n'est pas réglé.
+
+## B9 — Recette à l'écran du 01/10 (accord du pilote) et un constat
+
+**Circuit déroulé sur la fiche 38** (ligne 303121, plan 00004, travaux à quantité fixe) :
+1. dossier 100360 produit par la fiche ;
+2. soumis, réceptionné, dispatché à MEMANT1 ;
+3. examen n° 2 : 12 points de la grille DAO conformes, avis **FAV** ;
+4. PV n° 47 soumis, visé par PRES001, signé par MEMANT2.
+
+**Ce qui est conforme :**
+- `…/disponibilite` répond `disponible: true` (FAV, SIGNE).
+- À l'écran, l'encart de l'étape 7 propose l'impression. La modale prévient de trois informations vides de la fiche
+  (montant du DAO, nom du responsable, adresse de consultation).
+- L'impression produit la paire `AVIS_00004-PPM-AGPM-CNM-2026_303121_v7_20261001-090452.{docx,pdf}`, listée et
+  enregistrable.
+- **La ligne 303121 est passée `LANCE`**, avec `avisImprimeLe = 2026-10-01`.
+- Le texte imprimé est celui du **premier** modèle : B7 et B8 ne sont pas encore recopiés, c'est attendu.
+
+**Constat — une pièce exigée au dépôt contredit le nouveau circuit.** Le référentiel des pièces du dossier `DMC`
+(`/api/type-piece-jointes?typeDossier=DMC`) exige toujours la pièce **n° 9 « Avis d'appel d'offres »** pour soumettre
+le dossier. Or l'avis ne s'imprime désormais **qu'après** le PV favorable. Le script de recette a dû déposer un PDF de
+remplacement. **Proposition** : retirer la pièce n° 9 des pièces exigées au dépôt d'un dossier DAO, ou la rendre
+facultative. À confirmer par le pilote : merci de ne rien changer avant son accord, et de dire si ce référentiel se
+règle déjà à l'écran par l'Administrateur.
+
 ## Ce que le backend rend
 
 Commit(s) qui referment B1 à B6, le script du référentiel pour DBPRS20 (B5), les tests, et un encadré ⚠️ daté ici pour

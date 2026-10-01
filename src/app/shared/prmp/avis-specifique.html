@@ -19,8 +19,8 @@
           <li class="avs__avis" [class.avs__avis--dernier]="premier">
             <span class="avs__quand">
               Imprimé le {{ horodatage(a.dateGeneration) }}
-              @if (a.version) { <span class="avs__meta">· fiche version {{ a.version }}</span> }
-              @if (a.publication) { <span class="avs__meta">· publication du {{ jj(a.publication.datePublication) }}</span> }
+              @if (a.version) { <span class="avs__meta">&nbsp;· fiche version {{ a.version }}</span> }
+              @if (a.publication) { <span class="avs__meta">&nbsp;· publication du {{ jj(a.publication.datePublication) }}</span> }
             </span>
             <span class="avs__fichiers">
               @for (f of a.fichiers; track f.idDocument) {
