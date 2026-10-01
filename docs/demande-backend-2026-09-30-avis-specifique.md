@@ -437,3 +437,16 @@ la page du dossier, la modale des informations de publication, et la liste des a
 > « (en lettres 32500000) », avec une parenthèse, ce qui masquait le cas. Le motif `(.+?)` a pris **une simple espace**
 > pour les lettres, puis le reste pour le montant, qui a été rejeté. La règle qui en sortirait serait « un trou ne vaut
 > jamais un blanc seul ». Le banc rend désormais les lettres sans parenthèse ni chiffre, comme le serveur.
+
+> ⚠️ **Contre-recette du front du 2026-10-01, serveur relancé à 10:13 (`69e2447`).** Avis de la fiche 38 réimprimé
+> (`…_20261001-101740`). **Le titre n'est plus doublé** : emblème en premier, puis autorité, PRMP, UGPM, titre, « N° ».
+> Le PDF, rendu page par page, est conforme à l'avis réel. Côté import, `d718cae` (règle R-c) était déjà poussé avant
+> `88a56bb` : sur le DPAC réel de la fiche 39 (non alloti), `lire.mjs` lit `B04-DS-05 = 1500000` en confiance haute,
+> sans `alloti` déduit. La parité est à refaire de votre côté.
+>
+> **Un dernier défaut de mise en page :** le PDF fait **2 pages**, et la page 2 ne porte que le nom de la PRMP
+> (« RANDRIANARIVO La Personne »), séparé de sa qualité restée en bas de la page 1. **Demande** : garder ensemble le
+> bloc de signature (« à …, le … », « La Personne Responsable des Marchés Publics », le nom), en posant « paragraphe
+> solidaire du suivant » (`keepNext`) sur ses deux premiers paragraphes, dans le Word comme dans le PDF. Le bloc passe
+> alors en entier sur la page suivante quand il ne tient pas. Le modèle n'a pas à changer : ce sont les trois derniers
+> paragraphes de l'avis.
