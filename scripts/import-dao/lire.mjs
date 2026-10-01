@@ -249,7 +249,7 @@ const ET = /\s+et\s+(?=[\w-]+\s*(?:!?=|contient\b|renseigne\b|vide\b))/;
 const OU = /\s+ou\s+(?=[\w-]+\s*(?:!?=|contient\b|renseigne\b|vide\b))/;
 function implications(expression) {
   if (!expression || OU.test(expression)) return [];
-  return expression.split(ET).map((t) => /^([\w-]+)\s*=\s*(.+)$/.exec(t.trim())).filter(Boolean).map((x) => [x[1], x[2].trim()]);
+  return expression.split(ET).map((t) => /^([\w-]+)\s*(=|contient)\s*(.+)$/.exec(t.trim())).filter(Boolean).map((x) => [x[1], x[3].trim(), x[2]]);
 }
 
 // ── La lecture ────────────────────────────────────────────────────────────────────────────────
@@ -428,11 +428,26 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
   // 3. Les réponses que disent les rédactions retenues.
   const cadrage = {};
   const conflits = [];
+  // ⚠️ 01/10 (B05-GQ-02 en LISTE_MULTIPLE) — un terme `CODE contient Option` d'une section retenue ajoute l'option à la
+  // liste du champ, si c'est une option ENTIÈRE du référentiel (« contient bancaire », fragment, ne dit rien) : un DAO qui
+  // admet les trois formes de garantie donne les trois options.
+  const multiples = new Map();
   for (const s of sectionsVues) {
-    for (const [cle, valeur] of implications(m.conditions[s])) {
+    for (const [cle, valeur, op] of implications(m.conditions[s])) {
+      if (op === 'contient') {
+        const option = (champs[cle]?.options ?? []).find((o) => norm(o).toLowerCase() === norm(valeur).toLowerCase());
+        if (option) { const l = multiples.get(cle) ?? []; if (!l.includes(option)) l.push(option); multiples.set(cle, l); }
+        continue;
+      }
       if (cle in cadrage && cadrage[cle] !== valeur) conflits.push({ cle, valeurs: [cadrage[cle], valeur], section: s });
       else cadrage[cle] = valeur;
     }
+  }
+  for (const [cle, options] of multiples) {
+    // L'ordre est celui du référentiel, pas celui du document : deux lectures d'un même DAO donnent la même valeur.
+    const valeur = options.sort((a, b) => champs[cle].options.indexOf(a) - champs[cle].options.indexOf(b)).join(',');
+    if (cle in cadrage && cadrage[cle] !== valeur) conflits.push({ cle, valeurs: [cadrage[cle], valeur], section: 'contient' });
+    else cadrage[cle] = valeur;
   }
 
   // 4. Valeurs dans la forme de saisie ; un même champ lu deux fois différemment est un conflit, pas un choix.

@@ -39,7 +39,10 @@ const NOUVEAUX = { 'B04-EP-04': 'NOMBRE', 'B05-PF-13': 'MONTANT', 'B06-TP-07': '
 
 const n = (s) => String(s ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
 function vraie(expr, vaut) {
-  return expr.split(/\s+ou\s+/).some((c) => c.split(/\s+et\s+/).every((t) => {
+  // « et » / « ou » ne séparent deux termes que devant une clé suivie d'un opérateur, comme au serveur (DEBUT_TERME) et
+  // dans lire.mjs : « Caution personnelle et solidaire » est une valeur (01/10).
+  const debut = '(?=[\\w-]+\\s*(?:!?=|contient\\b|renseigne\\b|vide\\b))';
+  return expr.split(new RegExp(`\\s+ou\\s+${debut}`)).some((c) => c.split(new RegExp(`\\s+et\\s+${debut}`)).every((t) => {
     let x; t = t.trim();
     if ((x = /^([\w-]+)\s+renseigne$/.exec(t))) return n(vaut(x[1])) !== '';
     if ((x = /^([\w-]+)\s+vide$/.exec(t))) return n(vaut(x[1])) === '';
@@ -51,7 +54,10 @@ function vraie(expr, vaut) {
 }
 const milliers = (v) => String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 const MOTS = ['alpha', 'bravo', 'charlie', 'delta', 'écho', 'foxtrot', 'golf', 'hôtel', 'india', 'juliette'];
-function valeurPour(code, type, i, options) {
+function valeurPour(code, type, i, options, tout = false) {
+  // 01/10 — un choix multiple reçoit TOUTES ses options en cadrage « tout oui » (le DAO du MEN admet les trois formes de
+  // garantie) : c'est ce qui exerce la déduction `contient` de la lecture.
+  if (type === 'LISTE_MULTIPLE' && tout && options?.length) return options.join(',');
   if (options?.length) return options[i % options.length];
   switch (type) {
     case 'NOMBRE': return 11 + i;
@@ -82,8 +88,10 @@ const CADRAGES = {
 function rendre(sigle, cadrage, champs) {
   const m = JSON.parse(fs.readFileSync(`${MOD}/${sigle}.json`, 'utf8'));
   const [typeMarche, categorie] = FORMES[sigle];
-  const codes = [...new Set(m.blocs.flatMap((b) => [...b.texte.matchAll(/\{\{(B\d\d-[A-Z]{2}-\d\d)(?:\.\w+)?}}/g)].map((x) => x[1])))];
-  const valeurs = Object.fromEntries(codes.map((c, i) => [c, valeurPour(c, champs[c]?.type, i + (cadrage === CADRAGES.non ? 1 : 0), champs[c]?.options)]));
+  const codes = [...new Set([...m.blocs.flatMap((b) => [...b.texte.matchAll(/\{\{(B\d\d-[A-Z]{2}-\d\d)(?:\.\w+)?}}/g)].map((x) => x[1])),
+    // 01/10 — et les champs que seules les conditions citent (B05-GQ-02 : ses sections ne se rendaient jamais).
+    ...Object.values(m.conditions).flatMap((e) => [...e.matchAll(/\b(B\d\d-[A-Z]{2}-\d\d)\b/g)].map((x) => x[1]))])];
+  const valeurs = Object.fromEntries(codes.map((c, i) => [c, valeurPour(c, champs[c]?.type, i + (cadrage === CADRAGES.non ? 1 : 0), champs[c]?.options, cadrage === CADRAGES.oui)]));
   const vaut = (k) => (k in cadrage ? cadrage[k] : k === 'typeMarche' ? typeMarche : k === 'categorie' ? categorie : valeurs[k]);
   const pile = []; const actif = () => pile.every(Boolean);
   const imprimes = new Set(); const sortie = [];
@@ -127,7 +135,7 @@ const egal = (type, lu, attendu) => (['NOMBRE', 'MONTANT', 'POURCENTAGE'].includ
   ? Number(String(lu).replace(',', '.')) === Number(String(attendu).replace(',', '.'))
   : type === 'DATE_HEURE' ? String(lu).slice(0, 16) === String(attendu).slice(0, 16) : norm(String(lu)).toLowerCase() === norm(String(attendu)).toLowerCase());
 
-let totalFH = 0; const lignes = [];
+let totalFH = 0; let totalDF = 0; const lignes = [];
 for (const sigle of Object.keys(FORMES)) {
   const champs = { ...refs[FORMES[sigle].join('|')] };
   for (const [c, t] of Object.entries(NOUVEAUX)) champs[c] ??= { type: t };
@@ -140,6 +148,10 @@ for (const sigle of Object.keys(FORMES)) {
     const fausses = props.filter((p) => !justes.includes(p));
     const fh = fausses.filter((p) => p.confiance === 'haute');
     totalFH += fh.length;
+    // Les réponses déduites qui sont des CHAMPS (pas des clés de cadrage) : comparées à la valeur rendue (01/10).
+    const deduites = Object.entries(r.cadrage).filter(([c]) => /^B\d\d-/.test(c) && r0.valeurs[c] != null);
+    const dFausses = deduites.filter(([c, v]) => !egal(champs[c]?.type, v, r0.valeurs[c]));
+    totalDF += dFausses.length;
     const ret = attendus.filter((c) => justes.some((p) => p.code === c)).length;
     if (manques === sigle) {
       for (const a of r.ambigus) lignes.push(`   ${nomCad} ambigu ${a.candidats.join(', ')} : ${a.texte.split('\n').length} paragraphe(s)`);
@@ -148,8 +160,8 @@ for (const sigle of Object.keys(FORMES)) {
         lignes.push(`   ${nomCad} manque ${c} (${champs[c]?.type}) attendu « ${String(r0.valeurs[c]).slice(0, 30)} »${lu ? ` lu « ${String(lu.valeur).slice(0, 30)} »` : ''}`);
       }
     }
-    lignes.push(`${sigle.padEnd(8)} ${nomCad.padEnd(4)} rappel ${String(ret).padStart(3)}/${String(attendus.length).padEnd(3)} (${String(Math.round(100 * ret / Math.max(1, attendus.length))).padStart(3)} %)  fausses ${fausses.length} dont haute ${fh.length}${fh.length ? '  ← ' + fh.map((p) => `${p.code} « ${String(p.valeur).slice(0, 30)} »`).join(' ; ') : ''}`);
+    lignes.push(`${sigle.padEnd(8)} ${nomCad.padEnd(4)} rappel ${String(ret).padStart(3)}/${String(attendus.length).padEnd(3)} (${String(Math.round(100 * ret / Math.max(1, attendus.length))).padStart(3)} %)  fausses ${fausses.length} dont haute ${fh.length}  déduites ${deduites.length - dFausses.length}/${deduites.length}${dFausses.length ? ' ✗ ' + dFausses.map(([c, v]) => `${c} « ${v} »`).join(' ; ') : ''}${fh.length ? '  ← ' + fh.map((p) => `${p.code} « ${String(p.valeur).slice(0, 30)} »`).join(' ; ') : ''}`);
   }
 }
 console.log(lignes.join('\n'));
-console.log(`\n${bruit ? '[bruité] ' : ''}critère Q10 (0 fausse valeur en confiance haute) : ${totalFH ? `✗ ${totalFH}` : '✓ tenu'}`);
+console.log(`\n${bruit ? '[bruité] ' : ''}critère Q10 (0 fausse valeur en confiance haute) : ${totalFH ? `✗ ${totalFH}` : '✓ tenu'} ; réponses déduites fausses : ${totalDF ? `✗ ${totalDF}` : '✓ 0'}`);

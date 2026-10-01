@@ -95,6 +95,18 @@ comme le serveur, sinon il masquait ce cas.
 5. **Case laissée en blanc** : des pointillés autour d'une unité seule (« ........ Jours …. ») ne sont pas une valeur.
    Les caractères d'usage privé (U+E000-U+F8FF, glyphes de police Symbol : l'astérisque de renvoi « ….* ») sont
    ignorés pour ce test.
+6. **Réponse déduite d'un terme `contient`** (01/10, après la livraison backend : `B05-GQ-02` en `LISTE_MULTIPLE`) :
+   `CODE contient Option` d'une section retenue ajoute l'option à la liste du champ, **si c'est une option entière** du
+   référentiel (« contient bancaire », fragment, ne dit rien). La valeur est la suite des options dans l'ordre du
+   référentiel, séparées par des virgules ; deux lectures d'un même DAO donnent la même valeur. Un terme `=` sur le même
+   champ qui dirait autre chose est un conflit.
+
+**Banc** (01/10) : il rend aussi les champs que seules les conditions citent, donne **toutes** ses options à un choix
+multiple en cadrage « tout oui », coupe les conditions comme le serveur (« Caution personnelle et solidaire » est une
+valeur), et **contrôle les réponses déduites** (`déduites j/n`, une fausse fait échouer). Rendu propre : 70/70 justes.
+⚠️ Défaut connu, antérieur, révélé par ce contrôle : graine 6, CCAP-T « tout oui », `B05-GE-01 = OUI` déduit alors que le
+rendu dit NON — un paragraphe bruité atteste une section de bonne exécution. À instruire (la même logique vit dans
+`LectureDao`).
 `PdfLignes` : la fin d'un morceau est celle de sa dernière lettre (une espace finale, retirée du texte, collait le
 morceau suivant). Banc : rappel identique sur les 18 passes, Q10 tenu (propre et graines 3, 6, 11). 2463 : +3 valeurs
 justes (B04-DE-02/03, B06-EP-01), aucune perdue.

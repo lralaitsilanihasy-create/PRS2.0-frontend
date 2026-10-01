@@ -154,3 +154,47 @@ géométriquement d'un mot coupé (« Soix|ante »). Le texte lu porte « soumis
 
 Le CCAP du MEN n'est reconnu qu'à 5 paragraphes sur 422 : il suit une version plus ancienne du document type, réécrite
 partout. Comme pour le 2463, seule une **lecture par clause** le traiterait — décision du pilote, pas une demande ici.
+
+## B4 — Après la livraison (front, 01/10 au soir) : à recopier et à porter
+
+**Contre-recette du référentiel : conforme.** `GET /api/champs-fiche-marche?typeMarche=QUANTITE_FIXE&categorie=TRAVAUX`
+sert 171 champs ; `B03-QT-12` (`NOMBRE`, défaut 5), `B03-QT-13`, `B03-QT-14` (`parLot`), `parLot` sur `B03-QT-08`,
+`B05-GQ-03`, `B09-DL-01`, `LISTE_MULTIPLE` sur `B05-GQ-02` et `B05-GE-03`, la troisième option de `B05-GE-04`, la liste
+par défaut de `B03-CQ-01` sur six lignes, `B02-AU-07` et `B06-EO-07` servis. L'import du serveur sur le PDF du MEN n'a
+pas été rejoué (les fiches de travaux sont validées : 409 `FICHE_VALIDEE` ; ouvrir une révision écrit en base) — votre
+mesure de parité fait foi.
+
+### B4.1 — Recopier le DPAO-T une seconde fois
+
+`scripts/modeles-dao/modeles/DPAO-T.txt`, fidélité **260 / 260**, **40 conditions**. Depuis votre copie (253) :
+
+| clause | changement | condition |
+|---|---|---|
+| 1.1 | la phrase du document type « mais ne peut prétendre qu'à `{{B02-AU-07.lettres}} ({{B02-AU-07}})` lots » (retirée le 29/09 faute de champ) | `LIMITE-LOTS` = `alloti = OUI et B02-LT-02 = Divisible et B02-AU-07 renseigne` |
+| 6.7 | `GARANTIE-BANCAIRE`, `-CAUTION`, `-CHEQUE` : `B05-GQ-02 = …` → **`B05-GQ-02 contient …`** (option entière) | — |
+| 9.4.5 (rangée neuve) | « 9.4.5. Offres anormalement basses ou anormalement hautes » \| `{{B06-EO-07}}` — rangée déclarée en `ajouts`, le document type des travaux n'a pas de clause | `OFFRES-ANORMALES` = `B06-EO-07 renseigne` |
+
+Le CCAP-T n'a pas à changer : ses formes de bonne exécution étaient déjà en `contient` (fragments « bancaire »,
+« caution », « chèque »).
+
+### B4.2 — `LectureDao` : la réponse déduite d'un terme `contient`
+
+Spécification : `scripts/import-dao/README.md`, règle 6. Un terme `CODE contient Option` d'une section attestée ajoute
+l'option à la liste du champ quand c'est une option **entière** du référentiel ; la valeur est la suite des options dans
+l'ordre du référentiel, séparées par des virgules. Sans cette règle, passer le DPAO-T en `contient` fait perdre la
+déduction de `B05-GQ-02` (le lecteur ne déduisait que les termes `=`). Banc du front : 70 réponses déduites, toutes
+justes, dont `B05-GQ-02` = « Caution personnelle et solidaire,Garantie bancaire,Chèque de banque » en cadrage
+« tout oui ».
+
+### B4.3 — Pour information : un défaut ancien révélé par le banc
+
+Le banc contrôle désormais les réponses déduites. Graine 6, CCAP-T, cadrage « tout oui » : `B05-GE-01 = OUI` est déduit
+alors que le rendu dit NON — sous bruit, un paragraphe atteste une section de bonne exécution. La lecture d'avant le
+01/10 fait la même erreur : ce n'est pas une régression. Le front l'instruit ; `LectureDao` partageant la logique,
+vous verrez le correctif passer par une demande dédiée.
+
+### B4.4 — Les 7 valeurs sous le code nu (votre point ouvert) : traité à l'écran
+
+Sur une ligne allotie, l'écran **ne renvoie plus** la clé nue d'un champ `parLot` à l'enregistrement d'un bloc (votre
+refus l'aurait bloqué), et la montre à côté de chaque lot vide comme « Ancienne valeur, non reprise — à ressaisir »,
+comme une révision le fait depuis V46. Rien à faire au serveur.
