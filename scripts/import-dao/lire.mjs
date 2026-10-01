@@ -127,7 +127,17 @@ function paragraphesPdf(fichier) {
     }
     lignes.sort((a, b) => a.y - b.y || a.x - b.x);
     // 3. Paragraphes par colonne : une ligne rejoint le paragraphe ouvert de sa colonne si elle le suit à interligne normal.
-    const colonneDe = (x) => (x >= 240 ? 1 : 0);
+    // La frontière des colonnes se MESURE aussi (01/10, DAO travaux du MEN : la colonne des données commence à x ≈ 183,
+    // libellés et valeurs mêlés sous le réglage fixe de 240 pris sur le 2463) : l'abscisse de départ la plus fréquente
+    // d'un morceau qui suit, sur la même ligne de base, un morceau d'une autre colonne (saut de plus de 12 pt). Page sans
+    // telle paire, ou paire trop rare : 240, comme avant.
+    const departs = new Map();
+    for (const l of lignes) {
+      if (lignes.some((q) => q !== l && Math.abs(q.y - l.y) <= 1.5 && q.xFin + 12 < l.x)) { const x = Math.round(l.x); departs.set(x, (departs.get(x) ?? 0) + 1); }
+    }
+    const [frontiere, nbFrontiere] = [...departs.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0] ?? [240, 0];
+    const borne = nbFrontiere >= 3 ? frontiere - 2 : 240;
+    const colonneDe = (x) => (x >= borne ? 1 : 0);
     // L'interligne d'un paragraphe se MESURE sur la page : le plus petit écart vertical fréquent entre deux lignes
     // successives d'une même colonne (9,7 pt dans le 2463 ; 15 pt dans nos PDF, où 18 pt sépare deux paragraphes).
     // Un réglage fixe, fait sur le 2463, ne rejoignait pas les lignes de nos propres PDF (constat backend du 29/09).
@@ -150,7 +160,12 @@ function paragraphesPdf(fichier) {
       ouverts.set(c, p);
     }
     // 4. Ordre de lecture.
-    pars.sort((a, b) => a.y - b.y || a.colonne - b.colonne);
+    // Deux paragraphes qui commencent sur la même ligne de base À 1,5 PT PRÈS sont une même rangée : la clause d'abord
+    // (01/10, DAO travaux du MEN : la valeur est posée 0,5 pt plus haut que son libellé, et passait devant lui).
+    pars.sort((a, b) => a.y - b.y);
+    const rangs = [];
+    for (const p of pars) { const r = rangs.at(-1); if (r && p.y - r[0].y <= 1.5) r.push(p); else rangs.push([p]); }
+    pars.splice(0, pars.length, ...rangs.flatMap((r) => r.sort((a, b) => a.colonne - b.colonne || a.y - b.y)));
     for (const p of pars) { const t = p.texte.replace(/(\w)- (\w)/g, '$1$2'); if (norm(t)) sortie.push(t); }   // non normalisé (§B6.3)
   }
   return sortie;
@@ -195,6 +210,9 @@ function motifParagraphe(texte) {
     i = m.index + m[0].length;
   }
   re += motif(texte.slice(i));
+  // Le point final est facultatif (01/10, DAO travaux du MEN : « …sera de CENT VINGT (120) jours », sans point) —
+  // seulement quand du texte fixe le précède : un jeton qui finirait le paragraphe garderait son point dans la valeur.
+  if (/[^\s}]\s*\.\s*$/.test(texte)) re = re.replace(/\\s\*\\\.\\s\*$/, '(?:\\s*\\.)?\\s*');
   return { re: new RegExp(`^${re}$`, 'i'), jetons };
 }
 
@@ -203,7 +221,17 @@ function motifParagraphe(texte) {
 function valeurSaisie(brut, type, suffixe) {
   const v = norm(brut);
   if (POINTILLES.test(v)) return null;   // un jeton vide s'imprime en pointillés (R2)
-  const nombre = (s) => { const n = s.replace(/ariary|ar\.?|%|\s/gi, '').replace(',', '.'); return /^-?\d+(\.\d+)?$/.test(n) ? n : null; };
+  // Une unité seule devant ou derrière des pointillés est une case laissée en blanc (01/10, AE du MEN : « Jours …. »).
+  // Les caractères d'usage privé (U+E000-U+F8FF) sont des glyphes de police Symbol — ici l'astérisque de renvoi « ….* ».
+  if (/[.…_]{2,}/.test(v) && POINTILLES.test(v.replace(/[-]/g, '').replace(/(?<![\p{L}])(?:jours?|mois|ans?|ann[ée]es?|heures?|semaines?|ariary|ar|%)(?![\p{L}])/giu, ''))) return null;
+  const chiffres = (s) => { const n = s.replace(/ariary|ar\.?|%|\s/gi, '').replace(',', '.'); return /^-?\d+(\.\d+)?$/.test(n) ? n : null; };
+  // Règle « MOTS (n) » (01/10, DAO travaux du MEN) : l'usage écrit le nombre en lettres puis en chiffres entre
+  // parenthèses — « CENT VINGT (120) », « Cinq (05) », « neuf cent mille Ariary (Ar 9 900 000) ». Les chiffres font foi ;
+  // ce qui précède la parenthèse ne doit être que des lettres (aucun autre chiffre qui pourrait contredire).
+  const nombre = (s) => {
+    const p = /^[\p{L}\s'’.-]+\(\s*((?:ar\.?\s*)?[\d\s.,]+(?:\s*(?:ariary|ar\.?|%))?)\s*\)$/iu.exec(s.trim());
+    return chiffres(p ? p[1] : s);
+  };
   if (suffixe === 'chiffres' || ['NOMBRE', 'MONTANT', 'POURCENTAGE'].includes(type)) return nombre(v);
   if (type === 'DATE') { const d = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v); return d ? `${d[3]}-${d[2]}-${d[1]}` : null; }
   if (type === 'DATE_HEURE') { const d = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/.exec(v); return d ? `${d[3]}-${d[2]}-${d[1]}T${d[4]}:${d[5]}` : null; }

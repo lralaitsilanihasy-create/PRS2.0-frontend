@@ -59,6 +59,9 @@ public final class PdfLignes {
         StringBuilder sb = new StringBuilder();
         TextPosition debut = ps.get(0);
         TextPosition prec = null;
+        // La fin d'un morceau est celle de sa dernière lettre : une espace finale (retirée du texte) la reculait, et le
+        // morceau suivant, posé juste après l'espace, semblait collé (« soumissiondoit », DAO travaux du MEN, 01/10).
+        TextPosition dernier = null;
         for (TextPosition p : ps) {
             if (prec != null) {
                 float espace = p.getXDirAdj() - (prec.getXDirAdj() + prec.getWidthDirAdj());
@@ -70,17 +73,21 @@ public final class PdfLignes {
                     continue;
                 }
                 if (espace > 3 * largeurEspace && espace > 12f) {
-                    sortir(sb, debut, prec, page, out);
+                    sortir(sb, debut, dernier != null ? dernier : prec, page, out);
                     sb.setLength(0);
                     debut = p;
+                    dernier = null;
                 } else if (espace > largeurEspace * 0.3f && !sb.isEmpty() && sb.charAt(sb.length() - 1) != ' ') {
                     sb.append(' ');
                 }
             }
             sb.append(p.getUnicode());
             prec = p;
+            if (!p.getUnicode().isBlank()) {
+                dernier = p;
+            }
         }
-        sortir(sb, debut, prec, page, out);
+        sortir(sb, debut, dernier != null ? dernier : prec, page, out);
     }
 
     private static void sortir(StringBuilder sb, TextPosition debut, TextPosition fin, int page, PrintStream out) {

@@ -81,3 +81,20 @@ celle qui a le plus de texte fixe, en caractères hors blancs. La recherche port
 Cas d'origine : le DPAC du contrat-cadre, « … de {{B04-DS-05.parLot}} libellé … » face à « … de
 {{B04-DS-05.lettres}} ({{B04-DS-05}}) libellé … ». Le banc rend désormais les montants en lettres sans parenthèse,
 comme le serveur, sinon il masquait ce cas.
+
+**Premier DAO de travaux réel** (01/10, MEN, AOO deux lots, `Documents Types/Travaux/ExemplesDAO/`) — quatre règles,
+à porter dans `LectureDao` (parité) :
+1. **Frontière des colonnes mesurée par page** (PDF) : l'abscisse de départ la plus fréquente d'un morceau qui suit,
+   sur la même ligne de base, un morceau d'une autre colonne (saut > 12 pt), retenue si vue au moins 3 fois ; sinon
+   240 comme avant. Ici la colonne des données commence à x ≈ 183 : sous 240, libellés et valeurs se croisaient.
+2. **Rangée = même ligne de base à 1,5 pt près** (PDF) : la clause passe avant sa donnée même posée 0,5 pt plus bas.
+3. **« MOTS (n) »** : pour un nombre, un montant ou un pourcentage écrit « CENT VINGT (120) », « Cinq (05) »,
+   « neuf cent mille Ariary (Ar 9 900 000) », les chiffres entre parenthèses font foi — si rien d'autre que des lettres
+   ne les précède.
+4. **Point final facultatif** quand du texte fixe le précède (« …sera de CENT VINGT (120) jours », sans point).
+5. **Case laissée en blanc** : des pointillés autour d'une unité seule (« ........ Jours …. ») ne sont pas une valeur.
+   Les caractères d'usage privé (U+E000-U+F8FF, glyphes de police Symbol : l'astérisque de renvoi « ….* ») sont
+   ignorés pour ce test.
+`PdfLignes` : la fin d'un morceau est celle de sa dernière lettre (une espace finale, retirée du texte, collait le
+morceau suivant). Banc : rappel identique sur les 18 passes, Q10 tenu (propre et graines 3, 6, 11). 2463 : +3 valeurs
+justes (B04-DE-02/03, B06-EP-01), aucune perdue.
