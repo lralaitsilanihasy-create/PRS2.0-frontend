@@ -31,6 +31,7 @@ Un trou `<…>` du modèle a l'un de ces sorts, **tous tracés** dans `modeles/<
 | `choix` | le modèle propose ses rédactions (« choisir entre … / … », « Choix 1 / Choix 2 ») : l'une est gardée **mot pour mot**, dans une section `{{SI:NOM}}` … `{{FINSI:NOM}}` | le texte gardé est une sous-chaîne du trou |
 | `retire` | une instruction à l'acheteur (« préciser… », « <choisir…> », exemples) : « à supprimer du contrat finalisé » | ne remplace rien |
 | `typo` | une coquille de frappe du modèle (« .Les », « ARTICLE 1 3 ») | même texte à la ponctuation près |
+| `adapte` | du **texte fixe** d'un exemple que le document type invite à adapter (« choisir parmi les exemples suivants en les adaptant ») devient un jeton : durée figée, liste de pièces imprimée d'office (01/10, DAO travaux du MEN) | autour du jeton, rien que des mots du texte remplacé, de la ponctuation ou une unité |
 
 Et des lignes entières **retirées**, chacune avec sa raison (`retraits`) : sommaire, bandeaux, intitulés « Choix n » /
 « Option n », exemples. Une ligne de la source ni reprise ni retirée fait échouer `decrire.mjs` ; un paragraphe du

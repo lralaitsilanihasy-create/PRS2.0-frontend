@@ -18,6 +18,8 @@
   "GROUPEMENT-SOLIDAIRE": "groupement = OUI et formeGroupement = SOLIDAIRE_OBLIGATOIRE",
   "SANS-GARANTIE": "garantieSoumission = NON",
   "GARANTIE": "garantieSoumission = OUI",
+  "GARANTIE-LOTS": "garantieSoumission = OUI et alloti = OUI",
+  "GARANTIE-UNIQUE": "garantieSoumission = OUI et alloti != OUI",
   "GARANTIE-BANCAIRE": "garantieSoumission = OUI et B05-GQ-02 = Garantie bancaire",
   "GARANTIE-CAUTION": "garantieSoumission = OUI et B05-GQ-02 = Caution personnelle et solidaire",
   "GARANTIE-CHEQUE": "garantieSoumission = OUI et B05-GQ-02 = Chèque de banque",
@@ -98,15 +100,15 @@
   },
   {
    "type": "ligne",
-   "texte": "6.2. Contenu des offres\u001f1°- Documents ou pièces à remettre en sus de ceux mentionnés à la clause 6.2. des IC :\u001e{{B04-PI-01}}\u001e2° -\u001eune photocopie certifiée de la Carte Professionnelle de l’année en cours\u001eune photocopie certifiée de l’Etat 211 bis datée de moins de TROIS (03) mois\u001eune photocopie certifiée de l’Extrait du Registre de Commerce\u001eun certificat de non faillite datée de moins de 2 mois\u001eune photocopie certifiée du Numéro d’Identification Fiscale (NIF) »\u001eune photocopie certifiée de la carte statistique\u001e{{SI:GARANTIE}}\u001e4°- Garantie de soumission\u001e{{FINSI:GARANTIE}}\u001e{{SI:VISITE-OBLIGATOIRE}}\u001e5°- Certificat de visite des lieux\u001e{{FINSI:VISITE-OBLIGATOIRE}}"
+   "texte": "6.2. Contenu des offres\u001f1°- Documents ou pièces à remettre en sus de ceux mentionnés à la clause 6.2. des IC :\u001e{{B04-PI-01}}\u001e2° -\u001e{{B03-CQ-01}}\u001e{{SI:GARANTIE}}\u001e4°- Garantie de soumission\u001e{{FINSI:GARANTIE}}\u001e{{SI:VISITE-OBLIGATOIRE}}\u001e5°- Certificat de visite des lieux\u001e{{FINSI:VISITE-OBLIGATOIRE}}"
   },
   {
    "type": "ligne",
-   "texte": "6.3. Capacités et qualifications des candidats\u001fFiches d'information\u001eChaque Candidat complète les fiches de renseignements suivantes, selon les modèles figurant à la section 1.3 Formulaire de Soumission et les signe en portant la mention \"certifiées exactes et sincères\" :\u001e1°Une fiche de renseignements relative à son identification et à sa situation juridique;\u001e2°Une fiche de renseignements relative à ses capacités techniques à réaliser le Marché,\u001e3°Une fiche de renseignements relative à sa capacité financière;\u001e4°la liste des principaux marchés portant sur des travaux de même type ou d'un type similaire réalisés au cours des trois dernières années\u001e{{SI:ONG}}\u001eLes communautés locales et/ou les ONG sont admises à participer à l'appel d'offres. Par dérogation aux obligations de fournir les renseignements sus - mentionnés ces communautés n'ont pas à produire:\u001e<indiquer les formulaires ou informations que ces communautés et ONG sont dispensés de produire>\u001e{{FINSI:ONG}}"
+   "texte": "6.3. Capacités et qualifications des candidats\u001fFiches d'information\u001eChaque Candidat complète les fiches de renseignements suivantes, selon les modèles figurant à la section 1.3 Formulaire de Soumission et les signe en portant la mention \"certifiées exactes et sincères\" :\u001e1°Une fiche de renseignements relative à son identification et à sa situation juridique;\u001e2°Une fiche de renseignements relative à ses capacités techniques à réaliser le Marché,\u001e3°Une fiche de renseignements relative à sa capacité financière;\u001e4°la liste des principaux marchés portant sur des travaux de même type ou d'un type similaire réalisés au cours des {{B03-QT-12.lettres}} dernières années\u001e{{SI:ONG}}\u001eLes communautés locales et/ou les ONG sont admises à participer à l'appel d'offres. Par dérogation aux obligations de fournir les renseignements sus - mentionnés ces communautés n'ont pas à produire:\u001e<indiquer les formulaires ou informations que ces communautés et ONG sont dispensés de produire>\u001e{{FINSI:ONG}}"
   },
   {
    "type": "ligne",
-   "texte": "\u001fQualifications particulières requises\u001eAux fins du présent Marché, les Candidats doivent répondre aux critères de sélection minima suivants\u001ea) avoir réalisé un chiffre d’affaires annuel, pour des travaux de construction, d’un montant équivalant à\u001e{{B03-QT-07}}\u001eb) avoir réalisé avec succès en tant qu’entrepreneur principal au moins un projet de nature et de complexité comparables à celles des Travaux au cours des trois (5) dernières années et comprenant:\u001e{{B03-QT-08}}\u001e(c) indiquer sous quelle forme (propriété, location, etc.) l'Entrepreneur pourra disposer en temps voulu des gros matériels et équipements essentiels ci-après :\u001e{{B03-QT-09}}\u001e(d) proposer un directeur de travaux ayant {{B03-QT-10}} ans d’expérience dans la réalisation de travaux de nature et de complexité comparables, y compris au moins < par exemple >ans d’expérience en tant que directeur;\u001e{{SI:QUALIFICATIONS}}\u001e{{B03-QT-06}}\u001e{{FINSI:QUALIFICATIONS}}"
+   "texte": "\u001fQualifications particulières requises\u001eAux fins du présent Marché, les Candidats doivent répondre aux critères de sélection minima suivants\u001ea) avoir réalisé un chiffre d’affaires annuel, pour des travaux de construction, d’un montant équivalant à\u001e{{B03-QT-07}}\u001eb) avoir réalisé avec succès en tant qu’entrepreneur principal au moins un projet de nature et de complexité comparables à celles des Travaux au cours des {{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années et comprenant:\u001e{{B03-QT-08.parLot}}\u001e(c) indiquer sous quelle forme (propriété, location, etc.) l'Entrepreneur pourra disposer en temps voulu des gros matériels et équipements essentiels ci-après :\u001e{{B03-QT-09}}\u001e(d) proposer un directeur de travaux ayant {{B03-QT-10}} ans d’expérience dans la réalisation de travaux de nature et de complexité comparables;\u001e{{SI:QUALIFICATIONS}}\u001e{{B03-QT-06}}\u001e{{FINSI:QUALIFICATIONS}}"
   },
   {
    "type": "ligne",
@@ -146,7 +148,7 @@
   },
   {
    "type": "ligne",
-   "texte": "6.7. Garantie de soumission\u001f{{SI:SANS-GARANTIE}}\u001eIl n’est pas demandé de garantie de soumission\u001e{{FINSI:SANS-GARANTIE}}\u001e{{SI:GARANTIE}}\u001eUne garantie de soumission doit être fournie dans l’une des formes suivantes :\u001e{{SI:GARANTIE-BANCAIRE}}\u001e- Soit une garantie bancaire\u001e{{FINSI:GARANTIE-BANCAIRE}}\u001e{{SI:GARANTIE-CAUTION}}\u001e- Soit une caution personnelle et solidaire\u001e{{FINSI:GARANTIE-CAUTION}}\u001e{{SI:GARANTIE-CHEQUE}}\u001e- Soit un chèque de banque libéllé au nom de …..\u001e{{FINSI:GARANTIE-CHEQUE}}\u001eLe montant de la garantie de soumission est de :\u001e{{B05-GQ-03.lettres}} ({{B05-GQ-03}}).\u001e{{FINSI:GARANTIE}}"
+   "texte": "6.7. Garantie de soumission\u001f{{SI:SANS-GARANTIE}}\u001eIl n’est pas demandé de garantie de soumission\u001e{{FINSI:SANS-GARANTIE}}\u001e{{SI:GARANTIE}}\u001eUne garantie de soumission doit être fournie dans l’une des formes suivantes :\u001e{{SI:GARANTIE-BANCAIRE}}\u001e- Soit une garantie bancaire\u001e{{FINSI:GARANTIE-BANCAIRE}}\u001e{{SI:GARANTIE-CAUTION}}\u001e- Soit une caution personnelle et solidaire\u001e{{FINSI:GARANTIE-CAUTION}}\u001e{{SI:GARANTIE-CHEQUE}}\u001e- Soit un chèque de banque libéllé au nom de …..\u001e{{FINSI:GARANTIE-CHEQUE}}\u001eLe montant de la garantie de soumission est de :\u001e{{SI:GARANTIE-LOTS}}\u001e{{B05-GQ-03.parLot}}.\u001e{{FINSI:GARANTIE-LOTS}}\u001e{{SI:GARANTIE-UNIQUE}}\u001e{{B05-GQ-03.lettres}} ({{B05-GQ-03}}).\u001e{{FINSI:GARANTIE-UNIQUE}}\u001e{{FINSI:GARANTIE}}"
   },
   {
    "type": "ligne",
@@ -210,7 +212,7 @@
   },
   {
    "type": "ligne",
-   "texte": "11. Délai d’exécution\u001fLe délai d’exécution proposé ne doit pas dépasser {{B09-DL-01}} à compter du lendemain de la date de notification de l’OS de commencer les travaux\u001e{{SI:NON-CUMUL}}\u001eEn cas d’attribution de deux ou plusieurs lots à un Candidat, les délais ne sont pas cumulables\u001e{{FINSI:NON-CUMUL}}"
+   "texte": "11. Délai d’exécution\u001fLe délai d’exécution proposé ne doit pas dépasser {{B09-DL-01.parLot}} à compter du lendemain de la date de notification de l’OS de commencer les travaux\u001e{{SI:NON-CUMUL}}\u001eEn cas d’attribution de deux ou plusieurs lots à un Candidat, les délais ne sont pas cumulables\u001e{{FINSI:NON-CUMUL}}"
   },
   {
    "type": "fin_table",
@@ -309,10 +311,22 @@
    "par": "{{B04-PI-01}}"
   },
   {
+   "ligne": "44.1.4",
+   "genre": "adapte",
+   "source": "une photocopie certifiée de la Carte Professionnelle de l’année en cours",
+   "par": "{{B03-CQ-01}}"
+  },
+  {
    "ligne": "44.1.11",
    "genre": "retire",
    "source": "<le cas échéant>",
    "par": ""
+  },
+  {
+   "ligne": "46.1.8",
+   "genre": "adapte",
+   "source": "trois dernières années",
+   "par": "{{B03-QT-12.lettres}} dernières années"
   },
   {
    "ligne": "47.1.3",
@@ -327,10 +341,16 @@
    "par": "{{B03-QT-07}}"
   },
   {
+   "ligne": "47.1.9",
+   "genre": "adapte",
+   "source": "trois (5) dernières années",
+   "par": "{{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années"
+  },
+  {
    "ligne": "47.1.11",
    "genre": "jeton",
    "source": "<Indiquer le type de travaux correspondant à la principale ou aux principales activité(s) de construction prévues dans le cadre du projet et un rythme de réalisation correspondant à plus de 50% du rythme de construction maximum anticipé pour la ou les principales activités relatives aux Travaux, >",
-   "par": "{{B03-QT-08}}"
+   "par": "{{B03-QT-08.parLot}}"
   },
   {
    "ligne": "47.1.14",
@@ -343,6 +363,12 @@
    "genre": "jeton",
    "source": "<par exemple cinq à dix>",
    "par": "{{B03-QT-10}}"
+  },
+  {
+   "ligne": "47.1.16",
+   "genre": "retire",
+   "source": ", y compris au moins < par exemple >ans d’expérience en tant que directeur",
+   "par": ""
   },
   {
    "ligne": "50.1.7",
@@ -367,6 +393,12 @@
    "genre": "jeton",
    "source": "<nombre>",
    "par": "{{B04-VO-01}}"
+  },
+  {
+   "ligne": "54.1.11",
+   "genre": "jeton",
+   "source": "<insérer montant en chiffres et en lettres>",
+   "par": "{{B05-GQ-03.parLot}}"
   },
   {
    "ligne": "54.1.11",
@@ -462,7 +494,7 @@
    "ligne": "68.1.0",
    "genre": "jeton",
    "source": "….. <délai>",
-   "par": "{{B09-DL-01}}"
+   "par": "{{B09-DL-01.parLot}}"
   }
  ],
  "retraits": [
@@ -660,6 +692,31 @@
    "ligne": "46.1.10",
    "texte": "<Si les communautés locales et/ou les ONG sont admises à participer à l'appel d'offres, indiquer ici:>",
    "raison": "instruction à l’acheteur"
+  },
+  {
+   "ligne": "44.1.5",
+   "texte": "une photocopie certifiée de l’Etat 211 bis datée de moins de TROIS (03) mois",
+   "raison": "pièces administratives : la liste du document type est la valeur par défaut de B03-CQ-01 (adaptée le 01/10)"
+  },
+  {
+   "ligne": "44.1.6",
+   "texte": "une photocopie certifiée de l’Extrait du Registre de Commerce",
+   "raison": "pièces administratives : la liste du document type est la valeur par défaut de B03-CQ-01 (adaptée le 01/10)"
+  },
+  {
+   "ligne": "44.1.7",
+   "texte": "un certificat de non faillite datée de moins de 2 mois",
+   "raison": "pièces administratives : la liste du document type est la valeur par défaut de B03-CQ-01 (adaptée le 01/10)"
+  },
+  {
+   "ligne": "44.1.8",
+   "texte": "une photocopie certifiée du Numéro d’Identification Fiscale (NIF) »",
+   "raison": "pièces administratives : la liste du document type est la valeur par défaut de B03-CQ-01 (adaptée le 01/10)"
+  },
+  {
+   "ligne": "44.1.9",
+   "texte": "une photocopie certifiée de la carte statistique",
+   "raison": "pièces administratives : la liste du document type est la valeur par défaut de B03-CQ-01 (adaptée le 01/10)"
   },
   {
    "ligne": "47.1.1",

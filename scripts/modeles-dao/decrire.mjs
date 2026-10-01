@@ -148,6 +148,15 @@ function traiter(trace, n, texte, ...remplacements) {
     const f = t.slice(i, i + cherche.length);
     const erreur = (m) => { throw new Error(`ligne ${n} : ${m} (« ${f} » → « ${par} »)`); };
     if (genre === 'choix' && !droite(f).includes(droite(par))) erreur('le choix n’est pas une rédaction du modèle');
+    if (genre === 'adapte') {
+      // 01/10 (DAO travaux du MEN) — du texte FIXE d'un exemple que le document type invite à adapter (« choisir parmi
+      // les exemples suivants en les adaptant ») devient un jeton : une durée figée, une liste de pièces imprimée d'office.
+      // Garde-fou : la ligne de la source doit porter cette invitation (motif `adapt`), et rien d'autre qu'un jeton,
+      // de la ponctuation ou une unité ne remplace le texte.
+      const mots = par.replace(/{{[^{}]+}}/g, ' ').split(/[^p{L}p{N}]+/u).map(reduire).filter(Boolean);
+      const intrus = mots.filter((w) => !reduire(f).includes(w) && !UNITES.includes(w));
+      if (!/{{[^{}]+}}/.test(par) || intrus.length) erreur(`une adaptation se fait par un jeton${intrus.length ? ` (mots étrangers : ${intrus.join(', ')})` : ''}`);
+    }
     if (genre === 'jeton') {
       // Autour des jetons : de la ponctuation, des mots pris dans le trou, ou l'unité du nombre (« {{B07-DU-03}} mois »).
       const mots = par.replace(/\{\{[^{}]+}}/g, ' ').split(/[^\p{L}\p{N}]+/u).map(reduire).filter(Boolean);
@@ -156,7 +165,7 @@ function traiter(trace, n, texte, ...remplacements) {
     }
     if (genre === 'retire' && par !== '') erreur('un retrait ne remplace rien');
     if (genre === 'typo' && reduire(f) !== reduire(par)) erreur('une coquille ne change pas le texte');
-    if (!['jeton', 'choix', 'retire', 'typo'].includes(genre)) erreur(`genre inconnu « ${genre} »`);
+    if (!['jeton', 'choix', 'retire', 'typo', 'adapte'].includes(genre)) erreur(`genre inconnu « ${genre} »`);
     trace.push({ ligne: n, genre, source: f, par });
     t = t.slice(0, i) + par + t.slice(i + f.length);
   }
@@ -2207,6 +2216,9 @@ function dpaoTravaux() {
     'GROUPEMENT-SOLIDAIRE': 'groupement = OUI et formeGroupement = SOLIDAIRE_OBLIGATOIRE',
     'SANS-GARANTIE': 'garantieSoumission = NON',
     GARANTIE: 'garantieSoumission = OUI',
+    // 01/10 (DAO du MEN : 9 900 000 Ar au lot 1, 7 200 000 Ar au lot 2) — le montant par lot, comme B05-GS-03 en fournitures.
+    'GARANTIE-LOTS': 'garantieSoumission = OUI et alloti = OUI',
+    'GARANTIE-UNIQUE': 'garantieSoumission = OUI et alloti != OUI',
     'GARANTIE-BANCAIRE': 'garantieSoumission = OUI et B05-GQ-02 = Garantie bancaire',
     'GARANTIE-CAUTION': 'garantieSoumission = OUI et B05-GQ-02 = Caution personnelle et solidaire',
     'GARANTIE-CHEQUE': 'garantieSoumission = OUI et B05-GQ-02 = Chèque de banque',
@@ -2311,32 +2323,36 @@ function dpaoTravaux() {
     x(r62, '1°- Documents ou pièces'),
     x(r62, '<énumérer ces documents', ['<énumérer ces documents ou pièces>', '{{B04-PI-01}}', 'jeton']),
     x(r62, '2° -'),
-    x(r62, 'une photocopie certifiée de la Carte'),
-    x(r62, 'une photocopie certifiée de l’Etat 211'),
-    x(r62, 'une photocopie certifiée de l’Extrait'),
-    x(r62, 'un certificat de non faillite'),
-    x(r62, 'une photocopie certifiée du Numéro'),
-    x(r62, 'une photocopie certifiée de la carte statistique'),
+    // 01/10 — la liste des pièces administratives n'est plus imprimée d'office : c'est B03-CQ-01, saisi (le texte du
+    // document type en est la valeur par défaut, demandée au backend). Le MEN exige d'autres pièces que l'ARMP.
+    x(r62, 'une photocopie certifiée de la Carte', ['une photocopie certifiée de la Carte Professionnelle de l’année en cours', '{{B03-CQ-01}}', 'adapte']),
     SIc('GARANTIE', x(r62, '4°- Garantie de soumission')),
     SIc('VISITE-OBLIGATOIRE', x(r62, '5°- <le cas échéant>', ['<le cas échéant> ', '', 'retire'])));
   const r63 = rg('6.3. Capacités');
   const capacites = cel(
     x(r63, "Fiches d'information"),
     x(r63, 'Chaque Candidat complète'),
-    x(r63, '1°Une fiche'), x(r63, '2°Une fiche'), x(r63, '3°Une fiche'), x(r63, '4°la liste'),
+    x(r63, '1°Une fiche'), x(r63, '2°Une fiche'), x(r63, '3°Une fiche'), x(r63, '4°la liste', ['trois dernières années', '{{B03-QT-12.lettres}} dernières années', 'adapte']),
     SIc('ONG', x(r63, 'Les communautés locales'), x(r63, '<indiquer les formulaires')));
   retirer(r63, 'instruction à l’acheteur', '<indiquer ici les renseignements', '<Si les communautés locales');
+  retirer(r62, 'pièces administratives : la liste du document type est la valeur par défaut de B03-CQ-01 (adaptée le 01/10)',
+    'une photocopie certifiée de l’Etat 211', 'une photocopie certifiée de l’Extrait', 'un certificat de non faillite',
+    'une photocopie certifiée du Numéro', 'une photocopie certifiée de la carte statistique');
   const r63q = rg('Qualifications particulières requises', 1);
   const qualifications = cel(
     x(r63q, 'Qualifications particulières requises'),
     x(r63q, 'Aux fins du présent Marché', [' <choisir parmi les exemples suivants en les adaptant si besoin est>', '', 'retire']),
     x(r63q, 'a) avoir réalisé un chiffre'),
     xj(r63q, '<insérer un montant', 0, '{{B03-QT-07}}'),
-    x(r63q, 'b) avoir réalisé avec succès'),
-    xj(r63q, '<Indiquer le type de travaux', 0, '{{B03-QT-08}}'),
+    // 01/10 — « au cours des trois (5) dernières années » : coquille du document type, et durée que l'acheteur adapte
+    // (cinq ans au MEN) → B03-QT-12, la même période qu'au 4° de la clause 6.3.
+    x(r63q, 'b) avoir réalisé avec succès', ['trois (5) dernières années', '{{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années', 'adapte']),
+    xj(r63q, '<Indiquer le type de travaux', 0, '{{B03-QT-08.parLot}}'),   // 01/10 : par lot (seuils du MEN : 247,5 M / 180 M)
     x(r63q, '(c) indiquer sous quelle forme'),
     x(r63q, '<indiquer une liste de ces gros', ['<indiquer une liste de ces gros matériels et équipements essentiels>', '{{B03-QT-09}}', 'jeton']),
-    x(r63q, '(d) proposer un directeur', ['<par exemple cinq à dix>', '{{B03-QT-10}}', 'jeton']),
+    // 01/10 — « y compris au moins < par exemple >ans d'expérience en tant que directeur » s'imprimait tel quel : le trou
+    // n'a pas de champ (le MEN ne l'exige pas) ; l'exemple est retiré avec son trou, ce qui en tient lieu va dans B03-QT-06.
+    x(r63q, '(d) proposer un directeur', ['<par exemple cinq à dix>', '{{B03-QT-10}}', 'jeton'], [', y compris au moins < par exemple >ans d’expérience en tant que directeur', '', 'retire']),
     SIc('QUALIFICATIONS', '{{B03-QT-06}}'));
   retirer(r63q, 'instruction à l’acheteur', '<Indiquer ici les qualifications particulières');
   retirer(r63q, 'autres conditions du personnel clé : saisies dans B03-QT-06', '<Ajouter, si nécessaire');
@@ -2377,7 +2393,8 @@ function dpaoTravaux() {
       SIc('GARANTIE-CAUTION', x(r67, '- Soit une caution')),
       SIc('GARANTIE-CHEQUE', x(r67, '- Soit un chèque de banque')),
       x(r67, 'Le montant de la garantie de soumission'),
-      x(r67, '<insérer montant en chiffres', ['<insérer montant en chiffres et en lettres>', '{{B05-GQ-03.lettres}} ({{B05-GQ-03}})', 'jeton'])));
+      SIc('GARANTIE-LOTS', x(r67, '<insérer montant en chiffres', ['<insérer montant en chiffres et en lettres>', '{{B05-GQ-03.parLot}}', 'jeton'])),
+      SIc('GARANTIE-UNIQUE', x(r67, '<insérer montant en chiffres', ['<insérer montant en chiffres et en lettres>', '{{B05-GQ-03.lettres}} ({{B05-GQ-03}})', 'jeton']))));
   const r68 = rg('6.8. Langue');
   const langue = cel(x(r68, "La langue de l'offre est le français ou", ["<préciser la deuxième langue de l'offre>", '{{B04-LG-01}}', 'jeton']));
   retirer(r68, 'instruction à l’acheteur', '<Dans le cas où une langue');
@@ -2437,7 +2454,7 @@ function dpaoTravaux() {
   retirer(r95, 'instruction à l’acheteur', '<insérer l’une des options');
   const r11d = rg('11. Délai d’exécution');
   const delai = cel(
-    x(r11d, 'Le délai d’exécution proposé', ['….. <délai>', '{{B09-DL-01}}', 'jeton']),
+    x(r11d, 'Le délai d’exécution proposé', ['….. <délai>', '{{B09-DL-01.parLot}}', 'jeton']),   // 01/10 : par lot
     SIc('NON-CUMUL', x(r11d, 'En cas d’attribution de deux')));
   retirer(r11d, 'instruction à l’acheteur', '=<en cas d’allotissement>');
 
@@ -3196,5 +3213,5 @@ for (const sigle of voulus) {
   fs.writeFileSync(`modeles/${sigle}.txt`, commande.map((l) => l.join('\t')).join('\n') + '\n', 'utf8');
   const nb = (g) => m.trace.filter((t) => t.genre === g).length;
   const jetons = [...new Set(m.blocs.flatMap((b) => b.texte.match(/\{\{(?!SI:|FINSI:)[^{}]+}}/g) ?? []))];
-  console.log(`${sigle} — ${m.blocs.filter((b) => b.type !== 'ligne' && !/^\{\{(SI|FINSI):/.test(b.texte)).length} paragraphes, ${Object.keys(m.conditions).length} conditions, ${jetons.length} jetons distincts ; trous : ${nb('jeton')} jeton(s), ${nb('choix')} choix, ${nb('retire')} retrait(s), ${nb('typo')} coquille(s) ; ${m.retraits.length} ligne(s) de la source retirée(s)`);
+  console.log(`${sigle} — ${m.blocs.filter((b) => b.type !== 'ligne' && !/^\{\{(SI|FINSI):/.test(b.texte)).length} paragraphes, ${Object.keys(m.conditions).length} conditions, ${jetons.length} jetons distincts ; trous : ${nb('jeton')} jeton(s), ${nb('choix')} choix, ${nb('retire')} retrait(s), ${nb('typo')} coquille(s), ${nb('adapte')} adaptation(s) ; ${m.retraits.length} ligne(s) de la source retirée(s)`);
 }

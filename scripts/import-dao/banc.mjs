@@ -33,7 +33,9 @@ if (!refs) {
 }
 const NOUVEAUX = { 'B04-EP-04': 'NOMBRE', 'B05-PF-13': 'MONTANT', 'B06-TP-07': 'NOMBRE', 'B06-CS-02': 'NOMBRE', 'B06-CS-03': 'NOMBRE', 'B02-OP-04': 'TEXTE', 'B08-AI-03': 'POURCENTAGE', 'B09-OP-02': 'NOMBRE',
   // Lot D4 (travaux) : champs demandés en T-1.
-  'B02-MW-04': 'TEXTE_LONG', 'B02-LT-06': 'TEXTE', 'B02-LT-07': 'TEXTE', 'B04-VL-02': 'OUI_NON', 'B05-GE-05': 'POURCENTAGE', 'B09-BT-01': 'OUI_NON' };
+  'B02-MW-04': 'TEXTE_LONG', 'B02-LT-06': 'TEXTE', 'B02-LT-07': 'TEXTE', 'B04-VL-02': 'OUI_NON', 'B05-GE-05': 'POURCENTAGE', 'B09-BT-01': 'OUI_NON',
+  // 01/10 (correspondance DAO du MEN) : période de référence des marchés similaires.
+  'B03-QT-12': 'NOMBRE' };
 
 const n = (s) => String(s ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
 function vraie(expr, vaut) {
