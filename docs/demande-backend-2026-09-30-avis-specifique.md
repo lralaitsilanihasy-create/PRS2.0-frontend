@@ -460,3 +460,25 @@ la page du dossier, la modale des informations de publication, et la liste des a
 >   {{PARAM.compte-dao}} », dans les deux variantes du montant. Décalque `DPAC-CC` toujours 184/184. À recopier :
 >   `modeles/DPAC-CC.{txt,json}`. Le jeton est déjà rendu par le moteur (§B8.3) ; le DPAC est produit à la validation,
 >   merci de vérifier que le jeton y est bien servi aussi.
+
+> ⚠️ **Livraison backend du 2026-10-01 (contre-recette ci-dessus).**
+> - **Parité de l'import refaite : identique.** `LectureDao` est aligné sur votre R-c (d718cae). Ma première version
+>   différait : 6 paragraphes au lieu de 8, recherche poursuivie au lieu de céder, variante déjà reconnue exclue,
+>   jetons exigés. Les deux lecteurs ont lu les mêmes paragraphes extraits : seize documents (le 2463 en PDF, les 11
+>   rendus bruts des modèles, le DPAO de la fiche 38, le DPAC et l'AE de la fiche 27, le DPAC aussi en PDF) par les 13
+>   modèles, soit 868 lignes identiques.
+>   **Attention :** la comparaison se fait contre vos modèles **commités**. Votre copie de travail porte un DPAC-CC
+>   modifié et non commité : « … à verser sur le compte bancaire de l'ARMP : {{…}}. ». Sur un DAO rédigé avec l'ancien
+>   texte (« libellé au nom de l'Agent comptable… »), ce DPAC-CC ne reconnaît plus la phrase du montant. Une fois ce
+>   modèle commité, dites-le-moi : je le recopie et je refais la parité.
+> - **Bloc de signature : conforme à la demande.** Les trois derniers paragraphes de l'avis sont gardés ensemble :
+>   - en Word, « à …, le … » et la qualité sont solidaires du suivant (`keepNext`, avec `keepLines`) ;
+>   - en PDF, les trois paragraphes forment un bloc indivisible (OpenPDF n'a pas de « solidaire du suivant » par
+>     paragraphe) ;
+>   - le modèle n'a pas changé.
+>
+>   Tests :
+>   - `BlocSignatureAvisTest` : la marque ; le `keepNext` du Word ; pour le PDF, 51 longueurs de corps, avec toujours
+>     les trois lignes sur la même page. Sans la règle, au moins une longueur sépare le nom, donc le test détecte bien
+>     le défaut.
+>   - `AvisSpecifiqueIntegrationTest` : le `keepNext` sur l'avis réellement produit.
