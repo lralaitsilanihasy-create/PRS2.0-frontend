@@ -44,6 +44,7 @@ import {
   documentsProduits,
   largeurChamp,
   lotsDuChamp,
+  cleHorsCellule,
   metaChamp,
   formatPiece,
   PieceGroupee,
@@ -789,10 +790,14 @@ export class FicheMarcheEcran {
     const id = this.idDmc();
     const bloc = this.blocCourant();
     if (id == null || !bloc || this.saving()) return;
-    const codes = new Set(this.referentiel().champs.filter((c) => c.bloc === bloc.code && c.source === 'SAISIE').map((c) => c.code));
+    const champs = new Map(this.referentiel().champs.filter((c) => c.bloc === bloc.code && c.source === 'SAISIE').map((c) => [c.code, c]));
     const valeurs: Record<string, Valeur> = {};
     // ⚠️ V43 — une clé peut porter le rang du lot (`B05-TP-02#2`) : c'est le code NU qui dit à quel bloc elle appartient.
-    for (const [cle, v] of Object.entries(this.valeurs())) if (codes.has(cle.split('#')[0])) valeurs[cle] = v;
+    // ⚠️ 01/10 — la clé nue d'un champ passé par lot n'est pas renvoyée sur une ligne allotie : le serveur la refuserait.
+    for (const [cle, v] of Object.entries(this.valeurs())) {
+      const champ = champs.get(cle.split('#')[0]);
+      if (champ && !cleHorsCellule(champ, cle, this.saisieParLot(), this.nbLots())) valeurs[cle] = v;
+    }
     this.saving.set(true);
     this.ficheService.bloc(id, bloc.code, valeurs).subscribe({
       next: (f) => {

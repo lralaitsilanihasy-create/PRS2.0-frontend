@@ -2,6 +2,7 @@ import { ChampFiche, DocumentFiche, ReferentielFiche } from '../../../models';
 import {
   BILAN_VIDE,
   aidesRevision,
+  cleHorsCellule,
   formatPiece,
   pieceOuvrable,
   piecesParLot,
@@ -464,6 +465,21 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(aidesRevision(ref, {}, {}, { 'B09-LL-01#1': 'Toamasina' }, false, 0).get('B09-LL-01')).toBe('Toamasina');
     // Une ancienne valeur blanche n'est pas une aide.
     expect(aidesRevision(ref, {}, {}, { 'B02-OB-01': '   ' }, false, 0).has('B02-OB-01')).toBe(false);
+  });
+
+  it('brouillon : la clé nue d’un champ passé par lot sert d’aide à chaque lot, et ne repart pas au serveur (01/10)', () => {
+    const ref: ReferentielFiche = { blocs: [], champs: [champ({ code: 'B05-GQ-03', bloc: 'B05', rubrique: 'GQ', type: 'MONTANT', parLot: true })] };
+    // Saisie avant le passage par lot (DBPRS20 : 7 valeurs), aucune révision : la clé nue est dans les valeurs COURANTES.
+    const valeurs = { 'B05-GQ-03': '9900000', 'B05-GQ-03#2': '7200000' };
+    const aides = aidesRevision(ref, {}, valeurs, null, true, 2);
+    expect([...aides.entries()]).toEqual([['B05-GQ-03#1', '9900000']]);   // le lot 2, déjà saisi, n'a pas d'aide
+    // Ligne non allotie : la clé nue EST la cellule — ni aide, ni écartée.
+    expect(aidesRevision(ref, {}, valeurs, null, false, 0).size).toBe(0);
+    const c = ref.champs[0];
+    expect(cleHorsCellule(c, 'B05-GQ-03', true, 2)).toBe(true);
+    expect(cleHorsCellule(c, 'B05-GQ-03#1', true, 2)).toBe(false);
+    expect(cleHorsCellule(c, 'B05-GQ-03', false, 0)).toBe(false);
+    expect(cleHorsCellule({ parLot: false }, 'B02-OB-01', true, 2)).toBe(false);
   });
 
 });

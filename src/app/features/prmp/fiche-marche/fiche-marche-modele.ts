@@ -452,18 +452,30 @@ export function aidesRevision(
   nbLots = 0,
 ): Map<string, unknown> {
   const aides = new Map<string, unknown>();
-  if (!precedentes) return aides;
   for (const c of referentiel.champs) {
     if (c.source !== 'SAISIE' || c.actif === false || !evaluerCondition(c.condition, cadrage)) continue;
     for (const lot of lotsDuChamp(c, saisieParLot, nbLots)) {
       const cle = cleValeur(c.code, lot);
       if (!videur(valeurs[cle])) continue;
-      const candidates = lot == null ? [cle, `${c.code}#1`] : [cle, c.code];
-      const ancienne = candidates.map((k) => precedentes[k]).find((v) => !videur(v));
+      const candidates = !precedentes ? [] : (lot == null ? [cle, `${c.code}#1`] : [cle, c.code]).map((k) => precedentes[k]);
+      // ⚠️ 01/10 (livraison backend du DAO travaux du MEN) — un BROUILLON peut porter encore la clé nue d'un champ passé
+      // par lot depuis (B03-QT-08, B05-GQ-03, B09-DL-01 : 7 valeurs chacun sur DBPRS20). Aucune révision ne l'a
+      // écartée : elle est dans les valeurs COURANTES, et sert d'aide à chaque lot comme l'ancienne d'une révision.
+      if (lot != null) candidates.push(valeurs[c.code]);
+      const ancienne = candidates.find((v) => !videur(v));
       if (ancienne !== undefined) aides.set(cle, ancienne);
     }
   }
   return aides;
+}
+
+/**
+ * ⚠️ 01/10 — une clé que l'enregistrement d'un bloc ne doit PAS renvoyer : la clé nue d'un champ `parLot` sur une
+ * ligne allotie. Le serveur la refuse (elle ne dit pas de quel lot il s'agit) ; elle reste lue comme aide
+ * (`aidesRevision`) jusqu'à ce que chaque lot soit saisi.
+ */
+export function cleHorsCellule(champ: Pick<ChampFiche, 'parLot'>, cle: string, saisieParLot: boolean, nbLots: number): boolean {
+  return !cle.includes('#') && lotsDuChamp(champ, saisieParLot, nbLots)[0] !== null;
 }
 
 /**
