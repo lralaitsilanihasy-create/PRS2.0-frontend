@@ -263,6 +263,12 @@ et 97). Un repère `{{IMAGE:…}}` que le moteur ne connaît pas ne doit pas s'i
 >   fiche sans réponse perdrait donc l'objet et le montant du DAO. L'écran l'impose depuis le plan
 >   (`CLES_IMPOSEES_PAR_LE_PLAN`), le serveur ne le déduit pas.
 >
+> ⚠️ **Mise à jour du 2026-10-01 (après-midi).** Les deux points ci-dessus sont levés **par votre commit 40f2b4a** : le titre
+> est descendu sous l'en-tête, et le DPAC du contrat-cadre cite `{{B04-DS-05.parLot}}` sur une ligne allotie. Le serveur
+> a recopié AVIS-F, AVIS-T et DPAC-CC tels quels. Le comparateur donne **89/89, 95/95 et 184/184** sur le rendu brut du
+> serveur. L'emblème est désormais le **premier** élément de l'avis (test resserré). Le DPAC d'un contrat-cadre alloti
+> imprime « Lot n° 1 : 100 000 Ariary ; Lot n° 2 : 150 000 Ariary ».
+>
 > **Tests (B7.7)** :
 > - `ModelesAvisTest` : travaux à quantité fixe avec garantie ; contrat-cadre de fournitures alloti, sans garantie,
 >   sans numéro de JMP ni supports ; passe finale (image inconnue omise, numérotation sans trou) ;
@@ -362,3 +368,25 @@ la page du dossier, la modale des informations de publication, et la liste des a
 >
 > **Question ouverte au pilote :** le DPAC du contrat-cadre dit encore « libellé au nom de l'Agent comptable de l'ARMP
 > ou au nom du régisseur de recettes ». Faut-il y imprimer aussi le compte bancaire de l'ARMP, comme dans l'avis ?
+
+> ⚠️ **Contre-recette du front du 2026-10-01 (serveur relancé à 09:44).** Réimpression de l'avis de la fiche 38 par
+> l'API (`AVIS_00004-PPM-AGPM-CNM-2026_303121_v7_20261001-094938`), sans numéro de JMP et sans autres supports.
+>
+> **Conforme :**
+> - l'emblème est inséré (`word/media/image1.png`) ;
+> - autorité, PRMP et UGPM suivent l'emblème ;
+> - « N° … » seul ;
+> - paragraphes numérotés **1. à 8.** sans trou (ni garantie absente, ni contrat-cadre ici) ;
+> - « n°……… en date du 15/01/2026. » : sans supports, « et dans … » a disparu ;
+> - adresse de consultation en liste avec ses libellés ;
+> - « auprès de {autorité} » ;
+> - « à verser sur le compte bancaire de l'ARMP : ……… » (compte non réglé) ;
+> - « le 20/05/2026 à 10 h 00 (heure locale) » ;
+> - « à ………, le 05/10/2026 » au bas.
+>
+> **Un écart : le titre sort encore deux fois.** Le **premier paragraphe** du `.docx` est « Avis d’Appel d’Offres
+> Ouvert », centré, gras, taille 13, **au-dessus de l'emblème**. Le modèle recopié n'a pourtant plus de ligne `TITRE`
+> en tête. Le générateur semble prendre la ligne `TITRE` du corps comme titre du document et l'imprimer d'abord.
+> **Demande** : quand le modèle n'a pas de ligne `TITRE` en tête, ne rien imprimer avant le premier bloc, et rendre la
+> ligne `TITRE` du corps à sa place, une seule fois. Si le titre sert aussi de métadonnée (nom, propriétés du
+> document), le garder là sans l'imprimer. Test : le premier paragraphe de l'avis est l'image.
