@@ -263,11 +263,34 @@ et 97). Un repère `{{IMAGE:…}}` que le moteur ne connaît pas ne doit pas s'i
 >   fiche sans réponse perdrait donc l'objet et le montant du DAO. L'écran l'impose depuis le plan
 >   (`CLES_IMPOSEES_PAR_LE_PLAN`), le serveur ne le déduit pas.
 >
-> ⚠️ **Mise à jour du 2026-10-01 (après-midi).** Les deux points ci-dessus sont levés **par votre commit 40f2b4a** : le titre
+> ⚠️ **Mise à jour du 2026-10-01 (suite).** Les deux points ci-dessus sont levés **par votre commit 40f2b4a** : le titre
 > est descendu sous l'en-tête, et le DPAC du contrat-cadre cite `{{B04-DS-05.parLot}}` sur une ligne allotie. Le serveur
 > a recopié AVIS-F, AVIS-T et DPAC-CC tels quels. Le comparateur donne **89/89, 95/95 et 184/184** sur le rendu brut du
 > serveur. L'emblème est désormais le **premier** élément de l'avis (test resserré). Le DPAC d'un contrat-cadre alloti
 > imprime « Lot n° 1 : 100 000 Ariary ; Lot n° 2 : 150 000 Ariary ».
+>
+> ⚠️ **Effet sur l'import du DAO, et une règle à reporter dans `scripts/import-dao/lire.mjs` (2026-10-01).** Le
+> nouveau DPAC-CC contient deux rédactions de la phrase du montant. La rédaction « par lot » (`MONTANT-LOTS`,
+> `alloti = OUI`) n'a qu'une capture libre, `{{B04-DS-05.parLot}}`. Elle reconnaissait donc aussi la phrase d'un DAO
+> **non alloti**, et attestait `alloti = OUI` contre le reste du document : sur un aller-retour, `alloti` partait en
+> conflit (`OUI`/`NON`) et le montant n'était plus lu. `lire.mjs` a les mêmes règles (`distinctif`, `cleTexte`) et
+> devrait faire de même.
+> **Règle ajoutée côté serveur (`LectureDao`), à reporter à l'identique :** *la variante la plus contrainte gagne*.
+> - Les variantes d'un paragraphe à jeton sont les paragraphes à jeton qui le suivent dans le modèle, **6 au plus**, avec
+>   d'autres sections et **plus de signes de texte fixe**. On compte la ponctuation, mais pas les blancs ; les jetons
+>   sont retirés.
+> - Quand le paragraphe reconnaît un paragraphe du document qu'une de ses variantes, pas encore reconnue, reconnaît
+>   aussi en entier, il le lui laisse et poursuit sa recherche plus loin.
+>
+> Mesure, sur les entrées réelles du dernier contrôle de parité, lues par tous les modèles :
+> - les lectures sont **identiques** avec et sans la règle, sauf trois lectures du DPAC-CC, celles visées : le faux
+>   `alloti=OUI` disparaît et le montant est lu par la variante unique ;
+> - la parité avec `lire.mjs` tient donc ailleurs. Une fois la règle portée de votre côté, je refais le diff de parité.
+>
+> Tests : `LectureDaoTest.varianteLaPlusContrainte` (non alloti : `B04-DS-05=50000`, `alloti=NON` ; alloti : `#1`,
+> `#2`, `alloti=OUI`, sans conflit) et l'aller-retour `ImportDaoIntegrationTest.allerRetour`, qui l'a révélé.
+> L'ordre habituel (`lire.mjs` d'abord) est inversé ici avec l'accord donné le 01/10 : le serveur ne pouvait pas reprendre
+> vos modèles sans casser l'import.
 >
 > **Tests (B7.7)** :
 > - `ModelesAvisTest` : travaux à quantité fixe avec garantie ; contrat-cadre de fournitures alloti, sans garantie,
