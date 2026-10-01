@@ -177,6 +177,14 @@ mesure de parité fait foi.
 Le CCAP-T n'a pas à changer : ses formes de bonne exécution étaient déjà en `contient` (fragments « bancaire »,
 « caution », « chèque »).
 
+> ⚠️ **Livraison backend du 2026-10-01 (§B4.1).** Conforme. DPAO-T recopié tel quel (40 conditions), **260/260** sur le
+> rendu brut du serveur ; CCAP-T inchangé (573/573). Rendu contrôlé sur une ligne allotie en deux lots divisibles :
+> - « mais ne peut prétendre qu’à deux (2) lots » ;
+> - la rangée 9.4.5 et son texte ;
+> - avec `B05-GQ-02` = « Garantie bancaire,Chèque de banque », les deux formes retenues seulement.
+>
+> Sur une ligne non allotie, la phrase de la limite de lots ne s'imprime pas.
+
 ### B4.2 — `LectureDao` : la réponse déduite d'un terme `contient`
 
 Spécification : `scripts/import-dao/README.md`, règle 6. Un terme `CODE contient Option` d'une section attestée ajoute
@@ -186,12 +194,26 @@ déduction de `B05-GQ-02` (le lecteur ne déduisait que les termes `=`). Banc du
 justes, dont `B05-GQ-02` = « Caution personnelle et solidaire,Garantie bancaire,Chèque de banque » en cadrage
 « tout oui ».
 
+> ⚠️ **Livraison backend du 2026-10-01 (§B4.2).** Conforme. `InfoChamp` porte maintenant les options du référentiel ;
+> `ConditionsModele.contenus` donne les termes `contient` d'une section retenue ; un terme `=` contraire sur le même champ
+> est un conflit.
+> Une réponse déduite qui porte un **code de champ** (`B05-GQ-02`) sort, comme les autres, en `reponsesChamps` (proposée en
+> confiance moyenne), et non dans le cadrage : c'est l'écart de sortie déjà connu de l'import.
+> **Parité refaite**, cette fois avec les options et les réponses déduites, des deux côtés, sur les mêmes 18 documents :
+> extraction identique et **1 022 lignes de lecture identiques**. Sur le rendu brut du DPAO-T, `B05-GQ-02` = « Caution
+> personnelle et solidaire,Garantie bancaire,Chèque de banque ».
+> Test : `LectureDaoTest.reponseDeduiteDUnTermeContient`. Il couvre l'ordre du référentiel (et non celui du document),
+> le fragment qui ne dit rien et le conflit avec un terme `=`.
+
 ### B4.3 — Pour information : un défaut ancien révélé par le banc
 
 Le banc contrôle désormais les réponses déduites. Graine 6, CCAP-T, cadrage « tout oui » : `B05-GE-01 = OUI` est déduit
 alors que le rendu dit NON — sous bruit, un paragraphe atteste une section de bonne exécution. La lecture d'avant le
 01/10 fait la même erreur : ce n'est pas une régression. Le front l'instruit ; `LectureDao` partageant la logique,
 vous verrez le correctif passer par une demande dédiée.
+
+> ⚠️ **Réponse backend du 2026-10-01 (§B4.3).** Noté. La parité mesurée ici porte sur des documents propres ; le
+> défaut sous bruit se lira de la même façon des deux côtés tant que la logique est partagée. J'attends la demande dédiée.
 
 ### B4.4 — Les 7 valeurs sous le code nu (votre point ouvert) : traité à l'écran
 
