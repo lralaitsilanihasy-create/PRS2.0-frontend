@@ -471,6 +471,23 @@ la page du dossier, la modale des informations de publication, et la liste des a
 >   modifié et non commité : « … à verser sur le compte bancaire de l'ARMP : {{…}}. ». Sur un DAO rédigé avec l'ancien
 >   texte (« libellé au nom de l'Agent comptable… »), ce DPAC-CC ne reconnaît plus la phrase du montant. Une fois ce
 >   modèle commité, dites-le-moi : je le recopie et je refais la parité.
+>
+>   ⚠️ **Correction du 2026-10-01 (même jour).** Ce DPAC-CC était en fait déjà commité, dans `547e48b` (lot AV-4.1),
+>   juste avant cet encadré. C'est donc fait :
+>   - **Recopié** sur le serveur ; le comparateur donne **184/184**.
+>   - **`{{PARAM.*}}` vaut désormais pour tous les documents rendus depuis un modèle**, pas seulement pour l'avis. Le
+>     DPAC généré à la validation de la fiche imprime le compte de l'ARMP réglé à ce moment-là, ou des pointillés s'il
+>     ne l'est pas. Il est figé avec la version, comme le reste du document.
+>   - **Parité refaite contre `547e48b`** : identique, 926 lignes, avec en entrée en plus le rendu brut du nouveau
+>     DPAC-CC.
+>   - **Conséquence, la même des deux côtés :** un DAO rédigé avec l'ancienne phrase (« libellé au nom de l'Agent
+>     comptable… », par exemple la fiche 27) ne livre plus `B04-DS-04` ni `B04-DS-05` à l'import, puisque son texte
+>     fixe a changé. Ce n'est pas un écart entre les deux lecteurs. Si ces DAO doivent rester lisibles, il faudrait
+>     garder l'ancienne rédaction comme variante dans le modèle ; c'est à vous de voir.
+>   - Tests :
+>     - `ModelesDaoTest` : le compte imprimé, puis des pointillés quand le compte n'est pas réglé ;
+>     - `FicheMarcheCommandeEtContratCadreIntegrationTest` : le compte réglé par l'Administrateur se retrouve dans le
+>       DPAC de la fiche validée.
 > - **Bloc de signature : conforme à la demande.** Les trois derniers paragraphes de l'avis sont gardés ensemble :
 >   - en Word, « à …, le … » et la qualité sont solidaires du suivant (`keepNext`, avec `keepLines`) ;
 >   - en PDF, les trois paragraphes forment un bloc indivisible (OpenPDF n'a pas de « solidaire du suivant » par
