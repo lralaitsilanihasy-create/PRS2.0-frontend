@@ -35,6 +35,13 @@ saisit pas par lot (contrat du lot D2, §B1.3) ; un jeton sans valeur s'imprime 
 > document type invite à adapter (« choisir parmi les exemples suivants en les adaptant »), remplacé par un jeton et
 > tracé. Rien à faire au backend : le modèle recopié est le seul contrat.
 
+> ⚠️ **Livraison backend du 2026-10-01 (§B1).** DPAO-T recopié tel quel (38 conditions) ; le comparateur donne **253/253**
+> sur le rendu brut du serveur.
+> **Un écart, corrigé côté moteur :** sur une ligne allotie, `LIQUIDITE` = `B03-QT-14 renseigne` restait **faux**. La
+> liquidité y est saisie par lot (`B03-QT-14#1`, `#2`), et la condition lisait le code nu : le paragraphe (f) ne
+> s'imprimait jamais. Désormais, dans un document commun d'une ligne allotie, la condition d'un champ saisi par lot lit
+> ses valeurs par lot réunies. Le modèle n'a pas à changer.
+
 ## B2 — Référentiel des travaux (quantité fixe et à commande)
 
 ### B2.1 — Champs à créer
@@ -47,6 +54,10 @@ saisit pas par lot (contrat du lot D2, §B1.3) ; un jeton sans valeur s'imprime 
 
 `B03-QT-13` et `B03-QT-14` sont **déjà imprimés** par le DPAO-T de B1 (paragraphes (e) et (f), sous condition
 `renseigne`). Banc : DPAO-T 31/32 en cadrage « tout oui », les deux champs relus, Q10 tenu.
+
+> ⚠️ **Livraison backend du 2026-10-01 (§B2.1).** Les trois champs sont créés, conformes : `B03-QT-12` à 5 par défaut,
+> `B03-QT-14` par lot, avec le contrôle `MONTANT_POSITIF` comme les autres montants. Le défaut est recopié au premier
+> enregistrement de la fiche (V47), et le DPAO validé imprime « au cours des cinq (5) dernières années ».
 
 ### B2.2 — Champs existants à modifier
 
@@ -64,11 +75,29 @@ saisit pas par lot (contrat du lot D2, §B1.3) ; un jeton sans valeur s'imprime 
 chose pour les formes de bonne exécution dans le CCAP-T. Les fiches existantes : une valeur `LISTE` unique reste une
 `LISTE_MULTIPLE` valide à un élément — rien à migrer, à confirmer de votre côté.
 
+> ⚠️ **Livraison backend du 2026-10-01 (§B2.2).** Conforme, avec trois précisions :
+> - **`B03-CQ-01`** : ce champ est commun aux trois catégories (un seul enregistrement par code), donc son défaut est
+>   aussi proposé aux fiches de fournitures et de prestations intellectuelles, qui ne l'impriment pas. Le défaut tient sur
+>   plusieurs lignes : le fichier de correspondance (une cellule par ligne) l'écrit avec la séquence `\n`, que l'import
+>   lit comme un saut de ligne, et la colonne `VALEUR_DEFAUT` passe de 200 à 1 000 caractères (V58). En Word, un saut de
+>   ligne dans une valeur était rendu comme une espace : il est désormais un vrai saut de ligne. **Les deux copies du
+>   fichier (`docs/` du front et tests du serveur) sont mises à jour à l'identique.**
+> - **`B02-AU-07` et `B06-EO-07`** : actifs, servis aux **travaux seulement**, puisqu'ils avaient été retirés des fournitures
+>   le 29/09. Ils passent du fichier des fournitures à celui des travaux, et V58 ouvre leurs rubriques aux travaux.
+>   **Aucun modèle ne les imprime** : ils seront saisis sans effet sur le DAO tant que le DPAO-T ne les cite pas (1.1 et
+>   9.4.5 au MEN).
+> - **`LISTE_MULTIPLE`** : confirmé, rien à migrer. Les valeurs existantes, toutes à un seul élément, restent valides
+>   (DBPRS20 : 7 et 7 valeurs, sans virgule). Les trois champs devenus par lot ont 7 valeurs chacun sous le code nu :
+>   lisibles hors allotissement, à ressaisir par lot sur une ligne allotie.
+
 ### B2.3 — Moteur : `.lettres` sur un `NOMBRE`
 
 `{{B03-QT-12.lettres}}` doit donner le nombre en lettres, **en minuscules et sans unité** : « cinq », pour imprimer
 « au cours des cinq (5) dernières années ». Aujourd'hui `.lettres` n'est employé que sur des `MONTANT`. Si un
 `NOMBRE` décimal arrive (ce n'est pas le cas ici), la valeur seule.
+
+> ⚠️ **Livraison backend du 2026-10-01 (§B2.3).** Déjà servi : `.lettres` d'un `NOMBRE` entier donne le cardinal en
+> minuscules, sans unité (« cinq ») ; un décimal reste la valeur seule.
 
 ### Q1 — Valeur par défaut de `B03-QT-12` — ✅ arbitrée : 5
 
@@ -111,6 +140,15 @@ du texte mais comptée dans la largeur, faisait coller le morceau suivant.
 
 Limite connue, non traitée : « soumission » et « doit » sont posés sans aucun écart dans ce PDF ; c'est indiscernable
 géométriquement d'un mot coupé (« Soix|ante »). Le texte lu porte « soumissiondoit ».
+
+> ⚠️ **Livraison backend du 2026-10-01 (§B3).** Les cinq règles et le correctif d'extraction sont portés à l'identique
+> (`LecturePdf`, `LectureDao`). Parité mesurée sur 18 documents réels (le 2463, nos rendus bruts, les fiches 27 et 38, et
+> le DAO du MEN, gardé hors dépôt) :
+> - **extraction identique**, paragraphe par paragraphe, dont les 3 302 paragraphes du MEN ;
+> - **lectures identiques**, sur les 14 modèles, sans types de champ (985 lignes) puis avec les types des référentiels
+>   (818 lignes) ;
+> - on y retrouve vos mesures : DPAO-T du MEN à **45** paragraphes, délai de validité **120 (haute)** ; sur le 2463,
+>   `B04-DE-02 = 10`, `B04-DE-03 = 05`, `B06-EP-01 = 03` ; « Jours …. » n'est plus proposé.
 
 ## Ce qui ne relève pas du backend
 
