@@ -717,7 +717,14 @@
                   <a class="btn btn-primary" [routerLink]="['/prmp/dossier', idd]">Ouvrir le dossier n° {{ idd }}</a>
                   <!-- ⚠️ 30/09 (AV-3) — l'avis spécifique, après le PV signé favorable (FAVR : réserves levées). L'application
                        le produit : il a quitté la liste des pièces à joindre à la main. -->
-                  @if (idDmc(); as id) { <app-avis-specifique [idDmc]="id" [lecture]="enLecture()" /> }
+                  <!-- ⚠️ 01/10 (AV-4) — les prestations intellectuelles n'ont pas d'avis : leurs candidats reçoivent une lettre. -->
+                  @if (idDmc(); as id) {
+                    @if (fiche()?.categorie === 'PRESTATIONS_INTELLECTUELLES') {
+                      <app-lettres-invitation [idDmc]="id" [lecture]="enLecture()" />
+                    } @else {
+                      <app-avis-specifique [idDmc]="id" [lecture]="enLecture()" />
+                    }
+                  }
                 } @else if (!figee()) {
                   <p class="fm__attendus">Le dossier à soumettre se crée depuis une fiche <strong>validée</strong> : terminez l'étape 6 d'abord.</p>
                 } @else if (estPrmp()) {

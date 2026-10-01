@@ -10,6 +10,7 @@ import { FicheMarcheService } from '../../../services/fiche-marche.services';
 import { Icone } from '../../../shared/ui/icone';
 import { LienDossier } from './lien-dossier';
 import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
+import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
 
 /**
  * ⚠️ **Fiche DAO d'un dossier d'appel d'offres** (lot 1b, demande `docs/demande-backend-2026-09-23-fiche-marche-dossier.md`).
@@ -23,7 +24,7 @@ import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
 @Component({
   selector: 'app-fiche-marche-dossier',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icone, AvisSpecifique],
+  imports: [RouterLink, Icone, AvisSpecifique, LettresInvitation],
   template: `
     <section class="fmd" aria-labelledby="fmd-titre">
       <h2 class="fmd__titre" id="fmd-titre"><app-icone nom="file" [taille]="16" />Fiche DAO</h2>
@@ -42,7 +43,8 @@ import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
         </div>
         <!-- ⚠️ 30/09 (AV-3, Q5) — l'avis spécifique se lit aussi d'ici, au plus près du PV. PRMP et UGPM seulement :
              le serveur refuse les autres profils (403), inutile de leur faire faire l'appel. -->
-        @if (domaine()) { <app-avis-specifique [idDmc]="f.idDmc" /> }
+        <!-- 01/10 (AV-4) — chacun se tait hors de sa catégorie (CATEGORIE_SANS_AVIS / CATEGORIE_SANS_LETTRE). -->
+        @if (domaine()) { <app-avis-specifique [idDmc]="f.idDmc" /><app-lettres-invitation [idDmc]="f.idDmc" /> }
       } @else if (peutRattacher()) {
         <p class="fmd__vide">Aucune fiche DAO n'est rattachée à ce dossier. Rattachez celle que vous avez déjà validée, ou préparez-en une depuis la ligne du plan de passation.</p>
         @if (!choix()) {

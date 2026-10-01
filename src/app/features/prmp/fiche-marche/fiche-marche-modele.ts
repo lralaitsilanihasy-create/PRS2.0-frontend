@@ -50,6 +50,7 @@ export const LIBELLES_PIECES: Readonly<Record<PieceProduite, string>> = {
   C1: 'C1 — modèle de garantie',
   C2: 'C2 — modèle de garantie',
   AVIS: 'Avis spécifique d’appel d’offres',
+  LETTRE_INVITATION: 'Lettre d’invitation',
 };
 
 /** L'ordre de lecture d'une liste de pièces : le dossier d'abord, ses annexes ensuite. */

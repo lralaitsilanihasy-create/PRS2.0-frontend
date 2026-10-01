@@ -34,3 +34,13 @@
 .avs__large { grid-column: 1 / -1; }
 .avs__vides { margin: 0.3rem 0 0; padding-left: 1.1rem; }
 .avs__facultatif { font-weight: 400; color: var(--n-500); }
+// ⚠️ 01/10 (lot AV-4) — lettres d'invitation : une impression = une lettre par candidat, et la liste restreinte saisie.
+.lti__impression { flex-direction: column; align-items: stretch; }
+.lti__lettres { list-style: none; margin: 0.3rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.lti__lettre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.4rem; }
+.lti__dest { font-weight: 600; color: var(--n-700); }
+.lti__liste { border: 1px solid var(--n-200); border-radius: 8px; padding: 0.6rem 0.8rem; margin: 0.8rem 0 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.lti__candidat { display: grid; grid-template-columns: auto minmax(10rem, 1fr) minmax(12rem, 1.4fr) auto; gap: 0.5rem; align-items: start; }
+.lti__rang { padding-top: 1.9rem; font-weight: 700; color: var(--n-600); }
+.lti__retirer { margin-top: 1.6rem; }
+@media (max-width: 640px) { .lti__candidat { grid-template-columns: auto 1fr auto; } .lti__adresse { grid-column: 2 / 3; } }

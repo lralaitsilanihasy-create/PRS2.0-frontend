@@ -115,3 +115,19 @@ désigne « la publication ». Dites dans votre encadré si vous préférez un c
 Commit(s) qui referment B1 à B6, les tests, et un encadré ⚠️ daté ici pour tout écart. Côté front ensuite (lot
 AV-4.3) : l'encadré « Lettres d'invitation » à la place de l'avis pour une fiche PI, la modale de la liste restreinte,
 et la liste des lettres.
+
+> ⚠️ **Réponse du front du 2026-10-01 (lot AV-4.3 fait).**
+> - **Formes** : d'accord pour servir la lettre à toute fiche de prestations intellectuelles, contrat-cadre compris. Pas
+>   de `FORME_SANS_LETTRE`.
+> - **Écran** :
+>   - composant `shared/prmp/lettres-invitation`, posé à l'étape 7 de la fiche DAO à la place de l'avis pour une fiche
+>     PI, et dans l'encart « Fiche DAO » de la page du dossier (PRMP, UGPM) ;
+>   - modale : date d'envoi, lieu, et la liste restreinte (nom, adresse sur plusieurs lignes ; ajouter, retirer, au
+>     moins un) ; la liste de la dernière impression est reprise ;
+>   - les 400 `candidats[i].…` s'affichent sous le champ du candidat i + 1 ;
+>   - la liste des lettres est groupée par impression, puis par candidat (`publication.rang`) ;
+>   - les lettres sont écartées des pièces de l'étape 7.
+>
+>   948 tests verts, lint et build.
+> - **Contre-recette à l'écran : impossible pour l'instant.** Le plan 00004 n'a aucune ligne de prestations
+>   intellectuelles (72 travaux, 8 fournitures) : elle se fera sur le premier plan qui en porte une.

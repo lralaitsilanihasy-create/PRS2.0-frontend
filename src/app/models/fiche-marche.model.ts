@@ -22,7 +22,7 @@ export type DocumentDao = 'DPAO' | 'DPAC' | 'DPIC' | 'AE' | 'CCAP' | 'AUCUN';
  * nommer ici ne les promet pas — c'est l'écran qui saura les lire le jour où le serveur les servira.
  */
 /** ⚠️ 30/09 — `AVIS` : l'avis spécifique d'appel d'offres, produit À LA DEMANDE après le PV (jamais à la validation). */
-export type PieceProduite = DocumentDao | 'LF' | 'BP' | 'TC' | 'A1' | 'A2' | 'A3' | 'A4' | 'C1' | 'C2' | 'AVIS';
+export type PieceProduite = DocumentDao | 'LF' | 'BP' | 'TC' | 'A1' | 'A2' | 'A3' | 'A4' | 'C1' | 'C2' | 'AVIS' | 'LETTRE_INVITATION';
 export type SourceChamp = 'PPM' | 'SAISIE' | 'CADRAGE';
 /**
  * ⚠️ Lot 5 (24/09) — la **catégorie** de dossier d'appel d'offres, second axe du référentiel. Elle se déduit de la
@@ -423,8 +423,11 @@ export interface DocumentFiche {
   dateGeneration?: string | null;
   /** Version de la fiche qui a produit ce document. */
   version?: number | null;
-  /** ⚠️ 30/09 (V56) — avis spécifique seulement : les informations de publication saisies à l'impression. */
-  publication?: PublicationAvis | null;
+  /**
+   * ⚠️ 30/09 (V56) — avis spécifique (`PublicationAvis`) ou lettre d'invitation (`PublicationLettres`, 01/10) : les
+   * informations saisies à l'impression. Rien pour les autres documents.
+   */
+  publication?: PublicationAvis | PublicationLettres | null;
 }
 
 // ── Avis spécifique d'appel d'offres (demande du 30/09, livrée : V56) ─────────────────────────────────────────────
@@ -437,6 +440,23 @@ export interface PublicationAvis {
   supports: string;
 }
 
+/** ⚠️ 01/10 (lot AV-4) — un candidat de la liste restreinte des prestations intellectuelles. `adresse` : une ligne par ligne. */
+export interface CandidatInvite {
+  nom: string;
+  adresse: string;
+}
+
+/**
+ * Corps de `POST …/lettres-invitation` et trace gardée avec chaque lettre produite ; `rang` (1, 2…) dit à quel candidat
+ * de la liste une paire est adressée (trace seulement). Date `AAAA-MM-JJ`.
+ */
+export interface PublicationLettres {
+  dateEnvoi: string;
+  lieu: string;
+  candidats: CandidatInvite[];
+  rang?: number;
+}
+
 /** Pourquoi l'avis ne s'imprime pas encore (`details.raison` du 409 `AVIS_INDISPONIBLE`, `raison` de la disponibilité). */
 export type RaisonAvisIndisponible =
   | 'CATEGORIE_SANS_AVIS'
@@ -445,6 +465,7 @@ export type RaisonAvisIndisponible =
   | 'AVIS_NON_FAVORABLE'
   | 'RESERVES_NON_LEVEES'
   | 'FICHE_NON_VALIDEE'
+  | 'CATEGORIE_SANS_LETTRE'
   | (string & {});
 
 /**

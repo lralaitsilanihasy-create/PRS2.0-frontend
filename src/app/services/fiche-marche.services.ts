@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, ParametresInternes, ParametresInternesCorps, PublicationAvis, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, ParametresInternes, ParametresInternesCorps, PublicationAvis, PublicationLettres, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -171,6 +171,22 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
    */
   imprimerAvis(idDmc: number, corps: PublicationAvis): Observable<DocumentFiche[]> {
     return this.http.post<DocumentFiche[]>(`${this.baseUrl}/${idDmc}/avis-specifique`, corps, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Lettres d'invitation (01/10, lot AV-4) — `GET /{idDmc}/lettres-invitation/disponibilite`, même forme que celle
+   * de l'avis ; `CATEGORIE_SANS_LETTRE` hors prestations intellectuelles. Silencieux.
+   */
+  disponibiliteLettres(idDmc: number): Observable<DisponibiliteAvis> {
+    return this.http.get<DisponibiliteAvis>(`${this.baseUrl}/${idDmc}/lettres-invitation/disponibilite`, { context: skipErrorToast() });
+  }
+
+  /**
+   * `POST /{idDmc}/lettres-invitation` — une paire .docx/.pdf PAR candidat. 400 nominatif (`dateEnvoi`, `lieu`,
+   * `candidats`, `candidats[i].nom` / `.adresse`, indices à partir de 0), 409 `LETTRE_INDISPONIBLE` (`details.raison`).
+   */
+  imprimerLettres(idDmc: number, corps: Omit<PublicationLettres, 'rang'>): Observable<DocumentFiche[]> {
+    return this.http.post<DocumentFiche[]>(`${this.baseUrl}/${idDmc}/lettres-invitation`, corps, { context: skipErrorToast() });
   }
 
   /** `GET /documents/{idDocument}/contenu` — le binaire, à ouvrir ou enregistrer par `fichiers-surs`. */

@@ -1,0 +1,103 @@
+@if (visible()) {
+  <section class="avs" [attr.aria-labelledby]="'lti-titre-' + idDmc()">
+    <h3 class="avs__titre" [id]="'lti-titre-' + idDmc()">Lettres d’invitation (liste restreinte)</h3>
+    @if (etat()?.disponible) {
+      <p class="avs__txt">
+        Le PV est signé avec un avis <strong>{{ etat()?.idAvis === 'FAVR' ? 'favorable avec réserves, réserves levées' : 'favorable' }}</strong> :
+        les lettres d’invitation peuvent être imprimées, une par candidat de la liste restreinte. Elles reprennent la dernière
+        version validée de la fiche.
+      </p>
+      @if (!lecture()) {
+        <button type="button" class="btn btn-primary btn-sm" (click)="ouvrir()">Imprimer les lettres d’invitation</button>
+      }
+    } @else if (attente(); as m) {
+      <p class="avs__attente">{{ m }}</p>
+    }
+
+    @if (imprimees().length) {
+      <ul class="avs__liste">
+        @for (imp of imprimees(); track imp.cle; let premier = $first) {
+          <li class="avs__avis lti__impression" [class.avs__avis--dernier]="premier">
+            <span class="avs__quand">
+              Imprimées le {{ horodatage(imp.dateGeneration) }}
+              @if (imp.version) { <span class="avs__meta">&nbsp;· fiche version {{ imp.version }}</span> }
+              @if (imp.publication) { <span class="avs__meta">&nbsp;· envoi du {{ jj(imp.publication.dateEnvoi) }}, {{ imp.publication.lieu }}</span> }
+            </span>
+            <ul class="lti__lettres">
+              @for (l of imp.lettres; track l.rang) {
+                <li class="lti__lettre">
+                  <span class="lti__dest">{{ l.rang }}. {{ l.destinataire }}</span>
+                  <span class="avs__fichiers">
+                    @for (f of l.fichiers; track f.idDocument) {
+                      @if (format(f) === 'PDF') {
+                        <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" [attr.aria-label]="'Ouvrir le PDF de la lettre à ' + l.destinataire" (click)="obtenir(f, true)">Ouvrir le PDF</button>
+                      }
+                      <button type="button" class="btn btn-sm btn-outline" [disabled]="occupe()" [attr.aria-label]="'Enregistrer le ' + format(f) + ' de la lettre à ' + l.destinataire" (click)="obtenir(f, false)">Enregistrer {{ format(f) }}</button>
+                    }
+                  </span>
+                </li>
+              }
+            </ul>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}
+
+<!-- Fermeture par le bouton ou Échap seulement (règle du 13/09). -->
+@if (ouverte()) {
+  <div class="modal-backdrop">
+    <div class="modal avs__modale" role="dialog" aria-modal="true" aria-label="Imprimer les lettres d’invitation" appModale (appModaleFermer)="fermer()">
+      <div class="modal-header">
+        <span class="modal-title">Imprimer les lettres d’invitation</span>
+        <button type="button" class="btn-close" aria-label="Fermer sans imprimer" [disabled]="envoi()" (click)="fermer()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="avs__aide">Une lettre est imprimée <strong>pour chaque candidat</strong> de la liste restreinte ; toutes citent la liste entière. Ces informations ne figurent pas dans le DAO : elles sont gardées avec les lettres.</p>
+        <div class="avs__champs">
+          <label class="form-group">
+            <span class="form-label">Date d’envoi</span>
+            <input class="form-control" type="date" [value]="dateEnvoi()" (input)="poser('dateEnvoi', $any($event.target).value)" />
+            @if (erreurs().dateEnvoi; as m) { <span class="form-error">{{ m }}</span> }
+          </label>
+          <label class="form-group">
+            <span class="form-label">Lieu</span>
+            <input class="form-control" type="text" [value]="lieu()" (input)="poser('lieu', $any($event.target).value)" />
+            @if (erreurs().lieu; as m) { <span class="form-error">{{ m }}</span> }
+          </label>
+        </div>
+
+        <fieldset class="lti__liste">
+          <legend class="form-label">Liste restreinte ({{ candidats().length }} candidat{{ candidats().length > 1 ? 's' : '' }})</legend>
+          @for (c of candidats(); track c.id; let i = $index) {
+            <div class="lti__candidat">
+              <span class="lti__rang" aria-hidden="true">{{ i + 1 }}.</span>
+              <label class="form-group lti__nom">
+                <span class="form-label">Nom du candidat n° {{ i + 1 }}</span>
+                <input class="form-control" type="text" [value]="c.nom" (input)="poserCandidat(c.id, 'nom', $any($event.target).value)" />
+                @if (c.erreurNom; as m) { <span class="form-error">{{ m }}</span> }
+              </label>
+              <label class="form-group lti__adresse">
+                <span class="form-label">Adresse du candidat n° {{ i + 1 }}</span>
+                <textarea class="form-control" rows="2" [value]="c.adresse" (input)="poserCandidat(c.id, 'adresse', $any($event.target).value)"></textarea>
+                @if (c.erreurAdresse; as m) { <span class="form-error">{{ m }}</span> }
+              </label>
+              <button type="button" class="btn btn-sm btn-outline lti__retirer" [disabled]="candidats().length <= 1 || envoi()" [attr.aria-label]="'Retirer le candidat n° ' + (i + 1)" (click)="retirerCandidat(c.id)">✕</button>
+            </div>
+          }
+          @if (erreurs().candidats; as m) { <span class="form-error">{{ m }}</span> }
+          <button type="button" class="btn btn-sm btn-secondary" [disabled]="envoi()" (click)="ajouterCandidat()">+ Ajouter un candidat</button>
+        </fieldset>
+
+        @if (refus(); as r) { <div class="alert alert-danger" role="alert"><span>{{ r }}</span></div> }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" [disabled]="envoi()" (click)="fermer()">Annuler</button>
+        <button type="button" class="btn btn-primary" [disabled]="envoi() || !complete()" (click)="imprimer()">
+          {{ envoi() ? 'Impression…' : 'Imprimer ' + candidats().length + ' lettre' + (candidats().length > 1 ? 's' : '') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

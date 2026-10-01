@@ -1,4 +1,4 @@
-import { Cadrage, ChampFiche, DocumentFiche, PublicationAvis, RaisonAvisIndisponible } from '../../models';
+import { Cadrage, ChampFiche, DocumentFiche, PublicationAvis, PublicationLettres, RaisonAvisIndisponible } from '../../models';
 
 /**
  * Avis spécifique d'appel d'offres (plan du 30/09, lot AV-3) — règles pures, sans appel ni écran.
@@ -28,10 +28,10 @@ export function avisImprimes(documents: readonly DocumentFiche[]): AvisImprime[]
     const deja = parCle.get(cle);
     if (deja) {
       deja.fichiers.push(d);
-      deja.publication ??= d.publication ?? null;
+      deja.publication ??= (d.publication as PublicationAvis | null | undefined) ?? null;
       deja.dateGeneration ??= d.dateGeneration ?? null;
     } else {
-      parCle.set(cle, { cle, dateGeneration: d.dateGeneration ?? null, version: d.version ?? null, publication: d.publication ?? null, fichiers: [d] });
+      parCle.set(cle, { cle, dateGeneration: d.dateGeneration ?? null, version: d.version ?? null, publication: (d.publication as PublicationAvis | null | undefined) ?? null, fichiers: [d] });
     }
   }
   const rangFormat = (d: DocumentFiche): number => (extension(d) === 'pdf' ? 0 : 1);
@@ -41,9 +41,65 @@ export function avisImprimes(documents: readonly DocumentFiche[]): AvisImprime[]
   return liste.sort((a, b) => cleTri(b).localeCompare(cleTri(a)));
 }
 
-/** Les documents du DAO sans les avis : l'étape « Documents » les regroupe par pièce, l'avis a sa propre liste. */
+/**
+ * Les documents du DAO sans les publications (avis spécifique, lettres d'invitation) : l'étape « Documents » regroupe
+ * les pièces du DAO par sigle et par lot ; les publications ont leur propre encart.
+ */
 export function sansAvis(documents: readonly DocumentFiche[]): DocumentFiche[] {
-  return documents.filter((d) => d.type !== 'AVIS');
+  return documents.filter((d) => d.type !== 'AVIS' && d.type !== 'LETTRE_INVITATION');
+}
+
+/** ⚠️ 01/10 (lot AV-4) — une impression des lettres d'invitation : une lettre (paire .pdf/.docx) par candidat. */
+export interface LettresImprimees {
+  cle: string;
+  dateGeneration: string | null;
+  version: number | null;
+  publication: PublicationLettres | null;
+  lettres: { rang: number; destinataire: string; fichiers: DocumentFiche[] }[];
+}
+
+/**
+ * Les lettres déjà imprimées, groupées par impression (le nom porte l'horodatage puis le rang :
+ * `LETTRE_<plan>_<ligne>_v2_20261005-143000_01.pdf`), la plus récente en tête ; dans une impression, par rang du
+ * candidat (`publication.rang`, sinon le suffixe du nom). Le destinataire se lit dans la liste gardée en trace.
+ */
+export function lettresImprimees(documents: readonly DocumentFiche[]): LettresImprimees[] {
+  const parCle = new Map<string, LettresImprimees>();
+  for (const d of documents) {
+    if (d.type !== 'LETTRE_INVITATION') continue;
+    const base = d.nomFichier.replace(/\.[^.]+$/, '');
+    const m = /^(.*)_(\d+)$/.exec(base);
+    const cle = m ? m[1] : base;
+    const pub = (d.publication as PublicationLettres | null | undefined) ?? null;
+    const rang = pub?.rang ?? (m ? Number(m[2]) : 1);
+    let imp = parCle.get(cle);
+    if (!imp) {
+      imp = { cle, dateGeneration: d.dateGeneration ?? null, version: d.version ?? null, publication: pub, lettres: [] };
+      parCle.set(cle, imp);
+    }
+    imp.publication ??= pub;
+    let lettre = imp.lettres.find((l) => l.rang === rang);
+    if (!lettre) {
+      lettre = { rang, destinataire: pub?.candidats?.[rang - 1]?.nom ?? `Candidat n° ${rang}`, fichiers: [] };
+      imp.lettres.push(lettre);
+    }
+    lettre.fichiers.push(d);
+  }
+  const liste = [...parCle.values()];
+  for (const imp of liste) {
+    imp.lettres.sort((a, b) => a.rang - b.rang);
+    for (const l of imp.lettres) l.fichiers.sort((x, y) => (extension(x) === 'pdf' ? 0 : 1) - (extension(y) === 'pdf' ? 0 : 1));
+  }
+  return liste.sort((a, b) => (b.dateGeneration ?? b.cle).localeCompare(a.dateGeneration ?? a.cle));
+}
+
+/**
+ * ⚠️ 01/10 — une erreur nominative du serveur pour un candidat (`candidats[1].nom`, indice à partir de 0) :
+ * `{ rang: 2, champ: 'nom' }`, ou `null` pour un autre champ.
+ */
+export function erreurCandidat(cle: string): { rang: number; champ: 'nom' | 'adresse' } | null {
+  const m = /^candidats\[(\d+)\]\.(nom|adresse)$/.exec(cle);
+  return m ? { rang: Number(m[1]) + 1, champ: m[2] as 'nom' | 'adresse' } : null;
 }
 
 /** Ce que la PRMP lit quand l'avis n'est pas encore disponible (`null` : rien à montrer). */
@@ -51,6 +107,7 @@ export function messageIndisponible(raison: RaisonAvisIndisponible | null): stri
   switch (raison) {
     case null:
     case 'CATEGORIE_SANS_AVIS':
+    case 'CATEGORIE_SANS_LETTRE':
       return null;
     case 'SANS_DOSSIER':
       return 'L’avis s’imprime une fois le dossier soumis, examiné, et son PV signé avec un avis favorable.';

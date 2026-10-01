@@ -18,6 +18,7 @@ import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { FicheBesoin } from './fiche-besoin';
 import { ImportDao } from './import-dao';
 import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
+import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
 import { sansAvis } from '../../../shared/prmp/avis-specifique-modele';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { Icone } from '../../../shared/ui/icone';
@@ -105,6 +106,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
     FicheBesoin,
     ImportDao,
     AvisSpecifique,
+    LettresInvitation,
     ModaleDirective,RouterLink, Icone, EtatErreur, TitreSiTronqueDirective],
   templateUrl: './fiche-marche.html',
   styleUrl: './fiche-marche.scss',
