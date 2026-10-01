@@ -104,9 +104,15 @@ comme le serveur, sinon il masquait ce cas.
 **Banc** (01/10) : il rend aussi les champs que seules les conditions citent, donne **toutes** ses options à un choix
 multiple en cadrage « tout oui », coupe les conditions comme le serveur (« Caution personnelle et solidaire » est une
 valeur), et **contrôle les réponses déduites** (`déduites j/n`, une fausse fait échouer). Rendu propre : 70/70 justes.
-⚠️ Défaut connu, antérieur, révélé par ce contrôle : graine 6, CCAP-T « tout oui », `B05-GE-01 = OUI` déduit alors que le
-rendu dit NON — un paragraphe bruité atteste une section de bonne exécution. À instruire (la même logique vit dans
-`LectureDao`).
+Ce contrôle a révélé un défaut ancien (graines 6 et 10, CCAP-T) : il est corrigé par la règle 7.
+
+7. **Un trou laissé au candidat ne rend pas un paragraphe distinctif** (01/10, §B4.3 ;
+   `docs/demande-backend-2026-10-01-lecture-trous-distinctif.md`). Pour décider qu'un paragraphe reconnu **atteste sa
+   section** (≥ 20 lettres de texte fixe), les lettres des trous `<…>` ne comptent plus. Cas : « ATTENDU QUE <nom du
+   Titulaire> » (annexe de bonne exécution) — 14 de ses 24 lettres viennent du trou ; sous bruit, « ATTENDU QUE » +
+   « <nom du Titulaire> » de l'annexe de restitution d'avance, fusionnés, le reproduisaient et attestaient
+   `B05-GE-01 = OUI`. Banc, propre et graines 1 à 12 : les deux fausses déductions disparaissent, rappel, fausses valeurs
+   et réponses déduites identiques par ailleurs ; DAO du MEN et 2463 inchangés.
 `PdfLignes` : la fin d'un morceau est celle de sa dernière lettre (une espace finale, retirée du texte, collait le
 morceau suivant). Banc : rappel identique sur les 18 passes, Q10 tenu (propre et graines 3, 6, 11). 2463 : +3 valeurs
 justes (B04-DE-02/03, B06-EP-01), aucune perdue.

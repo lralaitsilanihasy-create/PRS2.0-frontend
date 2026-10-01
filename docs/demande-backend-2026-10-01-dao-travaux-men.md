@@ -211,6 +211,8 @@ Le banc contrôle désormais les réponses déduites. Graine 6, CCAP-T, cadrage 
 alors que le rendu dit NON — sous bruit, un paragraphe atteste une section de bonne exécution. La lecture d'avant le
 01/10 fait la même erreur : ce n'est pas une régression. Le front l'instruit ; `LectureDao` partageant la logique,
 vous verrez le correctif passer par une demande dédiée.
+>
+> → Demande dédiée : `docs/demande-backend-2026-10-01-lecture-trous-distinctif.md` (01/10 au soir).
 
 > ⚠️ **Réponse backend du 2026-10-01 (§B4.3).** Noté. La parité mesurée ici porte sur des documents propres ; le
 > défaut sous bruit se lira de la même façon des deux côtés tant que la logique est partagée. J'attends la demande dédiée.

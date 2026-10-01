@@ -269,7 +269,10 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
   // Un paragraphe atteste ses sections s'il a assez de texte fixe (20 lettres) et qu'aucun paragraphe de même texte
   // n'existe hors de ces sections.
   const cleTexte = (u) => norm(u.texte.replace(JETON, '{}')).toLowerCase();
-  const distinctif = (u) => u.sections.length > 0 && u.texte.replace(JETON, ' ').normalize('NFKC').toLowerCase().replace(/[^\p{L}]/gu, '').length >= 20
+  // ⚠️ 01/10 (§B4.3) — les lettres d'un trou laissé au candidat (« <nom du Titulaire> ») ne comptent pas : ce n'est pas du
+  // texte de clause, et il revient d'une annexe à l'autre. Sous bruit, « ATTENDU QUE » + « <nom du Titulaire> » fusionnés
+  // (annexe de restitution d'avance) devenaient l'en-tête de l'annexe de bonne exécution, et attestaient B05-GE-01 = OUI.
+  const distinctif = (u) => u.sections.length > 0 && u.texte.replace(JETON, ' ').replace(/<[^<>]*>/g, ' ').normalize('NFKC').toLowerCase().replace(/[^\p{L}]/gu, '').length >= 20
     && !us.some((v) => v !== u && cleTexte(v) === cleTexte(u) && v.sections.join('|') !== u.sections.join('|'));
   const doc = [...docLu];      // copie : un paragraphe fusionné par l'autorité y est redécoupé
   const trouves = new Map();   // indice de l'unité → indice du paragraphe du document
