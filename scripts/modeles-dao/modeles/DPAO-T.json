@@ -7,6 +7,8 @@
   "PROJET": "B02-OT-01 renseigne",
   "ALLOTI": "alloti = OUI",
   "LOTS-DIVISIBLES": "alloti = OUI et B02-LT-02 = Divisible",
+  "LIMITE-LOTS": "alloti = OUI et B02-LT-02 = Divisible et B02-AU-07 renseigne",
+  "OFFRES-ANORMALES": "B06-EO-07 renseigne",
   "LOTS-TOTALITE": "alloti = OUI et B02-LT-02 = Totalité des lots",
   "VARIANTES-NON": "variantes = NON",
   "VARIANTES-OUI": "variantes = OUI",
@@ -20,9 +22,9 @@
   "GARANTIE": "garantieSoumission = OUI",
   "GARANTIE-LOTS": "garantieSoumission = OUI et alloti = OUI",
   "GARANTIE-UNIQUE": "garantieSoumission = OUI et alloti != OUI",
-  "GARANTIE-BANCAIRE": "garantieSoumission = OUI et B05-GQ-02 = Garantie bancaire",
-  "GARANTIE-CAUTION": "garantieSoumission = OUI et B05-GQ-02 = Caution personnelle et solidaire",
-  "GARANTIE-CHEQUE": "garantieSoumission = OUI et B05-GQ-02 = Chèque de banque",
+  "GARANTIE-BANCAIRE": "garantieSoumission = OUI et B05-GQ-02 contient Garantie bancaire",
+  "GARANTIE-CAUTION": "garantieSoumission = OUI et B05-GQ-02 contient Caution personnelle et solidaire",
+  "GARANTIE-CHEQUE": "garantieSoumission = OUI et B05-GQ-02 contient Chèque de banque",
   "VISITE-OBLIGATOIRE": "B04-VL-02 = OUI",
   "ONG": "B03-QT-05 = OUI",
   "QUALIFICATIONS": "B03-QT-06 renseigne",
@@ -66,7 +68,7 @@
   },
   {
    "type": "ligne",
-   "texte": "1.1 Lots, variantes et tranches\u001f{{SI:ALLOTI}}\u001eLots\u001eLes lots suivants faisant partie de {{B02-LT-01}} :\u001e{{B02-LV-02}}\u001e{{SI:LOTS-DIVISIBLES}}\u001eLe candidat peut soumissionner pour un ou plusieurs lots\u001e{{FINSI:LOTS-DIVISIBLES}}\u001e{{SI:LOTS-TOTALITE}}\u001eLe candidat ne peut soumissionner que pour la totalité des lots\u001e{{FINSI:LOTS-TOTALITE}}\u001e{{FINSI:ALLOTI}}"
+   "texte": "1.1 Lots, variantes et tranches\u001f{{SI:ALLOTI}}\u001eLots\u001eLes lots suivants faisant partie de {{B02-LT-01}} :\u001e{{B02-LV-02}}\u001e{{SI:LOTS-DIVISIBLES}}\u001eLe candidat peut soumissionner pour un ou plusieurs lots\u001e{{FINSI:LOTS-DIVISIBLES}}\u001e{{SI:LIMITE-LOTS}}\u001emais ne peut prétendre qu’à {{B02-AU-07.lettres}} ({{B02-AU-07}}) lots\u001e{{FINSI:LIMITE-LOTS}}\u001e{{SI:LOTS-TOTALITE}}\u001eLe candidat ne peut soumissionner que pour la totalité des lots\u001e{{FINSI:LOTS-TOTALITE}}\u001e{{FINSI:ALLOTI}}"
   },
   {
    "type": "ligne",
@@ -210,6 +212,18 @@
   },
   {
    "type": "ligne",
+   "texte": "{{SI:OFFRES-ANORMALES}}\u001f"
+  },
+  {
+   "type": "ligne",
+   "texte": "9.4.5. Offres anormalement basses ou anormalement hautes\u001f{{B06-EO-07}}"
+  },
+  {
+   "type": "ligne",
+   "texte": "{{FINSI:OFFRES-ANORMALES}}\u001f"
+  },
+  {
+   "type": "ligne",
    "texte": "9.5. Marge de préférence nationale\u001f{{SI:SANS-PREFERENCE}}\u001eIl n’est pas accordé de préférence aux candidats\u001enationaux\u001e{{FINSI:SANS-PREFERENCE}}\u001e{{SI:PREFERENCE}}\u001eIl est accordé aux candidats nationaux une préférence conformément à la clause 9.5. des IC de {{B06-PN-02.chiffres}} %\u001e{{FINSI:PREFERENCE}}"
   },
   {
@@ -251,6 +265,18 @@
    "genre": "jeton",
    "source": "<insérer la description du projet global>",
    "par": "{{B02-LT-01}}"
+  },
+  {
+   "ligne": "33.1.20",
+   "genre": "retire",
+   "source": "<en cas de limitation de lots à attribuer à un soumissionnaires, insérer>",
+   "par": ""
+  },
+  {
+   "ligne": "33.1.20",
+   "genre": "jeton",
+   "source": "….",
+   "par": "{{B02-AU-07.lettres}} ({{B02-AU-07}}) "
   },
   {
    "ligne": "36.1.15",
@@ -646,11 +672,6 @@
    "raison": "instruction à l’acheteur"
   },
   {
-   "ligne": "33.1.20",
-   "texte": "<en cas de limitation de lots à attribuer à un soumissionnaires, insérer> mais ne peut prétendre qu’à ….lots",
-   "raison": "limitation du nombre de lots par candidat : aucun champ de la fiche (plan du lot D4, §6)"
-  },
-  {
    "ligne": "36.1.2",
    "texte": "<Insérer l’une des deux options suivantes : >",
    "raison": "instruction à l’acheteur"
@@ -851,6 +872,8 @@
   "{{B02-LV-02}}",
   "{{B03-QT-06}}",
   "(e) proposer le personnel clé suivant : {{B03-QT-13}}",
-  "(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum de : {{B03-QT-14.parLot}}"
+  "(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum de : {{B03-QT-14.parLot}}",
+  "9.4.5. Offres anormalement basses ou anormalement hautes",
+  "{{B06-EO-07}}"
  ]
 }

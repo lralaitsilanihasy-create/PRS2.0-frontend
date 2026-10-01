@@ -2205,6 +2205,9 @@ function dpaoTravaux() {
     PROJET: 'B02-OT-01 renseigne',
     ALLOTI: 'alloti = OUI',
     'LOTS-DIVISIBLES': 'alloti = OUI et B02-LT-02 = Divisible',
+    // 01/10 (livraison backend : B02-AU-07 et B06-EO-07 servis aux travaux, DAO du MEN)
+    'LIMITE-LOTS': 'alloti = OUI et B02-LT-02 = Divisible et B02-AU-07 renseigne',
+    'OFFRES-ANORMALES': 'B06-EO-07 renseigne',
     'LOTS-TOTALITE': 'alloti = OUI et B02-LT-02 = Totalité des lots',
     'VARIANTES-NON': 'variantes = NON',
     'VARIANTES-OUI': 'variantes = OUI',
@@ -2219,9 +2222,11 @@ function dpaoTravaux() {
     // 01/10 (DAO du MEN : 9 900 000 Ar au lot 1, 7 200 000 Ar au lot 2) — le montant par lot, comme B05-GS-03 en fournitures.
     'GARANTIE-LOTS': 'garantieSoumission = OUI et alloti = OUI',
     'GARANTIE-UNIQUE': 'garantieSoumission = OUI et alloti != OUI',
-    'GARANTIE-BANCAIRE': 'garantieSoumission = OUI et B05-GQ-02 = Garantie bancaire',
-    'GARANTIE-CAUTION': 'garantieSoumission = OUI et B05-GQ-02 = Caution personnelle et solidaire',
-    'GARANTIE-CHEQUE': 'garantieSoumission = OUI et B05-GQ-02 = Chèque de banque',
+    // 01/10 (livraison backend, B05-GQ-02 en LISTE_MULTIPLE) — le MEN admet les trois formes ensemble : chaque forme a sa
+    // section, `contient` l'option entière (une valeur à un seul élément reste vraie, comme avant).
+    'GARANTIE-BANCAIRE': 'garantieSoumission = OUI et B05-GQ-02 contient Garantie bancaire',
+    'GARANTIE-CAUTION': 'garantieSoumission = OUI et B05-GQ-02 contient Caution personnelle et solidaire',
+    'GARANTIE-CHEQUE': 'garantieSoumission = OUI et B05-GQ-02 contient Chèque de banque',
     'VISITE-OBLIGATOIRE': 'B04-VL-02 = OUI',
     ONG: 'B03-QT-05 = OUI',
     QUALIFICATIONS: 'B03-QT-06 renseigne',
@@ -2247,7 +2252,8 @@ function dpaoTravaux() {
   // document type : deux paragraphes déclarés, imprimés seulement si renseignés (champs créés par le backend).
   const PERSONNEL_CLE = '(e) proposer le personnel clé suivant : {{B03-QT-13}}';
   const LIQUIDITE = '(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum de : {{B03-QT-14.parLot}}';
-  const ajouts = [CLAUSE_SE, '{{B02-LV-02}}', '{{B03-QT-06}}', PERSONNEL_CLE, LIQUIDITE];
+  const OFFRES_ANORMALES_CLAUSE = '9.4.5. Offres anormalement basses ou anormalement hautes';
+  const ajouts = [CLAUSE_SE, '{{B02-LV-02}}', '{{B03-QT-06}}', PERSONNEL_CLE, LIQUIDITE, OFFRES_ANORMALES_CLAUSE, '{{B06-EO-07}}'];
 
   retirer(d, 'note de rédaction du modèle, « à supprimer »', '[note 1]');
   retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', (l) => /^<\s*(soit|ou)\s*:?\s*>\s*:?$/i.test(l.texte));
@@ -2275,11 +2281,12 @@ function dpaoTravaux() {
     x(r11, 'Les lots suivants faisant partie de', ['<insérer la description du projet global>', '{{B02-LT-01}}', 'jeton']),
     '{{B02-LV-02}}',
     SIc('LOTS-DIVISIBLES', x(r11, 'Le candidat peut soumissionner')),
+    // 01/10 — la phrase du document type pour limiter les lots d'un candidat (retirée le 29/09 faute de champ).
+    SIc('LIMITE-LOTS', x(r11, '<en cas de limitation de lots', ['<en cas de limitation de lots à attribuer à un soumissionnaires, insérer>', '', 'retire'], ['….', '{{B02-AU-07.lettres}} ({{B02-AU-07}}) ', 'jeton'])),
     SIc('LOTS-TOTALITE', x(r11, 'Le candidat ne peut soumissionner'))));
   retirer(r11, 'formulation pour un DAO portant sur UN lot : le DAO de la fiche porte sur tous les lots de la ligne', 'Le lot <insérer la description du lot>');
   retirer(r11, 'liste des lots : remplacée par la désignation des lots du plan (B02-LV-02)', '<insérer la description du lot>', '=….');
   retirer(r11, 'instruction à l’acheteur', '<en cas de décomposition en lots');
-  retirer(r11, "limitation du nombre de lots par candidat : aucun champ de la fiche (plan du lot D4, §6)", '<en cas de limitation de lots');
   const r11b = rg('Variantes', 1);
   const variantesTranches = cel(
     x(r11b, 'Variantes'),
@@ -2498,6 +2505,8 @@ function dpaoTravaux() {
     L(clause(r9), ''),
     L(clause(r91), relations),
     ...SIr('ALLOTI', L(clause(r94), evaluation)),
+    // 01/10 — pas de clause au document type des travaux : rangée déclarée (DPAO 9.4.5 du MEN).
+    ...SIr('OFFRES-ANORMALES', L(OFFRES_ANORMALES_CLAUSE, '{{B06-EO-07}}')),
     L(clause(r95), preference),
     L(clause(r11d), delai),
     FIN,
