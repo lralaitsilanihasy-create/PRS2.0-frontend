@@ -366,7 +366,7 @@
   },
   {
    "type": "para",
-   "texte": "Pour tout candidat désirant soumissionner, le règlement de la consultation (1) est retiré auprès de {{B04-DS-04}} moyennant le paiement d’un montant non remboursable de {{B04-DS-05.parLot}} libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP."
+   "texte": "Pour tout candidat désirant soumissionner, le règlement de la consultation (1) est retiré auprès de {{B04-DS-04}} moyennant le paiement d’un montant non remboursable de {{B04-DS-05.parLot}} à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}."
   },
   {
    "type": "para",
@@ -378,7 +378,7 @@
   },
   {
    "type": "para",
-   "texte": "Pour tout candidat désirant soumissionner, le règlement de la consultation (1) est retiré auprès de {{B04-DS-04}} moyennant le paiement d’un montant non remboursable de {{B04-DS-05.lettres}} ({{B04-DS-05}}) libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP."
+   "texte": "Pour tout candidat désirant soumissionner, le règlement de la consultation (1) est retiré auprès de {{B04-DS-04}} moyennant le paiement d’un montant non remboursable de {{B04-DS-05.lettres}} ({{B04-DS-05}}) à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}."
   },
   {
    "type": "para",
@@ -1382,6 +1382,8 @@
   "ARTICLE 11 : ",
   "ARTICLE 12 : ",
   "(1) ",
-  "[[CLAUSE À FOURNIR PAR LE JURISTE : conditions de la transmission électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]"
+  "[[CLAUSE À FOURNIR PAR LE JURISTE : conditions de la transmission électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]",
+  "Pour tout candidat désirant soumissionner, le règlement de la consultation (1) est retiré auprès de {{B04-DS-04}} moyennant le paiement d’un montant non remboursable de {{B04-DS-05.parLot}} à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}.",
+  "Pour tout candidat désirant soumissionner, le règlement de la consultation (1) est retiré auprès de {{B04-DS-04}} moyennant le paiement d’un montant non remboursable de {{B04-DS-05.lettres}} ({{B04-DS-05}}) à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}."
  ]
 }

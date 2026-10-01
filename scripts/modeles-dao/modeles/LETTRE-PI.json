@@ -1,0 +1,264 @@
+{
+ "fichier": "LETTRE-PI.docx",
+ "sigle": "LETTRE-PI",
+ "source": "pi-ic",
+ "titre": null,
+ "conditions": {
+  "SFQC": "B02-MS-01 contient expérience",
+  "BUDGET": "B02-MS-01 contient budget prédéterminé",
+  "MOINDRE-COUT": "B02-MS-01 contient note technique minimale",
+  "QUALITE-SEULE": "B02-MS-01 contient exclusivement"
+ },
+ "blocs": [
+  {
+   "type": "centre",
+   "texte": "{{IMAGE:embleme}}"
+  },
+  {
+   "type": "centre",
+   "texte": "{{B01-AC-01}}"
+  },
+  {
+   "type": "centre",
+   "texte": "LA PERSONNE RESPONSABLE DES MARCHES PUBLICS"
+  },
+  {
+   "type": "centre",
+   "texte": "UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS"
+  },
+  {
+   "type": "titre",
+   "texte": "LETTRE D’INVITATION"
+  },
+  {
+   "type": "para",
+   "texte": "Référence: {{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{LETTRE.lieu}}, {{LETTRE.date}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{LETTRE.destinataire}}"
+  },
+  {
+   "type": "para",
+   "texte": "Madame, Monsieur"
+  },
+  {
+   "type": "para",
+   "texte": "1. Nous avons l’honneur de vous aviser que vous avez été présélectionné, sur la base de la manifestation d'intérêt que vous avez remise, en vue de concourir à l'attribution du marché cité en référence. Vous trouverez dans les Termes de Références inclus dans le Dossier de Consultation ci-joint la description détaillée des prestations attendues."
+  },
+  {
+   "type": "para",
+   "texte": "Nous vous invitons en conséquence, par la présente, ainsi que les autres candidats sélectionnés, à présenter une proposition concernant l'exécution de ce marché."
+  },
+  {
+   "type": "para",
+   "texte": "2. Une lettre d'invitation accompagnant le présent Dossier de Consultation a été adressée aux candidats dont les noms figurent ci-après :"
+  },
+  {
+   "type": "para",
+   "texte": "{{LETTRE.candidats}}"
+  },
+  {
+   "type": "para",
+   "texte": "3. Le Marché sera attribué au candidat choisi, conformément à l'Article 26 du Code des Marchés Publics, sur la base:"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:SFQC}}"
+  },
+  {
+   "type": "para",
+   "texte": "de la qualité technique de la proposition, de l’expérience du candidat, de la qualification des experts et de la méthode de travail proposée ainsi que du montant de la proposition,"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:SFQC}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:BUDGET}}"
+  },
+  {
+   "type": "para",
+   "texte": "d’un budget prédéterminé dont le candidat doit proposer la meilleure utilisation possible,"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:BUDGET}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MOINDRE-COUT}}"
+  },
+  {
+   "type": "para",
+   "texte": "de la meilleure proposition financière soumise par les candidats ayant obtenu une notation technique minimum."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MOINDRE-COUT}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:QUALITE-SEULE}}"
+  },
+  {
+   "type": "para",
+   "texte": "exclusivement de la qualité technique"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:QUALITE-SEULE}}"
+  },
+  {
+   "type": "para",
+   "texte": "Les procédures et critères de sélection sont décrits dans les Instructions aux Candidats qui font partie du Dossier de Consultation ci-joint."
+  },
+  {
+   "type": "para",
+   "texte": "4. Le Dossier de Consultation comprend les documents suivants :"
+  },
+  {
+   "type": "para",
+   "texte": "Les documents relatifs à la procédure de passation :"
+  },
+  {
+   "type": "para",
+   "texte": "La présente Lettre d’invitation;"
+  },
+  {
+   "type": "para",
+   "texte": "Les instructions aux candidats, y compris les Formulaires types pour présenter la proposition technique, les Formulaires types pour présenter la Proposition financière et les Données Particulières des instructions aux candidats;"
+  },
+  {
+   "type": "para",
+   "texte": "Les Termes de référence"
+  },
+  {
+   "type": "para",
+   "texte": "Les documents constituant le marché :"
+  },
+  {
+   "type": "para",
+   "texte": "L'Acte d'Engagement"
+  },
+  {
+   "type": "para",
+   "texte": "Le Cahier des Prescriptions Spéciales qui comprend le Cahier des Clauses administratives Particulières et les Termes de références;"
+  },
+  {
+   "type": "para",
+   "texte": "le Cahier des Clauses administratives Générales applicables au marché de prestations intellectuelles;"
+  },
+  {
+   "type": "para",
+   "texte": "5. Nous vous serions reconnaissants de nous faire savoir, par écrit, dès réception, à l’adresse suivante:"
+  },
+  {
+   "type": "para",
+   "texte": "{{B01-AC-02}} ({{B01-AC-06}}):"
+  },
+  {
+   "type": "para",
+   "texte": "que vous avez reçu cette lettre d’invitation; et"
+  },
+  {
+   "type": "para",
+   "texte": "que vous soumettrez une proposition, seul ou en association."
+  },
+  {
+   "type": "para",
+   "texte": "Veuillez agréer, Madame/Monsieur, l’assurance de ma considération distinguée"
+  },
+  {
+   "type": "para",
+   "texte": "La Personne Responsable des Marchés Publics"
+  },
+  {
+   "type": "para",
+   "texte": "{{B01-AC-05}}"
+  }
+ ],
+ "trace": [
+  {
+   "ligne": 125,
+   "genre": "jeton",
+   "source": "<En tête de l'Autorité Contractante>",
+   "par": "{{B01-AC-01}}"
+  },
+  {
+   "ligne": 123,
+   "genre": "retire",
+   "source": "1.1.",
+   "par": ""
+  },
+  {
+   "ligne": 128,
+   "genre": "jeton",
+   "source": "<insérer intitulé et références du Marché>",
+   "par": "{{B02-OB-03}} — {{B02-OB-01}}"
+  },
+  {
+   "ligne": 129,
+   "genre": "jeton",
+   "source": "<insérer : lieu et date>",
+   "par": "{{LETTRE.lieu}}, {{LETTRE.date}}"
+  },
+  {
+   "ligne": 131,
+   "genre": "jeton",
+   "source": "< insérer : Nom et adresse du Consultant>",
+   "par": "{{LETTRE.destinataire}}"
+  },
+  {
+   "ligne": 144,
+   "genre": "jeton",
+   "source": "<insérer : liste des 5 candidats invités à remettre une proposition>",
+   "par": "{{LETTRE.candidats}}"
+  },
+  {
+   "ligne": 179,
+   "genre": "jeton",
+   "source": "<insérer l’adresse>",
+   "par": "{{B01-AC-02}} ({{B01-AC-06}})"
+  },
+  {
+   "ligne": 188,
+   "genre": "jeton",
+   "source": "<Insérer nom et signature de la Personne Responsable des Marchés Publics ou de son délégué>",
+   "par": "{{B01-AC-05}}"
+  }
+ ],
+ "retraits": [
+  {
+   "ligne": 149,
+   "texte": "<indiquer le mode de sélection, soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 152,
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 155,
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  },
+  {
+   "ligne": 158,
+   "texte": "<soit:>",
+   "raison": "intitulé d’option : seule la rédaction retenue est imprimée"
+  }
+ ],
+ "ajouts": [
+  "{{IMAGE:embleme}}",
+  "LA PERSONNE RESPONSABLE DES MARCHES PUBLICS",
+  "UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS",
+  "La Personne Responsable des Marchés Publics"
+ ]
+}

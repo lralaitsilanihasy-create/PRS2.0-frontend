@@ -450,3 +450,13 @@ la page du dossier, la modale des informations de publication, et la liste des a
 > solidaire du suivant » (`keepNext`) sur ses deux premiers paragraphes, dans le Word comme dans le PDF. Le bloc passe
 > alors en entier sur la page suivante quand il ne tient pas. Le modèle n'a pas à changer : ce sont les trois derniers
 > paragraphes de l'avis.
+
+> ⚠️ **Décisions du pilote du 2026-10-01.**
+> - **Pièce n° 9 « Avis d'appel d'offres » : rendue facultative** au dépôt des dossiers `DMC`, par l'écran de
+>   l'Administrateur (`PUT /api/type-piece-jointes/9`, `obligatoire: false`, compte ADMIN01, tracé à l'audit). Rien à
+>   faire côté serveur.
+> - **DPAC du contrat-cadre : le compte bancaire de l'ARMP aussi.** « libellé au nom de l’Agent comptable de l’ARMP ou
+>   au nom du régisseur de recettes de l’ARMP » devient « à verser sur le compte bancaire de l’ARMP :
+>   {{PARAM.compte-dao}} », dans les deux variantes du montant. Décalque `DPAC-CC` toujours 184/184. À recopier :
+>   `modeles/DPAC-CC.{txt,json}`. Le jeton est déjà rendu par le moteur (§B8.3) ; le DPAC est produit à la validation,
+>   merci de vérifier que le jeton y est bien servi aussi.

@@ -63,3 +63,8 @@ La source est à extraire du `.doc` officiel (`extraire.mjs`, clé `pi-ic`).
 - **Q4 — Nombre de candidats** : le modèle parle de « 5 candidats ». **Libre, au moins un** (recommandé, en attendant
   le juriste), ou exactement 5 ?
 - **Q5 — Statut « Lancé »** à la **première impression des lettres** (recommandé, comme l'avis) ?
+
+> ⚠️ **Arbitrage du pilote du 01/10 : Q1 à Q5 selon les recommandations.** AV-4.1 fait :
+> - source `pi-ic` extraite ;
+> - modèle `LETTRE-PI` décrit et vérifié, 43/43 ;
+> - demande backend `demande-backend-2026-10-01-lettre-invitation-pi.md`.

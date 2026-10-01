@@ -242,6 +242,13 @@ function dpacContratCadre() {
   // lecture — rendue dans le texte et déclarée en AJOUT, comme les labels « (a) » d'A1. Idem l'appel de note « (1) ».
   const art = (n, motif, rang = 0) => ST(`ARTICLE ${n} : ${ligne(d, motif, rang).texte}`);
   const ajouts = Array.from({ length: 12 }, (_, i) => `ARTICLE ${i + 1} : `);
+  const PAYEUR_DPAC = 'libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP';
+  const compteArmpDpac = (t) => {
+    if (!t.includes(PAYEUR_DPAC)) throw new Error(`DPAC-CC : « ${PAYEUR_DPAC} » absent`);
+    const a = t.replace(PAYEUR_DPAC, 'à verser sur le compte bancaire de l’ARMP : {{PARAM.compte-dao}}');
+    ajouts.push(a);
+    return a;
+  };
   ajouts.push('(1) ');
 
   // Remise électronique : les conditions de transmission ne sont écrites nulle part dans le modèle (« <préciser les
@@ -343,9 +350,11 @@ function dpacContratCadre() {
     P(x('Bureau, N° porte', [':', ': {{B04-DS-09}}', 'jeton'])),
     P(x('Localité', ['<préciser autant que possible avec des détails fins, tels que lot ou numéro de l’immeuble, nom de rue, quartier, ville>', '{{B04-DS-10}}', 'jeton'])),
     ST(x('3. 3.Modalités')),
-    ...['MONTANT-LOTS', 'MONTANT-UNIQUE'].flatMap((c) => SI(c, P(x('Pour tout candidat désirant soumissionner', ["<indiquer l'adresse>", '{{B04-DS-04}}', 'jeton'],
+    // ⚠️ 01/10 (décision du pilote, Q7 et point 4) — le prix du dossier se verse sur le compte bancaire unique de l'ARMP,
+    // comme dans l'avis spécifique : « libellé au nom de l'Agent comptable … ou du régisseur … » est remplacé (ajout déclaré).
+    ...['MONTANT-LOTS', 'MONTANT-UNIQUE'].flatMap((c) => SI(c, P(compteArmpDpac(x('Pour tout candidat désirant soumissionner', ["<indiquer l'adresse>", '{{B04-DS-04}}', 'jeton'],
       ['<indiquer en lettres et en chiffres le montant à payer en Ariary ou son équivalent en monnaie librement convertible>',
-        c === 'MONTANT-LOTS' ? '{{B04-DS-05.parLot}}' : '{{B04-DS-05.lettres}} ({{B04-DS-05}})', 'jeton'])))),
+        c === 'MONTANT-LOTS' ? '{{B04-DS-05.parLot}}' : '{{B04-DS-05.lettres}} ({{B04-DS-05}})', 'jeton']))))),
     ST(x('3.4.Modification')),
     P(x("L'Autorité contractante se réserve")),
     P(x('Si la date limite de réception des offres est reportée')),
@@ -2925,6 +2934,73 @@ function ccapTravaux() {
 /** Le texte entier d'un paragraphe (un trou qui est le paragraphe entier). */
 function texteDe(sec, motif) { return sec.lignes.find((l) => correspond(l, motif)).texte; }
 
+// ══ Lettre d'invitation des prestations intellectuelles (plan du 01/10, lot AV-4) ════════════════════════════
+// Source : « 1.1. LETTRE D'INVITATION », en tête du volume 1 du dossier type PI (Instructions aux candidats). Une lettre
+// PAR candidat de la liste restreinte (Q1) : le destinataire, la liste, le lieu et la date sont saisis à l'impression
+// (jetons `{{LETTRE.*}}`, pas des champs de la fiche) ; le mode de sélection vient de la fiche (`B02-MS-01`, conditions
+// du DPIC). En-tête commun avec l'avis spécifique : emblème, autorité, PRMP, UGPM.
+function lettrePi() {
+  const SRC = lireSource('pi-ic');
+  const d = sectionDe(SRC, '1.1. LETTRE', 'PREMIERE PARTIE');
+  const tr = [];
+  const x = (motif, ...r) => { const l = ligne(d, motif); return traiter(tr, l.n, l.texte, ...r); };
+  const ajouts = [];
+  const ajout = (t) => { ajouts.push(t); return t; };
+  retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', '<indiquer le mode de sélection', '<soit:>');
+
+  const conditions = {
+    // Les mêmes que le DPIC : la rédaction du mode de sélection suit `B02-MS-01`.
+    SFQC: 'B02-MS-01 contient expérience',
+    BUDGET: 'B02-MS-01 contient budget prédéterminé',
+    'MOINDRE-COUT': 'B02-MS-01 contient note technique minimale',
+    'QUALITE-SEULE': 'B02-MS-01 contient exclusivement',
+  };
+
+  const blocs = [
+    C(ajout('{{IMAGE:embleme}}')),
+    C(x('<En tête de l', ["<En tête de l'Autorité Contractante>", '{{B01-AC-01}}', 'jeton'])),
+    C(ajout('LA PERSONNE RESPONSABLE DES MARCHES PUBLICS')),
+    C(ajout('UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS')),
+    { type: 'titre', texte: x('1.1. LETTRE', ['1.1. ', '', 'retire']) },
+    P(x('Référence:', ['<insérer intitulé et références du Marché>', '{{B02-OB-03}} — {{B02-OB-01}}', 'jeton'])),
+    // Q2 — le lieu et la date d'envoi, saisis à l'impression.
+    P(x('<insérer : lieu et date>', ['<insérer : lieu et date>', '{{LETTRE.lieu}}, {{LETTRE.date}}', 'jeton'])),
+    // Q1 — le destinataire : un candidat de la liste restreinte (nom, puis adresse).
+    P(x('< insérer', ['< insérer : Nom et adresse du Consultant>', '{{LETTRE.destinataire}}', 'jeton'])),
+    P(x('Madame, Monsieur')),
+    P(x('1. Nous avons l’honneur')),
+    P(x('Nous vous invitons en conséquence')),
+    P(x('2. Une lettre d\'invitation')),
+    // La liste restreinte, un candidat par ligne (Q4 : libre, au moins un).
+    P(x('<insérer : liste des 5 candidats', ['<insérer : liste des 5 candidats invités à remettre une proposition>', '{{LETTRE.candidats}}', 'jeton'])),
+    P(x('3. Le Marché sera attribué')),
+    ...SI('SFQC', P(x('de la qualité technique de la proposition'))),
+    ...SI('BUDGET', P(x('d’un budget prédéterminé'))),
+    ...SI('MOINDRE-COUT', P(x('de la meilleure proposition financière'))),
+    ...SI('QUALITE-SEULE', P(x('exclusivement de la qualité technique'))),
+    P(x('Les procédures et critères de sélection')),
+    P(x('4. Le Dossier de Consultation comprend')),
+    P(x('Les documents relatifs à la procédure')),
+    P(x('La présente Lettre')),
+    P(x('Les instructions aux candidats')),
+    P(x('Les Termes de référence')),
+    P(x('Les documents constituant le marché')),
+    P(x('L\'Acte d\'Engagement')),
+    P(x('Le Cahier des Prescriptions Spéciales')),
+    P(x('le Cahier des Clauses administratives Générales')),
+    P(x('5. Nous vous serions reconnaissants')),
+    // Q3 — l'adresse de l'autorité et le courriel de la PRMP.
+    P(x('<insérer l’adresse>', ['<insérer l’adresse>', '{{B01-AC-02}} ({{B01-AC-06}})', 'jeton'])),
+    P(x('que vous avez reçu cette lettre')),
+    P(x('que vous soumettrez une proposition')),
+    P(x('Veuillez agréer')),
+    P(ajout('La Personne Responsable des Marchés Publics')),
+    P(x('<Insérer nom et signature', ['<Insérer nom et signature de la Personne Responsable des Marchés Publics ou de son délégué>', '{{B01-AC-05}}', 'jeton'])),
+  ];
+  toutEstRendu(d, 'LETTRE-PI');
+  return { fichier: 'LETTRE-PI.docx', sigle: 'LETTRE-PI', source: 'pi-ic', titre: null, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
+}
+
 // ══ Avis spécifique d'appel d'offres (plan du 30/09, lot AV-1) ═══════════════════════════════════════════════
 // Source : « AVIS SPECIFIQUES » en tête du document type du contrat-cadre (fournitures et services) — le seul modèle
 // d'avis des documents types ; sa rédaction couvre les trois formes (« à quantités fixes », « à commandes »,
@@ -3090,7 +3166,7 @@ function avisSpecifique(categorie) {
 }
 
 // ══ Sortie ═══════════════════════════════════════════════════════════════════════════════════
-const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre, 'DPAO-F': dpaoFournitures, 'AE-F': aeFournitures, 'CCAP-F': ccapFournitures, 'DPIC-PI': dpicPi, 'AE-PI': aePi, 'CPS-PI': cpsPi, 'DPAO-T': dpaoTravaux, 'AE-T': aeTravaux, 'CCAP-T': ccapTravaux, 'AVIS-F': () => avisSpecifique('FOURNITURES_SERVICES'), 'AVIS-T': () => avisSpecifique('TRAVAUX') };
+const DOCUMENTS = { 'DPAC-CC': dpacContratCadre, 'AE-CC': aeContratCadre, 'DPAO-F': dpaoFournitures, 'AE-F': aeFournitures, 'CCAP-F': ccapFournitures, 'DPIC-PI': dpicPi, 'AE-PI': aePi, 'CPS-PI': cpsPi, 'DPAO-T': dpaoTravaux, 'AE-T': aeTravaux, 'CCAP-T': ccapTravaux, 'AVIS-F': () => avisSpecifique('FOURNITURES_SERVICES'), 'AVIS-T': () => avisSpecifique('TRAVAUX'), 'LETTRE-PI': lettrePi };
 fs.mkdirSync('modeles', { recursive: true });
 const voulus = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(DOCUMENTS);
 for (const sigle of voulus) {

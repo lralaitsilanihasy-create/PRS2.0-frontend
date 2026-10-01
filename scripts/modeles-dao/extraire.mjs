@@ -24,6 +24,8 @@ const DOCUMENTS = {
   'pi-dpic': 'Documents Types/Prestations_Intellectuelles/2-Dossier type de consultation_PI_Données Particulières des Instructions aux candidats.doc',
   'pi-ae': "Documents Types/Prestations_Intellectuelles/4-Dossier type de consultation_PI_Acte d'engagement.doc",
   'pi-cps': 'Documents Types/Prestations_Intellectuelles/5-Dossier type de consultation_PI_Cahier Prescriptions Spéciales.doc',
+  // Lot AV-4 (01/10) — la lettre d'invitation des candidats de la liste restreinte, « 1.1 » en tête du volume 1 (IC).
+  'pi-ic': 'Documents Types/Prestations_Intellectuelles/1-Dossier type de consultation_PI_Instructions aux candidats.doc',
   // Lot D4 (29/09) — travaux, marché ordinaire (à tranches ou alloti) : DPAO (doc 2), AE (doc 4), CCAP et ses six
   // annexes (doc 5). IC et CCAG joints tels quels ; le contrat-cadre de travaux reprend le document type du contrat-cadre.
   'travaux-dpao': "Documents Types/Travaux/2-Dossier type d'appel d'offres_Travaux_Données Particulières d'Appel d'Offres.doc",
