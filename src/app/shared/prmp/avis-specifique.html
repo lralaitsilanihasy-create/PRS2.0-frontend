@@ -84,6 +84,11 @@
             </span>
           </div>
         }
+        @if (!preparation() && compteNonRegle()) {
+          <div class="alert alert-warning" role="status">
+            <span>Le <strong>compte bancaire de l’ARMP</strong> n’est pas encore réglé par l’Administrateur : l’avis imprimera des pointillés à la place du compte où verser le prix du dossier.</span>
+          </div>
+        }
         @if (refus(); as r) { <div class="alert alert-danger" role="alert"><span>{{ r }}</span></div> }
       </div>
       <div class="modal-footer">

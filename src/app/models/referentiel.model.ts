@@ -263,6 +263,20 @@ export interface ParametreAgpmSeuil {
 }
 
 /**
+ * ⚠️ 01/10 (avis spécifique §B8, décision du pilote) — le compte bancaire UNIQUE de l'ARMP sur lequel se verse le prix
+ * du DAO, imprimé dans l'avis (`{{PARAM.compte-dao}}`). `GET`/`PUT /api/parametres/compte-dao` : lu par
+ * l'Administrateur, la PRMP et l'UGPM, réglé par l'Administrateur seul (les trois informations exigées, tracé à l'audit).
+ * Non réglé : les trois valent `null`, et l'avis imprime des pointillés.
+ */
+export interface ParametreCompteDao {
+  banque: string | null;
+  titulaire: string | null;
+  numeroCompte: string | null;
+  misAJourLe?: string | null;
+  misAJourPar?: string | null;
+}
+
+/**
  * ⚠️ Remise électronique (27/09, demande §B1.4) — les valeurs par défaut et bornes ADMINISTRABLES du bloc
  * « Remise électronique », `GET`/`PUT /api/parametres/fiche-remise-electronique` (PUT réservé à l'Administrateur,
  * état complet, `null` efface). Recopiées dans une fiche à sa création ; bornes lues par les règles du bilan.

@@ -37,6 +37,8 @@ const refLinks = [
   { label: 'Champs de la fiche DAO (appel d’offres)', path: '/admin/referentiels/champs-fiche-marche' },
   // ⚠️ Remise électronique (27/09) — défauts et bornes du bloc B04-SE, centralisés (cahier des charges du pilote).
   { label: 'Remise électronique — défauts et bornes', path: '/admin/referentiels/remise-electronique' },
+  // ⚠️ 01/10 (avis spécifique §B8) — le compte bancaire unique de l'ARMP, imprimé dans l'avis pour le prix du DAO.
+  { label: 'Compte bancaire de l’ARMP (prix des DAO)', path: '/admin/referentiels/compte-dao' },
 ];
 
 /**
@@ -60,6 +62,7 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'referentiels/entite-arbre', loadComponent: () => import('./entite-arbre').then((m) => m.EntiteArbre) },
   { path: 'referentiels/dmc-mapping', loadComponent: () => import('./dmc-mapping-admin').then((m) => m.DmcMappingAdmin) },
   { path: 'referentiels/champs-fiche-marche', loadComponent: () => import('./champs-fiche-marche-admin').then((m) => m.ChampsFicheMarcheAdmin), data: { title: 'Champs de la fiche DAO' } },
+  { path: 'referentiels/compte-dao', loadComponent: () => import('./compte-dao-admin').then((m) => m.CompteDaoAdmin), data: { title: 'Compte bancaire de l’ARMP' } },
   { path: 'referentiels/remise-electronique', loadComponent: () => import('./remise-electronique-admin').then((m) => m.RemiseElectroniqueAdmin), data: { title: 'Remise électronique — défauts et bornes' } },
   // ⚠️ Remise électronique (27/09, Q8) — l'Administrateur désigne le responsable de la procédure DEPUIS la fiche : il
   // lui faut donc l'atteindre. La fiche s'ouvre pour lui en lecture (le mode se déduit du rôle), avec l'encart.

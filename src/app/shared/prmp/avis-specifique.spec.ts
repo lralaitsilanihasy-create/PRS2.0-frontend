@@ -19,6 +19,7 @@ const AVIS_2 = [
   doc(21, 'AVIS', 'AVIS_00004_303121_v2_20261012-093000.pdf', { dateGeneration: '2026-10-12T09:30:00', version: 2, publication: { ...PUB, datePublication: '2026-10-13' } }),
   doc(22, 'AVIS', 'AVIS_00004_303121_v2_20261012-093000.docx', { dateGeneration: '2026-10-12T09:30:00', version: 2, publication: { ...PUB, datePublication: '2026-10-13' } }),
 ];
+const COMPTE = { banque: 'BFV-SG', titulaire: 'ARMP', numeroCompte: '00008 00001 05000012345 67' };
 const champ = (code: string, libelle: string, autres: Partial<ChampFiche> = {}): ChampFiche =>
   ({ code, bloc: code.slice(0, 3), rubrique: code.slice(4, 6), rang: 1, libelle, type: 'TEXTE', source: 'SAISIE', documentMaitre: 'DPAC', reprises: [], typesMarche: ['QUANTITE_FIXE'], obligatoire: false, ...autres }) as ChampFiche;
 
@@ -119,6 +120,7 @@ describe('Avis spécifique — l’encart et la modale d’impression', () => {
     rendre();
     http.expectOne('/api/fiches-marche/38').flush({ idDmc: 38, typeMarche: 'QUANTITE_FIXE', categorie: 'TRAVAUX', cadrage: { garantieSoumission: 'OUI' }, valeurs: { 'B04-DS-07': 'M. Rakoto' }, valeursPpm: {}, nbLots: 1, saisieParLot: false });
     http.expectOne((r) => r.url === '/api/champs-fiche-marche').flush({ blocs: [], champs: [champ('B04-DS-05', 'Montant à payer pour le dossier'), champ('B04-DS-07', 'Nom du responsable'), champ('B05-GQ-03', 'Montant de la garantie de soumission')] });
+    http.expectOne('/api/parametres/compte-dao').flush(COMPTE);
     rendre();
     const modale = racine().querySelector('[role="dialog"]')!;
     expect(modale.getAttribute('aria-label')).toBe('Imprimer l’avis spécifique d’appel d’offres');
@@ -144,6 +146,7 @@ describe('Avis spécifique — l’encart et la modale d’impression', () => {
     rendre();
     http.expectOne('/api/fiches-marche/38').flush({ idDmc: 38, typeMarche: 'QUANTITE_FIXE', categorie: 'FOURNITURES_SERVICES', cadrage: {}, valeurs: {}, valeursPpm: {}, nbLots: 1 });
     http.expectOne((r) => r.url === '/api/champs-fiche-marche').flush({ blocs: [], champs: [] });
+    http.expectOne('/api/parametres/compte-dao').flush(COMPTE);
     rendre();
     boutonModale('Imprimer l’avis').click();
     http.expectOne('/api/fiches-marche/38/avis-specifique').flush(
@@ -168,6 +171,7 @@ describe('Avis spécifique — l’encart et la modale d’impression', () => {
     rendre();
     http.expectOne('/api/fiches-marche/38').flush({ idDmc: 38, typeMarche: 'CONTRAT_CADRE', categorie: 'TRAVAUX', cadrage: {}, valeurs: {}, valeursPpm: {}, nbLots: 3 });
     http.expectOne((r) => r.url === '/api/champs-fiche-marche').flush({ blocs: [], champs: [] });
+    http.expectOne('/api/parametres/compte-dao').flush(COMPTE);
     rendre();
     const c = fixture.componentInstance;
     c.poser('datePublication', '2026-09-09');
@@ -179,6 +183,17 @@ describe('Avis spécifique — l’encart et la modale d’impression', () => {
     const req = http.expectOne('/api/fiches-marche/38/avis-specifique');
     expect(req.request.body).toEqual({ datePublication: '2026-09-09', jmpNumero: '', jmpDate: '2026-07-31', supports: '' });
     req.flush([]);
+  });
+
+  it('§B8 — le compte bancaire de l’ARMP non réglé : la modale le signale', () => {
+    monter(dispo({ disponible: true, idAvis: 'FAV', statutPv: 'SIGNE' }));
+    bouton('Imprimer l’avis spécifique')!.click();
+    rendre();
+    http.expectOne('/api/fiches-marche/38').flush({ idDmc: 38, typeMarche: 'QUANTITE_FIXE', categorie: 'TRAVAUX', cadrage: {}, valeurs: {}, valeursPpm: {}, nbLots: 1 });
+    http.expectOne((r) => r.url === '/api/champs-fiche-marche').flush({ blocs: [], champs: [] });
+    http.expectOne('/api/parametres/compte-dao').flush({ banque: null, titulaire: null, numeroCompte: null });
+    rendre();
+    expect(texte(racine().querySelector('[role="dialog"] .alert-warning'))).toContain('compte bancaire de l’ARMP');
   });
 
   it('en lecture seule : la liste, sans bouton d’impression', () => {

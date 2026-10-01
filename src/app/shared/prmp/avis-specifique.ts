@@ -8,6 +8,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { ouvrirBlobSur, telechargerBlob } from '../../core/securite/fichiers-surs';
 import { ChampFiche, DisponibiliteAvis, DocumentFiche, PublicationAvis } from '../../models';
 import { ChampFicheMarcheService, FicheMarcheService } from '../../services/fiche-marche.services';
+import { ParametreCompteDaoService } from '../../services/parametres.services';
 import { ModaleDirective } from '../a11y/modale.directive';
 import { avisImprimes, champsVidesAvis, horodatage, jjmmaaaa, messageIndisponible } from './avis-specifique-modele';
 
@@ -34,6 +35,7 @@ type CleSaisie = keyof PublicationAvis;
 export class AvisSpecifique implements OnInit {
   private readonly fiches = inject(FicheMarcheService);
   private readonly referentiel = inject(ChampFicheMarcheService);
+  private readonly compte = inject(ParametreCompteDaoService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -58,6 +60,8 @@ export class AvisSpecifique implements OnInit {
   readonly erreurs = signal<Partial<Record<CleSaisie, string>>>({});
   readonly refus = signal<string | null>(null);
   readonly vides = signal<ChampFiche[]>([]);
+  /** §B8 — le compte bancaire de l'ARMP n'est pas réglé : l'avis imprimera des pointillés à sa place. */
+  readonly compteNonRegle = signal(false);
   /** ⚠️ 30/09 (§B7.5) — seules les deux dates sont exigées : le numéro du JMP et les supports peuvent rester vides, comme sur l'avis réel. */
   readonly complete = computed(() => this.saisie().datePublication.trim() !== '' && this.saisie().jmpDate.trim() !== '');
   readonly occupe = signal(false);
@@ -96,19 +100,23 @@ export class AvisSpecifique implements OnInit {
     this.vides.set([]);
     this.ouverte.set(true);
     this.preparation.set(true);
-    this.fiches
-      .lire(this.idDmc())
-      .pipe(
+    this.compteNonRegle.set(false);
+    // Une seule vague : les champs vides de la fiche, et le compte bancaire de l'ARMP (§B8 : non réglé = pointillés).
+    forkJoin({
+      vides: this.fiches.lire(this.idDmc()).pipe(
         switchMap((f) =>
           this.referentiel.referentiel(f.typeMarche ?? undefined, f.categorie ?? null).pipe(
             map((r) => champsVidesAvis(r.champs, f.valeurs ?? {}, f.cadrage ?? {}, f.nbLots ?? 0, f.saisieParLot === true)),
           ),
         ),
         catchError(() => of([] as ChampFiche[])),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((vides) => {
+      ),
+      compte: this.compte.lire().pipe(catchError(() => of(null))),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ vides, compte }) => {
         this.vides.set(vides);
+        this.compteNonRegle.set(!!compte && !(compte.banque && compte.titulaire && compte.numeroCompte));
         this.preparation.set(false);
       });
   }

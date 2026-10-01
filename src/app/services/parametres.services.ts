@@ -3,7 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { ParametreAgpmSeuil, ParametreRemiseElectronique } from '../models';
+import { ParametreAgpmSeuil, ParametreCompteDao, ParametreRemiseElectronique } from '../models';
+import { skipErrorToast } from '../core/errors/api-error';
 
 /**
  * Seuil AGPM (montant) au-delà duquel un marché en appel à manifestation d'intérêt (AMI) déclenche
@@ -46,5 +47,24 @@ export class ParametreRemiseElectroniqueService {
 
   definir(p: ParametreRemiseElectronique): Observable<ParametreRemiseElectronique> {
     return this.http.put<ParametreRemiseElectronique>(this.url, p);
+  }
+}
+
+/**
+ * ⚠️ 01/10 (avis spécifique §B8) — le compte bancaire de l'ARMP pour le prix du DAO. Bespoke, comme les autres
+ * paramètres. La lecture est silencieuse : la modale d'impression de l'avis s'en sert pour prévenir, sans alarmer.
+ */
+@Injectable({ providedIn: 'root' })
+export class ParametreCompteDaoService {
+  private readonly http = inject(HttpClient);
+  private readonly url = `${environment.apiUrl}/parametres/compte-dao`;
+
+  lire(): Observable<ParametreCompteDao> {
+    return this.http.get<ParametreCompteDao>(this.url, { context: skipErrorToast() });
+  }
+
+  /** ADMINISTRATEUR seul ; 400 nominatif (`banque`, `titulaire`, `numeroCompte`). Silencieux : l'écran nomme le refus. */
+  definir(corps: Pick<ParametreCompteDao, 'banque' | 'titulaire' | 'numeroCompte'>): Observable<ParametreCompteDao> {
+    return this.http.put<ParametreCompteDao>(this.url, corps, { context: skipErrorToast() });
   }
 }
