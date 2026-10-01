@@ -18,6 +18,14 @@
   (`SFQC`, `BUDGET`, `MOINDRE-COUT`, `QUALITE-SEULE`).
 - Les paragraphes portent déjà leur numéro (« 1. » à « 5. ») dans le texte officiel : pas de `{{NUM}}`.
 
+> ⚠️ **Livraison backend du 2026-10-01 (§B1).** Modèle recopié tel quel ; le comparateur donne **43/43** sur le rendu
+> brut du serveur. Il est hors des couvertures (`ModelesDao.LETTRES`, `sigleLettre`) : ni produit à la validation, ni lu
+> à l'import.
+> **Un écart sur les formes :** la lettre est servie à **toute** fiche de prestations intellectuelles, contrat-cadre
+> compris, et non aux seules quantité fixe et à commande. Le modèle n'a pas de texte propre à une forme, et une procédure de prestations
+> intellectuelles passe toujours par une liste restreinte. Si vous voulez la limiter aux deux formes, dites-le : ce
+> serait une raison de plus (`FORME_SANS_LETTRE`).
+
 ## B2 — Jetons `{{LETTRE.*}}` : saisis à l'impression, jamais écrits dans la fiche
 
 | Jeton | Contenu | Rendu |
@@ -26,6 +34,10 @@
 | `{{LETTRE.date}}` | date d'envoi | JJ/MM/AAAA |
 | `{{LETTRE.destinataire}}` | le candidat de **cette** lettre | son nom, puis son adresse à la ligne |
 | `{{LETTRE.candidats}}` | la liste restreinte entière | un candidat par ligne, « - Nom », dans l'ordre saisi |
+
+> ⚠️ **Livraison backend du 2026-10-01 (§B2).** Conforme. Les quatre jetons sont rendus par l'appelant, jamais lus dans la
+> fiche. `{{LETTRE.destinataire}}` : le nom, puis l'adresse **une ligne par ligne saisie** (`\n` dans `adresse`, lignes
+> vides retirées).
 
 ## B3 — Produire les lettres à la demande
 
@@ -49,12 +61,25 @@
   pour l'avis, pour que l'écran la reprenne à la réimpression.
 - **Journal** : `LETTRES_INVITATION_IMPRIMEES` sur le dossier DAO, avec le nombre de candidats.
 
+> ⚠️ **Livraison backend du 2026-10-01 (§B3).** Conforme, avec quatre précisions :
+> - **400** : les indices de `candidats[i]` partent de **0** (`candidats[1].nom` désigne le deuxième candidat). Le message
+>   dit le rang humain (« Le nom du candidat n° 2 est obligatoire. »).
+> - **Trace** : `publication` porte `{ dateEnvoi, lieu, candidats: [{nom, adresse}], rang }`. `rang` (1, 2…) dit à
+>   quel candidat la paire est adressée, pour que l'écran l'affiche sans relire le nom du fichier.
+>   `DocumentFicheDto.publication` porte donc maintenant des valeurs qui ne sont pas toutes du texte ; celles de l'avis
+>   restent du texte.
+> - **Bloc de signature** gardé ensemble, comme l'avis (« Veuillez agréer… », la qualité, le nom).
+> - **Migration V57** : la colonne `TYPE` des documents passe de 10 à 20 caractères (`LETTRE_INVITATION` en compte 17).
+
 ## B4 — Disponibilité
 
 `GET /api/fiches-marche/{idDmc}/lettres-invitation/disponibilite`, **même forme** que celle de l'avis
 (`disponible`, `raison`, `idAvis`, `statutPv`, `statutDossier`, `idDossierSoumis`). `CATEGORIE_SANS_LETTRE` hors PI.
 Les lettres produites apparaissent dans `GET /{idDmc}/documents` (type `LETTRE_INVITATION`), du plus récent au plus
 ancien, comme les avis.
+
+> ⚠️ **Livraison backend du 2026-10-01 (§B4).** Conforme. Les lettres sont listées avec les avis, du plus récent au plus
+> ancien. Ni l'avis ni les lettres ne sont joints au dossier.
 
 ## B5 — Statut « Lancé » (décision Q5)
 
@@ -63,6 +88,10 @@ première impression de l'avis (`demande-backend-2026-09-30-statut-lance-avis.md
 journal `LIGNE_LANCEE`. `MarcheDto.avisImprimeLe` vaut alors la date de cette première impression : le nom reste, il
 désigne « la publication ». Dites dans votre encadré si vous préférez un champ distinct.
 
+> ⚠️ **Livraison backend du 2026-10-01 (§B5).** Conforme. La règle porte sur la **première publication** de la filiation,
+> avis ou lettres. **`avisImprimeLe` est gardé tel quel**, sans champ distinct, comme vous le proposiez. Journal
+> `LIGNE_LANCEE` : « Ligne 9901 : 2 lettre(s) d'invitation imprimée(s) (envoi du 05/10/2026), statut PREVU → LANCE ».
+
 ## B6 — Tests
 
 - Rendu ≡ modèle (43), avec chacune des quatre rédactions du mode de sélection.
@@ -70,6 +99,16 @@ désigne « la publication ». Dites dans votre encadré si vous préférez un c
 - 400 nominatifs, dont une liste vide.
 - Deux candidats : deux paires de documents, chacune avec son destinataire et la même liste.
 - Première impression : `PREVU → LANCE` ; réimpression sans effet.
+
+> ⚠️ **Livraison backend du 2026-10-01 (§B6).** Tests :
+> - `ModelesLettreTest` : le registre, puis chacune des quatre rédactions du mode de sélection, seule imprimée (emblème
+>   en premier, destinataire sur plusieurs lignes, liste « - Nom », signature gardée ensemble).
+> - `LettreInvitationIntegrationTest` :
+>   - la garde, dont `CATEGORIE_SANS_LETTRE`, et le 403 de l'Administrateur et du Membre ;
+>   - les 400 nominatifs, dont une liste vide et un candidat incomplet ;
+>   - deux candidats : deux paires, chacune avec son destinataire et la même liste, la trace et le journal ; jamais
+>     jointes au dossier ;
+>   - la première impression `PREVU → LANCE`, et une réimpression sans effet.
 
 ## Ce que le backend rend
 
