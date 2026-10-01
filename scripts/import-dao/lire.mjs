@@ -257,6 +257,22 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
   for (const v of us) occurrences.set(cleTexte(v), (occurrences.get(cleTexte(v)) ?? 0) + 1);
   const repeteAilleurs = (u) => occurrences.get(cleTexte(u)) > 1;
   const jumeau = (u) => /\{\{/.test(u.texte) && repeteAilleurs(u);
+  // ⚠️ 01/10 (règle R-c, parité `LectureDao`, demande avis §B9) — deux VARIANTES d'un même paragraphe, sous des sections
+  // différentes, reconnaissent le même paragraphe du document : la PLUS CONTRAINTE gagne, celle qui a le plus de texte
+  // fixe (caractères hors blancs : « … de {{a}} ({{b}}) libellé » l'emporte sur « … de {{a.parLot}} libellé », dont le
+  // trou unique avale tout). Constat du backend : sur un DPAC de contrat-cadre non alloti, la variante « par lot »,
+  // placée en premier, prenait la phrase du montant ; l'import en déduisait « alloti = OUI » et ne lisait plus le montant.
+  const fixe = (u) => norm(u.texte.replace(JETON, '')).replace(/\s/g, '').length;
+  const motifs = new Map();
+  const motifDe = (q) => { if (!motifs.has(q)) motifs.set(q, motifParagraphe(us[q].texte).re); return motifs.get(q); };
+  const variantePlusContrainte = (u, k, paragraphe) => {
+    for (let q = k + 1; q < Math.min(us.length, k + 9); q++) {
+      const v = us[q];
+      if (seulJeton(v) || v.sections.join('|') === u.sections.join('|') || fixe(v) <= fixe(u)) continue;
+      if (motifDe(q).test(paragraphe)) return true;
+    }
+    return false;
+  };
 
   // Les débuts de paragraphe du modèle (texte fixe avant le premier jeton, au moins 6 caractères) : retrouvés DANS une
   // valeur capturée, ils disent qu'un paragraphe suivant a été collé derrière (fusion), et où couper.
@@ -299,6 +315,7 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
         if (x && doc[j].slice(x[0].length).trim()) { doc.splice(j + 1, 0, doc[j].slice(x[0].length).trim()); doc[j] = x[0]; confiance = 'moyenne'; }
       }
       if (!x) continue;
+      if (variantePlusContrainte(u, k, doc[j])) break;   // R-c : le paragraphe revient à la variante plus contrainte
       trouves.set(k, j);
       curseur = j + 1;
       if (distinctif(u)) u.sections.forEach((x) => sectionsVues.add(x));

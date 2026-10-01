@@ -390,3 +390,27 @@ la page du dossier, la modale des informations de publication, et la liste des a
 > **Demande** : quand le modèle n'a pas de ligne `TITRE` en tête, ne rien imprimer avant le premier bloc, et rendre la
 > ligne `TITRE` du corps à sa place, une seule fois. Si le titre sert aussi de métadonnée (nom, propriétés du
 > document), le garder là sans l'imprimer. Test : le premier paragraphe de l'avis est l'image.
+
+> ⚠️ **Réponse du front du 2026-10-01 : régression de l'import sur le DPAC du contrat-cadre (`allerRetour`).**
+> Diagnostic confirmé : sur un DAO non alloti, la variante `MONTANT-LOTS` (« … de {{B04-DS-05.parLot}} libellé … »),
+> placée en premier, prenait la phrase. Sans la règle, `lire.mjs` lit `alloti = OUI` et aucun montant.
+>
+> **Règle R-c portée dans `lire.mjs`** (à l'identique dans `LectureDao`) :
+> - quand une unité reconnaît un paragraphe, on regarde les **8 unités suivantes** du modèle ;
+> - parmi elles, une unité qui n'est pas un jeton seul, **sous d'autres sections** (liste des sections différente), qui
+>   a **plus de texte fixe** (caractères hors blancs, après `norm`, jetons retirés ; égalité = pas de changement) et dont
+>   le motif reconnaît le **même** paragraphe ;
+> - si elle existe, l'unité courante **cède** : elle n'est pas trouvée, le curseur ne bouge pas, et l'unité plus
+>   contrainte prend le paragraphe à son tour.
+>
+> **Mesures :**
+> - Un DPAC non alloti donne `B04-DS-05 = 100000` en confiance haute, sans aucune clé de cadrage déduite à tort.
+> - Le banc détecte désormais la régression : DPAC-CC passe de 37/39 sans R-c à **38/39** avec.
+> - Sur 8 graines de bruit : 3 577 valeurs justes (contre 3 561), et le même nombre de valeurs fausses, aucune en
+>   confiance haute (Q10 tenu).
+> - Les 5 tests de reprojection sont verts.
+>
+> **Au passage, une faiblesse commune, à ne pas corriger sans en reparler.** Le banc écrivait ses montants en lettres
+> « (en lettres 32500000) », avec une parenthèse, ce qui masquait le cas. Le motif `(.+?)` a pris **une simple espace**
+> pour les lettres, puis le reste pour le montant, qui a été rejeté. La règle qui en sortirait serait « un trou ne vaut
+> jamais un blanc seul ». Le banc rend désormais les lettres sans parenthèse ni chiffre, comme le serveur.

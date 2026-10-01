@@ -74,3 +74,10 @@ sa phrase passe de *haute* à *moyenne*, coupée.
 
 Limites : `.docx` seulement ; l'aller-retour et le bruit simulé ne remplacent pas un DAO réel écrit par une autre
 autorité (aucun disponible au 28/09) ; un seul modèle mesuré (contrat-cadre).
+
+**Règle R-c, variante la plus contrainte** (01/10, parité `LectureDao`) — quand deux variantes d'un même paragraphe,
+sous des sections différentes, reconnaissent le même paragraphe du document, c'est la plus contrainte qui le prend :
+celle qui a le plus de texte fixe, en caractères hors blancs. La recherche porte sur les 8 unités suivantes du modèle.
+Cas d'origine : le DPAC du contrat-cadre, « … de {{B04-DS-05.parLot}} libellé … » face à « … de
+{{B04-DS-05.lettres}} ({{B04-DS-05}}) libellé … ». Le banc rend désormais les montants en lettres sans parenthèse,
+comme le serveur, sinon il masquait ce cas.

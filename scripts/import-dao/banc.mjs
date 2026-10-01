@@ -65,7 +65,7 @@ function valeurPour(code, type, i, options) {
 function imprime(type, suffixe, v) {
   if (v == null || v === '') return '……';
   if (suffixe === 'chiffres') return String(v).replace('.', ',');
-  if (suffixe === 'lettres') return `(en lettres ${v})`;
+  if (suffixe === 'lettres') return `${MOTS[String(v).length % MOTS.length]} millions en lettres`;   // 01/10 — sans parenthèse ni chiffre, comme un vrai montant en lettres
   if (type === 'DATE') { const [a, m, j] = String(v).split('-'); return `${j}/${m}/${a}`; }
   if (type === 'DATE_HEURE') { const [d, h] = String(v).split('T'); const [a, m, j] = d.split('-'); return `${j}/${m}/${a} ${h}`; }
   if (type === 'MONTANT') return `${milliers(v)} Ariary`;
