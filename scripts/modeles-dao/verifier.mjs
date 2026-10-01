@@ -32,7 +32,7 @@ for (const sigle of sigles) {
 
   // Les unités comparées : un paragraphe, ou une cellule de tableau (LireDocx sépare les cellules par une tabulation).
   const rendu = lu.replace(/\r\n?/g, '\n').split('\n').flatMap((l) => l.split(/[\t\u001E]/)).map(reduire).filter(Boolean);
-  const attendu = [m.titre, ...m.blocs.filter((b) => !['table', 'fin_table', 'vide'].includes(b.type))
+  const attendu = [...(m.titre ? [m.titre] : []), ...m.blocs.filter((b) => !['table', 'fin_table', 'vide'].includes(b.type))
     .flatMap((b) => b.texte.split(/[\u001E\u001F]/))].map(reduire).filter(Boolean);
 
   // Sens 1 : le modèle, dans l'ordre, se retrouve dans le rendu.

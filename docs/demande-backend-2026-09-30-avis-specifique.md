@@ -234,6 +234,40 @@ et 97). Un repère `{{IMAGE:…}}` que le moteur ne connaît pas ne doit pas s'i
 - `.heureLocale` et `.lignesParLot`.
 - Impression sans `jmpNumero` ni `supports` : pas de « et dans ».
 
+> ⚠️ **Livraison backend du 2026-10-01 (§B7).** Les deux modèles sont recopiés tels quels, avec 22 et 24 conditions.
+> Le comparateur donne **90/90 et 96/96** sur le rendu brut du serveur. Le reste :
+> - **B7.2 `{{NUM}}`** : une passe finale numérote « 1. », « 2. »… dans l'ordre des paragraphes **imprimés**, sans
+>   trou ni doublon quand une section est omise.
+> - **B7.3** :
+>   - `.heureLocale` rend « 12/10/2026 à 09 h 00 (heure locale) » ;
+>   - `.lignesParLot` rend **un paragraphe par lot**, « - Lot 1 : cent mille ariary (Ar 100 000) ». Hors
+>     allotissement, la ligne seule, sans le lot.
+> - **B7.4** : `B04-DS-05` est saisi par lot (fichier de correspondance et script
+>   `docs/referentiel/2026-10-01-avis-montant-dao-par-lot.sql`). Quatre valeurs déjà saisies sous le code nu, celles
+>   de la fiche 39, restent lisibles hors allotissement ; sur une ligne allotie, elles sont à ressaisir par lot.
+>   **Le DPAC du contrat-cadre n'est pas changé** : il imprime « {{B04-DS-05.lettres}} ({{B04-DS-05}}) ». Sur un
+>   contrat-cadre alloti, ce passage s'imprime donc en **pointillés**, puisque la valeur est par lot. Proposition :
+>   le DPAC cite `{{B04-DS-05.lignesParLot}}` dans un paragraphe à lui, ou `{{B04-DS-05.parLot}}` dans la phrase.
+>   C'est au front de recopier le modèle, puisque la fidélité se mesure de son côté.
+> - **B7.5** :
+>   - seules `datePublication` et `jmpDate` sont exigées ;
+>   - `jmpNumero` vide s'imprime en pointillés ;
+>   - des `supports` vides lèvent la clé de condition `supportsPublication`, et « et dans … » disparaît.
+> - **B7.8, l'emblème** : l'image de tête des PV (750 × 492) est extraite une fois en ressource,
+>   `classpath:modeles/images/embleme.png`, et insérée centrée, à **5 cm** de large, en .docx comme en .pdf. Un
+>   repère `{{IMAGE:…}}` inconnu fait omettre son paragraphe.
+>   **Un point à vérifier de votre côté** : les deux modèles commencent par la ligne `TITRE` « Avis d’Appel d’Offres
+>   Ouvert », imprimée **avant** l'emblème. L'emblème n'est donc pas le premier paragraphe, contrairement à ce que dit
+>   B7.8. Je reproduis le modèle tel quel ; si le titre ne doit pas s'imprimer en tête, c'est à corriger dans le modèle.
+> - **Le cadrage `alloti`** : tout le corps de l'avis est conditionné sur `alloti = OUI` ou `alloti = NON`. Une
+>   fiche sans réponse perdrait donc l'objet et le montant du DAO. L'écran l'impose depuis le plan
+>   (`CLES_IMPOSEES_PAR_LE_PLAN`), le serveur ne le déduit pas.
+>
+> **Tests (B7.7)** :
+> - `ModelesAvisTest` : travaux à quantité fixe avec garantie ; contrat-cadre de fournitures alloti, sans garantie,
+>   sans numéro de JMP ni supports ; passe finale (image inconnue omise, numérotation sans trou) ;
+> - `AvisSpecifiqueIntegrationTest` : emblème présent dans le .docx, impression minimale.
+
 ## B8 — Le prix du DAO se paie sur le compte bancaire unique de l'ARMP (décision du pilote du 01/10)
 
 Le pilote a tranché la question Q7 : le bénéficiaire du paiement est **un compte bancaire unique de l'ARMP**, le même
@@ -256,6 +290,17 @@ Pointillés s'il n'est pas réglé (R2).
 
 Côté front, ensuite : un écran « Compte bancaire de l'ARMP (prix des DAO) » dans les référentiels de l'Administrateur,
 sur le modèle de l'écran du seuil AGPM, et une alerte dans la modale d'impression si le compte n'est pas réglé.
+
+> ⚠️ **Livraison backend du 2026-10-01 (§B8).** Conforme.
+> - `GET /api/parametres/compte-dao` : Administrateur, PRMP et UGPM (403 ailleurs).
+> - `PUT /api/parametres/compte-dao` : Administrateur seul (403 sinon), les trois informations exigées (400 nominatif
+>   `banque`, `titulaire`, `numeroCompte`). `misAJourLe` et `misAJourPar` viennent du paramètre. Le `PUT` est
+>   tracé à l'audit par l'intercepteur commun, comme tout réglage de l'Administrateur.
+> - `{{PARAM.compte-dao}}` rend « BNI Madagascar, compte n° … au nom de ARMP », ou des pointillés tant que le compte
+>   n'est pas entièrement réglé.
+>
+> Tests : `ParametreCompteDaoIntegrationTest`, et `AvisSpecifiqueIntegrationTest.publicationMinimaleEtCompte` (avant
+> puis après le réglage).
 
 ## B9 — Recette à l'écran du 01/10 (accord du pilote) et un constat
 
@@ -281,8 +326,39 @@ remplacement. **Proposition** : retirer la pièce n° 9 des pièces exigées au 
 facultative. À confirmer par le pilote : merci de ne rien changer avant son accord, et de dire si ce référentiel se
 règle déjà à l'écran par l'Administrateur.
 
+> ⚠️ **Réponse backend du 2026-10-01 (§B9).** Merci pour la recette.
+> **Pièce n° 9 : rien n'est changé.** Le référentiel des types de pièces (`/api/type-piece-jointes`) se règle déjà à
+> l'écran par l'Administrateur : `PUT /api/type-piece-jointes/{id}`, réservé à l'Administrateur comme tous les
+> référentiels, porte le champ `obligatoire`. Une fois l'accord du pilote donné, l'Administrateur peut rendre la pièce
+> facultative sans code. Si vous préférez la retirer du dépôt d'un DAO, ou la ranger après le PV, dites-le-moi et je
+> l'écris en script.
+
 ## Ce que le backend rend
 
 Commit(s) qui referment B1 à B6, le script du référentiel pour DBPRS20 (B5), les tests, et un encadré ⚠️ daté ici pour
 tout écart. Côté front ensuite (lot AV-3) : le bouton « Imprimer l'avis spécifique » à l'étape 7 de la fiche DAO et sur
 la page du dossier, la modale des informations de publication, et la liste des avis produits.
+
+> ⚠️ **Réponse du front du 2026-10-01 aux quatre points de la livraison §B7-§B8.**
+> 1. **DPAC du contrat-cadre : fait.** La phrase du retrait du règlement de la consultation a deux variantes :
+>    - `MONTANT-LOTS` (`alloti = OUI`) imprime `{{B04-DS-05.parLot}}` ;
+>    - `MONTANT-UNIQUE` (`alloti != OUI`) imprime le montant unique.
+>
+>    Décalque `DPAC-CC` **184/184** (au lieu de 179). À recopier : `modeles/DPAC-CC.{txt,json}`.
+> 2. **Ordre de l'en-tête : corrigé, le défaut venait du front.** La ligne `TITRE` du fichier de commande s'imprime en
+>    tête du document, donc au-dessus de l'emblème. Le titre sortait ainsi deux fois : en `TITRE`, puis dans le corps.
+>    - Un modèle **sans titre** n'écrit plus de ligne `TITRE`.
+>    - L'avis porte son titre **dans le corps**, sous l'UGPM, sur une ligne de type `TITRE` (même style, à sa place).
+>    - Ordre rendu : emblème, autorité, PRMP, UGPM, titre, « N° … ».
+>
+>    Décalques **AVIS-F 89/89, AVIS-T 95/95** (au lieu de 90 et 96 : le titre n'est plus doublé). Votre lecteur de
+>    modèles doit accepter un fichier **sans ligne `TITRE` en tête** et une ligne `TITRE` dans le corps : merci de le
+>    confirmer dans votre encadré.
+> 3. **Cadrage `alloti` absent : rendu robuste.** Les variantes « lot unique » de l'avis (`*-LOT-UNIQUE`, `DAO-UNIQUE`,
+>    `GARANTIE-UNIQUE`) testent désormais `alloti != OUI` au lieu de `alloti = NON`. Une fiche sans réponse imprime
+>    donc la variante lot unique, jamais un paragraphe vide. En pratique, l'écran impose la réponse depuis le plan.
+> 4. **Pièce n° 9 : en attente de la décision du pilote.** Noté que l'Administrateur peut la rendre facultative à
+>    l'écran des référentiels.
+>
+> **Question ouverte au pilote :** le DPAC du contrat-cadre dit encore « libellé au nom de l'Agent comptable de l'ARMP
+> ou au nom du régisseur de recettes ». Faut-il y imprimer aussi le compte bancaire de l'ARMP, comme dans l'avis ?

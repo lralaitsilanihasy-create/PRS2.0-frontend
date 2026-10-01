@@ -16,6 +16,8 @@
   "NON-RECONDUCTIBLE": "B02-DC-03 = NON",
   "ALLOTI": "alloti = OUI",
   "NON-ALLOTI": "alloti = NON",
+  "MONTANT-LOTS": "alloti = OUI",
+  "MONTANT-UNIQUE": "alloti != OUI",
   "PAPIER": "modeRemise = PAPIER",
   "B04-SE": "modeRemise = ELECTRONIQUE",
   "DEVISE": "B05-UM-01 renseigne",
@@ -360,7 +362,27 @@
   },
   {
    "type": "para",
+   "texte": "{{SI:MONTANT-LOTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "Pour tout candidat désirant soumissionner, le règlement de la consultation (1) est retiré auprès de {{B04-DS-04}} moyennant le paiement d’un montant non remboursable de {{B04-DS-05.parLot}} libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MONTANT-LOTS}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:MONTANT-UNIQUE}}"
+  },
+  {
+   "type": "para",
    "texte": "Pour tout candidat désirant soumissionner, le règlement de la consultation (1) est retiré auprès de {{B04-DS-04}} moyennant le paiement d’un montant non remboursable de {{B04-DS-05.lettres}} ({{B04-DS-05}}) libellé au nom de l’Agent comptable de l’ARMP ou au nom du régisseur de recettes de l’ARMP."
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:MONTANT-UNIQUE}}"
   },
   {
    "type": "sous_titre",
@@ -951,6 +973,18 @@
    "genre": "jeton",
    "source": "<préciser autant que possible avec des détails fins, tels que lot ou numéro de l’immeuble, nom de rue, quartier, ville>",
    "par": "{{B04-DS-10}}"
+  },
+  {
+   "ligne": 175,
+   "genre": "jeton",
+   "source": "<indiquer l’adresse>",
+   "par": "{{B04-DS-04}}"
+  },
+  {
+   "ligne": 175,
+   "genre": "jeton",
+   "source": "<indiquer en lettres et en chiffres le montant à payer en Ariary ou son équivalent en monnaie librement convertible>",
+   "par": "{{B04-DS-05.parLot}}"
   },
   {
    "ligne": 175,

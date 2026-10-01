@@ -228,6 +228,10 @@ function dpacContratCadre() {
     'NON-RECONDUCTIBLE': 'B02-DC-03 = NON',
     ALLOTI: 'alloti = OUI',
     'NON-ALLOTI': 'alloti = NON',
+    // ⚠️ 01/10 (avis spécifique §B7.4) — le montant du dossier se saisit par lot sur une ligne allotie ; sans réponse
+    // « alloti », le montant unique (jamais rien).
+    'MONTANT-LOTS': 'alloti = OUI',
+    'MONTANT-UNIQUE': 'alloti != OUI',
     PAPIER: 'modeRemise = PAPIER',
     'B04-SE': 'modeRemise = ELECTRONIQUE',
     DEVISE: 'B05-UM-01 renseigne',
@@ -339,8 +343,9 @@ function dpacContratCadre() {
     P(x('Bureau, N° porte', [':', ': {{B04-DS-09}}', 'jeton'])),
     P(x('Localité', ['<préciser autant que possible avec des détails fins, tels que lot ou numéro de l’immeuble, nom de rue, quartier, ville>', '{{B04-DS-10}}', 'jeton'])),
     ST(x('3. 3.Modalités')),
-    P(x('Pour tout candidat désirant soumissionner', ["<indiquer l'adresse>", '{{B04-DS-04}}', 'jeton'],
-      ['<indiquer en lettres et en chiffres le montant à payer en Ariary ou son équivalent en monnaie librement convertible>', '{{B04-DS-05.lettres}} ({{B04-DS-05}})', 'jeton'])),
+    ...['MONTANT-LOTS', 'MONTANT-UNIQUE'].flatMap((c) => SI(c, P(x('Pour tout candidat désirant soumissionner', ["<indiquer l'adresse>", '{{B04-DS-04}}', 'jeton'],
+      ['<indiquer en lettres et en chiffres le montant à payer en Ariary ou son équivalent en monnaie librement convertible>',
+        c === 'MONTANT-LOTS' ? '{{B04-DS-05.parLot}}' : '{{B04-DS-05.lettres}} ({{B04-DS-05}})', 'jeton'])))),
     ST(x('3.4.Modification')),
     P(x("L'Autorité contractante se réserve")),
     P(x('Si la date limite de réception des offres est reportée')),
@@ -2961,9 +2966,9 @@ function avisSpecifique(categorie) {
     CC: 'typeMarche = CONTRAT_CADRE',
     ORDINAIRE: 'typeMarche != CONTRAT_CADRE',
     'CC-ALLOTI': 'typeMarche = CONTRAT_CADRE et alloti = OUI',
-    'CC-LOT-UNIQUE': 'typeMarche = CONTRAT_CADRE et alloti = NON',
+    'CC-LOT-UNIQUE': 'typeMarche = CONTRAT_CADRE et alloti != OUI',
     'ORDINAIRE-ALLOTI': 'typeMarche != CONTRAT_CADRE et alloti = OUI',
-    'ORDINAIRE-LOT-UNIQUE': 'typeMarche != CONTRAT_CADRE et alloti = NON',
+    'ORDINAIRE-LOT-UNIQUE': 'typeMarche != CONTRAT_CADRE et alloti != OUI',
     'QF-UNITAIRES': 'typeMarche = QUANTITE_FIXE et typePrix = UNITAIRES',
     'QF-FORFAITAIRE': 'typeMarche = QUANTITE_FIXE et typePrix = FORFAITAIRE',
     'AC-UNITAIRES': 'typeMarche = A_COMMANDE et typePrix = UNITAIRES',
@@ -2979,7 +2984,7 @@ function avisSpecifique(categorie) {
     PAPIER: 'modeRemise != ELECTRONIQUE',
     ...(T ? { GARANTIE: 'garantieSoumission = OUI' } : {
       'GARANTIE-LOTS': 'garantieSoumission = OUI et alloti = OUI',
-      'GARANTIE-UNIQUE': 'garantieSoumission = OUI et alloti = NON',
+      'GARANTIE-UNIQUE': 'garantieSoumission = OUI et alloti != OUI',
     }),
     'CONSULTATION-EMAIL': 'B04-DS-11 renseigne',
     // ⚠️ 30/09 (analyse E5, E13, E16) — supports de publication facultatifs (clé posée par le serveur à l'impression),
@@ -2987,7 +2992,7 @@ function avisSpecifique(categorie) {
     SUPPORTS: 'supportsPublication renseigne',
     'SANS-SUPPORTS': 'supportsPublication vide',
     'DAO-LOTS': 'alloti = OUI',
-    'DAO-UNIQUE': 'alloti = NON',
+    'DAO-UNIQUE': 'alloti != OUI',   // ⚠️ 01/10 — sans réponse « alloti », la variante lot unique (jamais rien)
     'SANS-GARANTIE': 'garantieSoumission != OUI',
   };
 
@@ -3041,7 +3046,8 @@ function avisSpecifique(categorie) {
     C(x('[insérer : entête', ['[insérer : entête de l’Acheteur]', '{{B01-AC-01}}', 'jeton'])),
     C(ajout('LA PERSONNE RESPONSABLE DES MARCHES PUBLICS')),
     C(ajout('UNITE DE GESTION DE PASSATION DES MARCHES PUBLICS')),
-    C(x('Avis d’Appel d’Offres Ouvert')),
+    // Le titre sous l'en-tête, comme sur l'avis réel (centré, gras : le style TITRE, à cette place).
+    { type: 'titre', texte: x('Avis d’Appel d’Offres Ouvert') },
     ...SI('ORDINAIRE', C(numero('B02-OB-03'))),
     ...SI('CC', C(numero('B02-OE-01'))),
     ...SI('SUPPORTS', P(num(rappel(true)))),
@@ -3080,7 +3086,7 @@ function avisSpecifique(categorie) {
   ajouts.push('{{B01-AC-05}}');   // le nom de la PRMP sous sa qualité, comme au bas des autres documents produits
   toutEstRendu(d, T ? 'AVIS-T' : 'AVIS-F');
   const sigle = T ? 'AVIS-T' : 'AVIS-F';
-  return { fichier: `${sigle}.docx`, sigle, source: 'contrat-cadre', titre: 'Avis d’Appel d’Offres Ouvert', conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
+  return { fichier: `${sigle}.docx`, sigle, source: 'contrat-cadre', titre: null, conditions, blocs, trace: tr, retraits: d.retraits, ajouts };
 }
 
 // ══ Sortie ═══════════════════════════════════════════════════════════════════════════════════
@@ -3106,7 +3112,9 @@ for (const sigle of voulus) {
   if (doublons.length) throw new Error(`${sigle} : unité écrite après un jeton nu (${doublons.join(', ')}) — utiliser .chiffres`);
   if (orphelins.length) throw new Error(`${sigle} : ${orphelins.length} texte(s) ni lu(s) dans la source ni déclaré(s) en ajout :\n` + orphelins.map((t) => `   « ${t.slice(0, 110)} »`).join('\n'));
   fs.writeFileSync(`modeles/${sigle}.json`, JSON.stringify(m, null, 1), 'utf8');
-  const commande = [['FICHIER', m.fichier], ['TITRE', m.titre],
+  // ⚠️ 01/10 — un modèle sans `titre` (l'avis) porte son titre DANS le corps, à sa place : la ligne TITRE de tête, que le
+  // moteur imprime avant tout le reste, n'est alors pas écrite (sinon le titre de l'avis sortait au-dessus de l'emblème).
+  const commande = [['FICHIER', m.fichier], ...(m.titre ? [['TITRE', m.titre]] : []),
     ...Object.entries(m.conditions).map(([n, e]) => ['CONDITION', `${n}${US}${e}`]),
     ...m.blocs.map((b) => [b.type.toUpperCase(), b.texte])];
   fs.writeFileSync(`modeles/${sigle}.txt`, commande.map((l) => l.join('\t')).join('\n') + '\n', 'utf8');
