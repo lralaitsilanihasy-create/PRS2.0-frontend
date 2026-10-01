@@ -39,7 +39,7 @@ saisit pas par lot (contrat du lot D2, §B1.3) ; un jeton sans valeur s'imprime 
 
 | code | libellé | type | doc. | remarques |
 |---|---|---|---|---|
-| `B03-QT-12` | Période de référence des marchés similaires (années) | `NOMBRE` | DPAO | obligatoire ; valeur par défaut : voir Q1. `B03-QT-11` est déjà pris (doublon retiré le 29/09) |
+| `B03-QT-12` | Période de référence des marchés similaires (années) | `NOMBRE` | DPAO | obligatoire ; **`valeurDefaut` = 5** (Q1, arbitrée le 01/10). `B03-QT-11` est déjà pris (doublon retiré le 29/09) |
 | `B03-QT-13` | Personnel clé exigé (fonctions, diplômes, années d'expérience, justificatifs) | `TEXTE_LONG` | DPAO | MEN : conducteur de travaux ingénieur BTP 3 ans, chef de chantier technicien supérieur 3 ans, CV avec photo, diplôme certifié |
 | `B03-QT-14` | Liquidité ou ligne de crédit bancaire minimale (Ariary) | `MONTANT` | DPAO | **`parLot`** ; MEN : 99 M / 72 M |
 
@@ -69,11 +69,14 @@ chose pour les formes de bonne exécution dans le CCAP-T. Les fiches existantes 
 « au cours des cinq (5) dernières années ». Aujourd'hui `.lettres` n'est employé que sur des `MONTANT`. Si un
 `NOMBRE` décimal arrive (ce n'est pas le cas ici), la valeur seule.
 
-### Q1 — Valeur par défaut de `B03-QT-12` (question au pilote)
+### Q1 — Valeur par défaut de `B03-QT-12` — ✅ arbitrée : 5
 
 Le document type dit « trois dernières années » au 4° et « trois (5) » au b). **Recommandation : 5**, le chiffre entre
 parenthèses faisant foi dans l'usage (et c'est le choix du MEN). À défaut de réponse, pas de valeur par défaut :
 l'acheteur saisit.
+
+> ✅ **Arbitrage du pilote du 2026-10-01** : la recommandation est suivie. `valeurDefaut` = **5** ; le DPAO-T imprime
+> alors « au cours des cinq (5) dernières années » tant que l'acheteur ne change rien.
 
 ## B3 — Import du DAO : aligner `LectureDao` sur la lecture du front
 

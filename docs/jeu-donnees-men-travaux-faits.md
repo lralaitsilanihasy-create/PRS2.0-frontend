@@ -209,7 +209,9 @@ Le dossier laisse toutes les dates en blanc. Valeurs du jeu : §10.
     (AE) / article 9 (IC).
 
 ## 10. Compléments — ce que la fiche exige et que le dossier ne donne pas
-À valider par le pilote ; une ligne par information. Toutes [H].
+Toutes [H]. ✅ **Validées par le pilote le 2026-10-01** (« je suis votre recommandation ») : ces valeurs sont celles du
+jeu, les contradictions du §9 sont tranchées comme ci-dessous. Elles restent des hypothèses : jamais présentées comme
+venant du dossier.
 
 | code | information | valeur du jeu | [H] — raison |
 |---|---|---|---|
