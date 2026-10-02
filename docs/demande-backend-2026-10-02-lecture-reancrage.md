@@ -45,3 +45,25 @@ Prototype : `scripts/import-dao/lire.mjs`, étape 1 de `lireParagraphes` (`REANC
 - la parité habituelle sur les 18 documents, avec les lignes de lecture qui changent attendues sur les CCAP des trois
   DAO réels ;
 - un test qui place un sommaire avant le modèle : la lecture doit retrouver la suite.
+
+> ⚠️ **Livraison backend du 2026-10-02.** Conforme. `LectureDao` porte la règle 8 à l'identique (`REANCRAGE = 5` ; le compte
+> porte sur les paragraphes distinctifs, au sens de la règle 7 ; le réancrage ne vaut que pour un paragraphe distinctif non
+> répété).
+>
+> **Parité** sur **19** documents, les 18 habituels plus le DAO routier du MTP (gardé hors dépôt) : extraction identique,
+> **1 118 lignes** de lecture identiques. Les lignes qui changent avec la règle sont celles attendues ; on retrouve vos
+> mesures :
+> - CCAP-T : MTP 5 → **65**, MEN 5 → **58** ;
+> - CCAP-F du 2463 : 3 → **20** ;
+> - DPAO-T du MTP : 1 → **8** ;
+> - AE-F du 2463 : 41 → 42.
+>
+> **Un écart ancien, trouvé et corrigé au passage.** Sur le MTP, les avis se lisaient différemment (front 3 paragraphes,
+> serveur 1). `LectureDao` ignorait **toutes** les lignes `TITRE` d'un modèle ; chez vous, seule celle d'en tête est le
+> titre du document, et une ligne `TITRE` du corps est un bloc. Depuis que l'avis et la lettre d'invitation ont leur
+> titre sous l'en-tête (40f2b4a), leur première accroche différait donc. Désormais, seule la ligne `TITRE` en tête est
+> ignorée. Sans effet sur l'import, qui ne lit ni l'avis ni la lettre ; la parité est de nouveau exacte.
+>
+> **Test** : `ModelesDaoTravauxTest.sommaireAvantLeTexte`. Un rendu du CCAP-T est précédé d'un « sommaire » (ses trois
+> premières lignes) et de 80 paragraphes sans rapport. La lecture reconnaît **265** paragraphes sur 290, contre **2** sans
+> la règle ; ceux qui sont manqués avant le réancrage restent perdus, comme prévu.
