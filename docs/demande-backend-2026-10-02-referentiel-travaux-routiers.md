@@ -81,3 +81,43 @@ ne sont **pas** ici : ils relèvent du chantier b, qui fera l'objet d'un plan à
 >
 > Script `docs/referentiel/2026-10-02-travaux-routiers.sql`, passé à blanc sur DBPRS20 ; il sera appliqué avec la
 > livraison. Les deux copies du fichier de correspondance des travaux sont mises à jour à l'identique.
+
+> ✅ **Contre-recette du front, 2026-10-02 (JAR de 14:00), fiche 31** (travaux, 1 lot, jeu du MEN sans maître d'œuvre ni
+> assurance décennale ; écriture en base avec l'accord du pilote) :
+> - le référentiel sert `B02-MW-01` et `B09-AC-03` facultatifs, et ne sert plus `B08-MO-01` ;
+> - avec `B09-BT-01 = OUI`, le contrôle donne **un seul** bloquant, `ASSURANCE_DECENNALE`, avec le message attendu ;
+> - avec `B09-BT-01 = NON`, **0 bloquant** : la fiche se valide (v1 VALIDEE) ;
+> - les garanties s'intitulent « Garantie bancaire de soumission (B1) » et « Caution personnelle et solidaire de
+>   soumission (B2) », fichiers `B1_…_v1` et `B2_…_v1` ;
+> - le CCAP imprime la rédaction `SANS-MOE`, avec ses deux phrases d'origine (voir B5 ci-dessous).
+
+## B5 — Deux modèles à recopier (suite de la livraison)
+
+**B5.1 — CCAP-T, rédaction sans maître d'œuvre : le trou est levé par le modèle, sans champ.** Le modèle alignait deux
+phrases : « Les tâches du maître d'œuvre sont assurées par <préciser l'autorité désignée par la PRMP> » et « Dans ce
+cas, le maître d'œuvre sera désigné par une décision du Maître de l'ouvrage ou de la PRMP ». La première est retirée :
+une autorité connue se saisit déjà dans `B02-MW-01`, ce qui imprime la rédaction `MOE`. La seconde est retenue, comme au
+DAO du MTP, sans « Dans ce cas, ». Elle devient « Le maître d'œuvre sera désigné par une décision du Maître de
+l'ouvrage ou de la PRMP ».
+- À recopier : `scripts/modeles-dao/modeles/CCAP-T.txt` et `.json`. La différence porte sur la seule section `SANS-MOE`.
+- Contrôle : `verifier.mjs` donne 573 unités sur 573. Le banc de l'import est identique ligne pour ligne.
+
+**B5.2 — B1 et B2 : les garanties de soumission du document type des travaux.** Elles ont été recopiées de
+`Documents Types/Travaux/3-Dossier type d'appel d'offres_Travaux_Formulaire de soumission.doc` par la chaîne de C1 / C2
+(`scripts/modeles-candidat`, `node extraire-armp.mjs travaux` puis `decrire-armp.mjs B1 B2`). Le modèle est
+**plus qu'un titre à changer** : C1 imprimé sur une fiche de travaux renvoie à la « clause 6.8 (fournitures) » et à la
+« clause 10.4 (fournitures) » des Instructions aux candidats. La fiche 31 le montre encore. B1 dit « 6.7 (travaux) » et
+« 10.4 (travaux) ».
+- À recopier : `scripts/modeles-candidat/modeles-armp/B1.txt`, `B2.txt` et leurs `.json`. Les **mêmes jetons** que C1 /
+  C2, plus un dans B2. Le document type des travaux y ajoute « soit jusqu'au [durée de validité des offres + 30 jours]
+  ème jour », jetonné `{{B05-GS-04}}` comme dans C1. Une coquille du document type, « Adresse) », est corrigée et tracée.
+- Choix du modèle : **B1 / B2 pour une fiche de travaux**, C1 / C2 sinon. Le **type** du document reste `C1` / `C2`,
+  comme convenu en §B3.
+- Contrôle : `node verifier-armp.mjs B1 B2` donne « conforme au document type » dans les deux sens. A1 à C2 ressortent à
+  l'identique.
+- Pour la recette : `node verifier-armp.mjs B1 --docx=<rendu brut du serveur>`.
+
+**Constat de la recette, côté données** : `B02-MW-04` (maître d'ouvrage délégué) saisi « Non applicable », comme dans
+le DAO du MEN, déclenche la rédaction `MOD`. Le CCAP imprime alors « Le Maître d'Ouvrage Délégué désigné… Non
+applicable ». C'est le jeu de recette qui est en cause, pas le serveur : le champ doit rester vide. À surveiller si les
+PRMP écrivent « Non applicable » par habitude.

@@ -437,11 +437,7 @@
   },
   {
    "type": "para",
-   "texte": "Les tâches du maître d'œuvre sont assurées par <préciser l'autorité désignée par la PRMP>"
-  },
-  {
-   "type": "para",
-   "texte": "Dans ce cas, le maître d’œuvre sera désigné par une décision du Maître de l’ouvrage ou de la PRMP"
+   "texte": "Le maître d’œuvre sera désigné par une décision du Maître de l’ouvrage ou de la PRMP"
   },
   {
    "type": "para",
@@ -2434,6 +2430,18 @@
    "par": "{{B02-MW-01}}"
   },
   {
+   "ligne": "257.0.0",
+   "genre": "retire",
+   "source": "Dans ce cas,",
+   "par": ""
+  },
+  {
+   "ligne": "257.0.0",
+   "genre": "typo",
+   "source": "le maître",
+   "par": "Le maître"
+  },
+  {
    "ligne": "263.0.0",
    "genre": "jeton",
    "source": "<mentionner l'adresse de notification choisi par le Maître de l'Ouvrage à défaut d'élection de domicile par l'Entrepreneur. Si aucune adresse n'est mentionnée ici les notifications seront, selon les dispositions du CCAG, valablement effectuées à la mairie du lieu principal des travaux >",
@@ -3645,6 +3653,11 @@
    "ligne": "549.0.0",
    "texte": "Date limite d'achèvement des travaux <date>.",
    "raison": "rédaction « dates limites » : le délai d'exécution est retenu (plan du lot D4, Q9)"
+  },
+  {
+   "ligne": "256.0.0",
+   "texte": "Les tâches du maître d'œuvre sont assurées par <préciser l'autorité désignée par la PRMP>",
+   "raison": "rédaction sans maître d'œuvre : l'autorité qui en assure les tâches se saisit dans B02-MW-01 (rédaction MOE) ; la désignation ultérieure est retenue (DAO du MTP)"
   },
   {
    "ligne": "660.0.0",

@@ -20,10 +20,29 @@ export const droite = (s) => s.replace(/[’ʼ]/g, "'");
 /** La clé de recherche d'un texte : apostrophes confondues, blancs réduits (Word sème des espaces insécables : « A3 : »). */
 export const cle = (s) => droite(propre(s));
 
+/**
+ * Les documents types des formulaires : celui des fournitures (A1-A4, C1, C2) et, depuis le 02/10, celui des travaux,
+ * dont on ne prend que les garanties de soumission B1 et B2 (mêmes modèles que C1 / C2, mais numérotés B et renvoyant
+ * aux clauses « (travaux) » des Instructions aux candidats).
+ */
+export const SOURCES = {
+  fournitures: {
+    doc: "Documents Types/Fournitures et services/3-Document type d'appel d'offres_Fournitures_Formulaires de soumission.doc",
+    docx: 'armp/formulaires-fournitures.docx',
+    texte: 'source-armp.txt',
+  },
+  travaux: {
+    doc: "Documents Types/Travaux/3-Dossier type d'appel d'offres_Travaux_Formulaire de soumission.doc",
+    docx: 'armp/formulaires-travaux.docx',
+    texte: 'source-armp-travaux.txt',
+  },
+};
+
 /** Les lignes du document type (LireDocx : un paragraphe par ligne, une ligne de tableau par ligne, cellules séparées par une tabulation). */
-export function lireSource() {
-  if (!fs.existsSync('source-armp.txt')) throw new Error('source-armp.txt absent : lancer d’abord `node extraire-armp.mjs`');
-  return fs.readFileSync('source-armp.txt', 'utf8').replace(/\r\n?/g, '\n').split('\n');
+export function lireSource(cleSource = 'fournitures') {
+  const f = SOURCES[cleSource].texte;
+  if (!fs.existsSync(f)) throw new Error(`${f} absent : lancer d’abord \`node extraire-armp.mjs ${cleSource}\``);
+  return fs.readFileSync(f, 'utf8').replace(/\r\n?/g, '\n').split('\n');
 }
 
 /**
@@ -32,7 +51,8 @@ export function lireSource() {
  * `fin` absent : jusqu'à la fin du document.
  */
 export function section(src, debut, fin) {
-  const corps = src.findIndex((l) => l.trim().startsWith('Note aux Utilisateurs'));
+  // « Utilisateurs » aux fournitures, « utilisateurs » aux travaux
+  const corps = src.findIndex((l) => l.trim().toLowerCase().startsWith('note aux utilisateurs'));
   if (corps < 0) throw new Error('« Note aux Utilisateurs » absente : source-armp.txt n’est pas le document type des formulaires');
   const i = src.findIndex((l, k) => k > corps && cle(l).startsWith(cle(debut)));
   if (i < 0) throw new Error(`section « ${debut} » absente de source-armp.txt`);

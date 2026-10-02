@@ -10,3 +10,4 @@ modeles-docx-armp/
 # Chaîne ARMP (27/09) : le document type converti par Word et son texte se regénèrent (`node extraire-armp.mjs`).
 armp/
 source-armp.txt
+source-armp-travaux.txt

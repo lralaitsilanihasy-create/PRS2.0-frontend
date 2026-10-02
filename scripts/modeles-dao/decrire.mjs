@@ -2793,6 +2793,10 @@ function ccapTravaux() {
   retirer(d, "seconde liste de seuils d'intempéries (précipitations, vent, lieu d'observation) : même objet que la saisie B09-FM-02 — le DAO du MEN n'en garde qu'une",
     'En vue de l’application éventuelle du deuxième des articles 18.1', 'précipitations journalières supérieures', 'force du vent supérieure', 'Phénomènes constatés à');
   retirer(d, "rédaction « dates limites » : le délai d'exécution est retenu (plan du lot D4, Q9)", 'Date limite de commencement', "Date limite d'achèvement");
+  // 02/10 (demande référentiel des travaux, §B1) — sans maître d'œuvre, le modèle aligne deux phrases : « assurées par
+  // <préciser l'autorité> » (un trou sans champ) et « sera désigné par une décision ». Une autorité connue se saisit déjà
+  // dans B02-MW-01 (rédaction MOE) : la seconde phrase est retenue, comme au DAO routier du MTP (CCAP 1.2.3).
+  retirer(d, "rédaction sans maître d'œuvre : l'autorité qui en assure les tâches se saisit dans B02-MW-01 (rédaction MOE) ; la désignation ultérieure est retenue (DAO du MTP)", "Les tâches du maître d'œuvre sont assurées");
   retirer(d, "clause d'arbitrage d'exemple (CNUDCI, « à valider ») : remplacée par la saisie B10-PC-01", 'Tous litige', 'Le tribunal arbitral sera composé', "L'autorité de nomination sera", "A défaut d'accord des Parties");
   retirer(d, 'notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)', (l) => l.ligne >= repere('Notes aux utilisateurs relatives à la préparation du Bordereau des prix et du Détail quantitatif et estimatif') && l.ligne < repere('BORDEREAU DES PRIX'));
   retirer(d, 'notes de rédaction des spécifications techniques (pièce de l’acheteur)', (l) => l.ligne > repere('SPECIFICATIONS TECHNIQUES') && l.ligne < repere('Annexe aux Spécifications Techniques'));
@@ -2834,7 +2838,7 @@ function ccapTravaux() {
       // 02/10 — « en date <à préciser> » s'imprimait tel quel : la date fait partie des références saisies dans B02-MW-02.
       P(x("La maîtrise d'œuvre est assurée", ["<indiquer les référence du lien contractuel entre le Maître de l'ouvrage et le Maître d'œuvre >", '{{B02-MW-02}}', 'jeton'], [' en date <à préciser>', '', 'retire'])),
       P(x("<Préciser le nom et les coordonnées du Maître d'œuvre", ["<Préciser le nom et les coordonnées du Maître d'œuvre >", '{{B02-MW-01}}', 'jeton']))),
-    ...SI('SANS-MOE', P(x("Les tâches du maître d'œuvre sont assurées")), P(x('Dans ce cas, le maître d’œuvre sera désigné'))),
+    ...SI('SANS-MOE', P(x('Dans ce cas, le maître d’œuvre sera désigné', ['Dans ce cas, ', '', 'retire'], ['le maître', 'Le maître', 'typo']))),
     // Articles 2 à 5
     ...E('Article 2 -', '<mentionner l'),
     P(xj("<mentionner l'adresse de notification", '{{B09-NE-01}}')),

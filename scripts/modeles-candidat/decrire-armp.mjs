@@ -324,12 +324,11 @@ const blocsA4 = jetonnerBlocs([
 ], NOTE_A4, traceA4);
 
 // ══ C1 — garantie bancaire de soumission ══════════════════════════════════════════════════════
-const c1 = utiles(section(SRC, 'C 1 –', 'C 2 –'));
-const traceC1 = [];
 // Les trois conditions sont une liste Word numérotée « (a) (b) (c) » (numbering.xml, lowerLetter « (%1) ») :
 // le dernier paragraphe les cite « aux paragraphes a), b) et c) ci-dessus ». Decalque n'a pas de listes : le label
 // est écrit dans le texte, et déclaré comme AJOUT au comparateur.
-const blocsC1 = jetonnerBlocs([
+// B1 (travaux, 02/10) a la même structure, lue dans l'autre document type : `garantieBancaire` sert aux deux.
+const garantieBancaire = (c1, trace) => jetonnerBlocs([
   P(celui(c1, 'ATTENDU QUE')),
   P(celui(c1, 'EN CONSEQUENCE')),
   P('(a) ' + celui(c1, 'Si le Candidat retire')),
@@ -345,13 +344,15 @@ const blocsC1 = jetonnerBlocs([
   P(celui(c1, 'Adresse')),
   P(celui(c1, 'Date')),
   P(celui(c1, 'Cachet')),
-], JETONS_C1, traceC1);
+], JETONS_C1, trace);
+const c1 = utiles(section(SRC, 'C 1 –', 'C 2 –'));
+const traceC1 = [];
+const blocsC1 = garantieBancaire(c1, traceC1);
 
 // ══ C2 — caution personnelle et solidaire ═════════════════════════════════════════════════════
-const c2 = utiles(section(SRC, 'C 2 –'));
-const traceC2 = [];
 // Titre sur deux lignes dans le gabarit, recollé. Les trois cas sont une liste « a) b) c) » (lowerLetter « %1) »).
-const blocsC2 = jetonnerBlocs([
+// B2 (travaux) : même structure, `caution` sert aux deux.
+const caution = (c2, trace, jetons = JETONS_C2) => jetonnerBlocs([
   P(celui(c2, 'Nous soussignés')),
   P(celui(c2, 'déclarons')),
   P(celui(c2, 'ladite caution')),
@@ -369,7 +370,25 @@ const blocsC2 = jetonnerBlocs([
   P(celui(c2, 'Adresse')),
   P(celui(c2, 'Date')),
   P(celui(c2, 'Cachet')),
-], JETONS_C2, traceC2);
+], jetons, trace);
+const c2 = utiles(section(SRC, 'C 2 –'));
+const traceC2 = [];
+const blocsC2 = caution(c2, traceC2);
+
+// ══ B1, B2 — les mêmes garanties au document type des TRAVAUX (02/10) ═══════════════════════
+// Demande backend du 02/10 (référentiel des travaux, §B3) : une fiche de travaux imprimait C1 / C2, dont le titre
+// est « C » et dont les renvois disent « clause 6.8 (fournitures) » ; le document type des travaux dit « B » et
+// « clause 6.7 (travaux) ». Mêmes jetons, mêmes ajouts. La section B2 court jusqu'à la fin du document.
+const SRC_T = lireSource('travaux');
+const b1 = utiles(section(SRC_T, 'B 1 –', 'B 2 –'));
+const traceB1 = [];
+const blocsB1 = garantieBancaire(b1, traceB1);
+const b2 = utiles(section(SRC_T, 'B 2 –'));
+const traceB2 = [];
+// B2 a de plus que C2 la date d'expiration en jours (« soit jusqu'au [durée de validité des offres + 30 jours] ème
+// jour »), jetonnée comme dans C1 ; et une coquille du document type, « Adresse) », corrigée et tracée.
+const JETONS_B2 = [...JETONS_C2, ['[durée de validité des offres + 30 jours]', '{{B05-GS-04}}'], ['Adresse)', 'Adresse']];
+const blocsB2 = caution(b2, traceB2, JETONS_B2);
 
 // ══ Sortie ═══════════════════════════════════════════════════════════════════════════════════
 const modeles = [
@@ -379,6 +398,8 @@ const modeles = [
   { fichier: 'A4.docx', sigle: 'A4', section: ['A4', 'B. – Modèle'], titre: titreA4, blocs: blocsA4, trace: traceA4, ajouts: [] },
   { fichier: 'C1.docx', sigle: 'C1', section: ['C 1 –', 'C 2 –'], titre: celui(c1, 'C 1'), blocs: blocsC1, trace: traceC1, ajouts: ['(a) ', '(b) ', '(c) ', ...AJOUTS_SE] },
   { fichier: 'C2.docx', sigle: 'C2', section: ['C 2 –', null], titre: `${celui(c2, 'C 2')} ${celui(c2, 'de soumission')}`, blocs: blocsC2, trace: traceC2, ajouts: ['a) ', 'b) ', 'c) ', ...AJOUTS_SE] },
+  { fichier: 'B1.docx', sigle: 'B1', source: 'travaux', section: ['B 1 –', 'B 2 –'], titre: celui(b1, 'B 1'), blocs: blocsB1, trace: traceB1, ajouts: ['(a) ', '(b) ', '(c) ', ...AJOUTS_SE] },
+  { fichier: 'B2.docx', sigle: 'B2', source: 'travaux', section: ['B 2 –', null], titre: `${celui(b2, 'B 2')} ${celui(b2, 'de soumission')}`, blocs: blocsB2, trace: traceB2, ajouts: ['a) ', 'b) ', 'c) ', ...AJOUTS_SE] },
 ];
 
 fs.mkdirSync('modeles-armp', { recursive: true });

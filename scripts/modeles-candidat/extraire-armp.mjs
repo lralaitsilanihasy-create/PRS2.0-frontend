@@ -5,13 +5,20 @@
 // déposé (`Documents Types/`, non suivi) et n'est jamais modifié (ouvert en lecture seule).
 //
 //   node extraire-armp.mjs            # → armp/formulaires-fournitures.docx (une fois), source-armp.txt
+//   node extraire-armp.mjs travaux    # → armp/formulaires-travaux.docx (une fois), source-armp-travaux.txt (B1, B2 — 02/10)
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { CP, JAVA } from './armp-commun.mjs';
+import { CP, JAVA, SOURCES } from './armp-commun.mjs';
 
-const DOC = path.resolve("../../Documents Types/Fournitures et services/3-Document type d'appel d'offres_Fournitures_Formulaires de soumission.doc");
-const DOCX = path.resolve('armp/formulaires-fournitures.docx');
+const cleSource = process.argv[2] ?? 'fournitures';
+const S = SOURCES[cleSource];
+if (!S) {
+  console.error(`source inconnue : ${cleSource} (${Object.keys(SOURCES).join(', ')})`);
+  process.exit(2);
+}
+const DOC = path.resolve('../..', S.doc);
+const DOCX = path.resolve(S.docx);
 
 if (!fs.existsSync(DOC)) {
   console.error(`document type absent : ${DOC}`);
@@ -30,5 +37,5 @@ if (!fs.existsSync(DOCX)) {
   console.log(`converti par Word : ${DOCX}`);
 }
 const texte = execFileSync(JAVA, ['-cp', CP(), 'LireDocx', DOCX], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-fs.writeFileSync('source-armp.txt', texte, 'utf8');
-console.log(`source-armp.txt : ${texte.split('\n').length} lignes`);
+fs.writeFileSync(S.texte, texte, 'utf8');
+console.log(`${S.texte} : ${texte.split('\n').length} lignes`);

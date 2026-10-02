@@ -76,6 +76,22 @@ node verifier-armp.mjs C1 --docx=C:/…/C1.docx            # un rendu du serveur
 
 Puis copier `modeles-docx-armp/*.docx` dans `docs/modeles-candidat/armp/` (relecture du pilote).
 
+**B1 et B2 — les garanties de soumission des travaux (02/10).** Une fiche de travaux imprimait C1 et C2, recopiés du
+document type des fournitures : titre « C 1 » et renvois « clause 6.8 (fournitures) ». Le document type des travaux
+(`Documents Types/Travaux/3-Dossier type d'appel d'offres_Travaux_Formulaire de soumission.doc`) porte les mêmes
+modèles, numérotés **B 1** et **B 2**, avec les renvois « clause 6.7 (travaux) » et « 10.4 (travaux) ». Ils sont décrits
+par les mêmes fonctions que C1 / C2 (`garantieBancaire`, `caution`), lus dans la seconde source :
+
+```
+node extraire-armp.mjs travaux           # → armp/formulaires-travaux.docx (une fois), source-armp-travaux.txt
+node decrire-armp.mjs B1 B2              # le descripteur porte `source: 'travaux'`, que suit verifier-armp.mjs
+for m in B1 B2; do java -cp "$(cat cp.txt);out" Decalque modeles-armp/$m.txt modeles-docx-armp; done
+node verifier-armp.mjs B1 B2
+```
+
+Ce que B2 a de plus que C2 : « soit jusqu'au [durée de validité des offres + 30 jours] ème jour », jetonné
+`{{B05-GS-04}}` comme dans C1, et une coquille du document type, « Adresse) », corrigée (substitution tracée).
+
 | ce qui change | par quoi |
 |---|---|
 | **La source est le texte du `.docx` converti par Word**, pas un PDF | `extraire-armp.mjs` ; `LireDocx` lit run par run : trait d'union insécable (`w:noBreakHyphen` → U+2011, rendu « - » par `propre`), note de bas de page (`[note:n]` dans le paragraphe, `[note n] texte` sur la ligne suivante), petites majuscules lues en capitales (comme Word les affiche), une tabulation entre deux cellules même vides |

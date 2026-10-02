@@ -63,7 +63,7 @@ for (const sigle of sigles) {
     .filter((l) => l.trim());
   // Cellule par cellule : le texte rendu propre (blancs de Word réduits, glyphes de symboles écartés — comme le
   // descripteur l'a lu), puis les substitutions du descripteur rejouées.
-  const gabarit = section(SRC, desc.section[0], desc.section[1] ?? undefined)
+  const gabarit = section(desc.source ? lireSource(desc.source) : SRC, desc.section[0], desc.section[1] ?? undefined)
     .map((l) => l.split('\t').map((c) => desc.trace.reduce((t, s) => rejouer(t, s.source, s.jeton), propre(c))).join('\t'))
     .filter((l) => l.trim());
 
