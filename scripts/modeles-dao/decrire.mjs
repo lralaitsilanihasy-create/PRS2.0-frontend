@@ -163,9 +163,17 @@ function traiter(trace, n, texte, ...remplacements) {
       const intrus = mots.filter((w) => !reduire(f).includes(w) && !UNITES.includes(w));
       if (!/\{\{[^{}]+}}/.test(par) || intrus.length) erreur(`pas un jeton${intrus.length ? ` (mots étrangers au trou : ${intrus.join(', ')})` : ''}`);
     }
+    if (genre === 'renvoi') {
+      // 02/10 (fiche 40 v3) — un renvoi interne que nos propres modèles fixent : « Annexe <N° de l'Annexe> » de l'AE (le DQE
+      // est toujours l'annexe n° 1), « l'article…. du CCAP » (le découpage du forfait est l'article 16 du CCAP-T).
+      // Garde-fou : hors les mots du trou, rien qu'un numéro.
+      const mots = par.split(/[^\p{L}\p{N}]+/u).map(reduire).filter(Boolean);
+      const intrus = mots.filter((w) => !reduire(f).includes(w) && !/^\d+$/.test(w));
+      if (!/\d/.test(par) || intrus.length) erreur(`un renvoi est un numéro${intrus.length ? ` (mots étrangers : ${intrus.join(', ')})` : ''}`);
+    }
     if (genre === 'retire' && par !== '') erreur('un retrait ne remplace rien');
     if (genre === 'typo' && reduire(f) !== reduire(par)) erreur('une coquille ne change pas le texte');
-    if (!['jeton', 'choix', 'retire', 'typo', 'adapte'].includes(genre)) erreur(`genre inconnu « ${genre} »`);
+    if (!['jeton', 'choix', 'retire', 'typo', 'adapte', 'renvoi'].includes(genre)) erreur(`genre inconnu « ${genre} »`);
     trace.push({ ligne: n, genre, source: f, par });
     t = t.slice(0, i) + par + t.slice(i + f.length);
   }
@@ -2603,14 +2611,19 @@ function aeTravaux() {
     ...SI('ARIARY', P(x('La monnaie de compte'))),
     ...SI('DEVISES', P(x('Tous les paiements à réaliser en monnaie différente'))),
     ...SI('REVISABLE', P(x('Les modalités de variation des prix'))),
-    ...SI('UNITAIRES', E('Les Travaux, objet du présent marché, seront rémunérés, par application des prix unitaires qui', 'Les Travaux, objet du présent marché, seront rémunérées par application du prix')),
-    ...SI('FORFAIT', E('Les Travaux, objet du présent marché, seront rémunérées par application du prix', 'Les Travaux, objet du présent marché, seront rémunérés, par application des prix unitaires résultant')),
+    // 02/10 (fiche 40 v3) — renvois que nos modèles fixent : le DQE est l'annexe n° 1 de l'AE (voir la liste des annexes),
+    // le découpage du forfait l'article 16 du CCAP-T.
+    ...SI('UNITAIRES', E('Les Travaux, objet du présent marché, seront rémunérés, par application des prix unitaires qui', 'Les Travaux, objet du présent marché, seront rémunérées par application du prix',
+      [['Les Travaux, objet du présent marché, seront rémunérés, par application des prix unitaires qui', ["<N° de l'Annexe>", 'n° 1', 'renvoi']]])),
+    ...SI('FORFAIT', E('Les Travaux, objet du présent marché, seront rémunérées par application du prix', 'Les Travaux, objet du présent marché, seront rémunérés, par application des prix unitaires résultant',
+      [['Les Travaux, objet du présent marché, seront rémunérées par application du prix', ['<N° de l’Annexe>', 'n° 1', 'renvoi'], ['article….', 'article 16', 'renvoi']]])),
     // La tranche conditionnelle 2 (« Tranche conditionnelle … ») est imbriquée dans SA forme de prix.
     ...SI('UNITAIRES-TRANCHES',
       E('Les Travaux, objet du présent marché, seront rémunérés, par application des prix unitaires résultant', ['Tranche conditionnelle … :', 0]),
       SI('TRANCHE-C2', E(['Tranche conditionnelle … :', 0], 'Les Travaux, objet du présent marché, seront rémunérés, par application du prix'))),
     ...SI('FORFAIT-TRANCHES',
-      E('Les Travaux, objet du présent marché, seront rémunérés, par application du prix', ['Tranche conditionnelle … :', 0]),
+      E('Les Travaux, objet du présent marché, seront rémunérés, par application du prix', ['Tranche conditionnelle … :', 0],
+        [['Les Travaux, objet du présent marché, seront rémunérés, par application du prix', ['article….', 'article 16', 'renvoi']]]),
       SI('TRANCHE-C2', E(['Tranche conditionnelle … :', 1], 'ARTICLE 3'))),
     ...E('ARTICLE 3', 'ARTICLE 5', [['Est désigné comme Comptable', ['le……………….', 'le {{B03-NT-01}}', 'jeton']]]),
     ...E('ARTICLE 5', 'Le délai de réalisation des Travaux prend effet'),
@@ -3252,5 +3265,5 @@ for (const sigle of voulus) {
   fs.writeFileSync(`modeles/${sigle}.txt`, commande.map((l) => l.join('\t')).join('\n') + '\n', 'utf8');
   const nb = (g) => m.trace.filter((t) => t.genre === g).length;
   const jetons = [...new Set(m.blocs.flatMap((b) => b.texte.match(/\{\{(?!SI:|FINSI:)[^{}]+}}/g) ?? []))];
-  console.log(`${sigle} — ${m.blocs.filter((b) => b.type !== 'ligne' && !/^\{\{(SI|FINSI):/.test(b.texte)).length} paragraphes, ${Object.keys(m.conditions).length} conditions, ${jetons.length} jetons distincts ; trous : ${nb('jeton')} jeton(s), ${nb('choix')} choix, ${nb('retire')} retrait(s), ${nb('typo')} coquille(s), ${nb('adapte')} adaptation(s) ; ${m.retraits.length} ligne(s) de la source retirée(s)`);
+  console.log(`${sigle} — ${m.blocs.filter((b) => b.type !== 'ligne' && !/^\{\{(SI|FINSI):/.test(b.texte)).length} paragraphes, ${Object.keys(m.conditions).length} conditions, ${jetons.length} jetons distincts ; trous : ${nb('jeton')} jeton(s), ${nb('choix')} choix, ${nb('retire')} retrait(s), ${nb('typo')} coquille(s), ${nb('adapte')} adaptation(s), ${nb('renvoi')} renvoi(s) ; ${m.retraits.length} ligne(s) de la source retirée(s)`);
 }

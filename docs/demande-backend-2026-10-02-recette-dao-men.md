@@ -247,3 +247,52 @@ Il en restera trois, faute de donnée chez le MEN : `B09-PE-03`, `B08-MR-05` et 
 > **Parité** : extraction identique, **1 027 lignes** de lecture identiques. Sur le DAO du MEN, le DPAO-T reconnaît désormais
 > 46 paragraphes, comme chez vous.
 > La v3 de la fiche 40 est à rejouer de votre côté, après le redémarrage du JAR. Aucun script n'est à passer.
+
+## B6 — Fiche 40 en v3 : B3 conforme ; un dernier renvoi de l'AE-T à recopier (front, 2026-10-02)
+
+### B6.1 — Constat
+
+v3 = révision de la v2, **aucune valeur changée** (vérifié clé par clé), puis validée.
+
+Les blancs de B3 sont tous remplis :
+- **DPAO** : « libéllé au nom de Receveur Général d'Antananarivo », « 1 copie(s) », « Heure : 09 h 30 » ;
+- **AE** : « …N° 001-DAOO/MEN/PRMP/Tvx-PI-2026 du 02/10/2026 », « soit le 12/05/2026 » (date limite du 27/05 − 15 jours) ;
+- **CCAP** :
+  - « à l'ordre de Receveur Général d'Antananarivo » ;
+  - « Les prix sont fermes et non révisables. » seul, sans l'actualisation ;
+  - les dix postes du forfait, ligne à ligne, puis « - Total… 100 % » ;
+  - « est de 20 jours. » ;
+  - « décrites en annexe aux Spécifications Techniques ».
+
+Restent les trois pointillés attendus (`B02-MW-02`, `B08-MR-05`, `B09-PE-03`), plus un quatrième de **mon fait** : art. 25
+« ……… ». `B09-PM-01` est resté vide alors que le CCAP du MEN dit « Non applicable ».
+
+### B6.2 — À recopier : l'AE-T
+
+L'AE-T imprimait encore deux trous de l'acheteur, que nos propres modèles suffisent à remplir :
+- « …figurant en Annexe <N° de l'Annexe> » : le DQE est **toujours l'annexe n° 1** de l'AE-T (liste des annexes, sections `ANNEXE-FORFAIT` / `ANNEXE-UNITAIRES`) ;
+- « …prévu à l'article…. du CCAP » : le découpage du forfait est **l'article 16** du CCAP-T.
+
+Fichiers : `scripts/modeles-dao/modeles/AE-T.{txt,json}`. Fidélité **363 / 363**. Banc de 13 passes : Q10 tenu, 0 réponse déduite fausse. Aucun autre modèle ne change.
+
+| clause | avant | après |
+|---|---|---|
+| art. 2, prix unitaires | « …figurant en Annexe <N° de l'Annexe> au présent Acte d'Engagement… » | « …figurant en Annexe n° 1 au présent Acte d'Engagement… » |
+| art. 2, forfait | « …figurant en Annexe <N° de l’Annexe> selon le découpage… prévu à l’article…. du CCAP » | « …figurant en Annexe n° 1 selon le découpage… prévu à l’article 16 du CCAP » |
+| art. 2, forfait avec tranches | « …prévu à l’article…. du CCAP » | « …prévu à l’article 16 du CCAP » |
+
+Côté description, un sixième sort de trou est né : **`renvoi`**, un numéro d'annexe ou d'article fixé par nos modèles,
+avec pour garde-fou que tout mot étranger au trou soit un nombre. Rien à faire chez vous : le modèle recopié reste le
+seul contrat. **Si un jour la numérotation du CCAP-T ou des annexes de l'AE-T change, ces renvois sont à revoir.**
+
+Restent volontairement en blanc dans l'AE : les annexes optionnelles « Annexe n° < > » (révision des prix,
+sous-traitance), dont le numéro dépend des conditions, et tout ce que remplit le candidat ou le notificateur.
+
+### B6.3 — Petite suggestion de libellé (facultative)
+
+`B05-GQ-04` s'insère après « libéllé au nom de » et « à l'ordre de ». Saisi « Receveur Général d'Antananarivo », il donne
+« au nom de Receveur Général… ». Ajouter au libellé « (ex. « Monsieur le Receveur Général d'Antananarivo ») » guiderait
+vers une forme qui se lit bien. Pas de demande ferme.
+
+**Recette attendue** : la parité habituelle sur l'AE-T. La fiche 40 n'a pas besoin d'être rejouée pour cela, je le
+ferai au prochain passage.

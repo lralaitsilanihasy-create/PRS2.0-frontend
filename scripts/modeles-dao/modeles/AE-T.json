@@ -606,7 +606,7 @@
   },
   {
    "type": "para",
-   "texte": "Les Travaux, objet du présent marché, seront rémunérés, par application des prix unitaires qui résultent du bordereau des prix unitaires et du détail quantitatif et estimatif figurant en Annexe <N° de l'Annexe> au présent Acte d'Engagement, aux quantités réellement exécutées prises en attachement contradictoire."
+   "texte": "Les Travaux, objet du présent marché, seront rémunérés, par application des prix unitaires qui résultent du bordereau des prix unitaires et du détail quantitatif et estimatif figurant en Annexe n° 1 au présent Acte d'Engagement, aux quantités réellement exécutées prises en attachement contradictoire."
   },
   {
    "type": "para",
@@ -634,7 +634,7 @@
   },
   {
    "type": "para",
-   "texte": "Les Travaux, objet du présent marché, seront rémunérées par application du prix forfaitaire résultant du détail quantitatif et estimatif figurant en Annexe <N° de l’Annexe> selon le découpage en centième par corps d’état des travaux terminés, prévu à l’article…. du CCAP"
+   "texte": "Les Travaux, objet du présent marché, seront rémunérées par application du prix forfaitaire résultant du détail quantitatif et estimatif figurant en Annexe n° 1 selon le découpage en centième par corps d’état des travaux terminés, prévu à l’article 16 du CCAP"
   },
   {
    "type": "para",
@@ -750,7 +750,7 @@
   },
   {
    "type": "para",
-   "texte": "Les Travaux, objet du présent marché, seront rémunérés, par application du prix forfaitaire résultant du détail quantitatif et estimatif selon le découpage en centième par corps d’état des travaux terminés, prévu à l’article…. du CCAP"
+   "texte": "Les Travaux, objet du présent marché, seront rémunérés, par application du prix forfaitaire résultant du détail quantitatif et estimatif selon le découpage en centième par corps d’état des travaux terminés, prévu à l’article 16 du CCAP"
   },
   {
    "type": "para",
@@ -1543,6 +1543,30 @@
    "genre": "jeton",
    "source": "soit le…………",
    "par": "soit le {{DERIVE.date-prix}}"
+  },
+  {
+   "ligne": "169.0.2",
+   "genre": "renvoi",
+   "source": "<N° de l'Annexe>",
+   "par": "n° 1"
+  },
+  {
+   "ligne": "174.0.0",
+   "genre": "renvoi",
+   "source": "<N° de l’Annexe>",
+   "par": "n° 1"
+  },
+  {
+   "ligne": "174.0.0",
+   "genre": "renvoi",
+   "source": "article….",
+   "par": "article 16"
+  },
+  {
+   "ligne": "212.0.0",
+   "genre": "renvoi",
+   "source": "article….",
+   "par": "article 16"
   },
   {
    "ligne": "255.0.0",

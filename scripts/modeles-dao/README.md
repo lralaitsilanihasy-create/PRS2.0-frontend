@@ -32,6 +32,7 @@ Un trou `<…>` du modèle a l'un de ces sorts, **tous tracés** dans `modeles/<
 | `retire` | une instruction à l'acheteur (« préciser… », « <choisir…> », exemples) : « à supprimer du contrat finalisé » | ne remplace rien |
 | `typo` | une coquille de frappe du modèle (« .Les », « ARTICLE 1 3 ») | même texte à la ponctuation près |
 | `adapte` | du **texte fixe** d'un exemple que le document type invite à adapter (« choisir parmi les exemples suivants en les adaptant ») devient un jeton : durée figée, liste de pièces imprimée d'office (01/10, DAO travaux du MEN) | autour du jeton, rien que des mots du texte remplacé, de la ponctuation ou une unité |
+| `renvoi` | un **renvoi interne** que nos propres modèles fixent : « Annexe <N° de l'Annexe> » de l'AE-T (le DQE est toujours l'annexe n° 1), « l'article…. du CCAP » (le découpage du forfait est l'article 16 du CCAP-T) — 02/10, fiche 40 v3 | hors les mots du trou, rien qu'un numéro |
 
 Et des lignes entières **retirées**, chacune avec sa raison (`retraits`) : sommaire, bandeaux, intitulés « Choix n » /
 « Option n », exemples. Une ligne de la source ni reprise ni retirée fait échouer `decrire.mjs` ; un paragraphe du
