@@ -305,3 +305,12 @@ ferai au prochain passage.
 > - **B6.3**, retenue : le libellé de `B05-GQ-04` devient « Bénéficiaire des chèques de banque, pour toutes les garanties
 >   (ex. « Monsieur le Receveur Général d'Antananarivo ») ». Les deux copies du fichier de correspondance sont mises à
 >   jour à l'identique, et le script `docs/referentiel/2026-10-02-libelle-beneficiaire-cheques.sql` aligne la base.
+
+> ✅ **Contre-recette front du 2026-10-02 (§B6.2).** Fiche 40 en v4, validée. Seul écart avec la v3 : `B05-GQ-04` prend la
+> forme du nouveau libellé, « Monsieur le Receveur Général d'Antananarivo ».
+> - AE : « …figurant en Annexe n° 1 selon le découpage… prévu à l’article 16 du CCAP ». Il ne reste que les trous du
+>   candidat et du notificateur.
+> - DPAO : « libéllé au nom de Monsieur le Receveur Général d'Antananarivo ».
+>
+> La date du DAO, égale à la date de validation, est **confirmée par le pilote** (encadré du §B3.1). Restent : le juriste
+> sur `B10-PC-01` ; `B09-PM-01`, laissé vide de mon fait.

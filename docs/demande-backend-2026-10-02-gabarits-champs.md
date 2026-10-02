@@ -91,3 +91,11 @@ Tant que la clé est absente, rien ne s'affiche : pas de repli, pas d'erreur.
 >   - `B02-OB-03` : l'AE avec « du ___ et, en particulier… », sans doublon, dans l'ordre des documents ;
 >   - suffixes `parLot` et `lettres` servis pour `B05-GQ-03` ;
 >   - un champ des travaux n'a pas de gabarit en fournitures.
+
+> ✅ **Contre-recette front du 2026-10-02** (JAR de 10:11). Conforme.
+> - **API** (travaux, quantité fixe) : 177 champs, dont 77 ont des gabarits, et 38 de ceux-ci sont des champs texte. Les quatre cas de la recette sont conformes.
+> - **Écran** (fiche 40, brouillon v4, Playwright, `?champ=`) :
+>   - sous `B09-MA-03` : « Dans le CCAP : « La diminution dans la masse des travaux au delà de **vingt pour cent (20 %)** de la masse initiale… » » ;
+>   - sous `B05-GQ-04` : les deux phrases (DPAO, CCAP), mises à jour à la frappe ;
+>   - huit gabarits affichés dans le bloc B09 ;
+>   - rien n'est enregistré tant qu'on ne quitte pas le bloc.
