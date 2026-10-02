@@ -298,3 +298,10 @@ vers une forme qui se lit bien. Pas de demande ferme.
 
 **Recette attendue** : la parité habituelle sur l'AE-T. La fiche 40 n'a pas besoin d'être rejouée pour cela, je le
 ferai au prochain passage.
+
+> ⚠️ **Livraison backend du 2026-10-02 (§B6).** Conforme.
+> - **B6.2** : AE-T recopié, **363/363** sur le rendu brut du serveur (« Annexe n° 1 », « article 16 du CCAP »). Parité :
+>   extraction identique, 1 027 lignes de lecture identiques.
+> - **B6.3**, retenue : le libellé de `B05-GQ-04` devient « Bénéficiaire des chèques de banque, pour toutes les garanties
+>   (ex. « Monsieur le Receveur Général d'Antananarivo ») ». Les deux copies du fichier de correspondance sont mises à
+>   jour à l'identique, et le script `docs/referentiel/2026-10-02-libelle-beneficiaire-cheques.sql` aligne la base.

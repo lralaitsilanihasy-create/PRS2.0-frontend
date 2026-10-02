@@ -71,3 +71,23 @@ Tant que la clé est absente, rien ne s'affiche : pas de repli, pas d'erreur.
 - `B03-NT-01` : le paragraphe de l'AE-T, une seule fois malgré la variante « groupement » s'il est identique ;
 - `B10-PC-01` : pas de gabarit (paragraphe fait du seul jeton) ;
 - `B02-OB-03` (travaux) : entre autres, l'AE-T, avec `apres` = « du ___ et, en particulier… » (le jeton `DERIVE.date-dao` devient `___`).
+
+> ⚠️ **Livraison backend du 2026-10-02.** Conforme au contrat.
+> - **Côté serveur** : `GabaritsDao` relève les citations une fois, au premier appel, sur les modèles déjà chargés.
+>   `ChampFicheMarcheDto.gabarits` est servi dès qu'un filtre (`typeMarche` ou `categorie`) est donné : une liste vide
+>   pour un champ cité nulle part.
+> - **Sans filtre** (vue d'administration), la clé est **absente**, et elle est ignorée à l'écriture (PUT/POST d'un champ).
+> - **Périmètre :**
+>   - les couvertures de la forme et de la catégorie ;
+>   - l'avis de la catégorie, pour toutes les formes ;
+>   - la lettre d'invitation, pour les prestations intellectuelles.
+>
+>   Une forme ou une catégorie absente de la requête n'est pas filtrée.
+> - Les cellules de tableau comptent : chaque paragraphe d'une cellule est un paragraphe.
+> - **Recette** (`GabaritsDaoTest`, sur les modèles réels, et `FicheDaoTravauxIntegrationTest.recetteDuMen`, par l'API) :
+>   - `B09-MA-03` (travaux) : votre gabarit, seul ;
+>   - `B03-NT-01` : l'AE, une fois (`apres` vide) ;
+>   - `B10-PC-01` : aucun ;
+>   - `B02-OB-03` : l'AE avec « du ___ et, en particulier… », sans doublon, dans l'ordre des documents ;
+>   - suffixes `parLot` et `lettres` servis pour `B05-GQ-03` ;
+>   - un champ des travaux n'a pas de gabarit en fournitures.
