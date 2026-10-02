@@ -247,3 +247,18 @@ informations du dossier**, et la plupart ne devraient pas être exigées (`deman
 
 Le plan n'a aucune ligne de travaux à deux lots : la ligne de recette en a cinq, et les lots 3 à 5 reprennent les
 valeurs du lot 2.
+
+**v2 du 2026-10-02**, après la livraison backend : les trois premières valeurs sont retirées, et `B10-PC-01` prend le
+texte par défaut du serveur (rédaction à valider par le juriste). `B02-MW-04` est vidé : le dossier n'a pas de maître
+d'ouvrage délégué. Champs neufs :
+- `B05-GQ-04` = « Receveur Général d'Antananarivo » [R] (DPAO 6.7, CCAP 7.1 et 14.1) ;
+- `B08-MR-06` = les dix postes du CCAP art. 16, plus la retenue de 3 % [R].
+
+Restent vides, faute de donnée chez le MEN : `B09-PE-03`, `B08-MR-05`, `B05-VR-02`. Le vide de `B05-VR-02` signifie
+« pas d'actualisation », ce que dit le CCAP 11.4 [R].
+
+Saisies refaites en fragment, conformes aux nouveaux libellés ; même sens que le dossier :
+- `B09-MA-0x` = « vingt pour cent (20 %) » / « trente pour cent (30 %) » [R] ;
+- `B09-MD-01` = « vingt (20) jours » [R] ;
+- `B03-NT-01` = « Trésorier Ministériel chargé de l'Enseignement » [D]. Le dossier dit « la Trésorerie Ministérielle… » ;
+  le modèle impose « le ».

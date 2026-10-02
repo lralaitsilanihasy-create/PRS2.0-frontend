@@ -270,7 +270,7 @@
   },
   {
    "type": "para",
-   "texte": "Après avoir pris connaissance du Dossier d'Appel d'Offres N° {{B02-OB-03}} du <date> et, en particulier, des documents composant le Cahier des Prescriptions Spéciales :"
+   "texte": "Après avoir pris connaissance du Dossier d'Appel d'Offres N° {{B02-OB-03}} du {{DERIVE.date-dao}} et, en particulier, des documents composant le Cahier des Prescriptions Spéciales :"
   },
   {
    "type": "para",
@@ -502,7 +502,7 @@
   },
   {
    "type": "para",
-   "texte": "Après avoir pris connaissance du Dossier d'Appel d'Offres N° {{B02-OB-03}} du <date> et, en particulier, des documents composant le Cahier des Prescriptions Spéciales :"
+   "texte": "Après avoir pris connaissance du Dossier d'Appel d'Offres N° {{B02-OB-03}} du {{DERIVE.date-dao}} et, en particulier, des documents composant le Cahier des Prescriptions Spéciales :"
   },
   {
    "type": "para",
@@ -562,7 +562,7 @@
   },
   {
    "type": "para",
-   "texte": "Les conditions d'établissement des prix sont celles existant le quinzième jour précédant la date limite fixée pour la remise des offres, soit le…………"
+   "texte": "Les conditions d'établissement des prix sont celles existant le quinzième jour précédant la date limite fixée pour la remise des offres, soit le {{DERIVE.date-prix}}"
   },
   {
    "type": "para",
@@ -1518,7 +1518,7 @@
    "ligne": "96.0.0",
    "genre": "jeton",
    "source": "N° du <date>",
-   "par": "N° {{B02-OB-03}} du <date>"
+   "par": "N° {{B02-OB-03}} du {{DERIVE.date-dao}}"
   },
   {
    "ligne": "96.0.18",
@@ -1530,13 +1530,19 @@
    "ligne": "148.0.0",
    "genre": "jeton",
    "source": "N° du <date>",
-   "par": "N° {{B02-OB-03}} du <date>"
+   "par": "N° {{B02-OB-03}} du {{DERIVE.date-dao}}"
   },
   {
    "ligne": "148.0.17",
    "genre": "jeton",
    "source": "<date>",
    "par": "{{DERIVE.fin-validite-offre}}"
+  },
+  {
+   "ligne": "156.0.0",
+   "genre": "jeton",
+   "source": "soit le…………",
+   "par": "soit le {{DERIVE.date-prix}}"
   },
   {
    "ligne": "255.0.0",

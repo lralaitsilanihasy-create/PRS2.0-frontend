@@ -184,3 +184,49 @@ Demande :
 >    - le même nettoyage, désormais appliqué aussi à l'import xlsx (objet et lots).
 >
 >    Test : `NettoyageEncodagePpmTest`.
+
+## B5 — Contre-recette (front, 2026-10-02) et modèles rebranchés à recopier
+
+### B5.1 — Fiche 40 rejouée en v2 : B1, B2 et B4 conformes
+
+v2 = révision de la v1, puis validée. Écart avec la v1 :
+- retirées : `B03-QT-07`, `B03-CQ-10`, `B09-DL-04`, `B02-MW-04` ;
+- ajoutées : `B05-GQ-04`, `B08-MR-06` ;
+- corrigées : `B09-MA-01` à `-04`, `B09-MD-01`, `B03-NT-01` (saisies en fragment, selon les nouveaux libellés), `B10-PC-01` (votre texte par défaut).
+
+Résultat :
+- **0 contrôle bloquant**, sans aucune des quatre valeurs inventées ;
+- CCAP : libération « …suivant la date de la réception **provisoire** » seule, « figurant en Annexe au présent CCAP », délai par lot à l'art. 21, plus de §1.2.2 (maître d'ouvrage délégué), plus de seconde liste de seuils ;
+- art. 18 et 22 sans doublon (« au delà de vingt pour cent (20 %) de la masse initiale… », « une période cumulé de vingt (20) jours ») ;
+- DPAO : critère a) absent, la liste commence à b) ;
+- AE : « …de paiement le Trésorier Ministériel chargé de l'Enseignement » ;
+- objet : « Travaux d'aménagement… campus universitaire d'Antsiranana - Lot n°02… » dans les trois documents.
+
+> Piège de script, noté pour les prochains rejeux : `PUT /blocs/{bloc}` remplace **tout** le bloc. Un envoi partiel
+> efface le reste (vu sur le brouillon v2, rétabli avant validation, écart avec la v1 contrôlé clé par clé).
+
+### B5.2 — Recopier le DPAO-T, l'AE-T et le CCAP-T rebranchés (contre-recette de B3)
+
+Fichiers : `scripts/modeles-dao/modeles/{DPAO-T,AE-T,CCAP-T}.{txt,json}`. Fidélité : **DPAO-T 262 / 262**,
+**AE-T 363 / 363**, **CCAP-T 574 / 574** (73 conditions). Banc de 13 passes : Q10 tenu, 0 réponse déduite fausse.
+
+| modèle | clause | jeton ou changement |
+|---|---|---|
+| DPAO-T | 6.7, chèque de garantie de soumission | « libéllé au nom de `{{B05-GQ-04}}` » |
+| DPAO-T | 7.1 | « `{{B04-FP-01}}` copie(s) » (votre suggestion) |
+| DPAO-T | 8, ouverture | « Heure : `{{B04-OV-02.heure}}` » |
+| AE-T | préambule, deux fois | « N° `{{B02-OB-03}}` du `{{DERIVE.date-dao}}` » |
+| AE-T | art. 2 | « …soit le `{{DERIVE.date-prix}}` » |
+| CCAP-T | 7.1 | « à l'ordre de `{{B05-GQ-04}}` » |
+| CCAP-T | 11.4 | « Les prix sont fermes et non révisables. » reste sous `FERME` ; l'actualisation (formule et indices `{{B05-VR-02}}`) passe sous la **nouvelle** condition `ACTUALISATION` = `prixRevisable = NON et B05-VR-02 renseigne` |
+| CCAP-T | 12.2 | « …atteint `{{B08-RE-04.chiffres}} %` du montant du Marché » |
+| CCAP-T | 16, décomptes | « au plus tard `{{B08-MR-05}}` jours ouvrables… » |
+| CCAP-T | 16, forfait | les quatre lignes « -……% » et « - Réception provisoire…… 5% » sont retirées ; à leur place `{{B08-MR-06}}`, déclaré en `ajouts`. « - Total… 100 % » reste |
+| CCAP-T | 23 | « …dans la limite de `{{B09-PE-03.chiffres}} %` du montant global… » |
+| CCAP-T | 28.2 | « …est de `{{B09-RP-03}}` jours. » (la v2 imprimait « est de 20. ») ; « décrites en annexe aux Spécifications Techniques », sans « <n°> » |
+
+**Recette attendue** :
+- la parité habituelle ;
+- la fiche 40 révisée en v3, sans changement de valeur : les blancs de B3 doivent disparaître.
+
+Il en restera trois, faute de donnée chez le MEN : `B09-PE-03`, `B08-MR-05` et le marché de maîtrise d'œuvre (`B02-MW-02`). Ce sont des pointillés attendus. Je rejouerai la v3 à votre retour.

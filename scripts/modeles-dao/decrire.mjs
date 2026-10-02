@@ -2407,7 +2407,7 @@ function dpaoTravaux() {
       x(r67, 'Une garantie de soumission doit être fournie'),
       SIc('GARANTIE-BANCAIRE', x(r67, '- Soit une garantie bancaire')),
       SIc('GARANTIE-CAUTION', x(r67, '- Soit une caution')),
-      SIc('GARANTIE-CHEQUE', x(r67, '- Soit un chèque de banque')),
+      SIc('GARANTIE-CHEQUE', x(r67, '- Soit un chèque de banque', ['…..', '{{B05-GQ-04}}', 'jeton'])),   // 02/10 : bénéficiaire servi (B05-GQ-04)
       x(r67, 'Le montant de la garantie de soumission'),
       SIc('GARANTIE-LOTS', x(r67, '<insérer montant en chiffres', ['<insérer montant en chiffres et en lettres>', '{{B05-GQ-03.parLot}}', 'jeton'])),
       SIc('GARANTIE-UNIQUE', x(r67, '<insérer montant en chiffres', ['<insérer montant en chiffres et en lettres>', '{{B05-GQ-03.lettres}} ({{B05-GQ-03}})', 'jeton']))));
@@ -2431,7 +2431,7 @@ function dpaoTravaux() {
   const plis = cel(
     SIc('ALLOTI', x(r71, '<en cas d’allotissement> : les offres', ['<en cas d’allotissement> : ', '', 'retire'])),
     x(r71, 'Outre l’original de l’offre'),
-    x(r71, '<insérer le nombre de copies>', ['<insérer le nombre de copies>', '{{B04-FP-01}}', 'jeton']),
+    x(r71, '<insérer le nombre de copies>', ['<insérer le nombre de copies> copies', '{{B04-FP-01}} copie(s)', 'jeton']),   // 02/10 : « 1 copies »
     x(r71, 'Les enveloppes extérieure et intérieure'),
     xj(r71, '<insérer les mentions', 0, '{{B04-FP-02}}'),
     x(r71, 'Le nom et l’adresse du Maître', [':…….', ': {{B01-AC-01}}, {{B01-AC-02}}', 'jeton']),
@@ -2452,7 +2452,8 @@ function dpaoTravaux() {
   const electronique = cel(SIc('PAPIER', x(r73, 'Le mode de remise des offres par voie électronique')), SIc('B04-SE', CLAUSE_SE));
   retirer(r73, 'instruction à l’acheteur (les conditions de la remise électronique sont demandées au juriste)', "<s'il n'est pas possible", '<Dans le cas où il est possible');
   const r8 = rg('8. Ouverture des plis');
-  const ouverture = cel(x(r8, 'Lieu : (insérer le lieu)', ['(insérer le lieu)', '{{B04-OV-01}}', 'jeton']), x(r8, 'Date : Le même jour'), x(r8, 'Heure : (insérer'));
+  const ouverture = cel(x(r8, 'Lieu : (insérer le lieu)', ['(insérer le lieu)', '{{B04-OV-01}}', 'jeton']), x(r8, 'Date : Le même jour'),
+    x(r8, 'Heure : (insérer', ['(insérer l’heure)', '{{B04-OV-02.heure}}', 'jeton']));   // 02/10 : ouverture à l'heure limite de remise (.heure)
 
   // ── 9. Évaluation
   const r9 = rg('9. Evaluation et comparaison');
@@ -2576,7 +2577,7 @@ function aeTravaux() {
   retirer(d, 'rédaction « date de fin du marché » : le délai d’exécution est retenu (plan du lot D4, Q9)', 'Le marché prendra fin');
 
   const MARCHE = "<Indiquer: l'intitulé principal du Marché, le cas échéant le projet dans le cadre duquel le marché est passé, ou le numéro et l'objet du lot compris dans le projet >";
-  const DAO = ['N° du <date>', 'N° {{B02-OB-03}} du <date>', 'jeton'];
+  const DAO = ['N° du <date>', 'N° {{B02-OB-03}} du {{DERIVE.date-dao}}', 'jeton'];   // 02/10 : date de validation de la version
   const blocs = [
     C(x("ACTE D'ENGAGEMENT (A.E)")),
     ...E('AUTORITE CONTRACTANTE', "<Indiquer: l'intitulé", [['<indiquer le nom >', ['<indiquer le nom >', '{{B01-AC-01}}', 'jeton']]]),
@@ -2598,7 +2599,7 @@ function aeTravaux() {
     ...SI('GROUPEMENT', E("Engagement à remplir par les MEMBRES", 'ARTICLE 2 - PRIX', [
       ["Après avoir pris connaissance", DAO],
       ["L'offre ainsi présentée nous lie", ['<date>', '{{DERIVE.fin-validite-offre}}', 'jeton']]])),
-    ...E('ARTICLE 2 - PRIX', 'La monnaie de compte'),
+    ...E('ARTICLE 2 - PRIX', 'La monnaie de compte', [["Les conditions d'établissement des prix", ['soit le…………', 'soit le {{DERIVE.date-prix}}', 'jeton']]]),   // 02/10 : date limite − 15 jours
     ...SI('ARIARY', P(x('La monnaie de compte'))),
     ...SI('DEVISES', P(x('Tous les paiements à réaliser en monnaie différente'))),
     ...SI('REVISABLE', P(x('Les modalités de variation des prix'))),
@@ -2716,6 +2717,7 @@ function ccapTravaux() {
     FORFAIT: 'typePrix = FORFAITAIRE',
     UNITAIRES: 'typePrix = UNITAIRES',
     FERME: 'prixRevisable = NON',
+    ACTUALISATION: 'prixRevisable = NON et B05-VR-02 renseigne',
     REVISABLE: 'prixRevisable = OUI',
     'REGIE-NON': 'B08-RE-02 != OUI',
     'REGIE-OUI': 'B08-RE-02 = OUI',
@@ -2746,7 +2748,7 @@ function ccapTravaux() {
   // 02/10 — le référentiel offre « Libérée à 100 % à la réception provisoire » (B05-GE-04), le modèle n'a de rédaction
   // que pour la réception définitive : celle-ci, calquée mot pour mot sur la sienne (DAO du MEN, CCAP art. 7.1).
   const LIBERATION_PROVISOIRE = 'La garantie de bonne exécution est libérée à 100% dans les 30 jours suivant la date de la réception provisoire';
-  const ajouts = [LIBERATION_PROVISOIRE, '{{B04-CD-03}}', '{{B02-LV-02}}', '{{B09-AC-01}}', '{{B09-AC-02}}', '{{B09-AC-03}}', '{{B09-CH-01}}', '{{B09-CH-02}}', '{{B09-CH-03}}', '{{B09-CH-04}}',
+  const ajouts = [LIBERATION_PROVISOIRE, '{{B08-MR-06}}', '{{B04-CD-03}}', '{{B02-LV-02}}', '{{B09-AC-01}}', '{{B09-AC-02}}', '{{B09-AC-03}}', '{{B09-CH-01}}', '{{B09-CH-02}}', '{{B09-CH-03}}', '{{B09-CH-04}}',
     '{{B09-CH-05}}', '{{B08-AP-02}}', '{{B09-RP-04}}', '{{B10-PC-01}}', '{{B10-DR-01}}'];
 
   // ── Ce qui ne s'imprime pas
@@ -2774,6 +2776,7 @@ function ccapTravaux() {
   retirer(d, "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03", (l) => l.ligne === assurances);
   retirer(d, "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05", (l) => l.ligne === sujetions);
   retirer(d, "modalités d'exemple des acomptes sur approvisionnements : remplacées par la saisie B08-AP-02", 'A l’appui de tout projet de décompte', 'Les matériaux ne peuvent être pris en compte', 'Le montant pris en compte dans le projet de décompte');
+  retirer(d, "postes d'exemple du découpage du forfait : remplacés par la saisie B08-MR-06", (l) => /^-s*…+s*%$/.test(l.texte) || l.texte.startsWith('- Réception provisoire…'));
   retirer(d, "seconde liste de seuils d'intempéries (précipitations, vent, lieu d'observation) : même objet que la saisie B09-FM-02 — le DAO du MEN n'en garde qu'une",
     'En vue de l’application éventuelle du deuxième des articles 18.1', 'précipitations journalières supérieures', 'force du vent supérieure', 'Phénomènes constatés à');
   retirer(d, "rédaction « dates limites » : le délai d'exécution est retenu (plan du lot D4, Q9)", 'Date limite de commencement', "Date limite d'achèvement");
@@ -2851,7 +2854,7 @@ function ccapTravaux() {
       // aux modèles figurant dans les Annexes ».
       SI('GBE-BANCAIRE', P(x('- soit de garantie bancaire', ['<numéro> ', '', 'retire']))),
       SI('GBE-CAUTION', P(x('- soit une caution personnelle', ['<numéro> ', '', 'retire']))),
-      SI('GBE-CHEQUE', P(x('- soit un chèque de banque'))),
+      SI('GBE-CHEQUE', P(x('- soit un chèque de banque', ['<à préciser>', '{{B05-GQ-04}}', 'jeton']))),
       SI('LIBERATION-MOITIE', P(x('La garantie de bonne exécution est libérée de 50%'))),
       SI('LIBERATION-TOTALE', P(x('La garantie de bonne exécution est libérée à 100%'))),
       SI('LIBERATION-PROVISOIRE', P(LIBERATION_PROVISOIRE))),
@@ -2893,14 +2896,17 @@ function ccapTravaux() {
     ...SI('FORFAIT', P(x('Le Marché est traité sur la base d’un prix forfaitaire'))),
     ...SI('UNITAIRES', P(x('Le Marché est traité sur la base de prix unitaires', ['<ajouter le cas échéant :> ', '', 'retire']))),
     ...E('11.4.', 'Les prix sont fermes'),
-    ...SI('FERME', E('Les prix sont fermes', 'Les prix seront révisés')),
+    // 02/10 — l'actualisation ne s'imprime qu'avec ses indices (B05-VR-02) : le MEN a des prix « fermes et non révisables », sans plus.
+    ...SI('FERME', P(x('Les prix sont fermes'))),
+    ...SI('ACTUALISATION', E('Ils sont actualisés', 'Les prix seront révisés', [['<indiquer la nature des indices', ['<indiquer la nature des indices et les sources où ils peuvent être trouvés>', '{{B05-VR-02}}', 'jeton']]])),
     ...SI('REVISABLE', P(x('Les prix seront révisés'))),
     // Article 12 — règlement, régie
     ...E('Article 12 -', '<préciser ici les modalités'),
     P(xj('<préciser ici les modalités de règlement', '{{B08-RE-01}}')),
     ...E('12.2.', '=Non applicable'),
     ...SI('REGIE-NON', NA(4)),
-    ...SI('REGIE-OUI', E('Coefficient de majoration des salaires', 'Article 13 -', [['<Indiquer le taux de charges applicables', ['<Indiquer le taux de charges applicables aux salaires, le taux de frais généraux admis et le taux de marge admis>', '{{B08-RE-03}}', 'jeton']]])),
+    ...SI('REGIE-OUI', E('Coefficient de majoration des salaires', 'Article 13 -', [['<Indiquer le taux de charges applicables', ['<Indiquer le taux de charges applicables aux salaires, le taux de frais généraux admis et le taux de marge admis>', '{{B08-RE-03}}', 'jeton']],
+      ["L'obligation pour l'Entrepreneur d'exécuter des travaux en régie", ['<pourcentage>', '{{B08-RE-04.chiffres}} %', 'jeton']]])),
     // Article 13 — approvisionnements
     ...E('Article 13 -', '=Non applicable'),
     ...SI('APPROVISIONNEMENTS-NON', NA(5)),
@@ -2916,9 +2922,10 @@ function ccapTravaux() {
     // Articles 15 et 16
     ...E('Article 15 -', 'Les comptes seront réglés en une seule fois'),
     ...SI('REGLEMENT-UNIQUE', P(x('Les comptes seront réglés en une seule fois'))),
-    ...SI('DECOMPTES-MENSUELS', P(x('Délai de remise du projet de décompte'))),
+    ...SI('DECOMPTES-MENSUELS', P(x('Délai de remise du projet de décompte', ['< nombre de jours>', '{{B08-MR-05}}', 'jeton']))),
     ...SI('UNITAIRES', P(x('Le règlement des sommes dues à l’Entrepreneur s’effectuera par application des prix unitaires'))),
-    ...SI('FORFAIT', E('Le règlement des sommes dues à l’Entrepreneur s’effectuera par application du prix forfaitaire', 'Article 17 -')),
+    // 02/10 — les postes du découpage : la saisie B08-MR-06 (un poste par ligne) remplace les lignes d'exemple.
+    ...SI('FORFAIT', P(x('Le règlement des sommes dues à l’Entrepreneur s’effectuera par application du prix forfaitaire')), P('{{B08-MR-06}}'), P(x('- Total'))),
     // Articles 17 à 19 — masse des travaux
     ...E('Article 17 -', 'Article 20 -', [
       ['Le changement dans la masse des travaux peut être demandé par ordre de service sans nécessité de conclure un avenant lorsque ces changements n\'entraîne pas de variations', ['<pourcentage inférieur à 20%>', '{{B09-MA-01}}', 'jeton']],
@@ -2937,7 +2944,7 @@ function ccapTravaux() {
     // Article 23 — pénalités (question `penalites` du cadrage)
     ...E('Article 23 -', 'Les pénalités journalières prévues'),
     ...SI('PENALITES-NON', P(x('Les pénalités journalières prévues'))),
-    ...SI('PENALITES-OUI', P(x('Les pénalités journalières applicables')), P(x('<millièmes>', ['<millièmes>', '{{B09-PE-02}}', 'jeton']))),
+    ...SI('PENALITES-OUI', P(x('Les pénalités journalières applicables')), P(x('<millièmes>', ['<millièmes>', '{{B09-PE-02}}', 'jeton'], ['<pourcentage>', '{{B09-PE-03.chiffres}} %', 'jeton']))),
     // Articles 24 à 27
     ...E('Article 24 -', 'Article 26 -', [
       ['<Indiquer, le cas échéant, les modalités de vérification', [texteDe(d, '<Indiquer, le cas échéant, les modalités de vérification'), '{{B09-VQ-01}}', 'jeton']],
@@ -2957,7 +2964,9 @@ function ccapTravaux() {
     ...E('28.1.', 'Les tranches de travaux comportant'),
     ...SI('RECEPTION-TRANCHES', P(x('Les tranches de travaux comportant'))),
     ...E('28.2.', 'La constatation du repliement', [
-      ['Par dérogation au CCAG, le délai du début', ['<jours>', '{{B09-RP-03}}', 'jeton']]]),
+      // 02/10 (fiche 40 v2) — « …est de 20. » : l'unité manquait ; l'annexe des Spécifications n'est pas numérotée par le modèle.
+      ['Par dérogation au CCAG, le délai du début', ['<jours>', '{{B09-RP-03}} jours', 'jeton']],
+      ['Les modalités de réception des travaux sont décrites', ['<n°> ', '', 'retire']]]),
     P('{{B09-RP-04}}'),
     ...E('La constatation du repliement', 'Article 29 -'),
     // Article 29 — délai de garantie ; 30 (fixe) ; 31 contentieux ; 32 dérogations

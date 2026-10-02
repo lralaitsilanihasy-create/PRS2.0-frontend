@@ -153,7 +153,7 @@
   },
   {
    "type": "ligne",
-   "texte": "6.7. Garantie de soumission\u001f{{SI:SANS-GARANTIE}}\u001eIl n’est pas demandé de garantie de soumission\u001e{{FINSI:SANS-GARANTIE}}\u001e{{SI:GARANTIE}}\u001eUne garantie de soumission doit être fournie dans l’une des formes suivantes :\u001e{{SI:GARANTIE-BANCAIRE}}\u001e- Soit une garantie bancaire\u001e{{FINSI:GARANTIE-BANCAIRE}}\u001e{{SI:GARANTIE-CAUTION}}\u001e- Soit une caution personnelle et solidaire\u001e{{FINSI:GARANTIE-CAUTION}}\u001e{{SI:GARANTIE-CHEQUE}}\u001e- Soit un chèque de banque libéllé au nom de …..\u001e{{FINSI:GARANTIE-CHEQUE}}\u001eLe montant de la garantie de soumission est de :\u001e{{SI:GARANTIE-LOTS}}\u001e{{B05-GQ-03.parLot}}.\u001e{{FINSI:GARANTIE-LOTS}}\u001e{{SI:GARANTIE-UNIQUE}}\u001e{{B05-GQ-03.lettres}} ({{B05-GQ-03}}).\u001e{{FINSI:GARANTIE-UNIQUE}}\u001e{{FINSI:GARANTIE}}"
+   "texte": "6.7. Garantie de soumission\u001f{{SI:SANS-GARANTIE}}\u001eIl n’est pas demandé de garantie de soumission\u001e{{FINSI:SANS-GARANTIE}}\u001e{{SI:GARANTIE}}\u001eUne garantie de soumission doit être fournie dans l’une des formes suivantes :\u001e{{SI:GARANTIE-BANCAIRE}}\u001e- Soit une garantie bancaire\u001e{{FINSI:GARANTIE-BANCAIRE}}\u001e{{SI:GARANTIE-CAUTION}}\u001e- Soit une caution personnelle et solidaire\u001e{{FINSI:GARANTIE-CAUTION}}\u001e{{SI:GARANTIE-CHEQUE}}\u001e- Soit un chèque de banque libéllé au nom de {{B05-GQ-04}}\u001e{{FINSI:GARANTIE-CHEQUE}}\u001eLe montant de la garantie de soumission est de :\u001e{{SI:GARANTIE-LOTS}}\u001e{{B05-GQ-03.parLot}}.\u001e{{FINSI:GARANTIE-LOTS}}\u001e{{SI:GARANTIE-UNIQUE}}\u001e{{B05-GQ-03.lettres}} ({{B05-GQ-03}}).\u001e{{FINSI:GARANTIE-UNIQUE}}\u001e{{FINSI:GARANTIE}}"
   },
   {
    "type": "ligne",
@@ -177,7 +177,7 @@
   },
   {
    "type": "ligne",
-   "texte": "7.1. Forme des plis\u001f{{SI:ALLOTI}}\u001eles offres devront être présentées séparément pour chacun des lots\u001e{{FINSI:ALLOTI}}\u001eOutre l’original de l’offre, les plis doivent comprendre:\u001e{{B04-FP-01}} copies\u001eLes enveloppes extérieure et intérieure devront comporter les autres identifications suivantes :\u001e{{B04-FP-02}}\u001eLe nom et l’adresse du Maître de l’ouvrage : {{B01-AC-01}}, {{B01-AC-02}}\u001e- La référence du présent Appel d’Offres\u001e- La mention « NE PAS OUVRIR AVANT LA DATE ET L’HEURE D’OUVERTURE DES PLIS »,\u001e{{SI:ALLOTI}}\u001e- la référence et le numéro du lot auquel se rapporte l’offre\u001e{{FINSI:ALLOTI}}\u001eà l’exclusion de toute mention permettant d’identifier le candidat pour l’enveloppe extérieure"
+   "texte": "7.1. Forme des plis\u001f{{SI:ALLOTI}}\u001eles offres devront être présentées séparément pour chacun des lots\u001e{{FINSI:ALLOTI}}\u001eOutre l’original de l’offre, les plis doivent comprendre:\u001e{{B04-FP-01}} copie(s)\u001eLes enveloppes extérieure et intérieure devront comporter les autres identifications suivantes :\u001e{{B04-FP-02}}\u001eLe nom et l’adresse du Maître de l’ouvrage : {{B01-AC-01}}, {{B01-AC-02}}\u001e- La référence du présent Appel d’Offres\u001e- La mention « NE PAS OUVRIR AVANT LA DATE ET L’HEURE D’OUVERTURE DES PLIS »,\u001e{{SI:ALLOTI}}\u001e- la référence et le numéro du lot auquel se rapporte l’offre\u001e{{FINSI:ALLOTI}}\u001eà l’exclusion de toute mention permettant d’identifier le candidat pour l’enveloppe extérieure"
   },
   {
    "type": "ligne",
@@ -189,7 +189,7 @@
   },
   {
    "type": "ligne",
-   "texte": "8. Ouverture des plis\u001fLieu : {{B04-OV-01}}\u001eDate : Le même jour que la date limite fixée pour la remise des offres.\u001eHeure : (insérer l’heure)"
+   "texte": "8. Ouverture des plis\u001fLieu : {{B04-OV-01}}\u001eDate : Le même jour que la date limite fixée pour la remise des offres.\u001eHeure : {{B04-OV-02.heure}}"
   },
   {
    "type": "ligne",
@@ -424,6 +424,12 @@
    "par": "{{B04-VO-01}}"
   },
   {
+   "ligne": "54.1.8",
+   "genre": "jeton",
+   "source": "…..",
+   "par": "{{B05-GQ-04}}"
+  },
+  {
    "ligne": "54.1.11",
    "genre": "jeton",
    "source": "<insérer montant en chiffres et en lettres>",
@@ -462,8 +468,8 @@
   {
    "ligne": "60.1.2",
    "genre": "jeton",
-   "source": "<insérer le nombre de copies>",
-   "par": "{{B04-FP-01}}"
+   "source": "<insérer le nombre de copies> copies",
+   "par": "{{B04-FP-01}} copie(s)"
   },
   {
    "ligne": "60.1.5",
@@ -506,6 +512,12 @@
    "genre": "jeton",
    "source": "(insérer le lieu)",
    "par": "{{B04-OV-01}}"
+  },
+  {
+   "ligne": "63.1.2",
+   "genre": "jeton",
+   "source": "(insérer l’heure)",
+   "par": "{{B04-OV-02.heure}}"
   },
   {
    "ligne": "65.1.1",
