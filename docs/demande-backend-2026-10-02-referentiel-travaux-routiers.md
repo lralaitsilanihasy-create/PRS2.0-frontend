@@ -164,3 +164,14 @@ PRMP écrivent « Non applicable » par habitude.
 > - Contrôle : `verifier-armp.mjs` donne les huit modèles conformes ; A1 à C2 sont inchangés.
 > - Recette attendue sur une fiche de travaux : B1 et B2 sans pointillés pour le montant (celui du lot), la validité
 >   (`B04-VO-01` + 30) et la date limite.
+
+> ⚠️ **Livraison backend du 2026-10-02 (§B5, jetons de B1 / B2).** Conforme.
+> - B1 et B2 rejetonnés sont recopiés ; `verifier-armp.mjs B1` et `B2 --docx=<rendu brut du serveur>` donnent « aucun écart » ;
+>   A1 à C2 sont inchangés.
+> - `{{DERIVE.validite-garantie}}` est servi : `B04-VO-01` + 30, un nombre de jours (« soit jusqu'au 150 ème jour »). Sans
+>   validité des offres, il s'imprime en pointillés.
+> - **Recette** :
+>   - `FicheDaoTravauxIntegrationTest.travauxRoutiers`, fiche de travaux avec « C1 et C2 » : B1 imprime « cinq millions
+>     ariary (5 000 000 Ariary) » et « soit jusqu'au <validité + 30> ème jour » ; B2 imprime la date limite « … (heure
+>     locale) » et le montant ;
+>   - `ModelesCandidatRenduTest` : B1 par lot, sur le montant du lot.
