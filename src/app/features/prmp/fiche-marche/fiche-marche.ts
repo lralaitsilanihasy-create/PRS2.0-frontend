@@ -47,6 +47,7 @@ import {
   cleHorsCellule,
   metaChamp,
   extraitsGabarit,
+  libelleOption,
   formatPiece,
   PieceGroupee,
   pieceOuvrable,
@@ -758,8 +759,14 @@ export class FicheMarcheEcran {
   }
 
   /** Un champ de cadrage à options codées (`B04-SE-01` : PAPIER / ELECTRONIQUE) se lit par le libellé de sa question. */
+  /** Ce que désigne une option (« C1 — garantie bancaire… ») ; l'option elle-même sinon. */
+  libelleOption(champ: ChampFiche, option: string): string {
+    return libelleOption(champ.code, option);
+  }
+
   affichageLecture(champ: ChampFiche): string {
     const brut = this.valeurAffichee(champ);
+    if (champ.source !== 'CADRAGE' && champ.type === 'LISTE') return libelleOption(champ.code, brut);
     if (champ.source !== 'CADRAGE' || champ.type !== 'LISTE' || !champ.cleCadrage) return brut;
     const q = QUESTIONS_CADRAGE.find((x) => x.cle === champ.cleCadrage);
     const valeur = brut || String(this.cadrageEffectif()[champ.cleCadrage] ?? '');

@@ -478,6 +478,25 @@ export function cleHorsCellule(champ: Pick<ChampFiche, 'parLot'>, cle: string, s
   return !cle.includes('#') && lotsDuChamp(champ, saisieParLot, nbLots)[0] !== null;
 }
 
+/**
+ * ⚠️ 02/10 (DAO routier du MTP) — ce que désigne une option dont la valeur est un code. Les options du référentiel sont des
+ * chaînes où valeur et libellé ne font qu'un : « C1 » ne dit rien à une PRMP de travaux, dont le dossier type numérote
+ * le même modèle B1. La valeur enregistrée ne change pas (elle commande les documents C1 / C2 et le contrôle
+ * `GARANTIE_MANQUANTE`) ; seul l'affichage la décrit.
+ */
+const LIBELLES_OPTIONS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  'B04-CD-02': {
+    C1: 'C1 — garantie bancaire (B1 au dossier type des travaux)',
+    C2: 'C2 — caution personnelle et solidaire (B2 au dossier type des travaux)',
+    'C1 et C2': 'C1 et C2 — les deux modèles',
+  },
+};
+
+/** Le libellé à afficher pour une option ; l'option elle-même si rien ne la décrit. */
+export function libelleOption(code: string, option: string): string {
+  return LIBELLES_OPTIONS[code]?.[option] ?? option;
+}
+
 /** Un extrait de modèle prêt à afficher sous le champ : la saisie s'insère entre `avant` et `apres`. */
 export interface ExtraitGabarit {
   document: string;

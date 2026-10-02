@@ -413,7 +413,7 @@
                                     @case ('LISTE') {
                                       <select class="form-control" [id]="'c-' + cle(c, lot)" (change)="saisir(c, $event, lot)">
                                         <option value="" [selected]="!valeurAffichee(c, lot)">— Choisir —</option>
-                                        @for (o of c.options ?? []; track o) { <option [value]="o" [selected]="valeurAffichee(c, lot) === o">{{ o }}</option> }
+                                        @for (o of c.options ?? []; track o) { <option [value]="o" [selected]="valeurAffichee(c, lot) === o">{{ libelleOption(c, o) }}</option> }
                                       </select>
                                     }
                                     @case ('LISTE_MULTIPLE') {

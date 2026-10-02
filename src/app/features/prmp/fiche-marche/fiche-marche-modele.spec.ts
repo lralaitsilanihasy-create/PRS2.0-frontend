@@ -1,5 +1,6 @@
 import { ChampFiche, DocumentFiche, ReferentielFiche } from '../../../models';
 import {
+  libelleOption,
   extraitsGabarit,
   BILAN_VIDE,
   aidesRevision,
@@ -516,6 +517,13 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(extraits[0].apres.startsWith(' début')).toBe(true);
     expect(extraits[0].apres.endsWith(' …')).toBe(true);
     expect(extraits[0].avant.length).toBeLessThanOrEqual(92);
+  });
+
+  it("option : C1 / C2 disent quel modèle de garantie elles désignent (B1 / B2 au dossier type des travaux) ; ailleurs, l'option elle-même", () => {
+    expect(libelleOption('B04-CD-02', 'C1')).toBe('C1 — garantie bancaire (B1 au dossier type des travaux)');
+    expect(libelleOption('B04-CD-02', 'C1 et C2')).toBe('C1 et C2 — les deux modèles');
+    expect(libelleOption('B04-CD-02', 'X')).toBe('X');
+    expect(libelleOption('B05-GE-04', 'Libérée à 100 % à la réception provisoire')).toBe('Libérée à 100 % à la réception provisoire');
   });
 
 });
