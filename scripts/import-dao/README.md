@@ -116,3 +116,17 @@ Ce contrôle a révélé un défaut ancien (graines 6 et 10, CCAP-T) : il est co
 `PdfLignes` : la fin d'un morceau est celle de sa dernière lettre (une espace finale, retirée du texte, collait le
 morceau suivant). Banc : rappel identique sur les 18 passes, Q10 tenu (propre et graines 3, 6, 11). 2463 : +3 valeurs
 justes (B04-DE-02/03, B06-EP-01), aucune perdue.
+
+8. **Réancrage** (02/10, DAO de travaux routiers du MTP ; `docs/demande-backend-2026-10-02-lecture-reancrage.md`). La
+   première accroche se cherche dans tout le document, la suite dans une fenêtre de 60 paragraphes après la dernière
+   reconnue. Une première accroche **fausse** bloquait toute la lecture. Cas : le **sommaire** du DAO (« 1.2 Données
+   Particulières de l'Appel d'Offres (DPAO) ») ressemble au titre du modèle, et le vrai DPAO est 300 paragraphes plus
+   loin. Résultat : 1 paragraphe reconnu sur 161. Désormais, après **5 paragraphes distinctifs** du modèle (règle 7,
+   non répétés ailleurs) manqués d'affilée, le suivant se cherche dans **tout le reste** du document ; une
+   reconnaissance remet le compte à zéro. Mesures :
+   - MTP : DPAO-T 1 → 8, CCAP-T 5 → 65 paragraphes reconnus ;
+   - MEN : CCAP-T 5 → 58, DPAO-T 45 → 46, AE-T 44 → 45 (le CCAP du MEN souffrait du même défaut) ;
+   - 2463 : CCAP-F 3 → 20, AE-F 41 → 42, valeurs identiques ;
+   - banc, propre et graines 1 à 12 : **identique ligne pour ligne**, Q10 tenu, 0 réponse déduite fausse ;
+   - les valeurs nouvelles en confiance haute sont justes (MTP : `B09-RP-03` = 07, `B02-OT-01`) ; les erreurs nouvelles
+     restent en confiance basse (MTP : la phrase des pénalités lue comme `B09-VQ-01`).

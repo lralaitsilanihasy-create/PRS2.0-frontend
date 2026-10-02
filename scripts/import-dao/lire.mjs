@@ -322,6 +322,13 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
 
   // 1. Les paragraphes reconnus, dans l'ordre (un curseur empêche un texte répété de se lire deux fois).
   let curseur = 0;
+  // ⚠️ 02/10 (règle 8, DAO routier du MTP) — RÉANCRAGE. La première accroche se cherche dans tout le document : elle
+  // peut tomber sur le SOMMAIRE (« 1.2 Données Particulières de l'Appel d'Offres (DPAO) » ressemble au titre du modèle),
+  // et la fenêtre de 60 paragraphes ne rejoignait jamais le vrai DPAO, 300 paragraphes plus loin (1 paragraphe reconnu
+  // sur 161). Après REANCRAGE paragraphes distinctifs du modèle manqués d'affilée, un paragraphe distinctif se cherche
+  // dans tout le reste du document ; la première reconnaissance remet le compte à zéro.
+  const REANCRAGE = 5;
+  let manques = 0;
   us.forEach((u, k) => {
     if (seulJeton(u)) return;   // un jeton seul : borné par ses voisins, étape 2
     const { re, jetons } = motifParagraphe(u.texte);
@@ -333,7 +340,9 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
     // absent du document, il se raccrochait au « Non applicable » d'un article plus loin et la lecture sautait tout ce
     // qui les séparait (CCAP-T, banc synthétique : les assurances de l'article 8 perdues).
     const repete = repeteAilleurs(u);
-    const borne = trouves.size ? Math.min(doc.length, curseur + (repete ? 3 : 60)) : doc.length;
+    const reancre = manques >= REANCRAGE && distinctif(u) && !repete;
+    const borne = trouves.size && !reancre ? Math.min(doc.length, curseur + (repete ? 3 : 60)) : doc.length;
+    const avant = trouves.size;
     for (let j = curseur; j < borne; j++) {
       let x = re.exec(doc[j]);
       // Un paragraphe dont un autre paragraphe du modèle a le même texte fixe (« {{B04-EP-03}} jours avant la date
@@ -371,6 +380,7 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
       });
       break;
     }
+    if (trouves.size > avant) manques = 0; else if (distinctif(u)) manques++;
   });
 
   // 2. Un paragraphe fait d'un seul jeton (`{{B02-AL-02}}`, `{{B07-DE-02}}`) : ce qui sépare ses voisins reconnus.
