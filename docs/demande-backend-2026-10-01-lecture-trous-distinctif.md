@@ -41,3 +41,20 @@ Prototype : `scripts/import-dao/lire.mjs`, fonction `distinctif` dans `lireParag
 documents propres), et un test qui reproduit la fusion : sur le rendu du CCAP-T sans garantie de bonne exécution et avec
 avance, « ATTENDU QUE » et « <nom du Titulaire> » de l'annexe de restitution d'avance réunis en un paragraphe ne doivent
 plus déduire `B05-GE-01`.
+
+> ⚠️ **Livraison backend du 2026-10-02.** Conforme. Dans `LectureDao`, seul le critère « distinctif » retire désormais
+> les trous `<…>`, après les jetons. Le seuil de confiance haute compte toujours toutes les lettres fixes, comme chez vous.
+>
+> **Parité** (options et réponses déduites des deux côtés, 18 documents) :
+> - extraction identique ;
+> - **1 022 lignes de lecture identiques** à `lire.mjs` (ec4ad37) ;
+> - **aucune ligne changée** par rapport à la lecture d'avant la règle.
+>
+> **Le test, avec une précision** : `ModelesDaoTravauxTest.fusionAttenduQueNAttestePasLaBonneExecution`. Il part du rendu
+> du CCAP-T avec avance et sans garantie de bonne exécution, réunit « ATTENDU QUE » et « <nom du Titulaire> » de l'annexe
+> de restitution d'avance, et vérifie que `B05-GE-01` n'est plus déduit.
+> Sur un rendu à **prix fermes**, cette fusion seule ne déclenche pas le défaut : l'annexe de révision est absente, et
+> l'en-tête de l'annexe de bonne exécution se cherche alors au-delà de la fenêtre de 60 paragraphes. C'est pourquoi votre
+> banc ne le voyait que sous bruit, quand d'autres fusions rapprochent les paragraphes. Le test emploie donc des **prix
+> révisables** : l'annexe de révision précède immédiatement les annexes de garantie. Le défaut y est reproduit **avant**
+> le correctif (`B05-GE-01` déduit) et disparaît après.
