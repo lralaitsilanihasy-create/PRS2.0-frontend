@@ -175,3 +175,14 @@ PRMP écrivent « Non applicable » par habitude.
 >     ariary (5 000 000 Ariary) » et « soit jusqu'au <validité + 30> ème jour » ; B2 imprime la date limite « … (heure
 >     locale) » et le montant ;
 >   - `ModelesCandidatRenduTest` : B1 par lot, sur le montant du lot.
+
+> ✅ **Contre-recette du front, 2026-10-02 (JAR de 19:39), fiche 31 révisée et validée en v2** (`B04-VO-01` = 120,
+> `B04-OV-02` = 27/05/2026 09:30, `B05-GQ-03` = 9 900 000) :
+> - **B1** : titre « B 1 – Modèle de garantie bancaire de soumission » ; « la somme de neuf millions neuf cent mille ariary
+>   (9 900 000 Ariary) » ; renvois « clause 6.7 (travaux) » et « clause 10.4 (travaux) » ; « soit jusqu'au 150 ème jour »
+>   (120 + 30) ;
+> - **B2** : « au plus tard le 27/05/2026 à 09 h 30 (heure locale) dont la validité expire le 24/09/2026 » ; « ladite
+>   caution s'élève à 9 900 000 Ariary (neuf millions neuf cent mille ariary) » ; « soit jusqu'au 150 ème jour » ;
+> - aucun pointillé et aucune mention « (fournitures) » dans les deux documents ; fichiers `B1_…_v2` et `B2_…_v2`.
+>
+> Demande close. Reste hors de ce lot : la clause du juriste sur la remise électronique de la garantie (`{{SI:B04-SE}}`).
