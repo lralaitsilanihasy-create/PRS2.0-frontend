@@ -67,3 +67,17 @@ Prototype : `scripts/import-dao/lire.mjs`, étape 1 de `lireParagraphes` (`REANC
 > **Test** : `ModelesDaoTravauxTest.sommaireAvantLeTexte`. Un rendu du CCAP-T est précédé d'un « sommaire » (ses trois
 > premières lignes) et de 80 paragraphes sans rapport. La lecture reconnaît **265** paragraphes sur 290, contre **2** sans
 > la règle ; ceux qui sont manqués avant le réancrage restent perdus, comme prévu.
+>
+> ✅ **Contre-recette du front, 2026-10-02 (JAR de 13:34).** `POST /api/fiches-marche/31/import` (fiche de travaux en
+> brouillon ; lecture seule, rien n'est écrit), sur les deux DAO réels :
+>
+> | DAO | DPAO-T | CCAP-T | AE-T |
+> |---|---|---|---|
+> | MTP routier | **8** / 161 | **65** / 415 | 34 / 293 |
+> | MEN travaux | 46 / 161 | **58** / 415 | 45 / 293 |
+>
+> Les comptes sont identiques au prototype. Les valeurs nouvelles sont bien servies :
+> - MTP : `B09-RP-03` = 7 et `B02-OT-01` = « l'entretien des routes à Madagascar », en confiance haute ; `B09-FM-01` = OUI ;
+> - MEN : `B08-MR-01` = OUI.
+>
+> Besoin clos.
