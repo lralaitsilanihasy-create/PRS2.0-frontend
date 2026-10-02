@@ -152,6 +152,13 @@
 .fm__etat--saisie { background: #fef3c7; color: #b45309; border-color: transparent; }
 .fm__ou { color: var(--n-400); }
 .fm__modele { grid-column: 1 / -1; margin: 0; background: var(--n-50); border-left: 3px solid #f5c542; padding: 0.35rem 0.6rem; border-radius: 0 6px 6px 0; }
+// 02/10 — la phrase du document qui imprime le champ ; même place que le texte type, filet neutre pour s'en distinguer
+.fm__gabarit { grid-column: 1 / -1; margin: 0; font-size: 0.78rem; color: var(--n-500); border-left: 3px solid var(--n-300); padding: 0.2rem 0.6rem;
+  p { margin: 0.1rem 0; }
+  b { color: var(--n-800); }
+}
+.fm__gabarit-doc { font-weight: 600; }
+.fm__gabarit-autres { font-style: italic; }
 .fm__attendus { margin: 0; font-size: 0.82rem; color: var(--n-500); font-style: italic; }
 .fm__ok { margin: 0; color: var(--success-text, #047857); font-weight: 600; }
 .fm__ctrl { margin: 0.35rem 0; font-size: 0.86rem; }

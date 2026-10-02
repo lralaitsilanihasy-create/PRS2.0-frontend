@@ -46,6 +46,7 @@ import {
   lotsDuChamp,
   cleHorsCellule,
   metaChamp,
+  extraitsGabarit,
   formatPiece,
   PieceGroupee,
   pieceOuvrable,
@@ -391,6 +392,14 @@ export class FicheMarcheEcran {
   /** Ce qui reste à dire sous un champ, une fois retiré ce que sa rubrique dit déjà. */
   meta(champ: ChampFiche, rubrique: RubriqueFiche): ReturnType<typeof metaChamp> {
     return metaChamp(champ, rubrique, this.typeMarche(), this.categorie());
+  }
+
+  /**
+   * ⚠️ 02/10 — la phrase du document où la saisie s'insère, la saisie en place (premier lot pour un champ par lot :
+   * la phrase est la même d'un lot à l'autre). Vide tant que le serveur ne sert pas `gabarits`.
+   */
+  gabarit(champ: ChampFiche): ReturnType<typeof extraitsGabarit> {
+    return extraitsGabarit(champ, this.valeurAffichee(champ, this.lotsDe(champ)[0]));
   }
   /** « DPAC · AE », « DPAO · AE · CCAP »… pour le rail ; vide si le référentiel n'est pas encore là. */
   readonly documentsCourt = computed(() => this.documentsDeLaFiche().join(' · '));

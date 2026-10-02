@@ -466,6 +466,20 @@
                           }
                         }
                         @if (c.texteType) { <p class="fm__modele"><strong>Texte type :</strong> {{ c.texteType }}</p> }
+                        <!-- ⚠️ 02/10 (fiche 40) — la phrase du document qui imprime ce champ, la saisie à sa place : on n'y
+                             recopie pas ce que le modèle écrit déjà. Rien tant que le serveur ne sert pas `gabarits`. -->
+                        @if (!figee() && !enLecture()) {
+                          @if (gabarit(c); as g) {
+                            @if (g.extraits.length) {
+                              <div class="fm__gabarit">
+                                @for (e of g.extraits; track $index) {
+                                  <p><span class="fm__gabarit-doc">Dans le {{ e.document }} :</span> « {{ e.avant }}<b>{{ e.valeur ?? '‹ votre saisie ›' }}</b>{{ e.apres }} »</p>
+                                }
+                                @if (g.autres) { <p class="fm__gabarit-autres">et {{ g.autres }} autre{{ g.autres > 1 ? 's' : '' }}</p> }
+                              </div>
+                            }
+                          }
+                        }
                       </div>
                     } @empty {
                       <p class="fm__attendus">{{ r.nbAttendu ?? 0 }} information(s) attendue(s) — référentiel à compléter depuis le fichier de correspondance.</p>

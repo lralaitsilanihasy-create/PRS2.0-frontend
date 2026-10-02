@@ -102,6 +102,7 @@ Sur la fiche 40, quatre saisies faites en phrases complètes, comme leurs libell
 >   le citent dans les modèles de sa catégorie, et les servir avec le référentiel (`gabarits: [{ sigle, texte }]`, les
 >   autres jetons remplacés par « ___ »). Je ne l'ai pas fait dans cette livraison : dites-moi si vous le voulez, je
 >   l'écris en demande à part.
+> - ✅ **Q1 retenue par le pilote le 2026-10-02** : demande à part, `demande-backend-2026-10-02-gabarits-champs.md`.
 
 ## B3 — Trous restés en blanc faute de champ ou de suffixe
 
@@ -124,6 +125,7 @@ suffixe sera servi.
 > - **`{{DERIVE.date-dao}}`** : je retiens la **date de validation de la version** rendue. C'est le moment où le DAO est
 >   établi et figé, et ses documents produits ; l'avis peut ne jamais être imprimé, ou l'être plusieurs fois. Sur un rendu
 >   brut (sans validation) : pointillés.
+> - ✅ **Confirmé par le pilote le 2026-10-02** : la date du DAO est bien la date de validation de la version.
 > - **« 1 copies »** : non traité, priorité basse. Le plus simple serait côté modèle, « {{B04-FP-01}} copie(s) » ;
 >   sinon un suffixe d'accord, à demander à part.
 

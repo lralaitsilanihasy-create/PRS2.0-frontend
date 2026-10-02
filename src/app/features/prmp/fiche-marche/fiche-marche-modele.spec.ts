@@ -1,5 +1,6 @@
 import { ChampFiche, DocumentFiche, ReferentielFiche } from '../../../models';
 import {
+  extraitsGabarit,
   BILAN_VIDE,
   aidesRevision,
   cleHorsCellule,
@@ -480,6 +481,41 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(cleHorsCellule(c, 'B05-GQ-03#1', true, 2)).toBe(false);
     expect(cleHorsCellule(c, 'B05-GQ-03', false, 0)).toBe(false);
     expect(cleHorsCellule({ parLot: false }, 'B02-OB-01', true, 2)).toBe(false);
+  });
+
+  it('gabarit : la saisie se lit à sa place dans la phrase du document (fiche 40, « au delà de Au-delà de 20 % »)', () => {
+    const champ = {
+      type: 'TEXTE_LONG' as const,
+      gabarits: [{ document: 'CCAP', avant: 'La diminution dans la masse des travaux au delà de ', apres: ' de la masse initiale des travaux ouvre droit à indemnisation.', suffixe: null }],
+    };
+    const { extraits, autres } = extraitsGabarit(champ, ' vingt pour cent (20 %) ');
+    expect(autres).toBe(0);
+    expect(extraits).toEqual([{ document: 'CCAP', avant: 'La diminution dans la masse des travaux au delà de ', valeur: 'vingt pour cent (20 %)',
+      apres: ' de la masse initiale des travaux ouvre droit à indemnisation.' }]);
+    // champ vide, ou jeton que le serveur met en forme (suffixe) : la place reste marquée, sans valeur
+    expect(extraitsGabarit(champ, '').extraits[0].valeur).toBeNull();
+    expect(extraitsGabarit({ ...champ, gabarits: [{ ...champ.gabarits[0], suffixe: 'parLot' }] }, '120 jours').extraits[0].valeur).toBeNull();
+  });
+
+  it('gabarit : rien sans gabarits servis, ni pour un champ non textuel, ni pour un paragraphe fait du seul jeton', () => {
+    const g = { document: 'CCAP', avant: 'avant ', apres: ' après', suffixe: null };
+    expect(extraitsGabarit({ type: 'TEXTE' }, 'x').extraits).toEqual([]);
+    expect(extraitsGabarit({ type: 'TEXTE', gabarits: null }, 'x').extraits).toEqual([]);
+    expect(extraitsGabarit({ type: 'POURCENTAGE', gabarits: [g] }, '5').extraits).toEqual([]);
+    expect(extraitsGabarit({ type: 'TEXTE', gabarits: [{ ...g, avant: ' ', apres: '' }] }, 'x').extraits).toEqual([]);
+  });
+
+  it('gabarit : deux extraits au plus, le reste compté ; texte long coupé sur un mot', () => {
+    const long = 'mot '.repeat(60);
+    const g = { document: 'AE', avant: long + 'fin ', apres: ' début ' + long, suffixe: null };
+    const { extraits, autres } = extraitsGabarit({ type: 'TEXTE', gabarits: [g, { ...g, document: 'CCAP' }, { ...g, document: 'DPAO' }] }, 'v');
+    expect(extraits.map((e) => e.document)).toEqual(['AE', 'CCAP']);
+    expect(autres).toBe(1);
+    expect(extraits[0].avant.startsWith('… ')).toBe(true);
+    expect(extraits[0].avant.endsWith('fin ')).toBe(true);
+    expect(extraits[0].apres.startsWith(' début')).toBe(true);
+    expect(extraits[0].apres.endsWith(' …')).toBe(true);
+    expect(extraits[0].avant.length).toBeLessThanOrEqual(92);
   });
 
 });

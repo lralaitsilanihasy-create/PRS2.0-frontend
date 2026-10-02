@@ -175,6 +175,22 @@ export interface ChampFiche {
    * l'enregistrement du bloc (`champsCalcules`).
    */
   valeurDefaut?: string | null;
+  /**
+   * ⚠️ Demandé le 02/10 (`demande-backend-2026-10-02-gabarits-champs.md`), pas encore servi — les phrases des modèles
+   * qui impriment ce champ : la PRMP voit où sa saisie s'insère (fiche 40 : « au delà de Au-delà de 20 %… »).
+   * Absent tant que le serveur ne le sert pas : rien ne s'affiche.
+   */
+  gabarits?: GabaritChamp[] | null;
+}
+
+/** Un paragraphe de modèle qui cite le champ : le texte avant et après son jeton (les autres jetons valent `___`). */
+export interface GabaritChamp {
+  /** Pièce, en code court : `DPAO`, `AE`, `CCAP`, `AVIS`… */
+  document: string;
+  avant: string;
+  apres: string;
+  /** Suffixe du jeton (`lettres`, `parLot`…) ; `null` = la valeur telle que saisie. */
+  suffixe: string | null;
 }
 
 /** `GET /api/champs-fiche-marche?typeMarche=` */

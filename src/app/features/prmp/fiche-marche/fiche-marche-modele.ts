@@ -1,4 +1,4 @@
-import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, PieceProduite, ReferentielFiche, RubriqueFiche, TypeChamp, TypeMarche } from '../../../models';
+import { BilanControles, BlocFiche, Cadrage, CategorieDao, ChampFiche, DocumentDao, DocumentFiche, GabaritChamp, PieceProduite, ReferentielFiche, RubriqueFiche, TypeChamp, TypeMarche } from '../../../models';
 
 /**
  * Règles PURES de la fiche DAO (esquisse « DAO par type de marché », 22/09) : questions de cadrage, conditions
@@ -476,6 +476,58 @@ export function aidesRevision(
  */
 export function cleHorsCellule(champ: Pick<ChampFiche, 'parLot'>, cle: string, saisieParLot: boolean, nbLots: number): boolean {
   return !cle.includes('#') && lotsDuChamp(champ, saisieParLot, nbLots)[0] !== null;
+}
+
+/** Un extrait de modèle prêt à afficher sous le champ : la saisie s'insère entre `avant` et `apres`. */
+export interface ExtraitGabarit {
+  document: string;
+  avant: string;
+  /** La saisie en cours, ou `null` : afficher « ‹ votre saisie › » (champ vide, ou valeur que le serveur met en forme). */
+  valeur: string | null;
+  apres: string;
+}
+
+/** Longueur gardée de part et d'autre de la saisie : assez pour lire la phrase, pas le paragraphe. */
+const LONGUEUR_GABARIT = 90;
+
+/**
+ * ⚠️ 02/10 (fiche 40, `demande-backend-2026-10-02-gabarits-champs.md`) — la phrase du document qui imprime un champ
+ * texte, la saisie à sa place : on ne recopie plus dans le champ la phrase que le modèle écrit déjà (« au delà de
+ * Au-delà de 20 %… »). Deux extraits au plus ; `autres` compte le reste. Les champs non textuels n'en ont pas besoin :
+ * leur valeur ne peut pas répéter la phrase.
+ */
+export function extraitsGabarit(
+  champ: Pick<ChampFiche, 'type' | 'gabarits'>,
+  valeur: string | null | undefined,
+  max = 2,
+): { extraits: ExtraitGabarit[]; autres: number } {
+  const tous: GabaritChamp[] = (champ.type === 'TEXTE' || champ.type === 'TEXTE_LONG') ? (champ.gabarits ?? []) : [];
+  // repli défensif : un paragraphe fait du seul jeton n'apprend rien (le serveur ne doit pas le servir)
+  const utiles = tous.filter((g) => (g.avant ?? '').trim() || (g.apres ?? '').trim());
+  const saisie = (valeur ?? '').trim();
+  const extraits = utiles.slice(0, max).map((g) => ({
+    document: g.document,
+    avant: couperAvant(g.avant ?? ''),
+    valeur: g.suffixe || !saisie ? null : saisie,
+    apres: couperApres(g.apres ?? ''),
+  }));
+  return { extraits, autres: Math.max(0, utiles.length - max) };
+}
+
+/** Garde la fin du texte qui précède la saisie, coupée sur une limite de mot. */
+function couperAvant(t: string): string {
+  if (t.length <= LONGUEUR_GABARIT) return t;
+  const fin = t.slice(-LONGUEUR_GABARIT);
+  const espace = fin.indexOf(' ');
+  return '…' + (espace >= 0 ? fin.slice(espace) : fin);
+}
+
+/** Garde le début du texte qui suit la saisie, coupé sur une limite de mot. */
+function couperApres(t: string): string {
+  if (t.length <= LONGUEUR_GABARIT) return t;
+  const debut = t.slice(0, LONGUEUR_GABARIT);
+  const espace = debut.lastIndexOf(' ');
+  return (espace > 0 ? debut.slice(0, espace) : debut) + ' …';
 }
 
 /**
