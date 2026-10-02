@@ -121,3 +121,29 @@ l'ouvrage ou de la PRMP ».
 le DAO du MEN, déclenche la rédaction `MOD`. Le CCAP imprime alors « Le Maître d'Ouvrage Délégué désigné… Non
 applicable ». C'est le jeu de recette qui est en cause, pas le serveur : le champ doit rester vide. À surveiller si les
 PRMP écrivent « Non applicable » par habitude.
+
+> ⚠️ **Livraison backend du 2026-10-02 (§B5).**
+> - **B5.1, conforme.** CCAP-T recopié, **573/573** sur le rendu brut du serveur. La rédaction `SANS-MOE` imprime
+>   « Le maître d'œuvre sera désigné par une décision du Maître de l'ouvrage ou de la PRMP », sans trou.
+> - **B5.2, conforme au contrat.** B1 et B2 sont recopiés dans `modeles/candidat/` et chargés avec les autres modèles. Pour une
+>   fiche de **travaux**, la garantie `C1` / `C2` est rendue sur B1 / B2 ; le type reste `C1` / `C2`, avec l'intitulé et le
+>   nom de fichier `B1` / `B2` du §B3. `verifier-armp.mjs B1 --docx=<rendu brut>` et `B2` donnent « aucun écart ». La
+>   recette d'intégration vérifie qu'une garantie de travaux dit « (travaux) » et jamais « (fournitures) ».
+> - **Parité de la lecture** sur 19 documents : extraction identique, **1 117 lignes** identiques.
+>
+> **Un défaut à corriger côté modèle : les jetons de B1 / B2 ne valent pas pour les travaux.** Comme C1 / C2, B1 et B2
+> citent `B05-GS-03` (montant, en chiffres et en lettres), `B05-GS-04` (validité de la garantie), `B04-LR-03` (date limite,
+> dans B2) et `B05-GS-10`. Ce sont des champs de la catégorie **FOURNITURES_SERVICES** (vérifié sur DBPRS20). Une fiche de
+> travaux ne les sert pas et ne les saisit jamais : le **montant**, la **validité** et la **date limite** de la garantie
+> s'impriment donc en **pointillés** sur B1 / B2. C'était déjà le cas de C1 / C2 sur la fiche 40 et la fiche 31 : ce n'est
+> pas une régression, mais votre rejeu ne le montrait pas.
+> Ce qu'il faudrait, dans `decrire-armp.mjs` pour B1 / B2 :
+> - `B05-GS-03` → `B05-GQ-03` (montant de la garantie des travaux, par lot : un document par lot, donc la valeur du lot) ;
+> - `B04-LR-03` → `B04-OV-02` (date limite des travaux, date-heure : sa date) ;
+> - `B05-GS-04` (validité de la garantie, en jours) : **les travaux n'ont pas de champ**. Le document type des travaux dit
+>   « [durée de validité des offres + 30 jours] » : je peux servir un dérivé `{{DERIVE.validite-garantie}}` =
+>   `B04-VO-01` + 30, si vous le voulez ;
+> - `B05-GS-10` (forme de remise électronique de la garantie) : pas d'équivalent travaux ; la section `B04-SE` reste à
+>   arbitrer.
+>
+> Dites-moi la voie retenue : je recopierai B1 / B2 rejetonnés et ajouterai le dérivé s'il le faut.
