@@ -28,7 +28,8 @@
   "GBE-CAUTION": "B05-GE-01 = OUI et B05-GE-03 contient caution",
   "GBE-CHEQUE": "B05-GE-01 = OUI et B05-GE-03 contient chèque",
   "LIBERATION-MOITIE": "B05-GE-01 = OUI et B05-GE-04 contient 50",
-  "LIBERATION-TOTALE": "B05-GE-01 = OUI et B05-GE-04 contient 100",
+  "LIBERATION-TOTALE": "B05-GE-01 = OUI et B05-GE-04 = Libérée à 100 % à la réception définitive",
+  "LIBERATION-PROVISOIRE": "B05-GE-01 = OUI et B05-GE-04 = Libérée à 100 % à la réception provisoire",
   "RETENUE-NON": "B05-RG-01 != OUI",
   "RETENUE-OUI": "B05-RG-01 = OUI",
   "RESTITUTION-NON": "B05-GA-01 != OUI",
@@ -419,7 +420,7 @@
   },
   {
    "type": "para",
-   "texte": "La maîtrise d'œuvre est assurée conformément au marché {{B02-MW-02}} en date <à préciser> par :"
+   "texte": "La maîtrise d'œuvre est assurée conformément au marché {{B02-MW-02}} par :"
   },
   {
    "type": "para",
@@ -635,7 +636,7 @@
   },
   {
    "type": "para",
-   "texte": "- soit de garantie bancaire conformément au modèle figurant en Annexe <numéro> au présent CCAP;"
+   "texte": "- soit de garantie bancaire conformément au modèle figurant en Annexe au présent CCAP;"
   },
   {
    "type": "para",
@@ -647,7 +648,7 @@
   },
   {
    "type": "para",
-   "texte": "- soit une caution personnelle et solidaire conformément au modèle figurant en Annexe <numéro> au présent CCAP;"
+   "texte": "- soit une caution personnelle et solidaire conformément au modèle figurant en Annexe au présent CCAP;"
   },
   {
    "type": "para",
@@ -688,6 +689,18 @@
   {
    "type": "para",
    "texte": "{{FINSI:LIBERATION-TOTALE}}"
+  },
+  {
+   "type": "para",
+   "texte": "{{SI:LIBERATION-PROVISOIRE}}"
+  },
+  {
+   "type": "para",
+   "texte": "La garantie de bonne exécution est libérée à 100% dans les 30 jours suivant la date de la réception provisoire"
+  },
+  {
+   "type": "para",
+   "texte": "{{FINSI:LIBERATION-PROVISOIRE}}"
   },
   {
    "type": "para",
@@ -1367,22 +1380,6 @@
   },
   {
    "type": "para",
-   "texte": "En vue de l’application éventuelle du deuxième des articles 18.1 et 19.2 du CCAG, le délai d’exécution des travaux sera prolongé d’un nombre de jours égal à celui pendant lequel un au moins des phénomènes naturels ci-après dépassera les intensités et durées limitées ci-après:"
-  },
-  {
-   "type": "para",
-   "texte": "précipitations journalières supérieures ou égales à <préciser le niveau>"
-  },
-  {
-   "type": "para",
-   "texte": "force du vent supérieure à <préciser le niveau>"
-  },
-  {
-   "type": "para",
-   "texte": "Phénomènes constatés à <préciser le lieu d’observation de ces phénomènes>"
-  },
-  {
-   "type": "para",
    "texte": "{{FINSI:FORCE-MAJEURE-OUI}}"
   },
   {
@@ -1403,7 +1400,7 @@
   },
   {
    "type": "para",
-   "texte": "Le délai d'exécution est fixé à {{B09-DL-01}} à compter du lendemain de la date de notification de l’ordre de service de commencer les travaux qui interviendra après la notification à l’Entrepreneur du marché approuvé"
+   "texte": "Le délai d'exécution est fixé à {{B09-DL-01.parLot}} à compter du lendemain de la date de notification de l’ordre de service de commencer les travaux qui interviendra après la notification à l’Entrepreneur du marché approuvé"
   },
   {
    "type": "sous_titre",
@@ -2432,6 +2429,12 @@
    "par": "{{B02-MW-02}}"
   },
   {
+   "ligne": "249.0.0",
+   "genre": "retire",
+   "source": "en date <à préciser>",
+   "par": ""
+  },
+  {
    "ligne": "250.0.0",
    "genre": "jeton",
    "source": "<Préciser le nom et les coordonnées du Maître d'œuvre >",
@@ -2484,6 +2487,18 @@
    "genre": "jeton",
    "source": "<insérer le pourcentage>",
    "par": "{{B05-GE-05.chiffres}} %"
+  },
+  {
+   "ligne": "329.0.0",
+   "genre": "retire",
+   "source": "<numéro>",
+   "par": ""
+  },
+  {
+   "ligne": "330.0.0",
+   "genre": "retire",
+   "source": "<numéro>",
+   "par": ""
   },
   {
    "ligne": "347.0.0",
@@ -2597,7 +2612,7 @@
    "ligne": "544.0.0",
    "genre": "jeton",
    "source": "<insérer délai>",
-   "par": "{{B09-DL-01}}"
+   "par": "{{B09-DL-01.parLot}}"
   },
   {
    "ligne": "555.0.0",
@@ -3548,6 +3563,26 @@
    "raison": "modalités d'exemple des acomptes sur approvisionnements : remplacées par la saisie B08-AP-02"
   },
   {
+   "ligne": "536.0.0",
+   "texte": "En vue de l’application éventuelle du deuxième des articles 18.1 et 19.2 du CCAG, le délai d’exécution des travaux sera prolongé d’un nombre de jours égal à celui pendant lequel un au moins des phénomènes naturels ci-après dépassera les intensités et durées limitées ci-après:",
+   "raison": "seconde liste de seuils d'intempéries (précipitations, vent, lieu d'observation) : même objet que la saisie B09-FM-02 — le DAO du MEN n'en garde qu'une"
+  },
+  {
+   "ligne": "536.0.1",
+   "texte": "précipitations journalières supérieures ou égales à <préciser le niveau>",
+   "raison": "seconde liste de seuils d'intempéries (précipitations, vent, lieu d'observation) : même objet que la saisie B09-FM-02 — le DAO du MEN n'en garde qu'une"
+  },
+  {
+   "ligne": "536.0.2",
+   "texte": "force du vent supérieure à <préciser le niveau>",
+   "raison": "seconde liste de seuils d'intempéries (précipitations, vent, lieu d'observation) : même objet que la saisie B09-FM-02 — le DAO du MEN n'en garde qu'une"
+  },
+  {
+   "ligne": "536.0.4",
+   "texte": "Phénomènes constatés à <préciser le lieu d’observation de ces phénomènes>",
+   "raison": "seconde liste de seuils d'intempéries (précipitations, vent, lieu d'observation) : même objet que la saisie B09-FM-02 — le DAO du MEN n'en garde qu'une"
+  },
+  {
    "ligne": "548.0.0",
    "texte": "Date limite de commencement des travaux <date>.",
    "raison": "rédaction « dates limites » : le délai d'exécution est retenu (plan du lot D4, Q9)"
@@ -3924,6 +3959,7 @@
   }
  ],
  "ajouts": [
+  "La garantie de bonne exécution est libérée à 100% dans les 30 jours suivant la date de la réception provisoire",
   "{{B04-CD-03}}",
   "{{B02-LV-02}}",
   "{{B09-AC-01}}",

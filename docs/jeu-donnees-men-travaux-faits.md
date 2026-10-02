@@ -231,3 +231,19 @@ venant du dossier.
 | `B08-MR-01` | Règlement en une fois retenu | non (décomptes mensuels) | contradiction §9.8 ; conforme au CCAG 11.1 |
 | `B09-VX-01` | Délai de visa retenu | 3 jours | contradiction §9.10 ; CCAP prioritaire sur les Spécifications |
 | `B08-RE-01` | Pourcentages par corps d'état | à saisir par le candidat | en blanc [R] |
+
+### 10.1 Imposé par la fiche à la recette du 2026-10-02 (fiche 40, ligne 303288 du plan 00004)
+
+La fiche refusait la validation sans ces cinq valeurs. Elles ont été saisies pour la recette : **ce ne sont pas des
+informations du dossier**, et la plupart ne devraient pas être exigées (`demande-backend-2026-10-02-recette-dao-men.md`, §B2).
+
+| code / contrôle | valeur saisie | [H] — constat |
+|---|---|---|
+| `B03-CQ-10` | 5 | durée des antécédents financiers : le MEN n'en demande pas, **et aucun modèle de travaux ne l'imprime** |
+| `B03-QT-07` | 247 500 000 Ar | chiffre d'affaires : le MEN n'en exige pas (ligne ci-dessus) ; il s'imprimait en critère a) du DPAO |
+| `B09-DL-04` | 2026-10-30 | date de réception de l'ouvrage : inconnaissable au stade du DAO ; l'AE-T ne l'imprime que renseignée |
+| `B10-PC-01` | renvoi à l'article 50 du CCAG | procédure contentieuse : le CCAP du MEN n'en dit rien de propre |
+| `DATES_ORDRE` | `B04-OV-02` = 2026-05-27 09:30 (au lieu du 2026-11-20 ci-dessus) | la date limite doit suivre le calendrier du plan de la ligne de recette, pas celui du MEN |
+
+Le plan n'a aucune ligne de travaux à deux lots : la ligne de recette en a cinq, et les lots 3 à 5 reprennent les
+valeurs du lot 2.

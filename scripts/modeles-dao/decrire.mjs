@@ -153,7 +153,7 @@ function traiter(trace, n, texte, ...remplacements) {
       // les exemples suivants en les adaptant ») devient un jeton : une durée figée, une liste de pièces imprimée d'office.
       // Garde-fou : la ligne de la source doit porter cette invitation (motif `adapt`), et rien d'autre qu'un jeton,
       // de la ponctuation ou une unité ne remplace le texte.
-      const mots = par.replace(/{{[^{}]+}}/g, ' ').split(/[^p{L}p{N}]+/u).map(reduire).filter(Boolean);
+      const mots = par.replace(/\{\{[^{}]+}}/g, ' ').split(/[^\p{L}\p{N}]+/u).map(reduire).filter(Boolean);
       const intrus = mots.filter((w) => !reduire(f).includes(w) && !UNITES.includes(w));
       if (!/{{[^{}]+}}/.test(par) || intrus.length) erreur(`une adaptation se fait par un jeton${intrus.length ? ` (mots étrangers : ${intrus.join(', ')})` : ''}`);
     }
@@ -2231,6 +2231,7 @@ function dpaoTravaux() {
     ONG: 'B03-QT-05 = OUI',
     QUALIFICATIONS: 'B03-QT-06 renseigne',
     'PERSONNEL-CLE': 'B03-QT-13 renseigne',
+    'CHIFFRE-AFFAIRES': 'B03-QT-07 renseigne',
     LIQUIDITE: 'B03-QT-14 renseigne',
     PREFERENCE: 'B06-PN-01 = OUI',
     'SANS-PREFERENCE': 'B06-PN-01 != OUI',
@@ -2355,8 +2356,8 @@ function dpaoTravaux() {
   const qualifications = cel(
     x(r63q, 'Qualifications particulières requises'),
     x(r63q, 'Aux fins du présent Marché', [' <choisir parmi les exemples suivants en les adaptant si besoin est>', '', 'retire']),
-    x(r63q, 'a) avoir réalisé un chiffre'),
-    xj(r63q, '<insérer un montant', 0, '{{B03-QT-07}}'),
+    // 02/10 (recette du DAO du MEN) — le MEN n'exige aucun chiffre d'affaires : le critère a) ne s'imprime que saisi.
+    SIc('CHIFFRE-AFFAIRES', x(r63q, 'a) avoir réalisé un chiffre'), xj(r63q, '<insérer un montant', 0, '{{B03-QT-07}}')),
     // 01/10 — « au cours des trois (5) dernières années » : coquille du document type, et durée que l'acheteur adapte
     // (cinq ans au MEN) → B03-QT-12, la même période qu'au 4° de la clause 6.3.
     x(r63q, 'b) avoir réalisé avec succès', ['trois (5) dernières années', '{{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années', 'adapte']),
@@ -2689,7 +2690,10 @@ function ccapTravaux() {
     'GBE-CAUTION': 'B05-GE-01 = OUI et B05-GE-03 contient caution',
     'GBE-CHEQUE': 'B05-GE-01 = OUI et B05-GE-03 contient chèque',
     'LIBERATION-MOITIE': 'B05-GE-01 = OUI et B05-GE-04 contient 50',
-    'LIBERATION-TOTALE': 'B05-GE-01 = OUI et B05-GE-04 contient 100',
+    // 02/10 (recette du DAO du MEN) — « contient 100 » attrapait les DEUX options à 100 % : la libération à la réception
+    // provisoire imprimait « réception définitive ». Chaque rédaction suit désormais son option entière.
+    'LIBERATION-TOTALE': 'B05-GE-01 = OUI et B05-GE-04 = Libérée à 100 % à la réception définitive',
+    'LIBERATION-PROVISOIRE': 'B05-GE-01 = OUI et B05-GE-04 = Libérée à 100 % à la réception provisoire',
     'RETENUE-NON': 'B05-RG-01 != OUI',
     'RETENUE-OUI': 'B05-RG-01 = OUI',
     'RESTITUTION-NON': 'B05-GA-01 != OUI',
@@ -2739,7 +2743,10 @@ function ccapTravaux() {
     // reçoit les plans joints au dossier (B04-CD-03, facultatif depuis le 30/09), s'ils sont renseignés.
     PLANS: 'B04-CD-03 renseigne',
   };
-  const ajouts = ['{{B04-CD-03}}', '{{B02-LV-02}}', '{{B09-AC-01}}', '{{B09-AC-02}}', '{{B09-AC-03}}', '{{B09-CH-01}}', '{{B09-CH-02}}', '{{B09-CH-03}}', '{{B09-CH-04}}',
+  // 02/10 — le référentiel offre « Libérée à 100 % à la réception provisoire » (B05-GE-04), le modèle n'a de rédaction
+  // que pour la réception définitive : celle-ci, calquée mot pour mot sur la sienne (DAO du MEN, CCAP art. 7.1).
+  const LIBERATION_PROVISOIRE = 'La garantie de bonne exécution est libérée à 100% dans les 30 jours suivant la date de la réception provisoire';
+  const ajouts = [LIBERATION_PROVISOIRE, '{{B04-CD-03}}', '{{B02-LV-02}}', '{{B09-AC-01}}', '{{B09-AC-02}}', '{{B09-AC-03}}', '{{B09-CH-01}}', '{{B09-CH-02}}', '{{B09-CH-03}}', '{{B09-CH-04}}',
     '{{B09-CH-05}}', '{{B08-AP-02}}', '{{B09-RP-04}}', '{{B10-PC-01}}', '{{B10-DR-01}}'];
 
   // ── Ce qui ne s'imprime pas
@@ -2767,6 +2774,8 @@ function ccapTravaux() {
   retirer(d, "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03", (l) => l.ligne === assurances);
   retirer(d, "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05", (l) => l.ligne === sujetions);
   retirer(d, "modalités d'exemple des acomptes sur approvisionnements : remplacées par la saisie B08-AP-02", 'A l’appui de tout projet de décompte', 'Les matériaux ne peuvent être pris en compte', 'Le montant pris en compte dans le projet de décompte');
+  retirer(d, "seconde liste de seuils d'intempéries (précipitations, vent, lieu d'observation) : même objet que la saisie B09-FM-02 — le DAO du MEN n'en garde qu'une",
+    'En vue de l’application éventuelle du deuxième des articles 18.1', 'précipitations journalières supérieures', 'force du vent supérieure', 'Phénomènes constatés à');
   retirer(d, "rédaction « dates limites » : le délai d'exécution est retenu (plan du lot D4, Q9)", 'Date limite de commencement', "Date limite d'achèvement");
   retirer(d, "clause d'arbitrage d'exemple (CNUDCI, « à valider ») : remplacée par la saisie B10-PC-01", 'Tous litige', 'Le tribunal arbitral sera composé', "L'autorité de nomination sera", "A défaut d'accord des Parties");
   retirer(d, 'notes aux utilisateurs pour préparer le bordereau et le détail quantitatif (pièces de l’acheteur)', (l) => l.ligne >= repere('Notes aux utilisateurs relatives à la préparation du Bordereau des prix et du Détail quantitatif et estimatif') && l.ligne < repere('BORDEREAU DES PRIX'));
@@ -2806,7 +2815,8 @@ function ccapTravaux() {
     ...SI('MOD', E('1.2.2.', '1.2.3.', [['<Préciser les nom et coordonnées>', ['<Préciser les nom et coordonnées>', '{{B02-MW-04}}', 'jeton']]])),
     ...E('1.2.3.', "La maîtrise d'œuvre est assurée"),
     ...SI('MOE',
-      P(x("La maîtrise d'œuvre est assurée", ["<indiquer les référence du lien contractuel entre le Maître de l'ouvrage et le Maître d'œuvre >", '{{B02-MW-02}}', 'jeton'])),
+      // 02/10 — « en date <à préciser> » s'imprimait tel quel : la date fait partie des références saisies dans B02-MW-02.
+      P(x("La maîtrise d'œuvre est assurée", ["<indiquer les référence du lien contractuel entre le Maître de l'ouvrage et le Maître d'œuvre >", '{{B02-MW-02}}', 'jeton'], [' en date <à préciser>', '', 'retire'])),
       P(x("<Préciser le nom et les coordonnées du Maître d'œuvre", ["<Préciser le nom et les coordonnées du Maître d'œuvre >", '{{B02-MW-01}}', 'jeton']))),
     ...SI('SANS-MOE', P(x("Les tâches du maître d'œuvre sont assurées")), P(x('Dans ce cas, le maître d’œuvre sera désigné'))),
     // Articles 2 à 5
@@ -2837,11 +2847,14 @@ function ccapTravaux() {
         P(x('=et')),
         P(xr('<insérer le pourcentage>', 1, ['<insérer le pourcentage>', '{{B05-GE-05.chiffres}} %', 'jeton']))),
       P(x('La garantie de bonne exécution devra être fournie')),
-      SI('GBE-BANCAIRE', P(x('- soit de garantie bancaire'))),
-      SI('GBE-CAUTION', P(x('- soit une caution personnelle'))),
+      // « Annexe <numéro> » : les annexes du CCAP ne sont pas numérotées par le modèle ; le DAO du MEN écrit « conformément
+      // aux modèles figurant dans les Annexes ».
+      SI('GBE-BANCAIRE', P(x('- soit de garantie bancaire', ['<numéro> ', '', 'retire']))),
+      SI('GBE-CAUTION', P(x('- soit une caution personnelle', ['<numéro> ', '', 'retire']))),
       SI('GBE-CHEQUE', P(x('- soit un chèque de banque'))),
       SI('LIBERATION-MOITIE', P(x('La garantie de bonne exécution est libérée de 50%'))),
-      SI('LIBERATION-TOTALE', P(x('La garantie de bonne exécution est libérée à 100%')))),
+      SI('LIBERATION-TOTALE', P(x('La garantie de bonne exécution est libérée à 100%'))),
+      SI('LIBERATION-PROVISOIRE', P(LIBERATION_PROVISOIRE))),
     ...E('7.2.', '=Non applicable'),
     ...SI('RETENUE-NON', NA(0)),
     ...SI('RETENUE-OUI', P(x('Une retenue de garantie de', ['<maximum 5 %>', '{{B05-RG-02.chiffres}} %', 'jeton'], ['<ajouter le cas échéant:> ', '', 'retire']))),
@@ -2914,11 +2927,11 @@ function ccapTravaux() {
       ['Le changement des quantités de certaines natures', ['<pourcentage inférieur à 30%>', '{{B09-MA-04}}', 'jeton']]]),
     // Article 20 — force majeure
     ...E('Article 20 -', 'Constitueront des cas de force majeure'),
-    ...SI('FORCE-MAJEURE-OUI', P(x('Constitueront des cas de force majeure')), P(xj('<à préciser, par exemple', '{{B09-FM-02}}')), ...E('En vue de l’application éventuelle', '=Non applicable')),
+    ...SI('FORCE-MAJEURE-OUI', P(x('Constitueront des cas de force majeure')), P(xj('<à préciser, par exemple', '{{B09-FM-02}}'))),
     ...SI('FORCE-MAJEURE-NON', NA(7)),
     // Articles 21 et 22 — délais
     ...E('Article 21 -', 'Article 23 -', [
-      ["Le délai d'exécution est fixé à", ['<insérer délai>', '{{B09-DL-01}}', 'jeton']],
+      ["Le délai d'exécution est fixé à", ['<insérer délai>', '{{B09-DL-01.parLot}}', 'jeton']],   // 02/10 : saisi par lot, le CCAP est commun
       ['La PRMP peut notifier une prolongation', ['<indiquer le nombre de jours>', '{{B09-MD-01}}', 'jeton']],
       ["Une prolongation des délais n'est justifiée", ['<nombre>', '{{B09-MD-02}}', 'jeton']]]),
     // Article 23 — pénalités (question `penalites` du cadrage)
