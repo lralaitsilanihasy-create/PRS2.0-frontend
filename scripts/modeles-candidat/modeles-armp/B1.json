@@ -14,7 +14,7 @@
   },
   {
    "type": "para",
-   "texte": "EN CONSEQUENCE, Nous, [nom de la banque], ayant notre siège à [adresse du siège] (ci-après dénommée “le Garant”), avons accepté de nous porter garant du Candidat pour la somme de {{B05-GS-03.lettres}} ({{B05-GS-03.chiffres}} Ariary), que nous nous engageons à régler intégralement à l’Autorité Contractante dans les conditions suivantes :"
+   "texte": "EN CONSEQUENCE, Nous, [nom de la banque], ayant notre siège à [adresse du siège] (ci-après dénommée “le Garant”), avons accepté de nous porter garant du Candidat pour la somme de {{B05-GQ-03.lettres}} ({{B05-GQ-03.chiffres}} Ariary), que nous nous engageons à régler intégralement à l’Autorité Contractante dans les conditions suivantes :"
   },
   {
    "type": "para",
@@ -42,7 +42,7 @@
   },
   {
    "type": "para",
-   "texte": "La présente garantie demeurera valable jusqu’au trentième (30ème) jour suivant l’expiration de la période de validité des offres, soit jusqu’au {{B05-GS-04}} ème jour à compter de la date limite fixée pour la remise des offres. Cette date peut être reportée par l'Autorité Contractante par notification écrite au Candidat et au Garant. Toute demande relative à cette garantie devra parvenir au Garant au plus tard à la date d’expiration faute de quoi la présente garantie expire de plein droit."
+   "texte": "La présente garantie demeurera valable jusqu’au trentième (30ème) jour suivant l’expiration de la période de validité des offres, soit jusqu’au {{DERIVE.validite-garantie}} ème jour à compter de la date limite fixée pour la remise des offres. Cette date peut être reportée par l'Autorité Contractante par notification écrite au Candidat et au Garant. Toute demande relative à cette garantie devra parvenir au Garant au plus tard à la date d’expiration faute de quoi la présente garantie expire de plein droit."
   },
   {
    "type": "para",
@@ -50,7 +50,7 @@
   },
   {
    "type": "para",
-   "texte": "[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie ({{B05-GS-10}}) et code de vérification]]"
+   "texte": "[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie et code de vérification]]"
   },
   {
    "type": "para",
@@ -88,11 +88,11 @@
   },
   {
    "source": "[montant en lettres et en chiffres]",
-   "jeton": "{{B05-GS-03.lettres}} ({{B05-GS-03.chiffres}} Ariary)"
+   "jeton": "{{B05-GQ-03.lettres}} ({{B05-GQ-03.chiffres}} Ariary)"
   },
   {
    "source": "[durée de validité des offres + 30 jours]",
-   "jeton": "{{B05-GS-04}}"
+   "jeton": "{{DERIVE.validite-garantie}}"
   }
  ],
  "ajouts": [
@@ -101,6 +101,6 @@
   "(c) ",
   "{{SI:B04-SE}}",
   "{{FINSI:B04-SE}}",
-  "[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie ({{B05-GS-10}}) et code de vérification]]"
+  "[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie et code de vérification]]"
  ]
 }

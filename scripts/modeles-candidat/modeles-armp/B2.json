@@ -14,11 +14,11 @@
   },
   {
    "type": "para",
-   "texte": "déclarons nous porter caution personnelle et solidaire de [indiquer le nom et l’adresse complète du Candidat], ci-après dénommé « le Candidat », pour le montant de la caution à laquelle le Candidat est assujetti au titre de la remise d’une offre au plus tard le {{B04-LR-03}} dont la validité expire le {{DERIVE.fin-validite-offre}} pour l’exécution d’un marché portant sur {{B02-OB-03}} — {{B02-OB-01}}, ci-après dénommée « l’Offre » pour {{B01-AC-01}}, {{B01-AC-02}}, ci-après dénommée « le Bénéficiaire »,"
+   "texte": "déclarons nous porter caution personnelle et solidaire de [indiquer le nom et l’adresse complète du Candidat], ci-après dénommé « le Candidat », pour le montant de la caution à laquelle le Candidat est assujetti au titre de la remise d’une offre au plus tard le {{B04-OV-02.heureLocale}} dont la validité expire le {{DERIVE.fin-validite-offre}} pour l’exécution d’un marché portant sur {{B02-OB-03}} — {{B02-OB-01}}, ci-après dénommée « l’Offre » pour {{B01-AC-01}}, {{B01-AC-02}}, ci-après dénommée « le Bénéficiaire »,"
   },
   {
    "type": "para",
-   "texte": "ladite caution s’élève à {{B05-GS-03}} ({{B05-GS-03.lettres}})."
+   "texte": "ladite caution s’élève à {{B05-GQ-03}} ({{B05-GQ-03.lettres}})."
   },
   {
    "type": "para",
@@ -46,7 +46,7 @@
   },
   {
    "type": "para",
-   "texte": "Le présent engagement expire le trentième (30ème) jour suivant l’expiration de la période de validité des offres telle que stipulée ci-dessus, soit jusqu’au {{B05-GS-04}} ème jour à compter de la date limite fixée pour la remise des offres. Cette date peut être reportée par l’Autorité Contractante par notification écrite au Candidat et à nous même. Toute demande relative au présent engagement devra nous parvenir au plus tard à la date d’expiration, faute de quoi le présent engagement expire de plein droit."
+   "texte": "Le présent engagement expire le trentième (30ème) jour suivant l’expiration de la période de validité des offres telle que stipulée ci-dessus, soit jusqu’au {{DERIVE.validite-garantie}} ème jour à compter de la date limite fixée pour la remise des offres. Cette date peut être reportée par l’Autorité Contractante par notification écrite au Candidat et à nous même. Toute demande relative au présent engagement devra nous parvenir au plus tard à la date d’expiration, faute de quoi le présent engagement expire de plein droit."
   },
   {
    "type": "para",
@@ -54,7 +54,7 @@
   },
   {
    "type": "para",
-   "texte": "[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie ({{B05-GS-10}}) et code de vérification]]"
+   "texte": "[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie et code de vérification]]"
   },
   {
    "type": "para",
@@ -88,7 +88,7 @@
  "trace": [
   {
    "source": "[date fixée pour la remise des offres]",
-   "jeton": "{{B04-LR-03}}"
+   "jeton": "{{B04-OV-02.heureLocale}}"
   },
   {
    "source": "[date d’expiration de la validité de l’offre]",
@@ -104,11 +104,11 @@
   },
   {
    "source": "[insérer le montant en chiffres et en lettres de la garantie de soumission]",
-   "jeton": "{{B05-GS-03}} ({{B05-GS-03.lettres}})"
+   "jeton": "{{B05-GQ-03}} ({{B05-GQ-03.lettres}})"
   },
   {
    "source": "[durée de validité des offres + 30 jours]",
-   "jeton": "{{B05-GS-04}}"
+   "jeton": "{{DERIVE.validite-garantie}}"
   },
   {
    "source": "Adresse)",
@@ -121,6 +121,6 @@
   "c) ",
   "{{SI:B04-SE}}",
   "{{FINSI:B04-SE}}",
-  "[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie ({{B05-GS-10}}) et code de vérification]]"
+  "[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie et code de vérification]]"
  ]
 }

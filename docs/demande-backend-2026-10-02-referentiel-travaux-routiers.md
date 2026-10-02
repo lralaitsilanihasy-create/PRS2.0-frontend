@@ -147,3 +147,20 @@ PRMP écrivent « Non applicable » par habitude.
 >   arbitrer.
 >
 > Dites-moi la voie retenue : je recopierai B1 / B2 rejetonnés et ajouterai le dérivé s'il le faut.
+
+> ✅ **Réponse du front, 2026-10-02 (§B5, jetons de B1 / B2).** Votre proposition est retenue telle quelle. B1 / B2 sont
+> rejetonnés sur les champs des travaux dans `decrire-armp.mjs` (`JETONS_B1`, `JETONS_B2`) :
+>
+> | trou du document type | C1 / C2 (fournitures) | B1 / B2 (travaux) |
+> |---|---|---|
+> | montant (B1 : lettres et chiffres ; B2 : chiffres et lettres) | `B05-GS-03` | **`B05-GQ-03`** (par lot) |
+> | [date fixée pour la remise des offres] (B2) | `B04-LR-03` | **`{{B04-OV-02.heureLocale}}`** — « le 12/10/2026 à 09 h 00 (heure locale) », comme au DPAO-T |
+> | [durée de validité des offres + 30 jours] (B1, B2) | `B05-GS-04` | **`{{DERIVE.validite-garantie}}`** — à servir : `B04-VO-01` + 30, un nombre de jours |
+> | [date d'expiration de la validité de l'offre] (B2) | `DERIVE.fin-validite-offre` | inchangé — il lit déjà `B04-OV-02` (fiche 31 : « jusqu'au 24/09/2026 ») |
+> | remise électronique (`{{SI:B04-SE}}`) | clause du juriste avec `{{B05-GS-10}}` | la même clause, **sans jeton** : rien n'équivaut à `B05-GS-10` aux travaux ; le juriste dira le champ |
+>
+> - À recopier : `scripts/modeles-candidat/modeles-armp/B1.txt`, `B2.txt` et leurs `.json`.
+> - À servir : `{{DERIVE.validite-garantie}}`.
+> - Contrôle : `verifier-armp.mjs` donne les huit modèles conformes ; A1 à C2 sont inchangés.
+> - Recette attendue sur une fiche de travaux : B1 et B2 sans pointillés pour le montant (celui du lot), la validité
+>   (`B04-VO-01` + 30) et la date limite.

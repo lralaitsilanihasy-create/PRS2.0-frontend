@@ -328,7 +328,7 @@ const blocsA4 = jetonnerBlocs([
 // le dernier paragraphe les cite « aux paragraphes a), b) et c) ci-dessus ». Decalque n'a pas de listes : le label
 // est écrit dans le texte, et déclaré comme AJOUT au comparateur.
 // B1 (travaux, 02/10) a la même structure, lue dans l'autre document type : `garantieBancaire` sert aux deux.
-const garantieBancaire = (c1, trace) => jetonnerBlocs([
+const garantieBancaire = (c1, trace, jetons = JETONS_C1, clause = CLAUSE_SE) => jetonnerBlocs([
   P(celui(c1, 'ATTENDU QUE')),
   P(celui(c1, 'EN CONSEQUENCE')),
   P('(a) ' + celui(c1, 'Si le Candidat retire')),
@@ -338,13 +338,13 @@ const garantieBancaire = (c1, trace) => jetonnerBlocs([
   P(celui(c1, '(c2)')),
   P(celui(c1, 'Nous, Garant')),
   P(celui(c1, 'La présente garantie')),
-  ...sectionSe(P(CLAUSE_SE)),
+  ...sectionSe(P(clause)),
   P(celui(c1, 'SIGNATURE')),
   P(celui(c1, 'Nom de la Banque')),
   P(celui(c1, 'Adresse')),
   P(celui(c1, 'Date')),
   P(celui(c1, 'Cachet')),
-], JETONS_C1, trace);
+], jetons, trace);
 const c1 = utiles(section(SRC, 'C 1 –', 'C 2 –'));
 const traceC1 = [];
 const blocsC1 = garantieBancaire(c1, traceC1);
@@ -352,7 +352,7 @@ const blocsC1 = garantieBancaire(c1, traceC1);
 // ══ C2 — caution personnelle et solidaire ═════════════════════════════════════════════════════
 // Titre sur deux lignes dans le gabarit, recollé. Les trois cas sont une liste « a) b) c) » (lowerLetter « %1) »).
 // B2 (travaux) : même structure, `caution` sert aux deux.
-const caution = (c2, trace, jetons = JETONS_C2) => jetonnerBlocs([
+const caution = (c2, trace, jetons = JETONS_C2, clause = CLAUSE_SE) => jetonnerBlocs([
   P(celui(c2, 'Nous soussignés')),
   P(celui(c2, 'déclarons')),
   P(celui(c2, 'ladite caution')),
@@ -363,7 +363,7 @@ const caution = (c2, trace, jetons = JETONS_C2) => jetonnerBlocs([
   P(celui(c2, '- il', 0)),
   P(celui(c2, '- il', 1)),
   P(celui(c2, 'Le présent engagement')),
-  ...sectionSe(P(CLAUSE_SE)),
+  ...sectionSe(P(clause)),
   P(celui(c2, 'Fait à')),
   P(celui(c2, 'SIGNATURE')),
   P(celui(c2, 'Nom de la Banque')),
@@ -378,17 +378,38 @@ const blocsC2 = caution(c2, traceC2);
 // ══ B1, B2 — les mêmes garanties au document type des TRAVAUX (02/10) ═══════════════════════
 // Demande backend du 02/10 (référentiel des travaux, §B3) : une fiche de travaux imprimait C1 / C2, dont le titre
 // est « C » et dont les renvois disent « clause 6.8 (fournitures) » ; le document type des travaux dit « B » et
-// « clause 6.7 (travaux) ». Mêmes jetons, mêmes ajouts. La section B2 court jusqu'à la fin du document.
+// « clause 6.7 (travaux) ». Mêmes ajouts ; la section B2 court jusqu'à la fin du document.
+// ⚠️ Jetons des TRAVAUX (livraison backend §B5, 02/10) : les champs B05-GS-* et B04-LR-03 de C1 / C2 sont des
+// fournitures, qu'une fiche de travaux ne sert pas (montant, validité et date limite imprimés en pointillés). Ici :
+//   montant → B05-GQ-03 (par lot : un document par lot) · date limite → B04-OV-02 (« 12/10/2026 à 09 h 00 (heure
+//   locale) », comme le DPAO-T) · validité de la garantie → DERIVE.validite-garantie (B04-VO-01 + 30, servi par le
+//   serveur) · remise électronique : la clause du juriste reste, sans le jeton B05-GS-10, qui n'a pas d'équivalent.
 const SRC_T = lireSource('travaux');
+const JETONS_B1 = [
+  ['[titre du Marché]', AO],
+  ["[Nom de l'Organisme ayant lancé l'Appel d'offres]", '{{B01-AC-01}}'],
+  ['[montant en lettres et en chiffres]', '{{B05-GQ-03.lettres}} ({{B05-GQ-03.chiffres}} Ariary)'],
+  ['[durée de validité des offres + 30 jours]', '{{DERIVE.validite-garantie}}'],
+];
+// B2 a de plus que C2 la date d'expiration en jours (« soit jusqu'au [durée de validité des offres + 30 jours] ème
+// jour ») ; et une coquille du document type, « Adresse) », corrigée et tracée.
+const JETONS_B2 = [
+  ['[date fixée pour la remise des offres]', '{{B04-OV-02.heureLocale}}'],
+  ["[date d'expiration de la validité de l'offre]", '{{DERIVE.fin-validite-offre}}'],
+  ["[intitulé ou objet résumé du marché et références de l'appel d'offres]", AO],
+  ["[dénomination et adresse complète de l'Autorité contractante]", '{{B01-AC-01}}, {{B01-AC-02}}'],
+  ['[insérer le montant en chiffres et en lettres de la garantie de soumission]', '{{B05-GQ-03}} ({{B05-GQ-03.lettres}})'],
+  ['[durée de validité des offres + 30 jours]', '{{DERIVE.validite-garantie}}'],
+  ['Adresse)', 'Adresse'],
+];
+const CLAUSE_SE_T = '[[CLAUSE À FOURNIR PAR LE JURISTE : remise électronique — voie de remise de la garantie et code de vérification]]';
+const AJOUTS_SE_T = ['{{SI:B04-SE}}', '{{FINSI:B04-SE}}', CLAUSE_SE_T];
 const b1 = utiles(section(SRC_T, 'B 1 –', 'B 2 –'));
 const traceB1 = [];
-const blocsB1 = garantieBancaire(b1, traceB1);
+const blocsB1 = garantieBancaire(b1, traceB1, JETONS_B1, CLAUSE_SE_T);
 const b2 = utiles(section(SRC_T, 'B 2 –'));
 const traceB2 = [];
-// B2 a de plus que C2 la date d'expiration en jours (« soit jusqu'au [durée de validité des offres + 30 jours] ème
-// jour »), jetonnée comme dans C1 ; et une coquille du document type, « Adresse) », corrigée et tracée.
-const JETONS_B2 = [...JETONS_C2, ['[durée de validité des offres + 30 jours]', '{{B05-GS-04}}'], ['Adresse)', 'Adresse']];
-const blocsB2 = caution(b2, traceB2, JETONS_B2);
+const blocsB2 = caution(b2, traceB2, JETONS_B2, CLAUSE_SE_T);
 
 // ══ Sortie ═══════════════════════════════════════════════════════════════════════════════════
 const modeles = [
@@ -398,8 +419,8 @@ const modeles = [
   { fichier: 'A4.docx', sigle: 'A4', section: ['A4', 'B. – Modèle'], titre: titreA4, blocs: blocsA4, trace: traceA4, ajouts: [] },
   { fichier: 'C1.docx', sigle: 'C1', section: ['C 1 –', 'C 2 –'], titre: celui(c1, 'C 1'), blocs: blocsC1, trace: traceC1, ajouts: ['(a) ', '(b) ', '(c) ', ...AJOUTS_SE] },
   { fichier: 'C2.docx', sigle: 'C2', section: ['C 2 –', null], titre: `${celui(c2, 'C 2')} ${celui(c2, 'de soumission')}`, blocs: blocsC2, trace: traceC2, ajouts: ['a) ', 'b) ', 'c) ', ...AJOUTS_SE] },
-  { fichier: 'B1.docx', sigle: 'B1', source: 'travaux', section: ['B 1 –', 'B 2 –'], titre: celui(b1, 'B 1'), blocs: blocsB1, trace: traceB1, ajouts: ['(a) ', '(b) ', '(c) ', ...AJOUTS_SE] },
-  { fichier: 'B2.docx', sigle: 'B2', source: 'travaux', section: ['B 2 –', null], titre: `${celui(b2, 'B 2')} ${celui(b2, 'de soumission')}`, blocs: blocsB2, trace: traceB2, ajouts: ['a) ', 'b) ', 'c) ', ...AJOUTS_SE] },
+  { fichier: 'B1.docx', sigle: 'B1', source: 'travaux', section: ['B 1 –', 'B 2 –'], titre: celui(b1, 'B 1'), blocs: blocsB1, trace: traceB1, ajouts: ['(a) ', '(b) ', '(c) ', ...AJOUTS_SE_T] },
+  { fichier: 'B2.docx', sigle: 'B2', source: 'travaux', section: ['B 2 –', null], titre: `${celui(b2, 'B 2')} ${celui(b2, 'de soumission')}`, blocs: blocsB2, trace: traceB2, ajouts: ['a) ', 'b) ', 'c) ', ...AJOUTS_SE_T] },
 ];
 
 fs.mkdirSync('modeles-armp', { recursive: true });

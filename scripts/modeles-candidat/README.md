@@ -89,8 +89,14 @@ for m in B1 B2; do java -cp "$(cat cp.txt);out" Decalque modeles-armp/$m.txt mod
 node verifier-armp.mjs B1 B2
 ```
 
-Ce que B2 a de plus que C2 : « soit jusqu'au [durée de validité des offres + 30 jours] ème jour », jetonné
-`{{B05-GS-04}}` comme dans C1, et une coquille du document type, « Adresse) », corrigée (substitution tracée).
+Ce que B2 a de plus que C2 : « soit jusqu'au [durée de validité des offres + 30 jours] ème jour », et une coquille du
+document type, « Adresse) », corrigée (substitution tracée).
+
+**Les jetons de B1 / B2 sont ceux des travaux** (`JETONS_B1`, `JETONS_B2`) : les champs `B05-GS-*` et `B04-LR-03` de
+C1 / C2 appartiennent aux fournitures, et une fiche de travaux ne les sert pas. Montant : `B05-GQ-03` (par lot). Date
+limite : `{{B04-OV-02.heureLocale}}`, comme au DPAO-T. Validité de la garantie : `{{DERIVE.validite-garantie}}`
+(`B04-VO-01` + 30 jours, calculé par le serveur). La clause du juriste sur la remise électronique reste, sans le jeton
+`B05-GS-10`, qui n'a pas d'équivalent aux travaux (`CLAUSE_SE_T`).
 
 | ce qui change | par quoi |
 |---|---|
