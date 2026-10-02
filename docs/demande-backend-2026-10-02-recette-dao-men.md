@@ -42,6 +42,19 @@ Banc de lecture, 13 passes : Q10 tenu, **0** réponse déduite fausse. La lectur
 | CCAP-T | 21 | `{{B09-DL-01}}` | `{{B09-DL-01.parLot}}` | délai saisi par lot, dans un document commun : imprimé « ……… » sur la fiche 40 |
 | DPAO-T | 6.3 a) | toujours imprimé | section `CHIFFRE-AFFAIRES` = `B03-QT-07 renseigne` | le MEN n'exige aucun chiffre d'affaires (voir B2.1) |
 
+> ⚠️ **Livraison backend du 2026-10-02 (§B1).** Conforme. Les deux modèles sont recopiés tels quels : **DPAO-T 262/262**
+> (41 conditions), **CCAP-T 572/572** (72 conditions), mesurés par votre comparateur sur le rendu brut du serveur.
+> Rendu contrôlé (`ModelesDaoTravauxTest.recetteDuMen`) :
+> - « …libérée à 100% dans les 30 jours suivant la date de la réception **provisoire** », sans la définitive ; l'option
+>   définitive, elle, imprime la définitive seule ;
+> - le délai par lot dans le CCAP ;
+> - le chiffre d'affaires imprimé seulement s'il est renseigné.
+>
+> **Parité** (options et réponses déduites, 18 documents) : extraction identique, 1 022 lignes de lecture identiques à
+> `lire.mjs` ; aucune lecture du DAO du MEN ne change.
+> **Rejeu de la fiche 40 en v2** : c'est à faire de votre côté, après le redémarrage et le passage des scripts. Je
+> n'écris pas en base sous le nom d'une PRMP.
+
 ## B2 — Référentiel des travaux : ce qui ne devrait pas être exigé, et des libellés qui trompent
 
 ### B2.1 — Champs obligatoires qu'un DAO ne remplit pas
@@ -73,6 +86,23 @@ Sur la fiche 40, quatre saisies faites en phrases complètes, comme leurs libell
 > la masse initiale… ») ? Le front l'afficherait sous le champ. Les modèles recopiés la contiennent déjà. C'est une
 > proposition, pas un préalable.
 
+> ⚠️ **Livraison backend du 2026-10-02 (§B2).**
+> - **B2.1, conforme.** `B03-QT-07`, `B03-CQ-10` et `B09-DL-04` sont facultatifs. `B03-CQ-10` est commun aux trois
+>   catégories et n'est imprimé nulle part : il devient facultatif partout.
+>   `B10-PC-01` propose par défaut : « Les différends nés de l'exécution du marché sont réglés selon la procédure prévue à
+>   l'article 50 du Cahier des Clauses Administratives Générales applicable aux marchés de travaux. » L'article 50 est
+>   celui que cite déjà le titre de l'article 31 du CCAP-T. **Rédaction à faire valider par le juriste.** Le défaut ne
+>   vaut que pour les fiches créées ensuite : une révision de la fiche 40 garde la valeur saisie en v1.
+> - **B2.2, conforme**, avec deux précisions :
+>   - `B09-MD-01` garde le type `TEXTE_LONG`. Passer en `NOMBRE` rendrait invalides les valeurs déjà saisies en phrase
+>     (dont la fiche 40) ; le libellé guide désormais vers une durée (« ex. « soixante (60) jours » »).
+>   - `B09-MA-01` à `-04` reçoivent le même complément (« : pourcentage de la masse initiale (ex. « vingt pour cent
+>     (20 %) ») »).
+> - **Q1 (gabarit), faisable.** Au chargement des modèles, le serveur peut relever, pour chaque champ, les paragraphes qui
+>   le citent dans les modèles de sa catégorie, et les servir avec le référentiel (`gabarits: [{ sigle, texte }]`, les
+>   autres jetons remplacés par « ___ »). Je ne l'ai pas fait dans cette livraison : dites-moi si vous le voulez, je
+>   l'écris en demande à part.
+
 ## B3 — Trous restés en blanc faute de champ ou de suffixe
 
 Ces trous s'impriment tels quels sur la fiche 40. Le front les branchera dans `decrire.mjs` dès que le champ ou le
@@ -87,6 +117,16 @@ suffixe sera servi.
 | **dérivé « date du DAO »** | AE-T : « Dossier d'Appel d'Offres N° `{{B02-OB-03}}` du <date> » | `{{DERIVE.date-dao}}`. La date à retenir est à fixer par vous (validation de la fiche ? publication de l'avis ?) |
 | accord du nom après un nombre | DPAO-T 7.1 : « `{{B04-FP-01}}` copies » imprime « 1 copies » | à votre choix (suffixe d'accord, ou dérivé). Priorité basse |
 
+> ⚠️ **Livraison backend du 2026-10-02 (§B3.1).**
+> - **`.heure`** : `{{B04-OV-02.heure}}` donne « 09 h 30 ».
+> - **`{{DERIVE.date-prix}}`** : la date limite de remise moins 15 jours, lue comme `DERIVE.fin-validite-offre`
+>   (`B04-LR-03`, à défaut `B04-CP-02`, à défaut `B04-OV-02`).
+> - **`{{DERIVE.date-dao}}`** : je retiens la **date de validation de la version** rendue. C'est le moment où le DAO est
+>   établi et figé, et ses documents produits ; l'avis peut ne jamais être imprimé, ou l'être plusieurs fois. Sur un rendu
+>   brut (sans validation) : pointillés.
+> - **« 1 copies »** : non traité, priorité basse. Le plus simple serait côté modèle, « {{B04-FP-01}} copie(s) » ;
+>   sinon un suffixe d'accord, à demander à part.
+
 ### B3.2 — Champs à créer (travaux)
 
 | information | où | MEN | type proposé |
@@ -97,6 +137,18 @@ suffixe sera servi.
 | Plafond des travaux en régie | CCAP-T 12.2 : « …atteint <pourcentage> du montant du Marché » | non applicable | `POURCENTAGE` |
 | Indices d'actualisation des prix fermes | CCAP-T 11.4 : « <indiquer la nature des indices…> », imprimé dès que les prix sont fermes | prix « fermes et non révisables », **sans** actualisation | `TEXTE_LONG` **facultatif**. Le front mettra le paragraphe d'actualisation sous condition `renseigne` (comme `B05-VP-03` en fournitures) |
 | Découpage du forfait par corps d'état | CCAP-T 16 : quatre lignes « -…………% », puis « Réception provisoire 5 % » | dix postes (installation, terrassement… assainissement), pourcentages en blanc, plus une retenue de 3 % | `TEXTE_LONG` (liste des postes) |
+
+> ⚠️ **Livraison backend du 2026-10-02 (§B3.2).** Les six champs sont créés, facultatifs, réservés aux travaux (quantité
+> fixe et à commande). Codes à brancher dans `decrire.mjs` :
+> - `B05-GQ-04`, bénéficiaire des chèques de banque, `TEXTE` : un seul champ pour toutes les garanties (DPAO maître,
+>   repris au CCAP) ;
+> - `B09-PE-03`, plafond des pénalités de retard, `POURCENTAGE` ;
+> - `B08-MR-05`, délai de remise du projet de décompte, `NOMBRE` (jours ouvrables) ;
+> - `B08-RE-04`, plafond des travaux en régie, `POURCENTAGE` ;
+> - `B05-VR-02`, indices d'actualisation des prix fermes, `TEXTE_LONG` : le libellé dit « laisser vide sans
+>   actualisation », pour votre condition `renseigne` ;
+> - `B08-MR-06`, découpage du forfait par poste ou corps d'état, `TEXTE_LONG`, un poste par ligne (un saut de ligne dans
+>   une valeur est un vrai saut de ligne en Word depuis le 01/10).
 
 ## B4 — Données : apostrophes remplacées par « ¿ »
 
@@ -112,3 +164,23 @@ Demande :
 - **B1** : la parité habituelle sur les 18 documents, plus la fiche 40 rejouée en v2 avec `B05-GE-04` « …réception provisoire » ;
 - **B2** : la fiche 40 validable sans les quatre valeurs inventées ;
 - **B3** : rendus du DPAO-T, de l'AE-T et du CCAP-T sans aucun des blancs listés, une fois le front rebranché.
+
+> ⚠️ **Livraison backend du 2026-10-02 (§B4).**
+> 1. **Correction** : `docs/referentiel/2026-10-02-apostrophes-plan.sql`, essai à blanc fait (14 lignes et 14 lots
+>    corrigés, aucun « ¿ » restant). **Deux écarts :**
+>    - **L'apostrophe est la droite « ' »**, et non « ’ » : c'est celle du reste du plan (« Travaux d'urgence », sur la ligne
+>      303158 elle-même) et celle que pose l'import. Une même désignation ne mélange donc pas les deux.
+>    - **Les lots aussi** (`t_lot`, 14 désignations), que l'objet des documents reprend tout autant. Un « ¿ » n'était pas
+>      une apostrophe : « Antsiranana ¿ Lot n°02 », sur la ligne 303288, est un tiret, comme les « - » qui séparent les
+>      autres lots de la même phrase. Il devient « - » dans la ligne, et il est retiré du bout de la désignation du lot 1,
+>      où le découpage l'avait laissé.
+>
+>    Les documents déjà produits pour la fiche 40 (v1) restent figés ; la v2 reprendra le bon objet.
+> 2. **L'import actuel** ne reprend pas un « ¿ » en silence. Les deux imports du plan, PDF et xlsx, le signalent par une
+>    anomalie `ENCODAGE_SUSPECT` à la revue ; l'import PDF corrige aussi depuis le 22/07 les cas sans ambiguïté (œ,
+>    « jusqu'à »). Ajout du 02/10 :
+>    - l'élision d'un mot d'une lettre ou de « qu » (« d¿aménagement » → « d'aménagement »), la ligature œ passant avant,
+>      pour que « c¿ur » reste « cœur » ;
+>    - le même nettoyage, désormais appliqué aussi à l'import xlsx (objet et lots).
+>
+>    Test : `NettoyageEncodagePpmTest`.
