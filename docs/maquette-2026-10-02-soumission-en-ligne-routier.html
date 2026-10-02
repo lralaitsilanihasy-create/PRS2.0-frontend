@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Offre en ligne routière</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap">
+<style>
+:root{--fond:#eef2f8;--papier:#ffffff;--encre:#1f2937;--sourd:#5b6675;--regle:#dde3ec;--ligne:#eef1f6;--accent:#1d4ed8;--accent-doux:#dbeafe;--fiche:#0f766e;--fiche-doux:#ccfbf1;--candidat:#b45309;--candidat-doux:#fef3c7;--calc:#6d28d9;--calc-doux:#ede9fe;--ok:#047857;--ok-doux:#d1fae5;--ko:#b91c1c;--ko-doux:#fee2e2;--or:#f5c542;--mono:'DM Mono',ui-monospace,monospace;--font:'Plus Jakarta Sans',system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--fond:#0f141b;--papier:#171d26;--encre:#e6e9ef;--sourd:#9aa5b4;--regle:#2a3442;--ligne:#1f2733;--accent:#7aa2ff;--accent-doux:#1b2a4a;--fiche:#5eead4;--fiche-doux:#0f3a37;--candidat:#fbbf24;--candidat-doux:#3b2a0a;--calc:#c4b5fd;--calc-doux:#2a1f4d;--ok:#6ee7b7;--ok-doux:#0d3b2c;--ko:#fca5a5;--ko-doux:#3f1515}}
+:root[data-theme="dark"]{--fond:#0f141b;--papier:#171d26;--encre:#e6e9ef;--sourd:#9aa5b4;--regle:#2a3442;--ligne:#1f2733;--accent:#7aa2ff;--accent-doux:#1b2a4a;--fiche:#5eead4;--fiche-doux:#0f3a37;--candidat:#fbbf24;--candidat-doux:#3b2a0a;--calc:#c4b5fd;--calc-doux:#2a1f4d;--ok:#6ee7b7;--ok-doux:#0d3b2c;--ko:#fca5a5;--ko-doux:#3f1515}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fond);color:var(--encre);font-family:var(--font);font-size:14px;line-height:1.45;padding-inline:16px;padding-block:0 56px}
+.page{max-width:1180px;margin-inline:auto}
+h1,h2,h3{font-weight:700;text-wrap:balance;margin:0}
+h1{font-size:clamp(1.25rem,2.6vw,1.7rem);margin-bottom:12px}h2{font-size:1.12rem;margin-bottom:6px}h3{font-size:.98rem;margin:16px 0 6px}
+.mono{font-family:var(--mono)}
+.bandeau{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;padding:10px 0;border-bottom:3px solid var(--or);margin-bottom:16px}
+.bandeau .marque{font-weight:800;letter-spacing:.02em}.bandeau .marque small{font-weight:500;color:var(--sourd)}
+.exemple{display:inline-block;border:1px dashed var(--candidat);color:var(--candidat);border-radius:999px;padding:1px 10px;font-size:.78rem}
+.sur{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--sourd);margin:0 0 4px}
+.carte{background:var(--papier);border:1px solid var(--regle);border-radius:12px;padding:14px 16px}
+.proc{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.proc dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0 0;font-size:.9rem}.proc dt{color:var(--sourd)}.proc dd{margin:0}
+.puce{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.74rem;font-family:var(--mono);border:1px solid var(--regle);background:var(--fond)}
+.hyp{display:inline-block;padding:0 6px;border-radius:4px;font-size:.7rem;font-weight:700;color:var(--candidat);border:1px solid var(--candidat);vertical-align:1px}
+.legende{display:flex;flex-wrap:wrap;gap:8px 14px;margin:12px 0;font-size:.84rem}
+.legende span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.l-fiche::before{background:var(--fiche)}.l-cand::before{background:var(--candidat)}.l-calc::before{background:var(--calc)}
+.lots{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.lots button,.bouton{border:1px solid var(--regle);background:var(--papier);color:var(--encre);border-radius:999px;padding:5px 12px;font:inherit;font-size:.86rem;cursor:pointer;text-align:left}
+.lots button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.bouton.principal{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;padding:8px 16px}
+.bouton:disabled{opacity:.5;cursor:not-allowed}
+.onglets{display:flex;flex-wrap:wrap;gap:2px;border-bottom:1px solid var(--regle);margin-bottom:12px}
+.onglets button{border:0;background:transparent;color:var(--sourd);padding:8px 12px;font:inherit;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.onglets button[aria-selected="true"]{color:var(--accent);border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.defilant{overflow-x:auto;border:1px solid var(--regle);border-radius:8px;background:var(--papier)}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:6px 8px;border-bottom:1px solid var(--ligne);vertical-align:top;text-align:left}
+th{background:var(--fond);font-weight:600;font-size:.76rem;line-height:1.3}
+th.num,td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+tr.chap td{background:var(--fond);font-weight:700;font-size:.82rem}
+tr.sous td{font-weight:600;border-bottom:2px solid var(--regle)}
+td.fiche{background:var(--fiche-doux)}td.cand{background:var(--candidat-doux)}td.calc{background:var(--calc-doux);font-variant-numeric:tabular-nums}
+input,select{font:inherit;font-size:.86rem;color:var(--encre);background:var(--papier);border:1px solid var(--regle);border-radius:6px;padding:4px 6px;min-width:0}
+input[type=number]{width:9rem;text-align:right}input[type=date]{width:9.5rem}input.txt{width:100%}
+input[type=file]{font-size:.8rem;max-width:100%}
+tfoot td{font-weight:600;background:var(--fond)}
+.arrete{margin:12px 0 0;font-size:.9rem}.arrete b{font-variant-numeric:tabular-nums}
+.note{color:var(--sourd);font-size:.84rem;margin:8px 0 0}
+.grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.champ{display:grid;gap:4px;margin-top:8px}.champ label{font-weight:600;font-size:.86rem}
+.exig{font-size:.8rem;color:var(--fiche);background:var(--fiche-doux);border-radius:6px;padding:4px 8px}
+.verdict{display:inline-block;justify-self:start;width:max-content;border-radius:999px;padding:1px 9px;font-size:.76rem;font-weight:700}
+.verdict.ok{color:var(--ok);background:var(--ok-doux)}.verdict.ko{color:var(--ko);background:var(--ko-doux)}.verdict.att{color:var(--sourd);background:var(--fond)}
+.recap{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px}
+.recap .carte b.m{display:block;font-size:1.05rem;margin-top:4px;font-variant-numeric:tabular-nums}
+.check{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:5px;font-size:.86rem}.check li{display:flex;gap:8px;align-items:flex-start}
+.check li::before{content:'☐';color:var(--sourd)}.check li.fait::before{content:'☑';color:var(--ok)}.check li.manque::before{content:'☒';color:var(--ko)}
+.accuse{margin-top:12px;border:1px solid var(--ok);background:var(--ok-doux);border-radius:10px;padding:10px 14px}
+.sources{margin-top:28px;padding-top:14px;border-top:1px solid var(--regle);font-size:.84rem;color:var(--sourd)}
+.sources code{font-family:var(--mono);font-size:.8em}
+@media (max-width:760px){.proc{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="bandeau"><div class="marque">Plateforme de dépôt des offres <small>· maquette PRS 2.0 — travaux routiers, 2026-10-02</small></div><div><span class="exemple">Candidat d'exemple : SARL Exemple Routes — rien n'est enregistré</span></div></div>
+<p class="sur">Appel d'offres ouvert · Travaux routiers · Lot unique · Prix unitaires · MINISTERE DES TRAVAUX PUBLICS</p>
+<h1>AOO N°019-2026/MTP/PRMP/UGPM-TR — Travaux d'entretien progressif des routes reliant Ankily et Mahasoa</h1>
+<div class="proc">
+<div class="carte"><h2>Votre dépôt</h2><dl id="depot"></dl></div>
+<div class="carte"><h2>Ce que la plateforme sait déjà</h2><p class="note">Pré-rempli depuis la fiche DAO : articles du bordereau, unités, quantités estimatives, seuils de qualification, matériel exigé, garantie, délai. Le candidat saisit ses prix <b>en chiffres</b> ; la plateforme les écrit <b>en lettres</b> (ce sont les lettres qui font foi), calcule le DQE, contrôle les seuils.</p><div class="legende"><span class="l-fiche">Rempli par la fiche</span><span class="l-cand">Saisi par le candidat</span><span class="l-calc">Calculé par la plateforme</span></div><p class="note">Axe RP 303-F, PK 0+000 (carrefour RNP 7) – PK 25+000 (CR Mahasoa) · Ariary · prix fermes · TVA 20 % · groupement non admis.</p></div>
+</div>
+<div class="carte">
+<div class="onglets" role="tablist" aria-label="Formulaires">
+<button type="button" role="tab" aria-selected="true" data-doc="prix">Bordereau et DQE</button>
+<button type="button" role="tab" aria-selected="false" data-doc="k1">K1 et sous-détail</button>
+<button type="button" role="tab" aria-selected="false" data-doc="garantie">Garantie et délai</button>
+<button type="button" role="tab" aria-selected="false" data-doc="capacites">Capacités</button>
+<button type="button" role="tab" aria-selected="false" data-doc="pieces">Pièces</button>
+<button type="button" role="tab" aria-selected="false" data-doc="recap">Récapitulatif et dépôt</button>
+</div>
+<div id="formulaire" role="tabpanel"></div>
+</div>
+<div class="sources"><b>Sources</b> — DAO de travaux routiers réel du Ministère des Travaux Publics (AOO, lot unique), relevé dans
+<code>docs/jeu-donnees-mtp-routier-faits.md</code> : BPU et DQE de l'annexe 1 de l'AE (17 articles, séries 000, 500, 600), annexe 2 (K1),
+annexe 3 (sous-détail des prix), DPAO 6.2 (pièces 01 à 10), 6.3 (liquidité à 10 % de l'offre, chiffre d'affaires, références, matériel,
+personnel), 6.4, 6.7, 11 ; annexes 3 à 6 des Spécifications (matériel, location, plannings 8-a à 8-e, plan de charge).
+Les anomalies du dossier (unité du prix 620, « au plus trois marchés », aucun prix marqué d'un astérisque) sont relevées au §6 de la fiche des faits.
+<span class="hyp">H</span> Hypothèses de la maquette : la <b>remise électronique</b> (le DAO l'interdit, DPAO 7.3), la date limite, le candidat et les prix
+du bouton « prix d'exemple ». Page écrite à la main : elle n'enregistre rien.</div>
+</div>
+<script>
+const P = {
+  monnaie: "Ariary", tva: 20, dateLimite: "2026-11-27T09:00", fuseau: "heure du serveur (UTC+03:00, Antananarivo)",
+  formats: ["PDF", "PDF/A"], signature: "Avancée",
+  validiteOffres: 75, validiteGarantieJours: 105, delaiMaxMois: 6, ancienneteMois: 3,
+  garantie: 100500000, beneficiaire: "Monsieur le Receveur Général d'Antananarivo",
+  formesGarantie: ["Chèque de banque", "Caution bancaire, personnelle et solidaire", "Garantie bancaire"],
+  plafondInstallation: 10, liquiditePct: 10, caMin: 5000000000, caAnnees: 5, caMeilleures: 3, refMin: 2500000000, refMax: 3, refAnnees: 10,
+  series: [{ c: "000", t: "Installation de chantier" }, { c: "500", t: "Ouvrages" }, { c: "600", t: "Chaussées" }],
+  bpu: [
+    ["001", "000", "Installation et repli de chantier", "Fft", 1, "Le forfait"],
+    ["502", "500", "Aménagement de déviation", "Fft", 1, "Le forfait"],
+    ["510", "500", "Démolition maçonnerie", "m³", 55.2, "Le mètre cube"],
+    ["520", "500", "Déblai pour fouille", "m³", 2054.5, "Le mètre cube"],
+    ["529", "500", "Maçonnerie de moellons", "m³", 2825, "Le mètre cube"],
+    ["540", "500", "Béton B2 dosé à 250 kg/m³ de ciment", "m³", 195, "Le mètre cube"],
+    ["542", "500", "Béton B3 dosé à 350 kg/m³ de ciment", "m³", 192, "Le mètre cube"],
+    ["543", "500", "Béton B4 dosé à 400 kg/m³ de ciment", "m³", 210, "Le mètre cube"],
+    ["545", "500", "Acier pour armature", "kg", 48240, "Le kilogramme"],
+    ["550", "500", "Fossé maçonné 40 × 40 cm", "ml", 3000, "Le mètre linéaire"],
+    ["560", "500", "Dalot mixte maçonnerie – BA de 70 × 80 cm", "ml", 30, "Le mètre linéaire"],
+    ["584", "500", "Blocage 10/15 kg", "m³", 300.6, "Le mètre cube"],
+    ["620", "600", "Remblai d'emprunt", "m³", 1520, "Le mètre cube"],
+    ["630", "600", "Couche de roulement en matériaux sélectionnés", "m³", 15500, "Le mètre cube"],
+    ["621", "600", "Réglage de plateforme", "m²", 17100, "Le mètre carré"],
+    ["632", "600", "Pavage", "m²", 15200, "Le mètre carré"],
+    ["677", "600", "Chaussée en béton légèrement armé", "m³", 400, "Le mètre cube"],
+  ],
+  k1: [["a1", "Frais d'agence et de patente", "A1"], ["a2", "Frais de chantier", "A1"], ["a3", "Frais d'études et de laboratoire", "A1"], ["a4", "Assurances", "A1"],
+       ["a5", "Bénéfice et impôts sur le bénéfice", "A2"], ["a6", "Aléas techniques", "A2"], ["a7", "Aléas de révision de prix", "A2"], ["a8", "Frais financiers", "A2"], ["a9", "Frais de siège", "A3"]],
+  sousDetail: [["Personnel", ["Conducteur de travaux", "Chef d'équipe", "Ouvrier spécialisé", "Manœuvre"]], ["Matériel", ["Pelle", "Camion", "Niveleuse", "Compacteur", "Citerne"]], ["Matériaux", ["Redevance carrière"]], ["Outillage", ["Petit matériel"]]],
+  personnel: [
+    { k: "conducteur", poste: "Conducteur de travaux", exig: "Ingénieur BTP ou génie civil ; au moins 5 ans en travaux routiers ; CV et diplôme certifié", annees: 5 },
+    { k: "chef", poste: "Chef de chantier", exig: "Ingénieur ou technicien supérieur BTP / génie civil ; au moins 3 ans en travaux routiers ; CV et diplôme certifié", annees: 3 },
+  ],
+  materiel: [
+    { k: "bennes", t: "Camions bennes ≥ 10 000 kg", n: 6, propre: 4 }, { k: "citerne", t: "Camion-citerne ou citerne à eau ≥ 5 000 l", n: 2, propre: 1 },
+    { k: "pelle", t: "Pelle mécanique ou hydraulique", n: 1, propre: 1 }, { k: "chargeuse", t: "Chargeuse", n: 1, propre: 1 },
+    { k: "niveleuse", t: "Niveleuse", n: 1, propre: 1 }, { k: "lourd", t: "Compacteur lourd ≥ 10 t", n: 1, propre: 1 },
+    { k: "leger", t: "Compacteur léger ≥ 2,5 t", n: 1, propre: 1 }, { k: "betonniere", t: "Bétonnière ≥ 500 l", n: 2, propre: 2 },
+    { k: "pervibrateur", t: "Pervibrateurs", n: 2, propre: 2 }, { k: "liaison", t: "Véhicule de liaison 4×4", n: 1, propre: 1 },
+  ],
+  pieces: [
+    { k: "p01", t: "Pièce 01 — Carte professionnelle 2026, copie légalisée par le centre fiscal", date: true },
+    { k: "p02", t: "Pièce 02 — Carte statistique, photocopie certifiée conforme", date: true },
+    { k: "p03", t: "Pièce 03 — Registre du commerce", date: true },
+    { k: "p04", t: "Pièce 04 — Certificat de non-faillite", date: true },
+    { k: "p05", t: "Pièce 05 — Quittance de l'ARMP pour l'achat du dossier", date: false },
+    { k: "a1", t: "Fiche A1 — Identification et situation juridique (litiges)", date: false },
+    { k: "a3", t: "Fiche A3 — Situation financière, états financiers des trois dernières années", date: false },
+    { k: "ae4", t: "AE annexe 4 — État des sommes versées aux tiers (« aucune » s'il n'y en a pas)", date: false },
+    { k: "ae5", t: "AE annexe 5 — Déclaration des bénéficiaires effectifs", date: false },
+  ],
+  plannings: [["p8a", "8-a Planning général d'exécution des travaux"], ["p8b", "8-b Mobilisation du personnel et du matériel"], ["p8c", "8-c Approvisionnement des matériaux"], ["p8d", "8-d Échéancier de paiement"], ["p8e", "8-e Intervention pendant le délai de garantie"]],
+};
+const EXEMPLE = { "001": 450000000, "502": 30000000, "510": 60000, "520": 25000, "529": 280000, "540": 550000, "542": 750000, "543": 850000, "545": 8000, "550": 180000, "560": 1800000, "584": 90000, "620": 35000, "630": 75000, "621": 3500, "632": 120000, "677": 900000 };
+
+const etat = { doc: "prix", s: {}, f: {}, depose: null };
+const fr = (n) => (n == null || n === "" || Number.isNaN(n)) ? "—" : new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(n);
+const ar = (n) => (n == null || n === "" || Number.isNaN(n)) ? "—" : new Intl.NumberFormat("fr-FR").format(Math.round(n));
+const h = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const jour = (iso) => new Date(iso.length > 10 ? iso + ":00+03:00" : iso + "T00:00:00+03:00");
+const dateFr = (d) => d.toLocaleDateString("fr-FR", { timeZone: "Indian/Antananarivo" });
+const plus = (d, j) => new Date(d.getTime() + j * 86400000);
+const limite = jour(P.dateLimite);
+const v = (k) => etat.s[k] ?? "";
+const num = (k) => Number(v(k)) || 0;
+const verdict = (ok, txtOk, txtKo, attente = "à saisir") => ok == null ? `<span class="verdict att">${attente}</span>` : ok ? `<span class="verdict ok">${txtOk}</span>` : `<span class="verdict ko">${txtKo}</span>`;
+const fichier = (k, label) => `<input type="file" accept=".pdf" aria-label="${h(label)}" data-fichier="${k}">${etat.f[k] ? ` <span class="verdict ok">${h(etat.f[k])}</span>` : ""}`;
+
+// Nombres en toutes lettres, règles traditionnelles : « vingt et un », « quatre-vingts » et « deux cents » en fin de nombre
+// ou devant million et milliard (des noms), mais « quatre-vingt mille », « deux cent mille » (mille est invariable)
+const UNITES = ["zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"];
+const DIZAINES = ["", "", "vingt", "trente", "quarante", "cinquante", "soixante", "soixante", "quatre-vingt", "quatre-vingt"];
+function moinsDeCent(n, finale) {
+  if (n < 20) return UNITES[n];
+  const d = Math.floor(n / 10), u = n % 10;
+  if (d === 7 || d === 9) return DIZAINES[d] + (d === 7 && u === 1 ? " et " : "-") + UNITES[10 + u];
+  if (u === 0) return DIZAINES[d] + (d === 8 && finale ? "s" : "");
+  return DIZAINES[d] + (u === 1 && d !== 8 ? " et un" : "-" + UNITES[u]);
+}
+function moinsDeMille(n, finale) {
+  const c = Math.floor(n / 100), r = n % 100;
+  let t = c === 0 ? "" : c === 1 ? "cent" : UNITES[c] + " cent" + (r === 0 && finale ? "s" : "");
+  if (r) t += (t ? " " : "") + moinsDeCent(r, finale);
+  return t;
+}
+function enLettres(n) {
+  n = Math.round(n);
+  if (n === 0) return "zéro";
+  const parts = [];
+  for (const [val, sing, plur] of [[1e9, "milliard", "milliards"], [1e6, "million", "millions"]]) {
+    const q = Math.floor(n / val); n %= val;
+    if (q) parts.push(moinsDeMille(q, true) + " " + (q > 1 ? plur : sing));   // million, milliard : des noms, « deux cents millions »
+  }
+  const m = Math.floor(n / 1000); n %= 1000;
+  if (m) parts.push(m === 1 ? "mille" : moinsDeMille(m, false) + " mille");   // mille invariable : « deux cent mille », « quatre-vingt mille »
+  if (n) parts.push(moinsDeMille(n, true));
+  return parts.join(" ");
+}
+const majuscule = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+
+function totaux() {
+  const parSerie = {}; let ht = 0, saisis = 0;
+  for (const [no, s, , , q] of P.bpu) { const pu = num("pu:" + no); if (v("pu:" + no)) saisis++; parSerie[s] = (parSerie[s] ?? 0) + pu * q; ht += pu * q; }
+  return { ht, tva: ht * P.tva / 100, ttc: ht * (1 + P.tva / 100), parSerie, saisis, installation: num("pu:001") };
+}
+function k1() {
+  const somme = (g) => P.k1.filter(([, , G]) => G === g).reduce((s, [k]) => s + num("k1:" + k), 0);
+  const A1 = somme("A1"), A2 = somme("A2"), A3 = v("siege") === "etranger" ? somme("A3") : 0;
+  const brut = (1 + A1 / 100) * (1 + A2 / 100) / (1 - (A3 / 100) * (1 + P.tva / 100));
+  return { A1, A2, A3, k: Math.floor(brut * 100) / 100 };
+}
+
+function depot() {
+  document.getElementById("depot").innerHTML = `
+    <dt>Date et heure limites</dt><dd><b>${dateFr(limite)} à 09 h 00</b> — ${h(P.fuseau)} <span class="hyp">H</span></dd>
+    <dt>Formats admis</dt><dd>${P.formats.map((f) => `<span class="puce">${f}</span>`).join(" ")} ; bordereau et DQE également en tableur, planning aussi <span class="hyp">H</span></dd>
+    <dt>Signature exigée</dt><dd>électronique, niveau <b>${h(P.signature)}</b> <span class="hyp">H</span></dd>
+    <dt>Validité des offres</dt><dd>${P.validiteOffres} jours, soit jusqu'au ${dateFr(plus(limite, P.validiteOffres))}</dd>
+    <dt>Délai d'exécution</dt><dd>${P.delaiMaxMois} mois au plus</dd>
+    <dt>Garantie de soumission</dt><dd><b>${ar(P.garantie)} ${P.monnaie}</b>, valable ${P.validiteGarantieJours} jours après la date limite</dd>`;
+}
+
+function prix() {
+  const t = totaux();
+  let corps = "";
+  for (const s of P.series) {
+    corps += `<tr class="chap"><td class="mono">${s.c}</td><td colspan="6">${h(s.t)}</td></tr>`;
+    corps += P.bpu.filter((a) => a[1] === s.c).map(([no, , d, u, q, libU]) => {
+      const pu = v("pu:" + no);
+      return `<tr><td class="fiche mono">${no}</td><td class="fiche">${h(d)}<br><small class="${pu ? "" : "note"}">${h(libU)} à : <b>${pu ? majuscule(enLettres(Number(pu))) + " Ariary" : "……"}</b></small></td><td class="fiche">${h(u)}</td><td class="fiche num">${fr(q)}</td><td class="cand num"><input type="number" min="0" step="1" inputmode="numeric" aria-label="Prix unitaire, article ${no}" data-k="pu:${no}" value="${h(pu)}"></td><td class="calc num">${pu ? ar(Number(pu) * q) : "—"}</td></tr>`;
+    }).join("");
+    corps += `<tr class="sous"><td></td><td colspan="4">Total ${s.c} — ${h(s.t)}</td><td class="calc num">${ar(t.parSerie[s.c] ?? 0)}</td></tr>`;
+  }
+  const part = t.ht ? t.installation / t.ht * 100 : null;
+  return `<h2>Bordereau des prix unitaires et détail quantitatif et estimatif</h2>
+  <p class="note">Annexe 1 de l'acte d'engagement. Le candidat saisit chaque prix en chiffres ; la plateforme l'écrit en lettres sous la désignation, comme le cadre du bordereau. ${t.saisis}/${P.bpu.length} prix saisis. <button type="button" class="bouton" id="exemple">Remplir avec des prix d'exemple</button> <span class="hyp">H</span></p>
+  <div class="defilant" style="margin-top:10px"><table><thead><tr><th>N° prix</th><th>Désignation des travaux et prix en lettres</th><th>Unité</th><th class="num">Quantité</th><th class="num">Prix unitaire (Ar)</th><th class="num">Montant (Ar)</th></tr></thead>
+  <tbody>${corps}</tbody>
+  <tfoot><tr><td colspan="5">Montant total hors TVA</td><td class="num">${ar(t.ht)}</td></tr><tr><td colspan="5">TVA (${P.tva} %)</td><td class="num">${ar(t.tva)}</td></tr><tr><td colspan="5">Montant total TTC</td><td class="num">${ar(t.ttc)}</td></tr></tfoot></table></div>
+  <p class="arrete">Arrêté le montant estimé du marché à la somme de <b>${t.ttc ? majuscule(enLettres(t.ttc)) : "……"} Ariary (${ar(t.ttc)} Ar)</b> toutes taxes comprises.</p>
+  <p class="note">Installation et repli de chantier (prix 001) : ${part == null ? "—" : fr(Math.round(part * 100) / 100) + " % du montant des travaux"} ${verdict(part == null || !t.installation ? null : part <= P.plafondInstallation, "sous le plafond de 10 %", "au-delà du plafond de 10 % (CPS, prix 001)")}</p>
+  <p class="note">Le DQE du dossier libelle le prix 620 en mètres cubes, mais son bordereau dit « Le mètre carré à » : la fiche retient le m³ du DQE et le signale (fiche des faits, §6).</p>`;
+}
+
+function k1Onglet() {
+  const K = k1(), t = totaux();
+  const lignes = P.k1.map(([k, lib, G]) => `<tr><td class="fiche">${h(lib)}</td><td class="fiche mono">${k.replace("a", "a.")}</td><td class="fiche">${G}</td><td class="cand num"><input type="number" min="0" step="0.01" aria-label="${h(lib)} (%)" data-k="k1:${k}" value="${h(v("k1:" + k))}" style="width:6rem"${G === "A3" && v("siege") !== "etranger" ? " disabled" : ""}> %</td></tr>`).join("");
+  const sd = P.sousDetail.map(([groupe, items]) => `<tr class="chap"><td colspan="6">${groupe}</td></tr>` + items.map((it, i) => {
+    const b = "sd:" + groupe + ":" + i, tot = num(b + ":nb") * num(b + ":j") * num(b + ":pu");
+    return `<tr><td class="fiche">${h(it)}</td><td class="cand num"><input type="number" min="0" aria-label="Nombre, ${h(it)}" data-k="${b}:nb" value="${h(v(b + ":nb"))}" style="width:4.5rem"></td><td class="cand num"><input type="number" min="0" aria-label="Unités ou jours, ${h(it)}" data-k="${b}:j" value="${h(v(b + ":j"))}" style="width:4.5rem"></td><td class="cand num"><input type="number" min="0" aria-label="Prix unitaire, ${h(it)}" data-k="${b}:pu" value="${h(v(b + ":pu"))}"></td><td class="calc num">${tot ? ar(tot) : "—"}</td></tr>`;
+  }).join("")).join("");
+  const D = P.sousDetail.reduce((s, [groupe, items]) => s + items.reduce((ss, _, i) => { const b = "sd:" + groupe + ":" + i; return ss + num(b + ":nb") * num(b + ":j") * num(b + ":pu"); }, 0), 0);
+  const R = num("sd:R") || 1, prixSd = D * K.k / R, pu001 = num("pu:001");
+  const ecart = D && pu001 ? Math.abs(prixSd - pu001) / pu001 * 100 : null;
+  return `<h2>Coefficient de majoration des déboursés K1 (annexe 2)</h2>
+  <div class="exig">K1 = (1 + A1/100) × (1 + A2/100) / (1 − A3/100 × (1 + T/100)), T = TVA ${P.tva} % ; arrondi à la deuxième décimale par défaut. A3 est nul pour une entreprise ayant son siège à Madagascar.</div>
+  <div class="champ"><label for="siege">Siège social</label><select id="siege" data-k="siege"><option value="madagascar"${v("siege") !== "etranger" ? " selected" : ""}>à Madagascar (A3 = 0)</option><option value="etranger"${v("siege") === "etranger" ? " selected" : ""}>hors de Madagascar</option></select></div>
+  <div class="defilant" style="margin-top:10px"><table><thead><tr><th>Origine des frais</th><th>Indice</th><th>Catégorie</th><th class="num">Taux</th></tr></thead><tbody>${lignes}</tbody>
+  <tfoot><tr><td colspan="3">A1 = ${fr(K.A1)} % · A2 = ${fr(K.A2)} % · A3 = ${fr(K.A3)} %</td><td class="num">K1 = ${K.k.toFixed(2).replace(".", ",")}</td></tr></tfoot></table></div>
+  <h3>Sous-détail du prix 001 — Installation et repli de chantier (annexe 3)</h3>
+  <p class="note">Le dossier exige le sous-détail des prix d'installation, de laboratoire et des prix « marqués d'un astérisque au BDE » ; aucun n'est marqué : seul le prix 001 est demandé.</p>
+  <div class="defilant"><table><thead><tr><th>Composante du prix</th><th class="num">Nombre</th><th class="num">Unités ou jours</th><th class="num">Prix unitaire</th><th class="num">Total</th></tr></thead><tbody>${sd}</tbody>
+  <tfoot><tr><td colspan="4">Total déboursés secs « D »</td><td class="num">${ar(D)}</td></tr></tfoot></table></div>
+  <div class="champ"><label for="sd-R">Rendement « R » (quantité produite ; 1 pour un forfait)</label><input id="sd-R" type="number" min="0" step="0.01" data-k="sd:R" value="${h(v("sd:R"))}" style="width:7rem"></div>
+  <p class="note">Prix de vente à l'unité = D × K1 / R = <b>${D ? ar(prixSd) : "—"} Ar</b> · bordereau : ${pu001 ? ar(pu001) + " Ar" : "—"} ${verdict(ecart == null ? null : ecart <= 1, "cohérent avec le bordereau", "écart de " + fr(Math.round(ecart * 10) / 10) + " % avec le bordereau")}</p>
+  <p class="note">Coût total de l'offre pour mémoire : ${ar(t.ttc)} Ar TTC.</p>`;
+}
+
+function garantie() {
+  const forme = v("g:forme"), fin = v("g:fin"), mois = v("delai");
+  return `<h2>Garantie de soumission et délai</h2>
+  <div class="grille">
+  <div class="carte"><h3 style="margin-top:0">Garantie de soumission (pièce 06)</h3>
+    <div class="exig">Montant : <b>${ar(P.garantie)} ${P.monnaie}</b> · en faveur du ${h(P.beneficiaire.replace("Monsieur le ", ""))} · valable au moins jusqu'au <b>${dateFr(plus(limite, P.validiteGarantieJours))}</b> (${P.validiteGarantieJours}<sup>e</sup> jour)</div>
+    <div class="champ"><label for="g-forme">Forme</label><select id="g-forme" data-k="g:forme"><option value="">— Choisir —</option>${P.formesGarantie.map((f) => `<option${forme === f ? " selected" : ""}>${f}</option>`).join("")}</select></div>
+    ${forme === "Chèque de banque" ? `<p class="note">Chèque libellé au nom de <b>${h(P.beneficiaire)}</b>, versé au Trésor public ; joindre l'ordre de recette.</p>` : ""}
+    <div class="champ"><label for="g-montant">Montant (Ar)</label><input id="g-montant" type="number" data-k="g:montant" value="${h(v("g:montant"))}"> ${verdict(v("g:montant") ? num("g:montant") >= P.garantie : null, "suffisant", "inférieur au montant exigé")}</div>
+    <div class="champ"><label for="g-fin">Valable jusqu'au</label><input id="g-fin" type="date" data-k="g:fin" value="${h(fin)}"> ${verdict(fin ? jour(fin) >= plus(limite, P.validiteGarantieJours) : null, "validité suffisante", "trop courte")}</div>
+    <div class="champ"><label>Garantie numérisée (modèle B1 ou B2)</label>${fichier("garantie", "Garantie de soumission")}</div>
+    ${forme === "Chèque de banque" ? `<div class="champ"><label>Ordre de recette</label>${fichier("ordre-recette", "Ordre de recette du Trésor")}</div>` : ""}
+  </div>
+  <div class="carte"><h3 style="margin-top:0">Délai d'exécution (AE 5.2)</h3>
+    <div class="exig">À compléter par le candidat sans dépasser six (6) mois, à compter du lendemain de l'ordre de service de commencer</div>
+    <div class="champ"><label for="delai">Délai offert (mois)</label><input id="delai" type="number" min="1" step="0.5" data-k="delai" value="${h(mois)}" style="width:6rem"> ${verdict(mois ? num("delai") > 0 && num("delai") <= P.delaiMaxMois : null, "dans le délai", "au-delà de six mois")}</div>
+    <p class="note">${mois ? "Repris dans l'acte d'engagement : « " + majuscule(enLettres(num("delai"))) + " (" + fr(num("delai")) + ") mois »." : ""}</p>
+  </div>
+  </div>`;
+}
+
+function capacites() {
+  const t = totaux();
+  const ca = Array.from({ length: P.caAnnees }, (_, i) => num("ca:" + i));
+  const meilleures = [...ca].sort((a, b) => b - a).slice(0, P.caMeilleures);
+  const moyenne = meilleures.reduce((s, x) => s + x, 0) / P.caMeilleures;
+  const anneeRef = limite.getFullYear();
+  const caLignes = ca.map((x, i) => `<td class="cand num"><input type="number" min="0" aria-label="Chiffre d'affaires routier ${anneeRef - 1 - i}" data-k="ca:${i}" value="${h(v("ca:" + i))}" style="width:9rem"></td>`).join("");
+  const debutRef = new Date(anneeRef - P.refAnnees, limite.getMonth(), limite.getDate());
+  const refs = Array.from({ length: P.refMax }, (_, i) => {
+    const m = v("ref:" + i + ":montant"), d = v("ref:" + i + ":fin");
+    const ok = m && d ? jour(d) >= debutRef : null;
+    return `<tr><td class="cand"><input class="txt" aria-label="Marché ${i + 1}, objet et maître d'ouvrage" data-k="ref:${i}:objet" value="${h(v("ref:" + i + ":objet"))}"></td><td class="cand num"><input type="number" min="0" aria-label="Marché ${i + 1}, montant" data-k="ref:${i}:montant" value="${h(m)}"></td><td class="cand"><input type="date" aria-label="Marché ${i + 1}, date de réception" data-k="ref:${i}:fin" value="${h(d)}"></td><td class="cand">${fichier("ref" + i, "Certificat de bonne fin, marché " + (i + 1))}</td><td class="calc">${verdict(ok, "dans les 10 ans", "trop ancien")}</td></tr>`;
+  }).join("");
+  const totalRefs = Array.from({ length: P.refMax }, (_, i) => v("ref:" + i + ":fin") && jour(v("ref:" + i + ":fin")) >= debutRef ? num("ref:" + i + ":montant") : 0).reduce((s, x) => s + x, 0);
+  const liqMin = t.ttc * P.liquiditePct / 100, liq = v("liq:montant");
+  const pers = P.personnel.map((p) => { const an = v("p:" + p.k + ":annees"); return `<tr><td class="fiche"><b>${h(p.poste)}</b><br><small>${h(p.exig)}</small></td><td class="cand"><input class="txt" aria-label="Nom, ${h(p.poste)}" data-k="p:${p.k}:nom" value="${h(v("p:" + p.k + ":nom"))}"></td><td class="cand num"><input type="number" min="0" aria-label="Années en travaux routiers, ${h(p.poste)}" data-k="p:${p.k}:annees" value="${h(an)}" style="width:5rem"></td><td class="cand">${fichier("cv-" + p.k, "CV, " + p.poste)}<br>${fichier("dipl-" + p.k, "Diplôme certifié, " + p.poste)}</td><td class="calc">${verdict(an ? Number(an) >= p.annees : null, "conforme", "moins de " + p.annees + " ans")}</td></tr>`; }).join("");
+  const mat = P.materiel.map((m) => {
+    const pr = v("m:" + m.k + ":propre"), lo = v("m:" + m.k + ":loue");
+    const ok = pr === "" && lo === "" ? null : (Number(pr) || 0) >= m.propre && (Number(pr) || 0) + (Number(lo) || 0) >= m.n;
+    return `<tr><td class="fiche"><b>${h(m.t)}</b></td><td class="fiche num">${m.n}</td><td class="fiche num">${m.propre}</td><td class="cand num"><input type="number" min="0" aria-label="En propre, ${h(m.t)}" data-k="m:${m.k}:propre" value="${h(pr)}" style="width:4.5rem"></td><td class="cand num"><input type="number" min="0" aria-label="Loués, ${h(m.t)}" data-k="m:${m.k}:loue" value="${h(lo)}" style="width:4.5rem"></td><td class="cand"><input class="txt" aria-label="Lieu de parcage, ${h(m.t)}" data-k="m:${m.k}:lieu" value="${h(v("m:" + m.k + ":lieu"))}"></td><td class="cand">${fichier("mat-" + m.k, "Justificatifs, " + m.t)}</td><td class="calc">${verdict(ok, "conforme", "insuffisant")}</td></tr>`;
+  }).join("");
+  return `<h2>Capacités (DPAO 6.3)</h2>
+  <h3 style="margin-top:4px">a) Fonds de roulement</h3>
+  <div class="exig">Liquidité auprès d'une banque primaire ou ligne de crédit ≥ <b>10 % du montant de l'offre</b>, émise entre le lancement et la date limite. Avec votre offre de ${ar(t.ttc)} Ar TTC : <b>${t.ttc ? ar(liqMin) + " Ar" : "renseignez d'abord vos prix"}</b>.</div>
+  <div class="champ"><label for="liq-montant">Montant attesté (Ar)</label><input id="liq-montant" type="number" data-k="liq:montant" value="${h(liq)}"> ${verdict(liq && t.ttc ? num("liq:montant") >= liqMin : null, "suffisant", "insuffisant")}</div>
+  <div class="champ"><label>Attestation bancaire</label>${fichier("liq", "Attestation de liquidité")}</div>
+  <h3>b) Chiffre d'affaires en travaux routiers (fiche A3-b)</h3>
+  <div class="exig">Moyenne des <b>trois meilleures</b> des cinq dernières années ≥ <b>${ar(P.caMin)} Ar</b></div>
+  <div class="defilant"><table><thead><tr>${ca.map((_, i) => `<th class="num">Exercice ${anneeRef - 1 - i}</th>`).join("")}<th class="num">Moyenne des 3 meilleures</th></tr></thead><tbody><tr>${caLignes}<td class="calc num">${ca.some(Boolean) ? ar(moyenne) : "—"}<br>${verdict(ca.some(Boolean) ? moyenne >= P.caMin : null, "conforme", "insuffisante")}</td></tr></tbody></table></div>
+  <h3>c) Références techniques (fiche A4)</h3>
+  <div class="exig">Au plus trois marchés de travaux routiers, en entrepreneur principal, réceptionnés depuis le <b>${dateFr(debutRef)}</b>, d'un montant <b>total</b> ≥ <b>${ar(P.refMin)} Ar</b></div>
+  <div class="defilant"><table><thead><tr><th>Objet et maître d'ouvrage</th><th class="num">Montant (Ar)</th><th>Date de réception</th><th>Certificat de bonne fin ou PV</th><th>Contrôle</th></tr></thead><tbody>${refs}</tbody>
+  <tfoot><tr><td>Total des références recevables</td><td class="num">${ar(totalRefs)}</td><td colspan="3">${verdict(totalRefs ? totalRefs >= P.refMin : null, "atteint", "inférieur à " + ar(P.refMin) + " Ar")}</td></tr></tfoot></table></div>
+  <h3>d) Matériel (annexes 3 et 4)</h3>
+  <p class="note">Pour le matériel en propre, carte grise ou acte de vente ; pour le matériel loué, l'engagement de location du loueur. Le lieu de parcage permet la visite du matériel.</p>
+  <div class="defilant"><table><thead><tr><th>Type et caractéristiques</th><th class="num">Nombre exigé</th><th class="num">Dont en propre</th><th class="num">En propre</th><th class="num">Loués</th><th>Lieu de parcage</th><th>Justificatifs</th><th>Contrôle</th></tr></thead><tbody>${mat}</tbody></table></div>
+  <h3>e) Personnel (annexe 2)</h3>
+  <div class="defilant"><table><thead><tr><th>Poste et exigences</th><th>Nom</th><th class="num">Années</th><th>Justificatifs</th><th>Contrôle</th></tr></thead><tbody>${pers}</tbody></table></div>`;
+}
+
+function pieces() {
+  const seuil = new Date(limite.getFullYear(), limite.getMonth() - P.ancienneteMois, limite.getDate());
+  const lignes = P.pieces.map((p) => { const d = v("d:" + p.k); return `<tr><td class="fiche">${h(p.t)}${p.date ? `<br><small>datée de moins de ${P.ancienneteMois} mois</small>` : ""}</td><td class="cand">${p.date ? `<input type="date" aria-label="Date, ${h(p.t)}" data-k="d:${p.k}" value="${h(d)}">` : "—"}</td><td class="cand">${fichier(p.k, p.t)}</td><td class="calc">${p.date ? verdict(d ? jour(d) >= seuil : null, "valide", "trop ancienne") : ""}</td></tr>`; }).join("");
+  const plans = P.plannings.map(([k, t]) => `<tr><td class="fiche">${h(t)}</td><td class="cand">${fichier(k, t)}</td></tr>`).join("");
+  return `<h2>Pièces de l'offre (DPAO 6.2)</h2>
+  <p class="note">Délivrées après le <b>${dateFr(seuil)}</b> pour les pièces 01 à 04. Les pièces 06 (garantie), 07 (personnel) et 08 (matériel) se déposent dans leurs onglets.</p>
+  <div class="defilant"><table><thead><tr><th>Pièce exigée</th><th>Date</th><th>Fichier</th><th>Contrôle</th></tr></thead><tbody>${lignes}</tbody></table></div>
+  <h3>Pièce 09 — Plannings (annexe 5), conformes aux modèles</h3>
+  <div class="defilant"><table><thead><tr><th>Planning</th><th>Fichier (tableur ou PDF)</th></tr></thead><tbody>${plans}</tbody></table></div>
+  <h3>Pièce 10 — Plan de charge (annexe 6)</h3>
+  <div class="champ"><label class="fm__case"><input type="checkbox" data-k="charge:neant"${v("charge:neant") === "on" ? " checked" : ""}> Aucun marché en cours : « Néant »</label>${v("charge:neant") === "on" ? "" : fichier("charge", "Plan de charge")}</div>
+  <h3>Méthodologie (fiche A2-b)</h3>
+  <div class="champ"><label>Organisation, procédés, sécurité, communication, environnement</label>${fichier("methodo", "Méthodologie")}</div>`;
+}
+
+function controles() {
+  const t = totaux(), K = k1();
+  const liqMin = t.ttc * P.liquiditePct / 100;
+  const ca = Array.from({ length: P.caAnnees }, (_, i) => num("ca:" + i)).sort((a, b) => b - a).slice(0, P.caMeilleures);
+  const debutRef = new Date(limite.getFullYear() - P.refAnnees, limite.getMonth(), limite.getDate());
+  const totalRefs = Array.from({ length: P.refMax }, (_, i) => v("ref:" + i + ":fin") && jour(v("ref:" + i + ":fin")) >= debutRef ? num("ref:" + i + ":montant") : 0).reduce((s, x) => s + x, 0);
+  const seuil = new Date(limite.getFullYear(), limite.getMonth() - P.ancienneteMois, limite.getDate());
+  return [
+    ["Prix du bordereau", t.saisis === P.bpu.length, `${t.saisis}/${P.bpu.length}`],
+    ["Installation de chantier ≤ 10 % des travaux", t.ht > 0 && t.installation > 0 && t.installation / t.ht * 100 <= P.plafondInstallation],
+    ["K1 renseigné et sous-détail du prix 001", K.A1 + K.A2 > 0 && num("sd:R") > 0],
+    ["Garantie de soumission (forme, montant, validité, fichier)", !!(v("g:forme") && num("g:montant") >= P.garantie && v("g:fin") && jour(v("g:fin")) >= plus(limite, P.validiteGarantieJours) && etat.f.garantie)],
+    ["Délai ≤ 6 mois", num("delai") > 0 && num("delai") <= P.delaiMaxMois],
+    ["Liquidité ≥ 10 % de l'offre", t.ttc > 0 && num("liq:montant") >= liqMin && !!etat.f.liq],
+    ["Chiffre d'affaires routier", ca.reduce((s, x) => s + x, 0) / P.caMeilleures >= P.caMin],
+    ["Références techniques", totalRefs >= P.refMin],
+    ["Matériel (10 types)", P.materiel.every((m) => num("m:" + m.k + ":propre") >= m.propre && num("m:" + m.k + ":propre") + num("m:" + m.k + ":loue") >= m.n && etat.f["mat-" + m.k])],
+    ["Personnel clé", P.personnel.every((p) => v("p:" + p.k + ":nom") && num("p:" + p.k + ":annees") >= p.annees && etat.f["cv-" + p.k] && etat.f["dipl-" + p.k])],
+    ["Pièces 01 à 05, fiches et annexes de l'AE", P.pieces.every((p) => etat.f[p.k] && (!p.date || (v("d:" + p.k) && jour(v("d:" + p.k)) >= seuil)))],
+    ["Plannings 8-a à 8-e, plan de charge, méthodologie", P.plannings.every(([k]) => etat.f[k]) && (v("charge:neant") === "on" || !!etat.f.charge) && !!etat.f.methodo],
+  ];
+}
+
+function recap() {
+  const t = totaux(), items = controles(), complet = items.every((i) => i[1]);
+  return `<h2>Récapitulatif et dépôt</h2>
+  <div class="recap"><div class="carte"><p class="sur">Lot unique</p><div>Entretien progressif des routes reliant Ankily et Mahasoa</div><b class="m">${ar(t.ttc)} ${P.monnaie} TTC</b>
+  <p class="note">${t.ttc ? majuscule(enLettres(t.ttc)) + " Ariary" : ""}</p>
+  <ul class="check">${items.map(([lib, ok, n]) => `<li class="${ok ? "fait" : "manque"}">${h(lib)}${n ? " — " + n : ""}</li>`).join("")}</ul>
+  <p style="margin:12px 0 0"><button type="button" class="bouton principal" id="deposer"${complet && !etat.depose ? "" : " disabled"}>${etat.depose ? "Offre déposée" : "Signer et déposer l'offre"}</button></p>
+  ${!complet && !etat.depose ? `<p class="note">Le dépôt s'ouvre quand toutes les lignes sont cochées.</p>` : ""}
+  ${etat.depose ? `<div class="accuse"><b>Accusé de réception</b><br>Offre scellée et horodatée le ${etat.depose} (${h(P.fuseau)}).<br><span class="mono">Empreinte 7c1e 08ab 44f2 d913…</span> <span class="hyp">H</span><br><small>L'offre reste chiffrée jusqu'à la séance d'ouverture. L'acte d'engagement, le bordereau et le DQE sont produits depuis vos saisies et signés électroniquement.</small></div>` : ""}</div></div>`;
+}
+
+function rendre() {
+  const z = document.getElementById("formulaire");
+  z.innerHTML = { prix, k1: k1Onglet, garantie, capacites, pieces, recap }[etat.doc]();
+  z.querySelectorAll("[data-k]").forEach((el) => el.addEventListener(el.tagName === "SELECT" || el.type === "date" || el.type === "checkbox" ? "change" : "input", () => {
+    etat.s[el.dataset.k] = el.type === "checkbox" ? (el.checked ? "on" : "") : el.value;
+    if (el.type === "text" || el.classList.contains("txt")) return;
+    const id = el.dataset.k, garder = el.type === "number"; rendre();
+    if (garder) { const n = z.querySelector(`[data-k="${CSS.escape(id)}"]`); if (n) n.focus(); }
+  }));
+  z.querySelectorAll("[data-fichier]").forEach((el) => el.addEventListener("change", () => { const f = el.files && el.files[0]; if (f) { etat.f[el.dataset.fichier] = f.name; rendre(); } }));
+  const dep = document.getElementById("deposer"); if (dep) dep.addEventListener("click", () => { etat.depose = new Date().toLocaleString("fr-FR", { timeZone: "Indian/Antananarivo" }); rendre(); });
+  const ex = document.getElementById("exemple"); if (ex) ex.addEventListener("click", () => { for (const [no] of P.bpu) etat.s["pu:" + no] = String(EXEMPLE[no]); rendre(); });
+}
+
+document.querySelectorAll(".onglets button").forEach((b) => b.addEventListener("click", () => { etat.doc = b.dataset.doc; document.querySelectorAll(".onglets button").forEach((x) => x.setAttribute("aria-selected", String(x === b))); rendre(); }));
+depot(); rendre();
+</script>
+</body>
+</html>
