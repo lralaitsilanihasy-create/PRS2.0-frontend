@@ -230,3 +230,20 @@ Fichiers : `scripts/modeles-dao/modeles/{DPAO-T,AE-T,CCAP-T}.{txt,json}`. Fidél
 - la fiche 40 révisée en v3, sans changement de valeur : les blancs de B3 doivent disparaître.
 
 Il en restera trois, faute de donnée chez le MEN : `B09-PE-03`, `B08-MR-05` et le marché de maîtrise d'œuvre (`B02-MW-02`). Ce sont des pointillés attendus. Je rejouerai la v3 à votre retour.
+
+> ⚠️ **Livraison backend du 2026-10-02 (§B5.2).** Conforme. Les trois modèles sont recopiés tels quels : **DPAO-T 262/262**,
+> **AE-T 363/363**, **CCAP-T 574/574** (73 conditions), sur le rendu brut du serveur.
+> Rendu contrôlé (`ModelesDaoTravauxTest.blancsDeB3Remplis`) :
+> - chèque « libéllé au nom de … » et « à l'ordre de … » ;
+> - « 1 copie(s) » ;
+> - « Heure : 09 h 30 » ;
+> - « N° … du 02/10/2026 » (date de validation) ;
+> - « soit le 01/11/2026 » (remise − 15 jours) ;
+> - régie à « 10 % », décompte « 5 jours ouvrables », découpage du forfait ligne à ligne, pénalités plafonnées à « 10 % » ;
+> - « est de 20 jours. ».
+>
+> Plus aucun « <à préciser> », « <pourcentage> », « < nombre de jours> », « <indiquer la nature des indices… » ni « <n°> ».
+> L'actualisation ne s'imprime que si `B05-VR-02` est renseigné, et « Les prix sont fermes et non révisables. » reste.
+> **Parité** : extraction identique, **1 027 lignes** de lecture identiques. Sur le DAO du MEN, le DPAO-T reconnaît désormais
+> 46 paragraphes, comme chez vous.
+> La v3 de la fiche 40 est à rejouer de votre côté, après le redémarrage du JAR. Aucun script n'est à passer.
