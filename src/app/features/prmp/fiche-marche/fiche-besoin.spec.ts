@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 
 import { ToastService } from '../../../core/notifications/toast.service';
-import { ArticleFiche, TypeMarche } from '../../../models';
+import { ArticleFiche, CategorieDao, TypeMarche } from '../../../models';
 import { FicheBesoin } from './fiche-besoin';
 
 /** Le besoin tel que le serveur le sert : deux articles au lot 1, un au lot 2. */
@@ -47,6 +47,7 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     saisieParLot?: boolean;
     lecture?: boolean;
     typeMarche?: TypeMarche | null;
+    categorie?: CategorieDao | null;
   }
 
   function monter(o: Options = {}): void {
@@ -62,6 +63,7 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     fixture.componentRef.setInput('saisieParLot', o.saisieParLot ?? true);
     fixture.componentRef.setInput('lecture', o.lecture ?? false);
     fixture.componentRef.setInput('typeMarche', o.typeMarche ?? 'QUANTITE_FIXE');
+    fixture.componentRef.setInput('categorie', o.categorie ?? 'FOURNITURES_SERVICES');
     rendre();
   }
 
@@ -266,5 +268,71 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     bouton('+ Article').click();
     rendre();
     expect(lignes().length).toBe(1);
+  });
+
+  // ── DQE des travaux (chantier b, lot 1 — contrat demandé le 02/10, pas encore servi) ──────────────────────
+  /** Le DQE du MTP, deux séries : le serveur le servira ainsi une fois le besoin ouvert aux travaux. */
+  const DQE: ArticleFiche[] = [
+    { idArticle: 1, lot: null, ordre: 1, numeroPrix: '001', serie: '000', serieLibelle: 'Installation', designation: 'Installation et repli de chantier', unite: 'fft', quantite: 1, sousDetail: true, plafond: 10, libelleBordereau: 'Le forfait', caracteristiques: [] },
+    { idArticle: 2, lot: null, ordre: 2, numeroPrix: '510', serie: '500', serieLibelle: 'Ouvrages', designation: 'Démolition maçonnerie', unite: 'm³', quantite: 55.2, libelleBordereau: 'Le mètre cube', caracteristiques: [] },
+  ];
+
+  it('travaux : séries en intertitre, n° de prix, sous-détail et plafond dits sur la ligne', () => {
+    monter({ nbLots: 1, saisieParLot: false, categorie: 'TRAVAUX' });
+    ouvrir(DQE);
+    expect(Array.from(racine().querySelectorAll('.bs__serie')).map((t) => texte(t))).toEqual(['Série 000 — Installation', 'Série 500 — Ouvrages']);
+    expect(lignes().filter((l) => !l.classList.contains('bs__serie')).map((l) => saisie(l).value)).toEqual(['001', '510']);
+    expect(texte(racine().querySelector('.bs__plier'))).toContain('sous-détail exigé · plafond 10 %');
+  });
+
+  it('travaux : un n° de prix répété est signalé avant l’envoi ; l’envoi porte les attributs du DQE', () => {
+    monter({ nbLots: 1, saisieParLot: false, categorie: 'TRAVAUX' });
+    ouvrir(DQE);
+    const articles = (): HTMLTableRowElement[] => lignes().filter((l) => !l.classList.contains('bs__serie'));
+    ecrire(saisie(articles()[1]), '001');
+    rendre();
+    expect(racine().querySelectorAll('.form-error').length).toBe(2);
+    ecrire(saisie(articles()[1]), '510');
+    rendre();
+    expect(racine().querySelector('.form-error')).toBeNull();
+    bouton('Enregistrer le besoin').click();
+    const put = http.expectOne('/api/fiches-marche/42/articles');
+    const a = (put.request.body as { articles: ArticleFiche[] }).articles;
+    expect(a.map((x) => [x.numeroPrix, x.serie, x.sousDetail, x.plafond, x.quantite])).toEqual([
+      ['001', '000', true, 10, 1],
+      ['510', '500', false, null, 55.2],
+    ]);
+    put.flush(DQE);
+  });
+
+  it('travaux : « Coller depuis le tableur » lit les lignes, montre l’aperçu, et n’ajoute qu’au clic', () => {
+    monter({ nbLots: 1, saisieParLot: false, categorie: 'TRAVAUX' });
+    ouvrir([]);
+    bouton('Coller depuis le tableur').click();
+    rendre();
+    const zone = racine().querySelector('textarea') as HTMLTextAreaElement;
+    zone.value = ['600\tCHAUSSEES', '620\tRemblai d’emprunt\tm3\t1 520,00', 'TOTAL\t\t\t'].join('\n');
+    zone.dispatchEvent(new Event('input'));
+    rendre();
+    expect(texte(racine().querySelector('.modal [role="status"]'))).toBe('1 article(s) reconnu(s), 1 ligne(s) écartée(s).');
+    expect(lignes().length).toBe(1); // la ligne d'aperçu de la modale, pas encore la grille
+    bouton('Ajouter 1 article(s)').click();
+    rendre();
+    expect(racine().querySelector('textarea')).toBeNull();
+    expect(texte(racine().querySelector('.bs__serie'))).toBe('Série 600 — CHAUSSEES');
+    expect(toast.info).toHaveBeenCalledWith("1 article(s) ajouté(s) — à vérifier avant d'enregistrer.");
+  });
+
+  it('travaux, contrat en attente : 409 BESOIN_HORS_PERIMETRE dit que le DQE reste affiché', () => {
+    monter({ nbLots: 1, saisieParLot: false, categorie: 'TRAVAUX' });
+    ouvrir(DQE);
+    bouton('Enregistrer le besoin').click();
+    http.expectOne('/api/fiches-marche/42/articles').flush(
+      { message: 'Le besoin ne concerne que les fournitures.', code: 'BESOIN_HORS_PERIMETRE' },
+      { status: 409, statusText: 'Conflict' },
+    );
+    rendre();
+    expect(toast.error.mock.calls[0][0]).toContain('Le DQE reste affiché');
+    expect(lignes().filter((l) => !l.classList.contains('bs__serie')).length).toBe(2);
   });
 });

@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 
-import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
+import { ApiError, codeErreur, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
-import { ArticleFiche, TypeMarche } from '../../../models';
+import { ArticleFiche, CategorieDao, TypeMarche } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
+import { ModaleDirective } from '../../../shared/a11y/modale.directive';
+import { grouperParSerie, libelleBordereauPropose, lireCollage, numerosEnDouble } from './dqe';
 
 /** Une ligne de la grille — l'article et ses exigences, tels que l'écran les manipule avant d'enregistrer. */
 interface LigneBesoin extends ArticleFiche {
@@ -36,6 +38,7 @@ interface LigneBesoin extends ArticleFiche {
   templateUrl: './fiche-besoin.html',
   styleUrl: './fiche-besoin.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ModaleDirective],
 })
 export class FicheBesoin {
   private readonly fiches = inject(FicheMarcheService);
@@ -49,6 +52,11 @@ export class FicheBesoin {
   readonly lecture = input<boolean>(false);
   /** Forme du marché : à commande = quantités minimum et maximum ; sinon une quantité unique. */
   readonly typeMarche = input<TypeMarche | null>(null);
+  /**
+   * ⚠️ Catégorie de la fiche — aux **travaux**, la grille est un **DQE** (chantier b, lot 1, demande du 02/10 §B1) :
+   * n° de prix, série en intertitre, quantités décimales, sous-détail et plafond ; la caractéristique n'est pas exigée.
+   */
+  readonly categorie = input<CategorieDao | null>(null);
   /** Le besoin vient d'être enregistré : la page mère relit son bilan de contrôles. */
   readonly enregistre = output<void>();
 
@@ -66,6 +74,7 @@ export class FicheBesoin {
     return this.saisieParLot() && n > 1 ? Array.from({ length: n }, (_, i) => i + 1) : [];
   });
   readonly aCommande = computed(() => this.typeMarche() === 'A_COMMANDE');
+  readonly travaux = computed(() => this.categorie() === 'TRAVAUX');
   /**
    * ⚠️ Le lot **affiché** : celui qu'on a ouvert, ou le premier à défaut. Il est dérivé et non posé au retour
    * du serveur — sinon un chargement en échec laisserait la grille sans lot, et l'article ajouté partirait
@@ -83,6 +92,16 @@ export class FicheBesoin {
     for (const l of this.lignes()) if (l.lot != null) m.set(l.lot, (m.get(l.lot) ?? 0) + 1);
     return m;
   });
+  /** Aux travaux : les articles du lot regroupés par série, dans l'ordre de leur première apparition. */
+  readonly series = computed(() => grouperParSerie(this.duLot()));
+  /** Les n° de prix répétés dans le lot : refusés par le serveur, signalés dès la saisie. */
+  readonly doubles = computed(() => numerosEnDouble(this.duLot()));
+
+  // ── Coller depuis le tableur (Q2) ──
+  readonly collageOuvert = signal(false);
+  readonly collageTexte = signal('');
+  readonly collage = computed(() => lireCollage(this.collageTexte()));
+
   /** Les lots déjà garnis, hors lot courant : les seuls dont la copie ait un sens. */
   readonly lotsCopiables = computed(() => this.lots().filter((n) => n !== this.lotAffiche() && (this.comptes().get(n) ?? 0) > 0));
 
@@ -119,7 +138,18 @@ export class FicheBesoin {
     const lot = this.lotAffiche();
     this.lignes.update((l) => [
       ...l,
-      { cle: ++this.cles, lot, designation: '', unite: 'U', quantiteMin: null, quantiteMax: null, quantite: null, caracteristiques: [], ouverte: true },
+      {
+        cle: ++this.cles,
+        lot,
+        designation: '',
+        unite: 'U',
+        quantiteMin: null,
+        quantiteMax: null,
+        quantite: null,
+        caracteristiques: [],
+        ouverte: !this.travaux(),
+        ...(this.travaux() ? this.suiteDeSerie() : {}),
+      },
     ]);
   }
 
@@ -156,12 +186,56 @@ export class FicheBesoin {
     );
   }
 
-  saisir(ligne: LigneBesoin, champ: 'designation' | 'unite', ev: Event): void {
+  saisir(ligne: LigneBesoin, champ: 'designation' | 'unite' | 'numeroPrix' | 'serie' | 'serieLibelle' | 'libelleBordereau', ev: Event): void {
     const valeur = (ev.target as HTMLInputElement).value;
-    this.lignes.update((l) => l.map((x) => (x.cle === ligne.cle ? { ...x, [champ]: valeur } : x)));
+    this.lignes.update((l) =>
+      l.map((x) => {
+        if (x.cle !== ligne.cle) return x;
+        // L'unité change : le libellé du bordereau suit, tant que la PRMP ne l'a pas réécrit.
+        if (champ === 'unite' && this.travaux() && (!x.libelleBordereau || x.libelleBordereau === libelleBordereauPropose(x.unite))) {
+          return { ...x, unite: valeur, libelleBordereau: libelleBordereauPropose(valeur) };
+        }
+        return { ...x, [champ]: valeur };
+      }),
+    );
   }
 
-  saisirNombre(ligne: LigneBesoin, champ: 'quantiteMin' | 'quantiteMax' | 'quantite', ev: Event): void {
+  basculerSousDetail(ligne: LigneBesoin, ev: Event): void {
+    const coche = (ev.target as HTMLInputElement).checked;
+    this.lignes.update((l) => l.map((x) => (x.cle === ligne.cle ? { ...x, sousDetail: coche } : x)));
+  }
+
+  /** La série d'un article neuf : celle du dernier article du lot — on saisit un DQE série par série. */
+  private suiteDeSerie(): Partial<LigneBesoin> {
+    const dernier = this.duLot().at(-1);
+    return { serie: dernier?.serie ?? null, serieLibelle: dernier?.serieLibelle ?? null, libelleBordereau: libelleBordereauPropose('U'), sousDetail: false };
+  }
+
+  /** Rang d'un article dans le lot, celui des erreurs servies (`articles[i]`) — l'affichage par série ne le change pas. */
+  rangDe(ligne: LigneBesoin): number {
+    return this.duLot().findIndex((x) => x.cle === ligne.cle);
+  }
+
+  ouvrirCollage(): void {
+    this.collageTexte.set('');
+    this.collageOuvert.set(true);
+  }
+
+  fermerCollage(): void {
+    this.collageOuvert.set(false);
+  }
+
+  /** Les articles lus s'ajoutent à la fin du lot ; rien ne part au serveur avant « Enregistrer ». */
+  ajouterCollage(): void {
+    const lot = this.lotAffiche();
+    const lus = this.collage().articles.map((a) => ({ ...a, cle: ++this.cles, lot, caracteristiques: [], sousDetail: false, ouverte: false }));
+    if (!lus.length) return;
+    this.lignes.update((l) => [...l, ...lus]);
+    this.collageOuvert.set(false);
+    this.toast.info(`${lus.length} article(s) ajouté(s)${lot ? ` au lot ${lot}` : ''} — à vérifier avant d'enregistrer.`);
+  }
+
+  saisirNombre(ligne: LigneBesoin, champ: 'quantiteMin' | 'quantiteMax' | 'quantite' | 'plafond', ev: Event): void {
     const brut = (ev.target as HTMLInputElement).value;
     const valeur = brut === '' ? null : Number(brut);
     this.lignes.update((l) => l.map((x) => (x.cle === ligne.cle ? { ...x, [champ]: valeur } : x)));
@@ -194,6 +268,12 @@ export class FicheBesoin {
         quantiteMax: l.quantiteMax,
         quantite: l.quantite,
         caracteristiques: l.caracteristiques.map((c) => ({ libelle: c.libelle, exigence: c.exigence })),
+        numeroPrix: l.numeroPrix,
+        serie: l.serie,
+        serieLibelle: l.serieLibelle,
+        libelleBordereau: l.libelleBordereau,
+        sousDetail: l.sousDetail,
+        plafond: l.plafond,
         ouverte: false,
       }));
     if (!copies.length) return;
@@ -214,6 +294,16 @@ export class FicheBesoin {
       quantiteMax: this.aCommande() ? l.quantiteMax : null,
       quantite: this.aCommande() ? null : l.quantite,
       caracteristiques: l.caracteristiques,
+      ...(this.travaux()
+        ? {
+            numeroPrix: l.numeroPrix?.trim() || null,
+            serie: l.serie?.trim() || null,
+            serieLibelle: l.serieLibelle?.trim() || null,
+            libelleBordereau: l.libelleBordereau?.trim() || null,
+            sousDetail: !!l.sousDetail,
+            plafond: l.plafond ?? null,
+          }
+        : {}),
     }));
     this.saving.set(true);
     this.erreurs.set(new Map());
@@ -232,7 +322,10 @@ export class FicheBesoin {
         // (liste nue, ou `{ erreurs: [...] }`) autant que la forme normalisée par l'intercepteur.
         const m = erreursParChamp(e);
         this.erreurs.set(m);
-        if (!m.size) this.toast.error(e?.message ?? "Le besoin n'a pas pu être enregistré.");
+        // ⚠️ Contrat en attente (02/10) : tant que le serveur réserve le besoin aux fournitures, le DQE saisi reste
+        // à l'écran, et la PRMP le sait — il n'est pas perdu, il n'est pas encore enregistrable.
+        if (codeErreur(e) === 'BESOIN_HORS_PERIMETRE') this.toast.error("Le serveur n'accepte pas encore le détail quantitatif des travaux (évolution demandée le 02/10). Le DQE reste affiché ; il ne pourra être enregistré qu'après cette livraison.");
+        else if (!m.size) this.toast.error(e?.message ?? "Le besoin n'a pas pu être enregistré.");
       },
     });
   }

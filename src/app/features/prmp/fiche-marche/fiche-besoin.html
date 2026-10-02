@@ -31,7 +31,116 @@
       </div>
     }
 
-    @if (duLot().length) {
+    @if (duLot().length && travaux()) {
+      <!-- ⚠️ DQE des travaux (02/10) : n° de prix, séries en intertitre, quantités décimales ; le détail d'un
+           article porte sa série, le libellé du bordereau, le sous-détail et le plafond. -->
+      <div class="bs__table">
+        <table>
+          <caption class="bs__cap">
+            {{ duLot().length }} article(s) en {{ series().length }} série(s)@if (lotAffiche(); as n) { au lot {{ n }} } — le détail
+            quantitatif et estimatif : le candidat y portera ses prix.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="bs__c-p">N° de prix</th>
+              <th scope="col">Désignation</th>
+              <th scope="col" class="bs__c-u">Unité</th>
+              <th scope="col" class="bs__c-q">Quantité</th>
+              <th scope="col" class="bs__c-a"><span class="bs__sr">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of series(); track $index) {
+              <tr class="bs__serie">
+                <th scope="colgroup" colspan="5">
+                  @if (s.code) { Série {{ s.code }}@if (s.libelle) { — {{ s.libelle }} } } @else { Sans série — à préciser dans le détail de l’article }
+                </th>
+              </tr>
+              @for (l of s.articles; track l.cle) {
+                @let r = rangDe(l);
+                <tr [class.bs__ko]="erreurDe(r, 'designation') || erreurDe(r, 'numeroPrix') || doubles().has(l.numeroPrix?.trim() ?? '')">
+                  <td class="bs__c-p">
+                    @if (lecture()) {
+                      <span class="bs__lu">{{ l.numeroPrix }}</span>
+                    } @else {
+                      <input class="form-control" type="text" [value]="l.numeroPrix ?? ''" [attr.aria-label]="'N° de prix de l’article ' + (r + 1)" (input)="saisir(l, 'numeroPrix', $event)" />
+                      @if (doubles().has(l.numeroPrix?.trim() ?? '')) {
+                        <span class="form-error">N° déjà utilisé dans ce lot</span>
+                      } @else if (erreurDe(r, 'numeroPrix'); as msg) {
+                        <span class="form-error">{{ msg }}</span>
+                      }
+                    }
+                  </td>
+                  <td>
+                    @if (lecture()) {
+                      <span class="bs__lu">{{ l.designation }}</span>
+                    } @else {
+                      <input class="form-control" type="text" [value]="l.designation" [attr.aria-label]="'Désignation de l’article ' + (r + 1)" (input)="saisir(l, 'designation', $event)" />
+                      @if (erreurDe(r, 'designation'); as msg) { <span class="form-error">{{ msg }}</span> }
+                    }
+                    <button type="button" class="bs__plier" (click)="basculerOuverture(l)">
+                      {{ l.ouverte ? '▾' : '▸' }} Série, bordereau, sous-détail@if (l.sousDetail) { · sous-détail exigé }@if (l.plafond != null) { · plafond {{ l.plafond }} % }
+                    </button>
+                  </td>
+                  <td class="bs__c-u">
+                    @if (lecture()) {
+                      <span class="bs__lu">{{ l.unite }}</span>
+                    } @else {
+                      <input class="form-control" type="text" [value]="l.unite" [attr.aria-label]="'Unité de l’article ' + (r + 1)" (input)="saisir(l, 'unite', $event)" />
+                    }
+                  </td>
+                  <td class="bs__c-q">
+                    @if (lecture()) {
+                      <span class="bs__lu">{{ l.quantite }}</span>
+                    } @else {
+                      <input class="form-control" type="number" min="0" step="0.01" [value]="l.quantite ?? ''" [attr.aria-label]="'Quantité de l’article ' + (r + 1)" (input)="saisirNombre(l, 'quantite', $event)" />
+                      @if (erreurDe(r, 'quantite'); as msg) { <span class="form-error">{{ msg }}</span> }
+                    }
+                  </td>
+                  <td class="bs__c-a">
+                    @if (!lecture()) {
+                      <button type="button" class="bs__ic" aria-label="Monter cet article" [disabled]="r === 0" (click)="deplacer(l, -1)">↑</button>
+                      <button type="button" class="bs__ic" aria-label="Descendre cet article" [disabled]="r === duLot().length - 1" (click)="deplacer(l, 1)">↓</button>
+                      <button type="button" class="bs__ic bs__ic--ko" aria-label="Supprimer cet article" (click)="supprimerArticle(l)">✕</button>
+                    }
+                  </td>
+                </tr>
+                @if (l.ouverte) {
+                  <tr class="bs__carac">
+                    <td></td>
+                    <td colspan="3">
+                      <div class="bs__dqe">
+                        <label class="bs__f">
+                          <span>Série</span>
+                          <input class="form-control" type="text" [value]="l.serie ?? ''" [readOnly]="lecture()" placeholder="500" (input)="saisir(l, 'serie', $event)" />
+                        </label>
+                        <label class="bs__f bs__f--large">
+                          <span>Intitulé de la série</span>
+                          <input class="form-control" type="text" [value]="l.serieLibelle ?? ''" [readOnly]="lecture()" placeholder="Ouvrages" (input)="saisir(l, 'serieLibelle', $event)" />
+                        </label>
+                        <label class="bs__f bs__f--large">
+                          <span>Libellé au bordereau des prix unitaires</span>
+                          <input class="form-control" type="text" [value]="l.libelleBordereau ?? ''" [readOnly]="lecture()" placeholder="Le mètre cube" (input)="saisir(l, 'libelleBordereau', $event)" />
+                        </label>
+                        <label class="bs__f">
+                          <span>Plafond (% des travaux)</span>
+                          <input class="form-control" type="number" min="0" max="100" step="0.01" [value]="l.plafond ?? ''" [readOnly]="lecture()" (input)="saisirNombre(l, 'plafond', $event)" />
+                        </label>
+                        <label class="bs__case">
+                          <input type="checkbox" [checked]="!!l.sousDetail" [disabled]="lecture()" (change)="basculerSousDetail(l, $event)" />
+                          Prix soumis à sous-détail
+                        </label>
+                      </div>
+                    </td>
+                    <td></td>
+                  </tr>
+                }
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (duLot().length) {
       <div class="bs__table">
         <table>
           <caption class="bs__cap">
@@ -152,6 +261,9 @@
     @if (!lecture()) {
       <div class="bs__pied">
         <button type="button" class="btn btn-outline" (click)="ajouterArticle()">+ Article</button>
+        @if (travaux()) {
+          <button type="button" class="btn btn-outline" (click)="ouvrirCollage()">Coller depuis le tableur</button>
+        }
         @if (duLot().length && lotsCopiables().length) {
           @for (n of lotsCopiables(); track n) {
             <button type="button" class="btn btn-outline btn-sm" (click)="dupliquerDepuis(n)">Dupliquer depuis le lot {{ n }}</button>
@@ -164,3 +276,57 @@
     }
   }
 </div>
+
+@if (collageOuvert()) {
+  <div class="modal-backdrop">
+    <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Coller le détail quantitatif depuis un tableur" appModale (appModaleFermer)="fermerCollage()">
+      <div class="modal-header-plain">
+        <span class="modal-title">Coller depuis le tableur</span>
+        <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerCollage()">✕</button>
+      </div>
+      <div class="modal-body bs__col">
+        <p class="bs__etat">
+          Copiez dans Excel les lignes du DQE — colonnes <b>n° de prix, désignation, unité, quantité</b> —, puis collez-les ici.
+          Les lignes « 500 OUVRAGES » deviennent des séries ; l'en-tête et les totaux sont écartés.
+        </p>
+        <label class="bs__f bs__f--large">
+          <span>Lignes copiées</span>
+          <textarea class="form-control bs__zone" rows="8" [value]="collageTexte()" (input)="collageTexte.set($any($event.target).value)"></textarea>
+        </label>
+        @if (collageTexte().trim()) {
+          <p role="status" class="bs__etat">
+            {{ collage().articles.length }} article(s) reconnu(s)@if (collage().ecartees.length) {, {{ collage().ecartees.length }} ligne(s) écartée(s)}.
+          </p>
+          @if (collage().articles.length) {
+            <div class="bs__table">
+              <table>
+                <caption class="bs__sr">Aperçu des articles reconnus</caption>
+                <thead>
+                  <tr><th scope="col">Série</th><th scope="col">N°</th><th scope="col">Désignation</th><th scope="col">Unité</th><th scope="col">Quantité</th></tr>
+                </thead>
+                <tbody>
+                  @for (a of collage().articles; track $index) {
+                    <tr><td>{{ a.serie }}</td><td>{{ a.numeroPrix }}</td><td>{{ a.designation }}</td><td>{{ a.unite }}</td><td class="bs__c-q">{{ a.quantite }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+          @if (collage().ecartees.length) {
+            <ul class="bs__ecartees">
+              @for (e of collage().ecartees; track e.rang) {
+                <li>Ligne {{ e.rang }} — {{ e.raison }} : <span class="bs__lu">{{ e.texte }}</span></li>
+              }
+            </ul>
+          }
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="fermerCollage()">Annuler</button>
+        <button type="button" class="btn btn-primary" [disabled]="!collage().articles.length" (click)="ajouterCollage()">
+          Ajouter {{ collage().articles.length }} article(s)@if (lotAffiche(); as n) { au lot {{ n }}}
+        </button>
+      </div>
+    </div>
+  </div>
+}

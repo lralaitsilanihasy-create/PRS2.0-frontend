@@ -328,6 +328,21 @@ export interface ArticleFiche {
   caracteristiques: CaracteristiqueFiche[];
   redigePar?: string | null;
   profilRedacteur?: string | null;
+  /**
+   * ⚠️ **DQE des travaux** — contrat **demandé**, pas encore servi (`demande-backend-2026-10-02-dqe-et-seuils-travaux`,
+   * §B1.2) : les noms sont ceux de la demande, à réaligner sur la livraison. Ignorés hors travaux.
+   */
+  /** N° de prix au bordereau (« 529 », « 2.4 ») — unique dans le lot. */
+  numeroPrix?: string | null;
+  /** Série ou chapitre du DQE (« 500 ») ; regroupe les articles, dérive le découpage du forfait. */
+  serie?: string | null;
+  serieLibelle?: string | null;
+  /** « Le mètre cube » : tête de ligne du bordereau des prix unitaires, où le candidat écrit son prix en lettres. */
+  libelleBordereau?: string | null;
+  /** Prix soumis à sous-détail (annexe 3 de l'AE). */
+  sousDetail?: boolean | null;
+  /** Plafond du prix en % du montant des travaux (installation de chantier : 10). */
+  plafond?: number | null;
 }
 
 /** `GET /api/fiches-marche/{idDmc}/versions` — une version VALIDÉE, de quoi lister l'historique (le détail : `/versions/{n}`). */
