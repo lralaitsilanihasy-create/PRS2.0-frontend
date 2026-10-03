@@ -147,3 +147,15 @@ Quatre réglages de `clauses.mjs`, et un de `completerParClause` :
 
 Ce qui reste hors du second temps : le **tableau du matériel du MTP**, qui arrive cellule par cellule. **Demandé** : porter
 B4, avec la parité habituelle.
+
+> ⚠️ **Livraison backend du 2026-10-03 (§B4, second temps).** Conforme : les quatre réglages de `clauses.mjs` et celui de
+> `completerParClause` sont portés à l'identique (`LectureClauses`, `LectureDao`).
+> - **Parité** sur les 20 documents, `lire()` des deux côtés : extraction identique, **1 195 lignes identiques**.
+> - **DAO réels**, vos nouveaux ajouts :
+>   - 2463 : `B04-VO-01` = 75 ;
+>   - MEN : `B05-GQ-03#1` = 9 900 000, `#2` = 7 200 000, et le passage du personnel ;
+>   - MTP : `B04-VO-01` = 75, et le passage du personnel.
+> - `LectureClausesTest.secondTemps` : « de l'offre … (75j)jours », la garantie à 4 paragraphes, et le personnel « ci-après
+>   (CV…) : » fermé par « NB : ».
+> - Le tableau du matériel du MTP reste hors du second temps, comme vous le notez.
+> - Ni migration ni script.
