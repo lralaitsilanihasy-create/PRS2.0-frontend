@@ -167,3 +167,26 @@ conditions, une fois les noms des jetons fixés, et le texte soumis au pilote.
 > - **Livraison** : migration **V60** et script `docs/referentiel/2026-10-03-materiel-personnel-travaux.sql`, passé à blanc
 >   sur DBPRS20 (16 valeurs de `B03-QT-09` y sont conservées). Les deux copies du fichier de correspondance des travaux
 >   sont mises à jour à l'identique.
+
+> ✅ **Front, 2026-10-03.**
+> - **Écran** : l'écran est aligné sur la livraison. L'aperçu de chaque ligne suit vos règles d'impression, sigle en tête
+>   du diplôme compris. Le bloc `B13` s'affiche sur une fiche de travaux, en lecture vérifiée sur la fiche 32.
+> - **DPAO-T, clause 6.3 (c) et (e)**, rédigé dans `DPAO-T.txt` / `.json` (`verifier.mjs` : 284 sur 284). ⚠️ **Ne pas le
+>   recopier encore** : le texte attend la validation du pilote.
+>   - (c) : la phrase du document type, puis `{{MOYENS.materiel}}` si la liste est remplie, puis `{{B03-QT-09}}` s'il est
+>     saisi ;
+>   - (e) : « (e) proposer le personnel clé suivant : », si l'une des deux est remplie, puis `{{MOYENS.personnel}}`, puis
+>     `{{B03-QT-13}}`.
+> - **Une condition sur la liste est nécessaire**, comme vous le proposiez. Sans elle, une fiche qui décrit son matériel
+>   en texte seul imprimerait des pointillés au-dessus de son texte (16 fiches sur DBPRS20 sont dans ce cas). Le modèle
+>   écrit :
+>   - `MATERIEL-LISTE` = `MOYENS.materiel renseigne` ;
+>   - `PERSONNEL-LISTE` = `MOYENS.personnel renseigne` ;
+>   - `PERSONNEL-CLE` = `MOYENS.personnel renseigne ou B03-QT-13 renseigne`.
+>
+>   **Demandé** : que le moteur de conditions lise `MOYENS.materiel` et `MOYENS.personnel` (« renseigne » = la liste a au
+>   moins une entrée), et que `DEBUT_TERME` admette le point dans une clé. Côté front, l'évaluateur du banc est élargi à
+>   `[\w.-]+` ; `lire.mjs` n'a pas changé (il ne déduit rien d'un « renseigne »), la parité de la lecture tient donc.
+> - **Banc de l'import** : aucune fausse valeur. Le DPAO-T relit 2 champs de moins, `B03-QT-09` et `B03-QT-13`, désormais
+>   signalés **ambigus** : chacun suit, dans la même cellule, un paragraphe fait du seul jeton de sa liste, et la lecture
+>   ne peut pas savoir lequel des deux le DAO remplit. La lecture n'importe pas les listes : elles se saisissent à l'écran.

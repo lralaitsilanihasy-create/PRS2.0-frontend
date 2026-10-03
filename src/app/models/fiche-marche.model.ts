@@ -129,8 +129,8 @@ export interface RubriqueFiche {
 export type RenduBloc = 'BESOIN' | 'MOYENS' | (string & {});
 
 /**
- * ⚠️ Lot 3 du chantier b (03/10) — contrat **demandé**, pas encore servi (`demande-backend-2026-10-03-materiel-personnel-
- * travaux`) : le matériel et le personnel exigés des travaux, en listes (bloc à rendu `'MOYENS'`). Noms de la demande.
+ * ⚠️ Lot 3 du chantier b — livré le 03/10 (V60, `demande-backend-2026-10-03-materiel-personnel-travaux`) : le matériel
+ * et le personnel exigés des travaux, en listes (bloc `B13`, rendu `'MOYENS'`). Hors travaux : 409 `MOYENS_HORS_PERIMETRE`.
  */
 export interface MaterielExige {
   idMateriel?: number | null;

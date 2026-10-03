@@ -10,7 +10,7 @@ import { ligneMateriel, lignePersonnel, minimumIncoherent } from './moyens';
 type Ligne<T> = T & { cle: number };
 
 /**
- * ⚠️ **Matériel et personnel exigés** des travaux (lot 3 du chantier b, 03/10 — contrat **demandé**,
+ * ⚠️ **Matériel et personnel exigés** des travaux (lot 3 du chantier b — livré le 03/10, V60, bloc `B13`,
  * `demande-backend-2026-10-03-materiel-personnel-travaux`). Deux listes de la fiche, pas de champs : le bloc les déclare
  * (`rendu = 'MOYENS'`). Chacune s'enregistre seule (`PUT` remplace la liste), et chaque entrée montre la ligne que le
  * DPAO imprimera à la clause 6.3 — la PRMP relit la phrase, pas seulement des cases.

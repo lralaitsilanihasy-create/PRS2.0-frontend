@@ -19,6 +19,10 @@ describe('Matériel et personnel exigés — aperçu de la ligne imprimée', () 
     expect(lignePersonnel({ poste: 'Chef de chantier', nombre: 1, parLot: true, experienceAnnees: 3 })).toBe("- Chef de chantier (1 par lot) : au moins 3 ans d'expérience");
     expect(lignePersonnel({ poste: 'Topographe', nombre: 2 })).toBe('- Topographe (2)');
     expect(lignePersonnel({ poste: 'Géotechnicien', nombre: 1, experienceAnnees: 1 })).toBe("- Géotechnicien (1) : au moins 1 an d'expérience");
+    // Livraison V60 : un sigle en tête du diplôme garde ses capitales ; un domaine sans années donne « expérience en ».
+    expect(lignePersonnel({ poste: 'Chef de chantier', nombre: 1, diplome: 'BTS en génie civil', domaineExperience: 'travaux routiers' })).toBe(
+      '- Chef de chantier (1) : BTS en génie civil ; expérience en travaux routiers',
+    );
   });
 
   it('un minimum en propre au-delà du nombre est signalé', () => {

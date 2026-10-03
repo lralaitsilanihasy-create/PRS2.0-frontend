@@ -28,7 +28,11 @@
   "VISITE-OBLIGATOIRE": "B04-VL-02 = OUI",
   "ONG": "B03-QT-05 = OUI",
   "QUALIFICATIONS": "B03-QT-06 renseigne",
-  "PERSONNEL-CLE": "B03-QT-13 renseigne",
+  "MATERIEL-LISTE": "MOYENS.materiel renseigne",
+  "MATERIEL-TEXTE": "B03-QT-09 renseigne",
+  "PERSONNEL-CLE": "MOYENS.personnel renseigne ou B03-QT-13 renseigne",
+  "PERSONNEL-LISTE": "MOYENS.personnel renseigne",
+  "PERSONNEL-TEXTE": "B03-QT-13 renseigne",
   "CHIFFRE-AFFAIRES": "B03-QT-07 renseigne et B03-QT-16 vide",
   "CA-MOYENNE": "B03-QT-07 renseigne et B03-QT-16 renseigne",
   "REFERENCES-UN": "B03-QT-19 vide",
@@ -117,7 +121,7 @@
   },
   {
    "type": "ligne",
-   "texte": "\u001fQualifications particulières requises\u001eAux fins du présent Marché, les Candidats doivent répondre aux critères de sélection minima suivants\u001e{{SI:CHIFFRE-AFFAIRES}}\u001ea) avoir réalisé un chiffre d’affaires annuel, pour des {{B03-QT-18}}, d’un montant équivalant à\u001e{{B03-QT-07}}\u001e{{FINSI:CHIFFRE-AFFAIRES}}\u001e{{SI:CA-MOYENNE}}\u001ea) avoir réalisé un chiffre d’affaires annuel moyen, calculé sur les {{B03-QT-16.lettres}} ({{B03-QT-16}}) meilleures des {{B03-QT-17.lettres}} ({{B03-QT-17}}) dernières années, pour des {{B03-QT-18}}, d’un montant équivalant à {{B03-QT-07}}\u001e{{FINSI:CA-MOYENNE}}\u001e{{SI:REFERENCES-UN}}\u001eb) avoir réalisé avec succès en tant qu’entrepreneur principal au moins un projet de nature et de complexité comparables à celles des Travaux au cours des {{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années et comprenant:\u001e{{FINSI:REFERENCES-UN}}\u001e{{SI:REFERENCES-CUMUL}}\u001eb) avoir réalisé avec succès en tant qu’entrepreneur principal, au cours des {{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années, au plus {{B03-QT-19.lettres}} ({{B03-QT-19}}) marchés de nature et de complexité comparables à celles des Travaux, d’un montant cumulé d’au moins {{B03-QT-20.parLot}}, et comprenant :\u001e{{FINSI:REFERENCES-CUMUL}}\u001e{{B03-QT-08.parLot}}\u001e(c) indiquer sous quelle forme (propriété, location, etc.) l'Entrepreneur pourra disposer en temps voulu des gros matériels et équipements essentiels ci-après :\u001e{{B03-QT-09}}\u001e(d) proposer un directeur de travaux ayant {{B03-QT-10}} ans d’expérience dans la réalisation de travaux de nature et de complexité comparables;\u001e{{SI:PERSONNEL-CLE}}\u001e(e) proposer le personnel clé suivant : {{B03-QT-13}}\u001e{{FINSI:PERSONNEL-CLE}}\u001e{{SI:LIQUIDITE}}\u001e(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum de : {{B03-QT-14.parLot}}\u001e{{FINSI:LIQUIDITE}}\u001e{{SI:LIQUIDITE-POURCENT}}\u001e(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum égal à {{B03-QT-15.parLot}} du montant de son offre\u001e{{FINSI:LIQUIDITE-POURCENT}}\u001e{{SI:QUALIFICATIONS}}\u001e{{B03-QT-06}}\u001e{{FINSI:QUALIFICATIONS}}"
+   "texte": "\u001fQualifications particulières requises\u001eAux fins du présent Marché, les Candidats doivent répondre aux critères de sélection minima suivants\u001e{{SI:CHIFFRE-AFFAIRES}}\u001ea) avoir réalisé un chiffre d’affaires annuel, pour des {{B03-QT-18}}, d’un montant équivalant à\u001e{{B03-QT-07}}\u001e{{FINSI:CHIFFRE-AFFAIRES}}\u001e{{SI:CA-MOYENNE}}\u001ea) avoir réalisé un chiffre d’affaires annuel moyen, calculé sur les {{B03-QT-16.lettres}} ({{B03-QT-16}}) meilleures des {{B03-QT-17.lettres}} ({{B03-QT-17}}) dernières années, pour des {{B03-QT-18}}, d’un montant équivalant à {{B03-QT-07}}\u001e{{FINSI:CA-MOYENNE}}\u001e{{SI:REFERENCES-UN}}\u001eb) avoir réalisé avec succès en tant qu’entrepreneur principal au moins un projet de nature et de complexité comparables à celles des Travaux au cours des {{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années et comprenant:\u001e{{FINSI:REFERENCES-UN}}\u001e{{SI:REFERENCES-CUMUL}}\u001eb) avoir réalisé avec succès en tant qu’entrepreneur principal, au cours des {{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années, au plus {{B03-QT-19.lettres}} ({{B03-QT-19}}) marchés de nature et de complexité comparables à celles des Travaux, d’un montant cumulé d’au moins {{B03-QT-20.parLot}}, et comprenant :\u001e{{FINSI:REFERENCES-CUMUL}}\u001e{{B03-QT-08.parLot}}\u001e(c) indiquer sous quelle forme (propriété, location, etc.) l'Entrepreneur pourra disposer en temps voulu des gros matériels et équipements essentiels ci-après :\u001e{{SI:MATERIEL-LISTE}}\u001e{{MOYENS.materiel}}\u001e{{FINSI:MATERIEL-LISTE}}\u001e{{SI:MATERIEL-TEXTE}}\u001e{{B03-QT-09}}\u001e{{FINSI:MATERIEL-TEXTE}}\u001e(d) proposer un directeur de travaux ayant {{B03-QT-10}} ans d’expérience dans la réalisation de travaux de nature et de complexité comparables;\u001e{{SI:PERSONNEL-CLE}}\u001e(e) proposer le personnel clé suivant :\u001e{{FINSI:PERSONNEL-CLE}}\u001e{{SI:PERSONNEL-LISTE}}\u001e{{MOYENS.personnel}}\u001e{{FINSI:PERSONNEL-LISTE}}\u001e{{SI:PERSONNEL-TEXTE}}\u001e{{B03-QT-13}}\u001e{{FINSI:PERSONNEL-TEXTE}}\u001e{{SI:LIQUIDITE}}\u001e(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum de : {{B03-QT-14.parLot}}\u001e{{FINSI:LIQUIDITE}}\u001e{{SI:LIQUIDITE-POURCENT}}\u001e(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum égal à {{B03-QT-15.parLot}} du montant de son offre\u001e{{FINSI:LIQUIDITE-POURCENT}}\u001e{{SI:QUALIFICATIONS}}\u001e{{B03-QT-06}}\u001e{{FINSI:QUALIFICATIONS}}"
   },
   {
    "type": "ligne",
@@ -894,7 +898,10 @@
   "[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]",
   "{{B02-LV-02}}",
   "{{B03-QT-06}}",
-  "(e) proposer le personnel clé suivant : {{B03-QT-13}}",
+  "(e) proposer le personnel clé suivant :",
+  "{{MOYENS.materiel}}",
+  "{{MOYENS.personnel}}",
+  "{{B03-QT-13}}",
   "(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum de : {{B03-QT-14.parLot}}",
   "9.4.5. Offres anormalement basses ou anormalement hautes",
   "{{B06-EO-07}}",

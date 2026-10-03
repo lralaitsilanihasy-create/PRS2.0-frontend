@@ -118,7 +118,7 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
   }
 
   /**
-   * ⚠️ Lot 3 du chantier b (03/10) — **contrat demandé** (`demande-backend-2026-10-03-materiel-personnel-travaux`) :
+   * ⚠️ Lot 3 du chantier b — livré le 03/10 (V60, `demande-backend-2026-10-03-materiel-personnel-travaux`) :
    * le matériel et le personnel exigés des travaux, deux listes de la version de fiche ; `PUT` remplace la liste.
    */
   materiel(idDmc: number): Observable<MaterielExige[]> {

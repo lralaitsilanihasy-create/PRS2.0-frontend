@@ -2238,7 +2238,13 @@ function dpaoTravaux() {
     'VISITE-OBLIGATOIRE': 'B04-VL-02 = OUI',
     ONG: 'B03-QT-05 = OUI',
     QUALIFICATIONS: 'B03-QT-06 renseigne',
-    'PERSONNEL-CLE': 'B03-QT-13 renseigne',
+    // 03/10 (lot 3 du chantier b, V60) : matériel et personnel en listes ; le texte de B03 reste en complément.
+    // ⚠️ « MOYENS.x renseigne » : condition sur une LISTE, à servir par le backend (demande du 03/10, §B2).
+    'MATERIEL-LISTE': 'MOYENS.materiel renseigne',
+    'MATERIEL-TEXTE': 'B03-QT-09 renseigne',
+    'PERSONNEL-CLE': 'MOYENS.personnel renseigne ou B03-QT-13 renseigne',
+    'PERSONNEL-LISTE': 'MOYENS.personnel renseigne',
+    'PERSONNEL-TEXTE': 'B03-QT-13 renseigne',
     // 03/10 (chantier b, lot 2 — V59) : les seuils calculés de la clause 6.3, chacun en deux rédactions exclusives.
     'CHIFFRE-AFFAIRES': 'B03-QT-07 renseigne et B03-QT-16 vide',
     'CA-MOYENNE': 'B03-QT-07 renseigne et B03-QT-16 renseigne',
@@ -2264,7 +2270,8 @@ function dpaoTravaux() {
   const CLAUSE_SE = '[[CLAUSE À FOURNIR PAR LE JURISTE : conditions et modalités de la remise électronique — plateforme ({{B04-SE-02}}), heure de référence ({{B04-SE-04}}), signature exigée ({{B04-SE-05}}), formats ({{B04-SE-07}}) et tailles admis ({{B04-SE-08}} Mo par fichier, {{B04-SE-09}} Mo par offre), ouverture électronique en séance seulement, assistance ({{B04-SE-14}}), indisponibilité et prorogation ({{B04-SE-12}} h, {{B04-SE-13}} jours ouvrables)]]';
   // 01/10 (DAO du MEN, demande 2026-10-01-dao-travaux-men §B2.1) — personnel clé et liquidité n'ont pas de clause au
   // document type : deux paragraphes déclarés, imprimés seulement si renseignés (champs créés par le backend).
-  const PERSONNEL_CLE = '(e) proposer le personnel clé suivant : {{B03-QT-13}}';
+  // 03/10 — le (e) introduit la liste du personnel (un poste par ligne), puis le texte de B03-QT-13 s'il est saisi.
+  const PERSONNEL_CLE = '(e) proposer le personnel clé suivant :';
   const LIQUIDITE = '(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum de : {{B03-QT-14.parLot}}';
   const OFFRES_ANORMALES_CLAUSE = '9.4.5. Offres anormalement basses ou anormalement hautes';
   // 03/10 (chantier b, lot 2 ; demande 2026-10-02-dqe-et-seuils-travaux §B2.4) — les seuils CALCULÉS du DAO routier du
@@ -2273,7 +2280,7 @@ function dpaoTravaux() {
   const CA_MOYENNE = 'a) avoir réalisé un chiffre d’affaires annuel moyen, calculé sur les {{B03-QT-16.lettres}} ({{B03-QT-16}}) meilleures des {{B03-QT-17.lettres}} ({{B03-QT-17}}) dernières années, pour des {{B03-QT-18}}, d’un montant équivalant à {{B03-QT-07}}';
   const REFERENCES_CUMUL = 'b) avoir réalisé avec succès en tant qu’entrepreneur principal, au cours des {{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années, au plus {{B03-QT-19.lettres}} ({{B03-QT-19}}) marchés de nature et de complexité comparables à celles des Travaux, d’un montant cumulé d’au moins {{B03-QT-20.parLot}}, et comprenant :';
   const LIQUIDITE_POURCENT = '(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum égal à {{B03-QT-15.parLot}} du montant de son offre';
-  const ajouts = [CLAUSE_SE, '{{B02-LV-02}}', '{{B03-QT-06}}', PERSONNEL_CLE, LIQUIDITE, OFFRES_ANORMALES_CLAUSE, '{{B06-EO-07}}', CA_MOYENNE, REFERENCES_CUMUL, LIQUIDITE_POURCENT];
+  const ajouts = [CLAUSE_SE, '{{B02-LV-02}}', '{{B03-QT-06}}', PERSONNEL_CLE, '{{MOYENS.materiel}}', '{{MOYENS.personnel}}', '{{B03-QT-13}}', LIQUIDITE, OFFRES_ANORMALES_CLAUSE, '{{B06-EO-07}}', CA_MOYENNE, REFERENCES_CUMUL, LIQUIDITE_POURCENT];
 
   retirer(d, 'note de rédaction du modèle, « à supprimer »', '[note 1]');
   retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', (l) => /^<\s*(soit|ou)\s*:?\s*>\s*:?$/i.test(l.texte));
@@ -2386,11 +2393,15 @@ function dpaoTravaux() {
     SIc('REFERENCES-CUMUL', REFERENCES_CUMUL),
     xj(r63q, '<Indiquer le type de travaux', 0, '{{B03-QT-08.parLot}}'),   // 01/10 : par lot (seuils du MEN : 247,5 M / 180 M)
     x(r63q, '(c) indiquer sous quelle forme'),
-    x(r63q, '<indiquer une liste de ces gros', ['<indiquer une liste de ces gros matériels et équipements essentiels>', '{{B03-QT-09}}', 'jeton']),
+    // 03/10 — la liste du matériel (un engin par ligne), puis le texte de B03-QT-09 en complément s'il est saisi.
+    SIc('MATERIEL-LISTE', '{{MOYENS.materiel}}'),
+    SIc('MATERIEL-TEXTE', x(r63q, '<indiquer une liste de ces gros', ['<indiquer une liste de ces gros matériels et équipements essentiels>', '{{B03-QT-09}}', 'jeton'])),
     // 01/10 — « y compris au moins < par exemple >ans d'expérience en tant que directeur » s'imprimait tel quel : le trou
     // n'a pas de champ (le MEN ne l'exige pas) ; l'exemple est retiré avec son trou, ce qui en tient lieu va dans B03-QT-06.
     x(r63q, '(d) proposer un directeur', ['<par exemple cinq à dix>', '{{B03-QT-10}}', 'jeton'], [', y compris au moins < par exemple >ans d’expérience en tant que directeur', '', 'retire']),
     SIc('PERSONNEL-CLE', PERSONNEL_CLE),
+    SIc('PERSONNEL-LISTE', '{{MOYENS.personnel}}'),
+    SIc('PERSONNEL-TEXTE', '{{B03-QT-13}}'),
     SIc('LIQUIDITE', LIQUIDITE),
     SIc('LIQUIDITE-POURCENT', LIQUIDITE_POURCENT),
     SIc('QUALIFICATIONS', '{{B03-QT-06}}'));

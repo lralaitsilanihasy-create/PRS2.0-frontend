@@ -39,16 +39,17 @@ const NOUVEAUX = { 'B04-EP-04': 'NOMBRE', 'B05-PF-13': 'MONTANT', 'B06-TP-07': '
 
 const n = (s) => String(s ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
 function vraie(expr, vaut) {
+  // 03/10 — une clé peut porter un point : « MOYENS.materiel renseigne » teste une liste de la fiche (lot 3), vide au banc.
   // « et » / « ou » ne séparent deux termes que devant une clé suivie d'un opérateur, comme au serveur (DEBUT_TERME) et
   // dans lire.mjs : « Caution personnelle et solidaire » est une valeur (01/10).
-  const debut = '(?=[\\w-]+\\s*(?:!?=|contient\\b|renseigne\\b|vide\\b))';
+  const debut = '(?=[\\w.-]+\\s*(?:!?=|contient\\b|renseigne\\b|vide\\b))';
   return expr.split(new RegExp(`\\s+ou\\s+${debut}`)).some((c) => c.split(new RegExp(`\\s+et\\s+${debut}`)).every((t) => {
     let x; t = t.trim();
-    if ((x = /^([\w-]+)\s+renseigne$/.exec(t))) return n(vaut(x[1])) !== '';
-    if ((x = /^([\w-]+)\s+vide$/.exec(t))) return n(vaut(x[1])) === '';
-    if ((x = /^([\w-]+)\s+contient\s+(.+)$/.exec(t))) { const v = n(vaut(x[1])); return v !== '' && v.includes(n(x[2])); }
-    if ((x = /^([\w-]+)\s*!=\s*(.+)$/.exec(t))) { const v = n(vaut(x[1])); return !(v !== '' && v === n(x[2])); }
-    if ((x = /^([\w-]+)\s*=\s*(.+)$/.exec(t))) { const v = n(vaut(x[1])); return v !== '' && v === n(x[2]); }
+    if ((x = /^([\w.-]+)\s+renseigne$/.exec(t))) return n(vaut(x[1])) !== '';
+    if ((x = /^([\w.-]+)\s+vide$/.exec(t))) return n(vaut(x[1])) === '';
+    if ((x = /^([\w.-]+)\s+contient\s+(.+)$/.exec(t))) { const v = n(vaut(x[1])); return v !== '' && v.includes(n(x[2])); }
+    if ((x = /^([\w.-]+)\s*!=\s*(.+)$/.exec(t))) { const v = n(vaut(x[1])); return !(v !== '' && v === n(x[2])); }
+    if ((x = /^([\w.-]+)\s*=\s*(.+)$/.exec(t))) { const v = n(vaut(x[1])); return v !== '' && v === n(x[2]); }
     throw new Error(`terme illisible : ${t}`);
   }));
 }
