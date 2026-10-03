@@ -81,6 +81,10 @@
 
 /* ── Caractéristiques exigées ─────────────────────────────────────────────────────────────── */
 .bs__plier {
+  /* ⚠️ 03/10 (recette du DQE) — en ligne, le bouton se plaçait À CÔTÉ du champ « Désignation » et débordait sous le
+     champ « Unité », qui captait le clic : le détail de l'article était inaccessible. Il passe sous le champ. */
+  display: block;
+  text-align: left;
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;

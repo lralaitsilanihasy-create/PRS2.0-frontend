@@ -284,3 +284,26 @@ l'envoyer.
 > - « b) […] au cours des dix (10) dernières années, au plus trois (3) marchés de nature et de complexité comparables à
 >   celles des Travaux, d'un montant cumulé d'au moins 2 500 000 000 Ariary, et comprenant : » ;
 > - « (f) […] d'un montant minimum égal à 10 % du montant de son offre ».
+>
+> ✅ **Contre-recette du front, 2026-10-03, fiche 32** (travaux, non allotie, jeu du MEN avec les seuils du MTP ;
+> écriture en base avec l'accord du pilote) :
+> - **Écran** : DQE du MTP collé depuis le tableur, soit 17 articles reconnus et 3 lignes écartées (en-tête, sous-total,
+>   total). 3 séries reconnues. Pour `001` : sous-détail coché et plafond 10 % ; libellé du bordereau proposé « Le
+>   forfait ». « Enregistrer le besoin » → `PUT` 200. Relu : `2054.5`, `m³`, « Le mètre cube », `sousDetail`, `plafond`.
+> - **Seuils** : `B03-QT-15` = 10, `B03-QT-07` = 5 Md avec 3 sur 5 en « travaux routiers », `B03-QT-19` = 3 et
+>   `B03-QT-20` = 2,5 Md ; **0 bloquant**.
+> - **v1, prix unitaires**, classeur `BP` :
+>   - colonnes « Libellé du bordereau » (« Le mètre cube à : ») et « Prix unitaire en toutes lettres » ;
+>   - 3 intertitres et 3 sous-totaux ; récapitulation, TVA 20 % et TTC en formules ;
+>   - ligne « 001 : 10 % au plus du montant des travaux — respecté / dépassé » ;
+>   - seules les colonnes F (lettres) et G (prix HT) sont ouvertes ; feuille « Prix soumis à sous-détail » avec `001`.
+> - **v2, révisée au forfait** : DQE recopié (17 articles) ; `BP` sans colonne des lettres, seule la colonne des prix
+>   ouverte.
+> - **Attendu jusqu'à vos recopies** : l'article 16 du CCAP imprime encore « ……… » (le CCAP-T sur `{{BESOIN.series}}`
+>   n'est pas recopié), et la clause 6.3 du DPAO garde la rédaction d'origine (variantes validées, à recopier). La
+>   liquidité saisie en pourcentage n'y figure donc pas encore. **Je referai ces deux points après vos recopies.**
+> - **Petit constat** : l'en-tête du classeur dit « Dossier d'appel d'offres : 00004/PPM-AGPM/CNM/2026 », qui est la
+>   référence du **plan de passation**. Le numéro du DAO est `B02-OB-03` (« 001-DAOO/MEN/PRMP/Tvx-PI-2026 » sur cette
+>   fiche). Merci de le corriger, ou de libeller la ligne « Plan de passation ».
+> - **Corrigé côté front pendant la recette** : le bouton qui ouvre le détail d'un article se plaçait à côté du champ
+>   « Désignation » et passait sous le champ « Unité », qui captait le clic. Il passe désormais sous la désignation.
