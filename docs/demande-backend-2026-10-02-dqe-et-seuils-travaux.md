@@ -33,6 +33,13 @@ validation, copiée à la révision ; même `PUT ?lot=`, qui remplace le lot.
 Le bloc `B12` « Besoin » (`rendu = 'BESOIN'`) entre au référentiel des travaux. Proposition d'intitulé pour les
 travaux : « Détail quantitatif et estimatif ».
 
+> ⚠️ **Livraison backend du 2026-10-02 (§B1.1, V59).** Conforme. `GET|PUT|DELETE …/articles` s'ouvre à TRAVAUX, avec le
+> même cycle de vie ; `BESOIN_HORS_PERIMETRE` ne vise plus que les prestations intellectuelles. Le bloc `B12` est servi
+> aux travaux avec une **rubrique propre, `B12-DQ`** : « Détail quantitatif et estimatif, par lot ». L'intitulé du bloc
+> reste « Besoin », et les fournitures gardent `B12-BE`.
+> **Écart :** le DQE vaut pour les **trois** types de marché des travaux, contrat-cadre compris, comme le besoin des
+> fournitures ; une fiche de travaux en contrat-cadre exige donc aussi son DQE.
+
 ### B1.2 — Ce qu'un article de travaux porte de plus
 
 | propriété (proposée) | type | exemple MEN | exemple MTP | règle |
@@ -52,6 +59,12 @@ travaux : « Détail quantitatif et estimatif ».
   de leur première apparition.
 - Hors travaux, ces propriétés sont ignorées, ou refusées en 400 si vous préférez. Le besoin des fournitures ne change
   pas.
+
+> ⚠️ **Livraison backend du 2026-10-02 (§B1.2).** Conforme, avec les noms proposés : `numeroPrix`, `serie`,
+> `serieLibelle`, `libelleBordereau`, `sousDetail`, `plafond`. Les règles d'écriture sont celles du tableau, 400 nominatif
+> compris ; le plafond va de 0 à 100. **H1 :** les quantités passent à deux décimales (`numeric(15,2)`), pour toutes les
+> catégories. Elles sont servies sans zéro inutile (`5`, `2054.5`) ; trois décimales donnent un 400. **Hors travaux**, ces
+> propriétés sont **ignorées** et servies vides (`null`, `false`), sans 400 : l'écran peut envoyer la même forme partout.
 
 ### B1.3 — Les documents produits
 
@@ -74,6 +87,21 @@ travaux : « Détail quantitatif et estimatif ».
 - L'annexe 1 de l'AE-T reste le **cadre** qu'elle est (sections `ANNEXE-FORFAIT`, `ANNEXE-UNITAIRES`, `ANNEXE-MIXTE`) :
   le DQE chiffré est le classeur.
 
+> ⚠️ **Livraison backend du 2026-10-02 (§B1.3).** Conforme. Le classeur `BP` des travaux, par lot :
+> - colonnes « N° de prix, Désignation, Unité, Quantité (à commande : minimum et maximum), Prix unitaire HT, Montant HT » ;
+> - à prix **unitaires ou mixtes** (cadrage `typePrix`), deux colonnes avant le prix : « Libellé du bordereau »
+>   (« Le mètre cube à : »), verrouillée, et « Prix unitaire en toutes lettres », ouverte ;
+> - par série : un intertitre (code, intitulé), les articles, puis « Sous-total série 500 — Ouvrages » ;
+> - en pied : « Récapitulation » (une ligne par série, renvoyant à son sous-total), puis total HT, TVA et TTC ;
+> - un article plafonné reçoit une ligne de contrôle en formule sous les totaux : « 001 : 10 % au plus du montant des
+>   travaux — respecté / dépassé ». Elle est jugée sur le **total HT** (à commande : les montants maximum) et ne bloque
+>   rien.
+>
+> Seuls le prix HT et le prix en lettres sont ouverts ; la feuille est protégée sans mot de passe, comme celle des
+> fournitures. La seconde feuille « **Prix soumis à sous-détail** » (n° de prix, désignation, unité) n'existe que s'il y en
+> a. **La formule « prix = D × K1 / R » n'est pas tenue** : la liste seule. **Ni `LF` ni `TC`** aux travaux. L'annexe 1
+> de l'AE-T reste le cadre.
+
 ### B1.4 — Les contrôles
 
 - **`BESOIN_INCOMPLET` aux travaux** (bloquant) : chaque lot a au moins un article, et chaque article a un numéro de
@@ -81,6 +109,11 @@ travaux : « Détail quantitatif et estimatif ».
   DQE n'en a pas, et les spécifications techniques sont une pièce à part. Les caractéristiques restent possibles, sans
   être exigées.
 - **Pas de contrôle de plafond** à la fiche : les prix n'y sont pas.
+
+> ⚠️ **Livraison backend du 2026-10-02 (§B1.4).** Conforme, **H3** comprise. `BESOIN_INCOMPLET` aux travaux exige, pour
+> chaque article : un numéro de prix, une série, une unité et une quantité **positive**. À commande, c'est la quantité
+> maximum qui doit être positive. Message : « L'article n° 1.2 du lot 1 (« Remblais ») n'a pas de quantité positive. »
+> Pas de caractéristique exigée, pas de contrôle de plafond à la fiche.
 
 ### B1.5 — Le découpage du forfait, dérivé des séries (Q3)
 
@@ -93,6 +126,19 @@ Les pourcentages sont ceux du **candidat** : le MEN les laisse en blanc (fiche d
   l'article 16 se lit par lot (à vous de dire) ;
 - **`B08-MR-06` désactivé pour les travaux.** Je recopierai le CCAP-T sur le nouveau jeton dès que vous me direz sa
   forme.
+
+> ⚠️ **Livraison backend du 2026-10-02 (§B1.5).** `{{BESOIN.series}}` est servi, **sur une ligne par série**, dans l'ordre de
+> première apparition : `500 — Ouvrages : ……… %`. Le séparateur est un tiret cadratin entouré d'espaces ; les pointillés
+> sont ceux des autres jetons (`………`, trois caractères). Sans intitulé de série, la ligne est `500 : ……… %`. Les lignes
+> sont séparées par de vrais sauts de ligne en Word.
+> **H4, mieux que demandé :**
+> - si tous les lots ont les mêmes séries (le MEN), le jeton donne une seule liste ;
+> - sinon, une liste par lot, chacune précédée de « Lot n : » ;
+> - un document établi par lot lit la liste de son lot.
+>
+> Sans DQE, le jeton s'imprime en pointillés. **`B08-MR-06` est désactivé** (ses valeurs restent lisibles : 3 sur
+> DBPRS20). ⚠️ **Jusqu'à la recopie du CCAP-T sur `{{BESOIN.series}}`, l'article 16 imprime des pointillés à la place du
+> découpage.** Pour le remplacer, une ligne `PARA<tab>{{BESOIN.series}}` suffit, au même endroit que `{{B08-MR-06}}`.
 
 ### B1.6 — Ce que le front fait de son côté
 
@@ -121,6 +167,10 @@ Le DPAO-T imprime des seuils **fixes**. Le DAO du MTP en exige trois **calculés
 - Règle de bilan **bloquante** `LIQUIDITE_DOUBLE` : `B03-QT-14` et `B03-QT-15` ne peuvent pas être tous deux renseignés
   pour un même lot.
 
+> ⚠️ **Livraison backend du 2026-10-02 (§B2.1).** Conforme : **`B03-QT-15`** (POURCENTAGE, par lot, facultatif). La règle
+> **`LIQUIDITE_DOUBLE`** est bloquante, avec les rôles `MONTANT` (`B03-QT-14`) et `POURCENTAGE` (`B03-QT-15`), et se juge
+> lot par lot.
+
 ### B2.2 — Chiffre d'affaires : annuel, **ou** moyenne des meilleures années, dans un domaine
 
 - Existant : `B03-QT-07` (MONTANT), libellé « pour des travaux de construction ».
@@ -134,6 +184,13 @@ Le DPAO-T imprime des seuils **fixes**. Le DAO du MTP en exige trois **calculés
   `B03-QT-07` est renseigné.
 - Le libellé de `B03-QT-07` devient « Chiffre d'affaires minimum exigé (Ariary) ».
 
+> ⚠️ **Livraison backend du 2026-10-02 (§B2.2).** Conforme :
+> - **`B03-QT-16`** et **`B03-QT-17`** (NOMBRE), **`B03-QT-18`** (TEXTE, défaut « travaux de construction ») ; aucun n'est
+>   par lot ;
+> - libellé de `B03-QT-07` : « Chiffre d'affaires minimum exigé (Ariary) » ;
+> - **`CA_MOYENNE`**, bloquante, rôles `CA` (`B03-QT-07`), `MEILLEURES` (16) et `ANNEES` (17). Elle refuse : 16 sans 17 ou
+>   l'inverse, 16 > 17, ou une moyenne sans chiffre d'affaires renseigné.
+
 ### B2.3 — Références : un marché, **ou** un cumul sur quelques marchés
 
 - Existant : `B03-QT-08` (TEXTE_LONG, par lot, ce que le projet comparable doit comprendre) et `B03-QT-12` (période).
@@ -143,6 +200,10 @@ Le DPAO-T imprime des seuils **fixes**. Le DAO du MTP en exige trois **calculés
   - `B03-QT-20` MONTANT par lot « Montant cumulé minimum des marchés (Ariary) ».
 - Règle bloquante `REFERENCES_CUMUL` : les deux champs vont ensemble.
 - `B03-QT-08` reste : il décrit la nature des marchés.
+
+> ⚠️ **Livraison backend du 2026-10-02 (§B2.3).** Conforme : **`B03-QT-19`** (NOMBRE) et **`B03-QT-20`** (MONTANT, par lot,
+> montant positif). **`REFERENCES_CUMUL`** est bloquante, rôles `NOMBRE` et `MONTANT` : un nombre sans montant (pour chaque
+> lot d'une ligne allotie), ou un montant sans nombre, est refusé.
 
 ### B2.4 — L'impression
 
@@ -156,6 +217,10 @@ modèles :
 
 Il me faut seulement les codes définitifs. Pour le texte des variantes, je le soumettrai au pilote avant de vous
 l'envoyer.
+
+> ⚠️ **Livraison backend du 2026-10-02 (§B2.4).** Les **codes définitifs sont ceux proposés** : `B03-QT-15` à `B03-QT-20`.
+> `.lettres` sur un NOMBRE entier donne déjà « trois », et `.parLot` vaut pour `B03-QT-20`. J'attends les variantes de la
+> clause 6.3 avec les modèles.
 
 ---
 
@@ -173,3 +238,22 @@ l'envoyer.
 - **MTP** : prix unitaires, colonne des prix en lettres, plafond de `001` contrôlé en formule, `001` dans la liste
   des sous-détails. Le DPAO imprime la liquidité à 10 %, le chiffre d'affaires « 3 meilleures des 5 dernières années
   en travaux routiers », et les références « au plus trois marchés, cumul ≥ 2,5 Md ».
+
+> ⚠️ **Livraison backend du 2026-10-02 — hypothèses et recette.**
+> - Réponses : **H1** oui (deux décimales) ; **H2** oui (unique dans le lot) ; **H3** oui ; **H4** voir l'encadré §B1.5
+>   (liste unique si les lots ont le même DQE).
+> - **Recette** (`FicheDaoTravauxIntegrationTest`) :
+>   - **MTP**, prix unitaires, non alloti : 400 nominatifs (numéro manquant, en double, série à deux intitulés,
+>     `10.125`, plafond 120) ; DQE de 3 séries, `2054.5` m³, intitulé recopié. Le classeur `BP` a les colonnes des
+>     lettres, seules les cellules du candidat sont ouvertes ; prix posés, sous-totaux et total HT sont justes. Le plafond
+>     de `001` dit « dépassé » à 9 M sur 75,3 M, et « respecté » à 5 M. Feuille des sous-détails avec `001`. Ni LF ni TC.
+>   - **MEN**, forfait, deux lots : `BESOIN_INCOMPLET` sur le lot vide et la quantité nulle, puis le même DQE au lot 2.
+>     Un `BP` par lot, sans colonne des lettres ; la révision copie le DQE.
+>   - Seuils : liquidité double, moyenne incomplète et cumul sans montant sont bloquants. Une fois complétés (10 %,
+>     « 3 meilleures des 5 », 2,5 Md), la fiche se valide.
+>   - `SeriesDuBesoinTest` : le jeton, non alloti, alloti identique, alloti différent, document par lot, sans DQE.
+>   - Le texte imprimé par le DPAO attend vos variantes de la clause 6.3. Les 57 articles réels du MEN restent à saisir
+>     par la recette front.
+> - **Livraison** : migration **V59** (DQE, bloc `B12` ouvert aux travaux) et script
+>   `docs/referentiel/2026-10-02-dqe-et-seuils-travaux.sql`, passé à blanc sur DBPRS20. Les deux copies du fichier de
+>   correspondance des travaux sont mises à jour à l'identique.
