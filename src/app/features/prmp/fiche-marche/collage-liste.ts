@@ -26,9 +26,9 @@ import { LectureListe } from './collage-listes';
   template: `
     <div class="modal-backdrop">
       <div class="modal modal-lg" role="dialog" aria-modal="true" [attr.aria-label]="titre()" appModale (appModaleFermer)="ferme.emit()">
-        <div class="modal-header-plain">
+        <div class="modal-header">
           <span class="modal-title">{{ titre() }}</span>
-          <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="ferme.emit()">✕</button>
+          <button type="button" class="btn-close" aria-label="Fermer" (click)="ferme.emit()">✕</button>
         </div>
         <div class="modal-body cl">
           <p class="cl__etat">

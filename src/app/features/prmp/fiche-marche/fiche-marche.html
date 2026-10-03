@@ -828,9 +828,9 @@
 @if (departSuspendu()) {
   <div class="modal-backdrop">
     <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-label="Modifications non enregistrées" appModale (appModaleFermer)="resterSurLeBloc()">
-      <div class="modal-header-plain">
+      <div class="modal-header">
         <span class="modal-title">Modifications non enregistrées</span>
-        <button type="button" class="btn-close-plain" aria-label="Fermer" [disabled]="sauvegardeListe()" (click)="resterSurLeBloc()">✕</button>
+        <button type="button" class="btn-close" aria-label="Fermer" [disabled]="sauvegardeListe()" (click)="resterSurLeBloc()">✕</button>
       </div>
       <div class="modal-body">
         <p>
@@ -854,9 +854,9 @@
 @if (confirmSuppression()) {
   <div class="modal-backdrop">
     <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-label="Confirmer la suppression de la fiche" appModale (appModaleFermer)="confirmSuppression.set(false)">
-      <div class="modal-header-plain">
+      <div class="modal-header">
         <span class="modal-title">Supprimer cette fiche ?</span>
-        <button type="button" class="btn-close-plain" aria-label="Fermer" [disabled]="saving()" (click)="confirmSuppression.set(false)">✕</button>
+        <button type="button" class="btn-close" aria-label="Fermer" [disabled]="saving()" (click)="confirmSuppression.set(false)">✕</button>
       </div>
       <div class="modal-body">
         <p>
@@ -878,9 +878,9 @@
 @if (refusSuppression(); as refus) {
   <div class="modal-backdrop">
     <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-label="La fiche n’a pas été supprimée" appModale (appModaleFermer)="refusSuppression.set(null)">
-      <div class="modal-header-plain">
+      <div class="modal-header">
         <span class="modal-title">La fiche n’a pas été supprimée</span>
-        <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="refusSuppression.set(null)">✕</button>
+        <button type="button" class="btn-close" aria-label="Fermer" (click)="refusSuppression.set(null)">✕</button>
       </div>
       <div class="modal-body">
         <p>{{ refus.message }}</p>

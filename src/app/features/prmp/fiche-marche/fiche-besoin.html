@@ -112,15 +112,15 @@
                       <div class="bs__dqe">
                         <label class="bs__f">
                           <span>Série</span>
-                          <input class="form-control" type="text" [value]="l.serie ?? ''" [readOnly]="lecture()" placeholder="500" (input)="saisir(l, 'serie', $event)" />
+                          <input class="form-control" type="text" [value]="l.serie ?? ''" [readOnly]="lecture()" placeholder="ex. 500" (input)="saisir(l, 'serie', $event)" />
                         </label>
                         <label class="bs__f bs__f--large">
                           <span>Intitulé de la série</span>
-                          <input class="form-control" type="text" [value]="l.serieLibelle ?? ''" [readOnly]="lecture()" placeholder="Ouvrages" (input)="saisir(l, 'serieLibelle', $event)" />
+                          <input class="form-control" type="text" [value]="l.serieLibelle ?? ''" [readOnly]="lecture()" placeholder="ex. Ouvrages" (input)="saisir(l, 'serieLibelle', $event)" />
                         </label>
                         <label class="bs__f bs__f--large">
                           <span>Libellé au bordereau des prix unitaires</span>
-                          <input class="form-control" type="text" [value]="l.libelleBordereau ?? ''" [readOnly]="lecture()" placeholder="Le mètre cube" (input)="saisir(l, 'libelleBordereau', $event)" />
+                          <input class="form-control" type="text" [value]="l.libelleBordereau ?? ''" [readOnly]="lecture()" placeholder="ex. Le mètre cube" (input)="saisir(l, 'libelleBordereau', $event)" />
                         </label>
                         <label class="bs__f">
                           <span>Plafond (% des travaux)</span>
@@ -236,8 +236,8 @@
                         @if (lecture()) {
                           <span class="bs__lu"><b>{{ c.libelle }}</b> — {{ c.exigence }}</span>
                         } @else {
-                          <input class="form-control" type="text" placeholder="Mémoire vive" [value]="c.libelle" [attr.aria-label]="'Caractéristique ' + ($index + 1)" (input)="saisirCaracteristique(l, $index, 'libelle', $event)" />
-                          <input class="form-control" type="text" placeholder="8 Go au minimum" [value]="c.exigence" [attr.aria-label]="'Exigence ' + ($index + 1)" (input)="saisirCaracteristique(l, $index, 'exigence', $event)" />
+                          <input class="form-control" type="text" placeholder="ex. Mémoire vive" [value]="c.libelle" [attr.aria-label]="'Caractéristique ' + ($index + 1)" (input)="saisirCaracteristique(l, $index, 'libelle', $event)" />
+                          <input class="form-control" type="text" placeholder="ex. 8 Go au minimum" [value]="c.exigence" [attr.aria-label]="'Exigence ' + ($index + 1)" (input)="saisirCaracteristique(l, $index, 'exigence', $event)" />
                           <button type="button" class="bs__ic bs__ic--ko" aria-label="Retirer cette caractéristique" (click)="supprimerCaracteristique(l, $index)">✕</button>
                         }
                       </div>
@@ -280,9 +280,9 @@
 @if (collageOuvert()) {
   <div class="modal-backdrop">
     <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Coller le détail quantitatif depuis un tableur" appModale (appModaleFermer)="fermerCollage()">
-      <div class="modal-header-plain">
+      <div class="modal-header">
         <span class="modal-title">Coller depuis le tableur</span>
-        <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerCollage()">✕</button>
+        <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerCollage()">✕</button>
       </div>
       <div class="modal-body bs__col">
         <p class="bs__etat">

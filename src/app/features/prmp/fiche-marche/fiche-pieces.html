@@ -43,14 +43,14 @@
                 } @else {
                   <tr>
                     <td class="pc__c-num">
-                      <input class="form-control" type="text" [value]="p.numero ?? ''" placeholder="01" [attr.aria-label]="'Numéro de la pièce « ' + (p.libelle || 'nouvelle') + ' »'" (input)="saisirTexte(p.cle, 'numero', $event)" />
+                      <input class="form-control" type="text" [value]="p.numero ?? ''" placeholder="ex. 01" [attr.aria-label]="'Numéro de la pièce « ' + (p.libelle || 'nouvelle') + ' »'" (input)="saisirTexte(p.cle, 'numero', $event)" />
                     </td>
                     <td>
-                      <input class="form-control" type="text" [value]="p.libelle" placeholder="Carte statistique" [attr.aria-label]="'Pièce ' + ($index + 1) + ' — ' + r.titre" (input)="saisirTexte(p.cle, 'libelle', $event)" />
+                      <input class="form-control" type="text" [value]="p.libelle" placeholder="ex. Carte statistique" [attr.aria-label]="'Pièce ' + ($index + 1) + ' — ' + r.titre" (input)="saisirTexte(p.cle, 'libelle', $event)" />
                       @if (erreurDe(p, 'libelle'); as msg) { <span class="form-error">{{ msg }}</span> }
                     </td>
                     <td class="pc__c-forme">
-                      <input class="form-control" type="text" [value]="p.forme ?? ''" placeholder="photocopie certifiée" [attr.aria-label]="'Forme de la pièce ' + ($index + 1) + ' — ' + r.titre" (input)="saisirTexte(p.cle, 'forme', $event)" />
+                      <input class="form-control" type="text" [value]="p.forme ?? ''" placeholder="ex. photocopie certifiée" [attr.aria-label]="'Forme de la pièce ' + ($index + 1) + ' — ' + r.titre" (input)="saisirTexte(p.cle, 'forme', $event)" />
                     </td>
                     <td class="pc__c-mois">
                       <input class="form-control" type="number" min="1" step="1" [value]="p.ancienneteMaxMois ?? ''" [attr.aria-label]="'Ancienneté maximale en mois de la pièce ' + ($index + 1) + ' — ' + r.titre" (input)="saisirAnciennete(p.cle, $event)" />
@@ -60,7 +60,7 @@
                       <input type="checkbox" [checked]="!!p.parLot" [attr.aria-label]="'Une par lot — pièce ' + ($index + 1) + ' — ' + r.titre" (change)="basculerParLot(p.cle, $event)" />
                     </td>
                     <td class="pc__c-mod">
-                      <input class="form-control" type="text" [value]="p.modele ?? ''" placeholder="annexe 5" [attr.aria-label]="'Modèle de la pièce ' + ($index + 1) + ' — ' + r.titre" (input)="saisirTexte(p.cle, 'modele', $event)" />
+                      <input class="form-control" type="text" [value]="p.modele ?? ''" placeholder="ex. annexe 5" [attr.aria-label]="'Modèle de la pièce ' + ($index + 1) + ' — ' + r.titre" (input)="saisirTexte(p.cle, 'modele', $event)" />
                     </td>
                     <td class="pc__c-a">
                       <button type="button" class="pc__ic" aria-label="Monter cette pièce" [disabled]="$first" (click)="deplacer(p, -1)">↑</button>

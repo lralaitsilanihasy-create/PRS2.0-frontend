@@ -31,11 +31,11 @@
                   <td></td>
                 } @else {
                   <td>
-                    <input class="form-control" type="text" [value]="m.designation" placeholder="Camions bennes" [attr.aria-label]="'Désignation du matériel ' + (i + 1)" (input)="saisirTexte('materiel', m.cle, 'designation', $event)" />
+                    <input class="form-control" type="text" [value]="m.designation" placeholder="ex. Camions bennes" [attr.aria-label]="'Désignation du matériel ' + (i + 1)" (input)="saisirTexte('materiel', m.cle, 'designation', $event)" />
                     @if (erreurDe('materiel', i, 'designation'); as msg) { <span class="form-error">{{ msg }}</span> }
                   </td>
                   <td class="mo__c-car">
-                    <input class="form-control" type="text" [value]="m.caracteristique ?? ''" placeholder="≥ 10 000 kg" [attr.aria-label]="'Caractéristique du matériel ' + (i + 1)" (input)="saisirTexte('materiel', m.cle, 'caracteristique', $event)" />
+                    <input class="form-control" type="text" [value]="m.caracteristique ?? ''" placeholder="ex. ≥ 10 000 kg" [attr.aria-label]="'Caractéristique du matériel ' + (i + 1)" (input)="saisirTexte('materiel', m.cle, 'caracteristique', $event)" />
                   </td>
                   <td class="mo__c-n">
                     <input class="form-control" type="number" min="1" step="1" [value]="m.nombre ?? ''" [attr.aria-label]="'Nombre exigé du matériel ' + (i + 1)" (input)="saisirNombre('materiel', m.cle, 'nombre', $event)" />
@@ -91,7 +91,7 @@
           <div class="mo__grille">
             <label class="mo__f mo__f--large">
               <span>Poste</span>
-              <input class="form-control" type="text" [value]="p.poste" placeholder="Conducteur de travaux" (input)="saisirTexte('personnel', p.cle, 'poste', $event)" />
+              <input class="form-control" type="text" [value]="p.poste" placeholder="ex. Conducteur de travaux" (input)="saisirTexte('personnel', p.cle, 'poste', $event)" />
               @if (erreurDe('personnel', i, 'poste'); as msg) { <span class="form-error">{{ msg }}</span> }
             </label>
             <label class="mo__f">
@@ -100,7 +100,7 @@
             </label>
             <label class="mo__f mo__f--large">
               <span>Diplôme exigé</span>
-              <input class="form-control" type="text" [value]="p.diplome ?? ''" placeholder="Ingénieur BTP ou génie civil" (input)="saisirTexte('personnel', p.cle, 'diplome', $event)" />
+              <input class="form-control" type="text" [value]="p.diplome ?? ''" placeholder="ex. Ingénieur BTP ou génie civil" (input)="saisirTexte('personnel', p.cle, 'diplome', $event)" />
             </label>
             <label class="mo__f">
               <span>Expérience (années)</span>
@@ -108,11 +108,11 @@
             </label>
             <label class="mo__f">
               <span>Dans le domaine</span>
-              <input class="form-control" type="text" [value]="p.domaineExperience ?? ''" placeholder="travaux routiers" (input)="saisirTexte('personnel', p.cle, 'domaineExperience', $event)" />
+              <input class="form-control" type="text" [value]="p.domaineExperience ?? ''" placeholder="ex. travaux routiers" (input)="saisirTexte('personnel', p.cle, 'domaineExperience', $event)" />
             </label>
             <label class="mo__f mo__f--large">
               <span>Justificatifs</span>
-              <input class="form-control" type="text" [value]="p.justificatifs ?? ''" placeholder="CV et diplôme certifié" (input)="saisirTexte('personnel', p.cle, 'justificatifs', $event)" />
+              <input class="form-control" type="text" [value]="p.justificatifs ?? ''" placeholder="ex. CV et diplôme certifié" (input)="saisirTexte('personnel', p.cle, 'justificatifs', $event)" />
             </label>
             <label class="mo__case">
               <input type="checkbox" [checked]="!!p.parLot" (change)="basculer('personnel', p.cle, 'parLot', $event)" />
