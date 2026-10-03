@@ -150,3 +150,18 @@ justes (B04-DE-02/03, B06-EP-01), aucune perdue.
    - MTP : DPAO-T 8 → 7, valeur `B04-OV-01` gardée ; 2463 : inchangé.
    - Le banc reçoit deux options : `--defauts` (un champ à valeur par défaut la garde, comme sur une vraie fiche) et
      `--quantite-fixe` (le DPAO-F rendu en quantité fixe).
+
+   **Suite (03/10, constat du backend au portage)** : le vrai défaut de `B03-CQ-01` s'imprime **ligne par ligne**, et
+   « un certificat de non faillite datée de moins de 2 mois » ne fait que 54 caractères, sous le seuil `COURT`. Le cas réel
+   restait à 25 unités sur 142, des deux côtés. Loin du curseur, une unité pauvre doit donc **aussi** capturer des
+   valeurs qui ont la **forme de leur type** :
+   - un nombre pour un `NOMBRE`, un `MONTANT` ou un `POURCENTAGE`, au sens de la lecture des valeurs (« 6 », « six
+     (06) ») ;
+   - une année (19xx, 20xx) pour une `DATE` ou une `DATE_HEURE`, qui peut être écrite en toutes lettres (« 22 octobre
+     2026 », MTP) ;
+   - **à défaut de type** (champ non servi pour la forme du marché : `B02-AU-04` en quantité fixe), un jeton suivi d'une
+     unité (« mois », « jours », « ans », « semaines », « heures », « % ») attend un nombre.
+
+   Le banc rend désormais une valeur sur plusieurs lignes en autant de paragraphes, comme le rendu Word du serveur.
+   Mesures : cas réel (`--defauts --quantite-fixe`) 33 % → **90 %** et 39 % → **93 %**, 0 fausse valeur, Q10 tenu sur
+   12 graines ; banc ordinaire (propre et 12 graines) et DAO réels (MEN, MTP, 2463) **identiques** à la règle 9 seule.

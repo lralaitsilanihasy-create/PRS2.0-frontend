@@ -111,7 +111,9 @@ function rendre(sigle, cadrage, champs) {
     const si = /^\{\{SI:([^}]+)}}$/.exec(t), fin = /^\{\{FINSI:([^}]+)}}$/.exec(t);
     if (si) { pile.push(vraie(m.conditions[si[1]], vaut)); return; }
     if (fin) { pile.pop(); return; }
-    if (actif() && t.trim()) sortie.push(remplir(t));
+    // Une valeur sur plusieurs lignes (le défaut de B03-CQ-01) s'imprime en autant de paragraphes, comme le rendu Word du
+    // serveur : c'est sa ligne de 54 caractères qui accrochait encore « {{B02-AU-04}} mois. » (03/10, backend).
+    if (actif() && t.trim()) for (const l of remplir(t).split(/\r?\n/)) if (l.trim()) sortie.push(l);
   };
   for (const b of m.blocs) {
     if (['table', 'fin_table', 'vide'].includes(b.type)) continue;

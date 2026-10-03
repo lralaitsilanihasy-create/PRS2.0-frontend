@@ -369,6 +369,22 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
         if (x && doc[j].slice(x[0].length).trim()) { doc.splice(j + 1, 0, doc[j].slice(x[0].length).trim()); doc[j] = x[0]; confiance = 'moyenne'; }
       }
       if (!x) continue;
+      // ⚠️ 03/10 (règle 9, suite — piste du backend) — loin du curseur, une unité pauvre ne se reconnaît que si chaque
+      // valeur capturée a la FORME DE SON TYPE : un nombre pour un NOMBRE, une date pour une DATE. Le défaut réel de
+      // B03-CQ-01 a une ligne de 54 caractères, « un certificat de non faillite datée de moins de 2 mois », sous le seuil
+      // COURT : « {{B02-AU-04}} mois. » s'y accrochait encore, et lisait « un certificat … de 2 » pour un nombre.
+      // Le type vient du référentiel ; à défaut (B02-AU-04 n'est pas servi en quantité fixe), du texte : un jeton suivi
+      // d'une unité (« mois », « jours », « ans », « % »…) attend un nombre.
+      if (pauvre && j >= curseur + PRES && !jetons.every((jt, n) => {
+        const [code, suffixe] = jt.split('.');
+        const type = champs[code.split('#')[0]]?.type;
+        const apres = u.texte.slice(u.texte.indexOf(`{{${jt}}}`) + jt.length + 4);
+        const unite = /^\s*(?:mois|jours?|ans?|ann[ée]es?|semaines?|heures?|%)(?![\p{L}])/iu.test(apres);
+        // Une date s'écrit aussi en toutes lettres (« 22 octobre 2026 », DAO du MTP) : il lui suffit de porter une année.
+        if (['DATE', 'DATE_HEURE'].includes(type) && !suffixe) return /\b(?:19|20)\d{2}\b/.test(x[n + 1]);
+        const numerique = suffixe === 'chiffres' || unite || ['NOMBRE', 'MONTANT', 'POURCENTAGE'].includes(type);
+        return !numerique || valeurSaisie(x[n + 1], type ?? (unite ? 'NOMBRE' : undefined), suffixe) != null;
+      })) continue;
       if (variantePlusContrainte(u, k, doc[j])) break;   // R-c : le paragraphe revient à la variante plus contrainte
       trouves.set(k, j);
       curseur = j + 1;

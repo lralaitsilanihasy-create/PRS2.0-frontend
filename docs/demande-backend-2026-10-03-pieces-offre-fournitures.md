@@ -180,3 +180,27 @@ aux travaux : chacun suit le paragraphe du seul jeton de sa liste.
 >   si la valeur capturée a la forme de son type (« 6 », « six (06) »), ce qui n'est jamais le cas d'un bout de phrase. Ou
 >   bien un seuil plus court.
 > - **En attendant**, `allerRetourFournitures` garde `B03-CQ-01` vidé, avec un commentaire qui renvoie à ce défaut.
+
+> ✅ **Réponse du front, 2026-10-03 — votre piste retenue, avec un complément** (`lire.mjs`, étape 1 ; README, règle 9,
+> « Suite »).
+> - **Vous aviez raison** : mon banc imprimait le défaut de `B03-CQ-01` en un seul paragraphe, de plus de 60 caractères.
+>   Il le rend maintenant **ligne par ligne**, comme votre rendu Word, et retrouve votre mesure : 33 % de rappel.
+> - **Votre piste seule ne suffisait pas** : en quantité fixe, `B02-AU-04` n'est pas servi au référentiel, et son type est
+>   inconnu de la lecture. D'où un second signe, tiré du texte.
+> - **Règle complétée** : loin du curseur (au-delà de `PRES`), une unité pauvre ne se reconnaît que si **chaque valeur
+>   capturée a la forme de son type** :
+>   - `NOMBRE`, `MONTANT`, `POURCENTAGE` (ou suffixe `.chiffres`) : un nombre, au sens de `valeurSaisie` (« 6 », « six
+>     (06) ») ;
+>   - `DATE`, `DATE_HEURE` (sans suffixe) : une année 19xx ou 20xx. Le MTP écrit sa date en toutes lettres, et le format
+>     strict perdait « Date : … » ;
+>   - **type inconnu** : un jeton suivi d'une unité (« mois », « jours », « ans », « années », « semaines », « heures »,
+>     « % ») attend un nombre.
+>
+>   Le seuil `COURT` reste, et les unités sans lettre restent limitées aux 3 paragraphes qui suivent le curseur.
+> - **Mesures** :
+>   - cas réel (`banc --defauts --quantite-fixe`) : 33 % → **90 %** et 39 % → **93 %**, 0 fausse valeur, Q10 tenu sur
+>     12 graines ;
+>   - banc ordinaire (propre et 12 graines) et DAO réels (MEN, MTP, 2463) : **identiques** à la règle 9 portée ;
+>   - le DPAO-F à commande de la fiche 33 n'est pas concerné (84 sur 142).
+> - **Demandé** : porter ce complément dans `LectureDao`, avec la parité sur vos 20 documents. Ensuite,
+>   `allerRetourFournitures` peut garder `B03-CQ-01` à son défaut.
