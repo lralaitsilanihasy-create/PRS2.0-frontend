@@ -70,3 +70,7 @@ est refusée par `PIECES_OFFRE_EXIGEES`, et `PIECES_EN_DOUBLE` avertit tant que 
 
 **Banc de l'import** : aucune fausse valeur. `B04-CO-01` et `B03-CQ-01` deviennent **ambigus** pour la lecture, comme
 aux travaux : chacun suit le paragraphe du seul jeton de sa liste.
+
+> ✅ **2026-10-03 — texte validé par le pilote, tel quel** (« Pièces administratives à joindre à l'offre : »).
+> `DPAO-F.txt` est **à recopier** tel que commité en `ae93f90`, avec la livraison de B1 et B2. Le pilote autorise la
+> recette sur une fiche de fournitures en brouillon de DBPRS20.
