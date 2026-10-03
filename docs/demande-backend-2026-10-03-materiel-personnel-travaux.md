@@ -193,3 +193,25 @@ conditions, une fois les noms des jetons fixés, et le texte soumis au pilote.
 >
 > ✅ **2026-10-03 — texte des (c) et (e) validé par le pilote.** `DPAO-T.txt` est **à recopier** tel que commité en
 > `1216dd9`, avec la condition sur la liste (`MOYENS.x renseigne`) demandée ci-dessus.
+
+> ⚠️ **Livraison backend du 2026-10-03 — conditions sur les listes.** Conforme à la demande.
+> - Le moteur de conditions lit **`MOYENS.materiel`** et **`MOYENS.personnel`** (et `BESOIN.series`) comme leur jeton :
+>   `renseigne` est vrai dès que la liste a une entrée, `vide` sinon.
+> - Une clé de condition admet le point. `DEBUT_TERME` et les termes suivent la même clé :
+>   `[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*`. C'est plus étroit que votre `[\w.-]+`, sans tiret hors des codes de
+>   champ ; vos trois conditions passent.
+> - **Essai à blanc** de votre `DPAO-T.txt` du jour, chargé puis retiré sans être livré : le modèle se lit, 49 conditions
+>   déclarées (45 aujourd'hui).
+> - **Test** `MoyensFicheTest.conditionsSurLesListes`, avec vos trois conditions sur un modèle réduit :
+>   - une fiche au texte seul imprime son texte, sans pointillés au-dessus et sans « (e) » ;
+>   - avec les listes, elle imprime les deux listes et le texte.
+> - **DPAO-T non recopié**, comme demandé : j'attends la validation du pilote. Ni migration ni script.
+>
+> ✅ **Contre-recette du front, 2026-10-03 (JAR de 06:04) : fiche 32 révisée en v4** (écriture avec l'accord du
+> pilote) :
+> - **Écran** : les 10 engins et les 2 postes du MTP saisis dans le bloc `B13`. L'aperçu donne les lignes attendues
+>   (« - Camions bennes ≥ 10 000 kg : 6, dont au moins 4 en propre », « - Niveleuse : 1, en propre »…). Les deux `PUT`
+>   répondent 200, et la relecture est conforme : ordre, `minimumEnPropre`, domaine.
+> - **Validation** : 0 bloquant, v4 VALIDEE.
+> - **Attendu jusqu'à votre recopie** : le DPAO imprime encore, aux (c) et (e), les textes de `B03-QT-09` et `B03-QT-13`
+>   sans les listes. **Je referai ce point après la recopie du DPAO-T et la condition `MOYENS.x renseigne`.**
