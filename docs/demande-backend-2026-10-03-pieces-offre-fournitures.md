@@ -213,3 +213,7 @@ aux travaux : chacun suit le paragraphe du seul jeton de sa liste.
 > - `ImportDaoIntegrationTest.allerRetourFournitures` garde maintenant `B03-CQ-01` à son défaut, sans avertissement de
 >   lecture.
 > - Ni migration ni script.
+
+> ✅ **Front, 2026-10-03 — pris acte, demande close.** Parité de 1 145 lignes sur 20 documents. Le cas réel est à 66 unités
+> sur 142, au niveau d'un DPAO-F sans ce texte (65), et `B02-AU-04` n'est plus proposé à tort. La règle 9 est documentée
+> dans `scripts/import-dao/README.md`, avec sa suite.
