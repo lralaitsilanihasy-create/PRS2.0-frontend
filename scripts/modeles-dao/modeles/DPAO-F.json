@@ -6,6 +6,11 @@
  "conditions": {
   "PROJET": "B02-AU-01 renseigne",
   "ALLOTI": "alloti = OUI",
+  "PIECES-OFFRE-LISTE": "PIECES.offre renseigne",
+  "PIECES-OFFRE-TEXTE": "B04-CO-01 renseigne",
+  "PIECES-ADM": "PIECES.administratives renseigne ou B03-CQ-01 renseigne",
+  "PIECES-ADM-LISTE": "PIECES.administratives renseigne",
+  "PIECES-ADM-TEXTE": "B03-CQ-01 renseigne",
   "LOTS-DIVISIBLES": "alloti = OUI et B02-AU-02 = Lot par lot (attribution divisible)",
   "LOTS-TOTALITE": "alloti = OUI et B02-AU-02 = Totalité des lots à un seul attributaire",
   "VARIANTES-NON": "variantes = NON",
@@ -122,7 +127,7 @@
   },
   {
    "type": "ligne",
-   "texte": "6.2. Contenu des offres\u001fDocuments ou pièces à remettre en sus de ceux mentionnés à la clause 6.2. des IC :\u001e{{B04-CO-01}}"
+   "texte": "6.2. Contenu des offres\u001fDocuments ou pièces à remettre en sus de ceux mentionnés à la clause 6.2. des IC :\u001e{{SI:PIECES-OFFRE-LISTE}}\u001e{{PIECES.offre}}\u001e{{FINSI:PIECES-OFFRE-LISTE}}\u001e{{SI:PIECES-OFFRE-TEXTE}}\u001e{{B04-CO-01}}\u001e{{FINSI:PIECES-OFFRE-TEXTE}}\u001e{{SI:PIECES-ADM}}\u001ePièces administratives à joindre à l’offre :\u001e{{FINSI:PIECES-ADM}}\u001e{{SI:PIECES-ADM-LISTE}}\u001e{{PIECES.administratives}}\u001e{{FINSI:PIECES-ADM-LISTE}}\u001e{{SI:PIECES-ADM-TEXTE}}\u001e{{B03-CQ-01}}\u001e{{FINSI:PIECES-ADM-TEXTE}}"
   },
   {
    "type": "ligne",
@@ -859,6 +864,10 @@
   "Niveau exigé : {{B03-CQ-02}}",
   "Niveau exigé : {{B03-CQ-03}}",
   "Pièces exigées : {{B03-CQ-04}}",
+  "{{PIECES.offre}}",
+  "{{PIECES.administratives}}",
+  "{{B03-CQ-01}}",
+  "Pièces administratives à joindre à l’offre :",
   "{{B05-CP-02}}"
  ]
 }

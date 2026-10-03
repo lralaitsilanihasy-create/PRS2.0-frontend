@@ -920,6 +920,12 @@ function dpaoFournitures() {
   const conditions = {
     PROJET: 'B02-AU-01 renseigne',
     ALLOTI: 'alloti = OUI',
+    // 03/10 (choix A du pilote) — les pièces de l'offre en listes, comme aux travaux ; les textes restent en complément.
+    'PIECES-OFFRE-LISTE': 'PIECES.offre renseigne',
+    'PIECES-OFFRE-TEXTE': 'B04-CO-01 renseigne',
+    'PIECES-ADM': 'PIECES.administratives renseigne ou B03-CQ-01 renseigne',
+    'PIECES-ADM-LISTE': 'PIECES.administratives renseigne',
+    'PIECES-ADM-TEXTE': 'B03-CQ-01 renseigne',
     'LOTS-DIVISIBLES': 'alloti = OUI et B02-AU-02 = Lot par lot (attribution divisible)',
     'LOTS-TOTALITE': 'alloti = OUI et B02-AU-02 = Totalité des lots à un seul attributaire',
     'VARIANTES-NON': 'variantes = NON',
@@ -966,7 +972,11 @@ function dpaoFournitures() {
   const NIVEAU_TECHNIQUE = 'Niveau exigé : {{B03-CQ-02}}';
   const NIVEAU_FINANCIER = 'Niveau exigé : {{B03-CQ-03}}';
   const NIVEAU_REFERENCES = 'Pièces exigées : {{B03-CQ-04}}';
-  const ajouts = [CLAUSE_SE, '{{B04-DE-01}}', '{{B06-EO-02}}', '{{B02-LV-02}}', NIVEAU_TECHNIQUE, NIVEAU_FINANCIER, NIVEAU_REFERENCES];
+  // 03/10 (choix A du pilote) — le document type des fournitures n'a pas de place pour les pièces administratives : depuis
+  // les modèles officiels (27/09), B03-CQ-01 ne s'imprimait plus nulle part. Un paragraphe ajouté à la clause 6.2, sur le
+  // patron du 2° des travaux. ⚠️ Texte soumis à la validation du pilote.
+  const PIECES_ADMINISTRATIVES = 'Pièces administratives à joindre à l’offre :';
+  const ajouts = [CLAUSE_SE, '{{B04-DE-01}}', '{{B06-EO-02}}', '{{B02-LV-02}}', NIVEAU_TECHNIQUE, NIVEAU_FINANCIER, NIVEAU_REFERENCES, '{{PIECES.offre}}', '{{PIECES.administratives}}', '{{B03-CQ-01}}', PIECES_ADMINISTRATIVES];
 
   // En tête du document : bandeaux du dossier type, note de rédaction.
   retirer(d, 'note de rédaction du modèle, « à supprimer »', '[note 1]');
@@ -1044,7 +1054,13 @@ function dpaoFournitures() {
   // ── 6. Préparation des offres
   const r6 = rangee(d, '6. – Préparation');
   const r62 = rangee(d, '6.2. Contenu des offres');
-  const contenu = cel(x(r62, 'Documents ou pièces à remettre'), x(r62, '<énumérer ces documents', ['<énumérer ces documents ou pièces>', '{{B04-CO-01}}', 'jeton']));
+  const contenu = cel(
+    x(r62, 'Documents ou pièces à remettre'),
+    SIc('PIECES-OFFRE-LISTE', '{{PIECES.offre}}'),
+    SIc('PIECES-OFFRE-TEXTE', x(r62, '<énumérer ces documents', ['<énumérer ces documents ou pièces>', '{{B04-CO-01}}', 'jeton'])),
+    SIc('PIECES-ADM', PIECES_ADMINISTRATIVES),
+    SIc('PIECES-ADM-LISTE', '{{PIECES.administratives}}'),
+    SIc('PIECES-ADM-TEXTE', '{{B03-CQ-01}}'));
   const r63 = rangee(d, '6.3. Capacités');
   const capacites = cel(
     // Le document type énumère les fiches à remplir sans dire le niveau exigé, que la Commission contrôle : trois ajouts
