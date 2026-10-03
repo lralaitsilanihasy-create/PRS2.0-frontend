@@ -101,3 +101,26 @@ passages s'ajoutent, plus les trois DAO réels ci-dessus avec les mêmes ajouts.
 > - `ImportDaoIntegrationTest.allerRetourFournitures` : sur un DAO conforme, toutes les propositions sont `modele`, et le
 >   passage des pièces est rendu.
 > - Ni migration ni script.
+
+> ✅ **Contre-recette du front, 2026-10-03 (JAR de 20:48).** `POST …/import` en lecture seule : le MTP et le MEN sur la
+> fiche 34 (travaux, brouillon), le 2463 sur la fiche 35 (fournitures, brouillon).
+> - **Serveur**, mêmes ajouts que le prototype :
+>   - MTP : 3 propositions `clause` (`B05-GQ-03` 100 500 000, `B09-DL-01` « Six (06) mois », `B03-QT-15` 10) et le
+>     passage du matériel ;
+>   - MEN : 3 propositions (`B09-DL-01`, `B03-QT-14` lots 1 et 2) et le passage des pièces ;
+>   - 2463 : 5 propositions (`B05-GS-03` lots 1 à 5) et le passage des pièces.
+>
+>   Les sources sont `modele` et `clause`. Les anomalies attendues bloquent ce qui doit l'être, puisque les fiches de
+>   recette ne correspondent pas aux DAO : la garantie sans cadrage, des lots hors du plan, une valeur par lot sur une
+>   ligne non allotie.
+> - **Écran**, sur la fiche 34 avec le MTP :
+>   - les 3 valeurs `clause` portent « trouvée par les mots-clés de sa clause — à vérifier », et ne sont pas cochées ;
+>   - la section « Listes repérées » montre « Matériel exigé — bloc B13 » ;
+>   - « Copier le passage » met le texte dans le presse-papiers et dit où le coller.
+>
+>   Rien n'a été appliqué.
+> - **Limite constatée**, pour le second temps : le matériel du MTP est un **tableau** dans le PDF, et son passage arrive
+>   cellule par cellule (« Camions bennes supérieur ou égal à 10 000Kg / Au moins 4 en propre / … »). Collé tel quel,
+>   il donnera des entrées à reprendre à la main.
+>
+> **Premier temps clos.**
