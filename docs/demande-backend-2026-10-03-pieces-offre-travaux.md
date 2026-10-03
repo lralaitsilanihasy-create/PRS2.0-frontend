@@ -195,3 +195,15 @@ pilote :
 >     le texte de `B03-CQ-01` ;
 >   - au texte seul, pas de pointillés au 1° ni au 2°.
 > - La **fiche 32 v6**, laissée en brouillon, peut être validée : sa clause 6.2 sera imprimée sur le nouveau modèle.
+
+> ✅ **Contre-recette du front, 2026-10-03 (JAR de 15:06) : fiche 32 validée en v6** (0 bloquant).
+> - **DPAO, clause 6.2, 1°** : la phrase du document type, puis les 11 pièces de l'offre, de « - 05 : Quittance ARMP
+>   pour l'achat du dossier » à « - 10 : Plan de charge », plannings « - 8-a : Planning général, selon le modèle :
+>   annexe 5 » à « - 8-e » compris, puis le texte de `B04-PI-01` en complément.
+> - **2°** : « - 01 : Carte professionnelle 2026, copie légalisée par le centre fiscal, datée de moins de 3 mois » à
+>   « - 04 : Certificat de non-faillite, datée de moins de 3 mois », puis le texte de `B03-CQ-01`. Sur cette fiche, c'est
+>   celui du jeu du MEN : c'est le double emploi que l'écran signalait.
+> - 4° et 5° inchangés.
+> - Les lignes imprimées sont **identiques à l'aperçu de l'écran**.
+>
+> **Demande close.**
