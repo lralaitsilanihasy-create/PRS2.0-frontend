@@ -68,6 +68,18 @@ describe('Coller une liste — pièces', () => {
     expect(sansApostropheCourbe(entrees[1].libelle)).toBe('Carte statistique');
   });
 
+  it('le 2463 : « Photocopie certifiée conforme à l’original » est une forme entière, jamais « Photo » + « copie… »', () => {
+    const { entrees } = lirePieces(
+      "Photocopie certifiée conforme à l'original de la Carte d'Immatriculation Fiscale 2026 ou 2025 validée, datée de moins de 3 mois ; carte statistique, photocopie certifiée conforme à l'original, datée de moins de 3 mois ; certificat de non faillite daté de moins de 3 mois.",
+      'ADMINISTRATIVE',
+    );
+    expect(entrees.map((p) => [sansApostropheCourbe(p.libelle), p.forme, p.ancienneteMaxMois])).toEqual([
+      ['Carte d’Immatriculation Fiscale 2026 ou 2025 validée', 'photocopie certifiée conforme à l’original', 3],
+      ['Carte statistique', 'photocopie certifiée conforme à l’original', 3],
+      ['Certificat de non faillite', null, 3],
+    ]);
+  });
+
   it('numéros du MTP, rubrique choisie par la PRMP', () => {
     const { entrees } = lirePieces('05 : Quittance ARMP pour l’achat du dossier\n8-a : Planning général', 'OFFRE');
     expect(entrees.map((p) => [p.numero, p.libelle, p.rubrique])).toEqual([

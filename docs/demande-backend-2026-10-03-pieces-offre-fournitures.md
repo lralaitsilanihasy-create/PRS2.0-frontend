@@ -144,3 +144,22 @@ aux travaux : chacun suit le paragraphe du seul jeton de sa liste.
 > - **Demandé** : porter la règle dans `LectureDao`, avec la parité habituelle. Les lignes qui changent sont celles du
 >   CCAP-T du MEN et du DPAO-T du MTP. Ensuite, votre `allerRetourFournitures` peut garder `B03-CQ-01` à son défaut. Le
 >   banc a deux options nouvelles pour la parité : `--defauts` et `--quantite-fixe`.
+
+> ✅ **Contre-recette du front, 2026-10-03 (JAR de 16:13) : fiche 33**, fournitures à commande, 1 lot, avec le jeu du
+> 2463 (lot 1) et `B03-CQ-01` à sa valeur par défaut ; écriture avec l'accord du pilote.
+> - **Avant les pièces** : un seul bloquant, `PIECES_OFFRE_EXIGEES` (`B04-CO-01` non saisi), avec le message attendu.
+> - **Écran** : le bloc `B14` est servi (10e bloc). Les pièces administratives du 2463 sont collées par « Coller une
+>   liste » : 4 pièces, « photocopie certifiée conforme à l'original », « datée de moins de 3 mois ». Deux pièces de l'offre
+>   sont saisies aussi. L'écran signale le double emploi, et `PUT /pieces` répond 200.
+>   - Un défaut du découpage, côté front, a été trouvé et corrigé pendant la recette : « Photocopie certifiée… » se
+>     lisait « copie certifiée… » et laissait « Photo » dans le libellé.
+> - **Contrôle** : 0 bloquant ; **`PIECES_EN_DOUBLE`** avertit, avec le message attendu.
+> - **Validation v1**. Le DPAO, clause 6.2, imprime :
+>   - les 2 pièces de l'offre ;
+>   - « Pièces administratives à joindre à l'offre : » ;
+>   - les 4 pièces du 2463 ;
+>   - puis la liste du document type portée par `B03-CQ-01` : c'est le double emploi annoncé.
+> - **Réimport de ce DPAO-F** (à commande, sur la fiche 35, en lecture seule) : 84 unités sur 142, au serveur comme au
+>   prototype avec la règle 9. Le défaut de lecture ne touche que la quantité fixe, mesurée au banc.
+>
+> **Demande close**, sauf le portage de la règle 9 dans `LectureDao` (encadré ci-dessus).

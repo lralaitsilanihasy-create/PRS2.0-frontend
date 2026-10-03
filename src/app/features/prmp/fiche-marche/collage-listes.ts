@@ -126,8 +126,11 @@ export function lirePersonnel(texte: string): LectureListe<PersonnelExige> {
 
 // ── Pièces ───────────────────────────────────────────────────────────────────────────────────
 
+// ⚠️ « photocopie » d'abord, et « copie » seulement hors de ce mot : sinon « Photocopie certifiée conforme… » (dossier
+// 2463) se lisait « copie certifiée… » et laissait « Photo » dans le libellé (recette du 03/10, fiche 33).
 const FORMES: [RegExp, string][] = [
-  [/copie\s+certifi[ée]e\s+conforme\s+[àa]\s+l['’]original/i, 'copie certifiée conforme à l’original'],
+  [/photocopie\s+certifi[ée]e\s+conforme\s+[àa]\s+l['’]original/i, 'photocopie certifiée conforme à l’original'],
+  [/(?<!photo)copie\s+certifi[ée]e\s+conforme\s+[àa]\s+l['’]original/i, 'copie certifiée conforme à l’original'],
   [/photocopie\s+certifi[ée]e/i, 'photocopie certifiée'],
   [/copie\s+l[ée]galis[ée]e(?:\s+par\s+[^,;()]+)?/i, ''],
   [/\(\s*original(?:e)?\s*\)|\boriginal(?:e)?\b/i, 'original'],
