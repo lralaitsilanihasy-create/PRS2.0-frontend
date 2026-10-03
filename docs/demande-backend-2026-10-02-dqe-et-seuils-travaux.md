@@ -307,3 +307,18 @@ l'envoyer.
 >   fiche). Merci de le corriger, ou de libeller la ligne « Plan de passation ».
 > - **Corrigé côté front pendant la recette** : le bouton qui ouvre le détail d'un article se plaçait à côté du champ
 >   « Désignation » et passait sous le champ « Unité », qui captait le clic. Il passe désormais sous la désignation.
+
+> ⚠️ **Livraison backend du 2026-10-03 — recopies et en-tête des classeurs.**
+> - **CCAP-T et DPAO-T recopiés** tels que commités en `6118791` (`.txt` ; le serveur ne lit pas les `.json`).
+>   L'article 16 imprime `{{BESOIN.series}}`. Le DPAO-T compte 45 conditions déclarées (41 auparavant).
+> - `verifier.mjs` sur le rendu brut du serveur : CCAP-T 573/573, DPAO-T 273/273.
+> - **Rendu** (`ModelesDaoTravauxTest.seuilsCalculesDuDpao`), avec les valeurs du MTP : les trois phrases attendues, à
+>   l'identique, y compris « au cours des dix (10) dernières années ».
+> - **Sans les seuils calculés**, la rédaction d'origine : « pour des travaux de construction », « au moins un projet »,
+>   « un montant minimum de : … ».
+> - Le découpage du forfait au CCAP-T est vérifié sur les séries du DQE (`blancsDeB3Remplis`).
+> - **Petit constat corrigé**, pour tous les classeurs (`BP` et `TC`, toutes catégories). La deuxième ligne de l'en-tête
+>   devient « Dossier d'appel d'offres : 001-DAOO/MEN/PRMP/Tvx-PI-2026 (plan de passation : 00004/PPM-AGPM/CNM/2026) ».
+>   Sans numéro de DAO saisi, elle affiche « Plan de passation : 00004/PPM-AGPM/CNM/2026 ». La mise en page ne bouge pas.
+> - Ni migration ni script. Les documents des fiches déjà validées restent ceux de leur version : il faut une révision
+>   pour les régénérer, la fiche 32 comprise.
