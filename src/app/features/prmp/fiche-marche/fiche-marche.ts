@@ -17,6 +17,7 @@ import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { FicheBesoin } from './fiche-besoin';
 import { FicheMoyens } from './fiche-moyens';
+import { FichePieces } from './fiche-pieces';
 import { ImportDao } from './import-dao';
 import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
 import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
@@ -110,6 +111,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
   imports: [
     FicheBesoin,
     FicheMoyens,
+    FichePieces,
     ImportDao,
     AvisSpecifique,
     LettresInvitation,
@@ -320,6 +322,11 @@ export class FicheMarcheEcran {
     if (!bloc || !f) return false;
     const codes = new Set(this.referentiel().champs.filter((c) => c.bloc === bloc.code && c.source === 'SAISIE').map((c) => c.code));
     return valeursModifiees(codes, this.valeurs(), f.valeurs ?? {});
+  });
+  /** Le texte des pièces administratives (`B03-CQ-01`), passé à la liste des pièces pour prévenir un double emploi. */
+  readonly texteCq01 = computed(() => {
+    const v = this.valeurs()['B03-CQ-01'];
+    return typeof v === 'string' ? v : null;
   });
   /** Les informations obligatoires qui manquent, par bloc : la pastille de chaque bloc dans la navigation. */
   readonly manquantsParBloc = computed(() => new Map(this.obligatoiresParBloc().map((g) => [g.bloc, g.nb])));

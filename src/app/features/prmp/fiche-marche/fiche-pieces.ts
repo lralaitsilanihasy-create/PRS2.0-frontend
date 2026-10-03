@@ -1,0 +1,161 @@
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+
+import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
+import { ToastService } from '../../../core/notifications/toast.service';
+import { PieceExigee, RubriquePiece } from '../../../models';
+import { FicheMarcheService } from '../../../services/fiche-marche.services';
+import { lignePiece, PIECES_ADMINISTRATIVES_DOCUMENT_TYPE } from './pieces';
+
+/** Une pièce à l'écran, avec sa clé locale, qui survit au remplacement de l'objet à chaque frappe. */
+type LignePiece = PieceExigee & { cle: number };
+
+/** Les deux rubriques de la clause 6.2 du DPAO, dans l'ordre où l'écran les montre. */
+export const RUBRIQUES_PIECES: { code: RubriquePiece; titre: string; clause: string }[] = [
+  { code: 'ADMINISTRATIVE', titre: 'Pièces administratives', clause: 'clause 6.2, 2°' },
+  { code: 'OFFRE', titre: 'Autres pièces de l’offre', clause: 'clause 6.2, 1°' },
+];
+
+/**
+ * ⚠️ **Pièces de l'offre exigées** des travaux (lot 4 du chantier b, 03/10 — contrat **demandé**,
+ * `demande-backend-2026-10-03-pieces-offre-travaux`). Une liste de la fiche (`PUT` la remplace en entier), montrée en
+ * deux rubriques : les pièces administratives (2° de la clause 6.2) et les autres pièces de l'offre (1°). Chaque pièce
+ * montre la ligne que le DPAO imprimera.
+ *
+ * Les textes `B03-CQ-01` (pièces administratives, dont la valeur par défaut est la liste du document type) et `B04-PI-01`
+ * restent en complément (Q4 du plan) : l'écran prévient quand le premier ferait double emploi avec la liste.
+ */
+@Component({
+  selector: 'app-fiche-pieces',
+  standalone: true,
+  templateUrl: './fiche-pieces.html',
+  styleUrl: './fiche-pieces.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class FichePieces {
+  private readonly fiches = inject(FicheMarcheService);
+  private readonly toast = inject(ToastService);
+
+  readonly idDmc = input.required<number>();
+  readonly lecture = input<boolean>(false);
+  /** Le texte de `B03-CQ-01` tel que saisi au bloc B03 : s'il est rempli avec la liste, il s'imprime en plus. */
+  readonly texteAdministratif = input<string | null>(null);
+  readonly enregistre = output<void>();
+
+  readonly rubriques = RUBRIQUES_PIECES;
+  readonly chargement = signal(true);
+  readonly saving = signal(false);
+  readonly pieces = signal<LignePiece[]>([]);
+  /** Erreurs servies par le serveur, par chemin (`pieces[3].libelle`) : le rang est celui de toute la liste. */
+  readonly erreurs = signal<Map<string, string>>(new Map());
+  private cles = 0;
+
+  readonly parRubrique = computed(() => {
+    const m = new Map<RubriquePiece, LignePiece[]>(RUBRIQUES_PIECES.map((r) => [r.code, []]));
+    for (const p of this.pieces()) m.get(p.rubrique)?.push(p);
+    return m;
+  });
+  readonly doubleEmploi = computed(() => !!this.texteAdministratif()?.trim() && (this.parRubrique().get('ADMINISTRATIVE')?.length ?? 0) > 0);
+
+  constructor() {
+    effect(() => {
+      const id = this.idDmc();
+      this.chargement.set(true);
+      // Une route pas encore servie (contrat demandé) laisse la liste vide, pas un écran en erreur.
+      this.fiches.pieces(id).subscribe({
+        next: (l) => (this.pieces.set(l.map((p) => this.avecCle(p))), this.chargement.set(false)),
+        error: () => (this.pieces.set([]), this.chargement.set(false)),
+      });
+    });
+  }
+
+  private avecCle(p: PieceExigee): LignePiece {
+    return { ...p, cle: ++this.cles };
+  }
+
+  ligne(p: PieceExigee): string {
+    return lignePiece(p);
+  }
+
+  /** Le rang de la pièce dans toute la liste : celui des erreurs servies (`pieces[i]`). */
+  rangDe(p: LignePiece): number {
+    return this.pieces().findIndex((x) => x.cle === p.cle);
+  }
+
+  erreurDe(p: LignePiece, champ: string): string | null {
+    return this.erreurs().get(`pieces[${this.rangDe(p)}].${champ}`) ?? null;
+  }
+
+  ajouter(rubrique: RubriquePiece): void {
+    this.pieces.update((l) => [...l, this.avecCle({ rubrique, numero: null, libelle: '', forme: null, ancienneteMaxMois: null, parLot: false, modele: null })]);
+  }
+
+  /** Les six pièces administratives du document type, d'un clic, à ajuster ensuite. */
+  reprendreDocumentType(): void {
+    this.pieces.update((l) => [...l, ...PIECES_ADMINISTRATIVES_DOCUMENT_TYPE.map((p) => this.avecCle({ ...p, numero: null, parLot: false, modele: null }))]);
+    this.toast.info('Les six pièces administratives du document type sont ajoutées — à ajuster avant d’enregistrer.');
+  }
+
+  supprimer(cle: number): void {
+    this.pieces.update((l) => l.filter((x) => x.cle !== cle));
+  }
+
+  /** Monter ou descendre une pièce DANS SA RUBRIQUE : l'ordre affiché est l'ordre imprimé. */
+  deplacer(p: LignePiece, pas: -1 | 1): void {
+    const toutes = [...this.pieces()];
+    const memes = toutes.filter((x) => x.rubrique === p.rubrique);
+    const i = memes.findIndex((x) => x.cle === p.cle);
+    const j = i + pas;
+    if (i < 0 || j < 0 || j >= memes.length) return;
+    const a = toutes.indexOf(memes[i]);
+    const b = toutes.indexOf(memes[j]);
+    [toutes[a], toutes[b]] = [toutes[b], toutes[a]];
+    this.pieces.set(toutes);
+  }
+
+  saisirTexte(cle: number, champ: 'numero' | 'libelle' | 'forme' | 'modele', ev: Event): void {
+    const valeur = (ev.target as HTMLInputElement).value;
+    this.pieces.update((l) => l.map((x) => (x.cle === cle ? { ...x, [champ]: valeur } : x)));
+  }
+
+  saisirAnciennete(cle: number, ev: Event): void {
+    const brut = (ev.target as HTMLInputElement).value;
+    this.pieces.update((l) => l.map((x) => (x.cle === cle ? { ...x, ancienneteMaxMois: brut === '' ? null : Number(brut) } : x)));
+  }
+
+  basculerParLot(cle: number, ev: Event): void {
+    const coche = (ev.target as HTMLInputElement).checked;
+    this.pieces.update((l) => l.map((x) => (x.cle === cle ? { ...x, parLot: coche } : x)));
+  }
+
+  enregistrer(): void {
+    if (this.saving() || this.lecture()) return;
+    // Envoyées rubrique par rubrique, dans l'ordre affiché : c'est l'ordre que le serveur pose.
+    const charge: PieceExigee[] = RUBRIQUES_PIECES.flatMap((r) => this.parRubrique().get(r.code) ?? []).map((p) => ({
+      rubrique: p.rubrique,
+      numero: p.numero?.trim() || null,
+      libelle: p.libelle.trim(),
+      forme: p.forme?.trim() || null,
+      ancienneteMaxMois: p.ancienneteMaxMois ?? null,
+      parLot: !!p.parLot,
+      modele: p.modele?.trim() || null,
+    }));
+    // L'ordre envoyé devient l'ordre de la liste : les rangs des erreurs servies le suivront.
+    this.pieces.set(RUBRIQUES_PIECES.flatMap((r) => this.parRubrique().get(r.code) ?? []));
+    this.saving.set(true);
+    this.erreurs.set(new Map());
+    this.fiches.enregistrerPieces(this.idDmc(), charge).subscribe({
+      next: (l) => {
+        this.pieces.set(l.map((p) => this.avecCle(p)));
+        this.saving.set(false);
+        this.toast.success('Pièces de l’offre enregistrées.');
+        this.enregistre.emit();
+      },
+      error: (e: ApiError) => {
+        this.saving.set(false);
+        const m = erreursParChamp(e);
+        this.erreurs.set(m);
+        if (!m.size) this.toast.error(e?.message ?? "Les pièces n'ont pas pu être enregistrées.");
+      },
+    });
+  }
+}

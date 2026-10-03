@@ -1,0 +1,98 @@
+<!-- ⚠️ Lot 4 du chantier b (03/10) — les pièces de l'offre exigées, en deux rubriques de la clause 6.2 du DPAO ; sous
+     chaque rubrique, les lignes telles que le DPAO les imprimera. Une seule liste, enregistrée d'un coup. -->
+@if (chargement()) {
+  <p class="pc__etat" role="status">Chargement des pièces de l’offre…</p>
+} @else {
+  @for (r of rubriques; track r.code) {
+    @let liste = parRubrique().get(r.code) ?? [];
+    <section class="pc" [attr.aria-labelledby]="'pc-' + r.code">
+      <h3 [id]="'pc-' + r.code" class="pc__titre">{{ r.titre }} <span class="pc__clause">DPAO, {{ r.clause }}</span></h3>
+      @if (r.code === 'ADMINISTRATIVE' && doubleEmploi() && !lecture()) {
+        <p class="pc__alerte" role="status">
+          Le texte du bloc B03 (« pièces exigées ») est rempli : il s’imprimera aussi sous cette liste. Videz-le s’il fait
+          double emploi.
+        </p>
+      }
+      @if (liste.length) {
+        <div class="pc__table">
+          <table>
+            <caption class="pc__sr">{{ r.titre }}</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="pc__c-num">N°</th>
+                <th scope="col">Pièce</th>
+                <th scope="col" class="pc__c-forme">Forme</th>
+                <th scope="col" class="pc__c-mois">Moins de (mois)</th>
+                <th scope="col" class="pc__c-lot">Par lot</th>
+                <th scope="col" class="pc__c-mod">Modèle</th>
+                <th scope="col" class="pc__c-a"><span class="pc__sr">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of liste; track p.cle) {
+                @if (lecture()) {
+                  <tr>
+                    <td class="pc__c-num">{{ p.numero }}</td>
+                    <td>{{ p.libelle }}</td>
+                    <td>{{ p.forme }}</td>
+                    <td class="pc__c-mois">{{ p.ancienneteMaxMois }}</td>
+                    <td class="pc__c-lot">{{ p.parLot ? 'oui' : '' }}</td>
+                    <td>{{ p.modele }}</td>
+                    <td></td>
+                  </tr>
+                } @else {
+                  <tr>
+                    <td class="pc__c-num">
+                      <input class="form-control" type="text" [value]="p.numero ?? ''" placeholder="01" [attr.aria-label]="'Numéro de la pièce « ' + (p.libelle || 'nouvelle') + ' »'" (input)="saisirTexte(p.cle, 'numero', $event)" />
+                    </td>
+                    <td>
+                      <input class="form-control" type="text" [value]="p.libelle" placeholder="Carte statistique" [attr.aria-label]="'Pièce ' + ($index + 1) + ' — ' + r.titre" (input)="saisirTexte(p.cle, 'libelle', $event)" />
+                      @if (erreurDe(p, 'libelle'); as msg) { <span class="form-error">{{ msg }}</span> }
+                    </td>
+                    <td class="pc__c-forme">
+                      <input class="form-control" type="text" [value]="p.forme ?? ''" placeholder="photocopie certifiée" [attr.aria-label]="'Forme de la pièce ' + ($index + 1) + ' — ' + r.titre" (input)="saisirTexte(p.cle, 'forme', $event)" />
+                    </td>
+                    <td class="pc__c-mois">
+                      <input class="form-control" type="number" min="1" step="1" [value]="p.ancienneteMaxMois ?? ''" [attr.aria-label]="'Ancienneté maximale en mois de la pièce ' + ($index + 1) + ' — ' + r.titre" (input)="saisirAnciennete(p.cle, $event)" />
+                      @if (erreurDe(p, 'ancienneteMaxMois'); as msg) { <span class="form-error">{{ msg }}</span> }
+                    </td>
+                    <td class="pc__c-lot">
+                      <input type="checkbox" [checked]="!!p.parLot" [attr.aria-label]="'Une par lot — pièce ' + ($index + 1) + ' — ' + r.titre" (change)="basculerParLot(p.cle, $event)" />
+                    </td>
+                    <td class="pc__c-mod">
+                      <input class="form-control" type="text" [value]="p.modele ?? ''" placeholder="annexe 5" [attr.aria-label]="'Modèle de la pièce ' + ($index + 1) + ' — ' + r.titre" (input)="saisirTexte(p.cle, 'modele', $event)" />
+                    </td>
+                    <td class="pc__c-a">
+                      <button type="button" class="pc__ic" aria-label="Monter cette pièce" [disabled]="$first" (click)="deplacer(p, -1)">↑</button>
+                      <button type="button" class="pc__ic" aria-label="Descendre cette pièce" [disabled]="$last" (click)="deplacer(p, 1)">↓</button>
+                      <button type="button" class="pc__ic pc__ic--ko" aria-label="Retirer cette pièce" (click)="supprimer(p.cle)">✕</button>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="pc__apercu">
+          <span class="pc__apercu-t">Au DPAO, {{ r.clause }} :</span>
+          @for (p of liste; track p.cle) { <span>{{ ligne(p) }}</span> }
+        </div>
+      } @else {
+        <p class="pc__etat" role="status">Aucune pièce@if (!lecture()) { : ajoutez-en, ou décrivez-les au bloc {{ r.code === 'ADMINISTRATIVE' ? 'B03' : 'B04' }}}.</p>
+      }
+      @if (!lecture()) {
+        <div class="pc__pied">
+          @if (r.code === 'ADMINISTRATIVE' && !liste.length) {
+            <button type="button" class="btn btn-outline btn-sm" (click)="reprendreDocumentType()">Reprendre les pièces du document type</button>
+          }
+          <button type="button" class="btn btn-outline btn-sm" (click)="ajouter(r.code)">+ Pièce</button>
+        </div>
+      }
+    </section>
+  }
+  @if (!lecture()) {
+    <div class="pc__pied pc__pied--fin">
+      <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="enregistrer()">{{ saving() ? 'Enregistrement…' : 'Enregistrer les pièces' }}</button>
+    </div>
+  }
+}

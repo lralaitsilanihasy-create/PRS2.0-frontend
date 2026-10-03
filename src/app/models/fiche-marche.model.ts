@@ -126,7 +126,30 @@ export interface RubriqueFiche {
  * de ses champs, `'BESOIN'` = la grille du besoin (lots → articles → caractéristiques). Un rendu inconnu du front
  * n'est pas une erreur : le bloc annonce qu'il n'a rien à saisir plutôt que de rester blanc.
  */
-export type RenduBloc = 'BESOIN' | 'MOYENS' | (string & {});
+export type RenduBloc = 'BESOIN' | 'MOYENS' | 'PIECES' | (string & {});
+
+/**
+ * ⚠️ Lot 4 du chantier b (03/10) — contrat **demandé**, pas encore servi (`demande-backend-2026-10-03-pieces-offre-
+ * travaux`) : les pièces de l'offre exigées des travaux, en liste (bloc à rendu `'PIECES'`). Noms de la demande.
+ * `ADMINISTRATIVE` = 2° de la clause 6.2 du DPAO ; `OFFRE` = 1° (« en sus de ceux mentionnés aux IC »).
+ */
+export type RubriquePiece = 'ADMINISTRATIVE' | 'OFFRE';
+
+export interface PieceExigee {
+  idPiece?: number | null;
+  ordre?: number | null;
+  rubrique: RubriquePiece;
+  /** « 01 », « 8-a » : le numéro que le DAO donne à la pièce. */
+  numero?: string | null;
+  libelle: string;
+  /** « copie légalisée par le centre fiscal », « original »… */
+  forme?: string | null;
+  /** « datée de moins de 3 mois ». */
+  ancienneteMaxMois?: number | null;
+  parLot?: boolean | null;
+  /** « annexe 5, planning 8-a ». */
+  modele?: string | null;
+}
 
 /**
  * ⚠️ Lot 3 du chantier b — livré le 03/10 (V60, `demande-backend-2026-10-03-materiel-personnel-travaux`) : le matériel

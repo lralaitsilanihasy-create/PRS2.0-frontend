@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PublicationAvis, PublicationLettres, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PieceExigee, PublicationAvis, PublicationLettres, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -135,6 +135,18 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
 
   enregistrerPersonnel(idDmc: number, personnel: PersonnelExige[]): Observable<PersonnelExige[]> {
     return this.http.put<PersonnelExige[]>(`${this.baseUrl}/${idDmc}/personnel`, { personnel }, { context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Lot 4 du chantier b (03/10) — **contrat demandé** (`demande-backend-2026-10-03-pieces-offre-travaux`) : les
+   * pièces de l'offre exigées, une liste de la version de fiche ; `PUT` remplace la liste.
+   */
+  pieces(idDmc: number): Observable<PieceExigee[]> {
+    return this.http.get<PieceExigee[]>(`${this.baseUrl}/${idDmc}/pieces`, { context: skipErrorToast() });
+  }
+
+  enregistrerPieces(idDmc: number, pieces: PieceExigee[]): Observable<PieceExigee[]> {
+    return this.http.put<PieceExigee[]>(`${this.baseUrl}/${idDmc}/pieces`, { pieces }, { context: skipErrorToast() });
   }
 
   /**

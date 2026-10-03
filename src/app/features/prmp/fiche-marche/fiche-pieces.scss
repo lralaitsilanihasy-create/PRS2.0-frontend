@@ -1,0 +1,82 @@
+/* Pièces de l'offre exigées (lot 4 du chantier b) — deux rubriques de la clause 6.2, et l'aperçu de leur impression. */
+:host { display: block; padding: 0.9rem 1.1rem; }
+.pc {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.4rem;
+}
+.pc__titre {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--n-700);
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.pc__clause { font-size: 0.78rem; font-weight: 400; color: var(--n-500); }
+.pc__etat { margin: 0; font-size: 0.86rem; color: var(--n-500); }
+.pc__alerte {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.84rem;
+  color: var(--n-700);
+  background: var(--warning-bg);
+  border-left: 3px solid var(--warning-bdr);
+}
+.pc__table {
+  overflow-x: auto;
+  border: 1px solid var(--n-200);
+  border-radius: 6px;
+}
+.pc table { border-collapse: collapse; width: 100%; min-width: 860px; }
+.pc th {
+  text-align: left;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #fff;
+  background: var(--p-600);
+  padding: 0.5rem 0.6rem;
+}
+.pc td { padding: 0.4rem 0.6rem; border-top: 1px solid var(--n-200); vertical-align: top; }
+.pc__c-num { width: 5rem; }
+.pc__c-forme { width: 13rem; }
+.pc__c-mois { width: 6.5rem; font-variant-numeric: tabular-nums; }
+.pc__c-lot { width: 4.5rem; text-align: center; }
+.pc__c-mod { width: 10rem; }
+.pc__c-a { width: 7rem; white-space: nowrap; text-align: right; }
+.pc__ic {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--n-300);
+  background: #fff;
+  border-radius: 4px;
+  width: 1.8rem;
+  height: 1.8rem;
+  margin-left: 0.2rem;
+}
+.pc__ic:disabled { opacity: 0.4; cursor: default; }
+.pc__ic--ko { color: var(--danger-text); border-color: var(--danger-bdr); }
+.pc__apercu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.8rem;
+  border-left: 3px solid var(--p-300);
+  background: var(--p-50);
+  font-size: 0.84rem;
+  color: var(--n-700);
+}
+.pc__apercu-t { font-size: 0.78rem; color: var(--n-500); }
+.pc__pied { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; }
+.pc__pied--fin { border-top: 1px solid var(--n-200); padding-top: 0.8rem; }
+.pc__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
