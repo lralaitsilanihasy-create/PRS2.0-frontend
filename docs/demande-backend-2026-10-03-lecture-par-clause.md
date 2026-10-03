@@ -36,6 +36,13 @@ document), une seconde passe s'exécute sur les mêmes paragraphes. Elle ne remp
    - la valeur passe par la même conversion (`valeurSaisie`) ; une durée lue pour un `NOMBRE` perd son unité ;
    - la confiance est toujours **`moyenne`**, et la source **`clause`**.
 
+> ⚠️ **Livraison backend du 2026-10-03 (§B1).** Conforme : `LectureClauses` porte `clauses.mjs` (section, catalogue,
+> par lot dans l'ordre, passages), et `LectureDao.completerParClause` porte `completerParClause`. Les expressions sont les
+> vôtres : `\s` y est la classe des blancs de JavaScript, `\b` une frontière ASCII, et la casse est ignorée en Unicode.
+> **Un écart, au service d'import** : une valeur `clause` n'est ajoutée qu'**après la lecture de tous les modèles**, pour
+> un champ qu'**aucun** n'a proposé. Une validité lue à l'AE par le modèle n'est donc pas doublée d'une validité lue au
+> DPAO par clause : votre `lire()`, document par document, ne connaît pas ce cas, et en ferait un conflit.
+
 ## B2 — Les passages de listes
 
 Les listes ne sont pas découpées par la passe : l'essai donnait 1 liste juste sur 6. La passe repère le **passage**, et
@@ -47,6 +54,9 @@ l'écran le propose dans « Coller une liste », où la PRMP vérifie l'aperçu.
   - `MATERIEL` et `PERSONNEL` : travaux seulement ;
   - `PIECES` : travaux et fournitures. C'est « Documents ou pièces à remettre en sus… », jusqu'à la clause 6.3.
 
+> ⚠️ **Livraison backend du 2026-10-03 (§B2).** Conforme : `passages` dans `ImportDaoResult`, au format
+> `{ liste, texte, paragraphe }`, texte de l'ancre à la fin (25 paragraphes au plus), lignes séparées par `\n`.
+
 ## B3 — Le contrat de `POST …/import`
 
 - `PropositionImport` reçoit **`source`** : `'modele'` (la lecture actuelle) ou `'clause'`. L'écran l'affiche : une valeur
@@ -54,6 +64,9 @@ l'écran le propose dans « Coller une liste », où la PRMP vérifie l'aperçu.
 - `ImportDaoResult.passages` : voir B2. Vide par défaut.
 - Rien d'autre ne change : `appliquer` reçoit les lignes retenues comme aujourd'hui. Les passages ne s'appliquent pas :
   ils se collent dans la liste.
+
+> ⚠️ **Livraison backend du 2026-10-03 (§B3).** Conforme : `source` (`modele` | `clause`) sur chaque proposition, et
+> `passages`, vide par défaut. `appliquer` ne change pas.
 
 ## Mesures du front (DAO réels, `lire()` avec le référentiel de la forme du marché)
 
@@ -72,3 +85,19 @@ l'écran le propose dans « Coller une liste », où la PRMP vérifie l'aperçu.
 
 **Recette attendue** : la parité habituelle sur les 20 documents, où seules les propositions de source `clause` et les
 passages s'ajoutent, plus les trois DAO réels ci-dessus avec les mêmes ajouts.
+
+> ⚠️ **Livraison backend du 2026-10-03 — recette.**
+> - **Parité** sur les 20 documents, `lire()` des deux côtés : extraction identique, **1 185 lignes identiques**, dont
+>   23 propositions `clause` et 16 passages.
+>   - Le référentiel du banc a été complété de `B03-QT-15` à `B03-QT-20`. Sans eux, la liquidité de 10 % du MTP était
+>     écartée, des deux côtés.
+> - **DAO réels**, les mêmes ajouts que les vôtres :
+>   - MTP : `B05-GQ-03` = 100 500 000, `B09-DL-01` = « Six (06) mois », `B03-QT-15` = 10, et le passage du matériel ;
+>   - MEN : `B09-DL-01` = « CENT VINGT (120) Jours », `B03-QT-14#1` = 99 000 000, `#2` = 72 000 000, et le passage des
+>     pièces ;
+>   - 2463 : `B05-GS-03#1` à `#5` (1 600 000 / 2 170 000), et le passage des pièces.
+> - `LectureClausesTest` : section (les IC sont ignorées), catalogue des travaux, par lot sous ses deux formes, garde-fous
+>   (déjà lu, champ non servi, pas de section, hors DPAO), passage des pièces arrêté à la 6.3.
+> - `ImportDaoIntegrationTest.allerRetourFournitures` : sur un DAO conforme, toutes les propositions sont `modele`, et le
+>   passage des pièces est rendu.
+> - Ni migration ni script.
