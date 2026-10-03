@@ -276,3 +276,11 @@ l'envoyer.
 >   champ en moins (`B08-MR-06`) décale tout le tirage.
 > - **Écran** : la grille du DQE est développée (n° de prix, séries, coller depuis le tableur) ; lecture vérifiée sur
 >   la fiche 31. La recette avec saisie attend l'accord du pilote pour écrire en base.
+>
+> ✅ **2026-10-03 — variantes de la clause 6.3 validées par le pilote.** `DPAO-T.txt` et `.json` sont **à recopier**
+> tels que commités en `6118791`. Rendu attendu avec les valeurs du MTP :
+> - « a) avoir réalisé un chiffre d'affaires annuel moyen, calculé sur les trois (3) meilleures des cinq (5) dernières
+>   années, pour des travaux routiers, d'un montant équivalant à 5 000 000 000 Ariary » ;
+> - « b) […] au cours des dix (10) dernières années, au plus trois (3) marchés de nature et de complexité comparables à
+>   celles des Travaux, d'un montant cumulé d'au moins 2 500 000 000 Ariary, et comprenant : » ;
+> - « (f) […] d'un montant minimum égal à 10 % du montant de son offre ».
