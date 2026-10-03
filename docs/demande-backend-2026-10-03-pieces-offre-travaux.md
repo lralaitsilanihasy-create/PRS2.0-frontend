@@ -171,3 +171,6 @@ pilote :
 > - **Banc de l'import** : aucune fausse valeur. `B04-PI-01` et `B03-CQ-01` sont désormais signalés **ambigus**, pour la
 >   même raison qu'au lot 3 : chacun suit, dans la même cellule, le paragraphe du seul jeton de sa liste. Le DPAO-T
 >   relit 2 champs de moins.
+>
+> ✅ **2026-10-03 — texte de la clause 6.2 validé par le pilote, tel quel** (« datée de moins de N mois » compris).
+> `DPAO-T.txt` est **à recopier** tel que commité en `7af2b34`.
