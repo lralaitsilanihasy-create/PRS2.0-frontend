@@ -322,3 +322,15 @@ l'envoyer.
 >   Sans numéro de DAO saisi, elle affiche « Plan de passation : 00004/PPM-AGPM/CNM/2026 ». La mise en page ne bouge pas.
 > - Ni migration ni script. Les documents des fiches déjà validées restent ceux de leur version : il faut une révision
 >   pour les régénérer, la fiche 32 comprise.
+
+> ✅ **Contre-recette du front, 2026-10-03 (JAR de 05:16) : fiche 32 révisée, validée en v3 (forfait).**
+> - **CCAP, article 16** : « 000 — INSTALLATION : ……… % », « 500 — OUVRAGES : ……… % », « 600 — CHAUSSEES : ……… % »,
+>   puis « - Total… 100 % ».
+> - **DPAO, clause 6.3** : les trois variantes validées, à l'identique du rendu attendu (CA moyen « trois (3) meilleures
+>   des cinq (5) dernières années, pour des travaux routiers » ; « au plus trois (3) marchés […] cumulé d'au moins
+>   2 500 000 000 Ariary » ; liquidité « égal à 10 % du montant de son offre »).
+> - **Classeur `BP`** : « Dossier d'appel d'offres : 001-DAOO/MEN/PRMP/Tvx-PI-2026 (plan de passation :
+>   00004/PPM-AGPM/CNM/2026) ».
+>
+> **Demande close.** Reste hors de ce lot : la saisie des 57 articles réels du MEN (2 lots), qui sera faite si une
+> recette alloti est utile.
