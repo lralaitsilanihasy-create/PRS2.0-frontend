@@ -4,6 +4,8 @@ import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { MaterielExige, PersonnelExige } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
+import { CollageListe } from './collage-liste';
+import { lireMateriel, lirePersonnel } from './collage-listes';
 import { empreinte, ListeASauver } from './liste-a-sauver';
 import { ligneMateriel, lignePersonnel, minimumIncoherent } from './moyens';
 
@@ -24,6 +26,7 @@ type Ligne<T> = T & { cle: number };
   templateUrl: './fiche-moyens.html',
   styleUrl: './fiche-moyens.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CollageListe],
 })
 export class FicheMoyens implements ListeASauver {
   private readonly fiches = inject(FicheMarcheService);
@@ -50,6 +53,20 @@ export class FicheMoyens implements ListeASauver {
   readonly materielModifie = computed(() => empreinte(this.chargeMateriel()) !== this.refMateriel());
   readonly personnelModifie = computed(() => empreinte(this.chargePersonnel()) !== this.refPersonnel());
   readonly modifie = computed(() => this.materielModifie() || this.personnelModifie());
+
+  /** ⚠️ 03/10 — « Coller une liste » : la liste dans laquelle la PRMP colle un passage de son DAO, ou aucune. */
+  readonly collage = signal<'materiel' | 'personnel' | null>(null);
+  readonly lireMateriel = lireMateriel;
+  readonly lirePersonnel = lirePersonnel;
+  readonly ligneMateriel = ligneMateriel;
+  readonly lignePersonnel = lignePersonnel;
+
+  /** Les entrées lues s'ajoutent à la fin de la liste ; rien ne part avant « Enregistrer ». */
+  ajouterColles(nom: 'materiel' | 'personnel', entrees: (MaterielExige | PersonnelExige)[]): void {
+    this.liste(nom).update((l) => [...l, ...entrees.map((e) => this.cle(e as unknown as Record<string, unknown>))]);
+    this.collage.set(null);
+    this.toast.info(`${entrees.length} entrée(s) ajoutée(s) — à vérifier avant d'enregistrer.`);
+  }
 
   readonly apercuMateriel = computed(() => this.materiel().map((m) => ligneMateriel(m)));
   readonly apercuPersonnel = computed(() => this.personnel().map((p) => lignePersonnel(p)));

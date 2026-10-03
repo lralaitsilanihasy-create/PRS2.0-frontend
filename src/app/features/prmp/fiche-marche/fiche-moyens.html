@@ -72,6 +72,7 @@
     }
     @if (!lecture()) {
       <div class="mo__pied">
+        <button type="button" class="btn btn-outline" (click)="collage.set('materiel')">Coller une liste</button>
         <button type="button" class="btn btn-outline" (click)="ajouterMateriel()">+ Matériel</button>
         <button type="button" class="btn btn-primary" [disabled]="savingMateriel()" (click)="enregistrerMateriel()">
           {{ savingMateriel() ? 'Enregistrement…' : 'Enregistrer le matériel' }}
@@ -133,6 +134,7 @@
     }
     @if (!lecture()) {
       <div class="mo__pied">
+        <button type="button" class="btn btn-outline" (click)="collage.set('personnel')">Coller une liste</button>
         <button type="button" class="btn btn-outline" (click)="ajouterPersonnel()">+ Poste</button>
         <button type="button" class="btn btn-primary" [disabled]="savingPersonnel()" (click)="enregistrerPersonnel()">
           {{ savingPersonnel() ? 'Enregistrement…' : 'Enregistrer le personnel' }}
@@ -140,4 +142,26 @@
       </div>
     }
   </section>
+}
+
+<!-- ⚠️ 03/10 — « Coller une liste » : le passage du DAO, découpé, avec l'aperçu de l'impression. -->
+@if (collage() === 'materiel') {
+  <app-collage-liste
+    titre="Coller la liste du matériel"
+    exemple="Un (01) bétonnière de 350 litres minimum ; un (01) camion…"
+    [lire]="lireMateriel"
+    [ligne]="ligneMateriel"
+    (ajoute)="ajouterColles('materiel', $event)"
+    (ferme)="collage.set(null)"
+  />
+} @else if (collage() === 'personnel') {
+  <app-collage-liste
+    titre="Coller la liste du personnel clé"
+    exemple="Un (01) conducteur de travaux ayant un diplôme d’ingénieur…, au moins trois (03) ans d’expérience…"
+    [lire]="lirePersonnel"
+    [ligne]="lignePersonnel"
+    [noteUtilisee]="true"
+    (ajoute)="ajouterColles('personnel', $event)"
+    (ferme)="collage.set(null)"
+  />
 }

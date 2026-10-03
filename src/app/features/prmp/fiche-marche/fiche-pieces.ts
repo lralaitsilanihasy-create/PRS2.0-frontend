@@ -4,6 +4,8 @@ import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { PieceExigee, RubriquePiece } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
+import { CollageListe } from './collage-liste';
+import { lirePieces } from './collage-listes';
 import { empreinte, ListeASauver } from './liste-a-sauver';
 import { lignePiece, PIECES_ADMINISTRATIVES_DOCUMENT_TYPE } from './pieces';
 
@@ -31,6 +33,7 @@ export const RUBRIQUES_PIECES: { code: RubriquePiece; titre: string; clause: str
   templateUrl: './fiche-pieces.html',
   styleUrl: './fiche-pieces.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CollageListe],
 })
 export class FichePieces implements ListeASauver {
   private readonly fiches = inject(FicheMarcheService);
@@ -58,6 +61,24 @@ export class FichePieces implements ListeASauver {
   /** ⚠️ 03/10 — l'empreinte de la liste telle que servie ou enregistrée : la page la compare avant de quitter le bloc. */
   private readonly reference = signal('[]');
   readonly modifie = computed(() => empreinte(this.charge()) !== this.reference());
+  /**
+   * ⚠️ 03/10 — « Coller une liste » : la rubrique où la PRMP colle. C'est elle qui décide de la rubrique, l'écran ne
+   * devine pas (le MEN range ses pièces administratives au 1° de sa clause 6.2).
+   */
+  readonly collage = signal<RubriquePiece | null>(null);
+  readonly lirePiecesCollees = computed(() => {
+    const rubrique = this.collage() ?? 'OFFRE';
+    return (texte: string) => lirePieces(texte, rubrique);
+  });
+  readonly lignePiece = lignePiece;
+  readonly titreCollage = computed(() => `Coller la liste — ${RUBRIQUES_PIECES.find((r) => r.code === this.collage())?.titre ?? ''}`);
+
+  ajouterCollees(entrees: PieceExigee[]): void {
+    this.pieces.update((l) => [...l, ...entrees.map((p) => this.avecCle(p))]);
+    this.collage.set(null);
+    this.toast.info(`${entrees.length} pièce(s) ajoutée(s) — à vérifier avant d’enregistrer.`);
+  }
+
   readonly doubleEmploi = computed(() => !!this.texteAdministratif()?.trim() && (this.parRubrique().get('ADMINISTRATIVE')?.length ?? 0) > 0);
 
   constructor() {

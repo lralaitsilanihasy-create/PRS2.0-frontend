@@ -85,6 +85,7 @@
           @if (r.code === 'ADMINISTRATIVE' && !liste.length) {
             <button type="button" class="btn btn-outline btn-sm" (click)="reprendreDocumentType()">Reprendre les pièces du document type</button>
           }
+          <button type="button" class="btn btn-outline btn-sm" (click)="collage.set(r.code)">Coller une liste</button>
           <button type="button" class="btn btn-outline btn-sm" (click)="ajouter(r.code)">+ Pièce</button>
         </div>
       }
@@ -95,4 +96,16 @@
       <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="enregistrer()">{{ saving() ? 'Enregistrement…' : 'Enregistrer les pièces' }}</button>
     </div>
   }
+}
+
+<!-- ⚠️ 03/10 — « Coller une liste » dans la rubrique choisie : le passage du DAO, découpé, avec l'aperçu de l'impression. -->
+@if (collage()) {
+  <app-collage-liste
+    [titre]="titreCollage()"
+    exemple="Copie certifiée conforme à l’original de la carte statistique datée de moins de trois (03) mois…"
+    [lire]="lirePiecesCollees()"
+    [ligne]="lignePiece"
+    (ajoute)="ajouterCollees($event)"
+    (ferme)="collage.set(null)"
+  />
 }

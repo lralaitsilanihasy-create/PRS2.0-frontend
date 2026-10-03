@@ -128,4 +128,26 @@ describe('Matériel et personnel exigés (lot 3 du chantier b — contrat demand
     expect(Array.from(racine().querySelectorAll('button')).length).toBe(0);
     expect(texte(racine().querySelector('.mo__lu'))).toContain('- Conducteur de travaux (1)');
   });
+
+  it('« Coller une liste » (03/10) : le passage du DAO du MEN donne cinq engins, ajoutés seulement au clic', () => {
+    monter();
+    ouvrir([], []);
+    Array.from(racine().querySelectorAll('button')).filter((b) => texte(b) === 'Coller une liste')[0].click();
+    rendre();
+    const zone = racine().querySelector('textarea') as HTMLTextAreaElement;
+    zone.value = 'Un (01) bétonnière de 350 litres minimum ; une (01) voiture de liaison de type 4x4 — en propriété ou en location';
+    zone.dispatchEvent(new Event('input'));
+    rendre();
+    expect(texte(racine().querySelector('.modal [role="status"]'))).toBe('2 entrée(s) reconnue(s).');
+    expect(Array.from(racine().querySelectorAll('.cl__apercu span')).map((s) => texte(s))).toEqual([
+      '- Bétonnière de 350 litres minimum : 1',
+      '- Voiture de liaison de type 4x4 : 1',
+    ]);
+    expect(racine().querySelectorAll('.mo tbody tr').length).toBe(0);
+    bouton('Ajouter 2 entrée(s)').click();
+    rendre();
+    expect(racine().querySelector('textarea')).toBeNull();
+    expect(racine().querySelectorAll('.mo tbody tr').length).toBe(2);
+    expect(toast.info).toHaveBeenCalledWith("2 entrée(s) ajoutée(s) — à vérifier avant d'enregistrer.");
+  });
 });

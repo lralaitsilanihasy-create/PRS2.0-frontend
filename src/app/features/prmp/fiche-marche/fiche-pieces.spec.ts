@@ -110,4 +110,22 @@ describe('Pièces de l’offre exigées (lot 4 du chantier b — contrat demand�
     expect(Array.from(racine().querySelectorAll('.pc__etat')).map((e) => texte(e))).toEqual(['Aucune pièce.', 'Aucune pièce.']);
     expect(racine().querySelector('button')).toBeNull();
   });
+
+  it('« Coller une liste » (03/10) : collées dans la rubrique choisie, forme et ancienneté reconnues', () => {
+    monter();
+    ouvrir([]);
+    bouton('Coller une liste', section('ADMINISTRATIVE')).click();
+    rendre();
+    const zone = racine().querySelector('textarea') as HTMLTextAreaElement;
+    zone.value = "Un certificat de non faillite daté de moins de 03 mois (original)\nCopie certifiée conforme à l'original de la carte statistique datée de moins de deux (03) mois";
+    zone.dispatchEvent(new Event('input'));
+    rendre();
+    bouton('Ajouter 2 entrée(s)').click();
+    rendre();
+    expect(apercu('ADMINISTRATIVE')).toEqual([
+      '- Certificat de non faillite, original, datée de moins de 3 mois',
+      '- Carte statistique, copie certifiée conforme à l’original, datée de moins de 3 mois',
+    ]);
+    expect(apercu('OFFRE')).toEqual([]);
+  });
 });
