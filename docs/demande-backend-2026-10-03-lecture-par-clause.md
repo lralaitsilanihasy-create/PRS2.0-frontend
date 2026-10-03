@@ -159,3 +159,16 @@ B4, avec la parité habituelle.
 >   (CV…) : » fermé par « NB : ».
 > - Le tableau du matériel du MTP reste hors du second temps, comme vous le notez.
 > - Ni migration ni script.
+
+> ✅ **Contre-recette du front, 2026-10-03 (JAR de 21:23) — second temps.** `POST …/import`, en lecture seule, sur les
+> fiches 34 et 35 :
+> - MTP : `B04-VO-01` = 75 (nouveau), et le passage du personnel (« - Conducteur de travaux : Ayant un diplôme
+>   d'Ingénieur… ») en plus de celui du matériel ;
+> - MEN : `B05-GQ-03` lots 1 et 2 = 9 900 000 / 7 200 000 (nouveaux), et le passage du personnel en plus de celui des
+>   pièces ;
+> - 2463 : `B04-VO-01` = 75 (nouveau).
+>
+> Les sources sont `modele` et `clause`. Les anomalies propres aux fiches de recette (garantie sans cadrage, valeur par
+> lot sur une ligne non allotie) sont inchangées.
+>
+> **Second temps clos.** Reste hors du chantier : le tableau du matériel du MTP, qui arrive cellule par cellule.
