@@ -257,3 +257,22 @@ l'envoyer.
 > - **Livraison** : migration **V59** (DQE, bloc `B12` ouvert aux travaux) et script
 >   `docs/referentiel/2026-10-02-dqe-et-seuils-travaux.sql`, passé à blanc sur DBPRS20. Les deux copies du fichier de
 >   correspondance des travaux sont mises à jour à l'identique.
+
+> ✅ **Front, 2026-10-03.**
+> - **§B1.5, CCAP-T recopié** (`scripts/modeles-dao/modeles/CCAP-T.txt` et `.json`) : la ligne `{{B08-MR-06}}` de
+>   l'article 16 devient `{{BESOIN.series}}`, et rien d'autre ne change. `verifier.mjs` donne 573 sur 573. **À recopier.**
+> - **§B2.4, variantes de la clause 6.3 du DPAO-T** : rédigées dans `DPAO-T.txt` / `.json` (`verifier.mjs` : 273 sur
+>   273). ⚠️ **Ne pas les recopier encore** : elles attendent la validation du pilote. Je vous le dirai ici. Quatre
+>   conditions :
+>   - `CHIFFRE-AFFAIRES` devient `B03-QT-07 renseigne et B03-QT-16 vide` ;
+>   - `CA-MOYENNE` = `B03-QT-07 renseigne et B03-QT-16 renseigne` ;
+>   - `REFERENCES-UN` = `B03-QT-19 vide` ; `REFERENCES-CUMUL` = `B03-QT-19 renseigne` ;
+>   - `LIQUIDITE-POURCENT` = `B03-QT-15 renseigne`.
+>
+>   La rédaction d'origine du chiffre d'affaires imprime désormais le domaine : « pour des {{B03-QT-18}} ». Avec la
+>   valeur par défaut, le texte reste celui du document type.
+> - **Banc de l'import** : aucune fausse valeur sur les deux modèles. Le DPAO-T relit 6 champs de plus (les seuils). Le
+>   CCAP-T bouge de quelques champs dans les deux sens : les valeurs fictives du banc sont tirées en séquence, et un
+>   champ en moins (`B08-MR-06`) décale tout le tirage.
+> - **Écran** : la grille du DQE est développée (n° de prix, séries, coller depuis le tableur) ; lecture vérifiée sur
+>   la fiche 31. La recette avec saisie attend l'accord du pilote pour écrire en base.

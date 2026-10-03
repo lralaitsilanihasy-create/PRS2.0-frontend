@@ -1313,7 +1313,7 @@
   },
   {
    "type": "para",
-   "texte": "{{B08-MR-06}}"
+   "texte": "{{BESOIN.series}}"
   },
   {
    "type": "para",
@@ -3602,27 +3602,27 @@
   {
    "ligne": "504.0.0",
    "texte": "-…………………………………………………%",
-   "raison": "postes d'exemple du découpage du forfait : remplacés par la saisie B08-MR-06"
+   "raison": "postes d'exemple du découpage du forfait : remplacés par les séries du DQE ({{BESOIN.series}})"
   },
   {
    "ligne": "505.0.0",
    "texte": "-…………………………………………………%",
-   "raison": "postes d'exemple du découpage du forfait : remplacés par la saisie B08-MR-06"
+   "raison": "postes d'exemple du découpage du forfait : remplacés par les séries du DQE ({{BESOIN.series}})"
   },
   {
    "ligne": "506.0.0",
    "texte": "-…………………………………………………%",
-   "raison": "postes d'exemple du découpage du forfait : remplacés par la saisie B08-MR-06"
+   "raison": "postes d'exemple du découpage du forfait : remplacés par les séries du DQE ({{BESOIN.series}})"
   },
   {
    "ligne": "507.0.0",
    "texte": "-…………………………………………………%",
-   "raison": "postes d'exemple du découpage du forfait : remplacés par la saisie B08-MR-06"
+   "raison": "postes d'exemple du découpage du forfait : remplacés par les séries du DQE ({{BESOIN.series}})"
   },
   {
    "ligne": "508.0.0",
    "texte": "- Réception provisoire…………………… 5%",
-   "raison": "postes d'exemple du découpage du forfait : remplacés par la saisie B08-MR-06"
+   "raison": "postes d'exemple du découpage du forfait : remplacés par les séries du DQE ({{BESOIN.series}})"
   },
   {
    "ligne": "536.0.0",
@@ -4027,7 +4027,7 @@
  ],
  "ajouts": [
   "La garantie de bonne exécution est libérée à 100% dans les 30 jours suivant la date de la réception provisoire",
-  "{{B08-MR-06}}",
+  "{{BESOIN.series}}",
   "{{B04-CD-03}}",
   "{{B02-LV-02}}",
   "{{B09-AC-01}}",

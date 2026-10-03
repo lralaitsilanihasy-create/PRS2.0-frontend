@@ -329,8 +329,8 @@ export interface ArticleFiche {
   redigePar?: string | null;
   profilRedacteur?: string | null;
   /**
-   * ⚠️ **DQE des travaux** — contrat **demandé**, pas encore servi (`demande-backend-2026-10-02-dqe-et-seuils-travaux`,
-   * §B1.2) : les noms sont ceux de la demande, à réaligner sur la livraison. Ignorés hors travaux.
+   * ⚠️ **DQE des travaux** — livré le 02/10 (V59, `demande-backend-2026-10-02-dqe-et-seuils-travaux` §B1.2), noms
+   * de la demande. Hors travaux, servis vides (`null`, `false`) et ignorés à l'écriture.
    */
   /** N° de prix au bordereau (« 529 », « 2.4 ») — unique dans le lot. */
   numeroPrix?: string | null;

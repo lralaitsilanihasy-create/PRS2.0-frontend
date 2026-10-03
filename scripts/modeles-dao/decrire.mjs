@@ -2239,8 +2239,13 @@ function dpaoTravaux() {
     ONG: 'B03-QT-05 = OUI',
     QUALIFICATIONS: 'B03-QT-06 renseigne',
     'PERSONNEL-CLE': 'B03-QT-13 renseigne',
-    'CHIFFRE-AFFAIRES': 'B03-QT-07 renseigne',
+    // 03/10 (chantier b, lot 2 — V59) : les seuils calculés de la clause 6.3, chacun en deux rédactions exclusives.
+    'CHIFFRE-AFFAIRES': 'B03-QT-07 renseigne et B03-QT-16 vide',
+    'CA-MOYENNE': 'B03-QT-07 renseigne et B03-QT-16 renseigne',
+    'REFERENCES-UN': 'B03-QT-19 vide',
+    'REFERENCES-CUMUL': 'B03-QT-19 renseigne',
     LIQUIDITE: 'B03-QT-14 renseigne',
+    'LIQUIDITE-POURCENT': 'B03-QT-15 renseigne',
     PREFERENCE: 'B06-PN-01 = OUI',
     'SANS-PREFERENCE': 'B06-PN-01 != OUI',
     FERME: 'prixRevisable = NON',
@@ -2262,7 +2267,13 @@ function dpaoTravaux() {
   const PERSONNEL_CLE = '(e) proposer le personnel clé suivant : {{B03-QT-13}}';
   const LIQUIDITE = '(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum de : {{B03-QT-14.parLot}}';
   const OFFRES_ANORMALES_CLAUSE = '9.4.5. Offres anormalement basses ou anormalement hautes';
-  const ajouts = [CLAUSE_SE, '{{B02-LV-02}}', '{{B03-QT-06}}', PERSONNEL_CLE, LIQUIDITE, OFFRES_ANORMALES_CLAUSE, '{{B06-EO-07}}'];
+  // 03/10 (chantier b, lot 2 ; demande 2026-10-02-dqe-et-seuils-travaux §B2.4) — les seuils CALCULÉS du DAO routier du
+  // MTP n'ont pas de rédaction au document type : trois variantes déclarées, exclusives de la rédaction d'origine, sur
+  // le patron de celle-ci (mêmes mots, la règle de calcul en plus). ⚠️ Textes soumis à la validation du pilote.
+  const CA_MOYENNE = 'a) avoir réalisé un chiffre d’affaires annuel moyen, calculé sur les {{B03-QT-16.lettres}} ({{B03-QT-16}}) meilleures des {{B03-QT-17.lettres}} ({{B03-QT-17}}) dernières années, pour des {{B03-QT-18}}, d’un montant équivalant à {{B03-QT-07}}';
+  const REFERENCES_CUMUL = 'b) avoir réalisé avec succès en tant qu’entrepreneur principal, au cours des {{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années, au plus {{B03-QT-19.lettres}} ({{B03-QT-19}}) marchés de nature et de complexité comparables à celles des Travaux, d’un montant cumulé d’au moins {{B03-QT-20.parLot}}, et comprenant :';
+  const LIQUIDITE_POURCENT = '(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum égal à {{B03-QT-15.parLot}} du montant de son offre';
+  const ajouts = [CLAUSE_SE, '{{B02-LV-02}}', '{{B03-QT-06}}', PERSONNEL_CLE, LIQUIDITE, OFFRES_ANORMALES_CLAUSE, '{{B06-EO-07}}', CA_MOYENNE, REFERENCES_CUMUL, LIQUIDITE_POURCENT];
 
   retirer(d, 'note de rédaction du modèle, « à supprimer »', '[note 1]');
   retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', (l) => /^<\s*(soit|ou)\s*:?\s*>\s*:?$/i.test(l.texte));
@@ -2365,10 +2376,14 @@ function dpaoTravaux() {
     x(r63q, 'Qualifications particulières requises'),
     x(r63q, 'Aux fins du présent Marché', [' <choisir parmi les exemples suivants en les adaptant si besoin est>', '', 'retire']),
     // 02/10 (recette du DAO du MEN) — le MEN n'exige aucun chiffre d'affaires : le critère a) ne s'imprime que saisi.
-    SIc('CHIFFRE-AFFAIRES', x(r63q, 'a) avoir réalisé un chiffre'), xj(r63q, '<insérer un montant', 0, '{{B03-QT-07}}')),
+    // 03/10 — le domaine du chiffre d'affaires est saisi (B03-QT-18, défaut « travaux de construction », le texte
+    // du document type) : « travaux routiers » au MTP.
+    SIc('CHIFFRE-AFFAIRES', x(r63q, 'a) avoir réalisé un chiffre', ['travaux de construction', '{{B03-QT-18}}', 'adapte']), xj(r63q, '<insérer un montant', 0, '{{B03-QT-07}}')),
+    SIc('CA-MOYENNE', CA_MOYENNE),
     // 01/10 — « au cours des trois (5) dernières années » : coquille du document type, et durée que l'acheteur adapte
     // (cinq ans au MEN) → B03-QT-12, la même période qu'au 4° de la clause 6.3.
-    x(r63q, 'b) avoir réalisé avec succès', ['trois (5) dernières années', '{{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années', 'adapte']),
+    SIc('REFERENCES-UN', x(r63q, 'b) avoir réalisé avec succès', ['trois (5) dernières années', '{{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années', 'adapte'])),
+    SIc('REFERENCES-CUMUL', REFERENCES_CUMUL),
     xj(r63q, '<Indiquer le type de travaux', 0, '{{B03-QT-08.parLot}}'),   // 01/10 : par lot (seuils du MEN : 247,5 M / 180 M)
     x(r63q, '(c) indiquer sous quelle forme'),
     x(r63q, '<indiquer une liste de ces gros', ['<indiquer une liste de ces gros matériels et équipements essentiels>', '{{B03-QT-09}}', 'jeton']),
@@ -2377,6 +2392,7 @@ function dpaoTravaux() {
     x(r63q, '(d) proposer un directeur', ['<par exemple cinq à dix>', '{{B03-QT-10}}', 'jeton'], [', y compris au moins < par exemple >ans d’expérience en tant que directeur', '', 'retire']),
     SIc('PERSONNEL-CLE', PERSONNEL_CLE),
     SIc('LIQUIDITE', LIQUIDITE),
+    SIc('LIQUIDITE-POURCENT', LIQUIDITE_POURCENT),
     SIc('QUALIFICATIONS', '{{B03-QT-06}}'));
   retirer(r63q, 'instruction à l’acheteur', '<Indiquer ici les qualifications particulières');
   retirer(r63q, 'autres conditions du personnel clé : saisies dans B03-QT-06', '<Ajouter, si nécessaire');
@@ -2761,7 +2777,7 @@ function ccapTravaux() {
   // 02/10 — le référentiel offre « Libérée à 100 % à la réception provisoire » (B05-GE-04), le modèle n'a de rédaction
   // que pour la réception définitive : celle-ci, calquée mot pour mot sur la sienne (DAO du MEN, CCAP art. 7.1).
   const LIBERATION_PROVISOIRE = 'La garantie de bonne exécution est libérée à 100% dans les 30 jours suivant la date de la réception provisoire';
-  const ajouts = [LIBERATION_PROVISOIRE, '{{B08-MR-06}}', '{{B04-CD-03}}', '{{B02-LV-02}}', '{{B09-AC-01}}', '{{B09-AC-02}}', '{{B09-AC-03}}', '{{B09-CH-01}}', '{{B09-CH-02}}', '{{B09-CH-03}}', '{{B09-CH-04}}',
+  const ajouts = [LIBERATION_PROVISOIRE, '{{BESOIN.series}}', '{{B04-CD-03}}', '{{B02-LV-02}}', '{{B09-AC-01}}', '{{B09-AC-02}}', '{{B09-AC-03}}', '{{B09-CH-01}}', '{{B09-CH-02}}', '{{B09-CH-03}}', '{{B09-CH-04}}',
     '{{B09-CH-05}}', '{{B08-AP-02}}', '{{B09-RP-04}}', '{{B10-PC-01}}', '{{B10-DR-01}}'];
 
   // ── Ce qui ne s'imprime pas
@@ -2789,7 +2805,7 @@ function ccapTravaux() {
   retirer(d, "assurances d'exemple du modèle (« exemple à adapter ») : remplacées par les saisies B09-AC-01 à -03", (l) => l.ligne === assurances);
   retirer(d, "sujétions d'exemple du modèle (« à adapter ») : remplacées par les saisies B09-CH-01 à -05", (l) => l.ligne === sujetions);
   retirer(d, "modalités d'exemple des acomptes sur approvisionnements : remplacées par la saisie B08-AP-02", 'A l’appui de tout projet de décompte', 'Les matériaux ne peuvent être pris en compte', 'Le montant pris en compte dans le projet de décompte');
-  retirer(d, "postes d'exemple du découpage du forfait : remplacés par la saisie B08-MR-06", (l) => /^-s*…+s*%$/.test(l.texte) || l.texte.startsWith('- Réception provisoire…'));
+  retirer(d, "postes d'exemple du découpage du forfait : remplacés par les séries du DQE ({{BESOIN.series}})", (l) => /^-\s*…+\s*%$/.test(l.texte) || l.texte.startsWith('- Réception provisoire…'));
   retirer(d, "seconde liste de seuils d'intempéries (précipitations, vent, lieu d'observation) : même objet que la saisie B09-FM-02 — le DAO du MEN n'en garde qu'une",
     'En vue de l’application éventuelle du deuxième des articles 18.1', 'précipitations journalières supérieures', 'force du vent supérieure', 'Phénomènes constatés à');
   retirer(d, "rédaction « dates limites » : le délai d'exécution est retenu (plan du lot D4, Q9)", 'Date limite de commencement', "Date limite d'achèvement");
@@ -2941,8 +2957,9 @@ function ccapTravaux() {
     ...SI('REGLEMENT-UNIQUE', P(x('Les comptes seront réglés en une seule fois'))),
     ...SI('DECOMPTES-MENSUELS', P(x('Délai de remise du projet de décompte', ['< nombre de jours>', '{{B08-MR-05}}', 'jeton']))),
     ...SI('UNITAIRES', P(x('Le règlement des sommes dues à l’Entrepreneur s’effectuera par application des prix unitaires'))),
-    // 02/10 — les postes du découpage : la saisie B08-MR-06 (un poste par ligne) remplace les lignes d'exemple.
-    ...SI('FORFAIT', P(x('Le règlement des sommes dues à l’Entrepreneur s’effectuera par application du prix forfaitaire')), P('{{B08-MR-06}}'), P(x('- Total'))),
+    // 03/10 — les postes du découpage : les SÉRIES du DQE (chantier b, §B1.5 ; V59), une ligne par série
+    // (« 500 — Ouvrages : ……… % »), remplacent les lignes d'exemple. B08-MR-06 (saisie libre) est désactivé.
+    ...SI('FORFAIT', P(x('Le règlement des sommes dues à l’Entrepreneur s’effectuera par application du prix forfaitaire')), P('{{BESOIN.series}}'), P(x('- Total'))),
     // Articles 17 à 19 — masse des travaux
     ...E('Article 17 -', 'Article 20 -', [
       ['Le changement dans la masse des travaux peut être demandé par ordre de service sans nécessité de conclure un avenant lorsque ces changements n\'entraîne pas de variations', ['<pourcentage inférieur à 20%>', '{{B09-MA-01}}', 'jeton']],

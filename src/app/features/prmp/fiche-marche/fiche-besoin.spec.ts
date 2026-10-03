@@ -323,16 +323,4 @@ describe('Besoin de la fiche DAO (bloc B12, livraison V45 du 25/09)', () => {
     expect(toast.info).toHaveBeenCalledWith("1 article(s) ajouté(s) — à vérifier avant d'enregistrer.");
   });
 
-  it('travaux, contrat en attente : 409 BESOIN_HORS_PERIMETRE dit que le DQE reste affiché', () => {
-    monter({ nbLots: 1, saisieParLot: false, categorie: 'TRAVAUX' });
-    ouvrir(DQE);
-    bouton('Enregistrer le besoin').click();
-    http.expectOne('/api/fiches-marche/42/articles').flush(
-      { message: 'Le besoin ne concerne que les fournitures.', code: 'BESOIN_HORS_PERIMETRE' },
-      { status: 409, statusText: 'Conflict' },
-    );
-    rendre();
-    expect(toast.error.mock.calls[0][0]).toContain('Le DQE reste affiché');
-    expect(lignes().filter((l) => !l.classList.contains('bs__serie')).length).toBe(2);
-  });
 });

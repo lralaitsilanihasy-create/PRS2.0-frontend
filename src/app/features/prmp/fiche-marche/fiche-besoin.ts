@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 
-import { ApiError, codeErreur, erreursParChamp } from '../../../core/errors/api-error';
+import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { ArticleFiche, CategorieDao, TypeMarche } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
@@ -322,10 +322,7 @@ export class FicheBesoin {
         // (liste nue, ou `{ erreurs: [...] }`) autant que la forme normalisée par l'intercepteur.
         const m = erreursParChamp(e);
         this.erreurs.set(m);
-        // ⚠️ Contrat en attente (02/10) : tant que le serveur réserve le besoin aux fournitures, le DQE saisi reste
-        // à l'écran, et la PRMP le sait — il n'est pas perdu, il n'est pas encore enregistrable.
-        if (codeErreur(e) === 'BESOIN_HORS_PERIMETRE') this.toast.error("Le serveur n'accepte pas encore le détail quantitatif des travaux (évolution demandée le 02/10). Le DQE reste affiché ; il ne pourra être enregistré qu'après cette livraison.");
-        else if (!m.size) this.toast.error(e?.message ?? "Le besoin n'a pas pu être enregistré.");
+        if (!m.size) this.toast.error(e?.message ?? "Le besoin n'a pas pu être enregistré.");
       },
     });
   }
