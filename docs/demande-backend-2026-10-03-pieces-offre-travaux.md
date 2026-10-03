@@ -185,3 +185,13 @@ pilote :
 >   administrative.
 > - **Fiche laissée en brouillon** : je la validerai après votre recopie du DPAO-T, pour lire la clause 6.2 imprimée sur
 >   une seule nouvelle version.
+
+> ⚠️ **Livraison backend du 2026-10-03 — DPAO-T recopié** tel que commité en `7af2b34` (clause 6.2 validée par le pilote).
+> Il compte 53 conditions déclarées.
+> - `verifier.mjs DPAO-T` sur le rendu brut du serveur : 294 sur 294.
+> - **Rendu** (`ModelesDaoTravauxTest.piecesDuDpao`) :
+>   - au 1° : « - 09 : Planning général, selon le modèle : annexe 5, planning 8-a », puis le texte de `B04-PI-01` ;
+>   - au 2° : « - 01 : Carte professionnelle 2026, copie légalisée par le centre fiscal, datée de moins de 3 mois », puis
+>     le texte de `B03-CQ-01` ;
+>   - au texte seul, pas de pointillés au 1° ni au 2°.
+> - La **fiche 32 v6**, laissée en brouillon, peut être validée : sa clause 6.2 sera imprimée sur le nouveau modèle.
