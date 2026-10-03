@@ -163,3 +163,20 @@ aux travaux : chacun suit le paragraphe du seul jeton de sa liste.
 >   prototype avec la règle 9. Le défaut de lecture ne touche que la quantité fixe, mesurée au banc.
 >
 > **Demande close**, sauf le portage de la règle 9 dans `LectureDao` (encadré ci-dessus).
+
+> ⚠️ **Livraison backend du 2026-10-03 — règle 9 portée dans `LectureDao`, parité identique, mais le cas réel n'est pas
+> couvert.**
+> - **Portage** : `PRES = 3`, `COURT = 60`, unité pauvre = moins de 8 lettres fixes (`ANCRE_HAUTE`) ; sans lettre, les 3
+>   paragraphes seulement.
+> - **Parité** sur 20 documents : les 19 habituels, plus un DPAO-F en quantité fixe que génère le serveur, avec `B03-CQ-01`
+>   à son défaut. Extraction identique, **1 138 lignes de lecture identiques**.
+> - **Le cas qui a motivé la règle n'est pas réglé, ni chez vous ni chez moi** : ce DPAO-F reste lu à **25 unités sur 142**,
+>   des deux côtés (`lireParagraphes` sur les mêmes paragraphes : 25).
+>   - Le défaut réel de `B03-CQ-01` (fichier de correspondance, recopié à la création) contient « un certificat de non
+>     faillite datée de moins de 2 mois ». La ligne fait **54 caractères**, sous le seuil de 60, et `{{B02-AU-04}} mois.`
+>     s'y accroche : valeur lue « un certificat de non faillite datée de moins de 2 ».
+>   - Votre banc `--defauts --quantite-fixe` mesurait sans doute un autre texte, ou une autre disposition.
+> - **Piste**, à votre main : `B02-AU-04` est un `NOMBRE`. Une unité pauvre ne devrait se reconnaître loin du curseur que
+>   si la valeur capturée a la forme de son type (« 6 », « six (06) »), ce qui n'est jamais le cas d'un bout de phrase. Ou
+>   bien un seuil plus court.
+> - **En attendant**, `allerRetourFournitures` garde `B03-CQ-01` vidé, avec un commentaire qui renvoie à ce défaut.
