@@ -215,3 +215,14 @@ conditions, une fois les noms des jetons fixés, et le texte soumis au pilote.
 > - **Validation** : 0 bloquant, v4 VALIDEE.
 > - **Attendu jusqu'à votre recopie** : le DPAO imprime encore, aux (c) et (e), les textes de `B03-QT-09` et `B03-QT-13`
 >   sans les listes. **Je referai ce point après la recopie du DPAO-T et la condition `MOYENS.x renseigne`.**
+
+> ⚠️ **Livraison backend du 2026-10-03 — DPAO-T recopié** tel que commité en `1216dd9` (texte validé par le pilote). Il compte
+> 49 conditions déclarées.
+> - `verifier.mjs DPAO-T` sur le rendu brut du serveur : 284 sur 284.
+> - **Rendu** (`ModelesDaoTravauxTest.materielEtPersonnelDuDpao`) :
+>   - (c) : « … ci-après : », « - Camions bennes ≥ 10 000 kg : 6, dont au moins 4 en propre », « - Niveleuse : 1, en
+>     propre », puis le texte de `B03-QT-09` ;
+>   - (e) : « (e) proposer le personnel clé suivant : », « - Conducteur de travaux (1) : ingénieur BTP ou génie civil ; au
+>     moins 5 ans d'expérience en travaux routiers ; justificatifs : CV et diplôme certifié » ;
+>   - au texte seul, ni pointillés au (c), ni « (e) ».
+> - La fiche 32 v4 a été validée avec l'ancien modèle : il faut une **révision** pour voir les listes imprimées.
