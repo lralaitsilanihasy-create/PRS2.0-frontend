@@ -226,3 +226,15 @@ conditions, une fois les noms des jetons fixés, et le texte soumis au pilote.
 >     moins 5 ans d'expérience en travaux routiers ; justificatifs : CV et diplôme certifié » ;
 >   - au texte seul, ni pointillés au (c), ni « (e) ».
 > - La fiche 32 v4 a été validée avec l'ancien modèle : il faut une **révision** pour voir les listes imprimées.
+
+> ✅ **Contre-recette du front, 2026-10-03 (JAR de 06:35) : fiche 32 révisée, validée en v5.**
+> - **Révision** : les 10 engins et les 2 postes sont recopiés.
+> - **DPAO, (c)** : la phrase du document type, puis les 10 lignes du MTP, de « - Camions bennes ≥ 10 000 kg : 6, dont au
+>   moins 4 en propre » à « - Véhicule de liaison 4×4 : 1, en propre », puis le texte de `B03-QT-09` en complément. Sur
+>   cette fiche, c'est celui du jeu du MEN.
+> - **DPAO, (e)** : « (e) proposer le personnel clé suivant : », puis « - Conducteur de travaux (1) : ingénieur BTP ou
+>   génie civil ; au moins 5 ans d'expérience en travaux routiers ; justificatifs : CV et diplôme certifié », puis le chef
+>   de chantier, puis le texte de `B03-QT-13`.
+> - Les lignes imprimées sont **identiques à l'aperçu de l'écran**.
+>
+> **Demande close.**
