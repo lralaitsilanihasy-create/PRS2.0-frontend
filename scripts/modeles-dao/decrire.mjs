@@ -2245,6 +2245,12 @@ function dpaoTravaux() {
     'PERSONNEL-CLE': 'MOYENS.personnel renseigne ou B03-QT-13 renseigne',
     'PERSONNEL-LISTE': 'MOYENS.personnel renseigne',
     'PERSONNEL-TEXTE': 'B03-QT-13 renseigne',
+    // 03/10 (lot 4 du chantier b, V61) : les pièces de l'offre en liste, par rubrique de la clause 6.2 ; les textes restent
+    // en complément.
+    'PIECES-OFFRE-LISTE': 'PIECES.offre renseigne',
+    'PIECES-OFFRE-TEXTE': 'B04-PI-01 renseigne',
+    'PIECES-ADM-LISTE': 'PIECES.administratives renseigne',
+    'PIECES-ADM-TEXTE': 'B03-CQ-01 renseigne',
     // 03/10 (chantier b, lot 2 — V59) : les seuils calculés de la clause 6.3, chacun en deux rédactions exclusives.
     'CHIFFRE-AFFAIRES': 'B03-QT-07 renseigne et B03-QT-16 vide',
     'CA-MOYENNE': 'B03-QT-07 renseigne et B03-QT-16 renseigne',
@@ -2280,7 +2286,7 @@ function dpaoTravaux() {
   const CA_MOYENNE = 'a) avoir réalisé un chiffre d’affaires annuel moyen, calculé sur les {{B03-QT-16.lettres}} ({{B03-QT-16}}) meilleures des {{B03-QT-17.lettres}} ({{B03-QT-17}}) dernières années, pour des {{B03-QT-18}}, d’un montant équivalant à {{B03-QT-07}}';
   const REFERENCES_CUMUL = 'b) avoir réalisé avec succès en tant qu’entrepreneur principal, au cours des {{B03-QT-12.lettres}} ({{B03-QT-12}}) dernières années, au plus {{B03-QT-19.lettres}} ({{B03-QT-19}}) marchés de nature et de complexité comparables à celles des Travaux, d’un montant cumulé d’au moins {{B03-QT-20.parLot}}, et comprenant :';
   const LIQUIDITE_POURCENT = '(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum égal à {{B03-QT-15.parLot}} du montant de son offre';
-  const ajouts = [CLAUSE_SE, '{{B02-LV-02}}', '{{B03-QT-06}}', PERSONNEL_CLE, '{{MOYENS.materiel}}', '{{MOYENS.personnel}}', '{{B03-QT-13}}', LIQUIDITE, OFFRES_ANORMALES_CLAUSE, '{{B06-EO-07}}', CA_MOYENNE, REFERENCES_CUMUL, LIQUIDITE_POURCENT];
+  const ajouts = [CLAUSE_SE, '{{B02-LV-02}}', '{{B03-QT-06}}', PERSONNEL_CLE, '{{MOYENS.materiel}}', '{{MOYENS.personnel}}', '{{B03-QT-13}}', '{{PIECES.offre}}', '{{PIECES.administratives}}', LIQUIDITE, OFFRES_ANORMALES_CLAUSE, '{{B06-EO-07}}', CA_MOYENNE, REFERENCES_CUMUL, LIQUIDITE_POURCENT];
 
   retirer(d, 'note de rédaction du modèle, « à supprimer »', '[note 1]');
   retirer(d, 'intitulé d’option : seule la rédaction retenue est imprimée', (l) => /^<\s*(soit|ou)\s*:?\s*>\s*:?$/i.test(l.texte));
@@ -2361,11 +2367,16 @@ function dpaoTravaux() {
   const r62 = rg('6.2. Contenu des offres');
   const contenu = cel(
     x(r62, '1°- Documents ou pièces'),
-    x(r62, '<énumérer ces documents', ['<énumérer ces documents ou pièces>', '{{B04-PI-01}}', 'jeton']),
+    // 03/10 — 1° : la liste des pièces de l'offre (une par ligne), puis le texte de B04-PI-01 en complément s'il est saisi.
+    SIc('PIECES-OFFRE-LISTE', '{{PIECES.offre}}'),
+    SIc('PIECES-OFFRE-TEXTE', x(r62, '<énumérer ces documents', ['<énumérer ces documents ou pièces>', '{{B04-PI-01}}', 'jeton'])),
     x(r62, '2° -'),
+    // 03/10 — 2° : la liste des pièces administratives, puis le texte de B03-CQ-01 s'il est saisi (PIECES_EN_DOUBLE
+    // avertit quand ce texte garde la valeur par défaut alors que la liste est remplie).
+    SIc('PIECES-ADM-LISTE', '{{PIECES.administratives}}'),
     // 01/10 — la liste des pièces administratives n'est plus imprimée d'office : c'est B03-CQ-01, saisi (le texte du
     // document type en est la valeur par défaut, demandée au backend). Le MEN exige d'autres pièces que l'ARMP.
-    x(r62, 'une photocopie certifiée de la Carte', ['une photocopie certifiée de la Carte Professionnelle de l’année en cours', '{{B03-CQ-01}}', 'adapte']),
+    SIc('PIECES-ADM-TEXTE', x(r62, 'une photocopie certifiée de la Carte', ['une photocopie certifiée de la Carte Professionnelle de l’année en cours', '{{B03-CQ-01}}', 'adapte'])),
     SIc('GARANTIE', x(r62, '4°- Garantie de soumission')),
     SIc('VISITE-OBLIGATOIRE', x(r62, '5°- <le cas échéant>', ['<le cas échéant> ', '', 'retire'])));
   const r63 = rg('6.3. Capacités');

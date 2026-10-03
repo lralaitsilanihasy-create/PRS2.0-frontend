@@ -2,8 +2,8 @@ import { PieceExigee } from '../../../models';
 
 /**
  * ⚠️ Lot 4 du chantier b (03/10) — les pièces de l'offre exigées : l'**aperçu** de la ligne que la clause 6.2 du DPAO
- * imprimera, sur la forme proposée au backend (`demande-backend-2026-10-03-pieces-offre-travaux` §B2). C'est le serveur
- * qui imprime : si sa livraison s'écarte de la forme demandée, c'est ici qu'on s'aligne.
+ * imprimera, telle que le serveur l'imprime (`demande-backend-2026-10-03-pieces-offre-travaux` §B2, livrée en V61 à la
+ * lettre des exemples, « d'un mois » compris). C'est le serveur qui imprime : si sa forme change, c'est ici qu'on s'aligne.
  */
 
 const nonVide = (s: string | null | undefined): string | null => (s?.trim() ? s.trim() : null);
@@ -17,7 +17,7 @@ export function lignePiece(p: PieceExigee): string {
   const morceaux = [
     nonVide(p.libelle) ?? '………',
     nonVide(p.forme),
-    p.ancienneteMaxMois != null ? `datée de moins de ${p.ancienneteMaxMois} mois` : null,
+    p.ancienneteMaxMois != null ? (p.ancienneteMaxMois === 1 ? "datée de moins d'un mois" : `datée de moins de ${p.ancienneteMaxMois} mois`) : null,
     p.parLot ? 'une par lot' : null,
     nonVide(p.modele) ? `selon le modèle : ${nonVide(p.modele)}` : null,
   ].filter(Boolean);

@@ -138,7 +138,7 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
   }
 
   /**
-   * ⚠️ Lot 4 du chantier b (03/10) — **contrat demandé** (`demande-backend-2026-10-03-pieces-offre-travaux`) : les
+   * ⚠️ Lot 4 du chantier b — livré le 03/10 (V61, `demande-backend-2026-10-03-pieces-offre-travaux`) : les
    * pièces de l'offre exigées, une liste de la version de fiche ; `PUT` remplace la liste.
    */
   pieces(idDmc: number): Observable<PieceExigee[]> {

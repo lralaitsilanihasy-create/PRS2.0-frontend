@@ -33,6 +33,10 @@
   "PERSONNEL-CLE": "MOYENS.personnel renseigne ou B03-QT-13 renseigne",
   "PERSONNEL-LISTE": "MOYENS.personnel renseigne",
   "PERSONNEL-TEXTE": "B03-QT-13 renseigne",
+  "PIECES-OFFRE-LISTE": "PIECES.offre renseigne",
+  "PIECES-OFFRE-TEXTE": "B04-PI-01 renseigne",
+  "PIECES-ADM-LISTE": "PIECES.administratives renseigne",
+  "PIECES-ADM-TEXTE": "B03-CQ-01 renseigne",
   "CHIFFRE-AFFAIRES": "B03-QT-07 renseigne et B03-QT-16 vide",
   "CA-MOYENNE": "B03-QT-07 renseigne et B03-QT-16 renseigne",
   "REFERENCES-UN": "B03-QT-19 vide",
@@ -113,7 +117,7 @@
   },
   {
    "type": "ligne",
-   "texte": "6.2. Contenu des offres\u001f1°- Documents ou pièces à remettre en sus de ceux mentionnés à la clause 6.2. des IC :\u001e{{B04-PI-01}}\u001e2° -\u001e{{B03-CQ-01}}\u001e{{SI:GARANTIE}}\u001e4°- Garantie de soumission\u001e{{FINSI:GARANTIE}}\u001e{{SI:VISITE-OBLIGATOIRE}}\u001e5°- Certificat de visite des lieux\u001e{{FINSI:VISITE-OBLIGATOIRE}}"
+   "texte": "6.2. Contenu des offres\u001f1°- Documents ou pièces à remettre en sus de ceux mentionnés à la clause 6.2. des IC :\u001e{{SI:PIECES-OFFRE-LISTE}}\u001e{{PIECES.offre}}\u001e{{FINSI:PIECES-OFFRE-LISTE}}\u001e{{SI:PIECES-OFFRE-TEXTE}}\u001e{{B04-PI-01}}\u001e{{FINSI:PIECES-OFFRE-TEXTE}}\u001e2° -\u001e{{SI:PIECES-ADM-LISTE}}\u001e{{PIECES.administratives}}\u001e{{FINSI:PIECES-ADM-LISTE}}\u001e{{SI:PIECES-ADM-TEXTE}}\u001e{{B03-CQ-01}}\u001e{{FINSI:PIECES-ADM-TEXTE}}\u001e{{SI:GARANTIE}}\u001e4°- Garantie de soumission\u001e{{FINSI:GARANTIE}}\u001e{{SI:VISITE-OBLIGATOIRE}}\u001e5°- Certificat de visite des lieux\u001e{{FINSI:VISITE-OBLIGATOIRE}}"
   },
   {
    "type": "ligne",
@@ -902,6 +906,8 @@
   "{{MOYENS.materiel}}",
   "{{MOYENS.personnel}}",
   "{{B03-QT-13}}",
+  "{{PIECES.offre}}",
+  "{{PIECES.administratives}}",
   "(f) justifier d’une liquidité ou d’une ligne de crédit délivrée par une banque primaire, d’un montant minimum de : {{B03-QT-14.parLot}}",
   "9.4.5. Offres anormalement basses ou anormalement hautes",
   "{{B06-EO-07}}",

@@ -159,3 +159,15 @@ pilote :
 >   DBPRS20 (18 valeurs de `B04-PI-01` et 18 de `B03-CQ-01` y sont conservées).
 > - Les deux copies du fichier de correspondance des travaux (`B04-PI-01`) et des fournitures (`B03-CQ-01`) sont mises à
 >   jour à l'identique.
+
+> ✅ **Front, 2026-10-03.**
+> - **Écran aligné** sur la livraison : l'aperçu écrit « datée de moins d'un mois » pour un mois.
+> - **DPAO-T, clause 6.2**, rédigé dans `DPAO-T.txt` / `.json` (`verifier.mjs` : 294 sur 294). ⚠️ **Ne pas le recopier
+>   encore** : le texte attend la validation du pilote. Quatre conditions :
+>   - 1° : `PIECES-OFFRE-LISTE` = `PIECES.offre renseigne`, puis `PIECES-OFFRE-TEXTE` = `B04-PI-01 renseigne` ;
+>   - 2° : `PIECES-ADM-LISTE` = `PIECES.administratives renseigne`, puis `PIECES-ADM-TEXTE` = `B03-CQ-01 renseigne`.
+>
+>   Les 4° (garantie) et 5° (visite) ne changent pas.
+> - **Banc de l'import** : aucune fausse valeur. `B04-PI-01` et `B03-CQ-01` sont désormais signalés **ambigus**, pour la
+>   même raison qu'au lot 3 : chacun suit, dans la même cellule, le paragraphe du seul jeton de sa liste. Le DPAO-T
+>   relit 2 champs de moins.

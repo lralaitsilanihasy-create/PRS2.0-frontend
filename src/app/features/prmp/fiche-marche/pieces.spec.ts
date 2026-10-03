@@ -16,6 +16,8 @@ describe('Pièces de l’offre — aperçu de la ligne imprimée', () => {
     expect(lignePiece({ rubrique: 'OFFRE', numero: '06', libelle: 'Garantie de soumission', parLot: true })).toBe('- 06 : Garantie de soumission, une par lot');
     expect(lignePiece({ rubrique: 'OFFRE', numero: '8-a', libelle: 'Planning général', modele: 'annexe 5' })).toBe('- 8-a : Planning général, selon le modèle : annexe 5');
     expect(lignePiece({ rubrique: 'OFFRE', libelle: '' })).toBe('- ………');
+    // Livraison V61 : un mois s'écrit « d'un mois ».
+    expect(lignePiece({ rubrique: 'ADMINISTRATIVE', libelle: 'Attestation fiscale', ancienneteMaxMois: 1 })).toBe("- Attestation fiscale, datée de moins d'un mois");
   });
 
   it('les six pièces administratives du document type, avec leurs anciennetés (État 211 bis : 3 mois, non-faillite : 2 mois)', () => {

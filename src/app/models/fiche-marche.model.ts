@@ -129,8 +129,8 @@ export interface RubriqueFiche {
 export type RenduBloc = 'BESOIN' | 'MOYENS' | 'PIECES' | (string & {});
 
 /**
- * ⚠️ Lot 4 du chantier b (03/10) — contrat **demandé**, pas encore servi (`demande-backend-2026-10-03-pieces-offre-
- * travaux`) : les pièces de l'offre exigées des travaux, en liste (bloc à rendu `'PIECES'`). Noms de la demande.
+ * ⚠️ Lot 4 du chantier b — livré le 03/10 (V61, `demande-backend-2026-10-03-pieces-offre-travaux`) : les pièces de
+ * l'offre exigées des travaux, en liste (bloc `B14`, rendu `'PIECES'`). Hors travaux : 409 `PIECES_HORS_PERIMETRE`.
  * `ADMINISTRATIVE` = 2° de la clause 6.2 du DPAO ; `OFFRE` = 1° (« en sus de ceux mentionnés aux IC »).
  */
 export type RubriquePiece = 'ADMINISTRATIVE' | 'OFFRE';

@@ -16,7 +16,7 @@ export const RUBRIQUES_PIECES: { code: RubriquePiece; titre: string; clause: str
 ];
 
 /**
- * ⚠️ **Pièces de l'offre exigées** des travaux (lot 4 du chantier b, 03/10 — contrat **demandé**,
+ * ⚠️ **Pièces de l'offre exigées** des travaux (lot 4 du chantier b — livré le 03/10, V61, bloc `B14`,
  * `demande-backend-2026-10-03-pieces-offre-travaux`). Une liste de la fiche (`PUT` la remplace en entier), montrée en
  * deux rubriques : les pièces administratives (2° de la clause 6.2) et les autres pièces de l'offre (1°). Chaque pièce
  * montre la ligne que le DPAO imprimera.
