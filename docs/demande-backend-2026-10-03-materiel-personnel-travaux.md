@@ -190,3 +190,6 @@ conditions, une fois les noms des jetons fixés, et le texte soumis au pilote.
 > - **Banc de l'import** : aucune fausse valeur. Le DPAO-T relit 2 champs de moins, `B03-QT-09` et `B03-QT-13`, désormais
 >   signalés **ambigus** : chacun suit, dans la même cellule, un paragraphe fait du seul jeton de sa liste, et la lecture
 >   ne peut pas savoir lequel des deux le DAO remplit. La lecture n'importe pas les listes : elles se saisissent à l'écran.
+>
+> ✅ **2026-10-03 — texte des (c) et (e) validé par le pilote.** `DPAO-T.txt` est **à recopier** tel que commité en
+> `1216dd9`, avec la condition sur la liste (`MOYENS.x renseigne`) demandée ci-dessus.
