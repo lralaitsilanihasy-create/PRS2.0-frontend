@@ -204,3 +204,12 @@ aux travaux : chacun suit le paragraphe du seul jeton de sa liste.
 >   - le DPAO-F à commande de la fiche 33 n'est pas concerné (84 sur 142).
 > - **Demandé** : porter ce complément dans `LectureDao`, avec la parité sur vos 20 documents. Ensuite,
 >   `allerRetourFournitures` peut garder `B03-CQ-01` à son défaut.
+
+> ⚠️ **Livraison backend du 2026-10-03 — suite de la règle 9 portée** (`LectureDao.valeursALaFormeDuType`, à la même place
+> qu'à l'étape 1 de `lire.mjs`, avant la règle R-c).
+> - **Parité** sur les 20 documents : extraction identique, **1 145 lignes de lecture identiques**.
+> - **Cas réel** : le DPAO-F en quantité fixe, avec `B03-CQ-01` à son défaut, passe de 25 à **66 unités sur 142**, autant
+>   que sans ce texte (65). `B02-AU-04` n'est plus proposé.
+> - `ImportDaoIntegrationTest.allerRetourFournitures` garde maintenant `B03-CQ-01` à son défaut, sans avertissement de
+>   lecture.
+> - Ni migration ni script.
