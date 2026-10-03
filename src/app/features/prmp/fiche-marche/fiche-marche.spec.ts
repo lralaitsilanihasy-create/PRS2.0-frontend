@@ -583,6 +583,35 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(fixture.componentInstance.bilan().bloquants.map((x) => x.message)).toEqual(['Lot 2 : aucun article au besoin.']);
   });
 
+  it('accès direct aux blocs (03/10) : sans modification on y va sans rien écrire ; avec, le bloc quitté est enregistré', () => {
+    monter('PRMP', 42);
+    ouvrir(REFERENTIEL, fiche({ valeurs: {} }));
+    fixture.componentInstance.allerAuBloc('B02');
+    rendre();
+    const liens = (): HTMLButtonElement[] => Array.from(racine().querySelectorAll('.fm__blocs .fm__bloc-lien'));
+    expect(liens().map((b) => texte(b).split(' ')[0])).toEqual(fixture.componentInstance.blocs().map((b) => b.code));
+    expect(liens()[0].getAttribute('aria-current')).toBe('step');
+
+    // Rien de modifié : un clic suffit, aucune requête d'écriture.
+    liens()[1].click();
+    rendre();
+    expect(fixture.componentInstance.blocCourant()?.code).toBe('B05');
+    http.expectNone((r) => r.method === 'PUT');
+
+    // Une saisie dans B05, puis retour à B02 : B05 est enregistré d'abord, et l'écran le dit avant.
+    fixture.componentInstance.valeurs.update((v) => ({ ...v, 'B05-MO-01': 'Euro' }));
+    rendre();
+    expect(texte(racine().querySelector('.fm__bloc-modif'))).toContain('Modifications non enregistrées');
+    liens()[0].click();
+    const put = http.expectOne('/api/fiches-marche/42/blocs/B05');
+    expect(put.request.method).toBe('PUT');
+    expect((put.request.body as { valeurs: Record<string, unknown> }).valeurs).toEqual({ 'B05-MO-01': 'Euro' });
+    put.flush(fiche({ valeurs: { 'B05-MO-01': 'Euro' } }));
+    rendre();
+    expect(fixture.componentInstance.blocCourant()?.code).toBe('B02');
+    expect(racine().querySelector('.fm__bloc-modif')).toBeNull();
+  });
+
   it('allotissement : un lot au plan ⇒ « Non » imposé et verrouillé, la réponse part avec le cadrage', () => {
     monter('PRMP', 42);
     ouvrir(REF_AVEC_LOTS, fiche({ cadrage: {}, valeurs: {}, valeursPpm: { 'B02-LV-01': '1' } }));

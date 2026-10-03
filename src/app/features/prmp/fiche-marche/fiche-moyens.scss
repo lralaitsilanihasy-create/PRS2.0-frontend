@@ -1,4 +1,7 @@
 /* Matériel et personnel exigés (lot 3 du chantier b) — deux listes, et l'aperçu de leur impression au DPAO. */
+/* ⚠️ 03/10 — les deux listes prennent la marge des rubriques du bloc (.fm__rub) : sans elle, titres et tableaux touchaient
+   le bord de la carte. */
+:host { display: block; padding: 0.9rem 1.1rem; }
 .mo {
   display: flex;
   flex-direction: column;

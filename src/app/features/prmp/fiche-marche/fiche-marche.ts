@@ -27,6 +27,7 @@ import { TitreSiTronqueDirective } from '../../../shared/ui/titre-si-tronque';
 import {
   BILAN_VIDE,
   CLES_IMPOSEES_PAR_LE_PLAN,
+  valeursModifiees,
   ETAPES_FICHE,
   LIBELLES_CATEGORIES,
   LIBELLES_DOCUMENTS,
@@ -309,6 +310,19 @@ export class FicheMarcheEcran {
   readonly fuseau = computed(() => (this.modeElectronique() ? String(this.valeurs()['B04-SE-04'] ?? '') : ''));
   readonly blocs = computed(() => blocsASaisir(this.referentiel(), this.typeMarche()));
   readonly blocCourant = computed<BlocFiche | null>(() => this.blocs()[this.blocIdx()] ?? null);
+  /**
+   * ⚠️ 03/10 — accès direct aux blocs : le bloc courant porte-t-il des saisies non enregistrées ? Comparé à la dernière
+   * version servie. Un bloc à rendu propre (besoin, moyens) n'a pas de champs : ses listes s'enregistrent elles-mêmes.
+   */
+  readonly blocModifie = computed(() => {
+    const bloc = this.blocCourant();
+    const f = this.fiche();
+    if (!bloc || !f) return false;
+    const codes = new Set(this.referentiel().champs.filter((c) => c.bloc === bloc.code && c.source === 'SAISIE').map((c) => c.code));
+    return valeursModifiees(codes, this.valeurs(), f.valeurs ?? {});
+  });
+  /** Les informations obligatoires qui manquent, par bloc : la pastille de chaque bloc dans la navigation. */
+  readonly manquantsParBloc = computed(() => new Map(this.obligatoiresParBloc().map((g) => [g.bloc, g.nb])));
   readonly blocPpm = computed<BlocFiche | null>(() => this.referentiel().blocs.find((b) => b.code === 'B01') ?? null);
   /**
    * ⚠️ V43 (25/09) — **le serveur dit si la ligne est allotie** : `nbLots` et `saisieParLot`. L'écran ne le déduit
@@ -804,7 +818,7 @@ export class FicheMarcheEcran {
   }
 
   /** Enregistre le bloc courant (`PUT …/blocs/{bloc}`) puis passe au suivant, ou aux reprises après le dernier. */
-  enregistrerBloc(): void {
+  enregistrerBloc(vers?: number): void {
     const id = this.idDmc();
     const bloc = this.blocCourant();
     if (id == null || !bloc || this.saving()) return;
@@ -822,7 +836,8 @@ export class FicheMarcheEcran {
         this.saving.set(false);
         this.appliquer(f);
         this.erreursChamp.set(new Map());
-        if (this.blocIdx() < this.blocs().length - 1) this.blocIdx.update((i) => i + 1);
+        if (vers != null) this.blocIdx.set(vers);
+        else if (this.blocIdx() < this.blocs().length - 1) this.blocIdx.update((i) => i + 1);
         else this.etape.set(3);
       },
       error: (e: ApiError | HttpErrorResponse) => {
@@ -837,6 +852,22 @@ export class FicheMarcheEcran {
         }
       },
     });
+  }
+
+  /**
+   * ⚠️ 03/10 (recette du lot 3) — aller **directement** à un bloc. Avant, une fiche en brouillon n'avançait qu'en
+   * enregistrant chaque bloc l'un après l'autre : neuf enregistrements pour atteindre le matériel et le personnel. Le bloc
+   * qu'on quitte est enregistré **s'il a été modifié** ; un refus du serveur (400) garde la PRMP sur ce bloc, ses erreurs
+   * sous les champs. Sans modification, ou en lecture, on y va simplement.
+   */
+  choisirBloc(i: number): void {
+    if (i === this.blocIdx() || i < 0 || i >= this.blocs().length || this.saving()) return;
+    const ecrit = !(this.enLecture() || this.figee() || this.ecritureBloquee());
+    if (ecrit && this.blocModifie()) this.enregistrerBloc(i);
+    else {
+      this.erreursChamp.set(new Map());
+      this.blocIdx.set(i);
+    }
   }
 
   blocPrecedent(): void {

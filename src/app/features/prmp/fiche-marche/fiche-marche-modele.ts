@@ -984,3 +984,15 @@ export const REFERENTIEL_ESQUISSE: ReferentielFiche = {
   ],
   champs: [],
 };
+
+/**
+ * ⚠️ 03/10 — accès direct aux blocs : le bloc qu'on quitte a-t-il des saisies non enregistrées ? On compare, pour les
+ * clés de ses champs (code nu ou `CODE#n`), les valeurs de l'écran à la dernière version servie. Une valeur absente
+ * vaut une valeur vide : effacer puis rien ressaisir n'est pas une modification.
+ */
+export function valeursModifiees(codes: ReadonlySet<string>, ecran: Record<string, unknown>, servies: Record<string, unknown>): boolean {
+  const norme = (v: unknown): string => (v == null ? '' : typeof v === 'string' ? v.trim() : Array.isArray(v) ? v.join(',') : String(v));
+  const cles = new Set([...Object.keys(ecran), ...Object.keys(servies)].filter((k) => codes.has(k.split('#')[0])));
+  for (const k of cles) if (norme(ecran[k]) !== norme(servies[k])) return true;
+  return false;
+}

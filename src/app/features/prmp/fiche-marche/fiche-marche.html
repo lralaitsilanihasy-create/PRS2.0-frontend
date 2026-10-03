@@ -333,6 +333,28 @@
                   <h2 [id]="'fm-' + bloc.code">{{ bloc.libelle }}</h2>
                   <span class="fm__comptes">{{ blocIdx() + 1 }} sur {{ blocs().length }}</span>
                 </div>
+                <!-- ⚠️ 03/10 — accès direct aux blocs : un clic mène au bloc choisi ; celui qu'on quitte est enregistré
+                     s'il a été modifié. La pastille dit combien d'informations obligatoires y manquent. -->
+                <nav class="fm__blocs" aria-label="Blocs de la fiche">
+                  @for (b of blocs(); track b.code; let i = $index) {
+                    <button
+                      type="button"
+                      class="fm__bloc-lien"
+                      [class.fm__bloc-lien--actif]="i === blocIdx()"
+                      [attr.aria-current]="i === blocIdx() ? 'step' : null"
+                      [attr.title]="b.libelle"
+                      [attr.aria-label]="b.code + ' — ' + b.libelle + (manquantsParBloc().get(b.code) ? ', ' + manquantsParBloc().get(b.code) + ' information(s) obligatoire(s) à saisir' : '')"
+                      [disabled]="saving()"
+                      (click)="choisirBloc(i)"
+                    >
+                      {{ b.code }}
+                      @if (manquantsParBloc().get(b.code); as n) { <span class="fm__bloc-n" aria-hidden="true">{{ n }}</span> }
+                    </button>
+                  }
+                  @if (blocModifie() && !(enLecture() || figee() || ecritureBloquee())) {
+                    <span class="fm__bloc-modif" role="status">Modifications non enregistrées : elles le seront en changeant de bloc.</span>
+                  }
+                </nav>
                 <!-- ⚠️ 25/09 — un bloc peut DÉCLARER son rendu : le besoin est une grille, pas une liste de
                      champs. Un bloc sans champ et sans rendu connu le dit, au lieu de rester blanc. -->
                 @if (rendu(bloc) === 'BESOIN') {

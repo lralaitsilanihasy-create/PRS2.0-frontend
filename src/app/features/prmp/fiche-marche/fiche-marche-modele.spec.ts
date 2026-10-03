@@ -1,5 +1,6 @@
 import { ChampFiche, DocumentFiche, ReferentielFiche } from '../../../models';
 import {
+  valeursModifiees,
   libelleOption,
   extraitsGabarit,
   BILAN_VIDE,
@@ -526,4 +527,18 @@ describe('Fiche DAO — règles pures (esquisse du 22/09)', () => {
     expect(libelleOption('B05-GE-04', 'Libérée à 100 % à la réception provisoire')).toBe('Libérée à 100 % à la réception provisoire');
   });
 
+});
+
+describe('Accès direct aux blocs — saisies non enregistrées (03/10)', () => {
+  const codes = new Set(['B03-QT-07', 'B03-QT-14']);
+  it('ne regarde que les champs du bloc, clés par lot comprises', () => {
+    expect(valeursModifiees(codes, { 'B03-QT-07': '5', 'B02-OB-01': 'autre' }, { 'B03-QT-07': '5' })).toBe(false);
+    expect(valeursModifiees(codes, { 'B03-QT-14#2': '72000000' }, { 'B03-QT-14#2': '99000000' })).toBe(true);
+  });
+  it('absent = vide ; un nombre et sa chaîne, une liste et sa forme « A,B » sont égaux', () => {
+    expect(valeursModifiees(codes, { 'B03-QT-07': '' }, {})).toBe(false);
+    expect(valeursModifiees(codes, { 'B03-QT-07': 5 }, { 'B03-QT-07': '5' })).toBe(false);
+    expect(valeursModifiees(new Set(['B04-CD-01']), { 'B04-CD-01': ['A1', 'A3'] }, { 'B04-CD-01': 'A1,A3' })).toBe(false);
+    expect(valeursModifiees(codes, { 'B03-QT-07': '6' }, {})).toBe(true);
+  });
 });

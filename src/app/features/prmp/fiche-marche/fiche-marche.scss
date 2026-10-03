@@ -294,3 +294,12 @@
   white-space: nowrap;
   border: 0;
 }
+
+// ⚠️ 03/10 — accès direct aux blocs : une rangée de boutons sous l'en-tête du bloc.
+.fm__blocs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; padding: 0.6rem 1.1rem; border-bottom: 1px solid var(--n-200); }
+.fm__bloc-lien { font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: #fff; border: 1px solid var(--n-300); border-radius: 999px; padding: 0.2rem 0.7rem; color: var(--n-600); display: inline-flex; align-items: center; gap: 0.35rem; }
+.fm__bloc-lien--actif { background: var(--p-600); border-color: var(--p-600); color: #fff; }
+.fm__bloc-lien:disabled { opacity: 0.6; cursor: default; }
+.fm__bloc-n { font-size: 0.7rem; min-width: 1.1rem; padding: 0 0.3rem; border-radius: 999px; background: var(--danger-bg); color: var(--danger-text); text-align: center; }
+.fm__bloc-lien--actif .fm__bloc-n { background: #fff; }
+.fm__bloc-modif { margin-left: auto; font-size: 0.78rem; color: var(--n-500); }
