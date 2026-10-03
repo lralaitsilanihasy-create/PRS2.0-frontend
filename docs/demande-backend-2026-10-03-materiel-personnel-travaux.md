@@ -42,6 +42,10 @@ catégorie **TRAVAUX** seulement (409 hors travaux, comme `BESOIN_HORS_PERIMETRE
 lot » pour signifier que **chaque** lot mobilise son équipe : c'est un drapeau de la ligne (`parLot`), pas une liste
 par lot (H1).
 
+> ⚠️ **Livraison backend du 2026-10-03 (§B1.1, V60).** Conforme, **H1** comprise : les quatre adresses proposées, une liste
+> par fiche, figée à la validation, copiée à la révision, supprimée avec la fiche. Hors travaux, 409 **`MOYENS_HORS_PERIMETRE`**
+> ; sur une version validée, 409 `FICHE_VALIDEE`.
+
 ### B1.2 — Une ligne de matériel
 
 | propriété | type | MEN | MTP | règle |
@@ -53,6 +57,9 @@ par lot (H1).
 | `parLot` | booléen, défaut `false` | — | — | « par lot » : le nombre vaut pour chaque lot |
 
 400 nominatifs (`materiel[i].nombre`…) : désignation manquante ou trop longue, nombre < 1, minimum hors de 0…nombre.
+
+> ⚠️ **Livraison backend du 2026-10-03 (§B1.2).** Conforme : les noms et règles du tableau, 400 nominatifs `materiel[i].…`. Un
+> minimum de 0 vaut « indifférent », comme `null`.
 
 ### B1.3 — Une ligne de personnel
 
@@ -66,11 +73,18 @@ par lot (H1).
 | `justificatifs` | texte ≤ 500, facultatif | « CV avec photo, diplôme certifié » | « CV et diplôme certifié » | |
 | `parLot` | booléen, défaut `false` | `true` | — | |
 
+> ⚠️ **Livraison backend du 2026-10-03 (§B1.3).** Conforme : `nombre` vaut 1 s'il est absent ; 400 `personnel[i].…`
+> (poste manquant ou trop long, nombre < 1, expérience négative, textes trop longs).
+
 ### B1.4 — Où l'écran les saisit
 
 Un bloc à rendu propre, comme `B12` : **proposé `B13` « Matériel et personnel exigés »**, avec `rendu = 'MOYENS'`, servi
 au référentiel des travaux (les trois types de marché, comme le DQE). L'écran y montre les deux listes. Les champs
 `B03-QT-09` et `B03-QT-13` restent dans `B03`, en complément.
+
+> ⚠️ **Livraison backend du 2026-10-03 (§B1.4).** Conforme : bloc **`B13` « Matériel et personnel exigés »**, `rendu = 'MOYENS'`,
+> servi aux travaux dans les trois types de marché. Il a deux rubriques sans champ, `B13-MA` « Matériel exigé » et
+> `B13-PE` « Personnel clé exigé ». `B03-QT-09` et `B03-QT-13` restent dans `B03`.
 
 ---
 
@@ -91,6 +105,18 @@ Liste vide : pointillés, comme les autres jetons. C'est **le front** qui recopi
 la liste d'abord, puis le texte de `B03-QT-09` / `B03-QT-13` s'il est saisi. Je vous enverrai le modèle avec ses
 conditions, une fois les noms des jetons fixés, et le texte soumis au pilote.
 
+> ⚠️ **Livraison backend du 2026-10-03 (§B2).** Les jetons proposés sont retenus tels quels :
+> - **`{{MOYENS.materiel}}`** et **`{{MOYENS.personnel}}`**, une ligne par entrée, à la lettre de vos exemples ;
+> - « en propre » quand le minimum égale le nombre ; rien quand il est vide ou nul ;
+> - le diplôme prend une minuscule initiale (« ingénieur BTP… »), sauf un sigle (« BTS… ») ;
+> - sans années, un domaine seul donne « expérience en … » ; une année donne « au moins 1 an d'expérience » ;
+> - liste vide : pointillés.
+>
+> Les valeurs sont figées à la validation, comme `{{BESOIN.series}}`. J'attends le DPAO-T avec ses conditions.
+> `MOYENS.materiel renseigne` **ne se lit pas** dans une condition : ce n'est pas un champ. Il faudra tester `B03-QT-09`
+> pour le texte en complément, et laisser le jeton dire ses pointillés si la liste est vide. Si une condition sur la
+> liste vous est nécessaire, dites-le.
+
 ---
 
 ## B3 — Les contrôles
@@ -99,6 +125,16 @@ conditions, une fois les noms des jetons fixés, et le texte soumis au pilote.
   `B03-QT-09`, aujourd'hui obligatoire, devient **facultatif** (H2).
 - **`PERSONNEL_CLE`** : aucun contrôle nouveau. `B03-QT-13` est facultatif, et la liste aussi.
 - `B03-QT-10` (années d'expérience du directeur des travaux, (d) de la clause 6.3) **ne change pas** (H3).
+
+> ⚠️ **Livraison backend du 2026-10-03 (§B3).** Conforme, **H2** et **H3** comprises :
+> - **`MATERIEL_EXIGE`** est bloquante : la liste du matériel, ou `B03-QT-09`, qui devient facultatif et porte le rôle
+>   `MATERIEL_EXIGE:TEXTE` ;
+> - message : « Le matériel exigé n'est pas dit : remplissez la liste du matériel, ou « Forme sous laquelle
+>   l'entrepreneur disposera du matériel (propriété, location…) ». »
+>
+> **Écart :** la règle ne vaut que là où `B03-QT-09` est servi (quantité fixe et à commande). Le contrat-cadre de
+> travaux n'a pas ce champ, et son DPAC n'a pas de clause 6.3 : la règle ne lui dit rien, même si le bloc `B13` lui est
+> servi. Pas de contrôle sur le personnel ; `B03-QT-10` ne change pas.
 
 ---
 
@@ -115,3 +151,19 @@ conditions, une fois les noms des jetons fixés, et le texte soumis au pilote.
   imprime les deux listes à la clause 6.3 (après la recopie du front). Un minimum supérieur au nombre donne un 400.
 - **MEN** : 5 engins sans minimum, 2 postes `parLot`. Une fiche sans liste ni `B03-QT-09` est refusée par
   `MATERIEL_EXIGE`, et la révision copie les deux listes.
+
+> ⚠️ **Livraison backend du 2026-10-03 — recette.**
+> - `MoyensFicheTest` : les lignes du MTP (6 dont au moins 4 en propre, tout en propre) et du MEN (sans minimum, par
+>   lot), le personnel (domaine, sigle, morceaux absents), les 400 (minimum 3 sur 2, désignation vide, nombre 0, poste
+>   manquant, expérience négative).
+> - `FicheDaoTravauxIntegrationTest.materielEtPersonnel`, sur le MEN en deux lots :
+>   - `B13` servi aux travaux, pas aux fournitures ; 409 hors travaux ;
+>   - 400 sur un minimum supérieur au nombre ;
+>   - une fiche sans liste ni `B03-QT-09` est refusée par `MATERIEL_EXIGE` ;
+>   - avec les 5 engins et les 2 postes par lot, elle se valide ;
+>   - sur la version validée, 409 `FICHE_VALIDEE` ;
+>   - la révision copie les deux listes.
+> - L'impression par le DPAO attend votre recopie. Les 10 engins du MTP restent à saisir par la recette front.
+> - **Livraison** : migration **V60** et script `docs/referentiel/2026-10-03-materiel-personnel-travaux.sql`, passé à blanc
+>   sur DBPRS20 (16 valeurs de `B03-QT-09` y sont conservées). Les deux copies du fichier de correspondance des travaux
+>   sont mises à jour à l'identique.
