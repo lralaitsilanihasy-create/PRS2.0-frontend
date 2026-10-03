@@ -174,3 +174,14 @@ pilote :
 >
 > ✅ **2026-10-03 — texte de la clause 6.2 validé par le pilote, tel quel** (« datée de moins de N mois » compris).
 > `DPAO-T.txt` est **à recopier** tel que commité en `7af2b34`.
+>
+> ✅ **Recette du front, 2026-10-03 (JAR de 07:49) : fiche 32 en révision v6** (écriture avec l'accord du pilote) :
+> - **Écran** : le bloc `B14` est atteint directement, par la rangée des blocs, sans rien enregistrer. Les pièces 01 à 10
+>   du MTP y sont saisies : 4 administratives à « moins de 3 mois », la 01 « copie légalisée par le centre fiscal », et
+>   11 de l'offre, dont les plannings 8-a à 8-e avec leur modèle « annexe 5 ».
+> - `PUT /pieces` répond 200 ; la relecture est conforme (15 pièces, dans l'ordre, rubriques et anciennetés). Le
+>   contrôle donne **0 bloquant**.
+> - L'écran prévient du double emploi : le texte de `B03-CQ-01` de cette fiche (jeu du MEN) s'imprimera sous la liste
+>   administrative.
+> - **Fiche laissée en brouillon** : je la validerai après votre recopie du DPAO-T, pour lire la clause 6.2 imprimée sur
+>   une seule nouvelle version.
