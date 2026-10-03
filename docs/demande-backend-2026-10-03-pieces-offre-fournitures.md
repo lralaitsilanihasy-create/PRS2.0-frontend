@@ -33,12 +33,26 @@ sur le patron du 2° des travaux. La liste des pièces s'ouvre aux fournitures, 
 - **L'écran ne change pas** : la grille, l'aperçu, « Reprendre les pièces du document type » et « Coller une liste »
   sont les mêmes qu'aux travaux.
 
+> ⚠️ **Livraison backend du 2026-10-03 (§B1, V62).** Conforme : `/pieces` et le bloc `B14` sont ouverts aux fournitures, en
+> quantité fixe et à commande, avec le contrat et les règles de V61. Le contrat-cadre de fournitures reste à 409
+> `PIECES_HORS_PERIMETRE` (H1).
+>
+> **Écart :** le **contrat-cadre de travaux sort aussi du périmètre**. Son DPAC n'a pas davantage de place pour ces pièces,
+> et `B04-PI-01` ne lui est pas servi. `B14` n'y est plus servi, et `PUT /pieces` y répond 409. Aucune liste n'était
+> saisie sur un contrat-cadre.
+
 ## B2 — Les contrôles
 
 - **`PIECES_OFFRE_EXIGEES`** s'étend aux fournitures, avec `B04-CO-01` pour texte : la liste `OFFRE` **ou**
   `B04-CO-01`, qui devient **facultatif** (aujourd'hui obligatoire). Même logique qu'aux travaux avec `B04-PI-01`.
 - **`PIECES_EN_DOUBLE`** s'étend aux fournitures (fin de H4) : l'avertissement porte sur `B03-CQ-01` égal à sa valeur
   par défaut alors que la liste `ADMINISTRATIVE` est remplie.
+
+> ⚠️ **Livraison backend du 2026-10-03 (§B2).** Conforme, **H2** comprise :
+> - **`PIECES_OFFRE_EXIGEES`** lit `B04-CO-01` aux fournitures, devenu facultatif, avec le rôle
+>   `PIECES_OFFRE_EXIGEES:TEXTE`. Message : « Les pièces de l'offre ne sont pas dites : remplissez la liste des pièces de
+>   l'offre, ou « Documents et pièces constituant l'offre ». »
+> - **`PIECES_EN_DOUBLE`** s'étend aux fournitures.
 
 ## B3 — Le DPAO-F (recopié par le front)
 
@@ -59,6 +73,9 @@ Documents ou pièces à remettre en sus de ceux mentionnés à la clause 6.2. de
   vidé imprimeront désormais le paragraphe, avec la liste du document type. C'est l'effet voulu : ces pièces étaient
   exigées sans être dites.
 
+> ⚠️ **Livraison backend du 2026-10-03 (§B3).** DPAO-F **recopié** tel que commité en `ae93f90`, 47 conditions déclarées.
+> `verifier.mjs DPAO-F` sur le rendu brut du serveur : 251 sur 251.
+
 ## Hypothèses
 
 - **H1** — Le contrat-cadre de fournitures reste hors périmètre.
@@ -74,3 +91,35 @@ aux travaux : chacun suit le paragraphe du seul jeton de sa liste.
 > ✅ **2026-10-03 — texte validé par le pilote, tel quel** (« Pièces administratives à joindre à l'offre : »).
 > `DPAO-F.txt` est **à recopier** tel que commité en `ae93f90`, avec la livraison de B1 et B2. Le pilote autorise la
 > recette sur une fiche de fournitures en brouillon de DBPRS20.
+
+> ⚠️ **Livraison backend du 2026-10-03 — recette.**
+> - `FicheDaoTravauxIntegrationTest.piecesDesFournitures`, sur une fiche de fournitures à quantité fixe :
+>   - `B14` servi, pas en contrat-cadre ; `B04-CO-01` facultatif ;
+>   - sans liste ni texte, la fiche est refusée par `PIECES_OFFRE_EXIGEES` ;
+>   - avec les pièces administratives du 2463 (datées de moins de 3 mois) et deux pièces de l'offre, le contrôle passe ;
+>   - `PIECES_EN_DOUBLE` avertit sur `B03-CQ-01`, qui garde son défaut ;
+>   - une fois validée, le **DPAO imprime à la clause 6.2** : les pièces de l'offre, « Pièces administratives à joindre à
+>     l'offre : », les deux pièces datées, puis la liste du document type portée par `B03-CQ-01`.
+> - Le 409 du contrat-cadre est vérifié sur le contrat-cadre de travaux.
+> - **Livraison** : migration **V62** et script `docs/referentiel/2026-10-03-pieces-offre-fournitures.sql`, passé à blanc
+>   sur DBPRS20 (`B04-CO-01` n'y a aucune valeur saisie). Les deux copies du fichier de correspondance des fournitures sont
+>   mises à jour à l'identique.
+
+> ⚠️ **Défaut de lecture révélé par le DPAO-F — une règle à ajouter à `lire.mjs`** (arbitrage du 03/10 : livré tel quel,
+> la règle vient de vous, je la porterai ensuite).
+> - **Constat** : un DPAO-F exporté puis réimporté, sur une fiche à quantité fixe dont `B03-CQ-01` garde son défaut, n'est
+>   plus reconnu qu'à **25 unités sur 142** (65 sans ce texte). C'est le cas de la plupart des fiches de fournitures. L'import
+>   avertit : « peu de texte du modèle reconnu (10 %) ».
+> - **Cause** : la clause 1.2 (marché à commande) finit par l'unité « `{{B02-AU-04}} mois.` », dont le seul texte fixe est
+>   « mois. ». Elle n'est pas imprimée en quantité fixe : la lecture la cherche donc dans sa fenêtre et l'accroche à la
+>   ligne « … datée de moins de TROIS (03) mois » du défaut de `B03-CQ-01`, désormais imprimé à la clause 6.2. Le curseur
+>   saute au-delà de la 6.2, et toutes les unités qui précèdent sont perdues.
+> - **Pas propre au DPAO-F** : tout document qui contient un paragraphe finissant par « mois » après une clause 1.2 absente
+>   déclenche le même saut. Le DPAO-T n'a pas d'unité aussi pauvre, et sa lecture ne bouge pas (79 sur 169, avec ou sans ce
+>   texte).
+> - **Règle proposée (règle 9)** : une unité dont le texte fixe compte moins de 8 lettres, le seuil qui interdit déjà la
+>   confiance haute (règle 2), ne se cherche que tout près du curseur, dans la fenêtre courte des textes répétés
+>   (`FENETRE_REPETE`), et jamais par réancrage. Dites-moi si vous la retenez, ou une autre : je la porterai dans
+>   `LectureDao` avec la parité vérifiée.
+> - En attendant, `ImportDaoIntegrationTest.allerRetourFournitures` vide `B03-CQ-01` de sa fiche source, avec un
+>   commentaire qui renvoie à ce défaut.
