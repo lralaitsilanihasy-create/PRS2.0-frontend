@@ -41,6 +41,11 @@ révision, pour la catégorie **TRAVAUX** (409 hors travaux, comme `MOYENS_HORS_
 Une seule liste, avec la **rubrique** de chaque pièce (1° ou 2° de la clause 6.2). Comme au lot 3, il n'y a pas de liste
 par lot : un drapeau `parLot` suffit (H1).
 
+> ⚠️ **Livraison backend du 2026-10-03 (§B1.1, V61).** Conforme, **H1** comprise :
+> - `GET|PUT /api/fiches-marche/{idDmc}/pieces` ; une liste par fiche, figée à la validation, copiée à la révision,
+>   supprimée avec la fiche ;
+> - hors travaux, 409 **`PIECES_HORS_PERIMETRE`** ; sur une version validée, 409 `FICHE_VALIDEE`.
+
 ### B1.2 — Une pièce
 
 | propriété | type | exemple | règle |
@@ -55,6 +60,9 @@ par lot : un drapeau `parLot` suffit (H1).
 
 400 nominatifs (`pieces[i].libelle`…) : rubrique absente ou inconnue, libellé manquant ou trop long, ancienneté < 1.
 
+> ⚠️ **Livraison backend du 2026-10-03 (§B1.2).** Conforme : les noms et règles du tableau, 400 nominatifs `pieces[i].…`. La
+> rubrique est reçue **sans casse** (« offre » vaut `OFFRE`) et servie en majuscules.
+
 ### B1.3 — Où l'écran la saisit
 
 Un bloc à rendu propre, comme `B12` et `B13` : **proposé `B14` « Pièces de l'offre »**, `rendu = 'PIECES'`, servi au
@@ -62,6 +70,10 @@ référentiel des travaux. Les champs `B04-PI-01` et `B03-CQ-01` restent à leur
 
 L'écran proposera en un clic les **six pièces administratives du document type** (rubrique `ADMINISTRATIVE`, avec leurs
 formes et anciennetés), que la PRMP ajuste. C'est un geste d'écran, sans rien côté serveur.
+
+> ⚠️ **Livraison backend du 2026-10-03 (§B1.3).** Conforme : bloc **`B14` « Pièces de l'offre »**, `rendu = 'PIECES'`, servi
+> aux travaux dans les trois types de marché, comme `B13`. Il a deux rubriques sans champ, `B14-AD` « Pièces
+> administratives » et `B14-OF` « Autres pièces de l'offre ». Le geste « six pièces du document type » reste à l'écran.
 
 ---
 
@@ -81,6 +93,15 @@ pilote :
 - 1° : la phrase du document type, puis la liste `OFFRE`, puis `B04-PI-01` s'il est saisi ;
 - 2° : la liste `ADMINISTRATIVE`, puis `B03-CQ-01` s'il est saisi.
 
+> ⚠️ **Livraison backend du 2026-10-03 (§B2).** Les jetons proposés sont retenus tels quels :
+> - **`{{PIECES.administratives}}`** et **`{{PIECES.offre}}`**, à la lettre de vos exemples ;
+> - ordre des morceaux : libellé, forme, « datée de moins de N mois », « une par lot », « selon le modèle : … » ;
+> - un mois s'écrit « datée de moins d'un mois » ;
+> - rubrique vide : pointillés ;
+> - conditions `PIECES.administratives renseigne` / `PIECES.offre renseigne` lues comme `MOYENS.x`.
+>
+> J'attends le DPAO-T (clause 6.2) après la validation du pilote.
+
 ---
 
 ## B3 — Les contrôles
@@ -92,6 +113,14 @@ pilote :
   remplit la liste `ADMINISTRATIVE` imprimerait les pièces deux fois si elle ne vide pas le texte. Proposé : un
   **avertissement** (jamais bloquant) `PIECES_EN_DOUBLE` quand la liste `ADMINISTRATIVE` est remplie **et** que
   `B03-CQ-01` vaut encore sa valeur par défaut (H3). L'écran le dira aussi, au moment de la saisie.
+
+> ⚠️ **Livraison backend du 2026-10-03 (§B3).** Conforme, **H2** et **H3** comprises :
+> - **`PIECES_OFFRE_EXIGEES`** est bloquante : la liste `OFFRE`, ou `B04-PI-01`, devenu facultatif. Elle se tait là où
+>   `B04-PI-01` n'est pas servi (contrat-cadre), comme `MATERIEL_EXIGE`. Message : « Les pièces de l'offre ne sont pas
+>   dites : remplissez la liste des pièces de l'offre, ou « Documents et pièces constitutifs de l'offre ». »
+> - **`PIECES_EN_DOUBLE`** est un **avertissement** sur `B03-CQ-01` (rôle porté par le fichier des fournitures, où ce
+>   champ commun est décrit). Il s'émet quand la liste `ADMINISTRATIVE` a une pièce et que le texte égale sa valeur par
+>   défaut, aux blancs de bord et fins de ligne près ; il est évalué pour les travaux seulement (H4).
 
 ---
 
@@ -112,3 +141,21 @@ pilote :
   défaut.
 - **Soumission en ligne** (hors périmètre, pour mémoire) : cette liste est ce qu'une plateforme de dépôt présenterait
   au candidat, une case de dépôt par pièce avec son ancienneté contrôlable.
+
+> ⚠️ **Livraison backend du 2026-10-03 — recette.**
+> - `PiecesFicheTest` :
+>   - les lignes du MTP (01, légalisée, 3 mois ; 06 par lot ; 09 avec son modèle) et du MEN (sans numéro) ;
+>   - « d'un mois » ;
+>   - les 400 ;
+>   - une condition `PIECES.offre renseigne` sur un modèle réduit.
+> - `FicheDaoTravauxIntegrationTest.piecesDeLOffre`, sur le MEN en deux lots :
+>   - `B14` servi ; 409 hors travaux ; 400 sur une rubrique inconnue ;
+>   - une fiche sans liste `OFFRE` ni `B04-PI-01` est refusée ;
+>   - avec 4 pièces administratives et 2 de l'offre, le contrôle passe ;
+>   - `PIECES_EN_DOUBLE` avertit tant que `B03-CQ-01` garde son défaut, et se tait une fois le texte vidé ;
+>   - la révision copie la liste.
+> - L'impression par le DPAO attend votre recopie ; les pièces 01 à 10 du MTP restent à saisir par la recette front.
+> - **Livraison** : migration **V61** et script `docs/referentiel/2026-10-03-pieces-offre-travaux.sql`, passé à blanc sur
+>   DBPRS20 (18 valeurs de `B04-PI-01` et 18 de `B03-CQ-01` y sont conservées).
+> - Les deux copies du fichier de correspondance des travaux (`B04-PI-01`) et des fournitures (`B03-CQ-01`) sont mises à
+>   jour à l'identique.
