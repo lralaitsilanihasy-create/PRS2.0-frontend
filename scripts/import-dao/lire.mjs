@@ -341,9 +341,23 @@ export function lireParagraphes(docLu, sigle, champs = {}, origines = null) {
     // qui les séparait (CCAP-T, banc synthétique : les assurances de l'article 8 perdues).
     const repete = repeteAilleurs(u);
     const reancre = manques >= REANCRAGE && distinctif(u) && !repete;
+    // ⚠️ 03/10 (règle 9, DPAO-F réimporté, constat du backend) — une unité dont le texte fixe compte moins de 8 lettres
+    // (« {{B02-AU-04}} mois. ») ne prouve rien : absente du document (clause 1.2 du marché à commande, en quantité fixe),
+    // elle s'accrochait à « … datée de moins de TROIS (03) mois » de la clause 6.2, et le curseur sautait tout ce qui les
+    // séparait (25 unités reconnues sur 142 au lieu de 65). Au-delà des PRES paragraphes qui suivent le curseur, elle ne se
+    // reconnaît plus que dans un paragraphe COURT (COURT caractères au plus) : une étiquette et sa valeur (« Lieu : … »,
+    // « 07 jours »), jamais le bout d'une phrase. La forme proposée par le backend — tout près du curseur seulement — perdait
+    // au DAO du MTP « Date : », « Lieu : » et « 07 jours », justes, 4 à 42 paragraphes plus loin (8 → 5 reconnus).
+    const PRES = 3;
+    const COURT = 60;
+    // Sans aucune lettre (« 1 », un numéro d'annexe), même un paragraphe court ne prouve rien : tout près seulement (CCAP
+    // du MEN : « 1 » reconnu 48 paragraphes plus loin, et la suite perdue).
+    const lettres = lettresFixes(u.texte).length;
+    const pauvre = lettres < 8;
     const borne = trouves.size && !reancre ? Math.min(doc.length, curseur + (repete ? 3 : 60)) : doc.length;
     const avant = trouves.size;
     for (let j = curseur; j < borne; j++) {
+      if (pauvre && j >= curseur + PRES && (lettres === 0 || doc[j].length > COURT)) continue;
       let x = re.exec(doc[j]);
       // Un paragraphe dont un autre paragraphe du modèle a le même texte fixe (« {{B04-EP-03}} jours avant la date
       // limite… » / « {{B04-EP-04}} jours avant la date limite… ») peut prendre la place de son jumeau quand celui-ci

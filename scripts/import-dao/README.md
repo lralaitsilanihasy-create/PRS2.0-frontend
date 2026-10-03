@@ -130,3 +130,23 @@ justes (B04-DE-02/03, B06-EP-01), aucune perdue.
    - banc, propre et graines 1 à 12 : **identique ligne pour ligne**, Q10 tenu, 0 réponse déduite fausse ;
    - les valeurs nouvelles en confiance haute sont justes (MTP : `B09-RP-03` = 07, `B02-OT-01`) ; les erreurs nouvelles
      restent en confiance basse (MTP : la phrase des pénalités lue comme `B09-VQ-01`).
+
+9. **Unité pauvre** (03/10, DPAO-F réimporté ; constat du backend, `docs/demande-backend-2026-10-03-pieces-offre-fournitures.md`).
+   Une unité dont le texte fixe compte **moins de 8 lettres** (« `{{B02-AU-04}} mois.` », « Lieu : `{{…}}` », « 1 ») ne
+   prouve rien à elle seule. Absente du document, la clause 1.2 du marché à commande (en quantité fixe) s'accrochait à
+   « … datée de moins de TROIS (03) mois » de la clause 6.2, et le curseur sautait tout ce qui les séparait. Désormais,
+   au-delà des **3 paragraphes** qui suivent le curseur, une unité pauvre ne se reconnaît plus que dans un paragraphe
+   **court** (60 caractères au plus) : une étiquette et sa valeur, jamais le bout d'une phrase. Une unité **sans aucune
+   lettre** (« 1 ») ne se reconnaît que dans ces 3 paragraphes. La forme proposée par le backend, « tout près du curseur
+   seulement », perdait au DAO du MTP « Date : », « Lieu : » et « 07 jours », justes, de 4 à 42 paragraphes plus loin.
+   Mesures :
+   - banc `--defauts --quantite-fixe` (le cas du backend : DPAO-F en quantité fixe, `B03-CQ-01` à sa valeur par
+     défaut) : rappel 33 % → **90 %** (« tout oui ») et 39 % → **93 %** (« tout non ») ; 1 fausse valeur → 0. Sur 12
+     graines : Q10 tenu partout ;
+   - banc ordinaire, propre et graines 1 à 12 : **identique ligne pour ligne** ;
+   - MEN : CCAP-T 58 → **71** paragraphes reconnus, et 3 réponses déduites nouvelles, justes (garantie de bonne
+     exécution, avance, garantie de restitution d'avance) ; une valeur fausse nouvelle, en confiance basse
+     (`B10-DR-01`) ;
+   - MTP : DPAO-T 8 → 7, valeur `B04-OV-01` gardée ; 2463 : inchangé.
+   - Le banc reçoit deux options : `--defauts` (un champ à valeur par défaut la garde, comme sur une vraie fiche) et
+     `--quantite-fixe` (le DPAO-F rendu en quantité fixe).

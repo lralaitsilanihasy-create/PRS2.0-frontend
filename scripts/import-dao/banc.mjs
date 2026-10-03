@@ -15,10 +15,15 @@ const { lireParagraphes, norm } = await import(lirePath);
 const MOD = fileURLToPath(new URL('../modeles-dao/modeles', import.meta.url));
 const bruit = process.argv.some((a) => a.startsWith('--bruit'));
 const manques = process.argv.find((a) => a.startsWith('--manques='))?.slice(10);   // les champs non relus d'un modèle
+// 03/10 (règle 9) — `--defauts` : un champ qui a une valeur par défaut au référentiel la garde, comme sur une vraie fiche
+// (B03-CQ-01, la liste des pièces du document type, est ce qui a révélé le saut de la lecture au DPAO-F).
+const defauts = process.argv.includes('--defauts');
 const API = 'http://localhost:8080';
 
 let refs = null;
-const FORMES = { 'DPAC-CC': ['CONTRAT_CADRE', 'FOURNITURES_SERVICES'], 'AE-CC': ['CONTRAT_CADRE', 'FOURNITURES_SERVICES'], 'DPAO-F': ['A_COMMANDE', 'FOURNITURES_SERVICES'],
+// 03/10 (règle 9) — `--quantite-fixe` : le DPAO-F rendu en quantité fixe, où la clause 1.2 (marché à commande) ne s'imprime pas.
+const DPAO_F = process.argv.includes('--quantite-fixe') ? 'QUANTITE_FIXE' : 'A_COMMANDE';
+const FORMES = { 'DPAC-CC': ['CONTRAT_CADRE', 'FOURNITURES_SERVICES'], 'AE-CC': ['CONTRAT_CADRE', 'FOURNITURES_SERVICES'], 'DPAO-F': [DPAO_F, 'FOURNITURES_SERVICES'],
   'AE-F': ['A_COMMANDE', 'FOURNITURES_SERVICES'], 'CCAP-F': ['A_COMMANDE', 'FOURNITURES_SERVICES'], 'DPIC-PI': ['QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES'],
   'AE-PI': ['QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES'], 'CPS-PI': ['QUANTITE_FIXE', 'PRESTATIONS_INTELLECTUELLES'],
   'DPAO-T': ['QUANTITE_FIXE', 'TRAVAUX'], 'AE-T': ['QUANTITE_FIXE', 'TRAVAUX'], 'CCAP-T': ['QUANTITE_FIXE', 'TRAVAUX'] };
@@ -28,7 +33,7 @@ if (!refs) {
   refs = {};
   for (const [t, c] of new Set(Object.values(FORMES).map((x) => x.join('|'))).values().map((s) => s.split('|'))) {
     const ref = await (await fetch(`${API}/api/champs-fiche-marche?typeMarche=${t}&categorie=${c}`, { headers: { Cookie: jar } })).json();
-    refs[`${t}|${c}`] = Object.fromEntries(ref.champs.map((x) => [x.code, { type: x.type, source: x.source, cleCadrage: x.cleCadrage, options: x.options }]));
+    refs[`${t}|${c}`] = Object.fromEntries(ref.champs.map((x) => [x.code, { type: x.type, source: x.source, cleCadrage: x.cleCadrage, options: x.options, valeurDefaut: x.valeurDefaut }]));
   }
 }
 const NOUVEAUX = { 'B04-EP-04': 'NOMBRE', 'B05-PF-13': 'MONTANT', 'B06-TP-07': 'NOMBRE', 'B06-CS-02': 'NOMBRE', 'B06-CS-03': 'NOMBRE', 'B02-OP-04': 'TEXTE', 'B08-AI-03': 'POURCENTAGE', 'B09-OP-02': 'NOMBRE',
@@ -92,7 +97,7 @@ function rendre(sigle, cadrage, champs) {
   const codes = [...new Set([...m.blocs.flatMap((b) => [...b.texte.matchAll(/\{\{(B\d\d-[A-Z]{2}-\d\d)(?:\.\w+)?}}/g)].map((x) => x[1])),
     // 01/10 — et les champs que seules les conditions citent (B05-GQ-02 : ses sections ne se rendaient jamais).
     ...Object.values(m.conditions).flatMap((e) => [...e.matchAll(/\b(B\d\d-[A-Z]{2}-\d\d)\b/g)].map((x) => x[1]))])];
-  const valeurs = Object.fromEntries(codes.map((c, i) => [c, valeurPour(c, champs[c]?.type, i + (cadrage === CADRAGES.non ? 1 : 0), champs[c]?.options, cadrage === CADRAGES.oui)]));
+  const valeurs = Object.fromEntries(codes.map((c, i) => [c, defauts && champs[c]?.valeurDefaut ? champs[c].valeurDefaut : valeurPour(c, champs[c]?.type, i + (cadrage === CADRAGES.non ? 1 : 0), champs[c]?.options, cadrage === CADRAGES.oui)]));
   const vaut = (k) => (k in cadrage ? cadrage[k] : k === 'typeMarche' ? typeMarche : k === 'categorie' ? categorie : valeurs[k]);
   const pile = []; const actif = () => pile.every(Boolean);
   const imprimes = new Set(); const sortie = [];

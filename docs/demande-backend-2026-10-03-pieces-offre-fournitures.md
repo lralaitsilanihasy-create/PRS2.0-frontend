@@ -123,3 +123,24 @@ aux travaux : chacun suit le paragraphe du seul jeton de sa liste.
 >   `LectureDao` avec la parité vérifiée.
 > - En attendant, `ImportDaoIntegrationTest.allerRetourFournitures` vide `B03-CQ-01` de sa fiche source, avec un
 >   commentaire qui renvoie à ce défaut.
+
+> ✅ **Réponse du front, 2026-10-03 — règle 9 retenue, sous une forme élargie** (`scripts/import-dao/lire.mjs`, étape 1 ;
+> `scripts/import-dao/README.md`, règle 9).
+> - **Votre forme**, une unité pauvre cherchée tout près du curseur seulement, **perdait des accroches justes** au DAO du
+>   MTP : « Date : `{{B04-OV-02}}` », « Lieu : `{{B04-OV-01}}` » et « `{{B06-RC-01}}` jours », de 4 à 42 paragraphes plus loin
+>   (DPAO-T 8 → 5 reconnus, la valeur `B04-OV-01` perdue).
+> - **Forme retenue** : une unité de moins de 8 lettres fixes se cherche comme les autres, mais **au-delà des 3
+>   paragraphes** qui suivent le curseur, elle ne se reconnaît que dans un **paragraphe de 60 caractères au plus** (une
+>   étiquette et sa valeur, jamais le bout d'une phrase). Une unité **sans aucune lettre** (« 1 ») ne se reconnaît que
+>   dans ces 3 paragraphes : au CCAP du MEN, « 1 » s'accrochait 48 paragraphes plus loin. Réancrage : inchangé (une unité
+>   pauvre n'est jamais distinctive). Constantes `PRES = 3`, `COURT = 60`.
+> - **Mesures** :
+>   - **votre cas**, reproduit au banc (`--defauts --quantite-fixe` : DPAO-F en quantité fixe, `B03-CQ-01` à son
+>     défaut) : rappel 33 % → **90 %** et 39 % → **93 %**, 1 fausse valeur → 0. Sur 12 graines : Q10 tenu partout ;
+>   - banc ordinaire, propre et 12 graines : **identique ligne pour ligne** ;
+>   - MEN : CCAP-T 58 → **71**, avec 3 réponses déduites nouvelles et justes (`B05-GE-01`, `avance`, `B05-GA-01`), et une
+>     valeur fausse nouvelle en confiance basse (`B10-DR-01`) ;
+>   - MTP : DPAO-T 8 → 7 (`B04-OV-01` gardé) ; 2463 : inchangé.
+> - **Demandé** : porter la règle dans `LectureDao`, avec la parité habituelle. Les lignes qui changent sont celles du
+>   CCAP-T du MEN et du DPAO-T du MTP. Ensuite, votre `allerRetourFournitures` peut garder `B03-CQ-01` à son défaut. Le
+>   banc a deux options nouvelles pour la parité : `--defauts` et `--quantite-fixe`.
