@@ -345,6 +345,9 @@
                     [lecture]="figee() || enLecture()"
                     (enregistre)="besoinEnregistre()"
                   />
+                } @else if (rendu(bloc) === 'MOYENS') {
+                  <!-- ⚠️ 03/10 (lot 3 du chantier b) — matériel et personnel exigés des travaux, en listes. -->
+                  <app-fiche-moyens [idDmc]="idDmc()!" [lecture]="figee() || enLecture()" (enregistre)="besoinEnregistre()" />
                 } @else if (!rubriquesOuvertes(bloc).length) {
                   <p class="fm__vide" role="status">Aucune information à saisir dans ce bloc.</p>
                 }

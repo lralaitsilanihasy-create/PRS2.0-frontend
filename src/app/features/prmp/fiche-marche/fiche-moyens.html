@@ -1,0 +1,143 @@
+<!-- ⚠️ Lot 3 du chantier b (03/10) — matériel et personnel exigés : deux listes, chacune enregistrée seule ; sous
+     chaque liste, les lignes telles que la clause 6.3 du DPAO les imprimera. -->
+@if (chargement()) {
+  <p class="mo__etat" role="status">Chargement du matériel et du personnel exigés…</p>
+} @else {
+  <section class="mo" aria-labelledby="mo-materiel">
+    <h3 id="mo-materiel" class="mo__titre">Matériel exigé</h3>
+    @if (materiel().length) {
+      <div class="mo__table">
+        <table>
+          <caption class="mo__sr">Matériel exigé des candidats</caption>
+          <thead>
+            <tr>
+              <th scope="col">Désignation</th>
+              <th scope="col" class="mo__c-car">Caractéristique</th>
+              <th scope="col" class="mo__c-n">Nombre</th>
+              <th scope="col" class="mo__c-n">Dont en propre (min.)</th>
+              <th scope="col" class="mo__c-l">Par lot</th>
+              <th scope="col" class="mo__c-a"><span class="mo__sr">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of materiel(); track m.cle; let i = $index) {
+              <tr>
+                @if (lecture()) {
+                  <td>{{ m.designation }}</td>
+                  <td>{{ m.caracteristique }}</td>
+                  <td class="mo__c-n">{{ m.nombre }}</td>
+                  <td class="mo__c-n">{{ m.minimumEnPropre ?? '—' }}</td>
+                  <td class="mo__c-l">{{ m.parLot ? 'oui' : '' }}</td>
+                  <td></td>
+                } @else {
+                  <td>
+                    <input class="form-control" type="text" [value]="m.designation" placeholder="Camions bennes" [attr.aria-label]="'Désignation du matériel ' + (i + 1)" (input)="saisirTexte('materiel', m.cle, 'designation', $event)" />
+                    @if (erreurDe('materiel', i, 'designation'); as msg) { <span class="form-error">{{ msg }}</span> }
+                  </td>
+                  <td class="mo__c-car">
+                    <input class="form-control" type="text" [value]="m.caracteristique ?? ''" placeholder="≥ 10 000 kg" [attr.aria-label]="'Caractéristique du matériel ' + (i + 1)" (input)="saisirTexte('materiel', m.cle, 'caracteristique', $event)" />
+                  </td>
+                  <td class="mo__c-n">
+                    <input class="form-control" type="number" min="1" step="1" [value]="m.nombre ?? ''" [attr.aria-label]="'Nombre exigé du matériel ' + (i + 1)" (input)="saisirNombre('materiel', m.cle, 'nombre', $event)" />
+                    @if (erreurDe('materiel', i, 'nombre'); as msg) { <span class="form-error">{{ msg }}</span> }
+                  </td>
+                  <td class="mo__c-n">
+                    <input class="form-control" type="number" min="0" step="1" [value]="m.minimumEnPropre ?? ''" [attr.aria-label]="'Minimum en propre du matériel ' + (i + 1)" (input)="saisirNombre('materiel', m.cle, 'minimumEnPropre', $event)" />
+                    @if (minimumIncoherent(m)) {
+                      <span class="form-error">Au plus le nombre exigé</span>
+                    } @else if (erreurDe('materiel', i, 'minimumEnPropre'); as msg) {
+                      <span class="form-error">{{ msg }}</span>
+                    }
+                  </td>
+                  <td class="mo__c-l">
+                    <input type="checkbox" [checked]="!!m.parLot" [attr.aria-label]="'Nombre exigé par lot — matériel ' + (i + 1)" (change)="basculer('materiel', m.cle, 'parLot', $event)" />
+                  </td>
+                  <td class="mo__c-a">
+                    <button type="button" class="mo__ic" aria-label="Monter ce matériel" [disabled]="$first" (click)="deplacer('materiel', m.cle, -1)">↑</button>
+                    <button type="button" class="mo__ic" aria-label="Descendre ce matériel" [disabled]="$last" (click)="deplacer('materiel', m.cle, 1)">↓</button>
+                    <button type="button" class="mo__ic mo__ic--ko" aria-label="Retirer ce matériel" (click)="supprimer('materiel', m.cle)">✕</button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="mo__apercu">
+        <span class="mo__apercu-t">Au DPAO, clause 6.3 (c) :</span>
+        @for (l of apercuMateriel(); track $index) { <span>{{ l }}</span> }
+      </div>
+    } @else {
+      <p class="mo__etat" role="status">Aucun matériel exigé@if (!lecture()) { : ajoutez les engins essentiels, ou décrivez-les au bloc B03 (« matériel »)}.</p>
+    }
+    @if (!lecture()) {
+      <div class="mo__pied">
+        <button type="button" class="btn btn-outline" (click)="ajouterMateriel()">+ Matériel</button>
+        <button type="button" class="btn btn-primary" [disabled]="savingMateriel()" (click)="enregistrerMateriel()">
+          {{ savingMateriel() ? 'Enregistrement…' : 'Enregistrer le matériel' }}
+        </button>
+      </div>
+    }
+  </section>
+
+  <section class="mo" aria-labelledby="mo-personnel">
+    <h3 id="mo-personnel" class="mo__titre">Personnel clé exigé</h3>
+    @for (p of personnel(); track p.cle; let i = $index) {
+      <div class="mo__poste">
+        @if (lecture()) {
+          <p class="mo__lu">{{ apercuPersonnel()[i] }}</p>
+        } @else {
+          <div class="mo__grille">
+            <label class="mo__f mo__f--large">
+              <span>Poste</span>
+              <input class="form-control" type="text" [value]="p.poste" placeholder="Conducteur de travaux" (input)="saisirTexte('personnel', p.cle, 'poste', $event)" />
+              @if (erreurDe('personnel', i, 'poste'); as msg) { <span class="form-error">{{ msg }}</span> }
+            </label>
+            <label class="mo__f">
+              <span>Nombre</span>
+              <input class="form-control" type="number" min="1" step="1" [value]="p.nombre ?? ''" (input)="saisirNombre('personnel', p.cle, 'nombre', $event)" />
+            </label>
+            <label class="mo__f mo__f--large">
+              <span>Diplôme exigé</span>
+              <input class="form-control" type="text" [value]="p.diplome ?? ''" placeholder="Ingénieur BTP ou génie civil" (input)="saisirTexte('personnel', p.cle, 'diplome', $event)" />
+            </label>
+            <label class="mo__f">
+              <span>Expérience (années)</span>
+              <input class="form-control" type="number" min="0" step="1" [value]="p.experienceAnnees ?? ''" (input)="saisirNombre('personnel', p.cle, 'experienceAnnees', $event)" />
+            </label>
+            <label class="mo__f">
+              <span>Dans le domaine</span>
+              <input class="form-control" type="text" [value]="p.domaineExperience ?? ''" placeholder="travaux routiers" (input)="saisirTexte('personnel', p.cle, 'domaineExperience', $event)" />
+            </label>
+            <label class="mo__f mo__f--large">
+              <span>Justificatifs</span>
+              <input class="form-control" type="text" [value]="p.justificatifs ?? ''" placeholder="CV et diplôme certifié" (input)="saisirTexte('personnel', p.cle, 'justificatifs', $event)" />
+            </label>
+            <label class="mo__case">
+              <input type="checkbox" [checked]="!!p.parLot" (change)="basculer('personnel', p.cle, 'parLot', $event)" />
+              Par lot
+            </label>
+          </div>
+          <div class="mo__poste-pied">
+            <span class="mo__apercu-l">{{ apercuPersonnel()[i] }}</span>
+            <span>
+              <button type="button" class="mo__ic" aria-label="Monter ce poste" [disabled]="$first" (click)="deplacer('personnel', p.cle, -1)">↑</button>
+              <button type="button" class="mo__ic" aria-label="Descendre ce poste" [disabled]="$last" (click)="deplacer('personnel', p.cle, 1)">↓</button>
+              <button type="button" class="mo__ic mo__ic--ko" aria-label="Retirer ce poste" (click)="supprimer('personnel', p.cle)">✕</button>
+            </span>
+          </div>
+        }
+      </div>
+    } @empty {
+      <p class="mo__etat" role="status">Aucun poste exigé@if (!lecture()) { : ajoutez les postes clés, ou décrivez-les au bloc B03 (« personnel clé »)}.</p>
+    }
+    @if (!lecture()) {
+      <div class="mo__pied">
+        <button type="button" class="btn btn-outline" (click)="ajouterPersonnel()">+ Poste</button>
+        <button type="button" class="btn btn-primary" [disabled]="savingPersonnel()" (click)="enregistrerPersonnel()">
+          {{ savingPersonnel() ? 'Enregistrement…' : 'Enregistrer le personnel' }}
+        </button>
+      </div>
+    }
+  </section>
+}

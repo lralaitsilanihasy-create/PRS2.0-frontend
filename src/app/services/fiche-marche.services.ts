@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { skipErrorToast } from '../core/errors/api-error';
-import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, ParametresInternes, ParametresInternesCorps, PublicationAvis, PublicationLettres, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
+import { AppliquerImportCorps, ArticleFiche, BilanControles, Cadrage, CategorieDao, ChampFiche, CompteDesignable, DisponibiliteAvis, Dmc, DocumentFiche, Dossier, FicheMarche, FicheRattachable, ImportDaoResult, LigneEligible, MaterielExige, ParametresInternes, ParametresInternesCorps, PersonnelExige, PublicationAvis, PublicationLettres, ReferentielFiche, TypeMarche, VersionFiche } from '../models';
 import { CrudService } from './api/crud.service';
 
 /**
@@ -115,6 +115,26 @@ export class FicheMarcheService extends CrudService<FicheMarche> {
   enregistrerBesoin(idDmc: number, lot: number | null, articles: ArticleFiche[]): Observable<ArticleFiche[]> {
     const params = lot == null ? undefined : new HttpParams().set('lot', lot);
     return this.http.put<ArticleFiche[]>(`${this.baseUrl}/${idDmc}/articles`, { articles }, { params, context: skipErrorToast() });
+  }
+
+  /**
+   * ⚠️ Lot 3 du chantier b (03/10) — **contrat demandé** (`demande-backend-2026-10-03-materiel-personnel-travaux`) :
+   * le matériel et le personnel exigés des travaux, deux listes de la version de fiche ; `PUT` remplace la liste.
+   */
+  materiel(idDmc: number): Observable<MaterielExige[]> {
+    return this.http.get<MaterielExige[]>(`${this.baseUrl}/${idDmc}/materiel`, { context: skipErrorToast() });
+  }
+
+  enregistrerMateriel(idDmc: number, materiel: MaterielExige[]): Observable<MaterielExige[]> {
+    return this.http.put<MaterielExige[]>(`${this.baseUrl}/${idDmc}/materiel`, { materiel }, { context: skipErrorToast() });
+  }
+
+  personnel(idDmc: number): Observable<PersonnelExige[]> {
+    return this.http.get<PersonnelExige[]>(`${this.baseUrl}/${idDmc}/personnel`, { context: skipErrorToast() });
+  }
+
+  enregistrerPersonnel(idDmc: number, personnel: PersonnelExige[]): Observable<PersonnelExige[]> {
+    return this.http.put<PersonnelExige[]>(`${this.baseUrl}/${idDmc}/personnel`, { personnel }, { context: skipErrorToast() });
   }
 
   /**

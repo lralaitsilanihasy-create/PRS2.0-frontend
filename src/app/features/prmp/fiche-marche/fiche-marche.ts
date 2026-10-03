@@ -16,6 +16,7 @@ import { decomposerObservation } from '../../../shared/circuit/observation-pv-ca
 import { LienDossier } from '../../circuit/page-dossier/lien-dossier';
 import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { FicheBesoin } from './fiche-besoin';
+import { FicheMoyens } from './fiche-moyens';
 import { ImportDao } from './import-dao';
 import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
 import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
@@ -107,6 +108,7 @@ function routeAbsente(e: HttpErrorResponse | ApiError): boolean {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FicheBesoin,
+    FicheMoyens,
     ImportDao,
     AvisSpecifique,
     LettresInvitation,

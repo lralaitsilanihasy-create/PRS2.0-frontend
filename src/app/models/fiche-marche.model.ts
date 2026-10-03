@@ -126,7 +126,37 @@ export interface RubriqueFiche {
  * de ses champs, `'BESOIN'` = la grille du besoin (lots → articles → caractéristiques). Un rendu inconnu du front
  * n'est pas une erreur : le bloc annonce qu'il n'a rien à saisir plutôt que de rester blanc.
  */
-export type RenduBloc = 'BESOIN' | (string & {});
+export type RenduBloc = 'BESOIN' | 'MOYENS' | (string & {});
+
+/**
+ * ⚠️ Lot 3 du chantier b (03/10) — contrat **demandé**, pas encore servi (`demande-backend-2026-10-03-materiel-personnel-
+ * travaux`) : le matériel et le personnel exigés des travaux, en listes (bloc à rendu `'MOYENS'`). Noms de la demande.
+ */
+export interface MaterielExige {
+  idMateriel?: number | null;
+  ordre?: number | null;
+  designation: string;
+  /** « ≥ 10 000 kg » : capacité, puissance… */
+  caracteristique?: string | null;
+  nombre: number | null;
+  /** `null` = propriété ou location indifférente ; `= nombre` = tout en propre. */
+  minimumEnPropre?: number | null;
+  /** Le nombre vaut pour chaque lot. */
+  parLot?: boolean | null;
+}
+
+export interface PersonnelExige {
+  idPersonnel?: number | null;
+  ordre?: number | null;
+  poste: string;
+  nombre: number | null;
+  diplome?: string | null;
+  experienceAnnees?: number | null;
+  /** « travaux routiers ». */
+  domaineExperience?: string | null;
+  justificatifs?: string | null;
+  parLot?: boolean | null;
+}
 
 export interface BlocFiche {
   /** `B01` … `B10`. */
