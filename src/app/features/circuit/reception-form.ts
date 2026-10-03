@@ -51,7 +51,6 @@ interface LigneControle {
         aria-modal="true"
         aria-label="Réception du dossier"
         appModale
-        appModaleClicExterieur
         (appModaleFermer)="fermerDAnime()"
         novalidate
       >

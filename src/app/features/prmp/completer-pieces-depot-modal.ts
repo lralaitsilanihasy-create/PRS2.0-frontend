@@ -27,7 +27,7 @@ import {
   imports: [ModaleDirective],
   template: `
     <div class="modal-backdrop" [class.closing]="closingFermer()">
-      <div class="modal cnm-form cpd-modal" role="dialog" aria-modal="true" aria-label="Compléter les pièces du dépôt" appModale appModaleClicExterieur (appModaleFermer)="fermerFermerAnime()">
+      <div class="modal cnm-form cpd-modal" role="dialog" aria-modal="true" aria-label="Compléter les pièces du dépôt" appModale (appModaleFermer)="fermerFermerAnime()">
         <header class="modal-header-plain">
           <span class="modal-title">Compléter les pièces — {{ dossier().refeDossier || 'Dossier #' + dossier().idDossier }}</span>
           <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerFermerAnime()">✕</button>

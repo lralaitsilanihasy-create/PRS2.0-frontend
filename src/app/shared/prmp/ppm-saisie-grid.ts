@@ -279,7 +279,7 @@ export const OBJET_MARCHE_MAX = 4000;
 
     @if (datesCible()) {
       <div class="modal-backdrop" [class.closing]="closingDates()">
-        <div class="modal confirm-modal cnm-form sd__dates-modal" role="dialog" aria-modal="true" aria-label="CAPM du marché" appModale appModaleClicExterieur (appModaleFermer)="fermerDatesAnime()">
+        <div class="modal confirm-modal cnm-form sd__dates-modal" role="dialog" aria-modal="true" aria-label="CAPM du marché" appModale (appModaleFermer)="fermerDatesAnime()">
           <div class="modal-header-plain">
             <span class="modal-title">CAPM du marché</span>
           </div>
@@ -324,7 +324,7 @@ export const OBJET_MARCHE_MAX = 4000;
 
     @if (lotsCible()) {
       <div class="modal-backdrop" [class.closing]="closingLots()">
-        <div class="modal confirm-modal cnm-form sd__lots-modal" role="dialog" aria-modal="true" aria-label="Lots du marché" appModale appModaleClicExterieur (appModaleFermer)="fermerLotsAnime()">
+        <div class="modal confirm-modal cnm-form sd__lots-modal" role="dialog" aria-modal="true" aria-label="Lots du marché" appModale (appModaleFermer)="fermerLotsAnime()">
           <div class="modal-header-plain">
             <span class="modal-title">Lots (allotissement) du marché</span>
           </div>

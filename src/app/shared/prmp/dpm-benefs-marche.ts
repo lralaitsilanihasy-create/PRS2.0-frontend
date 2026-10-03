@@ -18,7 +18,7 @@ import { ModaleDirective } from '../a11y/modale.directive';
   imports: [ReactiveFormsModule, ModaleDirective],
   template: `
     <div class="dpm__overlay">
-      <form class="dpm cnm-card" [formGroup]="formulaire()" (ngSubmit)="enregistrer.emit()" role="dialog" aria-modal="true" aria-label="Services bénéficiaires du marché" appModale appModaleClicExterieur (appModaleFermer)="annuler.emit()" novalidate>
+      <form class="dpm cnm-card" [formGroup]="formulaire()" (ngSubmit)="enregistrer.emit()" role="dialog" aria-modal="true" aria-label="Services bénéficiaires du marché" appModale (appModaleFermer)="annuler.emit()" novalidate>
         <header class="dpm__head">
           <h2 class="dpm__title">Services bénéficiaires — {{ marche().designationMarche || 'Marché #' + marche().idDetail }}</h2>
           <button type="button" class="dpm__close" aria-label="Fermer" (click)="annuler.emit()">&times;</button>

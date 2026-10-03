@@ -643,9 +643,9 @@ interface ApercuDossier {
 
       @if (apercu(); as a) {
         <div class="modal-backdrop modal-backdrop--sans-flou" [class.closing]="closingApercu()">
-          <div class="modal sd__apercu cnm-form" role="dialog" aria-modal="true" aria-label="Aperçu du dossier" appModale appModaleClicExterieur (appModaleFermer)="fermerApercuAnime()">
+          <div class="modal sd__apercu cnm-form" role="dialog" aria-modal="true" aria-label="Aperçu du dossier" appModale (appModaleFermer)="fermerApercuAnime()">
             <!-- ⚠️ Demande pilote (03/09) — titre décalé du coin, ✕ supprimé : Échap, le clic sur
-                 le voile (appModaleClicExterieur) et le bouton « Fermer » du pied suffisent. -->
+                 le bouton « Fermer » du pied et Échap suffisent (le voile ne ferme plus depuis le 13/09). -->
             <div class="modal-header-plain sd__apercu-header">
               <span class="modal-title">Aperçu du dossier à créer</span>
             </div>

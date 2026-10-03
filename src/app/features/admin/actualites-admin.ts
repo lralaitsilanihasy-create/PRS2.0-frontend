@@ -130,7 +130,7 @@ const TAILLE_MAX_IMAGE_MO = 10;
     @if (edition(); as a) {
       <div class="modal-backdrop" [class.closing]="closingEdition()">
         <div class="modal modal-lg" role="dialog" aria-modal="true" [attr.aria-label]="titreEdition()"
-             appModale appModaleClicExterieur (appModaleFermer)="fermerEdition()">
+             appModale (appModaleFermer)="fermerEdition()">
           <div class="modal-header">
             <h2 class="modal-title">{{ titreEdition() }}</h2>
             <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerEdition()">✕</button>
@@ -218,7 +218,7 @@ const TAILLE_MAX_IMAGE_MO = 10;
     @if (consultation(); as a) {
       <div class="modal-backdrop" [class.closing]="closingConsult()">
         <div class="modal" role="dialog" aria-modal="true" aria-label="Actualité archivée"
-             appModale appModaleClicExterieur (appModaleFermer)="fermerConsultation()">
+             appModale (appModaleFermer)="fermerConsultation()">
           <div class="modal-header">
             <h2 class="modal-title">{{ a.titre }}</h2>
             <button type="button" class="btn-close" aria-label="Fermer" (click)="fermerConsultation()">✕</button>
@@ -238,7 +238,7 @@ const TAILLE_MAX_IMAGE_MO = 10;
     @if (aArchiver(); as a) {
       <div class="modal-backdrop" [class.closing]="closingArchive()">
         <div class="modal modal-sm" role="dialog" aria-modal="true" aria-label="Confirmer l'archivage"
-             appModale appModaleClicExterieur (appModaleFermer)="annulerArchivage()">
+             appModale (appModaleFermer)="annulerArchivage()">
           <div class="modal-body">
             <p>Archiver l'actualité <strong>{{ a.titre }}</strong> ?</p>
             <p class="form-hint">

@@ -47,7 +47,6 @@ import { ToastService } from './toast.service';
           aria-labelledby="alerte-titre"
           aria-describedby="alerte-message"
           appModale
-          appModaleClicExterieur
           (appModaleFermer)="toastService.dismiss(alerte.id)"
         >
           <div class="alerte__icone" aria-hidden="true">{{ icone(alerte.type) }}</div>

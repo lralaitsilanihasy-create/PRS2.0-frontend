@@ -46,7 +46,6 @@ import { DossierJournal } from './dossier/dossier-journal';
         aria-modal="true"
         [attr.aria-label]="'Consultation — ' + contenu.typeLabel()"
         appModale
-        appModaleClicExterieur
         (appModaleFermer)="fermer()"
       >
         <!-- ── En-tête ── -->
@@ -135,7 +134,7 @@ import { DossierJournal } from './dossier/dossier-journal';
         <div class="modal-backdrop">
           <div class="modal modal-lg dc-sousmodal" role="dialog" aria-modal="true"
             [attr.aria-label]="'Chronométrage et délais — ' + (dossier().refeDossier || dossier().idDossier)"
-            appModale appModaleClicExterieur (appModaleFermer)="chronoOuvert.set(false)">
+            appModale (appModaleFermer)="chronoOuvert.set(false)">
             <div class="modal-header">
               <h2 class="modal-title"><span aria-hidden="true">⏱</span> Chronométrage &amp; délais</h2>
               <button type="button" class="btn-close" aria-label="Fermer" (click)="chronoOuvert.set(false)">✕</button>
@@ -152,7 +151,7 @@ import { DossierJournal } from './dossier/dossier-journal';
         <div class="modal-backdrop">
           <div class="modal modal-lg dc-sousmodal" role="dialog" aria-modal="true"
             [attr.aria-label]="'Journal des actions — ' + (dossier().refeDossier || dossier().idDossier)"
-            appModale appModaleClicExterieur (appModaleFermer)="journalOuvert.set(false)">
+            appModale (appModaleFermer)="journalOuvert.set(false)">
             <div class="modal-header">
               <h2 class="modal-title"><span aria-hidden="true">🕘</span> Journal des actions
                 <span class="section-count">{{ contenu.journalVisible().length }} action(s)</span></h2>

@@ -79,7 +79,7 @@
 
   @if (formOpen()) {
     <div class="modal-backdrop">
-      <form class="crud__form cnm-form" [formGroup]="form" (ngSubmit)="save()" role="dialog" aria-modal="true" aria-labelledby="crud-form-titre" appModale appModaleClicExterieur (appModaleFermer)="closeForm()" novalidate>
+      <form class="crud__form cnm-form" [formGroup]="form" (ngSubmit)="save()" role="dialog" aria-modal="true" aria-labelledby="crud-form-titre" appModale (appModaleFermer)="closeForm()" novalidate>
         <h2 class="crud__form-title" id="crud-form-titre">
           {{ formMode() === 'create' ? 'Nouvel enregistrement' : 'Modifier' }}
         </h2>

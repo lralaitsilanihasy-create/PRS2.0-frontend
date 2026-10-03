@@ -33,7 +33,6 @@ import { MarkdownVue } from './markdown-vue';
         aria-modal="true"
         [attr.aria-label]="'Actualités — ' + courante().titre"
         appModale
-        appModaleClicExterieur
         (appModaleFermer)="fermer()"
       >
         <button type="button" class="act__x" aria-label="Fermer les actualités" (click)="fermer()">✕</button>

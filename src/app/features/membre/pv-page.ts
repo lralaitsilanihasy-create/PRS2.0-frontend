@@ -105,7 +105,7 @@ import { LienDossier } from '../circuit/page-dossier/lien-dossier';
           <div class="modal-backdrop" [class.closing]="closingDetail()">
             <div class="modal modal-lg pv-modal" role="dialog" aria-modal="true"
               [attr.aria-label]="'Projet de PV ' + (pv.refePv || pv.referencePv || pv.idPv)"
-              appModale appModaleClicExterieur (appModaleFermer)="fermerDetail()">
+              appModale (appModaleFermer)="fermerDetail()">
               <div class="modal-header">
                 <div class="pv-modal__titre">
                   <h2 class="modal-title">{{ pv.refePv || pv.referencePv || ('Projet de PV #' + pv.idPv) }}</h2>

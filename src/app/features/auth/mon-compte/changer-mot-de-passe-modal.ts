@@ -33,7 +33,6 @@ const MAX_LONGUEUR = 72;
         aria-modal="true"
         aria-label="Changer mon mot de passe"
         appModale
-        appModaleClicExterieur
         (appModaleFermer)="fermerAnime()"
       >
         <header class="modal-header-plain">

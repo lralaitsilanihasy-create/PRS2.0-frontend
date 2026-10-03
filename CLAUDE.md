@@ -110,11 +110,9 @@ dans un fichier séparé (exemple : `demande-backend-2026-09-17-espace-admin.md`
   elle apporte le focus initial, sa restitution, Échap et le piège de Tab. Y ajouter un
   `aria-label`, et un `aria-label` sur tout bouton réduit à un symbole (✕, ⤴…).
   ⚠️ **Depuis `896de8e` (13/09/2026, demande pilote), une modale ne se ferme QUE par son bouton de
-  fermeture ou par Échap — plus jamais au clic sur le voile.** Le drapeau `appModaleClicExterieur`
-  est devenu **inerte** : la directive ne pose plus aucun écouteur de clic sur le voile, qu'il soit
-  posé sur le gabarit ou non. **Ne plus le poser dans du code neuf** — il ne fait plus rien et
-  entretient la confusion sur le comportement réel. Il reste sur 34 gabarits existants : c'est de la
-  dette, à retirer un jour dans une passe dédiée, pas au fil d'une modale ponctuelle. Un voile n'est
+  fermeture ou par Échap — plus jamais au clic sur le voile.** La directive ne pose aucun écouteur de
+  clic sur le voile. L'ancien drapeau `appModaleClicExterieur`, devenu inerte, a été **retiré le
+  03/10/2026** de ses 34 gabarits et de la directive : le poser ne compile plus. Un voile n'est
   pas un élément interactif : lui poser `tabindex`/`role`/`keydown` pour satisfaire ESLint ajouterait
   une tabulation sans nom accessible dans un piège de focus.
 - **Élément cliquable** : utiliser `<button>`, jamais `<div (click)>` — sinon l'action est

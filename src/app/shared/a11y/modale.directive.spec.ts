@@ -6,7 +6,7 @@ import { ModaleDirective } from './modale.directive';
 /**
  * ⚠️ Demande pilote (2026-09-13) — les modals ne se ferment PLUS au clic sur le voile (clic hors du
  * dialogue) : la fermeture est réservée au bouton « Fermer » / « Annuler » (ou Échap au clavier).
- * Le flag `appModaleClicExterieur` est conservé (compat des gabarits) mais n'a plus aucun effet.
+ * Le drapeau `appModaleClicExterieur` a été retiré le 2026-10-03 : il ne faisait plus rien.
  */
 @Component({
   selector: 'app-hote-modale-test',
@@ -19,7 +19,6 @@ import { ModaleDirective } from './modale.directive';
         role="dialog"
         aria-label="Dialogue de test"
         [appModale]="actif()"
-        appModaleClicExterieur
         (appModaleFermer)="fermetures.set(fermetures() + 1)"
       >
         <button type="button" class="dedans">Action</button>

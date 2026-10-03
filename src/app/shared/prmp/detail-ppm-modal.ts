@@ -97,7 +97,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
       @if (loading()) {
         <div class="spinner-wrap"><div class="spinner"></div></div>
       } @else {
-      <div class="modal dpm-wide" role="dialog" aria-modal="true" aria-label="Détail du plan de passation" appModale appModaleClicExterieur (appModaleFermer)="emitFermer()">
+      <div class="modal dpm-wide" role="dialog" aria-modal="true" aria-label="Détail du plan de passation" appModale (appModaleFermer)="emitFermer()">
 
         <!-- ── HEADER ── -->
         <div class="dpm-header">
@@ -645,7 +645,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
     @if (editMarche(); as m) {
       @if (editForm(); as ef) {
         <div class="dpm__overlay">
-          <form class="dpm dpm--sm cnm-card" [formGroup]="ef" (ngSubmit)="enregistrerEdition()" role="dialog" aria-modal="true" aria-label="Modifier le marché" appModale appModaleClicExterieur (appModaleFermer)="annulerEdition()" novalidate>
+          <form class="dpm dpm--sm cnm-card" [formGroup]="ef" (ngSubmit)="enregistrerEdition()" role="dialog" aria-modal="true" aria-label="Modifier le marché" appModale (appModaleFermer)="annulerEdition()" novalidate>
             <header class="dpm__head">
               <h2 class="dpm__title">Modifier les dates — {{ m.designationMarche || 'Marché #' + m.idDetail }}</h2>
               <button type="button" class="dpm__close" aria-label="Fermer" (click)="annulerEdition()">&times;</button>
@@ -718,7 +718,7 @@ const ROLES_UGPM_PAR_TUTELLE: readonly Role[] = [
 
     @if (createOpen()) {
       <div class="dpm__overlay">
-        <form class="dpm dpm--sm cnm-card" [formGroup]="createForm" (ngSubmit)="enregistrerMarche()" role="dialog" aria-modal="true" aria-label="Nouveau marché" appModale appModaleClicExterieur (appModaleFermer)="annulerCreation()" novalidate>
+        <form class="dpm dpm--sm cnm-card" [formGroup]="createForm" (ngSubmit)="enregistrerMarche()" role="dialog" aria-modal="true" aria-label="Nouveau marché" appModale (appModaleFermer)="annulerCreation()" novalidate>
           <header class="dpm__head">
             <h2 class="dpm__title">
               {{ editingMarche() ? 'Modifier le marché #' + editingMarche()!.idDetail : 'Nouveau marché — PPM ' + (ppm()?.reference || '#' + idPpm) }}

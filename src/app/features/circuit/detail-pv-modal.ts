@@ -36,7 +36,7 @@ import { PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
   imports: [ModaleDirective, StatutBadge],
   template: `
     <div class="modal-backdrop" [class.closing]="closing()">
-      <div class="modal modal-lg" role="dialog" aria-modal="true" [attr.aria-label]="definitif() ? 'Détail du PV' : 'Détail du projet de PV'" appModale appModaleClicExterieur (appModaleFermer)="fermerModal()">
+      <div class="modal modal-lg" role="dialog" aria-modal="true" [attr.aria-label]="definitif() ? 'Détail du PV' : 'Détail du projet de PV'" appModale (appModaleFermer)="fermerModal()">
         <!-- En-tête -->
         <div class="modal-header">
           <div>
@@ -225,7 +225,7 @@ import { PV_STATUT_LABELS, StatutBadge } from '../../shared/circuit';
          navigateur offre déjà impression / enregistrement. -->
     @if (apercu(); as ap) {
       <div class="modal-backdrop" [class.closing]="closingApercu()">
-        <div class="modal modal-lg dpv-viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV" appModale appModaleClicExterieur (appModaleFermer)="fermerApercuAnime()">
+        <div class="modal modal-lg dpv-viewer" role="dialog" aria-modal="true" aria-label="Visionneuse du PV" appModale (appModaleFermer)="fermerApercuAnime()">
           <div class="modal-header">
             <div>
               <div class="dpv-head-top">

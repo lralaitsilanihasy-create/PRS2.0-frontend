@@ -16,7 +16,7 @@ import { ModaleDirective } from '../a11y/modale.directive';
   imports: [ModaleDirective],
   template: `
     <div class="dpm__overlay">
-      <div class="dpm dpm--sm cnm-card" role="alertdialog" aria-modal="true" aria-label="Réimport refusé" appModale appModaleClicExterieur (appModaleFermer)="fermer.emit()">
+      <div class="dpm dpm--sm cnm-card" role="alertdialog" aria-modal="true" aria-label="Réimport refusé" appModale (appModaleFermer)="fermer.emit()">
         <header class="dpm__head">
           <h2 class="dpm__title">🚫 Réimport impossible</h2>
           <button type="button" class="dpm__close" aria-label="Fermer" (click)="fermer.emit()">&times;</button>

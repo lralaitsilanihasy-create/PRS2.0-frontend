@@ -210,7 +210,7 @@ import { ClassementConfig, ColonneCircuit, dossierAttribueAMoi, dossierExcluDuGr
     }
     @if (annulation(); as d) {
       <div class="modal-backdrop" [class.closing]="closingAnnulation()">
-        <div class="modal dcl__confirm" role="alertdialog" aria-modal="true" aria-label="Confirmation d'annulation" appModale appModaleClicExterieur (appModaleFermer)="fermerAnnulation()">
+        <div class="modal dcl__confirm" role="alertdialog" aria-modal="true" aria-label="Confirmation d'annulation" appModale (appModaleFermer)="fermerAnnulation()">
           <div class="modal-body">
             @if (estRendu(d)) {
               <p>Rendre le dossier <strong>{{ d.refeDossier || '#' + d.idDossier }}</strong> ?</p>

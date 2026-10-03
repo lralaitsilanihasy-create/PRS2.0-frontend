@@ -24,7 +24,8 @@ const FOCALISABLES =
  *
  * ⚠️ Demande pilote (2026-09-13) — les modals ne se ferment PLUS au clic sur le voile (clic hors du
  * dialogue) : la fermeture est réservée au bouton « Fermer » / « Annuler » (ou Échap au clavier).
- * Le flag `appModaleClicExterieur` reste accepté par les templates mais n'a plus aucun effet.
+ * Le drapeau `appModaleClicExterieur`, inerte depuis, a été RETIRÉ le 2026-10-03 de ses 34 gabarits et de la
+ * directive : le poser de nouveau ne compile plus.
  *
  * L'entrée `appModale` accepte une valeur : `[appModale]="false"` rend la directive inerte, pour un
  * conteneur rendu tantôt en modale, tantôt intégré à la page. Plus aucun écran n'en a besoin depuis
@@ -48,14 +49,7 @@ export class ModaleDirective implements AfterViewInit, OnDestroy {
   /** `[appModale]="false"` neutralise la directive (conteneur affiché hors modale). */
   readonly appModale = input(true, { transform: booleanAttribute });
 
-  /**
-   * ⚠️ Demande pilote (2026-09-13) — les modals ne se ferment PLUS au clic sur le voile (clic hors du
-   * dialogue) : ce flag est CONSERVÉ pour compat des templates mais N'A PLUS D'EFFET. La fermeture se
-   * fait par le bouton « Fermer » / « Annuler » (ou Échap, équivalent clavier — encore actif).
-   */
-  readonly appModaleClicExterieur = input(false, { transform: booleanAttribute });
-
-  /** Émis sur Échap et, si demandé, au clic sur le voile : l'hôte ferme la modale. */
+  /** Émis sur Échap : l'hôte ferme la modale (jamais au clic sur le voile, depuis le 2026-09-13). */
   readonly appModaleFermer = output<void>();
 
   ngAfterViewInit(): void {
@@ -70,7 +64,7 @@ export class ModaleDirective implements AfterViewInit, OnDestroy {
     }
     (hote.querySelector<HTMLElement>('[autofocus]') ?? hote).focus();
     // ⚠️ 2026-09-13 (demande pilote) — plus de fermeture au clic sur le voile : aucun écouteur posé sur
-    // le parent. Les modals se ferment par leur bouton (ou Échap). Voir `appModaleClicExterieur` (inerte).
+    // le parent. Les modals se ferment par leur bouton (ou Échap).
   }
 
   ngOnDestroy(): void {

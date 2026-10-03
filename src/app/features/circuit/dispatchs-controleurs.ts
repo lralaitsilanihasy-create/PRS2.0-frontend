@@ -146,7 +146,7 @@ interface LigneControleur {
     <!-- Dossiers d'un contrôleur — MODAL (clic sur la ligne). -->
     @if (ligneOuverte(); as l) {
       <div class="modal-backdrop">
-        <div class="modal modal-xl dpc__modal" role="dialog" aria-modal="true" [attr.aria-label]="'Dossiers dispatchés à ' + l.nom" appModale appModaleClicExterieur (appModaleFermer)="fermerDetail()">
+        <div class="modal modal-xl dpc__modal" role="dialog" aria-modal="true" [attr.aria-label]="'Dossiers dispatchés à ' + l.nom" appModale (appModaleFermer)="fermerDetail()">
           <div class="modal-header">
             <h2 class="modal-title">Dossiers dispatchés à {{ l.nom }}</h2>
             <button type="button" class="btn-close-plain" aria-label="Fermer" (click)="fermerDetail()">✕</button>
@@ -205,7 +205,7 @@ interface LigneControleur {
 
     @if (retrait(); as r) {
       <div class="modal-backdrop" [class.closing]="closingRetrait()">
-        <div class="modal dpc__confirm" role="alertdialog" aria-modal="true" aria-label="Retrait du dossier dispatché" appModale appModaleClicExterieur (appModaleFermer)="fermerRetrait()">
+        <div class="modal dpc__confirm" role="alertdialog" aria-modal="true" aria-label="Retrait du dossier dispatché" appModale (appModaleFermer)="fermerRetrait()">
           <div class="modal-body">
             @if (estRendu(r.a)) {
               <p>Rendre le dossier <strong>{{ r.a.dossier.refeDossier || '#' + r.a.dossier.idDossier }}</strong> ?</p>

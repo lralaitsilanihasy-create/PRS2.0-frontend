@@ -27,7 +27,7 @@ export interface CibleSuppression {
   imports: [ModaleDirective],
   template: `
     <div class="dpm__overlay">
-      <div class="dpm dpm--sm cnm-card" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale appModaleClicExterieur (appModaleFermer)="annuler.emit()">
+      <div class="dpm dpm--sm cnm-card" role="dialog" aria-modal="true" aria-label="Confirmation de suppression" appModale (appModaleFermer)="annuler.emit()">
         <header class="dpm__head">
           <h2 class="dpm__title">{{ cible().kind === 'ppm' ? 'Supprimer le PPM' : 'Supprimer le marché' }}</h2>
           <button type="button" class="dpm__close" aria-label="Fermer" (click)="annuler.emit()">&times;</button>

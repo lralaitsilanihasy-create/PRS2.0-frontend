@@ -452,7 +452,7 @@
 @if (apercuOuvert() && diff(); as d) {
   <div class="maj__overlay">
     <div class="maj__modal" role="dialog" aria-modal="true" aria-labelledby="maj-apercu-titre"
-         appModale appModaleClicExterieur (appModaleFermer)="apercuOuvert.set(false)">
+         appModale (appModaleFermer)="apercuOuvert.set(false)">
       <header class="maj__modal-head">
         <h2 id="maj-apercu-titre">Aperçu du diff complet</h2>
         <button type="button" class="maj__fermer" (click)="apercuOuvert.set(false)" aria-label="Fermer">✕</button>

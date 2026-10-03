@@ -23,7 +23,7 @@ export function libelleCapm(capms: readonly Capm[], id: number): string {
   imports: [ModaleDirective],
   template: `
     <div class="dpm__overlay">
-      <div class="dpm dpm--sm cnm-card" role="dialog" aria-modal="true" aria-label="Dates du marché" appModale appModaleClicExterieur (appModaleFermer)="fermer.emit()">
+      <div class="dpm dpm--sm cnm-card" role="dialog" aria-modal="true" aria-label="Dates du marché" appModale (appModaleFermer)="fermer.emit()">
         <header class="dpm__head">
           <h2 class="dpm__title">Dates prévisionnelles — {{ marche().designationMarche || 'Marché #' + marche().idDetail }}</h2>
           <button type="button" class="dpm__close" aria-label="Fermer" (click)="fermer.emit()">&times;</button>

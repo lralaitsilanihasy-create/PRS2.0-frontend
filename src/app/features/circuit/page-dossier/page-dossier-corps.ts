@@ -222,7 +222,7 @@ const HAUT_TOPBAR = 48;
       <div class="modal-backdrop">
         <div class="modal modal-lg pd-sousmodal" role="dialog" aria-modal="true"
           [attr.aria-label]="'Chronométrage et délais — ' + reference()"
-          appModale appModaleClicExterieur (appModaleFermer)="chronoOuvert.set(false)">
+          appModale (appModaleFermer)="chronoOuvert.set(false)">
           <div class="modal-header">
             <h2 class="modal-title"><app-icone nom="clock" [taille]="18" />Chronométrage et délais</h2>
             <button type="button" class="btn-close" aria-label="Fermer" (click)="chronoOuvert.set(false)">✕</button>
@@ -239,7 +239,7 @@ const HAUT_TOPBAR = 48;
       <div class="modal-backdrop">
         <div class="modal modal-lg pd-sousmodal" role="dialog" aria-modal="true"
           [attr.aria-label]="'Journal des actions — ' + reference()"
-          appModale appModaleClicExterieur (appModaleFermer)="journalOuvert.set(false)">
+          appModale (appModaleFermer)="journalOuvert.set(false)">
           <div class="modal-header">
             <h2 class="modal-title"><app-icone nom="history" [taille]="18" />Journal des actions
               <span class="section-count">{{ contenu.journalVisible().length }} action(s)</span></h2>

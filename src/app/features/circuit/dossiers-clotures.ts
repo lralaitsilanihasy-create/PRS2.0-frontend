@@ -130,7 +130,7 @@ import { LienDossier } from './page-dossier/lien-dossier';
         <div class="modal-backdrop">
           <div class="modal modal-lg dcm-modal" role="dialog" aria-modal="true"
             [attr.aria-label]="'Historique des échanges — ' + (d.refeDossier || d.idDossier)"
-            appModale appModaleClicExterieur (appModaleFermer)="histoirePour.set(null)">
+            appModale (appModaleFermer)="histoirePour.set(null)">
             <div class="modal-header">
               <div class="dcm-modal__titre">
                 <h2 class="modal-title">{{ d.refeDossier || ('Dossier #' + d.idDossier) }}</h2>
@@ -176,7 +176,7 @@ import { LienDossier } from './page-dossier/lien-dossier';
         <div class="modal-backdrop">
           <div class="modal dcm-modal dcm-modal--maj" role="dialog" aria-modal="true"
             [attr.aria-label]="'Mise à jour du PPM — ' + (d.refeDossier || d.idDossier)"
-            appModale appModaleClicExterieur (appModaleFermer)="annulerMiseAJour()">
+            appModale (appModaleFermer)="annulerMiseAJour()">
             <div class="modal-header">
               <h2 class="modal-title">✎ Mettre à jour le PPM — {{ d.refeDossier || ('Dossier #' + d.idDossier) }}</h2>
               <button type="button" class="btn-close" aria-label="Fermer" (click)="annulerMiseAJour()">✕</button>
