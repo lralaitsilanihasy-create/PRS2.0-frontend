@@ -23,7 +23,8 @@ export function sectionDonneesParticulieres(doc, longueur = 700) {
 // Devant le nombre entre parenthèses, seulement des MOTS DE NOMBRE (« CENT VINGT (120) », « Six (06) ») : sinon la valeur
 // emportait « le délai de Six (06) mois ».
 const MOTS_NOMBRE = '(?:(?:un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|vingt|trente|quarante|cinquante|soixante|cent|cents|mille|et)[\\s-]+)*';
-const DUREE = new RegExp(`\\b${MOTS_NOMBRE}(?:\\(\\s*\\d+\\s*\\)|\\d+)\\s*(?:jours?|mois)\\b`, 'i');
+// Second temps (03/10) : « soixante-quinze (75j)jours » (2463) — l'abréviation « j » dans la parenthèse est admise.
+const DUREE = new RegExp(`\\b${MOTS_NOMBRE}(?:\\(\\s*\\d+\\s*j?\\s*\\)|\\d+)\\s*(?:jours?|mois)\\b`, 'i');
 const MONTANT = /\d{1,3}(?:[\s.]\d{3})+(?:,\d+)?|\d{6,}/;
 const POURCENT = /\d+(?:[.,]\d+)?\s*%/;
 
@@ -33,8 +34,10 @@ const POURCENT = /\d+(?:[.,]\d+)?\s*%/;
  * la mesure tient (note de décision, §4).
  */
 export const CATALOGUE = [
-  { info: 'validite', codes: { TRAVAUX: 'B04-VO-01', FOURNITURES_SERVICES: 'B04-VO-01' }, ancre: /validit[ée] des offres/i, forme: DUREE },
-  { info: 'garantie', codes: { TRAVAUX: 'B05-GQ-03', FOURNITURES_SERVICES: 'B05-GS-03' }, ancre: /garantie de soumission/i, forme: MONTANT, n: 2 },
+  // Second temps : « délai de validité DE L'OFFRE » (2463) ; la garantie du MEN a ses montants 4 paragraphes après
+  // l'ancre (les formes admises s'intercalent), d'où une fenêtre de 4.
+  { info: 'validite', codes: { TRAVAUX: 'B04-VO-01', FOURNITURES_SERVICES: 'B04-VO-01' }, ancre: /validit[ée] (?:des offres|de l['’]offre)/i, forme: DUREE },
+  { info: 'garantie', codes: { TRAVAUX: 'B05-GQ-03', FOURNITURES_SERVICES: 'B05-GS-03' }, ancre: /garantie de soumission/i, forme: MONTANT, n: 4 },
   { info: 'delai', codes: { TRAVAUX: 'B09-DL-01' }, ancre: /d[ée]lai d['’]ex[ée]cution/i, forme: DUREE },
   { info: 'liquidite', codes: { TRAVAUX: 'B03-QT-14' }, codesPourcent: { TRAVAUX: 'B03-QT-15' }, ancre: /liquidit[ée]|ligne de cr[ée]dit/i, forme: new RegExp(`${POURCENT.source}|${MONTANT.source}`), n: 2 },
   { info: 'lieu', codes: { TRAVAUX: 'B04-OV-01', FOURNITURES_SERVICES: 'B04-OP-01' }, ancre: /ouverture des plis/i, forme: /(?:Lieu|Bureau)\s*:\s*([^.;]{6,80})/i, groupe: 1 },
@@ -43,7 +46,9 @@ export const CATALOGUE = [
 /** Les passages de listes à proposer dans « Coller une liste » (travaux : clauses 6.2 et 6.3 du DPAO). */
 export const PASSAGES = [
   { liste: 'MATERIEL', categories: ['TRAVAUX'], ancre: /(?:gros )?mat[ée]riels?[^:]{0,80}:/i, fin: /^\(?[d-f]\)|personnel|directeur de travaux/i },
-  { liste: 'PERSONNEL', categories: ['TRAVAUX'], ancre: /personnel (?:cl[ée]|par lot|minimum|suivant)[^:]{0,60}:/i, fin: /^\(?[e-g]\)|liquidit|r[ée]f[ée]rence/i },
+  // Second temps : « listes des personnels répondant aux critères suivants : » (MEN), « le personnel ci-après (CV…) : »
+  // (MTP) ; la note « NB : » qui suit le MTP ferme le passage.
+  { liste: 'PERSONNEL', categories: ['TRAVAUX'], ancre: /personnels? (?:cl[ée]|par lot|minimum|suivant|ci-apr[èe]s|r[ée]pondant aux crit[èe]res)[^:]{0,120}:/i, fin: /^\(?[d-g]\)|liquidit|r[ée]f[ée]rence|^NB\b/i },
   { liste: 'PIECES', categories: ['TRAVAUX', 'FOURNITURES_SERVICES'], ancre: /documents ou pi[èe]ces [àa] remettre en sus[^:]*:/i, fin: /^6\.3|capacit[ée]s|^4\s*°|^\d+\.\d+\.?\s/i },
 ];
 

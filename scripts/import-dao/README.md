@@ -180,3 +180,5 @@ source **`clause`**, les informations d'un **catalogue court** que le modèle n'
 - **Mesures** : MTP 1 → 4 valeurs, MEN 9 → 12, 2463 9 → 14 ; tous les ajouts sont justes. Le banc est identique (le
   modèle y trouve tout) et passe désormais par `lire()`, le point d'entrée de l'import réel.
 - **Listes** : la passe ne découpe rien (essai : 1 liste juste sur 6) ; elle repère le passage.
+- **Second temps (03/10)** : validité « de l'offre » et « (75j) » (2463, MTP : 75), fenêtre de 4 pour la garantie (MEN :
+  9 900 000 / 7 200 000), passages du personnel (MEN, MTP). Banc identique.

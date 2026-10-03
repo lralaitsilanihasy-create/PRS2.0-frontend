@@ -124,3 +124,26 @@ passages s'ajoutent, plus les trois DAO réels ci-dessus avec les mêmes ajouts.
 >   il donnera des entrées à reprendre à la main.
 >
 > **Premier temps clos.**
+
+## B4 — Second temps (2026-10-03, pilote : « oui »)
+
+Quatre réglages de `clauses.mjs`, et un de `completerParClause` :
+
+| réglage | pourquoi (DAO réel) |
+|---|---|
+| ancre de la validité : `validit[ée] (?:des offres\|de l['’]offre)` | 2463 : « Le délai de validité **de l'offre** sera de… » |
+| `DUREE` admet `(75j)` : `\(\s*\d+\s*j?\s*\)` | 2463 : « soixante-quinze (75j)jours » |
+| `completerParClause` : `(\d+ j)` devient `(\d+)` avant `valeurSaisie`, pour un `NOMBRE` | même cas : sinon la conversion échoue |
+| fenêtre de la garantie : **4** paragraphes, au lieu de 2 | MEN : les montants sont à 4 paragraphes de l'ancre, après les formes admises |
+| ancre du passage `PERSONNEL` : `personnels? (?:clé\|par lot\|minimum\|suivant\|ci-après\|répondant aux critères)[^:]{0,120}:`, fin : `^\(?[d-g]\)\|liquidit\|référence\|^NB\b` | MEN : « listes des personnels répondant aux critères suivants : » ; MTP : « le personnel ci-après (CV et copie certifiée… à l'appui) : », puis « NB : » |
+
+**Mesures** (prototype, `lire()` avec le référentiel) :
+- **2463** : `B04-VO-01` = **75** (nouveau) ;
+- **MEN** : `B05-GQ-03#1` = **9 900 000**, `#2` = **7 200 000** (nouveaux), et le passage **du personnel** ;
+- **MTP** : `B04-VO-01` = **75** (nouveau, « soixante-quinze (75) jours », grâce à l'ancre élargie), et le passage **du
+  personnel** ;
+- tous les ajouts sont justes ; **banc identique** (propre, 12 graines, `--defauts --quantite-fixe`), Q10 tenu sur 14
+  passes.
+
+Ce qui reste hors du second temps : le **tableau du matériel du MTP**, qui arrive cellule par cellule. **Demandé** : porter
+B4, avec la parité habituelle.

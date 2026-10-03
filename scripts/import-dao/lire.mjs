@@ -279,7 +279,8 @@ function completerParClause(res, doc, sigle, champs) {
     const type = champs[code]?.type;
     if (!type) continue;   // un champ que le référentiel ne sert pas pour ce marché ne se propose pas
     // Une durée lue pour un NOMBRE (« CENT VINGT (120) jours ») : l'unité n'est pas la valeur.
-    const brut = ['NOMBRE', 'MONTANT', 'POURCENTAGE'].includes(type) ? p.brut.replace(/\s*(?:jours?|mois)\b.*$/i, '') : p.brut;
+    // Et « (75j) » vaut « (75) » (second temps, 2463).
+    const brut = ['NOMBRE', 'MONTANT', 'POURCENTAGE'].includes(type) ? p.brut.replace(/\s*(?:jours?|mois)\b.*$/i, '').replace(/\(\s*(\d+)\s*j\s*\)/i, '($1)') : p.brut;
     const valeur = valeurSaisie(brut, type);
     if (valeur == null) continue;
     ajouts.push({ code: p.code, valeur, brut: p.brut, confiance: 'moyenne', source: 'clause', paragraphe: p.paragraphe });
