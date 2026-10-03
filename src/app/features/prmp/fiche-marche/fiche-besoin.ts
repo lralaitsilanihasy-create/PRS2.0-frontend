@@ -6,6 +6,7 @@ import { ArticleFiche, CategorieDao, TypeMarche } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
 import { ModaleDirective } from '../../../shared/a11y/modale.directive';
 import { grouperParSerie, libelleBordereauPropose, lireCollage, numerosEnDouble } from './dqe';
+import { empreinte, ListeASauver } from './liste-a-sauver';
 
 /** Une ligne de la grille — l'article et ses exigences, tels que l'écran les manipule avant d'enregistrer. */
 interface LigneBesoin extends ArticleFiche {
@@ -40,7 +41,7 @@ interface LigneBesoin extends ArticleFiche {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ModaleDirective],
 })
-export class FicheBesoin {
+export class FicheBesoin implements ListeASauver {
   private readonly fiches = inject(FicheMarcheService);
   private readonly toast = inject(ToastService);
 
@@ -103,6 +104,19 @@ export class FicheBesoin {
   readonly collage = computed(() => lireCollage(this.collageTexte()));
 
   /** Les lots déjà garnis, hors lot courant : les seuls dont la copie ait un sens. */
+  /**
+   * ⚠️ 03/10 — l'empreinte de chaque lot tel que servi ou enregistré la dernière fois : un lot dont la charge diffère a
+   * des saisies non enregistrées. La page le demande avant de quitter le bloc (`ListeASauver`).
+   */
+  private readonly references = signal<Map<number | null, string>>(new Map());
+  /** Les lots (ou `null` sur une ligne non allotie) dont la grille diffère de la dernière version enregistrée. */
+  readonly lotsModifies = computed(() => {
+    const lots: (number | null)[] = this.lots().length ? this.lots() : [null];
+    const refs = this.references();
+    return lots.filter((lot) => empreinte(this.chargeDu(lot)) !== (refs.get(lot) ?? '[]'));
+  });
+  readonly modifie = computed(() => this.lotsModifies().length > 0);
+
   readonly lotsCopiables = computed(() => this.lots().filter((n) => n !== this.lotAffiche() && (this.comptes().get(n) ?? 0) > 0));
 
   constructor() {
@@ -112,10 +126,12 @@ export class FicheBesoin {
       this.fiches.articles(id).subscribe({
         next: (a) => {
           this.lignes.set(a.map((x) => this.enLigne(x)));
+          this.figerReferences();
           this.chargement.set(false);
         },
         error: () => {
           this.lignes.set([]);
+          this.figerReferences();
           this.chargement.set(false);
         },
       });
@@ -283,48 +299,82 @@ export class FicheBesoin {
 
   // ── Enregistrement ──────────────────────────────────────────────────────────────────────────
 
+  /** Ce que le `PUT` d'un lot envoie : les lignes du lot, dans l'ordre affiché. */
+  private chargeDu(lot: number | null): ArticleFiche[] {
+    return this.lignes()
+      .filter((l) => (lot == null ? true : l.lot === lot))
+      .map((l) => ({
+        lot: l.lot ?? null,
+        designation: l.designation,
+        unite: l.unite,
+        quantiteMin: this.aCommande() ? l.quantiteMin : null,
+        quantiteMax: this.aCommande() ? l.quantiteMax : null,
+        quantite: this.aCommande() ? null : l.quantite,
+        caracteristiques: l.caracteristiques.map((c) => ({ libelle: c.libelle, exigence: c.exigence })),
+        ...(this.travaux()
+          ? {
+              numeroPrix: l.numeroPrix?.trim() || null,
+              serie: l.serie?.trim() || null,
+              serieLibelle: l.serieLibelle?.trim() || null,
+              libelleBordereau: l.libelleBordereau?.trim() || null,
+              sousDetail: !!l.sousDetail,
+              plafond: l.plafond ?? null,
+            }
+          : {}),
+      }));
+  }
+
+  /** Fige l'empreinte de chaque lot, telle que la grille la tient maintenant (après un chargement). */
+  private figerReferences(): void {
+    const lots: (number | null)[] = this.lots().length ? this.lots() : [null];
+    this.references.set(new Map(lots.map((lot) => [lot, empreinte(this.chargeDu(lot))])));
+  }
+
   enregistrer(): void {
     if (this.saving() || this.lecture()) return;
-    const lot = this.lotAffiche();
-    const charge = this.duLot().map((l) => ({
-      lot: l.lot ?? null,
-      designation: l.designation,
-      unite: l.unite,
-      quantiteMin: this.aCommande() ? l.quantiteMin : null,
-      quantiteMax: this.aCommande() ? l.quantiteMax : null,
-      quantite: this.aCommande() ? null : l.quantite,
-      caracteristiques: l.caracteristiques,
-      ...(this.travaux()
-        ? {
-            numeroPrix: l.numeroPrix?.trim() || null,
-            serie: l.serie?.trim() || null,
-            serieLibelle: l.serieLibelle?.trim() || null,
-            libelleBordereau: l.libelleBordereau?.trim() || null,
-            sousDetail: !!l.sousDetail,
-            plafond: l.plafond ?? null,
-          }
-        : {}),
-    }));
+    void this.enregistrerLot(this.lotAffiche(), true);
+  }
+
+  /** ⚠️ 03/10 — tout enregistrer avant de quitter le bloc : chaque lot modifié, l'un après l'autre (`ListeASauver`). */
+  async sauver(): Promise<boolean> {
+    if (this.lecture()) return true;
+    for (const lot of this.lotsModifies()) if (!(await this.enregistrerLot(lot, false))) return false;
+    return true;
+  }
+
+  /**
+   * Le `PUT` d'un lot. Un refus montre le lot fautif, ses erreurs sous les champs (`articles[i]`). `annoncer` : le
+   * toast de réussite, que la page n'a pas à répéter quand elle enregistre en partant.
+   */
+  private enregistrerLot(lot: number | null, annoncer: boolean): Promise<boolean> {
+    const charge = this.chargeDu(lot);
     this.saving.set(true);
     this.erreurs.set(new Map());
-    this.fiches.enregistrerBesoin(this.idDmc(), lot, charge).subscribe({
-      next: (a) => {
-        const autres = this.lignes().filter((l) => (lot == null ? false : l.lot !== lot));
-        const relus = a.filter((x) => (lot == null ? true : x.lot === lot)).map((x) => this.enLigne(x));
-        this.lignes.set([...autres, ...relus]);
-        this.saving.set(false);
-        this.toast.success(lot == null ? 'Besoin enregistré.' : `Besoin du lot ${lot} enregistré.`);
-        this.enregistre.emit();
-      },
-      error: (e: ApiError) => {
-        this.saving.set(false);
-        // ⚠️ Les 400 nominatifs se lisent par le socle : lui seul connaît les deux formes du corps
-        // (liste nue, ou `{ erreurs: [...] }`) autant que la forme normalisée par l'intercepteur.
-        const m = erreursParChamp(e);
-        this.erreurs.set(m);
-        if (!m.size) this.toast.error(e?.message ?? "Le besoin n'a pas pu être enregistré.");
-      },
-    });
+    // L'abonnement met l'écran à jour à la réponse même (les tests le lisent aussitôt) ; la promesse dit l'issue.
+    return new Promise((resoudre) =>
+      this.fiches.enregistrerBesoin(this.idDmc(), lot, charge).subscribe({
+        next: (a) => {
+          const autres = this.lignes().filter((l) => (lot == null ? false : l.lot !== lot));
+          const relus = a.filter((x) => (lot == null ? true : x.lot === lot)).map((x) => this.enLigne(x));
+          this.lignes.set([...autres, ...relus]);
+          this.references.update((m) => new Map(m).set(lot, empreinte(this.chargeDu(lot))));
+          this.saving.set(false);
+          if (annoncer) this.toast.success(lot == null ? 'Besoin enregistré.' : `Besoin du lot ${lot} enregistré.`);
+          this.enregistre.emit();
+          resoudre(true);
+        },
+        error: (e: ApiError) => {
+          this.saving.set(false);
+          if (lot != null) this.lotCourant.set(lot);
+          // ⚠️ Les 400 nominatifs se lisent par le socle : lui seul connaît les deux formes du corps
+          // (liste nue, ou `{ erreurs: [...] }`) autant que la forme normalisée par l'intercepteur.
+          const m = erreursParChamp(e);
+          this.erreurs.set(m);
+          if (!m.size) this.toast.error(e?.message ?? "Le besoin n'a pas pu être enregistré.");
+          resoudre(false);
+        },
+      }),
+    );
   }
 
   /** L'erreur servie pour un champ d'un article, par sa position dans l'envoi. */

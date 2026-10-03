@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
@@ -18,6 +18,7 @@ import { EtatErreur } from '../../../shared/ui/etat-erreur';
 import { FicheBesoin } from './fiche-besoin';
 import { FicheMoyens } from './fiche-moyens';
 import { FichePieces } from './fiche-pieces';
+import { ListeASauver } from './liste-a-sauver';
 import { ImportDao } from './import-dao';
 import { AvisSpecifique } from '../../../shared/prmp/avis-specifique';
 import { LettresInvitation } from '../../../shared/prmp/lettres-invitation';
@@ -323,6 +324,17 @@ export class FicheMarcheEcran {
     const codes = new Set(this.referentiel().champs.filter((c) => c.bloc === bloc.code && c.source === 'SAISIE').map((c) => c.code));
     return valeursModifiees(codes, this.valeurs(), f.valeurs ?? {});
   });
+  /**
+   * ⚠️ 03/10 — la liste du bloc courant (besoin, moyens ou pièces) : ses saisies s'enregistrent par leur propre bouton.
+   * Avant de quitter le bloc, la page lui demande si elle est modifiée, et propose de l'enregistrer.
+   */
+  private readonly besoinCmp = viewChild(FicheBesoin);
+  private readonly moyensCmp = viewChild(FicheMoyens);
+  private readonly piecesCmp = viewChild(FichePieces);
+  private readonly listeCourante = computed<ListeASauver | null>(() => this.besoinCmp() ?? this.moyensCmp() ?? this.piecesCmp() ?? null);
+  /** Un départ suspendu : la liste du bloc a des saisies non enregistrées, la PRMP choisit (dialogue). */
+  readonly departSuspendu = signal<(() => void) | null>(null);
+  readonly sauvegardeListe = signal(false);
   /** Le texte des pièces administratives (`B03-CQ-01`), passé à la liste des pièces pour prévenir un double emploi. */
   readonly texteCq01 = computed(() => {
     const v = this.valeurs()['B03-CQ-01'];
@@ -818,10 +830,51 @@ export class FicheMarcheEcran {
 
   allerAuBloc(code: string): void {
     const i = this.blocs().findIndex((b) => b.code === code);
-    if (i >= 0) {
+    if (i < 0) return;
+    this.quitterLeBloc(() => {
       this.blocIdx.set(i);
       this.etape.set(2);
-    }
+    });
+  }
+
+  /**
+   * ⚠️ 03/10 — la garde des listes : quitter un bloc dont la liste (DQE, matériel, personnel, pièces) a des saisies non
+   * enregistrées suspend le départ et ouvre un dialogue — enregistrer, abandonner ou rester. Partout ailleurs, on part.
+   */
+  private quitterLeBloc(suite: () => void): void {
+    const liste = this.listeCourante();
+    const ecrit = !(this.enLecture() || this.figee() || this.ecritureBloquee());
+    if (this.etape() === 2 && ecrit && liste?.modifie()) this.departSuspendu.set(suite);
+    else suite();
+  }
+
+  /** « Enregistrer et continuer » du dialogue : la liste s'enregistre ; un refus garde la PRMP sur le bloc, ses erreurs affichées. */
+  async enregistrerListePuisPartir(): Promise<void> {
+    const suite = this.departSuspendu();
+    const liste = this.listeCourante();
+    if (!suite || !liste || this.sauvegardeListe()) return;
+    this.sauvegardeListe.set(true);
+    const ok = await liste.sauver();
+    this.sauvegardeListe.set(false);
+    this.departSuspendu.set(null);
+    if (ok) suite();
+  }
+
+  /** « Abandonner les modifications » : on part ; la liste sera relue du serveur au retour. */
+  abandonnerListePuisPartir(): void {
+    const suite = this.departSuspendu();
+    this.departSuspendu.set(null);
+    suite?.();
+  }
+
+  resterSurLeBloc(): void {
+    this.departSuspendu.set(null);
+  }
+
+  /** Fermer l'onglet ou recharger la page avec une liste modifiée : le navigateur demande confirmation. */
+  @HostListener('window:beforeunload', ['$event'])
+  prevenirDepartNavigateur(ev: BeforeUnloadEvent): void {
+    if (this.etape() === 2 && this.listeCourante()?.modifie() && !(this.enLecture() || this.figee())) ev.preventDefault();
   }
 
   /** Enregistre le bloc courant (`PUT …/blocs/{bloc}`) puis passe au suivant, ou aux reprises après le dernier. */
@@ -829,6 +882,17 @@ export class FicheMarcheEcran {
     const id = this.idDmc();
     const bloc = this.blocCourant();
     if (id == null || !bloc || this.saving()) return;
+    // ⚠️ 03/10 — un bloc à liste n'a pas de champs : « Enregistrer et continuer » enregistre SA LISTE, puis avance.
+    const liste = bloc.rendu ? this.listeCourante() : null;
+    if (liste) {
+      void liste.sauver().then((ok) => {
+        if (!ok) return;
+        if (vers != null) this.blocIdx.set(vers);
+        else if (this.blocIdx() < this.blocs().length - 1) this.blocIdx.update((i) => i + 1);
+        else this.etape.set(3);
+      });
+      return;
+    }
     const champs = new Map(this.referentiel().champs.filter((c) => c.bloc === bloc.code && c.source === 'SAISIE').map((c) => [c.code, c]));
     const valeurs: Record<string, Valeur> = {};
     // ⚠️ V43 — une clé peut porter le rang du lot (`B05-TP-02#2`) : c'est le code NU qui dit à quel bloc elle appartient.
@@ -871,21 +935,26 @@ export class FicheMarcheEcran {
     if (i === this.blocIdx() || i < 0 || i >= this.blocs().length || this.saving()) return;
     const ecrit = !(this.enLecture() || this.figee() || this.ecritureBloquee());
     if (ecrit && this.blocModifie()) this.enregistrerBloc(i);
-    else {
-      this.erreursChamp.set(new Map());
-      this.blocIdx.set(i);
-    }
+    else
+      this.quitterLeBloc(() => {
+        this.erreursChamp.set(new Map());
+        this.blocIdx.set(i);
+      });
   }
 
   blocPrecedent(): void {
-    if (this.blocIdx() > 0) this.blocIdx.update((i) => i - 1);
-    else this.etape.set(1);
+    this.quitterLeBloc(() => {
+      if (this.blocIdx() > 0) this.blocIdx.update((i) => i - 1);
+      else this.etape.set(1);
+    });
   }
 
   /** Avancer sans rien écrire : le geste de qui vient LIRE la fiche (Commission). */
   blocSuivant(): void {
-    if (this.blocIdx() < this.blocs().length - 1) this.blocIdx.update((i) => i + 1);
-    else this.etape.set(3);
+    this.quitterLeBloc(() => {
+      if (this.blocIdx() < this.blocs().length - 1) this.blocIdx.update((i) => i + 1);
+      else this.etape.set(3);
+    });
   }
 
   // ── Étapes 5 et 6 : contrôles, validation ─────────────────────────────────────────────────────
@@ -1134,7 +1203,8 @@ export class FicheMarcheEcran {
     }
     if (!this.fiche() && i > 1) return;
     if (i >= 2 && !this.cadrageOk()) return;
-    this.etape.set(i);
+    if (i === this.etape()) return;
+    this.quitterLeBloc(() => this.etape.set(i));
   }
 
   etatEtape(i: number): 'faite' | 'courante' | 'a-venir' {

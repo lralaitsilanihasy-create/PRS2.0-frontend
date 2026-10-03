@@ -823,6 +823,32 @@
   }
 </section>
 
+<!-- ⚠️ 03/10 — la liste du bloc (DQE, matériel, personnel, pièces) a des saisies non enregistrées : la PRMP choisit
+     avant de partir. Fermeture par « Rester » ou Échap seulement (règle du 13/09). -->
+@if (departSuspendu()) {
+  <div class="modal-backdrop">
+    <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-label="Modifications non enregistrées" appModale (appModaleFermer)="resterSurLeBloc()">
+      <div class="modal-header-plain">
+        <span class="modal-title">Modifications non enregistrées</span>
+        <button type="button" class="btn-close-plain" aria-label="Fermer" [disabled]="sauvegardeListe()" (click)="resterSurLeBloc()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>
+          La liste du bloc <b>{{ blocCourant()?.code }} — {{ blocCourant()?.libelle }}</b> a des saisies qui ne sont pas
+          enregistrées. Elles seront perdues si vous partez sans les enregistrer.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" [disabled]="sauvegardeListe()" (click)="resterSurLeBloc()">Rester sur le bloc</button>
+        <button type="button" class="btn btn-outline" [disabled]="sauvegardeListe()" (click)="abandonnerListePuisPartir()">Abandonner les modifications</button>
+        <button type="button" class="btn btn-primary" [disabled]="sauvegardeListe()" (click)="enregistrerListePuisPartir()">
+          {{ sauvegardeListe() ? 'Enregistrement…' : 'Enregistrer et continuer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
 <!-- ⚠️ Suppression d'une fiche sans histoire : la confirmation NOMME ce qu'on s'apprête à perdre — un
      « êtes-vous sûr ? » ne le dit pas. Fermeture par le bouton ou Échap seulement (règle du 13/09). -->
 @if (confirmSuppression()) {

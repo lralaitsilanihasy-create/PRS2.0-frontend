@@ -612,6 +612,62 @@ describe('Fiche DAO d’un appel d’offres (proposition DMC du 22/09, lot 1)', 
     expect(racine().querySelector('.fm__bloc-modif')).toBeNull();
   });
 
+  it('garde des listes (03/10) : une liste modifiée suspend le départ ; « Abandonner » part, « Enregistrer et continuer » enregistre puis part', async () => {
+    monter('PRMP', 42);
+    ouvrir(REF_BESOIN, fiche({ nbLots: 1, saisieParLot: false, valeurs: {} }));
+    fixture.componentInstance.allerAuBloc('B12');
+    rendre();
+    http.expectOne('/api/fiches-marche/42/articles').flush([]);
+    rendre();
+    const dialogue = (): Element | null => racine().querySelector('[aria-label="Modifications non enregistrées"]');
+    const lien = (code: string): HTMLButtonElement =>
+      Array.from(racine().querySelectorAll<HTMLButtonElement>('.fm__bloc-lien')).find((b) => texte(b).startsWith(code))!;
+
+    // Sans modification : on part sans dialogue.
+    lien('B02').click();
+    rendre();
+    expect(fixture.componentInstance.blocCourant()?.code).toBe('B02');
+    expect(dialogue()).toBeNull();
+
+    // Une ligne ajoutée à la grille, puis un départ : le dialogue s'ouvre, on reste sur B12.
+    lien('B12').click();
+    rendre();
+    http.expectOne('/api/fiches-marche/42/articles').flush([]);
+    rendre();
+    bouton('+ Article').click();
+    rendre();
+    lien('B02').click();
+    rendre();
+    expect(dialogue()).toBeTruthy();
+    expect(fixture.componentInstance.blocCourant()?.code).toBe('B12');
+
+    // « Abandonner les modifications » : on part, rien n'est écrit.
+    bouton('Abandonner les modifications').click();
+    rendre();
+    expect(dialogue()).toBeNull();
+    expect(fixture.componentInstance.blocCourant()?.code).toBe('B02');
+    http.expectNone((r) => r.method === 'PUT');
+
+    // De retour, une ligne saisie, puis « Enregistrer et continuer » : la liste part, puis on part.
+    lien('B12').click();
+    rendre();
+    http.expectOne('/api/fiches-marche/42/articles').flush([]);
+    rendre();
+    bouton('+ Article').click();
+    rendre();
+    lien('B02').click();
+    rendre();
+    bouton('Enregistrer et continuer').click();
+    const put = http.expectOne((r) => r.method === 'PUT' && r.url === '/api/fiches-marche/42/articles');
+    put.flush([{ idArticle: 9, lot: null, ordre: 1, designation: '', unite: 'U', quantite: null, caracteristiques: [] }]);
+    // La liste enregistrée, la page relit son bilan (comme après tout enregistrement du besoin).
+    http.expectOne('/api/fiches-marche/42/controler').flush({ bloquants: [], avertissements: [], ok: [], nbSaisis: 0, nbAttendus: 0 });
+    await fixture.whenStable();
+    rendre();
+    expect(dialogue()).toBeNull();
+    expect(fixture.componentInstance.blocCourant()?.code).toBe('B02');
+  });
+
   it('allotissement : un lot au plan ⇒ « Non » imposé et verrouillé, la réponse part avec le cadrage', () => {
     monter('PRMP', 42);
     ouvrir(REF_AVEC_LOTS, fiche({ cadrage: {}, valeurs: {}, valeursPpm: { 'B02-LV-01': '1' } }));

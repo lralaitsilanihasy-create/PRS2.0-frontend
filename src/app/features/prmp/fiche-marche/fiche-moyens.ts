@@ -4,6 +4,7 @@ import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { MaterielExige, PersonnelExige } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
+import { empreinte, ListeASauver } from './liste-a-sauver';
 import { ligneMateriel, lignePersonnel, minimumIncoherent } from './moyens';
 
 /** Une ligne d'écran : l'entrée et sa clé locale, qui survit au remplacement de l'objet à chaque frappe. */
@@ -24,7 +25,7 @@ type Ligne<T> = T & { cle: number };
   styleUrl: './fiche-moyens.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FicheMoyens {
+export class FicheMoyens implements ListeASauver {
   private readonly fiches = inject(FicheMarcheService);
   private readonly toast = inject(ToastService);
 
@@ -43,6 +44,13 @@ export class FicheMoyens {
   readonly erreurs = signal<Map<string, string>>(new Map());
   private cles = 0;
 
+  /** ⚠️ 03/10 — l'empreinte de chaque liste telle que servie ou enregistrée : la page la compare avant de quitter le bloc. */
+  private readonly refMateriel = signal('[]');
+  private readonly refPersonnel = signal('[]');
+  readonly materielModifie = computed(() => empreinte(this.chargeMateriel()) !== this.refMateriel());
+  readonly personnelModifie = computed(() => empreinte(this.chargePersonnel()) !== this.refPersonnel());
+  readonly modifie = computed(() => this.materielModifie() || this.personnelModifie());
+
   readonly apercuMateriel = computed(() => this.materiel().map((m) => ligneMateriel(m)));
   readonly apercuPersonnel = computed(() => this.personnel().map((p) => lignePersonnel(p)));
 
@@ -56,12 +64,12 @@ export class FicheMoyens {
       };
       // Une route pas encore servie (contrat demandé) laisse une liste vide, pas un écran en erreur.
       this.fiches.materiel(id).subscribe({
-        next: (l) => (this.materiel.set(l.map((m) => this.cle(m))), fini()),
-        error: () => (this.materiel.set([]), fini()),
+        next: (l) => (this.materiel.set(l.map((m) => this.cle(m))), this.refMateriel.set(empreinte(this.chargeMateriel())), fini()),
+        error: () => (this.materiel.set([]), this.refMateriel.set('[]'), fini()),
       });
       this.fiches.personnel(id).subscribe({
-        next: (l) => (this.personnel.set(l.map((p) => this.cle(p))), fini()),
-        error: () => (this.personnel.set([]), fini()),
+        next: (l) => (this.personnel.set(l.map((p) => this.cle(p))), this.refPersonnel.set(empreinte(this.chargePersonnel())), fini()),
+        error: () => (this.personnel.set([]), this.refPersonnel.set('[]'), fini()),
       });
     });
   }
@@ -127,31 +135,19 @@ export class FicheMoyens {
 
   // ── Enregistrement : chaque liste seule ─────────────────────────────────────────────────────
 
-  enregistrerMateriel(): void {
-    if (this.savingMateriel() || this.lecture()) return;
-    const charge: MaterielExige[] = this.materiel().map((m) => ({
+  /** Ce que le `PUT` du matériel envoie, dans l'ordre affiché, sans les clés d'écran. */
+  private chargeMateriel(): MaterielExige[] {
+    return this.materiel().map((m) => ({
       designation: m.designation.trim(),
       caracteristique: m.caracteristique?.trim() || null,
       nombre: m.nombre,
       minimumEnPropre: m.minimumEnPropre ?? null,
       parLot: !!m.parLot,
     }));
-    this.savingMateriel.set(true);
-    this.fiches.enregistrerMateriel(this.idDmc(), charge).subscribe({
-      next: (l) => {
-        this.materiel.set(l.map((m) => this.cle(m)));
-        this.savingMateriel.set(false);
-        this.effacerErreurs('materiel');
-        this.toast.success('Matériel exigé enregistré.');
-        this.enregistre.emit();
-      },
-      error: (e: ApiError) => this.echec('materiel', e, this.savingMateriel),
-    });
   }
 
-  enregistrerPersonnel(): void {
-    if (this.savingPersonnel() || this.lecture()) return;
-    const charge: PersonnelExige[] = this.personnel().map((p) => ({
+  private chargePersonnel(): PersonnelExige[] {
+    return this.personnel().map((p) => ({
       poste: p.poste.trim(),
       nombre: p.nombre,
       diplome: p.diplome?.trim() || null,
@@ -160,17 +156,61 @@ export class FicheMoyens {
       justificatifs: p.justificatifs?.trim() || null,
       parLot: !!p.parLot,
     }));
+  }
+
+  enregistrerMateriel(): void {
+    if (this.savingMateriel() || this.lecture()) return;
+    void this.envoyerMateriel(true);
+  }
+
+  enregistrerPersonnel(): void {
+    if (this.savingPersonnel() || this.lecture()) return;
+    void this.envoyerPersonnel(true);
+  }
+
+  /** ⚠️ 03/10 — tout enregistrer avant de quitter le bloc : chaque liste modifiée (`ListeASauver`). */
+  async sauver(): Promise<boolean> {
+    if (this.lecture()) return true;
+    if (this.materielModifie() && !(await this.envoyerMateriel(false))) return false;
+    if (this.personnelModifie() && !(await this.envoyerPersonnel(false))) return false;
+    return true;
+  }
+
+  /** Le `PUT` du matériel ; l'abonnement met l'écran à jour à la réponse même, la promesse dit l'issue. */
+  private envoyerMateriel(annoncer: boolean): Promise<boolean> {
+    this.savingMateriel.set(true);
+    return new Promise((resoudre) =>
+      this.fiches.enregistrerMateriel(this.idDmc(), this.chargeMateriel()).subscribe({
+        next: (l) => {
+          this.materiel.set(l.map((m) => this.cle(m)));
+          this.refMateriel.set(empreinte(this.chargeMateriel()));
+          this.savingMateriel.set(false);
+          this.effacerErreurs('materiel');
+          if (annoncer) this.toast.success('Matériel exigé enregistré.');
+          this.enregistre.emit();
+          resoudre(true);
+        },
+        error: (e: ApiError) => (this.echec('materiel', e, this.savingMateriel), resoudre(false)),
+      }),
+    );
+  }
+
+  private envoyerPersonnel(annoncer: boolean): Promise<boolean> {
     this.savingPersonnel.set(true);
-    this.fiches.enregistrerPersonnel(this.idDmc(), charge).subscribe({
-      next: (l) => {
-        this.personnel.set(l.map((p) => this.cle(p)));
-        this.savingPersonnel.set(false);
-        this.effacerErreurs('personnel');
-        this.toast.success('Personnel exigé enregistré.');
-        this.enregistre.emit();
-      },
-      error: (e: ApiError) => this.echec('personnel', e, this.savingPersonnel),
-    });
+    return new Promise((resoudre) =>
+      this.fiches.enregistrerPersonnel(this.idDmc(), this.chargePersonnel()).subscribe({
+        next: (l) => {
+          this.personnel.set(l.map((p) => this.cle(p)));
+          this.refPersonnel.set(empreinte(this.chargePersonnel()));
+          this.savingPersonnel.set(false);
+          this.effacerErreurs('personnel');
+          if (annoncer) this.toast.success('Personnel exigé enregistré.');
+          this.enregistre.emit();
+          resoudre(true);
+        },
+        error: (e: ApiError) => (this.echec('personnel', e, this.savingPersonnel), resoudre(false)),
+      }),
+    );
   }
 
   private effacerErreurs(nom: 'materiel' | 'personnel'): void {

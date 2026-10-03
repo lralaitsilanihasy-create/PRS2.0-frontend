@@ -4,6 +4,7 @@ import { ApiError, erreursParChamp } from '../../../core/errors/api-error';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { PieceExigee, RubriquePiece } from '../../../models';
 import { FicheMarcheService } from '../../../services/fiche-marche.services';
+import { empreinte, ListeASauver } from './liste-a-sauver';
 import { lignePiece, PIECES_ADMINISTRATIVES_DOCUMENT_TYPE } from './pieces';
 
 /** Une pièce à l'écran, avec sa clé locale, qui survit au remplacement de l'objet à chaque frappe. */
@@ -31,7 +32,7 @@ export const RUBRIQUES_PIECES: { code: RubriquePiece; titre: string; clause: str
   styleUrl: './fiche-pieces.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FichePieces {
+export class FichePieces implements ListeASauver {
   private readonly fiches = inject(FicheMarcheService);
   private readonly toast = inject(ToastService);
 
@@ -54,6 +55,9 @@ export class FichePieces {
     for (const p of this.pieces()) m.get(p.rubrique)?.push(p);
     return m;
   });
+  /** ⚠️ 03/10 — l'empreinte de la liste telle que servie ou enregistrée : la page la compare avant de quitter le bloc. */
+  private readonly reference = signal('[]');
+  readonly modifie = computed(() => empreinte(this.charge()) !== this.reference());
   readonly doubleEmploi = computed(() => !!this.texteAdministratif()?.trim() && (this.parRubrique().get('ADMINISTRATIVE')?.length ?? 0) > 0);
 
   constructor() {
@@ -62,8 +66,8 @@ export class FichePieces {
       this.chargement.set(true);
       // Une route pas encore servie (contrat demandé) laisse la liste vide, pas un écran en erreur.
       this.fiches.pieces(id).subscribe({
-        next: (l) => (this.pieces.set(l.map((p) => this.avecCle(p))), this.chargement.set(false)),
-        error: () => (this.pieces.set([]), this.chargement.set(false)),
+        next: (l) => (this.pieces.set(l.map((p) => this.avecCle(p))), this.reference.set(empreinte(this.charge())), this.chargement.set(false)),
+        error: () => (this.pieces.set([]), this.reference.set('[]'), this.chargement.set(false)),
       });
     });
   }
@@ -127,10 +131,9 @@ export class FichePieces {
     this.pieces.update((l) => l.map((x) => (x.cle === cle ? { ...x, parLot: coche } : x)));
   }
 
-  enregistrer(): void {
-    if (this.saving() || this.lecture()) return;
-    // Envoyées rubrique par rubrique, dans l'ordre affiché : c'est l'ordre que le serveur pose.
-    const charge: PieceExigee[] = RUBRIQUES_PIECES.flatMap((r) => this.parRubrique().get(r.code) ?? []).map((p) => ({
+  /** Ce que le `PUT` envoie : rubrique par rubrique, dans l'ordre affiché, sans les clés d'écran. */
+  private charge(): PieceExigee[] {
+    return RUBRIQUES_PIECES.flatMap((r) => this.parRubrique().get(r.code) ?? []).map((p) => ({
       rubrique: p.rubrique,
       numero: p.numero?.trim() || null,
       libelle: p.libelle.trim(),
@@ -139,23 +142,44 @@ export class FichePieces {
       parLot: !!p.parLot,
       modele: p.modele?.trim() || null,
     }));
+  }
+
+  enregistrer(): void {
+    if (this.saving() || this.lecture()) return;
+    void this.envoyer(true);
+  }
+
+  /** ⚠️ 03/10 — tout enregistrer avant de quitter le bloc (`ListeASauver`). */
+  async sauver(): Promise<boolean> {
+    if (this.lecture() || !this.modifie()) return true;
+    return this.envoyer(false);
+  }
+
+  /** Le `PUT` ; l'abonnement met l'écran à jour à la réponse même, la promesse dit l'issue. */
+  private envoyer(annoncer: boolean): Promise<boolean> {
+    const charge = this.charge();
     // L'ordre envoyé devient l'ordre de la liste : les rangs des erreurs servies le suivront.
     this.pieces.set(RUBRIQUES_PIECES.flatMap((r) => this.parRubrique().get(r.code) ?? []));
     this.saving.set(true);
     this.erreurs.set(new Map());
-    this.fiches.enregistrerPieces(this.idDmc(), charge).subscribe({
-      next: (l) => {
-        this.pieces.set(l.map((p) => this.avecCle(p)));
-        this.saving.set(false);
-        this.toast.success('Pièces de l’offre enregistrées.');
-        this.enregistre.emit();
-      },
-      error: (e: ApiError) => {
-        this.saving.set(false);
-        const m = erreursParChamp(e);
-        this.erreurs.set(m);
-        if (!m.size) this.toast.error(e?.message ?? "Les pièces n'ont pas pu être enregistrées.");
-      },
-    });
+    return new Promise((resoudre) =>
+      this.fiches.enregistrerPieces(this.idDmc(), charge).subscribe({
+        next: (l) => {
+          this.pieces.set(l.map((p) => this.avecCle(p)));
+          this.reference.set(empreinte(this.charge()));
+          this.saving.set(false);
+          if (annoncer) this.toast.success('Pièces de l’offre enregistrées.');
+          this.enregistre.emit();
+          resoudre(true);
+        },
+        error: (e: ApiError) => {
+          this.saving.set(false);
+          const m = erreursParChamp(e);
+          this.erreurs.set(m);
+          if (!m.size) this.toast.error(e?.message ?? "Les pièces n'ont pas pu être enregistrées.");
+          resoudre(false);
+        },
+      }),
+    );
   }
 }
